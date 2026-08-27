@@ -13,14 +13,14 @@ const ThreadConferenceBanner = async () => {
       target="_blank"
       rel="noreferrer"
       aria-label={t('Cta')}
-      className="block overflow-hidden rounded-md border border-cyan/60 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      className="block w-full overflow-hidden rounded-md border border-cyan/60 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
       <Image
         src="/thread-conference-banner.png"
         alt={t('ImageAlt')}
         width={865}
         height={120}
-        sizes="(max-width: 768px) 100vw, 865px"
-        className="h-auto w-full"
+        sizes="100vw"
+        className="aspect-[865/120] h-auto w-full object-contain object-center"
         priority
       />
     </Link>
