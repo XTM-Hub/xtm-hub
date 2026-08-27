@@ -1,5 +1,6 @@
 import BlueBlurDecoration from '@/components/homepage/BlueBlurDecoration';
 import { PublicLocale } from '@/i18n/config';
+import ThreadConferenceBanner from './ThreadConferenceBanner';
 import MostDeployedResources from './resources/MostDeployedResources';
 import NewestResources from './resources/NewestResources';
 import XtmRoadmap from './roadmap/XtmRoadmap';
@@ -13,6 +14,7 @@ const Homepage = ({ paramsLocale }: HomepageProps) => {
       <BlueBlurDecoration />
       <div className="flex flex-col gap-xxl">
         <XtmPlatform />
+        <ThreadConferenceBanner />
         <XtmRoadmap paramsLocale={paramsLocale} />
         <NewestResources paramsLocale={paramsLocale} />
         <MostDeployedResources paramsLocale={paramsLocale} />

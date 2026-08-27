@@ -372,6 +372,16 @@
       "Title": "Développez et faites évoluer votre plateforme XTM",
       "Description": "Connectez votre OpenCTI ou OpenAEV pour déployer du contenu prêt à l’emploi en un clic, rester informé des actualités sur les produits, bénéficier d’essais gratuits et, tout simplement, tirer le meilleur parti de votre expérience de la plateforme XTM."
     },
+    "ThreadConference": {
+      "Eyebrow": "Propulsé par Filigran",
+      "Wordmark": "thread",
+      "PoweredBy": "propulsé par Filigran",
+      "ImageAlt": "Bannière de la conférence THREAD 2026 : 15 octobre 2026 à Paris",
+      "Title": "THREAD 2026",
+      "Description": "Le rendez-vous annuel de la communauté mondiale du renseignement sur les menaces et de la cyberdéfense — où renseignement, gestion de l’exposition et action se réunissent.",
+      "EventDetails": "15 octobre 2026 · Paris",
+      "Cta": "En savoir plus"
+    },
     "XtmRoadmap": {
       "Title": "XTM Platform Roadmap",
       "TitleWithProduct": "{product} Roadmap",
@@ -1372,7 +1382,7 @@
     "Trials": {
       "ExploreBold": "Essai gratuit !",
       "ExplorePlatform": "Explorez {platformName} pendant 30 jours",
-      "ExploreProducts": "Explorez OpenCTI ou OpenAEV pendant 30 jours",
+      "ExploreProducts": "Explorez le produit OpenCTI ou OpenAEV pendant 30 jours",
       "Active": "Votre essai gratuit d'OpenCTI est actif",
       "Provisioning": "Votre essai gratuit d'OpenCTI est en cours de provisionnement.",
       "Requested": "Votre essai gratuit d'OpenCTI a été demandé.",

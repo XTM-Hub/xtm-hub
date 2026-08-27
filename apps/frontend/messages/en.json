@@ -372,6 +372,16 @@
       "Title": "Extend and scale your XTM Platform",
       "Description": "Connect your OpenCTI or OpenAEV to deploy pre-built content in one click, stay up to date with product newsfeeds, start free trials, and simply get more out of your XTM Platform experience."
     },
+    "ThreadConference": {
+      "Eyebrow": "Powered by Filigran",
+      "Wordmark": "thread",
+      "PoweredBy": "powered by Filigran",
+      "ImageAlt": "THREAD 2026 conference banner: October 15, 2026 in Paris",
+      "Title": "THREAD 2026",
+      "Description": "The annual gathering of the global threat intelligence and cyber defense community — where intelligence, exposure management and action come together.",
+      "EventDetails": "October 15, 2026 · Paris",
+      "Cta": "Learn more"
+    },
     "XtmRoadmap": {
       "Title": "XTM Platform Roadmap",
       "TitleWithProduct": "{product} Roadmap",
@@ -1372,7 +1382,7 @@
     "Trials": {
       "ExploreBold": "Free Trial!",
       "ExplorePlatform": "Explore {platformName} platform with 30 days",
-      "ExploreProducts": "Explore OpenCTI or OpenAEV platform with 30 days",
+      "ExploreProducts": "Explore OpenCTI or OpenAEV product with 30 days",
       "Active": "Your OpenCTI free trial is active",
       "Provisioning": "Your OpenCTI free trial is currently being provisioned.",
       "Requested": "Your OpenCTI free trial has been requested.",
