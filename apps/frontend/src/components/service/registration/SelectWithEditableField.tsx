@@ -6,6 +6,7 @@ import { useRef, useState } from 'react';
 type Option = { value: string; label: string };
 
 interface SelectWithEditableFieldProps {
+  value?: string;
   onChange: (value: string) => void;
   options: Option[];
   labels: {
@@ -18,14 +19,51 @@ interface SelectWithEditableFieldProps {
 
 const OTHER_VALUE = '__other__';
 
+const parseValueToLocalState = (
+  value: string | undefined,
+  options: Option[],
+  editableFieldValue: string
+) => {
+  if (!value) {
+    return { selectValue: '', customValue: '' };
+  }
+
+  if (options.some((option) => option.value === value)) {
+    return { selectValue: value, customValue: '' };
+  }
+
+  const otherPrefix = `${editableFieldValue}:`;
+  if (value === editableFieldValue) {
+    return { selectValue: OTHER_VALUE, customValue: '' };
+  }
+
+  if (value.startsWith(otherPrefix)) {
+    return {
+      selectValue: OTHER_VALUE,
+      customValue: value.slice(otherPrefix.length).trim(),
+    };
+  }
+
+  return { selectValue: OTHER_VALUE, customValue: value };
+};
+
 export const SelectWithEditableField = ({
+  value,
   onChange,
   options,
   labels,
   editableFieldValue,
 }: SelectWithEditableFieldProps) => {
-  const [selectValue, setSelectValue] = useState<string>('');
-  const [customValue, setCustomValue] = useState('');
+  const isControlled = value !== undefined;
+  const initialValueState = parseValueToLocalState(
+    value,
+    options,
+    editableFieldValue
+  );
+  const [selectValue, setSelectValue] = useState<string>(
+    initialValueState.selectValue
+  );
+  const [customValue, setCustomValue] = useState(initialValueState.customValue);
   const [open, setOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const committedValueRef = useRef<string>('');
@@ -35,7 +73,9 @@ export const SelectWithEditableField = ({
       return;
     }
 
-    setSelectValue(v);
+    if (!isControlled) {
+      setSelectValue(v);
+    }
     setCustomValue('');
 
     if (v === OTHER_VALUE) {
@@ -50,9 +90,12 @@ export const SelectWithEditableField = ({
   };
 
   const handleOtherClick = () => {
-    setSelectValue(OTHER_VALUE);
+    if (!isControlled) {
+      setSelectValue(OTHER_VALUE);
+    }
     committedValueRef.current = editableFieldValue;
     onChange(editableFieldValue);
+    setCustomValue('');
 
     setTimeout(() => inputRef.current?.focus(), 0);
   };
@@ -73,26 +116,46 @@ export const SelectWithEditableField = ({
         : editableFieldValue;
 
       committedValueRef.current = valueToCommit;
-      setSelectValue(OTHER_VALUE);
+      if (!isControlled) {
+        setSelectValue(OTHER_VALUE);
+      }
       setCustomValue(trimmed);
       onChange(valueToCommit);
       setOpen(false);
     }
   };
 
-  const selectedOption = options.find((o) => o.value === selectValue);
-  const isOtherMode = selectValue === OTHER_VALUE;
+  const controlledState = parseValueToLocalState(
+    value,
+    options,
+    editableFieldValue
+  );
+  const currentSelectValue = isControlled
+    ? controlledState.selectValue
+    : selectValue;
+  const selectedOption = options.find((o) => o.value === currentSelectValue);
+  const isOtherMode = currentSelectValue === OTHER_VALUE;
+  const currentCustomValue = isControlled
+    ? open
+      ? customValue
+      : controlledState.customValue
+    : customValue;
 
   const triggerText = isOtherMode
-    ? customValue || labels.editableFieldLabel
+    ? currentCustomValue || labels.editableFieldLabel
     : selectedOption?.label;
 
   return (
     <Select
-      value={selectValue}
+      value={currentSelectValue}
       onValueChange={handleSelectChange}
       open={open}
-      onOpenChange={setOpen}>
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (nextOpen && isControlled) {
+          setCustomValue(controlledState.customValue);
+        }
+      }}>
       <SelectTrigger>
         <span className={triggerText ? '' : 'text-muted-foreground'}>
           {triggerText || labels.placeholder}
@@ -122,7 +185,7 @@ export const SelectWithEditableField = ({
         <div className="px-2 pb-2 pl-8">
           <Input
             ref={inputRef}
-            value={customValue}
+            value={currentCustomValue}
             onChange={handleCustomChange}
             onKeyDown={handleCustomKeyDown}
             placeholder={labels.editableFieldPlaceholder}

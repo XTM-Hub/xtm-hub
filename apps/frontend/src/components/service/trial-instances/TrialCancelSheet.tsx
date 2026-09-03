@@ -1,5 +1,6 @@
 'use client';
 
+import { invalidatePrivateNavigationQueries } from '@/components/menu/navigation/private/private-navigation-query-invalidation';
 import { SelectWithEditableField } from '@/components/service/registration/SelectWithEditableField';
 import { CancelDeploymentRequestMutation } from '@/components/service/trial-instances/trial-instances.graphql';
 import { useOrgaFreeTrial } from '@/components/service/trial-instances/useOrgaFreeTrials';
@@ -15,6 +16,7 @@ import {
 } from '@filigran/ui';
 import { trialInstancesCancelDeploymentRequestMutation } from '@generated/trialInstancesCancelDeploymentRequestMutation.graphql';
 import { PlatformIdentifier } from '@graphql/generated';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
@@ -65,6 +67,7 @@ export const TrialCancelSheet = ({
     value: reason,
     label: t(`Service.Trials.CancellationReason.${reason}`),
   }));
+  const queryClient = useQueryClient();
   const { refetch } = useOrgaFreeTrial();
   const router = useRouter();
 
@@ -89,6 +92,7 @@ export const TrialCancelSheet = ({
           title: t('Utils.Success'),
           description: t(descriptionKey),
         });
+        invalidatePrivateNavigationQueries(queryClient);
         refetch({}, { fetchPolicy: 'network-only' });
         setOpen(false);
 
@@ -135,6 +139,7 @@ export const TrialCancelSheet = ({
                   <span className="text-sm text-destructive">*</span>
                 </FormLabel>
                 <SelectWithEditableField
+                  value={field.value}
                   onChange={field.onChange}
                   options={cancellationReasons}
                   labels={{
