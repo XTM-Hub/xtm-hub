@@ -17,10 +17,12 @@ import { useEffect, useState } from 'react';
 
 interface PublicMobileMenuButtonProps {
   visibleServiceSlugs: string[];
+  isXtmPlatformTrialEnabled: boolean;
 }
 
 export const PublicMobileMenuButton = ({
   visibleServiceSlugs,
+  isXtmPlatformTrialEnabled,
 }: PublicMobileMenuButtonProps) => {
   const [open, setOpen] = useState(false);
   const currentPath = usePathname();
@@ -70,6 +72,7 @@ export const PublicMobileMenuButton = ({
           <PublicNavigation
             open={true}
             visibleServiceSlugs={visibleServiceSlugs}
+            isXtmPlatformTrialEnabled={isXtmPlatformTrialEnabled}
           />
         </div>
       </SheetContent>

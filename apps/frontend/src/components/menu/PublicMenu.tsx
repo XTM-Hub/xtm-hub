@@ -9,9 +9,13 @@ import { useLocalStorage } from 'usehooks-ts';
 
 interface PublicMenuProps {
   visibleServiceSlugs: string[];
+  isXtmPlatformTrialEnabled: boolean;
 }
 
-const PublicMenu = ({ visibleServiceSlugs }: PublicMenuProps) => {
+const PublicMenu = ({
+  visibleServiceSlugs,
+  isXtmPlatformTrialEnabled,
+}: PublicMenuProps) => {
   const locale = useLocale();
   const [open, setOpen] = useLocalStorage<boolean>(
     'is-public-menu-open',
@@ -31,6 +35,7 @@ const PublicMenu = ({ visibleServiceSlugs }: PublicMenuProps) => {
         <PublicNavigation
           open={open}
           visibleServiceSlugs={visibleServiceSlugs}
+          isXtmPlatformTrialEnabled={isXtmPlatformTrialEnabled}
         />
         <MenuFooter
           open={open}
