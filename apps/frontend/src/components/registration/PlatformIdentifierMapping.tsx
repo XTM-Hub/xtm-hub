@@ -11,8 +11,11 @@ import {
   ServiceInstanceTag,
 } from '@graphql/generated';
 import openaevTextLogo from '@public/logo_openaev_text.png';
+import openaevTextDarkLogo from '@public/logo_openaev_text_dark.png';
 import openctiTextLogo from '@public/logo_opencti_text.png';
+import openctiTextDarkLogo from '@public/logo_opencti_text_dark.png';
 import xtmoneTextLogo from '@public/logo_xtmone_text.png';
+import xtmoneTextDarkLogo from '@public/logo_xtmone_text_dark.png';
 import { StaticImageData } from 'next/image';
 import { JSX } from 'react';
 
@@ -21,7 +24,8 @@ export interface PlatformMetadata {
   learnMorePublicUrl: string;
   learnMorePrivateUrl: string;
   logoUrl: string;
-  textLogo: StaticImageData;
+  lightTextLogo: StaticImageData;
+  darkTextLogo: StaticImageData;
   docUrl: string;
   Icon: ({ className }: { className: string }) => JSX.Element;
   iconClassName: string;
@@ -36,7 +40,8 @@ export const PlatformMetadataMapping: Record<
     learnMorePublicUrl: '/cybersecurity-solutions/opencti-free-trial',
     learnMorePrivateUrl: '/app/service/opencti-free-trial',
     logoUrl: '/logo_opencti_dark.png',
-    textLogo: openctiTextLogo,
+    lightTextLogo: openctiTextLogo,
+    darkTextLogo: openctiTextDarkLogo,
     docUrl: 'https://docs.opencti.io/latest/administration/hub/',
     Icon: ({ className }) => <OpenCtiIconIcon className={className} />,
     iconClassName: 'text-filigran-brand-primary',
@@ -46,7 +51,8 @@ export const PlatformMetadataMapping: Record<
     learnMorePublicUrl: '/cybersecurity-solutions/openaev-free-trial',
     learnMorePrivateUrl: '/app/service/openaev-free-trial',
     logoUrl: '/logo_openaev_dark.png',
-    textLogo: openaevTextLogo,
+    lightTextLogo: openaevTextLogo,
+    darkTextLogo: openaevTextDarkLogo,
     docUrl: 'https://docs.openaev.io/latest/administration/hub/',
     Icon: ({ className }) => <OpenAevIconIcon className={className} />,
     iconClassName: 'text-filigran-brand-primary',
@@ -56,7 +62,8 @@ export const PlatformMetadataMapping: Record<
     learnMorePublicUrl: '',
     learnMorePrivateUrl: '',
     logoUrl: '/logo_xtmone_dark.png',
-    textLogo: xtmoneTextLogo,
+    lightTextLogo: xtmoneTextLogo,
+    darkTextLogo: xtmoneTextDarkLogo,
     docUrl: '',
     Icon: ({ className }) => <LogoXtmOneIcon className={className} />,
     iconClassName: 'text-filigran-ia-main',

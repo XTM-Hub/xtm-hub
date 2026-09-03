@@ -13,12 +13,14 @@ const buildProduct = ({
   name = 'OpenCTI Instance',
   status = 'active',
   url = 'https://opencti.example.io',
+  registeredPlatformUrl,
   roles = [{ id: 'group-1', name: 'Admin' }],
 }: {
   platformIdentifier?: string;
   name?: string;
   status?: string | null;
   url?: string;
+  registeredPlatformUrl?: string;
   roles?: Array<{ id: string; name: string }> | null;
 } = {}): XtmPlatformBundleProductFragment => ({
   platform_identifier:
@@ -31,7 +33,7 @@ const buildProduct = ({
       XtmPlatformBundleProductFragment['registered_platform']
     >['status'],
     last_connectivity_check: '2026-07-30T12:31:53+00:00',
-    url,
+    url: registeredPlatformUrl ?? url,
     myGroups: roles,
   },
 });
@@ -77,7 +79,7 @@ describe('BundleProductCard', () => {
       />
     );
 
-    expect(screen.getByAltText('OpenCTI')).toBeInTheDocument();
+    expect(screen.getAllByAltText('OpenCTI')).toHaveLength(2);
     expect(screen.getByText('OpenCTI Instance')).toBeInTheDocument();
     expect(screen.getByText('Admin')).toBeInTheDocument();
   });
@@ -152,6 +154,28 @@ describe('BundleProductCard', () => {
           platformIdentifier: 'xtmone',
           name: 'XTM One Instance',
           url: 'https://xtmone.example.io',
+          roles: [],
+        })}
+        xtmoneStatus={connectedXtmoneStatus}
+        canManage={false}
+      />
+    );
+
+    const accessLink = screen
+      .getByText('XtmPlatformTrial.Products.AccessProduct')
+      .closest('a');
+    expect(accessLink).not.toBeNull();
+    expect(accessLink).toHaveAttribute('href', 'https://xtmone.example.io');
+  });
+
+  it('falls back to deployment request url when registered platform url is empty', () => {
+    testRender(
+      <BundleProductCard
+        product={buildProduct({
+          platformIdentifier: 'xtmone',
+          name: 'XTM One Instance',
+          url: 'https://xtmone.example.io',
+          registeredPlatformUrl: '',
           roles: [],
         })}
         xtmoneStatus={connectedXtmoneStatus}

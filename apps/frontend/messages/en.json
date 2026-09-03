@@ -91,6 +91,11 @@
       "ReconnectHint": "You should connect your product again."
     },
     "CancelTrial": "Cancel trial",
+    "CancelDialog": {
+      "Title": "Cancel trial",
+      "Description": "Are you sure you wish to cancel this trial ?",
+      "Warning": "Once cancelled, you will not be able to request a new trial"
+    },
     "Title": "Welcome to your XTM Platform Trial",
     "Subtitle": "Everything you need for your trial is right here: your trial details and time remaining, direct access to your products, and a direct line to the Filigran team whenever you need support or have questions.",
     "Guide": {
@@ -1653,6 +1658,7 @@
       "GoToMyTrial": "Go to my trial",
       "InfoPersonalSpace": "You can’t start a trial in your personal space—please switch to your organization’s space",
       "ReachOutToSales": "Reach out to Sales",
+      "ReachOutToSalesMessageLabel": "Message",
       "ReachOutToSalesMessagePlaceholder": "Your message",
       "NeedSupport": "Need support",
       "ReachOutToSalesSuccessTitle": "Thank you!",
