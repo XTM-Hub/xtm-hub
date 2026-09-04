@@ -69,7 +69,7 @@ export const ReachSalesDialogForm = ({
               name="message"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="font-input/text/label text-text-default-secondary text-xs">
+                  <FormLabel className="content-body-compact-medium text-text-default-secondary">
                     {t('Service.Trials.ReachOutToSalesMessageLabel')}
                     <span>*</span>
                   </FormLabel>

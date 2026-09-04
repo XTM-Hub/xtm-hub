@@ -27,26 +27,26 @@ const parseValueToLocalState = (
   editableFieldValue: string
 ) => {
   if (!value) {
-    return { selectValue: '', customValue: '' };
+    return { selectedValue: '', customValue: '' };
   }
 
   if (options.some((option) => option.value === value)) {
-    return { selectValue: value, customValue: '' };
+    return { selectedValue: value, customValue: '' };
   }
 
-  const otherPrefix = `${editableFieldValue}:`;
   if (value === editableFieldValue) {
-    return { selectValue: OTHER_VALUE, customValue: '' };
+    return { selectedValue: OTHER_VALUE, customValue: '' };
   }
+  const otherPrefix = `${editableFieldValue}:`;
 
   if (value.startsWith(otherPrefix)) {
     return {
-      selectValue: OTHER_VALUE,
+      selectedValue: OTHER_VALUE,
       customValue: value.slice(otherPrefix.length).trim(),
     };
   }
 
-  return { selectValue: OTHER_VALUE, customValue: value };
+  return { selectedValue: OTHER_VALUE, customValue: value };
 };
 
 export const SelectWithEditableField = ({
@@ -63,8 +63,8 @@ export const SelectWithEditableField = ({
     options,
     editableFieldValue
   );
-  const [selectValue, setSelectValue] = useState<string>(
-    initialValueState.selectValue
+  const [selectedValue, setSelectedValue] = useState<string>(
+    initialValueState.selectedValue
   );
   const [customValue, setCustomValue] = useState(initialValueState.customValue);
   const [open, setOpen] = useState(false);
@@ -77,7 +77,7 @@ export const SelectWithEditableField = ({
     }
 
     if (!isControlled) {
-      setSelectValue(v);
+      setSelectedValue(v);
     }
     setCustomValue('');
 
@@ -94,7 +94,7 @@ export const SelectWithEditableField = ({
 
   const handleOtherClick = () => {
     if (!isControlled) {
-      setSelectValue(OTHER_VALUE);
+      setSelectedValue(OTHER_VALUE);
     }
     committedValueRef.current = editableFieldValue;
     onChange(editableFieldValue);
@@ -120,7 +120,7 @@ export const SelectWithEditableField = ({
 
       committedValueRef.current = valueToCommit;
       if (!isControlled) {
-        setSelectValue(OTHER_VALUE);
+        setSelectedValue(OTHER_VALUE);
       }
       setCustomValue(trimmed);
       onChange(valueToCommit);
@@ -134,8 +134,8 @@ export const SelectWithEditableField = ({
     editableFieldValue
   );
   const currentSelectValue = isControlled
-    ? controlledState.selectValue
-    : selectValue;
+    ? controlledState.selectedValue
+    : selectedValue;
   const selectedOption = options.find((o) => o.value === currentSelectValue);
   const isOtherMode = currentSelectValue === OTHER_VALUE;
   const currentCustomValue = isControlled

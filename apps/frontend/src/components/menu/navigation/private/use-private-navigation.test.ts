@@ -155,9 +155,15 @@ describe('usePrivateNavigation', () => {
     });
 
     graphqlMocks.useTrialDeploymentsEligibilityQuery.mockReturnValue({
-      data: undefined,
+      data: {
+        trialDeployments: {
+          availableTrials: [],
+          isBlacklisted: false,
+        },
+      },
       isLoading: false,
       isPending: false,
+      isError: false,
     });
   });
 
@@ -207,6 +213,27 @@ describe('usePrivateNavigation', () => {
 
   it('hides the xtm-platform-trial bottom link when the feature flag is off', () => {
     vi.mocked(useIsFeatureEnabled).mockReturnValue(false);
+
+    const { result } = renderUsePrivateNavigation({
+      selectedOrganizationId: 'org-1',
+    });
+
+    expect(result.current.bottomLinks.map((link) => link.key)).not.toContain(
+      'xtm-platform-trial'
+    );
+  });
+
+  it('hides the xtm-platform-trial bottom link when organization is blacklisted', () => {
+    graphqlMocks.useTrialDeploymentsEligibilityQuery.mockReturnValue({
+      data: {
+        trialDeployments: {
+          availableTrials: [],
+          isBlacklisted: true,
+        },
+      },
+      isLoading: false,
+      isPending: false,
+    });
 
     const { result } = renderUsePrivateNavigation({
       selectedOrganizationId: 'org-1',
@@ -392,7 +419,7 @@ describe('usePrivateNavigation', () => {
     {
       selectedOrganizationId: 'org-1',
       isXtmPlatformTrialEnabled: true,
-      expectedEnabled: false,
+      expectedEnabled: true,
       expectedOrganizationId: 'org-1',
     },
     {

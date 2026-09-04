@@ -256,7 +256,7 @@
       "CAN_UNREGISTER_PLATFORM_UNKNOWN_ERROR": "An unknown error occurred during platform disconnection",
       "CANT_ADD_DISABLED_USER": "You cannot add a user that is disabled in the platform",
       "CANT_ADD_USER_TO_PERSONAL_SPACE": "You cannot add a user to your personal space",
-      "CANT_CANCEL_BUNDLE_PRODUCT": "A single product of an XTM Platform Trial cannot be canceled",
+      "CANT_CANCEL_BUNDLE_PRODUCT": "A single product of an XTM Platform Trial cannot be cancelled",
       "CANT_DELETE_BUILTIN_USER": "This built-in user cannot be deleted",
       "CANT_DELETE_YOURSELF": "You cannot delete your own account",
       "CANT_REMOVE_LAST_ADMINISTRATOR": "You cannot remove the last administrator of an organization",
@@ -277,7 +277,7 @@
       "DELETE_ORGANIZATION_PENDING_USERS": "This organization still has users waiting for approval. Accept or reject them before deleting it.",
       "DELETE_ORGANIZATION_REQUIRES_SINGLE_USER": "This organization still has several members. Remove them before deleting it.",
       "DELETE_SUBSCRIPTION_ERROR": "Error while deleting the subscription",
-      "DELETE_USER_BLOCKED_BY_CANCELLATION_RECORD": "This user cannot be deleted because they canceled a deployment request that is still linked to their account.",
+      "DELETE_USER_BLOCKED_BY_CANCELLATION_RECORD": "This user cannot be deleted because they cancelled a deployment request that is still linked to their account.",
       "DELETE_USER_BLOCKED_BY_DEPLOYMENT_REQUEST": "This user cannot be deleted because deployment requests are linked to their account.",
       "DELETE_USER_BLOCKED_BY_LAST_ORGANIZATION_MEMBER": "This user cannot be deleted because they are the last member of an organization.",
       "DELETE_USER_BLOCKED_BY_LINKED_DATA": "This user cannot be deleted because other data is still linked to their account.",
@@ -717,7 +717,7 @@
       "Products": "Products"
     },
     "TabTitle": {
-      "Cancelled": "Canceled",
+      "Cancelled": "Cancelled",
       "Expired": "Expired",
       "Running": "Running",
       "Waiting": "Waiting",
@@ -725,7 +725,7 @@
     },
     "Toast": {
       "TrialsReordered": "Trial requests were reordered",
-      "BundleCancelled": "The bundle trial was canceled successfully.",
+      "BundleCancelled": "The bundle trial was cancelled successfully.",
       "BundleReordered": "The bundle has been reordered in the queue."
     },
     "Actions": {
@@ -755,11 +755,11 @@
       "provisioning": "Provisioning",
       "active": "Active",
       "expired": "Expired",
-      "cancelled": "Canceled",
+      "cancelled": "Cancelled",
       "failed": "Failed"
     },
     "Cancellation": {
-      "Confirmation": "Are you sure you want to cancel the bundle trial of {organizationName}? Every product of the bundle will be canceled."
+      "Confirmation": "Are you sure you want to cancel the bundle trial of {organizationName}? Every product of the bundle will be cancelled."
     }
   },
   "Parameters": {
@@ -1472,7 +1472,7 @@
       "Provisioning": "Your OpenCTI free trial is currently being provisioned.",
       "Requested": "Your OpenCTI free trial has been requested.",
       "Expired": "Your OpenCTI free trial has expired.",
-      "Cancelled": "Your OpenCTI free trial has been canceled.",
+      "Cancelled": "Your OpenCTI free trial has been cancelled.",
       "CancellationReason": {
         "value": "Intelligence lacks actionable insight for our specific needs",
         "compatibility": "Incompatible with our existing security stack",
@@ -1621,7 +1621,7 @@
           "Status": {
             "RequestedOn": "Requested on",
             "StartedOn": "Started on",
-            "CancelledOn": "Canceled on",
+            "CancelledOn": "Cancelled on",
             "FinishedOn": "Finished on",
             "ProductsIncluded": "Products included in your trial",
             "ProductsIncludedInRequest": "Products included in your trial request",
@@ -1631,7 +1631,7 @@
               "Description": "Our team will be in touch shortly."
             },
             "cancelled": {
-              "Title": "Unfortunately, your trial has been canceled.",
+              "Title": "Unfortunately, your trial has been cancelled.",
               "Description": "You are not eligible to request a new trial. \nIf you would like to use the Enterprise Edition, please contact sales."
             },
             "expired": {
@@ -1666,9 +1666,9 @@
       "ReachOutToSalesDefaultMessage": "Type your message to request help",
       "Cancellation": {
         "Toast": {
-          "NoNewTrialPossible": "Thank you, your OpenCTI free trial was canceled successfully. Please note that new openCTI trials can’t be requested.",
-          "NewTrialPossible": "Thank you, your OpenCTI free trial was canceled successfully.",
-          "Admin": "The OpenCTI free trial was canceled successfully."
+          "NoNewTrialPossible": "Thank you, your OpenCTI free trial was cancelled successfully. Please note that new openCTI trials can’t be requested.",
+          "NewTrialPossible": "Thank you, your OpenCTI free trial was cancelled successfully.",
+          "Admin": "The OpenCTI free trial was cancelled successfully."
         },
         "ConfirmationForm": {
           "Title": "Cancel your OpenCTI free trial",

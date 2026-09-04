@@ -239,7 +239,7 @@ export const usePrivateNavigation = (): NavigationConfig => {
     portalGraphqlClient,
     privateNavigationTrialEligibilityVariables,
     {
-      enabled: !isXtmPlatformTrialEnabled && !!selectedOrganizationId,
+      enabled: !!selectedOrganizationId,
       queryKey: trialKeys.trialDeploymentsEligibility(
         privateNavigationTrialEligibilityVariables
       ),
@@ -266,6 +266,8 @@ export const usePrivateNavigation = (): NavigationConfig => {
     [registeredPlatformsQueryData]
   );
   const trialDeployments = trialEligibilityData?.trialDeployments;
+  const canShowXtmPlatformTrialLink =
+    isXtmPlatformTrialEnabled && !trialDeployments?.isBlacklisted;
   const getStartFreeTrialLinks = (
     platformIdentifier: PlatformIdentifier,
     href: string
@@ -486,7 +488,7 @@ export const usePrivateNavigation = (): NavigationConfig => {
       label: tMenu('Slack'),
       external: true,
     },
-    ...(isXtmPlatformTrialEnabled
+    ...(canShowXtmPlatformTrialLink
       ? [
           {
             key: 'xtm-platform-trial',

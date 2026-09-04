@@ -150,7 +150,7 @@ describe('BundleCancelSheet', () => {
       queryKey: trialKeys.trialDeploymentsEligibilityAll(),
     });
     expect(testState.invalidateQueries).toHaveBeenCalledWith({
-      queryKey: xtmPlatformBundleKeys.activeXtmPlatformBundle(),
+      queryKey: xtmPlatformBundleKeys.all(),
     });
   });
 
