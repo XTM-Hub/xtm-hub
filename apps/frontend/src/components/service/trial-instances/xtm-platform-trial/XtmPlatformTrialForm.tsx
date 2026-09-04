@@ -7,6 +7,7 @@ import {
 import { buildOngoingTrialWarningParams } from '@/components/service/trial-instances/xtm-platform-trial/xtm-platform-trial-form.utils';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { TranslatableEnumSelectField } from '@/components/ui/TranslatableEnumSelectField';
+import { cn } from '@/lib/utils';
 import { WarningIcon } from '@filigran/icon';
 import {
   Button,
@@ -81,6 +82,9 @@ export const XtmPlatformTrialForm = ({
 }: XtmPlatformTrialFormProps) => {
   const t = useTranslations();
   const locale = useLocale();
+  const selectLayerClassName = 'layer-2';
+  const selectTriggerClassName = cn(selectLayerClassName);
+  const selectContentClassName = cn(selectLayerClassName);
   const { me } = useContext(PortalContext);
 
   const ongoingTrialWarningParams = buildOngoingTrialWarningParams(
@@ -260,12 +264,12 @@ export const XtmPlatformTrialForm = ({
                 <Select
                   value={field.value}
                   onValueChange={field.onChange}>
-                  <SelectTrigger>
+                  <SelectTrigger className={selectTriggerClassName}>
                     <SelectValue
                       placeholder={t('Service.Trials.Form.RegionPlaceholder')}
                     />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className={selectContentClassName}>
                     {REGIONS.map((region) => (
                       <SelectItem
                         key={region.value}
@@ -290,6 +294,7 @@ export const XtmPlatformTrialForm = ({
                 placeholder={t('Service.Trials.Form.JobTitlePlaceholder')}
                 values={Object.values(DeploymentRequestJobTitle)}
                 translationNamespace="DeploymentRequestJobTitle"
+                selectClassName={selectLayerClassName}
               />
             )}
           />
@@ -304,6 +309,7 @@ export const XtmPlatformTrialForm = ({
                 placeholder={t('Service.Trials.Form.ActivitySectorPlaceholder')}
                 values={Object.values(DeploymentRequestActivitySector)}
                 translationNamespace="DeploymentRequestActivitySector"
+                selectClassName={selectLayerClassName}
               />
             )}
           />
@@ -326,6 +332,7 @@ export const XtmPlatformTrialForm = ({
                     USE_CASES_BY_PLATFORM_IDENTIFIER[entry.platform_identifier]
                   }
                   translationNamespace="DeploymentRequestUseCase"
+                  selectClassName={selectLayerClassName}
                 />
               )}
             />

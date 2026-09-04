@@ -2750,9 +2750,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@filigran/ui@npm:1.6.11":
-  version: 1.6.11
-  resolution: "@filigran/ui@npm:1.6.11"
+"@filigran/ui@npm:1.6.12":
+  version: 1.6.12
+  resolution: "@filigran/ui@npm:1.6.12"
   dependencies:
     "@dnd-kit/core": "npm:6.3.1"
     "@dnd-kit/modifiers": "npm:9.0.0"
@@ -2796,7 +2796,7 @@ __metadata:
     react-dom: ^16.8 || ^17.0 || ^18.0 || ^19.0
     react-hook-form: ^7.68.0
     zod: ^4.1.13
-  checksum: 10/5578cb416e91b3b2c2b062bf211549b00e6b0552c4b1bbc0c35b08a0e441af9385e8aa372409040a909bc09a8520a38988cd0a5397be164f1529450d7619c5c3
+  checksum: 10/3d132e277700a05588e76086a86b0513b8cf0152a2fafb8b4e9ce9154d29d291ed0915eca2497b9d4f8131751f70b4293059b68a9aa5ccf3a43626d6cf219c39
   languageName: node
   linkType: hard
 
@@ -8937,7 +8937,7 @@ __metadata:
   resolution: "@xtm-hub/frontend@workspace:apps/frontend"
   dependencies:
     "@filigran/icon": "npm:0.24.3"
-    "@filigran/ui": "npm:1.6.11"
+    "@filigran/ui": "npm:1.6.12"
     "@graphql-codegen/cli": "catalog:"
     "@graphql-codegen/typescript": "catalog:"
     "@graphql-codegen/typescript-operations": "npm:4.6.1"

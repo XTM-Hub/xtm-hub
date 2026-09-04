@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils';
 import { CheckIcon } from '@filigran/icon';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@filigran/ui';
 import { Input } from '@filigran/ui/servers';
@@ -15,6 +16,7 @@ interface SelectWithEditableFieldProps {
     editableFieldPlaceholder: string;
   };
   editableFieldValue: string;
+  layerClassName?: string;
 }
 
 const OTHER_VALUE = '__other__';
@@ -53,6 +55,7 @@ export const SelectWithEditableField = ({
   options,
   labels,
   editableFieldValue,
+  layerClassName = 'layer-2',
 }: SelectWithEditableFieldProps) => {
   const isControlled = value !== undefined;
   const initialValueState = parseValueToLocalState(
@@ -156,13 +159,13 @@ export const SelectWithEditableField = ({
           setCustomValue(controlledState.customValue);
         }
       }}>
-      <SelectTrigger>
+      <SelectTrigger className={cn(layerClassName)}>
         <span className={triggerText ? '' : 'text-muted-foreground'}>
           {triggerText || labels.placeholder}
         </span>
       </SelectTrigger>
 
-      <SelectContent>
+      <SelectContent className={cn(layerClassName)}>
         {options.map((option) => (
           <SelectItem
             key={option.value}
@@ -172,7 +175,7 @@ export const SelectWithEditableField = ({
         ))}
 
         <div
-          className="relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+          className="relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-input-hover"
           onClick={handleOtherClick}>
           {isOtherMode && (
             <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
