@@ -4,6 +4,7 @@ import {
   contextSimpleUserFiligran2,
   GRAPHQL_RESOLVE_INFO,
 } from '../../../tests/tests.const';
+import { NewsFeedItemMetadataKey } from '../../__generated__/resolvers-types';
 import { NewsFeedItemId } from '../../model/kanel/public/NewsFeedItem';
 import { UserLoadUserBy } from '../../model/user';
 import { UnknownErrorCode } from '../../utils/error/error.code';
@@ -178,5 +179,40 @@ describe('deleteNewsFeedItem GraphQL mutation', () => {
 
     // Then
     await expect(call).rejects.toThrow(UnknownErrorCode.UnknownError);
+  });
+});
+
+describe('newsFeedItem metadata field resolver', () => {
+  it('should load metadata through the newsFeed data loader and map it to the GraphQL shape', async () => {
+    // Given
+    const id = 'news-feed-item-id-123' as NewsFeedItemId;
+    const load = vi.fn().mockResolvedValue([
+      {
+        news_feed_item_id: id,
+        key: NewsFeedItemMetadataKey.UrlPath,
+        value: 'redirect/foo',
+      },
+    ]);
+    const context = {
+      ...contextSimpleUserFiligran2,
+      dataLoaders: {
+        ...contextSimpleUserFiligran2.dataLoaders,
+        newsFeed: { metadataByNewsFeedItemIdLoader: { load } },
+      },
+    };
+
+    // When
+    const result = await newsFeedResolver.NewsFeedItem!.metadata!(
+      { id },
+      {},
+      context,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    // Then
+    expect(load).toHaveBeenCalledWith(id);
+    expect(result).toEqual([
+      { key: NewsFeedItemMetadataKey.UrlPath, value: 'redirect/foo' },
+    ]);
   });
 });
