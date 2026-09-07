@@ -189,6 +189,64 @@ describe('epicApp', () => {
         FiligranProduct.Openaev,
       ]);
     });
+
+    it('should create an epic with a slack link', async () => {
+      // Given
+      const slackLink =
+        'https://filigran-community.slack.com/archives/C08HU35NPD4';
+      const input = {
+        ...basicInput,
+        title: 'Slack Link Epic',
+        slack_link: slackLink,
+      };
+
+      // When
+      const createdEpic = await EpicApp.createEpic(input, []);
+
+      // Check in DB
+      const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
+
+      // Then
+      expect(createdEpic.slack_link).toBe(slackLink);
+
+      expect(dbEpic?.slack_link).toBe(slackLink);
+    });
+
+    it('should create an epic without a slack link', async () => {
+      // Given
+      const input = { ...basicInput, title: 'No Slack Link Epic' };
+
+      // When
+      const createdEpic = await EpicApp.createEpic(input, []);
+
+      // Check in DB
+      const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
+
+      // Then
+      expect(createdEpic.slack_link).toBeNull();
+
+      expect(dbEpic?.slack_link).toBeNull();
+    });
+
+    it('should create an epic with an empty slack link stored as null', async () => {
+      // Given
+      const input = {
+        ...basicInput,
+        title: 'Empty Slack Link Epic',
+        slack_link: '',
+      };
+
+      // When
+      const createdEpic = await EpicApp.createEpic(input, []);
+
+      // Check in DB
+      const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
+
+      // Then
+      expect(createdEpic.slack_link).toBeNull();
+
+      expect(dbEpic?.slack_link).toBeNull();
+    });
   });
 
   describe('updateEpic', () => {
@@ -253,6 +311,61 @@ describe('epicApp', () => {
         FiligranProduct.Openaev,
         FiligranProduct.Xtmhub,
       ]);
+    });
+    it('should update the slack link of the specified epic', async () => {
+      // Given
+      const createdEpic = await EpicApp.createEpic(basicInput, []);
+      const slackLink =
+        'https://filigran-community.slack.com/archives/C0BMANSB4CW';
+      const updateInput = {
+        slack_link: slackLink,
+        edition_type: EditionType.CommunityEdition,
+      };
+
+      // When
+      const updatedEpic = await EpicApp.updateEpic(
+        createdEpic.id as EpicId,
+        updateInput,
+        []
+      );
+
+      // Check in DB
+      const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
+
+      // Then
+      expect(updatedEpic.slack_link).toBe(slackLink);
+
+      expect(dbEpic?.slack_link).toBe(slackLink);
+    });
+    it('should clear the slack link of the specified epic', async () => {
+      // Given
+      const createdEpic = await EpicApp.createEpic(
+        {
+          ...basicInput,
+          slack_link:
+            'https://filigran-community.slack.com/archives/C0BMANSB4CW',
+        },
+        []
+      );
+      const updateInput = {
+        slack_link: '',
+        edition_type: EditionType.CommunityEdition,
+      };
+
+      // When
+      const updatedEpic = await EpicApp.updateEpic(
+        createdEpic.id as EpicId,
+        updateInput,
+        []
+      );
+
+      // Check in DB
+      const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
+
+      // Then
+      expect(updatedEpic.slack_link).toBeNull();
+
+      expect(dbEpic?.slack_link).toBeNull();
     });
     it('should update the specified epic with uploads and create a document', async () => {
       // Given

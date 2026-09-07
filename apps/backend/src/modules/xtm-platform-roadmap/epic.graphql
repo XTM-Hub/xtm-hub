@@ -23,6 +23,7 @@ type Epic implements Node {
   edition_type: EditionType!
   active: Boolean!
   product: [FiligranProduct!]!
+  slack_link: String
   timeline: Timeline!
   epic_type: EpicType!
   document: Document
@@ -40,6 +41,7 @@ input CreateEpicInput {
   edition_type: EditionType!
   active: Boolean
   product: [FiligranProduct!]!
+  slack_link: String
   timeline: Timeline!
   is_integration: Boolean
   illustration_document: Upload
@@ -52,6 +54,7 @@ input UpdateEpicInput {
   edition_type: EditionType!
   active: Boolean
   product: [FiligranProduct!]
+  slack_link: String
   timeline: Timeline
   is_integration: Boolean
   illustration_document: Upload

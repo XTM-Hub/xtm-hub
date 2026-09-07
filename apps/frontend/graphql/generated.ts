@@ -268,6 +268,7 @@ export type CreateEpicInput = {
   is_integration: InputMaybe<Scalars['Boolean']['input']>;
   product: Array<FiligranProduct>;
   short_description: Scalars['String']['input'];
+  slack_link: InputMaybe<Scalars['String']['input']>;
   timeline: Timeline;
   title: Scalars['String']['input'];
 };
@@ -757,6 +758,7 @@ export type Epic = Node & {
   id: Scalars['ID']['output'];
   product: Array<FiligranProduct>;
   short_description: Scalars['String']['output'];
+  slack_link: Maybe<Scalars['String']['output']>;
   timeline: Timeline;
   title: Scalars['String']['output'];
   updated_at: Maybe<Scalars['Date']['output']>;
@@ -2844,6 +2846,7 @@ export type UpdateEpicInput = {
   is_integration: InputMaybe<Scalars['Boolean']['input']>;
   product: InputMaybe<Array<FiligranProduct>>;
   short_description: InputMaybe<Scalars['String']['input']>;
+  slack_link: InputMaybe<Scalars['String']['input']>;
   timeline: InputMaybe<Timeline>;
   title: InputMaybe<Scalars['String']['input']>;
 };

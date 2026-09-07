@@ -37,6 +37,8 @@ export default interface Epic {
   updater_id: UserId | null;
 
   edition_type: EditionType;
+
+  slack_link: string | null;
 }
 
 /** Represents the initializer for the table public.Epic */
@@ -71,6 +73,8 @@ export interface EpicInitializer {
   updater_id?: UserId | null;
 
   edition_type?: EditionType;
+
+  slack_link?: string | null;
 }
 
 /** Represents the mutator for the table public.Epic */
@@ -102,4 +106,6 @@ export interface EpicMutator {
   updater_id?: UserId | null;
 
   edition_type?: EditionType;
+
+  slack_link?: string | null;
 }

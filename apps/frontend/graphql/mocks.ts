@@ -293,6 +293,7 @@ export const mockCreateEpicInput = (overrides?: Partial<CreateEpicInput>, _relat
         is_integration: overrides && overrides.hasOwnProperty('is_integration') ? overrides.is_integration! : true,
         product: overrides && overrides.hasOwnProperty('product') ? overrides.product! : [FiligranProduct.Openaev],
         short_description: overrides && overrides.hasOwnProperty('short_description') ? overrides.short_description! : 'ter',
+        slack_link: overrides && overrides.hasOwnProperty('slack_link') ? overrides.slack_link! : 'timidus',
         timeline: overrides && overrides.hasOwnProperty('timeline') ? overrides.timeline! : Timeline.Finished,
         title: overrides && overrides.hasOwnProperty('title') ? overrides.title! : 'suggero',
     };
@@ -679,6 +680,7 @@ export const mockEpic = (overrides?: Partial<Epic>, _relationshipsToOmit: Set<st
         id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : '43bb0673-349a-47ed-9407-f44cc9929f36',
         product: overrides && overrides.hasOwnProperty('product') ? overrides.product! : [FiligranProduct.Openaev],
         short_description: overrides && overrides.hasOwnProperty('short_description') ? overrides.short_description! : 'tutamen',
+        slack_link: overrides && overrides.hasOwnProperty('slack_link') ? overrides.slack_link! : 'demitto',
         timeline: overrides && overrides.hasOwnProperty('timeline') ? overrides.timeline! : Timeline.Finished,
         title: overrides && overrides.hasOwnProperty('title') ? overrides.title! : 'amplitudo',
         updated_at: overrides && overrides.hasOwnProperty('updated_at') ? overrides.updated_at! : '2021-04-10T05:21:11.658Z',
@@ -2151,6 +2153,7 @@ export const mockUpdateEpicInput = (overrides?: Partial<UpdateEpicInput>, _relat
         is_integration: overrides && overrides.hasOwnProperty('is_integration') ? overrides.is_integration! : false,
         product: overrides && overrides.hasOwnProperty('product') ? overrides.product! : [FiligranProduct.Openaev],
         short_description: overrides && overrides.hasOwnProperty('short_description') ? overrides.short_description! : 'corrigo',
+        slack_link: overrides && overrides.hasOwnProperty('slack_link') ? overrides.slack_link! : 'tutamen',
         timeline: overrides && overrides.hasOwnProperty('timeline') ? overrides.timeline! : Timeline.Finished,
         title: overrides && overrides.hasOwnProperty('title') ? overrides.title! : 'tabella',
     };
