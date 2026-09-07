@@ -1,4 +1,5 @@
 import { EpicItemDetailed } from '@/components/epic/epic-item/EpicItemDetailed';
+import { DEFAULT_EPIC_SLACK_LINK } from '@/components/epic/epic-slack-links';
 import testRender from '@/utils/test/test-render';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import { EditionType, EpicType, FiligranProduct } from '@graphql/generated';
@@ -7,13 +8,14 @@ import { createMockEnvironment } from 'relay-test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('EpicItemDetailed', () => {
-  const epic = (product: FiligranProduct) =>
+  const epic = (slackLink: string | null) =>
     ({
       id: 'epic-1',
       title: 'Roadmap epic',
       epic_type: EpicType.Other,
       edition_type: EditionType.CommunityEdition,
-      product,
+      product: [FiligranProduct.Opencti],
+      slack_link: slackLink,
       short_description: 'short description',
       description: 'long **description**',
       document_id: null,
@@ -22,7 +24,7 @@ describe('EpicItemDetailed', () => {
     }) as epic_fragment$data;
 
   const defaultProps = {
-    epic: epic(FiligranProduct.Opencti),
+    epic: epic(null),
     serviceInstanceId: 'service-instance-1',
   };
 
@@ -46,14 +48,16 @@ describe('EpicItemDetailed', () => {
   });
 
   it.each`
-    product                    | expectedLink
-    ${FiligranProduct.Opencti} | ${'https://filigran-community.slack.com/archives/CHZC2D38C'}
-    ${FiligranProduct.Openaev} | ${'https://filigran-community.slack.com/archives/CJ1PHBHF1'}
-    ${FiligranProduct.Xtmone}  | ${'https://filigran-community.slack.com/archives/CHNEM9NUT'}
-    ${FiligranProduct.Xtmhub}  | ${'https://filigran-community.slack.com/archives/C08HU35NPD4'}
+    slackLink                                                      | expectedLink                                                   | description
+    ${'https://filigran-community.slack.com/archives/C08HU35NPD4'} | ${'https://filigran-community.slack.com/archives/C08HU35NPD4'} | ${'the link chosen on the epic'}
+    ${'https://filigran-community.slack.com/archives/CUSTOM12345'} | ${'https://filigran-community.slack.com/archives/CUSTOM12345'} | ${'a link typed by hand'}
+    ${null}                                                        | ${DEFAULT_EPIC_SLACK_LINK}                                     | ${'the default link when the epic has none'}
+    ${''}                                                          | ${DEFAULT_EPIC_SLACK_LINK}                                     | ${'the default link when the epic link is empty'}
+    ${'javascript:alert(1)'}                                       | ${DEFAULT_EPIC_SLACK_LINK}                                     | ${'the default link when the epic link is not a Filigran slack link'}
+    ${'https://evil.example.com/phishing'}                         | ${DEFAULT_EPIC_SLACK_LINK}                                     | ${'the default link when the epic link points to another domain'}
   `(
-    'renders community call-to-action for $product',
-    ({ product, expectedLink }) => {
+    'renders community call-to-action with $description',
+    ({ slackLink, expectedLink }) => {
       // Given
       const environment = createMockEnvironment();
 
@@ -61,7 +65,7 @@ describe('EpicItemDetailed', () => {
       testRender(
         <EpicItemDetailed
           {...defaultProps}
-          epic={epic(product)}
+          epic={epic(slackLink)}
         />,
         {
           relayConfig: environment,
