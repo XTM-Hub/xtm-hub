@@ -512,6 +512,11 @@ export const DeploymentRequestDomain = {
   },
 };
 
+export const isBundleChild = <T extends Pick<DeploymentRequest, 'parent_id'>>(
+  deploymentRequest: T
+): deploymentRequest is T & { parent_id: DeploymentRequestId } =>
+  deploymentRequest.parent_id !== null;
+
 /**
  * Bundles never create an Auth0 audience for themselves nor for their XtmOne,
  * OpenAEV or Opencti children. Standalone OpenAEV and Opencti trials no
@@ -533,10 +538,9 @@ export const shouldDeleteDeploymentRequestAudience = (
     return false;
   }
 
-  const isBundleChild = deploymentRequest.parent_id !== null;
   if (
     deploymentRequest.platform_identifier === PlatformIdentifier.Openaev &&
-    isBundleChild
+    isBundleChild(deploymentRequest)
   ) {
     return false;
   }

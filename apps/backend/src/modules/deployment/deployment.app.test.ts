@@ -1,3 +1,4 @@
+import config from 'config';
 import { v4 as uuidv4 } from 'uuid';
 import {
   afterAll,
@@ -510,7 +511,20 @@ describe('deployment app', () => {
             })
           );
         });
-        expect(mockSendMail).toHaveBeenCalledTimes(6);
+        expect(mockSendMail).toHaveBeenCalledTimes(4);
+        expect(mockSendMail).toHaveBeenCalledWith({
+          to: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.EMAIL,
+          template: 'free_trial_bundle_requested',
+          params: {
+            firstName: 'Anita',
+            productNames: 'OpenAEV, OpenCTI, and XTM One',
+            products: [
+              PlatformIdentifier.Openaev,
+              PlatformIdentifier.Opencti,
+              PlatformIdentifier.Xtmone,
+            ],
+          },
+        });
       });
 
       it('should bypass the free trial limit check for bundle products', async () => {
@@ -2137,6 +2151,118 @@ describe('deployment app', () => {
         }
       );
     });
+
+    describe('bundle mail', () => {
+      let bundle: DeploymentRequest;
+      let childA: DeploymentRequest;
+      let childB: DeploymentRequest;
+
+      beforeEach(async () => {
+        bundle =
+          await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+            {
+              type: DeploymentRequestDeploymentType.Bundle,
+              platform_identifier: null,
+              hub_status: DeploymentRequestHubStatus.Pending,
+              actual_state: DeploymentRequestPlatformState.Unprovisioned,
+              start_date: null,
+              end_date: null,
+            }
+          );
+
+        childA =
+          await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+            {
+              parent_id: bundle.id as DeploymentRequestId,
+              platform_identifier: PlatformIdentifier.Opencti,
+              hub_status: DeploymentRequestHubStatus.Pending,
+              actual_state: DeploymentRequestPlatformState.Unprovisioned,
+            }
+          );
+
+        childB =
+          await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+            {
+              parent_id: bundle.id as DeploymentRequestId,
+              platform_identifier: PlatformIdentifier.Openaev,
+              hub_status: DeploymentRequestHubStatus.Pending,
+              actual_state: DeploymentRequestPlatformState.Unprovisioned,
+            }
+          );
+
+        mockSendMail.mockClear();
+      });
+
+      it('should send the provisioning mail when the bundle itself starts provisioning', async () => {
+        await DeploymentApp.updateDeploymentRequest({
+          id: bundle.id as DeploymentRequestId,
+          actual_state: DeploymentRequestPlatformState.Provisioning,
+        });
+
+        expect(mockSendMail).toHaveBeenCalledTimes(1);
+        expect(mockSendMail).toHaveBeenCalledWith({
+          to: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.EMAIL,
+          template: 'free_trial_bundle_provisioning',
+          params: {
+            firstName: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.FIRST_NAME,
+            productNames: 'OpenAEV and OpenCTI',
+            products: [PlatformIdentifier.Openaev, PlatformIdentifier.Opencti],
+          },
+        });
+      });
+
+      it('should send the active mail when the bundle itself becomes active', async () => {
+        await DeploymentApp.updateDeploymentRequest({
+          id: bundle.id as DeploymentRequestId,
+          actual_state: DeploymentRequestPlatformState.Active,
+        });
+
+        expect(mockSendMail).toHaveBeenCalledTimes(1);
+        expect(mockSendMail).toHaveBeenCalledWith({
+          to: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.EMAIL,
+          template: 'free_trial_bundle_active',
+          params: {
+            firstName: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.FIRST_NAME,
+            productNames: 'OpenAEV and OpenCTI',
+            products: [PlatformIdentifier.Openaev, PlatformIdentifier.Opencti],
+            platformUrl: `${config.get('base_url_front')}/app/xtm-platform-trial`,
+          },
+        });
+      });
+
+      it('should not send any bundle mail when its products are provisioned or active', async () => {
+        await DeploymentApp.updateDeploymentRequest({
+          id: childA.id as DeploymentRequestId,
+          actual_state: DeploymentRequestPlatformState.Provisioning,
+        });
+
+        await DeploymentApp.updateDeploymentRequest({
+          id: childB.id as DeploymentRequestId,
+          actual_state: DeploymentRequestPlatformState.Active,
+          start_date: new Date(2025, 1, 1),
+          end_date: new Date(2025, 2, 1),
+          platform_id: 'child-b-platform-id',
+        });
+
+        await DeploymentApp.updateDeploymentRequest({
+          id: childA.id as DeploymentRequestId,
+          actual_state: DeploymentRequestPlatformState.Active,
+          start_date: new Date(2025, 1, 1),
+          end_date: new Date(2025, 2, 1),
+          platform_id: 'child-a-platform-id',
+        });
+
+        expect(mockSendMail).not.toHaveBeenCalled();
+
+        const untouchedBundle =
+          await DeploymentRequestDomain.loadDeploymentRequestBy({
+            id: bundle.id as DeploymentRequestId,
+          });
+        expect(untouchedBundle?.hub_status).toBe(
+          DeploymentRequestHubStatus.Pending
+        );
+      });
+    });
   });
   describe('loadTrialDeployments', () => {
     it('should return all available when no DeploymentRequest and no PlatformIdentifier specified', async () => {
@@ -3121,6 +3247,23 @@ describe('deployment app', () => {
         }
       });
 
+      it('should send a single cancellation mail for the bundle and none for its products', async () => {
+        mockSendMail.mockClear();
+
+        await DeploymentApp.cancelDeploymentRequest(bundle.id, false, 'reason');
+
+        expect(mockSendMail).toHaveBeenCalledTimes(1);
+        expect(mockSendMail).toHaveBeenCalledWith({
+          to: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.EMAIL,
+          template: 'free_trial_bundle_cancelled',
+          params: {
+            firstName: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.FIRST_NAME,
+            productNames: 'OpenCTI and XTM One',
+            products: [PlatformIdentifier.Opencti, PlatformIdentifier.Xtmone],
+          },
+        });
+      });
+
       it('should only delete the Auth0 audience of the OpenCTI child', async () => {
         const deleteAudienceSpy = vi.spyOn(
           auth0ClientMock,
@@ -3834,6 +3977,53 @@ describe('deployment app', () => {
         params: {
           firstName: '',
           platformIdentifier: PlatformIdentifier.Opencti,
+        },
+      });
+    });
+
+    it('should send a single expiration mail for a bundle and none for its products', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(Date.UTC(2025, 1, 3, 13, 12, 15)));
+      const expiredDate = new Date(Date.UTC(2025, 1, 1));
+
+      const bundle =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          {
+            type: DeploymentRequestDeploymentType.Bundle,
+            platform_identifier: null,
+            hub_status: DeploymentRequestHubStatus.Active,
+            target_state: DeploymentRequestPlatformState.Active,
+            end_date: expiredDate,
+          }
+        );
+
+      for (const platform_identifier of [
+        PlatformIdentifier.Opencti,
+        PlatformIdentifier.Openaev,
+      ]) {
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          {
+            parent_id: bundle.id as DeploymentRequestId,
+            platform_identifier,
+            hub_status: DeploymentRequestHubStatus.Active,
+            target_state: DeploymentRequestPlatformState.Active,
+            end_date: expiredDate,
+          }
+        );
+      }
+
+      mockSendMail.mockClear();
+
+      await DeploymentApp.expireTrials();
+
+      expect(mockSendMail).toHaveBeenCalledTimes(1);
+      expect(mockSendMail).toHaveBeenCalledWith({
+        to: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.EMAIL,
+        template: 'free_trial_bundle_expired',
+        params: {
+          firstName: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.FIRST_NAME,
+          productNames: 'OpenAEV and OpenCTI',
+          products: [PlatformIdentifier.Openaev, PlatformIdentifier.Opencti],
         },
       });
     });
