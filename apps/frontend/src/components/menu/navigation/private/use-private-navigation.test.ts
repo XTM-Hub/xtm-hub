@@ -529,7 +529,7 @@ describe('usePrivateNavigation', () => {
         {
           input: {
             identifier: null,
-            onlyActive: null,
+            onlyActive: true,
             onlyTrial: null,
             hasDeployedResources: null,
           },
@@ -540,7 +540,7 @@ describe('usePrivateNavigation', () => {
             {
               input: {
                 identifier: null,
-                onlyActive: null,
+                onlyActive: true,
                 onlyTrial: null,
                 hasDeployedResources: null,
               },

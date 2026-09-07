@@ -657,6 +657,29 @@ describe('registration domain', () => {
 
       expect(platforms).toHaveLength(0);
     });
+    it('should not return platforms with cancelled trials when onlyActiveTrials is true', async () => {
+      await DeploymentRequestDomain.insertDeploymentRequest({
+        id: uuidv4() as DeploymentRequest['id'],
+        service_instance_id: openCTIServiceInstanceId,
+        platform_identifier: PlatformIdentifier.Opencti,
+        region: DeploymentRequestPlatformRegion.EuWest,
+        type: DeploymentRequestDeploymentType.Trial,
+        hub_status: DeploymentRequestHubStatus.Cancelled,
+        platform_token: uuidv4(),
+        organization_requester_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        user_requester_id:
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+        ordering: 1,
+        request_date: new Date(),
+      });
+
+      const platforms = await RegistrationDomain.loadRegisteredPlatforms({
+        platformIdentifier: PlatformIdentifier.Opencti,
+        onlyActive: true,
+      });
+
+      expect(platforms).toHaveLength(0);
+    });
     it('should return platforms with active trials when onlyActiveTrials is true', async () => {
       await DeploymentRequestDomain.insertDeploymentRequest({
         id: uuidv4() as DeploymentRequest['id'],

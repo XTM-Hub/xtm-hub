@@ -49,7 +49,7 @@ import { useContext, useMemo } from 'react';
 const PRIVATE_NAVIGATION_REGISTERED_PLATFORMS_VARIABLES = {
   input: {
     identifier: null,
-    onlyActive: null,
+    onlyActive: true,
     onlyTrial: null,
     hasDeployedResources: null,
   },
