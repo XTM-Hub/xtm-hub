@@ -9,6 +9,7 @@ export const epicFragment = graphql`
     timeline
     edition_type
     product
+    slack_link
     active
     epic_type
     document_id
