@@ -266,7 +266,7 @@ export type CreateEpicInput = {
   edition_type: EditionType;
   illustration_document: InputMaybe<Scalars['Upload']['input']>;
   is_integration: InputMaybe<Scalars['Boolean']['input']>;
-  product: FiligranProduct;
+  product: Array<FiligranProduct>;
   short_description: Scalars['String']['input'];
   timeline: Timeline;
   title: Scalars['String']['input'];
@@ -755,7 +755,7 @@ export type Epic = Node & {
   edition_type: EditionType;
   epic_type: EpicType;
   id: Scalars['ID']['output'];
-  product: FiligranProduct;
+  product: Array<FiligranProduct>;
   short_description: Scalars['String']['output'];
   timeline: Timeline;
   title: Scalars['String']['output'];
@@ -2842,7 +2842,7 @@ export type UpdateEpicInput = {
   edition_type: EditionType;
   illustration_document: InputMaybe<Scalars['Upload']['input']>;
   is_integration: InputMaybe<Scalars['Boolean']['input']>;
-  product: InputMaybe<FiligranProduct>;
+  product: InputMaybe<Array<FiligranProduct>>;
   short_description: InputMaybe<Scalars['String']['input']>;
   timeline: InputMaybe<Timeline>;
   title: InputMaybe<Scalars['String']['input']>;

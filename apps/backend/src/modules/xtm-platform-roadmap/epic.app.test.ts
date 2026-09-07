@@ -49,7 +49,7 @@ describe('epicApp', () => {
     short_description: 'Short desc',
     description: 'Long description for the epic',
     active: true,
-    product: FiligranProduct.Opencti,
+    product: [FiligranProduct.Opencti],
     timeline: Timeline.Now,
     uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
     edition_type: EditionType.CommunityEdition,
@@ -83,7 +83,7 @@ describe('epicApp', () => {
       expect(createdEpic).toMatchObject({
         id: expect.anything(),
         title: 'Test Epic',
-        product: FiligranProduct.Opencti,
+        product: [FiligranProduct.Opencti],
         active: true,
       });
 
@@ -163,6 +163,32 @@ describe('epicApp', () => {
 
       expect(dbEpic?.epic_type).toBe(EpicType.Integration);
     });
+
+    it('should create an epic with several products', async () => {
+      // Given
+      const input = {
+        ...basicInput,
+        title: 'Multi Product Epic',
+        product: [FiligranProduct.Opencti, FiligranProduct.Openaev],
+      };
+
+      // When
+      const createdEpic = await EpicApp.createEpic(input, []);
+
+      // Check in DB
+      const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
+
+      // Then
+      expect(createdEpic.product).toEqual([
+        FiligranProduct.Opencti,
+        FiligranProduct.Openaev,
+      ]);
+
+      expect(dbEpic?.product).toEqual([
+        FiligranProduct.Opencti,
+        FiligranProduct.Openaev,
+      ]);
+    });
   });
 
   describe('updateEpic', () => {
@@ -198,6 +224,35 @@ describe('epicApp', () => {
         title: 'Updated Title',
         active: true,
       });
+    });
+    it('should replace the products of the specified epic', async () => {
+      // Given
+      const createdEpic = await EpicApp.createEpic(basicInput, []);
+      const updateInput = {
+        product: [FiligranProduct.Openaev, FiligranProduct.Xtmhub],
+        edition_type: EditionType.CommunityEdition,
+      };
+
+      // When
+      const updatedEpic = await EpicApp.updateEpic(
+        createdEpic.id as EpicId,
+        updateInput,
+        []
+      );
+
+      // Check in DB
+      const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
+
+      // Then
+      expect(updatedEpic.product).toEqual([
+        FiligranProduct.Openaev,
+        FiligranProduct.Xtmhub,
+      ]);
+
+      expect(dbEpic?.product).toEqual([
+        FiligranProduct.Openaev,
+        FiligranProduct.Xtmhub,
+      ]);
     });
     it('should update the specified epic with uploads and create a document', async () => {
       // Given

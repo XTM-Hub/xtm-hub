@@ -111,7 +111,7 @@ describe('epics GraphQL query', () => {
       active: true,
       short_description: 'A short description',
       description: 'A longer description',
-      product: FiligranProduct.Opencti,
+      product: [FiligranProduct.Opencti],
       timeline: Timeline.Now,
       epic_type: EpicType.Other,
       uploader_id: 'uploader-1',
@@ -158,7 +158,7 @@ describe('create epic GraphQL mutation', () => {
       title: 'My Epic',
       short_description: 'A short description',
       description: 'A longer description',
-      product: FiligranProduct.Opencti,
+      product: [FiligranProduct.Opencti],
       timeline: Timeline.Now,
     };
     const uploads: never[] = [];
@@ -188,7 +188,7 @@ describe('create epic GraphQL mutation', () => {
       title: 'My Epic',
       short_description: 'Short',
       description: 'Long',
-      product: FiligranProduct.Opencti,
+      product: [FiligranProduct.Opencti],
       timeline: Timeline.Now,
     };
     vi.spyOn(EpicApp, 'createEpic').mockRejectedValue(

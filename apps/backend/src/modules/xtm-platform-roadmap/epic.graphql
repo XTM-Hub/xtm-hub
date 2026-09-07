@@ -22,7 +22,7 @@ type Epic implements Node {
   description: String!
   edition_type: EditionType!
   active: Boolean!
-  product: FiligranProduct!
+  product: [FiligranProduct!]!
   timeline: Timeline!
   epic_type: EpicType!
   document: Document
@@ -39,7 +39,7 @@ input CreateEpicInput {
   description: String!
   edition_type: EditionType!
   active: Boolean
-  product: FiligranProduct!
+  product: [FiligranProduct!]!
   timeline: Timeline!
   is_integration: Boolean
   illustration_document: Upload
@@ -51,7 +51,7 @@ input UpdateEpicInput {
   description: String
   edition_type: EditionType!
   active: Boolean
-  product: FiligranProduct
+  product: [FiligranProduct!]
   timeline: Timeline
   is_integration: Boolean
   illustration_document: Upload
