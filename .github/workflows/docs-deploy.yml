@@ -116,7 +116,6 @@ jobs:
 
       - name: Build and publish version with mike
         env:
-          MKDOCS_GIT_COMMITTERS_APIKEY: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ needs.check-docs-changes.outputs.version }}
         run: |
           set -euo pipefail

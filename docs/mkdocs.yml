@@ -57,11 +57,6 @@ plugins:
       alias_type: symlink
       canonical_version: latest
   - search
-  - git-committers:
-      repository: XTM-Hub/xtm-hub
-      branch: main
-      docs_path: docs/docs/
-      token: !!python/object/apply:os.getenv ["MKDOCS_GIT_COMMITTERS_APIKEY"]
   - git-revision-date-localized:
       enable_creation_date: true
       type: timeago

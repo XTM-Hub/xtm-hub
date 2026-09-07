@@ -37,21 +37,6 @@ $ venv\Scripts\Activate.ps1
 $ pip install -r requirements.txt
 ```
 
-### Git committers plugin
-
-The `git-committers` plugin displays real contributors on each page and needs
-a GitHub token to query the API. Create a token in your
-[GitHub account settings](https://github.com/settings/tokens) with these
-permissions:
-- Commit statuses => Access: Read and write
-- Contents => Access: Read and write
-- Metadata => Access: Read-only
-- Pages => Access: Read and write
-
-```sh
-export MKDOCS_GIT_COMMITTERS_APIKEY=[YOUR_GITHUB_TOKEN]
-```
-
 ### Launch the local environment
 
 ```sh

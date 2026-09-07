@@ -45,6 +45,4 @@ jobs:
 
       - name: Build documentation (strict mode)
         working-directory: docs
-        env:
-          MKDOCS_GIT_COMMITTERS_APIKEY: ${{ secrets.GITHUB_TOKEN }}
         run: mkdocs build --strict --site-dir /tmp/mkdocs-site
