@@ -143,11 +143,11 @@ export const NewsFeedDomain = {
     return newsFeedItem;
   },
 
-  loadMetadataByNewsFeedItemId: async (
-    newsFeedItemId: NewsFeedItemId
+  loadMetadataByNewsFeedItemIds: async (
+    newsFeedItemIds: readonly NewsFeedItemId[]
   ): Promise<NewsFeedItemMetadata[]> => {
     return db<NewsFeedItemMetadata[]>('NewsFeedItemMetadata')
-      .where('news_feed_item_id', newsFeedItemId)
+      .whereIn('news_feed_item_id', newsFeedItemIds)
       .whereNot('key', NewsFeedItemMetadataKey.DocumentId)
       .select('*');
   },
