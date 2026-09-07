@@ -53,6 +53,7 @@ import { buildXtmPlatformTrialLink, sendMail } from '../../server/mail-service';
 import {
   formatProductNames,
   FreeTrialBundleModel,
+  sortProductsForMail,
 } from '../../server/mail-template/mail';
 import { fetchXtmoneIntegrationStatus } from '../../thirdparty/xtmone/xtmone';
 import { logApp } from '../../utils/app-logger.util';
@@ -784,7 +785,9 @@ const buildTrialMailContext = async (
     await DeploymentRequestDomain.loadDeploymentRequestWithChildren(
       deploymentRequest
     );
-  const products = children.flatMap((child) => child.platform_identifier ?? []);
+  const products = sortProductsForMail(
+    children.flatMap((child) => child.platform_identifier ?? [])
+  );
 
   return {
     isBundle: true,

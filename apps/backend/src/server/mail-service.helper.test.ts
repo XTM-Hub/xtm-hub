@@ -10,7 +10,11 @@ import {
   renderEmail,
   sendMail,
 } from './mail-service';
-import { formatProductNames, templateSubjects } from './mail-template/mail';
+import {
+  formatProductNames,
+  sortProductsForMail,
+  templateSubjects,
+} from './mail-template/mail';
 
 vi.mock('config', async (importOriginal) => {
   const mod = await importOriginal<{ default: typeof config }>();
@@ -580,6 +584,42 @@ describe('formatProductNames', () => {
 
   it('should return an empty string without product', () => {
     expect(formatProductNames([])).toBe('');
+  });
+
+  it('should always order products as OpenCTI, OpenAEV then XTM One', () => {
+    expect(
+      formatProductNames([
+        PlatformIdentifier.Xtmone,
+        PlatformIdentifier.Openaev,
+        PlatformIdentifier.Opencti,
+      ])
+    ).toBe('OpenCTI, OpenAEV, and XTM One');
+  });
+});
+
+describe('sortProductsForMail', () => {
+  it('should order products as OpenCTI, OpenAEV then XTM One', () => {
+    expect(
+      sortProductsForMail([
+        PlatformIdentifier.Xtmone,
+        PlatformIdentifier.Openaev,
+        PlatformIdentifier.Opencti,
+      ])
+    ).toEqual([
+      PlatformIdentifier.Opencti,
+      PlatformIdentifier.Openaev,
+      PlatformIdentifier.Xtmone,
+    ]);
+  });
+
+  it('should not mutate the given array', () => {
+    const products = [PlatformIdentifier.Xtmone, PlatformIdentifier.Opencti];
+    sortProductsForMail(products);
+
+    expect(products).toEqual([
+      PlatformIdentifier.Xtmone,
+      PlatformIdentifier.Opencti,
+    ]);
   });
 });
 
