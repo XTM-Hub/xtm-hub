@@ -2062,7 +2062,8 @@
     "Description": "Le rendez-vous annuel de la communauté mondiale du renseignement sur les menaces et de la cyberdéfense, où se croisent renseignement, gestion des risques et action.",
     "Date": "15 octobre 2026 | Paris",
     "ImageAlt": "Bannière de la conférence Thread",
-    "Cta": "En savoir plus"
+    "Cta": "En savoir plus",
+    "AriaLabel": "Souhaitez-vous participer à la Thread Conference ? En savoir plus ici."
   },
   "UnexpectedErrorDialog": {
     "Description": "Veuillez essayer de vous connecter à nouveau. Si le problème persiste, contactez-nous pour obtenir de l'aide.",
