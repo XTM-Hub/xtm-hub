@@ -217,7 +217,7 @@ type Mutation {
   transferPersonalSpace(requestId: ID!): Success!
   login(email: String!, password: String): User
   logout: ID!
-  contactUs(message: String, platformId: ID, platformIdentifier: PlatformIdentifier): Success!
+  contactUs(message: String, platformId: ID, platformIdentifier: PlatformIdentifier, deploymentRequestType: DeploymentRequestDeploymentType): Success!
   registerPlatform(input: RegisterPlatformInput!): RegistrationResponse!
   unregisterPlatform(input: UnregisterPlatformInput!): Success!
   refreshUserPlatformToken: RefreshUserPlatformTokenResponse!

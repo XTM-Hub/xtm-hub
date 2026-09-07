@@ -2,7 +2,6 @@ import {
   Resolvers,
   ShareableResource,
 } from '../../../../__generated__/resolvers-types';
-import { DocumentChildrenDomain } from '../../../document/domain/document.children.domain';
 
 const parseEntityTypes = (entityTypes: unknown): string[] => {
   if (!entityTypes) return [];
@@ -18,8 +17,8 @@ const parseEntityTypes = (entityTypes: unknown): string[] => {
 const resolvers: Resolvers = {
   CustomView: {
     entity_types: ({ entity_types }) => parseEntityTypes(entity_types),
-    children_documents: async ({ id }) =>
-      (await DocumentChildrenDomain.loadImagesByDocumentId(
+    children_documents: async ({ id }, _, context) =>
+      (await context.dataLoaders.document.imagesByDocumentIdLoader.load(
         id
       )) as unknown as ShareableResource[],
   },

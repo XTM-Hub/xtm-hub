@@ -43,12 +43,13 @@ export const BundleProductCard = ({
     return null;
   }
 
-  const { name, textLogo } =
+  const { darkTextLogo, lightTextLogo, name } =
     PlatformMetadataMapping[product.platform_identifier];
   const registeredPlatform = product.registered_platform;
   const isXtmone = product.platform_identifier === PlatformIdentifier.Xtmone;
   const hasAccess = (registeredPlatform?.myGroups?.length ?? 0) > 0;
-  const accessUrl = registeredPlatform?.url ?? product.url ?? null;
+  const accessUrl =
+    registeredPlatform?.url?.trim() || product.url?.trim() || null;
   const canAccess = isXtmone ? !!accessUrl : hasAccess && !!accessUrl;
   const roleLabel = (registeredPlatform?.myGroups ?? [])
     .map((role) => role.name)
@@ -90,9 +91,14 @@ export const BundleProductCard = ({
       <CardContent className="p-4 flex flex-col gap-m h-full">
         <div className="flex gap-s items-center min-w-0">
           <Image
-            src={textLogo}
+            src={darkTextLogo}
             alt={name}
-            className="h-9 w-auto shrink-0"
+            className="hidden h-9 w-auto shrink-0 dark:block"
+          />
+          <Image
+            src={lightTextLogo}
+            alt={name}
+            className="block h-9 w-auto shrink-0 dark:hidden"
           />
         </div>
         {isXtmone ? (

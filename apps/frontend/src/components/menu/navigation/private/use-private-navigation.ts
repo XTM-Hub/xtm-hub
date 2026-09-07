@@ -94,7 +94,7 @@ export const usePrivateNavigation = (): NavigationConfig => {
     useContext(PortalContext);
   const tMenu = useTranslations('Menu');
   const tMenuLinks = useTranslations('MenuLinks');
-  const isXtmPlatformBundleEnabled = useIsFeatureEnabled(
+  const isXtmPlatformTrialEnabled = useIsFeatureEnabled(
     FeatureFlag.XtmPlatformTrial
   );
   const locale = useLocale();
@@ -110,9 +110,6 @@ export const usePrivateNavigation = (): NavigationConfig => {
     ) ||
       hasOrganizationCapability(OrganizationCapability.ManageAccess));
   const isBypass = hasCapability?.(PortalCapability.Bypass) ?? false;
-  const isXtmPlatformTrialEnabled = useIsFeatureEnabled(
-    FeatureFlag.XtmPlatformTrial
-  );
   const settingsLinksConfig: SettingsLinkConfig[] = [
     {
       href: `/${APP_PATH}/admin/parameters`,
@@ -269,10 +266,15 @@ export const usePrivateNavigation = (): NavigationConfig => {
     [registeredPlatformsQueryData]
   );
   const trialDeployments = trialEligibilityData?.trialDeployments;
+  const canShowXtmPlatformTrialLink =
+    isXtmPlatformTrialEnabled && !trialDeployments?.isBlacklisted;
   const getStartFreeTrialLinks = (
     platformIdentifier: PlatformIdentifier,
     href: string
   ): SectionLink[] => {
+    if (isXtmPlatformTrialEnabled) {
+      return [];
+    }
     if (trialDeployments) {
       if (trialDeployments.isBlacklisted) {
         return [];
@@ -486,7 +488,7 @@ export const usePrivateNavigation = (): NavigationConfig => {
       label: tMenu('Slack'),
       external: true,
     },
-    ...(isXtmPlatformBundleEnabled
+    ...(canShowXtmPlatformTrialLink
       ? [
           {
             key: 'xtm-platform-trial',

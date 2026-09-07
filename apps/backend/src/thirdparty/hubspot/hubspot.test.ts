@@ -16,7 +16,10 @@ import {
   requestContextAdminSecondOrga,
   TEST_ORGANIZATIONS,
 } from '../../../tests/tests.const';
-import { DeploymentRequestDeploymentType } from '../../__generated__/resolvers-types';
+import {
+  DeploymentRequestDeploymentType,
+  PlatformIdentifier,
+} from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
 import { UserLoadUserBy } from '../../model/user';
 import { logApp } from '../../utils/app-logger.util';
@@ -232,6 +235,74 @@ describe('hubspot', () => {
             company: TEST_ORGANIZATIONS.FILIGRAN.NAME,
             message:
               'opencti: Message sent for free trial: pending trial.\n\nPlease contact me about the OpenCTI free trial',
+          }),
+        })
+      );
+    });
+
+    it('should send a bundle message listing the bundled products when a bundle deployment request is found for the user', async () => {
+      await TestHelper.deploymentRequest.createBundle({
+        children: [
+          { platform_identifier: PlatformIdentifier.Opencti },
+          { platform_identifier: PlatformIdentifier.Openaev },
+        ],
+      });
+
+      await hubspotReachOutSalesHook({
+        deploymentRequestType: DeploymentRequestDeploymentType.Bundle,
+      });
+
+      expect(fetchSpy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          body: JSON.stringify({
+            type: 'reachOutSales',
+            email: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.EMAIL,
+            firstname: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.FIRST_NAME,
+            lastname: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.LAST_NAME,
+            company: TEST_ORGANIZATIONS.FILIGRAN.NAME,
+            message:
+              'openaev, opencti: Message sent for free trial: pending bundle.\n\nPlease contact me about the OpenCTI free trial',
+          }),
+        })
+      );
+    });
+
+    it('should send generic message when no bundle deployment request is found for the user', async () => {
+      await hubspotReachOutSalesHook({
+        deploymentRequestType: DeploymentRequestDeploymentType.Bundle,
+      });
+
+      expect(fetchSpy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          body: JSON.stringify({
+            type: 'reachOutSales',
+            email: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.EMAIL,
+            firstname: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.FIRST_NAME,
+            lastname: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.LAST_NAME,
+            company: TEST_ORGANIZATIONS.FILIGRAN.NAME,
+            message: 'opencti: Please contact me about the OpenCTI free trial',
+          }),
+        })
+      );
+    });
+
+    it('should ignore an existing bundle deployment request when deploymentRequestType is omitted', async () => {
+      await TestHelper.deploymentRequest.createBundle();
+
+      await hubspotReachOutSalesHook({});
+
+      expect(fetchSpy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          body: JSON.stringify({
+            type: 'reachOutSales',
+            email: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.EMAIL,
+            firstname: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.FIRST_NAME,
+            lastname: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.LAST_NAME,
+            company: TEST_ORGANIZATIONS.FILIGRAN.NAME,
+            message: 'opencti: Please contact me about the OpenCTI free trial',
           }),
         })
       );

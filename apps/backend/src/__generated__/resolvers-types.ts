@@ -1167,6 +1167,7 @@ export type MutationChangeSelectedOrganizationArgs = {
 
 
 export type MutationContactUsArgs = {
+  deploymentRequestType?: InputMaybe<DeploymentRequestDeploymentType>;
   message?: InputMaybe<Scalars['String']['input']>;
   platformId?: InputMaybe<Scalars['ID']['input']>;
   platformIdentifier?: InputMaybe<PlatformIdentifier>;

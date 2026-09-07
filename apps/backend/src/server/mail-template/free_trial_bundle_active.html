@@ -1,0 +1,71 @@
+{{#> layout}}
+<h1
+  class="sm-leading-8"
+  style="margin: 0 0 24px; font-size: 24px; font-weight: 400">
+  Your XTM Platform Trial is ready
+</h1>
+<p style="margin: 0; line-height: 24px; margin-bottom: 24px">
+  Hi {{firstName}},<br />
+  <br />
+  Welcome to Filigran! Let’s get you started with your free trial.<br />
+  <br />
+  For the next 30 days, you’ll have full access to your
+  <strong>XTM Platform Free Trial</strong>, including the Enterprise Edition of
+  <strong>{{productNames}}</strong>.<br />
+  <br />
+  With this trial you can explore how the XTM Platform’s different products work
+  together to drive agentic, continuous threat exposure management.
+</p>
+<ul style="margin: 8px 0 24px; padding-left: 20px; line-height: 24px">
+  {{#each products}} {{#if (eq this "OpenCTI")}}
+  <li style="margin-bottom: 4px">
+    Use <strong>OpenCTI</strong> to gather, enrich, analyze, and prioritize
+    threat intelligence.
+  </li>
+  {{/if}} {{#if (eq this "OpenAEV")}}
+  <li style="margin-bottom: 4px">
+    Use <strong>OpenAEV</strong> to simulate real-life attack scenarios,
+    validate exploitable paths, and assess team readiness.
+  </li>
+  {{/if}} {{#if (eq this "XTM One")}}
+  <li style="margin-bottom: 4px">
+    Use <strong>XTM One</strong> to add an agentic layer across your XTM
+    Platform to consolidate and orchestrate your threat management operations.
+  </li>
+  {{/if}} {{/each}}
+</ul>
+<p style="margin: 0; line-height: 24px; margin-bottom: 24px">
+  <strong>
+    Log in to your free trial here:
+    <a href="{{ platformUrl }}">{{ platformUrl }}</a> </strong
+  ><br />
+  <br />
+  Need help getting started? Check out our
+  <a href="{{base_url_front}}/app/service/xtm-platform-trial-guide"
+    >trial guide</a
+  >.
+</p>
+<p style="margin: 0; padding-top: 16px">
+  Best regards, <br />
+  <br />
+  <strong>The Filigran Team</strong>
+</p>
+<p>
+  Note: This trial uses public Filigran API keys, but you can change them based
+  on your requirements.
+</p>
+<div
+  role="separator"
+  style="
+    height: 1px;
+    line-height: 1px;
+    margin: 24px 0;
+    background-color: #cbd5e1;
+  ">
+  &zwj;
+</div>
+<p style="margin: 0; font-size: 14px">
+  If you have any questions or require support, don’t hesitate to reach out at
+  <a href="mailto:{{ contactEmail }}">{{ contactEmail }}</a>.
+</p>
+{{/layout}}

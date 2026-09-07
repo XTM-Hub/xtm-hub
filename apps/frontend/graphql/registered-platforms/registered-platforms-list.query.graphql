@@ -6,6 +6,10 @@ query RegisteredPlatformsList($input: RegisteredPlatformsInput!) {
     url
     contract
     identifier
+    deployment_request {
+      type
+      parent_id
+    }
     subscription {
       end_date
       start_date

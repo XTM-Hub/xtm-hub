@@ -4,7 +4,10 @@ import { ReachSalesDialogForm } from '@/components/service/trial-instances/reach
 import { DialogInformative } from '@/components/ui/Dialog';
 import { toast } from '@filigran/ui';
 import { Button, GradientButton } from '@filigran/ui/servers';
-import { PlatformIdentifier } from '@graphql/generated';
+import {
+  DeploymentRequestDeploymentType,
+  PlatformIdentifier,
+} from '@graphql/generated';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { useMutation } from 'react-relay';
@@ -13,12 +16,14 @@ interface ReachSalesButtonProps {
   variant: 'default' | 'gradient' | 'secondary';
   platformIdentifier?: PlatformIdentifier;
   platformId?: string;
+  deploymentRequestType?: DeploymentRequestDeploymentType;
 }
 
 export const ReachSalesButton = ({
   variant,
   platformId,
   platformIdentifier,
+  deploymentRequestType,
 }: ReachSalesButtonProps) => {
   const t = useTranslations();
   const [commitReachSalesMutation, isInFlight] =
@@ -33,6 +38,7 @@ export const ReachSalesButton = ({
         message,
         platformId,
         platformIdentifier,
+        deploymentRequestType,
       },
       onError(error) {
         toast({

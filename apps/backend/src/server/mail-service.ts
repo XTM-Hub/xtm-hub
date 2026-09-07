@@ -56,6 +56,10 @@ export const buildServiceLink = ({
   return `${config.get('base_url_front')}/app/service/${serviceDefinitionIdentifier}/${toGlobalId('ServiceInstance', serviceInstanceId)}`;
 };
 
+export const buildXtmPlatformTrialLink = () => {
+  return `${config.get('base_url_front')}/app/xtm-platform-trial`;
+};
+
 export const buildPendingUserActionLink = ({
   action,
   organizationId,
@@ -109,6 +113,13 @@ export async function renderEmail<T extends keyof MailTemplates>(
                 PlatformIdentifierToString[
                   params.platformIdentifier as PlatformIdentifier
                 ],
+            }
+          : {}),
+        ...('products' in params && Array.isArray(params.products)
+          ? {
+              products: (params.products as PlatformIdentifier[]).map(
+                (product) => PlatformIdentifierToString[product]
+              ),
             }
           : {}),
       }

@@ -142,7 +142,7 @@ export const NavigationLinkMenu = ({
         className="block">
         <GradientButton
           className={cn(
-            'h-9 rounded-lg text-content-button whitespace-nowrap',
+            'h-9 rounded-lg text-content-button whitespace-nowrap bg-background dark:bg-none',
             open ? 'w-full px-2' : 'w-9 px-0'
           )}
           textGradient={open}

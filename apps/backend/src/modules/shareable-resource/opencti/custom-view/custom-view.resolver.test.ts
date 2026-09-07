@@ -5,7 +5,6 @@ import {
   GRAPHQL_RESOLVE_INFO,
 } from '../../../../../tests/tests.const';
 import { CustomView } from '../../../../__generated__/resolvers-types';
-import { DocumentChildrenDomain } from '../../../document/domain/document.children.domain';
 import customViewResolver from './custom-view.resolver';
 
 describe('customView field resolvers', () => {
@@ -51,11 +50,14 @@ describe('customView field resolvers', () => {
       const documentId = uuidv4();
       const expected = [{ id: uuidv4() }];
       vi.spyOn(
-        DocumentChildrenDomain,
-        'loadImagesByDocumentId'
+        contextSimpleUserFiligran2.dataLoaders.document
+          .imagesByDocumentIdLoader,
+        'load'
       ).mockResolvedValue(
         expected as unknown as Awaited<
-          ReturnType<typeof DocumentChildrenDomain.loadImagesByDocumentId>
+          ReturnType<
+            typeof contextSimpleUserFiligran2.dataLoaders.document.imagesByDocumentIdLoader.load
+          >
         >
       );
 
@@ -67,7 +69,8 @@ describe('customView field resolvers', () => {
       );
 
       expect(
-        DocumentChildrenDomain.loadImagesByDocumentId
+        contextSimpleUserFiligran2.dataLoaders.document.imagesByDocumentIdLoader
+          .load
       ).toHaveBeenCalledWith(documentId);
       expect(result).toEqual(expected);
     });

@@ -5,11 +5,12 @@ import { PlatformIdentifier } from '../__generated__/resolvers-types';
 import * as producer from '../thirdparty/pgboss/producer';
 import {
   buildPendingUserActionLink,
+  buildXtmPlatformTrialLink,
   clearTemplateCache,
   renderEmail,
   sendMail,
 } from './mail-service';
-import { templateSubjects } from './mail-template/mail';
+import { formatProductNames, templateSubjects } from './mail-template/mail';
 
 vi.mock('config', async (importOriginal) => {
   const mod = await importOriginal<{ default: typeof config }>();
@@ -192,6 +193,140 @@ describe('renderEmail', () => {
       });
 
       expect(html).toContain('openaev-trials');
+    });
+  });
+
+  describe('bundle free trials', () => {
+    const bundleProductNames = 'OpenCTI, OpenAEV, and XTM One';
+
+    const bundleProducts = [
+      PlatformIdentifier.Opencti,
+      PlatformIdentifier.Openaev,
+      PlatformIdentifier.Xtmone,
+    ];
+
+    it.each([
+      'free_trial_bundle_requested',
+      'free_trial_bundle_provisioning',
+      'free_trial_bundle_cancelled',
+      'free_trial_bundle_expired',
+    ] as const)(
+      'should render %s without leaking undefined',
+      async (template) => {
+        const html = await renderEmail(template, {
+          firstName: 'User',
+          productNames: bundleProductNames,
+          products: bundleProducts,
+        });
+
+        expect(html).toContain('XTM Platform');
+        expect(html).not.toContain('undefined');
+      }
+    );
+
+    it('should render the request wording', async () => {
+      const html = await renderEmail('free_trial_bundle_requested', {
+        firstName: 'User',
+        productNames: bundleProductNames,
+        products: bundleProducts,
+      });
+
+      expect(html.replace(/\s+/g, ' ')).toContain(
+        'Thank you for requesting an <strong>XTM Platform Free Trial</strong>, we’re on it!'
+      );
+      expect(html).toContain(bundleProductNames);
+      expect(html).not.toContain('full capacity');
+    });
+
+    it('should render the cancellation wording, the chosen products and the community link', async () => {
+      const html = await renderEmail('free_trial_bundle_cancelled', {
+        firstName: 'User',
+        productNames: 'OpenCTI and XTM One',
+        products: [PlatformIdentifier.Opencti, PlatformIdentifier.Xtmone],
+      });
+
+      expect(html.replace(/\s+/g, ' ')).toContain(
+        'If you have any questions or need support, don’t hesitate to contact us at'
+      );
+      expect(html).toContain(
+        'https://filigran-community.slack.com/archives/CHNEM9NUT'
+      );
+      expect(html).toContain('OpenCTI and XTM One');
+      expect(html).not.toContain('OpenAEV');
+    });
+
+    it('should render the expiration wording', async () => {
+      const html = await renderEmail('free_trial_bundle_expired', {
+        firstName: 'User',
+        productNames: bundleProductNames,
+        products: bundleProducts,
+      });
+
+      expect(html).toContain('Your XTM Platform Trial has expired.');
+      expect(html).toContain(
+        '(Please note that your free trial data will only be saved for 7 days.)'
+      );
+    });
+
+    it('should render the registered mail with the trial page link', async () => {
+      const html = await renderEmail('free_trial_bundle_active', {
+        firstName: 'User',
+        platformUrl: 'http://myTestPlatform',
+        productNames: bundleProductNames,
+        products: bundleProducts,
+      });
+
+      expect(html).toContain('Your XTM Platform Trial is ready');
+      expect(html).toContain(bundleProductNames);
+      expect(html).toContain('http://myTestPlatform');
+      expect(html).not.toContain('undefined');
+    });
+
+    it('should only describe the products of the bundle', async () => {
+      const html = await renderEmail('free_trial_bundle_active', {
+        firstName: 'User',
+        platformUrl: 'http://myTestPlatform',
+        productNames: 'OpenCTI and XTM One',
+        products: [PlatformIdentifier.Opencti, PlatformIdentifier.Xtmone],
+      });
+
+      expect(html).toContain('to gather, enrich, analyze, and prioritize');
+      expect(html).toContain('to add an agentic layer');
+      expect(html).not.toContain('to simulate real-life attack scenarios');
+    });
+  });
+
+  describe('product free trials', () => {
+    it('should keep the support wording of the cancellation mail', async () => {
+      const html = await renderEmail('free_trial_cancelled', {
+        firstName: 'User',
+        platformIdentifier: PlatformIdentifier.Opencti,
+      });
+
+      expect(html.replace(/\s+/g, ' ')).toContain(
+        'If you have any questions or require support, don’t hesitate to reach out at'
+      );
+    });
+
+    it('should keep the trial data retention wording of the expiration mail', async () => {
+      const html = await renderEmail('free_trial_expired', {
+        firstName: 'User',
+        platformIdentifier: PlatformIdentifier.Opencti,
+      });
+
+      expect(html).toContain(
+        '(Please note that your free trial data will be saved for 7 days.)'
+      );
+    });
+
+    it('should keep the capacity wording of the queued mail', async () => {
+      const html = await renderEmail('free_trial_queued', {
+        firstName: 'User',
+        platformIdentifier: PlatformIdentifier.Opencti,
+      });
+
+      expect(html).toContain('full capacity');
+      expect(html).not.toContain('XTM Platform Free Trial');
     });
   });
   describe('edge cases', () => {
@@ -416,5 +551,85 @@ describe('renderEmail', () => {
 
       expect(mockSend).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('formatProductNames', () => {
+  it('should format a single product', () => {
+    expect(formatProductNames([PlatformIdentifier.Opencti])).toBe('OpenCTI');
+  });
+
+  it('should format two products', () => {
+    expect(
+      formatProductNames([
+        PlatformIdentifier.Opencti,
+        PlatformIdentifier.Xtmone,
+      ])
+    ).toBe('OpenCTI and XTM One');
+  });
+
+  it('should format three products', () => {
+    expect(
+      formatProductNames([
+        PlatformIdentifier.Opencti,
+        PlatformIdentifier.Openaev,
+        PlatformIdentifier.Xtmone,
+      ])
+    ).toBe('OpenCTI, OpenAEV, and XTM One');
+  });
+
+  it('should return an empty string without product', () => {
+    expect(formatProductNames([])).toBe('');
+  });
+});
+
+describe('bundle trial subjects', () => {
+  it('should use the XTM Platform wording for bundles', () => {
+    const params = {
+      firstName: 'User',
+      productNames: 'OpenCTI and XTM One',
+      products: [PlatformIdentifier.Opencti, PlatformIdentifier.Xtmone],
+    };
+
+    expect(templateSubjects.free_trial_bundle_requested(params)).toBe(
+      'Your XTM Platform Trial Request'
+    );
+    expect(templateSubjects.free_trial_bundle_provisioning(params)).toBe(
+      'Your XTM Platform Trial is Being Provisioned'
+    );
+    expect(
+      templateSubjects.free_trial_bundle_active({
+        ...params,
+        platformUrl: 'http://myTestPlatform',
+      })
+    ).toBe('Your XTM Platform Trial is ready');
+    expect(templateSubjects.free_trial_bundle_cancelled(params)).toBe(
+      'Your XTM Platform Trial Has Been Cancelled'
+    );
+    expect(templateSubjects.free_trial_bundle_expired(params)).toBe(
+      'Your XTM Platform Trial Has Expired'
+    );
+  });
+
+  it('should keep the product wording outside of bundles', () => {
+    const params = {
+      firstName: 'User',
+      platformIdentifier: PlatformIdentifier.Opencti,
+    };
+
+    expect(templateSubjects.free_trial_requested(params)).toBe(
+      'Your OpenCTI Free Trial Request'
+    );
+    expect(templateSubjects.free_trial_expired(params)).toBe(
+      'Your OpenCTI Free Trial Has Expired'
+    );
+  });
+});
+
+describe('buildXtmPlatformTrialLink', () => {
+  it('should link to the xtm platform trial page', () => {
+    expect(buildXtmPlatformTrialLink()).toBe(
+      `${config.get('base_url_front')}/app/xtm-platform-trial`
+    );
   });
 });

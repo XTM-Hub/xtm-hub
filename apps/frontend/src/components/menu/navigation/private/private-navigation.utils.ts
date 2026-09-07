@@ -1,6 +1,7 @@
 import { getRegisteredPlatformServiceIdentifier } from '@/components/registration/PlatformIdentifierMapping';
 import { APP_PATH } from '@/utils/path/constant';
 import {
+  DeploymentRequestDeploymentType,
   PlatformIdentifier,
   RegisteredPlatformsListQuery,
   ServiceDefinitionIdentifier,
@@ -53,6 +54,21 @@ export const getPrivateNavigationRegisteredPlatformsByIdentifier = (
 
   return (queryData?.registeredPlatforms ?? []).flatMap((platform) => {
     if (!platform || platform.identifier !== registeredPlatformIdentifier) {
+      return [];
+    }
+
+    if (
+      platform.deployment_request?.type ===
+      DeploymentRequestDeploymentType.Bundle
+    ) {
+      return [];
+    }
+
+    if (
+      platform.deployment_request?.type ===
+        DeploymentRequestDeploymentType.Trial &&
+      platform.deployment_request.parent_id
+    ) {
       return [];
     }
 

@@ -91,6 +91,11 @@
       "ReconnectHint": "製品を再接続してください。"
     },
     "CancelTrial": "トライアルをキャンセル",
+    "CancelDialog": {
+      "Title": "トライアルをキャンセル",
+      "Description": "このトライアルをキャンセルしてもよろしいですか？",
+      "Warning": "一度キャンセルすると、新しいトライアルを再申請できなくなります"
+    },
     "Title": "XTMプラットフォームトライアルへようこそ",
     "Subtitle": "トライアルに必要なすべてがここにあります。トライアルの詳細と残り時間、製品への直接アクセス、そしてサポートが必要なときや質問があるときにFiligranチームに直接連絡できます。",
     "Guide": {
@@ -1653,6 +1658,7 @@
       "GoToMyTrial": "私のトライアルへ",
       "InfoPersonalSpace": "個人のスペースではトライアルを開始できません。組織のスペースに移動してください。",
       "ReachOutToSales": "営業に連絡する",
+      "ReachOutToSalesMessageLabel": "メッセージ",
       "ReachOutToSalesMessagePlaceholder": "あなたのメッセージ",
       "NeedSupport": "サポート希望",
       "ReachOutToSalesSuccessTitle": "ありがとうございます",

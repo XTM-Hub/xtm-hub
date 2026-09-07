@@ -171,6 +171,8 @@ type Mutation {
     message: String
     platformId: ID
     platformIdentifier: PlatformIdentifier
+    ############ XTM Hub internal only ############
+    deploymentRequestType: DeploymentRequestDeploymentType
   ): Success!
 }
 

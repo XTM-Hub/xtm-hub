@@ -535,7 +535,7 @@ describe('deploymentRequestDomain', () => {
     });
   });
 
-  describe('loadTrialDeploymentRequestByPlatformIdentifierAndUserId', () => {
+  describe('loadLatestDeploymentRequestForUser', () => {
     afterEach(async () => {
       await TestHelper.deploymentRequest.deleteAllWithServiceInstanceAndSubscription();
     });
@@ -555,9 +555,12 @@ describe('deploymentRequestDomain', () => {
         );
 
       const result =
-        await DeploymentRequestDomain.loadTrialDeploymentRequestByPlatformIdentifierAndUserId(
-          platformIdentifier,
-          userId
+        await DeploymentRequestDomain.loadLatestDeploymentRequestForUser(
+          userId,
+          {
+            type: DeploymentRequestDeploymentType.Trial,
+            platform_identifier: platformIdentifier,
+          }
         );
 
       expect(result).toBeDefined();
@@ -581,9 +584,12 @@ describe('deploymentRequestDomain', () => {
         );
 
       const result =
-        await DeploymentRequestDomain.loadTrialDeploymentRequestByPlatformIdentifierAndUserId(
-          platformIdentifier,
-          userId
+        await DeploymentRequestDomain.loadLatestDeploymentRequestForUser(
+          userId,
+          {
+            type: DeploymentRequestDeploymentType.Trial,
+            platform_identifier: platformIdentifier,
+          }
         );
 
       expect(result).toBeDefined();
@@ -606,9 +612,12 @@ describe('deploymentRequestDomain', () => {
         );
 
       const result =
-        await DeploymentRequestDomain.loadTrialDeploymentRequestByPlatformIdentifierAndUserId(
-          platformIdentifier,
-          userId
+        await DeploymentRequestDomain.loadLatestDeploymentRequestForUser(
+          userId,
+          {
+            type: DeploymentRequestDeploymentType.Trial,
+            platform_identifier: platformIdentifier,
+          }
         );
 
       expect(result).toBeDefined();
@@ -632,9 +641,12 @@ describe('deploymentRequestDomain', () => {
       );
 
       const result =
-        await DeploymentRequestDomain.loadTrialDeploymentRequestByPlatformIdentifierAndUserId(
-          platformIdentifier,
-          userNotInOrganization
+        await DeploymentRequestDomain.loadLatestDeploymentRequestForUser(
+          userNotInOrganization,
+          {
+            type: DeploymentRequestDeploymentType.Trial,
+            platform_identifier: platformIdentifier,
+          }
         );
 
       expect(result).toBeUndefined();
@@ -654,12 +666,32 @@ describe('deploymentRequestDomain', () => {
       );
 
       const result =
-        await DeploymentRequestDomain.loadTrialDeploymentRequestByPlatformIdentifierAndUserId(
-          platformIdentifier,
-          userId
+        await DeploymentRequestDomain.loadLatestDeploymentRequestForUser(
+          userId,
+          {
+            type: DeploymentRequestDeploymentType.Trial,
+            platform_identifier: platformIdentifier,
+          }
         );
 
       expect(result).toBeUndefined();
+    });
+
+    it('should return the bundle deployment request for the user when filtering by type Bundle only', async () => {
+      const userId = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID as UserId;
+
+      const { bundle } = await TestHelper.deploymentRequest.createBundle();
+
+      const result =
+        await DeploymentRequestDomain.loadLatestDeploymentRequestForUser(
+          userId,
+          { type: DeploymentRequestDeploymentType.Bundle }
+        );
+
+      expect(result).toBeDefined();
+      expect(result?.id).toBe(bundle.id);
+
+      await TestHelper.deploymentRequest.deleteBundle(bundle.id);
     });
   });
 
@@ -1793,7 +1825,7 @@ describe('deploymentRequestDomain', () => {
     it.each`
       platformIdentifier            | shouldCreateAudience
       ${PlatformIdentifier.Openaev} | ${false}
-      ${PlatformIdentifier.Opencti} | ${true}
+      ${PlatformIdentifier.Opencti} | ${false}
       ${PlatformIdentifier.Xtmone}  | ${false}
     `(
       'should create an Auth0 audience for a $platformIdentifier instance: $shouldCreateAudience',

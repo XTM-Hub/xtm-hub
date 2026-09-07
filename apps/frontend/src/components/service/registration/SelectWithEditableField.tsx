@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils';
 import { CheckIcon } from '@filigran/icon';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@filigran/ui';
 import { Input } from '@filigran/ui/servers';
@@ -6,6 +7,7 @@ import { useRef, useState } from 'react';
 type Option = { value: string; label: string };
 
 interface SelectWithEditableFieldProps {
+  value?: string;
   onChange: (value: string) => void;
   options: Option[];
   labels: {
@@ -14,18 +16,57 @@ interface SelectWithEditableFieldProps {
     editableFieldPlaceholder: string;
   };
   editableFieldValue: string;
+  layerClassName?: string;
 }
 
 const OTHER_VALUE = '__other__';
 
+const parseValueToLocalState = (
+  value: string | undefined,
+  options: Option[],
+  editableFieldValue: string
+) => {
+  if (!value) {
+    return { selectedValue: '', customValue: '' };
+  }
+
+  if (options.some((option) => option.value === value)) {
+    return { selectedValue: value, customValue: '' };
+  }
+
+  if (value === editableFieldValue) {
+    return { selectedValue: OTHER_VALUE, customValue: '' };
+  }
+  const otherPrefix = `${editableFieldValue}:`;
+
+  if (value.startsWith(otherPrefix)) {
+    return {
+      selectedValue: OTHER_VALUE,
+      customValue: value.slice(otherPrefix.length).trim(),
+    };
+  }
+
+  return { selectedValue: OTHER_VALUE, customValue: value };
+};
+
 export const SelectWithEditableField = ({
+  value,
   onChange,
   options,
   labels,
   editableFieldValue,
+  layerClassName = 'layer-2',
 }: SelectWithEditableFieldProps) => {
-  const [selectValue, setSelectValue] = useState<string>('');
-  const [customValue, setCustomValue] = useState('');
+  const isControlled = value !== undefined;
+  const initialValueState = parseValueToLocalState(
+    value,
+    options,
+    editableFieldValue
+  );
+  const [selectedValue, setSelectedValue] = useState<string>(
+    initialValueState.selectedValue
+  );
+  const [customValue, setCustomValue] = useState(initialValueState.customValue);
   const [open, setOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const committedValueRef = useRef<string>('');
@@ -35,7 +76,9 @@ export const SelectWithEditableField = ({
       return;
     }
 
-    setSelectValue(v);
+    if (!isControlled) {
+      setSelectedValue(v);
+    }
     setCustomValue('');
 
     if (v === OTHER_VALUE) {
@@ -50,9 +93,12 @@ export const SelectWithEditableField = ({
   };
 
   const handleOtherClick = () => {
-    setSelectValue(OTHER_VALUE);
+    if (!isControlled) {
+      setSelectedValue(OTHER_VALUE);
+    }
     committedValueRef.current = editableFieldValue;
     onChange(editableFieldValue);
+    setCustomValue('');
 
     setTimeout(() => inputRef.current?.focus(), 0);
   };
@@ -73,33 +119,53 @@ export const SelectWithEditableField = ({
         : editableFieldValue;
 
       committedValueRef.current = valueToCommit;
-      setSelectValue(OTHER_VALUE);
+      if (!isControlled) {
+        setSelectedValue(OTHER_VALUE);
+      }
       setCustomValue(trimmed);
       onChange(valueToCommit);
       setOpen(false);
     }
   };
 
-  const selectedOption = options.find((o) => o.value === selectValue);
-  const isOtherMode = selectValue === OTHER_VALUE;
+  const controlledState = parseValueToLocalState(
+    value,
+    options,
+    editableFieldValue
+  );
+  const currentSelectValue = isControlled
+    ? controlledState.selectedValue
+    : selectedValue;
+  const selectedOption = options.find((o) => o.value === currentSelectValue);
+  const isOtherMode = currentSelectValue === OTHER_VALUE;
+  const currentCustomValue = isControlled
+    ? open
+      ? customValue
+      : controlledState.customValue
+    : customValue;
 
   const triggerText = isOtherMode
-    ? customValue || labels.editableFieldLabel
+    ? currentCustomValue || labels.editableFieldLabel
     : selectedOption?.label;
 
   return (
     <Select
-      value={selectValue}
+      value={currentSelectValue}
       onValueChange={handleSelectChange}
       open={open}
-      onOpenChange={setOpen}>
-      <SelectTrigger>
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (nextOpen && isControlled) {
+          setCustomValue(controlledState.customValue);
+        }
+      }}>
+      <SelectTrigger className={cn(layerClassName)}>
         <span className={triggerText ? '' : 'text-muted-foreground'}>
           {triggerText || labels.placeholder}
         </span>
       </SelectTrigger>
 
-      <SelectContent>
+      <SelectContent className={cn(layerClassName)}>
         {options.map((option) => (
           <SelectItem
             key={option.value}
@@ -109,7 +175,7 @@ export const SelectWithEditableField = ({
         ))}
 
         <div
-          className="relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+          className="relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-input-hover"
           onClick={handleOtherClick}>
           {isOtherMode && (
             <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
@@ -122,7 +188,7 @@ export const SelectWithEditableField = ({
         <div className="px-2 pb-2 pl-8">
           <Input
             ref={inputRef}
-            value={customValue}
+            value={currentCustomValue}
             onChange={handleCustomChange}
             onKeyDown={handleCustomKeyDown}
             placeholder={labels.editableFieldPlaceholder}

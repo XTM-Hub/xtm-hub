@@ -105,7 +105,16 @@ vi.mock('@/components/xtm-platform-trial/BundleCancelSheet', () => ({
 vi.mock(
   '@/components/service/trial-instances/reach-sales/ReachSalesButton',
   () => ({
-    ReachSalesButton: () => <div data-testid="reach-sales-button" />,
+    ReachSalesButton: ({
+      deploymentRequestType,
+    }: {
+      deploymentRequestType?: DeploymentRequestDeploymentType;
+    }) => (
+      <div
+        data-testid="reach-sales-button"
+        data-deployment-request-type={deploymentRequestType}
+      />
+    ),
   })
 );
 
@@ -398,6 +407,10 @@ describe('PrivateXtmPlatformTrialPanel', () => {
       );
 
       expect(screen.getByTestId('reach-sales-button')).toBeInTheDocument();
+      expect(screen.getByTestId('reach-sales-button')).toHaveAttribute(
+        'data-deployment-request-type',
+        DeploymentRequestDeploymentType.Bundle
+      );
       expect(
         screen.queryByText(
           'Service.Trials.XtmPlatform.Page.Status.CancelTrialRequest'

@@ -45,7 +45,7 @@ to upload and configure the dashboard according to your specific requirements.
 ### One-Click Deployment
 The streamlined deployment process represents the most efficient method for integrating library custom dashboards
 into your OpenCTI product (available from OpenCTI 6.7.10).
-Before utilizing this functionality, your OpenCTI product must be properly connected in the XTM Hub (see [OpenCTI connection documentation](../user/opencti-connection)),
+Before utilizing this functionality, your OpenCTI product must be properly connected in the XTM Hub (see [OpenCTI connection documentation](../user/opencti-connection.md)),
 and your user account must possess the necessary UPDATE and CREATE permissions for custom dashboards within OpenCTI.
 The deployment process is straightforward: select your desired custom dashboard, click the ```Deploy on OpenCTI``` button,
 choose your target product if multiple products are connected,

@@ -12,6 +12,7 @@ import { useAdminByPass } from '@/hooks/use-portal-capability';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import {
+  DeploymentRequestDeploymentType,
   OrganizationCapability,
   PlatformIdentifier,
   useXtmPlatformBundleQuery,
@@ -94,7 +95,7 @@ export const XtmPlatformTrialPage = () => {
         <div className="flex items-center gap-s shrink-0">
           <ReachSalesButton
             variant="gradient"
-            platformIdentifier={PlatformIdentifier.Xtmone}
+            deploymentRequestType={DeploymentRequestDeploymentType.Bundle}
           />
           <SlackSupportButton />
         </div>

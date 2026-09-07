@@ -132,7 +132,10 @@ export const PrivateXtmPlatformTrialPanel = ({
         {t('Service.Trials.XtmPlatform.Page.Status.CancelTrialRequest')}
       </Button>
     ) : (
-      <ReachSalesButton variant="default" />
+      <ReachSalesButton
+        variant="default"
+        deploymentRequestType={DeploymentRequestDeploymentType.Bundle}
+      />
     );
 
     return (
