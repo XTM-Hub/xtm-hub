@@ -11,7 +11,7 @@ fonttools==4.61.1
 ghp-import==2.1.0
 gitdb==4.0.12
 GitPython==3.1.61
-idna==3.15
+idna==3.19
 importlib_metadata==8.7.1
 importlib_resources==6.5.2
 Jinja2==3.1.6
