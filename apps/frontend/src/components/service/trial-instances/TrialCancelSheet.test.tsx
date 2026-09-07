@@ -1,6 +1,9 @@
 import testRender from '@/utils/test/test-render';
 import * as FiligranUI from '@filigran/ui';
 import { PlatformIdentifier } from '@graphql/generated';
+import { registeredPlatformsKeys } from '@graphql/registered-platforms/registered-platforms.keys';
+import { serviceInstancesKeys } from '@graphql/service-instances/service-instances.keys';
+import { trialKeys } from '@graphql/trial/trial.keys';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { createMockEnvironment } from 'relay-test-utils';
@@ -8,12 +11,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TrialCancelSheet } from './TrialCancelSheet';
 
 const testState = vi.hoisted(() => ({
+  invalidateQueries: vi.fn(),
   lastCancelDeploymentRequestVariables: null as Record<string, unknown> | null,
   mutationMode: 'success' as 'success' | 'error',
 }));
 
 vi.mock('@/components/service/trial-instances/useOrgaFreeTrials', () => ({
   useOrgaFreeTrial: () => ({ refetch: vi.fn() }),
+}));
+vi.mock('@tanstack/react-query', async (importOriginal) => ({
+  ...(await importOriginal()),
+  useQueryClient: () => ({
+    invalidateQueries: testState.invalidateQueries,
+  }),
 }));
 vi.mock('@/components/ui/SheetWithPreventingDialog', () => ({
   SheetWithPreventingDialog: ({
@@ -65,6 +75,7 @@ vi.mock('react-relay', async (importOriginal) => ({
 }));
 describe('TrialCancelSheet', () => {
   beforeEach(() => {
+    testState.invalidateQueries.mockReset();
     testState.lastCancelDeploymentRequestVariables = null;
     testState.mutationMode = 'success';
     vi.spyOn(FiligranUI, 'toast').mockImplementation(() => undefined);
@@ -92,6 +103,15 @@ describe('TrialCancelSheet', () => {
     expect(testState.lastCancelDeploymentRequestVariables).toEqual({
       deploymentRequestId: 'test-id',
       cancellationReason: 'value',
+    });
+    expect(testState.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: serviceInstancesKeys.all(),
+    });
+    expect(testState.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: registeredPlatformsKeys.all(),
+    });
+    expect(testState.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: trialKeys.trialDeploymentsEligibilityAll(),
     });
   });
 

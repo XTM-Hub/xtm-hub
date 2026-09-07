@@ -10,6 +10,7 @@ import {
 } from '@/utils/path/constant';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
 import {
+  DiamondOutlinedIcon,
   HomeIcon,
   LogoXtmOneIcon,
   OpenAevIconIcon,
@@ -22,11 +23,13 @@ import {
 import { useLocale, useTranslations } from 'next-intl';
 
 export const usePublicNavigation = (
-  visibleServiceSlugs: string[]
+  visibleServiceSlugs: string[],
+  isXtmPlatformTrialEnabled: boolean
 ): NavigationConfig => {
   const t = useTranslations();
   const locale = useLocale();
   const visibleSlugs = new Set(visibleServiceSlugs);
+  const xtmPlatformTrialPublicHref = `/${locale}/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/xtm-platform-trial`;
 
   const buildServiceLink = (slug: string, label: string): SectionLink[] => {
     if (!visibleSlugs.has(slug)) {
@@ -55,11 +58,15 @@ export const usePublicNavigation = (
       icon: OpenCtiIconIcon,
       pathPrefix: `/${locale}/cybersecurity-solutions/opencti`,
       links: [
-        {
-          href: `/${locale}/cybersecurity-solutions/opencti-free-trial`,
-          label: t('Menu.StartFreeTrial'),
-          highlight: true,
-        },
+        ...(!isXtmPlatformTrialEnabled
+          ? [
+              {
+                href: `/${locale}/cybersecurity-solutions/opencti-free-trial`,
+                label: t('Menu.StartFreeTrial'),
+                highlight: true,
+              },
+            ]
+          : []),
         ...buildServiceLink(
           ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS,
           t('Menu.CustomDashboards')
@@ -94,11 +101,15 @@ export const usePublicNavigation = (
       icon: OpenAevIconIcon,
       pathPrefix: `/${locale}/cybersecurity-solutions/openaev`,
       links: [
-        {
-          href: `/${locale}/cybersecurity-solutions/openaev-free-trial`,
-          label: t('Menu.StartFreeTrial'),
-          highlight: true,
-        },
+        ...(!isXtmPlatformTrialEnabled
+          ? [
+              {
+                href: `/${locale}/cybersecurity-solutions/openaev-free-trial`,
+                label: t('Menu.StartFreeTrial'),
+                highlight: true,
+              },
+            ]
+          : []),
         ...buildServiceLink(
           ServiceSlug.OPEN_AEV_SCENARIOS,
           t('Menu.Scenarios')
@@ -163,6 +174,17 @@ export const usePublicNavigation = (
       label: t('Menu.Slack'),
       external: true,
     },
+    ...(isXtmPlatformTrialEnabled
+      ? [
+          {
+            key: 'xtm-platform-trial',
+            href: xtmPlatformTrialPublicHref,
+            icon: DiamondOutlinedIcon,
+            label: t('Menu.XTMPlatformTrial'),
+            highlight: true,
+          },
+        ]
+      : []),
   ];
 
   return { sections, bottomLinks };

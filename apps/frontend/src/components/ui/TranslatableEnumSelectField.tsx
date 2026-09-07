@@ -20,6 +20,7 @@ interface TranslatableEnumSelectFieldProps<
   values: string[];
   translationNamespace: string;
   className?: string;
+  selectClassName?: string;
 }
 
 export const TranslatableEnumSelectField = <T extends FieldValues>({
@@ -29,6 +30,7 @@ export const TranslatableEnumSelectField = <T extends FieldValues>({
   values,
   translationNamespace,
   className = 'text-sm text-destructive',
+  selectClassName,
 }: TranslatableEnumSelectFieldProps<T>) => {
   const t = useTranslations();
   return (
@@ -39,10 +41,10 @@ export const TranslatableEnumSelectField = <T extends FieldValues>({
       <Select
         value={field.value}
         onValueChange={field.onChange}>
-        <SelectTrigger>
+        <SelectTrigger className={selectClassName}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className={selectClassName}>
           {values.map((value) => (
             <SelectItem
               key={value}

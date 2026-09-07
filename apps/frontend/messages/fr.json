@@ -91,6 +91,11 @@
       "ReconnectHint": "Vous devriez reconnecter votre produit."
     },
     "CancelTrial": "Annuler l'essai",
+    "CancelDialog": {
+      "Title": "Annuler l'essai",
+      "Description": "Êtes-vous sûr de vouloir annuler cet essai ?",
+      "Warning": "Une fois annulé, vous ne pourrez pas demander un nouvel essai"
+    },
     "Title": "Bienvenue dans votre essai XTM Platform",
     "Subtitle": "Tout ce dont vous avez besoin pour votre essai se trouve ici : les détails de votre essai et le temps restant, un accès direct à vos produits, et une ligne directe avec l'équipe Filigran dès que vous avez besoin d'assistance ou des questions.",
     "Guide": {
@@ -1653,6 +1658,7 @@
       "GoToMyTrial": "Accéder à ma version d'évaluation",
       "InfoPersonalSpace": "Vous ne pouvez pas commencer un essai dans votre espace personnel - veuillez passer à l'espace de votre organisation",
       "ReachOutToSales": "Contactez nous",
+      "ReachOutToSalesMessageLabel": "Message",
       "ReachOutToSalesMessagePlaceholder": "Votre message",
       "NeedSupport": "Besoin d'aide",
       "ReachOutToSalesSuccessTitle": "Merci !",

@@ -43,10 +43,10 @@ const RootLayout = async ({
   }
   setRequestLocale(locale);
 
-  const visibleServiceSlugs = await fetchVisibleServiceSlugs();
-  const xtmPlatformTrialEnabled = await isFeatureEnabled(
-    FeatureFlag.XtmPlatformTrial
-  );
+  const [visibleServiceSlugs, xtmPlatformTrialEnabled] = await Promise.all([
+    fetchVisibleServiceSlugs(),
+    isFeatureEnabled(FeatureFlag.XtmPlatformTrial),
+  ]);
 
   return (
     <ReactQueryProvider>
@@ -58,11 +58,17 @@ const RootLayout = async ({
             <PublicTryFiligranProductsBanner />
           )
         }
-        menu={<PublicMenu visibleServiceSlugs={visibleServiceSlugs} />}
+        menu={
+          <PublicMenu
+            visibleServiceSlugs={visibleServiceSlugs}
+            isXtmPlatformTrialEnabled={xtmPlatformTrialEnabled}
+          />
+        }
         headerContent={
           <PublicHeaderContent
             locale={locale}
             visibleServiceSlugs={visibleServiceSlugs}
+            isXtmPlatformTrialEnabled={xtmPlatformTrialEnabled}
           />
         }
         contentClassName="container pt-l">

@@ -1,11 +1,18 @@
 'use client';
 
+import { invalidatePrivateNavigationQueries } from '@/components/menu/navigation/private/private-navigation-query-invalidation';
 import { SelectWithEditableField } from '@/components/service/registration/SelectWithEditableField';
 import { CancelDeploymentRequestMutation } from '@/components/service/trial-instances/trial-instances.graphql';
-import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { WarningIcon } from '@filigran/icon';
 import {
   AutoForm,
   Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   FormItem,
   FormLabel,
   FormMessage,
@@ -15,7 +22,7 @@ import { trialInstancesCancelDeploymentRequestMutation } from '@generated/trialI
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation } from 'react-relay';
 import { z } from 'zod';
 
@@ -60,6 +67,8 @@ export const BundleCancelSheet = ({
     value: reason,
     label: t(`Service.Trials.CancellationReason.${reason}`),
   }));
+  const [selectedCancellationReason, setSelectedCancellationReason] =
+    useState('');
 
   const [cancelDeploymentRequestMutation] =
     useMutation<trialInstancesCancelDeploymentRequestMutation>(
@@ -79,6 +88,7 @@ export const BundleCancelSheet = ({
             'Service.Trials.Cancellation.Toast.NoNewTrialPossible'
           ),
         });
+        invalidatePrivateNavigationQueries(queryClient);
         queryClient.invalidateQueries({
           queryKey: xtmPlatformBundleKeys.all(),
         });
@@ -94,59 +104,88 @@ export const BundleCancelSheet = ({
     });
   };
 
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (!nextOpen) {
+      setSelectedCancellationReason('');
+    }
+  };
+
   return (
-    <SheetWithPreventingDialog
+    <Dialog
       open={open}
-      setOpen={setOpen}
-      title={t('Service.Trials.Cancellation.ConfirmationForm.Title')}>
-      <AutoForm
-        className="mt-l"
-        formSchema={bundleCancelSchema}
-        onSubmit={onSubmit}
-        fieldConfig={{
-          cancellation_reason: {
-            label: t(
-              'Service.Trials.Cancellation.ConfirmationForm.CancellationReason'
-            ),
-            fieldType: ({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  {t(
-                    'Service.Trials.Cancellation.ConfirmationForm.CancellationReason'
-                  )}
-                  <span className="text-sm text-destructive">*</span>
-                </FormLabel>
-                <SelectWithEditableField
-                  onChange={field.onChange}
-                  options={cancellationReasons}
-                  labels={{
-                    placeholder: t(
-                      'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonPlaceholder'
-                    ),
-                    editableFieldLabel: t(
-                      'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonOther'
-                    ),
-                    editableFieldPlaceholder: t(
-                      'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonOtherPlaceholder'
-                    ),
-                  }}
-                  editableFieldValue="Other"
-                />
-                <FormMessage className="text-sm text-destructive" />
-              </FormItem>
-            ),
-          },
-        }}>
-        <div className="flex justify-end gap-s">
-          <Button
-            variant="secondary"
-            type="button"
-            onClick={() => setOpen(false)}>
-            {t('Utils.Cancel')}
-          </Button>
-          <Button type="submit">{t('Utils.Continue')}</Button>
-        </div>
-      </AutoForm>
-    </SheetWithPreventingDialog>
+      onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-[32rem]">
+        <DialogHeader className="gap-s">
+          <DialogTitle>{t('XtmPlatformTrial.CancelDialog.Title')}</DialogTitle>
+          <DialogDescription>
+            {t('XtmPlatformTrial.CancelDialog.Description')}
+          </DialogDescription>
+        </DialogHeader>
+        <AutoForm
+          className="mt-s"
+          formSchema={bundleCancelSchema}
+          onSubmit={onSubmit}
+          fieldConfig={{
+            cancellation_reason: {
+              label: t(
+                'Service.Trials.Cancellation.ConfirmationForm.CancellationReason'
+              ),
+              fieldType: ({ field }) => (
+                <FormItem>
+                  <FormLabel className="content-body-compact-medium text-text-default-secondary">
+                    {t(
+                      'Service.Trials.Cancellation.ConfirmationForm.CancellationReason'
+                    )}
+                    <span>*</span>
+                  </FormLabel>
+                  <SelectWithEditableField
+                    value={field.value}
+                    onChange={(value) => {
+                      field.onChange(value);
+                      setSelectedCancellationReason(value);
+                    }}
+                    options={cancellationReasons}
+                    labels={{
+                      placeholder: t(
+                        'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonPlaceholder'
+                      ),
+                      editableFieldLabel: t(
+                        'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonOther'
+                      ),
+                      editableFieldPlaceholder: t(
+                        'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonOtherPlaceholder'
+                      ),
+                    }}
+                    editableFieldValue="Other"
+                  />
+                  <FormMessage className="text-sm text-destructive" />
+                </FormItem>
+              ),
+            },
+          }}>
+          <div className="mt-l flex items-center gap-xs rounded border border-solid border-red p-s">
+            <WarningIcon className="size-4 shrink-0 text-destructive" />
+            <div className="content-body-compact text-text-default-primary">
+              <span>{t('XtmPlatformTrial.CancelDialog.Warning')}</span>
+            </div>
+          </div>
+          <DialogFooter className="justify-end gap-s">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => setOpen(false)}>
+              {t('Utils.Cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={!selectedCancellationReason.trim()}
+              type="submit">
+              {t('Utils.Confirm')}
+            </Button>
+          </DialogFooter>
+        </AutoForm>
+      </DialogContent>
+    </Dialog>
   );
 };
