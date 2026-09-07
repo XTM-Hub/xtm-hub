@@ -17,7 +17,7 @@ test.describe('XTM Platform Roadmap', () => {
       title: 'TitleDraft1',
       short_description: 'Short description for a draft',
       description: 'This is a draft epic',
-      product: 'opencti',
+      product: ['opencti'],
       active: false,
       timeline: 'next',
       uploader_id: ADMIN_USER.ID,
@@ -26,7 +26,7 @@ test.describe('XTM Platform Roadmap', () => {
       title: 'Title2',
       short_description: 'Short description',
       description: 'This is an epic',
-      product: 'opencti',
+      product: ['opencti'],
       active: true,
       timeline: 'next',
       uploader_id: ADMIN_USER.ID,
@@ -35,7 +35,7 @@ test.describe('XTM Platform Roadmap', () => {
       title: 'Title3',
       short_description: 'Short description for another epic',
       description: 'This is a second epic',
-      product: 'openaev',
+      product: ['openaev'],
       active: true,
       timeline: 'next',
       uploader_id: ADMIN_USER.ID,
@@ -56,7 +56,7 @@ test.describe('XTM Platform Roadmap', () => {
       });
 
       await expect(
-        page.getByRole('combobox').filter({ hasText: 'OpenCTI (1)' })
+        page.getByRole('button').filter({ hasText: 'OpenCTI (1)' })
       ).toBeVisible();
 
       await expect(page.getByText(/^Title$/)).toBeVisible();
@@ -69,14 +69,14 @@ test.describe('XTM Platform Roadmap', () => {
         draft: false,
       });
       await expect(
-        page.getByRole('combobox').filter({ hasText: 'OpenCTI (1)' })
+        page.getByRole('button').filter({ hasText: 'OpenCTI (1)' })
       ).toBeVisible();
       await expect(page.getByText('TitleModified')).toBeVisible();
     });
     await test.step('Delete an epic', async () => {
       await xtmPlatformRoadmapPage.deleteEpic();
       await expect(
-        page.getByRole('combobox').filter({ hasText: 'OpenCTI (0)' })
+        page.getByRole('button').filter({ hasText: 'OpenCTI (0)' })
       ).toBeVisible();
     });
     await test.step('Create an epic integration', async () => {
@@ -87,7 +87,7 @@ test.describe('XTM Platform Roadmap', () => {
         integration: true,
       });
       await expect(
-        page.getByRole('combobox').filter({ hasText: 'OpenCTI (1)' })
+        page.getByRole('button').filter({ hasText: 'OpenCTI (1)' })
       ).toBeVisible();
       await expect(page.getByText(/^EE$/)).not.toBeVisible();
       await expect(page.getByText(/^CE$/)).not.toBeVisible();
@@ -101,8 +101,62 @@ test.describe('XTM Platform Roadmap', () => {
         draft: true,
       });
       await expect(
-        page.getByRole('combobox').filter({ hasText: 'OpenCTI (2)' })
+        page.getByRole('button').filter({ hasText: 'OpenCTI (2)' })
       ).toBeVisible();
+    });
+    await test.step('Create an epic on several products', async () => {
+      await xtmPlatformRoadmapPage.addEpic({
+        title: 'TitleMultiProduct',
+        short_description: 'Short description for several products',
+        description: 'This is a multi product epic',
+        products: ['OpenCTI', 'OpenAEV'],
+      });
+
+      await xtmPlatformRoadmapPage.filterByProducts(['OpenAEV (1)']);
+      await expect(page.getByText('TitleMultiProduct')).toBeVisible();
+
+      await xtmPlatformRoadmapPage.filterByProducts(['OpenCTI (3)']);
+      await expect(page.getByText('TitleMultiProduct')).toBeVisible();
+    });
+    await test.step('Create an epic with a slack link picked from the list', async () => {
+      await xtmPlatformRoadmapPage.addEpic({
+        title: 'TitleSlackOption',
+        short_description: 'Short description for a picked slack link',
+        description: 'This is an epic with a picked slack link',
+        slackLinkOption: 'XTM Hub',
+      });
+
+      const detail =
+        await xtmPlatformRoadmapPage.openEpicDetail('TitleSlackOption');
+      await expect(
+        detail.getByRole('link', {
+          name: 'Stay in the loop on the Filigran Community',
+        })
+      ).toHaveAttribute(
+        'href',
+        'https://filigran-community.slack.com/archives/C08HU35NPD4'
+      );
+      await xtmPlatformRoadmapPage.closeEpicDetail();
+    });
+    await test.step('Create an epic with a slack link typed by hand', async () => {
+      await xtmPlatformRoadmapPage.addEpic({
+        title: 'TitleSlackFreeText',
+        short_description: 'Short description for a typed slack link',
+        description: 'This is an epic with a typed slack link',
+        slackLink: 'https://filigran-community.slack.com/archives/C0BMANSB4CW',
+      });
+
+      const detail =
+        await xtmPlatformRoadmapPage.openEpicDetail('TitleSlackFreeText');
+      await expect(
+        detail.getByRole('link', {
+          name: 'Stay in the loop on the Filigran Community',
+        })
+      ).toHaveAttribute(
+        'href',
+        'https://filigran-community.slack.com/archives/C0BMANSB4CW'
+      );
+      await xtmPlatformRoadmapPage.closeEpicDetail();
     });
   });
 
@@ -170,10 +224,18 @@ test.describe('XTM Platform Roadmap', () => {
       await expect(page.getByText('Title2', { exact: true })).toBeVisible();
       await expect(page.getByText('Title3', { exact: true })).toBeVisible();
     });
-    await test.step('It should filter', async () => {
-      await page.getByText('Filter by product').click();
-      await page.getByText('OpenAEV (1)').click();
+    await test.step('It should filter on a single product', async () => {
+      await xtmPlatformRoadmapPage.filterByProducts(['OpenAEV (1)']);
       await expect(page.getByText('Title2', { exact: true })).not.toBeVisible();
+      await expect(page.getByText('Title3', { exact: true })).toBeVisible();
+    });
+
+    await test.step('It should filter on several products', async () => {
+      await xtmPlatformRoadmapPage.filterByProducts([
+        'OpenAEV (1)',
+        'OpenCTI (1)',
+      ]);
+      await expect(page.getByText('Title2', { exact: true })).toBeVisible();
       await expect(page.getByText('Title3', { exact: true })).toBeVisible();
     });
 
