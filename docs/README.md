@@ -59,6 +59,14 @@ $ mkdocs serve
 Starting server at http://localhost:8000/
 ```
 
+## Continuous integration
+
+The [`docs-check.yml`](../.github/workflows/docs-check.yml) workflow runs on
+every pull request and push to `main` that touches `docs/` (content, nav
+structure, theme, or dependencies) and builds the site with
+`mkdocs build --strict`. This fails the check on any broken link, missing nav
+entry, or misconfiguration, without publishing anything.
+
 ## Deploy the documentation
 
 Deployment is **automated**. The
