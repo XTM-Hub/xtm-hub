@@ -99,7 +99,7 @@ const restrictConnectorsToLatestDecoupling = (query: Knex.QueryBuilder) =>
     });
 
 // Applies DECOUPLING_CONNECTORS for queries scoped to a single document `type`.
-const applyDecouplingRestriction =
+export const applyDecouplingRestriction =
   (type: string) => (query: Knex.QueryBuilder) => {
     if (
       type === OPENCTI_INTEGRATION_DOCUMENT_TYPE &&
@@ -113,7 +113,9 @@ const applyDecouplingRestriction =
 
 // Same as applyDecouplingRestriction, for mixed-type listings: no single `type` to
 // check, connectors self-select via their Document_Metadata IntegrationType.
-const applyDecouplingRestrictionForMixedTypes = (query: Knex.QueryBuilder) => {
+export const applyDecouplingRestrictionForMixedTypes = (
+  query: Knex.QueryBuilder
+) => {
   if (isFeatureEnabled(FeatureFlag.DecouplingConnectors)) {
     restrictConnectorsToLatestDecoupling(query);
   } else {

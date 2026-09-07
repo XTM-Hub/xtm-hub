@@ -2,15 +2,24 @@ import { v4 as uuidv4 } from 'uuid';
 import { afterEach, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import {
+  requestContextSimpleUserFiligran2,
+  SERVICES,
+} from '../../../../tests/tests.const';
+import {
   DocumentMetadataKeyCode,
+  DocumentOrdering,
   FilterKey,
   LogicalOperator,
+  OrderingMode,
 } from '../../../__generated__/resolvers-types';
+import { requestContext } from '../../../context/request.context';
+import { OrganizationId } from '../../../model/kanel/public/Organization';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import { objectSolutionCategoryDomain } from '../../solution-category/object-solution-category/object-solution-category.domain';
 import { solutionCategoryDomain } from '../../solution-category/solution-category.domain';
 import { objectUseCaseDomain } from '../../use-case/object-use-case/object-use-case.domain';
 import { useCaseDomain } from '../../use-case/use-case.domain';
+import { DocumentApp } from '../document.app';
 import { FacetDomain } from './facet.domain';
 
 const OPENCTI_INTEGRATION_DOCUMENT_TYPE = 'opencti_integration';
@@ -211,5 +220,104 @@ describe('facet.domain', () => {
     expect(result.entity_type).toEqual([
       { value: ENTITY_TYPE_MALWARE, count: 1 },
     ]);
+  });
+  describe('parity with the authenticated documents list', () => {
+    afterEach(async () => {
+      requestContext.set(undefined);
+      await TestHelper.subscription.delete({});
+    });
+
+    it('should count exactly the documents the authenticated list returns for a private subscribed instance', async () => {
+      // Given — a private instance the fixture user's organization subscribes to
+      const privateServiceInstance = await TestHelper.serviceInstance.create({
+        service_definition_id: SERVICES.DEFINITIONS.OPENCTI_INTEGRATIONS.ID,
+        name: `facet-parity-private-${uuidv4()}`,
+        slug: `facet-parity-private-${uuidv4()}`,
+        public: false,
+      });
+      createdServiceInstanceIds.push(privateServiceInstance.id);
+
+      await TestHelper.subscription.create({
+        service_instance_id: privateServiceInstance.id,
+        organization_id: requestContextSimpleUserFiligran2.user
+          .selected_organization_id as OrganizationId,
+      });
+
+      // 2 active + 1 inactive documents. Every document carries exactly ONE
+      // Verified metadata value: this is the invariant that makes
+      // sum(verified buckets) === list totalCount a valid parity check.
+      const activeVerified = await TestHelper.document.create({
+        name: `facet-parity-a-${uuidv4()}`,
+        slug: `facet-parity-a-${uuidv4()}`,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        active: true,
+        service_instance_id: privateServiceInstance.id,
+      });
+      const activeUnverified = await TestHelper.document.create({
+        name: `facet-parity-b-${uuidv4()}`,
+        slug: `facet-parity-b-${uuidv4()}`,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        active: true,
+        service_instance_id: privateServiceInstance.id,
+      });
+      const inactiveVerified = await TestHelper.document.create({
+        name: `facet-parity-c-${uuidv4()}`,
+        slug: `facet-parity-c-${uuidv4()}`,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        active: false,
+        service_instance_id: privateServiceInstance.id,
+      });
+      createdDocumentIds.push(
+        activeVerified.id,
+        activeUnverified.id,
+        inactiveVerified.id
+      );
+
+      await Promise.all([
+        TestHelper.documentMetadata.create({
+          document_id: activeVerified.id,
+          key: DocumentMetadataKeyCode.Verified,
+          value: VERIFIED_TRUE_VALUE,
+        }),
+        TestHelper.documentMetadata.create({
+          document_id: activeUnverified.id,
+          key: DocumentMetadataKeyCode.Verified,
+          value: VERIFIED_FALSE_VALUE,
+        }),
+        TestHelper.documentMetadata.create({
+          document_id: inactiveVerified.id,
+          key: DocumentMetadataKeyCode.Verified,
+          value: VERIFIED_TRUE_VALUE,
+        }),
+      ]);
+
+      // When — same user in context, list and facets called with the same scope
+      requestContext.set(requestContextSimpleUserFiligran2);
+
+      const connection = await DocumentApp.loadDocuments({
+        serviceInstanceId: privateServiceInstance.id,
+        first: 50,
+        orderBy: DocumentOrdering.CreatedAt,
+        orderMode: OrderingMode.Asc,
+      });
+
+      const facets = await FacetDomain.loadDocumentFacets({
+        serviceInstanceId: privateServiceInstance.id,
+        documentType: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        logicalFilters: null,
+      });
+
+      // Then — the facet counts and the list agree on what this user can see
+      const verifiedSum = facets.verified.reduce(
+        (sum, bucket) => sum + bucket.count,
+        0
+      );
+      // isUserRestrictedToActiveDocument short-circuits on isUserGranted(user), which
+      // without a capability argument means "any authenticated user" — so authenticated
+      // users always see inactive documents. The parity we assert is that facets follow
+      // the list either way.
+      expect(verifiedSum).toBe(Number(connection.totalCount));
+      expect(Number(connection.totalCount)).toBe(3);
+    });
   });
 });

@@ -12,21 +12,23 @@ import {
   LoadDocumentFacetInput,
   LogicalFilterInput,
 } from '../../../__generated__/resolvers-types';
+import { requestContext } from '../../../context/request.context';
 import type Document from '../../../model/kanel/public/Document';
-import { restrictServiceInstanceToPublic } from '../../../security/restriction/service-instance';
-import { TAG_DECOUPLING } from '../../shareable-resource/manifest-fragment/manifest-fragment.helper';
+import {
+  restrictDocumentToAccessibleServiceInstance,
+  restrictDocumentToActive,
+} from '../../../security/restriction/document';
+import { isUserRestrictedToActiveDocument } from '../document.security';
+import {
+  applyDecouplingRestriction,
+  applyDecouplingRestrictionForMixedTypes,
+} from '../domain/document.domain';
 
 type FacetRow = {
   value: string;
   count: string | number;
 };
 type DocumentIdsQuery = ReturnType<typeof db<Document>>;
-
-const excludeDecouplingTag = (query: ReturnType<typeof db<Document>>) =>
-  query.whereRaw(
-    `NOT (? ILIKE ANY(COALESCE("Document"."tags", ARRAY[]::text[])))`,
-    [TAG_DECOUPLING]
-  );
 
 const toFacetBuckets = (rows: FacetRow[]): FacetBucket[] =>
   rows.map(({ value, count }) => ({
@@ -68,27 +70,27 @@ const stripFilterKeyFromLogicalFilter = (
   };
 };
 
-const buildScopedDocumentIdsQuery = ({
-  serviceInstanceId,
-  documentType,
-  logicalFilters,
-}: LoadDocumentFacetInput) => {
+const buildScopedDocumentIdsQuery = (
+  { serviceInstanceId, documentType, logicalFilters }: LoadDocumentFacetInput,
+  restrictToActive: boolean
+) => {
   const query = db<Document>('Document')
     .select('Document.id')
-    .leftJoin(
-      'ServiceInstance',
-      'Document.service_instance_id',
-      'ServiceInstance.id'
-    )
-    .tap(restrictServiceInstanceToPublic)
-    .where('Document.active', '=', true)
+    .tap(restrictDocumentToAccessibleServiceInstance)
+    .modify((builder) => {
+      if (restrictToActive) {
+        restrictDocumentToActive(builder);
+      }
+    })
     .where('Document.service_instance_id', '=', serviceInstanceId)
     .modify((builder) => {
       if (documentType != null) {
         builder.where('Document.type', '=', documentType);
+        applyDecouplingRestriction(documentType)(builder);
+      } else {
+        applyDecouplingRestrictionForMixedTypes(builder);
       }
     })
-    .modify(excludeDecouplingTag)
     .whereNotExists(function () {
       this.select(dbRaw('1'))
         .from('Document_Children')
@@ -198,22 +200,31 @@ const loadEntityTypeFacetBuckets = async (
 
 const buildScopedQueryByFilterKey = (
   input: LoadDocumentFacetInput,
-  filterKey: FilterKey
+  filterKey: FilterKey,
+  restrictToActive: boolean
 ) =>
-  buildScopedDocumentIdsQuery({
-    ...input,
-    logicalFilters: stripFilterKeyFromLogicalFilter(
-      input.logicalFilters,
-      filterKey
-    ),
-  });
+  buildScopedDocumentIdsQuery(
+    {
+      ...input,
+      logicalFilters: stripFilterKeyFromLogicalFilter(
+        input.logicalFilters,
+        filterKey
+      ),
+    },
+    restrictToActive
+  );
 
 const loadBucketsWithScopedDocuments = async <T>(
   input: LoadDocumentFacetInput,
   filterKey: FilterKey,
+  restrictToActive: boolean,
   loader: (documentIdsQuery: DocumentIdsQuery) => Promise<T>
 ): Promise<T> => {
-  const documentIdsQuery = buildScopedQueryByFilterKey(input, filterKey);
+  const documentIdsQuery = buildScopedQueryByFilterKey(
+    input,
+    filterKey,
+    restrictToActive
+  );
   await applySearch(
     'Document',
     documentIdsQuery,
@@ -225,6 +236,10 @@ const loadBucketsWithScopedDocuments = async <T>(
 
 export const FacetDomain = {
   loadDocumentFacets: async (input: LoadDocumentFacetInput): Promise<Facet> => {
+    const user = requestContext.get()?.user;
+    const restrictToActive =
+      !user ||
+      (await isUserRestrictedToActiveDocument(user, input.serviceInstanceId));
     const [
       integrationType,
       licenseType,
@@ -238,43 +253,63 @@ export const FacetDomain = {
       loadBucketsWithScopedDocuments(
         input,
         FilterKey.IntegrationType,
+        restrictToActive,
         (query) =>
           loadMetadataFacetBuckets(
             query,
             DocumentMetadataKeyCode.IntegrationType
           )
       ),
-      loadBucketsWithScopedDocuments(input, FilterKey.LicenseType, (query) =>
-        loadMetadataFacetBuckets(query, DocumentMetadataKeyCode.LicenseType)
+      loadBucketsWithScopedDocuments(
+        input,
+        FilterKey.LicenseType,
+        restrictToActive,
+        (query) =>
+          loadMetadataFacetBuckets(query, DocumentMetadataKeyCode.LicenseType)
       ),
       loadBucketsWithScopedDocuments(
         input,
         FilterKey.ManagerSupported,
+        restrictToActive,
         (query) =>
           loadMetadataFacetBuckets(
             query,
             DocumentMetadataKeyCode.ManagerSupported
           )
       ),
-      loadBucketsWithScopedDocuments(input, FilterKey.Verified, (query) =>
-        loadMetadataFacetBuckets(query, DocumentMetadataKeyCode.Verified)
+      loadBucketsWithScopedDocuments(
+        input,
+        FilterKey.Verified,
+        restrictToActive,
+        (query) =>
+          loadMetadataFacetBuckets(query, DocumentMetadataKeyCode.Verified)
       ),
-      loadBucketsWithScopedDocuments(input, FilterKey.ProductVersion, (query) =>
-        loadMetadataFacetBuckets(query, DocumentMetadataKeyCode.ProductVersion)
+      loadBucketsWithScopedDocuments(
+        input,
+        FilterKey.ProductVersion,
+        restrictToActive,
+        (query) =>
+          loadMetadataFacetBuckets(
+            query,
+            DocumentMetadataKeyCode.ProductVersion
+          )
       ),
       loadBucketsWithScopedDocuments(
         input,
         FilterKey.SolutionCategory,
+        restrictToActive,
         loadSolutionCategoryFacetBuckets
       ),
       loadBucketsWithScopedDocuments(
         input,
         FilterKey.Label,
+        restrictToActive,
         loadUseCaseFacetBuckets
       ),
       loadBucketsWithScopedDocuments(
         input,
         FilterKey.EntityType,
+        restrictToActive,
         loadEntityTypeFacetBuckets
       ),
     ]);
