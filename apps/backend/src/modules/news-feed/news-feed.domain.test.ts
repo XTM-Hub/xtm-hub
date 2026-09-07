@@ -355,16 +355,16 @@ describe('newsFeedDomain', () => {
     });
   });
 
-  describe('loadMetadataByNewsFeedItemId', () => {
+  describe('loadMetadataByNewsFeedItemIds', () => {
     it('should return the url_path metadata and exclude the document_id metadata', async () => {
       // Given
       const { document, newsFeedItem } = await createDocumentWithNewsFeedItem();
       const expectedGlobalDocumentId = toGlobalId('Document', document.id);
 
       // When
-      const metadata = await NewsFeedDomain.loadMetadataByNewsFeedItemId(
-        newsFeedItem.id
-      );
+      const metadata = await NewsFeedDomain.loadMetadataByNewsFeedItemIds([
+        newsFeedItem.id,
+      ]);
 
       // Then
       expect(metadata).toHaveLength(1);
@@ -377,10 +377,30 @@ describe('newsFeedDomain', () => {
       ).toBe(false);
     });
 
-    it('should return an empty array when the news feed item has no metadata', async () => {
-      const metadata = await NewsFeedDomain.loadMetadataByNewsFeedItemId(
-        uuidv4() as NewsFeedItemId
-      );
+    it('should return the metadata for multiple news feed items in a single call', async () => {
+      // Given
+      const first = await createDocumentWithNewsFeedItem();
+      const second = await createDocumentWithNewsFeedItem();
+
+      // When
+      const metadata = await NewsFeedDomain.loadMetadataByNewsFeedItemIds([
+        first.newsFeedItem.id,
+        second.newsFeedItem.id,
+      ]);
+
+      // Then
+      expect(
+        metadata.filter((m) => m.news_feed_item_id === first.newsFeedItem.id)
+      ).toHaveLength(1);
+      expect(
+        metadata.filter((m) => m.news_feed_item_id === second.newsFeedItem.id)
+      ).toHaveLength(1);
+    });
+
+    it('should return an empty array when the news feed items have no metadata', async () => {
+      const metadata = await NewsFeedDomain.loadMetadataByNewsFeedItemIds([
+        uuidv4() as NewsFeedItemId,
+      ]);
 
       expect(metadata).toEqual([]);
     });
