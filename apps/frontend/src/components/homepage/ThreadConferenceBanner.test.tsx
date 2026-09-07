@@ -25,7 +25,7 @@ describe('ThreadConferenceBanner', () => {
 
     // Then the supplied banner artwork links to the conference website
     const bannerLink = screen.getByRole('link', {
-      name: 'Cta',
+      name: 'ThreadConference.AriaLabel',
     });
     const threadLogo = screen.getByRole('img', {
       name: 'XTM Hub logo',

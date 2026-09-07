@@ -2062,7 +2062,8 @@
     "Description": "The annual gathering of the global threat intelligence and cyber defense community - where intelligence, exposure management and action come together.",
     "Date": "October 15, 2026 | Paris",
     "ImageAlt": "Thread Conference Banner",
-    "Cta": "Learn more"
+    "Cta": "Learn more",
+    "AriaLabel": "Would you like to participate in the Thread Conference? Learn more here."
   },
   "UnexpectedErrorDialog": {
     "Description": "Please try logging in again. If the issue persists, contact us for assistance.",
