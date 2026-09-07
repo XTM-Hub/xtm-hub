@@ -623,6 +623,46 @@ describe('sortProductsForMail', () => {
   });
 });
 
+describe('free_trial_bundle_active bullets', () => {
+  afterEach(() => {
+    clearTemplateCache();
+  });
+
+  it('should list bullets as OpenCTI, OpenAEV then XTM One whatever the products order', async () => {
+    const html = await renderEmail('free_trial_bundle_active', {
+      firstName: 'User',
+      productNames: 'OpenCTI, OpenAEV, and XTM One',
+      products: [
+        PlatformIdentifier.Xtmone,
+        PlatformIdentifier.Openaev,
+        PlatformIdentifier.Opencti,
+      ],
+      platformUrl: 'https://trial.filigran.cloud',
+    });
+
+    const bullets = [...html.matchAll(/Use <strong>([^<]+)<\/strong>/g)].map(
+      ([, product]) => product
+    );
+
+    expect(bullets).toEqual(['OpenCTI', 'OpenAEV', 'XTM One']);
+  });
+
+  it('should only list the bullets of the trialed products', async () => {
+    const html = await renderEmail('free_trial_bundle_active', {
+      firstName: 'User',
+      productNames: 'OpenCTI and XTM One',
+      products: [PlatformIdentifier.Xtmone, PlatformIdentifier.Opencti],
+      platformUrl: 'https://trial.filigran.cloud',
+    });
+
+    const bullets = [...html.matchAll(/Use <strong>([^<]+)<\/strong>/g)].map(
+      ([, product]) => product
+    );
+
+    expect(bullets).toEqual(['OpenCTI', 'XTM One']);
+  });
+});
+
 describe('bundle trial subjects', () => {
   it('should use the XTM Platform wording for bundles', () => {
     const params = {
