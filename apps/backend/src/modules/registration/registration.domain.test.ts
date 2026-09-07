@@ -634,7 +634,7 @@ describe('registration domain', () => {
       expect(platforms).toHaveLength(1);
       expect(platforms[0]?.platform_id).toBe(platformId);
     });
-    it('should not return platforms with non-active trials when onlyActiveTrials is true', async () => {
+    it('should not return platforms with non-active trials when onlyActive is true', async () => {
       await DeploymentRequestDomain.insertDeploymentRequest({
         id: uuidv4() as DeploymentRequest['id'],
         service_instance_id: openCTIServiceInstanceId,
@@ -657,7 +657,7 @@ describe('registration domain', () => {
 
       expect(platforms).toHaveLength(0);
     });
-    it('should not return platforms with cancelled trials when onlyActiveTrials is true', async () => {
+    it('should not return platforms with cancelled trials when onlyActive is true', async () => {
       await DeploymentRequestDomain.insertDeploymentRequest({
         id: uuidv4() as DeploymentRequest['id'],
         service_instance_id: openCTIServiceInstanceId,
@@ -680,7 +680,7 @@ describe('registration domain', () => {
 
       expect(platforms).toHaveLength(0);
     });
-    it('should return platforms with active trials when onlyActiveTrials is true', async () => {
+    it('should return platforms with active trials when onlyActive is true', async () => {
       await DeploymentRequestDomain.insertDeploymentRequest({
         id: uuidv4() as DeploymentRequest['id'],
         service_instance_id: openCTIServiceInstanceId,
@@ -704,7 +704,7 @@ describe('registration domain', () => {
       expect(platforms).toHaveLength(1);
       expect(platforms[0]?.platform_id).toBe(platformId);
     });
-    it('should return platforms only active trials when onlyActiveTrials is true AND onlyTrial is true', async () => {
+    it('should return platforms only active trials when onlyActive is true AND onlyTrial is true', async () => {
       await DeploymentRequestDomain.insertDeploymentRequest({
         id: uuidv4() as DeploymentRequest['id'],
         service_instance_id: openCTIServiceInstanceId,

@@ -17,7 +17,7 @@ import { platformTrialKeys } from '@graphql/trial/trial.keys';
 import { QueryClient } from '@tanstack/react-query';
 import { screen } from '@testing-library/react';
 import { ReactNode } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const graphqlMocks = vi.hoisted(() => ({
   useCreateDeploymentRequestMutation: vi.fn(),
@@ -166,7 +166,10 @@ const statusView = (
 });
 
 describe('PrivateXtmPlatformTrialPanel', () => {
+  let invalidateQueries: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
+    invalidateQueries = vi.spyOn(QueryClient.prototype, 'invalidateQueries');
     graphqlMocks.useCreateDeploymentRequestMutation.mockReset();
     graphqlMocks.mutate.mockReset();
     graphqlMocks.useCreateDeploymentRequestMutation.mockReturnValue({
@@ -176,12 +179,11 @@ describe('PrivateXtmPlatformTrialPanel', () => {
     queryMocks.invalidatePrivateNavigationQueries.mockReset();
   });
 
-  it('refreshes the bundle and the navigation queries after a successful request', () => {
-    const invalidateQueries = vi.spyOn(
-      QueryClient.prototype,
-      'invalidateQueries'
-    );
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
+  it('refreshes the bundle and the navigation queries after a successful request', () => {
     testRender(
       <PrivateXtmPlatformTrialPanel
         bundle={null}
@@ -212,8 +214,6 @@ describe('PrivateXtmPlatformTrialPanel', () => {
     expect(queryMocks.invalidatePrivateNavigationQueries).toHaveBeenCalledWith(
       expect.any(QueryClient)
     );
-
-    invalidateQueries.mockRestore();
   });
 
   it('renders nothing while the view is not resolved yet', () => {
