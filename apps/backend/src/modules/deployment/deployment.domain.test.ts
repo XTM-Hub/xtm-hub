@@ -1825,7 +1825,7 @@ describe('deploymentRequestDomain', () => {
     it.each`
       platformIdentifier            | shouldCreateAudience
       ${PlatformIdentifier.Openaev} | ${false}
-      ${PlatformIdentifier.Opencti} | ${true}
+      ${PlatformIdentifier.Opencti} | ${false}
       ${PlatformIdentifier.Xtmone}  | ${false}
     `(
       'should create an Auth0 audience for a $platformIdentifier instance: $shouldCreateAudience',

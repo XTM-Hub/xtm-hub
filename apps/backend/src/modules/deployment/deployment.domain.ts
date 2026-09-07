@@ -407,7 +407,6 @@ export const DeploymentRequestDomain = {
     }
 
     const {
-      organization_name,
       requester_email,
       platform_id,
       user_requester_id,
@@ -415,17 +414,6 @@ export const DeploymentRequestDomain = {
     } = fullDeploymentRequest;
     if (!platform_id) {
       throw new Error(ErrorCode.InvalidPlatformId);
-    }
-
-    if (platformIdentifier === PlatformIdentifier.Opencti) {
-      try {
-        await auth0Client.createAudienceAPI(organization_name, platform_id);
-      } catch (error) {
-        logApp.warn('Unable to create audience', {
-          error,
-          deploymentRequestId: id,
-        });
-      }
     }
 
     const serviceGroup = await ServiceGroupDomain.loadServiceGroups({
@@ -525,10 +513,11 @@ export const DeploymentRequestDomain = {
 };
 
 /**
- * Bundles never create an Auth0 audience for themselves nor for their XtmOne
- * or OpenAEV children, unlike standalone trials which do create one for
- * OpenAEV (and Opencti). This tells callers whether it is worth attempting
- * to delete an audience for a given deployment request.
+ * Bundles never create an Auth0 audience for themselves nor for their XtmOne,
+ * OpenAEV or Opencti children. Standalone OpenAEV and Opencti trials no
+ * longer create one either, but older deployment requests may still have one
+ * left over. This tells callers whether it is worth attempting to delete an
+ * audience for a given deployment request.
  */
 export const shouldDeleteDeploymentRequestAudience = (
   deploymentRequest: Pick<
