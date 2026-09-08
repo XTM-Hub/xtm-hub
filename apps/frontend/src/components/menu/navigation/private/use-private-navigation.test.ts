@@ -136,19 +136,11 @@ const getFooterSection = (
   key: string
 ) => footerSections.find((section) => section.key === key);
 
-const getStartFreeTrialLinks = (
-  sections: ReturnType<typeof usePrivateNavigation>['sections'],
-  key: string
-) =>
-  getSection(sections, key)?.links.filter(
-    (link) => link.label === 'StartFreeTrial'
-  ) ?? [];
-
 describe('usePrivateNavigation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    vi.mocked(useIsFeatureEnabled).mockReturnValue(false);
+    vi.mocked(useIsFeatureEnabled).mockReturnValue(true);
     vi.mocked(getPrivateNavigationServiceHrefs).mockReturnValue(new Map());
     vi.mocked(
       getPrivateNavigationRegisteredPlatformsByIdentifier
@@ -163,9 +155,15 @@ describe('usePrivateNavigation', () => {
     });
 
     graphqlMocks.useTrialDeploymentsEligibilityQuery.mockReturnValue({
-      data: undefined,
+      data: {
+        trialDeployments: {
+          availableTrials: [],
+          isBlacklisted: false,
+        },
+      },
       isLoading: false,
       isPending: false,
+      isError: false,
     });
   });
 
@@ -203,7 +201,47 @@ describe('usePrivateNavigation', () => {
         label: 'Slack',
         external: true,
       },
+      {
+        key: 'xtm-platform-trial',
+        href: `/${APP_PATH}/service/xtm-platform-trial`,
+        icon: expect.any(Function),
+        label: 'XTMPlatformTrial',
+        highlight: true,
+      },
     ]);
+  });
+
+  it('hides the xtm-platform-trial bottom link when the feature flag is off', () => {
+    vi.mocked(useIsFeatureEnabled).mockReturnValue(false);
+
+    const { result } = renderUsePrivateNavigation({
+      selectedOrganizationId: 'org-1',
+    });
+
+    expect(result.current.bottomLinks.map((link) => link.key)).not.toContain(
+      'xtm-platform-trial'
+    );
+  });
+
+  it('hides the xtm-platform-trial bottom link when organization is blacklisted', () => {
+    graphqlMocks.useTrialDeploymentsEligibilityQuery.mockReturnValue({
+      data: {
+        trialDeployments: {
+          availableTrials: [],
+          isBlacklisted: true,
+        },
+      },
+      isLoading: false,
+      isPending: false,
+    });
+
+    const { result } = renderUsePrivateNavigation({
+      selectedOrganizationId: 'org-1',
+    });
+
+    expect(result.current.bottomLinks.map((link) => link.key)).not.toContain(
+      'xtm-platform-trial'
+    );
   });
 
   it('adds settings as a footer section when user is authorized', () => {
@@ -236,10 +274,10 @@ describe('usePrivateNavigation', () => {
 
   it.each`
     capabilities                                                         | expectedSettingsLabels
-    ${[PortalCapability.Bypass]}                                         | ${['Parameter', 'Security', 'UseCase', 'SolutionCategory', 'VotingRound', 'Organization', 'Service', 'OpenCTITrial', 'OpenAEVTrial', 'Competitor', 'NewsFeed']}
-    ${[PortalCapability.ReadTrials]}                                     | ${['OpenCTITrial', 'OpenAEVTrial']}
+    ${[PortalCapability.Bypass]}                                         | ${['Parameter', 'Security', 'UseCase', 'SolutionCategory', 'VotingRound', 'Organization', 'Service', 'ManageTrials', 'OpenCTITrial', 'OpenAEVTrial', 'Competitor', 'NewsFeed']}
+    ${[PortalCapability.ReadTrials]}                                     | ${['ManageTrials', 'OpenCTITrial', 'OpenAEVTrial']}
     ${[PortalCapability.ModifyCompetitors]}                              | ${['Competitor']}
-    ${[PortalCapability.ReadTrials, PortalCapability.ModifyCompetitors]} | ${['OpenCTITrial', 'OpenAEVTrial', 'Competitor']}
+    ${[PortalCapability.ReadTrials, PortalCapability.ModifyCompetitors]} | ${['ManageTrials', 'OpenCTITrial', 'OpenAEVTrial', 'Competitor']}
   `(
     'filters settings links according to portal capabilities $capabilities',
     ({ capabilities, expectedSettingsLabels }) => {
@@ -316,42 +354,42 @@ describe('usePrivateNavigation', () => {
         label: 'Slack',
         external: true,
       },
+      {
+        key: 'xtm-platform-trial',
+        href: `/${APP_PATH}/service/xtm-platform-trial`,
+        icon: expect.any(Function),
+        label: 'XTMPlatformTrial',
+        highlight: true,
+      },
     ]);
   });
 
-  it('does not include StartFreeTrial links when trial data is blacklisted', () => {
+  it('does not include StartFreeTrial links when the XTM Platform trial flag is enabled', () => {
+    const { result } = renderUsePrivateNavigation({
+      selectedOrganizationId: 'org-1',
+    });
+
+    const openctiSection = getSection(result.current.sections, 'opencti');
+    const openaevSection = getSection(result.current.sections, 'openaev');
+
+    expect(
+      openctiSection?.links.some((link) => link.label === 'StartFreeTrial')
+    ).toBe(false);
+    expect(
+      openaevSection?.links.some((link) => link.label === 'StartFreeTrial')
+    ).toBe(false);
+  });
+
+  it('includes StartFreeTrial links when the XTM Platform trial flag is disabled', () => {
+    vi.mocked(useIsFeatureEnabled).mockReturnValue(false);
     graphqlMocks.useTrialDeploymentsEligibilityQuery.mockReturnValue({
       data: {
         trialDeployments: {
-          isBlacklisted: true,
           availableTrials: [
             PlatformIdentifier.Opencti,
             PlatformIdentifier.Openaev,
           ],
-        },
-      },
-      isLoading: false,
-      isPending: false,
-    });
-
-    const { result } = renderUsePrivateNavigation({
-      selectedOrganizationId: 'org-1',
-    });
-
-    expect(
-      getStartFreeTrialLinks(result.current.sections, 'opencti')
-    ).toHaveLength(0);
-    expect(
-      getStartFreeTrialLinks(result.current.sections, 'openaev')
-    ).toHaveLength(0);
-  });
-
-  it('includes highlighted StartFreeTrial href link for available platform trial', () => {
-    graphqlMocks.useTrialDeploymentsEligibilityQuery.mockReturnValue({
-      data: {
-        trialDeployments: {
           isBlacklisted: false,
-          availableTrials: [PlatformIdentifier.Opencti],
         },
       },
       isLoading: false,
@@ -362,103 +400,49 @@ describe('usePrivateNavigation', () => {
       selectedOrganizationId: 'org-1',
     });
 
-    expect(getStartFreeTrialLinks(result.current.sections, 'opencti')).toEqual([
-      {
-        href: `/${APP_PATH}/service/opencti-free-trial`,
-        label: 'StartFreeTrial',
-        highlight: true,
-      },
-    ]);
+    const openctiSection = getSection(result.current.sections, 'opencti');
+    const openaevSection = getSection(result.current.sections, 'openaev');
+
     expect(
-      getStartFreeTrialLinks(result.current.sections, 'openaev')
-    ).toHaveLength(0);
+      openctiSection?.links.some(
+        (link) => link.href === '/app/service/opencti-free-trial'
+      )
+    ).toBe(true);
+    expect(
+      openaevSection?.links.some(
+        (link) => link.href === '/app/service/openaev-free-trial'
+      )
+    ).toBe(true);
   });
 
-  it('does not include StartFreeTrial when trial data exists but platform is unavailable', () => {
-    graphqlMocks.useTrialDeploymentsEligibilityQuery.mockReturnValue({
-      data: {
-        trialDeployments: {
-          isBlacklisted: false,
-          availableTrials: [],
-        },
-      },
-      isLoading: false,
-      isPending: false,
-    });
-
-    const { result } = renderUsePrivateNavigation({
+  it.each([
+    {
       selectedOrganizationId: 'org-1',
-    });
-
-    expect(
-      getStartFreeTrialLinks(result.current.sections, 'opencti')
-    ).toHaveLength(0);
-    expect(
-      getStartFreeTrialLinks(result.current.sections, 'openaev')
-    ).toHaveLength(0);
-  });
-
-  it.each`
-    description               | selectedOrganizationId | isLoading | isPending
-    ${'organization missing'} | ${undefined}           | ${false}  | ${false}
-    ${'loading'}              | ${'org-1'}             | ${true}   | ${false}
-    ${'pending'}              | ${'org-1'}             | ${false}  | ${true}
-  `(
-    'returns highlighted label-only StartFreeTrial link when no trial data and $description',
-    ({ selectedOrganizationId, isLoading, isPending }) => {
-      graphqlMocks.useTrialDeploymentsEligibilityQuery.mockReturnValue({
-        data: undefined,
-        isLoading,
-        isPending,
-      });
-
-      const { result } = renderUsePrivateNavigation({ selectedOrganizationId });
-
-      expect(
-        getStartFreeTrialLinks(result.current.sections, 'opencti')
-      ).toEqual([
-        {
-          label: 'StartFreeTrial',
-          highlight: true,
-        },
-      ]);
-      expect(
-        getStartFreeTrialLinks(result.current.sections, 'openaev')
-      ).toEqual([
-        {
-          label: 'StartFreeTrial',
-          highlight: true,
-        },
-      ]);
-    }
-  );
-
-  it('does not return label-only StartFreeTrial link when organization is selected and not loading/pending', () => {
-    graphqlMocks.useTrialDeploymentsEligibilityQuery.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      isPending: false,
-    });
-
-    const { result } = renderUsePrivateNavigation({
+      isXtmPlatformTrialEnabled: true,
+      expectedEnabled: true,
+      expectedOrganizationId: 'org-1',
+    },
+    {
       selectedOrganizationId: 'org-1',
-    });
-
-    expect(
-      getStartFreeTrialLinks(result.current.sections, 'opencti')
-    ).toHaveLength(0);
-    expect(
-      getStartFreeTrialLinks(result.current.sections, 'openaev')
-    ).toHaveLength(0);
-  });
-
-  it.each`
-    selectedOrganizationId | expectedEnabled | expectedOrganizationId
-    ${'org-1'}             | ${true}         | ${'org-1'}
-    ${undefined}           | ${false}        | ${''}
-  `(
-    'calls GraphQL hooks with expected variables and enabled flag for selected org ($selectedOrganizationId)',
-    ({ selectedOrganizationId, expectedEnabled, expectedOrganizationId }) => {
+      isXtmPlatformTrialEnabled: false,
+      expectedEnabled: true,
+      expectedOrganizationId: 'org-1',
+    },
+    {
+      selectedOrganizationId: undefined,
+      isXtmPlatformTrialEnabled: false,
+      expectedEnabled: false,
+      expectedOrganizationId: '',
+    },
+  ])(
+    'calls GraphQL hooks with expected variables for selected org $selectedOrganizationId when the XTM Platform trial flag is $isXtmPlatformTrialEnabled',
+    ({
+      selectedOrganizationId,
+      isXtmPlatformTrialEnabled,
+      expectedEnabled,
+      expectedOrganizationId,
+    }) => {
+      vi.mocked(useIsFeatureEnabled).mockReturnValue(isXtmPlatformTrialEnabled);
       renderUsePrivateNavigation({ selectedOrganizationId });
 
       const expectedServiceVariables = {
@@ -503,7 +487,7 @@ describe('usePrivateNavigation', () => {
         {
           input: {
             identifier: null,
-            onlyActive: null,
+            onlyActive: true,
             onlyTrial: null,
             hasDeployedResources: null,
           },
@@ -514,7 +498,7 @@ describe('usePrivateNavigation', () => {
             {
               input: {
                 identifier: null,
-                onlyActive: null,
+                onlyActive: true,
                 onlyTrial: null,
                 hasDeployedResources: null,
               },
@@ -532,21 +516,7 @@ describe('usePrivateNavigation', () => {
     }
   );
 
-  it('includes MyProduct nested links after StartFreeTrial in OpenCTI and OpenAEV sections when registrations exist', () => {
-    graphqlMocks.useTrialDeploymentsEligibilityQuery.mockReturnValue({
-      data: {
-        trialDeployments: {
-          isBlacklisted: false,
-          availableTrials: [
-            PlatformIdentifier.Opencti,
-            PlatformIdentifier.Openaev,
-          ],
-        },
-      },
-      isLoading: false,
-      isPending: false,
-    });
-
+  it('includes MyProduct nested links as first link in OpenCTI and OpenAEV sections when registrations exist', () => {
     vi.mocked(getPrivateNavigationRegisteredPlatformsByIdentifier)
       .mockReturnValueOnce([
         {
@@ -571,11 +541,6 @@ describe('usePrivateNavigation', () => {
     const openaevSection = getSection(result.current.sections, 'openaev');
 
     expect(openctiSection?.links[0]).toEqual({
-      href: `/${APP_PATH}/service/opencti-free-trial`,
-      label: 'StartFreeTrial',
-      highlight: true,
-    });
-    expect(openctiSection?.links[1]).toEqual({
       label: 'MyProduct',
       badge: '1',
       subLinks: [
@@ -588,11 +553,6 @@ describe('usePrivateNavigation', () => {
     });
 
     expect(openaevSection?.links[0]).toEqual({
-      href: `/${APP_PATH}/service/openaev-free-trial`,
-      label: 'StartFreeTrial',
-      highlight: true,
-    });
-    expect(openaevSection?.links[1]).toEqual({
       label: 'MyProduct',
       badge: '1',
       subLinks: [
@@ -606,17 +566,6 @@ describe('usePrivateNavigation', () => {
   });
 
   it('uses plural MyProduct label when more than one platform is linked', () => {
-    graphqlMocks.useTrialDeploymentsEligibilityQuery.mockReturnValue({
-      data: {
-        trialDeployments: {
-          isBlacklisted: false,
-          availableTrials: [PlatformIdentifier.Opencti],
-        },
-      },
-      isLoading: false,
-      isPending: false,
-    });
-
     vi.mocked(getPrivateNavigationRegisteredPlatformsByIdentifier)
       .mockReturnValueOnce([
         {
@@ -638,7 +587,7 @@ describe('usePrivateNavigation', () => {
 
     const openctiSection = getSection(result.current.sections, 'opencti');
 
-    expect(openctiSection?.links[1]).toMatchObject({
+    expect(openctiSection?.links[0]).toMatchObject({
       label: 'MyProducts',
       badge: '2',
     });

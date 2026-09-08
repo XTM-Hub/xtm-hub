@@ -7,11 +7,13 @@ import Link from 'next/link';
 interface PublicHeaderContentProps {
   locale: string;
   visibleServiceSlugs: string[];
+  isXtmPlatformTrialEnabled: boolean;
 }
 
 export const PublicHeaderContent = async ({
   locale,
   visibleServiceSlugs,
+  isXtmPlatformTrialEnabled,
 }: PublicHeaderContentProps) => {
   const t = await getTranslations();
 
@@ -24,7 +26,9 @@ export const PublicHeaderContent = async ({
         <span className="sr-only">{t('Metadata.SiteName')}</span>
       </Link>
       <div className="flex items-center gap-s ml-auto">
-        <Button variant="secondary">
+        <Button
+          asChild
+          variant="secondary">
           <Link
             href="/auth/oidc"
             prefetch={false}>
@@ -37,7 +41,10 @@ export const PublicHeaderContent = async ({
           <Link href={`/sign-up`}>{t('PublicLayout.SignUp')}</Link>
         </Button>
         <div className="md:hidden flex items-center">
-          <PublicMobileMenuButton visibleServiceSlugs={visibleServiceSlugs} />
+          <PublicMobileMenuButton
+            visibleServiceSlugs={visibleServiceSlugs}
+            isXtmPlatformTrialEnabled={isXtmPlatformTrialEnabled}
+          />
         </div>
       </div>
     </>

@@ -1,4 +1,5 @@
 import { DateTimeFormatOptions, useFormatter } from 'next-intl';
+import { useCallback, useMemo } from 'react';
 
 // Define FormatDateStyle as a type instead of an enum
 export type FormatDateStyle =
@@ -42,21 +43,29 @@ export const daysUntil = (targetDate: Date) => {
   return Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
 };
 
-export const formatDate = (
-  date?: Date | string,
-  dateStyle: FormatDateStyle = 'DATE_NUMERIC'
-) => {
-  if (!date) {
-    return null;
-  }
-
-  const dateObject = new Date(date);
+export const useDateFormatter = () => {
   const format = useFormatter();
+  const timeZone = useMemo(
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone,
+    []
+  );
 
-  return format.dateTime(dateObject, {
-    ...DATE_STYLE_FORMAT[dateStyle],
-    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-  });
+  return useCallback(
+    (
+      date?: Date | string | null,
+      dateStyle: FormatDateStyle = 'DATE_NUMERIC'
+    ) => {
+      if (!date) {
+        return null;
+      }
+
+      return format.dateTime(new Date(date), {
+        ...DATE_STYLE_FORMAT[dateStyle],
+        timeZone,
+      });
+    },
+    [format, timeZone]
+  );
 };
 
 export const isWithinLastMonths = (

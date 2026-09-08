@@ -109,6 +109,8 @@ type Query {
   deploymentRequestsList(first: Int!, after: ID, filters: [DeploymentRequestFilter!], orderBy: DeploymentRequestOrdering!, orderMode: OrderingMode!, searchTerm: String): DeploymentRequestConnection!
   trialDeployments(input: TrialDeploymentsInput!): TrialsDeployments!
   platformTrialStatus(organizationId: OrganizationId!): PlatformTrialStatus!
+  xtmPlatformBundle: DeploymentRequest
+  xtmonePlatformIntegrationStatus(serviceInstanceId: ServiceInstanceId!): XtmoneIntegrationStatus
   serviceGroups(serviceInstanceId: ServiceInstanceId!): [ServiceGroup!]!
   bundleUserServiceGroups(serviceInstanceId: ServiceInstanceId!): [BundleUserServiceGroup!]!
   bundleProducts(serviceInstanceId: ServiceInstanceId!): [PlatformIdentifier!]!
@@ -216,7 +218,7 @@ type Mutation {
   transferPersonalSpace(requestId: ID!): Success!
   login(email: String!, password: String): User
   logout: ID!
-  contactUs(message: String, platformId: ID, platformIdentifier: PlatformIdentifier): Success!
+  contactUs(message: String, platformId: ID, platformIdentifier: PlatformIdentifier, deploymentRequestType: DeploymentRequestDeploymentType): Success!
   registerPlatform(input: RegisterPlatformInput!): RegistrationResponse!
   unregisterPlatform(input: UnregisterPlatformInput!): Success!
   refreshUserPlatformToken: RefreshUserPlatformTokenResponse!
@@ -228,7 +230,7 @@ type Mutation {
   addCapabilitiesToUserServices(input: UserServicesAddCapabilitiesInput!, service_instance_id: ServiceInstanceId!): [UserService]
   editSeoServiceInstance(service_instance_id: ServiceInstanceId!, language: SeoServiceInstanceLanguage!, input: EditSeoServiceInstanceInput!): SeoServiceInstanceMetadata!
   addServicePicture(serviceInstanceId: ServiceInstanceId!, document: Upload, isLogo: Boolean!): ServiceInstance
-  updatePlatformServiceMetadata(input: UpdatePlatformServiceMetadataInput!, document: Upload): RegisteredPlatform
+  updatePlatformServiceMetadata(input: UpdatePlatformServiceMetadataInput!): RegisteredPlatform
   ingestManifestFragments(manifestFragments: [ManifestFragmentInput!]!): Success!
   generateManifest(product: PlatformIdentifier!, version: String!, type: ManifestType!): Success!
   addSolutionCategory(input: AddSolutionCategoryInput!): SolutionCategory!
@@ -397,6 +399,8 @@ type DeploymentRequest implements Node {
   platform_url: String
   parent_id: DeploymentRequestId
   url: String
+  registered_platform: RegisteredPlatform
+  service_instance: ServiceInstance
   children: [DeploymentRequest!]
 }
 
@@ -496,6 +500,19 @@ type DeploymentAvailability {
   availableCount: Int!
   capacity: Int!
   platform_identifier: PlatformIdentifier
+}
+
+type XtmoneIntegrationStatusEntry {
+  status: String!
+  connected: Boolean!
+  last_checked_at: String
+}
+
+type XtmoneIntegrationStatus {
+  opencti: XtmoneIntegrationStatusEntry!
+  openaev: XtmoneIntegrationStatusEntry!
+  linked: Boolean!
+  last_checked_at: String
 }
 
 type DeployedPlatform {
@@ -1171,6 +1188,7 @@ type RegisteredPlatform implements Node {
   illustration_document_id: DocumentId
   deployment_request: DeploymentRequest
   last_connectivity_check: Date
+  status: PlatformConfigurationStatus
   subscription: SubscriptionModel
   myGroups: [ServiceGroup!]
 }

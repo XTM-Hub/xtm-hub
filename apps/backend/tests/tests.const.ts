@@ -19,7 +19,9 @@ import { ServiceInstanceId } from '../src/model/kanel/public/ServiceInstance';
 import { UseCaseId } from '../src/model/kanel/public/UseCase';
 import { UserId } from '../src/model/kanel/public/User';
 import { PortalContext } from '../src/model/portal-context';
+import type { DeploymentRequestDataLoaders } from '../src/modules/deployment/deployment.dataloader';
 import type { DocumentDataLoaders } from '../src/modules/document/document.dataloader';
+import type { NewsFeedDataLoaders } from '../src/modules/news-feed/news-feed.dataloader';
 import type { ServiceInstanceDataLoaders } from '../src/modules/service/instance/service-instance.dataloader';
 import {
   CAPABILITY_BYPASS,
@@ -327,6 +329,11 @@ export const contextRegistererUserSecondOrga: PortalContext = {
       },
     ],
   },
+  dataLoaders: {
+    deploymentRequest: {
+      childrenByParentLoader: { load: () => Promise.resolve([]) },
+    } as unknown as DeploymentRequestDataLoaders,
+  },
 } as unknown as PortalContext;
 
 export const requestContextRegistererUserSecondOrga = {
@@ -398,6 +405,9 @@ export const contextSimpleUserFiligran2: PortalContext = {
     roles_portal: [],
   },
   dataLoaders: {
+    deploymentRequest: {
+      childrenByParentLoader: { load: () => Promise.resolve([]) },
+    } as unknown as DeploymentRequestDataLoaders,
     document: {
       uploaderLoader: { load: () => Promise.resolve(null) },
       uploaderOrganizationLoader: { load: () => Promise.resolve(null) },
@@ -411,6 +421,9 @@ export const contextSimpleUserFiligran2: PortalContext = {
         load: () => Promise.resolve(null),
       },
     } as unknown as DocumentDataLoaders,
+    newsFeed: {
+      metadataByNewsFeedItemIdLoader: { load: () => Promise.resolve([]) },
+    } as unknown as NewsFeedDataLoaders,
     serviceInstance: {
       linksByServiceInstanceLoader: { load: () => Promise.resolve([]) },
       serviceDefinitionByServiceInstanceLoader: {

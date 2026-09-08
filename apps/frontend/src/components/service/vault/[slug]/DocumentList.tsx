@@ -22,7 +22,7 @@ import useServiceCapability from '@/hooks/use-service-capability';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
-import { formatDate } from '@/utils/date';
+import { useDateFormatter } from '@/utils/date';
 import { APP_PATH } from '@/utils/path/constant';
 import { MoreVertIcon } from '@filigran/icon';
 import {
@@ -72,6 +72,7 @@ const DocumentList = ({ queryRef, serviceInstance }: ServiceProps) => {
     queryRef
   );
   const t = useTranslations();
+  const formatDate = useDateFormatter();
   const [editDocument, setEditDocument] = useState<
     documentItem_fragment$data | undefined
   >(undefined);

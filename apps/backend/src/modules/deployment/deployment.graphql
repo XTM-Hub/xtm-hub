@@ -142,6 +142,8 @@ type DeploymentRequest implements Node {
   platform_url: String
   parent_id: DeploymentRequestId
   url: String
+  registered_platform: RegisteredPlatform
+  service_instance: ServiceInstance
   children: [DeploymentRequest!]
 }
 
@@ -243,6 +245,19 @@ type DeploymentAvailability {
   platform_identifier: PlatformIdentifier
 }
 
+type XtmoneIntegrationStatusEntry {
+  status: String!
+  connected: Boolean!
+  last_checked_at: String
+}
+
+type XtmoneIntegrationStatus {
+  opencti: XtmoneIntegrationStatusEntry!
+  openaev: XtmoneIntegrationStatusEntry!
+  linked: Boolean!
+  last_checked_at: String
+}
+
 type DeployedPlatform {
   serviceInstanceId: ServiceInstanceId!
   platformIdentifier: PlatformIdentifier!
@@ -321,6 +336,10 @@ extend type Query {
   trialDeployments(input: TrialDeploymentsInput!): TrialsDeployments! @auth
   platformTrialStatus(organizationId: OrganizationId!): PlatformTrialStatus!
     @auth
+  xtmPlatformBundle: DeploymentRequest @auth
+  xtmonePlatformIntegrationStatus(
+    serviceInstanceId: ServiceInstanceId!
+  ): XtmoneIntegrationStatus @auth
 }
 
 extend type Mutation {

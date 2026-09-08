@@ -2,24 +2,28 @@
 import { ReachSalesMutation } from '@/components/service/trial-instances/reach-sales.graphql';
 import { ReachSalesDialogForm } from '@/components/service/trial-instances/reach-sales/ReachSalesDialogForm';
 import { DialogInformative } from '@/components/ui/Dialog';
-import { ArrowRightAltIcon } from '@filigran/icon';
 import { toast } from '@filigran/ui';
 import { Button, GradientButton } from '@filigran/ui/servers';
-import { PlatformIdentifier } from '@graphql/generated';
+import {
+  DeploymentRequestDeploymentType,
+  PlatformIdentifier,
+} from '@graphql/generated';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { useMutation } from 'react-relay';
 
 interface ReachSalesButtonProps {
   variant: 'default' | 'gradient' | 'secondary';
-  platformIdentifier: PlatformIdentifier;
+  platformIdentifier?: PlatformIdentifier;
   platformId?: string;
+  deploymentRequestType?: DeploymentRequestDeploymentType;
 }
 
 export const ReachSalesButton = ({
   variant,
   platformId,
   platformIdentifier,
+  deploymentRequestType,
 }: ReachSalesButtonProps) => {
   const t = useTranslations();
   const [commitReachSalesMutation, isInFlight] =
@@ -34,6 +38,7 @@ export const ReachSalesButton = ({
         message,
         platformId,
         platformIdentifier,
+        deploymentRequestType,
       },
       onError(error) {
         toast({
@@ -75,10 +80,8 @@ export const ReachSalesButton = ({
     return (
       <Button
         onClick={() => setIsConfirmationDialogOpen(true)}
-        className="ml-xl bg-background hover:bg-background text-[12px] px-2 py-0.5 min-h-0 h-auto"
         disabled={isInFlight}>
         {t('Service.Trials.ReachOutToSales')}
-        <ArrowRightAltIcon className="ml-s size-4" />
       </Button>
     );
   }, [variant, setIsConfirmationDialogOpen, isInFlight, t]);
@@ -90,7 +93,6 @@ export const ReachSalesButton = ({
         isDialogOpen={isConfirmationDialogOpen}
         setIsDialogOpen={setIsConfirmationDialogOpen}
         onSubmit={(message) => handleReachSales(message)}
-        platformIdentifier={platformIdentifier}
       />
       <DialogInformative
         isOpen={isInformationDialogOpen}

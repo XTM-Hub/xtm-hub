@@ -11,7 +11,7 @@ const ThreadConferenceBanner = async () => {
       href={THREAD_CONFERENCE_URL}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={t('Cta')}
+      aria-label={t('ThreadConference.AriaLabel')}
       className="block z-10">
       <div className="overflow-hidden rounded-lg bg-elevation-background-layer-1 dark:bg-black">
         <div className="flex flex-col items-start gap-m sm:flex-row sm:items-stretch">

@@ -4,7 +4,7 @@ import { LastDeployedOverview } from '@/components/homepage/last-deployed-resour
 import BadgeOverflowCounter from '@/components/ui/BadgeOverflowCounter';
 import { UserDisplay } from '@/components/ui/UserDisplay';
 import { cn } from '@/lib/utils';
-import { formatDate } from '@/utils/date';
+import { useDateFormatter } from '@/utils/date';
 import { ResourceTypeIcon } from '@/utils/shareable-resources/resource-type-icon';
 import {
   SHAREABLE_RESOURCE_SERVICE_DEFINITION_IDENTIFIER_MAPPING,
@@ -34,6 +34,7 @@ const LastDeployedResourceRow = ({
   resource,
 }: LastDeployedResourceRowProps) => {
   const t = useTranslations('HomePage.LastDeployedResources');
+  const formatDate = useDateFormatter();
   const deployedAt = formatDate(resource.deployedAt, 'DATE_MEDIUM');
 
   const { document } = resource;

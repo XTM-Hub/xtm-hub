@@ -5,11 +5,13 @@ export const ReachSalesMutation = graphql`
     $message: String
     $platformId: ID
     $platformIdentifier: PlatformIdentifier
+    $deploymentRequestType: DeploymentRequestDeploymentType
   ) {
     contactUs(
       message: $message
       platformId: $platformId
       platformIdentifier: $platformIdentifier
+      deploymentRequestType: $deploymentRequestType
     ) {
       success
     }

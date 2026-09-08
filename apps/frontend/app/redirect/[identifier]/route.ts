@@ -1,4 +1,5 @@
-import { PlatformIdentifier } from '@graphql/generated';
+import { isFeatureEnabled } from '@/utils/settings.service';
+import { FeatureFlag, PlatformIdentifier } from '@graphql/generated';
 import { NextRequest } from 'next/server';
 import { redirectToCreateFreeTrial } from './create-free-trial';
 import { redirectToFreeTrial } from './free-trial';
@@ -50,8 +51,14 @@ export async function GET(
     case 'free-trial':
       return redirectToFreeTrial(request);
     case 'create-free-trial':
+      if (await isFeatureEnabled(FeatureFlag.XtmPlatformTrial)) {
+        return redirectToFreeTrial(request);
+      }
       return redirectToCreateFreeTrial(request, PlatformIdentifier.Opencti);
     case 'create-openaev-free-trial':
+      if (await isFeatureEnabled(FeatureFlag.XtmPlatformTrial)) {
+        return redirectToFreeTrial(request);
+      }
       return redirectToCreateFreeTrial(request, PlatformIdentifier.Openaev);
   }
   return redirectToResource(awaitedParams, request);

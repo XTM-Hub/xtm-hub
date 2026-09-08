@@ -1,33 +1,26 @@
-import { formatDate, isWithinLastMonths } from '@/utils/date';
+import { isWithinLastMonths, useDateFormatter } from '@/utils/date';
 import { ProvidersWrapperProps, TestWrapper } from '@/utils/test/test-render';
 import { renderHook } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-describe('date', () => {
+describe('useDateFormatter', () => {
+  const wrapper = ({ children }: ProvidersWrapperProps) => (
+    <TestWrapper>{children}</TestWrapper>
+  );
+
   it('should return formatted date for valid input', () => {
-    expect(true).toBe(true);
-    const wrapper = ({ children }: ProvidersWrapperProps) => {
-      return <TestWrapper>{children}</TestWrapper>;
-    };
-    const { result } = renderHook(
-      () => formatDate('2024-11-08T10:20:30Z', false),
-      {
-        wrapper,
-      }
-    );
-    expect(result.current).toBe('11/8/2024');
+    const { result } = renderHook(() => useDateFormatter(), { wrapper });
+    expect(result.current('2024-11-08T10:20:30Z')).toBe('11/8/2024');
   });
 
-  it('should return null for undefined input', () => {
-    expect(formatDate(undefined)).toBe(null);
-  });
-
-  it('should return null for empty string input', () => {
-    expect(formatDate('')).toBe(null);
-  });
-
-  it('should return null for invalid date input', () => {
-    expect(formatDate(null)).toBe(null);
+  it.each`
+    input        | description
+    ${undefined} | ${'undefined'}
+    ${''}        | ${'empty string'}
+    ${null}      | ${'null'}
+  `('should return null for $description input', ({ input }) => {
+    const { result } = renderHook(() => useDateFormatter(), { wrapper });
+    expect(result.current(input)).toBe(null);
   });
 });
 

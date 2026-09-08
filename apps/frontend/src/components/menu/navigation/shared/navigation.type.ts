@@ -21,6 +21,7 @@ export interface BottomLink {
   icon: ElementType;
   label: string;
   external?: boolean;
+  highlight?: boolean;
 }
 
 export interface SectionConfig {

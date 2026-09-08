@@ -1,5 +1,6 @@
 'use client';
 
+import { invalidatePrivateNavigationQueries } from '@/components/menu/navigation/private/private-navigation-query-invalidation';
 import { SelectWithEditableField } from '@/components/service/registration/SelectWithEditableField';
 import { CancelDeploymentRequestMutation } from '@/components/service/trial-instances/trial-instances.graphql';
 import { useOrgaFreeTrial } from '@/components/service/trial-instances/useOrgaFreeTrials';
@@ -15,14 +16,19 @@ import {
 } from '@filigran/ui';
 import { trialInstancesCancelDeploymentRequestMutation } from '@generated/trialInstancesCancelDeploymentRequestMutation.graphql';
 import { PlatformIdentifier } from '@graphql/generated';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useMemo } from 'react';
 import { useMutation } from 'react-relay';
 import { z } from 'zod';
 
-const trialCancelSchema = z.object({
-  cancellation_reason: z.string().optional(),
-});
+const buildTrialCancelSchema = (requiredMessage: string) =>
+  z.object({
+    cancellation_reason: z.string().min(1, requiredMessage),
+  });
+
+type TrialCancelSchema = ReturnType<typeof buildTrialCancelSchema>;
 
 interface TrialCancelSheetProps {
   deploymentRequestId: string;
@@ -48,10 +54,20 @@ export const TrialCancelSheet = ({
   platformIdentifier,
 }: TrialCancelSheetProps) => {
   const t = useTranslations();
+  const trialCancelSchema = useMemo(
+    () =>
+      buildTrialCancelSchema(
+        t(
+          'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonRequired'
+        )
+      ),
+    [t]
+  );
   const cancellationReasons = REASONS.map((reason) => ({
     value: reason,
     label: t(`Service.Trials.CancellationReason.${reason}`),
   }));
+  const queryClient = useQueryClient();
   const { refetch } = useOrgaFreeTrial();
   const router = useRouter();
 
@@ -60,7 +76,7 @@ export const TrialCancelSheet = ({
       CancelDeploymentRequestMutation
     );
 
-  const onSubmit = (values: z.infer<typeof trialCancelSchema>) => {
+  const onSubmit = (values: z.infer<TrialCancelSchema>) => {
     cancelDeploymentRequestMutation({
       variables: {
         deploymentRequestId: deploymentRequestId,
@@ -76,6 +92,7 @@ export const TrialCancelSheet = ({
           title: t('Utils.Success'),
           description: t(descriptionKey),
         });
+        invalidatePrivateNavigationQueries(queryClient);
         refetch({}, { fetchPolicy: 'network-only' });
         setOpen(false);
 
@@ -110,7 +127,9 @@ export const TrialCancelSheet = ({
         }}
         fieldConfig={{
           cancellation_reason: {
-            label: 'Cancel Trial',
+            label: t(
+              'Service.Trials.Cancellation.ConfirmationForm.CancellationReason'
+            ),
             fieldType: ({ field }) => (
               <FormItem>
                 <FormLabel>
@@ -120,6 +139,7 @@ export const TrialCancelSheet = ({
                   <span className="text-sm text-destructive">*</span>
                 </FormLabel>
                 <SelectWithEditableField
+                  value={field.value}
                   onChange={field.onChange}
                   options={cancellationReasons}
                   labels={{

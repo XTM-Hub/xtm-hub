@@ -65,13 +65,16 @@ export const SharedNavigation = ({
       <Separator className="my-s" />
       <ul className="space-y-s pb-s">
         {bottomLinks.map((link) => (
-          <li key={link.key}>
+          <li
+            key={link.key}
+            className={link.highlight ? 'px-4 pt-s' : undefined}>
             <NavigationLinkMenu
               open={open}
               href={link.href}
               icon={link.icon}
               text={link.label}
               external={link.external}
+              highlight={link.highlight}
             />
           </li>
         ))}

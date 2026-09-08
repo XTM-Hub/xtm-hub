@@ -5,6 +5,7 @@ interface CountBadgeProps {
   bgFadedClass: string;
   textClass: string;
   className?: string;
+  fontClass?: string;
 }
 
 export const CountBadge = ({
@@ -12,6 +13,7 @@ export const CountBadge = ({
   bgFadedClass,
   textClass,
   className,
+  fontClass = 'content-body-base-medium',
 }: CountBadgeProps) => (
   <div
     className={cn(
@@ -19,8 +21,6 @@ export const CountBadge = ({
       className
     )}>
     <div className={cn('absolute inset-0 rounded-full', bgFadedClass)} />
-    <span className={cn('relative z-10 content-body-base-medium', textClass)}>
-      {count}
-    </span>
+    <span className={cn('relative z-10', fontClass, textClass)}>{count}</span>
   </div>
 );

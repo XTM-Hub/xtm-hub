@@ -104,7 +104,6 @@ describe('PlatformUpdateSheet', () => {
         serviceInstanceId: defaultProps.serviceInstanceId,
         name: defaultProps.serviceInstanceName,
       },
-      document: null,
     });
     expect(
       (testState.lastVariables as { input: Record<string, unknown> }).input

@@ -535,7 +535,7 @@ describe('deploymentRequestDomain', () => {
     });
   });
 
-  describe('loadTrialDeploymentRequestByPlatformIdentifierAndUserId', () => {
+  describe('loadLatestDeploymentRequestForUser', () => {
     afterEach(async () => {
       await TestHelper.deploymentRequest.deleteAllWithServiceInstanceAndSubscription();
     });
@@ -555,9 +555,12 @@ describe('deploymentRequestDomain', () => {
         );
 
       const result =
-        await DeploymentRequestDomain.loadTrialDeploymentRequestByPlatformIdentifierAndUserId(
-          platformIdentifier,
-          userId
+        await DeploymentRequestDomain.loadLatestDeploymentRequestForUser(
+          userId,
+          {
+            type: DeploymentRequestDeploymentType.Trial,
+            platform_identifier: platformIdentifier,
+          }
         );
 
       expect(result).toBeDefined();
@@ -581,9 +584,12 @@ describe('deploymentRequestDomain', () => {
         );
 
       const result =
-        await DeploymentRequestDomain.loadTrialDeploymentRequestByPlatformIdentifierAndUserId(
-          platformIdentifier,
-          userId
+        await DeploymentRequestDomain.loadLatestDeploymentRequestForUser(
+          userId,
+          {
+            type: DeploymentRequestDeploymentType.Trial,
+            platform_identifier: platformIdentifier,
+          }
         );
 
       expect(result).toBeDefined();
@@ -606,9 +612,12 @@ describe('deploymentRequestDomain', () => {
         );
 
       const result =
-        await DeploymentRequestDomain.loadTrialDeploymentRequestByPlatformIdentifierAndUserId(
-          platformIdentifier,
-          userId
+        await DeploymentRequestDomain.loadLatestDeploymentRequestForUser(
+          userId,
+          {
+            type: DeploymentRequestDeploymentType.Trial,
+            platform_identifier: platformIdentifier,
+          }
         );
 
       expect(result).toBeDefined();
@@ -632,9 +641,12 @@ describe('deploymentRequestDomain', () => {
       );
 
       const result =
-        await DeploymentRequestDomain.loadTrialDeploymentRequestByPlatformIdentifierAndUserId(
-          platformIdentifier,
-          userNotInOrganization
+        await DeploymentRequestDomain.loadLatestDeploymentRequestForUser(
+          userNotInOrganization,
+          {
+            type: DeploymentRequestDeploymentType.Trial,
+            platform_identifier: platformIdentifier,
+          }
         );
 
       expect(result).toBeUndefined();
@@ -654,12 +666,32 @@ describe('deploymentRequestDomain', () => {
       );
 
       const result =
-        await DeploymentRequestDomain.loadTrialDeploymentRequestByPlatformIdentifierAndUserId(
-          platformIdentifier,
-          userId
+        await DeploymentRequestDomain.loadLatestDeploymentRequestForUser(
+          userId,
+          {
+            type: DeploymentRequestDeploymentType.Trial,
+            platform_identifier: platformIdentifier,
+          }
         );
 
       expect(result).toBeUndefined();
+    });
+
+    it('should return the bundle deployment request for the user when filtering by type Bundle only', async () => {
+      const userId = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID as UserId;
+
+      const { bundle } = await TestHelper.deploymentRequest.createBundle();
+
+      const result =
+        await DeploymentRequestDomain.loadLatestDeploymentRequestForUser(
+          userId,
+          { type: DeploymentRequestDeploymentType.Bundle }
+        );
+
+      expect(result).toBeDefined();
+      expect(result?.id).toBe(bundle.id);
+
+      await TestHelper.deploymentRequest.deleteBundle(bundle.id);
     });
   });
 
@@ -797,6 +829,43 @@ describe('deploymentRequestDomain', () => {
       });
 
       expect(result).toBeUndefined();
+    });
+
+    it('should return the most recent deployment request by request_date when orderBy is provided and multiple rows match', async () => {
+      const region = DeploymentRequestPlatformRegion.UsEast;
+      const older =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          {
+            hub_status: DeploymentRequestHubStatus.Cancelled,
+            type: DeploymentRequestDeploymentType.Bundle,
+            platform_identifier: null,
+            region,
+            request_date: new Date(Date.UTC(2025, 0, 1)),
+          }
+        );
+      const newer =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          {
+            hub_status: DeploymentRequestHubStatus.Active,
+            type: DeploymentRequestDeploymentType.Bundle,
+            platform_identifier: null,
+            region,
+            request_date: new Date(Date.UTC(2025, 5, 1)),
+          }
+        );
+
+      const result = await DeploymentRequestDomain.loadFullDeploymentRequest(
+        {
+          type: DeploymentRequestDeploymentType.Bundle,
+          organization_requester_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        },
+        { orderBy: { column: 'request_date', order: OrderingMode.Desc } }
+      );
+
+      expect(result).toBeDefined();
+      expect(result!.id).toBe(newer.id);
+      expect(result!.id).not.toBe(older.id);
+      expect(result!.hub_status).toBe(DeploymentRequestHubStatus.Active);
     });
   });
 
@@ -1756,7 +1825,7 @@ describe('deploymentRequestDomain', () => {
     it.each`
       platformIdentifier            | shouldCreateAudience
       ${PlatformIdentifier.Openaev} | ${false}
-      ${PlatformIdentifier.Opencti} | ${true}
+      ${PlatformIdentifier.Opencti} | ${false}
       ${PlatformIdentifier.Xtmone}  | ${false}
     `(
       'should create an Auth0 audience for a $platformIdentifier instance: $shouldCreateAudience',

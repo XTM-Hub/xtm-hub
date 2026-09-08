@@ -445,8 +445,10 @@ export type DeploymentRequest = Node & {
   platform_identifier?: Maybe<PlatformIdentifier>;
   platform_url?: Maybe<Scalars['String']['output']>;
   region: DeploymentRequestPlatformRegion;
+  registered_platform?: Maybe<RegisteredPlatform>;
   request_date: Scalars['Date']['output'];
   requester_email?: Maybe<Scalars['String']['output']>;
+  service_instance?: Maybe<ServiceInstance>;
   service_instance_id: Scalars['ServiceInstanceId']['output'];
   start_date?: Maybe<Scalars['Date']['output']>;
   type: DeploymentRequestDeploymentType;
@@ -1190,6 +1192,7 @@ export type MutationChangeSelectedOrganizationArgs = {
 
 
 export type MutationContactUsArgs = {
+  deploymentRequestType?: InputMaybe<DeploymentRequestDeploymentType>;
   message?: InputMaybe<Scalars['String']['input']>;
   platformId?: InputMaybe<Scalars['ID']['input']>;
   platformIdentifier?: InputMaybe<PlatformIdentifier>;
@@ -1484,7 +1487,6 @@ export type MutationUpdateEpicArgs = {
 
 
 export type MutationUpdatePlatformServiceMetadataArgs = {
-  document?: InputMaybe<Scalars['Upload']['input']>;
   input: UpdatePlatformServiceMetadataInput;
 };
 
@@ -1889,6 +1891,8 @@ export type Query = {
   votingRound?: Maybe<VotingRound>;
   votingRoundResults: VotingRoundResults;
   votingRounds: Array<VotingRound>;
+  xtmPlatformBundle?: Maybe<DeploymentRequest>;
+  xtmonePlatformIntegrationStatus?: Maybe<XtmoneIntegrationStatus>;
 };
 
 
@@ -2218,6 +2222,11 @@ export type QueryVotingRoundsArgs = {
   service_instance_id?: InputMaybe<Scalars['ServiceInstanceId']['input']>;
 };
 
+
+export type QueryXtmonePlatformIntegrationStatusArgs = {
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+};
+
 export type RefreshPlatformRegistrationConnectivityStatusAllTenantsInput = {
   platformId: Scalars['String']['input'];
   platformIdentifier: PlatformIdentifier;
@@ -2273,6 +2282,7 @@ export type RegisteredPlatform = Node & {
   last_connectivity_check?: Maybe<Scalars['Date']['output']>;
   myGroups?: Maybe<Array<ServiceGroup>>;
   platform_id: Scalars['String']['output'];
+  status?: Maybe<PlatformConfigurationStatus>;
   subscription?: Maybe<SubscriptionModel>;
   tenant_id?: Maybe<Scalars['String']['output']>;
   tenant_name?: Maybe<Scalars['String']['output']>;
@@ -3134,6 +3144,21 @@ export enum VotingRoundTheme {
   Thread = 'thread'
 }
 
+export type XtmoneIntegrationStatus = {
+  __typename?: 'XtmoneIntegrationStatus';
+  last_checked_at?: Maybe<Scalars['String']['output']>;
+  linked: Scalars['Boolean']['output'];
+  openaev: XtmoneIntegrationStatusEntry;
+  opencti: XtmoneIntegrationStatusEntry;
+};
+
+export type XtmoneIntegrationStatusEntry = {
+  __typename?: 'XtmoneIntegrationStatusEntry';
+  connected: Scalars['Boolean']['output'];
+  last_checked_at?: Maybe<Scalars['String']['output']>;
+  status: Scalars['String']['output'];
+};
+
 export type WithIndex<TObject> = TObject & Record<string, any>;
 export type ResolversObject<TObject> = WithIndex<TObject>;
 
@@ -3466,6 +3491,8 @@ export type ResolversTypes = ResolversObject<{
   VotingRoundResults: ResolverTypeWrapper<Omit<VotingRoundResults, 'results' | 'round'> & { results: Array<ResolversTypes['VotableFeatureResult']>, round: ResolversTypes['VotingRound'] }>;
   VotingRoundStatus: VotingRoundStatus;
   VotingRoundTheme: VotingRoundTheme;
+  XtmoneIntegrationStatus: ResolverTypeWrapper<XtmoneIntegrationStatus>;
+  XtmoneIntegrationStatusEntry: ResolverTypeWrapper<XtmoneIntegrationStatusEntry>;
 }>;
 
 /** Mapping between all available schema types and the resolvers parents */
@@ -3673,6 +3700,8 @@ export type ResolversParentTypes = ResolversObject<{
   VotingRound: VotingRoundModel;
   VotingRoundId: Scalars['VotingRoundId']['output'];
   VotingRoundResults: Omit<VotingRoundResults, 'results' | 'round'> & { results: Array<ResolversParentTypes['VotableFeatureResult']>, round: ResolversParentTypes['VotingRound'] };
+  XtmoneIntegrationStatus: XtmoneIntegrationStatus;
+  XtmoneIntegrationStatusEntry: XtmoneIntegrationStatusEntry;
 }>;
 
 export type AuthDirectiveArgs = {
@@ -3941,8 +3970,10 @@ export type DeploymentRequestResolvers<ContextType = PortalContext, ParentType e
   platform_identifier?: Resolver<Maybe<ResolversTypes['PlatformIdentifier']>, ParentType, ContextType>;
   platform_url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   region?: Resolver<ResolversTypes['DeploymentRequestPlatformRegion'], ParentType, ContextType>;
+  registered_platform?: Resolver<Maybe<ResolversTypes['RegisteredPlatform']>, ParentType, ContextType>;
   request_date?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   requester_email?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  service_instance?: Resolver<Maybe<ResolversTypes['ServiceInstance']>, ParentType, ContextType>;
   service_instance_id?: Resolver<ResolversTypes['ServiceInstanceId'], ParentType, ContextType>;
   start_date?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   type?: Resolver<ResolversTypes['DeploymentRequestDeploymentType'], ParentType, ContextType>;
@@ -4515,6 +4546,8 @@ export type QueryResolvers<ContextType = PortalContext, ParentType extends Resol
   votingRound?: Resolver<Maybe<ResolversTypes['VotingRound']>, ParentType, ContextType, RequireFields<QueryVotingRoundArgs, 'id'>>;
   votingRoundResults?: Resolver<ResolversTypes['VotingRoundResults'], ParentType, ContextType, RequireFields<QueryVotingRoundResultsArgs, 'id'>>;
   votingRounds?: Resolver<Array<ResolversTypes['VotingRound']>, ParentType, ContextType, Partial<QueryVotingRoundsArgs>>;
+  xtmPlatformBundle?: Resolver<Maybe<ResolversTypes['DeploymentRequest']>, ParentType, ContextType>;
+  xtmonePlatformIntegrationStatus?: Resolver<Maybe<ResolversTypes['XtmoneIntegrationStatus']>, ParentType, ContextType, RequireFields<QueryXtmonePlatformIntegrationStatusArgs, 'serviceInstanceId'>>;
 }>;
 
 export type RefreshPlatformRegistrationConnectivityStatusAllTenantsResponseResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse'] = ResolversParentTypes['RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse']> = ResolversObject<{
@@ -4541,6 +4574,7 @@ export type RegisteredPlatformResolvers<ContextType = PortalContext, ParentType 
   last_connectivity_check?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   myGroups?: Resolver<Maybe<Array<ResolversTypes['ServiceGroup']>>, ParentType, ContextType>;
   platform_id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  status?: Resolver<Maybe<ResolversTypes['PlatformConfigurationStatus']>, ParentType, ContextType>;
   subscription?: Resolver<Maybe<ResolversTypes['SubscriptionModel']>, ParentType, ContextType>;
   tenant_id?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   tenant_name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -5123,6 +5157,21 @@ export type VotingRoundResultsResolvers<ContextType = PortalContext, ParentType 
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type XtmoneIntegrationStatusResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['XtmoneIntegrationStatus'] = ResolversParentTypes['XtmoneIntegrationStatus']> = ResolversObject<{
+  last_checked_at?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  linked?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  openaev?: Resolver<ResolversTypes['XtmoneIntegrationStatusEntry'], ParentType, ContextType>;
+  opencti?: Resolver<ResolversTypes['XtmoneIntegrationStatusEntry'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type XtmoneIntegrationStatusEntryResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['XtmoneIntegrationStatusEntry'] = ResolversParentTypes['XtmoneIntegrationStatusEntry']> = ResolversObject<{
+  connected?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  last_checked_at?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type Resolvers<ContextType = PortalContext> = ResolversObject<{
   BundleUserServiceGroup?: BundleUserServiceGroupResolvers<ContextType>;
   CanUnregisterResponse?: CanUnregisterResponseResolvers<ContextType>;
@@ -5255,6 +5304,8 @@ export type Resolvers<ContextType = PortalContext> = ResolversObject<{
   VotingRound?: VotingRoundResolvers<ContextType>;
   VotingRoundId?: GraphQLScalarType;
   VotingRoundResults?: VotingRoundResultsResolvers<ContextType>;
+  XtmoneIntegrationStatus?: XtmoneIntegrationStatusResolvers<ContextType>;
+  XtmoneIntegrationStatusEntry?: XtmoneIntegrationStatusEntryResolvers<ContextType>;
 }>;
 
 export type DirectiveResolvers<ContextType = PortalContext> = ResolversObject<{

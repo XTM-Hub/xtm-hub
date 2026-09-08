@@ -19,10 +19,11 @@ import { NewsFeedDomain } from './news-feed.domain';
 const newsFeedResolver: Resolvers = {
   NewsFeedItemId: createRelayIdScalar<NewsFeedItemId>('NewsFeedItem'),
   NewsFeedItem: {
-    metadata: async (parent: NewsFeedItem) => {
-      const metadata = await NewsFeedDomain.loadMetadataByNewsFeedItemId(
-        parent.id as NewsFeedItemId
-      );
+    metadata: async (parent: NewsFeedItem, _args, context: PortalContext) => {
+      const metadata =
+        await context.dataLoaders.newsFeed.metadataByNewsFeedItemIdLoader.load(
+          parent.id as NewsFeedItemId
+        );
       return metadata.map((m) => ({
         key: m.key as NewsFeedItemMetadataKey,
         value: m.value,

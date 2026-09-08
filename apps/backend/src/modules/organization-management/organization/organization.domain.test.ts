@@ -75,45 +75,4 @@ describe('organizationsDomain', () => {
       expect(result?.id).toBe(TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID);
     });
   });
-
-  describe('loadOrganizationsSubscribedToServiceInstance', () => {
-    it('should return an empty array when no organizations are subscribed to a service instance', async () => {
-      // Given
-      const serviceInstance = await TestHelper.serviceInstance.create();
-
-      // When
-      const result =
-        await OrganizationDomain.loadOrganizationsSubscribedToServiceInstance(
-          serviceInstance.id
-        );
-
-      // Then
-      expect(result).toEqual([]);
-    });
-
-    it('should return all subscribed organizations', async () => {
-      // Given
-      const serviceInstance = await TestHelper.serviceInstance.create();
-      await TestHelper.subscription.create({
-        service_instance_id: serviceInstance.id,
-        organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-      });
-      await TestHelper.subscription.create({
-        service_instance_id: serviceInstance.id,
-        organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
-      });
-
-      // When
-      const result =
-        await OrganizationDomain.loadOrganizationsSubscribedToServiceInstance(
-          serviceInstance.id
-        );
-
-      // Then
-      const orgIds = result.map((org) => org.id);
-      expect(result).toHaveLength(2);
-      expect(orgIds).toContain(TEST_ORGANIZATIONS.FILIGRAN.ID);
-      expect(orgIds).toContain(TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID);
-    });
-  });
 });

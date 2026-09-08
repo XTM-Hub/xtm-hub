@@ -11,7 +11,7 @@ import { useTranslations } from 'next-intl';
 
 interface ConnectProductButtonProps {
   onCloseDropdown?: () => void;
-  variant?: 'default' | 'secondary';
+  variant?: 'default' | 'secondary' | 'tertiary';
 }
 
 export const ConnectProductButton = ({

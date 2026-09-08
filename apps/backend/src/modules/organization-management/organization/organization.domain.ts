@@ -67,29 +67,6 @@ export const OrganizationDomain = {
       .first();
   },
 
-  loadOrganizationsSubscribedToServiceInstance: async (
-    serviceInstanceId: ServiceInstanceId
-  ): Promise<Organization[]> => {
-    return db<Organization>('Organization')
-      .leftJoin(
-        'Subscription',
-        'Subscription.organization_id',
-        '=',
-        'Organization.id'
-      )
-      .leftJoin(
-        'ServiceInstance',
-        'Subscription.service_instance_id',
-        '=',
-        'ServiceInstance.id'
-      )
-      .where({
-        'ServiceInstance.id': serviceInstanceId,
-      })
-      .distinct('Organization.id')
-      .select('Organization.*');
-  },
-
   loadOrganizationsByUser: async (userId: UserId): Promise<Organization[]> => {
     return db<Organization>('Organization')
       .leftJoin(

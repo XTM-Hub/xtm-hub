@@ -9,7 +9,7 @@ import { PlatformUpdateSheet } from '@/components/service/components/PlatformUpd
 import { UnregisterButton } from '@/components/service/registration/UnregisterButton';
 import { TrialsManageUsersDialog } from '@/components/service/trial-instances/manage-users/TrialsManageUsersDialog';
 import { TrialCancelSheet } from '@/components/service/trial-instances/TrialCancelSheet';
-import { formatDate, isWithinLastMonths } from '@/utils/date';
+import { isWithinLastMonths, useDateFormatter } from '@/utils/date';
 import { formatTitleCase } from '@/utils/format/case';
 import { Button } from '@filigran/ui/servers';
 import { registeredPlatformByServiceInstanceId_fragment$key } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
@@ -34,6 +34,7 @@ export const RegistrationDetails = ({
   registeredPlatform,
 }: RegistrationDetailsProps) => {
   const t = useTranslations();
+  const formatDate = useDateFormatter();
   const searchParams = useSearchParams();
   const openForm = searchParams.get('openForm') === 'true';
 

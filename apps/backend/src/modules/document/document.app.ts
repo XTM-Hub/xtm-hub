@@ -235,7 +235,6 @@ export const DocumentApp = {
     void NewsFeedApp.upsertResourceNewsFeed({
       documentBeforeUpdate: undefined,
       updatedDocument: createdDocument,
-      serviceInstanceId,
       serviceDefinitionIdentifier: serviceDefinition.identifier,
     });
 
@@ -459,7 +458,6 @@ export const DocumentApp = {
     void NewsFeedApp.upsertResourceNewsFeed({
       documentBeforeUpdate,
       updatedDocument,
-      serviceInstanceId,
       serviceDefinitionIdentifier: serviceDefinition.identifier,
     });
 

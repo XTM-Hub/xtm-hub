@@ -64,6 +64,46 @@
     "EE": "エンタープライズ版",
     "TRIAL": "無料トライアル"
   },
+  "XtmPlatformTrial": {
+    "BundleInfo": {
+      "OrganizationName": "組織",
+      "StartedOn": "開始日",
+      "License": "ライセンス",
+      "Remaining": "残り",
+      "DaysRemaining": "{days} 日",
+      "TrialRequester": "トライアル申請者",
+      "Title": "XTM製品トライアルの詳細:"
+    },
+    "Products": {
+      "ConnectionStatus": "接続ステータス",
+      "LastConnection": "最終接続確認",
+      "Role": "ロール",
+      "NoRole": "なし。",
+      "NoRoleHint": "トライアル申請者にお問い合わせください。",
+      "StatusActive": "接続済み",
+      "StatusNotConnected": "未接続",
+      "AccessProduct": "{productName}にアクセス",
+      "StatusUnavailable": "ステータスを取得できません",
+      "ProductName": "製品名",
+      "Connection": "{productName}接続",
+      "EditName": "名前を編集",
+      "ConnectionLost": "接続が切断されました。",
+      "ReconnectHint": "製品を再接続してください。"
+    },
+    "CancelTrial": "トライアルをキャンセル",
+    "CancelDialog": {
+      "Title": "トライアルをキャンセル",
+      "Description": "このトライアルをキャンセルしてもよろしいですか？",
+      "Warning": "一度キャンセルすると、新しいトライアルを再申請できなくなります"
+    },
+    "Title": "XTMプラットフォームトライアルへようこそ",
+    "Subtitle": "トライアルに必要なすべてがここにあります。トライアルの詳細と残り時間、製品への直接アクセス、そしてサポートが必要なときや質問があるときにFiligranチームに直接連絡できます。",
+    "Guide": {
+      "Title": "XTMプラットフォームトライアルガイド",
+      "Content": "私たちが構築しているもの、次に登場するもの、そしてXTMプラットフォームが目指す方向をご覧ください。完全な透明性。驚きはありません。",
+      "SeeMore": "詳細を見る"
+    }
+  },
   "Datatable": {
     "Asc": "として",
     "Columns": "列",
@@ -370,7 +410,8 @@
       "Details": "詳細",
       "Documentation": "ドキュメント",
       "ConnectPlatform": "{platformName} を接続",
-      "Trial": "トライアル"
+      "Trial": "トライアル",
+      "EE": "EE"
     }
   },
   "HomePage": {
@@ -514,6 +555,7 @@
   },
   "Menu": {
     "XTMPlatform": "XTMプラットフォーム",
+    "XTMPlatformTrial": "XTMプラットフォームトライアル",
     "StartFreeTrial": "無料トライアルを開始",
     "CustomDashboards": "カスタムダッシュボード",
     "CustomViews": "カスタムビュー",
@@ -1568,15 +1610,45 @@
             "Submit": "XTM Platform トライアルを申請"
           },
           "NotLoggedIn": {
-            "Title": "トライアルを申請するにはログインが必要です",
+            "Title": "トライアルを申請するにはログインが必要です。",
             "Description": "XTM アカウントを作成するか、既存のアカウントでログインしてください。"
           },
           "NotAdmin": {
-            "Title": "トライアルを申請するには組織の管理者である必要があります",
+            "Title": "トライアルを申請するには組織の管理者である必要があります。",
             "Description": "所属企業の組織管理者にお問い合わせください"
           },
           "PersonalSpace": {
             "Title": "個人スペースではトライアルをご利用いただけません"
+          },
+          "Status": {
+            "RequestedOn": "申請日",
+            "StartedOn": "開始日",
+            "CancelledOn": "キャンセル日",
+            "FinishedOn": "終了日",
+            "ProductsIncluded": "トライアルに含まれる製品",
+            "ProductsIncludedInRequest": "トライアル申請に含まれる製品",
+            "CancelTrialRequest": "トライアル申請をキャンセル",
+            "request-in-progress": {
+              "Title": "ありがとうございます。リクエストを受け付けました。",
+              "Description": "担当チームより間もなくご連絡いたします。"
+            },
+            "cancelled": {
+              "Title": "誠に残念ながら、トライアルはキャンセルされました。",
+              "Description": "トライアル期間を再度申請する資格はなくなりました。\nEnterprise Edition ライセンスを再度ご利用になりたい場合は、営業担当までお問い合わせください。"
+            },
+            "expired": {
+              "Title": "XTM Platform をお試しいただきありがとうございました。ご満足いただけましたら幸いです。",
+              "Description": "トライアル期間が終了しました。引き続き Enterprise Edition ライセンスをご利用になりたい場合は、営業チームまでお問い合わせください。"
+            },
+            "failed": {
+              "Title": "トライアルの申請を完了できませんでした",
+              "Description": "トライアルのプロビジョニング中に問題が発生しました。サポートが必要な場合は営業担当までお問い合わせください。"
+            },
+            "Stepper": {
+              "Pending": "保留中",
+              "Provisioning": "プロビジョニング中",
+              "Active": "アクティブ"
+            }
           }
         }
       },
@@ -1588,6 +1660,7 @@
       "GoToMyTrial": "私のトライアルへ",
       "InfoPersonalSpace": "個人のスペースではトライアルを開始できません。組織のスペースに移動してください。",
       "ReachOutToSales": "営業に連絡する",
+      "ReachOutToSalesMessageLabel": "メッセージ",
       "ReachOutToSalesMessagePlaceholder": "あなたのメッセージ",
       "NeedSupport": "サポート希望",
       "ReachOutToSalesSuccessTitle": "ありがとうございます",
@@ -1605,7 +1678,8 @@
           "CancellationReason": "キャンセル理由",
           "CancellationReasonPlaceholder": "理由を選択してください",
           "CancellationReasonOther": "その他",
-          "CancellationReasonOtherPlaceholder": "理由をご記入ください"
+          "CancellationReasonOtherPlaceholder": "理由をご記入ください",
+          "CancellationReasonRequired": "キャンセル理由を選択してください"
         },
         "Confirmation": {
           "Title": "体験キャンセル",
@@ -1990,7 +2064,8 @@
     "Description": "世界的な脅威インテリジェンスおよびサイバー防衛コミュニティによる年次集会――インテリジェンス、リスク管理、そして実践が一堂に会する場。",
     "Date": "2026年10月15日 | パリ",
     "ImageAlt": "Thread Conference バナー",
-    "Cta": "詳細はこちら"
+    "Cta": "詳細はこちら",
+    "AriaLabel": "Thread Conferenceに参加しませんか？詳細はこちらをご覧ください。"
   },
   "UnexpectedErrorDialog": {
     "Description": "再度ログインをお試しください。それでも問題が解決しない場合は、お問い合わせください。",
@@ -2161,7 +2236,6 @@
     "UpdateMetadata": "プラットフォームメタデータの更新",
     "Name": "プラットフォーム名",
     "NamePlaceholder": "プラットフォーム名を入力",
-    "IllustrationImage": "イラストイメージ",
     "Updated": "{platformName} は正常に更新されました"
   },
   "Region": {

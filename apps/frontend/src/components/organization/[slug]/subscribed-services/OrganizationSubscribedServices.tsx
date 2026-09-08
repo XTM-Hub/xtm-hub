@@ -9,7 +9,7 @@ import { useTablePagination } from '@/hooks/use-table-pagination';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
-import { formatDate } from '@/utils/date';
+import { useDateFormatter } from '@/utils/date';
 import { Badge, DataTable, DataTableHeadBarOptions } from '@filigran/ui';
 import {
   OrderingMode,
@@ -35,6 +35,7 @@ const OrganizationSubscribedServicesSlug = ({
   organizationId,
 }: OrganizationSubscribedServicesProps) => {
   const t = useTranslations();
+  const formatDate = useDateFormatter();
   const [searchTerm, setSearchTerm] = useState('');
   const columns = useMemo<
     ColumnDef<OrganizationSubscribedServiceRowFragment>[]
@@ -114,7 +115,7 @@ const OrganizationSubscribedServicesSlug = ({
         },
       },
     ],
-    [t]
+    [t, formatDate]
   );
   const {
     pageSize,

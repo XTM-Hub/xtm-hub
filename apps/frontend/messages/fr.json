@@ -64,6 +64,46 @@
     "EE": "Édition Entreprise",
     "TRIAL": "Essai gratuit"
   },
+  "XtmPlatformTrial": {
+    "BundleInfo": {
+      "OrganizationName": "Organisation",
+      "StartedOn": "Démarré le",
+      "License": "Licence",
+      "Remaining": "Restant",
+      "DaysRemaining": "{days} jours",
+      "TrialRequester": "Demandeur de l'essai",
+      "Title": "Détails de l'essai XTM Product :"
+    },
+    "Products": {
+      "ConnectionStatus": "Statut de connexion",
+      "LastConnection": "Dernière vérification de connexion",
+      "Role": "Rôle",
+      "NoRole": "Aucun.",
+      "NoRoleHint": "Veuillez contacter le demandeur de l'essai.",
+      "StatusActive": "Connecté",
+      "StatusNotConnected": "Non connecté",
+      "AccessProduct": "Accéder à {productName}",
+      "StatusUnavailable": "Statut indisponible",
+      "ProductName": "Nom du produit",
+      "Connection": "Connexion {productName}",
+      "EditName": "Modifier le nom",
+      "ConnectionLost": "Connexion perdue.",
+      "ReconnectHint": "Vous devriez reconnecter votre produit."
+    },
+    "CancelTrial": "Annuler l'essai",
+    "CancelDialog": {
+      "Title": "Annuler l'essai",
+      "Description": "Êtes-vous sûr de vouloir annuler cet essai ?",
+      "Warning": "Une fois annulé, vous ne pourrez pas demander un nouvel essai"
+    },
+    "Title": "Bienvenue dans votre essai XTM Platform",
+    "Subtitle": "Tout ce dont vous avez besoin pour votre essai se trouve ici : les détails de votre essai et le temps restant, un accès direct à vos produits, et une ligne directe avec l'équipe Filigran dès que vous avez besoin d'assistance ou des questions.",
+    "Guide": {
+      "Title": "Guide de l'essai XTM Platform",
+      "Content": "Découvrez ce que nous construisons, ce qui arrive ensuite et où se dirige la plateforme XTM. Transparence totale. Aucune surprise.",
+      "SeeMore": "Voir plus"
+    }
+  },
   "Datatable": {
     "Asc": "Asc",
     "Columns": "Colonnes",
@@ -370,7 +410,8 @@
       "Details": "Détails",
       "Documentation": "Documentation",
       "ConnectPlatform": "Connecter {platformName}",
-      "Trial": "Essai"
+      "Trial": "Essai",
+      "EE": "EE"
     }
   },
   "HomePage": {
@@ -514,6 +555,7 @@
   },
   "Menu": {
     "XTMPlatform": "Plateforme XTM",
+    "XTMPlatformTrial": "Essai Plateforme XTM",
     "StartFreeTrial": "Commencer l'essai gratuit",
     "CustomDashboards": "Tableaux de bord personnalisés",
     "CustomViews": "Vues personnalisées",
@@ -1568,15 +1610,45 @@
             "Submit": "Demander l'essai XTM Platform"
           },
           "NotLoggedIn": {
-            "Title": "Vous devez être connecté pour pouvoir demander un essai",
+            "Title": "Vous devez être connecté pour pouvoir demander un essai.",
             "Description": "Créez un compte XTM ou connectez-vous à un compte existant."
           },
           "NotAdmin": {
-            "Title": "Vous devez être administrateur de l'organisation pour demander un essai",
+            "Title": "Vous devez être administrateur de l'organisation pour demander un essai.",
             "Description": "Contactez l'administrateur de l'organisation dans votre entreprise"
           },
           "PersonalSpace": {
             "Title": "Les essais ne sont pas disponibles dans un espace personnel"
+          },
+          "Status": {
+            "RequestedOn": "Demandé le",
+            "StartedOn": "Démarré le",
+            "CancelledOn": "Annulé le",
+            "FinishedOn": "Terminé le",
+            "ProductsIncluded": "Produits inclus dans votre essai",
+            "ProductsIncludedInRequest": "Produits inclus dans votre demande d'essai",
+            "CancelTrialRequest": "Annuler la demande d'essai",
+            "request-in-progress": {
+              "Title": "Merci ! Nous avons bien reçu votre demande.",
+              "Description": "Notre équipe vous contactera très prochainement."
+            },
+            "cancelled": {
+              "Title": "Malheureusement, votre essai a été annulé.",
+              "Description": "Vous n'êtes plus éligible pour demander une nouvelle période d'essai. \nSi vous souhaitez de nouveau utiliser une licence Enterprise Edition, merci de contacter notre équipe commerciale."
+            },
+            "expired": {
+              "Title": "Merci d'avoir essayé la XTM Platform, nous espérons que cette expérience vous a plu.",
+              "Description": "Votre période d'essai est terminée. Si vous souhaitez continuer à utiliser une licence Enterprise Edition, merci de contacter notre équipe commerciale."
+            },
+            "failed": {
+              "Title": "Votre demande d'essai n'a pas pu aboutir",
+              "Description": "Une erreur est survenue lors du provisionnement de votre essai. Merci de contacter notre équipe commerciale pour obtenir de l'aide."
+            },
+            "Stepper": {
+              "Pending": "En attente",
+              "Provisioning": "Provisionnement",
+              "Active": "Actif"
+            }
           }
         }
       },
@@ -1588,6 +1660,7 @@
       "GoToMyTrial": "Accéder à ma version d'évaluation",
       "InfoPersonalSpace": "Vous ne pouvez pas commencer un essai dans votre espace personnel - veuillez passer à l'espace de votre organisation",
       "ReachOutToSales": "Contactez nous",
+      "ReachOutToSalesMessageLabel": "Message",
       "ReachOutToSalesMessagePlaceholder": "Votre message",
       "NeedSupport": "Besoin d'aide",
       "ReachOutToSalesSuccessTitle": "Merci !",
@@ -1605,7 +1678,8 @@
           "CancellationReason": "Raison de l'annulation",
           "CancellationReasonPlaceholder": "Sélectionnez une raison",
           "CancellationReasonOther": "Autre",
-          "CancellationReasonOtherPlaceholder": "Ecrivez votre raison ici"
+          "CancellationReasonOtherPlaceholder": "Ecrivez votre raison ici",
+          "CancellationReasonRequired": "Veuillez sélectionner une raison d'annulation"
         },
         "Confirmation": {
           "Title": "Annulation de l'essai",
@@ -1990,7 +2064,8 @@
     "Description": "Le rendez-vous annuel de la communauté mondiale du renseignement sur les menaces et de la cyberdéfense, où se croisent renseignement, gestion des risques et action.",
     "Date": "15 octobre 2026 | Paris",
     "ImageAlt": "Bannière de la conférence Thread",
-    "Cta": "En savoir plus"
+    "Cta": "En savoir plus",
+    "AriaLabel": "Souhaitez-vous participer à la Thread Conference ? En savoir plus ici."
   },
   "UnexpectedErrorDialog": {
     "Description": "Veuillez essayer de vous connecter à nouveau. Si le problème persiste, contactez-nous pour obtenir de l'aide.",
@@ -2161,7 +2236,6 @@
     "UpdateMetadata": "Mettre à jour les métadonnées de la plateforme",
     "Name": "Nom de la plateforme",
     "NamePlaceholder": "Entrez le nom de la plateforme",
-    "IllustrationImage": "Image d'illustration",
     "Updated": "{platformName} a été mis à jour avec succès"
   },
   "Region": {

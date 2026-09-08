@@ -9,7 +9,7 @@ import {
 } from '@/components/service/document/ui/ShareableResourceEntityTypes';
 import { UserDisplay } from '@/components/ui/UserDisplay';
 import { roundToNearest } from '@/lib/utils';
-import { formatDate } from '@/utils/date';
+import { useDateFormatter } from '@/utils/date';
 import { platformIdentifierMappedByShareableResourceType } from '@/utils/services';
 import {
   isIntegrationItem,
@@ -45,6 +45,7 @@ const ShareableResourceDetails = ({
   downloadNumber,
 }: ShareableResourceDetailsProps) => {
   const t = useTranslations();
+  const formatDate = useDateFormatter();
   const platformIdentifier =
     platformIdentifierMappedByShareableResourceType[
       documentData.type as ShareableResourceType

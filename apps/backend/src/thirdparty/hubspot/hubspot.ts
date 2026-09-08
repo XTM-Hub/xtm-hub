@@ -126,11 +126,13 @@ export const hubspotReachOutSalesHook = async ({
   platformId,
   platformIdentifier = PlatformIdentifier.Opencti,
   platformToken,
+  deploymentRequestType,
 }: {
   message?: string;
   platformIdentifier?: PlatformIdentifier;
   platformId?: string;
   platformToken?: string;
+  deploymentRequestType?: DeploymentRequestDeploymentType;
 }) =>
   hubspotHook('reachOutSales', async () => {
     const user = requestContext.requireUser();
@@ -173,11 +175,39 @@ export const hubspotReachOutSalesHook = async ({
         );
       }
     } else if (user?.id) {
-      deploymentRequest =
-        await DeploymentRequestDomain.loadTrialDeploymentRequestByPlatformIdentifierAndUserId(
-          platformIdentifier,
-          user.id
-        );
+      if (deploymentRequestType === DeploymentRequestDeploymentType.Bundle) {
+        const bundle =
+          await DeploymentRequestDomain.loadLatestDeploymentRequestForUser(
+            user.id,
+            { type: DeploymentRequestDeploymentType.Bundle }
+          );
+        if (bundle) {
+          const children =
+            await DeploymentRequestDomain.loadChildrenByParentIds([bundle.id]);
+          const products = children
+            .map((child) => child.platform_identifier)
+            .filter((identifier): identifier is PlatformIdentifier =>
+              Boolean(identifier)
+            );
+          return {
+            email: bundle.requester_email,
+            firstname: bundle.requester_first_name,
+            lastname: bundle.requester_last_name,
+            company: bundle.organization_name,
+            message: `${products.join(', ')}: Message sent for free trial: ${bundle.hub_status.toLowerCase()} ${bundle.type}.\n\n${message}`,
+          };
+        }
+      } else {
+        deploymentRequest =
+          await DeploymentRequestDomain.loadLatestDeploymentRequestForUser(
+            user.id,
+            {
+              type: DeploymentRequestDeploymentType.Trial,
+              platform_identifier: platformIdentifier,
+            }
+          );
+      }
+
       if (!deploymentRequest) {
         return {
           email: user.email,

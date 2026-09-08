@@ -11,8 +11,9 @@ import {
 } from '@/components/menu/navigation/shared/navigation.type';
 import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { APP_PATH } from '@/utils/path/constant';
+import { APP_PATH, XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
 import {
+  DiamondOutlinedIcon,
   HomeIcon,
   IndividualIcon,
   LogoXtmOneIcon,
@@ -48,7 +49,7 @@ import { useContext, useMemo } from 'react';
 const PRIVATE_NAVIGATION_REGISTERED_PLATFORMS_VARIABLES = {
   input: {
     identifier: null,
-    onlyActive: null,
+    onlyActive: true,
     onlyTrial: null,
     hasDeployedResources: null,
   },
@@ -93,6 +94,9 @@ export const usePrivateNavigation = (): NavigationConfig => {
     useContext(PortalContext);
   const tMenu = useTranslations('Menu');
   const tMenuLinks = useTranslations('MenuLinks');
+  const isXtmPlatformTrialEnabled = useIsFeatureEnabled(
+    FeatureFlag.XtmPlatformTrial
+  );
   const locale = useLocale();
   const selectedOrganizationId = me?.selected_organization_id;
   const currentOrganization = me?.organizations.find(
@@ -106,9 +110,6 @@ export const usePrivateNavigation = (): NavigationConfig => {
     ) ||
       hasOrganizationCapability(OrganizationCapability.ManageAccess));
   const isBypass = hasCapability?.(PortalCapability.Bypass) ?? false;
-  const isXtmPlatformTrialEnabled = useIsFeatureEnabled(
-    FeatureFlag.XtmPlatformTrial
-  );
   const settingsLinksConfig: SettingsLinkConfig[] = [
     {
       href: `/${APP_PATH}/admin/parameters`,
@@ -265,10 +266,15 @@ export const usePrivateNavigation = (): NavigationConfig => {
     [registeredPlatformsQueryData]
   );
   const trialDeployments = trialEligibilityData?.trialDeployments;
+  const canShowXtmPlatformTrialLink =
+    isXtmPlatformTrialEnabled && !trialDeployments?.isBlacklisted;
   const getStartFreeTrialLinks = (
     platformIdentifier: PlatformIdentifier,
     href: string
   ): SectionLink[] => {
+    if (isXtmPlatformTrialEnabled) {
+      return [];
+    }
     if (trialDeployments) {
       if (trialDeployments.isBlacklisted) {
         return [];
@@ -482,6 +488,17 @@ export const usePrivateNavigation = (): NavigationConfig => {
       label: tMenu('Slack'),
       external: true,
     },
+    ...(canShowXtmPlatformTrialLink
+      ? [
+          {
+            key: 'xtm-platform-trial',
+            href: XTM_PLATFORM_TRIAL_PATH,
+            icon: DiamondOutlinedIcon,
+            label: tMenu('XTMPlatformTrial'),
+            highlight: true,
+          },
+        ]
+      : []),
   ];
   return { sections, bottomLinks, footerSections };
 };

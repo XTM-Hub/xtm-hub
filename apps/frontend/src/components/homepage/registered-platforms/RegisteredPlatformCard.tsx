@@ -6,6 +6,7 @@ import {
   PlatformMetadataMapping,
 } from '@/components/registration/PlatformIdentifierMapping';
 import { cn } from '@/lib/utils';
+import { useDateFormatter } from '@/utils/date';
 import {
   Badge,
   Card,
@@ -16,7 +17,7 @@ import {
   TooltipTrigger,
 } from '@filigran/ui';
 import { PlatformContract } from '@graphql/generated';
-import { useFormatter, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import React from 'react';
 
@@ -50,15 +51,10 @@ const RegisteredPlatformCard = ({ platform }: RegisteredPlatformCardProps) => {
     'HomePage.RegisteredPlatformsCard'
   );
   const t = useTranslations();
-  const format = useFormatter();
+  const formatDate = useDateFormatter();
 
   const registrationDate = platform.registrationDate
-    ? format.dateTime(new Date(platform.registrationDate), {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      })
+    ? formatDate(platform.registrationDate, 'DATE_MEDIUM')
     : '-';
 
   const remainingTrialDaysBadgeClassName = resolveTrialDaysBadgeClassName(

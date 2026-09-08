@@ -17,6 +17,7 @@ type RegisteredPlatform implements Node {
   illustration_document_id: DocumentId
   deployment_request: DeploymentRequest
   last_connectivity_check: Date
+  status: PlatformConfigurationStatus
   subscription: SubscriptionModel
   myGroups: [ServiceGroup!]
 }

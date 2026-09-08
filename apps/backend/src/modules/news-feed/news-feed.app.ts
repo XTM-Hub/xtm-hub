@@ -7,7 +7,6 @@ import {
 } from '../../__generated__/resolvers-types';
 import Document from '../../model/kanel/public/Document';
 import { NewsFeedItemId } from '../../model/kanel/public/NewsFeedItem';
-import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode } from '../../utils/error/error.code';
 import {
@@ -15,7 +14,6 @@ import {
   IntervalHelper,
   IntervalUnit,
 } from '../common/interval.helper';
-import { OrganizationDomain } from '../organization-management/organization/organization.domain';
 import { PlatformConfigurationDomain } from '../registration/platform-configuration/platform-configuration.domain';
 import { RegistrationDomain } from '../registration/registration.domain';
 import { useCaseDomain } from '../use-case/use-case.domain';
@@ -36,23 +34,15 @@ const getSupportedPlatformIds = (
     )
     .map((platform) => platform.platform_id);
 
-const provisionNewsFeedItemForServiceInstance = async ({
+const provisionNewsFeedItemForAllSupportedPlatforms = async ({
   newsFeedItemId,
-  serviceInstanceId,
   platformIdentifier,
 }: {
   newsFeedItemId: NewsFeedItemId;
-  serviceInstanceId: ServiceInstanceId;
   platformIdentifier: PlatformIdentifier;
 }): Promise<void> => {
-  const organizations =
-    await OrganizationDomain.loadOrganizationsSubscribedToServiceInstance(
-      serviceInstanceId
-    );
-  const organizationIds = organizations.map((org) => org.id);
   const registeredPlatforms =
-    await RegistrationDomain.loadRegisteredPlatformsByOrganizationIds(
-      organizationIds,
+    await RegistrationDomain.loadAllActiveRegisteredPlatformsByPlatformIdentifier(
       platformIdentifier
     );
   const platformIds = getSupportedPlatformIds(
@@ -116,11 +106,9 @@ export const NewsFeedApp = {
 
   createResourceNewsFeedItem: async ({
     document,
-    serviceInstanceId,
     serviceDefinitionIdentifier,
   }: {
     document: Document;
-    serviceInstanceId: ServiceInstanceId;
     serviceDefinitionIdentifier: ServiceDefinitionIdentifier;
   }): Promise<void> => {
     const newsFeedConfiguration =
@@ -141,20 +129,17 @@ export const NewsFeedApp = {
       tags,
     });
 
-    await provisionNewsFeedItemForServiceInstance({
+    await provisionNewsFeedItemForAllSupportedPlatforms({
       newsFeedItemId: newsFeedItem.id,
-      serviceInstanceId,
       platformIdentifier,
     });
   },
 
   updateResourceNewsFeedItem: async ({
     document,
-    serviceInstanceId,
     serviceDefinitionIdentifier,
   }: {
     document: Document;
-    serviceInstanceId: ServiceInstanceId;
     serviceDefinitionIdentifier: ServiceDefinitionIdentifier;
   }): Promise<void> => {
     const newsFeedConfiguration =
@@ -178,9 +163,8 @@ export const NewsFeedApp = {
       tags,
     });
 
-    await provisionNewsFeedItemForServiceInstance({
+    await provisionNewsFeedItemForAllSupportedPlatforms({
       newsFeedItemId: existingItem.id,
-      serviceInstanceId,
       platformIdentifier: newsFeedConfiguration.platformIdentifier,
     });
   },
@@ -188,28 +172,25 @@ export const NewsFeedApp = {
   upsertResourceNewsFeed: async ({
     documentBeforeUpdate,
     updatedDocument,
-    serviceInstanceId,
     serviceDefinitionIdentifier,
   }: {
     documentBeforeUpdate?: Document;
     updatedDocument: Document;
-    serviceInstanceId: ServiceInstanceId;
     serviceDefinitionIdentifier: ServiceDefinitionIdentifier;
   }): Promise<void> => {
     if (!NewsFeedApp.isNewsFeedConfigured(serviceDefinitionIdentifier)) {
       return;
     }
 
-    if (updatedDocument.active !== true) {
+    if (!updatedDocument.active) {
       return;
     }
 
     const shouldCreateNewsFeedItem =
-      !documentBeforeUpdate || documentBeforeUpdate.active === false;
+      !documentBeforeUpdate || !documentBeforeUpdate.active;
     if (shouldCreateNewsFeedItem) {
       await NewsFeedApp.createResourceNewsFeedItem({
         document: updatedDocument,
-        serviceInstanceId,
         serviceDefinitionIdentifier,
       }).catch((error) =>
         logApp.error('Unable to create news feed item', {
@@ -223,7 +204,6 @@ export const NewsFeedApp = {
 
     await NewsFeedApp.updateResourceNewsFeedItem({
       document: updatedDocument,
-      serviceInstanceId,
       serviceDefinitionIdentifier,
     }).catch((error) =>
       logApp.error('Unable to update news feed item', {
@@ -250,16 +230,10 @@ export const NewsFeedApp = {
       return;
     }
 
-    const registeredPlatforms =
-      await RegistrationDomain.loadAllActiveRegisteredPlatformsByPlatformIdentifier(
-        platformIdentifier
-      );
-    const platformIds = getSupportedPlatformIds(
-      registeredPlatforms,
-      platformIdentifier
-    );
-
-    await NewsFeedDomain.provisionNewsFeedItem(newsFeedItem.id, platformIds);
+    await provisionNewsFeedItemForAllSupportedPlatforms({
+      newsFeedItemId: newsFeedItem.id,
+      platformIdentifier,
+    });
   },
 
   cleanExpiredNewsFeedItems: async (): Promise<void> => {

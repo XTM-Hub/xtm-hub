@@ -154,47 +154,6 @@ export const RegistrationDomain = {
     );
   },
 
-  loadRegisteredPlatformsByOrganizationIds: async (
-    organizationIds: OrganizationId[],
-    platformIdentifier: PlatformIdentifier
-  ): Promise<DomainRegisteredPlatform[]> => {
-    if (organizationIds.length === 0) {
-      return [];
-    }
-
-    const serviceDefinitionIdentifier =
-      serviceDefinitionIdentifierMappedByPlatformIdentifier[platformIdentifier];
-
-    return db<ServiceInstance>('ServiceInstance')
-      .leftJoin(
-        'PlatformConfiguration',
-        'PlatformConfiguration.service_instance_id',
-        '=',
-        'ServiceInstance.id'
-      )
-      .leftJoin(
-        'ServiceDefinition',
-        'ServiceDefinition.id',
-        '=',
-        'ServiceInstance.service_definition_id'
-      )
-      .leftJoin(
-        'Subscription',
-        'Subscription.service_instance_id',
-        '=',
-        'ServiceInstance.id'
-      )
-      .where('ServiceInstance.creation_status', '!=', 'DISABLED')
-      .whereIn('Subscription.organization_id', organizationIds)
-      .where('ServiceDefinition.identifier', '=', serviceDefinitionIdentifier)
-      .where(
-        'PlatformConfiguration.status',
-        '=',
-        PlatformConfigurationStatus.Active
-      )
-      .select(RegisteredPlatformsSelectColumns);
-  },
-
   loadAllActiveRegisteredPlatformsByPlatformIdentifier: async (
     platformIdentifier: PlatformIdentifier
   ): Promise<DomainRegisteredPlatform[]> => {

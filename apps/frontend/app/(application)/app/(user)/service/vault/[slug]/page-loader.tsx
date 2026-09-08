@@ -4,7 +4,7 @@ import { DocumentsListQuery } from '@/components/service/document/document.graph
 import DocumentList from '@/components/service/vault/[slug]/DocumentList';
 import { documentListLocalStorage } from '@/components/service/vault/document-list-localstorage';
 import { i18nKey } from '@/utils/datatable';
-import { formatDate } from '@/utils/date';
+import { useDateFormatter } from '@/utils/date';
 import { DataTable } from '@filigran/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { useTranslations } from 'next-intl';
@@ -19,6 +19,7 @@ interface PreloaderProps {
 }
 const PageLoader = ({ serviceInstance }: PreloaderProps) => {
   const t = useTranslations();
+  const formatDate = useDateFormatter();
 
   const columns: ColumnDef<documentItem_fragment$data>[] = [
     {

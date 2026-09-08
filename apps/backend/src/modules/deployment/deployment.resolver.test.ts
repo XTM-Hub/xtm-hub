@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { db } from '../../../knexfile';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import {
+  contextRegistererUserSecondOrga,
+  GRAPHQL_RESOLVE_INFO,
   requestContextRegistererUserSecondOrga,
   requestContextSystemUserManageDeployment,
   TEST_ORGANIZATIONS,
@@ -21,6 +23,7 @@ import {
   PlatformIdentifier,
   QueryDeploymentRequestsArgs,
   QueryDeploymentRequestsListArgs,
+  RegisteredPlatform,
   ReorderDeploymentRequestInQueueDirection,
   TrialDeploymentsInput,
 } from '../../__generated__/resolvers-types';
@@ -29,6 +32,8 @@ import { DeploymentRequestId } from '../../model/kanel/public/DeploymentRequest'
 import DeploymentRequestQuota from '../../model/kanel/public/DeploymentRequestQuota';
 import { ErrorCode } from '../../utils/error/error.code';
 import { ErrorType } from '../../utils/error/error.type';
+import { RegistrationApp } from '../registration/registration.app';
+import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { DeploymentApp } from './deployment.app';
 import { DeploymentRequestDomain } from './deployment.domain';
 import resolver from './deployment.resolver';
@@ -460,6 +465,74 @@ describe('deployment resolver — unit tests', () => {
         input
       );
       expect(result).toEqual(expected);
+    });
+  });
+
+  describe('deploymentRequest type resolvers', () => {
+    it('children should load child deployment requests by parent id', async () => {
+      const children = [{ id: 'child-1' }] as unknown as Awaited<
+        ReturnType<
+          typeof contextRegistererUserSecondOrga.dataLoaders.deploymentRequest.childrenByParentLoader.load
+        >
+      >;
+      const spy = vi
+        .spyOn(
+          contextRegistererUserSecondOrga.dataLoaders.deploymentRequest
+            .childrenByParentLoader,
+          'load'
+        )
+        .mockResolvedValue(children);
+
+      const result = await resolver.DeploymentRequest!.children!(
+        { id: 'bundle-1' } as unknown as DeploymentRequest,
+        {},
+        contextRegistererUserSecondOrga,
+        GRAPHQL_RESOLVE_INFO
+      );
+
+      expect(spy).toHaveBeenCalledWith('bundle-1');
+      expect(result).toEqual(children);
+    });
+
+    it('registered_platform should load the registered platform for the service instance', async () => {
+      const registeredPlatform = {
+        id: 'si-1',
+      } as unknown as RegisteredPlatform;
+      const spy = vi
+        .spyOn(RegistrationApp, 'loadRegisteredPlatform')
+        .mockResolvedValue(registeredPlatform);
+
+      const result = await resolver.DeploymentRequest!.registered_platform!(
+        { service_instance_id: 'si-1' } as unknown as DeploymentRequest,
+        {},
+        contextRegistererUserSecondOrga,
+        GRAPHQL_RESOLVE_INFO
+      );
+
+      expect(spy).toHaveBeenCalledWith('si-1');
+      expect(result).toEqual(registeredPlatform);
+    });
+
+    it('service_instance should load the service instance for the deployment request', async () => {
+      const serviceInstance = {
+        id: 'si-1',
+        name: 'Instance',
+      } as unknown as Awaited<
+        ReturnType<typeof ServiceInstanceDomain.loadServiceInstanceBy>
+      >;
+      const spy = vi
+        .spyOn(ServiceInstanceDomain, 'loadServiceInstanceBy')
+        .mockResolvedValue(serviceInstance);
+
+      const result = await resolver.DeploymentRequest!.service_instance!(
+        { service_instance_id: 'si-1' } as unknown as DeploymentRequest,
+        {},
+        contextRegistererUserSecondOrga,
+        GRAPHQL_RESOLVE_INFO
+      );
+
+      expect(spy).toHaveBeenCalledWith({ id: 'si-1' });
+      expect(result).toMatchObject({ id: 'si-1', name: 'Instance' });
     });
   });
 });

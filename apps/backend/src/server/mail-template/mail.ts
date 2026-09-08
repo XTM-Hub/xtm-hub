@@ -45,6 +45,14 @@ export interface FreeTrialGenericModel {
   firstName: string;
   platformIdentifier: PlatformIdentifier;
 }
+export interface FreeTrialBundleModel {
+  firstName: string;
+  productNames: string;
+  products: PlatformIdentifier[];
+}
+export interface FreeTrialBundleActiveModel extends FreeTrialBundleModel {
+  platformUrl: string;
+}
 export interface AdminSaasInstanceRequestedModel {
   organizationName: string;
   userName: string;
@@ -84,6 +92,35 @@ export const PlatformIdentifierToString: Record<PlatformIdentifier, string> = {
   [PlatformIdentifier.Xtmone]: 'XTM One',
 };
 
+export const BUNDLE_PLATFORM_NAME = 'XTM Platform';
+
+export const MAIL_PRODUCT_ORDER: PlatformIdentifier[] = [
+  PlatformIdentifier.Opencti,
+  PlatformIdentifier.Openaev,
+  PlatformIdentifier.Xtmone,
+];
+
+export const sortProductsForMail = (
+  platformIdentifiers: PlatformIdentifier[]
+): PlatformIdentifier[] =>
+  [...platformIdentifiers].sort(
+    (a, b) => MAIL_PRODUCT_ORDER.indexOf(a) - MAIL_PRODUCT_ORDER.indexOf(b)
+  );
+
+const productListFormatter = new Intl.ListFormat('en', {
+  style: 'long',
+  type: 'conjunction',
+});
+
+export const formatProductNames = (
+  platformIdentifiers: PlatformIdentifier[]
+): string =>
+  productListFormatter.format(
+    sortProductsForMail(platformIdentifiers).map(
+      (identifier) => PlatformIdentifierToString[identifier]
+    )
+  );
+
 export const ServiceIdentifierToMailTemplate = new Map<
   ServiceDefinitionIdentifier,
   keyof MailTemplates
@@ -117,6 +154,11 @@ export type MailTemplates = {
   free_trial_provisioning: FreeTrialGenericModel;
   free_trial_cancelled: FreeTrialGenericModel;
   free_trial_expired: FreeTrialGenericModel;
+  free_trial_bundle_requested: FreeTrialBundleModel;
+  free_trial_bundle_provisioning: FreeTrialBundleModel;
+  free_trial_bundle_active: FreeTrialBundleActiveModel;
+  free_trial_bundle_cancelled: FreeTrialBundleModel;
+  free_trial_bundle_expired: FreeTrialBundleModel;
   free_trial_user_added: FreeTrialUserAddedModel;
   organization_pending_user_digest: OrganizationPendingUserDigestModel;
   admin_saas_instance_requested: AdminSaasInstanceRequestedModel;
@@ -171,6 +213,15 @@ export const templateSubjects: {
     `Your ${PlatformIdentifierToString[params.platformIdentifier]} Trial Has Been Cancelled`,
   free_trial_expired: (params: FreeTrialGenericModel) =>
     `Your ${PlatformIdentifierToString[params.platformIdentifier]} Free Trial Has Expired`,
+  free_trial_bundle_requested: () =>
+    `Your ${BUNDLE_PLATFORM_NAME} Trial Request`,
+  free_trial_bundle_provisioning: () =>
+    `Your ${BUNDLE_PLATFORM_NAME} Trial is Being Provisioned`,
+  free_trial_bundle_active: () => `Your ${BUNDLE_PLATFORM_NAME} Trial is ready`,
+  free_trial_bundle_cancelled: () =>
+    `Your ${BUNDLE_PLATFORM_NAME} Trial Has Been Cancelled`,
+  free_trial_bundle_expired: () =>
+    `Your ${BUNDLE_PLATFORM_NAME} Trial Has Expired`,
   free_trial_user_added: (params: FreeTrialUserAddedModel) =>
     `Welcome to your ${
       PlatformIdentifierToString[params.platformIdentifier]

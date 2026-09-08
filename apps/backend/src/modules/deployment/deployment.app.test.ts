@@ -1,3 +1,4 @@
+import config from 'config';
 import { v4 as uuidv4 } from 'uuid';
 import {
   afterAll,
@@ -79,7 +80,10 @@ import { requestContext } from '../../context/request.context';
 import { CompetitorId } from '../../model/kanel/public/Competitor';
 import { PortalContext } from '../../model/portal-context';
 import { PlatformConfigurationDomain } from '../registration/platform-configuration/platform-configuration.domain';
-import { RegistrationDomain } from '../registration/registration.domain';
+import {
+  DomainRegisteredPlatform,
+  RegistrationDomain,
+} from '../registration/registration.domain';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { CompetitorDomain } from './competitor/competitor.domain';
 import {
@@ -507,7 +511,20 @@ describe('deployment app', () => {
             })
           );
         });
-        expect(mockSendMail).toHaveBeenCalledTimes(6);
+        expect(mockSendMail).toHaveBeenCalledTimes(4);
+        expect(mockSendMail).toHaveBeenCalledWith({
+          to: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.EMAIL,
+          template: 'free_trial_bundle_requested',
+          params: {
+            firstName: 'Anita',
+            productNames: 'OpenCTI, OpenAEV, and XTM One',
+            products: [
+              PlatformIdentifier.Opencti,
+              PlatformIdentifier.Openaev,
+              PlatformIdentifier.Xtmone,
+            ],
+          },
+        });
       });
 
       it('should bypass the free trial limit check for bundle products', async () => {
@@ -2134,6 +2151,118 @@ describe('deployment app', () => {
         }
       );
     });
+
+    describe('bundle mail', () => {
+      let bundle: DeploymentRequest;
+      let childA: DeploymentRequest;
+      let childB: DeploymentRequest;
+
+      beforeEach(async () => {
+        bundle =
+          await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+            {
+              type: DeploymentRequestDeploymentType.Bundle,
+              platform_identifier: null,
+              hub_status: DeploymentRequestHubStatus.Pending,
+              actual_state: DeploymentRequestPlatformState.Unprovisioned,
+              start_date: null,
+              end_date: null,
+            }
+          );
+
+        childA =
+          await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+            {
+              parent_id: bundle.id as DeploymentRequestId,
+              platform_identifier: PlatformIdentifier.Opencti,
+              hub_status: DeploymentRequestHubStatus.Pending,
+              actual_state: DeploymentRequestPlatformState.Unprovisioned,
+            }
+          );
+
+        childB =
+          await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+            {
+              parent_id: bundle.id as DeploymentRequestId,
+              platform_identifier: PlatformIdentifier.Openaev,
+              hub_status: DeploymentRequestHubStatus.Pending,
+              actual_state: DeploymentRequestPlatformState.Unprovisioned,
+            }
+          );
+
+        mockSendMail.mockClear();
+      });
+
+      it('should send the provisioning mail when the bundle itself starts provisioning', async () => {
+        await DeploymentApp.updateDeploymentRequest({
+          id: bundle.id as DeploymentRequestId,
+          actual_state: DeploymentRequestPlatformState.Provisioning,
+        });
+
+        expect(mockSendMail).toHaveBeenCalledTimes(1);
+        expect(mockSendMail).toHaveBeenCalledWith({
+          to: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.EMAIL,
+          template: 'free_trial_bundle_provisioning',
+          params: {
+            firstName: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.FIRST_NAME,
+            productNames: 'OpenCTI and OpenAEV',
+            products: [PlatformIdentifier.Opencti, PlatformIdentifier.Openaev],
+          },
+        });
+      });
+
+      it('should send the active mail when the bundle itself becomes active', async () => {
+        await DeploymentApp.updateDeploymentRequest({
+          id: bundle.id as DeploymentRequestId,
+          actual_state: DeploymentRequestPlatformState.Active,
+        });
+
+        expect(mockSendMail).toHaveBeenCalledTimes(1);
+        expect(mockSendMail).toHaveBeenCalledWith({
+          to: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.EMAIL,
+          template: 'free_trial_bundle_active',
+          params: {
+            firstName: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.FIRST_NAME,
+            productNames: 'OpenCTI and OpenAEV',
+            products: [PlatformIdentifier.Opencti, PlatformIdentifier.Openaev],
+            platformUrl: `${config.get('base_url_front')}/app/xtm-platform-trial`,
+          },
+        });
+      });
+
+      it('should not send any bundle mail when its products are provisioned or active', async () => {
+        await DeploymentApp.updateDeploymentRequest({
+          id: childA.id as DeploymentRequestId,
+          actual_state: DeploymentRequestPlatformState.Provisioning,
+        });
+
+        await DeploymentApp.updateDeploymentRequest({
+          id: childB.id as DeploymentRequestId,
+          actual_state: DeploymentRequestPlatformState.Active,
+          start_date: new Date(2025, 1, 1),
+          end_date: new Date(2025, 2, 1),
+          platform_id: 'child-b-platform-id',
+        });
+
+        await DeploymentApp.updateDeploymentRequest({
+          id: childA.id as DeploymentRequestId,
+          actual_state: DeploymentRequestPlatformState.Active,
+          start_date: new Date(2025, 1, 1),
+          end_date: new Date(2025, 2, 1),
+          platform_id: 'child-a-platform-id',
+        });
+
+        expect(mockSendMail).not.toHaveBeenCalled();
+
+        const untouchedBundle =
+          await DeploymentRequestDomain.loadDeploymentRequestBy({
+            id: bundle.id as DeploymentRequestId,
+          });
+        expect(untouchedBundle?.hub_status).toBe(
+          DeploymentRequestHubStatus.Pending
+        );
+      });
+    });
   });
   describe('loadTrialDeployments', () => {
     it('should return all available when no DeploymentRequest and no PlatformIdentifier specified', async () => {
@@ -3118,6 +3247,23 @@ describe('deployment app', () => {
         }
       });
 
+      it('should send a single cancellation mail for the bundle and none for its products', async () => {
+        mockSendMail.mockClear();
+
+        await DeploymentApp.cancelDeploymentRequest(bundle.id, false, 'reason');
+
+        expect(mockSendMail).toHaveBeenCalledTimes(1);
+        expect(mockSendMail).toHaveBeenCalledWith({
+          to: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.EMAIL,
+          template: 'free_trial_bundle_cancelled',
+          params: {
+            firstName: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.FIRST_NAME,
+            productNames: 'OpenCTI and XTM One',
+            products: [PlatformIdentifier.Opencti, PlatformIdentifier.Xtmone],
+          },
+        });
+      });
+
       it('should only delete the Auth0 audience of the OpenCTI child', async () => {
         const deleteAudienceSpy = vi.spyOn(
           auth0ClientMock,
@@ -3835,6 +3981,53 @@ describe('deployment app', () => {
       });
     });
 
+    it('should send a single expiration mail for a bundle and none for its products', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(Date.UTC(2025, 1, 3, 13, 12, 15)));
+      const expiredDate = new Date(Date.UTC(2025, 1, 1));
+
+      const bundle =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          {
+            type: DeploymentRequestDeploymentType.Bundle,
+            platform_identifier: null,
+            hub_status: DeploymentRequestHubStatus.Active,
+            target_state: DeploymentRequestPlatformState.Active,
+            end_date: expiredDate,
+          }
+        );
+
+      for (const platform_identifier of [
+        PlatformIdentifier.Opencti,
+        PlatformIdentifier.Openaev,
+      ]) {
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          {
+            parent_id: bundle.id as DeploymentRequestId,
+            platform_identifier,
+            hub_status: DeploymentRequestHubStatus.Active,
+            target_state: DeploymentRequestPlatformState.Active,
+            end_date: expiredDate,
+          }
+        );
+      }
+
+      mockSendMail.mockClear();
+
+      await DeploymentApp.expireTrials();
+
+      expect(mockSendMail).toHaveBeenCalledTimes(1);
+      expect(mockSendMail).toHaveBeenCalledWith({
+        to: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.EMAIL,
+        template: 'free_trial_bundle_expired',
+        params: {
+          firstName: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.FIRST_NAME,
+          productNames: 'OpenCTI and OpenAEV',
+          products: [PlatformIdentifier.Opencti, PlatformIdentifier.Openaev],
+        },
+      });
+    });
+
     it('should send a telemetry event', async () => {
       vi.useFakeTimers();
       const date = new Date(Date.UTC(2025, 1, 3, 13, 12, 15));
@@ -4152,6 +4345,176 @@ describe('deployment app', () => {
           parent_id: undefined,
         });
       });
+    });
+  });
+
+  describe('loadXtmPlatformBundle', () => {
+    beforeEach(() => {
+      requestContext.set(requestContextRegistererUserSecondOrga);
+      vi.spyOn(DeploymentQuotaDomain, 'reservePlace').mockResolvedValue({
+        isPlaceAvailable: true,
+      });
+    });
+
+    const createActiveBundle = async () => {
+      const bundle = await DeploymentApp.createDeploymentRequest({
+        ...TEST_DEPLOYMENT,
+        type: DeploymentRequestDeploymentType.Bundle,
+        products: [
+          PlatformIdentifier.Xtmone,
+          PlatformIdentifier.Opencti,
+          PlatformIdentifier.Openaev,
+        ],
+        use_cases_by_product: [
+          {
+            platform_identifier: PlatformIdentifier.Opencti,
+            use_case: DeploymentRequestUseCase.ThreatHunting,
+          },
+          {
+            platform_identifier: PlatformIdentifier.Openaev,
+            use_case: DeploymentRequestUseCase.OaevAttackSimulation,
+          },
+        ],
+      });
+      await DeploymentRequestDomain.updateDeploymentRequestById(bundle.id, {
+        hub_status: DeploymentRequestHubStatus.Active,
+        start_date: new Date('2025-01-01T00:00:00.000Z'),
+        end_date: new Date('2025-01-31T00:00:00.000Z'),
+      });
+      return bundle;
+    };
+
+    it('should return null when the organization has no active bundle', async () => {
+      const result = await DeploymentApp.loadXtmPlatformBundle();
+
+      expect(result).toBeNull();
+    });
+
+    it('should return the active bundle for the organization', async () => {
+      await createActiveBundle();
+
+      const result = await DeploymentApp.loadXtmPlatformBundle();
+
+      expect(result).toMatchObject({
+        type: DeploymentRequestDeploymentType.Bundle,
+        hub_status: DeploymentRequestHubStatus.Active,
+        organization_name: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
+        requester_email:
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.EMAIL,
+        start_date: expect.any(Date),
+        end_date: expect.any(Date),
+        service_instance_id: expect.any(String),
+      });
+    });
+  });
+
+  describe('loadXtmonePlatformIntegrationStatus', () => {
+    const serviceInstanceId = uuidv4() as ServiceInstanceId;
+    const user = contextRegistererUserSecondOrga.user;
+    const ownedDeploymentRequest = { url: null } as unknown as Awaited<
+      ReturnType<typeof DeploymentRequestDomain.loadDeploymentRequestBy>
+    >;
+    const integrationStatus = {
+      opencti: { status: 'connected', connected: true, last_checked_at: null },
+      openaev: { status: 'connected', connected: true, last_checked_at: null },
+      linked: true,
+      last_checked_at: null,
+    };
+
+    beforeEach(() => {
+      requestContext.set(requestContextRegistererUserSecondOrga);
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+      vi.unstubAllGlobals();
+    });
+
+    it('returns null without fetching when the service instance is not owned by the user organization', async () => {
+      const loadDeploymentRequestBySpy = vi
+        .spyOn(DeploymentRequestDomain, 'loadDeploymentRequestBy')
+        .mockResolvedValue(undefined);
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+
+      const result =
+        await DeploymentApp.loadXtmonePlatformIntegrationStatus(
+          serviceInstanceId
+        );
+
+      expect(result).toBeNull();
+      expect(loadDeploymentRequestBySpy).toHaveBeenCalledWith({
+        service_instance_id: serviceInstanceId,
+        organization_requester_id: user.selected_organization_id,
+      });
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('returns null without fetching when no platform url can be resolved', async () => {
+      vi.spyOn(
+        DeploymentRequestDomain,
+        'loadDeploymentRequestBy'
+      ).mockResolvedValue(ownedDeploymentRequest);
+      vi.spyOn(RegistrationDomain, 'loadRegisteredPlatform').mockResolvedValue(
+        []
+      );
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+
+      const result =
+        await DeploymentApp.loadXtmonePlatformIntegrationStatus(
+          serviceInstanceId
+        );
+
+      expect(result).toBeNull();
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('fetches the integration status from the registered platform url without credentials', async () => {
+      vi.spyOn(
+        DeploymentRequestDomain,
+        'loadDeploymentRequestBy'
+      ).mockResolvedValue(ownedDeploymentRequest);
+      vi.spyOn(RegistrationDomain, 'loadRegisteredPlatform').mockResolvedValue([
+        { platform_url: 'https://xtmone.example.io' },
+      ] as unknown as DomainRegisteredPlatform[]);
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ integration_status: integrationStatus }),
+      });
+      vi.stubGlobal('fetch', fetchMock);
+
+      const result =
+        await DeploymentApp.loadXtmonePlatformIntegrationStatus(
+          serviceInstanceId
+        );
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://xtmone.example.io/api/v1/platform/config',
+        expect.objectContaining({ credentials: 'omit', redirect: 'error' })
+      );
+      expect(result).toEqual(integrationStatus);
+    });
+
+    it('returns null when the platform responds with an error status', async () => {
+      vi.spyOn(
+        DeploymentRequestDomain,
+        'loadDeploymentRequestBy'
+      ).mockResolvedValue(ownedDeploymentRequest);
+      vi.spyOn(RegistrationDomain, 'loadRegisteredPlatform').mockResolvedValue([
+        { platform_url: 'https://xtmone.example.io' },
+      ] as unknown as DomainRegisteredPlatform[]);
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({ ok: false, status: 502 })
+      );
+
+      const result =
+        await DeploymentApp.loadXtmonePlatformIntegrationStatus(
+          serviceInstanceId
+        );
+
+      expect(result).toBeNull();
     });
   });
 });

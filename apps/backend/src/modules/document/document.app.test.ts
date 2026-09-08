@@ -382,7 +382,6 @@ describe('documentApp', () => {
           id: result!.id,
           active: true,
         }),
-        serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
         serviceDefinitionIdentifier:
           ServiceDefinitionIdentifier.OpenctiCustomDashboards,
       });
@@ -998,7 +997,6 @@ describe('documentApp', () => {
           id: updatedDocument.id,
           active: true,
         }),
-        serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
         serviceDefinitionIdentifier:
           ServiceDefinitionIdentifier.OpenctiCustomDashboards,
       });

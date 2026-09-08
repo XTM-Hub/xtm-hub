@@ -22,7 +22,7 @@ import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useUsersList } from '@/hooks/use-users-list';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
-import { formatDate } from '@/utils/date';
+import { useDateFormatter } from '@/utils/date';
 import { MoreVertIcon } from '@filigran/icon';
 import { Badge, DataTable, DataTableHeadBarOptions } from '@filigran/ui';
 import {
@@ -100,6 +100,7 @@ interface UserListProps {
 // Component
 const UserList = ({ organization }: UserListProps) => {
   const t = useTranslations();
+  const formatDate = useDateFormatter();
   const {
     pageSize,
     setPageSize,
@@ -325,7 +326,14 @@ const UserList = ({ organization }: UserListProps) => {
           ]
         : []),
     ],
-    [hasActionsColumn, isAdminPath, me?.id, me?.selected_organization_id, t]
+    [
+      hasActionsColumn,
+      isAdminPath,
+      me?.id,
+      me?.selected_organization_id,
+      t,
+      formatDate,
+    ]
   );
 
   useEffect(() => {

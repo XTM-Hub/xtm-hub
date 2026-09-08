@@ -64,6 +64,46 @@
     "EE": "Enterprise Edition",
     "TRIAL": "Free trial"
   },
+  "XtmPlatformTrial": {
+    "BundleInfo": {
+      "OrganizationName": "Organisation",
+      "StartedOn": "Started on",
+      "License": "License",
+      "Remaining": "Remaining",
+      "DaysRemaining": "{days} days",
+      "TrialRequester": "Trial requester",
+      "Title": "XTM Product Trial details:"
+    },
+    "Products": {
+      "ConnectionStatus": "Connection status",
+      "LastConnection": "Last connection check",
+      "Role": "Role",
+      "NoRole": "None.",
+      "NoRoleHint": "Please contact the trial requester.",
+      "StatusActive": "Connected",
+      "StatusNotConnected": "Not connected",
+      "AccessProduct": "Access {productName}",
+      "StatusUnavailable": "Status unavailable",
+      "ProductName": "Product name",
+      "Connection": "Connection {productName}",
+      "EditName": "Edit name",
+      "ConnectionLost": "Connection lost.",
+      "ReconnectHint": "You should connect your product again."
+    },
+    "CancelTrial": "Cancel trial",
+    "CancelDialog": {
+      "Title": "Cancel trial",
+      "Description": "Are you sure you wish to cancel this trial ?",
+      "Warning": "Once cancelled, you will not be able to request a new trial"
+    },
+    "Title": "Welcome to your XTM Platform Trial",
+    "Subtitle": "Everything you need for your trial is right here: your trial details and time remaining, direct access to your products, and a direct line to the Filigran team whenever you need support or have questions.",
+    "Guide": {
+      "Title": "XTM Platform Trial Guide",
+      "Content": "Explore what we're building, what's coming next, and where the XTM Platform is headed. Full transparency. No surprises.",
+      "SeeMore": "See more"
+    }
+  },
   "Datatable": {
     "Asc": "Asc",
     "Columns": "Columns",
@@ -370,7 +410,8 @@
       "Details": "Details",
       "Documentation": "Documentation",
       "ConnectPlatform": "Connect {platformName}",
-      "Trial": "Trial"
+      "Trial": "Trial",
+      "EE": "EE"
     }
   },
   "HomePage": {
@@ -514,6 +555,7 @@
   },
   "Menu": {
     "XTMPlatform": "XTM Platform",
+    "XTMPlatformTrial": "XTM Platform Trial",
     "StartFreeTrial": "Start Free Trial",
     "CustomDashboards": "Custom Dashboards",
     "CustomViews": "Custom Views",
@@ -1438,7 +1480,7 @@
         "compatibility": "Incompatible with our existing security stack",
         "complexity": "Configuration is too complex to complete within a reasonable timeframe",
         "legal-security": "Internal security or legal team required immediate termination",
-        "expertise": "We lack the internal analysts/expertise to utilise the tool effectively"
+        "expertise": "We lack the internal analysts/expertise to utilize the tool effectively"
       },
       "DaysRemaining": "{days, plural, =1 {# Day remaining} other {# Days remaining}}",
       "Header": {
@@ -1568,15 +1610,45 @@
             "Submit": "Request XTM Platform trial"
           },
           "NotLoggedIn": {
-            "Title": "To be elligible to request trial you need to be login",
-            "Description": "Please create a XTM account or connect you to an existent one."
+            "Title": "To request a trial you need to be logged in.",
+            "Description": "Please create an XTM account or log in to an existing one."
           },
           "NotAdmin": {
-            "Title": "To request a trial you need to be Organization admin",
-            "Description": "Please contact the organization admin in your company"
+            "Title": "To request a trial you must be an organization admin.",
+            "Description": "Please contact the organization’s admin in your company"
           },
           "PersonalSpace": {
             "Title": "Trials are not available in a personal space"
+          },
+          "Status": {
+            "RequestedOn": "Requested on",
+            "StartedOn": "Started on",
+            "CancelledOn": "Cancelled on",
+            "FinishedOn": "Finished on",
+            "ProductsIncluded": "Products included in your trial",
+            "ProductsIncludedInRequest": "Products included in your trial request",
+            "CancelTrialRequest": "Cancel trial request",
+            "request-in-progress": {
+              "Title": "Thanks! We've received your request.",
+              "Description": "Our team will be in touch shortly."
+            },
+            "cancelled": {
+              "Title": "Unfortunately, your trial has been cancelled.",
+              "Description": "You are not eligible to request a new trial. \nIf you would like to use the Enterprise Edition, please contact sales."
+            },
+            "expired": {
+              "Title": "Thank you for trying out the XTM platform, we hope you enjoyed your experience.",
+              "Description": "Your trial period has now ended. If you would like to continue using the Enterprise Edition, please contact our sales team."
+            },
+            "failed": {
+              "Title": "Your trial request could not be completed",
+              "Description": "Something went wrong while provisioning your trial. Please reach out to sales for assistance."
+            },
+            "Stepper": {
+              "Pending": "Pending",
+              "Provisioning": "Provisioning",
+              "Active": "Active"
+            }
           }
         }
       },
@@ -1588,6 +1660,7 @@
       "GoToMyTrial": "Go to my trial",
       "InfoPersonalSpace": "You can’t start a trial in your personal space—please switch to your organization’s space",
       "ReachOutToSales": "Reach out to Sales",
+      "ReachOutToSalesMessageLabel": "Message",
       "ReachOutToSalesMessagePlaceholder": "Your message",
       "NeedSupport": "Need support",
       "ReachOutToSalesSuccessTitle": "Thank you!",
@@ -1605,7 +1678,8 @@
           "CancellationReason": "Cancellation reason",
           "CancellationReasonPlaceholder": "Select a reason",
           "CancellationReasonOther": "Other",
-          "CancellationReasonOtherPlaceholder": "Write your reason here"
+          "CancellationReasonOtherPlaceholder": "Write your reason here",
+          "CancellationReasonRequired": "Please select a cancellation reason"
         },
         "Confirmation": {
           "Title": "Trial Cancellation",
@@ -1990,7 +2064,8 @@
     "Description": "The annual gathering of the global threat intelligence and cyber defense community - where intelligence, exposure management and action come together.",
     "Date": "October 15, 2026 | Paris",
     "ImageAlt": "Thread Conference Banner",
-    "Cta": "Learn more"
+    "Cta": "Learn more",
+    "AriaLabel": "Would you like to participate in the Thread Conference? Learn more here."
   },
   "UnexpectedErrorDialog": {
     "Description": "Please try logging in again. If the issue persists, contact us for assistance.",
@@ -2055,7 +2130,7 @@
     }
   },
   "UpdateUserDialog": {
-    "TextUpdatedUser": "Your account has been modified by an administrator. The behaviour of the app may change.",
+    "TextUpdatedUser": "Your account has been modified by an administrator. The behavior of the app may change.",
     "TextUpdatedUserTitle": "Account modified!"
   },
   "UserActions": {
@@ -2161,7 +2236,6 @@
     "UpdateMetadata": "Update Platform Metadata",
     "Name": "Platform Name",
     "NamePlaceholder": "Enter platform name",
-    "IllustrationImage": "Illustration Image",
     "Updated": "{platformName} has been updated successfully"
   },
   "Region": {

@@ -452,8 +452,10 @@ export type DeploymentRequest = Node & {
   platform_identifier: Maybe<PlatformIdentifier>;
   platform_url: Maybe<Scalars['String']['output']>;
   region: DeploymentRequestPlatformRegion;
+  registered_platform: Maybe<RegisteredPlatform>;
   request_date: Scalars['Date']['output'];
   requester_email: Maybe<Scalars['String']['output']>;
+  service_instance: Maybe<ServiceInstance>;
   service_instance_id: Scalars['ServiceInstanceId']['output'];
   start_date: Maybe<Scalars['Date']['output']>;
   type: DeploymentRequestDeploymentType;
@@ -1197,6 +1199,7 @@ export type MutationChangeSelectedOrganizationArgs = {
 
 
 export type MutationContactUsArgs = {
+  deploymentRequestType: InputMaybe<DeploymentRequestDeploymentType>;
   message: InputMaybe<Scalars['String']['input']>;
   platformId: InputMaybe<Scalars['ID']['input']>;
   platformIdentifier: InputMaybe<PlatformIdentifier>;
@@ -1491,7 +1494,6 @@ export type MutationUpdateEpicArgs = {
 
 
 export type MutationUpdatePlatformServiceMetadataArgs = {
-  document: InputMaybe<Scalars['Upload']['input']>;
   input: UpdatePlatformServiceMetadataInput;
 };
 
@@ -1896,6 +1898,8 @@ export type Query = {
   votingRound: Maybe<VotingRound>;
   votingRoundResults: VotingRoundResults;
   votingRounds: Array<VotingRound>;
+  xtmPlatformBundle: Maybe<DeploymentRequest>;
+  xtmonePlatformIntegrationStatus: Maybe<XtmoneIntegrationStatus>;
 };
 
 
@@ -2225,6 +2229,11 @@ export type QueryVotingRoundsArgs = {
   service_instance_id: InputMaybe<Scalars['ServiceInstanceId']['input']>;
 };
 
+
+export type QueryXtmonePlatformIntegrationStatusArgs = {
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+};
+
 export type RefreshPlatformRegistrationConnectivityStatusAllTenantsInput = {
   platformId: Scalars['String']['input'];
   platformIdentifier: PlatformIdentifier;
@@ -2280,6 +2289,7 @@ export type RegisteredPlatform = Node & {
   last_connectivity_check: Maybe<Scalars['Date']['output']>;
   myGroups: Maybe<Array<ServiceGroup>>;
   platform_id: Scalars['String']['output'];
+  status: Maybe<PlatformConfigurationStatus>;
   subscription: Maybe<SubscriptionModel>;
   tenant_id: Maybe<Scalars['String']['output']>;
   tenant_name: Maybe<Scalars['String']['output']>;
@@ -3141,6 +3151,21 @@ export enum VotingRoundTheme {
   Thread = 'thread'
 }
 
+export type XtmoneIntegrationStatus = {
+  __typename?: 'XtmoneIntegrationStatus';
+  last_checked_at: Maybe<Scalars['String']['output']>;
+  linked: Scalars['Boolean']['output'];
+  openaev: XtmoneIntegrationStatusEntry;
+  opencti: XtmoneIntegrationStatusEntry;
+};
+
+export type XtmoneIntegrationStatusEntry = {
+  __typename?: 'XtmoneIntegrationStatusEntry';
+  connected: Scalars['Boolean']['output'];
+  last_checked_at: Maybe<Scalars['String']['output']>;
+  status: Scalars['String']['output'];
+};
+
 export type TrialsAdminCancelDeploymentRequestMutationVariables = Exact<{
   deploymentRequestId: Scalars['DeploymentRequestId']['input'];
 }>;
@@ -3186,6 +3211,26 @@ export type TrialsQuotasQueryVariables = Exact<{
 
 
 export type TrialsQuotasQuery = { __typename?: 'Query', deploymentRequestsAvailable: Array<{ __typename?: 'DeploymentAvailability', id: string, region: DeploymentRequestPlatformRegion, availableCount: number, capacity: number, platform_identifier: PlatformIdentifier | null }> };
+
+export type XtmPlatformBundleProductFragment = { __typename?: 'DeploymentRequest', platform_identifier: PlatformIdentifier | null, service_instance_id: any, url: string | null, service_instance: { __typename?: 'ServiceInstance', name: string } | null, registered_platform: { __typename?: 'RegisteredPlatform', status: PlatformConfigurationStatus | null, last_connectivity_check: any | null, url: string, myGroups: Array<{ __typename?: 'ServiceGroup', id: string, name: ServiceGroupName }> | null } | null };
+
+export type XtmPlatformBundleDetailsFragment = { __typename?: 'DeploymentRequest', id: string, service_instance_id: any, organization_name: string | null, start_date: any | null, end_date: any | null, hub_status: DeploymentRequestHubStatus, requester_email: string | null, request_date: any, cancellation_date: any | null, children: Array<{ __typename?: 'DeploymentRequest', platform_identifier: PlatformIdentifier | null, service_instance_id: any, url: string | null, service_instance: { __typename?: 'ServiceInstance', name: string } | null, registered_platform: { __typename?: 'RegisteredPlatform', status: PlatformConfigurationStatus | null, last_connectivity_check: any | null, url: string, myGroups: Array<{ __typename?: 'ServiceGroup', id: string, name: ServiceGroupName }> | null } | null }> | null };
+
+export type XtmPlatformBundleQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type XtmPlatformBundleQuery = { __typename?: 'Query', xtmPlatformBundle: { __typename?: 'DeploymentRequest', id: string, service_instance_id: any, organization_name: string | null, start_date: any | null, end_date: any | null, hub_status: DeploymentRequestHubStatus, requester_email: string | null, request_date: any, cancellation_date: any | null, children: Array<{ __typename?: 'DeploymentRequest', platform_identifier: PlatformIdentifier | null, service_instance_id: any, url: string | null, service_instance: { __typename?: 'ServiceInstance', name: string } | null, registered_platform: { __typename?: 'RegisteredPlatform', status: PlatformConfigurationStatus | null, last_connectivity_check: any | null, url: string, myGroups: Array<{ __typename?: 'ServiceGroup', id: string, name: ServiceGroupName }> | null } | null }> | null } | null };
+
+export type XtmoneIntegrationStatusEntryFragment = { __typename?: 'XtmoneIntegrationStatusEntry', status: string, connected: boolean, last_checked_at: string | null };
+
+export type XtmoneIntegrationStatusFragment = { __typename?: 'XtmoneIntegrationStatus', linked: boolean, last_checked_at: string | null, opencti: { __typename?: 'XtmoneIntegrationStatusEntry', status: string, connected: boolean, last_checked_at: string | null }, openaev: { __typename?: 'XtmoneIntegrationStatusEntry', status: string, connected: boolean, last_checked_at: string | null } };
+
+export type XtmonePlatformIntegrationStatusQueryVariables = Exact<{
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+}>;
+
+
+export type XtmonePlatformIntegrationStatusQuery = { __typename?: 'Query', xtmonePlatformIntegrationStatus: { __typename?: 'XtmoneIntegrationStatus', linked: boolean, last_checked_at: string | null, opencti: { __typename?: 'XtmoneIntegrationStatusEntry', status: string, connected: boolean, last_checked_at: string | null }, openaev: { __typename?: 'XtmoneIntegrationStatusEntry', status: string, connected: boolean, last_checked_at: string | null } } | null };
 
 type HomepageDocument_Connector_Fragment = { __typename?: 'Connector', verified: boolean, manager_supported: boolean, id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
 
@@ -3296,7 +3341,7 @@ export type RegisteredPlatformsListQueryVariables = Exact<{
 }>;
 
 
-export type RegisteredPlatformsListQuery = { __typename?: 'Query', registeredPlatforms: Array<{ __typename?: 'RegisteredPlatform', id: string, platform_id: string, title: string, url: string, contract: PlatformContract, identifier: ServiceDefinitionIdentifier, subscription: { __typename?: 'SubscriptionModel', end_date: any | null, start_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string, name: string } } | null }> };
+export type RegisteredPlatformsListQuery = { __typename?: 'Query', registeredPlatforms: Array<{ __typename?: 'RegisteredPlatform', id: string, platform_id: string, title: string, url: string, contract: PlatformContract, identifier: ServiceDefinitionIdentifier, deployment_request: { __typename?: 'DeploymentRequest', type: DeploymentRequestDeploymentType, parent_id: any | null } | null, subscription: { __typename?: 'SubscriptionModel', end_date: any | null, start_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string, name: string } } | null }> };
 
 export type RegisteredPlatformsQueryVariables = Exact<{
   input: RegisteredPlatformsInput;
@@ -3624,6 +3669,60 @@ export const TrialsQuotaFragmentDoc = `
   platform_identifier
 }
     `;
+export const XtmPlatformBundleProductFragmentDoc = `
+    fragment XtmPlatformBundleProduct on DeploymentRequest {
+  platform_identifier
+  service_instance_id
+  url
+  service_instance {
+    name
+  }
+  registered_platform {
+    status
+    last_connectivity_check
+    url
+    myGroups {
+      id
+      name
+    }
+  }
+}
+    `;
+export const XtmPlatformBundleDetailsFragmentDoc = `
+    fragment XtmPlatformBundleDetails on DeploymentRequest {
+  id
+  service_instance_id
+  organization_name
+  start_date
+  end_date
+  hub_status
+  requester_email
+  request_date
+  cancellation_date
+  children {
+    ...XtmPlatformBundleProduct
+  }
+}
+    ${XtmPlatformBundleProductFragmentDoc}`;
+export const XtmoneIntegrationStatusEntryFragmentDoc = `
+    fragment XtmoneIntegrationStatusEntry on XtmoneIntegrationStatusEntry {
+  status
+  connected
+  last_checked_at
+}
+    `;
+export const XtmoneIntegrationStatusFragmentDoc = `
+    fragment XtmoneIntegrationStatus on XtmoneIntegrationStatus {
+  opencti {
+    ...XtmoneIntegrationStatusEntry
+  }
+  openaev {
+    ...XtmoneIntegrationStatusEntry
+  }
+  linked
+  last_checked_at
+}
+    ${XtmoneIntegrationStatusEntryFragmentDoc}`;
 export const HomepageDocumentFragmentDoc = `
     fragment HomepageDocument on Document {
   id
@@ -3931,6 +4030,112 @@ export const useInfiniteTrialsQuotasQuery = <
 useInfiniteTrialsQuotasQuery.getKey = (variables?: TrialsQuotasQueryVariables) => variables === undefined ? ['TrialsQuotas.infinite'] : ['TrialsQuotas.infinite', variables];
 useInfiniteTrialsQuotasQuery.getRootKey = () => ['TrialsQuotas.infinite'] as const;
 useTrialsQuotasQuery.fetcher = (client: GraphQLClient, variables?: TrialsQuotasQueryVariables, headers?: RequestInit['headers']) => fetcher<TrialsQuotasQuery, TrialsQuotasQueryVariables>(client, TrialsQuotasDocument, variables, headers);
+
+export const XtmPlatformBundleDocument = `
+    query XtmPlatformBundle {
+  xtmPlatformBundle {
+    ...XtmPlatformBundleDetails
+  }
+}
+    ${XtmPlatformBundleDetailsFragmentDoc}`;
+
+export const useXtmPlatformBundleQuery = <
+      TData = XtmPlatformBundleQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: XtmPlatformBundleQueryVariables,
+      options?: Omit<UseQueryOptions<XtmPlatformBundleQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<XtmPlatformBundleQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<XtmPlatformBundleQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['XtmPlatformBundle'] : ['XtmPlatformBundle', variables],
+    queryFn: fetcher<XtmPlatformBundleQuery, XtmPlatformBundleQueryVariables>(client, XtmPlatformBundleDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useXtmPlatformBundleQuery.getKey = (variables?: XtmPlatformBundleQueryVariables) => variables === undefined ? ['XtmPlatformBundle'] : ['XtmPlatformBundle', variables];
+useXtmPlatformBundleQuery.getRootKey = () => ['XtmPlatformBundle'] as const;
+export const useInfiniteXtmPlatformBundleQuery = <
+      TData = InfiniteData<XtmPlatformBundleQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: XtmPlatformBundleQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<XtmPlatformBundleQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<XtmPlatformBundleQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<XtmPlatformBundleQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['XtmPlatformBundle.infinite'] : ['XtmPlatformBundle.infinite', variables],
+      queryFn: (metaData) => fetcher<XtmPlatformBundleQuery, XtmPlatformBundleQueryVariables>(client, XtmPlatformBundleDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteXtmPlatformBundleQuery.getKey = (variables?: XtmPlatformBundleQueryVariables) => variables === undefined ? ['XtmPlatformBundle.infinite'] : ['XtmPlatformBundle.infinite', variables];
+useInfiniteXtmPlatformBundleQuery.getRootKey = () => ['XtmPlatformBundle.infinite'] as const;
+useXtmPlatformBundleQuery.fetcher = (client: GraphQLClient, variables?: XtmPlatformBundleQueryVariables, headers?: RequestInit['headers']) => fetcher<XtmPlatformBundleQuery, XtmPlatformBundleQueryVariables>(client, XtmPlatformBundleDocument, variables, headers);
+
+export const XtmonePlatformIntegrationStatusDocument = `
+    query XtmonePlatformIntegrationStatus($serviceInstanceId: ServiceInstanceId!) {
+  xtmonePlatformIntegrationStatus(serviceInstanceId: $serviceInstanceId) {
+    ...XtmoneIntegrationStatus
+  }
+}
+    ${XtmoneIntegrationStatusFragmentDoc}`;
+
+export const useXtmonePlatformIntegrationStatusQuery = <
+      TData = XtmonePlatformIntegrationStatusQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: XtmonePlatformIntegrationStatusQueryVariables,
+      options?: Omit<UseQueryOptions<XtmonePlatformIntegrationStatusQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<XtmonePlatformIntegrationStatusQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<XtmonePlatformIntegrationStatusQuery, TError, TData>(
+      {
+    queryKey: ['XtmonePlatformIntegrationStatus', variables],
+    queryFn: fetcher<XtmonePlatformIntegrationStatusQuery, XtmonePlatformIntegrationStatusQueryVariables>(client, XtmonePlatformIntegrationStatusDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useXtmonePlatformIntegrationStatusQuery.getKey = (variables: XtmonePlatformIntegrationStatusQueryVariables) => ['XtmonePlatformIntegrationStatus', variables];
+useXtmonePlatformIntegrationStatusQuery.getRootKey = () => ['XtmonePlatformIntegrationStatus'] as const;
+export const useInfiniteXtmonePlatformIntegrationStatusQuery = <
+      TData = InfiniteData<XtmonePlatformIntegrationStatusQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: XtmonePlatformIntegrationStatusQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<XtmonePlatformIntegrationStatusQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<XtmonePlatformIntegrationStatusQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<XtmonePlatformIntegrationStatusQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['XtmonePlatformIntegrationStatus.infinite', variables],
+      queryFn: (metaData) => fetcher<XtmonePlatformIntegrationStatusQuery, XtmonePlatformIntegrationStatusQueryVariables>(client, XtmonePlatformIntegrationStatusDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteXtmonePlatformIntegrationStatusQuery.getKey = (variables: XtmonePlatformIntegrationStatusQueryVariables) => ['XtmonePlatformIntegrationStatus.infinite', variables];
+useInfiniteXtmonePlatformIntegrationStatusQuery.getRootKey = () => ['XtmonePlatformIntegrationStatus.infinite'] as const;
+useXtmonePlatformIntegrationStatusQuery.fetcher = (client: GraphQLClient, variables: XtmonePlatformIntegrationStatusQueryVariables, headers?: RequestInit['headers']) => fetcher<XtmonePlatformIntegrationStatusQuery, XtmonePlatformIntegrationStatusQueryVariables>(client, XtmonePlatformIntegrationStatusDocument, variables, headers);
 
 export const MostDeployedDocumentsQueryDocument = `
     query MostDeployedDocumentsQuery($limit: Int!, $platformIdentifiers: [PlatformIdentifier!]) {
@@ -4491,6 +4696,10 @@ export const RegisteredPlatformsListDocument = `
     url
     contract
     identifier
+    deployment_request {
+      type
+      parent_id
+    }
     subscription {
       end_date
       start_date

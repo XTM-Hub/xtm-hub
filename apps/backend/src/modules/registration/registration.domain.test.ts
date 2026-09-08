@@ -372,96 +372,6 @@ describe('registration domain', () => {
     });
   });
 
-  describe('loadRegisteredPlatformsByOrganizationIds', () => {
-    let serviceInstanceId: ServiceInstanceId;
-
-    beforeEach(async () => {
-      requestContext.set(requestContextRegistererUserSecondOrga);
-
-      serviceInstanceId = await RegistrationDomain.registerNewPlatform({
-        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
-        serviceDefinitionId,
-        configuration: {
-          registerer_id:
-            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
-          platform_id: platformId,
-          platform_url: platformUrl,
-          platform_title: platformTitle,
-          platform_contract: platformContract,
-          platform_version: platformOpenCTI,
-          token,
-          last_connectivity_check: new Date(),
-        },
-        platformIdentifier: PlatformIdentifier.Opencti,
-      });
-    });
-
-    afterEach(async () => {
-      await PlatformConfigurationDomain.deleteConfigurationBy({});
-      await ServiceInstanceDomain.deleteServiceInstanceBy({});
-    });
-
-    it('should return an empty array when organizationIds is empty', async () => {
-      // When
-      const result =
-        await RegistrationDomain.loadRegisteredPlatformsByOrganizationIds(
-          [],
-          PlatformIdentifier.Opencti
-        );
-
-      // Then
-      expect(result).toEqual([]);
-    });
-
-    it('should return platforms for the given organization IDs and platform identifier', async () => {
-      // When
-      const result =
-        await RegistrationDomain.loadRegisteredPlatformsByOrganizationIds(
-          [TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID],
-          PlatformIdentifier.Opencti
-        );
-
-      // Then
-      expect(result).toHaveLength(1);
-      expect(result[0]).toMatchObject({
-        id: serviceInstanceId,
-        identifier: ServiceDefinitionIdentifier.OpenctiRegistration,
-      });
-    });
-
-    it('should return an empty array when no platform matches the given organization ID', async () => {
-      // Given
-      const randomOrgId = uuidv4() as OrganizationId;
-
-      // When
-      const result =
-        await RegistrationDomain.loadRegisteredPlatformsByOrganizationIds(
-          [randomOrgId],
-          PlatformIdentifier.Opencti
-        );
-
-      // Then
-      expect(result).toEqual([]);
-    });
-
-    it('should not return platforms with inactive configuration', async () => {
-      // Given
-      await PlatformConfigurationDomain.updateConfiguration(serviceInstanceId, {
-        status: PlatformConfigurationStatus.Inactive,
-      });
-
-      // When
-      const result =
-        await RegistrationDomain.loadRegisteredPlatformsByOrganizationIds(
-          [TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID],
-          PlatformIdentifier.Opencti
-        );
-
-      // Then
-      expect(result).toEqual([]);
-    });
-  });
-
   describe('loadAllActiveRegisteredPlatformsByPlatformIdentifier', () => {
     const openAEVServiceDefinitionId =
       SERVICES.DEFINITIONS.OPENAEV_REGISTRATION.ID;
@@ -724,7 +634,7 @@ describe('registration domain', () => {
       expect(platforms).toHaveLength(1);
       expect(platforms[0]?.platform_id).toBe(platformId);
     });
-    it('should not return platforms with non-active trials when onlyActiveTrials is true', async () => {
+    it('should not return platforms with non-active trials when onlyActive is true', async () => {
       await DeploymentRequestDomain.insertDeploymentRequest({
         id: uuidv4() as DeploymentRequest['id'],
         service_instance_id: openCTIServiceInstanceId,
@@ -747,7 +657,30 @@ describe('registration domain', () => {
 
       expect(platforms).toHaveLength(0);
     });
-    it('should return platforms with active trials when onlyActiveTrials is true', async () => {
+    it('should not return platforms with cancelled trials when onlyActive is true', async () => {
+      await DeploymentRequestDomain.insertDeploymentRequest({
+        id: uuidv4() as DeploymentRequest['id'],
+        service_instance_id: openCTIServiceInstanceId,
+        platform_identifier: PlatformIdentifier.Opencti,
+        region: DeploymentRequestPlatformRegion.EuWest,
+        type: DeploymentRequestDeploymentType.Trial,
+        hub_status: DeploymentRequestHubStatus.Cancelled,
+        platform_token: uuidv4(),
+        organization_requester_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        user_requester_id:
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+        ordering: 1,
+        request_date: new Date(),
+      });
+
+      const platforms = await RegistrationDomain.loadRegisteredPlatforms({
+        platformIdentifier: PlatformIdentifier.Opencti,
+        onlyActive: true,
+      });
+
+      expect(platforms).toHaveLength(0);
+    });
+    it('should return platforms with active trials when onlyActive is true', async () => {
       await DeploymentRequestDomain.insertDeploymentRequest({
         id: uuidv4() as DeploymentRequest['id'],
         service_instance_id: openCTIServiceInstanceId,
@@ -771,7 +704,7 @@ describe('registration domain', () => {
       expect(platforms).toHaveLength(1);
       expect(platforms[0]?.platform_id).toBe(platformId);
     });
-    it('should return platforms only active trials when onlyActiveTrials is true AND onlyTrial is true', async () => {
+    it('should return platforms only active trials when onlyActive is true AND onlyTrial is true', async () => {
       await DeploymentRequestDomain.insertDeploymentRequest({
         id: uuidv4() as DeploymentRequest['id'],
         service_instance_id: openCTIServiceInstanceId,

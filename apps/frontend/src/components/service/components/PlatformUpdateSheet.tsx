@@ -4,10 +4,8 @@ import { invalidatePrivateNavigationQueries } from '@/components/menu/navigation
 import { translateServiceDefinitionIdentifier } from '@/components/registration/PlatformIdentifierMapping';
 import { UpdatePlatformServiceMetadata } from '@/components/service/service.graphql';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
-import { fileListToUploadableMap } from '@/relay/environment/fetch-form-data';
 import {
   Button,
-  FileInput,
   Form,
   FormControl,
   FormField,
@@ -29,7 +27,6 @@ import { z } from 'zod';
 
 const platformUpdateSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  illustration_document: z.custom<FileList>().optional(),
 });
 
 interface PlatformUpdateSheetProps {
@@ -39,6 +36,7 @@ interface PlatformUpdateSheetProps {
   serviceDefinitionIdentifier: ServiceDefinitionIdentifier;
   open: boolean;
   setOpen: (open: boolean) => void;
+  onUpdated?: () => void;
 }
 
 export const PlatformUpdateSheet = ({
@@ -48,6 +46,7 @@ export const PlatformUpdateSheet = ({
   serviceDefinitionIdentifier,
   open,
   setOpen,
+  onUpdated,
 }: PlatformUpdateSheetProps) => {
   const t = useTranslations();
   const { toast } = useToast();
@@ -62,30 +61,21 @@ export const PlatformUpdateSheet = ({
     resolver: zodResolver(platformUpdateSchema),
     defaultValues: {
       name: serviceInstanceName,
-      illustration_document: undefined,
     },
   });
 
   const onSubmit = (values: z.infer<typeof platformUpdateSchema>) => {
-    const document = !values.illustration_document
-      ? null
-      : Array.from(values.illustration_document);
-    const uploadables = !document
-      ? undefined
-      : fileListToUploadableMap(document);
-
     updatePlatformMetadata({
       variables: {
         input: {
           serviceInstanceId: serviceInstanceId,
           name: values.name,
         },
-        document,
       },
-      uploadables,
       onCompleted: () => {
         setOpen(false);
         invalidatePrivateNavigationQueries(queryClient);
+        onUpdated?.();
         toast({
           title: t('Utils.Success'),
           description: t('Platform.Updated', {
@@ -94,7 +84,6 @@ export const PlatformUpdateSheet = ({
         });
         form.reset({
           name: values.name,
-          illustration_document: undefined,
         });
       },
       onError: (error) => {
@@ -147,25 +136,6 @@ export const PlatformUpdateSheet = ({
               />
             </FormControl>
           </FormItem>
-
-          <FormField
-            control={form.control}
-            name="illustration_document"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('Platform.IllustrationImage')}</FormLabel>
-                <FormControl>
-                  <FileInput
-                    name="illustration_document"
-                    accept="image/*"
-                    onChange={field.onChange}
-                    className="w-full"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
 
           <SheetFooter>
             <Button

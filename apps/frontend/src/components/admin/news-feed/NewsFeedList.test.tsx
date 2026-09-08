@@ -24,7 +24,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/utils/date', () => ({
-  formatDate: (date: string) => `formatted:${date}`,
+  useDateFormatter: () => (date: string) => `formatted:${date}`,
 }));
 
 vi.mock('@/utils/services', async (importOriginal) => ({

@@ -20,9 +20,8 @@ export const ServiceAddPicture = graphql`
 export const UpdatePlatformServiceMetadata = graphql`
   mutation serviceUpdatePlatformServiceMetadataMutation(
     $input: UpdatePlatformServiceMetadataInput!
-    $document: Upload
   ) {
-    updatePlatformServiceMetadata(input: $input, document: $document) {
+    updatePlatformServiceMetadata(input: $input) {
       ...registerRegisteredPlatformFragment
     }
   }

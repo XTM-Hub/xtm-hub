@@ -358,7 +358,6 @@ describe('newsFeedApp', () => {
       const createCustomDashboardNewsFeedItem = async () => {
         await NewsFeedApp.createResourceNewsFeedItem({
           document,
-          serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiCustomDashboards,
         });
@@ -367,7 +366,6 @@ describe('newsFeedApp', () => {
       it('should do nothing when the service definition is not configured', async () => {
         await NewsFeedApp.createResourceNewsFeedItem({
           document,
-          serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiIntegrations,
         });
@@ -421,7 +419,7 @@ describe('newsFeedApp', () => {
         );
       });
 
-      it('should create the news feed item but no provisioned records when no organizations are subscribed', async () => {
+      it('should create the news feed item but no provisioned records when no platforms are registered', async () => {
         await createCustomDashboardNewsFeedItem();
 
         const newsFeedItem = await TestHelper.newsFeed.loadFirstItem();
@@ -473,7 +471,6 @@ describe('newsFeedApp', () => {
       const updateCustomDashboardNewsFeedItem = async () => {
         await NewsFeedApp.updateResourceNewsFeedItem({
           document,
-          serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiCustomDashboards,
         });
@@ -482,14 +479,12 @@ describe('newsFeedApp', () => {
       it('should do nothing when the service definition is not configured', async () => {
         await NewsFeedApp.createResourceNewsFeedItem({
           document,
-          serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiCustomDashboards,
         });
 
         await NewsFeedApp.updateResourceNewsFeedItem({
           document,
-          serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiIntegrations,
         });
@@ -522,7 +517,6 @@ describe('newsFeedApp', () => {
           // Given
           await NewsFeedApp.createResourceNewsFeedItem({
             document,
-            serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
             serviceDefinitionIdentifier:
               ServiceDefinitionIdentifier.OpenctiCustomDashboards,
           });
@@ -537,7 +531,7 @@ describe('newsFeedApp', () => {
         }
       );
 
-      it('should provision the updated news feed item to all platforms subscribed to the service instance', async () => {
+      it('should provision the updated news feed item to all actively registered platforms', async () => {
         const firstPlatformId = uuidv4();
         const secondPlatformId = uuidv4();
         // Given
@@ -553,7 +547,6 @@ describe('newsFeedApp', () => {
 
         await NewsFeedApp.createResourceNewsFeedItem({
           document,
-          serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiCustomDashboards,
         });
@@ -597,7 +590,6 @@ describe('newsFeedApp', () => {
 
         await NewsFeedApp.createResourceNewsFeedItem({
           document,
-          serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiCustomDashboards,
         });
@@ -621,11 +613,10 @@ describe('newsFeedApp', () => {
         });
       });
 
-      it('should not provision when no organizations are subscribed to the service instance', async () => {
+      it('should not provision when no platforms are registered', async () => {
         // Given
         await NewsFeedApp.createResourceNewsFeedItem({
           document,
-          serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiCustomDashboards,
         });
@@ -688,7 +679,6 @@ describe('newsFeedApp', () => {
       const createPlaybookNewsFeedItem = async () => {
         await NewsFeedApp.createResourceNewsFeedItem({
           document,
-          serviceInstanceId: SERVICES.INSTANCES.OPENCTI_PLAYBOOKS.ID,
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiPlaybooks,
         });
@@ -815,9 +805,6 @@ describe('newsFeedApp', () => {
     });
 
     describe('upsertResourceNewsFeed', () => {
-      const serviceInstanceId = SERVICES.INSTANCES.CUSTOM_DASHBOARDS
-        .ID as ServiceInstanceId;
-
       it('should do nothing when the service definition is not configured', async () => {
         // Given
         vi.spyOn(NewsFeedApp, 'isNewsFeedConfigured').mockReturnValue(false);
@@ -832,7 +819,6 @@ describe('newsFeedApp', () => {
         await NewsFeedApp.upsertResourceNewsFeed({
           documentBeforeUpdate: undefined,
           updatedDocument: { ...document, active: true },
-          serviceInstanceId,
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiIntegrations,
         });
@@ -858,7 +844,6 @@ describe('newsFeedApp', () => {
         await NewsFeedApp.upsertResourceNewsFeed({
           documentBeforeUpdate: undefined,
           updatedDocument,
-          serviceInstanceId,
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiCustomDashboards,
         });
@@ -867,7 +852,6 @@ describe('newsFeedApp', () => {
         expect(createResourceNewsFeedItemSpy).toHaveBeenCalledOnce();
         expect(createResourceNewsFeedItemSpy).toHaveBeenCalledWith({
           document: updatedDocument,
-          serviceInstanceId,
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiCustomDashboards,
         });
@@ -890,7 +874,6 @@ describe('newsFeedApp', () => {
         await NewsFeedApp.upsertResourceNewsFeed({
           documentBeforeUpdate: { ...document, active: true },
           updatedDocument,
-          serviceInstanceId,
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiCustomDashboards,
         });
@@ -899,7 +882,6 @@ describe('newsFeedApp', () => {
         expect(updateResourceNewsFeedItemSpy).toHaveBeenCalledOnce();
         expect(updateResourceNewsFeedItemSpy).toHaveBeenCalledWith({
           document: updatedDocument,
-          serviceInstanceId,
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiCustomDashboards,
         });
@@ -920,7 +902,6 @@ describe('newsFeedApp', () => {
         await NewsFeedApp.upsertResourceNewsFeed({
           documentBeforeUpdate: { ...document, active: true },
           updatedDocument: { ...document, active: false },
-          serviceInstanceId,
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiCustomDashboards,
         });
@@ -945,7 +926,6 @@ describe('newsFeedApp', () => {
         await NewsFeedApp.upsertResourceNewsFeed({
           documentBeforeUpdate: undefined,
           updatedDocument: { ...document, active: true },
-          serviceInstanceId,
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiCustomDashboards,
         });
@@ -976,7 +956,6 @@ describe('newsFeedApp', () => {
         await NewsFeedApp.upsertResourceNewsFeed({
           documentBeforeUpdate: { ...document, active: true },
           updatedDocument: { ...document, active: true },
-          serviceInstanceId,
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiCustomDashboards,
         });

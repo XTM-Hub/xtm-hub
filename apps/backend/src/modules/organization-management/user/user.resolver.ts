@@ -323,7 +323,7 @@ const resolvers: Resolvers = {
     },
     contactUs: async (
       _,
-      { message, platformIdentifier, platformId },
+      { message, platformIdentifier, platformId, deploymentRequestType },
       portalContext
     ) => {
       try {
@@ -336,6 +336,7 @@ const resolvers: Resolvers = {
           platformToken,
           platformId: platformId ?? undefined,
           platformIdentifier: platformIdentifier ?? undefined,
+          deploymentRequestType: deploymentRequestType ?? undefined,
         });
         return { success: true };
       } catch (error) {

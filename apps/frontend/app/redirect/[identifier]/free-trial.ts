@@ -1,4 +1,7 @@
 import { loadMeUser } from '@/utils/load-me-user';
+import { XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
+import { isFeatureEnabled } from '@/utils/settings.service';
+import { FeatureFlag } from '@graphql/generated';
 import { NextRequest, NextResponse } from 'next/server';
 import { loadBaseUrlFront } from './utils/load';
 import { getLoginRedirectionURL } from './utils/url';
@@ -12,8 +15,11 @@ export const redirectToFreeTrial = async (request: NextRequest) => {
       return NextResponse.redirect(redirectionUrl);
     }
 
+    const bundleEnabled = await isFeatureEnabled(FeatureFlag.XtmPlatformTrial);
     const registrationUrl = new URL(
-      `/app/service/opencti-free-trial`,
+      bundleEnabled
+        ? XTM_PLATFORM_TRIAL_PATH
+        : `/app/service/opencti-free-trial`,
       baseUrlFront
     );
     return NextResponse.redirect(registrationUrl);

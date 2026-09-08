@@ -20,7 +20,12 @@ vi.mock('@/components/menu/navigation/public/PublicNavigation', () => ({
 
 describe('PublicMobileMenuButton', () => {
   it('renders the trigger with a screen-reader label', () => {
-    testRender(<PublicMobileMenuButton />);
+    testRender(
+      <PublicMobileMenuButton
+        visibleServiceSlugs={[]}
+        isXtmPlatformTrialEnabled={true}
+      />
+    );
 
     const srText = screen.getByText('Header.OpenMenu');
     expect(srText).toBeInTheDocument();
@@ -28,7 +33,12 @@ describe('PublicMobileMenuButton', () => {
   });
 
   it('renders the menu icon trigger', () => {
-    testRender(<PublicMobileMenuButton />);
+    testRender(
+      <PublicMobileMenuButton
+        visibleServiceSlugs={[]}
+        isXtmPlatformTrialEnabled={true}
+      />
+    );
 
     // The SheetTrigger wraps the icon; the sr-only span makes it accessible
     expect(screen.getByText('Header.OpenMenu')).toBeInTheDocument();
@@ -36,7 +46,12 @@ describe('PublicMobileMenuButton', () => {
 
   it('opens the sheet and shows PublicNavigation when trigger is clicked', async () => {
     const user = userEvent.setup();
-    testRender(<PublicMobileMenuButton />);
+    testRender(
+      <PublicMobileMenuButton
+        visibleServiceSlugs={[]}
+        isXtmPlatformTrialEnabled={true}
+      />
+    );
 
     expect(screen.queryByTestId('public-navigation')).not.toBeInTheDocument();
 
@@ -52,7 +67,12 @@ describe('PublicMobileMenuButton', () => {
 
   it('shows the brand name in the sheet header when open', async () => {
     const user = userEvent.setup();
-    testRender(<PublicMobileMenuButton />);
+    testRender(
+      <PublicMobileMenuButton
+        visibleServiceSlugs={[]}
+        isXtmPlatformTrialEnabled={true}
+      />
+    );
 
     await user.click(
       screen.getByText('Header.OpenMenu').closest('button') ??
@@ -68,7 +88,12 @@ describe('PublicMobileMenuButton', () => {
     const user = userEvent.setup();
     vi.mocked(usePathname).mockReturnValue('/en');
 
-    const { rerender } = testRender(<PublicMobileMenuButton />);
+    const { rerender } = testRender(
+      <PublicMobileMenuButton
+        visibleServiceSlugs={[]}
+        isXtmPlatformTrialEnabled={true}
+      />
+    );
 
     await user.click(
       screen.getByText('Header.OpenMenu').closest('button') ??
@@ -80,7 +105,12 @@ describe('PublicMobileMenuButton', () => {
     });
 
     vi.mocked(usePathname).mockReturnValue('/en/new-path');
-    rerender(<PublicMobileMenuButton />);
+    rerender(
+      <PublicMobileMenuButton
+        visibleServiceSlugs={[]}
+        isXtmPlatformTrialEnabled={true}
+      />
+    );
 
     await waitFor(() => {
       expect(screen.queryByTestId('public-navigation')).not.toBeInTheDocument();
@@ -89,7 +119,12 @@ describe('PublicMobileMenuButton', () => {
 
   it('closes the sheet when a link inside the content is clicked', async () => {
     const user = userEvent.setup();
-    testRender(<PublicMobileMenuButton />);
+    testRender(
+      <PublicMobileMenuButton
+        visibleServiceSlugs={[]}
+        isXtmPlatformTrialEnabled={true}
+      />
+    );
 
     await user.click(
       screen.getByText('Header.OpenMenu').closest('button') ??

@@ -28,7 +28,7 @@ import { useTablePagination } from '@/hooks/use-table-pagination';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
-import { daysUntil, formatDate } from '@/utils/date';
+import { daysUntil, useDateFormatter } from '@/utils/date';
 import { APP_PATH } from '@/utils/path/constant';
 import {
   ArrowShapeUpIcon,
@@ -78,6 +78,7 @@ type TrialsProductValue = Pick<
 const dateColumn = (
   id: 'request_date' | 'start_date' | 'end_date' | 'cancellation_date',
   header: string,
+  formatDate: ReturnType<typeof useDateFormatter>,
   enableSorting = true
 ): TrialsColumn => ({
   accessorKey: id,
@@ -337,6 +338,7 @@ const buildTrialsColumns = (
   type: TrialsTabType,
   scope: TrialsScope,
   t: Translate,
+  formatDate: ReturnType<typeof useDateFormatter>,
   isReorderTrialsAllowed: boolean,
   renderActions: (request: TrialsRowFragment) => ReactNode
 ): TrialsColumn[] => [
@@ -381,6 +383,7 @@ const buildTrialsColumns = (
         dateColumn(
           'request_date',
           t('TrialsDashboard.Columns.RequestDate'),
+          formatDate,
           !isReorderTrialsAllowed
         ),
       ]
@@ -388,11 +391,13 @@ const buildTrialsColumns = (
         dateColumn(
           'start_date',
           t('TrialsDashboard.Columns.StartDate'),
+          formatDate,
           !isReorderTrialsAllowed
         ),
         dateColumn(
           'end_date',
           t('TrialsDashboard.Columns.EndDate'),
+          formatDate,
           !isReorderTrialsAllowed
         ),
       ]),
@@ -439,7 +444,8 @@ const buildTrialsColumns = (
     ? [
         dateColumn(
           'cancellation_date',
-          t('TrialsDashboard.Columns.CancellationDate')
+          t('TrialsDashboard.Columns.CancellationDate'),
+          formatDate
         ),
         {
           accessorKey: 'cancellation_user_email',
@@ -496,6 +502,7 @@ interface TrialsTabProps {
 
 const TrialsTab = ({ type, scope }: TrialsTabProps) => {
   const t = useTranslations();
+  const formatDate = useDateFormatter();
   const isAdminByPass = useAdminByPass();
   const userHasModifyTrialCapa = useUserHasPortalCapability([
     PortalCapability.ModifyTrials,
@@ -508,14 +515,21 @@ const TrialsTab = ({ type, scope }: TrialsTabProps) => {
 
   const columns = useMemo(
     () =>
-      buildTrialsColumns(type, scope, t, isReorderTrialsAllowed, (request) => (
-        <TrialsRowActions
-          request={request}
-          type={type}
-          scope={scope}
-        />
-      )),
-    [type, scope, t, isReorderTrialsAllowed]
+      buildTrialsColumns(
+        type,
+        scope,
+        t,
+        formatDate,
+        isReorderTrialsAllowed,
+        (request) => (
+          <TrialsRowActions
+            request={request}
+            type={type}
+            scope={scope}
+          />
+        )
+      ),
+    [type, scope, t, formatDate, isReorderTrialsAllowed]
   );
 
   const {

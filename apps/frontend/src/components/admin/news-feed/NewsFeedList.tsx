@@ -10,7 +10,7 @@ import BadgeOverflowCounter from '@/components/ui/BadgeOverflowCounter';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { i18nKey } from '@/utils/datatable';
-import { formatDate } from '@/utils/date';
+import { useDateFormatter } from '@/utils/date';
 import { localizedCardName } from '@/utils/services';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
 import { MoreVertIcon } from '@filigran/icon';
@@ -50,6 +50,7 @@ const NEWS_FEED_TYPE_TO_SERVICE_SLUG: Record<NewsFeedItemType, ServiceSlug> = {
 
 const NewsFeedList = () => {
   const t = useTranslations();
+  const formatDate = useDateFormatter();
   const router = useRouter();
   const [deleteTarget, setDeleteTarget] = useState<
     newsFeedItem_fragment$data | undefined
@@ -194,7 +195,7 @@ const NewsFeedList = () => {
           ),
       },
     ],
-    [t]
+    [t, formatDate]
   );
 
   return (

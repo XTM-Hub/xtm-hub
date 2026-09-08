@@ -67,3 +67,65 @@ query TrialsQuotas($platformIdentifier: PlatformIdentifier) {
     ...TrialsQuota
   }
 }
+
+fragment XtmPlatformBundleProduct on DeploymentRequest {
+  platform_identifier
+  service_instance_id
+  url
+  service_instance {
+    name
+  }
+  registered_platform {
+    status
+    last_connectivity_check
+    url
+    myGroups {
+      id
+      name
+    }
+  }
+}
+
+fragment XtmPlatformBundleDetails on DeploymentRequest {
+  id
+  service_instance_id
+  organization_name
+  start_date
+  end_date
+  hub_status
+  requester_email
+  request_date
+  cancellation_date
+  children {
+    ...XtmPlatformBundleProduct
+  }
+}
+
+query XtmPlatformBundle {
+  xtmPlatformBundle {
+    ...XtmPlatformBundleDetails
+  }
+}
+
+fragment XtmoneIntegrationStatusEntry on XtmoneIntegrationStatusEntry {
+  status
+  connected
+  last_checked_at
+}
+
+fragment XtmoneIntegrationStatus on XtmoneIntegrationStatus {
+  opencti {
+    ...XtmoneIntegrationStatusEntry
+  }
+  openaev {
+    ...XtmoneIntegrationStatusEntry
+  }
+  linked
+  last_checked_at
+}
+
+query XtmonePlatformIntegrationStatus($serviceInstanceId: ServiceInstanceId!) {
+  xtmonePlatformIntegrationStatus(serviceInstanceId: $serviceInstanceId) {
+    ...XtmoneIntegrationStatus
+  }
+}

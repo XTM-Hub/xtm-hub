@@ -18,6 +18,10 @@ Handlebars.registerHelper('eq', function (a, b) {
   return a === b;
 });
 
+Handlebars.registerHelper('includes', function (list, value) {
+  return Array.isArray(list) && list.includes(value);
+});
+
 const smtpOptions = config.get<TransportOptions>('smtp_options');
 const transporter = nodemailer.createTransport(smtpOptions);
 
@@ -54,6 +58,10 @@ export const buildServiceLink = ({
   serviceInstanceId: string;
 }) => {
   return `${config.get('base_url_front')}/app/service/${serviceDefinitionIdentifier}/${toGlobalId('ServiceInstance', serviceInstanceId)}`;
+};
+
+export const buildXtmPlatformTrialLink = () => {
+  return `${config.get('base_url_front')}/app/xtm-platform-trial`;
 };
 
 export const buildPendingUserActionLink = ({
@@ -109,6 +117,13 @@ export async function renderEmail<T extends keyof MailTemplates>(
                 PlatformIdentifierToString[
                   params.platformIdentifier as PlatformIdentifier
                 ],
+            }
+          : {}),
+        ...('products' in params && Array.isArray(params.products)
+          ? {
+              products: (params.products as PlatformIdentifier[]).map(
+                (product) => PlatformIdentifierToString[product]
+              ),
             }
           : {}),
       }
