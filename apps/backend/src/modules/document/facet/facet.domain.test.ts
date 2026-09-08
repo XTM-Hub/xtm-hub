@@ -292,20 +292,25 @@ describe('facet.domain', () => {
       ]);
 
       // When — same user in context, list and facets called with the same scope
-      requestContext.set(requestContextSimpleUserFiligran2);
+      const { connection, facets } = await requestContext.run(
+        requestContextSimpleUserFiligran2,
+        async () => {
+          const connection = await DocumentApp.loadDocuments({
+            serviceInstanceId: privateServiceInstance.id,
+            first: 50,
+            orderBy: DocumentOrdering.CreatedAt,
+            orderMode: OrderingMode.Asc,
+          });
 
-      const connection = await DocumentApp.loadDocuments({
-        serviceInstanceId: privateServiceInstance.id,
-        first: 50,
-        orderBy: DocumentOrdering.CreatedAt,
-        orderMode: OrderingMode.Asc,
-      });
+          const facets = await FacetDomain.loadDocumentFacets({
+            serviceInstanceId: privateServiceInstance.id,
+            documentType: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+            logicalFilters: null,
+          });
 
-      const facets = await FacetDomain.loadDocumentFacets({
-        serviceInstanceId: privateServiceInstance.id,
-        documentType: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-        logicalFilters: null,
-      });
+          return { connection, facets };
+        }
+      );
 
       // Then — the facet counts and the list agree on what this user can see
       const verifiedSum = facets.verified.reduce(
