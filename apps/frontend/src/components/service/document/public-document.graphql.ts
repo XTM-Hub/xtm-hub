@@ -290,3 +290,21 @@ export const PublicDocumentBySlugQuery = graphql`
     }
   }
 `;
+
+export const publicDocumentSitemapItem = graphql`
+  fragment publicDocumentSitemapItemFragment on Document @inline {
+    slug
+    created_at
+    updated_at
+  }
+`;
+
+export const PublicDocumentsByServiceSlugSitemapQuery = graphql`
+  query publicDocumentsByServiceSlugSitemapQuery(
+    $serviceInstanceSlug: String!
+  ) {
+    publicDocumentsByServiceSlug(serviceInstanceSlug: $serviceInstanceSlug) {
+      ...publicDocumentSitemapItemFragment
+    }
+  }
+`;

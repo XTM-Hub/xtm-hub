@@ -3,7 +3,7 @@ import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
 import { fetchSeoServiceInstances } from '@/utils/seo-service-instance/utils/seo-service-instance.server.utils';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
-import { fetchAllDocuments } from '@/utils/shareable-resources/utils/shareable-resources.server.utils';
+import { fetchDocumentSlugsForSitemap } from '@/utils/shareable-resources/utils/shareable-resources.server.utils';
 import SettingsQuery, { settingsQuery } from '@generated/settingsQuery.graphql';
 import type { MetadataRoute } from 'next';
 
@@ -76,7 +76,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const servicesWithResources = await Promise.all(
     documentBearingServices.map(async (service) => ({
       service,
-      resources: await fetchAllDocuments(service.slug as ServiceSlug),
+      resources: await fetchDocumentSlugsForSitemap(
+        service.slug as ServiceSlug
+      ),
     }))
   );
 

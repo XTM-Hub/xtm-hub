@@ -5,6 +5,8 @@ import type { publicDocumentByServiceSlugItemFragment$data } from '@generated/pu
 import type { publicDocumentBySlugItemFragment$data } from '@generated/publicDocumentBySlugItemFragment.graphql';
 import publicDocumentBySlugQueryGraphql from '@generated/publicDocumentBySlugQuery.graphql';
 import publicDocumentsByServiceSlugQueryGraphql from '@generated/publicDocumentsByServiceSlugQuery.graphql';
+import publicDocumentsByServiceSlugSitemapQueryGraphql from '@generated/publicDocumentsByServiceSlugSitemapQuery.graphql';
+import type { publicDocumentSitemapItemFragment$data } from '@generated/publicDocumentSitemapItemFragment.graphql';
 
 /**
  * Cache tag for the public document list of a service instance. Invalidated
@@ -25,10 +27,10 @@ export const publicDocumentCacheTag = (
 ): string => `public-document:${serviceInstanceSlug}:${docSlug}`;
 
 /**
- * Fetches every public document of a service instance; also used to
- * validate `docSlug` on the detail page before calling the backend for a
- * single document. Tag-invalidated on demand, with a 6h fallback revalidate
- * to catch backend-side changes (e.g. connector manifest ingestion).
+ * Fetches the full detail of every public document of a service instance,
+ * for the catalog listing page. Tag-invalidated on demand, with a 1h
+ * fallback revalidate to catch backend-side changes (e.g. connector
+ * manifest ingestion).
  */
 export async function fetchAllDocuments(
   serviceInstanceSlug: ServiceSlug
@@ -52,6 +54,35 @@ export async function fetchAllDocuments(
   return safeData[
     'publicDocumentsByServiceSlug'
   ] as publicDocumentByServiceSlugItemFragment$data[];
+}
+
+/**
+ * Fetches only the `slug`/`created_at`/`updated_at` of every public document
+ * of a service instance, for sitemap generation. Reuses `fetchAllDocuments`'s
+ * cache tag so a document create/update/delete invalidates both at once.
+ */
+export async function fetchDocumentSlugsForSitemap(
+  serviceInstanceSlug: ServiceSlug
+): Promise<publicDocumentSitemapItemFragment$data[]> {
+  if (!Object.values(ServiceSlug).includes(serviceInstanceSlug)) {
+    throw new Error(`Invalid service slug: ${serviceInstanceSlug}`);
+  }
+  const response = await serverFetchGraphQL(
+    publicDocumentsByServiceSlugSitemapQueryGraphql,
+    { serviceInstanceSlug },
+    {
+      cache: 'force-cache',
+      next: {
+        tags: [publicDocumentsCacheTag(serviceInstanceSlug)],
+        revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS,
+      },
+    }
+  );
+
+  const safeData = response.data as Record<string, unknown>;
+  return safeData[
+    'publicDocumentsByServiceSlug'
+  ] as publicDocumentSitemapItemFragment$data[];
 }
 
 /** Fetches a single public document by slug; same caching as `fetchAllDocuments`. */
