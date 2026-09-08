@@ -35,6 +35,8 @@ interface ManageTrialHeaderProps {
   products: PlatformIdentifier[];
   selectedUsers: ManageTrialHeaderUser[];
   onUsersRemoved: () => void;
+  backHref?: string;
+  backLabelKey?: string;
 }
 
 export const ManageTrialHeader = ({
@@ -42,6 +44,8 @@ export const ManageTrialHeader = ({
   products,
   selectedUsers,
   onUsersRemoved,
+  backHref = XTM_PLATFORM_TRIAL_PATH,
+  backLabelKey = 'Service.Bundle.ManageTrial.BackButton',
 }: ManageTrialHeaderProps) => {
   const t = useTranslations();
   const queryClient = useQueryClient();
@@ -98,9 +102,9 @@ export const ManageTrialHeader = ({
           variant="outline"
           className="gap-s border-elevation-border-default-layer-0"
           asChild>
-          <Link href={XTM_PLATFORM_TRIAL_PATH}>
+          <Link href={backHref}>
             <ArrowUpwardIcon className="h-3 w-3 -rotate-90" />
-            {t('Service.Bundle.ManageTrial.BackButton')}
+            {t(backLabelKey)}
           </Link>
         </Button>
         <div className="flex flex-wrap items-center gap-s">
