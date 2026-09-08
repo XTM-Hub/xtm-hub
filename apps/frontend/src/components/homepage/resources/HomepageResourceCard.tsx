@@ -71,6 +71,7 @@ const HomepageResourceCard = ({
       </div>
       <Link
         className="flex flex-col flex-1 min-h-0 overflow-hidden p-m gap-s"
+        prefetch={false}
         href={url}>
         <div
           className="flex items-start sm:items-center gap-m min-w-0"

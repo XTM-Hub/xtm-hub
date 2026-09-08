@@ -45,14 +45,15 @@ const ServiceListHeaderButtons = ({}) => {
   return (
     <div className="flex gap-s">
       {(hasCapaManageAccess || isAdminOrga || isBypass) && subscriptionId && (
-        <>
-          <Button variant="secondary">
-            <Link
-              href={`/${APP_PATH}/manage/service/${serviceInstance.id}/subscription/${subscriptionId}`}>
-              {t('Service.Capabilities.ManageAccessName')}
-            </Link>
-          </Button>
-        </>
+        <Button
+          variant="secondary"
+          asChild>
+          <Link
+            prefetch={false}
+            href={`/${APP_PATH}/manage/service/${serviceInstance.id}/subscription/${subscriptionId}`}>
+            {t('Service.Capabilities.ManageAccessName')}
+          </Link>
+        </Button>
       )}
       {userCanUpdate && (
         <>

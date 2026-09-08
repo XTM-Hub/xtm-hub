@@ -65,6 +65,7 @@ const ShareableResourceCard = ({
       <Link
         className="flex flex-col flex-1 min-h-0 overflow-hidden"
         onClick={handleClick}
+        prefetch={false}
         href={detailUrl}>
         <ShareableResourceCardHeader
           document={document}
