@@ -517,10 +517,10 @@ describe('deployment app', () => {
           template: 'free_trial_bundle_requested',
           params: {
             firstName: 'Anita',
-            productNames: 'OpenAEV, OpenCTI, and XTM One',
+            productNames: 'OpenCTI, OpenAEV, and XTM One',
             products: [
-              PlatformIdentifier.Openaev,
               PlatformIdentifier.Opencti,
+              PlatformIdentifier.Openaev,
               PlatformIdentifier.Xtmone,
             ],
           },
@@ -2205,8 +2205,8 @@ describe('deployment app', () => {
           template: 'free_trial_bundle_provisioning',
           params: {
             firstName: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.FIRST_NAME,
-            productNames: 'OpenAEV and OpenCTI',
-            products: [PlatformIdentifier.Openaev, PlatformIdentifier.Opencti],
+            productNames: 'OpenCTI and OpenAEV',
+            products: [PlatformIdentifier.Opencti, PlatformIdentifier.Openaev],
           },
         });
       });
@@ -2223,8 +2223,8 @@ describe('deployment app', () => {
           template: 'free_trial_bundle_active',
           params: {
             firstName: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.FIRST_NAME,
-            productNames: 'OpenAEV and OpenCTI',
-            products: [PlatformIdentifier.Openaev, PlatformIdentifier.Opencti],
+            productNames: 'OpenCTI and OpenAEV',
+            products: [PlatformIdentifier.Opencti, PlatformIdentifier.Openaev],
             platformUrl: `${config.get('base_url_front')}/app/xtm-platform-trial`,
           },
         });
@@ -4022,8 +4022,8 @@ describe('deployment app', () => {
         template: 'free_trial_bundle_expired',
         params: {
           firstName: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.FIRST_NAME,
-          productNames: 'OpenAEV and OpenCTI',
-          products: [PlatformIdentifier.Openaev, PlatformIdentifier.Opencti],
+          productNames: 'OpenCTI and OpenAEV',
+          products: [PlatformIdentifier.Opencti, PlatformIdentifier.Openaev],
         },
       });
     });
