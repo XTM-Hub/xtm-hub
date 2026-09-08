@@ -47,7 +47,7 @@ const ServiceList = ({
   paginationControls,
 }: ServiceListProps) => {
   const t = useTranslations();
-  const { translationKey, serviceInstance, type } = useServiceContext();
+  const { translationKey, serviceInstance } = useServiceContext();
   const userCanUpdate = useServiceCapability(
     ServiceRestriction.Upload,
     serviceInstance

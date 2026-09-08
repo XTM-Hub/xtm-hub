@@ -1,8 +1,3 @@
-import { ServiceListFilterEntityType } from '@/components/service/components/header/filter/ServiceListFilterEntityType';
-import {
-  ServiceListFilterKey,
-  ServiceListFilterMap,
-} from '@/components/service/components/header/ServiceListHeader';
 import ShareableResourceServiceList from '@/components/service/components/ShareableResourceServiceList';
 import { ServiceListLocalStorageKey } from '@/hooks/use-service-list-local-storage';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
@@ -26,12 +21,6 @@ const CustomViewsList = ({
   search,
   onSearchChange,
 }: CustomViewsListProps) => {
-  const additionalFilters: ServiceListFilterMap = {
-    [ServiceListFilterKey.EntityType]: {
-      node: <ServiceListFilterEntityType />,
-    },
-  };
-
   return (
     <ShareableResourceServiceList
       queryRef={queryRef}
@@ -41,7 +30,6 @@ const CustomViewsList = ({
       onSearchChange={onSearchChange}
       type={ShareableResourceType.OPENCTI_CUSTOM_VIEW}
       localStorageKey={ServiceListLocalStorageKey.OpenCTICustomViews}
-      additionalFilters={additionalFilters}
     />
   );
 };

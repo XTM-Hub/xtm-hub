@@ -1,5 +1,4 @@
 import { toServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
-import { ServiceListFilterMap } from '@/components/service/components/header/ServiceListHeader';
 import { useActiveAndDraftSplit } from '@/components/service/components/service-list-utils';
 import { AppServiceContext } from '@/components/service/components/ServiceContext';
 import ServiceList from '@/components/service/components/ServiceList';
@@ -48,7 +47,6 @@ export interface ShareableResourceServiceListProps {
   onSearchChange: (v: string) => void;
   type: ShareableResourceType;
   localStorageKey: ServiceListLocalStorageKey;
-  additionalFilters?: ServiceListFilterMap;
 }
 
 /**
@@ -66,7 +64,6 @@ const ShareableResourceServiceList = ({
   onSearchChange,
   type,
   localStorageKey,
-  additionalFilters,
 }: ShareableResourceServiceListProps) => {
   const queryData = usePreloadedQuery<documentsQuery>(
     DocumentsListQuery,
