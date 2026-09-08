@@ -8,7 +8,11 @@ export const toExternalHref = (
   if (!trimmed) return null;
 
   const hasScheme = /^[a-zA-Z][a-zA-Z\d+-]*:/.test(trimmed);
-  const candidate = hasScheme ? trimmed : `https://${trimmed}`;
+  const candidate = hasScheme
+    ? trimmed
+    : trimmed.startsWith('//')
+      ? `https:${trimmed}`
+      : `https://${trimmed}`;
 
   try {
     const parsed = new URL(candidate);
