@@ -10,7 +10,11 @@ import {
   renderEmail,
   sendMail,
 } from './mail-service';
-import { formatProductNames, templateSubjects } from './mail-template/mail';
+import {
+  formatProductNames,
+  sortProductsForMail,
+  templateSubjects,
+} from './mail-template/mail';
 
 vi.mock('config', async (importOriginal) => {
   const mod = await importOriginal<{ default: typeof config }>();
@@ -580,6 +584,82 @@ describe('formatProductNames', () => {
 
   it('should return an empty string without product', () => {
     expect(formatProductNames([])).toBe('');
+  });
+
+  it('should always order products as OpenCTI, OpenAEV then XTM One', () => {
+    expect(
+      formatProductNames([
+        PlatformIdentifier.Xtmone,
+        PlatformIdentifier.Openaev,
+        PlatformIdentifier.Opencti,
+      ])
+    ).toBe('OpenCTI, OpenAEV, and XTM One');
+  });
+});
+
+describe('sortProductsForMail', () => {
+  it('should order products as OpenCTI, OpenAEV then XTM One', () => {
+    expect(
+      sortProductsForMail([
+        PlatformIdentifier.Xtmone,
+        PlatformIdentifier.Openaev,
+        PlatformIdentifier.Opencti,
+      ])
+    ).toEqual([
+      PlatformIdentifier.Opencti,
+      PlatformIdentifier.Openaev,
+      PlatformIdentifier.Xtmone,
+    ]);
+  });
+
+  it('should not mutate the given array', () => {
+    const products = [PlatformIdentifier.Xtmone, PlatformIdentifier.Opencti];
+    sortProductsForMail(products);
+
+    expect(products).toEqual([
+      PlatformIdentifier.Xtmone,
+      PlatformIdentifier.Opencti,
+    ]);
+  });
+});
+
+describe('free_trial_bundle_active bullets', () => {
+  afterEach(() => {
+    clearTemplateCache();
+  });
+
+  it('should list bullets as OpenCTI, OpenAEV then XTM One whatever the products order', async () => {
+    const html = await renderEmail('free_trial_bundle_active', {
+      firstName: 'User',
+      productNames: 'OpenCTI, OpenAEV, and XTM One',
+      products: [
+        PlatformIdentifier.Xtmone,
+        PlatformIdentifier.Openaev,
+        PlatformIdentifier.Opencti,
+      ],
+      platformUrl: 'https://trial.filigran.cloud',
+    });
+
+    const bullets = [...html.matchAll(/Use <strong>([^<]+)<\/strong>/g)].map(
+      ([, product]) => product
+    );
+
+    expect(bullets).toEqual(['OpenCTI', 'OpenAEV', 'XTM One']);
+  });
+
+  it('should only list the bullets of the trialed products', async () => {
+    const html = await renderEmail('free_trial_bundle_active', {
+      firstName: 'User',
+      productNames: 'OpenCTI and XTM One',
+      products: [PlatformIdentifier.Xtmone, PlatformIdentifier.Opencti],
+      platformUrl: 'https://trial.filigran.cloud',
+    });
+
+    const bullets = [...html.matchAll(/Use <strong>([^<]+)<\/strong>/g)].map(
+      ([, product]) => product
+    );
+
+    expect(bullets).toEqual(['OpenCTI', 'XTM One']);
   });
 });
 

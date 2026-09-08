@@ -17,22 +17,22 @@
   together to drive agentic, continuous threat exposure management.
 </p>
 <ul style="margin: 8px 0 24px; padding-left: 20px; line-height: 24px">
-  {{#each products}} {{#if (eq this "OpenCTI")}}
+  {{#if (includes products "OpenCTI")}}
   <li style="margin-bottom: 4px">
     Use <strong>OpenCTI</strong> to gather, enrich, analyze, and prioritize
     threat intelligence.
   </li>
-  {{/if}} {{#if (eq this "OpenAEV")}}
+  {{/if}} {{#if (includes products "OpenAEV")}}
   <li style="margin-bottom: 4px">
     Use <strong>OpenAEV</strong> to simulate real-life attack scenarios,
     validate exploitable paths, and assess team readiness.
   </li>
-  {{/if}} {{#if (eq this "XTM One")}}
+  {{/if}} {{#if (includes products "XTM One")}}
   <li style="margin-bottom: 4px">
     Use <strong>XTM One</strong> to add an agentic layer across your XTM
     Platform to consolidate and orchestrate your threat management operations.
   </li>
-  {{/if}} {{/each}}
+  {{/if}}
 </ul>
 <p style="margin: 0; line-height: 24px; margin-bottom: 24px">
   <strong>
