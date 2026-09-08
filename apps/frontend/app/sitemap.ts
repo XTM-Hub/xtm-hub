@@ -67,12 +67,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 1,
     });
+  }
 
-    if (!documentBearingServiceSlugs.has(service.slug as string)) {
-      continue;
-    }
+  const documentBearingServices = routableSeoServiceInstances.filter(
+    (service) => documentBearingServiceSlugs.has(service.slug as string)
+  );
 
-    const resources = await fetchAllDocuments(service.slug as ServiceSlug);
+  const servicesWithResources = await Promise.all(
+    documentBearingServices.map(async (service) => ({
+      service,
+      resources: await fetchAllDocuments(service.slug as ServiceSlug),
+    }))
+  );
+
+  for (const { service, resources } of servicesWithResources) {
+    const servicePath = `/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${service.slug}`;
     for (const resource of resources) {
       if (!resource.slug) continue;
       const docPath = `${servicePath}/${resource.slug}`;
