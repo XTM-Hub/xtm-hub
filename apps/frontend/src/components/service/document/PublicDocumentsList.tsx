@@ -1,4 +1,4 @@
-import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
+import { toServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { ServiceListFilterSection } from '@/components/service/components/header/filter/ServiceListFilterSection';
 import { ServiceListHeader } from '@/components/service/components/header/ServiceListHeader';
 import { AppServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
@@ -56,25 +56,10 @@ const PublicDocumentsList = ({
     publicDocumentList$key
   >(publicDocumentListGraphql, queryData);
 
-  const facetCounts = useMemo<ServiceListFacetCounts>(() => {
-    const facets = queryDataFacet.documentFacets;
-    const toMap = (values: ReadonlyArray<{ value: string; count: number }>) => {
-      return Object.fromEntries(
-        values.map((item) => [item.value, item.count] as const)
-      );
-    };
-
-    return {
-      integrationType: toMap(facets?.integration_type ?? []),
-      licenseType: toMap(facets?.license_type ?? []),
-      managerSupported: toMap(facets?.manager_supported ?? []),
-      verified: toMap(facets?.verified ?? []),
-      productVersion: toMap(facets?.product_version ?? []),
-      solutionCategory: toMap(facets?.solution_category ?? []),
-      useCase: toMap(facets?.use_case ?? []),
-      entityType: toMap(facets?.entity_type ?? []),
-    };
-  }, [queryDataFacet.documentFacets]);
+  const facetCounts = useMemo(
+    () => toServiceListFacetCounts(queryDataFacet.documentFacets),
+    [queryDataFacet.documentFacets]
+  );
 
   const documents = useMemo(() => {
     return (data.publicDocuments?.edges ?? [])

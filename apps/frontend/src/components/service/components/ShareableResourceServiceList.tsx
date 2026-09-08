@@ -1,3 +1,4 @@
+import { toServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { ServiceListFilterMap } from '@/components/service/components/header/ServiceListHeader';
 import { useActiveAndDraftSplit } from '@/components/service/components/service-list-utils';
 import { AppServiceContext } from '@/components/service/components/ServiceContext';
@@ -8,6 +9,7 @@ import {
   documentsFragment,
   DocumentsListQuery,
 } from '@/components/service/document/document.graphql';
+import { FacetDocumentListQuery } from '@/components/service/document/public-document.graphql';
 import { useDocumentContext } from '@/components/service/document/use-document-context';
 import { PaginationControls } from '@/components/ui/pagination/PaginationControls';
 import {
@@ -15,7 +17,11 @@ import {
   useServiceListLocalStorage,
 } from '@/hooks/use-service-list-local-storage';
 import { useTablePagination } from '@/hooks/use-table-pagination';
-import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
+import {
+  SHAREABLE_RESOURCE_SERVICE_SLUG_MAPPING,
+  ShareableResourceType,
+} from '@/utils/shareable-resources/shareable-resources.types';
+import { useShareableResourceMapping } from '@/utils/shareable-resources/use-shareable-resource-mapping';
 import { documentFacets } from '@generated/documentFacets.graphql';
 import {
   documentItem_fragment$data,
@@ -27,6 +33,7 @@ import {
   documentsQuery$variables,
 } from '@generated/documentsQuery.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
+import { useMemo } from 'react';
 import {
   PreloadedQuery,
   usePreloadedQuery,
@@ -97,6 +104,21 @@ const ShareableResourceServiceList = ({
     },
   });
 
+  const queryDataFacet = usePreloadedQuery<documentFacets>(
+    FacetDocumentListQuery,
+    queryRefFacet
+  );
+
+  const facetCounts = useMemo(
+    () => toServiceListFacetCounts(queryDataFacet.documentFacets),
+    [queryDataFacet.documentFacets]
+  );
+
+  const { filters } = useShareableResourceMapping(
+    SHAREABLE_RESOURCE_SERVICE_SLUG_MAPPING[type],
+    facetCounts
+  );
+
   return (
     <AppServiceContext {...context}>
       <AppServiceListLocalStorageKeyContext localStorageKey={localStorageKey}>
@@ -105,7 +127,7 @@ const ShareableResourceServiceList = ({
           draft={draft}
           search={search}
           onSearchChange={onSearchChange}
-          additionalFilters={additionalFilters}
+          additionalFilters={filters}
           connectionId={connectionId}
           paginationControls={
             <PaginationControls
