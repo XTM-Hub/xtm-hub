@@ -38,19 +38,25 @@ const renderPage = async (from?: string) => {
 describe('manage-users page', () => {
   beforeEach(() => {
     vi.mocked(isFeatureEnabled).mockReset();
-    vi.mocked(notFound).mockClear();
+    vi.mocked(notFound).mockReset();
     clientSectionProps.mockReset();
   });
 
-  it('calls notFound when the XtmPlatformTrial feature flag is disabled', async () => {
+  it('blocks the page and calls notFound when the XtmPlatformTrial feature flag is disabled', async () => {
     vi.mocked(isFeatureEnabled).mockResolvedValue(false);
-
-    await Page({
-      params: Promise.resolve({ serviceInstanceId: 'bundle-1' }),
-      searchParams: Promise.resolve({}),
+    vi.mocked(notFound).mockImplementation(() => {
+      throw new Error('NEXT_NOT_FOUND');
     });
 
+    await expect(
+      Page({
+        params: Promise.resolve({ serviceInstanceId: 'bundle-1' }),
+        searchParams: Promise.resolve({}),
+      })
+    ).rejects.toThrow('NEXT_NOT_FOUND');
+
     expect(notFound).toHaveBeenCalled();
+    expect(clientSectionProps).not.toHaveBeenCalled();
   });
 
   it('flags fromDashboard when opened from the admin dashboard', async () => {

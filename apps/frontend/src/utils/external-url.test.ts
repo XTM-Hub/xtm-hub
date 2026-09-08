@@ -12,6 +12,7 @@ describe('toExternalHref', () => {
     ${'http://opencti.io'}        | ${'http://opencti.io/'}
     ${'  opencti.example.com  '}  | ${'https://opencti.example.com/'}
     ${'HTTPS://OpenCTI.io'}       | ${'https://opencti.io/'}
+    ${'localhost:3000'}           | ${'https://localhost:3000/'}
   `('normalises "$input" to "$expected"', ({ input, expected }) => {
     expect(toExternalHref(input)).toBe(expected);
   });
@@ -28,7 +29,6 @@ describe('toExternalHref', () => {
     ${'file:///etc/passwd'}      | ${'file scheme'}
     ${'vbscript:msgbox(1)'}      | ${'vbscript scheme'}
     ${'ftp://example.com'}       | ${'ftp scheme'}
-    ${'localhost:3000'}          | ${'ambiguous single-label host:port'}
   `('returns null for $reason', ({ input }) => {
     expect(toExternalHref(input)).toBeNull();
   });

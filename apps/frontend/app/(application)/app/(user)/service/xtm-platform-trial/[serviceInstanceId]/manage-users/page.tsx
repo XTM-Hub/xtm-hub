@@ -7,7 +7,7 @@ import ClientSection from './client-section';
 
 export interface ServiceXtmPlatformBundleManageUsersPageProps {
   params: Promise<{ serviceInstanceId: string }>;
-  searchParams: Promise<{ from?: string }>;
+  searchParams: Promise<{ from?: string | string[] }>;
 }
 
 const Page = async ({
@@ -22,7 +22,8 @@ const Page = async ({
   }
 
   const { from } = await searchParams;
-  const fromDashboard = from === MANAGE_USERS_ORIGIN_DASHBOARD;
+  const fromValue = Array.isArray(from) ? from[0] : from;
+  const fromDashboard = fromValue === MANAGE_USERS_ORIGIN_DASHBOARD;
 
   return (
     <GuardCapacityComponent

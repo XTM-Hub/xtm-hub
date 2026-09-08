@@ -7,7 +7,7 @@ export const toExternalHref = (
   const trimmed = url.trim();
   if (!trimmed) return null;
 
-  const hasScheme = /^[a-zA-Z][a-zA-Z\d+-]*:/.test(trimmed);
+  const hasScheme = /^[a-zA-Z][a-zA-Z\d+-]*:(?!\d)/.test(trimmed);
   const candidate = hasScheme
     ? trimmed
     : trimmed.startsWith('//')
