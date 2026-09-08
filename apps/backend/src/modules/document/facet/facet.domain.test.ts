@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import {
   requestContextSimpleUserFiligran2,
@@ -29,6 +29,10 @@ const VERIFIED_TRUE_VALUE = 'true';
 const VERIFIED_FALSE_VALUE = 'false';
 const ENTITY_TYPE_MALWARE = 'Malware';
 const ENTITY_TYPE_THREAT_ACTOR = 'Threat-Actor';
+
+vi.mock('../../../utils/feature-flag.util', () => ({
+  isFeatureEnabled: vi.fn(() => false),
+}));
 
 describe('facet.domain', () => {
   const createdDocumentIds: string[] = [];
