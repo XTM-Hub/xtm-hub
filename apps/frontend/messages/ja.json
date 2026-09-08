@@ -409,7 +409,8 @@
       "Details": "詳細",
       "Documentation": "ドキュメント",
       "ConnectPlatform": "{platformName} を接続",
-      "Trial": "トライアル"
+      "Trial": "トライアル",
+      "EE": "EE"
     }
   },
   "HomePage": {
