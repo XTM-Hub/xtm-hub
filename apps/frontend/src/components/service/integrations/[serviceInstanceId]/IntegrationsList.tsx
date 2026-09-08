@@ -11,6 +11,7 @@ import { IntegrationSolutionCategoryFilter } from '@/components/ui/shareable-res
 import { IntegrationVerifiedFilter } from '@/components/ui/shareable-resource/integration/IntegrationVerifiedFilter';
 import { ProductVersionFilter } from '@/components/ui/shareable-resource/ProductVersionFilter';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
+import { documentFacets } from '@generated/documentFacets.graphql';
 import { documentsQuery } from '@generated/documentsQuery.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import { PlatformIdentifier } from '@graphql/generated';
@@ -18,6 +19,7 @@ import { PreloadedQuery } from 'react-relay';
 
 interface IntegrationsListProps {
   queryRef: PreloadedQuery<documentsQuery>;
+  queryRefFacet: PreloadedQuery<documentFacets>;
   serviceInstance: serviceInstance_fragment$data;
   search: string;
   onSearchChange: (v: string) => void;
@@ -25,6 +27,7 @@ interface IntegrationsListProps {
 
 const IntegrationsList = ({
   queryRef,
+  queryRefFacet,
   serviceInstance,
   search,
   onSearchChange,
@@ -57,6 +60,7 @@ const IntegrationsList = ({
   return (
     <ShareableResourceServiceList
       queryRef={queryRef}
+      queryRefFacet={queryRefFacet}
       serviceInstance={serviceInstance}
       search={search}
       onSearchChange={onSearchChange}

@@ -16,6 +16,7 @@ import {
 } from '@/hooks/use-service-list-local-storage';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
+import { documentFacets } from '@generated/documentFacets.graphql';
 import {
   documentItem_fragment$data,
   documentItem_fragment$key,
@@ -34,6 +35,7 @@ import {
 
 export interface ShareableResourceServiceListProps {
   queryRef: PreloadedQuery<documentsQuery>;
+  queryRefFacet: PreloadedQuery<documentFacets>;
   serviceInstance: serviceInstance_fragment$data;
   search: string;
   onSearchChange: (v: string) => void;
@@ -51,6 +53,7 @@ export interface ShareableResourceServiceListProps {
  */
 const ShareableResourceServiceList = ({
   queryRef,
+  queryRefFacet,
   serviceInstance,
   search,
   onSearchChange,

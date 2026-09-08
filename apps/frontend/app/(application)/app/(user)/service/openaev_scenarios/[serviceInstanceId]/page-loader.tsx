@@ -26,21 +26,23 @@ const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
     labels,
   });
 
-  const queryRef = useShareableResourceQueryLoader({
+  const { queryRef, queryRefFacet } = useShareableResourceQueryLoader({
     pageSize: count,
     orderBy,
     orderMode,
     serviceInstanceId: serviceInstance.id,
     searchTerm: search,
     logicalFilters,
+    documentType: ShareableResourceType.OPENAEV_SCENARIO,
   });
 
   return (
     <>
-      {queryRef ? (
+      {queryRef && queryRefFacet ? (
         <ShareableResourceServiceList
           serviceInstance={serviceInstance}
           queryRef={queryRef}
+          queryRefFacet={queryRefFacet}
           search={search}
           onSearchChange={setSearch}
           type={ShareableResourceType.OPENAEV_SCENARIO}

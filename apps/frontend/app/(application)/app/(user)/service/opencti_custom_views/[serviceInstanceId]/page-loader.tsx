@@ -7,7 +7,10 @@ import {
   useServiceListLocalStorage,
 } from '@/hooks/use-service-list-local-storage';
 import { useShareableResourceQueryLoader } from '@/hooks/use-shareable-resource-query-loader';
-import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
+import {
+  ServiceSlug,
+  ShareableResourceType,
+} from '@/utils/shareable-resources/shareable-resources.types';
 import { Skeleton } from '@filigran/ui';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 
@@ -24,21 +27,23 @@ const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
     entityTypes,
   });
 
-  const queryRef = useShareableResourceQueryLoader({
+  const { queryRef, queryRefFacet } = useShareableResourceQueryLoader({
     pageSize: count,
     orderBy,
     orderMode,
     serviceInstanceId: serviceInstance.id,
     searchTerm: search,
     logicalFilters,
+    documentType: ShareableResourceType.OPENCTI_CUSTOM_VIEW,
   });
 
   return (
     <>
-      {queryRef ? (
+      {queryRef && queryRefFacet ? (
         <CustomViewsList
           serviceInstance={serviceInstance}
           queryRef={queryRef}
+          queryRefFacet={queryRefFacet}
           search={search}
           onSearchChange={setSearch}
         />
