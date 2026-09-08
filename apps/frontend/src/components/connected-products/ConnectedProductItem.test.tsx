@@ -62,6 +62,37 @@ describe('ConnectedProductItem', () => {
     }
   );
 
+  it('shows the EE badge when the contract is EE', () => {
+    testRender(
+      <ConnectedProductItem
+        platform={buildPlatform({ contract: PlatformContract.Ee })}
+        t={t}
+      />
+    );
+
+    expect(screen.getByText('Header.ConnectedProducts.EE')).toBeInTheDocument();
+  });
+
+  it.each`
+    contract                  | description
+    ${PlatformContract.Ce}    | ${'CE'}
+    ${PlatformContract.Trial} | ${'trial'}
+  `(
+    'does not show the EE badge when the contract is $description',
+    ({ contract }) => {
+      testRender(
+        <ConnectedProductItem
+          platform={buildPlatform({ contract })}
+          t={t}
+        />
+      );
+
+      expect(
+        screen.queryByText('Header.ConnectedProducts.EE')
+      ).not.toBeInTheDocument();
+    }
+  );
+
   it.each`
     identifier                                         | description
     ${ServiceDefinitionIdentifier.OpenctiRegistration} | ${'OpenCTI'}

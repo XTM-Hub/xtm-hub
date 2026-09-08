@@ -409,7 +409,8 @@
       "Details": "Details",
       "Documentation": "Documentation",
       "ConnectPlatform": "Connect {platformName}",
-      "Trial": "Trial"
+      "Trial": "Trial",
+      "EE": "EE"
     }
   },
   "HomePage": {

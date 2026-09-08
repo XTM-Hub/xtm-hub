@@ -46,6 +46,13 @@ export const ConnectedProductItem = ({
           {t('Header.ConnectedProducts.Trial')}
         </Badge>
       )}
+      {platform.contract === PlatformContract.Ee && (
+        <Badge className="border-none bg-filigran-tonic-primary content-body-compact-medium">
+          <span className="text-text-negative-primary">
+            {t('Header.ConnectedProducts.EE')}
+          </span>
+        </Badge>
+      )}
       <div className="flex w-16 items-center justify-end gap-xs">
         {detailPath && (
           <Button
