@@ -362,7 +362,7 @@ describe('mutation.updatePlatformServiceMetadata', () => {
     const result = await serviceInstanceResolver.Mutation!
       .updatePlatformServiceMetadata!(
       {},
-      { input, document: null },
+      { input },
       contextSimpleUserFiligran2,
       GRAPHQL_RESOLVE_INFO
     );
@@ -372,8 +372,7 @@ describe('mutation.updatePlatformServiceMetadata', () => {
     ).toHaveBeenCalledWith(
       contextSimpleUserFiligran2.user,
       SERVICES.INSTANCES.EPIC.ID,
-      input,
-      null
+      input
     );
     expect(result).toEqual(expected);
   });
@@ -391,7 +390,6 @@ describe('mutation.updatePlatformServiceMetadata', () => {
         input: {
           serviceInstanceId: SERVICES.INSTANCES.EPIC.ID,
         } as unknown as MutationUpdatePlatformServiceMetadataArgs['input'],
-        document: null,
       },
       contextSimpleUserFiligran2,
       GRAPHQL_RESOLVE_INFO

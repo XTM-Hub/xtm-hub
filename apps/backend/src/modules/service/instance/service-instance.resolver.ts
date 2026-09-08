@@ -98,13 +98,12 @@ const resolvers: Resolvers = {
         throw mapToGraphQLError(error);
       }
     },
-    updatePlatformServiceMetadata: async (_, { input, document }, context) => {
+    updatePlatformServiceMetadata: async (_, { input }, context) => {
       try {
         return await ServiceInstanceApp.updatePlatformServiceMetadata(
           context.user,
           input.serviceInstanceId,
-          input,
-          document
+          input
         );
       } catch (error) {
         throw mapToGraphQLError(

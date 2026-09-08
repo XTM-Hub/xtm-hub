@@ -1462,7 +1462,6 @@ export type MutationUpdateEpicArgs = {
 
 
 export type MutationUpdatePlatformServiceMetadataArgs = {
-  document?: InputMaybe<Scalars['Upload']['input']>;
   input: UpdatePlatformServiceMetadataInput;
 };
 

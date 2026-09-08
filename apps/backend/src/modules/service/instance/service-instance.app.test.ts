@@ -108,25 +108,11 @@ describe('service Instance app', () => {
 
   describe('updatePlatformServiceMetadata', () => {
     let dispatchSpy: MockInstance;
-    let uploadNewFileSpy: MockInstance;
-
-    const mockFileUpload: FileUpload = {
-      filename: 'illustration.png',
-      mimetype: 'image/png',
-      encoding: '7bit',
-      createReadStream: vi.fn(),
-    };
-
-    const mockUpload = {
-      file: mockFileUpload,
-      promise: Promise.resolve(mockFileUpload),
-    };
     let serviceDefinition: ServiceDefinition;
     let serviceInstance: ServiceInstance;
 
     beforeEach(async () => {
       dispatchSpy = vi.spyOn(pub, 'dispatch').mockResolvedValue(undefined);
-      uploadNewFileSpy = vi.spyOn(DocumentHelper, 'uploadNewFile');
       vi.spyOn(
         securityGuardModule.securityGuard,
         'assertUserCanModifyPlatformService'
@@ -164,8 +150,7 @@ describe('service Instance app', () => {
       const result = await ServiceInstanceApp.updatePlatformServiceMetadata(
         contextRegistererUserSecondOrga.user,
         serviceInstance.id,
-        input,
-        null
+        input
       );
 
       // Then
@@ -185,35 +170,6 @@ describe('service Instance app', () => {
       );
     });
 
-    it('should upload illustration and include global document ID in response', async () => {
-      // Given
-      const illustrationId = uuidv4();
-      uploadNewFileSpy.mockResolvedValue({
-        id: illustrationId,
-        name: 'illustration.png',
-        mime_type: 'image/png',
-      });
-      const input: UpdatePlatformServiceMetadataInput = {
-        serviceInstanceId: serviceInstance.id,
-        name: 'Updated Platform Name',
-      };
-
-      // When
-      const result = await ServiceInstanceApp.updatePlatformServiceMetadata(
-        contextRegistererUserSecondOrga.user,
-        serviceInstance.id,
-        input,
-        mockUpload
-      );
-
-      // Then
-      expect(uploadNewFileSpy).toHaveBeenCalledWith(
-        mockUpload,
-        serviceInstance.id
-      );
-      expect(result.illustration_document_id).toBe(illustrationId);
-    });
-
     it('should not update service instance or config when no fields to update', async () => {
       // Given
       const input: UpdatePlatformServiceMetadataInput = {
@@ -224,8 +180,7 @@ describe('service Instance app', () => {
       await ServiceInstanceApp.updatePlatformServiceMetadata(
         contextRegistererUserSecondOrga.user,
         serviceInstance.id,
-        input,
-        null
+        input
       );
 
       // Then
@@ -247,8 +202,7 @@ describe('service Instance app', () => {
       const result = await ServiceInstanceApp.updatePlatformServiceMetadata(
         contextRegistererUserSecondOrga.user,
         serviceInstance.id,
-        input,
-        null
+        input
       );
 
       // Then
@@ -267,8 +221,7 @@ describe('service Instance app', () => {
           {
             serviceInstanceId: nonExistentId,
             name: 'Name',
-          },
-          null
+          }
         )
       ).rejects.toThrow(ErrorCode.ServiceInstanceNotFound);
     });
@@ -297,8 +250,7 @@ describe('service Instance app', () => {
           {
             serviceInstanceId: mockId,
             name: 'Name',
-          },
-          null
+          }
         )
       ).rejects.toThrow(ErrorCode.ServiceDefinitionNotFound);
     });
@@ -331,32 +283,9 @@ describe('service Instance app', () => {
           {
             serviceInstanceId: mockId,
             name: 'Name',
-          },
-          null
+          }
         )
       ).rejects.toThrow(ErrorCode.MissingCapabilityOnOrganization);
-    });
-
-    it('should throw when upload fails and not update service instance', async () => {
-      // Given
-      uploadNewFileSpy.mockRejectedValue(new Error('Upload failed'));
-      const input: UpdatePlatformServiceMetadataInput = {
-        serviceInstanceId: serviceInstance.id,
-        name: 'Updated Name',
-      };
-
-      // When
-      await expect(
-        ServiceInstanceApp.updatePlatformServiceMetadata(
-          contextRegistererUserSecondOrga.user,
-          serviceInstance.id,
-          input,
-          mockUpload
-        )
-      ).rejects.toThrow('Upload failed');
-
-      // Then
-      expect(dispatchSpy).not.toHaveBeenCalled();
     });
 
     it('should throw PLATFORM_CONFIGURATION_NOT_FOUND when config is missing after update', async () => {
@@ -417,8 +346,7 @@ describe('service Instance app', () => {
           {
             serviceInstanceId: mockId,
             name: 'Updated',
-          },
-          null
+          }
         )
       ).rejects.toThrow(ErrorCode.PlatformConfigurationNotFound);
     });

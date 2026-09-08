@@ -2235,7 +2235,6 @@
     "UpdateMetadata": "Mettre à jour les métadonnées de la plateforme",
     "Name": "Nom de la plateforme",
     "NamePlaceholder": "Entrez le nom de la plateforme",
-    "IllustrationImage": "Image d'illustration",
     "Updated": "{platformName} a été mis à jour avec succès"
   },
   "Region": {

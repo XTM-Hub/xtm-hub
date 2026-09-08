@@ -2235,7 +2235,6 @@
     "UpdateMetadata": "Update Platform Metadata",
     "Name": "Platform Name",
     "NamePlaceholder": "Enter platform name",
-    "IllustrationImage": "Illustration Image",
     "Updated": "{platformName} has been updated successfully"
   },
   "Region": {
