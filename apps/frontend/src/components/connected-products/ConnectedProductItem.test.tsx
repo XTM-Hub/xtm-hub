@@ -62,6 +62,29 @@ describe('ConnectedProductItem', () => {
     }
   );
 
+  it.each`
+    identifier                                         | description
+    ${ServiceDefinitionIdentifier.OpenctiRegistration} | ${'OpenCTI'}
+    ${ServiceDefinitionIdentifier.OpenaevRegistration} | ${'OpenAEV'}
+    ${ServiceDefinitionIdentifier.XtmoneRegistration}  | ${'XTM One'}
+  `(
+    'renders the platform icon for a $description platform',
+    ({ identifier }) => {
+      const { container } = testRender(
+        <ConnectedProductItem
+          platform={buildPlatform({
+            identifier,
+            subscription: null,
+            url: '',
+          })}
+          t={t}
+        />
+      );
+
+      expect(container.querySelector('svg')).toBeInTheDocument();
+    }
+  );
+
   it('renders the details button when a service instance is linked', () => {
     testRender(
       <ConnectedProductItem
