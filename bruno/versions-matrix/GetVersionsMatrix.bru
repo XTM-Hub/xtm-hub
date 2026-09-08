@@ -1,0 +1,29 @@
+meta {
+  name: Get versions matrix
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/opencti/versions-matrix
+  body: none
+  auth: none
+}
+
+docs {
+  Returns the OpenCTI/connectors compatibility matrix as JSON.
+  Public endpoint, no auth required.
+
+  No query params: defaults to format=json, the latest registered OpenCTI
+  version, and every known connector (the same "latest, or best compatible
+  fallback" rules as generateManifest — a connector with no compatible
+  version at all is silently omitted here, it is never an error).
+
+  Response shape:
+  {
+    "opencti_version": "7.260807.0",
+    "connector_MitreAttack_version": "6.240930.0",
+    "connector_Crowdstrike_version": "7.260309.0",
+    ...
+  }
+}

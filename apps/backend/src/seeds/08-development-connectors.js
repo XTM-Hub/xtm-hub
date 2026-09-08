@@ -1,0 +1,421 @@
+export async function seed(knex) {
+  // Decoupled OpenCTI connector documents (v2), used to exercise the
+  // /opencti/:version/versions-matrix endpoint locally against a variety of
+  // OpenCTI compatibility scenarios: always compatible, incompatible with
+  // the latest registered OpenCTI version, and "fallback" (the connector's
+  // latest release is incompatible but an older, still-active release is).
+  const BYPASS_USER_ID = 'ba091095-418f-4b4f-b150-6c9295e232c3';
+
+  const integrationFeedsService = await knex('ServiceInstance')
+    .join(
+      'ServiceDefinition',
+      'ServiceInstance.service_definition_id',
+      'ServiceDefinition.id'
+    )
+    .where('ServiceDefinition.identifier', 'opencti_integrations')
+    .select('ServiceInstance.id')
+    .first();
+
+  const serviceInstanceId = integrationFeedsService?.id || null;
+
+  await knex('Document')
+    .insert([
+      {
+        id: '47c8692b-a790-49bc-a6cc-e62e7f44cf9c',
+        uploader_id: BYPASS_USER_ID,
+        service_instance_id: serviceInstanceId,
+        description:
+          'Import malware and botnet C2 indicators from Abuse.ch feeds.',
+        active: true,
+        created_at: '2025-09-04 08:01:55.737+00',
+        remover_id: null,
+        name: 'AbuseCh',
+        short_description:
+          'Import malware and botnet C2 indicators from Abuse.ch feeds.',
+        slug: 'abusech',
+        uploader_organization_id: 'ba091095-418f-4b4f-b150-6c9295e232c4',
+        type: 'opencti_integration',
+        source_type: 'external',
+        version: '6.250110.0',
+        tags: ['decoupling', 'latest'],
+      },
+      {
+        id: '71e2ae8d-e32a-494f-9c62-2da5f91199ba',
+        uploader_id: BYPASS_USER_ID,
+        service_instance_id: serviceInstanceId,
+        description:
+          'Import pulses, indicators, and observables from AlienVault OTX.',
+        active: true,
+        created_at: '2025-09-04 08:01:55.748+00',
+        remover_id: null,
+        name: 'AlienVaultOTX',
+        short_description:
+          'Import pulses, indicators, and observables from AlienVault OTX.',
+        slug: 'alienvaultotx',
+        uploader_organization_id: 'ba091095-418f-4b4f-b150-6c9295e232c4',
+        type: 'opencti_integration',
+        source_type: 'external',
+        version: '6.250314.0',
+        tags: ['decoupling', 'latest'],
+      },
+      {
+        id: 'abc1aa5c-cbac-43a0-b66d-a8b4cdef0871',
+        uploader_id: BYPASS_USER_ID,
+        service_instance_id: serviceInstanceId,
+        description: 'Import ANSSI CERT-FR advisories and alerts into OpenCTI.',
+        active: true,
+        created_at: '2025-09-04 08:01:55.837+00',
+        remover_id: null,
+        name: 'Anssi',
+        short_description:
+          'Import ANSSI CERT-FR advisories and alerts into OpenCTI.',
+        slug: 'anssi',
+        uploader_organization_id: 'ba091095-418f-4b4f-b150-6c9295e232c4',
+        type: 'opencti_integration',
+        source_type: 'external',
+        version: '7.260405.0',
+        tags: ['decoupling', 'latest'],
+      },
+      {
+        id: '32e2a2f9-123b-475b-b90d-b0a5b79bf4fd',
+        uploader_id: BYPASS_USER_ID,
+        service_instance_id: serviceInstanceId,
+        description:
+          'Import CISA Known Exploited Vulnerabilities catalog into OpenCTI.',
+        active: true,
+        created_at: '2025-09-04 08:01:55.827+00',
+        remover_id: null,
+        name: 'CisaKev',
+        short_description:
+          'Import CISA Known Exploited Vulnerabilities catalog into OpenCTI.',
+        slug: 'cisakev',
+        uploader_organization_id: 'ba091095-418f-4b4f-b150-6c9295e232c4',
+        type: 'opencti_integration',
+        source_type: 'external',
+        version: '7.260309.0',
+        tags: ['decoupling', 'latest'],
+      },
+      // Two versions of the same connector: the older one has no "latest"
+      // tag but stays active, so a caller requesting an OpenCTI version
+      // incompatible with the latest Crowdstrike release still gets a
+      // compatible (older) result instead of an error.
+      {
+        id: '6fb6ef73-6b56-45dd-a77a-59ba6d59f716',
+        uploader_id: BYPASS_USER_ID,
+        service_instance_id: serviceInstanceId,
+        description:
+          'Import threat intelligence, indicators, and detections from Crowdstrike Falcon.',
+        active: true,
+        created_at: '2025-09-04 08:01:55.673+00',
+        remover_id: null,
+        name: 'Crowdstrike',
+        short_description:
+          'Import threat intelligence, indicators, and detections from Crowdstrike Falcon.',
+        slug: 'crowdstrike',
+        uploader_organization_id: 'ba091095-418f-4b4f-b150-6c9295e232c4',
+        type: 'opencti_integration',
+        source_type: 'external',
+        version: '5.240115.0',
+        tags: ['decoupling'],
+      },
+      {
+        id: 'bbfbca6c-4105-4526-9300-8d802bd5d1b2',
+        uploader_id: BYPASS_USER_ID,
+        service_instance_id: serviceInstanceId,
+        description:
+          'Import threat intelligence, indicators, and detections from Crowdstrike Falcon.',
+        active: true,
+        created_at: '2025-09-04 08:01:55.860+00',
+        remover_id: null,
+        name: 'Crowdstrike',
+        short_description:
+          'Import threat intelligence, indicators, and detections from Crowdstrike Falcon.',
+        slug: 'crowdstrike',
+        uploader_organization_id: 'ba091095-418f-4b4f-b150-6c9295e232c4',
+        type: 'opencti_integration',
+        source_type: 'external',
+        version: '7.260309.0',
+        tags: ['decoupling', 'latest'],
+      },
+      {
+        id: '552a193e-ef20-4059-8afc-2665f9922866',
+        uploader_id: BYPASS_USER_ID,
+        service_instance_id: serviceInstanceId,
+        description: 'Import tracked C2 panels from Cybercrime Tracker.',
+        active: true,
+        created_at: '2025-09-04 08:01:55.847+00',
+        remover_id: null,
+        name: 'CybercrimeTracker',
+        short_description: 'Import tracked C2 panels from Cybercrime Tracker.',
+        slug: 'cybercrimetracker',
+        uploader_organization_id: 'ba091095-418f-4b4f-b150-6c9295e232c4',
+        type: 'opencti_integration',
+        source_type: 'external',
+        version: '7.260507.0',
+        tags: ['decoupling', 'latest'],
+      },
+      {
+        id: 'c23741ba-2fad-4339-aec9-7ee43b2697da',
+        uploader_id: BYPASS_USER_ID,
+        service_instance_id: serviceInstanceId,
+        description:
+          'Import Google Threat Intelligence indicators and reports.',
+        active: true,
+        created_at: '2025-09-04 08:01:55.895+00',
+        remover_id: null,
+        name: 'GoogleTi',
+        short_description:
+          'Import Google Threat Intelligence indicators and reports.',
+        slug: 'googleti',
+        uploader_organization_id: 'ba091095-418f-4b4f-b150-6c9295e232c4',
+        type: 'opencti_integration',
+        source_type: 'external',
+        version: '8.261003.0',
+        tags: ['decoupling', 'latest'],
+      },
+      {
+        id: '6013f281-ef46-46b2-b369-08c71edfb893',
+        uploader_id: BYPASS_USER_ID,
+        service_instance_id: serviceInstanceId,
+        description:
+          'Enrich IP observables with GreyNoise internet scanning context.',
+        active: true,
+        created_at: '2025-09-04 08:01:55.798+00',
+        remover_id: null,
+        name: 'GreyNoise',
+        short_description:
+          'Enrich IP observables with GreyNoise internet scanning context.',
+        slug: 'greynoise',
+        uploader_organization_id: 'ba091095-418f-4b4f-b150-6c9295e232c4',
+        type: 'opencti_integration',
+        source_type: 'external',
+        version: '7.260112.0',
+        tags: ['decoupling', 'latest'],
+      },
+      {
+        id: '515540e6-1dbb-46db-8eb5-c4c716a76b34',
+        uploader_id: BYPASS_USER_ID,
+        service_instance_id: serviceInstanceId,
+        description:
+          'Enrich observables using IBM X-Force Exchange threat data.',
+        active: true,
+        created_at: '2025-09-04 08:01:55.887+00',
+        remover_id: null,
+        name: 'IbmXForce',
+        short_description:
+          'Enrich observables using IBM X-Force Exchange threat data.',
+        slug: 'ibmxforce',
+        uploader_organization_id: 'ba091095-418f-4b4f-b150-6c9295e232c4',
+        type: 'opencti_integration',
+        source_type: 'external',
+        version: '8.260901.0',
+        tags: ['decoupling', 'latest'],
+      },
+      {
+        id: 'da7e0c79-223e-44bd-b700-0396eaf6036e',
+        uploader_id: BYPASS_USER_ID,
+        service_instance_id: serviceInstanceId,
+        description: 'Import malware samples metadata from MalwareBazaar.',
+        active: true,
+        created_at: '2025-09-04 08:01:55.866+00',
+        remover_id: null,
+        name: 'MalwareBazaar',
+        short_description:
+          'Import malware samples metadata from MalwareBazaar.',
+        slug: 'malwarebazaar',
+        uploader_organization_id: 'ba091095-418f-4b4f-b150-6c9295e232c4',
+        type: 'opencti_integration',
+        source_type: 'external',
+        version: '7.260702.0',
+        tags: ['decoupling', 'latest'],
+      },
+      {
+        id: 'a3e14a04-b876-48f6-a9a7-3998f4f2609b',
+        uploader_id: BYPASS_USER_ID,
+        service_instance_id: serviceInstanceId,
+        description:
+          'Import Mandiant Advantage threat intelligence indicators and reports.',
+        active: true,
+        created_at: '2025-09-04 08:01:55.816+00',
+        remover_id: null,
+        name: 'Mandiant',
+        short_description:
+          'Import Mandiant Advantage threat intelligence indicators and reports.',
+        slug: 'mandiant',
+        uploader_organization_id: 'ba091095-418f-4b4f-b150-6c9295e232c4',
+        type: 'opencti_integration',
+        source_type: 'external',
+        version: '7.260218.0',
+        tags: ['decoupling', 'latest'],
+      },
+      {
+        id: '0fcfbcf1-11f9-49dc-9900-fd825ec65e02',
+        uploader_id: BYPASS_USER_ID,
+        service_instance_id: serviceInstanceId,
+        description:
+          'Import Microsoft Defender Threat Intelligence indicators.',
+        active: true,
+        created_at: '2025-09-04 08:01:55.902+00',
+        remover_id: null,
+        name: 'MicrosoftDefenderTi',
+        short_description:
+          'Import Microsoft Defender Threat Intelligence indicators.',
+        slug: 'microsoftdefenderti',
+        uploader_organization_id: 'ba091095-418f-4b4f-b150-6c9295e232c4',
+        type: 'opencti_integration',
+        source_type: 'external',
+        version: '8.261115.0',
+        tags: ['decoupling', 'latest'],
+      },
+      {
+        id: '4dff1096-65b8-4740-a576-14069a070678',
+        uploader_id: BYPASS_USER_ID,
+        service_instance_id: serviceInstanceId,
+        description:
+          'Import threat intelligence events, indicators, and observables from MISP instances.',
+        active: true,
+        created_at: '2025-09-04 08:01:55.713+00',
+        remover_id: null,
+        name: 'MISP',
+        short_description:
+          'Import threat intelligence events, indicators, and observables from MISP instances.',
+        slug: 'misp',
+        uploader_organization_id: 'ba091095-418f-4b4f-b150-6c9295e232c4',
+        type: 'opencti_integration',
+        source_type: 'external',
+        version: '5.240612.0',
+        tags: ['decoupling', 'latest'],
+      },
+      {
+        id: 'abdf5d97-5991-41a3-80f8-2803e1c8fb92',
+        uploader_id: BYPASS_USER_ID,
+        service_instance_id: serviceInstanceId,
+        description:
+          'Import MITRE ATT&CK tactics, techniques, and mitigations into OpenCTI.',
+        active: true,
+        created_at: '2025-09-04 08:01:55.727+00',
+        remover_id: null,
+        name: 'MitreAttack',
+        short_description:
+          'Import MITRE ATT&CK tactics, techniques, and mitigations into OpenCTI.',
+        slug: 'mitreattack',
+        uploader_organization_id: 'ba091095-418f-4b4f-b150-6c9295e232c4',
+        type: 'opencti_integration',
+        source_type: 'external',
+        version: '6.240930.0',
+        tags: ['decoupling', 'latest'],
+      },
+      {
+        id: 'f42432ae-8cbf-4964-b423-fa7e3420295b',
+        uploader_id: BYPASS_USER_ID,
+        service_instance_id: serviceInstanceId,
+        description:
+          'Import threat intelligence risk lists and analyst notes from Recorded Future.',
+        active: true,
+        created_at: '2025-09-04 08:01:55.772+00',
+        remover_id: null,
+        name: 'RecordedFuture',
+        short_description:
+          'Import threat intelligence risk lists and analyst notes from Recorded Future.',
+        slug: 'recordedfuture',
+        uploader_organization_id: 'ba091095-418f-4b4f-b150-6c9295e232c4',
+        type: 'opencti_integration',
+        source_type: 'external',
+        version: '6.250901.0',
+        tags: ['decoupling', 'latest'],
+      },
+      {
+        id: 'e9048b69-28bf-4b52-a896-267e9515b8a3',
+        uploader_id: BYPASS_USER_ID,
+        service_instance_id: serviceInstanceId,
+        description:
+          'Import Sekoia.io Intelligence Center indicators and objects.',
+        active: true,
+        created_at: '2025-09-04 08:01:55.909+00',
+        remover_id: null,
+        name: 'Sekoia',
+        short_description:
+          'Import Sekoia.io Intelligence Center indicators and objects.',
+        slug: 'sekoia',
+        uploader_organization_id: 'ba091095-418f-4b4f-b150-6c9295e232c4',
+        type: 'opencti_integration',
+        source_type: 'external',
+        version: '8.261230.0',
+        tags: ['decoupling', 'latest'],
+      },
+      {
+        id: 'a287eccc-c37a-417a-a098-fb2edee7e1ce',
+        uploader_id: BYPASS_USER_ID,
+        service_instance_id: serviceInstanceId,
+        description:
+          'Enrich IP addresses and infrastructure with Shodan scan data.',
+        active: true,
+        created_at: '2025-09-04 08:01:55.783+00',
+        remover_id: null,
+        name: 'Shodan',
+        short_description:
+          'Enrich IP addresses and infrastructure with Shodan scan data.',
+        slug: 'shodan',
+        uploader_organization_id: 'ba091095-418f-4b4f-b150-6c9295e232c4',
+        type: 'opencti_integration',
+        source_type: 'external',
+        version: '6.251205.0',
+        tags: ['decoupling', 'latest'],
+      },
+      {
+        id: '1da99d65-80f9-4d38-b46b-998216449e63',
+        uploader_id: BYPASS_USER_ID,
+        service_instance_id: serviceInstanceId,
+        description: 'Import IOC feeds from abuse.ch ThreatFox platform.',
+        active: true,
+        created_at: '2025-09-04 08:01:55.856+00',
+        remover_id: null,
+        name: 'ThreatFox',
+        short_description: 'Import IOC feeds from abuse.ch ThreatFox platform.',
+        slug: 'threatfox',
+        uploader_organization_id: 'ba091095-418f-4b4f-b150-6c9295e232c4',
+        type: 'opencti_integration',
+        source_type: 'external',
+        version: '7.260601.0',
+        tags: ['decoupling', 'latest'],
+      },
+      {
+        id: 'f1490a53-8aa6-4b64-97f0-24e388e15245',
+        uploader_id: BYPASS_USER_ID,
+        service_instance_id: serviceInstanceId,
+        description: 'Import malicious URLs from abuse.ch URLhaus.',
+        active: true,
+        created_at: '2025-09-04 08:01:55.879+00',
+        remover_id: null,
+        name: 'Urlhaus',
+        short_description: 'Import malicious URLs from abuse.ch URLhaus.',
+        slug: 'urlhaus',
+        uploader_organization_id: 'ba091095-418f-4b4f-b150-6c9295e232c4',
+        type: 'opencti_integration',
+        source_type: 'external',
+        version: '7.260810.0',
+        tags: ['decoupling', 'latest'],
+      },
+      {
+        id: 'fa24b9de-6b0d-4728-b145-26fd6462b0f5',
+        uploader_id: BYPASS_USER_ID,
+        service_instance_id: serviceInstanceId,
+        description:
+          'Enrich observables with VirusTotal reputation and analysis data.',
+        active: true,
+        created_at: '2025-09-04 08:01:55.760+00',
+        remover_id: null,
+        name: 'VirusTotal',
+        short_description:
+          'Enrich observables with VirusTotal reputation and analysis data.',
+        slug: 'virustotal',
+        uploader_organization_id: 'ba091095-418f-4b4f-b150-6c9295e232c4',
+        type: 'opencti_integration',
+        source_type: 'external',
+        version: '6.250620.0',
+        tags: ['decoupling', 'latest'],
+      },
+    ])
+    .onConflict('id')
+    .ignore();
+}

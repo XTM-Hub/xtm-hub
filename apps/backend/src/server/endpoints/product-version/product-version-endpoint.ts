@@ -1,10 +1,10 @@
 import cors from 'cors';
 import { Express, Request, Response } from 'express';
 import rateLimit, { type Options } from 'express-rate-limit';
-import { ManageProductVersionDomain } from '../../modules/manage-product-version/manage-product-version.domain';
-import { logApp } from '../../utils/app-logger.util';
-import { buildIpRateLimiterOptions } from './ip-rate-limit.util';
-import { isProduct } from './manifest-endpoint.utils';
+import { ManageProductVersionDomain } from '../../../modules/manage-product-version/manage-product-version.domain';
+import { logApp } from '../../../utils/app-logger.util';
+import { buildIpRateLimiterOptions } from '../shared/ip-rate-limit.util';
+import { isProduct } from '../shared/product.util';
 
 const PRODUCT_VERSION_RATE_WINDOW_MS = 60 * 1000;
 const PRODUCT_VERSION_RATE_MAX = 300;

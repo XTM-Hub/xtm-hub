@@ -1,0 +1,30 @@
+meta {
+  name: Get versions matrix - unsupported product
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/openaev/versions-matrix
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 400
+  res.body.code: eq 400
+}
+
+docs {
+  :product accepts any valid PlatformIdentifier (opencti, openaev, xtmone),
+  but connector compatibility data is only tracked for OpenCTI today, so a
+  valid-but-unsupported product like "openaev" is rejected here rather than
+  silently returning an empty/misleading matrix.
+  
+  Response: { "code": 400, "message": "The versions matrix is only available for the opencti product" }
+  
+  See "Get versions matrix - invalid product" for a :product value that
+  isn't even a valid PlatformIdentifier (the route still matches — :product
+  accepts any path segment — but validation fails earlier with a different
+  message).
+}

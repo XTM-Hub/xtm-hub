@@ -23,6 +23,7 @@ import type { DocumentMetadataKey } from '../../../model/kanel/public/DocumentMe
 import {
   TAG_DECOUPLING,
   TAG_LATEST,
+  TAG_LATEST_LTS,
 } from '../../shareable-resource/manifest-fragment/manifest-fragment.helper';
 import { OPENAEV_SCENARIO_DOCUMENT_TYPE } from '../../shareable-resource/openaev/scenario/scenario.model';
 import { OPENCTI_CUSTOM_VIEW_DOCUMENT_TYPE } from '../../shareable-resource/opencti/custom-view/custom-view.model';
@@ -1775,6 +1776,150 @@ describe('document domain', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0]!.id).toBe(doc.id);
+    });
+  });
+
+  describe('loadDistinctConnectorSlugs', () => {
+    const REQUESTED_VERSION = '7.260904.0';
+    const REQUESTED_LTS_VERSION = '7.260309.0-lts.5';
+
+    const createConnector = async ({
+      slug,
+      version,
+      active = true,
+      isDecommissioned = false,
+      integrationType = IntegrationType.Connector,
+      tags = [TAG_LATEST, TAG_DECOUPLING],
+    }: {
+      slug: string;
+      version: string;
+      active?: boolean;
+      isDecommissioned?: boolean;
+      integrationType?: IntegrationType;
+      tags?: string[];
+    }) => {
+      const doc = await TestHelper.document.create({
+        active,
+        is_decommissioned: isDecommissioned,
+        slug,
+        version,
+        tags,
+      });
+      await TestHelper.documentMetadata.create({
+        document_id: doc.id,
+        key: DocumentMetadataKeyCode.IntegrationType as unknown as DocumentMetadataKey,
+        value: integrationType,
+      });
+      return doc;
+    };
+
+    afterEach(async () => {
+      await TestHelper.documentMetadata.delete({});
+      await TestHelper.document.delete({});
+    });
+
+    it('returns an empty array when there are no connectors', async () => {
+      const result =
+        await DocumentDomain.loadDistinctConnectorSlugs(REQUESTED_VERSION);
+      expect(result).toHaveLength(0);
+    });
+
+    it('returns the distinct slugs of the TAG_LATEST connectors', async () => {
+      await createConnector({ slug: 'connector-a', version: '007.260309.000' });
+      await createConnector({ slug: 'connector-b', version: '007.260309.000' });
+      // An older version of the same connector, no longer tagged TAG_LATEST,
+      // must not surface as a separate/duplicate slug.
+      await createConnector({
+        slug: 'connector-a',
+        version: '007.260101.000',
+        tags: [TAG_DECOUPLING],
+      });
+
+      const result =
+        await DocumentDomain.loadDistinctConnectorSlugs(REQUESTED_VERSION);
+
+      expect(result.sort()).toEqual(['connector-a', 'connector-b']);
+    });
+
+    it('uses TAG_LATEST_LTS instead of TAG_LATEST when the requested version is LTS', async () => {
+      await createConnector({
+        slug: 'connector-a',
+        version: '007.260309.000.LTS.5',
+        tags: [TAG_LATEST_LTS, TAG_DECOUPLING],
+      });
+      // Regular (non-LTS) latest connector must not be considered known for an LTS request.
+      await createConnector({ slug: 'connector-b', version: '007.260309.000' });
+
+      const result = await DocumentDomain.loadDistinctConnectorSlugs(
+        REQUESTED_LTS_VERSION
+      );
+
+      expect(result).toEqual(['connector-a']);
+    });
+
+    it('excludes inactive connectors', async () => {
+      await createConnector({
+        slug: 'connector-a',
+        version: '007.260309.000',
+        active: false,
+      });
+
+      const result =
+        await DocumentDomain.loadDistinctConnectorSlugs(REQUESTED_VERSION);
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('excludes decommissioned connectors', async () => {
+      await createConnector({
+        slug: 'connector-a',
+        version: '007.260309.000',
+        isDecommissioned: true,
+      });
+
+      const result =
+        await DocumentDomain.loadDistinctConnectorSlugs(REQUESTED_VERSION);
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('excludes connectors that are not tagged as decoupled', async () => {
+      await createConnector({
+        slug: 'connector-a',
+        version: '007.260309.000',
+        tags: [TAG_LATEST],
+      });
+
+      const result =
+        await DocumentDomain.loadDistinctConnectorSlugs(REQUESTED_VERSION);
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('excludes connectors that are not tagged as latest', async () => {
+      await createConnector({
+        slug: 'connector-a',
+        version: '007.260309.000',
+        tags: [TAG_DECOUPLING],
+      });
+
+      const result =
+        await DocumentDomain.loadDistinctConnectorSlugs(REQUESTED_VERSION);
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('excludes documents whose integration_type is not connector', async () => {
+      await createConnector({
+        slug: 'connector-a',
+        version: '007.260309.000',
+        integrationType: IntegrationType.CsvFeed,
+      });
+
+      const result =
+        await DocumentDomain.loadDistinctConnectorSlugs(REQUESTED_VERSION);
+
+      expect(result).toHaveLength(0);
     });
   });
 

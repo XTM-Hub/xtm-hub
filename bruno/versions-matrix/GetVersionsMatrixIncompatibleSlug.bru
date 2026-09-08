@@ -1,0 +1,34 @@
+meta {
+  name: Get versions matrix - incompatible connector slug
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/opencti/versions-matrix?version=6.260807.0&connector_slugs=sekoia
+  body: none
+  auth: none
+}
+
+params:query {
+  version: 6.260807.0
+  connector_slugs: sekoia
+}
+
+assert {
+  res.status: eq 400
+}
+
+docs {
+  A requested slug that is known but has no version (not even a historical
+  fallback) compatible with the requested OpenCTI version is rejected with
+  400. GoogleTi requires OpenCTI >= 8.260901.0, which is above every
+  registered OpenCTI version, to force this case.
+  
+  Response: { "code": 400, "message": "Incompatible connector slug(s) for OpenCTI version 7.260807.0: GoogleTi" }
+  
+  Note: `version` must itself be a *registered* OpenCTI version (see
+  GetVersionsMatrixUnregisteredVersion.bru) — an arbitrary/made-up version
+  like "1.0.0" is rejected as "Unknown opencti version" before slug
+  compatibility is even checked.
+}
