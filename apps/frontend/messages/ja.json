@@ -1156,6 +1156,12 @@
           "Label": "接続済み製品",
           "Placeholder": "接続済み製品..."
         },
+        "OpenCTIVersion": {
+          "Label": "OpenCTI バージョン",
+          "Placeholder": "OpenCTI バージョン...",
+          "RegisteredInstanceTooltip": "登録済みの{count, plural, one {製品} other {製品}}と一致します: {names}",
+          "FilterIncompatibleTooltip": "選択された OpenCTI バージョンと互換性がありません。{version} 以降が必要です"
+        },
         "ManagerSupported": {
           "Label": "配備タイプ",
           "Placeholder": "デプロイメントタイプ...",
@@ -1343,6 +1349,7 @@
           "solution_category": "ソリューションカテゴリ",
           "license_type": "ライセンス種別",
           "product_version": "接続済み製品",
+          "opencti_version": "OpenCTIバージョン",
           "manager_supported": "配備タイプ",
           "verified": "検証状況",
           "entity_type": "エンティティタイプ"

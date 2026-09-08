@@ -1,0 +1,5 @@
+query RegisteredProductVersionsList($product: PlatformIdentifier!) {
+  registeredProductVersions(product: $product) {
+    version
+  }
+}

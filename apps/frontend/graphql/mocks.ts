@@ -228,6 +228,7 @@ export const mockConnector = (overrides?: Partial<Connector>, _relationshipsToOm
         uploader_organization: overrides && overrides.hasOwnProperty('uploader_organization') ? overrides.uploader_organization! : relationshipsToOmit.has('Organization') ? {} as Organization : mockOrganization({}, relationshipsToOmit),
         use_cases: overrides && overrides.hasOwnProperty('use_cases') ? overrides.use_cases! : [relationshipsToOmit.has('UseCase') ? {} as UseCase : mockUseCase({}, relationshipsToOmit)],
         verified: overrides && overrides.hasOwnProperty('verified') ? overrides.verified! : true,
+        version: overrides && overrides.hasOwnProperty('version') ? overrides.version! : 'agnitio',
     };
 };
 

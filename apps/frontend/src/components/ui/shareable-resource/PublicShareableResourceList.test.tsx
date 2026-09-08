@@ -1,4 +1,6 @@
+import { AppServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
 import { ServiceListDisplayMode } from '@/components/service/components/header/ServiceListHeader';
+import { ServiceListLocalStorageKey } from '@/hooks/use-service-list-local-storage';
 import testRender from '@/utils/test/test-render';
 import { publicDocumentListItemFragment$data } from '@generated/publicDocumentListItemFragment.graphql';
 import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
@@ -19,6 +21,8 @@ describe('PublicShareableResourceList', () => {
   };
 
   it('renders an empty state when no document is provided', () => {
+    // With no documents, the component returns early and never renders
+    // ShareableResourceCard, so no ServiceListLocalStorageKeyContext is needed.
     testRender(
       <PublicShareableResourceList
         documents={[]}
@@ -49,13 +53,18 @@ describe('PublicShareableResourceList', () => {
       },
     ];
 
+    // Renders ShareableResourceCard for each document, which reads the
+    // selected product-version filter from ServiceListLocalStorageKeyContext.
     testRender(
-      <PublicShareableResourceList
-        documents={documents as publicDocumentListItemFragment$data[]}
-        serviceInstance={serviceInstance as seoServiceInstanceFragment$data}
-        baseUrl="https://xtm.local"
-        displayMode={ServiceListDisplayMode.Tab}
-      />
+      <AppServiceListLocalStorageKeyContext
+        localStorageKey={ServiceListLocalStorageKey.OpenCTIIntegrationFeeds}>
+        <PublicShareableResourceList
+          documents={documents as publicDocumentListItemFragment$data[]}
+          serviceInstance={serviceInstance as seoServiceInstanceFragment$data}
+          baseUrl="https://xtm.local"
+          displayMode={ServiceListDisplayMode.Tab}
+        />
+      </AppServiceListLocalStorageKeyContext>
     );
 
     expect(

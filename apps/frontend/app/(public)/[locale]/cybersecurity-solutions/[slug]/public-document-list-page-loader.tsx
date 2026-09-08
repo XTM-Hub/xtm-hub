@@ -14,21 +14,36 @@ import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFr
 import { useEffect } from 'react';
 import { useQueryLoader } from 'react-relay';
 
+const EMPTY_PRODUCT_VERSIONS = {};
+
 interface PublicDocumentListPageLoaderProps {
   serviceInstance: seoServiceInstanceFragment$data;
   baseUrl: string;
+  /**
+   * Resolved server-side (see settings.service.ts:isFeatureEnabled) since
+   * public pages never mount SettingsContext for useIsFeatureEnabled to read.
+   */
+  isDecouplingConnectorsEnabled: boolean;
 }
 
 export const PublicDocumentListPageLoader = ({
   serviceInstance,
   baseUrl,
+  isDecouplingConnectorsEnabled,
 }: PublicDocumentListPageLoaderProps) => {
   const [queryRef, loadQuery] = useQueryLoader<publicDocumentsQuery>(
     PublicDocumentListQuery
   );
 
   const serviceInstanceSlug = serviceInstance.slug as ServiceSlug;
-  const { localStorageKey } = useShareableResourceMapping(serviceInstanceSlug);
+  const { localStorageKey } = useShareableResourceMapping(
+    serviceInstanceSlug,
+    isDecouplingConnectorsEnabled
+  );
+  // The OpenCTI version filter only excludes non-compatible connectors on
+  // the backend when DECOUPLING_CONNECTORS is disabled. When it's enabled,
+  // OpenctiVersionFilter drives the grey-out client-side instead, so no
+  // product_version value must be sent to the backend query.
 
   const {
     pageSize,
@@ -38,9 +53,9 @@ export const PublicDocumentListPageLoader = ({
     integrationTypes,
     deployable,
     verified,
-    productVersions,
     licenseTypes,
     solutionCategories,
+    productVersions,
     orderMode,
     orderBy,
   } = useServiceListLocalStorage(localStorageKey);
@@ -53,9 +68,11 @@ export const PublicDocumentListPageLoader = ({
           deployable,
           verified,
           integrationTypes,
-          productVersions,
           licenseTypes,
           solutionCategories,
+          productVersions: isDecouplingConnectorsEnabled
+            ? EMPTY_PRODUCT_VERSIONS
+            : productVersions,
         }
       : {
           serviceInstanceSlug: serviceInstanceSlug as
@@ -106,6 +123,7 @@ export const PublicDocumentListPageLoader = ({
           serviceInstance={serviceInstance}
           queryRef={queryRef}
           baseUrl={baseUrl}
+          isDecouplingConnectorsEnabled={isDecouplingConnectorsEnabled}
         />
       ) : (
         <Skeleton className="w-full inset-1/2" />

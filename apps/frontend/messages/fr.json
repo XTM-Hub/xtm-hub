@@ -1156,6 +1156,12 @@
           "Label": "Produits connectés",
           "Placeholder": "Produits connectés..."
         },
+        "OpenCTIVersion": {
+          "Label": "Version OpenCTI",
+          "Placeholder": "Version OpenCTI...",
+          "RegisteredInstanceTooltip": "Correspond à {count, plural, one {votre produit enregistré} other {vos produits enregistrés}} : {names}",
+          "FilterIncompatibleTooltip": "Non compatible avec la version OpenCTI sélectionnée, nécessite la version {version} ou supérieure"
+        },
         "ManagerSupported": {
           "Label": "Type de déploiement",
           "Placeholder": "Type de déploiement...",
@@ -1343,6 +1349,7 @@
           "solution_category": "Catégorie de solution",
           "license_type": "Type de licence",
           "product_version": "Produits connectés",
+          "opencti_version": "Version OpenCTI",
           "manager_supported": "Type de déploiement",
           "verified": "Statut de vérification",
           "entity_type": "Type d'entité"

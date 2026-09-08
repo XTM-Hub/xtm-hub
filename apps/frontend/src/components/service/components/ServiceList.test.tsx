@@ -76,6 +76,8 @@ const buildLocalStorageState = (displayMode = ServiceListDisplayMode.Tab) => ({
   setOrderMode: testState.setOrderMode,
   selectedFilters: testState.selectedFilters,
   setSelectedFilters: testState.setSelectedFilters,
+  productVersions: {},
+  openctiVersions: {},
 });
 
 describe('ServiceList', () => {

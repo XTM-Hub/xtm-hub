@@ -1,4 +1,6 @@
 import { ServiceListDisplayMode } from '@/components/service/components/header/ServiceListHeader';
+import { AppServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
+import { ServiceListLocalStorageKey } from '@/hooks/use-service-list-local-storage';
 import testRender from '@/utils/test/test-render';
 import { publicDocumentListItemFragment$data } from '@generated/publicDocumentListItemFragment.graphql';
 import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
@@ -60,14 +62,18 @@ describe('PublicShareableDocumentList', () => {
   ] as publicDocumentListItemFragment$data[];
 
   it('renders one public card per document with expected public URLs in tab mode', () => {
-    // Given / When
+    // Given / When: Tab mode renders ShareableResourceCard, which reads the
+    // selected product-version filter from ServiceListLocalStorageKeyContext.
     testRender(
-      <PublicShareableDocumentList
-        documents={documents}
-        serviceInstance={serviceInstance}
-        baseUrl={BaseUrl}
-        displayMode={ServiceListDisplayMode.Tab}
-      />
+      <AppServiceListLocalStorageKeyContext
+        localStorageKey={ServiceListLocalStorageKey.OpenCTIIntegrationFeeds}>
+        <PublicShareableDocumentList
+          documents={documents}
+          serviceInstance={serviceInstance}
+          baseUrl={BaseUrl}
+          displayMode={ServiceListDisplayMode.Tab}
+        />
+      </AppServiceListLocalStorageKeyContext>
     );
 
     // Then

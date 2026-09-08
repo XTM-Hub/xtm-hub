@@ -95,6 +95,8 @@ describe('PublicDocumentsList', () => {
       setOrderMode: vi.fn(),
       selectedFilters: [],
       setSelectedFilters: vi.fn(),
+      productVersions: {},
+      openctiVersions: {},
     });
     testState.useScrollPosition.mockReturnValue({
       restore: testState.restore,
@@ -142,6 +144,7 @@ describe('PublicDocumentsList', () => {
         queryRef={queryRef}
         serviceInstance={serviceInstance}
         baseUrl="https://xtm.local"
+        isDecouplingConnectorsEnabled={false}
       />
     );
 
@@ -156,6 +159,7 @@ describe('PublicDocumentsList', () => {
         queryRef={queryRef}
         serviceInstance={serviceInstance}
         baseUrl="https://xtm.local"
+        isDecouplingConnectorsEnabled={false}
       />
     );
 
@@ -178,6 +182,7 @@ describe('PublicDocumentsList', () => {
         queryRef={queryRef}
         serviceInstance={serviceInstance}
         baseUrl="https://xtm.local"
+        isDecouplingConnectorsEnabled={false}
       />
     );
 

@@ -24,14 +24,11 @@ const IntegrationAccordion = ({
 
       defaultValue={[integrationType]}>
       <AccordionItem value={integrationType}>
-        <h2 className="m-0">
-          <AccordionTrigger variant="colored">
-            <div className="inline-flex items-center gap-s">
-              {t(`Service.OpenctiIntegrations.Type.${integrationType}`)}
-            </div>
-          </AccordionTrigger>
-        </h2>
-
+        <AccordionTrigger variant="colored">
+          <div className="inline-flex items-center gap-s">
+            {t(`Service.OpenctiIntegrations.Type.${integrationType}`)}
+          </div>
+        </AccordionTrigger>
         <AccordionContent>{children}</AccordionContent>
       </AccordionItem>
     </Accordion>

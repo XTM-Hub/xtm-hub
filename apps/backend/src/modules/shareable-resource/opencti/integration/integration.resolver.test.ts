@@ -122,4 +122,28 @@ describe('integration field resolvers', () => {
       });
     });
   });
+
+  describe('connector.product_version', () => {
+    it.each`
+      product_version | minimum_deployable_version | expected        | description
+      ${'1.2.3'}      | ${'1.0.0'}                 | ${'1.2.3'}      | ${'prefers product_version when both are set (legacy connector)'}
+      ${null}         | ${'7.260507.0'}            | ${'7.260507.0'} | ${'falls back to minimum_deployable_version when product_version is missing (decoupled/V2 connector)'}
+      ${null}         | ${null}                    | ${null}         | ${'resolves to null when neither is set'}
+    `(
+      'should resolve to $expected: $description',
+      ({ product_version, minimum_deployable_version, expected }) => {
+        const result = integrationResolver.Connector!.product_version!(
+          {
+            product_version,
+            minimum_deployable_version,
+          } as unknown as Connector,
+          {},
+          contextSimpleUserFiligran2,
+          GRAPHQL_RESOLVE_INFO
+        );
+
+        expect(result).toBe(expected);
+      }
+    );
+  });
 });

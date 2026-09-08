@@ -19,6 +19,7 @@ export enum ServiceListFilterKey {
   SolutionCategory = 'solution_category',
   LicenseType = 'license_type',
   ProductVersion = 'product_version',
+  OpenctiVersion = 'opencti_version',
   ManagerSupported = 'manager_supported',
   Verified = 'verified',
 }

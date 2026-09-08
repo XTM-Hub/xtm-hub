@@ -15,6 +15,7 @@ import {
   stringifyJsonLd,
 } from '@/utils/generate-metadata';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
+import { isFeatureEnabled } from '@/utils/settings.service';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
 import { fetchAllDocuments } from '@/utils/shareable-resources/utils/shareable-resources.server.utils';
 import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
@@ -24,6 +25,7 @@ import SeoServiceInstanceMetadataQuery, {
 import SeoServiceInstanceQuery, {
   seoServiceInstanceQuery,
 } from '@generated/seoServiceInstanceQuery.graphql';
+import { FeatureFlag } from '@graphql/generated';
 import { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -113,6 +115,9 @@ const Page = async ({
 
   const { baseUrl, serviceInstance, seoMetadata, documents } =
     await getPageData(awaitedParams.slug, locale);
+  const isDecouplingConnectorsEnabled = await isFeatureEnabled(
+    FeatureFlag.DecouplingConnectors
+  );
 
   const localizedServiceUrl = `${baseUrl}/${locale}/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${serviceInstance.slug}`;
 
@@ -204,6 +209,7 @@ const Page = async ({
         <PublicDocumentListPageLoader
           baseUrl={baseUrl}
           serviceInstance={serviceInstance}
+          isDecouplingConnectorsEnabled={isDecouplingConnectorsEnabled}
         />
       </RelayProvider>
     </>

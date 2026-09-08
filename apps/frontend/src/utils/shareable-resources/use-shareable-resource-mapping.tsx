@@ -10,6 +10,7 @@ import { IntegrationFilters } from '@/components/ui/shareable-resource/integrati
 import { IntegrationLicenseTypeFilter } from '@/components/ui/shareable-resource/integration/IntegrationLicenseTypeFilter';
 import { IntegrationSolutionCategoryFilter } from '@/components/ui/shareable-resource/integration/IntegrationSolutionCategoryFilter';
 import { IntegrationVerifiedFilter } from '@/components/ui/shareable-resource/integration/IntegrationVerifiedFilter';
+import { OpenctiVersionFilter } from '@/components/ui/shareable-resource/OpenctiVersionFilter';
 import {
   ServiceListLocalStorageKey,
   useServiceListLocalStorage,
@@ -18,8 +19,19 @@ import {
   ServiceSlug,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
+import { PlatformIdentifier } from '@graphql/generated';
 
-export const useShareableResourceMapping = (slug: ServiceSlug) => {
+/**
+ * Public pages never mount SettingsContext (no authenticated session), so
+ * useIsFeatureEnabled would always report the DECOUPLING_CONNECTORS flag as
+ * disabled regardless of the actual backend config. The flag value must
+ * therefore be resolved server-side (see settings.service.ts:isFeatureEnabled)
+ * and passed down as a prop.
+ */
+export const useShareableResourceMapping = (
+  slug: ServiceSlug,
+  isDecouplingConnectorsEnabled: boolean
+) => {
   const localStorageKeyMapping: Record<
     ServiceSlug,
     ServiceListLocalStorageKey
@@ -54,6 +66,7 @@ export const useShareableResourceMapping = (slug: ServiceSlug) => {
     removeDeployable,
     removeVerified,
     removeEntityTypes,
+    removeOpenctiVersions,
   } = useServiceListLocalStorage(localStorageKey);
 
   const labelFilter = {
@@ -73,6 +86,17 @@ export const useShareableResourceMapping = (slug: ServiceSlug) => {
         node: <IntegrationFilters />,
         reset: removeIntegrationTypes,
       },
+      ...(isDecouplingConnectorsEnabled && {
+        [ServiceListFilterKey.OpenctiVersion]: {
+          node: (
+            <OpenctiVersionFilter
+              platformIdentifier={PlatformIdentifier.Opencti}
+              publicPath
+            />
+          ),
+          reset: removeOpenctiVersions,
+        },
+      }),
       [ServiceListFilterKey.ManagerSupported]: {
         node: <IntegrationDeployableFilter />,
         reset: removeDeployable,

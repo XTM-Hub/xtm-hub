@@ -54,4 +54,46 @@ describe('ShareableResourceCardFooterVersion', () => {
     expect(screen.getByText('extra')).toBeInTheDocument();
     expect(screen.getByRole('button')).toBeInTheDocument();
   });
+
+  it('greys out only the version label when incompatible with the selected filter', async () => {
+    const { container, user } = testRender(
+      <ShareableResourceCardFooterVersion
+        document={document as documentItem_fragment$data}
+        publicPath
+        shareLinkUrl="https://share"
+        isIncompatibleWithSelectedVersion
+        incompatibleTooltip="Requires a newer version"
+      />
+    );
+
+    const incompatibleLabel = container.querySelector('[data-incompatible]');
+    expect(incompatibleLabel).toHaveAttribute('data-incompatible', 'true');
+    expect(incompatibleLabel).toHaveTextContent(PRODUCT_VERSION);
+
+    expect(
+      screen.queryByText('Requires a newer version')
+    ).not.toBeInTheDocument();
+    await user.hover(incompatibleLabel!);
+    const tooltip = await screen.findByRole('tooltip');
+    expect(tooltip).toHaveTextContent('Requires a newer version');
+  });
+
+  it('prefers the connector version over product_version when both are set', () => {
+    const CONNECTOR_VERSION = '1.4.2';
+    testRender(
+      <ShareableResourceCardFooterVersion
+        document={
+          {
+            ...document,
+            version: CONNECTOR_VERSION,
+          } as documentItem_fragment$data
+        }
+        publicPath
+        shareLinkUrl="https://share"
+      />
+    );
+
+    expect(screen.getByText(CONNECTOR_VERSION)).toBeInTheDocument();
+    expect(screen.queryByText(PRODUCT_VERSION)).not.toBeInTheDocument();
+  });
 });

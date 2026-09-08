@@ -1759,6 +1759,7 @@ type Connector implements Node & Document & Integration {
   remover_id: ID
   integration_type: IntegrationType!
   product_version: String
+  version: String
   container_image: String
   verified: Boolean!
   source_code: String

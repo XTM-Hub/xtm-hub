@@ -1,3 +1,5 @@
+import { AppServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
+import { ServiceListLocalStorageKey } from '@/hooks/use-service-list-local-storage';
 import testRender from '@/utils/test/test-render';
 import { toast } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
@@ -108,12 +110,16 @@ describe('DocumentList', () => {
       },
     ] as documentItem_fragment$data[];
 
-    // When
+    // When: Tab mode renders ShareableResourceCard, which reads the
+    // selected product-version filter from ServiceListLocalStorageKeyContext.
     testRender(
-      <DocumentList
-        documents={documents}
-        displayMode={ServiceListDisplayMode.Tab}
-      />
+      <AppServiceListLocalStorageKeyContext
+        localStorageKey={ServiceListLocalStorageKey.OpenCTIIntegrationFeeds}>
+        <DocumentList
+          documents={documents}
+          displayMode={ServiceListDisplayMode.Tab}
+        />
+      </AppServiceListLocalStorageKeyContext>
     );
 
     // Then

@@ -30,6 +30,7 @@ export const publicDocumentListItem = graphql`
 
     ... on Connector {
       product_version
+      version
       verified
       manager_supported
     }
@@ -115,6 +116,7 @@ export const publicDocumentByServiceSlugItem = graphql`
 
     ... on Connector {
       product_version
+      version
       container_image
       verified
       source_code
@@ -212,6 +214,7 @@ export const publicDocumentBySlugItem = graphql`
 
     ... on Connector {
       product_version
+      version
       container_image
       verified
       source_code

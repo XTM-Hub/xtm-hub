@@ -172,6 +172,7 @@ export const documentItem = graphql`
 
     ... on Connector {
       product_version
+      version
       container_image
       verified
       source_code

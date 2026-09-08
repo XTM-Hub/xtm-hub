@@ -216,6 +216,7 @@ export type Connector = Document & Integration & Node & {
   uploader_organization?: Maybe<Organization>;
   use_cases?: Maybe<Array<UseCase>>;
   verified: Scalars['Boolean']['output'];
+  version?: Maybe<Scalars['String']['output']>;
 };
 
 export type ConsumeProvisionedNewsFeedItemsResponse = {
@@ -3773,6 +3774,7 @@ export type ConnectorResolvers<ContextType = PortalContext, ParentType extends R
   uploader_organization?: Resolver<Maybe<ResolversTypes['Organization']>, ParentType, ContextType>;
   use_cases?: Resolver<Maybe<Array<ResolversTypes['UseCase']>>, ParentType, ContextType>;
   verified?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  version?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 

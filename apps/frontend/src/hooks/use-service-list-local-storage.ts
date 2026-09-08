@@ -102,6 +102,15 @@ export const useServiceListLocalStorage = (
       }
     );
 
+  const [openctiVersions, setOpenctiVersions, removeOpenctiVersions] =
+    useLocalStorage<LogicalMultiSelectSelection>(
+      `openctiVersion${pagePrefix}${serviceName}List`,
+      {},
+      {
+        deserializer: deserializeLogicalMultiSelectSelection,
+      }
+    );
+
   const [licenseTypes, setLicenseTypes, removeLicenseTypes] =
     useLocalStorage<LogicalMultiSelectSelection>(
       `licenseType${pagePrefix}${serviceName}List`,
@@ -182,6 +191,7 @@ export const useServiceListLocalStorage = (
     removeSelectedFilters();
     removeIntegrationTypes();
     removeProductVersions();
+    removeOpenctiVersions();
     removeLicenseTypes();
     removeSolutionCategories();
     removeEntityTypes();
@@ -198,6 +208,7 @@ export const useServiceListLocalStorage = (
     removeSelectedFilters,
     removeIntegrationTypes,
     removeProductVersions,
+    removeOpenctiVersions,
     removeLicenseTypes,
     removeSolutionCategories,
     removeEntityTypes,
@@ -229,6 +240,9 @@ export const useServiceListLocalStorage = (
     productVersions,
     setProductVersions,
     removeProductVersions,
+    openctiVersions,
+    setOpenctiVersions,
+    removeOpenctiVersions,
     licenseTypes,
     setLicenseTypes,
     removeLicenseTypes,
