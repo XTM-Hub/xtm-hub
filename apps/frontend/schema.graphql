@@ -229,7 +229,7 @@ type Mutation {
   addCapabilitiesToUserServices(input: UserServicesAddCapabilitiesInput!, service_instance_id: ServiceInstanceId!): [UserService]
   editSeoServiceInstance(service_instance_id: ServiceInstanceId!, language: SeoServiceInstanceLanguage!, input: EditSeoServiceInstanceInput!): SeoServiceInstanceMetadata!
   addServicePicture(serviceInstanceId: ServiceInstanceId!, document: Upload, isLogo: Boolean!): ServiceInstance
-  updatePlatformServiceMetadata(input: UpdatePlatformServiceMetadataInput!, document: Upload): RegisteredPlatform
+  updatePlatformServiceMetadata(input: UpdatePlatformServiceMetadataInput!): RegisteredPlatform
   ingestManifestFragments(manifestFragments: [ManifestFragmentInput!]!): Success!
   generateManifest(product: PlatformIdentifier!, version: String!, type: ManifestType!): Success!
   addSolutionCategory(input: AddSolutionCategoryInput!): SolutionCategory!
