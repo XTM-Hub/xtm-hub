@@ -68,7 +68,7 @@ export const ConnectedProductsDropdown = () => {
         )}
         <div className="flex flex-col gap-s p-m">
           <ConnectProductButton
-            variant="secondary"
+            variant="tertiary"
             onCloseDropdown={() => setOpen(false)}
           />
         </div>
