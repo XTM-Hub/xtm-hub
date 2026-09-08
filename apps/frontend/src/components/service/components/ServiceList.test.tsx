@@ -139,6 +139,7 @@ describe('ServiceList', () => {
         draft={draft}
         search=""
         onSearchChange={vi.fn()}
+        additionalFilters={{}}
       />
     );
 
@@ -182,6 +183,7 @@ describe('ServiceList', () => {
         draft={draft}
         search=""
         onSearchChange={vi.fn()}
+        additionalFilters={{}}
       />
     );
 
@@ -216,6 +218,7 @@ describe('ServiceList', () => {
         draft={[]}
         search=""
         onSearchChange={vi.fn()}
+        additionalFilters={{}}
       />
     );
 
@@ -236,6 +239,7 @@ describe('ServiceList', () => {
         draft={[]}
         search=""
         onSearchChange={vi.fn()}
+        additionalFilters={{}}
       />
     );
 

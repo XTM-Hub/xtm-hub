@@ -24,6 +24,7 @@ export const ServiceListFilterSection = ({
         <Accordion
           key={filterKey}
           type="multiple"
+          defaultValue={[]}
           className="w-full border-b border-border last:border-b-0">
           <AccordionItem
             value={filterKey}

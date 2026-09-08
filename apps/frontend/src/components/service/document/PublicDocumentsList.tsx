@@ -1,5 +1,5 @@
+import { FilterSidebar } from '@/components/service/components/header/filter/FilterSidebar';
 import { toServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
-import { ServiceListFilterSection } from '@/components/service/components/header/filter/ServiceListFilterSection';
 import { ServiceListHeader } from '@/components/service/components/header/ServiceListHeader';
 import { AppServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
 import {
@@ -11,6 +11,7 @@ import { PaginationControls } from '@/components/ui/pagination/PaginationControl
 import { PublicShareableResourceList } from '@/components/ui/shareable-resource/PublicShareableResourceList';
 import useScrollPosition from '@/hooks/use-scroll-position';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
+import { useStickyHeaderOffset } from '@/hooks/use-sticky-header-offset';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
 import { useShareableResourceMapping } from '@/utils/shareable-resources/use-shareable-resource-mapping';
@@ -21,7 +22,7 @@ import publicDocumentListGraphql, {
 import { publicDocumentListItemFragment$key } from '@generated/publicDocumentListItemFragment.graphql';
 import { publicDocumentsQuery } from '@generated/publicDocumentsQuery.graphql';
 import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
-import { useLayoutEffect, useMemo } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
 import {
   PreloadedQuery,
   readInlineData,
@@ -100,9 +101,14 @@ const PublicDocumentsList = ({
     },
   });
 
+  const headerRef = useRef<HTMLDivElement>(null);
+  useStickyHeaderOffset(headerRef);
+
   return (
     <AppServiceListLocalStorageKeyContext localStorageKey={localStorageKey}>
-      <div className="sticky top-0 py-m z-15 relative bg-gradient-background">
+      <div
+        ref={headerRef}
+        className="sticky top-0 py-m z-15 relative bg-gradient-background">
         <ServiceListHeader
           search={search}
           onSearchChange={setSearch}
@@ -120,9 +126,7 @@ const PublicDocumentsList = ({
         />
       </div>
       <div className="flex flex-row">
-        <div className="w-1/6 bg-elevation-background-layer-1">
-          <ServiceListFilterSection filters={filters} />
-        </div>
+        <FilterSidebar filters={filters} />
         <div className="w-5/6 p-m">
           <PublicShareableResourceList
             displayMode={selectedDisplayMode}

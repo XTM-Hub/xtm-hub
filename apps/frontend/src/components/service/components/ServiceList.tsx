@@ -6,6 +6,7 @@ import {
 } from '@graphql/generated';
 
 import DocumentList from '@/components/service/components/DocumentList';
+import { FilterSidebar } from '@/components/service/components/header/filter/FilterSidebar';
 import {
   ServiceListFilterMap,
   ServiceListHeader,
@@ -21,16 +22,17 @@ import { useUserHasPortalCapability } from '@/hooks/use-portal-capability';
 import useScrollPosition from '@/hooks/use-scroll-position';
 import useServiceCapability from '@/hooks/use-service-capability';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
+import { useStickyHeaderOffset } from '@/hooks/use-sticky-header-offset';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useTranslations } from 'next-intl';
-import { Fragment, useLayoutEffect } from 'react';
+import { Fragment, useLayoutEffect, useRef } from 'react';
 
 export interface ServiceListProps {
   active: documentItem_fragment$data[];
   draft: documentItem_fragment$data[];
   search: string;
   onSearchChange: (v: string) => void;
-  additionalFilters?: ServiceListFilterMap;
+  additionalFilters: ServiceListFilterMap;
   connectionId?: string;
   paginationControls?: React.ReactNode;
 }
@@ -80,13 +82,18 @@ const ServiceList = ({
   }, {});
   const heroSectionProps = getHeroSectionLibraryProps(serviceInstance, t);
 
+  const headerRef = useRef<HTMLDivElement>(null);
+  useStickyHeaderOffset(headerRef);
+
   return (
     <div className="flex flex-col gap-xl">
       <HeroSectionLibrary
         {...heroSectionProps}
         showLibraryUpdate={userIsMarketingOrBypass}
       />
-      <div className="sticky top-0 py-m z-11 relative bg-gradient-background">
+      <div
+        ref={headerRef}
+        className="sticky top-0 py-m z-11 relative bg-gradient-background">
         <ServiceListHeader
           search={search}
           onSearchChange={onSearchChange}
@@ -95,45 +102,51 @@ const ServiceList = ({
           onDisplayModeChange={setDisplayMode}
         />
       </div>
-      {userCanUpdate && draft.length > 0 && (
-        <>
-          <div className="txt-category">
-            {t(`${translationKey}.NonActive`)}:
-          </div>
-          <DocumentList
-            documents={draft}
-            displayMode={selectedDisplayMode}
-            connectionId={connectionId}
-          />
-          {active.length > 0 && (
-            <div className="txt-category">{t(`${translationKey}.Active`)}:</div>
-          )}
-        </>
-      )}
-
-      {Object.entries(activeByIntegrationType).map(
-        ([integrationType, documents]) => (
-          <Fragment key={integrationType}>
-            {Object.values(IntegrationType).includes(
-              integrationType as IntegrationType
-            ) ? (
-              <IntegrationAccordion integrationType={integrationType}>
-                <DocumentList
-                  documents={documents}
-                  displayMode={selectedDisplayMode}
-                  connectionId={connectionId}
-                />
-              </IntegrationAccordion>
-            ) : (
+      <div className="flex flex-row">
+        <FilterSidebar filters={additionalFilters} />
+        <div className="w-5/6 p-m flex flex-col gap-xl">
+          {userCanUpdate && draft.length > 0 && (
+            <>
+              <div className="txt-category">
+                {t(`${translationKey}.NonActive`)}:
+              </div>
               <DocumentList
+                documents={draft}
                 displayMode={selectedDisplayMode}
-                documents={documents}
                 connectionId={connectionId}
               />
-            )}
-          </Fragment>
-        )
-      )}
+              {active.length > 0 && (
+                <div className="txt-category">
+                  {t(`${translationKey}.Active`)}:
+                </div>
+              )}
+            </>
+          )}
+          {Object.entries(activeByIntegrationType).map(
+            ([integrationType, documents]) => (
+              <Fragment key={integrationType}>
+                {Object.values(IntegrationType).includes(
+                  integrationType as IntegrationType
+                ) ? (
+                  <IntegrationAccordion integrationType={integrationType}>
+                    <DocumentList
+                      documents={documents}
+                      displayMode={selectedDisplayMode}
+                      connectionId={connectionId}
+                    />
+                  </IntegrationAccordion>
+                ) : (
+                  <DocumentList
+                    displayMode={selectedDisplayMode}
+                    documents={documents}
+                    connectionId={connectionId}
+                  />
+                )}
+              </Fragment>
+            )
+          )}
+        </div>
+      </div>
     </div>
   );
 };
