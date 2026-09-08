@@ -2234,7 +2234,6 @@
     "UpdateMetadata": "プラットフォームメタデータの更新",
     "Name": "プラットフォーム名",
     "NamePlaceholder": "プラットフォーム名を入力",
-    "IllustrationImage": "イラストイメージ",
     "Updated": "{platformName} は正常に更新されました"
   },
   "Region": {
