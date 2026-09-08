@@ -2,6 +2,7 @@
 
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { portalGraphqlClient } from '@/lib/graphql-client';
+import { XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
 import { ArrowUpwardIcon, DeleteIcon } from '@filigran/icon';
 import {
   Button,
@@ -97,7 +98,7 @@ export const ManageTrialHeader = ({
           variant="outline"
           className="gap-s border-elevation-border-default-layer-0"
           asChild>
-          <Link href="/service/xtm-platform-trial">
+          <Link href={XTM_PLATFORM_TRIAL_PATH}>
             <ArrowUpwardIcon className="h-3 w-3 -rotate-90" />
             {t('Service.Bundle.ManageTrial.BackButton')}
           </Link>
