@@ -94,6 +94,19 @@ export const PlatformIdentifierToString: Record<PlatformIdentifier, string> = {
 
 export const BUNDLE_PLATFORM_NAME = 'XTM Platform';
 
+export const MAIL_PRODUCT_ORDER: PlatformIdentifier[] = [
+  PlatformIdentifier.Opencti,
+  PlatformIdentifier.Openaev,
+  PlatformIdentifier.Xtmone,
+];
+
+export const sortProductsForMail = (
+  platformIdentifiers: PlatformIdentifier[]
+): PlatformIdentifier[] =>
+  [...platformIdentifiers].sort(
+    (a, b) => MAIL_PRODUCT_ORDER.indexOf(a) - MAIL_PRODUCT_ORDER.indexOf(b)
+  );
+
 const productListFormatter = new Intl.ListFormat('en', {
   style: 'long',
   type: 'conjunction',
@@ -103,7 +116,7 @@ export const formatProductNames = (
   platformIdentifiers: PlatformIdentifier[]
 ): string =>
   productListFormatter.format(
-    platformIdentifiers.map(
+    sortProductsForMail(platformIdentifiers).map(
       (identifier) => PlatformIdentifierToString[identifier]
     )
   );

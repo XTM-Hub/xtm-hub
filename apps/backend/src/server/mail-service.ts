@@ -18,6 +18,10 @@ Handlebars.registerHelper('eq', function (a, b) {
   return a === b;
 });
 
+Handlebars.registerHelper('includes', function (list, value) {
+  return Array.isArray(list) && list.includes(value);
+});
+
 const smtpOptions = config.get<TransportOptions>('smtp_options');
 const transporter = nodemailer.createTransport(smtpOptions);
 

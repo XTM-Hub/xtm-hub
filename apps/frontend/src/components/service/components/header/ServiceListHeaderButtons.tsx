@@ -49,8 +49,8 @@ const ServiceListHeaderButtons = ({}) => {
           variant="secondary"
           asChild>
           <Link
-            prefetch={false}
-            href={`/${APP_PATH}/manage/service/${serviceInstance.id}/subscription/${subscriptionId}`}>
+            href={`/${APP_PATH}/manage/service/${serviceInstance.id}/subscription/${subscriptionId}`}
+            prefetch={false}>
             {t('Service.Capabilities.ManageAccessName')}
           </Link>
         </Button>
