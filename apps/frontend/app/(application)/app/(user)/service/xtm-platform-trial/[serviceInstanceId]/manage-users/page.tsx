@@ -1,5 +1,8 @@
 import GuardCapacityComponent from '@/components/AdminGuard';
-import { MANAGE_USERS_ORIGIN_DASHBOARD } from '@/utils/path/constant';
+import {
+  MANAGE_USERS_ORIGIN_DASHBOARD,
+  MANAGE_USERS_ORIGIN_PARAM,
+} from '@/utils/path/constant';
 import { isFeatureEnabled } from '@/utils/settings.service';
 import { FeatureFlag, OrganizationCapability } from '@graphql/generated';
 import { notFound } from 'next/navigation';
@@ -7,7 +10,7 @@ import ClientSection from './client-section';
 
 export interface ServiceXtmPlatformBundleManageUsersPageProps {
   params: Promise<{ serviceInstanceId: string }>;
-  searchParams: Promise<{ from?: string | string[] }>;
+  searchParams: Promise<{ [MANAGE_USERS_ORIGIN_PARAM]?: string | string[] }>;
 }
 
 const Page = async ({
@@ -21,8 +24,8 @@ const Page = async ({
     notFound();
   }
 
-  const { from } = await searchParams;
-  const fromValue = Array.isArray(from) ? from[0] : from;
+  const fromParam = (await searchParams)[MANAGE_USERS_ORIGIN_PARAM];
+  const fromValue = Array.isArray(fromParam) ? fromParam[0] : fromParam;
   const fromDashboard = fromValue === MANAGE_USERS_ORIGIN_DASHBOARD;
 
   return (
