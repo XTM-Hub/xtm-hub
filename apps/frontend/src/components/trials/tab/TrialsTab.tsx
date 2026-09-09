@@ -29,7 +29,7 @@ import { portalGraphqlClient } from '@/lib/graphql-client';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { daysUntil, useDateFormatter } from '@/utils/date';
-import { APP_PATH } from '@/utils/path/constant';
+import { xtmPlatformTrialManageUsersFromDashboardPath } from '@/utils/path/constant';
 import {
   ArrowShapeUpIcon,
   ArrowShapeUpStackIcon,
@@ -304,7 +304,9 @@ const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
                   className="border m-1"
                   aria-label={t('Service.Trials.ManageUsers.Title')}>
                   <Link
-                    href={`/${APP_PATH}/service/xtm-platform-trial/${request.service_instance_id}/manage-users`}>
+                    href={xtmPlatformTrialManageUsersFromDashboardPath(
+                      request.service_instance_id
+                    )}>
                     <GroupIcon className="h-4 w-4" />
                   </Link>
                 </Button>
