@@ -126,8 +126,8 @@ const HeaderComponent = ({ displayLogo }: HeaderComponentProps) => {
             </SheetTrigger>
             <SheetContent
               side="left"
-              className="bg-gradient-layer-0-white">
-              <SheetHeader className="flex flex-row justify-between pl-l bg-gradient-layer-0-white">
+              className="bg-gradient-background">
+              <SheetHeader className="flex flex-row justify-between pl-l bg-gradient-background">
                 <div className="flex items-center gap-s">
                   <DisplayLogo className="text-primary h-8" />
                   <SheetTitle className="sr-only">
