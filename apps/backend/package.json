@@ -84,7 +84,7 @@
     "knex": "catalog:",
     "migrate": "^2.1.0",
     "node-cron": "4.6.0",
-    "nodemailer": "9.0.5",
+    "nodemailer": "9.1.1",
     "openid-client": "6.8.8",
     "passport": "0.7.0",
     "pg": "catalog:",

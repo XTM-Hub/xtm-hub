@@ -8954,7 +8954,7 @@ __metadata:
     knex: "catalog:"
     migrate: "npm:^2.1.0"
     node-cron: "npm:4.6.0"
-    nodemailer: "npm:9.0.5"
+    nodemailer: "npm:9.1.1"
     openid-client: "npm:6.8.8"
     passport: "npm:0.7.0"
     pg: "catalog:"
@@ -16839,10 +16839,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"nodemailer@npm:9.0.5":
-  version: 9.0.5
-  resolution: "nodemailer@npm:9.0.5"
-  checksum: 10/22a56ec9585d3239dadc603f52e2d1da8194603f44dbba0de9c2291e180c7109a95c29e68e0e54e5fa586e38674e4e11d29e73f440fb338fd1d7e9bccbe6e497
+"nodemailer@npm:9.1.1":
+  version: 9.1.1
+  resolution: "nodemailer@npm:9.1.1"
+  checksum: 10/d84fd16456a8b1e1f979e65f78f3963819ed0500aaf51544d5da04634ceb0364e5ad7c784793bf7dd7b0028d4bee1d48e5b316394c5c538dbda99f4fc5aa7502
   languageName: node
   linkType: hard
 
