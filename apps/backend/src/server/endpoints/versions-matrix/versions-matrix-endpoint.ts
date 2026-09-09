@@ -103,8 +103,10 @@ const resolveRequestedVersion = async (
   if (typeof rawVersion !== 'string') {
     return { ok: false, error: VERSIONS_MATRIX_ERRORS.InvalidVersionFormat };
   }
+  let paddedVersion: string;
   try {
-    ManifestFragmentHelper.validateAndFormatManifestVersion(rawVersion);
+    paddedVersion =
+      ManifestFragmentHelper.validateAndFormatManifestVersion(rawVersion);
   } catch {
     return { ok: false, error: VERSIONS_MATRIX_ERRORS.InvalidVersionFormat };
   }
@@ -113,8 +115,13 @@ const resolveRequestedVersion = async (
   // not-yet-reported one) isn't a "compatibility" question, it's simply
   // unknown for this product: reject it up front rather than letting it
   // silently pass through to the (unrelated) slug compatibility checks.
+  //
+  // The comparison uses the padded form, like every other version
+  // comparison in the matrix, so that formatting differences between the
+  // request and the registered value (missing zero-padding, LTS suffix
+  // casing, ...) can't cause a false "unregistered" result.
   const isRegistered = registeredVersions.some(
-    (registered) => registered.version === rawVersion
+    (registered) => registered.version_padded === paddedVersion
   );
   if (!isRegistered) {
     return {

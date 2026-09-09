@@ -50,7 +50,7 @@ describe('getMatrix', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     loadRegisteredProductVersionsMock.mockResolvedValue([
-      { version: '7.260904.0' },
+      { version: '7.260904.0', version_padded: '007.260904.000' },
     ]);
     loadDistinctConnectorSlugsMock.mockResolvedValue(['mitre', 'sentinel']);
     loadBestCompatibleConnectorsBySlugsMock.mockResolvedValue([
@@ -110,80 +110,20 @@ describe('getMatrix', () => {
       connector_mitre_version: '7.260809.0',
       connector_sentinel_version: '7.260809.0',
     });
-  });
-
-  it('returns the env matrix when format=env', async () => {
-    const res = buildResponse();
-    await VersionsMatrixEndpoint.getMatrix(
-      buildRequest({ version: '7.260904.0', format: 'env' }),
-      res as unknown as Response
-    );
-
     expect(res.setHeader).toHaveBeenCalledWith(
-      'Content-Type',
-      'text/plain; charset=utf-8'
+      'ETag',
+      buildVersionsMatrixETag(
+        JSON.stringify({
+          opencti_version: '7.260904.0',
+          connector_mitre_version: '7.260809.0',
+          connector_sentinel_version: '7.260809.0',
+        })
+      )
     );
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.send).toHaveBeenCalledWith(
-      [
-        'OPENCTI_VERSION="7.260904.0"',
-        'CONNECTOR_MITRE_VERSION="7.260809.0"',
-        'CONNECTOR_SENTINEL_VERSION="7.260809.0"',
-      ].join('\n')
-    );
-  });
-
-  it('returns the csv matrix when format=csv', async () => {
-    const res = buildResponse();
-    await VersionsMatrixEndpoint.getMatrix(
-      buildRequest({ version: '7.260904.0', format: 'csv' }),
-      res as unknown as Response
-    );
-
-    expect(res.setHeader).toHaveBeenCalledWith(
-      'Content-Type',
-      'text/csv; charset=utf-8'
-    );
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.send).toHaveBeenCalledWith(
-      [
-        'opencti_version,connector_mitre_version,connector_sentinel_version',
-        '7.260904.0,7.260809.0,7.260809.0',
-      ].join('\n')
-    );
-  });
-
-  it('sets a strong ETag built from a hash of the JSON body', async () => {
-    const res = buildResponse();
-    await VersionsMatrixEndpoint.getMatrix(
-      buildRequest({ version: '7.260904.0' }),
-      res as unknown as Response
-    );
-
-    const expectedETag = buildVersionsMatrixETag(
-      JSON.stringify({
-        opencti_version: '7.260904.0',
-        connector_mitre_version: '7.260809.0',
-        connector_sentinel_version: '7.260809.0',
-      })
-    );
-    expect(res.setHeader).toHaveBeenCalledWith('ETag', expectedETag);
     expect(res.setHeader).toHaveBeenCalledWith('Cache-Control', 'no-cache');
   });
 
-  it('returns 304 without a body when the client is up to date', async () => {
-    const res = buildResponse();
-    await VersionsMatrixEndpoint.getMatrix(
-      buildRequest({ version: '7.260904.0' }, { product: 'opencti' }, true),
-      res as unknown as Response
-    );
-
-    expect(res.status).toHaveBeenCalledWith(304);
-    expect(res.end).toHaveBeenCalled();
-    expect(res.json).not.toHaveBeenCalled();
-  });
-
-  it('sets an ETag matching the exact bytes sent for the env format', async () => {
+  it('returns the env matrix when format=env', async () => {
     const res = buildResponse();
     await VersionsMatrixEndpoint.getMatrix(
       buildRequest({ version: '7.260904.0', format: 'env' }),
@@ -196,9 +136,50 @@ describe('getMatrix', () => {
       'CONNECTOR_SENTINEL_VERSION="7.260809.0"',
     ].join('\n');
     expect(res.setHeader).toHaveBeenCalledWith(
+      'Content-Type',
+      'text/plain; charset=utf-8'
+    );
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.send).toHaveBeenCalledWith(expectedBody);
+    expect(res.setHeader).toHaveBeenCalledWith(
       'ETag',
       buildVersionsMatrixETag(expectedBody)
     );
+  });
+
+  it('returns the csv matrix when format=csv', async () => {
+    const res = buildResponse();
+    await VersionsMatrixEndpoint.getMatrix(
+      buildRequest({ version: '7.260904.0', format: 'csv' }),
+      res as unknown as Response
+    );
+
+    const expectedBody = [
+      'opencti_version,connector_mitre_version,connector_sentinel_version',
+      '7.260904.0,7.260809.0,7.260809.0',
+    ].join('\n');
+    expect(res.setHeader).toHaveBeenCalledWith(
+      'Content-Type',
+      'text/csv; charset=utf-8'
+    );
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.send).toHaveBeenCalledWith(expectedBody);
+    expect(res.setHeader).toHaveBeenCalledWith(
+      'ETag',
+      buildVersionsMatrixETag(expectedBody)
+    );
+  });
+
+  it('returns 304 without a body when the client is up to date', async () => {
+    const res = buildResponse();
+    await VersionsMatrixEndpoint.getMatrix(
+      buildRequest({ version: '7.260904.0' }, { product: 'opencti' }, true),
+      res as unknown as Response
+    );
+
+    expect(res.status).toHaveBeenCalledWith(304);
+    expect(res.end).toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
   });
 
   it('filters the matrix down to the requested connector_slugs', async () => {
@@ -220,8 +201,8 @@ describe('getMatrix', () => {
 
   it('defaults version to the latest registered OpenCTI version', async () => {
     loadRegisteredProductVersionsMock.mockResolvedValue([
-      { version: '7.260904.0' },
-      { version: '7.260801.0' },
+      { version: '7.260904.0', version_padded: '007.260904.000' },
+      { version: '7.260801.0', version_padded: '007.260801.000' },
     ]);
 
     const res = buildResponse();
@@ -279,6 +260,19 @@ describe('getMatrix', () => {
       message: 'Unknown opencti version: 1.0.0',
     });
     expect(loadDistinctConnectorSlugsMock).not.toHaveBeenCalled();
+  });
+
+  it('accepts a registered version requested with different (but equivalent) raw formatting', async () => {
+    // '7.260904.0' and '7.260904.00' both pad to '007.260904.000', so the
+    // registration check must compare padded forms, not raw strings.
+    const res = buildResponse();
+    await VersionsMatrixEndpoint.getMatrix(
+      buildRequest({ version: '7.260904.00' }),
+      res as unknown as Response
+    );
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(loadDistinctConnectorSlugsMock).toHaveBeenCalledWith('7.260904.00');
   });
 
   it('returns 400 on an invalid format', async () => {
