@@ -83,7 +83,7 @@
       "StatusActive": "接続済み",
       "StatusNotConnected": "未接続",
       "AccessProduct": "{productName}にアクセス",
-      "StatusUnavailable": "ステータスを取得できません",
+      "StatusUnavailable": "利用不可",
       "ProductName": "製品名",
       "Connection": "{productName}接続",
       "EditName": "名前を編集",

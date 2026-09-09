@@ -83,7 +83,7 @@
       "StatusActive": "Connecté",
       "StatusNotConnected": "Non connecté",
       "AccessProduct": "Accéder à {productName}",
-      "StatusUnavailable": "Statut indisponible",
+      "StatusUnavailable": "Indisponible",
       "ProductName": "Nom du produit",
       "Connection": "Connexion {productName}",
       "EditName": "Modifier le nom",
