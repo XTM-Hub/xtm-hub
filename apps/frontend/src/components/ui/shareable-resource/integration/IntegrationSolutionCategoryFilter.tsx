@@ -1,7 +1,4 @@
-import {
-  ServiceListFacetCounts,
-  withFacetCount,
-} from '@/components/service/components/header/filter/service-list-facet-counts';
+import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { useServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
 import { useSolutionCategories } from '@/components/service/form/UseSolutionCategories';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
@@ -22,10 +19,10 @@ export const IntegrationSolutionCategoryFilter = ({
   const options = useMemo(
     () =>
       categories.map((category) => ({
-        label: withFacetCount(category.name, category.id, facetCounts),
+        label: category.name,
         value: category.id,
       })),
-    [categories, facetCounts]
+    [categories]
   );
 
   const { localStorageKey } = useServiceListLocalStorageKeyContext();
@@ -41,6 +38,7 @@ export const IntegrationSolutionCategoryFilter = ({
       optionLabel={t(
         'Service.OpenctiIntegrations.Filter.SolutionCategory.Label'
       )}
+      facetCounts={facetCounts}
     />
   );
 };

@@ -18,7 +18,7 @@ interface FilterSidebarProps {
  * paint before the observer publishes.
  */
 export const FilterSidebar = ({ filters }: FilterSidebarProps) => (
-  <div className="w-1/6 self-start sticky top-[var(--list-header-height,64px)] max-h-[calc(var(--list-scroll-height,100dvh)-var(--list-header-height,64px))] overflow-y-auto bg-elevation-background-layer-1">
+  <div className="w-1/6 self-start sticky top-[var(--list-header-height,64px)] max-h-[calc(var(--list-scroll-height,100dvh)-var(--list-header-height,64px))] overflow-y-auto p-m bg-elevation-background-layer-1">
     <ServiceListFilterSection filters={filters} />
   </div>
 );

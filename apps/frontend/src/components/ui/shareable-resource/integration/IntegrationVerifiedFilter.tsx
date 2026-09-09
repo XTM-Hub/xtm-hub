@@ -1,7 +1,4 @@
-import {
-  ServiceListFacetCounts,
-  withFacetCount,
-} from '@/components/service/components/header/filter/service-list-facet-counts';
+import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
 import {
   ServiceListLocalStorageKey,
@@ -25,19 +22,11 @@ export const IntegrationVerifiedFilter = ({
     <LogicalMultiSelectFormField
       options={[
         {
-          label: withFacetCount(
-            t('Service.OpenctiIntegrations.Filter.Verified.Verified'),
-            'true',
-            facetCounts
-          ),
+          label: t('Service.OpenctiIntegrations.Filter.Verified.Verified'),
           value: 'true',
         },
         {
-          label: withFacetCount(
-            t('Service.OpenctiIntegrations.Filter.Verified.Unverified'),
-            'false',
-            facetCounts
-          ),
+          label: t('Service.OpenctiIntegrations.Filter.Verified.Unverified'),
           value: 'false',
         },
       ]}
@@ -45,6 +34,7 @@ export const IntegrationVerifiedFilter = ({
       noResultString={t('Utils.NotFound')}
       onValueChange={setVerified}
       optionLabel={t('Service.OpenctiIntegrations.Filter.Verified.Label')}
+      facetCounts={facetCounts}
     />
   );
 };

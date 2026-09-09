@@ -1,8 +1,5 @@
 import { useServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
-import {
-  ServiceListFacetCounts,
-  withFacetCount,
-} from '@/components/service/components/header/filter/service-list-facet-counts';
+import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
 import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
@@ -35,11 +32,7 @@ export const ProductVersionFilter = ({
         }
         return [
           {
-            label: withFacetCount(
-              platform.title,
-              platform.version,
-              facetCounts
-            ),
+            label: platform.title,
             value: platform.version,
           },
         ];
@@ -58,6 +51,7 @@ export const ProductVersionFilter = ({
       noResultString={t('Utils.NotFound')}
       onValueChange={setProductVersions}
       optionLabel={t('Service.OpenctiIntegrations.Filter.ProductVersion.Label')}
+      facetCounts={facetCounts}
     />
   );
 };

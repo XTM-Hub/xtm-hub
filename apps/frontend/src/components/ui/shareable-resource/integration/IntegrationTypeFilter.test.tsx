@@ -1,6 +1,6 @@
 import testRender from '@/utils/test/test-render';
 import { IntegrationType } from '@graphql/generated';
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { IntegrationTypeFilter } from './IntegrationTypeFilter';
 
@@ -38,10 +38,13 @@ describe('IntegrationTypeFilter', () => {
       />
     );
 
+    const checkbox = screen.getByRole('checkbox', {
+      name: new RegExp(
+        `Service\\.OpenctiIntegrations\\.Type\\.${IntegrationType.Connector}`
+      ),
+    });
     expect(
-      screen.getByRole('checkbox', {
-        name: `Service.OpenctiIntegrations.Type.${IntegrationType.Connector} (12)`,
-      })
+      within(checkbox.closest('label')!).getByText('12')
     ).toBeInTheDocument();
   });
 

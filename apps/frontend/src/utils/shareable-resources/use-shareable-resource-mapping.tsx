@@ -7,9 +7,9 @@ import {
   ServiceListFilterMap,
 } from '@/components/service/components/header/ServiceListHeader';
 import { IntegrationDeployableFilter } from '@/components/ui/shareable-resource/integration/IntegrationDeployableFilter';
-import { IntegrationFilters } from '@/components/ui/shareable-resource/integration/IntegrationFilters';
 import { IntegrationLicenseTypeFilter } from '@/components/ui/shareable-resource/integration/IntegrationLicenseTypeFilter';
 import { IntegrationSolutionCategoryFilter } from '@/components/ui/shareable-resource/integration/IntegrationSolutionCategoryFilter';
+import { IntegrationTypeFilter } from '@/components/ui/shareable-resource/integration/IntegrationTypeFilter';
 import { IntegrationVerifiedFilter } from '@/components/ui/shareable-resource/integration/IntegrationVerifiedFilter';
 import { ServiceListLocalStorageKey } from '@/hooks/use-service-list-local-storage';
 import {
@@ -69,7 +69,9 @@ export const useShareableResourceMapping = (
       [ServiceListFilterKey.Label]: labelFilter,
       [ServiceListFilterKey.IntegrationType]: {
         title: t('Service.OpenctiIntegrations.Filter.Type.Label'),
-        node: <IntegrationFilters facetCounts={facetCounts?.integrationType} />,
+        node: (
+          <IntegrationTypeFilter facetCounts={facetCounts?.integrationType} />
+        ),
       },
       [ServiceListFilterKey.ManagerSupported]: {
         title: t('Service.OpenctiIntegrations.Filter.ManagerSupported.Label'),

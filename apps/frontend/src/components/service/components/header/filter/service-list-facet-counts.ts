@@ -11,17 +11,6 @@ export interface ServiceListFacetCounts {
   licenseType?: Record<string, number>;
 }
 
-export const withFacetCount = (
-  label: string,
-  optionValue: string,
-  facetCounts?: Record<string, number>
-) => {
-  if (!facetCounts) {
-    return label;
-  }
-  return `${label} (${facetCounts[optionValue] ?? 0})`;
-};
-
 type FacetData = documentFacets$data['documentFacets'];
 
 const toMap = (values: ReadonlyArray<{ value: string; count: number }>) =>

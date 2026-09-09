@@ -1,7 +1,4 @@
-import {
-  ServiceListFacetCounts,
-  withFacetCount,
-} from '@/components/service/components/header/filter/service-list-facet-counts';
+import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
 import {
   ServiceListLocalStorageKey,
@@ -26,19 +23,11 @@ export const IntegrationLicenseTypeFilter = ({
     <LogicalMultiSelectFormField
       options={[
         {
-          label: withFacetCount(
-            t('Service.OpenctiIntegrations.Filter.LicenseType.Free'),
-            LicenseType.Free,
-            facetCounts
-          ),
+          label: t('Service.OpenctiIntegrations.Filter.LicenseType.Free'),
           value: LicenseType.Free,
         },
         {
-          label: withFacetCount(
-            t('Service.OpenctiIntegrations.Filter.LicenseType.Commercial'),
-            LicenseType.Commercial,
-            facetCounts
-          ),
+          label: t('Service.OpenctiIntegrations.Filter.LicenseType.Commercial'),
           value: LicenseType.Commercial,
         },
       ]}
@@ -46,6 +35,7 @@ export const IntegrationLicenseTypeFilter = ({
       noResultString={t('Utils.NotFound')}
       onValueChange={setLicenseTypes}
       optionLabel={t('Service.OpenctiIntegrations.Filter.LicenseType.Label')}
+      facetCounts={facetCounts}
     />
   );
 };

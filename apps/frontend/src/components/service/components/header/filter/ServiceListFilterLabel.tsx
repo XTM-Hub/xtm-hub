@@ -1,9 +1,6 @@
 import { useUseCases } from '@/components/admin/use-case/use-use-cases';
 import { useServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
-import {
-  ServiceListFacetCounts,
-  withFacetCount,
-} from '@/components/service/components/header/filter/service-list-facet-counts';
+import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
 import { useTranslations } from 'next-intl';
@@ -22,7 +19,7 @@ export const ServiceListFilterLabel = ({
 
   const labelOptions = useUseCases({ documentType: type }).map(
     ({ name, id }) => ({
-      label: withFacetCount(name, id, facetCounts),
+      label: name,
       value: id,
     })
   );
@@ -34,6 +31,7 @@ export const ServiceListFilterLabel = ({
       noResultString={t('Utils.NotFound')}
       onValueChange={setLabels}
       optionLabel={t('GenericActions.FilterUseCasesLabel')}
+      facetCounts={facetCounts}
     />
   );
 };

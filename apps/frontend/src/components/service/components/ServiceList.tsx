@@ -104,7 +104,7 @@ const ServiceList = ({
       </div>
       <div className="flex flex-row">
         <FilterSidebar filters={additionalFilters} />
-        <div className="w-5/6 p-m flex flex-col gap-xl">
+        <div className="w-5/6 px-m pb-m flex flex-col gap-xl">
           {userCanUpdate && draft.length > 0 && (
             <>
               <div className="txt-category">

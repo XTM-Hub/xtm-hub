@@ -1,7 +1,7 @@
 import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
 import testRender from '@/utils/test/test-render';
 import { PlatformIdentifier } from '@graphql/generated';
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProductVersionFilter } from './ProductVersionFilter';
 
@@ -54,7 +54,7 @@ describe('ProductVersionFilter', () => {
     expect(labels[1]).toHaveTextContent(PLATFORM_TITLE_ZULU);
   });
 
-  it('renders facet count in product version subfilter labels', () => {
+  it('renders facet count as a badge next to the product version option', () => {
     testRender(
       <ProductVersionFilter
         platformIdentifier={PlatformIdentifier.Opencti}
@@ -62,8 +62,10 @@ describe('ProductVersionFilter', () => {
       />
     );
 
+    const checkbox = screen.getByRole('checkbox', { name: /Alpha/ });
+    expect(checkbox).toBeInTheDocument();
     expect(
-      screen.getByRole('checkbox', { name: `${PLATFORM_TITLE_ALPHA} (12)` })
+      within(checkbox.closest('label')!).getByText('12')
     ).toBeInTheDocument();
   });
 

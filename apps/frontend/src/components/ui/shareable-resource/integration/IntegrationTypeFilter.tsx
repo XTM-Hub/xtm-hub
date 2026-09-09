@@ -1,7 +1,4 @@
-import {
-  ServiceListFacetCounts,
-  withFacetCount,
-} from '@/components/service/components/header/filter/service-list-facet-counts';
+import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { availableIntegrationTypes } from '@/components/service/integrations/Integration.utils';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
 import {
@@ -27,11 +24,7 @@ export const IntegrationTypeFilter = ({
 
   const options = useMemo(() => {
     const allOptions = Object.values(IntegrationType).map((feedType) => ({
-      label: withFacetCount(
-        t(`Service.OpenctiIntegrations.Type.${feedType}`),
-        feedType.toString(),
-        facetCounts
-      ),
+      label: t(`Service.OpenctiIntegrations.Type.${feedType}`),
       value: feedType.toString(),
     }));
     const availableOption = allOptions
@@ -46,7 +39,7 @@ export const IntegrationTypeFilter = ({
       )
       .sort((a, b) => a.label.localeCompare(b.label));
     return [...availableOption, ...comingSoonOption];
-  }, [facetCounts, t]);
+  }, [t]);
 
   return (
     <LogicalMultiSelectFormField
@@ -55,6 +48,7 @@ export const IntegrationTypeFilter = ({
       noResultString={t('Utils.NotFound')}
       onValueChange={setIntegrationTypes}
       optionLabel={t('Service.OpenctiIntegrations.Filter.Type.Label')}
+      facetCounts={facetCounts}
     />
   );
 };

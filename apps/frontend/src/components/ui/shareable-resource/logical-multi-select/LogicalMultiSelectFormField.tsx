@@ -29,6 +29,7 @@ interface MultiSelectFormFieldProps<
   noResultString: string;
   onValueChange: (value: Selection) => void;
   optionLabel: string;
+  facetCounts?: Record<string, number>;
 }
 
 const LogicalMultiSelectFormField = React.forwardRef<
@@ -45,6 +46,7 @@ const LogicalMultiSelectFormField = React.forwardRef<
       onValueChange,
       optionLabel,
       noResultString = 'No results found',
+      facetCounts,
       ...props
     },
     ref
@@ -177,7 +179,7 @@ const LogicalMultiSelectFormField = React.forwardRef<
       <div
         ref={ref}
         {...props}
-        className="flex flex-col gap-xs rounded-md border-0 p-0">
+        className="flex flex-col gap-s rounded-md border-0 p-0">
         <span className="sr-only">{optionLabel}</span>
         {flatOptions.length === 0 ? (
           <span className="text-sm text-text-default-secondary">
@@ -191,12 +193,22 @@ const LogicalMultiSelectFormField = React.forwardRef<
               return (
                 <label
                   key={option.value}
-                  className="flex items-center gap-xs text-sm cursor-pointer">
+                  className="flex items-center gap-s text-sm cursor-pointer">
                   <Checkbox
+                    className="shrink-0"
                     checked={indeterminate ? 'indeterminate' : checked}
                     onCheckedChange={() => toggleParent(option.value)}
                   />
-                  <span>{option.label}</span>
+                  <span
+                    className="min-w-0 flex-1 truncate"
+                    title={option.label}>
+                    {option.label}
+                  </span>
+                  {facetCounts && (
+                    <span className="ml-auto shrink-0 rounded bg-elevation-surface-highlight-layer-0 px-1.5 content-body-compact text-text-default-secondary">
+                      {facetCounts[option.value] ?? 0}
+                    </span>
+                  )}
                 </label>
               );
             }
@@ -209,14 +221,24 @@ const LogicalMultiSelectFormField = React.forwardRef<
             return (
               <label
                 key={`${option.parentValue}-${option.value}`}
-                className="flex items-center gap-xs pl-m text-sm cursor-pointer">
+                className="flex items-center gap-s pl-m text-sm cursor-pointer">
                 <Checkbox
+                  className="shrink-0"
                   checked={isSelected}
                   onCheckedChange={() =>
                     toggleChild(option.value, option.parentValue)
                   }
                 />
-                <span>{option.label}</span>
+                <span
+                  className="min-w-0 flex-1 truncate"
+                  title={option.label}>
+                  {option.label}
+                </span>
+                {facetCounts && (
+                  <span className="ml-auto shrink-0 rounded bg-elevation-surface-highlight-layer-0 px-1.5 content-body-compact text-text-default-secondary">
+                    {facetCounts[option.value] ?? 0}
+                  </span>
+                )}
               </label>
             );
           })

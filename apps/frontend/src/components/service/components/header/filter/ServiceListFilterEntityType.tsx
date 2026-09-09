@@ -1,8 +1,5 @@
 import { useServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
-import {
-  ServiceListFacetCounts,
-  withFacetCount,
-} from '@/components/service/components/header/filter/service-list-facet-counts';
+import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
 import { ENTITY_TYPES } from '@/utils/shareable-resources/entity-type';
@@ -21,7 +18,7 @@ export const ServiceListFilterEntityType = ({
     useServiceListLocalStorage(localStorageKey);
 
   const entityTypeOptions = ENTITY_TYPES.map(({ name, id }) => ({
-    label: withFacetCount(name, id, facetCounts),
+    label: name,
     value: id,
   }));
 
@@ -32,6 +29,7 @@ export const ServiceListFilterEntityType = ({
       noResultString={t('Utils.NotFound')}
       onValueChange={setEntityTypes}
       optionLabel={t('GenericActions.FilterEntityTypesLabel')}
+      facetCounts={facetCounts}
     />
   );
 };

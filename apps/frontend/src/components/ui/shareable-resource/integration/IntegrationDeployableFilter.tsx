@@ -1,7 +1,4 @@
-import {
-  ServiceListFacetCounts,
-  withFacetCount,
-} from '@/components/service/components/header/filter/service-list-facet-counts';
+import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
 import {
   ServiceListLocalStorageKey,
@@ -25,22 +22,14 @@ export const IntegrationDeployableFilter = ({
     <LogicalMultiSelectFormField
       options={[
         {
-          label: withFacetCount(
-            t(
-              'Service.OpenctiIntegrations.Filter.ManagerSupported.AutomaticDeploy'
-            ),
-            'true',
-            facetCounts
+          label: t(
+            'Service.OpenctiIntegrations.Filter.ManagerSupported.AutomaticDeploy'
           ),
           value: 'true',
         },
         {
-          label: withFacetCount(
-            t(
-              'Service.OpenctiIntegrations.Filter.ManagerSupported.ManualDeploy'
-            ),
-            'false',
-            facetCounts
+          label: t(
+            'Service.OpenctiIntegrations.Filter.ManagerSupported.ManualDeploy'
           ),
           value: 'false',
         },
@@ -51,6 +40,7 @@ export const IntegrationDeployableFilter = ({
       optionLabel={t(
         'Service.OpenctiIntegrations.Filter.ManagerSupported.Label'
       )}
+      facetCounts={facetCounts}
     />
   );
 };
