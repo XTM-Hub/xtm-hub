@@ -4,6 +4,7 @@ import {
   XtmPlatformTrialStatusPanelState,
 } from '@/components/service/trial-instances/xtm-platform-trial/xtm-platform-trial-panel.utils';
 import testRender from '@/utils/test/test-render';
+import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import {
   DeploymentRequestDeploymentType,
   DeploymentRequestHubStatus,
@@ -12,14 +13,28 @@ import {
   PlatformIdentifier,
   XtmPlatformBundleDetailsFragment,
 } from '@graphql/generated';
+import { platformTrialKeys } from '@graphql/trial/trial.keys';
+import { QueryClient } from '@tanstack/react-query';
 import { screen } from '@testing-library/react';
 import { ReactNode } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const graphqlMocks = vi.hoisted(() => ({
   useCreateDeploymentRequestMutation: vi.fn(),
   mutate: vi.fn(),
 }));
+
+const queryMocks = vi.hoisted(() => ({
+  invalidatePrivateNavigationQueries: vi.fn(),
+}));
+
+vi.mock(
+  '@/components/menu/navigation/private/private-navigation-query-invalidation',
+  () => ({
+    invalidatePrivateNavigationQueries:
+      queryMocks.invalidatePrivateNavigationQueries,
+  })
+);
 
 vi.mock('@graphql/generated', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@graphql/generated')>();
@@ -151,13 +166,54 @@ const statusView = (
 });
 
 describe('PrivateXtmPlatformTrialPanel', () => {
+  let invalidateQueries: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
+    invalidateQueries = vi.spyOn(QueryClient.prototype, 'invalidateQueries');
     graphqlMocks.useCreateDeploymentRequestMutation.mockReset();
     graphqlMocks.mutate.mockReset();
     graphqlMocks.useCreateDeploymentRequestMutation.mockReturnValue({
       mutate: graphqlMocks.mutate,
     });
     capturedHandleSubmit = undefined;
+    queryMocks.invalidatePrivateNavigationQueries.mockReset();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('refreshes the bundle and the navigation queries after a successful request', () => {
+    testRender(
+      <PrivateXtmPlatformTrialPanel
+        bundle={null}
+        view={formView(false)}
+        ongoingStandaloneTrials={[]}
+      />
+    );
+
+    expect(
+      queryMocks.invalidatePrivateNavigationQueries
+    ).not.toHaveBeenCalled();
+
+    const [, options] =
+      graphqlMocks.useCreateDeploymentRequestMutation.mock.calls[0];
+    options.onSuccess();
+
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: platformTrialKeys.platformTrialStatus({
+        organizationId: 'org-test-456',
+      }),
+    });
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: xtmPlatformBundleKeys.all(),
+    });
+    expect(
+      queryMocks.invalidatePrivateNavigationQueries
+    ).toHaveBeenCalledOnce();
+    expect(queryMocks.invalidatePrivateNavigationQueries).toHaveBeenCalledWith(
+      expect.any(QueryClient)
+    );
   });
 
   it('renders nothing while the view is not resolved yet', () => {

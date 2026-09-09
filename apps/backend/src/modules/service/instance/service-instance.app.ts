@@ -72,8 +72,7 @@ export const ServiceInstanceApp = {
   updatePlatformServiceMetadata: async (
     user: UserLoadUserBy,
     serviceInstanceId: ServiceInstanceId,
-    input: UpdatePlatformServiceMetadataInput,
-    upload: Upload | null
+    input: UpdatePlatformServiceMetadataInput
   ): Promise<RegisteredPlatform> => {
     const serviceInstance =
       await ServiceInstanceDomain.loadPlatformServiceInstance(
@@ -105,18 +104,6 @@ export const ServiceInstanceApp = {
     // Update ServiceInstance name if provided
     if (input.name) {
       updateData.name = input.name;
-    }
-
-    // Handle illustration image upload if provided
-    if (upload) {
-      const document = await DocumentHelper.uploadNewFile(
-        upload,
-        serviceInstance.id
-      );
-      if (!document) {
-        throw new Error(ErrorCode.DocumentFileMissing);
-      }
-      updateData.illustration_document_id = document.id;
     }
 
     const updatedServiceInstance = await withTransaction(async () => {

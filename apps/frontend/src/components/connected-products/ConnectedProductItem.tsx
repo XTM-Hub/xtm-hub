@@ -7,7 +7,7 @@ import {
 } from '@/components/registration/PlatformIdentifierMapping';
 import { UseTranslationsProps } from '@/i18n/config';
 import { APP_PATH } from '@/utils/path/constant';
-import { OpenInNewIcon, TextSnippetIcon } from '@filigran/icon';
+import { LinkIcon, TextSnippetIcon } from '@filigran/icon';
 import { Badge, Button } from '@filigran/ui';
 import { PlatformContract } from '@graphql/generated';
 import Link from 'next/link';
@@ -46,25 +46,32 @@ export const ConnectedProductItem = ({
           {t('Header.ConnectedProducts.Trial')}
         </Badge>
       )}
+      {platform.contract === PlatformContract.Ee && (
+        <Badge className="border-none bg-filigran-tonic-primary content-body-compact-medium">
+          <span className="text-text-negative-primary">
+            {t('Header.ConnectedProducts.EE')}
+          </span>
+        </Badge>
+      )}
       <div className="flex w-16 items-center justify-end gap-xs">
         {detailPath && (
           <Button
-            variant="secondary"
+            variant="tertiary"
             size="icon"
-            className="h-7 w-7"
+            className="h-7 w-7 text-text-default-primary"
             asChild>
             <Link
               href={detailPath}
               aria-label={t('Header.ConnectedProducts.Details')}>
-              <TextSnippetIcon className="h-4 w-4" />
+              <TextSnippetIcon className="h-4 w-4 shrink-0" />
             </Link>
           </Button>
         )}
         {platform.url && (
           <Button
-            variant="secondary"
+            variant="tertiary"
             size="icon"
-            className="h-7 w-7"
+            className="h-7 w-7 text-text-default-primary"
             asChild>
             <Link
               href={platform.url}
@@ -74,7 +81,7 @@ export const ConnectedProductItem = ({
                 title:
                   platform.title ?? platformMeta?.name ?? platform.identifier,
               })}>
-              <OpenInNewIcon className="h-4 w-4" />
+              <LinkIcon className="h-4 w-4 shrink-0" />
             </Link>
           </Button>
         )}

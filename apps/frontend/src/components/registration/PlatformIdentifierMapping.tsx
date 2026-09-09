@@ -92,6 +92,7 @@ export const ServiceDefinitionIdentifierToPlatformIdentifier: Partial<
 > = {
   [ServiceDefinitionIdentifier.OpenctiRegistration]: PlatformIdentifier.Opencti,
   [ServiceDefinitionIdentifier.OpenaevRegistration]: PlatformIdentifier.Openaev,
+  [ServiceDefinitionIdentifier.XtmoneRegistration]: PlatformIdentifier.Xtmone,
 };
 
 export const serviceInstanceTagByPlatformIdentifier: Record<

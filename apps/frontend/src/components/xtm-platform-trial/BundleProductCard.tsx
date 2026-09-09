@@ -8,6 +8,7 @@ import { PlatformUpdateSheet } from '@/components/service/components/PlatformUpd
 import { XtmoneStatusState } from '@/components/xtm-platform-trial/useXtmoneIntegrationStatus';
 import { XtmoneConnectionStatus } from '@/components/xtm-platform-trial/XtmoneConnectionStatus';
 import { useDateFormatter } from '@/utils/date';
+import { toExternalHref } from '@/utils/external-url';
 import { EditIcon } from '@filigran/icon';
 import { Badge, Button, Card, CardContent, Separator } from '@filigran/ui';
 import { GradientButton } from '@filigran/ui/servers';
@@ -50,7 +51,8 @@ export const BundleProductCard = ({
   const hasAccess = (registeredPlatform?.myGroups?.length ?? 0) > 0;
   const accessUrl =
     registeredPlatform?.url?.trim() || product.url?.trim() || null;
-  const canAccess = isXtmone ? !!accessUrl : hasAccess && !!accessUrl;
+  const accessHref = toExternalHref(accessUrl);
+  const canAccess = isXtmone ? !!accessHref : hasAccess && !!accessHref;
   const roleLabel = (registeredPlatform?.myGroups ?? [])
     .map((role) => role.name)
     .join(', ');
@@ -161,9 +163,9 @@ export const BundleProductCard = ({
         )}
         <div className="flex justify-end mt-auto">
           {isXtmone ? (
-            canAccess && accessUrl ? (
+            canAccess && accessHref ? (
               <Link
-                href={accessUrl}
+                href={accessHref}
                 target="_blank"
                 rel="noopener noreferrer">
                 <GradientButton
@@ -180,9 +182,9 @@ export const BundleProductCard = ({
             <Button
               asChild={canAccess}
               disabled={!canAccess}>
-              {canAccess && accessUrl ? (
+              {canAccess && accessHref ? (
                 <Link
-                  href={accessUrl}
+                  href={accessHref}
                   target="_blank"
                   rel="noopener noreferrer">
                   {accessLabel}

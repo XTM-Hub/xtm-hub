@@ -83,7 +83,7 @@
       "StatusActive": "接続済み",
       "StatusNotConnected": "未接続",
       "AccessProduct": "{productName}にアクセス",
-      "StatusUnavailable": "ステータスを取得できません",
+      "StatusUnavailable": "利用不可",
       "ProductName": "製品名",
       "Connection": "{productName}接続",
       "EditName": "名前を編集",
@@ -409,7 +409,8 @@
       "Details": "詳細",
       "Documentation": "ドキュメント",
       "ConnectPlatform": "{platformName} を接続",
-      "Trial": "トライアル"
+      "Trial": "トライアル",
+      "EE": "EE"
     }
   },
   "HomePage": {
@@ -1946,6 +1947,7 @@
         "Eyebrow": "XTM Platform 無料トライアル",
         "Description": "XTM Platform のトライアル期間中、チームを簡単に管理し、共同作業を行いましょう。メンバーを招待し、役割と権限を割り当てて、全員がプラットフォームに適切なレベルでアクセスできるようにします。",
         "BackButton": "XTM トライアルプラットフォームに戻る",
+        "BackToDashboardButton": "ダッシュボードに戻る",
         "GroupAction": "グループアクション",
         "GroupActionDisabledTooltip": "グループアクションを適用するには、リストからユーザーを選択する必要があります",
         "BulkDeleteTooltip": "選択したユーザーを削除できます",
@@ -2234,7 +2236,6 @@
     "UpdateMetadata": "プラットフォームメタデータの更新",
     "Name": "プラットフォーム名",
     "NamePlaceholder": "プラットフォーム名を入力",
-    "IllustrationImage": "イラストイメージ",
     "Updated": "{platformName} は正常に更新されました"
   },
   "Region": {

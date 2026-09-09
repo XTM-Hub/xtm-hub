@@ -6,7 +6,7 @@ import { ManageTrialRoleDescriptions } from '@/components/service/trial-instance
 import { ManageTrialTable } from '@/components/service/trial-instances/xtm-platform-trial/manage-trial/ManageTrialTable';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { APP_PATH } from '@/utils/path/constant';
+import { ADMIN_MANAGE_TRIALS_PATH, APP_PATH } from '@/utils/path/constant';
 import { SelectionState } from '@filigran/ui';
 import {
   useBundleProductsQuery,
@@ -26,9 +26,12 @@ const emptySelection = (): SelectionState => ({
   excludedIds: new Set<string>(),
 });
 
-const ClientSection = ({
-  params,
-}: ServiceXtmPlatformBundleManageUsersPageProps) => {
+interface ClientSectionProps {
+  params: ServiceXtmPlatformBundleManageUsersPageProps['params'];
+  fromDashboard: boolean;
+}
+
+const ClientSection = ({ params, fromDashboard }: ClientSectionProps) => {
   const t = useTranslations();
   const { serviceInstanceId } = use(params);
   const decodedServiceInstanceId = decodeURIComponent(serviceInstanceId);
@@ -99,6 +102,10 @@ const ClientSection = ({
           products={products}
           selectedUsers={selectedUsers}
           onUsersRemoved={() => setSelection(emptySelection())}
+          {...(fromDashboard && {
+            backHref: ADMIN_MANAGE_TRIALS_PATH,
+            backLabelKey: 'Service.Bundle.ManageTrial.BackToDashboardButton',
+          })}
         />
         <ManageTrialRoleDescriptions products={products} />
         <ManageTrialTable

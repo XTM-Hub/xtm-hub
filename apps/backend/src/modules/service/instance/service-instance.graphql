@@ -98,7 +98,6 @@ type Mutation {
     @auth(orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_SUBSCRIPTION])
   updatePlatformServiceMetadata(
     input: UpdatePlatformServiceMetadataInput!
-    document: Upload
   ): RegisteredPlatform
     @auth(orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_PLATFORM_REGISTRATION])
 }

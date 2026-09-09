@@ -165,7 +165,7 @@ describe('BundleProductCard', () => {
       .getByText('XtmPlatformTrial.Products.AccessProduct')
       .closest('a');
     expect(accessLink).not.toBeNull();
-    expect(accessLink).toHaveAttribute('href', 'https://xtmone.example.io');
+    expect(accessLink).toHaveAttribute('href', 'https://xtmone.example.io/');
   });
 
   it('falls back to deployment request url when registered platform url is empty', () => {
@@ -187,7 +187,7 @@ describe('BundleProductCard', () => {
       .getByText('XtmPlatformTrial.Products.AccessProduct')
       .closest('a');
     expect(accessLink).not.toBeNull();
-    expect(accessLink).toHaveAttribute('href', 'https://xtmone.example.io');
+    expect(accessLink).toHaveAttribute('href', 'https://xtmone.example.io/');
   });
 
   it('hides the edit-name button when the user cannot manage', () => {

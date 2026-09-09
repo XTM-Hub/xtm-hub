@@ -2,6 +2,7 @@
 
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { portalGraphqlClient } from '@/lib/graphql-client';
+import { XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
 import { ArrowUpwardIcon, DeleteIcon } from '@filigran/icon';
 import {
   Button,
@@ -34,6 +35,8 @@ interface ManageTrialHeaderProps {
   products: PlatformIdentifier[];
   selectedUsers: ManageTrialHeaderUser[];
   onUsersRemoved: () => void;
+  backHref?: string;
+  backLabelKey?: string;
 }
 
 export const ManageTrialHeader = ({
@@ -41,6 +44,8 @@ export const ManageTrialHeader = ({
   products,
   selectedUsers,
   onUsersRemoved,
+  backHref = XTM_PLATFORM_TRIAL_PATH,
+  backLabelKey = 'Service.Bundle.ManageTrial.BackButton',
 }: ManageTrialHeaderProps) => {
   const t = useTranslations();
   const queryClient = useQueryClient();
@@ -97,9 +102,9 @@ export const ManageTrialHeader = ({
           variant="outline"
           className="gap-s border-elevation-border-default-layer-0"
           asChild>
-          <Link href="/service/xtm-platform-trial">
+          <Link href={backHref}>
             <ArrowUpwardIcon className="h-3 w-3 -rotate-90" />
-            {t('Service.Bundle.ManageTrial.BackButton')}
+            {t(backLabelKey)}
           </Link>
         </Button>
         <div className="flex flex-wrap items-center gap-s">

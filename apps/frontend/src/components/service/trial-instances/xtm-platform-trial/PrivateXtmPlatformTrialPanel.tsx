@@ -1,6 +1,7 @@
 'use client';
 
 import { PortalContext } from '@/components/me/AppPortalContext';
+import { invalidatePrivateNavigationQueries } from '@/components/menu/navigation/private/private-navigation-query-invalidation';
 import { ReachSalesButton } from '@/components/service/trial-instances/reach-sales/ReachSalesButton';
 import {
   XtmPlatformTrialForm,
@@ -19,6 +20,7 @@ import { BundleCancelSheet } from '@/components/xtm-platform-trial/BundleCancelS
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Button } from '@filigran/ui';
 import { toast } from '@filigran/ui/clients';
+import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import {
   DeploymentRequestDeploymentType,
   DeploymentRequestSource,
@@ -56,6 +58,10 @@ export const PrivateXtmPlatformTrialPanel = ({
       queryClient.invalidateQueries({
         queryKey: platformTrialKeys.platformTrialStatus(variables),
       });
+      queryClient.invalidateQueries({
+        queryKey: xtmPlatformBundleKeys.all(),
+      });
+      invalidatePrivateNavigationQueries(queryClient);
       toast({
         title: t('Utils.Success'),
         description: t('Service.Trials.Form.FormRequested'),

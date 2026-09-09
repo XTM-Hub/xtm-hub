@@ -83,7 +83,7 @@
       "StatusActive": "Connected",
       "StatusNotConnected": "Not connected",
       "AccessProduct": "Access {productName}",
-      "StatusUnavailable": "Status unavailable",
+      "StatusUnavailable": "Unavailable",
       "ProductName": "Product name",
       "Connection": "Connection {productName}",
       "EditName": "Edit name",
@@ -409,7 +409,8 @@
       "Details": "Details",
       "Documentation": "Documentation",
       "ConnectPlatform": "Connect {platformName}",
-      "Trial": "Trial"
+      "Trial": "Trial",
+      "EE": "EE"
     }
   },
   "HomePage": {
@@ -1946,6 +1947,7 @@
         "Eyebrow": "XTM Platform free trial",
         "Description": "Easily manage your team and collaborate throughout your XTM Platform trial. Invite team members, assign roles and permissions, and ensure everyone has the right level of access to the platform.",
         "BackButton": "Back to XTM Platform Trial",
+        "BackToDashboardButton": "Back to dashboard",
         "GroupAction": "Group action",
         "GroupActionDisabledTooltip": "You need to select users in the list to apply group action",
         "BulkDeleteTooltip": "You can delete selected users",
@@ -2234,7 +2236,6 @@
     "UpdateMetadata": "Update Platform Metadata",
     "Name": "Platform Name",
     "NamePlaceholder": "Enter platform name",
-    "IllustrationImage": "Illustration Image",
     "Updated": "{platformName} has been updated successfully"
   },
   "Region": {
