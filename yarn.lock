@@ -8955,7 +8955,7 @@ __metadata:
     migrate: "npm:^2.1.0"
     node-cron: "npm:4.6.0"
     nodemailer: "npm:9.0.5"
-    openid-client: "npm:6.8.7"
+    openid-client: "npm:6.8.8"
     passport: "npm:0.7.0"
     pg: "catalog:"
     pg-boss: "npm:12.27.0"
@@ -14607,10 +14607,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jose@npm:^6.2.8":
-  version: 6.2.8
-  resolution: "jose@npm:6.2.8"
-  checksum: 10/d1534f56cf693dfbb4b433b72df469c3c858748fe627621e27d9c1e7894716fc1d0225923be3ae98153345b9823a25c0ac376bfccce3ed363a4c032cfd4e2f5b
+"jose@npm:^6.2.12":
+  version: 6.2.12
+  resolution: "jose@npm:6.2.12"
+  checksum: 10/42ef7b598d22fe4ed0a4d0407f9dd9ae9f56dabd31cbad6cb4f67e296953a46b5d63603f8a599a3ee4c5659bf29bb14e846237f0381ea679116520b53e71e4ea
   languageName: node
   linkType: hard
 
@@ -16889,10 +16889,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"oauth4webapi@npm:^3.8.7":
-  version: 3.8.7
-  resolution: "oauth4webapi@npm:3.8.7"
-  checksum: 10/a12ade342bbdaff3783cc936ecd1cb91247ec56e35c1badd27dfbbcdd6a6c9ced79b3d7e090628d7f1a570436206b0f245fb5fa4702609d145ff2f866bf487ed
+"oauth4webapi@npm:^3.8.8":
+  version: 3.8.8
+  resolution: "oauth4webapi@npm:3.8.8"
+  checksum: 10/7a212e4ed119dff57b44b81b0b36bd2d1f3bf3b152e201a6a864c854abad7cb5d20ada33f12e64ca544f1ea18ff0dc4b20ee847a680d5c33cb519e30f19b9045
   languageName: node
   linkType: hard
 
@@ -17042,13 +17042,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"openid-client@npm:6.8.7":
-  version: 6.8.7
-  resolution: "openid-client@npm:6.8.7"
+"openid-client@npm:6.8.8":
+  version: 6.8.8
+  resolution: "openid-client@npm:6.8.8"
   dependencies:
-    jose: "npm:^6.2.8"
-    oauth4webapi: "npm:^3.8.7"
-  checksum: 10/13e06f7e0752cb0ca3980c105c50e4c862bb12ce12fefe5ef46374a0669ee6693e0309fc859528274f0d7498a772c893185468fbf655bc8e0117b19c48403be5
+    jose: "npm:^6.2.12"
+    oauth4webapi: "npm:^3.8.8"
+  checksum: 10/0a8601e3b8baf910801a76c268295317b6e72ac512cf39f8d220bdb49fab3c8ed978a0717be589900982191c0fd74209d15109b50f4f4be502ff6c713f28d94e
   languageName: node
   linkType: hard
 
