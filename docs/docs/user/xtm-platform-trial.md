@@ -184,3 +184,9 @@ Selecting **Reach out to Sales**, from the XTM Hub or from the trial page, sends
 to our **Sales team**.
 
 Use this option for questions related to licensing, enterprise packages, pricing, or expansions.
+
+Selecting **Need support**, next to it on the trial page, opens the
+[Filigran community on Slack](https://community.filigran.io/) in a new tab.
+
+Use this option for technical questions about the products themselves, to share feedback on your
+trial, or to get help from the Filigran team and the community.
