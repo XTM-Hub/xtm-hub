@@ -19,7 +19,7 @@ interface PageLoaderProps {
 }
 
 const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
-  const { count, search, labels, setSearch, orderMode, orderBy } =
+  const { pageSize, search, labels, setSearch, orderMode, orderBy } =
     useServiceListLocalStorage(ServiceListLocalStorageKey.OpenAEVScenarios);
   const logicalFilters = useLogicalFiltersFromStorage({
     serviceInstanceSlug: ServiceSlug.OPEN_AEV_SCENARIOS,
@@ -27,7 +27,7 @@ const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
   });
 
   const { queryRef, queryRefFacet } = useShareableResourceQueryLoader({
-    pageSize: count,
+    pageSize,
     orderBy,
     orderMode,
     serviceInstanceId: serviceInstance.id,

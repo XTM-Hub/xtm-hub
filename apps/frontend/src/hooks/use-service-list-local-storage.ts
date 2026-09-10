@@ -37,11 +37,6 @@ export const useServiceListLocalStorage = (
 ) => {
   const isPublicPath = usePublicPath();
   const pagePrefix = isPublicPath ? 'Public' : 'Private';
-  const [count, setCount, removeCount] = useLocalStorage(
-    `count${pagePrefix}${serviceName}List`,
-    50
-  );
-
   const [search, setSearch, removeSearch] = useLocalStorage<string>(
     `search${pagePrefix}${serviceName}List`,
     ''
@@ -147,7 +142,6 @@ export const useServiceListLocalStorage = (
     );
 
   const resetAll = useCallback(() => {
-    removeCount();
     removePageSize();
     removeSearch();
     removeLabels();
@@ -162,7 +156,6 @@ export const useServiceListLocalStorage = (
     removeOrderMode();
     removeDisplayMode();
   }, [
-    removeCount,
     removePageSize,
     removeSearch,
     removeLabels,
@@ -179,8 +172,6 @@ export const useServiceListLocalStorage = (
   ]);
 
   return {
-    count,
-    setCount,
     pageSize,
     setPageSize,
     resetAll,

@@ -76,18 +76,18 @@ describe('useServiceListLocalStorage', () => {
     }
   );
 
-  it('uses distinct storage keys for count and pageSize', () => {
+  it('uses pageSize as the single source of truth for the page size', () => {
     renderHook(() =>
       useServiceListLocalStorage(ServiceListLocalStorageKey.OpenAEVScenarios)
     );
 
     expect(testState.useLocalStorage).toHaveBeenCalledWith(
-      'countPrivateOpenAEVScenariosList',
-      50
-    );
-    expect(testState.useLocalStorage).toHaveBeenCalledWith(
       'pageSizePrivateOpenAEVScenariosList',
       50
+    );
+    expect(testState.useLocalStorage).not.toHaveBeenCalledWith(
+      expect.stringMatching(/^count/),
+      expect.anything()
     );
   });
 
@@ -98,7 +98,6 @@ describe('useServiceListLocalStorage', () => {
 
     expect(result.current.search).toBe('');
     expect(result.current.pageSize).toBe(50);
-    expect(result.current.count).toBe(50);
     expect(result.current.orderMode).toBe(OrderingMode.Asc);
     expect(result.current.displayMode).toBe(ServiceListDisplayMode.Tab);
     expect(result.current.labels).toEqual({});
@@ -111,7 +110,7 @@ describe('useServiceListLocalStorage', () => {
 
     result.current.resetAll();
 
-    expect(testState.removeFns).toHaveLength(14);
+    expect(testState.removeFns).toHaveLength(13);
     for (const remove of testState.removeFns) {
       expect(remove).toHaveBeenCalledOnce();
     }

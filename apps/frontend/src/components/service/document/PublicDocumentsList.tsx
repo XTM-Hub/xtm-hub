@@ -127,7 +127,7 @@ const PublicDocumentsList = ({
       </div>
       <div className="flex flex-row">
         <FilterSidebar filters={filters} />
-        <div className="w-5/6 px-m pb-m">
+        <div className="grow shrink min-w-0 px-m pb-m">
           <PublicShareableResourceList
             displayMode={selectedDisplayMode}
             documents={documents}
