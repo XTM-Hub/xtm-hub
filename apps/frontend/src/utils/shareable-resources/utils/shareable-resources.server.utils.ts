@@ -1,12 +1,21 @@
+import { serverGraphqlFetch } from '@/lib/server-graphql-fetch';
 import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '@/utils/constant';
+import type {
+  PublicDocumentByServiceSlugItem,
+  PublicDocumentSitemapItem,
+} from '@/utils/shareable-resources/shareable-resources.types';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
-import type { publicDocumentByServiceSlugItemFragment$data } from '@generated/publicDocumentByServiceSlugItemFragment.graphql';
 import type { publicDocumentBySlugItemFragment$data } from '@generated/publicDocumentBySlugItemFragment.graphql';
 import publicDocumentBySlugQueryGraphql from '@generated/publicDocumentBySlugQuery.graphql';
-import publicDocumentsByServiceSlugQueryGraphql from '@generated/publicDocumentsByServiceSlugQuery.graphql';
-import publicDocumentsByServiceSlugSitemapQueryGraphql from '@generated/publicDocumentsByServiceSlugSitemapQuery.graphql';
-import type { publicDocumentSitemapItemFragment$data } from '@generated/publicDocumentSitemapItemFragment.graphql';
+import {
+  PublicDocumentsByServiceSlugQueryDocument,
+  PublicDocumentsByServiceSlugQueryQuery,
+  PublicDocumentsByServiceSlugQueryQueryVariables,
+  PublicDocumentsByServiceSlugSitemapQueryDocument,
+  PublicDocumentsByServiceSlugSitemapQueryQuery,
+  PublicDocumentsByServiceSlugSitemapQueryQueryVariables,
+} from '@graphql/generated';
 
 /**
  * Cache tag for the public document list of a service instance. Invalidated
@@ -34,12 +43,15 @@ export const publicDocumentCacheTag = (
  */
 export async function fetchAllDocuments(
   serviceInstanceSlug: ServiceSlug
-): Promise<publicDocumentByServiceSlugItemFragment$data[]> {
+): Promise<PublicDocumentByServiceSlugItem[]> {
   if (!Object.values(ServiceSlug).includes(serviceInstanceSlug)) {
     throw new Error(`Invalid service slug: ${serviceInstanceSlug}`);
   }
-  const response = await serverFetchGraphQL(
-    publicDocumentsByServiceSlugQueryGraphql,
+  const data = await serverGraphqlFetch<
+    PublicDocumentsByServiceSlugQueryQuery,
+    PublicDocumentsByServiceSlugQueryQueryVariables
+  >(
+    PublicDocumentsByServiceSlugQueryDocument,
     { serviceInstanceSlug },
     {
       cache: 'force-cache',
@@ -50,10 +62,7 @@ export async function fetchAllDocuments(
     }
   );
 
-  const safeData = response.data as Record<string, unknown>;
-  return safeData[
-    'publicDocumentsByServiceSlug'
-  ] as publicDocumentByServiceSlugItemFragment$data[];
+  return data.publicDocumentsByServiceSlug;
 }
 
 /**
@@ -63,12 +72,15 @@ export async function fetchAllDocuments(
  */
 export async function fetchDocumentSlugsForSitemap(
   serviceInstanceSlug: ServiceSlug
-): Promise<publicDocumentSitemapItemFragment$data[]> {
+): Promise<PublicDocumentSitemapItem[]> {
   if (!Object.values(ServiceSlug).includes(serviceInstanceSlug)) {
     throw new Error(`Invalid service slug: ${serviceInstanceSlug}`);
   }
-  const response = await serverFetchGraphQL(
-    publicDocumentsByServiceSlugSitemapQueryGraphql,
+  const data = await serverGraphqlFetch<
+    PublicDocumentsByServiceSlugSitemapQueryQuery,
+    PublicDocumentsByServiceSlugSitemapQueryQueryVariables
+  >(
+    PublicDocumentsByServiceSlugSitemapQueryDocument,
     { serviceInstanceSlug },
     {
       cache: 'force-cache',
@@ -79,10 +91,7 @@ export async function fetchDocumentSlugsForSitemap(
     }
   );
 
-  const safeData = response.data as Record<string, unknown>;
-  return safeData[
-    'publicDocumentsByServiceSlug'
-  ] as publicDocumentSitemapItemFragment$data[];
+  return data.publicDocumentsByServiceSlug;
 }
 
 /** Fetches a single public document by slug; same caching as `fetchAllDocuments`. */
