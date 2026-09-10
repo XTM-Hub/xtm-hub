@@ -16,7 +16,10 @@ import {
   PublicDocumentDetailsData,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
-import { isResourceDownloadable } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
+import {
+  getDocumentEntityTypes,
+  isResourceDownloadable,
+} from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
 import { LogoFiligranIcon } from '@filigran/icon';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { DocumentMetadataKeyCode, IntegrationType } from '@graphql/generated';
@@ -54,8 +57,11 @@ const ShareableResourceDetails = ({
   const isIntegration = isIntegrationItem(documentData);
 
   const documentationUrl =
+    isIntegration &&
     documentData.integration_type &&
-    DOCUMENTATION_URLS[documentData.integration_type];
+    DOCUMENTATION_URLS[documentData.integration_type as IntegrationType];
+
+  const entityTypes = getDocumentEntityTypes(documentData);
 
   return (
     <ShareableResourceBasicInformation>
@@ -77,10 +83,12 @@ const ShareableResourceDetails = ({
           <UserDisplay uploader={documentData.uploader} />
         </div>
       </ShareableResourceDetailItem>
-      {getEntityTypes(documentData).length > 0 && (
+      {getEntityTypes({ entity_types: entityTypes }).length > 0 && (
         <ShareableResourceDetailItem
           label={t('Service.ShareableResources.Details.EntityType')}>
-          <ShareableResourceEntityTypes document={documentData} />
+          <ShareableResourceEntityTypes
+            document={{ entity_types: entityTypes }}
+          />
         </ShareableResourceDetailItem>
       )}
       {isIntegration && (
@@ -102,7 +110,12 @@ const ShareableResourceDetails = ({
               )}>
               <div className="flex items-center gap-s">
                 <span>
-                  {documentData.solution_categories
+                  {(
+                    documentData.solution_categories as ReadonlyArray<{
+                      id: string;
+                      name: string;
+                    }>
+                  )
                     .map((category) => category.name)
                     .join(', ')}
                 </span>
