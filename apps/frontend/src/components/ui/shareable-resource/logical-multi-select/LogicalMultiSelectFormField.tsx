@@ -193,7 +193,7 @@ const LogicalMultiSelectFormField = React.forwardRef<
               return (
                 <label
                   key={option.value}
-                  className="flex items-center gap-s text-sm cursor-pointer">
+                  className="flex items-center gap-s content-body-compact text-[13px] cursor-pointer">
                   <Checkbox
                     className="shrink-0"
                     checked={indeterminate ? 'indeterminate' : checked}
@@ -221,7 +221,7 @@ const LogicalMultiSelectFormField = React.forwardRef<
             return (
               <label
                 key={`${option.parentValue}-${option.value}`}
-                className="flex items-center gap-s pl-m text-sm cursor-pointer">
+                className="flex items-center gap-s pl-m content-body-compact text-[13px] cursor-pointer">
                 <Checkbox
                   className="shrink-0"
                   checked={isSelected}
