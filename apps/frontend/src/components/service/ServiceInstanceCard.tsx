@@ -66,6 +66,7 @@ const ServiceInstanceCard = ({
         {...(action.variant ? { variant: action.variant } : {})}>
         <Link
           href={action.href}
+          prefetch={false}
           target={action.target}>
           {action.label}
         </Link>
@@ -164,6 +165,7 @@ const ServiceInstanceCard = ({
             ) : (
               <Link
                 href={href}
+                prefetch={false}
                 target={target}
                 rel={target === '_blank' ? 'noopener noreferrer' : undefined}
                 className="focus-visible:outline-none after:cursor-pointer after:content-[' '] after:absolute after:inset-0 z-0 aria-disabled:opacity-60 aria-disabled:after:hidden aria-disabled:cursor-auto"

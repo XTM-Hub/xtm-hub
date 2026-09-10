@@ -23,6 +23,7 @@ import {
 import { FiligranProduct } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
+import { useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -43,23 +44,29 @@ export interface VotableFeatureFormModel {
   active: boolean;
 }
 
-export const votableFeatureFormSchema = z.object({
-  title: z.string().min(2, { error: 'VotingRound.Feature.Error.Title' }),
-  short_description: z
-    .string()
-    .min(2, { error: 'VotingRound.Feature.Error.ShortDescription' }),
-  description: z
-    .string()
-    .min(2, { error: 'VotingRound.Feature.Error.Description' }),
-  product: z.enum(productValues),
-  use_case_ids: z.array(z.string()),
-  illustration_document: z.custom<FileList>().optional(),
-  remove_illustration: z.boolean(),
-  position: z.string().regex(/^\d+$/, {
-    error: 'VotingRound.Feature.Error.Position',
-  }),
-  active: z.boolean(),
-});
+const buildVotableFeatureFormSchema = (t: (key: string) => string) =>
+  z.object({
+    title: z.string().min(2, { error: t('VotingRound.Feature.Error.Title') }),
+    short_description: z
+      .string()
+      .min(2, { error: t('VotingRound.Feature.Error.ShortDescription') })
+      .max(215, { error: t('VotingRound.Feature.Error.ShortDescriptionMax') }),
+    description: z
+      .string()
+      .min(2, { error: t('VotingRound.Feature.Error.Description') }),
+    product: z.enum(productValues),
+    use_case_ids: z.array(z.string()),
+    illustration_document: z.custom<FileList>().optional(),
+    remove_illustration: z.boolean(),
+    position: z.string().regex(/^\d+$/, {
+      error: t('VotingRound.Feature.Error.Position'),
+    }),
+    active: z.boolean(),
+  });
+
+export const votableFeatureFormSchema = buildVotableFeatureFormSchema(
+  (key) => key
+);
 
 export type VotableFeatureFormValues = z.infer<typeof votableFeatureFormSchema>;
 
@@ -77,8 +84,9 @@ const VotableFeatureForm = ({
   handleSubmit: (values: VotableFeatureFormValues) => void;
 }) => {
   const t = useTranslations();
+  const formSchema = useMemo(() => buildVotableFeatureFormSchema(t), [t]);
   const form = useForm<VotableFeatureFormValues>({
-    resolver: zodResolver(votableFeatureFormSchema),
+    resolver: zodResolver(formSchema),
     defaultValues: {
       title: feature?.title ?? '',
       short_description: feature?.short_description ?? '',
