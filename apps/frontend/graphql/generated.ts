@@ -3156,9 +3156,9 @@ export type TrialsUpdateDeploymentQuotaCapacityMutationVariables = Exact<{
 
 export type TrialsUpdateDeploymentQuotaCapacityMutation = { __typename?: 'Mutation', updateDeploymentQuotaCapacity: { __typename?: 'Success', success: boolean } };
 
-export type TrialsProductFragment = { __typename?: 'DeploymentRequest', id: string, platform_identifier: PlatformIdentifier | null, hub_status: DeploymentRequestHubStatus, platform_id: string | null, platform_url: string | null };
+export type TrialsProductFragment = { __typename?: 'DeploymentRequest', id: string, platform_identifier: PlatformIdentifier | null, hub_status: DeploymentRequestHubStatus, platform_id: string | null, platform_url: string | null, url: string | null };
 
-export type TrialsRowFragment = { __typename?: 'DeploymentRequest', id: string, service_instance_id: any, ordering: number, hub_status: DeploymentRequestHubStatus, requester_email: string | null, organization_name: string | null, organization_requester_id: any, region: DeploymentRequestPlatformRegion, request_date: any, start_date: any | null, end_date: any | null, cancellation_date: any | null, cancellation_user_email: string | null, cancellation_reason: string | null, platform_identifier: PlatformIdentifier | null, platform_id: string | null, platform_url: string | null, children: Array<{ __typename?: 'DeploymentRequest', id: string, platform_identifier: PlatformIdentifier | null, hub_status: DeploymentRequestHubStatus, platform_id: string | null, platform_url: string | null }> | null };
+export type TrialsRowFragment = { __typename?: 'DeploymentRequest', id: string, service_instance_id: any, ordering: number, hub_status: DeploymentRequestHubStatus, requester_email: string | null, organization_name: string | null, organization_requester_id: any, region: DeploymentRequestPlatformRegion, request_date: any, start_date: any | null, end_date: any | null, cancellation_date: any | null, cancellation_user_email: string | null, cancellation_reason: string | null, platform_identifier: PlatformIdentifier | null, platform_id: string | null, platform_url: string | null, url: string | null, children: Array<{ __typename?: 'DeploymentRequest', id: string, platform_identifier: PlatformIdentifier | null, hub_status: DeploymentRequestHubStatus, platform_id: string | null, platform_url: string | null, url: string | null }> | null };
 
 export type TrialsQuotaFragment = { __typename?: 'DeploymentAvailability', id: string, region: DeploymentRequestPlatformRegion, availableCount: number, capacity: number, platform_identifier: PlatformIdentifier | null };
 
@@ -3172,7 +3172,7 @@ export type TrialsListQueryVariables = Exact<{
 }>;
 
 
-export type TrialsListQuery = { __typename?: 'Query', deploymentRequestsList: { __typename?: 'DeploymentRequestConnection', totalCount: number, edges: Array<{ __typename?: 'DeploymentRequestEdge', node: { __typename?: 'DeploymentRequest', id: string, service_instance_id: any, ordering: number, hub_status: DeploymentRequestHubStatus, requester_email: string | null, organization_name: string | null, organization_requester_id: any, region: DeploymentRequestPlatformRegion, request_date: any, start_date: any | null, end_date: any | null, cancellation_date: any | null, cancellation_user_email: string | null, cancellation_reason: string | null, platform_identifier: PlatformIdentifier | null, platform_id: string | null, platform_url: string | null, children: Array<{ __typename?: 'DeploymentRequest', id: string, platform_identifier: PlatformIdentifier | null, hub_status: DeploymentRequestHubStatus, platform_id: string | null, platform_url: string | null }> | null } }> } };
+export type TrialsListQuery = { __typename?: 'Query', deploymentRequestsList: { __typename?: 'DeploymentRequestConnection', totalCount: number, edges: Array<{ __typename?: 'DeploymentRequestEdge', node: { __typename?: 'DeploymentRequest', id: string, service_instance_id: any, ordering: number, hub_status: DeploymentRequestHubStatus, requester_email: string | null, organization_name: string | null, organization_requester_id: any, region: DeploymentRequestPlatformRegion, request_date: any, start_date: any | null, end_date: any | null, cancellation_date: any | null, cancellation_user_email: string | null, cancellation_reason: string | null, platform_identifier: PlatformIdentifier | null, platform_id: string | null, platform_url: string | null, url: string | null, children: Array<{ __typename?: 'DeploymentRequest', id: string, platform_identifier: PlatformIdentifier | null, hub_status: DeploymentRequestHubStatus, platform_id: string | null, platform_url: string | null, url: string | null }> | null } }> } };
 
 export type TrialsQuotasQueryVariables = Exact<{
   platformIdentifier: InputMaybe<PlatformIdentifier>;
@@ -3603,6 +3603,7 @@ export const TrialsProductFragmentDoc = `
   hub_status
   platform_id
   platform_url
+  url
 }
     `;
 export const TrialsRowFragmentDoc = `
@@ -3624,6 +3625,7 @@ export const TrialsRowFragmentDoc = `
   platform_identifier
   platform_id
   platform_url
+  url
   children {
     ...TrialsProduct
   }

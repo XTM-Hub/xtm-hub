@@ -19,6 +19,7 @@ const makeProduct = (
   hub_status: DeploymentRequestHubStatus.Active,
   platform_id: platformId,
   platform_url: null,
+  url: null,
   service_instance_id: `instance-${platformIdentifier}`,
 });
 
@@ -59,5 +60,26 @@ describe('TrialsProductValues', () => {
     // Then
     expect(screen.getByText('-')).toBeInTheDocument();
     expect(screen.queryByText('OPENCTI')).not.toBeInTheDocument();
+  });
+
+  it('should render values as clickable external links when asLink is set', () => {
+    const products = [
+      {
+        ...makeProduct(PlatformIdentifier.Xtmone, null),
+        url: 'xtmone.example.io',
+      },
+    ];
+
+    testRender(
+      <TrialsProductValues
+        products={products}
+        valueOf={(product) => product.url}
+        asLink
+      />
+    );
+
+    const link = screen.getByRole('link', { name: 'xtmone.example.io' });
+    expect(link).toHaveAttribute('href', 'https://xtmone.example.io/');
+    expect(link).toHaveAttribute('target', '_blank');
   });
 });
