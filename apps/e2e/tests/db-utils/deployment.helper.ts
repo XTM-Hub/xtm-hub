@@ -32,13 +32,26 @@ export const insertDeploymentRequest = async (
     .ignore();
 };
 
-export const loadBundleDeploymentRequest = async (organizationId: string) =>
-  db('DeploymentRequest')
+// An organization can only ever have one bundle, a second request is rejected
+// with FreeTrialAlreadyExists
+export const loadBundleDeploymentRequest = async (organizationId: string) => {
+  const bundle = await db('DeploymentRequest')
     .where({ organization_requester_id: organizationId, type: 'bundle' })
     .first();
 
+  if (!bundle) {
+    throw new Error(
+      `No bundle deployment request found for organization ${organizationId}`
+    );
+  }
+
+  return bundle;
+};
+
 export const loadBundleProducts = async (bundleId: string) =>
-  db('DeploymentRequest').where({ parent_id: bundleId }).orderBy('id');
+  db('DeploymentRequest')
+    .where({ parent_id: bundleId })
+    .orderBy('platform_identifier');
 
 export const TRIAL_DURATION_IN_DAYS = 30;
 

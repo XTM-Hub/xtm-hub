@@ -8,6 +8,7 @@ import {
 import LoginPage from '../model/login.pageModel';
 import XtmPlatformTrialPage from '../model/xtm-platform-trial.pageModel';
 
+// Alphabetical, matching the ordering of loadBundleProducts()
 const BUNDLE_PRODUCTS = ['openaev', 'opencti', 'xtmone'];
 
 test.describe('XTM Platform bundle trial', () => {
@@ -64,7 +65,7 @@ test.describe('XTM Platform bundle trial', () => {
       const products = await loadBundleProducts(bundle.id);
       expect(products).toHaveLength(BUNDLE_PRODUCTS.length);
       expect(
-        products.map(({ platform_identifier }) => platform_identifier).sort()
+        products.map(({ platform_identifier }) => platform_identifier)
       ).toEqual(BUNDLE_PRODUCTS);
       products.forEach((product) => {
         expect(product.type).toEqual('trial');

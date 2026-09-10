@@ -35,9 +35,12 @@ export default class XtmPlatformTrialPage {
   }
 
   async requestBundleTrial() {
-    // OpenCTI, OpenAEV and XTM One are pre-selected by the form
+    // OpenCTI, OpenAEV and XTM One are pre-selected by the form, and XTM One
+    // is mandatory in a bundle so its checkbox cannot be unticked
     await expect(this.getProductCheckbox('opencti')).toBeChecked();
     await expect(this.getProductCheckbox('openaev')).toBeChecked();
+    await expect(this.getProductCheckbox('xtmone')).toBeChecked();
+    await expect(this.getProductCheckbox('xtmone')).toBeDisabled();
 
     await this.selectOption(
       'Select your preferred region for hosting',
