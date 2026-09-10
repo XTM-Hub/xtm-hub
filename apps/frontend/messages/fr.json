@@ -185,6 +185,14 @@
   "DisableUserDialog": {
     "TextDisableThisUser": "Êtes-vous sûr de vouloir désactiver cet utilisateur {email} ? ?"
   },
+  "EpicForm": {
+    "Error": {
+      "Title": "Le titre est obligatoire",
+      "ShortDescription": "La description courte est obligatoire",
+      "ShortDescriptionMax": "La description courte ne doit pas dépasser 215 caractères",
+      "Description": "La description est obligatoire"
+    }
+  },
   "Epic": {
     "XTMRoadmap": "Roadmap Platform XTM",
     "AllProducts": "Tous les produits",
@@ -2327,6 +2335,7 @@
       "Error": {
         "Title": "Le titre est obligatoire",
         "ShortDescription": "La description courte est obligatoire",
+        "ShortDescriptionMax": "La description courte ne doit pas dépasser 215 caractères",
         "Description": "La description est obligatoire",
         "Position": "La position doit être un nombre positif"
       },
