@@ -150,6 +150,7 @@ const RegisteredPlatformCard = ({ platform }: RegisteredPlatformCardProps) => {
   return platform.href ? (
     <Link
       href={platform.href}
+      prefetch={false}
       className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
       {cardContent}
     </Link>
