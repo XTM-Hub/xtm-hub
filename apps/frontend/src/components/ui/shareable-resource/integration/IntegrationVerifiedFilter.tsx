@@ -1,22 +1,22 @@
-import { ServiceListFilterKey } from '@/components/service/components/header/ServiceListHeader';
+import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
-import { useServiceListFilters } from '@/hooks/use-service-list-filters';
 import {
   ServiceListLocalStorageKey,
   useServiceListLocalStorage,
 } from '@/hooks/use-service-list-local-storage';
 import { useTranslations } from 'next-intl';
 
-export const IntegrationVerifiedFilter = () => {
-  const { verified, setVerified, removeVerified } = useServiceListLocalStorage(
+interface IntegrationVerifiedFilterProps {
+  facetCounts?: ServiceListFacetCounts['verified'];
+}
+
+export const IntegrationVerifiedFilter = ({
+  facetCounts,
+}: IntegrationVerifiedFilterProps) => {
+  const { verified, setVerified } = useServiceListLocalStorage(
     ServiceListLocalStorageKey.OpenCTIIntegrationFeeds
   );
   const t = useTranslations();
-  const { removeFilter } = useServiceListFilters();
-  const removeVerifiedFilter = () => {
-    removeVerified();
-    removeFilter(ServiceListFilterKey.Verified);
-  };
 
   return (
     <LogicalMultiSelectFormField
@@ -31,11 +31,10 @@ export const IntegrationVerifiedFilter = () => {
         },
       ]}
       initialValue={verified}
-      placeholder={t('Service.OpenctiIntegrations.Filter.Verified.Placeholder')}
       noResultString={t('Utils.NotFound')}
       onValueChange={setVerified}
-      onRemove={removeVerifiedFilter}
       optionLabel={t('Service.OpenctiIntegrations.Filter.Verified.Label')}
+      facetCounts={facetCounts}
     />
   );
 };

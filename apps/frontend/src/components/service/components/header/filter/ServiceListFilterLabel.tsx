@@ -1,27 +1,21 @@
 import { useUseCases } from '@/components/admin/use-case/use-use-cases';
 import { useServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
-import { ServiceListFilterKey } from '@/components/service/components/header/ServiceListHeader';
+import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
-import { useServiceListFilters } from '@/hooks/use-service-list-filters';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
 import { useTranslations } from 'next-intl';
 
 interface ServiceListFilterLabelProps {
   type: string;
+  facetCounts?: ServiceListFacetCounts['useCase'];
 }
 export const ServiceListFilterLabel = ({
   type,
+  facetCounts,
 }: ServiceListFilterLabelProps) => {
   const t = useTranslations();
   const { localStorageKey } = useServiceListLocalStorageKeyContext();
-  const { labels, setLabels, removeLabels } =
-    useServiceListLocalStorage(localStorageKey);
-
-  const { removeFilter } = useServiceListFilters();
-  const removeLabelFilter = () => {
-    removeLabels();
-    removeFilter(ServiceListFilterKey.Label);
-  };
+  const { labels, setLabels } = useServiceListLocalStorage(localStorageKey);
 
   const labelOptions = useUseCases({ documentType: type }).map(
     ({ name, id }) => ({
@@ -34,11 +28,10 @@ export const ServiceListFilterLabel = ({
     <LogicalMultiSelectFormField
       options={labelOptions}
       initialValue={labels}
-      placeholder={t('GenericActions.FilterUseCases')}
       noResultString={t('Utils.NotFound')}
       onValueChange={setLabels}
-      onRemove={removeLabelFilter}
       optionLabel={t('GenericActions.FilterUseCasesLabel')}
+      facetCounts={facetCounts}
     />
   );
 };

@@ -1,23 +1,22 @@
-import { ServiceListFilterKey } from '@/components/service/components/header/ServiceListHeader';
+import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
-import { useServiceListFilters } from '@/hooks/use-service-list-filters';
 import {
   ServiceListLocalStorageKey,
   useServiceListLocalStorage,
 } from '@/hooks/use-service-list-local-storage';
 import { useTranslations } from 'next-intl';
 
-export const IntegrationDeployableFilter = () => {
-  const { deployable, setDeployable, removeDeployable } =
-    useServiceListLocalStorage(
-      ServiceListLocalStorageKey.OpenCTIIntegrationFeeds
-    );
+interface IntegrationDeployableFilterProps {
+  facetCounts?: ServiceListFacetCounts['managerSupported'];
+}
+
+export const IntegrationDeployableFilter = ({
+  facetCounts,
+}: IntegrationDeployableFilterProps) => {
+  const { deployable, setDeployable } = useServiceListLocalStorage(
+    ServiceListLocalStorageKey.OpenCTIIntegrationFeeds
+  );
   const t = useTranslations();
-  const { removeFilter } = useServiceListFilters();
-  const removeDeployableFilter = () => {
-    removeDeployable();
-    removeFilter(ServiceListFilterKey.ManagerSupported);
-  };
 
   return (
     <LogicalMultiSelectFormField
@@ -36,15 +35,12 @@ export const IntegrationDeployableFilter = () => {
         },
       ]}
       initialValue={deployable}
-      placeholder={t(
-        'Service.OpenctiIntegrations.Filter.ManagerSupported.Placeholder'
-      )}
       noResultString={t('Utils.NotFound')}
       onValueChange={setDeployable}
-      onRemove={removeDeployableFilter}
       optionLabel={t(
         'Service.OpenctiIntegrations.Filter.ManagerSupported.Label'
       )}
+      facetCounts={facetCounts}
     />
   );
 };

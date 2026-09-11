@@ -329,6 +329,7 @@
       "INVALID_PRODUCTS_FOR_DEPLOYMENT_TYPE": "Les produits sélectionnés ne sont pas valides pour ce type de déploiement",
       "IS_PLATFORM_REGISTERED_UNKNOWN_ERROR": "Une erreur inconnue s'est produite lors de la connexion avec le produit",
       "LOAD_CAPABILITIES_ERROR": "Une erreur s'est produite lors du chargement des fonctionnalités",
+      "LIST_FACET_ERROR": "Une erreur s'est produite lors de l'affichage des facettes.",
       "MISSING_AUTO_REGISTER_PLATFORM_ARGUMENT": "Argument de connexion automatique du produit manquant",
       "MISSING_CAPABILITY_ON_ORGANIZATION": "Permissions manquantes",
       "MISSING_CAPABILITY_ON_SERVICE": "Permissions manquantes",
@@ -1160,10 +1161,6 @@
         "Type": {
           "Label": "Type d'intégration",
           "Placeholder": "Type d'intégration..."
-        },
-        "ProductVersion": {
-          "Label": "Produits connectés",
-          "Placeholder": "Produits connectés..."
         },
         "ManagerSupported": {
           "Label": "Type de déploiement",

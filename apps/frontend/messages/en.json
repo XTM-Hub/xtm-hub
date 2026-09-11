@@ -329,6 +329,7 @@
       "INVALID_PRODUCTS_FOR_DEPLOYMENT_TYPE": "The selected products are not valid for this deployment type",
       "IS_PLATFORM_REGISTERED_UNKNOWN_ERROR": "An unknown error occurred during product connection",
       "LOAD_CAPABILITIES_ERROR": "An error occurred while loading capabilities",
+      "LIST_FACET_ERROR": "An unknown error occurred while listing facets",
       "MISSING_AUTO_REGISTER_PLATFORM_ARGUMENT": "Missing auto connection product argument",
       "MISSING_CAPABILITY_ON_ORGANIZATION": "Missing permissions",
       "MISSING_CAPABILITY_ON_SERVICE": "Missing permissions",
@@ -1160,10 +1161,6 @@
         "Type": {
           "Label": "Integration type",
           "Placeholder": "Integration type..."
-        },
-        "ProductVersion": {
-          "Label": "Connected products",
-          "Placeholder": "Connected products..."
         },
         "ManagerSupported": {
           "Label": "Deployment type",

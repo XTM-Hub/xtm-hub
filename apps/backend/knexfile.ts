@@ -600,7 +600,7 @@ const applyLogicalFilterWhere = (
   }
 };
 
-const applyLogicalFilter = (
+export const applyLogicalFilter = (
   type: DatabaseType,
   qb: Knex.QueryBuilder,
   logicalFilter?: LogicalFilterInput

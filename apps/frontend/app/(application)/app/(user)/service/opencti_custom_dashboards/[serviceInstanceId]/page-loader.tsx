@@ -19,7 +19,7 @@ interface PageLoaderProps {
 }
 
 const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
-  const { count, search, setSearch, labels, orderMode, orderBy } =
+  const { pageSize, search, setSearch, labels, orderMode, orderBy } =
     useServiceListLocalStorage(
       ServiceListLocalStorageKey.OpenCTICustomDashboards
     );
@@ -29,8 +29,8 @@ const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
     labels,
   });
 
-  const queryRef = useShareableResourceQueryLoader({
-    pageSize: count,
+  const { queryRef } = useShareableResourceQueryLoader({
+    pageSize,
     orderBy,
     orderMode,
     serviceInstanceId: serviceInstance.id,

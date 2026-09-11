@@ -19,15 +19,15 @@ interface PageLoaderProps {
 }
 
 const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
-  const { count, search, labels, setSearch, orderMode, orderBy } =
+  const { pageSize, search, labels, setSearch, orderMode, orderBy } =
     useServiceListLocalStorage(ServiceListLocalStorageKey.OpenCTIPlaybooks);
   const logicalFilters = useLogicalFiltersFromStorage({
     serviceInstanceSlug: ServiceSlug.OPEN_CTI_PLAYBOOKS,
     labels,
   });
 
-  const queryRef = useShareableResourceQueryLoader({
-    pageSize: count,
+  const { queryRef } = useShareableResourceQueryLoader({
+    pageSize,
     orderBy,
     orderMode,
     serviceInstanceId: serviceInstance.id,

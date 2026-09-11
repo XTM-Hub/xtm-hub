@@ -1,19 +1,8 @@
-import {
-  ServiceListFilterKey,
-  ServiceListFilterMap,
-} from '@/components/service/components/header/ServiceListHeader';
 import ShareableResourceServiceList from '@/components/service/components/ShareableResourceServiceList';
 import { useIntegrationListStorage } from '@/components/service/integrations/[serviceInstanceId]/use-integration-list-storage';
-import { IntegrationDeployableFilter } from '@/components/ui/shareable-resource/integration/IntegrationDeployableFilter';
-import { IntegrationFilters } from '@/components/ui/shareable-resource/integration/IntegrationFilters';
-import { IntegrationLicenseTypeFilter } from '@/components/ui/shareable-resource/integration/IntegrationLicenseTypeFilter';
-import { IntegrationSolutionCategoryFilter } from '@/components/ui/shareable-resource/integration/IntegrationSolutionCategoryFilter';
-import { IntegrationVerifiedFilter } from '@/components/ui/shareable-resource/integration/IntegrationVerifiedFilter';
-import { ProductVersionFilter } from '@/components/ui/shareable-resource/ProductVersionFilter';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { documentsQuery } from '@generated/documentsQuery.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { PlatformIdentifier } from '@graphql/generated';
 import { PreloadedQuery } from 'react-relay';
 
 interface IntegrationsListProps {
@@ -29,46 +18,7 @@ const IntegrationsList = ({
   search,
   onSearchChange,
 }: IntegrationsListProps) => {
-  const {
-    removeIntegrationTypes,
-    removeProductVersions,
-    removeLicenseTypes,
-    removeSolutionCategories,
-    removeDeployable,
-    removeVerified,
-    localStorageKey,
-  } = useIntegrationListStorage();
-
-  const additionalFilters: ServiceListFilterMap = {
-    [ServiceListFilterKey.IntegrationType]: {
-      node: <IntegrationFilters />,
-      reset: () => {
-        removeIntegrationTypes();
-      },
-    },
-    [ServiceListFilterKey.ProductVersion]: {
-      node: (
-        <ProductVersionFilter platformIdentifier={PlatformIdentifier.Opencti} />
-      ),
-      reset: removeProductVersions,
-    },
-    [ServiceListFilterKey.ManagerSupported]: {
-      node: <IntegrationDeployableFilter />,
-      reset: removeDeployable,
-    },
-    [ServiceListFilterKey.Verified]: {
-      node: <IntegrationVerifiedFilter />,
-      reset: removeVerified,
-    },
-    [ServiceListFilterKey.SolutionCategory]: {
-      node: <IntegrationSolutionCategoryFilter />,
-      reset: removeSolutionCategories,
-    },
-    [ServiceListFilterKey.LicenseType]: {
-      node: <IntegrationLicenseTypeFilter />,
-      reset: removeLicenseTypes,
-    },
-  };
+  const { localStorageKey } = useIntegrationListStorage();
 
   return (
     <ShareableResourceServiceList
@@ -78,7 +28,6 @@ const IntegrationsList = ({
       onSearchChange={onSearchChange}
       type={ShareableResourceType.OPENCTI_INTEGRATION}
       localStorageKey={localStorageKey}
-      additionalFilters={additionalFilters}
     />
   );
 };

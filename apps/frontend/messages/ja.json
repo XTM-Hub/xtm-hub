@@ -329,6 +329,7 @@
       "INVALID_PRODUCTS_FOR_DEPLOYMENT_TYPE": "選択された製品はこの展開タイプには無効です",
       "IS_PLATFORM_REGISTERED_UNKNOWN_ERROR": "製品の接続中に不明なエラーが発生しました",
       "LOAD_CAPABILITIES_ERROR": "機能の読み込み中にエラーが発生しました",
+      "LIST_FACET_ERROR": "ファセットの一覧表示中に不明なエラーが発生しました",
       "MISSING_AUTO_REGISTER_PLATFORM_ARGUMENT": "製品の自動接続引数がありません",
       "MISSING_CAPABILITY_ON_ORGANIZATION": "権限がない",
       "MISSING_CAPABILITY_ON_SERVICE": "パーミッションが見つからない",
@@ -1160,10 +1161,6 @@
         "Type": {
           "Label": "統合タイプ",
           "Placeholder": "統合タイプ..."
-        },
-        "ProductVersion": {
-          "Label": "接続済み製品",
-          "Placeholder": "接続済み製品..."
         },
         "ManagerSupported": {
           "Label": "配備タイプ",

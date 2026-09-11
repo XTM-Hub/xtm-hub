@@ -1,24 +1,11 @@
-import {
-  FlatOption,
-  OptionsList,
-} from '@/components/ui/shareable-resource/logical-multi-select/OptionsList';
-import {
-  GroupedSelection,
-  SelectedValuesDisplay,
-} from '@/components/ui/shareable-resource/logical-multi-select/SelectedValuesDisplay';
-import {
-  Command,
-  CommandInput,
-  CommandList,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
+import { Checkbox } from '@filigran/ui';
 import * as React from 'react';
 import { useMemo } from 'react';
 
 type Selection = Record<string, string[]>;
+type FlatOption =
+  | { type: 'parent'; value: string; label: string }
+  | { type: 'child'; value: string; label: string; parentValue: string };
 
 const isSelection = (item: unknown): item is Selection => {
   if (typeof item !== 'object' || item === null || Array.isArray(item)) {
@@ -33,22 +20,20 @@ const isSelection = (item: unknown): item is Selection => {
 interface MultiSelectFormFieldProps<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   T extends Record<string, any> = Record<string, any>,
-> extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+> extends React.HTMLAttributes<HTMLDivElement> {
   options: T[];
   keyLabel?: keyof T;
   keyValue?: keyof T;
   keyChildren?: keyof T;
   initialValue?: Selection;
-  placeholder: string;
   noResultString: string;
   onValueChange: (value: Selection) => void;
-  onInputChange?: (value: string) => void;
-  onRemove?: () => void;
   optionLabel: string;
+  facetCounts?: Record<string, number>;
 }
 
 const LogicalMultiSelectFormField = React.forwardRef<
-  HTMLButtonElement,
+  HTMLDivElement,
   MultiSelectFormFieldProps
 >(
   (
@@ -59,11 +44,9 @@ const LogicalMultiSelectFormField = React.forwardRef<
       keyChildren = 'children',
       initialValue,
       onValueChange,
-      onInputChange,
-      onRemove,
       optionLabel,
-      placeholder,
       noResultString = 'No results found',
+      facetCounts,
       ...props
     },
     ref
@@ -71,7 +54,6 @@ const LogicalMultiSelectFormField = React.forwardRef<
     const [selectedValues, setSelectedValues] = React.useState<Selection>(
       initialValue || {}
     );
-    const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
 
     const flatOptions = useMemo<FlatOption[]>(() => {
       const res: FlatOption[] = [];
@@ -129,45 +111,6 @@ const LogicalMultiSelectFormField = React.forwardRef<
       if (childValues.length === 0) return true;
       return childValues.includes(childValue);
     };
-
-    const groupedSelections = useMemo<GroupedSelection[]>(() => {
-      const groups: GroupedSelection[] = [];
-
-      for (const parent of options) {
-        const parentValue = String(parent[keyValue]);
-        const parentLabel = String(parent[keyLabel]);
-        const children = parent[keyChildren] as typeof options;
-
-        if (!(parentValue in selectedValues)) continue;
-
-        const selectedChildValues = selectedValues[parentValue];
-
-        if (children) {
-          if (!selectedChildValues || selectedChildValues.length === 0) {
-            groups.push({ parentValue, parentLabel, children: [] });
-          } else {
-            const selectedChildren = children
-              .filter((child) =>
-                selectedChildValues.includes(String(child[keyValue]))
-              )
-              .map((child) => ({
-                value: String(child[keyValue]),
-                label: String(child[keyLabel]),
-              }));
-            if (selectedChildren.length > 0) {
-              groups.push({
-                parentValue,
-                parentLabel,
-                children: selectedChildren,
-              });
-            }
-          }
-        } else {
-          groups.push({ parentValue, parentLabel, children: [] });
-        }
-      }
-      return groups;
-    }, [options, selectedValues, keyValue, keyLabel, keyChildren]);
 
     const toggleChild = (childValue: string, parentValue: string) => {
       const newSelection = { ...selectedValues };
@@ -232,69 +175,75 @@ const LogicalMultiSelectFormField = React.forwardRef<
       onValueChange(newSelection);
     };
 
-    const handleClearAll = () => {
-      setSelectedValues({});
-      onValueChange({});
-    };
-
-    const handleSearchInputChange = (
-      event: React.ChangeEvent<HTMLInputElement>
-    ) => {
-      onInputChange?.(event.target.value);
-    };
-
-    const handleInputKeyDown = (
-      event: React.KeyboardEvent<HTMLInputElement>
-    ) => {
-      if (event.key === 'Enter') {
-        setIsPopoverOpen(true);
-      }
-    };
-
     return (
-      <Popover
-        open={isPopoverOpen}
-        onOpenChange={setIsPopoverOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            ref={ref}
-            {...props}
-            onClick={() => setIsPopoverOpen(!isPopoverOpen)}
-            className="flex h-auto min-h-9 w-full items-center justify-between bg-inherit p-0 hover:bg-hover">
-            <SelectedValuesDisplay
-              groupedSelections={groupedSelections}
-              optionLabel={optionLabel}
-              placeholder={placeholder}
-              onRemove={onRemove}
-            />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent
-          className="w-[300px] p-0 drop-shadow-sm"
-          align="start"
-          onEscapeKeyDown={() => setIsPopoverOpen(false)}>
-          <Command onChange={handleSearchInputChange}>
-            <CommandInput
-              placeholder="Search..."
-              onKeyDown={handleInputKeyDown}
-            />
-            <CommandList>
-              <OptionsList
-                flatOptions={flatOptions}
-                noResultString={noResultString}
-                isParentFullySelected={isParentFullySelected}
-                isParentPartiallySelected={isParentPartiallySelected}
-                isChildSelected={isChildSelected}
-                toggleParent={toggleParent}
-                toggleChild={toggleChild}
-                onClear={handleClearAll}
-                onClose={() => setIsPopoverOpen(false)}
-                showClear={groupedSelections.length > 0}
-              />
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
+      <div
+        ref={ref}
+        {...props}
+        className="flex flex-col gap-s rounded-md border-0 p-0">
+        <span className="sr-only">{optionLabel}</span>
+        {flatOptions.length === 0 ? (
+          <span className="text-sm text-text-default-secondary">
+            {noResultString}
+          </span>
+        ) : (
+          flatOptions.map((option) => {
+            if (option.type === 'parent') {
+              const checked = isParentFullySelected(option.value);
+              const indeterminate = isParentPartiallySelected(option.value);
+              return (
+                <label
+                  key={option.value}
+                  className="flex items-center gap-s content-body-compact text-[13px] cursor-pointer">
+                  <Checkbox
+                    className="shrink-0"
+                    checked={indeterminate ? 'indeterminate' : checked}
+                    onCheckedChange={() => toggleParent(option.value)}
+                  />
+                  <span
+                    className="min-w-0 flex-1 truncate"
+                    title={option.label}>
+                    {option.label}
+                  </span>
+                  {facetCounts && (
+                    <span className="ml-auto shrink-0 rounded bg-elevation-surface-highlight-layer-0 px-1.5 content-body-compact text-text-default-secondary">
+                      {facetCounts[option.value] ?? 0}
+                    </span>
+                  )}
+                </label>
+              );
+            }
+
+            const isSelected = isChildSelected(
+              option.parentValue,
+              option.value
+            );
+
+            return (
+              <label
+                key={`${option.parentValue}-${option.value}`}
+                className="flex items-center gap-s pl-m content-body-compact text-[13px] cursor-pointer">
+                <Checkbox
+                  className="shrink-0"
+                  checked={isSelected}
+                  onCheckedChange={() =>
+                    toggleChild(option.value, option.parentValue)
+                  }
+                />
+                <span
+                  className="min-w-0 flex-1 truncate"
+                  title={option.label}>
+                  {option.label}
+                </span>
+                {facetCounts && (
+                  <span className="ml-auto shrink-0 rounded bg-elevation-surface-highlight-layer-0 px-1.5 content-body-compact text-text-default-secondary">
+                    {facetCounts[option.value] ?? 0}
+                  </span>
+                )}
+              </label>
+            );
+          })
+        )}
+      </div>
     );
   }
 );

@@ -116,6 +116,7 @@ export enum UnknownErrorCode {
   VoteForFeatureError = 'VOTE_FOR_FEATURE_ERROR',
   VotingRoundMutationError = 'VOTING_ROUND_MUTATION_ERROR',
   VotableFeatureMutationError = 'VOTABLE_FEATURE_MUTATION_ERROR',
+  ListFacetError = 'LIST_FACET_ERROR',
 }
 
 export enum AlreadyExistsErrorCode {

@@ -16,16 +16,23 @@ interface PageLoaderProps {
 }
 
 const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
-  const { count, search, labels, entityTypes, setSearch, orderMode, orderBy } =
-    useServiceListLocalStorage(ServiceListLocalStorageKey.OpenCTICustomViews);
+  const {
+    pageSize,
+    search,
+    labels,
+    entityTypes,
+    setSearch,
+    orderMode,
+    orderBy,
+  } = useServiceListLocalStorage(ServiceListLocalStorageKey.OpenCTICustomViews);
   const logicalFilters = useLogicalFiltersFromStorage({
     serviceInstanceSlug: ServiceSlug.OPEN_CTI_CUSTOM_VIEWS,
     labels,
     entityTypes,
   });
 
-  const queryRef = useShareableResourceQueryLoader({
-    pageSize: count,
+  const { queryRef } = useShareableResourceQueryLoader({
+    pageSize,
     orderBy,
     orderMode,
     serviceInstanceId: serviceInstance.id,

@@ -142,6 +142,19 @@ export const SHAREABLE_RESOURCE_SERVICE_SLUG_MAPPING: Record<
   [ShareableResourceType.OPENCTI_CUSTOM_VIEW]:
     ServiceSlug.OPEN_CTI_CUSTOM_VIEWS,
 };
+export const SERVICE_SLUG_SHAREABLE_RESOURCE_MAPPING: Record<
+  ServiceSlug,
+  ShareableResourceType
+> = {
+  [ServiceSlug.OPEN_CTI_INTEGRATIONS]:
+    ShareableResourceType.OPENCTI_INTEGRATION,
+  [ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS]:
+    ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD,
+  [ServiceSlug.OPEN_AEV_SCENARIOS]: ShareableResourceType.OPENAEV_SCENARIO,
+  [ServiceSlug.OPEN_CTI_PLAYBOOKS]: ShareableResourceType.OPENCTI_PLAYBOOK,
+  [ServiceSlug.OPEN_CTI_CUSTOM_VIEWS]:
+    ShareableResourceType.OPENCTI_CUSTOM_VIEW,
+};
 
 export const isIntegrationItem = <
   T extends documentItem_fragment$data | PublicDocumentData,

@@ -16,8 +16,13 @@ export type UseShareableResourceQueryLoaderParams = Omit<
 
 /**
  * Mutualizes the `useQueryLoader`/`loadQuery` boilerplate duplicated across every
- * shareable-resource page-loader: loading the initial page of documents for a service
- * instance, re-triggered whenever search/order/filters change.
+ * shareable-resource page-loader: loading the initial page of documents.
+ *
+ * The matching facet counts are fetched separately via `useDocumentFacetsQuery`
+ * (react-query) directly in the components that render them, so the two are no
+ * longer guaranteed to land in the same tick — react-query refetches whenever its
+ * own variables change, keeping them consistent, but a loading-state flicker
+ * between the list and its counts is possible.
  */
 export const useShareableResourceQueryLoader = ({
   pageSize,
@@ -40,9 +45,7 @@ export const useShareableResourceQueryLoader = ({
         searchTerm,
         logicalFilters,
       },
-      {
-        fetchPolicy: 'store-and-network',
-      }
+      { fetchPolicy: 'store-and-network' }
     );
   }, [
     loadQuery,
@@ -54,5 +57,5 @@ export const useShareableResourceQueryLoader = ({
     logicalFilters,
   ]);
 
-  return queryRef;
+  return { queryRef };
 };

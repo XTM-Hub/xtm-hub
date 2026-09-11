@@ -1,6 +1,5 @@
 import {
   ServiceListDisplayMode,
-  ServiceListFilterKey,
   ServiceListHeader,
 } from '@/components/service/components/header/ServiceListHeader';
 import { AppServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
@@ -16,7 +15,6 @@ const testState = vi.hoisted(() => ({
   setOrderBy: vi.fn(),
   setOrderMode: vi.fn(),
   setDisplayMode: vi.fn(),
-  selectedFilters: [] as ServiceListFilterKey[],
 }));
 
 vi.mock('@/utils/debounce', () => ({
@@ -40,8 +38,6 @@ const buildLocalStorageState = (displayMode = ServiceListDisplayMode.List) => ({
   setOrderMode: testState.setOrderMode,
   displayMode,
   setDisplayMode: testState.setDisplayMode,
-  selectedFilters: testState.selectedFilters,
-  setSelectedFilters: vi.fn(),
 });
 
 const renderHeader = (
@@ -53,7 +49,6 @@ const renderHeader = (
       <ServiceListHeader
         search=""
         onSearchChange={vi.fn()}
-        filters={{}}
         {...props}
       />
     </AppServiceListLocalStorageKeyContext>
@@ -61,7 +56,6 @@ const renderHeader = (
 
 describe('ServiceListHeader', () => {
   it('renders search, actions and pagination controls', () => {
-    testState.selectedFilters = [];
     testState.useServiceListLocalStorage.mockReturnValue(
       buildLocalStorageState()
     );
@@ -81,7 +75,6 @@ describe('ServiceListHeader', () => {
   });
 
   it('calls onSearchChange when typing in search input', async () => {
-    testState.selectedFilters = [];
     testState.useServiceListLocalStorage.mockReturnValue(
       buildLocalStorageState()
     );
@@ -103,7 +96,6 @@ describe('ServiceListHeader', () => {
   `(
     'changes display mode from $initialDisplayMode when clicking $clickedLabel',
     async ({ initialDisplayMode, clickedLabel, expectedMode }) => {
-      testState.selectedFilters = [];
       testState.useServiceListLocalStorage.mockReturnValue(
         buildLocalStorageState(initialDisplayMode)
       );
@@ -124,7 +116,6 @@ describe('ServiceListHeader', () => {
   `(
     'applies selected color classes for mode=$initialDisplayMode',
     ({ initialDisplayMode, expectedTabClass, expectedListClass }) => {
-      testState.selectedFilters = [];
       testState.useServiceListLocalStorage.mockReturnValue(
         buildLocalStorageState(initialDisplayMode)
       );
@@ -143,26 +134,7 @@ describe('ServiceListHeader', () => {
     }
   );
 
-  it('renders selected filter nodes in filter section', () => {
-    testState.selectedFilters = [ServiceListFilterKey.Label];
-    testState.useServiceListLocalStorage.mockReturnValue(
-      buildLocalStorageState()
-    );
-
-    renderHeader({
-      filters: {
-        [ServiceListFilterKey.Label]: {
-          node: <span>label-filter</span>,
-          reset: vi.fn(),
-        },
-      },
-    });
-
-    expect(screen.getByText('label-filter')).toBeInTheDocument();
-  });
-
   it('toggles ordering mode when clicking sort direction button', async () => {
-    testState.selectedFilters = [];
     testState.useServiceListLocalStorage.mockReturnValue(
       buildLocalStorageState()
     );
