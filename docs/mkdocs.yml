@@ -107,18 +107,17 @@ nav:
   - Home: "index.md"
   - User Guide:
       - XTM Hub:
+          - XTM Platform Trial: user/xtm-platform-trial.md
           - Manage your organization: user/manage-organization.md
           - Transfer your personal space: user/transfer-personal-space.md
           - Access public roadmap: user/roadmap.md
       - OpenCTI:
-        - Free Trials: user/opencti-freetrials.md
         - Connection: user/opencti-connection.md
         - Custom Dashboards library: libraries/custom-dashboards.md
         - Custom Views library: libraries/opencti-custom-views.md
         - Integrations library: libraries/integrations.md
         - Playbooks library: libraries/opencti-playbooks.md
       - OpenAEV:
-        - Free Trials: user/openaev-freetrials.md
         - Connection: user/openaev-connection.md
         - Scenarios library: libraries/openaev-scenarios.md
   - Developer Guide:
