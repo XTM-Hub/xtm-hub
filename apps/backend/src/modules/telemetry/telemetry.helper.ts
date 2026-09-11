@@ -26,6 +26,7 @@ import {
   CreateEvent,
   CreateOrganizationEvent,
   DownloadEvent,
+  ExportEvent,
   LoginEvent,
   OneClickDeployEvent,
   RegisterPlatformEvent,
@@ -182,6 +183,23 @@ export const TelemetryHelper = {
       service_type: await buildServiceTypeEvent(resource_id),
       resource_id: resource_id,
       resource_title: resource_title,
+    };
+  },
+
+  buildExportEvent: (
+    organization: Organization | undefined,
+    user_id: UserId | undefined,
+    service: ServiceDefinitionIdentifier,
+    export_format: string = 'csv',
+    timestamp?: Date
+  ): ExportEvent => {
+    const baseEvent = buildBaseEvent(organization, user_id, timestamp);
+
+    return {
+      event_type: TelemetryEventType.EXPORT,
+      ...baseEvent,
+      service: getOrThrow(ServiceIdentifierToEventService, service),
+      export_format,
     };
   },
 
