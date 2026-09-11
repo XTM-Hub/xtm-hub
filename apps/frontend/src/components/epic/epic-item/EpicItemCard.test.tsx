@@ -18,7 +18,7 @@ describe('EpicItemCard', () => {
     id: 'epic-1',
     title: 'Roadmap epic',
     epic_type: EpicType.Other,
-    product: FiligranProduct.Opencti,
+    product: [FiligranProduct.Opencti],
     edition_type: EditionType.CommunityEdition,
     short_description: 'short description',
     description: 'long description',

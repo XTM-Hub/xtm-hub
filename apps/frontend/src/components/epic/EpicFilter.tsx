@@ -1,19 +1,13 @@
 'use client';
 import { FiligranProductMapping } from '@/components/epic/epic-item/FiligranProductMapping';
+import { FILIGRAN_PRODUCTS_ORDER } from '@/components/epic/filigran-products';
 import { SearchInput } from '@/components/ui/SearchInput';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Switch,
-} from '@filigran/ui';
+import { MultiSelectFormField, Switch } from '@filigran/ui';
 import { FiligranProduct } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
-import React from 'react';
+import React, { useMemo } from 'react';
 
-export type EpicFilterType = 'all' | FiligranProduct;
+export type EpicFilterType = FiligranProduct[];
 
 interface EpicFilterProps {
   selectedFilter?: EpicFilterType;
@@ -34,11 +28,13 @@ export const EpicFilter = ({
 }: EpicFilterProps) => {
   const t = useTranslations();
 
-  const products = Object.values(FiligranProduct);
-
-  const totalCount = products.reduce(
-    (sum, product) => sum + (countsByProduct[product] ?? 0),
-    0
+  const options = useMemo(
+    () =>
+      FILIGRAN_PRODUCTS_ORDER.map((product) => ({
+        id: product,
+        label: `${FiligranProductMapping[product].name} (${countsByProduct[product] ?? 0})`,
+      })),
+    [countsByProduct]
   );
 
   return (
@@ -51,31 +47,20 @@ export const EpicFilter = ({
       </div>
 
       <div className="max-w-full sm:max-w-[100%]">
-        <Select
+        <MultiSelectFormField
+          options={options}
+          popoverContentClassName="bg-elevation-background-layer-3"
+          keyValue="id"
+          keyLabel="label"
+          defaultValue={selectedFilter}
           value={selectedFilter}
           onValueChange={(value) =>
             onSelectedFilterChange(value as EpicFilterType)
-          }>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder={t('Epic.FilterByProduct')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">
-              {t('Epic.AllProducts')} ({totalCount})
-            </SelectItem>
-            {products.map((product) => {
-              const count = countsByProduct[product] ?? 0;
-
-              return (
-                <SelectItem
-                  key={product}
-                  value={product}>
-                  {FiligranProductMapping[product].name} ({count})
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
+          }
+          noResultString={t('Utils.NotFound')}
+          placeholder={t('Epic.FilterByProduct')}
+          variant="inverted"
+        />
       </div>
       <div className="ml-auto flex items-center gap-s">
         <Switch

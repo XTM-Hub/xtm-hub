@@ -12,7 +12,7 @@ describe('EpicItemFooter', () => {
     title: 'Roadmap epic',
     epic_type: EpicType.Other,
     edition_type: EditionType.CommunityEdition,
-    product: FiligranProduct.Opencti,
+    product: [FiligranProduct.Opencti],
     document_id: null,
   } as epic_fragment$data;
 
@@ -32,6 +32,55 @@ describe('EpicItemFooter', () => {
 
     // Then
     expect(screen.getByText('OpenCTI')).toBeInTheDocument();
+  });
+
+  it('renders every product of the epic', () => {
+    // Given
+    const environment = createMockEnvironment();
+
+    // When
+    testRender(
+      <EpicItemFooter
+        {...defaultProps}
+        epic={{
+          ...epic,
+          product: [FiligranProduct.Opencti, FiligranProduct.Openaev],
+        }}
+      />,
+      {
+        relayConfig: environment,
+      }
+    );
+
+    // Then
+    expect(screen.getByText('OpenCTI')).toBeInTheDocument();
+    expect(screen.getByText('OpenAEV')).toBeInTheDocument();
+  });
+
+  it('renders the products in the expected order', () => {
+    // Given
+    const environment = createMockEnvironment();
+
+    // When
+    const { container } = testRender(
+      <EpicItemFooter
+        {...defaultProps}
+        epic={{
+          ...epic,
+          product: [
+            FiligranProduct.Xtmone,
+            FiligranProduct.Openaev,
+            FiligranProduct.Xtmhub,
+          ],
+        }}
+      />,
+      {
+        relayConfig: environment,
+      }
+    );
+
+    // Then
+    expect(container.textContent).toContain('XTM HubOpenAEVXTM One');
   });
 
   it.each`

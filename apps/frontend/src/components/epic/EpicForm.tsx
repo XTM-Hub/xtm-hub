@@ -2,7 +2,16 @@
 
 import { EditionTypeMapping } from '@/components/epic/epic-item/EditionTypeMapping';
 import { FiligranProductMapping } from '@/components/epic/epic-item/FiligranProductMapping';
+import {
+  EPIC_SLACK_LINK_OPTIONS,
+  EPIC_SLACK_LINK_REGEX,
+} from '@/components/epic/epic-slack-links';
+import {
+  FILIGRAN_PRODUCTS_ORDER,
+  sortFiligranProducts,
+} from '@/components/epic/filigran-products';
 import { ServiceFormDescriptionField } from '@/components/service/form/DescriptionField';
+import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 import {
   AutoForm,
   Button,
@@ -11,6 +20,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  MultiSelectFormField,
   RadioGroup,
   RadioGroupItem,
   Select,
@@ -43,11 +53,19 @@ export const descriptionValue =
   '### Expected Value\n' +
   'Short point-form list (3-5 points) of what a customer will now be able to do and the value to be gained.\n' +
   "'If EPIC is aimed at a specific persona, worth mentioning it here.\n";
-export const FILIGRAN_PRODUCTS_VALUES = Object.values(FiligranProduct);
 export const TIMELINE_VALUES = Object.values(Timeline);
+export const FILIGRAN_PRODUCTS_OPTIONS = FILIGRAN_PRODUCTS_ORDER.map(
+  (product) => ({
+    id: product,
+    label: FiligranProductMapping[product].name,
+  })
+);
+
 const buildEpicFormSchema = (t: (key: string) => string) =>
   z.object({
-    product: z.enum(FILIGRAN_PRODUCTS_VALUES),
+    product: z
+      .array(z.enum(FILIGRAN_PRODUCTS_ORDER))
+      .min(1, t('EpicForm.Error.Product')),
     edition_type: z.enum(EditionType),
     title: z.string().min(2, t('EpicForm.Error.Title')).max(160),
     short_description: z
@@ -59,6 +77,11 @@ const buildEpicFormSchema = (t: (key: string) => string) =>
     active: z.boolean().optional(),
     is_integration: z.boolean().optional(),
     illustration_document: z.custom<FileList>().optional(),
+    slack_link: z
+      .string()
+      .regex(EPIC_SLACK_LINK_REGEX, t('EpicForm.Error.SlackLink'))
+      .or(z.literal(''))
+      .optional(),
   });
 
 export const epicFormSchema = buildEpicFormSchema((key) => key);
@@ -90,7 +113,10 @@ const EpicForm = ({
         description: epic?.description ?? descriptionValue,
         edition_type:
           (epic?.edition_type as EditionType) ?? EditionType.CommunityEdition,
-        product: (epic?.product as FiligranProduct) ?? FiligranProduct.Opencti,
+        product: sortFiligranProducts(
+          (epic?.product as FiligranProduct[]) ?? [FiligranProduct.Opencti]
+        ),
+        slack_link: epic?.slack_link ?? '',
         timeline: (epic?.timeline as Timeline) ?? Timeline.Now,
         active: epic?.active ?? false,
         is_integration: epic?.epic_type === EpicType.Integration,
@@ -134,29 +160,43 @@ const EpicForm = ({
                 {t('Epic.Form.FiligranProduct')}
                 <span className="text-sm text-destructive"> *</span>
               </FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                value={field.value}
-                defaultValue={epic?.product ?? FiligranProduct.Opencti}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={t('Epic.Form.FiligranProductPlaceholder')}
-                    />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {Object.values(FiligranProduct).map((product) => {
-                    return (
-                      <SelectItem
-                        key={product}
-                        value={product}>
-                        {FiligranProductMapping[product].name}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <MultiSelectFormField
+                  options={FILIGRAN_PRODUCTS_OPTIONS}
+                  popoverContentClassName="bg-elevation-background-layer-3"
+                  keyValue="id"
+                  keyLabel="label"
+                  defaultValue={field.value}
+                  value={field.value}
+                  onValueChange={(products) =>
+                    field.onChange(sortFiligranProducts(products))
+                  }
+                  noResultString={t('Utils.NotFound')}
+                  placeholder={t('Epic.Form.FiligranProduct')}
+                  variant="inverted"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          ),
+        },
+        slack_link: {
+          fieldType: ({
+            field,
+          }: {
+            field: ControllerRenderProps<FieldValues, string>;
+          }) => (
+            <FormItem>
+              <FormLabel>{t('Epic.Form.SlackLink')}</FormLabel>
+              <FormControl>
+                <AutocompleteInput
+                  options={EPIC_SLACK_LINK_OPTIONS}
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder={t('Epic.Form.SlackLinkPlaceholder')}
+                  listLabel={t('Epic.Form.SlackLink')}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           ),

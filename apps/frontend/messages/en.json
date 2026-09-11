@@ -190,7 +190,9 @@
       "Title": "Title is required",
       "ShortDescription": "Short description is required",
       "ShortDescriptionMax": "Short description must be 215 characters or fewer",
-      "Description": "Description is required"
+      "Description": "Description is required",
+      "Product": "At least one product is required",
+      "SlackLink": "Must be a filigran-community Slack link"
     }
   },
   "Epic": {
@@ -220,6 +222,8 @@
       "EditionType": "Edition Type",
       "FiligranProduct": "Product",
       "FiligranProductPlaceholder": "OpenCTI",
+      "SlackLink": "Slack link",
+      "SlackLinkPlaceholder": "Pick a channel or paste a Slack link",
       "Timeline": "Timeline",
       "IsActive": "Is this epic published? (By default your epic is in draft mode)",
       "Integration": "Is an integration",

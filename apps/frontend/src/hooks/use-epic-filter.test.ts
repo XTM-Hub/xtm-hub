@@ -20,28 +20,44 @@ describe('useEpicFilter', () => {
     it.each([
       {
         searchQuery: '',
-        expectedSelectedProduct: undefined,
-        description: 'no param → undefined',
+        expectedSelectedProduct: [],
+        description: 'no param → no product',
       },
       {
         searchQuery: 'product=all',
-        expectedSelectedProduct: 'all',
-        description: 'explicit "all" → "all"',
+        expectedSelectedProduct: [],
+        description: 'legacy "all" → no product',
       },
       {
         searchQuery: `product=${FiligranProduct.Opencti}`,
-        expectedSelectedProduct: FiligranProduct.Opencti,
-        description: 'valid enum value → enum',
+        expectedSelectedProduct: [FiligranProduct.Opencti],
+        description: 'single valid enum value → one product',
       },
       {
-        searchQuery: 'product=unknown',
-        expectedSelectedProduct: undefined,
-        description: 'unknown value → undefined',
+        searchQuery: `product=${FiligranProduct.Opencti},${FiligranProduct.Openaev}`,
+        expectedSelectedProduct: [
+          FiligranProduct.Opencti,
+          FiligranProduct.Openaev,
+        ],
+        description: 'comma separated values → several products',
+      },
+      {
+        searchQuery: `product=${FiligranProduct.Openaev},${FiligranProduct.Opencti}`,
+        expectedSelectedProduct: [
+          FiligranProduct.Opencti,
+          FiligranProduct.Openaev,
+        ],
+        description: 'unordered values → canonical product order',
+      },
+      {
+        searchQuery: `product=unknown,${FiligranProduct.Openaev}`,
+        expectedSelectedProduct: [FiligranProduct.Openaev],
+        description: 'unknown value → ignored',
       },
       {
         searchQuery: 'product=',
-        expectedSelectedProduct: undefined,
-        description: 'empty value → undefined',
+        expectedSelectedProduct: [],
+        description: 'empty value → no product',
       },
     ])(
       'should expose "$expectedSelectedProduct" from "$searchQuery" ($description)',
@@ -52,18 +68,20 @@ describe('useEpicFilter', () => {
 
         const { result } = renderHook(() => useEpicFilter());
 
-        expect(result.current.selectedProduct).toBe(expectedSelectedProduct);
+        expect(result.current.selectedProduct).toEqual(expectedSelectedProduct);
       }
     );
   });
 
   describe('setSelectedProduct', () => {
     it.each`
-      initialSearch                                                              | filter                     | expectedUrl                                    | description
-      ${''}                                                                      | ${'all'}                   | ${'/epics?product=all'}                        | ${'sets "all" on empty params'}
-      ${''}                                                                      | ${FiligranProduct.Opencti} | ${`/epics?product=${FiligranProduct.Opencti}`} | ${'sets a product on empty params'}
-      ${`product=${FiligranProduct.Opencti}`}                                    | ${FiligranProduct.Xtmhub}  | ${`/epics?product=${FiligranProduct.Xtmhub}`}  | ${'replaces existing product'}
-      ${`product=${FiligranProduct.Opencti}&product=${FiligranProduct.Openaev}`} | ${FiligranProduct.Opencti} | ${`/epics?product=${FiligranProduct.Opencti}`} | ${'get first product if user plays with URL'}
+      initialSearch                           | filter                                                | expectedUrl                                                                 | description
+      ${''}                                   | ${[]}                                                 | ${'/epics'}                                                                 | ${'removes the param when nothing is selected'}
+      ${''}                                   | ${[FiligranProduct.Opencti]}                          | ${`/epics?product=${FiligranProduct.Opencti}`}                              | ${'sets a product on empty params'}
+      ${''}                                   | ${[FiligranProduct.Opencti, FiligranProduct.Openaev]} | ${`/epics?product=${FiligranProduct.Opencti}%2C${FiligranProduct.Openaev}`} | ${'sets several products as a comma separated list'}
+      ${`product=${FiligranProduct.Opencti}`} | ${[FiligranProduct.Xtmhub]}                           | ${`/epics?product=${FiligranProduct.Xtmhub}`}                               | ${'replaces existing products'}
+      ${`product=${FiligranProduct.Opencti}`} | ${[]}                                                 | ${'/epics'}                                                                 | ${'removes existing products when nothing is selected'}
+      ${''}                                   | ${[FiligranProduct.Openaev, FiligranProduct.Opencti]} | ${`/epics?product=${FiligranProduct.Opencti}%2C${FiligranProduct.Openaev}`} | ${'writes the products in the canonical order'}
     `(
       'should call router.replace with "$expectedUrl" ($description)',
       ({ initialSearch, filter, expectedUrl }) => {

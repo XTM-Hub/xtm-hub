@@ -22,7 +22,7 @@ export default interface Epic {
 
   description: string;
 
-  product: FiligranProduct;
+  product: FiligranProduct[];
 
   timeline: Timeline;
 
@@ -37,6 +37,8 @@ export default interface Epic {
   updater_id: UserId | null;
 
   edition_type: EditionType;
+
+  slack_link: string | null;
 }
 
 /** Represents the initializer for the table public.Epic */
@@ -55,7 +57,7 @@ export interface EpicInitializer {
 
   description: string;
 
-  product: FiligranProduct;
+  product: FiligranProduct[];
 
   timeline?: Timeline;
 
@@ -71,6 +73,8 @@ export interface EpicInitializer {
   updater_id?: UserId | null;
 
   edition_type?: EditionType;
+
+  slack_link?: string | null;
 }
 
 /** Represents the mutator for the table public.Epic */
@@ -87,7 +91,7 @@ export interface EpicMutator {
 
   description?: string;
 
-  product?: FiligranProduct;
+  product?: FiligranProduct[];
 
   timeline?: Timeline;
 
@@ -102,4 +106,6 @@ export interface EpicMutator {
   updater_id?: UserId | null;
 
   edition_type?: EditionType;
+
+  slack_link?: string | null;
 }

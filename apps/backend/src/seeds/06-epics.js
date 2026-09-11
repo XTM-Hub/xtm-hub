@@ -10,7 +10,8 @@ export async function seed(knex) {
         description:
           'Like the Night’s Watch, this *epic* consolidates the detection and **prioritization** of critical indicators before the White Walkers reach production.',
         active: true,
-        product: 'opencti',
+        product: ['opencti'],
+        slack_link: 'https://filigran-community.slack.com/archives/C0BMAMQ9JKY',
         timeline: 'now',
         epic_type: 'other',
         uploader_id: BYPASS_USER_ID,
@@ -23,7 +24,7 @@ export async function seed(knex) {
         description:
           'This epic runs continuous validation campaigns to ensure the defenses hold even against Drogon in full rage mode.',
         active: true,
-        product: 'openaev',
+        product: ['openaev'],
         timeline: 'next',
         epic_type: 'other',
         uploader_id: BYPASS_USER_ID,
@@ -36,7 +37,7 @@ export async function seed(knex) {
         description:
           'This epic aligns product flows in a single portal to avoid dashboard battles between Stark, Lannister, and Targaryen.',
         active: true,
-        product: 'xtmhub',
+        product: ['xtmhub'],
         timeline: 'under_consideration',
         epic_type: 'other',
         uploader_id: BYPASS_USER_ID,
@@ -48,7 +49,7 @@ export async function seed(knex) {
         description:
           'Arya sorts the backlog with precision to accelerate user value and keep only truly strategic initiatives.',
         active: false,
-        product: 'opencti',
+        product: ['opencti'],
         timeline: 'under_consideration',
         epic_type: 'other',
         uploader_id: BYPASS_USER_ID,
@@ -60,7 +61,7 @@ export async function seed(knex) {
         description:
           'Focus on reducing technical and security debt, ensuring compliance and resilience because the Iron Bank always collects.',
         active: true,
-        product: 'xtmone',
+        product: ['xtmone'],
         timeline: 'next',
         epic_type: 'other',
         uploader_id: BYPASS_USER_ID,
@@ -73,7 +74,7 @@ export async function seed(knex) {
         description:
           'Like wildfire beneath King’s Landing, this epic enhances rapid containment and high-impact response to major security events.',
         active: true,
-        product: 'openaev',
+        product: ['openaev'],
         timeline: 'now',
         epic_type: 'other',
         uploader_id: BYPASS_USER_ID,
@@ -85,7 +86,7 @@ export async function seed(knex) {
         description:
           'Centralize intelligence to provide deep visibility across all systems, correlating past and present data for better decisions.',
         active: true,
-        product: 'opencti',
+        product: ['opencti'],
         timeline: 'next',
         epic_type: 'other',
         uploader_id: BYPASS_USER_ID,
@@ -97,7 +98,7 @@ export async function seed(knex) {
         description:
           'Develop niche but powerful protections tailored to defeat the most sophisticated and rare attack vectors.',
         active: false,
-        product: 'openaev',
+        product: ['openaev'],
         timeline: 'under_consideration',
         epic_type: 'other',
         uploader_id: BYPASS_USER_ID,
@@ -109,7 +110,7 @@ export async function seed(knex) {
         description:
           'Establish governance frameworks to ensure all stakeholders align on priorities, risk, and execution strategy.',
         active: true,
-        product: 'xtmhub',
+        product: ['xtmhub'],
         timeline: 'now',
         epic_type: 'other',
         uploader_id: BYPASS_USER_ID,
@@ -121,7 +122,7 @@ export async function seed(knex) {
         description:
           'Prepare systems to withstand sustained pressure, ensuring uptime and integrity even during extended crisis scenarios.',
         active: true,
-        product: 'openaev',
+        product: ['openaev'],
         timeline: 'finished',
         epic_type: 'other',
         uploader_id: BYPASS_USER_ID,
@@ -133,8 +134,22 @@ export async function seed(knex) {
         description:
           'Introduce smart automation pipelines to reduce manual workload while maintaining control and oversight.',
         active: true,
-        product: 'opencti',
+        product: ['opencti'],
         timeline: 'finished',
+        epic_type: 'other',
+        uploader_id: BYPASS_USER_ID,
+      },
+      {
+        id: '9b6f5d2a-7c31-4e88-9a10-3f7c2ad4be51',
+        title: 'Winterfell Alliance',
+        short_description:
+          'The Northern houses share their banners across products.',
+        description:
+          'This epic unifies threat intelligence and adversary emulation so that OpenCTI and OpenAEV fight the same war with the same maps.',
+        active: true,
+        product: ['opencti', 'openaev'],
+        slack_link: 'https://filigran-community.slack.com/archives/C0BMANSB4CW',
+        timeline: 'now',
         epic_type: 'other',
         uploader_id: BYPASS_USER_ID,
       },

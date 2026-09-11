@@ -61,7 +61,9 @@ export function useCountEpicsByProduct(
     });
 
     return filteredEpics.reduce((acc, item) => {
-      acc[item.product] += 1;
+      item.product.forEach((product) => {
+        acc[product] += 1;
+      });
       return acc;
     }, initial);
   }, [epics, userCanUpdate, showFinished]);

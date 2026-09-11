@@ -204,7 +204,7 @@ export const TestHelper = {
           short_description: 'Short desc',
           description: 'Long description for the epic',
           active: true,
-          product: FiligranProduct.Opencti,
+          product: [FiligranProduct.Opencti],
           timeline: Timeline.Now,
           ...data,
         })

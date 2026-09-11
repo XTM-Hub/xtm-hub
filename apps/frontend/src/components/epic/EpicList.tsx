@@ -92,10 +92,13 @@ export const EpicList = ({
 
   const isBypass = useAdminByPass();
 
+  const selectedProducts = new Set<string>(selectedProduct ?? []);
   const filteredEpics =
-    !selectedProduct || selectedProduct === 'all'
+    selectedProducts.size === 0
       ? epics
-      : epics.filter((epic) => epic.product === selectedProduct);
+      : epics.filter((epic) =>
+          epic.product.some((product) => selectedProducts.has(product))
+        );
 
   const { draft, now, next, under_consideration, finished } =
     useDraftAndTimelineEpics(filteredEpics);
