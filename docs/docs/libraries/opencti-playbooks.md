@@ -16,7 +16,7 @@ ensuring high-quality, relevant automation content.
 
 All users can browse the library on the XTM Hub completely free of charge, with or without authentication, and read the full details of each playbook before deciding to deploy it.
 
-Note that most playbooks require additional configuration once imported into OpenCTI, typically setting up connectors, labels, markings, or specific entities — before they can run. Each playbook's description on the Hub indicates its specific setup requirements.
+Note that most playbooks require additional configuration once imported into OpenCTI, typically setting up connectors, labels, markings, or specific entities, before they can run. Each playbook's description on the Hub indicates its specific setup requirements.
 
 ## Getting Started
 
