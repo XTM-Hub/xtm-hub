@@ -30,6 +30,7 @@ import { documentVisualizeEndpoint } from './modules/document/visualize-document
 import { NewsFeedDataLoader } from './modules/news-feed/news-feed.dataloader';
 import { initAuthPlatform } from './modules/security-management/authentication/auth-platform';
 import { ServiceInstanceDataLoader } from './modules/service/instance/service-instance.dataloader';
+import { integrationCsvExportEndpoint } from './modules/shareable-resource/opencti/integration/integration-csv-export-endpoint';
 import { TelemetrySnapshotApp } from './modules/telemetry/telemetry-snapshot.app';
 import { errorLoggingPlugin } from './server/apollo-plugins/log';
 import {
@@ -421,6 +422,7 @@ await initAuthPlatform(app);
 // Therefore, we have to handle it through this route instead.
 documentDownloadEndpoint(app);
 documentVisualizeEndpoint(app);
+integrationCsvExportEndpoint(app);
 healthEndpoint(app);
 userPictureEndpoint(app);
 manifestEndpoint(app);

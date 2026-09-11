@@ -1,0 +1,76 @@
+meta {
+  name: ExportIntegrationsCsv
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/document/csv-export/:serviceInstanceId?columns=integration_type,use_case,deployment_type,verification_status,solution_category,license_type
+  body: none
+  auth: none
+}
+
+params:query {
+  columns: integration_type,use_case,deployment_type,verification_status,solution_category,license_type
+  ~integration_type: connector,csv_feed
+  ~license_type: Free
+  ~manager_supported: true
+  ~verified: true
+  ~solution_category: U29sdXRpb25DYXRlZ29yeToxMjM=
+  ~use_case: VXNlQ2FzZTo0NTY=
+}
+
+params:path {
+  serviceInstanceId: U2VydmljZUluc3RhbmNlOjBmNGFhZDRiLWJkZDYtNDA4NC04YjFmLTgyYzljNjY1NzhjYw==
+}
+
+headers {
+  Cookie: {{cookie}}
+}
+
+docs {
+  Downloads the Integrations Library as a CSV file for the logged-in user's
+  accessible integrations.
+
+  Ensure cookie is defined in environment (requires a logged-in session).
+
+  Path params:
+  serviceInstanceId: Relay global ID of the integrations library service
+  instance (defaults to the Base64 encoding of
+  "ServiceInstance:0f4aad4b-bdd6-4084-8b1f-82c9c66578cc",
+  i.e. INTEGRATION_SERVICE_INSTANCE_ID).
+
+  Query params:
+  columns (optional): comma-separated list of selectable columns to include,
+  in addition to the always-included "Name" column. Defaults to all columns
+  when omitted, empty, or containing no recognized keys. Valid keys:
+  integration_type, use_case, deployment_type, verification_status,
+  solution_category, license_type.
+
+  Row filters (optional, disabled by default above - tick the ones you want
+  in the Params tab and edit their values): each narrows down which
+  integrations are included in the export (unlike `columns`, which only
+  changes which fields are displayed). Multiple values for the same key are
+  comma-separated and OR'd together; multiple different keys are AND'd
+  together. Supported keys:
+  - integration_type: connector, csv_feed, rss_feed, stream, taxii_feed,
+    third_party_integration
+  - license_type: Free, Commercial
+  - manager_supported: true or false (this is the "Deployment type" column:
+    true = Automatic deploy, false = Manual deploy)
+  - verified: true or false
+  - solution_category: one or more solution category Relay global IDs (see
+    the solution-category/ListSolutionCategories request to look them up)
+  - use_case: one or more use case Relay global IDs (see the GraphQL
+    `useCases` query to look them up; internally this maps to the `label`
+    filter key)
+
+  Responses:
+  200: CSV file stream (Content-Type: text/csv; charset=utf-8), with a
+  Content-Disposition header naming the file
+  "integrations-library-export-YYYY-MM-DD.csv".
+  401: user not logged in.
+  404: service instance not found.
+  400: service instance is not the Integrations Library.
+  500: unexpected error while generating the export.
+}
