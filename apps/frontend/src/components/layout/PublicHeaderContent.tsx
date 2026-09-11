@@ -1,5 +1,5 @@
+import { PublicHeaderAuthButtons } from '@/components/layout/PublicHeaderAuthButtons';
 import { PublicMobileMenuButton } from '@/components/menu/navigation/public/PublicMobileMenuButton';
-import { Button } from '@filigran/ui/servers';
 import LogoXTMDark from '@public/logo_xtm_hub_dark.svg';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
@@ -26,20 +26,7 @@ export const PublicHeaderContent = async ({
         <span className="sr-only">{t('Metadata.SiteName')}</span>
       </Link>
       <div className="flex items-center gap-s ml-auto">
-        <Button
-          asChild
-          variant="secondary">
-          <Link
-            href="/auth/oidc"
-            prefetch={false}>
-            {t('PublicLayout.Login')}
-          </Link>
-        </Button>
-        <Button
-          asChild
-          className="whitespace-nowrap">
-          <Link href={`/sign-up`}>{t('PublicLayout.SignUp')}</Link>
-        </Button>
+        <PublicHeaderAuthButtons />
         <div className="md:hidden flex items-center">
           <PublicMobileMenuButton
             visibleServiceSlugs={visibleServiceSlugs}

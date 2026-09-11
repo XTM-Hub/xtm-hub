@@ -1,5 +1,5 @@
 import serverPortalApiFetch from '@/relay/server-portal-api-fetch';
-import { loadMeUser } from '@/utils/load-me-user';
+import { loadCurrentUser, loadMeUser } from '@/utils/load-me-user';
 import MeLoaderQuery from '@generated/meLoaderQuery.graphql';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -34,5 +34,23 @@ describe('loadMeUser', () => {
     } as never);
 
     await expect(loadMeUser()).resolves.toBeNull();
+  });
+});
+
+describe('loadCurrentUser', () => {
+  it('swallows a rejected identity request and resolves null', async () => {
+    vi.mocked(serverPortalApiFetch).mockRejectedValue(
+      new Error('unauthenticated')
+    );
+
+    await expect(loadCurrentUser()).resolves.toBeNull();
+  });
+
+  it('returns the user when the identity request succeeds', async () => {
+    vi.mocked(serverPortalApiFetch).mockResolvedValue({
+      data: { me: { id: 'user-1' } },
+    } as never);
+
+    await expect(loadCurrentUser()).resolves.toEqual({ id: 'user-1' });
   });
 });
