@@ -2,7 +2,6 @@ import { ServiceListDisplayMode } from '@/components/service/components/header/S
 import PublicDocumentsList from '@/components/service/document/PublicDocumentsList';
 import { ServiceListLocalStorageKey } from '@/hooks/use-service-list-local-storage';
 import testRender from '@/utils/test/test-render';
-import { documentFacets } from '@generated/documentFacets.graphql';
 import { publicDocumentsQuery } from '@generated/publicDocumentsQuery.graphql';
 import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
 import { DocumentOrdering, OrderingMode } from '@graphql/generated';
@@ -24,7 +23,6 @@ const EMPTY_FACETS = {
     license_type: [],
     manager_supported: [],
     verified: [],
-    product_version: [],
     solution_category: [],
     use_case: [],
     entity_type: [],
@@ -37,6 +35,8 @@ const testState = vi.hoisted(() => ({
   readInlineData: vi.fn(),
   useShareableResourceMapping: vi.fn(),
   useServiceListLocalStorage: vi.fn(),
+  useLogicalFiltersFromStorage: vi.fn(),
+  useDocumentFacetsQuery: vi.fn(),
   useScrollPosition: vi.fn(),
   refetch: vi.fn(),
   setSearch: vi.fn(),
@@ -54,6 +54,25 @@ vi.mock('@/hooks/use-service-list-local-storage', async (importOriginal) => ({
     typeof import('@/hooks/use-service-list-local-storage')
   >()),
   useServiceListLocalStorage: testState.useServiceListLocalStorage,
+}));
+
+vi.mock('@/hooks/use-logical-filters-from-storage', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@/hooks/use-logical-filters-from-storage')
+  >()),
+  useLogicalFiltersFromStorage: testState.useLogicalFiltersFromStorage,
+}));
+
+vi.mock('@graphql/generated', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@graphql/generated')>();
+  return {
+    ...actual,
+    useDocumentFacetsQuery: testState.useDocumentFacetsQuery,
+  };
+});
+
+vi.mock('@/lib/graphql-client', () => ({
+  portalGraphqlClient: { _mock: 'portalGraphqlClient' },
 }));
 
 vi.mock('@/hooks/use-scroll-position', () => ({
@@ -84,7 +103,6 @@ describe('PublicDocumentsList', () => {
     slug: SERVICE_INSTANCE_SLUG,
   } as Partial<seoServiceInstanceFragment$data>;
   const queryRef = {} as PreloadedQuery<publicDocumentsQuery>;
-  const queryRefFacet = {} as PreloadedQuery<documentFacets>;
 
   beforeEach(() => {
     testState.refetch.mockReset();
@@ -109,11 +127,14 @@ describe('PublicDocumentsList', () => {
       setOrderBy: vi.fn(),
       setOrderMode: vi.fn(),
     });
+    testState.useLogicalFiltersFromStorage.mockReturnValue(undefined);
+    testState.useDocumentFacetsQuery.mockReturnValue({ data: EMPTY_FACETS });
     testState.useScrollPosition.mockReturnValue({
       restore: testState.restore,
     });
 
     testState.usePreloadedQuery.mockReset();
+    testState.usePreloadedQuery.mockReturnValue({});
     testState.useRefetchableFragment.mockReturnValue([
       {
         publicDocuments: {
@@ -150,29 +171,28 @@ describe('PublicDocumentsList', () => {
   });
 
   const mockFacetQuery = () => {
-    testState.usePreloadedQuery.mockReturnValueOnce({}).mockReturnValueOnce({
-      documentFacets: {
-        integration_type: [
-          { value: INTEGRATION_TYPE_VALUE, count: FACET_COUNT },
-        ],
-        license_type: [],
-        manager_supported: [],
-        verified: [],
-        product_version: [],
-        solution_category: [],
-        use_case: [],
-        entity_type: [],
+    testState.useDocumentFacetsQuery.mockReturnValue({
+      data: {
+        documentFacets: {
+          integration_type: [
+            { value: INTEGRATION_TYPE_VALUE, count: FACET_COUNT },
+          ],
+          license_type: [],
+          manager_supported: [],
+          verified: [],
+          solution_category: [],
+          use_case: [],
+          entity_type: [],
+        },
       },
     });
   };
 
   const mockEmptyFacetQuery = () => {
-    testState.usePreloadedQuery
-      .mockReturnValueOnce({})
-      .mockReturnValue(EMPTY_FACETS);
+    testState.useDocumentFacetsQuery.mockReturnValue({ data: EMPTY_FACETS });
   };
 
-  it('should render documents and facet filters when relay data contains both', () => {
+  it('should render documents and facet filters when the facet query returns counts', () => {
     // Given
     testState.useShareableResourceMapping.mockReturnValue({
       localStorageKey: ServiceListLocalStorageKey.OpenCTIIntegrationFeeds,
@@ -195,7 +215,6 @@ describe('PublicDocumentsList', () => {
     testRender(
       <PublicDocumentsList
         queryRef={queryRef}
-        queryRefFacet={queryRefFacet}
         serviceInstance={serviceInstance}
         baseUrl={BASE_URL}
       />
@@ -214,13 +233,31 @@ describe('PublicDocumentsList', () => {
     ).toBeInTheDocument();
   });
 
+  it('should not pass any facet counts to the filters mapping before the facet query has resolved', () => {
+    // Given
+    testState.useDocumentFacetsQuery.mockReturnValue({ data: undefined });
+
+    // When
+    testRender(
+      <PublicDocumentsList
+        queryRef={queryRef}
+        serviceInstance={serviceInstance}
+        baseUrl={BASE_URL}
+      />
+    );
+
+    // Then
+    const [, facetCountsArg] =
+      testState.useShareableResourceMapping.mock.calls.at(-1) ?? [];
+    expect(facetCountsArg).toBeUndefined();
+  });
+
   it('should forward search and display mode changes when header actions are used', async () => {
     // Given
     mockEmptyFacetQuery();
     const { user } = testRender(
       <PublicDocumentsList
         queryRef={queryRef}
-        queryRefFacet={queryRefFacet}
         serviceInstance={serviceInstance}
         baseUrl={BASE_URL}
       />
@@ -247,7 +284,6 @@ describe('PublicDocumentsList', () => {
     const { user } = testRender(
       <PublicDocumentsList
         queryRef={queryRef}
-        queryRefFacet={queryRefFacet}
         serviceInstance={serviceInstance}
         baseUrl={BASE_URL}
       />

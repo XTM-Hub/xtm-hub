@@ -5,10 +5,7 @@ import { useIntegrationListStorage } from '@/components/service/integrations/[se
 import { useIntegrationListUrlFilters } from '@/components/service/integrations/[serviceInstanceId]/use-integration-list-url-filters';
 import { useLogicalFiltersFromStorage } from '@/hooks/use-logical-filters-from-storage';
 import { useShareableResourceQueryLoader } from '@/hooks/use-shareable-resource-query-loader';
-import {
-  ServiceSlug,
-  ShareableResourceType,
-} from '@/utils/shareable-resources/shareable-resources.types';
+import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
 import { Skeleton } from '@filigran/ui';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 
@@ -52,23 +49,21 @@ const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
     solutionCategories,
   });
 
-  const { queryRef, queryRefFacet } = useShareableResourceQueryLoader({
+  const { queryRef } = useShareableResourceQueryLoader({
     pageSize,
     orderBy,
     orderMode,
     serviceInstanceId: serviceInstance.id,
     searchTerm: search,
     logicalFilters,
-    documentType: ShareableResourceType.OPENCTI_INTEGRATION,
   });
 
   return (
     <>
-      {queryRef && queryRefFacet ? (
+      {queryRef ? (
         <IntegrationsList
           serviceInstance={serviceInstance}
           queryRef={queryRef}
-          queryRefFacet={queryRefFacet}
           search={search}
           onSearchChange={setSearch}
         />

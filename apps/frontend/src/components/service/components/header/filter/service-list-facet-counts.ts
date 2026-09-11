@@ -1,4 +1,4 @@
-import { documentFacets$data } from '@generated/documentFacets.graphql';
+import { DocumentFacetsQuery } from '@graphql/generated';
 
 export interface ServiceListFacetCounts {
   useCase?: Record<string, number>;
@@ -6,12 +6,11 @@ export interface ServiceListFacetCounts {
   integrationType?: Record<string, number>;
   managerSupported?: Record<string, number>;
   verified?: Record<string, number>;
-  productVersion?: Record<string, number>;
   solutionCategory?: Record<string, number>;
   licenseType?: Record<string, number>;
 }
 
-type FacetData = documentFacets$data['documentFacets'];
+type FacetData = DocumentFacetsQuery['documentFacets'] | undefined;
 
 const toMap = (values: ReadonlyArray<{ value: string; count: number }>) =>
   Object.fromEntries(values.map((item) => [item.value, item.count] as const));
@@ -25,7 +24,6 @@ export const toServiceListFacetCounts = (
   licenseType: toMap(facets?.license_type ?? []),
   managerSupported: toMap(facets?.manager_supported ?? []),
   verified: toMap(facets?.verified ?? []),
-  productVersion: toMap(facets?.product_version ?? []),
   solutionCategory: toMap(facets?.solution_category ?? []),
   useCase: toMap(facets?.use_case ?? []),
   entityType: toMap(facets?.entity_type ?? []),

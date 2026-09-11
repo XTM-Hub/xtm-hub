@@ -26,23 +26,21 @@ const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
     labels,
   });
 
-  const { queryRef, queryRefFacet } = useShareableResourceQueryLoader({
+  const { queryRef } = useShareableResourceQueryLoader({
     pageSize,
     orderBy,
     orderMode,
     serviceInstanceId: serviceInstance.id,
     searchTerm: search,
     logicalFilters,
-    documentType: ShareableResourceType.OPENCTI_PLAYBOOK,
   });
 
   return (
     <>
-      {queryRef && queryRefFacet ? (
+      {queryRef ? (
         <ShareableResourceServiceList
           serviceInstance={serviceInstance}
           queryRef={queryRef}
-          queryRefFacet={queryRefFacet}
           search={search}
           onSearchChange={setSearch}
           type={ShareableResourceType.OPENCTI_PLAYBOOK}

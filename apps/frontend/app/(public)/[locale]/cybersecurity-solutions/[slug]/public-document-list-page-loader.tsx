@@ -1,21 +1,14 @@
 'use client';
-import {
-  FacetDocumentListQuery,
-  PublicDocumentListQuery,
-} from '@/components/service/document/public-document.graphql';
+import { PublicDocumentListQuery } from '@/components/service/document/public-document.graphql';
 import PublicDocumentsList from '@/components/service/document/PublicDocumentsList';
 import {
   LogicalFiltersParams,
   useLogicalFiltersFromStorage,
 } from '@/hooks/use-logical-filters-from-storage';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
-import {
-  SERVICE_SLUG_SHAREABLE_RESOURCE_MAPPING,
-  ServiceSlug,
-} from '@/utils/shareable-resources/shareable-resources.types';
+import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
 import { useShareableResourceMapping } from '@/utils/shareable-resources/use-shareable-resource-mapping';
 import { Skeleton } from '@filigran/ui';
-import { documentFacets } from '@generated/documentFacets.graphql';
 import { publicDocumentsQuery } from '@generated/publicDocumentsQuery.graphql';
 import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
 import { useEffect } from 'react';
@@ -32,9 +25,6 @@ export const PublicDocumentListPageLoader = ({
 }: PublicDocumentListPageLoaderProps) => {
   const [queryRef, loadQuery] = useQueryLoader<publicDocumentsQuery>(
     PublicDocumentListQuery
-  );
-  const [queryRefFacet, loadQueryFacet] = useQueryLoader<documentFacets>(
-    FacetDocumentListQuery
   );
 
   const serviceInstanceSlug = serviceInstance.slug as ServiceSlug;
@@ -94,23 +84,8 @@ export const PublicDocumentListPageLoader = ({
         fetchPolicy: 'store-and-network',
       }
     );
-    loadQueryFacet(
-      {
-        input: {
-          serviceInstanceId: serviceInstance.id,
-          documentType:
-            SERVICE_SLUG_SHAREABLE_RESOURCE_MAPPING[serviceInstanceSlug],
-          searchTerm: search,
-          logicalFilters,
-        },
-      },
-      {
-        fetchPolicy: 'store-and-network',
-      }
-    );
   }, [
     loadQuery,
-    loadQueryFacet,
     pageSize,
     serviceInstance,
     search,
@@ -126,11 +101,10 @@ export const PublicDocumentListPageLoader = ({
 
   return (
     <>
-      {queryRef && queryRefFacet ? (
+      {queryRef ? (
         <PublicDocumentsList
           serviceInstance={serviceInstance}
           queryRef={queryRef}
-          queryRefFacet={queryRefFacet}
           baseUrl={baseUrl}
         />
       ) : (

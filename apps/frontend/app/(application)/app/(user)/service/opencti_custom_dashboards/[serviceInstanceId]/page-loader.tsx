@@ -29,19 +29,18 @@ const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
     labels,
   });
 
-  const { queryRef, queryRefFacet } = useShareableResourceQueryLoader({
+  const { queryRef } = useShareableResourceQueryLoader({
     pageSize,
     orderBy,
     orderMode,
     serviceInstanceId: serviceInstance.id,
     searchTerm: search,
     logicalFilters,
-    documentType: ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD,
   });
 
   return (
     <>
-      {queryRef && queryRefFacet ? (
+      {queryRef ? (
         <ShareableResourceServiceList
           serviceInstance={serviceInstance}
           queryRef={queryRef}
@@ -49,7 +48,6 @@ const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
           onSearchChange={setSearch}
           type={ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD}
           localStorageKey={ServiceListLocalStorageKey.OpenCTICustomDashboards}
-          queryRefFacet={queryRefFacet}
         />
       ) : (
         <Skeleton className="w-full inset-1/2" />

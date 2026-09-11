@@ -3232,6 +3232,13 @@ export type XtmonePlatformIntegrationStatusQueryVariables = Exact<{
 
 export type XtmonePlatformIntegrationStatusQuery = { __typename?: 'Query', xtmonePlatformIntegrationStatus: { __typename?: 'XtmoneIntegrationStatus', linked: boolean, last_checked_at: string | null, opencti: { __typename?: 'XtmoneIntegrationStatusEntry', status: string, connected: boolean, last_checked_at: string | null }, openaev: { __typename?: 'XtmoneIntegrationStatusEntry', status: string, connected: boolean, last_checked_at: string | null } } | null };
 
+export type DocumentFacetsQueryVariables = Exact<{
+  input: LoadDocumentFacetInput;
+}>;
+
+
+export type DocumentFacetsQuery = { __typename?: 'Query', documentFacets: { __typename?: 'Facet', integration_type: Array<{ __typename?: 'FacetBucket', value: string, count: number }>, license_type: Array<{ __typename?: 'FacetBucket', value: string, count: number }>, manager_supported: Array<{ __typename?: 'FacetBucket', value: string, count: number }>, verified: Array<{ __typename?: 'FacetBucket', value: string, count: number }>, solution_category: Array<{ __typename?: 'FacetBucket', value: string, count: number }>, use_case: Array<{ __typename?: 'FacetBucket', value: string, count: number }>, entity_type: Array<{ __typename?: 'FacetBucket', value: string, count: number }> } | null };
+
 type HomepageDocument_Connector_Fragment = { __typename?: 'Connector', verified: boolean, manager_supported: boolean, id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
 
 type HomepageDocument_CsvFeed_Fragment = { __typename?: 'CsvFeed', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
@@ -4136,6 +4143,86 @@ export const useInfiniteXtmonePlatformIntegrationStatusQuery = <
 useInfiniteXtmonePlatformIntegrationStatusQuery.getKey = (variables: XtmonePlatformIntegrationStatusQueryVariables) => ['XtmonePlatformIntegrationStatus.infinite', variables];
 useInfiniteXtmonePlatformIntegrationStatusQuery.getRootKey = () => ['XtmonePlatformIntegrationStatus.infinite'] as const;
 useXtmonePlatformIntegrationStatusQuery.fetcher = (client: GraphQLClient, variables: XtmonePlatformIntegrationStatusQueryVariables, headers?: RequestInit['headers']) => fetcher<XtmonePlatformIntegrationStatusQuery, XtmonePlatformIntegrationStatusQueryVariables>(client, XtmonePlatformIntegrationStatusDocument, variables, headers);
+
+export const DocumentFacetsDocument = `
+    query DocumentFacets($input: LoadDocumentFacetInput!) {
+  documentFacets(input: $input) {
+    integration_type {
+      value
+      count
+    }
+    license_type {
+      value
+      count
+    }
+    manager_supported {
+      value
+      count
+    }
+    verified {
+      value
+      count
+    }
+    solution_category {
+      value
+      count
+    }
+    use_case {
+      value
+      count
+    }
+    entity_type {
+      value
+      count
+    }
+  }
+}
+    `;
+
+export const useDocumentFacetsQuery = <
+      TData = DocumentFacetsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: DocumentFacetsQueryVariables,
+      options?: Omit<UseQueryOptions<DocumentFacetsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<DocumentFacetsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<DocumentFacetsQuery, TError, TData>(
+      {
+    queryKey: ['DocumentFacets', variables],
+    queryFn: fetcher<DocumentFacetsQuery, DocumentFacetsQueryVariables>(client, DocumentFacetsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useDocumentFacetsQuery.getKey = (variables: DocumentFacetsQueryVariables) => ['DocumentFacets', variables];
+useDocumentFacetsQuery.getRootKey = () => ['DocumentFacets'] as const;
+export const useInfiniteDocumentFacetsQuery = <
+      TData = InfiniteData<DocumentFacetsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: DocumentFacetsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<DocumentFacetsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<DocumentFacetsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<DocumentFacetsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['DocumentFacets.infinite', variables],
+      queryFn: (metaData) => fetcher<DocumentFacetsQuery, DocumentFacetsQueryVariables>(client, DocumentFacetsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteDocumentFacetsQuery.getKey = (variables: DocumentFacetsQueryVariables) => ['DocumentFacets.infinite', variables];
+useInfiniteDocumentFacetsQuery.getRootKey = () => ['DocumentFacets.infinite'] as const;
+useDocumentFacetsQuery.fetcher = (client: GraphQLClient, variables: DocumentFacetsQueryVariables, headers?: RequestInit['headers']) => fetcher<DocumentFacetsQuery, DocumentFacetsQueryVariables>(client, DocumentFacetsDocument, variables, headers);
 
 export const MostDeployedDocumentsQueryDocument = `
     query MostDeployedDocumentsQuery($limit: Int!, $platformIdentifiers: [PlatformIdentifier!]) {
