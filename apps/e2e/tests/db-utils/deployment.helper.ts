@@ -67,7 +67,7 @@ export const activateBundleDeploymentRequest = async (
   const activation = {
     hub_status: 'active',
     target_state: 'active',
-    actual_state: 'provisioned',
+    actual_state: 'active',
     start_date: startDate,
     end_date: endDate,
   };
