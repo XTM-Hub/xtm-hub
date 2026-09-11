@@ -1782,6 +1782,7 @@ describe('document domain', () => {
   describe('loadDistinctConnectorSlugs', () => {
     const REQUESTED_VERSION = '7.260904.0';
     const REQUESTED_LTS_VERSION = '7.260309.0-lts.5';
+    const REQUESTED_PADDED_VERSION = '007.260309.000';
 
     const createConnector = async ({
       slug,
@@ -1825,8 +1826,14 @@ describe('document domain', () => {
     });
 
     it('returns the distinct slugs of the TAG_LATEST connectors', async () => {
-      await createConnector({ slug: 'connector-a', version: '007.260309.000' });
-      await createConnector({ slug: 'connector-b', version: '007.260309.000' });
+      await createConnector({
+        slug: 'connector-a',
+        version: REQUESTED_PADDED_VERSION,
+      });
+      await createConnector({
+        slug: 'connector-b',
+        version: REQUESTED_PADDED_VERSION,
+      });
       // An older version of the same connector, no longer tagged TAG_LATEST,
       // must not surface as a separate/duplicate slug.
       await createConnector({
@@ -1848,7 +1855,10 @@ describe('document domain', () => {
         tags: [TAG_LATEST_LTS, TAG_DECOUPLING],
       });
       // Regular (non-LTS) latest connector must not be considered known for an LTS request.
-      await createConnector({ slug: 'connector-b', version: '007.260309.000' });
+      await createConnector({
+        slug: 'connector-b',
+        version: REQUESTED_PADDED_VERSION,
+      });
 
       const result = await DocumentDomain.loadDistinctConnectorSlugs(
         REQUESTED_LTS_VERSION
@@ -1860,7 +1870,7 @@ describe('document domain', () => {
     it('excludes inactive connectors', async () => {
       await createConnector({
         slug: 'connector-a',
-        version: '007.260309.000',
+        version: REQUESTED_PADDED_VERSION,
         active: false,
       });
 
@@ -1873,7 +1883,7 @@ describe('document domain', () => {
     it('excludes decommissioned connectors', async () => {
       await createConnector({
         slug: 'connector-a',
-        version: '007.260309.000',
+        version: REQUESTED_PADDED_VERSION,
         isDecommissioned: true,
       });
 
@@ -1886,7 +1896,7 @@ describe('document domain', () => {
     it('excludes connectors that are not tagged as decoupled', async () => {
       await createConnector({
         slug: 'connector-a',
-        version: '007.260309.000',
+        version: REQUESTED_PADDED_VERSION,
         tags: [TAG_LATEST],
       });
 
@@ -1899,7 +1909,7 @@ describe('document domain', () => {
     it('excludes connectors that are not tagged as latest', async () => {
       await createConnector({
         slug: 'connector-a',
-        version: '007.260309.000',
+        version: REQUESTED_PADDED_VERSION,
         tags: [TAG_DECOUPLING],
       });
 
@@ -1912,7 +1922,7 @@ describe('document domain', () => {
     it('excludes documents whose integration_type is not connector', async () => {
       await createConnector({
         slug: 'connector-a',
-        version: '007.260309.000',
+        version: REQUESTED_PADDED_VERSION,
         integrationType: IntegrationType.CsvFeed,
       });
 

@@ -137,7 +137,7 @@ export const buildVersionsMatrixEnv = (
 };
 
 export const buildVersionsMatrixETag = (payload: string): string =>
-  `"${crypto.createHash('sha1').update(payload).digest('hex')}"`;
+  `"${crypto.createHash('sha256').update(payload).digest('hex')}"`;
 
 /** Quotes a CSV field when it contains a comma, quote, or newline. */
 const escapeCsvField = (value: string): string =>

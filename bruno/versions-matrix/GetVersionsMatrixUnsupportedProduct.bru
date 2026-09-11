@@ -11,17 +11,19 @@ get {
 }
 
 assert {
-  res.status: eq 400
-  res.body.code: eq 400
+  res.status: eq 404
+  res.body.code: eq 404
 }
 
 docs {
   :product accepts any valid PlatformIdentifier (opencti, openaev, xtmone),
   but connector compatibility data is only tracked for OpenCTI today, so a
   valid-but-unsupported product like "openaev" is rejected here rather than
-  silently returning an empty/misleading matrix.
+  silently returning an empty/misleading matrix. The product identifier
+  itself is well-formed, there's simply no matrix resource for it, hence
+  404 rather than 400.
   
-  Response: { "code": 400, "message": "The versions matrix is only available for the opencti product" }
+  Response: { "code": 404, "message": "The versions matrix is only available for the opencti product" }
   
   See "Get versions matrix - invalid product" for a :product value that
   isn't even a valid PlatformIdentifier (the route still matches — :product

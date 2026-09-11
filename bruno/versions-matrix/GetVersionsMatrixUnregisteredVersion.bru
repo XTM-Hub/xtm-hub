@@ -15,15 +15,15 @@ params:query {
 }
 
 assert {
-  res.status: eq 400
-  res.body.code: eq 400
+  res.status: eq 404
+  res.body.code: eq 404
 }
 
 docs {
   A well-formed `version` that was never registered for the product (see
   GET /opencti/versions, which lists what's actually registered) is
-  rejected with 400, distinct from "Invalid version format": the string is
+  rejected with 404, distinct from "Invalid version format": the string is
   syntactically valid, it's simply unknown to this product.
   
-  Response: { "code": 400, "message": "Unknown opencti version: 1.0.0" }
+  Response: { "code": 404, "message": "Unknown opencti version: 1.0.0" }
 }

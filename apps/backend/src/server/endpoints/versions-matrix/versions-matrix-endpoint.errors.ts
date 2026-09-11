@@ -1,6 +1,6 @@
 import type { Response } from 'express';
 
-type VersionsMatrixErrorStatus = 400 | 404 | 429 | 500;
+type VersionsMatrixErrorStatus = 400 | 404 | 409 | 429 | 500;
 
 interface VersionsMatrixErrorDefinition {
   readonly message: string;
@@ -12,11 +12,13 @@ export const VERSIONS_MATRIX_ERRORS = {
   /**
    * Connector compatibility data is only tracked for OpenCTI today, so any
    * other (valid) product identifier is rejected here rather than silently
-   * returning an empty/misleading matrix.
+   * returning an empty/misleading matrix. The product itself is well-formed
+   * (a real PlatformIdentifier), there's simply no matrix resource for it,
+   * hence 404 rather than 400.
    */
   UnsupportedProduct: {
     message: 'The versions matrix is only available for the opencti product',
-    status: 400,
+    status: 404,
   },
   InvalidVersionFormat: { message: 'Invalid version format', status: 400 },
   InvalidFormat: {
@@ -49,13 +51,17 @@ export const sendVersionsMatrixError = (
 };
 
 /**
- * Unknown/incompatible connector slug messages are built dynamically from the
- * request (they list the offending slugs), so they are not part of the
- * static catalogue above; they always carry a 400 status.
+ * Unknown-version/unknown-slug/incompatible-slug messages are built
+ * dynamically from the request (they list the offending version or slugs),
+ * so they are not part of the static catalogue above. Unlike that catalogue,
+ * their status varies by case: 404 when the requested version or slug simply
+ * isn't known, 409 when it is known but conflicts with the resolved version
+ * (see call sites in versions-matrix-endpoint.ts).
  */
 export const sendVersionsMatrixValidationError = (
   res: Response,
-  message: string
+  message: string,
+  status: Extract<VersionsMatrixErrorStatus, 404 | 409>
 ): void => {
-  res.status(400).json({ code: 400, message });
+  res.status(status).json({ code: status, message });
 };

@@ -75,7 +75,7 @@ describe('getMatrix', () => {
   });
 
   it.each(['openaev', 'xtmone'])(
-    'returns 400 for the valid but unsupported product "%s"',
+    'returns 404 for the valid but unsupported product "%s"',
     async (product) => {
       const res = buildResponse();
       await VersionsMatrixEndpoint.getMatrix(
@@ -83,9 +83,9 @@ describe('getMatrix', () => {
         res as unknown as Response
       );
 
-      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith({
-        code: 400,
+        code: 404,
         message:
           'The versions matrix is only available for the opencti product',
       });
@@ -247,16 +247,16 @@ describe('getMatrix', () => {
     });
   });
 
-  it('returns 400 for a well-formed but unregistered version', async () => {
+  it('returns 404 for a well-formed but unregistered version', async () => {
     const res = buildResponse();
     await VersionsMatrixEndpoint.getMatrix(
       buildRequest({ version: '1.0.0' }),
       res as unknown as Response
     );
 
-    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.status).toHaveBeenCalledWith(404);
     expect(res.json).toHaveBeenCalledWith({
-      code: 400,
+      code: 404,
       message: 'Unknown opencti version: 1.0.0',
     });
     expect(loadDistinctConnectorSlugsMock).not.toHaveBeenCalled();
@@ -286,22 +286,22 @@ describe('getMatrix', () => {
     expect(loadDistinctConnectorSlugsMock).not.toHaveBeenCalled();
   });
 
-  it('returns 400 for an unknown connector slug', async () => {
+  it('returns 404 for an unknown connector slug', async () => {
     const res = buildResponse();
     await VersionsMatrixEndpoint.getMatrix(
       buildRequest({ version: '7.260904.0', connector_slugs: 'mitre,unknown' }),
       res as unknown as Response
     );
 
-    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.status).toHaveBeenCalledWith(404);
     expect(res.json).toHaveBeenCalledWith({
-      code: 400,
+      code: 404,
       message: 'Unknown connector slug(s): unknown',
     });
     expect(loadBestCompatibleConnectorsBySlugsMock).not.toHaveBeenCalled();
   });
 
-  it('returns 400 for an incompatible connector slug', async () => {
+  it('returns 409 for an incompatible connector slug', async () => {
     loadBestCompatibleConnectorsBySlugsMock.mockResolvedValue([
       { slug: 'mitre', version: '7.260809.0' },
     ]);
@@ -315,9 +315,9 @@ describe('getMatrix', () => {
       res as unknown as Response
     );
 
-    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.status).toHaveBeenCalledWith(409);
     expect(res.json).toHaveBeenCalledWith({
-      code: 400,
+      code: 409,
       message:
         'Incompatible connector slug(s) for OpenCTI version 7.260904.0: sentinel',
     });

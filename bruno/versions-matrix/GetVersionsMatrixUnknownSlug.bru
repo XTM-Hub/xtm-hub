@@ -15,13 +15,13 @@ params:query {
 }
 
 assert {
-  res.status: eq 400
+  res.status: eq 404
 }
 
 docs {
   A requested slug that doesn't exist at all (not a known decoupled
-  connector) is rejected with 400, unlike the default "all connectors" case
+  connector) is rejected with 404, unlike the default "all connectors" case
   which never errors on missing connectors.
   
-  Response: { "code": 400, "message": "Unknown connector slug(s): not-a-real-connector" }
+  Response: { "code": 404, "message": "Unknown connector slug(s): not-a-real-connector" }
 }

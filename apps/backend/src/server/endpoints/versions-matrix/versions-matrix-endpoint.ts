@@ -77,7 +77,7 @@ const validateRequestedFormat = (
 type VersionResolutionResult =
   | { ok: true; value: string }
   | { ok: false; error: VersionsMatrixError }
-  | { ok: false; message: string };
+  | { ok: false; message: string; status: 404 };
 
 /**
  * Resolves and validates the requested product version: parses the
@@ -113,8 +113,9 @@ const resolveRequestedVersion = async (
 
   // A well-formed but never-registered version (e.g. a made-up or
   // not-yet-reported one) isn't a "compatibility" question, it's simply
-  // unknown for this product: reject it up front rather than letting it
-  // silently pass through to the (unrelated) slug compatibility checks.
+  // unknown for this product: reject it up front (404, like
+  // NoRegisteredVersion above) rather than letting it silently pass through
+  // to the (unrelated) slug compatibility checks.
   //
   // The comparison uses the padded form, like every other version
   // comparison in the matrix, so that formatting differences between the
@@ -127,6 +128,7 @@ const resolveRequestedVersion = async (
     return {
       ok: false,
       message: `Unknown ${product} version: ${rawVersion}`,
+      status: 404,
     };
   }
 
@@ -134,7 +136,8 @@ const resolveRequestedVersion = async (
 };
 
 type MatrixEntriesResult =
-  { ok: true; entries: VersionsMatrixEntry[] } | { ok: false; message: string };
+  | { ok: true; entries: VersionsMatrixEntry[] }
+  | { ok: false; message: string; status: 404 | 409 };
 
 /**
  * Resolves the matrix entries for the requested (or, by default, all known)
@@ -152,6 +155,7 @@ const resolveMatrixEntries = async (
     return {
       ok: false,
       message: `Unknown connector slug(s): ${unknownSlugs.join(', ')}`,
+      status: 404,
     };
   }
 
@@ -171,6 +175,9 @@ const resolveMatrixEntries = async (
     return {
       ok: false,
       message: `Incompatible connector slug(s) for OpenCTI version ${version}: ${incompatibleSlugs.join(', ')}`,
+      // 409: the slugs themselves are known (unlike unknownSlugs above),
+      // they just conflict with the resolved version.
+      status: 409,
     };
   }
 
@@ -250,7 +257,11 @@ export const VersionsMatrixEndpoint = {
       );
       if (!versionResult.ok) {
         if ('message' in versionResult) {
-          sendVersionsMatrixValidationError(res, versionResult.message);
+          sendVersionsMatrixValidationError(
+            res,
+            versionResult.message,
+            versionResult.status
+          );
         } else {
           sendVersionsMatrixError(res, versionResult.error);
         }
@@ -262,7 +273,11 @@ export const VersionsMatrixEndpoint = {
         slugsResult.slugs
       );
       if (!matrixResult.ok) {
-        sendVersionsMatrixValidationError(res, matrixResult.message);
+        sendVersionsMatrixValidationError(
+          res,
+          matrixResult.message,
+          matrixResult.status
+        );
         return;
       }
 

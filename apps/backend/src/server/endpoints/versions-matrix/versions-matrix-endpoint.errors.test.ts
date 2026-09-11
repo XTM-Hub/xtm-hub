@@ -15,7 +15,7 @@ const buildResponse = () => {
 describe('sendVersionsMatrixError', () => {
   it.each([
     { error: VERSIONS_MATRIX_ERRORS.InvalidProduct, status: 400 },
-    { error: VERSIONS_MATRIX_ERRORS.UnsupportedProduct, status: 400 },
+    { error: VERSIONS_MATRIX_ERRORS.UnsupportedProduct, status: 404 },
     { error: VERSIONS_MATRIX_ERRORS.InvalidFormat, status: 400 },
     {
       error: VERSIONS_MATRIX_ERRORS.NoRegisteredVersion,
@@ -34,15 +34,36 @@ describe('sendVersionsMatrixError', () => {
 });
 
 describe('sendVersionsMatrixValidationError', () => {
-  it('answers 400 with the provided message', () => {
+  it('answers 404 with the provided message when the requested resource is unknown', () => {
     const { res, status, json } = buildResponse();
 
-    sendVersionsMatrixValidationError(res, 'Unknown connector slug(s): foo');
+    sendVersionsMatrixValidationError(
+      res,
+      'Unknown connector slug(s): foo',
+      404
+    );
 
-    expect(status).toHaveBeenCalledWith(400);
+    expect(status).toHaveBeenCalledWith(404);
     expect(json).toHaveBeenCalledWith({
-      code: 400,
+      code: 404,
       message: 'Unknown connector slug(s): foo',
+    });
+  });
+
+  it('answers 409 with the provided message when the requested resource conflicts', () => {
+    const { res, status, json } = buildResponse();
+
+    sendVersionsMatrixValidationError(
+      res,
+      'Incompatible connector slug(s) for OpenCTI version 7.260904.0: foo',
+      409
+    );
+
+    expect(status).toHaveBeenCalledWith(409);
+    expect(json).toHaveBeenCalledWith({
+      code: 409,
+      message:
+        'Incompatible connector slug(s) for OpenCTI version 7.260904.0: foo',
     });
   });
 });
