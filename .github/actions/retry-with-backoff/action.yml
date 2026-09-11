@@ -1,0 +1,44 @@
+name: 'Retry with exponential backoff'
+description: 'Runs a shell command, retrying with exponential backoff on failure.'
+inputs:
+  command:
+    description: 'Shell command to execute (can be multi-line).'
+    required: true
+  max-attempts:
+    description: 'Maximum number of attempts before giving up.'
+    required: false
+    default: '5'
+  initial-delay-seconds:
+    description: 'Delay (in seconds) before the first retry. Doubles after every failed attempt.'
+    required: false
+    default: '2'
+runs:
+  using: 'composite'
+  steps:
+    - name: Run command with retries
+      shell: bash
+      run: |
+        script_path="${RUNNER_TEMP}/retry-command-${GITHUB_RUN_ID}-${RANDOM}.sh"
+        cat <<'RETRY_COMMAND_EOF' > "${script_path}"
+        ${{ inputs.command }}
+        RETRY_COMMAND_EOF
+        chmod +x "${script_path}"
+
+        max_attempts="${{ inputs.max-attempts }}"
+        delay="${{ inputs.initial-delay-seconds }}"
+        attempt=1
+
+        until bash -e -o pipefail "${script_path}"; do
+          if (( attempt >= max_attempts )); then
+            echo "❌ Command failed after ${attempt} attempts"
+            rm -f "${script_path}"
+            exit 1
+          fi
+          echo "⚠️ Attempt ${attempt}/${max_attempts} failed. Retrying in ${delay}s..."
+          sleep "${delay}"
+          delay=$(( delay * 2 ))
+          attempt=$(( attempt + 1 ))
+        done
+
+        echo "✅ Command succeeded on attempt ${attempt}/${max_attempts}"
+        rm -f "${script_path}"
