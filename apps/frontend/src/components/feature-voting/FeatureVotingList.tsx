@@ -40,7 +40,7 @@ export const FeatureVotingList = ({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { mutate: commitVote } = useFeatureVote();
-  const hasAutoVoted = useRef(false);
+  const lastAutoVotedFeatureId = useRef<string | null>(null);
 
   const variables = useMemo(
     () => ({ service_instance_id: serviceInstanceId }),
@@ -61,10 +61,15 @@ export const FeatureVotingList = ({
   // Cast that vote once, then strip the marker so a refresh never re-fires it.
   useEffect(() => {
     const voteFeatureId = searchParams.get(VOTE_FEATURE_ID_PARAM);
-    if (!voteFeatureId || !isAuthenticated || !round || hasAutoVoted.current) {
+    if (
+      !voteFeatureId ||
+      !isAuthenticated ||
+      !round ||
+      lastAutoVotedFeatureId.current === voteFeatureId
+    ) {
       return;
     }
-    hasAutoVoted.current = true;
+    lastAutoVotedFeatureId.current = voteFeatureId;
 
     const feature = round.features.find((f) => f.id === voteFeatureId);
     if (feature && !feature.has_my_vote) {

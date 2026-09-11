@@ -234,6 +234,50 @@ describe('FeatureVotingList', () => {
       expect(toastMock).not.toHaveBeenCalled();
     });
 
+    it('should cast a new vote when redirected again with a different feature id while mounted', async () => {
+      // Given
+      mockSearchParams('feature-opencti');
+      mockRound(
+        mockVotingRound({
+          id: 'round-1',
+          description: 'Tell us what matters to you',
+          features: [openctiFeature, openaevFeature],
+        })
+      );
+      mockVoteSuccess('feature-opencti');
+
+      // When
+      const { rerender } = renderList();
+
+      // Then
+      await vi.waitFor(() =>
+        expect(toastMock).toHaveBeenCalledWith(
+          expect.objectContaining({ title: 'FeatureVoting.VoteRecordedTitle' })
+        )
+      );
+      expect(toastMock).toHaveBeenCalledTimes(1);
+
+      // When a client-side navigation lands on the same mounted component
+      // with a new feature id to vote for.
+      toastMock.mockClear();
+      mockSearchParams('feature-openaev');
+      mockVoteSuccess('feature-openaev');
+      rerender(
+        <FeatureVotingList
+          serviceInstanceId="instance-1"
+          roadmapHref={ROADMAP_HREF}
+        />
+      );
+
+      // Then
+      await vi.waitFor(() =>
+        expect(toastMock).toHaveBeenCalledWith(
+          expect.objectContaining({ title: 'FeatureVoting.VoteRecordedTitle' })
+        )
+      );
+      expect(toastMock).toHaveBeenCalledTimes(1);
+    });
+
     it('should not vote for an anonymous visitor', async () => {
       // Given
       mockSearchParams('feature-opencti');
