@@ -217,6 +217,13 @@ jobs:
           cp -r ./apps/backend/tests/seeds ./apps/e2e/seeds
           cp ./apps/backend/tests/test-utils.ts ./apps/e2e/test-utils.ts
 
+      - name: Pull docker images
+        uses: ./.github/actions/retry-with-backoff
+        env:
+          IMAGE_TAGS: ${{ needs.build-images-tests.outputs.docker-tags }}
+        with:
+          command: docker compose -f ./xtm-hub-dev/docker-compose-ci.yml pull --include-deps e2e
+
       - name: Launch docker compose
         run: |
           mkdir -p ctrf
@@ -226,7 +233,6 @@ jobs:
            GITHUB_PR_NUMBER="${{ github.event.pull_request.number }}" \
            GITHUB_RUN_ID="${{ github.run_id }}" \
            PLAYWRIGHT_SHARD="${{ matrix.shard }}/8"
-          docker compose -f ./xtm-hub-dev/docker-compose-ci.yml pull --include-deps e2e
           docker compose -f ./xtm-hub-dev/docker-compose-ci.yml run \
            -e PLAYWRIGHT_SHARD \
            e2e sh -lc "yarn test:e2e --shard=${PLAYWRIGHT_SHARD}" || TEST_EXIT_CODE=$?
@@ -319,6 +325,11 @@ jobs:
       - name: Install docker
         uses: docker/setup-docker-action@v5
 
+      - name: Pull docker image
+        uses: ./.github/actions/retry-with-backoff
+        with:
+          command: docker pull filigran/portal-front-test:${{ needs.build-images-tests.outputs.docker-tags }}
+
       - name: Run front unit tests
         run: |
           export IMAGE_TAGS="${{ needs.build-images-tests.outputs.docker-tags }}" \
@@ -365,6 +376,13 @@ jobs:
 
       - name: Install docker
         uses: docker/setup-docker-action@v5
+
+      - name: Pull docker images
+        uses: ./.github/actions/retry-with-backoff
+        env:
+          IMAGE_TAGS: ${{ needs.build-images-tests.outputs.docker-tags }}
+        with:
+          command: docker compose -f ./xtm-hub-dev/docker-compose-ci.yml pull --include-deps backend-test
 
       - name: Run backend type-check
         if: matrix.shard == 1
@@ -481,25 +499,14 @@ jobs:
           echo "deployment_key=$DEPLOYMENT_KEY" >> "$GITHUB_OUTPUT"
 
       - name: Deploy
-        run: |
-          max_attempts=5
-          for i in $(seq 1 $max_attempts); do
-            if awx --conf.host https://awx.filigran.io \
+        uses: ./.github/actions/retry-with-backoff
+        with:
+          command: |
+            awx --conf.host https://awx.filigran.io \
               --conf.token ${{ secrets.AWX_TOKEN }} \
               -f human job_templates launch 'Deploy XTM Hub feature branch for testing' \
               --inventory eu-west-staging \
-              --extra_vars "{\"env\":\"Development\",\"xtmhub_version\":\"pr-${{ github.event.number }}\",\"xtmhub_node_env\":\"development\"}"; then
-              echo "✅ Deployment successful"
-              exit 0
-            fi
-            if [ $i -lt $max_attempts ]; then
-              delay=$((2 ** i))
-              echo "⚠️ Attempt $i/$max_attempts failed, retrying in ${delay}s..."
-              sleep $delay
-            fi
-          done
-          echo "❌ All $max_attempts attempts failed"
-          exit 1
+              --extra_vars "{\"env\":\"Development\",\"xtmhub_version\":\"pr-${{ github.event.number }}\",\"xtmhub_node_env\":\"development\"}"
 
   build-images-prod:
     needs:
@@ -646,26 +653,15 @@ jobs:
       - name: Deploy on Production
         id: awx_production_deploy
         if: contains(github.ref, 'refs/tags/')
-        run: |
-          export VERSION=$(echo "${GITHUB_REF_NAME}" | sed 's/^v//')
-          max_attempts=5
-          for i in $(seq 1 $max_attempts); do
-            if awx --conf.host https://awx.filigran.io \
+        uses: ./.github/actions/retry-with-backoff
+        with:
+          command: |
+            export VERSION=$(echo "${GITHUB_REF_NAME}" | sed 's/^v//')
+            awx --conf.host https://awx.filigran.io \
               --conf.token ${{ secrets.AWX_TOKEN }} \
               -f human job_templates launch 'Deploy XTM Hub' \
               --inventory eu-west-production \
-              --extra_vars "{\"env\":\"Production\",\"xtmhub_version\":\"$VERSION\"}"; then
-              echo "✅ Deployment successful"
-              exit 0
-            fi
-            if [ $i -lt $max_attempts ]; then
-              delay=$((2 ** i))
-              echo "⚠️ Attempt $i/$max_attempts failed, retrying in ${delay}s..."
-              sleep $delay
-            fi
-          done
-          echo "❌ All $max_attempts attempts failed"
-          exit 1
+              --extra_vars "{\"env\":\"Production\",\"xtmhub_version\":\"$VERSION\"}"
 
       - name: Send n8n Webhook Notification
         if: contains(github.ref, 'refs/tags/')
@@ -753,47 +749,25 @@ jobs:
 
       - name: Deploy on Development
         if: github.ref == 'refs/heads/main'
-        run: |
-          max_attempts=5
-          for i in $(seq 1 $max_attempts); do
-            if awx --conf.host https://awx.filigran.io \
+        uses: ./.github/actions/retry-with-backoff
+        with:
+          command: |
+            awx --conf.host https://awx.filigran.io \
               --conf.token ${{ secrets.AWX_TOKEN }} \
               -f human job_templates launch 'Deploy XTM Hub' \
               --inventory eu-west-staging \
-              --extra_vars '{"env":"Development"}'; then
-              echo "✅ Deployment successful"
-              exit 0
-            fi
-            if [ $i -lt $max_attempts ]; then
-              delay=$((2 ** i))
-              echo "⚠️ Attempt $i/$max_attempts failed, retrying in ${delay}s..."
-              sleep $delay
-            fi
-          done
-          echo "❌ All $max_attempts attempts failed"
-          exit 1
+              --extra_vars '{"env":"Development"}'
 
       - name: Deploy on Prerelease
         if: github.ref == 'refs/heads/main'
-        run: |
-          max_attempts=5
-          for i in $(seq 1 $max_attempts); do
-            if awx --conf.host https://awx.filigran.io \
+        uses: ./.github/actions/retry-with-backoff
+        with:
+          command: |
+            awx --conf.host https://awx.filigran.io \
               --conf.token ${{ secrets.AWX_TOKEN }} \
               -f human job_templates launch 'Deploy XTM Hub' \
               --inventory eu-west-staging \
-              --extra_vars '{"env":"Prerelease"}'; then
-              echo "✅ Deployment successful"
-              exit 0
-            fi
-            if [ $i -lt $max_attempts ]; then
-              delay=$((2 ** i))
-              echo "⚠️ Attempt $i/$max_attempts failed, retrying in ${delay}s..."
-              sleep $delay
-            fi
-          done
-          echo "❌ All $max_attempts attempts failed"
-          exit 1
+              --extra_vars '{"env":"Prerelease"}'
 
   # Notifies the team channel when CI fails on a protected branch (main/development)
   # or in the merge queue. Regular PR-branch CI failures are intentionally excluded,
