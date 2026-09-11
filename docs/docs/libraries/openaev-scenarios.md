@@ -1,6 +1,6 @@
 # OpenAEV Scenarios Library
 
-A comprehensive library of OpenAEV scenarios is now available on the XTM Hub, 
+A comprehensive library of OpenAEV scenarios is now available on XTM Hub, 
 providing seamless access to curated scenarios data. 
 Currently, the library focuses on OpenAEV scenarios that can be directly deployed to OpenAEV products and created by our Filigran Team.
 
