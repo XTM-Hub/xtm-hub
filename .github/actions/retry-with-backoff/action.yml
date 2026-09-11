@@ -28,7 +28,7 @@ runs:
         delay="${{ inputs.initial-delay-seconds }}"
         attempt=1
 
-        until bash "${script_path}"; do
+        until bash -e -o pipefail "${script_path}"; do
           if (( attempt >= max_attempts )); then
             echo "❌ Command failed after ${attempt} attempts"
             rm -f "${script_path}"
