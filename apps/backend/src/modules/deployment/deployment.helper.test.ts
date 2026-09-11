@@ -47,6 +47,8 @@ const buildDeploymentRequest = (
   cancellation_date: null,
   cancellation_reason: null,
   source: DeploymentRequestSource.Xtmhub,
+  parent_id: null,
+  url: null,
   ...overrides,
 });
 
@@ -108,69 +110,43 @@ describe('isHubStatusTransitionValid', () => {
 });
 
 describe('isPlatformStateTransitionValid', () => {
-  const validTransitions = [
-    [
-      DeploymentRequestPlatformState.Unprovisioned,
-      DeploymentRequestPlatformState.Provisioning,
-    ],
-    [
-      DeploymentRequestPlatformState.Provisioning,
-      DeploymentRequestPlatformState.Active,
-    ],
-    [
-      DeploymentRequestPlatformState.Provisioning,
-      DeploymentRequestPlatformState.Removing,
-    ],
-    [
-      DeploymentRequestPlatformState.Provisioning,
-      DeploymentRequestPlatformState.Removed,
-    ],
-    [
-      DeploymentRequestPlatformState.Active,
-      DeploymentRequestPlatformState.Removing,
-    ],
-    [
-      DeploymentRequestPlatformState.Active,
-      DeploymentRequestPlatformState.Removed,
-    ],
-    [
-      DeploymentRequestPlatformState.Removing,
-      DeploymentRequestPlatformState.Removed,
-    ],
-    [
-      DeploymentRequestPlatformState.Removed,
-      DeploymentRequestPlatformState.Provisioning,
-    ],
-  ] as const;
-
-  it.each(validTransitions)(
-    'should allow valid platform state transition: %s to %s',
-    (from, to) => {
-      expect(DeploymentHelper.isPlatformStateTransitionValid(from, to)).toBe(
-        true
-      );
+  it.each`
+    from                                            | to                                             | targetState
+    ${DeploymentRequestPlatformState.Unprovisioned} | ${DeploymentRequestPlatformState.Provisioning} | ${DeploymentRequestPlatformState.Active}
+    ${DeploymentRequestPlatformState.Provisioning}  | ${DeploymentRequestPlatformState.Active}       | ${DeploymentRequestPlatformState.Active}
+    ${DeploymentRequestPlatformState.Provisioning}  | ${DeploymentRequestPlatformState.Removing}     | ${DeploymentRequestPlatformState.Removed}
+    ${DeploymentRequestPlatformState.Provisioning}  | ${DeploymentRequestPlatformState.Removed}      | ${DeploymentRequestPlatformState.Removed}
+    ${DeploymentRequestPlatformState.Active}        | ${DeploymentRequestPlatformState.Removing}     | ${DeploymentRequestPlatformState.Removed}
+    ${DeploymentRequestPlatformState.Active}        | ${DeploymentRequestPlatformState.Removed}      | ${DeploymentRequestPlatformState.Removed}
+    ${DeploymentRequestPlatformState.Removing}      | ${DeploymentRequestPlatformState.Removed}      | ${DeploymentRequestPlatformState.Removed}
+    ${DeploymentRequestPlatformState.Removing}      | ${DeploymentRequestPlatformState.Provisioning} | ${DeploymentRequestPlatformState.Active}
+    ${DeploymentRequestPlatformState.Removed}       | ${DeploymentRequestPlatformState.Provisioning} | ${DeploymentRequestPlatformState.Active}
+    ${DeploymentRequestPlatformState.Unprovisioned} | ${DeploymentRequestPlatformState.Active}       | ${DeploymentRequestPlatformState.Active}
+  `(
+    'should allow valid platform state transition: $from to $to with target state $targetState',
+    ({ from, to, targetState }) => {
+      expect(
+        DeploymentHelper.isPlatformStateTransitionValid(from, to, targetState)
+      ).toBe(true);
     }
   );
 
-  const invalidTransitions = [
-    [null, DeploymentRequestPlatformState.Active],
-    [
-      DeploymentRequestPlatformState.Provisioning,
-      DeploymentRequestPlatformState.Unprovisioned,
-    ],
-    [DeploymentRequestPlatformState.Active, null],
-    [
-      DeploymentRequestPlatformState.Removed,
-      DeploymentRequestPlatformState.Active,
-    ],
-  ] as const;
-
-  it.each(invalidTransitions)(
-    'should reject invalid platform state transition: %s to %s',
-    (from, to) => {
-      expect(DeploymentHelper.isPlatformStateTransitionValid(from, to)).toBe(
-        false
-      );
+  it.each`
+    from                                           | to                                              | targetState                               | description
+    ${null}                                        | ${DeploymentRequestPlatformState.Active}        | ${DeploymentRequestPlatformState.Active}  | ${'unknown current state'}
+    ${DeploymentRequestPlatformState.Provisioning} | ${DeploymentRequestPlatformState.Unprovisioned} | ${DeploymentRequestPlatformState.Active}  | ${'cannot go back to unprovisioned'}
+    ${DeploymentRequestPlatformState.Active}       | ${null}                                         | ${DeploymentRequestPlatformState.Active}  | ${'unknown next state'}
+    ${DeploymentRequestPlatformState.Removed}      | ${DeploymentRequestPlatformState.Active}        | ${DeploymentRequestPlatformState.Active}  | ${'removed platform cannot become active directly'}
+    ${DeploymentRequestPlatformState.Removing}     | ${DeploymentRequestPlatformState.Provisioning}  | ${DeploymentRequestPlatformState.Removed} | ${'redeploy is not expected while removal is targeted'}
+    ${DeploymentRequestPlatformState.Removed}      | ${DeploymentRequestPlatformState.Provisioning}  | ${DeploymentRequestPlatformState.Removed} | ${'redeploy is not expected while removal is targeted'}
+    ${DeploymentRequestPlatformState.Removing}     | ${DeploymentRequestPlatformState.Provisioning}  | ${null}                                   | ${'no target state to justify a redeploy'}
+    ${DeploymentRequestPlatformState.Removed}      | ${DeploymentRequestPlatformState.Provisioning}  | ${null}                                   | ${'no target state to justify a redeploy'}
+  `(
+    'should reject invalid platform state transition: $from to $to with target state $targetState ($description)',
+    ({ from, to, targetState }) => {
+      expect(
+        DeploymentHelper.isPlatformStateTransitionValid(from, to, targetState)
+      ).toBe(false);
     }
   );
 

@@ -1723,6 +1723,68 @@ describe('deployment app', () => {
       }
     });
 
+    describe('redeploy after removal', () => {
+      it.each`
+        actualState                                | description
+        ${DeploymentRequestPlatformState.Removing} | ${'removal is still in progress'}
+        ${DeploymentRequestPlatformState.Removed}  | ${'removal is complete'}
+      `(
+        'should allow going back to provisioning from $actualState when target state is active ($description)',
+        async ({ actualState }) => {
+          const removedDeployment =
+            (await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+              {
+                hub_status: DeploymentRequestHubStatus.Provisioning,
+                target_state: DeploymentRequestPlatformState.Active,
+                actual_state: actualState,
+              }
+            )) as DeploymentRequest;
+
+          await DeploymentApp.updateDeploymentRequest({
+            id: removedDeployment.id as DeploymentRequestId,
+            actual_state: DeploymentRequestPlatformState.Provisioning,
+          });
+
+          const dbDeploymentRequest =
+            await DeploymentRequestDomain.loadDeploymentRequestBy({
+              id: removedDeployment.id as DeploymentRequestId,
+            });
+
+          expect(dbDeploymentRequest).toMatchObject({
+            actual_state: DeploymentRequestPlatformState.Provisioning,
+            hub_status: DeploymentRequestHubStatus.Provisioning,
+          });
+        }
+      );
+
+      it.each`
+        actualState                                | description
+        ${DeploymentRequestPlatformState.Removing} | ${'removal is still in progress'}
+        ${DeploymentRequestPlatformState.Removed}  | ${'removal is complete'}
+      `(
+        'should reject going back to provisioning from $actualState when target state is removed ($description)',
+        async ({ actualState }) => {
+          const removedDeployment =
+            (await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+              {
+                hub_status: DeploymentRequestHubStatus.Cancelled,
+                target_state: DeploymentRequestPlatformState.Removed,
+                actual_state: actualState,
+              }
+            )) as DeploymentRequest;
+
+          const call = DeploymentApp.updateDeploymentRequest({
+            id: removedDeployment.id as DeploymentRequestId,
+            actual_state: DeploymentRequestPlatformState.Provisioning,
+          });
+
+          await expect(call).rejects.toThrow(
+            BadRequestErrorCode.DeploymentRequestStatusUpdateNotAllowed
+          );
+        }
+      );
+    });
+
     it('should throw if deployment request does not exist', async () => {
       const call = DeploymentApp.updateDeploymentRequest({
         id: uuidv4() as DeploymentRequestId,

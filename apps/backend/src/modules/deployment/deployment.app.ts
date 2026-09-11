@@ -1244,11 +1244,12 @@ const checkStatusAndDataValidity = async (
     input.actual_state &&
     !DeploymentHelper.isPlatformStateTransitionValid(
       deploymentRequest.actual_state,
-      input.actual_state
+      input.actual_state,
+      deploymentRequest.target_state
     )
   ) {
     logApp.error(
-      `Invalid deployment request status update from ${deploymentRequest.actual_state} to ${input.actual_state}`
+      `Invalid deployment request status update from ${deploymentRequest.actual_state} to ${input.actual_state} with target state ${deploymentRequest.target_state}`
     );
     throw new Error(
       BadRequestErrorCode.DeploymentRequestStatusUpdateNotAllowed
