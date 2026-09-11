@@ -33,7 +33,7 @@ test.describe('Organization switcher', async () => {
       platform_identifier: 'opencti',
       hub_status: 'active',
       target_state: 'active',
-      actual_state: 'provisioned',
+      actual_state: 'active',
       ordering: 1,
       counts_in_orga_quota: true,
       region: 'us-west',
