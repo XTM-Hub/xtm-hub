@@ -83,7 +83,7 @@
       "StatusActive": "Connecté",
       "StatusNotConnected": "Non connecté",
       "AccessProduct": "Accéder à {productName}",
-      "StatusUnavailable": "Statut indisponible",
+      "StatusUnavailable": "Indisponible",
       "ProductName": "Nom du produit",
       "Connection": "Connexion {productName}",
       "EditName": "Modifier le nom",
@@ -184,6 +184,14 @@
   },
   "DisableUserDialog": {
     "TextDisableThisUser": "Êtes-vous sûr de vouloir désactiver cet utilisateur {email} ? ?"
+  },
+  "EpicForm": {
+    "Error": {
+      "Title": "Le titre est obligatoire",
+      "ShortDescription": "La description courte est obligatoire",
+      "ShortDescriptionMax": "La description courte ne doit pas dépasser 215 caractères",
+      "Description": "La description est obligatoire"
+    }
   },
   "Epic": {
     "XTMRoadmap": "Roadmap Platform XTM",
@@ -1944,6 +1952,7 @@
         "Eyebrow": "Essai gratuit XTM Platform",
         "Description": "Gérez facilement votre équipe et collaborez tout au long de votre essai XTM Platform. Invitez des membres, attribuez des rôles et des permissions, et assurez à chacun le bon niveau d'accès à la plateforme.",
         "BackButton": "Retour à la plateforme d'essai XTM",
+        "BackToDashboardButton": "Retour au tableau de bord",
         "GroupAction": "Action groupée",
         "GroupActionDisabledTooltip": "Vous devez sélectionner des utilisateurs dans la liste pour appliquer une action groupée",
         "BulkDeleteTooltip": "Vous pouvez supprimer les utilisateurs sélectionnés",
@@ -2323,6 +2332,7 @@
       "Error": {
         "Title": "Le titre est obligatoire",
         "ShortDescription": "La description courte est obligatoire",
+        "ShortDescriptionMax": "La description courte ne doit pas dépasser 215 caractères",
         "Description": "La description est obligatoire",
         "Position": "La position doit être un nombre positif"
       },

@@ -55,6 +55,46 @@ describe('ManageTrialHeader', () => {
     toastMock.mockReset();
   });
 
+  it('links the back button to the XTM Platform Trial page by default', () => {
+    setupQueryMocks();
+
+    testRender(
+      <ManageTrialHeader
+        serviceInstanceId="bundle-1"
+        products={Object.values(PlatformIdentifier)}
+        selectedUsers={[]}
+        onUsersRemoved={vi.fn()}
+      />
+    );
+
+    expect(
+      screen.getByRole('link', {
+        name: 'Service.Bundle.ManageTrial.BackButton',
+      })
+    ).toHaveAttribute('href', '/app/service/xtm-platform-trial');
+  });
+
+  it('uses the provided back link when overridden', () => {
+    setupQueryMocks();
+
+    testRender(
+      <ManageTrialHeader
+        serviceInstanceId="bundle-1"
+        products={Object.values(PlatformIdentifier)}
+        selectedUsers={[]}
+        onUsersRemoved={vi.fn()}
+        backHref="/app/admin/manage-trials"
+        backLabelKey="Service.Bundle.ManageTrial.BackToDashboardButton"
+      />
+    );
+
+    expect(
+      screen.getByRole('link', {
+        name: 'Service.Bundle.ManageTrial.BackToDashboardButton',
+      })
+    ).toHaveAttribute('href', '/app/admin/manage-trials');
+  });
+
   it('opens the add trial user dialog when the button is clicked', async () => {
     setupQueryMocks();
 

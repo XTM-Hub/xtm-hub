@@ -493,8 +493,7 @@ export const DocumentDomain = {
             { column: 'Document.created_at', order: 'desc' },
           ]);
         }
-      })
-      .groupBy(['Document.id']);
+      });
   },
 
   loadSeoDocumentsByServiceSlug: async (

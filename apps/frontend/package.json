@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@filigran/icon": "0.24.3",
-    "@filigran/ui": "1.6.12",
+    "@filigran/ui": "1.6.13",
     "@hookform/resolvers": "5.9.1",
     "@svgr/webpack": "8.1.0",
     "@tailwindcss/postcss": "4.3.3",
@@ -40,7 +40,7 @@
     "next": "16.3.4",
     "next-intl": "4.13.7",
     "next-themes": "0.4.6",
-    "postcss": "8.5.26",
+    "postcss": "8.5.28",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-hook-form": "7.85.0",

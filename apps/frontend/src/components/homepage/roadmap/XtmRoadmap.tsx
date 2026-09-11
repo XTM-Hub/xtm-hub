@@ -77,7 +77,11 @@ const XtmRoadmap = async ({
             asChild
             variant="secondary"
             className="border-elevation-border-strong">
-            <Link href={seeMoreHref ?? defaultSeeMoreHref}>{t('SeeMore')}</Link>
+            <Link
+              href={seeMoreHref ?? defaultSeeMoreHref}
+              prefetch={false}>
+              {t('SeeMore')}
+            </Link>
           </Button>
         </div>
       </div>

@@ -83,7 +83,7 @@
       "StatusActive": "接続済み",
       "StatusNotConnected": "未接続",
       "AccessProduct": "{productName}にアクセス",
-      "StatusUnavailable": "ステータスを取得できません",
+      "StatusUnavailable": "利用不可",
       "ProductName": "製品名",
       "Connection": "{productName}接続",
       "EditName": "名前を編集",
@@ -184,6 +184,14 @@
   },
   "DisableUserDialog": {
     "TextDisableThisUser": "本当にこのユーザー {email} を無効にしますか？"
+  },
+  "EpicForm": {
+    "Error": {
+      "Title": "タイトルは必須です",
+      "ShortDescription": "概要は必須です",
+      "ShortDescriptionMax": "概要は215文字以内で入力してください",
+      "Description": "説明は必須です"
+    }
   },
   "Epic": {
     "XTMRoadmap": "XTMスイートロードマップ",
@@ -1944,6 +1952,7 @@
         "Eyebrow": "XTM Platform 無料トライアル",
         "Description": "XTM Platform のトライアル期間中、チームを簡単に管理し、共同作業を行いましょう。メンバーを招待し、役割と権限を割り当てて、全員がプラットフォームに適切なレベルでアクセスできるようにします。",
         "BackButton": "XTM トライアルプラットフォームに戻る",
+        "BackToDashboardButton": "ダッシュボードに戻る",
         "GroupAction": "グループアクション",
         "GroupActionDisabledTooltip": "グループアクションを適用するには、リストからユーザーを選択する必要があります",
         "BulkDeleteTooltip": "選択したユーザーを削除できます",
@@ -2323,6 +2332,7 @@
       "Error": {
         "Title": "タイトルは必須です",
         "ShortDescription": "概要は必須です",
+        "ShortDescriptionMax": "概要は215文字以内で入力してください",
         "Description": "説明は必須です",
         "Position": "表示順は0以上の数値で入力してください"
       },

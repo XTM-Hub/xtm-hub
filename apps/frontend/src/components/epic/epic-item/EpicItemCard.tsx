@@ -1,9 +1,9 @@
 import { EpicAdminMenu } from '@/components/epic/epic-item/EpicAdminMenu';
 import { EpicItemFooter } from '@/components/epic/epic-item/EpicItemFooter';
+import { DetailCard } from '@/components/ui/DetailCard';
+import { useDetailParam } from '@/hooks/use-detail-param';
 import { Separator } from '@filigran/ui/clients';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { MouseEvent, useCallback } from 'react';
 
 interface EpicItemCardProps {
   epic: epic_fragment$data;
@@ -18,47 +18,17 @@ export const EpicItemCard = ({
   userCanDelete,
   userCanUpdate,
 }: EpicItemCardProps) => {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  const handleOpenDetail = useCallback(
-    (event: MouseEvent<HTMLDivElement>) => {
-      const { currentTarget, target } = event;
-      if (!(target instanceof Node) || !currentTarget.contains(target)) {
-        return;
-      }
-
-      if (
-        target instanceof HTMLElement &&
-        target.closest('[data-no-open-detail]')
-      ) {
-        return;
-      }
-
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('epicId', epic.id);
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-    },
-    [router, pathname, searchParams, epic.id]
-  );
+  const { open: openDetail } = useDetailParam('epicId', epic.id);
 
   return (
-    <>
-      <div
-        onClick={handleOpenDetail}
-        className="flex flex-col flex-1 bg-elevation-background-layer-1 text-ellipsis overflow-hidden p-m group-hover:bg-hover h-full w-full">
-        <h2 className="text-base font-semibold pr-xxl line-clamp-2">
-          {epic.title}
-        </h2>
-        <div className="mt-auto line-clamp-3">
-          <p className="h-full text-muted-foreground text-sm">
-            {epic.short_description}
-          </p>
-        </div>
-        <div className="mt-auto">
+    <DetailCard
+      onOpenDetail={openDetail}
+      title={epic.title}
+      description={epic.short_description}
+      footer={
+        <>
           <Separator />
-          <div className="mt-m flex flex-row ">
+          <div className="mt-m flex flex-row">
             <EpicItemFooter
               epic={epic}
               serviceInstanceId={serviceInstanceId}
@@ -69,8 +39,8 @@ export const EpicItemCard = ({
               userCanUpdate={userCanUpdate}
             />
           </div>
-        </div>
-      </div>
-    </>
+        </>
+      }
+    />
   );
 };

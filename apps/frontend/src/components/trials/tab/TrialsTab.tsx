@@ -5,6 +5,7 @@ import {
   formatCancellationReason,
   sortProducts,
 } from '@/components/trials/tab/trials-tab.utils';
+import { TrialsExternalLink } from '@/components/trials/tab/TrialsExternalLink';
 import { TrialsProducts } from '@/components/trials/tab/TrialsProducts';
 import { TrialsProductValues } from '@/components/trials/tab/TrialsProductValues';
 import { useTrialsListLocalstorage } from '@/components/trials/trial-list-localstorage';
@@ -29,7 +30,7 @@ import { portalGraphqlClient } from '@/lib/graphql-client';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { daysUntil, useDateFormatter } from '@/utils/date';
-import { APP_PATH } from '@/utils/path/constant';
+import { xtmPlatformTrialManageUsersFromDashboardPath } from '@/utils/path/constant';
 import {
   ArrowShapeUpIcon,
   ArrowShapeUpStackIcon,
@@ -72,7 +73,7 @@ type TrialsCellProps = { row: { original: TrialsRowFragment } };
 type Translate = (key: string) => string;
 type TrialsProductValue = Pick<
   TrialsProductFragment,
-  'platform_id' | 'platform_url'
+  'platform_id' | 'platform_url' | 'url'
 >;
 
 const dateColumn = (
@@ -96,21 +97,34 @@ const productColumn = (
   id: 'platform_id' | 'platform_url' | 'registration_status',
   header: string,
   scope: TrialsScope,
-  valueOf: (product: TrialsProductValue) => string | null | undefined
+  valueOf: (product: TrialsProductValue) => string | null | undefined,
+  asLink = false
 ): TrialsColumn => ({
   accessorKey: id,
   id,
   enableSorting: false,
   header,
-  cell: ({ row }: TrialsCellProps) =>
-    scope.kind === 'bundle' ? (
-      <TrialsProductValues
-        products={row.original.children ?? []}
-        valueOf={valueOf}
-      />
-    ) : (
-      <span className="truncate">{valueOf(row.original) || '-'}</span>
-    ),
+  cell: ({ row }: TrialsCellProps) => {
+    if (scope.kind === 'bundle') {
+      return (
+        <TrialsProductValues
+          products={row.original.children ?? []}
+          valueOf={valueOf}
+          asLink={asLink}
+        />
+      );
+    }
+    const value = valueOf(row.original);
+    if (asLink) {
+      return (
+        <TrialsExternalLink
+          url={value}
+          className="truncate"
+        />
+      );
+    }
+    return <span className="truncate">{value || '-'}</span>;
+  },
 });
 
 const productColumns = (scope: TrialsScope, t: Translate): TrialsColumn[] => [
@@ -124,7 +138,8 @@ const productColumns = (scope: TrialsScope, t: Translate): TrialsColumn[] => [
     'platform_url',
     t('TrialsDashboard.Columns.PlatformUrl'),
     scope,
-    (product) => product.platform_url
+    (product) => product.platform_url ?? product.url,
+    true
   ),
   productColumn(
     'registration_status',
@@ -304,7 +319,9 @@ const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
                   className="border m-1"
                   aria-label={t('Service.Trials.ManageUsers.Title')}>
                   <Link
-                    href={`/${APP_PATH}/service/xtm-platform-trial/${request.service_instance_id}/manage-users`}>
+                    href={xtmPlatformTrialManageUsersFromDashboardPath(
+                      request.service_instance_id
+                    )}>
                     <GroupIcon className="h-4 w-4" />
                   </Link>
                 </Button>

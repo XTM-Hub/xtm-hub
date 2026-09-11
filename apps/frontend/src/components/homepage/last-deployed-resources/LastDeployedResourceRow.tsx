@@ -50,6 +50,7 @@ const LastDeployedResourceRow = ({
   return (
     <Link
       href={url}
+      prefetch={false}
       className="group contents">
       <div className="min-w-0 max-w-full justify-self-start inline-flex items-center gap-m overflow-hidden rounded p-s bg-elevation-background-layer-1 group-focus-visible:outline-none group-focus-visible:ring-2 group-focus-visible:ring-ring">
         <ResourceTypeIcon
