@@ -4,6 +4,7 @@ fragment TrialsProduct on DeploymentRequest {
   hub_status
   platform_id
   platform_url
+  url
 }
 
 fragment TrialsRow on DeploymentRequest {
@@ -24,6 +25,7 @@ fragment TrialsRow on DeploymentRequest {
   platform_identifier
   platform_id
   platform_url
+  url
   children {
     ...TrialsProduct
   }
