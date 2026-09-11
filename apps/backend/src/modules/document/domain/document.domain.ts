@@ -49,6 +49,7 @@ import {
   ManifestFragmentHelper,
   TAG_DECOUPLING,
   TAG_LATEST,
+  TAG_LATEST_LTS,
 } from '../../shareable-resource/manifest-fragment/manifest-fragment.helper';
 import { isUserRestrictedToActiveDocument } from '../document.security';
 import {
@@ -720,5 +721,38 @@ export const DocumentDomain = {
       );
 
     return DocumentMetadataDomain.hydrateMetadata(connectors, metadataKeys);
+  },
+
+  /**
+   * Returns the distinct slugs of the connectors currently known as "latest"
+   * for the given product version's track, i.e. active, non-decommissioned
+   * decoupled connector documents tagged TAG_LATEST (or TAG_LATEST_LTS for an
+   * LTS version) + TAG_DECOUPLING.
+   */
+  loadDistinctConnectorSlugs: async (version: string): Promise<string[]> => {
+    const tag = isLtsVersion(version) ? TAG_LATEST_LTS : TAG_LATEST;
+
+    const rows: Pick<DocumentModel, 'slug'>[] = await db<DocumentModel>(
+      'Document'
+    )
+      .join(
+        'Document_Metadata as dm_type',
+        'Document.id',
+        'dm_type.document_id'
+      )
+      .where('dm_type.key', DocumentMetadataKeyCode.IntegrationType)
+      .andWhere('dm_type.value', IntegrationType.Connector)
+      .where('Document.active', true)
+      .where('Document.is_decommissioned', false)
+      .whereRaw(`"Document"."tags" @> ARRAY[?, ?]::text[]`, [
+        tag,
+        TAG_DECOUPLING,
+      ])
+      .whereNotNull('Document.slug')
+      .distinct('Document.slug');
+
+    return rows
+      .map((row) => row.slug)
+      .filter((slug): slug is string => slug !== null);
   },
 };

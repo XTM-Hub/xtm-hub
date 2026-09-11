@@ -2,13 +2,13 @@ import cors from 'cors';
 import { Express, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import { Readable } from 'stream';
-import { PlatformIdentifier } from '../../__generated__/resolvers-types';
-import { ManifestDomain } from '../../modules/shareable-resource/manifest/manifest.domain';
-import { ManifestHelper } from '../../modules/shareable-resource/manifest/manifest.helper';
-import { MinIOClient } from '../../thirdparty/minio/client';
-import { StorageUnavailableError } from '../../thirdparty/minio/storage-error';
-import { logApp } from '../../utils/app-logger.util';
-import { getErrorMessage } from '../../utils/error/error-guard.util';
+import { PlatformIdentifier } from '../../../__generated__/resolvers-types';
+import { ManifestDomain } from '../../../modules/shareable-resource/manifest/manifest.domain';
+import { ManifestHelper } from '../../../modules/shareable-resource/manifest/manifest.helper';
+import { MinIOClient } from '../../../thirdparty/minio/client';
+import { StorageUnavailableError } from '../../../thirdparty/minio/storage-error';
+import { logApp } from '../../../utils/app-logger.util';
+import { getErrorMessage } from '../../../utils/error/error-guard.util';
 import {
   MANIFEST_ERRORS,
   sendManifestError,

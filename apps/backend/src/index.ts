@@ -38,10 +38,11 @@ import {
   sseMessageCounter,
   sseSubscriptionCounter,
 } from './server/apollo-plugins/metrics';
-import { healthEndpoint } from './server/endpoints/health';
-import { manifestEndpoint } from './server/endpoints/manifest-endpoint';
-import { productVersionEndpoint } from './server/endpoints/product-version-endpoint';
-import { userPictureEndpoint } from './server/endpoints/user-picture-endpoint';
+import { healthEndpoint } from './server/endpoints/health/health-endpoint';
+import { manifestEndpoint } from './server/endpoints/manifest/manifest-endpoint';
+import { productVersionEndpoint } from './server/endpoints/product-version/product-version-endpoint';
+import { userPictureEndpoint } from './server/endpoints/user-picture/user-picture-endpoint';
+import { versionsMatrixEndpoint } from './server/endpoints/versions-matrix/versions-matrix-endpoint';
 import createSchema from './server/graphql-schema';
 import platformInit, { minioInit } from './server/initialize';
 import { seedDevelopmentConnectors } from './server/initialize.helper';
@@ -425,6 +426,7 @@ healthEndpoint(app);
 userPictureEndpoint(app);
 manifestEndpoint(app);
 productVersionEndpoint(app);
+versionsMatrixEndpoint(app);
 // Modified server startup
 if (!process.env.VITEST_MODE || process.env.START_DEV_SERVER) {
   // Ensure migrate the schema

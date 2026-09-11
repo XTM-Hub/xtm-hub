@@ -7,15 +7,15 @@ const { loadUserPictureMinioMock, downloadFileMock } = vi.hoisted(() => ({
 }));
 
 vi.mock(
-  '../../modules/organization-management/user/user-domain/user.domain',
+  '../../../modules/organization-management/user/user-domain/user.domain',
   () => ({
     UserDomain: { loadUserPictureMinio: loadUserPictureMinioMock },
   })
 );
-vi.mock('../../thirdparty/minio/client', () => ({
+vi.mock('../../../thirdparty/minio/client', () => ({
   MinIOClient: { downloadFile: downloadFileMock },
 }));
-vi.mock('../../utils/app-logger.util', () => ({
+vi.mock('../../../utils/app-logger.util', () => ({
   logApp: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 

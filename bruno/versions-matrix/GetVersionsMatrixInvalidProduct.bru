@@ -1,0 +1,22 @@
+meta {
+  name: Get versions matrix - invalid product
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/not-a-product/versions-matrix
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 400
+  res.body.code: eq 400
+}
+
+docs {
+  :product isn't a valid PlatformIdentifier at all → 400 "Invalid product",
+  distinct from the "unsupported product" case (valid PlatformIdentifier,
+  just not OpenCTI).
+}
