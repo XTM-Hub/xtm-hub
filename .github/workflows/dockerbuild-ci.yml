@@ -482,6 +482,9 @@ jobs:
       github.event_name == 'pull_request' &&
       !contains(github.event.pull_request.labels.*.name, 'skip-feature-env')
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
       - name: Install AWX cli
         run: pip install awxkit
 
@@ -617,6 +620,9 @@ jobs:
       github.event_name != 'merge_group' &&
       (needs.build-images-prod.result == 'success')
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
       - name: Install AWX cli
         run: pip install awxkit
 
