@@ -1154,10 +1154,6 @@
           "Label": "統合タイプ",
           "Placeholder": "統合タイプ..."
         },
-        "ProductVersion": {
-          "Label": "接続済み製品",
-          "Placeholder": "接続済み製品..."
-        },
         "ManagerSupported": {
           "Label": "配備タイプ",
           "Placeholder": "デプロイメントタイプ...",

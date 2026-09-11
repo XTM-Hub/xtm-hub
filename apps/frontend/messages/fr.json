@@ -1154,10 +1154,6 @@
           "Label": "Type d'intégration",
           "Placeholder": "Type d'intégration..."
         },
-        "ProductVersion": {
-          "Label": "Produits connectés",
-          "Placeholder": "Produits connectés..."
-        },
         "ManagerSupported": {
           "Label": "Type de déploiement",
           "Placeholder": "Type de déploiement...",
