@@ -31,6 +31,7 @@ type HubStatusTransition = {
 type PlatformStateTransition = {
   from: DeploymentRequestPlatformState;
   to: DeploymentRequestPlatformState;
+  requiredTargetState?: DeploymentRequestPlatformState;
 };
 
 const VALID_HUB_STATUS_TRANSITIONS: HubStatusTransition[] = [
@@ -121,9 +122,17 @@ const VALID_PLATFORM_STATE_TRANSITIONS: PlatformStateTransition[] = [
     from: DeploymentRequestPlatformState.Removing,
     to: DeploymentRequestPlatformState.Removed,
   },
+  // The platform can remove an instance before redeploying it. Removal may complete
+  // between two status polls, so the `removed` state is not always observed.
+  {
+    from: DeploymentRequestPlatformState.Removing,
+    to: DeploymentRequestPlatformState.Provisioning,
+    requiredTargetState: DeploymentRequestPlatformState.Active,
+  },
   {
     from: DeploymentRequestPlatformState.Removed,
     to: DeploymentRequestPlatformState.Provisioning,
+    requiredTargetState: DeploymentRequestPlatformState.Active,
   },
 ];
 
@@ -140,12 +149,16 @@ export const DeploymentHelper = {
 
   isPlatformStateTransitionValid: (
     from: DeploymentRequestPlatformState | null,
-    to: DeploymentRequestPlatformState | null
+    to: DeploymentRequestPlatformState | null,
+    targetState?: DeploymentRequestPlatformState | null
   ): boolean => {
     return (
       from === to ||
       VALID_PLATFORM_STATE_TRANSITIONS.some(
-        (t) => t.from === from && t.to === to
+        (t) =>
+          t.from === from &&
+          t.to === to &&
+          (!t.requiredTargetState || t.requiredTargetState === targetState)
       )
     );
   },
