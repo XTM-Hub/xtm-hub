@@ -1,11 +1,11 @@
 'use client';
 
 import { FeatureVoteButton } from '@/components/feature-voting/FeatureVoteButton';
+import { DetailCard } from '@/components/ui/DetailCard';
+import { useDetailParam } from '@/hooks/use-detail-param';
 import { Badge } from '@filigran/ui/servers';
 import { VotableFeaturePublicFragment } from '@graphql/generated';
 import Image from 'next/image';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { MouseEvent, useCallback } from 'react';
 
 const BADGE_CLASS =
   'border-0 content-body-compact-medium bg-feedback-info-secondary-transparency';
@@ -21,66 +21,27 @@ export const FeatureVoteCard = ({
   serviceInstanceId,
   isAuthenticated,
 }: FeatureVoteCardProps) => {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  const openDetail = useCallback(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('featureId', feature.id);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  }, [router, pathname, searchParams, feature.id]);
-
-  // Clicking anywhere on the card is a mouse convenience only. Keyboard users
-  // reach the detail through the title, so the card stays a plain container
-  // rather than a widget wrapping other widgets.
-  const handleCardClick = useCallback(
-    (event: MouseEvent<HTMLDivElement>) => {
-      const { currentTarget, target } = event;
-      if (!(target instanceof Node) || !currentTarget.contains(target)) {
-        return;
-      }
-
-      if (
-        target instanceof HTMLElement &&
-        target.closest('[data-no-open-detail]')
-      ) {
-        return;
-      }
-
-      openDetail();
-    },
-    [openDetail]
-  );
+  const { open: openDetail } = useDetailParam('featureId', feature.id);
 
   return (
-    <div
-      onClick={handleCardClick}
-      className="flex h-full cursor-pointer flex-col overflow-hidden rounded bg-elevation-background-layer-1 hover:bg-hover">
-      {feature.illustration_document_id && (
-        <div className="relative h-32 w-full shrink-0">
-          <Image
-            src={`/document/images/${serviceInstanceId}/${feature.illustration_document_id}`}
-            alt={feature.title}
-            fill
-            className="object-cover"
-          />
-        </div>
-      )}
-      <div className="flex flex-1 flex-col gap-s p-m">
-        <h3 className="text-base font-semibold leading-tight line-clamp-2">
-          <button
-            type="button"
-            onClick={openDetail}
-            data-no-open-detail
-            className="focus-visible:ring-primary text-left underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2">
-            {feature.title}
-          </button>
-        </h3>
-        <p className="text-muted-foreground text-sm line-clamp-3">
-          {feature.short_description}
-        </p>
-        {feature.use_cases.length > 0 && (
+    <DetailCard
+      onOpenDetail={openDetail}
+      title={feature.title}
+      description={feature.short_description}
+      media={
+        feature.illustration_document_id && (
+          <div className="relative h-32 w-full shrink-0">
+            <Image
+              src={`/document/images/${serviceInstanceId}/${feature.illustration_document_id}`}
+              alt={feature.title}
+              fill
+              className="object-cover"
+            />
+          </div>
+        )
+      }
+      extra={
+        feature.use_cases.length > 0 && (
           <div className="flex flex-wrap items-center gap-s">
             {feature.use_cases.map((useCase) => (
               <Badge
@@ -90,19 +51,19 @@ export const FeatureVoteCard = ({
               </Badge>
             ))}
           </div>
-        )}
-        {/* Voting must not open the detail dialog. */}
-        <div
-          className="mt-auto pt-s"
-          data-no-open-detail>
+        )
+      }
+      footer={
+        <div data-no-open-detail>
           <FeatureVoteButton
             featureId={feature.id}
+            serviceInstanceId={serviceInstanceId}
             hasMyVote={feature.has_my_vote}
             isAuthenticated={isAuthenticated}
             className="w-full"
           />
         </div>
-      </div>
-    </div>
+      }
+    />
   );
 };

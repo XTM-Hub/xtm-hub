@@ -1,6 +1,6 @@
 export async function seed(knex) {
   // Metadata for the decoupled OpenCTI connector documents created in
-  // 08-development-connectors.js. Only the keys relevant to compatibility
+  // 09-development-connectors.js. Only the keys relevant to compatibility
   // resolution and basic connector display are seeded here (a subset of
   // INTEGRATION_CONNECTOR_V2_METADATA_KEYS).
   await knex('Document_Metadata')

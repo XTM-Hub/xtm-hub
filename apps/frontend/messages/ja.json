@@ -185,6 +185,14 @@
   "DisableUserDialog": {
     "TextDisableThisUser": "本当にこのユーザー {email} を無効にしますか？"
   },
+  "EpicForm": {
+    "Error": {
+      "Title": "タイトルは必須です",
+      "ShortDescription": "概要は必須です",
+      "ShortDescriptionMax": "概要は215文字以内で入力してください",
+      "Description": "説明は必須です"
+    }
+  },
   "Epic": {
     "XTMRoadmap": "XTMスイートロードマップ",
     "AllProducts": "すべての製品",
@@ -2327,6 +2335,7 @@
       "Error": {
         "Title": "タイトルは必須です",
         "ShortDescription": "概要は必須です",
+        "ShortDescriptionMax": "概要は215文字以内で入力してください",
         "Description": "説明は必須です",
         "Position": "表示順は0以上の数値で入力してください"
       },

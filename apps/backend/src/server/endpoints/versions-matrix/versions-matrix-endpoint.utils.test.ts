@@ -17,9 +17,9 @@ import {
 } from './versions-matrix-endpoint.utils';
 
 describe('buildVersionsMatrixETag', () => {
-  it('wraps a sha1 hash of the payload in a strong ETag', () => {
+  it('wraps a sha256 hash of the payload in a strong ETag', () => {
     expect(buildVersionsMatrixETag('payload')).toBe(
-      '"f07e5a815613c5abeddc4b682247a4c42d8a95df"'
+      '"239f59ed55e737c77147cf55ad0c1b030b6d7ee748a7426952f9b852d5a935e5"'
     );
   });
 

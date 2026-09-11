@@ -17,6 +17,7 @@ const makeProduct = (
   hub_status: hubStatus,
   platform_id: null,
   platform_url: null,
+  url: null,
 });
 
 const badgeOf = (product: string) =>

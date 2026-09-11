@@ -5,7 +5,8 @@ description: >-
   `.github/instructions/*.md`, `.github/agents/*.agent.md`, `.github/skills/*/SKILL.md` —
   for drift against the real codebase and against each other. Use when asked to review AI instructions, docs, agents,
   or skills; when reviewing a PR/diff that touches any of those paths; or when directed here as
-  `skill:hub-review` from another instruction (e.g. the reviewer agent's "Documentation drift" step). Never invoke
+  `skill:hub-review` from another instruction (e.g. the `code-review` skill's "What to check against" documentation
+  drift step). Never invoke
   this uninvited on edits you just made without being asked.
 ---
 
