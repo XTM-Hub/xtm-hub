@@ -55,29 +55,29 @@ export const loadBundleProducts = async (bundleId: string) =>
 
 export const TRIAL_DURATION_IN_DAYS = 30;
 
-export const activateBundleDeploymentRequest = async (
-  organizationId: string
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+interface BundleFamilyUpdate {
+  hub_status: string;
+  target_state: string;
+  actual_state: string;
+  start_date: Date;
+  end_date: Date;
+}
+
+const updateBundleFamily = async (
+  organizationId: string,
+  update: BundleFamilyUpdate
 ) => {
   const bundle = await loadBundleDeploymentRequest(organizationId);
-  const startDate = new Date();
-  const endDate = new Date(
-    startDate.getTime() + TRIAL_DURATION_IN_DAYS * 24 * 60 * 60 * 1000
-  );
-
-  const activation = {
-    hub_status: 'active',
-    target_state: 'active',
-    actual_state: 'active',
-    start_date: startDate,
-    end_date: endDate,
-  };
+  const { start_date: startDate, end_date: endDate } = update;
 
   const products = await loadBundleProducts(bundle.id);
   for (const product of products) {
     await db('DeploymentRequest')
       .where({ id: product.id })
       .update({
-        ...activation,
+        ...update,
         platform_id: `${product.platform_identifier}-platform-id`,
         url: `https://${product.platform_identifier}.example.test`,
       });
@@ -86,10 +86,40 @@ export const activateBundleDeploymentRequest = async (
       .update({ start_date: startDate, end_date: endDate });
   }
 
-  await db('DeploymentRequest').where({ id: bundle.id }).update(activation);
+  await db('DeploymentRequest').where({ id: bundle.id }).update(update);
   await db('Subscription')
     .where({ service_instance_id: bundle.service_instance_id })
     .update({ start_date: startDate, end_date: endDate });
 
   return bundle;
+};
+
+export const activateBundleDeploymentRequest = async (
+  organizationId: string
+) => {
+  const startDate = new Date();
+
+  return updateBundleFamily(organizationId, {
+    hub_status: 'active',
+    target_state: 'active',
+    actual_state: 'active',
+    start_date: startDate,
+    end_date: new Date(
+      startDate.getTime() + TRIAL_DURATION_IN_DAYS * DAY_IN_MS
+    ),
+  });
+};
+
+export const expireBundleDeploymentRequest = async (organizationId: string) => {
+  const endDate = new Date(Date.now() - DAY_IN_MS);
+
+  return updateBundleFamily(organizationId, {
+    hub_status: 'expired',
+    target_state: 'removed',
+    actual_state: 'removed',
+    start_date: new Date(
+      endDate.getTime() - TRIAL_DURATION_IN_DAYS * DAY_IN_MS
+    ),
+    end_date: endDate,
+  });
 };

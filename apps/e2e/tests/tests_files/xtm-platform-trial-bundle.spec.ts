@@ -2,6 +2,7 @@ import { expect, test } from '../fixtures/baseFixtures';
 import { ADMIN_USER, PLATFORM_ORGANIZATION_UUID } from '../db-utils/const';
 import {
   activateBundleDeploymentRequest,
+  expireBundleDeploymentRequest,
   loadBundleDeploymentRequest,
   loadBundleProducts,
 } from '../db-utils/deployment.helper';
@@ -22,7 +23,7 @@ test.describe('XTM Platform bundle trial', () => {
     await page.waitForURL('/app');
   });
 
-  test('Should request, activate and cancel a bundle trial', async ({
+  test('Should request, activate, expire and cancel a bundle trial', async ({
     page,
   }) => {
     await test.step('Organization admin requests the bundle trial', async () => {
@@ -142,7 +143,47 @@ test.describe('XTM Platform bundle trial', () => {
       ).toBeVisible();
     });
 
+    await test.step('Once the trial is over, the user gets the expired panel', async () => {
+      await expireBundleDeploymentRequest(PLATFORM_ORGANIZATION_UUID);
+
+      await trialPage.navigateTo();
+      await expect(
+        page.getByText(
+          'Thank you for trying out the XTM platform, we hope you enjoyed your experience.'
+        )
+      ).toBeVisible();
+      await expect(
+        page.getByText('Your trial period has now ended.')
+      ).toBeVisible();
+
+      await expect(page.getByText('Started on')).toBeVisible();
+      await expect(page.getByText('Finished on')).toBeVisible();
+      await expect(
+        page.getByText('Products included in your trial')
+      ).toBeVisible();
+      for (const product of BUNDLE_PRODUCTS) {
+        await expect(trialPage.getStatusProductCheckbox(product)).toBeChecked();
+      }
+
+      // An expired bundle can no longer be reached nor cancelled, the only
+      // action left is contacting sales
+      await expect(
+        page.getByRole('button', { name: 'Reach out to Sales' })
+      ).toBeVisible();
+      await expect(
+        page.getByRole('button', { name: 'Cancel trial' })
+      ).toBeHidden();
+      await expect(
+        page.getByRole('link', { name: 'Access XTM One' })
+      ).toBeHidden();
+
+      // Put the bundle back in its active state so it can be cancelled below
+      await activateBundleDeploymentRequest(PLATFORM_ORGANIZATION_UUID);
+    });
+
     await test.step('Cancelling the bundle cancels every product', async () => {
+      await trialPage.navigateTo();
+
       await trialPage.cancelTrial('Cancel trial');
 
       await expect(
