@@ -85,8 +85,8 @@ postgres:
     password: "CHANGEME--q5Y6NbtbeIu3qyjk0iPthl2hCUkAmB--CHANGEME"
 minio:
   image:
-    repository: quay.io/minio/minio
-    tag: RELEASE.2025-06-13T11-33-47Z
+    repository: pgsty/silo
+    tag: latest
     pullPolicy: IfNotPresent
   ingressWhitelistSourceRange: "149.88.28.168/32,10.0.0.0/8"
   resources:

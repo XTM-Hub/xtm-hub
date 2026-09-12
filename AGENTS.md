@@ -8,7 +8,7 @@ workspaces.
 
 | Workspace | Path | Stack | Dev port |
 | --- | --- | --- | --- |
-| `@xtm-hub/backend` | `apps/backend` | Express 5, Apollo Server, GraphQL, Knex, PostgreSQL, Elasticsearch, MinIO | 4002 |
+| `@xtm-hub/backend` | `apps/backend` | Express 5, Apollo Server, GraphQL, Knex, PostgreSQL, Elasticsearch, Silo (S3) | 4002 |
 | `@xtm-hub/frontend` | `apps/frontend` | Next.js 16 (App Router + Turbopack), React 19, `@tanstack/react-query` (mandatory for new data fetching) + Relay (existing pages, being phased out), TailwindCSS 4, `@filigran/ui` | 3002 |
 | `@xtm-hub/test_e2e` | `apps/e2e` | Playwright | — |
 
@@ -30,7 +30,7 @@ per workspace.
 ## Development
 
 ```bash
-docker compose -f xtm-hub-dev/docker-compose.yml up   # PostgreSQL, MinIO, Elasticsearch, Kibana, PgAdmin, Mailpit
+docker compose -f xtm-hub-dev/docker-compose.yml up   # PostgreSQL, Silo (S3), Elasticsearch, Kibana, PgAdmin, Mailpit
 yarn dev:api                                          # backend on :4002
 yarn dev:front                                        # frontend on :3002 (start the API first)
 ```
@@ -44,7 +44,7 @@ yarn workspace @xtm-hub/backend  test:ci   # check-ts + lint + tests
 yarn workspace @xtm-hub/frontend test:ci   # lint + tests
 ```
 
-Backend tests need PostgreSQL and MinIO running, target `test_database` via `VITEST_MODE=true`, and execute with
+Backend tests need PostgreSQL and Silo (S3) running, target `test_database` via `VITEST_MODE=true`, and execute with
 `fileParallelism: false`. E2E tests need the frontend and backend already running.
 
 Only run linters, builds and tests that already exist; do not add new tooling unless the task requires it.

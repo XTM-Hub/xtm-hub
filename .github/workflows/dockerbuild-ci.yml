@@ -262,7 +262,7 @@ jobs:
           echo "=== PostgreSQL Logs ==="
           docker compose -f ./xtm-hub-dev/docker-compose-ci.yml logs --tail=100 portal-postgres || echo "Could not collect portal-postgres logs"
           echo ""
-          echo "=== MinIO Logs ==="
+          echo "=== Silo (S3) Logs ==="
           docker compose -f ./xtm-hub-dev/docker-compose-ci.yml logs --tail=100 portal-minio || echo "Could not collect portal-minio logs"
           echo ""
           echo "=== E2E Tests Logs ==="

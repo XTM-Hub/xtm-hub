@@ -97,7 +97,7 @@ docker compose -f ./xtm-hub-dev/docker-compose.yml up
 
 This starts:
 - **PostgreSQL** on port `5434`
-- **MinIO** on port `9002` (console on `8902`)
+- **Silo** (S3 object storage, MinIO fork) on port `9002` (console on `8902`)
 - **PgAdmin** on port `8888`
 - **Elasticsearch** on port `9204`
 - **Kibana** on port `5603`
@@ -125,7 +125,7 @@ Once everything is running:
 
 - **Frontend**: http://localhost:3002
 - **API**: http://localhost:4002
-- **MinIO Console**: http://localhost:8902
+- **Silo Console**: http://localhost:8902
 - **PgAdmin**: http://localhost:8888 (portal@filigran.io / portal-password)
 - **Kibana**: http://localhost:5603
 - **Mailpit**: http://localhost:8025
@@ -241,7 +241,7 @@ yarn test:e2e
 1. **Port conflicts**: Ensure ports 3002, 4002, 5434, 5603, 8025, 8888, 9002, 8902, 9204, 1025 are available
 2. **Docker issues**: Verify the Docker daemon is running and `docker compose` is available
 3. **Yarn version mismatch**: Always run `corepack enable` first; the global/npm Yarn will not work
-4. **MinIO credentials**: Ensure `accessKeyId` and `secretAccessKey` in `local.json` match `docker-compose.yml`
+4. **Silo (S3) credentials**: Ensure `accessKeyId` and `secretAccessKey` in `local.json` match `docker-compose.yml`
 
 ### Reset development environment
 
