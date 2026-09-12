@@ -735,13 +735,6 @@ export const DocumentDomain = {
     const rows: Pick<DocumentModel, 'slug'>[] = await db<DocumentModel>(
       'Document'
     )
-      .join(
-        'Document_Metadata as dm_type',
-        'Document.id',
-        'dm_type.document_id'
-      )
-      .where('dm_type.key', DocumentMetadataKeyCode.IntegrationType)
-      .andWhere('dm_type.value', IntegrationType.Connector)
       .where('Document.active', true)
       .where('Document.is_decommissioned', false)
       .whereRaw(`"Document"."tags" @> ARRAY[?, ?]::text[]`, [
@@ -749,6 +742,13 @@ export const DocumentDomain = {
         TAG_DECOUPLING,
       ])
       .whereNotNull('Document.slug')
+      .whereExists(function () {
+        this.select(dbRaw('1'))
+          .from('Document_Metadata as dm_type')
+          .whereRaw('"dm_type"."document_id" = "Document"."id"')
+          .andWhere('dm_type.key', DocumentMetadataKeyCode.IntegrationType)
+          .andWhere('dm_type.value', IntegrationType.Connector);
+      })
       .distinct('Document.slug');
 
     return rows
