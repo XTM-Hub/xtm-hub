@@ -57,6 +57,14 @@ export const TestDeploymentHelper = {
     update: async (field: DeploymentRequestMutator) => {
       await db<DeploymentRequest>('DeploymentRequest').update(field);
     },
+    updateById: async (
+      id: DeploymentRequestId,
+      data: DeploymentRequestMutator
+    ): Promise<void> => {
+      await db<DeploymentRequest>('DeploymentRequest')
+        .where({ id })
+        .update(data);
+    },
     loadMany: async (
       field: DeploymentRequestMutator
     ): Promise<DeploymentRequest[]> => {

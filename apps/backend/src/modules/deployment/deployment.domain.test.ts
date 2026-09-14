@@ -1888,6 +1888,66 @@ describe('deploymentRequestDomain', () => {
     });
   });
 
+  describe('updateDeploymentRequestByIdIfTargetState', () => {
+    afterEach(async () => {
+      await TestHelper.deploymentRequest.deleteAllWithServiceInstanceAndSubscription();
+    });
+
+    it('should update the deployment request when the expected target_state still matches', async () => {
+      const deploymentRequest =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          {
+            target_state: DeploymentRequestPlatformState.Active,
+            hub_status: DeploymentRequestHubStatus.Provisioning,
+          }
+        );
+
+      const updated =
+        await DeploymentRequestDomain.updateDeploymentRequestByIdIfTargetState(
+          deploymentRequest.id,
+          DeploymentRequestPlatformState.Active,
+          { hub_status: DeploymentRequestHubStatus.Active }
+        );
+
+      expect(updated).toMatchObject({
+        id: deploymentRequest.id,
+        hub_status: DeploymentRequestHubStatus.Active,
+      });
+
+      await TestHelper.deploymentRequest.assertProperties(
+        deploymentRequest.id,
+        { hub_status: DeploymentRequestHubStatus.Active }
+      );
+    });
+
+    it('should not update the deployment request when target_state changed concurrently', async () => {
+      const deploymentRequest =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          {
+            target_state: DeploymentRequestPlatformState.Removed,
+            hub_status: DeploymentRequestHubStatus.Cancelled,
+          }
+        );
+
+      const updated =
+        await DeploymentRequestDomain.updateDeploymentRequestByIdIfTargetState(
+          deploymentRequest.id,
+          DeploymentRequestPlatformState.Active,
+          { hub_status: DeploymentRequestHubStatus.Active }
+        );
+
+      expect(updated).toBeUndefined();
+
+      await TestHelper.deploymentRequest.assertProperties(
+        deploymentRequest.id,
+        {
+          hub_status: DeploymentRequestHubStatus.Cancelled,
+          target_state: DeploymentRequestPlatformState.Removed,
+        }
+      );
+    });
+  });
+
   describe('loadOngoingStandaloneTrialsForOrganization', () => {
     const ORGANIZATION_ID = TEST_ORGANIZATIONS.FILIGRAN.ID;
     const OTHER_ORGANIZATION_ID = TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID;
