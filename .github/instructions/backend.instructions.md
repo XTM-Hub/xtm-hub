@@ -4,7 +4,7 @@ applyTo: 'apps/backend/**'
 
 # Backend Instructions (`apps/backend`)
 
-Express 5 + Apollo Server + GraphQL + Knex + PostgreSQL + Elasticsearch + MinIO. Dev port **4002**.
+Express 5 + Apollo Server + GraphQL + Knex + PostgreSQL + Elasticsearch + Silo (S3). Dev port **4002**.
 
 ## Commands
 
@@ -23,7 +23,7 @@ Run from `apps/backend` (or `yarn workspace @xtm-hub/backend <script>`).
 
 Prefer the narrowest command that covers your change. Use `yarn test:ci` before opening a pull request.
 
-Tests need PostgreSQL and MinIO running (`docker compose -f xtm-hub-dev/docker-compose.yml up`). Vitest runs with
+Tests need PostgreSQL and Silo (S3) running (`docker compose -f xtm-hub-dev/docker-compose.yml up`). Vitest runs with
 `fileParallelism: false` and hits a real `test_database` when `VITEST_MODE=true`.
 
 ## Layout
