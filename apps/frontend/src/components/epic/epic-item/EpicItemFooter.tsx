@@ -20,7 +20,7 @@ export const EpicItemFooter = ({
     <>
       <div className="flex w-full items-center justify-between">
         <div className="flex flex-wrap items-center gap-s">
-          {sortFiligranProducts(epic.product).map((product) => (
+          {sortFiligranProducts(epic.products).map((product) => (
             <div
               key={product}
               className="flex items-center gap-xs">

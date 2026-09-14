@@ -14,7 +14,7 @@ describe('EpicItemDetailed', () => {
       title: 'Roadmap epic',
       epic_type: EpicType.Other,
       edition_type: EditionType.CommunityEdition,
-      product: [FiligranProduct.Opencti],
+      products: [FiligranProduct.Opencti],
       slack_link: slackLink,
       short_description: 'short description',
       description: 'long **description**',

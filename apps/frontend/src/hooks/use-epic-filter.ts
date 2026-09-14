@@ -5,7 +5,7 @@ import { FiligranProduct } from '@graphql/generated';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo } from 'react';
 
-const PRODUCT_PARAM = 'product';
+const PRODUCT_PARAM = 'products';
 
 const isFiligranProduct = (value: string): value is FiligranProduct =>
   Object.values(FiligranProduct).includes(value as FiligranProduct);
@@ -16,7 +16,7 @@ export const useEpicFilter = () => {
   const pathname = usePathname();
 
   const rawParam = searchParams.get(PRODUCT_PARAM);
-  const selectedProduct: EpicFilterType = useMemo(
+  const selectedProducts: EpicFilterType = useMemo(
     () =>
       sortFiligranProducts(
         (rawParam ?? '').split(',').filter(isFiligranProduct)
@@ -24,7 +24,7 @@ export const useEpicFilter = () => {
     [rawParam]
   );
 
-  const setSelectedProduct = useCallback(
+  const setSelectedProducts = useCallback(
     (filter: EpicFilterType) => {
       const params = new URLSearchParams(searchParams.toString());
       if (filter.length === 0) {
@@ -38,5 +38,5 @@ export const useEpicFilter = () => {
     [searchParams, router, pathname]
   );
 
-  return { selectedProduct, setSelectedProduct };
+  return { selectedProducts, setSelectedProducts };
 };

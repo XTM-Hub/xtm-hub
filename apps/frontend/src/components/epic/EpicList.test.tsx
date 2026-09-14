@@ -75,7 +75,7 @@ const makeEpic = (
   title: NOW_EPIC_TITLE,
   timeline: Timeline.Now,
   edition_type: EditionType.CommunityEdition,
-  product: [FiligranProduct.Opencti],
+  products: [FiligranProduct.Opencti],
   active: true,
   epic_type: EpicType.Other,
   document_id: null,
@@ -99,7 +99,7 @@ const renderEpicList = (
   const defaultProps: ComponentProps<typeof EpicList> = {
     epics: [makeEpic()],
     serviceInstance,
-    selectedProduct: [],
+    selectedProducts: [],
     onFilterChange: vi.fn(),
     onSearch: vi.fn(),
   };
@@ -159,19 +159,19 @@ describe('EpicList', () => {
       makeEpic({
         id: 'opencti-epic',
         title: NOW_EPIC_TITLE,
-        product: [FiligranProduct.Opencti],
+        products: [FiligranProduct.Opencti],
       }),
       makeEpic({
         id: 'openaev-epic',
         title: NEXT_EPIC_TITLE,
-        product: [FiligranProduct.Openaev],
+        products: [FiligranProduct.Openaev],
       }),
     ];
 
     // When
     renderEpicList({
       epics,
-      selectedProduct: [FiligranProduct.Opencti],
+      selectedProducts: [FiligranProduct.Opencti],
     });
 
     // Then
@@ -184,19 +184,19 @@ describe('EpicList', () => {
       makeEpic({
         id: 'opencti-epic',
         title: NOW_EPIC_TITLE,
-        product: [FiligranProduct.Opencti],
+        products: [FiligranProduct.Opencti],
       }),
       makeEpic({
         id: 'openaev-epic',
         title: NEXT_EPIC_TITLE,
-        product: [FiligranProduct.Openaev],
+        products: [FiligranProduct.Openaev],
       }),
     ];
 
     // When
     renderEpicList({
       epics,
-      selectedProduct: [FiligranProduct.Opencti, FiligranProduct.Openaev],
+      selectedProducts: [FiligranProduct.Opencti, FiligranProduct.Openaev],
     });
 
     // Then
@@ -210,14 +210,14 @@ describe('EpicList', () => {
       makeEpic({
         id: 'multi-product-epic',
         title: NOW_EPIC_TITLE,
-        product: [FiligranProduct.Opencti, FiligranProduct.Openaev],
+        products: [FiligranProduct.Opencti, FiligranProduct.Openaev],
       }),
     ];
 
     // When
     renderEpicList({
       epics,
-      selectedProduct: [FiligranProduct.Openaev],
+      selectedProducts: [FiligranProduct.Openaev],
     });
 
     // Then

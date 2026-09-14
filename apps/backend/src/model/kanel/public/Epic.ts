@@ -22,7 +22,7 @@ export default interface Epic {
 
   description: string;
 
-  product: FiligranProduct[];
+  products: FiligranProduct[];
 
   timeline: Timeline;
 
@@ -57,7 +57,7 @@ export interface EpicInitializer {
 
   description: string;
 
-  product: FiligranProduct[];
+  products: FiligranProduct[];
 
   timeline?: Timeline;
 
@@ -91,7 +91,7 @@ export interface EpicMutator {
 
   description?: string;
 
-  product?: FiligranProduct[];
+  products?: FiligranProduct[];
 
   timeline?: Timeline;
 

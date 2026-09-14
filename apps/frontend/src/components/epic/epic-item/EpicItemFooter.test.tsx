@@ -12,7 +12,7 @@ describe('EpicItemFooter', () => {
     title: 'Roadmap epic',
     epic_type: EpicType.Other,
     edition_type: EditionType.CommunityEdition,
-    product: [FiligranProduct.Opencti],
+    products: [FiligranProduct.Opencti],
     document_id: null,
   } as epic_fragment$data;
 
@@ -44,7 +44,7 @@ describe('EpicItemFooter', () => {
         {...defaultProps}
         epic={{
           ...epic,
-          product: [FiligranProduct.Opencti, FiligranProduct.Openaev],
+          products: [FiligranProduct.Opencti, FiligranProduct.Openaev],
         }}
       />,
       {
@@ -67,7 +67,7 @@ describe('EpicItemFooter', () => {
         {...defaultProps}
         epic={{
           ...epic,
-          product: [
+          products: [
             FiligranProduct.Xtmone,
             FiligranProduct.Openaev,
             FiligranProduct.Xtmhub,

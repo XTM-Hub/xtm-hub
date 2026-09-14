@@ -61,7 +61,7 @@ export function useCountEpicsByProduct(
     });
 
     return filteredEpics.reduce((acc, item) => {
-      item.product.forEach((product) => {
+      item.products.forEach((product) => {
         acc[product] += 1;
       });
       return acc;

@@ -63,7 +63,7 @@ export const FILIGRAN_PRODUCTS_OPTIONS = FILIGRAN_PRODUCTS_ORDER.map(
 
 const buildEpicFormSchema = (t: (key: string) => string) =>
   z.object({
-    product: z
+    products: z
       .array(z.enum(FILIGRAN_PRODUCTS_ORDER))
       .min(1, t('EpicForm.Error.Product')),
     edition_type: z.enum(EditionType),
@@ -113,8 +113,8 @@ const EpicForm = ({
         description: epic?.description ?? descriptionValue,
         edition_type:
           (epic?.edition_type as EditionType) ?? EditionType.CommunityEdition,
-        product: sortFiligranProducts(
-          (epic?.product as FiligranProduct[]) ?? [FiligranProduct.Opencti]
+        products: sortFiligranProducts(
+          (epic?.products as FiligranProduct[]) ?? [FiligranProduct.Opencti]
         ),
         slack_link: epic?.slack_link ?? '',
         timeline: (epic?.timeline as Timeline) ?? Timeline.Now,
@@ -149,7 +149,7 @@ const EpicForm = ({
             </>
           ),
         },
-        product: {
+        products: {
           fieldType: ({
             field,
           }: {

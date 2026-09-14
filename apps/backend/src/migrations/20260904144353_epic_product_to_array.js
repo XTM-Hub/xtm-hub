@@ -3,11 +3,12 @@
  * @returns { Promise<void> }
  */
 export async function up(knex) {
+  await knex.raw('ALTER TABLE "Epic" RENAME COLUMN product TO products');
   await knex.raw(
-    'ALTER TABLE "Epic" ALTER COLUMN product TYPE text[] USING ARRAY[product]'
+    'ALTER TABLE "Epic" ALTER COLUMN products TYPE text[] USING ARRAY[products]'
   );
   await knex.raw(
-    'ALTER TABLE "Epic" ADD CONSTRAINT epic_product_not_empty CHECK (cardinality(product) > 0)'
+    'ALTER TABLE "Epic" ADD CONSTRAINT epic_products_not_empty CHECK (cardinality(products) > 0)'
   );
 }
 
@@ -16,8 +17,9 @@ export async function up(knex) {
  * @returns { Promise<void> }
  */
 export async function down(knex) {
-  await knex.raw('ALTER TABLE "Epic" DROP CONSTRAINT epic_product_not_empty');
+  await knex.raw('ALTER TABLE "Epic" DROP CONSTRAINT epic_products_not_empty');
   await knex.raw(
-    'ALTER TABLE "Epic" ALTER COLUMN product TYPE text USING product[1]'
+    'ALTER TABLE "Epic" ALTER COLUMN products TYPE text USING products[1]'
   );
+  await knex.raw('ALTER TABLE "Epic" RENAME COLUMN products TO product');
 }

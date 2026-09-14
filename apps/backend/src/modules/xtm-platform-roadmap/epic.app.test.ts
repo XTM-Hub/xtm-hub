@@ -49,7 +49,7 @@ describe('epicApp', () => {
     short_description: 'Short desc',
     description: 'Long description for the epic',
     active: true,
-    product: [FiligranProduct.Opencti],
+    products: [FiligranProduct.Opencti],
     timeline: Timeline.Now,
     uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
     edition_type: EditionType.CommunityEdition,
@@ -83,7 +83,7 @@ describe('epicApp', () => {
       expect(createdEpic).toMatchObject({
         id: expect.anything(),
         title: 'Test Epic',
-        product: [FiligranProduct.Opencti],
+        products: [FiligranProduct.Opencti],
         active: true,
       });
 
@@ -169,7 +169,7 @@ describe('epicApp', () => {
       const input = {
         ...basicInput,
         title: 'Multi Product Epic',
-        product: [FiligranProduct.Opencti, FiligranProduct.Openaev],
+        products: [FiligranProduct.Opencti, FiligranProduct.Openaev],
       };
 
       // When
@@ -179,12 +179,12 @@ describe('epicApp', () => {
       const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
 
       // Then
-      expect(createdEpic.product).toEqual([
+      expect(createdEpic.products).toEqual([
         FiligranProduct.Opencti,
         FiligranProduct.Openaev,
       ]);
 
-      expect(dbEpic?.product).toEqual([
+      expect(dbEpic?.products).toEqual([
         FiligranProduct.Opencti,
         FiligranProduct.Openaev,
       ]);
@@ -287,7 +287,7 @@ describe('epicApp', () => {
       // Given
       const createdEpic = await EpicApp.createEpic(basicInput, []);
       const updateInput = {
-        product: [FiligranProduct.Openaev, FiligranProduct.Xtmhub],
+        products: [FiligranProduct.Openaev, FiligranProduct.Xtmhub],
         edition_type: EditionType.CommunityEdition,
       };
 
@@ -302,12 +302,12 @@ describe('epicApp', () => {
       const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
 
       // Then
-      expect(updatedEpic.product).toEqual([
+      expect(updatedEpic.products).toEqual([
         FiligranProduct.Openaev,
         FiligranProduct.Xtmhub,
       ]);
 
-      expect(dbEpic?.product).toEqual([
+      expect(dbEpic?.products).toEqual([
         FiligranProduct.Openaev,
         FiligranProduct.Xtmhub,
       ]);
@@ -366,6 +366,33 @@ describe('epicApp', () => {
       expect(updatedEpic.slack_link).toBeNull();
 
       expect(dbEpic?.slack_link).toBeNull();
+    });
+    it('should keep the slack link when the update does not provide it', async () => {
+      // Given
+      const slackLink =
+        'https://filigran-community.slack.com/archives/C0BMANSB4CW';
+      const createdEpic = await EpicApp.createEpic(
+        { ...basicInput, slack_link: slackLink },
+        []
+      );
+      const updateInput = {
+        edition_type: EditionType.CommunityEdition,
+      };
+
+      // When
+      const updatedEpic = await EpicApp.updateEpic(
+        createdEpic.id as EpicId,
+        updateInput,
+        []
+      );
+
+      // Check in DB
+      const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
+
+      // Then
+      expect(updatedEpic.slack_link).toBe(slackLink);
+
+      expect(dbEpic?.slack_link).toBe(slackLink);
     });
     it('should update the specified epic with uploads and create a document', async () => {
       // Given
