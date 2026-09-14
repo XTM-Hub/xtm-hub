@@ -7,30 +7,30 @@ const { loadManifestsMock, getManifestByNameMock, downloadFileMock } =
     getManifestByNameMock: vi.fn(),
     downloadFileMock: vi.fn(),
   }));
-vi.mock('../../modules/shareable-resource/manifest/manifest.domain', () => ({
+vi.mock('../../../modules/shareable-resource/manifest/manifest.domain', () => ({
   ManifestDomain: {
     getManifestByName: getManifestByNameMock,
     loadManifests: loadManifestsMock,
   },
 }));
-vi.mock('../../thirdparty/minio/client', () => ({
+vi.mock('../../../thirdparty/minio/client', () => ({
   MinIOClient: { downloadFile: downloadFileMock },
 }));
-vi.mock('../../modules/shareable-resource/manifest/manifest.helper', () => ({
+vi.mock('../../../modules/shareable-resource/manifest/manifest.helper', () => ({
   ManifestHelper: {
     buildManifestObjectKey: (p: string, v: string, n: string) =>
       `${p}/${v}/connector/manifest/${n}.json`,
   },
 }));
-vi.mock('../../utils/app-logger.util', () => ({
+vi.mock('../../../utils/app-logger.util', () => ({
   logApp: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
 import {
   ManifestType,
   PlatformIdentifier,
-} from '../../__generated__/resolvers-types';
-import { StorageUnavailableError } from '../../thirdparty/minio/storage-error';
+} from '../../../__generated__/resolvers-types';
+import { StorageUnavailableError } from '../../../thirdparty/minio/storage-error';
 import { ManifestEndpoint } from './manifest-endpoint';
 
 const buildResponse = () => ({

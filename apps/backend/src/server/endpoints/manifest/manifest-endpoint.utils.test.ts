@@ -1,13 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import {
-  ManifestType,
-  PlatformIdentifier,
-} from '../../__generated__/resolvers-types';
-import { MANIFEST_LIST_DEFAULT_COUNT } from '../../modules/shareable-resource/manifest/manifest.consts';
+import { ManifestType } from '../../../__generated__/resolvers-types';
+import { MANIFEST_LIST_DEFAULT_COUNT } from '../../../modules/shareable-resource/manifest/manifest.consts';
 import {
   buildManifestETag,
   isIntegrationType,
-  isProduct,
   isValidManifestName,
   parseCount,
   validateManifestParams,
@@ -42,19 +38,6 @@ describe('parseCount', () => {
     ${['5']}     | ${undefined}                   | ${'array rejected (duplicated param)'}
   `('$description', ({ raw, expected }) => {
     expect(parseCount(raw)).toBe(expected);
-  });
-});
-
-describe('isProduct', () => {
-  it.each`
-    value                         | expected | description
-    ${PlatformIdentifier.Opencti} | ${true}  | ${'valid enum value'}
-    ${'opengrc'}                  | ${false} | ${'product listed in the contract but not yet in the enum'}
-    ${42}                         | ${false} | ${'number'}
-    ${undefined}                  | ${false} | ${'undefined'}
-    ${['opencti']}                | ${false} | ${'array'}
-  `('$description → $expected', ({ value, expected }) => {
-    expect(isProduct(value)).toBe(expected);
   });
 });
 

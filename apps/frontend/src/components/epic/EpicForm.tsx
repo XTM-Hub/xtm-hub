@@ -27,7 +27,7 @@ import {
   Timeline,
 } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -45,17 +45,23 @@ export const descriptionValue =
   "'If EPIC is aimed at a specific persona, worth mentioning it here.\n";
 export const FILIGRAN_PRODUCTS_VALUES = Object.values(FiligranProduct);
 export const TIMELINE_VALUES = Object.values(Timeline);
-export const epicFormSchema = z.object({
-  product: z.enum(FILIGRAN_PRODUCTS_VALUES),
-  edition_type: z.enum(EditionType),
-  title: z.string().min(2, 'EpicForm.Error.Title').max(160),
-  short_description: z.string().min(1, 'Required').max(215),
-  description: z.string().min(1, 'Required'),
-  timeline: z.enum(TIMELINE_VALUES),
-  active: z.boolean().optional(),
-  is_integration: z.boolean().optional(),
-  illustration_document: z.custom<FileList>().optional(),
-});
+const buildEpicFormSchema = (t: (key: string) => string) =>
+  z.object({
+    product: z.enum(FILIGRAN_PRODUCTS_VALUES),
+    edition_type: z.enum(EditionType),
+    title: z.string().min(2, t('EpicForm.Error.Title')).max(160),
+    short_description: z
+      .string()
+      .min(1, t('EpicForm.Error.ShortDescription'))
+      .max(215, t('EpicForm.Error.ShortDescriptionMax')),
+    description: z.string().min(1, t('EpicForm.Error.Description')),
+    timeline: z.enum(TIMELINE_VALUES),
+    active: z.boolean().optional(),
+    is_integration: z.boolean().optional(),
+    illustration_document: z.custom<FileList>().optional(),
+  });
+
+export const epicFormSchema = buildEpicFormSchema((key) => key);
 
 const EpicForm = ({
   epic,
@@ -65,6 +71,7 @@ const EpicForm = ({
   handleSubmit: (values: z.infer<typeof epicFormSchema>) => void;
 }) => {
   const t = useTranslations();
+  const formSchema = useMemo(() => buildEpicFormSchema(t), [t]);
 
   const [isIntegration, setIsIntegration] = useState(
     epic?.epic_type === EpicType.Integration
@@ -76,7 +83,7 @@ const EpicForm = ({
       onValuesChange={(values) => {
         setIsIntegration(values.is_integration ?? false);
       }}
-      formSchema={epicFormSchema}
+      formSchema={formSchema}
       values={{
         title: epic?.title ?? '',
         short_description: epic?.short_description ?? '',

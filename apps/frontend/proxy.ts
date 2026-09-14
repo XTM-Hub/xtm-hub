@@ -74,5 +74,6 @@ export const config = {
     '/api/chatbot/:path*',
     '/:product/:version/:integrationType/manifests',
     '/:product/:version/:integrationType/manifests/:path*',
+    '/:product/versions-matrix',
   ],
 };

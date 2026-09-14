@@ -1,0 +1,26 @@
+meta {
+  name: Get versions matrix - invalid format
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/opencti/versions-matrix?format=xml
+  body: none
+  auth: none
+}
+
+params:query {
+  format: xml
+}
+
+assert {
+  res.status: eq 400
+  res.body.code: eq 400
+}
+
+docs {
+  format only accepts "json", "env" or "csv" (case-sensitive, defaults to
+  "json"). Anything else is rejected before any version/connector
+  resolution.
+}

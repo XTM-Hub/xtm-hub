@@ -185,6 +185,14 @@
   "DisableUserDialog": {
     "TextDisableThisUser": "Are you sure you want to disable this user {email} ?"
   },
+  "EpicForm": {
+    "Error": {
+      "Title": "Title is required",
+      "ShortDescription": "Short description is required",
+      "ShortDescriptionMax": "Short description must be 215 characters or fewer",
+      "Description": "Description is required"
+    }
+  },
   "Epic": {
     "XTMRoadmap": "XTM Platform Roadmap",
     "AllProducts": "All products",
@@ -2327,6 +2335,7 @@
       "Error": {
         "Title": "Title is required",
         "ShortDescription": "Short description is required",
+        "ShortDescriptionMax": "Short description must be 215 characters or fewer",
         "Description": "Description is required",
         "Position": "Position must be a positive number"
       },

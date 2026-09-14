@@ -2,9 +2,9 @@ import cors from 'cors';
 import { Express, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import { Readable } from 'stream';
-import { UserDomain } from '../../modules/organization-management/user/user-domain/user.domain';
-import { MinIOClient } from '../../thirdparty/minio/client';
-import { logApp } from '../../utils/app-logger.util';
+import { UserDomain } from '../../../modules/organization-management/user/user-domain/user.domain';
+import { MinIOClient } from '../../../thirdparty/minio/client';
+import { logApp } from '../../../utils/app-logger.util';
 
 const USER_PICTURE_RATE_WINDOW_MS = 60 * 1000;
 const USER_PICTURE_RATE_MAX = 300;

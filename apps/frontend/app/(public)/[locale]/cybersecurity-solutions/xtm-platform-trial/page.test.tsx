@@ -1,4 +1,4 @@
-import { loadMeUser } from '@/utils/load-me-user';
+import { loadCurrentUser } from '@/utils/load-me-user';
 import { isFeatureEnabled } from '@/utils/settings.service';
 import Page, {
   generateMetadata,
@@ -8,7 +8,7 @@ import { notFound, redirect } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/utils/load-me-user', () => ({
-  loadMeUser: vi.fn(),
+  loadCurrentUser: vi.fn(),
 }));
 
 vi.mock('@/utils/settings.service', () => ({
@@ -37,16 +37,16 @@ vi.mock(
 
 describe('public xtm-platform-trial page', () => {
   beforeEach(() => {
-    vi.mocked(loadMeUser).mockReset();
+    vi.mocked(loadCurrentUser).mockReset();
     vi.mocked(redirect).mockReset();
     vi.mocked(notFound).mockClear();
     vi.mocked(isFeatureEnabled).mockReset().mockResolvedValue(true);
   });
 
   it('redirects logged-in users to the private xtm-platform-trial page', async () => {
-    vi.mocked(loadMeUser).mockResolvedValue({
+    vi.mocked(loadCurrentUser).mockResolvedValue({
       id: 'user-1',
-    } as Awaited<ReturnType<typeof loadMeUser>>);
+    } as Awaited<ReturnType<typeof loadCurrentUser>>);
 
     await Page({ params: Promise.resolve({ locale: 'en' }) });
 
@@ -54,7 +54,7 @@ describe('public xtm-platform-trial page', () => {
   });
 
   it('renders the breadcrumb and page for anonymous users', async () => {
-    vi.mocked(loadMeUser).mockRejectedValue(new Error('not logged in'));
+    vi.mocked(loadCurrentUser).mockResolvedValue(null);
 
     const element = await Page({ params: Promise.resolve({ locale: 'en' }) });
     render(element);

@@ -5,18 +5,18 @@ const { loadRegisteredProductVersionsMock } = vi.hoisted(() => ({
   loadRegisteredProductVersionsMock: vi.fn(),
 }));
 vi.mock(
-  '../../modules/manage-product-version/manage-product-version.domain',
+  '../../../modules/manage-product-version/manage-product-version.domain',
   () => ({
     ManageProductVersionDomain: {
       loadRegisteredProductVersions: loadRegisteredProductVersionsMock,
     },
   })
 );
-vi.mock('../../utils/app-logger.util', () => ({
+vi.mock('../../../utils/app-logger.util', () => ({
   logApp: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
-import { PlatformIdentifier } from '../../__generated__/resolvers-types';
+import { PlatformIdentifier } from '../../../__generated__/resolvers-types';
 import {
   buildProductVersionRateLimiterOptions,
   ProductVersionEndpoint,

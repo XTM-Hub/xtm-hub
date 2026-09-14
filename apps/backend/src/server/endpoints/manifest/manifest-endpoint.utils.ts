@@ -2,12 +2,13 @@ import type { Request } from 'express';
 import {
   ManifestType,
   PlatformIdentifier,
-} from '../../__generated__/resolvers-types';
+} from '../../../__generated__/resolvers-types';
 import {
   MANIFEST_VERSION_PATTERN,
   ManifestFragmentHelper,
-} from '../../modules/shareable-resource/manifest-fragment/manifest-fragment.helper';
-import { MANIFEST_LIST_DEFAULT_COUNT } from '../../modules/shareable-resource/manifest/manifest.consts';
+} from '../../../modules/shareable-resource/manifest-fragment/manifest-fragment.helper';
+import { MANIFEST_LIST_DEFAULT_COUNT } from '../../../modules/shareable-resource/manifest/manifest.consts';
+import { isProduct } from '../shared/product.util';
 
 const MANIFEST_NAME_PATTERN = new RegExp(
   `^connector-manifest-(?:${MANIFEST_VERSION_PATTERN})-\\d{12}$`,
@@ -15,10 +16,6 @@ const MANIFEST_NAME_PATTERN = new RegExp(
 );
 
 export const buildManifestETag = (name: string): string => `"${name}"`;
-
-export const isProduct = (value: unknown): value is PlatformIdentifier =>
-  typeof value === 'string' &&
-  (Object.values(PlatformIdentifier) as string[]).includes(value);
 
 export const isIntegrationType = (value: unknown): value is ManifestType =>
   typeof value === 'string' &&

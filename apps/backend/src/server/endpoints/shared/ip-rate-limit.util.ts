@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { ipKeyGenerator, type Options } from 'express-rate-limit';
-import { logApp } from '../../utils/app-logger.util';
+import { logApp } from '../../../utils/app-logger.util';
 
 const RATE_LIMIT_LOG_INTERVAL_MS = 60 * 1000;
 const MAX_LOG_RATE_ENTRIES = 100;

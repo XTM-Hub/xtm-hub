@@ -1,0 +1,33 @@
+meta {
+  name: Get versions matrix - specific connectors
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/opencti/versions-matrix?version=7.260807.0&format=json&connector_slugs=mitreattack,crowdstrike
+  body: none
+  auth: none
+}
+
+params:query {
+  version: 7.260807.0
+  format: json
+  connector_slugs: mitreattack,crowdstrike
+}
+
+docs {
+  Restricts the matrix to the requested connector_slugs (comma-separated,
+  case-sensitive) for an explicit OpenCTI version instead of the latest
+  registered one.
+  
+  Swap "MitreAttack,Crowdstrike" and the version for slugs/version that
+  actually exist in your local/dev instance if these were not seeded (see
+  "Get versions matrix" response for the full known list).
+  
+  Only errors when a requested slug is unknown or has no version compatible
+  with the requested OpenCTI version — see the "Unknown connector slug" and
+  "Incompatible connector slug" requests below. The default (no
+  connector_slugs) request never errors this way, it just omits
+  unresolvable connectors.
+}
