@@ -16,7 +16,7 @@ assert {
 }
 
 docs {
-  Storage failure case. Requires a manifest row in database and MinIO stopped:
+  Storage failure case. Requires a manifest row in database and the Silo (S3) container stopped:
 
     podman ps --format '{{Names}}'
     podman stop <minio-container>

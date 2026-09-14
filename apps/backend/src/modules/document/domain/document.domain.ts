@@ -263,16 +263,15 @@ export const DocumentDomain = {
     const { tags, ...scalarFilters } = documentFilters;
 
     const docQuery = db<DocumentModel>('Document')
-      .leftJoin(
-        'Document_Metadata',
-        'Document.id',
-        'Document_Metadata.document_id'
-      )
-      .where('Document_Metadata.key', key)
-      .andWhere('Document_Metadata.value', value)
-      .andWhere(scalarFilters)
-      .select('Document.*')
-      .groupBy('Document.id');
+      .where(scalarFilters)
+      .whereExists(function () {
+        this.select(dbRaw('1'))
+          .from('Document_Metadata')
+          .whereRaw('"Document_Metadata"."document_id" = "Document"."id"')
+          .andWhere('Document_Metadata.key', key)
+          .andWhere('Document_Metadata.value', value);
+      })
+      .select('Document.*');
 
     if (tags && tags.length > 0) {
       const placeholders = tags.map(() => '?').join(',');
@@ -735,13 +734,6 @@ export const DocumentDomain = {
     const rows: Pick<DocumentModel, 'slug'>[] = await db<DocumentModel>(
       'Document'
     )
-      .join(
-        'Document_Metadata as dm_type',
-        'Document.id',
-        'dm_type.document_id'
-      )
-      .where('dm_type.key', DocumentMetadataKeyCode.IntegrationType)
-      .andWhere('dm_type.value', IntegrationType.Connector)
       .where('Document.active', true)
       .where('Document.is_decommissioned', false)
       .whereRaw(`"Document"."tags" @> ARRAY[?, ?]::text[]`, [
@@ -749,6 +741,13 @@ export const DocumentDomain = {
         TAG_DECOUPLING,
       ])
       .whereNotNull('Document.slug')
+      .whereExists(function () {
+        this.select(dbRaw('1'))
+          .from('Document_Metadata as dm_type')
+          .whereRaw('"dm_type"."document_id" = "Document"."id"')
+          .andWhere('dm_type.key', DocumentMetadataKeyCode.IntegrationType)
+          .andWhere('dm_type.value', IntegrationType.Connector);
+      })
       .distinct('Document.slug');
 
     return rows
