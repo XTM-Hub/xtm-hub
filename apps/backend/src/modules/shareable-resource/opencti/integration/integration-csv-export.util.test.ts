@@ -10,6 +10,7 @@ import {
   escapeCsvCell,
   IntegrationCsvColumnKey,
   IntegrationCsvExportRow,
+  neutralizeFormulaCell,
   parseRequestedColumns,
   parseRequestedFilters,
 } from './integration-csv-export.util';
@@ -39,6 +40,33 @@ describe('escapeCsvCell', () => {
   });
 });
 
+describe('neutralizeFormulaCell', () => {
+  it.each`
+    value              | expected
+    ${'=SUM(A1:A9)'}   | ${"'=SUM(A1:A9)"}
+    ${'+1234567890'}   | ${"'+1234567890"}
+    ${'-1234567890'}   | ${"'-1234567890"}
+    ${'@SUM(A1:A9)'}   | ${"'@SUM(A1:A9)"}
+    ${'\t=SUM(A1:A9)'} | ${"'\t=SUM(A1:A9)"}
+    ${'\r=SUM(A1:A9)'} | ${"'\r=SUM(A1:A9)"}
+  `(
+    'prefixes formula-like value "$value" with an apostrophe',
+    ({ value, expected }) => {
+      expect(neutralizeFormulaCell(value)).toBe(expected);
+    }
+  );
+
+  it('leaves plain values unchanged', () => {
+    expect(neutralizeFormulaCell('Sentinel Connector')).toBe(
+      'Sentinel Connector'
+    );
+  });
+
+  it('does not treat a formula char in the middle of a value as a trigger', () => {
+    expect(neutralizeFormulaCell('Threat=Intel')).toBe('Threat=Intel');
+  });
+});
+
 describe('parseRequestedColumns', () => {
   it('returns all default columns when no columns param is given', () => {
     expect(parseRequestedColumns(undefined)).toEqual(
@@ -61,6 +89,16 @@ describe('parseRequestedColumns', () => {
     expect(parseRequestedColumns(['use_case', 'verification_status'])).toEqual([
       IntegrationCsvColumnKey.UseCase,
       IntegrationCsvColumnKey.VerificationStatus,
+    ]);
+  });
+
+  it('splits comma-separated values within each array element from repeated query params', () => {
+    expect(
+      parseRequestedColumns(['integration_type,license_type', 'use_case'])
+    ).toEqual([
+      IntegrationCsvColumnKey.IntegrationType,
+      IntegrationCsvColumnKey.LicenseType,
+      IntegrationCsvColumnKey.UseCase,
     ]);
   });
 
@@ -165,6 +203,22 @@ describe('parseRequestedFilters', () => {
       children: [
         {
           leaf: { key: FilterKey.LicenseType, value: ['Free', 'Commercial'] },
+        },
+      ],
+    });
+  });
+
+  it('splits comma-separated values within each array element from repeated query params', () => {
+    expect(
+      parseRequestedFilters({ license_type: ['Free,Commercial', 'Trial'] })
+    ).toEqual({
+      operator: LogicalOperator.And,
+      children: [
+        {
+          leaf: {
+            key: FilterKey.LicenseType,
+            value: ['Free', 'Commercial', 'Trial'],
+          },
         },
       ],
     });
@@ -286,6 +340,22 @@ describe('buildIntegrationsCsv', () => {
     const csv = buildIntegrationsCsv([row], []);
     const [, dataLine] = csv.replace('\uFEFF', '').split('\r\n');
     expect(dataLine).toBe('');
+  });
+
+  it('neutralizes formula injection in the name and other columns', () => {
+    const row: IntegrationCsvExportRow = {
+      id: 'doc-5',
+      name: '=HYPERLINK("https://evil.example","click")',
+      license_type: '@SUM(A1:A9)',
+    };
+    const csv = buildIntegrationsCsv(
+      [row],
+      [IntegrationCsvColumnKey.LicenseType]
+    );
+    const [, dataLine] = csv.replace('\uFEFF', '').split('\r\n');
+    expect(dataLine).toBe(
+      '"\'=HYPERLINK(""https://evil.example"",""click"")",\'@SUM(A1:A9)'
+    );
   });
 });
 
