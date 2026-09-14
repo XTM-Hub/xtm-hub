@@ -1,0 +1,27 @@
+meta {
+  name: Get versions matrix - env format
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/opencti/versions-matrix?format=env
+  body: none
+  auth: none
+}
+
+params:query {
+  format: env
+}
+
+docs {
+  Same matrix as "Get versions matrix", rendered as shell-sourceable env
+  assignments instead of JSON. Values (and OPENCTI_VERSION/CONNECTOR_*
+  versions) are uppercased:
+  
+  OPENCTI_VERSION="7.260807.0"
+  CONNECTOR_MITREATTACK_VERSION="6.240930.0"
+  CONNECTOR_CROWDSTRIKE_VERSION="7.260309.0"
+  
+  Content-Type: text/plain.
+}

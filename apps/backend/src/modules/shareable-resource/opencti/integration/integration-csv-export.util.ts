@@ -5,8 +5,7 @@ import {
   LogicalOperator,
 } from '../../../../__generated__/resolvers-types';
 
-// Column keys the user can pick in the "Generate a CSV export" dialog.
-// "name" is always exported and is not part of this selectable list.
+// Column keys selectable in the "Generate a CSV export" dialog; "name" is always exported and not listed here.
 export enum IntegrationCsvColumnKey {
   IntegrationType = 'integration_type',
   UseCase = 'use_case',
@@ -16,14 +15,7 @@ export enum IntegrationCsvColumnKey {
   LicenseType = 'license_type',
 }
 
-// Filter params the user can narrow the export down to. `queryParam` is the
-// URL query string key; `key` is the corresponding FilterKey passed to
-// DocumentDomain.loadDocuments. Most map 1:1 onto the FilterKey enum value,
-// except `use_case`, which (confusingly) maps to the `label` FilterKey used
-// internally for the Object_UseCase join. `solution_category` and
-// `use_case` values are Relay global IDs (see ListSolutionCategories and
-// useCases); the others are raw metadata/document values (e.g.
-// `connector`, `true`/`false`, `Free`/`Commercial`).
+// Maps export query params to FilterKey; `use_case` maps to `Label`, the FilterKey used internally for the Object_UseCase join.
 export const EXPORT_FILTER_PARAMS: Array<{
   queryParam: string;
   key: FilterKey;
@@ -31,8 +23,8 @@ export const EXPORT_FILTER_PARAMS: Array<{
   { queryParam: 'integration_type', key: FilterKey.IntegrationType },
   { queryParam: 'license_type', key: FilterKey.LicenseType },
   { queryParam: 'manager_supported', key: FilterKey.ManagerSupported },
-  { queryParam: 'verified', key: FilterKey.Verified },
   { queryParam: 'solution_category', key: FilterKey.SolutionCategory },
+  { queryParam: 'verified', key: FilterKey.Verified },
   { queryParam: 'use_case', key: FilterKey.Label },
 ];
 
@@ -109,10 +101,7 @@ const cellValueForColumn = (
   }
 };
 
-/**
- * Escapes a single CSV cell per RFC 4180: values containing commas, quotes
- * or line breaks are wrapped in double quotes, with internal quotes doubled.
- */
+// RFC 4180 escaping: wraps in quotes when it contains a comma, quote or line break, doubling internal quotes.
 export const escapeCsvCell = (value: string): string => {
   if (/[",\r\n]/.test(value)) {
     return `"${value.replace(/"/g, '""')}"`;
@@ -120,11 +109,7 @@ export const escapeCsvCell = (value: string): string => {
   return value;
 };
 
-/**
- * Parses the `columns` query param into a validated, de-duplicated list of
- * column keys. Falls back to all columns when the param is missing, empty,
- * or contains no recognized keys.
- */
+// Falls back to all default columns when the param is missing, empty, or has no recognized keys.
 export const parseRequestedColumns = (
   raw?: string | string[]
 ): IntegrationCsvColumnKey[] => {
@@ -143,13 +128,7 @@ export const parseRequestedColumns = (
   return requested.length > 0 ? requested : DEFAULT_INTEGRATION_CSV_COLUMNS;
 };
 
-/**
- * Parses the export's row-filtering query params (see EXPORT_FILTER_PARAMS)
- * into a LogicalFilterInput tree, the same shape consumed by
- * DocumentDomain.loadDocuments/paginate. Unknown query params and keys with
- * no value are ignored. Returns undefined when no recognized filter is
- * present, i.e. the export is not narrowed down.
- */
+// Builds the LogicalFilterInput tree consumed by DocumentApp.loadDocuments; undefined when no filter param is present.
 export const parseRequestedFilters = (
   query: Record<string, unknown>
 ): LogicalFilterInput | undefined => {
@@ -171,12 +150,7 @@ export const parseRequestedFilters = (
     : undefined;
 };
 
-/**
- * Builds a RFC 4180 compatible CSV document (UTF-8 BOM + CRLF line endings,
- * for Excel/Google Sheets compatibility) from integration rows. Always
- * includes a "Name" column first, then the requested selectable columns.
- * Returns a header-only CSV when `rows` is empty.
- */
+// UTF-8 BOM + CRLF for Excel/Sheets compatibility; "Name" column is always first, followed by the requested columns.
 export const buildIntegrationsCsv = (
   rows: IntegrationCsvExportRow[],
   columns: IntegrationCsvColumnKey[] = DEFAULT_INTEGRATION_CSV_COLUMNS
@@ -196,10 +170,7 @@ export const buildIntegrationsCsv = (
   return `\uFEFF${[headerRow, ...dataRows].join('\r\n')}\r\n`;
 };
 
-/**
- * Builds the date-stamped download filename, e.g.
- * "integrations-library-export-2026-09-10.csv".
- */
+// e.g. "integrations-library-export-2026-09-10.csv".
 export const buildIntegrationsExportFilename = (
   date: Date = new Date()
 ): string => {

@@ -111,6 +111,7 @@ nav:
           - Transfer your personal space: user/transfer-personal-space.md
           - Access public roadmap: user/roadmap.md
       - OpenCTI:
+        - News Feed: user/opencti-news-feed.md
         - Free Trials: user/opencti-freetrials.md
         - Connection: user/opencti-connection.md
         - Custom Dashboards library: libraries/custom-dashboards.md

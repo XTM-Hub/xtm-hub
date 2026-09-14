@@ -312,6 +312,29 @@ describe('document.__resolveType', () => {
     ).__resolveType(doc, contextSimpleUserFiligran2, GRAPHQL_RESOLVE_INFO);
     expect(result).toBe('DefaultDocument');
   });
+
+  it('should resolve integration type from an already-hydrated document without querying the dataloader', async () => {
+    // Given a document that already carries `integration_type` (e.g.
+    // hydrated by DocumentMetadataDomain.hydrateMetadata upstream)
+    const doc = {
+      id: uuidv4(),
+      type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+      integration_type: IntegrationType.Connector,
+    } as unknown as DocumentModel;
+    const loadSpy = vi.spyOn(
+      contextSimpleUserFiligran2.dataLoaders.document.integrationTypeLoader,
+      'load'
+    );
+
+    // When resolving its concrete GraphQL type
+    const result = await (
+      documentResolver.Document as unknown as DocumentResolvers
+    ).__resolveType(doc, contextSimpleUserFiligran2, GRAPHQL_RESOLVE_INFO);
+
+    // Then it resolves using the hydrated value, without a dataloader call
+    expect(result).toBe('Connector');
+    expect(loadSpy).not.toHaveBeenCalled();
+  });
 });
 
 describe('document field resolvers', () => {

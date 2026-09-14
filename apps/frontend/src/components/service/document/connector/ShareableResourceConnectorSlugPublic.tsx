@@ -5,7 +5,10 @@ import BadgeOverflowCounter, {
 } from '@/components/ui/BadgeOverflowCounter';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
 import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
-import { PublicDocumentDetailsData } from '@/utils/shareable-resources/shareable-resources.types';
+import {
+  ConnectorFields,
+  PublicDocumentDetailsData,
+} from '@/utils/shareable-resources/shareable-resources.types';
 import {
   MotionPlayIcon,
   ThreatActorGroupIcon,
@@ -19,7 +22,8 @@ import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 
 interface ShareableResourceConnectorSlugPublicProps {
-  documentData: documentItem_fragment$data | PublicDocumentDetailsData;
+  documentData: (documentItem_fragment$data | PublicDocumentDetailsData) &
+    ConnectorFields;
   serviceInstance:
     seoServiceInstanceFragment$data | serviceInstance_fragment$data;
   pageUrl: string;

@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { logApp } from '../../utils/app-logger.util';
+import { logApp } from '../../../utils/app-logger.util';
 import { MANIFEST_ERRORS } from './manifest-endpoint.errors';
 import { buildManifestRateLimiterOptions } from './manifest-endpoint.rate-limit';
 

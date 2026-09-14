@@ -28,7 +28,7 @@ performance bottlenecks and security weaknesses before delivering it.
 
 ## API / Integration Test Authoring
 As a senior backend integration test engineer, design robust, maintainable integration tests focused on real-world data flows:
-- Prefer real database calls over mocks for all `*.domain.ts` files. Only use mocks for external services (e.g., MinIO, Elasticsearch) or when testing `*.app.ts` files, and only when necessary.
+- Prefer real database calls over mocks for all `*.domain.ts` files. Only use mocks for external services (e.g., Silo / S3, Elasticsearch) or when testing `*.app.ts` files, and only when necessary.
 - Use the actual test DB for integration tests and clean up data between tests to ensure isolation; keep tests deterministic and independent of external state.
 - Do not manipulate the DB directly; use helper functions.
 - Use the project's constants and helpers for test data (e.g., from `tests/tests.const`).

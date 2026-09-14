@@ -26,8 +26,7 @@ import {
   parseRequestedFilters,
 } from './integration-csv-export.util';
 
-// Realistic upper bound for the number of integrations in the library today;
-// keeps the export a single unpaginated query while still bounding memory.
+// Upper bound keeping the export a single unpaginated query while bounding memory.
 export const EXPORT_MAX_ROWS = 10_000;
 
 const csvExportRateLimiter = rateLimit({

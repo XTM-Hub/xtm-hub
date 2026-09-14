@@ -1,5 +1,5 @@
 import { Express } from 'express';
-import { dbRaw } from '../../../knexfile';
+import { dbRaw } from '../../../../knexfile';
 
 export const healthEndpoint = (app: Express) => {
   app.get('/health', async (_req, res) => {

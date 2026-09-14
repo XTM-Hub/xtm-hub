@@ -1,6 +1,6 @@
 # OpenCTI Playbooks Library
 
-A comprehensive library of playbooks is now available on the XTM Hub,
+A comprehensive library of playbooks is now available on XTM Hub,
 providing seamless access to curated automation workflows.
 Currently, the library focuses on playbooks that can be directly deployed to OpenCTI products and created by our Filigran Team.
 
@@ -14,9 +14,9 @@ ensuring high-quality, relevant automation content.
 
 **Playbooks are an OpenCTI Enterprise Edition feature.** Running a playbook on your OpenCTI product requires an EE license, whether the playbook is deployed in one click from the Hub or downloaded and imported manually.
 
-All users can browse the library on the XTM Hub completely free of charge, with or without authentication, and read the full details of each playbook before deciding to deploy it.
+All users can browse the library on XTM Hub completely free of charge, with or without authentication, and read the full details of each playbook before deciding to deploy it.
 
-Note that most playbooks require additional configuration once imported into OpenCTI, typically setting up connectors, labels, markings, or specific entities — before they can run. Each playbook's description on the Hub indicates its specific setup requirements.
+Note that most playbooks require additional configuration once imported into OpenCTI, typically setting up connectors, labels, markings, or specific entities, before they can run. Each playbook's description on the Hub indicates its specific setup requirements.
 
 ## Getting Started
 

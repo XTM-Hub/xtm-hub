@@ -1,6 +1,6 @@
 # OpenCTI Integrations Library
 
-A comprehensive library of Integrations is available on the XTM Hub, providing seamless access to curated threat intelligence data. 
+A comprehensive library of Integrations is available on XTM Hub, providing seamless access to curated threat intelligence data. 
 
 Currently, the library proposes CSV Feeds, TAXII Feeds, OpenCTI Streams, Third Party Integrations and Connectors.
 Depending on the type of Integration, you can either use one click Deploy or download and import it to OpenCTI products.

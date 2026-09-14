@@ -25,3 +25,11 @@ export const loadMeUser = async () => {
   >(MeLoaderQuery, {}, { cache: 'no-store' })) as MeResponse;
   return meResponse.data.me ?? null;
 };
+
+export const loadCurrentUser = async () => {
+  try {
+    return await loadMeUser();
+  } catch {
+    return null;
+  }
+};

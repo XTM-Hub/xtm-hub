@@ -5,6 +5,7 @@ export const GRAPHQL_SSE = '/graphql-sse';
 export const SERVER_HTTP_API =
   process.env.SERVER_HTTP_API ?? 'http://localhost:4002';
 const MANIFEST_PATH = /^\/[^/]+\/[^/]+\/[^/]+\/manifests(?:\/|$)/;
+const VERSIONS_MATRIX_PATH = /^\/[^/]+\/versions-matrix(?:\/|$)/;
 
 export const manageRequest = async (request: NextRequest) => {
   const { pathname, search } = request.nextUrl;
@@ -36,6 +37,11 @@ export const manageRequest = async (request: NextRequest) => {
     );
   }
   if (MANIFEST_PATH.test(pathname)) {
+    return NextResponse.rewrite(
+      new URL(SERVER_HTTP_API + pathname + search, request.url)
+    );
+  }
+  if (VERSIONS_MATRIX_PATH.test(pathname)) {
     return NextResponse.rewrite(
       new URL(SERVER_HTTP_API + pathname + search, request.url)
     );
