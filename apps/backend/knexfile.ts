@@ -232,16 +232,25 @@ const searchAttributes = [
   'title',
 ];
 
-// Cache column names per table so applySearch never calls columnInfo() twice
-// for the same table during the lifetime of the process.
-const columnInfoCache = new Map<DatabaseType, string[]>();
+const columnInfoCache = new Map<DatabaseType, Promise<string[]>>();
 
-const getCachedColumnInfo = async (type: DatabaseType): Promise<string[]> => {
+const fetchColumnInfo = (type: DatabaseType): Promise<string[]> =>
+  database(type)
+    .columnInfo()
+    .then((columnInfo) => Object.keys(columnInfo));
+
+export const getCachedColumnInfo = (
+  type: DatabaseType,
+  fetchColumns: (type: DatabaseType) => Promise<string[]> = fetchColumnInfo
+): Promise<string[]> => {
   const cached = columnInfoCache.get(type);
   if (cached) return cached;
-  const columns = Object.keys(await database(type).columnInfo());
-  columnInfoCache.set(type, columns);
-  return columns;
+
+  const pending = fetchColumns(type);
+  pending.catch(() => columnInfoCache.delete(type));
+
+  columnInfoCache.set(type, pending);
+  return pending;
 };
 
 type JoinFn = (qb: Knex.QueryBuilder, type: DatabaseType) => void;
