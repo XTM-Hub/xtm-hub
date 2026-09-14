@@ -1,6 +1,6 @@
 # OpenCTI Custom Views Library
 
-A comprehensive library of custom views is now available on the XTM Hub,
+A comprehensive library of custom views is now available on XTM Hub,
 providing seamless access to curated, role-specific intelligence views.
 Currently, the library focuses on custom views that can be directly deployed to OpenCTI products and created by our Filigran Team.
 
@@ -15,7 +15,7 @@ Instead of navigating across multiple tabs and datasets, analysts see contextual
 
 The library features pre-built custom views that have been curated by the Filigran team,
 ensuring high-quality, relevant views tailored to common analyst use cases (SOC, FIMI, threat intelligence).
-All users can browse the library on the XTM Hub completely free of charge, with or without authentication,
+All users can browse the library on XTM Hub completely free of charge, with or without authentication,
 and read the full details of each custom view before deciding to deploy it.
 
 ## Getting Started

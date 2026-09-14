@@ -3,6 +3,7 @@
 import { FiligranProductMapping } from '@/components/epic/epic-item/FiligranProductMapping';
 import { FeatureVotingItem } from '@/components/feature-voting/FeatureVotingItem';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
+import { useFeatureVote } from '@/hooks/use-feature-vote';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Skeleton } from '@filigran/ui';
 import { featureVotingKeys } from '@graphql/feature-voting/feature-voting.keys';
@@ -12,7 +13,10 @@ import {
   VotableFeaturePublicFragment,
 } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
-import { useMemo } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useRef } from 'react';
+
+const VOTE_FEATURE_ID_PARAM = 'voteFeatureId';
 
 const PRODUCT_ORDER: FiligranProduct[] = [
   FiligranProduct.Opencti,
@@ -32,6 +36,11 @@ export const FeatureVotingList = ({
   roadmapHref,
 }: FeatureVotingListProps) => {
   const t = useTranslations();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { mutate: commitVote } = useFeatureVote();
+  const lastAutoVotedFeatureId = useRef<string | null>(null);
 
   const variables = useMemo(
     () => ({ service_instance_id: serviceInstanceId }),
@@ -46,6 +55,34 @@ export const FeatureVotingList = ({
 
   const round = data?.currentVotingRound;
   const isAuthenticated = !!data?.me?.id;
+
+  // A visitor who voted from the public page while logged in (or who just
+  // logged in to vote) lands here with the feature to vote for in the URL.
+  // Cast that vote once, then strip the marker so a refresh never re-fires it.
+  useEffect(() => {
+    const voteFeatureId = searchParams.get(VOTE_FEATURE_ID_PARAM);
+    if (
+      !voteFeatureId ||
+      !isAuthenticated ||
+      !round ||
+      lastAutoVotedFeatureId.current === voteFeatureId
+    ) {
+      return;
+    }
+    lastAutoVotedFeatureId.current = voteFeatureId;
+
+    const feature = round.features.find((f) => f.id === voteFeatureId);
+    if (feature && !feature.has_my_vote) {
+      commitVote({ feature_id: voteFeatureId });
+    }
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete(VOTE_FEATURE_ID_PARAM);
+    const queryString = params.toString();
+    router.replace(queryString ? `${pathname}?${queryString}` : pathname, {
+      scroll: false,
+    });
+  }, [searchParams, isAuthenticated, round, commitVote, router, pathname]);
 
   const sections = useMemo(() => {
     const features: VotableFeaturePublicFragment[] = round?.features ?? [];

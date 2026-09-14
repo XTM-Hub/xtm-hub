@@ -8,7 +8,7 @@ import {
   getBaseUrl,
   stringifyJsonLd,
 } from '@/utils/generate-metadata';
-import { loadMeUser } from '@/utils/load-me-user';
+import { loadCurrentUser } from '@/utils/load-me-user';
 import {
   APP_PATH,
   PUBLIC_CYBERSECURITY_SOLUTIONS_PATH,
@@ -41,14 +41,6 @@ export async function generateMetadata({
     imageAlt: t('Service.Trials.XtmPlatform.Page.PitchTitle'),
   });
 }
-
-const loadCurrentUser = async () => {
-  try {
-    return await loadMeUser();
-  } catch {
-    return null;
-  }
-};
 
 const Page = async ({
   params,

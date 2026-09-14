@@ -89,7 +89,7 @@ be installed explicitly.
 docker compose -f xtm-hub-dev/docker-compose.yml up
 ```
 
-PostgreSQL 5434, MinIO 9002, Elasticsearch 9204, Kibana 5603, PgAdmin 8888, Mailpit 8025/1025. Keep these ports in
+PostgreSQL 5434, Silo (S3) 9002, Elasticsearch 9204, Kibana 5603, PgAdmin 8888, Mailpit 8025/1025. Keep these ports in
 sync with `apps/backend/config/default.json` when changing either side.
 
 ## Deployment

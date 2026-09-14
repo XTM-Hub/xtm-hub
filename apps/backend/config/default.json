@@ -20,7 +20,7 @@
     "pending_user_digest": false,
     "public_roadmap_monthly_reminder": false
   },
-  "enabled_features": [],
+  "enabled_features": ["XTM_PLATFORM_TRIAL"],
   "auth0": {
     "domain": "filigran.eu.auth0.com",
     "clientId": "changeme",

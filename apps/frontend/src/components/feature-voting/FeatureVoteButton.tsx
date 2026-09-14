@@ -1,18 +1,17 @@
 'use client';
 
-import { portalGraphqlClient } from '@/lib/graphql-client';
+import { getFeatureVotingPrivatePath } from '@/components/feature-voting/feature-voting-path';
+import { useFeatureVote } from '@/hooks/use-feature-vote';
+import usePublicPath from '@/hooks/use-public-path';
 import { buildSignupRedirect } from '@/utils/redirect';
 import { CheckCircleIcon } from '@filigran/icon';
-import { toast } from '@filigran/ui';
 import { Button } from '@filigran/ui/servers';
-import { featureVotingKeys } from '@graphql/feature-voting/feature-voting.keys';
-import { useFeatureVoteMutation } from '@graphql/generated';
-import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 interface FeatureVoteButtonProps {
   featureId: string;
+  serviceInstanceId: string;
   hasMyVote: boolean;
   isAuthenticated: boolean;
   className?: string;
@@ -20,44 +19,30 @@ interface FeatureVoteButtonProps {
 
 export const FeatureVoteButton = ({
   featureId,
+  serviceInstanceId,
   hasMyVote,
   isAuthenticated,
   className,
 }: FeatureVoteButtonProps) => {
   const t = useTranslations();
   const router = useRouter();
-  const pathname = usePathname();
-  const queryClient = useQueryClient();
-
-  const { mutate: commitVote, isPending } = useFeatureVoteMutation(
-    portalGraphqlClient,
-    {
-      onSuccess: () => {
-        // A vote moves the one vote allowed per product, so the whole round has
-        // to be refetched for the previously voted feature to lose its badge.
-        queryClient.invalidateQueries({
-          queryKey: featureVotingKeys.currentAll(),
-        });
-        toast({
-          title: t('FeatureVoting.VoteRecordedTitle'),
-          description: t('FeatureVoting.VoteRecordedDescription'),
-        });
-      },
-      onError: (error: unknown) => {
-        const errorMessage =
-          error instanceof Error ? error.message : 'UnknownError';
-        toast({
-          variant: 'destructive',
-          title: t('Utils.Error'),
-          description: <>{t(`Error.Server.${errorMessage}`)}</>,
-        });
-      },
-    }
-  );
+  const isPublicPath = usePublicPath();
+  const { mutate: commitVote, isPending } = useFeatureVote();
 
   const handleVote = () => {
+    // Voting only ever happens on the private page: a visitor on the public
+    // page is always sent there first, carrying the feature to vote for so
+    // the private page can cast it once it lands (see FeatureVotingList).
     if (!isAuthenticated) {
-      router.push(buildSignupRedirect(pathname));
+      router.push(
+        buildSignupRedirect(
+          getFeatureVotingPrivatePath(serviceInstanceId, featureId)
+        )
+      );
+      return;
+    }
+    if (isPublicPath) {
+      router.push(getFeatureVotingPrivatePath(serviceInstanceId, featureId));
       return;
     }
     commitVote({ feature_id: featureId });

@@ -9,29 +9,27 @@ export const isSafeRedirect = (url: string): boolean => {
   return url.startsWith('/') && !url.startsWith('//');
 };
 
-/**
- * Builds a safe login redirect URL with the current pathname base64-encoded
- * as a query param. Returns '/login' when no pathname is provided.
- * Single canonical way to produce a login redirect URL on the frontend.
- */
-export const buildLoginRedirect = (
+// Canonical builder for the auth redirect URLs. Encodes the pathname as a
+// `redirect` query param, or returns `base` unchanged when none is given.
+const buildAuthRedirect = (
+  base: string,
   pathname: string | null | undefined
 ): string => {
-  if (!pathname) return '/login';
-  return `/login?redirect=${encodeURIComponent(btoa(pathname))}`;
+  if (!pathname) return base;
+  return `${base}?redirect=${encodeURIComponent(btoa(pathname))}`;
 };
 
-/**
- * Builds a safe signup redirect URL with the current pathname base64-encoded
- * as a query param.
- * Returns '/sign-up' when no pathname is provided.
- */
+export const buildLoginRedirect = (
+  pathname: string | null | undefined
+): string => buildAuthRedirect('/login', pathname);
+
 export const buildSignupRedirect = (
   pathname: string | null | undefined
-): string => {
-  if (!pathname) return '/sign-up';
-  return `/sign-up?redirect=${encodeURIComponent(btoa(pathname))}`;
-};
+): string => buildAuthRedirect('/sign-up', pathname);
+
+export const buildOidcRedirect = (
+  pathname: string | null | undefined
+): string => buildAuthRedirect('/auth/oidc', pathname);
 
 /**
  * Decodes a base64-encoded redirect parameter and validates it is a safe
