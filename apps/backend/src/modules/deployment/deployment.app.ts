@@ -1360,16 +1360,54 @@ const applyDeploymentRequestUpdateInQuotaTransaction = async ({
     quotaKeysOfRequest(deploymentRequest),
     async () => {
       if (deploymentRequest.type === DeploymentRequestDeploymentType.Bundle) {
-        await DeploymentRequestDomain.updateDeploymentRequestById(
+        const updatedDeploymentRequest =
+          await DeploymentRequestDomain.updateDeploymentRequestByIdIfTargetState(
+            deploymentRequestId,
+            deploymentRequest.target_state,
+            {
+              platform_id: input.platform_id,
+              failure_reason: input.failure_reason,
+              actual_state: input.actual_state,
+              hub_status: newStatus,
+            }
+          );
+
+        if (!updatedDeploymentRequest) {
+          logApp.warn(
+            'Skipped stale deployment request update: target_state changed concurrently',
+            {
+              deploymentRequestId,
+              target_state: deploymentRequest.target_state,
+            }
+          );
+        }
+
+        return;
+      }
+
+      const updateData: DeploymentRequestMutator = {
+        start_date: input.start_date,
+        end_date: input.end_date,
+        platform_id: input.platform_id,
+        failure_reason: input.failure_reason,
+        actual_state: input.actual_state,
+        ordering: input.ordering ?? undefined,
+        hub_status: newStatus,
+        url: input.url,
+      };
+
+      const updatedDeploymentRequest =
+        await DeploymentRequestDomain.updateDeploymentRequestByIdIfTargetState(
           deploymentRequestId,
-          {
-            platform_id: input.platform_id,
-            failure_reason: input.failure_reason,
-            actual_state: input.actual_state,
-            hub_status: newStatus,
-          }
+          deploymentRequest.target_state,
+          updateData
         );
 
+      if (!updatedDeploymentRequest) {
+        logApp.warn(
+          'Skipped stale deployment request update: target_state changed concurrently',
+          { deploymentRequestId }
+        );
         return;
       }
 
@@ -1384,21 +1422,6 @@ const applyDeploymentRequestUpdateInQuotaTransaction = async ({
         );
       }
 
-      const updateData: DeploymentRequestMutator = {
-        start_date: input.start_date,
-        end_date: input.end_date,
-        platform_id: input.platform_id,
-        failure_reason: input.failure_reason,
-        actual_state: input.actual_state,
-        ordering: input.ordering ?? undefined,
-        hub_status: newStatus,
-        url: input.url,
-      };
-
-      await DeploymentRequestDomain.updateDeploymentRequestById(
-        deploymentRequestId,
-        updateData
-      );
       await syncPlatformRegistrationStatus(
         deploymentRequest,
         input.actual_state

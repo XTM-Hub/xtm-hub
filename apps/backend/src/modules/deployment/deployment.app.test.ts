@@ -1783,6 +1783,52 @@ describe('deployment app', () => {
           );
         }
       );
+
+      it('should not overwrite hub_status when the request is cancelled concurrently after validation but before the locked write', async () => {
+        const removedDeployment =
+          await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+            {
+              hub_status: DeploymentRequestHubStatus.Provisioning,
+              target_state: DeploymentRequestPlatformState.Active,
+              actual_state: DeploymentRequestPlatformState.Removed,
+            }
+          );
+
+        const originalUpdate =
+          DeploymentRequestDomain.updateDeploymentRequestByIdIfTargetState;
+        const updateSpy = vi
+          .spyOn(
+            DeploymentRequestDomain,
+            'updateDeploymentRequestByIdIfTargetState'
+          )
+          .mockImplementationOnce(async (id, expectedTargetState, data) => {
+            await TestHelper.deploymentRequest.updateById(id, {
+              hub_status: DeploymentRequestHubStatus.Cancelled,
+              target_state: DeploymentRequestPlatformState.Removed,
+            });
+            return originalUpdate(id, expectedTargetState, data);
+          });
+
+        try {
+          await DeploymentApp.updateDeploymentRequest({
+            id: removedDeployment.id as DeploymentRequestId,
+            actual_state: DeploymentRequestPlatformState.Provisioning,
+          });
+
+          const dbDeploymentRequest =
+            await DeploymentRequestDomain.loadDeploymentRequestBy({
+              id: removedDeployment.id as DeploymentRequestId,
+            });
+
+          expect(dbDeploymentRequest).toMatchObject({
+            hub_status: DeploymentRequestHubStatus.Cancelled,
+            target_state: DeploymentRequestPlatformState.Removed,
+            actual_state: DeploymentRequestPlatformState.Removed,
+          });
+        } finally {
+          updateSpy.mockRestore();
+        }
+      });
     });
 
     it('should throw if deployment request does not exist', async () => {

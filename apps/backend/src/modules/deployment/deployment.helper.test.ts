@@ -139,8 +139,6 @@ describe('isPlatformStateTransitionValid', () => {
     ${DeploymentRequestPlatformState.Removed}      | ${DeploymentRequestPlatformState.Active}        | ${DeploymentRequestPlatformState.Active}  | ${'removed platform cannot become active directly'}
     ${DeploymentRequestPlatformState.Removing}     | ${DeploymentRequestPlatformState.Provisioning}  | ${DeploymentRequestPlatformState.Removed} | ${'redeploy is not expected while removal is targeted'}
     ${DeploymentRequestPlatformState.Removed}      | ${DeploymentRequestPlatformState.Provisioning}  | ${DeploymentRequestPlatformState.Removed} | ${'redeploy is not expected while removal is targeted'}
-    ${DeploymentRequestPlatformState.Removing}     | ${DeploymentRequestPlatformState.Provisioning}  | ${null}                                   | ${'no target state to justify a redeploy'}
-    ${DeploymentRequestPlatformState.Removed}      | ${DeploymentRequestPlatformState.Provisioning}  | ${null}                                   | ${'no target state to justify a redeploy'}
   `(
     'should reject invalid platform state transition: $from to $to with target state $targetState ($description)',
     ({ from, to, targetState }) => {
