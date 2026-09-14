@@ -1,4 +1,3 @@
-import { toServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { useActiveAndDraftSplit } from '@/components/service/components/service-list-utils';
 import { AppServiceContext } from '@/components/service/components/ServiceContext';
 import ServiceList from '@/components/service/components/ServiceList';
@@ -10,15 +9,13 @@ import {
 } from '@/components/service/document/document.graphql';
 import { useDocumentContext } from '@/components/service/document/use-document-context';
 import { PaginationControls } from '@/components/ui/pagination/PaginationControls';
-import { useLogicalFiltersFromStorage } from '@/hooks/use-logical-filters-from-storage';
+import { useDocumentFacetCounts } from '@/hooks/use-document-facet-counts';
 import {
   ServiceListLocalStorageKey,
   useServiceListLocalStorage,
 } from '@/hooks/use-service-list-local-storage';
 import { useTablePagination } from '@/hooks/use-table-pagination';
-import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
-  ServiceSlug,
   SHAREABLE_RESOURCE_SERVICE_SLUG_MAPPING,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
@@ -33,9 +30,6 @@ import {
   documentsQuery$variables,
 } from '@generated/documentsQuery.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { LogicalFilterInput, useDocumentFacetsQuery } from '@graphql/generated';
-import { keepPreviousData } from '@tanstack/react-query';
-import { useMemo } from 'react';
 import {
   PreloadedQuery,
   usePreloadedQuery,
@@ -115,60 +109,20 @@ const ShareableResourceServiceList = ({
 
   const serviceInstanceSlug = SHAREABLE_RESOURCE_SERVICE_SLUG_MAPPING[type];
 
-  const logicalFilters = useLogicalFiltersFromStorage(
-    serviceInstanceSlug === ServiceSlug.OPEN_CTI_INTEGRATIONS
-      ? {
-          serviceInstanceSlug: ServiceSlug.OPEN_CTI_INTEGRATIONS,
-          labels,
-          deployable,
-          verified,
-          integrationTypes,
-          productVersions,
-          licenseTypes,
-          solutionCategories,
-        }
-      : {
-          serviceInstanceSlug: serviceInstanceSlug as
-            | ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS
-            | ServiceSlug.OPEN_AEV_SCENARIOS
-            | ServiceSlug.OPEN_CTI_PLAYBOOKS
-            | ServiceSlug.OPEN_CTI_CUSTOM_VIEWS,
-          labels,
-          entityTypes,
-        }
-  );
-
-  const { data: facetData } = useDocumentFacetsQuery(
-    portalGraphqlClient,
-    {
-      input: {
-        serviceInstanceId: serviceInstance.id,
-        documentType: type,
-        searchTerm: search,
-        // useLogicalFiltersFromStorage is shared with the (still-Relay) documents
-        // query, so it's typed against Relay's LogicalFilterInput (all fields
-        // optional). The react-query codegen output for the same schema input
-        // type has `avoidOptionals` enabled, making fields required-but-nullable
-        // instead — structurally identical at runtime, just a stricter TS shape.
-        logicalFilters: logicalFilters as LogicalFilterInput,
-      },
-    },
-    { placeholderData: keepPreviousData }
-  );
-
-  // `facetData` is `undefined` until the query has resolved at least once
-  // (react-query's initial-fetch state). Returning `undefined` here — instead
-  // of computing all-zero counts — lets each filter badge stay hidden rather
-  // than briefly rendering "(0)" before the real counts arrive. Once fetched,
-  // `placeholderData: keepPreviousData` keeps `facetData` populated across
-  // refetches, so this only ever gates the very first paint.
-  const facetCounts = useMemo(
-    () =>
-      facetData === undefined
-        ? undefined
-        : toServiceListFacetCounts(facetData.documentFacets),
-    [facetData]
-  );
+  const facetCounts = useDocumentFacetCounts({
+    serviceInstanceId: serviceInstance.id,
+    documentType: type,
+    search,
+    serviceInstanceSlug,
+    labels,
+    entityTypes,
+    deployable,
+    verified,
+    integrationTypes,
+    productVersions,
+    licenseTypes,
+    solutionCategories,
+  });
 
   const { filters } = useShareableResourceMapping(
     serviceInstanceSlug,
