@@ -322,7 +322,8 @@ export const DocumentDomain = {
 
   loadParentDocumentsByServiceInstance: async (
     type: string,
-    input: QueryDocumentsArgs,
+    input: Partial<QueryDocumentsArgs> &
+      Pick<QueryDocumentsArgs, 'serviceInstanceId'>,
     include_metadata?: DocumentMetadataKeyCode[]
   ): Promise<DocumentConnection> => {
     return DocumentDomain.loadDocuments(

@@ -211,3 +211,12 @@ export const INTEGRATION_METADATA_KEYS: DocumentMetadataKeyCode[] = Array.from(
     ...INTEGRATION_THIRD_PARTY_INTEGRATION_METADATA_KEYS,
   ])
 ) as DocumentMetadataKeyCode[];
+
+// The only metadata columns the CSV export reads (see integration-csv-export.util.ts); narrower
+// than INTEGRATION_METADATA_KEYS to avoid hydrating unused metadata for every exported row.
+export const INTEGRATION_CSV_EXPORT_METADATA_KEYS: DocumentMetadataKeyCode[] = [
+  DocumentMetadataKeyCode.IntegrationType,
+  DocumentMetadataKeyCode.ManagerSupported,
+  DocumentMetadataKeyCode.Verified,
+  DocumentMetadataKeyCode.LicenseType,
+];

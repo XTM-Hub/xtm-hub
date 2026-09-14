@@ -1190,6 +1190,47 @@ describe('documentApp', () => {
     });
   });
 
+  describe('loadDocumentsForCsvExport', () => {
+    it('should throw when service definition is not found', async () => {
+      // When
+      const call = DocumentApp.loadDocumentsForCsvExport(
+        {
+          serviceInstanceId:
+            '00000000-0000-0000-0000-000000000000' as ServiceInstanceId,
+        },
+        [DocumentMetadataKeyCode.IntegrationType]
+      );
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.ServiceDefinitionNotFound);
+    });
+
+    it('should load documents with the caller-provided metadata keys instead of the service definition default', async () => {
+      // Given
+      const loadParentDocumentsByServiceInstanceSpy = vi
+        .spyOn(DocumentDomain, 'loadParentDocumentsByServiceInstance')
+        .mockResolvedValue({
+          edges: [],
+          pageInfo: { hasNextPage: false, hasPreviousPage: false },
+          totalCount: 0,
+        });
+      const input = {
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+      };
+      const metadataKeys = [DocumentMetadataKeyCode.IntegrationType];
+
+      // When
+      await DocumentApp.loadDocumentsForCsvExport(input, metadataKeys);
+
+      // Then
+      expect(loadParentDocumentsByServiceInstanceSpy).toHaveBeenCalledWith(
+        OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        input,
+        metadataKeys
+      );
+    });
+  });
+
   describe('loadPublicDocuments', () => {
     it('should throw if service definition is not found', async () => {
       // Given

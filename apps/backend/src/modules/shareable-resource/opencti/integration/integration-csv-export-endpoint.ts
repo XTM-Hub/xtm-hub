@@ -25,9 +25,7 @@ import {
   parseRequestedColumns,
   parseRequestedFilters,
 } from './integration-csv-export.util';
-
-// Upper bound keeping the export a single unpaginated query while bounding memory.
-export const EXPORT_MAX_ROWS = 10_000;
+import { INTEGRATION_CSV_EXPORT_METADATA_KEYS } from './integration.model';
 
 const csvExportRateLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
@@ -114,14 +112,16 @@ export const IntegrationCsvExportEndpoint = {
         req.query as Record<string, unknown>
       );
 
-      const documentsConnection = await DocumentApp.loadDocuments({
-        serviceInstanceId,
-        first: EXPORT_MAX_ROWS,
-        orderBy: DocumentOrdering.Name,
-        orderMode: OrderingMode.Asc,
-        parentsOnly: true,
-        logicalFilters,
-      });
+      const documentsConnection = await DocumentApp.loadDocumentsForCsvExport(
+        {
+          serviceInstanceId,
+          orderBy: DocumentOrdering.Name,
+          orderMode: OrderingMode.Asc,
+          parentsOnly: true,
+          logicalFilters,
+        },
+        INTEGRATION_CSV_EXPORT_METADATA_KEYS
+      );
 
       const rows = documentsConnection.edges.map(
         (edge) => edge.node as unknown as IntegrationCsvExportRow
@@ -140,9 +140,16 @@ export const IntegrationCsvExportEndpoint = {
         rows.forEach((row, index) => {
           const useCases = useCasesByDocument[index];
           const solutionCategories = solutionCategoriesByDocument[index];
-          row.use_cases = useCases instanceof Error ? [] : useCases;
-          row.solution_categories =
-            solutionCategories instanceof Error ? [] : solutionCategories;
+          // loadMany never rejects; it resolves per-key Errors instead. Re-throw them here so a
+          // failed use-case/solution-category lookup fails the export instead of silently emptying the column.
+          if (useCases instanceof Error) {
+            throw useCases;
+          }
+          if (solutionCategories instanceof Error) {
+            throw solutionCategories;
+          }
+          row.use_cases = useCases;
+          row.solution_categories = solutionCategories;
         });
       }
 

@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
-  loadDocumentsMock,
+  loadDocumentsForCsvExportMock,
   loadServiceDefinitionByServiceInstanceMock,
   loadOrganizationByMock,
   sendTelemetryEventMock,
@@ -10,7 +10,7 @@ const {
   solutionCategoriesByDocumentIdLoaderLoadManyMock,
   requestContextUpdateMock,
 } = vi.hoisted(() => ({
-  loadDocumentsMock: vi.fn(),
+  loadDocumentsForCsvExportMock: vi.fn(),
   loadServiceDefinitionByServiceInstanceMock: vi.fn(),
   loadOrganizationByMock: vi.fn(),
   sendTelemetryEventMock: vi.fn(),
@@ -20,7 +20,7 @@ const {
 }));
 
 vi.mock('../../../document/document.app', () => ({
-  DocumentApp: { loadDocuments: loadDocumentsMock },
+  DocumentApp: { loadDocumentsForCsvExport: loadDocumentsForCsvExportMock },
 }));
 vi.mock('../../../document/document.dataloader', () => ({
   DocumentDataLoader: {
@@ -110,7 +110,7 @@ describe('integrationCsvExportEndpoint.exportCsv', () => {
     loadServiceDefinitionByServiceInstanceMock.mockResolvedValue(
       INTEGRATIONS_SERVICE_DEFINITION
     );
-    loadDocumentsMock.mockResolvedValue({ edges: [] });
+    loadDocumentsForCsvExportMock.mockResolvedValue({ edges: [] });
     useCasesByDocumentIdLoaderLoadManyMock.mockResolvedValue([]);
     solutionCategoriesByDocumentIdLoaderLoadManyMock.mockResolvedValue([]);
     loadOrganizationByMock.mockResolvedValue({ id: 'org-1' });
@@ -138,7 +138,7 @@ describe('integrationCsvExportEndpoint.exportCsv', () => {
     );
 
     expect(res.status).toHaveBeenCalledWith(404);
-    expect(loadDocumentsMock).not.toHaveBeenCalled();
+    expect(loadDocumentsForCsvExportMock).not.toHaveBeenCalled();
   });
 
   it('returns 400 when the service instance is not the integrations library', async () => {
@@ -153,11 +153,11 @@ describe('integrationCsvExportEndpoint.exportCsv', () => {
     );
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(loadDocumentsMock).not.toHaveBeenCalled();
+    expect(loadDocumentsForCsvExportMock).not.toHaveBeenCalled();
   });
 
   it('downloads a header-only CSV when there are no integrations', async () => {
-    loadDocumentsMock.mockResolvedValue({ edges: [] });
+    loadDocumentsForCsvExportMock.mockResolvedValue({ edges: [] });
 
     const res = buildResponse();
     await IntegrationCsvExportEndpoint.exportCsv(
@@ -176,7 +176,7 @@ describe('integrationCsvExportEndpoint.exportCsv', () => {
   });
 
   it('builds one CSV row per integration, including use cases and solution categories', async () => {
-    loadDocumentsMock.mockResolvedValue({
+    loadDocumentsForCsvExportMock.mockResolvedValue({
       edges: [buildDocumentEdge({ id: 'doc-1', name: 'My Integration' })],
     });
     useCasesByDocumentIdLoaderLoadManyMock.mockResolvedValue([
@@ -216,7 +216,7 @@ describe('integrationCsvExportEndpoint.exportCsv', () => {
   });
 
   it('sends a telemetry export event with the export format', async () => {
-    loadDocumentsMock.mockResolvedValue({
+    loadDocumentsForCsvExportMock.mockResolvedValue({
       edges: [buildDocumentEdge(), buildDocumentEdge({ id: 'doc-2' })],
     });
     useCasesByDocumentIdLoaderLoadManyMock.mockResolvedValue([[], []]);
@@ -253,7 +253,7 @@ describe('integrationCsvExportEndpoint.exportCsv', () => {
   });
 
   it('returns 500 when loading the documents fails', async () => {
-    loadDocumentsMock.mockRejectedValue(new Error('database down'));
+    loadDocumentsForCsvExportMock.mockRejectedValue(new Error('database down'));
 
     const res = buildResponse();
     await IntegrationCsvExportEndpoint.exportCsv(
@@ -262,6 +262,42 @@ describe('integrationCsvExportEndpoint.exportCsv', () => {
     );
 
     expect(res.status).toHaveBeenCalledWith(500);
+  });
+
+  it('returns 500 when the use cases lookup fails instead of silently exporting an empty column', async () => {
+    loadDocumentsForCsvExportMock.mockResolvedValue({
+      edges: [buildDocumentEdge()],
+    });
+    useCasesByDocumentIdLoaderLoadManyMock.mockResolvedValue([
+      new Error('use case lookup failed'),
+    ]);
+
+    const res = buildResponse();
+    await IntegrationCsvExportEndpoint.exportCsv(
+      buildRequest(VALID_PARAMS),
+      res as unknown as Response
+    );
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).not.toHaveBeenCalled();
+  });
+
+  it('returns 500 when the solution categories lookup fails instead of silently exporting an empty column', async () => {
+    loadDocumentsForCsvExportMock.mockResolvedValue({
+      edges: [buildDocumentEdge()],
+    });
+    solutionCategoriesByDocumentIdLoaderLoadManyMock.mockResolvedValue([
+      new Error('solution category lookup failed'),
+    ]);
+
+    const res = buildResponse();
+    await IntegrationCsvExportEndpoint.exportCsv(
+      buildRequest(VALID_PARAMS),
+      res as unknown as Response
+    );
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.send).not.toHaveBeenCalled();
   });
 
   it('returns 400 when the serviceInstanceId param is missing', async () => {
