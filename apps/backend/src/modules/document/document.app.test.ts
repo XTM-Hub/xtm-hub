@@ -1061,6 +1061,20 @@ describe('documentApp', () => {
       await expect(call).rejects.toThrow(ErrorCode.ServiceDefinitionNotFound);
     });
 
+    it('should return null instead of throwing when the slug is unknown for a known service', async () => {
+      // Given a valid service instance but a slug that doesn't match any document
+      // When
+      const documentLoaded = await DocumentApp.loadPublicDocumentBySlug(
+        SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+        'this-slug-does-not-exist'
+      );
+
+      // Then it resolves to null instead of surfacing a DOCUMENT_NOT_FOUND
+      // GraphQL error, since publicDocumentBySlug is a nullable public query
+      // and an unknown/guessed slug is an expected outcome.
+      expect(documentLoaded).toBeNull();
+    });
+
     it('should return the document with elastic search counters', async () => {
       // Given
       const document = await DocumentApp.createDocument({

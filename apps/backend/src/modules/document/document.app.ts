@@ -21,6 +21,7 @@ import ServiceDefinition from '../../model/kanel/public/ServiceDefinition';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { SolutionCategoryId } from '../../model/kanel/public/SolutionCategory';
 import { logApp } from '../../utils/app-logger.util';
+import { getErrorMessage } from '../../utils/error/error-guard.util';
 import { ErrorCode, UnknownErrorCode } from '../../utils/error/error.code';
 import { ForbiddenAccess } from '../../utils/error/error.util';
 import { NewsFeedApp } from '../news-feed/news-feed.app';
@@ -633,11 +634,22 @@ export const DocumentApp = {
     const { documentType, metadataKeys } =
       getMetadataKeysAndDocumentTypeFromServiceDefinition(serviceDefinition);
 
-    return DocumentHelper.loadSeoDocumentWithCountersBySlug(
-      documentType,
-      slug,
-      metadataKeys
-    );
+    // `publicDocumentBySlug` is a nullable public query: an unknown/guessed
+    // slug is an expected outcome (typo, stale link, bot crawl), not an
+    // exceptional one, so it resolves to `null` instead of surfacing as a
+    // GraphQL error.
+    try {
+      return await DocumentHelper.loadSeoDocumentWithCountersBySlug(
+        documentType,
+        slug,
+        metadataKeys
+      );
+    } catch (error) {
+      if (getErrorMessage(error) === ErrorCode.DocumentNotFound) {
+        return null;
+      }
+      throw error;
+    }
   },
 
   loadPublicDocuments: async (input: QueryPublicDocumentsArgs) => {
