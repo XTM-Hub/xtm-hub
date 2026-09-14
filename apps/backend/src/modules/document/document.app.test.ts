@@ -1190,10 +1190,10 @@ describe('documentApp', () => {
     });
   });
 
-  describe('loadDocumentsForCsvExport', () => {
+  describe('loadDocuments with metadataKeysOverride', () => {
     it('should throw when service definition is not found', async () => {
       // When
-      const call = DocumentApp.loadDocumentsForCsvExport(
+      const call = DocumentApp.loadDocuments(
         {
           serviceInstanceId:
             '00000000-0000-0000-0000-000000000000' as ServiceInstanceId,
@@ -1220,7 +1220,7 @@ describe('documentApp', () => {
       const metadataKeys = [DocumentMetadataKeyCode.IntegrationType];
 
       // When
-      await DocumentApp.loadDocumentsForCsvExport(input, metadataKeys);
+      await DocumentApp.loadDocuments(input, metadataKeys);
 
       // Then
       expect(loadParentDocumentsByServiceInstanceSpy).toHaveBeenCalledWith(

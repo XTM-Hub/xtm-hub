@@ -219,4 +219,8 @@ export const INTEGRATION_CSV_EXPORT_METADATA_KEYS: DocumentMetadataKeyCode[] = [
   DocumentMetadataKeyCode.ManagerSupported,
   DocumentMetadataKeyCode.Verified,
   DocumentMetadataKeyCode.LicenseType,
+  DocumentMetadataKeyCode.FeedUrl,
+  DocumentMetadataKeyCode.VendorUrl,
+  DocumentMetadataKeyCode.DemoUrl,
+  DocumentMetadataKeyCode.DatasheetUrl,
 ];

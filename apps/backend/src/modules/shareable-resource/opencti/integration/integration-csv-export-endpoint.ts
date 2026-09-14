@@ -112,7 +112,7 @@ export const IntegrationCsvExportEndpoint = {
         req.query as Record<string, unknown>
       );
 
-      const documentsConnection = await DocumentApp.loadDocumentsForCsvExport(
+      const documentsConnection = await DocumentApp.loadDocuments(
         {
           serviceInstanceId,
           orderBy: DocumentOrdering.Name,

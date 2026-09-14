@@ -22,6 +22,12 @@ const baseRow: IntegrationCsvExportRow = {
   manager_supported: true,
   verified: true,
   license_type: 'Open Source',
+  short_description: 'Detects threats in real time',
+  description: 'A longer description of the Sentinel connector.',
+  feed_url: 'https://feed.example/sentinel',
+  datasheet_url: 'https://docs.example/sentinel',
+  vendor_url: 'https://vendor.example/sentinel',
+  demo_url: 'https://demo.example/sentinel',
   use_cases: [{ name: 'Threat Detection' }, { name: 'Incident Response' }],
   solution_categories: [{ name: 'Detection' }],
 };
@@ -254,7 +260,7 @@ describe('buildIntegrationsCsv', () => {
   it('returns a header-only CSV when there are no rows', () => {
     const csv = buildIntegrationsCsv([]);
     expect(csv).toBe(
-      '\uFEFFName,Integration type,Use case,Deployment type,Verification status,Solution category,License type\r\n'
+      '\uFEFFName,Integration type,Use case,Deployment type,Verification status,Solution category,License type,Short description,Long description,Feed URL,OpenCTI documentation,Vendor URL,Demo link\r\n'
     );
   });
 
@@ -262,10 +268,10 @@ describe('buildIntegrationsCsv', () => {
     const csv = buildIntegrationsCsv([baseRow]);
     const lines = csv.replace('\uFEFF', '').split('\r\n');
     expect(lines[0]).toBe(
-      'Name,Integration type,Use case,Deployment type,Verification status,Solution category,License type'
+      'Name,Integration type,Use case,Deployment type,Verification status,Solution category,License type,Short description,Long description,Feed URL,OpenCTI documentation,Vendor URL,Demo link'
     );
     expect(lines[1]).toBe(
-      'Sentinel Connector,connector,Threat Detection;Incident Response,Automatic deploy,Verified,Detection,Open Source'
+      'Sentinel Connector,connector,Threat Detection;Incident Response,Automatic deploy,Verified,Detection,Open Source,Detects threats in real time,A longer description of the Sentinel connector.,https://feed.example/sentinel,https://docs.example/sentinel,https://vendor.example/sentinel,https://demo.example/sentinel'
     );
   });
 
@@ -304,7 +310,7 @@ describe('buildIntegrationsCsv', () => {
     };
     const csv = buildIntegrationsCsv([emptyRow]);
     const lines = csv.replace('\uFEFF', '').split('\r\n');
-    expect(lines[1]).toBe('Bare Feed,,,,,,');
+    expect(lines[1]).toBe('Bare Feed,,,,,,,,,,,,');
   });
 
   it('escapes special characters (commas, quotes, line breaks) in cell values', () => {
@@ -332,6 +338,24 @@ describe('buildIntegrationsCsv', () => {
     const [, dataLine] = csv.replace('\uFEFF', '').split('\r\n');
     expect(dataLine).toBe(
       'Sentinel Connector,Threat Detection;Incident Response,Detection'
+    );
+  });
+
+  it('exports the description, link and URL columns from their underlying fields', () => {
+    const csv = buildIntegrationsCsv(
+      [baseRow],
+      [
+        IntegrationCsvColumnKey.ShortDescription,
+        IntegrationCsvColumnKey.LongDescription,
+        IntegrationCsvColumnKey.FeedUrl,
+        IntegrationCsvColumnKey.OpenctiDocumentation,
+        IntegrationCsvColumnKey.VendorUrl,
+        IntegrationCsvColumnKey.DemoLink,
+      ]
+    );
+    const [, dataLine] = csv.replace('\uFEFF', '').split('\r\n');
+    expect(dataLine).toBe(
+      'Sentinel Connector,Detects threats in real time,A longer description of the Sentinel connector.,https://feed.example/sentinel,https://docs.example/sentinel,https://vendor.example/sentinel,https://demo.example/sentinel'
     );
   });
 

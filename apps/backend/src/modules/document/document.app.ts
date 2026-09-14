@@ -578,7 +578,14 @@ export const DocumentApp = {
     return documentFromDb as T;
   },
 
-  loadDocuments: async (input: QueryDocumentsArgs) => {
+  // `metadataKeysOverride` lets callers (e.g. the CSV export) hydrate a caller-chosen metadata
+  // key list instead of the service definition's default one, avoiding unused metadata. `first`
+  // is optional in the input type so exports aren't row-capped like the paginated GraphQL API.
+  loadDocuments: async (
+    input: Partial<QueryDocumentsArgs> &
+      Pick<QueryDocumentsArgs, 'serviceInstanceId'>,
+    metadataKeysOverride?: DocumentMetadataKeyCode[]
+  ) => {
     const serviceDefinition =
       await ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
         input.serviceInstanceId
@@ -593,33 +600,7 @@ export const DocumentApp = {
     return DocumentDomain.loadParentDocumentsByServiceInstance(
       documentType,
       input,
-      metadataKeys
-    );
-  },
-
-  // Same secured query path as loadDocuments, but lets the caller pass its own metadata key
-  // list instead of the service definition's default one, to avoid hydrating unused metadata.
-  // `first` is optional here (unlike the paginated GraphQL API) so exports aren't row-capped.
-  loadDocumentsForCsvExport: async (
-    input: Partial<QueryDocumentsArgs> &
-      Pick<QueryDocumentsArgs, 'serviceInstanceId'>,
-    metadataKeys: DocumentMetadataKeyCode[]
-  ) => {
-    const serviceDefinition =
-      await ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
-        input.serviceInstanceId
-      );
-    if (!serviceDefinition) {
-      throw new Error(ErrorCode.ServiceDefinitionNotFound);
-    }
-
-    const { documentType } =
-      getMetadataKeysAndDocumentTypeFromServiceDefinition(serviceDefinition);
-
-    return DocumentDomain.loadParentDocumentsByServiceInstance(
-      documentType,
-      input,
-      metadataKeys
+      metadataKeysOverride ?? metadataKeys
     );
   },
 

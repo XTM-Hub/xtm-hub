@@ -13,6 +13,12 @@ export enum IntegrationCsvColumnKey {
   VerificationStatus = 'verification_status',
   SolutionCategory = 'solution_category',
   LicenseType = 'license_type',
+  ShortDescription = 'short_description',
+  LongDescription = 'long_description',
+  FeedUrl = 'feed_url',
+  OpenctiDocumentation = 'opencti_documentation',
+  VendorUrl = 'vendor_url',
+  DemoLink = 'demo_link',
 }
 
 // Maps export query params to FilterKey; `use_case` maps to `Label`, the FilterKey used internally for the Object_UseCase join.
@@ -44,6 +50,18 @@ export const INTEGRATION_CSV_EXPORT_COLUMNS: Array<{
     header: 'Solution category',
   },
   { key: IntegrationCsvColumnKey.LicenseType, header: 'License type' },
+  {
+    key: IntegrationCsvColumnKey.ShortDescription,
+    header: 'Short description',
+  },
+  { key: IntegrationCsvColumnKey.LongDescription, header: 'Long description' },
+  { key: IntegrationCsvColumnKey.FeedUrl, header: 'Feed URL' },
+  {
+    key: IntegrationCsvColumnKey.OpenctiDocumentation,
+    header: 'OpenCTI documentation',
+  },
+  { key: IntegrationCsvColumnKey.VendorUrl, header: 'Vendor URL' },
+  { key: IntegrationCsvColumnKey.DemoLink, header: 'Demo link' },
 ];
 
 export const DEFAULT_INTEGRATION_CSV_COLUMNS: IntegrationCsvColumnKey[] =
@@ -52,10 +70,16 @@ export const DEFAULT_INTEGRATION_CSV_COLUMNS: IntegrationCsvColumnKey[] =
 export interface IntegrationCsvExportRow {
   id: string;
   name: string | null;
+  description?: string | null;
+  short_description?: string | null;
   integration_type?: string | null;
   manager_supported?: boolean | null;
   verified?: boolean | null;
   license_type?: string | null;
+  feed_url?: string | null;
+  datasheet_url?: string | null;
+  vendor_url?: string | null;
+  demo_url?: string | null;
   use_cases?: Array<{ name: string }>;
   solution_categories?: Array<{ name: string }>;
 }
@@ -97,6 +121,21 @@ const extractSolutionCategory: CellValueExtractor = (row) =>
 
 const extractLicenseType: CellValueExtractor = (row) => row.license_type ?? '';
 
+const extractShortDescription: CellValueExtractor = (row) =>
+  row.short_description ?? '';
+
+const extractLongDescription: CellValueExtractor = (row) =>
+  row.description ?? '';
+
+const extractFeedUrl: CellValueExtractor = (row) => row.feed_url ?? '';
+
+const extractOpenctiDocumentation: CellValueExtractor = (row) =>
+  row.datasheet_url ?? '';
+
+const extractVendorUrl: CellValueExtractor = (row) => row.vendor_url ?? '';
+
+const extractDemoLink: CellValueExtractor = (row) => row.demo_url ?? '';
+
 // One extractor per column key; keeps cellValueForColumn a plain lookup instead of a switch.
 const CELL_VALUE_EXTRACTORS: Record<
   IntegrationCsvColumnKey,
@@ -108,6 +147,12 @@ const CELL_VALUE_EXTRACTORS: Record<
   [IntegrationCsvColumnKey.VerificationStatus]: extractVerificationStatus,
   [IntegrationCsvColumnKey.SolutionCategory]: extractSolutionCategory,
   [IntegrationCsvColumnKey.LicenseType]: extractLicenseType,
+  [IntegrationCsvColumnKey.ShortDescription]: extractShortDescription,
+  [IntegrationCsvColumnKey.LongDescription]: extractLongDescription,
+  [IntegrationCsvColumnKey.FeedUrl]: extractFeedUrl,
+  [IntegrationCsvColumnKey.OpenctiDocumentation]: extractOpenctiDocumentation,
+  [IntegrationCsvColumnKey.VendorUrl]: extractVendorUrl,
+  [IntegrationCsvColumnKey.DemoLink]: extractDemoLink,
 };
 
 const cellValueForColumn = (

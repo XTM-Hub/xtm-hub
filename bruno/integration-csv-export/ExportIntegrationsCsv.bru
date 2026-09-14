@@ -5,13 +5,13 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/document/csv-export/:serviceInstanceId?columns=integration_type,use_case,deployment_type,verification_status,solution_category,license_type
+  url: {{baseUrl}}/document/csv-export/:serviceInstanceId?columns=integration_type,use_case,deployment_type,verification_status,solution_category,license_type,short_description,long_description,feed_url,opencti_documentation,vendor_url,demo_link
   body: none
   auth: none
 }
 
 params:query {
-  columns: integration_type,use_case,deployment_type,verification_status,solution_category,license_type
+  columns: integration_type,use_case,deployment_type,verification_status,solution_category,license_type,short_description,long_description,feed_url,opencti_documentation,vendor_url,demo_link
   ~integration_type: connector,csv_feed
   ~license_type: Free
   ~manager_supported: true
@@ -45,7 +45,8 @@ docs {
   in addition to the always-included "Name" column. Defaults to all columns
   when omitted, empty, or containing no recognized keys. Valid keys:
   integration_type, use_case, deployment_type, verification_status,
-  solution_category, license_type.
+  solution_category, license_type, short_description, long_description,
+  feed_url, opencti_documentation, vendor_url, demo_link.
 
   Row filters (optional, disabled by default above - tick the ones you want
   in the Params tab and edit their values): each narrows down which
