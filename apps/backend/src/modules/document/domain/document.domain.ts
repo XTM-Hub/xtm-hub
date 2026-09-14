@@ -263,16 +263,15 @@ export const DocumentDomain = {
     const { tags, ...scalarFilters } = documentFilters;
 
     const docQuery = db<DocumentModel>('Document')
-      .leftJoin(
-        'Document_Metadata',
-        'Document.id',
-        'Document_Metadata.document_id'
-      )
-      .where('Document_Metadata.key', key)
-      .andWhere('Document_Metadata.value', value)
-      .andWhere(scalarFilters)
-      .select('Document.*')
-      .groupBy('Document.id');
+      .where(scalarFilters)
+      .whereExists(function () {
+        this.select(dbRaw('1'))
+          .from('Document_Metadata')
+          .whereRaw('"Document_Metadata"."document_id" = "Document"."id"')
+          .andWhere('Document_Metadata.key', key)
+          .andWhere('Document_Metadata.value', value);
+      })
+      .select('Document.*');
 
     if (tags && tags.length > 0) {
       const placeholders = tags.map(() => '?').join(',');
