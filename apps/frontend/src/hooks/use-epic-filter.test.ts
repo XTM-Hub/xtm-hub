@@ -59,6 +59,21 @@ describe('useEpicFilter', () => {
         expectedSelectedProducts: [],
         description: 'empty value → no product',
       },
+      {
+        searchQuery: `product=${FiligranProduct.Opencti}`,
+        expectedSelectedProducts: [FiligranProduct.Opencti],
+        description: 'legacy "product" param → one product',
+      },
+      {
+        searchQuery: 'product=all',
+        expectedSelectedProducts: [],
+        description: 'legacy "product=all" → no product',
+      },
+      {
+        searchQuery: `products=${FiligranProduct.Openaev}&product=${FiligranProduct.Opencti}`,
+        expectedSelectedProducts: [FiligranProduct.Openaev],
+        description: 'both params → "products" wins',
+      },
     ])(
       'should expose "$expectedSelectedProducts" from "$searchQuery" ($description)',
       ({ searchQuery, expectedSelectedProducts }) => {
@@ -84,6 +99,8 @@ describe('useEpicFilter', () => {
       ${`products=${FiligranProduct.Opencti}`} | ${[FiligranProduct.Xtmhub]}                           | ${`/epics?products=${FiligranProduct.Xtmhub}`}                               | ${'replaces existing products'}
       ${`products=${FiligranProduct.Opencti}`} | ${[]}                                                 | ${'/epics'}                                                                  | ${'removes existing products when nothing is selected'}
       ${''}                                    | ${[FiligranProduct.Openaev, FiligranProduct.Opencti]} | ${`/epics?products=${FiligranProduct.Opencti}%2C${FiligranProduct.Openaev}`} | ${'writes the products in the canonical order'}
+      ${`product=${FiligranProduct.Opencti}`}  | ${[FiligranProduct.Openaev]}                          | ${`/epics?products=${FiligranProduct.Openaev}`}                              | ${'drops the legacy "product" param'}
+      ${`product=${FiligranProduct.Opencti}`}  | ${[]}                                                 | ${'/epics'}                                                                  | ${'drops the legacy "product" param when nothing is selected'}
     `(
       'should call router.replace with "$expectedUrl" ($description)',
       ({ initialSearch, filter, expectedUrl }) => {
