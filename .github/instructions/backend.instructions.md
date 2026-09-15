@@ -76,7 +76,7 @@ All endpoints are wired in `src/server/endpoints/index.ts` (`registerEndpoints(a
 calls to mount them — do not import or call an endpoint directly from `src/index.ts`.
 
 Adding an endpoint: copy the shape of an existing one (e.g. `manifest/` or `versions-matrix/`) and register it in
-src/server/endpoints/index.ts
+`src/server/endpoints/index.ts`.
 
 ## Database access
 
