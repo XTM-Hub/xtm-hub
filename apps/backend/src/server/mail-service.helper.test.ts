@@ -198,6 +198,44 @@ describe('renderEmail', () => {
 
       expect(html).toContain('openaev-trials');
     });
+    it('should render the bundle admin mail without leaking undefined', async () => {
+      const html = await renderEmail('admin_saas_bundle_requested', {
+        organizationName: 'myorga',
+        userName: 'firstName lastName',
+        userEmail: 'user.email',
+        region: 'Test region',
+        activitySector: 'Test ActivitySector',
+        openCTIUseCase: 'Test OpenCTI UseCase',
+        openAEVUseCase: 'Test OpenAEV UseCase',
+        products: 'OpenCTI, OpenAEV, and XTM One',
+        deploymentType: 'Bundle',
+      });
+
+      expect(html).toContain(
+        'A new XTM Platform SaaS Bundle has been launched'
+      );
+      expect(html).toContain('manage-trials');
+      expect(html).not.toContain('undefined');
+    });
+    it('should omit use case lines for products not part of the bundle', async () => {
+      const html = await renderEmail('admin_saas_bundle_requested', {
+        organizationName: 'myorga',
+        userName: 'firstName lastName',
+        userEmail: 'user.email',
+        region: 'Test region',
+        activitySector: 'Test ActivitySector',
+        openCTIUseCase: 'Test OpenCTI UseCase',
+        products: 'OpenCTI and XTM One',
+        deploymentType: 'Bundle',
+      });
+
+      expect(html).toContain(
+        'A new XTM Platform SaaS Bundle has been launched'
+      );
+      expect(html).toContain('OpenCTI use case: Test OpenCTI UseCase');
+      expect(html).not.toContain('OpenAEV use case');
+      expect(html).not.toContain('undefined');
+    });
   });
 
   describe('bundle free trials', () => {
