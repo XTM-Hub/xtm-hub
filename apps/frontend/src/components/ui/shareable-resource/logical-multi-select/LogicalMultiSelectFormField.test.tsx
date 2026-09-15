@@ -52,7 +52,8 @@ describe('LogicalMultiSelectFormField', () => {
   });
 
   it('resolves facet counts when the option value is a Relay global id but the facet bucket is keyed by the raw uuid', () => {
-    const globalId = 'VXNlQ2FzZTowMGU4YjQ0ZC04MzBhLTQwNjYtYmM5Ny1mOGM0ZWU1YjUzYTU=';
+    const globalId =
+      'VXNlQ2FzZTowMGU4YjQ0ZC04MzBhLTQwNjYtYmM5Ny1mOGM0ZWU1YjUzYTU=';
     const rawUuid = '00e8b44d-830a-4066-bc97-f8c4ee5b53a5';
 
     testRender(
