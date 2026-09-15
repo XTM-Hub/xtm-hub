@@ -5,8 +5,8 @@ import {
   PlatformMetadataMapping,
 } from '@/components/registration/PlatformIdentifierMapping';
 import { PlatformUpdateSheet } from '@/components/service/components/PlatformUpdateSheet';
-import { XtmoneStatusState } from '@/components/xtm-platform-trial/useXtmoneIntegrationStatus';
-import { XtmoneConnectionStatus } from '@/components/xtm-platform-trial/XtmoneConnectionStatus';
+import { XtmoneStatusState } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/useXtmoneIntegrationStatus';
+import { XtmoneConnectionStatus } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/XtmoneConnectionStatus';
 import { useDateFormatter } from '@/utils/date';
 import { toExternalHref } from '@/utils/external-url';
 import { EditIcon } from '@filigran/icon';

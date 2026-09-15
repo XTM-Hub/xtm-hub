@@ -1,7 +1,7 @@
 'use client';
 
 import { CONTRACT_LABEL_BY_CONTRACT } from '@/components/registration/PlatformIdentifierMapping';
-import { BundleCancelSheet } from '@/components/xtm-platform-trial/BundleCancelSheet';
+import { BundleCancelSheet } from '@/components/service/trial-instances/xtm-platform-trial/shared/BundleCancelSheet';
 import { daysUntil, useDateFormatter } from '@/utils/date';
 import { xtmPlatformTrialManageUsersPath } from '@/utils/path/constant';
 import { Badge, Button, Card, CardContent } from '@filigran/ui';

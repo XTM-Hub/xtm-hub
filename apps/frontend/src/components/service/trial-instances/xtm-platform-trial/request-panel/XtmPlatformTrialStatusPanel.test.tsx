@@ -1,5 +1,5 @@
-import { XtmPlatformTrialStatusPanel } from '@/components/service/trial-instances/xtm-platform-trial/XtmPlatformTrialStatusPanel';
-import { XtmPlatformTrialStatusPanelState } from '@/components/service/trial-instances/xtm-platform-trial/xtm-platform-trial-panel.utils';
+import { XtmPlatformTrialStatusPanel } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/XtmPlatformTrialStatusPanel';
+import { XtmPlatformTrialStatusPanelState } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/xtm-platform-trial-panel.utils';
 import testRender from '@/utils/test/test-render';
 import { PlatformIdentifier } from '@graphql/generated';
 import { screen } from '@testing-library/react';

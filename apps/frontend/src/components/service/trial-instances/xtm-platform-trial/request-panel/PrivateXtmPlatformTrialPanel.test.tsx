@@ -1,8 +1,8 @@
-import { PrivateXtmPlatformTrialPanel } from '@/components/service/trial-instances/xtm-platform-trial/PrivateXtmPlatformTrialPanel';
+import { PrivateXtmPlatformTrialPanel } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/PrivateXtmPlatformTrialPanel';
 import {
   XtmPlatformTrialPanelView,
   XtmPlatformTrialStatusPanelState,
-} from '@/components/service/trial-instances/xtm-platform-trial/xtm-platform-trial-panel.utils';
+} from '@/components/service/trial-instances/xtm-platform-trial/request-panel/xtm-platform-trial-panel.utils';
 import testRender from '@/utils/test/test-render';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import {
@@ -64,7 +64,7 @@ let capturedHandleSubmit:
   | undefined;
 
 vi.mock(
-  '@/components/service/trial-instances/xtm-platform-trial/XtmPlatformTrialForm',
+  '@/components/service/trial-instances/xtm-platform-trial/request-form/XtmPlatformTrialForm',
   () => ({
     XtmPlatformTrialForm: ({
       handleSubmit,
@@ -85,7 +85,7 @@ vi.mock(
 );
 
 vi.mock(
-  '@/components/service/trial-instances/xtm-platform-trial/XtmPlatformTrialStatusPanel',
+  '@/components/service/trial-instances/xtm-platform-trial/request-panel/XtmPlatformTrialStatusPanel',
   () => ({
     XtmPlatformTrialStatusPanel: ({
       state,
@@ -111,11 +111,14 @@ vi.mock(
   })
 );
 
-vi.mock('@/components/xtm-platform-trial/BundleCancelSheet', () => ({
-  BundleCancelSheet: ({ open }: { open: boolean }) => (
-    <div data-testid="bundle-cancel-sheet">{open ? 'open' : 'closed'}</div>
-  ),
-}));
+vi.mock(
+  '@/components/service/trial-instances/xtm-platform-trial/shared/BundleCancelSheet',
+  () => ({
+    BundleCancelSheet: ({ open }: { open: boolean }) => (
+      <div data-testid="bundle-cancel-sheet">{open ? 'open' : 'closed'}</div>
+    ),
+  })
+);
 
 vi.mock(
   '@/components/service/trial-instances/reach-sales/ReachSalesButton',

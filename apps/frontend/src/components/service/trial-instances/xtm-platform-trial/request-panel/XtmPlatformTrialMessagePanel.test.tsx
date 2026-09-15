@@ -1,4 +1,4 @@
-import { XtmPlatformTrialMessagePanel } from '@/components/service/trial-instances/xtm-platform-trial/XtmPlatformTrialMessagePanel';
+import { XtmPlatformTrialMessagePanel } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/XtmPlatformTrialMessagePanel';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 

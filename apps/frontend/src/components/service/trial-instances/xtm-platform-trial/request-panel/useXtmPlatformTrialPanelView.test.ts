@@ -1,4 +1,4 @@
-import { useXtmPlatformTrialPanelView } from '@/components/service/trial-instances/xtm-platform-trial/useXtmPlatformTrialPanelView';
+import { useXtmPlatformTrialPanelView } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/useXtmPlatformTrialPanelView';
 import { testRenderHook } from '@/utils/test/test-render';
 import {
   DeploymentRequestHubStatus,

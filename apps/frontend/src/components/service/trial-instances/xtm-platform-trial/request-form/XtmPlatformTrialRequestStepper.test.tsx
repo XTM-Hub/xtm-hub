@@ -1,4 +1,4 @@
-import { XtmPlatformTrialRequestStepper } from '@/components/service/trial-instances/xtm-platform-trial/XtmPlatformTrialRequestStepper';
+import { XtmPlatformTrialRequestStepper } from '@/components/service/trial-instances/xtm-platform-trial/request-form/XtmPlatformTrialRequestStepper';
 import testRender from '@/utils/test/test-render';
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';

@@ -2,7 +2,7 @@ import { PortalContext } from '@/components/me/AppPortalContext';
 import {
   deriveXtmPlatformTrialPanelView,
   XtmPlatformTrialPanelView,
-} from '@/components/service/trial-instances/xtm-platform-trial/xtm-platform-trial-panel.utils';
+} from '@/components/service/trial-instances/xtm-platform-trial/request-panel/xtm-platform-trial-panel.utils';
 import useGranted from '@/hooks/use-granted';
 import { useAdminByPass } from '@/hooks/use-portal-capability';
 import { portalGraphqlClient } from '@/lib/graphql-client';

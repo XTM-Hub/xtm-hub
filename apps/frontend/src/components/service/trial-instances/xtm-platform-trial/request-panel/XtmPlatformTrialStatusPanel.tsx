@@ -1,7 +1,7 @@
 'use client';
 
-import { XtmPlatformTrialRequestStepper } from '@/components/service/trial-instances/xtm-platform-trial/XtmPlatformTrialRequestStepper';
-import { XtmPlatformTrialStatusPanelState } from '@/components/service/trial-instances/xtm-platform-trial/xtm-platform-trial-panel.utils';
+import { XtmPlatformTrialRequestStepper } from '@/components/service/trial-instances/xtm-platform-trial/request-form/XtmPlatformTrialRequestStepper';
+import { XtmPlatformTrialStatusPanelState } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/xtm-platform-trial-panel.utils';
 import { useDateFormatter } from '@/utils/date';
 import { Checkbox } from '@filigran/ui';
 import { PlatformIdentifier } from '@graphql/generated';

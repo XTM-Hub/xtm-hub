@@ -2,11 +2,11 @@
 
 import { ReachSalesButton } from '@/components/service/trial-instances/reach-sales/ReachSalesButton';
 import { SlackSupportButton } from '@/components/service/trial-instances/SlackSupport';
-import { XtmPlatformTrialLimitations } from '@/components/service/trial-instances/xtm-platform-trial/XtmPlatformTrialLimitations';
-import { BundleGuideCard } from '@/components/xtm-platform-trial/BundleGuideCard';
-import { BundleInfoCard } from '@/components/xtm-platform-trial/BundleInfoCard';
-import { BundleProductCard } from '@/components/xtm-platform-trial/BundleProductCard';
-import { useXtmoneIntegrationStatus } from '@/components/xtm-platform-trial/useXtmoneIntegrationStatus';
+import { BundleGuideCard } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleGuideCard';
+import { BundleInfoCard } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleInfoCard';
+import { BundleProductCard } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/BundleProductCard';
+import { useXtmoneIntegrationStatus } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/useXtmoneIntegrationStatus';
+import { XtmPlatformTrialLimitations } from '@/components/service/trial-instances/xtm-platform-trial/shared/XtmPlatformTrialLimitations';
 import useGranted from '@/hooks/use-granted';
 import { useAdminByPass } from '@/hooks/use-portal-capability';
 import { portalGraphqlClient } from '@/lib/graphql-client';
@@ -19,7 +19,7 @@ import {
 } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
 
-export const XtmPlatformTrialPage = () => {
+export const XtmPlatformActiveBundlePage = () => {
   const t = useTranslations();
 
   const isAdminByPass = useAdminByPass();
