@@ -378,17 +378,15 @@ const handler = createHandler({
     return { user, req: _req };
   },
 
-  onConnect: async (req) => {
-    sseActiveConnectionsGauge.inc({
-      subscription: req.context.res.req.body?.operationName ?? 'Unknown',
-    });
-  },
   onComplete: async (_ctx, msg) => {
     sseActiveConnectionsGauge.dec({
       subscription: msg.context.res.req.body?.operationName ?? 'Unknown',
     });
   },
   onSubscribe: async (_ctx, msg) => {
+    sseActiveConnectionsGauge.inc({
+      subscription: msg.operationName ?? 'Unknown',
+    });
     sseSubscriptionCounter.inc({
       subscription: msg.operationName ?? 'Unknown',
     });
