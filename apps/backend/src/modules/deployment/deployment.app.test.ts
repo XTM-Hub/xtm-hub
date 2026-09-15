@@ -511,7 +511,7 @@ describe('deployment app', () => {
             })
           );
         });
-        expect(mockSendMail).toHaveBeenCalledTimes(4);
+        expect(mockSendMail).toHaveBeenCalledTimes(2);
         expect(mockSendMail).toHaveBeenCalledWith({
           to: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.EMAIL,
           template: 'free_trial_bundle_requested',
@@ -523,6 +523,23 @@ describe('deployment app', () => {
               PlatformIdentifier.Openaev,
               PlatformIdentifier.Xtmone,
             ],
+          },
+        });
+        expect(mockSendMail).toHaveBeenCalledWith({
+          to: XTM_HUB_DEV_TEAM_EMAIL,
+          template: 'admin_saas_bundle_requested',
+          params: {
+            organizationName: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
+            userName: 'Anita Break',
+            userEmail:
+              TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.EMAIL,
+            region: DeploymentRequestPlatformRegion.UsEast,
+            activitySector:
+              DeploymentRequestActivitySector.ComputerNetworkSecurity,
+            openCTIUseCase: DeploymentRequestUseCase.ThreatHunting,
+            openAEVUseCase: DeploymentRequestUseCase.OaevPurpleTeam,
+            products: 'OpenCTI, OpenAEV, and XTM One',
+            deploymentType: 'Bundle',
           },
         });
       });
@@ -1721,6 +1738,114 @@ describe('deployment app', () => {
           service_instance_id: initialDeployment.service_instance_id,
         });
       }
+    });
+
+    describe('redeploy after removal', () => {
+      it.each`
+        actualState                                | description
+        ${DeploymentRequestPlatformState.Removing} | ${'removal is still in progress'}
+        ${DeploymentRequestPlatformState.Removed}  | ${'removal is complete'}
+      `(
+        'should allow going back to provisioning from $actualState when target state is active ($description)',
+        async ({ actualState }) => {
+          const removedDeployment =
+            (await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+              {
+                hub_status: DeploymentRequestHubStatus.Provisioning,
+                target_state: DeploymentRequestPlatformState.Active,
+                actual_state: actualState,
+              }
+            )) as DeploymentRequest;
+
+          await DeploymentApp.updateDeploymentRequest({
+            id: removedDeployment.id as DeploymentRequestId,
+            actual_state: DeploymentRequestPlatformState.Provisioning,
+          });
+
+          const dbDeploymentRequest =
+            await DeploymentRequestDomain.loadDeploymentRequestBy({
+              id: removedDeployment.id as DeploymentRequestId,
+            });
+
+          expect(dbDeploymentRequest).toMatchObject({
+            actual_state: DeploymentRequestPlatformState.Provisioning,
+            hub_status: DeploymentRequestHubStatus.Provisioning,
+          });
+        }
+      );
+
+      it.each`
+        actualState                                | description
+        ${DeploymentRequestPlatformState.Removing} | ${'removal is still in progress'}
+        ${DeploymentRequestPlatformState.Removed}  | ${'removal is complete'}
+      `(
+        'should reject going back to provisioning from $actualState when target state is removed ($description)',
+        async ({ actualState }) => {
+          const removedDeployment =
+            (await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+              {
+                hub_status: DeploymentRequestHubStatus.Cancelled,
+                target_state: DeploymentRequestPlatformState.Removed,
+                actual_state: actualState,
+              }
+            )) as DeploymentRequest;
+
+          const call = DeploymentApp.updateDeploymentRequest({
+            id: removedDeployment.id as DeploymentRequestId,
+            actual_state: DeploymentRequestPlatformState.Provisioning,
+          });
+
+          await expect(call).rejects.toThrow(
+            BadRequestErrorCode.DeploymentRequestStatusUpdateNotAllowed
+          );
+        }
+      );
+
+      it('should not overwrite hub_status when the request is cancelled concurrently after validation but before the locked write', async () => {
+        const removedDeployment =
+          await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+            {
+              hub_status: DeploymentRequestHubStatus.Provisioning,
+              target_state: DeploymentRequestPlatformState.Active,
+              actual_state: DeploymentRequestPlatformState.Removed,
+            }
+          );
+
+        const originalUpdate =
+          DeploymentRequestDomain.updateDeploymentRequestByIdIfTargetState;
+        const updateSpy = vi
+          .spyOn(
+            DeploymentRequestDomain,
+            'updateDeploymentRequestByIdIfTargetState'
+          )
+          .mockImplementationOnce(async (id, expectedTargetState, data) => {
+            await TestHelper.deploymentRequest.updateById(id, {
+              hub_status: DeploymentRequestHubStatus.Cancelled,
+              target_state: DeploymentRequestPlatformState.Removed,
+            });
+            return originalUpdate(id, expectedTargetState, data);
+          });
+
+        try {
+          await DeploymentApp.updateDeploymentRequest({
+            id: removedDeployment.id as DeploymentRequestId,
+            actual_state: DeploymentRequestPlatformState.Provisioning,
+          });
+
+          const dbDeploymentRequest =
+            await DeploymentRequestDomain.loadDeploymentRequestBy({
+              id: removedDeployment.id as DeploymentRequestId,
+            });
+
+          expect(dbDeploymentRequest).toMatchObject({
+            hub_status: DeploymentRequestHubStatus.Cancelled,
+            target_state: DeploymentRequestPlatformState.Removed,
+            actual_state: DeploymentRequestPlatformState.Removed,
+          });
+        } finally {
+          updateSpy.mockRestore();
+        }
+      });
     });
 
     it('should throw if deployment request does not exist', async () => {

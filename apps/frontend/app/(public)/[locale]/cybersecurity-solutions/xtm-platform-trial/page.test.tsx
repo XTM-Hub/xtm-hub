@@ -29,7 +29,7 @@ vi.mock('@/utils/generate-metadata', () => ({
 }));
 
 vi.mock(
-  '@/components/service/trial-instances/xtm-platform-trial/PublicXtmPlatformTrialPanel',
+  '@/components/service/trial-instances/xtm-platform-trial/request-panel/PublicXtmPlatformTrialPanel',
   () => ({
     PublicXtmPlatformTrialPanel: () => <div data-testid="public-panel" />,
   })

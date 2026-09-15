@@ -1,5 +1,6 @@
 import { RefreshUserPlatformTokenMutation } from '@/components/registration/register/register.graphql';
 import useExternalTab from '@/hooks/use-external-tab';
+import { OPENCTI_INTEGRATION_URL_CONFIGS } from '@/utils/shareable-resources/shareable-resources.consts';
 import {
   isConnectorResource,
   ShareableResourceType,
@@ -11,7 +12,6 @@ import {
   registerRefreshUserPlatformTokenMutation,
   registerRefreshUserPlatformTokenMutation$data,
 } from '@generated/registerRefreshUserPlatformTokenMutation.graphql';
-import { IntegrationType } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
 import { useMutation } from 'react-relay';
 
@@ -20,15 +20,6 @@ const OPENCTI_URL_CONFIGS = {
   opencti_custom_view: 'deploy-custom-view',
   opencti_integration: 'deploy-csv-feed',
   opencti_playbook: 'deploy-playbook',
-};
-
-export const OPENCTI_INTEGRATION_URL_CONFIGS: Partial<
-  Record<IntegrationType, string>
-> = {
-  [IntegrationType.TaxiiFeed]: 'deploy-taxii-feed',
-  [IntegrationType.CsvFeed]: 'deploy-csv-feed',
-  [IntegrationType.Stream]: 'deploy-sync',
-  [IntegrationType.RssFeed]: 'deploy-rss-feed',
 };
 
 interface Props {

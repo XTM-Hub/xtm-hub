@@ -305,6 +305,25 @@ export const DeploymentRequestDomain = {
     return deploymentRequest;
   },
 
+  updateDeploymentRequestByIdIfTargetState: async (
+    id: DeploymentRequestId,
+    expectedTargetState: DeploymentRequestPlatformState | null,
+    data: DeploymentRequestMutator
+  ): Promise<DeploymentRequest | undefined> => {
+    const [deploymentRequest] = await db<DeploymentRequest>('DeploymentRequest')
+      .where('id', '=', id)
+      .modify((builder) => {
+        if (expectedTargetState === null) {
+          builder.whereNull('target_state');
+        } else {
+          builder.andWhere('target_state', '=', expectedTargetState);
+        }
+      })
+      .update(data)
+      .returning('*');
+    return deploymentRequest;
+  },
+
   loadFirstQueuedRequest: async (
     key: QuotaKey
   ): Promise<DeploymentRequest | undefined> => {
