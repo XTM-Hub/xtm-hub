@@ -211,9 +211,7 @@ describe('renderEmail', () => {
         deploymentType: 'Bundle',
       });
 
-      expect(html).toContain(
-        'A new XTM Platform SaaS Bundle has been launched'
-      );
+      expect(html).toContain('A new XTM Platform trial has been launched');
       expect(html).toContain('manage-trials');
       expect(html).not.toContain('undefined');
     });
@@ -229,9 +227,7 @@ describe('renderEmail', () => {
         deploymentType: 'Bundle',
       });
 
-      expect(html).toContain(
-        'A new XTM Platform SaaS Bundle has been launched'
-      );
+      expect(html).toContain('A new XTM Platform trial has been launched');
       expect(html).toContain('OpenCTI use case: Test OpenCTI UseCase');
       expect(html).not.toContain('OpenAEV use case');
       expect(html).not.toContain('undefined');

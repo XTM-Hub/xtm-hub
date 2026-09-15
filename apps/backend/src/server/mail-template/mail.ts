@@ -245,7 +245,7 @@ export const templateSubjects: {
     return `New ${params.platformIdentifier} SaaS ${params.deploymentType} Has Been Launched on XTM Hub by ${params.organizationName}`;
   },
   admin_saas_bundle_requested: (params: AdminSaasBundleRequestedModel) => {
-    return `New ${BUNDLE_PLATFORM_NAME} SaaS ${params.deploymentType} Has Been Launched on XTM Hub by ${params.organizationName}`;
+    return `New ${BUNDLE_PLATFORM_NAME} Trial Has Been Launched on XTM Hub by ${params.organizationName}`;
   },
   public_roadmap_monthly_reminder: () =>
     'Monthly check-in — Update your XTM Hub Roadmap Epics',
