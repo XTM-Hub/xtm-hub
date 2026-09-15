@@ -126,15 +126,7 @@ pkg.QueryBuilder.extend('tap', function (fn) {
 });
 const config: Knex.Config = {
   ...baseConfig,
-  // Scoped to this single app-wide `database` instance — NOT `baseConfig`,
-  // which is also `knex(baseConfig)`'d directly by several ES-migration
-  // scripts that never call `.destroy()`. Bumping the pool there would
-  // multiply leaked idle connections by the number of those instances.
-  // max: 20 covers the worst case of 8 concurrent facet queries (now down
-  // to a single round-trip per request) plus headroom for every other
-  // resolver sharing this pool; min: 2 avoids reconnecting on every burst
-  // after an idle period.
-  pool: { min: 2, max: 20 },
+  pool: { min: 2, max: 10 },
   migrations: {
     extension: 'js',
     tableName: 'migrations',
