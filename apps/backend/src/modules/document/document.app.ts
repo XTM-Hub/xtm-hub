@@ -604,32 +604,6 @@ export const DocumentApp = {
     );
   },
 
-  // Same secured query path as loadDocuments, but lets the caller pass its own metadata key
-  // list instead of the service definition's default one, to avoid hydrating unused metadata.
-  // `first` is optional here (unlike the paginated GraphQL API) so exports aren't row-capped.
-  loadDocumentsForCsvExport: async (
-    input: Partial<QueryDocumentsArgs> &
-      Pick<QueryDocumentsArgs, 'serviceInstanceId'>,
-    metadataKeys: DocumentMetadataKeyCode[]
-  ) => {
-    const serviceDefinition =
-      await ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
-        input.serviceInstanceId
-      );
-    if (!serviceDefinition) {
-      throw new Error(ErrorCode.ServiceDefinitionNotFound);
-    }
-
-    const { documentType } =
-      getMetadataKeysAndDocumentTypeFromServiceDefinition(serviceDefinition);
-
-    return DocumentDomain.loadParentDocumentsByServiceInstance(
-      documentType,
-      input,
-      metadataKeys
-    );
-  },
-
   loadPublicDocumentsByServiceSlug: async (
     serviceInstanceSlug: string
   ): Promise<Document[]> => {

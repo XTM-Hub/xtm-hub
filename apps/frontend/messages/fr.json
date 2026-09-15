@@ -1017,6 +1017,31 @@
       "ManageAccessName": "Manage access",
       "SelectCapabilities": "Sélectionner les capacités"
     },
+    "CsvExport": {
+      "TriggerButton": "Exporter en CSV",
+      "DialogTitle": "Exporter les intégrations en CSV",
+      "DialogDescription": "Choisissez les champs et les filtres à inclure dans le fichier CSV exporté.",
+      "ColumnsLabel": "Champs à exporter",
+      "ColumnsPlaceholder": "Sélectionner les champs à inclure",
+      "FiltersLabel": "Filtres",
+      "ExportButton": "Exporter",
+      "SuccessToast": "L'export CSV a démarré.",
+      "ErrorToast": "Impossible d'exporter la liste des intégrations. Veuillez réessayer.",
+      "Columns": {
+        "IntegrationType": "Type d'intégration",
+        "UseCase": "Cas d'usage",
+        "DeploymentType": "Type de déploiement",
+        "VerificationStatus": "Statut de vérification",
+        "SolutionCategory": "Catégorie de solution",
+        "LicenseType": "Type de licence",
+        "ShortDescription": "Description courte",
+        "LongDescription": "Description longue",
+        "FeedUrl": "URL du flux",
+        "OpenctiDocumentation": "Documentation OpenCTI",
+        "VendorUrl": "URL du fournisseur",
+        "DemoLink": "Lien de démonstration"
+      }
+    },
     "Cards": {
       "filigran-academy": {
         "Name": "Filigran Academy",
