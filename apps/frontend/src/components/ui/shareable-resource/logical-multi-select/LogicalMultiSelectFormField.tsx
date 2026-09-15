@@ -17,6 +17,24 @@ const isSelection = (item: unknown): item is Selection => {
   );
 };
 
+const decodeGlobalId = (value: string): string => {
+  try {
+    const decoded = atob(value);
+    const separatorIndex = decoded.indexOf(':');
+    return separatorIndex === -1 ? value : decoded.slice(separatorIndex + 1);
+  } catch {
+    return value;
+  }
+};
+
+const getFacetCount = (
+  facetCounts: Record<string, number> | undefined,
+  value: string
+): number => {
+  if (!facetCounts) return 0;
+  return facetCounts[value] ?? facetCounts[decodeGlobalId(value)] ?? 0;
+};
+
 interface MultiSelectFormFieldProps<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   T extends Record<string, any> = Record<string, any>,
@@ -206,7 +224,7 @@ const LogicalMultiSelectFormField = React.forwardRef<
                   </span>
                   {facetCounts && (
                     <span className="ml-auto shrink-0 rounded bg-elevation-surface-highlight-layer-0 px-1.5 content-body-compact text-text-default-secondary">
-                      {facetCounts[option.value] ?? 0}
+                      {getFacetCount(facetCounts, option.value)}
                     </span>
                   )}
                 </label>
@@ -236,7 +254,7 @@ const LogicalMultiSelectFormField = React.forwardRef<
                 </span>
                 {facetCounts && (
                   <span className="ml-auto shrink-0 rounded bg-elevation-surface-highlight-layer-0 px-1.5 content-body-compact text-text-default-secondary">
-                    {facetCounts[option.value] ?? 0}
+                    {getFacetCount(facetCounts, option.value)}
                   </span>
                 )}
               </label>

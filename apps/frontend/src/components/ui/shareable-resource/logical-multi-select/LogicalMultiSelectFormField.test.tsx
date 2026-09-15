@@ -50,4 +50,37 @@ describe('LogicalMultiSelectFormField', () => {
     await user.click(screen.getByRole('checkbox', { name: 'Parent A' }));
     expect(onValueChange).toHaveBeenLastCalledWith({});
   });
+
+  it('resolves facet counts when the option value is a Relay global id but the facet bucket is keyed by the raw uuid', () => {
+    const globalId = 'VXNlQ2FzZTowMGU4YjQ0ZC04MzBhLTQwNjYtYmM5Ny1mOGM0ZWU1YjUzYTU=';
+    const rawUuid = '00e8b44d-830a-4066-bc97-f8c4ee5b53a5';
+
+    testRender(
+      <LogicalMultiSelectFormField
+        options={[{ label: 'Use case A', value: globalId }]}
+        initialValue={{}}
+        noResultString="no-result"
+        optionLabel="label"
+        onValueChange={vi.fn()}
+        facetCounts={{ [rawUuid]: 2 }}
+      />
+    );
+
+    expect(screen.getByText('2')).toBeInTheDocument();
+  });
+
+  it('falls back to 0 when neither the raw value nor its decoded id are in the facet counts', () => {
+    testRender(
+      <LogicalMultiSelectFormField
+        options={[{ label: 'Unmatched', value: 'unmatched-value' }]}
+        initialValue={{}}
+        noResultString="no-result"
+        optionLabel="label"
+        onValueChange={vi.fn()}
+        facetCounts={{ 'some-other-id': 5 }}
+      />
+    );
+
+    expect(screen.getByText('0')).toBeInTheDocument();
+  });
 });
