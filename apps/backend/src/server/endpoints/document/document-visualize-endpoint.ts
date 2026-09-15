@@ -2,16 +2,16 @@ import cors from 'cors';
 import { Application, Request, Response } from 'express';
 import { fromGlobalId } from 'graphql-relay/node/node.js';
 import { Readable } from 'stream';
-import { requestContext } from '../../context/request.context';
-import { DocumentId } from '../../model/kanel/public/Document';
-import ServiceDefinition from '../../model/kanel/public/ServiceDefinition';
-import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
-import { MinIOClient } from '../../thirdparty/minio/client';
-import { logApp } from '../../utils/app-logger.util';
-import { NotFoundError } from '../../utils/error/error.util';
-import { extractId } from '../../utils/utils';
-import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
-import { DocumentDomain } from './domain/document.domain';
+import { requestContext } from '../../../context/request.context';
+import { DocumentId } from '../../../model/kanel/public/Document';
+import ServiceDefinition from '../../../model/kanel/public/ServiceDefinition';
+import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
+import { DocumentDomain } from '../../../modules/document/domain/document.domain';
+import { ServiceInstanceDomain } from '../../../modules/service/instance/service-instance.domain';
+import { MinIOClient } from '../../../thirdparty/minio/client';
+import { logApp } from '../../../utils/app-logger.util';
+import { NotFoundError } from '../../../utils/error/error.util';
+import { extractId } from '../../../utils/utils';
 
 export const documentVisualizeEndpoint = (app: Application) => {
   app.get(
