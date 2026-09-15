@@ -511,7 +511,7 @@ describe('deployment app', () => {
             })
           );
         });
-        expect(mockSendMail).toHaveBeenCalledTimes(4);
+        expect(mockSendMail).toHaveBeenCalledTimes(2);
         expect(mockSendMail).toHaveBeenCalledWith({
           to: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.EMAIL,
           template: 'free_trial_bundle_requested',
@@ -523,6 +523,23 @@ describe('deployment app', () => {
               PlatformIdentifier.Openaev,
               PlatformIdentifier.Xtmone,
             ],
+          },
+        });
+        expect(mockSendMail).toHaveBeenCalledWith({
+          to: XTM_HUB_DEV_TEAM_EMAIL,
+          template: 'admin_saas_bundle_requested',
+          params: {
+            organizationName: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
+            userName: 'Anita Break',
+            userEmail:
+              TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.EMAIL,
+            region: DeploymentRequestPlatformRegion.UsEast,
+            activitySector:
+              DeploymentRequestActivitySector.ComputerNetworkSecurity,
+            openCTIUseCase: DeploymentRequestUseCase.ThreatHunting,
+            openAEVUseCase: DeploymentRequestUseCase.OaevPurpleTeam,
+            products: 'OpenCTI, OpenAEV, and XTM One',
+            deploymentType: 'Bundle',
           },
         });
       });

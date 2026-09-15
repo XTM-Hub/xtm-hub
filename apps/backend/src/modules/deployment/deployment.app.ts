@@ -856,6 +856,11 @@ const sendDeploymentRequestCreatedMail = async ({
   }
 };
 
+const getInstanceRequestedEmailRecipient = (): string =>
+  portalConfig.environment === 'production'
+    ? XTM_HUB_SUPPORT_EMAIL
+    : XTM_HUB_DEV_TEAM_EMAIL;
+
 const sendDeploymentRequestCreatedNotifications = async ({
   user,
   chosenOrganization,
@@ -896,13 +901,13 @@ const sendDeploymentRequestCreatedNotifications = async ({
 
   await sendDeploymentRequestCreatedMail({ user, deploymentRequest });
 
-  const instanceRequestedEmail =
-    portalConfig.environment === 'production'
-      ? XTM_HUB_SUPPORT_EMAIL
-      : XTM_HUB_DEV_TEAM_EMAIL;
+  if (isBundleChild(deploymentRequest)) {
+    return;
+  }
+
   try {
     await sendMail({
-      to: instanceRequestedEmail,
+      to: getInstanceRequestedEmailRecipient(),
       template: 'admin_saas_instance_requested',
       params: {
         organizationName: chosenOrganization.name,
@@ -922,6 +927,48 @@ const sendDeploymentRequestCreatedNotifications = async ({
     logApp.error('Unable to send mail to admins', {
       error,
       deploymentRequestId: deploymentRequest.id,
+    });
+  }
+};
+
+const sendBundleAdminRequestedMail = async ({
+  user,
+  chosenOrganization,
+  input,
+  bundleDeploymentRequest,
+  products,
+  useCasesByProduct,
+}: {
+  user: UserLoadUserBy;
+  chosenOrganization: Organization;
+  input: CreateDeploymentRequestInput;
+  bundleDeploymentRequest: DeploymentRequestModel;
+  products: PlatformIdentifier[];
+  useCasesByProduct: Partial<Record<PlatformIdentifier, string>>;
+}): Promise<void> => {
+  try {
+    await sendMail({
+      to: getInstanceRequestedEmailRecipient(),
+      template: 'admin_saas_bundle_requested',
+      params: {
+        organizationName: chosenOrganization.name,
+        userName:
+          user.first_name && user.last_name
+            ? `${user.first_name} ${user.last_name}`
+            : `${user.email}`,
+        userEmail: user.email,
+        region: input.region,
+        activitySector: input.activity_sector ?? undefined,
+        openCTIUseCase: useCasesByProduct[PlatformIdentifier.Opencti],
+        openAEVUseCase: useCasesByProduct[PlatformIdentifier.Openaev],
+        products: formatProductNames(sortProductsForMail(products)),
+        deploymentType: ucfirst(bundleDeploymentRequest.type),
+      },
+    });
+  } catch (error) {
+    logApp.error('Unable to send bundle mail to admins', {
+      error,
+      deploymentRequestId: bundleDeploymentRequest.id,
     });
   }
 };
@@ -1063,6 +1110,8 @@ const createBundleDeploymentRequest = async ({
         });
       }
 
+      const useCasesByProduct: Partial<Record<PlatformIdentifier, string>> = {};
+
       for (const platformIdentifier of products) {
         const childDeploymentRequest = await createSingleDeploymentRequest({
           user,
@@ -1072,6 +1121,11 @@ const createBundleDeploymentRequest = async ({
           parentId: bundleDeploymentRequest.id,
           inheritedHubStatus: bundleHubStatus,
         });
+
+        if (childDeploymentRequest.use_case) {
+          useCasesByProduct[platformIdentifier] =
+            childDeploymentRequest.use_case;
+        }
 
         await sendDeploymentRequestCreatedNotifications({
           user,
@@ -1085,6 +1139,15 @@ const createBundleDeploymentRequest = async ({
       await sendDeploymentRequestCreatedMail({
         user,
         deploymentRequest: bundleDeploymentRequest,
+      });
+
+      await sendBundleAdminRequestedMail({
+        user,
+        chosenOrganization,
+        input,
+        bundleDeploymentRequest,
+        products,
+        useCasesByProduct,
       });
 
       return bundleDeploymentRequest;
