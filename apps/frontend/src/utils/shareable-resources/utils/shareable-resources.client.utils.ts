@@ -4,6 +4,7 @@ import {
   serviceConfigMap,
 } from '@/utils/shareable-resources/shareable-resources.consts';
 import {
+  isConnectorResource,
   PublicDocumentData,
   ServiceInfo,
   ServiceSlug,
@@ -108,6 +109,10 @@ export const isResourceDeployable = (
 ): boolean => {
   if (!document.active) {
     return false;
+  }
+
+  if (isConnectorResource(document)) {
+    return true;
   }
 
   const integrationType = docHasMetadata(

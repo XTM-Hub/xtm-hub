@@ -8,14 +8,17 @@ type DeployableCase = {
   type: ShareableResourceType;
   active: boolean;
   integrationType?: documentItem_fragment$data['integration_type'];
+  typename?: string;
 };
 
 const buildDocumentData = ({
   type,
   active,
   integrationType,
+  typename = 'Document',
 }: Omit<DeployableCase, 'expected'>): documentItem_fragment$data =>
   ({
+    __typename: typename,
     id: 'doc-1',
     type,
     active,
@@ -96,11 +99,30 @@ describe('isResourceDeployable', () => {
       active: false,
       integrationType: 'csv_feed',
     },
+    {
+      expected: true,
+      type: ShareableResourceType.OPENCTI_INTEGRATION,
+      active: true,
+      integrationType: 'connector',
+      typename: 'Connector',
+    },
+    {
+      expected: false,
+      type: ShareableResourceType.OPENCTI_INTEGRATION,
+      active: false,
+      integrationType: 'connector',
+      typename: 'Connector',
+    },
   ])(
-    'should return $expected when type is $type, active is $active and integration type is $integrationType',
-    ({ expected, type, active, integrationType }) => {
+    'should return $expected when type is $type, active is $active, integration type is $integrationType and typename is $typename',
+    ({ expected, type, active, integrationType, typename }) => {
       // Given
-      const document = buildDocumentData({ type, active, integrationType });
+      const document = buildDocumentData({
+        type,
+        active,
+        integrationType,
+        typename,
+      });
 
       // When
       const result = isResourceDeployable(document);

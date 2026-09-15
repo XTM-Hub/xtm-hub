@@ -51,7 +51,7 @@ export const PublicResourceActions = ({
   const signupHref = buildSignupRedirect(privateResourceLink);
 
   const isConnector = isConnectorResource(documentData);
-  const showDeploy = isConnector || isResourceDeployable(documentData);
+  const showDeploy = isResourceDeployable(documentData);
   const canDeploy = !isConnector || documentData.manager_supported;
   const deployLabel = t('Service.ShareableResources.Deploy.DeployPlatform', {
     platformName:
