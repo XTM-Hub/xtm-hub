@@ -5,27 +5,27 @@ import {
   DocumentOrdering,
   OrderingMode,
   ServiceDefinitionIdentifier,
-} from '../../../../__generated__/resolvers-types';
-import { requestContext } from '../../../../context/request.context';
-import { OrganizationId } from '../../../../model/kanel/public/Organization';
-import { ServiceInstanceId } from '../../../../model/kanel/public/ServiceInstance';
-import { UserId } from '../../../../model/kanel/public/User';
-import { logApp } from '../../../../utils/app-logger.util';
-import { extractId } from '../../../../utils/utils';
-import { DocumentApp } from '../../../document/document.app';
-import { DocumentDataLoader } from '../../../document/document.dataloader';
-import { OrganizationDomain } from '../../../organization-management/organization/organization.domain';
-import { ServiceInstanceDomain } from '../../../service/instance/service-instance.domain';
-import { TelemetryApp } from '../../../telemetry/telemetry.app';
-import { TelemetryHelper } from '../../../telemetry/telemetry.helper';
+} from '../../../__generated__/resolvers-types';
+import { requestContext } from '../../../context/request.context';
+import { OrganizationId } from '../../../model/kanel/public/Organization';
+import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
+import { UserId } from '../../../model/kanel/public/User';
+import { DocumentApp } from '../../../modules/document/document.app';
+import { DocumentDataLoader } from '../../../modules/document/document.dataloader';
+import { OrganizationDomain } from '../../../modules/organization-management/organization/organization.domain';
+import { ServiceInstanceDomain } from '../../../modules/service/instance/service-instance.domain';
+import { INTEGRATION_CSV_EXPORT_METADATA_KEYS } from '../../../modules/shareable-resource/opencti/integration/integration.model';
+import { TelemetryApp } from '../../../modules/telemetry/telemetry.app';
+import { TelemetryHelper } from '../../../modules/telemetry/telemetry.helper';
+import { logApp } from '../../../utils/app-logger.util';
+import { extractId } from '../../../utils/utils';
 import {
   buildIntegrationsCsv,
   buildIntegrationsExportFilename,
   IntegrationCsvExportRow,
   parseRequestedColumns,
   parseRequestedFilters,
-} from './integration-csv-export.util';
-import { INTEGRATION_CSV_EXPORT_METADATA_KEYS } from './integration.model';
+} from './integration-csv-export-endpoint.utils';
 
 const csvExportRateLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute

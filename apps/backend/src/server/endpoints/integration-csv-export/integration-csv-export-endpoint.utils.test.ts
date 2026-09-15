@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   FilterKey,
   LogicalOperator,
-} from '../../../../__generated__/resolvers-types';
+} from '../../../__generated__/resolvers-types';
 import {
   buildIntegrationsCsv,
   buildIntegrationsExportFilename,
@@ -13,7 +13,7 @@ import {
   neutralizeFormulaCell,
   parseRequestedColumns,
   parseRequestedFilters,
-} from './integration-csv-export.util';
+} from './integration-csv-export-endpoint.utils';
 
 const baseRow: IntegrationCsvExportRow = {
   id: 'doc-1',

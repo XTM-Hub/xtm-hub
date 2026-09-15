@@ -19,10 +19,10 @@ const {
   requestContextUpdateMock: vi.fn(),
 }));
 
-vi.mock('../../../document/document.app', () => ({
+vi.mock('../../../modules/document/document.app', () => ({
   DocumentApp: { loadDocuments: loadDocumentsMock },
 }));
-vi.mock('../../../document/document.dataloader', () => ({
+vi.mock('../../../modules/document/document.dataloader', () => ({
   DocumentDataLoader: {
     create: () => ({
       useCasesByDocumentIdLoader: {
@@ -34,29 +34,29 @@ vi.mock('../../../document/document.dataloader', () => ({
     }),
   },
 }));
-vi.mock('../../../service/instance/service-instance.domain', () => ({
+vi.mock('../../../modules/service/instance/service-instance.domain', () => ({
   ServiceInstanceDomain: {
     loadServiceDefinitionByServiceInstance:
       loadServiceDefinitionByServiceInstanceMock,
   },
 }));
 vi.mock(
-  '../../../organization-management/organization/organization.domain',
+  '../../../modules/organization-management/organization/organization.domain',
   () => ({
     OrganizationDomain: { loadOrganizationBy: loadOrganizationByMock },
   })
 );
-vi.mock('../../../telemetry/telemetry.app', () => ({
+vi.mock('../../../modules/telemetry/telemetry.app', () => ({
   TelemetryApp: { sendTelemetryEvent: sendTelemetryEventMock },
 }));
-vi.mock('../../../../context/request.context', () => ({
+vi.mock('../../../context/request.context', () => ({
   requestContext: { update: requestContextUpdateMock },
 }));
-vi.mock('../../../../utils/app-logger.util', () => ({
+vi.mock('../../../utils/app-logger.util', () => ({
   logApp: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
-import { ServiceDefinitionIdentifier } from '../../../../__generated__/resolvers-types';
+import { ServiceDefinitionIdentifier } from '../../../__generated__/resolvers-types';
 import { IntegrationCsvExportEndpoint } from './integration-csv-export-endpoint';
 
 const buildResponse = () => ({

@@ -3,7 +3,7 @@ import {
   FilterKey,
   LogicalFilterInput,
   LogicalOperator,
-} from '../../../../__generated__/resolvers-types';
+} from '../../../__generated__/resolvers-types';
 
 // Column keys selectable in the "Generate a CSV export" dialog; "name" is always exported and not listed here.
 export enum IntegrationCsvColumnKey {
