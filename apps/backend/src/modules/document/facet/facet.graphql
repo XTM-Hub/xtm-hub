@@ -1,0 +1,26 @@
+type FacetBucket {
+  value: String!
+  count: Int!
+}
+
+type Facet {
+  integration_type: [FacetBucket!]!
+  license_type: [FacetBucket!]!
+  manager_supported: [FacetBucket!]!
+  verified: [FacetBucket!]!
+  product_version: [FacetBucket!]!
+  solution_category: [FacetBucket!]!
+  use_case: [FacetBucket!]!
+  entity_type: [FacetBucket!]!
+}
+
+input LoadDocumentFacetInput {
+  serviceInstanceId: ServiceInstanceId!
+  searchTerm: String
+  documentType: String
+  logicalFilters: LogicalFilterInput
+}
+
+type Query {
+  documentFacets(input: LoadDocumentFacetInput!): Facet
+}

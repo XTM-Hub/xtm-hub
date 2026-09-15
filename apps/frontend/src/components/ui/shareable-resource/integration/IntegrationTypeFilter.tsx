@@ -1,7 +1,6 @@
-import { ServiceListFilterKey } from '@/components/service/components/header/ServiceListHeader';
+import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { availableIntegrationTypes } from '@/components/service/integrations/Integration.utils';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
-import { useServiceListFilters } from '@/hooks/use-service-list-filters';
 import {
   ServiceListLocalStorageKey,
   useServiceListLocalStorage,
@@ -10,13 +9,17 @@ import { IntegrationType } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 
-export const IntegrationTypeFilter = () => {
-  const { integrationTypes, setIntegrationTypes, removeIntegrationTypes } =
-    useServiceListLocalStorage(
-      ServiceListLocalStorageKey.OpenCTIIntegrationFeeds
-    );
+interface IntegrationTypeFilterProps {
+  facetCounts?: ServiceListFacetCounts['integrationType'];
+}
 
-  const { removeFilter } = useServiceListFilters();
+export const IntegrationTypeFilter = ({
+  facetCounts,
+}: IntegrationTypeFilterProps) => {
+  const { integrationTypes, setIntegrationTypes } = useServiceListLocalStorage(
+    ServiceListLocalStorageKey.OpenCTIIntegrationFeeds
+  );
+
   const t = useTranslations();
 
   const options = useMemo(() => {
@@ -38,20 +41,14 @@ export const IntegrationTypeFilter = () => {
     return [...availableOption, ...comingSoonOption];
   }, [t]);
 
-  const removeIntegrationFilter = () => {
-    removeIntegrationTypes();
-    removeFilter(ServiceListFilterKey.IntegrationType);
-  };
-
   return (
     <LogicalMultiSelectFormField
       options={options}
       initialValue={integrationTypes}
-      placeholder={t('Service.OpenctiIntegrations.Filter.Type.Placeholder')}
       noResultString={t('Utils.NotFound')}
       onValueChange={setIntegrationTypes}
       optionLabel={t('Service.OpenctiIntegrations.Filter.Type.Label')}
-      onRemove={removeIntegrationFilter}
+      facetCounts={facetCounts}
     />
   );
 };
