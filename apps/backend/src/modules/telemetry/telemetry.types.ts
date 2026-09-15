@@ -28,6 +28,7 @@ export enum TelemetryEventType {
   CREATE_ORGANIZATION = 'create_organization',
   CREATE_DEPLOYMENT = 'create_deployment',
   UPDATE_DEPLOYMENT = 'update_deployment',
+  EXPORT = 'export',
 }
 
 export interface BaseTelemetryEvent {
@@ -74,6 +75,12 @@ export interface DownloadEvent extends BaseTelemetryEvent {
   service_type?: TelemetryEventServiceType;
   resource_id: string;
   resource_title: string;
+}
+
+export interface ExportEvent extends BaseTelemetryEvent {
+  event_type: TelemetryEventType.EXPORT;
+  service: TelemetryEventService;
+  export_format: string;
 }
 
 export interface CreateEvent extends BaseTelemetryEvent {
@@ -158,6 +165,7 @@ export type TelemetryEvent =
   | SubscribeEvent
   | ShareEvent
   | DownloadEvent
+  | ExportEvent
   | CreateEvent
   | RegisterPlatformEvent
   | UnregisterPlatformEvent
