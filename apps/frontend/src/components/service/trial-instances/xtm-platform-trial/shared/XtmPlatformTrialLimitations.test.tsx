@@ -1,4 +1,4 @@
-import { XtmPlatformTrialLimitations } from '@/components/service/trial-instances/xtm-platform-trial/XtmPlatformTrialLimitations';
+import { XtmPlatformTrialLimitations } from '@/components/service/trial-instances/xtm-platform-trial/shared/XtmPlatformTrialLimitations';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 

@@ -1,4 +1,4 @@
-import { XtmPlatformTrialPitch } from '@/components/service/trial-instances/xtm-platform-trial/XtmPlatformTrialPitch';
+import { XtmPlatformTrialPitch } from '@/components/service/trial-instances/xtm-platform-trial/request-pitch/XtmPlatformTrialPitch';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
-import { XtmoneStatusState } from '@/components/xtm-platform-trial/useXtmoneIntegrationStatus';
+import { XtmoneStatusState } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/useXtmoneIntegrationStatus';
 import { CheckCircleIcon, CircleCloseIcon } from '@filigran/icon';
 import { Skeleton } from '@filigran/ui';
 import {

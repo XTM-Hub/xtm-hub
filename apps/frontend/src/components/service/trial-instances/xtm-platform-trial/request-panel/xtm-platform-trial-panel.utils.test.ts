@@ -2,7 +2,7 @@ import {
   deriveXtmPlatformTrialPanelView,
   XtmPlatformTrialPanelView,
   XtmPlatformTrialStatusPanelState,
-} from '@/components/service/trial-instances/xtm-platform-trial/xtm-platform-trial-panel.utils';
+} from '@/components/service/trial-instances/xtm-platform-trial/request-panel/xtm-platform-trial-panel.utils';
 import {
   DeploymentRequestHubStatus,
   PlatformIdentifier,

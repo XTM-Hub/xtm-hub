@@ -1,5 +1,6 @@
 import testRender from '@/utils/test/test-render';
 import {
+  ServiceGroupName,
   XtmoneIntegrationStatusFragment,
   XtmPlatformBundleProductFragment,
 } from '@graphql/generated';
@@ -14,14 +15,14 @@ const buildProduct = ({
   status = 'active',
   url = 'https://opencti.example.io',
   registeredPlatformUrl,
-  roles = [{ id: 'group-1', name: 'Admin' }],
+  roles = [{ id: 'group-1', name: ServiceGroupName.Admin }],
 }: {
   platformIdentifier?: string;
   name?: string;
   status?: string | null;
   url?: string;
   registeredPlatformUrl?: string;
-  roles?: Array<{ id: string; name: string }> | null;
+  roles?: Array<{ id: string; name: ServiceGroupName }> | null;
 } = {}): XtmPlatformBundleProductFragment => ({
   platform_identifier:
     platformIdentifier as XtmPlatformBundleProductFragment['platform_identifier'],

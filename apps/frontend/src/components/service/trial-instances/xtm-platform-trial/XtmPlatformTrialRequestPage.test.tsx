@@ -1,11 +1,13 @@
-import { XtmPlatformTrialPage } from '@/components/service/trial-instances/xtm-platform-trial/XtmPlatformTrialPage';
+import { XtmPlatformTrialRequestPage } from '@/components/service/trial-instances/xtm-platform-trial/XtmPlatformTrialRequestPage';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-describe('XtmPlatformTrialPage', () => {
+describe('XtmPlatformTrialRequestPage', () => {
   it('renders the header, pitch and given panel', () => {
     render(
-      <XtmPlatformTrialPage panel={<div data-testid="panel">Panel</div>} />
+      <XtmPlatformTrialRequestPage
+        panel={<div data-testid="panel">Panel</div>}
+      />
     );
 
     expect(
@@ -23,7 +25,7 @@ describe('XtmPlatformTrialPage', () => {
   });
 
   it('does not render the limitations section by default', () => {
-    render(<XtmPlatformTrialPage panel={<div>Panel</div>} />);
+    render(<XtmPlatformTrialRequestPage panel={<div>Panel</div>} />);
 
     expect(
       screen.queryByText('Service.Trials.XtmPlatform.Page.Limitations.Title')
@@ -32,7 +34,7 @@ describe('XtmPlatformTrialPage', () => {
 
   it('renders the limitations section when showLimitations is true', () => {
     render(
-      <XtmPlatformTrialPage
+      <XtmPlatformTrialRequestPage
         panel={<div>Panel</div>}
         showLimitations
       />

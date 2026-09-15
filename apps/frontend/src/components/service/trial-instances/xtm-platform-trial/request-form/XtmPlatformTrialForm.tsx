@@ -4,7 +4,7 @@ import {
   REGIONS_VALUES,
   USE_CASES_BY_PLATFORM_IDENTIFIER,
 } from '@/components/service/trial-instances/form-constants';
-import { buildOngoingTrialWarningParams } from '@/components/service/trial-instances/xtm-platform-trial/xtm-platform-trial-form.utils';
+import { buildOngoingTrialWarningParams } from '@/components/service/trial-instances/xtm-platform-trial/request-form/xtm-platform-trial-form.utils';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { TranslatableEnumSelectField } from '@/components/ui/TranslatableEnumSelectField';
 import { cn } from '@/lib/utils';

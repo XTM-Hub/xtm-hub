@@ -1,10 +1,10 @@
 'use client';
 
-import { PrivateXtmPlatformTrialPanel } from '@/components/service/trial-instances/xtm-platform-trial/PrivateXtmPlatformTrialPanel';
-import { XtmPlatformTrialPage as XtmPlatformTrialPitchPage } from '@/components/service/trial-instances/xtm-platform-trial/XtmPlatformTrialPage';
-import { useXtmPlatformTrialPanelView } from '@/components/service/trial-instances/xtm-platform-trial/useXtmPlatformTrialPanelView';
+import { XtmPlatformActiveBundlePage as XtmPlatformTrialBundlePage } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/XtmPlatformActiveBundlePage';
+import { PrivateXtmPlatformTrialPanel } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/PrivateXtmPlatformTrialPanel';
+import { useXtmPlatformTrialPanelView } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/useXtmPlatformTrialPanelView';
+import { XtmPlatformTrialRequestPage } from '@/components/service/trial-instances/xtm-platform-trial/XtmPlatformTrialRequestPage';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
-import { XtmPlatformTrialPage as XtmPlatformTrialBundlePage } from '@/components/xtm-platform-trial/XtmPlatformTrialPage';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH } from '@/utils/path/constant';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
@@ -49,7 +49,7 @@ const PageLoader = () => {
       {bundle?.hub_status === DeploymentRequestHubStatus.Active ? (
         <XtmPlatformTrialBundlePage />
       ) : (
-        <XtmPlatformTrialPitchPage
+        <XtmPlatformTrialRequestPage
           panel={
             <PrivateXtmPlatformTrialPanel
               bundle={bundle}

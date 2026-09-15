@@ -6,17 +6,17 @@ import { ReachSalesButton } from '@/components/service/trial-instances/reach-sal
 import {
   XtmPlatformTrialForm,
   xtmPlatformTrialFormSchema,
-} from '@/components/service/trial-instances/xtm-platform-trial/XtmPlatformTrialForm';
-import { XtmPlatformTrialMessagePanel } from '@/components/service/trial-instances/xtm-platform-trial/XtmPlatformTrialMessagePanel';
+} from '@/components/service/trial-instances/xtm-platform-trial/request-form/XtmPlatformTrialForm';
+import { XtmPlatformTrialMessagePanel } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/XtmPlatformTrialMessagePanel';
 import {
   XtmPlatformTrialStatusPanel,
   XtmPlatformTrialStatusPanelDateRow,
-} from '@/components/service/trial-instances/xtm-platform-trial/XtmPlatformTrialStatusPanel';
+} from '@/components/service/trial-instances/xtm-platform-trial/request-panel/XtmPlatformTrialStatusPanel';
 import {
   XtmPlatformTrialPanelView,
   XtmPlatformTrialStatusPanelState,
-} from '@/components/service/trial-instances/xtm-platform-trial/xtm-platform-trial-panel.utils';
-import { BundleCancelSheet } from '@/components/xtm-platform-trial/BundleCancelSheet';
+} from '@/components/service/trial-instances/xtm-platform-trial/request-panel/xtm-platform-trial-panel.utils';
+import { BundleCancelSheet } from '@/components/service/trial-instances/xtm-platform-trial/shared/BundleCancelSheet';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Button } from '@filigran/ui';
 import { toast } from '@filigran/ui/clients';

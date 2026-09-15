@@ -2,7 +2,7 @@ import { REGIONS_VALUES } from '@/components/service/trial-instances/form-consta
 import {
   XtmPlatformTrialForm,
   xtmPlatformTrialFormSchema,
-} from '@/components/service/trial-instances/xtm-platform-trial/XtmPlatformTrialForm';
+} from '@/components/service/trial-instances/xtm-platform-trial/request-form/XtmPlatformTrialForm';
 import testRender from '@/utils/test/test-render';
 import { screen } from '@testing-library/react';
 import type { ReactNode } from 'react';

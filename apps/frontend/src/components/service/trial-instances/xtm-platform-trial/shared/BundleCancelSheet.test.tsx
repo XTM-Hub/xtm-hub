@@ -1,7 +1,6 @@
 'use client';
 
 import testRender from '@/utils/test/test-render';
-import * as FiligranUI from '@filigran/ui';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import { registeredPlatformsKeys } from '@graphql/registered-platforms/registered-platforms.keys';
 import { serviceInstancesKeys } from '@graphql/service-instances/service-instances.keys';
@@ -17,6 +16,13 @@ const testState = vi.hoisted(() => ({
   invalidateQueries: vi.fn(),
   lastCancelDeploymentRequestVariables: null as Record<string, unknown> | null,
   mutationMode: 'success' as 'success' | 'error',
+}));
+
+const toastMock = vi.hoisted(() => vi.fn());
+
+vi.mock('@filigran/ui', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@filigran/ui')>()),
+  toast: toastMock,
 }));
 
 vi.mock('@/components/service/registration/SelectWithEditableField', () => ({
@@ -65,7 +71,7 @@ describe('BundleCancelSheet', () => {
     testState.invalidateQueries.mockReset();
     testState.lastCancelDeploymentRequestVariables = null;
     testState.mutationMode = 'success';
-    vi.spyOn(FiligranUI, 'toast').mockImplementation(() => undefined);
+    toastMock.mockReset();
   });
 
   it('should render the cancellation popup content when opened', () => {
@@ -152,6 +158,35 @@ describe('BundleCancelSheet', () => {
     expect(testState.invalidateQueries).toHaveBeenCalledWith({
       queryKey: xtmPlatformBundleKeys.all(),
     });
+  });
+
+  it('should show a destructive toast and keep the popup open when the cancellation mutation fails', async () => {
+    const setOpen = vi.fn();
+    testState.mutationMode = 'error';
+
+    // Given
+    testRender(
+      <BundleCancelSheet
+        deploymentRequestId={bundleDeploymentRequestId}
+        open={true}
+        setOpen={setOpen}
+      />
+    );
+
+    // When
+    fireEvent.click(screen.getByTestId('select-reason'));
+    fireEvent.click(screen.getByRole('button', { name: 'Utils.Confirm' }));
+
+    // Then
+    await waitFor(() => {
+      expect(toastMock).toHaveBeenCalledWith({
+        variant: 'destructive',
+        title: 'Utils.Error',
+        description: 'Error.Server.Some error',
+      });
+    });
+    expect(setOpen).not.toHaveBeenCalledWith(false);
+    expect(testState.invalidateQueries).not.toHaveBeenCalled();
   });
 
   it('should close the popup when the cancel button is clicked', () => {

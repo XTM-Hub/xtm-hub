@@ -1,4 +1,4 @@
-import { buildOngoingTrialWarningParams } from '@/components/service/trial-instances/xtm-platform-trial/xtm-platform-trial-form.utils';
+import { buildOngoingTrialWarningParams } from '@/components/service/trial-instances/xtm-platform-trial/request-form/xtm-platform-trial-form.utils';
 import { PlatformIdentifier } from '@graphql/generated';
 import { describe, expect, it } from 'vitest';
 

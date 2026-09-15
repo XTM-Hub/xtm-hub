@@ -1,5 +1,5 @@
-import { XtmPlatformTrialLimitations } from '@/components/service/trial-instances/xtm-platform-trial/XtmPlatformTrialLimitations';
-import { XtmPlatformTrialPitch } from '@/components/service/trial-instances/xtm-platform-trial/XtmPlatformTrialPitch';
+import { XtmPlatformTrialPitch } from '@/components/service/trial-instances/xtm-platform-trial/request-pitch/XtmPlatformTrialPitch';
+import { XtmPlatformTrialLimitations } from '@/components/service/trial-instances/xtm-platform-trial/shared/XtmPlatformTrialLimitations';
 import { useTranslations } from 'next-intl';
 import { ReactNode } from 'react';
 
@@ -8,7 +8,7 @@ interface XtmPlatformTrialPageProps {
   showLimitations?: boolean;
 }
 
-export const XtmPlatformTrialPage = ({
+export const XtmPlatformTrialRequestPage = ({
   panel,
   showLimitations = false,
 }: XtmPlatformTrialPageProps) => {
