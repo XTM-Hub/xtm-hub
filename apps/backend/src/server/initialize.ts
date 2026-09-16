@@ -5,6 +5,8 @@ import { withTransaction } from '../context/database.context';
 import { OrganizationId } from '../model/kanel/public/Organization';
 import { RolePortalId } from '../model/kanel/public/RolePortal';
 import { UserId } from '../model/kanel/public/User';
+import { UserOrganizationDomain } from '../modules/organization-management/user/user-organization/user-organization.domain';
+import { RolePortalDomain } from '../modules/role-portal/role-portal.domain';
 import {
   ADMIN_UUID,
   CAPABILITY_BYPASS,
@@ -25,8 +27,6 @@ import {
   ensurePersonalSpaceExist,
   ensureRoleExists,
   ensureRoleHasCapability,
-  ensureUserOrganizationExist,
-  ensureUserRoleExist,
   initializeDevUsers,
   insertAdminUser,
   insertPlatformOrganization,
@@ -56,7 +56,7 @@ const initializeUser = async ({
     await completeUserInitialization(userId, email, passwordData);
   }
   if (roleId) {
-    await ensureUserRoleExist(userId, roleId);
+    await RolePortalDomain.ensureUserHasRole(userId, roleId);
   }
 
   await ensurePersonalSpaceExist(userId, email);
@@ -98,8 +98,11 @@ const completeUserInitialization = async (
 
     await insertAdminUser(user_id, email, data);
 
-    await ensureUserOrganizationExist(user_id, PLATFORM_ORGANIZATION_UUID);
-    await ensureUserOrganizationExist(
+    await UserOrganizationDomain.ensureUserOrganizationExists(
+      user_id,
+      PLATFORM_ORGANIZATION_UUID
+    );
+    await UserOrganizationDomain.ensureUserOrganizationExists(
       user_id,
       user_id as unknown as OrganizationId
     );

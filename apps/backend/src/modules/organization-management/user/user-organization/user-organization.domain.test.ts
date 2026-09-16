@@ -176,4 +176,49 @@ describe('userOrganizationDomain', () => {
       ).toBe(false);
     });
   });
+
+  describe('ensureUserOrganizationExists', () => {
+    it('should create the User_Organization link when it does not exist yet', async () => {
+      const organization = await TestHelper.organization.create({
+        personal_space: false,
+      });
+      const user = await UserHelper.createUserWithPersonalSpace(
+        { email: `ensure-user-org-${uuidv4()}@filigran.io` },
+        { sendWelcomeEmail: false }
+      );
+
+      const result = await UserOrganizationDomain.ensureUserOrganizationExists(
+        user.id,
+        organization.id
+      );
+
+      const userOrg = await TestHelper.user_Organization.load({
+        user_id: user.id,
+        organization_id: organization.id,
+      });
+      expect(userOrg).toBeDefined();
+      expect(result.id).toBe(userOrg!.id);
+    });
+
+    it('should return the existing link instead of creating a duplicate when called twice', async () => {
+      const organization = await TestHelper.organization.create({
+        personal_space: false,
+      });
+      const user = await UserHelper.createUserWithPersonalSpace(
+        { email: `ensure-user-org-${uuidv4()}@filigran.io` },
+        { sendWelcomeEmail: false }
+      );
+
+      const first = await UserOrganizationDomain.ensureUserOrganizationExists(
+        user.id,
+        organization.id
+      );
+      const second = await UserOrganizationDomain.ensureUserOrganizationExists(
+        user.id,
+        organization.id
+      );
+
+      expect(second.id).toBe(first.id);
+    });
+  });
 });

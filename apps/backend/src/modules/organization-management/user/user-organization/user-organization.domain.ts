@@ -9,6 +9,7 @@ import Organization, {
 } from '../../../../model/kanel/public/Organization';
 import User, { UserId } from '../../../../model/kanel/public/User';
 import UserOrganization, {
+  UserOrganizationId,
   UserOrganizationInitializer,
   UserOrganizationMutator,
 } from '../../../../model/kanel/public/UserOrganization';
@@ -70,6 +71,27 @@ export const UserOrganizationDomain = {
     field: UserOrganizationMutator
   ): Promise<UserOrganization[]> => {
     return db<UserOrganization>('User_Organization').where(field);
+  },
+
+  ensureUserOrganizationExists: async (
+    user_id: UserId,
+    organization_id: OrganizationId
+  ): Promise<{ id: UserOrganizationId }> => {
+    const existing = await db<UserOrganization>('User_Organization')
+      .where({ user_id, organization_id })
+      .first();
+    if (existing) {
+      return { id: existing.id };
+    }
+
+    const [inserted] = await UserOrganizationDomain.insertNewUserOrganization({
+      user_id,
+      organization_id,
+    });
+    if (!inserted) {
+      throw new Error(UnknownErrorCode.UnknownError);
+    }
+    return { id: inserted.id };
   },
 
   updateMultipleUserOrgWithCapabilities: async (

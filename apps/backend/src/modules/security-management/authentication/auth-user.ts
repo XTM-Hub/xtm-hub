@@ -1,14 +1,11 @@
 import type { Request, Response } from 'express';
 import { UserInfo, UserLoadUserBy } from '../../../model/user';
 import { PLATFORM_ORGANIZATION_UUID } from '../../../portal.const';
-import {
-  addRoleToUser,
-  ensureUserOrganizationExist,
-} from '../../../server/initialize.helper';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { ForbiddenAccess } from '../../../utils/error/error.util';
 import { isEmptyField } from '../../../utils/utils';
 import { UserDomain } from '../../organization-management/user/user-domain/user.domain';
+import { UserOrganizationDomain } from '../../organization-management/user/user-organization/user-organization.domain';
 import { UserHelper } from '../../organization-management/user/user.helper';
 import { RolePortalDomain } from '../../role-portal/role-portal.domain';
 
@@ -34,11 +31,16 @@ export const loginFromProvider = async (userInfo: UserInfo) => {
   }
   // Check if the user has the admin role, so in creation we create user then add admin role
   if (isFiligranUser) {
-    await ensureUserOrganizationExist(user.id, PLATFORM_ORGANIZATION_UUID);
+    await UserOrganizationDomain.ensureUserOrganizationExists(
+      user.id,
+      PLATFORM_ORGANIZATION_UUID
+    );
     await RolePortalDomain.removeAllUserRolePortal(user.id);
     if (userInfo.roles.length > 0) {
       await Promise.all(
-        userInfo.roles.map((role) => addRoleToUser(user.id, role))
+        userInfo.roles.map((role) =>
+          RolePortalDomain.assignRoleByName(user.id, role)
+        )
       );
       const reloadedUser = await UserDomain.loadUserBy({ 'User.id': user.id });
       if (!reloadedUser) {

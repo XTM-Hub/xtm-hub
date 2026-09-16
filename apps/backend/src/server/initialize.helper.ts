@@ -16,12 +16,12 @@ import Organization, {
 import RolePortal from '../model/kanel/public/RolePortal';
 import RolePortalCapabilityPortal from '../model/kanel/public/RolePortalCapabilityPortal';
 import { UserId, UserInitializer } from '../model/kanel/public/User';
-import UserOrganization, {
-  UserOrganizationId,
-} from '../model/kanel/public/UserOrganization';
+import { UserOrganizationId } from '../model/kanel/public/UserOrganization';
 import UserOrganizationCapability from '../model/kanel/public/UserOrganizationCapability';
 import { OrganizationDomain } from '../modules/organization-management/organization/organization.domain';
 import { UserDomain } from '../modules/organization-management/user/user-domain/user.domain';
+import { UserOrganizationDomain } from '../modules/organization-management/user/user-organization/user-organization.domain';
+import { RolePortalDomain } from '../modules/role-portal/role-portal.domain';
 import { IngestManifestApp } from '../modules/shareable-resource/opencti/integration/ingest-manifest/ingest-manifest.app';
 import {
   ADMIN_UUID,
@@ -54,30 +54,6 @@ export const ensureCapabilityExists = async (capability: CapabilityPortal) => {
   if (!capabilityPortal.find((c: CapabilityPortal) => c.id === capability.id)) {
     await db<CapabilityPortal>('CapabilityPortal').insert(capability);
   }
-};
-
-export const ensureUserRoleExist = async (
-  user_id: UserId,
-  role_portal_id: string
-) => {
-  const userRole = await db('User_RolePortal')
-    .where({ user_id, role_portal_id })
-    .first();
-  if (!userRole) {
-    await db('User_RolePortal').insert({
-      user_id,
-      role_portal_id,
-    });
-  }
-};
-
-export const addRoleToUser = async (user_id: UserId, role: string) => {
-  const rolePortal = await db('RolePortal').where({ name: role }).first();
-  if (!rolePortal) {
-    logApp.warn(`Role portal '${role}' not found for user`);
-    return;
-  }
-  await ensureUserRoleExist(user_id, rolePortal.id);
 };
 
 export const ensureRoleExists = async (role: InitEntityWithId) => {
@@ -162,22 +138,6 @@ export const updateUserPassword = async (
     .returning('*');
 };
 
-export const ensureUserOrganizationExist = async (
-  user_id: UserId,
-  organization_id: OrganizationId
-) => {
-  const userOrganization = await db<UserOrganization>('User_Organization')
-    .where({ user_id, organization_id })
-    .first();
-
-  if (!userOrganization) {
-    await db('User_Organization').insert({
-      user_id,
-      organization_id,
-    });
-  }
-};
-
 export const ensurePersonalSpaceExist = async (
   user_id: UserId,
   mail: string
@@ -185,7 +145,10 @@ export const ensurePersonalSpaceExist = async (
   const orgId = user_id as unknown as OrganizationId;
 
   await ensureOrganizationExists(orgId, mail);
-  const userOrg = await ensureUserOrganizationExists(user_id, orgId);
+  const userOrg = await UserOrganizationDomain.ensureUserOrganizationExists(
+    user_id,
+    orgId
+  );
   await ensureCapabilitiesExist(userOrg.id, [
     OrganizationCapability.AdministrateOrganization,
   ]);
@@ -206,28 +169,6 @@ const ensureOrganizationExists = async (
       personal_space: true,
     });
   }
-};
-
-const ensureUserOrganizationExists = async (
-  user_id: UserId,
-  orgId: OrganizationId
-) => {
-  const userOrg = await db<UserOrganization>('User_Organization')
-    .where({ user_id, organization_id: orgId })
-    .first();
-
-  if (!userOrg) {
-    const query = db<UserOrganization>('User_Organization')
-      .insert({ user_id, organization_id: orgId })
-      .returning('id');
-
-    const [insertedRecord] = await query;
-    if (!insertedRecord) {
-      throw new Error(UnknownErrorCode.UnknownError);
-    }
-    return { id: insertedRecord.id };
-  }
-  return userOrg;
 };
 
 const ensureCapabilitiesExist = async (
@@ -343,7 +284,10 @@ export const ensureDevUserExists = async (
         });
         orgId = org.id;
 
-        await ensureUserOrganizationExist(userId, orgId);
+        await UserOrganizationDomain.ensureUserOrganizationExists(
+          userId,
+          orgId
+        );
 
         // Set as default organization for new users
         if (isNewUser) {
@@ -354,7 +298,10 @@ export const ensureDevUserExists = async (
       }
 
       // Always ensure platform organization membership
-      await ensureUserOrganizationExist(userId, PLATFORM_ORGANIZATION_UUID);
+      await UserOrganizationDomain.ensureUserOrganizationExists(
+        userId,
+        PLATFORM_ORGANIZATION_UUID
+      );
 
       // Handle roles
       const roles = userConfig.roles || ['USER'];
@@ -367,7 +314,7 @@ export const ensureDevUserExists = async (
           continue;
         }
 
-        await ensureUserRoleExist(userId, roleId);
+        await RolePortalDomain.ensureUserHasRole(userId, roleId);
       }
 
       // Always create personal space
