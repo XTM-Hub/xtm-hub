@@ -339,10 +339,79 @@ describe('facet.domain', () => {
       );
       // isUserRestrictedToActiveDocument short-circuits on isUserGranted(user), which
       // without a capability argument means "any authenticated user" — so authenticated
-      // users always see inactive documents. The parity we assert is that facets follow
-      // the list either way.
+      // users always see inactive documents unless restrictToActiveDocuments is
+      // explicitly set to true (not the case here). The parity we assert is that
+      // facets follow the list either way.
       expect(verifiedSum).toBe(Number(connection.totalCount));
       expect(Number(connection.totalCount)).toBe(3);
+    });
+
+    it('should exclude inactive documents from every facet bucket for an authenticated user when restrictToActiveDocuments is true', async () => {
+      // Given — same fixture as above: an authenticated user who would
+      // otherwise see inactive documents (isUserRestrictedToActiveDocument
+      // is false for them), but the caller explicitly opts into the public,
+      // active-only scope via restrictToActiveDocuments.
+      const privateServiceInstance = await TestHelper.serviceInstance.create({
+        service_definition_id: SERVICES.DEFINITIONS.OPENCTI_INTEGRATIONS.ID,
+        name: `facet-parity-restrict-${uuidv4()}`,
+        slug: `facet-parity-restrict-${uuidv4()}`,
+        public: false,
+      });
+      createdServiceInstanceIds.push(privateServiceInstance.id);
+
+      await TestHelper.subscription.create({
+        service_instance_id: privateServiceInstance.id,
+        organization_id: requestContextSimpleUserFiligran2.user
+          .selected_organization_id as OrganizationId,
+      });
+
+      const activeVerified = await TestHelper.document.create({
+        name: `facet-parity-restrict-a-${uuidv4()}`,
+        slug: `facet-parity-restrict-a-${uuidv4()}`,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        active: true,
+        service_instance_id: privateServiceInstance.id,
+      });
+      const inactiveVerified = await TestHelper.document.create({
+        name: `facet-parity-restrict-b-${uuidv4()}`,
+        slug: `facet-parity-restrict-b-${uuidv4()}`,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        active: false,
+        service_instance_id: privateServiceInstance.id,
+      });
+      createdDocumentIds.push(activeVerified.id, inactiveVerified.id);
+
+      await Promise.all([
+        TestHelper.documentMetadata.create({
+          document_id: activeVerified.id,
+          key: DocumentMetadataKeyCode.Verified,
+          value: VERIFIED_TRUE_VALUE,
+        }),
+        TestHelper.documentMetadata.create({
+          document_id: inactiveVerified.id,
+          key: DocumentMetadataKeyCode.Verified,
+          value: VERIFIED_TRUE_VALUE,
+        }),
+      ]);
+
+      // When — same authenticated user, but the flag forces active-only scope
+      const facets = await requestContext.run(
+        requestContextSimpleUserFiligran2,
+        async () =>
+          FacetDomain.loadDocumentFacets({
+            serviceInstanceId: privateServiceInstance.id,
+            documentType: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+            logicalFilters: null,
+            restrictToActiveDocuments: true,
+          })
+      );
+
+      // Then — only the active document is counted, never the draft/inactive one
+      const verifiedSum = facets.verified.reduce(
+        (sum, bucket) => sum + bucket.count,
+        0
+      );
+      expect(verifiedSum).toBe(1);
     });
   });
 
@@ -474,6 +543,7 @@ describe('facet.domain', () => {
       // Given — restrictToActive computed exactly like the domain does
       const user = requestContext.get()?.user;
       const restrictToActive =
+        input.restrictToActiveDocuments === true ||
         !user ||
         (await isUserRestrictedToActiveDocument(user, input.serviceInstanceId));
 

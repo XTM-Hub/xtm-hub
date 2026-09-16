@@ -12,6 +12,7 @@ export interface UseDocumentFacetCountsParams {
   documentType: string;
   search: string;
   serviceInstanceSlug: ServiceSlug;
+  restrictToActiveDocuments: boolean;
   labels: LogicalMultiSelectSelection;
   entityTypes: LogicalMultiSelectSelection;
   deployable: LogicalMultiSelectSelection;
@@ -27,6 +28,7 @@ export const useDocumentFacetCounts = ({
   documentType,
   search,
   serviceInstanceSlug,
+  restrictToActiveDocuments,
   labels,
   entityTypes,
   deployable,
@@ -67,6 +69,7 @@ export const useDocumentFacetCounts = ({
         documentType,
         searchTerm: search,
         logicalFilters: logicalFilters as LogicalFilterInput,
+        restrictToActiveDocuments,
       },
     },
     { placeholderData: keepPreviousData }

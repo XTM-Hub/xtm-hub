@@ -821,6 +821,7 @@ input LoadDocumentFacetInput {
   searchTerm: String
   documentType: String
   logicalFilters: LogicalFilterInput
+  restrictToActiveDocuments: Boolean
 }
 
 """

@@ -11,6 +11,7 @@ export const FacetDomain = {
   loadDocumentFacets: async (input: LoadDocumentFacetInput): Promise<Facet> => {
     const user = requestContext.get()?.user;
     const restrictToActive =
+      input.restrictToActiveDocuments === true ||
       !user ||
       (await isUserRestrictedToActiveDocument(user, input.serviceInstanceId));
 

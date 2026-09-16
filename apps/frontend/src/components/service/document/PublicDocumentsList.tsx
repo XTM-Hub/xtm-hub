@@ -77,6 +77,7 @@ const PublicDocumentsList = ({
     documentType: SERVICE_SLUG_SHAREABLE_RESOURCE_MAPPING[serviceInstanceSlug],
     search,
     serviceInstanceSlug,
+    restrictToActiveDocuments: true,
     labels,
     entityTypes,
     deployable,

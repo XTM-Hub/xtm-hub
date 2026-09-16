@@ -877,6 +877,7 @@ export const mockLoadDocumentFacetInput = (overrides?: Partial<LoadDocumentFacet
     return {
         documentType: overrides && overrides.hasOwnProperty('documentType') ? overrides.documentType! : 'sum',
         logicalFilters: overrides && overrides.hasOwnProperty('logicalFilters') ? overrides.logicalFilters! : relationshipsToOmit.has('LogicalFilterInput') ? {} as LogicalFilterInput : mockLogicalFilterInput({}, relationshipsToOmit),
+        restrictToActiveDocuments: overrides && overrides.hasOwnProperty('restrictToActiveDocuments') ? overrides.restrictToActiveDocuments! : false,
         searchTerm: overrides && overrides.hasOwnProperty('searchTerm') ? overrides.searchTerm! : 'quis',
         serviceInstanceId: overrides && overrides.hasOwnProperty('serviceInstanceId') ? overrides.serviceInstanceId! : 'trepide',
     };
