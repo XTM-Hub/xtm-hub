@@ -1,9 +1,9 @@
 import { ShareableResourceConnectorDetails } from '@/components/service/document/connector/ShareableResourceConnectorDetails';
+import { PublicResourceActions } from '@/components/service/document/PublicResourceActions';
 import ShareableResourceCarousel from '@/components/service/document/ui/ShareableResourceCarouselView';
 import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
-import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
 import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
 import {
   ConnectorFields,
@@ -15,15 +15,13 @@ import {
   VerifiedIcon,
 } from '@filigran/icon';
 import { MarkdownRenderer } from '@filigran/ui/clients';
-import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 
 interface ShareableResourceConnectorSlugPublicProps {
-  documentData: (documentItem_fragment$data | PublicDocumentDetailsData) &
-    ConnectorFields;
+  documentData: PublicDocumentDetailsData & ConnectorFields;
   serviceInstance:
     seoServiceInstanceFragment$data | serviceInstance_fragment$data;
   pageUrl: string;
@@ -76,13 +74,12 @@ const ShareableResourceConnectorSlugPublic = ({
               )}
             </div>
 
-            <div className="ml-auto">
-              <ShareLinkButton
-                documentId={documentData.id}
-                url={pageUrl}
-                tooltipText={`Service.OpenctiIntegrations.Actions.Share`}
-              />
-            </div>
+            <PublicResourceActions
+              documentData={documentData}
+              serviceInstance={serviceInstance}
+              pageUrl={pageUrl}
+              shareTooltipText="Service.OpenctiIntegrations.Actions.Share"
+            />
           </div>
           <div className="w-full mt-s mb-xs">
             <BadgeOverflowCounter

@@ -15,7 +15,6 @@ import { Button } from '@filigran/ui/servers';
 import { useTranslations } from 'next-intl';
 
 import OneClickDeploy from '@/components/service/document/one-click-deploy/OneClickDeploy';
-import { OPENCTI_INTEGRATION_URL_CONFIGS } from '@/components/service/document/one-click-deploy/UseOneClickDeployTab';
 import ShareableResourceDetails from '@/components/service/document/ShareableResouceDetails';
 import ShareableResourceDescription from '@/components/service/document/ShareableResourceDescription';
 import ShareableResourceCarousel from '@/components/service/document/ui/ShareableResourceCarouselView';
@@ -29,8 +28,10 @@ import useDecodedParams from '@/hooks/use-decoded-params';
 import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
 import { EntityTypeOrFiligranLogo } from '@/utils/shareable-resources/entity-type';
-import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { isResourceDownloadable } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
+import {
+  isResourceDeployable,
+  isResourceDownloadable,
+} from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import Image from 'next/image';
@@ -62,20 +63,10 @@ const ShareableResourceSlug = ({
   const incrementDownloadNumber = () =>
     setDocumentDownloadNumber((prev) => prev + 1);
 
-  const shouldShowOneClickDeployComponent = useMemo(() => {
-    if (!documentData.active) return false;
-
-    if (documentData.integration_type) {
-      return documentData.integration_type in OPENCTI_INTEGRATION_URL_CONFIGS;
-    }
-
-    return [
-      ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD,
-      ShareableResourceType.OPENCTI_CUSTOM_VIEW,
-      ShareableResourceType.OPENAEV_SCENARIO,
-      ShareableResourceType.OPENCTI_PLAYBOOK,
-    ].includes(documentData.type as ShareableResourceType);
-  }, [documentData]);
+  const shouldShowOneClickDeployComponent = useMemo(
+    () => isResourceDeployable(documentData),
+    [documentData]
+  );
 
   const carouselImages = useMemo(() => {
     return filterDocumentImages(documentData);

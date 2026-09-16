@@ -1006,7 +1006,9 @@
       "opencti_playbooks": "OpenCTI Playbooks",
       "opencti_registration": "OpenCTI Registration",
       "vault": "Vault",
-      "xtm_platform_roadmap": "XTM Platform Roadmap"
+      "xtm_platform_bundle": "XTM Platform Trial",
+      "xtm_platform_roadmap": "XTM Platform Roadmap",
+      "xtmone_registration": "XTM One Registration"
     },
     "Capabilities": {
       "AccessServiceDescription": "Vous avez uniquement accès à un service",

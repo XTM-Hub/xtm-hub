@@ -64,6 +64,18 @@ export interface AdminSaasInstanceRequestedModel {
   deploymentType: string;
 }
 
+export interface AdminSaasBundleRequestedModel {
+  organizationName: string;
+  userName: string;
+  userEmail: string;
+  region: string;
+  activitySector?: string;
+  openCTIUseCase?: string;
+  openAEVUseCase?: string;
+  products: string;
+  deploymentType: string;
+}
+
 export interface OrganizationPendingUserDigestUser {
   firstName: string;
   lastName: string;
@@ -162,6 +174,7 @@ export type MailTemplates = {
   free_trial_user_added: FreeTrialUserAddedModel;
   organization_pending_user_digest: OrganizationPendingUserDigestModel;
   admin_saas_instance_requested: AdminSaasInstanceRequestedModel;
+  admin_saas_bundle_requested: AdminSaasBundleRequestedModel;
   public_roadmap_monthly_reminder: { roadmapLink: string };
 };
 
@@ -230,6 +243,9 @@ export const templateSubjects: {
     'XTM Hub - Users Requesting to Join Your Organization',
   admin_saas_instance_requested: (params: AdminSaasInstanceRequestedModel) => {
     return `New ${params.platformIdentifier} SaaS ${params.deploymentType} Has Been Launched on XTM Hub by ${params.organizationName}`;
+  },
+  admin_saas_bundle_requested: (params: AdminSaasBundleRequestedModel) => {
+    return `New ${BUNDLE_PLATFORM_NAME} Trial Has Been Launched on XTM Hub by ${params.organizationName}`;
   },
   public_roadmap_monthly_reminder: () =>
     'Monthly check-in — Update your XTM Hub Roadmap Epics',

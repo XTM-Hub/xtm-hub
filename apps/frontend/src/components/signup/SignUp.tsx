@@ -98,12 +98,12 @@ const SignUp = ({ showLocalLogin = false }: { showLocalLogin?: boolean }) => {
         </div>
         {/* Footer */}
         <div className="shrink-0 flex flex-col items-center gap-1.5 text-xs pr-6">
-          <p className="text-muted-foreground flex items-center gap-2">
+          <p className="text-sm leading-6 text-foreground flex items-center gap-2">
             {t('AlreadyHaveAccount')}
             <Link
               href={oidcHref}
               prefetch={false}
-              className="text-primary underline">
+              className="text-primary font-bold underline">
               {t('LogIn')}
             </Link>
           </p>

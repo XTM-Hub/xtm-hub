@@ -9,7 +9,7 @@ vi.mock('@/utils/settings.service', () => ({
 }));
 
 vi.mock(
-  '@/components/service/trial-instances/xtm-platform-trial/PrivateXtmPlatformTrialPanel',
+  '@/components/service/trial-instances/xtm-platform-trial/request-panel/PrivateXtmPlatformTrialPanel',
   () => ({
     PrivateXtmPlatformTrialPanel: ({
       bundle,
@@ -23,7 +23,7 @@ vi.mock(
 
 const mockUseXtmPlatformTrialPanelView = vi.fn();
 vi.mock(
-  '@/components/service/trial-instances/xtm-platform-trial/useXtmPlatformTrialPanelView',
+  '@/components/service/trial-instances/xtm-platform-trial/request-panel/useXtmPlatformTrialPanelView',
   () => ({
     useXtmPlatformTrialPanelView: (
       ...args: Parameters<typeof mockUseXtmPlatformTrialPanelView>
@@ -31,9 +31,12 @@ vi.mock(
   })
 );
 
-vi.mock('@/components/xtm-platform-trial/XtmPlatformTrialPage', () => ({
-  XtmPlatformTrialPage: () => <div data-testid="bundle-dashboard" />,
-}));
+vi.mock(
+  '@/components/service/trial-instances/xtm-platform-trial/active-bundle/XtmPlatformActiveBundlePage',
+  () => ({
+    XtmPlatformActiveBundlePage: () => <div data-testid="bundle-dashboard" />,
+  })
+);
 
 const mockUseXtmPlatformBundleQuery = vi.fn();
 vi.mock('@graphql/generated', async (importOriginal) => ({
