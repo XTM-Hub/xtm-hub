@@ -109,7 +109,7 @@ export const ServiceGroupApp = {
       throw new Error(ErrorCode.XtmOneRoleRequired);
     }
 
-    const { children, bundleOrganizationId } =
+    const { bundleDeploymentRequest, children, bundleOrganizationId } =
       await ServiceGroupSecurityHelper.assertBundleAccessAndLoadChildren(
         serviceInstanceId
       );
@@ -155,18 +155,14 @@ export const ServiceGroupApp = {
       emailByUserId
     );
 
-    await Promise.all(
-      grantedAssignments.map(async ({ child }) => {
-        await ServiceGroupHelper.sendFreeTrialWelcomeEmails({
-          platformId: child.platform_id,
-          platformIdentifier: child.platform_identifier,
-          deploymentType: child.type,
-          endDate: child.end_date,
-          newlyAddedUsers: users,
-          adminEmail: user.email,
-        });
-      })
-    );
+    await ServiceGroupHelper.sendFreeTrialBundleWelcomeEmails({
+      endDate: bundleDeploymentRequest.end_date,
+      products: grantedAssignments.flatMap(({ child }) =>
+        child.platform_identifier ? [child.platform_identifier] : []
+      ),
+      newlyAddedUsers: users,
+      adminEmail: user.email,
+    });
 
     return ServiceGroupApp.loadBundleUserServiceGroups(serviceInstanceId);
   },

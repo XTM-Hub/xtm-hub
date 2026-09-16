@@ -19,8 +19,6 @@ import {
 } from '../../../../tests/tests.const';
 import {
   DeploymentRequestHubStatus,
-  PlatformConfigurationStatus,
-  PlatformContract,
   PlatformIdentifier,
   ServiceGroupName,
   ServiceInstanceCreationStatus,
@@ -552,29 +550,21 @@ describe('serviceGroupApp', () => {
 
   describe('addUsersToBundleGroups', () => {
     const createdBundleIds: DeploymentRequestId[] = [];
-    const createdPlatformConfigServiceInstanceIds: ServiceInstanceId[] = [];
 
     afterEach(async () => {
-      for (const serviceInstanceId of createdPlatformConfigServiceInstanceIds) {
-        await TestHelper.platformConfiguration.delete({
-          service_instance_id: serviceInstanceId,
-        });
-      }
-      createdPlatformConfigServiceInstanceIds.length = 0;
+      vi.useRealTimers();
       for (const bundleId of createdBundleIds) {
         await TestHelper.deploymentRequest.deleteBundle(bundleId);
       }
       createdBundleIds.length = 0;
     });
 
-    const createBundleWithGroups = async (opts?: {
-      endDate?: Date;
-      platformUrl?: string;
-    }) => {
+    const createBundleWithGroups = async (opts?: { endDate?: Date }) => {
       const openctiPlatformId = uuidv4();
       const xtmonePlatformId = uuidv4();
       const { bundle, children } =
         await TestHelper.deploymentRequest.createBundle({
+          bundle: { end_date: opts?.endDate },
           children: [
             {
               platform_identifier: PlatformIdentifier.Opencti,
@@ -615,35 +605,6 @@ describe('serviceGroupApp', () => {
         name: 'Admin',
         service_instance_id: xtmoneChild!.service_instance_id,
       });
-
-      if (opts?.platformUrl) {
-        await TestHelper.platformConfiguration.create({
-          service_instance_id: openctiChild!.service_instance_id,
-          status: PlatformConfigurationStatus.Active,
-          platform_id: openctiPlatformId,
-          platform_url: opts.platformUrl,
-          registerer_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-          platform_title: 'Test OpenCTI',
-          platform_version: '1.0.0',
-          platform_contract: PlatformContract.Ee,
-          token: uuidv4(),
-        });
-        await TestHelper.platformConfiguration.create({
-          service_instance_id: xtmoneChild!.service_instance_id,
-          status: PlatformConfigurationStatus.Active,
-          platform_id: xtmonePlatformId,
-          platform_url: opts.platformUrl,
-          registerer_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-          platform_title: 'Test XTM One',
-          platform_version: '1.0.0',
-          platform_contract: PlatformContract.Ee,
-          token: uuidv4(),
-        });
-        createdPlatformConfigServiceInstanceIds.push(
-          openctiChild!.service_instance_id,
-          xtmoneChild!.service_instance_id
-        );
-      }
 
       return {
         bundle,
@@ -823,14 +784,15 @@ describe('serviceGroupApp', () => {
       );
     });
 
-    it('should sync Auth0 RBAC groups for all submitted users and email each of them the free trial welcome message', async () => {
+    it('should sync Auth0 RBAC groups for all submitted users and email each of them a single XTM Platform trial invitation', async () => {
       // Given
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-09-16T10:00:00.000Z'));
       const actingUserEmail = requestContextSimpleUserFiligran2.user.email;
       const targetUser = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS;
-      const platformUrl = 'https://test-platform.example.com';
-      const endDate = new Date('2026-06-01');
+      const endDate = new Date('2026-10-06T10:00:00.000Z');
       const { bundle, openctiChild, xtmoneChild } =
-        await createBundleWithGroups({ endDate, platformUrl });
+        await createBundleWithGroups({ endDate });
 
       const auth0Spy = vi
         .spyOn(auth0ClientMock, 'updateUserRBACInstance')
@@ -843,8 +805,8 @@ describe('serviceGroupApp', () => {
       await ServiceGroupApp.addUsersToBundleGroups(bundle.service_instance_id, {
         userIds: [targetUser.ID],
         roles: [
-          { product: PlatformIdentifier.Opencti, role: ServiceGroupName.Admin },
           { product: PlatformIdentifier.Xtmone, role: ServiceGroupName.User },
+          { product: PlatformIdentifier.Opencti, role: ServiceGroupName.Admin },
         ],
       });
 
@@ -855,32 +817,17 @@ describe('serviceGroupApp', () => {
         [xtmoneChild.platform_id as string]: { groups: ['User'] },
       });
 
-      const expectedTrialEndDate = endDate.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: '2-digit',
-      });
-      expect(sendMailSpy).toHaveBeenCalledTimes(2);
+      expect(sendMailSpy).toHaveBeenCalledTimes(1);
       expect(sendMailSpy).toHaveBeenCalledWith({
         to: targetUser.EMAIL,
-        template: 'free_trial_user_added',
+        template: 'free_trial_bundle_user_added',
         params: {
           firstName: formatName(targetUser.FIRST_NAME),
-          platformUrl,
-          platformIdentifier: PlatformIdentifier.Opencti,
           adminEmail: actingUserEmail,
-          trialEndDate: expectedTrialEndDate,
-        },
-      });
-      expect(sendMailSpy).toHaveBeenCalledWith({
-        to: targetUser.EMAIL,
-        template: 'free_trial_user_added',
-        params: {
-          firstName: formatName(targetUser.FIRST_NAME),
-          platformUrl,
-          platformIdentifier: PlatformIdentifier.Xtmone,
-          adminEmail: actingUserEmail,
-          trialEndDate: expectedTrialEndDate,
+          productNames: 'OpenCTI and XTM One',
+          products: [PlatformIdentifier.Opencti, PlatformIdentifier.Xtmone],
+          daysLeft: 20,
+          platformUrl: mailService.buildXtmPlatformTrialLink(),
         },
       });
     });

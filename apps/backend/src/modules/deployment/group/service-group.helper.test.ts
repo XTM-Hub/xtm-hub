@@ -545,6 +545,118 @@ describe('serviceGroupHelper', () => {
     });
   });
 
+  describe('sendFreeTrialBundleWelcomeEmails', () => {
+    let simple2User: User;
+    let bypassUser: User;
+
+    beforeAll(async () => {
+      const users = await UserDomain.loadUsers([
+        TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
+        TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+      ]);
+      simple2User = users.find(
+        (user) => user.id === TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID
+      )!;
+      bypassUser = users.find(
+        (user) => user.id === TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID
+      )!;
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      vi.restoreAllMocks();
+    });
+
+    it('should send a single free_trial_bundle_user_added email to each newly added user', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-09-16T10:00:00.000Z'));
+      const endDate = new Date('2026-10-01T10:00:00.000Z');
+      const adminEmail = 'admin@filigran.io';
+
+      const sendMailSpy = vi
+        .spyOn(mailService, 'sendMail')
+        .mockResolvedValue(undefined);
+
+      await ServiceGroupHelper.sendFreeTrialBundleWelcomeEmails({
+        endDate,
+        products: [PlatformIdentifier.Xtmone, PlatformIdentifier.Opencti],
+        newlyAddedUsers: [simple2User, bypassUser],
+        adminEmail,
+      });
+
+      const expectedParams = {
+        adminEmail,
+        productNames: 'OpenCTI and XTM One',
+        products: [PlatformIdentifier.Opencti, PlatformIdentifier.Xtmone],
+        daysLeft: 15,
+        platformUrl: mailService.buildXtmPlatformTrialLink(),
+      };
+      expect(sendMailSpy).toHaveBeenCalledTimes(2);
+      expect(sendMailSpy).toHaveBeenCalledWith({
+        to: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.EMAIL,
+        template: 'free_trial_bundle_user_added',
+        params: {
+          firstName: formatName(
+            TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.FIRST_NAME
+          ),
+          ...expectedParams,
+        },
+      });
+      expect(sendMailSpy).toHaveBeenCalledWith({
+        to: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.EMAIL,
+        template: 'free_trial_bundle_user_added',
+        params: {
+          firstName: formatName(
+            TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.FIRST_NAME
+          ),
+          ...expectedParams,
+        },
+      });
+    });
+
+    it.each([
+      ['there is no end date', null, [PlatformIdentifier.Opencti], true],
+      ['there are no products', new Date(), [], true],
+      [
+        'there are no newly added users',
+        new Date(),
+        [PlatformIdentifier.Opencti],
+        false,
+      ],
+    ])(
+      'should do nothing when %s',
+      async (_description, endDate, products, withUsers) => {
+        const sendMailSpy = vi
+          .spyOn(mailService, 'sendMail')
+          .mockResolvedValue(undefined);
+
+        await ServiceGroupHelper.sendFreeTrialBundleWelcomeEmails({
+          endDate,
+          products,
+          newlyAddedUsers: withUsers ? [simple2User] : [],
+          adminEmail: 'admin@filigran.io',
+        });
+
+        expect(sendMailSpy).not.toHaveBeenCalled();
+      }
+    );
+
+    it('should swallow errors raised while sending emails', async () => {
+      vi.spyOn(mailService, 'sendMail').mockRejectedValue(
+        new Error('smtp down')
+      );
+
+      await expect(
+        ServiceGroupHelper.sendFreeTrialBundleWelcomeEmails({
+          endDate: new Date(),
+          products: [PlatformIdentifier.Opencti],
+          newlyAddedUsers: [simple2User],
+          adminEmail: 'admin@filigran.io',
+        })
+      ).resolves.toBeUndefined();
+    });
+  });
+
   describe('updateAuth0Groups', () => {
     const bundleIds: DeploymentRequestId[] = [];
 

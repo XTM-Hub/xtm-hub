@@ -11,7 +11,14 @@ import ServiceGroupModel, {
 import ServiceGroupUser from '../../../model/kanel/public/ServiceGroupUser';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import User, { UserId } from '../../../model/kanel/public/User';
-import { sendMail } from '../../../server/mail-service';
+import {
+  buildXtmPlatformTrialLink,
+  sendMail,
+} from '../../../server/mail-service';
+import {
+  formatProductNames,
+  sortProductsForMail,
+} from '../../../server/mail-template/mail';
 import {
   Auth0UpdateUserRBACInstance,
   auth0Client,
@@ -26,6 +33,8 @@ import { UpdateGroupsPayload } from './service-group.app';
 import { ServiceGroupDomain } from './service-group.domain';
 
 export type UserGroups = { user_id: UserId; group_ids: ServiceGroupId[] };
+
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 export const ServiceGroupHelper = {
   buildUserGroupsDiff: (
@@ -172,6 +181,53 @@ export const ServiceGroupHelper = {
       );
     } catch (error) {
       logApp.error('Unable to send free_trial_user_added mail', { error });
+    }
+  },
+
+  sendFreeTrialBundleWelcomeEmails: async ({
+    endDate,
+    products,
+    newlyAddedUsers,
+    adminEmail,
+  }: {
+    endDate: Date | null;
+    products: PlatformIdentifier[];
+    newlyAddedUsers: User[];
+    adminEmail: string;
+  }): Promise<void> => {
+    if (!endDate || products.length === 0 || newlyAddedUsers.length === 0) {
+      return;
+    }
+
+    try {
+      const platformUrl = buildXtmPlatformTrialLink();
+      const daysLeft = Math.max(
+        0,
+        Math.ceil((endDate.getTime() - Date.now()) / MS_PER_DAY)
+      );
+      const sortedProducts = sortProductsForMail(products);
+      const productNames = formatProductNames(products);
+
+      await Promise.all(
+        newlyAddedUsers.map((addedUser) =>
+          sendMail({
+            to: addedUser.email,
+            template: 'free_trial_bundle_user_added',
+            params: {
+              firstName: formatName(addedUser.first_name),
+              adminEmail,
+              productNames,
+              products: sortedProducts,
+              daysLeft,
+              platformUrl,
+            },
+          })
+        )
+      );
+    } catch (error) {
+      logApp.error('Unable to send free_trial_bundle_user_added mail', {
+        error,
+      });
     }
   },
 
