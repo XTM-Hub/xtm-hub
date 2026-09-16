@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../../tests/helper/test.helper';
+import { TEST_ORGANIZATIONS } from '../../../../../tests/tests.const';
 import * as MailService from '../../../../server/mail-service';
 import { UserProvisioningDomain } from './user-provisioning.domain';
 
@@ -70,6 +71,90 @@ describe('userProvisioningDomain', () => {
       );
 
       expect(sendMailSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('upsertUser', () => {
+    it('should create a new user with the given profile when the email does not exist yet', async () => {
+      const email = `ensure-user-${uuidv4()}@filigran.io`;
+
+      const { user, created } = await UserProvisioningDomain.upsertUser({
+        email,
+        first_name: 'Jane',
+        last_name: 'Doe',
+        picture: null,
+        selected_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+      });
+
+      expect(created).toBe(true);
+      expect(user).toMatchObject({
+        email,
+        first_name: 'Jane',
+        last_name: 'Doe',
+        selected_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+      });
+    });
+
+    it('should fill blank first_name/last_name/picture on an existing user but keep already-set values', async () => {
+      const existingUser = await TestHelper.user.insert({
+        email: `ensure-user-${uuidv4()}@filigran.io`,
+        first_name: null,
+        last_name: 'Existing',
+        picture: null,
+      });
+
+      const { user, created } = await UserProvisioningDomain.upsertUser({
+        email: existingUser.email,
+        first_name: 'FilledFirstName',
+        last_name: 'IgnoredLastName',
+        picture: 'filled-picture.png',
+        selected_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+      });
+
+      expect(created).toBe(false);
+      expect(user).toMatchObject({
+        id: existingUser.id,
+        first_name: 'FilledFirstName',
+        last_name: 'Existing',
+        picture: 'filled-picture.png',
+      });
+    });
+
+    it('should update salt/password when a password is given for an existing user', async () => {
+      const existingUser = await TestHelper.user.insert({
+        email: `ensure-user-${uuidv4()}@filigran.io`,
+      });
+
+      const { user } = await UserProvisioningDomain.upsertUser(
+        {
+          email: existingUser.email,
+          first_name: existingUser.first_name,
+          last_name: existingUser.last_name,
+          picture: existingUser.picture,
+          selected_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        },
+        { password: 'new-password' }
+      );
+
+      expect(user.salt).not.toBe(existingUser.salt);
+      expect(user.password).not.toBe(existingUser.password);
+    });
+
+    it('should not modify salt/password on an existing user when no password is given', async () => {
+      const existingUser = await TestHelper.user.insert({
+        email: `ensure-user-${uuidv4()}@filigran.io`,
+      });
+
+      const { user } = await UserProvisioningDomain.upsertUser({
+        email: existingUser.email,
+        first_name: existingUser.first_name,
+        last_name: existingUser.last_name,
+        picture: existingUser.picture,
+        selected_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+      });
+
+      expect(user.salt).toBe(existingUser.salt);
+      expect(user.password).toBe(existingUser.password);
     });
   });
 });

@@ -9,6 +9,7 @@ import { sendMail } from '../../../../server/mail-service';
 import { UnknownErrorCode } from '../../../../utils/error/error.code';
 import { UnknownError } from '../../../../utils/error/error.util';
 import { hashPassword } from '../../../../utils/hash-password.util';
+import { isEmpty } from '../../../../utils/utils';
 import { UserOrganizationCapabilityDomain } from '../../../security-management/user-organization-capability/user-organization-capability.domain';
 import { OrganizationDomain } from '../../organization/organization.domain';
 import { UserDomain } from '../user-domain/user.domain';
@@ -18,12 +19,14 @@ interface WelcomeEmailOptions {
   sendWelcomeEmail?: boolean;
 }
 
+type UserProfile = Pick<
+  UserInitializer,
+  'email' | 'first_name' | 'last_name' | 'picture'
+>;
+
 export const UserProvisioningDomain = {
   createUser: async (
-    data: Pick<
-      UserInitializer,
-      'email' | 'first_name' | 'last_name' | 'picture'
-    > & {
+    data: UserProfile & {
       password?: string | null;
       selected_organization_id?: OrganizationId;
     },
@@ -74,5 +77,53 @@ export const UserProvisioningDomain = {
     }
 
     return addedUser;
+  },
+
+  upsertUser: async (
+    profile: UserProfile & { selected_organization_id: OrganizationId },
+    { password }: { password?: string | null } = {}
+  ): Promise<{ user: User; created: boolean }> => {
+    const existingUser = await UserDomain.loadUserBy({
+      email: profile.email,
+    });
+
+    if (existingUser) {
+      const passwordFields = password ? hashPassword(password) : undefined;
+      const updatedUser = await UserDomain.updateUser(existingUser.id, {
+        ...(passwordFields && {
+          salt: passwordFields.salt,
+          password: passwordFields.hash,
+        }),
+        first_name: isEmpty(existingUser.first_name)
+          ? profile.first_name
+          : existingUser.first_name,
+        last_name: isEmpty(existingUser.last_name)
+          ? profile.last_name
+          : existingUser.last_name,
+        picture: isEmpty(existingUser.picture)
+          ? profile.picture
+          : existingUser.picture,
+      });
+
+      if (!updatedUser) {
+        throw UnknownError(UnknownErrorCode.EditUserError);
+      }
+
+      return { user: updatedUser, created: false };
+    }
+
+    const { salt, hash } = hashPassword(password ?? '');
+    const newUser = await UserDomain.insertUser({
+      id: uuidv4() as UserId,
+      email: profile.email,
+      first_name: profile.first_name,
+      last_name: profile.last_name,
+      picture: profile.picture,
+      selected_organization_id: profile.selected_organization_id,
+      salt,
+      password: hash,
+    });
+
+    return { user: newUser, created: true };
   },
 };
