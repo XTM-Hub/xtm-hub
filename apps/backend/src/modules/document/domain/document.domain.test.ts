@@ -1,3 +1,4 @@
+import { toGlobalId } from 'graphql-relay/node/node.js';
 import { v4 as uuidv4 } from 'uuid';
 import {
   afterAll,
@@ -16,6 +17,7 @@ import {
   FilterKey,
   Integration,
   IntegrationType,
+  LogicalFilterInput,
   LogicalOperator,
   OrderingMode,
 } from '../../../__generated__/resolvers-types';
@@ -48,6 +50,7 @@ import { requestContext } from '../../../context/request.context';
 import Document from '../../../model/kanel/public/Document';
 import { ObjectUseCaseObjectId } from '../../../model/kanel/public/ObjectUseCase';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
+import { SolutionCategoryId } from '../../../model/kanel/public/SolutionCategory';
 import { UseCaseId } from '../../../model/kanel/public/UseCase';
 import {
   ADMIN_UUID,
@@ -55,6 +58,8 @@ import {
   SYSTEM_USER_UUID,
 } from '../../../portal.const';
 import { isFeatureEnabled } from '../../../utils/feature-flag.util';
+import { objectSolutionCategoryDomain } from '../../solution-category/object-solution-category/object-solution-category.domain';
+import { solutionCategoryDomain } from '../../solution-category/solution-category.domain';
 import { DocumentUploadsHelper } from '../document.uploads.helper';
 import { DocumentDomain } from './document.domain';
 
@@ -2160,5 +2165,195 @@ describe('document domain', () => {
 
       expect(ids).toContain(orphan.id);
     });
+  });
+
+  describe('loadPaginatedSeoDocumentsByServiceSlug - relation filters without duplicate edges', () => {
+    type UseCaseKey = 'A' | 'B';
+    type SolutionCategoryKey = 'X' | 'Y';
+
+    let useCaseIds: Record<UseCaseKey, UseCaseId>;
+    let solutionCategoryIds: Record<SolutionCategoryKey, SolutionCategoryId>;
+    let visibleDocument: Document;
+    let controlDocument: Document;
+
+    beforeAll(async () => {
+      const [useCaseA, useCaseB] = await Promise.all([
+        TestHelper.useCase.create({
+          name: `dup-edges-use-case-a-${uuidv4()}`,
+          color: '#ff0000',
+        }),
+        TestHelper.useCase.create({
+          name: `dup-edges-use-case-b-${uuidv4()}`,
+          color: '#00ff00',
+        }),
+      ]);
+      useCaseIds = { A: useCaseA.id, B: useCaseB.id };
+
+      const [solutionCategoryX, solutionCategoryY] = await Promise.all([
+        solutionCategoryDomain.insertSolutionCategory({
+          name: `dup-edges-solution-category-x-${uuidv4()}`,
+        }),
+        solutionCategoryDomain.insertSolutionCategory({
+          name: `dup-edges-solution-category-y-${uuidv4()}`,
+        }),
+      ]);
+      solutionCategoryIds = {
+        X: solutionCategoryX.id,
+        Y: solutionCategoryY.id,
+      };
+    });
+
+    beforeEach(async () => {
+      const publicIntegrationFields = {
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+        active: true,
+        tags: [],
+      };
+
+      visibleDocument = await TestHelper.document.create({
+        ...publicIntegrationFields,
+        name: 'dup-edges-visible',
+        slug: `dup-edges-visible-${uuidv4()}`,
+      });
+      controlDocument = await TestHelper.document.create({
+        ...publicIntegrationFields,
+        name: 'dup-edges-control',
+        slug: `dup-edges-control-${uuidv4()}`,
+      });
+
+      const visibleObjectId =
+        visibleDocument.id as unknown as ObjectUseCaseObjectId;
+      await TestHelper.objectUseCase.insert([
+        { object_id: visibleObjectId, use_case_id: useCaseIds.A },
+        { object_id: visibleObjectId, use_case_id: useCaseIds.B },
+      ]);
+      await objectSolutionCategoryDomain.insertObjectSolutionCategory([
+        {
+          object_id: visibleDocument.id,
+          solution_category_id: solutionCategoryIds.X,
+        },
+        {
+          object_id: visibleDocument.id,
+          solution_category_id: solutionCategoryIds.Y,
+        },
+      ]);
+    });
+
+    afterEach(async () => {
+      await TestHelper.objectUseCase.delete({
+        object_id: visibleDocument.id as unknown as ObjectUseCaseObjectId,
+      });
+      await TestHelper.objectSolutionCategory.delete({
+        object_id: visibleDocument.id,
+      });
+    });
+
+    afterAll(async () => {
+      await Promise.all([
+        TestHelper.useCase.delete({ id: useCaseIds.A }),
+        TestHelper.useCase.delete({ id: useCaseIds.B }),
+        solutionCategoryDomain.deleteSolutionCategory({
+          id: solutionCategoryIds.X,
+        }),
+        solutionCategoryDomain.deleteSolutionCategory({
+          id: solutionCategoryIds.Y,
+        }),
+      ]);
+    });
+
+    const buildIntegrationsLogicalFilters = (
+      useCaseKeys: UseCaseKey[],
+      solutionCategoryKeys: SolutionCategoryKey[]
+    ): LogicalFilterInput => ({
+      operator: LogicalOperator.And,
+      children: [
+        {
+          leaf: {
+            key: FilterKey.Label,
+            value: useCaseKeys.map((k) => toGlobalId('UseCase', useCaseIds[k])),
+          },
+        },
+        { leaf: { key: FilterKey.ManagerSupported, value: [] } },
+        { leaf: { key: FilterKey.Verified, value: [] } },
+        { leaf: { key: FilterKey.IntegrationType, value: [] } },
+        { leaf: { key: FilterKey.ProductVersion, value: [] } },
+        {
+          leaf: {
+            key: FilterKey.SolutionCategory,
+            value: solutionCategoryKeys.map((k) =>
+              toGlobalId('SolutionCategory', solutionCategoryIds[k])
+            ),
+          },
+        },
+        { leaf: { key: FilterKey.LicenseType, value: [] } },
+      ],
+    });
+
+    it.each<{
+      description: string;
+      useCaseKeys: UseCaseKey[];
+      solutionCategoryKeys: SolutionCategoryKey[];
+      controlVisible: boolean;
+    }>([
+      {
+        description: 'all leaves empty (production case)',
+        useCaseKeys: [],
+        solutionCategoryKeys: [],
+        controlVisible: true,
+      },
+      {
+        description: 'use case filter matching two use cases',
+        useCaseKeys: ['A', 'B'],
+        solutionCategoryKeys: [],
+        controlVisible: false,
+      },
+      {
+        description: 'use case filter with empty solution category leaf',
+        useCaseKeys: ['A'],
+        solutionCategoryKeys: [],
+        controlVisible: false,
+      },
+      {
+        description: 'use case and solution category filters both narrowed',
+        useCaseKeys: ['A'],
+        solutionCategoryKeys: ['X'],
+        controlVisible: false,
+      },
+    ])(
+      'should return each matching document exactly once ($description)',
+      async ({ useCaseKeys, solutionCategoryKeys, controlVisible }) => {
+        const result =
+          await DocumentDomain.loadPaginatedSeoDocumentsByServiceSlug(
+            OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+            'opencti-integrations',
+            {
+              first: 100,
+              logicalFilters: buildIntegrationsLogicalFilters(
+                useCaseKeys,
+                solutionCategoryKeys
+              ),
+            }
+          );
+
+        const edgeIds = result.edges.map(({ node }) => node.id);
+
+        expect(edgeIds).toContain(visibleDocument.id);
+
+        const expectedTotalCount = controlVisible ? 2 : 1;
+        expect(Number(result.totalCount)).toBe(expectedTotalCount);
+        expect(edgeIds).toHaveLength(expectedTotalCount);
+
+        expect(new Set(edgeIds).size).toBe(edgeIds.length);
+
+        if (controlVisible) {
+          expect(edgeIds).toContain(controlDocument.id);
+        } else {
+          expect(edgeIds).not.toContain(controlDocument.id);
+        }
+      }
+    );
   });
 });
