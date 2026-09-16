@@ -1804,6 +1804,13 @@ export type ProvisionedNewsFeedItem = Node & {
   type: NewsFeedItemType;
 };
 
+export type PublicDocumentSlugInfo = {
+  __typename?: 'PublicDocumentSlugInfo';
+  created_at: Scalars['Date']['output'];
+  slug?: Maybe<Scalars['String']['output']>;
+  updated_at?: Maybe<Scalars['Date']['output']>;
+};
+
 export type Query = {
   __typename?: 'Query';
   bundleProducts: Array<PlatformIdentifier>;
@@ -1838,6 +1845,7 @@ export type Query = {
   platformAssociatedOrganization?: Maybe<Organization>;
   platformTrialStatus: PlatformTrialStatus;
   publicDocumentBySlug?: Maybe<Document>;
+  publicDocumentSlugsByServiceSlug: Array<PublicDocumentSlugInfo>;
   publicDocuments: DocumentConnection;
   publicDocumentsByServiceSlug: Array<Document>;
   registeredPlatform?: Maybe<RegisteredPlatform>;
@@ -2030,6 +2038,11 @@ export type QueryPlatformTrialStatusArgs = {
 export type QueryPublicDocumentBySlugArgs = {
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
   slug: Scalars['String']['input'];
+};
+
+
+export type QueryPublicDocumentSlugsByServiceSlugArgs = {
+  serviceInstanceSlug: Scalars['String']['input'];
 };
 
 
@@ -3339,6 +3352,7 @@ export type ResolversTypes = ResolversObject<{
   PortalCapability: PortalCapability;
   ProductUseCaseInput: ProductUseCaseInput;
   ProvisionedNewsFeedItem: ResolverTypeWrapper<ProvisionedNewsFeedItem>;
+  PublicDocumentSlugInfo: ResolverTypeWrapper<PublicDocumentSlugInfo>;
   Query: ResolverTypeWrapper<{}>;
   RefreshPlatformRegistrationConnectivityStatusAllTenantsInput: RefreshPlatformRegistrationConnectivityStatusAllTenantsInput;
   RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse: ResolverTypeWrapper<RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse>;
@@ -3563,6 +3577,7 @@ export type ResolversParentTypes = ResolversObject<{
   PlatformTrialStatus: PlatformTrialStatus;
   ProductUseCaseInput: ProductUseCaseInput;
   ProvisionedNewsFeedItem: ProvisionedNewsFeedItem;
+  PublicDocumentSlugInfo: PublicDocumentSlugInfo;
   Query: {};
   RefreshPlatformRegistrationConnectivityStatusAllTenantsInput: RefreshPlatformRegistrationConnectivityStatusAllTenantsInput;
   RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse: RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse;
@@ -4435,6 +4450,13 @@ export type ProvisionedNewsFeedItemResolvers<ContextType = PortalContext, Parent
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type PublicDocumentSlugInfoResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['PublicDocumentSlugInfo'] = ResolversParentTypes['PublicDocumentSlugInfo']> = ResolversObject<{
+  created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  slug?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  updated_at?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type QueryResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = ResolversObject<{
   bundleProducts?: Resolver<Array<ResolversTypes['PlatformIdentifier']>, ParentType, ContextType, RequireFields<QueryBundleProductsArgs, 'serviceInstanceId'>>;
   bundleUserServiceGroups?: Resolver<Array<ResolversTypes['BundleUserServiceGroup']>, ParentType, ContextType, RequireFields<QueryBundleUserServiceGroupsArgs, 'serviceInstanceId'>>;
@@ -4463,6 +4485,7 @@ export type QueryResolvers<ContextType = PortalContext, ParentType extends Resol
   platformAssociatedOrganization?: Resolver<Maybe<ResolversTypes['Organization']>, ParentType, ContextType, RequireFields<QueryPlatformAssociatedOrganizationArgs, 'platformId'>>;
   platformTrialStatus?: Resolver<ResolversTypes['PlatformTrialStatus'], ParentType, ContextType, RequireFields<QueryPlatformTrialStatusArgs, 'organizationId'>>;
   publicDocumentBySlug?: Resolver<Maybe<ResolversTypes['Document']>, ParentType, ContextType, RequireFields<QueryPublicDocumentBySlugArgs, 'serviceInstanceId' | 'slug'>>;
+  publicDocumentSlugsByServiceSlug?: Resolver<Array<ResolversTypes['PublicDocumentSlugInfo']>, ParentType, ContextType, RequireFields<QueryPublicDocumentSlugsByServiceSlugArgs, 'serviceInstanceSlug'>>;
   publicDocuments?: Resolver<ResolversTypes['DocumentConnection'], ParentType, ContextType, RequireFields<QueryPublicDocumentsArgs, 'first' | 'orderBy' | 'orderMode' | 'serviceInstanceId' | 'slug'>>;
   publicDocumentsByServiceSlug?: Resolver<Array<ResolversTypes['Document']>, ParentType, ContextType, RequireFields<QueryPublicDocumentsByServiceSlugArgs, 'serviceInstanceSlug'>>;
   registeredPlatform?: Resolver<Maybe<ResolversTypes['RegisteredPlatform']>, ParentType, ContextType, RequireFields<QueryRegisteredPlatformArgs, 'input'>>;
@@ -5178,6 +5201,7 @@ export type Resolvers<ContextType = PortalContext> = ResolversObject<{
   PlatformProvider?: PlatformProviderResolvers<ContextType>;
   PlatformTrialStatus?: PlatformTrialStatusResolvers<ContextType>;
   ProvisionedNewsFeedItem?: ProvisionedNewsFeedItemResolvers<ContextType>;
+  PublicDocumentSlugInfo?: PublicDocumentSlugInfoResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse?: RefreshPlatformRegistrationConnectivityStatusAllTenantsResponseResolvers<ContextType>;
   RefreshPlatformRegistrationConnectivityStatusResponse?: RefreshPlatformRegistrationConnectivityStatusResponseResolvers<ContextType>;
