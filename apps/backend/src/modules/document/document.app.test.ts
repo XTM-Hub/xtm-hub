@@ -1,3 +1,4 @@
+import { GraphQLResolveInfo, Kind, parse } from 'graphql';
 import { FileUpload } from 'graphql-upload/processRequest.mjs';
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -68,6 +69,23 @@ import {
   DocumentMetadataDomain,
   DocumentMetadataKeys,
 } from './domain/document.metadata.domain';
+
+// Builds a minimal `GraphQLResolveInfo` from a real query selection, so
+// `loadPublicDocumentsByServiceSlug`'s column-narrowing (via
+// document.field-selection.util.ts) can be exercised against what Apollo would
+// actually hand the resolver.
+function buildResolveInfo(selectionSet: string): GraphQLResolveInfo {
+  const document = parse(`query { documents ${selectionSet} }`);
+  const [operation] = document.definitions;
+  if (operation?.kind !== Kind.OPERATION_DEFINITION) {
+    throw new Error('Test query must have an operation definition');
+  }
+  const [fieldNode] = operation.selectionSet.selections;
+  if (fieldNode?.kind !== Kind.FIELD) {
+    throw new Error('Test query must have a root field selection');
+  }
+  return { fieldNodes: [fieldNode], fragments: {} } as GraphQLResolveInfo;
+}
 
 describe('documentApp', () => {
   const minioFileMock = {
@@ -1118,7 +1136,7 @@ describe('documentApp', () => {
       await expect(call).rejects.toThrow(ErrorCode.ServiceDefinitionNotFound);
     });
 
-    it('should return the documents', async () => {
+    it('should return the documents with the default full column selection when no info is provided', async () => {
       // Given
       const loadSeoDocumentsByServiceSlugSpy = vi
         .spyOn(DocumentDomain, 'loadSeoDocumentsByServiceSlug')
@@ -1133,7 +1151,38 @@ describe('documentApp', () => {
       expect(loadSeoDocumentsByServiceSlugSpy).toHaveBeenCalledWith(
         OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
         SERVICES.INSTANCES.CUSTOM_DASHBOARDS.SLUG,
-        CUSTOM_DASHBOARD_METADATA_KEYS
+        CUSTOM_DASHBOARD_METADATA_KEYS,
+        true,
+        undefined
+      );
+    });
+
+    it('should narrow the SQL columns to the GraphQL selection when info is provided', async () => {
+      // Given
+      const loadSeoDocumentsByServiceSlugSpy = vi
+        .spyOn(DocumentDomain, 'loadSeoDocumentsByServiceSlug')
+        .mockResolvedValue([{}]);
+      const info = buildResolveInfo(`{ slug created_at updated_at }`);
+
+      // When
+      await DocumentApp.loadPublicDocumentsByServiceSlug(
+        SERVICES.INSTANCES.CUSTOM_DASHBOARDS.SLUG,
+        info
+      );
+
+      // Then
+      expect(loadSeoDocumentsByServiceSlugSpy).toHaveBeenCalledWith(
+        OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
+        SERVICES.INSTANCES.CUSTOM_DASHBOARDS.SLUG,
+        CUSTOM_DASHBOARD_METADATA_KEYS,
+        true,
+        [
+          'Document.id',
+          'Document.type',
+          'Document.slug',
+          'Document.created_at',
+          'Document.updated_at',
+        ]
       );
     });
   });
