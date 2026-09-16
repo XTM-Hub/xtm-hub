@@ -3,15 +3,15 @@ import { describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../../../tests/helper/test.helper';
 import { TEST_ORGANIZATIONS } from '../../../../../tests/tests.const';
 import { UserOrganizationPendingDomain } from '../user-pending/user-organization-pending.domain';
+import { UserProvisioningApp } from '../user-provisioning/user-provisioning.app';
 import { UserProvisioningDomain } from '../user-provisioning/user-provisioning.domain';
-import { UserHelper } from '../user.helper';
 import { UserOrganizationDomain } from './user-organization.domain';
 
 describe('userOrganizationDomain', () => {
   describe('createUserOrganizationRelationAndRemovePending', () => {
     it('should delete pending organization before adding an organization', async () => {
       const testMail = `createUserOrganizationRelationAndRemovePending${uuidv4()}@filigran.io`;
-      const user = await UserHelper.createNewUserFromInvitation({
+      const user = await UserProvisioningApp.autoProvisionNewUser({
         email: testMail,
       });
       const initialPendingOrg =
@@ -38,7 +38,7 @@ describe('userOrganizationDomain', () => {
 
     it('should not fail if there is no organization to remove', async () => {
       const testMail = `createUserOrganizationRelationAndRemovePending${uuidv4()}@whatever.io`;
-      const user = await UserHelper.createNewUserFromInvitation({
+      const user = await UserProvisioningApp.autoProvisionNewUser({
         email: testMail,
       });
       const initialPendingOrg =

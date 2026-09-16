@@ -157,4 +157,70 @@ describe('userProvisioningDomain', () => {
       expect(user.password).toBe(existingUser.password);
     });
   });
+
+  describe('linkUserAsNewOrganizationAdmin', () => {
+    it('should create a new organization for the email domain and grant the user administrate capability', async () => {
+      const domain = `link-admin-${uuidv4()}.io`;
+      const email = `user@${domain}`;
+      const user = await UserProvisioningDomain.createUser(
+        { email },
+        { sendWelcomeEmail: false }
+      );
+
+      await UserProvisioningDomain.linkUserAsNewOrganizationAdmin(user, email);
+
+      const newOrganization = await TestHelper.organization.load({
+        name: domain,
+      });
+      expect(newOrganization).toMatchObject({ domains: [domain] });
+
+      const userOrganization = await TestHelper.user_Organization.load({
+        user_id: user.id,
+        organization_id: newOrganization!.id,
+      });
+      expect(userOrganization).toBeTruthy();
+
+      const capabilities = await TestHelper.user_OrganizationCapability.loadAll(
+        { user_organization_id: userOrganization.id }
+      );
+      expect(capabilities.map((capability) => capability.name)).toEqual([
+        'ADMINISTRATE_ORGANIZATION',
+      ]);
+    });
+
+    it('should throw a BadRequestError when the email has no domain', async () => {
+      const user = await UserProvisioningDomain.createUser(
+        { email: `link-admin-${uuidv4()}@filigran.io` },
+        { sendWelcomeEmail: false }
+      );
+
+      const call = UserProvisioningDomain.linkUserAsNewOrganizationAdmin(
+        user,
+        'not-an-email'
+      );
+
+      await expect(call).rejects.toThrow('INVALID_EMAIL');
+    });
+  });
+
+  describe('linkUserToPendingOrganization', () => {
+    it("should insert the user into the organization's pending list", async () => {
+      const user = await UserProvisioningDomain.createUser(
+        { email: `link-pending-${uuidv4()}@filigran.io` },
+        { sendWelcomeEmail: false }
+      );
+      const organization = await TestHelper.organization.create();
+
+      await UserProvisioningDomain.linkUserToPendingOrganization(
+        user,
+        organization
+      );
+
+      const pending = await TestHelper.user_OrganizationPending.loadAll({
+        user_id: user.id,
+      });
+      expect(pending).toHaveLength(1);
+      expect(pending[0]?.organization_id).toBe(organization.id);
+    });
+  });
 });

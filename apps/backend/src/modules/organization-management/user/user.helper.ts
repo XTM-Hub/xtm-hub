@@ -1,5 +1,4 @@
 import { GraphQLError } from 'graphql/error/index.js';
-import { v4 as uuidv4 } from 'uuid';
 import {
   Capability,
   User as GraphqlUser,
@@ -7,18 +6,12 @@ import {
   RolePortal,
 } from '../../../__generated__/resolvers-types';
 import { withTransaction } from '../../../context/database.context';
-import Organization, {
-  OrganizationId,
-} from '../../../model/kanel/public/Organization';
+import { OrganizationId } from '../../../model/kanel/public/Organization';
 import {
   SubscriptionId,
   SubscriptionMutator,
 } from '../../../model/kanel/public/Subscription';
-import User, {
-  UserId,
-  UserInitializer,
-  UserMutator,
-} from '../../../model/kanel/public/User';
+import User, { UserId, UserMutator } from '../../../model/kanel/public/User';
 import {
   UserLoadUserBy,
   UserWithOrganizationsAndRole,
@@ -28,87 +21,17 @@ import { updateUserSession } from '../../../session-store-manager';
 import { MinIOClient } from '../../../thirdparty/minio/client';
 import { logApp } from '../../../utils/app-logger.util';
 import {
-  BadRequestErrorCode,
   ErrorCode,
   NotFoundErrorCode,
   UnknownErrorCode,
 } from '../../../utils/error/error.code';
-import {
-  BadRequestError,
-  NotFoundError,
-  UnknownError,
-} from '../../../utils/error/error.util';
+import { NotFoundError, UnknownError } from '../../../utils/error/error.util';
 import { isEmpty } from '../../../utils/utils';
-import { extractDomain } from '../../../utils/verify-email.util';
 import { UserOrganizationCapabilityDomain } from '../../security-management/user-organization-capability/user-organization-capability.domain';
 import { SubscriptionDomain } from '../../subscription/subscription.domain';
-import { TelemetryApp } from '../../telemetry/telemetry.app';
-import { TelemetryHelper } from '../../telemetry/telemetry.helper';
 import { OrganizationDomain } from '../organization/organization.domain';
 import { UserDomain } from './user-domain/user.domain';
 import { UserOrganizationDomain } from './user-organization/user-organization.domain';
-import { UserOrganizationPendingDomain } from './user-pending/user-organization-pending.domain';
-import { UserProvisioningDomain } from './user-provisioning/user-provisioning.domain';
-
-interface WelcomeEmailOptions {
-  sendWelcomeEmail?: boolean;
-}
-
-interface CreateNewUserOptions extends WelcomeEmailOptions {
-  isFiligranUser?: boolean;
-}
-
-const createOrganisationWithAdminUser = async (
-  email: string,
-  { sendWelcomeEmail = true }: WelcomeEmailOptions = {}
-) => {
-  const extractedDomain = extractDomain(email);
-
-  if (!extractedDomain) {
-    throw BadRequestError(BadRequestErrorCode.InvalidEmail);
-  }
-
-  const newOrganization = await OrganizationDomain.insertNewOrganization({
-    id: uuidv4() as OrganizationId,
-    name: extractedDomain,
-    domains: [extractedDomain],
-  });
-  const addedUser = await UserProvisioningDomain.createUser(
-    {
-      email,
-    },
-    { sendWelcomeEmail }
-  );
-
-  try {
-    const createOrgaEvent = TelemetryHelper.buildCreateOrganizationEvent(
-      newOrganization,
-      addedUser.id
-    );
-    await TelemetryApp.sendTelemetryEvent(createOrgaEvent);
-  } catch (error) {
-    logApp.error('Unable to send telemetry event for create organization', {
-      error,
-    });
-  }
-
-  const [userOrgRelation] =
-    await UserOrganizationDomain.createUserOrganizationRelation({
-      user_id: addedUser.id,
-      organizations_id: [newOrganization.id],
-    });
-
-  if (!userOrgRelation) {
-    throw UnknownError(UnknownErrorCode.AddingUserError);
-  }
-
-  await UserOrganizationCapabilityDomain.createUserOrganizationCapability({
-    user_organization_id: userOrgRelation.id,
-    capabilities_name: [OrganizationCapability.AdministrateOrganization],
-  });
-
-  return addedUser;
-};
 
 const countOrganizationAdministrators = async (
   organizationId: OrganizationId
@@ -168,81 +91,6 @@ const updateUserCapabilities = async ({
 };
 
 export const UserHelper = {
-  createNewUserWithPendingOrga: async (
-    {
-      email,
-      first_name,
-      last_name,
-      picture,
-    }: Pick<UserInitializer, 'email' | 'first_name' | 'last_name' | 'picture'>,
-    organization: Organization,
-    { sendWelcomeEmail = true }: WelcomeEmailOptions = {}
-  ) => {
-    const addedUser = await UserProvisioningDomain.createUser(
-      {
-        email,
-        last_name,
-        first_name,
-        picture,
-      },
-      { sendWelcomeEmail }
-    );
-    await UserOrganizationPendingDomain.insertNewUserOrganizationPending({
-      user_id: addedUser.id,
-      organization_id: organization.id,
-    });
-    return addedUser;
-  },
-
-  createNewUserFromInvitation: async (
-    {
-      email,
-      first_name,
-      last_name,
-      picture,
-    }: Pick<UserInitializer, 'email' | 'first_name' | 'last_name' | 'picture'>,
-    {
-      isFiligranUser = false,
-      sendWelcomeEmail = true,
-    }: CreateNewUserOptions = {}
-  ): Promise<User> => {
-    const [organization] =
-      await OrganizationDomain.loadOrganizationsFromEmail(email);
-    let userWithRoles: User;
-    if (!organization) {
-      userWithRoles = await createOrganisationWithAdminUser(email, {
-        sendWelcomeEmail,
-      });
-    } else if (isFiligranUser) {
-      userWithRoles = await UserProvisioningDomain.createUser(
-        {
-          email,
-          last_name,
-          first_name,
-          picture,
-        },
-        { sendWelcomeEmail }
-      );
-    } else {
-      userWithRoles = await UserHelper.createNewUserWithPendingOrga(
-        {
-          email,
-          last_name,
-          first_name,
-          picture,
-        },
-        organization,
-        { sendWelcomeEmail }
-      );
-    }
-
-    const user = await UserDomain.loadUserBy({ 'User.id': userWithRoles.id });
-    if (!user) {
-      throw UnknownError(UnknownErrorCode.AddingUserError);
-    }
-    return user;
-  },
-
   insertUserIntoOrganization: async (
     user: User,
     subscriptionId: SubscriptionId

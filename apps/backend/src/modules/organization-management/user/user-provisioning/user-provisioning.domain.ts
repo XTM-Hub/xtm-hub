@@ -1,19 +1,32 @@
 import { v4 as uuidv4 } from 'uuid';
 import { OrganizationCapability } from '../../../../__generated__/resolvers-types';
-import { OrganizationId } from '../../../../model/kanel/public/Organization';
+import Organization, {
+  OrganizationId,
+} from '../../../../model/kanel/public/Organization';
 import User, {
   UserId,
   UserInitializer,
 } from '../../../../model/kanel/public/User';
 import { sendMail } from '../../../../server/mail-service';
-import { UnknownErrorCode } from '../../../../utils/error/error.code';
-import { UnknownError } from '../../../../utils/error/error.util';
+import { logApp } from '../../../../utils/app-logger.util';
+import {
+  BadRequestErrorCode,
+  UnknownErrorCode,
+} from '../../../../utils/error/error.code';
+import {
+  BadRequestError,
+  UnknownError,
+} from '../../../../utils/error/error.util';
 import { hashPassword } from '../../../../utils/hash-password.util';
 import { isEmpty } from '../../../../utils/utils';
+import { extractDomain } from '../../../../utils/verify-email.util';
 import { UserOrganizationCapabilityDomain } from '../../../security-management/user-organization-capability/user-organization-capability.domain';
+import { TelemetryApp } from '../../../telemetry/telemetry.app';
+import { TelemetryHelper } from '../../../telemetry/telemetry.helper';
 import { OrganizationDomain } from '../../organization/organization.domain';
 import { UserDomain } from '../user-domain/user.domain';
 import { UserOrganizationDomain } from '../user-organization/user-organization.domain';
+import { UserOrganizationPendingDomain } from '../user-pending/user-organization-pending.domain';
 
 interface WelcomeEmailOptions {
   sendWelcomeEmail?: boolean;
@@ -125,5 +138,58 @@ export const UserProvisioningDomain = {
     });
 
     return { user: newUser, created: true };
+  },
+
+  linkUserAsNewOrganizationAdmin: async (
+    user: User,
+    email: string
+  ): Promise<void> => {
+    const extractedDomain = extractDomain(email);
+    if (!extractedDomain) {
+      throw BadRequestError(BadRequestErrorCode.InvalidEmail);
+    }
+
+    const newOrganization = await OrganizationDomain.insertNewOrganization({
+      id: uuidv4() as OrganizationId,
+      name: extractedDomain,
+      domains: [extractedDomain],
+    });
+
+    try {
+      const createOrgaEvent = TelemetryHelper.buildCreateOrganizationEvent(
+        newOrganization,
+        user.id
+      );
+      await TelemetryApp.sendTelemetryEvent(createOrgaEvent);
+    } catch (error) {
+      logApp.error('Unable to send telemetry event for create organization', {
+        error,
+      });
+    }
+
+    const [userOrgRelation] =
+      await UserOrganizationDomain.createUserOrganizationRelation({
+        user_id: user.id,
+        organizations_id: [newOrganization.id],
+      });
+
+    if (!userOrgRelation) {
+      throw UnknownError(UnknownErrorCode.AddingUserError);
+    }
+
+    await UserOrganizationCapabilityDomain.createUserOrganizationCapability({
+      user_organization_id: userOrgRelation.id,
+      capabilities_name: [OrganizationCapability.AdministrateOrganization],
+    });
+  },
+
+  linkUserToPendingOrganization: async (
+    user: User,
+    organization: Organization
+  ): Promise<void> => {
+    await UserOrganizationPendingDomain.insertNewUserOrganizationPending({
+      user_id: user.id,
+      organization_id: organization.id,
+    });
   },
 };

@@ -225,9 +225,9 @@ describe('users admin app', () => {
       const secondOrga = (await OrganizationDomain.loadOrganizationBy({
         id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
       }))!;
-      createdUser = await UserHelper.createNewUserWithPendingOrga(
+      createdUser = await TestHelper.user.insertWithPendingOrganization(
         { email, first_name: 'pending', last_name: 'cleanup', picture: null },
-        secondOrga
+        secondOrga.id
       );
     });
 
@@ -353,21 +353,21 @@ describe('users admin app', () => {
 
       createdUsers = await Promise.all(
         userList.map((user) =>
-          UserHelper.createNewUserWithPendingOrga(user, secondOrga)
+          TestHelper.user.insertWithPendingOrganization(user, secondOrga.id)
         )
       );
 
       const filigranOrga = (await OrganizationDomain.loadOrganizationBy({
         id: TEST_ORGANIZATIONS.FILIGRAN.ID,
       }))!;
-      const filigranUser = await UserHelper.createNewUserWithPendingOrga(
+      const filigranUser = await TestHelper.user.insertWithPendingOrganization(
         {
           email: 'testFiligran@filigran.io',
           first_name: 'test',
           last_name: 'filigran',
           picture: null,
         },
-        filigranOrga
+        filigranOrga.id
       );
       createdUsers.push(filigranUser);
     });
@@ -569,14 +569,14 @@ describe('users admin app', () => {
       const filigranOrga = (await OrganizationDomain.loadOrganizationBy({
         id: TEST_ORGANIZATIONS.FILIGRAN.ID,
       }))!;
-      const filigranUser = await UserHelper.createNewUserWithPendingOrga(
+      const filigranUser = await TestHelper.user.insertWithPendingOrganization(
         {
           email: 'testFiligranRemoveBulk@filigran.io',
           first_name: 'test',
           last_name: 'filigran',
           picture: null,
         },
-        filigranOrga
+        filigranOrga.id
       );
       createdUsers.push(filigranUser);
     });
@@ -591,14 +591,14 @@ describe('users admin app', () => {
       const filigranOrga = (await OrganizationDomain.loadOrganizationBy({
         id: TEST_ORGANIZATIONS.FILIGRAN.ID,
       }))!;
-      const filigranUser = await UserHelper.createNewUserWithPendingOrga(
+      const filigranUser = await TestHelper.user.insertWithPendingOrganization(
         {
           email: 'testFiligran@filigran.io',
           first_name: 'test',
           last_name: 'filigran',
           picture: null,
         },
-        filigranOrga
+        filigranOrga.id
       );
 
       const call = UserAdminApp.bulkRemovePendingUserFromOrganization(
