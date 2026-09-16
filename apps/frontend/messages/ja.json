@@ -1018,6 +1018,31 @@
       "ManageAccessName": "アクセス管理",
       "SelectCapabilities": "機能を選択"
     },
+    "CsvExport": {
+      "TriggerButton": "CSVエクスポート",
+      "DialogTitle": "インテグレーションをCSVにエクスポート",
+      "DialogDescription": "エクスポートするCSVファイルに含めるフィールドとフィルターを選択してください。",
+      "ColumnsLabel": "エクスポートするフィールド",
+      "ColumnsPlaceholder": "含めるフィールドを選択してください",
+      "FiltersLabel": "フィルター",
+      "ExportButton": "エクスポート",
+      "SuccessToast": "CSVエクスポートを開始しました。",
+      "ErrorToast": "インテグレーション一覧をエクスポートできませんでした。もう一度お試しください。",
+      "Columns": {
+        "IntegrationType": "インテグレーションタイプ",
+        "UseCase": "ユースケース",
+        "DeploymentType": "デプロイタイプ",
+        "VerificationStatus": "検証ステータス",
+        "SolutionCategory": "ソリューションカテゴリ",
+        "LicenseType": "ライセンスタイプ",
+        "ShortDescription": "概要",
+        "LongDescription": "詳細説明",
+        "FeedUrl": "フィードURL",
+        "OpenctiDocumentation": "OpenCTIドキュメント",
+        "VendorUrl": "ベンダーURL",
+        "DemoLink": "デモリンク"
+      }
+    },
     "Cards": {
       "filigran-academy": {
         "Name": "Filigran Academy",
