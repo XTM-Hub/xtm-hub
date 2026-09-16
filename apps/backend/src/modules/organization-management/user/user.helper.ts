@@ -58,10 +58,6 @@ interface CreateNewUserOptions extends WelcomeEmailOptions {
   isFiligranUser?: boolean;
 }
 
-interface GetOrCreateUserOptions extends CreateNewUserOptions {
-  upsert?: boolean;
-}
-
 const createOrganisationWithAdminUser = async (
   email: string,
   { sendWelcomeEmail = true }: WelcomeEmailOptions = {}
@@ -245,38 +241,6 @@ export const UserHelper = {
       throw UnknownError(UnknownErrorCode.AddingUserError);
     }
     return user;
-  },
-
-  getOrCreateUser: async (
-    userInfo: Pick<
-      UserInitializer,
-      'email' | 'first_name' | 'last_name' | 'picture'
-    >,
-    {
-      upsert = false,
-      isFiligranUser = false,
-      sendWelcomeEmail = true,
-    }: GetOrCreateUserOptions = {}
-  ): Promise<User> => {
-    const user = await UserDomain.loadUserBy({ email: userInfo.email });
-    if (user && upsert) {
-      await UserDomain.updateUser(user.id, {
-        last_login: new Date(),
-        first_name: isEmpty(user.first_name)
-          ? userInfo.first_name
-          : user.first_name,
-        last_name: isEmpty(user.last_name)
-          ? userInfo.last_name
-          : user.last_name,
-        picture: isEmpty(user.picture) ? userInfo.picture : user.picture,
-      });
-    }
-    return user
-      ? user
-      : await UserHelper.createNewUserFromInvitation(userInfo, {
-          isFiligranUser,
-          sendWelcomeEmail,
-        });
   },
 
   insertUserIntoOrganization: async (

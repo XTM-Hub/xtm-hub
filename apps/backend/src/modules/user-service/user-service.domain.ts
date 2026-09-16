@@ -35,6 +35,7 @@ import { formatRawObject } from '../../utils/query-raw.util';
 import { addPrefixToObject } from '../../utils/typescript';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { UserOrganizationDomain } from '../organization-management/user/user-organization/user-organization.domain';
+import { UserProvisioningApp } from '../organization-management/user/user-provisioning/user-provisioning.app';
 import { UserHelper } from '../organization-management/user/user.helper';
 import { GenericServiceCapabilityIds } from '../security-management/service-capability/generic-service-capability.const';
 import { UserServiceCapabilityHelper } from '../security-management/user-service-capability/user-service-capability.helper';
@@ -50,7 +51,7 @@ export const UserServiceDomain = {
     const userServices: UserService[] = [];
     return withTransaction(async () => {
       for (const email of emails) {
-        const user = await UserHelper.getOrCreateUser({
+        const user = await UserProvisioningApp.getOrProvisionUser({
           email: email,
         });
 

@@ -6,7 +6,7 @@ import { ForbiddenAccess } from '../../../utils/error/error.util';
 import { isEmptyField } from '../../../utils/utils';
 import { UserDomain } from '../../organization-management/user/user-domain/user.domain';
 import { UserOrganizationDomain } from '../../organization-management/user/user-organization/user-organization.domain';
-import { UserHelper } from '../../organization-management/user/user.helper';
+import { UserProvisioningApp } from '../../organization-management/user/user-provisioning/user-provisioning.app';
 import { RolePortalDomain } from '../../role-portal/role-portal.domain';
 
 export const loginFromProvider = async (userInfo: UserInfo) => {
@@ -18,7 +18,7 @@ export const loginFromProvider = async (userInfo: UserInfo) => {
   }
   const isFiligranUser = email.endsWith('@filigran.io');
 
-  const user = await UserHelper.getOrCreateUser(userInfo, {
+  const user = await UserProvisioningApp.getOrProvisionUser(userInfo, {
     upsert: true,
     isFiligranUser,
     sendWelcomeEmail: false,
