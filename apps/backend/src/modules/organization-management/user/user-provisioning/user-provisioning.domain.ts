@@ -93,12 +93,15 @@ export const UserProvisioningDomain = {
   },
 
   upsertUser: async (
-    profile: UserProfile & { selected_organization_id: OrganizationId },
+    profile: UserProfile & {
+      id?: UserId;
+      selected_organization_id: OrganizationId;
+    },
     { password }: { password?: string | null } = {}
   ): Promise<{ user: User; created: boolean }> => {
-    const existingUser = await UserDomain.loadUserBy({
-      email: profile.email,
-    });
+    const existingUser = await UserDomain.loadSimpleUserBy(
+      profile.id ? { id: profile.id } : { email: profile.email }
+    );
 
     if (existingUser) {
       const passwordFields = password ? hashPassword(password) : undefined;
@@ -127,7 +130,7 @@ export const UserProvisioningDomain = {
 
     const { salt, hash } = hashPassword(password ?? '');
     const newUser = await UserDomain.insertUser({
-      id: uuidv4() as UserId,
+      id: profile.id ?? (uuidv4() as UserId),
       email: profile.email,
       first_name: profile.first_name,
       last_name: profile.last_name,

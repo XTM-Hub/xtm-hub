@@ -15,12 +15,13 @@ import Organization, {
 } from '../model/kanel/public/Organization';
 import RolePortal from '../model/kanel/public/RolePortal';
 import RolePortalCapabilityPortal from '../model/kanel/public/RolePortalCapabilityPortal';
-import { UserId, UserInitializer } from '../model/kanel/public/User';
+import { UserId } from '../model/kanel/public/User';
 import { UserOrganizationId } from '../model/kanel/public/UserOrganization';
 import UserOrganizationCapability from '../model/kanel/public/UserOrganizationCapability';
 import { OrganizationDomain } from '../modules/organization-management/organization/organization.domain';
 import { UserDomain } from '../modules/organization-management/user/user-domain/user.domain';
 import { UserOrganizationDomain } from '../modules/organization-management/user/user-organization/user-organization.domain';
+import { UserProvisioningDomain } from '../modules/organization-management/user/user-provisioning/user-provisioning.domain';
 import { RolePortalDomain } from '../modules/role-portal/role-portal.domain';
 import { IngestManifestApp } from '../modules/shareable-resource/opencti/integration/ingest-manifest/ingest-manifest.app';
 import {
@@ -36,7 +37,6 @@ import { logApp } from '../utils/app-logger.util';
 import { DevUser } from '../utils/config-validation.util';
 import { getErrorMessage } from '../utils/error/error-guard.util';
 import { UnknownErrorCode } from '../utils/error/error.code';
-import { hashPassword } from '../utils/hash-password.util';
 
 // Role mapping for dev user initialization
 const ROLE_MAPPING: { [key: string]: string } = {
@@ -46,8 +46,6 @@ const ROLE_MAPPING: { [key: string]: string } = {
 };
 
 type InitEntityWithId = { id: string };
-
-type UserPasswordData = Pick<UserInitializer, 'salt' | 'password'>;
 
 export const ensureCapabilityExists = async (capability: CapabilityPortal) => {
   const capabilityPortal = await db('CapabilityPortal');
@@ -112,30 +110,6 @@ export const insertUserAdminOrganization = async (
       personal_space: true,
     });
   }
-};
-
-export const insertAdminUser = async (
-  user_id: UserId,
-  email: string,
-  data: UserPasswordData
-) => {
-  const userData = {
-    id: user_id,
-    email,
-    selected_organization_id: PLATFORM_ORGANIZATION_UUID,
-    ...data,
-  };
-  await db<UserInitializer>('User').insert(userData);
-};
-
-export const updateUserPassword = async (
-  user_id: UserId,
-  data: UserPasswordData
-) => {
-  await db<UserInitializer>('User')
-    .where({ id: user_id as UserId })
-    .update(data)
-    .returning('*');
 };
 
 export const ensurePersonalSpaceExist = async (
@@ -237,64 +211,36 @@ export const ensureDevUserExists = async (
 ): Promise<void> => {
   try {
     await withTransaction(async () => {
-      // Check if user already exists
-      const existingUser = await db<UserInitializer>('User')
-        .where({ email: userConfig.email })
-        .first();
-
-      let userId: UserId;
-      let isNewUser = false;
-
-      if (existingUser) {
-        userId = existingUser.id;
-        // Update password
-        const { salt, hash } = hashPassword(userConfig.password);
-        await db<UserInitializer>('User')
-          .where({ id: userId })
-          .update({ salt, password: hash });
-
-        logApp.info(`Updated dev user: ${userConfig.email}`);
-      } else {
-        // Create new user
-        userId = uuidv4() as UserId;
-        isNewUser = true;
-
-        const { salt, hash } = hashPassword(userConfig.password);
-        const userData: Partial<UserInitializer> = {
-          id: userId,
-          email: userConfig.email,
-          salt,
-          password: hash,
-          selected_organization_id: PLATFORM_ORGANIZATION_UUID,
-        };
-
-        await db<UserInitializer>('User').insert(userData);
-
-        logApp.info(`Created dev user: ${userConfig.email}`);
-      }
-
-      // Handle organization membership
-      let orgId: OrganizationId;
-
+      let orgId: OrganizationId | undefined;
       if (userConfig.organization) {
-        // Create/update organization and assign user
         const org = await ensureDevOrganizationExists({
           name: userConfig.organization.name,
           domains: userConfig.organization.domains,
         });
         orgId = org.id;
+      }
 
+      const { user, created } = await UserProvisioningDomain.upsertUser(
+        {
+          email: userConfig.email,
+          first_name: null,
+          last_name: null,
+          picture: null,
+          selected_organization_id: orgId ?? PLATFORM_ORGANIZATION_UUID,
+        },
+        { password: userConfig.password }
+      );
+      const userId = user.id;
+
+      logApp.info(
+        `${created ? 'Created' : 'Updated'} dev user: ${userConfig.email}`
+      );
+
+      if (orgId) {
         await UserOrganizationDomain.ensureUserOrganizationExists(
           userId,
           orgId
         );
-
-        // Set as default organization for new users
-        if (isNewUser) {
-          await db<UserInitializer>('User')
-            .where({ id: userId })
-            .update({ selected_organization_id: orgId });
-        }
       }
 
       // Always ensure platform organization membership

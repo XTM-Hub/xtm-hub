@@ -1,11 +1,10 @@
-import { db } from '../../knexfile';
-import { User } from '../__generated__/resolvers-types';
 import portalConfig from '../config';
 import { withTransaction } from '../context/database.context';
 import { OrganizationId } from '../model/kanel/public/Organization';
 import { RolePortalId } from '../model/kanel/public/RolePortal';
 import { UserId } from '../model/kanel/public/User';
 import { UserOrganizationDomain } from '../modules/organization-management/user/user-organization/user-organization.domain';
+import { UserProvisioningDomain } from '../modules/organization-management/user/user-provisioning/user-provisioning.domain';
 import { RolePortalDomain } from '../modules/role-portal/role-portal.domain';
 import {
   ADMIN_UUID,
@@ -21,17 +20,14 @@ import {
 } from '../portal.const';
 import { MinIOClient } from '../thirdparty/minio/client';
 import { logApp } from '../utils/app-logger.util';
-import { hashPassword } from '../utils/hash-password.util';
 import {
   ensureCapabilityExists,
   ensurePersonalSpaceExist,
   ensureRoleExists,
   ensureRoleHasCapability,
   initializeDevUsers,
-  insertAdminUser,
   insertPlatformOrganization,
   insertUserAdminOrganization,
-  updateUserPassword,
 } from './initialize.helper';
 
 const initializeUser = async ({
@@ -45,16 +41,26 @@ const initializeUser = async ({
   password: string;
   roleId?: RolePortalId;
 }) => {
-  const existingUser = await db<User>('User').where({ id: userId }).first();
+  await withTransaction(async () => {
+    await insertPlatformOrganization();
 
-  const { salt, hash } = hashPassword(password);
-  const passwordData = { salt, password: hash };
+    const { created } = await UserProvisioningDomain.upsertUser(
+      {
+        id: userId,
+        email,
+        first_name: null,
+        last_name: null,
+        picture: null,
+        selected_organization_id: PLATFORM_ORGANIZATION_UUID,
+      },
+      { password }
+    );
 
-  if (existingUser) {
-    await updateUserPassword(userId, passwordData);
-  } else {
-    await completeUserInitialization(userId, email, passwordData);
-  }
+    if (created) {
+      await completeUserOrganizationSetup(userId, email);
+    }
+  });
+
   if (roleId) {
     await RolePortalDomain.ensureUserHasRole(userId, roleId);
   }
@@ -85,18 +91,12 @@ const initPlatformUser = () =>
     password: portalConfig.admin.password,
   });
 
-const completeUserInitialization = async (
+const completeUserOrganizationSetup = async (
   user_id: UserId,
-  email: string,
-  data: { salt: string; password: string }
+  email: string
 ) => {
   await withTransaction(async () => {
-    // Check the platform organization
-
-    await insertPlatformOrganization();
     await insertUserAdminOrganization(user_id, email);
-
-    await insertAdminUser(user_id, email, data);
 
     await UserOrganizationDomain.ensureUserOrganizationExists(
       user_id,

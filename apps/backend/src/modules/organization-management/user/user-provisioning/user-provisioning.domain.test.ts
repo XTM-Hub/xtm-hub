@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../../tests/helper/test.helper';
 import { TEST_ORGANIZATIONS } from '../../../../../tests/tests.const';
+import { UserId } from '../../../../model/kanel/public/User';
 import * as MailService from '../../../../server/mail-service';
 import { UserProvisioningDomain } from './user-provisioning.domain';
 
@@ -155,6 +156,23 @@ describe('userProvisioningDomain', () => {
 
       expect(user.salt).toBe(existingUser.salt);
       expect(user.password).toBe(existingUser.password);
+    });
+
+    it('should create the new user with the given id when one is provided', async () => {
+      const email = `ensure-user-${uuidv4()}@filigran.io`;
+      const explicitId = uuidv4() as UserId;
+
+      const { user, created } = await UserProvisioningDomain.upsertUser({
+        id: explicitId,
+        email,
+        first_name: 'Jane',
+        last_name: 'Doe',
+        picture: null,
+        selected_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+      });
+
+      expect(created).toBe(true);
+      expect(user.id).toBe(explicitId);
     });
   });
 
