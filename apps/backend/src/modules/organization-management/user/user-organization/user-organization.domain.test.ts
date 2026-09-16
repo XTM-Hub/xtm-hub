@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../../../tests/helper/test.helper';
 import { TEST_ORGANIZATIONS } from '../../../../../tests/tests.const';
 import { UserOrganizationPendingDomain } from '../user-pending/user-organization-pending.domain';
+import { UserProvisioningDomain } from '../user-provisioning/user-provisioning.domain';
 import { UserHelper } from '../user.helper';
 import { UserOrganizationDomain } from './user-organization.domain';
 
@@ -63,11 +64,11 @@ describe('userOrganizationDomain', () => {
       const organization = await TestHelper.organization.create({
         personal_space: false,
       });
-      const user1 = await UserHelper.createUserWithPersonalSpace(
+      const user1 = await UserProvisioningDomain.createUser(
         { email: `count-users-in-organization-${uuidv4()}@filigran.io` },
         { sendWelcomeEmail: false }
       );
-      const user2 = await UserHelper.createUserWithPersonalSpace(
+      const user2 = await UserProvisioningDomain.createUser(
         { email: `count-users-in-organization-${uuidv4()}@filigran.io` },
         { sendWelcomeEmail: false }
       );
@@ -109,11 +110,11 @@ describe('userOrganizationDomain', () => {
       const organization = await TestHelper.organization.create({
         personal_space: false,
       });
-      const user1 = await UserHelper.createUserWithPersonalSpace(
+      const user1 = await UserProvisioningDomain.createUser(
         { email: `are-all-users-in-organization-${uuidv4()}@filigran.io` },
         { sendWelcomeEmail: false }
       );
-      const user2 = await UserHelper.createUserWithPersonalSpace(
+      const user2 = await UserProvisioningDomain.createUser(
         { email: `are-all-users-in-organization-${uuidv4()}@filigran.io` },
         { sendWelcomeEmail: false }
       );
@@ -138,11 +139,11 @@ describe('userOrganizationDomain', () => {
       const organization = await TestHelper.organization.create({
         personal_space: false,
       });
-      const user1 = await UserHelper.createUserWithPersonalSpace(
+      const user1 = await UserProvisioningDomain.createUser(
         { email: `are-all-users-in-organization-${uuidv4()}@filigran.io` },
         { sendWelcomeEmail: false }
       );
-      const outsideUser = await UserHelper.createUserWithPersonalSpace(
+      const outsideUser = await UserProvisioningDomain.createUser(
         { email: `are-all-users-in-organization-${uuidv4()}@filigran.io` },
         { sendWelcomeEmail: false }
       );
@@ -182,7 +183,7 @@ describe('userOrganizationDomain', () => {
       const organization = await TestHelper.organization.create({
         personal_space: false,
       });
-      const user = await UserHelper.createUserWithPersonalSpace(
+      const user = await UserProvisioningDomain.createUser(
         { email: `ensure-user-org-${uuidv4()}@filigran.io` },
         { sendWelcomeEmail: false }
       );
@@ -204,7 +205,7 @@ describe('userOrganizationDomain', () => {
       const organization = await TestHelper.organization.create({
         personal_space: false,
       });
-      const user = await UserHelper.createUserWithPersonalSpace(
+      const user = await UserProvisioningDomain.createUser(
         { email: `ensure-user-org-${uuidv4()}@filigran.io` },
         { sendWelcomeEmail: false }
       );

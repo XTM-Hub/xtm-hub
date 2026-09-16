@@ -21,6 +21,7 @@ import { formatName } from '../../../../utils/format';
 import { OrganizationDomain } from '../../organization/organization.domain';
 import { UserDomain } from '../user-domain/user.domain';
 import { UserOrganizationPendingDomain } from '../user-pending/user-organization-pending.domain';
+import { UserProvisioningDomain } from '../user-provisioning/user-provisioning.domain';
 import { UserHelper } from '../user.helper';
 import { UserOrganizationDomain } from './user-organization.domain';
 
@@ -60,7 +61,7 @@ export const UserOrganizationApp = {
     const { user, pendingRemoved } = await withTransaction(async () => {
       const user = existingUser
         ? existingUser
-        : await UserHelper.createUserWithPersonalSpace({
+        : await UserProvisioningDomain.createUser({
             email: input.email,
             password: input.password ?? undefined,
             selected_organization_id: chosenOrganization.id,

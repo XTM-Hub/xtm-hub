@@ -24,7 +24,6 @@ import {
   UserWithOrganizationsAndRole,
 } from '../../../model/user';
 import { dispatch } from '../../../pub';
-import { sendMail } from '../../../server/mail-service';
 import { updateUserSession } from '../../../session-store-manager';
 import { MinIOClient } from '../../../thirdparty/minio/client';
 import { logApp } from '../../../utils/app-logger.util';
@@ -39,7 +38,6 @@ import {
   NotFoundError,
   UnknownError,
 } from '../../../utils/error/error.util';
-import { hashPassword } from '../../../utils/hash-password.util';
 import { isEmpty } from '../../../utils/utils';
 import { extractDomain } from '../../../utils/verify-email.util';
 import { UserOrganizationCapabilityDomain } from '../../security-management/user-organization-capability/user-organization-capability.domain';
@@ -50,6 +48,7 @@ import { OrganizationDomain } from '../organization/organization.domain';
 import { UserDomain } from './user-domain/user.domain';
 import { UserOrganizationDomain } from './user-organization/user-organization.domain';
 import { UserOrganizationPendingDomain } from './user-pending/user-organization-pending.domain';
+import { UserProvisioningDomain } from './user-provisioning/user-provisioning.domain';
 
 interface WelcomeEmailOptions {
   sendWelcomeEmail?: boolean;
@@ -78,7 +77,7 @@ const createOrganisationWithAdminUser = async (
     name: extractedDomain,
     domains: [extractedDomain],
   });
-  const addedUser = await UserHelper.createUserWithPersonalSpace(
+  const addedUser = await UserProvisioningDomain.createUser(
     {
       email,
     },
@@ -173,65 +172,6 @@ const updateUserCapabilities = async ({
 };
 
 export const UserHelper = {
-  createUserWithPersonalSpace: async (
-    data: Pick<
-      UserInitializer,
-      'email' | 'first_name' | 'last_name' | 'picture'
-    > & {
-      password?: string | null;
-      selected_organization_id?: OrganizationId;
-    },
-    { sendWelcomeEmail = true }: WelcomeEmailOptions = {}
-  ): Promise<User> => {
-    const { salt, hash } = hashPassword(data.password ?? '');
-    const uuid = uuidv4();
-    // Create user personal space organization
-    const personalSpaceOrganization =
-      await OrganizationDomain.insertNewOrganization({
-        id: uuid as unknown as OrganizationId,
-        name: data.email,
-        personal_space: true,
-      });
-
-    const addedUser = await UserDomain.insertUser({
-      id: uuid as UserId,
-      selected_organization_id:
-        data.selected_organization_id ?? personalSpaceOrganization.id,
-      salt,
-      email: data.email,
-      first_name: data.first_name,
-      last_name: data.last_name,
-      picture: data.picture,
-      password: hash,
-    });
-
-    // Insert relation UserOrganization
-    const [userOrgRelation] =
-      await UserOrganizationDomain.createUserOrganizationRelation({
-        user_id: addedUser.id,
-        organizations_id: [personalSpaceOrganization.id],
-      });
-
-    if (!userOrgRelation) {
-      throw UnknownError(UnknownErrorCode.AddingUserError);
-    }
-
-    await UserOrganizationCapabilityDomain.createUserOrganizationCapability({
-      user_organization_id: userOrgRelation.id,
-      capabilities_name: [OrganizationCapability.AdministrateOrganization],
-    });
-
-    if (sendWelcomeEmail) {
-      await sendMail({
-        to: addedUser.email,
-        template: 'welcome',
-        params: {},
-      });
-    }
-
-    return addedUser;
-  },
-
   createNewUserWithPendingOrga: async (
     {
       email,
@@ -242,7 +182,7 @@ export const UserHelper = {
     organization: Organization,
     { sendWelcomeEmail = true }: WelcomeEmailOptions = {}
   ) => {
-    const addedUser = await UserHelper.createUserWithPersonalSpace(
+    const addedUser = await UserProvisioningDomain.createUser(
       {
         email,
         last_name,
@@ -278,7 +218,7 @@ export const UserHelper = {
         sendWelcomeEmail,
       });
     } else if (isFiligranUser) {
-      userWithRoles = await UserHelper.createUserWithPersonalSpace(
+      userWithRoles = await UserProvisioningDomain.createUser(
         {
           email,
           last_name,

@@ -30,6 +30,7 @@ import { OrganizationDomain } from '../../organization/organization.domain';
 import { UserDomain } from '../user-domain/user.domain';
 import { UserOrganizationDomain } from '../user-organization/user-organization.domain';
 import { UserOrganizationPendingDomain } from '../user-pending/user-organization-pending.domain';
+import { UserProvisioningDomain } from '../user-provisioning/user-provisioning.domain';
 import { UserHelper } from '../user.helper';
 import { UserAdminGuard } from './user.admin.guard';
 
@@ -73,7 +74,7 @@ export const UserAdminApp = {
     const finalUser = await withTransaction(async () => {
       const user = existingUser
         ? existingUser
-        : await UserHelper.createUserWithPersonalSpace({
+        : await UserProvisioningDomain.createUser({
             email: input.email,
             password: input.password,
             first_name: input.first_name,
