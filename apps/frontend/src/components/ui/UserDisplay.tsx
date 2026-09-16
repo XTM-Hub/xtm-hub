@@ -39,7 +39,7 @@ export const UserDisplay = ({
   const nameSpan = (
     <span
       className={cn(
-        'truncate max-w-[220px]',
+        'truncate',
         !uploader && 'italic text-text-default-secondary',
         className
       )}>

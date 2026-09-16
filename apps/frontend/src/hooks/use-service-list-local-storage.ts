@@ -1,7 +1,4 @@
-import {
-  ServiceListDisplayMode,
-  ServiceListFilterKey,
-} from '@/components/service/components/header/ServiceListHeader';
+import { ServiceListDisplayMode } from '@/components/service/components/header/ServiceListHeader';
 import {
   isLogicalMultiSelectSelection,
   LogicalMultiSelectSelection,
@@ -18,22 +15,6 @@ export enum ServiceListLocalStorageKey {
   OpenAEVScenarios = 'OpenAEVScenarios',
   OpenCTIPlaybooks = 'OpenCTIPlaybooks',
 }
-
-const deserializeSelectedFilters = (stored: string): ServiceListFilterKey[] => {
-  try {
-    const parsed = JSON.parse(stored);
-
-    if (!Array.isArray(parsed)) return [];
-
-    const validValues = Object.values(ServiceListFilterKey);
-
-    return parsed.filter((item): item is ServiceListFilterKey =>
-      validValues.includes(item)
-    );
-  } catch {
-    return [];
-  }
-};
 
 const deserializeLogicalMultiSelectSelection = (
   stored: string
@@ -56,11 +37,6 @@ export const useServiceListLocalStorage = (
 ) => {
   const isPublicPath = usePublicPath();
   const pagePrefix = isPublicPath ? 'Public' : 'Private';
-  const [count, setCount, removeCount] = useLocalStorage(
-    `count${pagePrefix}${serviceName}List`,
-    50
-  );
-
   const [search, setSearch, removeSearch] = useLocalStorage<string>(
     `search${pagePrefix}${serviceName}List`,
     ''
@@ -72,15 +48,6 @@ export const useServiceListLocalStorage = (
       {},
       {
         deserializer: deserializeLogicalMultiSelectSelection,
-      }
-    );
-
-  const [selectedFilters, setSelectedFilters, removeSelectedFilters] =
-    useLocalStorage<ServiceListFilterKey[]>(
-      `selectedFilters${pagePrefix}${serviceName}List`,
-      [],
-      {
-        deserializer: deserializeSelectedFilters,
       }
     );
 
@@ -148,7 +115,7 @@ export const useServiceListLocalStorage = (
     );
 
   const [pageSize, setPageSize, removePageSize] = useLocalStorage(
-    `count${pagePrefix}${serviceName}List`,
+    `pageSize${pagePrefix}${serviceName}List`,
     50
   );
 
@@ -175,11 +142,9 @@ export const useServiceListLocalStorage = (
     );
 
   const resetAll = useCallback(() => {
-    removeCount();
     removePageSize();
     removeSearch();
     removeLabels();
-    removeSelectedFilters();
     removeIntegrationTypes();
     removeProductVersions();
     removeLicenseTypes();
@@ -191,11 +156,9 @@ export const useServiceListLocalStorage = (
     removeOrderMode();
     removeDisplayMode();
   }, [
-    removeCount,
     removePageSize,
     removeSearch,
     removeLabels,
-    removeSelectedFilters,
     removeIntegrationTypes,
     removeProductVersions,
     removeLicenseTypes,
@@ -209,8 +172,6 @@ export const useServiceListLocalStorage = (
   ]);
 
   return {
-    count,
-    setCount,
     pageSize,
     setPageSize,
     resetAll,
@@ -223,9 +184,6 @@ export const useServiceListLocalStorage = (
     integrationTypes,
     setIntegrationTypes,
     removeIntegrationTypes,
-    selectedFilters,
-    setSelectedFilters,
-    removeSelectedFilters,
     productVersions,
     setProductVersions,
     removeProductVersions,

@@ -1,4 +1,3 @@
-import { ServiceListFilterMap } from '@/components/service/components/header/ServiceListHeader';
 import { useActiveAndDraftSplit } from '@/components/service/components/service-list-utils';
 import { AppServiceContext } from '@/components/service/components/ServiceContext';
 import ServiceList from '@/components/service/components/ServiceList';
@@ -10,12 +9,17 @@ import {
 } from '@/components/service/document/document.graphql';
 import { useDocumentContext } from '@/components/service/document/use-document-context';
 import { PaginationControls } from '@/components/ui/pagination/PaginationControls';
+import { useDocumentFacetCounts } from '@/hooks/use-document-facet-counts';
 import {
   ServiceListLocalStorageKey,
   useServiceListLocalStorage,
 } from '@/hooks/use-service-list-local-storage';
 import { useTablePagination } from '@/hooks/use-table-pagination';
-import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
+import {
+  SHAREABLE_RESOURCE_SERVICE_SLUG_MAPPING,
+  ShareableResourceType,
+} from '@/utils/shareable-resources/shareable-resources.types';
+import { useShareableResourceMapping } from '@/utils/shareable-resources/use-shareable-resource-mapping';
 import {
   documentItem_fragment$data,
   documentItem_fragment$key,
@@ -39,7 +43,6 @@ export interface ShareableResourceServiceListProps {
   onSearchChange: (v: string) => void;
   type: ShareableResourceType;
   localStorageKey: ServiceListLocalStorageKey;
-  additionalFilters?: ServiceListFilterMap;
 }
 
 /**
@@ -56,7 +59,6 @@ const ShareableResourceServiceList = ({
   onSearchChange,
   type,
   localStorageKey,
-  additionalFilters,
 }: ShareableResourceServiceListProps) => {
   const queryData = usePreloadedQuery<documentsQuery>(
     DocumentsListQuery,
@@ -81,7 +83,18 @@ const ShareableResourceServiceList = ({
     type,
   });
 
-  const { pageSize, setPageSize } = useServiceListLocalStorage(localStorageKey);
+  const {
+    pageSize,
+    setPageSize,
+    labels,
+    entityTypes,
+    integrationTypes,
+    deployable,
+    verified,
+    productVersions,
+    licenseTypes,
+    solutionCategories,
+  } = useServiceListLocalStorage(localStorageKey);
 
   const { pagination, onPaginationChange } = useTablePagination({
     pageSize,
@@ -94,6 +107,29 @@ const ShareableResourceServiceList = ({
     },
   });
 
+  const serviceInstanceSlug = SHAREABLE_RESOURCE_SERVICE_SLUG_MAPPING[type];
+
+  const facetCounts = useDocumentFacetCounts({
+    serviceInstanceId: serviceInstance.id,
+    documentType: type,
+    search,
+    serviceInstanceSlug,
+    restrictToActiveDocuments: false,
+    labels,
+    entityTypes,
+    deployable,
+    verified,
+    integrationTypes,
+    productVersions,
+    licenseTypes,
+    solutionCategories,
+  });
+
+  const { filters } = useShareableResourceMapping(
+    serviceInstanceSlug,
+    facetCounts
+  );
+
   return (
     <AppServiceContext {...context}>
       <AppServiceListLocalStorageKeyContext localStorageKey={localStorageKey}>
@@ -102,7 +138,7 @@ const ShareableResourceServiceList = ({
           draft={draft}
           search={search}
           onSearchChange={onSearchChange}
-          additionalFilters={additionalFilters}
+          additionalFilters={filters}
           connectionId={connectionId}
           paginationControls={
             <PaginationControls

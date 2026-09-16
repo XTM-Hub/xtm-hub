@@ -124,6 +124,7 @@ type Query {
   mostDeployedDocuments(limit: Int!, platformIdentifiers: [PlatformIdentifier!]): [Document!]!
   newestDocuments(limit: Int!, platformIdentifiers: [PlatformIdentifier!]): [Document!]!
   lastDeployedOverview(limit: Int!, serviceInstanceId: ServiceInstanceId!): LastDeployedOverview!
+  documentFacets(input: LoadDocumentFacetInput!): Facet
 
   """
   The round currently collecting votes on a service instance, if any.
@@ -804,6 +805,30 @@ type DeployedResource {
 
 type LastDeployedOverview {
   resources: [DeployedResource!]!
+}
+
+type FacetBucket {
+  value: String!
+  count: Int!
+}
+
+type Facet {
+  integration_type: [FacetBucket!]!
+  license_type: [FacetBucket!]!
+  manager_supported: [FacetBucket!]!
+  verified: [FacetBucket!]!
+  product_version: [FacetBucket!]!
+  solution_category: [FacetBucket!]!
+  use_case: [FacetBucket!]!
+  entity_type: [FacetBucket!]!
+}
+
+input LoadDocumentFacetInput {
+  serviceInstanceId: ServiceInstanceId!
+  searchTerm: String
+  documentType: String
+  logicalFilters: LogicalFilterInput
+  restrictToActiveDocuments: Boolean
 }
 
 """

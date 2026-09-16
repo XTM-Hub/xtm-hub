@@ -329,6 +329,7 @@
       "INVALID_PRODUCTS_FOR_DEPLOYMENT_TYPE": "The selected products are not valid for this deployment type",
       "IS_PLATFORM_REGISTERED_UNKNOWN_ERROR": "An unknown error occurred during product connection",
       "LOAD_CAPABILITIES_ERROR": "An error occurred while loading capabilities",
+      "LIST_FACET_ERROR": "An unknown error occurred while listing facets",
       "MISSING_AUTO_REGISTER_PLATFORM_ARGUMENT": "Missing auto connection product argument",
       "MISSING_CAPABILITY_ON_ORGANIZATION": "Missing permissions",
       "MISSING_CAPABILITY_ON_SERVICE": "Missing permissions",
@@ -1017,6 +1018,31 @@
       "ManageAccessName": "Manage access",
       "SelectCapabilities": "Select capabilities"
     },
+    "CsvExport": {
+      "TriggerButton": "Export CSV",
+      "DialogTitle": "Export integrations to CSV",
+      "DialogDescription": "Choose which fields and filters to include in the exported CSV file.",
+      "ColumnsLabel": "Fields to export",
+      "ColumnsPlaceholder": "Select fields to include",
+      "FiltersLabel": "Filters",
+      "ExportButton": "Export",
+      "SuccessToast": "CSV export started.",
+      "ErrorToast": "We couldn't export the integrations list. Please try again.",
+      "Columns": {
+        "IntegrationType": "Integration type",
+        "UseCase": "Use case",
+        "DeploymentType": "Deployment type",
+        "VerificationStatus": "Verification status",
+        "SolutionCategory": "Solution category",
+        "LicenseType": "License type",
+        "ShortDescription": "Short description",
+        "LongDescription": "Long description",
+        "FeedUrl": "Feed URL",
+        "OpenctiDocumentation": "OpenCTI documentation",
+        "VendorUrl": "Vendor URL",
+        "DemoLink": "Demo link"
+      }
+    },
     "Cards": {
       "filigran-academy": {
         "Name": "Filigran Academy",
@@ -1162,10 +1188,6 @@
         "Type": {
           "Label": "Integration type",
           "Placeholder": "Integration type..."
-        },
-        "ProductVersion": {
-          "Label": "Connected products",
-          "Placeholder": "Connected products..."
         },
         "ManagerSupported": {
           "Label": "Deployment type",

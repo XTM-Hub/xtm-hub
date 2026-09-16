@@ -1,6 +1,4 @@
 import { useServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
-import { ServiceListAddFilterCombobox } from '@/components/service/components/header/filter/ServiceListAddFilterCombobox';
-import { ServiceListFilterSection } from '@/components/service/components/header/filter/ServiceListFilterSection';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { SortControls } from '@/components/ui/SortControls';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
@@ -25,7 +23,7 @@ export enum ServiceListFilterKey {
 
 export interface ServiceListFilter {
   node: React.ReactNode;
-  reset: () => void;
+  title?: React.ReactNode;
 }
 
 export type ServiceListFilterMap = Partial<
@@ -40,7 +38,6 @@ export enum ServiceListDisplayMode {
 interface ServiceListHeaderProps {
   search: string;
   onSearchChange: (v: string) => void;
-  filters: ServiceListFilterMap;
   paginationControls?: React.ReactNode;
   actions?: React.ReactNode;
   className?: string;
@@ -50,7 +47,6 @@ interface ServiceListHeaderProps {
 export const ServiceListHeader = ({
   search,
   onSearchChange,
-  filters,
   paginationControls,
   actions,
   className,
@@ -90,12 +86,6 @@ export const ServiceListHeader = ({
     />
   );
 
-  const filterNode = (
-    <ServiceListAddFilterCombobox
-      filterKeys={Object.keys(filters) as ServiceListFilterKey[]}
-    />
-  );
-
   const sortControls = (
     <SortControls
       orderByOptions={sortOptions}
@@ -114,7 +104,6 @@ export const ServiceListHeader = ({
           <div className="flex gap-s flex-wrap items-center min-w-0">
             {searchInput}
             <div className="flex gap-s items-center min-w-0">
-              {filterNode}
               {sortControls}
             </div>
           </div>
@@ -179,7 +168,6 @@ export const ServiceListHeader = ({
           </div>
         )}
       </div>
-      <ServiceListFilterSection filters={filters} />
     </div>
   );
 };
