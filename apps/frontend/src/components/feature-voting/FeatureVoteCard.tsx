@@ -57,6 +57,7 @@ export const FeatureVoteCard = ({
         <div data-no-open-detail>
           <FeatureVoteButton
             featureId={feature.id}
+            serviceInstanceId={serviceInstanceId}
             hasMyVote={feature.has_my_vote}
             isAuthenticated={isAuthenticated}
             className="w-full"

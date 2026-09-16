@@ -34,7 +34,10 @@ describe('ThreadConferenceBanner', () => {
     const conferenceCta = screen.getByText('ThreadConference.Cta');
     const dateDot = conferenceDate.querySelector('span');
 
-    expect(bannerLink).toHaveAttribute('href', 'https://thread.filigran.io/');
+    expect(bannerLink).toHaveAttribute(
+      'href',
+      'https://filigran.io/thread?form_origin=xtmhub'
+    );
     expect(threadLogo).toHaveAttribute('src', '/thread-logo.svg');
     expect(conferenceDate).toHaveClass('inline-flex', 'w-fit', 'rounded-full');
     expect(conferenceCta).toHaveClass(

@@ -1,11 +1,11 @@
 import ShareableResourceConnectorSlugPublic from '@/components/service/document/connector/ShareableResourceConnectorSlugPublic';
+import { PublicResourceActions } from '@/components/service/document/PublicResourceActions';
 import ShareableResourceDetails from '@/components/service/document/ShareableResouceDetails';
 import ShareableResourceCarousel from '@/components/service/document/ui/ShareableResourceCarouselView';
 import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
-import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
 import type { PublicLocale } from '@/i18n/config';
 import { RelayProvider } from '@/relay/relay-provider';
 import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
@@ -24,17 +24,9 @@ import {
   isConnectorResource,
   ServiceSlug,
 } from '@/utils/shareable-resources/shareable-resources.types';
-import {
-  getServiceInfo,
-  isResourceDownloadable,
-} from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
-import {
-  fetchAllDocuments,
-  fetchSingleDocument,
-} from '@/utils/shareable-resources/utils/shareable-resources.server.utils';
+import { fetchSingleDocument } from '@/utils/shareable-resources/utils/shareable-resources.server.utils';
 import { LogoFiligranIcon } from '@filigran/icon';
 import { MarkdownRenderer } from '@filigran/ui/clients';
-import { Button } from '@filigran/ui/servers';
 import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
 import SeoServiceInstanceQuery, {
   seoServiceInstanceQuery,
@@ -42,10 +34,8 @@ import SeoServiceInstanceQuery, {
 import { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import Image from 'next/image';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
-import { isKnownDocumentSlug } from './docslug-page.utils';
 const FALLBACK_DESCRIPTION_KEYS: Record<ServiceSlug, string> = {
   [ServiceSlug.OPEN_CTI_INTEGRATIONS]:
     'Metadata.DocumentFallbackDescriptionIntegration',
@@ -76,22 +66,6 @@ const getPageData = cache(async (serviceSlug: string, docSlug: string) => {
     .seoServiceInstance as unknown as seoServiceInstanceFragment$data;
 
   if (!serviceInstance) {
-    notFound();
-  }
-
-  // Reuses the same cached fetch as the parent list/SEO page, so this is a
-  // free lookup in the common case. It lets us reject unknown/guessed
-  // docSlug values without ever calling the backend for the document detail.
-  const knownDocuments = await fetchAllDocuments(
-    serviceInstance.slug as ServiceSlug
-  );
-
-  if (
-    !isKnownDocumentSlug(
-      knownDocuments.map((doc) => doc.slug),
-      docSlug
-    )
-  ) {
     notFound();
   }
 
@@ -190,14 +164,6 @@ const Page = async ({
   }
 
   const { baseUrl, serviceInstance, document } = pageData;
-
-  const serviceInformation = getServiceInfo(
-    {
-      id: serviceInstance.id,
-      slug: serviceInstance.slug as ServiceSlug,
-    },
-    document.id
-  );
 
   const servicePath = `/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${serviceInstance.slug}`;
   const localizedServicePath = `/${locale}${servicePath}`;
@@ -312,26 +278,14 @@ const Page = async ({
         <div className="flex flex-col w-full justify-center">
           <div className="flex items-start">
             <h1 className="whitespace-nowrap mb-s">{document.name}</h1>
-            <div className="flex items-center gap-s ml-auto">
-              {
-                <RelayProvider>
-                  <ShareLinkButton
-                    documentId={document.id}
-                    url={`${pageUrl}`}
-                    tooltipText={`Service.${localeMap[serviceInstance.slug as ServiceSlug]}.Actions.Share`}
-                  />
-                </RelayProvider>
-              }
-              {isResourceDownloadable(document) && (
-                <Button
-                  asChild
-                  className="whitespace-nowrap">
-                  <Link href={serviceInformation?.link ?? ''}>
-                    {t('PublicResourcePage.Download')}
-                  </Link>
-                </Button>
-              )}
-            </div>
+            <RelayProvider>
+              <PublicResourceActions
+                documentData={document}
+                serviceInstance={serviceInstance}
+                pageUrl={pageUrl}
+                shareTooltipText={`Service.${localeMap[serviceInstance.slug as ServiceSlug]}.Actions.Share`}
+              />
+            </RelayProvider>
           </div>
           <div>
             <BadgeOverflowCounter

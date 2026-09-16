@@ -6,6 +6,7 @@ import { ShareableResourceCardIcon } from '@/components/ui/shareable-resource/ca
 import { ShareableResourceCardImage } from '@/components/ui/shareable-resource/card-design/ShareableResourceCardImage';
 import { cn } from '@/lib/utils';
 import { PublicDocumentData } from '@/utils/shareable-resources/shareable-resources.types';
+import { getDocumentEntityTypes } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 
 interface ShareableResourceCardHeaderProps {
@@ -49,7 +50,7 @@ export const ShareableResourceCardHeader = ({
         </div>
         {isConnector ? (
           <ShareableResourceEntityTypes
-            document={document}
+            document={{ entity_types: getDocumentEntityTypes(document) }}
             className="mt-s z-[2]"
           />
         ) : (

@@ -154,10 +154,14 @@ const resolvers: Resolvers = {
       if (mappedType) {
         return mappedType;
       } else if (document.type === OPENCTI_INTEGRATION_DOCUMENT_TYPE) {
+        const hydratedIntegrationType = (
+          document as { integration_type?: IntegrationType }
+        ).integration_type;
         const integrationType =
-          await context.dataLoaders.document.integrationTypeLoader.load(
+          hydratedIntegrationType ??
+          (await context.dataLoaders.document.integrationTypeLoader.load(
             document.id
-          );
+          ));
         if (integrationType) {
           const responseType =
             INTEGRATION_MAPPINGS[

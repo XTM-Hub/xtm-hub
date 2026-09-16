@@ -24,9 +24,7 @@ import { initCronJobs, stopCronJobs } from './crons';
 import { PortalContext } from './model/portal-context';
 import { UserLoadUserBy } from './model/user';
 import { DeploymentRequestDataLoader } from './modules/deployment/deployment.dataloader';
-import { documentDownloadEndpoint } from './modules/document/document-download-endpoint';
 import { DocumentDataLoader } from './modules/document/document.dataloader';
-import { documentVisualizeEndpoint } from './modules/document/visualize-document-endpoint';
 import { NewsFeedDataLoader } from './modules/news-feed/news-feed.dataloader';
 import { initAuthPlatform } from './modules/security-management/authentication/auth-platform';
 import { ServiceInstanceDataLoader } from './modules/service/instance/service-instance.dataloader';
@@ -38,10 +36,7 @@ import {
   sseMessageCounter,
   sseSubscriptionCounter,
 } from './server/apollo-plugins/metrics';
-import { healthEndpoint } from './server/endpoints/health';
-import { manifestEndpoint } from './server/endpoints/manifest-endpoint';
-import { productVersionEndpoint } from './server/endpoints/product-version-endpoint';
-import { userPictureEndpoint } from './server/endpoints/user-picture-endpoint';
+import { registerEndpoints } from './server/endpoints';
 import createSchema from './server/graphql-schema';
 import platformInit, { minioInit } from './server/initialize';
 import { seedDevelopmentConnectors } from './server/initialize.helper';
@@ -377,17 +372,15 @@ const handler = createHandler({
     return { user, req: _req };
   },
 
-  onConnect: async (req) => {
-    sseActiveConnectionsGauge.inc({
-      subscription: req.context.res.req.body?.operationName ?? 'Unknown',
-    });
-  },
   onComplete: async (_ctx, msg) => {
     sseActiveConnectionsGauge.dec({
       subscription: msg.context.res.req.body?.operationName ?? 'Unknown',
     });
   },
   onSubscribe: async (_ctx, msg) => {
+    sseActiveConnectionsGauge.inc({
+      subscription: msg.operationName ?? 'Unknown',
+    });
     sseSubscriptionCounter.inc({
       subscription: msg.operationName ?? 'Unknown',
     });
@@ -416,15 +409,7 @@ app.use(
 // endregion
 
 await initAuthPlatform(app);
-// This /storage/get route is implemented here because the GraphQL resolver cannot return a document directly.
-// It lacks the level of abstraction needed to attach a file to the response (using res.attachment).
-// Therefore, we have to handle it through this route instead.
-documentDownloadEndpoint(app);
-documentVisualizeEndpoint(app);
-healthEndpoint(app);
-userPictureEndpoint(app);
-manifestEndpoint(app);
-productVersionEndpoint(app);
+registerEndpoints(app);
 // Modified server startup
 if (!process.env.VITEST_MODE || process.env.START_DEV_SERVER) {
   // Ensure migrate the schema

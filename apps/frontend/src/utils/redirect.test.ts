@@ -3,6 +3,7 @@ import { getClientEnvironment } from '@/relay/environment/registry';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildLoginRedirect,
+  buildOidcRedirect,
   decodeSafeRedirect,
   isSafeRedirect,
 } from './redirect';
@@ -90,6 +91,35 @@ describe('buildLoginRedirect', () => {
     const path = '/app/manage/user?tab=pending&page=2';
     const loginUrl = buildLoginRedirect(path);
     const b64 = new URLSearchParams(loginUrl.split('?')[1]).get('redirect');
+    expect(decodeSafeRedirect(b64)).toBe(path);
+  });
+});
+
+describe('buildOidcRedirect', () => {
+  it.each([[null], [undefined], ['']])('returns /auth/oidc for %s', (value) => {
+    expect(buildOidcRedirect(value)).toBe('/auth/oidc');
+  });
+
+  it('encodes the pathname as encodeURIComponent(btoa(pathname))', () => {
+    const path = '/app/service/xtm_platform_roadmap/abc-123/feature-voting';
+    const expected = `/auth/oidc?redirect=${encodeURIComponent(btoa(path))}`;
+    expect(buildOidcRedirect(path)).toBe(expected);
+  });
+
+  it('encodes + in base64 as %2B', () => {
+    const path = '/~~';
+    const result = buildOidcRedirect(path);
+    // Sanity check: this path's base64 genuinely contains a + so the guard is exercised
+    expect(btoa(path)).toContain('+');
+    // qs decodes a raw + as a space, so the + must be percent-encoded as %2B
+    expect(result.split('?redirect=')[1]).toContain('%2B');
+    expect(result.split('?redirect=')[1]).not.toContain('+');
+  });
+
+  it('round-trips through URLSearchParams and decodeSafeRedirect', () => {
+    const path = '/cybersecurity-solutions/xtm-platform-roadmap/feature-voting';
+    const url = buildOidcRedirect(path);
+    const b64 = new URLSearchParams(url.split('?')[1]).get('redirect');
     expect(decodeSafeRedirect(b64)).toBe(path);
   });
 });

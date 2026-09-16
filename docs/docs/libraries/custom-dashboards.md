@@ -1,6 +1,6 @@
 # OpenCTI Custom Dashboards Library
 
-A comprehensive library of custom dashboards is now available on the XTM Hub,
+A comprehensive library of custom dashboards is now available on XTM Hub,
 providing seamless access to curated threat intelligence data.
 Currently, the library focuses on custom dashboards that can be directly deployed to OpenCTI products and created by our Filigran Team.
 

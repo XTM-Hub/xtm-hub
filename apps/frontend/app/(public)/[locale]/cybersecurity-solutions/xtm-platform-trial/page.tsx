@@ -1,5 +1,5 @@
-import { PublicXtmPlatformTrialPanel } from '@/components/service/trial-instances/xtm-platform-trial/PublicXtmPlatformTrialPanel';
-import { XtmPlatformTrialPage } from '@/components/service/trial-instances/xtm-platform-trial/XtmPlatformTrialPage';
+import { PublicXtmPlatformTrialPanel } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/PublicXtmPlatformTrialPanel';
+import { XtmPlatformTrialRequestPage } from '@/components/service/trial-instances/xtm-platform-trial/XtmPlatformTrialRequestPage';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
 import type { PublicLocale } from '@/i18n/config';
 import {
@@ -8,7 +8,7 @@ import {
   getBaseUrl,
   stringifyJsonLd,
 } from '@/utils/generate-metadata';
-import { loadMeUser } from '@/utils/load-me-user';
+import { loadCurrentUser } from '@/utils/load-me-user';
 import {
   APP_PATH,
   PUBLIC_CYBERSECURITY_SOLUTIONS_PATH,
@@ -41,14 +41,6 @@ export async function generateMetadata({
     imageAlt: t('Service.Trials.XtmPlatform.Page.PitchTitle'),
   });
 }
-
-const loadCurrentUser = async () => {
-  try {
-    return await loadMeUser();
-  } catch {
-    return null;
-  }
-};
 
 const Page = async ({
   params,
@@ -98,7 +90,7 @@ const Page = async ({
         dangerouslySetInnerHTML={{ __html: stringifyJsonLd(jsonLd) }}
       />
       <BreadcrumbNav value={breadcrumbs} />
-      <XtmPlatformTrialPage panel={<PublicXtmPlatformTrialPanel />} />
+      <XtmPlatformTrialRequestPage panel={<PublicXtmPlatformTrialPanel />} />
     </>
   );
 };

@@ -1009,7 +1009,9 @@
       "opencti_playbooks": "OpenCTIプレイブック",
       "opencti_registration": "OpenCTI 登録",
       "vault": "ボールト",
-      "xtm_platform_roadmap": "XTM Platform ロードマップ"
+      "xtm_platform_bundle": "XTMプラットフォームトライアル",
+      "xtm_platform_roadmap": "XTM Platform ロードマップ",
+      "xtmone_registration": "XTM One 登録"
     },
     "Capabilities": {
       "AccessServiceDescription": "サービスへのアクセス",

@@ -1,7 +1,9 @@
 import { FeatureVotingList } from '@/components/feature-voting/FeatureVotingList';
+import { getFeatureVotingPrivatePath } from '@/components/feature-voting/feature-voting-path';
 import type { PublicLocale } from '@/i18n/config';
 import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
 import { buildSeoPageMetadata, getBaseUrl } from '@/utils/generate-metadata';
+import { loadCurrentUser } from '@/utils/load-me-user';
 import {
   PUBLIC_CYBERSECURITY_SOLUTIONS_PATH,
   XTM_PLATFORM_ROADMAP_SLUG,
@@ -12,6 +14,7 @@ import SeoServiceInstanceQuery, {
 } from '@generated/seoServiceInstanceQuery.graphql';
 import { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 import { cache } from 'react';
 
 const ROADMAP_PATH = `/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${XTM_PLATFORM_ROADMAP_SLUG}`;
@@ -55,6 +58,11 @@ const Page = async ({
   setRequestLocale(locale);
 
   const serviceInstance = await getRoadmapServiceInstance();
+
+  const user = await loadCurrentUser();
+  if (user) {
+    redirect(getFeatureVotingPrivatePath(serviceInstance.id));
+  }
 
   return (
     <FeatureVotingList

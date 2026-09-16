@@ -4,7 +4,7 @@ applyTo: 'apps/backend/**'
 
 # Backend Instructions (`apps/backend`)
 
-Express 5 + Apollo Server + GraphQL + Knex + PostgreSQL + Elasticsearch + MinIO. Dev port **4002**.
+Express 5 + Apollo Server + GraphQL + Knex + PostgreSQL + Elasticsearch + Silo (S3). Dev port **4002**.
 
 ## Commands
 
@@ -19,11 +19,11 @@ Run from `apps/backend` (or `yarn workspace @xtm-hub/backend <script>`).
 | `yarn test:ci` | `check-ts` + `lint` + coverage — the full gate |
 | `yarn build` | `copy` + esbuild (`builder/prod/prod.js`) |
 | `yarn generate:ts` | GraphQL codegen → `src/__generated__/resolvers-types.ts` |
-| `yarn generate:module` | Scaffolds a new module |
+| `yarn generate:module` | Scaffolds a new GraphQL module |
 
 Prefer the narrowest command that covers your change. Use `yarn test:ci` before opening a pull request.
 
-Tests need PostgreSQL and MinIO running (`docker compose -f xtm-hub-dev/docker-compose.yml up`). Vitest runs with
+Tests need PostgreSQL and Silo (S3) running (`docker compose -f xtm-hub-dev/docker-compose.yml up`). Vitest runs with
 `fileParallelism: false` and hits a real `test_database` when `VITEST_MODE=true`.
 
 ## Layout
@@ -52,16 +52,31 @@ Module domains: `organization-management`, `service`, `service-link`, `deploymen
 
 ## Module structure
 
-Each module directory holds `<name>.graphql` (schema), `<name>.resolver.ts` (resolvers) and `<name>.service.ts`
-(business logic). Keep resolvers thin — they validate and delegate to the service.
+Each module directory holds `<name>.graphql` (schema), `<name>.resolver.ts` (resolvers), `<name>.app.ts`
+(orchestration / business rules) and `<name>.domain.ts` (Knex data access). Keep resolvers thin — they validate and
+delegate to the app layer; keep the app layer free of raw Knex queries — it delegates those to the domain layer.
+Optional siblings as needed: `<name>.dataloader.ts`, `<name>.helper.ts`, `<name>.security.ts`.
 
 Adding a module:
 
 1. `yarn generate:module`, or copy the shape produced by `src/scripts/generate-new-module.ts`.
 2. Define types, queries and mutations in `<name>.graphql`.
-3. Implement `<name>.resolver.ts` and `<name>.service.ts`.
+3. Implement `<name>.resolver.ts`, `<name>.app.ts` and `<name>.domain.ts`.
 4. Register the resolver in `src/server/graphql-schema.ts`.
 5. Run `yarn generate:ts`.
+
+## REST endpoint structure
+
+Every REST endpoint (as opposed to a GraphQL operation) lives under `src/server/endpoints/<name>/`, named
+`<name>-endpoint.ts`, with optional `<name>-endpoint.utils.ts` / `.errors.ts` / `.rate-limit.ts` siblings for
+non-trivial endpoints (see `manifest/` or `versions-matrix/` for the fuller shape). Endpoints delegate to a module's
+`.domain.ts` (or `.app.ts`) rather than querying the database directly.
+
+All endpoints are wired in `src/server/endpoints/index.ts` (`registerEndpoints(app)`), the single place `src/index.ts`
+calls to mount them — do not import or call an endpoint directly from `src/index.ts`.
+
+Adding an endpoint: copy the shape of an existing one (e.g. `manifest/` or `versions-matrix/`) and register it in
+`src/server/endpoints/index.ts`.
 
 ## Database access
 

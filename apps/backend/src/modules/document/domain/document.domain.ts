@@ -49,6 +49,7 @@ import {
   ManifestFragmentHelper,
   TAG_DECOUPLING,
   TAG_LATEST,
+  TAG_LATEST_LTS,
 } from '../../shareable-resource/manifest-fragment/manifest-fragment.helper';
 import { isUserRestrictedToActiveDocument } from '../document.security';
 import {
@@ -262,16 +263,15 @@ export const DocumentDomain = {
     const { tags, ...scalarFilters } = documentFilters;
 
     const docQuery = db<DocumentModel>('Document')
-      .leftJoin(
-        'Document_Metadata',
-        'Document.id',
-        'Document_Metadata.document_id'
-      )
-      .where('Document_Metadata.key', key)
-      .andWhere('Document_Metadata.value', value)
-      .andWhere(scalarFilters)
-      .select('Document.*')
-      .groupBy('Document.id');
+      .where(scalarFilters)
+      .whereExists(function () {
+        this.select(dbRaw('1'))
+          .from('Document_Metadata')
+          .whereRaw('"Document_Metadata"."document_id" = "Document"."id"')
+          .andWhere('Document_Metadata.key', key)
+          .andWhere('Document_Metadata.value', value);
+      })
+      .select('Document.*');
 
     if (tags && tags.length > 0) {
       const placeholders = tags.map(() => '?').join(',');
@@ -322,7 +322,8 @@ export const DocumentDomain = {
 
   loadParentDocumentsByServiceInstance: async (
     type: string,
-    input: QueryDocumentsArgs,
+    input: Partial<QueryDocumentsArgs> &
+      Pick<QueryDocumentsArgs, 'serviceInstanceId'>,
     include_metadata?: DocumentMetadataKeyCode[]
   ): Promise<DocumentConnection> => {
     return DocumentDomain.loadDocuments(
@@ -491,8 +492,7 @@ export const DocumentDomain = {
             { column: 'Document.created_at', order: 'desc' },
           ]);
         }
-      })
-      .groupBy(['Document.id']);
+      });
   },
 
   loadSeoDocumentsByServiceSlug: async (
@@ -721,5 +721,38 @@ export const DocumentDomain = {
       );
 
     return DocumentMetadataDomain.hydrateMetadata(connectors, metadataKeys);
+  },
+
+  /**
+   * Returns the distinct slugs of the connectors currently known as "latest"
+   * for the given product version's track, i.e. active, non-decommissioned
+   * decoupled connector documents tagged TAG_LATEST (or TAG_LATEST_LTS for an
+   * LTS version) + TAG_DECOUPLING.
+   */
+  loadDistinctConnectorSlugs: async (version: string): Promise<string[]> => {
+    const tag = isLtsVersion(version) ? TAG_LATEST_LTS : TAG_LATEST;
+
+    const rows: Pick<DocumentModel, 'slug'>[] = await db<DocumentModel>(
+      'Document'
+    )
+      .where('Document.active', true)
+      .where('Document.is_decommissioned', false)
+      .whereRaw(`"Document"."tags" @> ARRAY[?, ?]::text[]`, [
+        tag,
+        TAG_DECOUPLING,
+      ])
+      .whereNotNull('Document.slug')
+      .whereExists(function () {
+        this.select(dbRaw('1'))
+          .from('Document_Metadata as dm_type')
+          .whereRaw('"dm_type"."document_id" = "Document"."id"')
+          .andWhere('dm_type.key', DocumentMetadataKeyCode.IntegrationType)
+          .andWhere('dm_type.value', IntegrationType.Connector);
+      })
+      .distinct('Document.slug');
+
+    return rows
+      .map((row) => row.slug)
+      .filter((slug): slug is string => slug !== null);
   },
 };
