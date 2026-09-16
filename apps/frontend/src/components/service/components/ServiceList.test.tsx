@@ -21,11 +21,9 @@ const testState = vi.hoisted(() => ({
   setDisplayMode: vi.fn(),
   setOrderBy: vi.fn(),
   setOrderMode: vi.fn(),
-  setSelectedFilters: vi.fn(),
   removeLabels: vi.fn(),
   restore: vi.fn(),
   save: vi.fn(),
-  selectedFilters: [] as string[],
 }));
 
 vi.mock('@/components/service/components/ServiceContext', () => ({
@@ -74,8 +72,6 @@ const buildLocalStorageState = (displayMode = ServiceListDisplayMode.Tab) => ({
   orderMode: OrderingMode.Asc,
   setOrderBy: testState.setOrderBy,
   setOrderMode: testState.setOrderMode,
-  selectedFilters: testState.selectedFilters,
-  setSelectedFilters: testState.setSelectedFilters,
 });
 
 describe('ServiceList', () => {
@@ -83,11 +79,9 @@ describe('ServiceList', () => {
     testState.setDisplayMode.mockReset();
     testState.setOrderBy.mockReset();
     testState.setOrderMode.mockReset();
-    testState.setSelectedFilters.mockReset();
     testState.removeLabels.mockReset();
     testState.restore.mockReset();
     testState.save.mockReset();
-    testState.selectedFilters = [];
     testState.useServiceContext.mockReturnValue({
       translationKey: 'Service.Connector',
       serviceInstance: {
@@ -145,6 +139,7 @@ describe('ServiceList', () => {
         draft={draft}
         search=""
         onSearchChange={vi.fn()}
+        additionalFilters={{}}
       />
     );
 
@@ -188,6 +183,7 @@ describe('ServiceList', () => {
         draft={draft}
         search=""
         onSearchChange={vi.fn()}
+        additionalFilters={{}}
       />
     );
 
@@ -222,6 +218,7 @@ describe('ServiceList', () => {
         draft={[]}
         search=""
         onSearchChange={vi.fn()}
+        additionalFilters={{}}
       />
     );
 
@@ -242,6 +239,7 @@ describe('ServiceList', () => {
         draft={[]}
         search=""
         onSearchChange={vi.fn()}
+        additionalFilters={{}}
       />
     );
 

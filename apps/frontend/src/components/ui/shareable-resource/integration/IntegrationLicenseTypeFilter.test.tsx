@@ -1,13 +1,10 @@
-import { ServiceListFilterKey } from '@/components/service/components/header/ServiceListHeader';
 import testRender from '@/utils/test/test-render';
 import { LicenseType } from '@graphql/generated';
-import { screen, within } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { IntegrationLicenseTypeFilter } from './IntegrationLicenseTypeFilter';
 
-const removeFilterMock = vi.fn();
 const setLicenseTypesMock = vi.fn();
-const removeLicenseTypesMock = vi.fn();
 
 vi.mock('@/hooks/use-service-list-local-storage', () => ({
   ServiceListLocalStorageKey: {
@@ -16,36 +13,26 @@ vi.mock('@/hooks/use-service-list-local-storage', () => ({
   useServiceListLocalStorage: () => ({
     licenseTypes: {},
     setLicenseTypes: setLicenseTypesMock,
-    removeLicenseTypes: removeLicenseTypesMock,
-  }),
-}));
-
-vi.mock('@/hooks/use-service-list-filters', () => ({
-  useServiceListFilters: () => ({
-    removeFilter: removeFilterMock,
+    removeLicenseTypes: vi.fn(),
   }),
 }));
 
 describe('IntegrationLicenseTypeFilter', () => {
-  it('renders placeholder and options after opening the popover', async () => {
-    const { user } = testRender(<IntegrationLicenseTypeFilter />);
+  it('renders license type subfilters as visible checkboxes', () => {
+    testRender(<IntegrationLicenseTypeFilter />);
 
-    const placeholder = screen.getByText(
-      'Service.OpenctiIntegrations.Filter.LicenseType.Placeholder'
-    );
-    expect(placeholder).toBeInTheDocument();
-
-    await user.click(placeholder);
-    const listbox = screen.getByRole('listbox');
     expect(
-      within(listbox).getByText(
-        'Service.OpenctiIntegrations.Filter.LicenseType.Free'
-      )
+      screen.getByText('Service.OpenctiIntegrations.Filter.LicenseType.Label')
     ).toBeInTheDocument();
     expect(
-      within(listbox).getByText(
-        'Service.OpenctiIntegrations.Filter.LicenseType.Commercial'
-      )
+      screen.getByRole('checkbox', {
+        name: 'Service.OpenctiIntegrations.Filter.LicenseType.Free',
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('checkbox', {
+        name: 'Service.OpenctiIntegrations.Filter.LicenseType.Commercial',
+      })
     ).toBeInTheDocument();
   });
 
@@ -53,14 +40,9 @@ describe('IntegrationLicenseTypeFilter', () => {
     const { user } = testRender(<IntegrationLicenseTypeFilter />);
 
     await user.click(
-      screen.getByText(
-        'Service.OpenctiIntegrations.Filter.LicenseType.Placeholder'
-      )
-    );
-    await user.click(
-      within(screen.getByRole('listbox')).getByText(
-        'Service.OpenctiIntegrations.Filter.LicenseType.Free'
-      )
+      screen.getByRole('checkbox', {
+        name: 'Service.OpenctiIntegrations.Filter.LicenseType.Free',
+      })
     );
 
     expect(setLicenseTypesMock).toHaveBeenCalledWith({
@@ -68,14 +50,13 @@ describe('IntegrationLicenseTypeFilter', () => {
     });
   });
 
-  it('calls remove callbacks when the remove button is clicked', async () => {
-    const { user } = testRender(<IntegrationLicenseTypeFilter />);
+  it('does not render a clickable filter title button', () => {
+    testRender(<IntegrationLicenseTypeFilter />);
 
-    await user.click(screen.getByRole('button', { name: 'Remove filter' }));
-
-    expect(removeLicenseTypesMock).toHaveBeenCalledTimes(1);
-    expect(removeFilterMock).toHaveBeenCalledWith(
-      ServiceListFilterKey.LicenseType
-    );
+    expect(
+      screen.queryByRole('button', {
+        name: 'Service.OpenctiIntegrations.Filter.LicenseType.Placeholder',
+      })
+    ).not.toBeInTheDocument();
   });
 });

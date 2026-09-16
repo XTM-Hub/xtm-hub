@@ -1,5 +1,5 @@
 import testRender from '@/utils/test/test-render';
-import { screen, within } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import {
   isLogicalMultiSelectSelection,
@@ -14,7 +14,7 @@ describe('LogicalMultiSelectFormField', () => {
     expect(isLogicalMultiSelectSelection(['x'])).toBe(false);
   });
 
-  it('applies parent/child toggle semantics and clear behavior', async () => {
+  it('applies parent/child toggle semantics', async () => {
     const onValueChange = vi.fn();
     const { user } = testRender(
       <LogicalMultiSelectFormField
@@ -29,39 +29,59 @@ describe('LogicalMultiSelectFormField', () => {
           },
         ]}
         initialValue={{}}
-        placeholder="placeholder"
         noResultString="no-result"
         optionLabel="label"
         onValueChange={onValueChange}
       />
     );
 
-    // Open the popover
-    await user.click(screen.getByText('placeholder'));
-    const listbox = screen.getByRole('listbox');
-
-    // Select child A1
-    await user.click(within(listbox).getByText('A1'));
+    await user.click(screen.getByRole('checkbox', { name: 'A1' }));
     expect(onValueChange).toHaveBeenLastCalledWith({ a: ['a1'] });
 
-    // Select A2 — all children selected → parent fully selected
-    await user.click(within(listbox).getByText('A2'));
+    await user.click(screen.getByRole('checkbox', { name: 'A2' }));
     expect(onValueChange).toHaveBeenLastCalledWith({ a: [] });
 
-    // Deselect A1 — partial selection (A2 only)
-    await user.click(within(listbox).getByText('A1'));
+    await user.click(screen.getByRole('checkbox', { name: 'A1' }));
     expect(onValueChange).toHaveBeenLastCalledWith({ a: ['a2'] });
 
-    // Clear all (Utils.Clear visible because there is a selection)
-    await user.click(within(listbox).getByText('Utils.Clear'));
-    expect(onValueChange).toHaveBeenLastCalledWith({});
-
-    // Toggle parent on (select all children)
-    await user.click(within(listbox).getByText('Parent A'));
+    await user.click(screen.getByRole('checkbox', { name: 'Parent A' }));
     expect(onValueChange).toHaveBeenLastCalledWith({ a: [] });
 
-    // Toggle parent off (deselect)
-    await user.click(within(listbox).getByText('Parent A'));
+    await user.click(screen.getByRole('checkbox', { name: 'Parent A' }));
     expect(onValueChange).toHaveBeenLastCalledWith({});
+  });
+
+  it('resolves facet counts when the option value is a Relay global id but the facet bucket is keyed by the raw uuid', () => {
+    const globalId =
+      'VXNlQ2FzZTowMGU4YjQ0ZC04MzBhLTQwNjYtYmM5Ny1mOGM0ZWU1YjUzYTU=';
+    const rawUuid = '00e8b44d-830a-4066-bc97-f8c4ee5b53a5';
+
+    testRender(
+      <LogicalMultiSelectFormField
+        options={[{ label: 'Use case A', value: globalId }]}
+        initialValue={{}}
+        noResultString="no-result"
+        optionLabel="label"
+        onValueChange={vi.fn()}
+        facetCounts={{ [rawUuid]: 2 }}
+      />
+    );
+
+    expect(screen.getByText('2')).toBeInTheDocument();
+  });
+
+  it('falls back to 0 when neither the raw value nor its decoded id are in the facet counts', () => {
+    testRender(
+      <LogicalMultiSelectFormField
+        options={[{ label: 'Unmatched', value: 'unmatched-value' }]}
+        initialValue={{}}
+        noResultString="no-result"
+        optionLabel="label"
+        onValueChange={vi.fn()}
+        facetCounts={{ 'some-other-id': 5 }}
+      />
+    );
+
+    expect(screen.getByText('0')).toBeInTheDocument();
   });
 });
