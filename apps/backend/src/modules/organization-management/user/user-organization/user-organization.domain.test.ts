@@ -9,7 +9,6 @@ import {
 } from '../../../../../tests/tests.const';
 import { requestContext } from '../../../../context/request.context';
 import { UserOrganizationPendingDomain } from '../user-pending/user-organization-pending.domain';
-import { UserProvisioningApp } from '../user-provisioning/user-provisioning.app';
 import { UserProvisioningDomain } from '../user-provisioning/user-provisioning.domain';
 import { UserOrganizationDomain } from './user-organization.domain';
 
@@ -17,9 +16,10 @@ describe('userOrganizationDomain', () => {
   describe('createUserOrganizationRelationAndRemovePending', () => {
     it('should delete pending organization before adding an organization', async () => {
       const testMail = `createUserOrganizationRelationAndRemovePending${uuidv4()}@filigran.io`;
-      const user = await UserProvisioningApp.autoProvisionNewUser({
-        email: testMail,
-      });
+      const user = await TestHelper.user.insertWithPendingOrganization(
+        { email: testMail },
+        TEST_ORGANIZATIONS.FILIGRAN.ID
+      );
       const initialPendingOrg =
         await UserOrganizationPendingDomain.loadUserOrganizationPending({
           user_id: user.id,
@@ -44,9 +44,7 @@ describe('userOrganizationDomain', () => {
 
     it('should not fail if there is no organization to remove', async () => {
       const testMail = `createUserOrganizationRelationAndRemovePending${uuidv4()}@whatever.io`;
-      const user = await UserProvisioningApp.autoProvisionNewUser({
-        email: testMail,
-      });
+      const user = await TestHelper.user.insert({ email: testMail });
       const initialPendingOrg =
         await UserOrganizationPendingDomain.loadUserOrganizationPending({
           user_id: user.id,
