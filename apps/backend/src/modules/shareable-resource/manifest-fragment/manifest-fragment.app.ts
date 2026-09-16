@@ -4,8 +4,7 @@ import {
   PortalCapability,
   type MutationIngestManifestFragmentsArgs,
 } from '../../../__generated__/resolvers-types';
-import { requestContext } from '../../../context/request.context';
-import { securityGuard } from '../../../security/guard';
+import { RequiresPortalCapability } from '../../../security/app-guard.decorator';
 import { logApp } from '../../../utils/app-logger.util';
 import { getErrorMessage } from '../../../utils/error/error-guard.util';
 import { ManifestKey } from '../manifest/manifest.consts';
@@ -14,15 +13,11 @@ import { ManifestHelper } from '../manifest/manifest.helper';
 import { ManifestFragmentDomain } from './manifest-fragment.domain';
 import { ManifestFragmentHelper } from './manifest-fragment.helper';
 
-export const ManifestFragmentApp = {
-  ingestManifestFragments: async ({
+export class ManifestFragmentApp {
+  @RequiresPortalCapability([PortalCapability.ManageManifestIngestions])
+  static async ingestManifestFragments({
     manifestFragments,
-  }: MutationIngestManifestFragmentsArgs): Promise<void> => {
-    const user = requestContext.requireUser();
-    await securityGuard.assertUserPortalCapabilities(user, [
-      PortalCapability.ManageManifestIngestions,
-    ]);
-
+  }: MutationIngestManifestFragmentsArgs): Promise<void> {
     if (manifestFragments.length === 0) {
       return;
     }
@@ -69,5 +64,5 @@ export const ManifestFragmentApp = {
         });
       }
     });
-  },
-};
+  }
+}

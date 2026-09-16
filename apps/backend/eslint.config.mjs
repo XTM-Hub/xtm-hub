@@ -99,6 +99,15 @@ export default defineConfig([
     },
   },
   {
+    files: ['**/*.app.ts'],
+    rules: {
+      // App-layer modules are namespaces of static, decoratable methods
+      // (e.g. @RequiresPortalCapability) shared between GraphQL and REST,
+      // not stateful instances — a static-only class is the intended shape.
+      '@typescript-eslint/no-extraneous-class': 'off',
+    },
+  },
+  {
     rules: {
       '@typescript-eslint/ban-ts-ignore': 'off',
       '@typescript-eslint/ban-ts-comment': 'off',

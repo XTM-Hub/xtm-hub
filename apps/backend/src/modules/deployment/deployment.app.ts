@@ -48,7 +48,10 @@ import {
   XTM_HUB_DEV_TEAM_EMAIL,
   XTM_HUB_SUPPORT_EMAIL,
 } from '../../portal.const';
-import { securityGuard } from '../../security/guard';
+import {
+  RequiresOrgMembership,
+  RequiresPortalCapability,
+} from '../../security/app-guard.decorator';
 import { buildXtmPlatformTrialLink, sendMail } from '../../server/mail-service';
 import {
   formatProductNames,
@@ -98,10 +101,10 @@ export const XTM_PLATFORM_BUNDLE_SERVICE_INSTANCE_NAME = 'XTM Platform Bundle';
 
 const DEPLOYMENT_REQUEST_LOCK_NAMESPACE = 'deployment_request';
 
-export const DeploymentApp = {
-  createDeploymentRequest: async (
+export class DeploymentApp {
+  static async createDeploymentRequest(
     input: CreateDeploymentRequestInput
-  ): Promise<DeploymentRequest> => {
+  ): Promise<DeploymentRequest> {
     const user = requestContext.requireUser();
 
     const validatedProducts = validateDeploymentRequestProducts(input);
@@ -192,18 +195,15 @@ export const DeploymentApp = {
       logApp.error('unable to create deployment request', { error });
       throw error;
     }
-  },
+  }
 
-  updateDeploymentRequest: async (
+  @RequiresPortalCapability([
+    PortalCapability.ManageDeployment,
+    PortalCapability.ModifyTrials,
+  ])
+  static async updateDeploymentRequest(
     input: UpdateDeploymentRequestInput
-  ): Promise<PlatformDeploymentRequest> => {
-    const user = requestContext.requireUser();
-
-    await securityGuard.assertUserPortalCapabilities(user, [
-      PortalCapability.ManageDeployment,
-      PortalCapability.ModifyTrials,
-    ]);
-
+  ): Promise<PlatformDeploymentRequest> {
     const deploymentRequestId = input.id;
     const deploymentRequest =
       await loadDeploymentRequestForUpdate(deploymentRequestId);
@@ -254,17 +254,12 @@ export const DeploymentApp = {
     }
 
     return updatedDeploymentRequest;
-  },
+  }
 
-  loadPlatformDeploymentRequests: async (
+  @RequiresPortalCapability([PortalCapability.ManageDeployment])
+  static async loadPlatformDeploymentRequests(
     args: QueryDeploymentRequestsArgs
-  ): Promise<PlatformDeploymentRequestConnection> => {
-    const user = requestContext.requireUser();
-
-    await securityGuard.assertUserPortalCapabilities(user, [
-      PortalCapability.ManageDeployment,
-    ]);
-
+  ): Promise<PlatformDeploymentRequestConnection> {
     args.filters = args.filters || [];
 
     // By default, only return deployments with sync offset (target_state different from actual_state)
@@ -284,11 +279,11 @@ export const DeploymentApp = {
         onlyOutOfSync: !hasStateFilter,
       }
     );
-  },
+  }
 
-  loadAvailableDeploymentRequests: async (
+  static async loadAvailableDeploymentRequests(
     platformIdentifier: PlatformIdentifier | null
-  ): Promise<DeploymentAvailability[]> => {
+  ): Promise<DeploymentAvailability[]> {
     const quotas = await DeploymentQuotaDomain.loadQuotas(
       platformIdentifier
         ? { platform_identifier: platformIdentifier }
@@ -302,15 +297,15 @@ export const DeploymentApp = {
       capacity: quota.capacity,
       platform_identifier: platformIdentifier,
     }));
-  },
+  }
 
-  reorderDeploymentRequestInQueue: async ({
+  static async reorderDeploymentRequestInQueue({
     id,
     direction,
   }: {
     id: DeploymentRequestId;
     direction: ReorderDeploymentRequestInQueueDirection;
-  }): Promise<Success> => {
+  }): Promise<Success> {
     const deploymentRequest =
       await DeploymentRequestDomain.loadDeploymentRequestBy({ id });
     if (!deploymentRequest) {
@@ -338,9 +333,9 @@ export const DeploymentApp = {
     return {
       success: true,
     };
-  },
+  }
 
-  updateDeploymentQuotaCapacity: async ({
+  static async updateDeploymentQuotaCapacity({
     platformIdentifier,
     region,
     newCapacity,
@@ -348,7 +343,7 @@ export const DeploymentApp = {
     platformIdentifier?: PlatformIdentifier | null;
     region: DeploymentRequestPlatformRegion;
     newCapacity: number;
-  }): Promise<{ success: boolean }> => {
+  }): Promise<{ success: boolean }> {
     const user = requestContext.requireUser();
 
     await DeploymentQuotaApp.applyQuotaCapacityChange({
@@ -363,13 +358,13 @@ export const DeploymentApp = {
     });
 
     return { success: true };
-  },
+  }
 
-  cancelDeploymentRequest: async (
+  static async cancelDeploymentRequest(
     deploymentRequestId: DeploymentRequestId,
     isAdmin: boolean,
     cancellationReason?: string
-  ): Promise<DeploymentRequest> => {
+  ): Promise<DeploymentRequest> {
     const user = requestContext.requireUser();
     const deploymentRequest =
       await DeploymentRequestDomain.loadDeploymentRequestBy({
@@ -433,9 +428,9 @@ export const DeploymentApp = {
     }
 
     return updatedDeploymentRequest;
-  },
+  }
 
-  expireTrials: async () => {
+  static async expireTrials() {
     const expiredTrials: DeploymentRequestModel[] =
       await DeploymentRequestDomain.loadTrialsToExpire();
 
@@ -473,11 +468,11 @@ export const DeploymentApp = {
         }
       }
     }
-  },
+  }
 
-  loadTrialDeployments: async (input: TrialDeploymentsInput) => {
+  @RequiresOrgMembership((input: TrialDeploymentsInput) => input.organizationId)
+  static async loadTrialDeployments(input: TrialDeploymentsInput) {
     const user = requestContext.requireUser();
-    await securityGuard.assertUserIsInOrganization(user, input.organizationId);
 
     const organization = await OrganizationDomain.loadOrganizationBy({
       id: input.organizationId,
@@ -528,11 +523,9 @@ export const DeploymentApp = {
       isBlacklisted:
         await CompetitorApp.isOrganizationBlacklisted(organization),
     };
-  },
-  loadPlatformTrialStatus: async (organizationId: OrganizationId) => {
-    const user = requestContext.requireUser();
-    await securityGuard.assertUserIsInOrganization(user, organizationId);
-
+  }
+  @RequiresOrgMembership((organizationId: OrganizationId) => organizationId)
+  static async loadPlatformTrialStatus(organizationId: OrganizationId) {
     const organization = await OrganizationDomain.loadOrganizationBy({
       id: organizationId,
     });
@@ -569,9 +562,9 @@ export const DeploymentApp = {
           (identifier): identifier is PlatformIdentifier => identifier !== null
         ),
     };
-  },
+  }
 
-  loadXtmPlatformBundle: async (): Promise<DeploymentRequest | null> => {
+  static async loadXtmPlatformBundle(): Promise<DeploymentRequest | null> {
     const user = requestContext.requireUser();
     const bundle = await DeploymentRequestDomain.loadFullDeploymentRequest(
       {
@@ -583,11 +576,11 @@ export const DeploymentApp = {
     );
 
     return bundle ?? null;
-  },
+  }
 
-  loadXtmonePlatformIntegrationStatus: async (
+  static async loadXtmonePlatformIntegrationStatus(
     serviceInstanceId: ServiceInstanceId
-  ): Promise<XtmoneIntegrationStatus | null> => {
+  ): Promise<XtmoneIntegrationStatus | null> {
     const user = requestContext.requireUser();
     const deploymentRequest =
       await DeploymentRequestDomain.loadDeploymentRequestBy({
@@ -607,8 +600,8 @@ export const DeploymentApp = {
     }
 
     return fetchXtmoneIntegrationStatus(baseUrl);
-  },
-};
+  }
+}
 
 type ValidatedDeploymentRequestProducts =
   | {
