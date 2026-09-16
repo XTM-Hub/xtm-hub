@@ -1837,11 +1837,6 @@ export type ProvisionedNewsFeedItem = Node & {
   type: NewsFeedItemType;
 };
 
-/**
- * Lightweight projection of a public document's slug + timestamps, for sitemap
- * generation. Kept separate from `Document` so the query backing it can select
- * only these columns and skip metadata hydration entirely.
- */
 export type PublicDocumentSlugInfo = {
   __typename?: 'PublicDocumentSlugInfo';
   created_at: Scalars['Date']['output'];
@@ -1884,10 +1879,6 @@ export type Query = {
   platformAssociatedOrganization: Maybe<Organization>;
   platformTrialStatus: PlatformTrialStatus;
   publicDocumentBySlug: Maybe<Document>;
-  /**
-   * Lightweight variant of `publicDocumentsByServiceSlug` for sitemap generation:
-   * selects only slug/created_at/updated_at and skips metadata hydration.
-   */
   publicDocumentSlugsByServiceSlug: Array<PublicDocumentSlugInfo>;
   publicDocuments: DocumentConnection;
   publicDocumentsByServiceSlug: Array<Document>;
