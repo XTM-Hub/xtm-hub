@@ -1,4 +1,3 @@
-import { GraphQLError } from 'graphql/error/index.js';
 import { db } from '../../../../../knexfile';
 import {
   OrganizationCapabilitiesInput,
@@ -22,10 +21,12 @@ import UserOrganizationPending from '../../../../model/kanel/public/UserOrganiza
 import { securityGuard } from '../../../../security/guard';
 import { sendMail } from '../../../../server/mail-service';
 import {
+  ForbiddenErrorCode,
   NotFoundErrorCode,
   UnknownErrorCode,
 } from '../../../../utils/error/error.code';
 import {
+  ForbiddenAccess,
   NotFoundError,
   UnknownError,
 } from '../../../../utils/error/error.util';
@@ -339,12 +340,7 @@ export const UserOrganizationDomain = {
       organization_id: organization.id,
     });
     if (subscription.organization_id !== organization.id) {
-      throw new GraphQLError(
-        'The email address does not correspond to the current organization',
-        {
-          extensions: { code: '[User_Service] EMAIL ADDRESS WRONG DOMAIN' },
-        }
-      );
+      throw ForbiddenAccess(ForbiddenErrorCode.EmailOutsideOrganizationError);
     }
     if (isEmpty(userOrganization)) {
       const [userOrgRelation] =

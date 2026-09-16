@@ -8,6 +8,7 @@ import {
   TEST_ORGANIZATIONS,
 } from '../../../../../tests/tests.const';
 import { requestContext } from '../../../../context/request.context';
+import { ForbiddenErrorCode } from '../../../../utils/error/error.code';
 import { UserOrganizationPendingDomain } from '../user-pending/user-organization-pending.domain';
 import { UserProvisioningDomain } from '../user-provisioning/user-provisioning.domain';
 import { UserOrganizationDomain } from './user-organization.domain';
@@ -358,6 +359,32 @@ describe('userOrganizationDomain', () => {
       );
 
       await expect(call).rejects.toThrow();
+    });
+
+    it('should throw a ForbiddenAccess error when the user email domain matches a different organization than the subscription', async () => {
+      const subscriptionOrganization = await TestHelper.organization.create({
+        personal_space: false,
+        domains: [`link-subscription-${uuidv4()}.io`],
+      });
+      const subscription = await TestHelper.subscription.create({
+        organization_id: subscriptionOrganization.id,
+        service_instance_id: SERVICES.INSTANCES.VAULT.ID,
+      });
+      const user = await UserProvisioningDomain.createUser(
+        {
+          email: `mismatched-${uuidv4()}@${TEST_ORGANIZATIONS.FILIGRAN.DOMAINS.FIRST}`,
+        },
+        { sendWelcomeEmail: false }
+      );
+
+      const call = UserOrganizationDomain.linkUserToSubscriptionOrganization(
+        user,
+        subscription.id
+      );
+
+      await expect(call).rejects.toThrow(
+        ForbiddenErrorCode.EmailOutsideOrganizationError
+      );
     });
   });
 });
