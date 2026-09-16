@@ -1,4 +1,3 @@
-import { GraphQLError } from 'graphql/error/index.js';
 import {
   Capability,
   User as GraphqlUser,
@@ -7,10 +6,6 @@ import {
 } from '../../../__generated__/resolvers-types';
 import { withTransaction } from '../../../context/database.context';
 import { OrganizationId } from '../../../model/kanel/public/Organization';
-import {
-  SubscriptionId,
-  SubscriptionMutator,
-} from '../../../model/kanel/public/Subscription';
 import User, { UserId, UserMutator } from '../../../model/kanel/public/User';
 import {
   UserLoadUserBy,
@@ -20,15 +15,8 @@ import { dispatch } from '../../../pub';
 import { updateUserSession } from '../../../session-store-manager';
 import { MinIOClient } from '../../../thirdparty/minio/client';
 import { logApp } from '../../../utils/app-logger.util';
-import {
-  ErrorCode,
-  NotFoundErrorCode,
-  UnknownErrorCode,
-} from '../../../utils/error/error.code';
-import { NotFoundError, UnknownError } from '../../../utils/error/error.util';
-import { isEmpty } from '../../../utils/utils';
-import { UserOrganizationCapabilityDomain } from '../../security-management/user-organization-capability/user-organization-capability.domain';
-import { SubscriptionDomain } from '../../subscription/subscription.domain';
+import { ErrorCode, NotFoundErrorCode } from '../../../utils/error/error.code';
+import { NotFoundError } from '../../../utils/error/error.util';
 import { OrganizationDomain } from '../organization/organization.domain';
 import { UserDomain } from './user-domain/user.domain';
 import { UserOrganizationDomain } from './user-organization/user-organization.domain';
@@ -91,68 +79,6 @@ const updateUserCapabilities = async ({
 };
 
 export const UserHelper = {
-  insertUserIntoOrganization: async (
-    user: User,
-    subscriptionId: SubscriptionId
-  ) => {
-    const [subscription] =
-      await SubscriptionDomain.loadSubscriptionWithOrganizationAndCapabilitiesBy(
-        {
-          'Subscription.id': subscriptionId,
-        } as SubscriptionMutator
-      );
-    const [organization] = await OrganizationDomain.loadOrganizationsFromEmail(
-      user.email
-    );
-    if (!organization) {
-      throw NotFoundError(NotFoundErrorCode.UserNotFound);
-    }
-    const userOrganization = await UserOrganizationDomain.loadUserOrganization({
-      user_id: user.id,
-      organization_id: organization.id,
-    });
-    if (subscription.organization_id !== organization.id) {
-      throw new GraphQLError(
-        'The email address does not correspond to the current organization',
-        {
-          extensions: { code: '[User_Service] EMAIL ADDRESS WRONG DOMAIN' },
-        }
-      );
-    }
-    if (isEmpty(userOrganization)) {
-      const [userOrgRelation] =
-        await UserOrganizationDomain.createUserOrganizationRelationAndRemovePending(
-          {
-            user_id: user.id,
-            organizations_id: [organization.id],
-          }
-        );
-      if (!userOrgRelation) {
-        throw UnknownError(UnknownErrorCode.AddingUserError);
-      }
-      const shouldBeAdminOrga = await UserHelper.isFirstInOrganization(
-        organization.id
-      );
-      if (shouldBeAdminOrga) {
-        await UserOrganizationCapabilityDomain.createUserOrganizationCapability(
-          {
-            user_organization_id: userOrgRelation.id,
-            capabilities_name: [
-              OrganizationCapability.AdministrateOrganization,
-            ],
-          }
-        );
-      }
-    }
-  },
-
-  isFirstInOrganization: async (organizationId: OrganizationId) => {
-    const userOrganization = await UserOrganizationDomain.loadUserOrganization({
-      organization_id: organizationId,
-    });
-    return userOrganization.length === 1;
-  },
-
   mapUserToGraphqlUser: (
     user: User | UserLoadUserBy | UserWithOrganizationsAndRole
   ): GraphqlUser => {

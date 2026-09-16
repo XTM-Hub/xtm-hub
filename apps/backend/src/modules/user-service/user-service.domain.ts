@@ -36,7 +36,6 @@ import { addPrefixToObject } from '../../utils/typescript';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { UserOrganizationDomain } from '../organization-management/user/user-organization/user-organization.domain';
 import { UserProvisioningApp } from '../organization-management/user/user-provisioning/user-provisioning.app';
-import { UserHelper } from '../organization-management/user/user.helper';
 import { GenericServiceCapabilityIds } from '../security-management/service-capability/generic-service-capability.const';
 import { UserServiceCapabilityHelper } from '../security-management/user-service-capability/user-service-capability.helper';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
@@ -55,7 +54,10 @@ export const UserServiceDomain = {
           email: email,
         });
 
-        await UserHelper.insertUserIntoOrganization(user, subscription.id);
+        await UserOrganizationDomain.linkUserToSubscriptionOrganization(
+          user,
+          subscription.id
+        );
         const userServiceAlreadyExist =
           await UserServiceDomain.doesUserServiceExist(
             user.id as UserId,

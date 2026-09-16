@@ -1,7 +1,13 @@
 import { v4 as uuidv4 } from 'uuid';
 import { describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../../../tests/helper/test.helper';
-import { TEST_ORGANIZATIONS } from '../../../../../tests/tests.const';
+import {
+  // eslint-disable-next-line no-restricted-imports
+  requestContextAdminUser,
+  SERVICES,
+  TEST_ORGANIZATIONS,
+} from '../../../../../tests/tests.const';
+import { requestContext } from '../../../../context/request.context';
 import { UserOrganizationPendingDomain } from '../user-pending/user-organization-pending.domain';
 import { UserProvisioningApp } from '../user-provisioning/user-provisioning.app';
 import { UserProvisioningDomain } from '../user-provisioning/user-provisioning.domain';
@@ -220,6 +226,140 @@ describe('userOrganizationDomain', () => {
       );
 
       expect(second.id).toBe(first.id);
+    });
+  });
+
+  describe('isFirstInOrganization', () => {
+    it('should return true when there is exactly one user in the organization', async () => {
+      const organization = await TestHelper.organization.create({
+        personal_space: false,
+      });
+      const user = await UserProvisioningDomain.createUser(
+        { email: `is-first-in-org-${uuidv4()}@filigran.io` },
+        { sendWelcomeEmail: false }
+      );
+      await UserOrganizationDomain.createUserOrganizationRelation({
+        user_id: user.id,
+        organizations_id: [organization.id],
+      });
+
+      expect(
+        await UserOrganizationDomain.isFirstInOrganization(organization.id)
+      ).toBe(true);
+    });
+
+    it('should return false when there are two or more users in the organization', async () => {
+      const organization = await TestHelper.organization.create({
+        personal_space: false,
+      });
+      const user1 = await UserProvisioningDomain.createUser(
+        { email: `is-first-in-org-${uuidv4()}@filigran.io` },
+        { sendWelcomeEmail: false }
+      );
+      const user2 = await UserProvisioningDomain.createUser(
+        { email: `is-first-in-org-${uuidv4()}@filigran.io` },
+        { sendWelcomeEmail: false }
+      );
+      await UserOrganizationDomain.createUserOrganizationRelation({
+        user_id: user1.id,
+        organizations_id: [organization.id],
+      });
+      await UserOrganizationDomain.createUserOrganizationRelation({
+        user_id: user2.id,
+        organizations_id: [organization.id],
+      });
+
+      expect(
+        await UserOrganizationDomain.isFirstInOrganization(organization.id)
+      ).toBe(false);
+    });
+  });
+
+  describe('linkUserToSubscriptionOrganization', () => {
+    it('should link the user to the organization and grant administrate capability when they are the first member', async () => {
+      requestContext.set(requestContextAdminUser);
+      const domain = `link-subscription-${uuidv4()}.io`;
+      const organization = await TestHelper.organization.create({
+        personal_space: false,
+        domains: [domain],
+      });
+      const subscription = await TestHelper.subscription.create({
+        organization_id: organization.id,
+        service_instance_id: SERVICES.INSTANCES.VAULT.ID,
+      });
+      const user = await UserProvisioningDomain.createUser(
+        { email: `user@${domain}` },
+        { sendWelcomeEmail: false }
+      );
+
+      await UserOrganizationDomain.linkUserToSubscriptionOrganization(
+        user,
+        subscription.id
+      );
+
+      const userOrganization = await TestHelper.user_Organization.load({
+        user_id: user.id,
+        organization_id: organization.id,
+      });
+      expect(userOrganization).toBeTruthy();
+
+      const capabilities = await TestHelper.user_OrganizationCapability.loadAll(
+        { user_organization_id: userOrganization.id }
+      );
+      expect(capabilities.map((capability) => capability.name)).toEqual([
+        'ADMINISTRATE_ORGANIZATION',
+      ]);
+    });
+
+    it('should link a second user to the organization without granting administrate capability', async () => {
+      const subscription = await TestHelper.subscription.create({
+        organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: SERVICES.INSTANCES.VAULT.ID,
+      });
+      const user = await UserProvisioningDomain.createUser(
+        {
+          email: `second-${uuidv4()}@${TEST_ORGANIZATIONS.FILIGRAN.DOMAINS.FIRST}`,
+        },
+        { sendWelcomeEmail: false }
+      );
+
+      await UserOrganizationDomain.linkUserToSubscriptionOrganization(
+        user,
+        subscription.id
+      );
+
+      const userOrganization = await TestHelper.user_Organization.load({
+        user_id: user.id,
+        organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+      });
+      expect(userOrganization).toBeTruthy();
+
+      const capabilities = await TestHelper.user_OrganizationCapability.loadAll(
+        { user_organization_id: userOrganization.id }
+      );
+      expect(capabilities).toHaveLength(0);
+    });
+
+    it('should throw a NotFoundError when no organization matches the user email domain', async () => {
+      const organization = await TestHelper.organization.create({
+        personal_space: false,
+        domains: [`link-subscription-${uuidv4()}.io`],
+      });
+      const subscription = await TestHelper.subscription.create({
+        organization_id: organization.id,
+        service_instance_id: SERVICES.INSTANCES.VAULT.ID,
+      });
+      const user = await UserProvisioningDomain.createUser(
+        { email: `orphan-${uuidv4()}@unmatched-domain.io` },
+        { sendWelcomeEmail: false }
+      );
+
+      const call = UserOrganizationDomain.linkUserToSubscriptionOrganization(
+        user,
+        subscription.id
+      );
+
+      await expect(call).rejects.toThrow();
     });
   });
 });
