@@ -573,13 +573,13 @@ describe('public document slugs by service slug GraphQL query', () => {
       'loadPublicDocumentSlugsByServiceSlug'
     ).mockResolvedValue(expected);
 
-    const result =
-      await documentResolver.Query!.publicDocumentSlugsByServiceSlug!(
-        {},
-        { serviceInstanceSlug: 'my-service' },
-        contextSimpleUserFiligran2,
-        GRAPHQL_RESOLVE_INFO
-      );
+    const result = await documentResolver.Query!
+      .publicDocumentSlugsByServiceSlug!(
+      {},
+      { serviceInstanceSlug: 'my-service' },
+      contextSimpleUserFiligran2,
+      GRAPHQL_RESOLVE_INFO
+    );
 
     expect(
       DocumentApp.loadPublicDocumentSlugsByServiceSlug

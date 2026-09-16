@@ -1087,7 +1087,13 @@ describe('document domain', () => {
       );
 
       expect(docs).toHaveLength(1);
-      expect(docs[0]).toEqual({
+      // `__typename` is injected by the shared `db()` helper's postProcessResponse
+      // regardless of the selected columns; assert it alongside the projected
+      // fields to confirm no other Document columns (e.g. name, description) leak in.
+      expect(Object.keys(docs[0]).sort()).toEqual(
+        ['__typename', 'created_at', 'slug', 'updated_at'].sort()
+      );
+      expect(docs[0]).toMatchObject({
         slug: parentDoc.slug,
         created_at: parentDoc.created_at,
         updated_at: parentDoc.updated_at,
