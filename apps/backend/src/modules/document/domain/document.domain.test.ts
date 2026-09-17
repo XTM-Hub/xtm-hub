@@ -48,6 +48,7 @@ import {
 } from '../../../../tests/tests.const';
 import { requestContext } from '../../../context/request.context';
 import Document from '../../../model/kanel/public/Document';
+import { ObjectSolutionCategoryObjectId } from '../../../model/kanel/public/ObjectSolutionCategory';
 import { ObjectUseCaseObjectId } from '../../../model/kanel/public/ObjectUseCase';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import { SolutionCategoryId } from '../../../model/kanel/public/SolutionCategory';
@@ -2226,17 +2227,19 @@ describe('document domain', () => {
 
       const visibleObjectId =
         visibleDocument.id as unknown as ObjectUseCaseObjectId;
+      const visibleSolutionCategoryObjectId =
+        visibleDocument.id as unknown as ObjectSolutionCategoryObjectId;
       await TestHelper.objectUseCase.insert([
         { object_id: visibleObjectId, use_case_id: useCaseIds.A },
         { object_id: visibleObjectId, use_case_id: useCaseIds.B },
       ]);
       await objectSolutionCategoryDomain.insertObjectSolutionCategory([
         {
-          object_id: visibleDocument.id,
+          object_id: visibleSolutionCategoryObjectId,
           solution_category_id: solutionCategoryIds.X,
         },
         {
-          object_id: visibleDocument.id,
+          object_id: visibleSolutionCategoryObjectId,
           solution_category_id: solutionCategoryIds.Y,
         },
       ]);
@@ -2247,7 +2250,8 @@ describe('document domain', () => {
         object_id: visibleDocument.id as unknown as ObjectUseCaseObjectId,
       });
       await TestHelper.objectSolutionCategory.delete({
-        object_id: visibleDocument.id,
+        object_id:
+          visibleDocument.id as unknown as ObjectSolutionCategoryObjectId,
       });
     });
 
