@@ -806,7 +806,8 @@ export type FacetBucket = {
 
 export enum FeatureFlag {
   DecouplingConnectors = 'DECOUPLING_CONNECTORS',
-  Dummy = 'DUMMY'
+  Dummy = 'DUMMY',
+  TrialInvite = 'TRIAL_INVITE'
 }
 
 export enum FiligranProduct {
@@ -2935,6 +2936,7 @@ export type User = Node & {
   email: Scalars['String']['output'];
   first_name: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
+  invitation_date: Maybe<Scalars['Date']['output']>;
   last_login: Maybe<Scalars['Date']['output']>;
   last_name: Maybe<Scalars['String']['output']>;
   organization_capabilities: Maybe<Array<OrganizationCapabilities>>;
@@ -2945,7 +2947,14 @@ export type User = Node & {
   selected_language: Maybe<Scalars['String']['output']>;
   selected_org_capabilities: Maybe<Array<OrganizationCapability>>;
   selected_organization_id: Maybe<Scalars['OrganizationId']['output']>;
+  status: Maybe<UserAccountStatus>;
 };
+
+export enum UserAccountStatus {
+  Expired = 'expired',
+  Invited = 'invited',
+  Waiting = 'waiting'
+}
 
 export type UserConnection = {
   __typename?: 'UserConnection';

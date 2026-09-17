@@ -1019,6 +1019,12 @@ input OrganizationInput {
 """A Relay global ID for User, extracted to a branded UserId string"""
 scalar UserId
 
+enum UserAccountStatus {
+  waiting
+  invited
+  expired
+}
+
 enum UserOrdering {
   email
   first_name
@@ -1056,6 +1062,8 @@ type User implements Node {
   selected_org_capabilities: [OrganizationCapability!]
   last_login: Date
   pending_organization_id: OrganizationId
+  status: UserAccountStatus
+  invitation_date: Date
 }
 
 type UserEdge {
@@ -1527,6 +1535,7 @@ type ServiceInstanceSubscription {
 enum FeatureFlag {
   DUMMY
   DECOUPLING_CONNECTORS
+  TRIAL_INVITE
 }
 
 type PlatformProvider {
