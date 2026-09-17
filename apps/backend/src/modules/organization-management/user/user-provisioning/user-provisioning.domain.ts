@@ -92,6 +92,22 @@ export const UserProvisioningDomain = {
     return addedUser;
   },
 
+  findOrCreateUser: async (data: {
+    email: string;
+    password?: string | null;
+    first_name?: string | null;
+    last_name?: string | null;
+    selected_organization_id?: OrganizationId;
+  }): Promise<{ user: User; existed: boolean }> => {
+    const [existingUser] = await UserDomain.loadUser({ email: data.email });
+    if (existingUser) {
+      return { user: existingUser, existed: true };
+    }
+
+    const user = await UserProvisioningDomain.createUser(data);
+    return { user, existed: false };
+  },
+
   upsertUser: async (
     profile: UserProfile & {
       id?: UserId;

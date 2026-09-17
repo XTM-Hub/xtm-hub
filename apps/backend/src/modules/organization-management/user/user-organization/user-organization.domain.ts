@@ -3,10 +3,7 @@ import {
   OrganizationCapabilitiesInput,
   OrganizationCapability,
 } from '../../../../__generated__/resolvers-types';
-import { requestContext } from '../../../../context/request.context';
-import Organization, {
-  OrganizationId,
-} from '../../../../model/kanel/public/Organization';
+import { OrganizationId } from '../../../../model/kanel/public/Organization';
 import {
   SubscriptionId,
   SubscriptionMutator,
@@ -19,7 +16,6 @@ import UserOrganization, {
 } from '../../../../model/kanel/public/UserOrganization';
 import UserOrganizationPending from '../../../../model/kanel/public/UserOrganizationPending';
 import { securityGuard } from '../../../../security/guard';
-import { sendMail } from '../../../../server/mail-service';
 import {
   ForbiddenErrorCode,
   NotFoundErrorCode,
@@ -109,36 +105,49 @@ export const UserOrganizationDomain = {
     return { id: inserted.id };
   },
 
+  assignUserOrgCapabilities: async ({
+    userId,
+    orgCapabilities,
+    mode,
+  }: {
+    userId: UserId;
+    orgCapabilities: {
+      organization_id: OrganizationId;
+      capabilities?: string[] | null;
+    }[];
+    mode: 'replace' | 'add';
+  }): Promise<void> => {
+    if (mode === 'replace') {
+      await db<UserOrganization>('User_Organization')
+        .where('user_id', '=', userId)
+        .whereNot('organization_id', userId) // Should not touch personal space
+        .del();
+    }
+
+    for (const { organization_id, capabilities } of orgCapabilities) {
+      if (organization_id === userId.toString()) continue;
+
+      const { id: userOrganizationId } =
+        await UserOrganizationDomain.ensureUserOrganizationExists(
+          userId,
+          organization_id
+        );
+      await UserOrganizationCapabilityDomain.updateUserOrganizationCapability({
+        user_organization_id: userOrganizationId,
+        capabilities_name: capabilities,
+      });
+    }
+  },
+
   updateMultipleUserOrgWithCapabilities: async (
     userId: UserId,
     orgCapabilities: OrganizationCapabilitiesInput[] | null = []
   ) => {
-    await db<UserOrganization>('User_Organization')
-      .where('user_id', '=', userId)
-      .whereNot('organization_id', userId) // Should not touch personal space
-      .del();
-    if (!orgCapabilities || isEmpty(orgCapabilities)) {
-      return;
-    }
-    for (const orgCapa of orgCapabilities) {
-      const organization_id = orgCapa.organization_id;
-      if (organization_id !== userId.toString()) {
-        const [newUserOrganization] =
-          await UserOrganizationDomain.insertNewUserOrganization({
-            user_id: userId,
-            organization_id,
-          });
-        if (!newUserOrganization) {
-          throw new Error(UnknownErrorCode.UnknownError);
-        }
-        await UserOrganizationCapabilityDomain.createUserOrganizationCapability(
-          {
-            user_organization_id: newUserOrganization.id,
-            capabilities_name: orgCapa.capabilities,
-          }
-        );
-      }
-    }
+    await UserOrganizationDomain.assignUserOrgCapabilities({
+      userId,
+      orgCapabilities: orgCapabilities ?? [],
+      mode: 'replace',
+    });
     return true;
   },
 
@@ -171,52 +180,6 @@ export const UserOrganizationDomain = {
       user_organization_id: userOrganization.id,
       capabilities_name: orgCapabilities,
     });
-    return true;
-  },
-
-  createUserOrgCapabilities: async ({
-    user,
-    organization,
-    orgCapabilities,
-    userExists,
-  }: {
-    user: User;
-    organization: Organization;
-    orgCapabilities: string[];
-    userExists: boolean;
-  }) => {
-    const [userOrganization] =
-      await UserOrganizationDomain.insertNewUserOrganization({
-        user_id: user.id,
-        organization_id: organization.id,
-      });
-    if (!userOrganization) {
-      throw new Error(UnknownErrorCode.UnknownError);
-    }
-    const contextUser = requestContext.requireUser();
-    await securityGuard.assertUserCapabilities(
-      [
-        OrganizationCapability.AdministrateOrganization,
-        OrganizationCapability.ManageAccess,
-      ],
-      organization.id
-    );
-
-    await UserOrganizationCapabilityDomain.updateUserOrganizationCapability({
-      user_organization_id: userOrganization.id,
-      capabilities_name: orgCapabilities,
-    });
-    if (userExists) {
-      await sendMail({
-        to: user.email,
-        template: 'new_user_organization',
-        params: {
-          organizationName: organization.name,
-          userName: `${contextUser.first_name ?? ''} ${contextUser.last_name ?? ''}`,
-          invitedName: `${user.first_name ?? ''} ${user.last_name ?? ''}`,
-        },
-      });
-    }
     return true;
   },
 

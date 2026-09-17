@@ -1,9 +1,14 @@
 import { v4 as uuidv4 } from 'uuid';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../../tests/helper/test.helper';
-import { TEST_ORGANIZATIONS } from '../../../../../tests/tests.const';
+import {
+  requestContextAdminSecondOrga,
+  TEST_ORGANIZATIONS,
+} from '../../../../../tests/tests.const';
 import { OrganizationCapability } from '../../../../__generated__/resolvers-types';
+import { requestContext } from '../../../../context/request.context';
 import { UserId } from '../../../../model/kanel/public/User';
+import * as pub from '../../../../pub';
 import * as MailService from '../../../../server/mail-service';
 import { ErrorCode } from '../../../../utils/error/error.code';
 import { TelemetryApp } from '../../../telemetry/telemetry.app';
@@ -224,6 +229,225 @@ describe('userProvisioningApp', () => {
       expect(sendMailSpy).not.toHaveBeenCalled();
 
       sendMailSpy.mockRestore();
+    });
+  });
+
+  describe('provisionUserForOrganizations', () => {
+    let createdEmails: string[] = [];
+
+    beforeEach(() => {
+      createdEmails = [];
+      requestContext.set(requestContextAdminSecondOrga);
+    });
+
+    afterEach(async () => {
+      vi.restoreAllMocks();
+      await Promise.all(
+        createdEmails.map((email) => UserHelper.removeUser({ email }))
+      );
+    });
+
+    it('should create a new user and grant the given organization capabilities when the email does not exist yet', async () => {
+      const email = `provision-${uuidv4()}@filigran.io`;
+      createdEmails.push(email);
+
+      const user = await UserProvisioningApp.provisionUserForOrganizations({
+        userData: { email },
+        orgCapabilities: [
+          {
+            organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            capabilities: [OrganizationCapability.ManageAccess],
+          },
+        ],
+        mode: 'add',
+      });
+
+      expect(user.email).toBe(email);
+      const orgCapabilities =
+        await UserDomain.loadUserCapabilitiesByOrganization(
+          user.id as UserId,
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+        );
+      expect(orgCapabilities.capabilities).toEqual([
+        OrganizationCapability.ManageAccess,
+      ]);
+    });
+
+    it('should reuse an existing user unchanged and send a welcome email when organizationForWelcomeEmail is given', async () => {
+      const existingUser = await TestHelper.user.insert({
+        email: `provision-${uuidv4()}@filigran.io`,
+        first_name: 'Existing',
+      });
+      createdEmails.push(existingUser.email);
+      const secondOrganization = (await OrganizationDomain.loadOrganizationBy({
+        id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+      }))!;
+      const sendMailSpy = vi.spyOn(MailService, 'sendMail').mockResolvedValue();
+
+      const user = await UserProvisioningApp.provisionUserForOrganizations({
+        userData: { email: existingUser.email, first_name: 'Overwritten' },
+        orgCapabilities: [
+          {
+            organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            capabilities: [OrganizationCapability.ManageAccess],
+          },
+        ],
+        mode: 'add',
+        organizationForWelcomeEmail: secondOrganization,
+      });
+
+      expect(user.first_name).toBe('Existing');
+      expect(sendMailSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: existingUser.email,
+          template: 'new_user_organization',
+        })
+      );
+    });
+
+    it('should not send a welcome email for a newly created user even when organizationForWelcomeEmail is given', async () => {
+      const email = `provision-${uuidv4()}@filigran.io`;
+      createdEmails.push(email);
+      const secondOrganization = (await OrganizationDomain.loadOrganizationBy({
+        id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+      }))!;
+      const sendMailSpy = vi.spyOn(MailService, 'sendMail').mockResolvedValue();
+
+      await UserProvisioningApp.provisionUserForOrganizations({
+        userData: { email },
+        orgCapabilities: [
+          {
+            organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            capabilities: [OrganizationCapability.ManageAccess],
+          },
+        ],
+        mode: 'add',
+        organizationForWelcomeEmail: secondOrganization,
+      });
+
+      expect(sendMailSpy).not.toHaveBeenCalledWith(
+        expect.objectContaining({ template: 'new_user_organization' })
+      );
+    });
+
+    it('should not send any email when reusing an existing user without organizationForWelcomeEmail', async () => {
+      const existingUser = await TestHelper.user.insert({
+        email: `provision-${uuidv4()}@filigran.io`,
+      });
+      createdEmails.push(existingUser.email);
+      const sendMailSpy = vi.spyOn(MailService, 'sendMail').mockResolvedValue();
+
+      await UserProvisioningApp.provisionUserForOrganizations({
+        userData: { email: existingUser.email },
+        orgCapabilities: [
+          {
+            organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            capabilities: [OrganizationCapability.ManageAccess],
+          },
+        ],
+        mode: 'add',
+      });
+
+      expect(sendMailSpy).not.toHaveBeenCalled();
+    });
+
+    it('should remove the pending request and dispatch a UserPending delete event for an organization the user was pending in', async () => {
+      const pendingUser = await TestHelper.user.insertWithPendingOrganization(
+        { email: `provision-${uuidv4()}@filigran.io` },
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+      );
+      createdEmails.push(pendingUser.email);
+      const dispatchSpy = vi.spyOn(pub, 'dispatch');
+
+      await UserProvisioningApp.provisionUserForOrganizations({
+        userData: { email: pendingUser.email },
+        orgCapabilities: [
+          {
+            organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            capabilities: [OrganizationCapability.ManageAccess],
+          },
+        ],
+        mode: 'add',
+      });
+
+      const pendingAfter =
+        await UserOrganizationPendingDomain.loadUserOrganizationPending({
+          user_id: pendingUser.id,
+          organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        });
+      expect(pendingAfter).toHaveLength(0);
+      expect(dispatchSpy).toHaveBeenCalledWith(
+        'UserPending',
+        'delete',
+        expect.objectContaining({
+          id: pendingUser.id,
+          pending_organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        }),
+        'User'
+      );
+    });
+
+    it('should not dispatch a UserPending delete event when the user had no pending request for the organization', async () => {
+      const email = `provision-${uuidv4()}@filigran.io`;
+      createdEmails.push(email);
+      const dispatchSpy = vi.spyOn(pub, 'dispatch');
+
+      await UserProvisioningApp.provisionUserForOrganizations({
+        userData: { email },
+        orgCapabilities: [
+          {
+            organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            capabilities: [OrganizationCapability.ManageAccess],
+          },
+        ],
+        mode: 'add',
+      });
+
+      expect(dispatchSpy).not.toHaveBeenCalledWith(
+        'UserPending',
+        'delete',
+        expect.anything(),
+        'User'
+      );
+    });
+
+    it('should dispatch a User add event for the provisioned user', async () => {
+      const email = `provision-${uuidv4()}@filigran.io`;
+      createdEmails.push(email);
+      const dispatchSpy = vi.spyOn(pub, 'dispatch');
+
+      const user = await UserProvisioningApp.provisionUserForOrganizations({
+        userData: { email },
+        orgCapabilities: [
+          {
+            organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            capabilities: [OrganizationCapability.ManageAccess],
+          },
+        ],
+        mode: 'add',
+      });
+
+      expect(dispatchSpy).toHaveBeenCalledWith('User', 'add', user);
+    });
+
+    it('should reject and not create the user when the caller lacks capabilities on one of the target organizations', async () => {
+      const email = `provision-${uuidv4()}@filigran.io`;
+
+      const call = UserProvisioningApp.provisionUserForOrganizations({
+        userData: { email },
+        orgCapabilities: [
+          {
+            organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+            capabilities: [OrganizationCapability.ManageAccess],
+          },
+        ],
+        mode: 'add',
+      });
+
+      await expect(call).rejects.toThrow(
+        ErrorCode.MissingCapabilityOnOrganization
+      );
+      expect(await UserDomain.loadUserBy({ email })).toBeUndefined();
     });
   });
 });

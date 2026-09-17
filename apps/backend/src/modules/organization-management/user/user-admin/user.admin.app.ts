@@ -30,7 +30,7 @@ import { OrganizationDomain } from '../../organization/organization.domain';
 import { UserDomain } from '../user-domain/user.domain';
 import { UserOrganizationDomain } from '../user-organization/user-organization.domain';
 import { UserOrganizationPendingDomain } from '../user-pending/user-organization-pending.domain';
-import { UserProvisioningDomain } from '../user-provisioning/user-provisioning.domain';
+import { UserProvisioningApp } from '../user-provisioning/user-provisioning.app';
 import { UserHelper } from '../user.helper';
 import { UserAdminGuard } from './user.admin.guard';
 
@@ -59,50 +59,17 @@ export const UserAdminApp = {
       chosenOrganizationId
     );
 
-    const [existingUser] = await UserDomain.loadUser({ email: input.email });
-
-    const organizationsWithRemovedPending: OrganizationId[] = [];
-
-    const finalUser = await withTransaction(async () => {
-      const user = existingUser
-        ? existingUser
-        : await UserProvisioningDomain.createUser({
-            email: input.email,
-            password: input.password,
-            first_name: input.first_name,
-            last_name: input.last_name,
-            selected_organization_id: chosenOrganizationId,
-          });
-
-      await UserOrganizationDomain.updateMultipleUserOrgWithCapabilities(
-        user.id,
-        input.organization_capabilities
-      );
-
-      for (const orgCapa of input.organization_capabilities ?? []) {
-        if (await UserHelper.removePending(user, orgCapa.organization_id)) {
-          organizationsWithRemovedPending.push(orgCapa.organization_id);
-        }
-      }
-
-      return await UserDomain.loadUserBy({
-        'User.id': user.id,
-      });
+    return UserProvisioningApp.provisionUserForOrganizations({
+      userData: {
+        email: input.email,
+        password: input.password,
+        first_name: input.first_name,
+        last_name: input.last_name,
+        selected_organization_id: chosenOrganizationId,
+      },
+      orgCapabilities: input.organization_capabilities ?? [],
+      mode: 'replace',
     });
-
-    if (!finalUser) {
-      throw new Error(ErrorCode.UserNotFound);
-    }
-
-    await Promise.all(
-      organizationsWithRemovedPending.map((organizationId) =>
-        UserHelper.dispatchPendingDeleted(finalUser, organizationId)
-      )
-    );
-
-    await dispatch('User', 'add', finalUser);
-
-    return finalUser;
   },
   editUser: async ({
     userId,

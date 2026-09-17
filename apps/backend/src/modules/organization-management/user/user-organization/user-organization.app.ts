@@ -19,7 +19,7 @@ import { formatName } from '../../../../utils/format';
 import { OrganizationDomain } from '../../organization/organization.domain';
 import { UserDomain } from '../user-domain/user.domain';
 import { UserOrganizationPendingDomain } from '../user-pending/user-organization-pending.domain';
-import { UserProvisioningDomain } from '../user-provisioning/user-provisioning.domain';
+import { UserProvisioningApp } from '../user-provisioning/user-provisioning.app';
 import { UserHelper } from '../user.helper';
 import { UserOrganizationDomain } from './user-organization.domain';
 
@@ -28,7 +28,6 @@ export const UserOrganizationApp = {
     input: AddUserInput
   ): Promise<UserLoadUserBy> => {
     const contextUser = requestContext.requireUser();
-
     const chosenOrganization = await OrganizationDomain.loadOrganizationBy({
       id: contextUser.selected_organization_id,
     });
@@ -47,43 +46,21 @@ export const UserOrganizationApp = {
       chosenOrganization.id
     );
 
-    const [existingUser] = await UserDomain.loadUser({ email: input.email });
-
-    const { user, pendingRemoved } = await withTransaction(async () => {
-      const user = existingUser
-        ? existingUser
-        : await UserProvisioningDomain.createUser({
-            email: input.email,
-            password: input.password ?? undefined,
-            selected_organization_id: chosenOrganization.id,
-          });
-
-      await UserOrganizationDomain.createUserOrgCapabilities({
-        user,
-        organization: chosenOrganization,
-        orgCapabilities: input.capabilities ?? [],
-        userExists: !!existingUser,
-      });
-
-      const pendingRemoved = await UserHelper.removePending(
-        user,
-        chosenOrganization.id
-      );
-
-      return { user, pendingRemoved };
+    return UserProvisioningApp.provisionUserForOrganizations({
+      userData: {
+        email: input.email,
+        password: input.password,
+        selected_organization_id: chosenOrganization.id,
+      },
+      orgCapabilities: [
+        {
+          organization_id: chosenOrganization.id,
+          capabilities: input.capabilities ?? [],
+        },
+      ],
+      mode: 'add',
+      organizationForWelcomeEmail: chosenOrganization,
     });
-
-    if (pendingRemoved) {
-      await UserHelper.dispatchPendingDeleted(user, chosenOrganization.id);
-    }
-
-    const updatedUser = await UserDomain.loadUserBy({
-      'User.id': user.id,
-    });
-    if (!updatedUser) {
-      throw new Error(ErrorCode.UserNotFound);
-    }
-    return updatedUser;
   },
   changeSelectedOrganization: async (
     organization_id: OrganizationId

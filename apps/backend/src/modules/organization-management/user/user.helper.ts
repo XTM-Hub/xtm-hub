@@ -195,6 +195,17 @@ export const UserHelper = {
     await dispatch('UserPending', 'delete', userPendingPayload, 'User');
   },
 
+  dispatchPendingDeletedForOrganizations: async (
+    user: User | UserLoadUserBy | UserWithOrganizationsAndRole,
+    organizationIds: OrganizationId[]
+  ) => {
+    await Promise.all(
+      organizationIds.map((organizationId) =>
+        UserHelper.dispatchPendingDeleted(user, organizationId)
+      )
+    );
+  },
+
   removePendingAndDispatch: async (
     user: User | UserLoadUserBy | UserWithOrganizationsAndRole,
     organization_id: OrganizationId

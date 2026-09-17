@@ -216,6 +216,87 @@ describe('users admin app', () => {
     });
   });
 
+  describe('addUser', () => {
+    const createdEmails: string[] = [];
+
+    beforeEach(() => {
+      requestContext.set(requestContextAdminUser);
+    });
+
+    afterEach(async () => {
+      await Promise.all(
+        createdEmails.splice(0).map((email) => UserHelper.removeUser({ email }))
+      );
+    });
+
+    it('should create a new user and grant the given organization capabilities', async () => {
+      const email = `add-user-${uuidv4()}@second-orga.com`;
+      createdEmails.push(email);
+
+      const user = await UserAdminApp.addUser({
+        email,
+        organization_capabilities: [
+          {
+            organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            capabilities: [OrganizationCapability.ManageAccess],
+          },
+        ],
+      });
+
+      expect(user.email).toBe(email);
+      const { capabilities } =
+        await UserDomain.loadUserCapabilitiesByOrganization(
+          user.id as UserId,
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+        );
+      expect(capabilities).toEqual([OrganizationCapability.ManageAccess]);
+    });
+
+    it('should replace prior organization memberships instead of adding to them', async () => {
+      const email = `add-user-${uuidv4()}@second-orga.com`;
+      createdEmails.push(email);
+      const existingUser = await TestHelper.user.insert({ email });
+      const priorOrganization = await TestHelper.organization.create();
+      await TestHelper.user_Organization.create({
+        user_id: existingUser.id,
+        organization_id: priorOrganization.id,
+      });
+
+      await UserAdminApp.addUser({
+        email,
+        organization_capabilities: [
+          {
+            organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            capabilities: [OrganizationCapability.ManageAccess],
+          },
+        ],
+      });
+
+      const priorMembership = await UserOrganizationDomain.loadUserOrganization(
+        {
+          user_id: existingUser.id,
+          organization_id: priorOrganization.id,
+        }
+      );
+      expect(priorMembership).toHaveLength(0);
+      const newMembership = await UserOrganizationDomain.loadUserOrganization({
+        user_id: existingUser.id,
+        organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+      });
+      expect(newMembership).toHaveLength(1);
+    });
+
+    it('should allow a platform admin to add a user with no organization, keeping only their personal space', async () => {
+      const email = `add-user-${uuidv4()}@no-organization-match.io`;
+      createdEmails.push(email);
+
+      const user = await UserAdminApp.addUser({ email });
+
+      expect(user.organizations).toHaveLength(1);
+      expect(user.organizations[0]).toMatchObject({ personal_space: true });
+    });
+  });
+
   describe('pending request cleanup', () => {
     const email = 'testPendingCleanup@second-orga.com';
     let createdUser: User;

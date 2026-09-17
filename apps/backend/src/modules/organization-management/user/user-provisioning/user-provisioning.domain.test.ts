@@ -241,4 +241,48 @@ describe('userProvisioningDomain', () => {
       expect(pending[0]?.organization_id).toBe(organization.id);
     });
   });
+
+  describe('findOrCreateUser', () => {
+    it('should return the existing user unchanged with existed=true when the email already exists', async () => {
+      const existingUser = await TestHelper.user.insert({
+        email: `find-or-create-${uuidv4()}@filigran.io`,
+        first_name: 'Existing',
+        last_name: 'User',
+      });
+
+      const { user, existed } = await UserProvisioningDomain.findOrCreateUser({
+        email: existingUser.email,
+        first_name: 'Overwritten',
+        last_name: 'Overwritten',
+      });
+
+      expect(existed).toBe(true);
+      expect(user).toMatchObject({
+        id: existingUser.id,
+        first_name: 'Existing',
+        last_name: 'User',
+      });
+    });
+
+    it('should create a new user with existed=false when the email does not exist yet', async () => {
+      const sendMailSpy = vi.spyOn(MailService, 'sendMail').mockResolvedValue();
+      const email = `find-or-create-${uuidv4()}@filigran.io`;
+
+      const { user, existed } = await UserProvisioningDomain.findOrCreateUser({
+        email,
+        first_name: 'Jane',
+        last_name: 'Doe',
+      });
+
+      expect(existed).toBe(false);
+      expect(user).toMatchObject({
+        email,
+        first_name: 'Jane',
+        last_name: 'Doe',
+      });
+      expect(sendMailSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ to: email, template: 'welcome' })
+      );
+    });
+  });
 });
