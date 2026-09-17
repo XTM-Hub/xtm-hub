@@ -6,6 +6,7 @@ import competitorResolver from '../modules/deployment/competitor/competitor.reso
 import deploymentResolver from '../modules/deployment/deployment.resolver';
 import serviceGroupResolver from '../modules/deployment/group/service-group.resolver';
 import vaultResolver from '../modules/document/document.resolver';
+import facetResolver from '../modules/document/facet/facet.resolver';
 import featureVotingResolver from '../modules/feature-voting/feature-voting.resolver';
 import logResolver from '../modules/log/log.resolver';
 import manageProductVersionResolver from '../modules/manage-product-version/manage-product-version.resolver';
@@ -63,6 +64,7 @@ const resolvers = mergeResolvers([
   logResolver,
   useCaseResolver,
   customDashboardsResolver,
+  facetResolver,
   customViewsResolver,
   openAEVScenariosResolver,
   openCTIPlaybooksResolver,

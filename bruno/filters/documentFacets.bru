@@ -1,0 +1,118 @@
+meta {
+  name: documentFacets
+  type: graphql
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/graphql-api
+  body: graphql
+}
+
+headers {
+  cookie: {{cookie}}
+}
+
+body:graphql {
+  query documentFacets(
+    $input: LoadDocumentFacetInput!
+  ) {
+    documentFacets(
+      input: $input
+    ) {
+      integration_type {
+        value
+        count
+      }
+      license_type {
+        value
+        count
+      }
+      manager_supported {
+        value
+        count
+      }
+      verified {
+        value
+        count
+      }
+      product_version {
+        value
+        count
+      }
+      solution_category {
+        value
+        count
+      }
+      use_case {
+        value
+        count
+      }
+      entity_type {
+        value
+        count
+      }
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "input": {
+      "serviceInstanceId": "0f4aad4b-bdd6-4084-8b1f-82c9c66578cc",
+      "searchTerm": "Ax",
+      "documentType": "opencti_integration",
+      "logicalFilters": {
+        "operator": "AND",
+        "children": [
+          {
+            "leaf": {
+              "key": "label",
+              "value": []
+            }
+          },
+          {
+            "leaf": {
+              "key": "manager_supported",
+              "value": []
+            }
+          },
+          {
+            "leaf": {
+              "key": "verified",
+              "value": []
+            }
+          },
+          {
+            "leaf": {
+              "key": "integration_type",
+              "value": ["connector"]
+            }
+          },
+          {
+            "leaf": {
+              "key": "product_version",
+              "value": []
+            }
+          },
+          {
+            "leaf": {
+              "key": "solution_category",
+              "value": []
+            }
+          },
+          {
+            "leaf": {
+              "key": "license_type",
+              "value": []
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+
+docs {
+  This request list filter facets
+}

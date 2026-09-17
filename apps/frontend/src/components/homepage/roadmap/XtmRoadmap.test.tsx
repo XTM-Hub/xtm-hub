@@ -72,13 +72,13 @@ describe('XtmRoadmap', () => {
     render(
       await XtmRoadmap({
         seeMoreHref:
-          '/app/service/xtm_platform_roadmap/instance-1?product=opencti',
+          '/app/service/xtm_platform_roadmap/instance-1?products=opencti',
       })
     );
 
     expect(screen.getByRole('link', { name: 'SeeMore' })).toHaveAttribute(
       'href',
-      '/app/service/xtm_platform_roadmap/instance-1?product=opencti'
+      '/app/service/xtm_platform_roadmap/instance-1?products=opencti'
     );
   });
 

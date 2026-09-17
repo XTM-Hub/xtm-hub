@@ -117,12 +117,14 @@ type Query {
   documentExists(documentName: String, service_instance_id: ServiceInstanceId!): Boolean
   publicDocuments(slug: String!, first: Int!, after: ID, orderBy: DocumentOrdering!, orderMode: OrderingMode!, searchTerm: String, logicalFilters: LogicalFilterInput, serviceInstanceId: ServiceInstanceId!): DocumentConnection!
   publicDocumentsByServiceSlug(serviceInstanceSlug: String!): [Document!]!
+  publicDocumentSlugsByServiceSlug(serviceInstanceSlug: String!): [PublicDocumentSlugInfo!]!
   publicDocumentBySlug(serviceInstanceId: ServiceInstanceId!, slug: String!): Document
   documents(first: Int!, after: ID, orderBy: DocumentOrdering!, orderMode: OrderingMode!, searchTerm: String, logicalFilters: LogicalFilterInput, serviceInstanceId: ServiceInstanceId!, parentsOnly: Boolean): DocumentConnection!
   document(documentId: DocumentId!, serviceInstanceId: ServiceInstanceId!): Document
   mostDeployedDocuments(limit: Int!, platformIdentifiers: [PlatformIdentifier!]): [Document!]!
   newestDocuments(limit: Int!, platformIdentifiers: [PlatformIdentifier!]): [Document!]!
   lastDeployedOverview(limit: Int!, serviceInstanceId: ServiceInstanceId!): LastDeployedOverview!
+  documentFacets(input: LoadDocumentFacetInput!): Facet
 
   """
   The round currently collecting votes on a service instance, if any.
@@ -697,6 +699,12 @@ enum DocumentOrdering {
   name
 }
 
+type PublicDocumentSlugInfo {
+  slug: String
+  created_at: Date!
+  updated_at: Date
+}
+
 """
 /!\ WARNING Do not use this type.
 It exists only to cover cases where we failed to map to a specific Document.
@@ -797,6 +805,30 @@ type DeployedResource {
 
 type LastDeployedOverview {
   resources: [DeployedResource!]!
+}
+
+type FacetBucket {
+  value: String!
+  count: Int!
+}
+
+type Facet {
+  integration_type: [FacetBucket!]!
+  license_type: [FacetBucket!]!
+  manager_supported: [FacetBucket!]!
+  verified: [FacetBucket!]!
+  product_version: [FacetBucket!]!
+  solution_category: [FacetBucket!]!
+  use_case: [FacetBucket!]!
+  entity_type: [FacetBucket!]!
+}
+
+input LoadDocumentFacetInput {
+  serviceInstanceId: ServiceInstanceId!
+  searchTerm: String
+  documentType: String
+  logicalFilters: LogicalFilterInput
+  restrictToActiveDocuments: Boolean
 }
 
 """
@@ -2167,7 +2199,8 @@ type Epic implements Node {
   description: String!
   edition_type: EditionType!
   active: Boolean!
-  product: FiligranProduct!
+  products: [FiligranProduct!]!
+  slack_link: String
   timeline: Timeline!
   epic_type: EpicType!
   document: Document
@@ -2184,7 +2217,8 @@ input CreateEpicInput {
   description: String!
   edition_type: EditionType!
   active: Boolean
-  product: FiligranProduct!
+  products: [FiligranProduct!]!
+  slack_link: String
   timeline: Timeline!
   is_integration: Boolean
   illustration_document: Upload
@@ -2196,7 +2230,8 @@ input UpdateEpicInput {
   description: String
   edition_type: EditionType!
   active: Boolean
-  product: FiligranProduct
+  products: [FiligranProduct!]
+  slack_link: String
   timeline: Timeline
   is_integration: Boolean
   illustration_document: Upload

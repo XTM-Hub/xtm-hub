@@ -1,4 +1,4 @@
-import { AddServiceInput, AddSolutionCategoryInput, AddSubscriptionCapabilityInput, AddUseCaseInput, AddUserInput, AddUsersToBundleGroupsInput, AdminAddUserInput, AdminEditUserInput, AutoRegisterPlatformInput, BulkPendingUserFromOrganizationInput, BundleUserRoleAssignmentInput, BundleUserServiceGroup, CanUnregisterPlatformInput, CanUnregisterResponse, Capability, Competitor, CompetitorConnection, CompetitorEdge, Connector, ConsumeProvisionedNewsFeedItemsResponse, CreateCompetitorInput, CreateDeploymentRequestInput, CreateDocumentInput, CreateEpicInput, CreateSubscriptionsInput, CreateVotableFeatureInput, CreateVotingRoundInput, CsvFeed, CustomDashboard, CustomView, DefaultDocument, DeployedPlatform, DeployedResource, DeploymentAvailability, DeploymentRequest, DeploymentRequestConnection, DeploymentRequestEdge, DeploymentRequestFilter, Document, DocumentConnection, DocumentEdge, DocumentMetadata, EditMeUserInput, EditSeoServiceInstanceInput, EditSolutionCategoryInput, EditUseCaseInput, EditUserCapabilitiesInput, Epic, EpicConnection, EpicCountPerTimeline, EpicEdge, Filter, GenericServiceCapability, Integration, IntegrationHack, IsPlatformRegisteredInput, IsPlatformRegisteredOrganization, IsPlatformRegisteredResponse, LastDeployedOverview, LogicalFilterInput, ManifestFragmentInput, MeUserSubscription, MergeEvent, Mutation, NewsFeedItem, NewsFeedItemConnection, NewsFeedItemEdge, NewsFeedItemMetadata, Node, OneClickDeployInput, OpenAevScenario, OpenCtiPlatformRegistrationStatusInput, OpenCtiPlatformRegistrationStatusResponse, OpenCtiPlaybook, Organization, OrganizationCapabilities, OrganizationCapabilitiesInput, OrganizationConnection, OrganizationEdge, OrganizationInput, OrganizationRef, PageInfo, PlatformDeploymentRequest, PlatformDeploymentRequestConnection, PlatformDeploymentRequestEdge, PlatformInput, PlatformProvider, PlatformTrialStatus, ProductUseCaseInput, ProvisionedNewsFeedItem, Query, RefreshPlatformRegistrationConnectivityStatusAllTenantsInput, RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse, RefreshPlatformRegistrationConnectivityStatusInput, RefreshPlatformRegistrationConnectivityStatusResponse, RefreshPlatformRegistrationConnectivityStatusSingleTenantInput, RefreshUserPlatformTokenResponse, RegisterPlatformInput, RegisteredPlatform, RegisteredPlatformInput, RegisteredPlatformsInput, RegisteredProductVersion, RegistrationResponse, ReorderDeploymentRequestInQueueInput, RolePortal, RssFeed, SendTelemetryMutation, SeoServiceInstance, SeoServiceInstanceMetadata, ServiceCapability, ServiceConnection, ServiceDefinition, ServiceGroup, ServiceInstance, ServiceInstanceEdge, ServiceInstanceFilter, ServiceInstanceSubscription, ServiceLink, Settings, ShareableResource, SolutionCategory, SolutionCategoryConnection, SolutionCategoryEdge, Stream, SubscribedServiceInstanceConfiguration, Subscription, SubscriptionCapability, SubscriptionConnection, SubscriptionEdge, SubscriptionFilter, SubscriptionModel, Success, TaxiiFeed, TelemetryResponse, TenantDetails, TenantStatus, ThirdPartyIntegration, TrialDeploymentsInput, TrialsDeployments, UnregisterPlatformInput, UpdateBundleUserGroupsInput, UpdateBundleUserGroupsRoleInput, UpdateCompetitorInput, UpdateDeploymentQuotaCapacityInput, UpdateDeploymentRequestInput, UpdateDocumentInput, UpdateEpicInput, UpdatePlatformServiceMetadataInput, UpdateServiceGroupsInput, UpdateServiceGroupsInputGroup, UpdateSubscriptionInput, UpdateVotableFeatureInput, UpdateVotingRoundInput, UseCase, UseCaseConnection, UseCaseEdge, User, UserConnection, UserEdge, UserPendingSubscription, UserPlatformGroup, UserService, UserServiceAddInput, UserServiceAddYourselfInput, UserServiceCapabilitiesResponse, UserServiceCapability, UserServiceConnection, UserServiceDeleted, UserServiceEdge, UserServiceEditInput, UserServicesAddCapabilitiesInput, UserServicesDeleteInput, UserSubscription, UsersWithCapabilitiesInOrganizationInput, VotableFeature, VotableFeatureResult, VotingRound, VotingRoundResults, XtmoneIntegrationStatus, XtmoneIntegrationStatusEntry, CompetitorOrdering, CompetitorTier, DeploymentRequestActivitySector, DeploymentRequestDeploymentType, DeploymentRequestFilterKey, DeploymentRequestHubStatus, DeploymentRequestJobTitle, DeploymentRequestOrdering, DeploymentRequestPlatformRegion, DeploymentRequestPlatformState, DeploymentRequestSource, DeploymentRequestUseCase, DocumentImageType, DocumentMetadataKeyCode, DocumentOrdering, DocumentSourceType, EditionType, EpicOrdering, EpicType, FeatureFlag, FiligranProduct, FilterKey, IntegrationType, LicenseType, LogicalOperator, ManifestType, NewsFeedItemMetadataKey, NewsFeedItemType, OrderingMode, OrganizationCapability, OrganizationOrdering, PlatformConfigurationStatus, PlatformContract, PlatformIdentifier, PlatformRegistrationConnectivityStatus, PlatformRegistrationStatus, PortalCapability, ReorderDeploymentRequestInQueueDirection, SeoServiceInstanceLanguage, ServiceDefinitionIdentifier, ServiceGroupName, ServiceInstanceCreationStatus, ServiceInstanceFilterKey, ServiceInstanceOrdering, ServiceInstanceTag, ServiceRestriction, SolutionCategoryOrdering, SubscriptionFilterKey, SubscriptionOrdering, Timeline, UseCaseOrdering, UserOrdering, UserServiceOrdering, VotingRoundStatus, VotingRoundTheme } from './generated';
+import { AddServiceInput, AddSolutionCategoryInput, AddSubscriptionCapabilityInput, AddUseCaseInput, AddUserInput, AddUsersToBundleGroupsInput, AdminAddUserInput, AdminEditUserInput, AutoRegisterPlatformInput, BulkPendingUserFromOrganizationInput, BundleUserRoleAssignmentInput, BundleUserServiceGroup, CanUnregisterPlatformInput, CanUnregisterResponse, Capability, Competitor, CompetitorConnection, CompetitorEdge, Connector, ConsumeProvisionedNewsFeedItemsResponse, CreateCompetitorInput, CreateDeploymentRequestInput, CreateDocumentInput, CreateEpicInput, CreateSubscriptionsInput, CreateVotableFeatureInput, CreateVotingRoundInput, CsvFeed, CustomDashboard, CustomView, DefaultDocument, DeployedPlatform, DeployedResource, DeploymentAvailability, DeploymentRequest, DeploymentRequestConnection, DeploymentRequestEdge, DeploymentRequestFilter, Document, DocumentConnection, DocumentEdge, DocumentMetadata, EditMeUserInput, EditSeoServiceInstanceInput, EditSolutionCategoryInput, EditUseCaseInput, EditUserCapabilitiesInput, Epic, EpicConnection, EpicCountPerTimeline, EpicEdge, Facet, FacetBucket, Filter, GenericServiceCapability, Integration, IntegrationHack, IsPlatformRegisteredInput, IsPlatformRegisteredOrganization, IsPlatformRegisteredResponse, LastDeployedOverview, LoadDocumentFacetInput, LogicalFilterInput, ManifestFragmentInput, MeUserSubscription, MergeEvent, Mutation, NewsFeedItem, NewsFeedItemConnection, NewsFeedItemEdge, NewsFeedItemMetadata, Node, OneClickDeployInput, OpenAevScenario, OpenCtiPlatformRegistrationStatusInput, OpenCtiPlatformRegistrationStatusResponse, OpenCtiPlaybook, Organization, OrganizationCapabilities, OrganizationCapabilitiesInput, OrganizationConnection, OrganizationEdge, OrganizationInput, OrganizationRef, PageInfo, PlatformDeploymentRequest, PlatformDeploymentRequestConnection, PlatformDeploymentRequestEdge, PlatformInput, PlatformProvider, PlatformTrialStatus, ProductUseCaseInput, ProvisionedNewsFeedItem, PublicDocumentSlugInfo, Query, RefreshPlatformRegistrationConnectivityStatusAllTenantsInput, RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse, RefreshPlatformRegistrationConnectivityStatusInput, RefreshPlatformRegistrationConnectivityStatusResponse, RefreshPlatformRegistrationConnectivityStatusSingleTenantInput, RefreshUserPlatformTokenResponse, RegisterPlatformInput, RegisteredPlatform, RegisteredPlatformInput, RegisteredPlatformsInput, RegisteredProductVersion, RegistrationResponse, ReorderDeploymentRequestInQueueInput, RolePortal, RssFeed, SendTelemetryMutation, SeoServiceInstance, SeoServiceInstanceMetadata, ServiceCapability, ServiceConnection, ServiceDefinition, ServiceGroup, ServiceInstance, ServiceInstanceEdge, ServiceInstanceFilter, ServiceInstanceSubscription, ServiceLink, Settings, ShareableResource, SolutionCategory, SolutionCategoryConnection, SolutionCategoryEdge, Stream, SubscribedServiceInstanceConfiguration, Subscription, SubscriptionCapability, SubscriptionConnection, SubscriptionEdge, SubscriptionFilter, SubscriptionModel, Success, TaxiiFeed, TelemetryResponse, TenantDetails, TenantStatus, ThirdPartyIntegration, TrialDeploymentsInput, TrialsDeployments, UnregisterPlatformInput, UpdateBundleUserGroupsInput, UpdateBundleUserGroupsRoleInput, UpdateCompetitorInput, UpdateDeploymentQuotaCapacityInput, UpdateDeploymentRequestInput, UpdateDocumentInput, UpdateEpicInput, UpdatePlatformServiceMetadataInput, UpdateServiceGroupsInput, UpdateServiceGroupsInputGroup, UpdateSubscriptionInput, UpdateVotableFeatureInput, UpdateVotingRoundInput, UseCase, UseCaseConnection, UseCaseEdge, User, UserConnection, UserEdge, UserPendingSubscription, UserPlatformGroup, UserService, UserServiceAddInput, UserServiceAddYourselfInput, UserServiceCapabilitiesResponse, UserServiceCapability, UserServiceConnection, UserServiceDeleted, UserServiceEdge, UserServiceEditInput, UserServicesAddCapabilitiesInput, UserServicesDeleteInput, UserSubscription, UsersWithCapabilitiesInOrganizationInput, VotableFeature, VotableFeatureResult, VotingRound, VotingRoundResults, XtmoneIntegrationStatus, XtmoneIntegrationStatusEntry, CompetitorOrdering, CompetitorTier, DeploymentRequestActivitySector, DeploymentRequestDeploymentType, DeploymentRequestFilterKey, DeploymentRequestHubStatus, DeploymentRequestJobTitle, DeploymentRequestOrdering, DeploymentRequestPlatformRegion, DeploymentRequestPlatformState, DeploymentRequestSource, DeploymentRequestUseCase, DocumentImageType, DocumentMetadataKeyCode, DocumentOrdering, DocumentSourceType, EditionType, EpicOrdering, EpicType, FeatureFlag, FiligranProduct, FilterKey, IntegrationType, LicenseType, LogicalOperator, ManifestType, NewsFeedItemMetadataKey, NewsFeedItemType, OrderingMode, OrganizationCapability, OrganizationOrdering, PlatformConfigurationStatus, PlatformContract, PlatformIdentifier, PlatformRegistrationConnectivityStatus, PlatformRegistrationStatus, PortalCapability, ReorderDeploymentRequestInQueueDirection, SeoServiceInstanceLanguage, ServiceDefinitionIdentifier, ServiceGroupName, ServiceInstanceCreationStatus, ServiceInstanceFilterKey, ServiceInstanceOrdering, ServiceInstanceTag, ServiceRestriction, SolutionCategoryOrdering, SubscriptionFilterKey, SubscriptionOrdering, Timeline, UseCaseOrdering, UserOrdering, UserServiceOrdering, VotingRoundStatus, VotingRoundTheme } from './generated';
 
 export const mockAddServiceInput = (overrides?: Partial<AddServiceInput>, _relationshipsToOmit: Set<string> = new Set()): AddServiceInput => {
     const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
@@ -291,8 +291,9 @@ export const mockCreateEpicInput = (overrides?: Partial<CreateEpicInput>, _relat
         edition_type: overrides && overrides.hasOwnProperty('edition_type') ? overrides.edition_type! : EditionType.CommunityEdition,
         illustration_document: overrides && overrides.hasOwnProperty('illustration_document') ? overrides.illustration_document! : 'comminor',
         is_integration: overrides && overrides.hasOwnProperty('is_integration') ? overrides.is_integration! : true,
-        product: overrides && overrides.hasOwnProperty('product') ? overrides.product! : FiligranProduct.Openaev,
+        products: overrides && overrides.hasOwnProperty('products') ? overrides.products! : [FiligranProduct.Openaev],
         short_description: overrides && overrides.hasOwnProperty('short_description') ? overrides.short_description! : 'ter',
+        slack_link: overrides && overrides.hasOwnProperty('slack_link') ? overrides.slack_link! : 'timidus',
         timeline: overrides && overrides.hasOwnProperty('timeline') ? overrides.timeline! : Timeline.Finished,
         title: overrides && overrides.hasOwnProperty('title') ? overrides.title! : 'suggero',
     };
@@ -677,8 +678,9 @@ export const mockEpic = (overrides?: Partial<Epic>, _relationshipsToOmit: Set<st
         edition_type: overrides && overrides.hasOwnProperty('edition_type') ? overrides.edition_type! : EditionType.CommunityEdition,
         epic_type: overrides && overrides.hasOwnProperty('epic_type') ? overrides.epic_type! : EpicType.Integration,
         id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : '43bb0673-349a-47ed-9407-f44cc9929f36',
-        product: overrides && overrides.hasOwnProperty('product') ? overrides.product! : FiligranProduct.Openaev,
+        products: overrides && overrides.hasOwnProperty('products') ? overrides.products! : [FiligranProduct.Openaev],
         short_description: overrides && overrides.hasOwnProperty('short_description') ? overrides.short_description! : 'tutamen',
+        slack_link: overrides && overrides.hasOwnProperty('slack_link') ? overrides.slack_link! : 'demitto',
         timeline: overrides && overrides.hasOwnProperty('timeline') ? overrides.timeline! : Timeline.Finished,
         title: overrides && overrides.hasOwnProperty('title') ? overrides.title! : 'amplitudo',
         updated_at: overrides && overrides.hasOwnProperty('updated_at') ? overrides.updated_at! : '2021-04-10T05:21:11.658Z',
@@ -715,6 +717,32 @@ export const mockEpicEdge = (overrides?: Partial<EpicEdge>, _relationshipsToOmit
         __typename: 'EpicEdge',
         cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'peccatus',
         node: overrides && overrides.hasOwnProperty('node') ? overrides.node! : relationshipsToOmit.has('Epic') ? {} as Epic : mockEpic({}, relationshipsToOmit),
+    };
+};
+
+export const mockFacet = (overrides?: Partial<Facet>, _relationshipsToOmit: Set<string> = new Set()): { __typename: 'Facet' } & Facet => {
+    const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+    relationshipsToOmit.add('Facet');
+    return {
+        __typename: 'Facet',
+        entity_type: overrides && overrides.hasOwnProperty('entity_type') ? overrides.entity_type! : [relationshipsToOmit.has('FacetBucket') ? {} as FacetBucket : mockFacetBucket({}, relationshipsToOmit)],
+        integration_type: overrides && overrides.hasOwnProperty('integration_type') ? overrides.integration_type! : [relationshipsToOmit.has('FacetBucket') ? {} as FacetBucket : mockFacetBucket({}, relationshipsToOmit)],
+        license_type: overrides && overrides.hasOwnProperty('license_type') ? overrides.license_type! : [relationshipsToOmit.has('FacetBucket') ? {} as FacetBucket : mockFacetBucket({}, relationshipsToOmit)],
+        manager_supported: overrides && overrides.hasOwnProperty('manager_supported') ? overrides.manager_supported! : [relationshipsToOmit.has('FacetBucket') ? {} as FacetBucket : mockFacetBucket({}, relationshipsToOmit)],
+        product_version: overrides && overrides.hasOwnProperty('product_version') ? overrides.product_version! : [relationshipsToOmit.has('FacetBucket') ? {} as FacetBucket : mockFacetBucket({}, relationshipsToOmit)],
+        solution_category: overrides && overrides.hasOwnProperty('solution_category') ? overrides.solution_category! : [relationshipsToOmit.has('FacetBucket') ? {} as FacetBucket : mockFacetBucket({}, relationshipsToOmit)],
+        use_case: overrides && overrides.hasOwnProperty('use_case') ? overrides.use_case! : [relationshipsToOmit.has('FacetBucket') ? {} as FacetBucket : mockFacetBucket({}, relationshipsToOmit)],
+        verified: overrides && overrides.hasOwnProperty('verified') ? overrides.verified! : [relationshipsToOmit.has('FacetBucket') ? {} as FacetBucket : mockFacetBucket({}, relationshipsToOmit)],
+    };
+};
+
+export const mockFacetBucket = (overrides?: Partial<FacetBucket>, _relationshipsToOmit: Set<string> = new Set()): { __typename: 'FacetBucket' } & FacetBucket => {
+    const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+    relationshipsToOmit.add('FacetBucket');
+    return {
+        __typename: 'FacetBucket',
+        count: overrides && overrides.hasOwnProperty('count') ? overrides.count! : 7246,
+        value: overrides && overrides.hasOwnProperty('value') ? overrides.value! : 'ambulo',
     };
 };
 
@@ -842,6 +870,18 @@ export const mockLastDeployedOverview = (overrides?: Partial<LastDeployedOvervie
     return {
         __typename: 'LastDeployedOverview',
         resources: overrides && overrides.hasOwnProperty('resources') ? overrides.resources! : [relationshipsToOmit.has('DeployedResource') ? {} as DeployedResource : mockDeployedResource({}, relationshipsToOmit)],
+    };
+};
+
+export const mockLoadDocumentFacetInput = (overrides?: Partial<LoadDocumentFacetInput>, _relationshipsToOmit: Set<string> = new Set()): LoadDocumentFacetInput => {
+    const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+    relationshipsToOmit.add('LoadDocumentFacetInput');
+    return {
+        documentType: overrides && overrides.hasOwnProperty('documentType') ? overrides.documentType! : 'sum',
+        logicalFilters: overrides && overrides.hasOwnProperty('logicalFilters') ? overrides.logicalFilters! : relationshipsToOmit.has('LogicalFilterInput') ? {} as LogicalFilterInput : mockLogicalFilterInput({}, relationshipsToOmit),
+        restrictToActiveDocuments: overrides && overrides.hasOwnProperty('restrictToActiveDocuments') ? overrides.restrictToActiveDocuments! : false,
+        searchTerm: overrides && overrides.hasOwnProperty('searchTerm') ? overrides.searchTerm! : 'quis',
+        serviceInstanceId: overrides && overrides.hasOwnProperty('serviceInstanceId') ? overrides.serviceInstanceId! : 'trepide',
     };
 };
 
@@ -1337,6 +1377,17 @@ export const mockProvisionedNewsFeedItem = (overrides?: Partial<ProvisionedNewsF
     };
 };
 
+export const mockPublicDocumentSlugInfo = (overrides?: Partial<PublicDocumentSlugInfo>, _relationshipsToOmit: Set<string> = new Set()): { __typename: 'PublicDocumentSlugInfo' } & PublicDocumentSlugInfo => {
+    const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+    relationshipsToOmit.add('PublicDocumentSlugInfo');
+    return {
+        __typename: 'PublicDocumentSlugInfo',
+        created_at: overrides && overrides.hasOwnProperty('created_at') ? overrides.created_at! : '2021-06-16T14:22:39.553Z',
+        slug: overrides && overrides.hasOwnProperty('slug') ? overrides.slug! : 'sulum',
+        updated_at: overrides && overrides.hasOwnProperty('updated_at') ? overrides.updated_at! : '2021-09-26T22:42:28.540Z',
+    };
+};
+
 export const mockQuery = (overrides?: Partial<Query>, _relationshipsToOmit: Set<string> = new Set()): { __typename: 'Query' } & Query => {
     const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
     relationshipsToOmit.add('Query');
@@ -1353,6 +1404,7 @@ export const mockQuery = (overrides?: Partial<Query>, _relationshipsToOmit: Set<
         deploymentRequestsList: overrides && overrides.hasOwnProperty('deploymentRequestsList') ? overrides.deploymentRequestsList! : relationshipsToOmit.has('DeploymentRequestConnection') ? {} as DeploymentRequestConnection : mockDeploymentRequestConnection({}, relationshipsToOmit),
         document: overrides && overrides.hasOwnProperty('document') ? overrides.document! : relationshipsToOmit.has('Document') ? {} as Document : mockDocument({}, relationshipsToOmit),
         documentExists: overrides && overrides.hasOwnProperty('documentExists') ? overrides.documentExists! : false,
+        documentFacets: overrides && overrides.hasOwnProperty('documentFacets') ? overrides.documentFacets! : relationshipsToOmit.has('Facet') ? {} as Facet : mockFacet({}, relationshipsToOmit),
         documents: overrides && overrides.hasOwnProperty('documents') ? overrides.documents! : relationshipsToOmit.has('DocumentConnection') ? {} as DocumentConnection : mockDocumentConnection({}, relationshipsToOmit),
         epics: overrides && overrides.hasOwnProperty('epics') ? overrides.epics! : relationshipsToOmit.has('EpicConnection') ? {} as EpicConnection : mockEpicConnection({}, relationshipsToOmit),
         isPlatformRegistered: overrides && overrides.hasOwnProperty('isPlatformRegistered') ? overrides.isPlatformRegistered! : relationshipsToOmit.has('IsPlatformRegisteredResponse') ? {} as IsPlatformRegisteredResponse : mockIsPlatformRegisteredResponse({}, relationshipsToOmit),
@@ -1369,6 +1421,7 @@ export const mockQuery = (overrides?: Partial<Query>, _relationshipsToOmit: Set<
         platformAssociatedOrganization: overrides && overrides.hasOwnProperty('platformAssociatedOrganization') ? overrides.platformAssociatedOrganization! : relationshipsToOmit.has('Organization') ? {} as Organization : mockOrganization({}, relationshipsToOmit),
         platformTrialStatus: overrides && overrides.hasOwnProperty('platformTrialStatus') ? overrides.platformTrialStatus! : relationshipsToOmit.has('PlatformTrialStatus') ? {} as PlatformTrialStatus : mockPlatformTrialStatus({}, relationshipsToOmit),
         publicDocumentBySlug: overrides && overrides.hasOwnProperty('publicDocumentBySlug') ? overrides.publicDocumentBySlug! : relationshipsToOmit.has('Document') ? {} as Document : mockDocument({}, relationshipsToOmit),
+        publicDocumentSlugsByServiceSlug: overrides && overrides.hasOwnProperty('publicDocumentSlugsByServiceSlug') ? overrides.publicDocumentSlugsByServiceSlug! : [relationshipsToOmit.has('PublicDocumentSlugInfo') ? {} as PublicDocumentSlugInfo : mockPublicDocumentSlugInfo({}, relationshipsToOmit)],
         publicDocuments: overrides && overrides.hasOwnProperty('publicDocuments') ? overrides.publicDocuments! : relationshipsToOmit.has('DocumentConnection') ? {} as DocumentConnection : mockDocumentConnection({}, relationshipsToOmit),
         publicDocumentsByServiceSlug: overrides && overrides.hasOwnProperty('publicDocumentsByServiceSlug') ? overrides.publicDocumentsByServiceSlug! : [relationshipsToOmit.has('Document') ? {} as Document : mockDocument({}, relationshipsToOmit)],
         registeredPlatform: overrides && overrides.hasOwnProperty('registeredPlatform') ? overrides.registeredPlatform! : relationshipsToOmit.has('RegisteredPlatform') ? {} as RegisteredPlatform : mockRegisteredPlatform({}, relationshipsToOmit),
@@ -2149,8 +2202,9 @@ export const mockUpdateEpicInput = (overrides?: Partial<UpdateEpicInput>, _relat
         edition_type: overrides && overrides.hasOwnProperty('edition_type') ? overrides.edition_type! : EditionType.CommunityEdition,
         illustration_document: overrides && overrides.hasOwnProperty('illustration_document') ? overrides.illustration_document! : 'venustas',
         is_integration: overrides && overrides.hasOwnProperty('is_integration') ? overrides.is_integration! : false,
-        product: overrides && overrides.hasOwnProperty('product') ? overrides.product! : FiligranProduct.Openaev,
+        products: overrides && overrides.hasOwnProperty('products') ? overrides.products! : [FiligranProduct.Openaev],
         short_description: overrides && overrides.hasOwnProperty('short_description') ? overrides.short_description! : 'corrigo',
+        slack_link: overrides && overrides.hasOwnProperty('slack_link') ? overrides.slack_link! : 'tutamen',
         timeline: overrides && overrides.hasOwnProperty('timeline') ? overrides.timeline! : Timeline.Finished,
         title: overrides && overrides.hasOwnProperty('title') ? overrides.title! : 'tabella',
     };

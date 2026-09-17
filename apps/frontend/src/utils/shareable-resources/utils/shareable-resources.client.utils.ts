@@ -1,9 +1,15 @@
 import { hasProperty } from '@/utils/has-property';
-import { serviceConfigMap } from '@/utils/shareable-resources/shareable-resources.consts';
+import { encodeRedirectValue } from '@/utils/redirect';
 import {
+  OPENCTI_INTEGRATION_URL_CONFIGS,
+  serviceConfigMap,
+} from '@/utils/shareable-resources/shareable-resources.consts';
+import {
+  isConnectorResource,
   PublicDocumentData,
   ServiceInfo,
   ServiceSlug,
+  ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { DocumentMetadataKeyCode, IntegrationType } from '@graphql/generated';
@@ -19,7 +25,7 @@ export function getServiceInfo(
   }
 
   return {
-    link: `/redirect/${config.redirectPath}?service_instance_id=${serviceInstance.id}&document_id=${documentId}`,
+    link: `/redirect/${config.redirectPath}?service_instance_id=${encodeRedirectValue(serviceInstance.id)}&document_id=${encodeRedirectValue(documentId)}`,
     description: config.description,
   };
 }
@@ -90,4 +96,36 @@ export const isResourceDownloadable = (
       'integration_type'
     ) || document.integration_type !== IntegrationType.ThirdPartyIntegration
   );
+};
+
+const DEPLOYABLE_RESOURCE_TYPES: string[] = [
+  ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD,
+  ShareableResourceType.OPENCTI_CUSTOM_VIEW,
+  ShareableResourceType.OPENAEV_SCENARIO,
+  ShareableResourceType.OPENCTI_PLAYBOOK,
+];
+
+export const isResourceDeployable = (
+  document: documentItem_fragment$data | PublicDocumentData
+): boolean => {
+  if (!document.active) {
+    return false;
+  }
+
+  if (isConnectorResource(document)) {
+    return true;
+  }
+
+  const integrationType = docHasMetadata(
+    document,
+    DocumentMetadataKeyCode.IntegrationType
+  )
+    ? document.integration_type
+    : null;
+
+  if (integrationType) {
+    return integrationType in OPENCTI_INTEGRATION_URL_CONFIGS;
+  }
+
+  return DEPLOYABLE_RESOURCE_TYPES.includes(document.type);
 };

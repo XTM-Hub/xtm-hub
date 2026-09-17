@@ -64,20 +64,12 @@ describe('deploymentRequestDomain', () => {
       );
     });
     it('should expose parent_id and url on returned deployment requests', async () => {
-      const bundle =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            type: DeploymentRequestDeploymentType.Bundle,
-            platform_identifier: null,
-          }
-        );
-      const child =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            parent_id: bundle.id,
-            url: 'https://xtmone.example.com',
-          }
-        );
+      const {
+        bundle,
+        children: [child],
+      } = await TestHelper.deploymentRequest.createBundle({
+        children: [{ url: 'https://xtmone.example.com' }],
+      });
 
       const deploymentRequests =
         await DeploymentRequestDomain.loadDeploymentRequests<DeploymentRequestConnection>(
@@ -95,18 +87,7 @@ describe('deploymentRequestDomain', () => {
       expect(childNode?.url).toBe('https://xtmone.example.com');
     });
     it('should exclude bundle children when filtering on a null parent_id', async () => {
-      const bundle =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            type: DeploymentRequestDeploymentType.Bundle,
-            platform_identifier: null,
-          }
-        );
-      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-        {
-          parent_id: bundle.id,
-        }
-      );
+      await TestHelper.deploymentRequest.createBundle({ children: [{}] });
       const standalone =
         await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
           {}
@@ -255,21 +236,12 @@ describe('deploymentRequestDomain', () => {
     });
 
     it('should return all deployment requests matching the given conditions', async () => {
-      const bundle =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            type: DeploymentRequestDeploymentType.Bundle,
-            platform_identifier: null,
-          }
-        );
-      const child1 =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          { parent_id: bundle.id }
-        );
-      const child2 =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          { parent_id: bundle.id }
-        );
+      const {
+        bundle,
+        children: [child1, child2],
+      } = await TestHelper.deploymentRequest.createBundle({
+        children: [{}, {}],
+      });
       await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
         { parent_id: null }
       );
@@ -298,37 +270,23 @@ describe('deploymentRequestDomain', () => {
       await TestHelper.deploymentRequest.deleteAllWithServiceInstanceAndSubscription();
     });
 
-    const createBundle = () =>
-      TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription({
-        type: DeploymentRequestDeploymentType.Bundle,
-        platform_identifier: null,
-      });
-
     it('should return the children of the requested bundles only', async () => {
       // Given
-      const firstBundle = await createBundle();
-      const secondBundle = await createBundle();
-      const unrequestedBundle = await createBundle();
-      const firstChild =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            parent_id: firstBundle.id,
-            platform_identifier: PlatformIdentifier.Opencti,
-          }
-        );
-      const secondChild =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            parent_id: secondBundle.id,
-            platform_identifier: PlatformIdentifier.Openaev,
-          }
-        );
-      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-        {
-          parent_id: unrequestedBundle.id,
-          platform_identifier: PlatformIdentifier.Xtmone,
-        }
-      );
+      const {
+        bundle: firstBundle,
+        children: [firstChild],
+      } = await TestHelper.deploymentRequest.createBundle({
+        children: [{ platform_identifier: PlatformIdentifier.Opencti }],
+      });
+      const {
+        bundle: secondBundle,
+        children: [secondChild],
+      } = await TestHelper.deploymentRequest.createBundle({
+        children: [{ platform_identifier: PlatformIdentifier.Openaev }],
+      });
+      await TestHelper.deploymentRequest.createBundle({
+        children: [{ platform_identifier: PlatformIdentifier.Xtmone }],
+      });
 
       // When
       const children = await DeploymentRequestDomain.loadChildrenByParentIds([
@@ -354,14 +312,12 @@ describe('deploymentRequestDomain', () => {
 
     it('should expose the platform url of the children', async () => {
       // Given
-      const bundle = await createBundle();
-      const child =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            parent_id: bundle.id,
-            platform_identifier: PlatformIdentifier.Opencti,
-          }
-        );
+      const {
+        bundle,
+        children: [child],
+      } = await TestHelper.deploymentRequest.createBundle({
+        children: [{ platform_identifier: PlatformIdentifier.Opencti }],
+      });
       await TestHelper.platformConfiguration.create({
         service_instance_id: child.service_instance_id,
         platform_url: 'https://opencti.example.com',
@@ -390,34 +346,16 @@ describe('deploymentRequestDomain', () => {
     });
 
     it('should return the bundle first, then its children ordered by platform identifier', async () => {
-      const bundle =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            type: DeploymentRequestDeploymentType.Bundle,
-            platform_identifier: null,
-          }
-        );
-      const childXtmone =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            parent_id: bundle.id,
-            platform_identifier: PlatformIdentifier.Xtmone,
-          }
-        );
-      const childOpencti =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            parent_id: bundle.id,
-            platform_identifier: PlatformIdentifier.Opencti,
-          }
-        );
-      const childOpenaev =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            parent_id: bundle.id,
-            platform_identifier: PlatformIdentifier.Openaev,
-          }
-        );
+      const {
+        bundle,
+        children: [childXtmone, childOpencti, childOpenaev],
+      } = await TestHelper.deploymentRequest.createBundle({
+        children: [
+          { platform_identifier: PlatformIdentifier.Xtmone },
+          { platform_identifier: PlatformIdentifier.Opencti },
+          { platform_identifier: PlatformIdentifier.Openaev },
+        ],
+      });
 
       const family =
         await DeploymentRequestDomain.loadDeploymentRequestWithChildren(bundle);
@@ -448,29 +386,22 @@ describe('deploymentRequestDomain', () => {
     });
 
     it('should only return children matching the given hub status', async () => {
-      const bundle =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+      const {
+        bundle,
+        children: [activeChild],
+      } = await TestHelper.deploymentRequest.createBundle({
+        bundle: { hub_status: DeploymentRequestHubStatus.Active },
+        children: [
           {
-            type: DeploymentRequestDeploymentType.Bundle,
-            platform_identifier: null,
-            hub_status: DeploymentRequestHubStatus.Active,
-          }
-        );
-      const activeChild =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            parent_id: bundle.id,
             platform_identifier: PlatformIdentifier.Opencti,
             hub_status: DeploymentRequestHubStatus.Active,
-          }
-        );
-      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-        {
-          parent_id: bundle.id,
-          platform_identifier: PlatformIdentifier.Xtmone,
-          hub_status: DeploymentRequestHubStatus.Cancelled,
-        }
-      );
+          },
+          {
+            platform_identifier: PlatformIdentifier.Xtmone,
+            hub_status: DeploymentRequestHubStatus.Cancelled,
+          },
+        ],
+      });
 
       const family =
         await DeploymentRequestDomain.loadDeploymentRequestWithChildren(
@@ -491,23 +422,21 @@ describe('deploymentRequestDomain', () => {
       const expiredDate = new Date(Date.UTC(2020, 0, 1));
       const futureDate = new Date(Date.UTC(2999, 0, 1));
 
-      const expiredBundle =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+      const {
+        bundle: expiredBundle,
+        children: [expiredChild],
+      } = await TestHelper.deploymentRequest.createBundle({
+        bundle: {
+          hub_status: DeploymentRequestHubStatus.Active,
+          end_date: expiredDate,
+        },
+        children: [
           {
-            type: DeploymentRequestDeploymentType.Bundle,
-            platform_identifier: null,
             hub_status: DeploymentRequestHubStatus.Active,
             end_date: expiredDate,
-          }
-        );
-      const expiredChild =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            parent_id: expiredBundle.id,
-            hub_status: DeploymentRequestHubStatus.Active,
-            end_date: expiredDate,
-          }
-        );
+          },
+        ],
+      });
       const expiredStandalone =
         await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
           {
@@ -1100,26 +1029,22 @@ describe('deploymentRequestDomain', () => {
 
     it('should ignore the bundle products, they follow their bundle instead of holding a rank', async () => {
       // Given
-      const bundle =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            type: DeploymentRequestDeploymentType.Bundle,
-            platform_identifier: null,
-            region: DeploymentRequestPlatformRegion.EuWest,
-            ordering: 1,
-            hub_status: DeploymentRequestHubStatus.Queued,
-          }
-        );
-      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-        {
-          type: DeploymentRequestDeploymentType.Trial,
-          platform_identifier: PlatformIdentifier.Opencti,
+      await TestHelper.deploymentRequest.createBundle({
+        bundle: {
           region: DeploymentRequestPlatformRegion.EuWest,
-          ordering: 9,
+          ordering: 1,
           hub_status: DeploymentRequestHubStatus.Queued,
-          parent_id: bundle!.id,
-        }
-      );
+        },
+        children: [
+          {
+            type: DeploymentRequestDeploymentType.Trial,
+            platform_identifier: PlatformIdentifier.Opencti,
+            region: DeploymentRequestPlatformRegion.EuWest,
+            ordering: 9,
+            hub_status: DeploymentRequestHubStatus.Queued,
+          },
+        ],
+      });
 
       // When
       const maxOrdering = await DeploymentRequestDomain.getMaxOrderingInQueue(
@@ -1747,37 +1672,31 @@ describe('deploymentRequestDomain', () => {
 
     it('should cascade to the queued children when the promoted request is a bundle', async () => {
       const region = DeploymentRequestPlatformRegion.UsEast;
-      const bundle =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+      const {
+        bundle,
+        children: [queuedChild, cancelledChild],
+      } = await TestHelper.deploymentRequest.createBundle({
+        bundle: {
+          region,
+          ordering: 1,
+          hub_status: DeploymentRequestHubStatus.Queued,
+          target_state: DeploymentRequestPlatformState.Unprovisioned,
+        },
+        children: [
           {
-            type: DeploymentRequestDeploymentType.Bundle,
-            platform_identifier: null,
-            region,
-            ordering: 1,
-            hub_status: DeploymentRequestHubStatus.Queued,
-            target_state: DeploymentRequestPlatformState.Unprovisioned,
-          }
-        );
-      const queuedChild =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            parent_id: bundle!.id,
             platform_identifier: PlatformIdentifier.Opencti,
             region,
             hub_status: DeploymentRequestHubStatus.Queued,
             target_state: DeploymentRequestPlatformState.Unprovisioned,
-          }
-        );
-      const cancelledChild =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          },
           {
-            parent_id: bundle!.id,
             platform_identifier: PlatformIdentifier.Xtmone,
             region,
             hub_status: DeploymentRequestHubStatus.Cancelled,
             target_state: DeploymentRequestPlatformState.Unprovisioned,
-          }
-        );
+          },
+        ],
+      });
 
       const promotedRequest = await DeploymentRequestDomain.setRequestAsPending(
         bundle!
@@ -1888,6 +1807,66 @@ describe('deploymentRequestDomain', () => {
     });
   });
 
+  describe('updateDeploymentRequestByIdIfTargetState', () => {
+    afterEach(async () => {
+      await TestHelper.deploymentRequest.deleteAllWithServiceInstanceAndSubscription();
+    });
+
+    it('should update the deployment request when the expected target_state still matches', async () => {
+      const deploymentRequest =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          {
+            target_state: DeploymentRequestPlatformState.Active,
+            hub_status: DeploymentRequestHubStatus.Provisioning,
+          }
+        );
+
+      const updated =
+        await DeploymentRequestDomain.updateDeploymentRequestByIdIfTargetState(
+          deploymentRequest.id,
+          DeploymentRequestPlatformState.Active,
+          { hub_status: DeploymentRequestHubStatus.Active }
+        );
+
+      expect(updated).toMatchObject({
+        id: deploymentRequest.id,
+        hub_status: DeploymentRequestHubStatus.Active,
+      });
+
+      await TestHelper.deploymentRequest.assertProperties(
+        deploymentRequest.id,
+        { hub_status: DeploymentRequestHubStatus.Active }
+      );
+    });
+
+    it('should not update the deployment request when target_state changed concurrently', async () => {
+      const deploymentRequest =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          {
+            target_state: DeploymentRequestPlatformState.Removed,
+            hub_status: DeploymentRequestHubStatus.Cancelled,
+          }
+        );
+
+      const updated =
+        await DeploymentRequestDomain.updateDeploymentRequestByIdIfTargetState(
+          deploymentRequest.id,
+          DeploymentRequestPlatformState.Active,
+          { hub_status: DeploymentRequestHubStatus.Active }
+        );
+
+      expect(updated).toBeUndefined();
+
+      await TestHelper.deploymentRequest.assertProperties(
+        deploymentRequest.id,
+        {
+          hub_status: DeploymentRequestHubStatus.Cancelled,
+          target_state: DeploymentRequestPlatformState.Removed,
+        }
+      );
+    });
+  });
+
   describe('loadOngoingStandaloneTrialsForOrganization', () => {
     const ORGANIZATION_ID = TEST_ORGANIZATIONS.FILIGRAN.ID;
     const OTHER_ORGANIZATION_ID = TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID;
@@ -1946,20 +1925,10 @@ describe('deploymentRequestDomain', () => {
 
     it('should not return a bundle nor its products when the organization has an active bundle', async () => {
       // Given an active bundle with an active child
-      const bundle =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            type: DeploymentRequestDeploymentType.Bundle,
-            platform_identifier: null,
-            hub_status: DeploymentRequestHubStatus.Active,
-          }
-        );
-      await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-        {
-          parent_id: bundle.id,
-          hub_status: DeploymentRequestHubStatus.Active,
-        }
-      );
+      await TestHelper.deploymentRequest.createBundle({
+        bundle: { hub_status: DeploymentRequestHubStatus.Active },
+        children: [{ hub_status: DeploymentRequestHubStatus.Active }],
+      });
 
       // When loading the ongoing standalone trials of the organization
       const ongoing =

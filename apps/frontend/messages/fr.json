@@ -190,7 +190,9 @@
       "Title": "Le titre est obligatoire",
       "ShortDescription": "La description courte est obligatoire",
       "ShortDescriptionMax": "La description courte ne doit pas dépasser 215 caractères",
-      "Description": "La description est obligatoire"
+      "Description": "La description est obligatoire",
+      "Product": "Au moins un produit est obligatoire",
+      "SlackLink": "Doit être un lien Slack filigran-community"
     }
   },
   "Epic": {
@@ -220,6 +222,8 @@
       "EditionType": "type d'édition",
       "FiligranProduct": "Produit",
       "FiligranProductPlaceholder": "OpenCTI",
+      "SlackLink": "Lien Slack",
+      "SlackLinkPlaceholder": "Choisissez un canal ou collez un lien Slack",
       "Timeline": "Ligne de temps",
       "IsActive": "Cet EPIC est-il publié ? (Par défaut votre EPIC est en mode brouillon)",
       "Integration": "Est une intégration",
@@ -329,6 +333,7 @@
       "INVALID_PRODUCTS_FOR_DEPLOYMENT_TYPE": "Les produits sélectionnés ne sont pas valides pour ce type de déploiement",
       "IS_PLATFORM_REGISTERED_UNKNOWN_ERROR": "Une erreur inconnue s'est produite lors de la connexion avec le produit",
       "LOAD_CAPABILITIES_ERROR": "Une erreur s'est produite lors du chargement des fonctionnalités",
+      "LIST_FACET_ERROR": "Une erreur s'est produite lors de l'affichage des facettes.",
       "MISSING_AUTO_REGISTER_PLATFORM_ARGUMENT": "Argument de connexion automatique du produit manquant",
       "MISSING_CAPABILITY_ON_ORGANIZATION": "Permissions manquantes",
       "MISSING_CAPABILITY_ON_SERVICE": "Permissions manquantes",
@@ -1005,7 +1010,9 @@
       "opencti_playbooks": "OpenCTI Playbooks",
       "opencti_registration": "OpenCTI Registration",
       "vault": "Vault",
-      "xtm_platform_roadmap": "XTM Platform Roadmap"
+      "xtm_platform_bundle": "XTM Platform Trial",
+      "xtm_platform_roadmap": "XTM Platform Roadmap",
+      "xtmone_registration": "XTM One Registration"
     },
     "Capabilities": {
       "AccessServiceDescription": "Vous avez uniquement accès à un service",
@@ -1014,6 +1021,31 @@
       "ManageAccessDescription": "Vous pouvez accéder au service et inviter des utilisateurs à ce service",
       "ManageAccessName": "Manage access",
       "SelectCapabilities": "Sélectionner les capacités"
+    },
+    "CsvExport": {
+      "TriggerButton": "Exporter en CSV",
+      "DialogTitle": "Exporter les intégrations en CSV",
+      "DialogDescription": "Choisissez les champs et les filtres à inclure dans le fichier CSV exporté.",
+      "ColumnsLabel": "Champs à exporter",
+      "ColumnsPlaceholder": "Sélectionner les champs à inclure",
+      "FiltersLabel": "Filtres",
+      "ExportButton": "Exporter",
+      "SuccessToast": "L'export CSV a démarré.",
+      "ErrorToast": "Impossible d'exporter la liste des intégrations. Veuillez réessayer.",
+      "Columns": {
+        "IntegrationType": "Type d'intégration",
+        "UseCase": "Cas d'usage",
+        "DeploymentType": "Type de déploiement",
+        "VerificationStatus": "Statut de vérification",
+        "SolutionCategory": "Catégorie de solution",
+        "LicenseType": "Type de licence",
+        "ShortDescription": "Description courte",
+        "LongDescription": "Description longue",
+        "FeedUrl": "URL du flux",
+        "OpenctiDocumentation": "Documentation OpenCTI",
+        "VendorUrl": "URL du fournisseur",
+        "DemoLink": "Lien de démonstration"
+      }
     },
     "Cards": {
       "filigran-academy": {
@@ -1160,10 +1192,6 @@
         "Type": {
           "Label": "Type d'intégration",
           "Placeholder": "Type d'intégration..."
-        },
-        "ProductVersion": {
-          "Label": "Produits connectés",
-          "Placeholder": "Produits connectés..."
         },
         "ManagerSupported": {
           "Label": "Type de déploiement",

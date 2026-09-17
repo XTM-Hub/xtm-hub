@@ -190,7 +190,9 @@
       "Title": "タイトルは必須です",
       "ShortDescription": "概要は必須です",
       "ShortDescriptionMax": "概要は215文字以内で入力してください",
-      "Description": "説明は必須です"
+      "Description": "説明は必須です",
+      "Product": "少なくとも1つの製品が必要です",
+      "SlackLink": "filigran-community のSlackリンクである必要があります"
     }
   },
   "Epic": {
@@ -220,6 +222,8 @@
       "EditionType": "エディション・タイプ",
       "FiligranProduct": "製品名",
       "FiligranProductPlaceholder": "オープンCTI",
+      "SlackLink": "Slackリンク",
+      "SlackLinkPlaceholder": "チャンネルを選択するか、Slackリンクを貼り付けてください",
       "Timeline": "タイムライン",
       "IsActive": "このエピックは公開されていますか？(デフォルトでは下書きモードです)",
       "Integration": "統合されているか",
@@ -329,6 +333,7 @@
       "INVALID_PRODUCTS_FOR_DEPLOYMENT_TYPE": "選択された製品はこの展開タイプには無効です",
       "IS_PLATFORM_REGISTERED_UNKNOWN_ERROR": "製品の接続中に不明なエラーが発生しました",
       "LOAD_CAPABILITIES_ERROR": "機能の読み込み中にエラーが発生しました",
+      "LIST_FACET_ERROR": "ファセットの一覧表示中に不明なエラーが発生しました",
       "MISSING_AUTO_REGISTER_PLATFORM_ARGUMENT": "製品の自動接続引数がありません",
       "MISSING_CAPABILITY_ON_ORGANIZATION": "権限がない",
       "MISSING_CAPABILITY_ON_SERVICE": "パーミッションが見つからない",
@@ -1005,7 +1010,9 @@
       "opencti_playbooks": "OpenCTIプレイブック",
       "opencti_registration": "OpenCTI 登録",
       "vault": "ボールト",
-      "xtm_platform_roadmap": "XTM Platform ロードマップ"
+      "xtm_platform_bundle": "XTMプラットフォームトライアル",
+      "xtm_platform_roadmap": "XTM Platform ロードマップ",
+      "xtmone_registration": "XTM One 登録"
     },
     "Capabilities": {
       "AccessServiceDescription": "サービスへのアクセス",
@@ -1014,6 +1021,31 @@
       "ManageAccessDescription": "このサービスにアクセスし、ユーザーを招待することができます。",
       "ManageAccessName": "アクセス管理",
       "SelectCapabilities": "機能を選択"
+    },
+    "CsvExport": {
+      "TriggerButton": "CSVエクスポート",
+      "DialogTitle": "インテグレーションをCSVにエクスポート",
+      "DialogDescription": "エクスポートするCSVファイルに含めるフィールドとフィルターを選択してください。",
+      "ColumnsLabel": "エクスポートするフィールド",
+      "ColumnsPlaceholder": "含めるフィールドを選択してください",
+      "FiltersLabel": "フィルター",
+      "ExportButton": "エクスポート",
+      "SuccessToast": "CSVエクスポートを開始しました。",
+      "ErrorToast": "インテグレーション一覧をエクスポートできませんでした。もう一度お試しください。",
+      "Columns": {
+        "IntegrationType": "インテグレーションタイプ",
+        "UseCase": "ユースケース",
+        "DeploymentType": "デプロイタイプ",
+        "VerificationStatus": "検証ステータス",
+        "SolutionCategory": "ソリューションカテゴリ",
+        "LicenseType": "ライセンスタイプ",
+        "ShortDescription": "概要",
+        "LongDescription": "詳細説明",
+        "FeedUrl": "フィードURL",
+        "OpenctiDocumentation": "OpenCTIドキュメント",
+        "VendorUrl": "ベンダーURL",
+        "DemoLink": "デモリンク"
+      }
     },
     "Cards": {
       "filigran-academy": {
@@ -1160,10 +1192,6 @@
         "Type": {
           "Label": "統合タイプ",
           "Placeholder": "統合タイプ..."
-        },
-        "ProductVersion": {
-          "Label": "接続済み製品",
-          "Placeholder": "接続済み製品..."
         },
         "ManagerSupported": {
           "Label": "配備タイプ",

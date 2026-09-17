@@ -266,8 +266,9 @@ export type CreateEpicInput = {
   edition_type: EditionType;
   illustration_document: InputMaybe<Scalars['Upload']['input']>;
   is_integration: InputMaybe<Scalars['Boolean']['input']>;
-  product: FiligranProduct;
+  products: Array<FiligranProduct>;
   short_description: Scalars['String']['input'];
+  slack_link: InputMaybe<Scalars['String']['input']>;
   timeline: Timeline;
   title: Scalars['String']['input'];
 };
@@ -755,8 +756,9 @@ export type Epic = Node & {
   edition_type: EditionType;
   epic_type: EpicType;
   id: Scalars['ID']['output'];
-  product: FiligranProduct;
+  products: Array<FiligranProduct>;
   short_description: Scalars['String']['output'];
+  slack_link: Maybe<Scalars['String']['output']>;
   timeline: Timeline;
   title: Scalars['String']['output'];
   updated_at: Maybe<Scalars['Date']['output']>;
@@ -791,6 +793,24 @@ export enum EpicType {
   Integration = 'integration',
   Other = 'other'
 }
+
+export type Facet = {
+  __typename?: 'Facet';
+  entity_type: Array<FacetBucket>;
+  integration_type: Array<FacetBucket>;
+  license_type: Array<FacetBucket>;
+  manager_supported: Array<FacetBucket>;
+  product_version: Array<FacetBucket>;
+  solution_category: Array<FacetBucket>;
+  use_case: Array<FacetBucket>;
+  verified: Array<FacetBucket>;
+};
+
+export type FacetBucket = {
+  __typename?: 'FacetBucket';
+  count: Scalars['Int']['output'];
+  value: Scalars['String']['output'];
+};
 
 export enum FeatureFlag {
   DecouplingConnectors = 'DECOUPLING_CONNECTORS',
@@ -927,6 +947,14 @@ export enum LicenseType {
   Commercial = 'Commercial',
   Free = 'Free'
 }
+
+export type LoadDocumentFacetInput = {
+  documentType: InputMaybe<Scalars['String']['input']>;
+  logicalFilters: InputMaybe<LogicalFilterInput>;
+  restrictToActiveDocuments: InputMaybe<Scalars['Boolean']['input']>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+  serviceInstanceId: Scalars['ServiceInstanceId']['input'];
+};
 
 export type LogicalFilterInput = {
   children: InputMaybe<Array<LogicalFilterInput>>;
@@ -1811,6 +1839,13 @@ export type ProvisionedNewsFeedItem = Node & {
   type: NewsFeedItemType;
 };
 
+export type PublicDocumentSlugInfo = {
+  __typename?: 'PublicDocumentSlugInfo';
+  created_at: Scalars['Date']['output'];
+  slug: Maybe<Scalars['String']['output']>;
+  updated_at: Maybe<Scalars['Date']['output']>;
+};
+
 export type Query = {
   __typename?: 'Query';
   bundleProducts: Array<PlatformIdentifier>;
@@ -1828,6 +1863,7 @@ export type Query = {
   deploymentRequestsList: DeploymentRequestConnection;
   document: Maybe<Document>;
   documentExists: Maybe<Scalars['Boolean']['output']>;
+  documentFacets: Maybe<Facet>;
   documents: DocumentConnection;
   epics: Maybe<EpicConnection>;
   isPlatformRegistered: IsPlatformRegisteredResponse;
@@ -1845,6 +1881,7 @@ export type Query = {
   platformAssociatedOrganization: Maybe<Organization>;
   platformTrialStatus: PlatformTrialStatus;
   publicDocumentBySlug: Maybe<Document>;
+  publicDocumentSlugsByServiceSlug: Array<PublicDocumentSlugInfo>;
   publicDocuments: DocumentConnection;
   publicDocumentsByServiceSlug: Array<Document>;
   registeredPlatform: Maybe<RegisteredPlatform>;
@@ -1936,6 +1973,11 @@ export type QueryDocumentArgs = {
 export type QueryDocumentExistsArgs = {
   documentName: InputMaybe<Scalars['String']['input']>;
   service_instance_id: Scalars['ServiceInstanceId']['input'];
+};
+
+
+export type QueryDocumentFacetsArgs = {
+  input: LoadDocumentFacetInput;
 };
 
 
@@ -2037,6 +2079,11 @@ export type QueryPlatformTrialStatusArgs = {
 export type QueryPublicDocumentBySlugArgs = {
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
   slug: Scalars['String']['input'];
+};
+
+
+export type QueryPublicDocumentSlugsByServiceSlugArgs = {
+  serviceInstanceSlug: Scalars['String']['input'];
 };
 
 
@@ -2842,8 +2889,9 @@ export type UpdateEpicInput = {
   edition_type: EditionType;
   illustration_document: InputMaybe<Scalars['Upload']['input']>;
   is_integration: InputMaybe<Scalars['Boolean']['input']>;
-  product: InputMaybe<FiligranProduct>;
+  products: InputMaybe<Array<FiligranProduct>>;
   short_description: InputMaybe<Scalars['String']['input']>;
+  slack_link: InputMaybe<Scalars['String']['input']>;
   timeline: InputMaybe<Timeline>;
   title: InputMaybe<Scalars['String']['input']>;
 };
@@ -3201,6 +3249,13 @@ export type XtmonePlatformIntegrationStatusQueryVariables = Exact<{
 
 export type XtmonePlatformIntegrationStatusQuery = { __typename?: 'Query', xtmonePlatformIntegrationStatus: { __typename?: 'XtmoneIntegrationStatus', linked: boolean, last_checked_at: string | null, opencti: { __typename?: 'XtmoneIntegrationStatusEntry', status: string, connected: boolean, last_checked_at: string | null }, openaev: { __typename?: 'XtmoneIntegrationStatusEntry', status: string, connected: boolean, last_checked_at: string | null } } | null };
 
+export type DocumentFacetsQueryVariables = Exact<{
+  input: LoadDocumentFacetInput;
+}>;
+
+
+export type DocumentFacetsQuery = { __typename?: 'Query', documentFacets: { __typename?: 'Facet', integration_type: Array<{ __typename?: 'FacetBucket', value: string, count: number }>, license_type: Array<{ __typename?: 'FacetBucket', value: string, count: number }>, manager_supported: Array<{ __typename?: 'FacetBucket', value: string, count: number }>, verified: Array<{ __typename?: 'FacetBucket', value: string, count: number }>, solution_category: Array<{ __typename?: 'FacetBucket', value: string, count: number }>, use_case: Array<{ __typename?: 'FacetBucket', value: string, count: number }>, entity_type: Array<{ __typename?: 'FacetBucket', value: string, count: number }> } | null };
+
 type HomepageDocument_Connector_Fragment = { __typename?: 'Connector', verified: boolean, manager_supported: boolean, id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
 
 type HomepageDocument_CsvFeed_Fragment = { __typename?: 'CsvFeed', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
@@ -3289,7 +3344,7 @@ export type PublicDocumentsByServiceSlugSitemapQueryQueryVariables = Exact<{
 }>;
 
 
-export type PublicDocumentsByServiceSlugSitemapQueryQuery = { __typename?: 'Query', publicDocumentsByServiceSlug: Array<{ __typename?: 'Connector', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'CsvFeed', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'CustomDashboard', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'CustomView', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'DefaultDocument', slug: string | null, created_at: any, updated_at: any | null } | { __typename?: 'IntegrationHack', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'OpenAEVScenario', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'OpenCTIPlaybook', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'RssFeed', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'Stream', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'TaxiiFeed', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'ThirdPartyIntegration', slug: string, created_at: any, updated_at: any | null }> };
+export type PublicDocumentsByServiceSlugSitemapQueryQuery = { __typename?: 'Query', publicDocumentSlugsByServiceSlug: Array<{ __typename?: 'PublicDocumentSlugInfo', slug: string | null, created_at: any, updated_at: any | null }> };
 
 export type FeatureVoteMutationVariables = Exact<{
   feature_id: Scalars['VotableFeatureId']['input'];
@@ -4233,6 +4288,86 @@ useInfiniteXtmonePlatformIntegrationStatusQuery.getKey = (variables: XtmonePlatf
 useInfiniteXtmonePlatformIntegrationStatusQuery.getRootKey = () => ['XtmonePlatformIntegrationStatus.infinite'] as const;
 useXtmonePlatformIntegrationStatusQuery.fetcher = (client: GraphQLClient, variables: XtmonePlatformIntegrationStatusQueryVariables, headers?: RequestInit['headers']) => fetcher<XtmonePlatformIntegrationStatusQuery, XtmonePlatformIntegrationStatusQueryVariables>(client, XtmonePlatformIntegrationStatusDocument, variables, headers);
 
+export const DocumentFacetsDocument = `
+    query DocumentFacets($input: LoadDocumentFacetInput!) {
+  documentFacets(input: $input) {
+    integration_type {
+      value
+      count
+    }
+    license_type {
+      value
+      count
+    }
+    manager_supported {
+      value
+      count
+    }
+    verified {
+      value
+      count
+    }
+    solution_category {
+      value
+      count
+    }
+    use_case {
+      value
+      count
+    }
+    entity_type {
+      value
+      count
+    }
+  }
+}
+    `;
+
+export const useDocumentFacetsQuery = <
+      TData = DocumentFacetsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: DocumentFacetsQueryVariables,
+      options?: Omit<UseQueryOptions<DocumentFacetsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<DocumentFacetsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<DocumentFacetsQuery, TError, TData>(
+      {
+    queryKey: ['DocumentFacets', variables],
+    queryFn: fetcher<DocumentFacetsQuery, DocumentFacetsQueryVariables>(client, DocumentFacetsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useDocumentFacetsQuery.getKey = (variables: DocumentFacetsQueryVariables) => ['DocumentFacets', variables];
+useDocumentFacetsQuery.getRootKey = () => ['DocumentFacets'] as const;
+export const useInfiniteDocumentFacetsQuery = <
+      TData = InfiniteData<DocumentFacetsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: DocumentFacetsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<DocumentFacetsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<DocumentFacetsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<DocumentFacetsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['DocumentFacets.infinite', variables],
+      queryFn: (metaData) => fetcher<DocumentFacetsQuery, DocumentFacetsQueryVariables>(client, DocumentFacetsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteDocumentFacetsQuery.getKey = (variables: DocumentFacetsQueryVariables) => ['DocumentFacets.infinite', variables];
+useInfiniteDocumentFacetsQuery.getRootKey = () => ['DocumentFacets.infinite'] as const;
+useDocumentFacetsQuery.fetcher = (client: GraphQLClient, variables: DocumentFacetsQueryVariables, headers?: RequestInit['headers']) => fetcher<DocumentFacetsQuery, DocumentFacetsQueryVariables>(client, DocumentFacetsDocument, variables, headers);
+
 export const MostDeployedDocumentsQueryDocument = `
     query MostDeployedDocumentsQuery($limit: Int!, $platformIdentifiers: [PlatformIdentifier!]) {
   mostDeployedDocuments(limit: $limit, platformIdentifiers: $platformIdentifiers) {
@@ -4459,7 +4594,7 @@ usePublicDocumentsByServiceSlugQueryQuery.fetcher = (client: GraphQLClient, vari
 
 export const PublicDocumentsByServiceSlugSitemapQueryDocument = `
     query PublicDocumentsByServiceSlugSitemapQuery($serviceInstanceSlug: String!) {
-  publicDocumentsByServiceSlug(serviceInstanceSlug: $serviceInstanceSlug) {
+  publicDocumentSlugsByServiceSlug(serviceInstanceSlug: $serviceInstanceSlug) {
     slug
     created_at
     updated_at

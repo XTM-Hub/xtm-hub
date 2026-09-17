@@ -100,7 +100,7 @@ const restrictConnectorsToLatestDecoupling = (query: Knex.QueryBuilder) =>
     });
 
 // Applies DECOUPLING_CONNECTORS for queries scoped to a single document `type`.
-const applyDecouplingRestriction =
+export const applyDecouplingRestriction =
   (type: string) => (query: Knex.QueryBuilder) => {
     if (
       type === OPENCTI_INTEGRATION_DOCUMENT_TYPE &&
@@ -114,7 +114,9 @@ const applyDecouplingRestriction =
 
 // Same as applyDecouplingRestriction, for mixed-type listings: no single `type` to
 // check, connectors self-select via their Document_Metadata IntegrationType.
-const applyDecouplingRestrictionForMixedTypes = (query: Knex.QueryBuilder) => {
+export const applyDecouplingRestrictionForMixedTypes = (
+  query: Knex.QueryBuilder
+) => {
   if (isFeatureEnabled(FeatureFlag.DecouplingConnectors)) {
     restrictConnectorsToLatestDecoupling(query);
   } else {
@@ -322,7 +324,8 @@ export const DocumentDomain = {
 
   loadParentDocumentsByServiceInstance: async (
     type: string,
-    input: QueryDocumentsArgs,
+    input: Partial<QueryDocumentsArgs> &
+      Pick<QueryDocumentsArgs, 'serviceInstanceId'>,
     include_metadata?: DocumentMetadataKeyCode[]
   ): Promise<DocumentConnection> => {
     return DocumentDomain.loadDocuments(
@@ -463,10 +466,11 @@ export const DocumentDomain = {
   buildSeoDocumentsByServiceSlugQuery: (
     type: string,
     serviceSlug: string,
-    orderResults: boolean = true
+    orderResults: boolean = true,
+    columns: string | string[] = 'Document.*'
   ): Knex.QueryBuilder => {
     return db<Document>('Document')
-      .select('Document.*')
+      .select(columns)
       .leftJoin(
         'ServiceInstance',
         'Document.service_instance_id',
@@ -508,6 +512,22 @@ export const DocumentDomain = {
       );
 
     return DocumentMetadataDomain.hydrateMetadata(documents, include_metadata);
+  },
+
+  // Sitemap-only projection: selects just slug/created_at/updated_at (skipping the
+  // rest of `Document`'s columns) and skips metadata hydration entirely, since the
+  // sitemap never reads document metadata. See `buildSeoDocumentsByServiceSlugQuery`
+  // for the shared filtering/decoupling logic.
+  loadSeoDocumentSlugsByServiceSlug: async (
+    type: string,
+    serviceSlug: string
+  ): Promise<Pick<Document, 'slug' | 'created_at' | 'updated_at'>[]> => {
+    return DocumentDomain.buildSeoDocumentsByServiceSlugQuery(
+      type,
+      serviceSlug,
+      true,
+      ['Document.slug', 'Document.created_at', 'Document.updated_at']
+    );
   },
 
   updateDocument: async ({

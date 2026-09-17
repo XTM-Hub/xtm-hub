@@ -563,6 +563,31 @@ describe('public documents by service slug GraphQL query', () => {
   });
 });
 
+describe('public document slugs by service slug GraphQL query', () => {
+  it('should delegate to DocumentApp.loadPublicDocumentSlugsByServiceSlug and return result', async () => {
+    const expected = [] as unknown as Awaited<
+      ReturnType<typeof DocumentApp.loadPublicDocumentSlugsByServiceSlug>
+    >;
+    vi.spyOn(
+      DocumentApp,
+      'loadPublicDocumentSlugsByServiceSlug'
+    ).mockResolvedValue(expected);
+
+    const result = await documentResolver.Query!
+      .publicDocumentSlugsByServiceSlug!(
+      {},
+      { serviceInstanceSlug: 'my-service' },
+      contextSimpleUserFiligran2,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    expect(
+      DocumentApp.loadPublicDocumentSlugsByServiceSlug
+    ).toHaveBeenCalledWith('my-service');
+    expect(result).toEqual(expected);
+  });
+});
+
 describe('public document by slug GraphQL query', () => {
   it('should delegate to DocumentApp.loadPublicDocumentBySlug and return result', async () => {
     const expected = { id: uuidv4() } as unknown as Awaited<

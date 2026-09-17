@@ -30,14 +30,12 @@ const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
     resetAll,
     filters,
     setFilters,
-    setSelectedFilters,
   } = useIntegrationListStorage();
 
   useIntegrationListUrlFilters({
     filters,
     resetAll,
     setFilters,
-    setSelectedFilters,
   });
 
   const logicalFilters = useLogicalFiltersFromStorage({
@@ -51,7 +49,7 @@ const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
     solutionCategories,
   });
 
-  const queryRef = useShareableResourceQueryLoader({
+  const { queryRef } = useShareableResourceQueryLoader({
     pageSize,
     orderBy,
     orderMode,

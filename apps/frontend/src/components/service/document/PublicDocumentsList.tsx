@@ -1,3 +1,5 @@
+import { FilterSidebar } from '@/components/service/components/header/filter/FilterSidebar';
+import { IntegrationsCsvExportButton } from '@/components/service/components/header/IntegrationsCsvExportButton';
 import { ServiceListHeader } from '@/components/service/components/header/ServiceListHeader';
 import { AppServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
 import {
@@ -6,10 +8,17 @@ import {
 } from '@/components/service/document/public-document.graphql';
 import { PaginationControls } from '@/components/ui/pagination/PaginationControls';
 import { PublicShareableResourceList } from '@/components/ui/shareable-resource/PublicShareableResourceList';
+import { useDocumentFacetCounts } from '@/hooks/use-document-facet-counts';
 import useScrollPosition from '@/hooks/use-scroll-position';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
+import { useStickyHeaderOffset } from '@/hooks/use-sticky-header-offset';
 import { useTablePagination } from '@/hooks/use-table-pagination';
-import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
+import { APP_PATH } from '@/utils/path/constant';
+import { encodeRedirectValue } from '@/utils/redirect';
+import {
+  SERVICE_SLUG_SHAREABLE_RESOURCE_MAPPING,
+  ServiceSlug,
+} from '@/utils/shareable-resources/shareable-resources.types';
 import { useShareableResourceMapping } from '@/utils/shareable-resources/use-shareable-resource-mapping';
 import publicDocumentListGraphql, {
   publicDocumentList$key,
@@ -17,7 +26,7 @@ import publicDocumentListGraphql, {
 import { publicDocumentListItemFragment$key } from '@generated/publicDocumentListItemFragment.graphql';
 import { publicDocumentsQuery } from '@generated/publicDocumentsQuery.graphql';
 import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
-import { useLayoutEffect, useMemo } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
 import {
   PreloadedQuery,
   readInlineData,
@@ -46,6 +55,42 @@ const PublicDocumentsList = ({
     publicDocumentList$key
   >(publicDocumentListGraphql, queryData);
 
+  const serviceInstanceSlug = serviceInstance.slug as ServiceSlug;
+  const { localStorageKey } = useShareableResourceMapping(serviceInstanceSlug);
+
+  const {
+    search,
+    setSearch,
+    pageSize,
+    setPageSize,
+    displayMode: selectedDisplayMode,
+    setDisplayMode,
+    labels,
+    entityTypes,
+    integrationTypes,
+    deployable,
+    verified,
+    productVersions,
+    licenseTypes,
+    solutionCategories,
+  } = useServiceListLocalStorage(localStorageKey);
+
+  const facetCounts = useDocumentFacetCounts({
+    serviceInstanceId: serviceInstance.id,
+    documentType: SERVICE_SLUG_SHAREABLE_RESOURCE_MAPPING[serviceInstanceSlug],
+    search,
+    serviceInstanceSlug,
+    restrictToActiveDocuments: true,
+    labels,
+    entityTypes,
+    deployable,
+    verified,
+    integrationTypes,
+    productVersions,
+    licenseTypes,
+    solutionCategories,
+  });
+
   const documents = useMemo(() => {
     return (data.publicDocuments?.edges ?? [])
       .map(({ node }) =>
@@ -57,18 +102,10 @@ const PublicDocumentsList = ({
       .filter((l) => !!l);
   }, [data.publicDocuments]);
 
-  const { filters, localStorageKey } = useShareableResourceMapping(
-    serviceInstance.slug as ServiceSlug
+  const { filters } = useShareableResourceMapping(
+    serviceInstanceSlug,
+    facetCounts
   );
-
-  const {
-    search,
-    setSearch,
-    pageSize,
-    setPageSize,
-    displayMode: selectedDisplayMode,
-    setDisplayMode,
-  } = useServiceListLocalStorage(localStorageKey);
 
   const { restore } = useScrollPosition();
 
@@ -84,15 +121,34 @@ const PublicDocumentsList = ({
     },
   });
 
+  const headerRef = useRef<HTMLDivElement>(null);
+  useStickyHeaderOffset(headerRef);
+
+  const isIntegrationsService =
+    serviceInstanceSlug === ServiceSlug.OPEN_CTI_INTEGRATIONS;
+
   return (
     <AppServiceListLocalStorageKeyContext localStorageKey={localStorageKey}>
-      <div className="sticky top-0 py-m z-15 relative bg-gradient-background">
+      <div
+        ref={headerRef}
+        className="sticky top-0 py-m z-15 relative bg-gradient-background">
         <ServiceListHeader
           search={search}
           onSearchChange={setSearch}
-          filters={filters}
           className="mb-3"
           onDisplayModeChange={setDisplayMode}
+          actions={
+            isIntegrationsService ? (
+              <IntegrationsCsvExportButton
+                serviceInstanceId={serviceInstance.id}
+                isAuthenticated={false}
+                loginRedirectPath={`/${APP_PATH}/service/opencti_integrations/${encodeRedirectValue(serviceInstance.id)}`}
+                type={
+                  SERVICE_SLUG_SHAREABLE_RESOURCE_MAPPING[serviceInstanceSlug]
+                }
+              />
+            ) : undefined
+          }
           paginationControls={
             <PaginationControls
               totalCount={data.publicDocuments.totalCount}
@@ -104,12 +160,17 @@ const PublicDocumentsList = ({
           }
         />
       </div>
-      <PublicShareableResourceList
-        displayMode={selectedDisplayMode}
-        documents={documents}
-        serviceInstance={serviceInstance}
-        baseUrl={baseUrl}
-      />
+      <div className="flex flex-row">
+        <FilterSidebar filters={filters} />
+        <div className="grow shrink min-w-0 px-m pb-m">
+          <PublicShareableResourceList
+            displayMode={selectedDisplayMode}
+            documents={documents}
+            serviceInstance={serviceInstance}
+            baseUrl={baseUrl}
+          />
+        </div>
+      </div>
     </AppServiceListLocalStorageKeyContext>
   );
 };

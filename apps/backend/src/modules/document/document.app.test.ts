@@ -1138,6 +1138,35 @@ describe('documentApp', () => {
     });
   });
 
+  describe('loadPublicDocumentSlugsByServiceSlug', () => {
+    it('should throw when service definition is not found', async () => {
+      // When
+      const call =
+        DocumentApp.loadPublicDocumentSlugsByServiceSlug('unknown-slug');
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.ServiceDefinitionNotFound);
+    });
+
+    it('should return the document slugs without hydrating metadata', async () => {
+      // Given
+      const loadSeoDocumentSlugsByServiceSlugSpy = vi
+        .spyOn(DocumentDomain, 'loadSeoDocumentSlugsByServiceSlug')
+        .mockResolvedValue([{}]);
+
+      // When
+      await DocumentApp.loadPublicDocumentSlugsByServiceSlug(
+        SERVICES.INSTANCES.CUSTOM_DASHBOARDS.SLUG
+      );
+
+      // Then
+      expect(loadSeoDocumentSlugsByServiceSlugSpy).toHaveBeenCalledWith(
+        OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
+        SERVICES.INSTANCES.CUSTOM_DASHBOARDS.SLUG
+      );
+    });
+  });
+
   describe('loadDocuments visibility', () => {
     let privateServiceInstance: ServiceInstance;
 
@@ -1187,6 +1216,47 @@ describe('documentApp', () => {
       });
 
       expect(result.edges).toHaveLength(1);
+    });
+  });
+
+  describe('loadDocuments with metadataKeysOverride', () => {
+    it('should throw when service definition is not found', async () => {
+      // When
+      const call = DocumentApp.loadDocuments(
+        {
+          serviceInstanceId:
+            '00000000-0000-0000-0000-000000000000' as ServiceInstanceId,
+        },
+        [DocumentMetadataKeyCode.IntegrationType]
+      );
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.ServiceDefinitionNotFound);
+    });
+
+    it('should load documents with the caller-provided metadata keys instead of the service definition default', async () => {
+      // Given
+      const loadParentDocumentsByServiceInstanceSpy = vi
+        .spyOn(DocumentDomain, 'loadParentDocumentsByServiceInstance')
+        .mockResolvedValue({
+          edges: [],
+          pageInfo: { hasNextPage: false, hasPreviousPage: false },
+          totalCount: 0,
+        });
+      const input = {
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+      };
+      const metadataKeys = [DocumentMetadataKeyCode.IntegrationType];
+
+      // When
+      await DocumentApp.loadDocuments(input, metadataKeys);
+
+      // Then
+      expect(loadParentDocumentsByServiceInstanceSpy).toHaveBeenCalledWith(
+        OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        input,
+        metadataKeys
+      );
     });
   });
 

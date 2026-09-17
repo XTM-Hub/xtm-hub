@@ -9,6 +9,15 @@ export const isSafeRedirect = (url: string): boolean => {
   return url.startsWith('/') && !url.startsWith('//');
 };
 
+/**
+ * Encodes a dynamic value (e.g. a Relay global ID, which is base64 and can
+ * contain `+`, `/`, `=`) before interpolating it into a redirect `pathname`.
+ * Without this, an unescaped `+`/`/` gets corrupted once the browser/Next.js
+ * re-parses the decoded pathname as a real URL (e.g. `+` read back as a space).
+ */
+export const encodeRedirectValue = (value: string): string =>
+  encodeURIComponent(value);
+
 // Canonical builder for the auth redirect URLs. Encodes the pathname as a
 // `redirect` query param, or returns `base` unchanged when none is given.
 const buildAuthRedirect = (
