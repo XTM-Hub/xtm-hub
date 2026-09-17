@@ -218,6 +218,30 @@ export const ServiceGroupDomain = {
       .select('ServiceGroup_User.*');
   },
 
+  loadUserIdsInServiceInstanceGroups: async (
+    serviceInstanceIds: ServiceInstanceId[],
+    userIds: UserId[]
+  ): Promise<UserId[]> => {
+    if (!serviceInstanceIds.length || !userIds.length) {
+      return [];
+    }
+
+    const rows = await db<Pick<ServiceGroupUser, 'user_id'>>(
+      'ServiceGroup_User'
+    )
+      .innerJoin(
+        'ServiceGroup',
+        'ServiceGroup.id',
+        '=',
+        'ServiceGroup_User.group_id'
+      )
+      .whereIn('ServiceGroup.service_instance_id', serviceInstanceIds)
+      .whereIn('ServiceGroup_User.user_id', userIds)
+      .distinct('ServiceGroup_User.user_id');
+
+    return rows.map(({ user_id }) => user_id);
+  },
+
   initGroupWithAdmin: async (
     userAdminId: UserId,
     serviceInstancesId: ServiceInstanceId,

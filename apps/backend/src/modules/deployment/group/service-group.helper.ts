@@ -73,6 +73,15 @@ export const ServiceGroupHelper = {
     name: serviceGroup.name as ServiceGroupName,
   }),
 
+  uniqueRolesByProduct: <T extends { product: PlatformIdentifier }>(
+    roles: T[]
+  ): T[] =>
+    roles.filter(
+      (roleAssignment, index) =>
+        roles.findIndex((other) => other.product === roleAssignment.product) ===
+        index
+    ),
+
   matchRolesToChildren: <T extends ServiceGroupName | null>(
     children: DeploymentRequest[],
     roles: { product: PlatformIdentifier; role?: T | null }[]

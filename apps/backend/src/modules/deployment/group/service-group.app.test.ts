@@ -550,6 +550,7 @@ describe('serviceGroupApp', () => {
 
   describe('addUsersToBundleGroups', () => {
     const createdBundleIds: DeploymentRequestId[] = [];
+    const inTenDays = () => new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
 
     afterEach(async () => {
       vi.useRealTimers();
@@ -641,6 +642,50 @@ describe('serviceGroupApp', () => {
       await expect(call).rejects.toThrow(ErrorCode.XtmOneRoleRequired);
     });
 
+    it('should keep only the first role when the same product is submitted twice', async () => {
+      // Given
+      const { bundle, groups } = await createBundleWithGroups({
+        endDate: inTenDays(),
+      });
+      const sendMailSpy = vi
+        .spyOn(mailService, 'sendMail')
+        .mockResolvedValue(undefined);
+
+      // When
+      await ServiceGroupApp.addUsersToBundleGroups(bundle.service_instance_id, {
+        userIds: [TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID],
+        roles: [
+          { product: PlatformIdentifier.Xtmone, role: ServiceGroupName.User },
+          { product: PlatformIdentifier.Opencti, role: ServiceGroupName.Admin },
+          {
+            product: PlatformIdentifier.Opencti,
+            role: ServiceGroupName.Reader,
+          },
+        ],
+      });
+
+      // Then
+      const adminMembers = await TestHelper.serviceGroupUser.load({
+        group_id: groups.openctiAdminGroupId,
+      });
+      const readerMembers = await TestHelper.serviceGroupUser.load({
+        group_id: groups.openctiReaderGroupId,
+      });
+      expect(adminMembers?.map((member) => member.user_id)).toEqual([
+        TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
+      ]);
+      expect(readerMembers).toEqual([]);
+      expect(sendMailSpy).toHaveBeenCalledTimes(1);
+      expect(sendMailSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: expect.objectContaining({
+            productNames: 'OpenCTI and XTM One',
+            products: [PlatformIdentifier.Opencti, PlatformIdentifier.Xtmone],
+          }),
+        })
+      );
+    });
+
     it('should throw UserIsNotInOrganization when a userId does not belong to the bundle organization', async () => {
       // Given
       const { bundle } = await createBundleWithGroups();
@@ -721,7 +766,12 @@ describe('serviceGroupApp', () => {
 
     it('should be idempotent when a user is added twice to the same group (relies on ON CONFLICT IGNORE)', async () => {
       // Given
-      const { bundle, groups } = await createBundleWithGroups();
+      const { bundle, groups } = await createBundleWithGroups({
+        endDate: inTenDays(),
+      });
+      const sendMailSpy = vi
+        .spyOn(mailService, 'sendMail')
+        .mockResolvedValue(undefined);
 
       // When
       await ServiceGroupApp.addUsersToBundleGroups(bundle.service_instance_id, {
@@ -750,6 +800,82 @@ describe('serviceGroupApp', () => {
         TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
       ]);
       expect(xtmoneMembers?.map((member) => member.user_id)).toEqual([
+        TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
+      ]);
+      expect(sendMailSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not send the invitation again when granting another product to a user already in the bundle', async () => {
+      // Given
+      const { bundle } = await createBundleWithGroups({
+        endDate: inTenDays(),
+      });
+      const sendMailSpy = vi
+        .spyOn(mailService, 'sendMail')
+        .mockResolvedValue(undefined);
+      await ServiceGroupApp.addUsersToBundleGroups(bundle.service_instance_id, {
+        userIds: [TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID],
+        roles: [
+          { product: PlatformIdentifier.Xtmone, role: ServiceGroupName.User },
+        ],
+      });
+      expect(sendMailSpy).toHaveBeenCalledTimes(1);
+
+      // When
+      await ServiceGroupApp.addUsersToBundleGroups(bundle.service_instance_id, {
+        userIds: [
+          TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
+          TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+        ],
+        roles: [
+          { product: PlatformIdentifier.Opencti, role: ServiceGroupName.Admin },
+          { product: PlatformIdentifier.Xtmone, role: ServiceGroupName.User },
+        ],
+      });
+
+      // Then
+      expect(sendMailSpy).toHaveBeenCalledTimes(2);
+      expect(sendMailSpy).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          to: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.EMAIL,
+          template: 'free_trial_bundle_user_added',
+        })
+      );
+    });
+
+    it('should send a single invitation when the same new user is added by two concurrent calls', async () => {
+      // Given
+      const { bundle, groups } = await createBundleWithGroups({
+        endDate: inTenDays(),
+      });
+      const sendMailSpy = vi
+        .spyOn(mailService, 'sendMail')
+        .mockResolvedValue(undefined);
+      const input = {
+        userIds: [TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID],
+        roles: [
+          { product: PlatformIdentifier.Xtmone, role: ServiceGroupName.User },
+        ],
+      };
+
+      // When
+      await Promise.all([
+        ServiceGroupApp.addUsersToBundleGroups(
+          bundle.service_instance_id,
+          input
+        ),
+        ServiceGroupApp.addUsersToBundleGroups(
+          bundle.service_instance_id,
+          input
+        ),
+      ]);
+
+      // Then
+      expect(sendMailSpy).toHaveBeenCalledTimes(1);
+      const members = await TestHelper.serviceGroupUser.load({
+        group_id: groups.xtmoneUserGroupId,
+      });
+      expect(members?.map((member) => member.user_id)).toEqual([
         TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
       ]);
     });

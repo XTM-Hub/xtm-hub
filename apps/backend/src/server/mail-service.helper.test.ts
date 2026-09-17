@@ -693,14 +693,29 @@ describe('free_trial_bundle_user_added', () => {
     expect(html).toContain('Hi Alice,');
     expect(html).toMatch(/by\s+admin@filigran\.io\./);
     expect(html).toContain('<strong>OpenCTI and XTM One</strong>');
-    expect(html).toContain(
-      'You have 12 days remaining until the end of the trial.'
+    expect(html).toMatch(
+      /You have 12 days remaining\s+until the end of the trial\./
     );
     expect(html).toContain(`<a href="${platformUrl}">${platformUrl}</a>`);
     expect(html).toContain(
       `${config.get('base_url_front')}/app/service/xtm-platform-trial-guide`
     );
     expect(html).toContain('xtm-hub-support@filigran.io');
+  });
+
+  it('should use the singular unit when a single day is left', async () => {
+    const html = await renderEmail('free_trial_bundle_user_added', {
+      firstName: 'Alice',
+      adminEmail: 'admin@filigran.io',
+      productNames: 'OpenCTI',
+      products: [PlatformIdentifier.Opencti],
+      daysLeft: 1,
+      platformUrl: 'https://hub.filigran.io/app/xtm-platform-trial',
+    });
+
+    expect(html).toMatch(
+      /You have 1 day remaining\s+until the end of the trial\./
+    );
   });
 
   it('should use the XTM Platform subject', () => {

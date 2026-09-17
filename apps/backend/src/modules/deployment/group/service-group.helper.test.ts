@@ -142,6 +142,22 @@ describe('serviceGroupHelper', () => {
     });
   });
 
+  describe('uniqueRolesByProduct', () => {
+    it('should keep the first assignment of each product and preserve order', () => {
+      const roles = [
+        { product: PlatformIdentifier.Xtmone, role: ServiceGroupName.User },
+        { product: PlatformIdentifier.Opencti, role: ServiceGroupName.Admin },
+        { product: PlatformIdentifier.Opencti, role: ServiceGroupName.Reader },
+        { product: PlatformIdentifier.Xtmone, role: ServiceGroupName.Admin },
+      ];
+
+      expect(ServiceGroupHelper.uniqueRolesByProduct(roles)).toEqual([
+        { product: PlatformIdentifier.Xtmone, role: ServiceGroupName.User },
+        { product: PlatformIdentifier.Opencti, role: ServiceGroupName.Admin },
+      ]);
+    });
+  });
+
   describe('matchRolesToChildren', () => {
     const bundleIds: DeploymentRequestId[] = [];
 

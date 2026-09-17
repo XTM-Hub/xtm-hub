@@ -112,6 +112,42 @@ describe('serviceGroupDomain', () => {
     });
   });
 
+  describe('loadUserIdsInServiceInstanceGroups', () => {
+    it('should return the submitted users that belong to a group of the given service instances, once each', async () => {
+      // Given
+      await TestHelper.serviceGroupUser.create({
+        user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+        group_id: adminGroupId,
+      });
+      await TestHelper.serviceGroupUser.create({
+        user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+        group_id: analystGroupId,
+      });
+      await TestHelper.serviceGroupUser.create({
+        user_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.ID,
+        group_id: analystGroupId,
+      });
+      await TestHelper.serviceGroupUser.create({
+        user_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID,
+        group_id: readerGroupId,
+      });
+
+      // When
+      const userIds =
+        await ServiceGroupDomain.loadUserIdsInServiceInstanceGroups(
+          [serviceInstanceId1],
+          [
+            TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID,
+            TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
+          ]
+        );
+
+      // Then
+      expect(userIds).toEqual([TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID]);
+    });
+  });
+
   describe('addUsersToGroup', () => {
     it('should add users to the service group', async () => {
       await ServiceGroupDomain.addUsersToGroup(adminGroupId, [
