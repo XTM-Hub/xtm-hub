@@ -1839,6 +1839,13 @@ export type ProvisionedNewsFeedItem = Node & {
   type: NewsFeedItemType;
 };
 
+export type PublicDocumentSlugInfo = {
+  __typename?: 'PublicDocumentSlugInfo';
+  created_at: Scalars['Date']['output'];
+  slug: Maybe<Scalars['String']['output']>;
+  updated_at: Maybe<Scalars['Date']['output']>;
+};
+
 export type Query = {
   __typename?: 'Query';
   bundleProducts: Array<PlatformIdentifier>;
@@ -1874,6 +1881,7 @@ export type Query = {
   platformAssociatedOrganization: Maybe<Organization>;
   platformTrialStatus: PlatformTrialStatus;
   publicDocumentBySlug: Maybe<Document>;
+  publicDocumentSlugsByServiceSlug: Array<PublicDocumentSlugInfo>;
   publicDocuments: DocumentConnection;
   publicDocumentsByServiceSlug: Array<Document>;
   registeredPlatform: Maybe<RegisteredPlatform>;
@@ -2071,6 +2079,11 @@ export type QueryPlatformTrialStatusArgs = {
 export type QueryPublicDocumentBySlugArgs = {
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
   slug: Scalars['String']['input'];
+};
+
+
+export type QueryPublicDocumentSlugsByServiceSlugArgs = {
+  serviceInstanceSlug: Scalars['String']['input'];
 };
 
 
@@ -3331,7 +3344,7 @@ export type PublicDocumentsByServiceSlugSitemapQueryQueryVariables = Exact<{
 }>;
 
 
-export type PublicDocumentsByServiceSlugSitemapQueryQuery = { __typename?: 'Query', publicDocumentsByServiceSlug: Array<{ __typename?: 'Connector', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'CsvFeed', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'CustomDashboard', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'CustomView', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'DefaultDocument', slug: string | null, created_at: any, updated_at: any | null } | { __typename?: 'IntegrationHack', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'OpenAEVScenario', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'OpenCTIPlaybook', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'RssFeed', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'Stream', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'TaxiiFeed', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'ThirdPartyIntegration', slug: string, created_at: any, updated_at: any | null }> };
+export type PublicDocumentsByServiceSlugSitemapQueryQuery = { __typename?: 'Query', publicDocumentSlugsByServiceSlug: Array<{ __typename?: 'PublicDocumentSlugInfo', slug: string | null, created_at: any, updated_at: any | null }> };
 
 export type FeatureVoteMutationVariables = Exact<{
   feature_id: Scalars['VotableFeatureId']['input'];
@@ -4581,7 +4594,7 @@ usePublicDocumentsByServiceSlugQueryQuery.fetcher = (client: GraphQLClient, vari
 
 export const PublicDocumentsByServiceSlugSitemapQueryDocument = `
     query PublicDocumentsByServiceSlugSitemapQuery($serviceInstanceSlug: String!) {
-  publicDocumentsByServiceSlug(serviceInstanceSlug: $serviceInstanceSlug) {
+  publicDocumentSlugsByServiceSlug(serviceInstanceSlug: $serviceInstanceSlug) {
     slug
     created_at
     updated_at
