@@ -47,25 +47,17 @@ const isForeignKeyViolation = (error: unknown): boolean =>
 export const UserAdminApp = {
   addUser: async (input: AdminAddUserInput): Promise<UserLoadUserBy> => {
     const contextUser = requestContext.requireUser();
-    const [organizationFromEmail] =
-      await OrganizationDomain.loadOrganizationsFromEmail(input.email);
     // In most of the case there will be only one organization in the list, but in case where the scenario is an admin pltfm it can be multiple or none
     const chosenOrganizationId: OrganizationId | undefined = input
       .organization_capabilities?.[0]
       ? input.organization_capabilities?.[0].organization_id
       : undefined;
 
-    // The admin orga should only allow to add users in the same organization and with the same domain.
-    // Only the admin PLTFM can by pass this check
-    const isEmailOutsideOrganization =
-      chosenOrganizationId !== organizationFromEmail?.id;
-
-    if (isEmailOutsideOrganization && !isUserAdminPlatform(contextUser)) {
-      logApp.warn(
-        'You cannot add a user whose email domain is outside your organization'
-      );
-      throw new Error(ErrorCode.EmailOutsideOrganizationError);
-    }
+    await securityGuard.assertEmailMatchesOrganization(
+      contextUser,
+      input.email,
+      chosenOrganizationId
+    );
 
     const [existingUser] = await UserDomain.loadUser({ email: input.email });
 
