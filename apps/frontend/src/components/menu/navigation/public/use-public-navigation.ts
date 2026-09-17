@@ -23,8 +23,7 @@ import {
 import { useLocale, useTranslations } from 'next-intl';
 
 export const usePublicNavigation = (
-  visibleServiceSlugs: string[],
-  isXtmPlatformTrialEnabled: boolean
+  visibleServiceSlugs: string[]
 ): NavigationConfig => {
   const t = useTranslations();
   const locale = useLocale();
@@ -156,17 +155,13 @@ export const usePublicNavigation = (
       label: t('Menu.Slack'),
       external: true,
     },
-    ...(isXtmPlatformTrialEnabled
-      ? [
-          {
-            key: 'xtm-platform-trial',
-            href: xtmPlatformTrialPublicHref,
-            icon: DiamondOutlinedIcon,
-            label: t('Menu.XTMPlatformTrial'),
-            highlight: true,
-          },
-        ]
-      : []),
+    {
+      key: 'xtm-platform-trial',
+      href: xtmPlatformTrialPublicHref,
+      icon: DiamondOutlinedIcon,
+      label: t('Menu.XTMPlatformTrial'),
+      highlight: true,
+    },
   ];
 
   return { sections, bottomLinks };

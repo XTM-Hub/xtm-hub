@@ -7,13 +7,11 @@ import Link from 'next/link';
 interface PublicHeaderContentProps {
   locale: string;
   visibleServiceSlugs: string[];
-  isXtmPlatformTrialEnabled: boolean;
 }
 
 export const PublicHeaderContent = async ({
   locale,
   visibleServiceSlugs,
-  isXtmPlatformTrialEnabled,
 }: PublicHeaderContentProps) => {
   const t = await getTranslations();
 
@@ -28,10 +26,7 @@ export const PublicHeaderContent = async ({
       <div className="flex items-center gap-s ml-auto">
         <PublicHeaderAuthButtons />
         <div className="md:hidden flex items-center">
-          <PublicMobileMenuButton
-            visibleServiceSlugs={visibleServiceSlugs}
-            isXtmPlatformTrialEnabled={isXtmPlatformTrialEnabled}
-          />
+          <PublicMobileMenuButton visibleServiceSlugs={visibleServiceSlugs} />
         </div>
       </div>
     </>

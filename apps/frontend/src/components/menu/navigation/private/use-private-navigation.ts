@@ -9,7 +9,6 @@ import {
   SectionConfig,
   SectionLink,
 } from '@/components/menu/navigation/shared/navigation.type';
-import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH, XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
 import {
@@ -26,7 +25,6 @@ import {
   SlackIcon,
 } from '@filigran/icon';
 import {
-  FeatureFlag,
   OrderingMode,
   OrganizationCapability,
   PlatformIdentifier,
@@ -94,9 +92,6 @@ export const usePrivateNavigation = (): NavigationConfig => {
     useContext(PortalContext);
   const tMenu = useTranslations('Menu');
   const tMenuLinks = useTranslations('MenuLinks');
-  const isXtmPlatformTrialEnabled = useIsFeatureEnabled(
-    FeatureFlag.XtmPlatformTrial
-  );
   const locale = useLocale();
   const selectedOrganizationId = me?.selected_organization_id;
   const currentOrganization = me?.organizations.find(
@@ -139,15 +134,11 @@ export const usePrivateNavigation = (): NavigationConfig => {
       href: `/${APP_PATH}/admin/service`,
       label: tMenuLinks('Service'),
     },
-    ...(isXtmPlatformTrialEnabled
-      ? [
-          {
-            href: `/${APP_PATH}/admin/manage-trials`,
-            label: tMenuLinks('ManageTrials'),
-            restriction: [PortalCapability.ReadTrials],
-          },
-        ]
-      : []),
+    {
+      href: `/${APP_PATH}/admin/manage-trials`,
+      label: tMenuLinks('ManageTrials'),
+      restriction: [PortalCapability.ReadTrials],
+    },
     {
       href: `/${APP_PATH}/admin/opencti-trials`,
       label: tMenuLinks('OpenCTITrial'),
@@ -255,7 +246,6 @@ export const usePrivateNavigation = (): NavigationConfig => {
     [registeredPlatformsQueryData]
   );
   const canShowXtmPlatformTrialLink =
-    isXtmPlatformTrialEnabled &&
     !platformTrialStatusData?.platformTrialStatus.isBlacklisted;
   const buildServiceLink = (
     identifier: ServiceDefinitionIdentifier

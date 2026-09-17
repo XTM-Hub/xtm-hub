@@ -14,8 +14,6 @@ import { loadMeUser } from '@/utils/load-me-user';
 import { getMetadataBase } from '@/utils/metadata';
 import { APP_PATH } from '@/utils/path/constant';
 import { buildSignupRedirect } from '@/utils/redirect';
-import { isFeatureEnabled } from '@/utils/settings.service';
-import { FeatureFlag } from '@graphql/generated';
 import { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -46,15 +44,11 @@ const RootLayout = async ({ children }: RootLayoutProps) => {
     redirect(buildSignupRedirect(pathname));
   }
 
-  const xtmPlatformTrialEnabled = await isFeatureEnabled(
-    FeatureFlag.XtmPlatformTrial
-  );
-
   const banners = (
     <>
       <TestEnvBanner />
       <AdminBanner />
-      {xtmPlatformTrialEnabled && <PrivateXtmPlatformTrialBanner />}
+      <PrivateXtmPlatformTrialBanner />
     </>
   );
 

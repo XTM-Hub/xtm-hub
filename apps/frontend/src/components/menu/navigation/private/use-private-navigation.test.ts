@@ -4,7 +4,6 @@ import {
   getPrivateNavigationServiceHrefs,
 } from '@/components/menu/navigation/private/private-navigation.utils';
 import { usePrivateNavigation } from '@/components/menu/navigation/private/use-private-navigation';
-import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH } from '@/utils/path/constant';
 import { meContext_fragment$data } from '@generated/meContext_fragment.graphql';
@@ -135,7 +134,6 @@ describe('usePrivateNavigation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    vi.mocked(useIsFeatureEnabled).mockReturnValue(true);
     vi.mocked(getPrivateNavigationServiceHrefs).mockReturnValue(new Map());
     vi.mocked(
       getPrivateNavigationRegisteredPlatformsByIdentifier
@@ -206,18 +204,6 @@ describe('usePrivateNavigation', () => {
         highlight: true,
       },
     ]);
-  });
-
-  it('hides the xtm-platform-trial bottom link when the feature flag is off', () => {
-    vi.mocked(useIsFeatureEnabled).mockReturnValue(false);
-
-    const { result } = renderUsePrivateNavigation({
-      selectedOrganizationId: 'org-1',
-    });
-
-    expect(result.current.bottomLinks.map((link) => link.key)).not.toContain(
-      'xtm-platform-trial'
-    );
   });
 
   it('hides the xtm-platform-trial bottom link when organization is blacklisted', () => {
@@ -366,31 +352,17 @@ describe('usePrivateNavigation', () => {
   it.each([
     {
       selectedOrganizationId: 'org-1',
-      isXtmPlatformTrialEnabled: true,
-      expectedEnabled: true,
-      expectedOrganizationId: 'org-1',
-    },
-    {
-      selectedOrganizationId: 'org-1',
-      isXtmPlatformTrialEnabled: false,
       expectedEnabled: true,
       expectedOrganizationId: 'org-1',
     },
     {
       selectedOrganizationId: undefined,
-      isXtmPlatformTrialEnabled: false,
       expectedEnabled: false,
       expectedOrganizationId: '',
     },
   ])(
-    'calls GraphQL hooks with expected variables for selected org $selectedOrganizationId when the XTM Platform trial flag is $isXtmPlatformTrialEnabled',
-    ({
-      selectedOrganizationId,
-      isXtmPlatformTrialEnabled,
-      expectedEnabled,
-      expectedOrganizationId,
-    }) => {
-      vi.mocked(useIsFeatureEnabled).mockReturnValue(isXtmPlatformTrialEnabled);
+    'calls GraphQL hooks with expected variables for selected org $selectedOrganizationId',
+    ({ selectedOrganizationId, expectedEnabled, expectedOrganizationId }) => {
       renderUsePrivateNavigation({ selectedOrganizationId });
 
       const expectedServiceVariables = {

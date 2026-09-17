@@ -7,9 +7,7 @@ import { PublicXtmPlatformTrialBanner } from '@/components/service/trial-instanc
 import { type PublicLocale, publicLocales } from '@/i18n/config';
 import { getDefaultMetadata } from '@/utils/generate-metadata';
 import { fetchVisibleServiceSlugs } from '@/utils/seo-service-instance/utils/seo-service-instance.server.utils';
-import { isFeatureEnabled } from '@/utils/settings.service';
 import '@filigran/ui/theme.css';
-import { FeatureFlag } from '@graphql/generated';
 import '@styles/globals.css';
 import { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
@@ -42,26 +40,17 @@ const RootLayout = async ({
   }
   setRequestLocale(locale);
 
-  const [visibleServiceSlugs, xtmPlatformTrialEnabled] = await Promise.all([
-    fetchVisibleServiceSlugs(),
-    isFeatureEnabled(FeatureFlag.XtmPlatformTrial),
-  ]);
+  const visibleServiceSlugs = await fetchVisibleServiceSlugs();
 
   return (
     <ReactQueryProvider>
       <AppShell
-        banners={xtmPlatformTrialEnabled && <PublicXtmPlatformTrialBanner />}
-        menu={
-          <PublicMenu
-            visibleServiceSlugs={visibleServiceSlugs}
-            isXtmPlatformTrialEnabled={xtmPlatformTrialEnabled}
-          />
-        }
+        banners={<PublicXtmPlatformTrialBanner />}
+        menu={<PublicMenu visibleServiceSlugs={visibleServiceSlugs} />}
         headerContent={
           <PublicHeaderContent
             locale={locale}
             visibleServiceSlugs={visibleServiceSlugs}
-            isXtmPlatformTrialEnabled={xtmPlatformTrialEnabled}
           />
         }
         contentClassName="container pt-l">
