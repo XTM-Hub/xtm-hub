@@ -1,0 +1,40 @@
+meta {
+  name: publicDocumentSlugsByServiceSlug
+  type: graphql
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/graphql-api
+  body: graphql
+}
+
+headers {
+  cookie: {{cookie}}
+}
+
+body:graphql {
+  query publicDocumentSlugsByServiceSlug(
+    $serviceInstanceSlug: String!
+  ) {
+    publicDocumentSlugsByServiceSlug(
+      serviceInstanceSlug: $serviceInstanceSlug
+    ) {
+      slug
+      created_at
+      updated_at
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "serviceInstanceSlug": "opencti"
+  }
+}
+
+docs {
+  This request lists the slug/created_at/updated_at of every active parent
+  document for a service instance, without fetching full Document rows or
+  metadata. It backs the sitemap generation for public documents.
+}

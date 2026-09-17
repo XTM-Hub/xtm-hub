@@ -142,4 +142,43 @@ describe('PublicResourceActions', () => {
     ).toBeDisabled();
     expect(screen.getByText(`${DEPLOY_KEY}:OpenCTI`).closest('a')).toBeNull();
   });
+
+  it('should percent-encode a service instance id containing + so it survives the signup redirect round-trip', () => {
+    // Given
+    // Relay global IDs are base64 and can contain `+`; an unescaped `+` in a
+    // query value would otherwise be silently read back as a space.
+    const SERVICE_INSTANCE_ID_WITH_PLUS = 'U2VydmljZUluc3RhbmNlOnh4eHg/+/+PT0=';
+    const documentData = buildDocumentData();
+
+    // When
+    testRender(
+      <PublicResourceActions
+        documentData={documentData}
+        serviceInstance={{
+          id: SERVICE_INSTANCE_ID_WITH_PLUS,
+          slug: ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS,
+        }}
+        pageUrl={PAGE_URL}
+      />
+    );
+
+    // Then
+    const expectedHref = `/sign-up?redirect=${encodeURIComponent(
+      btoa(
+        `/redirect/opencti_custom_dashboards?service_instance_id=${encodeURIComponent(SERVICE_INSTANCE_ID_WITH_PLUS)}&document_id=${DOCUMENT_ID}`
+      )
+    )}`;
+    const href = screen
+      .getByRole('link', { name: DOWNLOAD_ICON_KEY })
+      .getAttribute('href')!;
+    expect(href).toBe(expectedHref);
+
+    const decodedPathname = atob(
+      decodeURIComponent(href.split('?redirect=')[1])
+    );
+    const query = new URLSearchParams(decodedPathname.split('?')[1]);
+    expect(query.get('service_instance_id')).toBe(
+      SERVICE_INSTANCE_ID_WITH_PLUS
+    );
+  });
 });

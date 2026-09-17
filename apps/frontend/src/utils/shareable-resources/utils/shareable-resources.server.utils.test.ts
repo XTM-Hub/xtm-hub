@@ -75,7 +75,7 @@ describe('fetchDocumentSlugsForSitemap', () => {
       'updated_at',
     ]);
     vi.mocked(serverGraphqlFetch).mockResolvedValue({
-      publicDocumentsByServiceSlug: [document],
+      publicDocumentSlugsByServiceSlug: [document],
     });
 
     // When fetching the sitemap-only document slugs for that service
@@ -88,7 +88,7 @@ describe('fetchDocumentSlugsForSitemap', () => {
   it('should tag the request with the shared public documents cache tag', async () => {
     // Given a backend response
     vi.mocked(serverGraphqlFetch).mockResolvedValue({
-      publicDocumentsByServiceSlug: [],
+      publicDocumentSlugsByServiceSlug: [],
     });
 
     // When fetching the sitemap-only document slugs for that service
