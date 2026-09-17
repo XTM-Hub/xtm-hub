@@ -3,12 +3,14 @@ query Users(
   $orderBy: UserOrdering!
   $orderMode: OrderingMode!
   $filters: [Filter!]
+  $searchTerm: String
 ) {
   users(
     first: $first
     orderBy: $orderBy
     orderMode: $orderMode
     filters: $filters
+    searchTerm: $searchTerm
   ) {
     edges {
       node {

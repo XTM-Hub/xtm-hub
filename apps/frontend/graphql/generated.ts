@@ -3571,6 +3571,7 @@ export type UsersQueryVariables = Exact<{
   orderBy: UserOrdering;
   orderMode: OrderingMode;
   filters: InputMaybe<Array<Filter> | Filter>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
 }>;
 
 
@@ -6074,12 +6075,13 @@ useChangeSelectedOrganizationMutation.getRootKey = () => ['ChangeSelectedOrganiz
 useChangeSelectedOrganizationMutation.fetcher = (client: GraphQLClient, variables: ChangeSelectedOrganizationMutationVariables, headers?: RequestInit['headers']) => fetcher<ChangeSelectedOrganizationMutation, ChangeSelectedOrganizationMutationVariables>(client, ChangeSelectedOrganizationDocument, variables, headers);
 
 export const UsersDocument = `
-    query Users($first: Int!, $orderBy: UserOrdering!, $orderMode: OrderingMode!, $filters: [Filter!]) {
+    query Users($first: Int!, $orderBy: UserOrdering!, $orderMode: OrderingMode!, $filters: [Filter!], $searchTerm: String) {
   users(
     first: $first
     orderBy: $orderBy
     orderMode: $orderMode
     filters: $filters
+    searchTerm: $searchTerm
   ) {
     edges {
       node {

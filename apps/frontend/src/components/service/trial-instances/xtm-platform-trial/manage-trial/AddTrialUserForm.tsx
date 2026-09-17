@@ -72,6 +72,7 @@ export const AddTrialUserForm = ({
     filters: organizationId
       ? [{ key: FilterKey.OrganizationId, value: [organizationId] }]
       : [],
+    searchTerm: null,
   };
   const { data: usersData } = useUsersQuery(
     portalGraphqlClient,
