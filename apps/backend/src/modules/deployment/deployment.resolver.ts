@@ -48,14 +48,11 @@ const resolvers: Resolvers = {
         );
       }
     },
-    deploymentRequestsAvailable: async (
-      _,
-      { platformIdentifier }
-    ): Promise<DeploymentAvailability[]> => {
+    deploymentRequestsAvailable: async (): Promise<
+      DeploymentAvailability[]
+    > => {
       try {
-        return await DeploymentApp.loadAvailableDeploymentRequests(
-          platformIdentifier ?? null
-        );
+        return await DeploymentApp.loadAvailableDeploymentRequests();
       } catch (error) {
         throw mapToGraphQLError(
           error,

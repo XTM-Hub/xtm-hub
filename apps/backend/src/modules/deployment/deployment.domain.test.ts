@@ -21,7 +21,7 @@ import {
   shouldDeleteDeploymentRequestAudience,
 } from './deployment.domain';
 import { ServiceGroupDomain } from './group/service-group.domain';
-import { QuotaKey, trialQuotaKey } from './quota/deployment.quota.domain';
+import { bundleQuotaKey, QuotaKey } from './quota/deployment.quota.domain';
 
 describe('deploymentRequestDomain', () => {
   beforeEach(async () => {
@@ -989,9 +989,9 @@ describe('deploymentRequestDomain', () => {
   });
 
   describe('getMaxOrderingInQueue', () => {
-    const queueOf = (region: DeploymentRequestPlatformRegion): QuotaKey => ({
+    const queueOf = (region: DeploymentRequestPlatformRegion) => ({
       type: DeploymentRequestDeploymentType.Trial,
-      platformIdentifier: PlatformIdentifier.Opencti,
+      platform_identifier: PlatformIdentifier.Opencti,
       region,
     });
 
@@ -1282,6 +1282,11 @@ describe('deploymentRequestDomain', () => {
     });
   });
   describe('loadLastPendingRequest and setRequestAsQueued', () => {
+    const BUNDLE_REQUEST = {
+      type: DeploymentRequestDeploymentType.Bundle,
+      platform_identifier: null,
+    };
+
     const queueLastPendingRequest = async (key: QuotaKey) => {
       const request = await DeploymentRequestDomain.loadLastPendingRequest(key);
       if (!request) {
@@ -1291,7 +1296,6 @@ describe('deploymentRequestDomain', () => {
       return DeploymentRequestDomain.setRequestAsQueued(request);
     };
 
-    let platformIdentifier: PlatformIdentifier;
     let region: DeploymentRequestPlatformRegion;
     let deploymentRequestId1: DeploymentRequestId;
     let deploymentRequestId2: DeploymentRequestId;
@@ -1301,18 +1305,19 @@ describe('deploymentRequestDomain', () => {
       const deploymentRequest1 =
         await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
           {
+            ...BUNDLE_REQUEST,
             ordering: 3,
             hub_status: DeploymentRequestHubStatus.Queued,
             target_state: DeploymentRequestPlatformState.Unprovisioned,
           }
         );
       deploymentRequestId1 = deploymentRequest1!.id;
-      platformIdentifier = deploymentRequest1!.platform_identifier!;
       region = deploymentRequest1!.region;
 
       const deploymentRequest2 =
         await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
           {
+            ...BUNDLE_REQUEST,
             ordering: 4,
             hub_status: DeploymentRequestHubStatus.Pending,
             target_state: DeploymentRequestPlatformState.Active,
@@ -1323,6 +1328,7 @@ describe('deploymentRequestDomain', () => {
       const deploymentRequest3 =
         await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
           {
+            ...BUNDLE_REQUEST,
             ordering: 5,
             hub_status: DeploymentRequestHubStatus.Pending,
             target_state: DeploymentRequestPlatformState.Active,
@@ -1333,6 +1339,7 @@ describe('deploymentRequestDomain', () => {
       const deploymentRequest4 =
         await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
           {
+            ...BUNDLE_REQUEST,
             ordering: 6,
             hub_status: DeploymentRequestHubStatus.Queued,
             target_state: DeploymentRequestPlatformState.Unprovisioned,
@@ -1346,16 +1353,16 @@ describe('deploymentRequestDomain', () => {
       const euWestQueued =
         await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
           {
+            ...BUNDLE_REQUEST,
             ordering: 1,
             hub_status: DeploymentRequestHubStatus.Queued,
             target_state: DeploymentRequestPlatformState.Unprovisioned,
-            platform_identifier: platformIdentifier,
             region: DeploymentRequestPlatformRegion.EuWest,
           }
         );
 
       // When
-      await queueLastPendingRequest(trialQuotaKey(platformIdentifier, region));
+      await queueLastPendingRequest(bundleQuotaKey(region));
 
       // Then
       await TestHelper.deploymentRequest.assertProperties(euWestQueued!.id, {
@@ -1363,19 +1370,18 @@ describe('deploymentRequestDomain', () => {
       });
     });
 
-    it('should update the last request in platform and region', async () => {
-      const openAEVDeploymentRequest =
+    it('should update the last bundle request in region', async () => {
+      const standaloneDeploymentRequest =
         await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
           {
             ordering: 4,
             hub_status: DeploymentRequestHubStatus.Queued,
             target_state: DeploymentRequestPlatformState.Unprovisioned,
-            platform_identifier: PlatformIdentifier.Openaev,
           }
         );
 
       const updatedRequest = await queueLastPendingRequest(
-        trialQuotaKey(platformIdentifier, region)
+        bundleQuotaKey(region)
       );
 
       expect(updatedRequest).toBeDefined();
@@ -1414,16 +1420,16 @@ describe('deploymentRequestDomain', () => {
       );
 
       await TestHelper.deploymentRequest.assertProperties(
-        openAEVDeploymentRequest!.id,
+        standaloneDeploymentRequest!.id,
         {
           hub_status: DeploymentRequestHubStatus.Queued,
-          ordering: openAEVDeploymentRequest!.ordering,
+          ordering: standaloneDeploymentRequest!.ordering,
         }
       );
     });
 
     it('should set pending requests in the right order with queued requests', async () => {
-      await queueLastPendingRequest(trialQuotaKey(platformIdentifier, region));
+      await queueLastPendingRequest(bundleQuotaKey(region));
 
       await TestHelper.deploymentRequest.assertProperties(
         deploymentRequestId1,
@@ -1460,7 +1466,7 @@ describe('deploymentRequestDomain', () => {
       });
 
       const updatedRequest = await queueLastPendingRequest(
-        trialQuotaKey(platformIdentifier, region)
+        bundleQuotaKey(region)
       );
 
       expect(updatedRequest).toBeUndefined();
@@ -1496,10 +1502,16 @@ describe('deploymentRequestDomain', () => {
   });
 
   describe('loadFirstQueuedRequest', () => {
+    const BUNDLE_REQUEST = {
+      type: DeploymentRequestDeploymentType.Bundle,
+      platform_identifier: null,
+    };
+
     it('should return the queued request with the lowest ordering', async () => {
       const deploymentRequest1 =
         await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
           {
+            ...BUNDLE_REQUEST,
             ordering: 3,
             hub_status: DeploymentRequestHubStatus.Queued,
             target_state: DeploymentRequestPlatformState.Unprovisioned,
@@ -1507,6 +1519,7 @@ describe('deploymentRequestDomain', () => {
         );
       await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
         {
+          ...BUNDLE_REQUEST,
           ordering: 6,
           hub_status: DeploymentRequestHubStatus.Queued,
           target_state: DeploymentRequestPlatformState.Unprovisioned,
@@ -1514,6 +1527,7 @@ describe('deploymentRequestDomain', () => {
       );
       await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
         {
+          ...BUNDLE_REQUEST,
           ordering: 1,
           hub_status: DeploymentRequestHubStatus.Pending,
           target_state: DeploymentRequestPlatformState.Active,
@@ -1521,10 +1535,7 @@ describe('deploymentRequestDomain', () => {
       );
 
       const request = await DeploymentRequestDomain.loadFirstQueuedRequest(
-        trialQuotaKey(
-          deploymentRequest1!.platform_identifier!,
-          deploymentRequest1!.region
-        )
+        bundleQuotaKey(deploymentRequest1!.region)
       );
 
       expect(request?.id).toBe(deploymentRequest1!.id);
@@ -1534,6 +1545,7 @@ describe('deploymentRequestDomain', () => {
       const usEastRequest =
         await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
           {
+            ...BUNDLE_REQUEST,
             ordering: 3,
             hub_status: DeploymentRequestHubStatus.Queued,
             target_state: DeploymentRequestPlatformState.Unprovisioned,
@@ -1542,6 +1554,7 @@ describe('deploymentRequestDomain', () => {
         );
       await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
         {
+          ...BUNDLE_REQUEST,
           ordering: 1,
           hub_status: DeploymentRequestHubStatus.Queued,
           target_state: DeploymentRequestPlatformState.Unprovisioned,
@@ -1550,23 +1563,20 @@ describe('deploymentRequestDomain', () => {
       );
 
       const request = await DeploymentRequestDomain.loadFirstQueuedRequest(
-        trialQuotaKey(
-          usEastRequest!.platform_identifier!,
-          DeploymentRequestPlatformRegion.UsEast
-        )
+        bundleQuotaKey(DeploymentRequestPlatformRegion.UsEast)
       );
 
       expect(request?.id).toBe(usEastRequest!.id);
     });
 
-    it('should ignore queued requests from another platform', async () => {
-      const openctiRequest =
+    it('should ignore queued standalone trials', async () => {
+      const bundleRequest =
         await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
           {
+            ...BUNDLE_REQUEST,
             ordering: 3,
             hub_status: DeploymentRequestHubStatus.Queued,
             target_state: DeploymentRequestPlatformState.Unprovisioned,
-            platform_identifier: PlatformIdentifier.Opencti,
           }
         );
       await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
@@ -1574,15 +1584,14 @@ describe('deploymentRequestDomain', () => {
           ordering: 1,
           hub_status: DeploymentRequestHubStatus.Queued,
           target_state: DeploymentRequestPlatformState.Unprovisioned,
-          platform_identifier: PlatformIdentifier.Openaev,
         }
       );
 
       const request = await DeploymentRequestDomain.loadFirstQueuedRequest(
-        trialQuotaKey(PlatformIdentifier.Opencti, openctiRequest!.region)
+        bundleQuotaKey(bundleRequest!.region)
       );
 
-      expect(request?.id).toBe(openctiRequest!.id);
+      expect(request?.id).toBe(bundleRequest!.id);
     });
   });
 

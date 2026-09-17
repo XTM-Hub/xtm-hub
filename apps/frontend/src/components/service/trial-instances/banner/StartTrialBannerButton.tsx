@@ -81,11 +81,9 @@ export const StartTrialBannerButton = () => {
       loadQuery<trialInstancesDeploymentRequestsAvailableQuery>(
         environment,
         DeploymentRequestsAvailableQuery,
-        {
-          platformIdentifier: platformIdentifier,
-        }
+        {}
       ),
-    [environment, platformIdentifier]
+    [environment]
   );
 
   const handleSubmit = (

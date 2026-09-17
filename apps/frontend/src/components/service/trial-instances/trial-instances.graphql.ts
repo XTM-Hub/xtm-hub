@@ -15,10 +15,8 @@ export const CreateDeploymentRequestMutation = graphql`
 `;
 
 export const DeploymentRequestsAvailableQuery = graphql`
-  query trialInstancesDeploymentRequestsAvailableQuery(
-    $platformIdentifier: PlatformIdentifier!
-  ) {
-    deploymentRequestsAvailable(platformIdentifier: $platformIdentifier) {
+  query trialInstancesDeploymentRequestsAvailableQuery {
+    deploymentRequestsAvailable {
       region
       availableCount
     }

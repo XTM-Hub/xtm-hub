@@ -213,9 +213,7 @@ describe('deployment resolver', () => {
           DeploymentRequestPlatformRegion.UsEast,
         ]);
       const availableDeployments =
-        await resolver.Query.deploymentRequestsAvailable(undefined, {
-          platformIdentifier: PlatformIdentifier.Opencti,
-        });
+        await resolver.Query.deploymentRequestsAvailable();
 
       expect(availableDeployments).toStrictEqual([
         {
@@ -223,28 +221,24 @@ describe('deployment resolver', () => {
           region: DeploymentRequestPlatformRegion.ApacAu,
           availableCount: 10,
           capacity: 10,
-          platform_identifier: PlatformIdentifier.Opencti,
         },
         {
           id: expect.any(String),
           region: DeploymentRequestPlatformRegion.ApacSg,
           availableCount: 10,
           capacity: 10,
-          platform_identifier: PlatformIdentifier.Opencti,
         },
         {
           id: expect.any(String),
           region: DeploymentRequestPlatformRegion.EuWest,
           availableCount: 20,
           capacity: 20,
-          platform_identifier: PlatformIdentifier.Opencti,
         },
         {
           id: expect.any(String),
           region: DeploymentRequestPlatformRegion.UsEast,
           availableCount: 20,
           capacity: 20,
-          platform_identifier: PlatformIdentifier.Opencti,
         },
       ]);
     });

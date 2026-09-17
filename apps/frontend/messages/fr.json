@@ -750,7 +750,6 @@
       "CancelTrial": "Annuler l'essai"
     },
     "UpdateQuotasForm": {
-      "Title": "Mise à jour des quotas pour {platform} dans {region}",
       "QuotasUpdated": "Le quota a été mis à jour avec succès",
       "NewCapacityLabel": "Nouvelle capacité de quota",
       "AlertDialog": {

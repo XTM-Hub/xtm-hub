@@ -490,7 +490,6 @@ export const mockDeploymentAvailability = (overrides?: Partial<DeploymentAvailab
         availableCount: overrides && overrides.hasOwnProperty('availableCount') ? overrides.availableCount! : 6555,
         capacity: overrides && overrides.hasOwnProperty('capacity') ? overrides.capacity! : 2192,
         id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : '6b4611b2-0741-4176-b330-9117b080b913',
-        platform_identifier: overrides && overrides.hasOwnProperty('platform_identifier') ? overrides.platform_identifier! : PlatformIdentifier.Openaev,
         region: overrides && overrides.hasOwnProperty('region') ? overrides.region! : DeploymentRequestPlatformRegion.ApacAu,
     };
 };
@@ -2156,7 +2155,6 @@ export const mockUpdateDeploymentQuotaCapacityInput = (overrides?: Partial<Updat
     relationshipsToOmit.add('UpdateDeploymentQuotaCapacityInput');
     return {
         newCapacity: overrides && overrides.hasOwnProperty('newCapacity') ? overrides.newCapacity! : 7870,
-        platformIdentifier: overrides && overrides.hasOwnProperty('platformIdentifier') ? overrides.platformIdentifier! : PlatformIdentifier.Openaev,
         region: overrides && overrides.hasOwnProperty('region') ? overrides.region! : DeploymentRequestPlatformRegion.ApacAu,
     };
 };

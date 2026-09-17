@@ -91,7 +91,6 @@ import {
   bundleQuotaKey,
   DeploymentQuotaDomain,
   quotaKeysOfRequest,
-  trialQuotaKey,
 } from './quota/deployment.quota.domain';
 
 export const XTM_PLATFORM_BUNDLE_SERVICE_INSTANCE_NAME = 'XTM Platform Bundle';
@@ -286,21 +285,16 @@ export const DeploymentApp = {
     );
   },
 
-  loadAvailableDeploymentRequests: async (
-    platformIdentifier: PlatformIdentifier | null
-  ): Promise<DeploymentAvailability[]> => {
-    const quotas = await DeploymentQuotaDomain.loadQuotas(
-      platformIdentifier
-        ? { platform_identifier: platformIdentifier }
-        : { type: DeploymentRequestDeploymentType.Bundle }
-    );
+  loadAvailableDeploymentRequests: async (): Promise<
+    DeploymentAvailability[]
+  > => {
+    const quotas = await DeploymentQuotaDomain.loadQuotas({});
 
     return quotas.map((quota) => ({
       id: quota.id,
       region: quota.region,
       availableCount: quota.availability,
       capacity: quota.capacity,
-      platform_identifier: platformIdentifier,
     }));
   },
 
@@ -341,18 +335,15 @@ export const DeploymentApp = {
   },
 
   updateDeploymentQuotaCapacity: async ({
-    platformIdentifier,
     region,
     newCapacity,
   }: {
-    platformIdentifier?: PlatformIdentifier | null;
     region: DeploymentRequestPlatformRegion;
     newCapacity: number;
   }): Promise<{ success: boolean }> => {
     const user = requestContext.requireUser();
 
     await DeploymentQuotaApp.applyQuotaCapacityChange({
-      platformIdentifier,
       region,
       newCapacity,
       onRequestMoved: (movedRequest) =>
@@ -671,13 +662,7 @@ const createSingleDeploymentRequest = async ({
     throw new Error(ErrorCode.ServiceDefinitionNotFound);
   }
 
-  const quotaKeys =
-    parentId === null
-      ? [
-          bundleQuotaKey(input.region),
-          trialQuotaKey(platformIdentifier, input.region),
-        ]
-      : [];
+  const quotaKeys = parentId === null ? [bundleQuotaKey(input.region)] : [];
 
   return DeploymentQuotaDomain.withLockedQuotaTransaction(
     quotaKeys,
@@ -685,15 +670,10 @@ const createSingleDeploymentRequest = async ({
       const hubStatus = await resolveHubStatus({
         parentId,
         inheritedHubStatus,
-        platformIdentifier,
         region: input.region,
       });
       const maxOrdering = await DeploymentRequestDomain.getMaxOrderingInQueue(
-        {
-          type,
-          platformIdentifier,
-          region: input.region,
-        },
+        { type, platform_identifier: platformIdentifier, region: input.region },
         hubStatus
       );
       const ordering = (maxOrdering ?? 0) + 1;
@@ -737,12 +717,10 @@ const createSingleDeploymentRequest = async ({
 const resolveHubStatus = async ({
   parentId,
   inheritedHubStatus,
-  platformIdentifier,
   region,
 }: {
   parentId: DeploymentRequestId | null;
   inheritedHubStatus?: DeploymentRequestHubStatus;
-  platformIdentifier: PlatformIdentifier;
   region: DeploymentRequestPlatformRegion;
 }): Promise<DeploymentRequestHubStatus> => {
   if (parentId !== null) {
@@ -750,10 +728,7 @@ const resolveHubStatus = async ({
   }
 
   const { isPlaceAvailable } = await DeploymentQuotaApp.takeQuotaForRequest({
-    type: DeploymentRequestDeploymentType.Trial,
     region,
-    platformIdentifier,
-    parentId,
   });
 
   return isPlaceAvailable
@@ -1003,19 +978,10 @@ const createBundleDeploymentRequest = async ({
   }
 
   return DeploymentQuotaDomain.withLockedQuotaTransaction(
-    [
-      bundleQuotaKey(input.region),
-      ...products.map((platformIdentifier) =>
-        trialQuotaKey(platformIdentifier, input.region)
-      ),
-    ],
+    [bundleQuotaKey(input.region)],
     async () => {
       const { isPlaceAvailable } = await DeploymentQuotaApp.takeQuotaForRequest(
-        {
-          type: DeploymentRequestDeploymentType.Bundle,
-          region: input.region,
-          products,
-        }
+        { region: input.region }
       );
       const bundleHubStatus = isPlaceAvailable
         ? DeploymentRequestHubStatus.Pending
@@ -1049,7 +1015,7 @@ const createBundleDeploymentRequest = async ({
       const maxOrdering = await DeploymentRequestDomain.getMaxOrderingInQueue(
         {
           type: DeploymentRequestDeploymentType.Bundle,
-          platformIdentifier: null,
+          platform_identifier: null,
           region: input.region,
         },
         bundleHubStatus

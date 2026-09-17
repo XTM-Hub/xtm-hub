@@ -31,9 +31,11 @@ const TrialsList = ({ scope }: TrialsListProps) => {
             {t(TAB_TITLES[type])}
           </TabsTrigger>
         ))}
-        <TabsTrigger value={QUOTAS_TAB}>
-          {t('TrialsDashboard.TabTitle.Quotas')}
-        </TabsTrigger>
+        {scope.kind === 'bundle' && (
+          <TabsTrigger value={QUOTAS_TAB}>
+            {t('TrialsDashboard.TabTitle.Quotas')}
+          </TabsTrigger>
+        )}
       </TabsList>
       {Object.values(TrialsTabType).map((type) => (
         <TabsContent
@@ -45,9 +47,11 @@ const TrialsList = ({ scope }: TrialsListProps) => {
           />
         </TabsContent>
       ))}
-      <TabsContent value={QUOTAS_TAB}>
-        <TrialsTabQuotasPlatform scope={scope} />
-      </TabsContent>
+      {scope.kind === 'bundle' && (
+        <TabsContent value={QUOTAS_TAB}>
+          <TrialsTabQuotasPlatform />
+        </TabsContent>
+      )}
     </Tabs>
   );
 };

@@ -429,7 +429,6 @@ export type DeploymentAvailability = {
   availableCount: Scalars['Int']['output'];
   capacity: Scalars['Int']['output'];
   id: Scalars['ID']['output'];
-  platform_identifier: Maybe<PlatformIdentifier>;
   region: DeploymentRequestPlatformRegion;
 };
 
@@ -1949,11 +1948,6 @@ export type QueryDeploymentRequestsArgs = {
 };
 
 
-export type QueryDeploymentRequestsAvailableArgs = {
-  platformIdentifier: InputMaybe<PlatformIdentifier>;
-};
-
-
 export type QueryDeploymentRequestsListArgs = {
   after: InputMaybe<Scalars['ID']['input']>;
   filters: InputMaybe<Array<DeploymentRequestFilter>>;
@@ -2855,7 +2849,6 @@ export type UpdateCompetitorInput = {
 
 export type UpdateDeploymentQuotaCapacityInput = {
   newCapacity: Scalars['Int']['input'];
-  platformIdentifier: InputMaybe<PlatformIdentifier>;
   region: DeploymentRequestPlatformRegion;
 };
 
@@ -3208,7 +3201,7 @@ export type TrialsProductFragment = { __typename?: 'DeploymentRequest', id: stri
 
 export type TrialsRowFragment = { __typename?: 'DeploymentRequest', id: string, service_instance_id: any, ordering: number, hub_status: DeploymentRequestHubStatus, requester_email: string | null, organization_name: string | null, organization_requester_id: any, region: DeploymentRequestPlatformRegion, request_date: any, start_date: any | null, end_date: any | null, cancellation_date: any | null, cancellation_user_email: string | null, cancellation_reason: string | null, platform_identifier: PlatformIdentifier | null, platform_id: string | null, platform_url: string | null, url: string | null, children: Array<{ __typename?: 'DeploymentRequest', id: string, platform_identifier: PlatformIdentifier | null, hub_status: DeploymentRequestHubStatus, platform_id: string | null, platform_url: string | null, url: string | null }> | null };
 
-export type TrialsQuotaFragment = { __typename?: 'DeploymentAvailability', id: string, region: DeploymentRequestPlatformRegion, availableCount: number, capacity: number, platform_identifier: PlatformIdentifier | null };
+export type TrialsQuotaFragment = { __typename?: 'DeploymentAvailability', id: string, region: DeploymentRequestPlatformRegion, availableCount: number, capacity: number };
 
 export type TrialsListQueryVariables = Exact<{
   count: Scalars['Int']['input'];
@@ -3222,12 +3215,10 @@ export type TrialsListQueryVariables = Exact<{
 
 export type TrialsListQuery = { __typename?: 'Query', deploymentRequestsList: { __typename?: 'DeploymentRequestConnection', totalCount: number, edges: Array<{ __typename?: 'DeploymentRequestEdge', node: { __typename?: 'DeploymentRequest', id: string, service_instance_id: any, ordering: number, hub_status: DeploymentRequestHubStatus, requester_email: string | null, organization_name: string | null, organization_requester_id: any, region: DeploymentRequestPlatformRegion, request_date: any, start_date: any | null, end_date: any | null, cancellation_date: any | null, cancellation_user_email: string | null, cancellation_reason: string | null, platform_identifier: PlatformIdentifier | null, platform_id: string | null, platform_url: string | null, url: string | null, children: Array<{ __typename?: 'DeploymentRequest', id: string, platform_identifier: PlatformIdentifier | null, hub_status: DeploymentRequestHubStatus, platform_id: string | null, platform_url: string | null, url: string | null }> | null } }> } };
 
-export type TrialsQuotasQueryVariables = Exact<{
-  platformIdentifier: InputMaybe<PlatformIdentifier>;
-}>;
+export type TrialsQuotasQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type TrialsQuotasQuery = { __typename?: 'Query', deploymentRequestsAvailable: Array<{ __typename?: 'DeploymentAvailability', id: string, region: DeploymentRequestPlatformRegion, availableCount: number, capacity: number, platform_identifier: PlatformIdentifier | null }> };
+export type TrialsQuotasQuery = { __typename?: 'Query', deploymentRequestsAvailable: Array<{ __typename?: 'DeploymentAvailability', id: string, region: DeploymentRequestPlatformRegion, availableCount: number, capacity: number }> };
 
 export type XtmPlatformBundleProductFragment = { __typename?: 'DeploymentRequest', platform_identifier: PlatformIdentifier | null, service_instance_id: any, url: string | null, service_instance: { __typename?: 'ServiceInstance', name: string } | null, registered_platform: { __typename?: 'RegisteredPlatform', status: PlatformConfigurationStatus | null, last_connectivity_check: any | null, url: string, myGroups: Array<{ __typename?: 'ServiceGroup', id: string, name: ServiceGroupName }> | null } | null };
 
@@ -3732,7 +3723,6 @@ export const TrialsQuotaFragmentDoc = `
   region
   availableCount
   capacity
-  platform_identifier
 }
     `;
 export const XtmPlatformBundleProductFragmentDoc = `
@@ -4130,8 +4120,8 @@ useInfiniteTrialsListQuery.getRootKey = () => ['TrialsList.infinite'] as const;
 useTrialsListQuery.fetcher = (client: GraphQLClient, variables: TrialsListQueryVariables, headers?: RequestInit['headers']) => fetcher<TrialsListQuery, TrialsListQueryVariables>(client, TrialsListDocument, variables, headers);
 
 export const TrialsQuotasDocument = `
-    query TrialsQuotas($platformIdentifier: PlatformIdentifier) {
-  deploymentRequestsAvailable(platformIdentifier: $platformIdentifier) {
+    query TrialsQuotas {
+  deploymentRequestsAvailable {
     ...TrialsQuota
   }
 }

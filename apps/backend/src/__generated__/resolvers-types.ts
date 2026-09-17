@@ -422,7 +422,6 @@ export type DeploymentAvailability = {
   availableCount: Scalars['Int']['output'];
   capacity: Scalars['Int']['output'];
   id: Scalars['ID']['output'];
-  platform_identifier?: Maybe<PlatformIdentifier>;
   region: DeploymentRequestPlatformRegion;
 };
 
@@ -1942,11 +1941,6 @@ export type QueryDeploymentRequestsArgs = {
 };
 
 
-export type QueryDeploymentRequestsAvailableArgs = {
-  platformIdentifier?: InputMaybe<PlatformIdentifier>;
-};
-
-
 export type QueryDeploymentRequestsListArgs = {
   after?: InputMaybe<Scalars['ID']['input']>;
   filters?: InputMaybe<Array<DeploymentRequestFilter>>;
@@ -2848,7 +2842,6 @@ export type UpdateCompetitorInput = {
 
 export type UpdateDeploymentQuotaCapacityInput = {
   newCapacity: Scalars['Int']['input'];
-  platformIdentifier?: InputMaybe<PlatformIdentifier>;
   region: DeploymentRequestPlatformRegion;
 };
 
@@ -3965,7 +3958,6 @@ export type DeploymentAvailabilityResolvers<ContextType = PortalContext, ParentT
   availableCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   capacity?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  platform_identifier?: Resolver<Maybe<ResolversTypes['PlatformIdentifier']>, ParentType, ContextType>;
   region?: Resolver<ResolversTypes['DeploymentRequestPlatformRegion'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -4525,7 +4517,7 @@ export type QueryResolvers<ContextType = PortalContext, ParentType extends Resol
   countEpicsPerTimeline?: Resolver<Array<ResolversTypes['EpicCountPerTimeline']>, ParentType, ContextType>;
   currentVotingRound?: Resolver<Maybe<ResolversTypes['VotingRound']>, ParentType, ContextType, RequireFields<QueryCurrentVotingRoundArgs, 'service_instance_id'>>;
   deploymentRequests?: Resolver<ResolversTypes['PlatformDeploymentRequestConnection'], ParentType, ContextType, RequireFields<QueryDeploymentRequestsArgs, 'first'>>;
-  deploymentRequestsAvailable?: Resolver<Array<ResolversTypes['DeploymentAvailability']>, ParentType, ContextType, Partial<QueryDeploymentRequestsAvailableArgs>>;
+  deploymentRequestsAvailable?: Resolver<Array<ResolversTypes['DeploymentAvailability']>, ParentType, ContextType>;
   deploymentRequestsList?: Resolver<ResolversTypes['DeploymentRequestConnection'], ParentType, ContextType, RequireFields<QueryDeploymentRequestsListArgs, 'first' | 'orderBy' | 'orderMode'>>;
   document?: Resolver<Maybe<ResolversTypes['Document']>, ParentType, ContextType, RequireFields<QueryDocumentArgs, 'documentId' | 'serviceInstanceId'>>;
   documentExists?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType, RequireFields<QueryDocumentExistsArgs, 'service_instance_id'>>;

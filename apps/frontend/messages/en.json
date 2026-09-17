@@ -750,7 +750,6 @@
       "CancelTrial": "Cancel the trial"
     },
     "UpdateQuotasForm": {
-      "Title": "Update quotas for {platform} in {region}",
       "QuotasUpdated": "Quota has been updated successfully",
       "NewCapacityLabel": "New quota capacity",
       "AlertDialog": {

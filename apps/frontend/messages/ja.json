@@ -750,7 +750,6 @@
       "CancelTrial": "トライアルをキャンセルする"
     },
     "UpdateQuotasForm": {
-      "Title": "{region}で{platform}のクォータを更新する",
       "QuotasUpdated": "クォータは正常に更新されました",
       "NewCapacityLabel": "新しいクォータ容量",
       "AlertDialog": {

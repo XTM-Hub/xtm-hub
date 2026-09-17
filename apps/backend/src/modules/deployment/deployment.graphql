@@ -242,7 +242,6 @@ type DeploymentAvailability {
   region: DeploymentRequestPlatformRegion!
   availableCount: Int!
   capacity: Int!
-  platform_identifier: PlatformIdentifier
 }
 
 type XtmoneIntegrationStatusEntry {
@@ -301,7 +300,6 @@ input ReorderDeploymentRequestInQueueInput {
 }
 
 input UpdateDeploymentQuotaCapacityInput {
-  platformIdentifier: PlatformIdentifier
   region: DeploymentRequestPlatformRegion!
   newCapacity: Int!
 }
@@ -318,9 +316,7 @@ extend type Query {
     filters: [DeploymentRequestFilter!]
   ): PlatformDeploymentRequestConnection!
     @system_token(portalCapa: [MANAGE_DEPLOYMENT])
-  deploymentRequestsAvailable(
-    platformIdentifier: PlatformIdentifier
-  ): [DeploymentAvailability!]!
+  deploymentRequestsAvailable: [DeploymentAvailability!]!
     @auth(
       portalCapa: [BYPASS, READ_TRIALS]
       orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_PLATFORM_REGISTRATION]
