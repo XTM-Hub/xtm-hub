@@ -50,7 +50,7 @@ const PrivateHomepageRoadmapSection = async ({
   const roadmapHref = `${PRIVATE_ROADMAP_BASE_PATH}/${encodeURIComponent(serviceInstanceId)}`;
   const seeMoreHref =
     homepageRoadmapTitleProduct !== 'default'
-      ? `${roadmapHref}?product=${encodeURIComponent(homepageRoadmapTitleProduct)}`
+      ? `${roadmapHref}?products=${encodeURIComponent(homepageRoadmapTitleProduct)}`
       : roadmapHref;
 
   return (

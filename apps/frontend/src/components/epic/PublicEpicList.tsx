@@ -28,7 +28,7 @@ const PublicEpicList = ({ queryRef, serviceInstance }: PublicEpicListProps) => {
     epicsList_epics$key
   >(epicsListFragment, queryData);
 
-  const { selectedProduct, setSelectedProduct } = useEpicFilter();
+  const { selectedProducts, setSelectedProducts } = useEpicFilter();
 
   const epics = data.epics!.edges.map(
     (edge) => edge.node as epic_fragment$data
@@ -44,8 +44,8 @@ const PublicEpicList = ({ queryRef, serviceInstance }: PublicEpicListProps) => {
       <EpicList
         epics={epics}
         serviceInstance={serviceInstance}
-        selectedProduct={selectedProduct}
-        onFilterChange={setSelectedProduct}
+        selectedProducts={selectedProducts}
+        onFilterChange={setSelectedProducts}
         onSearch={handleSearch}
       />
     </EpicListContext.Provider>
