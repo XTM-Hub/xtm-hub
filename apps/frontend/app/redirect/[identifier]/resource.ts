@@ -2,6 +2,7 @@ import { serverMutateGraphQL } from '@/relay/server-portal-api-fetch';
 import { isValueInEnum } from '@/utils/is-value-in-enum';
 import { loadMeUser } from '@/utils/load-me-user';
 import { APP_PATH } from '@/utils/path/constant';
+import { encodeRedirectValue } from '@/utils/redirect';
 import OrganizationSwitcherMutation, {
   OrganizationSwitcherMutation as OrganizationSwitcherMutationType,
 } from '@generated/OrganizationSwitcherMutation.graphql';
@@ -85,6 +86,6 @@ export const redirectToResource = async (
     return NextResponse.redirect(new URL(`/${APP_PATH}`, baseUrlFront));
   }
 
-  const targetPath = `/${APP_PATH}/service/${identifier}/${serviceInstances[0].id}${queryString ? `?${queryString}` : ''}${document_id ? `/${document_id}` : ''}`;
+  const targetPath = `/${APP_PATH}/service/${identifier}/${encodeRedirectValue(serviceInstances[0].id)}${document_id ? `/${encodeRedirectValue(document_id)}` : ''}${queryString ? `?${queryString}` : ''}`;
   return NextResponse.redirect(new URL(targetPath, baseUrlFront));
 };
