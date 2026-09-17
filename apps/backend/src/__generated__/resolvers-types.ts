@@ -259,8 +259,9 @@ export type CreateEpicInput = {
   edition_type: EditionType;
   illustration_document?: InputMaybe<Scalars['Upload']['input']>;
   is_integration?: InputMaybe<Scalars['Boolean']['input']>;
-  product: FiligranProduct;
+  products: Array<FiligranProduct>;
   short_description: Scalars['String']['input'];
+  slack_link?: InputMaybe<Scalars['String']['input']>;
   timeline: Timeline;
   title: Scalars['String']['input'];
 };
@@ -748,8 +749,9 @@ export type Epic = Node & {
   edition_type: EditionType;
   epic_type: EpicType;
   id: Scalars['ID']['output'];
-  product: FiligranProduct;
+  products: Array<FiligranProduct>;
   short_description: Scalars['String']['output'];
+  slack_link?: Maybe<Scalars['String']['output']>;
   timeline: Timeline;
   title: Scalars['String']['output'];
   updated_at?: Maybe<Scalars['Date']['output']>;
@@ -2868,8 +2870,9 @@ export type UpdateEpicInput = {
   edition_type: EditionType;
   illustration_document?: InputMaybe<Scalars['Upload']['input']>;
   is_integration?: InputMaybe<Scalars['Boolean']['input']>;
-  product?: InputMaybe<FiligranProduct>;
+  products?: InputMaybe<Array<FiligranProduct>>;
   short_description?: InputMaybe<Scalars['String']['input']>;
+  slack_link?: InputMaybe<Scalars['String']['input']>;
   timeline?: InputMaybe<Timeline>;
   title?: InputMaybe<Scalars['String']['input']>;
 };
@@ -4051,8 +4054,9 @@ export type EpicResolvers<ContextType = PortalContext, ParentType extends Resolv
   edition_type?: Resolver<ResolversTypes['EditionType'], ParentType, ContextType>;
   epic_type?: Resolver<ResolversTypes['EpicType'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  product?: Resolver<ResolversTypes['FiligranProduct'], ParentType, ContextType>;
+  products?: Resolver<Array<ResolversTypes['FiligranProduct']>, ParentType, ContextType>;
   short_description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  slack_link?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   timeline?: Resolver<ResolversTypes['Timeline'], ParentType, ContextType>;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updated_at?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;

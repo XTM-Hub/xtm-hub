@@ -22,7 +22,7 @@ import {
   UnknownErrorCode,
 } from '../../utils/error/error.code';
 import { isRoadmapReminderDay } from '../../utils/roadmap-reminder.util';
-import { stripNulls } from '../../utils/typescript';
+import { applyUpdate, stripNulls } from '../../utils/typescript';
 import {
   DocumentUploadsHelper,
   Upload,
@@ -68,6 +68,10 @@ const addImage = async (user: User, uploads: Upload[]) => {
 
 const PLATFORM_ROADMAP_SLUG = 'xtm-platform-roadmap';
 
+const normalizeSlackLink = <T extends { slack_link?: string | null }>(
+  input: T
+): T => (input.slack_link === '' ? { ...input, slack_link: null } : input);
+
 export const EpicApp = {
   loadEpics: async (opts: Partial<QueryEpicsArgs>): Promise<EpicConnection> => {
     return EpicDomain.loadEpics(opts);
@@ -96,7 +100,7 @@ export const EpicApp = {
     const createdDocument = await addImage(user, uploads);
 
     const epicData: Partial<Epic> = {
-      ...stripNulls(restInput),
+      ...stripNulls(normalizeSlackLink(restInput)),
       id: uuidv4() as EpicId,
       uploader_id: user.id,
       created_at: new Date(),
@@ -128,7 +132,7 @@ export const EpicApp = {
       oldEpic = loadedOldEpic;
     }
     const epicData: Partial<Epic> = {
-      ...stripNulls(restInput),
+      ...applyUpdate(normalizeSlackLink(restInput), ['slack_link']),
       updater_id: user.id,
       updated_at: new Date(),
       epic_type: is_integration ? EpicType.Integration : EpicType.Other,
