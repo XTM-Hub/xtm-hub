@@ -556,8 +556,11 @@ describe('public documents by service slug GraphQL query', () => {
       GRAPHQL_RESOLVE_INFO
     );
 
+    // info is forwarded so the app layer can narrow the SQL SELECT to the
+    // requested fields (see document.field-selection.util.ts).
     expect(DocumentApp.loadPublicDocumentsByServiceSlug).toHaveBeenCalledWith(
-      'my-service'
+      'my-service',
+      GRAPHQL_RESOLVE_INFO
     );
     expect(result).toEqual(expected);
   });
