@@ -1,7 +1,6 @@
 import { GraphQLResolveInfo } from 'graphql';
 import {
   DeploymentRequestActivitySector,
-  DeploymentRequestDeploymentType,
   DeploymentRequestJobTitle,
   DeploymentRequestPlatformRegion,
   DeploymentRequestSource,
@@ -197,9 +196,8 @@ export const TEST_DEPLOYMENT = {
       use_case: DeploymentRequestUseCase.ThreatHunting,
     },
   ],
-  products: [PlatformIdentifier.Opencti],
+  products: [PlatformIdentifier.Xtmone, PlatformIdentifier.Opencti],
   region: DeploymentRequestPlatformRegion.UsEast,
-  type: DeploymentRequestDeploymentType.Trial,
   source: DeploymentRequestSource.Xtmhub,
 };
 

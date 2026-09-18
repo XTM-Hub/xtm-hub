@@ -1,10 +1,7 @@
 import { BUNDLE_SCOPE } from '@/components/trials/trials.const';
 import TrialsList from '@/components/trials/TrialsList';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
-import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
-import { FeatureFlag } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
-import { notFound } from 'next/navigation';
 
 const breadcrumbValue = [
   {
@@ -17,14 +14,6 @@ const breadcrumbValue = [
 
 const PageLoader = () => {
   const t = useTranslations();
-  const isXtmPlatformTrialEnabled = useIsFeatureEnabled(
-    FeatureFlag.XtmPlatformTrial
-  );
-
-  if (!isXtmPlatformTrialEnabled) {
-    notFound();
-  }
-
   return (
     <>
       <BreadcrumbNav value={breadcrumbValue} />

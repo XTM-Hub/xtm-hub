@@ -84,7 +84,6 @@ export const PrivateXtmPlatformTrialPanel = ({
               ]
             : []
         ),
-        type: DeploymentRequestDeploymentType.Bundle,
         source: DeploymentRequestSource.Xtmhub,
       },
     });

@@ -48,14 +48,11 @@ const resolvers: Resolvers = {
         );
       }
     },
-    deploymentRequestsAvailable: async (
-      _,
-      { platformIdentifier }
-    ): Promise<DeploymentAvailability[]> => {
+    deploymentRequestsAvailable: async (): Promise<
+      DeploymentAvailability[]
+    > => {
       try {
-        return await DeploymentApp.loadAvailableDeploymentRequests(
-          platformIdentifier ?? null
-        );
+        return await DeploymentApp.loadAvailableDeploymentRequests();
       } catch (error) {
         throw mapToGraphQLError(
           error,
@@ -71,16 +68,6 @@ const resolvers: Resolvers = {
         return await DeploymentRequestDomain.loadDeploymentRequests<DeploymentRequestConnection>(
           args
         );
-      } catch (error) {
-        throw mapToGraphQLError(
-          error,
-          UnknownErrorCode.DeploymentRequestUnknownError
-        );
-      }
-    },
-    trialDeployments: async (_, { input }) => {
-      try {
-        return await DeploymentApp.loadTrialDeployments(input);
       } catch (error) {
         throw mapToGraphQLError(
           error,

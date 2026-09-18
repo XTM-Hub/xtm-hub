@@ -105,9 +105,8 @@ input UpdateCompetitorInput {
 type Query {
   competitors(first: Int!, after: ID, orderBy: CompetitorOrdering!, orderMode: OrderingMode!): CompetitorConnection!
   deploymentRequests(first: Int!, after: ID, filters: [DeploymentRequestFilter!]): PlatformDeploymentRequestConnection!
-  deploymentRequestsAvailable(platformIdentifier: PlatformIdentifier): [DeploymentAvailability!]!
+  deploymentRequestsAvailable: [DeploymentAvailability!]!
   deploymentRequestsList(first: Int!, after: ID, filters: [DeploymentRequestFilter!], orderBy: DeploymentRequestOrdering!, orderMode: OrderingMode!, searchTerm: String): DeploymentRequestConnection!
-  trialDeployments(input: TrialDeploymentsInput!): TrialsDeployments!
   platformTrialStatus(organizationId: OrganizationId!): PlatformTrialStatus!
   xtmPlatformBundle: DeploymentRequest
   xtmonePlatformIntegrationStatus(serviceInstanceId: ServiceInstanceId!): XtmoneIntegrationStatus
@@ -436,7 +435,6 @@ input CreateDeploymentRequestInput {
   products: [PlatformIdentifier!]!
   use_cases_by_product: [ProductUseCaseInput!]
   region: DeploymentRequestPlatformRegion!
-  type: DeploymentRequestDeploymentType!
   job_title: DeploymentRequestJobTitle
   activity_sector: DeploymentRequestActivitySector
   source: DeploymentRequestSource!
@@ -500,7 +498,6 @@ type DeploymentAvailability {
   region: DeploymentRequestPlatformRegion!
   availableCount: Int!
   capacity: Int!
-  platform_identifier: PlatformIdentifier
 }
 
 type XtmoneIntegrationStatusEntry {
@@ -514,17 +511,6 @@ type XtmoneIntegrationStatus {
   openaev: XtmoneIntegrationStatusEntry!
   linked: Boolean!
   last_checked_at: String
-}
-
-type DeployedPlatform {
-  serviceInstanceId: ServiceInstanceId!
-  platformIdentifier: PlatformIdentifier!
-}
-
-type TrialsDeployments {
-  availableTrials: [PlatformIdentifier!]!
-  deployed: [DeployedPlatform!]!
-  isBlacklisted: Boolean!
 }
 
 type PlatformTrialStatus {
@@ -559,14 +545,8 @@ input ReorderDeploymentRequestInQueueInput {
 }
 
 input UpdateDeploymentQuotaCapacityInput {
-  platformIdentifier: PlatformIdentifier
   region: DeploymentRequestPlatformRegion!
   newCapacity: Int!
-}
-
-input TrialDeploymentsInput {
-  organizationId: OrganizationId!
-  platformIdentifiers: [PlatformIdentifier!]
 }
 
 """
@@ -1546,7 +1526,6 @@ type ServiceInstanceSubscription {
 
 enum FeatureFlag {
   DUMMY
-  XTM_PLATFORM_TRIAL
   DECOUPLING_CONNECTORS
 }
 

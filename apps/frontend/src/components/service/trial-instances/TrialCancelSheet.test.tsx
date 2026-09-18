@@ -1,9 +1,8 @@
 import testRender from '@/utils/test/test-render';
 import * as FiligranUI from '@filigran/ui';
-import { PlatformIdentifier } from '@graphql/generated';
 import { registeredPlatformsKeys } from '@graphql/registered-platforms/registered-platforms.keys';
 import { serviceInstancesKeys } from '@graphql/service-instances/service-instances.keys';
-import { trialKeys } from '@graphql/trial/trial.keys';
+import { platformTrialKeys } from '@graphql/trial/trial.keys';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { createMockEnvironment } from 'relay-test-utils';
@@ -16,9 +15,6 @@ const testState = vi.hoisted(() => ({
   mutationMode: 'success' as 'success' | 'error',
 }));
 
-vi.mock('@/components/service/trial-instances/useOrgaFreeTrials', () => ({
-  useOrgaFreeTrial: () => ({ refetch: vi.fn() }),
-}));
 vi.mock('@tanstack/react-query', async (importOriginal) => ({
   ...(await importOriginal()),
   useQueryClient: () => ({
@@ -90,7 +86,6 @@ describe('TrialCancelSheet', () => {
         isCancellationDefinitive={false}
         open
         setOpen={setOpen}
-        platformIdentifier={PlatformIdentifier.Opencti}
       />,
       { relayConfig: environment }
     );
@@ -111,7 +106,7 @@ describe('TrialCancelSheet', () => {
       queryKey: registeredPlatformsKeys.all(),
     });
     expect(testState.invalidateQueries).toHaveBeenCalledWith({
-      queryKey: trialKeys.trialDeploymentsEligibilityAll(),
+      queryKey: platformTrialKeys.platformTrialStatusAll(),
     });
   });
 
@@ -123,7 +118,6 @@ describe('TrialCancelSheet', () => {
         isCancellationDefinitive={false}
         open
         setOpen={setOpen}
-        platformIdentifier={PlatformIdentifier.Opencti}
       />,
       { relayConfig: createMockEnvironment() }
     );
@@ -145,7 +139,6 @@ describe('TrialCancelSheet', () => {
         isCancellationDefinitive
         open
         setOpen={vi.fn()}
-        platformIdentifier={PlatformIdentifier.Opencti}
       />,
       { relayConfig: createMockEnvironment() }
     );
@@ -164,7 +157,6 @@ describe('TrialCancelSheet', () => {
         isCancellationDefinitive={false}
         open
         setOpen={setOpen}
-        platformIdentifier={PlatformIdentifier.Opencti}
       />,
       { relayConfig: createMockEnvironment() }
     );
@@ -180,7 +172,6 @@ describe('TrialCancelSheet', () => {
         isCancellationDefinitive={false}
         open
         setOpen={vi.fn()}
-        platformIdentifier={PlatformIdentifier.Opencti}
       />,
       { relayConfig: createMockEnvironment() }
     );
