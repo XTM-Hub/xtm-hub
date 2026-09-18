@@ -75,17 +75,18 @@ describe('userProvisioningDomain', () => {
     });
   });
 
-  describe('upsertUser', () => {
+  describe('createOrRefreshUser', () => {
     it('should create a new user with the given profile when the email does not exist yet', async () => {
       const email = `ensure-user-${uuidv4()}@filigran.io`;
 
-      const { user, created } = await UserProvisioningDomain.upsertUser({
-        email,
-        first_name: 'Jane',
-        last_name: 'Doe',
-        picture: null,
-        selected_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-      });
+      const { user, created } =
+        await UserProvisioningDomain.createOrRefreshUser({
+          email,
+          first_name: 'Jane',
+          last_name: 'Doe',
+          picture: null,
+          selected_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        });
 
       expect(created).toBe(true);
       expect(user).toMatchObject({
@@ -104,13 +105,14 @@ describe('userProvisioningDomain', () => {
         picture: null,
       });
 
-      const { user, created } = await UserProvisioningDomain.upsertUser({
-        email: existingUser.email,
-        first_name: 'FilledFirstName',
-        last_name: 'IgnoredLastName',
-        picture: 'filled-picture.png',
-        selected_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-      });
+      const { user, created } =
+        await UserProvisioningDomain.createOrRefreshUser({
+          email: existingUser.email,
+          first_name: 'FilledFirstName',
+          last_name: 'IgnoredLastName',
+          picture: 'filled-picture.png',
+          selected_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        });
 
       expect(created).toBe(false);
       expect(user).toMatchObject({
@@ -126,7 +128,7 @@ describe('userProvisioningDomain', () => {
         email: `ensure-user-${uuidv4()}@filigran.io`,
       });
 
-      const { user } = await UserProvisioningDomain.upsertUser(
+      const { user } = await UserProvisioningDomain.createOrRefreshUser(
         {
           email: existingUser.email,
           first_name: existingUser.first_name,
@@ -146,7 +148,7 @@ describe('userProvisioningDomain', () => {
         email: `ensure-user-${uuidv4()}@filigran.io`,
       });
 
-      const { user } = await UserProvisioningDomain.upsertUser({
+      const { user } = await UserProvisioningDomain.createOrRefreshUser({
         email: existingUser.email,
         first_name: existingUser.first_name,
         last_name: existingUser.last_name,
@@ -162,14 +164,15 @@ describe('userProvisioningDomain', () => {
       const email = `ensure-user-${uuidv4()}@filigran.io`;
       const explicitId = uuidv4() as UserId;
 
-      const { user, created } = await UserProvisioningDomain.upsertUser({
-        id: explicitId,
-        email,
-        first_name: 'Jane',
-        last_name: 'Doe',
-        picture: null,
-        selected_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-      });
+      const { user, created } =
+        await UserProvisioningDomain.createOrRefreshUser({
+          id: explicitId,
+          email,
+          first_name: 'Jane',
+          last_name: 'Doe',
+          picture: null,
+          selected_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        });
 
       expect(created).toBe(true);
       expect(user.id).toBe(explicitId);

@@ -132,12 +132,15 @@ export async function seed(knex) {
     .onConflict('id')
     .ignore();
 
-  await knex('User_RolePortal').insert([
-    {
-      user_id: filigranAdminUserId,
-      role_portal_id: '6b632cf2-9105-46ec-a463-ad59ab58c770',
-    },
-  ]);
+  await knex('User_RolePortal')
+    .insert([
+      {
+        user_id: filigranAdminUserId,
+        role_portal_id: '6b632cf2-9105-46ec-a463-ad59ab58c770',
+      },
+    ])
+    .onConflict(['user_id', 'role_portal_id'])
+    .ignore();
 
   await knex('CapabilityPortal')
     .insert([{ id: '85c9fe6f-901f-4992-a8aa-b8d56a7e2e09', name: 'BYPASS' }])

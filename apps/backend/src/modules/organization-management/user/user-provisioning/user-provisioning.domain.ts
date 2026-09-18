@@ -108,7 +108,7 @@ export const UserProvisioningDomain = {
     return { user, existed: false };
   },
 
-  upsertUser: async (
+  createOrRefreshUser: async (
     profile: UserProfile & {
       id?: UserId;
       selected_organization_id: OrganizationId;

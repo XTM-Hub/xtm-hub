@@ -22,7 +22,6 @@ import {
   UnknownErrorCode,
 } from '../../../../utils/error/error.code';
 import {
-  ForbiddenAccess,
   NotFoundError,
   UnknownError,
 } from '../../../../utils/error/error.util';
@@ -303,7 +302,7 @@ export const UserOrganizationDomain = {
       organization_id: organization.id,
     });
     if (subscription.organization_id !== organization.id) {
-      throw ForbiddenAccess(ForbiddenErrorCode.EmailOutsideOrganizationError);
+      throw new Error(ForbiddenErrorCode.EmailOutsideOrganizationError);
     }
     if (isEmpty(userOrganization)) {
       const [userOrgRelation] =

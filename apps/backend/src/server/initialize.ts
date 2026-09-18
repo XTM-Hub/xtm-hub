@@ -44,7 +44,7 @@ const initializeUser = async ({
   await withTransaction(async () => {
     await insertPlatformOrganization();
 
-    const { created } = await UserProvisioningDomain.upsertUser(
+    const { created } = await UserProvisioningDomain.createOrRefreshUser(
       {
         id: userId,
         email,

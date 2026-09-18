@@ -77,12 +77,29 @@ describe('userProvisioningApp', () => {
   });
 
   describe('autoProvisionNewUser', () => {
-    afterEach(() => {
+    let createdEmails: string[] = [];
+    let createdOrganizationNames: string[] = [];
+
+    beforeEach(() => {
+      createdEmails = [];
+      createdOrganizationNames = [];
+    });
+
+    afterEach(async () => {
       vi.useRealTimers();
+      await Promise.all(
+        createdEmails.map((email) => UserHelper.removeUser({ email }))
+      );
+      await Promise.all(
+        createdOrganizationNames.map((name) =>
+          OrganizationDomain.deleteOrganizationBy({ name })
+        )
+      );
     });
 
     it('should create a new user with Role USER and not add in an existing Organization, but in pending organization', async () => {
       const testMail = `testCreateNewUserFromInvitation${uuidv4()}@filigran.io`;
+      createdEmails.push(testMail);
       await UserProvisioningApp.autoProvisionNewUser({
         email: testMail,
       });
@@ -98,13 +115,13 @@ describe('userProvisioningApp', () => {
       expect(newUserPendingOrg[0]?.organization_id).toBe(
         TEST_ORGANIZATIONS.FILIGRAN.ID
       );
-
-      await UserHelper.removeUser({ email: newUser.email });
     });
 
     it('should add new user with Role admin organization with an new Organization, keeping the given first_name/last_name/picture', async () => {
       const organizationName = 'test-new-organization.fr';
       const testMail = `testCreateNewUserFromInvitation${uuidv4()}@${organizationName}`;
+      createdEmails.push(testMail);
+      createdOrganizationNames.push(organizationName);
 
       vi.useFakeTimers();
       const date = new Date(Date.UTC(2025, 1, 3, 13, 12, 15));
@@ -162,13 +179,11 @@ describe('userProvisioningApp', () => {
         user_id: newUser!.id,
         domains: ['test-new-organization.fr'],
       });
-
-      await UserHelper.removeUser({ email: testMail });
-      await OrganizationDomain.deleteOrganizationBy({ name: organizationName });
     });
 
     it('should create a new user with Role USER and should not add it to pending organization if orga does not exist', async () => {
       const testMail = `testCreateNewUserFromInvitation${uuidv4()}@whatever.io`;
+      createdEmails.push(testMail);
       await UserProvisioningApp.autoProvisionNewUser({
         email: testMail,
       });
@@ -186,6 +201,7 @@ describe('userProvisioningApp', () => {
     it('should send a welcome email by default when creating a new user', async () => {
       const sendMailSpy = vi.spyOn(MailService, 'sendMail').mockResolvedValue();
       const testMail = `testWelcomeEmail${uuidv4()}@whatever.io`;
+      createdEmails.push(testMail);
 
       await UserProvisioningApp.autoProvisionNewUser({ email: testMail });
 
@@ -193,13 +209,13 @@ describe('userProvisioningApp', () => {
         expect.objectContaining({ to: testMail, template: 'welcome' })
       );
 
-      await UserHelper.removeUser({ email: testMail });
       sendMailSpy.mockRestore();
     });
 
     it('should not send a welcome email when sendWelcomeEmail is false', async () => {
       const sendMailSpy = vi.spyOn(MailService, 'sendMail').mockResolvedValue();
       const testMail = `testWelcomeEmail${uuidv4()}@whatever.io`;
+      createdEmails.push(testMail);
 
       await UserProvisioningApp.autoProvisionNewUser(
         { email: testMail },
@@ -210,7 +226,6 @@ describe('userProvisioningApp', () => {
         expect.objectContaining({ template: 'welcome' })
       );
 
-      await UserHelper.removeUser({ email: testMail });
       sendMailSpy.mockRestore();
     });
 

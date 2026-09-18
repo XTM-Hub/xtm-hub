@@ -220,16 +220,17 @@ export const ensureDevUserExists = async (
         orgId = org.id;
       }
 
-      const { user, created } = await UserProvisioningDomain.upsertUser(
-        {
-          email: userConfig.email,
-          first_name: null,
-          last_name: null,
-          picture: null,
-          selected_organization_id: orgId ?? PLATFORM_ORGANIZATION_UUID,
-        },
-        { password: userConfig.password }
-      );
+      const { user, created } =
+        await UserProvisioningDomain.createOrRefreshUser(
+          {
+            email: userConfig.email,
+            first_name: null,
+            last_name: null,
+            picture: null,
+            selected_organization_id: orgId ?? PLATFORM_ORGANIZATION_UUID,
+          },
+          { password: userConfig.password }
+        );
       const userId = user.id;
 
       logApp.info(

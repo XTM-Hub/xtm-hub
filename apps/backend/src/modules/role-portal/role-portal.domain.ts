@@ -30,15 +30,10 @@ export const RolePortalDomain = {
   },
 
   ensureUserHasRole: async (user_id: UserId, role_portal_id: string) => {
-    const userRole = await db('User_RolePortal')
-      .where({ user_id, role_portal_id })
-      .first();
-    if (!userRole) {
-      await db('User_RolePortal').insert({
-        user_id,
-        role_portal_id,
-      });
-    }
+    await db('User_RolePortal')
+      .insert({ user_id, role_portal_id })
+      .onConflict(['user_id', 'role_portal_id'])
+      .ignore();
   },
 
   assignRoleByName: async (user_id: UserId, role: string) => {
