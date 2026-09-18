@@ -27,6 +27,7 @@
     "@dnd-kit/modifiers": "9.0.0",
     "@dnd-kit/sortable": "10.0.0",
     "@dnd-kit/utilities": "3.2.2",
+    "@filigran/design-system": "1.1.0",
     "@filigran/icon": "0.24.3",
     "@hookform/resolvers": "5.9.1",
     "@radix-ui/react-accordion": "1.2.12",

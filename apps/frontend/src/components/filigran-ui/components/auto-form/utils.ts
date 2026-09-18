@@ -8,9 +8,12 @@ import type { FieldConfig, FieldConfigItem } from './types';
 // caller (e.g. `AutoForm<typeof mySchema>`), instead of collapsing to a
 // generic `unknown`-based ZodObject/ZodType that would break `z.infer`
 // downstream throughout AutoForm.tsx and its field renderers.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+/* eslint-disable @typescript-eslint/no-explicit-any -- see comment above; using a block (not
+   eslint-disable-next-line) because Prettier may wrap this declaration across multiple lines,
+   which would move the `any` usages off the disabled line. */
 export type ZodObjectOrWrapped =
   z.ZodObject<any, any> | z.ZodType<any, any, any>;
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 /**
  * Zod schemas expose their internal definition via `_def`, but its shape
