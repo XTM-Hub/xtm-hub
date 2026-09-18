@@ -6,6 +6,7 @@ import { OrganizationId } from '../../model/kanel/public/Organization';
 import { ServiceCapabilityId } from '../../model/kanel/public/ServiceCapability';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { SubscriptionId } from '../../model/kanel/public/Subscription';
+import { SubscriptionCapabilityId } from '../../model/kanel/public/SubscriptionCapability';
 import { SubscriptionCapabilityDomain } from '../security-management/subscription-capability/subscription-capability.domain';
 import { SubscriptionDomain } from './subscription.domain';
 
@@ -171,8 +172,8 @@ describe('subscription domain', () => {
     });
   });
 
-  describe('should test getSubscriptionCapability', () => {
-    it('should return capabilities linked to the subscription', async () => {
+  describe('should test loadSubscriptionCapabilitiesBySubscriptionIds', () => {
+    it('should return capabilities linked to the given subscriptions', async () => {
       const id = uuidv4() as SubscriptionId;
       await SubscriptionDomain.createSubscription({
         id,
@@ -186,7 +187,10 @@ describe('subscription domain', () => {
         SERVICES.INSTANCES.INTEGRATIONS.CAPABILITIES.DELETE.ID,
       ]);
 
-      const result = await SubscriptionDomain.getSubscriptionCapability(id);
+      const result =
+        await SubscriptionDomain.loadSubscriptionCapabilitiesBySubscriptionIds([
+          id,
+        ]);
 
       expect(result).toHaveLength(2);
       const capabilityIds = result.map(
@@ -212,12 +216,23 @@ describe('subscription domain', () => {
         end_date: null,
       });
 
-      const result = await SubscriptionDomain.getSubscriptionCapability(id);
+      const result =
+        await SubscriptionDomain.loadSubscriptionCapabilitiesBySubscriptionIds([
+          id,
+        ]);
       expect(result).toHaveLength(0);
+    });
+
+    it('should return an empty array when given no ids', async () => {
+      const result =
+        await SubscriptionDomain.loadSubscriptionCapabilitiesBySubscriptionIds(
+          []
+        );
+      expect(result).toEqual([]);
     });
   });
 
-  describe('should test getServiceCapability', () => {
+  describe('should test loadServiceCapabilitiesBySubscriptionCapabilityIds', () => {
     it('should return the service capability linked to a subscription_capability id', async () => {
       const subscriptionId = uuidv4() as SubscriptionId;
       await SubscriptionDomain.createSubscription({
@@ -233,21 +248,34 @@ describe('subscription domain', () => {
           [SERVICES.INSTANCES.INTEGRATIONS.CAPABILITIES.UPLOAD.ID]
         );
 
-      const result = await SubscriptionDomain.getServiceCapability(
-        subscriptionCapability!.id
-      );
+      const result =
+        await SubscriptionDomain.loadServiceCapabilitiesBySubscriptionCapabilityIds(
+          [subscriptionCapability!.id]
+        );
 
-      expect(result).toBeDefined();
-      expect(result.id).toBe(
+      expect(result).toHaveLength(1);
+      expect(result[0]!.id).toBe(
         SERVICES.INSTANCES.INTEGRATIONS.CAPABILITIES.UPLOAD.ID
+      );
+      expect(result[0]!.subscription_capability_id).toBe(
+        subscriptionCapability!.id
       );
     });
 
-    it('should return undefined when the subscription_capability id does not exist', async () => {
-      const result = await SubscriptionDomain.getServiceCapability(
-        uuidv4() as ServiceCapabilityId
-      );
-      expect(result).toBeUndefined();
+    it('should return an empty array when the subscription_capability id does not exist', async () => {
+      const result =
+        await SubscriptionDomain.loadServiceCapabilitiesBySubscriptionCapabilityIds(
+          [uuidv4() as SubscriptionCapabilityId]
+        );
+      expect(result).toEqual([]);
+    });
+
+    it('should return an empty array when given no ids', async () => {
+      const result =
+        await SubscriptionDomain.loadServiceCapabilitiesBySubscriptionCapabilityIds(
+          []
+        );
+      expect(result).toEqual([]);
     });
   });
 
