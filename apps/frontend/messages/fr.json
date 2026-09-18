@@ -190,7 +190,9 @@
       "Title": "Le titre est obligatoire",
       "ShortDescription": "La description courte est obligatoire",
       "ShortDescriptionMax": "La description courte ne doit pas dépasser 215 caractères",
-      "Description": "La description est obligatoire"
+      "Description": "La description est obligatoire",
+      "Product": "Au moins un produit est obligatoire",
+      "SlackLink": "Doit être un lien Slack filigran-community"
     }
   },
   "Epic": {
@@ -220,6 +222,8 @@
       "EditionType": "type d'édition",
       "FiligranProduct": "Produit",
       "FiligranProductPlaceholder": "OpenCTI",
+      "SlackLink": "Lien Slack",
+      "SlackLinkPlaceholder": "Choisissez un canal ou collez un lien Slack",
       "Timeline": "Ligne de temps",
       "IsActive": "Cet EPIC est-il publié ? (Par défaut votre EPIC est en mode brouillon)",
       "Integration": "Est une intégration",
@@ -1017,6 +1021,31 @@
       "ManageAccessDescription": "Vous pouvez accéder au service et inviter des utilisateurs à ce service",
       "ManageAccessName": "Manage access",
       "SelectCapabilities": "Sélectionner les capacités"
+    },
+    "CsvExport": {
+      "TriggerButton": "Exporter en CSV",
+      "DialogTitle": "Exporter les intégrations en CSV",
+      "DialogDescription": "Choisissez les champs et les filtres à inclure dans le fichier CSV exporté.",
+      "ColumnsLabel": "Champs à exporter",
+      "ColumnsPlaceholder": "Sélectionner les champs à inclure",
+      "FiltersLabel": "Filtres",
+      "ExportButton": "Exporter",
+      "SuccessToast": "L'export CSV a démarré.",
+      "ErrorToast": "Impossible d'exporter la liste des intégrations. Veuillez réessayer.",
+      "Columns": {
+        "IntegrationType": "Type d'intégration",
+        "UseCase": "Cas d'usage",
+        "DeploymentType": "Type de déploiement",
+        "VerificationStatus": "Statut de vérification",
+        "SolutionCategory": "Catégorie de solution",
+        "LicenseType": "Type de licence",
+        "ShortDescription": "Description courte",
+        "LongDescription": "Description longue",
+        "FeedUrl": "URL du flux",
+        "OpenctiDocumentation": "Documentation OpenCTI",
+        "VendorUrl": "URL du fournisseur",
+        "DemoLink": "Lien de démonstration"
+      }
     },
     "Cards": {
       "filigran-academy": {

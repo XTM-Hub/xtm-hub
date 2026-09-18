@@ -69,6 +69,7 @@ export const config = {
     '/document/visualize/:serviceInstanceId/:filename*',
     '/document/deploy/:serviceInstanceId/:filename*',
     '/document/images/:documentId*',
+    '/document/csv-export/:serviceInstanceId*',
     '/user/picture/:userId*',
     '/app/:path*',
     '/api/chatbot/:path*',

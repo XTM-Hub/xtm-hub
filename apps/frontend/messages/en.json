@@ -190,7 +190,9 @@
       "Title": "Title is required",
       "ShortDescription": "Short description is required",
       "ShortDescriptionMax": "Short description must be 215 characters or fewer",
-      "Description": "Description is required"
+      "Description": "Description is required",
+      "Product": "At least one product is required",
+      "SlackLink": "Must be a filigran-community Slack link"
     }
   },
   "Epic": {
@@ -220,6 +222,8 @@
       "EditionType": "Edition Type",
       "FiligranProduct": "Product",
       "FiligranProductPlaceholder": "OpenCTI",
+      "SlackLink": "Slack link",
+      "SlackLinkPlaceholder": "Pick a channel or paste a Slack link",
       "Timeline": "Timeline",
       "IsActive": "Is this epic published? (By default your epic is in draft mode)",
       "Integration": "Is an integration",
@@ -1017,6 +1021,31 @@
       "ManageAccessDescription": "You can access the service and invite users to this service",
       "ManageAccessName": "Manage access",
       "SelectCapabilities": "Select capabilities"
+    },
+    "CsvExport": {
+      "TriggerButton": "Export CSV",
+      "DialogTitle": "Export integrations to CSV",
+      "DialogDescription": "Choose which fields and filters to include in the exported CSV file.",
+      "ColumnsLabel": "Fields to export",
+      "ColumnsPlaceholder": "Select fields to include",
+      "FiltersLabel": "Filters",
+      "ExportButton": "Export",
+      "SuccessToast": "CSV export started.",
+      "ErrorToast": "We couldn't export the integrations list. Please try again.",
+      "Columns": {
+        "IntegrationType": "Integration type",
+        "UseCase": "Use case",
+        "DeploymentType": "Deployment type",
+        "VerificationStatus": "Verification status",
+        "SolutionCategory": "Solution category",
+        "LicenseType": "License type",
+        "ShortDescription": "Short description",
+        "LongDescription": "Long description",
+        "FeedUrl": "Feed URL",
+        "OpenctiDocumentation": "OpenCTI documentation",
+        "VendorUrl": "Vendor URL",
+        "DemoLink": "Demo link"
+      }
     },
     "Cards": {
       "filigran-academy": {

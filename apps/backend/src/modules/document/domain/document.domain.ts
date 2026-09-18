@@ -466,10 +466,11 @@ export const DocumentDomain = {
   buildSeoDocumentsByServiceSlugQuery: (
     type: string,
     serviceSlug: string,
-    orderResults: boolean = true
+    orderResults: boolean = true,
+    columns: string | string[] = 'Document.*'
   ): Knex.QueryBuilder => {
     return db<Document>('Document')
-      .select('Document.*')
+      .select(columns)
       .leftJoin(
         'ServiceInstance',
         'Document.service_instance_id',
@@ -511,6 +512,22 @@ export const DocumentDomain = {
       );
 
     return DocumentMetadataDomain.hydrateMetadata(documents, include_metadata);
+  },
+
+  // Sitemap-only projection: selects just slug/created_at/updated_at (skipping the
+  // rest of `Document`'s columns) and skips metadata hydration entirely, since the
+  // sitemap never reads document metadata. See `buildSeoDocumentsByServiceSlugQuery`
+  // for the shared filtering/decoupling logic.
+  loadSeoDocumentSlugsByServiceSlug: async (
+    type: string,
+    serviceSlug: string
+  ): Promise<Pick<Document, 'slug' | 'created_at' | 'updated_at'>[]> => {
+    return DocumentDomain.buildSeoDocumentsByServiceSlugQuery(
+      type,
+      serviceSlug,
+      true,
+      ['Document.slug', 'Document.created_at', 'Document.updated_at']
+    );
   },
 
   updateDocument: async ({

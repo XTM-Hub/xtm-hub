@@ -188,7 +188,7 @@ describe('redirectToResource', () => {
     ${`/redirect/${IDENTIFIER}?platform_id=platform-1&tenant_id=tenant-1&label=foo&integrationType=bar`} | ${`${BASE_URL}/app/service/${IDENTIFIER}/instance-target?label=foo&integrationType=bar`} | ${'strips internal params, forwards multiple extra params'}
     ${`/redirect/${IDENTIFIER}?label=foo&label=bar`}                                                     | ${`${BASE_URL}/app/service/${IDENTIFIER}/instance-target?label=foo&label=bar`}           | ${'preserves repeated params'}
     ${`/redirect/${IDENTIFIER}?document_id=doc-42`}                                                      | ${`${BASE_URL}/app/service/${IDENTIFIER}/instance-target/doc-42`}                        | ${'maps document_id to path segment'}
-    ${`/redirect/${IDENTIFIER}?label=foo&document_id=doc-42`}                                            | ${`${BASE_URL}/app/service/${IDENTIFIER}/instance-target?label=foo/doc-42`}              | ${'keeps extra params and appends document_id path segment'}
+    ${`/redirect/${IDENTIFIER}?label=foo&document_id=doc-42`}                                            | ${`${BASE_URL}/app/service/${IDENTIFIER}/instance-target/doc-42?label=foo`}              | ${'places document_id as a path segment before the forwarded query string'}
   `(
     'forwards query params correctly to the instance redirect ($description)',
     async ({ pathAndQuery, expectedLocation }) => {
@@ -243,5 +243,34 @@ describe('redirectToResource', () => {
 
     // Then
     expect(response.headers.get('location')).toBe(`${BASE_URL}/app`);
+  });
+
+  it('percent-encodes the instance id and document_id when they contain base64 special characters', async () => {
+    // Given
+    // Relay global IDs are base64 and can contain `+`, `/`, `=`; embedding
+    // them raw as path segments would corrupt or split the destination URL.
+    const INSTANCE_ID_WITH_SPECIAL_CHARS = 'U2VydmljZUluc3RhbmNlOnh4/+PT0=';
+    const DOCUMENT_ID_WITH_SPECIAL_CHARS = 'RG9jdW1lbnQ6eXl5/+PT0=';
+    vi.mocked(loadServiceInstances).mockResolvedValue([
+      {
+        id: INSTANCE_ID_WITH_SPECIAL_CHARS,
+        service_definition: {
+          identifier: ServiceDefinitionIdentifier.OpenaevScenarios,
+        },
+      },
+    ] as LoadServiceInstancesResult);
+
+    // When
+    const response = await redirectToResource(
+      { identifier: IDENTIFIER },
+      makeRequest(
+        `/redirect/${IDENTIFIER}?document_id=${encodeURIComponent(DOCUMENT_ID_WITH_SPECIAL_CHARS)}`
+      )
+    );
+
+    // Then
+    expect(response.headers.get('location')).toBe(
+      `${BASE_URL}/app/service/${IDENTIFIER}/${encodeURIComponent(INSTANCE_ID_WITH_SPECIAL_CHARS)}/${encodeURIComponent(DOCUMENT_ID_WITH_SPECIAL_CHARS)}`
+    );
   });
 });

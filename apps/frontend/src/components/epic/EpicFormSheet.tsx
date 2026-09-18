@@ -37,7 +37,7 @@ export const EpicFormSheet = ({
   const [updateEpicMutation] = useMutation(UpdateEpicMutation);
   const { toast } = useToast();
   const { connectionID } = useEpicListContext();
-  const { setSelectedProduct } = useEpicFilter();
+  const { setSelectedProducts } = useEpicFilter();
   const openSheet =
     externalOpen !== undefined ? externalOpen : internalOpenSheet;
   const setOpenSheet =
@@ -57,7 +57,7 @@ export const EpicFormSheet = ({
       uploadables,
       onCompleted: () => {
         setOpenSheet(false);
-        setSelectedProduct(inputValues.product);
+        setSelectedProducts(inputValues.products);
         toast({
           title: t('Utils.Success'),
           description: t('Utils.Success'),

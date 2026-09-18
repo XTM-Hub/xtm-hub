@@ -266,8 +266,9 @@ export type CreateEpicInput = {
   edition_type: EditionType;
   illustration_document: InputMaybe<Scalars['Upload']['input']>;
   is_integration: InputMaybe<Scalars['Boolean']['input']>;
-  product: FiligranProduct;
+  products: Array<FiligranProduct>;
   short_description: Scalars['String']['input'];
+  slack_link: InputMaybe<Scalars['String']['input']>;
   timeline: Timeline;
   title: Scalars['String']['input'];
 };
@@ -755,8 +756,9 @@ export type Epic = Node & {
   edition_type: EditionType;
   epic_type: EpicType;
   id: Scalars['ID']['output'];
-  product: FiligranProduct;
+  products: Array<FiligranProduct>;
   short_description: Scalars['String']['output'];
+  slack_link: Maybe<Scalars['String']['output']>;
   timeline: Timeline;
   title: Scalars['String']['output'];
   updated_at: Maybe<Scalars['Date']['output']>;
@@ -1837,6 +1839,13 @@ export type ProvisionedNewsFeedItem = Node & {
   type: NewsFeedItemType;
 };
 
+export type PublicDocumentSlugInfo = {
+  __typename?: 'PublicDocumentSlugInfo';
+  created_at: Scalars['Date']['output'];
+  slug: Maybe<Scalars['String']['output']>;
+  updated_at: Maybe<Scalars['Date']['output']>;
+};
+
 export type Query = {
   __typename?: 'Query';
   bundleProducts: Array<PlatformIdentifier>;
@@ -1872,6 +1881,7 @@ export type Query = {
   platformAssociatedOrganization: Maybe<Organization>;
   platformTrialStatus: PlatformTrialStatus;
   publicDocumentBySlug: Maybe<Document>;
+  publicDocumentSlugsByServiceSlug: Array<PublicDocumentSlugInfo>;
   publicDocuments: DocumentConnection;
   publicDocumentsByServiceSlug: Array<Document>;
   registeredPlatform: Maybe<RegisteredPlatform>;
@@ -2069,6 +2079,11 @@ export type QueryPlatformTrialStatusArgs = {
 export type QueryPublicDocumentBySlugArgs = {
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
   slug: Scalars['String']['input'];
+};
+
+
+export type QueryPublicDocumentSlugsByServiceSlugArgs = {
+  serviceInstanceSlug: Scalars['String']['input'];
 };
 
 
@@ -2874,8 +2889,9 @@ export type UpdateEpicInput = {
   edition_type: EditionType;
   illustration_document: InputMaybe<Scalars['Upload']['input']>;
   is_integration: InputMaybe<Scalars['Boolean']['input']>;
-  product: InputMaybe<FiligranProduct>;
+  products: InputMaybe<Array<FiligranProduct>>;
   short_description: InputMaybe<Scalars['String']['input']>;
+  slack_link: InputMaybe<Scalars['String']['input']>;
   timeline: InputMaybe<Timeline>;
   title: InputMaybe<Scalars['String']['input']>;
 };
@@ -3328,7 +3344,7 @@ export type PublicDocumentsByServiceSlugSitemapQueryQueryVariables = Exact<{
 }>;
 
 
-export type PublicDocumentsByServiceSlugSitemapQueryQuery = { __typename?: 'Query', publicDocumentsByServiceSlug: Array<{ __typename?: 'Connector', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'CsvFeed', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'CustomDashboard', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'CustomView', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'DefaultDocument', slug: string | null, created_at: any, updated_at: any | null } | { __typename?: 'IntegrationHack', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'OpenAEVScenario', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'OpenCTIPlaybook', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'RssFeed', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'Stream', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'TaxiiFeed', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'ThirdPartyIntegration', slug: string, created_at: any, updated_at: any | null }> };
+export type PublicDocumentsByServiceSlugSitemapQueryQuery = { __typename?: 'Query', publicDocumentSlugsByServiceSlug: Array<{ __typename?: 'PublicDocumentSlugInfo', slug: string | null, created_at: any, updated_at: any | null }> };
 
 export type FeatureVoteMutationVariables = Exact<{
   feature_id: Scalars['VotableFeatureId']['input'];
@@ -4578,7 +4594,7 @@ usePublicDocumentsByServiceSlugQueryQuery.fetcher = (client: GraphQLClient, vari
 
 export const PublicDocumentsByServiceSlugSitemapQueryDocument = `
     query PublicDocumentsByServiceSlugSitemapQuery($serviceInstanceSlug: String!) {
-  publicDocumentsByServiceSlug(serviceInstanceSlug: $serviceInstanceSlug) {
+  publicDocumentSlugsByServiceSlug(serviceInstanceSlug: $serviceInstanceSlug) {
     slug
     created_at
     updated_at

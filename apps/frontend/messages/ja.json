@@ -190,7 +190,9 @@
       "Title": "タイトルは必須です",
       "ShortDescription": "概要は必須です",
       "ShortDescriptionMax": "概要は215文字以内で入力してください",
-      "Description": "説明は必須です"
+      "Description": "説明は必須です",
+      "Product": "少なくとも1つの製品が必要です",
+      "SlackLink": "filigran-community のSlackリンクである必要があります"
     }
   },
   "Epic": {
@@ -220,6 +222,8 @@
       "EditionType": "エディション・タイプ",
       "FiligranProduct": "製品名",
       "FiligranProductPlaceholder": "オープンCTI",
+      "SlackLink": "Slackリンク",
+      "SlackLinkPlaceholder": "チャンネルを選択するか、Slackリンクを貼り付けてください",
       "Timeline": "タイムライン",
       "IsActive": "このエピックは公開されていますか？(デフォルトでは下書きモードです)",
       "Integration": "統合されているか",
@@ -1017,6 +1021,31 @@
       "ManageAccessDescription": "このサービスにアクセスし、ユーザーを招待することができます。",
       "ManageAccessName": "アクセス管理",
       "SelectCapabilities": "機能を選択"
+    },
+    "CsvExport": {
+      "TriggerButton": "CSVエクスポート",
+      "DialogTitle": "インテグレーションをCSVにエクスポート",
+      "DialogDescription": "エクスポートするCSVファイルに含めるフィールドとフィルターを選択してください。",
+      "ColumnsLabel": "エクスポートするフィールド",
+      "ColumnsPlaceholder": "含めるフィールドを選択してください",
+      "FiltersLabel": "フィルター",
+      "ExportButton": "エクスポート",
+      "SuccessToast": "CSVエクスポートを開始しました。",
+      "ErrorToast": "インテグレーション一覧をエクスポートできませんでした。もう一度お試しください。",
+      "Columns": {
+        "IntegrationType": "インテグレーションタイプ",
+        "UseCase": "ユースケース",
+        "DeploymentType": "デプロイタイプ",
+        "VerificationStatus": "検証ステータス",
+        "SolutionCategory": "ソリューションカテゴリ",
+        "LicenseType": "ライセンスタイプ",
+        "ShortDescription": "概要",
+        "LongDescription": "詳細説明",
+        "FeedUrl": "フィードURL",
+        "OpenctiDocumentation": "OpenCTIドキュメント",
+        "VendorUrl": "ベンダーURL",
+        "DemoLink": "デモリンク"
+      }
     },
     "Cards": {
       "filigran-academy": {

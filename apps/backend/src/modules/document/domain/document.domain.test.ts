@@ -1021,6 +1021,112 @@ describe('document domain', () => {
     });
   });
 
+  describe('loadSeoDocumentSlugsByServiceSlug', () => {
+    const TEST_SERVICE_SLUG = 'opencti-integrations';
+
+    let parentDoc: Document;
+    let childDoc: Document;
+    let inactiveDoc: Document;
+    let otherServiceDoc: Document;
+
+    beforeEach(async () => {
+      await TestHelper.documentChildren.delete({});
+      await TestHelper.documentMetadata.delete({});
+      await TestHelper.document.delete({});
+
+      parentDoc = await TestHelper.document.create({
+        name: 'Parent SEO Doc',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'parent-seo',
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        active: true,
+        created_at: new Date('2023-01-01T10:00:00Z'),
+        updated_at: new Date('2023-01-02T10:00:00Z'),
+      });
+      childDoc = await TestHelper.document.create({
+        name: 'Child SEO Doc',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'child-seo',
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        active: true,
+        created_at: new Date('2023-01-01T11:00:00Z'),
+        updated_at: new Date('2023-01-02T11:00:00Z'),
+      });
+      await TestHelper.documentChildren.create({
+        parent_document_id: parentDoc.id,
+        child_document_id: childDoc.id,
+      });
+
+      inactiveDoc = await TestHelper.document.create({
+        name: 'Inactive SEO Doc',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'inactive-seo',
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        active: false,
+        created_at: new Date('2023-01-01T12:00:00Z'),
+        updated_at: new Date('2023-01-02T12:00:00Z'),
+      });
+
+      otherServiceDoc = await TestHelper.document.create({
+        name: 'Other Service Doc',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'other-service-doc',
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: SERVICES.INSTANCES.EPIC.ID,
+        active: true,
+        created_at: new Date('2023-01-01T13:00:00Z'),
+        updated_at: new Date('2023-01-02T13:00:00Z'),
+      });
+    });
+
+    it('should return only slug/created_at/updated_at of active parent documents', async () => {
+      const docs = await DocumentDomain.loadSeoDocumentSlugsByServiceSlug(
+        OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        TEST_SERVICE_SLUG
+      );
+
+      expect(docs).toHaveLength(1);
+      // `__typename` is injected by the shared `db()` helper's postProcessResponse
+      // regardless of the selected columns; assert it alongside the projected
+      // fields to confirm no other Document columns (e.g. name, description) leak in.
+      expect(Object.keys(docs[0]).sort()).toEqual(
+        ['__typename', 'created_at', 'slug', 'updated_at'].sort()
+      );
+      expect(docs[0]).toMatchObject({
+        slug: parentDoc.slug,
+        created_at: parentDoc.created_at,
+        updated_at: parentDoc.updated_at,
+      });
+    });
+
+    it('should not return child, inactive, or other-service documents', async () => {
+      const docs = await DocumentDomain.loadSeoDocumentSlugsByServiceSlug(
+        OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        TEST_SERVICE_SLUG
+      );
+      const slugs = docs.map((d) => d.slug);
+      expect(slugs).not.toContain(childDoc.slug);
+      expect(slugs).not.toContain(inactiveDoc.slug);
+      expect(slugs).not.toContain(otherServiceDoc.slug);
+    });
+
+    it('should return empty array if no documents match', async () => {
+      const docs = await DocumentDomain.loadSeoDocumentSlugsByServiceSlug(
+        'nonexistent-type',
+        'nonexistent-slug'
+      );
+      expect(Array.isArray(docs)).toBe(true);
+      expect(docs).toHaveLength(0);
+    });
+  });
+
   describe('loadDocumentsByMetadata', () => {
     let doc1: Document;
     let doc2: Document;

@@ -117,6 +117,7 @@ type Query {
   documentExists(documentName: String, service_instance_id: ServiceInstanceId!): Boolean
   publicDocuments(slug: String!, first: Int!, after: ID, orderBy: DocumentOrdering!, orderMode: OrderingMode!, searchTerm: String, logicalFilters: LogicalFilterInput, serviceInstanceId: ServiceInstanceId!): DocumentConnection!
   publicDocumentsByServiceSlug(serviceInstanceSlug: String!): [Document!]!
+  publicDocumentSlugsByServiceSlug(serviceInstanceSlug: String!): [PublicDocumentSlugInfo!]!
   publicDocumentBySlug(serviceInstanceId: ServiceInstanceId!, slug: String!): Document
   documents(first: Int!, after: ID, orderBy: DocumentOrdering!, orderMode: OrderingMode!, searchTerm: String, logicalFilters: LogicalFilterInput, serviceInstanceId: ServiceInstanceId!, parentsOnly: Boolean): DocumentConnection!
   document(documentId: DocumentId!, serviceInstanceId: ServiceInstanceId!): Document
@@ -696,6 +697,12 @@ enum DocumentOrdering {
   updated_at
   download_number
   name
+}
+
+type PublicDocumentSlugInfo {
+  slug: String
+  created_at: Date!
+  updated_at: Date
 }
 
 """
@@ -2192,7 +2199,8 @@ type Epic implements Node {
   description: String!
   edition_type: EditionType!
   active: Boolean!
-  product: FiligranProduct!
+  products: [FiligranProduct!]!
+  slack_link: String
   timeline: Timeline!
   epic_type: EpicType!
   document: Document
@@ -2209,7 +2217,8 @@ input CreateEpicInput {
   description: String!
   edition_type: EditionType!
   active: Boolean
-  product: FiligranProduct!
+  products: [FiligranProduct!]!
+  slack_link: String
   timeline: Timeline!
   is_integration: Boolean
   illustration_document: Upload
@@ -2221,7 +2230,8 @@ input UpdateEpicInput {
   description: String
   edition_type: EditionType!
   active: Boolean
-  product: FiligranProduct
+  products: [FiligranProduct!]
+  slack_link: String
   timeline: Timeline
   is_integration: Boolean
   illustration_document: Upload
