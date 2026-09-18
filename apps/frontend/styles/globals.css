@@ -1,8 +1,8 @@
 @import 'tw-animate-css';
 @import 'tailwindcss';
-@import '@filigran/ui/theme.css';
+@import '../src/components/filigran-ui/theme.css';
 
-@reference '@filigran/ui/theme.css';
+@reference '../src/components/filigran-ui/theme.css';
 
 @theme inline {
   --color-filigran-decoration: var(--color-filigran-decoration);
@@ -24,8 +24,7 @@ body[data-theme='Dark'] {
   --color-filigran-decoration: hsl(var(--blue-500) / 0.3);
   --hover-background: var(--color-filigran-brand-primary-transparency);
 }
-@source '../node_modules/@filigran/ui/dist/**/*.{js,ts,jsx,tsx}';
-@source '../../../node_modules/@filigran/ui/dist/**/*.{js,ts,jsx,tsx}';
+@source '../src/components/filigran-ui/**/*.{ts,tsx}';
 
 @variant dark (.dark &);
 @variant mobile (@media screen and (max-width: 40rem));

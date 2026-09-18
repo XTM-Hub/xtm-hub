@@ -297,6 +297,11 @@ const localThemeRulesPlugin = {
 
 const eslintConfig = [
   {
+    // Vendored third-party UI library source, kept close to its upstream
+    // layout/conventions on purpose — excluded like other generated output.
+    ignores: ['src/components/filigran-ui/**'],
+  },
+  {
     plugins: {
       unicorn,
     },
