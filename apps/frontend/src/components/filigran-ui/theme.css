@@ -393,7 +393,9 @@
   );
   --color-feedback-error-tertiary: var(--semantic-feedback-error-tertiary);
   --color-feedback-neutral-primary: var(--semantic-feedback-neutral-primary);
-  --color-feedback-neutral-secondary: var(--semantic-feedback-neutral-secondary);
+  --color-feedback-neutral-secondary: var(
+    --semantic-feedback-neutral-secondary
+  );
   --color-feedback-neutral-secondary-transparency: var(
     --semantic-feedback-neutral-secondary-transparency
   );
@@ -1569,11 +1571,15 @@
     var(--entity-observations) / 0.2
   );
   --semantic-entities-all-threats: hsl(var(--entity-threats));
-  --semantic-entities-all-threats-transparency: hsl(var(--entity-threats) / 0.2);
+  --semantic-entities-all-threats-transparency: hsl(
+    var(--entity-threats) / 0.2
+  );
   --semantic-entities-arsenal: hsl(var(--entity-arsenal));
   --semantic-entities-arsenal-transparency: hsl(var(--entity-arsenal) / 0.2);
   --semantic-entities-techniques: hsl(var(--entity-techniques));
-  --semantic-entities-techniques-transparency: hsl(var(--entity-techniques) / 0.2);
+  --semantic-entities-techniques-transparency: hsl(
+    var(--entity-techniques) / 0.2
+  );
   --semantic-entities-victimology: hsl(var(--entity-victimology));
   --semantic-entities-victimology-transparency: hsl(
     var(--entity-victimology) / 0.2
@@ -1752,7 +1758,9 @@
   );
   --color-feedback-error-tertiary: var(--semantic-feedback-error-tertiary);
   --color-feedback-neutral-primary: var(--semantic-feedback-neutral-primary);
-  --color-feedback-neutral-secondary: var(--semantic-feedback-neutral-secondary);
+  --color-feedback-neutral-secondary: var(
+    --semantic-feedback-neutral-secondary
+  );
   --color-feedback-neutral-secondary-transparency: var(
     --semantic-feedback-neutral-secondary-transparency
   );
@@ -1908,7 +1916,9 @@ body[data-theme='Dark'] {
   --semantic-feedback-error-tertiary: var(--color-red-300);
   --semantic-feedback-neutral-primary: var(--color-gray-400);
   --semantic-feedback-neutral-secondary: var(--color-gray-600);
-  --semantic-feedback-neutral-secondary-transparency: hsl(var(--gray-600) / 0.3);
+  --semantic-feedback-neutral-secondary-transparency: hsl(
+    var(--gray-600) / 0.3
+  );
   --semantic-feedback-neutral-tertiary: var(--color-gray-200);
 
   --semantic-entities-analyses: hsl(var(--entity-analyse));
@@ -1922,11 +1932,15 @@ body[data-theme='Dark'] {
     var(--entity-observations) / 0.2
   );
   --semantic-entities-all-threats: hsl(var(--entity-threats));
-  --semantic-entities-all-threats-transparency: hsl(var(--entity-threats) / 0.2);
+  --semantic-entities-all-threats-transparency: hsl(
+    var(--entity-threats) / 0.2
+  );
   --semantic-entities-arsenal: hsl(var(--entity-arsenal));
   --semantic-entities-arsenal-transparency: hsl(var(--entity-arsenal) / 0.2);
   --semantic-entities-techniques: hsl(var(--entity-techniques));
-  --semantic-entities-techniques-transparency: hsl(var(--entity-techniques) / 0.2);
+  --semantic-entities-techniques-transparency: hsl(
+    var(--entity-techniques) / 0.2
+  );
   --semantic-entities-victimology: hsl(var(--entity-victimology));
   --semantic-entities-victimology-transparency: hsl(
     var(--entity-victimology) / 0.2
@@ -2157,7 +2171,9 @@ body[data-theme='Dark'] {
   );
   --color-feedback-error-tertiary: var(--semantic-feedback-error-tertiary);
   --color-feedback-neutral-primary: var(--semantic-feedback-neutral-primary);
-  --color-feedback-neutral-secondary: var(--semantic-feedback-neutral-secondary);
+  --color-feedback-neutral-secondary: var(
+    --semantic-feedback-neutral-secondary
+  );
   --color-feedback-neutral-secondary-transparency: var(
     --semantic-feedback-neutral-secondary-transparency
   );
@@ -2308,12 +2324,8 @@ body[data-theme='Dark'] {
 }
 ::-webkit-scrollbar-thumb {
   border-radius: 100vh;
-  border: 0.1rem solid var(
-          --semantic-elevation-background-layer-0
-  );
-  background: var(
-          --semantic-elevation-background-layer-3
-  );
+  border: 0.1rem solid var(--semantic-elevation-background-layer-0);
+  background: var(--semantic-elevation-background-layer-3);
 }
 
 ::-webkit-scrollbar-corner {
