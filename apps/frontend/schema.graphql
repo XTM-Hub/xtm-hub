@@ -107,7 +107,6 @@ type Query {
   deploymentRequests(first: Int!, after: ID, filters: [DeploymentRequestFilter!]): PlatformDeploymentRequestConnection!
   deploymentRequestsAvailable: [DeploymentAvailability!]!
   deploymentRequestsList(first: Int!, after: ID, filters: [DeploymentRequestFilter!], orderBy: DeploymentRequestOrdering!, orderMode: OrderingMode!, searchTerm: String): DeploymentRequestConnection!
-  trialDeployments(input: TrialDeploymentsInput!): TrialsDeployments!
   platformTrialStatus(organizationId: OrganizationId!): PlatformTrialStatus!
   xtmPlatformBundle: DeploymentRequest
   xtmonePlatformIntegrationStatus(serviceInstanceId: ServiceInstanceId!): XtmoneIntegrationStatus
@@ -514,17 +513,6 @@ type XtmoneIntegrationStatus {
   last_checked_at: String
 }
 
-type DeployedPlatform {
-  serviceInstanceId: ServiceInstanceId!
-  platformIdentifier: PlatformIdentifier!
-}
-
-type TrialsDeployments {
-  availableTrials: [PlatformIdentifier!]!
-  deployed: [DeployedPlatform!]!
-  isBlacklisted: Boolean!
-}
-
 type PlatformTrialStatus {
   isBlacklisted: Boolean!
   hub_status: DeploymentRequestHubStatus
@@ -559,11 +547,6 @@ input ReorderDeploymentRequestInQueueInput {
 input UpdateDeploymentQuotaCapacityInput {
   region: DeploymentRequestPlatformRegion!
   newCapacity: Int!
-}
-
-input TrialDeploymentsInput {
-  organizationId: OrganizationId!
-  platformIdentifiers: [PlatformIdentifier!]
 }
 
 """

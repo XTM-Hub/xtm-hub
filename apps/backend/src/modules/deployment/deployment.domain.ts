@@ -118,22 +118,6 @@ export const DeploymentRequestDomain = {
     ];
   },
 
-  loadTrialsForOrganization: async (
-    organizationId: OrganizationId,
-    identifiers?: PlatformIdentifier[]
-  ): Promise<DeploymentRequest[]> => {
-    return db<DeploymentRequest>('DeploymentRequest')
-      .where('organization_requester_id', '=', organizationId)
-      .modify((qb) => {
-        if (identifiers?.length) {
-          qb.whereIn('platform_identifier', identifiers);
-        }
-      })
-      .where('type', '=', DeploymentRequestDeploymentType.Trial)
-      .where('counts_in_orga_quota', '=', true)
-      .select('*');
-  },
-
   loadBundleTrialForOrganization: async (
     organizationId: OrganizationId
   ): Promise<DeploymentRequest | undefined> => {

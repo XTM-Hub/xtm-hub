@@ -25,7 +25,6 @@ import {
   QueryDeploymentRequestsListArgs,
   RegisteredPlatform,
   ReorderDeploymentRequestInQueueDirection,
-  TrialDeploymentsInput,
 } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
 import { DeploymentRequestId } from '../../model/kanel/public/DeploymentRequest';
@@ -300,34 +299,6 @@ describe('deployment resolver — unit tests', () => {
         {} as unknown as QueryDeploymentRequestsListArgs
       );
       await expect(call).rejects.toMatchObject({ name: ErrorType.BadRequest });
-    });
-  });
-
-  describe('trial deployments GraphQL query', () => {
-    it('should delegate to DeploymentApp.loadTrialDeployments and return result', async () => {
-      const expected = [] as unknown as Awaited<
-        ReturnType<typeof DeploymentApp.loadTrialDeployments>
-      >;
-      vi.spyOn(DeploymentApp, 'loadTrialDeployments').mockResolvedValue(
-        expected
-      );
-
-      const result = await resolver.Query.trialDeployments(undefined, {
-        input: {} as unknown as TrialDeploymentsInput,
-      });
-
-      expect(result).toEqual(expected);
-    });
-
-    it('should map to NotFound for DeploymentRequestQuotaNotFound error', async () => {
-      vi.spyOn(DeploymentApp, 'loadTrialDeployments').mockRejectedValue(
-        new Error(ErrorCode.DeploymentRequestQuotaNotFound)
-      );
-
-      const call = resolver.Query.trialDeployments(undefined, {
-        input: {} as unknown as TrialDeploymentsInput,
-      });
-      await expect(call).rejects.toMatchObject({ name: ErrorType.NotFound });
     });
   });
 

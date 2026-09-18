@@ -256,17 +256,6 @@ type XtmoneIntegrationStatus {
   last_checked_at: String
 }
 
-type DeployedPlatform {
-  serviceInstanceId: ServiceInstanceId!
-  platformIdentifier: PlatformIdentifier!
-}
-
-type TrialsDeployments {
-  availableTrials: [PlatformIdentifier!]!
-  deployed: [DeployedPlatform!]!
-  isBlacklisted: Boolean!
-}
-
 type PlatformTrialStatus {
   isBlacklisted: Boolean!
   hub_status: DeploymentRequestHubStatus
@@ -303,11 +292,6 @@ input UpdateDeploymentQuotaCapacityInput {
   newCapacity: Int!
 }
 
-input TrialDeploymentsInput {
-  organizationId: OrganizationId!
-  platformIdentifiers: [PlatformIdentifier!]
-}
-
 extend type Query {
   deploymentRequests(
     first: Int!
@@ -328,7 +312,6 @@ extend type Query {
     orderMode: OrderingMode!
     searchTerm: String
   ): DeploymentRequestConnection! @auth(portalCapa: [BYPASS, READ_TRIALS])
-  trialDeployments(input: TrialDeploymentsInput!): TrialsDeployments! @auth
   platformTrialStatus(organizationId: OrganizationId!): PlatformTrialStatus!
     @auth
   xtmPlatformBundle: DeploymentRequest @auth

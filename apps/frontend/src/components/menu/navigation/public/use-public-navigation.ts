@@ -58,15 +58,6 @@ export const usePublicNavigation = (
       icon: OpenCtiIconIcon,
       pathPrefix: `/${locale}/cybersecurity-solutions/opencti`,
       links: [
-        ...(!isXtmPlatformTrialEnabled
-          ? [
-              {
-                href: `/${locale}/cybersecurity-solutions/opencti-free-trial`,
-                label: t('Menu.StartFreeTrial'),
-                highlight: true,
-              },
-            ]
-          : []),
         ...buildServiceLink(
           ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS,
           t('Menu.CustomDashboards')
@@ -101,15 +92,6 @@ export const usePublicNavigation = (
       icon: OpenAevIconIcon,
       pathPrefix: `/${locale}/cybersecurity-solutions/openaev`,
       links: [
-        ...(!isXtmPlatformTrialEnabled
-          ? [
-              {
-                href: `/${locale}/cybersecurity-solutions/openaev-free-trial`,
-                label: t('Menu.StartFreeTrial'),
-                highlight: true,
-              },
-            ]
-          : []),
         ...buildServiceLink(
           ServiceSlug.OPEN_AEV_SCENARIOS,
           t('Menu.Scenarios')

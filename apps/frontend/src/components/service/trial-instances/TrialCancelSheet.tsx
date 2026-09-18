@@ -3,8 +3,8 @@
 import { invalidatePrivateNavigationQueries } from '@/components/menu/navigation/private/private-navigation-query-invalidation';
 import { SelectWithEditableField } from '@/components/service/registration/SelectWithEditableField';
 import { CancelDeploymentRequestMutation } from '@/components/service/trial-instances/trial-instances.graphql';
-import { useOrgaFreeTrial } from '@/components/service/trial-instances/useOrgaFreeTrials';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
 import { CheckIndeterminateIcon } from '@filigran/icon';
 import {
   AutoForm,
@@ -15,7 +15,6 @@ import {
   toast,
 } from '@filigran/ui';
 import { trialInstancesCancelDeploymentRequestMutation } from '@generated/trialInstancesCancelDeploymentRequestMutation.graphql';
-import { PlatformIdentifier } from '@graphql/generated';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -35,7 +34,6 @@ interface TrialCancelSheetProps {
   isCancellationDefinitive: boolean;
   open: boolean;
   setOpen: (open: boolean) => void;
-  platformIdentifier: PlatformIdentifier;
 }
 
 const REASONS = [
@@ -51,7 +49,6 @@ export const TrialCancelSheet = ({
   isCancellationDefinitive,
   open,
   setOpen,
-  platformIdentifier,
 }: TrialCancelSheetProps) => {
   const t = useTranslations();
   const trialCancelSchema = useMemo(
@@ -68,7 +65,6 @@ export const TrialCancelSheet = ({
     label: t(`Service.Trials.CancellationReason.${reason}`),
   }));
   const queryClient = useQueryClient();
-  const { refetch } = useOrgaFreeTrial();
   const router = useRouter();
 
   const [cancelDeploymentRequestMutation] =
@@ -93,10 +89,9 @@ export const TrialCancelSheet = ({
           description: t(descriptionKey),
         });
         invalidatePrivateNavigationQueries(queryClient);
-        refetch({}, { fetchPolicy: 'network-only' });
         setOpen(false);
 
-        router.push(`/app/service/${platformIdentifier}-free-trial`);
+        router.push(XTM_PLATFORM_TRIAL_PATH);
       },
       onError: (error) => {
         toast({

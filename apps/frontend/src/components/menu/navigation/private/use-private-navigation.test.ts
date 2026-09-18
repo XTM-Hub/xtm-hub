@@ -11,7 +11,6 @@ import { meContext_fragment$data } from '@generated/meContext_fragment.graphql';
 import {
   OrderingMode,
   OrganizationCapability,
-  PlatformIdentifier,
   PortalCapability,
   ServiceDefinitionIdentifier,
   ServiceInstanceFilterKey,
@@ -34,12 +33,9 @@ const graphqlMocks = vi.hoisted(() => ({
     ),
     getRootKey: vi.fn(() => ['RegisteredPlatformsList']),
   }),
-  useTrialDeploymentsEligibilityQuery: Object.assign(vi.fn(), {
-    getKey: vi.fn((variables: unknown) => [
-      'TrialDeploymentsEligibility',
-      variables,
-    ]),
-    getRootKey: vi.fn(() => ['TrialDeploymentsEligibility']),
+  usePlatformTrialStatusQuery: Object.assign(vi.fn(), {
+    getKey: vi.fn((variables: unknown) => ['PlatformTrialStatus', variables]),
+    getRootKey: vi.fn(() => ['PlatformTrialStatus']),
   }),
 }));
 
@@ -51,8 +47,7 @@ vi.mock('@graphql/generated', async (importOriginal) => {
     useServiceInstancesListQuery: graphqlMocks.useServiceInstancesListQuery,
     useRegisteredPlatformsListQuery:
       graphqlMocks.useRegisteredPlatformsListQuery,
-    useTrialDeploymentsEligibilityQuery:
-      graphqlMocks.useTrialDeploymentsEligibilityQuery,
+    usePlatformTrialStatusQuery: graphqlMocks.usePlatformTrialStatusQuery,
   };
 });
 
@@ -154,11 +149,13 @@ describe('usePrivateNavigation', () => {
       data: undefined,
     });
 
-    graphqlMocks.useTrialDeploymentsEligibilityQuery.mockReturnValue({
+    graphqlMocks.usePlatformTrialStatusQuery.mockReturnValue({
       data: {
-        trialDeployments: {
-          availableTrials: [],
+        platformTrialStatus: {
           isBlacklisted: false,
+          hub_status: null,
+          end_date: null,
+          ongoingStandaloneTrials: [],
         },
       },
       isLoading: false,
@@ -224,11 +221,13 @@ describe('usePrivateNavigation', () => {
   });
 
   it('hides the xtm-platform-trial bottom link when organization is blacklisted', () => {
-    graphqlMocks.useTrialDeploymentsEligibilityQuery.mockReturnValue({
+    graphqlMocks.usePlatformTrialStatusQuery.mockReturnValue({
       data: {
-        trialDeployments: {
-          availableTrials: [],
+        platformTrialStatus: {
           isBlacklisted: true,
+          hub_status: null,
+          end_date: null,
+          ongoingStandaloneTrials: [],
         },
       },
       isLoading: false,
@@ -364,57 +363,6 @@ describe('usePrivateNavigation', () => {
     ]);
   });
 
-  it('does not include StartFreeTrial links when the XTM Platform trial flag is enabled', () => {
-    const { result } = renderUsePrivateNavigation({
-      selectedOrganizationId: 'org-1',
-    });
-
-    const openctiSection = getSection(result.current.sections, 'opencti');
-    const openaevSection = getSection(result.current.sections, 'openaev');
-
-    expect(
-      openctiSection?.links.some((link) => link.label === 'StartFreeTrial')
-    ).toBe(false);
-    expect(
-      openaevSection?.links.some((link) => link.label === 'StartFreeTrial')
-    ).toBe(false);
-  });
-
-  it('includes StartFreeTrial links when the XTM Platform trial flag is disabled', () => {
-    vi.mocked(useIsFeatureEnabled).mockReturnValue(false);
-    graphqlMocks.useTrialDeploymentsEligibilityQuery.mockReturnValue({
-      data: {
-        trialDeployments: {
-          availableTrials: [
-            PlatformIdentifier.Opencti,
-            PlatformIdentifier.Openaev,
-          ],
-          isBlacklisted: false,
-        },
-      },
-      isLoading: false,
-      isPending: false,
-    });
-
-    const { result } = renderUsePrivateNavigation({
-      selectedOrganizationId: 'org-1',
-    });
-
-    const openctiSection = getSection(result.current.sections, 'opencti');
-    const openaevSection = getSection(result.current.sections, 'openaev');
-
-    expect(
-      openctiSection?.links.some(
-        (link) => link.href === '/app/service/opencti-free-trial'
-      )
-    ).toBe(true);
-    expect(
-      openaevSection?.links.some(
-        (link) => link.href === '/app/service/openaev-free-trial'
-      )
-    ).toBe(true);
-  });
-
   it.each([
     {
       selectedOrganizationId: 'org-1',
@@ -465,13 +413,7 @@ describe('usePrivateNavigation', () => {
         searchTerm: null,
       };
       const expectedTrialVariables = {
-        input: {
-          organizationId: expectedOrganizationId,
-          platformIdentifiers: [
-            PlatformIdentifier.Opencti,
-            PlatformIdentifier.Openaev,
-          ],
-        },
+        organizationId: expectedOrganizationId,
       };
 
       expect(graphqlMocks.useServiceInstancesListQuery).toHaveBeenCalledWith(
@@ -507,12 +449,14 @@ describe('usePrivateNavigation', () => {
         }
       );
 
-      expect(
-        graphqlMocks.useTrialDeploymentsEligibilityQuery
-      ).toHaveBeenCalledWith(portalGraphqlClient, expectedTrialVariables, {
-        enabled: expectedEnabled,
-        queryKey: ['TrialDeploymentsEligibility', expectedTrialVariables],
-      });
+      expect(graphqlMocks.usePlatformTrialStatusQuery).toHaveBeenCalledWith(
+        portalGraphqlClient,
+        expectedTrialVariables,
+        {
+          enabled: expectedEnabled,
+          queryKey: ['PlatformTrialStatus', expectedTrialVariables],
+        }
+      );
     }
   );
 

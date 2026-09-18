@@ -17,7 +17,7 @@ describe('XtmPlatformTrialBanner', () => {
     const { getByText, getByRole } = testRender(
       <XtmPlatformTrialBanner
         state="no-trial"
-        learnMoreHref="/app/service/opencti-free-trial"
+        learnMoreHref="/app/service/xtm-platform-trial"
       />
     );
 

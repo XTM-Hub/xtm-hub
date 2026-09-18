@@ -444,10 +444,6 @@
       "Contract": "Contrat",
       "Remaining": "restant",
       "DaysRemaining": "{days, plural, =1 {# jour} other {# jours}}"
-    },
-    "TryOtherPlatform": {
-      "Title": "Étendez et adaptez votre plateforme XTM",
-      "Cta": "Essayez {productName}"
     }
   },
   "PublicHomePage": {
@@ -568,7 +564,6 @@
   "Menu": {
     "XTMPlatform": "Plateforme XTM",
     "XTMPlatformTrial": "Essai Plateforme XTM",
-    "StartFreeTrial": "Commencer l'essai gratuit",
     "CustomDashboards": "Tableaux de bord personnalisés",
     "CustomViews": "Vues personnalisées",
     "Integrations": "Intégrations",
@@ -1501,9 +1496,6 @@
     "SubscribeService": "Souscrire au service {serviceName}",
     "SubscribeSuccessful": "Vous avez souscrit au service. Vous pouvez maintenant le retrouver dans les services souscrits !",
     "Trials": {
-      "ExploreBold": "Essai gratuit !",
-      "ExplorePlatform": "Explorez {platformName} pendant 30 jours",
-      "ExploreProducts": "Explorez le produit OpenCTI ou OpenAEV pendant 30 jours",
       "Active": "Votre essai gratuit d'OpenCTI est actif",
       "Provisioning": "Votre essai gratuit d'OpenCTI est en cours de provisionnement.",
       "Requested": "Votre essai gratuit d'OpenCTI a été demandé.",
@@ -1570,8 +1562,6 @@
           }
         }
       },
-      "StartTrial": "Commencez votre essai gratuit",
-      "StartTrialWithName": "Commencez votre essai gratuit de {platformName}",
       "OpenAEVPlatformBreadcrumb": "Plateforme d'essai OpenAEV",
       "OpenCTIPlatformBreadcrumb": "Plateforme d'essai OpenCTI",
       "PageHeader": {
@@ -1745,11 +1735,6 @@
           "Title": "Essai gratuit d'OpenAEV pendant 30 jours",
           "FreeTrialDescription": "Explorez OpenAEV pour simuler des scénarios d'attaque réels, évaluer votre posture de sécurité et améliorer votre cyber-résilience - au niveau technique et humain."
         }
-      },
-      "CapacityWarning": {
-        "Title": "Aucune plateforme disponible",
-        "Content": "Aucune plateforme n'est disponible dans cette région pour le moment. Souhaitez-vous être averti lorsque nous en aurons une de disponible ?",
-        "Continue": "Me prévenir"
       },
       "ManageUsers": {
         "Title": "Gérer les utilisateurs",

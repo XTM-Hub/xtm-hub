@@ -410,12 +410,6 @@ export type DefaultDocument = Document & Node & {
   use_cases: Maybe<Array<UseCase>>;
 };
 
-export type DeployedPlatform = {
-  __typename?: 'DeployedPlatform';
-  platformIdentifier: PlatformIdentifier;
-  serviceInstanceId: Scalars['ServiceInstanceId']['output'];
-};
-
 export type DeployedResource = {
   __typename?: 'DeployedResource';
   deployedAt: Scalars['Date']['output'];
@@ -1896,7 +1890,6 @@ export type Query = {
   solutionCategories: Maybe<SolutionCategoryConnection>;
   subscriptionById: Maybe<SubscriptionModel>;
   subscriptions: SubscriptionConnection;
-  trialDeployments: TrialsDeployments;
   updateOpenCTIManifest: Success;
   useCases: Maybe<UseCaseConnection>;
   userOrganizations: Array<Organization>;
@@ -2171,11 +2164,6 @@ export type QuerySubscriptionsArgs = {
   orderBy: SubscriptionOrdering;
   orderMode: OrderingMode;
   searchTerm: InputMaybe<Scalars['String']['input']>;
-};
-
-
-export type QueryTrialDeploymentsArgs = {
-  input: TrialDeploymentsInput;
 };
 
 
@@ -2810,18 +2798,6 @@ export enum Timeline {
   Now = 'now',
   UnderConsideration = 'under_consideration'
 }
-
-export type TrialDeploymentsInput = {
-  organizationId: Scalars['OrganizationId']['input'];
-  platformIdentifiers: InputMaybe<Array<PlatformIdentifier>>;
-};
-
-export type TrialsDeployments = {
-  __typename?: 'TrialsDeployments';
-  availableTrials: Array<PlatformIdentifier>;
-  deployed: Array<DeployedPlatform>;
-  isBlacklisted: Scalars['Boolean']['output'];
-};
 
 export type UnregisterPlatformInput = {
   identifier: PlatformIdentifier;
@@ -3531,13 +3507,6 @@ export type PlatformTrialStatusQueryVariables = Exact<{
 
 
 export type PlatformTrialStatusQuery = { __typename?: 'Query', platformTrialStatus: { __typename?: 'PlatformTrialStatus', isBlacklisted: boolean, hub_status: DeploymentRequestHubStatus | null, end_date: any | null, ongoingStandaloneTrials: Array<PlatformIdentifier> } };
-
-export type TrialDeploymentsEligibilityQueryVariables = Exact<{
-  input: TrialDeploymentsInput;
-}>;
-
-
-export type TrialDeploymentsEligibilityQuery = { __typename?: 'Query', trialDeployments: { __typename?: 'TrialsDeployments', availableTrials: Array<PlatformIdentifier>, isBlacklisted: boolean } };
 
 export type UseCaseAddMutationVariables = Exact<{
   input: AddUseCaseInput;
@@ -5880,60 +5849,6 @@ export const useInfinitePlatformTrialStatusQuery = <
 useInfinitePlatformTrialStatusQuery.getKey = (variables: PlatformTrialStatusQueryVariables) => ['PlatformTrialStatus.infinite', variables];
 useInfinitePlatformTrialStatusQuery.getRootKey = () => ['PlatformTrialStatus.infinite'] as const;
 usePlatformTrialStatusQuery.fetcher = (client: GraphQLClient, variables: PlatformTrialStatusQueryVariables, headers?: RequestInit['headers']) => fetcher<PlatformTrialStatusQuery, PlatformTrialStatusQueryVariables>(client, PlatformTrialStatusDocument, variables, headers);
-
-export const TrialDeploymentsEligibilityDocument = `
-    query TrialDeploymentsEligibility($input: TrialDeploymentsInput!) {
-  trialDeployments(input: $input) {
-    availableTrials
-    isBlacklisted
-  }
-}
-    `;
-
-export const useTrialDeploymentsEligibilityQuery = <
-      TData = TrialDeploymentsEligibilityQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: TrialDeploymentsEligibilityQueryVariables,
-      options?: Omit<UseQueryOptions<TrialDeploymentsEligibilityQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<TrialDeploymentsEligibilityQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<TrialDeploymentsEligibilityQuery, TError, TData>(
-      {
-    queryKey: ['TrialDeploymentsEligibility', variables],
-    queryFn: fetcher<TrialDeploymentsEligibilityQuery, TrialDeploymentsEligibilityQueryVariables>(client, TrialDeploymentsEligibilityDocument, variables, headers),
-    ...options
-  }
-    )};
-
-useTrialDeploymentsEligibilityQuery.getKey = (variables: TrialDeploymentsEligibilityQueryVariables) => ['TrialDeploymentsEligibility', variables];
-useTrialDeploymentsEligibilityQuery.getRootKey = () => ['TrialDeploymentsEligibility'] as const;
-export const useInfiniteTrialDeploymentsEligibilityQuery = <
-      TData = InfiniteData<TrialDeploymentsEligibilityQuery>,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: TrialDeploymentsEligibilityQueryVariables,
-      options: Omit<UseInfiniteQueryOptions<TrialDeploymentsEligibilityQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<TrialDeploymentsEligibilityQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useInfiniteQuery<TrialDeploymentsEligibilityQuery, TError, TData>(
-      (() => {
-    const { queryKey: optionsQueryKey, ...restOptions } = options;
-    return {
-      queryKey: optionsQueryKey ?? ['TrialDeploymentsEligibility.infinite', variables],
-      queryFn: (metaData) => fetcher<TrialDeploymentsEligibilityQuery, TrialDeploymentsEligibilityQueryVariables>(client, TrialDeploymentsEligibilityDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
-      ...restOptions
-    }
-  })()
-    )};
-
-useInfiniteTrialDeploymentsEligibilityQuery.getKey = (variables: TrialDeploymentsEligibilityQueryVariables) => ['TrialDeploymentsEligibility.infinite', variables];
-useInfiniteTrialDeploymentsEligibilityQuery.getRootKey = () => ['TrialDeploymentsEligibility.infinite'] as const;
-useTrialDeploymentsEligibilityQuery.fetcher = (client: GraphQLClient, variables: TrialDeploymentsEligibilityQueryVariables, headers?: RequestInit['headers']) => fetcher<TrialDeploymentsEligibilityQuery, TrialDeploymentsEligibilityQueryVariables>(client, TrialDeploymentsEligibilityDocument, variables, headers);
 
 export const UseCaseAddDocument = `
     mutation UseCaseAdd($input: AddUseCaseInput!) {

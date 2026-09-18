@@ -3,7 +3,6 @@ import { AppShell } from '@/components/layout/AppShell';
 import { PublicHeaderContent } from '@/components/layout/PublicHeaderContent';
 import PublicMenu from '@/components/menu/PublicMenu';
 import { ReactQueryProvider } from '@/components/ReactQueryProvider';
-import { PublicTryFiligranProductsBanner } from '@/components/service/trial-instances/banner/PublicTryFiligranProductsBanner';
 import { PublicXtmPlatformTrialBanner } from '@/components/service/trial-instances/banner/xtm-platform-trial/PublicXtmPlatformTrialBanner';
 import { type PublicLocale, publicLocales } from '@/i18n/config';
 import { getDefaultMetadata } from '@/utils/generate-metadata';
@@ -51,13 +50,7 @@ const RootLayout = async ({
   return (
     <ReactQueryProvider>
       <AppShell
-        banners={
-          xtmPlatformTrialEnabled ? (
-            <PublicXtmPlatformTrialBanner />
-          ) : (
-            <PublicTryFiligranProductsBanner />
-          )
-        }
+        banners={xtmPlatformTrialEnabled && <PublicXtmPlatformTrialBanner />}
         menu={
           <PublicMenu
             visibleServiceSlugs={visibleServiceSlugs}

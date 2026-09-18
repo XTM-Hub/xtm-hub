@@ -8,7 +8,6 @@ import HeaderComponent from '@/components/Header';
 import { AppShell } from '@/components/layout/AppShell';
 import PrivateMenu from '@/components/menu/PrivateMenu';
 import { ReactQueryProvider } from '@/components/ReactQueryProvider';
-import { TryFiligranProductsBanner } from '@/components/service/trial-instances/banner/TryFiligranProductsBanner';
 import { PrivateXtmPlatformTrialBanner } from '@/components/service/trial-instances/banner/xtm-platform-trial/PrivateXtmPlatformTrialBanner';
 import { RelayProvider } from '@/relay/relay-provider';
 import { loadMeUser } from '@/utils/load-me-user';
@@ -55,11 +54,7 @@ const RootLayout = async ({ children }: RootLayoutProps) => {
     <>
       <TestEnvBanner />
       <AdminBanner />
-      {xtmPlatformTrialEnabled ? (
-        <PrivateXtmPlatformTrialBanner />
-      ) : (
-        <TryFiligranProductsBanner />
-      )}
+      {xtmPlatformTrialEnabled && <PrivateXtmPlatformTrialBanner />}
     </>
   );
 

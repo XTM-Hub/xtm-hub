@@ -444,10 +444,6 @@
       "Contract": "契約",
       "Remaining": "残り",
       "DaysRemaining": "{days, plural, =1 {#日} other {#日}}"
-    },
-    "TryOtherPlatform": {
-      "Title": "XTMプラットフォームを拡張・スケールアップ",
-      "Cta": "{productName}を試してみてください"
     }
   },
   "PublicHomePage": {
@@ -568,7 +564,6 @@
   "Menu": {
     "XTMPlatform": "XTMプラットフォーム",
     "XTMPlatformTrial": "XTMプラットフォームトライアル",
-    "StartFreeTrial": "無料トライアルを開始",
     "CustomDashboards": "カスタムダッシュボード",
     "CustomViews": "カスタムビュー",
     "Integrations": "連携機能",
@@ -1501,9 +1496,6 @@
     "SubscribeService": "{serviceName} サービスを購読する",
     "SubscribeSuccessful": "サービスへの登録が完了しました。これで登録したサービスにこのサービスが表示されます。",
     "Trials": {
-      "ExploreBold": "無料トライアル",
-      "ExplorePlatform": "30日間、{platformName} プラットフォームをお試しください。",
-      "ExploreProducts": "OpenCTI または OpenAEV プラットフォームを 30 日間お試しいただけます。",
       "Active": "OpenCTI 無料トライアルは有効です",
       "Provisioning": "OpenCTI 無料トライアルは現在プロビジョニング中です。",
       "Requested": "OpenCTI 無料トライアルがリクエストされました。",
@@ -1570,8 +1562,6 @@
           }
         }
       },
-      "StartTrial": "無料トライアルを開始する",
-      "StartTrialWithName": "無料 {platformName} トライアルを開始する",
       "OpenAEVPlatformBreadcrumb": "OpenAEV トライアルプラットフォーム",
       "OpenCTIPlatformBreadcrumb": "OpenCTI トライアルプラットフォーム",
       "PageHeader": {
@@ -1745,11 +1735,6 @@
           "Title": "OpenAEV 30日間無料トライアル",
           "FreeTrialDescription": "OpenAEV を使って、実際の攻撃シナリオをシミュレートし、セキュリティ態勢を評価し、サイバー耐性を向上させましょう。"
         }
-      },
-      "CapacityWarning": {
-        "Title": "提供開始のお知らせ",
-        "Content": "プラットフォームスロットは現在お住まいの地域ではご利用いただけません。利用可能になった際に通知を受け取りたいですか？",
-        "Continue": "通知する"
       },
       "ManageUsers": {
         "Title": "ユーザーを管理する",

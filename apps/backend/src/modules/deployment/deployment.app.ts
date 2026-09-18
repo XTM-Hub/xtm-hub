@@ -22,7 +22,6 @@ import {
   ServiceInstanceCreationStatus,
   ServiceInstanceTag,
   Success,
-  TrialDeploymentsInput,
   UpdateDeploymentRequestInput,
   XtmoneIntegrationStatus,
 } from '../../__generated__/resolvers-types';
@@ -69,10 +68,7 @@ import { OrganizationDomain } from '../organization-management/organization/orga
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { PlatformConfigurationDomain } from '../registration/platform-configuration/platform-configuration.domain';
 import { RegistrationDomain } from '../registration/registration.domain';
-import {
-  REGISTRABLE_PLATFORM_IDENTIFIERS,
-  serviceInstanceTagMappedByPlatformIdentifier,
-} from '../registration/registration.mapping';
+import { serviceInstanceTagMappedByPlatformIdentifier } from '../registration/registration.mapping';
 import { ServiceDefinitionDomain } from '../service/definition/service-definition.domain';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { SubscriptionDomain } from '../subscription/subscription.domain';
@@ -425,60 +421,6 @@ export const DeploymentApp = {
     }
   },
 
-  loadTrialDeployments: async (input: TrialDeploymentsInput) => {
-    const user = requestContext.requireUser();
-    await securityGuard.assertUserIsInOrganization(user, input.organizationId);
-
-    const organization = await OrganizationDomain.loadOrganizationBy({
-      id: input.organizationId,
-    });
-    if (!organization) {
-      throw new Error(ErrorCode.OrganizationNotFound);
-    }
-    if (organization.personal_space) {
-      return {
-        availableTrials: [],
-        deployed: [],
-        isBlacklisted: false,
-      };
-    }
-
-    const deploymentRequests =
-      await DeploymentRequestDomain.loadTrialsForOrganization(
-        user.selected_organization_id,
-        input.platformIdentifiers ?? undefined
-      );
-
-    const deployedIdentifiers = new Set(
-      deploymentRequests.map((d) => d.platform_identifier)
-    );
-
-    const requestedIdentifiers =
-      input.platformIdentifiers ?? REGISTRABLE_PLATFORM_IDENTIFIERS;
-    const availableTrials = requestedIdentifiers.filter(
-      (identifier) => !deployedIdentifiers.has(identifier)
-    );
-
-    return {
-      availableTrials: availableTrials,
-      deployed: deploymentRequests
-        .filter(
-          (
-            deployment
-          ): deployment is DeploymentRequestModel & {
-            platform_identifier: PlatformIdentifier;
-          } => deployment.platform_identifier !== null
-        )
-        .map((deployment) => {
-          return {
-            serviceInstanceId: deployment.service_instance_id,
-            platformIdentifier: deployment.platform_identifier,
-          };
-        }),
-      isBlacklisted:
-        await CompetitorApp.isOrganizationBlacklisted(organization),
-    };
-  },
   loadPlatformTrialStatus: async (organizationId: OrganizationId) => {
     const user = requestContext.requireUser();
     await securityGuard.assertUserIsInOrganization(user, organizationId);

@@ -267,18 +267,6 @@ describe('PublicNavigation — open={false}', () => {
     });
   });
 
-  it('shows product Start Free Trial entries when feature flag is off', async () => {
-    const user = userEvent.setup();
-    renderPublicNavigation(false, false);
-
-    const openctiButton = screen.getByRole('button', { name: 'OpenCTI' });
-    await user.hover(openctiButton);
-
-    await waitFor(() => {
-      expect(screen.getByText('Menu.StartFreeTrial')).toBeInTheDocument();
-    });
-  });
-
   it('should hide XTM Platform Trial bottom link when feature flag is off', () => {
     renderPublicNavigation(false, false);
 
