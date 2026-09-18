@@ -75,4 +75,34 @@ describe('organizationsDomain', () => {
       expect(result?.id).toBe(TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID);
     });
   });
+
+  describe('loadOrganizationsByIds', () => {
+    it('should return organizations matching the given ids', async () => {
+      const organizations = await OrganizationDomain.loadOrganizationsByIds([
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        TEST_ORGANIZATIONS.FILIGRAN.ID,
+      ]);
+
+      expect(organizations.map((organization) => organization.id)).toEqual(
+        expect.arrayContaining([
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          TEST_ORGANIZATIONS.FILIGRAN.ID,
+        ])
+      );
+    });
+
+    it('should return an empty array when no ids match', async () => {
+      const organizations = await OrganizationDomain.loadOrganizationsByIds([
+        uuidv4() as OrganizationId,
+      ]);
+
+      expect(organizations).toEqual([]);
+    });
+
+    it('should return an empty array when given no ids', async () => {
+      const organizations = await OrganizationDomain.loadOrganizationsByIds([]);
+
+      expect(organizations).toEqual([]);
+    });
+  });
 });

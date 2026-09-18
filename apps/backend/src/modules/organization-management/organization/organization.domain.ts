@@ -117,6 +117,16 @@ export const OrganizationDomain = {
       .first();
   },
 
+  loadOrganizationsByIds: async (
+    ids: OrganizationId[]
+  ): Promise<Organization[]> => {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    return db<Organization>('Organization').whereIn('Organization.id', ids);
+  },
+
   loadOrganizations: (opts: QueryOrganizationsArgs) => {
     const { first, after, orderMode, orderBy, searchTerm } = opts;
     return paginate<Organization, OrganizationConnection>('Organization', {
