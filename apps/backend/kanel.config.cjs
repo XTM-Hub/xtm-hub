@@ -75,6 +75,9 @@ const COLUMN_ENUM_MAP = {
   ProductVersion: {
     product: 'PlatformIdentifier',
   },
+  User: {
+    status: 'UserAccountStatus',
+  },
 };
 
 /** @type {import('kanel').Config} */

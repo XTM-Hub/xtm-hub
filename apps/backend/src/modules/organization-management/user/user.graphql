@@ -1,5 +1,11 @@
 scalar UserId
 
+enum UserAccountStatus {
+  waiting
+  invited
+  expired
+}
+
 enum UserOrdering {
   email
   first_name
@@ -37,6 +43,8 @@ type User implements Node {
   selected_org_capabilities: [OrganizationCapability!]
   last_login: Date
   pending_organization_id: OrganizationId
+  status: UserAccountStatus
+  invitation_date: Date
 }
 
 type UserEdge {
