@@ -13,11 +13,13 @@ export function getValidChildren(children: ReactNode) {
   ) as ReactElement[];
 }
 
-export function fixedForwardRef<T, P = {}>(
+export function fixedForwardRef<T, P = object>(
   render: (props: P, ref: Ref<T>) => ReactNode
 ): (props: P & RefAttributes<T>) => ReactNode {
-  // @ts-ignore
-  return forwardRef(render) as any;
+  // @ts-expect-error - forwardRef cannot express an arbitrary generic props type
+  return forwardRef(render) as unknown as (
+    props: P & RefAttributes<T>
+  ) => ReactNode;
 }
 
 export function uuid() {

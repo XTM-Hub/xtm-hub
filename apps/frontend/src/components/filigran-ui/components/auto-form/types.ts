@@ -11,7 +11,8 @@ export type FieldConfigItem = {
     };
   label?: string;
   fieldType?:
-    keyof typeof INPUT_COMPONENTS | React.FC<AutoFormInputComponentProps>;
+    | keyof typeof INPUT_COMPONENTS
+    | ((props: AutoFormInputComponentProps) => React.ReactElement | null);
 
   renderParent?: (props: {
     children: React.ReactNode;
@@ -20,7 +21,7 @@ export type FieldConfigItem = {
   order?: number;
 };
 
-export type FieldConfig<SchemaType extends z.infer<z.ZodObject<any, any>>> = {
+export type FieldConfig<SchemaType extends z.infer<z.ZodObject>> = {
   // If SchemaType.key is an object, create a nested FieldConfig, otherwise FieldConfigItem
   [Key in keyof SchemaType]?: SchemaType[Key] extends object
     ? FieldConfig<z.infer<SchemaType[Key]>>
@@ -34,14 +35,14 @@ export enum DependencyType {
   SETS_OPTIONS,
 }
 
-type BaseDependency<SchemaType extends z.infer<z.ZodObject<any, any>>> = {
+type BaseDependency<SchemaType extends z.infer<z.ZodObject>> = {
   sourceField: keyof SchemaType;
   type: DependencyType;
   targetField: keyof SchemaType;
-  when: (sourceFieldValue: any, targetFieldValue: any) => boolean;
+  when: (sourceFieldValue: unknown, targetFieldValue: unknown) => boolean;
 };
 
-export type ValueDependency<SchemaType extends z.infer<z.ZodObject<any, any>>> =
+export type ValueDependency<SchemaType extends z.infer<z.ZodObject>> =
   BaseDependency<SchemaType> & {
     type:
       DependencyType.DISABLES | DependencyType.REQUIRES | DependencyType.HIDES;
@@ -49,16 +50,15 @@ export type ValueDependency<SchemaType extends z.infer<z.ZodObject<any, any>>> =
 
 export type EnumValues = readonly [string, ...string[]];
 
-export type OptionsDependency<
-  SchemaType extends z.infer<z.ZodObject<any, any>>,
-> = BaseDependency<SchemaType> & {
-  type: DependencyType.SETS_OPTIONS;
+export type OptionsDependency<SchemaType extends z.infer<z.ZodObject>> =
+  BaseDependency<SchemaType> & {
+    type: DependencyType.SETS_OPTIONS;
 
-  // Partial array of values from sourceField that will trigger the dependency
-  options: EnumValues;
-};
+    // Partial array of values from sourceField that will trigger the dependency
+    options: EnumValues;
+  };
 
-export type Dependency<SchemaType extends z.infer<z.ZodObject<any, any>>> =
+export type Dependency<SchemaType extends z.infer<z.ZodObject>> =
   ValueDependency<SchemaType> | OptionsDependency<SchemaType>;
 
 /**
@@ -66,11 +66,14 @@ export type Dependency<SchemaType extends z.infer<z.ZodObject<any, any>>> =
  */
 export type AutoFormInputComponentProps = {
   zodInputProps: React.InputHTMLAttributes<HTMLInputElement>;
-  field: ControllerRenderProps<FieldValues, any>;
+  field: ControllerRenderProps<FieldValues>;
   fieldConfigItem: FieldConfigItem;
   label: string;
   isRequired: boolean;
-  fieldProps: any;
+  // Field-specific props determined dynamically by the resolved field type
+  // (input, select, checkbox, radio group, etc.) at runtime; each consuming
+  // field component knows the concrete shape it needs and casts accordingly.
+  fieldProps: Record<string, unknown>;
   zodItem: z.ZodAny;
   className?: string;
 };

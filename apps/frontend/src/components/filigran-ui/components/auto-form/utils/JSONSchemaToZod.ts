@@ -26,6 +26,9 @@ export type JSONSchema = {
   allOf?: JSONSchema[];
   anyOf?: JSONSchema[];
   additionalProperties?: boolean | JSONSchema;
+  // JSON Schema is an inherently dynamic, externally-defined format; its
+  // additional properties can be of any shape depending on the schema author.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any; // For any other additional properties
 };
 
@@ -387,7 +390,7 @@ export class JSONSchemaToZod {
    * @returns {ZodTypeAny} - The ZodTypeAny schema.
    */
   private static parseNumberSchema(schema: JSONSchema): ZodTypeAny {
-    let numberSchema = z.number();
+    const numberSchema = z.number();
 
     // Apply all number validations
     let result: z.ZodTypeAny = numberSchema;
@@ -503,7 +506,7 @@ export class JSONSchemaToZod {
    * @returns {ZodTypeAny} - The ZodTypeAny schema.
    */
   private static parseString(schema: JSONSchema): ZodTypeAny {
-    let stringSchema = z.string();
+    const stringSchema = z.string();
     let result: z.ZodTypeAny = stringSchema;
 
     // Apply all string validations
@@ -587,11 +590,11 @@ export class JSONSchemaToZod {
     let result = stringSchema;
 
     if (schema['minLength'] !== undefined) {
-      stringSchema = stringSchema.min(schema['minLength']);
+      result = result.min(schema['minLength']);
     }
 
     if (schema['maxLength'] !== undefined) {
-      stringSchema = stringSchema.max(schema['maxLength']);
+      result = result.max(schema['maxLength']);
     }
 
     return result;
@@ -633,7 +636,7 @@ export class JSONSchemaToZod {
 
     // Create regular array schema
     const itemSchema = schema.items ? this.parseSchema(schema.items) : z.any();
-    let arraySchema = z.array(itemSchema);
+    const arraySchema = z.array(itemSchema);
 
     // Apply array constraints
     let result: z.ZodTypeAny = arraySchema;
@@ -645,12 +648,12 @@ export class JSONSchemaToZod {
   /**
    * Applies constraints to an array schema.
    *
-   * @param {z.ZodArray<any>} arraySchema - The base array schema.
+   * @param {z.ZodArray} arraySchema - The base array schema.
    * @param {JSONSchema} schema - The JSON schema with array constraints.
    * @returns {z.ZodTypeAny} - The updated array schema with constraints.
    */
   private static applyArrayConstraints(
-    arraySchema: z.ZodArray<any>,
+    arraySchema: z.ZodArray,
     schema: JSONSchema
   ): z.ZodTypeAny {
     // Handle minItems
@@ -722,13 +725,13 @@ export class JSONSchemaToZod {
    * Processes additionalProperties configuration.
    *
    * @param {JSONSchema} schema - The JSON schema for an object.
-   * @param {z.ZodObject<any, any>} objectSchema - The Zod object schema.
-   * @returns {z.ZodObject<any, any>} - The updated Zod object schema.
+   * @param {z.ZodObject} objectSchema - The Zod object schema.
+   * @returns {z.ZodObject} - The updated Zod object schema.
    */
   private static processAdditionalProperties(
     schema: JSONSchema,
-    objectSchema: z.ZodObject<any, any>
-  ): z.ZodObject<any, any> {
+    objectSchema: z.ZodObject
+  ): z.ZodObject {
     if (schema.additionalProperties === true) {
       return objectSchema.passthrough();
     } else if (
@@ -779,11 +782,9 @@ export class JSONSchemaToZod {
    * Creates a base object schema from the given JSON schema.
    *
    * @param {JSONSchema} schema - The JSON schema.
-   * @returns {z.ZodObject<any, any>} - The base Zod object schema.
+   * @returns {z.ZodObject} - The base Zod object schema.
    */
-  private static createBaseObjectSchema(
-    schema: JSONSchema
-  ): z.ZodObject<any, any> {
+  private static createBaseObjectSchema(schema: JSONSchema): z.ZodObject {
     const shape: Record<string, ZodTypeAny> = {};
     const required = new Set(schema.required || []);
 

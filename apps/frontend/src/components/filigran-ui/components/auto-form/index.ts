@@ -1,2 +1,2 @@
-export * from './auto-form';
+export * from './AutoForm';
 export * from './utils/JSONSchemaToZod';

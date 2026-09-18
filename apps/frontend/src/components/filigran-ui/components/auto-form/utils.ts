@@ -1,10 +1,41 @@
 import React from 'react';
 import type { DefaultValues } from 'react-hook-form';
 import { z } from 'zod';
-import type { FieldConfig } from './types';
+import type { FieldConfig, FieldConfigItem } from './types';
 
+// AutoForm's `SchemaType extends ZodObjectOrWrapped` generic bound relies on
+// `any` here so TypeScript infers the concrete schema type passed by each
+// caller (e.g. `AutoForm<typeof mySchema>`), instead of collapsing to a
+// generic `unknown`-based ZodObject/ZodType that would break `z.infer`
+// downstream throughout AutoForm.tsx and its field renderers.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ZodObjectOrWrapped =
   z.ZodObject<any, any> | z.ZodType<any, any, any>;
+
+/**
+ * Zod schemas expose their internal definition via `_def`, but its shape
+ * isn't part of the public type surface. This describes only the fields
+ * this file actually reads off of it while walking the Zod stack.
+ */
+export type ZodInternalDef = {
+  typeName?: string;
+  type?: string;
+  schema?: z.ZodTypeAny;
+  out?: z.ZodTypeAny;
+  innerType?: z.ZodTypeAny;
+  defaultValue?: () => unknown;
+  description?: string;
+  entries?: Record<string, string> | string[];
+  values?: Record<string, string> | string[];
+  checks?: Array<{
+    kind?: string;
+    value?: number;
+    regex?: RegExp;
+  }>;
+};
+
+export const getZodDef = (schema: z.ZodTypeAny): ZodInternalDef =>
+  (schema as unknown as { _def: ZodInternalDef })._def;
 
 /**
  * Beautify a camelCase string.
@@ -26,7 +57,7 @@ export function getBaseSchema<ChildType extends z.ZodTypeAny = z.ZodTypeAny>(
 ): ChildType | null {
   if (!schema) return null;
 
-  const def = (schema as any)._def;
+  const def = getZodDef(schema);
 
   if (def.typeName === 'effects') {
     return getBaseSchema(def.schema as ChildType);
@@ -51,8 +82,8 @@ export function extractShape(
 
   if (!baseSchema) return null;
 
-  if ((baseSchema as any)._def?.typeName === 'object') {
-    return (baseSchema as z.ZodObject<any, any>).shape;
+  if (getZodDef(baseSchema)?.typeName === 'object') {
+    return (baseSchema as z.ZodObject).shape;
   }
 
   return null;
@@ -64,17 +95,17 @@ export function extractShape(
  */
 export function getBaseType(schema: z.ZodTypeAny): string {
   const baseSchema = getBaseSchema(schema);
-  return baseSchema ? (baseSchema as any)._def.type : '';
+  return baseSchema ? (getZodDef(baseSchema).type ?? '') : '';
 }
 
 /**
  * Search for a "ZodDefault" in the Zod stack and return its value.
  */
-export function getDefaultValueInZodStack(schema: z.ZodTypeAny): any {
-  const def = (schema as any)._def;
+export function getDefaultValueInZodStack(schema: z.ZodTypeAny): unknown {
+  const def = getZodDef(schema);
 
   if (def.typeName === 'ZodDefault') {
-    return def.defaultValue();
+    return def.defaultValue?.();
   }
 
   if (def.typeName === 'ZodEffects') {
@@ -91,24 +122,24 @@ export function getDefaultValueInZodStack(schema: z.ZodTypeAny): any {
 /**
  * Get all default values from a Zod schema.
  */
-export function getDefaultValues<Schema extends z.ZodObject<any, any>>(
+export function getDefaultValues<Schema extends z.ZodObject>(
   schema: Schema,
   fieldConfig?: FieldConfig<z.infer<Schema>>
 ): DefaultValues<Partial<z.infer<Schema>>> | null {
   if (!schema) return null;
 
   const shape = extractShape(schema);
-  const defaultValues: any = {};
+  const defaultValues: Record<string, unknown> = {};
 
-  if (!shape) return defaultValues;
+  if (!shape) return defaultValues as DefaultValues<Partial<z.infer<Schema>>>;
 
   for (const key of Object.keys(shape)) {
     const item = shape[key] as z.ZodTypeAny;
 
     if (getBaseType(item) === 'ZodObject') {
       const nestedDefaults = getDefaultValues(
-        getBaseSchema(item) as unknown as z.ZodObject<any, any>,
-        fieldConfig?.[key] as FieldConfig<any> | undefined
+        getBaseSchema(item) as unknown as z.ZodObject,
+        fieldConfig?.[key] as FieldConfig<Record<string, unknown>> | undefined
       );
 
       if (nestedDefaults !== null) {
@@ -118,12 +149,12 @@ export function getDefaultValues<Schema extends z.ZodObject<any, any>>(
       }
     } else {
       let defaultValue = getDefaultValueInZodStack(item);
+      const fieldConfigItem = fieldConfig?.[key] as FieldConfigItem | undefined;
       if (
         (defaultValue === null || defaultValue === '') &&
-        fieldConfig?.[key]?.inputProps
+        fieldConfigItem?.inputProps
       ) {
-        defaultValue = (fieldConfig?.[key]?.inputProps as unknown as any)
-          .defaultValue;
+        defaultValue = fieldConfigItem.inputProps.defaultValue;
       }
       if (defaultValue !== undefined) {
         defaultValues[key] = defaultValue;
@@ -131,23 +162,21 @@ export function getDefaultValues<Schema extends z.ZodObject<any, any>>(
     }
   }
 
-  return defaultValues;
+  return defaultValues as DefaultValues<Partial<z.infer<Schema>>>;
 }
 
 /**
  * Get the underlying ZodObject from a potentially wrapped schema
  */
-export function getObjectFormSchema(
-  schema: ZodObjectOrWrapped
-): z.ZodObject<any, any> {
-  const def = (schema as any)._def;
+export function getObjectFormSchema(schema: ZodObjectOrWrapped): z.ZodObject {
+  const def = getZodDef(schema as z.ZodTypeAny);
 
   // Recursively unwrap ZodEffects
   if (def.typeName === 'ZodEffects') {
-    return getObjectFormSchema(def.schema);
+    return getObjectFormSchema(def.schema as ZodObjectOrWrapped);
   }
 
-  return schema as z.ZodObject<any, any>;
+  return schema as z.ZodObject;
 }
 
 /**
@@ -157,17 +186,17 @@ export function getObjectFormSchema(
 export function zodToHtmlInputProps(
   schema: z.ZodTypeAny
 ): React.InputHTMLAttributes<HTMLInputElement> {
-  const def = (schema as any)._def;
+  const def = getZodDef(schema);
 
   // Handle ZodPipeline (z.coerce)
   if (def.typeName === 'ZodPipeline') {
-    return zodToHtmlInputProps(def.out);
+    return zodToHtmlInputProps(def.out as z.ZodTypeAny);
   }
 
   // Handle Optional and Nullable types
-  if (['optional', 'nullable'].includes(def.type)) {
+  if (def.type && ['optional', 'nullable'].includes(def.type)) {
     return {
-      ...zodToHtmlInputProps(def.innerType),
+      ...zodToHtmlInputProps(def.innerType as z.ZodTypeAny),
       required: false,
     };
   }
@@ -185,7 +214,7 @@ export function zodToHtmlInputProps(
 
   // Handle checks (min, max, email, url, etc.)
   if (def.checks && Array.isArray(def.checks)) {
-    for (const check of def.checks as any[]) {
+    for (const check of def.checks) {
       switch (check.kind) {
         case 'min':
           if (baseType === 'string') {
@@ -237,7 +266,7 @@ export function zodToHtmlInputProps(
  * Sort the fields by order.
  * If no order is set, the field will be sorted based on the order in the schema.
  */
-export function sortFieldsByOrder<SchemaType extends z.ZodObject<any, any>>(
+export function sortFieldsByOrder<SchemaType extends z.ZodObject>(
   fieldConfig: FieldConfig<z.infer<SchemaType>> | undefined,
   keys: string[]
 ): string[] {
@@ -252,16 +281,16 @@ export function sortFieldsByOrder<SchemaType extends z.ZodObject<any, any>>(
  * Check if a schema has effects (transformations)
  */
 export function hasEffects(schema: z.ZodTypeAny): boolean {
-  return (schema as any)._def.typeName === 'ZodEffects';
+  return getZodDef(schema).typeName === 'ZodEffects';
 }
 
 /**
  * Unwrap all effects from a schema
  */
 export function unwrapEffects<T extends z.ZodTypeAny>(schema: T): T {
-  const def = (schema as any)._def;
+  const def = getZodDef(schema);
   if (def.typeName === 'ZodEffects') {
-    return unwrapEffects(def.schema);
+    return unwrapEffects(def.schema as T);
   }
   return schema;
 }
