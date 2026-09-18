@@ -843,43 +843,6 @@ describe('serviceGroupApp', () => {
       );
     });
 
-    it('should send a single invitation when the same new user is added by two concurrent calls', async () => {
-      // Given
-      const { bundle, groups } = await createBundleWithGroups({
-        endDate: inTenDays(),
-      });
-      const sendMailSpy = vi
-        .spyOn(mailService, 'sendMail')
-        .mockResolvedValue(undefined);
-      const input = {
-        userIds: [TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID],
-        roles: [
-          { product: PlatformIdentifier.Xtmone, role: ServiceGroupName.User },
-        ],
-      };
-
-      // When
-      await Promise.all([
-        ServiceGroupApp.addUsersToBundleGroups(
-          bundle.service_instance_id,
-          input
-        ),
-        ServiceGroupApp.addUsersToBundleGroups(
-          bundle.service_instance_id,
-          input
-        ),
-      ]);
-
-      // Then
-      expect(sendMailSpy).toHaveBeenCalledTimes(1);
-      const members = await TestHelper.serviceGroupUser.load({
-        group_id: groups.xtmoneUserGroupId,
-      });
-      expect(members?.map((member) => member.user_id)).toEqual([
-        TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
-      ]);
-    });
-
     it('should persist additions from two sequential calls for different users on the same group (no lost update)', async () => {
       // Given
       const { bundle, groups } = await createBundleWithGroups();

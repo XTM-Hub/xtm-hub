@@ -5,10 +5,7 @@ import {
   ServiceGroup as ServiceGroupResponse,
   UpdateBundleUserGroupsInput,
 } from '../../../__generated__/resolvers-types';
-import {
-  withAdvisoryLock,
-  withTransaction,
-} from '../../../context/database.context';
+import { withTransaction } from '../../../context/database.context';
 import { requestContext } from '../../../context/request.context';
 import { ServiceGroupId } from '../../../model/kanel/public/ServiceGroup';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
@@ -20,8 +17,6 @@ import { DeploymentRequestDomain } from '../deployment.domain';
 import { ServiceGroupDomain } from './service-group.domain';
 import { ServiceGroupHelper } from './service-group.helper';
 import { ServiceGroupSecurityHelper } from './service-group.security.helper';
-
-const BUNDLE_GROUP_MEMBERS_LOCK_NAMESPACE = 'bundle_group_members';
 
 export type UpdateGroupsPayload = { id: ServiceGroupId; userIds: UserId[] }[];
 
@@ -129,34 +124,27 @@ export const ServiceGroupApp = {
       ServiceGroupHelper.uniqueRolesByProduct(input.roles)
     );
 
-    const existingBundleUserIds = await withAdvisoryLock(
-      BUNDLE_GROUP_MEMBERS_LOCK_NAMESPACE,
-      bundleDeploymentRequest.id,
-      async () => {
-        const existingUserIds =
-          await ServiceGroupDomain.loadUserIdsInServiceInstanceGroups(
-            children.map((child) => child.service_instance_id),
-            input.userIds
-          );
+    const existingBundleUserIds = await withTransaction(async () => {
+      const existingUserIds =
+        await ServiceGroupDomain.loadUserIdsInServiceInstanceGroups(
+          children.map((child) => child.service_instance_id),
+          input.userIds
+        );
 
-        for (const { child, role } of platformRoleAssignments) {
-          const groups = await ServiceGroupDomain.loadServiceGroups({
-            service_instance_id: child.service_instance_id,
-          });
-          const targetGroup = groups.find((group) => group.name === role);
-          if (!targetGroup) {
-            throw new Error(ErrorCode.ServiceGroupNotFound);
-          }
-
-          await ServiceGroupDomain.addUsersToGroup(
-            targetGroup.id,
-            input.userIds
-          );
+      for (const { child, role } of platformRoleAssignments) {
+        const groups = await ServiceGroupDomain.loadServiceGroups({
+          service_instance_id: child.service_instance_id,
+        });
+        const targetGroup = groups.find((group) => group.name === role);
+        if (!targetGroup) {
+          throw new Error(ErrorCode.ServiceGroupNotFound);
         }
 
-        return new Set(existingUserIds);
+        await ServiceGroupDomain.addUsersToGroup(targetGroup.id, input.userIds);
       }
-    );
+
+      return new Set(existingUserIds);
+    });
 
     const { users, emailByUserId } = await ServiceGroupHelper.loadEmailByUserId(
       input.userIds

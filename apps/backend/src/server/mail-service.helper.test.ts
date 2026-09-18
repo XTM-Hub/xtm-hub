@@ -679,7 +679,8 @@ describe('free_trial_bundle_user_added', () => {
   });
 
   it('should render the invitation with the admin, the products, the days left and the links', async () => {
-    const platformUrl = 'https://hub.filigran.io/app/xtm-platform-trial';
+    const platformUrl =
+      'https://hub.filigran.io/app/service/xtm-platform-trial';
     const html = await renderEmail('free_trial_bundle_user_added', {
       firstName: 'Alice',
       adminEmail: 'admin@filigran.io',
@@ -710,7 +711,7 @@ describe('free_trial_bundle_user_added', () => {
       productNames: 'OpenCTI',
       products: [PlatformIdentifier.Opencti],
       daysLeft: 1,
-      platformUrl: 'https://hub.filigran.io/app/xtm-platform-trial',
+      platformUrl: 'https://hub.filigran.io/app/service/xtm-platform-trial',
     });
 
     expect(html).toMatch(
@@ -726,7 +727,7 @@ describe('free_trial_bundle_user_added', () => {
         productNames: 'OpenCTI and XTM One',
         products: [PlatformIdentifier.Opencti, PlatformIdentifier.Xtmone],
         daysLeft: 12,
-        platformUrl: 'https://hub.filigran.io/app/xtm-platform-trial',
+        platformUrl: 'https://hub.filigran.io/app/service/xtm-platform-trial',
       })
     ).toBe('You’ve Been Added to an XTM Platform Trial');
   });
@@ -775,7 +776,7 @@ describe('bundle trial subjects', () => {
 describe('buildXtmPlatformTrialLink', () => {
   it('should link to the xtm platform trial page', () => {
     expect(buildXtmPlatformTrialLink()).toBe(
-      `${config.get('base_url_front')}/app/xtm-platform-trial`
+      `${config.get('base_url_front')}/app/service/xtm-platform-trial`
     );
   });
 });
