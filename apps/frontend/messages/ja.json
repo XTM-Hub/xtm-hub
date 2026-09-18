@@ -190,7 +190,9 @@
       "Title": "タイトルは必須です",
       "ShortDescription": "概要は必須です",
       "ShortDescriptionMax": "概要は215文字以内で入力してください",
-      "Description": "説明は必須です"
+      "Description": "説明は必須です",
+      "Product": "少なくとも1つの製品が必要です",
+      "SlackLink": "filigran-community のSlackリンクである必要があります"
     }
   },
   "Epic": {
@@ -220,6 +222,8 @@
       "EditionType": "エディション・タイプ",
       "FiligranProduct": "製品名",
       "FiligranProductPlaceholder": "オープンCTI",
+      "SlackLink": "Slackリンク",
+      "SlackLinkPlaceholder": "チャンネルを選択するか、Slackリンクを貼り付けてください",
       "Timeline": "タイムライン",
       "IsActive": "このエピックは公開されていますか？(デフォルトでは下書きモードです)",
       "Integration": "統合されているか",

@@ -31,7 +31,7 @@ const COLUMN_ENUM_MAP = {
     type: 'DeploymentRequestDeploymentType',
   },
   Epic: {
-    product: 'FiligranProduct',
+    products: 'FiligranProduct',
     timeline: 'Timeline',
     epic_type: 'EpicType',
     edition_type: 'EditionType',

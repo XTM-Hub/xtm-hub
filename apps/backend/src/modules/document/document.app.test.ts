@@ -1216,6 +1216,35 @@ describe('documentApp', () => {
     });
   });
 
+  describe('loadPublicDocumentSlugsByServiceSlug', () => {
+    it('should throw when service definition is not found', async () => {
+      // When
+      const call =
+        DocumentApp.loadPublicDocumentSlugsByServiceSlug('unknown-slug');
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.ServiceDefinitionNotFound);
+    });
+
+    it('should return the document slugs without hydrating metadata', async () => {
+      // Given
+      const loadSeoDocumentSlugsByServiceSlugSpy = vi
+        .spyOn(DocumentDomain, 'loadSeoDocumentSlugsByServiceSlug')
+        .mockResolvedValue([{}]);
+
+      // When
+      await DocumentApp.loadPublicDocumentSlugsByServiceSlug(
+        SERVICES.INSTANCES.CUSTOM_DASHBOARDS.SLUG
+      );
+
+      // Then
+      expect(loadSeoDocumentSlugsByServiceSlugSpy).toHaveBeenCalledWith(
+        OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
+        SERVICES.INSTANCES.CUSTOM_DASHBOARDS.SLUG
+      );
+    });
+  });
+
   describe('loadDocuments visibility', () => {
     let privateServiceInstance: ServiceInstance;
 
