@@ -61,7 +61,7 @@ export const buildServiceLink = ({
 };
 
 export const buildXtmPlatformTrialLink = () => {
-  return `${config.get('base_url_front')}/app/xtm-platform-trial`;
+  return `${config.get('base_url_front')}/app/service/xtm-platform-trial`;
 };
 
 export const buildPendingUserActionLink = ({

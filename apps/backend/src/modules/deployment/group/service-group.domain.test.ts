@@ -137,20 +137,27 @@ describe('serviceGroupDomain', () => {
       );
     });
 
-    it('should ignore users already in the group instead of throwing', async () => {
+    it('should ignore users already in the group and only return the newly inserted ones', async () => {
       await ServiceGroupDomain.addUsersToGroup(adminGroupId, [
         TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
       ]);
 
-      await ServiceGroupDomain.addUsersToGroup(adminGroupId, [
-        TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-      ]);
+      const insertedUserIds = await ServiceGroupDomain.addUsersToGroup(
+        adminGroupId,
+        [
+          TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.ID,
+        ]
+      );
 
       const serviceGroupUsers = await TestHelper.serviceGroupUser.load({
         group_id: adminGroupId,
       });
 
-      expect(serviceGroupUsers).toHaveLength(1);
+      expect(insertedUserIds).toEqual([
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.ID,
+      ]);
+      expect(serviceGroupUsers).toHaveLength(2);
     });
   });
 

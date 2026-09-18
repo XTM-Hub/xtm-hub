@@ -109,7 +109,7 @@ export const ServiceGroupApp = {
       throw new Error(ErrorCode.XtmOneRoleRequired);
     }
 
-    const { children, bundleOrganizationId } =
+    const { bundleDeploymentRequest, children, bundleOrganizationId } =
       await ServiceGroupSecurityHelper.assertBundleAccessAndLoadChildren(
         serviceInstanceId
       );
@@ -121,10 +121,12 @@ export const ServiceGroupApp = {
 
     const platformRoleAssignments = ServiceGroupHelper.matchRolesToChildren(
       children,
-      input.roles
+      ServiceGroupHelper.uniqueRolesByProduct(input.roles)
     );
 
-    await withTransaction(async () => {
+    const insertedUserIds = await withTransaction(async () => {
+      const inserted = new Set<UserId>();
+
       for (const { child, role } of platformRoleAssignments) {
         const groups = await ServiceGroupDomain.loadServiceGroups({
           service_instance_id: child.service_instance_id,
@@ -134,8 +136,14 @@ export const ServiceGroupApp = {
           throw new Error(ErrorCode.ServiceGroupNotFound);
         }
 
-        await ServiceGroupDomain.addUsersToGroup(targetGroup.id, input.userIds);
+        const insertedInGroup = await ServiceGroupDomain.addUsersToGroup(
+          targetGroup.id,
+          input.userIds
+        );
+        insertedInGroup.forEach((userId) => inserted.add(userId));
       }
+
+      return inserted;
     });
 
     const { users, emailByUserId } = await ServiceGroupHelper.loadEmailByUserId(
@@ -155,18 +163,16 @@ export const ServiceGroupApp = {
       emailByUserId
     );
 
-    await Promise.all(
-      grantedAssignments.map(async ({ child }) => {
-        await ServiceGroupHelper.sendFreeTrialWelcomeEmails({
-          platformId: child.platform_id,
-          platformIdentifier: child.platform_identifier,
-          deploymentType: child.type,
-          endDate: child.end_date,
-          newlyAddedUsers: users,
-          adminEmail: user.email,
-        });
-      })
-    );
+    await ServiceGroupHelper.sendFreeTrialBundleWelcomeEmails({
+      endDate: bundleDeploymentRequest.end_date,
+      products: grantedAssignments.flatMap(({ child }) =>
+        child.platform_identifier ? [child.platform_identifier] : []
+      ),
+      newlyAddedUsers: users.filter((addedUser) =>
+        insertedUserIds.has(addedUser.id)
+      ),
+      adminEmail: user.email,
+    });
 
     return ServiceGroupApp.loadBundleUserServiceGroups(serviceInstanceId);
   },

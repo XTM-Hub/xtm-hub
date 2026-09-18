@@ -1959,7 +1959,7 @@ describe('deployment app', () => {
             firstName: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.FIRST_NAME,
             productNames: 'OpenCTI and OpenAEV',
             products: [PlatformIdentifier.Opencti, PlatformIdentifier.Openaev],
-            platformUrl: `${config.get('base_url_front')}/app/xtm-platform-trial`,
+            platformUrl: `${config.get('base_url_front')}/app/service/xtm-platform-trial`,
           },
         });
       });

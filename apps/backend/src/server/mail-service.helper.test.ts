@@ -673,6 +673,66 @@ describe('free_trial_bundle_active bullets', () => {
   });
 });
 
+describe('free_trial_bundle_user_added', () => {
+  afterEach(() => {
+    clearTemplateCache();
+  });
+
+  it('should render the invitation with the admin, the products, the days left and the links', async () => {
+    const platformUrl =
+      'https://hub.filigran.io/app/service/xtm-platform-trial';
+    const html = await renderEmail('free_trial_bundle_user_added', {
+      firstName: 'Alice',
+      adminEmail: 'admin@filigran.io',
+      productNames: 'OpenCTI and XTM One',
+      products: [PlatformIdentifier.Opencti, PlatformIdentifier.Xtmone],
+      daysLeft: 12,
+      platformUrl,
+    });
+
+    expect(html).toContain('You’ve Been Added to an XTM Platform Trial');
+    expect(html).toContain('Hi Alice,');
+    expect(html).toMatch(/by\s+admin@filigran\.io\./);
+    expect(html).toContain('<strong>OpenCTI and XTM One</strong>');
+    expect(html).toMatch(
+      /You have 12 days remaining\s+until the end of the trial\./
+    );
+    expect(html).toContain(`<a href="${platformUrl}">${platformUrl}</a>`);
+    expect(html).toContain(
+      `${config.get('base_url_front')}/app/service/xtm-platform-trial-guide`
+    );
+    expect(html).toContain('xtm-hub-support@filigran.io');
+  });
+
+  it('should use the singular unit when a single day is left', async () => {
+    const html = await renderEmail('free_trial_bundle_user_added', {
+      firstName: 'Alice',
+      adminEmail: 'admin@filigran.io',
+      productNames: 'OpenCTI',
+      products: [PlatformIdentifier.Opencti],
+      daysLeft: 1,
+      platformUrl: 'https://hub.filigran.io/app/service/xtm-platform-trial',
+    });
+
+    expect(html).toMatch(
+      /You have 1 day remaining\s+until the end of the trial\./
+    );
+  });
+
+  it('should use the XTM Platform subject', () => {
+    expect(
+      templateSubjects.free_trial_bundle_user_added({
+        firstName: 'Alice',
+        adminEmail: 'admin@filigran.io',
+        productNames: 'OpenCTI and XTM One',
+        products: [PlatformIdentifier.Opencti, PlatformIdentifier.Xtmone],
+        daysLeft: 12,
+        platformUrl: 'https://hub.filigran.io/app/service/xtm-platform-trial',
+      })
+    ).toBe('You’ve Been Added to an XTM Platform Trial');
+  });
+});
+
 describe('bundle trial subjects', () => {
   it('should use the XTM Platform wording for bundles', () => {
     const params = {
@@ -716,7 +776,7 @@ describe('bundle trial subjects', () => {
 describe('buildXtmPlatformTrialLink', () => {
   it('should link to the xtm platform trial page', () => {
     expect(buildXtmPlatformTrialLink()).toBe(
-      `${config.get('base_url_front')}/app/xtm-platform-trial`
+      `${config.get('base_url_front')}/app/service/xtm-platform-trial`
     );
   });
 });
