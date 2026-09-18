@@ -1284,7 +1284,6 @@ describe('deploymentRequestDomain', () => {
   describe('loadLastPendingRequest and setRequestAsQueued', () => {
     const BUNDLE_REQUEST = {
       type: DeploymentRequestDeploymentType.Bundle,
-      platform_identifier: null,
     };
 
     const queueLastPendingRequest = async (key: QuotaKey) => {
@@ -1504,7 +1503,6 @@ describe('deploymentRequestDomain', () => {
   describe('loadFirstQueuedRequest', () => {
     const BUNDLE_REQUEST = {
       type: DeploymentRequestDeploymentType.Bundle,
-      platform_identifier: null,
     };
 
     it('should return the queued request with the lowest ordering', async () => {

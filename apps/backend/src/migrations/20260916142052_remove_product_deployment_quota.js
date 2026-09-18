@@ -1,17 +1,6 @@
 const PRODUCT_PLATFORM_IDENTIFIERS = ['opencti', 'openaev'];
 const QUOTA_HOLDING_HUB_STATUSES = ['active', 'pending', 'provisioning'];
 
-const countRootRequestsByRegion = async (knex) => {
-  const rows = await knex('DeploymentRequest')
-    .whereNull('parent_id')
-    .whereIn('hub_status', QUOTA_HOLDING_HUB_STATUSES)
-    .groupBy('region')
-    .select('region')
-    .count('id as count');
-
-  return new Map(rows.map((row) => [row.region, Number(row.count)]));
-};
-
 const countProductRequestsByRegion = async (knex, platformIdentifier) => {
   const rows = await knex('DeploymentRequest')
     .where('platform_identifier', '=', platformIdentifier)
@@ -51,22 +40,6 @@ export async function up(knex) {
   await knex.schema.alterTable('DeploymentRequestQuota', (table) => {
     table.unique(['region']);
   });
-
-  const heldPlacesByRegion = await countRootRequestsByRegion(knex);
-  const quotas = await knex('DeploymentRequestQuota').select(
-    'id',
-    'region',
-    'capacity'
-  );
-
-  for (const quota of quotas) {
-    await knex('DeploymentRequestQuota')
-      .update({
-        availability:
-          quota.capacity - (heldPlacesByRegion.get(quota.region) ?? 0),
-      })
-      .where({ id: quota.id });
-  }
 }
 
 /**
