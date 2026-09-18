@@ -11,12 +11,12 @@ export const manageRequest = async (request: NextRequest) => {
   const { pathname, search } = request.nextUrl;
   if (pathname.startsWith(GRAPHQL_API)) {
     return NextResponse.rewrite(
-      new URL(SERVER_HTTP_API + GRAPHQL_API, request.url)
+      new URL(SERVER_HTTP_API + GRAPHQL_API + search, request.url)
     );
   }
   if (pathname.startsWith(GRAPHQL_SSE)) {
     return NextResponse.rewrite(
-      new URL(SERVER_HTTP_API + GRAPHQL_SSE, request.url)
+      new URL(SERVER_HTTP_API + GRAPHQL_SSE + search, request.url)
     );
   }
 
