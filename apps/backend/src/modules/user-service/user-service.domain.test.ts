@@ -23,6 +23,7 @@ import UserServiceCapability, {
   UserServiceCapabilityId,
 } from '../../model/kanel/public/UserServiceCapability';
 import * as mailService from '../../server/mail-service';
+import { ForbiddenErrorCode } from '../../utils/error/error.code';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { UserHelper } from '../organization-management/user/user.helper';
 import { GenericServiceCapabilityIds } from '../security-management/service-capability/generic-service-capability.const';
@@ -355,7 +356,7 @@ describe('userServiceDomain', () => {
       ).toBe(true);
     });
 
-    it('should throw a GraphQL error when an email domain does not match the org', async () => {
+    it('should throw a ForbiddenAccess error when an email domain does not match the org', async () => {
       const outsiderEmail = `outsider-${uuidv4()}@filigran.io`;
       const subscription = await getSubscription();
 
@@ -365,7 +366,7 @@ describe('userServiceDomain', () => {
         [ServiceRestriction.Access]
       );
       await expect(call).rejects.toThrow(
-        'The email address does not correspond to the current organization'
+        ForbiddenErrorCode.EmailOutsideOrganizationError
       );
 
       const rows = await TestHelper.user_Service.loadAll({
