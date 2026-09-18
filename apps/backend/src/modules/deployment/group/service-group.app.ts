@@ -124,12 +124,8 @@ export const ServiceGroupApp = {
       ServiceGroupHelper.uniqueRolesByProduct(input.roles)
     );
 
-    const existingBundleUserIds = await withTransaction(async () => {
-      const existingUserIds =
-        await ServiceGroupDomain.loadUserIdsInServiceInstanceGroups(
-          children.map((child) => child.service_instance_id),
-          input.userIds
-        );
+    const insertedUserIds = await withTransaction(async () => {
+      const inserted = new Set<UserId>();
 
       for (const { child, role } of platformRoleAssignments) {
         const groups = await ServiceGroupDomain.loadServiceGroups({
@@ -140,10 +136,14 @@ export const ServiceGroupApp = {
           throw new Error(ErrorCode.ServiceGroupNotFound);
         }
 
-        await ServiceGroupDomain.addUsersToGroup(targetGroup.id, input.userIds);
+        const insertedInGroup = await ServiceGroupDomain.addUsersToGroup(
+          targetGroup.id,
+          input.userIds
+        );
+        insertedInGroup.forEach((userId) => inserted.add(userId));
       }
 
-      return new Set(existingUserIds);
+      return inserted;
     });
 
     const { users, emailByUserId } = await ServiceGroupHelper.loadEmailByUserId(
@@ -168,8 +168,8 @@ export const ServiceGroupApp = {
       products: grantedAssignments.flatMap(({ child }) =>
         child.platform_identifier ? [child.platform_identifier] : []
       ),
-      newlyAddedUsers: users.filter(
-        (addedUser) => !existingBundleUserIds.has(addedUser.id)
+      newlyAddedUsers: users.filter((addedUser) =>
+        insertedUserIds.has(addedUser.id)
       ),
       adminEmail: user.email,
     });

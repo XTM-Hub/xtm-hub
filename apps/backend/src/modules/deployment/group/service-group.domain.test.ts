@@ -112,42 +112,6 @@ describe('serviceGroupDomain', () => {
     });
   });
 
-  describe('loadUserIdsInServiceInstanceGroups', () => {
-    it('should return the submitted users that belong to a group of the given service instances, once each', async () => {
-      // Given
-      await TestHelper.serviceGroupUser.create({
-        user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-        group_id: adminGroupId,
-      });
-      await TestHelper.serviceGroupUser.create({
-        user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-        group_id: analystGroupId,
-      });
-      await TestHelper.serviceGroupUser.create({
-        user_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.ID,
-        group_id: analystGroupId,
-      });
-      await TestHelper.serviceGroupUser.create({
-        user_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID,
-        group_id: readerGroupId,
-      });
-
-      // When
-      const userIds =
-        await ServiceGroupDomain.loadUserIdsInServiceInstanceGroups(
-          [serviceInstanceId1],
-          [
-            TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID,
-            TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
-          ]
-        );
-
-      // Then
-      expect(userIds).toEqual([TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID]);
-    });
-  });
-
   describe('addUsersToGroup', () => {
     it('should add users to the service group', async () => {
       await ServiceGroupDomain.addUsersToGroup(adminGroupId, [
@@ -173,20 +137,27 @@ describe('serviceGroupDomain', () => {
       );
     });
 
-    it('should ignore users already in the group instead of throwing', async () => {
+    it('should ignore users already in the group and only return the newly inserted ones', async () => {
       await ServiceGroupDomain.addUsersToGroup(adminGroupId, [
         TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
       ]);
 
-      await ServiceGroupDomain.addUsersToGroup(adminGroupId, [
-        TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-      ]);
+      const insertedUserIds = await ServiceGroupDomain.addUsersToGroup(
+        adminGroupId,
+        [
+          TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.ID,
+        ]
+      );
 
       const serviceGroupUsers = await TestHelper.serviceGroupUser.load({
         group_id: adminGroupId,
       });
 
-      expect(serviceGroupUsers).toHaveLength(1);
+      expect(insertedUserIds).toEqual([
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.ID,
+      ]);
+      expect(serviceGroupUsers).toHaveLength(2);
     });
   });
 

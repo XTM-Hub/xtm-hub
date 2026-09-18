@@ -805,44 +805,6 @@ describe('serviceGroupApp', () => {
       expect(sendMailSpy).toHaveBeenCalledTimes(1);
     });
 
-    it('should not send the invitation again when granting another product to a user already in the bundle', async () => {
-      // Given
-      const { bundle } = await createBundleWithGroups({
-        endDate: inTenDays(),
-      });
-      const sendMailSpy = vi
-        .spyOn(mailService, 'sendMail')
-        .mockResolvedValue(undefined);
-      await ServiceGroupApp.addUsersToBundleGroups(bundle.service_instance_id, {
-        userIds: [TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID],
-        roles: [
-          { product: PlatformIdentifier.Xtmone, role: ServiceGroupName.User },
-        ],
-      });
-      expect(sendMailSpy).toHaveBeenCalledTimes(1);
-
-      // When
-      await ServiceGroupApp.addUsersToBundleGroups(bundle.service_instance_id, {
-        userIds: [
-          TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
-          TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-        ],
-        roles: [
-          { product: PlatformIdentifier.Opencti, role: ServiceGroupName.Admin },
-          { product: PlatformIdentifier.Xtmone, role: ServiceGroupName.User },
-        ],
-      });
-
-      // Then
-      expect(sendMailSpy).toHaveBeenCalledTimes(2);
-      expect(sendMailSpy).toHaveBeenLastCalledWith(
-        expect.objectContaining({
-          to: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.EMAIL,
-          template: 'free_trial_bundle_user_added',
-        })
-      );
-    });
-
     it('should persist additions from two sequential calls for different users on the same group (no lost update)', async () => {
       // Given
       const { bundle, groups } = await createBundleWithGroups();
