@@ -1,7 +1,6 @@
 import { StartTrialButton } from '@/components/service/trial-instances/StartTrialButton';
 import testRender from '@/utils/test/test-render';
 import {
-  DeploymentRequestDeploymentType,
   DeploymentRequestSource,
   DeploymentRequestUseCase,
   PlatformIdentifier,
@@ -99,7 +98,6 @@ describe('StartTrialButton', () => {
                 use_case: DeploymentRequestUseCase.ThreatHunting,
               },
             ],
-            type: DeploymentRequestDeploymentType.Trial,
             source: DeploymentRequestSource.Xtmhub,
           },
         },

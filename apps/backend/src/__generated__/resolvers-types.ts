@@ -236,7 +236,6 @@ export type CreateDeploymentRequestInput = {
   products: Array<PlatformIdentifier>;
   region: DeploymentRequestPlatformRegion;
   source: DeploymentRequestSource;
-  type: DeploymentRequestDeploymentType;
   use_cases_by_product?: InputMaybe<Array<ProductUseCaseInput>>;
 };
 

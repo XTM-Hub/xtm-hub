@@ -184,20 +184,6 @@ describe('renderEmail', () => {
 
       expect(html).not.toContain('OpenCTI');
     });
-    it('should render text conditionally for free trials admin mail', async () => {
-      const html = await renderEmail('admin_saas_instance_requested', {
-        organizationName: 'myorga',
-        userName: 'firstName lastName',
-        userEmail: 'user.email',
-        region: 'Test region',
-        activitySector: 'Test ActivitySector',
-        useCase: 'Test UseCase',
-        platformIdentifier: PlatformIdentifier.Openaev,
-        deploymentType: 'Trial',
-      });
-
-      expect(html).toContain('openaev-trials');
-    });
     it('should render the bundle admin mail without leaking undefined', async () => {
       const html = await renderEmail('admin_saas_bundle_requested', {
         organizationName: 'myorga',
@@ -355,16 +341,6 @@ describe('renderEmail', () => {
       expect(html).toContain(
         '(Please note that your free trial data will be saved for 7 days.)'
       );
-    });
-
-    it('should keep the capacity wording of the queued mail', async () => {
-      const html = await renderEmail('free_trial_queued', {
-        firstName: 'User',
-        platformIdentifier: PlatformIdentifier.Opencti,
-      });
-
-      expect(html).toContain('full capacity');
-      expect(html).not.toContain('XTM Platform Free Trial');
     });
   });
   describe('edge cases', () => {
@@ -731,9 +707,6 @@ describe('bundle trial subjects', () => {
       platformIdentifier: PlatformIdentifier.Opencti,
     };
 
-    expect(templateSubjects.free_trial_requested(params)).toBe(
-      'Your OpenCTI Free Trial Request'
-    );
     expect(templateSubjects.free_trial_expired(params)).toBe(
       'Your OpenCTI Free Trial Has Expired'
     );

@@ -40,7 +40,6 @@ import {
 } from '@filigran/ui';
 import { trialInstancesDeploymentRequestsAvailableQuery } from '@generated/trialInstancesDeploymentRequestsAvailableQuery.graphql';
 import {
-  DeploymentRequestDeploymentType,
   DeploymentRequestSource,
   PlatformIdentifier,
 } from '@graphql/generated';
@@ -99,7 +98,6 @@ export const StartTrialBannerButton = () => {
           use_cases_by_product: [
             { platform_identifier: platformIdentifier, use_case },
           ],
-          type: DeploymentRequestDeploymentType.Trial,
           source: DeploymentRequestSource.Xtmhub,
         },
       },

@@ -260,7 +260,6 @@ export const mockCreateDeploymentRequestInput = (overrides?: Partial<CreateDeplo
         products: overrides && overrides.hasOwnProperty('products') ? overrides.products! : [PlatformIdentifier.Openaev],
         region: overrides && overrides.hasOwnProperty('region') ? overrides.region! : DeploymentRequestPlatformRegion.ApacAu,
         source: overrides && overrides.hasOwnProperty('source') ? overrides.source! : DeploymentRequestSource.OpenaevDemo,
-        type: overrides && overrides.hasOwnProperty('type') ? overrides.type! : DeploymentRequestDeploymentType.Bundle,
         use_cases_by_product: overrides && overrides.hasOwnProperty('use_cases_by_product') ? overrides.use_cases_by_product! : [relationshipsToOmit.has('ProductUseCaseInput') ? {} as ProductUseCaseInput : mockProductUseCaseInput({}, relationshipsToOmit)],
     };
 };

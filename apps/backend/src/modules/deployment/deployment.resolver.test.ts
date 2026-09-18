@@ -46,7 +46,7 @@ describe('deployment resolver', () => {
     beforeEach(() => {
       requestContext.set(requestContextRegistererUserSecondOrga);
     });
-    it('should return the deployment request created', async () => {
+    it('should return the bundle deployment request created', async () => {
       const deployment = await resolver.Mutation.createDeploymentRequest(
         undefined,
         {
@@ -60,9 +60,8 @@ describe('deployment resolver', () => {
                 use_case: DeploymentRequestUseCase.ThreatHunting,
               },
             ],
-            products: [PlatformIdentifier.Opencti],
+            products: [PlatformIdentifier.Xtmone, PlatformIdentifier.Opencti],
             region: DeploymentRequestPlatformRegion.UsEast,
-            type: DeploymentRequestDeploymentType.Trial,
             source: DeploymentRequestSource.Xtmhub,
           },
         }
@@ -71,10 +70,10 @@ describe('deployment resolver', () => {
         activity_sector:
           DeploymentRequestActivitySector.ComputerNetworkSecurity,
         job_title: DeploymentRequestJobTitle.CybersecurityEngineer,
-        use_case: DeploymentRequestUseCase.ThreatHunting,
-        platform_identifier: PlatformIdentifier.Opencti,
+        use_case: null,
+        platform_identifier: null,
         region: DeploymentRequestPlatformRegion.UsEast,
-        type: DeploymentRequestDeploymentType.Trial,
+        type: DeploymentRequestDeploymentType.Bundle,
         hub_status: DeploymentRequestHubStatus.Pending,
         target_state: DeploymentRequestPlatformState.Active,
         actual_state: DeploymentRequestPlatformState.Unprovisioned,
@@ -86,22 +85,16 @@ describe('deployment resolver', () => {
     let initialDeployment: DeploymentRequest;
 
     beforeEach(async () => {
-      requestContext.set(requestContextRegistererUserSecondOrga);
-      initialDeployment = await DeploymentApp.createDeploymentRequest({
-        activity_sector:
-          DeploymentRequestActivitySector.ComputerNetworkSecurity,
-        job_title: DeploymentRequestJobTitle.CybersecurityEngineer,
-        use_cases_by_product: [
+      initialDeployment =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
           {
-            platform_identifier: PlatformIdentifier.Opencti,
-            use_case: DeploymentRequestUseCase.ThreatHunting,
-          },
-        ],
-        products: [PlatformIdentifier.Opencti],
-        region: DeploymentRequestPlatformRegion.UsEast,
-        type: DeploymentRequestDeploymentType.Trial,
-        source: DeploymentRequestSource.Xtmhub,
-      });
+            organization_requester_id:
+              TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            user_requester_id:
+              TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+            actual_state: DeploymentRequestPlatformState.Unprovisioned,
+          }
+        );
       requestContext.set(requestContextSystemUserManageDeployment);
     });
     it('should return the updated deployment request', async () => {

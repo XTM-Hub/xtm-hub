@@ -159,40 +159,34 @@ describe('isPlatformStateTransitionValid', () => {
 });
 
 describe('assertFreeTrialsLimit', () => {
-  it('should throw an error if a free trial already exists', async () => {
+  it('should throw when the organization already has a bundle trial', async () => {
     vi.spyOn(
       DeploymentRequestDomain,
       'loadDeploymentRequestBy'
     ).mockResolvedValue(
       buildDeploymentRequest({
         id: uuidv4() as DeploymentRequestId,
-        platform_identifier: PlatformIdentifier.Opencti,
+        platform_identifier: null,
         region: DeploymentRequestPlatformRegion.EuWest,
-        type: DeploymentRequestDeploymentType.Trial,
+        type: DeploymentRequestDeploymentType.Bundle,
         hub_status: DeploymentRequestHubStatus.Pending,
         target_state: DeploymentRequestPlatformState.Active,
         actual_state: DeploymentRequestPlatformState.Active,
       })
     );
     await expect(
-      DeploymentHelper.assertFreeTrialsLimit(
-        TEST_ORGANIZATIONS.FILIGRAN.ID,
-        PlatformIdentifier.Opencti
-      )
+      DeploymentHelper.assertFreeTrialsLimit(TEST_ORGANIZATIONS.FILIGRAN.ID)
     ).rejects.toThrow(AlreadyExistsErrorCode.FreeTrialAlreadyExists);
   });
 
-  it('should not throw if no trial exists', async () => {
+  it('should not throw when the organization has no bundle trial', async () => {
     vi.spyOn(
       DeploymentRequestDomain,
       'loadDeploymentRequestBy'
     ).mockResolvedValue(undefined);
 
     await expect(
-      DeploymentHelper.assertFreeTrialsLimit(
-        TEST_ORGANIZATIONS.FILIGRAN.ID,
-        PlatformIdentifier.Opencti
-      )
+      DeploymentHelper.assertFreeTrialsLimit(TEST_ORGANIZATIONS.FILIGRAN.ID)
     ).resolves.toBeUndefined();
   });
 });

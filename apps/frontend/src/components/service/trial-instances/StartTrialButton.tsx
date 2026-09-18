@@ -32,7 +32,6 @@ import {
 import { useOrgaFreeTrial } from '@/components/service/trial-instances/useOrgaFreeTrials';
 import { trialInstancesDeploymentRequestsAvailableQuery } from '@generated/trialInstancesDeploymentRequestsAvailableQuery.graphql';
 import {
-  DeploymentRequestDeploymentType,
   DeploymentRequestSource,
   PlatformIdentifier,
 } from '@graphql/generated';
@@ -99,7 +98,6 @@ export const StartTrialButton = ({
           use_cases_by_product: [
             { platform_identifier: platformIdentifier, use_case },
           ],
-          type: DeploymentRequestDeploymentType.Trial,
           source,
         },
       },
