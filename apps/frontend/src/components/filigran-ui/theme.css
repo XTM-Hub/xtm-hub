@@ -484,10 +484,6 @@
   --radius-full: 624.9375rem;
 
   --depth-xs: 0.125rem;
-  --depth-sm: 0.25rem;
-  --depth-md: 0.5rem;
-  --depth-lg: 1rem;
-  --depth-xl: 1.25rem;
 
   --font-geologica: Geologica;
   --font-ibm-plex-sans: IBM Plex Sans;
@@ -651,8 +647,6 @@
     var(--color-elevation-background-layer-0) 0%,
     var(--color-elevation-background-layer-0-gradient) 100%
   );
-
-  --shadow-global-shadow: 0rem 0.125rem 0.25rem 0rem hsl(0 0% 0% / 0.4);
 
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
