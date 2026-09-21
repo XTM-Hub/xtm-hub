@@ -1,10 +1,6 @@
 # CLAUDE.md
 
-Entry point for coding agents working in the XTM Hub repository.
-
-`AGENTS.md` is a symlink to this file, so Claude Code, GitHub Copilot and anything else following the `AGENTS.md`
-convention read exactly the same content. See [Where the rest of the guidance lives](#where-the-rest-of-the-guidance-lives)
-for how each tool layers its own surface on top.
+Entry point for coding agents working in the XTM Hub repository. `AGENTS.md` is a symlink to this file.
 
 XTM Hub is the unified entry point for Filigran's ecosystem — a marketplace for cybersecurity resources, a
 knowledge-sharing platform, and a community engagement hub. It is a full-stack TypeScript monorepo on Yarn
