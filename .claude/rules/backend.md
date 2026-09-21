@@ -1,5 +1,6 @@
 ---
-applyTo: 'apps/backend/**'
+paths:
+  - "apps/backend/**"
 ---
 
 # Backend Instructions (`apps/backend`)
@@ -123,5 +124,5 @@ query/mutation in `body:graphql` and its variables in `body:graphql:vars`; `type
 
 ## Tests
 
-See [`testing.instructions.md`](testing.instructions.md) for structure, mocking policy and backend-specific tooling
+See [`testing.md`](testing.md) for structure, mocking policy and backend-specific tooling
 (`test_database`, `fileParallelism: false`).

@@ -1,5 +1,6 @@
 ---
-applyTo: 'apps/frontend/**'
+paths:
+  - "apps/frontend/**"
 ---
 
 # Frontend Instructions (`apps/frontend`)
@@ -86,7 +87,7 @@ delegates GraphQL/auth/document routes to `src/utils/middleware/graphql-request.
 `SERVER_HTTP_API` (default `http://localhost:4002`).
 
 **For new work, use `@tanstack/react-query`**, not Relay. See
-[`graphql.instructions.md`](graphql.instructions.md#tanstackreact-query-conventions-new-frontend-work) for the
+[`graphql.md`](graphql.md#tanstackreact-query-conventions-new-frontend-work) for the
 operation-file convention, the codegen command, and the client/cache-invalidation wiring.
 
 **Never introduce new Relay usage, even for a small addition to an existing Relay page** — add it as a
@@ -101,7 +102,7 @@ a component's last Relay usage, confirm nothing else still imports its generated
 deleting them.
 
 Existing Relay pages: see
-[`graphql.instructions.md`](graphql.instructions.md#relay-conventions-existing-pages-only) for the file convention
+[`graphql.md`](graphql.md#relay-conventions-existing-pages-only) for the file convention
 and regeneration command.
 
 Server-side fetches go through `src/relay/server-portal-api-fetch.ts`, which forwards Next.js cookies.
@@ -131,7 +132,7 @@ source of truth) — never hardcode copy in a component. `yarn i18n:check` verif
 
 ## Tests
 
-See [`testing.instructions.md`](testing.instructions.md) for structure, mocking policy and the frontend-specific
+See [`testing.md`](testing.md) for structure, mocking policy and the frontend-specific
 tooling (`testRender`, `next-intl` mocking, `@tanstack/react-query` vs Relay mocking, pure-utility extraction).
 
 ## Environment variables

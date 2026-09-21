@@ -11,7 +11,7 @@ stack-specific rules on top.
 
 ## Mandatory Coding Rules
 - Never use `console.log` in new application code. A layer's instructions file may document a narrow, already-existing
-  exception (e.g. frontend.instructions.md's Logging section) — that isn't license to add new ones.
+  exception (e.g. `.claude/rules/frontend.md`'s Logging section) — that isn't license to add new ones.
 - Prefix every intentionally unused variable with `_` (e.g. `_unused`).
 - Use strict typing; avoid `any` unless there is no practical alternative.
 - Keep code deterministic, testable, and explicit about errors.

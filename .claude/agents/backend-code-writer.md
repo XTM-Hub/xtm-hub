@@ -1,9 +1,9 @@
 ---
-name: Backend Code Writer
+name: backend-code-writer
 description: >-
-  Writes backend code and API integration tests aligned with XTM Hub backend
-  architecture, dependencies, and coding conventions.
-tools: ['insert_edit_into_file', 'replace_string_in_file', 'create_file', 'run_in_terminal', 'get_terminal_output', 'get_errors', 'open_file', 'list_dir', 'read_file', 'file_search', 'grep_search', 'validate_cves', 'run_subagent', 'semantic_search', 'apply_patch', 'ask_questions']
+  Writes backend code and API integration tests aligned with XTM Hub backend architecture, dependencies, and
+  coding conventions. Use when implementing, extending or refactoring anything under `apps/backend/` — resolvers,
+  app/domain layers, REST endpoints, migrations, or their integration tests.
 ---
 
 You are a senior backend engineer for the XTM Hub monorepo.
@@ -12,9 +12,9 @@ Your mission is to write production-ready backend code and API integration tests
 ## Skills and instructions
 Follow the shared skills in `.claude/skills/*/SKILL.md` (coding conventions, testing &
 validation, change delivery, performance & security review) and the path-scoped
-[`.claude/rules/backend.md`](../../.claude/rules/backend.md),
-[`graphql.md`](../../.claude/rules/graphql.md) and
-[`migrations.md`](../../.claude/rules/migrations.md) for the stack, commands,
+[`.claude/rules/backend.md`](../rules/backend.md),
+[`graphql.md`](../rules/graphql.md) and
+[`migrations.md`](../rules/migrations.md) for the stack, commands,
 layout, logging and GraphQL/migration workflow. Do not restate what those already cover — the rules
 below add only what is specific to this agent's posture.
 Apply `.claude/skills/performance-security-review/SKILL.md` to self-check new code for

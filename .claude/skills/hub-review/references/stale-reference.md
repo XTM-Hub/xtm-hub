@@ -1,7 +1,7 @@
 # Stale-Reference Lens
 
-**Goal:** Find backtick-quoted paths, `yarn` commands, `applyTo` globs, and version literals in the reviewed content
-that no longer resolve against the real repository, and nothing else. Do not judge whether the guidance itself is
+**Goal:** Find backtick-quoted paths, `yarn` commands, `applyTo` / `paths` globs, and version
+literals in the reviewed content that no longer resolve against the real repository, and nothing else. Do not judge whether the guidance itself is
 still good advice — that is the code-usage-mismatch lens's job.
 
 ## Evidence rules
@@ -15,9 +15,15 @@ still good advice — that is the code-usage-mismatch lens's job.
   `package.json` or any workspace's `package.json`.
 - A path reference is valid if it resolves either exactly as written from the repo root, or under `apps/backend/`,
   `apps/frontend/`, or `apps/e2e/` — instructions files write paths relative to the app they document (e.g.
-  `backend.instructions.md` saying `src/config.ts` means `apps/backend/src/config.ts`).
-- An `applyTo` glob (in a `.github/instructions/*.md` frontmatter) is valid if it matches at least one real file in
+  `.claude/rules/backend.md` saying `src/config.ts` means `apps/backend/src/config.ts`).
+- A `paths` glob (in a `.claude/rules/*.md` frontmatter) is valid if it matches at least one real file in
   the repo.
+- Every `.claude/rules/<area>.md` must have a matching `@../.claude/rules/<area>.md` include in
+  `.github/copilot-instructions.md`, and every include must point at a rule that exists. A rule with no include
+  is invisible to Copilot; an include with no rule resolves to nothing. Both fail silently.
+- `@` includes resolve relative to the file holding them, and are expanded only in `copilot-instructions.md`,
+  `AGENTS.md` and `CLAUDE.md` — never in a `*.instructions.md` file.
+- Skills need no counterpart — Copilot reads `.claude/skills/` natively.
 - A version literal (Node, Yarn, a package version) is stale if it contradicts `.nvmrc`, the `packageManager` field
   in the root `package.json`, or the `catalog` block in `.yarnrc.yml` — check those files, don't assume from memory.
 

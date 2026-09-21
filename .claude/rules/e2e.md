@@ -1,5 +1,6 @@
 ---
-applyTo: 'apps/e2e/**'
+paths:
+  - "apps/e2e/**"
 ---
 
 # E2E Instructions (`apps/e2e`)
@@ -48,5 +49,5 @@ tests/__screenshots__/ Visual regression baselines
 
 ## CI coupling
 
-See [`ci.instructions.md`](ci.instructions.md) for the exact copy command. Those two directories are build
+See [`ci.md`](ci.md) for the exact copy command. Those two directories are build
 artifacts — do not edit them here, change the backend sources instead.

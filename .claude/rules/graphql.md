@@ -1,5 +1,10 @@
 ---
-applyTo: 'apps/backend/**/*.graphql,apps/backend/**/*.resolver.ts,apps/frontend/**/*.graphql.ts,apps/frontend/graphql/**,apps/frontend/schema.graphql'
+paths:
+  - "apps/backend/**/*.graphql"
+  - "apps/backend/**/*.resolver.ts"
+  - "apps/frontend/**/*.graphql.ts"
+  - "apps/frontend/graphql/**"
+  - "apps/frontend/schema.graphql"
 ---
 
 # GraphQL Instructions
@@ -29,7 +34,7 @@ flowchart LR
 - Resolvers are merged in `apps/backend/src/server/graphql-schema.ts`. A new module's resolver has to be registered
   there or its fields silently do not exist.
 - Adding, renaming, or reshaping an operation? Update the matching `.bru` request under `bruno/` too — see
-  [`backend.instructions.md`](backend.instructions.md#api-collection-bruno).
+  [`backend.md`](backend.md#api-collection-bruno).
 
 ## Authorization
 

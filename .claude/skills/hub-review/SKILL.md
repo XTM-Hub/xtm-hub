@@ -1,8 +1,9 @@
 ---
 name: hub-review
 description: >-
-  Reviews the XTM Hub AI-instruction surface — `.github/copilot-instructions.md`, `AGENTS.md`,
-  `.github/instructions/*.md`, `.github/agents/*.agent.md`, `.github/skills/*/SKILL.md` —
+  Reviews the XTM Hub AI-instruction surface — `AGENTS.md`,
+  `.github/copilot-instructions.md`, `.claude/rules/*.md`, `.claude/skills/*/SKILL.md`,
+  `.claude/agents/*.md` and `.github/agents/*.agent.md` —
   for drift against the real codebase and against each other. Use when asked to review AI instructions, docs, agents,
   or skills; when reviewing a PR/diff that touches any of those paths; or when directed here as
   `skill:hub-review` from another instruction (e.g. the `code-review` skill's "What to check against" documentation
@@ -19,7 +20,22 @@ confirm by reading the referenced file, command, or code. `0` findings for a len
 ## Conventions
 
 Bare paths (e.g. `references/stale-reference.md`) resolve from `{skill-root}` — this skill's own directory,
-`.github/skills/hub-review/`. `{project-root}` resolves to the repository root.
+`.claude/skills/hub-review/`. `{project-root}` resolves to the repository root.
+
+The `<!-- filigran-conventions -->` and `<!-- filigran-model-policy -->` blocks, in
+`.github/copilot-instructions.md` and `CONTRIBUTING.md`, are synced from an org-wide source. Never edit them and
+never rewrite the guidance inside them, and do not report the commit conventions they restate from `AGENTS.md`
+— that duplication is deliberate. A reference that objectively does not resolve inside one of those blocks is
+still a finding: repair it locally so the link works today, and escalate it as well, because the next sync
+overwrites the block and the same break almost certainly exists in the other Filigran repositories.
+
+The surface is shared by two tools, so parts of it are deliberately paired. Treat each pair as one unit:
+
+| Pair | How they are kept identical |
+| --- | --- |
+| `AGENTS.md` / `CLAUDE.md` | `CLAUDE.md` is the single line `@AGENTS.md` — nothing to compare |
+| `.claude/rules/*.md` / `.github/copilot-instructions.md` | the rule is the only copy. Claude loads it by its `paths` glob; Copilot gets it through an `@` include in `copilot-instructions.md`, unscoped. Every rule must have its include |
+| `.claude/agents/*.md` / `.github/agents/*.agent.md` | **real duplication** — the `tools:` vocabularies differ, so the two files coexist. Their `name`, `description` and behavioural rules must match; only the frontmatter `tools:` and the tool-specific phrasing may differ. A rule added to one and not the other is a duplication-lens finding. |
 
 ## Inputs
 
@@ -27,9 +43,9 @@ Bare paths (e.g. `references/stale-reference.md`) resolve from `{skill-root}` �
   - **PR / diff** — only the instruction-surface files the diff touches, plus anything they reference that the diff
     did not update (a changed convention with a stale cross-reference elsewhere).
   - **Named file(s)** — whatever the caller pointed at.
-  - **Full audit** (default when nothing else is specified) — every file under `.github/instructions/`,
-    `.github/agents/`, `.github/skills/`, plus `.github/copilot-instructions.md` and
-    `AGENTS.md`.
+  - **Full audit** (default when nothing else is specified) — every file under `.claude/rules/`,
+    `.claude/skills/`, `.claude/agents/`, `.github/agents/`, plus `.github/copilot-instructions.md`
+    and `AGENTS.md`.
 - **lenses** (optional) — one or more lens names. Default: all four lenses below.
 
 ## Lenses
@@ -38,7 +54,7 @@ Each lens is a reference file loaded just-in-time — read only the ones that ru
 
 | Lens | Reference | Catches |
 | --- | --- | --- |
-| Stale reference | `references/stale-reference.md` | Paths, `yarn` commands, `applyTo` globs, version literals that no longer resolve |
+| Stale reference | `references/stale-reference.md` | Paths, `yarn` commands, `paths` globs, `@` includes, version literals that no longer resolve |
 | Contradiction | `references/contradiction.md` | Two authoritative sources giving conflicting guidance |
 | Code-usage mismatch | `references/code-usage-mismatch.md` | A documented convention the code no longer follows, or vice versa |
 | Duplication | `references/duplication.md` | Guidance restated across files instead of one linking to the other |
@@ -59,10 +75,12 @@ Each lens is a reference file loaded just-in-time — read only the ones that ru
    - **Ambiguous** — the two sides of a contradiction are both plausible, resolving it requires a product/architecture
      decision, or the convention looks mid-migration (some code follows the old pattern, some the new one, and it's
      unclear which the docs should mandate). Never resolve this yourself.
-5. **Escalate every ambiguous finding**, depending on context:
-   - Reviewing a PR/diff: use `add_pr_review_comment` on the relevant line, and `reply_and_resolve_review_thread`
-     once the author responds.
-   - Interactive session with a user present, no PR in scope: use `ask_user` with the concrete question, not a vague
+5. **Escalate every ambiguous finding**, depending on context. Use whichever mechanism the running tool offers —
+   Copilot has `add_pr_review_comment` / `reply_and_resolve_review_thread` / `ask_user`; Claude Code has the
+   `gh` CLI and `AskUserQuestion`:
+   - Reviewing a PR/diff: post an inline review comment on the relevant line, and reply to (then resolve) the
+     thread once the author responds.
+   - Interactive session with a user present, no PR in scope: ask the concrete question, not a vague
      "does this look right?".
    - Unattended (no PR, no user to ask): open a GitHub issue describing the drift and where it was found.
 6. **Assemble and present** per Output below.

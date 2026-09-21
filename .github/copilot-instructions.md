@@ -1,60 +1,16 @@
-# XTM Hub — Coding Agent Instructions
+# XTM Hub — GitHub Copilot Instructions
 
-Shared, repository-wide context. Anything scoped to a single area lives in
-[`.github/instructions/`](instructions/) and is applied automatically by path.
+@../AGENTS.md
 
-| Scope | File |
-| --- | --- |
-| `apps/backend/**` | [`backend.instructions.md`](instructions/backend.instructions.md) |
-| `apps/frontend/**` | [`frontend.instructions.md`](instructions/frontend.instructions.md) |
-| `apps/e2e/**` | [`e2e.instructions.md`](instructions/e2e.instructions.md) |
-| Schema, resolvers, Relay operations | [`graphql.instructions.md`](instructions/graphql.instructions.md) |
-| Knex / Elasticsearch migrations, seeds | [`migrations.instructions.md`](instructions/migrations.instructions.md) |
-| `*.test.ts(x)`, `*.utils.ts` | [`testing.instructions.md`](instructions/testing.instructions.md) |
-| Workflows, Docker, Helm | [`ci.instructions.md`](instructions/ci.instructions.md) |
+@../.claude/rules/backend.md
+@../.claude/rules/ci.md
+@../.claude/rules/e2e.md
+@../.claude/rules/frontend.md
+@../.claude/rules/graphql.md
+@../.claude/rules/migrations.md
+@../.claude/rules/testing.md
 
-Deeper task guidance lives in [`.github/skills/`](skills/) and
-[`.github/agents/`](agents/).
-
-This content drifts as the codebase changes. Use the [`hub-review`](skills/hub-review/SKILL.md) skill to audit it
-against the real code — it asks a question (or flags a PR comment) instead of guessing when something doesn't match.
-
-## Review
-
-1. You must use the skill `hub-review`.
-2. Follow the workflow.
-
-## Critical rules
-
-See [`AGENTS.md`](../AGENTS.md#critical-rules) for the repo's mandatory coding rules (console.log, generated output,
-versions, UI library, GraphQL regeneration) — that file is the canonical, cross-tool source. It defers in turn to
-[`.github/skills/coding-conventions/SKILL.md`](skills/coding-conventions/SKILL.md) for the baseline (no `console.log`,
-`_`-prefix unused variables, strict typing, no `as never`/unjustified casts).
-
-## What this is, setup, and validation
-
-See [`AGENTS.md`](../AGENTS.md) for the stack overview, workspace table, `corepack`/`yarn install` setup, local
-infrastructure (`docker compose`), dev servers, the pre-commit hook, and the `test:ci` validation commands — that
-file is the canonical source so it stays accurate for every tool that reads it, not just Copilot.
-
-## The one data flow to understand
-
-The GraphQL schema is authored in the backend and flows to the frontend: the frontend never edits it. See
-[`graphql.instructions.md`](instructions/graphql.instructions.md) for the full flow, the regeneration commands
-(`generate:ts`, `relay`), and why skipping them is the most common cause of confusing frontend type errors.
-
-## Pitfalls
-
-- **Yarn version mismatch** — always `corepack enable` first.
-- **Missing Relay artifacts** — run `yarn relay` after any GraphQL change or before a frontend build.
-- **Bogus `@public/*.svg` type errors** — `next-env.d.ts` is generated and gitignored. Run
-  `yarn workspace @xtm-hub/frontend next typegen` before `check-ts` on a fresh checkout.
-- **E2E failures** — the frontend (:3002) and backend (:4002) must already be running.
-- **Test database** — backend tests use `test_database`, not `cloud-portal`, when `VITEST_MODE=true`, and Vitest runs
-  with `fileParallelism: false`.
-- **Frontend ports** — 3002 in development, 3000 inside the production container.
-- **TypeScript ESLint version warning** — non-blocking, ignore it.
-- **Three-day dependency age gate** — a brand-new package release will fail to install until it ages out.
+Before changing any instruction, rule, skill or agent file, use the `hub-review` skill.
 
 <!-- filigran-conventions:start -->
 
@@ -76,7 +32,7 @@ type(scope?)!?: description (#issue)
 - Sign your commits.
 
 When generating commit messages, PR titles or issue titles, always follow this convention. See [
-`.github/LABELS.md`](.github/LABELS.md) for the full title and label taxonomy.
+`.github/LABELS.md`](LABELS.md) for the full title and label taxonomy.
 <!-- filigran-conventions:end -->
 
 
