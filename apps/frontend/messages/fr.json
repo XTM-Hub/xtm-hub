@@ -2060,9 +2060,6 @@
   "ServiceName": {
     "custom_dashboards": "Tableau de bord personnalisé"
   },
-  "SelectUsers": {
-    "ClearAllSelections": "Effacer toutes les sélections"
-  },
   "Sort Asc": "Tri Asc",
   "Sort Desc": "Sort Desc",
   "SortControls": {
@@ -2216,7 +2213,6 @@
   },
   "Utils": {
     "Cancel": "Annuler",
-    "Clear": "Effacer",
     "Close": "Fermer",
     "Confirm": "Confirmer",
     "Continue": "Continuer",

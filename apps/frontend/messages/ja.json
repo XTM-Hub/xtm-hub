@@ -2060,9 +2060,6 @@
   "ServiceName": {
     "custom_dashboards": "カスタムダッシュボード"
   },
-  "SelectUsers": {
-    "ClearAllSelections": "すべての選択をクリア"
-  },
   "Sort Asc": "ソート",
   "Sort Desc": "降順ソート",
   "SortControls": {
@@ -2216,7 +2213,6 @@
   },
   "Utils": {
     "Cancel": "キャンセル",
-    "Clear": "クリア",
     "Close": "閉じる",
     "Confirm": "確認する",
     "Continue": "続ける",
