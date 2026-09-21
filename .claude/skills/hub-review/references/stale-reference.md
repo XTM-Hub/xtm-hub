@@ -1,7 +1,7 @@
 # Stale-Reference Lens
 
-**Goal:** Find backtick-quoted paths, `yarn` commands, `applyTo` globs, `@`-import paths, symlink targets, and
-version literals in the reviewed content that no longer resolve against the real repository, and nothing else. Do not judge whether the guidance itself is
+**Goal:** Find backtick-quoted paths, `yarn` commands, `applyTo` / `paths` globs, symlink targets, and version
+literals in the reviewed content that no longer resolve against the real repository, and nothing else. Do not judge whether the guidance itself is
 still good advice — that is the code-usage-mismatch lens's job.
 
 ## Evidence rules
@@ -18,12 +18,12 @@ still good advice — that is the code-usage-mismatch lens's job.
   `backend.instructions.md` saying `src/config.ts` means `apps/backend/src/config.ts`).
 - An `applyTo` glob (in a `.github/instructions/*.md` frontmatter) is valid if it matches at least one real file in
   the repo.
-- An `@`-import line in `CLAUDE.md` (e.g. `@.github/instructions/backend.instructions.md`) is valid only if the
-  path resolves relative to that file. Check it with `ls` — a broken import fails silently, so nothing else will
-  catch it. All seven instruction files must be imported; one missing from the Area rules section is a finding.
-- The repository has two committed symlinks, `AGENTS.md` → `CLAUDE.md` and `.github/skills` → `../.claude/skills`.
-  Verify both still resolve (`ls -l`, `readlink`); a broken one silently cuts Copilot off from the whole
-  instruction surface.
+- Every `.github/instructions/*.instructions.md` file must carry **both** an `applyTo` string (Copilot) and a
+  `paths` list (Claude Code) covering the same globs. One without the other silently cuts that tool off from the
+  rule. Check the two agree, pattern for pattern.
+- The repository's committed symlinks are `.github/skills` → `../.claude/skills` and one
+  `.claude/rules/<area>.md` per instruction file. Verify each resolves (`ls -l`, `readlink`) and that no
+  instruction file lacks its rule symlink; a broken or missing one fails silently.
 - A version literal (Node, Yarn, a package version) is stale if it contradicts `.nvmrc`, the `packageManager` field
   in the root `package.json`, or the `catalog` block in `.yarnrc.yml` — check those files, don't assume from memory.
 

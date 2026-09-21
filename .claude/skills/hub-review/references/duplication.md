@@ -1,6 +1,6 @@
 # Duplication Lens
 
-**Goal:** Find guidance restated across `CLAUDE.md`, `.github/copilot-instructions.md`,
+**Goal:** Find guidance restated across `AGENTS.md`, `.github/copilot-instructions.md`,
 `.github/instructions/*.md`, `.claude/agents/*.md`, `.github/agents/*.agent.md`, and `.claude/skills/*/SKILL.md`
 instead of one file holding the canonical version and the others linking to it.
 
@@ -13,12 +13,13 @@ instead of one file holding the canonical version and the others linking to it.
   correct pattern, not a problem.
 - Prefer the more specific or path-scoped file as the source of truth when proposing a fix (an `.instructions.md`
   file for stack/workflow detail, a `SKILL.md` for a cross-cutting practice), and the more general file
-  (`CLAUDE.md`, `copilot-instructions.md`, an agent file) as the one that should link to it instead of restating it.
+  (`AGENTS.md`, `copilot-instructions.md`, an agent file) as the one that should link to it instead of restating it.
 - The `.claude/agents/*.md` ↔ `.github/agents/*.agent.md` pair is **intentional** duplication: the two tools use
   different `tools:` vocabularies, so both files must exist. Do not propose collapsing them. Flag the opposite —
   a behavioural rule present in one and missing from the other, which means the mirrors have drifted.
-- `CLAUDE.md` restating anything from an instruction file its Area rules section `@`-imports is always a finding:
-  the import already puts that content in context, so the copy is pure drift risk.
+- `AGENTS.md` restating anything from an instruction file is always a finding: the instruction file reaches Claude
+  through `.claude/rules/` and Copilot through `applyTo`, so the copy is pure drift risk. `AGENTS.md` holds only
+  what is true in every session.
 
 ## Review sequence
 

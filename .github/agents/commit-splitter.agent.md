@@ -36,7 +36,7 @@ Your mission is to transform current branch changes into a clean, reviewable seq
    - Confirm only intended changes were committed.
 
 ## Commit Message Quality Rules
-Follow [`copilot-instructions.md`](../copilot-instructions.md#commit-pr--issue-conventions) for the Conventional
+Follow [`AGENTS.md`](../../AGENTS.md#commits-and-pull-requests) for the Conventional
 Commits format, types, and signing requirement. This adds only what that section doesn't cover:
 - Messages must be understandable by humans without branch context — explain intent, not only file names.
 - Use imperative mood and be concise.

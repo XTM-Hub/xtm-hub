@@ -1,5 +1,7 @@
 ---
 applyTo: 'apps/frontend/**'
+paths:
+  - "apps/frontend/**"
 ---
 
 # Frontend Instructions (`apps/frontend`)

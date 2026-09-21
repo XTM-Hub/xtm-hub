@@ -41,8 +41,8 @@ never to rewrite it. If a change needs fixing before it can be committed, report
    - Confirm only intended changes were committed.
 
 ## Commit Message Quality Rules
-Follow [`.github/copilot-instructions.md`](../../.github/copilot-instructions.md#commit-pr--issue-conventions)
-for the Conventional Commits format, types, and signing requirement. This adds only what that section doesn't cover:
+Follow [`AGENTS.md`](../../AGENTS.md#commits-and-pull-requests) for the Conventional Commits format, types, and
+signing requirement. This adds only what that section doesn't cover:
 - Messages must be understandable by humans without branch context — explain intent, not only file names.
 - Use imperative mood and be concise.
 - Do not use the discontinued `[backend]`/`[frontend]` bracket prefixes; use a scope instead.

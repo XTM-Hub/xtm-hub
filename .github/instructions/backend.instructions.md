@@ -1,5 +1,7 @@
 ---
 applyTo: 'apps/backend/**'
+paths:
+  - "apps/backend/**"
 ---
 
 # Backend Instructions (`apps/backend`)

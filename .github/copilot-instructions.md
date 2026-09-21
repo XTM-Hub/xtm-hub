@@ -2,9 +2,9 @@
 
 Copilot-specific entry point. The repository-wide context — what this is, the workspace table, `corepack`/
 `yarn install` setup, local infrastructure, dev servers, the `test:ci` validation commands, the mandatory coding
-rules — lives in [`AGENTS.md`](../AGENTS.md), a symlink to
-[`CLAUDE.md`](../CLAUDE.md) at the repository root. That file is the canonical, cross-tool source so it stays
-accurate for every tool that reads it, not just Copilot. **Read it first.**
+rules, and the commit and pull request conventions — lives in [`AGENTS.md`](../AGENTS.md) at the repository root.
+That file is the canonical, cross-tool source so it stays accurate for every tool that reads it, not just Copilot.
+**Read it first.**
 
 This file adds only what is specific to Copilot, plus the two org-synced blocks at the end.
 

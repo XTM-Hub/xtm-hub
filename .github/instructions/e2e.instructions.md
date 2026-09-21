@@ -1,5 +1,7 @@
 ---
 applyTo: 'apps/e2e/**'
+paths:
+  - "apps/e2e/**"
 ---
 
 # E2E Instructions (`apps/e2e`)

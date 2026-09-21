@@ -1,5 +1,10 @@
 ---
 applyTo: 'apps/backend/src/migrations/**,apps/backend/src/es-migrations/**,apps/backend/src/seeds/**,apps/backend/tests/seeds/**'
+paths:
+  - "apps/backend/src/migrations/**"
+  - "apps/backend/src/es-migrations/**"
+  - "apps/backend/src/seeds/**"
+  - "apps/backend/tests/seeds/**"
 ---
 
 # Migration Instructions

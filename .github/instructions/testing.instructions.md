@@ -1,5 +1,9 @@
 ---
 applyTo: '**/*.test.ts,**/*.test.tsx,**/*.utils.ts'
+paths:
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.utils.ts"
 ---
 
 # Testing Instructions
