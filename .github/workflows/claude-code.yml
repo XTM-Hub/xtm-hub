@@ -1,0 +1,99 @@
+name: Claude Code
+
+# Runs Claude Code on demand, when someone writes `@claude` in an issue, a pull
+# request comment or a review. It is the Claude Code counterpart of
+# `copilot-setup-steps.yml`; keep the toolchain steps below in sync with that
+# file when the setup changes.
+#
+# Requires the `ANTHROPIC_API_KEY` repository (or organisation) secret. Without
+# it the job warns and stops instead of failing, so the workflow is harmless
+# until someone configures it.
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+  issues:
+    types: [opened, assigned]
+
+jobs:
+  claude:
+    # Only react to an explicit mention — never run on every comment.
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+
+    steps:
+      - name: Check credentials
+        id: credentials
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::warning::ANTHROPIC_API_KEY is not configured — skipping."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        if: steps.credentials.outputs.configured == 'true'
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node
+        if: steps.credentials.outputs.configured == 'true'
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+
+      # Must come before any yarn call. Yarn 4 is resolved from the
+      # `packageManager` field in package.json, so never pin a version here.
+      # `cache: yarn` is NOT set on setup-node above for the same reason as in
+      # copilot-setup-steps.yml — it shells out to the runner's global yarn 1.x
+      # before Corepack is enabled.
+      - name: Enable Corepack
+        if: steps.credentials.outputs.configured == 'true'
+        run: corepack enable
+
+      - name: Locate Yarn cache
+        if: steps.credentials.outputs.configured == 'true'
+        id: yarn-cache
+        run: echo "dir=$(yarn config get cacheFolder)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore Yarn cache
+        if: steps.credentials.outputs.configured == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.yarn-cache.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: ${{ runner.os }}-yarn-
+
+      # Deliberately no `yarn install` or codegen step here, unlike
+      # copilot-setup-steps.yml: the action below may switch to the pull
+      # request's branch, so anything built now could come from the wrong ref.
+      # Claude runs the setup itself, from the instructions in CLAUDE.md, when
+      # a task needs it — the restored cache is what keeps that fast.
+      #
+      # Tool permissions come from the repository's `.claude/settings.json`,
+      # which the action picks up from the checkout.
+      - name: Run Claude Code
+        if: steps.credentials.outputs.configured == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
