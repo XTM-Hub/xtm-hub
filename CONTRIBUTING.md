@@ -83,3 +83,47 @@ in [`.github/LABELS.md`](.github/LABELS.md). In short:
   `feature`. See [`.github/LABELS.md`](.github/LABELS.md) for the shared palette
   ([`.github/labels.yml`](.github/labels.yml)).
 <!-- filigran-conventions:end -->
+
+
+## AI coding agents
+
+The repository is set up for **Claude Code** and **GitHub Copilot** at the same time, from one corpus of guidance.
+You do not have to configure anything: clone the repo and your tool picks up its own entry point.
+
+| | Claude Code | GitHub Copilot |
+| --- | --- | --- |
+| Entry point | `CLAUDE.md` | `AGENTS.md` (symlink to `CLAUDE.md`) + [`.github/copilot-instructions.md`](.github/copilot-instructions.md) |
+| Per-area rules | `apps/backend/CLAUDE.md`, `apps/frontend/CLAUDE.md`, `apps/e2e/CLAUDE.md` | [`.github/instructions/*.instructions.md`](.github/instructions), by `applyTo` glob |
+| Skills | [`.claude/skills/*/SKILL.md`](.claude/skills) | `.github/skills` (symlink to `.claude/skills`) |
+| Agents | [`.claude/agents/*.md`](.claude/agents) | [`.github/agents/*.agent.md`](.github/agents) |
+| Shared settings | `.claude/settings.json` | — |
+| CI | [`.github/workflows/claude-code.yml`](.github/workflows/claude-code.yml) | [`.github/workflows/copilot-setup-steps.yml`](.github/workflows/copilot-setup-steps.yml) |
+
+### Where to make a change
+
+- **A repo-wide rule** (stack, setup, validation, a mandatory coding rule) → `CLAUDE.md`. Both tools read it.
+- **A rule for one workspace** → the matching `.github/instructions/*.instructions.md`. The `apps/*/CLAUDE.md`
+  files import those, so never copy content into them — they exist only because Claude Code has no `applyTo`.
+  Start Claude Code from the repository root, or those imports do not resolve.
+- **A task playbook** (how to write a migration, how to review) → a skill under `.claude/skills/`.
+- **Agent behaviour** → **both** `.claude/agents/<name>.md` and `.github/agents/<name>.agent.md`. This is the only
+  deliberate duplication in the setup: the two tools name their tools differently, so the files cannot be shared.
+  Their behavioural rules must stay identical; only the frontmatter `tools:` list may differ.
+
+Two committed symlinks hold the rest together — `AGENTS.md` → `CLAUDE.md` and `.github/skills` →
+`../.claude/skills`. Git preserves them on macOS and Linux. On Windows, clone with symlink support enabled
+(`git clone -c core.symlinks=true`, with Developer Mode on) or the two entry points arrive as plain text files
+containing a path.
+
+### Local settings
+
+`.claude/settings.json` is committed and shared: it pre-approves the repository's own `yarn` and read-only `git`
+commands, and blocks edits to generated output. Put anything personal in `.claude/settings.local.json`, which is
+gitignored.
+
+### Keeping it honest
+
+This guidance drifts as the code moves. Before changing it — or when reviewing a pull request that touches it —
+run the `hub-review` skill ([`.claude/skills/hub-review/SKILL.md`](.claude/skills/hub-review/SKILL.md)). It audits
+the whole surface for stale references, contradictions, mismatches with the real code, and duplication, and asks
+rather than guessing when something is ambiguous.
