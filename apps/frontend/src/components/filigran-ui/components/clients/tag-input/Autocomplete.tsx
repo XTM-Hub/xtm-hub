@@ -97,12 +97,10 @@ export const Autocomplete = ({
     if (open && triggerContainerRef.current) {
       const { width } = triggerContainerRef.current.getBoundingClientRect();
       setPopoverWidth(width);
+      inputRef.current?.focus();
     }
 
-    if (open) {
-      inputRef.current?.focus();
-      setIsPopoverOpen(open);
-    }
+    setIsPopoverOpen(open);
   }, []);
 
   const handleInputFocus = (
