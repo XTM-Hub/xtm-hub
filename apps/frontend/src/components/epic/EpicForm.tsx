@@ -10,7 +10,6 @@ import {
   FILIGRAN_PRODUCTS_ORDER,
   sortFiligranProducts,
 } from '@/components/epic/filigran-products';
-import { ServiceFormDescriptionField } from '@/components/service/form/DescriptionField';
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 import {
   AutoForm,
@@ -28,6 +27,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Textarea,
 } from '@filigran/ui';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import {
@@ -45,18 +45,8 @@ import {
 } from 'react-hook-form';
 import { z } from 'zod';
 
-export const descriptionValue =
-  ' [Long Description] - no limit of chars\n' +
-  '### Problem to Solve\n' +
-  '            \n' +
-  'Description of pain point(s) felt by the user that this Epic is solving. This pain must be specific to this Epic (not a generic, high level pain such as “*Lack of visibility in my threat landscape*”)\n' +
-  '         \n' +
-  '### Proposed Solution\n' +
-  'What we are introducing to solve the problem\n' +
-  '\n' +
-  '### Expected Value\n' +
-  'Short point-form list (3-5 points) of what a customer will now be able to do and the value to be gained.\n' +
-  "'If EPIC is aimed at a specific persona, worth mentioning it here.\n";
+const SHORT_DESCRIPTION_MAX_CHARS = 215;
+const SECTION_MAX_CHARS = 500;
 export const TIMELINE_VALUES = Object.values(Timeline);
 export const FILIGRAN_PRODUCTS_OPTIONS = FILIGRAN_PRODUCTS_ORDER.map(
   (product) => ({
@@ -75,8 +65,25 @@ const buildEpicFormSchema = (t: (key: string) => string) =>
     short_description: z
       .string()
       .min(1, t('EpicForm.Error.ShortDescription'))
-      .max(215, t('EpicForm.Error.ShortDescriptionMax')),
-    description: z.string().min(1, t('EpicForm.Error.Description')),
+      .max(
+        SHORT_DESCRIPTION_MAX_CHARS,
+        t('EpicForm.Error.ShortDescriptionMax')
+      ),
+    description: z
+      .string()
+      .max(SECTION_MAX_CHARS, t('EpicForm.Error.DescriptionMax')),
+    problem_to_solve: z
+      .string()
+      .min(1, t('EpicForm.Error.ProblemToSolve'))
+      .max(SECTION_MAX_CHARS, t('EpicForm.Error.ProblemToSolveMax')),
+    proposed_solution: z
+      .string()
+      .min(1, t('EpicForm.Error.ProposedSolution'))
+      .max(SECTION_MAX_CHARS, t('EpicForm.Error.ProposedSolutionMax')),
+    expected_value: z
+      .string()
+      .min(1, t('EpicForm.Error.ExpectedValue'))
+      .max(SECTION_MAX_CHARS, t('EpicForm.Error.ExpectedValueMax')),
     timeline: z.enum(TIMELINE_VALUES),
     active: z.boolean().optional(),
     is_integration: z.boolean().optional(),
@@ -94,13 +101,63 @@ type EpicFieldProps = {
   field: ControllerRenderProps<FieldValues, string>;
 };
 
-const DescriptionFieldType = ({ field }: EpicFieldProps) => (
-  <ServiceFormDescriptionField
-    field={field}
-    documentType={'Epic'}
-    required
-  />
-);
+const makeTextareaFieldType = ({
+  labelKey,
+  maxChars,
+  required = false,
+}: {
+  labelKey: string;
+  maxChars: number;
+  required?: boolean;
+}) => {
+  const TextareaFieldType = ({ field }: EpicFieldProps) => {
+    const t = useTranslations();
+    return (
+      <FormItem>
+        <FormLabel>
+          {t(labelKey)}
+          {required && <span className="text-sm text-destructive"> *</span>}
+        </FormLabel>
+        <FormControl>
+          <Textarea
+            {...field}
+            value={field.value ?? ''}
+            rows={1}
+            className="field-sizing-content min-h-9 resize-none"
+            placeholder={t('Epic.Form.IsLimited', { maxChars })}
+          />
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    );
+  };
+  return TextareaFieldType;
+};
+
+const ShortDescriptionFieldType = makeTextareaFieldType({
+  labelKey: 'Epic.Form.ShortDesc',
+  maxChars: SHORT_DESCRIPTION_MAX_CHARS,
+  required: true,
+});
+const DescriptionFieldType = makeTextareaFieldType({
+  labelKey: 'Epic.Form.Description',
+  maxChars: SECTION_MAX_CHARS,
+});
+const ProblemToSolveFieldType = makeTextareaFieldType({
+  labelKey: 'Epic.Form.ProblemToSolve',
+  maxChars: SECTION_MAX_CHARS,
+  required: true,
+});
+const ProposedSolutionFieldType = makeTextareaFieldType({
+  labelKey: 'Epic.Form.ProposedSolution',
+  maxChars: SECTION_MAX_CHARS,
+  required: true,
+});
+const ExpectedValueFieldType = makeTextareaFieldType({
+  labelKey: 'Epic.Form.ExpectedValue',
+  maxChars: SECTION_MAX_CHARS,
+  required: true,
+});
 
 const ProductsFieldType = ({ field }: EpicFieldProps) => {
   const t = useTranslations();
@@ -249,7 +306,10 @@ const EpicForm = ({
     () => ({
       title: epic?.title ?? '',
       short_description: epic?.short_description ?? '',
-      description: epic?.description ?? descriptionValue,
+      description: epic?.description ?? '',
+      problem_to_solve: epic?.problem_to_solve ?? '',
+      proposed_solution: epic?.proposed_solution ?? '',
+      expected_value: epic?.expected_value ?? '',
       edition_type:
         (epic?.edition_type as EditionType) ?? EditionType.CommunityEdition,
       products: sortFiligranProducts(
@@ -265,6 +325,9 @@ const EpicForm = ({
       epic?.title,
       epic?.short_description,
       epic?.description,
+      epic?.problem_to_solve,
+      epic?.proposed_solution,
+      epic?.expected_value,
       epic?.edition_type,
       epic?.products,
       epic?.slack_link,
@@ -286,13 +349,19 @@ const EpicForm = ({
           },
         },
         short_description: {
-          label: t('Epic.Form.ShortDesc'),
-          inputProps: {
-            placeholder: t('Epic.Form.IsLimited', { maxChars: '215' }),
-          },
+          fieldType: ShortDescriptionFieldType,
         },
         description: {
           fieldType: DescriptionFieldType,
+        },
+        problem_to_solve: {
+          fieldType: ProblemToSolveFieldType,
+        },
+        proposed_solution: {
+          fieldType: ProposedSolutionFieldType,
+        },
+        expected_value: {
+          fieldType: ExpectedValueFieldType,
         },
         products: {
           fieldType: ProductsFieldType,

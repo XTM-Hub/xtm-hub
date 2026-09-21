@@ -263,9 +263,12 @@ export type CreateEpicInput = {
   active: InputMaybe<Scalars['Boolean']['input']>;
   description: Scalars['String']['input'];
   edition_type: EditionType;
+  expected_value: Scalars['String']['input'];
   illustration_document: InputMaybe<Scalars['Upload']['input']>;
   is_integration: InputMaybe<Scalars['Boolean']['input']>;
+  problem_to_solve: Scalars['String']['input'];
   products: Array<FiligranProduct>;
+  proposed_solution: Scalars['String']['input'];
   short_description: Scalars['String']['input'];
   slack_link: InputMaybe<Scalars['String']['input']>;
   timeline: Timeline;
@@ -747,8 +750,11 @@ export type Epic = Node & {
   document_id: Maybe<Scalars['DocumentId']['output']>;
   edition_type: EditionType;
   epic_type: EpicType;
+  expected_value: Scalars['String']['output'];
   id: Scalars['ID']['output'];
+  problem_to_solve: Scalars['String']['output'];
   products: Array<FiligranProduct>;
+  proposed_solution: Scalars['String']['output'];
   short_description: Scalars['String']['output'];
   slack_link: Maybe<Scalars['String']['output']>;
   timeline: Timeline;
@@ -2855,9 +2861,12 @@ export type UpdateEpicInput = {
   active: InputMaybe<Scalars['Boolean']['input']>;
   description: InputMaybe<Scalars['String']['input']>;
   edition_type: EditionType;
+  expected_value: InputMaybe<Scalars['String']['input']>;
   illustration_document: InputMaybe<Scalars['Upload']['input']>;
   is_integration: InputMaybe<Scalars['Boolean']['input']>;
+  problem_to_solve: InputMaybe<Scalars['String']['input']>;
   products: InputMaybe<Array<FiligranProduct>>;
+  proposed_solution: InputMaybe<Scalars['String']['input']>;
   short_description: InputMaybe<Scalars['String']['input']>;
   slack_link: InputMaybe<Scalars['String']['input']>;
   timeline: InputMaybe<Timeline>;
