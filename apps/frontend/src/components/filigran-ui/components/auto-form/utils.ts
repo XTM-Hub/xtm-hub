@@ -24,9 +24,10 @@ export type ZodInternalDef = {
   typeName?: string;
   type?: string;
   schema?: z.ZodTypeAny;
+  in?: z.ZodTypeAny;
   out?: z.ZodTypeAny;
   innerType?: z.ZodTypeAny;
-  defaultValue?: () => unknown;
+  defaultValue?: unknown;
   description?: string;
   entries?: Record<string, string> | string[];
   values?: Record<string, string> | string[];
@@ -62,11 +63,11 @@ export function getBaseSchema<ChildType extends z.ZodTypeAny = z.ZodTypeAny>(
 
   const def = getZodDef(schema);
 
-  if (def.typeName === 'effects') {
-    return getBaseSchema(def.schema as ChildType);
-  }
-  if (def.typeName === 'pipeline') {
-    return getBaseSchema(def.out as ChildType);
+  // Zod 4 represents transforms/coercions as a "pipe" whose `in` schema
+  // carries the original shape/checks (the `out` side is just the
+  // transform result and has no usable shape for AutoForm).
+  if (def.type === 'pipe') {
+    return getBaseSchema(def.in as ChildType);
   }
   if ('innerType' in def) {
     return getBaseSchema(def.innerType as ChildType);
@@ -85,7 +86,7 @@ export function extractShape(
 
   if (!baseSchema) return null;
 
-  if (getZodDef(baseSchema)?.typeName === 'object') {
+  if (getZodDef(baseSchema)?.type === 'object') {
     return (baseSchema as z.ZodObject).shape;
   }
 
@@ -107,12 +108,12 @@ export function getBaseType(schema: z.ZodTypeAny): string {
 export function getDefaultValueInZodStack(schema: z.ZodTypeAny): unknown {
   const def = getZodDef(schema);
 
-  if (def.typeName === 'ZodDefault') {
-    return def.defaultValue?.();
+  if (def.type === 'default') {
+    return def.defaultValue;
   }
 
-  if (def.typeName === 'ZodEffects') {
-    return getDefaultValueInZodStack(def.schema as z.ZodTypeAny);
+  if (def.type === 'pipe') {
+    return getDefaultValueInZodStack(def.in as z.ZodTypeAny);
   }
 
   if ('innerType' in def) {
@@ -139,7 +140,7 @@ export function getDefaultValues<Schema extends z.ZodObject>(
   for (const key of Object.keys(shape)) {
     const item = shape[key] as z.ZodTypeAny;
 
-    if (getBaseType(item) === 'ZodObject') {
+    if (getBaseType(item) === 'object') {
       const nestedDefaults = getDefaultValues(
         getBaseSchema(item) as unknown as z.ZodObject,
         fieldConfig?.[key] as FieldConfig<Record<string, unknown>> | undefined
@@ -174,9 +175,9 @@ export function getDefaultValues<Schema extends z.ZodObject>(
 export function getObjectFormSchema(schema: ZodObjectOrWrapped): z.ZodObject {
   const def = getZodDef(schema as z.ZodTypeAny);
 
-  // Recursively unwrap ZodEffects
-  if (def.typeName === 'ZodEffects') {
-    return getObjectFormSchema(def.schema as ZodObjectOrWrapped);
+  // Recursively unwrap transforms/coercions represented as Zod 4 pipes
+  if (def.type === 'pipe') {
+    return getObjectFormSchema(def.in as ZodObjectOrWrapped);
   }
 
   return schema as z.ZodObject;
