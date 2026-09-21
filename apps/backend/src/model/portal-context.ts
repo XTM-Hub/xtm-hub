@@ -4,6 +4,7 @@ import type { DeploymentRequestDataLoaders } from '../modules/deployment/deploym
 import type { DocumentDataLoaders } from '../modules/document/document.dataloader';
 import type { NewsFeedDataLoaders } from '../modules/news-feed/news-feed.dataloader';
 import type { ServiceInstanceDataLoaders } from '../modules/service/instance/service-instance.dataloader';
+import type { SubscriptionDataLoaders } from '../modules/subscription/subscription.dataloader';
 import { UserLoadUserBy } from './user';
 
 export type PortalDataLoaders = {
@@ -11,6 +12,7 @@ export type PortalDataLoaders = {
   document: DocumentDataLoaders;
   newsFeed: NewsFeedDataLoaders;
   serviceInstance: ServiceInstanceDataLoaders;
+  subscription: SubscriptionDataLoaders;
 };
 
 export interface PortalContext {
