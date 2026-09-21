@@ -9630,7 +9630,6 @@ __metadata:
     graphql-sse: "catalog:"
     i18n-auto-translation: "npm:2.2.3"
     jsdom: "npm:29.1.1"
-    lucide-react: "npm:1.45.0"
     monocart-reporter: "catalog:"
     msw: "npm:2.15.0"
     next: "npm:16.3.5"
@@ -16151,15 +16150,6 @@ __metadata:
   peerDependencies:
     react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
   checksum: 10/660938dc985d8101d669750d2abbd4516d2260d74f21455f1a79ff977fa5d2a2ba755a29b4b4e773e6fb5e85eb1beba1a1aead2ce19ef6c0c50ae7f075752fa5
-  languageName: node
-  linkType: hard
-
-"lucide-react@npm:1.45.0":
-  version: 1.45.0
-  resolution: "lucide-react@npm:1.45.0"
-  peerDependencies:
-    react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
-  checksum: 10/53b83be8dec74271ee6b9ff8d310ef04e1edcbb717b453e77330f20defc6978cf2763cc3daafac4de058135767b72fc70edd50a9acf7f7e45a0199245a4b7d5d
   languageName: node
   linkType: hard
 
