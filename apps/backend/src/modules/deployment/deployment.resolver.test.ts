@@ -31,8 +31,6 @@ import { DeploymentRequestId } from '../../model/kanel/public/DeploymentRequest'
 import DeploymentRequestQuota from '../../model/kanel/public/DeploymentRequestQuota';
 import { ErrorCode } from '../../utils/error/error.code';
 import { ErrorType } from '../../utils/error/error.type';
-import { RegistrationApp } from '../registration/registration.app';
-import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { DeploymentApp } from './deployment.app';
 import { DeploymentRequestDomain } from './deployment.domain';
 import resolver from './deployment.resolver';
@@ -452,12 +450,16 @@ describe('deployment resolver — unit tests', () => {
       expect(result).toEqual(children);
     });
 
-    it('registered_platform should load the registered platform for the service instance', async () => {
+    it('registered_platform should load the registered platform for the service instance via the batched loader', async () => {
       const registeredPlatform = {
         id: 'si-1',
       } as unknown as RegisteredPlatform;
       const spy = vi
-        .spyOn(RegistrationApp, 'loadRegisteredPlatform')
+        .spyOn(
+          contextRegistererUserSecondOrga.dataLoaders.registration
+            .registeredPlatformByServiceInstanceLoader,
+          'load'
+        )
         .mockResolvedValue(registeredPlatform);
 
       const result = await resolver.DeploymentRequest!.registered_platform!(
@@ -471,15 +473,21 @@ describe('deployment resolver — unit tests', () => {
       expect(result).toEqual(registeredPlatform);
     });
 
-    it('service_instance should load the service instance for the deployment request', async () => {
+    it('service_instance should load the service instance for the deployment request via the batched loader', async () => {
       const serviceInstance = {
         id: 'si-1',
         name: 'Instance',
       } as unknown as Awaited<
-        ReturnType<typeof ServiceInstanceDomain.loadServiceInstanceBy>
+        ReturnType<
+          typeof contextRegistererUserSecondOrga.dataLoaders.serviceInstance.serviceInstanceByIdLoader.load
+        >
       >;
       const spy = vi
-        .spyOn(ServiceInstanceDomain, 'loadServiceInstanceBy')
+        .spyOn(
+          contextRegistererUserSecondOrga.dataLoaders.serviceInstance
+            .serviceInstanceByIdLoader,
+          'load'
+        )
         .mockResolvedValue(serviceInstance);
 
       const result = await resolver.DeploymentRequest!.service_instance!(
@@ -489,7 +497,7 @@ describe('deployment resolver — unit tests', () => {
         GRAPHQL_RESOLVE_INFO
       );
 
-      expect(spy).toHaveBeenCalledWith({ id: 'si-1' });
+      expect(spy).toHaveBeenCalledWith('si-1');
       expect(result).toMatchObject({ id: 'si-1', name: 'Instance' });
     });
   });
