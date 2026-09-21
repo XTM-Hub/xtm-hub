@@ -92,7 +92,7 @@ You do not have to configure anything: clone the repo and your tool picks up its
 
 | | Claude Code | GitHub Copilot |
 | --- | --- | --- |
-| Entry point | `AGENTS.md`, read natively (`CLAUDE.md` is a one-line import of it, for older versions and Bedrock sessions) | [`.github/copilot-instructions.md`](.github/copilot-instructions.md), which `@`-includes `AGENTS.md` |
+| Entry point | `CLAUDE.md`, whose only line is `@AGENTS.md`. With both files present Claude Code reads `CLAUDE.md` and pulls `AGENTS.md` in through that import — so **edit `AGENTS.md`** | [`.github/copilot-instructions.md`](.github/copilot-instructions.md), which `@`-includes `AGENTS.md` too |
 | Per-area rules | [`.claude/rules/*.md`](.claude/rules), loaded only when a file matches their `paths` glob | the same files, `@`-included by `copilot-instructions.md` — all of them, always |
 | Skills | [`.claude/skills/*/SKILL.md`](.claude/skills) | the same directory, which Copilot reads natively |
 | Agents | [`.claude/agents/*.md`](.claude/agents) | [`.github/agents/*.agent.md`](.github/agents) |

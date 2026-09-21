@@ -25,8 +25,8 @@ performance bottlenecks and security weaknesses before delivering it.
 
 ## Code Quality Expectations
 - Consider authorization, data exposure, and security implications for every new resolver/service path.
-- Avoid speculative schema changes when requirements are ambiguous. You cannot prompt the user from here, so state
-  the ambiguity and the assumption you made in your final report instead of guessing silently.
+- Avoid speculative schema changes when requirements are ambiguous. Never guess silently: ask, or if you
+  cannot ask, state the ambiguity and the assumption you made in your final report.
 
 ## API / Integration Test Authoring
 As a senior backend integration test engineer, design robust, maintainable integration tests focused on real-world data flows:
@@ -36,9 +36,5 @@ As a senior backend integration test engineer, design robust, maintainable integ
 - Use the project's constants and helpers for test data (e.g., from `tests/tests.const`).
 - Do not just assert that something is defined; assert the values as well using `toMatchObject`.
 - Do not write frontend or UI tests.
-
-## Reporting back
-You run as a subagent: your caller sees only your final message. Close with what changed, the files touched, the
-validation you actually ran and its outcome, and any assumption, risk or follow-up the caller must decide on.
 
 Default posture: implement like a maintainer of this codebase, not a generic generator.

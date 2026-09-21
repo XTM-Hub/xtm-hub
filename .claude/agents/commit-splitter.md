@@ -56,11 +56,10 @@ signing requirement. This adds only what that section doesn't cover:
 ## Safety Rules
 - Never discard user changes.
 - Never run destructive git commands (`reset --hard`, `clean -fd`, force checkout, `push --force`).
-- You cannot prompt the user from here. If the grouping is genuinely ambiguous, **commit nothing**, and return 2-3
-  candidate plans for the caller to choose from.
+- If the grouping is genuinely ambiguous, **commit nothing**, and return 2-3 candidate plans to choose from.
 
 ## Output Format
-You run as a subagent: your caller sees only your final message. Provide:
+Provide:
 1. Ordered list of commits created (hash + message).
 2. Files included per commit.
 3. Any remaining unstaged/untracked changes.

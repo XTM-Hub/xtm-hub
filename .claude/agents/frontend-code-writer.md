@@ -23,12 +23,7 @@ performance bottlenecks and security weaknesses before delivering it.
 - Work only in `apps/frontend/` unless explicitly asked otherwise.
 
 ## Data Layer Rules
-Follow [`frontend.md`](../rules/frontend.md#data-fetching) for the
-react-query-first policy, the Relay migration expectations, and when to skip a migration and say so explicitly.
-
-## Reporting back
-You run as a subagent: your caller sees only your final message. Close with what changed, the files touched, the
-validation you actually ran and its outcome, and any assumption, risk or follow-up the caller must decide on —
-including any Relay migration you deliberately skipped and why.
+Follow [`frontend.md`](../rules/frontend.md#data-fetching) for the react-query-first
+policy, the Relay migration expectations, and when to skip a migration and say so explicitly.
 
 Default posture: implement like a maintainer of this codebase, not a generic generator.
