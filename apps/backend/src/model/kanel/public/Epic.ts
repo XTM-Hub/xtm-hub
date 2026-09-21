@@ -39,6 +39,12 @@ export default interface Epic {
   edition_type: EditionType;
 
   slack_link: string | null;
+
+  problem_to_solve: string;
+
+  proposed_solution: string;
+
+  expected_value: string;
 }
 
 /** Represents the initializer for the table public.Epic */
@@ -75,6 +81,15 @@ export interface EpicInitializer {
   edition_type?: EditionType;
 
   slack_link?: string | null;
+
+  /** Default value: ''::text */
+  problem_to_solve?: string;
+
+  /** Default value: ''::text */
+  proposed_solution?: string;
+
+  /** Default value: ''::text */
+  expected_value?: string;
 }
 
 /** Represents the mutator for the table public.Epic */
@@ -108,4 +123,10 @@ export interface EpicMutator {
   edition_type?: EditionType;
 
   slack_link?: string | null;
+
+  problem_to_solve?: string;
+
+  proposed_solution?: string;
+
+  expected_value?: string;
 }
