@@ -22,6 +22,11 @@ confirm by reading the referenced file, command, or code. `0` findings for a len
 Bare paths (e.g. `references/stale-reference.md`) resolve from `{skill-root}` — this skill's own directory,
 `.claude/skills/hub-review/`. `{project-root}` resolves to the repository root.
 
+The `<!-- filigran-conventions -->` and `<!-- filigran-model-policy -->` blocks, in
+`.github/copilot-instructions.md` and `CONTRIBUTING.md`, are synced from an org-wide source. Never edit them and
+report nothing inside them, including the commit conventions they restate from `AGENTS.md` — that duplication is
+deliberate and its fix belongs upstream. A genuine problem in there is escalated, never fixed here.
+
 The surface is shared by two tools, so parts of it are deliberately paired. Treat each pair as one unit:
 
 | Pair | How they are kept identical |

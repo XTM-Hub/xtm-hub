@@ -1,59 +1,15 @@
 # XTM Hub — GitHub Copilot Instructions
 
-Copilot-specific entry point. The repository-wide context — what this is, the workspace table, `corepack`/
-`yarn install` setup, local infrastructure, dev servers, the `test:ci` validation commands, the mandatory coding
-rules, and the commit and pull request conventions — lives in [`AGENTS.md`](../AGENTS.md) at the repository root.
-That file is the canonical, cross-tool source so it stays accurate for every tool that reads it, not just Copilot.
-**Read it first.**
+Copilot-specific notes. Everything else — what this is, setup, dev servers, validation commands, the mandatory
+coding rules and the commit conventions — is in [`AGENTS.md`](../AGENTS.md), which Copilot loads alongside this
+file rather than instead of it.
 
-This file adds only what is specific to Copilot, plus the two org-synced blocks at the end.
+Per-area rules arrive on their own: each file in [`.github/instructions/`](instructions/) carries a path glob and
+names the rule it covers in [`.claude/rules/`](../.claude/rules/). **Open the file it names** — the rules are
+there, not in the pointer. Task playbooks are skills in [`.claude/skills/`](../.claude/skills/), which Copilot
+reads natively. Custom agents are in [`.github/agents/`](agents/).
 
-## Path-scoped instructions
-
-Anything scoped to a single area lives in [`.github/instructions/`](instructions/) and is applied automatically by
-its `applyTo` glob.
-
-| Scope | File |
-| --- | --- |
-| `apps/backend/**` | [`backend.instructions.md`](instructions/backend.instructions.md) |
-| `apps/frontend/**` | [`frontend.instructions.md`](instructions/frontend.instructions.md) |
-| `apps/e2e/**` | [`e2e.instructions.md`](instructions/e2e.instructions.md) |
-| Schema, resolvers, Relay operations | [`graphql.instructions.md`](instructions/graphql.instructions.md) |
-| Knex / Elasticsearch migrations, seeds | [`migrations.instructions.md`](instructions/migrations.instructions.md) |
-| `*.test.ts(x)`, `*.utils.ts` | [`testing.instructions.md`](instructions/testing.instructions.md) |
-| Workflows, Docker, Helm | [`ci.instructions.md`](instructions/ci.instructions.md) |
-
-Deeper task guidance lives in [`.claude/skills/`](../.claude/skills/), which Copilot reads natively, and in
-[`.github/agents/`](agents/), the Copilot mirror of [`.claude/agents/`](../.claude/agents/). The two agent
-directories are the one place the same guidance is written twice, because the `tools:` vocabularies differ: change
-one, change the other.
-
-This content drifts as the codebase changes. Use the [`hub-review`](../.claude/skills/hub-review/SKILL.md) skill to audit it
-against the real code — it asks a question (or flags a PR comment) instead of guessing when something doesn't match.
-
-## Review
-
-1. You must use the skill `hub-review`.
-2. Follow the workflow.
-
-## The one data flow to understand
-
-The GraphQL schema is authored in the backend and flows to the frontend: the frontend never edits it. See
-[`graphql.instructions.md`](instructions/graphql.instructions.md) for the full flow, the regeneration commands
-(`generate:ts`, `relay`), and why skipping them is the most common cause of confusing frontend type errors.
-
-## Pitfalls
-
-- **Yarn version mismatch** — always `corepack enable` first.
-- **Missing Relay artifacts** — run `yarn relay` after any GraphQL change or before a frontend build.
-- **Bogus `@public/*.svg` type errors** — `next-env.d.ts` is generated and gitignored. Run
-  `yarn workspace @xtm-hub/frontend next typegen` before `check-ts` on a fresh checkout.
-- **E2E failures** — the frontend (:3002) and backend (:4002) must already be running.
-- **Test database** — backend tests use `test_database`, not `cloud-portal`, when `VITEST_MODE=true`, and Vitest runs
-  with `fileParallelism: false`.
-- **Frontend ports** — 3002 in development, 3000 inside the production container.
-- **TypeScript ESLint version warning** — non-blocking, ignore it.
-- **Three-day dependency age gate** — a brand-new package release will fail to install until it ages out.
+Before changing any instruction, rule, skill or agent file, use the `hub-review` skill.
 
 <!-- filigran-conventions:start -->
 
