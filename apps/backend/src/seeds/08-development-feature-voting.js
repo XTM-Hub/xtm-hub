@@ -33,36 +33,7 @@ export async function seed(knex) {
    * since it is not open to voters.
    */
   const seedRound = async ({ round, votableFeatures, withVotes }) => {
-    const existingRound = await knex('VotingRound')
-      .where('id', round.id)
-      .first();
-
-    if (!existingRound) {
-      if (round.status === 'open') {
-        // The DB enforces at most one open round per service instance via
-        // the partial unique index "VotingRound_single_open_per_service_instance"
-        // (on service_instance_id WHERE status = 'open'). Postgres only
-        // supports a single ON CONFLICT arbiter per insert, so "on conflict
-        // (id) do nothing" cannot also ignore a conflict on that separate
-        // index when a different id already holds the open slot. Check for
-        // it explicitly and skip rather than crash the seed.
-        const conflictingOpenRound = await knex('VotingRound')
-          .where({
-            service_instance_id: round.service_instance_id,
-            status: 'open',
-          })
-          .first();
-
-        if (conflictingOpenRound) {
-          console.warn(
-            `Skipping voting round "${round.name}" (${round.id}): round "${conflictingOpenRound.name}" (${conflictingOpenRound.id}) is already open for service instance ${round.service_instance_id}.`
-          );
-          return;
-        }
-      }
-
-      await knex('VotingRound').insert([round]).onConflict('id').ignore();
-    }
+    await knex('VotingRound').insert([round]).onConflict('id').ignore();
 
     await knex('VotableFeature')
       .insert(
