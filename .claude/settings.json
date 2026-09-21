@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(corepack enable)",
+      "Bash(yarn install --immutable)",
+      "Bash(yarn workspace @xtm-hub/backend check-ts)",
+      "Bash(yarn workspace @xtm-hub/backend lint)",
+      "Bash(yarn workspace @xtm-hub/backend lint:fix)",
+      "Bash(yarn workspace @xtm-hub/backend format:check)",
+      "Bash(yarn workspace @xtm-hub/backend generate:ts)",
+      "Bash(yarn workspace @xtm-hub/backend test:*)",
+      "Bash(yarn workspace @xtm-hub/frontend check-ts)",
+      "Bash(yarn workspace @xtm-hub/frontend lint)",
+      "Bash(yarn workspace @xtm-hub/frontend format:check)",
+      "Bash(yarn workspace @xtm-hub/frontend i18n:check)",
+      "Bash(yarn workspace @xtm-hub/frontend relay)",
+      "Bash(yarn workspace @xtm-hub/frontend codegen)",
+      "Bash(yarn workspace @xtm-hub/frontend next typegen)",
+      "Bash(yarn workspace @xtm-hub/frontend test:*)",
+      "Bash(yarn workspace @xtm-hub/test_e2e lint)",
+      "Bash(yarn workspace @xtm-hub/test_e2e lint:fix)",
+      "Bash(yarn workspace @xtm-hub/test_e2e format:check)",
+      "Bash(yarn lint-staged --config .lintstagedrc.cjs)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git blame:*)",
+      "Bash(git branch:*)",
+      "Bash(git ls-files:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh issue view:*)"
+    ],
+    "deny": [
+      "Read(./apps/backend/config/local.json)",
+      "Edit(./apps/backend/src/__generated__/**)",
+      "Edit(./apps/backend/src/model/kanel/**)",
+      "Edit(./apps/frontend/__generated__/**)",
+      "Edit(./apps/frontend/schema.graphql)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git clean -fd:*)"
+    ]
+  }
+}
