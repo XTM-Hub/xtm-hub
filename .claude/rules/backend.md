@@ -1,5 +1,4 @@
 ---
-applyTo: 'apps/backend/**'
 paths:
   - "apps/backend/**"
 ---

@@ -1,5 +1,4 @@
 ---
-applyTo: 'apps/e2e/**'
 paths:
   - "apps/e2e/**"
 ---

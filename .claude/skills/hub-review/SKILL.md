@@ -27,7 +27,7 @@ The surface is shared by two tools, so parts of it are deliberately paired. Trea
 | Pair | How they are kept identical |
 | --- | --- |
 | `AGENTS.md` / `CLAUDE.md` | `CLAUDE.md` is the single line `@AGENTS.md` — nothing to compare |
-| `.claude/rules/*.md` / `.github/instructions/*.instructions.md` | the rule is the real file; the `.github` path is a symlink to it. It carries both an `applyTo` and a `paths` glob — one file, two readers |
+| `.claude/rules/*.md` / `.github/instructions/*.instructions.md` | the rule holds the content and a `paths` glob; the `.github` file is a five-line pointer holding the matching `applyTo` glob. Same globs, no duplicated content |
 | `.claude/agents/*.md` / `.github/agents/*.agent.md` | **real duplication** — the `tools:` vocabularies differ, so the two files coexist. Their `name`, `description` and behavioural rules must match; only the frontmatter `tools:` and the tool-specific phrasing may differ. A rule added to one and not the other is a duplication-lens finding. |
 
 ## Inputs
@@ -38,8 +38,7 @@ The surface is shared by two tools, so parts of it are deliberately paired. Trea
   - **Named file(s)** — whatever the caller pointed at.
   - **Full audit** (default when nothing else is specified) — every file under `.claude/rules/`,
     `.claude/skills/`, `.claude/agents/`, `.github/agents/`, plus `.github/copilot-instructions.md`
-    and `AGENTS.md`. Read them at those paths; reaching the same files through the `.github/instructions/`
-    symlinks would review each one twice.
+    `.github/instructions/` and `AGENTS.md`.
 - **lenses** (optional) — one or more lens names. Default: all four lenses below.
 
 ## Lenses

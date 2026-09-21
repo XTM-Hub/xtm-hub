@@ -1,5 +1,4 @@
 ---
-applyTo: 'apps/backend/**/*.graphql,apps/backend/**/*.resolver.ts,apps/frontend/**/*.graphql.ts,apps/frontend/graphql/**,apps/frontend/schema.graphql'
 paths:
   - "apps/backend/**/*.graphql"
   - "apps/backend/**/*.resolver.ts"
