@@ -6,7 +6,10 @@ import { requestContext } from '../context/request.context';
 import { OrganizationId } from '../model/kanel/public/Organization';
 import { UserLoadUserBy } from '../model/user';
 import { ForbiddenErrorCode } from '../utils/error/error.code';
-import { ForbiddenAccess } from '../utils/error/error.util';
+import {
+  ForbiddenAccess,
+  UnauthenticatedAccess,
+} from '../utils/error/error.util';
 import {
   hasServiceCapability,
   ServiceCapabilityArgs,
@@ -24,18 +27,40 @@ type MethodDecorator<This, Args extends unknown[], Return> = (
 ) => AsyncMethod<This, Args, Return>;
 
 /**
+ * `requestContext.requireUser()` throws a bare (non-Error) sentinel for both
+ * "no request context at all" and "context present but no user" — neither of
+ * which maps to a CustomApolloError, so it falls through to a generic 500
+ * for REST callers (and an unmapped error for GraphQL) instead of a proper
+ * 401. This wrapper is what the guard decorators use instead: it always
+ * throws a real `UnauthenticatedAccess` for a missing user, exactly like the
+ * GraphQL `@auth` directive's own `isAuthenticated` check does.
+ */
+const requireAuthenticatedUser = (): UserLoadUserBy => {
+  const user = requestContext.get()?.user;
+  if (!user) {
+    throw UnauthenticatedAccess('Not authorized: You are not authenticated');
+  }
+  return user;
+};
+
+/**
  * Declares the portal capabilities required to call this App-layer method,
  * enforced identically for every caller (GraphQL resolver or REST endpoint).
- * Mirrors the GraphQL `@auth(portalCapa: [...])` schema directive, which
- * stays in the schema purely for self-documentation/introspection — this
- * decorator is the single place that actually runs the check.
+ * Mirrors the GraphQL `@auth`/`@system_token` schema directives, which are
+ * NOT disabled by this decorator — the existing `authDirectiveTransformer`
+ * still actively enforces them on any field that declares one (this is
+ * unavoidable for `@system_token`, since it also populates the synthetic
+ * system-token user this decorator's `requireAuthenticatedUser()` reads).
+ * For a field carrying both, the two checks currently run independently and
+ * can drift; treat the decorator as the source of truth for non-GraphQL
+ * callers, not yet as a replacement for the schema-level check.
  */
 export function RequiresPortalCapability<This, Args extends unknown[], Return>(
   capabilities: PortalCapability[]
 ): MethodDecorator<This, Args, Return> {
   return (target) => {
     return async function guarded(this: This, ...args: Args): Promise<Return> {
-      const user = requestContext.requireUser();
+      const user = requireAuthenticatedUser();
       await securityGuard.assertUserPortalCapabilities(user, capabilities);
       return target.call(this, ...args);
     };
@@ -52,7 +77,7 @@ export function RequiresOrgMembership<This, Args extends unknown[], Return>(
 ): MethodDecorator<This, Args, Return> {
   return (target) => {
     return async function guarded(this: This, ...args: Args): Promise<Return> {
-      const user = requestContext.requireUser();
+      const user = requireAuthenticatedUser();
       await securityGuard.assertUserIsInOrganization(
         user,
         getOrganizationId(...args)
@@ -73,7 +98,7 @@ export function RequiresServiceCapability<This, Args extends unknown[], Return>(
 ): MethodDecorator<This, Args, Return> {
   return (target) => {
     return async function guarded(this: This, ...args: Args): Promise<Return> {
-      const user = requestContext.requireUser();
+      const user = requireAuthenticatedUser();
       const isAllowed = await hasServiceCapability(
         user,
         getServiceArgs(...args),
@@ -107,7 +132,7 @@ export function RequiresRule<This, Args extends unknown[], Return>(
 ): MethodDecorator<This, Args, Return> {
   return (target) => {
     return async function guarded(this: This, ...args: Args): Promise<Return> {
-      const user = requestContext.requireUser();
+      const user = requireAuthenticatedUser();
       if (!(await rule(user, ...args))) {
         throw ForbiddenAccess(errorCode);
       }
