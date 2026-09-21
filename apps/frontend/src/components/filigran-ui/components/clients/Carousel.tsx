@@ -203,6 +203,8 @@ const Carousel = forwardRef<
                       <CarouselDotButton
                         key={actualIndex}
                         onClick={() => onDotButtonClick(actualIndex)}
+                        aria-label={`Go to slide ${actualIndex + 1}`}
+                        aria-current={actualIndex === selectedIndex}
                         className={cn(
                           actualIndex === selectedIndex && 'bg-primary',
                           dotButton === 'hover' &&
@@ -232,6 +234,8 @@ const Carousel = forwardRef<
                       <CarouselDotButton
                         key={actualIndex}
                         onClick={() => onDotButtonClick(actualIndex)}
+                        aria-label={`Go to slide ${actualIndex + 1}`}
+                        aria-current={actualIndex === selectedIndex}
                         className={cn(
                           actualIndex === selectedIndex && 'bg-primary',
                           dotButton === 'hover' &&
