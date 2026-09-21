@@ -15,15 +15,15 @@ still good advice — that is the code-usage-mismatch lens's job.
   `package.json` or any workspace's `package.json`.
 - A path reference is valid if it resolves either exactly as written from the repo root, or under `apps/backend/`,
   `apps/frontend/`, or `apps/e2e/` — instructions files write paths relative to the app they document (e.g.
-  `backend.instructions.md` saying `src/config.ts` means `apps/backend/src/config.ts`).
-- An `applyTo` glob (in a `.github/instructions/*.md` frontmatter) is valid if it matches at least one real file in
+  `.claude/rules/backend.md` saying `src/config.ts` means `apps/backend/src/config.ts`).
+- An `applyTo` or `paths` glob (in a `.claude/rules/*.md` frontmatter) is valid if it matches at least one real file in
   the repo.
-- Every `.github/instructions/*.instructions.md` file must carry **both** an `applyTo` string (Copilot) and a
-  `paths` list (Claude Code) covering the same globs. One without the other silently cuts that tool off from the
-  rule. Check the two agree, pattern for pattern.
-- The repository's committed symlinks are `.github/skills` → `../.claude/skills` and one
-  `.claude/rules/<area>.md` per instruction file. Verify each resolves (`ls -l`, `readlink`) and that no
-  instruction file lacks its rule symlink; a broken or missing one fails silently.
+- Every `.claude/rules/*.md` file must carry **both** an `applyTo` string (Copilot) and a `paths` list (Claude
+  Code) covering the same globs. One without the other silently cuts that tool off from the rule. Check the two
+  agree, pattern for pattern.
+- Every rule must also have its `.github/instructions/<area>.instructions.md` symlink, or Copilot never sees it.
+  With `.github/skills` → `../.claude/skills`, those are the repository's committed symlinks: verify each
+  resolves (`ls -l`, `readlink`). A broken or missing one fails silently.
 - A version literal (Node, Yarn, a package version) is stale if it contradicts `.nvmrc`, the `packageManager` field
   in the root `package.json`, or the `catalog` block in `.yarnrc.yml` — check those files, don't assume from memory.
 

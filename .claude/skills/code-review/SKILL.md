@@ -30,7 +30,7 @@ whether as a dedicated review pass or as a check before finishing a change.
 - Apply `.claude/skills/performance-security-review/SKILL.md` for performance bottlenecks, security vulnerabilities,
   and likely future failure scenarios — including its devil's-advocate stance, output format, and prioritization
   policy.
-- Check the diff against the path-scoped `.github/instructions/*.md` files and any custom agent that would
+- Check the diff against the path-scoped `.claude/rules/*.md` files and any custom agent that would
   normally write this kind of file (`.claude/agents/*.md` for Claude Code, `.github/agents/*.agent.md` for
   Copilot — the two are mirrors and must say the same thing). If the code contradicts a documented
   convention (or the diff reveals the doc is stale), don't just critique the code — use the `hub-review` skill to

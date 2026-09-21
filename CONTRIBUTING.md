@@ -93,21 +93,24 @@ You do not have to configure anything: clone the repo and your tool picks up its
 | | Claude Code | GitHub Copilot |
 | --- | --- | --- |
 | Entry point | `AGENTS.md`, read natively (`CLAUDE.md` is a one-line import of it, for older versions and Bedrock sessions) | `AGENTS.md` + [`.github/copilot-instructions.md`](.github/copilot-instructions.md) |
-| Per-area rules | [`.claude/rules/*.md`](.claude/rules) — symlinks to the instruction files, loaded when a file matches their `paths` glob | the same files under [`.github/instructions/`](.github/instructions), loaded by their `applyTo` glob |
+| Per-area rules | [`.claude/rules/*.md`](.claude/rules), loaded when a file matches their `paths` glob | the same files, reached through the `.github/instructions/*.instructions.md` symlinks and loaded by their `applyTo` glob |
 | Skills | [`.claude/skills/*/SKILL.md`](.claude/skills) | `.github/skills` (symlink to `.claude/skills`) |
 | Agents | [`.claude/agents/*.md`](.claude/agents) | [`.github/agents/*.agent.md`](.github/agents) |
 | Shared settings | `.claude/settings.json` | — |
 
-Each `.github/instructions/*.instructions.md` carries **two** globs in its frontmatter — `applyTo` for Copilot and
-`paths` for Claude Code — over the same patterns. One file, one rule, two readers. Keep them in step.
+Each `.claude/rules/*.md` carries **two** globs in its frontmatter — `paths` for Claude Code and `applyTo` for
+Copilot — over the same patterns. One file, one rule, two readers. Keep them in step. Copilot requires its
+path-specific instructions to sit under `.github/instructions/` with an `.instructions.md` name, so that
+directory holds a symlink per rule and nothing else.
 
 ### Where to make a change
 
 - **A rule that is true in every session** (a command, a mandatory convention, repository etiquette) → `AGENTS.md`.
   Keep it short: it is loaded into every conversation, and a bloated entry point makes agents ignore the rules that
   matter.
-- **A rule for one area of the codebase** → the matching `.github/instructions/*.instructions.md`, updating both
-  globs if the scope changes. Never copy its content into `AGENTS.md`.
+- **A rule for one area of the codebase** → the matching `.claude/rules/*.md`, updating both globs if the scope
+  changes. Never copy its content into `AGENTS.md`. A brand-new rule also needs its symlink under
+  `.github/instructions/`, or Copilot will not see it.
 - **A task playbook** (how to write a migration, how to review) → a skill under `.claude/skills/`.
 - **Agent behaviour** → **both** `.claude/agents/<name>.md` and `.github/agents/<name>.agent.md`. This is the only
   deliberate duplication in the setup: the two tools name their tools differently, so the files cannot be shared.
@@ -115,9 +118,11 @@ Each `.github/instructions/*.instructions.md` carries **two** globs in its front
 
 ### Symlinks
 
-`.github/skills` and every file in `.claude/rules/` are committed symlinks. Git preserves them on macOS and Linux.
-On Windows, clone with symlink support enabled (`git clone -c core.symlinks=true`, with Developer Mode on) or they
-arrive as plain text files containing a path.
+Everything real lives under `.claude/`. `.github/skills` and the seven `.github/instructions/*.instructions.md`
+files are committed symlinks pointing into it, there purely so Copilot keeps working; the day Copilot goes, they
+are deleted and nothing moves. Git preserves symlinks on macOS and Linux. On Windows, clone with symlink support
+enabled (`git clone -c core.symlinks=true`, with Developer Mode on) or they arrive as plain text files containing
+a path.
 
 ### Local settings
 

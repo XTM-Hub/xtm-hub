@@ -2,7 +2,7 @@
 name: hub-review
 description: >-
   Reviews the XTM Hub AI-instruction surface — `AGENTS.md`,
-  `.github/copilot-instructions.md`, `.github/instructions/*.md`, `.claude/skills/*/SKILL.md`,
+  `.github/copilot-instructions.md`, `.claude/rules/*.md`, `.claude/skills/*/SKILL.md`,
   `.claude/agents/*.md` and `.github/agents/*.agent.md` —
   for drift against the real codebase and against each other. Use when asked to review AI instructions, docs, agents,
   or skills; when reviewing a PR/diff that touches any of those paths; or when directed here as
@@ -28,7 +28,7 @@ The surface is shared by two tools, so parts of it are deliberately paired. Trea
 | --- | --- |
 | `AGENTS.md` / `CLAUDE.md` | `CLAUDE.md` is the single line `@AGENTS.md` — nothing to compare |
 | `.claude/skills/` / `.github/skills/` | `.github/skills` is a symlink — one directory, nothing to compare |
-| `.claude/rules/*.md` / `.github/instructions/*.instructions.md` | each rule is a symlink to its instruction file, which carries both an `applyTo` and a `paths` glob — one file, two readers |
+| `.claude/rules/*.md` / `.github/instructions/*.instructions.md` | the rule is the real file; the `.github` path is a symlink to it. It carries both an `applyTo` and a `paths` glob — one file, two readers |
 | `.claude/agents/*.md` / `.github/agents/*.agent.md` | **real duplication** — the `tools:` vocabularies differ, so the two files coexist. Their `name`, `description` and behavioural rules must match; only the frontmatter `tools:` and the tool-specific phrasing may differ. A rule added to one and not the other is a duplication-lens finding. |
 
 ## Inputs
@@ -37,10 +37,10 @@ The surface is shared by two tools, so parts of it are deliberately paired. Trea
   - **PR / diff** — only the instruction-surface files the diff touches, plus anything they reference that the diff
     did not update (a changed convention with a stale cross-reference elsewhere).
   - **Named file(s)** — whatever the caller pointed at.
-  - **Full audit** (default when nothing else is specified) — every file under `.github/instructions/`,
-    `.github/agents/`, `.claude/agents/`, `.claude/skills/`, plus `.github/copilot-instructions.md`,
-    and `AGENTS.md`. Read `.claude/skills/` and `.github/instructions/` by their real paths; reaching them
-    through the `.github/skills` or `.claude/rules/` symlinks would review the same file twice.
+  - **Full audit** (default when nothing else is specified) — every file under `.claude/rules/`,
+    `.claude/skills/`, `.claude/agents/`, `.github/agents/`, plus `.github/copilot-instructions.md`
+    and `AGENTS.md`. Read them at those paths; reaching the same files through the `.github/instructions/`
+    or `.github/skills` symlinks would review each one twice.
 - **lenses** (optional) — one or more lens names. Default: all four lenses below.
 
 ## Lenses

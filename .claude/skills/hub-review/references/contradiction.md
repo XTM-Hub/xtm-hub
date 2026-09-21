@@ -6,7 +6,7 @@ situation — guidance that cannot both be followed at once.
 ## Evidence rules
 
 - "Authoritative source" means `AGENTS.md`, `.github/copilot-instructions.md`,
-  `.github/instructions/*.md`, `.claude/agents/*.md`, `.github/agents/*.agent.md`, or
+  `.claude/rules/*.md`, `.claude/agents/*.md`, `.github/agents/*.agent.md`, or
   `.claude/skills/*/SKILL.md`.
 - Quote both sides verbatim before calling something a contradiction; a difference in emphasis, scope, or level of
   detail is not automatically a conflict.
@@ -22,9 +22,9 @@ situation — guidance that cannot both be followed at once.
 ## Review sequence
 
 1. For each rule or convention stated in the in-scope content, search the rest of the instruction surface for the
-   same topic — grep for the relevant keywords, file paths, or tool names across `.github/instructions/`,
+   same topic — grep for the relevant keywords, file paths, or tool names across `.claude/rules/`,
    `.claude/agents/`, `.github/agents/`, and `.claude/skills/`, plus `AGENTS.md`.
-   Grep the real paths, not the `.github/skills` or `.claude/rules/` symlinks, or every hit shows up twice and the
+   Grep the real paths, not the `.github/skills` or `.github/instructions/` symlinks, or every hit shows up twice and the
    same file looks like it contradicts itself.
 2. Compare the wording. If both statements can be true simultaneously (one is a valid special case of the other,
    or they apply to disjoint situations), it is not a finding.
