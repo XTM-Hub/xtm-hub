@@ -115,13 +115,14 @@ const OneClickDeploy = ({
 
   const openEeSheet = useCallback(() => {
     if (isProduction() && typeof window.gtag === 'function') {
-      window.gtag('event', 'ee_badge_playbooks', {
+      window.gtag('event', 'ee_badge_click', {
         resource_id: documentData.id,
         resource_title: documentData.name ?? '',
+        resource_type: documentData.type,
       });
     }
     setIsEeSheetOpen(true);
-  }, [documentData.id, documentData.name]);
+  }, [documentData.id, documentData.name, documentData.type]);
 
   const alertContent = useMemo(() => {
     if (platforms.length === 1) {
