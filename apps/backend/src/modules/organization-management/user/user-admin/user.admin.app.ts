@@ -30,6 +30,7 @@ import { OrganizationDomain } from '../../organization/organization.domain';
 import { UserDomain } from '../user-domain/user.domain';
 import { UserOrganizationDomain } from '../user-organization/user-organization.domain';
 import { UserOrganizationPendingDomain } from '../user-pending/user-organization-pending.domain';
+import { UserProvisioningApp } from '../user-provisioning/user-provisioning.app';
 import { UserHelper } from '../user.helper';
 import { UserAdminGuard } from './user.admin.guard';
 
@@ -46,70 +47,29 @@ const isForeignKeyViolation = (error: unknown): boolean =>
 export const UserAdminApp = {
   addUser: async (input: AdminAddUserInput): Promise<UserLoadUserBy> => {
     const contextUser = requestContext.requireUser();
-    const [organizationFromEmail] =
-      await OrganizationDomain.loadOrganizationsFromEmail(input.email);
     // In most of the case there will be only one organization in the list, but in case where the scenario is an admin pltfm it can be multiple or none
     const chosenOrganizationId: OrganizationId | undefined = input
       .organization_capabilities?.[0]
       ? input.organization_capabilities?.[0].organization_id
       : undefined;
 
-    // The admin orga should only allow to add users in the same organization and with the same domain.
-    // Only the admin PLTFM can by pass this check
-    const isEmailOutsideOrganization =
-      chosenOrganizationId !== organizationFromEmail?.id;
-
-    if (isEmailOutsideOrganization && !isUserAdminPlatform(contextUser)) {
-      logApp.warn(
-        'You cannot add a user whose email domain is outside your organization'
-      );
-      throw new Error(ErrorCode.EmailOutsideOrganizationError);
-    }
-
-    const [existingUser] = await UserDomain.loadUser({ email: input.email });
-
-    const organizationsWithRemovedPending: OrganizationId[] = [];
-
-    const finalUser = await withTransaction(async () => {
-      const user = existingUser
-        ? existingUser
-        : await UserHelper.createUserWithPersonalSpace({
-            email: input.email,
-            password: input.password,
-            first_name: input.first_name,
-            last_name: input.last_name,
-            selected_organization_id: chosenOrganizationId,
-          });
-
-      await UserOrganizationDomain.updateMultipleUserOrgWithCapabilities(
-        user.id,
-        input.organization_capabilities
-      );
-
-      for (const orgCapa of input.organization_capabilities ?? []) {
-        if (await UserHelper.removePending(user, orgCapa.organization_id)) {
-          organizationsWithRemovedPending.push(orgCapa.organization_id);
-        }
-      }
-
-      return await UserDomain.loadUserBy({
-        'User.id': user.id,
-      });
-    });
-
-    if (!finalUser) {
-      throw new Error(ErrorCode.UserNotFound);
-    }
-
-    await Promise.all(
-      organizationsWithRemovedPending.map((organizationId) =>
-        UserHelper.dispatchPendingDeleted(finalUser, organizationId)
-      )
+    await securityGuard.assertEmailMatchesOrganization(
+      contextUser,
+      input.email,
+      chosenOrganizationId
     );
 
-    await dispatch('User', 'add', finalUser);
-
-    return finalUser;
+    return UserProvisioningApp.provisionUserForOrganizations({
+      userData: {
+        email: input.email,
+        password: input.password,
+        first_name: input.first_name,
+        last_name: input.last_name,
+        selected_organization_id: chosenOrganizationId,
+      },
+      orgCapabilities: input.organization_capabilities ?? [],
+      mode: 'replace',
+    });
   },
   editUser: async ({
     userId,

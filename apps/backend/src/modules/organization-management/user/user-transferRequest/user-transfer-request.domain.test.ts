@@ -1,28 +1,28 @@
 import { v4 as uuidv4 } from 'uuid';
 import { describe, expect, it } from 'vitest';
-import { UserHelper } from '../user.helper';
+import { UserProvisioningDomain } from '../user-provisioning/user-provisioning.domain';
 import { UserTransferRequestDomain } from './user-transfer-request.domain';
 
 describe('userTransferRequestDomain', () => {
   describe('countTransferRequestsForUser', () => {
     it('should count transfer requests involving the user in either direction, ignoring unrelated ones', async () => {
-      const user = await UserHelper.createUserWithPersonalSpace(
+      const user = await UserProvisioningDomain.createUser(
         { email: `count-transfer-requests-${uuidv4()}@filigran.io` },
         { sendWelcomeEmail: false }
       );
-      const counterpartA = await UserHelper.createUserWithPersonalSpace(
+      const counterpartA = await UserProvisioningDomain.createUser(
         { email: `count-transfer-requests-${uuidv4()}@filigran.io` },
         { sendWelcomeEmail: false }
       );
-      const counterpartB = await UserHelper.createUserWithPersonalSpace(
+      const counterpartB = await UserProvisioningDomain.createUser(
         { email: `count-transfer-requests-${uuidv4()}@filigran.io` },
         { sendWelcomeEmail: false }
       );
-      const unrelatedA = await UserHelper.createUserWithPersonalSpace(
+      const unrelatedA = await UserProvisioningDomain.createUser(
         { email: `count-transfer-requests-${uuidv4()}@filigran.io` },
         { sendWelcomeEmail: false }
       );
-      const unrelatedB = await UserHelper.createUserWithPersonalSpace(
+      const unrelatedB = await UserProvisioningDomain.createUser(
         { email: `count-transfer-requests-${uuidv4()}@filigran.io` },
         { sendWelcomeEmail: false }
       );
