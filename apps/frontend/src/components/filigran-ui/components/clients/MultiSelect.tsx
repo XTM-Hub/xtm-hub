@@ -200,16 +200,26 @@ const MultiSelectFormField = React.forwardRef<
       (values: string[]) =>
         values.map((value) => {
           const option = options.find((opt) => String(opt[keyValue]) === value);
+          const optionLabel = option ? String(option[keyLabel]) : value;
           return (
             <Badge key={value}>
-              {option ? String(option[keyLabel]) : value}
+              {optionLabel}
               <span
+                role="button"
+                tabIndex={0}
                 className="ml-s flex items-center justify-center"
                 onClick={(event) => {
                   event.stopPropagation();
                   toggleOption(value);
                 }}
-                aria-label={`Remove ${option ? String(option[keyLabel]) : value}`}>
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    toggleOption(value);
+                  }
+                }}
+                aria-label={`Remove ${optionLabel}`}>
                 <CloseIcon className="h-3 w-3 cursor-pointer" />
               </span>
             </Badge>
