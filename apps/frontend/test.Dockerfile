@@ -1,5 +1,5 @@
 ARG APP_VERSION=0.0.0-dev
-FROM node:24.20.0-alpine3.24 AS base
+FROM node:24.21.0-alpine3.24 AS base
 
 # Install dependencies only when needed
 FROM base AS deps
