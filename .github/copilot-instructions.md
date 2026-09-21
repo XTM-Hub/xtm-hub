@@ -1,7 +1,17 @@
-# XTM Hub — Coding Agent Instructions
+# XTM Hub — GitHub Copilot Instructions
 
-Shared, repository-wide context. Anything scoped to a single area lives in
-[`.github/instructions/`](instructions/) and is applied automatically by path.
+Copilot-specific entry point. The repository-wide context — what this is, the workspace table, `corepack`/
+`yarn install` setup, local infrastructure, dev servers, the `test:ci` validation commands, the mandatory coding
+rules, the GraphQL data flow and the common pitfalls — lives in [`AGENTS.md`](../AGENTS.md), a symlink to
+[`CLAUDE.md`](../CLAUDE.md) at the repository root. That file is the canonical, cross-tool source so it stays
+accurate for every tool that reads it, not just Copilot. **Read it first.**
+
+This file adds only what is specific to Copilot, plus the two org-synced blocks at the end.
+
+## Path-scoped instructions
+
+Anything scoped to a single area lives in [`.github/instructions/`](instructions/) and is applied automatically by
+its `applyTo` glob.
 
 | Scope | File |
 | --- | --- |
@@ -13,8 +23,11 @@ Shared, repository-wide context. Anything scoped to a single area lives in
 | `*.test.ts(x)`, `*.utils.ts` | [`testing.instructions.md`](instructions/testing.instructions.md) |
 | Workflows, Docker, Helm | [`ci.instructions.md`](instructions/ci.instructions.md) |
 
-Deeper task guidance lives in [`.github/skills/`](skills/) and
-[`.github/agents/`](agents/).
+Deeper task guidance lives in [`.github/skills/`](skills/) — a symlink to
+[`.claude/skills/`](../.claude/skills/), where the files actually live, kept so Copilot keeps discovering them — and
+in [`.github/agents/`](agents/), the Copilot mirror of [`.claude/agents/`](../.claude/agents/). The two agent
+directories are the one place the same guidance is written twice, because the `tools:` vocabularies differ: change
+one, change the other.
 
 This content drifts as the codebase changes. Use the [`hub-review`](skills/hub-review/SKILL.md) skill to audit it
 against the real code — it asks a question (or flags a PR comment) instead of guessing when something doesn't match.
@@ -23,38 +36,6 @@ against the real code — it asks a question (or flags a PR comment) instead of 
 
 1. You must use the skill `hub-review`.
 2. Follow the workflow.
-
-## Critical rules
-
-See [`AGENTS.md`](../AGENTS.md#critical-rules) for the repo's mandatory coding rules (console.log, generated output,
-versions, UI library, GraphQL regeneration) — that file is the canonical, cross-tool source. It defers in turn to
-[`.github/skills/coding-conventions/SKILL.md`](skills/coding-conventions/SKILL.md) for the baseline (no `console.log`,
-`_`-prefix unused variables, strict typing, no `as never`/unjustified casts).
-
-## What this is, setup, and validation
-
-See [`AGENTS.md`](../AGENTS.md) for the stack overview, workspace table, `corepack`/`yarn install` setup, local
-infrastructure (`docker compose`), dev servers, the pre-commit hook, and the `test:ci` validation commands — that
-file is the canonical source so it stays accurate for every tool that reads it, not just Copilot.
-
-## The one data flow to understand
-
-The GraphQL schema is authored in the backend and flows to the frontend: the frontend never edits it. See
-[`graphql.instructions.md`](instructions/graphql.instructions.md) for the full flow, the regeneration commands
-(`generate:ts`, `relay`), and why skipping them is the most common cause of confusing frontend type errors.
-
-## Pitfalls
-
-- **Yarn version mismatch** — always `corepack enable` first.
-- **Missing Relay artifacts** — run `yarn relay` after any GraphQL change or before a frontend build.
-- **Bogus `@public/*.svg` type errors** — `next-env.d.ts` is generated and gitignored. Run
-  `yarn workspace @xtm-hub/frontend next typegen` before `check-ts` on a fresh checkout.
-- **E2E failures** — the frontend (:3002) and backend (:4002) must already be running.
-- **Test database** — backend tests use `test_database`, not `cloud-portal`, when `VITEST_MODE=true`, and Vitest runs
-  with `fileParallelism: false`.
-- **Frontend ports** — 3002 in development, 3000 inside the production container.
-- **TypeScript ESLint version warning** — non-blocking, ignore it.
-- **Three-day dependency age gate** — a brand-new package release will fail to install until it ages out.
 
 <!-- filigran-conventions:start -->
 
