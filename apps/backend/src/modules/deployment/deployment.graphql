@@ -179,7 +179,6 @@ input CreateDeploymentRequestInput {
   products: [PlatformIdentifier!]!
   use_cases_by_product: [ProductUseCaseInput!]
   region: DeploymentRequestPlatformRegion!
-  type: DeploymentRequestDeploymentType!
   job_title: DeploymentRequestJobTitle
   activity_sector: DeploymentRequestActivitySector
   source: DeploymentRequestSource!
@@ -242,7 +241,6 @@ type DeploymentAvailability {
   region: DeploymentRequestPlatformRegion!
   availableCount: Int!
   capacity: Int!
-  platform_identifier: PlatformIdentifier
 }
 
 type XtmoneIntegrationStatusEntry {
@@ -256,17 +254,6 @@ type XtmoneIntegrationStatus {
   openaev: XtmoneIntegrationStatusEntry!
   linked: Boolean!
   last_checked_at: String
-}
-
-type DeployedPlatform {
-  serviceInstanceId: ServiceInstanceId!
-  platformIdentifier: PlatformIdentifier!
-}
-
-type TrialsDeployments {
-  availableTrials: [PlatformIdentifier!]!
-  deployed: [DeployedPlatform!]!
-  isBlacklisted: Boolean!
 }
 
 type PlatformTrialStatus {
@@ -301,14 +288,8 @@ input ReorderDeploymentRequestInQueueInput {
 }
 
 input UpdateDeploymentQuotaCapacityInput {
-  platformIdentifier: PlatformIdentifier
   region: DeploymentRequestPlatformRegion!
   newCapacity: Int!
-}
-
-input TrialDeploymentsInput {
-  organizationId: OrganizationId!
-  platformIdentifiers: [PlatformIdentifier!]
 }
 
 extend type Query {
@@ -318,9 +299,7 @@ extend type Query {
     filters: [DeploymentRequestFilter!]
   ): PlatformDeploymentRequestConnection!
     @system_token(portalCapa: [MANAGE_DEPLOYMENT])
-  deploymentRequestsAvailable(
-    platformIdentifier: PlatformIdentifier
-  ): [DeploymentAvailability!]!
+  deploymentRequestsAvailable: [DeploymentAvailability!]!
     @auth(
       portalCapa: [BYPASS, READ_TRIALS]
       orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_PLATFORM_REGISTRATION]
@@ -333,7 +312,6 @@ extend type Query {
     orderMode: OrderingMode!
     searchTerm: String
   ): DeploymentRequestConnection! @auth(portalCapa: [BYPASS, READ_TRIALS])
-  trialDeployments(input: TrialDeploymentsInput!): TrialsDeployments! @auth
   platformTrialStatus(organizationId: OrganizationId!): PlatformTrialStatus!
     @auth
   xtmPlatformBundle: DeploymentRequest @auth

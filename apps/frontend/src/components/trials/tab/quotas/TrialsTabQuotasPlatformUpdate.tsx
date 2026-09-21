@@ -1,5 +1,5 @@
 import { TrialsTabQuotasPlatformUpdateForm } from '@/components/trials/tab/quotas/TrialsTabQuotasPlatformUpdateForm';
-import { TrialsScope, trialsRegionKey } from '@/components/trials/trials.const';
+import { trialsRegionKey } from '@/components/trials/trials.const';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { TrialsQuotaFragment } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
@@ -7,7 +7,6 @@ import { ReactNode, useState } from 'react';
 
 interface TrialsTabQuotasPlatformUpdateProps {
   quota: TrialsQuotaFragment;
-  scope: TrialsScope;
   trigger?: ReactNode;
   onCloseSheet?: () => void;
   defaultStateOpen?: boolean;
@@ -18,7 +17,6 @@ export const TrialsTabQuotasPlatformUpdate = ({
   onCloseSheet,
   defaultStateOpen,
   quota,
-  scope,
 }: TrialsTabQuotasPlatformUpdateProps) => {
   const t = useTranslations();
   const [openSheet, setOpenSheet] = useState(defaultStateOpen ?? false);
@@ -36,16 +34,9 @@ export const TrialsTabQuotasPlatformUpdate = ({
 
   return (
     <SheetWithPreventingDialog
-      title={
-        scope.kind === 'bundle'
-          ? t('TrialsDashboard.UpdateQuotasForm.BundleTitle', {
-              region: translatedRegion,
-            })
-          : t('TrialsDashboard.UpdateQuotasForm.Title', {
-              region: translatedRegion,
-              platform: t(`PlatformIdentifier.${scope.platformIdentifier}`),
-            })
-      }
+      title={t('TrialsDashboard.UpdateQuotasForm.BundleTitle', {
+        region: translatedRegion,
+      })}
       open={openSheet}
       setOpen={handleOpenSheet}
       trigger={trigger}>

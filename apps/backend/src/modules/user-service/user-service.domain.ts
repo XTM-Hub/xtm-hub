@@ -35,7 +35,7 @@ import { formatRawObject } from '../../utils/query-raw.util';
 import { addPrefixToObject } from '../../utils/typescript';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { UserOrganizationDomain } from '../organization-management/user/user-organization/user-organization.domain';
-import { UserHelper } from '../organization-management/user/user.helper';
+import { UserProvisioningApp } from '../organization-management/user/user-provisioning/user-provisioning.app';
 import { GenericServiceCapabilityIds } from '../security-management/service-capability/generic-service-capability.const';
 import { UserServiceCapabilityHelper } from '../security-management/user-service-capability/user-service-capability.helper';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
@@ -50,11 +50,14 @@ export const UserServiceDomain = {
     const userServices: UserService[] = [];
     return withTransaction(async () => {
       for (const email of emails) {
-        const user = await UserHelper.getOrCreateUser({
+        const user = await UserProvisioningApp.getOrProvisionUser({
           email: email,
         });
 
-        await UserHelper.insertUserIntoOrganization(user, subscription.id);
+        await UserOrganizationDomain.linkUserToSubscriptionOrganization(
+          user,
+          subscription.id
+        );
         const userServiceAlreadyExist =
           await UserServiceDomain.doesUserServiceExist(
             user.id as UserId,

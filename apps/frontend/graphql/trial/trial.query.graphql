@@ -6,10 +6,3 @@ query PlatformTrialStatus($organizationId: OrganizationId!) {
     ongoingStandaloneTrials
   }
 }
-
-query TrialDeploymentsEligibility($input: TrialDeploymentsInput!) {
-  trialDeployments(input: $input) {
-    availableTrials
-    isBlacklisted
-  }
-}

@@ -260,28 +260,27 @@ type FilterHandler = {
 
 const createLabelFilter = (): FilterHandler => ({
   key: FilterKey.Label,
-  addJoin: (qb, type) => {
-    qb.leftJoin('Object_UseCase as ouc', 'ouc.object_id', '=', `${type}.id`);
-  },
-  addWhere: (qb, _type, values) => {
+  addWhere: (qb, type, values) => {
     if (!values.length) return;
-    qb.whereIn('ouc.use_case_id', values.map(extractId));
+    qb.whereExists(function () {
+      this.select(dbRaw('1'))
+        .from('Object_UseCase as ouc')
+        .whereRaw('?? = ??', ['ouc.object_id', `${type}.id`])
+        .whereIn('ouc.use_case_id', values.map(extractId));
+    });
   },
 });
 
 const createSolutionCategoryFilter = (): FilterHandler => ({
   key: FilterKey.SolutionCategory,
-  addJoin: (qb, type) => {
-    qb.leftJoin(
-      'Object_SolutionCategory as osc',
-      'osc.object_id',
-      '=',
-      `${type}.id`
-    );
-  },
-  addWhere: (qb, _type, values) => {
+  addWhere: (qb, type, values) => {
     if (!values.length) return;
-    qb.whereIn('osc.solution_category_id', values.map(extractId));
+    qb.whereExists(function () {
+      this.select(dbRaw('1'))
+        .from('Object_SolutionCategory as osc')
+        .whereRaw('?? = ??', ['osc.object_id', `${type}.id`])
+        .whereIn('osc.solution_category_id', values.map(extractId));
+    });
   },
 });
 

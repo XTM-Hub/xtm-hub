@@ -1,7 +1,6 @@
 import { GraphQLResolveInfo } from 'graphql';
 import {
   DeploymentRequestActivitySector,
-  DeploymentRequestDeploymentType,
   DeploymentRequestJobTitle,
   DeploymentRequestPlatformRegion,
   DeploymentRequestSource,
@@ -23,6 +22,7 @@ import type { DeploymentRequestDataLoaders } from '../src/modules/deployment/dep
 import type { DocumentDataLoaders } from '../src/modules/document/document.dataloader';
 import type { NewsFeedDataLoaders } from '../src/modules/news-feed/news-feed.dataloader';
 import type { ServiceInstanceDataLoaders } from '../src/modules/service/instance/service-instance.dataloader';
+import type { SubscriptionDataLoaders } from '../src/modules/subscription/subscription.dataloader';
 import {
   CAPABILITY_BYPASS,
   PLATFORM_ORGANIZATION_UUID,
@@ -197,9 +197,8 @@ export const TEST_DEPLOYMENT = {
       use_case: DeploymentRequestUseCase.ThreatHunting,
     },
   ],
-  products: [PlatformIdentifier.Opencti],
+  products: [PlatformIdentifier.Xtmone, PlatformIdentifier.Opencti],
   region: DeploymentRequestPlatformRegion.UsEast,
-  type: DeploymentRequestDeploymentType.Trial,
   source: DeploymentRequestSource.Xtmhub,
 };
 
@@ -436,6 +435,23 @@ export const contextSimpleUserFiligran2: PortalContext = {
         load: () => Promise.resolve([]),
       },
     } as unknown as ServiceInstanceDataLoaders,
+    subscription: {
+      serviceInstanceBySubscriptionServiceInstanceIdLoader: {
+        load: () => Promise.resolve(undefined),
+      },
+      organizationBySubscriptionOrganizationIdLoader: {
+        load: () => Promise.resolve(undefined),
+      },
+      subscriptionCapabilitiesBySubscriptionIdLoader: {
+        load: () => Promise.resolve([]),
+      },
+      userServicesBySubscriptionIdLoader: {
+        load: () => Promise.resolve([]),
+      },
+      serviceCapabilityBySubscriptionCapabilityIdLoader: {
+        load: () => Promise.resolve(undefined),
+      },
+    } as unknown as SubscriptionDataLoaders,
   },
 } as unknown as PortalContext;
 

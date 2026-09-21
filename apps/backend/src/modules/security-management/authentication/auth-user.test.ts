@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { UserId } from '../../../model/kanel/public/User';
 import { UserLoadUserBy } from '../../../model/user';
 import { UserDomain } from '../../organization-management/user/user-domain/user.domain';
+import { UserProvisioningApp } from '../../organization-management/user/user-provisioning/user-provisioning.app';
 import { UserHelper } from '../../organization-management/user/user.helper';
 import { isSessionUserActive } from './auth-user';
 
@@ -10,7 +11,7 @@ const asSessionUser = (id: string) => ({ id }) as UserLoadUserBy;
 
 const createTestUser = async () => {
   const email = `auth-user-session-${uuidv4()}@filigran.io`;
-  await UserHelper.createNewUserFromInvitation({ email });
+  await UserProvisioningApp.autoProvisionNewUser({ email });
   const user = (await UserDomain.loadUserBy({ email }))!;
   return { email, user };
 };

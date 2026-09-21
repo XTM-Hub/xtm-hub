@@ -24,34 +24,33 @@ import { prefixObjectKeys } from '../../utils/utils';
 import { ServiceGroupDomain } from './group/service-group.domain';
 import { QuotaKey } from './quota/deployment.quota.domain';
 
-const scopeToPlatformIdentifier =
-  (key: QuotaKey) => (builder: Knex.QueryBuilder<DeploymentRequest>) => {
-    if (key.platformIdentifier === null) {
-      builder.whereNull('platform_identifier');
-    } else {
-      builder.andWhere('platform_identifier', '=', key.platformIdentifier);
-    }
-  };
-
 const scopeToQuotaKey =
   (key: QuotaKey) => (builder: Knex.QueryBuilder<DeploymentRequest>) => {
     builder
-      .where('type', '=', key.type)
+      .where('type', '=', DeploymentRequestDeploymentType.Bundle)
       .andWhere('region', '=', key.region)
-      .whereNull('parent_id')
-      .modify(scopeToPlatformIdentifier(key));
+      .whereNull('parent_id');
   };
 
+type DeploymentRequestQueue = Pick<
+  DeploymentRequest,
+  'type' | 'platform_identifier' | 'region'
+>;
+
 const scopeToQueueOf =
-  (request: DeploymentRequest) =>
+  (queue: DeploymentRequestQueue) =>
   (builder: Knex.QueryBuilder<DeploymentRequest>) => {
-    builder.modify(
-      scopeToQuotaKey({
-        type: request.type,
-        platformIdentifier: request.platform_identifier,
-        region: request.region,
-      })
-    );
+    builder
+      .where('type', '=', queue.type)
+      .andWhere('region', '=', queue.region)
+      .whereNull('parent_id')
+      .modify((qb) => {
+        if (queue.platform_identifier === null) {
+          qb.whereNull('platform_identifier');
+        } else {
+          qb.andWhere('platform_identifier', '=', queue.platform_identifier);
+        }
+      });
   };
 
 export const DeploymentRequestDomain = {
@@ -111,31 +110,12 @@ export const DeploymentRequestDomain = {
       ...(childrenHubStatus ? { hub_status: childrenHubStatus } : {}),
     });
 
-    // Children are sorted by platform_identifier to keep a stable quota lock
-    // acquisition order: two concurrent family cancellations would otherwise
-    // be able to deadlock on DeploymentRequestQuota rows.
     return [
       deploymentRequest,
       ...children.sort((a, b) =>
         (a.platform_identifier ?? '').localeCompare(b.platform_identifier ?? '')
       ),
     ];
-  },
-
-  loadTrialsForOrganization: async (
-    organizationId: OrganizationId,
-    identifiers?: PlatformIdentifier[]
-  ): Promise<DeploymentRequest[]> => {
-    return db<DeploymentRequest>('DeploymentRequest')
-      .where('organization_requester_id', '=', organizationId)
-      .modify((qb) => {
-        if (identifiers?.length) {
-          qb.whereIn('platform_identifier', identifiers);
-        }
-      })
-      .where('type', '=', DeploymentRequestDeploymentType.Trial)
-      .where('counts_in_orga_quota', '=', true)
-      .select('*');
   },
 
   loadBundleTrialForOrganization: async (
@@ -166,13 +146,13 @@ export const DeploymentRequestDomain = {
   },
 
   getMaxOrderingInQueue: async (
-    key: QuotaKey,
+    queue: DeploymentRequestQueue,
     hubStatus: DeploymentRequestHubStatus
   ): Promise<number | null> => {
     const result = await db<DeploymentRequest>('DeploymentRequest')
       .max('ordering as max')
       .where('hub_status', '=', hubStatus)
-      .modify(scopeToQuotaKey(key))
+      .modify(scopeToQueueOf(queue))
       .first();
     return result?.max ? parseInt(result.max as string, 10) : null;
   },
@@ -340,11 +320,7 @@ export const DeploymentRequestDomain = {
   ): Promise<DeploymentRequest | undefined> => {
     const maxPendingOrdering =
       await DeploymentRequestDomain.getMaxOrderingInQueue(
-        {
-          type: request.type,
-          platformIdentifier: request.platform_identifier,
-          region: request.region,
-        },
+        request,
         DeploymentRequestHubStatus.Pending
       );
 

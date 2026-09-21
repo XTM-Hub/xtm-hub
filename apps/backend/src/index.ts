@@ -28,6 +28,7 @@ import { DocumentDataLoader } from './modules/document/document.dataloader';
 import { NewsFeedDataLoader } from './modules/news-feed/news-feed.dataloader';
 import { initAuthPlatform } from './modules/security-management/authentication/auth-platform';
 import { ServiceInstanceDataLoader } from './modules/service/instance/service-instance.dataloader';
+import { SubscriptionDataLoader } from './modules/subscription/subscription.dataloader';
 import { TelemetrySnapshotApp } from './modules/telemetry/telemetry-snapshot.app';
 import { errorLoggingPlugin } from './server/apollo-plugins/log';
 import {
@@ -352,6 +353,7 @@ const middlewareExpress = expressMiddleware(server, {
         document: DocumentDataLoader.create(),
         newsFeed: NewsFeedDataLoader.create(),
         serviceInstance: ServiceInstanceDataLoader.create(),
+        subscription: SubscriptionDataLoader.create(),
       },
     };
 

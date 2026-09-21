@@ -3,21 +3,32 @@ import {
   OrganizationCapabilitiesInput,
   OrganizationCapability,
 } from '../../../../__generated__/resolvers-types';
-import { requestContext } from '../../../../context/request.context';
-import Organization, {
-  OrganizationId,
-} from '../../../../model/kanel/public/Organization';
+import { OrganizationId } from '../../../../model/kanel/public/Organization';
+import {
+  SubscriptionId,
+  SubscriptionMutator,
+} from '../../../../model/kanel/public/Subscription';
 import User, { UserId } from '../../../../model/kanel/public/User';
 import UserOrganization, {
+  UserOrganizationId,
   UserOrganizationInitializer,
   UserOrganizationMutator,
 } from '../../../../model/kanel/public/UserOrganization';
 import UserOrganizationPending from '../../../../model/kanel/public/UserOrganizationPending';
 import { securityGuard } from '../../../../security/guard';
-import { sendMail } from '../../../../server/mail-service';
-import { UnknownErrorCode } from '../../../../utils/error/error.code';
+import {
+  ForbiddenErrorCode,
+  NotFoundErrorCode,
+  UnknownErrorCode,
+} from '../../../../utils/error/error.code';
+import {
+  NotFoundError,
+  UnknownError,
+} from '../../../../utils/error/error.util';
 import { isEmpty } from '../../../../utils/utils';
 import { UserOrganizationCapabilityDomain } from '../../../security-management/user-organization-capability/user-organization-capability.domain';
+import { SubscriptionDomain } from '../../../subscription/subscription.domain';
+import { OrganizationDomain } from '../../organization/organization.domain';
 import { UserOrganizationPendingDomain } from '../user-pending/user-organization-pending.domain';
 
 export const UserOrganizationDomain = {
@@ -72,36 +83,70 @@ export const UserOrganizationDomain = {
     return db<UserOrganization>('User_Organization').where(field);
   },
 
+  ensureUserOrganizationExists: async (
+    user_id: UserId,
+    organization_id: OrganizationId
+  ): Promise<{ id: UserOrganizationId }> => {
+    const existing = await db<UserOrganization>('User_Organization')
+      .where({ user_id, organization_id })
+      .first();
+    if (existing) {
+      return { id: existing.id };
+    }
+
+    const [inserted] = await UserOrganizationDomain.insertNewUserOrganization({
+      user_id,
+      organization_id,
+    });
+    if (!inserted) {
+      throw new Error(UnknownErrorCode.UnknownError);
+    }
+    return { id: inserted.id };
+  },
+
+  assignUserOrgCapabilities: async ({
+    userId,
+    orgCapabilities,
+    mode,
+  }: {
+    userId: UserId;
+    orgCapabilities: {
+      organization_id: OrganizationId;
+      capabilities?: string[] | null;
+    }[];
+    mode: 'replace' | 'add';
+  }): Promise<void> => {
+    if (mode === 'replace') {
+      await db<UserOrganization>('User_Organization')
+        .where('user_id', '=', userId)
+        .whereNot('organization_id', userId) // Should not touch personal space
+        .del();
+    }
+
+    for (const { organization_id, capabilities } of orgCapabilities) {
+      if (organization_id === userId.toString()) continue;
+
+      const { id: userOrganizationId } =
+        await UserOrganizationDomain.ensureUserOrganizationExists(
+          userId,
+          organization_id
+        );
+      await UserOrganizationCapabilityDomain.updateUserOrganizationCapability({
+        user_organization_id: userOrganizationId,
+        capabilities_name: capabilities,
+      });
+    }
+  },
+
   updateMultipleUserOrgWithCapabilities: async (
     userId: UserId,
     orgCapabilities: OrganizationCapabilitiesInput[] | null = []
   ) => {
-    await db<UserOrganization>('User_Organization')
-      .where('user_id', '=', userId)
-      .whereNot('organization_id', userId) // Should not touch personal space
-      .del();
-    if (!orgCapabilities || isEmpty(orgCapabilities)) {
-      return;
-    }
-    for (const orgCapa of orgCapabilities) {
-      const organization_id = orgCapa.organization_id;
-      if (organization_id !== userId.toString()) {
-        const [newUserOrganization] =
-          await UserOrganizationDomain.insertNewUserOrganization({
-            user_id: userId,
-            organization_id,
-          });
-        if (!newUserOrganization) {
-          throw new Error(UnknownErrorCode.UnknownError);
-        }
-        await UserOrganizationCapabilityDomain.createUserOrganizationCapability(
-          {
-            user_organization_id: newUserOrganization.id,
-            capabilities_name: orgCapa.capabilities,
-          }
-        );
-      }
-    }
+    await UserOrganizationDomain.assignUserOrgCapabilities({
+      userId,
+      orgCapabilities: orgCapabilities ?? [],
+      mode: 'replace',
+    });
     return true;
   },
 
@@ -134,52 +179,6 @@ export const UserOrganizationDomain = {
       user_organization_id: userOrganization.id,
       capabilities_name: orgCapabilities,
     });
-    return true;
-  },
-
-  createUserOrgCapabilities: async ({
-    user,
-    organization,
-    orgCapabilities,
-    userExists,
-  }: {
-    user: User;
-    organization: Organization;
-    orgCapabilities: string[];
-    userExists: boolean;
-  }) => {
-    const [userOrganization] =
-      await UserOrganizationDomain.insertNewUserOrganization({
-        user_id: user.id,
-        organization_id: organization.id,
-      });
-    if (!userOrganization) {
-      throw new Error(UnknownErrorCode.UnknownError);
-    }
-    const contextUser = requestContext.requireUser();
-    await securityGuard.assertUserCapabilities(
-      [
-        OrganizationCapability.AdministrateOrganization,
-        OrganizationCapability.ManageAccess,
-      ],
-      organization.id
-    );
-
-    await UserOrganizationCapabilityDomain.updateUserOrganizationCapability({
-      user_organization_id: userOrganization.id,
-      capabilities_name: orgCapabilities,
-    });
-    if (userExists) {
-      await sendMail({
-        to: user.email,
-        template: 'new_user_organization',
-        params: {
-          organizationName: organization.name,
-          userName: `${contextUser.first_name ?? ''} ${contextUser.last_name ?? ''}`,
-          invitedName: `${user.first_name ?? ''} ${user.last_name ?? ''}`,
-        },
-      });
-    }
     return true;
   },
 
@@ -271,5 +270,63 @@ export const UserOrganizationDomain = {
       .groupBy('Organization.id');
 
     return Number(administratorsCount?.count ?? 0);
+  },
+
+  isFirstInOrganization: async (
+    organizationId: OrganizationId
+  ): Promise<boolean> => {
+    const userOrganization = await UserOrganizationDomain.loadUserOrganization({
+      organization_id: organizationId,
+    });
+    return userOrganization.length === 1;
+  },
+
+  linkUserToSubscriptionOrganization: async (
+    user: User,
+    subscriptionId: SubscriptionId
+  ): Promise<void> => {
+    const [subscription] =
+      await SubscriptionDomain.loadSubscriptionWithOrganizationAndCapabilitiesBy(
+        {
+          'Subscription.id': subscriptionId,
+        } as SubscriptionMutator
+      );
+    const [organization] = await OrganizationDomain.loadOrganizationsFromEmail(
+      user.email
+    );
+    if (!organization) {
+      throw NotFoundError(NotFoundErrorCode.UserNotFound);
+    }
+    const userOrganization = await UserOrganizationDomain.loadUserOrganization({
+      user_id: user.id,
+      organization_id: organization.id,
+    });
+    if (subscription.organization_id !== organization.id) {
+      throw new Error(ForbiddenErrorCode.EmailOutsideOrganizationError);
+    }
+    if (isEmpty(userOrganization)) {
+      const [userOrgRelation] =
+        await UserOrganizationDomain.createUserOrganizationRelationAndRemovePending(
+          {
+            user_id: user.id,
+            organizations_id: [organization.id],
+          }
+        );
+      if (!userOrgRelation) {
+        throw UnknownError(UnknownErrorCode.AddingUserError);
+      }
+      const shouldBeAdminOrga =
+        await UserOrganizationDomain.isFirstInOrganization(organization.id);
+      if (shouldBeAdminOrga) {
+        await UserOrganizationCapabilityDomain.createUserOrganizationCapability(
+          {
+            user_organization_id: userOrgRelation.id,
+            capabilities_name: [
+              OrganizationCapability.AdministrateOrganization,
+            ],
+          }
+        );
+      }
+    }
   },
 };

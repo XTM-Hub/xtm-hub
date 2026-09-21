@@ -6,18 +6,14 @@ import { usePublicNavigation } from './use-public-navigation';
 interface PublicNavigationProps {
   open: boolean;
   visibleServiceSlugs: string[];
-  isXtmPlatformTrialEnabled: boolean;
 }
 
 const PublicNavigation = ({
   open,
   visibleServiceSlugs,
-  isXtmPlatformTrialEnabled,
 }: PublicNavigationProps) => {
-  const { sections, bottomLinks, footerSections } = usePublicNavigation(
-    visibleServiceSlugs,
-    isXtmPlatformTrialEnabled
-  );
+  const { sections, bottomLinks, footerSections } =
+    usePublicNavigation(visibleServiceSlugs);
 
   return (
     <SharedNavigation

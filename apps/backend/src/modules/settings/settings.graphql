@@ -1,7 +1,7 @@
 enum FeatureFlag {
   DUMMY
-  XTM_PLATFORM_TRIAL
   DECOUPLING_CONNECTORS
+  TRIAL_INVITE
 }
 
 type PlatformProvider {

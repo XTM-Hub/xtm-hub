@@ -8,7 +8,6 @@ import {
   PlatformContract,
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
-  ServiceInstanceTag,
 } from '@graphql/generated';
 import openaevTextLogo from '@public/logo_openaev_text.png';
 import openaevTextDarkLogo from '@public/logo_openaev_text_dark.png';
@@ -21,8 +20,6 @@ import { JSX } from 'react';
 
 export interface PlatformMetadata {
   name: string;
-  learnMorePublicUrl: string;
-  learnMorePrivateUrl: string;
   logoUrl: string;
   lightTextLogo: StaticImageData;
   darkTextLogo: StaticImageData;
@@ -37,8 +34,6 @@ export const PlatformMetadataMapping: Record<
 > = {
   [PlatformIdentifier.Opencti]: {
     name: 'OpenCTI',
-    learnMorePublicUrl: '/cybersecurity-solutions/opencti-free-trial',
-    learnMorePrivateUrl: '/app/service/opencti-free-trial',
     logoUrl: '/logo_opencti_dark.png',
     lightTextLogo: openctiTextLogo,
     darkTextLogo: openctiTextDarkLogo,
@@ -48,8 +43,6 @@ export const PlatformMetadataMapping: Record<
   },
   [PlatformIdentifier.Openaev]: {
     name: 'OpenAEV',
-    learnMorePublicUrl: '/cybersecurity-solutions/openaev-free-trial',
-    learnMorePrivateUrl: '/app/service/openaev-free-trial',
     logoUrl: '/logo_openaev_dark.png',
     lightTextLogo: openaevTextLogo,
     darkTextLogo: openaevTextDarkLogo,
@@ -59,8 +52,6 @@ export const PlatformMetadataMapping: Record<
   },
   [PlatformIdentifier.Xtmone]: {
     name: 'XTM One',
-    learnMorePublicUrl: '',
-    learnMorePrivateUrl: '',
     logoUrl: '/logo_xtmone_dark.png',
     lightTextLogo: xtmoneTextLogo,
     darkTextLogo: xtmoneTextDarkLogo,
@@ -93,15 +84,6 @@ export const ServiceDefinitionIdentifierToPlatformIdentifier: Partial<
   [ServiceDefinitionIdentifier.OpenctiRegistration]: PlatformIdentifier.Opencti,
   [ServiceDefinitionIdentifier.OpenaevRegistration]: PlatformIdentifier.Openaev,
   [ServiceDefinitionIdentifier.XtmoneRegistration]: PlatformIdentifier.Xtmone,
-};
-
-export const serviceInstanceTagByPlatformIdentifier: Record<
-  PlatformIdentifier,
-  ServiceInstanceTag
-> = {
-  [PlatformIdentifier.Opencti]: ServiceInstanceTag.OpenCti,
-  [PlatformIdentifier.Openaev]: ServiceInstanceTag.OpenAev,
-  [PlatformIdentifier.Xtmone]: ServiceInstanceTag.XtmOne,
 };
 
 export const getRegisteredPlatformServiceIdentifier = (

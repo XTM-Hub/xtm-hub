@@ -4,7 +4,7 @@ import testRender from '@/utils/test/test-render';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import { registeredPlatformsKeys } from '@graphql/registered-platforms/registered-platforms.keys';
 import { serviceInstancesKeys } from '@graphql/service-instances/service-instances.keys';
-import { trialKeys } from '@graphql/trial/trial.keys';
+import { platformTrialKeys } from '@graphql/trial/trial.keys';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BundleCancelSheet } from './BundleCancelSheet';
@@ -153,7 +153,7 @@ describe('BundleCancelSheet', () => {
       queryKey: registeredPlatformsKeys.all(),
     });
     expect(testState.invalidateQueries).toHaveBeenCalledWith({
-      queryKey: trialKeys.trialDeploymentsEligibilityAll(),
+      queryKey: platformTrialKeys.platformTrialStatusAll(),
     });
     expect(testState.invalidateQueries).toHaveBeenCalledWith({
       queryKey: xtmPlatformBundleKeys.all(),
