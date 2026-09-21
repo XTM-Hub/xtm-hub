@@ -152,7 +152,11 @@ const GenericFileInput = (
         className="hidden"
         accept={allowedTypes}
         ref={(e) => {
-          ref && typeof ref === 'function' && ref(e);
+          if (typeof ref === 'function') {
+            ref(e);
+          } else if (ref) {
+            ref.current = e;
+          }
           inputRef.current = e;
         }}
         {...propsWithoutValue}
