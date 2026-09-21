@@ -48,6 +48,9 @@ describe('epicApp', () => {
     title: 'Test Epic',
     short_description: 'Short desc',
     description: 'Long description for the epic',
+    problem_to_solve: 'Problem to solve',
+    proposed_solution: 'Proposed solution',
+    expected_value: 'Expected value',
     active: true,
     products: [FiligranProduct.Opencti],
     timeline: Timeline.Now,
@@ -89,6 +92,10 @@ describe('epicApp', () => {
 
       expect(dbEpic).toMatchObject({
         title: 'Test Epic',
+        description: 'Long description for the epic',
+        problem_to_solve: 'Problem to solve',
+        proposed_solution: 'Proposed solution',
+        expected_value: 'Expected value',
       });
     });
 
@@ -366,6 +373,31 @@ describe('epicApp', () => {
       expect(updatedEpic.slack_link).toBeNull();
 
       expect(dbEpic?.slack_link).toBeNull();
+    });
+    it('should update the description sections of the specified epic', async () => {
+      // Given
+      const createdEpic = await EpicApp.createEpic(basicInput, []);
+      const updateInput = {
+        description: 'Updated description',
+        problem_to_solve: 'Updated problem',
+        proposed_solution: 'Updated solution',
+        expected_value: 'Updated value',
+        edition_type: EditionType.CommunityEdition,
+      };
+
+      // When
+      const updatedEpic = await EpicApp.updateEpic(
+        createdEpic.id as EpicId,
+        updateInput,
+        []
+      );
+
+      // Check in DB
+      const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
+
+      // Then
+      expect(updatedEpic).toMatchObject(updateInput);
+      expect(dbEpic).toMatchObject(updateInput);
     });
     it('should keep the slack link when the update does not provide it', async () => {
       // Given
@@ -799,6 +831,46 @@ describe('epicApp', () => {
       expect(epicsConnection.edges).toHaveLength(1);
       expect(epicsConnection.edges[0]?.node.title).toBe('Title A');
     });
+
+    it.each`
+      field                  | searchTerm
+      ${'problem_to_solve'}  | ${'blind spo'}
+      ${'proposed_solution'} | ${'blind spo'}
+      ${'expected_value'}    | ${'blind spo'}
+    `(
+      'should return epics matching searchTerm on $field',
+      async ({ field, searchTerm }) => {
+        // Given
+        await EpicApp.createEpic(
+          {
+            ...basicInput,
+            title: 'Title A',
+            [field]: 'a blind spot in the roadmap',
+          },
+          []
+        );
+
+        await EpicApp.createEpic(
+          {
+            ...basicInput,
+            title: 'Title B',
+          },
+          []
+        );
+
+        // When
+        const epicsConnection = await EpicApp.loadEpics({
+          first: 10,
+          orderBy: EpicOrdering.Title,
+          orderMode: OrderingMode.Asc,
+          searchTerm,
+        });
+
+        // Then
+        expect(epicsConnection.edges).toHaveLength(1);
+        expect(epicsConnection.edges[0]?.node.title).toBe('Title A');
+      }
+    );
 
     it('should return empty results when searchTerm matches nothing', async () => {
       // Given
