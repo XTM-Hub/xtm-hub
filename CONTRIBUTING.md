@@ -97,7 +97,7 @@ You do not have to configure anything: clone the repo and your tool picks up its
 | Skills | [`.claude/skills/*/SKILL.md`](.claude/skills) | `.github/skills` (symlink to `.claude/skills`) |
 | Agents | [`.claude/agents/*.md`](.claude/agents) | [`.github/agents/*.agent.md`](.github/agents) |
 | Shared settings | `.claude/settings.json` | — |
-| CI | [`.github/workflows/claude-code.yml`](.github/workflows/claude-code.yml) | [`.github/workflows/copilot-setup-steps.yml`](.github/workflows/copilot-setup-steps.yml) |
+| CI | — | [`.github/workflows/copilot-setup-steps.yml`](.github/workflows/copilot-setup-steps.yml) |
 
 ### Where to make a change
 

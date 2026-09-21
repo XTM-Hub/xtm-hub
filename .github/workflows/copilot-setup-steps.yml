@@ -3,10 +3,6 @@ name: Copilot setup steps
 # Preinstalls the XTM Hub toolchain for the Copilot coding agent.
 # The job MUST be named `copilot-setup-steps` for the agent to pick it up.
 # Pushing/PRing this file also validates it like any other workflow.
-#
-# `claude-code.yml` is the Claude Code counterpart and repeats the Node/Yarn
-# steps below — keep the two in sync when the setup changes. It stops before
-# `yarn install` on purpose; that file explains why.
 
 on:
   workflow_dispatch:
