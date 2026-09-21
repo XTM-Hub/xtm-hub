@@ -9,7 +9,7 @@ const calloutVariants = cva(
       variant: {
         primary: 'bg-primary text-primary-foreground',
         secondary: 'bg-secondary text-secondary-foreground',
-        warning: 'bg-orange text-black',
+        warning: 'bg-orange text-black-1000',
         destructive: 'bg-destructive text-primary-foreground',
         outline: 'bg-transparent border-primary text-primary',
       },
