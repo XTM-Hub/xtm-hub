@@ -8,7 +8,10 @@ import { createMockEnvironment } from 'relay-test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('EpicItemDetailed', () => {
-  const epic = (slackLink: string | null) =>
+  const epic = (
+    slackLink: string | null,
+    overrides: Partial<epic_fragment$data> = {}
+  ) =>
     ({
       id: 'epic-1',
       title: 'Roadmap epic',
@@ -18,9 +21,13 @@ describe('EpicItemDetailed', () => {
       slack_link: slackLink,
       short_description: 'short description',
       description: 'long **description**',
+      problem_to_solve: 'the **problem**',
+      proposed_solution: 'the solution',
+      expected_value: 'the value',
       document_id: null,
       active: true,
       timeline: 'now',
+      ...overrides,
     }) as epic_fragment$data;
 
   const defaultProps = {
@@ -32,7 +39,7 @@ describe('EpicItemDetailed', () => {
     vi.clearAllMocks();
   });
 
-  it('renders title, markdown description and footer', () => {
+  it('renders title, short description, markdown description and footer', () => {
     // Given
     const environment = createMockEnvironment();
 
@@ -44,7 +51,65 @@ describe('EpicItemDetailed', () => {
     // Then
     const heading = screen.getByRole('heading', { level: 2 });
     expect(heading).toHaveTextContent(defaultProps.epic.title);
+    expect(screen.getByText('short description')).toBeInTheDocument();
     expect(screen.getByText('description')).toBeInTheDocument();
+  });
+
+  it('renders the problem, solution and value sections as markdown', () => {
+    // Given
+    const environment = createMockEnvironment();
+
+    // When
+    testRender(<EpicItemDetailed {...defaultProps} />, {
+      relayConfig: environment,
+    });
+
+    // Then
+    expect(
+      screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)
+    ).toEqual([
+      'Epic.Form.ProblemToSolve',
+      'Epic.Form.ProposedSolution',
+      'Epic.Form.ExpectedValue',
+    ]);
+    expect(screen.getByText('problem').tagName).toBe('STRONG');
+  });
+
+  it('does not render the heading of a section left empty', () => {
+    // Given
+    const environment = createMockEnvironment();
+
+    // When
+    testRender(
+      <EpicItemDetailed
+        {...defaultProps}
+        epic={epic(null, { proposed_solution: '' })}
+      />,
+      { relayConfig: environment }
+    );
+
+    // Then
+    expect(
+      screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)
+    ).toEqual(['Epic.Form.ProblemToSolve', 'Epic.Form.ExpectedValue']);
+  });
+
+  it('does not render the description when the epic has none', () => {
+    // Given
+    const environment = createMockEnvironment();
+
+    // When
+    testRender(
+      <EpicItemDetailed
+        {...defaultProps}
+        epic={epic(null, { description: '' })}
+      />,
+      { relayConfig: environment }
+    );
+
+    // Then
+    expect(screen.queryByText('description')).not.toBeInTheDocument();
+    expect(screen.getByText('the solution')).toBeInTheDocument();
   });
 
   it.each`

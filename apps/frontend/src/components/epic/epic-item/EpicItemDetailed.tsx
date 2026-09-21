@@ -23,12 +23,27 @@ export const EpicItemDetailed = ({
     epic.slack_link && EPIC_SLACK_LINK_REGEX.test(epic.slack_link)
       ? epic.slack_link
       : DEFAULT_EPIC_SLACK_LINK;
+  const sections = [
+    { labelKey: 'Epic.Form.ProblemToSolve', source: epic.problem_to_solve },
+    { labelKey: 'Epic.Form.ProposedSolution', source: epic.proposed_solution },
+    { labelKey: 'Epic.Form.ExpectedValue', source: epic.expected_value },
+  ].filter(({ source }) => source);
 
   return (
-    <div className="p-l bg-elevation-background-layer-1 markdown-content flex h-full min-h-0 flex-1 flex-col">
+    <div className="p-l bg-elevation-background-layer-1 flex h-full min-h-0 flex-1 flex-col">
       <h2>{epic.title}</h2>
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <MarkdownRendererWithTheme source={epic.description} />
+      <p className="text-muted-foreground text-sm">{epic.short_description}</p>
+      <Separator className="my-s" />
+      <div className="markdown-content min-h-0 flex-1 overflow-y-auto">
+        {epic.description && (
+          <MarkdownRendererWithTheme source={epic.description} />
+        )}
+        {sections.map(({ labelKey, source }) => (
+          <section key={labelKey}>
+            <h3>{t(labelKey)}</h3>
+            <MarkdownRendererWithTheme source={source} />
+          </section>
+        ))}
       </div>
       <Separator />
       <div className="flex flex-row">
