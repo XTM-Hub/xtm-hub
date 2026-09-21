@@ -97,12 +97,10 @@ export const TagPopover = ({
   const handleOpenChange = useCallback((open: boolean) => {
     if (open && triggerContainerRef.current) {
       setPopoverWidth(triggerContainerRef.current.offsetWidth);
+      inputRef.current?.focus();
     }
 
-    if (open) {
-      inputRef.current?.focus();
-      setIsPopoverOpen(open);
-    }
+    setIsPopoverOpen(open);
   }, []);
 
   const handleInputFocus = (
