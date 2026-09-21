@@ -656,26 +656,6 @@ export const DocumentApp = {
     );
   },
 
-  loadPublicDocumentSlugsByServiceSlug: async (
-    serviceInstanceSlug: string
-  ): Promise<Pick<Document, 'slug' | 'created_at' | 'updated_at'>[]> => {
-    const serviceDefinition =
-      await ServiceDefinitionDomain.loadServiceDefinitionByServiceInstanceSlug(
-        serviceInstanceSlug
-      );
-    if (!serviceDefinition) {
-      throw new Error(ErrorCode.ServiceDefinitionNotFound);
-    }
-
-    const { documentType } =
-      getMetadataKeysAndDocumentTypeFromServiceDefinition(serviceDefinition);
-
-    return DocumentDomain.loadSeoDocumentSlugsByServiceSlug(
-      documentType,
-      serviceInstanceSlug
-    );
-  },
-
   loadPublicDocumentBySlug: async (
     serviceInstanceId: ServiceInstanceId,
     slug: string
