@@ -112,15 +112,14 @@ Each tool layers its own surface on top:
 | | Claude Code | GitHub Copilot |
 | --- | --- | --- |
 | Entry point | `CLAUDE.md` (this file) | `AGENTS.md` → symlink to this file, plus [`.github/copilot-instructions.md`](.github/copilot-instructions.md) |
-| Per-area rules | [`apps/*/CLAUDE.md`](apps), loaded when you touch that workspace | [`.github/instructions/*.instructions.md`](.github/instructions), applied by `applyTo` glob |
+| Per-area rules | [`.github/instructions/*.instructions.md`](.github/instructions), imported wholesale at the end of this file | the same files, injected by `applyTo` glob |
 | Skills | [`.claude/skills/*/SKILL.md`](.claude/skills) | `.github/skills` → symlink to `.claude/skills` |
 | Subagents | [`.claude/agents/*.md`](.claude/agents) | [`.github/agents/*.agent.md`](.github/agents) |
 | Shared settings | [`.claude/settings.json`](.claude/settings.json) | — |
 
 Wherever the two tools allow it, both columns resolve to the same file: `AGENTS.md` and `.github/skills` are
-symlinks, and each `apps/*/CLAUDE.md` imports the matching `.github/instructions/*.instructions.md` rather than
-restating it. Those instruction files stay under `.github/` because Copilot's `applyTo` mechanism resolves them from
-there.
+symlinks, and the [Area rules](#area-rules) section below `@`-imports the instruction files rather than restating
+them. Those files stay under `.github/` because Copilot's `applyTo` mechanism resolves them from there.
 
 The agent definitions are the one genuine duplication — the two tools have different `tools:` vocabularies, so each
 needs its own file. Both are deliberately thin and delegate to the same skills and instructions; keep them
@@ -128,23 +127,46 @@ behaviourally identical when you change one.
 
 ### Path-scoped rules
 
-Claude Code has no `applyTo` equivalent, so the workspace rules load through nested `CLAUDE.md` files and the
-cross-cutting ones have to be opened deliberately:
+Claude Code has no `applyTo` equivalent. Rather than approximate it, this file imports **every** instruction file
+(see [Area rules](#area-rules)), so the same rules Copilot injects per glob are always in context here. The globs
+below are what Copilot matches on; for Claude Code they are just a map of which file covers what.
 
-| Touching… | Read first | Loaded automatically? |
-| --- | --- | --- |
-| `apps/backend/**` | [`backend.instructions.md`](.github/instructions/backend.instructions.md) | Yes — `apps/backend/CLAUDE.md` |
-| `apps/frontend/**` | [`frontend.instructions.md`](.github/instructions/frontend.instructions.md) | Yes — `apps/frontend/CLAUDE.md` |
-| `apps/e2e/**` | [`e2e.instructions.md`](.github/instructions/e2e.instructions.md) | Yes — `apps/e2e/CLAUDE.md` |
-| Schema, resolvers, Relay/react-query operations | [`graphql.instructions.md`](.github/instructions/graphql.instructions.md) | Yes — imported by both app files |
-| `src/migrations/`, `src/es-migrations/`, seeds | [`migrations.instructions.md`](.github/instructions/migrations.instructions.md) | **No** — open it yourself |
-| `*.test.ts`, `*.test.tsx`, `*.utils.ts` | [`testing.instructions.md`](.github/instructions/testing.instructions.md) | **No** — open it yourself |
-| Workflows, Docker, Helm | [`ci.instructions.md`](.github/instructions/ci.instructions.md) | **No** — open it yourself |
+| Touching… | Covered by |
+| --- | --- |
+| `apps/backend/**` | [`backend.instructions.md`](.github/instructions/backend.instructions.md) |
+| `apps/frontend/**` | [`frontend.instructions.md`](.github/instructions/frontend.instructions.md) |
+| `apps/e2e/**` | [`e2e.instructions.md`](.github/instructions/e2e.instructions.md) |
+| Schema, resolvers, Relay/react-query operations | [`graphql.instructions.md`](.github/instructions/graphql.instructions.md) |
+| `src/migrations/`, `src/es-migrations/`, seeds | [`migrations.instructions.md`](.github/instructions/migrations.instructions.md) |
+| `*.test.ts`, `*.test.tsx`, `*.utils.ts` | [`testing.instructions.md`](.github/instructions/testing.instructions.md) |
+| Workflows, Docker, Helm | [`ci.instructions.md`](.github/instructions/ci.instructions.md) |
 
-Start Claude Code from the repository root. Started from inside `apps/backend/` (or another workspace), that
-directory becomes the project root and the `@` imports in its `CLAUDE.md` — which point up to
-`.github/instructions/` — stop resolving, silently. Each workspace file says what to read instead if that happens.
+**Start Claude Code from the repository root.** Started from inside `apps/backend/` or any other subdirectory, that
+directory becomes the project root, the imports below point outside it, and they silently do not resolve — you get
+this file's prose without a single area rule. Nothing warns you. If you must work that way, open the file from the
+table above yourself.
 
 Read the file matching the area you are touching before making changes. To review AI instructions/docs/agents/skills
 for drift, use the `hub-review` skill ([`.claude/skills/hub-review/SKILL.md`](.claude/skills/hub-review/SKILL.md))
 rather than guessing.
+
+## Area rules
+
+Everything below is imported verbatim from `.github/instructions/`, where the files live so Copilot's `applyTo`
+globs keep resolving. Edit them there — never copy their content into this file.
+
+Relative links inside the imported content resolve from `.github/instructions/`.
+
+@.github/instructions/backend.instructions.md
+
+@.github/instructions/frontend.instructions.md
+
+@.github/instructions/e2e.instructions.md
+
+@.github/instructions/graphql.instructions.md
+
+@.github/instructions/migrations.instructions.md
+
+@.github/instructions/testing.instructions.md
+
+@.github/instructions/ci.instructions.md

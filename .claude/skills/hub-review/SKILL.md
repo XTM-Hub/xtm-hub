@@ -1,7 +1,7 @@
 ---
 name: hub-review
 description: >-
-  Reviews the XTM Hub AI-instruction surface — `CLAUDE.md` (and its `AGENTS.md` symlink), `apps/*/CLAUDE.md`,
+  Reviews the XTM Hub AI-instruction surface — `CLAUDE.md` (and its `AGENTS.md` symlink),
   `.github/copilot-instructions.md`, `.github/instructions/*.md`, `.claude/skills/*/SKILL.md`,
   `.claude/agents/*.md` and `.github/agents/*.agent.md` —
   for drift against the real codebase and against each other. Use when asked to review AI instructions, docs, agents,
@@ -28,7 +28,7 @@ The surface is shared by two tools, so parts of it are deliberately paired. Trea
 | --- | --- |
 | `CLAUDE.md` / `AGENTS.md` | `AGENTS.md` is a symlink — one file, nothing to compare |
 | `.claude/skills/` / `.github/skills/` | `.github/skills` is a symlink — one directory, nothing to compare |
-| `apps/*/CLAUDE.md` / `.github/instructions/*.instructions.md` | the `CLAUDE.md` files `@`-import the instruction files; they must not restate them |
+| `CLAUDE.md` / `.github/instructions/*.instructions.md` | `CLAUDE.md`'s Area rules section `@`-imports all seven; it must not restate them |
 | `.claude/agents/*.md` / `.github/agents/*.agent.md` | **real duplication** — the `tools:` vocabularies differ, so the two files coexist. Their `name`, `description` and behavioural rules must match; only the frontmatter `tools:` and the tool-specific phrasing may differ. A rule added to one and not the other is a duplication-lens finding. |
 
 ## Inputs
@@ -39,7 +39,7 @@ The surface is shared by two tools, so parts of it are deliberately paired. Trea
   - **Named file(s)** — whatever the caller pointed at.
   - **Full audit** (default when nothing else is specified) — every file under `.github/instructions/`,
     `.github/agents/`, `.claude/agents/`, `.claude/skills/`, plus `.github/copilot-instructions.md`,
-    `CLAUDE.md` and `apps/*/CLAUDE.md`. Read `.claude/skills/` and `CLAUDE.md` by their real paths; reaching them
+    and `CLAUDE.md`. Read `.claude/skills/` and `CLAUDE.md` by their real paths; reaching them
     through the `.github/skills` or `AGENTS.md` symlinks would review the same file twice.
 - **lenses** (optional) — one or more lens names. Default: all four lenses below.
 

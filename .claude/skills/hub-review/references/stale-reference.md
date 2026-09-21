@@ -18,9 +18,9 @@ still good advice — that is the code-usage-mismatch lens's job.
   `backend.instructions.md` saying `src/config.ts` means `apps/backend/src/config.ts`).
 - An `applyTo` glob (in a `.github/instructions/*.md` frontmatter) is valid if it matches at least one real file in
   the repo.
-- An `@`-import line in a `CLAUDE.md` file (e.g. `@../../.github/instructions/backend.instructions.md`) is valid
-  only if the path resolves **relative to the importing file**, not to the repo root. Check it with `ls` on the
-  resolved path — a broken import fails silently, so nothing else will catch it.
+- An `@`-import line in `CLAUDE.md` (e.g. `@.github/instructions/backend.instructions.md`) is valid only if the
+  path resolves relative to that file. Check it with `ls` — a broken import fails silently, so nothing else will
+  catch it. All seven instruction files must be imported; one missing from the Area rules section is a finding.
 - The repository has two committed symlinks, `AGENTS.md` → `CLAUDE.md` and `.github/skills` → `../.claude/skills`.
   Verify both still resolve (`ls -l`, `readlink`); a broken one silently cuts Copilot off from the whole
   instruction surface.

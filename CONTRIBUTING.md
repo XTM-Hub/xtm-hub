@@ -93,7 +93,7 @@ You do not have to configure anything: clone the repo and your tool picks up its
 | | Claude Code | GitHub Copilot |
 | --- | --- | --- |
 | Entry point | `CLAUDE.md` | `AGENTS.md` (symlink to `CLAUDE.md`) + [`.github/copilot-instructions.md`](.github/copilot-instructions.md) |
-| Per-area rules | `apps/backend/CLAUDE.md`, `apps/frontend/CLAUDE.md`, `apps/e2e/CLAUDE.md` | [`.github/instructions/*.instructions.md`](.github/instructions), by `applyTo` glob |
+| Per-area rules | [`.github/instructions/*.instructions.md`](.github/instructions), all seven `@`-imported by `CLAUDE.md` | the same files, by `applyTo` glob |
 | Skills | [`.claude/skills/*/SKILL.md`](.claude/skills) | `.github/skills` (symlink to `.claude/skills`) |
 | Agents | [`.claude/agents/*.md`](.claude/agents) | [`.github/agents/*.agent.md`](.github/agents) |
 | Shared settings | `.claude/settings.json` | — |
@@ -102,9 +102,9 @@ You do not have to configure anything: clone the repo and your tool picks up its
 ### Where to make a change
 
 - **A repo-wide rule** (stack, setup, validation, a mandatory coding rule) → `CLAUDE.md`. Both tools read it.
-- **A rule for one workspace** → the matching `.github/instructions/*.instructions.md`. The `apps/*/CLAUDE.md`
-  files import those, so never copy content into them — they exist only because Claude Code has no `applyTo`.
-  Start Claude Code from the repository root, or those imports do not resolve.
+- **A rule for one workspace** → the matching `.github/instructions/*.instructions.md`. Copilot injects it by
+  `applyTo` glob; `CLAUDE.md` `@`-imports all seven, so never copy their content anywhere. Start Claude Code from
+  the repository root, or those imports do not resolve.
 - **A task playbook** (how to write a migration, how to review) → a skill under `.claude/skills/`.
 - **Agent behaviour** → **both** `.claude/agents/<name>.md` and `.github/agents/<name>.agent.md`. This is the only
   deliberate duplication in the setup: the two tools name their tools differently, so the files cannot be shared.

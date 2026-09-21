@@ -5,7 +5,7 @@ situation — guidance that cannot both be followed at once.
 
 ## Evidence rules
 
-- "Authoritative source" means `CLAUDE.md`, `apps/*/CLAUDE.md`, `.github/copilot-instructions.md`,
+- "Authoritative source" means `CLAUDE.md`, `.github/copilot-instructions.md`,
   `.github/instructions/*.md`, `.claude/agents/*.md`, `.github/agents/*.agent.md`, or
   `.claude/skills/*/SKILL.md`.
 - Quote both sides verbatim before calling something a contradiction; a difference in emphasis, scope, or level of

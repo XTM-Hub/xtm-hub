@@ -1,6 +1,6 @@
 # Duplication Lens
 
-**Goal:** Find guidance restated across `CLAUDE.md`, `apps/*/CLAUDE.md`, `.github/copilot-instructions.md`,
+**Goal:** Find guidance restated across `CLAUDE.md`, `.github/copilot-instructions.md`,
 `.github/instructions/*.md`, `.claude/agents/*.md`, `.github/agents/*.agent.md`, and `.claude/skills/*/SKILL.md`
 instead of one file holding the canonical version and the others linking to it.
 
@@ -17,8 +17,8 @@ instead of one file holding the canonical version and the others linking to it.
 - The `.claude/agents/*.md` ↔ `.github/agents/*.agent.md` pair is **intentional** duplication: the two tools use
   different `tools:` vocabularies, so both files must exist. Do not propose collapsing them. Flag the opposite —
   a behavioural rule present in one and missing from the other, which means the mirrors have drifted.
-- An `apps/*/CLAUDE.md` restating anything from the `.github/instructions/*.instructions.md` file it `@`-imports
-  is always a finding: the import already puts that content in context, so the copy is pure drift risk.
+- `CLAUDE.md` restating anything from an instruction file its Area rules section `@`-imports is always a finding:
+  the import already puts that content in context, so the copy is pure drift risk.
 
 ## Review sequence
 
