@@ -186,6 +186,8 @@ const AutoFormObject = ({
                     >
                   }
                   path={[...path, name]}
+                  dependencies={dependencies}
+                  intlTranslation={intlTranslation}
                 />
               </AccordionContent>
             </AccordionItem>
