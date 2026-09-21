@@ -418,7 +418,10 @@ const useDotButton = (
     emblaApi.on('reInit', onInit).on('reInit', onSelect).on('select', onSelect);
 
     return () => {
-      emblaApi.off('reInit', onInit).off('reInit', onSelect).off('select', onSelect);
+      emblaApi
+        .off('reInit', onInit)
+        .off('reInit', onSelect)
+        .off('select', onSelect);
     };
   }, [emblaApi, onInit, onSelect]);
 
