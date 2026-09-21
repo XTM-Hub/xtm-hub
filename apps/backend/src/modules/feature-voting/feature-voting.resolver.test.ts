@@ -269,7 +269,11 @@ describe('votingRound field resolvers', () => {
   it('should keep the features the caller already filtered for its audience', async () => {
     // Given
     const features = [buildVotableFeature()];
-    const loadSpy = vi.spyOn(featureVotingApp, 'loadRoundFeatures');
+    const loadSpy = vi.spyOn(
+      contextSimpleUserFiligran2.dataLoaders.featureVoting
+        .roundFeaturesByRoundIdLoader,
+      'load'
+    );
 
     // When
     const result = await featureVotingResolver.VotingRound!.features!(
@@ -287,7 +291,13 @@ describe('votingRound field resolvers', () => {
   it('should load the features of a round that was listed without them', async () => {
     // Given
     const features = [buildVotableFeature()];
-    vi.spyOn(featureVotingApp, 'loadRoundFeatures').mockResolvedValue(features);
+    const loadSpy = vi
+      .spyOn(
+        contextSimpleUserFiligran2.dataLoaders.featureVoting
+          .roundFeaturesByRoundIdLoader,
+        'load'
+      )
+      .mockResolvedValue(features);
     const { features: _omitted, ...roundWithoutFeatures } =
       buildVotingRoundWithFeatures();
 
@@ -300,9 +310,7 @@ describe('votingRound field resolvers', () => {
     );
 
     // Then
-    expect(featureVotingApp.loadRoundFeatures).toHaveBeenCalledWith(
-      FIXTURE_ROUND_ID
-    );
+    expect(loadSpy).toHaveBeenCalledWith(FIXTURE_ROUND_ID);
     expect(result).toEqual(features);
   });
 
@@ -335,5 +343,105 @@ describe('votingRound field resolvers', () => {
 
     // Then
     expect(result).toBe(2);
+  });
+});
+
+describe('votableFeature field resolvers', () => {
+  describe('use_cases', () => {
+    it('should keep the use cases the caller already attached', async () => {
+      // Given
+      const useCases = [{ id: 'use-case-1', name: 'Threat hunting' }] as never;
+      const loadSpy = vi.spyOn(
+        contextSimpleUserFiligran2.dataLoaders.featureVoting
+          .useCasesByFeatureIdLoader,
+        'load'
+      );
+
+      // When
+      const result = await featureVotingResolver.VotableFeature!.use_cases!(
+        buildVotableFeature({ use_cases: useCases }),
+        {},
+        contextSimpleUserFiligran2,
+        GRAPHQL_RESOLVE_INFO
+      );
+
+      // Then
+      expect(result).toEqual(useCases);
+      expect(loadSpy).not.toHaveBeenCalled();
+    });
+
+    it('should load the use cases of a feature returned without them', async () => {
+      // Given
+      const useCases = [{ id: 'use-case-1', name: 'Threat hunting' }] as never;
+      const loadSpy = vi
+        .spyOn(
+          contextSimpleUserFiligran2.dataLoaders.featureVoting
+            .useCasesByFeatureIdLoader,
+          'load'
+        )
+        .mockResolvedValue(useCases);
+      const { use_cases: _omitted, ...featureWithoutUseCases } =
+        buildVotableFeature();
+
+      // When
+      const result = await featureVotingResolver.VotableFeature!.use_cases!(
+        featureWithoutUseCases,
+        {},
+        contextSimpleUserFiligran2,
+        GRAPHQL_RESOLVE_INFO
+      );
+
+      // Then
+      expect(loadSpy).toHaveBeenCalledWith(featureWithoutUseCases.id);
+      expect(result).toEqual(useCases);
+    });
+  });
+
+  describe('illustration_document', () => {
+    it('should return null when the feature has no illustration', async () => {
+      // Given
+      const loadSpy = vi.spyOn(
+        contextSimpleUserFiligran2.dataLoaders.document.documentByIdLoader,
+        'load'
+      );
+
+      // When
+      const result = await featureVotingResolver.VotableFeature!
+        .illustration_document!(
+        buildVotableFeature({ illustration_document_id: null }),
+        {},
+        contextSimpleUserFiligran2,
+        GRAPHQL_RESOLVE_INFO
+      );
+
+      // Then
+      expect(result).toBeNull();
+      expect(loadSpy).not.toHaveBeenCalled();
+    });
+
+    it('should load the illustration document through the document DataLoader', async () => {
+      // Given
+      const documentId = uuidv4() as never;
+      const document = { id: documentId, file_name: 'illustration.png' };
+      const loadSpy = vi
+        .spyOn(
+          contextSimpleUserFiligran2.dataLoaders.document.documentByIdLoader,
+          'load'
+        )
+        .mockResolvedValue(document as never);
+
+      // When
+      const result = await featureVotingResolver.VotableFeature!
+        .illustration_document!(
+        buildVotableFeature({ illustration_document_id: documentId }),
+        {},
+        contextSimpleUserFiligran2,
+        GRAPHQL_RESOLVE_INFO
+      );
+
+      // Then
+      expect(loadSpy).toHaveBeenCalledWith(documentId);
+      expect(result).toEqual(document);
+    });
   });
 });

@@ -199,6 +199,90 @@ describe('featureVotingDomain', () => {
     });
   });
 
+  describe('loadVotableFeaturesByRoundIds', () => {
+    it('should group the features of every requested round in one query', async () => {
+      const round = await createRound();
+      const otherRound = await createRound();
+      const feature = await createFeature(round.id);
+      const otherFeature = await createFeature(otherRound.id);
+
+      const grouped = await featureVotingDomain.loadVotableFeaturesByRoundIds([
+        round.id,
+        otherRound.id,
+      ]);
+
+      expect(grouped.get(round.id)?.map(({ id }) => id)).toEqual([feature.id]);
+      expect(grouped.get(otherRound.id)?.map(({ id }) => id)).toEqual([
+        otherFeature.id,
+      ]);
+    });
+
+    it('should include inactive features, like the admin listing fallback does', async () => {
+      const round = await createRound();
+      const inactive = await createFeature(round.id, { active: false });
+
+      const grouped = await featureVotingDomain.loadVotableFeaturesByRoundIds([
+        round.id,
+      ]);
+
+      expect(grouped.get(round.id)?.map(({ id }) => id)).toEqual([inactive.id]);
+    });
+
+    it('should attach the use cases of every feature in the batch', async () => {
+      const round = await createRound();
+      const feature = await createFeature(round.id);
+      const useCase = await TestHelper.useCase.create({
+        name: `feature-voting-domain-test-use-case-${uuidv4()}`,
+        color: '#123456',
+      });
+      await featureVotingDomain.replaceFeatureUseCases(feature.id, [
+        useCase.id,
+      ]);
+
+      const grouped = await featureVotingDomain.loadVotableFeaturesByRoundIds([
+        round.id,
+      ]);
+
+      expect(
+        grouped.get(round.id)?.[0]?.use_cases?.map(({ id }) => id)
+      ).toEqual([useCase.id]);
+      await TestHelper.useCase.delete({ id: useCase.id });
+    });
+
+    it('should flag the vote of the given user across every round', async () => {
+      const round = await createRound();
+      const voted = await createFeature(round.id);
+      await vote(round.id, voted.id);
+
+      const grouped = await featureVotingDomain.loadVotableFeaturesByRoundIds(
+        [round.id],
+        VOTER
+      );
+
+      expect(grouped.get(round.id)).toEqual([
+        expect.objectContaining({ id: voted.id, has_my_vote: true }),
+      ]);
+    });
+
+    it('should not query the database for an empty list of rounds', async () => {
+      const grouped = await featureVotingDomain.loadVotableFeaturesByRoundIds(
+        []
+      );
+
+      expect(grouped.size).toBe(0);
+    });
+
+    it('should not return an entry for a round without features', async () => {
+      const round = await createRound();
+
+      const grouped = await featureVotingDomain.loadVotableFeaturesByRoundIds([
+        round.id,
+      ]);
+
+      expect(grouped.has(round.id)).toBe(false);
+    });
+  });
+
   describe('upsertFeatureVote', () => {
     // The primary key is what enforces one vote per user, round and product.
     it('should move the vote of a user instead of adding a second one', async () => {

@@ -6,9 +6,40 @@ import { UserDomain } from '../organization-management/user/user-domain/user.dom
 import { solutionCategoryDomain } from '../solution-category/solution-category.domain';
 import { DocumentDataLoader } from './document.dataloader';
 import { DocumentChildrenDomain } from './domain/document.children.domain';
+import { DocumentDomain } from './domain/document.domain';
 import { DocumentMetadataDomain } from './domain/document.metadata.domain';
 
 describe('documentDataLoader', () => {
+  it('should map documents by id and return null for missing ids', async () => {
+    vi.spyOn(
+      DocumentDomain,
+      'loadDocumentsWithMetadataByIds'
+    ).mockResolvedValue([{ id: 'doc-1' }] as never);
+
+    const result = await DocumentDataLoader.batchLoadDocumentsById([
+      'doc-1',
+      'doc-2',
+    ]);
+
+    expect(DocumentDomain.loadDocumentsWithMetadataByIds).toHaveBeenCalledWith([
+      'doc-1',
+      'doc-2',
+    ]);
+    expect(result).toEqual([{ id: 'doc-1' }, null]);
+  });
+
+  it('should wire the document loader in create()', async () => {
+    const batchLoadDocumentsByIdSpy = vi
+      .spyOn(DocumentDataLoader, 'batchLoadDocumentsById')
+      .mockResolvedValue([{ id: 'doc-1' } as never]);
+
+    const loaders = DocumentDataLoader.create();
+    const result = await loaders.documentByIdLoader.load('doc-1');
+
+    expect(batchLoadDocumentsByIdSpy).toHaveBeenCalledWith(['doc-1']);
+    expect(result).toEqual({ id: 'doc-1' });
+  });
+
   it('should map users by id and return null for missing users', async () => {
     vi.spyOn(UserDomain, 'loadUsers').mockResolvedValue([
       { id: 'user-1' } as User,

@@ -20,6 +20,7 @@ import { UserId } from '../src/model/kanel/public/User';
 import { PortalContext } from '../src/model/portal-context';
 import type { DeploymentRequestDataLoaders } from '../src/modules/deployment/deployment.dataloader';
 import type { DocumentDataLoaders } from '../src/modules/document/document.dataloader';
+import type { FeatureVotingDataLoaders } from '../src/modules/feature-voting/feature-voting.dataloader';
 import type { NewsFeedDataLoaders } from '../src/modules/news-feed/news-feed.dataloader';
 import type { ServiceInstanceDataLoaders } from '../src/modules/service/instance/service-instance.dataloader';
 import type { SubscriptionDataLoaders } from '../src/modules/subscription/subscription.dataloader';
@@ -408,6 +409,7 @@ export const contextSimpleUserFiligran2: PortalContext = {
       childrenByParentLoader: { load: () => Promise.resolve([]) },
     } as unknown as DeploymentRequestDataLoaders,
     document: {
+      documentByIdLoader: { load: () => Promise.resolve(null) },
       uploaderLoader: { load: () => Promise.resolve(null) },
       uploaderOrganizationLoader: { load: () => Promise.resolve(null) },
       childrenDocumentsLoader: { load: () => Promise.resolve([]) },
@@ -420,6 +422,10 @@ export const contextSimpleUserFiligran2: PortalContext = {
         load: () => Promise.resolve(null),
       },
     } as unknown as DocumentDataLoaders,
+    featureVoting: {
+      roundFeaturesByRoundIdLoader: { load: () => Promise.resolve([]) },
+      useCasesByFeatureIdLoader: { load: () => Promise.resolve([]) },
+    } as unknown as FeatureVotingDataLoaders,
     newsFeed: {
       metadataByNewsFeedItemIdLoader: { load: () => Promise.resolve([]) },
     } as unknown as NewsFeedDataLoaders,
