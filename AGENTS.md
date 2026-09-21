@@ -66,5 +66,4 @@ Full title and label taxonomy: [`.github/LABELS.md`](.github/LABELS.md).
 
 ## Changing the agent instructions
 
-Area rules live in `.claude/rules/` and load by path. Task playbooks are skills in `.claude/skills/`. Before
-editing any of them, or any agent definition, use the `hub-review` skill.
+Before editing anything under `.claude/` or `.github/agents/`, use the `hub-review` skill.

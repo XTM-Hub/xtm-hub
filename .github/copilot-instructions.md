@@ -1,9 +1,5 @@
 # XTM Hub — GitHub Copilot Instructions
 
-Copilot reads this file everywhere; it does not read `AGENTS.md` in JetBrains, and it ignores path-scoped globs
-in the CLI. So this file pulls in the whole surface by reference. Nothing below is written twice — every line
-lives in the file it names.
-
 @../AGENTS.md
 
 @../.claude/rules/backend.md
@@ -13,9 +9,6 @@ lives in the file it names.
 @../.claude/rules/graphql.md
 @../.claude/rules/migrations.md
 @../.claude/rules/testing.md
-
-Task playbooks are skills in [`.claude/skills/`](../.claude/skills/), which Copilot reads natively. Custom agents
-are in [`.github/agents/`](agents/).
 
 Before changing any instruction, rule, skill or agent file, use the `hub-review` skill.
 
