@@ -7678,12 +7678,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/nodemailer@npm:8.0.1":
-  version: 8.0.1
-  resolution: "@types/nodemailer@npm:8.0.1"
+"@types/nodemailer@npm:8.0.2":
+  version: 8.0.2
+  resolution: "@types/nodemailer@npm:8.0.2"
   dependencies:
     "@types/node": "npm:*"
-  checksum: 10/ec2d9783387a0b24de0cfa76a8da6beab7342e97329fe1e2cf7a26d05e57b241f8dd45276385f1ee5bd089000f35b60beb8f31a9e2e7deaec5486ff1c640e641
+  checksum: 10/e9a5df9af188d4f64666fc4fcff62159bbfcd050b7ec7ed539bf6acf9bdd180571bcd5fc19dce5b31b71cde9ff5ae82a2c68533651ddca56b3fbe5bd67668c9f
   languageName: node
   linkType: hard
 
@@ -8783,7 +8783,7 @@ __metadata:
     "@types/express-session": "npm:1.19.0"
     "@types/graphql-upload": "npm:17.0.0"
     "@types/node": "catalog:"
-    "@types/nodemailer": "npm:8.0.1"
+    "@types/nodemailer": "npm:8.0.2"
     "@types/passport": "npm:1.0.17"
     "@typescript-eslint/eslint-plugin": "npm:8.70.0"
     "@typescript-eslint/parser": "npm:8.70.0"
@@ -8867,7 +8867,7 @@ __metadata:
     "@uiw/react-md-editor": "npm:4.1.2"
     "@vitejs/plugin-react": "npm:6.1.1"
     "@vitest/coverage-v8": "catalog:"
-    autoprefixer: "npm:10.5.6"
+    autoprefixer: "npm:10.6.1"
     babel-plugin-relay: "npm:21.0.1"
     class-variance-authority: "npm:0.7.1"
     clsx: "npm:2.1.1"
@@ -9430,9 +9430,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"autoprefixer@npm:10.5.6":
-  version: 10.5.6
-  resolution: "autoprefixer@npm:10.5.6"
+"autoprefixer@npm:10.6.1":
+  version: 10.6.1
+  resolution: "autoprefixer@npm:10.6.1"
   dependencies:
     browserslist: "npm:^4.28.9"
     caniuse-lite: "npm:^1.0.30001810"
@@ -9443,7 +9443,7 @@ __metadata:
     postcss: ^8.1.0
   bin:
     autoprefixer: bin/autoprefixer
-  checksum: 10/94488a13c7586aafd32542b20cb3480c114d48bf09f9fe56d9ebb8221ef02f77303aae11b7db4e487fa7bc00664969aef3971f3e31c22f14b2ba3c0f500e9d58
+  checksum: 10/186b2e62c6fd6a5b25787f944e24951a914b4fbc96374b89a51243b7d2241365ce33e4c5698b40973749432f39ad18aa3f4ffa446ac3745166ca9149b0b5e957
   languageName: node
   linkType: hard
 

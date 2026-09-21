@@ -9,10 +9,12 @@ import { requestContext } from '../context/request.context';
 import { OrganizationId } from '../model/kanel/public/Organization';
 import { ServiceInstanceId } from '../model/kanel/public/ServiceInstance';
 import { UserLoadUserBy } from '../model/user';
+import { OrganizationDomain } from '../modules/organization-management/organization/organization.domain';
 import { UserOrganizationDomain } from '../modules/organization-management/user/user-organization/user-organization.domain';
 import { AuthHelper } from '../modules/security-management/capability/auth.helper';
 import { SubscriptionDomain } from '../modules/subscription/subscription.domain';
 import { UserServiceDomain } from '../modules/user-service/user-service.domain';
+import { logApp } from '../utils/app-logger.util';
 import { ErrorCode } from '../utils/error/error.code';
 import { BadRequestError, ForbiddenAccess } from '../utils/error/error.util';
 import { isUserAdminPlatform, isUserGranted } from './access';
@@ -108,6 +110,24 @@ export const securityGuard = {
 
     if (!userCapabilities) {
       throw ForbiddenAccess(ErrorCode.MissingCapabilityOnOrganization);
+    }
+  },
+
+  assertEmailMatchesOrganization: async (
+    user: UserLoadUserBy,
+    email: string,
+    organizationId?: OrganizationId
+  ) => {
+    if (isUserAdminPlatform(user)) return;
+
+    const [organizationFromEmail] =
+      await OrganizationDomain.loadOrganizationsFromEmail(email);
+
+    if (organizationId !== organizationFromEmail?.id) {
+      logApp.warn(
+        'You cannot add a user whose email domain is outside your organization'
+      );
+      throw ForbiddenAccess(ErrorCode.EmailOutsideOrganizationError);
     }
   },
 

@@ -160,6 +160,13 @@ export const TestUserHelper = {
         .where(field)
         .del();
     },
+    loadAll: async (
+      field: UserOrganizationPendingMutator
+    ): Promise<UserOrganizationPending[]> => {
+      return db<UserOrganizationPending[]>('User_Organization_Pending')
+        .where(field)
+        .select('*');
+    },
     linkUsersToOrganization: async (
       users: User[],
       organizationId: OrganizationId
@@ -203,6 +210,17 @@ export const TestUserHelper = {
       expect(createdUser).toBeDefined();
 
       return createdUser!;
+    },
+    insertWithPendingOrganization: async (
+      fields: UserMutator,
+      organizationId: OrganizationId
+    ): Promise<User> => {
+      const user = await TestUserHelper.user.insert(fields);
+      await TestUserHelper.user_OrganizationPending.create({
+        user_id: user.id,
+        organization_id: organizationId,
+      });
+      return user;
     },
   },
   rolePortal: {

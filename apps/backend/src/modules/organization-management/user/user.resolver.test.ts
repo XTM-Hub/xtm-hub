@@ -241,7 +241,7 @@ describe('user mutation resolver', () => {
       try {
         vi.spyOn(
           UserOrganizationDomain,
-          'updateMultipleUserOrgWithCapabilities'
+          'assignUserOrgCapabilities'
         ).mockImplementation(() => {
           throw new Error('Test error');
         });

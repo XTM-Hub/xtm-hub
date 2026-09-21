@@ -14,6 +14,7 @@ import {
   ServiceRestriction,
 } from '../__generated__/resolvers-types';
 import { requestContext } from '../context/request.context';
+import { OrganizationDomain } from '../modules/organization-management/organization/organization.domain';
 import { AuthHelper } from '../modules/security-management/capability/auth.helper';
 import { SubscriptionDomain } from '../modules/subscription/subscription.domain';
 import { UserServiceDomain } from '../modules/user-service/user-service.domain';
@@ -138,6 +139,76 @@ describe('security Guard', () => {
           PortalCapability.ManageDeployment,
         ])
       ).resolves.not.toThrow();
+    });
+  });
+
+  describe('assertEmailMatchesOrganization', () => {
+    let loadOrganizationsFromEmailSpy: MockInstance;
+
+    beforeEach(() => {
+      loadOrganizationsFromEmailSpy = vi.spyOn(
+        OrganizationDomain,
+        'loadOrganizationsFromEmail'
+      );
+    });
+
+    it('should not throw when user has bypass capability, even on a mismatched domain', async () => {
+      loadOrganizationsFromEmailSpy.mockResolvedValue([
+        { id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID },
+      ]);
+
+      await expect(
+        securityGuard.assertEmailMatchesOrganization(
+          contextBypassUser.user,
+          'user@filigran.io',
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+        )
+      ).resolves.not.toThrow();
+      expect(loadOrganizationsFromEmailSpy).not.toHaveBeenCalled();
+    });
+
+    it('should not throw when the email domain matches the target organization', async () => {
+      loadOrganizationsFromEmailSpy.mockResolvedValue([
+        { id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID },
+      ]);
+
+      await expect(
+        securityGuard.assertEmailMatchesOrganization(
+          requestContextAdminSecondOrga.user,
+          'user@second-orga.com',
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+        )
+      ).resolves.not.toThrow();
+    });
+
+    it('should throw EmailOutsideOrganizationError when the email domain does not match the target organization', async () => {
+      loadOrganizationsFromEmailSpy.mockResolvedValue([
+        { id: TEST_ORGANIZATIONS.FILIGRAN.ID },
+      ]);
+
+      const call = securityGuard.assertEmailMatchesOrganization(
+        requestContextAdminSecondOrga.user,
+        'user@filigran.io',
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+      );
+
+      await expect(call).rejects.toThrow(
+        ErrorCode.EmailOutsideOrganizationError
+      );
+    });
+
+    it('should throw EmailOutsideOrganizationError when no organization matches the email domain', async () => {
+      loadOrganizationsFromEmailSpy.mockResolvedValue([]);
+
+      const call = securityGuard.assertEmailMatchesOrganization(
+        requestContextAdminSecondOrga.user,
+        'user@unknown-domain.com',
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+      );
+
+      await expect(call).rejects.toThrow(
+        ErrorCode.EmailOutsideOrganizationError
+      );
     });
   });
 
