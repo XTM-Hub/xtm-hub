@@ -101,34 +101,40 @@ const GenericFileInput = (
     e.preventDefault();
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragActive(false);
-    const files = e.dataTransfer.files;
-    const droppedFile = files[0];
-    if (!droppedFile) {
-      return;
+  const validateFiles = (files: FileList): boolean => {
+    const firstFile = files[0];
+    if (!firstFile) {
+      return false;
     }
-    const extension = droppedFile.name.split('.')[1];
+    const extension = firstFile.name.split('.')[1];
 
     if (allowedTypes && (!extension || !allowedTypes.includes(extension))) {
       form.setError(props.name, {
         message: 'Format not accepted',
       });
-      return;
+      return false;
     }
     if (!props.multiple && files.length > 1) {
       form.setError(props.name, {
         message: 'You can only select one file',
       });
-      return;
+      return false;
     }
-    setValueFileInput(files);
+    return true;
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragActive(false);
+    const files = e.dataTransfer.files;
+    if (validateFiles(files)) {
+      setValueFileInput(files);
+    }
   };
 
   const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files) {
+    if (files && validateFiles(files)) {
       setValueFileInput(files);
     }
   };
@@ -138,6 +144,7 @@ const GenericFileInput = (
   const arraySelectedFile: File[] | null = filesSelected
     ? Array.from(filesSelected)
     : null;
+
   return (
     <div className={cn(hidden ? 'hidden' : undefined, className)}>
       <input
