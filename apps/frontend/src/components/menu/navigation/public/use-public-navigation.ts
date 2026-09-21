@@ -23,8 +23,7 @@ import {
 import { useLocale, useTranslations } from 'next-intl';
 
 export const usePublicNavigation = (
-  visibleServiceSlugs: string[],
-  isXtmPlatformTrialEnabled: boolean
+  visibleServiceSlugs: string[]
 ): NavigationConfig => {
   const t = useTranslations();
   const locale = useLocale();
@@ -58,15 +57,6 @@ export const usePublicNavigation = (
       icon: OpenCtiIconIcon,
       pathPrefix: `/${locale}/cybersecurity-solutions/opencti`,
       links: [
-        ...(!isXtmPlatformTrialEnabled
-          ? [
-              {
-                href: `/${locale}/cybersecurity-solutions/opencti-free-trial`,
-                label: t('Menu.StartFreeTrial'),
-                highlight: true,
-              },
-            ]
-          : []),
         ...buildServiceLink(
           ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS,
           t('Menu.CustomDashboards')
@@ -101,15 +91,6 @@ export const usePublicNavigation = (
       icon: OpenAevIconIcon,
       pathPrefix: `/${locale}/cybersecurity-solutions/openaev`,
       links: [
-        ...(!isXtmPlatformTrialEnabled
-          ? [
-              {
-                href: `/${locale}/cybersecurity-solutions/openaev-free-trial`,
-                label: t('Menu.StartFreeTrial'),
-                highlight: true,
-              },
-            ]
-          : []),
         ...buildServiceLink(
           ServiceSlug.OPEN_AEV_SCENARIOS,
           t('Menu.Scenarios')
@@ -174,17 +155,13 @@ export const usePublicNavigation = (
       label: t('Menu.Slack'),
       external: true,
     },
-    ...(isXtmPlatformTrialEnabled
-      ? [
-          {
-            key: 'xtm-platform-trial',
-            href: xtmPlatformTrialPublicHref,
-            icon: DiamondOutlinedIcon,
-            label: t('Menu.XTMPlatformTrial'),
-            highlight: true,
-          },
-        ]
-      : []),
+    {
+      key: 'xtm-platform-trial',
+      href: xtmPlatformTrialPublicHref,
+      icon: DiamondOutlinedIcon,
+      label: t('Menu.XTMPlatformTrial'),
+      highlight: true,
+    },
   ];
 
   return { sections, bottomLinks };

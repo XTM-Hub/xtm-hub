@@ -1,6 +1,5 @@
 import {
   type TrialsListQueryVariables,
-  type TrialsQuotasQueryVariables,
   useTrialsListQuery,
   useTrialsQuotasQuery,
   useXtmPlatformBundleQuery,
@@ -14,8 +13,7 @@ export const trialsKeys = {
 
 export const trialsQuotasKeys = {
   all: useTrialsQuotasQuery.getRootKey,
-  list: (variables: TrialsQuotasQueryVariables) =>
-    useTrialsQuotasQuery.getKey(variables),
+  list: () => useTrialsQuotasQuery.getKey(),
 };
 
 export const xtmPlatformBundleKeys = {

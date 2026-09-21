@@ -53,16 +53,6 @@ export interface FreeTrialBundleModel {
 export interface FreeTrialBundleActiveModel extends FreeTrialBundleModel {
   platformUrl: string;
 }
-export interface AdminSaasInstanceRequestedModel {
-  organizationName: string;
-  userName: string;
-  userEmail: string;
-  region: string;
-  activitySector?: string;
-  useCase?: string;
-  platformIdentifier: string;
-  deploymentType: string;
-}
 
 export interface AdminSaasBundleRequestedModel {
   organizationName: string;
@@ -161,8 +151,6 @@ export type MailTemplates = {
   platform_registered: PlatformRegisteredModel;
   platform_unregistered: PlatformUnregisteredModel;
   free_trial_registered: FreeTrialRegistered;
-  free_trial_requested: FreeTrialGenericModel;
-  free_trial_queued: FreeTrialGenericModel;
   free_trial_provisioning: FreeTrialGenericModel;
   free_trial_cancelled: FreeTrialGenericModel;
   free_trial_expired: FreeTrialGenericModel;
@@ -173,7 +161,6 @@ export type MailTemplates = {
   free_trial_bundle_expired: FreeTrialBundleModel;
   free_trial_user_added: FreeTrialUserAddedModel;
   organization_pending_user_digest: OrganizationPendingUserDigestModel;
-  admin_saas_instance_requested: AdminSaasInstanceRequestedModel;
   admin_saas_bundle_requested: AdminSaasBundleRequestedModel;
   public_roadmap_monthly_reminder: { roadmapLink: string };
 };
@@ -210,14 +197,6 @@ export const templateSubjects: {
     `Welcome to your ${
       PlatformIdentifierToString[params.platformIdentifier]
     } free trial!`,
-  free_trial_requested: (params: FreeTrialGenericModel) =>
-    `Your ${
-      PlatformIdentifierToString[params.platformIdentifier]
-    } Free Trial Request`,
-  free_trial_queued: (params: FreeTrialGenericModel) =>
-    `Your ${
-      PlatformIdentifierToString[params.platformIdentifier]
-    } Free Trial Request`,
   free_trial_provisioning: (params: FreeTrialGenericModel) =>
     `Your ${
       PlatformIdentifierToString[params.platformIdentifier]
@@ -241,9 +220,6 @@ export const templateSubjects: {
     } free trial!`,
   organization_pending_user_digest: () =>
     'XTM Hub - Users Requesting to Join Your Organization',
-  admin_saas_instance_requested: (params: AdminSaasInstanceRequestedModel) => {
-    return `New ${params.platformIdentifier} SaaS ${params.deploymentType} Has Been Launched on XTM Hub by ${params.organizationName}`;
-  },
   admin_saas_bundle_requested: (params: AdminSaasBundleRequestedModel) => {
     return `New ${BUNDLE_PLATFORM_NAME} Trial Has Been Launched on XTM Hub by ${params.organizationName}`;
   },

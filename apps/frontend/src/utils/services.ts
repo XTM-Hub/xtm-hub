@@ -107,23 +107,6 @@ const freeTrialStaticData = (
   };
 };
 
-export const freeTrialSkeletonToServiceInstanceCardData = (
-  platformIdentifier: PlatformIdentifier,
-  t: ReturnType<typeof useTranslations>
-) => {
-  const page =
-    platformIdentifier === PlatformIdentifier.Openaev
-      ? 'openaev-free-trial'
-      : 'opencti-free-trial';
-
-  return {
-    ...freeTrialStaticData(platformIdentifier, t),
-    id: 'freeTrial',
-    displayedServiceStatus: t('Service.Trials.Display.New'),
-    url: `/app/service/${page}`,
-  };
-};
-
 export const registeredPlatformToServiceInstanceCardData = (
   platform: registerRegisteredPlatformListFragment$data['registeredPlatforms'][number],
   t: ReturnType<typeof useTranslations>

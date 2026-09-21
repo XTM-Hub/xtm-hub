@@ -8,15 +8,12 @@ import HeaderComponent from '@/components/Header';
 import { AppShell } from '@/components/layout/AppShell';
 import PrivateMenu from '@/components/menu/PrivateMenu';
 import { ReactQueryProvider } from '@/components/ReactQueryProvider';
-import { TryFiligranProductsBanner } from '@/components/service/trial-instances/banner/TryFiligranProductsBanner';
 import { PrivateXtmPlatformTrialBanner } from '@/components/service/trial-instances/banner/xtm-platform-trial/PrivateXtmPlatformTrialBanner';
 import { RelayProvider } from '@/relay/relay-provider';
 import { loadMeUser } from '@/utils/load-me-user';
 import { getMetadataBase } from '@/utils/metadata';
 import { APP_PATH } from '@/utils/path/constant';
 import { buildSignupRedirect } from '@/utils/redirect';
-import { isFeatureEnabled } from '@/utils/settings.service';
-import { FeatureFlag } from '@graphql/generated';
 import { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -47,19 +44,11 @@ const RootLayout = async ({ children }: RootLayoutProps) => {
     redirect(buildSignupRedirect(pathname));
   }
 
-  const xtmPlatformTrialEnabled = await isFeatureEnabled(
-    FeatureFlag.XtmPlatformTrial
-  );
-
   const banners = (
     <>
       <TestEnvBanner />
       <AdminBanner />
-      {xtmPlatformTrialEnabled ? (
-        <PrivateXtmPlatformTrialBanner />
-      ) : (
-        <TryFiligranProductsBanner />
-      )}
+      <PrivateXtmPlatformTrialBanner />
     </>
   );
 

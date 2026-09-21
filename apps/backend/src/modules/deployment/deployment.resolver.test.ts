@@ -25,7 +25,6 @@ import {
   QueryDeploymentRequestsListArgs,
   RegisteredPlatform,
   ReorderDeploymentRequestInQueueDirection,
-  TrialDeploymentsInput,
 } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
 import { DeploymentRequestId } from '../../model/kanel/public/DeploymentRequest';
@@ -46,7 +45,7 @@ describe('deployment resolver', () => {
     beforeEach(() => {
       requestContext.set(requestContextRegistererUserSecondOrga);
     });
-    it('should return the deployment request created', async () => {
+    it('should return the bundle deployment request created', async () => {
       const deployment = await resolver.Mutation.createDeploymentRequest(
         undefined,
         {
@@ -60,9 +59,8 @@ describe('deployment resolver', () => {
                 use_case: DeploymentRequestUseCase.ThreatHunting,
               },
             ],
-            products: [PlatformIdentifier.Opencti],
+            products: [PlatformIdentifier.Xtmone, PlatformIdentifier.Opencti],
             region: DeploymentRequestPlatformRegion.UsEast,
-            type: DeploymentRequestDeploymentType.Trial,
             source: DeploymentRequestSource.Xtmhub,
           },
         }
@@ -71,10 +69,10 @@ describe('deployment resolver', () => {
         activity_sector:
           DeploymentRequestActivitySector.ComputerNetworkSecurity,
         job_title: DeploymentRequestJobTitle.CybersecurityEngineer,
-        use_case: DeploymentRequestUseCase.ThreatHunting,
-        platform_identifier: PlatformIdentifier.Opencti,
+        use_case: null,
+        platform_identifier: null,
         region: DeploymentRequestPlatformRegion.UsEast,
-        type: DeploymentRequestDeploymentType.Trial,
+        type: DeploymentRequestDeploymentType.Bundle,
         hub_status: DeploymentRequestHubStatus.Pending,
         target_state: DeploymentRequestPlatformState.Active,
         actual_state: DeploymentRequestPlatformState.Unprovisioned,
@@ -86,22 +84,16 @@ describe('deployment resolver', () => {
     let initialDeployment: DeploymentRequest;
 
     beforeEach(async () => {
-      requestContext.set(requestContextRegistererUserSecondOrga);
-      initialDeployment = await DeploymentApp.createDeploymentRequest({
-        activity_sector:
-          DeploymentRequestActivitySector.ComputerNetworkSecurity,
-        job_title: DeploymentRequestJobTitle.CybersecurityEngineer,
-        use_cases_by_product: [
+      initialDeployment =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
           {
-            platform_identifier: PlatformIdentifier.Opencti,
-            use_case: DeploymentRequestUseCase.ThreatHunting,
-          },
-        ],
-        products: [PlatformIdentifier.Opencti],
-        region: DeploymentRequestPlatformRegion.UsEast,
-        type: DeploymentRequestDeploymentType.Trial,
-        source: DeploymentRequestSource.Xtmhub,
-      });
+            organization_requester_id:
+              TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            user_requester_id:
+              TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+            actual_state: DeploymentRequestPlatformState.Unprovisioned,
+          }
+        );
       requestContext.set(requestContextSystemUserManageDeployment);
     });
     it('should return the updated deployment request', async () => {
@@ -213,9 +205,7 @@ describe('deployment resolver', () => {
           DeploymentRequestPlatformRegion.UsEast,
         ]);
       const availableDeployments =
-        await resolver.Query.deploymentRequestsAvailable(undefined, {
-          platformIdentifier: PlatformIdentifier.Opencti,
-        });
+        await resolver.Query.deploymentRequestsAvailable();
 
       expect(availableDeployments).toStrictEqual([
         {
@@ -223,28 +213,24 @@ describe('deployment resolver', () => {
           region: DeploymentRequestPlatformRegion.ApacAu,
           availableCount: 10,
           capacity: 10,
-          platform_identifier: PlatformIdentifier.Opencti,
         },
         {
           id: expect.any(String),
           region: DeploymentRequestPlatformRegion.ApacSg,
           availableCount: 10,
           capacity: 10,
-          platform_identifier: PlatformIdentifier.Opencti,
         },
         {
           id: expect.any(String),
           region: DeploymentRequestPlatformRegion.EuWest,
           availableCount: 20,
           capacity: 20,
-          platform_identifier: PlatformIdentifier.Opencti,
         },
         {
           id: expect.any(String),
           region: DeploymentRequestPlatformRegion.UsEast,
           availableCount: 20,
           capacity: 20,
-          platform_identifier: PlatformIdentifier.Opencti,
         },
       ]);
     });
@@ -313,34 +299,6 @@ describe('deployment resolver — unit tests', () => {
         {} as unknown as QueryDeploymentRequestsListArgs
       );
       await expect(call).rejects.toMatchObject({ name: ErrorType.BadRequest });
-    });
-  });
-
-  describe('trial deployments GraphQL query', () => {
-    it('should delegate to DeploymentApp.loadTrialDeployments and return result', async () => {
-      const expected = [] as unknown as Awaited<
-        ReturnType<typeof DeploymentApp.loadTrialDeployments>
-      >;
-      vi.spyOn(DeploymentApp, 'loadTrialDeployments').mockResolvedValue(
-        expected
-      );
-
-      const result = await resolver.Query.trialDeployments(undefined, {
-        input: {} as unknown as TrialDeploymentsInput,
-      });
-
-      expect(result).toEqual(expected);
-    });
-
-    it('should map to NotFound for DeploymentRequestQuotaNotFound error', async () => {
-      vi.spyOn(DeploymentApp, 'loadTrialDeployments').mockRejectedValue(
-        new Error(ErrorCode.DeploymentRequestQuotaNotFound)
-      );
-
-      const call = resolver.Query.trialDeployments(undefined, {
-        input: {} as unknown as TrialDeploymentsInput,
-      });
-      await expect(call).rejects.toMatchObject({ name: ErrorType.NotFound });
     });
   });
 

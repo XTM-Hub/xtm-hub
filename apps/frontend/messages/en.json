@@ -444,10 +444,6 @@
       "Contract": "Contract",
       "Remaining": "remaining",
       "DaysRemaining": "{days, plural, =1 {# day} other {# days}}"
-    },
-    "TryOtherPlatform": {
-      "Title": "Extend and scale your XTM Platform",
-      "Cta": "Try {productName}"
     }
   },
   "PublicHomePage": {
@@ -568,7 +564,6 @@
   "Menu": {
     "XTMPlatform": "XTM Platform",
     "XTMPlatformTrial": "XTM Platform Trial",
-    "StartFreeTrial": "Start Free Trial",
     "CustomDashboards": "Custom Dashboards",
     "CustomViews": "Custom Views",
     "Integrations": "Integrations",
@@ -750,7 +745,6 @@
       "CancelTrial": "Cancel the trial"
     },
     "UpdateQuotasForm": {
-      "Title": "Update quotas for {platform} in {region}",
       "QuotasUpdated": "Quota has been updated successfully",
       "NewCapacityLabel": "New quota capacity",
       "AlertDialog": {
@@ -1502,9 +1496,6 @@
     "SubscribeService": "Subscribe to {serviceName} service",
     "SubscribeSuccessful": "You have successfully subscribed to the service. You can now find it in your subscribed services.",
     "Trials": {
-      "ExploreBold": "Free Trial!",
-      "ExplorePlatform": "Explore {platformName} platform with 30 days",
-      "ExploreProducts": "Explore OpenCTI or OpenAEV product with 30 days",
       "Active": "Your OpenCTI free trial is active",
       "Provisioning": "Your OpenCTI free trial is currently being provisioned.",
       "Requested": "Your OpenCTI free trial has been requested.",
@@ -1571,8 +1562,6 @@
           }
         }
       },
-      "StartTrial": "Start your free trial",
-      "StartTrialWithName": "Start your free {platformName} trial",
       "OpenAEVPlatformBreadcrumb": "OpenAEV Trial platform",
       "OpenCTIPlatformBreadcrumb": "OpenCTI Trial platform",
       "PageHeader": {
@@ -1746,11 +1735,6 @@
           "Title": "OpenAEV 30-days Free Trial",
           "FreeTrialDescription": "Explore OpenAEV to simulate real-life attack scenarios, evaluate your security posture, and improve cyber resilience - at a technical and human level."
         }
-      },
-      "CapacityWarning": {
-        "Title": "Availability Notice",
-        "Content": "A platform slot is not available in your region at this time. Would you like to receive a notification when it becomes available?",
-        "Continue": "Notify me"
       },
       "ManageUsers": {
         "Title": "Manage users",

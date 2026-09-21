@@ -324,7 +324,6 @@ describe('PrivateXtmPlatformTrialPanel', () => {
             use_case: DeploymentRequestUseCase.ThreatHunting,
           },
         ],
-        type: DeploymentRequestDeploymentType.Bundle,
         source: DeploymentRequestSource.Xtmhub,
       },
     });

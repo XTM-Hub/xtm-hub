@@ -103,6 +103,8 @@ export const createPlatformTokenResolver = (
       platform_token: null,
       picture_minio: null,
       selected_language: 'en',
+      status: null,
+      invitation_date: null,
       organizations: [organization],
       capabilities: [],
       roles_portal: [],

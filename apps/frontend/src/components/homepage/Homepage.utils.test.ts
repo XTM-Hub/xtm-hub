@@ -9,7 +9,6 @@ import {
   buildDistinctPlatformIdentifiersFromServiceDefinition,
   findLogoUrl,
   mapRegisteredPlatformsToHomepageCards,
-  resolveHomepageCrossSellProduct,
   resolveRemainingTrialDays,
 } from './Homepage.utils';
 
@@ -252,64 +251,4 @@ describe('findLogoUrl', () => {
       );
     }
   );
-});
-
-describe('resolveHomepageCrossSellProduct', () => {
-  it.each([
-    {
-      trialDeploymentsEligibility: undefined,
-      expected: undefined,
-      description: 'returns undefined when no eligibility data is available',
-    },
-    {
-      trialDeploymentsEligibility: {
-        availableTrials: [],
-        isBlacklisted: false,
-      },
-      expected: undefined,
-      description: 'returns undefined when no trial is available',
-    },
-    {
-      trialDeploymentsEligibility: {
-        availableTrials: [PlatformIdentifier.Opencti],
-        isBlacklisted: false,
-      },
-      expected: PlatformIdentifier.Opencti,
-      description: 'returns OpenCTI when only OpenCTI trial is available',
-    },
-    {
-      trialDeploymentsEligibility: {
-        availableTrials: [PlatformIdentifier.Openaev],
-        isBlacklisted: false,
-      },
-      expected: PlatformIdentifier.Openaev,
-      description: 'returns OpenAEV when only OpenAEV trial is available',
-    },
-    {
-      trialDeploymentsEligibility: {
-        availableTrials: [
-          PlatformIdentifier.Opencti,
-          PlatformIdentifier.Openaev,
-        ],
-        isBlacklisted: false,
-      },
-      expected: PlatformIdentifier.Opencti,
-      description: 'returns OpenCTI first when both trials are available',
-    },
-    {
-      trialDeploymentsEligibility: {
-        availableTrials: [
-          PlatformIdentifier.Opencti,
-          PlatformIdentifier.Openaev,
-        ],
-        isBlacklisted: true,
-      },
-      expected: undefined,
-      description: 'returns undefined when organization is blacklisted',
-    },
-  ])('$description', ({ trialDeploymentsEligibility, expected }) => {
-    expect(resolveHomepageCrossSellProduct(trialDeploymentsEligibility)).toBe(
-      expected
-    );
-  });
 });
