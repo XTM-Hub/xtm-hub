@@ -34,7 +34,7 @@ The surface is shared by two tools, so parts of it are deliberately paired. Trea
 | Pair | How they are kept identical |
 | --- | --- |
 | `AGENTS.md` / `CLAUDE.md` | `CLAUDE.md` is the single line `@AGENTS.md` — nothing to compare |
-| `.claude/rules/*.md` / `.github/instructions/*.instructions.md` | the rule holds the content and a `paths` glob; the `.github` file is a five-line pointer holding the matching `applyTo` glob. Same globs, no duplicated content |
+| `.claude/rules/*.md` / `.github/copilot-instructions.md` | the rule is the only copy. Claude loads it by its `paths` glob; Copilot gets it through an `@` include in `copilot-instructions.md`, unscoped. Every rule must have its include |
 | `.claude/agents/*.md` / `.github/agents/*.agent.md` | **real duplication** — the `tools:` vocabularies differ, so the two files coexist. Their `name`, `description` and behavioural rules must match; only the frontmatter `tools:` and the tool-specific phrasing may differ. A rule added to one and not the other is a duplication-lens finding. |
 
 ## Inputs
@@ -45,7 +45,7 @@ The surface is shared by two tools, so parts of it are deliberately paired. Trea
   - **Named file(s)** — whatever the caller pointed at.
   - **Full audit** (default when nothing else is specified) — every file under `.claude/rules/`,
     `.claude/skills/`, `.claude/agents/`, `.github/agents/`, plus `.github/copilot-instructions.md`
-    `.github/instructions/` and `AGENTS.md`.
+    and `AGENTS.md`.
 - **lenses** (optional) — one or more lens names. Default: all four lenses below.
 
 ## Lenses
@@ -54,7 +54,7 @@ Each lens is a reference file loaded just-in-time — read only the ones that ru
 
 | Lens | Reference | Catches |
 | --- | --- | --- |
-| Stale reference | `references/stale-reference.md` | Paths, `yarn` commands, `applyTo` globs, version literals that no longer resolve |
+| Stale reference | `references/stale-reference.md` | Paths, `yarn` commands, `paths` globs, `@` includes, version literals that no longer resolve |
 | Contradiction | `references/contradiction.md` | Two authoritative sources giving conflicting guidance |
 | Code-usage mismatch | `references/code-usage-mismatch.md` | A documented convention the code no longer follows, or vice versa |
 | Duplication | `references/duplication.md` | Guidance restated across files instead of one linking to the other |

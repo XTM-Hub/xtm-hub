@@ -1,13 +1,21 @@
 # XTM Hub — GitHub Copilot Instructions
 
-Copilot-specific notes. Everything else — what this is, setup, dev servers, validation commands, the mandatory
-coding rules and the commit conventions — is in [`AGENTS.md`](../AGENTS.md), which Copilot loads alongside this
-file rather than instead of it.
+Copilot reads this file everywhere; it does not read `AGENTS.md` in JetBrains, and it ignores path-scoped globs
+in the CLI. So this file pulls in the whole surface by reference. Nothing below is written twice — every line
+lives in the file it names.
 
-Per-area rules arrive on their own: each file in [`.github/instructions/`](instructions/) carries a path glob and
-names the rule it covers in [`.claude/rules/`](../.claude/rules/). **Open the file it names** — the rules are
-there, not in the pointer. Task playbooks are skills in [`.claude/skills/`](../.claude/skills/), which Copilot
-reads natively. Custom agents are in [`.github/agents/`](agents/).
+@../AGENTS.md
+
+@../.claude/rules/backend.md
+@../.claude/rules/ci.md
+@../.claude/rules/e2e.md
+@../.claude/rules/frontend.md
+@../.claude/rules/graphql.md
+@../.claude/rules/migrations.md
+@../.claude/rules/testing.md
+
+Task playbooks are skills in [`.claude/skills/`](../.claude/skills/), which Copilot reads natively. Custom agents
+are in [`.github/agents/`](agents/).
 
 Before changing any instruction, rule, skill or agent file, use the `hub-review` skill.
 

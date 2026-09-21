@@ -18,8 +18,8 @@ instead of one file holding the canonical version and the others linking to it.
   different `tools:` vocabularies, so both files must exist. Do not propose collapsing them. Flag the opposite —
   a behavioural rule present in one and missing from the other, which means the mirrors have drifted.
 - `AGENTS.md` restating anything from a rule file is always a finding: the rule reaches Claude through its
-  `paths` glob and Copilot through `applyTo`, so the copy is pure drift risk. `AGENTS.md` holds only what is true
-  in every session.
+  `paths` glob and Copilot through the `@` include in `copilot-instructions.md`, so the copy is pure drift risk.
+  `AGENTS.md` holds only what is true in every session.
 
 ## Review sequence
 

@@ -92,37 +92,34 @@ You do not have to configure anything: clone the repo and your tool picks up its
 
 | | Claude Code | GitHub Copilot |
 | --- | --- | --- |
-| Entry point | `AGENTS.md`, read natively (`CLAUDE.md` is a one-line import of it, for older versions and Bedrock sessions) | `AGENTS.md` + [`.github/copilot-instructions.md`](.github/copilot-instructions.md) |
-| Per-area rules | [`.claude/rules/*.md`](.claude/rules), loaded when a file matches their `paths` glob | a pointer per rule in [`.github/instructions/`](.github/instructions), injected by its `applyTo` glob, telling Copilot to read the rule |
+| Entry point | `AGENTS.md`, read natively (`CLAUDE.md` is a one-line import of it, for older versions and Bedrock sessions) | [`.github/copilot-instructions.md`](.github/copilot-instructions.md), which `@`-includes `AGENTS.md` |
+| Per-area rules | [`.claude/rules/*.md`](.claude/rules), loaded only when a file matches their `paths` glob | the same files, `@`-included by `copilot-instructions.md` — all of them, always |
 | Skills | [`.claude/skills/*/SKILL.md`](.claude/skills) | the same directory, which Copilot reads natively |
 | Agents | [`.claude/agents/*.md`](.claude/agents) | [`.github/agents/*.agent.md`](.github/agents) |
 | Shared settings | `.claude/settings.json` | — |
 
-Copilot requires its path-specific instructions to sit under `.github/instructions/` with an `.instructions.md`
-name, and it does not expand `@` includes in those files. So each rule exists once, in `.claude/rules/`, and
-`.github/instructions/` holds a five-line pointer that Copilot injects at the right moment and that tells it to
-read the rule. No symlinks, no duplicated content — but the glob is written twice, `paths` in the rule and
-`applyTo` in the pointer. **Keep the two identical**; `hub-review` checks them pattern for pattern.
+Every rule exists exactly once, in `.claude/rules/`. There are no symlinks, no generated copies and no
+`.github/instructions/` directory. Copilot gets the whole set through eight `@` include lines in
+`copilot-instructions.md`.
+
+**Why Copilot gets them unscoped.** Its path-scoped mechanism cannot be relied on here: the CLI discovers
+`.github/instructions/` files but never applies their `applyTo` glob (measured, not assumed), and Copilot in
+JetBrains does not read `AGENTS.md` at all. An `@` include is expanded in `copilot-instructions.md`, `AGENTS.md`
+and `CLAUDE.md`, but never in a `*.instructions.md` file. Including everything unconditionally is the only shape
+that reaches every Copilot client without duplicating a single line. Claude Code keeps proper scoping.
 
 ### Where to make a change
 
 - **A rule that is true in every session** (a command, a mandatory convention, repository etiquette) → `AGENTS.md`.
   Keep it short: it is loaded into every conversation, and a bloated entry point makes agents ignore the rules that
   matter.
-- **A rule for one area of the codebase** → the matching `.claude/rules/*.md`. If the scope changes, update the
-  pointer's `applyTo` too. Never copy its content into `AGENTS.md` or into the pointer. A brand-new rule also
-  needs its pointer under `.github/instructions/`, or Copilot will not see it.
+- **A rule for one area of the codebase** → the matching `.claude/rules/*.md`, adjusting its `paths` glob if the
+  scope changes. Never copy its content into `AGENTS.md`. A brand-new rule also needs its `@` include line in
+  `copilot-instructions.md`, or Copilot will not see it.
 - **A task playbook** (how to write a migration, how to review) → a skill under `.claude/skills/`.
 - **Agent behaviour** → **both** `.claude/agents/<name>.md` and `.github/agents/<name>.agent.md`. This is the only
   deliberate duplication in the setup: the two tools name their tools differently, so the files cannot be shared.
   Their behavioural rules must stay identical; only the frontmatter `tools:` list may differ.
-
-### No symlinks
-
-Everything real lives under `.claude/`, as ordinary files — the repository is multi-OS and a committed symlink
-arrives as a text file on a Windows clone without Developer Mode, which fails silently. Copilot reads
-`.claude/skills/` natively, so skills need nothing on its side; only the seven pointers in
-`.github/instructions/` exist for it. The day Copilot goes, that directory is deleted and nothing moves.
 
 ### Local settings
 

@@ -16,13 +16,13 @@ still good advice — that is the code-usage-mismatch lens's job.
 - A path reference is valid if it resolves either exactly as written from the repo root, or under `apps/backend/`,
   `apps/frontend/`, or `apps/e2e/` — instructions files write paths relative to the app they document (e.g.
   `.claude/rules/backend.md` saying `src/config.ts` means `apps/backend/src/config.ts`).
-- An `applyTo` or `paths` glob (in a `.claude/rules/*.md` frontmatter) is valid if it matches at least one real file in
+- A `paths` glob (in a `.claude/rules/*.md` frontmatter) is valid if it matches at least one real file in
   the repo.
-- Every `.claude/rules/<area>.md` must have a `.github/instructions/<area>.instructions.md` pointer, and the
-  pointer's `applyTo` string must cover exactly the same globs as the rule's `paths` list, pattern for pattern.
-  A rule with no pointer is invisible to Copilot; a pointer with no rule sends it to a file that does not exist;
-  globs that disagree mean the two tools apply the rule to different files. All three fail silently.
-- A pointer holding rule content instead of a link is a finding for the duplication lens, not this one.
+- Every `.claude/rules/<area>.md` must have a matching `@../.claude/rules/<area>.md` include in
+  `.github/copilot-instructions.md`, and every include must point at a rule that exists. A rule with no include
+  is invisible to Copilot; an include with no rule resolves to nothing. Both fail silently.
+- `@` includes resolve relative to the file holding them, and are expanded only in `copilot-instructions.md`,
+  `AGENTS.md` and `CLAUDE.md` — never in a `*.instructions.md` file.
 - Skills need no counterpart — Copilot reads `.claude/skills/` natively.
 - A version literal (Node, Yarn, a package version) is stale if it contradicts `.nvmrc`, the `packageManager` field
   in the root `package.json`, or the `catalog` block in `.yarnrc.yml` — check those files, don't assume from memory.
