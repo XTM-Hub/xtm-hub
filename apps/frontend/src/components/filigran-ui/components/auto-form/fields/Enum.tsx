@@ -40,7 +40,7 @@ const AutoFormEnum = ({
   }
 
   function findItem(value: string) {
-    return values.find((item) => item[0] === value);
+    return values.find((item) => item[1] === value);
   }
 
   const { popoverContentClassName, ...selectFieldProps } = fieldProps;
