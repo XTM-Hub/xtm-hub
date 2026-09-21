@@ -31,7 +31,7 @@ type(scope?)!?: description (#issue)
 - Sign your commits.
 
 When generating commit messages, PR titles or issue titles, always follow this convention. See [
-`.github/LABELS.md`](.github/LABELS.md) for the full title and label taxonomy.
+`.github/LABELS.md`](LABELS.md) for the full title and label taxonomy.
 <!-- filigran-conventions:end -->
 
 

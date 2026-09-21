@@ -24,8 +24,10 @@ Bare paths (e.g. `references/stale-reference.md`) resolve from `{skill-root}` �
 
 The `<!-- filigran-conventions -->` and `<!-- filigran-model-policy -->` blocks, in
 `.github/copilot-instructions.md` and `CONTRIBUTING.md`, are synced from an org-wide source. Never edit them and
-report nothing inside them, including the commit conventions they restate from `AGENTS.md` — that duplication is
-deliberate and its fix belongs upstream. A genuine problem in there is escalated, never fixed here.
+never rewrite the guidance inside them, and do not report the commit conventions they restate from `AGENTS.md`
+— that duplication is deliberate. A reference that objectively does not resolve inside one of those blocks is
+still a finding: repair it locally so the link works today, and escalate it as well, because the next sync
+overwrites the block and the same break almost certainly exists in the other Filigran repositories.
 
 The surface is shared by two tools, so parts of it are deliberately paired. Treat each pair as one unit:
 
