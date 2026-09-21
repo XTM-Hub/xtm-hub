@@ -10,7 +10,11 @@ import { useOneClickDeployTab } from '@/components/service/document/one-click-de
 import { useBuildCompatibilityTranslationKey } from '@/hooks/use-build-compatibility-translation-key';
 import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
 import { isProduction } from '@/lib/utils';
-import { getPlatformIdentifier, isEeCapableContract } from '@/utils/platform';
+import {
+  getPlatformIdentifier,
+  isEeCapableContract,
+  requiresEnterpriseEdition,
+} from '@/utils/platform';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { AlertDialog, AlertDialogContent, SimpleTooltip } from '@filigran/ui';
 import { Button } from '@filigran/ui/servers';
@@ -62,7 +66,8 @@ const OneClickDeploy = ({
     });
 
   const requiresEe =
-    documentData.type === ShareableResourceType.OPENCTI_PLAYBOOK;
+    documentData.type === ShareableResourceType.OPENCTI_PLAYBOOK ||
+    requiresEnterpriseEdition(documentData.license_type);
 
   const hasEeCapablePlatform = useMemo(
     () => platforms.some((platform) => isEeCapableContract(platform.contract)),
