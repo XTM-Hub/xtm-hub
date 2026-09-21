@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { database } from '../../../knexfile';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import { TEST_ORGANIZATIONS } from '../../../tests/tests.const';
 import {
@@ -206,15 +207,29 @@ describe('featureVotingDomain', () => {
       const feature = await createFeature(round.id);
       const otherFeature = await createFeature(otherRound.id);
 
-      const grouped = await featureVotingDomain.loadVotableFeaturesByRoundIds([
-        round.id,
-        otherRound.id,
-      ]);
+      let queryCount = 0;
+      const onQuery = () => {
+        queryCount += 1;
+      };
+      database.on('query', onQuery);
+
+      let grouped: Awaited<
+        ReturnType<typeof featureVotingDomain.loadVotableFeaturesByRoundIds>
+      >;
+      try {
+        grouped = await featureVotingDomain.loadVotableFeaturesByRoundIds([
+          round.id,
+          otherRound.id,
+        ]);
+      } finally {
+        database.off('query', onQuery);
+      }
 
       expect(grouped.get(round.id)?.map(({ id }) => id)).toEqual([feature.id]);
       expect(grouped.get(otherRound.id)?.map(({ id }) => id)).toEqual([
         otherFeature.id,
       ]);
+      expect(queryCount).toBe(2);
     });
 
     it('should include inactive features, like the admin listing fallback does', async () => {

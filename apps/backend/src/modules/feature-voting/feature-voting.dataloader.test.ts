@@ -4,6 +4,7 @@ import { requestContext } from '../../context/request.context';
 import UseCase from '../../model/kanel/public/UseCase';
 import { VotableFeatureId } from '../../model/kanel/public/VotableFeature';
 import { VotingRoundId } from '../../model/kanel/public/VotingRound';
+import { UserLoadUserBy } from '../../model/user';
 import { FeatureVotingDataLoader } from './feature-voting.dataloader';
 import {
   featureVotingDomain,
@@ -45,8 +46,8 @@ describe('featureVotingDataLoader', () => {
         'loadVotableFeaturesByRoundIds'
       ).mockResolvedValue(new Map());
       vi.spyOn(requestContext, 'get').mockReturnValue({
-        user: { id: userId },
-      } as never);
+        user: { id: userId } as UserLoadUserBy,
+      });
 
       await FeatureVotingDataLoader.batchLoadRoundFeatures([roundId]);
 
@@ -79,28 +80,38 @@ describe('featureVotingDataLoader', () => {
   });
 
   describe('create', () => {
-    it('should wire the round features loader to batchLoadRoundFeatures', async () => {
+    it('should batch concurrent round feature loads into a single call', async () => {
       const roundId = uuidv4() as VotingRoundId;
+      const otherRoundId = uuidv4() as VotingRoundId;
       const batchSpy = vi
         .spyOn(FeatureVotingDataLoader, 'batchLoadRoundFeatures')
-        .mockResolvedValue([[]]);
+        .mockResolvedValue([[], []]);
 
       const loaders = FeatureVotingDataLoader.create();
-      await loaders.roundFeaturesByRoundIdLoader.load(roundId);
+      const roundIdLoad = loaders.roundFeaturesByRoundIdLoader.load(roundId);
+      const otherRoundIdLoad =
+        loaders.roundFeaturesByRoundIdLoader.load(otherRoundId);
+      await Promise.all([roundIdLoad, otherRoundIdLoad]);
 
-      expect(batchSpy).toHaveBeenCalledWith([roundId]);
+      expect(batchSpy).toHaveBeenCalledTimes(1);
+      expect(batchSpy).toHaveBeenCalledWith([roundId, otherRoundId]);
     });
 
-    it('should wire the use cases loader to batchLoadUseCasesByFeature', async () => {
+    it('should batch concurrent use case loads into a single call', async () => {
       const featureId = uuidv4() as VotableFeatureId;
+      const otherFeatureId = uuidv4() as VotableFeatureId;
       const batchSpy = vi
         .spyOn(FeatureVotingDataLoader, 'batchLoadUseCasesByFeature')
-        .mockResolvedValue([[]]);
+        .mockResolvedValue([[], []]);
 
       const loaders = FeatureVotingDataLoader.create();
-      await loaders.useCasesByFeatureIdLoader.load(featureId);
+      const featureIdLoad = loaders.useCasesByFeatureIdLoader.load(featureId);
+      const otherFeatureIdLoad =
+        loaders.useCasesByFeatureIdLoader.load(otherFeatureId);
+      await Promise.all([featureIdLoad, otherFeatureIdLoad]);
 
-      expect(batchSpy).toHaveBeenCalledWith([featureId]);
+      expect(batchSpy).toHaveBeenCalledTimes(1);
+      expect(batchSpy).toHaveBeenCalledWith([featureId, otherFeatureId]);
     });
   });
 });

@@ -8,6 +8,8 @@ import {
   FiligranProduct,
   VotingRoundStatus,
 } from '../../__generated__/resolvers-types';
+import Document, { DocumentId } from '../../model/kanel/public/Document';
+import UseCase, { UseCaseId } from '../../model/kanel/public/UseCase';
 import { VotableFeatureId } from '../../model/kanel/public/VotableFeature';
 import { featureVotingApp } from './feature-voting.app';
 import {
@@ -17,6 +19,39 @@ import {
   FIXTURE_SERVICE_INSTANCE_ID,
 } from './feature-voting.fixtures';
 import featureVotingResolver from './feature-voting.resolver';
+
+const buildUseCase = (overrides: Partial<UseCase> = {}): UseCase => ({
+  id: 'use-case-1' as UseCaseId,
+  name: 'Threat hunting',
+  color: '#000000',
+  product: [FiligranProduct.Opencti],
+  ...overrides,
+});
+
+const buildDocument = (overrides: Partial<Document> = {}): Document => ({
+  id: 'doc-1' as DocumentId,
+  uploader_id: null,
+  service_instance_id: null,
+  description: null,
+  file_name: null,
+  minio_name: null,
+  active: true,
+  created_at: new Date('2024-01-01T00:00:00Z'),
+  remover_id: null,
+  mime_type: null,
+  name: null,
+  updated_at: null,
+  updater_id: null,
+  short_description: null,
+  slug: null,
+  uploader_organization_id: null,
+  type: 'test-type',
+  source_type: null,
+  is_decommissioned: false,
+  version: null,
+  tags: [],
+  ...overrides,
+});
 
 describe('currentVotingRound GraphQL query', () => {
   it('should delegate to featureVotingApp.loadCurrentVotingRound', async () => {
@@ -350,7 +385,7 @@ describe('votableFeature field resolvers', () => {
   describe('use_cases', () => {
     it('should keep the use cases the caller already attached', async () => {
       // Given
-      const useCases = [{ id: 'use-case-1', name: 'Threat hunting' }] as never;
+      const useCases = [buildUseCase()];
       const loadSpy = vi.spyOn(
         contextSimpleUserFiligran2.dataLoaders.featureVoting
           .useCasesByFeatureIdLoader,
@@ -372,7 +407,7 @@ describe('votableFeature field resolvers', () => {
 
     it('should load the use cases of a feature returned without them', async () => {
       // Given
-      const useCases = [{ id: 'use-case-1', name: 'Threat hunting' }] as never;
+      const useCases = [buildUseCase()];
       const loadSpy = vi
         .spyOn(
           contextSimpleUserFiligran2.dataLoaders.featureVoting
@@ -421,14 +456,17 @@ describe('votableFeature field resolvers', () => {
 
     it('should load the illustration document through the document DataLoader', async () => {
       // Given
-      const documentId = uuidv4() as never;
-      const document = { id: documentId, file_name: 'illustration.png' };
+      const documentId = uuidv4() as DocumentId;
+      const document = buildDocument({
+        id: documentId,
+        file_name: 'illustration.png',
+      });
       const loadSpy = vi
         .spyOn(
           contextSimpleUserFiligran2.dataLoaders.document.documentByIdLoader,
           'load'
         )
-        .mockResolvedValue(document as never);
+        .mockResolvedValue(document);
 
       // When
       const result = await featureVotingResolver.VotableFeature!
