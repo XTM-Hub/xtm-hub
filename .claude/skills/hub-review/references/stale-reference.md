@@ -21,9 +21,9 @@ still good advice — that is the code-usage-mismatch lens's job.
 - Every `.claude/rules/*.md` file must carry **both** an `applyTo` string (Copilot) and a `paths` list (Claude
   Code) covering the same globs. One without the other silently cuts that tool off from the rule. Check the two
   agree, pattern for pattern.
-- Every rule must also have its `.github/instructions/<area>.instructions.md` symlink, or Copilot never sees it.
-  With `.github/skills` → `../.claude/skills`, those are the repository's committed symlinks: verify each
-  resolves (`ls -l`, `readlink`). A broken or missing one fails silently.
+- Every rule must also have its `.github/instructions/<area>.instructions.md` counterpart, or Copilot never sees
+  it. Verify each one resolves (`ls -l`, `readlink`); a broken or missing one fails silently. Skills need no
+  counterpart — Copilot reads `.claude/skills/` natively.
 - A version literal (Node, Yarn, a package version) is stale if it contradicts `.nvmrc`, the `packageManager` field
   in the root `package.json`, or the `catalog` block in `.yarnrc.yml` — check those files, don't assume from memory.
 

@@ -24,7 +24,7 @@ situation — guidance that cannot both be followed at once.
 1. For each rule or convention stated in the in-scope content, search the rest of the instruction surface for the
    same topic — grep for the relevant keywords, file paths, or tool names across `.claude/rules/`,
    `.claude/agents/`, `.github/agents/`, and `.claude/skills/`, plus `AGENTS.md`.
-   Grep the real paths, not the `.github/skills` or `.github/instructions/` symlinks, or every hit shows up twice and the
+   Grep the real paths, not the `.github/instructions/` symlinks, or every hit shows up twice and the
    same file looks like it contradicts itself.
 2. Compare the wording. If both statements can be true simultaneously (one is a valid special case of the other,
    or they apply to disjoint situations), it is not a finding.

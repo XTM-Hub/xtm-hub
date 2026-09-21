@@ -94,7 +94,7 @@ You do not have to configure anything: clone the repo and your tool picks up its
 | --- | --- | --- |
 | Entry point | `AGENTS.md`, read natively (`CLAUDE.md` is a one-line import of it, for older versions and Bedrock sessions) | `AGENTS.md` + [`.github/copilot-instructions.md`](.github/copilot-instructions.md) |
 | Per-area rules | [`.claude/rules/*.md`](.claude/rules), loaded when a file matches their `paths` glob | the same files, reached through the `.github/instructions/*.instructions.md` symlinks and loaded by their `applyTo` glob |
-| Skills | [`.claude/skills/*/SKILL.md`](.claude/skills) | `.github/skills` (symlink to `.claude/skills`) |
+| Skills | [`.claude/skills/*/SKILL.md`](.claude/skills) | the same directory, which Copilot reads natively |
 | Agents | [`.claude/agents/*.md`](.claude/agents) | [`.github/agents/*.agent.md`](.github/agents) |
 | Shared settings | `.claude/settings.json` | — |
 
@@ -118,11 +118,9 @@ directory holds a symlink per rule and nothing else.
 
 ### Symlinks
 
-Everything real lives under `.claude/`. `.github/skills` and the seven `.github/instructions/*.instructions.md`
-files are committed symlinks pointing into it, there purely so Copilot keeps working; the day Copilot goes, they
-are deleted and nothing moves. Git preserves symlinks on macOS and Linux. On Windows, clone with symlink support
-enabled (`git clone -c core.symlinks=true`, with Developer Mode on) or they arrive as plain text files containing
-a path.
+Everything real lives under `.claude/`. Copilot reads `.claude/skills/` natively, so skills need nothing on its
+side. Only the seven `.github/instructions/*.instructions.md` files exist for it, because path-specific
+instructions have to live there; the day Copilot goes, that directory is deleted and nothing moves.
 
 ### Local settings
 

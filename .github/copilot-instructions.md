@@ -23,13 +23,12 @@ its `applyTo` glob.
 | `*.test.ts(x)`, `*.utils.ts` | [`testing.instructions.md`](instructions/testing.instructions.md) |
 | Workflows, Docker, Helm | [`ci.instructions.md`](instructions/ci.instructions.md) |
 
-Deeper task guidance lives in [`.github/skills/`](skills/) — a symlink to
-[`.claude/skills/`](../.claude/skills/), where the files actually live, kept so Copilot keeps discovering them — and
-in [`.github/agents/`](agents/), the Copilot mirror of [`.claude/agents/`](../.claude/agents/). The two agent
+Deeper task guidance lives in [`.claude/skills/`](../.claude/skills/), which Copilot reads natively, and in
+[`.github/agents/`](agents/), the Copilot mirror of [`.claude/agents/`](../.claude/agents/). The two agent
 directories are the one place the same guidance is written twice, because the `tools:` vocabularies differ: change
 one, change the other.
 
-This content drifts as the codebase changes. Use the [`hub-review`](skills/hub-review/SKILL.md) skill to audit it
+This content drifts as the codebase changes. Use the [`hub-review`](../.claude/skills/hub-review/SKILL.md) skill to audit it
 against the real code — it asks a question (or flags a PR comment) instead of guessing when something doesn't match.
 
 ## Review
