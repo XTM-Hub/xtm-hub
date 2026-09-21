@@ -109,7 +109,7 @@ const BreadcrumbEllipsis = ({
     <span className="sr-only">{label}</span>
   </span>
 );
-BreadcrumbEllipsis.displayName = 'BreadcrumbElipssis';
+BreadcrumbEllipsis.displayName = 'BreadcrumbEllipsis';
 
 export {
   Breadcrumb,
