@@ -1,7 +1,7 @@
 # Stale-Reference Lens
 
-**Goal:** Find backtick-quoted paths, `yarn` commands, `applyTo` globs, and version literals in the reviewed content
-that no longer resolve against the real repository, and nothing else. Do not judge whether the guidance itself is
+**Goal:** Find backtick-quoted paths, `yarn` commands, `applyTo` globs, `@`-import paths, symlink targets, and
+version literals in the reviewed content that no longer resolve against the real repository, and nothing else. Do not judge whether the guidance itself is
 still good advice — that is the code-usage-mismatch lens's job.
 
 ## Evidence rules
@@ -18,6 +18,12 @@ still good advice — that is the code-usage-mismatch lens's job.
   `backend.instructions.md` saying `src/config.ts` means `apps/backend/src/config.ts`).
 - An `applyTo` glob (in a `.github/instructions/*.md` frontmatter) is valid if it matches at least one real file in
   the repo.
+- An `@`-import line in a `CLAUDE.md` file (e.g. `@../../.github/instructions/backend.instructions.md`) is valid
+  only if the path resolves **relative to the importing file**, not to the repo root. Check it with `ls` on the
+  resolved path — a broken import fails silently, so nothing else will catch it.
+- The repository has two committed symlinks, `AGENTS.md` → `CLAUDE.md` and `.github/skills` → `../.claude/skills`.
+  Verify both still resolve (`ls -l`, `readlink`); a broken one silently cuts Copilot off from the whole
+  instruction surface.
 - A version literal (Node, Yarn, a package version) is stale if it contradicts `.nvmrc`, the `packageManager` field
   in the root `package.json`, or the `catalog` block in `.yarnrc.yml` — check those files, don't assume from memory.
 

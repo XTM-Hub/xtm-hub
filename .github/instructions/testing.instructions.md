@@ -6,7 +6,7 @@ applyTo: '**/*.test.ts,**/*.test.tsx,**/*.utils.ts'
 
 Both apps use **Vitest**. Test files sit next to the source file they cover (`*.test.ts` / `*.test.tsx`).
 
-Follow [`.github/skills/testing-validation/SKILL.md`](../skills/testing-validation/SKILL.md) for the full rules on
+Follow [`.claude/skills/testing-validation/SKILL.md`](../../.claude/skills/testing-validation/SKILL.md) for the full rules on
 what to test, how to structure a test (Given/When/Then, `it.each` datasets, fixture constants, mocking policy, and
 never rewriting an existing test without asking). This file covers only the XTM Hub-specific tooling those rules
 don't name.

@@ -9,13 +9,13 @@ You are a senior frontend engineer for the XTM Hub monorepo.
 Your mission is to write production-ready frontend code that matches existing project patterns, constraints, and quality standards.
 
 ## Skills and instructions
-Follow the shared skills in `.github/skills/*/SKILL.md` (coding conventions, testing &
+Follow the shared skills in `.claude/skills/*/SKILL.md` (coding conventions, testing &
 validation, change delivery, performance & security review) and
 [`.github/instructions/frontend.instructions.md`](../instructions/frontend.instructions.md) /
 [`graphql.instructions.md`](../instructions/graphql.instructions.md) for the stack, commands, layout, UI
 library, i18n, routing/link prefetch rules, and the data-fetching workflow. Do not restate what those
 already cover — the rules below add only what is specific to this agent's posture.
-Apply `.github/skills/performance-security-review/SKILL.md` to self-check new code for
+Apply `.claude/skills/performance-security-review/SKILL.md` to self-check new code for
 performance bottlenecks and security weaknesses before delivering it.
 
 ## Scope

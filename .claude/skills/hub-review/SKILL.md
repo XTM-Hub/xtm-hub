@@ -1,8 +1,9 @@
 ---
 name: hub-review
 description: >-
-  Reviews the XTM Hub AI-instruction surface — `.github/copilot-instructions.md`, `AGENTS.md`,
-  `.github/instructions/*.md`, `.github/agents/*.agent.md`, `.github/skills/*/SKILL.md` —
+  Reviews the XTM Hub AI-instruction surface — `CLAUDE.md` (and its `AGENTS.md` symlink), `apps/*/CLAUDE.md`,
+  `.github/copilot-instructions.md`, `.github/instructions/*.md`, `.claude/skills/*/SKILL.md`,
+  `.claude/agents/*.md` and `.github/agents/*.agent.md` —
   for drift against the real codebase and against each other. Use when asked to review AI instructions, docs, agents,
   or skills; when reviewing a PR/diff that touches any of those paths; or when directed here as
   `skill:hub-review` from another instruction (e.g. the `code-review` skill's "What to check against" documentation
@@ -19,7 +20,16 @@ confirm by reading the referenced file, command, or code. `0` findings for a len
 ## Conventions
 
 Bare paths (e.g. `references/stale-reference.md`) resolve from `{skill-root}` — this skill's own directory,
-`.github/skills/hub-review/`. `{project-root}` resolves to the repository root.
+`.claude/skills/hub-review/`. `{project-root}` resolves to the repository root.
+
+The surface is shared by two tools, so parts of it are deliberately paired. Treat each pair as one unit:
+
+| Pair | How they are kept identical |
+| --- | --- |
+| `CLAUDE.md` / `AGENTS.md` | `AGENTS.md` is a symlink — one file, nothing to compare |
+| `.claude/skills/` / `.github/skills/` | `.github/skills` is a symlink — one directory, nothing to compare |
+| `apps/*/CLAUDE.md` / `.github/instructions/*.instructions.md` | the `CLAUDE.md` files `@`-import the instruction files; they must not restate them |
+| `.claude/agents/*.md` / `.github/agents/*.agent.md` | **real duplication** — the `tools:` vocabularies differ, so the two files coexist. Their `name`, `description` and behavioural rules must match; only the frontmatter `tools:` and the tool-specific phrasing may differ. A rule added to one and not the other is a duplication-lens finding. |
 
 ## Inputs
 
@@ -28,8 +38,9 @@ Bare paths (e.g. `references/stale-reference.md`) resolve from `{skill-root}` �
     did not update (a changed convention with a stale cross-reference elsewhere).
   - **Named file(s)** — whatever the caller pointed at.
   - **Full audit** (default when nothing else is specified) — every file under `.github/instructions/`,
-    `.github/agents/`, `.github/skills/`, plus `.github/copilot-instructions.md` and
-    `AGENTS.md`.
+    `.github/agents/`, `.claude/agents/`, `.claude/skills/`, plus `.github/copilot-instructions.md`,
+    `CLAUDE.md` and `apps/*/CLAUDE.md`. Read `.claude/skills/` and `CLAUDE.md` by their real paths; reaching them
+    through the `.github/skills` or `AGENTS.md` symlinks would review the same file twice.
 - **lenses** (optional) — one or more lens names. Default: all four lenses below.
 
 ## Lenses
@@ -59,10 +70,12 @@ Each lens is a reference file loaded just-in-time — read only the ones that ru
    - **Ambiguous** — the two sides of a contradiction are both plausible, resolving it requires a product/architecture
      decision, or the convention looks mid-migration (some code follows the old pattern, some the new one, and it's
      unclear which the docs should mandate). Never resolve this yourself.
-5. **Escalate every ambiguous finding**, depending on context:
-   - Reviewing a PR/diff: use `add_pr_review_comment` on the relevant line, and `reply_and_resolve_review_thread`
-     once the author responds.
-   - Interactive session with a user present, no PR in scope: use `ask_user` with the concrete question, not a vague
+5. **Escalate every ambiguous finding**, depending on context. Use whichever mechanism the running tool offers —
+   Copilot has `add_pr_review_comment` / `reply_and_resolve_review_thread` / `ask_user`; Claude Code has the
+   `gh` CLI and `AskUserQuestion`:
+   - Reviewing a PR/diff: post an inline review comment on the relevant line, and reply to (then resolve) the
+     thread once the author responds.
+   - Interactive session with a user present, no PR in scope: ask the concrete question, not a vague
      "does this look right?".
    - Unattended (no PR, no user to ask): open a GitHub issue describing the drift and where it was found.
 6. **Assemble and present** per Output below.

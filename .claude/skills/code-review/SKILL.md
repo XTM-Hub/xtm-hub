@@ -25,13 +25,14 @@ whether as a dedicated review pass or as a check before finishing a change.
 
 ## What to check against
 
-- Judge code against the shared skills in `.github/skills/*/SKILL.md` (coding conventions, testing & validation).
+- Judge code against the shared skills in `.claude/skills/*/SKILL.md` (coding conventions, testing & validation).
   Flag any violation explicitly.
-- Apply `.github/skills/performance-security-review/SKILL.md` for performance bottlenecks, security vulnerabilities,
+- Apply `.claude/skills/performance-security-review/SKILL.md` for performance bottlenecks, security vulnerabilities,
   and likely future failure scenarios — including its devil's-advocate stance, output format, and prioritization
   policy.
-- Check the diff against the path-scoped `.github/instructions/*.md` files and any custom agent
-  (`.github/agents/*.agent.md`) that would normally write this kind of file. If the code contradicts a documented
+- Check the diff against the path-scoped `.github/instructions/*.md` files and any custom agent that would
+  normally write this kind of file (`.claude/agents/*.md` for Claude Code, `.github/agents/*.agent.md` for
+  Copilot — the two are mirrors and must say the same thing). If the code contradicts a documented
   convention (or the diff reveals the doc is stale), don't just critique the code — use the `hub-review` skill to
   flag the specific contradiction as an inline PR review comment instead of only noting it in prose.
 
@@ -50,7 +51,7 @@ Structure the review into:
 - Identify potential bugs, security issues, or performance problems.
 - Evaluate accessibility and user experience considerations.
 - For performance/security/reliability analysis specifically, follow
-  `.github/skills/performance-security-review/SKILL.md` rather than a separate list here.
+  `.claude/skills/performance-security-review/SKILL.md` rather than a separate list here.
 
 ## Guidelines
 
