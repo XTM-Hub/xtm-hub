@@ -333,6 +333,46 @@ describe('serviceGroupHelper', () => {
 
       expect(auth0Spy).not.toHaveBeenCalled();
     });
+
+    it('should return only the userIds that were successfully synced when auth0 fails for one user', async () => {
+      // Given
+      const openctiPlatformId = uuidv4();
+      const { bundle, children } =
+        await TestHelper.deploymentRequest.createBundle({
+          children: [
+            {
+              platform_identifier: PlatformIdentifier.Opencti,
+              platform_id: openctiPlatformId,
+            },
+          ],
+        });
+      bundleIds.push(bundle.id);
+
+      const succeedingUserId = TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID;
+      const failingUserId = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID;
+
+      vi.spyOn(auth0ClientMock, 'updateUserRBACInstance').mockImplementation(
+        async (email: string) => {
+          if (email === TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.EMAIL) {
+            throw new Error('Auth0 failure');
+          }
+          return undefined;
+        }
+      );
+
+      // When
+      const result = await ServiceGroupHelper.syncAuth0GroupsForChildren(
+        [{ child: children[0]!, groupNames: [ServiceGroupName.Admin] }],
+        [succeedingUserId, failingUserId],
+        new Map([
+          [succeedingUserId, TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.EMAIL],
+          [failingUserId, TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.EMAIL],
+        ])
+      );
+
+      // Then
+      expect(result).toEqual([succeedingUserId]);
+    });
   });
 
   describe('sendFreeTrialWelcomeEmails', () => {
