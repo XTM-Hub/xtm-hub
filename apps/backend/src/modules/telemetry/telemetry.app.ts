@@ -98,6 +98,40 @@ const withHubIdentity = async (
   hub_environment: portalConfig.environment,
 });
 
+const dispatchTelemetryEvent = async (
+  rawEvent: TelemetryEvent,
+  { awaitDirectIndex }: { awaitDirectIndex: boolean }
+): Promise<void> => {
+  try {
+    const event = await withHubIdentity(rawEvent);
+    if (useQueueProcessing()) {
+      const queuedTypes = getQueuedEventTypes();
+      if (queuedTypes.length === 0 || queuedTypes.includes(event.event_type)) {
+        try {
+          await PgBossProducer.send(TELEMETRY_QUEUES.EVENTS, { event });
+        } catch (error) {
+          logApp.error('Failed to enqueue telemetry event', { event, error });
+        }
+        return;
+      }
+    }
+    const indexing = TelemetryApp.indexTelemetryEvent(event).catch((error) => {
+      logApp.error('Error sending telemetry event synchronously', {
+        event,
+        error,
+      });
+    });
+    if (awaitDirectIndex) {
+      await indexing;
+    }
+  } catch (error) {
+    logApp.error('Error sending telemetry event ', {
+      event: rawEvent,
+      error,
+    });
+  }
+};
+
 export const TelemetryApp = {
   async indexTelemetryEvent(event: TelemetryEvent) {
     await esDbClient.index({
@@ -107,34 +141,11 @@ export const TelemetryApp = {
   },
 
   async sendTelemetryEvent(rawEvent: TelemetryEvent) {
-    try {
-      const event = await withHubIdentity(rawEvent);
-      if (useQueueProcessing()) {
-        const queuedTypes = getQueuedEventTypes();
-        if (
-          queuedTypes.length === 0 ||
-          queuedTypes.includes(event.event_type)
-        ) {
-          try {
-            await PgBossProducer.send(TELEMETRY_QUEUES.EVENTS, { event });
-          } catch (error) {
-            logApp.error('Failed to enqueue telemetry event', { event, error });
-          }
-          return;
-        }
-      }
-      TelemetryApp.indexTelemetryEvent(event).catch((error) => {
-        logApp.error('Error sending telemetry event synchronously', {
-          event,
-          error,
-        });
-      });
-    } catch (error) {
-      logApp.error('Error sending telemetry event ', {
-        event: rawEvent,
-        error,
-      });
-    }
+    await dispatchTelemetryEvent(rawEvent, { awaitDirectIndex: false });
+  },
+
+  async sendTelemetryEventAndWaitForIndexing(rawEvent: TelemetryEvent) {
+    await dispatchTelemetryEvent(rawEvent, { awaitDirectIndex: true });
   },
 
   async getLastDeployments(

@@ -2,16 +2,21 @@ import {
   AddUsersToBundleGroupsInput,
   BundleUserServiceGroup,
   PlatformIdentifier,
+  ServiceGroupName,
   ServiceGroup as ServiceGroupResponse,
   UpdateBundleUserGroupsInput,
 } from '../../../__generated__/resolvers-types';
 import { withTransaction } from '../../../context/database.context';
 import { requestContext } from '../../../context/request.context';
+import { DeploymentRequestId } from '../../../model/kanel/public/DeploymentRequest';
+import { OrganizationId } from '../../../model/kanel/public/Organization';
 import { ServiceGroupId } from '../../../model/kanel/public/ServiceGroup';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import User, { UserId } from '../../../model/kanel/public/User';
+import { CRONS_USER_UUID } from '../../../portal.const';
 import { logApp } from '../../../utils/app-logger.util';
 import { ErrorCode } from '../../../utils/error/error.code';
+import { OrganizationDomain } from '../../organization-management/organization/organization.domain';
 import { UserDomain } from '../../organization-management/user/user-domain/user.domain';
 import { DeploymentRequestDomain } from '../deployment.domain';
 import { ServiceGroupDomain } from './service-group.domain';
@@ -124,27 +129,20 @@ export const ServiceGroupApp = {
       ServiceGroupHelper.uniqueRolesByProduct(input.roles)
     );
 
-    const insertedUserIds = await withTransaction(async () => {
-      const inserted = new Set<UserId>();
-
-      for (const { child, role } of platformRoleAssignments) {
-        const groups = await ServiceGroupDomain.loadServiceGroups({
-          service_instance_id: child.service_instance_id,
-        });
-        const targetGroup = groups.find((group) => group.name === role);
-        if (!targetGroup) {
-          throw new Error(ErrorCode.ServiceGroupNotFound);
-        }
-
-        const insertedInGroup = await ServiceGroupDomain.addUsersToGroup(
-          targetGroup.id,
-          input.userIds
-        );
-        insertedInGroup.forEach((userId) => inserted.add(userId));
+    const targetGroupIdByChildId = new Map<
+      DeploymentRequestId,
+      ServiceGroupId
+    >();
+    for (const { child, role } of platformRoleAssignments) {
+      const groups = await ServiceGroupDomain.loadServiceGroups({
+        service_instance_id: child.service_instance_id,
+      });
+      const targetGroup = groups.find((group) => group.name === role);
+      if (!targetGroup) {
+        throw new Error(ErrorCode.ServiceGroupNotFound);
       }
-
-      return inserted;
-    });
+      targetGroupIdByChildId.set(child.id, targetGroup.id);
+    }
 
     const { users, emailByUserId } = await ServiceGroupHelper.loadEmailByUserId(
       input.userIds
@@ -154,7 +152,7 @@ export const ServiceGroupApp = {
       ({ child, role }) => child.platform_identifier && role
     );
 
-    await ServiceGroupHelper.syncAuth0GroupsForChildren(
+    const grantedUserIds = await ServiceGroupHelper.syncAuth0GroupsForChildren(
       grantedAssignments.map(({ child, role }) => ({
         child,
         groupNames: role ? [role] : [],
@@ -162,6 +160,51 @@ export const ServiceGroupApp = {
       input.userIds,
       emailByUserId
     );
+
+    const newlyGrantedUserIdsByChildId = new Map<
+      DeploymentRequestId,
+      UserId[]
+    >();
+    const insertedUserIds = await withTransaction(async () => {
+      const inserted = new Set<UserId>();
+
+      for (const { child } of platformRoleAssignments) {
+        const targetGroupId = targetGroupIdByChildId.get(child.id);
+        if (!targetGroupId) {
+          continue;
+        }
+        const newlyInsertedUserIds = await ServiceGroupDomain.addUsersToGroup(
+          targetGroupId,
+          input.userIds
+        );
+        newlyGrantedUserIdsByChildId.set(child.id, newlyInsertedUserIds);
+        newlyInsertedUserIds.forEach((userId) => inserted.add(userId));
+      }
+
+      return inserted;
+    });
+
+    try {
+      const grantedUserIdSet = new Set(grantedUserIds);
+      await sendBundleTrialAccessTelemetry({
+        bundleOrganizationId,
+        bundleDeploymentRequestId: bundleDeploymentRequest.id,
+        actorUserId: user.id,
+        emailByUserId,
+        assignments: grantedAssignments.map(({ child, role }) => ({
+          deploymentId: child.id,
+          role,
+          userIds: (newlyGrantedUserIdsByChildId.get(child.id) ?? []).filter(
+            (userId) => grantedUserIdSet.has(userId)
+          ),
+        })),
+      });
+    } catch (telemetryError) {
+      logApp.error('Failed to send trial-access-granted telemetry', {
+        serviceInstanceId,
+        error: telemetryError,
+      });
+    }
 
     await ServiceGroupHelper.sendFreeTrialBundleWelcomeEmails({
       endDate: bundleDeploymentRequest.end_date,
@@ -181,27 +224,79 @@ export const ServiceGroupApp = {
     serviceInstanceId: ServiceInstanceId,
     userIds: UserId[]
   ): Promise<UserId[]> => {
-    const { children } =
+    const user = requestContext.requireUser();
+
+    const { bundleDeploymentRequest, children, bundleOrganizationId } =
       await ServiceGroupSecurityHelper.assertBundleAccessAndLoadChildren(
         serviceInstanceId
       );
 
+    const serviceInstanceIds = children.map(
+      (child) => child.service_instance_id
+    );
+
     const groups =
       await ServiceGroupDomain.loadServiceGroupsByServiceInstanceIds(
-        children.map((child) => child.service_instance_id)
+        serviceInstanceIds
       );
     const allGroupIds = groups.map((group) => group.id);
-
-    await ServiceGroupDomain.removeUsersFromServiceGroups(userIds, allGroupIds);
+    const serviceInstanceIdByGroupId = new Map(
+      groups.map((group) => [group.id, group.service_instance_id])
+    );
 
     const { emailByUserId } =
       await ServiceGroupHelper.loadEmailByUserId(userIds);
 
-    await ServiceGroupHelper.syncAuth0GroupsForChildren(
+    const removedUserIds = await ServiceGroupHelper.syncAuth0GroupsForChildren(
       children.map((child) => ({ child, groupNames: [] })),
       userIds,
       emailByUserId
     );
+    const removedUserIdSet = new Set(removedUserIds);
+
+    const removedMemberships =
+      await ServiceGroupDomain.removeUsersFromServiceGroups(
+        userIds,
+        allGroupIds
+      );
+
+    const memberUserIdsByServiceInstance = new Map<
+      ServiceInstanceId,
+      Set<UserId>
+    >();
+    for (const { user_id, group_id } of removedMemberships) {
+      const childServiceInstanceId = serviceInstanceIdByGroupId.get(group_id);
+      if (!childServiceInstanceId) {
+        continue;
+      }
+      const memberUserIds =
+        memberUserIdsByServiceInstance.get(childServiceInstanceId) ??
+        new Set<UserId>();
+      memberUserIds.add(user_id);
+      memberUserIdsByServiceInstance.set(childServiceInstanceId, memberUserIds);
+    }
+
+    try {
+      await sendBundleTrialAccessTelemetry({
+        bundleOrganizationId,
+        bundleDeploymentRequestId: bundleDeploymentRequest.id,
+        actorUserId: user.id,
+        emailByUserId,
+        assignments: children.map((child) => ({
+          deploymentId: child.id,
+          role: null,
+          userIds: [
+            ...(memberUserIdsByServiceInstance.get(child.service_instance_id) ??
+              []),
+          ].filter((userId) => removedUserIdSet.has(userId)),
+        })),
+      });
+    } catch (telemetryError) {
+      logApp.error('Failed to send trial-access-removed telemetry', {
+        serviceInstanceId,
+        error: telemetryError,
+      });
+    }
 
     return userIds;
   },
@@ -210,6 +305,8 @@ export const ServiceGroupApp = {
     serviceInstanceId: ServiceInstanceId,
     input: UpdateBundleUserGroupsInput
   ): Promise<BundleUserServiceGroup[]> => {
+    const user = requestContext.requireUser();
+
     const xtmOneRoleAssignment = input.roles.find(
       (role) => role.product === PlatformIdentifier.Xtmone
     );
@@ -217,7 +314,7 @@ export const ServiceGroupApp = {
       throw new Error(ErrorCode.XtmOneRoleRequired);
     }
 
-    const { children, bundleOrganizationId } =
+    const { bundleDeploymentRequest, children, bundleOrganizationId } =
       await ServiceGroupSecurityHelper.assertBundleAccessAndLoadChildren(
         serviceInstanceId
       );
@@ -232,35 +329,40 @@ export const ServiceGroupApp = {
       input.roles
     );
 
-    await withTransaction(async () => {
-      for (const { child, role } of platformRoleAssignments) {
-        const groups = await ServiceGroupDomain.loadServiceGroups({
-          service_instance_id: child.service_instance_id,
-        });
-
-        await ServiceGroupDomain.removeUsersFromServiceGroups(
-          input.userIds,
-          groups.map((group) => group.id)
-        );
-
-        if (!role) {
-          continue;
-        }
-
-        const targetGroup = groups.find((group) => group.name === role);
-        if (!targetGroup) {
-          throw new Error(ErrorCode.ServiceGroupNotFound);
-        }
-
-        await ServiceGroupDomain.addUsersToGroup(targetGroup.id, input.userIds);
+    const groupPlanByChildId = new Map<
+      DeploymentRequestId,
+      {
+        targetGroupId: ServiceGroupId | undefined;
+        groupIdsToClear: ServiceGroupId[];
       }
-    });
+    >();
+    for (const { child, role } of platformRoleAssignments) {
+      const groups = await ServiceGroupDomain.loadServiceGroups({
+        service_instance_id: child.service_instance_id,
+      });
+
+      const targetGroup = role
+        ? groups.find((group) => group.name === role)
+        : undefined;
+      if (role && !targetGroup) {
+        throw new Error(ErrorCode.ServiceGroupNotFound);
+      }
+
+      const groupIdsToClear = groups
+        .map((group) => group.id)
+        .filter((groupId) => groupId !== targetGroup?.id);
+
+      groupPlanByChildId.set(child.id, {
+        targetGroupId: targetGroup?.id,
+        groupIdsToClear,
+      });
+    }
 
     const { emailByUserId } = await ServiceGroupHelper.loadEmailByUserId(
       input.userIds
     );
 
-    await ServiceGroupHelper.syncAuth0GroupsForChildren(
+    const updatedUserIds = await ServiceGroupHelper.syncAuth0GroupsForChildren(
       platformRoleAssignments.map(({ child, role }) => ({
         child,
         groupNames: role ? [role] : [],
@@ -268,6 +370,58 @@ export const ServiceGroupApp = {
       input.userIds,
       emailByUserId
     );
+
+    const changedUserIdsByChildId = new Map<DeploymentRequestId, UserId[]>();
+    await withTransaction(async () => {
+      for (const { child } of platformRoleAssignments) {
+        const plan = groupPlanByChildId.get(child.id);
+        if (!plan) {
+          continue;
+        }
+        const { targetGroupId, groupIdsToClear } = plan;
+
+        const removedMemberships =
+          await ServiceGroupDomain.removeUsersFromServiceGroups(
+            input.userIds,
+            groupIdsToClear
+          );
+        const changedUserIds = new Set(
+          removedMemberships.map((membership) => membership.user_id)
+        );
+
+        if (targetGroupId) {
+          const newlyInsertedUserIds = await ServiceGroupDomain.addUsersToGroup(
+            targetGroupId,
+            input.userIds
+          );
+          newlyInsertedUserIds.forEach((userId) => changedUserIds.add(userId));
+        }
+
+        changedUserIdsByChildId.set(child.id, [...changedUserIds]);
+      }
+    });
+
+    try {
+      const updatedUserIdSet = new Set(updatedUserIds);
+      await sendBundleTrialAccessTelemetry({
+        bundleOrganizationId,
+        bundleDeploymentRequestId: bundleDeploymentRequest.id,
+        actorUserId: user.id,
+        emailByUserId,
+        assignments: platformRoleAssignments.map(({ child, role }) => ({
+          deploymentId: child.id,
+          role,
+          userIds: (changedUserIdsByChildId.get(child.id) ?? []).filter(
+            (userId) => updatedUserIdSet.has(userId)
+          ),
+        })),
+      });
+    } catch (telemetryError) {
+      logApp.error('Failed to send trial-access telemetry', {
+        serviceInstanceId,
+        error: telemetryError,
+      });
+    }
 
     return ServiceGroupApp.loadBundleUserServiceGroups(serviceInstanceId);
   },
@@ -343,12 +497,17 @@ export const ServiceGroupApp = {
     const byServiceInstance = rows.reduce<
       Map<
         ServiceInstanceId,
-        { deploymentRequestId: string; groupIds: ServiceGroupId[] }
+        {
+          deploymentRequestId: DeploymentRequestId;
+          groupIds: ServiceGroupId[];
+          parentId: DeploymentRequestId | null;
+        }
       >
     >((acc, row) => {
       const entry = acc.get(row.serviceInstanceId) ?? {
         deploymentRequestId: row.deploymentRequestId,
         groupIds: [],
+        parentId: row.parentId,
       };
       entry.groupIds.push(row.groupId);
       acc.set(row.serviceInstanceId, entry);
@@ -357,7 +516,7 @@ export const ServiceGroupApp = {
 
     for (const [
       serviceInstanceId,
-      { deploymentRequestId, groupIds },
+      { deploymentRequestId, groupIds, parentId },
     ] of byServiceInstance) {
       logApp.info('Removing users from expired trial groups', {
         deploymentRequestId,
@@ -374,6 +533,24 @@ export const ServiceGroupApp = {
           serviceInstanceId
         );
         await ServiceGroupDomain.deleteGroups(groupIds);
+
+        if (parentId && oldUsers.length > 0) {
+          try {
+            await sendExpiredBundleTrialTelemetry({
+              serviceInstanceId,
+              deploymentRequestId,
+              parentId,
+              removedUserIds: [
+                ...new Set(oldUsers.map((oldUser) => oldUser.user_id)),
+              ],
+            });
+          } catch (telemetryError) {
+            logApp.error('Failed to send expired-trial telemetry', {
+              deploymentRequestId,
+              error: telemetryError,
+            });
+          }
+        }
       } catch (error) {
         logApp.error('Failed to clean up expired trial groups', {
           deploymentRequestId,
@@ -382,4 +559,74 @@ export const ServiceGroupApp = {
       }
     }
   },
+};
+
+const sendBundleTrialAccessTelemetry = async ({
+  bundleOrganizationId,
+  bundleDeploymentRequestId,
+  actorUserId,
+  emailByUserId,
+  assignments,
+}: {
+  bundleOrganizationId: OrganizationId;
+  bundleDeploymentRequestId: DeploymentRequestId;
+  actorUserId: UserId;
+  emailByUserId: Map<UserId, string>;
+  assignments: {
+    deploymentId: DeploymentRequestId;
+    role: ServiceGroupName | null;
+    userIds: UserId[];
+  }[];
+}): Promise<void> => {
+  const bundleOrganization = await OrganizationDomain.loadOrganizationBy({
+    id: bundleOrganizationId,
+  });
+  if (!bundleOrganization) {
+    return;
+  }
+
+  await ServiceGroupHelper.sendTrialAccessTelemetryForChildren(
+    assignments,
+    emailByUserId,
+    bundleOrganization,
+    actorUserId,
+    bundleDeploymentRequestId
+  );
+};
+
+const sendExpiredBundleTrialTelemetry = async ({
+  serviceInstanceId,
+  deploymentRequestId,
+  parentId,
+  removedUserIds,
+}: {
+  serviceInstanceId: ServiceInstanceId;
+  deploymentRequestId: DeploymentRequestId;
+  parentId: DeploymentRequestId;
+  removedUserIds: UserId[];
+}): Promise<void> => {
+  const organization =
+    await OrganizationDomain.loadOrganizationSubscribedToServiceInstance(
+      serviceInstanceId
+    );
+  if (!organization) {
+    return;
+  }
+
+  const { emailByUserId } =
+    await ServiceGroupHelper.loadEmailByUserId(removedUserIds);
+
+  await ServiceGroupHelper.sendTrialAccessTelemetryForChildren(
+    [
+      {
+        deploymentId: deploymentRequestId,
+        role: null,
+        userIds: removedUserIds,
+      },
+    ],
+    emailByUserId,
+    organization,
+    CRONS_USER_UUID,
+    parentId
+  );
 };

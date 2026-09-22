@@ -27,13 +27,18 @@ import { requestContext } from '../../../context/request.context';
 import { DeploymentRequestId } from '../../../model/kanel/public/DeploymentRequest';
 import { ServiceGroupId } from '../../../model/kanel/public/ServiceGroup';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
+import { CRONS_USER_UUID } from '../../../portal.const';
 import * as mailService from '../../../server/mail-service';
 import { auth0ClientMock } from '../../../thirdparty/auth0/mock';
+import { logApp } from '../../../utils/app-logger.util';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { formatName } from '../../../utils/format';
 
 import { TestHelper } from '../../../../tests/helper/test.helper';
+import { OrganizationDomain } from '../../organization-management/organization/organization.domain';
 import { ServiceInstanceDomain } from '../../service/instance/service-instance.domain';
+import { TelemetryApp } from '../../telemetry/telemetry.app';
+import { TelemetryEventType } from '../../telemetry/telemetry.types';
 import { ServiceGroupApp } from './service-group.app';
 
 describe('serviceGroupApp', () => {
@@ -85,6 +90,14 @@ describe('serviceGroupApp', () => {
       name: 'Analyst',
       service_instance_id: serviceInstanceId2,
     });
+  });
+
+  let telemetrySpy: MockInstance;
+
+  beforeEach(() => {
+    telemetrySpy = vi
+      .spyOn(TelemetryApp, 'sendTelemetryEventAndWaitForIndexing')
+      .mockResolvedValue();
   });
 
   describe('updateGroups', () => {
@@ -419,6 +432,144 @@ describe('serviceGroupApp', () => {
 
       // Then
       expect(auth0Spy).not.toHaveBeenCalled();
+    });
+
+    it('should not send trial_access_removed telemetry for a standalone (non-bundle) expired trial', async () => {
+      // Given
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() - 8);
+
+      const deploymentRequest =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          {
+            hub_status: DeploymentRequestHubStatus.Expired,
+            end_date: endDate,
+            platform_id: uuidv4(),
+          }
+        );
+      trackedServiceInstanceIds.push(deploymentRequest.service_instance_id);
+
+      const groupId = uuidv4() as ServiceGroupId;
+      await TestHelper.serviceGroup.create({
+        id: groupId,
+        name: 'Admin',
+        service_instance_id: deploymentRequest.service_instance_id,
+      });
+      await TestHelper.serviceGroupUser.create({
+        group_id: groupId,
+        user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+      });
+
+      // When
+      await ServiceGroupApp.removeExpiredGroups();
+
+      // Then
+      expect(telemetrySpy).not.toHaveBeenCalled();
+    });
+
+    it('should send a trial_access_removed telemetry event per user for a bundle expired trial, using the crons actor', async () => {
+      // Given
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() - 8);
+      const platformId = uuidv4();
+
+      const { bundle, children } =
+        await TestHelper.deploymentRequest.createBundle({
+          children: [
+            {
+              hub_status: DeploymentRequestHubStatus.Expired,
+              end_date: endDate,
+              platform_id: platformId,
+            },
+          ],
+        });
+      const [child] = children;
+      trackedServiceInstanceIds.push(
+        bundle.service_instance_id,
+        child!.service_instance_id
+      );
+
+      const groupId = uuidv4() as ServiceGroupId;
+      await TestHelper.serviceGroup.create({
+        id: groupId,
+        name: 'Admin',
+        service_instance_id: child!.service_instance_id,
+      });
+      await TestHelper.serviceGroupUser.create({
+        group_id: groupId,
+        user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+      });
+
+      // When
+      await ServiceGroupApp.removeExpiredGroups();
+
+      // Then
+      expect(telemetrySpy).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          event_type: TelemetryEventType.TRIAL_ACCESS_REMOVED,
+          organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+          user_id: CRONS_USER_UUID,
+          deployment_id: child!.id,
+          parent_id: bundle.id,
+          email: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.EMAIL,
+        })
+      );
+    });
+
+    it('should still clean up expired trial groups (and log the telemetry failure separately) when sending telemetry throws', async () => {
+      // Given
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() - 8);
+
+      const { bundle, children } =
+        await TestHelper.deploymentRequest.createBundle({
+          children: [
+            {
+              hub_status: DeploymentRequestHubStatus.Expired,
+              end_date: endDate,
+              platform_id: uuidv4(),
+            },
+          ],
+        });
+      const [child] = children;
+      trackedServiceInstanceIds.push(
+        bundle.service_instance_id,
+        child!.service_instance_id
+      );
+
+      const groupId = uuidv4() as ServiceGroupId;
+      await TestHelper.serviceGroup.create({
+        id: groupId,
+        name: 'Admin',
+        service_instance_id: child!.service_instance_id,
+      });
+      await TestHelper.serviceGroupUser.create({
+        group_id: groupId,
+        user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+      });
+
+      vi.spyOn(
+        OrganizationDomain,
+        'loadOrganizationSubscribedToServiceInstance'
+      ).mockRejectedValue(new Error('org lookup failure'));
+      const logErrorSpy = vi.spyOn(logApp, 'error');
+
+      // When
+      await ServiceGroupApp.removeExpiredGroups();
+
+      // Then
+      const remainingGroups = await TestHelper.serviceGroup.load({
+        id: groupId,
+      });
+      expect(remainingGroups).toEqual([]);
+      expect(logErrorSpy).not.toHaveBeenCalledWith(
+        'Failed to clean up expired trial groups',
+        expect.anything()
+      );
+      expect(logErrorSpy).toHaveBeenCalledWith(
+        'Failed to send expired-trial telemetry',
+        expect.objectContaining({ deploymentRequestId: child!.id })
+      );
     });
   });
 
@@ -901,6 +1052,160 @@ describe('serviceGroupApp', () => {
       // Then
       await expect(call).rejects.toThrow(ErrorCode.DeploymentRequestNotFound);
     });
+
+    it('should send a trial_access_granted telemetry event per (user, product) with the acting admin as user_id', async () => {
+      // Given
+      const actingUser = requestContextSimpleUserFiligran2.user;
+      const targetUser = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS;
+      const { bundle, openctiChild, xtmoneChild } =
+        await createBundleWithGroups();
+
+      vi.spyOn(auth0ClientMock, 'updateUserRBACInstance').mockResolvedValue(
+        undefined
+      );
+      vi.spyOn(mailService, 'sendMail').mockResolvedValue(undefined);
+
+      // When
+      await ServiceGroupApp.addUsersToBundleGroups(bundle.service_instance_id, {
+        userIds: [targetUser.ID],
+        roles: [
+          { product: PlatformIdentifier.Opencti, role: ServiceGroupName.Admin },
+          { product: PlatformIdentifier.Xtmone, role: ServiceGroupName.User },
+        ],
+      });
+
+      // Then
+      expect(telemetrySpy).toHaveBeenCalledTimes(2);
+      expect(telemetrySpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event_type: TelemetryEventType.TRIAL_ACCESS_GRANTED,
+          organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+          user_id: actingUser.id,
+          deployment_id: openctiChild.id,
+          parent_id: bundle.id,
+          role: ServiceGroupName.Admin,
+          email: targetUser.EMAIL,
+        })
+      );
+      expect(telemetrySpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event_type: TelemetryEventType.TRIAL_ACCESS_GRANTED,
+          user_id: actingUser.id,
+          deployment_id: xtmoneChild.id,
+          parent_id: bundle.id,
+          role: ServiceGroupName.User,
+          email: targetUser.EMAIL,
+        })
+      );
+    });
+
+    it('should not re-send trial_access_granted telemetry when the same role is granted again for an already-added user', async () => {
+      // Given
+      const targetUser = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS;
+      const { bundle, openctiChild, xtmoneChild } =
+        await createBundleWithGroups();
+
+      vi.spyOn(auth0ClientMock, 'updateUserRBACInstance').mockResolvedValue(
+        undefined
+      );
+      vi.spyOn(mailService, 'sendMail').mockResolvedValue(undefined);
+
+      // When: same call is issued twice (e.g. a client retry), the DB insert
+      // is a no-op the second time (ON CONFLICT IGNORE)
+      await ServiceGroupApp.addUsersToBundleGroups(bundle.service_instance_id, {
+        userIds: [targetUser.ID],
+        roles: [
+          { product: PlatformIdentifier.Opencti, role: ServiceGroupName.Admin },
+          { product: PlatformIdentifier.Xtmone, role: ServiceGroupName.User },
+        ],
+      });
+      telemetrySpy.mockClear();
+      await ServiceGroupApp.addUsersToBundleGroups(bundle.service_instance_id, {
+        userIds: [targetUser.ID],
+        roles: [
+          { product: PlatformIdentifier.Opencti, role: ServiceGroupName.Admin },
+          { product: PlatformIdentifier.Xtmone, role: ServiceGroupName.User },
+        ],
+      });
+
+      // Then: no duplicate trial_access_granted event is sent for the retry
+      expect(telemetrySpy).not.toHaveBeenCalled();
+      expect(openctiChild).toBeDefined();
+      expect(xtmoneChild).toBeDefined();
+    });
+
+    it('should propagate an error and skip telemetry when Auth0 RBAC sync fails for a user', async () => {
+      // Given
+      const targetUser = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS;
+      const { bundle } = await createBundleWithGroups();
+      vi.spyOn(auth0ClientMock, 'updateUserRBACInstance').mockRejectedValue(
+        new Error('Auth0 failure')
+      );
+
+      // When
+      const call = ServiceGroupApp.addUsersToBundleGroups(
+        bundle.service_instance_id,
+        {
+          userIds: [targetUser.ID],
+          roles: [
+            {
+              product: PlatformIdentifier.Opencti,
+              role: ServiceGroupName.Admin,
+            },
+            { product: PlatformIdentifier.Xtmone, role: ServiceGroupName.User },
+          ],
+        }
+      );
+
+      // Then: the caller gets an explicit failure instead of a false success
+      await expect(call).rejects.toThrow(ErrorCode.Auth0RbacSyncFailed);
+      expect(telemetrySpy).not.toHaveBeenCalled();
+    });
+
+    it('should still grant access (and log the telemetry failure separately) when the telemetry organization lookup throws', async () => {
+      // Given
+      const targetUser = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS;
+      const { bundle, groups } = await createBundleWithGroups();
+      vi.spyOn(auth0ClientMock, 'updateUserRBACInstance').mockResolvedValue(
+        undefined
+      );
+      vi.spyOn(mailService, 'sendMail').mockResolvedValue(undefined);
+      vi.spyOn(OrganizationDomain, 'loadOrganizationBy').mockRejectedValueOnce(
+        new Error('org lookup failure')
+      );
+      const logErrorSpy = vi.spyOn(logApp, 'error');
+
+      // When
+      const result = await ServiceGroupApp.addUsersToBundleGroups(
+        bundle.service_instance_id,
+        {
+          userIds: [targetUser.ID],
+          roles: [
+            {
+              product: PlatformIdentifier.Opencti,
+              role: ServiceGroupName.Admin,
+            },
+            { product: PlatformIdentifier.Xtmone, role: ServiceGroupName.User },
+          ],
+        }
+      );
+
+      // Then: access is still granted even though telemetry failed
+      expect(result).toEqual(expect.any(Array));
+      const adminMembers = await TestHelper.serviceGroupUser.load({
+        group_id: groups.openctiAdminGroupId,
+      });
+      expect(adminMembers?.map((member) => member.user_id)).toEqual([
+        targetUser.ID,
+      ]);
+      expect(telemetrySpy).not.toHaveBeenCalled();
+      expect(logErrorSpy).toHaveBeenCalledWith(
+        'Failed to send trial-access-granted telemetry',
+        expect.objectContaining({
+          serviceInstanceId: bundle.service_instance_id,
+        })
+      );
+    });
   });
 
   describe('removeUsersFromBundleGroups', () => {
@@ -1051,6 +1356,100 @@ describe('serviceGroupApp', () => {
 
       // Then
       expect(result).toEqual([TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID]);
+    });
+
+    it('should send a trial_access_removed telemetry event per bundle product for the removed user', async () => {
+      // Given
+      const actingUser = requestContextSimpleUserFiligran2.user;
+      const targetUser = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS;
+      const { bundle, openctiChild, xtmoneChild } =
+        await createBundleWithMember({ userId: targetUser.ID });
+
+      vi.spyOn(auth0ClientMock, 'updateUserRBACInstance').mockResolvedValue(
+        undefined
+      );
+
+      // When
+      await ServiceGroupApp.removeUsersFromBundleGroups(
+        bundle.service_instance_id,
+        [targetUser.ID]
+      );
+
+      // Then
+      expect(telemetrySpy).toHaveBeenCalledTimes(2);
+      expect(telemetrySpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event_type: TelemetryEventType.TRIAL_ACCESS_REMOVED,
+          user_id: actingUser.id,
+          deployment_id: openctiChild.id,
+          parent_id: bundle.id,
+          email: targetUser.EMAIL,
+        })
+      );
+      expect(telemetrySpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event_type: TelemetryEventType.TRIAL_ACCESS_REMOVED,
+          user_id: actingUser.id,
+          deployment_id: xtmoneChild.id,
+          parent_id: bundle.id,
+          email: targetUser.EMAIL,
+        })
+      );
+    });
+
+    it('should only send trial_access_removed telemetry for products the user actually had a role on', async () => {
+      // Given
+      const actingUser = requestContextSimpleUserFiligran2.user;
+      const targetUser = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS;
+      const openctiPlatformId = uuidv4();
+      const xtmonePlatformId = uuidv4();
+      const { bundle, children } =
+        await TestHelper.deploymentRequest.createBundle({
+          children: [
+            {
+              platform_identifier: PlatformIdentifier.Opencti,
+              platform_id: openctiPlatformId,
+            },
+            {
+              platform_identifier: PlatformIdentifier.Xtmone,
+              platform_id: xtmonePlatformId,
+            },
+          ],
+        });
+      createdBundleIds.push(bundle.id);
+      const [openctiChild] = children;
+
+      const openctiAdminGroupId = uuidv4() as ServiceGroupId;
+      await TestHelper.serviceGroup.create({
+        id: openctiAdminGroupId,
+        name: 'Admin',
+        service_instance_id: openctiChild!.service_instance_id,
+      });
+      await TestHelper.serviceGroupUser.create({
+        user_id: targetUser.ID,
+        group_id: openctiAdminGroupId,
+      });
+
+      vi.spyOn(auth0ClientMock, 'updateUserRBACInstance').mockResolvedValue(
+        undefined
+      );
+
+      // When
+      await ServiceGroupApp.removeUsersFromBundleGroups(
+        bundle.service_instance_id,
+        [targetUser.ID]
+      );
+
+      // Then
+      expect(telemetrySpy).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          event_type: TelemetryEventType.TRIAL_ACCESS_REMOVED,
+          user_id: actingUser.id,
+          deployment_id: openctiChild!.id,
+          parent_id: bundle.id,
+          email: targetUser.EMAIL,
+        })
+      );
     });
 
     it('should throw DeploymentRequestNotFound when the bundle has no deployment request', async () => {
@@ -1299,6 +1698,93 @@ describe('serviceGroupApp', () => {
         [openctiChild.platform_id as string]: { groups: [] },
         [xtmoneChild.platform_id as string]: { groups: ['Admin'] },
       });
+    });
+
+    it('should send trial_access_removed when a product role is revoked and trial_access_granted when it changes', async () => {
+      // Given
+      const actingUser = requestContextSimpleUserFiligran2.user;
+      const { bundle, openctiChild, xtmoneChild, targetUser } =
+        await createBundleWithMembers();
+      vi.spyOn(auth0ClientMock, 'updateUserRBACInstance').mockResolvedValue(
+        undefined
+      );
+
+      // When
+      await ServiceGroupApp.updateBundleUserGroups(bundle.service_instance_id, {
+        userIds: [targetUser.ID],
+        roles: [
+          { product: PlatformIdentifier.Opencti, role: null },
+          { product: PlatformIdentifier.Xtmone, role: ServiceGroupName.Admin },
+        ],
+      });
+
+      // Then
+      expect(telemetrySpy).toHaveBeenCalledTimes(2);
+      expect(telemetrySpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event_type: TelemetryEventType.TRIAL_ACCESS_REMOVED,
+          user_id: actingUser.id,
+          deployment_id: openctiChild.id,
+          parent_id: bundle.id,
+          email: targetUser.EMAIL,
+        })
+      );
+      expect(telemetrySpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event_type: TelemetryEventType.TRIAL_ACCESS_GRANTED,
+          user_id: actingUser.id,
+          deployment_id: xtmoneChild.id,
+          parent_id: bundle.id,
+          role: ServiceGroupName.Admin,
+          email: targetUser.EMAIL,
+        })
+      );
+    });
+
+    it('should not send any telemetry when re-submitting the roles a user already holds', async () => {
+      // Given: targetUser already has opencti=Admin and xtmone=User
+      const { bundle, targetUser } = await createBundleWithMembers();
+      vi.spyOn(auth0ClientMock, 'updateUserRBACInstance').mockResolvedValue(
+        undefined
+      );
+
+      // When
+      await ServiceGroupApp.updateBundleUserGroups(bundle.service_instance_id, {
+        userIds: [targetUser.ID],
+        roles: [
+          {
+            product: PlatformIdentifier.Opencti,
+            role: ServiceGroupName.Admin,
+          },
+          { product: PlatformIdentifier.Xtmone, role: ServiceGroupName.User },
+        ],
+      });
+
+      // Then: nothing actually changed, so no grant/removal telemetry fires
+      expect(telemetrySpy).not.toHaveBeenCalled();
+    });
+
+    it('should not re-send trial_access_removed telemetry for a product the user never had a role on', async () => {
+      // Given: targetUser has no role on Opencti's sibling call already
+      // revoked once; a second revoke call must not re-emit the event
+      const { bundle, targetUser } = await createBundleWithMembers();
+      vi.spyOn(auth0ClientMock, 'updateUserRBACInstance').mockResolvedValue(
+        undefined
+      );
+      await ServiceGroupApp.updateBundleUserGroups(bundle.service_instance_id, {
+        userIds: [targetUser.ID],
+        roles: [{ product: PlatformIdentifier.Opencti, role: null }],
+      });
+      telemetrySpy.mockClear();
+
+      // When: revoking again is a DB no-op
+      await ServiceGroupApp.updateBundleUserGroups(bundle.service_instance_id, {
+        userIds: [targetUser.ID],
+        roles: [{ product: PlatformIdentifier.Opencti, role: null }],
+      });
+
+      // Then
+      expect(telemetrySpy).not.toHaveBeenCalled();
     });
 
     it('should support updating several users at once', async () => {
