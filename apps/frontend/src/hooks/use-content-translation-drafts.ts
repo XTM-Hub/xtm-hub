@@ -1,27 +1,25 @@
 'use client';
 
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import revalidateContentTranslationsAction from '@/utils/actions/revalidate-content-translations.actions';
-import {
-  useDiscardContentTranslationDraftsMutation,
-  usePublishContentTranslationDraftsMutation,
-} from '@graphql/generated';
+import publishContentTranslationDraftsAction from '@/utils/actions/publish-content-translation-drafts.actions';
+import { useDiscardContentTranslationDraftsMutation } from '@graphql/generated';
+import { useMutation } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
 // Callers re-render the route afterwards: drafts only ever reach the page
 // through the server-side message overlay.
 export const useContentTranslationDrafts = () => {
-  const publishMutation =
-    usePublishContentTranslationDraftsMutation(portalGraphqlClient);
+  // A Server Action, so publishing and expiring the cache happen together.
+  const publishMutation = useMutation({
+    mutationFn: () => publishContentTranslationDraftsAction(),
+  });
   const discardMutation =
     useDiscardContentTranslationDraftsMutation(portalGraphqlClient);
   const { mutateAsync: publish } = publishMutation;
   const { mutateAsync: discard } = discardMutation;
 
   const publishDrafts = useCallback(async () => {
-    await publish({});
-    // Published values are the only ones visitors read, through the cache.
-    await revalidateContentTranslationsAction();
+    await publish();
   }, [publish]);
 
   const discardDrafts = useCallback(async () => {

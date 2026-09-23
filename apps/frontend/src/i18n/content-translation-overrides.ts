@@ -1,6 +1,5 @@
 import { isLocale, toGraphqlLocale } from '@/i18n/graphql-locale';
 import { serverGraphqlFetch } from '@/lib/server-graphql-fetch';
-import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '@/utils/constant';
 import { isContentEditModeActive } from '@/utils/content-translation/content-edit-mode.server';
 import { loadContentTranslationDrafts } from '@/utils/content-translation/content-translation-drafts.server';
 import {
@@ -16,9 +15,15 @@ import {
 
 export const CONTENT_TRANSLATIONS_CACHE_TAG = 'content-translations';
 
+// Publishing from the edit mode banner expires the tag at once; this bounds
+// how long a publish made straight through the API, or served by another
+// instance than the one that expired the tag, can stay unseen.
+const CONTENT_TRANSLATIONS_REVALIDATE_SECONDS = 60;
+
 // Editors bypass the Data Cache so a saved value shows up on their next
-// render; everyone else shares the cached overrides, expired on save (see
-// revalidate-content-translations.actions.ts) or after the revalidate window.
+// render; everyone else shares the cached overrides, expired on publish (see
+// publish-content-translation-drafts.actions.ts) or after the revalidate
+// window.
 const fetchContentTranslationOverrides = async (locale: GraphqlLocale) => {
   const isEditMode = await isContentEditModeActive();
   const data = await serverGraphqlFetch<
@@ -32,7 +37,7 @@ const fetchContentTranslationOverrides = async (locale: GraphqlLocale) => {
       : {
           cache: undefined,
           next: {
-            revalidate: PUBLIC_PAGE_REVALIDATE_SECONDS,
+            revalidate: CONTENT_TRANSLATIONS_REVALIDATE_SECONDS,
             tags: [CONTENT_TRANSLATIONS_CACHE_TAG],
           },
         }

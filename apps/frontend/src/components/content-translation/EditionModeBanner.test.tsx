@@ -1,24 +1,20 @@
 import { EditionModeBanner } from '@/components/content-translation/EditionModeBanner';
 import { EditModeProvider } from '@/context/edit-mode-context';
-import revalidateContentTranslationsAction from '@/utils/actions/revalidate-content-translations.actions';
+import publishContentTranslationDraftsAction from '@/utils/actions/publish-content-translation-drafts.actions';
 import testRender from '@/utils/test/test-render';
-import {
-  useDiscardContentTranslationDraftsMutation,
-  usePublishContentTranslationDraftsMutation,
-} from '@graphql/generated';
+import { useDiscardContentTranslationDraftsMutation } from '@graphql/generated';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@graphql/generated', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@graphql/generated')>()),
-  usePublishContentTranslationDraftsMutation: vi.fn(),
   useDiscardContentTranslationDraftsMutation: vi.fn(),
 }));
 vi.mock('@/utils/actions/content-edit-mode.actions', () => ({
   default: vi.fn(),
 }));
-vi.mock('@/utils/actions/revalidate-content-translations.actions', () => ({
+vi.mock('@/utils/actions/publish-content-translation-drafts.actions', () => ({
   default: vi.fn(),
 }));
 
@@ -27,13 +23,13 @@ const DISCARD_LABEL = 'EditableText.Discard';
 const PENDING_LABEL = 'EditableText.PendingChanges';
 const TOGGLE_LABEL = 'EditableText.ShowEditableAreas';
 
-const publish = vi.fn();
+const publish = vi.mocked(publishContentTranslationDraftsAction);
 const discard = vi.fn();
 
 // Only the fields the banner reads: the full mutation result is not needed.
-const mockMutation = (mutateAsync: typeof publish) =>
+const mockMutation = (mutateAsync: typeof discard) =>
   ({ mutateAsync, isPending: false }) as unknown as ReturnType<
-    typeof usePublishContentTranslationDraftsMutation
+    typeof useDiscardContentTranslationDraftsMutation
   >;
 
 const renderBanner = (pendingChangeCount: number) =>
@@ -49,15 +45,11 @@ const renderBanner = (pendingChangeCount: number) =>
 describe('EditionModeBanner', () => {
   beforeEach(() => {
     localStorage.clear();
-    publish.mockResolvedValue({});
+    publish.mockResolvedValue(undefined);
     discard.mockResolvedValue({});
-    vi.mocked(usePublishContentTranslationDraftsMutation).mockReturnValue(
-      mockMutation(publish)
-    );
     vi.mocked(useDiscardContentTranslationDraftsMutation).mockReturnValue(
       mockMutation(discard)
     );
-    vi.mocked(revalidateContentTranslationsAction).mockResolvedValue(undefined);
   });
 
   it('should not offer to publish when no change is pending', () => {
@@ -118,24 +110,6 @@ describe('EditionModeBanner', () => {
 
     // Then
     expect(publish).not.toHaveBeenCalled();
-  });
-
-  it('should make published texts visible to visitors by expiring the cache', async () => {
-    // Given
-    renderBanner(2);
-    await userEvent.click(screen.getByRole('button', { name: PUBLISH_LABEL }));
-
-    // When
-    await userEvent.click(
-      within(await screen.findByRole('alertdialog')).getByRole('button', {
-        name: PUBLISH_LABEL,
-      })
-    );
-
-    // Then
-    await waitFor(() =>
-      expect(revalidateContentTranslationsAction).toHaveBeenCalled()
-    );
   });
 
   it('should show the editable areas by default', () => {

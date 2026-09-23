@@ -1,25 +1,21 @@
 import { ExitEditModeDialog } from '@/components/content-translation/ExitEditModeDialog';
 import { EditModeProvider } from '@/context/edit-mode-context';
 import setContentEditModeAction from '@/utils/actions/content-edit-mode.actions';
-import revalidateContentTranslationsAction from '@/utils/actions/revalidate-content-translations.actions';
+import publishContentTranslationDraftsAction from '@/utils/actions/publish-content-translation-drafts.actions';
 import testRender from '@/utils/test/test-render';
-import {
-  useDiscardContentTranslationDraftsMutation,
-  usePublishContentTranslationDraftsMutation,
-} from '@graphql/generated';
+import { useDiscardContentTranslationDraftsMutation } from '@graphql/generated';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@graphql/generated', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@graphql/generated')>()),
-  usePublishContentTranslationDraftsMutation: vi.fn(),
   useDiscardContentTranslationDraftsMutation: vi.fn(),
 }));
 vi.mock('@/utils/actions/content-edit-mode.actions', () => ({
   default: vi.fn(),
 }));
-vi.mock('@/utils/actions/revalidate-content-translations.actions', () => ({
+vi.mock('@/utils/actions/publish-content-translation-drafts.actions', () => ({
   default: vi.fn(),
 }));
 
@@ -27,13 +23,13 @@ const KEEP_LABEL = 'EditableText.KeepDraftsAndExit';
 const DISCARD_LABEL = 'EditableText.DiscardAndExit';
 const PUBLISH_LABEL = 'EditableText.PublishAndExit';
 
-const publish = vi.fn();
+const publish = vi.mocked(publishContentTranslationDraftsAction);
 const discard = vi.fn();
 
 // Only the fields the dialog reads: the full mutation result is not needed.
-const mockMutation = (mutateAsync: typeof publish) =>
+const mockMutation = (mutateAsync: typeof discard) =>
   ({ mutateAsync, isPending: false }) as unknown as ReturnType<
-    typeof usePublishContentTranslationDraftsMutation
+    typeof useDiscardContentTranslationDraftsMutation
   >;
 
 const renderDialog = () =>
@@ -51,16 +47,12 @@ const renderDialog = () =>
 
 describe('ExitEditModeDialog', () => {
   beforeEach(() => {
-    publish.mockResolvedValue({});
+    publish.mockResolvedValue(undefined);
     discard.mockResolvedValue({});
-    vi.mocked(usePublishContentTranslationDraftsMutation).mockReturnValue(
-      mockMutation(publish)
-    );
     vi.mocked(useDiscardContentTranslationDraftsMutation).mockReturnValue(
       mockMutation(discard)
     );
     vi.mocked(setContentEditModeAction).mockResolvedValue(undefined);
-    vi.mocked(revalidateContentTranslationsAction).mockResolvedValue(undefined);
   });
 
   it.each([[KEEP_LABEL], [DISCARD_LABEL], [PUBLISH_LABEL]])(
