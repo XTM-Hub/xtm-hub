@@ -1,4 +1,3 @@
-import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { formatPersonNames } from '@/utils/format/name';
 import { PublicDocumentData } from '@/utils/shareable-resources/shareable-resources.types';
@@ -10,6 +9,7 @@ import {
   TooltipTrigger,
 } from '@filigran/ui/clients';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import { useTranslations } from 'next-intl';
 
 interface UserDisplayProps {
   uploader:
@@ -28,7 +28,7 @@ export const UserDisplay = ({
   withTooltip = false,
   displayPicture = true,
 }: UserDisplayProps) => {
-  const t = useTranslate('UserDisplay');
+  const t = useTranslations('UserDisplay');
   const formattedName = formatPersonNames(uploader);
   const fallbackEmail =
     uploader && 'email' in uploader ? (uploader.email ?? '') : '';

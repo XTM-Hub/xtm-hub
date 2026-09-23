@@ -1,4 +1,4 @@
-import { useTranslate } from '@/hooks/use-translate';
+import { useTranslations } from 'next-intl';
 import React from 'react';
 
 interface ShareableResourceBasicInformationProps {
@@ -8,7 +8,7 @@ interface ShareableResourceBasicInformationProps {
 export const ShareableResourceBasicInformation = ({
   children,
 }: ShareableResourceBasicInformationProps) => {
-  const t = useTranslate();
+  const t = useTranslations();
   return (
     <div className="flex-1">
       <h2 className="py-s txt-container-title truncate text-ellipsis text-muted-foreground">
