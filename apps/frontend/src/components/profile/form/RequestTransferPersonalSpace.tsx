@@ -2,6 +2,7 @@
 
 import { MeRequestTransferPersonalSpaceMutation } from '@/components/me/me.graphql';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   AutoForm,
   Card,
@@ -12,7 +13,6 @@ import {
   toast,
 } from '@filigran/ui';
 import { Button } from '@filigran/ui/servers';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useMutation } from 'react-relay';
@@ -25,7 +25,7 @@ export type RequestTransferPersonalSpaceSchema = z.infer<typeof formSchema>;
 
 export const RequestTransferPersonalSpace = () => {
   const router = useRouter();
-  const t = useTranslations();
+  const t = useTranslate();
   const [pendingValues, setPendingValues] =
     useState<RequestTransferPersonalSpaceSchema>();
   const [isDialogOpen, setIsDialogOpen] = useState(false);

@@ -1,6 +1,7 @@
 import { ServiceFormUseCasesField } from '@/components/service/form/UseCasesField';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import MarkdownInput from '@/components/ui/MarkdownInput';
+import { useTranslate } from '@/hooks/use-translate';
 import { DeleteIcon } from '@filigran/icon';
 import {
   Button,
@@ -22,7 +23,6 @@ import {
 } from '@filigran/ui';
 import { FiligranProduct } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
@@ -83,7 +83,7 @@ const VotableFeatureForm = ({
   handleDelete?: () => void;
   handleSubmit: (values: VotableFeatureFormValues) => void;
 }) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const formSchema = useMemo(() => buildVotableFeatureFormSchema(t), [t]);
   const form = useForm<VotableFeatureFormValues>({
     resolver: zodResolver(formSchema),

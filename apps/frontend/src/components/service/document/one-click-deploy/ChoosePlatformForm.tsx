@@ -1,3 +1,4 @@
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { isEeCapableContract } from '@/utils/platform';
 import { SHAREABLE_RESOURCE_TYPE_NAME_MAPPING } from '@/utils/shareable-resources/shareable-resources.types';
@@ -18,7 +19,6 @@ import {
 import { Button } from '@filigran/ui/servers';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
-import { useTranslations } from 'next-intl';
 import { z } from 'zod';
 
 interface ChoosePlatformFormProps {
@@ -44,7 +44,7 @@ const ChoosePlatformForm = ({
   requiredProductVersion,
   requiresEe,
 }: ChoosePlatformFormProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <div className="flex flex-col h-full justify-between gap-m">

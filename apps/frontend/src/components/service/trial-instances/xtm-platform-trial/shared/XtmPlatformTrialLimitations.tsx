@@ -1,10 +1,10 @@
 'use client';
 
+import { useTranslate } from '@/hooks/use-translate';
 import { InfoIcon } from '@filigran/icon';
-import { useTranslations } from 'next-intl';
 
 export const XtmPlatformTrialLimitations = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <div className="rounded p-m bg-feedback-info-secondary-transparency">
       <h2 className="flex items-center gap-s mb-s heading-xs">

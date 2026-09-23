@@ -3,10 +3,10 @@ import { DeleteEpic } from '@/components/epic/epic-item/DeleteEpic';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
 import { useEpicListContext } from '@/hooks/use-epic-list-context';
+import { useTranslate } from '@/hooks/use-translate';
 import { MoreVertIcon } from '@filigran/icon';
 import { Badge } from '@filigran/ui/servers';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface EpicAdminMenuProps {
@@ -19,7 +19,7 @@ export const EpicAdminMenu = ({
   userCanUpdate = false,
   userCanDelete = false,
 }: EpicAdminMenuProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   const { connectionID } = useEpicListContext();
 

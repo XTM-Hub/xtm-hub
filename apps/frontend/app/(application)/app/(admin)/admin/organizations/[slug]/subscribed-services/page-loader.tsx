@@ -2,10 +2,10 @@
 
 import OrganizationSubscribedServicesSlug from '@/components/organization/[slug]/subscribed-services/OrganizationSubscribedServices';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH } from '@/utils/path/constant';
 import { useOrganizationSubscribedServicesBreadcrumbQuery } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 
 const baseBreadcrumbValue = [
@@ -25,7 +25,7 @@ interface PreloaderProps {
 
 // Component
 const PageLoader = ({ id }: PreloaderProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { data: organizationData } =
     useOrganizationSubscribedServicesBreadcrumbQuery(portalGraphqlClient, {
       id,

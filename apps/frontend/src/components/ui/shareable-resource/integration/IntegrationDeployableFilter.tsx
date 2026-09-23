@@ -4,7 +4,7 @@ import {
   ServiceListLocalStorageKey,
   useServiceListLocalStorage,
 } from '@/hooks/use-service-list-local-storage';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 
 interface IntegrationDeployableFilterProps {
   facetCounts?: ServiceListFacetCounts['managerSupported'];
@@ -16,7 +16,7 @@ export const IntegrationDeployableFilter = ({
   const { deployable, setDeployable } = useServiceListLocalStorage(
     ServiceListLocalStorageKey.OpenCTIIntegrationFeeds
   );
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <LogicalMultiSelectFormField

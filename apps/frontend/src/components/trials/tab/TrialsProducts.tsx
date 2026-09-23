@@ -1,4 +1,5 @@
 'use client';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   Tooltip,
   TooltipContent,
@@ -10,7 +11,6 @@ import {
   DeploymentRequestHubStatus,
   TrialsProductFragment,
 } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
 const SUCCESS_CLASS_NAME = 'text-feedback-success-primary';
 const RUNNING_CLASS_NAME = 'text-feedback-alert-primary';
@@ -31,7 +31,7 @@ interface TrialsProductsProps {
 }
 
 export const TrialsProducts = ({ products }: TrialsProductsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   if (products.length === 0) {
     return <span>-</span>;

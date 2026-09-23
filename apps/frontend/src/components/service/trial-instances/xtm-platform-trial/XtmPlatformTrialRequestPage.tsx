@@ -1,6 +1,6 @@
 import { XtmPlatformTrialPitch } from '@/components/service/trial-instances/xtm-platform-trial/request-pitch/XtmPlatformTrialPitch';
 import { XtmPlatformTrialLimitations } from '@/components/service/trial-instances/xtm-platform-trial/shared/XtmPlatformTrialLimitations';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 import { ReactNode } from 'react';
 
 interface XtmPlatformTrialPageProps {
@@ -12,7 +12,7 @@ export const XtmPlatformTrialRequestPage = ({
   panel,
   showLimitations = false,
 }: XtmPlatformTrialPageProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <div className="flex flex-col gap-xxl">
       <header className="flex flex-col gap-s">

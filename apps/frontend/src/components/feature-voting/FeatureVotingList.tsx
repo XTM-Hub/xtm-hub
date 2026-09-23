@@ -4,6 +4,7 @@ import { FiligranProductMapping } from '@/components/epic/epic-item/FiligranProd
 import { FeatureVotingItem } from '@/components/feature-voting/FeatureVotingItem';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
 import { useFeatureVote } from '@/hooks/use-feature-vote';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Skeleton } from '@filigran/ui';
 import { featureVotingKeys } from '@graphql/feature-voting/feature-voting.keys';
@@ -12,7 +13,6 @@ import {
   useCurrentVotingRoundQuery,
   VotableFeaturePublicFragment,
 } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef } from 'react';
 
@@ -35,7 +35,7 @@ export const FeatureVotingList = ({
   serviceInstanceId,
   roadmapHref,
 }: FeatureVotingListProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

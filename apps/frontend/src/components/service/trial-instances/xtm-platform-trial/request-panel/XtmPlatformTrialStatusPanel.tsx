@@ -2,10 +2,10 @@
 
 import { XtmPlatformTrialRequestStepper } from '@/components/service/trial-instances/xtm-platform-trial/request-form/XtmPlatformTrialRequestStepper';
 import { XtmPlatformTrialStatusPanelState } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/xtm-platform-trial-panel.utils';
+import { useTranslate } from '@/hooks/use-translate';
 import { useDateFormatter } from '@/utils/date';
 import { Checkbox } from '@filigran/ui';
 import { PlatformIdentifier } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { ReactNode } from 'react';
 
 export type XtmPlatformTrialStatusPanelDateRowLabelKey =
@@ -33,7 +33,7 @@ export const XtmPlatformTrialStatusPanel = ({
   stepIndex,
   actions,
 }: XtmPlatformTrialStatusPanelProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const formatDate = useDateFormatter();
   const isInProgress =
     state === XtmPlatformTrialStatusPanelState.RequestInProgress;

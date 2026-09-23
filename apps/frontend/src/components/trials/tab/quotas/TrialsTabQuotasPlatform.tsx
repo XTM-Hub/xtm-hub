@@ -2,6 +2,7 @@
 import { TrialsTabQuotasPlatformUpdate } from '@/components/trials/tab/quotas/TrialsTabQuotasPlatformUpdate';
 import { trialsRegionKey } from '@/components/trials/trials.const';
 import { useUserHasPortalCapability } from '@/hooks/use-portal-capability';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { DataTable } from '@filigran/ui';
 import { trialsQuotasKeys } from '@graphql/deployment/deployment.keys';
@@ -11,11 +12,10 @@ import {
   useTrialsQuotasQuery,
 } from '@graphql/generated';
 import { ColumnDef } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
 export const TrialsTabQuotasPlatform = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const userHasModifyTrialQuotaCapa = useUserHasPortalCapability([
     PortalCapability.ModifyTrialsQuota,
   ]);

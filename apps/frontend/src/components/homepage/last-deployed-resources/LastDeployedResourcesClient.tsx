@@ -3,6 +3,7 @@
 import LastDeployedResourceRow from '@/components/homepage/last-deployed-resources/LastDeployedResourceRow';
 import { LastDeployedPlatform } from '@/components/homepage/last-deployed-resources/LastDeployedResourcesSection';
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
   Select,
@@ -13,7 +14,6 @@ import {
 } from '@filigran/ui';
 import { Separator } from '@filigran/ui/clients';
 import { useLastDeployedOverviewQueryQuery } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { Fragment, useState } from 'react';
 
 const LAST_DEPLOYED_LIMIT = 4;
@@ -25,7 +25,7 @@ type LastDeployedResourcesClientProps = {
 const LastDeployedResourcesClient = ({
   platforms,
 }: LastDeployedResourcesClientProps) => {
-  const t = useTranslations('HomePage.LastDeployedResources');
+  const t = useTranslate('HomePage.LastDeployedResources');
 
   const [selectedServiceInstanceId, setSelectedServiceInstanceId] =
     useState<string>(platforms[0]?.serviceInstanceId ?? '');

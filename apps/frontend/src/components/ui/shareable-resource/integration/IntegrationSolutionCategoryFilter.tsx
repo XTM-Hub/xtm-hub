@@ -3,8 +3,8 @@ import { useServiceListLocalStorageKeyContext } from '@/components/service/compo
 import { useSolutionCategories } from '@/components/service/form/UseSolutionCategories';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
+import { useTranslate } from '@/hooks/use-translate';
 import { FiligranProduct } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 
 interface IntegrationSolutionCategoryFilterProps {
@@ -14,7 +14,7 @@ interface IntegrationSolutionCategoryFilterProps {
 export const IntegrationSolutionCategoryFilter = ({
   facetCounts,
 }: IntegrationSolutionCategoryFilterProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const categories = useSolutionCategories(FiligranProduct.Opencti);
   const options = useMemo(
     () =>

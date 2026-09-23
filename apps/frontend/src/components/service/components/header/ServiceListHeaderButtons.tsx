@@ -7,16 +7,16 @@ import { useAdminByPass } from '@/hooks/use-portal-capability';
 import useServiceCapability, {
   useServiceCapabilityWithSubscriptionId,
 } from '@/hooks/use-service-capability';
+import { useTranslate } from '@/hooks/use-translate';
 import { APP_PATH } from '@/utils/path/constant';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { Button } from '@filigran/ui';
 import { OrganizationCapability, ServiceRestriction } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useContext, useState } from 'react';
 
 const ServiceListHeaderButtons = ({}) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { hasOrganizationCapability } = useContext(PortalContext);
 
   const { serviceInstance, translationKey, type, setIntegrationType } =

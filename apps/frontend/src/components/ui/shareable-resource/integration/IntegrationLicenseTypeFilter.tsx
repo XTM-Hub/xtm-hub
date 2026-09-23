@@ -4,8 +4,8 @@ import {
   ServiceListLocalStorageKey,
   useServiceListLocalStorage,
 } from '@/hooks/use-service-list-local-storage';
+import { useTranslate } from '@/hooks/use-translate';
 import { LicenseType } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
 interface IntegrationLicenseTypeFilterProps {
   facetCounts?: ServiceListFacetCounts['licenseType'];
@@ -17,7 +17,7 @@ export const IntegrationLicenseTypeFilter = ({
   const { licenseTypes, setLicenseTypes } = useServiceListLocalStorage(
     ServiceListLocalStorageKey.OpenCTIIntegrationFeeds
   );
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <LogicalMultiSelectFormField

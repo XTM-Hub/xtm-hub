@@ -1,5 +1,6 @@
 import EeBadge from '@/components/service/document/one-click-deploy/EeBadge';
 import { ReachSalesMutation } from '@/components/service/trial-instances/reach-sales.graphql';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   Form,
   FormControl,
@@ -19,7 +20,6 @@ import { Button } from '@filigran/ui/servers';
 import { reachSalesMutation as ReachSalesMutationType } from '@generated/reachSalesMutation.graphql';
 import { PlatformIdentifier } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
@@ -46,7 +46,7 @@ const EeLearnMoreSheet = ({
   serviceInstanceId,
   platformIdentifier,
 }: EeLearnMoreSheetProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const defaultMessage = t(
     'Service.ShareableResources.Deploy.EELearnMore.DefaultMessage'
   );

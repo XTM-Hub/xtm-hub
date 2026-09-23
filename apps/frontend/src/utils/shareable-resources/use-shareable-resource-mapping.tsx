@@ -12,17 +12,17 @@ import { IntegrationSolutionCategoryFilter } from '@/components/ui/shareable-res
 import { IntegrationTypeFilter } from '@/components/ui/shareable-resource/integration/IntegrationTypeFilter';
 import { IntegrationVerifiedFilter } from '@/components/ui/shareable-resource/integration/IntegrationVerifiedFilter';
 import { ServiceListLocalStorageKey } from '@/hooks/use-service-list-local-storage';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   ServiceSlug,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
-import { useTranslations } from 'next-intl';
 
 export const useShareableResourceMapping = (
   slug: ServiceSlug,
   facetCounts?: ServiceListFacetCounts
 ) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const localStorageKeyMapping: Record<
     ServiceSlug,
     ServiceListLocalStorageKey

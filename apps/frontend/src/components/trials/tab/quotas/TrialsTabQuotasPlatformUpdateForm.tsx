@@ -1,6 +1,7 @@
 import { trialsRegionKey } from '@/components/trials/trials.const';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { isEmpty } from '@/lib/utils';
 import {
@@ -22,7 +23,6 @@ import {
 } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -41,7 +41,7 @@ export const TrialsTabQuotasPlatformUpdateForm = ({
   quota,
   callback,
 }: TrialsTabQuotasPlatformUpdateFormProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { handleCloseSheet, setIsDirty } = useDialogContext();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

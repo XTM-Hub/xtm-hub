@@ -7,7 +7,7 @@ import { useState } from 'react';
 import ConnectProductFromHubModal, {
   ConnectProductOrigin,
 } from '@/components/registration/registerFromHub/ConnectProductFromHubModal';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 
 interface ConnectProductButtonProps {
   onCloseDropdown?: () => void;
@@ -18,7 +18,7 @@ export const ConnectProductButton = ({
   onCloseDropdown,
   variant = 'default',
 }: ConnectProductButtonProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   const [isOpen, setIsOpen] = useState<boolean>(false);
 

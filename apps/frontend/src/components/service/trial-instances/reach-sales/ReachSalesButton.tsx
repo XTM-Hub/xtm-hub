@@ -2,13 +2,13 @@
 import { ReachSalesMutation } from '@/components/service/trial-instances/reach-sales.graphql';
 import { ReachSalesDialogForm } from '@/components/service/trial-instances/reach-sales/ReachSalesDialogForm';
 import { DialogInformative } from '@/components/ui/Dialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { toast } from '@filigran/ui';
 import { Button, GradientButton } from '@filigran/ui/servers';
 import {
   DeploymentRequestDeploymentType,
   PlatformIdentifier,
 } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { useMutation } from 'react-relay';
 
@@ -25,7 +25,7 @@ export const ReachSalesButton = ({
   platformIdentifier,
   deploymentRequestType,
 }: ReachSalesButtonProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [commitReachSalesMutation, isInFlight] =
     useMutation(ReachSalesMutation);
   const [isConfirmationDialogOpen, setIsConfirmationDialogOpen] =

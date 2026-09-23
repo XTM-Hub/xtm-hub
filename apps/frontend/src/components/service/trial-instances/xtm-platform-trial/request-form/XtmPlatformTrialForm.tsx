@@ -7,6 +7,7 @@ import {
 import { buildOngoingTrialWarningParams } from '@/components/service/trial-instances/xtm-platform-trial/request-form/xtm-platform-trial-form.utils';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { TranslatableEnumSelectField } from '@/components/ui/TranslatableEnumSelectField';
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { WarningIcon } from '@filigran/icon';
 import {
@@ -30,7 +31,7 @@ import {
   PlatformIdentifier,
 } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { useContext, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
@@ -80,7 +81,7 @@ export const XtmPlatformTrialForm = ({
   hasOngoingStandaloneTrials = false,
   ongoingStandaloneTrialProducts = [],
 }: XtmPlatformTrialFormProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const locale = useLocale();
   const selectLayerClassName = 'layer-2';
   const selectTriggerClassName = cn(selectLayerClassName);

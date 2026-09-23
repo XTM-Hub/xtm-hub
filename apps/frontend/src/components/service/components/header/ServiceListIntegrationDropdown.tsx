@@ -1,3 +1,4 @@
+import { useTranslate } from '@/hooks/use-translate';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,7 +9,6 @@ import {
 } from '@filigran/ui';
 import { Button } from '@filigran/ui/servers';
 import { IntegrationType } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
 interface ServiceListIntegrationDropdownProps {
   onIntegrationTypeSelect: (integrationType: IntegrationType) => void;
@@ -17,7 +17,7 @@ interface ServiceListIntegrationDropdownProps {
 export const ServiceListIntegrationDropdown = ({
   onIntegrationTypeSelect,
 }: ServiceListIntegrationDropdownProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

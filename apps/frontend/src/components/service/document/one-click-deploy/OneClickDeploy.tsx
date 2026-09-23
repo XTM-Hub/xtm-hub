@@ -9,6 +9,7 @@ import OnePlatformDisplay from '@/components/service/document/one-click-deploy/O
 import { useOneClickDeployTab } from '@/components/service/document/one-click-deploy/UseOneClickDeployTab';
 import { useBuildCompatibilityTranslationKey } from '@/hooks/use-build-compatibility-translation-key';
 import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
+import { useTranslate } from '@/hooks/use-translate';
 import { isProduction } from '@/lib/utils';
 import { getPlatformIdentifier, isEeCapableContract } from '@/utils/platform';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
@@ -16,7 +17,6 @@ import { AlertDialog, AlertDialogContent, SimpleTooltip } from '@filigran/ui';
 import { Button } from '@filigran/ui/servers';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { OneClickDeployMutation as OneClickDeployMutationType } from '@generated/OneClickDeployMutation.graphql';
-import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
 import { graphql, useMutation } from 'react-relay';
 
@@ -29,7 +29,7 @@ const OneClickDeploy = ({
   documentData,
   requiredProductVersion,
 }: OneClickDeployProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const platformIdentifier = getPlatformIdentifier(documentData.type);
   const { platforms } = useRegisteredPlatforms(platformIdentifier, {
     onlyActive: true,

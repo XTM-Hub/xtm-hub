@@ -1,4 +1,5 @@
 import { PlatformHoverAction } from '@/components/service/ServiceInstanceCard';
+import { useTranslate } from '@/hooks/use-translate';
 import { APP_PATH } from '@/utils/path/constant';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { registerRegisteredPlatformListFragment$data } from '@generated/registerRegisteredPlatformListFragment.graphql';
@@ -8,7 +9,6 @@ import {
   PlatformContract,
   PlatformIdentifier,
 } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
 export const getPlatformIdentifier = (type: string): PlatformIdentifier => {
   return type === ShareableResourceType.OPENAEV_SCENARIO
@@ -31,7 +31,7 @@ export const isEeCapableContract = (
 
 export const buildPlatformHoverLinks = (
   platform: registerRegisteredPlatformListFragment$data['registeredPlatforms'][number],
-  t: ReturnType<typeof useTranslations>
+  t: ReturnType<typeof useTranslate>
 ): PlatformHoverAction[] | undefined => {
   const isTrialActive =
     platform.deployment_request?.hub_status ===

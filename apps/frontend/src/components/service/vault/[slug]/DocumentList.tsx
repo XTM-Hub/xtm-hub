@@ -20,6 +20,7 @@ import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { SearchInput } from '@/components/ui/SearchInput';
 import useServiceCapability from '@/hooks/use-service-capability';
 import { useTablePagination } from '@/hooks/use-table-pagination';
+import { useTranslate } from '@/hooks/use-translate';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { useDateFormatter } from '@/utils/date';
@@ -50,7 +51,6 @@ import {
   ServiceRestriction,
 } from '@graphql/generated';
 import { ColumnDef } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState } from 'react';
 import {
@@ -71,7 +71,7 @@ const DocumentList = ({ queryRef, serviceInstance }: ServiceProps) => {
     DocumentsListQuery,
     queryRef
   );
-  const t = useTranslations();
+  const t = useTranslate();
   const formatDate = useDateFormatter();
   const [editDocument, setEditDocument] = useState<
     documentItem_fragment$data | undefined

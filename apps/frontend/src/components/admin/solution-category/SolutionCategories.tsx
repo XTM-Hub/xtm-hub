@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/handle-sorting.utils';
 import { useExecuteAfterAnimation } from '@/hooks/use-execute-after-animation';
 import { useTablePagination } from '@/hooks/use-table-pagination';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { i18nKey } from '@/utils/datatable';
 import { formatName } from '@/utils/format/name';
@@ -22,11 +23,10 @@ import {
 } from '@graphql/generated';
 import { solutionCategoryListKeys } from '@graphql/solution-category/solution-category-list.keys';
 import { ColumnDef } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
 const SolutionCategories = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [solutionCategoryEdit, setSolutionCategoryEdit] = useState<
     SolutionCategoryRowFragment | undefined
   >(undefined);

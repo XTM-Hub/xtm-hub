@@ -2,6 +2,7 @@
 
 import { CONTRACT_LABEL_BY_CONTRACT } from '@/components/registration/PlatformIdentifierMapping';
 import { BundleCancelSheet } from '@/components/service/trial-instances/xtm-platform-trial/shared/BundleCancelSheet';
+import { useTranslate } from '@/hooks/use-translate';
 import { daysUntil, useDateFormatter } from '@/utils/date';
 import { xtmPlatformTrialManageUsersPath } from '@/utils/path/constant';
 import { Badge, Button, Card, CardContent } from '@filigran/ui';
@@ -9,7 +10,6 @@ import {
   PlatformContract,
   XtmPlatformBundleDetailsFragment,
 } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -34,7 +34,7 @@ const InfoRow = ({
 );
 
 export const BundleInfoCard = ({ bundle, canManage }: BundleInfoCardProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const formatDate = useDateFormatter();
   const [openCancel, setOpenCancel] = useState(false);
 

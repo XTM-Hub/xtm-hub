@@ -1,5 +1,6 @@
 import { useUserListLocalstorage } from '@/components/admin/user/user-list-localstorage';
 import { UserFragment } from '@/components/admin/user/UserList';
+import { useTranslate } from '@/hooks/use-translate';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { CheckIcon, CloseIcon, KeyboardArrowDownIcon } from '@filigran/icon';
 import {
@@ -21,7 +22,6 @@ import {
 } from '@filigran/ui/clients';
 import { Badge, Button } from '@filigran/ui/servers';
 import { UserList_fragment$key } from '@generated/UserList_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 
 import { useUsersList } from '@/hooks/use-users-list';
@@ -38,7 +38,7 @@ const SelectUsersFormField = React.forwardRef<
   HTMLButtonElement,
   SelectUsersFormFieldProps
 >(({ defaultValue, onValueChange, disabled, ...props }, ref) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   const [selectedValues, setSelectedValues] = useState<string[]>([
     defaultValue ?? '',

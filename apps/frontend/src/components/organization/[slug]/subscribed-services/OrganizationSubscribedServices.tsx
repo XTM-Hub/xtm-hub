@@ -6,6 +6,7 @@ import {
   mapToSortingTableValue,
 } from '@/components/ui/handle-sorting.utils';
 import { useTablePagination } from '@/hooks/use-table-pagination';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
@@ -19,7 +20,6 @@ import {
 } from '@graphql/generated';
 import { organizationSubscribedServicesKeys } from '@graphql/organization-subscribed-services/organization-subscribed-services.keys';
 import { ColumnDef } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 import { ChangeEvent, useMemo, useState } from 'react';
 import { useDebounceCallback } from 'usehooks-ts';
 import {
@@ -34,7 +34,7 @@ interface OrganizationSubscribedServicesProps {
 const OrganizationSubscribedServicesSlug = ({
   organizationId,
 }: OrganizationSubscribedServicesProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const formatDate = useDateFormatter();
   const [searchTerm, setSearchTerm] = useState('');
   const columns = useMemo<

@@ -2,8 +2,8 @@ import { AdminUserUpdateForm } from '@/components/admin/user/forms/admin/AdminUs
 import { UserUpdateForm } from '@/components/admin/user/forms/UserUpdateForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import useAdminPath from '@/hooks/use-admin-path';
+import { useTranslate } from '@/hooks/use-translate';
 import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import { ReactNode, useState } from 'react';
 
 interface EditUserProps {
@@ -21,7 +21,7 @@ export const EditUser = ({
 }: EditUserProps) => {
   const isAdminPath = useAdminPath();
   const [openSheet, setOpenSheet] = useState(defaultStateOpen ?? false);
-  const t = useTranslations();
+  const t = useTranslate();
 
   const handleOpenSheet = (open: boolean) => {
     setOpenSheet((prevState) => {

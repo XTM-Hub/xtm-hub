@@ -2,9 +2,9 @@ import { CreateOrganizationMutation } from '@/components/organization/organizati
 import { OrganizationForm } from '@/components/organization/OrganizationForm';
 import { organizationFormSchema } from '@/components/organization/OrganizationForm.schema';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { Button, useToast } from '@filigran/ui';
 import { organizationCreateMutation } from '@generated/organizationCreateMutation.graphql';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useMutation } from 'react-relay';
 import { z } from 'zod';
@@ -16,7 +16,7 @@ interface CreateOrganizationProps {
 export const CreateOrganization = ({
   connectionId,
 }: CreateOrganizationProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { toast } = useToast();
   const [commitOrganizationCreationMutation] =
     useMutation<organizationCreateMutation>(CreateOrganizationMutation);

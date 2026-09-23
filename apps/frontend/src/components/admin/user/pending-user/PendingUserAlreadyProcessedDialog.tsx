@@ -1,5 +1,5 @@
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 
 interface PendingUserAlreadyProcessedDialogProps {
   isOpen: boolean;
@@ -10,7 +10,7 @@ export const PendingUserAlreadyProcessedDialog = ({
   isOpen,
   onOpenChange,
 }: PendingUserAlreadyProcessedDialogProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <AlertDialogComponent

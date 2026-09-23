@@ -3,8 +3,8 @@ import {
   IconActionsItem,
 } from '@/components/ui/IconActions';
 import useDecodedParams from '@/hooks/use-decoded-params';
+import { useTranslate } from '@/hooks/use-translate';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import { useContext } from 'react';
 import { commitLocalUpdate, useRelayEnvironment } from 'react-relay';
 interface DownloadDocumentProps {
@@ -13,7 +13,7 @@ interface DownloadDocumentProps {
 
 export const DownloadDocument = ({ documentData }: DownloadDocumentProps) => {
   const { setMenuOpen } = useContext(IconActionContext);
-  const t = useTranslations();
+  const t = useTranslate();
   const { slug } = useDecodedParams();
   const environment = useRelayEnvironment();
 

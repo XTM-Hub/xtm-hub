@@ -2,11 +2,11 @@ import { PlatformMetadataMapping } from '@/components/registration/PlatformIdent
 import { ShareableResourceDetailsLink } from '@/components/service/document/ShareableResourceDetailsLink';
 import { ShareableResourceBasicInformation } from '@/components/service/document/ui/ShareableResourceBasicInformation';
 import { ShareableResourceDetailItem } from '@/components/service/document/ui/ShareableResourceDetailItem';
+import { useTranslate } from '@/hooks/use-translate';
 import { roundToNearest } from '@/lib/utils';
 import { LogoGitIcon, OpenInNewIcon } from '@filigran/icon';
 import { Button } from '@filigran/ui/servers';
 import { PlatformIdentifier } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import * as React from 'react';
 
@@ -34,7 +34,7 @@ export const ShareableResourceConnectorDetails = ({
   connectorDetails,
   compatibilityItem,
 }: ShareableResourceConnectorDetailsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const platformName = PlatformMetadataMapping[PlatformIdentifier.Opencti].name;
 
   return (

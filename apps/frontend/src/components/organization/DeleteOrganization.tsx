@@ -1,9 +1,9 @@
 import { organizationDeletion } from '@/components/organization/organization.graphql';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { useToast } from '@filigran/ui';
 import { organizationDeletionMutation } from '@generated/organizationDeletionMutation.graphql';
 import { organizationItem_fragment$data } from '@generated/organizationItem_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import { useMutation } from 'react-relay';
 
 interface DeleteOrganizationProps {
@@ -21,7 +21,7 @@ export const DeleteOrganization = ({
 }: DeleteOrganizationProps) => {
   const [deleteOrganizationMutation] =
     useMutation<organizationDeletionMutation>(organizationDeletion);
-  const t = useTranslations();
+  const t = useTranslate();
   const { toast } = useToast();
   const onDeletedOrganization = (deletedOrganizationId: string) => {
     deleteOrganizationMutation({

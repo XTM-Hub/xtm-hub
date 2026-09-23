@@ -1,8 +1,8 @@
 'use client';
 
+import { useTranslate } from '@/hooks/use-translate';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@filigran/ui';
 import { PlatformIdentifier } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { ReactNode } from 'react';
 import { AddTrialUserForm } from './AddTrialUserForm';
 import { EditTrialUsersForm } from './EditTrialUsersForm';
@@ -20,7 +20,7 @@ type TrialUserDialogProps =
 
 export const TrialUserDialog = (props: TrialUserDialogProps) => {
   const { mode, serviceInstanceId, products, open, setOpen } = props;
-  const t = useTranslations();
+  const t = useTranslate();
   const onClose = () => setOpen(false);
 
   let form: ReactNode;

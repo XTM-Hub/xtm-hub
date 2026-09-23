@@ -1,6 +1,7 @@
 import { useUserListLocalstorage } from '@/components/admin/user/user-list-localstorage';
 import { UserFragment } from '@/components/admin/user/UserList';
 import { serviceGroupFragment } from '@/components/service/service-group.graphql';
+import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
 import {
   Button,
@@ -19,7 +20,6 @@ import ServiceGroupsByServiceInstanceIdQueryGraphql, {
 import ServiceGroupsUpdateMutationGraphql from '@generated/serviceGroupsUpdateMutation.graphql';
 import { UserList_fragment$key } from '@generated/UserList_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { readInlineData, useLazyLoadQuery, useMutation } from 'react-relay';
@@ -48,7 +48,7 @@ export const TrialsManageUsersForm = ({
   serviceInstanceId,
   onCompleted,
 }: TrialsManageUsersFormProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { orderMode, orderBy, pageSize } = useUserListLocalstorage();
   const { data: availableUsers } = useUsersList({
     orderMode,

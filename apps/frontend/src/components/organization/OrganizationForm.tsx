@@ -1,5 +1,6 @@
 import { organizationFormSchema } from '@/components/organization/OrganizationForm.schema';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   Button,
   Form,
@@ -15,7 +16,6 @@ import {
 } from '@filigran/ui';
 import { organizationItem_fragment$data } from '@generated/organizationItem_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -31,7 +31,7 @@ export const OrganizationForm = ({
 }: OrganizationFormSheetProps) => {
   const { handleCloseSheet, setIsDirty } = useDialogContext();
 
-  const t = useTranslations();
+  const t = useTranslate();
 
   const form = useForm<z.infer<typeof organizationFormSchema>>({
     resolver: zodResolver(organizationFormSchema),

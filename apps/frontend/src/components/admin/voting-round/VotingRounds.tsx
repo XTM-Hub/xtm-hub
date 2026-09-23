@@ -6,6 +6,7 @@ import { useRoadmapServiceInstances } from '@/components/admin/voting-round/use-
 import { VotingRoundStatusBadge } from '@/components/admin/voting-round/VotingRoundStatusBadge';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { useExecuteAfterAnimation } from '@/hooks/use-execute-after-animation';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { i18nKey } from '@/utils/datatable';
 import { APP_PATH } from '@/utils/path/constant';
@@ -18,14 +19,13 @@ import {
 } from '@graphql/generated';
 import { votingRoundKeys } from '@graphql/voting-round/voting-round.keys';
 import { ColumnDef } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
 type VotingRoundListRow = VotingRoundsListQuery['votingRounds'][number];
 
 const VotingRounds = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const router = useRouter();
   const [roundToEdit, setRoundToEdit] = useState<
     VotingRoundRowFragment | undefined

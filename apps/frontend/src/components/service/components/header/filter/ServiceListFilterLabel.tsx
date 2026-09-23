@@ -3,7 +3,7 @@ import { useServiceListLocalStorageKeyContext } from '@/components/service/compo
 import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 
 interface ServiceListFilterLabelProps {
   type: string;
@@ -13,7 +13,7 @@ export const ServiceListFilterLabel = ({
   type,
   facetCounts,
 }: ServiceListFilterLabelProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { localStorageKey } = useServiceListLocalStorageKeyContext();
   const { labels, setLabels } = useServiceListLocalStorage(localStorageKey);
 

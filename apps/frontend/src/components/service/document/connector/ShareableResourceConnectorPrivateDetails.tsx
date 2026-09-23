@@ -5,9 +5,9 @@ import {
 } from '@/components/service/document/connector/ShareableResourceConnectorDetails';
 import { useBuildCompatibilityTranslationKey } from '@/hooks/use-build-compatibility-translation-key';
 import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
+import { useTranslate } from '@/hooks/use-translate';
 import { CheckIndeterminateIcon } from '@filigran/icon';
 import { PlatformIdentifier } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
 interface ShareableResourceConnectorPrivateDetailsProps {
   connectorDetails: ShareableResourceConnectorDetailsProps['connectorDetails'];
@@ -16,7 +16,7 @@ interface ShareableResourceConnectorPrivateDetailsProps {
 export const ShareableResourceConnectorPrivateDetails = ({
   connectorDetails,
 }: ShareableResourceConnectorPrivateDetailsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { platforms } = useRegisteredPlatforms(PlatformIdentifier.Opencti, {
     onlyActive: true,
   });

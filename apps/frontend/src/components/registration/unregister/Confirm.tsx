@@ -1,7 +1,7 @@
 import { getOrganization } from '@/components/organization/Organization.service';
 import { RegistrationContext } from '@/components/registration/Context';
 import { RegistrationLayout } from '@/components/registration/Layout';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 import { useContext } from 'react';
 
 interface UnregisterConfirmProps {
@@ -16,7 +16,7 @@ export const UnregisterConfirm = ({
   organizationId,
 }: UnregisterConfirmProps) => {
   const { displayedIdentifier } = useContext(RegistrationContext);
-  const t = useTranslations();
+  const t = useTranslate();
   const organization = getOrganization(organizationId);
 
   return (

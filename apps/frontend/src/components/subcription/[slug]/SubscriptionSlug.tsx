@@ -6,6 +6,7 @@ import {
 import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
+import { useTranslate } from '@/hooks/use-translate';
 import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
 import {
   Badge,
@@ -21,7 +22,6 @@ import {
 } from '@generated/userServices_fragment.graphql';
 import { OrganizationCapability, ServiceRestriction } from '@graphql/generated';
 import { ColumnDef, PaginationState } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 
 import { useCallback, useContext, useMemo, useState } from 'react';
 
@@ -67,7 +67,7 @@ const SubscriptionSlug = ({
   queryRefSubscription,
   serviceInstance,
 }: SubscriptionSlugProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [editUserService, setEditUserService] = useState<
     userServices_fragment$data | undefined
   >(undefined);

@@ -1,7 +1,7 @@
 'use client';
 import { logFrontendError } from '@/components/error-frontend-log.graphql';
 import { SettingsContext } from '@/components/settings/EnvPortalContext';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 import { useContext, useEffect } from 'react';
 import { useRelayEnvironment } from 'react-relay';
 
@@ -14,7 +14,7 @@ const AppError = ({
   const isDevelopmentEnvSetting =
     settings?.environment && settings.environment !== 'production';
   const environment = useRelayEnvironment();
-  const t = useTranslations();
+  const t = useTranslate();
   useEffect(() => {
     if (isDevelopmentEnvSetting) {
       logFrontendError(

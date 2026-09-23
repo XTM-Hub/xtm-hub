@@ -4,8 +4,8 @@ import {
   VaultNewFileForm,
 } from '@/components/service/vault/VaultNewFileForm';
 import { IconActionContext } from '@/components/ui/IconActions';
+import { useTranslate } from '@/hooks/use-translate';
 import { useToast } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 import { useContext } from 'react';
 
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
@@ -30,7 +30,7 @@ export const EditDocument = ({
   setOpen,
 }: EditDocumentProps) => {
   const { toast } = useToast();
-  const t = useTranslations();
+  const t = useTranslate();
   const [updateMutation] = useMutation<documentUpdateMutation>(
     DocumentUpdateMutation
   );

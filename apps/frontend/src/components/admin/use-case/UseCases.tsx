@@ -1,6 +1,7 @@
 import AddUseCase from '@/components/admin/use-case/AddUseCase';
 import EditUseCase from '@/components/admin/use-case/EditUseCase';
 import { useExecuteAfterAnimation } from '@/hooks/use-execute-after-animation';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { i18nKey } from '@/utils/datatable';
 import {
@@ -21,11 +22,10 @@ import {
 } from '@graphql/generated';
 import { useCaseListKeys } from '@graphql/use-case/use-case-list.keys';
 import { ColumnDef } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
 const UseCases = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [useCaseEdit, setUseCaseEdit] = useState<
     UseCaseRowFragment | undefined
   >(undefined);

@@ -2,7 +2,7 @@
 import UseCases from '@/components/admin/use-case/UseCases';
 import GuardCapacityComponent from '@/components/AdminGuard';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +17,7 @@ const breadcrumbValue = [
 
 // Component
 const Page = () => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <GuardCapacityComponent displayError>

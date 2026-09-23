@@ -1,10 +1,10 @@
 import { RegistrationContext } from '@/components/registration/Context';
 import { RegistrationLayout } from '@/components/registration/Layout';
+import { useTranslate } from '@/hooks/use-translate';
 import UserWithCapabilitiesInOrganizationQueryGraphql, {
   userWithCapabilitiesInOrganizationQuery,
 } from '@generated/userWithCapabilitiesInOrganizationQuery.graphql';
 import { OrganizationCapability } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { useContext } from 'react';
 import { useLazyLoadQuery } from 'react-relay';
 
@@ -18,7 +18,7 @@ export const RegisterStateMissingCapability = ({
   cancel,
 }: RegisterStateMissingCapabilityProps) => {
   const { capability, displayedIdentifier } = useContext(RegistrationContext);
-  const t = useTranslations();
+  const t = useTranslate();
   const capabilities = [OrganizationCapability.AdministrateOrganization];
   if (capability) {
     capabilities.push(capability);

@@ -1,3 +1,4 @@
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { ArrowDownwardIcon, ArrowUpwardIcon } from '@filigran/icon';
 import {
@@ -9,7 +10,6 @@ import {
 } from '@filigran/ui';
 import { Button } from '@filigran/ui/servers';
 import { OrderingMode } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
 interface SortControlsProps {
   orderByOptions: { label: string; value: string }[];
@@ -28,7 +28,7 @@ export const SortControls = ({
   selectedOrderBy,
   className,
 }: SortControlsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <div className={cn(className, 'flex gap-s items-center')}>

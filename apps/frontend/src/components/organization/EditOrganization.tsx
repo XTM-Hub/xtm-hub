@@ -2,10 +2,10 @@ import { OrganizationEditMutation } from '@/components/organization/organization
 import { OrganizationForm } from '@/components/organization/OrganizationForm';
 import { organizationFormSchema } from '@/components/organization/OrganizationForm.schema';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { useToast } from '@filigran/ui';
 import { organizationEditMutation } from '@generated/organizationEditMutation.graphql';
 import { organizationItem_fragment$data } from '@generated/organizationItem_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import { useMutation } from 'react-relay';
 import { z } from 'zod';
 
@@ -20,7 +20,7 @@ export const EditOrganization = ({
   open,
   setOpen,
 }: EditOrganizationProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { toast } = useToast();
   const [commitOrganizationEditionMutation] =
     useMutation<organizationEditMutation>(OrganizationEditMutation);
