@@ -9,15 +9,54 @@
 }
 
 :root {
-  --color-filigran-decoration: hsl(var(--darkblue-700) / 0.3);
+  --color-filigran-decoration: hsl(var(--pink-700) / 0.3);
   --hover-background: var(--color-gray-150);
+
+  /* Pink ramp, following the @filigran/ui ramp format (hue sat% light%). */
+  --pink-100: 330 78.26% 90.98%;
+  --pink-200: 330 79.38% 80.98%;
+  --pink-300: 330 79.73% 70.98%;
+  --pink-400: 330 79.9% 60.98%;
+  --pink-500: 330 79.2% 50.98%;
+  --pink-600: 330 79.9% 40.98%;
+  --pink-700: 330 79.49% 30.59%;
+  --pink-800: 330 79.44% 20.98%;
+  --pink-900: 330 78.57% 10.98%;
+
+  --color-pink-100: hsl(var(--pink-100));
+  --color-pink-200: hsl(var(--pink-200));
+  --color-pink-300: hsl(var(--pink-300));
+  --color-pink-400: hsl(var(--pink-400));
+  --color-pink-500: hsl(var(--pink-500));
+  --color-pink-600: hsl(var(--pink-600));
+  --color-pink-700: hsl(var(--pink-700));
+  --color-pink-800: hsl(var(--pink-800));
+  --color-pink-900: hsl(var(--pink-900));
+
+  /* Brand accent -> pink (light theme). */
+  --semantic-filigran-brand-primary: var(--color-pink-700);
+  --semantic-filigran-brand-primary-transparency: hsl(var(--pink-700) / 0.1);
+  --semantic-filigran-brand-secondary: var(--color-pink-300);
+  --semantic-filigran-brand-tertiary: var(--color-pink-900);
+
+  /* Drives bg-primary / text-primary / ring-primary (buttons, links, active nav). */
+  --primary: var(--pink-700);
 }
 
 .dark,
 body[data-theme='dark'],
 body[data-theme='Dark'] {
-  --color-filigran-decoration: hsl(var(--blue-500) / 0.3);
+  --color-filigran-decoration: hsl(var(--pink-500) / 0.3);
   --hover-background: var(--color-filigran-brand-primary-transparency);
+
+  /* Brand accent -> pink (dark theme). */
+  --semantic-filigran-brand-primary: var(--color-pink-500);
+  --semantic-filigran-brand-primary-transparency: hsl(var(--pink-500) / 0.1);
+  --semantic-filigran-brand-secondary: var(--color-pink-200);
+  --semantic-filigran-brand-tertiary: var(--color-pink-600);
+
+  /* Drives bg-primary / text-primary / ring-primary (buttons, links, active nav). */
+  --primary: var(--pink-500);
 }
 @source '../node_modules/@filigran/ui/dist/**/*.{js,ts,jsx,tsx}';
 @source '../../../node_modules/@filigran/ui/dist/**/*.{js,ts,jsx,tsx}';

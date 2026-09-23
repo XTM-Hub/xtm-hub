@@ -12,6 +12,7 @@ import {
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH } from '@/utils/path/constant';
 import {
+  GroupIcon,
   HomeIcon,
   IndividualIcon,
   LogoXtmOneIcon,
@@ -33,6 +34,7 @@ import {
   ServiceInstanceOrdering,
   ServiceInstancesListQueryVariables,
   TrialDeploymentsEligibilityQueryVariables,
+  useConnectProductOrganizationAdminsQuery,
   useRegisteredPlatformsListQuery,
   useServiceInstancesListQuery,
   useTrialDeploymentsEligibilityQuery,
@@ -226,6 +228,27 @@ export const usePrivateNavigation = (): NavigationConfig => {
       ),
     }
   );
+  const { data: organizationAdminsQueryData } =
+    useConnectProductOrganizationAdminsQuery(
+      portalGraphqlClient,
+      {
+        input: {
+          organizationId: selectedOrganizationId ?? '',
+          capabilities: [OrganizationCapability.AdministrateOrganization],
+        },
+      },
+      {
+        enabled:
+          !!selectedOrganizationId && !currentOrganization?.personal_space,
+      }
+    );
+  const organizationAdminLinks: SectionLink[] = (
+    organizationAdminsQueryData?.usersWithCapabilitiesInOrganization ?? []
+  ).map(({ email }) => ({
+    label: email,
+    href: `mailto:${email}`,
+    external: true,
+  }));
   const serviceHrefs = useMemo(
     () => getPrivateNavigationServiceHrefs(serviceInstancesQueryData),
     [serviceInstancesQueryData]
@@ -408,6 +431,19 @@ export const usePrivateNavigation = (): NavigationConfig => {
     },
   ];
   const footerSections: SectionConfig[] = [
+    ...(organizationAdminLinks.length > 0
+      ? [
+          {
+            key: 'organization-admins',
+            label: tMenuLinks('OrganizationAdmins'),
+            icon: GroupIcon,
+            // Contact list only: no route of its own, so this prefix never
+            // matches and the section is never marked active.
+            pathPrefix: `/${APP_PATH}/organization-admins`,
+            links: organizationAdminLinks,
+          },
+        ]
+      : []),
     ...(canManageUser
       ? [
           {
