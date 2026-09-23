@@ -42,20 +42,11 @@ export const ContentTranslationApp = {
   // Keys were validated when saved as drafts. The publisher becomes the
   // updater of the live rows.
   publishContentTranslationDrafts: (): Promise<ContentTranslationEntry[]> =>
-    withTransaction(async () => {
-      const drafts =
-        await ContentTranslationDomain.deleteContentTranslationDrafts();
-      const published: ContentTranslationEntry[] = [];
-      for (const key of new Set(drafts.map((draft) => draft.key))) {
-        published.push(
-          ...(await ContentTranslationDomain.upsertContentTranslation(
-            key,
-            drafts.filter((draft) => draft.key === key)
-          ))
-        );
-      }
-      return published;
-    }),
+    withTransaction(async () =>
+      ContentTranslationDomain.upsertContentTranslations(
+        await ContentTranslationDomain.deleteContentTranslationDrafts()
+      )
+    ),
 
   discardContentTranslationDrafts: async (): Promise<number> => {
     const discarded =

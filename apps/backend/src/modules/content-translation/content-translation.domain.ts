@@ -9,11 +9,12 @@ export interface LoadContentTranslationsFilter {
 }
 
 type ContentTranslationValue = Pick<ContentTranslation, 'locale' | 'value'>;
+type ContentTranslationRow = ContentTranslationValue & { key: string };
 
-const toRows = (key: string, values: readonly ContentTranslationValue[]) => {
+const toRows = (rows: readonly ContentTranslationRow[]) => {
   const updaterId = requestContext.get()?.user?.id;
   const updatedAt = new Date();
-  return values.map(({ locale, value }) => ({
+  return rows.map(({ key, locale, value }) => ({
     key,
     locale,
     value,
@@ -42,8 +43,20 @@ export const ContentTranslationDomain = {
     key: string,
     values: readonly ContentTranslationValue[]
   ): Promise<ContentTranslationEntry[]> => {
+    return ContentTranslationDomain.upsertContentTranslations(
+      values.map((value) => ({ key, ...value }))
+    );
+  },
+
+  // One statement for any number of keys, e.g. every draft being published.
+  upsertContentTranslations: async (
+    rows: readonly ContentTranslationRow[]
+  ): Promise<ContentTranslationEntry[]> => {
+    if (rows.length === 0) {
+      return [];
+    }
     return db<ContentTranslationEntry>('ContentTranslation')
-      .insert(toRows(key, values))
+      .insert(toRows(rows))
       .onConflict(['key', 'locale'])
       .merge(['value', 'updater_id', 'updated_at'])
       .returning('*');
@@ -66,7 +79,7 @@ export const ContentTranslationDomain = {
     values: readonly ContentTranslationValue[]
   ): Promise<ContentTranslationEntry[]> => {
     return db<ContentTranslationEntry>('ContentTranslationDraft')
-      .insert(toRows(key, values))
+      .insert(toRows(values.map((value) => ({ key, ...value }))))
       .onConflict(['key', 'locale'])
       .merge(['value', 'updater_id', 'updated_at'])
       .returning('*');
