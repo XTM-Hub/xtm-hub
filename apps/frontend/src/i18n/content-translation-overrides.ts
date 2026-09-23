@@ -2,6 +2,7 @@ import { isLocale, toGraphqlLocale } from '@/i18n/graphql-locale';
 import { serverGraphqlFetch } from '@/lib/server-graphql-fetch';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '@/utils/constant';
 import { isContentEditModeActive } from '@/utils/content-translation/content-edit-mode.server';
+import { loadContentTranslationDrafts } from '@/utils/content-translation/content-translation-drafts.server';
 import {
   applyMessageOverrides,
   Messages,
@@ -41,7 +42,8 @@ const fetchContentTranslationOverrides = async (locale: GraphqlLocale) => {
 
 // Overlays DB-backed overrides (edited in context, see
 // EditModeContentObserver) on the committed next-intl messages, for every
-// t() call, server or client.
+// t() call, server or client. In edit mode, drafts win over published values
+// so editors preview their pending changes rendered like live ones.
 export const withContentTranslationOverrides = async (
   locale: string,
   messages: Messages
@@ -49,14 +51,15 @@ export const withContentTranslationOverrides = async (
   if (!isLocale(locale)) {
     return messages;
   }
-  try {
-    const overrides = await fetchContentTranslationOverrides(
-      toGraphqlLocale(locale)
-    );
-    return applyMessageOverrides(messages, overrides);
-  } catch {
+  const graphqlLocale = toGraphqlLocale(locale);
+  const [published, drafts] = await Promise.all([
     // An unreachable backend must never break rendering: the committed
     // messages are a complete fallback.
-    return messages;
-  }
+    fetchContentTranslationOverrides(graphqlLocale).catch(() => []),
+    loadContentTranslationDrafts(),
+  ]);
+  return applyMessageOverrides(messages, [
+    ...published,
+    ...drafts.filter((draft) => draft.locale === graphqlLocale),
+  ]);
 };

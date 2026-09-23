@@ -2370,13 +2370,30 @@
     "DialogTitle": "Modifier le contenu",
     "KeyLabel": "Clé : {contentKey}",
     "ValueLabel": "Valeur {locale}",
-    "Save": "Enregistrer",
-    "EditionBannerLabel": "Vous êtes en mode édition — chaque texte modifiable est cliquable.",
-    "EditionBannerExit": "Retour au site en direct"
+    "SaveDraft": "Enregistrer le brouillon",
+    "EditionBannerLabel": "Vous êtes en mode édition — cliquez sur un texte encadré pour le modifier.",
+    "EditionBannerHiddenAreasLabel": "Vous êtes en mode édition — affichez les zones modifiables pour modifier un texte.",
+    "ShowEditableAreas": "Afficher les zones modifiables",
+    "EditionBannerExit": "Retour au site en direct",
+    "MenuButton": "Modifier les traductions",
+    "MenuButtonExit": "Quitter le mode édition",
+    "DraftHint": "Enregistré en brouillon : les visiteurs ne le verront qu’une fois publié depuis le bandeau du mode édition.",
+    "PendingChanges": "{count, plural, one {# modification non publiée} other {# modifications non publiées}}",
+    "Publish": "Publier",
+    "Discard": "Abandonner",
+    "PublishConfirmTitle": "{count, plural, one {Publier # modification ?} other {Publier # modifications ?}}",
+    "PublishConfirmDescription": "Tous les visiteurs verront les textes publiés.",
+    "DiscardConfirmTitle": "{count, plural, one {Abandonner # modification ?} other {Abandonner # modifications ?}}",
+    "DiscardConfirmDescription": "Les brouillons seront supprimés pour tous les éditeurs. Cette action est irréversible.",
+    "ExitDialogTitle": "Modifications non publiées",
+    "ExitDialogDescription": "{count, plural, one {# modification n’est pas encore publiée.} other {# modifications ne sont pas encore publiées.}} Les visiteurs voient les textes actuels tant que vous ne publiez pas.",
+    "KeepDraftsAndExit": "Garder les brouillons et quitter",
+    "DiscardAndExit": "Abandonner et quitter",
+    "PublishAndExit": "Publier et quitter"
   },
   "EditableTextDemo": {
     "Title": "Bienvenue sur XTM Hub",
     "Subtitle": "Le point d'entrée unifié de l'écosystème Filigran.",
-    "Instructions": "Rendez-vous sur /edition pour activer le mode édition (réservé aux utilisateurs avec la capacité BYPASS), puis cliquez sur le titre ou le sous-titre ci-dessous. L’enregistrement appelle la véritable mutation upsertContentTranslation."
+    "Instructions": "Utilisez « Modifier les traductions » dans la barre latérale pour activer le mode édition (réservé aux utilisateurs avec la capacité BYPASS), puis cliquez sur le titre ou le sous-titre encadré ci-dessous. L’enregistrement crée un brouillon à publier depuis le bandeau du mode édition."
   }
 }

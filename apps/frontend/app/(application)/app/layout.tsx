@@ -13,7 +13,12 @@ import { ReactQueryProvider } from '@/components/ReactQueryProvider';
 import { PrivateXtmPlatformTrialBanner } from '@/components/service/trial-instances/banner/xtm-platform-trial/PrivateXtmPlatformTrialBanner';
 import { EditModeProvider } from '@/context/edit-mode-context';
 import { RelayProvider } from '@/relay/relay-provider';
-import { isContentEditModeActive } from '@/utils/content-translation/content-edit-mode.server';
+import {
+  hasContentEditCapability,
+  isContentEditModeActive,
+} from '@/utils/content-translation/content-edit-mode.server';
+import { loadContentTranslationDrafts } from '@/utils/content-translation/content-translation-drafts.server';
+import { countPendingChanges } from '@/utils/content-translation/pending-changes';
 import { loadMeUser } from '@/utils/load-me-user';
 import { getMetadataBase } from '@/utils/metadata';
 import { APP_PATH } from '@/utils/path/constant';
@@ -49,6 +54,9 @@ const RootLayout = async ({ children }: RootLayoutProps) => {
   }
 
   const isEditMode = await isContentEditModeActive();
+  const pendingChangeCount = countPendingChanges(
+    await loadContentTranslationDrafts()
+  );
 
   const banners = (
     <>
@@ -64,7 +72,10 @@ const RootLayout = async ({ children }: RootLayoutProps) => {
       <ReactQueryProvider>
         <div className="flex min-h-screen">
           <PageLoader>
-            <EditModeProvider isEditMode={isEditMode}>
+            <EditModeProvider
+              canEditContent={hasContentEditCapability(me)}
+              isEditMode={isEditMode}
+              pendingChangeCount={pendingChangeCount}>
               <AppShell
                 banners={banners}
                 menu={<PrivateMenu />}

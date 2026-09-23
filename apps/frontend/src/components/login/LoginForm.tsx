@@ -50,12 +50,6 @@ const LoginForm = () => {
       },
       onCompleted() {
         const destination = decodeSafeRedirect(redirect);
-        // /edition is a Route Handler: a client-side push never reaches the
-        // server, so the edit-mode cookie would silently never be set.
-        if (destination?.startsWith('/edition')) {
-          window.location.href = destination;
-          return;
-        }
         if (destination) {
           router.push(destination);
         }

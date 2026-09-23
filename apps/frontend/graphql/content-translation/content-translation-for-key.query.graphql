@@ -4,4 +4,9 @@ query ContentTranslationForKey($keys: [String!]) {
     locale
     value
   }
+  contentTranslationDrafts(keys: $keys) {
+    key
+    locale
+    value
+  }
 }

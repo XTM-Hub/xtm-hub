@@ -80,6 +80,7 @@ input UpsertContentTranslationInput {
 
 type Query {
   contentTranslations(locale: Locale, keys: [String!]): [ContentTranslationEntry!]!
+  contentTranslationDrafts(keys: [String!]): [ContentTranslationEntry!]!
   competitors(first: Int!, after: ID, orderBy: CompetitorOrdering!, orderMode: OrderingMode!): CompetitorConnection!
   deploymentRequests(first: Int!, after: ID, filters: [DeploymentRequestFilter!]): PlatformDeploymentRequestConnection!
   deploymentRequestsAvailable: [DeploymentAvailability!]!
@@ -145,7 +146,9 @@ type Query {
 }
 
 type Mutation {
-  upsertContentTranslation(input: UpsertContentTranslationInput!): [ContentTranslationEntry!]!
+  saveContentTranslationDraft(input: UpsertContentTranslationInput!): [ContentTranslationEntry!]!
+  publishContentTranslationDrafts: [ContentTranslationEntry!]!
+  discardContentTranslationDrafts: Int!
   createCompetitor(input: CreateCompetitorInput!): Competitor!
   updateCompetitor(input: UpdateCompetitorInput!): Competitor!
   deleteCompetitor(id: CompetitorId!): Competitor!

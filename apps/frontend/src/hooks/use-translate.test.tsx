@@ -20,7 +20,12 @@ const stableTranslator = Object.assign(() => TRANSLATED_TITLE, {
 const renderUseTranslate = (isEditMode: boolean) =>
   renderHook(() => useTranslate(NAMESPACE), {
     wrapper: ({ children }: { children: ReactNode }) => (
-      <EditModeProvider isEditMode={isEditMode}>{children}</EditModeProvider>
+      <EditModeProvider
+        canEditContent={isEditMode}
+        isEditMode={isEditMode}
+        pendingChangeCount={0}>
+        {children}
+      </EditModeProvider>
     ),
   });
 

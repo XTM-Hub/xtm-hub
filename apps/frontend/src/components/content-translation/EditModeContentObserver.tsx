@@ -163,9 +163,9 @@ const findMarkedTextAtPoint = (
 };
 
 // Every visible rect (one per wrapped line) for every currently-registered
-// marked node — used to reveal all editable regions on screen at once
-// while Ctrl/Cmd is held, rather than only the one under the cursor,
-// which was otherwise impossible to discover without blindly hovering.
+// marked node — used to reveal all editable regions on screen at once,
+// rather than only the one under the cursor, which was otherwise impossible
+// to discover without blindly hovering.
 const getAllTargetRects = (registry: MarkedTextRegistry): EditableRegion[] => {
   const regions: EditableRegion[] = [];
   registry.list().forEach(({ node, contentKey }) => {
@@ -195,26 +195,24 @@ type HoverTarget = EditableRegion;
 // invisible content-key markers left by useTranslate() and registers each
 // marked Text node's live instance (stripping the marker from its data in
 // place, never replacing the node itself — see MarkedTextRegistry.register
-// for why that distinction matters). While Ctrl/Cmd is held, hovering
-// reveals a floating highlight over the nearest marked text under the
-// cursor (a portal, positioned via getBoundingClientRect — it never
-// touches the underlying DOM/React tree either), and Ctrl/Cmd+click opens
-// the edit dialog for it. See with-content-key-markers.ts for how markers get
+// for why that distinction matters). While the editable areas are shown
+// (toggled from EditionModeBanner), every editable region is outlined,
+// hovering highlights the one under the cursor (a portal, positioned via
+// getBoundingClientRect — it never touches the underlying DOM/React tree
+// either), and a click opens the edit dialog for it. See with-content-key-markers.ts for how markers get
 // embedded, and invisible-marker.ts for the encoding scheme.
 export const EditModeContentObserver = () => {
-  const { isEditMode } = useEditMode();
+  const { isEditMode, showEditableAreas } = useEditMode();
   const [hoverTarget, setHoverTarget] = useState<HoverTarget | null>(null);
   const router = useRouter();
   const [activeContentKey, setActiveContentKey] = useState<string | null>(null);
-  // Every editable region currently on screen, shown as a dim outline the
-  // moment Ctrl/Cmd is pressed — without this, discovering what's
-  // actually editable would mean blindly hovering the whole page.
+  // Every editable region currently on screen, shown as a dim outline while
+  // the editable areas are shown.
   const [allTargets, setAllTargets] = useState<EditableRegion[]>([]);
   const registryRef = useRef<MarkedTextRegistry | null>(null);
   if (registryRef.current === null) {
     registryRef.current = new MarkedTextRegistry();
   }
-  const modifierHeldRef = useRef(false);
   const rafRef = useRef<number | null>(null);
   const allTargetsRafRef = useRef<number | null>(null);
 
@@ -237,9 +235,7 @@ export const EditModeContentObserver = () => {
       }
       allTargetsRafRef.current = requestAnimationFrame(() => {
         allTargetsRafRef.current = null;
-        setAllTargets(
-          modifierHeldRef.current ? getAllTargetRects(registry) : []
-        );
+        setAllTargets(getAllTargetRects(registry));
       });
     };
 
@@ -263,7 +259,7 @@ export const EditModeContentObserver = () => {
           registry.register(mutation.target as Text);
         }
       });
-      if (modifierHeldRef.current) {
+      if (showEditableAreas) {
         refreshAllTargets();
       }
     });
@@ -273,40 +269,11 @@ export const EditModeContentObserver = () => {
       characterData: true,
     });
 
-    const isModifierKey = (event: KeyboardEvent) =>
-      event.key === 'Control' || event.key === 'Meta';
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (!isModifierKey(event) || modifierHeldRef.current) {
-        return;
-      }
-      modifierHeldRef.current = true;
-      refreshAllTargets();
-    };
-    const handleKeyUp = (event: KeyboardEvent) => {
-      if (isModifierKey(event)) {
-        modifierHeldRef.current = false;
-        clearHover();
-        setAllTargets([]);
-      }
-    };
-    // Alt-tabbing (or any focus loss) away while the modifier is still
-    // physically held down never fires its keyup — reset defensively
-    // whenever the window loses focus so the overlay never gets stuck on.
-    const handleBlur = () => {
-      modifierHeldRef.current = false;
-      clearHover();
-      setAllTargets([]);
-    };
-
     // rAF-throttled: hit-testing runs a DOM walk + Range measurement, so
     // this avoids doing that work more than once per frame during a fast
     // mouse movement.
     const handlePointerMove = (event: MouseEvent) => {
-      if (!modifierHeldRef.current) {
-        return;
-      }
-      if (rafRef.current !== null) {
+      if (!showEditableAreas || rafRef.current !== null) {
         return;
       }
       const { clientX, clientY } = event;
@@ -316,11 +283,10 @@ export const EditModeContentObserver = () => {
       });
     };
 
-    // Plain clicks are never intercepted — only Ctrl/Cmd+click opens the
-    // dialog, so normal navigation, buttons, and other interactive content
-    // behave exactly as usual the rest of the time.
+    // Only a click on an editable text, while the areas are shown, is
+    // intercepted: anything else on the page keeps working as usual.
     const handleClick = (event: MouseEvent) => {
-      if (!modifierHeldRef.current) {
+      if (!showEditableAreas) {
         return;
       }
       const match = findMarkedTextAtPoint(
@@ -340,41 +306,41 @@ export const EditModeContentObserver = () => {
       event.stopPropagation();
       setActiveContentKey(match.contentKey);
       setHoverTarget(null);
-      setAllTargets([]);
     };
 
     const handleViewportChange = () => {
       clearHover();
-      if (modifierHeldRef.current) {
+      if (showEditableAreas) {
         refreshAllTargets();
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('keyup', handleKeyUp);
-    window.addEventListener('blur', handleBlur);
     document.addEventListener('mousemove', handlePointerMove);
     document.addEventListener('scroll', handleViewportChange, true);
     window.addEventListener('resize', handleViewportChange);
     document.addEventListener('click', handleClick, true);
+    if (showEditableAreas) {
+      refreshAllTargets();
+    }
 
     return () => {
       mutationObserver.disconnect();
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('keyup', handleKeyUp);
-      window.removeEventListener('blur', handleBlur);
       document.removeEventListener('mousemove', handlePointerMove);
       document.removeEventListener('scroll', handleViewportChange, true);
       window.removeEventListener('resize', handleViewportChange);
       document.removeEventListener('click', handleClick, true);
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
       }
       if (allTargetsRafRef.current !== null) {
         cancelAnimationFrame(allTargetsRafRef.current);
+        allTargetsRafRef.current = null;
       }
+      setHoverTarget(null);
+      setAllTargets([]);
     };
-  }, [isEditMode]);
+  }, [isEditMode, showEditableAreas]);
 
   if (!isEditMode) {
     return null;

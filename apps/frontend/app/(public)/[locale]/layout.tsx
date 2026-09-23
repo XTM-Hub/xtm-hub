@@ -9,6 +9,8 @@ import { PublicXtmPlatformTrialBanner } from '@/components/service/trial-instanc
 import { EditModeProvider } from '@/context/edit-mode-context';
 import { type PublicLocale, publicLocales } from '@/i18n/config';
 import { isContentEditModeActive } from '@/utils/content-translation/content-edit-mode.server';
+import { loadContentTranslationDrafts } from '@/utils/content-translation/content-translation-drafts.server';
+import { countPendingChanges } from '@/utils/content-translation/pending-changes';
 import { getDefaultMetadata } from '@/utils/generate-metadata';
 import { fetchVisibleServiceSlugs } from '@/utils/seo-service-instance/utils/seo-service-instance.server.utils';
 import '@filigran/ui/theme.css';
@@ -46,10 +48,18 @@ const RootLayout = async ({
 
   const visibleServiceSlugs = await fetchVisibleServiceSlugs();
   const isEditMode = await isContentEditModeActive();
+  const pendingChangeCount = countPendingChanges(
+    await loadContentTranslationDrafts()
+  );
+  // Public pages never load the current user, so only an editor already in
+  // edit mode (a verified BYPASS user) gets the toggle here, to turn it off.
 
   return (
     <ReactQueryProvider>
-      <EditModeProvider isEditMode={isEditMode}>
+      <EditModeProvider
+        canEditContent={isEditMode}
+        isEditMode={isEditMode}
+        pendingChangeCount={pendingChangeCount}>
         <AppShell
           banners={
             <>
