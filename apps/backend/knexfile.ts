@@ -101,7 +101,8 @@ type BaseDatabaseType =
   | 'VotableFeature'
   | 'VotableFeature_UseCase'
   | 'FeatureVote'
-  | 'ContentTranslation';
+  | 'ContentTranslation'
+  | 'ContentTranslationDraft';
 
 export type DatabaseType =
   | BaseDatabaseType

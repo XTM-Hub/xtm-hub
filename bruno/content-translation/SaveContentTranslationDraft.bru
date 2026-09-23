@@ -1,5 +1,5 @@
 meta {
-  name: UpsertContentTranslation
+  name: SaveContentTranslationDraft
   type: graphql
   seq: 2
 }
@@ -15,8 +15,8 @@ headers {
 }
 
 body:graphql {
-  mutation UpsertContentTranslation($input: UpsertContentTranslationInput!) {
-    upsertContentTranslation(input: $input) {
+  mutation SaveContentTranslationDraft($input: UpsertContentTranslationInput!) {
+    saveContentTranslationDraft(input: $input) {
       key
       locale
       value
@@ -40,5 +40,5 @@ body:graphql:vars {
 
 docs {
   Ensure cookie is defined in environment, for a user with the BYPASS capability.
-  The key must be the dot path of an existing next-intl message.
+  The key must be the dot path of an existing next-intl message. Visitors only see it once published.
 }

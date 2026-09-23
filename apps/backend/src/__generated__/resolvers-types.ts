@@ -1057,6 +1057,7 @@ export type Mutation = {
   deleteUserServices?: Maybe<Array<Maybe<UserService>>>;
   deleteVotableFeature: VotableFeature;
   deleteVotingRound: VotingRound;
+  discardContentTranslationDrafts: Scalars['Int']['output'];
   editMeUser: User;
   editOrganization?: Maybe<Organization>;
   editSeoServiceInstance: SeoServiceInstanceMetadata;
@@ -1071,6 +1072,7 @@ export type Mutation = {
   login?: Maybe<User>;
   logout: Scalars['ID']['output'];
   newProductVersion: Success;
+  publishContentTranslationDrafts: Array<ContentTranslationEntry>;
   refreshPlatformRegistrationConnectivityStatus: RefreshPlatformRegistrationConnectivityStatusResponse;
   refreshPlatformRegistrationConnectivityStatusAllTenants: RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse;
   refreshPlatformRegistrationConnectivityStatusSingleTenant: RefreshPlatformRegistrationConnectivityStatusResponse;
@@ -1082,6 +1084,7 @@ export type Mutation = {
   reorderDeploymentRequestInQueue: Success;
   requestTransferPersonalSpace: Success;
   resetPassword: Success;
+  saveContentTranslationDraft: Array<ContentTranslationEntry>;
   sendTelemetryEvent?: Maybe<SendTelemetryMutation>;
   setVotingRoundStatus: Array<VotingRound>;
   transferPersonalSpace: Success;
@@ -1098,7 +1101,6 @@ export type Mutation = {
   updateVotableFeature: VotableFeature;
   updateVotingRound: VotingRound;
   uploadUserPicture: User;
-  upsertContentTranslation: Array<ContentTranslationEntry>;
   voteForFeature: Array<VotableFeature>;
 };
 
@@ -1446,6 +1448,11 @@ export type MutationRequestTransferPersonalSpaceArgs = {
 };
 
 
+export type MutationSaveContentTranslationDraftArgs = {
+  input: UpsertContentTranslationInput;
+};
+
+
 export type MutationSetVotingRoundStatusArgs = {
   id: Scalars['VotingRoundId']['input'];
   status: VotingRoundStatus;
@@ -1533,11 +1540,6 @@ export type MutationUpdateVotingRoundArgs = {
 
 export type MutationUploadUserPictureArgs = {
   document: Scalars['Upload']['input'];
-};
-
-
-export type MutationUpsertContentTranslationArgs = {
-  input: UpsertContentTranslationInput;
 };
 
 
@@ -1864,6 +1866,7 @@ export type Query = {
   bundleUserServiceGroups: Array<BundleUserServiceGroup>;
   canUnregisterPlatform: CanUnregisterResponse;
   competitors: CompetitorConnection;
+  contentTranslationDrafts: Array<ContentTranslationEntry>;
   contentTranslations: Array<ContentTranslationEntry>;
   countEpicsPerTimeline: Array<EpicCountPerTimeline>;
   /**
@@ -1946,6 +1949,11 @@ export type QueryCompetitorsArgs = {
   first: Scalars['Int']['input'];
   orderBy: CompetitorOrdering;
   orderMode: OrderingMode;
+};
+
+
+export type QueryContentTranslationDraftsArgs = {
+  keys?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 
@@ -4278,6 +4286,7 @@ export type MutationResolvers<ContextType = PortalContext, ParentType extends Re
   deleteUserServices?: Resolver<Maybe<Array<Maybe<ResolversTypes['UserService']>>>, ParentType, ContextType, RequireFields<MutationDeleteUserServicesArgs, 'input' | 'service_instance_id'>>;
   deleteVotableFeature?: Resolver<ResolversTypes['VotableFeature'], ParentType, ContextType, RequireFields<MutationDeleteVotableFeatureArgs, 'id'>>;
   deleteVotingRound?: Resolver<ResolversTypes['VotingRound'], ParentType, ContextType, RequireFields<MutationDeleteVotingRoundArgs, 'id'>>;
+  discardContentTranslationDrafts?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   editMeUser?: Resolver<ResolversTypes['User'], ParentType, ContextType, RequireFields<MutationEditMeUserArgs, 'input'>>;
   editOrganization?: Resolver<Maybe<ResolversTypes['Organization']>, ParentType, ContextType, RequireFields<MutationEditOrganizationArgs, 'id' | 'input'>>;
   editSeoServiceInstance?: Resolver<ResolversTypes['SeoServiceInstanceMetadata'], ParentType, ContextType, RequireFields<MutationEditSeoServiceInstanceArgs, 'input' | 'language' | 'service_instance_id'>>;
@@ -4292,6 +4301,7 @@ export type MutationResolvers<ContextType = PortalContext, ParentType extends Re
   login?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<MutationLoginArgs, 'email'>>;
   logout?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   newProductVersion?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<MutationNewProductVersionArgs, 'product' | 'version'>>;
+  publishContentTranslationDrafts?: Resolver<Array<ResolversTypes['ContentTranslationEntry']>, ParentType, ContextType>;
   refreshPlatformRegistrationConnectivityStatus?: Resolver<ResolversTypes['RefreshPlatformRegistrationConnectivityStatusResponse'], ParentType, ContextType, RequireFields<MutationRefreshPlatformRegistrationConnectivityStatusArgs, 'input'>>;
   refreshPlatformRegistrationConnectivityStatusAllTenants?: Resolver<ResolversTypes['RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse'], ParentType, ContextType, RequireFields<MutationRefreshPlatformRegistrationConnectivityStatusAllTenantsArgs, 'input'>>;
   refreshPlatformRegistrationConnectivityStatusSingleTenant?: Resolver<ResolversTypes['RefreshPlatformRegistrationConnectivityStatusResponse'], ParentType, ContextType, RequireFields<MutationRefreshPlatformRegistrationConnectivityStatusSingleTenantArgs, 'input'>>;
@@ -4303,6 +4313,7 @@ export type MutationResolvers<ContextType = PortalContext, ParentType extends Re
   reorderDeploymentRequestInQueue?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<MutationReorderDeploymentRequestInQueueArgs, 'input'>>;
   requestTransferPersonalSpace?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<MutationRequestTransferPersonalSpaceArgs, 'new_email'>>;
   resetPassword?: Resolver<ResolversTypes['Success'], ParentType, ContextType>;
+  saveContentTranslationDraft?: Resolver<Array<ResolversTypes['ContentTranslationEntry']>, ParentType, ContextType, RequireFields<MutationSaveContentTranslationDraftArgs, 'input'>>;
   sendTelemetryEvent?: Resolver<Maybe<ResolversTypes['SendTelemetryMutation']>, ParentType, ContextType>;
   setVotingRoundStatus?: Resolver<Array<ResolversTypes['VotingRound']>, ParentType, ContextType, RequireFields<MutationSetVotingRoundStatusArgs, 'id' | 'status'>>;
   transferPersonalSpace?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<MutationTransferPersonalSpaceArgs, 'requestId'>>;
@@ -4319,7 +4330,6 @@ export type MutationResolvers<ContextType = PortalContext, ParentType extends Re
   updateVotableFeature?: Resolver<ResolversTypes['VotableFeature'], ParentType, ContextType, RequireFields<MutationUpdateVotableFeatureArgs, 'id' | 'input'>>;
   updateVotingRound?: Resolver<ResolversTypes['VotingRound'], ParentType, ContextType, RequireFields<MutationUpdateVotingRoundArgs, 'id' | 'input'>>;
   uploadUserPicture?: Resolver<ResolversTypes['User'], ParentType, ContextType, RequireFields<MutationUploadUserPictureArgs, 'document'>>;
-  upsertContentTranslation?: Resolver<Array<ResolversTypes['ContentTranslationEntry']>, ParentType, ContextType, RequireFields<MutationUpsertContentTranslationArgs, 'input'>>;
   voteForFeature?: Resolver<Array<ResolversTypes['VotableFeature']>, ParentType, ContextType, RequireFields<MutationVoteForFeatureArgs, 'feature_id'>>;
 }>;
 
@@ -4542,6 +4552,7 @@ export type QueryResolvers<ContextType = PortalContext, ParentType extends Resol
   bundleUserServiceGroups?: Resolver<Array<ResolversTypes['BundleUserServiceGroup']>, ParentType, ContextType, RequireFields<QueryBundleUserServiceGroupsArgs, 'serviceInstanceId'>>;
   canUnregisterPlatform?: Resolver<ResolversTypes['CanUnregisterResponse'], ParentType, ContextType, RequireFields<QueryCanUnregisterPlatformArgs, 'input'>>;
   competitors?: Resolver<ResolversTypes['CompetitorConnection'], ParentType, ContextType, RequireFields<QueryCompetitorsArgs, 'first' | 'orderBy' | 'orderMode'>>;
+  contentTranslationDrafts?: Resolver<Array<ResolversTypes['ContentTranslationEntry']>, ParentType, ContextType, Partial<QueryContentTranslationDraftsArgs>>;
   contentTranslations?: Resolver<Array<ResolversTypes['ContentTranslationEntry']>, ParentType, ContextType, Partial<QueryContentTranslationsArgs>>;
   countEpicsPerTimeline?: Resolver<Array<ResolversTypes['EpicCountPerTimeline']>, ParentType, ContextType>;
   currentVotingRound?: Resolver<Maybe<ResolversTypes['VotingRound']>, ParentType, ContextType, RequireFields<QueryCurrentVotingRoundArgs, 'service_instance_id'>>;

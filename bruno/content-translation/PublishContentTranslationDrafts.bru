@@ -1,0 +1,32 @@
+meta {
+  name: PublishContentTranslationDrafts
+  type: graphql
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/graphql-api
+  body: graphql
+  auth: inherit
+}
+
+headers {
+  cookie: {{cookie}}
+}
+
+body:graphql {
+  mutation PublishContentTranslationDrafts {
+    publishContentTranslationDrafts {
+      key
+      locale
+      value
+      updated_at
+      updater_id
+    }
+  }
+}
+
+docs {
+  Ensure cookie is defined in environment, for a user with the BYPASS capability.
+  Makes every pending draft live at once.
+}

@@ -1,0 +1,26 @@
+meta {
+  name: DiscardContentTranslationDrafts
+  type: graphql
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/graphql-api
+  body: graphql
+  auth: inherit
+}
+
+headers {
+  cookie: {{cookie}}
+}
+
+body:graphql {
+  mutation DiscardContentTranslationDrafts {
+    discardContentTranslationDrafts
+  }
+}
+
+docs {
+  Ensure cookie is defined in environment, for a user with the BYPASS capability.
+  Deletes every pending draft and returns how many rows were discarded.
+}

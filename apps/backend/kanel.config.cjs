@@ -75,6 +75,9 @@ const COLUMN_ENUM_MAP = {
   ContentTranslation: {
     locale: 'Locale',
   },
+  ContentTranslationDraft: {
+    locale: 'Locale',
+  },
   ProductVersion: {
     product: 'PlatformIdentifier',
   },

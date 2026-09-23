@@ -44,7 +44,7 @@ describe('content-translation.resolver', () => {
     expect(result).toEqual(expected);
   });
 
-  it('should delegate upsertContentTranslation mutation to app', async () => {
+  it('should delegate saveContentTranslationDraft mutation to app', async () => {
     // Given
     const expected: ContentTranslationEntry[] = [
       {
@@ -57,7 +57,7 @@ describe('content-translation.resolver', () => {
     ];
     vi.spyOn(
       ContentTranslationApp,
-      'upsertContentTranslationBy'
+      'saveContentTranslationDraftBy'
     ).mockResolvedValue(expected);
     const input = {
       key: 'HomePage.hero.title',
@@ -65,7 +65,7 @@ describe('content-translation.resolver', () => {
     };
 
     // When
-    const result = await resolver.Mutation!.upsertContentTranslation!(
+    const result = await resolver.Mutation!.saveContentTranslationDraft!(
       {},
       { input },
       contextSimpleUserFiligran2,
@@ -74,10 +74,71 @@ describe('content-translation.resolver', () => {
 
     // Then
     expect(
-      ContentTranslationApp.upsertContentTranslationBy
+      ContentTranslationApp.saveContentTranslationDraftBy
     ).toHaveBeenCalledWith({
       input,
     });
     expect(result).toEqual(expected);
+  });
+
+  it('should delegate contentTranslationDrafts query to app', async () => {
+    // Given
+    vi.spyOn(
+      ContentTranslationApp,
+      'loadContentTranslationDraftsBy'
+    ).mockResolvedValue([]);
+
+    // When
+    await resolver.Query!.contentTranslationDrafts!(
+      {},
+      { keys: ['HomePage.hero.title'] },
+      contextSimpleUserFiligran2,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    // Then
+    expect(
+      ContentTranslationApp.loadContentTranslationDraftsBy
+    ).toHaveBeenCalledWith({ keys: ['HomePage.hero.title'] });
+  });
+
+  it('should delegate publishContentTranslationDrafts mutation to app', async () => {
+    // Given
+    vi.spyOn(
+      ContentTranslationApp,
+      'publishContentTranslationDrafts'
+    ).mockResolvedValue([]);
+
+    // When
+    await resolver.Mutation!.publishContentTranslationDrafts!(
+      {},
+      {},
+      contextSimpleUserFiligran2,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    // Then
+    expect(
+      ContentTranslationApp.publishContentTranslationDrafts
+    ).toHaveBeenCalled();
+  });
+
+  it('should delegate discardContentTranslationDrafts mutation to app', async () => {
+    // Given
+    vi.spyOn(
+      ContentTranslationApp,
+      'discardContentTranslationDrafts'
+    ).mockResolvedValue(2);
+
+    // When
+    const result = await resolver.Mutation!.discardContentTranslationDrafts!(
+      {},
+      {},
+      contextSimpleUserFiligran2,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    // Then
+    expect(result).toBe(2);
   });
 });

@@ -31,12 +31,21 @@ type Query {
     locale: Locale
     keys: [String!]
   ): [ContentTranslationEntry!]!
+  # Pending edits, shared by every editor and invisible to visitors until
+  # published. Omitting keys returns every draft.
+  contentTranslationDrafts(keys: [String!]): [ContentTranslationEntry!]!
+    @auth(portalCapa: [BYPASS])
 }
 
 type Mutation {
-  # Upserts one or more locale values for a single content key in a single
-  # round trip (one row per locale), returning the updated rows.
-  upsertContentTranslation(
+  # Saves one or more locale values for a single content key as drafts (one
+  # row per locale), returning the saved rows.
+  saveContentTranslationDraft(
     input: UpsertContentTranslationInput!
   ): [ContentTranslationEntry!]! @auth(portalCapa: [BYPASS])
+  # Makes every draft live at once, returning the published rows.
+  publishContentTranslationDrafts: [ContentTranslationEntry!]!
+    @auth(portalCapa: [BYPASS])
+  # Deletes every draft, returning how many rows were discarded.
+  discardContentTranslationDrafts: Int! @auth(portalCapa: [BYPASS])
 }

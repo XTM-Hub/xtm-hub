@@ -139,4 +139,96 @@ describe('content-translation.domain', () => {
     expect(result).toHaveLength(3);
     expect(savedRows).toHaveLength(3);
   });
+
+  describe('drafts', () => {
+    afterEach(async () => {
+      await TestHelper.contentTranslationDraft.delete();
+    });
+
+    it('should save drafts without changing live values', async () => {
+      // Given
+      await TestHelper.contentTranslation.create({
+        key: `${testKeyPrefix}.title`,
+        locale: Locale.En,
+        value: 'Live value',
+      });
+
+      // When
+      await ContentTranslationDomain.upsertContentTranslationDraft(
+        `${testKeyPrefix}.title`,
+        [{ locale: Locale.En, value: 'Draft value' }]
+      );
+
+      // Then
+      const [live] = await TestHelper.contentTranslation.loadAll({
+        key: `${testKeyPrefix}.title`,
+        locale: Locale.En,
+      });
+      expect(live?.value).toBe('Live value');
+    });
+
+    it('should update the draft when one already exists for the key/locale pair', async () => {
+      // Given
+      await TestHelper.contentTranslationDraft.create({
+        key: `${testKeyPrefix}.title`,
+        locale: Locale.En,
+        value: 'First draft',
+      });
+
+      // When
+      await ContentTranslationDomain.upsertContentTranslationDraft(
+        `${testKeyPrefix}.title`,
+        [{ locale: Locale.En, value: 'Second draft' }]
+      );
+
+      // Then
+      const drafts = await TestHelper.contentTranslationDraft.loadAll({
+        key: `${testKeyPrefix}.title`,
+      });
+      expect(drafts.map(({ value }) => value)).toEqual(['Second draft']);
+    });
+
+    it('should load only the drafts of the given keys', async () => {
+      // Given
+      await TestHelper.contentTranslationDraft.create({
+        key: `${testKeyPrefix}.title`,
+        locale: Locale.En,
+      });
+      await TestHelper.contentTranslationDraft.create({
+        key: `${testKeyPrefix}.subtitle`,
+        locale: Locale.En,
+      });
+
+      // When
+      const drafts =
+        await ContentTranslationDomain.loadContentTranslationDraftsBy([
+          `${testKeyPrefix}.title`,
+        ]);
+
+      // Then
+      expect(drafts.map(({ key }) => key)).toEqual([`${testKeyPrefix}.title`]);
+    });
+
+    it('should return the deleted drafts when deleting them', async () => {
+      // Given
+      await TestHelper.contentTranslationDraft.create({
+        key: `${testKeyPrefix}.title`,
+        locale: Locale.En,
+        value: 'Draft value',
+      });
+
+      // When
+      const deleted =
+        await ContentTranslationDomain.deleteContentTranslationDrafts();
+
+      // Then
+      expect(deleted).toEqual([
+        expect.objectContaining({
+          key: `${testKeyPrefix}.title`,
+          locale: Locale.En,
+          value: 'Draft value',
+        }),
+      ]);
+    });
+  });
 });
