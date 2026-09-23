@@ -141,4 +141,59 @@ describe('content-translation.resolver', () => {
     // Then
     expect(result).toBe(2);
   });
+
+  it.each([
+    [
+      'saveContentTranslationDraft',
+      'saveContentTranslationDraftBy',
+      () =>
+        resolver.Mutation!.saveContentTranslationDraft!(
+          {},
+          {
+            input: {
+              key: 'HomePage.hero.title',
+              values: [{ locale: Locale.En, value: 'Updated' }],
+            },
+          },
+          contextSimpleUserFiligran2,
+          GRAPHQL_RESOLVE_INFO
+        ),
+    ],
+    [
+      'publishContentTranslationDrafts',
+      'publishContentTranslationDrafts',
+      () =>
+        resolver.Mutation!.publishContentTranslationDrafts!(
+          {},
+          {},
+          contextSimpleUserFiligran2,
+          GRAPHQL_RESOLVE_INFO
+        ),
+    ],
+    [
+      'discardContentTranslationDrafts',
+      'discardContentTranslationDrafts',
+      () =>
+        resolver.Mutation!.discardContentTranslationDrafts!(
+          {},
+          {},
+          contextSimpleUserFiligran2,
+          GRAPHQL_RESOLVE_INFO
+        ),
+    ],
+  ] as const)(
+    'should expose app failures as GraphQL errors when %s fails',
+    async (_mutation, appMethod, callMutation) => {
+      // Given
+      vi.spyOn(ContentTranslationApp, appMethod).mockRejectedValue(
+        new Error('INVALID_CONTENT_TRANSLATION_KEY')
+      );
+
+      // When
+      const result = callMutation();
+
+      // Then
+      await expect(result).rejects.toMatchObject({ name: 'BAD_REQUEST' });
+    }
+  );
 });

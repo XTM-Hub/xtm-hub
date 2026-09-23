@@ -144,6 +144,26 @@ describe('content-translation.app', () => {
       }
     });
 
+    it('should load the drafts of the given keys', async () => {
+      // Given
+      await TestHelper.contentTranslationDraft.create({
+        key: TITLE_KEY,
+        locale: Locale.En,
+      });
+      await TestHelper.contentTranslationDraft.create({
+        key: SUBTITLE_KEY,
+        locale: Locale.En,
+      });
+
+      // When
+      const drafts = await ContentTranslationApp.loadContentTranslationDraftsBy(
+        { keys: [TITLE_KEY] }
+      );
+
+      // Then
+      expect(drafts.map(({ key }) => key)).toEqual([TITLE_KEY]);
+    });
+
     it('should make every draft live when publishing', async () => {
       // Given
       await TestHelper.contentTranslationDraft.create({
