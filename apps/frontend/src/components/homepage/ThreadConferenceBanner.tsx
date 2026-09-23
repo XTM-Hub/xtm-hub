@@ -1,10 +1,10 @@
-import { getTranslations } from 'next-intl/server';
+import { getTranslate } from '@/hooks/get-translate';
 import Link from 'next/link';
 
 const THREAD_CONFERENCE_URL = 'https://filigran.io/thread?form_origin=xtmhub';
 
 const ThreadConferenceBanner = async () => {
-  const t = await getTranslations();
+  const t = await getTranslate();
 
   return (
     <Link
