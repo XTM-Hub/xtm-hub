@@ -72,6 +72,9 @@ const COLUMN_ENUM_MAP = {
   Manifest: {
     type: 'ManifestType',
   },
+  ContentTranslation: {
+    locale: 'Locale',
+  },
   ProductVersion: {
     product: 'PlatformIdentifier',
   },

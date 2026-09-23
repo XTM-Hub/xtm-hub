@@ -224,6 +224,20 @@ export type ConsumeProvisionedNewsFeedItemsResponse = {
   news_feed_items: Array<ProvisionedNewsFeedItem>;
 };
 
+export type ContentTranslationEntry = {
+  __typename?: 'ContentTranslationEntry';
+  key: Scalars['String']['output'];
+  locale: Locale;
+  updated_at: Scalars['Date']['output'];
+  updater_id?: Maybe<Scalars['UserId']['output']>;
+  value: Scalars['String']['output'];
+};
+
+export type ContentTranslationValueInput = {
+  locale: Locale;
+  value: Scalars['String']['input'];
+};
+
 export type CreateCompetitorInput = {
   domain: Scalars['String']['input'];
   name: Scalars['String']['input'];
@@ -941,6 +955,12 @@ export type LoadDocumentFacetInput = {
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
 };
 
+export enum Locale {
+  En = 'en',
+  Fr = 'fr',
+  Ja = 'ja'
+}
+
 export type LogicalFilterInput = {
   children?: InputMaybe<Array<LogicalFilterInput>>;
   leaf?: InputMaybe<Filter>;
@@ -1078,6 +1098,7 @@ export type Mutation = {
   updateVotableFeature: VotableFeature;
   updateVotingRound: VotingRound;
   uploadUserPicture: User;
+  upsertContentTranslation: Array<ContentTranslationEntry>;
   voteForFeature: Array<VotableFeature>;
 };
 
@@ -1515,6 +1536,11 @@ export type MutationUploadUserPictureArgs = {
 };
 
 
+export type MutationUpsertContentTranslationArgs = {
+  input: UpsertContentTranslationInput;
+};
+
+
 export type MutationVoteForFeatureArgs = {
   feature_id: Scalars['VotableFeatureId']['input'];
 };
@@ -1838,6 +1864,7 @@ export type Query = {
   bundleUserServiceGroups: Array<BundleUserServiceGroup>;
   canUnregisterPlatform: CanUnregisterResponse;
   competitors: CompetitorConnection;
+  contentTranslations: Array<ContentTranslationEntry>;
   countEpicsPerTimeline: Array<EpicCountPerTimeline>;
   /**
    * The round currently collecting votes on a service instance, if any.
@@ -1919,6 +1946,12 @@ export type QueryCompetitorsArgs = {
   first: Scalars['Int']['input'];
   orderBy: CompetitorOrdering;
   orderMode: OrderingMode;
+};
+
+
+export type QueryContentTranslationsArgs = {
+  keys?: InputMaybe<Array<Scalars['String']['input']>>;
+  locale?: InputMaybe<Locale>;
 };
 
 
@@ -2896,6 +2929,11 @@ export type UpdateVotingRoundInput = {
   theme?: InputMaybe<VotingRoundTheme>;
 };
 
+export type UpsertContentTranslationInput = {
+  key: Scalars['String']['input'];
+  values: Array<ContentTranslationValueInput>;
+};
+
 export type UseCase = Node & {
   __typename?: 'UseCase';
   color: Scalars['String']['output'];
@@ -3251,6 +3289,8 @@ export type ResolversTypes = ResolversObject<{
   CompetitorTier: CompetitorTier;
   Connector: ResolverTypeWrapper<Connector>;
   ConsumeProvisionedNewsFeedItemsResponse: ResolverTypeWrapper<ConsumeProvisionedNewsFeedItemsResponse>;
+  ContentTranslationEntry: ResolverTypeWrapper<ContentTranslationEntry>;
+  ContentTranslationValueInput: ContentTranslationValueInput;
   CreateCompetitorInput: CreateCompetitorInput;
   CreateDeploymentRequestInput: CreateDeploymentRequestInput;
   CreateDocumentInput: CreateDocumentInput;
@@ -3320,6 +3360,7 @@ export type ResolversTypes = ResolversObject<{
   LastDeployedOverview: ResolverTypeWrapper<Omit<LastDeployedOverview, 'resources'> & { resources: Array<ResolversTypes['DeployedResource']> }>;
   LicenseType: LicenseType;
   LoadDocumentFacetInput: LoadDocumentFacetInput;
+  Locale: Locale;
   LogicalFilterInput: LogicalFilterInput;
   LogicalOperator: LogicalOperator;
   ManifestFragmentInput: ManifestFragmentInput;
@@ -3448,6 +3489,7 @@ export type ResolversTypes = ResolversObject<{
   UpdateVotableFeatureInput: UpdateVotableFeatureInput;
   UpdateVotingRoundInput: UpdateVotingRoundInput;
   Upload: ResolverTypeWrapper<Scalars['Upload']['output']>;
+  UpsertContentTranslationInput: UpsertContentTranslationInput;
   UseCase: ResolverTypeWrapper<UseCase>;
   UseCaseConnection: ResolverTypeWrapper<UseCaseConnection>;
   UseCaseEdge: ResolverTypeWrapper<UseCaseEdge>;
@@ -3512,6 +3554,8 @@ export type ResolversParentTypes = ResolversObject<{
   CompetitorId: Scalars['CompetitorId']['output'];
   Connector: Connector;
   ConsumeProvisionedNewsFeedItemsResponse: ConsumeProvisionedNewsFeedItemsResponse;
+  ContentTranslationEntry: ContentTranslationEntry;
+  ContentTranslationValueInput: ContentTranslationValueInput;
   CreateCompetitorInput: CreateCompetitorInput;
   CreateDeploymentRequestInput: CreateDeploymentRequestInput;
   CreateDocumentInput: CreateDocumentInput;
@@ -3661,6 +3705,7 @@ export type ResolversParentTypes = ResolversObject<{
   UpdateVotableFeatureInput: UpdateVotableFeatureInput;
   UpdateVotingRoundInput: UpdateVotingRoundInput;
   Upload: Scalars['Upload']['output'];
+  UpsertContentTranslationInput: UpsertContentTranslationInput;
   UseCase: UseCase;
   UseCaseConnection: UseCaseConnection;
   UseCaseEdge: UseCaseEdge;
@@ -3806,6 +3851,15 @@ export type ConnectorResolvers<ContextType = PortalContext, ParentType extends R
 export type ConsumeProvisionedNewsFeedItemsResponseResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['ConsumeProvisionedNewsFeedItemsResponse'] = ResolversParentTypes['ConsumeProvisionedNewsFeedItemsResponse']> = ResolversObject<{
   available_news_feed_types?: Resolver<Array<ResolversTypes['NewsFeedItemType']>, ParentType, ContextType>;
   news_feed_items?: Resolver<Array<ResolversTypes['ProvisionedNewsFeedItem']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ContentTranslationEntryResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['ContentTranslationEntry'] = ResolversParentTypes['ContentTranslationEntry']> = ResolversObject<{
+  key?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  locale?: Resolver<ResolversTypes['Locale'], ParentType, ContextType>;
+  updated_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  updater_id?: Resolver<Maybe<ResolversTypes['UserId']>, ParentType, ContextType>;
+  value?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -4265,6 +4319,7 @@ export type MutationResolvers<ContextType = PortalContext, ParentType extends Re
   updateVotableFeature?: Resolver<ResolversTypes['VotableFeature'], ParentType, ContextType, RequireFields<MutationUpdateVotableFeatureArgs, 'id' | 'input'>>;
   updateVotingRound?: Resolver<ResolversTypes['VotingRound'], ParentType, ContextType, RequireFields<MutationUpdateVotingRoundArgs, 'id' | 'input'>>;
   uploadUserPicture?: Resolver<ResolversTypes['User'], ParentType, ContextType, RequireFields<MutationUploadUserPictureArgs, 'document'>>;
+  upsertContentTranslation?: Resolver<Array<ResolversTypes['ContentTranslationEntry']>, ParentType, ContextType, RequireFields<MutationUpsertContentTranslationArgs, 'input'>>;
   voteForFeature?: Resolver<Array<ResolversTypes['VotableFeature']>, ParentType, ContextType, RequireFields<MutationVoteForFeatureArgs, 'feature_id'>>;
 }>;
 
@@ -4487,6 +4542,7 @@ export type QueryResolvers<ContextType = PortalContext, ParentType extends Resol
   bundleUserServiceGroups?: Resolver<Array<ResolversTypes['BundleUserServiceGroup']>, ParentType, ContextType, RequireFields<QueryBundleUserServiceGroupsArgs, 'serviceInstanceId'>>;
   canUnregisterPlatform?: Resolver<ResolversTypes['CanUnregisterResponse'], ParentType, ContextType, RequireFields<QueryCanUnregisterPlatformArgs, 'input'>>;
   competitors?: Resolver<ResolversTypes['CompetitorConnection'], ParentType, ContextType, RequireFields<QueryCompetitorsArgs, 'first' | 'orderBy' | 'orderMode'>>;
+  contentTranslations?: Resolver<Array<ResolversTypes['ContentTranslationEntry']>, ParentType, ContextType, Partial<QueryContentTranslationsArgs>>;
   countEpicsPerTimeline?: Resolver<Array<ResolversTypes['EpicCountPerTimeline']>, ParentType, ContextType>;
   currentVotingRound?: Resolver<Maybe<ResolversTypes['VotingRound']>, ParentType, ContextType, RequireFields<QueryCurrentVotingRoundArgs, 'service_instance_id'>>;
   deploymentRequests?: Resolver<ResolversTypes['PlatformDeploymentRequestConnection'], ParentType, ContextType, RequireFields<QueryDeploymentRequestsArgs, 'first'>>;
@@ -5169,6 +5225,7 @@ export type Resolvers<ContextType = PortalContext> = ResolversObject<{
   CompetitorId?: GraphQLScalarType;
   Connector?: ConnectorResolvers<ContextType>;
   ConsumeProvisionedNewsFeedItemsResponse?: ConsumeProvisionedNewsFeedItemsResponseResolvers<ContextType>;
+  ContentTranslationEntry?: ContentTranslationEntryResolvers<ContextType>;
   CsvFeed?: CsvFeedResolvers<ContextType>;
   CustomDashboard?: CustomDashboardResolvers<ContextType>;
   CustomView?: CustomViewResolvers<ContextType>;

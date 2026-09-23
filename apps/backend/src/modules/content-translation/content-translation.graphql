@@ -1,0 +1,42 @@
+enum Locale {
+  en
+  fr
+  ja
+}
+
+type ContentTranslationEntry {
+  key: String!
+  locale: Locale!
+  value: String!
+  updated_at: Date!
+  updater_id: UserId
+}
+
+input ContentTranslationValueInput {
+  locale: Locale!
+  value: String!
+}
+
+input UpsertContentTranslationInput {
+  key: String!
+  values: [ContentTranslationValueInput!]!
+}
+
+type Query {
+  # Fetches translations to overlay on top of the static next-intl JSON
+  # messages. Omitting keys returns every entry for the given locale (used to
+  # hydrate a whole page); omitting locale returns every locale for the given
+  # keys (used by the edit dialog to show all language tabs at once).
+  contentTranslations(
+    locale: Locale
+    keys: [String!]
+  ): [ContentTranslationEntry!]!
+}
+
+type Mutation {
+  # Upserts one or more locale values for a single content key in a single
+  # round trip (one row per locale), returning the updated rows.
+  upsertContentTranslation(
+    input: UpsertContentTranslationInput!
+  ): [ContentTranslationEntry!]! @auth(portalCapa: [BYPASS])
+}
