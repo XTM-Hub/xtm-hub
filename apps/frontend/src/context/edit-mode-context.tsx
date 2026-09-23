@@ -9,6 +9,8 @@ interface EditModeServerValue {
   isEditMode: boolean;
   // Texts edited as drafts, not yet visible to visitors.
   pendingChangeCount: number;
+  // Content keys rendered from a draft or a published override.
+  overriddenKeys: string[];
 }
 
 interface EditModeContextValue extends EditModeServerValue {
@@ -22,6 +24,7 @@ const EditModeContext = createContext<EditModeContextValue>({
   canEditContent: false,
   isEditMode: false,
   pendingChangeCount: 0,
+  overriddenKeys: [],
   showEditableAreas: false,
   setShowEditableAreas: () => {},
 });
@@ -33,6 +36,7 @@ export const EditModeProvider = ({
   canEditContent,
   isEditMode,
   pendingChangeCount,
+  overriddenKeys,
   children,
 }: EditModeServerValue & { children: ReactNode }) => {
   // A per-viewer preference, kept across page loads. Shown by default:
@@ -47,6 +51,7 @@ export const EditModeProvider = ({
       canEditContent,
       isEditMode,
       pendingChangeCount,
+      overriddenKeys,
       showEditableAreas,
       setShowEditableAreas,
     }),
@@ -54,6 +59,7 @@ export const EditModeProvider = ({
       canEditContent,
       isEditMode,
       pendingChangeCount,
+      overriddenKeys,
       showEditableAreas,
       setShowEditableAreas,
     ]

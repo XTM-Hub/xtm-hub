@@ -37,7 +37,8 @@ const renderDialog = () =>
     <EditModeProvider
       canEditContent
       isEditMode
-      pendingChangeCount={2}>
+      pendingChangeCount={2}
+      overriddenKeys={[]}>
       <ExitEditModeDialog
         open
         onOpenChange={vi.fn()}

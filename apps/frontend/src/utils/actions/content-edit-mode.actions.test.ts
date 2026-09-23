@@ -9,6 +9,9 @@ vi.mock('@/utils/load-me-user', () => ({ loadMeUser: vi.fn() }));
 
 type MeUser = Awaited<ReturnType<typeof loadMeUser>>;
 type CookieStore = Awaited<ReturnType<typeof cookies>>;
+// loadMeUser resolves null for an anonymous visitor, which its inferred type
+// leaves out.
+const ANONYMOUS = null as unknown as MeUser;
 
 const makeMeUser = (capabilities: PortalCapability[]): MeUser => ({
   id: 'user-id',
@@ -50,7 +53,7 @@ describe('setContentEditModeAction', () => {
 
   it.each([
     ['a user without the BYPASS capability', makeMeUser([])],
-    ['an anonymous visitor', null],
+    ['an anonymous visitor', ANONYMOUS],
   ])(
     'should not set the edit-mode cookie when %s turns edit mode on',
     async (_label, me) => {
@@ -67,7 +70,7 @@ describe('setContentEditModeAction', () => {
 
   it('should delete the edit-mode cookie when edit mode is turned off', async () => {
     // Given
-    vi.mocked(loadMeUser).mockResolvedValue(null);
+    vi.mocked(loadMeUser).mockResolvedValue(ANONYMOUS);
 
     // When
     await setContentEditModeAction(false);

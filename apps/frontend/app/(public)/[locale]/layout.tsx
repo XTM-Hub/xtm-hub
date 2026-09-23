@@ -8,6 +8,7 @@ import { ReactQueryProvider } from '@/components/ReactQueryProvider';
 import { PublicXtmPlatformTrialBanner } from '@/components/service/trial-instances/banner/xtm-platform-trial/PublicXtmPlatformTrialBanner';
 import { EditModeProvider } from '@/context/edit-mode-context';
 import { type PublicLocale, publicLocales } from '@/i18n/config';
+import { loadOverriddenContentKeys } from '@/i18n/content-translation-overrides';
 import { isContentEditModeActive } from '@/utils/content-translation/content-edit-mode.server';
 import { loadContentTranslationDrafts } from '@/utils/content-translation/content-translation-drafts.server';
 import { countPendingChanges } from '@/utils/content-translation/pending-changes';
@@ -51,6 +52,7 @@ const RootLayout = async ({
   const pendingChangeCount = countPendingChanges(
     await loadContentTranslationDrafts()
   );
+  const overriddenKeys = await loadOverriddenContentKeys(locale);
   // Public pages never load the current user, so only an editor already in
   // edit mode (a verified BYPASS user) gets the toggle here, to turn it off.
 
@@ -59,7 +61,8 @@ const RootLayout = async ({
       <EditModeProvider
         canEditContent={isEditMode}
         isEditMode={isEditMode}
-        pendingChangeCount={pendingChangeCount}>
+        pendingChangeCount={pendingChangeCount}
+        overriddenKeys={overriddenKeys}>
         <AppShell
           banners={
             <>

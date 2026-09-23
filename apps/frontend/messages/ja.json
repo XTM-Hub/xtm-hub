@@ -2370,6 +2370,7 @@
     "DialogTitle": "コンテンツを編集",
     "KeyLabel": "キー: {contentKey}",
     "ValueLabel": "{locale} の値",
+    "OriginalValue": "元の値: {value}",
     "SaveDraft": "下書きを保存",
     "EditionBannerLabel": "編集モードです。枠で囲まれたテキストをクリックすると編集できます。",
     "EditionBannerHiddenAreasLabel": "編集モードです。テキストを編集するには、編集可能な箇所を表示してください。",

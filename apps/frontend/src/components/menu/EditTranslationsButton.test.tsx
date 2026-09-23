@@ -27,7 +27,8 @@ const renderButton = ({
     <EditModeProvider
       canEditContent={canEditContent}
       isEditMode={isEditMode}
-      pendingChangeCount={pendingChangeCount}>
+      pendingChangeCount={pendingChangeCount}
+      overriddenKeys={[]}>
       <EditTranslationsButton open />
     </EditModeProvider>
   );
@@ -37,14 +38,7 @@ describe('EditTranslationsButton', () => {
 
   beforeEach(() => {
     vi.mocked(setContentEditModeAction).mockResolvedValue(undefined);
-    vi.mocked(useRouter).mockReturnValue({
-      push: vi.fn(),
-      replace: vi.fn(),
-      prefetch: vi.fn(),
-      back: vi.fn(),
-      forward: vi.fn(),
-      refresh,
-    });
+    vi.mocked(useRouter).mockReturnValue({ ...useRouter(), refresh });
   });
 
   it('should not render when the user cannot edit content', () => {

@@ -2370,6 +2370,7 @@
     "DialogTitle": "Modifier le contenu",
     "KeyLabel": "Clé : {contentKey}",
     "ValueLabel": "Valeur {locale}",
+    "OriginalValue": "Original : {value}",
     "SaveDraft": "Enregistrer le brouillon",
     "EditionBannerLabel": "Vous êtes en mode édition — cliquez sur un texte encadré pour le modifier.",
     "EditionBannerHiddenAreasLabel": "Vous êtes en mode édition — affichez les zones modifiables pour modifier un texte.",

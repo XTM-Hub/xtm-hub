@@ -23,7 +23,8 @@ const renderUseTranslate = (isEditMode: boolean) =>
       <EditModeProvider
         canEditContent={isEditMode}
         isEditMode={isEditMode}
-        pendingChangeCount={0}>
+        pendingChangeCount={0}
+        overriddenKeys={[]}>
         {children}
       </EditModeProvider>
     ),

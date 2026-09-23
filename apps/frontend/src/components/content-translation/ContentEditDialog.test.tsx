@@ -26,6 +26,7 @@ const PUBLISHED_EN = 'Start your {platformName} free trial!';
 const DRAFT_EN = 'Try {platformName} for free!';
 const EDITED_EN = 'Try {platformName} today!';
 const SAVE_LABEL = 'EditableText.SaveDraft';
+const ORIGINAL_LABEL = 'EditableText.OriginalValue';
 
 const saveDraft = vi.fn();
 
@@ -160,5 +161,49 @@ describe('ContentEditDialog', () => {
     // Then
     await waitFor(() => expect(saveDraft).toHaveBeenCalled());
     expect(onOpenChange).not.toHaveBeenCalledWith(false);
+  });
+
+  it.each([
+    [
+      'a draft',
+      {
+        contentTranslationDrafts: [
+          { key: CONTENT_KEY, locale: Locale.En, value: DRAFT_EN },
+        ],
+      },
+    ],
+    [
+      'a published override',
+      {
+        contentTranslations: [
+          { key: CONTENT_KEY, locale: Locale.En, value: PUBLISHED_EN },
+        ],
+      },
+    ],
+  ])(
+    'should show the original template when the locale has %s',
+    async (_label, saved) => {
+      // Given
+      givenSavedValues(saved);
+      renderDialog();
+
+      // When
+      const original = await screen.findByText(ORIGINAL_LABEL);
+
+      // Then
+      expect(original).toBeInTheDocument();
+    }
+  );
+
+  it('should not show an original when the text was never edited', async () => {
+    // Given
+    renderDialog();
+    const textbox = await findEnglishValue();
+
+    // When
+    await waitFor(() => expect(textbox).toHaveValue(EN_TEMPLATE));
+
+    // Then
+    expect(screen.queryByText(ORIGINAL_LABEL)).not.toBeInTheDocument();
   });
 });

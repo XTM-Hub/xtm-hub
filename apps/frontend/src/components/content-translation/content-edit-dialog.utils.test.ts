@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildEditFormValues,
+  getOriginalValues,
   pickChangedValues,
 } from './content-edit-dialog.utils';
 
@@ -105,5 +106,47 @@ describe('pickChangedValues', () => {
 
     // Then
     expect(changed).toEqual([]);
+  });
+});
+
+describe('getOriginalValues', () => {
+  it('should return the committed template of every overridden locale', () => {
+    // Given
+    const saved = {
+      published: [{ locale: 'fr' as const, value: 'Publié' }],
+      drafts: [{ locale: 'en' as const, value: DRAFT_EN }],
+    };
+
+    // When
+    const originals = getOriginalValues(TEMPLATES, saved);
+
+    // Then
+    expect(originals).toEqual({ en: EN_TEMPLATE, fr: FR_TEMPLATE });
+  });
+
+  it('should return nothing when no locale is overridden', () => {
+    // Given
+    const saved = { published: [], drafts: [] };
+
+    // When
+    const originals = getOriginalValues(TEMPLATES, saved);
+
+    // Then
+    expect(originals).toEqual({});
+  });
+
+  it('should skip a locale without committed template', () => {
+    // Given
+    const templates = [{ locale: 'ja' as const, value: '' }];
+    const saved = {
+      published: [],
+      drafts: [{ locale: 'ja' as const, value: 'ドラフト' }],
+    };
+
+    // When
+    const originals = getOriginalValues(templates, saved);
+
+    // Then
+    expect(originals).toEqual({});
   });
 });

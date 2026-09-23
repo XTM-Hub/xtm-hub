@@ -37,7 +37,8 @@ const renderBanner = (pendingChangeCount: number) =>
     <EditModeProvider
       canEditContent
       isEditMode
-      pendingChangeCount={pendingChangeCount}>
+      pendingChangeCount={pendingChangeCount}
+      overriddenKeys={[]}>
       <EditionModeBanner />
     </EditModeProvider>
   );

@@ -2,13 +2,14 @@
 
 import { ContentEditDialog } from '@/components/content-translation/ContentEditDialog';
 import { useEditMode } from '@/context/edit-mode-context';
+import { cn } from '@/lib/utils';
 import {
   containsContentKeyMarker,
   decodeContentKeyMarker,
 } from '@/utils/content-translation/invisible-marker';
 import { EditIcon } from '@filigran/icon';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 // Text nodes whose parent isn't actually rendered (e.g. Next.js's inline
@@ -202,7 +203,13 @@ type HoverTarget = EditableRegion;
 // either), and a click opens the edit dialog for it. See with-content-key-markers.ts for how markers get
 // embedded, and invisible-marker.ts for the encoding scheme.
 export const EditModeContentObserver = () => {
-  const { isEditMode, showEditableAreas } = useEditMode();
+  const { isEditMode, showEditableAreas, overriddenKeys } = useEditMode();
+  // Texts rendered from a draft or a published override are outlined in
+  // yellow, to tell them apart from the committed messages.
+  const overriddenKeySet = useMemo(
+    () => new Set(overriddenKeys),
+    [overriddenKeys]
+  );
   const [hoverTarget, setHoverTarget] = useState<HoverTarget | null>(null);
   const router = useRouter();
   const [activeContentKey, setActiveContentKey] = useState<string | null>(null);
@@ -367,7 +374,12 @@ export const EditModeContentObserver = () => {
                   width: target.rect.width,
                   height: target.rect.height,
                 }}
-                className="outline-primary/50 pointer-events-none z-[99] rounded-xs outline-1 outline-dashed"
+                className={cn(
+                  'pointer-events-none z-[99] rounded-xs outline-1 outline-dashed',
+                  overriddenKeySet.has(target.contentKey)
+                    ? 'outline-yellow-400'
+                    : 'outline-primary/50'
+                )}
               />
             ))}
           </>,
@@ -384,7 +396,12 @@ export const EditModeContentObserver = () => {
               width: hoverTarget.rect.width,
               height: hoverTarget.rect.height,
             }}
-            className="outline-primary bg-blue-50/40 pointer-events-none z-[100] rounded-xs outline-1 outline-dashed">
+            className={cn(
+              'pointer-events-none z-[100] rounded-xs outline-1 outline-dashed',
+              overriddenKeySet.has(hoverTarget.contentKey)
+                ? 'outline-yellow-400 bg-yellow-100/30'
+                : 'outline-primary bg-blue-50/40'
+            )}>
             <EditIcon className="text-primary bg-elevation-background-layer-1 absolute -top-2 -right-2 h-4 w-4 rounded-full p-0.5 shadow" />
           </div>,
           document.body

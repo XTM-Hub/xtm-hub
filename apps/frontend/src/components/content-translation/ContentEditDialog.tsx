@@ -3,10 +3,11 @@
 import {
   buildEditFormValues,
   EditableTextFormValues,
+  getOriginalValues,
   pickChangedValues,
 } from '@/components/content-translation/content-edit-dialog.utils';
 import { useContentTranslationApi } from '@/hooks/use-content-translation-api';
-import { locales } from '@/i18n/config';
+import { Locale, locales } from '@/i18n/config';
 import { getStaticTranslationValue } from '@/utils/content-translation/get-static-translation-value';
 import {
   Button,
@@ -19,6 +20,7 @@ import {
   DialogTitle,
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -74,6 +76,9 @@ export const ContentEditDialog = ({
   // Values loaded when the dialog opened, to save only what was edited.
   const [initialValues, setInitialValues] =
     useState<EditableTextFormValues>(emptyFormValues);
+  const [originalValues, setOriginalValues] = useState<
+    Partial<Record<Locale, string>>
+  >({});
 
   useEffect(() => {
     if (!open) {
@@ -90,11 +95,10 @@ export const ContentEditDialog = ({
       }))
     )
       .then(async (templates) => {
-        const loadedValues = buildEditFormValues(
-          templates,
-          await loadValuesForKey(contentKey)
-        );
+        const savedValues = await loadValuesForKey(contentKey);
+        const loadedValues = buildEditFormValues(templates, savedValues);
         setInitialValues(loadedValues);
+        setOriginalValues(getOriginalValues(templates, savedValues));
         form.reset(loadedValues);
       })
       .catch(() => {
@@ -180,6 +184,13 @@ export const ContentEditDialog = ({
                               {...field}
                             />
                           </FormControl>
+                          {originalValues[locale] !== undefined && (
+                            <FormDescription>
+                              {tCommon('EditableText.OriginalValue', {
+                                value: originalValues[locale],
+                              })}
+                            </FormDescription>
+                          )}
                         </FormItem>
                       )}
                     />

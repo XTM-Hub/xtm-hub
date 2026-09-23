@@ -43,12 +43,18 @@ const nextFrame = () =>
 const renderObserver = ({
   isEditMode = true,
   onLinkClick = vi.fn(),
-}: { isEditMode?: boolean; onLinkClick?: () => void } = {}) =>
+  overriddenKeys = [],
+}: {
+  isEditMode?: boolean;
+  onLinkClick?: () => void;
+  overriddenKeys?: string[];
+} = {}) =>
   testRender(
     <EditModeProvider
       canEditContent
       isEditMode={isEditMode}
-      pendingChangeCount={0}>
+      pendingChangeCount={0}
+      overriddenKeys={overriddenKeys}>
       <a
         href="#title"
         data-testid="editable-link"
@@ -216,4 +222,25 @@ describe('EditModeContentObserver', () => {
     // Then
     await waitFor(() => expect(countOutlines()).toBe(2));
   });
+
+  it.each([
+    ['yellow when it is overridden', [CONTENT_KEY], 'outline-yellow-400'],
+    ['with the primary color when it is committed', [], 'outline-primary/50'],
+  ])(
+    'should outline an editable text %s',
+    async (_label, overriddenKeys, expectedClass) => {
+      // Given
+      renderObserver({ overriddenKeys });
+
+      // When
+      const outline = await waitFor(() => {
+        const element = document.querySelector('.outline-dashed');
+        expect(element).not.toBeNull();
+        return element;
+      });
+
+      // Then
+      expect(outline).toHaveClass(expectedClass);
+    }
+  );
 });

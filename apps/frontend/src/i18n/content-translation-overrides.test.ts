@@ -1,11 +1,18 @@
 import { serverGraphqlFetch } from '@/lib/server-graphql-fetch';
+import { isContentEditModeActive } from '@/utils/content-translation/content-edit-mode.server';
 import { loadContentTranslationDrafts } from '@/utils/content-translation/content-translation-drafts.server';
 import { getMessage } from '@/utils/content-translation/message-overrides';
 import { Locale } from '@graphql/generated';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { withContentTranslationOverrides } from './content-translation-overrides';
+import {
+  loadOverriddenContentKeys,
+  withContentTranslationOverrides,
+} from './content-translation-overrides';
 
 vi.mock('@/lib/server-graphql-fetch', () => ({ serverGraphqlFetch: vi.fn() }));
+vi.mock('@/utils/content-translation/content-edit-mode.server', () => ({
+  isContentEditModeActive: vi.fn(),
+}));
 vi.mock(
   '@/utils/content-translation/content-translation-drafts.server',
   () => ({ loadContentTranslationDrafts: vi.fn() })
@@ -15,6 +22,7 @@ const TITLE_KEY = 'PublicHomePage.XtmPlatform.Title';
 const COMMITTED_TITLE = 'Extend and scale your XTM Platform';
 const PUBLISHED_TITLE = 'Scale your XTM Platform';
 const DRAFT_TITLE = 'Grow your XTM Platform';
+const DESCRIPTION_KEY = 'PublicHomePage.XtmPlatform.Description';
 
 const makeMessages = () => ({
   PublicHomePage: { XtmPlatform: { Title: COMMITTED_TITLE } },
@@ -81,5 +89,45 @@ describe('withContentTranslationOverrides', () => {
 
     // Then
     expect(getMessage(merged, TITLE_KEY)).toBe(DRAFT_TITLE);
+  });
+});
+
+describe('loadOverriddenContentKeys', () => {
+  beforeEach(() => {
+    vi.mocked(isContentEditModeActive).mockResolvedValue(true);
+    vi.mocked(serverGraphqlFetch).mockResolvedValue({
+      contentTranslations: [{ key: TITLE_KEY, value: PUBLISHED_TITLE }],
+    });
+    vi.mocked(loadContentTranslationDrafts).mockResolvedValue([
+      { key: TITLE_KEY, locale: Locale.En, value: DRAFT_TITLE },
+      { key: DESCRIPTION_KEY, locale: Locale.En, value: DRAFT_TITLE },
+      {
+        key: 'PublicHomePage.XtmPlatform.Label',
+        locale: Locale.Fr,
+        value: 'x',
+      },
+    ]);
+  });
+
+  it('should list the keys overridden by a draft or a published value in the rendered locale', async () => {
+    // Given
+    const locale = 'en';
+
+    // When
+    const keys = await loadOverriddenContentKeys(locale);
+
+    // Then
+    expect(keys).toEqual([TITLE_KEY, DESCRIPTION_KEY]);
+  });
+
+  it('should list nothing outside edit mode', async () => {
+    // Given
+    vi.mocked(isContentEditModeActive).mockResolvedValue(false);
+
+    // When
+    const keys = await loadOverriddenContentKeys('en');
+
+    // Then
+    expect(keys).toEqual([]);
   });
 });

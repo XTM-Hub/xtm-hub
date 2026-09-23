@@ -32,3 +32,19 @@ export const pickChangedValues = (
   locales
     .filter((locale) => values[locale] !== initialValues[locale])
     .map((locale) => ({ locale, value: values[locale] }));
+
+// The committed template of every locale whose value comes from a draft or a
+// published override, shown as the original next to the edited value.
+export const getOriginalValues = (
+  templates: EditableTranslationValue[],
+  { published, drafts }: ContentKeyValues
+): Partial<Record<Locale, string>> =>
+  Object.fromEntries(
+    templates
+      .filter(
+        ({ locale, value }) =>
+          value !== '' &&
+          [...published, ...drafts].some((entry) => entry.locale === locale)
+      )
+      .map(({ locale, value }) => [locale, value])
+  );

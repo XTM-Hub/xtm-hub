@@ -2370,6 +2370,7 @@
     "DialogTitle": "Edit content",
     "KeyLabel": "Key: {contentKey}",
     "ValueLabel": "{locale} value",
+    "OriginalValue": "Original: {value}",
     "SaveDraft": "Save draft",
     "EditionBannerLabel": "You are in edit mode — click an outlined text to edit it.",
     "EditionBannerHiddenAreasLabel": "You are in edit mode — show the editable areas to edit a text.",

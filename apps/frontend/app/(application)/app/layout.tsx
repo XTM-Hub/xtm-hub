@@ -12,6 +12,7 @@ import PrivateMenu from '@/components/menu/PrivateMenu';
 import { ReactQueryProvider } from '@/components/ReactQueryProvider';
 import { PrivateXtmPlatformTrialBanner } from '@/components/service/trial-instances/banner/xtm-platform-trial/PrivateXtmPlatformTrialBanner';
 import { EditModeProvider } from '@/context/edit-mode-context';
+import { loadOverriddenContentKeys } from '@/i18n/content-translation-overrides';
 import { RelayProvider } from '@/relay/relay-provider';
 import {
   hasContentEditCapability,
@@ -24,6 +25,7 @@ import { getMetadataBase } from '@/utils/metadata';
 import { APP_PATH } from '@/utils/path/constant';
 import { buildSignupRedirect } from '@/utils/redirect';
 import { Metadata } from 'next';
+import { getLocale } from 'next-intl/server';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import PageLoader from './page-loader';
@@ -57,6 +59,7 @@ const RootLayout = async ({ children }: RootLayoutProps) => {
   const pendingChangeCount = countPendingChanges(
     await loadContentTranslationDrafts()
   );
+  const overriddenKeys = await loadOverriddenContentKeys(await getLocale());
 
   const banners = (
     <>
@@ -75,7 +78,8 @@ const RootLayout = async ({ children }: RootLayoutProps) => {
             <EditModeProvider
               canEditContent={hasContentEditCapability(me)}
               isEditMode={isEditMode}
-              pendingChangeCount={pendingChangeCount}>
+              pendingChangeCount={pendingChangeCount}
+              overriddenKeys={overriddenKeys}>
               <AppShell
                 banners={banners}
                 menu={<PrivateMenu />}
