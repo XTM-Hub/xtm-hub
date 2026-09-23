@@ -131,11 +131,81 @@ const scanForMarkedTextNodes = (root: Node, registry: MarkedTextRegistry) => {
 // non-standard/inconsistent caretRangeFromPoint/caretPositionFromPoint
 // APIs) so multiple marked text nodes sharing one parent element are
 // disambiguated by an actual point-in-rect test, not by proximity alone.
+interface ScreenBox {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
+
+const CLIPPING_OVERFLOWS = new Set(['hidden', 'clip', 'auto', 'scroll']);
+// Below this, what is left of a text is a visually hidden (sr-only) sliver.
+const MIN_VISIBLE_SIZE = 2;
+
+// Whether an element crops its content (a scroll container, the 1px box of
+// visually hidden text...). Memoized per outline refresh by the caller.
+const createClippingCheck = () => {
+  const cache = new Map<Element, boolean>();
+  return (element: Element) => {
+    let isClipping = cache.get(element);
+    if (isClipping === undefined) {
+      const { overflowX, overflowY } = getComputedStyle(element);
+      isClipping =
+        CLIPPING_OVERFLOWS.has(overflowX) || CLIPPING_OVERFLOWS.has(overflowY);
+      cache.set(element, isClipping);
+    }
+    return isClipping;
+  };
+};
+
+// Narrows a text line rect to what the viewport and every cropping ancestor
+// let show, or null when nothing of it does. getClientRects() reports text
+// scrolled out of its container, or visually hidden, as if it were visible.
+const clipToVisibleArea = (
+  rect: DOMRect,
+  element: Element,
+  isClipping: (element: Element) => boolean
+): ScreenBox | null => {
+  let left = Math.max(rect.left, 0);
+  let top = Math.max(rect.top, 0);
+  let right = Math.min(rect.right, window.innerWidth);
+  let bottom = Math.min(rect.bottom, window.innerHeight);
+  for (
+    let ancestor: Element | null = element;
+    ancestor && ancestor !== document.body;
+    ancestor = ancestor.parentElement
+  ) {
+    if (!isClipping(ancestor)) {
+      continue;
+    }
+    const box = ancestor.getBoundingClientRect();
+    left = Math.max(left, box.left);
+    top = Math.max(top, box.top);
+    right = Math.min(right, box.right);
+    bottom = Math.min(bottom, box.bottom);
+  }
+  if (right - left < MIN_VISIBLE_SIZE || bottom - top < MIN_VISIBLE_SIZE) {
+    return null;
+  }
+  return { left, top, width: right - left, height: bottom - top };
+};
+
+// Whether the text is on top at the center of its visible box, rather than
+// covered by something else, such as a sticky header it scrolls under.
+// Outlines are pointer-events: none, so they never get in the way.
+const isOnTopAt = (box: ScreenBox, element: Element) => {
+  const hit = document.elementFromPoint(
+    box.left + box.width / 2,
+    box.top + box.height / 2
+  );
+  return !!hit && (element.contains(hit) || hit.contains(element));
+};
+
 const findMarkedTextAtPoint = (
   x: number,
   y: number,
   registry: MarkedTextRegistry
-): { node: Text; contentKey: string; rect: DOMRect } | null => {
+): { node: Text; contentKey: string; rect: ScreenBox } | null => {
   let element = document.elementFromPoint(x, y);
   let depth = 0;
   while (element && depth < 8) {
@@ -153,7 +223,14 @@ const findMarkedTextAtPoint = (
           y >= rect.top &&
           y <= rect.bottom
         ) {
-          return { node, contentKey: entry.contentKey, rect };
+          const visibleBox = clipToVisibleArea(
+            rect,
+            element,
+            createClippingCheck()
+          );
+          return visibleBox
+            ? { node, contentKey: entry.contentKey, rect: visibleBox }
+            : null;
         }
       }
     }
@@ -166,18 +243,22 @@ const findMarkedTextAtPoint = (
 // Every visible rect (one per wrapped line) for every currently-registered
 // marked node — used to reveal all editable regions on screen at once,
 // rather than only the one under the cursor, which was otherwise impossible
-// to discover without blindly hovering.
+// to discover without blindly hovering. Only the part actually on screen is
+// outlined, so no box is left floating over a header or a hidden text.
 const getAllTargetRects = (registry: MarkedTextRegistry): EditableRegion[] => {
   const regions: EditableRegion[] = [];
+  const isClipping = createClippingCheck();
   registry.list().forEach(({ node, contentKey }) => {
+    const parent = node.parentElement;
+    if (!parent) {
+      return;
+    }
     const range = document.createRange();
     range.selectNodeContents(node);
     Array.from(range.getClientRects()).forEach((rect) => {
-      // Empty/collapsed text nodes (whitespace-only, or momentarily
-      // mid-render) produce zero-size rects — not worth drawing a box
-      // around.
-      if (rect.width > 0 && rect.height > 0) {
-        regions.push({ node, contentKey, rect });
+      const visibleBox = clipToVisibleArea(rect, parent, isClipping);
+      if (visibleBox && isOnTopAt(visibleBox, parent)) {
+        regions.push({ node, contentKey, rect: visibleBox });
       }
     });
   });
@@ -187,7 +268,7 @@ const getAllTargetRects = (registry: MarkedTextRegistry): EditableRegion[] => {
 interface EditableRegion {
   node: Text;
   contentKey: string;
-  rect: DOMRect;
+  rect: ScreenBox;
 }
 
 type HoverTarget = EditableRegion;

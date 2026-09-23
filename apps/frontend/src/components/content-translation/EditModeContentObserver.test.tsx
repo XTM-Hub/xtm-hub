@@ -243,4 +243,43 @@ describe('EditModeContentObserver', () => {
       expect(outline).toHaveClass(expectedClass);
     }
   );
+
+  it('should not outline a text cropped out by its container', async () => {
+    // Given
+    // jsdom lays every element out as an empty box, so any cropping container
+    // hides the text entirely, as a scrolled-out or visually hidden one would.
+    testRender(
+      <EditModeProvider
+        canEditContent
+        isEditMode
+        pendingChangeCount={0}
+        overriddenKeys={[]}>
+        <div style={{ overflowX: 'hidden', overflowY: 'hidden' }}>
+          <span data-testid="cropped-text">
+            {appendContentKeyMarker(VISIBLE_TEXT, CONTENT_KEY)}
+          </span>
+        </div>
+        <EditModeContentObserver />
+      </EditModeProvider>
+    );
+    givenLayout(() => screen.queryByTestId('cropped-text'));
+
+    // When
+    await nextFrame();
+
+    // Then
+    expect(countOutlines()).toBe(0);
+  });
+
+  it('should not outline a text covered by another element', async () => {
+    // Given
+    givenLayout(() => screen.queryByTestId('plain-text'));
+    renderObserver();
+
+    // When
+    await nextFrame();
+
+    // Then
+    expect(countOutlines()).toBe(0);
+  });
 });
