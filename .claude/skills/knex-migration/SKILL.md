@@ -44,3 +44,27 @@ an `alterTable` will do.
   current properties (type, `nullable`/`notNullable`, `defaultTo`, etc.), not
   just the one you're changing — Knex/Postgres will silently drop any
   unspecified property (e.g. an existing `defaultTo`) instead of preserving it.
+
+## Backfilling Existing Rows
+- **Derive into a new column, never overwrite the source one.** Mirror
+  `20260707072920_add_manifest_version_padded.js`: it fills `version_padded` and
+  leaves `version` untouched, which is what makes its `down` a true inverse.
+  Rewriting the column you read from makes `down` lossy however carefully it is
+  written, and breaks the rule above.
+- Update in bounded batches rather than one `UPDATE` per row in series — the same
+  migration uses `BATCH_SIZE = 200`.
+- A migration cannot import application source: it is plain JS run by Knex's own
+  runner. The established pattern is to copy the helper into the migration and add
+  a comment naming the application function it mirrors. Name it by its path and
+  symbol, and expect that comment to rot — the migration is frozen, the source it
+  mirrors is not.
+- The suite runs that copy but never exercises it. `tests/config-test.ts` and
+  `tests/setup-test.ts` both call `db.migrate.latest()` on a freshly dropped
+  database and only seed afterwards, so a backfill loop iterates zero rows and its
+  helper is never called — the migration is proven to apply, not to transform
+  anything. `src/migrations/**` is excluded from coverage in `vitest.config.ts` on
+  top of that, so nothing reports the gap. Keep the logic as dumb as the change
+  allows, and when it rewrites existing rows, dry-run it against a production dump
+  before merging.
+- Text moved between columns can silently drop out of free-text search: see
+  [`.claude/rules/backend.md`](../../rules/backend.md#free-text-search).
