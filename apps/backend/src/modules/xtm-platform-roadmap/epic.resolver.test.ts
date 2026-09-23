@@ -17,10 +17,11 @@ import {
   Timeline,
   UpdateEpicInput,
 } from '../../__generated__/resolvers-types';
-import { DocumentId } from '../../model/kanel/public/Document';
+import Document, { DocumentId } from '../../model/kanel/public/Document';
 import Epic, { EpicId } from '../../model/kanel/public/Epic';
 import { BadRequestErrorCode } from '../../utils/error/error.code';
 import { ErrorType } from '../../utils/error/error.type';
+import { Document as DocumentWithUseCases } from '../document/document.helper';
 import { EpicApp } from './epic.app';
 import epicResolver from './epic.resolver';
 
@@ -32,13 +33,35 @@ describe('epic.document', () => {
       id: uuidv4() as EpicId,
       document_id: documentId,
     } as unknown as Epic;
-    const expectedDocument = { id: documentId, file_name: 'image.png' };
+    const expectedDocument: Document = {
+      id: documentId,
+      uploader_id: null,
+      service_instance_id: null,
+      description: null,
+      file_name: 'image.png',
+      minio_name: null,
+      active: true,
+      created_at: new Date(),
+      remover_id: null,
+      mime_type: null,
+      name: null,
+      updated_at: null,
+      updater_id: null,
+      short_description: null,
+      slug: null,
+      uploader_organization_id: null,
+      type: 'document',
+      source_type: null,
+      is_decommissioned: false,
+      version: null,
+      tags: [],
+    };
     const loadSpy = vi
       .spyOn(
         contextSimpleUserFiligran2.dataLoaders.document.documentByIdLoader,
         'load'
       )
-      .mockResolvedValue(expectedDocument as never);
+      .mockResolvedValue({ ...expectedDocument, use_cases: [] });
 
     // When
     const result = await epicResolver.Epic!.document!(
@@ -77,7 +100,7 @@ describe('epic.document', () => {
     expect(loadSpy).not.toHaveBeenCalled();
   });
 
-  it('should return null when the DataLoader resolves undefined', async () => {
+  it('should return null when the DataLoader resolves null', async () => {
     // Given
     const documentId = uuidv4() as DocumentId;
     const epicParent = {
@@ -87,7 +110,7 @@ describe('epic.document', () => {
     vi.spyOn(
       contextSimpleUserFiligran2.dataLoaders.document.documentByIdLoader,
       'load'
-    ).mockResolvedValue(undefined as never);
+    ).mockResolvedValue(null);
 
     // When
     const result = await epicResolver.Epic!.document!(
@@ -113,14 +136,45 @@ describe('epic.document', () => {
       id: uuidv4() as EpicId,
       document_id: documentIdB,
     } as unknown as Epic;
-    const batchLoadFn = vi.fn().mockResolvedValue([
-      { id: documentIdA, file_name: 'a.png' },
-      { id: documentIdB, file_name: 'b.png' },
-    ]);
+    const documentA: DocumentWithUseCases = {
+      id: documentIdA,
+      uploader_id: null,
+      service_instance_id: null,
+      description: null,
+      file_name: 'a.png',
+      minio_name: null,
+      active: true,
+      created_at: new Date(),
+      remover_id: null,
+      mime_type: null,
+      name: null,
+      updated_at: null,
+      updater_id: null,
+      short_description: null,
+      slug: null,
+      uploader_organization_id: null,
+      type: 'document',
+      source_type: null,
+      is_decommissioned: false,
+      version: null,
+      tags: [],
+      use_cases: [],
+    };
+    const documentB: DocumentWithUseCases = {
+      ...documentA,
+      id: documentIdB,
+      file_name: 'b.png',
+    };
+    const batchLoadFn = vi.fn(
+      async (
+        keys: readonly string[]
+      ): Promise<(DocumentWithUseCases | null)[]> =>
+        keys.map((key) => (key === documentIdA ? documentA : documentB))
+    );
     const originalLoader =
       contextSimpleUserFiligran2.dataLoaders.document.documentByIdLoader;
     contextSimpleUserFiligran2.dataLoaders.document.documentByIdLoader =
-      new DataLoader(batchLoadFn) as never;
+      new DataLoader(batchLoadFn);
 
     try {
       // When
