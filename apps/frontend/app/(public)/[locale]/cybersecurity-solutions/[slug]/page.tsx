@@ -3,6 +3,7 @@ import {
   HeroSectionLibrary,
 } from '@/components/service/document/ui/HeroSectionLibrary';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
+import { getTranslate } from '@/hooks/get-translate';
 import type { PublicLocale } from '@/i18n/config';
 import { RelayProvider } from '@/relay/relay-provider';
 import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
@@ -25,7 +26,7 @@ import SeoServiceInstanceQuery, {
   seoServiceInstanceQuery,
 } from '@generated/seoServiceInstanceQuery.graphql';
 import { Metadata } from 'next';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { PublicDocumentListPageLoader } from './public-document-list-page-loader';
@@ -109,7 +110,7 @@ const Page = async ({
   const awaitedParams = await params;
   const { locale } = awaitedParams;
   setRequestLocale(locale);
-  const t = await getTranslations({ locale });
+  const t = await getTranslate({ locale });
 
   const { baseUrl, serviceInstance, seoMetadata, documents } =
     await getPageData(awaitedParams.slug, locale);

@@ -323,6 +323,7 @@
       "INTEGRATION_TYPE_NOT_MANAGEABLE": "Ce type d'intégration n'est pas gérable.",
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "Ce type d'intégration n'est pas reconnu",
       "INVALID_ACTION_SIZE": "Une erreur inconnue s'est produite",
+      "INVALID_CONTENT_TRANSLATION_KEY": "Clé de contenu invalide",
       "INVALID_EMAIL": "L'email doit être dans un format valide.",
       "INVALID_IMAGE_URL": "L'URL de l'image n'est pas valide",
       "INVALID_MANIFEST_VERSION_FORMAT": "Le format de version du manifest n'est pas valide",
@@ -2364,5 +2365,18 @@
       "default": "Par défaut",
       "thread": "Thread"
     }
+  },
+  "EditableText": {
+    "DialogTitle": "Modifier le contenu",
+    "KeyLabel": "Clé : {contentKey}",
+    "ValueLabel": "Valeur {locale}",
+    "Save": "Enregistrer",
+    "EditionBannerLabel": "Vous êtes en mode édition — chaque texte modifiable est cliquable.",
+    "EditionBannerExit": "Retour au site en direct"
+  },
+  "EditableTextDemo": {
+    "Title": "Bienvenue sur XTM Hub",
+    "Subtitle": "Le point d'entrée unifié de l'écosystème Filigran.",
+    "Instructions": "Rendez-vous sur /edition pour activer le mode édition (réservé aux utilisateurs avec la capacité BYPASS), puis cliquez sur le titre ou le sous-titre ci-dessous. L’enregistrement appelle la véritable mutation upsertContentTranslation."
   }
 }

@@ -323,6 +323,7 @@
       "INTEGRATION_TYPE_NOT_MANAGEABLE": "このタイプの統合は管理できません。",
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "このタイプの統合は認識されない",
       "INVALID_ACTION_SIZE": "不明なエラーが発生した",
+      "INVALID_CONTENT_TRANSLATION_KEY": "無効なコンテンツキーです",
       "INVALID_EMAIL": "電子メールは有効な形式でなければなりません。",
       "INVALID_IMAGE_URL": "画像のURLが不正",
       "INVALID_MANIFEST_VERSION_FORMAT": "マニフェストのバージョン形式が無効です",
@@ -2364,5 +2365,18 @@
       "default": "デフォルト",
       "thread": "Thread"
     }
+  },
+  "EditableText": {
+    "DialogTitle": "コンテンツを編集",
+    "KeyLabel": "キー: {contentKey}",
+    "ValueLabel": "{locale} の値",
+    "Save": "保存",
+    "EditionBannerLabel": "編集モードです。編集可能なテキストはすべてクリックできます。",
+    "EditionBannerExit": "公開サイトに戻る"
+  },
+  "EditableTextDemo": {
+    "Title": "XTM Hub へようこそ",
+    "Subtitle": "Filigran エコシステムの統合エントリーポイント。",
+    "Instructions": "/edition にアクセスして編集モードを有効にしてください(BYPASS 権限を持つユーザーのみ)。その後、下のタイトルまたはサブタイトルをクリックしてください。保存すると実際の upsertContentTranslation ミューテーションが呼び出されます。"
   }
 }

@@ -1,0 +1,7 @@
+query ContentTranslationForKey($keys: [String!]) {
+  contentTranslations(keys: $keys) {
+    key
+    locale
+    value
+  }
+}

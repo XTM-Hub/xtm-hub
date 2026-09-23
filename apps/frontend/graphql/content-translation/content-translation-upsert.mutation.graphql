@@ -1,0 +1,8 @@
+mutation UpsertContentTranslation($input: UpsertContentTranslationInput!) {
+  upsertContentTranslation(input: $input) {
+    key
+    locale
+    value
+    updated_at
+  }
+}

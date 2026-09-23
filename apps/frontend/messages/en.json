@@ -323,6 +323,7 @@
       "INTEGRATION_TYPE_NOT_MANAGEABLE": "This type of integration is not manageable.",
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "This type of integration is not recognized",
       "INVALID_ACTION_SIZE": "An unknown error occurred",
+      "INVALID_CONTENT_TRANSLATION_KEY": "Invalid content key",
       "INVALID_EMAIL": "The email should be in valid format.",
       "INVALID_IMAGE_URL": "The image URL is not valid",
       "INVALID_MANIFEST_VERSION_FORMAT": "The manifest version format is invalid",
@@ -2364,5 +2365,18 @@
       "default": "Default",
       "thread": "Thread"
     }
+  },
+  "EditableText": {
+    "DialogTitle": "Edit content",
+    "KeyLabel": "Key: {contentKey}",
+    "ValueLabel": "{locale} value",
+    "Save": "Save",
+    "EditionBannerLabel": "You are in edit mode — every editable text is clickable.",
+    "EditionBannerExit": "Back to live site"
+  },
+  "EditableTextDemo": {
+    "Title": "Welcome to XTM Hub",
+    "Subtitle": "The unified entry point for the Filigran ecosystem.",
+    "Instructions": "Visit /edition to turn edit mode on (BYPASS-capability users only), then click the title or subtitle below. Saving calls the real upsertContentTranslation mutation."
   }
 }
