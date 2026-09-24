@@ -1,6 +1,7 @@
 import DataLoader from 'dataloader';
 import { v4 as uuidv4 } from 'uuid';
 import { describe, expect, it, vi } from 'vitest';
+import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   contextSimpleUserFiligran2,
   GRAPHQL_RESOLVE_INFO,
@@ -17,7 +18,7 @@ import {
   Timeline,
   UpdateEpicInput,
 } from '../../__generated__/resolvers-types';
-import Document, { DocumentId } from '../../model/kanel/public/Document';
+import { DocumentId } from '../../model/kanel/public/Document';
 import Epic, { EpicId } from '../../model/kanel/public/Epic';
 import { BadRequestErrorCode } from '../../utils/error/error.code';
 import { ErrorType } from '../../utils/error/error.type';
@@ -33,29 +34,10 @@ describe('epic.document', () => {
       id: uuidv4() as EpicId,
       document_id: documentId,
     } as unknown as Epic;
-    const expectedDocument: Document = {
+    const expectedDocument = TestHelper.document.build({
       id: documentId,
-      uploader_id: null,
-      service_instance_id: null,
-      description: null,
       file_name: 'image.png',
-      minio_name: null,
-      active: true,
-      created_at: new Date(),
-      remover_id: null,
-      mime_type: null,
-      name: null,
-      updated_at: null,
-      updater_id: null,
-      short_description: null,
-      slug: null,
-      uploader_organization_id: null,
-      type: 'document',
-      source_type: null,
-      is_decommissioned: false,
-      version: null,
-      tags: [],
-    };
+    });
     const loadSpy = vi
       .spyOn(
         contextSimpleUserFiligran2.dataLoaders.document.documentByIdLoader,
@@ -136,30 +118,10 @@ describe('epic.document', () => {
       id: uuidv4() as EpicId,
       document_id: documentIdB,
     } as unknown as Epic;
-    const documentA: DocumentWithUseCases = {
+    const documentA: DocumentWithUseCases = TestHelper.document.build({
       id: documentIdA,
-      uploader_id: null,
-      service_instance_id: null,
-      description: null,
       file_name: 'a.png',
-      minio_name: null,
-      active: true,
-      created_at: new Date(),
-      remover_id: null,
-      mime_type: null,
-      name: null,
-      updated_at: null,
-      updater_id: null,
-      short_description: null,
-      slug: null,
-      uploader_organization_id: null,
-      type: 'document',
-      source_type: null,
-      is_decommissioned: false,
-      version: null,
-      tags: [],
-      use_cases: [],
-    };
+    });
     const documentB: DocumentWithUseCases = {
       ...documentA,
       id: documentIdB,
