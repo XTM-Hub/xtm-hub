@@ -34,6 +34,10 @@ const TEXT_RECT = {
   height: 20,
 };
 const POINT_INSIDE_TEXT = { clientX: 10, clientY: 10 };
+// Inside the editable element but beside its text, e.g. a button padding.
+const POINT_BESIDE_TEXT = { clientX: 300, clientY: 10 };
+
+const findBadge = () => document.querySelector('[data-content-edit-badge]');
 
 const editableFlagOf = (testId: string) =>
   screen.getByTestId(testId).getAttribute(EDITABLE_ATTRIBUTE);
@@ -271,4 +275,79 @@ describe('EditModeContentObserver', () => {
       expect(flag).toBe(expectedFlag);
     }
   );
+
+  it('should open the edit dialog when clicking beside the text inside its editable element', async () => {
+    // Given
+    renderObserver();
+
+    // When
+    fireEvent.click(screen.getByTestId('editable-link'), POINT_BESIDE_TEXT);
+
+    // Then
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('should keep the action of an icon button inside an editable block', () => {
+    // Given
+    const onIconClick = vi.fn();
+    testRender(
+      <EditModeProvider
+        canEditContent
+        isEditMode
+        pendingChangeCount={0}
+        overriddenKeys={[]}>
+        <div>
+          {appendContentKeyMarker(VISIBLE_TEXT, CONTENT_KEY)}
+          <button
+            type="button"
+            data-testid="icon-button"
+            onClick={onIconClick}>
+            ×
+          </button>
+        </div>
+        <EditModeContentObserver />
+      </EditModeProvider>
+    );
+    givenLayout(() => screen.queryByTestId('icon-button'));
+
+    // When
+    fireEvent.click(screen.getByTestId('icon-button'), POINT_BESIDE_TEXT);
+
+    // Then
+    expect(onIconClick).toHaveBeenCalled();
+  });
+
+  it.each([
+    ['committed', [], 'committed'],
+    ['overridden', [CONTENT_KEY], 'overridden'],
+  ])(
+    'should show the %s edit badge over the editable element under the pointer',
+    async (_label, overriddenKeys, expectedBadge) => {
+      // Given
+      renderObserver({ overriddenKeys });
+
+      // When
+      fireEvent.mouseMove(document, POINT_BESIDE_TEXT);
+
+      // Then
+      await waitFor(() =>
+        expect(findBadge()?.getAttribute('data-content-edit-badge')).toBe(
+          expectedBadge
+        )
+      );
+    }
+  );
+
+  it('should hide the edit badge while the page scrolls', async () => {
+    // Given
+    renderObserver();
+    fireEvent.mouseMove(document, POINT_INSIDE_TEXT);
+    await waitFor(() => expect(findBadge()).not.toBeNull());
+
+    // When
+    fireEvent.scroll(document);
+
+    // Then
+    await waitFor(() => expect(findBadge()).toBeNull());
+  });
 });

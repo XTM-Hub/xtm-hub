@@ -192,3 +192,7 @@ body[data-theme='Dark'] {
 [data-content-editable='overridden']:hover {
   outline-color: var(--color-yellow-400);
 }
+
+[data-content-edit-badge='overridden'] svg {
+  color: var(--color-yellow-400);
+}

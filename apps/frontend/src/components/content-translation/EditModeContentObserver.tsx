@@ -6,8 +6,10 @@ import {
   containsContentKeyMarker,
   decodeContentKeyMarker,
 } from '@/utils/content-translation/invisible-marker';
+import { EditIcon } from '@filigran/icon';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 // Text nodes whose parent isn't actually rendered (e.g. Next.js's inline
 // hydration <script> tags, which embed a serialized copy of the rendered
@@ -120,37 +122,65 @@ const scanForMarkedTextNodes = (root: Node, registry: MarkedTextRegistry) => {
   matches.forEach((node) => registry.register(node));
 };
 
-// Finds the exact marked Text node (if any) under viewport point (x, y).
-// Walks up from the deepest element at that point (rather than relying on
-// the non-standard/inconsistent caretRangeFromPoint/caretPositionFromPoint
-// APIs) so multiple marked text nodes sharing one parent element are
-// disambiguated by an actual point-in-rect test — a Range can span several
-// client rects when its text wraps across lines.
-const findMarkedTextAtPoint = (
+const INTERACTIVE_SELECTOR = [
+  'a',
+  'button',
+  'input',
+  'label',
+  'select',
+  'summary',
+  'textarea',
+  '[role="button"]',
+  '[role="checkbox"]',
+  '[role="link"]',
+  '[role="menuitem"]',
+  '[role="option"]',
+  '[role="switch"]',
+  '[role="tab"]',
+].join(', ');
+
+const isPointInText = (node: Text, x: number, y: number) => {
+  const range = document.createRange();
+  range.selectNodeContents(node);
+  return Array.from(range.getClientRects()).some(
+    (rect) =>
+      x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom
+  );
+};
+
+interface EditableTarget {
+  element: Element;
+  contentKey: string;
+}
+
+// The editable text whose element holds viewport point (x, y): that whole
+// element box is editable, as its outline shows. Walks up from the deepest
+// element at the point, and stops at an interactive element without an
+// editable text of its own, so an icon-only button inside an editable block
+// keeps its action. Several marked texts in one element are told apart by
+// the line rect the point falls in, else the first one wins.
+const findEditableTarget = (
   x: number,
   y: number,
   registry: MarkedTextRegistry
-): { node: Text; contentKey: string } | null => {
+): EditableTarget | null => {
   let element = document.elementFromPoint(x, y);
   let depth = 0;
   while (element && depth < 8) {
-    for (const node of registry.candidatesUnder(element)) {
-      const entry = registry.get(node);
-      if (!entry) {
-        continue;
-      }
-      const range = document.createRange();
-      range.selectNodeContents(node);
-      for (const rect of Array.from(range.getClientRects())) {
-        if (
-          x >= rect.left &&
-          x <= rect.right &&
-          y >= rect.top &&
-          y <= rect.bottom
-        ) {
-          return { node, contentKey: entry.contentKey };
-        }
-      }
+    const candidates = registry
+      .candidatesUnder(element)
+      .filter((node) => node.isConnected)
+      .flatMap((node) => {
+        const entry = registry.get(node);
+        return entry ? [{ node, contentKey: entry.contentKey }] : [];
+      });
+    const match =
+      candidates.find(({ node }) => isPointInText(node, x, y)) ?? candidates[0];
+    if (match) {
+      return { element, contentKey: match.contentKey };
+    }
+    if (element.matches(INTERACTIVE_SELECTOR)) {
+      return null;
     }
     element = element.parentElement;
     depth += 1;
@@ -193,7 +223,8 @@ const clearEditableElements = () => {
 // for why that distinction matters). While the editable areas are shown
 // (toggled from EditionModeBanner), the element holding each marked text is
 // flagged for its outline, yellow when the text has a draft or a published
-// override in any locale, and a click on the text opens its edit dialog.
+// override in any locale; hovering it shows an edit badge and a click
+// anywhere on it opens its edit dialog.
 // See with-content-key-markers.ts for how markers get embedded, and
 // invisible-marker.ts for the encoding scheme.
 export const EditModeContentObserver = () => {
@@ -204,6 +235,14 @@ export const EditModeContentObserver = () => {
   );
   const router = useRouter();
   const [activeContentKey, setActiveContentKey] = useState<string | null>(null);
+  // Where to draw the edit badge: the top-right corner of the editable
+  // element under the pointer.
+  const [badge, setBadge] = useState<{
+    top: number;
+    left: number;
+    isOverridden: boolean;
+  } | null>(null);
+  const badgeRafRef = useRef<number | null>(null);
   const registryRef = useRef<MarkedTextRegistry | null>(null);
   if (registryRef.current === null) {
     registryRef.current = new MarkedTextRegistry();
@@ -264,11 +303,7 @@ export const EditModeContentObserver = () => {
       if (!showEditableAreas) {
         return;
       }
-      const match = findMarkedTextAtPoint(
-        event.clientX,
-        event.clientY,
-        registry
-      );
+      const match = findEditableTarget(event.clientX, event.clientY, registry);
       if (!match) {
         return;
       }
@@ -279,19 +314,73 @@ export const EditModeContentObserver = () => {
       // ensures only the edit dialog opens.
       event.preventDefault();
       event.stopPropagation();
+      setBadge(null);
       setActiveContentKey(match.contentKey);
     };
+
+    // rAF-throttled: hit-testing walks the DOM, so do it at most once per
+    // frame during a fast mouse movement.
+    const handlePointerMove = (event: MouseEvent) => {
+      if (!showEditableAreas || badgeRafRef.current !== null) {
+        return;
+      }
+      const { clientX, clientY } = event;
+      badgeRafRef.current = requestAnimationFrame(() => {
+        badgeRafRef.current = null;
+        const target = findEditableTarget(clientX, clientY, registry);
+        if (!target) {
+          setBadge(null);
+          return;
+        }
+        const rect = target.element.getBoundingClientRect();
+        setBadge({
+          top: rect.top,
+          left: rect.right,
+          isOverridden:
+            target.element.getAttribute(EDITABLE_ATTRIBUTE) === 'overridden',
+        });
+      });
+    };
+    // The badge is fixed-position: hide it rather than chase the element
+    // while the page scrolls; the next pointer move brings it back.
+    const hideBadge = () => setBadge(null);
+
     document.addEventListener('click', handleClick, true);
+    document.addEventListener('mousemove', handlePointerMove);
+    document.addEventListener('scroll', hideBadge, true);
 
     return () => {
       mutationObserver.disconnect();
       document.removeEventListener('click', handleClick, true);
+      document.removeEventListener('mousemove', handlePointerMove);
+      document.removeEventListener('scroll', hideBadge, true);
+      if (badgeRafRef.current !== null) {
+        cancelAnimationFrame(badgeRafRef.current);
+        badgeRafRef.current = null;
+      }
+      setBadge(null);
       clearEditableElements();
     };
   }, [isEditMode, showEditableAreas, overriddenKeySet]);
 
-  if (!isEditMode || !activeContentKey) {
+  if (!isEditMode) {
     return null;
+  }
+
+  if (!activeContentKey) {
+    return badge
+      ? createPortal(
+          <div
+            data-content-edit-badge={
+              badge.isOverridden ? 'overridden' : 'committed'
+            }
+            style={{ top: badge.top, left: badge.left }}
+            className="pointer-events-none fixed z-[100] -translate-x-1/2 -translate-y-1/2">
+            <EditIcon className="text-primary bg-elevation-background-layer-1 h-4 w-4 rounded-full p-0.5 shadow" />
+          </div>,
+          document.body
+        )
+      : null;
   }
 
   return (
