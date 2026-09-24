@@ -173,3 +173,22 @@ body[data-theme='Dark'] {
 .w-md-editor-text {
   min-height: 100% !important;
 }
+
+/* In-context editing: elements flagged by EditModeContentObserver. An outline
+   never changes the layout, and follows its element when it scrolls, clips or
+   hides. */
+[data-content-editable] {
+  outline: 1px dashed color-mix(in srgb, var(--color-primary) 50%, transparent);
+  outline-offset: 1px;
+  cursor: pointer;
+}
+
+[data-content-editable]:hover {
+  outline-style: solid;
+  outline-color: var(--color-primary);
+}
+
+[data-content-editable='overridden'],
+[data-content-editable='overridden']:hover {
+  outline-color: var(--color-yellow-400);
+}

@@ -1,4 +1,7 @@
-import { EditModeContentObserver } from '@/components/content-translation/EditModeContentObserver';
+import {
+  EDITABLE_ATTRIBUTE,
+  EditModeContentObserver,
+} from '@/components/content-translation/EditModeContentObserver';
 import { EditModeProvider } from '@/context/edit-mode-context';
 import { appendContentKeyMarker } from '@/utils/content-translation/invisible-marker';
 import testRender from '@/utils/test/test-render';
@@ -32,7 +35,8 @@ const TEXT_RECT = {
 };
 const POINT_INSIDE_TEXT = { clientX: 10, clientY: 10 };
 
-const countOutlines = () => document.querySelectorAll('.outline-dashed').length;
+const editableFlagOf = (testId: string) =>
+  screen.getByTestId(testId).getAttribute(EDITABLE_ATTRIBUTE);
 
 // Outlines are refreshed on the next animation frame.
 const nextFrame = () =>
@@ -135,22 +139,34 @@ describe('EditModeContentObserver', () => {
     late.remove();
   });
 
-  it('should outline editable texts when the editable areas are shown', async () => {
+  it('should flag the element of an editable text when the editable areas are shown', () => {
     // Given
     renderObserver();
 
     // When
-    const outlines = await waitFor(() => {
-      const count = countOutlines();
-      expect(count).toBeGreaterThan(0);
-      return count;
-    });
+    const flag = editableFlagOf('editable-link');
 
     // Then
-    expect(outlines).toBe(1);
+    expect(flag).toBe('committed');
   });
 
-  it('should not outline anything when the editable areas are hidden', async () => {
+  it('should flag the element of an editable text rendered after mount', async () => {
+    // Given
+    renderObserver();
+
+    // When
+    const late = document.createElement('span');
+    late.textContent = appendContentKeyMarker('Late text', CONTENT_KEY);
+    document.body.appendChild(late);
+
+    // Then
+    await waitFor(() =>
+      expect(late.getAttribute(EDITABLE_ATTRIBUTE)).toBe('committed')
+    );
+    late.remove();
+  });
+
+  it('should flag nothing when the editable areas are hidden', async () => {
     // Given
     localStorage.setItem(AREAS_STORAGE_KEY, 'false');
     renderObserver();
@@ -159,7 +175,31 @@ describe('EditModeContentObserver', () => {
     await nextFrame();
 
     // Then
-    expect(countOutlines()).toBe(0);
+    expect(editableFlagOf('editable-link')).toBeNull();
+  });
+
+  it('should clear the flags when edit mode is turned off', () => {
+    // Given
+    const { rerender } = renderObserver();
+
+    // When
+    rerender(
+      <EditModeProvider
+        canEditContent
+        isEditMode={false}
+        pendingChangeCount={0}
+        overriddenKeys={[]}>
+        <a
+          href="#title"
+          data-testid="editable-link">
+          {VISIBLE_TEXT}
+        </a>
+        <EditModeContentObserver />
+      </EditModeProvider>
+    );
+
+    // Then
+    expect(editableFlagOf('editable-link')).toBeNull();
   });
 
   it('should open the edit dialog when clicking an editable text', async () => {
@@ -211,75 +251,24 @@ describe('EditModeContentObserver', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('should highlight the editable text under the pointer', async () => {
-    // Given
-    renderObserver();
-    await waitFor(() => expect(countOutlines()).toBe(1));
-
-    // When
-    fireEvent.mouseMove(document, POINT_INSIDE_TEXT);
-
-    // Then
-    await waitFor(() => expect(countOutlines()).toBe(2));
-  });
-
   it.each([
-    ['yellow when it is overridden', [CONTENT_KEY], 'outline-yellow-400'],
-    ['with the primary color when it is committed', [], 'outline-primary/50'],
+    [
+      'overridden when it has a draft or a published value',
+      [CONTENT_KEY],
+      'overridden',
+    ],
+    ['committed when it has neither', [], 'committed'],
   ])(
-    'should outline an editable text %s',
-    async (_label, overriddenKeys, expectedClass) => {
+    'should flag an editable text as %s',
+    (_label, overriddenKeys, expectedFlag) => {
       // Given
       renderObserver({ overriddenKeys });
 
       // When
-      const outline = await waitFor(() => {
-        const element = document.querySelector('.outline-dashed');
-        expect(element).not.toBeNull();
-        return element;
-      });
+      const flag = editableFlagOf('editable-link');
 
       // Then
-      expect(outline).toHaveClass(expectedClass);
+      expect(flag).toBe(expectedFlag);
     }
   );
-
-  it('should not outline a text cropped out by its container', async () => {
-    // Given
-    // jsdom lays every element out as an empty box, so any cropping container
-    // hides the text entirely, as a scrolled-out or visually hidden one would.
-    testRender(
-      <EditModeProvider
-        canEditContent
-        isEditMode
-        pendingChangeCount={0}
-        overriddenKeys={[]}>
-        <div style={{ overflowX: 'hidden', overflowY: 'hidden' }}>
-          <span data-testid="cropped-text">
-            {appendContentKeyMarker(VISIBLE_TEXT, CONTENT_KEY)}
-          </span>
-        </div>
-        <EditModeContentObserver />
-      </EditModeProvider>
-    );
-    givenLayout(() => screen.queryByTestId('cropped-text'));
-
-    // When
-    await nextFrame();
-
-    // Then
-    expect(countOutlines()).toBe(0);
-  });
-
-  it('should not outline a text covered by another element', async () => {
-    // Given
-    givenLayout(() => screen.queryByTestId('plain-text'));
-    renderObserver();
-
-    // When
-    await nextFrame();
-
-    // Then
-    expect(countOutlines()).toBe(0);
-  });
 });

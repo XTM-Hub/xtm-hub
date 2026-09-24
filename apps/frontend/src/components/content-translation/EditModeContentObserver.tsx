@@ -2,15 +2,12 @@
 
 import { ContentEditDialog } from '@/components/content-translation/ContentEditDialog';
 import { useEditMode } from '@/context/edit-mode-context';
-import { cn } from '@/lib/utils';
 import {
   containsContentKeyMarker,
   decodeContentKeyMarker,
 } from '@/utils/content-translation/invisible-marker';
-import { EditIcon } from '@filigran/icon';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 
 // Text nodes whose parent isn't actually rendered (e.g. Next.js's inline
 // hydration <script> tags, which embed a serialized copy of the rendered
@@ -81,9 +78,8 @@ class MarkedTextRegistry {
     return this.byParent.get(element) ?? [];
   }
 
-  // Every still-connected marked node with its content key — used to
-  // highlight every editable region on screen at once (rather than only
-  // the one under the cursor). Nodes React has since removed from the
+  // Every still-connected marked node with its content key — used to flag
+  // every editable element at once. Nodes React has since removed from the
   // document are pruned here rather than tracked separately, since that's
   // the only time this list actually needs to be accurate.
   list(): { node: Text; contentKey: string }[] {
@@ -124,88 +120,17 @@ const scanForMarkedTextNodes = (root: Node, registry: MarkedTextRegistry) => {
   matches.forEach((node) => registry.register(node));
 };
 
-// Finds the exact marked Text node (if any) under viewport point (x, y),
-// along with the specific line rect the point falls in — a Range can span
-// several client rects when its text wraps across lines. Walks up from
-// the deepest element at that point (rather than relying on the
-// non-standard/inconsistent caretRangeFromPoint/caretPositionFromPoint
+// Finds the exact marked Text node (if any) under viewport point (x, y).
+// Walks up from the deepest element at that point (rather than relying on
+// the non-standard/inconsistent caretRangeFromPoint/caretPositionFromPoint
 // APIs) so multiple marked text nodes sharing one parent element are
-// disambiguated by an actual point-in-rect test, not by proximity alone.
-interface ScreenBox {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-}
-
-const CLIPPING_OVERFLOWS = new Set(['hidden', 'clip', 'auto', 'scroll']);
-// Below this, what is left of a text is a visually hidden (sr-only) sliver.
-const MIN_VISIBLE_SIZE = 2;
-
-// Whether an element crops its content (a scroll container, the 1px box of
-// visually hidden text...). Memoized per outline refresh by the caller.
-const createClippingCheck = () => {
-  const cache = new Map<Element, boolean>();
-  return (element: Element) => {
-    let isClipping = cache.get(element);
-    if (isClipping === undefined) {
-      const { overflowX, overflowY } = getComputedStyle(element);
-      isClipping =
-        CLIPPING_OVERFLOWS.has(overflowX) || CLIPPING_OVERFLOWS.has(overflowY);
-      cache.set(element, isClipping);
-    }
-    return isClipping;
-  };
-};
-
-// Narrows a text line rect to what the viewport and every cropping ancestor
-// let show, or null when nothing of it does. getClientRects() reports text
-// scrolled out of its container, or visually hidden, as if it were visible.
-const clipToVisibleArea = (
-  rect: DOMRect,
-  element: Element,
-  isClipping: (element: Element) => boolean
-): ScreenBox | null => {
-  let left = Math.max(rect.left, 0);
-  let top = Math.max(rect.top, 0);
-  let right = Math.min(rect.right, window.innerWidth);
-  let bottom = Math.min(rect.bottom, window.innerHeight);
-  for (
-    let ancestor: Element | null = element;
-    ancestor && ancestor !== document.body;
-    ancestor = ancestor.parentElement
-  ) {
-    if (!isClipping(ancestor)) {
-      continue;
-    }
-    const box = ancestor.getBoundingClientRect();
-    left = Math.max(left, box.left);
-    top = Math.max(top, box.top);
-    right = Math.min(right, box.right);
-    bottom = Math.min(bottom, box.bottom);
-  }
-  if (right - left < MIN_VISIBLE_SIZE || bottom - top < MIN_VISIBLE_SIZE) {
-    return null;
-  }
-  return { left, top, width: right - left, height: bottom - top };
-};
-
-// Whether the text is on top at the center of its visible box, rather than
-// covered by something else, such as a sticky header it scrolls under.
-// Outlines are pointer-events: none, so they never get in the way.
-const isOnTopAt = (box: ScreenBox, element: Element) => {
-  const hit = document.elementFromPoint(
-    box.left + box.width / 2,
-    box.top + box.height / 2
-  );
-  return !!hit && (element.contains(hit) || hit.contains(element));
-};
-
+// disambiguated by an actual point-in-rect test — a Range can span several
+// client rects when its text wraps across lines.
 const findMarkedTextAtPoint = (
   x: number,
   y: number,
   registry: MarkedTextRegistry
-): { node: Text; contentKey: string; rect: ScreenBox } | null => {
+): { node: Text; contentKey: string } | null => {
   let element = document.elementFromPoint(x, y);
   let depth = 0;
   while (element && depth < 8) {
@@ -223,14 +148,7 @@ const findMarkedTextAtPoint = (
           y >= rect.top &&
           y <= rect.bottom
         ) {
-          const visibleBox = clipToVisibleArea(
-            rect,
-            element,
-            createClippingCheck()
-          );
-          return visibleBox
-            ? { node, contentKey: entry.contentKey, rect: visibleBox }
-            : null;
+          return { node, contentKey: entry.contentKey };
         }
       }
     }
@@ -240,69 +158,56 @@ const findMarkedTextAtPoint = (
   return null;
 };
 
-// Every visible rect (one per wrapped line) for every currently-registered
-// marked node — used to reveal all editable regions on screen at once,
-// rather than only the one under the cursor, which was otherwise impossible
-// to discover without blindly hovering. Only the part actually on screen is
-// outlined, so no box is left floating over a header or a hidden text.
-const getAllTargetRects = (registry: MarkedTextRegistry): EditableRegion[] => {
-  const regions: EditableRegion[] = [];
-  const isClipping = createClippingCheck();
-  registry.list().forEach(({ node, contentKey }) => {
-    const parent = node.parentElement;
-    if (!parent) {
-      return;
-    }
-    const range = document.createRange();
-    range.selectNodeContents(node);
-    Array.from(range.getClientRects()).forEach((rect) => {
-      const visibleBox = clipToVisibleArea(rect, parent, isClipping);
-      if (visibleBox && isOnTopAt(visibleBox, parent)) {
-        regions.push({ node, contentKey, rect: visibleBox });
-      }
-    });
-  });
-  return regions;
+// Set on the element holding an editable text and styled in globals.css:
+// the browser draws the outline with the element itself, so it scrolls,
+// clips and hides with it, and an outline never changes the layout. An
+// attribute rather than a class, which React rewrites on every render.
+export const EDITABLE_ATTRIBUTE = 'data-content-editable';
+
+const flagEditableElement = (
+  node: Text,
+  contentKey: string,
+  overriddenKeys: Set<string>
+) => {
+  const element = node.parentElement;
+  // One overridden text is enough to flag an element holding several.
+  if (!element || element.getAttribute(EDITABLE_ATTRIBUTE) === 'overridden') {
+    return;
+  }
+  element.setAttribute(
+    EDITABLE_ATTRIBUTE,
+    overriddenKeys.has(contentKey) ? 'overridden' : 'committed'
+  );
 };
 
-interface EditableRegion {
-  node: Text;
-  contentKey: string;
-  rect: ScreenBox;
-}
-
-type HoverTarget = EditableRegion;
+const clearEditableElements = () => {
+  document
+    .querySelectorAll(`[${EDITABLE_ATTRIBUTE}]`)
+    .forEach((element) => element.removeAttribute(EDITABLE_ATTRIBUTE));
+};
 
 // Mounted once per root layout while edit mode is on: scans the DOM for
 // invisible content-key markers left by useTranslate() and registers each
 // marked Text node's live instance (stripping the marker from its data in
 // place, never replacing the node itself — see MarkedTextRegistry.register
 // for why that distinction matters). While the editable areas are shown
-// (toggled from EditionModeBanner), every editable region is outlined,
-// hovering highlights the one under the cursor (a portal, positioned via
-// getBoundingClientRect — it never touches the underlying DOM/React tree
-// either), and a click opens the edit dialog for it. See with-content-key-markers.ts for how markers get
-// embedded, and invisible-marker.ts for the encoding scheme.
+// (toggled from EditionModeBanner), the element holding each marked text is
+// flagged for its outline, yellow when the text has a draft or a published
+// override in any locale, and a click on the text opens its edit dialog.
+// See with-content-key-markers.ts for how markers get embedded, and
+// invisible-marker.ts for the encoding scheme.
 export const EditModeContentObserver = () => {
   const { isEditMode, showEditableAreas, overriddenKeys } = useEditMode();
-  // Texts with a draft or a published override, in any locale, are outlined
-  // in yellow, to tell them apart from the committed messages.
   const overriddenKeySet = useMemo(
     () => new Set(overriddenKeys),
     [overriddenKeys]
   );
-  const [hoverTarget, setHoverTarget] = useState<HoverTarget | null>(null);
   const router = useRouter();
   const [activeContentKey, setActiveContentKey] = useState<string | null>(null);
-  // Every editable region currently on screen, shown as a dim outline while
-  // the editable areas are shown.
-  const [allTargets, setAllTargets] = useState<EditableRegion[]>([]);
   const registryRef = useRef<MarkedTextRegistry | null>(null);
   if (registryRef.current === null) {
     registryRef.current = new MarkedTextRegistry();
   }
-  const rafRef = useRef<number | null>(null);
-  const allTargetsRafRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!isEditMode) {
@@ -312,25 +217,23 @@ export const EditModeContentObserver = () => {
     const registry = registryRef.current!;
     scanForMarkedTextNodes(document.body, registry);
 
-    const clearHover = () => setHoverTarget(null);
-
-    // rAF-throttled for the same reason as the pointer-move handler below
-    // — recomputing every registered node's rects on every scroll/resize
-    // tick would be wasteful.
-    const refreshAllTargets = () => {
-      if (allTargetsRafRef.current !== null) {
+    const flagAll = () => {
+      if (!showEditableAreas) {
         return;
       }
-      allTargetsRafRef.current = requestAnimationFrame(() => {
-        allTargetsRafRef.current = null;
-        setAllTargets(getAllTargetRects(registry));
-      });
+      registry
+        .list()
+        .forEach(({ node, contentKey }) =>
+          flagEditableElement(node, contentKey, overriddenKeySet)
+        );
     };
+    flagAll();
 
     // Next.js App Router client-side navigations swap page content under
     // the same persistent root layout without remounting it, so a live
     // observer (not just the initial scan above) is needed to catch
-    // newly-rendered marked text.
+    // newly-rendered marked text. It only watches text and children, so
+    // flagging elements through an attribute never triggers it again.
     const mutationObserver = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         mutation.addedNodes.forEach((added) => {
@@ -347,29 +250,13 @@ export const EditModeContentObserver = () => {
           registry.register(mutation.target as Text);
         }
       });
-      if (showEditableAreas) {
-        refreshAllTargets();
-      }
+      flagAll();
     });
     mutationObserver.observe(document.body, {
       childList: true,
       subtree: true,
       characterData: true,
     });
-
-    // rAF-throttled: hit-testing runs a DOM walk + Range measurement, so
-    // this avoids doing that work more than once per frame during a fast
-    // mouse movement.
-    const handlePointerMove = (event: MouseEvent) => {
-      if (!showEditableAreas || rafRef.current !== null) {
-        return;
-      }
-      const { clientX, clientY } = event;
-      rafRef.current = requestAnimationFrame(() => {
-        rafRef.current = null;
-        setHoverTarget(findMarkedTextAtPoint(clientX, clientY, registry));
-      });
-    };
 
     // Only a click on an editable text, while the areas are shown, is
     // intercepted: anything else on the page keeps working as usual.
@@ -393,115 +280,33 @@ export const EditModeContentObserver = () => {
       event.preventDefault();
       event.stopPropagation();
       setActiveContentKey(match.contentKey);
-      setHoverTarget(null);
     };
-
-    const handleViewportChange = () => {
-      clearHover();
-      if (showEditableAreas) {
-        refreshAllTargets();
-      }
-    };
-
-    document.addEventListener('mousemove', handlePointerMove);
-    document.addEventListener('scroll', handleViewportChange, true);
-    window.addEventListener('resize', handleViewportChange);
     document.addEventListener('click', handleClick, true);
-    if (showEditableAreas) {
-      refreshAllTargets();
-    }
 
     return () => {
       mutationObserver.disconnect();
-      document.removeEventListener('mousemove', handlePointerMove);
-      document.removeEventListener('scroll', handleViewportChange, true);
-      window.removeEventListener('resize', handleViewportChange);
       document.removeEventListener('click', handleClick, true);
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
-      if (allTargetsRafRef.current !== null) {
-        cancelAnimationFrame(allTargetsRafRef.current);
-        allTargetsRafRef.current = null;
-      }
-      setHoverTarget(null);
-      setAllTargets([]);
+      clearEditableElements();
     };
-  }, [isEditMode, showEditableAreas]);
+  }, [isEditMode, showEditableAreas, overriddenKeySet]);
 
-  if (!isEditMode) {
+  if (!isEditMode || !activeContentKey) {
     return null;
   }
 
   return (
-    <>
-      {allTargets.length > 0 &&
-        !activeContentKey &&
-        createPortal(
-          <>
-            {allTargets.map((target, index) => (
-              <div
-                // Text nodes don't have a stable id of their own, and the
-                // same node can produce several rects (wrapped lines) —
-                // node identity + rect index together are unique enough
-                // for a list that's only ever fully replaced, never
-                // reordered in place.
-                key={index}
-                style={{
-                  position: 'fixed',
-                  top: target.rect.top,
-                  left: target.rect.left,
-                  width: target.rect.width,
-                  height: target.rect.height,
-                }}
-                className={cn(
-                  'pointer-events-none z-[99] rounded-xs outline-1 outline-dashed',
-                  overriddenKeySet.has(target.contentKey)
-                    ? 'outline-yellow-400'
-                    : 'outline-primary/50'
-                )}
-              />
-            ))}
-          </>,
-          document.body
-        )}
-      {hoverTarget &&
-        !activeContentKey &&
-        createPortal(
-          <div
-            style={{
-              position: 'fixed',
-              top: hoverTarget.rect.top,
-              left: hoverTarget.rect.left,
-              width: hoverTarget.rect.width,
-              height: hoverTarget.rect.height,
-            }}
-            className={cn(
-              'pointer-events-none z-[100] rounded-xs outline-1 outline-dashed',
-              overriddenKeySet.has(hoverTarget.contentKey)
-                ? 'outline-yellow-400 bg-yellow-100/30'
-                : 'outline-primary bg-blue-50/40'
-            )}>
-            <EditIcon className="text-primary bg-elevation-background-layer-1 absolute -top-2 -right-2 h-4 w-4 rounded-full p-0.5 shadow" />
-          </div>,
-          document.body
-        )}
-      {activeContentKey && (
-        <ContentEditDialog
-          contentKey={activeContentKey}
-          open
-          onOpenChange={(open) => {
-            if (!open) {
-              setActiveContentKey(null);
-            }
-          }}
-          // Re-render from the server rather than writing the saved value
-          // into the DOM: the value is a message template, and only a render
-          // resolves its placeholders (and updates every other occurrence).
-          onSaved={() => router.refresh()}
-        />
-      )}
-    </>
+    <ContentEditDialog
+      contentKey={activeContentKey}
+      open
+      onOpenChange={(open) => {
+        if (!open) {
+          setActiveContentKey(null);
+        }
+      }}
+      // Re-render from the server rather than writing the saved value into
+      // the DOM: the value is a message template, and only a render resolves
+      // its placeholders (and updates every other occurrence).
+      onSaved={() => router.refresh()}
+    />
   );
 };
