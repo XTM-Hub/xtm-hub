@@ -67,7 +67,7 @@ type Query {
   me: User
   usersWithCapabilitiesInOrganization(
     input: UsersWithCapabilitiesInOrganizationInput!
-  ): [User!]!
+  ): [User!]! @auth
   users(
     first: Int!
     after: ID
