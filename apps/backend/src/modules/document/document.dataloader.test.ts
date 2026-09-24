@@ -1,5 +1,6 @@
 import { toGlobalId } from 'graphql-relay/node/node.js';
 import { describe, expect, it, vi } from 'vitest';
+import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   FiligranProduct,
   IntegrationType,
@@ -17,36 +18,10 @@ import { DocumentChildrenDomain } from './domain/document.children.domain';
 import { DocumentDomain } from './domain/document.domain';
 import { DocumentMetadataDomain } from './domain/document.metadata.domain';
 
-const buildDocument = (overrides: Partial<Document> = {}): Document => ({
-  id: 'doc-1' as DocumentId,
-  uploader_id: null,
-  service_instance_id: null,
-  description: null,
-  file_name: null,
-  minio_name: null,
-  active: true,
-  created_at: new Date('2024-01-01T00:00:00Z'),
-  remover_id: null,
-  mime_type: null,
-  name: null,
-  updated_at: null,
-  updater_id: null,
-  short_description: null,
-  slug: null,
-  uploader_organization_id: null,
-  type: 'test-type',
-  source_type: null,
-  is_decommissioned: false,
-  version: null,
-  tags: [],
-  use_cases: [],
-  ...overrides,
-});
-
 const buildChildDocument = (
   overrides: Partial<WithParentId<Document>> = {}
 ): WithParentId<Document> => ({
-  ...buildDocument(),
+  ...TestHelper.document.build(),
   _parent_id: 'doc-1',
   ...overrides,
 });
@@ -66,7 +41,9 @@ describe('documentDataLoader', () => {
     vi.spyOn(
       DocumentDomain,
       'loadDocumentsWithMetadataByIds'
-    ).mockResolvedValue([buildDocument({ id: 'doc-1' as DocumentId })]);
+    ).mockResolvedValue([
+      TestHelper.document.build({ id: 'doc-1' as DocumentId }),
+    ]);
 
     const result = await DocumentDataLoader.batchLoadDocumentsById([
       'doc-1',
@@ -78,7 +55,7 @@ describe('documentDataLoader', () => {
       'doc-2',
     ]);
     expect(result).toEqual([
-      buildDocument({ id: 'doc-1' as DocumentId }),
+      TestHelper.document.build({ id: 'doc-1' as DocumentId }),
       null,
     ]);
   });
@@ -86,13 +63,17 @@ describe('documentDataLoader', () => {
   it('should wire the document loader in create()', async () => {
     const batchLoadDocumentsByIdSpy = vi
       .spyOn(DocumentDataLoader, 'batchLoadDocumentsById')
-      .mockResolvedValue([buildDocument({ id: 'doc-1' as DocumentId })]);
+      .mockResolvedValue([
+        TestHelper.document.build({ id: 'doc-1' as DocumentId }),
+      ]);
 
     const loaders = DocumentDataLoader.create();
     const result = await loaders.documentByIdLoader.load('doc-1');
 
     expect(batchLoadDocumentsByIdSpy).toHaveBeenCalledWith(['doc-1']);
-    expect(result).toEqual(buildDocument({ id: 'doc-1' as DocumentId }));
+    expect(result).toEqual(
+      TestHelper.document.build({ id: 'doc-1' as DocumentId })
+    );
   });
 
   it('should map users by id and return null for missing users', async () => {

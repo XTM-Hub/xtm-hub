@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { describe, expect, it, vi } from 'vitest';
+import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   contextSimpleUserFiligran2,
   GRAPHQL_RESOLVE_INFO,
@@ -8,7 +9,7 @@ import {
   FiligranProduct,
   VotingRoundStatus,
 } from '../../__generated__/resolvers-types';
-import Document, { DocumentId } from '../../model/kanel/public/Document';
+import { DocumentId } from '../../model/kanel/public/Document';
 import UseCase, { UseCaseId } from '../../model/kanel/public/UseCase';
 import { VotableFeatureId } from '../../model/kanel/public/VotableFeature';
 import { featureVotingApp } from './feature-voting.app';
@@ -25,31 +26,6 @@ const buildUseCase = (overrides: Partial<UseCase> = {}): UseCase => ({
   name: 'Threat hunting',
   color: '#000000',
   product: [FiligranProduct.Opencti],
-  ...overrides,
-});
-
-const buildDocument = (overrides: Partial<Document> = {}): Document => ({
-  id: 'doc-1' as DocumentId,
-  uploader_id: null,
-  service_instance_id: null,
-  description: null,
-  file_name: null,
-  minio_name: null,
-  active: true,
-  created_at: new Date('2024-01-01T00:00:00Z'),
-  remover_id: null,
-  mime_type: null,
-  name: null,
-  updated_at: null,
-  updater_id: null,
-  short_description: null,
-  slug: null,
-  uploader_organization_id: null,
-  type: 'test-type',
-  source_type: null,
-  is_decommissioned: false,
-  version: null,
-  tags: [],
   ...overrides,
 });
 
@@ -457,7 +433,7 @@ describe('votableFeature field resolvers', () => {
     it('should load the illustration document through the document DataLoader', async () => {
       // Given
       const documentId = uuidv4() as DocumentId;
-      const document = buildDocument({
+      const document = TestHelper.document.build({
         id: documentId,
         file_name: 'illustration.png',
       });
