@@ -7,6 +7,8 @@ import {
   Messages,
 } from '@/utils/content-translation/message-overrides';
 import {
+  ContentTranslationKeysDocument,
+  ContentTranslationKeysQuery,
   ContentTranslationsByLocaleDocument,
   ContentTranslationsByLocaleQuery,
   ContentTranslationsByLocaleQueryVariables,
@@ -77,14 +79,22 @@ export const withContentTranslationOverrides = async (
   );
 };
 
-// Keys rendered from a draft or a published override rather than the
-// committed messages, so edit mode can tell them apart.
-export const loadOverriddenContentKeys = async (
-  locale: string
-): Promise<string[]> => {
-  if (!isLocale(locale) || !(await isContentEditModeActive())) {
+// Keys with a draft or a published override in any locale, not only the
+// rendered one, so edit mode can tell them apart from committed texts.
+// Editors only, read uncached like the drafts.
+export const loadOverriddenContentKeys = async (): Promise<string[]> => {
+  if (!(await isContentEditModeActive())) {
     return [];
   }
-  const overrides = await loadLocaleOverrides(toGraphqlLocale(locale));
-  return [...new Set(overrides.map(({ key }) => key))];
+  const [published, drafts] = await Promise.all([
+    serverGraphqlFetch<ContentTranslationKeysQuery>(
+      ContentTranslationKeysDocument,
+      {},
+      { cache: 'no-store' }
+    )
+      .then((data) => data.contentTranslations)
+      .catch(() => []),
+    loadContentTranslationDrafts(),
+  ]);
+  return [...new Set([...published, ...drafts].map(({ key }) => key))];
 };

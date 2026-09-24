@@ -52,7 +52,7 @@ const RootLayout = async ({
   const pendingChangeCount = countPendingChanges(
     await loadContentTranslationDrafts()
   );
-  const overriddenKeys = await loadOverriddenContentKeys(locale);
+  const overriddenKeys = await loadOverriddenContentKeys();
   // Public pages never load the current user, so only an editor already in
   // edit mode (a verified BYPASS user) gets the toggle here, to turn it off.
 

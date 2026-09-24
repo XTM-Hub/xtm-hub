@@ -285,8 +285,8 @@ type HoverTarget = EditableRegion;
 // embedded, and invisible-marker.ts for the encoding scheme.
 export const EditModeContentObserver = () => {
   const { isEditMode, showEditableAreas, overriddenKeys } = useEditMode();
-  // Texts rendered from a draft or a published override are outlined in
-  // yellow, to tell them apart from the committed messages.
+  // Texts with a draft or a published override, in any locale, are outlined
+  // in yellow, to tell them apart from the committed messages.
   const overriddenKeySet = useMemo(
     () => new Set(overriddenKeys),
     [overriddenKeys]

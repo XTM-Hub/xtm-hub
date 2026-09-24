@@ -25,7 +25,6 @@ import { getMetadataBase } from '@/utils/metadata';
 import { APP_PATH } from '@/utils/path/constant';
 import { buildSignupRedirect } from '@/utils/redirect';
 import { Metadata } from 'next';
-import { getLocale } from 'next-intl/server';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import PageLoader from './page-loader';
@@ -59,7 +58,7 @@ const RootLayout = async ({ children }: RootLayoutProps) => {
   const pendingChangeCount = countPendingChanges(
     await loadContentTranslationDrafts()
   );
-  const overriddenKeys = await loadOverriddenContentKeys(await getLocale());
+  const overriddenKeys = await loadOverriddenContentKeys();
 
   const banners = (
     <>

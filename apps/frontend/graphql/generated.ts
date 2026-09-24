@@ -3235,6 +3235,11 @@ export type ContentTranslationForKeyQueryVariables = Exact<{
 
 export type ContentTranslationForKeyQuery = { __typename?: 'Query', contentTranslations: Array<{ __typename?: 'ContentTranslationEntry', key: string, locale: Locale, value: string }>, contentTranslationDrafts: Array<{ __typename?: 'ContentTranslationEntry', key: string, locale: Locale, value: string }> };
 
+export type ContentTranslationKeysQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ContentTranslationKeysQuery = { __typename?: 'Query', contentTranslations: Array<{ __typename?: 'ContentTranslationEntry', key: string }> };
+
 export type ContentTranslationsByLocaleQueryVariables = Exact<{
   locale: InputMaybe<Locale>;
 }>;
@@ -4228,6 +4233,59 @@ export const useInfiniteContentTranslationForKeyQuery = <
 useInfiniteContentTranslationForKeyQuery.getKey = (variables?: ContentTranslationForKeyQueryVariables) => variables === undefined ? ['ContentTranslationForKey.infinite'] : ['ContentTranslationForKey.infinite', variables];
 useInfiniteContentTranslationForKeyQuery.getRootKey = () => ['ContentTranslationForKey.infinite'] as const;
 useContentTranslationForKeyQuery.fetcher = (client: GraphQLClient, variables?: ContentTranslationForKeyQueryVariables, headers?: RequestInit['headers']) => fetcher<ContentTranslationForKeyQuery, ContentTranslationForKeyQueryVariables>(client, ContentTranslationForKeyDocument, variables, headers);
+
+export const ContentTranslationKeysDocument = `
+    query ContentTranslationKeys {
+  contentTranslations {
+    key
+  }
+}
+    `;
+
+export const useContentTranslationKeysQuery = <
+      TData = ContentTranslationKeysQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: ContentTranslationKeysQueryVariables,
+      options?: Omit<UseQueryOptions<ContentTranslationKeysQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<ContentTranslationKeysQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<ContentTranslationKeysQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['ContentTranslationKeys'] : ['ContentTranslationKeys', variables],
+    queryFn: fetcher<ContentTranslationKeysQuery, ContentTranslationKeysQueryVariables>(client, ContentTranslationKeysDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useContentTranslationKeysQuery.getKey = (variables?: ContentTranslationKeysQueryVariables) => variables === undefined ? ['ContentTranslationKeys'] : ['ContentTranslationKeys', variables];
+useContentTranslationKeysQuery.getRootKey = () => ['ContentTranslationKeys'] as const;
+export const useInfiniteContentTranslationKeysQuery = <
+      TData = InfiniteData<ContentTranslationKeysQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ContentTranslationKeysQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<ContentTranslationKeysQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<ContentTranslationKeysQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<ContentTranslationKeysQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['ContentTranslationKeys.infinite'] : ['ContentTranslationKeys.infinite', variables],
+      queryFn: (metaData) => fetcher<ContentTranslationKeysQuery, ContentTranslationKeysQueryVariables>(client, ContentTranslationKeysDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteContentTranslationKeysQuery.getKey = (variables?: ContentTranslationKeysQueryVariables) => variables === undefined ? ['ContentTranslationKeys.infinite'] : ['ContentTranslationKeys.infinite', variables];
+useInfiniteContentTranslationKeysQuery.getRootKey = () => ['ContentTranslationKeys.infinite'] as const;
+useContentTranslationKeysQuery.fetcher = (client: GraphQLClient, variables?: ContentTranslationKeysQueryVariables, headers?: RequestInit['headers']) => fetcher<ContentTranslationKeysQuery, ContentTranslationKeysQueryVariables>(client, ContentTranslationKeysDocument, variables, headers);
 
 export const ContentTranslationsByLocaleDocument = `
     query ContentTranslationsByLocale($locale: Locale) {

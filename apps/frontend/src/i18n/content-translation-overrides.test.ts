@@ -93,28 +93,49 @@ describe('withContentTranslationOverrides', () => {
 });
 
 describe('loadOverriddenContentKeys', () => {
+  const LABEL_KEY = 'PublicHomePage.XtmPlatform.Label';
+
   beforeEach(() => {
     vi.mocked(isContentEditModeActive).mockResolvedValue(true);
     vi.mocked(serverGraphqlFetch).mockResolvedValue({
-      contentTranslations: [{ key: TITLE_KEY, value: PUBLISHED_TITLE }],
+      contentTranslations: [{ key: TITLE_KEY }],
     });
     vi.mocked(loadContentTranslationDrafts).mockResolvedValue([
       { key: TITLE_KEY, locale: Locale.En, value: DRAFT_TITLE },
       { key: DESCRIPTION_KEY, locale: Locale.En, value: DRAFT_TITLE },
-      {
-        key: 'PublicHomePage.XtmPlatform.Label',
-        locale: Locale.Fr,
-        value: 'x',
-      },
     ]);
   });
 
-  it('should list the keys overridden by a draft or a published value in the rendered locale', async () => {
+  it('should list each key with a draft or a published override once', async () => {
     // Given
-    const locale = 'en';
+    const loadKeys = loadOverriddenContentKeys;
 
     // When
-    const keys = await loadOverriddenContentKeys(locale);
+    const keys = await loadKeys();
+
+    // Then
+    expect(keys).toEqual([TITLE_KEY, DESCRIPTION_KEY]);
+  });
+
+  it('should list a key whose only draft is in another locale than the rendered one', async () => {
+    // Given
+    vi.mocked(loadContentTranslationDrafts).mockResolvedValue([
+      { key: LABEL_KEY, locale: Locale.Ja, value: 'ようこそ' },
+    ]);
+
+    // When
+    const keys = await loadOverriddenContentKeys();
+
+    // Then
+    expect(keys).toContain(LABEL_KEY);
+  });
+
+  it('should still list draft keys when the published overrides cannot be fetched', async () => {
+    // Given
+    vi.mocked(serverGraphqlFetch).mockRejectedValue(new Error('unreachable'));
+
+    // When
+    const keys = await loadOverriddenContentKeys();
 
     // Then
     expect(keys).toEqual([TITLE_KEY, DESCRIPTION_KEY]);
@@ -125,7 +146,7 @@ describe('loadOverriddenContentKeys', () => {
     vi.mocked(isContentEditModeActive).mockResolvedValue(false);
 
     // When
-    const keys = await loadOverriddenContentKeys('en');
+    const keys = await loadOverriddenContentKeys();
 
     // Then
     expect(keys).toEqual([]);

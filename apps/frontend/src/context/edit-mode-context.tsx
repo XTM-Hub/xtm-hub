@@ -9,7 +9,7 @@ interface EditModeServerValue {
   isEditMode: boolean;
   // Texts edited as drafts, not yet visible to visitors.
   pendingChangeCount: number;
-  // Content keys rendered from a draft or a published override.
+  // Content keys with a draft or a published override, in any locale.
   overriddenKeys: string[];
 }
 
