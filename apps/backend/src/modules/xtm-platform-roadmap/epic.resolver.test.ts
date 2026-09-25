@@ -1,5 +1,7 @@
+import DataLoader from 'dataloader';
 import { v4 as uuidv4 } from 'uuid';
 import { describe, expect, it, vi } from 'vitest';
+import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   contextSimpleUserFiligran2,
   GRAPHQL_RESOLVE_INFO,
@@ -20,24 +22,28 @@ import { DocumentId } from '../../model/kanel/public/Document';
 import Epic, { EpicId } from '../../model/kanel/public/Epic';
 import { BadRequestErrorCode } from '../../utils/error/error.code';
 import { ErrorType } from '../../utils/error/error.type';
-import { DocumentDomain } from '../document/domain/document.domain';
+import { Document as DocumentWithUseCases } from '../document/document.helper';
 import { EpicApp } from './epic.app';
 import epicResolver from './epic.resolver';
 
 describe('epic.document', () => {
-  it('should load document by document_id', async () => {
+  it('should load document through the document DataLoader by document_id', async () => {
     // Given
     const documentId = uuidv4() as DocumentId;
     const epicParent = {
       id: uuidv4() as EpicId,
       document_id: documentId,
     } as unknown as Epic;
-    const expectedDocument = { id: documentId, file_name: 'image.png' };
-    vi.spyOn(DocumentDomain, 'loadDocumentBy').mockResolvedValue(
-      expectedDocument as unknown as Awaited<
-        ReturnType<typeof DocumentDomain.loadDocumentBy>
-      >
-    );
+    const expectedDocument = TestHelper.document.build({
+      id: documentId,
+      file_name: 'image.png',
+    });
+    const loadSpy = vi
+      .spyOn(
+        contextSimpleUserFiligran2.dataLoaders.document.documentByIdLoader,
+        'load'
+      )
+      .mockResolvedValue({ ...expectedDocument, use_cases: [] });
 
     // When
     const result = await epicResolver.Epic!.document!(
@@ -48,9 +54,7 @@ describe('epic.document', () => {
     );
 
     // Then
-    expect(DocumentDomain.loadDocumentBy).toHaveBeenCalledWith({
-      id: documentId,
-    });
+    expect(loadSpy).toHaveBeenCalledWith(documentId);
     expect(result).toMatchObject({ id: documentId, file_name: 'image.png' });
   });
 
@@ -60,6 +64,35 @@ describe('epic.document', () => {
       id: uuidv4() as EpicId,
       document_id: null,
     } as unknown as Epic;
+    const loadSpy = vi.spyOn(
+      contextSimpleUserFiligran2.dataLoaders.document.documentByIdLoader,
+      'load'
+    );
+
+    // When
+    const result = await epicResolver.Epic!.document!(
+      epicParent,
+      {},
+      contextSimpleUserFiligran2,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    // Then
+    expect(result).toBeNull();
+    expect(loadSpy).not.toHaveBeenCalled();
+  });
+
+  it('should return null when the DataLoader resolves null', async () => {
+    // Given
+    const documentId = uuidv4() as DocumentId;
+    const epicParent = {
+      id: uuidv4() as EpicId,
+      document_id: documentId,
+    } as unknown as Epic;
+    vi.spyOn(
+      contextSimpleUserFiligran2.dataLoaders.document.documentByIdLoader,
+      'load'
+    ).mockResolvedValue(null);
 
     // When
     const result = await epicResolver.Epic!.document!(
@@ -73,25 +106,64 @@ describe('epic.document', () => {
     expect(result).toBeNull();
   });
 
-  it('should return null when DocumentDomain returns undefined', async () => {
+  it('should batch document loads across multiple epics into a single underlying call', async () => {
     // Given
-    const documentId = uuidv4() as DocumentId;
-    const epicParent = {
+    const documentIdA = uuidv4() as DocumentId;
+    const documentIdB = uuidv4() as DocumentId;
+    const epicA = {
       id: uuidv4() as EpicId,
-      document_id: documentId,
+      document_id: documentIdA,
     } as unknown as Epic;
-    vi.spyOn(DocumentDomain, 'loadDocumentBy').mockResolvedValue(undefined);
-
-    // When
-    const result = await epicResolver.Epic!.document!(
-      epicParent,
-      {},
-      contextSimpleUserFiligran2,
-      GRAPHQL_RESOLVE_INFO
+    const epicB = {
+      id: uuidv4() as EpicId,
+      document_id: documentIdB,
+    } as unknown as Epic;
+    const documentA: DocumentWithUseCases = TestHelper.document.build({
+      id: documentIdA,
+      file_name: 'a.png',
+    });
+    const documentB: DocumentWithUseCases = {
+      ...documentA,
+      id: documentIdB,
+      file_name: 'b.png',
+    };
+    const batchLoadFn = vi.fn(
+      async (
+        keys: readonly string[]
+      ): Promise<(DocumentWithUseCases | null)[]> =>
+        keys.map((key) => (key === documentIdA ? documentA : documentB))
     );
+    const originalLoader =
+      contextSimpleUserFiligran2.dataLoaders.document.documentByIdLoader;
+    contextSimpleUserFiligran2.dataLoaders.document.documentByIdLoader =
+      new DataLoader(batchLoadFn);
 
-    // Then
-    expect(result).toBeNull();
+    try {
+      // When
+      const [resultA, resultB] = await Promise.all([
+        epicResolver.Epic!.document!(
+          epicA,
+          {},
+          contextSimpleUserFiligran2,
+          GRAPHQL_RESOLVE_INFO
+        ),
+        epicResolver.Epic!.document!(
+          epicB,
+          {},
+          contextSimpleUserFiligran2,
+          GRAPHQL_RESOLVE_INFO
+        ),
+      ]);
+
+      // Then
+      expect(batchLoadFn).toHaveBeenCalledTimes(1);
+      expect(batchLoadFn).toHaveBeenCalledWith([documentIdA, documentIdB]);
+      expect(resultA).toMatchObject({ id: documentIdA, file_name: 'a.png' });
+      expect(resultB).toMatchObject({ id: documentIdB, file_name: 'b.png' });
+    } finally {
+      contextSimpleUserFiligran2.dataLoaders.document.documentByIdLoader =
+        originalLoader;
+    }
   });
 });
 
