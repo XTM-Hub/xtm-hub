@@ -35,6 +35,9 @@ test.describe('XTM Platform Roadmap', () => {
       title: 'Title3',
       short_description: 'Short description for another epic',
       description: 'This is a second epic',
+      problem_to_solve: 'Problem of the second epic',
+      proposed_solution: 'Solution of the second epic',
+      expected_value: 'Value of the second epic',
       products: ['openaev'],
       active: true,
       timeline: 'next',
@@ -52,6 +55,9 @@ test.describe('XTM Platform Roadmap', () => {
         title: 'Title',
         short_description: 'Short description',
         description: 'This is a test epic',
+        problem_to_solve: 'Users lose track of indicators',
+        proposed_solution: 'Watch them around the clock',
+        expected_value: 'Indicators triaged in time',
         edition_type: 'EE',
       });
 
@@ -61,17 +67,34 @@ test.describe('XTM Platform Roadmap', () => {
 
       await expect(page.getByText(/^Title$/)).toBeVisible();
       await expect(page.getByText(/^EE$/)).toBeVisible();
+
+      const detail = await xtmPlatformRoadmapPage.openEpicDetail('Title');
+      await expect(detail.getByText('Short description')).toBeVisible();
+      await expect(
+        detail.getByRole('heading', { level: 3, name: 'Problem to Solve' })
+      ).toBeVisible();
+      await expect(
+        detail.getByText('Users lose track of indicators')
+      ).toBeVisible();
+      await xtmPlatformRoadmapPage.closeEpicDetail();
     });
     await test.step('Update an epic', async () => {
       await xtmPlatformRoadmapPage.updateEpic({
         title: 'TitleModified',
-        description: 'This is a test epicModified',
+        description: '',
+        problem_to_solve: 'Problem modified',
         draft: false,
       });
       await expect(
         page.getByRole('button').filter({ hasText: 'OpenCTI (1)' })
       ).toBeVisible();
       await expect(page.getByText('TitleModified')).toBeVisible();
+
+      const detail =
+        await xtmPlatformRoadmapPage.openEpicDetail('TitleModified');
+      await expect(detail.getByText('This is a test epic')).not.toBeVisible();
+      await expect(detail.getByText('Problem modified')).toBeVisible();
+      await xtmPlatformRoadmapPage.closeEpicDetail();
     });
     await test.step('Delete an epic', async () => {
       await xtmPlatformRoadmapPage.deleteEpic();
@@ -242,7 +265,19 @@ test.describe('XTM Platform Roadmap', () => {
     await test.step('It should display details', async () => {
       await page.getByText('Title3').click();
       await expect(
+        page.getByText('Short description for another epic', { exact: true })
+      ).toBeVisible();
+      await expect(
         page.getByText('This is a second epic', { exact: true })
+      ).toBeVisible();
+      await expect(
+        page.getByText('Problem of the second epic', { exact: true })
+      ).toBeVisible();
+      await expect(
+        page.getByText('Solution of the second epic', { exact: true })
+      ).toBeVisible();
+      await expect(
+        page.getByText('Value of the second epic', { exact: true })
       ).toBeVisible();
     });
   }
