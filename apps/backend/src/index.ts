@@ -25,6 +25,7 @@ import { PortalContext } from './model/portal-context';
 import { UserLoadUserBy } from './model/user';
 import { DeploymentRequestDataLoader } from './modules/deployment/deployment.dataloader';
 import { DocumentDataLoader } from './modules/document/document.dataloader';
+import { FeatureVotingDataLoader } from './modules/feature-voting/feature-voting.dataloader';
 import { NewsFeedDataLoader } from './modules/news-feed/news-feed.dataloader';
 import { RegistrationDataLoader } from './modules/registration/registration.dataloader';
 import { initAuthPlatform } from './modules/security-management/authentication/auth-platform';
@@ -352,6 +353,7 @@ const middlewareExpress = expressMiddleware(server, {
       dataLoaders: {
         deploymentRequest: DeploymentRequestDataLoader.create(),
         document: DocumentDataLoader.create(),
+        featureVoting: FeatureVotingDataLoader.create(),
         newsFeed: NewsFeedDataLoader.create(),
         registration: RegistrationDataLoader.create(),
         serviceInstance: ServiceInstanceDataLoader.create(),
