@@ -43,6 +43,26 @@ type UserProfile = Pick<
   UserInitializer,
   'email' | 'first_name' | 'last_name' | 'picture'
 >;
+
+const notifyHubspotInvite = async (user: User): Promise<void> => {
+  await hubspotInviteUserHook(user);
+};
+
+const reinviteExpiredUser = async (user: User): Promise<User> =>
+  withTransaction(async () => {
+    const reinvitedUser = await UserDomain.updateUser(user.id, {
+      status: UserAccountStatus.Waiting,
+      invitation_date: new Date(),
+    });
+    if (!reinvitedUser) {
+      throw UnknownError(UnknownErrorCode.EditUserError);
+    }
+
+    await notifyHubspotInvite(reinvitedUser);
+
+    return reinvitedUser;
+  });
+
 export const UserProvisioningDomain = {
   createUser: async (
     data: UserProfile & {
@@ -110,11 +130,22 @@ export const UserProvisioningDomain = {
     selected_organization_id?: OrganizationId;
   }): Promise<{ user: User; existed: boolean }> => {
     const [existingUser] = await UserDomain.loadUser({ email: data.email });
+    const isInviteFlagEnabled = isFeatureEnabled(FeatureFlag.TrialInvite);
+
     if (existingUser) {
+      if (
+        isInviteFlagEnabled &&
+        existingUser.status === UserAccountStatus.Expired
+      ) {
+        return {
+          user: await reinviteExpiredUser(existingUser),
+          existed: true,
+        };
+      }
+
       return { user: existingUser, existed: true };
     }
 
-    const isInviteFlagEnabled = isFeatureEnabled(FeatureFlag.TrialInvite);
     const user = await withTransaction(async () => {
       const createdUser = await UserProvisioningDomain.createUser({
         ...data,
@@ -125,7 +156,7 @@ export const UserProvisioningDomain = {
       });
 
       if (isInviteFlagEnabled) {
-        await hubspotInviteUserHook(createdUser);
+        await notifyHubspotInvite(createdUser);
       }
 
       return createdUser;

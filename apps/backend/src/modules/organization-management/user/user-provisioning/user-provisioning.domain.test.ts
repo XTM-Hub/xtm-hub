@@ -333,5 +333,77 @@ describe('userProvisioningDomain', () => {
         expect.objectContaining({ id: user.id, email })
       );
     });
+
+    it('should not reset an expired user status or notify Hubspot when the TRIAL_INVITE feature flag is disabled', async () => {
+      vi.spyOn(FeatureFlagUtil, 'isFeatureEnabled').mockReturnValue(false);
+      const hubspotSpy = vi
+        .spyOn(Hubspot, 'hubspotInviteUserHook')
+        .mockResolvedValue();
+      const existingUser = await TestHelper.user.insert({
+        email: `find-or-create-${uuidv4()}@filigran.io`,
+        status: UserAccountStatus.Expired,
+        invitation_date: new Date('2020-01-01'),
+      });
+
+      const { user, existed } = await UserProvisioningDomain.findOrCreateUser({
+        email: existingUser.email,
+      });
+
+      expect(existed).toBe(true);
+      expect(user.status).toBe(UserAccountStatus.Expired);
+      expect(user.invitation_date).toEqual(existingUser.invitation_date);
+      expect(hubspotSpy).not.toHaveBeenCalled();
+    });
+
+    it.each([UserAccountStatus.Waiting, UserAccountStatus.Invited, null])(
+      'should leave the user untouched and not notify Hubspot when re-invited with status=%s (not expired)',
+      async (status) => {
+        vi.spyOn(FeatureFlagUtil, 'isFeatureEnabled').mockReturnValue(true);
+        const hubspotSpy = vi
+          .spyOn(Hubspot, 'hubspotInviteUserHook')
+          .mockResolvedValue();
+        const existingUser = await TestHelper.user.insert({
+          email: `find-or-create-${uuidv4()}@filigran.io`,
+          status,
+          invitation_date: null,
+        });
+
+        const { user, existed } = await UserProvisioningDomain.findOrCreateUser(
+          {
+            email: existingUser.email,
+          }
+        );
+
+        expect(existed).toBe(true);
+        expect(user.status).toBe(status);
+        expect(user.invitation_date).toBeNull();
+        expect(hubspotSpy).not.toHaveBeenCalled();
+      }
+    );
+
+    it('should reset an expired user to waiting, set a new invitation date and notify Hubspot when re-invited with the TRIAL_INVITE feature flag enabled', async () => {
+      vi.spyOn(FeatureFlagUtil, 'isFeatureEnabled').mockReturnValue(true);
+      const hubspotSpy = vi
+        .spyOn(Hubspot, 'hubspotInviteUserHook')
+        .mockResolvedValue();
+      const existingUser = await TestHelper.user.insert({
+        email: `find-or-create-${uuidv4()}@filigran.io`,
+        status: UserAccountStatus.Expired,
+        invitation_date: new Date('2020-01-01'),
+        selected_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+      });
+
+      const { user, existed } = await UserProvisioningDomain.findOrCreateUser({
+        email: existingUser.email,
+      });
+
+      expect(existed).toBe(true);
+      expect(user.status).toBe(UserAccountStatus.Waiting);
+      expect(user.invitation_date).toBeInstanceOf(Date);
+      expect(user.invitation_date).not.toEqual(existingUser.invitation_date);
+      expect(hubspotSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ id: existingUser.id })
+      );
+    });
   });
 });
