@@ -1,5 +1,11 @@
 ---
-applyTo: '.github/workflows/**,xtm-hub-dev/**,chart/**,**/Dockerfile,**/*.Dockerfile,.dockerignore'
+paths:
+  - ".github/workflows/**"
+  - "xtm-hub-dev/**"
+  - "chart/**"
+  - "**/Dockerfile"
+  - "**/*.Dockerfile"
+  - ".dockerignore"
 ---
 
 # CI, Docker & Deployment Instructions

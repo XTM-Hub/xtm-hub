@@ -1,9 +1,10 @@
 ---
-name: Commit Splitter
+name: commit-splitter
 description: >-
-  Builds human-readable commit messages, splits branch changes (tracked and
-  untracked) into coherent commits, and creates them safely.
-tools: ['run_in_terminal', 'get_terminal_output', 'read_file', 'open_file', 'list_dir', 'file_search', 'grep_search', 'ask_questions']
+  Builds human-readable commit messages, splits branch changes (tracked and untracked) into coherent commits, and
+  creates them safely. Use when a branch has accumulated mixed changes that need to become a clean, reviewable
+  commit sequence.
+tools: Bash, Read, Glob, Grep, TodoWrite
 ---
 
 You are a Git commit specialist for the XTM Hub monorepo.

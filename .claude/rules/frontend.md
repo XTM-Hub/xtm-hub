@@ -1,5 +1,6 @@
 ---
-applyTo: 'apps/frontend/**'
+paths:
+  - "apps/frontend/**"
 ---
 
 # Frontend Instructions (`apps/frontend`)
@@ -79,6 +80,19 @@ for buttons, inputs, tables, dialogs and the like. Fall back to raw TailwindCSS 
 - Forms: `react-hook-form` + `zod` (v4)
 - Markdown: `@uiw/react-md-editor`
 
+### Tightening an AutoForm schema
+
+`AutoForm` takes one `zod` schema and validates it in full on submit, and the same component serves both the create
+and the edit path — the convention is `values: { field: entity?.field ?? <default> }` (`EpicForm`, `CompetitorForm`,
+`OpenctiPlaybookForm`, `TaxiiFeedForm`). **Adding a constraint to a field (`.min(1)`, `.max()`, `.regex()`) therefore
+applies retroactively to every stored record loaded into that form.** A row that does not satisfy the new rule can no
+longer be saved at all — not even to change an unrelated field — and the user gets a blocking error on a field they
+never touched.
+
+Before tightening a field, check what the already-stored rows hold and backfill them in the same change, or apply the
+constraint to creation only. A `zod` rule is also not a constraint on the data: the resolver and the column accept
+anything the browser didn't filter, so validate server-side too when it matters.
+
 ## Data fetching
 
 The backend is reached through `proxy.ts` (Next.js 16's convention file, renamed from `middleware.ts`), which
@@ -86,7 +100,7 @@ delegates GraphQL/auth/document routes to `src/utils/middleware/graphql-request.
 `SERVER_HTTP_API` (default `http://localhost:4002`).
 
 **For new work, use `@tanstack/react-query`**, not Relay. See
-[`graphql.instructions.md`](graphql.instructions.md#tanstackreact-query-conventions-new-frontend-work) for the
+[`graphql.md`](graphql.md#tanstackreact-query-conventions-new-frontend-work) for the
 operation-file convention, the codegen command, and the client/cache-invalidation wiring.
 
 **Never introduce new Relay usage, even for a small addition to an existing Relay page** — add it as a
@@ -101,7 +115,7 @@ a component's last Relay usage, confirm nothing else still imports its generated
 deleting them.
 
 Existing Relay pages: see
-[`graphql.instructions.md`](graphql.instructions.md#relay-conventions-existing-pages-only) for the file convention
+[`graphql.md`](graphql.md#relay-conventions-existing-pages-only) for the file convention
 and regeneration command.
 
 Server-side fetches go through `src/relay/server-portal-api-fetch.ts`, which forwards Next.js cookies.
@@ -131,7 +145,7 @@ source of truth) — never hardcode copy in a component. `yarn i18n:check` verif
 
 ## Tests
 
-See [`testing.instructions.md`](testing.instructions.md) for structure, mocking policy and the frontend-specific
+See [`testing.md`](testing.md) for structure, mocking policy and the frontend-specific
 tooling (`testRender`, `next-intl` mocking, `@tanstack/react-query` vs Relay mocking, pure-utility extraction).
 
 ## Environment variables

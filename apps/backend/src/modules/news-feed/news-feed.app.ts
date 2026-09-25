@@ -18,7 +18,10 @@ import { PlatformConfigurationDomain } from '../registration/platform-configurat
 import { RegistrationDomain } from '../registration/registration.domain';
 import { useCaseDomain } from '../use-case/use-case.domain';
 import { NewsFeedDomain } from './news-feed.domain';
-import { doesPlatformSupportNewsFeed } from './news-feed.helper';
+import {
+  doesPlatformSupportNewsFeed,
+  NewsFeedHelper,
+} from './news-feed.helper';
 import { newsFeedConfigurationMapping } from './news-feed.model';
 
 const getSupportedPlatformIds = (
@@ -96,14 +99,6 @@ export const NewsFeedApp = {
     };
   },
 
-  isNewsFeedConfigured: (
-    serviceDefinitionIdentifier: ServiceDefinitionIdentifier
-  ): boolean => {
-    return (
-      newsFeedConfigurationMapping[serviceDefinitionIdentifier] !== undefined
-    );
-  },
-
   createResourceNewsFeedItem: async ({
     document,
     serviceDefinitionIdentifier,
@@ -111,8 +106,10 @@ export const NewsFeedApp = {
     document: Document;
     serviceDefinitionIdentifier: ServiceDefinitionIdentifier;
   }): Promise<void> => {
-    const newsFeedConfiguration =
-      newsFeedConfigurationMapping[serviceDefinitionIdentifier];
+    const newsFeedConfiguration = NewsFeedHelper.getNewsFeedConfiguration(
+      serviceDefinitionIdentifier,
+      document
+    );
     if (!newsFeedConfiguration) {
       return;
     }
@@ -142,8 +139,10 @@ export const NewsFeedApp = {
     document: Document;
     serviceDefinitionIdentifier: ServiceDefinitionIdentifier;
   }): Promise<void> => {
-    const newsFeedConfiguration =
-      newsFeedConfigurationMapping[serviceDefinitionIdentifier];
+    const newsFeedConfiguration = NewsFeedHelper.getNewsFeedConfiguration(
+      serviceDefinitionIdentifier,
+      document
+    );
     if (!newsFeedConfiguration) {
       return;
     }
@@ -178,7 +177,12 @@ export const NewsFeedApp = {
     updatedDocument: Document;
     serviceDefinitionIdentifier: ServiceDefinitionIdentifier;
   }): Promise<void> => {
-    if (!NewsFeedApp.isNewsFeedConfigured(serviceDefinitionIdentifier)) {
+    if (
+      !NewsFeedHelper.getNewsFeedConfiguration(
+        serviceDefinitionIdentifier,
+        updatedDocument
+      )
+    ) {
       return;
     }
 

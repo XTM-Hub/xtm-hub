@@ -20,8 +20,11 @@ import { UserId } from '../src/model/kanel/public/User';
 import { PortalContext } from '../src/model/portal-context';
 import type { DeploymentRequestDataLoaders } from '../src/modules/deployment/deployment.dataloader';
 import type { DocumentDataLoaders } from '../src/modules/document/document.dataloader';
+import type { FeatureVotingDataLoaders } from '../src/modules/feature-voting/feature-voting.dataloader';
 import type { NewsFeedDataLoaders } from '../src/modules/news-feed/news-feed.dataloader';
+import type { RegistrationDataLoaders } from '../src/modules/registration/registration.dataloader';
 import type { ServiceInstanceDataLoaders } from '../src/modules/service/instance/service-instance.dataloader';
+import type { SubscriptionDataLoaders } from '../src/modules/subscription/subscription.dataloader';
 import {
   CAPABILITY_BYPASS,
   PLATFORM_ORGANIZATION_UUID,
@@ -331,6 +334,14 @@ export const contextRegistererUserSecondOrga: PortalContext = {
     deploymentRequest: {
       childrenByParentLoader: { load: () => Promise.resolve([]) },
     } as unknown as DeploymentRequestDataLoaders,
+    registration: {
+      registeredPlatformByServiceInstanceLoader: {
+        load: () => Promise.resolve(null),
+      },
+    } as unknown as RegistrationDataLoaders,
+    serviceInstance: {
+      serviceInstanceByIdLoader: { load: () => Promise.resolve(undefined) },
+    } as unknown as ServiceInstanceDataLoaders,
   },
 } as unknown as PortalContext;
 
@@ -407,6 +418,7 @@ export const contextSimpleUserFiligran2: PortalContext = {
       childrenByParentLoader: { load: () => Promise.resolve([]) },
     } as unknown as DeploymentRequestDataLoaders,
     document: {
+      documentByIdLoader: { load: () => Promise.resolve(null) },
       uploaderLoader: { load: () => Promise.resolve(null) },
       uploaderOrganizationLoader: { load: () => Promise.resolve(null) },
       childrenDocumentsLoader: { load: () => Promise.resolve([]) },
@@ -419,9 +431,18 @@ export const contextSimpleUserFiligran2: PortalContext = {
         load: () => Promise.resolve(null),
       },
     } as unknown as DocumentDataLoaders,
+    featureVoting: {
+      roundFeaturesByRoundIdLoader: { load: () => Promise.resolve([]) },
+      useCasesByFeatureIdLoader: { load: () => Promise.resolve([]) },
+    } as unknown as FeatureVotingDataLoaders,
     newsFeed: {
       metadataByNewsFeedItemIdLoader: { load: () => Promise.resolve([]) },
     } as unknown as NewsFeedDataLoaders,
+    registration: {
+      registeredPlatformByServiceInstanceLoader: {
+        load: () => Promise.resolve(null),
+      },
+    } as unknown as RegistrationDataLoaders,
     serviceInstance: {
       linksByServiceInstanceLoader: { load: () => Promise.resolve([]) },
       serviceDefinitionByServiceInstanceLoader: {
@@ -433,7 +454,25 @@ export const contextSimpleUserFiligran2: PortalContext = {
       subscriptionsByServiceInstanceLoader: {
         load: () => Promise.resolve([]),
       },
+      serviceInstanceByIdLoader: { load: () => Promise.resolve(undefined) },
     } as unknown as ServiceInstanceDataLoaders,
+    subscription: {
+      serviceInstanceBySubscriptionServiceInstanceIdLoader: {
+        load: () => Promise.resolve(undefined),
+      },
+      organizationBySubscriptionOrganizationIdLoader: {
+        load: () => Promise.resolve(undefined),
+      },
+      subscriptionCapabilitiesBySubscriptionIdLoader: {
+        load: () => Promise.resolve([]),
+      },
+      userServicesBySubscriptionIdLoader: {
+        load: () => Promise.resolve([]),
+      },
+      serviceCapabilityBySubscriptionCapabilityIdLoader: {
+        load: () => Promise.resolve(undefined),
+      },
+    } as unknown as SubscriptionDataLoaders,
   },
 } as unknown as PortalContext;
 

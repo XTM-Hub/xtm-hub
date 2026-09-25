@@ -1,5 +1,9 @@
 ---
-applyTo: 'apps/backend/src/migrations/**,apps/backend/src/es-migrations/**,apps/backend/src/seeds/**,apps/backend/tests/seeds/**'
+paths:
+  - "apps/backend/src/migrations/**"
+  - "apps/backend/src/es-migrations/**"
+  - "apps/backend/src/seeds/**"
+  - "apps/backend/tests/seeds/**"
 ---
 
 # Migration Instructions
@@ -8,11 +12,16 @@ Migrations are append-only history. Once a migration has run anywhere beyond you
 new one.
 
 For how to write and scaffold migrations themselves, follow
-[`.github/skills/knex-migration/SKILL.md`](../skills/knex-migration/SKILL.md) (Postgres — table naming, `.alter()`
+[`.claude/skills/knex-migration/SKILL.md`](../skills/knex-migration/SKILL.md) (Postgres — table naming, `.alter()`
 gotcha, `down` correctness) and
-[`.github/skills/elasticsearch-migration/SKILL.md`](../skills/elasticsearch-migration/SKILL.md) (Elasticsearch —
+[`.claude/skills/elasticsearch-migration/SKILL.md`](../skills/elasticsearch-migration/SKILL.md) (Elasticsearch —
 mapping changes, isolation from app code). This file covers the surrounding pieces those skills don't: seeds and the
 CI coupling.
+
+## Searchable columns
+
+A migration that adds a text column, or moves text from one column to another, does not make that text searchable —
+see [`backend.md`](backend.md#free-text-search) for the allow-list that governs it.
 
 ## Seeds
 
@@ -22,5 +31,5 @@ the test seeds too, or integration tests will fail on missing fixtures.
 
 ## CI coupling
 
-See [`ci.instructions.md`](ci.instructions.md) for the exact copy command. A migration that only works when run
+See [`ci.md`](ci.md) for the exact copy command. A migration that only works when run
 from `apps/backend` will break the e2e job.

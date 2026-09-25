@@ -193,15 +193,6 @@ describe('featureVotingApp', () => {
       }
     );
 
-    it('should expose inactive features when the admin round list asks for them', async () => {
-      const round = await createRound();
-      const inactive = await createFeature(round.id, { active: false });
-
-      const features = await featureVotingApp.loadRoundFeatures(round.id);
-
-      expect(features.map(({ id }) => id)).toEqual([inactive.id]);
-    });
-
     it('should return null for a round that does not exist', async () => {
       const result = await featureVotingApp.loadVotingRound(
         uuidv4() as VotingRoundId

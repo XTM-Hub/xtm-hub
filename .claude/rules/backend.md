@@ -1,5 +1,6 @@
 ---
-applyTo: 'apps/backend/**'
+paths:
+  - "apps/backend/**"
 ---
 
 # Backend Instructions (`apps/backend`)
@@ -86,6 +87,18 @@ ambient transaction implicitly. Do not open your own connection.
 
 `knexconfig.ts` holds the base connection; `knexfile.ts` layers on migrations, seeds, security and pagination.
 
+### Free-text search
+
+`searchTerm` on a paginated query is served by `applySearch` in `knexfile.ts`, which builds its `ILIKE` clauses from
+one global allow-list — `searchAttributes` (`name`, `file_name`, `description`, `short_description`, `email`,
+`first_name`, `last_name`, `country`, `title`) — intersected with the columns the table actually has. **A new text
+column is not searchable until its name is added to that list.** Declaring it on the GraphQL type and in the Kanel
+model changes nothing.
+
+This bites hardest when a migration moves existing text out of a searchable column into a new one: the content stays
+visible in the UI and silently stops matching any search. Adding a name to `searchAttributes` only affects tables that
+own a column of that name, so the change stays table-local in practice.
+
 ## Configuration
 
 `node-config` reads `config/*.json` (`default`, `development`, `production`, `staging`, `local`). Environment
@@ -123,5 +136,5 @@ query/mutation in `body:graphql` and its variables in `body:graphql:vars`; `type
 
 ## Tests
 
-See [`testing.instructions.md`](testing.instructions.md) for structure, mocking policy and backend-specific tooling
+See [`testing.md`](testing.md) for structure, mocking policy and backend-specific tooling
 (`test_database`, `fileParallelism: false`).

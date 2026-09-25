@@ -20,6 +20,7 @@ import DocumentMetadata, {
 import { ServiceInstanceId } from '../../src/model/kanel/public/ServiceInstance';
 import { UserId } from '../../src/model/kanel/public/User';
 import { DocumentApp } from '../../src/modules/document/document.app';
+import { Document as DocumentWithUseCases } from '../../src/modules/document/document.helper';
 import { Upload } from '../../src/modules/document/document.uploads.helper';
 import { INTEGRATION_SERVICE_INSTANCE_ID } from '../../src/modules/shareable-resource/opencti/integration/integration.model';
 import { TEST_ORGANIZATIONS } from '../tests.const';
@@ -38,6 +39,33 @@ const mockUpload = {
 
 export const TestDocumentHelper = {
   document: {
+    build: (
+      overrides: Partial<DocumentWithUseCases> = {}
+    ): DocumentWithUseCases => ({
+      id: 'doc-1' as DocumentId,
+      uploader_id: null,
+      service_instance_id: null,
+      description: null,
+      file_name: null,
+      minio_name: null,
+      active: true,
+      created_at: new Date('2024-01-01T00:00:00Z'),
+      remover_id: null,
+      mime_type: null,
+      name: null,
+      updated_at: null,
+      updater_id: null,
+      short_description: null,
+      slug: null,
+      uploader_organization_id: null,
+      type: 'test-type',
+      source_type: null,
+      is_decommissioned: false,
+      version: null,
+      tags: [],
+      use_cases: [],
+      ...overrides,
+    }),
     createWholeDocument: async ({
       name = 'myCsvFeed',
       description = 'description',

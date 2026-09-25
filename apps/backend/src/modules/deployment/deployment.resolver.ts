@@ -4,15 +4,11 @@ import {
   QueryDeploymentRequestsArgs,
   QueryDeploymentRequestsListArgs,
   Resolvers,
-  ServiceInstance,
 } from '../../__generated__/resolvers-types';
 import { DeploymentRequestId } from '../../model/kanel/public/DeploymentRequest';
-import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { UnknownErrorCode } from '../../utils/error/error.code';
 import { mapToGraphQLError } from '../../utils/error/error.mapping';
 import { createRelayIdScalar } from '../../utils/scalar.util';
-import { RegistrationApp } from '../registration/registration.app';
-import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { DeploymentApp } from './deployment.app';
 import { DeploymentRequestDomain } from './deployment.domain';
 
@@ -24,17 +20,16 @@ const resolvers: Resolvers = {
       context.dataLoaders.deploymentRequest.childrenByParentLoader.load(
         id as DeploymentRequestId
       ),
-    registered_platform: ({ service_instance_id }) =>
-      RegistrationApp.loadRegisteredPlatform(
-        service_instance_id as ServiceInstanceId
+    registered_platform: ({ service_instance_id }, _, context) =>
+      context.dataLoaders.registration.registeredPlatformByServiceInstanceLoader.load(
+        service_instance_id
       ),
-    service_instance: async ({ service_instance_id }) => {
-      const serviceInstance = await ServiceInstanceDomain.loadServiceInstanceBy(
-        { id: service_instance_id as ServiceInstanceId }
-      );
-      return serviceInstance
-        ? (serviceInstance as unknown as ServiceInstance)
-        : null;
+    service_instance: async ({ service_instance_id }, _, context) => {
+      const serviceInstance =
+        await context.dataLoaders.serviceInstance.serviceInstanceByIdLoader.load(
+          service_instance_id
+        );
+      return serviceInstance ?? null;
     },
   },
   Query: {

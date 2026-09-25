@@ -154,6 +154,17 @@ export const RegistrationDomain = {
     );
   },
 
+  loadRegisteredPlatformsByServiceInstanceIds: async (
+    serviceInstanceIds: readonly ServiceInstanceId[]
+  ): Promise<DomainRegisteredPlatform[]> => {
+    if (serviceInstanceIds.length === 0) {
+      return [];
+    }
+    return getRegisteredPlatformsDataQuery().whereIn('ServiceInstance.id', [
+      ...serviceInstanceIds,
+    ]);
+  },
+
   loadAllActiveRegisteredPlatformsByPlatformIdentifier: async (
     platformIdentifier: PlatformIdentifier
   ): Promise<DomainRegisteredPlatform[]> => {

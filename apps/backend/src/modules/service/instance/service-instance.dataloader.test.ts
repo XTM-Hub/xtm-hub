@@ -8,6 +8,7 @@ import {
   TEST_ORGANIZATIONS,
 } from '../../../../tests/tests.const';
 import { requestContext } from '../../../context/request.context';
+import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import { ServiceInstanceDataLoader } from './service-instance.dataloader';
 import { organizationServiceInstanceKey } from './service-instance.keys';
 
@@ -90,5 +91,43 @@ describe('batchLoadSubscriptions', () => {
 
     // Then
     expect(subscriptions).toEqual([]);
+  });
+});
+
+describe('batchLoadServiceInstances', () => {
+  it('should return the matching service instances in the order of the requested ids', async () => {
+    // When
+    const [integrations, vault] =
+      await ServiceInstanceDataLoader.batchLoadServiceInstances([
+        SERVICES.INSTANCES.INTEGRATIONS.ID,
+        SERVICES.INSTANCES.VAULT.ID,
+      ]);
+
+    // Then
+    expect(integrations).toMatchObject({
+      id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+    });
+    expect(vault).toMatchObject({ id: SERVICES.INSTANCES.VAULT.ID });
+  });
+
+  it('should return undefined for an id that does not match a service instance', async () => {
+    // When
+    const [serviceInstance] =
+      await ServiceInstanceDataLoader.batchLoadServiceInstances([
+        'ffffffff-ffff-ffff-ffff-ffffffffffff' as ServiceInstanceId,
+      ]);
+
+    // Then
+    expect(serviceInstance).toBeUndefined();
+  });
+
+  it('should return an empty array when no ids are requested', async () => {
+    // When
+    const result = await ServiceInstanceDataLoader.batchLoadServiceInstances(
+      []
+    );
+
+    // Then
+    expect(result).toEqual([]);
   });
 });
