@@ -321,6 +321,76 @@ describe('serviceGroupDomain', () => {
       // Then
       expect(result).toEqual([]);
     });
+
+    it('should return parentId null for a standalone (non-bundle) expired trial', async () => {
+      // Given
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() - 8);
+      const deploymentRequest =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          {
+            hub_status: DeploymentRequestHubStatus.Expired,
+            end_date: endDate,
+          }
+        );
+      trackedServiceInstanceIds.push(deploymentRequest.service_instance_id);
+
+      const groupId = uuidv4() as ServiceGroupId;
+      await TestHelper.serviceGroup.create({
+        id: groupId,
+        name: 'Admin',
+        service_instance_id: deploymentRequest.service_instance_id,
+      });
+
+      // When
+      const result = await ServiceGroupDomain.loadGroupsForExpiredTrials();
+
+      // Then
+      expect(result).toMatchObject([
+        {
+          deploymentRequestId: deploymentRequest.id,
+          parentId: null,
+        },
+      ]);
+    });
+
+    it('should return the bundle parentId for a bundle product expired trial', async () => {
+      // Given
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() - 8);
+      const { bundle, children } =
+        await TestHelper.deploymentRequest.createBundle({
+          children: [
+            {
+              hub_status: DeploymentRequestHubStatus.Expired,
+              end_date: endDate,
+            },
+          ],
+        });
+      const [child] = children;
+      trackedServiceInstanceIds.push(
+        bundle.service_instance_id,
+        child!.service_instance_id
+      );
+
+      const groupId = uuidv4() as ServiceGroupId;
+      await TestHelper.serviceGroup.create({
+        id: groupId,
+        name: 'Admin',
+        service_instance_id: child!.service_instance_id,
+      });
+
+      // When
+      const result = await ServiceGroupDomain.loadGroupsForExpiredTrials();
+
+      // Then
+      expect(result).toMatchObject([
+        {
+          deploymentRequestId: child!.id,
+          parentId: bundle.id,
+        },
+      ]);
+    });
   });
 
   describe('loadServiceGroupsByServiceInstanceAndUser', () => {

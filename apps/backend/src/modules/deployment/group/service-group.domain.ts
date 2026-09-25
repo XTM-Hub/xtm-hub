@@ -74,6 +74,31 @@ export const ServiceGroupDomain = {
       .whereIn('service_instance_id', serviceInstanceIds);
   },
 
+  loadServiceInstanceIdsWithUserMembership: async (
+    userIds: UserId[],
+    serviceInstanceIds: ServiceInstanceId[]
+  ): Promise<{ user_id: UserId; service_instance_id: ServiceInstanceId }[]> => {
+    if (!userIds.length || !serviceInstanceIds.length) {
+      return [];
+    }
+
+    return db<{ user_id: UserId; service_instance_id: ServiceInstanceId }[]>(
+      'ServiceGroup_User'
+    )
+      .join(
+        'ServiceGroup',
+        'ServiceGroup.id',
+        '=',
+        'ServiceGroup_User.group_id'
+      )
+      .whereIn('ServiceGroup_User.user_id', userIds)
+      .whereIn('ServiceGroup.service_instance_id', serviceInstanceIds)
+      .distinct(
+        'ServiceGroup_User.user_id',
+        'ServiceGroup.service_instance_id'
+      );
+  },
+
   loadServiceGroupsByServiceInstanceAndUser: async (
     serviceInstanceId: ServiceInstanceId,
     userId: UserId
@@ -171,6 +196,7 @@ export const ServiceGroupDomain = {
       deploymentRequestId: DeploymentRequestId;
       groupId: ServiceGroupId;
       serviceInstanceId: ServiceInstanceId;
+      parentId: DeploymentRequestId | null;
     }[]
   > => {
     const sevenDaysAgo = new Date();
@@ -180,6 +206,7 @@ export const ServiceGroupDomain = {
       groupId: ServiceGroupId;
       deploymentRequestId: DeploymentRequestId;
       serviceInstanceId: ServiceInstanceId;
+      parentId: DeploymentRequestId | null;
     }>('ServiceGroup')
       .join(
         'DeploymentRequest',
@@ -200,7 +227,8 @@ export const ServiceGroupDomain = {
       .select(
         'ServiceGroup.id as groupId',
         'DeploymentRequest.id as deploymentRequestId',
-        'ServiceGroup.service_instance_id as serviceInstanceId'
+        'ServiceGroup.service_instance_id as serviceInstanceId',
+        'DeploymentRequest.parent_id as parentId'
       );
   },
 
