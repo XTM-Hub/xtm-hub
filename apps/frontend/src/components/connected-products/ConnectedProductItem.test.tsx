@@ -1,6 +1,7 @@
 import { ConnectedPlatform } from '@/components/connected-products/useConnectedPlatforms';
 import testRender from '@/utils/test/test-render';
 import {
+  DeploymentRequestDeploymentType,
   PlatformContract,
   ServiceDefinitionIdentifier,
 } from '@graphql/generated';
@@ -25,6 +26,7 @@ const buildPlatform = (
     start_date: null,
     service_instance: { id: 'service-instance-1', name: 'instance' },
   },
+  deployment_request: null,
   ...overrides,
 });
 
@@ -126,7 +128,29 @@ describe('ConnectedProductItem', () => {
 
     expect(
       screen.getByLabelText('Header.ConnectedProducts.Details')
-    ).toBeInTheDocument();
+    ).toHaveAttribute(
+      'href',
+      '/app/service/openaev_registration/service-instance-1'
+    );
+  });
+
+  it('links bundle products to the XTM Platform trial details page', () => {
+    testRender(
+      <ConnectedProductItem
+        platform={buildPlatform({
+          contract: PlatformContract.Trial,
+          deployment_request: {
+            type: DeploymentRequestDeploymentType.Trial,
+            parent_id: 'bundle-deployment-request-1',
+          },
+        })}
+        t={t}
+      />
+    );
+
+    expect(
+      screen.getByLabelText('Header.ConnectedProducts.Details')
+    ).toHaveAttribute('href', '/app/service/xtm-platform-trial');
   });
 
   it('does not render the details button when no service instance is linked', () => {

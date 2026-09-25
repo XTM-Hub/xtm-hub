@@ -716,7 +716,7 @@ describe('bundle trial subjects', () => {
 describe('buildXtmPlatformTrialLink', () => {
   it('should link to the xtm platform trial page', () => {
     expect(buildXtmPlatformTrialLink()).toBe(
-      `${config.get('base_url_front')}/app/xtm-platform-trial`
+      `${config.get('base_url_front')}/app/service/xtm-platform-trial`
     );
   });
 });
