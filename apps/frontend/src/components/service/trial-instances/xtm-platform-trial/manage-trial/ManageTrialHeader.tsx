@@ -1,6 +1,7 @@
 'use client';
 
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
 import { ArrowUpwardIcon, DeleteIcon } from '@filigran/icon';
@@ -19,7 +20,6 @@ import {
 } from '@graphql/generated';
 import { bundleUserServiceGroupsKeys } from '@graphql/service-group/service-group.keys';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState } from 'react';
 import { TrialUserDialog } from './TrialUserDialog';
@@ -47,7 +47,7 @@ export const ManageTrialHeader = ({
   backHref = XTM_PLATFORM_TRIAL_PATH,
   backLabelKey = 'Service.Bundle.ManageTrial.BackButton',
 }: ManageTrialHeaderProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const queryClient = useQueryClient();
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   const [isEditUsersDialogOpen, setIsEditUsersDialogOpen] = useState(false);

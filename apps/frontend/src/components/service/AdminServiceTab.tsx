@@ -11,6 +11,7 @@ import {
   IconActionsLink,
 } from '@/components/ui/IconActions';
 import { SearchInput } from '@/components/ui/SearchInput';
+import { useTranslate } from '@/hooks/use-translate';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { APP_PATH } from '@/utils/path/constant';
@@ -20,7 +21,6 @@ import { serviceList_fragment$data } from '@generated/serviceList_fragment.graph
 import { serviceQuery } from '@generated/serviceQuery.graphql';
 import { servicesList_services$key } from '@generated/servicesList_services.graphql';
 import { ColumnDef, getSortedRowModel } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { RefetchFnDynamic } from 'react-relay';
 import { useDebounceCallback } from 'usehooks-ts';
@@ -41,7 +41,7 @@ export const ADMIN_SERVICE_TAB_SERVICE_DEFINITION_IDENTIFIERS = Object.values(
 );
 
 const AdminServiceTab = ({ serviceData, refetch }: AdminServiceTabProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [open, setOpen] = useState(false);
   const [editedService, setEditedService] =
     useState<serviceList_fragment$data>();

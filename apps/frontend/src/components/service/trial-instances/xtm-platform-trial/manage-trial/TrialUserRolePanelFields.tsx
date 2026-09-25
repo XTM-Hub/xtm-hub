@@ -1,8 +1,8 @@
 'use client';
 
+import { useTranslate } from '@/hooks/use-translate';
 import { FormControl, FormField, FormItem, FormLabel } from '@filigran/ui';
 import { PlatformIdentifier } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { Control } from 'react-hook-form';
 import {
   NO_ROLE_VALUE,
@@ -24,7 +24,7 @@ export const TrialUserRolePanelFields = ({
   bundleRolePanels,
   mixedRoleDefaults,
 }: TrialUserRolePanelFieldsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <div className="flex flex-col md:flex-row gap-l mt-l">
       {bundleRolePanels.map(({ platform, roles, defaultRole }) => {

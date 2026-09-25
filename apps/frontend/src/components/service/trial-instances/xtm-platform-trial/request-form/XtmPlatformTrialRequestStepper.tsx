@@ -1,6 +1,6 @@
 import { CountBadge } from '@/components/ui/CountBadge';
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
-import { useTranslations } from 'next-intl';
 
 interface XtmPlatformTrialRequestStepperProps {
   currentStepIndex: number;
@@ -11,7 +11,7 @@ const STEP_LABEL_KEYS = ['Pending', 'Provisioning', 'Active'];
 export const XtmPlatformTrialRequestStepper = ({
   currentStepIndex,
 }: XtmPlatformTrialRequestStepperProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <div className="flex items-start">

@@ -1,5 +1,6 @@
 import { RoadmapServiceInstance } from '@/components/admin/voting-round/use-roadmap-service-instances';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   Button,
   Form,
@@ -19,7 +20,6 @@ import {
 } from '@filigran/ui';
 import { VotingRoundTheme } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -70,7 +70,7 @@ const VotingRoundForm = ({
   handleDelete?: () => void;
   handleSubmit: (values: z.infer<typeof votingRoundFormSchema>) => void;
 }) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const form = useForm<z.infer<typeof votingRoundFormSchema>>({
     resolver: zodResolver(votingRoundFormSchema),
     defaultValues: {

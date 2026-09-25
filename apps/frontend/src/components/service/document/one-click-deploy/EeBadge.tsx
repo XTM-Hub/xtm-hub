@@ -1,3 +1,4 @@
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -5,7 +6,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 
 const EE_GRADIENT =
   'bg-[linear-gradient(90deg,#0FBCFF_-3.68%,#00F1BD_106.62%)]';
@@ -15,7 +15,7 @@ interface EeBadgeProps {
 }
 
 const EeBadgeVisual = ({ interactive }: { interactive: boolean }) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <span
       className={cn(
@@ -32,7 +32,7 @@ const EeBadgeVisual = ({ interactive }: { interactive: boolean }) => {
 };
 
 const EeBadge = ({ onClick }: EeBadgeProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   if (!onClick) {
     return (

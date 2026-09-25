@@ -323,6 +323,7 @@
       "INTEGRATION_TYPE_NOT_MANAGEABLE": "This type of integration is not manageable.",
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "This type of integration is not recognized",
       "INVALID_ACTION_SIZE": "An unknown error occurred",
+      "INVALID_CONTENT_TRANSLATION_KEY": "Invalid content key",
       "INVALID_EMAIL": "The email should be in valid format.",
       "INVALID_IMAGE_URL": "The image URL is not valid",
       "INVALID_MANIFEST_VERSION_FORMAT": "The manifest version format is invalid",
@@ -2364,5 +2365,36 @@
       "default": "Default",
       "thread": "Thread"
     }
+  },
+  "EditableText": {
+    "DialogTitle": "Edit content",
+    "KeyLabel": "Key: {contentKey}",
+    "ValueLabel": "{locale} value",
+    "OriginalValue": "Original: {value}",
+    "SaveDraft": "Save draft",
+    "EditionBannerLabel": "You are in edit mode — click an outlined text to edit it.",
+    "EditionBannerHiddenAreasLabel": "You are in edit mode — show the editable areas to edit a text.",
+    "ShowEditableAreas": "Show editable areas",
+    "EditionBannerExit": "Back to live site",
+    "MenuButton": "Edit Translations",
+    "MenuButtonExit": "Exit Edition Mode",
+    "DraftHint": "Saved as a draft: visitors only see it once published from the edit mode banner.",
+    "PendingChanges": "{count, plural, one {# unpublished change} other {# unpublished changes}}",
+    "Publish": "Publish",
+    "Discard": "Discard",
+    "PublishConfirmTitle": "{count, plural, one {Publish # change?} other {Publish # changes?}}",
+    "PublishConfirmDescription": "Every visitor will see the published texts.",
+    "DiscardConfirmTitle": "{count, plural, one {Discard # change?} other {Discard # changes?}}",
+    "DiscardConfirmDescription": "The drafts will be deleted for every editor. This cannot be undone.",
+    "ExitDialogTitle": "Unpublished changes",
+    "ExitDialogDescription": "{count, plural, one {# change is not published yet.} other {# changes are not published yet.}} Visitors keep seeing the current texts until you publish.",
+    "KeepDraftsAndExit": "Keep drafts and exit",
+    "DiscardAndExit": "Discard and exit",
+    "PublishAndExit": "Publish and exit"
+  },
+  "EditableTextDemo": {
+    "Title": "Welcome to XTM Hub",
+    "Subtitle": "The unified entry point for the Filigran ecosystem.",
+    "Instructions": "Use Edit Translations in the sidebar to turn edit mode on (BYPASS-capability users only), then click the outlined title or subtitle below. Saving creates a draft to publish from the edit mode banner."
   }
 }

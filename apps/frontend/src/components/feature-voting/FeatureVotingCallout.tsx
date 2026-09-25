@@ -2,6 +2,7 @@
 
 import { getFeatureVotingTheme } from '@/components/feature-voting/feature-voting-theme';
 import usePublicPath from '@/hooks/use-public-path';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
   APP_PATH,
@@ -15,7 +16,7 @@ import {
   ServiceDefinitionIdentifier,
   useCurrentVotingRoundCalloutQuery,
 } from '@graphql/generated';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { useMemo } from 'react';
 
@@ -31,7 +32,7 @@ interface FeatureVotingCalloutProps {
 export const FeatureVotingCallout = ({
   serviceInstanceId,
 }: FeatureVotingCalloutProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const locale = useLocale();
   const isPublicPath = usePublicPath();
 

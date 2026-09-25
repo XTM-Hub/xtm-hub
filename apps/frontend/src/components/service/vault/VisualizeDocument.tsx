@@ -3,8 +3,8 @@ import {
   IconActionsItem,
 } from '@/components/ui/IconActions';
 import useDecodedParams from '@/hooks/use-decoded-params';
+import { useTranslate } from '@/hooks/use-translate';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import { useContext } from 'react';
 interface DownloadDocumentProps {
   documentData: documentItem_fragment$data;
@@ -12,7 +12,7 @@ interface DownloadDocumentProps {
 
 export const VisualizeDocument = ({ documentData }: DownloadDocumentProps) => {
   const { setMenuOpen } = useContext(IconActionContext);
-  const t = useTranslations();
+  const t = useTranslate();
   const { slug } = useDecodedParams();
   return (
     <IconActionsItem asChild>

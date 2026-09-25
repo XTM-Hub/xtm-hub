@@ -1,3 +1,4 @@
+import { useTranslate } from '@/hooks/use-translate';
 import {
   Badge,
   Card,
@@ -6,10 +7,9 @@ import {
   CardTitle,
   Label,
 } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 
 export const Parameters = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const appVersion = process.env.NEXT_PUBLIC_APP_VERSION || '0.0.0-dev';
 
   return (

@@ -1,3 +1,4 @@
+import { withContentTranslationOverrides } from '@/i18n/content-translation-overrides';
 import { getUserLocale } from '@/i18n/locale';
 import { getRequestConfig } from 'next-intl/server';
 
@@ -5,6 +6,9 @@ export default getRequestConfig(async ({ requestLocale }) => {
   const locale = (await requestLocale) ?? (await getUserLocale());
   return {
     locale,
-    messages: (await import(`../../messages/${locale}.json`)).default,
+    messages: await withContentTranslationOverrides(
+      locale,
+      (await import(`../../messages/${locale}.json`)).default
+    ),
   };
 });

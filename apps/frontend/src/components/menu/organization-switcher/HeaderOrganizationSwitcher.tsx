@@ -1,12 +1,12 @@
 'use client';
 
 import { PortalContext } from '@/components/me/AppPortalContext';
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { APP_PATH } from '@/utils/path/constant';
 import { ArrowDropDownIcon } from '@filigran/icon';
 import { Button, Popover, PopoverContent, PopoverTrigger } from '@filigran/ui';
 import { OrganizationSwitcherMutation as OrganizationSwitcherMutationType } from '@generated/OrganizationSwitcherMutation.graphql';
-import { useTranslations } from 'next-intl';
 import { useContext, useId, useMemo, useState } from 'react';
 import { graphql, useMutation } from 'react-relay';
 
@@ -33,7 +33,7 @@ const HeaderOrganizationSwitcher = ({
   fitContainer = false,
 }: HeaderOrganizationSwitcherProps) => {
   const { me } = useContext(PortalContext);
-  const t = useTranslations();
+  const t = useTranslate();
   const [openPopover, setOpenPopover] = useState(false);
   const listboxId = useId();
 

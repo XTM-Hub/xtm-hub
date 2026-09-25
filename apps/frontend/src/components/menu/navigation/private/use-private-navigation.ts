@@ -9,6 +9,7 @@ import {
   SectionConfig,
   SectionLink,
 } from '@/components/menu/navigation/shared/navigation.type';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH, XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
 import {
@@ -41,7 +42,7 @@ import {
 import { registeredPlatformsKeys } from '@graphql/registered-platforms/registered-platforms.keys';
 import { serviceInstancesKeys } from '@graphql/service-instances/service-instances.keys';
 import { platformTrialKeys } from '@graphql/trial/trial.keys';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { useContext, useMemo } from 'react';
 
 const PRIVATE_NAVIGATION_REGISTERED_PLATFORMS_VARIABLES = {
@@ -90,8 +91,8 @@ interface SettingsLinkConfig extends SectionLink {
 export const usePrivateNavigation = (): NavigationConfig => {
   const { me, hasCapability, hasOrganizationCapability } =
     useContext(PortalContext);
-  const tMenu = useTranslations('Menu');
-  const tMenuLinks = useTranslations('MenuLinks');
+  const tMenu = useTranslate('Menu');
+  const tMenuLinks = useTranslate('MenuLinks');
   const locale = useLocale();
   const selectedOrganizationId = me?.selected_organization_id;
   const currentOrganization = me?.organizations.find(

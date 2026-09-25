@@ -1,8 +1,9 @@
 'use client';
 
 import { CollapseMenuButton } from '@/components/menu/CollapseMenuButton';
+import { EditTranslationsButton } from '@/components/menu/EditTranslationsButton';
+import { useTranslate } from '@/hooks/use-translate';
 import { LogoFiligranIcon } from '@filigran/icon';
-import { useTranslations } from 'next-intl';
 
 interface PublicMenuFooterProps {
   open: boolean;
@@ -10,10 +11,11 @@ interface PublicMenuFooterProps {
 }
 
 export const MenuFooter = ({ open, handleOpenMenu }: PublicMenuFooterProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <div>
+      <EditTranslationsButton open={open} />
       <CollapseMenuButton
         open={open}
         handleOpenMenu={handleOpenMenu}

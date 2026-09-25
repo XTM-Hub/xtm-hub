@@ -4,9 +4,9 @@ import {
   EPIC_SLACK_LINK_REGEX,
 } from '@/components/epic/epic-slack-links';
 import MarkdownRendererWithTheme from '@/components/ui/MarkdownRendererWithTheme';
+import { useTranslate } from '@/hooks/use-translate';
 import { Separator } from '@filigran/ui/clients';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 interface EpicItemDetailedProps {
@@ -18,7 +18,7 @@ export const EpicItemDetailed = ({
   epic,
   serviceInstanceId,
 }: EpicItemDetailedProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const slackLink =
     epic.slack_link && EPIC_SLACK_LINK_REGEX.test(epic.slack_link)
       ? epic.slack_link

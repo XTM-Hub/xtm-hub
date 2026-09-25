@@ -2,8 +2,8 @@
 import { TrialsTabQuotasPlatform } from '@/components/trials/tab/quotas/TrialsTabQuotasPlatform';
 import TrialsTab from '@/components/trials/tab/TrialsTab';
 import { TrialsScope, TrialsTabType } from '@/components/trials/trials.const';
+import { useTranslate } from '@/hooks/use-translate';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 
 const TAB_TITLES: Record<TrialsTabType, string> = {
   [TrialsTabType.Cancelled]: 'TrialsDashboard.TabTitle.Cancelled',
@@ -19,7 +19,7 @@ interface TrialsListProps {
 }
 
 const TrialsList = ({ scope }: TrialsListProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <Tabs defaultValue={TrialsTabType.Waiting}>

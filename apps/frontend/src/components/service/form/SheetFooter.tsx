@@ -1,5 +1,5 @@
+import { useTranslate } from '@/hooks/use-translate';
 import { Button, SheetFooter } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 
 interface ServiceFormSheetFooterProps {
   handleCloseSheet: (e: React.MouseEvent<HTMLButtonElement>) => void;
@@ -8,7 +8,7 @@ interface ServiceFormSheetFooterProps {
 export const ServiceFormSheetFooter = ({
   handleCloseSheet,
 }: ServiceFormSheetFooterProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <SheetFooter className="sm:justify-between pt-2">
       <div className="ml-auto flex gap-s">

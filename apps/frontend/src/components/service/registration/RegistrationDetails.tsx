@@ -9,6 +9,7 @@ import { PlatformUpdateSheet } from '@/components/service/components/PlatformUpd
 import { UnregisterButton } from '@/components/service/registration/UnregisterButton';
 import { TrialsManageUsersDialog } from '@/components/service/trial-instances/manage-users/TrialsManageUsersDialog';
 import { TrialCancelSheet } from '@/components/service/trial-instances/TrialCancelSheet';
+import { useTranslate } from '@/hooks/use-translate';
 import { isWithinLastMonths, useDateFormatter } from '@/utils/date';
 import { formatTitleCase } from '@/utils/format/case';
 import { Button } from '@filigran/ui/servers';
@@ -19,7 +20,6 @@ import {
   PlatformContract,
   PortalCapability,
 } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useContext, useState } from 'react';
@@ -32,7 +32,7 @@ interface RegistrationDetailsProps {
 export const RegistrationDetails = ({
   registeredPlatform,
 }: RegistrationDetailsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const formatDate = useDateFormatter();
   const searchParams = useSearchParams();
   const openForm = searchParams.get('openForm') === 'true';

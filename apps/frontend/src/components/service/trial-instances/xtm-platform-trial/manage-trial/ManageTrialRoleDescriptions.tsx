@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { InfoIcon } from '@filigran/icon';
 import {
@@ -9,7 +10,6 @@ import {
   AccordionTrigger,
 } from '@filigran/ui';
 import { PlatformIdentifier } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { getBundleRolePanels } from './manage-trial.const';
 
 interface ManageTrialRoleDescriptionsProps {
@@ -21,7 +21,7 @@ export const ManageTrialRoleDescriptions = ({
   stacked = false,
   products,
 }: ManageTrialRoleDescriptionsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const bundleRolePanels = getBundleRolePanels(products);
 
   return (

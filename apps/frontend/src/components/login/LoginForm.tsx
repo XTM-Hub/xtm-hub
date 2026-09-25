@@ -2,6 +2,7 @@
 
 import { LoginFormMutation } from '@/components/login/login.graphql';
 import useDecodedQuery from '@/hooks/use-decoded-query';
+import { useTranslate } from '@/hooks/use-translate';
 import { decodeSafeRedirect } from '@/utils/redirect';
 import {
   Button,
@@ -14,7 +15,6 @@ import {
   toast,
 } from '@filigran/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'react-relay';
@@ -28,7 +28,7 @@ const formSchema = z.object({
 // Component
 const LoginForm = () => {
   const router = useRouter();
-  const t = useTranslations();
+  const t = useTranslate();
   const { redirect } = useDecodedQuery();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

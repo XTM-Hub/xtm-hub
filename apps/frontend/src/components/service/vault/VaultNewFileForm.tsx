@@ -4,6 +4,7 @@ import useDecodedParams from '@/hooks/use-decoded-params';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   Button,
   FileInput,
@@ -19,7 +20,6 @@ import {
 } from '@filigran/ui';
 import { documentExistsQuery } from '@generated/documentExistsQuery.graphql';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import { useForm, useWatch } from 'react-hook-form';
 import { useLazyLoadQuery } from 'react-relay';
 import { z } from 'zod';
@@ -39,7 +39,7 @@ export const VaultNewFileForm = ({
   document,
   handleSubmit,
 }: VaultNewFileFormSheetProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { handleCloseSheet, setIsDirty } = useDialogContext();
   const form = useForm<z.infer<typeof newDocumentSchema>>({
     resolver: zodResolver(newDocumentSchema),

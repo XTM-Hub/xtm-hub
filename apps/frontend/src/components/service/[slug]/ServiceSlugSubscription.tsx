@@ -1,9 +1,9 @@
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import useAdminPath from '@/hooks/use-admin-path';
+import { useTranslate } from '@/hooks/use-translate';
 import { Button } from '@filigran/ui';
 import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import { FunctionComponent, useState } from 'react';
 import { ServiceSlugOrgaForm } from './ServiceSlugOrgaForm';
 
@@ -27,7 +27,7 @@ export const ServiceSlugSubscription: FunctionComponent<
   setOpenEdit,
 }) => {
   const [openSheetAddOrga, setOpenSheetAddOrga] = useState(false);
-  const t = useTranslations();
+  const t = useTranslate();
   const isAdminPath = useAdminPath();
 
   if (!isAdminPath || !serviceInstance) {

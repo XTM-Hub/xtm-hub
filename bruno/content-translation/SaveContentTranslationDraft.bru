@@ -1,0 +1,44 @@
+meta {
+  name: SaveContentTranslationDraft
+  type: graphql
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/graphql-api
+  body: graphql
+  auth: inherit
+}
+
+headers {
+  cookie: {{cookie}}
+}
+
+body:graphql {
+  mutation SaveContentTranslationDraft($input: UpsertContentTranslationInput!) {
+    saveContentTranslationDraft(input: $input) {
+      key
+      locale
+      value
+      updated_at
+      updater_id
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "input": {
+      "key": "PublicHomePage.XtmPlatform.Title",
+      "values": [
+        { "locale": "en", "value": "Extend and scale your XTM Platform" },
+        { "locale": "fr", "value": "Étendez et faites évoluer votre plateforme XTM" }
+      ]
+    }
+  }
+}
+
+docs {
+  Ensure cookie is defined in environment, for a user with the BYPASS capability.
+  The key must be the dot path of an existing next-intl message. Visitors only see it once published.
+}

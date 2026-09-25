@@ -1,5 +1,5 @@
 import { RegistrationLayout } from '@/components/registration/Layout';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 
 interface RegisterStateTooManyOrganizationsProps {
   cancel: () => void;
@@ -14,7 +14,7 @@ export const RegisterStateTooManyOrganizations = ({
   displayedIdentifier,
   platformTitle,
 }: RegisterStateTooManyOrganizationsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <RegistrationLayout
       cancel={cancel}

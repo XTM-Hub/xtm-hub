@@ -1,4 +1,5 @@
 import HomepageResourceList from '@/components/homepage/resources/HomepageResourceList';
+import { getTranslate } from '@/hooks/get-translate';
 import { PublicLocale } from '@/i18n/config';
 import { serverGraphqlFetch } from '@/lib/server-graphql-fetch';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '@/utils/constant';
@@ -8,7 +9,6 @@ import {
   NewestDocumentsQueryQueryVariables,
   PlatformIdentifier,
 } from '@graphql/generated';
-import { getTranslations } from 'next-intl/server';
 
 const NEWEST_LIMIT = 8;
 
@@ -23,7 +23,7 @@ const NewestResources = async ({
   isAuthenticated = false,
   paramsLocale,
 }: NewestResourcesProps) => {
-  const t = await getTranslations('HomePage.XtmNewestResources');
+  const t = await getTranslate('HomePage.XtmNewestResources');
 
   const data = await serverGraphqlFetch<
     NewestDocumentsQueryQuery,

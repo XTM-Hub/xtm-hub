@@ -1,12 +1,12 @@
 'use client';
 
+import { useTranslate } from '@/hooks/use-translate';
 import { XTM_PLATFORM_TRIAL_GUIDE_PATH } from '@/utils/path/constant';
 import { Button, Card, CardContent } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 export const BundleGuideCard = () => {
-  const tGuide = useTranslations('XtmPlatformTrial.Guide');
+  const tGuide = useTranslate('XtmPlatformTrial.Guide');
 
   return (
     <Card className="h-full w-full bg-elevation-background-layer-1">

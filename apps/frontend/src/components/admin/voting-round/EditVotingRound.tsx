@@ -3,6 +3,7 @@ import VotingRoundForm, {
   votingRoundFormSchema,
 } from '@/components/admin/voting-round/VotingRoundForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { toast } from '@filigran/ui';
 import {
@@ -10,7 +11,6 @@ import {
   useVotingRoundUpdateMutation,
 } from '@graphql/generated';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { z } from 'zod';
 import { invalidateVotingRoundQueries } from './voting-round-query-invalidation';
@@ -24,7 +24,7 @@ const EditVotingRound = ({
   onClose: () => void;
   votingRound: VotingRoundFormModel;
 }) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const queryClient = useQueryClient();
   const [openSheet, setOpenSheet] = useState<boolean>(open);
 

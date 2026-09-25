@@ -1,0 +1,32 @@
+meta {
+  name: ListContentTranslationDrafts
+  type: graphql
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/graphql-api
+  body: graphql
+  auth: inherit
+}
+
+headers {
+  cookie: {{cookie}}
+}
+
+body:graphql {
+  query ContentTranslationDrafts($keys: [String!]) {
+    contentTranslationDrafts(keys: $keys) {
+      key
+      locale
+      value
+      updated_at
+      updater_id
+    }
+  }
+}
+
+docs {
+  Ensure cookie is defined in environment, for a user with the BYPASS capability.
+  Omit `keys` to list every pending draft.
+}

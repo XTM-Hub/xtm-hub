@@ -1,3 +1,4 @@
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import {
   AlertDialog,
@@ -11,7 +12,6 @@ import {
   AlertDialogTrigger,
   buttonVariants,
 } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 import React, { ReactNode } from 'react';
 
 interface AlertDialogProps {
@@ -73,7 +73,7 @@ export const AlertDialogComponent = ({
   variantName = 'default',
   continueButtonDisabled = false,
 }: AlertDialogProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <AlertDialog

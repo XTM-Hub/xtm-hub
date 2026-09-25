@@ -1,8 +1,8 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
 import SelectUsersFormField from '@/components/ui/SelectUsers';
+import { useTranslate } from '@/hooks/use-translate';
 import { FormControl, FormItem, FormLabel } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import { useContext } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 
@@ -17,7 +17,7 @@ export const ServiceFormUploaderIdField = ({
   document,
   disabled,
 }: ServiceFormUploaderIdFieldProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { me } = useContext(PortalContext);
   return (
     <FormItem>

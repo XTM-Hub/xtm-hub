@@ -1,7 +1,7 @@
 import { DocumentDeleteMutation } from '@/components/service/document/document.graphql';
 import { IconActionContext } from '@/components/ui/IconActions';
+import { useTranslate } from '@/hooks/use-translate';
 import { useToast } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 import { useContext } from 'react';
 import { useMutation } from 'react-relay';
 
@@ -22,7 +22,7 @@ export const DeleteDocument = ({
   open,
   setOpen,
 }: DeleteDocumentProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { toast } = useToast();
 
   const { setMenuOpen } = useContext(IconActionContext);

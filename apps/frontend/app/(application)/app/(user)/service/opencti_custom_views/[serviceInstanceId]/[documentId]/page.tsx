@@ -1,9 +1,9 @@
+import { getTranslate } from '@/hooks/get-translate';
 import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
 import ServiceByIdQuery, {
   serviceByIdQuery,
 } from '@generated/serviceByIdQuery.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { getTranslations } from 'next-intl/server';
 import PageLoader from './page-loader';
 
 interface ServiceCustomViewPageProps {
@@ -14,7 +14,7 @@ const Page = async ({ params }: ServiceCustomViewPageProps) => {
   const { serviceInstanceId, documentId } = await params;
   const decodedServiceInstanceId = decodeURIComponent(serviceInstanceId);
   const decodedDocumentId = decodeURIComponent(documentId);
-  const t = await getTranslations();
+  const t = await getTranslate();
   const response = await serverFetchGraphQL<serviceByIdQuery>(
     ServiceByIdQuery,
     {

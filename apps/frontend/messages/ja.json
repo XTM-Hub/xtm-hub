@@ -323,6 +323,7 @@
       "INTEGRATION_TYPE_NOT_MANAGEABLE": "このタイプの統合は管理できません。",
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "このタイプの統合は認識されない",
       "INVALID_ACTION_SIZE": "不明なエラーが発生した",
+      "INVALID_CONTENT_TRANSLATION_KEY": "無効なコンテンツキーです",
       "INVALID_EMAIL": "電子メールは有効な形式でなければなりません。",
       "INVALID_IMAGE_URL": "画像のURLが不正",
       "INVALID_MANIFEST_VERSION_FORMAT": "マニフェストのバージョン形式が無効です",
@@ -2364,5 +2365,36 @@
       "default": "デフォルト",
       "thread": "Thread"
     }
+  },
+  "EditableText": {
+    "DialogTitle": "コンテンツを編集",
+    "KeyLabel": "キー: {contentKey}",
+    "ValueLabel": "{locale} の値",
+    "OriginalValue": "元の値: {value}",
+    "SaveDraft": "下書きを保存",
+    "EditionBannerLabel": "編集モードです。枠で囲まれたテキストをクリックすると編集できます。",
+    "EditionBannerHiddenAreasLabel": "編集モードです。テキストを編集するには、編集可能な箇所を表示してください。",
+    "ShowEditableAreas": "編集可能な箇所を表示",
+    "EditionBannerExit": "公開サイトに戻る",
+    "MenuButton": "翻訳を編集",
+    "MenuButtonExit": "編集モードを終了",
+    "DraftHint": "下書きとして保存されます。編集モードのバナーから公開するまで、訪問者には表示されません。",
+    "PendingChanges": "{count, plural, other {未公開の変更 # 件}}",
+    "Publish": "公開",
+    "Discard": "破棄",
+    "PublishConfirmTitle": "{count, plural, other {# 件の変更を公開しますか?}}",
+    "PublishConfirmDescription": "公開したテキストはすべての訪問者に表示されます。",
+    "DiscardConfirmTitle": "{count, plural, other {# 件の変更を破棄しますか?}}",
+    "DiscardConfirmDescription": "下書きはすべての編集者から削除されます。この操作は元に戻せません。",
+    "ExitDialogTitle": "未公開の変更",
+    "ExitDialogDescription": "{count, plural, other {# 件の変更がまだ公開されていません。}}公開するまで、訪問者には現在のテキストが表示されます。",
+    "KeepDraftsAndExit": "下書きを保持して終了",
+    "DiscardAndExit": "破棄して終了",
+    "PublishAndExit": "公開して終了"
+  },
+  "EditableTextDemo": {
+    "Title": "XTM Hub へようこそ",
+    "Subtitle": "Filigran エコシステムの統合エントリーポイント。",
+    "Instructions": "サイドバーの「翻訳を編集」で編集モードを有効にしてください(BYPASS 権限を持つユーザーのみ)。その後、下の枠で囲まれたタイトルまたはサブタイトルをクリックしてください。保存すると下書きが作成され、編集モードのバナーから公開できます。"
   }
 }

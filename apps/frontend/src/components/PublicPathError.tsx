@@ -1,8 +1,8 @@
 'use client';
 import { logFrontendError } from '@/components/error-frontend-log.graphql';
 import { ErrorPage } from '@/components/ui/ErrorPage';
+import { useTranslate } from '@/hooks/use-translate';
 import { isProduction } from '@/lib/utils';
-import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import { useRelayEnvironment } from 'react-relay';
 
@@ -12,7 +12,7 @@ interface PublicPathErrorProps {
 
 const PublicPathError = ({ error }: PublicPathErrorProps) => {
   const env = useRelayEnvironment();
-  const t = useTranslations();
+  const t = useTranslate();
   useEffect(() => {
     if (isProduction()) {
       logFrontendError(

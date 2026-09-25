@@ -1,10 +1,10 @@
 import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
+import { useTranslate } from '@/hooks/use-translate';
 import { formatName } from '@/utils/format/name';
 import { Badge } from '@filigran/ui';
 import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 
 interface ServiceSlugHeaderProps {
@@ -12,7 +12,7 @@ interface ServiceSlugHeaderProps {
 }
 
 const ServiceSlugHeader = ({ serviceInstance }: ServiceSlugHeaderProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   const availableCapabilities: BadgeOverflow[] = useMemo(
     () =>

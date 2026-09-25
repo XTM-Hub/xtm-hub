@@ -1,8 +1,8 @@
 import { UserServiceDeleteMutation } from '@/components/service/user_service.graphql';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { userServiceDeleteMutation } from '@generated/userServiceDeleteMutation.graphql';
 import { userServices_fragment$data } from '@generated/userServices_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import { useMutation } from 'react-relay';
 
 interface DeleteUserServiceProps {
@@ -20,7 +20,7 @@ export const DeleteUserService = ({
   connectionId,
   onDeleted,
 }: DeleteUserServiceProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [commitUserServiceDeletingMutation] =
     useMutation<userServiceDeleteMutation>(UserServiceDeleteMutation);
 
