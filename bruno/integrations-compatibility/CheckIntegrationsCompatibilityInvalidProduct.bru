@@ -1,0 +1,23 @@
+meta {
+  name: Check integrations compatibility - invalid product
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/not-a-product/integrations-compatibility?integration_versions=mitreattack@6.240930.0
+  body: none
+  auth: none
+}
+
+params:query {
+  integration_versions: mitreattack@6.240930.0
+}
+
+assert {
+  res.status: eq 400
+}
+
+docs {
+  Response: { "code": 400, "message": "Invalid product" }
+}

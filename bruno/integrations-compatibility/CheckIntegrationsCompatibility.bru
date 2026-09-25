@@ -1,0 +1,46 @@
+meta {
+  name: Check integrations compatibility
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/opencti/integrations-compatibility?integration_versions=mitreattack@6.240930.0,crowdstrike@7.260309.0
+  body: none
+  auth: none
+}
+
+params:query {
+  integration_versions: mitreattack@6.240930.0,crowdstrike@7.260309.0
+}
+
+docs {
+  Answers "are these integration versions compatible with OpenCTI?" for a
+  batch of "slug@version" pairs. Public endpoint, no auth required.
+
+  This is the inverse of the versions-matrix endpoint: the matrix answers
+  "which version should I run?", this one verifies a version you already
+  run.
+
+  Without a `version` query param it checks against the latest registered
+  OpenCTI version, echoed back as `opencti_version`.
+
+  Swap the slugs/versions for ones that exist in your local instance — see
+  the versions-matrix requests for the known list.
+
+  Response shape:
+  {
+    "opencti_version": "7.260807.0",
+    "integrations": [
+      {
+        "slug": "mitreattack",
+        "integration_version": "6.240930.0",
+        "compatible": true,
+        "latest_compatible_integration_version": "6.240930.0"
+      }
+    ]
+  }
+
+  Entries come back in the order they were requested, one per requested
+  pair, including duplicates.
+}

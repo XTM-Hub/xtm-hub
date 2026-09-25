@@ -784,4 +784,77 @@ export const DocumentDomain = {
       .map((row) => row.slug)
       .filter((slug): slug is string => slug !== null);
   },
+
+  /**
+   * Maps each of the given slugs to its integration type, regardless of the
+   * document's active/decommissioned state or version.
+   *
+   * Lets a caller tell "this slug doesn't exist at all" apart from "this slug
+   * exists but isn't a connector" — only connectors carry version metadata, so
+   * a feed can never be answered by a version compatibility check. Slugs with
+   * no document at all are simply absent from the returned map.
+   */
+  loadIntegrationTypesBySlugs: async (
+    slugs: string[]
+  ): Promise<Map<string, string>> => {
+    if (slugs.length === 0) return new Map();
+
+    const rows: { slug: string; integration_type: string }[] =
+      await db<DocumentModel>('Document')
+        .join({ dm_type: 'Document_Metadata' }, function () {
+          this.on('dm_type.document_id', '=', 'Document.id').andOnVal(
+            'dm_type.key',
+            DocumentMetadataKeyCode.IntegrationType
+          );
+        })
+        .whereIn('Document.slug', slugs)
+        .distinct({
+          slug: 'Document.slug',
+          integration_type: 'dm_type.value',
+        });
+
+    return new Map(rows.map((row) => [row.slug, row.integration_type]));
+  },
+
+  /**
+   * Returns the connector documents matching the given (slug, padded version)
+   * pairs exactly.
+   *
+   * Matching is done on the `version_padded` metadata rather than
+   * "Document"."version", which holds the raw manifest version: the padded
+   * form is what makes formatting differences between the request and the
+   * stored value (missing zero-padding, LTS suffix casing, ...) irrelevant.
+   *
+   * Deliberately does NOT filter on active / is_decommissioned: the caller
+   * needs to see a decommissioned connector to report it as such, instead of
+   * reporting the far more confusing "this version does not exist".
+   */
+  loadConnectorsBySlugAndPaddedVersions: async (
+    pairs: { slug: string; versionPadded: string }[]
+  ): Promise<ConnectorV2[]> => {
+    if (pairs.length === 0) return [];
+
+    const metadataKeys =
+      INTEGRATION_CONNECTOR_V2_METADATA_KEYS as DocumentMetadataKeyCode[];
+
+    const documents: ConnectorV2[] = await db<DocumentModel>('Document')
+      .join({ dm_ver: 'Document_Metadata' }, function () {
+        this.on('dm_ver.document_id', '=', 'Document.id').andOnVal(
+          'dm_ver.key',
+          DocumentMetadataKeyCode.VersionPadded
+        );
+      })
+      .join({ dm_type: 'Document_Metadata' }, function () {
+        this.on('dm_type.document_id', '=', 'Document.id')
+          .andOnVal('dm_type.key', DocumentMetadataKeyCode.IntegrationType)
+          .andOnVal('dm_type.value', IntegrationType.Connector);
+      })
+      .whereIn(
+        ['Document.slug', 'dm_ver.value'],
+        pairs.map((pair) => [pair.slug, pair.versionPadded])
+      )
+      .select('Document.*');
+
+    return DocumentMetadataDomain.hydrateMetadata(documents, metadataKeys);
+  },
 };

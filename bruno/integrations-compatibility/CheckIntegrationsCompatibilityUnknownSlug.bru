@@ -1,0 +1,38 @@
+meta {
+  name: Check integrations compatibility - unknown slug
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/opencti/integrations-compatibility?integration_versions=not-a-real-integration@1.0.0
+  body: none
+  auth: none
+}
+
+params:query {
+  integration_versions: not-a-real-integration@1.0.0
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Unlike the versions-matrix endpoint, an unknown slug is not a 404 here: a
+  caller checking a batch of installed integrations should still get the
+  verdict for the ones that do exist.
+
+  {
+    "opencti_version": "7.260807.0",
+    "integrations": [
+      {
+        "slug": "not-a-real-integration",
+        "integration_version": "1.0.0",
+        "incompatibility_reason": "unknown_integration_slug"
+      }
+    ]
+  }
+
+  Note the absent `compatible`: see "incompatible version" for why.
+}

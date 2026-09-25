@@ -1,0 +1,44 @@
+meta {
+  name: Check integrations compatibility - non-connector integration
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/opencti/integrations-compatibility?integration_versions=some-csv-feed@1.0.0
+  body: none
+  auth: none
+}
+
+params:query {
+  integration_versions: some-csv-feed@1.0.0
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  Only connectors carry version metadata today, so a compatibility question
+  cannot be answered for a csv_feed, rss_feed, stream, taxii_feed or
+  third_party_integration. The endpoint says so explicitly instead of
+  guessing:
+
+  {
+    "opencti_version": "7.260807.0",
+    "integrations": [
+      {
+        "slug": "some-csv-feed",
+        "integration_version": "1.0.0",
+        "integration_type": "csv_feed",
+        "incompatibility_reason": "integration_type_not_supported"
+      }
+    ]
+  }
+
+  `integration_type` is echoed back so the caller can tell "you asked about
+  a feed" apart from "your slug is wrong".
+
+  Swap the slug for a non-connector integration that exists in your local
+  instance.
+}

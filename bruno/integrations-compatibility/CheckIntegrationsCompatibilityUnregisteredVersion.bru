@@ -1,0 +1,27 @@
+meta {
+  name: Check integrations compatibility - unregistered OpenCTI version
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/opencti/integrations-compatibility?integration_versions=mitreattack@6.240930.0&version=9.999999.9
+  body: none
+  auth: none
+}
+
+params:query {
+  integration_versions: mitreattack@6.240930.0
+  version: 9.999999.9
+}
+
+assert {
+  res.status: eq 404
+}
+
+docs {
+  A well-formed but unregistered OpenCTI version is a 404: answering against
+  a version nobody declared would be a guess.
+
+  Response: { "code": 404, "message": "Unknown opencti version: 9.999999.9" }
+}

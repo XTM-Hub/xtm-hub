@@ -1,5 +1,5 @@
-import crypto from 'node:crypto';
 import type { ConnectorV2 } from '../../../modules/shareable-resource/opencti/integration/integration.model';
+import { buildETag } from '../shared/etag.util';
 
 export const VERSIONS_MATRIX_FORMATS = ['json', 'env', 'csv'] as const;
 
@@ -137,7 +137,7 @@ export const buildVersionsMatrixEnv = (
 };
 
 export const buildVersionsMatrixETag = (payload: string): string =>
-  `"${crypto.createHash('sha256').update(payload).digest('hex')}"`;
+  buildETag(payload);
 
 /** Quotes a CSV field when it contains a comma, quote, or newline. */
 const escapeCsvField = (value: string): string =>

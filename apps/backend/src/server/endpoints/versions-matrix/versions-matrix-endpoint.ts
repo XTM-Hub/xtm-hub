@@ -3,11 +3,10 @@ import { Express, Request, Response } from 'express';
 import rateLimit, { type Options } from 'express-rate-limit';
 import { PlatformIdentifier } from '../../../__generated__/resolvers-types';
 import { DocumentDomain } from '../../../modules/document/domain/document.domain';
-import { ManageProductVersionDomain } from '../../../modules/manage-product-version/manage-product-version.domain';
-import { ManifestFragmentHelper } from '../../../modules/shareable-resource/manifest-fragment/manifest-fragment.helper';
 import { logApp } from '../../../utils/app-logger.util';
 import { buildIpRateLimiterOptions } from '../shared/ip-rate-limit.util';
-import { isProduct } from '../shared/product.util';
+import { resolveRegisteredProductVersion } from '../shared/product-version.util';
+import { resolveOpenctiOnlyProduct } from '../shared/product.util';
 import {
   sendVersionsMatrixError,
   sendVersionsMatrixValidationError,
@@ -56,13 +55,17 @@ type Result<T> =
 const validateRequestedProduct = (
   rawProduct: unknown
 ): Result<PlatformIdentifier> => {
-  if (!isProduct(rawProduct)) {
-    return { ok: false, error: VERSIONS_MATRIX_ERRORS.InvalidProduct };
+  const resolution = resolveOpenctiOnlyProduct(rawProduct);
+  if (resolution.ok) {
+    return { ok: true, value: resolution.product };
   }
-  if (rawProduct !== PlatformIdentifier.Opencti) {
-    return { ok: false, error: VERSIONS_MATRIX_ERRORS.UnsupportedProduct };
-  }
-  return { ok: true, value: rawProduct };
+  return {
+    ok: false,
+    error:
+      resolution.reason === 'invalid'
+        ? VERSIONS_MATRIX_ERRORS.InvalidProduct
+        : VERSIONS_MATRIX_ERRORS.UnsupportedProduct,
+  };
 };
 
 const validateRequestedFormat = (
@@ -80,59 +83,34 @@ type VersionResolutionResult =
   | { ok: false; message: string; status: 404 };
 
 /**
- * Resolves and validates the requested product version: parses the
- * `version` query parameter when provided, otherwise falls back to the
- * latest version registered for that product. Fails when the version is
- * missing/malformed/not a registered version for the product, or when
- * defaulting finds nothing registered at all.
+ * Resolves and validates the requested product version, then maps the shared
+ * resolution failures onto this endpoint's error catalogue. A well-formed but
+ * never-registered version isn't a "compatibility" question, it's simply
+ * unknown for this product, so it is rejected up front (404) rather than
+ * silently passing through to the (unrelated) slug compatibility checks.
  */
 const resolveRequestedVersion = async (
   product: PlatformIdentifier,
   rawVersion: unknown
 ): Promise<VersionResolutionResult> => {
-  const registeredVersions =
-    await ManageProductVersionDomain.loadRegisteredProductVersions(product);
+  const resolution = await resolveRegisteredProductVersion(product, rawVersion);
 
-  if (rawVersion === undefined) {
-    const version = registeredVersions[0]?.version;
-    return version
-      ? { ok: true, value: version }
-      : { ok: false, error: VERSIONS_MATRIX_ERRORS.NoRegisteredVersion };
+  if (resolution.ok) {
+    return { ok: true, value: resolution.version };
   }
 
-  if (typeof rawVersion !== 'string') {
-    return { ok: false, error: VERSIONS_MATRIX_ERRORS.InvalidVersionFormat };
+  switch (resolution.reason) {
+    case 'no-registered-version':
+      return { ok: false, error: VERSIONS_MATRIX_ERRORS.NoRegisteredVersion };
+    case 'invalid-format':
+      return { ok: false, error: VERSIONS_MATRIX_ERRORS.InvalidVersionFormat };
+    case 'unregistered':
+      return {
+        ok: false,
+        message: `Unknown ${product} version: ${String(rawVersion)}`,
+        status: 404,
+      };
   }
-  let paddedVersion: string;
-  try {
-    paddedVersion =
-      ManifestFragmentHelper.validateAndFormatManifestVersion(rawVersion);
-  } catch {
-    return { ok: false, error: VERSIONS_MATRIX_ERRORS.InvalidVersionFormat };
-  }
-
-  // A well-formed but never-registered version (e.g. a made-up or
-  // not-yet-reported one) isn't a "compatibility" question, it's simply
-  // unknown for this product: reject it up front (404, like
-  // NoRegisteredVersion above) rather than letting it silently pass through
-  // to the (unrelated) slug compatibility checks.
-  //
-  // The comparison uses the padded form, like every other version
-  // comparison in the matrix, so that formatting differences between the
-  // request and the registered value (missing zero-padding, LTS suffix
-  // casing, ...) can't cause a false "unregistered" result.
-  const isRegistered = registeredVersions.some(
-    (registered) => registered.version_padded === paddedVersion
-  );
-  if (!isRegistered) {
-    return {
-      ok: false,
-      message: `Unknown ${product} version: ${rawVersion}`,
-      status: 404,
-    };
-  }
-
-  return { ok: true, value: rawVersion };
 };
 
 type MatrixEntriesResult =

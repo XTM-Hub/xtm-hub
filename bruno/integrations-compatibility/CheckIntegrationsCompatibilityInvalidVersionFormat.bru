@@ -1,0 +1,24 @@
+meta {
+  name: Check integrations compatibility - invalid OpenCTI version format
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/opencti/integrations-compatibility?integration_versions=mitreattack@6.240930.0&version=not-a-version
+  body: none
+  auth: none
+}
+
+params:query {
+  integration_versions: mitreattack@6.240930.0
+  version: not-a-version
+}
+
+assert {
+  res.status: eq 400
+}
+
+docs {
+  Response: { "code": 400, "message": "Invalid version format" }
+}

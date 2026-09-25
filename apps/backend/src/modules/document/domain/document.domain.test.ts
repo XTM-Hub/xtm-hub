@@ -2082,6 +2082,266 @@ describe('document domain', () => {
     });
   });
 
+  describe('integration compatibility lookups', () => {
+    const createIntegration = async ({
+      slug,
+      version,
+      integrationType = IntegrationType.Connector,
+      active = true,
+      isDecommissioned = false,
+      minimumDeployableVersion,
+    }: {
+      slug: string;
+      version: string;
+      integrationType?: IntegrationType;
+      active?: boolean;
+      isDecommissioned?: boolean;
+      minimumDeployableVersion?: string;
+    }) => {
+      const doc = await TestHelper.document.create({
+        active,
+        is_decommissioned: isDecommissioned,
+        slug,
+        version,
+      });
+      await TestHelper.documentMetadata.create({
+        document_id: doc.id,
+        key: DocumentMetadataKeyCode.VersionPadded as unknown as DocumentMetadataKey,
+        value: toPaddedVersion(version),
+      });
+      await TestHelper.documentMetadata.create({
+        document_id: doc.id,
+        key: DocumentMetadataKeyCode.IntegrationType as unknown as DocumentMetadataKey,
+        value: integrationType,
+      });
+      if (minimumDeployableVersion) {
+        await TestHelper.documentMetadata.create({
+          document_id: doc.id,
+          key: DocumentMetadataKeyCode.MinimumDeployableVersionPadded as unknown as DocumentMetadataKey,
+          value: toPaddedVersion(minimumDeployableVersion),
+        });
+      }
+      return doc;
+    };
+
+    afterEach(async () => {
+      await TestHelper.documentMetadata.delete({});
+      await TestHelper.document.delete({});
+    });
+
+    describe('loadIntegrationTypesBySlugs', () => {
+      it('returns an empty map when the slug list is empty', async () => {
+        const result = await DocumentDomain.loadIntegrationTypesBySlugs([]);
+        expect(result.size).toBe(0);
+      });
+
+      it('maps each known slug to its integration type', async () => {
+        await createIntegration({
+          slug: 'connector-a',
+          version: '7.260309.0',
+          version: '7.260309.0',
+        });
+        await createIntegration({
+          slug: 'feed-a',
+          version: '1.0.0',
+          version: '1.0.0',
+          integrationType: IntegrationType.CsvFeed,
+        });
+
+        const result = await DocumentDomain.loadIntegrationTypesBySlugs([
+          'connector-a',
+          'feed-a',
+        ]);
+
+        expect([...result.entries()].sort()).toEqual([
+          ['connector-a', IntegrationType.Connector],
+          ['feed-a', IntegrationType.CsvFeed],
+        ]);
+      });
+
+      it('omits a slug that has no document at all', async () => {
+        await createIntegration({
+          slug: 'connector-a',
+          version: '7.260309.0',
+          version: '7.260309.0',
+        });
+
+        const result = await DocumentDomain.loadIntegrationTypesBySlugs([
+          'connector-a',
+          'does-not-exist',
+        ]);
+
+        expect(result.has('does-not-exist')).toBe(false);
+        expect(result.get('connector-a')).toBe(IntegrationType.Connector);
+      });
+
+      it('still reports the type of an inactive or decommissioned integration', async () => {
+        await createIntegration({
+          slug: 'connector-a',
+          version: '7.260309.0',
+          version: '7.260309.0',
+          active: false,
+          isDecommissioned: true,
+        });
+
+        const result = await DocumentDomain.loadIntegrationTypesBySlugs([
+          'connector-a',
+        ]);
+
+        expect(result.get('connector-a')).toBe(IntegrationType.Connector);
+      });
+
+      it('returns a single entry when several versions of the same slug exist', async () => {
+        await createIntegration({
+          slug: 'connector-a',
+          version: '7.260309.0',
+          version: '7.260309.0',
+        });
+        await createIntegration({
+          slug: 'connector-a',
+          version: '7.260101.0',
+          version: '7.260101.0',
+        });
+
+        const result = await DocumentDomain.loadIntegrationTypesBySlugs([
+          'connector-a',
+        ]);
+
+        expect(result.size).toBe(1);
+        expect(result.get('connector-a')).toBe(IntegrationType.Connector);
+      });
+    });
+
+    describe('loadConnectorsBySlugAndPaddedVersions', () => {
+      it('returns an empty array when the pair list is empty', async () => {
+        const result =
+          await DocumentDomain.loadConnectorsBySlugAndPaddedVersions([]);
+        expect(result).toHaveLength(0);
+      });
+
+      it('returns only the exact (slug, padded version) pairs requested', async () => {
+        const wanted = await createIntegration({
+          slug: 'connector-a',
+          version: '7.260309.0',
+          version: '7.260309.0',
+        });
+        // Same slug, another version.
+        await createIntegration({
+          slug: 'connector-a',
+          version: '7.260101.0',
+          version: '7.260101.0',
+        });
+        // Same version, another slug.
+        await createIntegration({
+          slug: 'connector-b',
+          version: '7.260309.0',
+          version: '7.260309.0',
+        });
+
+        const result =
+          await DocumentDomain.loadConnectorsBySlugAndPaddedVersions([
+            { slug: 'connector-a', versionPadded: toPaddedVersion('7.260309.0') },
+          ]);
+
+        expect(result).toHaveLength(1);
+        expect(result[0]!.id).toBe(wanted.id);
+      });
+
+      it('resolves several pairs in one call', async () => {
+        await createIntegration({
+          slug: 'connector-a',
+          version: '7.260309.0',
+          version: '7.260309.0',
+        });
+        await createIntegration({
+          slug: 'connector-b',
+          version: '7.260101.0',
+          version: '7.260101.0',
+        });
+
+        const result =
+          await DocumentDomain.loadConnectorsBySlugAndPaddedVersions([
+            { slug: 'connector-a', versionPadded: toPaddedVersion('7.260309.0') },
+            { slug: 'connector-b', versionPadded: toPaddedVersion('7.260101.0') },
+          ]);
+
+        expect(result.map((connector) => connector.slug).sort()).toEqual([
+          'connector-a',
+          'connector-b',
+        ]);
+      });
+
+      it('returns nothing for a slug that exists at another version only', async () => {
+        await createIntegration({
+          slug: 'connector-a',
+          version: '7.260101.0',
+          version: '7.260101.0',
+        });
+
+        const result =
+          await DocumentDomain.loadConnectorsBySlugAndPaddedVersions([
+            { slug: 'connector-a', versionPadded: toPaddedVersion('7.260309.0') },
+          ]);
+
+        expect(result).toHaveLength(0);
+      });
+
+      it('returns a decommissioned or inactive connector so the caller can report it as such', async () => {
+        await createIntegration({
+          slug: 'connector-a',
+          version: '7.260309.0',
+          version: '7.260309.0',
+          active: false,
+          isDecommissioned: true,
+        });
+
+        const result =
+          await DocumentDomain.loadConnectorsBySlugAndPaddedVersions([
+            { slug: 'connector-a', versionPadded: toPaddedVersion('7.260309.0') },
+          ]);
+
+        expect(result).toHaveLength(1);
+        expect(result[0]!.active).toBe(false);
+        expect(result[0]!.is_decommissioned).toBe(true);
+      });
+
+      it('ignores an integration that is not a connector', async () => {
+        await createIntegration({
+          slug: 'feed-a',
+          version: '1.0.0',
+          version: '1.0.0',
+          integrationType: IntegrationType.CsvFeed,
+        });
+
+        const result =
+          await DocumentDomain.loadConnectorsBySlugAndPaddedVersions([
+            { slug: 'feed-a', versionPadded: toPaddedVersion('1.0.0') },
+          ]);
+
+        expect(result).toHaveLength(0);
+      });
+
+      it('hydrates the metadata the compatibility check relies on', async () => {
+        await createIntegration({
+          slug: 'connector-a',
+          version: '7.260309.0',
+          version: '7.260309.0',
+          minimumDeployableVersion: '7.260101.0',
+        });
+
+        const result =
+          await DocumentDomain.loadConnectorsBySlugAndPaddedVersions([
+            { slug: 'connector-a', versionPadded: toPaddedVersion('7.260309.0') },
+          ]);
+
+        expect(result[0]!.version_padded).toBe('007.260309.000');
+        expect(result[0]!.minimum_deployable_version_padded).toBe(
+          '007.260101.000'
+        );
+      });
+    });
+  });
+
   describe('loadMostDeployedDocuments', () => {
     const createDeployableDocument = (
       name: string,

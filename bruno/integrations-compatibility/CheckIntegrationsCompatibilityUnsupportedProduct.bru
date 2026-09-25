@@ -1,0 +1,26 @@
+meta {
+  name: Check integrations compatibility - unsupported product
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/openaev/integrations-compatibility?integration_versions=mitreattack@6.240930.0
+  body: none
+  auth: none
+}
+
+params:query {
+  integration_versions: mitreattack@6.240930.0
+}
+
+assert {
+  res.status: eq 404
+}
+
+docs {
+  openaev is a known product, but only OpenCTI publishes versioned
+  connectors, so the check is opencti-only.
+
+  Response: { "code": 404, "message": "The integrations compatibility check is only available for the opencti product" }
+}

@@ -1,0 +1,28 @@
+meta {
+  name: Check integrations compatibility - malformed pair
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/opencti/integrations-compatibility?integration_versions=mitreattack
+  body: none
+  auth: none
+}
+
+params:query {
+  integration_versions: mitreattack
+}
+
+assert {
+  res.status: eq 400
+}
+
+docs {
+  A syntactically broken entry (missing "@version", or a version that is not
+  a valid manifest version) fails the whole request with 400, rather than
+  being reported per entry: unlike "is this a connector?", the caller cannot
+  have believed a malformed pair was valid.
+
+  Response: { "code": 400, "message": "Invalid integration_versions parameter, expected \"slug@version\" pairs separated by commas" }
+}

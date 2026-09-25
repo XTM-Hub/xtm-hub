@@ -1,0 +1,22 @@
+meta {
+  name: Check integrations compatibility - missing integration_versions
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/opencti/integrations-compatibility
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 400
+}
+
+docs {
+  `integration_versions` is required — there is no "check everything"
+  default, since the endpoint verifies versions the caller already runs.
+
+  Response: { "code": 400, "message": "Missing integration_versions parameter, expected \"slug@version\" pairs separated by commas" }
+}

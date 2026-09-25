@@ -1,0 +1,57 @@
+meta {
+  name: Check integrations compatibility - incompatible version
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/opencti/integrations-compatibility?integration_versions=mitreattack@6.240930.0&version=6.200101.0
+  body: none
+  auth: none
+}
+
+params:query {
+  integration_versions: mitreattack@6.240930.0
+  version: 6.200101.0
+}
+
+assert {
+  res.status: eq 200
+}
+
+docs {
+  An incompatible pair is an *answer*, not an error: the response is still
+  200, with `compatible: false` and an `incompatibility_reason` on the
+  offending entry. One bad entry never hides the verdict of the others.
+
+  {
+    "opencti_version": "6.200101.0",
+    "integrations": [
+      {
+        "slug": "mitreattack",
+        "integration_version": "6.240930.0",
+        "compatible": false,
+        "incompatibility_reason": "opencti_version_too_old",
+        "minimum_deployable_version": "6.240101.0",
+        "latest_compatible_integration_version": "6.230101.0"
+      }
+    ]
+  }
+
+  `incompatibility_reason` is one of:
+    - opencti_version_too_old       the connector needs a newer OpenCTI
+    - lts_track_mismatch            LTS connector on non-LTS OpenCTI, or vice versa
+    - integration_decommissioned    that version exists but is retired
+    - unknown_integration_version   the slug is a connector, but not at that version
+    - unknown_integration_slug      no integration carries that slug
+    - integration_type_not_supported  the slug is not a connector
+
+  The last three come back *without* `compatible`: nothing was verified, so
+  neither true nor false would be honest. `false` would block a deployment
+  that may well be fine, `true` would vouch for something never checked.
+
+  `latest_compatible_integration_version` is the newest version of that slug
+  that does work with the resolved OpenCTI version, so the caller gets the
+  fix along with the diagnosis. It is absent when no version of that slug is
+  compatible at all.
+}

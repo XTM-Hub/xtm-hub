@@ -1,0 +1,28 @@
+meta {
+  name: Check integrations compatibility - explicit OpenCTI version
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/opencti/integrations-compatibility?integration_versions=mitreattack@6.240930.0&version=7.260807.0
+  body: none
+  auth: none
+}
+
+params:query {
+  integration_versions: mitreattack@6.240930.0
+  version: 7.260807.0
+}
+
+docs {
+  Checks against an explicit OpenCTI version instead of the latest
+  registered one. The version must be registered (see the
+  manage-product-version folder), otherwise the request is rejected with
+  404 — see "unregistered OpenCTI version".
+
+  Both `version` and the versions inside `integration_versions` are matched
+  on their padded form, so formatting differences (missing zero padding,
+  LTS suffix casing) do not matter: 7.260807.0 and 007.260807.000 resolve
+  to the same version.
+}
