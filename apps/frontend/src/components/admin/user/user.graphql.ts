@@ -9,6 +9,22 @@ export const UserListCreateMutation = graphql`
   }
 `;
 
+export const UserResendInviteMutation = graphql`
+  mutation userResendInviteMutation($input: AddUserInput!) {
+    addUser(input: $input) {
+      id
+    }
+  }
+`;
+
+export const UserAdminResendInviteMutation = graphql`
+  mutation userAdminResendInviteMutation($input: AdminAddUserInput!) {
+    adminAddUser(input: $input) {
+      id
+    }
+  }
+`;
+
 export const UserSlugEditMutation = graphql`
   mutation userSlugEditMutation(
     $id: ID!
