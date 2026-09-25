@@ -76,6 +76,8 @@ import { TestHelper } from '../../../tests/helper/test.helper';
 import portalConfig from '../../config';
 import { requestContext } from '../../context/request.context';
 import { CompetitorId } from '../../model/kanel/public/Competitor';
+import { OrganizationId } from '../../model/kanel/public/Organization';
+import { UserId } from '../../model/kanel/public/User';
 import { PortalContext } from '../../model/portal-context';
 import { PlatformConfigurationDomain } from '../registration/platform-configuration/platform-configuration.domain';
 import {
@@ -1603,7 +1605,7 @@ describe('deployment app', () => {
           'loadConfigurationByPlatform'
         ).mockResolvedValue({
           service_instance_id: uuidv4() as ServiceInstanceId,
-          registerer_id: uuidv4(),
+          registerer_id: uuidv4() as UserId,
           platform_id: uuidv4(),
           tenant_id: null,
           tenant_name: null,
@@ -1959,7 +1961,7 @@ describe('deployment app', () => {
             firstName: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.FIRST_NAME,
             productNames: 'OpenCTI and OpenAEV',
             products: [PlatformIdentifier.Opencti, PlatformIdentifier.Openaev],
-            platformUrl: `${config.get('base_url_front')}/app/xtm-platform-trial`,
+            platformUrl: `${config.get('base_url_front')}/app/service/xtm-platform-trial`,
           },
         });
       });
@@ -3817,11 +3819,14 @@ describe('deployment app', () => {
           },
         ],
       });
-      await DeploymentRequestDomain.updateDeploymentRequestById(bundle.id, {
-        hub_status: DeploymentRequestHubStatus.Active,
-        start_date: new Date('2025-01-01T00:00:00.000Z'),
-        end_date: new Date('2025-01-31T00:00:00.000Z'),
-      });
+      await DeploymentRequestDomain.updateDeploymentRequestById(
+        bundle.id as DeploymentRequestId,
+        {
+          hub_status: DeploymentRequestHubStatus.Active,
+          start_date: new Date('2025-01-01T00:00:00.000Z'),
+          end_date: new Date('2025-01-31T00:00:00.000Z'),
+        }
+      );
       return bundle;
     };
 
