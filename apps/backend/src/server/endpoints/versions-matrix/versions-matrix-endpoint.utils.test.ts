@@ -180,9 +180,9 @@ describe('field/key builders', () => {
   it.each`
     slug              | expectedField     | expectedJsonKey                     | expectedEnvKey
     ${'mitre'}        | ${'mitre'}        | ${'connector_mitre_version'}        | ${'CONNECTOR_MITRE_VERSION'}
-    ${'my-connector'} | ${'my_connector'} | ${'connector_my_connector_version'} | ${'CONNECTOR_MY_CONNECTOR_VERSION'}
+    ${'my-connector'} | ${'my_connector'} | ${'connector_my-connector_version'} | ${'CONNECTOR_MY_CONNECTOR_VERSION'}
   `(
-    'formats "$slug" consistently across field, json key and env key',
+    'keeps the slug as-is in the json key, but sanitizes it for the env key, for "$slug"',
     ({ slug, expectedField, expectedJsonKey, expectedEnvKey }) => {
       expect(buildConnectorFieldSlug(slug)).toBe(expectedField);
       expect(buildConnectorJsonKey(slug)).toBe(expectedJsonKey);

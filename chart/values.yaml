@@ -76,6 +76,8 @@ postgres:
       initdb:
         database: xtmhub
         owner: xtmhub
+        postInitApplicationSQL:
+          - CREATE EXTENSION IF NOT EXISTS pg_trgm
     # externalClusters:
     # plugins:
   pgadmin:
