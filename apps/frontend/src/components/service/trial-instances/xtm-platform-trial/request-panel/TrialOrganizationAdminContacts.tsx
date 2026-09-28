@@ -5,6 +5,8 @@ import {
 } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
 
+const MAX_DISPLAYED_ADMINISTRATORS = 5;
+
 interface TrialOrganizationAdminContactsProps {
   organizationId: string;
 }
@@ -30,7 +32,9 @@ export const TrialOrganizationAdminContacts = ({
     }
   );
 
-  const administrators = data?.usersWithCapabilitiesInOrganization ?? [];
+  const administrators = (
+    data?.usersWithCapabilitiesInOrganization ?? []
+  ).slice(0, MAX_DISPLAYED_ADMINISTRATORS);
 
   if (administrators.length === 0) {
     return null;

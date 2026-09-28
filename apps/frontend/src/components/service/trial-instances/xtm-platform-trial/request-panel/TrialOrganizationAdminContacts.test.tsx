@@ -78,6 +78,28 @@ describe('TrialOrganizationAdminContacts', () => {
     expect(screen.getByText('bob@acme.com')).toBeInTheDocument();
   });
 
+  it('displays at most five administrators', () => {
+    graphqlMocks.useConnectProductOrganizationAdminsQuery.mockReturnValue({
+      data: {
+        usersWithCapabilitiesInOrganization: Array.from(
+          { length: 8 },
+          (_, index) => ({
+            id: `user-${index}`,
+            email: `admin${index}@acme.com`,
+          })
+        ),
+      },
+    });
+
+    testRender(
+      <TrialOrganizationAdminContacts organizationId={ORGANIZATION_ID} />
+    );
+
+    expect(screen.getByText('admin4@acme.com')).toBeInTheDocument();
+    expect(screen.queryByText('admin5@acme.com')).not.toBeInTheDocument();
+    expect(screen.getAllByText(/@acme\.com$/)).toHaveLength(5);
+  });
+
   it.each<[string, ConnectProductOrganizationAdminsQuery | undefined]>([
     ['the query has not resolved yet', undefined],
     [
