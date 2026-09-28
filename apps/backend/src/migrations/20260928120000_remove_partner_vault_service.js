@@ -28,20 +28,6 @@ export async function up(knex) {
   );
 
   if (vaultServiceInstanceIds.length > 0) {
-    // PlatformConfiguration, Service_Configuration and DeploymentRequest all
-    // reference ServiceInstance without ON DELETE CASCADE. Vault instances
-    // are never deployed platforms, but clear these defensively so a stray
-    // row can't abort the migration with a foreign-key violation.
-    await knex('PlatformConfiguration')
-      .whereIn('service_instance_id', vaultServiceInstanceIds)
-      .del();
-    await knex('Service_Configuration')
-      .whereIn('service_instance_id', vaultServiceInstanceIds)
-      .del();
-    await knex('DeploymentRequest')
-      .whereIn('service_instance_id', vaultServiceInstanceIds)
-      .del();
-
     // Cascades (ON DELETE CASCADE): Subscription, Service_Link, Document
     // (which itself cascades Document_Metadata / Document_Children),
     // User_Service (via Subscription) and Subscription_Capability /
