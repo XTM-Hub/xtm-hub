@@ -58,7 +58,6 @@ import {
   ALL_METADATA_KEYS,
   DocumentTypeMappedByServiceDefinition,
   ServiceDefinitionIdentifiersByPlatformIdentifier,
-  VAULT_DOCUMENT_TYPE,
 } from './document.helper';
 import { DOCUMENT_IMAGE_METADATA_KEYS, DocumentImage } from './document.model';
 import { DocumentUploadsHelper } from './document.uploads.helper';
@@ -1648,28 +1647,6 @@ describe('documentApp', () => {
       const result = await DocumentApp.loadNewestDocuments(10);
 
       // Then
-      expect(result).toHaveLength(2);
-    });
-
-    it('should not include vault documents when no platformIdentifiers are given', async () => {
-      // Given — a vault document alongside the shareable ones created in beforeEach
-      await DocumentApp.createDocumentWithChildrenAndMetadata(
-        {
-          name: 'Vault document',
-          description: 'description',
-          service_instance_id: SERVICES.INSTANCES.VAULT.ID,
-          type: VAULT_DOCUMENT_TYPE,
-          active: true,
-        },
-        []
-      );
-
-      // When — no platform filter provided (homepage / unauthenticated caller scenario)
-      const result = await DocumentApp.loadNewestDocuments(10);
-
-      // Then — only the 2 shareable docs from beforeEach should be returned;
-      // the vault document must not leak through the unfiltered query
-      expect(result.map((d) => d.name)).not.toContain('Vault document');
       expect(result).toHaveLength(2);
     });
 

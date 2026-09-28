@@ -97,17 +97,19 @@ describe('batchLoadSubscriptions', () => {
 describe('batchLoadServiceInstances', () => {
   it('should return the matching service instances in the order of the requested ids', async () => {
     // When
-    const [integrations, vault] =
+    const [integrations, customDashboards] =
       await ServiceInstanceDataLoader.batchLoadServiceInstances([
         SERVICES.INSTANCES.INTEGRATIONS.ID,
-        SERVICES.INSTANCES.VAULT.ID,
+        SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
       ]);
 
     // Then
     expect(integrations).toMatchObject({
       id: SERVICES.INSTANCES.INTEGRATIONS.ID,
     });
-    expect(vault).toMatchObject({ id: SERVICES.INSTANCES.VAULT.ID });
+    expect(customDashboards).toMatchObject({
+      id: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+    });
   });
 
   it('should return undefined for an id that does not match a service instance', async () => {

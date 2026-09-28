@@ -1003,7 +1003,6 @@
       "opencti_integrations": "OpenCTI Integrations",
       "opencti_playbooks": "OpenCTI Playbooks",
       "opencti_registration": "OpenCTI Registration",
-      "vault": "Vault",
       "xtm_platform_bundle": "XTM Platform Trial",
       "xtm_platform_roadmap": "XTM Platform Roadmap",
       "xtmone_registration": "XTM One Registration"
@@ -1909,39 +1908,10 @@
         }
       }
     },
-    "Vault": {
-      "DeleteDocument": "Delete document",
-      "DropFile": "Drop the document here",
-      "File": "Document to send",
-      "FileExtension": "The document must have an extension",
-      "FileForm": {
-        "AddFile": "Add new document",
-        "AlreadyExists": "This document already exists. The old one will be erased.",
-        "DeleteDialog": "Are you sure you want to delete this document?",
-        "DescriptionLabel": "Description",
-        "DescriptionPlaceholder": "This is a short paragraph to describe the document.",
-        "DropDocuments": "Drop documents here",
-        "EditFile": "Edit document",
-        "File": "Document",
-        "FileAlreadyExists": "This document already exists",
-        "FileExistsDialog": "This document already exists. This document will erase the old one. Are you sure you want to continue?",
-        "NoDocument": "No document selected",
-        "SelectDocument": "Select document",
-        "ShortNameLabel": "Short name",
-        "ShortNamePlaceholder": "Filigran Pricing",
-        "UploadNewFile": "Upload a new document in Vault"
-      },
-      "FileTab": {
-        "Description": "Description",
-        "FileName": "Document name",
-        "NumberDownload": "Downloads",
-        "Search": "Search with document name...",
-        "UploadDate": "Upload date"
-      },
-      "ManageVault": "Manage vault",
-      "UpdateDocument": "Update document",
-      "Vault": "Partner Vault",
-      "VaultTitle": "Vault Administration"
+    "FileForm": {
+      "DropDocuments": "Drop documents here",
+      "NoDocument": "No document selected",
+      "SelectDocument": "Select document"
     },
     "OpenctiCustomViews": {
       "Actions": {
@@ -2045,10 +2015,7 @@
     }
   },
   "ServiceActions": {
-    "OrganizationAdded": "{name} organization subscribed to the {serviceName} service",
-    "OrganizationDeleted": "Organization {name} has been deleted",
-    "UserCapabilitiesModified": "{email}'s capabilities have been modified",
-    "UserServiceAdded": "{email} has been invited to the {serviceName}"
+    "DocumentUpdated": "{file_name} has been modified"
   },
   "ServiceForm": {
     "EditService": "Edit service's pictures",
@@ -2263,12 +2230,6 @@
     "APAC_SG": "Singapore",
     "EU_WEST": "Europe West",
     "US_EAST": "United States East"
-  },
-  "VaultActions": {
-    "DocumentAdded": "{file_name} has been added",
-    "DocumentDeleted": "{file_name} has been deleted",
-    "DocumentUpdated": "{file_name} has been modified",
-    "UpdateDocument": "Update document"
   },
   "DeploymentRequestJobTitle": {
     "ceo": "CEO",

@@ -10,7 +10,7 @@ describe('resolveSafeRedirect', () => {
     it.each`
       path                         | expected
       ${'/app'}                    | ${'/app'}
-      ${'/app/service/vault'}      | ${'/app/service/vault'}
+      ${'/app/service/opencti_integrations'}      | ${'/app/service/opencti_integrations'}
       ${'/app/manage?tab=members'} | ${'/app/manage?tab=members'}
       ${'/'}                       | ${'/'}
       ${'/%5cevil.test'}           | ${'/%5cevil.test'}

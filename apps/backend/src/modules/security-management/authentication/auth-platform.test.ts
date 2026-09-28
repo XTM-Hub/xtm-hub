@@ -117,7 +117,7 @@ describe('initAuthPlatform', () => {
     it.each`
       redirect                      | expected                | description
       ${undefined}                  | ${'/app'}               | ${'no redirect param'}
-      ${btoa('/app/service/vault')} | ${'/app/service/vault'} | ${'safe relative redirect'}
+      ${btoa('/app/service/opencti_integrations')} | ${'/app/service/opencti_integrations'} | ${'safe relative redirect'}
       ${btoa('https://evil.test')}  | ${'/app'}               | ${'absolute url rejected'}
       ${btoa('//evil.test')}        | ${'/app'}               | ${'protocol-relative url rejected'}
       ${btoa('/\\evil.test')}       | ${'/app'}               | ${'backslash url rejected'}
@@ -201,11 +201,11 @@ describe('initAuthPlatform', () => {
     });
 
     it('should store the safe redirect as session referer', async () => {
-      const req = buildRequest({ redirect: btoa('/app/service/vault') });
+      const req = buildRequest({ redirect: btoa('/app/service/opencti_integrations') });
 
       await app.handler(req, buildResponse(), vi.fn());
 
-      expect(req.session.referer).toBe('/app/service/vault');
+      expect(req.session.referer).toBe('/app/service/opencti_integrations');
     });
 
     it('should not store an unsafe redirect as session referer', async () => {

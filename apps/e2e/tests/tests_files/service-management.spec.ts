@@ -8,7 +8,7 @@ const TEST_SUBSCRIPTION = {
   organizationId: '681fb117-e2c3-46d3-945a-0e921b5d4b6c',
   adminOrgaEmail: 'admin@second-orga.com',
   userInOrgaEmail: 'user@second-orga.com',
-  vaultServiceInstanceId: 'e88e8f80-ba9e-480b-ab27-8613a1565eff',
+  serviceName: 'OpenCTI Integrations Library',
 };
 
 export const GENERIC_CAPABILITY = {
@@ -72,8 +72,12 @@ test.describe('Service Management', () => {
     });
 
     await test.step("Delete an organization's subscription", async () => {
-      await page.getByRole('link', { name: 'Vault' }).click();
-      await expect(page.getByRole('heading', { name: 'Vault' })).toBeVisible();
+      await page
+        .getByRole('link', { name: TEST_SUBSCRIPTION.serviceName })
+        .click();
+      await expect(
+        page.getByRole('heading', { name: TEST_SUBSCRIPTION.serviceName })
+      ).toBeVisible();
       await waitForReactIdle(page);
 
       await servicePage.deleteOrganizationFromService(

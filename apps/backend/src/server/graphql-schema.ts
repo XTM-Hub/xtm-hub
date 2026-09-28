@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import competitorResolver from '../modules/deployment/competitor/competitor.resolver';
 import deploymentResolver from '../modules/deployment/deployment.resolver';
 import serviceGroupResolver from '../modules/deployment/group/service-group.resolver';
-import vaultResolver from '../modules/document/document.resolver';
+import documentResolver from '../modules/document/document.resolver';
 import facetResolver from '../modules/document/facet/facet.resolver';
 import featureVotingResolver from '../modules/feature-voting/feature-voting.resolver';
 import logResolver from '../modules/log/log.resolver';
@@ -55,7 +55,7 @@ const resolvers = mergeResolvers([
   organizationResolver,
   userResolver,
   settingsResolver,
-  vaultResolver,
+  documentResolver,
   subscriptionsResolver,
   subscriptionCapabilityResolver,
   userServiceCapabilityResolver,
