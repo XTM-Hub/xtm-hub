@@ -18,6 +18,7 @@ import { BadRequestErrorCode } from '../../../utils/error/error.code';
 import { DocumentChildrenDomain } from '../../document/domain/document.children.domain';
 import { DocumentDomain } from '../../document/domain/document.domain';
 import {
+  ManifestFragmentHelper,
   TAG_DECOUPLING,
   TAG_LATEST,
   TAG_LATEST_LTS,
@@ -60,7 +61,7 @@ const createConnectorWithFragment = async ({
   slug = `connector-${manifestFragmentId}`,
   minimumDeployableVersionPadded,
   tags = [],
-  version = '007.260309.000',
+  version = '7.260309.0',
   active = true,
   isDecommissioned = false,
 }: {
@@ -88,6 +89,11 @@ const createConnectorWithFragment = async ({
     document_id: doc.id,
     key: DocumentMetadataKeyCode.ManifestFragmentId as unknown as DocumentMetadataKey,
     value: manifestFragmentId,
+  });
+  await TestHelper.documentMetadata.create({
+    document_id: doc.id,
+    key: DocumentMetadataKeyCode.VersionPadded as unknown as DocumentMetadataKey,
+    value: ManifestFragmentHelper.validateAndFormatManifestVersion(version),
   });
   if (minimumDeployableVersionPadded) {
     await TestHelper.documentMetadata.create({
@@ -239,7 +245,7 @@ describe('manifestApp', () => {
         const fallback = await createConnectorWithFragment({
           manifestFragmentId: 'fragment-a-legacy',
           slug: 'connector-a',
-          version: '007.260101.000',
+          version: '7.260101.0',
         });
 
         await ManifestApp.generateManifest(MANIFEST_KEY);
