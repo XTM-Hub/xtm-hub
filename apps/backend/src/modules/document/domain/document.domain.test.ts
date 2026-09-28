@@ -23,6 +23,7 @@ import {
 } from '../../../__generated__/resolvers-types';
 import type { DocumentMetadataKey } from '../../../model/kanel/public/DocumentMetadata';
 import {
+  ManifestFragmentHelper,
   TAG_DECOUPLING,
   TAG_LATEST,
   TAG_LATEST_LTS,
@@ -1599,6 +1600,10 @@ describe('document domain', () => {
   });
 
   describe('loadBestCompatibleConnectorsBySlugs', () => {
+    // Mirrors the real ingestion path (manifest-fragment.domain.ts): `Document.version`
+    // stores the raw manifest version (e.g. `7.260309.0-lts.1`), while the zero-padded,
+    // uppercased form used for filtering/ordering is written separately as
+    // `Document_Metadata.version_padded`.
     const createConnector = async ({
       manifestFragmentId,
       slug,
@@ -1631,6 +1636,11 @@ describe('document domain', () => {
         document_id: doc.id,
         key: DocumentMetadataKeyCode.ManifestFragmentId as unknown as DocumentMetadataKey,
         value: manifestFragmentId,
+      });
+      await TestHelper.documentMetadata.create({
+        document_id: doc.id,
+        key: DocumentMetadataKeyCode.VersionPadded as unknown as DocumentMetadataKey,
+        value: ManifestFragmentHelper.validateAndFormatManifestVersion(version),
       });
       if (minimumDeployableVersionPadded) {
         await TestHelper.documentMetadata.create({
@@ -1684,7 +1694,7 @@ describe('document domain', () => {
         const doc = await createConnector({
           manifestFragmentId: 'fragment-a',
           slug: 'connector-a',
-          version: '007.260309.000',
+          version: '7.260309.0',
           minimumDeployableVersionPadded,
         });
 
@@ -1702,7 +1712,7 @@ describe('document domain', () => {
       await createConnector({
         manifestFragmentId: 'fragment-a',
         slug: 'connector-a',
-        version: '007.260309.000',
+        version: '7.260309.0',
         minimumDeployableVersionPadded: '007.260601.000',
       });
 
@@ -1718,7 +1728,7 @@ describe('document domain', () => {
       await createConnector({
         manifestFragmentId: 'fragment-a',
         slug: 'connector-a',
-        version: '007.260309.000',
+        version: '7.260309.0',
         active: false,
       });
 
@@ -1734,7 +1744,7 @@ describe('document domain', () => {
       await createConnector({
         manifestFragmentId: 'fragment-a',
         slug: 'connector-a',
-        version: '007.260309.000',
+        version: '7.260309.0',
         isDecommissioned: true,
       });
 
@@ -1750,7 +1760,7 @@ describe('document domain', () => {
       await createConnector({
         manifestFragmentId: 'fragment-a',
         slug: 'connector-a',
-        version: '007.260309.000',
+        version: '7.260309.0',
         integrationType: IntegrationType.CsvFeed,
       });
 
@@ -1766,12 +1776,12 @@ describe('document domain', () => {
       await createConnector({
         manifestFragmentId: 'fragment-a',
         slug: 'connector-a',
-        version: '007.260309.000',
+        version: '7.260309.0',
       });
       await createConnector({
         manifestFragmentId: 'fragment-b',
         slug: 'connector-b',
-        version: '007.260309.000',
+        version: '7.260309.0',
       });
 
       const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
@@ -1787,19 +1797,19 @@ describe('document domain', () => {
       await createConnector({
         manifestFragmentId: 'fragment-a',
         slug: 'connector-a',
-        version: '007.260309.000',
+        version: '7.260309.0',
         minimumDeployableVersionPadded: '007.260101.000',
       });
       await createConnector({
         manifestFragmentId: 'fragment-b',
         slug: 'connector-b',
-        version: '007.260309.000',
+        version: '7.260309.0',
         minimumDeployableVersionPadded: '007.260601.000',
       });
       await createConnector({
         manifestFragmentId: 'fragment-c',
         slug: 'connector-c',
-        version: '007.260101.000',
+        version: '7.260101.0',
       });
 
       const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
@@ -1818,19 +1828,19 @@ describe('document domain', () => {
       await createConnector({
         manifestFragmentId: 'fragment-a-newest-incompatible',
         slug: 'connector-a',
-        version: '007.260701.000',
+        version: '7.260701.0',
         minimumDeployableVersionPadded: '007.260601.000',
       });
       const expected = await createConnector({
         manifestFragmentId: 'fragment-a-newest-compatible',
         slug: 'connector-a',
-        version: '007.260401.000',
+        version: '7.260401.0',
         minimumDeployableVersionPadded: '007.260101.000',
       });
       await createConnector({
         manifestFragmentId: 'fragment-a-older-compatible',
         slug: 'connector-a',
-        version: '007.260101.000',
+        version: '7.260101.0',
       });
 
       const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
@@ -1846,7 +1856,7 @@ describe('document domain', () => {
       await createConnector({
         manifestFragmentId: 'fragment-a',
         slug: 'connector-a',
-        version: '007.260309.000.LTS.005',
+        version: '7.260309.0-lts.5',
         minimumDeployableVersionPadded: '007.260101.000.LTS.001',
       });
 
@@ -1862,7 +1872,7 @@ describe('document domain', () => {
       await createConnector({
         manifestFragmentId: 'fragment-a',
         slug: 'connector-a',
-        version: '007.260309.000',
+        version: '7.260309.0',
       });
 
       const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
@@ -1877,7 +1887,7 @@ describe('document domain', () => {
       const doc = await createConnector({
         manifestFragmentId: 'fragment-a',
         slug: 'connector-a',
-        version: '007.260101.000.LTS.001',
+        version: '7.260101.0-lts.1',
         minimumDeployableVersionPadded: '007.260101.000.LTS.001',
       });
 
@@ -1888,6 +1898,85 @@ describe('document domain', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0]!.id).toBe(doc.id);
+    });
+
+    // LTS versions must only ever be ranked against other LTS versions (and
+    // vice versa for non-LTS): the LTS filter partitions the set before
+    // ordering, so a newer non-LTS build must never outrank an older LTS one
+    // when the requested manifest version is LTS.
+    it('returns the latest LTS version among several compatible LTS versions of the same slug', async () => {
+      const expected = await createConnector({
+        manifestFragmentId: 'fragment-a-lts-newer',
+        slug: 'connector-a',
+        version: '7.260207.0-lts.2',
+      });
+      await createConnector({
+        manifestFragmentId: 'fragment-a-lts-older',
+        slug: 'connector-a',
+        version: '7.260101.0-lts.1',
+      });
+
+      // Newer than both LTS builds, but not LTS: must not win an LTS request.
+      await createConnector({
+        manifestFragmentId: 'fragment-a-non-lts-newest',
+        slug: 'connector-a',
+        version: '7.260904.0',
+      });
+
+      const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
+        ['connector-a'],
+        '7.260309.0-lts.5'
+      );
+
+      expect(result).toHaveLength(1);
+      expect(result[0]!.id).toBe(expected.id);
+    });
+
+    it('excludes a raw lowercase-suffixed LTS connector when manifest version is not LTS', async () => {
+      await createConnector({
+        manifestFragmentId: 'fragment-a',
+        slug: 'connector-a',
+        version: '7.260309.0-lts.5',
+      });
+
+      const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
+        ['connector-a'],
+        '7.260904.0'
+      );
+
+      expect(result).toHaveLength(0);
+    });
+
+    // Regression test for #3575: ordering used to be lexicographic over the
+    // raw, unpadded `Document.version` column, so `7.260309.9` (a string)
+    // sorted above `7.260309.10`. Comparing the zero-padded `version_padded`
+    // metadata instead makes the ordering numeric.
+    it('returns the highest padded version even when the raw patch has fewer digits (10 vs 9)', async () => {
+      const expected = await createConnector({
+        manifestFragmentId: 'fragment-a-patch-10',
+        slug: 'connector-a',
+        version: '7.260309.10',
+      });
+
+      await createConnector({
+        manifestFragmentId: 'fragment-a-patch-9',
+        slug: 'connector-a',
+        version: '7.260309.9',
+      });
+
+      await createConnector({
+        manifestFragmentId: 'fragment-a-lts-older',
+        slug: 'connector-a',
+        version: '7.260401.0-lts.1',
+      });
+
+      const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
+        ['connector-a'],
+        '7.260309.10'
+      );
+
+      expect(result).toHaveLength(1);
+      expect(result[0]!.id).toBe(expected.id);
     });
   });
 
