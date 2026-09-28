@@ -5,8 +5,10 @@ import { TestHelper } from '../../../../tests/helper/test.helper';
 import { SERVICES, TEST_ORGANIZATIONS } from '../../../../tests/tests.const';
 import {
   DeploymentRequestHubStatus,
+  PlatformIdentifier,
   ServiceInstanceCreationStatus,
 } from '../../../__generated__/resolvers-types';
+import { DeploymentRequestId } from '../../../model/kanel/public/DeploymentRequest';
 import { ServiceGroupId } from '../../../model/kanel/public/ServiceGroup';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import { ServiceInstanceDomain } from '../../service/instance/service-instance.domain';
@@ -431,6 +433,77 @@ describe('serviceGroupDomain', () => {
 
       // Then
       expect(groups).toMatchObject([]);
+    });
+  });
+
+  describe('loadUserServiceGroupsWithDeployment', () => {
+    const createdBundleIds: DeploymentRequestId[] = [];
+
+    afterEach(async () => {
+      for (const bundleId of createdBundleIds) {
+        await TestHelper.deploymentRequest.deleteBundle(bundleId);
+      }
+      createdBundleIds.length = 0;
+    });
+
+    it('should return empty array when the user has no service group grant', async () => {
+      const rows = await ServiceGroupDomain.loadUserServiceGroupsWithDeployment(
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.ID
+      );
+
+      expect(rows).toEqual([]);
+    });
+
+    it('should return one row per group for a bundle child grant, keeping the parent_id', async () => {
+      const { bundle, children } =
+        await TestHelper.deploymentRequest.createBundle({
+          children: [
+            { platform_identifier: PlatformIdentifier.Opencti },
+            { platform_identifier: PlatformIdentifier.Xtmone },
+          ],
+        });
+      createdBundleIds.push(bundle.id);
+      const [openctiChild, xtmoneChild] = children;
+      const openctiGroupId = uuidv4() as ServiceGroupId;
+      const xtmoneGroupId = uuidv4() as ServiceGroupId;
+      await TestHelper.serviceGroup.create({
+        id: openctiGroupId,
+        name: 'Admin',
+        service_instance_id: openctiChild!.service_instance_id,
+      });
+      await TestHelper.serviceGroup.create({
+        id: xtmoneGroupId,
+        name: 'User',
+        service_instance_id: xtmoneChild!.service_instance_id,
+      });
+      await TestHelper.serviceGroupUser.create({
+        user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE.ID,
+        group_id: openctiGroupId,
+      });
+      await TestHelper.serviceGroupUser.create({
+        user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE.ID,
+        group_id: xtmoneGroupId,
+      });
+
+      const rows = await ServiceGroupDomain.loadUserServiceGroupsWithDeployment(
+        TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE.ID
+      );
+
+      const sortedRows = [...rows].sort((left, right) =>
+        left.group_name.localeCompare(right.group_name)
+      );
+      expect(sortedRows).toMatchObject([
+        {
+          id: openctiChild!.id,
+          parent_id: bundle.id,
+          group_name: 'Admin',
+        },
+        {
+          id: xtmoneChild!.id,
+          parent_id: bundle.id,
+          group_name: 'User',
+        },
+      ]);
     });
   });
 });

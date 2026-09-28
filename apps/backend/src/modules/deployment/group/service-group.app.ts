@@ -4,12 +4,14 @@ import {
   PlatformIdentifier,
   ServiceGroup as ServiceGroupResponse,
   UpdateBundleUserGroupsInput,
+  UserAccountStatus,
 } from '../../../__generated__/resolvers-types';
 import { withTransaction } from '../../../context/database.context';
 import { requestContext } from '../../../context/request.context';
 import { ServiceGroupId } from '../../../model/kanel/public/ServiceGroup';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import User, { UserId } from '../../../model/kanel/public/User';
+import { UserLoadUserBy } from '../../../model/user';
 import { logApp } from '../../../utils/app-logger.util';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { OrganizationDomain } from '../../organization-management/organization/organization.domain';
@@ -456,6 +458,65 @@ export const ServiceGroupApp = {
           error,
         });
       }
+    }
+  },
+
+  grantUserAccess: async (userId: UserId): Promise<boolean> => {
+    const deploymentRequestsWithGroupName =
+      await ServiceGroupDomain.loadUserServiceGroupsWithDeployment(userId);
+    if (deploymentRequestsWithGroupName.length === 0) {
+      return true;
+    }
+
+    const { users, emailByUserId } = await ServiceGroupHelper.loadEmailByUserId(
+      [userId]
+    );
+    const [user] = users;
+    if (!user) {
+      return true;
+    }
+
+    try {
+      await ServiceGroupHelper.syncAuth0GroupsForChildren(
+        deploymentRequestsWithGroupName.map((deploymentRequest) => ({
+          child: deploymentRequest,
+          groupNames: [deploymentRequest.group_name],
+        })),
+        [userId],
+        emailByUserId
+      );
+    } catch (error) {
+      logApp.error('Unable to sync Auth0 groups for reactivated user', {
+        userId,
+        error,
+      });
+      return false;
+    }
+
+    await ServiceGroupHelper.sendBundleWelcomeEmailsForGrant(
+      deploymentRequestsWithGroupName,
+      user
+    );
+    return true;
+  },
+
+  grantAccessIfWaiting: async (user: UserLoadUserBy): Promise<void> => {
+    if (user.status !== UserAccountStatus.Waiting) {
+      return;
+    }
+
+    try {
+      const granted = await ServiceGroupApp.grantUserAccess(user.id);
+      if (!granted) {
+        return;
+      }
+      await UserDomain.updateUser(user.id, { status: null });
+      user.status = null;
+    } catch (error) {
+      logApp.error('Unable to grant service group access at login', {
+        userId: user.id,
+        error,
+      });
     }
   },
 };

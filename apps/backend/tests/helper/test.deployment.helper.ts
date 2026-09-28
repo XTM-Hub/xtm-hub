@@ -188,6 +188,9 @@ export const TestDeploymentHelper = {
         await db<Subscription>('Subscription')
           .where({ service_instance_id })
           .del();
+        await TestServiceHelper.serviceGroup.delete({
+          service_instance_id,
+        });
         await TestServiceHelper.serviceInstance.delete({
           id: service_instance_id,
         });

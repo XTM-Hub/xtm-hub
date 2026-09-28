@@ -673,6 +673,135 @@ describe('serviceGroupHelper', () => {
     });
   });
 
+  describe('sendBundleWelcomeEmailsForGrant', () => {
+    const bundleIds: DeploymentRequestId[] = [];
+    const endDate = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
+    let simple2User: User;
+
+    beforeAll(async () => {
+      [simple2User] = await UserDomain.loadUsers([
+        TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
+      ]);
+    });
+
+    afterEach(async () => {
+      vi.restoreAllMocks();
+      for (const bundleId of bundleIds) {
+        await TestHelper.deploymentRequest.deleteBundle(bundleId);
+      }
+      bundleIds.length = 0;
+    });
+
+    it('should send one welcome email grouping all products of the same bundle', async () => {
+      const { bundle, children } =
+        await TestHelper.deploymentRequest.createBundle({
+          bundle: { end_date: endDate },
+          children: [
+            { platform_identifier: PlatformIdentifier.Opencti },
+            { platform_identifier: PlatformIdentifier.Xtmone },
+          ],
+        });
+      bundleIds.push(bundle.id);
+      const [openctiChild, xtmoneChild] = children;
+      const deploymentRequestsWithGroupName = [
+        { ...openctiChild!, group_name: ServiceGroupName.Admin },
+        { ...xtmoneChild!, group_name: ServiceGroupName.User },
+      ];
+      const sendMailSpy = vi
+        .spyOn(mailService, 'sendMail')
+        .mockResolvedValue(undefined);
+
+      await ServiceGroupHelper.sendBundleWelcomeEmailsForGrant(
+        deploymentRequestsWithGroupName,
+        simple2User
+      );
+
+      expect(sendMailSpy).toHaveBeenCalledTimes(1);
+      expect(sendMailSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: simple2User.email,
+          template: 'free_trial_bundle_user_added',
+          params: expect.objectContaining({
+            adminEmail: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.EMAIL,
+            products: expect.arrayContaining([
+              PlatformIdentifier.Opencti,
+              PlatformIdentifier.Xtmone,
+            ]),
+          }),
+        })
+      );
+    });
+
+    it('should send one welcome email per bundle when the user has grants in several bundles', async () => {
+      const firstBundle = await TestHelper.deploymentRequest.createBundle({
+        bundle: { end_date: endDate },
+        children: [{ platform_identifier: PlatformIdentifier.Opencti }],
+      });
+      const secondBundle = await TestHelper.deploymentRequest.createBundle({
+        bundle: { end_date: endDate },
+        children: [{ platform_identifier: PlatformIdentifier.Xtmone }],
+      });
+      bundleIds.push(firstBundle.bundle.id, secondBundle.bundle.id);
+      const deploymentRequestsWithGroupName = [
+        { ...firstBundle.children[0]!, group_name: ServiceGroupName.Admin },
+        { ...secondBundle.children[0]!, group_name: ServiceGroupName.Admin },
+      ];
+      const sendMailSpy = vi
+        .spyOn(mailService, 'sendMail')
+        .mockResolvedValue(undefined);
+
+      await ServiceGroupHelper.sendBundleWelcomeEmailsForGrant(
+        deploymentRequestsWithGroupName,
+        simple2User
+      );
+
+      expect(sendMailSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('should ignore deployment requests without a parent bundle or a platform identifier', async () => {
+      const { bundle, children } =
+        await TestHelper.deploymentRequest.createBundle({
+          bundle: { end_date: endDate },
+          children: [{ platform_identifier: PlatformIdentifier.Opencti }],
+        });
+      bundleIds.push(bundle.id);
+      const [openctiChild] = children;
+      const deploymentRequestsWithGroupName = [
+        { ...openctiChild!, group_name: ServiceGroupName.Admin },
+        {
+          ...openctiChild!,
+          parent_id: null,
+          group_name: ServiceGroupName.Admin,
+        },
+        {
+          ...openctiChild!,
+          platform_identifier: null,
+          group_name: ServiceGroupName.Admin,
+        },
+      ];
+      const sendMailSpy = vi
+        .spyOn(mailService, 'sendMail')
+        .mockResolvedValue(undefined);
+
+      await ServiceGroupHelper.sendBundleWelcomeEmailsForGrant(
+        deploymentRequestsWithGroupName,
+        simple2User
+      );
+
+      expect(sendMailSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should do nothing when given an empty list', async () => {
+      const sendMailSpy = vi
+        .spyOn(mailService, 'sendMail')
+        .mockResolvedValue(undefined);
+
+      await ServiceGroupHelper.sendBundleWelcomeEmailsForGrant([], simple2User);
+
+      expect(sendMailSpy).not.toHaveBeenCalled();
+    });
+  });
+
   describe('updateAuth0Groups', () => {
     const bundleIds: DeploymentRequestId[] = [];
 
