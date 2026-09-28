@@ -1,46 +1,6 @@
-import * as s3 from '@aws-sdk/client-s3';
-import { S3Client } from '@aws-sdk/client-s3';
-import config from 'config';
 import { v4 as uuidv4 } from 'uuid';
 
 const VAULT_IDENTIFIER = 'vault';
-
-// Mirrors src/thirdparty/minio/client.ts — a migration cannot import
-// application source, so the S3 client construction is duplicated here.
-const getEndpoint = () => {
-  if (config.get('minio.endpoint') === 's3.amazonaws.com') {
-    return undefined;
-  }
-  return `${config.get('minio.useSsl') === 'true' ? 'https' : 'http'}://${config.get('minio.endpoint')}:${config.get('minio.port')}`;
-};
-
-const buildS3Client = () =>
-  new S3Client({
-    region: config.get('minio.region'),
-    endpoint: getEndpoint(),
-    forcePathStyle: true,
-    credentials: {
-      accessKeyId: config.get('minio.accessKeyId'),
-      secretAccessKey: config.get('minio.secretAccessKey'),
-    },
-    tls: config.get('minio.useSsl') === 'true',
-  });
-
-const deleteMinioFile = async (s3Client, minioName) => {
-  try {
-    await s3Client.send(
-      new s3.DeleteObjectCommand({
-        Bucket: config.get('minio.bucketName'),
-        Key: minioName,
-      })
-    );
-  } catch (err) {
-    console.error(
-      `Failed to delete Partner Vault document file from storage (minio_name: ${minioName}):`,
-      err
-    );
-  }
-};
 
 /**
  * @param { import("knex").Knex } knex
@@ -63,24 +23,11 @@ export async function up(knex) {
   );
 
   if (vaultServiceInstanceIds.length > 0) {
-    const vaultDocuments = await knex('Document')
-      .whereIn('service_instance_id', vaultServiceInstanceIds)
-      .whereNotNull('minio_name')
-      .select('minio_name');
-
-    if (vaultDocuments.length > 0) {
-      const s3Client = buildS3Client();
-      await Promise.all(
-        vaultDocuments.map((document) =>
-          deleteMinioFile(s3Client, document.minio_name)
-        )
-      );
-    }
-
     // Cascades (ON DELETE CASCADE): Subscription, Service_Link, Document
     // (which itself cascades Document_Metadata / Document_Children),
     // User_Service (via Subscription) and Subscription_Capability /
-    // UserService_Capability (via Subscription / User_Service).
+    // UserService_Capability (via Subscription / User_Service). This does
+    // not remove the underlying files from MinIO — only the database rows.
     await knex('ServiceInstance').whereIn('id', vaultServiceInstanceIds).del();
   }
 
