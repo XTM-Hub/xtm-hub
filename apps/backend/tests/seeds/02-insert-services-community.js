@@ -4,7 +4,7 @@ export async function seed(knex) {
       {
         id: '7f17820c-3a36-4023-ae3c-e2c15613b518',
         organization_id: 'ba091095-418f-4b4f-b150-6c9295e232c4',
-        service_instance_id: 'e88e8f80-ba9e-480b-ab27-8613a1565eff',
+        service_instance_id: '0f4aad4b-bdd6-4084-8b1f-82c9c66578cc',
         start_date: '2024-08-08',
         end_date: null,
       },
