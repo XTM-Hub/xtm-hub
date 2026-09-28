@@ -2015,7 +2015,11 @@
     }
   },
   "ServiceActions": {
-    "DocumentUpdated": "{file_name} a été modifié"
+    "DocumentUpdated": "{file_name} a été modifié",
+    "OrganizationAdded": "L'organisation {name} a souscrit au service {serviceName}",
+    "OrganizationDeleted": "L'organisation {name} a été supprimée",
+    "UserCapabilitiesModified": "les capacités de {email}'s ont été modifiées",
+    "UserServiceAdded": "{email} a été invité au service {serviceName}"
   },
   "ServiceForm": {
     "EditService": "Editer les illustrations d'un service",

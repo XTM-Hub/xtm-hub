@@ -2015,7 +2015,11 @@
     }
   },
   "ServiceActions": {
-    "DocumentUpdated": "{file_name} は修正されました"
+    "DocumentUpdated": "{file_name} は修正されました",
+    "OrganizationAdded": "{name} 組織は {serviceName} サービスを購読している。",
+    "OrganizationDeleted": "組織 {name} は削除されました。",
+    "UserCapabilitiesModified": "{email} の機能が変更されました",
+    "UserServiceAdded": "{email} は {serviceName} に招待されました。"
   },
   "ServiceForm": {
     "EditService": "編集サービスの写真",

@@ -7,22 +7,41 @@ const VAULT_IDENTIFIER = 'vault';
  * @returns { Promise<void> }
  */
 export async function up(knex) {
-  const vaultServiceDefinition = await knex('ServiceDefinition')
+  // `identifier` is not a unique column on ServiceDefinition, so query every
+  // matching row instead of assuming a single legacy vault definition exists.
+  const vaultServiceDefinitions = await knex('ServiceDefinition')
     .where({ identifier: VAULT_IDENTIFIER })
-    .first();
+    .select('id');
 
-  if (!vaultServiceDefinition) {
+  if (vaultServiceDefinitions.length === 0) {
     return;
   }
+  const vaultServiceDefinitionIds = vaultServiceDefinitions.map(
+    (definition) => definition.id
+  );
 
   const vaultServiceInstances = await knex('ServiceInstance')
-    .where({ service_definition_id: vaultServiceDefinition.id })
+    .whereIn('service_definition_id', vaultServiceDefinitionIds)
     .select('id');
   const vaultServiceInstanceIds = vaultServiceInstances.map(
     (instance) => instance.id
   );
 
   if (vaultServiceInstanceIds.length > 0) {
+    // PlatformConfiguration, Service_Configuration and DeploymentRequest all
+    // reference ServiceInstance without ON DELETE CASCADE. Vault instances
+    // are never deployed platforms, but clear these defensively so a stray
+    // row can't abort the migration with a foreign-key violation.
+    await knex('PlatformConfiguration')
+      .whereIn('service_instance_id', vaultServiceInstanceIds)
+      .del();
+    await knex('Service_Configuration')
+      .whereIn('service_instance_id', vaultServiceInstanceIds)
+      .del();
+    await knex('DeploymentRequest')
+      .whereIn('service_instance_id', vaultServiceInstanceIds)
+      .del();
+
     // Cascades (ON DELETE CASCADE): Subscription, Service_Link, Document
     // (which itself cascades Document_Metadata / Document_Children),
     // User_Service (via Subscription) and Subscription_Capability /
@@ -35,11 +54,11 @@ export async function up(knex) {
   // now no Subscription_Capability row can reference it (they were removed by
   // the ServiceInstance cascade above), so it's safe to delete directly.
   await knex('Service_Capability')
-    .where({ service_definition_id: vaultServiceDefinition.id })
+    .whereIn('service_definition_id', vaultServiceDefinitionIds)
     .del();
 
   await knex('ServiceDefinition')
-    .where({ id: vaultServiceDefinition.id })
+    .whereIn('id', vaultServiceDefinitionIds)
     .del();
 }
 
