@@ -115,16 +115,16 @@ describe('initAuthPlatform', () => {
     });
 
     it.each`
-      redirect                      | expected                | description
-      ${undefined}                  | ${'/app'}               | ${'no redirect param'}
+      redirect                                     | expected                               | description
+      ${undefined}                                 | ${'/app'}                              | ${'no redirect param'}
       ${btoa('/app/service/opencti_integrations')} | ${'/app/service/opencti_integrations'} | ${'safe relative redirect'}
-      ${btoa('https://evil.test')}  | ${'/app'}               | ${'absolute url rejected'}
-      ${btoa('//evil.test')}        | ${'/app'}               | ${'protocol-relative url rejected'}
-      ${btoa('/\\evil.test')}       | ${'/app'}               | ${'backslash url rejected'}
-      ${btoa('/app\r\nx: y')}       | ${'/app'}               | ${'CRLF payload rejected'}
-      ${'not-base64-!!'}            | ${'/app'}               | ${'malformed base64 redirect'}
-      ${''}                         | ${'/app'}               | ${'empty redirect param'}
-      ${['/app/a', '/app/b']}       | ${'/app'}               | ${'repeated redirect param'}
+      ${btoa('https://evil.test')}                 | ${'/app'}                              | ${'absolute url rejected'}
+      ${btoa('//evil.test')}                       | ${'/app'}                              | ${'protocol-relative url rejected'}
+      ${btoa('/\\evil.test')}                      | ${'/app'}                              | ${'backslash url rejected'}
+      ${btoa('/app\r\nx: y')}                      | ${'/app'}                              | ${'CRLF payload rejected'}
+      ${'not-base64-!!'}                           | ${'/app'}                              | ${'malformed base64 redirect'}
+      ${''}                                        | ${'/app'}                              | ${'empty redirect param'}
+      ${['/app/a', '/app/b']}                      | ${'/app'}                              | ${'repeated redirect param'}
     `(
       'should redirect to "$expected" ($description)',
       async ({ redirect, expected }) => {
@@ -201,7 +201,9 @@ describe('initAuthPlatform', () => {
     });
 
     it('should store the safe redirect as session referer', async () => {
-      const req = buildRequest({ redirect: btoa('/app/service/opencti_integrations') });
+      const req = buildRequest({
+        redirect: btoa('/app/service/opencti_integrations'),
+      });
 
       await app.handler(req, buildResponse(), vi.fn());
 

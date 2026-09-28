@@ -225,8 +225,7 @@ describe('service instance domain', () => {
       // Then
       expect(results).toHaveLength(2);
       const integrationsRow = results.find(
-        (row) =>
-          row.service_instance_id === SERVICES.INSTANCES.INTEGRATIONS.ID
+        (row) => row.service_instance_id === SERVICES.INSTANCES.INTEGRATIONS.ID
       );
       expect(integrationsRow?.id).toBe(
         SERVICES.DEFINITIONS.OPENCTI_INTEGRATIONS.ID

@@ -20,7 +20,7 @@ describe('buildDistinctPlatformIdentifiersFromServiceDefinition', () => {
     ${[{ identifier: ServiceDefinitionIdentifier.OpenaevRegistration }]}                                                                  | ${[PlatformIdentifier.Openaev]}                             | ${'returns [openaev] for a single OPENAEV identifier'}
     ${[{ identifier: ServiceDefinitionIdentifier.OpenctiRegistration }, { identifier: ServiceDefinitionIdentifier.OpenctiRegistration }]} | ${[PlatformIdentifier.Opencti]}                             | ${'deduplicates identifiers resolving to the same platform'}
     ${[{ identifier: ServiceDefinitionIdentifier.OpenctiRegistration }, { identifier: ServiceDefinitionIdentifier.OpenaevRegistration }]} | ${[PlatformIdentifier.Opencti, PlatformIdentifier.Openaev]} | ${'returns both platforms when identifiers span two different platforms'}
-    ${[{ identifier: ServiceDefinitionIdentifier.OpenctiIntegrations }]}                                                                | ${[]}                                                       | ${'returns an empty array for an unmapped identifier'}
+    ${[{ identifier: ServiceDefinitionIdentifier.OpenctiIntegrations }]}                                                                  | ${[]}                                                       | ${'returns an empty array for an unmapped identifier'}
   `(
     '$description',
     ({
