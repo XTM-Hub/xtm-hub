@@ -120,9 +120,12 @@ export const ServiceGroupDomain = {
       .select('User.*');
   },
 
-  addUsersToGroup: async (groupId: ServiceGroupId, userIds: UserId[]) => {
+  addUsersToGroup: async (
+    groupId: ServiceGroupId,
+    userIds: UserId[]
+  ): Promise<UserId[]> => {
     if (!userIds.length) {
-      return;
+      return [];
     }
 
     const data: ServiceGroupUserInitializer[] = userIds.map((userId) => ({
@@ -130,10 +133,13 @@ export const ServiceGroupDomain = {
       group_id: groupId,
     }));
 
-    await db<ServiceGroupUser>('ServiceGroup_User')
+    const rows = await db<ServiceGroupUser>('ServiceGroup_User')
       .insert(data)
       .onConflict(['group_id', 'user_id'])
-      .ignore();
+      .ignore()
+      .returning('user_id');
+
+    return rows.map(({ user_id }) => user_id);
   },
 
   removeUsersFromGroups: async (groupIds: ServiceGroupId[]) => {

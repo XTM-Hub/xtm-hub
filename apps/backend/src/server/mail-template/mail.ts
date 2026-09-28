@@ -53,6 +53,11 @@ export interface FreeTrialBundleModel {
 export interface FreeTrialBundleActiveModel extends FreeTrialBundleModel {
   platformUrl: string;
 }
+export interface FreeTrialBundleUserAddedModel extends FreeTrialBundleModel {
+  adminEmail: string;
+  daysLeft: number;
+  platformUrl: string;
+}
 
 export interface AdminSaasBundleRequestedModel {
   organizationName: string;
@@ -160,6 +165,7 @@ export type MailTemplates = {
   free_trial_bundle_cancelled: FreeTrialBundleModel;
   free_trial_bundle_expired: FreeTrialBundleModel;
   free_trial_user_added: FreeTrialUserAddedModel;
+  free_trial_bundle_user_added: FreeTrialBundleUserAddedModel;
   organization_pending_user_digest: OrganizationPendingUserDigestModel;
   admin_saas_bundle_requested: AdminSaasBundleRequestedModel;
   public_roadmap_monthly_reminder: { roadmapLink: string };
@@ -218,6 +224,8 @@ export const templateSubjects: {
     `Welcome to your ${
       PlatformIdentifierToString[params.platformIdentifier]
     } free trial!`,
+  free_trial_bundle_user_added: () =>
+    `You’ve Been Added to an ${BUNDLE_PLATFORM_NAME} Trial`,
   organization_pending_user_digest: () =>
     'XTM Hub - Users Requesting to Join Your Organization',
   admin_saas_bundle_requested: (params: AdminSaasBundleRequestedModel) => {
