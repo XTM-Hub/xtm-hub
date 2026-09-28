@@ -50,7 +50,9 @@ describe('sitemap', () => {
     const result = await sitemap();
 
     expect(
-      result.some((entry) => entry.url.includes('/cybersecurity-solutions/filigran-blog'))
+      result.some((entry) =>
+        entry.url.includes('/cybersecurity-solutions/filigran-blog')
+      )
     ).toBe(false);
   });
 
