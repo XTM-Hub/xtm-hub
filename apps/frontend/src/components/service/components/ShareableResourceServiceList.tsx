@@ -30,6 +30,7 @@ import {
   documentsQuery$variables,
 } from '@generated/documentsQuery.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
+import { useEffect } from 'react';
 import {
   PreloadedQuery,
   usePreloadedQuery,
@@ -96,7 +97,7 @@ const ShareableResourceServiceList = ({
     solutionCategories,
   } = useServiceListLocalStorage(localStorageKey);
 
-  const { pagination, onPaginationChange } = useTablePagination({
+  const { pagination, setPagination, onPaginationChange } = useTablePagination({
     pageSize,
     setPageSize,
     onPaginationChange: (nextPagination, nextCursor) => {
@@ -106,6 +107,23 @@ const ShareableResourceServiceList = ({
       } satisfies Partial<documentsQuery$variables>);
     },
   });
+
+  // Search/filter changes reload the documents connection from its first page, so reset
+  // the displayed page index too, or `PaginationControls` shows a stale, out-of-range page.
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [
+    setPagination,
+    search,
+    labels,
+    entityTypes,
+    integrationTypes,
+    deployable,
+    verified,
+    productVersions,
+    licenseTypes,
+    solutionCategories,
+  ]);
 
   const serviceInstanceSlug = SHAREABLE_RESOURCE_SERVICE_SLUG_MAPPING[type];
 
