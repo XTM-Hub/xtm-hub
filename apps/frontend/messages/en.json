@@ -1639,7 +1639,8 @@
           },
           "NotAdmin": {
             "Title": "To request a trial you must be an organization admin.",
-            "Description": "Please contact the organization’s admin in your company"
+            "Description": "Please contact the organization’s admin in your company",
+            "AdminListTitle": "{count, plural, =1 {Administrator} other {Administrators}}"
           },
           "PersonalSpace": {
             "Title": "Trials are not available in a personal space"
