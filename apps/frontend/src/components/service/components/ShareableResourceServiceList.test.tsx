@@ -4,6 +4,7 @@ import { ShareableResourceType } from '@/utils/shareable-resources/shareable-res
 import testRender from '@/utils/test/test-render';
 import { documentsQuery } from '@generated/documentsQuery.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
+import { DocumentOrdering, OrderingMode } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { PreloadedQuery } from 'react-relay';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -27,6 +28,24 @@ const withDocuments = (totalCount: number) => [
   { documents: { __id: 'connection-1', totalCount, edges: [] } },
   testState.refetch,
 ];
+
+// Shared reference so unrelated filters don't look "changed" between renders.
+const EMPTY_SELECTION = {};
+
+const baseLocalStorageState = () => ({
+  pageSize: PAGE_SIZE,
+  setPageSize: testState.setPageSize,
+  labels: EMPTY_SELECTION,
+  entityTypes: EMPTY_SELECTION,
+  integrationTypes: EMPTY_SELECTION,
+  deployable: EMPTY_SELECTION,
+  verified: EMPTY_SELECTION,
+  productVersions: EMPTY_SELECTION,
+  licenseTypes: EMPTY_SELECTION,
+  solutionCategories: EMPTY_SELECTION,
+  orderBy: DocumentOrdering.CreatedAt,
+  orderMode: OrderingMode.Asc,
+});
 
 vi.mock('react-relay', async (importOriginal) => {
   const original = await importOriginal<typeof import('react-relay')>();
@@ -53,9 +72,7 @@ vi.mock('@/utils/shareable-resources/use-shareable-resource-mapping', () => ({
   useShareableResourceMapping: testState.useShareableResourceMapping,
 }));
 
-// ServiceList pulls in a large tree of unrelated hooks/components (capabilities, hero
-// section, filter sidebar, document list...); stubbing it keeps this test focused on the
-// pagination controls it receives.
+// Stub ServiceList to keep this test focused on the pagination controls it receives.
 vi.mock('@/components/service/components/ServiceList', () => ({
   default: (props: { paginationControls?: React.ReactNode }) => (
     <>{props.paginationControls}</>
@@ -65,20 +82,30 @@ vi.mock('@/components/service/components/ServiceList', () => ({
 describe('ShareableResourceServiceList', () => {
   const serviceInstance = {
     id: SERVICE_INSTANCE_ID,
-  } as Partial<serviceInstance_fragment$data>;
+    capabilities: [],
+  } as serviceInstance_fragment$data;
   const queryRef = {} as PreloadedQuery<documentsQuery>;
 
-  const renderList = (search: string) =>
-    testRender(
-      <ShareableResourceServiceList
-        queryRef={queryRef}
-        serviceInstance={serviceInstance}
-        search={search}
-        onSearchChange={vi.fn()}
-        type={ShareableResourceType.OPENCTI_INTEGRATION}
-        localStorageKey={ServiceListLocalStorageKey.OpenCTIIntegrationFeeds}
-      />
+  const buildElement = (search: string) => (
+    <ShareableResourceServiceList
+      queryRef={queryRef}
+      serviceInstance={serviceInstance}
+      search={search}
+      onSearchChange={vi.fn()}
+      type={ShareableResourceType.OPENCTI_INTEGRATION}
+      localStorageKey={ServiceListLocalStorageKey.OpenCTIIntegrationFeeds}
+    />
+  );
+
+  const renderList = (search: string) => testRender(buildElement(search));
+
+  const goToSecondPage = async (
+    user: ReturnType<typeof renderList>['user']
+  ) => {
+    await user.click(
+      screen.getByRole('button', { name: 'GenericActions.Paginate.NextPage' })
     );
+  };
 
   beforeEach(() => {
     testState.refetch.mockReset();
@@ -86,18 +113,9 @@ describe('ShareableResourceServiceList', () => {
     testState.usePreloadedQuery.mockReturnValue({});
     testState.useDocumentFacetCounts.mockReturnValue({});
     testState.useShareableResourceMapping.mockReturnValue({ filters: {} });
-    testState.useServiceListLocalStorage.mockReturnValue({
-      pageSize: PAGE_SIZE,
-      setPageSize: testState.setPageSize,
-      labels: {},
-      entityTypes: {},
-      integrationTypes: {},
-      deployable: {},
-      verified: {},
-      productVersions: {},
-      licenseTypes: {},
-      solutionCategories: {},
-    });
+    testState.useServiceListLocalStorage.mockReturnValue(
+      baseLocalStorageState()
+    );
     testState.useRefetchableFragment.mockReturnValue(
       withDocuments(LARGE_TOTAL_COUNT)
     );
@@ -106,28 +124,57 @@ describe('ShareableResourceServiceList', () => {
   it('should reset the displayed page to the first one when the search term changes after paginating', async () => {
     // Given
     const { user, rerender, container } = renderList('');
-    await user.click(
-      screen.getByRole('button', { name: 'GenericActions.Paginate.NextPage' })
-    );
+    await goToSecondPage(user);
     expect(container.textContent).toBe(`51 - 100 / ${LARGE_TOTAL_COUNT}`);
 
-    // When: applying a search that narrows the result set down to a smaller page
+    // When
     testState.useRefetchableFragment.mockReturnValue(
       withDocuments(FILTERED_TOTAL_COUNT)
     );
-    rerender(
-      <ShareableResourceServiceList
-        queryRef={queryRef}
-        serviceInstance={serviceInstance}
-        search="narrow-search"
-        onSearchChange={vi.fn()}
-        type={ShareableResourceType.OPENCTI_INTEGRATION}
-        localStorageKey={ServiceListLocalStorageKey.OpenCTIIntegrationFeeds}
-      />
-    );
+    rerender(buildElement('narrow-search'));
 
-    // Then: the pagination display goes back to page 1 instead of keeping the stale
-    // "51 - ..." offset against the new, smaller total count.
+    // Then
+    expect(container.textContent).toBe(`1 - 4 / ${FILTERED_TOTAL_COUNT}`);
+  });
+
+  it('should reset the displayed page to the first one when a filter changes after paginating', async () => {
+    // Given
+    const { user, rerender, container } = renderList('');
+    await goToSecondPage(user);
+    expect(container.textContent).toBe(`51 - 100 / ${LARGE_TOTAL_COUNT}`);
+
+    // When
+    testState.useServiceListLocalStorage.mockReturnValue({
+      ...baseLocalStorageState(),
+      labels: { 'label-1': true },
+    });
+    testState.useRefetchableFragment.mockReturnValue(
+      withDocuments(FILTERED_TOTAL_COUNT)
+    );
+    rerender(buildElement(''));
+
+    // Then
+    expect(container.textContent).toBe(`1 - 4 / ${FILTERED_TOTAL_COUNT}`);
+  });
+
+  it('should reset the displayed page to the first one when the sort order changes after paginating', async () => {
+    // Given
+    const { user, rerender, container } = renderList('');
+    await goToSecondPage(user);
+    expect(container.textContent).toBe(`51 - 100 / ${LARGE_TOTAL_COUNT}`);
+
+    // When
+    testState.useServiceListLocalStorage.mockReturnValue({
+      ...baseLocalStorageState(),
+      orderBy: DocumentOrdering.Name,
+      orderMode: OrderingMode.Desc,
+    });
+    testState.useRefetchableFragment.mockReturnValue(
+      withDocuments(FILTERED_TOTAL_COUNT)
+    );
+    rerender(buildElement(''));
+
+    // Then
     expect(container.textContent).toBe(`1 - 4 / ${FILTERED_TOTAL_COUNT}`);
   });
 });

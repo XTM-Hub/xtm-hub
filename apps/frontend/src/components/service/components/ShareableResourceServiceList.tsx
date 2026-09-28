@@ -95,6 +95,8 @@ const ShareableResourceServiceList = ({
     productVersions,
     licenseTypes,
     solutionCategories,
+    orderBy,
+    orderMode,
   } = useServiceListLocalStorage(localStorageKey);
 
   const { pagination, setPagination, onPaginationChange } = useTablePagination({
@@ -108,8 +110,7 @@ const ShareableResourceServiceList = ({
     },
   });
 
-  // Search/filter changes reload the documents connection from its first page, so reset
-  // the displayed page index too, or `PaginationControls` shows a stale, out-of-range page.
+  // Reset the page on search/filter/sort change so it stays in sync with the refetched data.
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   }, [
@@ -123,6 +124,8 @@ const ShareableResourceServiceList = ({
     productVersions,
     licenseTypes,
     solutionCategories,
+    orderBy,
+    orderMode,
   ]);
 
   const serviceInstanceSlug = SHAREABLE_RESOURCE_SERVICE_SLUG_MAPPING[type];
