@@ -36,9 +36,6 @@ const buildMetadataFacetBranch = (
   return db('Document_Metadata')
     .from('Document_Metadata as metadata')
     .select(dbRaw('? as facet', [spec.field]), 'metadata.value as value')
-    // Document_Metadata's primary key is (document_id, key), so grouping by
-    // value already yields at most one row per document: a plain count is
-    // equivalent to countDistinct here without the extra dedup step.
     .count({ count: 'metadata.document_id' })
     .where('metadata.key', '=', spec.metadataKey)
     .whereNotNull('metadata.value')
@@ -58,8 +55,6 @@ const buildUseCaseFacetBranch = (
       dbRaw('? as facet', [spec.field]),
       dbRaw('"objectUseCase"."use_case_id"::text as value')
     )
-    // Object_UseCase's primary key is (object_id, use_case_id), so a plain
-    // count is equivalent to countDistinct here.
     .count({ count: 'objectUseCase.object_id' })
     .whereIn('objectUseCase.object_id', selectIdsFromCte(cteName))
     .groupBy('objectUseCase.use_case_id')
@@ -76,8 +71,6 @@ const buildSolutionCategoryFacetBranch = (
       dbRaw('? as facet', [spec.field]),
       dbRaw('"objectSolutionCategory"."solution_category_id"::text as value')
     )
-    // Object_SolutionCategory's primary key is (object_id, solution_category_id),
-    // so a plain count is equivalent to countDistinct here.
     .count({ count: 'objectSolutionCategory.object_id' })
     .whereIn('objectSolutionCategory.object_id', selectIdsFromCte(cteName))
     .groupBy('objectSolutionCategory.solution_category_id')
@@ -154,10 +147,6 @@ export const loadFacetsInSingleQuery = async (
   const ctes: Array<{ name: string; query: Knex.QueryBuilder }> = [];
   const branches: Knex.QueryBuilder[] = [];
 
-  // The restrictions + search are identical across every signature group, so
-  // they're computed once here as a shared base-scope CTE rather than once
-  // per group (see facet.grouping.utils.ts for why filters fan out into
-  // several groups in the first place).
   const baseScopeCteName = 'facet_base_scope';
   const baseScopeQuery = buildFacetBaseScopeQuery(input, restrictToActive);
   await applySearch(
