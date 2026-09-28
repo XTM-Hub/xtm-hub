@@ -1932,12 +1932,6 @@ describe('document domain', () => {
       expect(result[0]!.id).toBe(expected.id);
     });
 
-    // Regression test for #3575: the LTS filter used to compare the raw
-    // `Document.version` (e.g. `7.260309.0-lts.5`) against `LIKE '%.LTS.%'`.
-    // Since Postgres `LIKE` is case-sensitive and the raw manifest version
-    // uses a lowercase `-lts.` separator, an LTS connector's raw version
-    // never matched the uppercase pattern. That made the non-LTS branch
-    // (`NOT LIKE`) wrongly match every row, including LTS builds.
     it('excludes a raw lowercase-suffixed LTS connector when manifest version is not LTS', async () => {
       await createConnector({
         manifestFragmentId: 'fragment-a',
