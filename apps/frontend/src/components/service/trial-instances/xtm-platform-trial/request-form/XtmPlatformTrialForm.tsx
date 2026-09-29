@@ -32,37 +32,42 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { ReactNode, useContext, useState } from 'react';
+import { ReactNode, useContext, useMemo, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-export const xtmPlatformTrialFormSchema = z.object({
-  region: z.enum(REGIONS_VALUES),
-  job_title: z.enum(DeploymentRequestJobTitle),
-  activity_sector: z.enum(DeploymentRequestActivitySector),
-  products: z.array(z.enum(PlatformIdentifier)),
-  use_cases_by_product: z
-    .array(
-      z.object({
-        platform_identifier: z.enum(PlatformIdentifier),
-        use_case: z.enum(DeploymentRequestUseCase).optional(),
-      })
-    )
-    .superRefine((entries, ctx) => {
-      entries.forEach((entry, index) => {
-        if (!entry.use_case) {
-          ctx.addIssue({
-            path: [index, 'use_case'],
-            code: 'custom',
-            message: 'Please select a use case.',
-          });
-        }
-      });
+const buildXtmPlatformTrialFormSchema = (t: (key: string) => string) =>
+  z.object({
+    region: z.enum(REGIONS_VALUES),
+    job_title: z.enum(DeploymentRequestJobTitle),
+    activity_sector: z.enum(DeploymentRequestActivitySector),
+    products: z.array(z.enum(PlatformIdentifier)),
+    use_cases_by_product: z
+      .array(
+        z.object({
+          platform_identifier: z.enum(PlatformIdentifier),
+          use_case: z.enum(DeploymentRequestUseCase).optional(),
+        })
+      )
+      .superRefine((entries, ctx) => {
+        entries.forEach((entry, index) => {
+          if (!entry.use_case) {
+            ctx.addIssue({
+              path: [index, 'use_case'],
+              code: 'custom',
+              message: t('Service.Trials.Form.Error.UseCase'),
+            });
+          }
+        });
+      }),
+    acceptTerms: z.boolean().refine((value) => value === true, {
+      error: t('Service.Trials.Form.Error.AcceptTerms'),
     }),
-  acceptTerms: z.boolean().refine((value) => value === true, {
-    error: 'Please accept the terms to continue.',
-  }),
-});
+  });
+
+export const xtmPlatformTrialFormSchema = buildXtmPlatformTrialFormSchema(
+  (key) => key
+);
 
 const SELECTABLE_PRODUCTS = [
   PlatformIdentifier.Opencti,
@@ -117,8 +122,10 @@ export const XtmPlatformTrialForm = ({
     typeof xtmPlatformTrialFormSchema
   > | null>(null);
 
+  const formSchema = useMemo(() => buildXtmPlatformTrialFormSchema(t), [t]);
+
   const form = useForm<z.infer<typeof xtmPlatformTrialFormSchema>>({
-    resolver: zodResolver(xtmPlatformTrialFormSchema),
+    resolver: zodResolver(formSchema),
     defaultValues: {
       products: [
         PlatformIdentifier.Opencti,
