@@ -1639,7 +1639,8 @@
           },
           "NotAdmin": {
             "Title": "Vous devez être administrateur de l'organisation pour demander un essai.",
-            "Description": "Contactez l'administrateur de l'organisation dans votre entreprise"
+            "Description": "Contactez l'administrateur de l'organisation dans votre entreprise",
+            "AdminListTitle": "{count, plural, =1 {Administrateur} other {Administrateurs}}"
           },
           "PersonalSpace": {
             "Title": "Les essais ne sont pas disponibles dans un espace personnel"

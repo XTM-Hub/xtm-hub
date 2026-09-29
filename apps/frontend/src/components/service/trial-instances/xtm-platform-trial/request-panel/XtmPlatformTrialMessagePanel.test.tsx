@@ -39,4 +39,16 @@ describe('XtmPlatformTrialMessagePanel', () => {
       screen.getByRole('button', { name: 'Do something' })
     ).toBeInTheDocument();
   });
+
+  it('renders the provided details', () => {
+    render(
+      <XtmPlatformTrialMessagePanel
+        title="Panel title"
+        description="Panel description"
+        details={<p>Administrator list</p>}
+      />
+    );
+
+    expect(screen.getByText('Administrator list')).toBeInTheDocument();
+  });
 });

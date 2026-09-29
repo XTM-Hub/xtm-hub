@@ -85,6 +85,21 @@ vi.mock(
 );
 
 vi.mock(
+  '@/components/service/trial-instances/xtm-platform-trial/request-panel/TrialOrganizationAdminContacts',
+  () => ({
+    TrialOrganizationAdminContacts: ({
+      organizationId,
+    }: {
+      organizationId: string;
+    }) => (
+      <div data-testid="trial-organization-admin-contacts">
+        {organizationId}
+      </div>
+    ),
+  })
+);
+
+vi.mock(
   '@/components/service/trial-instances/xtm-platform-trial/request-panel/XtmPlatformTrialStatusPanel',
   () => ({
     XtmPlatformTrialStatusPanel: ({
@@ -256,6 +271,9 @@ describe('PrivateXtmPlatformTrialPanel', () => {
 
     expect(
       screen.getByText('Service.Trials.XtmPlatform.Page.NotAdmin.Title')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId('trial-organization-admin-contacts')
     ).toBeInTheDocument();
   });
 

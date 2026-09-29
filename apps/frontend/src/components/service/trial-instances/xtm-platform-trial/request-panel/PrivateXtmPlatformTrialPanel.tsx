@@ -7,6 +7,7 @@ import {
   XtmPlatformTrialForm,
   xtmPlatformTrialFormSchema,
 } from '@/components/service/trial-instances/xtm-platform-trial/request-form/XtmPlatformTrialForm';
+import { TrialOrganizationAdminContacts } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/TrialOrganizationAdminContacts';
 import { XtmPlatformTrialMessagePanel } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/XtmPlatformTrialMessagePanel';
 import {
   XtmPlatformTrialStatusPanel,
@@ -107,6 +108,9 @@ export const PrivateXtmPlatformTrialPanel = ({
       <XtmPlatformTrialMessagePanel
         title={t('Service.Trials.XtmPlatform.Page.NotAdmin.Title')}
         description={t('Service.Trials.XtmPlatform.Page.NotAdmin.Description')}
+        details={
+          <TrialOrganizationAdminContacts organizationId={organizationId} />
+        }
       />
     );
   }

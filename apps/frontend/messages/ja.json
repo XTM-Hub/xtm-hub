@@ -1639,7 +1639,8 @@
           },
           "NotAdmin": {
             "Title": "トライアルを申請するには組織の管理者である必要があります。",
-            "Description": "所属企業の組織管理者にお問い合わせください"
+            "Description": "所属企業の組織管理者にお問い合わせください",
+            "AdminListTitle": "{count, plural, =1 {管理者} other {管理者}}"
           },
           "PersonalSpace": {
             "Title": "個人スペースではトライアルをご利用いただけません"
