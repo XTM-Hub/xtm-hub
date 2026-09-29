@@ -36,9 +36,18 @@ export async function up(knex) {
     await knex('ServiceInstance').whereIn('id', vaultServiceInstanceIds).del();
   }
 
-  // Service_Capability has no cascading delete from ServiceDefinition, but by
-  // now no Subscription_Capability row can reference it (they were removed by
-  // the ServiceInstance cascade above), so it's safe to delete directly.
+  // Service_Capability has no cascading delete from ServiceDefinition, and
+  // some Subscription_Capability rows are orphaned (no subscription_id) due
+  // to a historical data bug, so delete them explicitly here too.
+  await knex('Subscription_Capability')
+    .whereIn(
+      'service_capability_id',
+      knex('Service_Capability')
+        .whereIn('service_definition_id', vaultServiceDefinitionIds)
+        .select('id')
+    )
+    .del();
+
   await knex('Service_Capability')
     .whereIn('service_definition_id', vaultServiceDefinitionIds)
     .del();
