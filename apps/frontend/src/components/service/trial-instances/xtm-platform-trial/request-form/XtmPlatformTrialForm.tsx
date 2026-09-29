@@ -32,7 +32,7 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useContext, useState } from 'react';
+import { ReactNode, useContext, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -60,7 +60,7 @@ export const xtmPlatformTrialFormSchema = z.object({
       });
     }),
   acceptTerms: z.boolean().refine((value) => value === true, {
-    error: 'Please accept the MSSA to continue.',
+    error: 'Please accept the terms to continue.',
   }),
 });
 
@@ -86,6 +86,25 @@ export const XtmPlatformTrialForm = ({
   const selectTriggerClassName = cn(selectLayerClassName);
   const selectContentClassName = cn(selectLayerClassName);
   const { me } = useContext(PortalContext);
+
+  const renderMssaLink = (chunks: ReactNode) => (
+    <Link
+      target="_blank"
+      rel="noopener noreferrer"
+      className="underline text-primary"
+      href="https://filigran.io/mssa">
+      {chunks}
+    </Link>
+  );
+  const renderAiTermsLink = (chunks: ReactNode) => (
+    <Link
+      target="_blank"
+      rel="noopener noreferrer"
+      className="underline text-primary"
+      href="https://filigran.io/ai-terms">
+      {chunks}
+    </Link>
+  );
 
   const ongoingTrialWarningParams = buildOngoingTrialWarningParams(
     ongoingStandaloneTrialProducts,
@@ -353,14 +372,10 @@ export const XtmPlatformTrialForm = ({
                   <label
                     htmlFor="acceptTerms"
                     className="txt-default cursor-pointer text-muted-foreground">
-                    {t('Service.Trials.Form.MSSAAgreement')}{' '}
-                    <Link
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline text-primary"
-                      href="https://filigran.io/mssa/">
-                      {t('Service.Trials.Form.MSSA')}
-                    </Link>{' '}
+                    {t.rich('Service.Trials.Form.TermsAgreement', {
+                      mssa: renderMssaLink,
+                      aiterms: renderAiTermsLink,
+                    })}{' '}
                     <span className="text-destructive">*</span>
                   </label>
                 </div>

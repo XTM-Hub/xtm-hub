@@ -1720,8 +1720,7 @@
         "ActivitySectorPlaceholder": "Sélectionnez votre secteur d'activité",
         "UseCase": "Cas d'utilisation",
         "UseCasePlaceholder": "Sélectionnez votre cas d'utilisation",
-        "MSSA": "MSSA",
-        "MSSAAgreement": "*Je reconnais avoir lu, compris et accepté les conditions du procès de",
+        "TermsAgreement": "Je reconnais avoir lu, compris et accepté les conditions d'essai du <mssa>MSSA</mssa> et les <aiterms>conditions d'utilisation de l'IA</aiterms>",
         "FormRequested": "Vous avez demandé un essai gratuit. Vous recevrez un e-mail dès que la plateforme sera prête !"
       },
       "Display": {
