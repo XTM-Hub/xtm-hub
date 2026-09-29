@@ -21,6 +21,8 @@ const SERVICE_INSTANCE_SLUG = 'my-service';
 const OPENCTI_INTEGRATIONS_SLUG = 'opencti-integrations';
 const INTEGRATION_TYPE_VALUE = 'connector';
 const FACET_COUNT = 4;
+const LARGE_TOTAL_COUNT = 144;
+const FILTERED_TOTAL_COUNT = 4;
 const EMPTY_FACETS = {
   documentFacets: {
     integration_type: [],
@@ -31,6 +33,23 @@ const EMPTY_FACETS = {
     use_case: [],
     entity_type: [],
   },
+};
+
+// Shared reference so unrelated filters don't look "changed" between renders.
+const EMPTY_SELECTION = {};
+
+// Asserts the pagination range with digit boundaries, so e.g. "1 - 4 / 4" can't
+// false-positive match as a substring of a stale "51 - 4 / 4".
+const expectPaginationRange = (
+  container: HTMLElement,
+  rangeStart: number,
+  rangeEnd: number,
+  total: number
+) => {
+  const pattern = new RegExp(
+    `(?:^|\\D)${rangeStart} - ${rangeEnd} / ${total}(?:\\D|$)`
+  );
+  expect(container.textContent).toMatch(pattern);
 };
 
 const testState = vi.hoisted(() => ({
@@ -48,6 +67,11 @@ const testState = vi.hoisted(() => ({
   setDisplayMode: vi.fn(),
   restore: vi.fn(),
 }));
+
+const withPublicDocuments = (totalCount: number) => [
+  { publicDocuments: { totalCount, edges: [] } },
+  testState.refetch,
+];
 
 vi.mock('@/utils/shareable-resources/use-shareable-resource-mapping', () => ({
   useShareableResourceMapping: testState.useShareableResourceMapping,
@@ -108,6 +132,45 @@ describe('PublicDocumentsList', () => {
   } as Partial<seoServiceInstanceFragment$data>;
   const queryRef = {} as PreloadedQuery<publicDocumentsQuery>;
 
+  const buildElement = () => (
+    <PublicDocumentsList
+      queryRef={queryRef}
+      serviceInstance={serviceInstance}
+      baseUrl={BASE_URL}
+    />
+  );
+
+  const goToSecondPage = async (
+    user: ReturnType<typeof testRender>['user']
+  ) => {
+    await user.click(
+      screen.getByRole('button', { name: 'GenericActions.Paginate.NextPage' })
+    );
+  };
+
+  // Base return value of `useServiceListLocalStorage`; individual tests spread this and
+  // override the one field (search, a filter, or the sort) whose change should reset pagination.
+  const baseLocalStorageState = () => ({
+    search: 'initial-search',
+    setSearch: testState.setSearch,
+    pageSize: 10,
+    setPageSize: testState.setPageSize,
+    displayMode: ServiceListDisplayMode.List,
+    setDisplayMode: testState.setDisplayMode,
+    labels: EMPTY_SELECTION,
+    entityTypes: EMPTY_SELECTION,
+    integrationTypes: EMPTY_SELECTION,
+    deployable: EMPTY_SELECTION,
+    verified: EMPTY_SELECTION,
+    productVersions: EMPTY_SELECTION,
+    licenseTypes: EMPTY_SELECTION,
+    solutionCategories: EMPTY_SELECTION,
+    orderBy: DocumentOrdering.Name,
+    orderMode: OrderingMode.Asc,
+    setOrderBy: vi.fn(),
+    setOrderMode: vi.fn(),
+  });
+
   beforeEach(() => {
     testState.refetch.mockReset();
     testState.setSearch.mockReset();
@@ -119,18 +182,9 @@ describe('PublicDocumentsList', () => {
       localStorageKey: ServiceListLocalStorageKey.OpenCTIIntegrationFeeds,
       filters: {},
     });
-    testState.useServiceListLocalStorage.mockReturnValue({
-      search: 'initial-search',
-      setSearch: testState.setSearch,
-      pageSize: 10,
-      setPageSize: testState.setPageSize,
-      displayMode: ServiceListDisplayMode.List,
-      setDisplayMode: testState.setDisplayMode,
-      orderBy: DocumentOrdering.Name,
-      orderMode: OrderingMode.Asc,
-      setOrderBy: vi.fn(),
-      setOrderMode: vi.fn(),
-    });
+    testState.useServiceListLocalStorage.mockReturnValue(
+      baseLocalStorageState()
+    );
     testState.useLogicalFiltersFromStorage.mockReturnValue(undefined);
     testState.useDocumentFacetsQuery.mockReturnValue({ data: EMPTY_FACETS });
     testState.useScrollPosition.mockReturnValue({
@@ -304,6 +358,94 @@ describe('PublicDocumentsList', () => {
       count: 10,
       cursor: btoa('10'),
     });
+  });
+
+  it('should reset the displayed page to the first one when the search term changes after paginating', async () => {
+    // Given
+    mockEmptyFacetQuery();
+    testState.useRefetchableFragment.mockReturnValue(
+      withPublicDocuments(LARGE_TOTAL_COUNT)
+    );
+    const { user, rerender, container } = testRender(buildElement());
+    await goToSecondPage(user);
+    expectPaginationRange(container, 11, 20, LARGE_TOTAL_COUNT);
+
+    // When
+    testState.useServiceListLocalStorage.mockReturnValue({
+      ...baseLocalStorageState(),
+      search: 'narrow-search',
+    });
+    testState.useRefetchableFragment.mockReturnValue(
+      withPublicDocuments(FILTERED_TOTAL_COUNT)
+    );
+    rerender(buildElement());
+
+    // Then
+    expectPaginationRange(
+      container,
+      1,
+      FILTERED_TOTAL_COUNT,
+      FILTERED_TOTAL_COUNT
+    );
+  });
+
+  it('should reset the displayed page to the first one when a filter changes after paginating', async () => {
+    // Given
+    mockEmptyFacetQuery();
+    testState.useRefetchableFragment.mockReturnValue(
+      withPublicDocuments(LARGE_TOTAL_COUNT)
+    );
+    const { user, rerender, container } = testRender(buildElement());
+    await goToSecondPage(user);
+    expectPaginationRange(container, 11, 20, LARGE_TOTAL_COUNT);
+
+    // When
+    testState.useServiceListLocalStorage.mockReturnValue({
+      ...baseLocalStorageState(),
+      labels: { 'label-1': true },
+    });
+    testState.useRefetchableFragment.mockReturnValue(
+      withPublicDocuments(FILTERED_TOTAL_COUNT)
+    );
+    rerender(buildElement());
+
+    // Then
+    expectPaginationRange(
+      container,
+      1,
+      FILTERED_TOTAL_COUNT,
+      FILTERED_TOTAL_COUNT
+    );
+  });
+
+  it('should reset the displayed page to the first one when the sort order changes after paginating', async () => {
+    // Given
+    mockEmptyFacetQuery();
+    testState.useRefetchableFragment.mockReturnValue(
+      withPublicDocuments(LARGE_TOTAL_COUNT)
+    );
+    const { user, rerender, container } = testRender(buildElement());
+    await goToSecondPage(user);
+    expectPaginationRange(container, 11, 20, LARGE_TOTAL_COUNT);
+
+    // When
+    testState.useServiceListLocalStorage.mockReturnValue({
+      ...baseLocalStorageState(),
+      orderBy: DocumentOrdering.CreatedAt,
+      orderMode: OrderingMode.Desc,
+    });
+    testState.useRefetchableFragment.mockReturnValue(
+      withPublicDocuments(FILTERED_TOTAL_COUNT)
+    );
+    rerender(buildElement());
+
+    // Then
+    expectPaginationRange(
+      container,
+      1,
+      FILTERED_TOTAL_COUNT,
+      FILTERED_TOTAL_COUNT
+    );
   });
 
   it('should redirect to sign-up with the private integrations page when the CSV export button is clicked on the OpenCTI integrations public page', async () => {
