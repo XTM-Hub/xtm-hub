@@ -15,10 +15,31 @@ export default defineConfig({
       '@messages': fileURLToPath(new URL('./messages', import.meta.url)),
       '@public': fileURLToPath(new URL('./public', import.meta.url)),
       '@styles': fileURLToPath(new URL('./styles', import.meta.url)),
+      '@filigran/ui/clients': fileURLToPath(
+        new URL(
+          './src/components/filigran-ui/components/clients/index.ts',
+          import.meta.url
+        )
+      ),
+      '@filigran/ui/servers': fileURLToPath(
+        new URL(
+          './src/components/filigran-ui/components/servers/index.ts',
+          import.meta.url
+        )
+      ),
+      '@filigran/ui/auto-form': fileURLToPath(
+        new URL(
+          './src/components/filigran-ui/components/auto-form/index.ts',
+          import.meta.url
+        )
+      ),
+      '@filigran/ui': fileURLToPath(
+        new URL('./src/components/filigran-ui/index.ts', import.meta.url)
+      ),
     },
   },
   ssr: {
-    noExternal: ['@filigran/ui', /@uiw\/.*/],
+    noExternal: [/@uiw\/.*/],
   },
   plugins: [react() as PluginOption, relay as PluginOption],
   test: {
@@ -28,11 +49,7 @@ export default defineConfig({
     include: ['src/**/*.test.{ts,tsx}', 'app/**/*.test.{ts,tsx}'],
     server: {
       deps: {
-        inline: [
-          /@filigran\/ui/,
-          '@uiw/react-md-editor',
-          '@uiw/react-markdown-preview',
-        ],
+        inline: ['@uiw/react-md-editor', '@uiw/react-markdown-preview'],
       },
     },
     coverage: {

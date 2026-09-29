@@ -20,7 +20,7 @@ const EeBadgeVisual = ({ interactive }: { interactive: boolean }) => {
     <span
       className={cn(
         'flex h-4 w-4 items-center justify-center rounded-xs',
-        'bg-slate-950',
+        'bg-grayblue-1000',
         interactive && 'group-hover:bg-transparent',
         'text-[8px] font-bold leading-none'
       )}>

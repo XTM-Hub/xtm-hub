@@ -77,10 +77,10 @@ const ServiceInstanceCard = ({
   return (
     <li className={cn('relative rounded flex', className)}>
       {serviceInstance.disableCard && (
-        <div className="absolute inset-0  bg-elevation-background-layer-0 dark:bg-black/60 z-10 rounded pointer-events-none" />
+        <div className="absolute inset-0  bg-elevation-background-layer-0 dark:bg-black-1000/60 z-10 rounded pointer-events-none" />
       )}
       {serviceInstance.hoverLinks && (
-        <div className="absolute inset-0 bg-elevation-background-layer-1 dark:bg-black/80 z-10 opacity-0 hover:opacity-100 flex">
+        <div className="absolute inset-0 bg-elevation-background-layer-1 dark:bg-black-1000/80 z-10 opacity-0 hover:opacity-100 flex">
           <div className="flex flex-col gap-s m-auto">
             {serviceInstance.hoverLinks?.map(renderHoverButton)}
           </div>
