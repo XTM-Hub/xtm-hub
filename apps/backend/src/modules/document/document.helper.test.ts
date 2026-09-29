@@ -33,7 +33,6 @@ import {
   type Document,
   DocumentHelper,
   ManageableServiceDefinitionIdentifier,
-  VAULT_DOCUMENT_TYPE,
 } from './document.helper';
 import { DocumentUploadsHelper } from './document.uploads.helper';
 import { DocumentDomain } from './domain/document.domain';
@@ -255,7 +254,6 @@ describe('documentHelper', () => {
       ${ServiceDefinitionIdentifier.OpenctiIntegrations}     | ${OPENCTI_INTEGRATION_DOCUMENT_TYPE}
       ${ServiceDefinitionIdentifier.OpenctiCustomDashboards} | ${OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE}
       ${ServiceDefinitionIdentifier.OpenaevScenarios}        | ${OPENAEV_SCENARIO_DOCUMENT_TYPE}
-      ${ServiceDefinitionIdentifier.Vault}                   | ${VAULT_DOCUMENT_TYPE}
     `(
       'should return $documentType when service definition identifier is $identifier',
       ({ identifier, documentType }) => {

@@ -61,9 +61,9 @@ export const ServiceForm = ({ handleSubmit }: ServiceFormProps) => {
                     <FileInput
                       {...field}
                       texts={{
-                        selectFile: t('Service.Vault.FileForm.SelectDocument'),
-                        noFile: t('Service.Vault.FileForm.NoDocument'),
-                        dropFiles: t('Service.Vault.FileForm.DropDocuments'),
+                        selectFile: t('Service.FileForm.SelectDocument'),
+                        noFile: t('Service.FileForm.NoDocument'),
+                        dropFiles: t('Service.FileForm.DropDocuments'),
                       }}
                       allowedTypes={
                         'image/jpeg, image/gif, image/png, image/svg'
@@ -86,9 +86,9 @@ export const ServiceForm = ({ handleSubmit }: ServiceFormProps) => {
                     <FileInput
                       {...field}
                       texts={{
-                        selectFile: t('Service.Vault.FileForm.SelectDocument'),
-                        noFile: t('Service.Vault.FileForm.NoDocument'),
-                        dropFiles: t('Service.Vault.FileForm.DropDocuments'),
+                        selectFile: t('Service.FileForm.SelectDocument'),
+                        noFile: t('Service.FileForm.NoDocument'),
+                        dropFiles: t('Service.FileForm.DropDocuments'),
                       }}
                       allowedTypes={
                         'image/jpeg, image/gif, image/png, image/svg'

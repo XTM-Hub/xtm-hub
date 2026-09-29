@@ -58,7 +58,7 @@ export const ServiceManageSheet = ({
     setOpenSheet(false);
     toast({
       title: t('Utils.Success'),
-      description: t('VaultActions.DocumentUpdated', {
+      description: t('ServiceActions.DocumentUpdated', {
         file_name: serviceName,
       }),
     });

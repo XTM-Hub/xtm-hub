@@ -1003,7 +1003,6 @@
       "opencti_integrations": "OpenCTI 統合",
       "opencti_playbooks": "OpenCTIプレイブック",
       "opencti_registration": "OpenCTI 登録",
-      "vault": "ボールト",
       "xtm_platform_bundle": "XTMプラットフォームトライアル",
       "xtm_platform_roadmap": "XTM Platform ロードマップ",
       "xtmone_registration": "XTM One 登録"
@@ -1913,39 +1912,10 @@
         }
       }
     },
-    "Vault": {
-      "DeleteDocument": "ドキュメント削除",
-      "DropFile": "ここに書類を置く",
-      "File": "送信する文書",
-      "FileExtension": "ドキュメントの拡張子は",
-      "FileForm": {
-        "AddFile": "新しい文書を追加する",
-        "AlreadyExists": "このドキュメントは既に存在します。古いものは消去されます。",
-        "DeleteDialog": "本当に削除しますか？",
-        "DescriptionLabel": "説明",
-        "DescriptionPlaceholder": "この文書について説明してください。",
-        "DropDocuments": "ここにドキュメントをドロップする",
-        "EditFile": "文書を編集する",
-        "File": "ドキュメント",
-        "FileAlreadyExists": "このドキュメントは既に存在します",
-        "FileExistsDialog": "このドキュメントはすでに存在します。このドキュメントは古いものを消去します。本当に続けますか？",
-        "NoDocument": "選択した文書がありません。",
-        "SelectDocument": "ドキュメントを選択",
-        "ShortNameLabel": "短い名前",
-        "ShortNamePlaceholder": "フィリグラン価格",
-        "UploadNewFile": "Vaultに新しい文書をアップロードする"
-      },
-      "FileTab": {
-        "Description": "説明",
-        "FileName": "ドキュメント名",
-        "NumberDownload": "ダウンロード",
-        "Search": "文書名で検索...",
-        "UploadDate": "アップロード日"
-      },
-      "ManageVault": "保管庫の管理",
-      "UpdateDocument": "ドキュメントの更新",
-      "Vault": "パートナー保管庫",
-      "VaultTitle": "保管庫管理"
+    "FileForm": {
+      "DropDocuments": "ここにドキュメントをドロップする",
+      "NoDocument": "選択した文書がありません。",
+      "SelectDocument": "ドキュメントを選択"
     },
     "OpenctiCustomViews": {
       "Actions": {
@@ -2049,6 +2019,7 @@
     }
   },
   "ServiceActions": {
+    "DocumentUpdated": "{file_name} は修正されました",
     "OrganizationAdded": "{name} 組織は {serviceName} サービスを購読している。",
     "OrganizationDeleted": "組織 {name} は削除されました。",
     "UserCapabilitiesModified": "{email} の機能が変更されました",
@@ -2267,12 +2238,6 @@
     "APAC_SG": "シンガポール",
     "EU_WEST": "西ヨーロッパ",
     "US_EAST": "アメリカ東部"
-  },
-  "VaultActions": {
-    "DocumentAdded": "{file_name} が追加されました",
-    "DocumentDeleted": "{file_name} は削除されました",
-    "DocumentUpdated": "{file_name} は修正されました",
-    "UpdateDocument": "ドキュメントの更新"
   },
   "DeploymentRequestJobTitle": {
     "ceo": "CEO",

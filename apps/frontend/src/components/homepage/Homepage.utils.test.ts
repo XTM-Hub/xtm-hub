@@ -20,7 +20,7 @@ describe('buildDistinctPlatformIdentifiersFromServiceDefinition', () => {
     ${[{ identifier: ServiceDefinitionIdentifier.OpenaevRegistration }]}                                                                  | ${[PlatformIdentifier.Openaev]}                             | ${'returns [openaev] for a single OPENAEV identifier'}
     ${[{ identifier: ServiceDefinitionIdentifier.OpenctiRegistration }, { identifier: ServiceDefinitionIdentifier.OpenctiRegistration }]} | ${[PlatformIdentifier.Opencti]}                             | ${'deduplicates identifiers resolving to the same platform'}
     ${[{ identifier: ServiceDefinitionIdentifier.OpenctiRegistration }, { identifier: ServiceDefinitionIdentifier.OpenaevRegistration }]} | ${[PlatformIdentifier.Opencti, PlatformIdentifier.Openaev]} | ${'returns both platforms when identifiers span two different platforms'}
-    ${[{ identifier: ServiceDefinitionIdentifier.Vault }]}                                                                                | ${[]}                                                       | ${'returns an empty array for an unmapped identifier'}
+    ${[{ identifier: ServiceDefinitionIdentifier.OpenctiIntegrations }]}                                                                  | ${[]}                                                       | ${'returns an empty array for an unmapped identifier'}
   `(
     '$description',
     ({
@@ -133,14 +133,14 @@ describe('mapRegisteredPlatformsToHomepageCards', () => {
   it('excludes entries whose identifier does not resolve to a platform', () => {
     const cards = mapRegisteredPlatformsToHomepageCards([
       {
-        id: 'rp-vault',
-        identifier: ServiceDefinitionIdentifier.Vault,
-        title: 'Vault',
+        id: 'rp-integrations',
+        identifier: ServiceDefinitionIdentifier.OpenctiIntegrations,
+        title: 'Integrations',
         contract: PlatformContract.Ce,
         subscription: {
           start_date: '2025-12-01T00:00:00.000Z',
           end_date: null,
-          service_instance_id: 'instance-vault',
+          service_instance_id: 'instance-integrations',
         },
       },
     ] as Parameters<typeof mapRegisteredPlatformsToHomepageCards>[0]);

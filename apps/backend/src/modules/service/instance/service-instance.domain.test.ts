@@ -138,13 +138,24 @@ describe('service instance domain', () => {
   describe('loadLinks', () => {
     // Happy path
     const generateId = uuidv4() as ServiceInstanceId;
+    const instanceWithLinkId = uuidv4() as ServiceInstanceId;
+    beforeAll(async () => {
+      await TestHelper.serviceInstance.create({ id: instanceWithLinkId });
+      await TestHelper.serviceLink.create({
+        service_instance_id: instanceWithLinkId,
+      });
+    });
     afterAll(async () => {
       await TestHelper.serviceInstance.delete({ id: generateId });
+      await TestHelper.serviceLink.delete({
+        service_instance_id: instanceWithLinkId,
+      });
+      await TestHelper.serviceInstance.delete({ id: instanceWithLinkId });
     });
     it('should return the service link when the service instance exists and has links', async () => {
-      const links = await loadLinks(SERVICES.INSTANCES.VAULT.ID);
+      const links = await loadLinks(instanceWithLinkId);
       expect(links).toHaveLength(1);
-      expect(links[0]?.service_instance_id).toBe(SERVICES.INSTANCES.VAULT.ID);
+      expect(links[0]?.service_instance_id).toBe(instanceWithLinkId);
     });
 
     it('should return an empty array when the service instance exists but has no links', async () => {
@@ -169,25 +180,37 @@ describe('service instance domain', () => {
   });
 
   describe('loadLinksByServiceInstanceIds', () => {
+    const instanceWithLinkId = uuidv4() as ServiceInstanceId;
+    beforeAll(async () => {
+      await TestHelper.serviceInstance.create({ id: instanceWithLinkId });
+      await TestHelper.serviceLink.create({
+        service_instance_id: instanceWithLinkId,
+      });
+    });
+    afterAll(async () => {
+      await TestHelper.serviceLink.delete({
+        service_instance_id: instanceWithLinkId,
+      });
+      await TestHelper.serviceInstance.delete({ id: instanceWithLinkId });
+    });
+
     it('should return one row per link tagged with its service instance id and nothing for instances without links', async () => {
       // When
       const results = await loadLinksByServiceInstanceIds([
         SERVICES.INSTANCES.EPIC.ID,
-        SERVICES.INSTANCES.VAULT.ID,
+        instanceWithLinkId,
       ]);
 
       // Then
       const epicLinks = results.filter(
         (link) => link.service_instance_id === SERVICES.INSTANCES.EPIC.ID
       );
-      const vaultLinks = results.filter(
-        (link) => link.service_instance_id === SERVICES.INSTANCES.VAULT.ID
+      const instanceLinks = results.filter(
+        (link) => link.service_instance_id === instanceWithLinkId
       );
       expect(epicLinks).toHaveLength(0);
-      expect(vaultLinks).toHaveLength(1);
-      expect(vaultLinks[0]?.service_instance_id).toBe(
-        SERVICES.INSTANCES.VAULT.ID
-      );
+      expect(instanceLinks).toHaveLength(1);
+      expect(instanceLinks[0]?.service_instance_id).toBe(instanceWithLinkId);
     });
   });
 
@@ -195,16 +218,18 @@ describe('service instance domain', () => {
     it('should return one row per requested service instance id, tagged accordingly', async () => {
       // When
       const results = await loadServiceDefinitionsByServiceInstanceIds([
-        SERVICES.INSTANCES.VAULT.ID,
+        SERVICES.INSTANCES.INTEGRATIONS.ID,
         SERVICES.INSTANCES.EPIC.ID,
       ]);
 
       // Then
       expect(results).toHaveLength(2);
-      const vaultRow = results.find(
-        (row) => row.service_instance_id === SERVICES.INSTANCES.VAULT.ID
+      const integrationsRow = results.find(
+        (row) => row.service_instance_id === SERVICES.INSTANCES.INTEGRATIONS.ID
       );
-      expect(vaultRow?.id).toBe(SERVICES.DEFINITIONS.VAULT.ID);
+      expect(integrationsRow?.id).toBe(
+        SERVICES.DEFINITIONS.OPENCTI_INTEGRATIONS.ID
+      );
     });
   });
 
