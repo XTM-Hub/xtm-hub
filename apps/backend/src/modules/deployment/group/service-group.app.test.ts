@@ -27,7 +27,6 @@ import { requestContext } from '../../../context/request.context';
 import { DeploymentRequestId } from '../../../model/kanel/public/DeploymentRequest';
 import { ServiceGroupId } from '../../../model/kanel/public/ServiceGroup';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
-import { CRONS_USER_UUID } from '../../../portal.const';
 import * as mailService from '../../../server/mail-service';
 import { auth0ClientMock } from '../../../thirdparty/auth0/mock';
 import { logApp } from '../../../utils/app-logger.util';
@@ -96,7 +95,7 @@ describe('serviceGroupApp', () => {
 
   beforeEach(() => {
     telemetrySpy = vi
-      .spyOn(TelemetryApp, 'sendTelemetryEventAndWaitForIndexing')
+      .spyOn(TelemetryApp, 'sendTelemetryEvent')
       .mockResolvedValue();
   });
 
@@ -434,89 +433,7 @@ describe('serviceGroupApp', () => {
       expect(auth0Spy).not.toHaveBeenCalled();
     });
 
-    it('should not send trial_access_removed telemetry for a standalone (non-bundle) expired trial', async () => {
-      // Given
-      const endDate = new Date();
-      endDate.setDate(endDate.getDate() - 8);
-
-      const deploymentRequest =
-        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            hub_status: DeploymentRequestHubStatus.Expired,
-            end_date: endDate,
-            platform_id: uuidv4(),
-          }
-        );
-      trackedServiceInstanceIds.push(deploymentRequest.service_instance_id);
-
-      const groupId = uuidv4() as ServiceGroupId;
-      await TestHelper.serviceGroup.create({
-        id: groupId,
-        name: 'Admin',
-        service_instance_id: deploymentRequest.service_instance_id,
-      });
-      await TestHelper.serviceGroupUser.create({
-        group_id: groupId,
-        user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-      });
-
-      // When
-      await ServiceGroupApp.removeExpiredGroups();
-
-      // Then
-      expect(telemetrySpy).not.toHaveBeenCalled();
-    });
-
-    it('should send a trial_access_removed telemetry event per user for a bundle expired trial, using the crons actor', async () => {
-      // Given
-      const endDate = new Date();
-      endDate.setDate(endDate.getDate() - 8);
-      const platformId = uuidv4();
-
-      const { bundle, children } =
-        await TestHelper.deploymentRequest.createBundle({
-          children: [
-            {
-              hub_status: DeploymentRequestHubStatus.Expired,
-              end_date: endDate,
-              platform_id: platformId,
-            },
-          ],
-        });
-      const [child] = children;
-      trackedServiceInstanceIds.push(
-        bundle.service_instance_id,
-        child!.service_instance_id
-      );
-
-      const groupId = uuidv4() as ServiceGroupId;
-      await TestHelper.serviceGroup.create({
-        id: groupId,
-        name: 'Admin',
-        service_instance_id: child!.service_instance_id,
-      });
-      await TestHelper.serviceGroupUser.create({
-        group_id: groupId,
-        user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-      });
-
-      // When
-      await ServiceGroupApp.removeExpiredGroups();
-
-      // Then
-      expect(telemetrySpy).toHaveBeenCalledExactlyOnceWith(
-        expect.objectContaining({
-          event_type: TelemetryEventType.TRIAL_ACCESS_REMOVED,
-          organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-          user_id: CRONS_USER_UUID,
-          deployment_id: child!.id,
-          parent_id: bundle.id,
-          email: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.EMAIL,
-        })
-      );
-    });
-
-    it('should still clean up expired trial groups (and log the telemetry failure separately) when sending telemetry throws', async () => {
+    it('should not send trial_access_removed telemetry when a bundle trial expires', async () => {
       // Given
       const endDate = new Date();
       endDate.setDate(endDate.getDate() - 8);
@@ -548,28 +465,11 @@ describe('serviceGroupApp', () => {
         user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
       });
 
-      vi.spyOn(
-        OrganizationDomain,
-        'loadOrganizationSubscribedToServiceInstance'
-      ).mockRejectedValue(new Error('org lookup failure'));
-      const logErrorSpy = vi.spyOn(logApp, 'error');
-
       // When
       await ServiceGroupApp.removeExpiredGroups();
 
       // Then
-      const remainingGroups = await TestHelper.serviceGroup.load({
-        id: groupId,
-      });
-      expect(remainingGroups).toEqual([]);
-      expect(logErrorSpy).not.toHaveBeenCalledWith(
-        'Failed to clean up expired trial groups',
-        expect.anything()
-      );
-      expect(logErrorSpy).toHaveBeenCalledWith(
-        'Failed to send expired-trial telemetry',
-        expect.objectContaining({ deploymentRequestId: child!.id })
-      );
+      expect(telemetrySpy).not.toHaveBeenCalled();
     });
   });
 
@@ -1134,10 +1034,10 @@ describe('serviceGroupApp', () => {
       expect(xtmoneChild).toBeDefined();
     });
 
-    it('should propagate an error and skip telemetry when Auth0 RBAC sync fails for a user', async () => {
+    it('should persist the grant and send telemetry, then propagate an error, when Auth0 RBAC sync fails for a user', async () => {
       // Given
       const targetUser = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS;
-      const { bundle } = await createBundleWithGroups();
+      const { bundle, groups, openctiChild } = await createBundleWithGroups();
       vi.spyOn(auth0ClientMock, 'updateUserRBACInstance').mockRejectedValue(
         new Error('Auth0 failure')
       );
@@ -1157,9 +1057,22 @@ describe('serviceGroupApp', () => {
         }
       );
 
-      // Then: the caller gets an explicit failure instead of a false success
-      await expect(call).rejects.toThrow(ErrorCode.Auth0RbacSyncFailed);
-      expect(telemetrySpy).not.toHaveBeenCalled();
+      // Then: the caller gets an explicit failure so it can retry, while the
+      // DB (our reference) and telemetry already reflect the grant
+      await expect(call).rejects.toThrow('Auth0 failure');
+      const adminMembers = await TestHelper.serviceGroupUser.load({
+        group_id: groups.openctiAdminGroupId,
+      });
+      expect(adminMembers?.map((member) => member.user_id)).toEqual([
+        targetUser.ID,
+      ]);
+      expect(telemetrySpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event_type: TelemetryEventType.TRIAL_ACCESS_GRANTED,
+          deployment_id: openctiChild.id,
+          email: targetUser.EMAIL,
+        })
+      );
     });
 
     it('should still grant access (and log the telemetry failure separately) when the telemetry organization lookup throws', async () => {
@@ -1200,7 +1113,7 @@ describe('serviceGroupApp', () => {
       ]);
       expect(telemetrySpy).not.toHaveBeenCalled();
       expect(logErrorSpy).toHaveBeenCalledWith(
-        'Failed to send trial-access-granted telemetry',
+        'Failed to send trial-access telemetry',
         expect.objectContaining({
           serviceInstanceId: bundle.service_instance_id,
         })

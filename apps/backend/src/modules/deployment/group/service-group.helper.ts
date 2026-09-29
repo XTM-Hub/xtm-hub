@@ -1,6 +1,5 @@
 import {
   DeploymentRequestDeploymentType,
-  Organization,
   PlatformIdentifier,
   ServiceGroupName,
   ServiceGroup as ServiceGroupResponse,
@@ -8,6 +7,7 @@ import {
 import DeploymentRequest, {
   DeploymentRequestId,
 } from '../../../model/kanel/public/DeploymentRequest';
+import { OrganizationId } from '../../../model/kanel/public/Organization';
 import ServiceGroupModel, {
   ServiceGroupId,
 } from '../../../model/kanel/public/ServiceGroup';
@@ -29,6 +29,7 @@ import {
 import { logApp } from '../../../utils/app-logger.util';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { formatName } from '../../../utils/format';
+import { OrganizationDomain } from '../../organization-management/organization/organization.domain';
 import { UserDomain } from '../../organization-management/user/user-domain/user.domain';
 import { PlatformConfigurationDomain } from '../../registration/platform-configuration/platform-configuration.domain';
 import { TelemetryApp } from '../../telemetry/telemetry.app';
@@ -40,11 +41,6 @@ import { ServiceGroupDomain } from './service-group.domain';
 export type UserGroups = { user_id: UserId; group_ids: ServiceGroupId[] };
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
-
-type Auth0SyncSettlement =
-  | { userId: UserId; status: 'succeeded' }
-  | { userId: UserId; status: 'failed'; error: unknown }
-  | { userId: UserId; status: 'skipped' };
 
 export const ServiceGroupHelper = {
   buildUserGroupsDiff: (
@@ -121,7 +117,7 @@ export const ServiceGroupHelper = {
     }[],
     userIds: UserId[],
     emailByUserId: Map<UserId, string>
-  ): Promise<UserId[]> => {
+  ): Promise<void> => {
     const rbacInstance: Auth0UpdateUserRBACInstance = {};
     childGroupAssignments.forEach(({ child, groupNames }) => {
       if (!child.platform_id) {
@@ -131,104 +127,84 @@ export const ServiceGroupHelper = {
     });
 
     if (Object.keys(rbacInstance).length === 0) {
-      return [];
+      return;
     }
 
-    const settlements = await Promise.all(
-      userIds.map(async (userId): Promise<Auth0SyncSettlement> => {
+    await Promise.all(
+      userIds.map((userId) => {
         const email = emailByUserId.get(userId);
         if (!email) {
-          return { userId, status: 'skipped' };
+          return undefined;
         }
-        try {
-          await auth0Client.updateUserRBACInstance(email, rbacInstance);
-          return { userId, status: 'succeeded' };
-        } catch (error) {
-          return { userId, status: 'failed', error };
-        }
+        return auth0Client.updateUserRBACInstance(email, rbacInstance);
       })
     );
-
-    const succeededUserIds: UserId[] = [];
-    const failedUserIds: UserId[] = [];
-    settlements.forEach((settlement) => {
-      if (settlement.status === 'failed') {
-        failedUserIds.push(settlement.userId);
-        logApp.error('Failed to update Auth0 RBAC groups for user', {
-          userId: settlement.userId,
-          error: settlement.error,
-        });
-        return;
-      }
-      if (settlement.status === 'succeeded') {
-        succeededUserIds.push(settlement.userId);
-      }
-    });
-
-    if (failedUserIds.length > 0) {
-      throw new Error(ErrorCode.Auth0RbacSyncFailed);
-    }
-
-    return succeededUserIds;
   },
 
-  sendTrialAccessTelemetryForChildren: async (
-    childRoleAssignments: {
+  sendTrialAccessTelemetry: async ({
+    organizationId,
+    serviceInstanceId,
+    bundleDeploymentRequestId,
+    actorUserId,
+    emailByUserId,
+    assignments,
+  }: {
+    organizationId: OrganizationId;
+    serviceInstanceId: ServiceInstanceId;
+    bundleDeploymentRequestId: DeploymentRequestId;
+    actorUserId: UserId;
+    emailByUserId: Map<UserId, string>;
+    assignments: {
       deploymentId: DeploymentRequestId;
       role: ServiceGroupName | null;
       userIds: UserId[];
-    }[],
-    emailByUserId: Map<UserId, string>,
-    organization: Organization,
-    actorUserId: UserId,
-    bundleDeploymentRequestId: DeploymentRequestId
-  ): Promise<void> => {
-    const events = childRoleAssignments
-      .flatMap(({ deploymentId, role, userIds }) =>
-        userIds.map((userId) => ({
-          deploymentId,
-          role,
-          email: emailByUserId.get(userId),
-        }))
-      )
-      .filter(
-        (
-          assignment
-        ): assignment is {
-          deploymentId: DeploymentRequestId;
-          role: ServiceGroupName | null;
-          email: string;
-        } => Boolean(assignment.email)
-      );
+    }[];
+  }): Promise<void> => {
+    try {
+      const organization = await OrganizationDomain.loadOrganizationBy({
+        id: organizationId,
+      });
+      if (!organization) {
+        return;
+      }
 
-    const BATCH_SIZE = 20;
-    for (let i = 0; i < events.length; i += BATCH_SIZE) {
-      const batch = events.slice(i, i + BATCH_SIZE);
       await Promise.all(
-        batch.map(async ({ deploymentId, role, email }) => {
-          const event = role
-            ? TelemetryHelper.buildTrialAccessGrantedEvent(
-                organization,
-                actorUserId,
-                {
-                  deployment_id: deploymentId,
-                  parent_id: bundleDeploymentRequestId,
-                  role,
-                  email,
-                }
-              )
-            : TelemetryHelper.buildTrialAccessRemovedEvent(
-                organization,
-                actorUserId,
-                {
-                  deployment_id: deploymentId,
-                  parent_id: bundleDeploymentRequestId,
-                  email,
-                }
-              );
-          await TelemetryApp.sendTelemetryEventAndWaitForIndexing(event);
-        })
+        assignments.flatMap(({ deploymentId, role, userIds }) =>
+          userIds.flatMap((userId) => {
+            const email = emailByUserId.get(userId);
+            if (!email) {
+              return [];
+            }
+            return TelemetryApp.sendTelemetryEvent(
+              role
+                ? TelemetryHelper.buildTrialAccessGrantedEvent(
+                    organization,
+                    actorUserId,
+                    {
+                      deployment_id: deploymentId,
+                      parent_id: bundleDeploymentRequestId,
+                      role,
+                      email,
+                    }
+                  )
+                : TelemetryHelper.buildTrialAccessRemovedEvent(
+                    organization,
+                    actorUserId,
+                    {
+                      deployment_id: deploymentId,
+                      parent_id: bundleDeploymentRequestId,
+                      email,
+                    }
+                  )
+            );
+          })
+        )
       );
+    } catch (error) {
+      logApp.error('Failed to send trial-access telemetry', {
+        serviceInstanceId,
+        error,
+      });
     }
   },
 

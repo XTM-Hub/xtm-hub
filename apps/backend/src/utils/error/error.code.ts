@@ -73,7 +73,6 @@ export enum BadRequestErrorCode {
   InvalidUseCasesForProducts = 'INVALID_USE_CASES_FOR_PRODUCTS',
   SolutionCategoriesRequired = 'SOLUTION_CATEGORIES_REQUIRED',
   XtmOneRoleRequired = 'XTM_ONE_ROLE_REQUIRED',
-  Auth0RbacSyncFailed = 'AUTH0_RBAC_SYNC_FAILED',
 }
 
 export enum UnknownErrorCode {
