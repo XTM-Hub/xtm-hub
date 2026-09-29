@@ -46,7 +46,7 @@ export const EpicItemDetailed = ({
         ))}
       </div>
       <Separator />
-      <div className="flex flex-row">
+      <div className="markdown-content flex flex-row">
         <EpicItemFooter
           epic={epic}
           serviceInstanceId={serviceInstanceId}
