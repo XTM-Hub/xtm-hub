@@ -1,8 +1,8 @@
 'use client';
 
 import { CookieSettingsLink } from '@/components/cookie-consent/CookieSettingsLink';
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 interface AppFooterProps {
@@ -10,7 +10,7 @@ interface AppFooterProps {
 }
 
 export const AppFooter = ({ className }: AppFooterProps) => {
-  const t = useTranslations('AppFooter');
+  const t = useTranslate('AppFooter');
 
   return (
     <footer

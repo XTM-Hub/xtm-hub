@@ -5,6 +5,7 @@ import { ManageTrialHeader } from '@/components/service/trial-instances/xtm-plat
 import { ManageTrialRoleDescriptions } from '@/components/service/trial-instances/xtm-platform-trial/manage-trial/ManageTrialRoleDescriptions';
 import { ManageTrialTable } from '@/components/service/trial-instances/xtm-platform-trial/manage-trial/ManageTrialTable';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { ADMIN_MANAGE_TRIALS_PATH, APP_PATH } from '@/utils/path/constant';
 import { SelectionState } from '@filigran/ui';
@@ -16,7 +17,6 @@ import {
   bundleProductsKeys,
   bundleUserServiceGroupsKeys,
 } from '@graphql/service-group/service-group.keys';
-import { useTranslations } from 'next-intl';
 import { use, useMemo, useState } from 'react';
 import { ServiceXtmPlatformBundleManageUsersPageProps } from './page';
 
@@ -32,7 +32,7 @@ interface ClientSectionProps {
 }
 
 const ClientSection = ({ params, fromDashboard }: ClientSectionProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { serviceInstanceId } = use(params);
   const decodedServiceInstanceId = decodeURIComponent(serviceInstanceId);
 

@@ -1,5 +1,5 @@
 import { ConnectProductButton } from '@/components/connected-products/ConnectProductButton';
-import { getTranslations } from 'next-intl/server';
+import { getTranslate } from '@/hooks/get-translate';
 import XtmPlatformImage from './XtmPlatformImage';
 
 type XtmPlatformProps = {
@@ -7,7 +7,7 @@ type XtmPlatformProps = {
 };
 
 const XtmPlatform = async ({ welcomeName }: XtmPlatformProps = {}) => {
-  const t = await getTranslations('PublicHomePage.XtmPlatform');
+  const t = await getTranslate('PublicHomePage.XtmPlatform');
   return (
     <section className="grid grid-cols-1 md:grid-cols-2 gap-l items-center">
       <div className="flex flex-col gap-l">

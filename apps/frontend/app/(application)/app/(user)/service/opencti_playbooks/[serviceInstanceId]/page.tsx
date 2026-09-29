@@ -1,11 +1,11 @@
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
+import { getTranslate } from '@/hooks/get-translate';
 import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
 import { APP_PATH } from '@/utils/path/constant';
 import ServiceByIdQuery, {
   serviceByIdQuery,
 } from '@generated/serviceByIdQuery.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { getTranslations } from 'next-intl/server';
 import PageLoader from './page-loader';
 
 interface ServicePlaybooksPageProps {
@@ -15,7 +15,7 @@ interface ServicePlaybooksPageProps {
 const Page = async ({ params }: ServicePlaybooksPageProps) => {
   const { serviceInstanceId } = await params;
   const decodedServiceInstanceId = decodeURIComponent(serviceInstanceId);
-  const t = await getTranslations();
+  const t = await getTranslate();
   const response = await serverFetchGraphQL<serviceByIdQuery>(
     ServiceByIdQuery,
     {

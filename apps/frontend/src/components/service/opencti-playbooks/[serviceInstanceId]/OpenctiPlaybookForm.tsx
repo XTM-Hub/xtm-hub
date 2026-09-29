@@ -3,6 +3,7 @@ import { ServiceFormJsonFileField } from '@/components/service/form/JsonFileFiel
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   fileListCheck,
   optionalFileListCheck,
@@ -11,7 +12,6 @@ import {
 import { AutoForm } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { DocumentImageType } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { useContext, useMemo } from 'react';
 import slugify from 'slugify';
 import { z } from 'zod';
@@ -57,7 +57,7 @@ export const OpenctiPlaybookForm = ({
   handleSubmit,
   document,
 }: OpenCTIPlaybookFormProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { me } = useContext(PortalContext);
 
   const isCreation = !document;

@@ -2,12 +2,12 @@ import { useServiceListLocalStorageKeyContext } from '@/components/service/compo
 import { SearchInput } from '@/components/ui/SearchInput';
 import { SortControls } from '@/components/ui/SortControls';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { debounceHandleInput } from '@/utils/debounce';
 import { CalendarViewMonthIcon, ListViewIcon } from '@filigran/icon';
 import { Separator } from '@filigran/ui/clients';
 import { DocumentOrdering } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import React from 'react';
 
 export enum ServiceListFilterKey {
@@ -52,7 +52,7 @@ export const ServiceListHeader = ({
   className,
   onDisplayModeChange,
 }: ServiceListHeaderProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   const { localStorageKey } = useServiceListLocalStorageKeyContext();
   const {

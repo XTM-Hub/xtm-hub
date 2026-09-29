@@ -26,6 +26,7 @@ import {
   useUserHasPortalCapability,
 } from '@/hooks/use-portal-capability';
 import { useTablePagination } from '@/hooks/use-table-pagination';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
@@ -63,7 +64,6 @@ import {
 } from '@graphql/generated';
 import { useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { ReactNode, useMemo, useState } from 'react';
 import { useDebounceCallback } from 'usehooks-ts';
@@ -161,7 +161,7 @@ interface TrialsRowActionsProps {
 }
 
 const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const queryClient = useQueryClient();
   const isAdminByPass = useAdminByPass();
   const userHasModifyTrialCapa = useUserHasPortalCapability([
@@ -518,7 +518,7 @@ interface TrialsTabProps {
 }
 
 const TrialsTab = ({ type, scope }: TrialsTabProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const formatDate = useDateFormatter();
   const isAdminByPass = useAdminByPass();
   const userHasModifyTrialCapa = useUserHasPortalCapability([

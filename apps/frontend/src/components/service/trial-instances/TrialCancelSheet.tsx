@@ -4,6 +4,7 @@ import { invalidatePrivateNavigationQueries } from '@/components/menu/navigation
 import { SelectWithEditableField } from '@/components/service/registration/SelectWithEditableField';
 import { CancelDeploymentRequestMutation } from '@/components/service/trial-instances/trial-instances.graphql';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
 import { CheckIndeterminateIcon } from '@filigran/icon';
 import {
@@ -16,7 +17,6 @@ import {
 } from '@filigran/ui';
 import { trialInstancesCancelDeploymentRequestMutation } from '@generated/trialInstancesCancelDeploymentRequestMutation.graphql';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 import { useMutation } from 'react-relay';
@@ -50,7 +50,7 @@ export const TrialCancelSheet = ({
   open,
   setOpen,
 }: TrialCancelSheetProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const trialCancelSchema = useMemo(
     () =>
       buildTrialCancelSchema(

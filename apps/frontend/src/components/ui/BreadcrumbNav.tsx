@@ -1,4 +1,5 @@
 'use client';
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import {
   Breadcrumb,
@@ -8,7 +9,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { Fragment } from 'react';
 
@@ -24,7 +24,7 @@ export interface BreadcrumbNavLink {
 }
 
 export const BreadcrumbNav = ({ value }: BreadcrumbProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const renderLabel = ({ label, original, fallback }: BreadcrumbNavLink) => {
     if (original) {
       return label;

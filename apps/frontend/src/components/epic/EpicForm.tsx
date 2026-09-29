@@ -12,6 +12,7 @@ import {
 } from '@/components/epic/filigran-products';
 import { ServiceFormDescriptionField } from '@/components/service/form/DescriptionField';
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   AutoForm,
   Button,
@@ -36,7 +37,6 @@ import {
   FiligranProduct,
   Timeline,
 } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import {
   ControllerRenderProps,
@@ -103,7 +103,7 @@ const DescriptionFieldType = ({ field }: EpicFieldProps) => (
 );
 
 const ProductsFieldType = ({ field }: EpicFieldProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <FormItem>
       <FormLabel>
@@ -132,7 +132,7 @@ const ProductsFieldType = ({ field }: EpicFieldProps) => {
 };
 
 const SlackLinkFieldType = ({ field }: EpicFieldProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <FormItem>
       <FormLabel>{t('Epic.Form.SlackLink')}</FormLabel>
@@ -151,7 +151,7 @@ const SlackLinkFieldType = ({ field }: EpicFieldProps) => {
 };
 
 const TimelineFieldType = ({ field }: EpicFieldProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <FormItem>
       <FormLabel>
@@ -184,7 +184,7 @@ const TimelineFieldType = ({ field }: EpicFieldProps) => {
 };
 
 const IllustrationDocumentFieldType = ({ field }: EpicFieldProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { watch } = useFormContext();
   const isIntegration = watch('is_integration');
   if (!isIntegration) return null;
@@ -208,7 +208,7 @@ const IllustrationDocumentFieldType = ({ field }: EpicFieldProps) => {
 };
 
 const EditionTypeFieldType = ({ field }: EpicFieldProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <FormItem>
       <FormLabel>{t('Epic.Form.EditionType')}</FormLabel>
@@ -242,7 +242,7 @@ const EpicForm = ({
   epic?: epic_fragment$data;
   handleSubmit: (values: z.infer<typeof epicFormSchema>) => void;
 }) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const formSchema = useMemo(() => buildEpicFormSchema(t), [t]);
 
   const values = useMemo(

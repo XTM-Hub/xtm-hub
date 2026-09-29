@@ -1,6 +1,6 @@
 import { getOrganizations } from '@/components/organization/Organization.service';
+import { useTranslate } from '@/hooks/use-translate';
 import { Combobox } from '@filigran/ui/clients';
-import { useTranslations } from 'next-intl';
 
 interface OrganizationFilterOption {
   id: string;
@@ -17,7 +17,7 @@ export const UserOrganizationFilter = ({
   value,
   onChange,
 }: UserOrganizationFilterProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { organizationsData, refetch } = getOrganizations();
 
   const ALL_ORGANIZATIONS: OrganizationFilterOption = {

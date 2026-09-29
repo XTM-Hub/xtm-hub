@@ -1,9 +1,9 @@
 import { SubscriptionDeleteMutation } from '@/components/subcription/subscription.graphql';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { useToast } from '@filigran/ui';
 import { subscriptionDeleteMutation } from '@generated/subscriptionDeleteMutation.graphql';
 import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import { FunctionComponent } from 'react';
 import { useMutation } from 'react-relay';
 
@@ -23,7 +23,7 @@ export const ServiceSlugDeleteSubscription: FunctionComponent<
   );
 
   const { toast } = useToast();
-  const t = useTranslations();
+  const t = useTranslate();
 
   const onDeleteSubscription = () => {
     commitDeleteSubscription({

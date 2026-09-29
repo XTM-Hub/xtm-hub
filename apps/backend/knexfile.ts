@@ -100,7 +100,9 @@ type BaseDatabaseType =
   | 'VotingRound'
   | 'VotableFeature'
   | 'VotableFeature_UseCase'
-  | 'FeatureVote';
+  | 'FeatureVote'
+  | 'ContentTranslation'
+  | 'ContentTranslationDraft';
 
 export type DatabaseType =
   | BaseDatabaseType

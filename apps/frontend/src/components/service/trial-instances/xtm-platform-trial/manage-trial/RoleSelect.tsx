@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import {
   Select,
@@ -9,7 +10,6 @@ import {
   SelectValue,
 } from '@filigran/ui';
 import { ServiceGroupName } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { NO_ROLE_VALUE } from './manage-trial.const';
 
 interface RoleSelectProps {
@@ -33,7 +33,7 @@ export const RoleSelect = ({
   disabled,
   triggerClassName,
 }: RoleSelectProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <Select
       onValueChange={onValueChange}

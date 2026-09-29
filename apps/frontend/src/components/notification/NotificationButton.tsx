@@ -7,6 +7,7 @@ import {
 } from '@/components/admin/user/user.graphql';
 import { UserFragment } from '@/components/admin/user/UserList';
 import { PortalContext } from '@/components/me/AppPortalContext';
+import { useTranslate } from '@/hooks/use-translate';
 import { APP_PATH } from '@/utils/path/constant';
 import {
   Popover,
@@ -28,7 +29,6 @@ import {
   userPendingListSubscription,
   userPendingListSubscription$data,
 } from '@generated/userPendingListSubscription.graphql';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useContext, useMemo, useState } from 'react';
 import {
@@ -69,7 +69,7 @@ interface PendingUserNotificationsProps {
 const PendingUserNotifications = ({
   organizationId,
 }: PendingUserNotificationsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [openPopover, setOpenPopover] = useState(false);
 
   const queryData = useLazyLoadQuery<userPendingListQuery>(

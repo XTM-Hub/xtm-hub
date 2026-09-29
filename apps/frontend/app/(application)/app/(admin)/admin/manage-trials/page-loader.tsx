@@ -1,7 +1,7 @@
 import { BUNDLE_SCOPE } from '@/components/trials/trials.const';
 import TrialsList from '@/components/trials/TrialsList';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 
 const breadcrumbValue = [
   {
@@ -13,7 +13,7 @@ const breadcrumbValue = [
 ];
 
 const PageLoader = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <>
       <BreadcrumbNav value={breadcrumbValue} />

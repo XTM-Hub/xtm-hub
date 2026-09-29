@@ -1,6 +1,6 @@
 import NewsFeedList from '@/components/admin/news-feed/NewsFeedList';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 import { Suspense } from 'react';
 
 const breadcrumbValue = [
@@ -13,7 +13,7 @@ const breadcrumbValue = [
 ];
 
 const PageLoader = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <>
       <BreadcrumbNav value={breadcrumbValue} />

@@ -3,11 +3,11 @@
 import { DocumentsListQuery } from '@/components/service/document/document.graphql';
 import DocumentList from '@/components/service/vault/[slug]/DocumentList';
 import { documentListLocalStorage } from '@/components/service/vault/document-list-localstorage';
+import { useTranslate } from '@/hooks/use-translate';
 import { i18nKey } from '@/utils/datatable';
 import { useDateFormatter } from '@/utils/date';
 import { DataTable } from '@filigran/ui';
 import { ColumnDef } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
@@ -18,7 +18,7 @@ interface PreloaderProps {
   serviceInstance: serviceInstance_fragment$data;
 }
 const PageLoader = ({ serviceInstance }: PreloaderProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const formatDate = useDateFormatter();
 
   const columns: ColumnDef<documentItem_fragment$data>[] = [

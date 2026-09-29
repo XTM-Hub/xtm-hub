@@ -1,8 +1,8 @@
 'use client';
 
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@filigran/ui/servers';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 interface LearnMoreBannerLinkProps {
@@ -10,7 +10,7 @@ interface LearnMoreBannerLinkProps {
 }
 
 export const LearnMoreBannerLink = ({ href }: LearnMoreBannerLinkProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <Link

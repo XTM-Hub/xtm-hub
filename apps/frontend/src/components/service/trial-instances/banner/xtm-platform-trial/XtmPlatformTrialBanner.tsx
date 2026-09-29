@@ -3,9 +3,9 @@
 import { LearnMoreBannerLink } from '@/components/service/trial-instances/banner/LearnMoreBannerLink';
 import { useXtmPlatformTrialBannerDismissed } from '@/components/service/trial-instances/banner/xtm-platform-trial/useXtmPlatformTrialBannerDismissed';
 import { XtmPlatformTrialBannerState } from '@/components/service/trial-instances/banner/xtm-platform-trial/xtm-platform-trial-banner.utils';
+import { useTranslate } from '@/hooks/use-translate';
 import { CloseIcon } from '@filigran/icon';
 import { Badge, Callout } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 
 interface XtmPlatformTrialBannerProps {
   state: XtmPlatformTrialBannerState;
@@ -18,7 +18,7 @@ export const XtmPlatformTrialBanner = ({
   daysLeft,
   learnMoreHref,
 }: XtmPlatformTrialBannerProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { dismissed, dismiss } = useXtmPlatformTrialBannerDismissed(state);
 
   if (state === 'none' || dismissed) {

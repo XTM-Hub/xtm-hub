@@ -7,6 +7,7 @@ import { userAdminFormSchema } from '@/components/admin/user/forms/user-form.sch
 import { SettingsContext } from '@/components/settings/EnvPortalContext';
 import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { cn, isEmpty } from '@/lib/utils';
 import { DeleteIcon } from '@filigran/icon';
 import {
@@ -21,7 +22,6 @@ import {
 } from '@filigran/ui/clients';
 import { Button, Input } from '@filigran/ui/servers';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
 import { useContext, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -31,7 +31,7 @@ interface UserAdminFormProps {
 }
 export const UserAdminForm = ({ handleSubmit }: UserAdminFormProps) => {
   const { handleCloseSheet, setIsDirty } = useDialogContext();
-  const t = useTranslations();
+  const t = useTranslate();
   const { settings } = useContext(SettingsContext);
   const [userOrganization, setUserOrganization] = useState<
     UserOrganizationFormProps[]

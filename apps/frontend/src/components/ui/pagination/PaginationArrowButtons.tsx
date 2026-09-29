@@ -1,7 +1,7 @@
+import { useTranslate } from '@/hooks/use-translate';
 import { ArrowNextIcon, ArrowPreviousIcon } from '@filigran/icon';
 import { Button } from '@filigran/ui/servers';
 import { PaginationState } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 
 interface PaginationArrowButtonsProps {
   totalCount: number;
@@ -16,7 +16,7 @@ export const PaginationArrowButtons = ({
   pageIndex,
   pageSize,
 }: PaginationArrowButtonsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const safePageSize = pageSize > 0 ? pageSize : 1;
   const pageCount = Math.ceil(totalCount / safePageSize);
   const rangeStart = totalCount > 0 ? pageIndex * safePageSize + 1 : 0;

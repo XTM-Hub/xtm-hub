@@ -1,9 +1,9 @@
 import { DeleteEpicMutation } from '@/components/epic/epic.graphql';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { useToast } from '@filigran/ui';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import { epicDeleteMutation } from '@generated/epicDeleteMutation.graphql';
-import { useTranslations } from 'next-intl';
 import { useMutation } from 'react-relay';
 
 interface DeleteEpicProps {
@@ -21,7 +21,7 @@ export const DeleteEpic = ({
 }: DeleteEpicProps) => {
   const [deleteEpicMutation] =
     useMutation<epicDeleteMutation>(DeleteEpicMutation);
-  const t = useTranslations();
+  const t = useTranslate();
   const { toast } = useToast();
   const onDeletedEpic = (deletedEpicId: string) => {
     deleteEpicMutation({

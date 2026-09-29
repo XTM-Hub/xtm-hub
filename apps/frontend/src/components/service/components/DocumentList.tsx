@@ -21,9 +21,9 @@ import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
 import useScrollPosition from '@/hooks/use-scroll-position';
+import { useTranslate } from '@/hooks/use-translate';
 import { DataTable } from '@filigran/ui';
 import { ColumnDef } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
 interface DocumentListProps {
@@ -39,7 +39,7 @@ const DocumentList = ({
 }: DocumentListProps) => {
   const { settings } = useContext(SettingsContext);
   const { serviceInstance } = useServiceContext();
-  const t = useTranslations();
+  const t = useTranslate();
   const router = useRouter();
   const { save } = useScrollPosition();
   const columns: ColumnDef<documentItem_fragment$data>[] = useMemo(

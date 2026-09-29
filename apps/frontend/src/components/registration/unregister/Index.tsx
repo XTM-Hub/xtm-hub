@@ -8,13 +8,13 @@ import {
 import { UnregisterConfirm } from '@/components/registration/unregister/Confirm';
 import { UnregisterMissingCapability } from '@/components/registration/unregister/MissingCapability';
 import { UnregisterPlatformNotRegistered } from '@/components/registration/unregister/PlatformNotRegistered';
+import { useTranslate } from '@/hooks/use-translate';
 import { toast } from '@filigran/ui/clients';
 import { registerCanUnregisterPlatformFragment$key } from '@generated/registerCanUnregisterPlatformFragment.graphql';
 import RegisterCanUnregisterPlatformQueryGraphql, {
   registerCanUnregisterPlatformQuery,
 } from '@generated/registerCanUnregisterPlatformQuery.graphql';
 import { registerUnregisterPlatformMutation } from '@generated/registerUnregisterPlatformMutation.graphql';
-import { useTranslations } from 'next-intl';
 import { useContext, useState } from 'react';
 import {
   PreloadedQuery,
@@ -37,7 +37,7 @@ export const Unregister = ({
   tenantId,
 }: UnregisterProps) => {
   const { displayedIdentifier, identifier } = useContext(RegistrationContext);
-  const t = useTranslations();
+  const t = useTranslate();
   const canUnregisterPreloadedQuery =
     usePreloadedQuery<registerCanUnregisterPlatformQuery>(
       RegisterCanUnregisterPlatformQueryGraphql,

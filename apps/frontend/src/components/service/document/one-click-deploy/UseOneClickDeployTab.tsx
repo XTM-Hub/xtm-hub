@@ -1,5 +1,6 @@
 import { RefreshUserPlatformTokenMutation } from '@/components/registration/register/register.graphql';
 import useExternalTab from '@/hooks/use-external-tab';
+import { useTranslate } from '@/hooks/use-translate';
 import { OPENCTI_INTEGRATION_URL_CONFIGS } from '@/utils/shareable-resources/shareable-resources.consts';
 import {
   isConnectorResource,
@@ -12,7 +13,6 @@ import {
   registerRefreshUserPlatformTokenMutation,
   registerRefreshUserPlatformTokenMutation$data,
 } from '@generated/registerRefreshUserPlatformTokenMutation.graphql';
-import { useTranslations } from 'next-intl';
 import { useMutation } from 'react-relay';
 
 const OPENCTI_URL_CONFIGS = {
@@ -76,7 +76,7 @@ export const useOneClickDeployTab = ({
   platformBasePath,
   documentData,
 }: Props): Return => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [refreshUserPlatformToken] =
     useMutation<registerRefreshUserPlatformTokenMutation>(
       RefreshUserPlatformTokenMutation

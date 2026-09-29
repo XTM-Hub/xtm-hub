@@ -1,4 +1,5 @@
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   Button,
   ColorPicker,
@@ -14,7 +15,6 @@ import {
 } from '@filigran/ui';
 import { FiligranProduct } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -56,7 +56,7 @@ const UseCaseForm = ({
   handleSubmit: (values: z.infer<typeof useCaseFormSchema>) => void;
   onClose: () => void;
 }) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   const form = useForm<z.infer<typeof useCaseFormSchema>>({
     resolver: zodResolver(useCaseFormSchema),

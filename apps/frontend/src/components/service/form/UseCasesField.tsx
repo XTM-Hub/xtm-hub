@@ -1,4 +1,5 @@
 import { useUseCases } from '@/components/admin/use-case/use-use-cases';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   FormControl,
   FormItem,
@@ -6,7 +7,6 @@ import {
   MultiSelectFormField,
 } from '@filigran/ui';
 import type { FiligranProduct } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { ControllerRenderProps, FieldPath, FieldValues } from 'react-hook-form';
 
 interface ServiceFormUseCasesFieldProps<
@@ -28,7 +28,7 @@ export const ServiceFormUseCasesField = <
   product,
   required,
 }: ServiceFormUseCasesFieldProps<TFieldValues, TName>) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <FormItem>
       <FormLabel>

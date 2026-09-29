@@ -6,11 +6,11 @@ import { TRIAL_GUIDE_CONTENT } from '@/components/service/trial-guide/TrialGuide
 import { TrialGuideResourceCard } from '@/components/service/trial-guide/TrialGuideResourceCard';
 import { SlackSupportButton } from '@/components/service/trial-instances/SlackSupport';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { APP_PATH } from '@/utils/path/constant';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@filigran/ui';
 import { PlatformIdentifier } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
 const TRIAL_GUIDE_TABS = [
   PlatformIdentifier.Opencti,
@@ -19,7 +19,7 @@ const TRIAL_GUIDE_TABS = [
 ];
 
 export const TrialGuidePage = () => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   const breadcrumbs = [
     {

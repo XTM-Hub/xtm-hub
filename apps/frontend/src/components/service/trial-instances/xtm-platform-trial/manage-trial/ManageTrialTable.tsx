@@ -1,6 +1,7 @@
 'use client';
 
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { i18nKey } from '@/utils/datatable';
 import { DeleteIcon } from '@filigran/icon';
@@ -15,7 +16,6 @@ import {
 import { bundleUserServiceGroupsKeys } from '@graphql/service-group/service-group.keys';
 import { useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 import { Dispatch, SetStateAction, useMemo, useState } from 'react';
 import {
   getBundleRolePanels,
@@ -64,7 +64,7 @@ export const ManageTrialTable = ({
   selection,
   onSelectionChange,
 }: ManageTrialTableProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const queryClient = useQueryClient();
   const [deletingUserId, setDeletingUserId] = useState<string | undefined>(
     undefined

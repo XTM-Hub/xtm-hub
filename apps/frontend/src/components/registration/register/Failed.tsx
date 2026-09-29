@@ -1,12 +1,12 @@
 import { RegistrationLayout } from '@/components/registration/Layout';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 
 interface RegisterStateFailedProps {
   cancel: () => void;
 }
 
 export const RegisterStateFailed = ({ cancel }: RegisterStateFailedProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <RegistrationLayout cancel={cancel}>
       <h1>{t(`Register.Failed.Title`)}</h1>

@@ -3,6 +3,7 @@
 import { LastDeployedOverview } from '@/components/homepage/last-deployed-resources/LastDeployedResourcesSection';
 import BadgeOverflowCounter from '@/components/ui/BadgeOverflowCounter';
 import { UserDisplay } from '@/components/ui/UserDisplay';
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { useDateFormatter } from '@/utils/date';
 import { ResourceTypeIcon } from '@/utils/shareable-resources/resource-type-icon';
@@ -19,7 +20,6 @@ import {
   TooltipTrigger,
 } from '@filigran/ui';
 import { Badge } from '@filigran/ui/servers';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 const BADGE_CLASS = 'border-0 bg-primary/20 p-l';
@@ -33,7 +33,7 @@ type LastDeployedResourceRowProps = {
 const LastDeployedResourceRow = ({
   resource,
 }: LastDeployedResourceRowProps) => {
-  const t = useTranslations('HomePage.LastDeployedResources');
+  const t = useTranslate('HomePage.LastDeployedResources');
   const formatDate = useDateFormatter();
   const deployedAt = formatDate(resource.deployedAt, 'DATE_MEDIUM');
 

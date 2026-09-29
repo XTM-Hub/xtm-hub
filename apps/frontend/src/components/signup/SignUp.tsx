@@ -1,9 +1,9 @@
 'use client';
 
+import { useTranslate } from '@/hooks/use-translate';
 import FiligranLogo from '@public/filigran_logo.svg';
 import FiligranLogoDark from '@public/filigran_logo_dark.svg';
 import SchemeXtmHub from '@public/scheme_xtm_hub_account_creation.svg';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
@@ -13,7 +13,7 @@ const HUBSPOT_FORM_ID = '10b2ca41-4734-46d8-96dd-ac410a10a937';
 const HUBSPOT_REGION = 'eu1';
 
 const SignUp = ({ showLocalLogin = false }: { showLocalLogin?: boolean }) => {
-  const t = useTranslations('SignUpPage');
+  const t = useTranslate('SignUpPage');
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect');
   const oidcHref = redirect

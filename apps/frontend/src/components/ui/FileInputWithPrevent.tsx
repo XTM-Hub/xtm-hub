@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslate } from '@/hooks/use-translate';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -11,7 +12,6 @@ import {
   AlertDialogTrigger,
   Button,
 } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 
 const FileInputWithPrevent = ({
@@ -31,7 +31,7 @@ const FileInputWithPrevent = ({
     value?: FileList;
   };
 }) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [isOpen, setIsOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 

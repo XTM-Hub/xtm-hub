@@ -1,9 +1,9 @@
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
 import { ChecklistItem } from '@/components/service/trial-guide/ChecklistItem';
 import { TrialGuideChecklistItem } from '@/components/service/trial-guide/TrialGuide.content';
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { PlatformIdentifier } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
 interface SuggestedActionsChecklistProps {
   checklistItems: TrialGuideChecklistItem[];
@@ -14,7 +14,7 @@ export const SuggestedActionsChecklist = ({
   checklistItems,
   platformIdentifier,
 }: SuggestedActionsChecklistProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { name, Icon, iconClassName } =
     PlatformMetadataMapping[platformIdentifier];
 

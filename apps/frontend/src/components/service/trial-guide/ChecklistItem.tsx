@@ -1,5 +1,5 @@
 import { TrialGuideChecklistItem } from '@/components/service/trial-guide/TrialGuide.content';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 import Link from 'next/link';
 import { ReactNode } from 'react';
 
@@ -11,7 +11,7 @@ interface ChecklistItemProps {
 const renderStrong = (chunks: ReactNode) => <strong>{chunks}</strong>;
 
 export const ChecklistItem = ({ index, item }: ChecklistItemProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { titleKey, descriptionKey, exampleKey, readMoreUrl } = item;
 
   return (

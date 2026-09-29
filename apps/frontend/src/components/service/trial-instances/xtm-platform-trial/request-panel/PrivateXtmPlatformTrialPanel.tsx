@@ -18,6 +18,7 @@ import {
   XtmPlatformTrialStatusPanelState,
 } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/xtm-platform-trial-panel.utils';
 import { BundleCancelSheet } from '@/components/service/trial-instances/xtm-platform-trial/shared/BundleCancelSheet';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Button } from '@filigran/ui';
 import { toast } from '@filigran/ui/clients';
@@ -32,7 +33,6 @@ import {
 } from '@graphql/generated';
 import { platformTrialKeys } from '@graphql/trial/trial.keys';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 import { useContext, useState } from 'react';
 import { z } from 'zod';
 
@@ -48,7 +48,7 @@ export const PrivateXtmPlatformTrialPanel = ({
   ongoingStandaloneTrials,
 }: PrivateXtmPlatformTrialPanelProps) => {
   const { me } = useContext(PortalContext);
-  const t = useTranslations();
+  const t = useTranslate();
   const organizationId = me?.selected_organization_id ?? '';
   const [isCancelSheetOpen, setIsCancelSheetOpen] = useState(false);
 

@@ -2,6 +2,7 @@
 
 import GuardCapacityComponent from '@/components/AdminGuard';
 import { useServiceContext } from '@/components/service/components/ServiceContext';
+import { useTranslate } from '@/hooks/use-translate';
 import { Locale, locales } from '@/i18n/config';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { EditIcon } from '@filigran/icon';
@@ -22,7 +23,6 @@ import {
   useServiceInstanceSeoMetadataByIdQuery,
 } from '@graphql/generated';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { z } from 'zod';
 
@@ -90,7 +90,7 @@ type LibraryUpdateFieldConfig = Record<
 >;
 
 export const LibraryUpdateMetadata = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { serviceInstance } = useServiceContext();
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);

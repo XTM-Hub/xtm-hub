@@ -23,8 +23,8 @@ import useScrollPosition from '@/hooks/use-scroll-position';
 import useServiceCapability from '@/hooks/use-service-capability';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
 import { useStickyHeaderOffset } from '@/hooks/use-sticky-header-offset';
+import { useTranslate } from '@/hooks/use-translate';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import { Fragment, useLayoutEffect, useRef } from 'react';
 
 export interface ServiceListProps {
@@ -46,7 +46,7 @@ const ServiceList = ({
   connectionId,
   paginationControls,
 }: ServiceListProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { translationKey, serviceInstance } = useServiceContext();
   const userCanUpdate = useServiceCapability(
     ServiceRestriction.Upload,

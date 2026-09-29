@@ -1,6 +1,6 @@
+import { useTranslate } from '@/hooks/use-translate';
 import { Badge } from '@filigran/ui';
 import { VotingRoundStatus } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
 const BADGE_VARIANT: Record<
   VotingRoundStatus,
@@ -16,7 +16,7 @@ export const VotingRoundStatusBadge = ({
 }: {
   status: VotingRoundStatus;
 }) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <Badge variant={BADGE_VARIANT[status]}>
       {t(`VotingRound.Status.${status}`)}

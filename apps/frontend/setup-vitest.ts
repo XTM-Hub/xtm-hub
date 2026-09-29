@@ -50,6 +50,13 @@ vi.mock('next/navigation', async (importOriginal) => ({
   notFound: vi.fn(),
 }));
 
+// cookies() throws outside a real Next.js request scope: default to an empty
+// jar, so server-side edit mode is off in tests, like the client default.
+vi.mock('next/headers', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/headers')>()),
+  cookies: vi.fn(async () => ({ get: () => undefined })),
+}));
+
 vi.mock('next-intl', async (importOriginal) => ({
   ...(await importOriginal<typeof import('next-intl')>()),
   useTranslations: vi.fn(() =>

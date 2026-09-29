@@ -2,7 +2,7 @@
 
 import UserListPage from '@/components/admin/user/UserListPage';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 
 const breadcrumbValue = [
   {
@@ -14,7 +14,7 @@ const breadcrumbValue = [
 ];
 // Component
 const PageLoader = () => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <>

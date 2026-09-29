@@ -1,5 +1,6 @@
 'use server';
 import PublicServiceInstanceCard from '@/components/service/PublicServiceInstanceCard';
+import { getTranslate } from '@/hooks/get-translate';
 import { cn } from '@/lib/utils';
 import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '@/utils/constant';
@@ -9,7 +10,6 @@ import ServiceLinksByTagsQueryGraphql, {
   serviceLinksByTagsQuery,
 } from '@generated/serviceLinksByTagsQuery.graphql';
 import { ServiceInstanceTag } from '@graphql/generated';
-import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import React from 'react';
 
@@ -42,7 +42,7 @@ export const RegistrationLearnMore = async ({
 
   const services = response.data
     .serviceInstanceLinksByTags as unknown as seoServiceInstanceFragment$data[];
-  const t = await getTranslations();
+  const t = await getTranslate();
   const platformName =
     serviceInstanceTag === ServiceInstanceTag.OpenCti ? 'OpenCTI' : 'OpenAEV';
 

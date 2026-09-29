@@ -4,8 +4,8 @@ import {
   newDocumentSchema,
   VaultNewFileForm,
 } from '@/components/service/vault/VaultNewFileForm';
+import { useTranslate } from '@/hooks/use-translate';
 import { Button, useToast } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 import { useContext, useState } from 'react';
 
 import { PortalContext } from '@/components/me/AppPortalContext';
@@ -26,7 +26,7 @@ interface VaultFormProps {
 }
 export const VaultForm = ({ connectionId, userCanUpdate }: VaultFormProps) => {
   const { toast } = useToast();
-  const t = useTranslations();
+  const t = useTranslate();
   const [createMutation] = useMutation<documentCreateMutation>(
     DocumentCreateMutation
   );

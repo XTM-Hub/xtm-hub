@@ -8,12 +8,13 @@ import BadgeOverflowCounter from '@/components/ui/BadgeOverflowCounter';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
 import ShareableResourceCard from '@/components/ui/shareable-resource/ShareableResourceCard';
 import useScrollPosition from '@/hooks/use-scroll-position';
+import { useTranslate } from '@/hooks/use-translate';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
 import { DataTable } from '@filigran/ui';
 import { publicDocumentListItemFragment$data } from '@generated/publicDocumentListItemFragment.graphql';
 import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
 import { ColumnDef } from '@tanstack/react-table';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 
@@ -32,7 +33,7 @@ export const PublicShareableDocumentList = ({
 }: PublicShareableDocumentListProps) => {
   const locale = useLocale();
   const { save } = useScrollPosition();
-  const t = useTranslations();
+  const t = useTranslate();
   const router = useRouter();
 
   const columns: ColumnDef<publicDocumentListItemFragment$data>[] = useMemo(

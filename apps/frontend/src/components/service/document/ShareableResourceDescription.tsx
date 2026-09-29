@@ -1,5 +1,5 @@
 import MarkdownRendererWithTheme from '@/components/ui/MarkdownRendererWithTheme';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 
 // Component interface
 interface ShareableResourceDescriptionProps {
@@ -12,7 +12,7 @@ const ShareableResourceDescription = ({
   shortDescription,
   longDescription,
 }: ShareableResourceDescriptionProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <div className="flex-[3_3_0%] min-w-0">

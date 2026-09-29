@@ -2,6 +2,7 @@
 
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { CountryCombobox } from '@/components/ui/country/Combobox';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   AutoForm,
   Button,
@@ -14,7 +15,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 import { useContext } from 'react';
 import { z } from 'zod';
 
@@ -34,7 +34,7 @@ interface ProfileFormEditProps {
 }
 
 export const ProfileFormEdit = ({ onSubmit }: ProfileFormEditProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { me } = useContext(PortalContext);
 
   return (

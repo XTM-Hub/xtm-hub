@@ -20,13 +20,13 @@ import { documentItem_fragment$data } from '@generated/documentItem_fragment.gra
 import { IntegrationType, ServiceRestriction } from '@graphql/generated';
 import { useContext, useState } from 'react';
 
+import { useTranslate } from '@/hooks/use-translate';
 import {
   isIntegrationItem,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { MoreVertIcon } from '@filigran/icon';
 import { toast } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
 interface DocumentActionsCellProps {
@@ -37,7 +37,7 @@ export const DocumentActionsCell = ({ document }: DocumentActionsCellProps) => {
   const { settings } = useContext(SettingsContext);
   const { serviceInstance, translationKey, setIntegrationType } =
     useServiceContext();
-  const t = useTranslations();
+  const t = useTranslate();
   const router = useRouter();
   const [openSheet, setOpenSheet] = useState(false);
 

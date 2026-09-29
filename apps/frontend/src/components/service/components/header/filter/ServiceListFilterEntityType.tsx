@@ -2,8 +2,8 @@ import { useServiceListLocalStorageKeyContext } from '@/components/service/compo
 import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
+import { useTranslate } from '@/hooks/use-translate';
 import { ENTITY_TYPES } from '@/utils/shareable-resources/entity-type';
-import { useTranslations } from 'next-intl';
 
 interface ServiceListFilterEntityTypeProps {
   facetCounts?: ServiceListFacetCounts['entityType'];
@@ -12,7 +12,7 @@ interface ServiceListFilterEntityTypeProps {
 export const ServiceListFilterEntityType = ({
   facetCounts,
 }: ServiceListFilterEntityTypeProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { localStorageKey } = useServiceListLocalStorageKeyContext();
   const { entityTypes, setEntityTypes } =
     useServiceListLocalStorage(localStorageKey);

@@ -7,6 +7,7 @@ import { VotingRoundResults } from '@/components/admin/voting-round/VotingRoundR
 import { VotingRoundStatusActions } from '@/components/admin/voting-round/VotingRoundStatusActions';
 import { VotingRoundStatusBadge } from '@/components/admin/voting-round/VotingRoundStatusBadge';
 import { useExecuteAfterAnimation } from '@/hooks/use-execute-after-animation';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { i18nKey } from '@/utils/datatable';
 import { Badge, DataTable, Skeleton } from '@filigran/ui';
@@ -17,11 +18,10 @@ import {
 } from '@graphql/generated';
 import { votingRoundKeys } from '@graphql/voting-round/voting-round.keys';
 import { ColumnDef } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
 export const VotingRoundDetail = ({ roundId }: { roundId: string }) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [featureToEdit, setFeatureToEdit] = useState<
     VotableFeatureFormModel | undefined
   >(undefined);

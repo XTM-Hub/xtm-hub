@@ -1,6 +1,6 @@
 import OrganizationList from '@/components/organization/OrganizationList';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 
 const breadcrumbValue = [
   {
@@ -11,7 +11,7 @@ const breadcrumbValue = [
   },
 ];
 const PageLoader = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <>
       <BreadcrumbNav value={breadcrumbValue} />

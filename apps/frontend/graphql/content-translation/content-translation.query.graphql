@@ -1,0 +1,6 @@
+query ContentTranslationsByLocale($locale: Locale) {
+  contentTranslations(locale: $locale) {
+    key
+    value
+  }
+}

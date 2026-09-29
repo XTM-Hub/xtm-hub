@@ -1,9 +1,9 @@
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { toast } from '@filigran/ui';
 import { featureVotingKeys } from '@graphql/feature-voting/feature-voting.keys';
 import { useFeatureVoteMutation } from '@graphql/generated';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 
 /**
  * Casts a vote for a feature. Shared by the manual vote click on the private
@@ -11,7 +11,7 @@ import { useTranslations } from 'next-intl';
  * public page, so both paths get the same success/error handling.
  */
 export const useFeatureVote = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const queryClient = useQueryClient();
 
   return useFeatureVoteMutation(portalGraphqlClient, {

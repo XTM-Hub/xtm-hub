@@ -1,0 +1,7 @@
+mutation SaveContentTranslationDraft($input: UpsertContentTranslationInput!) {
+  saveContentTranslationDraft(input: $input) {
+    key
+    locale
+    value
+  }
+}

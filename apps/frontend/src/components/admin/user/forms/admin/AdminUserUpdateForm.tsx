@@ -7,6 +7,7 @@ import { userEditAdminFormSchema } from '@/components/admin/user/forms/user-form
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { cn, isEmpty } from '@/lib/utils';
 import { DeleteIcon } from '@filigran/icon';
 import {
@@ -24,7 +25,6 @@ import {
 import { Label } from '@filigran/ui/clients';
 import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { graphql, useMutation } from 'react-relay';
@@ -47,7 +47,7 @@ export const AdminUserUpdateForm = ({
   user,
   callback,
 }: AdminUserUpdateFormProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { handleCloseSheet, setIsDirty } = useDialogContext();
 
   const [userOrganization, setUserOrganization] = useState<

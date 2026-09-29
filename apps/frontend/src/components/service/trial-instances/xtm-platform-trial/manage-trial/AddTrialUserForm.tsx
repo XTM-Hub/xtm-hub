@@ -1,6 +1,7 @@
 'use client';
 
 import { PortalContext } from '@/components/me/AppPortalContext';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { toast } from '@filigran/ui';
 import {
@@ -17,7 +18,6 @@ import { bundleUserServiceGroupsKeys } from '@graphql/service-group/service-grou
 import { usersKeys } from '@graphql/user/users.keys';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 import { useContext, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import {
@@ -43,7 +43,7 @@ export const AddTrialUserForm = ({
   onCompleted,
   onCancel,
 }: AddTrialUserFormProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const queryClient = useQueryClient();
   const { me } = useContext(PortalContext);
 

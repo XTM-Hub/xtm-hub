@@ -1,6 +1,6 @@
 import { PendingUserDialogState } from '@/components/admin/user/pending-user/pending-user-list.types';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 import { ReactNode } from 'react';
 
 const renderStrong = (chunks: ReactNode) => <strong>{chunks}</strong>;
@@ -16,7 +16,7 @@ export const PendingUserConfirmDialog = ({
   onOpenChange,
   onConfirm,
 }: PendingUserConfirmDialogProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   if (!pendingUserDialog) {
     return null;
   }

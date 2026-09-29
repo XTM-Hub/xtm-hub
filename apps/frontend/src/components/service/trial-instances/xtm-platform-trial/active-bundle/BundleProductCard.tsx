@@ -7,6 +7,7 @@ import {
 import { PlatformUpdateSheet } from '@/components/service/components/PlatformUpdateSheet';
 import { XtmoneStatusState } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/useXtmoneIntegrationStatus';
 import { XtmoneConnectionStatus } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/XtmoneConnectionStatus';
+import { useTranslate } from '@/hooks/use-translate';
 import { useDateFormatter } from '@/utils/date';
 import { toExternalHref } from '@/utils/external-url';
 import { EditIcon } from '@filigran/icon';
@@ -19,7 +20,6 @@ import {
   XtmPlatformBundleProductFragment,
 } from '@graphql/generated';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -35,7 +35,7 @@ export const BundleProductCard = ({
   xtmoneStatus,
   canManage,
 }: BundleProductCardProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const formatDate = useDateFormatter();
   const queryClient = useQueryClient();
   const [openEditName, setOpenEditName] = useState(false);

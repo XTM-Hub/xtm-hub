@@ -1,6 +1,7 @@
 'use client';
 import { updateShareNumber } from '@/components/ui/share-link/ShareLinkActions';
 import usePublicPath from '@/hooks/use-public-path';
+import { useTranslate } from '@/hooks/use-translate';
 import { ShareIcon } from '@filigran/icon';
 import {
   toast,
@@ -10,7 +11,6 @@ import {
   TooltipTrigger,
 } from '@filigran/ui/clients';
 import { Button } from '@filigran/ui/servers';
-import { useTranslations } from 'next-intl';
 import { graphql, useMutation } from 'react-relay';
 import { useCopyToClipboard } from 'usehooks-ts';
 
@@ -79,7 +79,7 @@ export const ShareLinkCommonButton = ({
   onClickAction,
   tooltipText,
 }: ShareLinkCommonProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [_, copy] = useCopyToClipboard();
 
   const handleCopy = (e: React.MouseEvent) => {

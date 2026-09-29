@@ -4,7 +4,7 @@ import {
   BreadcrumbNav,
   BreadcrumbNavLink,
 } from '@/components/ui/BreadcrumbNav';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
 import { ServiceManageSheet } from '@/components/service/components/ServiceManageSheet';
@@ -46,7 +46,7 @@ const ShareableResourceConnectorSlug = ({
   shareUrl,
   serviceInstance,
 }: ShareableResourceConnectorSlugProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const platformIdentifier = getPlatformIdentifier(documentData.type);
   const canClickOnDeployButton = documentData.manager_supported;
 

@@ -1,6 +1,6 @@
 import { getOrganizations } from '@/components/organization/Organization.service';
+import { useTranslate } from '@/hooks/use-translate';
 import { Combobox } from '@filigran/ui/clients';
-import { useTranslations } from 'next-intl';
 
 export interface UserOrganizationFormProps {
   id: string;
@@ -19,7 +19,7 @@ export const AutocompleteOrganization = ({
   selectedOrganizationCapabilities,
   onValueChange,
 }: AutocompleteOrganizationProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { organizationsData, refetch } = getOrganizations();
 
   const isOrganizationAlreadySelected = (id: string) => {

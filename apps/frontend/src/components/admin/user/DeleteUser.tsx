@@ -1,11 +1,11 @@
 import { getDeletionBlockedReasonKey } from '@/components/admin/user/delete-user.utils';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { DialogInformative } from '@/components/ui/Dialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { useToast } from '@filigran/ui';
 import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { useUserDeleteMutation } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import React, { useState } from 'react';
 
 interface DeleteUserProps {
@@ -21,7 +21,7 @@ export const DeleteUser = ({
   open,
   setOpen,
 }: DeleteUserProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { toast } = useToast();
   const [blockedReasonKey, setBlockedReasonKey] = useState<string | null>(null);
   const { mutate: deleteUserMutation } = useUserDeleteMutation(
