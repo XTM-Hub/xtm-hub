@@ -1721,8 +1721,11 @@
         "ActivitySectorPlaceholder": "業種を選択してください",
         "UseCase": "用途",
         "UseCasePlaceholder": "ユースケースを選択してください",
-        "MSSA": "MSSA",
-        "MSSAAgreement": "の試用規約を読み、理解し、同意します。",
+        "Error": {
+          "AcceptTerms": "続行するには試用条件に同意してください",
+          "UseCase": "ユースケースを選択してください"
+        },
+        "TermsAgreement": "<mssa>MSSA</mssa>および<aiterms>AI利用規約</aiterms>の試用条件を読み、理解し、同意します。",
         "FormRequested": "無料トライアルを申し込みました。プラットフォームの準備が整い次第、Eメールをお送りします！"
       },
       "Display": {
