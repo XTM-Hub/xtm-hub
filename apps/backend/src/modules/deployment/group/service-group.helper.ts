@@ -4,7 +4,10 @@ import {
   ServiceGroupName,
   ServiceGroup as ServiceGroupResponse,
 } from '../../../__generated__/resolvers-types';
-import DeploymentRequest from '../../../model/kanel/public/DeploymentRequest';
+import DeploymentRequest, {
+  DeploymentRequestId,
+} from '../../../model/kanel/public/DeploymentRequest';
+import Organization from '../../../model/kanel/public/Organization';
 import ServiceGroupModel, {
   ServiceGroupId,
 } from '../../../model/kanel/public/ServiceGroup';
@@ -28,11 +31,19 @@ import { ErrorCode } from '../../../utils/error/error.code';
 import { formatName } from '../../../utils/format';
 import { UserDomain } from '../../organization-management/user/user-domain/user.domain';
 import { PlatformConfigurationDomain } from '../../registration/platform-configuration/platform-configuration.domain';
+import { TelemetryApp } from '../../telemetry/telemetry.app';
+import { TelemetryHelper } from '../../telemetry/telemetry.helper';
 import { DeploymentRequestDomain } from '../deployment.domain';
 import { UpdateGroupsPayload } from './service-group.app';
 import { ServiceGroupDomain } from './service-group.domain';
 
 export type UserGroups = { user_id: UserId; group_ids: ServiceGroupId[] };
+
+export type TrialAccessTelemetryContext = {
+  organization: Organization | undefined;
+  actorUserId: UserId;
+  emailByUserId: Map<UserId, string>;
+};
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
@@ -131,6 +142,48 @@ export const ServiceGroupHelper = {
           return undefined;
         }
         return auth0Client.updateUserRBACInstance(email, rbacInstance);
+      })
+    );
+  },
+
+  sendTrialAccessTelemetry: async (
+    { organization, actorUserId, emailByUserId }: TrialAccessTelemetryContext,
+    {
+      deploymentId,
+      role,
+      userIds,
+    }: {
+      deploymentId: DeploymentRequestId;
+      role: ServiceGroupName | null;
+      userIds: UserId[];
+    }
+  ): Promise<void> => {
+    await Promise.allSettled(
+      userIds.flatMap((userId) => {
+        const email = emailByUserId.get(userId);
+        if (!email) {
+          return [];
+        }
+        return TelemetryApp.sendTelemetryEvent(
+          role
+            ? TelemetryHelper.buildTrialAccessGrantedEvent(
+                organization,
+                actorUserId,
+                {
+                  deployment_id: deploymentId,
+                  role,
+                  email,
+                }
+              )
+            : TelemetryHelper.buildTrialAccessRemovedEvent(
+                organization,
+                actorUserId,
+                {
+                  deployment_id: deploymentId,
+                  email,
+                }
+              )
+        );
       })
     );
   },

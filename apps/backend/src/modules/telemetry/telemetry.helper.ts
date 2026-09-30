@@ -5,6 +5,7 @@ import {
   PlatformContract,
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
+  ServiceGroupName,
 } from '../../__generated__/resolvers-types';
 import Document from '../../model/kanel/public/Document';
 import { UserId } from '../../model/kanel/public/User';
@@ -33,6 +34,8 @@ import {
   ShareEvent,
   SubscribeEvent,
   TelemetryEventType,
+  TrialAccessGrantedEvent,
+  TrialAccessRemovedEvent,
   UnregisterPlatformEvent,
   UpdateDeploymentEvent,
   UpdateOrganizationEvent,
@@ -426,6 +429,43 @@ export const TelemetryHelper = {
       ...baseEvent,
       ...additional_data,
       event_type: TelemetryEventType.UPDATE_DEPLOYMENT,
+    };
+  },
+
+  buildTrialAccessGrantedEvent: (
+    organization: Organization | undefined,
+    actor_user_id: UserId,
+    data: {
+      deployment_id: string;
+      role: ServiceGroupName;
+      email: string;
+    },
+    timestamp?: Date
+  ): TrialAccessGrantedEvent => {
+    const baseEvent = buildBaseEvent(organization, actor_user_id, timestamp);
+
+    return {
+      ...baseEvent,
+      ...data,
+      event_type: TelemetryEventType.TRIAL_ACCESS_GRANTED,
+    };
+  },
+
+  buildTrialAccessRemovedEvent: (
+    organization: Organization | undefined,
+    actor_user_id: UserId,
+    data: {
+      deployment_id: string;
+      email: string;
+    },
+    timestamp?: Date
+  ): TrialAccessRemovedEvent => {
+    const baseEvent = buildBaseEvent(organization, actor_user_id, timestamp);
+
+    return {
+      ...baseEvent,
+      ...data,
+      event_type: TelemetryEventType.TRIAL_ACCESS_REMOVED,
     };
   },
 };

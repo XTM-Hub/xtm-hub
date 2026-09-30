@@ -153,15 +153,16 @@ export const ServiceGroupDomain = {
   removeUsersFromServiceGroups: async (
     userIds: UserId[],
     groupIds: ServiceGroupId[]
-  ) => {
+  ): Promise<{ user_id: UserId; group_id: ServiceGroupId }[]> => {
     if (!userIds.length || !groupIds.length) {
-      return;
+      return [];
     }
 
-    await db('ServiceGroup_User')
+    return db<ServiceGroupUser>('ServiceGroup_User')
       .del()
       .whereIn('user_id', userIds)
-      .whereIn('group_id', groupIds);
+      .whereIn('group_id', groupIds)
+      .returning(['user_id', 'group_id']);
   },
 
   deleteGroups: async (groupIds: ServiceGroupId[]) => {
