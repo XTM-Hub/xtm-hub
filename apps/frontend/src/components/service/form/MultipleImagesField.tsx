@@ -159,7 +159,7 @@ export const ServiceFormMultipleImagesField = ({
                           priority="secondary"
                           type="button"
                           className="ml-auto m-s"
-                          aria-label={t('Service.Form.DeleteSentence')}
+                          aria-label={t('Service.Form.DeleteImage')}
                           icon={<DeleteIcon className="size-4" />}
                           onClick={() => {
                             setImagesToDelete([...imagesToDelete, doc!.id]);

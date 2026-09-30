@@ -1165,6 +1165,7 @@
       "CurrentLogo": "Logo actuel",
       "DatasheetUrlLabel": "Lien vers la fiche technique (url)",
       "BlogpostUrlLabel": "Lien vers l'article de blog (url)",
+      "DeleteImage": "Supprimer l'image",
       "DeleteSentence": "Après avoir cliqué sur ce bouton, cliquez sur VALIDER pour supprimer définitivement cette image.",
       "DemoUrlLabel": "Lien vers la démo (url)",
       "DescriptionLabel": "Description",
