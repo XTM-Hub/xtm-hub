@@ -1033,6 +1033,7 @@ enum UserOrdering {
   disabled
   country
   last_login
+  invitation_date
 }
 
 type Capability implements Node {

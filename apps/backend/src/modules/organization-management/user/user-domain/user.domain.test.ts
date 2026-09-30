@@ -172,6 +172,45 @@ describe('users domain', () => {
         TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID
       );
     });
+
+    describe('ordered by invitation date', () => {
+      const SECOND_ORGANIZATION_USERS =
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS;
+      const FIRST_INVITED_USER_ID = SECOND_ORGANIZATION_USERS.SIMPLE.ID;
+      const LAST_INVITED_USER_ID = SECOND_ORGANIZATION_USERS.ADMIN_ORGA.ID;
+      const NEVER_INVITED_USER_ID = SECOND_ORGANIZATION_USERS.REGISTERER.ID;
+
+      afterEach(async () => {
+        for (const userId of [FIRST_INVITED_USER_ID, LAST_INVITED_USER_ID]) {
+          await UserDomain.updateUser(userId, { invitation_date: null });
+        }
+      });
+
+      it('should list users by invitation date, users never invited last', async () => {
+        // Given two users of the organization invited on different days, and one never invited
+        requestContext.set(requestContextAdminSecondOrga);
+        await UserDomain.updateUser(LAST_INVITED_USER_ID, {
+          invitation_date: new Date('2026-01-02T00:00:00.000Z'),
+        });
+        await UserDomain.updateUser(FIRST_INVITED_USER_ID, {
+          invitation_date: new Date('2026-01-01T00:00:00.000Z'),
+        });
+
+        // When loading the users ordered by invitation date
+        const result = await UserDomain.loadUserConnection({
+          ...opts,
+          orderBy: UserOrdering.InvitationDate,
+        });
+
+        // Then the earliest invitation comes first, ahead of the user never invited
+        const returnedIds = result.edges.map((e) => e.node!.id);
+        expect(returnedIds).toContain(NEVER_INVITED_USER_ID);
+        expect(returnedIds.slice(0, 2)).toEqual([
+          FIRST_INVITED_USER_ID,
+          LAST_INVITED_USER_ID,
+        ]);
+      });
+    });
   });
 
   describe('loadUsersWithDeploymentServiceGroups', () => {

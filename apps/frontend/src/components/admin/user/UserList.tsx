@@ -3,9 +3,11 @@ import { DeleteUser } from '@/components/admin/user/DeleteUser';
 import { EditUser } from '@/components/admin/user/forms/UserUpdate';
 import { useUserListLocalstorage } from '@/components/admin/user/user-list-localstorage';
 import {
-  UserAdminResendInviteMutation,
-  UserResendInviteMutation,
-} from '@/components/admin/user/user.graphql';
+  canResendInvite,
+  getOrganizationCapabilities,
+  toAdminResendInviteInput,
+  toResendInviteInput,
+} from '@/components/admin/user/user-list.utils';
 import { getUserListContext } from '@/components/admin/user/UserListPage';
 import { UserOrganizationFilter } from '@/components/admin/user/UserOrganizationFilter';
 import { PortalContext } from '@/components/me/AppPortalContext';
@@ -25,6 +27,7 @@ import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
 import { useAdminByPass } from '@/hooks/use-portal-capability';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useUsersList } from '@/hooks/use-users-list';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { useDateFormatter } from '@/utils/date';
@@ -36,14 +39,17 @@ import {
   DataTableHeadBarOptions,
   useToast,
 } from '@filigran/ui';
-import { userAdminResendInviteMutation } from '@generated/userAdminResendInviteMutation.graphql';
 import {
   UserList_fragment$data,
   UserList_fragment$key,
 } from '@generated/UserList_fragment.graphql';
 import { UserListQuery$variables } from '@generated/UserListQuery.graphql';
-import { userResendInviteMutation } from '@generated/userResendInviteMutation.graphql';
-import { FeatureFlag, UserAccountStatus } from '@graphql/generated';
+import {
+  FeatureFlag,
+  UserAccountStatus,
+  useUserAdminResendInviteMutation,
+  useUserResendInviteMutation,
+} from '@graphql/generated';
 import { ColumnDef, Row } from '@tanstack/react-table';
 import { useTranslations } from 'next-intl';
 import {
@@ -54,12 +60,7 @@ import {
   useMemo,
   useState,
 } from 'react';
-import {
-  graphql,
-  readInlineData,
-  useMutation,
-  useSubscription,
-} from 'react-relay';
+import { graphql, readInlineData, useSubscription } from 'react-relay';
 import { useDebounceCallback } from 'usehooks-ts';
 
 // Configuration or Preloader Query
@@ -125,18 +126,6 @@ interface UserListProps {
   organization?: string;
 }
 
-const canResendInvite = (status: UserList_fragment$data['status']) => !!status;
-
-const toOrganizationCapabilitiesInput = (
-  organizationCapabilities: UserList_fragment$data['organization_capabilities']
-) =>
-  (organizationCapabilities ?? [])
-    .filter(({ organization }) => !organization.personal_space)
-    .map(({ organization, capabilities }) => ({
-      organization_id: organization.id,
-      capabilities: [...(capabilities ?? [])],
-    }));
-
 // Component
 const UserList = ({ organization }: UserListProps) => {
   const t = useTranslations();
@@ -165,71 +154,6 @@ const UserList = ({ organization }: UserListProps) => {
   const hasResendButtonColumn = !isAdminPath && isTrialInviteEnabled;
   const { me } = useContext(PortalContext);
   const { toast } = useToast();
-  const [commitResendInvite] = useMutation<userResendInviteMutation>(
-    UserResendInviteMutation
-  );
-  const [commitAdminResendInvite] = useMutation<userAdminResendInviteMutation>(
-    UserAdminResendInviteMutation
-  );
-  const handleResendInvite = useCallback(
-    (event: SyntheticEvent, user: UserList_fragment$data) => {
-      event.stopPropagation();
-      const onCompleted = () => {
-        toast({
-          title: t('Utils.Success'),
-          description: t('UserListPage.ResendInviteSuccess'),
-        });
-      };
-      const onError = (error: Error) => {
-        toast({
-          variant: 'destructive',
-          title: t('Utils.Error'),
-          description: t(`Error.Server.${error.message}`),
-        });
-      };
-
-      if (isAdminPath) {
-        commitAdminResendInvite({
-          variables: {
-            input: {
-              email: user.email,
-              first_name: user.first_name,
-              last_name: user.last_name,
-              organization_capabilities: toOrganizationCapabilitiesInput(
-                user.organization_capabilities
-              ),
-            },
-          },
-          onCompleted,
-          onError,
-        });
-        return;
-      }
-
-      const capabilities =
-        user.organization_capabilities?.find(
-          ({ organization }) => organization.id === me?.selected_organization_id
-        )?.capabilities ?? [];
-      commitResendInvite({
-        variables: {
-          input: {
-            email: user.email,
-            capabilities: [...capabilities],
-          },
-        },
-        onCompleted,
-        onError,
-      });
-    },
-    [
-      commitAdminResendInvite,
-      commitResendInvite,
-      isAdminPath,
-      me?.selected_organization_id,
-      t,
-      toast,
-    ]
-  );
   const [userEdit, setUserEdit] = useState<UserList_fragment$data | undefined>(
     undefined
   );
@@ -252,6 +176,48 @@ const UserList = ({ organization }: UserListProps) => {
     filter,
     fetchPolicy: 'store-and-network',
   });
+
+  const resendInviteMutationOptions = {
+    onSuccess: () => {
+      toast({
+        title: t('Utils.Success'),
+        description: t('UserListPage.ResendInviteSuccess'),
+      });
+    },
+    onError: (error: unknown) => {
+      const errorMessage =
+        error instanceof Error ? error.message : 'UnknownError';
+      toast({
+        variant: 'destructive',
+        title: t('Utils.Error'),
+        description: t(`Error.Server.${errorMessage}`),
+      });
+    },
+  };
+  const { mutate: resendInvite, isPending: isResendInvitePending } =
+    useUserResendInviteMutation(
+      portalGraphqlClient,
+      resendInviteMutationOptions
+    );
+  const { mutate: adminResendInvite, isPending: isAdminResendInvitePending } =
+    useUserAdminResendInviteMutation(
+      portalGraphqlClient,
+      resendInviteMutationOptions
+    );
+  const isResendingInvite = isResendInvitePending || isAdminResendInvitePending;
+  const handleResendInvite = useCallback(
+    (event: SyntheticEvent, user: UserList_fragment$data) => {
+      event.stopPropagation();
+      if (isAdminPath) {
+        adminResendInvite({ input: toAdminResendInviteInput(user) });
+        return;
+      }
+      resendInvite({
+        input: toResendInviteInput(user, me?.selected_organization_id),
+      });
+    },
+    [adminResendInvite, isAdminPath, me?.selected_organization_id, resendInvite]
+  );
 
   const connectionID = data?.users?.__id;
   const { setConnectionId } = getUserListContext();
@@ -382,11 +348,9 @@ const UserList = ({ organization }: UserListProps) => {
               }) => {
                 // As non-admin path, we should return only one organization
                 if (row.original.organization_capabilities) {
-                  const capabilities = (
-                    row.original.organization_capabilities.find(
-                      ({ organization }) =>
-                        organization.id === me?.selected_organization_id
-                    )?.capabilities ?? []
+                  const capabilities = getOrganizationCapabilities(
+                    row.original.organization_capabilities,
+                    me?.selected_organization_id
                   ).map(
                     (capability) =>
                       ({
@@ -472,6 +436,7 @@ const UserList = ({ organization }: UserListProps) => {
                   <Button
                     variant="default"
                     size="sm"
+                    disabled={isResendingInvite}
                     onClick={(event) =>
                       handleResendInvite(event, row.original)
                     }>
@@ -507,6 +472,7 @@ const UserList = ({ organization }: UserListProps) => {
                       }>
                       {showResendInvite && (
                         <IconActionsItem
+                          disabled={isResendingInvite}
                           onClick={(event) =>
                             handleResendInvite(event, row.original)
                           }>
@@ -531,6 +497,7 @@ const UserList = ({ organization }: UserListProps) => {
       hasResendButtonColumn,
       handleResendInvite,
       isAdminPath,
+      isResendingInvite,
       isTrialInviteEnabled,
       me?.id,
       me?.selected_organization_id,

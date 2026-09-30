@@ -2974,6 +2974,7 @@ export enum UserOrdering {
   Disabled = 'disabled',
   Email = 'email',
   FirstName = 'first_name',
+  InvitationDate = 'invitation_date',
   LastLogin = 'last_login',
   LastName = 'last_name'
 }
@@ -3564,6 +3565,20 @@ export type ChangeSelectedOrganizationMutationVariables = Exact<{
 
 
 export type ChangeSelectedOrganizationMutation = { __typename?: 'Mutation', changeSelectedOrganization: { __typename?: 'User', id: string, selected_organization_id: any | null, selected_org_capabilities: Array<OrganizationCapability> | null } | null };
+
+export type UserResendInviteMutationVariables = Exact<{
+  input: AddUserInput;
+}>;
+
+
+export type UserResendInviteMutation = { __typename?: 'Mutation', addUser: { __typename?: 'User', id: string } | null };
+
+export type UserAdminResendInviteMutationVariables = Exact<{
+  input: AdminAddUserInput;
+}>;
+
+
+export type UserAdminResendInviteMutation = { __typename?: 'Mutation', adminAddUser: { __typename?: 'User', id: string } | null };
 
 export type UsersQueryVariables = Exact<{
   first: Scalars['Int']['input'];
@@ -6071,6 +6086,64 @@ export const useChangeSelectedOrganizationMutation = <
 useChangeSelectedOrganizationMutation.getKey = () => ['ChangeSelectedOrganization'];
 useChangeSelectedOrganizationMutation.getRootKey = () => ['ChangeSelectedOrganization'] as const;
 useChangeSelectedOrganizationMutation.fetcher = (client: GraphQLClient, variables: ChangeSelectedOrganizationMutationVariables, headers?: RequestInit['headers']) => fetcher<ChangeSelectedOrganizationMutation, ChangeSelectedOrganizationMutationVariables>(client, ChangeSelectedOrganizationDocument, variables, headers);
+
+export const UserResendInviteDocument = `
+    mutation UserResendInvite($input: AddUserInput!) {
+  addUser(input: $input) {
+    id
+  }
+}
+    `;
+
+export const useUserResendInviteMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UserResendInviteMutation, TError, UserResendInviteMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UserResendInviteMutation, TError, UserResendInviteMutationVariables, TContext>(
+      {
+    mutationKey: ['UserResendInvite'],
+    mutationFn: (variables?: UserResendInviteMutationVariables) => fetcher<UserResendInviteMutation, UserResendInviteMutationVariables>(client, UserResendInviteDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUserResendInviteMutation.getKey = () => ['UserResendInvite'];
+useUserResendInviteMutation.getRootKey = () => ['UserResendInvite'] as const;
+useUserResendInviteMutation.fetcher = (client: GraphQLClient, variables: UserResendInviteMutationVariables, headers?: RequestInit['headers']) => fetcher<UserResendInviteMutation, UserResendInviteMutationVariables>(client, UserResendInviteDocument, variables, headers);
+
+export const UserAdminResendInviteDocument = `
+    mutation UserAdminResendInvite($input: AdminAddUserInput!) {
+  adminAddUser(input: $input) {
+    id
+  }
+}
+    `;
+
+export const useUserAdminResendInviteMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UserAdminResendInviteMutation, TError, UserAdminResendInviteMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UserAdminResendInviteMutation, TError, UserAdminResendInviteMutationVariables, TContext>(
+      {
+    mutationKey: ['UserAdminResendInvite'],
+    mutationFn: (variables?: UserAdminResendInviteMutationVariables) => fetcher<UserAdminResendInviteMutation, UserAdminResendInviteMutationVariables>(client, UserAdminResendInviteDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUserAdminResendInviteMutation.getKey = () => ['UserAdminResendInvite'];
+useUserAdminResendInviteMutation.getRootKey = () => ['UserAdminResendInvite'] as const;
+useUserAdminResendInviteMutation.fetcher = (client: GraphQLClient, variables: UserAdminResendInviteMutationVariables, headers?: RequestInit['headers']) => fetcher<UserAdminResendInviteMutation, UserAdminResendInviteMutationVariables>(client, UserAdminResendInviteDocument, variables, headers);
 
 export const UsersDocument = `
     query Users($first: Int!, $orderBy: UserOrdering!, $orderMode: OrderingMode!, $filters: [Filter!]) {
