@@ -1162,6 +1162,7 @@
       "CurrentLogo": "現在のロゴ",
       "DatasheetUrlLabel": "データシート・リンク（URL）",
       "BlogpostUrlLabel": "ブログ記事リンク (url)",
+      "DeleteImage": "画像を削除",
       "DeleteSentence": "このボタンをクリックした後、VALIDATEをクリックすると、この画像が永久に削除されます。",
       "DemoUrlLabel": "デモリンク (url)",
       "DescriptionLabel": "説明",

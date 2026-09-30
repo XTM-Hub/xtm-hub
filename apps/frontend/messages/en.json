@@ -1162,6 +1162,7 @@
       "CurrentLogo": "Current logo",
       "DatasheetUrlLabel": "Datasheet link (url)",
       "BlogpostUrlLabel": "Blogpost link (url)",
+      "DeleteImage": "Delete image",
       "DeleteSentence": "After clicking that button, click VALIDATE to permanently delete this image.",
       "DemoUrlLabel": "Demo link (url)",
       "DescriptionLabel": "Description",
