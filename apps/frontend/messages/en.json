@@ -249,7 +249,13 @@
       "DetailsSection": "Epic details",
       "PublishNow": "Publish now",
       "PublishNowHint": "(otherwise saved as draft)",
-      "EditionTypeInfo": "Partial EE: works in Community Edition but some options need Enterprise Edition"
+      "EditionTypeInfo": "Partial EE: works in Community Edition but some options need Enterprise Edition",
+      "TimelineOption": {
+        "now": "Now",
+        "next": "Next",
+        "under_consideration": "Under consideration",
+        "finished": "Finished"
+      }
     },
     "EpicActions": {
       "CreateEpic": "Create a new epic",

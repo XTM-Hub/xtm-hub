@@ -249,7 +249,13 @@
       "DetailsSection": "エピックの詳細",
       "PublishNow": "今すぐ公開",
       "PublishNowHint": "（それ以外は下書きとして保存）",
-      "EditionTypeInfo": "Partial EE：Community Edition で動作しますが、一部のオプションには Enterprise Edition が必要です"
+      "EditionTypeInfo": "Partial EE：Community Edition で動作しますが、一部のオプションには Enterprise Edition が必要です",
+      "TimelineOption": {
+        "now": "現在",
+        "next": "次",
+        "under_consideration": "検討中",
+        "finished": "完了"
+      }
     },
     "EpicActions": {
       "CreateEpic": "新しい叙事詩を作成する",

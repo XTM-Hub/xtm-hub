@@ -249,7 +249,13 @@
       "DetailsSection": "Détails de l'epic",
       "PublishNow": "Publier maintenant",
       "PublishNowHint": "(sinon enregistré en brouillon)",
-      "EditionTypeInfo": "Partial EE : fonctionne en Community Edition mais certaines options nécessitent l'Enterprise Edition"
+      "EditionTypeInfo": "Partial EE : fonctionne en Community Edition mais certaines options nécessitent l'Enterprise Edition",
+      "TimelineOption": {
+        "now": "Maintenant",
+        "next": "Ensuite",
+        "under_consideration": "À l’étude",
+        "finished": "Terminé"
+      }
     },
     "EpicActions": {
       "CreateEpic": "Créer un nouvel épic",

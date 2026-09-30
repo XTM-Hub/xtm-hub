@@ -12,7 +12,7 @@ import {
 } from '@/components/epic/filigran-products';
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
-import { HelpOutlinedIcon } from '@filigran/icon';
+import { InfoIcon } from '@filigran/icon';
 import {
   Button,
   Checkbox,
@@ -139,7 +139,7 @@ const EpicFieldLabel = ({
                 type="button"
                 aria-label={t(infoKey)}
                 className="text-muted-foreground">
-                <HelpOutlinedIcon className="size-4" />
+                <InfoIcon className="size-4" />
               </button>
             </TooltipTrigger>
             <TooltipContent>{t(infoKey)}</TooltipContent>
@@ -317,7 +317,9 @@ const EpicForm = ({
                   value={field.value ?? Timeline.Now}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder={t('Epic.Timeline.now')} />
+                      <SelectValue
+                        placeholder={t('Epic.Form.TimelineOption.now')}
+                      />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -325,7 +327,9 @@ const EpicForm = ({
                       <SelectItem
                         key={timeline}
                         value={timeline}>
-                        {t(`Epic.Timeline.${timeline.toLowerCase()}`)}
+                        {t(
+                          `Epic.Form.TimelineOption.${timeline.toLowerCase()}`
+                        )}
                       </SelectItem>
                     ))}
                   </SelectContent>
