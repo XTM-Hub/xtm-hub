@@ -11,5 +11,8 @@
     "pending_user_digest": true,
     "public_roadmap_monthly_reminder": true
   },
+  "auth0_sync": {
+    "enabled": true
+  },
   "base_url_front": "https://hub.filigran.io"
 }
