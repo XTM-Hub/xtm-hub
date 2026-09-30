@@ -601,6 +601,41 @@ describe('UserList', () => {
             description: `Error.Server.${SERVER_ERROR_CODE}`,
           });
         });
+
+        it('should reload the list from the server when the resend succeeds', () => {
+          // Given the server accepts the resend
+          mocks.settleResendInvite.mockImplementation(({ onSuccess }) =>
+            onSuccess()
+          );
+          renderUserCell(columnId, makeUserNode({ status: 'expired' }));
+
+          // When resend is clicked
+          fireEvent.click(
+            screen.getByRole('button', { name: RESEND_INVITE_LABEL })
+          );
+
+          // Then the list is refetched, bypassing the Relay store, so the row is up to date
+          expect(mocks.refetch).toHaveBeenCalledExactlyOnceWith(
+            {},
+            { fetchPolicy: 'network-only' }
+          );
+        });
+
+        it('should not reload the list when the resend fails', () => {
+          // Given the server rejects the resend
+          mocks.settleResendInvite.mockImplementation(({ onError }) =>
+            onError(new Error(SERVER_ERROR_CODE))
+          );
+          renderUserCell(columnId, makeUserNode({ status: 'expired' }));
+
+          // When resend is clicked
+          fireEvent.click(
+            screen.getByRole('button', { name: RESEND_INVITE_LABEL })
+          );
+
+          // Then the list is left as is
+          expect(mocks.refetch).not.toHaveBeenCalled();
+        });
       }
     );
 

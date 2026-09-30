@@ -183,6 +183,7 @@ const UserList = ({ organization }: UserListProps) => {
         title: t('Utils.Success'),
         description: t('UserListPage.ResendInviteSuccess'),
       });
+      refetch({}, { fetchPolicy: 'network-only' });
     },
     onError: (error: unknown) => {
       const errorMessage =
