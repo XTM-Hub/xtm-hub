@@ -11,3 +11,15 @@ mutation ChangeSelectedOrganization($organization_id: OrganizationId!) {
     selected_org_capabilities
   }
 }
+
+mutation UserResendInvite($input: AddUserInput!) {
+  addUser(input: $input) {
+    id
+  }
+}
+
+mutation UserAdminResendInvite($input: AdminAddUserInput!) {
+  adminAddUser(input: $input) {
+    id
+  }
+}
