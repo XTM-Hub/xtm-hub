@@ -377,14 +377,15 @@ export const UserDomain = {
 
   updateUser: async (
     id: UserId,
-    input: UserMutator
+    input: UserMutator,
+    expected: Omit<UserMutator, 'id'> = {}
   ): Promise<User | undefined> => {
     if (isEmpty(input)) {
       return;
     }
 
     const [updatedUser] = await db<User>('User')
-      .where({ id })
+      .where({ ...expected, id })
       .update(input)
       .returning('*');
 
