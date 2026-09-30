@@ -104,6 +104,12 @@
     "type": "postgresql",
     "cleanup_interval_minutes": 60
   },
+  "auth0_sync": {
+    "enabled": false,
+    "max_users_per_run": 500,
+    "concurrency": 3,
+    "deadline_minutes": 30
+  },
   "news_feed": {
     "cleanup_interval_value": 180,
     "cleanup_interval_unit": "days"

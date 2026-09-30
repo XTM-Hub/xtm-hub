@@ -175,6 +175,134 @@ describe('users domain', () => {
     });
   });
 
+  describe('loadUsersToSyncAccountStatus', () => {
+    let insertedUsers: User[] = [];
+
+    const insertUser = async (
+      label: string,
+      status: UserAccountStatus | null,
+      invitation_date: Date | null
+    ) => {
+      const user = await TestHelper.user.insert({
+        email: `sync-${label}-${uuidv4()}@filigran.io`,
+        status,
+        invitation_date,
+      });
+      insertedUsers.push(user);
+      return user;
+    };
+
+    afterEach(async () => {
+      for (const { id } of insertedUsers) {
+        await UserDomain.deleteUserBy({ id });
+      }
+      insertedUsers = [];
+    });
+
+    it('should only return waiting and invited users', async () => {
+      const date = new Date('1990-01-01');
+      const waiting = await insertUser(
+        'waiting',
+        UserAccountStatus.Waiting,
+        date
+      );
+      const invited = await insertUser(
+        'invited',
+        UserAccountStatus.Invited,
+        date
+      );
+      const expired = await insertUser(
+        'expired',
+        UserAccountStatus.Expired,
+        date
+      );
+      const active = await insertUser('active', null, date);
+
+      const users = await UserDomain.loadUsersToSyncAccountStatus(1000);
+
+      const ids = users.map(({ id }) => id);
+      expect(ids).toContain(waiting.id);
+      expect(ids).toContain(invited.id);
+      expect(ids).not.toContain(expired.id);
+      expect(ids).not.toContain(active.id);
+    });
+
+    it('should not return disabled users', async () => {
+      const date = new Date('1990-01-01');
+      const disabled = await TestHelper.user.insert({
+        email: `sync-disabled-${uuidv4()}@filigran.io`,
+        status: UserAccountStatus.Waiting,
+        invitation_date: date,
+        disabled: true,
+      });
+      insertedUsers.push(disabled);
+      const notDisabled = await TestHelper.user.insert({
+        email: `sync-not-disabled-${uuidv4()}@filigran.io`,
+        status: UserAccountStatus.Waiting,
+        invitation_date: date,
+        disabled: false,
+      });
+      insertedUsers.push(notDisabled);
+      const noFlag = await TestHelper.user.insert({
+        email: `sync-no-flag-${uuidv4()}@filigran.io`,
+        status: UserAccountStatus.Invited,
+        invitation_date: date,
+        disabled: null,
+      });
+      insertedUsers.push(noFlag);
+
+      const users = await UserDomain.loadUsersToSyncAccountStatus(1000);
+
+      const ids = users.map(({ id }) => id);
+      expect(ids).not.toContain(disabled.id);
+      expect(ids).toContain(notDisabled.id);
+      expect(ids).toContain(noFlag.id);
+    });
+
+    it('should order by oldest invitation first and users without invitation date last', async () => {
+      const newer = await insertUser(
+        'newer',
+        UserAccountStatus.Invited,
+        new Date('1990-06-01')
+      );
+      const noDate = await insertUser(
+        'no-date',
+        UserAccountStatus.Waiting,
+        null
+      );
+      const older = await insertUser(
+        'older',
+        UserAccountStatus.Waiting,
+        new Date('1990-01-01')
+      );
+      const mine = [newer.id, noDate.id, older.id];
+
+      const users = await UserDomain.loadUsersToSyncAccountStatus(1000);
+
+      expect(
+        users.map(({ id }) => id).filter((id) => mine.includes(id))
+      ).toEqual([older.id, newer.id, noDate.id]);
+    });
+
+    it('should not return more users than the limit', async () => {
+      const older = await insertUser(
+        'older',
+        UserAccountStatus.Waiting,
+        new Date('1980-01-01')
+      );
+      await insertUser(
+        'newer',
+        UserAccountStatus.Waiting,
+        new Date('1980-06-01')
+      );
+
+      const users = await UserDomain.loadUsersToSyncAccountStatus(1);
+
+      expect(users).toHaveLength(1);
+      expect(users[0]!.id).toBe(older.id);
+    });
+  });
+
   describe('updateUser with an expected condition', () => {
     let insertedUsers: User[] = [];
 
