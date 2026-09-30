@@ -7,16 +7,19 @@ import {
 } from '../../../__generated__/resolvers-types';
 import { withTransaction } from '../../../context/database.context';
 import { requestContext } from '../../../context/request.context';
-import { DeploymentRequestId } from '../../../model/kanel/public/DeploymentRequest';
 import { ServiceGroupId } from '../../../model/kanel/public/ServiceGroup';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import User, { UserId } from '../../../model/kanel/public/User';
 import { logApp } from '../../../utils/app-logger.util';
 import { ErrorCode } from '../../../utils/error/error.code';
+import { OrganizationDomain } from '../../organization-management/organization/organization.domain';
 import { UserDomain } from '../../organization-management/user/user-domain/user.domain';
 import { DeploymentRequestDomain } from '../deployment.domain';
 import { ServiceGroupDomain } from './service-group.domain';
-import { ServiceGroupHelper } from './service-group.helper';
+import {
+  ServiceGroupHelper,
+  TrialAccessTelemetryContext,
+} from './service-group.helper';
 import { ServiceGroupSecurityHelper } from './service-group.security.helper';
 
 export type UpdateGroupsPayload = { id: ServiceGroupId; userIds: UserId[] }[];
@@ -125,8 +128,19 @@ export const ServiceGroupApp = {
       ServiceGroupHelper.uniqueRolesByProduct(input.roles)
     );
 
-    const insertedUserIdsByChildId = await withTransaction(async () => {
-      const insertedByChildId = new Map<DeploymentRequestId, UserId[]>();
+    const { users, emailByUserId } = await ServiceGroupHelper.loadEmailByUserId(
+      input.userIds
+    );
+    const telemetryContext: TrialAccessTelemetryContext = {
+      organization: await OrganizationDomain.loadOrganizationBy({
+        id: bundleOrganizationId,
+      }),
+      actorUserId: user.id,
+      emailByUserId,
+    };
+
+    const insertedUserIds = await withTransaction(async () => {
+      const inserted = new Set<UserId>();
 
       for (const { child, role } of platformRoleAssignments) {
         const groups = await ServiceGroupDomain.loadServiceGroups({
@@ -141,35 +155,21 @@ export const ServiceGroupApp = {
           targetGroup.id,
           input.userIds
         );
-        insertedByChildId.set(child.id, insertedInGroup);
+        insertedInGroup.forEach((userId) => inserted.add(userId));
+
+        await ServiceGroupHelper.sendTrialAccessTelemetry(telemetryContext, {
+          deploymentId: child.id,
+          role,
+          userIds: insertedInGroup,
+        });
       }
 
-      return insertedByChildId;
+      return inserted;
     });
-    const insertedUserIds = new Set(
-      [...insertedUserIdsByChildId.values()].flat()
-    );
-
-    const { users, emailByUserId } = await ServiceGroupHelper.loadEmailByUserId(
-      input.userIds
-    );
 
     const grantedAssignments = platformRoleAssignments.filter(
       ({ child, role }) => child.platform_identifier && role
     );
-
-    await ServiceGroupHelper.sendTrialAccessTelemetry({
-      organizationId: bundleOrganizationId,
-      serviceInstanceId,
-      bundleDeploymentRequestId: bundleDeploymentRequest.id,
-      actorUserId: user.id,
-      emailByUserId,
-      assignments: grantedAssignments.map(({ child, role }) => ({
-        deploymentId: child.id,
-        role,
-        userIds: insertedUserIdsByChildId.get(child.id) ?? [],
-      })),
-    });
 
     await ServiceGroupHelper.syncAuth0GroupsForChildren(
       grantedAssignments.map(({ child, role }) => ({
@@ -200,7 +200,7 @@ export const ServiceGroupApp = {
   ): Promise<UserId[]> => {
     const user = requestContext.requireUser();
 
-    const { bundleDeploymentRequest, children, bundleOrganizationId } =
+    const { children, bundleOrganizationId } =
       await ServiceGroupSecurityHelper.assertBundleAccessAndLoadChildren(
         serviceInstanceId
       );
@@ -222,14 +222,16 @@ export const ServiceGroupApp = {
 
     const { emailByUserId } =
       await ServiceGroupHelper.loadEmailByUserId(userIds);
-
-    await ServiceGroupHelper.sendTrialAccessTelemetry({
-      organizationId: bundleOrganizationId,
-      serviceInstanceId,
-      bundleDeploymentRequestId: bundleDeploymentRequest.id,
+    const telemetryContext: TrialAccessTelemetryContext = {
+      organization: await OrganizationDomain.loadOrganizationBy({
+        id: bundleOrganizationId,
+      }),
       actorUserId: user.id,
       emailByUserId,
-      assignments: children.map((child) => ({
+    };
+
+    for (const child of children) {
+      await ServiceGroupHelper.sendTrialAccessTelemetry(telemetryContext, {
         deploymentId: child.id,
         role: null,
         userIds: [
@@ -243,8 +245,8 @@ export const ServiceGroupApp = {
               .map(({ user_id }) => user_id)
           ),
         ],
-      })),
-    });
+      });
+    }
 
     await ServiceGroupHelper.syncAuth0GroupsForChildren(
       children.map((child) => ({ child, groupNames: [] })),
@@ -268,7 +270,7 @@ export const ServiceGroupApp = {
       throw new Error(ErrorCode.XtmOneRoleRequired);
     }
 
-    const { bundleDeploymentRequest, children, bundleOrganizationId } =
+    const { children, bundleOrganizationId } =
       await ServiceGroupSecurityHelper.assertBundleAccessAndLoadChildren(
         serviceInstanceId
       );
@@ -283,9 +285,18 @@ export const ServiceGroupApp = {
       input.roles
     );
 
-    const changedUserIdsByChildId = await withTransaction(async () => {
-      const changedByChildId = new Map<DeploymentRequestId, UserId[]>();
+    const { emailByUserId } = await ServiceGroupHelper.loadEmailByUserId(
+      input.userIds
+    );
+    const telemetryContext: TrialAccessTelemetryContext = {
+      organization: await OrganizationDomain.loadOrganizationBy({
+        id: bundleOrganizationId,
+      }),
+      actorUserId: user.id,
+      emailByUserId,
+    };
 
+    await withTransaction(async () => {
       for (const { child, role } of platformRoleAssignments) {
         const groups = await ServiceGroupDomain.loadServiceGroups({
           service_instance_id: child.service_instance_id,
@@ -317,27 +328,12 @@ export const ServiceGroupApp = {
           insertedInGroup.forEach((userId) => changedUserIds.add(userId));
         }
 
-        changedByChildId.set(child.id, [...changedUserIds]);
+        await ServiceGroupHelper.sendTrialAccessTelemetry(telemetryContext, {
+          deploymentId: child.id,
+          role,
+          userIds: [...changedUserIds],
+        });
       }
-
-      return changedByChildId;
-    });
-
-    const { emailByUserId } = await ServiceGroupHelper.loadEmailByUserId(
-      input.userIds
-    );
-
-    await ServiceGroupHelper.sendTrialAccessTelemetry({
-      organizationId: bundleOrganizationId,
-      serviceInstanceId,
-      bundleDeploymentRequestId: bundleDeploymentRequest.id,
-      actorUserId: user.id,
-      emailByUserId,
-      assignments: platformRoleAssignments.map(({ child, role }) => ({
-        deploymentId: child.id,
-        role,
-        userIds: changedUserIdsByChildId.get(child.id) ?? [],
-      })),
     });
 
     await ServiceGroupHelper.syncAuth0GroupsForChildren(

@@ -7,7 +7,6 @@ import {
   ServiceDefinitionIdentifier,
   ServiceGroupName,
 } from '../../__generated__/resolvers-types';
-import { DeploymentRequestId } from '../../model/kanel/public/DeploymentRequest';
 import Document from '../../model/kanel/public/Document';
 import { UserId } from '../../model/kanel/public/User';
 import { OrganizationDomain } from '../organization-management/organization/organization.domain';
@@ -438,7 +437,6 @@ export const TelemetryHelper = {
     actor_user_id: UserId,
     data: {
       deployment_id: string;
-      parent_id?: DeploymentRequestId;
       role: ServiceGroupName;
       email: string;
     },
@@ -458,7 +456,6 @@ export const TelemetryHelper = {
     actor_user_id: UserId,
     data: {
       deployment_id: string;
-      parent_id?: DeploymentRequestId;
       email: string;
     },
     timestamp?: Date

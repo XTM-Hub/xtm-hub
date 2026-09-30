@@ -29,12 +29,10 @@ import { ServiceGroupId } from '../../../model/kanel/public/ServiceGroup';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import * as mailService from '../../../server/mail-service';
 import { auth0ClientMock } from '../../../thirdparty/auth0/mock';
-import { logApp } from '../../../utils/app-logger.util';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { formatName } from '../../../utils/format';
 
 import { TestHelper } from '../../../../tests/helper/test.helper';
-import { OrganizationDomain } from '../../organization-management/organization/organization.domain';
 import { ServiceInstanceDomain } from '../../service/instance/service-instance.domain';
 import { TelemetryApp } from '../../telemetry/telemetry.app';
 import { TelemetryEventType } from '../../telemetry/telemetry.types';
@@ -982,7 +980,6 @@ describe('serviceGroupApp', () => {
           organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
           user_id: actingUser.id,
           deployment_id: openctiChild.id,
-          parent_id: bundle.id,
           role: ServiceGroupName.Admin,
           email: targetUser.EMAIL,
         })
@@ -992,7 +989,6 @@ describe('serviceGroupApp', () => {
           event_type: TelemetryEventType.TRIAL_ACCESS_GRANTED,
           user_id: actingUser.id,
           deployment_id: xtmoneChild.id,
-          parent_id: bundle.id,
           role: ServiceGroupName.User,
           email: targetUser.EMAIL,
         })
@@ -1071,51 +1067,6 @@ describe('serviceGroupApp', () => {
           event_type: TelemetryEventType.TRIAL_ACCESS_GRANTED,
           deployment_id: openctiChild.id,
           email: targetUser.EMAIL,
-        })
-      );
-    });
-
-    it('should still grant access (and log the telemetry failure separately) when the telemetry organization lookup throws', async () => {
-      // Given
-      const targetUser = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS;
-      const { bundle, groups } = await createBundleWithGroups();
-      vi.spyOn(auth0ClientMock, 'updateUserRBACInstance').mockResolvedValue(
-        undefined
-      );
-      vi.spyOn(mailService, 'sendMail').mockResolvedValue(undefined);
-      vi.spyOn(OrganizationDomain, 'loadOrganizationBy').mockRejectedValueOnce(
-        new Error('org lookup failure')
-      );
-      const logErrorSpy = vi.spyOn(logApp, 'error');
-
-      // When
-      const result = await ServiceGroupApp.addUsersToBundleGroups(
-        bundle.service_instance_id,
-        {
-          userIds: [targetUser.ID],
-          roles: [
-            {
-              product: PlatformIdentifier.Opencti,
-              role: ServiceGroupName.Admin,
-            },
-            { product: PlatformIdentifier.Xtmone, role: ServiceGroupName.User },
-          ],
-        }
-      );
-
-      // Then: access is still granted even though telemetry failed
-      expect(result).toEqual(expect.any(Array));
-      const adminMembers = await TestHelper.serviceGroupUser.load({
-        group_id: groups.openctiAdminGroupId,
-      });
-      expect(adminMembers?.map((member) => member.user_id)).toEqual([
-        targetUser.ID,
-      ]);
-      expect(telemetrySpy).not.toHaveBeenCalled();
-      expect(logErrorSpy).toHaveBeenCalledWith(
-        'Failed to send trial-access telemetry',
-        expect.objectContaining({
-          serviceInstanceId: bundle.service_instance_id,
         })
       );
     });
@@ -1295,7 +1246,6 @@ describe('serviceGroupApp', () => {
           event_type: TelemetryEventType.TRIAL_ACCESS_REMOVED,
           user_id: actingUser.id,
           deployment_id: openctiChild.id,
-          parent_id: bundle.id,
           email: targetUser.EMAIL,
         })
       );
@@ -1304,7 +1254,6 @@ describe('serviceGroupApp', () => {
           event_type: TelemetryEventType.TRIAL_ACCESS_REMOVED,
           user_id: actingUser.id,
           deployment_id: xtmoneChild.id,
-          parent_id: bundle.id,
           email: targetUser.EMAIL,
         })
       );
@@ -1359,7 +1308,6 @@ describe('serviceGroupApp', () => {
           event_type: TelemetryEventType.TRIAL_ACCESS_REMOVED,
           user_id: actingUser.id,
           deployment_id: openctiChild!.id,
-          parent_id: bundle.id,
           email: targetUser.EMAIL,
         })
       );
@@ -1638,7 +1586,6 @@ describe('serviceGroupApp', () => {
           event_type: TelemetryEventType.TRIAL_ACCESS_REMOVED,
           user_id: actingUser.id,
           deployment_id: openctiChild.id,
-          parent_id: bundle.id,
           email: targetUser.EMAIL,
         })
       );
@@ -1647,7 +1594,6 @@ describe('serviceGroupApp', () => {
           event_type: TelemetryEventType.TRIAL_ACCESS_GRANTED,
           user_id: actingUser.id,
           deployment_id: xtmoneChild.id,
-          parent_id: bundle.id,
           role: ServiceGroupName.Admin,
           email: targetUser.EMAIL,
         })

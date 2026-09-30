@@ -166,7 +166,6 @@ export interface UpdateDeploymentEvent extends BaseTelemetryEvent {
 export interface TrialAccessGrantedEvent extends BaseTelemetryEvent {
   event_type: TelemetryEventType.TRIAL_ACCESS_GRANTED;
   deployment_id: string;
-  parent_id?: DeploymentRequestId;
   role: ServiceGroupName;
   email: string;
 }
@@ -174,7 +173,6 @@ export interface TrialAccessGrantedEvent extends BaseTelemetryEvent {
 export interface TrialAccessRemovedEvent extends BaseTelemetryEvent {
   event_type: TelemetryEventType.TRIAL_ACCESS_REMOVED;
   deployment_id: string;
-  parent_id?: DeploymentRequestId;
   email: string;
 }
 
