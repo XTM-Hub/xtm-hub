@@ -17,7 +17,13 @@ import useServiceCapability, {
 import { cn } from '@/lib/utils';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { APP_PATH } from '@/utils/path/constant';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/ui';
 import { Separator } from '@filigran/ui/clients';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
@@ -31,7 +37,6 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useCallback, useContext, useMemo, useState } from 'react';
 import { useDebounceCallback } from 'usehooks-ts';
-import { Button } from '@filigran/design-system';
 
 interface EpicListProps {
   epics: epic_fragment$data[];
@@ -152,7 +157,8 @@ export const EpicList = ({
           )}
           {(canManageService || isBypass) && subscriptionId && (
             <Button
-              asChild priority="secondary">
+              asChild
+              priority="secondary">
               <Link
                 href={`/${APP_PATH}/manage/service/${serviceInstance.id}/subscription/${subscriptionId}`}>
                 {t('Service.Capabilities.ManageAccessName')}

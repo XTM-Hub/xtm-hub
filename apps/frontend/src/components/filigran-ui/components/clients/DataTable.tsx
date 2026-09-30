@@ -19,6 +19,7 @@ import {
 } from '@dnd-kit/sortable';
 import type { Arguments } from '@dnd-kit/sortable/dist/hooks/useSortable';
 import { type Transform } from '@dnd-kit/utilities';
+import { IconButton } from '@filigran/design-system';
 import {
   ArrowNextIcon,
   ArrowPreviousIcon,
@@ -82,7 +83,6 @@ import {
   TableHeader,
   TableRow,
 } from './Table';
-import { IconButton } from '@filigran/design-system';
 
 type ColumnDefWithOptionsHeader<TData, TValue> = ColumnDef<TData, TValue> & {
   optionsHeader?: StringOrTemplateHeader<TData, TValue>;

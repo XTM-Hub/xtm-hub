@@ -5,6 +5,7 @@ import VotingRoundForm, {
 } from '@/components/admin/voting-round/VotingRoundForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { portalGraphqlClient } from '@/lib/graphql-client';
+import { Button } from '@filigran/design-system';
 import { toast } from '@filigran/ui';
 import { useVotingRoundCreateMutation } from '@graphql/generated';
 import { useQueryClient } from '@tanstack/react-query';
@@ -12,7 +13,6 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { z } from 'zod';
 import { invalidateVotingRoundQueries } from './voting-round-query-invalidation';
-import { Button } from '@filigran/design-system';
 
 const AddVotingRound = ({
   copySources,

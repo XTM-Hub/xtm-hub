@@ -1,13 +1,24 @@
 import { organizationFormSchema } from '@/components/organization/OrganizationForm.schema';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, Input, SheetFooter, Tag, TagInput } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  SheetFooter,
+  Tag,
+  TagInput,
+} from '@filigran/ui';
 import { organizationItem_fragment$data } from '@generated/organizationItem_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Button } from '@filigran/design-system';
 
 interface OrganizationFormSheetProps {
   organization?: organizationItem_fragment$data;
@@ -123,7 +134,9 @@ export const OrganizationForm = ({
 
         <SheetFooter className="pt-2">
           <Button
-            priority="secondary" type="button" onClick={(e) => handleCloseSheet(e)}>
+            priority="secondary"
+            type="button"
+            onClick={(e) => handleCloseSheet(e)}>
             {t('Utils.Cancel')}
           </Button>
           <Button

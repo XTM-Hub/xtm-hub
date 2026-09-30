@@ -12,6 +12,7 @@ import {
 } from '@/components/epic/filigran-products';
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { Button } from '@filigran/design-system';
 import { InfoIcon } from '@filigran/icon';
 import {
   Checkbox,
@@ -51,8 +52,6 @@ import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { Control, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
-import { Button } from '@filigran/design-system';
-import { Button } from '@filigran/design-system';
 
 const TITLE_MAX_CHARS = 160;
 const SHORT_DESCRIPTION_MAX_CHARS = 215;

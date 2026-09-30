@@ -11,12 +11,20 @@ import {
   PublicSubLink,
 } from '@/components/menu/navigation/shared/NavigationLinks';
 import { cn } from '@/lib/utils';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, Popover, PopoverContent, PopoverTrigger } from '@filigran/ui';
+import { buttonVariants, IconButton } from '@filigran/design-system';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@filigran/ui';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { useDebounceValue } from 'usehooks-ts';
-import { buttonVariants, IconButton } from '@filigran/design-system';
 
 const SectionLinksList = ({ links }: { links: SectionLink[] }) => (
   <ul className="space-y-xs">

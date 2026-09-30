@@ -3,12 +3,12 @@ import { ShareableResourceDetailsLink } from '@/components/service/document/Shar
 import { ShareableResourceBasicInformation } from '@/components/service/document/ui/ShareableResourceBasicInformation';
 import { ShareableResourceDetailItem } from '@/components/service/document/ui/ShareableResourceDetailItem';
 import { roundToNearest } from '@/lib/utils';
+import { Button } from '@filigran/design-system';
 import { LogoGitIcon, OpenInNewIcon } from '@filigran/icon';
 import { PlatformIdentifier } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import * as React from 'react';
-import { Button } from '@filigran/design-system';
 
 export interface ShareableResourceConnectorDetailsProps {
   connectorDetails: {

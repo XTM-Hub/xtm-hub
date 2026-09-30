@@ -11,6 +11,7 @@ import { TrialsManageUsersDialog } from '@/components/service/trial-instances/ma
 import { TrialCancelSheet } from '@/components/service/trial-instances/TrialCancelSheet';
 import { isWithinLastMonths, useDateFormatter } from '@/utils/date';
 import { formatTitleCase } from '@/utils/format/case';
+import { Button } from '@filigran/design-system';
 import { registeredPlatformByServiceInstanceId_fragment$key } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
 import {
   DeploymentRequestHubStatus,
@@ -23,7 +24,6 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useContext, useState } from 'react';
 import { useFragment } from 'react-relay';
-import { Button } from '@filigran/design-system';
 
 interface RegistrationDetailsProps {
   registeredPlatform: registeredPlatformByServiceInstanceId_fragment$key;
@@ -261,7 +261,8 @@ export const RegistrationDetails = ({
           )}
         {displayUpdatePlatform && (
           <Button
-            priority="secondary" onClick={() => setOpenPlatformSheet(true)}>
+            priority="secondary"
+            onClick={() => setOpenPlatformSheet(true)}>
             {t('Platform.Update')}
           </Button>
         )}

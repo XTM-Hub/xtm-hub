@@ -1,3 +1,4 @@
+import { IconButton } from '@filigran/design-system';
 import { TableTuneIcon } from '@filigran/icon';
 import {
   DropdownMenu,
@@ -12,7 +13,6 @@ import {
 } from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
-import { IconButton } from '@filigran/design-system';
 
 interface PaginationManageDropdownProps {
   pageSize: number;

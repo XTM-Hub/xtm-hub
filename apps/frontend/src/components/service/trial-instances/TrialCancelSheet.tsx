@@ -5,8 +5,15 @@ import { SelectWithEditableField } from '@/components/service/registration/Selec
 import { CancelDeploymentRequestMutation } from '@/components/service/trial-instances/trial-instances.graphql';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
+import { Button } from '@filigran/design-system';
 import { CheckIndeterminateIcon } from '@filigran/icon';
-import { AutoForm, FormItem, FormLabel, FormMessage, toast } from '@filigran/ui';
+import {
+  AutoForm,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  toast,
+} from '@filigran/ui';
 import { trialInstancesCancelDeploymentRequestMutation } from '@generated/trialInstancesCancelDeploymentRequestMutation.graphql';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
@@ -14,7 +21,6 @@ import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 import { useMutation } from 'react-relay';
 import { z } from 'zod';
-import { Button } from '@filigran/design-system';
 
 const buildTrialCancelSchema = (requiredMessage: string) =>
   z.object({
@@ -151,7 +157,9 @@ export const TrialCancelSheet = ({
         }}>
         <div className="flex justify-end gap-s">
           <Button
-            priority="secondary" type="button" onClick={() => setOpen(false)}>
+            priority="secondary"
+            type="button"
+            onClick={() => setOpen(false)}>
             {t('Utils.Cancel')}
           </Button>
 

@@ -1,8 +1,18 @@
 import { cn } from '@/lib/utils';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@filigran/ui';
+import { buttonVariants } from '@filigran/design-system';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 import React, { ReactNode } from 'react';
-import { buttonVariants } from '@filigran/design-system';
 
 interface AlertDialogProps {
   triggerElement?: ReactNode;

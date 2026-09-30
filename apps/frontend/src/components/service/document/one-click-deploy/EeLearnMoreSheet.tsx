@@ -1,5 +1,6 @@
 import EeBadge from '@/components/service/document/one-click-deploy/EeBadge';
 import { ReachSalesMutation } from '@/components/service/trial-instances/reach-sales.graphql';
+import { Button } from '@filigran/design-system';
 import {
   Form,
   FormControl,
@@ -24,7 +25,6 @@ import { useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useMutation } from 'react-relay';
 import { z } from 'zod';
-import { Button } from '@filigran/design-system';
 
 interface EeLearnMoreSheetProps {
   open: boolean;

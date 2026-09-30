@@ -2,13 +2,13 @@ import { getUserListContext } from '@/components/admin/user/UserListPage';
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { Button } from '@filigran/design-system';
 import { useToast } from '@filigran/ui';
 import { RemoveUserFromOrgaMutation } from '@generated/RemoveUserFromOrgaMutation.graphql';
 import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { useTranslations } from 'next-intl';
 import { useContext } from 'react';
 import { graphql, useMutation } from 'react-relay';
-import { Button } from '@filigran/design-system';
 
 interface RemoveUserFromOrgaProps {
   user: UserList_fragment$data;
@@ -63,7 +63,11 @@ export const RemoveUserFromOrga = ({ user }: RemoveUserFromOrgaProps) => {
   };
 
   const trigger = (
-    <Button variant="destructive" priority="secondary">{t('MenuActions.Remove')}</Button>
+    <Button
+      variant="destructive"
+      priority="secondary">
+      {t('MenuActions.Remove')}
+    </Button>
   );
 
   return (

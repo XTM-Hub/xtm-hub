@@ -1,9 +1,9 @@
 'use client';
 import { TrialsManageUsersForm } from '@/components/service/trial-instances/manage-users/TrialsManageUsersForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { Button } from '@filigran/design-system';
 import { useTranslations } from 'next-intl';
 import React, { useState } from 'react';
-import { Button } from '@filigran/design-system';
 
 interface TrialsManageUsersDialogProps {
   serviceInstanceId: string;

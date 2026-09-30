@@ -3,12 +3,12 @@
 import { ResolvedServiceInstanceLink } from '@/components/service/service-instance-link.util';
 import useScrollPosition from '@/hooks/use-scroll-position';
 import { cn } from '@/lib/utils';
+import { Button } from '@filigran/design-system';
 import { ArrowOutwardIcon, LogoFiligranIcon } from '@filigran/icon';
 import { AspectRatio } from '@filigran/ui/servers';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ReactNode, useCallback, useEffect } from 'react';
-import { Button } from '@filigran/design-system';
 
 export type PlatformHoverAction = {
   id: string;

@@ -1,5 +1,5 @@
-
 import { cn } from '@/components/filigran-ui/lib/utils';
+import { IconButton } from '@filigran/design-system';
 import { CheckIcon } from '@filigran/icon';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '../Popover';
@@ -7,7 +7,6 @@ import {
   type TagInputStyleClassesProps,
   type Tag as TagType,
 } from './TagInput';
-import { IconButton } from '@filigran/design-system';
 
 type AutocompleteInputElement = React.ReactElement<{
   onFocus?: React.FocusEventHandler<HTMLInputElement | HTMLTextAreaElement>;

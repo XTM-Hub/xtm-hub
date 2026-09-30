@@ -1,5 +1,6 @@
 import { fileToBase64 } from '@/lib/utils';
 import { docIsExistingFile, ExistingFile, NewFile } from '@/utils/documents';
+import { IconButton } from '@filigran/design-system';
 import { AddIcon, DeleteIcon, ReplayIcon } from '@filigran/icon';
 import {
   FileInput,
@@ -19,7 +20,6 @@ import { DocumentSourceType } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
 import { ChangeEvent, useRef } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
-import { IconButton } from '@filigran/design-system';
 
 export type ServiceFormMultipleImagesFieldImages = (ExistingFile | NewFile) & {
   source_type: DocumentSourceType;

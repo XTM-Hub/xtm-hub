@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { IconButton } from '@filigran/design-system';
 import { ArrowDownwardIcon, ArrowUpwardIcon } from '@filigran/icon';
 import {
   Select,
@@ -9,7 +10,6 @@ import {
 } from '@filigran/ui';
 import { OrderingMode } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
-import { IconButton } from '@filigran/design-system';
 
 interface SortControlsProps {
   orderByOptions: { label: string; value: string }[];

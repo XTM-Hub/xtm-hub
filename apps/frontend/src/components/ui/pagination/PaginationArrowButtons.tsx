@@ -1,7 +1,7 @@
+import { IconButton } from '@filigran/design-system';
 import { ArrowNextIcon, ArrowPreviousIcon } from '@filigran/icon';
 import { PaginationState } from '@tanstack/react-table';
 import { useTranslations } from 'next-intl';
-import { IconButton } from '@filigran/design-system';
 
 interface PaginationArrowButtonsProps {
   totalCount: number;

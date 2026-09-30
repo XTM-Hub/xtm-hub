@@ -4,8 +4,16 @@ import GuardCapacityComponent from '@/components/AdminGuard';
 import { useServiceContext } from '@/components/service/components/ServiceContext';
 import { Locale, locales } from '@/i18n/config';
 import { portalGraphqlClient } from '@/lib/graphql-client';
+import { Button } from '@filigran/design-system';
 import { EditIcon } from '@filigran/icon';
-import { AutoForm, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@filigran/ui';
+import {
+  AutoForm,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@filigran/ui';
 import { toast } from '@filigran/ui/clients';
 import {
   PortalCapability,
@@ -17,7 +25,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { z } from 'zod';
-import { Button } from '@filigran/design-system';
 
 const SEO_METADATA_MAX_LENGTH = 155;
 const optionalSeoField = z.string().max(SEO_METADATA_MAX_LENGTH).optional();
@@ -173,7 +180,8 @@ export const LibraryUpdateMetadata = () => {
       portalCapabilityRestriction={[PortalCapability.ModifyServiceMetadata]}>
       <>
         <Button
-          priority="tertiary" onClick={() => setIsOpen(true)}>
+          priority="tertiary"
+          onClick={() => setIsOpen(true)}>
           <EditIcon className="h-4 w-4 mr-s " />
           {t('Utils.Edit')}
         </Button>
@@ -192,7 +200,9 @@ export const LibraryUpdateMetadata = () => {
               onSubmit={handleSubmit}>
               <DialogFooter className="pt-s">
                 <Button
-                  priority="secondary" type="button" onClick={() => setIsOpen(false)}>
+                  priority="secondary"
+                  type="button"
+                  onClick={() => setIsOpen(false)}>
                   {t('Utils.Cancel')}
                 </Button>
                 <Button type="submit">{t('Utils.Validate')}</Button>

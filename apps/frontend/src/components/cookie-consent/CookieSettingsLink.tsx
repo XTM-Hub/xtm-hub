@@ -2,8 +2,8 @@
 
 import { useConsent } from '@/components/cookie-consent/CookieConsentProvider';
 import { cn } from '@/lib/utils';
-import { useTranslations } from 'next-intl';
 import { Button } from '@filigran/design-system';
+import { useTranslations } from 'next-intl';
 
 export const CookieSettingsLink = ({ className }: { className?: string }) => {
   const t = useTranslations('CookieConsent');

@@ -25,9 +25,9 @@ import { useTranslations } from 'next-intl';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 
 import { useUsersList } from '@/hooks/use-users-list';
+import { Button } from '@filigran/design-system';
 import { readInlineData } from 'react-relay';
 import { useDebounceCallback } from 'usehooks-ts';
-import { Button } from '@filigran/design-system';
 
 interface SelectUsersFormFieldProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   defaultValue?: string;

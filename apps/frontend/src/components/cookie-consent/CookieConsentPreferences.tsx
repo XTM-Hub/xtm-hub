@@ -16,10 +16,18 @@ import {
   setCategoryConsent,
 } from '@/components/cookie-consent/cookie-consent.utils';
 import { useConsent } from '@/components/cookie-consent/CookieConsentProvider';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Switch } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Switch,
+} from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { Button } from '@filigran/design-system';
 
 const VISIBLE_CATEGORIES = CONSENT_CATEGORIES.filter(
   (category) => CONSENT_REGISTRY[category].services.length > 0

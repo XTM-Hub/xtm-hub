@@ -4,7 +4,18 @@ import { invalidatePrivateNavigationQueries } from '@/components/menu/navigation
 import { translateServiceDefinitionIdentifier } from '@/components/registration/PlatformIdentifierMapping';
 import { UpdatePlatformServiceMetadata } from '@/components/service/service.graphql';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, Input, SheetFooter, useToast } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  SheetFooter,
+  useToast,
+} from '@filigran/ui';
 import { ServiceDefinitionIdentifier } from '@generated/serviceInstance_fragment.graphql';
 import { serviceUpdatePlatformServiceMetadataMutation } from '@generated/serviceUpdatePlatformServiceMetadataMutation.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,7 +24,6 @@ import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'react-relay';
 import { z } from 'zod';
-import { Button } from '@filigran/design-system';
 
 const platformUpdateSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -129,7 +139,9 @@ export const PlatformUpdateSheet = ({
 
           <SheetFooter>
             <Button
-              type="button" priority="secondary" onClick={() => setOpen(false)}>
+              type="button"
+              priority="secondary"
+              onClick={() => setOpen(false)}>
               {t('Utils.Cancel')}
             </Button>
             <Button

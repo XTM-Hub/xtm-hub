@@ -1,7 +1,15 @@
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 import { ReactNode } from 'react';
-import { Button } from '@filigran/design-system';
 
 interface DialogInformativeProps {
   isOpen: boolean;

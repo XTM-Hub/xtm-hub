@@ -1,11 +1,22 @@
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
-import { ColorPicker, Form, FormControl, FormField, FormItem, FormLabel, FormMessage, Input, MultiSelectFormField, SheetFooter } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
+import {
+  ColorPicker,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  MultiSelectFormField,
+  SheetFooter,
+} from '@filigran/ui';
 import { FiligranProduct } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Button } from '@filigran/design-system';
 
 export interface UseCaseFormModel {
   id: string;
@@ -121,7 +132,9 @@ const UseCaseForm = ({
               actionButtonText={t('MenuActions.Delete')}
               variantName={'destructive'}
               triggerElement={
-                <Button variant="destructive" priority="secondary">
+                <Button
+                  variant="destructive"
+                  priority="secondary">
                   {t('MenuActions.Delete')}
                 </Button>
               }
@@ -133,7 +146,9 @@ const UseCaseForm = ({
           )}
           <div className="flex gap-s">
             <Button
-              priority="secondary" type="button" onClick={onClose}>
+              priority="secondary"
+              type="button"
+              onClick={onClose}>
               {t('Utils.Cancel')}
             </Button>
             <Button

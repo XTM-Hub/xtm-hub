@@ -6,8 +6,8 @@ import { useState } from 'react';
 import ConnectProductFromHubModal, {
   ConnectProductOrigin,
 } from '@/components/registration/registerFromHub/ConnectProductFromHubModal';
-import { useTranslations } from 'next-intl';
 import { Button } from '@filigran/design-system';
+import { useTranslations } from 'next-intl';
 
 interface ConnectProductButtonProps {
   onCloseDropdown?: () => void;

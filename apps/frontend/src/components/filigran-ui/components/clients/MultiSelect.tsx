@@ -1,4 +1,5 @@
 import { cn } from '@/components/filigran-ui/lib/utils';
+import { Button } from '@filigran/design-system';
 import { ArrowDropDownIcon, CheckIcon, CloseIcon } from '@filigran/icon';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
@@ -21,7 +22,6 @@ import {
   TooltipTrigger,
 } from '../clients';
 import { Badge } from '../servers';
-import { Button } from '@filigran/design-system';
 
 const _multiSelectVariants = cva('', {
   variants: {

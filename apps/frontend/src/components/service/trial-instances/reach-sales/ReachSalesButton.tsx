@@ -2,6 +2,7 @@
 import { ReachSalesMutation } from '@/components/service/trial-instances/reach-sales.graphql';
 import { ReachSalesDialogForm } from '@/components/service/trial-instances/reach-sales/ReachSalesDialogForm';
 import { DialogInformative } from '@/components/ui/Dialog';
+import { Button } from '@filigran/design-system';
 import { toast } from '@filigran/ui';
 import { GradientButton } from '@filigran/ui/servers';
 import {
@@ -11,7 +12,6 @@ import {
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { useMutation } from 'react-relay';
-import { Button } from '@filigran/design-system';
 
 interface ReachSalesButtonProps {
   variant: 'default' | 'gradient' | 'secondary';
@@ -70,7 +70,9 @@ export const ReachSalesButton = ({
     if ('secondary' === variant) {
       return (
         <Button
-          onClick={() => setIsConfirmationDialogOpen(true)} priority="secondary" disabled={isInFlight}>
+          onClick={() => setIsConfirmationDialogOpen(true)}
+          priority="secondary"
+          disabled={isInFlight}>
           {t('Service.Trials.ReachOutToSales')}
         </Button>
       );

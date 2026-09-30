@@ -31,10 +31,10 @@ import {
   isResourceDeployable,
   isResourceDownloadable,
 } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
+import { Button, IconButton } from '@filigran/design-system';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import Image from 'next/image';
-import { Button, IconButton } from '@filigran/design-system';
 
 // Component interface
 interface ShareableResourceSlugProps {
@@ -121,7 +121,9 @@ const ShareableResourceSlug = ({
                               window.location.href = `/document/get/${serviceInstanceId}/${documentData?.id}?attach=1`;
                             }}
                             className="z-[2] text-primary"
-                            aria-label={t('Service.ShareableResources.Download')}
+                            aria-label={t(
+                              'Service.ShareableResources.Download'
+                            )}
                             icon={<DownloadIcon className="h-4 w-4" />}
                           />
                         </TooltipTrigger>

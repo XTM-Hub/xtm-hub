@@ -8,6 +8,7 @@ import { SettingsContext } from '@/components/settings/EnvPortalContext';
 import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { cn, isEmpty } from '@/lib/utils';
+import { Button, IconButton } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
 import {
   Form,
@@ -25,7 +26,6 @@ import { useTranslations } from 'next-intl';
 import { useContext, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Button, IconButton } from '@filigran/design-system';
 
 interface UserAdminFormProps {
   handleSubmit: (values: z.infer<typeof userAdminFormSchema>) => void;
@@ -207,7 +207,9 @@ export const UserAdminForm = ({ handleSubmit }: UserAdminFormProps) => {
 
         <SheetFooter className="pt-2">
           <Button
-            priority="secondary" type="button" onClick={(e) => handleCloseSheet(e)}>
+            priority="secondary"
+            type="button"
+            onClick={(e) => handleCloseSheet(e)}>
             {t('Utils.Cancel')}
           </Button>
           <Button

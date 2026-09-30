@@ -1,11 +1,11 @@
 'use client';
 import { cn } from '@/components/filigran-ui/lib/utils';
+import { IconButton, type IconButtonProps } from '@filigran/design-system';
+import { useTranslations } from 'next-intl';
 import { forwardRef, useMemo, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
-import { useTranslations } from 'next-intl';
 import { Input } from '../servers';
 import { Popover, PopoverContent, PopoverTrigger } from './Popover';
-import { IconButton, type IconButtonProps } from '@filigran/design-system';
 
 interface ColorPickerProps {
   value: string;
@@ -15,8 +15,7 @@ interface ColorPickerProps {
 
 const ColorPicker = forwardRef<
   HTMLInputElement,
-  Omit<IconButtonProps, 'aria-label' | 'children' | 'icon'> &
-    ColorPickerProps
+  Omit<IconButtonProps, 'aria-label' | 'children' | 'icon'> & ColorPickerProps
 >(
   (
     { disabled, value, onChange, onBlur, name, className, ...props },

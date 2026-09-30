@@ -3,14 +3,22 @@
 import { LoginFormMutation } from '@/components/login/login.graphql';
 import useDecodedQuery from '@/hooks/use-decoded-query';
 import { decodeSafeRedirect } from '@/utils/redirect';
-import { Form, FormControl, FormField, FormItem, FormLabel, Input, toast } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  Input,
+  toast,
+} from '@filigran/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'react-relay';
 import { z } from 'zod';
-import { Button } from '@filigran/design-system';
 
 const formSchema = z.object({
   email: z.email('This is not a valid email.'),

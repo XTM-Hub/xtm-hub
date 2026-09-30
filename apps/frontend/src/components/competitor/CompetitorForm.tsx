@@ -1,12 +1,24 @@
 'use client';
 
 import { formatTier } from '@/components/competitor/competitor.utils';
-import { AutoForm, FormControl, FormItem, FormLabel, FormMessage, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SheetFooter } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
+import {
+  AutoForm,
+  FormControl,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SheetFooter,
+} from '@filigran/ui';
 import { competitor_fragment$data } from '@generated/competitor_fragment.graphql';
 import { CompetitorTier } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
 import { z } from 'zod';
-import { Button } from '@filigran/design-system';
 
 export const TIER_VALUES = Object.values(CompetitorTier);
 export const TIERS = Object.values(CompetitorTier).map((tier) => ({
@@ -93,7 +105,9 @@ const CompetitorForm = ({
       <SheetFooter className={'sm:justify-end pb-0'}>
         <div className="flex gap-s">
           <Button
-            priority="secondary" type="button" onClick={onClose}>
+            priority="secondary"
+            type="button"
+            onClick={onClose}>
             {t('Utils.Cancel')}
           </Button>
           <Button type="submit">

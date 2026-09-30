@@ -8,6 +8,7 @@ import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDi
 import { useEpicFilter } from '@/hooks/use-epic-filter';
 import { useEpicListContext } from '@/hooks/use-epic-list-context';
 import { fileListToUploadableMap } from '@/relay/environment/fetch-form-data';
+import { Button } from '@filigran/design-system';
 import { AddIcon } from '@filigran/icon';
 import { useToast } from '@filigran/ui';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
@@ -16,7 +17,6 @@ import { useState } from 'react';
 import { useMutation } from 'react-relay';
 import { UploadableMap } from 'relay-runtime';
 import { z } from 'zod';
-import { Button } from '@filigran/design-system';
 
 interface EpicFormSheetProps {
   epic?: epic_fragment$data;

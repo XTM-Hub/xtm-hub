@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { cn } from '@/components/filigran-ui/lib/utils';
+import { Button } from '@filigran/design-system';
 import { useEffect } from 'react';
 import { Form } from '../clients';
 import AutoFormObject from './fields/Object';
@@ -19,7 +20,6 @@ import {
   getObjectFormSchema,
   type ZodObjectOrWrapped,
 } from './utils';
-import { Button } from '@filigran/design-system';
 
 const AutoFormSubmit = ({
   children,

@@ -1,11 +1,16 @@
 import { IntegrationsCsvExportDialog } from '@/components/service/components/header/IntegrationsCsvExportDialog';
 import { buildSignupRedirect } from '@/utils/redirect';
+import { IconButton } from '@filigran/design-system';
 import { DownloadIcon } from '@filigran/icon';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@filigran/ui';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { IconButton } from '@filigran/design-system';
 
 interface IntegrationsCsvExportButtonProps {
   serviceInstanceId: string;
@@ -43,8 +48,7 @@ export const IntegrationsCsvExportButton = ({
               priority="secondary"
               aria-label={t('Service.CsvExport.TriggerButton')}
               icon={<DownloadIcon className="h-4 w-4" />}
-              onClick={handleClick}>
-            </IconButton>
+              onClick={handleClick}></IconButton>
           </TooltipTrigger>
           <TooltipContent>
             <p>{t('Service.CsvExport.TriggerButton')}</p>

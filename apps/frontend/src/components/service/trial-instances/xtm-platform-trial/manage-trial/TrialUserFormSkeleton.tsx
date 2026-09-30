@@ -1,6 +1,13 @@
 'use client';
 
-import { Form, FormControl, FormField, FormItem, FormMessage } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from '@filigran/ui';
 import { FormLabel, MultiSelectFormField } from '@filigran/ui/clients';
 import { PlatformIdentifier } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
@@ -13,7 +20,6 @@ import {
 import { MixedRoleDefault } from './manage-trial.utils';
 import { ManageTrialRoleDescriptions } from './ManageTrialRoleDescriptions';
 import { TrialUserRolePanelFields } from './TrialUserRolePanelFields';
-import { Button } from '@filigran/design-system';
 
 interface UserOption {
   label: string;
@@ -106,7 +112,9 @@ export const TrialUserFormSkeleton = ({
 
         <div className="flex justify-end gap-s">
           <Button
-            priority="secondary" type="button" onClick={onCancel}>
+            priority="secondary"
+            type="button"
+            onClick={onCancel}>
             {t('Utils.Cancel')}
           </Button>
           <Button

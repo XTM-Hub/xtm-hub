@@ -1,11 +1,11 @@
 'use client';
 
 import { cn } from '@/components/filigran-ui/lib/utils';
+import { iconButtonVariants } from '@filigran/design-system';
 import { ArrowDropDownIcon } from '@filigran/icon';
 import * as AccordionPrimitive from '@radix-ui/react-accordion';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
-import { iconButtonVariants } from '@filigran/design-system';
 
 const Accordion = AccordionPrimitive.Root;
 

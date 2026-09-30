@@ -1,6 +1,7 @@
 import { fileToBase64 } from '@/lib/utils';
 import { docIsExistingFile, ExistingFile, NewFile } from '@/utils/documents';
 import { EntityTypeOrFiligranLogo } from '@/utils/shareable-resources/entity-type';
+import { IconButton } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
 import {
   FileInput,
@@ -15,7 +16,6 @@ import { DocumentSourceType } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
 import { ChangeEvent } from 'react';
 import { ControllerRenderProps, FieldValues, useWatch } from 'react-hook-form';
-import { IconButton } from '@filigran/design-system';
 
 interface ServiceFormLogoFieldProps {
   field: ControllerRenderProps<FieldValues, string>;

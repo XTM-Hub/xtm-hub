@@ -1,5 +1,5 @@
-
 import { cn } from '@/components/filigran-ui/lib/utils';
+import { IconButton } from '@filigran/design-system';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '../Popover';
 import {
@@ -7,7 +7,6 @@ import {
   type Tag as TagType,
 } from './TagInput';
 import { TagList, type TagListProps } from './TagList';
-import { IconButton } from '@filigran/design-system';
 
 type TagPopoverInputElement = React.ReactElement<{
   onFocus?: React.FocusEventHandler<HTMLInputElement | HTMLTextAreaElement>;

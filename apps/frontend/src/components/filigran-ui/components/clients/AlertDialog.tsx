@@ -1,9 +1,9 @@
 'use client';
 
 import { cn } from '@/components/filigran-ui/lib/utils';
+import { buttonVariants } from '@filigran/design-system';
 import * as AlertDialogPrimitive from '@radix-ui/react-alert-dialog';
 import * as React from 'react';
-import { buttonVariants } from '@filigran/design-system';
 
 const AlertDialog = AlertDialogPrimitive.Root;
 

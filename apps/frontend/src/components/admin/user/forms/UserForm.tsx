@@ -3,12 +3,21 @@ import { userFormSchema } from '@/components/admin/user/forms/user-form.schema';
 import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { isEmpty } from '@/lib/utils';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, Input, SheetFooter } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  SheetFooter,
+} from '@filigran/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Button } from '@filigran/design-system';
 
 interface UserFormProps {
   handleSubmit: (values: z.infer<typeof userFormSchema>) => void;
@@ -76,7 +85,9 @@ export const UserForm = ({ handleSubmit, validationSchema }: UserFormProps) => {
 
         <SheetFooter className="pt-2">
           <Button
-            priority="secondary" type="button" onClick={(e) => handleCloseSheet(e)}>
+            priority="secondary"
+            type="button"
+            onClick={(e) => handleCloseSheet(e)}>
             {t('Utils.Cancel')}
           </Button>
           <Button

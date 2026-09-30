@@ -2,13 +2,13 @@ import { CreateOrganizationMutation } from '@/components/organization/organizati
 import { OrganizationForm } from '@/components/organization/OrganizationForm';
 import { organizationFormSchema } from '@/components/organization/OrganizationForm.schema';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { Button } from '@filigran/design-system';
 import { useToast } from '@filigran/ui';
 import { organizationCreateMutation } from '@generated/organizationCreateMutation.graphql';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useMutation } from 'react-relay';
 import { z } from 'zod';
-import { Button } from '@filigran/design-system';
 
 interface CreateOrganizationProps {
   connectionId: string;

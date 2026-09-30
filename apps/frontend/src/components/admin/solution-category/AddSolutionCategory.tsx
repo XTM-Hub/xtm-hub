@@ -4,6 +4,7 @@ import SolutionCategoryForm, {
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { prependToQueryCache } from '@/utils/query-cache';
+import { Button } from '@filigran/design-system';
 import { toast } from '@filigran/ui';
 import {
   SolutionCategoriesListQuery,
@@ -15,7 +16,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { z } from 'zod';
-import { Button } from '@filigran/design-system';
 
 const AddSolutionCategory = () => {
   const t = useTranslations();

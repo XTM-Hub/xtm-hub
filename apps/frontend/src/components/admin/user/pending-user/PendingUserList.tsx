@@ -20,6 +20,7 @@ import {
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
+import { IconButton } from '@filigran/design-system';
 import { CheckIcon, CloseIcon } from '@filigran/icon';
 import {
   DataTable,
@@ -54,7 +55,6 @@ import {
   useSubscription,
 } from 'react-relay';
 import { useDebounceCallback } from 'usehooks-ts';
-import { IconButton } from '@filigran/design-system';
 
 const renderStrong = (chunks: ReactNode) => <strong>{chunks}</strong>;
 

@@ -1,6 +1,7 @@
 'use client';
 import { updateShareNumber } from '@/components/ui/share-link/ShareLinkActions';
 import usePublicPath from '@/hooks/use-public-path';
+import { IconButton } from '@filigran/design-system';
 import { ShareIcon } from '@filigran/icon';
 import {
   toast,
@@ -12,7 +13,6 @@ import {
 import { useTranslations } from 'next-intl';
 import { graphql, useMutation } from 'react-relay';
 import { useCopyToClipboard } from 'usehooks-ts';
-import { IconButton } from '@filigran/design-system';
 
 export interface ShareLinkButtonProps {
   url: string;

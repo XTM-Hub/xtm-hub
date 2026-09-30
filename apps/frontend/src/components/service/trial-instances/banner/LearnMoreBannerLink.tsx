@@ -1,9 +1,9 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { buttonVariants } from '@filigran/design-system';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { buttonVariants } from '@filigran/design-system';
 
 interface LearnMoreBannerLinkProps {
   href: string;

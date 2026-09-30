@@ -7,13 +7,18 @@ import {
   SectionSubLink,
 } from '@/components/menu/navigation/shared/navigation.type';
 import { cn } from '@/lib/utils';
+import { buttonVariants } from '@filigran/design-system';
 import { OpenInNewIcon } from '@filigran/icon';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@filigran/ui';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/ui';
 import { GradientButton } from '@filigran/ui/servers';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ElementType, ReactNode } from 'react';
-import { buttonVariants } from '@filigran/design-system';
 
 export const PublicSubLink = ({
   href,

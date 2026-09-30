@@ -1,10 +1,10 @@
 'use client';
 
 import { cn } from '@/components/filigran-ui/lib/utils';
+import { buttonVariants } from '@filigran/design-system';
 import { KeyboardArrowLeftIcon, KeyboardArrowRightIcon } from '@filigran/icon';
 import * as React from 'react';
 import { DayPicker } from 'react-day-picker';
-import { buttonVariants } from '@filigran/design-system';
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 

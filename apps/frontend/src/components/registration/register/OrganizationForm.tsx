@@ -1,4 +1,5 @@
 import { RegistrationContext } from '@/components/registration/Context';
+import { Button } from '@filigran/design-system';
 import { AutoForm } from '@filigran/ui';
 import {
   FormControl,
@@ -11,7 +12,6 @@ import { organizationListUserOrganizationsQuery$data } from '@generated/organiza
 import { useTranslations } from 'next-intl';
 import { useContext } from 'react';
 import { z } from 'zod';
-import { Button } from '@filigran/design-system';
 
 interface RegisterOrganizationFormProps {
   userOrganizationsQueryData: organizationListUserOrganizationsQuery$data;
@@ -125,9 +125,11 @@ export const RegisterOrganizationForm = ({
           }}>
           <div className="flex justify-end gap-s">
             <Button
-              priority="secondary" type="button" onClick={() => {
-        cancel();
-    }}>
+              priority="secondary"
+              type="button"
+              onClick={() => {
+                cancel();
+              }}>
               {t('Utils.Cancel')}
             </Button>
 

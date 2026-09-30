@@ -3,6 +3,7 @@
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { i18nKey } from '@/utils/datatable';
+import { IconButton } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
 import { DataTable, SelectionState, toast } from '@filigran/ui';
 import {
@@ -24,7 +25,6 @@ import {
 } from './manage-trial.const';
 import { isServiceGroupName } from './manage-trial.utils';
 import { RoleSelect } from './RoleSelect';
-import { IconButton } from '@filigran/design-system';
 
 interface ManageTrialTableProps {
   serviceInstanceId: string;

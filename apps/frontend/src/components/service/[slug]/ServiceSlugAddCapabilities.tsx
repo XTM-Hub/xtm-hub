@@ -1,12 +1,20 @@
 import { AddSubscriptionCapabilityMutation } from '@/components/subcription/subscription.graphql';
 import { BadgeOverflow } from '@/components/ui/BadgeOverflowCounter';
-import { Checkbox, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, toast } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
+import {
+  Checkbox,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  toast,
+} from '@filigran/ui';
 import { subscriptionAddCapabilityMutation } from '@generated/subscriptionAddCapabilityMutation.graphql';
 import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useMutation } from 'react-relay';
-import { Button } from '@filigran/design-system';
 
 interface ServiceSlugAddCapabilitiesProps {
   selectedSubscriptions: subscription_fragment$data[];
@@ -118,7 +126,8 @@ export const ServiceSlugAddCapabilities = ({
 
         <DialogFooter>
           <Button
-            priority="tertiary" onClick={() => resetAndClose()}>
+            priority="tertiary"
+            onClick={() => resetAndClose()}>
             {t('Utils.Cancel')}
           </Button>
           <Button

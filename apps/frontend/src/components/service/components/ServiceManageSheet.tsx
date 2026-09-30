@@ -10,9 +10,9 @@ import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDi
 import useServiceCapability from '@/hooks/use-service-capability';
 import revalidatePathActions from '@/utils/actions/revalidate-path.actions';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
+import { Button } from '@filigran/design-system';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { Button } from '@filigran/design-system';
 
 interface ServiceManageSheetProps {
   document?: documentItem_fragment$data;

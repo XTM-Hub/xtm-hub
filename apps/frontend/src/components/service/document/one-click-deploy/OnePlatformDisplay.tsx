@@ -1,9 +1,9 @@
 import { SHAREABLE_RESOURCE_TYPE_NAME_MAPPING } from '@/utils/shareable-resources/shareable-resources.types';
+import { Button } from '@filigran/design-system';
 import { AlertDialogTitle } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
 import { useTranslations } from 'next-intl';
-import { Button } from '@filigran/design-system';
 
 interface OnePlatformDisplayProps {
   documentData: documentItem_fragment$data;
@@ -40,9 +40,11 @@ const OnePlatformDisplay = ({
       </div>
       <div className="flex justify-end gap-s">
         <Button
-          priority="secondary" type="button" onClick={() => {
-        setIsOpen(false);
-    }}>
+          priority="secondary"
+          type="button"
+          onClick={() => {
+            setIsOpen(false);
+          }}>
           {t('Utils.Cancel')}
         </Button>
 

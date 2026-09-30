@@ -1,3 +1,4 @@
+import { Button } from '@filigran/design-system';
 import { OpenInNewIcon } from '@filigran/icon';
 import {
   Tooltip,
@@ -6,7 +7,6 @@ import {
   TooltipTrigger,
 } from '@filigran/ui/clients';
 import Link from 'next/link';
-import { Button } from '@filigran/design-system';
 
 interface ShareableResourceDetailsLinkProps {
   url: string;

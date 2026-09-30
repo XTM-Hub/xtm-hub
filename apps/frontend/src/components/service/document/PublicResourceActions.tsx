@@ -15,6 +15,7 @@ import {
   isResourceDeployable,
   isResourceDownloadable,
 } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
+import { Button, IconButton } from '@filigran/design-system';
 import { DownloadIcon } from '@filigran/icon';
 import { SimpleTooltip } from '@filigran/ui';
 import {
@@ -25,7 +26,6 @@ import {
 } from '@filigran/ui/clients';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { Button, IconButton } from '@filigran/design-system';
 
 interface PublicResourceActionsProps {
   documentData: PublicDocumentDetailsData;
