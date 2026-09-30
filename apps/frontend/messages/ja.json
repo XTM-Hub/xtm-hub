@@ -1029,7 +1029,7 @@
         "IntegrationType": "インテグレーションタイプ",
         "UseCase": "ユースケース",
         "DeploymentType": "デプロイタイプ",
-        "VerificationStatus": "検証ステータス",
+        "VerificationStatus": "提供元",
         "SolutionCategory": "ソリューションカテゴリ",
         "LicenseType": "ライセンスタイプ",
         "ShortDescription": "概要",
@@ -1203,10 +1203,10 @@
           "Placeholder": "ソリューションカテゴリ..."
         },
         "Verified": {
-          "Label": "検証ステータス",
-          "Placeholder": "検証状況...",
-          "Verified": "確認済み",
-          "Unverified": "未確認"
+          "Label": "提供元",
+          "Placeholder": "提供元...",
+          "Verified": "Filigran",
+          "Unverified": "コミュニティ"
         }
       },
       "Type": {
@@ -1374,7 +1374,7 @@
           "license_type": "ライセンス種別",
           "product_version": "接続済み製品",
           "manager_supported": "配備タイプ",
-          "verified": "検証状況",
+          "verified": "提供元",
           "entity_type": "エンティティタイプ"
         }
       }

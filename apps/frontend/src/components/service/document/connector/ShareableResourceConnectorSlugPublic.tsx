@@ -10,9 +10,9 @@ import {
   PublicDocumentDetailsData,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import {
+  LogoFiligranIcon,
   MotionPlayIcon,
   ThreatActorGroupIcon,
-  VerifiedIcon,
 } from '@filigran/icon';
 import { MarkdownRenderer } from '@filigran/ui/clients';
 import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
@@ -63,7 +63,7 @@ const ShareableResourceConnectorSlugPublic = ({
             <div className="flex items-center gap-s py-xs px-l font-semibold bg-alert-success-primary text-alert-success-primary dark:bg-turquoise-900 rounded-lg">
               {documentData.verified ? (
                 <>
-                  <VerifiedIcon className="h-5 w-5 shrink-0 mr-xs" />
+                  <LogoFiligranIcon className="h-5 w-5 shrink-0 mr-xs text-primary" />
                   {t('Service.ShareableResources.Details.SupportedByFiligran')}
                 </>
               ) : (
