@@ -9,6 +9,7 @@ import { UserFragment } from '@/components/admin/user/UserList';
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { useTranslate } from '@/hooks/use-translate';
 import { APP_PATH } from '@/utils/path/constant';
+import { Button } from '@filigran/design-system';
 import {
   Popover,
   PopoverContent,
@@ -38,7 +39,6 @@ import {
   useRelayEnvironment,
   useSubscription,
 } from 'react-relay';
-import { Button } from '@filigran/design-system';
 
 export function notificationPendingUserQueryFilters(
   organization_id: string
@@ -130,7 +130,8 @@ const PendingUserNotifications = ({
       onOpenChange={setOpenPopover}>
       <PopoverTrigger asChild>
         <Button
-          priority="tertiary" className="text-primary w-9 px-0 relative">
+          priority="tertiary"
+          className="text-primary w-9 px-0 relative">
           <NotificationsIcon className="h-4 w-4" />
           {nbUsers > 0 && (
             <span className="absolute top-2 right-2.5 block h-[6px] w-[6px] transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full"></span>

@@ -2,14 +2,30 @@ import { ServiceFormUseCasesField } from '@/components/service/form/UseCasesFiel
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import MarkdownInput from '@/components/ui/MarkdownInput';
 import { useTranslate } from '@/hooks/use-translate';
+import { Button, IconButton } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
-import { FileInput, Form, FormControl, FormField, FormItem, FormLabel, FormMessage, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SheetFooter, Switch } from '@filigran/ui';
+import {
+  FileInput,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SheetFooter,
+  Switch,
+} from '@filigran/ui';
 import { FiligranProduct } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
-import { Button, IconButton } from '@filigran/design-system';
 
 const productValues = Object.values(FiligranProduct) as [
   FiligranProduct,
@@ -278,7 +294,9 @@ const VotableFeatureForm = ({
               actionButtonText={t('MenuActions.Delete')}
               variantName="destructive"
               triggerElement={
-                <Button variant="destructive" priority="secondary">
+                <Button
+                  variant="destructive"
+                  priority="secondary">
                   {t('MenuActions.Delete')}
                 </Button>
               }
@@ -288,7 +306,9 @@ const VotableFeatureForm = ({
           )}
           <div className="flex gap-s">
             <Button
-              priority="secondary" type="button" onClick={onClose}>
+              priority="secondary"
+              type="button"
+              onClick={onClose}>
               {t('Utils.Cancel')}
             </Button>
             <Button

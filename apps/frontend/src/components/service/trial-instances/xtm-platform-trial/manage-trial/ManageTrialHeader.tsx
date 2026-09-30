@@ -4,8 +4,15 @@ import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
+import { Button, IconButton } from '@filigran/design-system';
 import { ArrowUpwardIcon, DeleteIcon } from '@filigran/icon';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, toast } from '@filigran/ui';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  toast,
+} from '@filigran/ui';
 import {
   BundleUserServiceGroupsQuery,
   PlatformIdentifier,
@@ -17,7 +24,6 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { TrialUserDialog } from './TrialUserDialog';
 import { formatEmailList } from './manage-trial.utils';
-import { Button, IconButton } from '@filigran/design-system';
 
 interface ManageTrialHeaderUser {
   id: string;
@@ -93,7 +99,9 @@ export const ManageTrialHeader = ({
       </div>
       <div className="flex flex-wrap items-center justify-between gap-m">
         <Button
-          priority="secondary" className="gap-s border-elevation-border-default-layer-0" asChild>
+          priority="secondary"
+          className="gap-s border-elevation-border-default-layer-0"
+          asChild>
           <Link href={backHref}>
             <ArrowUpwardIcon className="h-3 w-3 -rotate-90" />
             {t(backLabelKey)}
@@ -150,7 +158,9 @@ export const ManageTrialHeader = ({
                   style={{ cursor: 'unset' }}>
                   <div>
                     <Button
-                      priority="secondary" disabled className="border-elevation-border-default-layer-0">
+                      priority="secondary"
+                      disabled
+                      className="border-elevation-border-default-layer-0">
                       {t('Service.Bundle.ManageTrial.GroupAction')}
                     </Button>
                   </div>
@@ -162,12 +172,13 @@ export const ManageTrialHeader = ({
             </TooltipProvider>
           ) : (
             <Button
-              priority="secondary" className="border-elevation-border-default-layer-0" onClick={() => setIsEditUsersDialogOpen(true)}>
+              priority="secondary"
+              className="border-elevation-border-default-layer-0"
+              onClick={() => setIsEditUsersDialogOpen(true)}>
               {t('Service.Bundle.ManageTrial.GroupAction')}
             </Button>
           )}
-          <Button
-            onClick={() => setIsAddUserDialogOpen(true)}>
+          <Button onClick={() => setIsAddUserDialogOpen(true)}>
             {t('Service.Bundle.ManageTrial.AddTrialUser')}
           </Button>
         </div>

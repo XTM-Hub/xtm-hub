@@ -5,6 +5,7 @@ import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDi
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { prependToQueryCache } from '@/utils/query-cache';
+import { Button } from '@filigran/design-system';
 import { toast } from '@filigran/ui';
 import {
   SolutionCategoriesListQuery,
@@ -15,7 +16,6 @@ import { solutionCategoryListKeys } from '@graphql/solution-category/solution-ca
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { z } from 'zod';
-import { Button } from '@filigran/design-system';
 
 const AddSolutionCategory = () => {
   const t = useTranslate();

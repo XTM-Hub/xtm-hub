@@ -6,11 +6,11 @@ import { ShareableResourceBasicInformation } from '@/components/service/document
 import { ShareableResourceDetailItem } from '@/components/service/document/ui/ShareableResourceDetailItem';
 import { useTranslate } from '@/hooks/use-translate';
 import { roundToNearest } from '@/lib/utils';
+import { Button } from '@filigran/design-system';
 import { LogoGitIcon, OpenInNewIcon } from '@filigran/icon';
 import { PlatformIdentifier } from '@graphql/generated';
 import Link from 'next/link';
 import * as React from 'react';
-import { Button } from '@filigran/design-system';
 
 export interface ShareableResourceConnectorDetailsProps {
   connectorDetails: {

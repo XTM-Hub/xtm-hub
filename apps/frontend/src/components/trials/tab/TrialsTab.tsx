@@ -32,6 +32,7 @@ import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { daysUntil, useDateFormatter } from '@/utils/date';
 import { xtmPlatformTrialManageUsersFromDashboardPath } from '@/utils/path/constant';
+import { IconButton } from '@filigran/design-system';
 import {
   ArrowShapeUpIcon,
   ArrowShapeUpStackIcon,
@@ -39,7 +40,15 @@ import {
   CloseIcon,
   GroupIcon,
 } from '@filigran/icon';
-import { DataTable, DataTableHeadBarOptions, toast, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@filigran/ui';
+import {
+  DataTable,
+  DataTableHeadBarOptions,
+  toast,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/ui';
 import { trialsKeys } from '@graphql/deployment/deployment.keys';
 import {
   DeploymentRequestHubStatus,
@@ -58,7 +67,6 @@ import { ColumnDef } from '@tanstack/react-table';
 import Link from 'next/link';
 import { ReactNode, useMemo, useState } from 'react';
 import { useDebounceCallback } from 'usehooks-ts';
-import { IconButton } from '@filigran/design-system';
 
 type TrialsColumn = ColumnDef<TrialsRowFragment>;
 type TrialsCellProps = { row: { original: TrialsRowFragment } };

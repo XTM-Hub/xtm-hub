@@ -9,6 +9,7 @@ import { PublicLocale } from '@/i18n/config';
 import { serverGraphqlFetch } from '@/lib/server-graphql-fetch';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '@/utils/constant';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
+import { Button } from '@filigran/design-system';
 import {
   EpicCountPerTimelineQueryDocument,
   EpicCountPerTimelineQueryQuery,
@@ -17,7 +18,6 @@ import {
 import { getLocale, getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Button } from '@filigran/design-system';
 
 const HOMEPAGE_TIMELINES = [
   Timeline.Now,
@@ -75,7 +75,9 @@ const XtmRoadmap = async ({
         </p>
         <div>
           <Button
-            asChild priority="secondary" className="border-elevation-border-strong">
+            asChild
+            priority="secondary"
+            className="border-elevation-border-strong">
             <Link
               href={seeMoreHref ?? defaultSeeMoreHref}
               prefetch={false}>

@@ -1,5 +1,6 @@
 'use client';
 import { cn, fixedForwardRef } from '@/components/filigran-ui/lib/utils';
+import { Button } from '@filigran/design-system';
 import { ReadMoreIcon } from '@filigran/icon';
 import {
   createContext,
@@ -11,7 +12,6 @@ import {
   type Ref,
 } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { Button } from '@filigran/design-system';
 
 interface FileInputProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,

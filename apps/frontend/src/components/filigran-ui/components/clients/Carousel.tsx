@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/components/filigran-ui/lib/utils';
+import { Button, IconButton } from '@filigran/design-system';
 import { KeyboardArrowLeftIcon, KeyboardArrowRightIcon } from '@filigran/icon';
 import { type EmblaCarouselType } from 'embla-carousel';
 import useEmblaCarousel, {
@@ -18,7 +19,6 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { Button, IconButton } from '@filigran/design-system';
 
 type CarouselApi = UseEmblaCarouselType[1];
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>;
@@ -310,7 +310,9 @@ CarouselItem.displayName = 'CarouselItem';
 
 const CarouselPrevious = forwardRef<
   HTMLButtonElement,
-  Omit<ComponentProps<typeof IconButton>, 'icon' | 'aria-label'> & { label?: string }
+  Omit<ComponentProps<typeof IconButton>, 'icon' | 'aria-label'> & {
+    label?: string;
+  }
 >(
   (
     { className, priority = 'secondary', label = 'Previous slide', ...props },
@@ -345,7 +347,9 @@ CarouselPrevious.displayName = 'CarouselPrevious';
 
 const CarouselNext = forwardRef<
   HTMLButtonElement,
-  Omit<ComponentProps<typeof IconButton>, 'icon' | 'aria-label'> & { label?: string }
+  Omit<ComponentProps<typeof IconButton>, 'icon' | 'aria-label'> & {
+    label?: string;
+  }
 >(
   (
     { className, priority = 'secondary', label = 'Next slide', ...props },

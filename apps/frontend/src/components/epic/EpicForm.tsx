@@ -13,6 +13,7 @@ import {
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import { InfoIcon } from '@filigran/icon';
 import {
   Checkbox,
@@ -51,8 +52,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo } from 'react';
 import { Control, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
-import { Button } from '@filigran/design-system';
-import { Button } from '@filigran/design-system';
 
 const TITLE_MAX_CHARS = 160;
 const SHORT_DESCRIPTION_MAX_CHARS = 215;

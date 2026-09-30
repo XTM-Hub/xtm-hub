@@ -19,6 +19,7 @@ import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
 import { cn } from '@/lib/utils';
 import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
 import { getPlatformIdentifier } from '@/utils/platform';
+import { Button } from '@filigran/design-system';
 import {
   InfoIcon,
   LogoFiligranIcon,
@@ -30,7 +31,6 @@ import { documentItem_fragment$data } from '@generated/documentItem_fragment.gra
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Button } from '@filigran/design-system';
 
 // Component interface
 interface ShareableResourceConnectorSlugProps {

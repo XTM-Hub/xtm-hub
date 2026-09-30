@@ -7,11 +7,11 @@ import {
 } from '@/components/registration/PlatformIdentifierMapping';
 import { UseTranslationsProps } from '@/i18n/config';
 import { APP_PATH, XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
+import { IconButton } from '@filigran/design-system';
 import { LinkIcon, TextSnippetIcon } from '@filigran/icon';
 import { Badge } from '@filigran/ui';
 import { PlatformContract } from '@graphql/generated';
 import Link from 'next/link';
-import { IconButton } from '@filigran/design-system';
 
 interface ConnectedProductItemProps {
   platform: ConnectedPlatform;

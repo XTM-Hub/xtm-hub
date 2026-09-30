@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/components/filigran-ui/lib/utils';
+import { Button } from '@filigran/design-system';
 import { ArrowDropDownIcon, CheckIcon, CloseIcon } from '@filigran/icon';
 import * as React from 'react';
 import {
@@ -12,7 +13,6 @@ import {
   CommandList,
 } from './Command';
 import { Popover, PopoverContent, PopoverTrigger } from './Popover';
-import { Button } from '@filigran/design-system';
 
 export interface ComboboxItem {
   value: string;
@@ -73,7 +73,14 @@ const Combobox = <T,>({
       onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          priority="secondary" role="combobox" aria-expanded={open} className={cn('normal-case w-full justify-between bg-input-bg-default border-none', className)} onClick={() => setOpen(!open)}>
+          priority="secondary"
+          role="combobox"
+          aria-expanded={open}
+          className={cn(
+            'normal-case w-full justify-between bg-input-bg-default border-none',
+            className
+          )}
+          onClick={() => setOpen(!open)}>
           {value ? (
             String(value[keyLabel as keyof T])
           ) : (
