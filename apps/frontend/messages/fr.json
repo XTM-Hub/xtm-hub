@@ -1634,7 +1634,7 @@
           },
           "NotLoggedIn": {
             "Title": "Vous devez être connecté pour pouvoir demander un essai.",
-            "Description": "Créez un compte XTM ou connectez-vous à un compte existant."
+            "Description": "Créez un compte XTM Hub ou connectez-vous à un compte existant."
           },
           "NotAdmin": {
             "Title": "Vous devez être administrateur de l'organisation pour demander un essai.",
