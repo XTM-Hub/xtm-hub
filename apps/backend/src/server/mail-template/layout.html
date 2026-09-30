@@ -50,12 +50,14 @@
       apart into stacked blocks) and never renders SVG. The class rules below
       only adjust paddings on small screens; a client ignoring them keeps the
       desktop layout.
+      Logos are PNGs with an opaque white background on purpose: dark modes
+      recolor the page and the text but never image pixels, and Gmail ignores
+      prefers-color-scheme, so a light / dark logo swap is not an option.
     -->
     <style>
       @media (max-width: 600px) {
-        .sm-my-8 {
+        .sm-pt-8 {
           padding-top: 32px !important;
-          padding-bottom: 32px !important;
         }
         .sm-px-4 {
           padding-left: 16px !important;
@@ -103,7 +105,8 @@
         <tr>
           <td
             align="center"
-            class="sm-px-4">
+            class="sm-px-4 sm-pt-8"
+            style="padding-top: 40px">
             <table
               role="presentation"
               width="552"
@@ -111,27 +114,6 @@
               cellspacing="0"
               border="0"
               style="width: 552px; max-width: 100%">
-              <tr>
-                <td
-                  align="center"
-                  class="sm-my-8"
-                  style="padding-top: 40px; padding-bottom: 40px">
-                  <a href="{{ base_url_front }}">
-                    <img
-                      src="{{ base_url_front }}/logo_xtm_hub_email.png"
-                      width="320"
-                      height="96"
-                      alt="XTM Hub"
-                      style="
-                        display: block;
-                        width: 320px;
-                        max-width: 100%;
-                        height: auto;
-                        border: 0;
-                      " />
-                  </a>
-                </td>
-              </tr>
               <tr>
                 <td
                   class="sm-px-6"
@@ -143,6 +125,36 @@
                     color: #00020c;
                     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
                   ">
+                  <table
+                    role="presentation"
+                    width="100%"
+                    cellpadding="0"
+                    cellspacing="0"
+                    border="0">
+                    <tr>
+                      <td
+                        align="center"
+                        style="padding-bottom: 32px">
+                        <a href="{{ base_url_front }}">
+                          <img
+                            src="{{ base_url_front }}/logo_xtm_hub_email.png"
+                            width="200"
+                            height="66"
+                            alt="XTM Hub by Filigran"
+                            style="
+                              display: block;
+                              width: 200px;
+                              max-width: 100%;
+                              height: auto;
+                              margin: 0 auto;
+                              border: 0;
+                              outline: none;
+                              text-decoration: none;
+                            " />
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
                   {{> @partial-block}}
                 </td>
               </tr>
@@ -224,9 +236,9 @@
                   </table>
                   <a href="https://filigran.io">
                     <img
-                      src="{{ base_url_front }}/logo-filigran.png"
+                      src="{{ base_url_front }}/logo_filigran_email_white.png"
                       width="100"
-                      height="25"
+                      height="28"
                       alt="Filigran logo"
                       style="display: inline-block; border: 0" />
                   </a>
