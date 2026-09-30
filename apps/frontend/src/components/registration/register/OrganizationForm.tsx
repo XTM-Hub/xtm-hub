@@ -6,11 +6,12 @@ import {
   FormLabel,
   FormMessage,
 } from '@filigran/ui/clients';
-import { Button, Input } from '@filigran/ui/servers';
+import { Input } from '@filigran/ui/servers';
 import { organizationListUserOrganizationsQuery$data } from '@generated/organizationListUserOrganizationsQuery.graphql';
 import { useTranslations } from 'next-intl';
 import { useContext } from 'react';
 import { z } from 'zod';
+import { Button } from '@filigran/design-system';
 
 interface RegisterOrganizationFormProps {
   userOrganizationsQueryData: organizationListUserOrganizationsQuery$data;
@@ -124,11 +125,9 @@ export const RegisterOrganizationForm = ({
           }}>
           <div className="flex justify-end gap-s">
             <Button
-              variant="secondary"
-              type="button"
-              onClick={() => {
-                cancel();
-              }}>
+              priority="secondary" type="button" onClick={() => {
+        cancel();
+    }}>
               {t('Utils.Cancel')}
             </Button>
 

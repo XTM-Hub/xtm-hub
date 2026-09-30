@@ -1,21 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
-import {
-  Button,
-  FileInput,
-  FileInputDropZone,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  SheetFooter,
-} from '@filigran/ui';
+import { FileInput, FileInputDropZone, Form, FormControl, FormField, FormItem, FormLabel, FormMessage, SheetFooter } from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { Button } from '@filigran/design-system';
 
 export const newPicturesSchema = z.object({
   illustration_document: z.custom<FileList>(),
@@ -103,9 +93,7 @@ export const ServiceForm = ({ handleSubmit }: ServiceFormProps) => {
 
           <SheetFooter className="pt-2">
             <Button
-              variant="secondary"
-              type="button"
-              onClick={(e) => handleCloseSheet(e)}>
+              priority="secondary" type="button" onClick={(e) => handleCloseSheet(e)}>
               {t('Utils.Cancel')}
             </Button>
             <Button type="submit">{t('Utils.Validate')}</Button>

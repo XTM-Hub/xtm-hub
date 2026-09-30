@@ -8,9 +8,10 @@ import {
 import { UseTranslationsProps } from '@/i18n/config';
 import { APP_PATH, XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
 import { LinkIcon, TextSnippetIcon } from '@filigran/icon';
-import { Badge, Button } from '@filigran/ui';
+import { Badge } from '@filigran/ui';
 import { PlatformContract } from '@graphql/generated';
 import Link from 'next/link';
+import { IconButton } from '@filigran/design-system';
 
 interface ConnectedProductItemProps {
   platform: ConnectedPlatform;
@@ -60,35 +61,31 @@ export const ConnectedProductItem = ({
       )}
       <div className="flex w-16 items-center justify-end gap-xs">
         {detailPath && (
-          <Button
-            variant="tertiary"
-            size="icon"
+          <IconButton
+            priority="tertiary"
             className="h-7 w-7 text-text-default-primary"
+            aria-label={t('Header.ConnectedProducts.Details')}
+            icon={<TextSnippetIcon className="h-4 w-4 shrink-0" />}
             asChild>
-            <Link
-              href={detailPath}
-              aria-label={t('Header.ConnectedProducts.Details')}>
-              <TextSnippetIcon className="h-4 w-4 shrink-0" />
-            </Link>
-          </Button>
+            <Link href={detailPath} />
+          </IconButton>
         )}
         {platform.url && (
-          <Button
-            variant="tertiary"
-            size="icon"
+          <IconButton
+            priority="tertiary"
             className="h-7 w-7 text-text-default-primary"
+            aria-label={t('Header.ConnectedProducts.GoToPlatform', {
+              title:
+                platform.title ?? platformMeta?.name ?? platform.identifier,
+            })}
+            icon={<LinkIcon className="h-4 w-4 shrink-0" />}
             asChild>
             <Link
               href={platform.url}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label={t('Header.ConnectedProducts.GoToPlatform', {
-                title:
-                  platform.title ?? platformMeta?.name ?? platform.identifier,
-              })}>
-              <LinkIcon className="h-4 w-4 shrink-0" />
-            </Link>
-          </Button>
+            />
+          </IconButton>
         )}
       </div>
     </div>

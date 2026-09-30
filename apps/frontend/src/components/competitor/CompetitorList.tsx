@@ -2,7 +2,7 @@
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { i18nKey } from '@/utils/datatable';
 import { DeleteIcon, EditIcon } from '@filigran/icon';
-import { Button, DataTable, DataTableHeadBarOptions } from '@filigran/ui';
+import { DataTable, DataTableHeadBarOptions } from '@filigran/ui';
 import { CompetitorTier } from '@graphql/generated';
 import { ColumnDef, SortingState, Updater } from '@tanstack/react-table';
 import { useTranslations } from 'next-intl';
@@ -39,6 +39,7 @@ import {
   competitor_fragment$key,
 } from '@generated/competitor_fragment.graphql';
 import { competitor_list_fragment$key } from '@generated/competitor_list_fragment.graphql';
+import { Button } from '@filigran/design-system';
 
 const CompetitorList = () => {
   const t = useTranslations();
@@ -116,13 +117,11 @@ const CompetitorList = () => {
         cell: ({ row }) => (
           <div className="flex items-center justify-end gap-s">
             <Button
-              variant="tertiary"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                setEditRow(row.original);
-                setOpenEdit(true);
-              }}>
+              priority="tertiary" size="sm" onClick={(e) => {
+        e.stopPropagation();
+        setEditRow(row.original);
+        setOpenEdit(true);
+    }}>
               <EditIcon className="h-4 w-4" />
               <span className="sr-only">{t('CompetitorListPage.Edit')}</span>
             </Button>
@@ -132,8 +131,7 @@ const CompetitorList = () => {
               variantName="destructive"
               triggerElement={
                 <Button
-                  variant="tertiary-destructive"
-                  size="sm">
+                  variant="destructive" priority="tertiary" size="sm">
                   <DeleteIcon className="h-4 w-4" />
                   <span className="sr-only">
                     {t('CompetitorListPage.Delete')}

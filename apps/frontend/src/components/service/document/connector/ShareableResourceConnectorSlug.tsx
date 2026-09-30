@@ -25,11 +25,11 @@ import {
   VerifiedIcon,
 } from '@filigran/icon';
 import { SimpleTooltip } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Button } from '@filigran/design-system';
 
 // Component interface
 interface ShareableResourceConnectorSlugProps {

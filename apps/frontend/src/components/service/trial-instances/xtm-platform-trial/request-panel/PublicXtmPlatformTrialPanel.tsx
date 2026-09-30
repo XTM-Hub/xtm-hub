@@ -1,9 +1,9 @@
 import { XtmPlatformTrialMessagePanel } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/XtmPlatformTrialMessagePanel';
 import { APP_PATH } from '@/utils/path/constant';
 import { buildOidcRedirect, buildSignupRedirect } from '@/utils/redirect';
-import { Button } from '@filigran/ui/servers';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { Button } from '@filigran/design-system';
 
 export const PublicXtmPlatformTrialPanel = async () => {
   const t = await getTranslations();
@@ -17,8 +17,7 @@ export const PublicXtmPlatformTrialPanel = async () => {
       actions={
         <>
           <Button
-            asChild
-            variant="secondary">
+            asChild priority="secondary">
             <Link
               href={buildOidcRedirect(redirectPath)}
               prefetch={false}>

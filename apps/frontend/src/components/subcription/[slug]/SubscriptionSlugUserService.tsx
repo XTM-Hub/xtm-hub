@@ -1,10 +1,10 @@
 import { UserServiceForm } from '@/components/service/[slug]/UserServiceForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
-import { Button } from '@filigran/ui';
 import { subscriptionByIdQuery$data } from '@generated/subscriptionByIdQuery.graphql';
 import { userServices_fragment$data } from '@generated/userServices_fragment.graphql';
 import { useTranslations } from 'next-intl';
 import { FunctionComponent, useState } from 'react';
+import { Button } from '@filigran/design-system';
 
 interface SubscriptionSlugUserServiceProps {
   connectionId: string;

@@ -1,7 +1,7 @@
 import { ArrowNextIcon, ArrowPreviousIcon } from '@filigran/icon';
-import { Button } from '@filigran/ui/servers';
 import { PaginationState } from '@tanstack/react-table';
 import { useTranslations } from 'next-intl';
+import { IconButton } from '@filigran/design-system';
 
 interface PaginationArrowButtonsProps {
   totalCount: number;
@@ -49,15 +49,14 @@ export const PaginationArrowButtons = ({
 
   return (
     <>
-      <Button
-        variant="tertiary"
-        size="icon"
+      <IconButton
+        priority="tertiary"
         className="h-9 w-9 rounded-none"
         onClick={() => previousPage()}
         disabled={!canGoToPreviousPage()}
-        aria-label={t('GenericActions.Paginate.PreviousPage')}>
-        <ArrowPreviousIcon className="size-3" />
-      </Button>
+        aria-label={t('GenericActions.Paginate.PreviousPage')}
+        icon={<ArrowPreviousIcon className="size-3" />}
+      />
       <div
         className="leading-none text-text-secondary txt-sub-content whitespace-nowrap text-center"
         style={{ width: counterWidth }}>
@@ -69,15 +68,14 @@ export const PaginationArrowButtons = ({
         {' / '}
         {totalCount}
       </div>
-      <Button
-        variant="tertiary"
-        size="icon"
+      <IconButton
+        priority="tertiary"
         className="h-9 w-9 rounded-none"
         onClick={() => nextPage()}
         disabled={!canGoToNextPage()}
-        aria-label={t('GenericActions.Paginate.NextPage')}>
-        <ArrowNextIcon className="size-3" />
-      </Button>
+        aria-label={t('GenericActions.Paginate.NextPage')}
+        icon={<ArrowNextIcon className="size-3" />}
+      />
     </>
   );
 };

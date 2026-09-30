@@ -1,9 +1,9 @@
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { IconActionsItem } from '@/components/ui/IconActions';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { Button } from '@filigran/ui';
 import { IntegrationType } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
+import { Button } from '@filigran/design-system';
 
 interface ServiceDeleteProps {
   userCanDelete?: boolean;
@@ -55,7 +55,7 @@ export const ServiceDelete = ({
               {t('Utils.Delete')}
             </IconActionsItem>
           ) : (
-            <Button variant={'secondary-destructive'}>
+            <Button variant="destructive" priority="secondary">
               {t('Utils.Delete')}
             </Button>
           )

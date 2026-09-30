@@ -4,17 +4,11 @@ import { ConnectedProductItem } from '@/components/connected-products/ConnectedP
 import { ConnectProductButton } from '@/components/connected-products/ConnectProductButton';
 import { useConnectedPlatforms } from '@/components/connected-products/useConnectedPlatforms';
 import { ArrowDropDownIcon } from '@filigran/icon';
-import {
-  Button,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@filigran/ui';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@filigran/ui';
 import { PlatformIdentifier } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { Button } from '@filigran/design-system';
 
 export const CONNECTABLE_PLATFORMS = [
   PlatformIdentifier.Opencti,
@@ -33,8 +27,7 @@ export const ConnectedProductsDropdown = () => {
       onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="tertiary"
-          className="flex flex-row items-center gap-xs text-primary font-medium">
+          priority="tertiary" className="flex flex-row items-center gap-xs text-primary font-medium">
           <span>
             {t('Header.ConnectedProducts.Count', {
               count: connectedPlatforms.length,
@@ -68,7 +61,7 @@ export const ConnectedProductsDropdown = () => {
         )}
         <div className="flex flex-col gap-s p-m">
           <ConnectProductButton
-            variant="tertiary"
+            priority="tertiary"
             onCloseDropdown={() => setOpen(false)}
           />
         </div>

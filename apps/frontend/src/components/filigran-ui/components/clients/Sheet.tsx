@@ -5,7 +5,7 @@ import { CloseIcon } from '@filigran/icon';
 import * as SheetPrimitive from '@radix-ui/react-dialog';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
-import { Button } from '../servers';
+import { IconButton } from '@filigran/design-system';
 
 const Sheet = SheetPrimitive.Root;
 
@@ -75,13 +75,12 @@ const SheetContent = React.forwardRef<
         </div>
         <SheetPrimitive.Close asChild>
           <div className="absolute right-3 top-0 z-10 flex h-16 items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-primary hover:bg-hover/50 focus:bg-hover/50">
-              <CloseIcon className="size-4" />
-              <span className="sr-only">{closeLabel}</span>
-            </Button>
+            <IconButton
+              priority="tertiary"
+              className="text-primary hover:bg-hover/50 focus:bg-hover/50"
+              aria-label={closeLabel}
+              icon={<CloseIcon className="size-4" />}
+            />
           </div>
         </SheetPrimitive.Close>
       </SheetPrimitive.Content>

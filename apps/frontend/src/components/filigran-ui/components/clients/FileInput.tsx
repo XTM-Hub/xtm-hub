@@ -11,7 +11,7 @@ import {
   type Ref,
 } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { Button } from '../servers';
+import { Button } from '@filigran/design-system';
 
 interface FileInputProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,

@@ -1,22 +1,9 @@
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Textarea,
-} from '@filigran/ui';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, Form, FormControl, FormField, FormItem, FormLabel, FormMessage, Textarea } from '@filigran/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
+import { Button } from '@filigran/design-system';
 
 interface ReachSalesDialogFormProps {
   isDialogOpen: boolean;
@@ -89,9 +76,7 @@ export const ReachSalesDialogForm = ({
         </Form>
         <DialogFooter className="justify-end gap-s">
           <Button
-            variant="outline"
-            type="button"
-            onClick={() => setIsDialogOpen(false)}>
+            priority="secondary" type="button" onClick={() => setIsDialogOpen(false)}>
             {t('Utils.Cancel')}
           </Button>
           <Button

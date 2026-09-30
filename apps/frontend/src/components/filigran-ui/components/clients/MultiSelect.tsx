@@ -20,7 +20,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '../clients';
-import { Badge, Button } from '../servers';
+import { Badge } from '../servers';
+import { Button } from '@filigran/design-system';
 
 const _multiSelectVariants = cva('', {
   variants: {

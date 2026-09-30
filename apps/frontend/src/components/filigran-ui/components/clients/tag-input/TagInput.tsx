@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Input } from '@/components/filigran-ui/components/servers';
+import { Input } from '@/components/filigran-ui/components/servers';
 import { cn, uuid } from '@/components/filigran-ui/lib/utils';
 import { type VariantProps } from 'class-variance-authority';
 import React, { useMemo } from 'react';
@@ -8,6 +8,7 @@ import { Autocomplete } from './Autocomplete';
 import { tagVariants } from './Tag';
 import { TagList } from './TagList';
 import { TagPopover } from './TagPopover';
+import { Button } from '@filigran/design-system';
 
 export enum Delimiter {
   Comma = ',',

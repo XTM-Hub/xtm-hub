@@ -11,22 +11,7 @@ import {
 } from '@/components/service/user_service.graphql';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useUsersList } from '@/hooks/use-users-list';
-import {
-  Button,
-  Checkbox,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  SheetFooter,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-  useToast,
-} from '@filigran/ui';
+import { Checkbox, Form, FormControl, FormField, FormItem, FormLabel, FormMessage, SheetFooter, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, useToast } from '@filigran/ui';
 import { MultiSelectFormField } from '@filigran/ui/clients';
 import { subscriptionByIdQuery$data } from '@generated/subscriptionByIdQuery.graphql';
 import { UserList_fragment$key } from '@generated/UserList_fragment.graphql';
@@ -39,6 +24,7 @@ import { useForm } from 'react-hook-form';
 import { readInlineData, useMutation } from 'react-relay';
 import { useDebounceCallback } from 'usehooks-ts';
 import { z } from 'zod';
+import { Button } from '@filigran/design-system';
 
 interface UserServiceFormProps {
   connectionId: string;
@@ -374,9 +360,7 @@ export const UserServiceForm = ({
 
         <SheetFooter className="pt-2">
           <Button
-            variant="secondary"
-            type="button"
-            onClick={(e) => handleCloseSheet(e)}>
+            priority="secondary" type="button" onClick={(e) => handleCloseSheet(e)}>
             {t('Utils.Cancel')}
           </Button>
           <Button type="submit">{t('Utils.Validate')}</Button>

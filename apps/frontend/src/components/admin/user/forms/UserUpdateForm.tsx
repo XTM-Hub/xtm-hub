@@ -8,17 +8,7 @@ import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import useAdminPath from '@/hooks/use-admin-path';
 import { isEmpty } from '@/lib/utils';
-import {
-  Button,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  SheetFooter,
-  toast,
-} from '@filigran/ui';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, SheetFooter, toast } from '@filigran/ui';
 import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
@@ -26,6 +16,7 @@ import { useContext } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'react-relay';
 import { z } from 'zod';
+import { Button } from '@filigran/design-system';
 
 interface UserUpdateFormProps {
   user: UserList_fragment$data;
@@ -115,9 +106,7 @@ export const UserUpdateForm = ({ user, callback }: UserUpdateFormProps) => {
           <RemoveUserFromOrga user={user} />
           <div className="flex gap-s">
             <Button
-              variant="secondary"
-              type="button"
-              onClick={(e) => handleCloseSheet(e)}>
+              priority="secondary" type="button" onClick={(e) => handleCloseSheet(e)}>
               {t('Utils.Cancel')}
             </Button>
             <Button

@@ -11,12 +11,12 @@ import {
   Separator,
   toast,
 } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useMutation } from 'react-relay';
 import { z } from 'zod';
+import { Button } from '@filigran/design-system';
 
 const formSchema = z.object({
   new_email: z.string().email('This is not a valid email.'),
@@ -86,8 +86,7 @@ export const RequestTransferPersonalSpace = () => {
             }}>
             <div className="mt-xl flex justify-end">
               <Button
-                variant={'destructive'}
-                aria-label={t('ProfilePage.PersonalSpace.TransferPersoSpace')}>
+                variant="destructive" aria-label={t('ProfilePage.PersonalSpace.TransferPersoSpace')}>
                 {t('ProfilePage.PersonalSpace.Transfer')}
               </Button>
             </div>

@@ -1,8 +1,9 @@
 import { TrialGuideResourceCardContent } from '@/components/service/trial-guide/TrialGuide.content';
 import { OpenInNewIcon } from '@filigran/icon';
-import { Button, Card, CardContent } from '@filigran/ui';
+import { Card, CardContent } from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { Button } from '@filigran/design-system';
 
 interface ResourceCardProps {
   resourceCard: TrialGuideResourceCardContent;
@@ -23,8 +24,7 @@ export const TrialGuideResourceCard = ({ resourceCard }: ResourceCardProps) => {
         {url && (
           <div>
             <Button
-              asChild
-              variant="tertiary">
+              asChild priority="tertiary">
               <Link
                 href={url}
                 target="_blank"

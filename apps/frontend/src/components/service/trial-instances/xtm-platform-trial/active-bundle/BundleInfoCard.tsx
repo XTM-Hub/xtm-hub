@@ -4,7 +4,7 @@ import { CONTRACT_LABEL_BY_CONTRACT } from '@/components/registration/PlatformId
 import { BundleCancelSheet } from '@/components/service/trial-instances/xtm-platform-trial/shared/BundleCancelSheet';
 import { daysUntil, useDateFormatter } from '@/utils/date';
 import { xtmPlatformTrialManageUsersPath } from '@/utils/path/constant';
-import { Badge, Button, Card, CardContent } from '@filigran/ui';
+import { Badge, Card, CardContent } from '@filigran/ui';
 import {
   PlatformContract,
   XtmPlatformBundleDetailsFragment,
@@ -12,6 +12,7 @@ import {
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState } from 'react';
+import { Button } from '@filigran/design-system';
 
 interface BundleInfoCardProps {
   bundle: XtmPlatformBundleDetailsFragment;
@@ -80,8 +81,7 @@ export const BundleInfoCard = ({ bundle, canManage }: BundleInfoCardProps) => {
         {canManage && (
           <div className="flex flex-wrap items-center justify-end gap-s mt-auto">
             <Button
-              variant="outline-destructive"
-              onClick={() => setOpenCancel(true)}>
+              variant="destructive" priority="secondary" onClick={() => setOpenCancel(true)}>
               {t('XtmPlatformTrial.CancelTrial')}
             </Button>
             <Button asChild>

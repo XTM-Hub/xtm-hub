@@ -9,18 +9,7 @@ import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { cn, isEmpty } from '@/lib/utils';
 import { DeleteIcon } from '@filigran/icon';
-import {
-  Button,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Input,
-  SheetFooter,
-  toast,
-} from '@filigran/ui';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, Input, SheetFooter, toast } from '@filigran/ui';
 import { Label } from '@filigran/ui/clients';
 import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -29,6 +18,7 @@ import { useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { graphql, useMutation } from 'react-relay';
 import { z } from 'zod';
+import { Button, IconButton } from '@filigran/design-system';
 
 interface AdminUserUpdateFormProps {
   user: UserList_fragment$data;
@@ -225,13 +215,13 @@ export const AdminUserUpdateForm = ({
                             onChange={formField.onChange}
                           />
                         </FormControl>
-                        <Button
+                        <IconButton
                           type="button"
-                          variant="tertiary"
-                          size="icon"
-                          onClick={() => remove(index)}>
-                          <DeleteIcon className="h-4 w-4" />
-                        </Button>
+                          priority="tertiary"
+                          aria-label={t('MenuActions.Remove')}
+                          icon={<DeleteIcon className="h-4 w-4" />}
+                          onClick={() => remove(index)}
+                        />
                       </div>
                       <FormMessage />
                     </FormItem>
@@ -245,8 +235,7 @@ export const AdminUserUpdateForm = ({
         <SheetFooter className="justify-between sm:justify-between pb-0">
           {user.disabled ? (
             <Button
-              variant="secondary"
-              onClick={() => disableUser({ disabled: false })}>
+              priority="secondary" onClick={() => disableUser({ disabled: false })}>
               {t('UserActions.Enable')}
             </Button>
           ) : (
@@ -255,7 +244,7 @@ export const AdminUserUpdateForm = ({
               actionButtonText={t('MenuActions.Disable')}
               variantName={'destructive'}
               triggerElement={
-                <Button variant="secondary-destructive">
+                <Button variant="destructive" priority="secondary">
                   {t('UserActions.Disable')}
                 </Button>
               }
@@ -267,9 +256,7 @@ export const AdminUserUpdateForm = ({
           )}
           <div className="flex gap-s">
             <Button
-              variant="secondary"
-              type="button"
-              onClick={(e) => handleCloseSheet(e)}>
+              priority="secondary" type="button" onClick={(e) => handleCloseSheet(e)}>
               {t('Utils.Cancel')}
             </Button>
             <Button

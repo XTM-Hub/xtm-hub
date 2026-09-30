@@ -12,20 +12,7 @@ import { subscription_fragment$data } from '@generated/subscription_fragment.gra
 import { useSubscriptionDefaultValues } from './use-subscription-default-values';
 
 import { DEBOUNCE_TIME } from '@/utils/constant';
-import {
-  Button,
-  Checkbox,
-  DatePicker,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  MultiSelectFormField,
-  SheetFooter,
-  useToast,
-} from '@filigran/ui';
+import { Checkbox, DatePicker, Form, FormControl, FormField, FormItem, FormLabel, FormMessage, MultiSelectFormField, SheetFooter, useToast } from '@filigran/ui';
 import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { subscriptionInServiceUpdateMutation } from '@generated/subscriptionInServiceUpdateMutation.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -35,6 +22,7 @@ import { useForm } from 'react-hook-form';
 import { useMutation } from 'react-relay';
 import { useDebounceCallback } from 'usehooks-ts';
 import { z } from 'zod';
+import { Button } from '@filigran/design-system';
 
 interface ServiceSlugAddOrgaFormSheetProps {
   serviceInstance: serviceInstanceForSubscriptions_fragment$data;
@@ -301,9 +289,7 @@ export const ServiceSlugOrgaForm = ({
 
           <SheetFooter className="pt-2">
             <Button
-              variant="secondary"
-              type="button"
-              onClick={(e) => handleCloseSheet(e)}>
+              priority="secondary" type="button" onClick={(e) => handleCloseSheet(e)}>
               {t('Utils.Cancel')}
             </Button>
             <Button

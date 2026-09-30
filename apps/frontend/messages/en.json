@@ -106,6 +106,8 @@
   },
   "Datatable": {
     "Asc": "Asc",
+    "ClearSelection": "Clear selection",
+    "ColumnOptions": "Column options",
     "Columns": "Columns",
     "Desc": "Desc",
     "GoFirstPage": "Go to first page",
@@ -804,6 +806,8 @@
   },
   "PendingUserListPage": {
     "TabTitle": "Users Requests ({usersCount})",
+    "Reject": "Reject",
+    "Approve": "Approve",
     "ActionSuccessApprove": "User request for {email} has been approved",
     "ActionSuccessDeny": "User request for {email} has been denied",
     "WarningUserAccept": {
@@ -1151,6 +1155,7 @@
     },
     "CreationStatus": "Creation status",
     "Form": {
+      "AddImage": "Add image",
       "Author": "Author",
       "CapabilityAccessLabel": "{name} access: {description}",
       "ContainerImageLabel": "Container image",

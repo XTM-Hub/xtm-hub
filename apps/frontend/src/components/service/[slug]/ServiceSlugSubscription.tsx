@@ -1,11 +1,11 @@
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import useAdminPath from '@/hooks/use-admin-path';
-import { Button } from '@filigran/ui';
 import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
 import { useTranslations } from 'next-intl';
 import { FunctionComponent, useState } from 'react';
 import { ServiceSlugOrgaForm } from './ServiceSlugOrgaForm';
+import { Button } from '@filigran/design-system';
 
 interface ServiceSlugAddSubscriptionActionProps {
   serviceInstance: serviceInstanceForSubscriptions_fragment$data;

@@ -2,17 +2,10 @@
 
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { EditIcon } from '@filigran/icon';
-import {
-  Avatar,
-  Button,
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@filigran/ui';
+import { Avatar, Card, CardContent, CardFooter, CardHeader, CardTitle } from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 import React, { useContext, useRef, useState } from 'react';
+import { Button } from '@filigran/design-system';
 
 interface ProfileFormPictureProps {
   onSubmit: (files: (File | null)[]) => void;
@@ -70,11 +63,7 @@ export const ProfileFormPicture = ({ onSubmit }: ProfileFormPictureProps) => {
       </CardContent>
       <CardFooter className="flex justify-between">
         <Button
-          variant="tertiary"
-          aria-label={t('Utils.Edit')}
-          size="sm"
-          className="ml-s gap-s"
-          onClick={() => inputRef.current?.click()}>
+          priority="tertiary" aria-label={t('Utils.Edit')} size="sm" className="ml-s gap-s" onClick={() => inputRef.current?.click()}>
           <EditIcon className="h-4 w-4" />
           <span>{t('Utils.Edit')}</span>
         </Button>

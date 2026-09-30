@@ -1,18 +1,9 @@
 'use client';
 
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-  Button,
-} from '@filigran/ui';
+import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
+import { Button } from '@filigran/design-system';
 
 const FileInputWithPrevent = ({
   texts,

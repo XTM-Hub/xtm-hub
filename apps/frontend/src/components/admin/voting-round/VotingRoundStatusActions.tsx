@@ -2,7 +2,7 @@
 
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { Button, toast } from '@filigran/ui';
+import { toast } from '@filigran/ui';
 import {
   useVotingRoundSetStatusMutation,
   VotingRoundStatus,
@@ -10,6 +10,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { invalidateVotingRoundQueries } from './voting-round-query-invalidation';
+import { Button } from '@filigran/design-system';
 
 interface VotingRoundStatusActionsProps {
   roundId: string;
@@ -56,8 +57,7 @@ export const VotingRoundStatusActions = ({
         actionButtonText={t('VotingRound.Actions.Close')}
         triggerElement={
           <Button
-            variant="secondary"
-            disabled={isPending}>
+            priority="secondary" disabled={isPending}>
             {t('VotingRound.Actions.Close')}
           </Button>
         }

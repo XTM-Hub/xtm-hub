@@ -17,12 +17,12 @@ import {
 } from '@/utils/platform';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { AlertDialog, AlertDialogContent, SimpleTooltip } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { OneClickDeployMutation as OneClickDeployMutationType } from '@generated/OneClickDeployMutation.graphql';
 import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
 import { graphql, useMutation } from 'react-relay';
+import { Button } from '@filigran/design-system';
 
 interface OneClickDeployProps {
   documentData: documentItem_fragment$data;

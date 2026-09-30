@@ -16,18 +16,10 @@ import {
   setCategoryConsent,
 } from '@/components/cookie-consent/cookie-consent.utils';
 import { useConsent } from '@/components/cookie-consent/CookieConsentProvider';
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Switch,
-} from '@filigran/ui';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Switch } from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { Button } from '@filigran/design-system';
 
 const VISIBLE_CATEGORIES = CONSENT_CATEGORIES.filter(
   (category) => CONSENT_REGISTRY[category].services.length > 0
@@ -107,9 +99,9 @@ export const CookieConsentPreferences = () => {
                     </span>
                     {services.length > 0 ? (
                       <Button
-                        variant="link"
+                        priority="tertiary"
                         onClick={() => toggleDrawer(category)}
-                        className="h-auto justify-start p-0 body-compact">
+                        className="h-auto justify-start p-0 underline body-compact">
                         {t('ManageServices', { count: services.length })}
                       </Button>
                     ) : null}

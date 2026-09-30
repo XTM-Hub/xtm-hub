@@ -2,12 +2,13 @@ import { getUserListContext } from '@/components/admin/user/UserListPage';
 import { UserAdminForm } from '@/components/admin/user/forms/admin/UserAdminForm';
 import { userAdminFormSchema } from '@/components/admin/user/forms/user-form.schema';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
-import { Button, useToast } from '@filigran/ui';
+import { useToast } from '@filigran/ui';
 import { AdminAddUserMutation as AdminAddUserMutationType } from '@generated/AdminAddUserMutation.graphql';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { graphql, useMutation } from 'react-relay';
 import { z } from 'zod';
+import { Button } from '@filigran/design-system';
 
 export const AdminAddUserMutation = graphql`
   mutation AdminAddUserMutation(

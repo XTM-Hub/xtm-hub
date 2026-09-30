@@ -6,9 +6,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
 import { IntegrationType } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
+import { Button } from '@filigran/design-system';
 
 interface ServiceListIntegrationDropdownProps {
   onIntegrationTypeSelect: (integrationType: IntegrationType) => void;

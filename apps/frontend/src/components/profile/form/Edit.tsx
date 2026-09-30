@@ -2,21 +2,11 @@
 
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { CountryCombobox } from '@/components/ui/country/Combobox';
-import {
-  AutoForm,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  FormControl,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@filigran/ui';
+import { AutoForm, Card, CardContent, CardHeader, CardTitle, FormControl, FormItem, FormLabel, FormMessage } from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 import { useContext } from 'react';
 import { z } from 'zod';
+import { Button } from '@filigran/design-system';
 
 const formSchema = z.object({
   first_name: z.string().optional(),

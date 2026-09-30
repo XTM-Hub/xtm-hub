@@ -9,23 +9,7 @@ import { useServiceListLocalStorageKeyContext } from '@/components/service/compo
 import { useSolutionCategories } from '@/components/service/form/UseSolutionCategories';
 import { availableIntegrationTypes } from '@/components/service/integrations/Integration.utils';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
-import {
-  AutoForm,
-  Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  FormControl,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Label,
-  MultiSelectFormField,
-  toast,
-} from '@filigran/ui';
+import { AutoForm, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, FormControl, FormItem, FormLabel, FormMessage, Label, MultiSelectFormField, toast } from '@filigran/ui';
 import {
   FiligranProduct,
   IntegrationType,
@@ -35,6 +19,7 @@ import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 import { z } from 'zod';
+import { Button } from '@filigran/design-system';
 
 interface IntegrationsCsvExportDialogProps {
   open: boolean;
@@ -402,10 +387,7 @@ export const IntegrationsCsvExportDialog = ({
           }}>
           <DialogFooter>
             <Button
-              type="button"
-              variant="tertiary"
-              disabled={isExporting}
-              onClick={resetAndClose}>
+              type="button" priority="tertiary" disabled={isExporting} onClick={resetAndClose}>
               {t('Utils.Cancel')}
             </Button>
             <Button

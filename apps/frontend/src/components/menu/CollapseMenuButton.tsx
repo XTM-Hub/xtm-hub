@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 import { LeftPanelCloseIcon, LeftPanelOpenIcon } from '@filigran/icon';
-import { Button } from '@filigran/ui';
 import { useTranslations } from 'next-intl';
+import { Button } from '@filigran/design-system';
 
 interface CollapseMenuButtonProps {
   open: boolean;
@@ -16,10 +16,7 @@ export const CollapseMenuButton = ({
   return (
     <div className="shrink-0 pb-s">
       <Button
-        variant="tertiary"
-        aria-label={t('App.CollapseSidebar')}
-        className="h-9 px-m w-full justify-start rounded-none text-foreground"
-        onClick={handleOpenMenu}>
+        priority="tertiary" aria-label={t('App.CollapseSidebar')} className="h-9 px-m w-full justify-start rounded-none text-foreground" onClick={handleOpenMenu}>
         <span className="flex w-8 shrink-0 justify-center">
           <span className="relative h-6 w-6">
             <LeftPanelCloseIcon

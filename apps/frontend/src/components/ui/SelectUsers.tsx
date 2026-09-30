@@ -19,7 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/ui/clients';
-import { Badge, Button } from '@filigran/ui/servers';
+import { Badge } from '@filigran/ui/servers';
 import { UserList_fragment$key } from '@generated/UserList_fragment.graphql';
 import { useTranslations } from 'next-intl';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
@@ -27,6 +27,7 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useUsersList } from '@/hooks/use-users-list';
 import { readInlineData } from 'react-relay';
 import { useDebounceCallback } from 'usehooks-ts';
+import { Button } from '@filigran/design-system';
 
 interface SelectUsersFormFieldProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   defaultValue?: string;

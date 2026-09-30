@@ -1,15 +1,7 @@
-import {
-  Button,
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@filigran/ui';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 import { ReactNode } from 'react';
+import { Button } from '@filigran/design-system';
 
 interface DialogInformativeProps {
   isOpen: boolean;
@@ -35,6 +27,7 @@ export const DialogInformative = ({
   showFooter = true,
 }: DialogInformativeProps) => {
   const t = useTranslations();
+  const priority = variant === 'default' ? 'primary' : 'secondary';
 
   return (
     <Dialog
@@ -60,7 +53,7 @@ export const DialogInformative = ({
               <Button
                 className="mt-2 hover:cursor-pointer"
                 type="button"
-                variant={variant}
+                priority={priority}
                 onClick={onButtonClick ?? onClose}>
                 {t(buttonText)}
               </Button>

@@ -9,20 +9,7 @@ import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { TranslatableEnumSelectField } from '@/components/ui/TranslatableEnumSelectField';
 import { cn } from '@/lib/utils';
 import { WarningIcon } from '@filigran/icon';
-import {
-  Button,
-  Checkbox,
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@filigran/ui';
+import { Checkbox, Form, FormField, FormItem, FormLabel, FormMessage, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@filigran/ui';
 import {
   DeploymentRequestActivitySector,
   DeploymentRequestJobTitle,
@@ -35,6 +22,7 @@ import Link from 'next/link';
 import { ReactNode, useContext, useMemo, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { Button } from '@filigran/design-system';
 
 const buildXtmPlatformTrialFormSchema = (t: (key: string) => string) =>
   z.object({

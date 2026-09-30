@@ -1,21 +1,11 @@
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
-import {
-  Button,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Input,
-  MultiSelectFormField,
-  SheetFooter,
-} from '@filigran/ui';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, Input, MultiSelectFormField, SheetFooter } from '@filigran/ui';
 import { FiligranProduct } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { Button } from '@filigran/design-system';
 
 const productValues = Object.values(FiligranProduct) as [
   FiligranProduct,
@@ -113,7 +103,7 @@ const SolutionCategoryForm = ({
               actionButtonText={t('MenuActions.Delete')}
               variantName="destructive"
               triggerElement={
-                <Button variant="secondary-destructive">
+                <Button variant="destructive" priority="secondary">
                   {t('MenuActions.Delete')}
                 </Button>
               }
@@ -125,9 +115,7 @@ const SolutionCategoryForm = ({
           )}
           <div className="flex gap-s">
             <Button
-              variant="secondary"
-              type="button"
-              onClick={onClose}>
+              priority="secondary" type="button" onClick={onClose}>
               {t('Utils.Cancel')}
             </Button>
             <Button

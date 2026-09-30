@@ -3,15 +3,7 @@ import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { isEmpty } from '@/lib/utils';
-import {
-  Button,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  SheetFooter,
-} from '@filigran/ui';
+import { Form, FormControl, FormField, FormItem, FormLabel, SheetFooter } from '@filigran/ui';
 import { toast } from '@filigran/ui/clients';
 import { Input } from '@filigran/ui/servers';
 import { trialsQuotasKeys } from '@graphql/deployment/deployment.keys';
@@ -26,6 +18,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { Button } from '@filigran/design-system';
 
 interface TrialsTabQuotasPlatformUpdateFormProps {
   quota: TrialsQuotaFragment;
@@ -123,9 +116,7 @@ export const TrialsTabQuotasPlatformUpdateForm = ({
           <SheetFooter className="justify-end pb-0">
             <div className="flex gap-s">
               <Button
-                variant="secondary"
-                type="button"
-                onClick={(e) => handleCloseSheet(e)}>
+                priority="secondary" type="button" onClick={(e) => handleCloseSheet(e)}>
                 {t('Utils.Cancel')}
               </Button>
               <AlertDialogComponent

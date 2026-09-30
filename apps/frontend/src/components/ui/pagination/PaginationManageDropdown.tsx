@@ -10,9 +10,9 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
+import { IconButton } from '@filigran/design-system';
 
 interface PaginationManageDropdownProps {
   pageSize: number;
@@ -37,13 +37,12 @@ export const PaginationManageDropdown = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="tertiary"
-          size="icon"
+        <IconButton
+          priority="tertiary"
           className="h-9 w-9 rounded-none"
-          aria-label={t('GenericActions.Paginate.Manage')}>
-          <TableTuneIcon className="h-[1.125rem] w-[1.125rem]" />
-        </Button>
+          aria-label={t('GenericActions.Paginate.Manage')}
+          icon={<TableTuneIcon className="h-[1.125rem] w-[1.125rem]" />}
+        />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuSub>
