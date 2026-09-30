@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  chunk,
   getNestedPropertyValue,
   isEmptyField,
   isImgUrl,
@@ -12,6 +13,28 @@ import {
 } from './utils';
 
 describe('utils', () => {
+  describe('chunk', () => {
+    it.each`
+      items        | size | expected
+      ${[]}        | ${2} | ${[]}
+      ${[1, 2, 3]} | ${2} | ${[[1, 2], [3]]}
+      ${[1, 2]}    | ${2} | ${[[1, 2]]}
+      ${[1, 2]}    | ${5} | ${[[1, 2]]}
+    `(
+      'should split $items into chunks of $size',
+      ({ items, size, expected }) => {
+        expect(chunk(items, size)).toEqual(expected);
+      }
+    );
+
+    it.each([0, -1, 1.5, Number.NaN])(
+      'should reject the invalid chunk size %s',
+      (size) => {
+        expect(() => chunk([1, 2, 3], size)).toThrow(RangeError);
+      }
+    );
+  });
+
   describe('isNil', () => {
     it.each`
       input        | expected

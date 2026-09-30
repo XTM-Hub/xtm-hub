@@ -1,9 +1,17 @@
-import { AuthenticationClient, ManagementClient } from 'auth0';
+import { AuthenticationClient, Management, ManagementClient } from 'auth0';
 import config from 'config';
 import { OrganizationId } from '../../model/kanel/public/Organization';
 import { OrganizationDomain } from '../../modules/organization-management/organization/organization.domain';
 import { logApp } from '../../utils/app-logger.util';
-import { buildUserMetadataUpdate } from './auth0.util';
+import { chunk } from '../../utils/utils';
+import {
+  EMAILS_PER_LOOKUP,
+  USERS_LIST_PAGE_SIZE,
+  buildEmailsQuery,
+  buildUserMetadataUpdate,
+  groupAccountsByEmail,
+  withRateLimitRetry,
+} from './auth0.util';
 import {
   Auth0Client,
   Auth0UpdateUser,
@@ -11,6 +19,8 @@ import {
 } from './client';
 
 const CONNECTION_TYPE = 'Username-Password-Authentication';
+// Retries on 429 are handled by withRateLimitRetry (waits for x-ratelimit-reset).
+const NO_SDK_RETRY = { maxRetries: 0 };
 
 interface ClientConfiguration {
   domain: string;
@@ -48,11 +58,12 @@ export const auth0ClientImplementation: Auth0Client = {
   },
   updateUserRBACInstance: async (
     email: string,
-    userRBACInstance: Auth0UpdateUserRBACInstance
+    userRBACInstance: Auth0UpdateUserRBACInstance,
+    prefetchedAuth0Users?: Management.UserResponseSchema[]
   ): Promise<void> => {
-    const auth0_users = await managementClient.users.listUsersByEmail({
-      email,
-    });
+    const auth0_users =
+      prefetchedAuth0Users ??
+      (await managementClient.users.listUsersByEmail({ email }));
     if (auth0_users.length === 0) {
       throw new Error('AUTH0_USER_NOT_FOUND_ERROR');
     }
@@ -60,12 +71,49 @@ export const auth0ClientImplementation: Auth0Client = {
     await Promise.all(
       auth0_users.map(async (auth0_user) => {
         if (!auth0_user.user_id) return;
-        await managementClient.users.update(
-          auth0_user.user_id,
-          buildUserMetadataUpdate(auth0_user, userRBACInstance)
-        );
+        const userId = auth0_user.user_id;
+        const update = buildUserMetadataUpdate(auth0_user, userRBACInstance);
+        if (prefetchedAuth0Users) {
+          await withRateLimitRetry(() =>
+            managementClient.users.update(userId, update, NO_SDK_RETRY)
+          );
+          return;
+        }
+        await managementClient.users.update(userId, update);
       })
     );
+  },
+  getUsersByEmails: async (
+    emails: string[]
+  ): Promise<Map<string, Management.UserResponseSchema[]>> => {
+    const accounts: Management.UserResponseSchema[] = [];
+    const uniqueEmails = [...new Set(emails.map((e) => e.toLowerCase()))];
+
+    for (const emailsChunk of chunk(uniqueEmails, EMAILS_PER_LOOKUP)) {
+      const page = await withRateLimitRetry(() =>
+        managementClient.users.list(
+          {
+            q: buildEmailsQuery(emailsChunk),
+            search_engine: 'v3',
+            per_page: USERS_LIST_PAGE_SIZE,
+            fields: 'user_id,email,last_password_reset,user_metadata',
+            include_fields: true,
+          },
+          NO_SDK_RETRY
+        )
+      );
+      const remaining = page.rawResponse.headers?.get('x-ratelimit-remaining');
+      if (remaining) {
+        logApp.debug('Auth0 rate limit after users lookup', { remaining });
+      }
+      accounts.push(...page.data);
+      while (page.hasNextPage()) {
+        await withRateLimitRetry(() => page.getNextPage());
+        accounts.push(...page.data);
+      }
+    }
+
+    return groupAccountsByEmail(accounts);
   },
   resetPassword: async (email: string): Promise<void> => {
     await authenticationClient.database.changePassword({
