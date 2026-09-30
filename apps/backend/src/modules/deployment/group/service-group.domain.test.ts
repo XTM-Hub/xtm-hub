@@ -436,7 +436,7 @@ describe('serviceGroupDomain', () => {
     });
   });
 
-  describe('loadUserServiceGroupsWithDeployment', () => {
+  describe('loadUserDeploymentRequestsWithGroupName', () => {
     const createdBundleIds: DeploymentRequestId[] = [];
 
     afterEach(async () => {
@@ -447,9 +447,10 @@ describe('serviceGroupDomain', () => {
     });
 
     it('should return empty array when the user has no service group grant', async () => {
-      const rows = await ServiceGroupDomain.loadUserServiceGroupsWithDeployment(
-        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.ID
-      );
+      const rows =
+        await ServiceGroupDomain.loadUserDeploymentRequestsWithGroupName(
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.ID
+        );
 
       expect(rows).toEqual([]);
     });
@@ -458,8 +459,14 @@ describe('serviceGroupDomain', () => {
       const { bundle, children } =
         await TestHelper.deploymentRequest.createBundle({
           children: [
-            { platform_identifier: PlatformIdentifier.Opencti },
-            { platform_identifier: PlatformIdentifier.Xtmone },
+            {
+              platform_identifier: PlatformIdentifier.Opencti,
+              hub_status: DeploymentRequestHubStatus.Active,
+            },
+            {
+              platform_identifier: PlatformIdentifier.Xtmone,
+              hub_status: DeploymentRequestHubStatus.Active,
+            },
           ],
         });
       createdBundleIds.push(bundle.id);
@@ -485,9 +492,10 @@ describe('serviceGroupDomain', () => {
         group_id: xtmoneGroupId,
       });
 
-      const rows = await ServiceGroupDomain.loadUserServiceGroupsWithDeployment(
-        TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE.ID
-      );
+      const rows =
+        await ServiceGroupDomain.loadUserDeploymentRequestsWithGroupName(
+          TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE.ID
+        );
 
       const sortedRows = [...rows].sort((left, right) =>
         left.group_name.localeCompare(right.group_name)
@@ -505,5 +513,59 @@ describe('serviceGroupDomain', () => {
         },
       ]);
     });
+
+    it.each([
+      DeploymentRequestHubStatus.Expired,
+      DeploymentRequestHubStatus.Cancelled,
+    ])(
+      'should exclude the grants when the deployment request is %s',
+      async (hubStatus) => {
+        const { bundle, children } =
+          await TestHelper.deploymentRequest.createBundle({
+            children: [
+              {
+                platform_identifier: PlatformIdentifier.Opencti,
+                hub_status: DeploymentRequestHubStatus.Active,
+              },
+              {
+                platform_identifier: PlatformIdentifier.Xtmone,
+                hub_status: hubStatus,
+              },
+            ],
+          });
+        createdBundleIds.push(bundle.id);
+        const [openctiChild, xtmoneChild] = children;
+        const openctiGroupId = uuidv4() as ServiceGroupId;
+        const xtmoneGroupId = uuidv4() as ServiceGroupId;
+        await TestHelper.serviceGroup.create({
+          id: openctiGroupId,
+          name: 'Admin',
+          service_instance_id: openctiChild!.service_instance_id,
+        });
+        await TestHelper.serviceGroup.create({
+          id: xtmoneGroupId,
+          name: 'User',
+          service_instance_id: xtmoneChild!.service_instance_id,
+        });
+        await TestHelper.serviceGroupUser.create({
+          user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE.ID,
+          group_id: openctiGroupId,
+        });
+        await TestHelper.serviceGroupUser.create({
+          user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE.ID,
+          group_id: xtmoneGroupId,
+        });
+
+        const rows =
+          await ServiceGroupDomain.loadUserDeploymentRequestsWithGroupName(
+            TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE.ID
+          );
+
+        expect(rows).toMatchObject([
+          { id: openctiChild!.id, group_name: 'Admin' },
+        ]);
+        expect(rows).toHaveLength(1);
+      }
+    );
   });
 });

@@ -461,43 +461,27 @@ export const ServiceGroupApp = {
     }
   },
 
-  grantUserAccess: async (userId: UserId): Promise<boolean> => {
+  grantUserAccess: async (user: User): Promise<void> => {
     const deploymentRequestsWithGroupName =
-      await ServiceGroupDomain.loadUserServiceGroupsWithDeployment(userId);
+      await ServiceGroupDomain.loadUserDeploymentRequestsWithGroupName(user.id);
+    // Nothing to grant (e.g. every bundle has expired): not a failure.
     if (deploymentRequestsWithGroupName.length === 0) {
-      return true;
+      return;
     }
 
-    const { users, emailByUserId } = await ServiceGroupHelper.loadEmailByUserId(
-      [userId]
+    await ServiceGroupHelper.syncAuth0GroupsForChildren(
+      deploymentRequestsWithGroupName.map((deploymentRequest) => ({
+        child: deploymentRequest,
+        groupNames: [deploymentRequest.group_name],
+      })),
+      [user.id],
+      new Map([[user.id, user.email]])
     );
-    const [user] = users;
-    if (!user) {
-      return true;
-    }
-
-    try {
-      await ServiceGroupHelper.syncAuth0GroupsForChildren(
-        deploymentRequestsWithGroupName.map((deploymentRequest) => ({
-          child: deploymentRequest,
-          groupNames: [deploymentRequest.group_name],
-        })),
-        [userId],
-        emailByUserId
-      );
-    } catch (error) {
-      logApp.error('Unable to sync Auth0 groups for reactivated user', {
-        userId,
-        error,
-      });
-      return false;
-    }
 
     await ServiceGroupHelper.sendBundleWelcomeEmailsForGrant(
       deploymentRequestsWithGroupName,
       user
     );
-    return true;
   },
 
   grantAccessIfWaiting: async (user: UserLoadUserBy): Promise<void> => {
@@ -506,10 +490,7 @@ export const ServiceGroupApp = {
     }
 
     try {
-      const granted = await ServiceGroupApp.grantUserAccess(user.id);
-      if (!granted) {
-        return;
-      }
+      await ServiceGroupApp.grantUserAccess(user);
       await UserDomain.updateUser(user.id, { status: null });
       user.status = null;
     } catch (error) {

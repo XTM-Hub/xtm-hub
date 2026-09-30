@@ -213,7 +213,7 @@ export const ServiceGroupDomain = {
       );
   },
 
-  loadUserServiceGroupsWithDeployment: async (
+  loadUserDeploymentRequestsWithGroupName: async (
     userId: UserId
   ): Promise<DeploymentRequestWithServiceGroupName[]> => {
     return db<DeploymentRequestWithServiceGroupName>('ServiceGroup_User')
@@ -230,6 +230,11 @@ export const ServiceGroupDomain = {
         'ServiceGroup.service_instance_id'
       )
       .where('ServiceGroup_User.user_id', '=', userId)
+      .where(
+        'DeploymentRequest.hub_status',
+        '=',
+        DeploymentRequestHubStatus.Active
+      )
       .select('DeploymentRequest.*', 'ServiceGroup.name as group_name');
   },
 

@@ -28,6 +28,7 @@ import { requestContext } from '../../../context/request.context';
 import { DeploymentRequestId } from '../../../model/kanel/public/DeploymentRequest';
 import { ServiceGroupId } from '../../../model/kanel/public/ServiceGroup';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
+import User, { UserId } from '../../../model/kanel/public/User';
 import type { UserLoadUserBy } from '../../../model/user';
 import * as mailService from '../../../server/mail-service';
 import { auth0ClientMock } from '../../../thirdparty/auth0/mock';
@@ -40,6 +41,11 @@ import { ServiceInstanceDomain } from '../../service/instance/service-instance.d
 import { TelemetryApp } from '../../telemetry/telemetry.app';
 import { TelemetryEventType } from '../../telemetry/telemetry.types';
 import { ServiceGroupApp } from './service-group.app';
+
+const loadUser = async (userId: UserId): Promise<User> => {
+  const [user] = await UserDomain.loadUsers([userId]);
+  return user!;
+};
 
 describe('serviceGroupApp', () => {
   const adminGroupId = uuidv4() as ServiceGroupId;
@@ -1713,14 +1719,14 @@ describe('serviceGroupApp', () => {
       // Given
       const auth0Spy = vi.spyOn(auth0ClientMock, 'updateUserRBACInstance');
       const sendMailSpy = vi.spyOn(mailService, 'sendMail');
-
-      // When
-      const granted = await ServiceGroupApp.grantUserAccess(
+      const user = await loadUser(
         TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.ID
       );
 
+      // When
+      await ServiceGroupApp.grantUserAccess(user);
+
       // Then
-      expect(granted).toBe(true);
       expect(auth0Spy).not.toHaveBeenCalled();
       expect(sendMailSpy).not.toHaveBeenCalled();
     });
@@ -1736,10 +1742,12 @@ describe('serviceGroupApp', () => {
           children: [
             {
               platform_identifier: PlatformIdentifier.Opencti,
+              hub_status: DeploymentRequestHubStatus.Active,
               platform_id: openctiPlatformId,
             },
             {
               platform_identifier: PlatformIdentifier.Xtmone,
+              hub_status: DeploymentRequestHubStatus.Active,
               platform_id: xtmonePlatformId,
             },
           ],
@@ -1772,14 +1780,12 @@ describe('serviceGroupApp', () => {
       const sendMailSpy = vi
         .spyOn(mailService, 'sendMail')
         .mockResolvedValue(undefined);
+      const user = await loadUser(TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID);
 
       // When
-      const granted = await ServiceGroupApp.grantUserAccess(
-        TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID
-      );
+      await ServiceGroupApp.grantUserAccess(user);
 
       // Then
-      expect(granted).toBe(true);
       expect(auth0Spy).toHaveBeenCalledTimes(1);
       expect(auth0Spy).toHaveBeenCalledWith(
         TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.EMAIL,
@@ -1804,7 +1810,7 @@ describe('serviceGroupApp', () => {
       );
     });
 
-    it('should not send the welcome email when the Auth0 sync fails', async () => {
+    it('should propagate the Auth0 error and not send the welcome email when the sync fails', async () => {
       // Given
       const endDate = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
       const { bundle, children } =
@@ -1813,6 +1819,7 @@ describe('serviceGroupApp', () => {
           children: [
             {
               platform_identifier: PlatformIdentifier.Opencti,
+              hub_status: DeploymentRequestHubStatus.Active,
               platform_id: uuidv4(),
             },
           ],
@@ -1835,14 +1842,13 @@ describe('serviceGroupApp', () => {
       const sendMailSpy = vi
         .spyOn(mailService, 'sendMail')
         .mockResolvedValue(undefined);
+      const user = await loadUser(TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID);
 
       // When
-      const granted = await ServiceGroupApp.grantUserAccess(
-        TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID
-      );
+      const call = ServiceGroupApp.grantUserAccess(user);
 
       // Then
-      expect(granted).toBe(false);
+      await expect(call).rejects.toThrow('auth0 is down');
       expect(sendMailSpy).not.toHaveBeenCalled();
     });
   });
@@ -1895,6 +1901,7 @@ describe('serviceGroupApp', () => {
           children: [
             {
               platform_identifier: PlatformIdentifier.Opencti,
+              hub_status: DeploymentRequestHubStatus.Active,
               platform_id: uuidv4(),
             },
           ],
@@ -1915,10 +1922,9 @@ describe('serviceGroupApp', () => {
         undefined
       );
       vi.spyOn(mailService, 'sendMail').mockResolvedValue(undefined);
-      const user = {
-        id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
-        status: UserAccountStatus.Waiting,
-      } as UserLoadUserBy;
+      const user = (await UserDomain.loadUserBy({
+        'User.id': TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
+      })) as UserLoadUserBy;
 
       // When
       await ServiceGroupApp.grantAccessIfWaiting(user);
@@ -1946,6 +1952,7 @@ describe('serviceGroupApp', () => {
           children: [
             {
               platform_identifier: PlatformIdentifier.Opencti,
+              hub_status: DeploymentRequestHubStatus.Active,
               platform_id: uuidv4(),
             },
           ],
@@ -1968,10 +1975,9 @@ describe('serviceGroupApp', () => {
       const sendMailSpy = vi
         .spyOn(mailService, 'sendMail')
         .mockResolvedValue(undefined);
-      const user = {
-        id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
-        status: UserAccountStatus.Waiting,
-      } as UserLoadUserBy;
+      const user = (await UserDomain.loadUserBy({
+        'User.id': TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
+      })) as UserLoadUserBy;
 
       // When
       await ServiceGroupApp.grantAccessIfWaiting(user);

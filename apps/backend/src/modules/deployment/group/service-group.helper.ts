@@ -331,12 +331,17 @@ export const ServiceGroupHelper = {
           const [requester] = await UserDomain.loadUsers([
             bundleDeploymentRequest.user_requester_id,
           ]);
+          // Unreachable: user_requester_id is non-nullable and a foreign key to User.
+          // This guard only narrows the `User | undefined` from the array destructuring.
+          if (!requester) {
+            return;
+          }
 
           await ServiceGroupHelper.sendFreeTrialBundleWelcomeEmails({
             endDate: bundleDeploymentRequest.end_date,
             products,
             newlyAddedUsers: [user],
-            adminEmail: requester?.email ?? '',
+            adminEmail: requester.email,
           });
         }
       )
