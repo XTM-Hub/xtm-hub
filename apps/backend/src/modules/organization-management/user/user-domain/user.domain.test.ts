@@ -175,6 +175,101 @@ describe('users domain', () => {
     });
   });
 
+  describe('updateUser with an expected condition', () => {
+    let insertedUsers: User[] = [];
+
+    const insertUser = async (status: UserAccountStatus | null) => {
+      const user = await TestHelper.user.insert({
+        email: `status-if-${uuidv4()}@filigran.io`,
+        status,
+      });
+      insertedUsers.push(user);
+      return user;
+    };
+
+    afterEach(async () => {
+      for (const { id } of insertedUsers) {
+        await TestHelper.user.delete({ id });
+      }
+      insertedUsers = [];
+    });
+
+    it('should update the status and return the user when the expected status matches', async () => {
+      // Given
+      const user = await insertUser(UserAccountStatus.Waiting);
+
+      // When
+      const updated = await UserDomain.updateUser(
+        user.id,
+        { status: UserAccountStatus.Invited },
+        { status: UserAccountStatus.Waiting }
+      );
+
+      // Then
+      expect(updated).toMatchObject({
+        id: user.id,
+        status: UserAccountStatus.Invited,
+      });
+      expect((await TestHelper.user.load({ id: user.id })).status).toBe(
+        UserAccountStatus.Invited
+      );
+    });
+
+    it('should not update and return undefined when the expected status does not match', async () => {
+      // Given
+      const user = await insertUser(UserAccountStatus.Invited);
+
+      // When
+      const updated = await UserDomain.updateUser(
+        user.id,
+        { status: null },
+        { status: UserAccountStatus.Waiting }
+      );
+
+      // Then
+      expect(updated).toBeUndefined();
+      expect((await TestHelper.user.load({ id: user.id })).status).toBe(
+        UserAccountStatus.Invited
+      );
+    });
+
+    it('should match a null status when null is expected', async () => {
+      // Given
+      const user = await insertUser(null);
+
+      // When
+      const updated = await UserDomain.updateUser(
+        user.id,
+        { status: UserAccountStatus.Expired },
+        { status: null }
+      );
+
+      // Then
+      expect(updated).toMatchObject({
+        id: user.id,
+        status: UserAccountStatus.Expired,
+      });
+    });
+
+    it('should not match a non-null status when null is expected', async () => {
+      // Given
+      const user = await insertUser(UserAccountStatus.Waiting);
+
+      // When
+      const updated = await UserDomain.updateUser(
+        user.id,
+        { status: UserAccountStatus.Expired },
+        { status: null }
+      );
+
+      // Then
+      expect(updated).toBeUndefined();
+      expect((await TestHelper.user.load({ id: user.id })).status).toBe(
+        UserAccountStatus.Waiting
+      );
+    });
+  });
+
   describe('loadUserConnection', () => {
     const opts = {
       first: 50,

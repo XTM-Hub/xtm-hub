@@ -1,3 +1,4 @@
+import type { Management } from 'auth0';
 import {
   AddUsersToBundleGroupsInput,
   BundleUserServiceGroup,
@@ -13,6 +14,7 @@ import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import User, { UserId } from '../../../model/kanel/public/User';
 import { UserLoadUserBy } from '../../../model/user';
 import { logApp } from '../../../utils/app-logger.util';
+import { getErrorMessage } from '../../../utils/error/error-guard.util';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { OrganizationDomain } from '../../organization-management/organization/organization.domain';
 import { UserDomain } from '../../organization-management/user/user-domain/user.domain';
@@ -461,27 +463,46 @@ export const ServiceGroupApp = {
     }
   },
 
-  grantUserAccess: async (user: User): Promise<void> => {
+  // The Auth0 calls run outside any transaction; the status update and the emails
+  // share one, so a failed status write leaves no email behind (only when
+  // mail_use_queue_processing is on: the queued job then joins the transaction).
+  // A status changed meanwhile throws UserStatusChangedConcurrently.
+  grantUserAccessAndSetStatus: async (
+    user: User,
+    newStatus: UserAccountStatus | null,
+    expectedStatus: UserAccountStatus | null,
+    prefetchedAuth0Users?: Management.UserResponseSchema[]
+  ): Promise<void> => {
     const deploymentRequestsWithGroupName =
       await ServiceGroupDomain.loadUserDeploymentRequestsWithGroupName(user.id);
+
     // Nothing to grant (e.g. every bundle has expired): not a failure.
-    if (deploymentRequestsWithGroupName.length === 0) {
-      return;
+    if (deploymentRequestsWithGroupName.length > 0) {
+      await ServiceGroupHelper.syncAuth0GroupsForChildren(
+        deploymentRequestsWithGroupName.map((deploymentRequest) => ({
+          child: deploymentRequest,
+          groupNames: [deploymentRequest.group_name],
+        })),
+        [user.id],
+        new Map([[user.id, user.email]]),
+        prefetchedAuth0Users && new Map([[user.id, prefetchedAuth0Users]])
+      );
     }
 
-    await ServiceGroupHelper.syncAuth0GroupsForChildren(
-      deploymentRequestsWithGroupName.map((deploymentRequest) => ({
-        child: deploymentRequest,
-        groupNames: [deploymentRequest.group_name],
-      })),
-      [user.id],
-      new Map([[user.id, user.email]])
-    );
-
-    await ServiceGroupHelper.sendBundleWelcomeEmailsForGrant(
-      deploymentRequestsWithGroupName,
-      user
-    );
+    await withTransaction(async () => {
+      const updatedUser = await UserDomain.updateUser(
+        user.id,
+        { status: newStatus },
+        { status: expectedStatus }
+      );
+      if (!updatedUser) {
+        throw new Error(ErrorCode.UserStatusChangedConcurrently);
+      }
+      await ServiceGroupHelper.sendBundleWelcomeEmailsForGrant(
+        deploymentRequestsWithGroupName,
+        user
+      );
+    });
   },
 
   grantAccessIfWaiting: async (user: UserLoadUserBy): Promise<void> => {
@@ -490,10 +511,19 @@ export const ServiceGroupApp = {
     }
 
     try {
-      await ServiceGroupApp.grantUserAccess(user);
-      await UserDomain.updateUser(user.id, { status: null });
+      await ServiceGroupApp.grantUserAccessAndSetStatus(
+        user,
+        null,
+        UserAccountStatus.Waiting
+      );
       user.status = null;
     } catch (error) {
+      if (getErrorMessage(error) === ErrorCode.UserStatusChangedConcurrently) {
+        logApp.info('User status changed concurrently, login grant skipped', {
+          userId: user.id,
+        });
+        return;
+      }
       logApp.error('Unable to grant service group access at login', {
         userId: user.id,
         error,
