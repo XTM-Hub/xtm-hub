@@ -10,7 +10,7 @@ import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDi
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { requestGraphqlWithUploads } from '@/lib/graphql-upload-client';
-import { Button, toast } from '@filigran/ui';
+import { toast } from '@filigran/ui';
 import {
   VotableFeatureCreateDocument,
   VotableFeatureCreateMutation,
@@ -20,6 +20,7 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { invalidateVotingRoundQueries } from './voting-round-query-invalidation';
+import { Button } from '@filigran/design-system';
 
 const AddVotableFeature = ({
   roundId,

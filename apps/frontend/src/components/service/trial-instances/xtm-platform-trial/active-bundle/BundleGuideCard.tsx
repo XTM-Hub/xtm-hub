@@ -2,7 +2,8 @@
 
 import { useTranslate } from '@/hooks/use-translate';
 import { XTM_PLATFORM_TRIAL_GUIDE_PATH } from '@/utils/path/constant';
-import { Button, Card, CardContent } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
+import { Card, CardContent } from '@filigran/ui';
 import Link from 'next/link';
 
 export const BundleGuideCard = () => {
@@ -19,7 +20,7 @@ export const BundleGuideCard = () => {
             </p>
           </div>
           <Button
-            variant="secondary"
+            priority="secondary"
             className="self-start"
             asChild>
             <Link href={XTM_PLATFORM_TRIAL_GUIDE_PATH}>

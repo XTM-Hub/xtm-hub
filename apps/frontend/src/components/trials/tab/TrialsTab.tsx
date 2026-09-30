@@ -39,16 +39,7 @@ import {
   CloseIcon,
   GroupIcon,
 } from '@filigran/icon';
-import {
-  Button,
-  DataTable,
-  DataTableHeadBarOptions,
-  toast,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@filigran/ui';
+import { DataTable, DataTableHeadBarOptions, toast, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@filigran/ui';
 import { trialsKeys } from '@graphql/deployment/deployment.keys';
 import {
   DeploymentRequestHubStatus,
@@ -67,6 +58,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import Link from 'next/link';
 import { ReactNode, useMemo, useState } from 'react';
 import { useDebounceCallback } from 'usehooks-ts';
+import { IconButton } from '@filigran/design-system';
 
 type TrialsColumn = ColumnDef<TrialsRowFragment>;
 type TrialsCellProps = { row: { original: TrialsRowFragment } };
@@ -232,17 +224,17 @@ const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
           AlertTitle={t('Service.Trials.Cancellation.Confirmation.Title')}
           actionButtonText={t('MenuActions.Delete')}
           triggerElement={
-            <Button
-              variant="tertiary-destructive"
-              size="icon"
+            <IconButton
+              variant="destructive"
+              priority="tertiary"
               className="border m-1"
               aria-label={t(
                 isBundle
                   ? 'TrialsDashboard.Actions.CancelBundle'
                   : 'TrialsDashboard.Actions.CancelTrial'
-              )}>
-              <CloseIcon className="h-4 w-4" />
-            </Button>
+              )}
+              icon={<CloseIcon className="h-4 w-4" />}
+            />
           }
           onClickContinue={() =>
             cancelRequest({ deploymentRequestId: request.id })
@@ -260,11 +252,11 @@ const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant="tertiary"
-                  size="icon"
+                <IconButton
+                  priority="tertiary"
                   className="border m-1"
                   aria-label={t('TrialsDashboard.Actions.MoveToTop')}
+                  icon={<ArrowShapeUpStackIcon className="h-4 w-4" />}
                   onClick={() =>
                     reorderRequest({
                       input: {
@@ -272,9 +264,8 @@ const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
                         direction: ReorderDeploymentRequestInQueueDirection.Top,
                       },
                     })
-                  }>
-                  <ArrowShapeUpStackIcon className="h-4 w-4" />
-                </Button>
+                  }
+                />
               </TooltipTrigger>
               <TooltipContent>
                 {t('TrialsDashboard.Actions.MoveToTop')}
@@ -284,11 +275,11 @@ const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant="tertiary"
-                  size="icon"
+                <IconButton
+                  priority="tertiary"
                   className="border m-1"
                   aria-label={t('TrialsDashboard.Actions.MoveUp')}
+                  icon={<ArrowShapeUpIcon className="h-4 w-4" />}
                   onClick={() =>
                     reorderRequest({
                       input: {
@@ -296,9 +287,8 @@ const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
                         direction: ReorderDeploymentRequestInQueueDirection.Up,
                       },
                     })
-                  }>
-                  <ArrowShapeUpIcon className="h-4 w-4" />
-                </Button>
+                  }
+                />
               </TooltipTrigger>
               <TooltipContent>
                 {t('TrialsDashboard.Actions.MoveUp')}
@@ -312,31 +302,29 @@ const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
           <Tooltip>
             <TooltipTrigger asChild>
               {isBundle ? (
-                <Button
+                <IconButton
                   asChild
-                  variant="tertiary"
-                  size="icon"
+                  priority="tertiary"
                   className="border m-1"
-                  aria-label={t('Service.Trials.ManageUsers.Title')}>
+                  aria-label={t('Service.Trials.ManageUsers.Title')}
+                  icon={<GroupIcon className="h-4 w-4" />}>
                   <Link
                     href={xtmPlatformTrialManageUsersFromDashboardPath(
                       request.service_instance_id
-                    )}>
-                    <GroupIcon className="h-4 w-4" />
-                  </Link>
-                </Button>
+                    )}
+                  />
+                </IconButton>
               ) : (
                 <TrialsManageUsersDialog
                   serviceInstanceId={request.service_instance_id}
                   organizationId={request.organization_requester_id}
                   trigger={
-                    <Button
-                      variant="tertiary"
-                      size="icon"
+                    <IconButton
+                      priority="tertiary"
                       className="border m-1"
-                      aria-label={t('Service.Trials.ManageUsers.Title')}>
-                      <GroupIcon className="h-4 w-4" />
-                    </Button>
+                      aria-label={t('Service.Trials.ManageUsers.Title')}
+                      icon={<GroupIcon className="h-4 w-4" />}
+                    />
                   }
                 />
               )}

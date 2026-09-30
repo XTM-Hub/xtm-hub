@@ -20,7 +20,6 @@ import {
 import { BundleCancelSheet } from '@/components/service/trial-instances/xtm-platform-trial/shared/BundleCancelSheet';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { Button } from '@filigran/ui';
 import { toast } from '@filigran/ui/clients';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import {
@@ -35,6 +34,7 @@ import { platformTrialKeys } from '@graphql/trial/trial.keys';
 import { useQueryClient } from '@tanstack/react-query';
 import { useContext, useState } from 'react';
 import { z } from 'zod';
+import { Button } from '@filigran/design-system';
 
 interface PrivateXtmPlatformTrialPanelProps {
   bundle: XtmPlatformBundleDetailsFragment | null;
@@ -136,8 +136,7 @@ export const PrivateXtmPlatformTrialPanel = ({
 
     const actions = isInProgress ? (
       <Button
-        variant="outline-destructive"
-        onClick={() => setIsCancelSheetOpen(true)}>
+        variant="destructive" priority="secondary" onClick={() => setIsCancelSheetOpen(true)}>
         {t('Service.Trials.XtmPlatform.Page.Status.CancelTrialRequest')}
       </Button>
     ) : (

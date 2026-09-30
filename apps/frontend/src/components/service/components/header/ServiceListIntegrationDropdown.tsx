@@ -1,4 +1,5 @@
 import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,7 +8,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
 import { IntegrationType } from '@graphql/generated';
 
 interface ServiceListIntegrationDropdownProps {

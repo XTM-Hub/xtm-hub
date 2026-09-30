@@ -11,7 +11,7 @@ import { useTranslate } from '@/hooks/use-translate';
 import { useDateFormatter } from '@/utils/date';
 import { toExternalHref } from '@/utils/external-url';
 import { EditIcon } from '@filigran/icon';
-import { Badge, Button, Card, CardContent, Separator } from '@filigran/ui';
+import { Badge, Card, CardContent, Separator } from '@filigran/ui';
 import { GradientButton } from '@filigran/ui/servers';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import {
@@ -23,6 +23,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
+import { Button } from '@filigran/design-system';
 
 interface BundleProductCardProps {
   product: XtmPlatformBundleProductFragment;
@@ -77,10 +78,7 @@ export const BundleProductCard = ({
         </Badge>
         {canManage && (
           <Button
-            variant="ghost"
-            className="size-6 shrink-0 rounded-lg border border-elevation-border-strong p-0 text-text-default-primary"
-            aria-label={t('XtmPlatformTrial.Products.EditName')}
-            onClick={() => setOpenEditName(true)}>
+            priority="tertiary" className="size-6 shrink-0 rounded-lg border border-elevation-border-strong p-0 text-text-default-primary" aria-label={t('XtmPlatformTrial.Products.EditName')} onClick={() => setOpenEditName(true)}>
             <EditIcon className="size-4" />
           </Button>
         )}

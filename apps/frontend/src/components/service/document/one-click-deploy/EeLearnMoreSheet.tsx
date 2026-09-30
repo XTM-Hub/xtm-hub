@@ -16,7 +16,6 @@ import {
   toast,
 } from '@filigran/ui';
 import { Separator } from '@filigran/ui/clients';
-import { Button } from '@filigran/ui/servers';
 import { reachSalesMutation as ReachSalesMutationType } from '@generated/reachSalesMutation.graphql';
 import { PlatformIdentifier } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -25,6 +24,7 @@ import { useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useMutation } from 'react-relay';
 import { z } from 'zod';
+import { Button } from '@filigran/design-system';
 
 interface EeLearnMoreSheetProps {
   open: boolean;

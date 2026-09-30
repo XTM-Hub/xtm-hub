@@ -16,10 +16,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/ui/clients';
-import { Button } from '@filigran/ui/servers';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
 import { z } from 'zod';
+import { Button } from '@filigran/design-system';
 
 interface ChoosePlatformFormProps {
   documentData: documentItem_fragment$data;
@@ -142,11 +142,9 @@ const ChoosePlatformForm = ({
         }}>
         <div className="flex justify-end gap-s">
           <Button
-            type="button"
-            variant="secondary"
-            onClick={() => {
-              setIsOpen(false);
-            }}>
+            type="button" priority="secondary" onClick={() => {
+        setIsOpen(false);
+    }}>
             {t('Utils.Cancel')}
           </Button>
 

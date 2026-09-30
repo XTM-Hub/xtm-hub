@@ -15,7 +15,6 @@ import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { InfoIcon } from '@filigran/icon';
 import {
-  Button,
   Checkbox,
   FileInput,
   Form,
@@ -52,6 +51,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo } from 'react';
 import { Control, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
+import { Button } from '@filigran/design-system';
+import { Button } from '@filigran/design-system';
 
 const TITLE_MAX_CHARS = 160;
 const SHORT_DESCRIPTION_MAX_CHARS = 215;
@@ -532,7 +533,7 @@ const EpicForm = ({
           />
           <div className="flex gap-s">
             <Button
-              variant="secondary"
+              priority="secondary"
               type="button"
               onClick={handleCloseSheet}>
               {t('Utils.Cancel')}

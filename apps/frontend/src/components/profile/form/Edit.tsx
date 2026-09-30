@@ -3,9 +3,9 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { CountryCombobox } from '@/components/ui/country/Combobox';
 import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import {
   AutoForm,
-  Button,
   Card,
   CardContent,
   CardHeader,

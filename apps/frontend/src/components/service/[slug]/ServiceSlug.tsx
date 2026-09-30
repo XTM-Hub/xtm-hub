@@ -28,7 +28,6 @@ import {
   SelectionState,
   Switch,
 } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
 import { serviceInstanceByIdQuery } from '@generated/serviceInstanceByIdQuery.graphql';
 import { serviceInstanceForSubscriptions_fragment$key } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
@@ -39,6 +38,7 @@ import { useDebounceCallback } from 'usehooks-ts';
 import { ServiceSlugAddCapabilities } from './ServiceSlugAddCapabilities';
 import { ServiceSlugDeleteSubscription } from './ServiceSlugDeleteSubscription';
 import { ServiceSlugSubscription } from './ServiceSlugSubscription';
+import { Button } from '@filigran/design-system';
 
 interface ServiceSlugProps {
   subscriptions: subscription_fragment$data[];
@@ -289,22 +289,14 @@ const ServiceSlug = ({
                 actions: () => (
                   <>
                     <Button
-                      variant="tertiary"
-                      size="sm"
-                      className="cursor-pointer"
-                      onClick={() => setOpenAddCapabilities(true)}>
+                      priority="tertiary" size="sm" className="cursor-pointer" onClick={() => setOpenAddCapabilities(true)}>
                       <AddIcon className="h-4 w-4 m-s" />
                       {t(
                         'Service.Management.AddSubscriptionCapabilities.Button'
                       )}
                     </Button>
                     <Button
-                      variant="tertiary-destructive"
-                      size="sm"
-                      className="cursor-pointer"
-                      onClick={() =>
-                        setDeleteSubscriptions(selectedSubscriptions)
-                      }>
+                      variant="destructive" priority="tertiary" size="sm" className="cursor-pointer" onClick={() => setDeleteSubscriptions(selectedSubscriptions)}>
                       <DeleteIcon className="h-4 w-4 m-s" />
                       {t('Utils.Delete')}
                     </Button>

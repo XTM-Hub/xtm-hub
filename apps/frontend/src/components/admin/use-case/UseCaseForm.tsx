@@ -1,7 +1,7 @@
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   ColorPicker,
   Form,
   FormControl,
@@ -132,7 +132,9 @@ const UseCaseForm = ({
               actionButtonText={t('MenuActions.Delete')}
               variantName={'destructive'}
               triggerElement={
-                <Button variant="secondary-destructive">
+                <Button
+                  variant="destructive"
+                  priority="secondary">
                   {t('MenuActions.Delete')}
                 </Button>
               }
@@ -144,7 +146,7 @@ const UseCaseForm = ({
           )}
           <div className="flex gap-s">
             <Button
-              variant="secondary"
+              priority="secondary"
               type="button"
               onClick={onClose}>
               {t('Utils.Cancel')}

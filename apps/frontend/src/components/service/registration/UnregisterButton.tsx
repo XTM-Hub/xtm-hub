@@ -7,7 +7,6 @@ import { UnregisterPlatform } from '@/components/registration/register/register.
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { toast } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
 import { registeredPlatformByServiceInstanceId_fragment$data } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
 import { registerUnregisterPlatformMutation } from '@generated/registerUnregisterPlatformMutation.graphql';
 import {
@@ -18,6 +17,7 @@ import {
 } from '@graphql/generated';
 import { useRouter } from 'next/navigation';
 import { useMutation } from 'react-relay';
+import { Button } from '@filigran/design-system';
 
 interface UnregisterButtonProps {
   platform: registeredPlatformByServiceInstanceId_fragment$data;

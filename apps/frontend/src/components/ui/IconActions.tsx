@@ -1,12 +1,6 @@
 'use client';
 import { cn } from '@/lib/utils';
-import {
-  Button,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@filigran/ui';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@filigran/ui';
 import Link from 'next/link';
 import {
   type ButtonHTMLAttributes,
@@ -17,6 +11,7 @@ import {
   type SetStateAction,
   useState,
 } from 'react';
+import { Button } from '@filigran/design-system';
 
 export { DropdownMenuItem as IconActionsItem } from '@filigran/ui/clients';
 
@@ -52,8 +47,7 @@ export const IconActions = ({
         <div className="flex items-center gap-s cursor-pointer">
           {label}
           <Button
-            variant="tertiary"
-            className={cn('h-8 w-8 p-0 data-[state=open]:bg-hover', className)}>
+            priority="tertiary" className={cn('h-8 w-8 p-0 data-[state=open]:bg-hover', className)}>
             {icon}
           </Button>
         </div>
@@ -76,10 +70,7 @@ export const IconActionsButton = ({
 }: IconActionsButtonProps) => {
   return (
     <Button
-      variant="tertiary"
-      className={cn('w-full justify-start normal-case', className)}
-      onClick={(e) => e.stopPropagation()}
-      {...props}>
+      priority="tertiary" className={cn('w-full justify-start normal-case', className)} onClick={(e) => e.stopPropagation()} {...props}>
       {children}
     </Button>
   );

@@ -3,7 +3,7 @@ import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDi
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { prependToQueryCache } from '@/utils/query-cache';
-import { Button, toast } from '@filigran/ui';
+import { toast } from '@filigran/ui';
 import {
   UseCaseAddMutation,
   UseCasesListQuery,
@@ -12,6 +12,7 @@ import {
 import { useCaseListKeys } from '@graphql/use-case/use-case-list.keys';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { Button } from '@filigran/design-system';
 
 const AddUseCase = () => {
   const t = useTranslate();

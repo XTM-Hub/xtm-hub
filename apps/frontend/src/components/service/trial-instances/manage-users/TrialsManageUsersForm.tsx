@@ -3,15 +3,7 @@ import { UserFragment } from '@/components/admin/user/UserList';
 import { serviceGroupFragment } from '@/components/service/service-group.graphql';
 import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
-import {
-  Button,
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  SheetFooter,
-  toast,
-} from '@filigran/ui';
+import { Form, FormField, FormItem, FormLabel, SheetFooter, toast } from '@filigran/ui';
 import { MultiSelectFormField } from '@filigran/ui/clients';
 import { serviceGroup_fragment$key } from '@generated/serviceGroup_fragment.graphql';
 import ServiceGroupsByServiceInstanceIdQueryGraphql, {
@@ -24,6 +16,7 @@ import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { readInlineData, useLazyLoadQuery, useMutation } from 'react-relay';
 import { z } from 'zod';
+import { Button } from '@filigran/design-system';
 
 const formSchema = z.object({
   groups: z.array(
@@ -161,9 +154,7 @@ export const TrialsManageUsersForm = ({
         <SheetFooter>
           <div className="flex gap-s">
             <Button
-              variant="secondary"
-              type="button"
-              onClick={onCancel}>
+              priority="secondary" type="button" onClick={onCancel}>
               {t('Utils.Cancel')}
             </Button>
             <Button

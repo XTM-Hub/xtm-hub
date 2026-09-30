@@ -8,13 +8,7 @@ import BadgeOverflowCounter, {
 } from '@/components/ui/BadgeOverflowCounter';
 import { useTranslate } from '@/hooks/use-translate';
 import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
-import {
-  Badge,
-  Button,
-  DataTable,
-  DataTableHeadBarOptions,
-  SelectionState,
-} from '@filigran/ui';
+import { Badge, DataTable, DataTableHeadBarOptions, SelectionState } from '@filigran/ui';
 import { userServiceFromSubscription$key } from '@generated/userServiceFromSubscription.graphql';
 import {
   userServices_fragment$data,
@@ -49,6 +43,7 @@ import { serviceInstanceForSubscriptions_fragment$data } from '@generated/servic
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import { subscriptionByIdQuery } from '@generated/subscriptionByIdQuery.graphql';
 import { userServiceFromSubscriptionQuery } from '@generated/userServiceFromSubscriptionQuery.graphql';
+import { Button } from '@filigran/design-system';
 
 interface SubscriptionSlugProps {
   queryRef: PreloadedQuery<userServiceFromSubscriptionQuery>;
@@ -333,22 +328,14 @@ const SubscriptionSlug = ({
                   actions: () => (
                     <>
                       <Button
-                        variant="tertiary"
-                        size="sm"
-                        className="cursor-pointer"
-                        onClick={() => setOpenAddCapabilities(true)}>
+                        priority="tertiary" size="sm" className="cursor-pointer" onClick={() => setOpenAddCapabilities(true)}>
                         <AddIcon className="h-4 w-4 m-s" />
                         {t(
                           'Service.Management.AddUserServiceCapabilities.Button'
                         )}
                       </Button>
                       <Button
-                        variant="tertiary-destructive"
-                        size="sm"
-                        className="cursor-pointer"
-                        onClick={() =>
-                          setDeleteUserServices(selectedUserServices)
-                        }>
+                        variant="destructive" priority="tertiary" size="sm" className="cursor-pointer" onClick={() => setDeleteUserServices(selectedUserServices)}>
                         <DeleteIcon className="h-4 w-4 m-s" />
                         {t('Utils.Delete')}
                       </Button>

@@ -4,9 +4,9 @@ import { format } from 'date-fns';
 import { cn } from '@/components/filigran-ui/lib/utils';
 import { CalendarViewMonthIcon } from '@filigran/icon';
 import { forwardRef } from 'react';
-import { Button } from '../servers';
 import { Calendar } from './Calendar';
 import { Popover, PopoverContent, PopoverTrigger } from './Popover';
+import { Button } from '@filigran/design-system';
 
 export const DatePicker = forwardRef<
   HTMLDivElement,
@@ -24,11 +24,7 @@ export const DatePicker = forwardRef<
     <Popover>
       <PopoverTrigger asChild>
         <Button
-          variant={'outline'}
-          className={cn(
-            'w-full justify-start text-left font-normal normal-case',
-            !date && 'text-muted-foreground'
-          )}>
+          priority="secondary" className={cn('w-full justify-start text-left font-normal normal-case', !date && 'text-muted-foreground')}>
           <CalendarViewMonthIcon className="mr-2 h-3 w-3" />
           {date ? format(date, 'PP') : <span>{placeholderText}</span>}
         </Button>

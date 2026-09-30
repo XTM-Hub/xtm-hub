@@ -106,6 +106,8 @@
   },
   "Datatable": {
     "Asc": "として",
+    "ClearSelection": "選択を解除",
+    "ColumnOptions": "列のオプション",
     "Columns": "列",
     "Desc": "Des",
     "GoFirstPage": "最初のページへ",
@@ -807,6 +809,8 @@
   },
   "PendingUserListPage": {
     "TabTitle": "ユーザーリクエスト ({usersCount})",
+    "Reject": "拒否",
+    "Approve": "承認",
     "ActionSuccessApprove": "{email} のユーザー申請を承認しました",
     "ActionSuccessDeny": "{email} のユーザー申請を拒否しました",
     "WarningUserAccept": {
@@ -1154,6 +1158,7 @@
     },
     "CreationStatus": "作成ステータス",
     "Form": {
+      "AddImage": "画像を追加",
       "Author": "作成者",
       "CapabilityAccessLabel": "{name} アクセス: {description}",
       "ContainerImageLabel": "コンテナイメージ",

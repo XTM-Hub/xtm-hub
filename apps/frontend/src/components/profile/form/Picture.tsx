@@ -2,10 +2,10 @@
 
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import { EditIcon } from '@filigran/icon';
 import {
   Avatar,
-  Button,
   Card,
   CardContent,
   CardFooter,
@@ -70,7 +70,7 @@ export const ProfileFormPicture = ({ onSubmit }: ProfileFormPictureProps) => {
       </CardContent>
       <CardFooter className="flex justify-between">
         <Button
-          variant="tertiary"
+          priority="tertiary"
           aria-label={t('Utils.Edit')}
           size="sm"
           className="ml-s gap-s"

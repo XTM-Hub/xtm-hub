@@ -1,8 +1,10 @@
 'use client';
 import { cn } from '@/components/filigran-ui/lib/utils';
+import { useTranslate } from '@/hooks/use-translate';
+import { IconButton, type IconButtonProps } from '@filigran/design-system';
 import { forwardRef, useMemo, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
-import { Button, type ButtonProps, Input } from '../servers';
+import { Input } from '../servers';
 import { Popover, PopoverContent, PopoverTrigger } from './Popover';
 
 interface ColorPickerProps {
@@ -13,12 +15,13 @@ interface ColorPickerProps {
 
 const ColorPicker = forwardRef<
   HTMLInputElement,
-  Omit<ButtonProps, 'value' | 'onChange' | 'onBlur'> & ColorPickerProps
+  Omit<IconButtonProps, 'aria-label' | 'children' | 'icon'> & ColorPickerProps
 >(
   (
     { disabled, value, onChange, onBlur, name, className, ...props },
     forwardedRef
   ) => {
+    const t = useTranslate();
     const [open, setOpen] = useState(false);
     const parsedValue = useMemo(() => {
       return value || '#FFFFFF';
@@ -40,20 +43,23 @@ const ColorPicker = forwardRef<
             asChild
             disabled={disabled}
             onBlur={onBlur}>
-            <Button
+            <IconButton
               {...props}
-              className={cn('block', className, 'size-5 absolute right-2')}
+              className={cn(
+                'block size-5 rounded-full absolute right-2',
+                className
+              )}
               name={name}
               onClick={() => {
                 setOpen(true);
               }}
-              size="icon-rounded"
+              aria-label={t('UseCaseForm.Color')}
+              icon={<div className="h-0 w-0" />}
               style={{
                 backgroundColor: parsedValue,
               }}
-              variant="outline">
-              <div />
-            </Button>
+              priority="secondary"
+            />
           </PopoverTrigger>
         </div>
         <PopoverContent className="w-full">
