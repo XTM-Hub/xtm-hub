@@ -224,7 +224,7 @@
       "Epic": "Epic",
       "Title": "Title",
       "ShortDesc": "Short description",
-      "Description": "Description",
+      "Description": "Full description",
       "ProblemToSolve": "Problem to Solve",
       "ProposedSolution": "Proposed Solution",
       "ExpectedValue": "Expected Value",
@@ -236,15 +236,29 @@
       "Timeline": "Timeline",
       "IsActive": "Is this epic published? (By default your epic is in draft mode)",
       "Integration": "Is an integration",
-      "IsLimited": "Limited to {maxChars} chars",
-      "AutomaticallyAdded": "Added automatically (not editable)"
+      "AutomaticallyAdded": "Added automatically (not editable)",
+      "CharacterCount": "{count} / {maxChars}",
+      "Placeholder": {
+        "Title": "e.g. Users can see all their active trials in one place",
+        "ShortDesc": "One sentence shown on the roadmap card",
+        "Description": "Explain the epic in more depth: context, scope, constraints",
+        "ProblemToSolve": "Pain points felt by the user",
+        "ProposedSolution": "How we plan to solve it",
+        "ExpectedValue": "What we gain once it ships"
+      },
+      "DetailsSection": "Epic details",
+      "PublishNow": "Publish now",
+      "PublishNowHint": "(otherwise saved as draft)",
+      "EditionTypeInfo": "Partial EE: works in Community Edition but some options need Enterprise Edition"
     },
     "EpicActions": {
       "CreateEpic": "Create a new epic",
       "UpdateEpic": "Update an epic",
       "DeleteEpic": "Delete {epicName} epic",
       "SureDeleteEpic": "Are you sure you want to delete the {epicName} epic?",
-      "EpicDeleted": "The epic was deleted"
+      "EpicDeleted": "The epic was deleted",
+      "CreateEpicButton": "Create epic",
+      "UpdateEpicButton": "Update epic"
     },
     "JoinCommunity": "Stay in the loop on the Filigran Community"
   },

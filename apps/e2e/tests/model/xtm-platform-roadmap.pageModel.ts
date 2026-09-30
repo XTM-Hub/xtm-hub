@@ -144,13 +144,13 @@ export default class XTMPlatformRoadmapPage {
     await form.getByRole('radio', { name: edition_type, exact: true }).click();
     await this.selectTimeline(form, timeline);
     if (!draft) {
-      await form.getByRole('checkbox', { name: 'Active' }).check();
+      await form.getByRole('checkbox', { name: 'Publish now' }).check();
     }
     if (integration) {
       await form.getByRole('checkbox', { name: 'Is an integration' }).click();
       await this.uploadImageDocument(TEST_IMAGE_FILE.path);
     }
-    await form.getByRole('button', { name: 'Create' }).click();
+    await form.getByRole('button', { name: 'Create epic' }).click();
     await this.waitForFormToClose();
   }
 
@@ -218,7 +218,7 @@ export default class XTMPlatformRoadmapPage {
       await this.selectTimeline(form, timeline);
     }
     const publishedCheckbox = form.getByRole('checkbox', {
-      name: 'Is this EPIC published? (By default your EPIC is in draft mode)',
+      name: 'Publish now',
     });
     if (!draft) {
       await publishedCheckbox.check();
@@ -226,7 +226,7 @@ export default class XTMPlatformRoadmapPage {
     if (draft) {
       await publishedCheckbox.uncheck();
     }
-    await form.getByRole('button', { name: 'Update' }).click();
+    await form.getByRole('button', { name: 'Update epic' }).click();
     await this.waitForFormToClose();
   }
 
@@ -240,7 +240,7 @@ export default class XTMPlatformRoadmapPage {
     }
   ) {
     const fields = [
-      { name: /^Description$/, value: sections.description },
+      { name: 'Full description', value: sections.description },
       { name: 'Problem to Solve', value: sections.problem_to_solve },
       { name: 'Proposed Solution', value: sections.proposed_solution },
       { name: 'Expected Value', value: sections.expected_value },

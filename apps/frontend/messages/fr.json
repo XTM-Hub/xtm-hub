@@ -224,7 +224,7 @@
       "Epic": "Epic",
       "Title": "Titre",
       "ShortDesc": "Description courte",
-      "Description": "Description",
+      "Description": "Description complète",
       "ProblemToSolve": "Problème à résoudre",
       "ProposedSolution": "Solution proposée",
       "ExpectedValue": "Valeur attendue",
@@ -236,15 +236,29 @@
       "Timeline": "Ligne de temps",
       "IsActive": "Cet EPIC est-il publié ? (Par défaut votre EPIC est en mode brouillon)",
       "Integration": "Est une intégration",
-      "IsLimited": "Limité à {maxChars} caractères",
-      "AutomaticallyAdded": "Ajouté automatiquement (non modifiable)"
+      "AutomaticallyAdded": "Ajouté automatiquement (non modifiable)",
+      "CharacterCount": "{count} / {maxChars}",
+      "Placeholder": {
+        "Title": "ex. : les utilisateurs voient tous leurs essais actifs au même endroit",
+        "ShortDesc": "Une phrase affichée sur la carte de la roadmap",
+        "Description": "Détaillez l'epic : contexte, périmètre, contraintes",
+        "ProblemToSolve": "Les difficultés rencontrées par l'utilisateur",
+        "ProposedSolution": "Comment nous comptons le résoudre",
+        "ExpectedValue": "Ce que nous y gagnons une fois livré"
+      },
+      "DetailsSection": "Détails de l'epic",
+      "PublishNow": "Publier maintenant",
+      "PublishNowHint": "(sinon enregistré en brouillon)",
+      "EditionTypeInfo": "Partial EE : fonctionne en Community Edition mais certaines options nécessitent l'Enterprise Edition"
     },
     "EpicActions": {
       "CreateEpic": "Créer un nouvel épic",
       "UpdateEpic": "Mettre à jour un épic",
       "DeleteEpic": "Supprimer l'épic {epicName}",
       "SureDeleteEpic": "Êtes-vous sûr de vouloir supprimer l'épic {epicName} ?",
-      "EpicDeleted": "L'épic a été supprimé"
+      "EpicDeleted": "L'épic a été supprimé",
+      "CreateEpicButton": "Créer l'epic",
+      "UpdateEpicButton": "Mettre à jour l'epic"
     },
     "JoinCommunity": "Restez dans la boucle avec la communauté Filigran"
   },
