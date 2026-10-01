@@ -1634,7 +1634,7 @@
           },
           "NotLoggedIn": {
             "Title": "To request a trial you need to be logged in.",
-            "Description": "Please create an XTM Hub account or log in to an existing one."
+            "Description": "Please create a Filigran account or log in to an existing one."
           },
           "NotAdmin": {
             "Title": "To request a trial you must be an organization admin.",
