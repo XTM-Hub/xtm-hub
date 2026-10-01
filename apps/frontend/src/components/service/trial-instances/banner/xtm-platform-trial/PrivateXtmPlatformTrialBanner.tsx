@@ -147,12 +147,12 @@ export const PrivateXtmPlatformTrialBanner = () => {
   });
 
   const shouldShowFeedbackDialog =
-    true && me?.has_replied_satisfaction === null;
-  // state !== 'none' &&
-  // state !== 'no-trial' &&
-  // daysLeft != null &&
-  // daysLeft >= 0 &&
-  // daysLeft <= 15;
+    me?.has_replied_satisfaction === null &&
+    state !== 'none' &&
+    state !== 'no-trial' &&
+    daysLeft != null &&
+    daysLeft >= 0 &&
+    daysLeft <= 15;
 
   const isFeedbackDialogOpen =
     shouldShowFeedbackDialog && !isFeedbackDialogDismissed;
@@ -165,19 +165,19 @@ export const PrivateXtmPlatformTrialBanner = () => {
     answer,
     justification,
   }: z.infer<typeof feedbackFormSchema>) => {
-    // const deploymentRequestId = platformTrialStatus?.deploymentRequestId;
-    // if (deploymentRequestId) {
-    giveDeploymentFeedback({
-      input: {
-        deploymentRequestId: 'deploymentRequestId',
-        answer,
-        justification:
-          answer === HasRepliedSatisfaction.No && justification
-            ? justification
-            : null,
-      },
-    });
-    // }
+    const deploymentRequestId = platformTrialStatus?.deploymentRequestId;
+    if (deploymentRequestId) {
+      giveDeploymentFeedback({
+        input: {
+          deploymentRequestId,
+          answer,
+          justification:
+            answer === HasRepliedSatisfaction.No && justification
+              ? justification
+              : null,
+        },
+      });
+    }
 
     setIsFeedbackDialogDismissed(true);
   };
@@ -192,7 +192,11 @@ export const PrivateXtmPlatformTrialBanner = () => {
 
       <Dialog
         open={isFeedbackDialogOpen}
-        onOpenChange={(open) => setIsFeedbackDialogDismissed(!open)}>
+        onOpenChange={(open) => {
+          if (!open) {
+            handleSubmitFeedback({ answer: HasRepliedSatisfaction.Closed });
+          }
+        }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>

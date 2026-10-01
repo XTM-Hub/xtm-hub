@@ -40,7 +40,9 @@ const FEEDBACK_YES = 'Service.Trials.XtmPlatform.Feedback.Yes';
 const FEEDBACK_JUSTIFICATION =
   'Service.Trials.XtmPlatform.Feedback.Justification';
 const FEEDBACK_SUBMIT = 'Service.Trials.XtmPlatform.Feedback.Submit';
+const FEEDBACK_CLOSE = 'Close';
 const JUSTIFICATION_TEXT = 'Deployment took too long';
+const USER_WITHOUT_FEEDBACK = { has_replied_satisfaction: null };
 
 const mockActiveTrialWithDaysLeft = (daysLeft: number) => {
   graphqlMocks.usePlatformTrialStatusQuery.mockReturnValue({
@@ -96,7 +98,10 @@ describe('PrivateXtmPlatformTrialBanner', () => {
     });
 
     const { getByText, getByRole } = testRender(
-      <PrivateXtmPlatformTrialBanner />
+      <PrivateXtmPlatformTrialBanner />,
+      {
+        me: USER_WITHOUT_FEEDBACK,
+      }
     );
 
     expect(
@@ -136,7 +141,9 @@ describe('PrivateXtmPlatformTrialBanner', () => {
 
     it('should keep the submit button disabled when no answer is selected', () => {
       // Given
-      const { getByRole } = testRender(<PrivateXtmPlatformTrialBanner />);
+      const { getByRole } = testRender(<PrivateXtmPlatformTrialBanner />, {
+        me: USER_WITHOUT_FEEDBACK,
+      });
 
       // Then
       expect(getByRole('button', { name: FEEDBACK_SUBMIT })).toBeDisabled();
@@ -145,7 +152,10 @@ describe('PrivateXtmPlatformTrialBanner', () => {
     it('should not display the justification field when the answer is yes', async () => {
       // Given
       const { getByRole, queryByRole, user } = testRender(
-        <PrivateXtmPlatformTrialBanner />
+        <PrivateXtmPlatformTrialBanner />,
+        {
+          me: USER_WITHOUT_FEEDBACK,
+        }
       );
 
       // When
@@ -159,7 +169,12 @@ describe('PrivateXtmPlatformTrialBanner', () => {
 
     it('should display the justification field when the answer is no', async () => {
       // Given
-      const { getByRole, user } = testRender(<PrivateXtmPlatformTrialBanner />);
+      const { getByRole, user } = testRender(
+        <PrivateXtmPlatformTrialBanner />,
+        {
+          me: USER_WITHOUT_FEEDBACK,
+        }
+      );
 
       // When
       await user.click(getByRole('radio', { name: FEEDBACK_NO }));
@@ -172,7 +187,12 @@ describe('PrivateXtmPlatformTrialBanner', () => {
 
     it('should send the answer and the justification when submitting a no answer', async () => {
       // Given
-      const { getByRole, user } = testRender(<PrivateXtmPlatformTrialBanner />);
+      const { getByRole, user } = testRender(
+        <PrivateXtmPlatformTrialBanner />,
+        {
+          me: USER_WITHOUT_FEEDBACK,
+        }
+      );
       await user.click(getByRole('radio', { name: FEEDBACK_NO }));
       await user.type(
         getByRole('textbox', { name: FEEDBACK_JUSTIFICATION }),
@@ -185,7 +205,7 @@ describe('PrivateXtmPlatformTrialBanner', () => {
       // Then
       expect(graphqlMocks.giveDeploymentFeedback).toHaveBeenCalledWith({
         input: expect.objectContaining({
-          answer: DeploymentFeedbackAnswer.No,
+          answer: HasRepliedSatisfaction.No,
           justification: JUSTIFICATION_TEXT,
         }),
       });
@@ -193,7 +213,12 @@ describe('PrivateXtmPlatformTrialBanner', () => {
 
     it('should not send the justification when submitting a yes answer after typing one', async () => {
       // Given
-      const { getByRole, user } = testRender(<PrivateXtmPlatformTrialBanner />);
+      const { getByRole, user } = testRender(
+        <PrivateXtmPlatformTrialBanner />,
+        {
+          me: USER_WITHOUT_FEEDBACK,
+        }
+      );
       await user.click(getByRole('radio', { name: FEEDBACK_NO }));
       await user.type(
         getByRole('textbox', { name: FEEDBACK_JUSTIFICATION }),
@@ -207,7 +232,7 @@ describe('PrivateXtmPlatformTrialBanner', () => {
       // Then
       expect(graphqlMocks.giveDeploymentFeedback).toHaveBeenCalledWith({
         input: expect.objectContaining({
-          answer: DeploymentFeedbackAnswer.Yes,
+          answer: HasRepliedSatisfaction.Yes,
           justification: null,
         }),
       });
@@ -216,7 +241,10 @@ describe('PrivateXtmPlatformTrialBanner', () => {
     it('should close the dialog when submitting the feedback', async () => {
       // Given
       const { getByRole, queryByRole, user } = testRender(
-        <PrivateXtmPlatformTrialBanner />
+        <PrivateXtmPlatformTrialBanner />,
+        {
+          me: USER_WITHOUT_FEEDBACK,
+        }
       );
       await user.click(getByRole('radio', { name: FEEDBACK_YES }));
 
@@ -228,5 +256,62 @@ describe('PrivateXtmPlatformTrialBanner', () => {
         queryByRole('dialog', { name: FEEDBACK_QUESTION })
       ).not.toBeInTheDocument();
     });
+
+    it('should send a closed answer when closing the dialog without answering', async () => {
+      // Given
+      const { getByRole, user } = testRender(
+        <PrivateXtmPlatformTrialBanner />,
+        {
+          me: USER_WITHOUT_FEEDBACK,
+        }
+      );
+
+      // When
+      await user.click(getByRole('button', { name: FEEDBACK_CLOSE }));
+
+      // Then
+      expect(graphqlMocks.giveDeploymentFeedback).toHaveBeenCalledWith({
+        input: expect.objectContaining({
+          answer: HasRepliedSatisfaction.Closed,
+          justification: null,
+        }),
+      });
+    });
+
+    it('should not send a closed answer when submitting the feedback', async () => {
+      // Given
+      const { getByRole, user } = testRender(
+        <PrivateXtmPlatformTrialBanner />,
+        {
+          me: USER_WITHOUT_FEEDBACK,
+        }
+      );
+      await user.click(getByRole('radio', { name: FEEDBACK_YES }));
+
+      // When
+      await user.click(getByRole('button', { name: FEEDBACK_SUBMIT }));
+
+      // Then
+      expect(graphqlMocks.giveDeploymentFeedback).toHaveBeenCalledOnce();
+    });
+
+    it.each([
+      HasRepliedSatisfaction.Yes,
+      HasRepliedSatisfaction.No,
+      HasRepliedSatisfaction.Closed,
+    ])(
+      'should not open the feedback dialog when the user already replied %s',
+      (hasRepliedSatisfaction) => {
+        // Given
+        const { queryByRole } = testRender(<PrivateXtmPlatformTrialBanner />, {
+          me: { has_replied_satisfaction: hasRepliedSatisfaction },
+        });
+
+        // Then
+        expect(
+          queryByRole('dialog', { name: FEEDBACK_QUESTION })
+        ).not.toBeInTheDocument();
+      }
+    );
   });
 });
