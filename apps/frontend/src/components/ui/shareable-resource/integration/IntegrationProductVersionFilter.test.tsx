@@ -1,4 +1,3 @@
-import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
 import testRender from '@/utils/test/test-render';
 import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -34,13 +33,12 @@ describe('IntegrationProductVersionFilter', () => {
     useRegisteredProductVersionsMock.mockReturnValue({
       versions: ['6.6.0', '6.5.0'],
     });
-    vi.mocked(useRegisteredPlatforms).mockReturnValue({
-      platforms: [{ version: '6.5.0' }],
-    });
   });
 
   it('renders the known OpenCTI versions as combobox options once opened', async () => {
-    const { user } = testRender(<IntegrationProductVersionFilter />);
+    const { user } = testRender(
+      <IntegrationProductVersionFilter registeredVersions={['6.5.0']} />
+    );
 
     expect(screen.getByText(PLACEHOLDER)).toBeInTheDocument();
     await user.click(screen.getByText(PLACEHOLDER));
@@ -50,7 +48,9 @@ describe('IntegrationProductVersionFilter', () => {
   });
 
   it('marks the version matching a registered platform with the verified icon', async () => {
-    const { user } = testRender(<IntegrationProductVersionFilter />);
+    const { user } = testRender(
+      <IntegrationProductVersionFilter registeredVersions={['6.5.0']} />
+    );
 
     await user.click(screen.getByText(PLACEHOLDER));
 
@@ -59,8 +59,10 @@ describe('IntegrationProductVersionFilter', () => {
     ).toBeInTheDocument();
   });
 
-  it('forwards the registered platform versions to useRegisteredProductVersions', async () => {
-    testRender(<IntegrationProductVersionFilter />);
+  it('forwards the registeredVersions prop to useRegisteredProductVersions', async () => {
+    testRender(
+      <IntegrationProductVersionFilter registeredVersions={['6.5.0']} />
+    );
 
     expect(useRegisteredProductVersionsMock).toHaveBeenCalledWith(
       'opencti',
@@ -69,11 +71,27 @@ describe('IntegrationProductVersionFilter', () => {
   });
 
   it('selects only the chosen version when an option is picked', async () => {
-    const { user } = testRender(<IntegrationProductVersionFilter />);
+    const { user } = testRender(
+      <IntegrationProductVersionFilter registeredVersions={['6.5.0']} />
+    );
 
     await user.click(screen.getByText(PLACEHOLDER));
     await user.click(screen.getByText('6.6.0'));
 
     expect(setProductVersionsMock).toHaveBeenCalledWith({ '6.6.0': [] });
+  });
+
+  it('renders no registered adornment and forwards no registeredVersions when used standalone on public pages', async () => {
+    const { user } = testRender(<IntegrationProductVersionFilter />);
+
+    await user.click(screen.getByText(PLACEHOLDER));
+
+    expect(
+      screen.queryByRole('img', { name: REGISTERED_TOOLTIP })
+    ).not.toBeInTheDocument();
+    expect(useRegisteredProductVersionsMock).toHaveBeenCalledWith(
+      'opencti',
+      expect.objectContaining({ registeredVersions: [] })
+    );
   });
 });

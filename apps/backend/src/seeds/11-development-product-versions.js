@@ -34,6 +34,6 @@ export async function seed(knex) {
         version_padded: '001.000000.000',
       },
     ])
-    .onConflict(['product', 'version'])
+    .onConflict('id')
     .ignore();
 }

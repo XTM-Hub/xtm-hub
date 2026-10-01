@@ -263,9 +263,12 @@ export type CreateEpicInput = {
   active: InputMaybe<Scalars['Boolean']['input']>;
   description: Scalars['String']['input'];
   edition_type: EditionType;
+  expected_value: Scalars['String']['input'];
   illustration_document: InputMaybe<Scalars['Upload']['input']>;
   is_integration: InputMaybe<Scalars['Boolean']['input']>;
+  problem_to_solve: Scalars['String']['input'];
   products: Array<FiligranProduct>;
+  proposed_solution: Scalars['String']['input'];
   short_description: Scalars['String']['input'];
   slack_link: InputMaybe<Scalars['String']['input']>;
   timeline: Timeline;
@@ -747,8 +750,11 @@ export type Epic = Node & {
   document_id: Maybe<Scalars['DocumentId']['output']>;
   edition_type: EditionType;
   epic_type: EpicType;
+  expected_value: Scalars['String']['output'];
   id: Scalars['ID']['output'];
+  problem_to_solve: Scalars['String']['output'];
   products: Array<FiligranProduct>;
+  proposed_solution: Scalars['String']['output'];
   short_description: Scalars['String']['output'];
   slack_link: Maybe<Scalars['String']['output']>;
   timeline: Timeline;
@@ -2861,9 +2867,12 @@ export type UpdateEpicInput = {
   active: InputMaybe<Scalars['Boolean']['input']>;
   description: InputMaybe<Scalars['String']['input']>;
   edition_type: EditionType;
+  expected_value: InputMaybe<Scalars['String']['input']>;
   illustration_document: InputMaybe<Scalars['Upload']['input']>;
   is_integration: InputMaybe<Scalars['Boolean']['input']>;
+  problem_to_solve: InputMaybe<Scalars['String']['input']>;
   products: InputMaybe<Array<FiligranProduct>>;
+  proposed_solution: InputMaybe<Scalars['String']['input']>;
   short_description: InputMaybe<Scalars['String']['input']>;
   slack_link: InputMaybe<Scalars['String']['input']>;
   timeline: InputMaybe<Timeline>;
@@ -2980,6 +2989,7 @@ export enum UserOrdering {
   Disabled = 'disabled',
   Email = 'email',
   FirstName = 'first_name',
+  InvitationDate = 'invitation_date',
   LastLogin = 'last_login',
   LastName = 'last_name'
 }
@@ -3578,6 +3588,20 @@ export type ChangeSelectedOrganizationMutationVariables = Exact<{
 
 
 export type ChangeSelectedOrganizationMutation = { __typename?: 'Mutation', changeSelectedOrganization: { __typename?: 'User', id: string, selected_organization_id: any | null, selected_org_capabilities: Array<OrganizationCapability> | null } | null };
+
+export type UserResendInviteMutationVariables = Exact<{
+  input: AddUserInput;
+}>;
+
+
+export type UserResendInviteMutation = { __typename?: 'Mutation', addUser: { __typename?: 'User', id: string } | null };
+
+export type UserAdminResendInviteMutationVariables = Exact<{
+  input: AdminAddUserInput;
+}>;
+
+
+export type UserAdminResendInviteMutation = { __typename?: 'Mutation', adminAddUser: { __typename?: 'User', id: string } | null };
 
 export type UsersQueryVariables = Exact<{
   first: Scalars['Int']['input'];
@@ -6138,6 +6162,64 @@ export const useChangeSelectedOrganizationMutation = <
 useChangeSelectedOrganizationMutation.getKey = () => ['ChangeSelectedOrganization'];
 useChangeSelectedOrganizationMutation.getRootKey = () => ['ChangeSelectedOrganization'] as const;
 useChangeSelectedOrganizationMutation.fetcher = (client: GraphQLClient, variables: ChangeSelectedOrganizationMutationVariables, headers?: RequestInit['headers']) => fetcher<ChangeSelectedOrganizationMutation, ChangeSelectedOrganizationMutationVariables>(client, ChangeSelectedOrganizationDocument, variables, headers);
+
+export const UserResendInviteDocument = `
+    mutation UserResendInvite($input: AddUserInput!) {
+  addUser(input: $input) {
+    id
+  }
+}
+    `;
+
+export const useUserResendInviteMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UserResendInviteMutation, TError, UserResendInviteMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UserResendInviteMutation, TError, UserResendInviteMutationVariables, TContext>(
+      {
+    mutationKey: ['UserResendInvite'],
+    mutationFn: (variables?: UserResendInviteMutationVariables) => fetcher<UserResendInviteMutation, UserResendInviteMutationVariables>(client, UserResendInviteDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUserResendInviteMutation.getKey = () => ['UserResendInvite'];
+useUserResendInviteMutation.getRootKey = () => ['UserResendInvite'] as const;
+useUserResendInviteMutation.fetcher = (client: GraphQLClient, variables: UserResendInviteMutationVariables, headers?: RequestInit['headers']) => fetcher<UserResendInviteMutation, UserResendInviteMutationVariables>(client, UserResendInviteDocument, variables, headers);
+
+export const UserAdminResendInviteDocument = `
+    mutation UserAdminResendInvite($input: AdminAddUserInput!) {
+  adminAddUser(input: $input) {
+    id
+  }
+}
+    `;
+
+export const useUserAdminResendInviteMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UserAdminResendInviteMutation, TError, UserAdminResendInviteMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UserAdminResendInviteMutation, TError, UserAdminResendInviteMutationVariables, TContext>(
+      {
+    mutationKey: ['UserAdminResendInvite'],
+    mutationFn: (variables?: UserAdminResendInviteMutationVariables) => fetcher<UserAdminResendInviteMutation, UserAdminResendInviteMutationVariables>(client, UserAdminResendInviteDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUserAdminResendInviteMutation.getKey = () => ['UserAdminResendInvite'];
+useUserAdminResendInviteMutation.getRootKey = () => ['UserAdminResendInvite'] as const;
+useUserAdminResendInviteMutation.fetcher = (client: GraphQLClient, variables: UserAdminResendInviteMutationVariables, headers?: RequestInit['headers']) => fetcher<UserAdminResendInviteMutation, UserAdminResendInviteMutationVariables>(client, UserAdminResendInviteDocument, variables, headers);
 
 export const UsersDocument = `
     query Users($first: Int!, $orderBy: UserOrdering!, $orderMode: OrderingMode!, $filters: [Filter!]) {

@@ -190,7 +190,13 @@
       "Title": "Le titre est obligatoire",
       "ShortDescription": "La description courte est obligatoire",
       "ShortDescriptionMax": "La description courte ne doit pas dépasser 215 caractères",
-      "Description": "La description est obligatoire",
+      "DescriptionMax": "La description ne doit pas dépasser 500 caractères",
+      "ProblemToSolve": "Le problème à résoudre est obligatoire",
+      "ProblemToSolveMax": "Le problème à résoudre ne doit pas dépasser 500 caractères",
+      "ProposedSolution": "La solution proposée est obligatoire",
+      "ProposedSolutionMax": "La solution proposée ne doit pas dépasser 500 caractères",
+      "ExpectedValue": "La valeur attendue est obligatoire",
+      "ExpectedValueMax": "La valeur attendue ne doit pas dépasser 500 caractères",
       "Product": "Au moins un produit est obligatoire",
       "SlackLink": "Doit être un lien Slack filigran-community"
     }
@@ -218,7 +224,10 @@
       "Epic": "Epic",
       "Title": "Titre",
       "ShortDesc": "Description courte",
-      "Description": "Description",
+      "Description": "Description complète",
+      "ProblemToSolve": "Problème à résoudre",
+      "ProposedSolution": "Solution proposée",
+      "ExpectedValue": "Valeur attendue",
       "EditionType": "type d'édition",
       "FiligranProduct": "Produit",
       "FiligranProductPlaceholder": "OpenCTI",
@@ -227,15 +236,35 @@
       "Timeline": "Ligne de temps",
       "IsActive": "Cet EPIC est-il publié ? (Par défaut votre EPIC est en mode brouillon)",
       "Integration": "Est une intégration",
-      "IsLimited": "Limité à {maxChars} caractères",
-      "AutomaticallyAdded": "Ajouté automatiquement (non modifiable)"
+      "AutomaticallyAdded": "Ajouté automatiquement (non modifiable)",
+      "CharacterCount": "{count} / {maxChars}",
+      "Placeholder": {
+        "Title": "ex. : les utilisateurs voient tous leurs essais actifs au même endroit",
+        "ShortDesc": "Une phrase affichée sur la carte de la roadmap",
+        "Description": "Détaillez l'epic : contexte, périmètre, contraintes",
+        "ProblemToSolve": "Les difficultés rencontrées par l'utilisateur",
+        "ProposedSolution": "Comment nous comptons le résoudre",
+        "ExpectedValue": "Ce que nous y gagnons une fois livré"
+      },
+      "DetailsSection": "Détails de l'epic",
+      "PublishNow": "Publier maintenant",
+      "PublishNowHint": "(sinon enregistré en brouillon)",
+      "EditionTypeInfo": "Partial EE : fonctionne en Community Edition mais certaines options nécessitent l'Enterprise Edition",
+      "TimelineOption": {
+        "now": "Maintenant",
+        "next": "Ensuite",
+        "under_consideration": "À l’étude",
+        "finished": "Terminé"
+      }
     },
     "EpicActions": {
       "CreateEpic": "Créer un nouvel épic",
       "UpdateEpic": "Mettre à jour un épic",
       "DeleteEpic": "Supprimer l'épic {epicName}",
       "SureDeleteEpic": "Êtes-vous sûr de vouloir supprimer l'épic {epicName} ?",
-      "EpicDeleted": "L'épic a été supprimé"
+      "EpicDeleted": "L'épic a été supprimé",
+      "CreateEpicButton": "Créer l'epic",
+      "UpdateEpicButton": "Mettre à jour l'epic"
     },
     "JoinCommunity": "Restez dans la boucle avec la communauté Filigran"
   },
@@ -1639,7 +1668,7 @@
           },
           "NotLoggedIn": {
             "Title": "Vous devez être connecté pour pouvoir demander un essai.",
-            "Description": "Créez un compte XTM ou connectez-vous à un compte existant."
+            "Description": "Créez un compte Filigran ou connectez-vous à un compte existant."
           },
           "NotAdmin": {
             "Title": "Vous devez être administrateur de l'organisation pour demander un essai.",
@@ -2175,13 +2204,20 @@
     }
   },
   "UserListPage": {
+    "Action": "Action",
     "Country": "Pays",
     "Email": "Email",
     "FirstName": "Prénom",
+    "InvitationDate": "Date d'invitation",
+    "InvitationExpired": "Expirée",
+    "InvitationPending": "En attente",
+    "InvitationStatus": "Statut d'invitation",
     "LastLogin": "Dernière connexion",
     "LastName": "Nom de famille",
     "NoUsers": "Aucun utilisateur trouvé",
     "Organizations": "Organisations",
+    "ResendInvite": "Renvoyer l'invitation",
+    "ResendInviteSuccess": "Invitation renvoyée",
     "Roles": "Rôles",
     "Status": "Statut",
     "TabTitle": "Utilisateurs",

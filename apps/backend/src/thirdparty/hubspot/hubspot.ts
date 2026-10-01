@@ -5,7 +5,8 @@ import {
   PlatformIdentifier,
 } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
-import { UserId } from '../../model/kanel/public/User';
+import type User from '../../model/kanel/public/User';
+import type { UserId } from '../../model/kanel/public/User';
 import {
   DeploymentRequestDomain,
   FullyQualifiedDeploymentRequest,
@@ -120,6 +121,15 @@ export const hubspotLoginHook = async (userId: string) =>
       is_admin,
     };
   });
+
+export const hubspotInviteUserHook = async (
+  user: Pick<User, 'email' | 'first_name' | 'last_name'>
+) =>
+  hubspotHook('inviteUser', async () => ({
+    email: user.email,
+    first_name: user.first_name,
+    last_name: user.last_name,
+  }));
 
 export const hubspotReachOutSalesHook = async ({
   message = 'Please contact me about the OpenCTI free trial',

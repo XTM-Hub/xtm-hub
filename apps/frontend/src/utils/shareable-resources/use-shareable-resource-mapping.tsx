@@ -12,6 +12,8 @@ import { IntegrationProductVersionFilter } from '@/components/ui/shareable-resou
 import { IntegrationSolutionCategoryFilter } from '@/components/ui/shareable-resource/integration/IntegrationSolutionCategoryFilter';
 import { IntegrationTypeFilter } from '@/components/ui/shareable-resource/integration/IntegrationTypeFilter';
 import { IntegrationVerifiedFilter } from '@/components/ui/shareable-resource/integration/IntegrationVerifiedFilter';
+import { PrivateIntegrationProductVersionFilter } from '@/components/ui/shareable-resource/integration/PrivateIntegrationProductVersionFilter';
+import usePublicPath from '@/hooks/use-public-path';
 import { ServiceListLocalStorageKey } from '@/hooks/use-service-list-local-storage';
 import {
   ServiceSlug,
@@ -24,6 +26,7 @@ export const useShareableResourceMapping = (
   facetCounts?: ServiceListFacetCounts
 ) => {
   const t = useTranslations();
+  const isPublicPath = usePublicPath();
   const localStorageKeyMapping: Record<
     ServiceSlug,
     ServiceListLocalStorageKey
@@ -69,7 +72,11 @@ export const useShareableResourceMapping = (
     [ServiceSlug.OPEN_CTI_INTEGRATIONS]: {
       [ServiceListFilterKey.ProductVersion]: {
         title: t('Service.OpenctiIntegrations.Filter.ProductVersion.Label'),
-        node: <IntegrationProductVersionFilter />,
+        node: isPublicPath ? (
+          <IntegrationProductVersionFilter />
+        ) : (
+          <PrivateIntegrationProductVersionFilter />
+        ),
         noAccordion: true,
       },
       [ServiceListFilterKey.Label]: labelFilter,

@@ -4,12 +4,14 @@ import {
   PlatformIdentifier,
   ServiceGroup as ServiceGroupResponse,
   UpdateBundleUserGroupsInput,
+  UserAccountStatus,
 } from '../../../__generated__/resolvers-types';
 import { withTransaction } from '../../../context/database.context';
 import { requestContext } from '../../../context/request.context';
 import { ServiceGroupId } from '../../../model/kanel/public/ServiceGroup';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import User, { UserId } from '../../../model/kanel/public/User';
+import { UserLoadUserBy } from '../../../model/user';
 import { logApp } from '../../../utils/app-logger.util';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { OrganizationDomain } from '../../organization-management/organization/organization.domain';
@@ -456,6 +458,46 @@ export const ServiceGroupApp = {
           error,
         });
       }
+    }
+  },
+
+  grantUserAccess: async (user: User): Promise<void> => {
+    const deploymentRequestsWithGroupName =
+      await ServiceGroupDomain.loadUserDeploymentRequestsWithGroupName(user.id);
+    // Nothing to grant (e.g. every bundle has expired): not a failure.
+    if (deploymentRequestsWithGroupName.length === 0) {
+      return;
+    }
+
+    await ServiceGroupHelper.syncAuth0GroupsForChildren(
+      deploymentRequestsWithGroupName.map((deploymentRequest) => ({
+        child: deploymentRequest,
+        groupNames: [deploymentRequest.group_name],
+      })),
+      [user.id],
+      new Map([[user.id, user.email]])
+    );
+
+    await ServiceGroupHelper.sendBundleWelcomeEmailsForGrant(
+      deploymentRequestsWithGroupName,
+      user
+    );
+  },
+
+  grantAccessIfWaiting: async (user: UserLoadUserBy): Promise<void> => {
+    if (user.status !== UserAccountStatus.Waiting) {
+      return;
+    }
+
+    try {
+      await ServiceGroupApp.grantUserAccess(user);
+      await UserDomain.updateUser(user.id, { status: null });
+      user.status = null;
+    } catch (error) {
+      logApp.error('Unable to grant service group access at login', {
+        userId: user.id,
+        error,
+      });
     }
   },
 };

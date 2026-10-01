@@ -4,6 +4,7 @@ import { PLATFORM_ORGANIZATION_UUID } from '../../../portal.const';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { ForbiddenAccess } from '../../../utils/error/error.util';
 import { isEmptyField } from '../../../utils/utils';
+import { ServiceGroupApp } from '../../deployment/group/service-group.app';
 import { UserDomain } from '../../organization-management/user/user-domain/user.domain';
 import { UserOrganizationDomain } from '../../organization-management/user/user-organization/user-organization.domain';
 import { UserProvisioningApp } from '../../organization-management/user/user-provisioning/user-provisioning.app';
@@ -62,7 +63,11 @@ export const authenticateUser = async (
   if (!logged || logged.disabled) {
     return;
   }
-  req.session.user = await UserDomain.updateUserAtLogin(logged);
+  const updatedUser = await UserDomain.updateUserAtLogin(logged);
+  req.session.user = updatedUser;
+
+  await ServiceGroupApp.grantAccessIfWaiting(updatedUser);
+
   req.session.save();
   res.cookie('NEXT_LOCALE', logged.selected_language);
   return logged;

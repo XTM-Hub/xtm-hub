@@ -1,12 +1,11 @@
-import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
 import { useRegisteredProductVersions } from '@/hooks/use-registered-product-versions';
 import {
   ServiceListLocalStorageKey,
   useServiceListLocalStorage,
 } from '@/hooks/use-service-list-local-storage';
-import { VerifiedIcon } from '@filigran/icon';
 import { Combobox } from '@filigran/ui/clients';
 import { PlatformIdentifier } from '@graphql/generated';
+import { Link2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
@@ -15,23 +14,20 @@ interface ProductVersionOption {
   label: string;
 }
 
-export const IntegrationProductVersionFilter = () => {
+const EMPTY_VERSIONS: string[] = [];
+
+interface IntegrationProductVersionFilterProps {
+  registeredVersions?: string[];
+}
+
+export const IntegrationProductVersionFilter = ({
+  registeredVersions = EMPTY_VERSIONS,
+}: IntegrationProductVersionFilterProps = {}) => {
   const t = useTranslations();
   const [search, setSearch] = useState('');
 
   const { productVersions, setProductVersions } = useServiceListLocalStorage(
     ServiceListLocalStorageKey.OpenCTIIntegrationFeeds
-  );
-
-  const { platforms } = useRegisteredPlatforms(PlatformIdentifier.Opencti, {
-    onlyActive: true,
-  });
-  const registeredVersions = useMemo(
-    () =>
-      [...new Set(platforms.map((platform) => platform.version))].filter(
-        (version): version is string => Boolean(version)
-      ),
-    [platforms]
   );
 
   const { versions } = useRegisteredProductVersions(
@@ -69,11 +65,12 @@ export const IntegrationProductVersionFilter = () => {
       onInputChange={setSearch}
       renderItemAdornment={(option) =>
         registeredVersions.includes(option.value) && (
-          <VerifiedIcon
-            title={t(
+          <Link2
+            role="img"
+            aria-label={t(
               'Service.OpenctiIntegrations.Filter.ProductVersion.RegisteredTooltip'
             )}
-            className="h-4 w-4 shrink-0 text-feedback-success-primary"
+            className="h-4 w-4 shrink-0 text-primary"
           />
         )
       }

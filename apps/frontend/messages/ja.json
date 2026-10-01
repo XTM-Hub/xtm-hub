@@ -190,7 +190,13 @@
       "Title": "タイトルは必須です",
       "ShortDescription": "概要は必須です",
       "ShortDescriptionMax": "概要は215文字以内で入力してください",
-      "Description": "説明は必須です",
+      "DescriptionMax": "説明は500文字以内で入力してください",
+      "ProblemToSolve": "解決する課題は必須です",
+      "ProblemToSolveMax": "解決する課題は500文字以内で入力してください",
+      "ProposedSolution": "提案する解決策は必須です",
+      "ProposedSolutionMax": "提案する解決策は500文字以内で入力してください",
+      "ExpectedValue": "期待される価値は必須です",
+      "ExpectedValueMax": "期待される価値は500文字以内で入力してください",
       "Product": "少なくとも1つの製品が必要です",
       "SlackLink": "filigran-community のSlackリンクである必要があります"
     }
@@ -218,7 +224,10 @@
       "Epic": "エピック",
       "Title": "タイトル",
       "ShortDesc": "簡単な説明",
-      "Description": "説明文",
+      "Description": "詳細な説明",
+      "ProblemToSolve": "解決する課題",
+      "ProposedSolution": "提案する解決策",
+      "ExpectedValue": "期待される価値",
       "EditionType": "エディション・タイプ",
       "FiligranProduct": "製品名",
       "FiligranProductPlaceholder": "オープンCTI",
@@ -227,15 +236,35 @@
       "Timeline": "タイムライン",
       "IsActive": "このエピックは公開されていますか？(デフォルトでは下書きモードです)",
       "Integration": "統合されているか",
-      "IsLimited": "{maxChars}文字以内",
-      "AutomaticallyAdded": "自動的に追加される（編集不可）"
+      "AutomaticallyAdded": "自動的に追加される（編集不可）",
+      "CharacterCount": "{count} / {maxChars}",
+      "Placeholder": {
+        "Title": "例：ユーザーが有効なトライアルをすべて一覧できる",
+        "ShortDesc": "ロードマップカードに表示される一文",
+        "Description": "エピックの詳細：背景、範囲、制約",
+        "ProblemToSolve": "ユーザーが感じている課題",
+        "ProposedSolution": "どのように解決するか",
+        "ExpectedValue": "リリース後に得られる価値"
+      },
+      "DetailsSection": "エピックの詳細",
+      "PublishNow": "今すぐ公開",
+      "PublishNowHint": "（それ以外は下書きとして保存）",
+      "EditionTypeInfo": "Partial EE：Community Edition で動作しますが、一部のオプションには Enterprise Edition が必要です",
+      "TimelineOption": {
+        "now": "現在",
+        "next": "次",
+        "under_consideration": "検討中",
+        "finished": "完了"
+      }
     },
     "EpicActions": {
       "CreateEpic": "新しい叙事詩を作成する",
       "UpdateEpic": "エピックの更新",
       "DeleteEpic": "{epicName} エピックを削除する",
       "SureDeleteEpic": "本当に {epicName} エピックを削除しますか？",
-      "EpicDeleted": "エピックを削除しました"
+      "EpicDeleted": "エピックを削除しました",
+      "CreateEpicButton": "エピックを作成",
+      "UpdateEpicButton": "エピックを更新"
     },
     "JoinCommunity": "フィリグランコミュニティの輪に入る"
   },
@@ -1639,7 +1668,7 @@
           },
           "NotLoggedIn": {
             "Title": "トライアルを申請するにはログインが必要です。",
-            "Description": "XTM アカウントを作成するか、既存のアカウントでログインしてください。"
+            "Description": "Filigran アカウントを作成するか、既存のアカウントでログインしてください。"
           },
           "NotAdmin": {
             "Title": "トライアルを申請するには組織の管理者である必要があります。",
@@ -2175,13 +2204,20 @@
     }
   },
   "UserListPage": {
+    "Action": "アクション",
     "Country": "国名",
     "Email": "Eメール",
     "FirstName": "ファーストネーム",
+    "InvitationDate": "招待日",
+    "InvitationExpired": "期限切れ",
+    "InvitationPending": "保留中",
+    "InvitationStatus": "招待ステータス",
     "LastLogin": "姓",
     "LastName": "姓",
     "NoUsers": "ユーザーが見つかりません",
     "Organizations": "団体名",
+    "ResendInvite": "招待を再送信",
+    "ResendInviteSuccess": "招待を再送信しました",
     "Roles": "役割",
     "Status": "地位",
     "TabTitle": "ユーザー",
