@@ -20,8 +20,14 @@ export const EpicDomain = {
       .where('updater_id', '=', userId)
       .update({ updater_id: SYSTEM_USER_UUID });
   },
-  loadEpics: async (opts: Partial<QueryEpicsArgs>) => {
+  loadEpics: async (
+    opts: Partial<QueryEpicsArgs>,
+    { includeInactive }: { includeInactive: boolean }
+  ) => {
     const epicQuery = db<Epic>('Epic').select(['Epic.*']);
+    if (!includeInactive) {
+      epicQuery.where('Epic.active', true);
+    }
     return paginate<Epic, EpicConnection>('Epic', opts, undefined, epicQuery);
   },
   loadEpicsBy: async (field: EpicMutator): Promise<Epic[]> => {
