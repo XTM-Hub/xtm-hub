@@ -10,13 +10,13 @@ export const DeploymentFeedbackApp = {
   giveDeploymentFeedback: async (
     input: GiveDeploymentFeedbackInput
   ): Promise<Success> => {
+    await DeploymentFeedbackDomain.giveDeploymentFeedback(input.answer);
     const replySatisfactionEvent = await TelemetryHelper.buildSatisfactionEvent(
       input.answer,
       input.deploymentRequestId,
       input.justification
     );
     await TelemetryApp.sendTelemetryEvent(replySatisfactionEvent);
-    await DeploymentFeedbackDomain.giveDeploymentFeedback(input.answer);
 
     return { success: true };
   },

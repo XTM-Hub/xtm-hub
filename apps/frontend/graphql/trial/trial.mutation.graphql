@@ -1,12 +1,12 @@
 mutation CreateDeploymentRequest($input: CreateDeploymentRequestInput!) {
-    createDeploymentRequest(input: $input) {
-        id
-        service_instance_id
-    }
+  createDeploymentRequest(input: $input) {
+    id
+    service_instance_id
+  }
 }
 
 mutation GiveDeploymentFeedback($input: GiveDeploymentFeedbackInput!) {
-    giveDeploymentFeedback(input: $input) {
-        success
-    }
+  giveDeploymentFeedback(input: $input) {
+    success
+  }
 }

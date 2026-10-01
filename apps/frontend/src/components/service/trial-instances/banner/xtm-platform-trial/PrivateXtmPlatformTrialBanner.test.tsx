@@ -43,11 +43,16 @@ const FEEDBACK_SUBMIT = 'Service.Trials.XtmPlatform.Feedback.Submit';
 const FEEDBACK_CLOSE = 'Close';
 const JUSTIFICATION_TEXT = 'Deployment took too long';
 const USER_WITHOUT_FEEDBACK = { has_replied_satisfaction: null };
+const DEPLOYMENT_REQUEST_ID = 'deployment-request-id';
 
-const mockActiveTrialWithDaysLeft = (daysLeft: number) => {
+const mockActiveTrialWithDaysLeft = (
+  daysLeft: number,
+  deploymentRequestId: string | null = DEPLOYMENT_REQUEST_ID
+) => {
   graphqlMocks.usePlatformTrialStatusQuery.mockReturnValue({
     data: {
       platformTrialStatus: {
+        deploymentRequestId,
         isBlacklisted: false,
         hub_status: DeploymentRequestHubStatus.Active,
         end_date: new Date(
@@ -204,10 +209,11 @@ describe('PrivateXtmPlatformTrialBanner', () => {
 
       // Then
       expect(graphqlMocks.giveDeploymentFeedback).toHaveBeenCalledWith({
-        input: expect.objectContaining({
+        input: {
+          deploymentRequestId: DEPLOYMENT_REQUEST_ID,
           answer: HasRepliedSatisfaction.No,
           justification: JUSTIFICATION_TEXT,
-        }),
+        },
       });
     });
 
@@ -231,10 +237,11 @@ describe('PrivateXtmPlatformTrialBanner', () => {
 
       // Then
       expect(graphqlMocks.giveDeploymentFeedback).toHaveBeenCalledWith({
-        input: expect.objectContaining({
+        input: {
+          deploymentRequestId: DEPLOYMENT_REQUEST_ID,
           answer: HasRepliedSatisfaction.Yes,
           justification: null,
-        }),
+        },
       });
     });
 
@@ -271,10 +278,11 @@ describe('PrivateXtmPlatformTrialBanner', () => {
 
       // Then
       expect(graphqlMocks.giveDeploymentFeedback).toHaveBeenCalledWith({
-        input: expect.objectContaining({
+        input: {
+          deploymentRequestId: DEPLOYMENT_REQUEST_ID,
           answer: HasRepliedSatisfaction.Closed,
           justification: null,
-        }),
+        },
       });
     });
 
@@ -293,6 +301,24 @@ describe('PrivateXtmPlatformTrialBanner', () => {
 
       // Then
       expect(graphqlMocks.giveDeploymentFeedback).toHaveBeenCalledOnce();
+    });
+
+    it('should not send the feedback when the trial has no deployment request', async () => {
+      // Given
+      mockActiveTrialWithDaysLeft(15, null);
+      const { getByRole, user } = testRender(
+        <PrivateXtmPlatformTrialBanner />,
+        {
+          me: USER_WITHOUT_FEEDBACK,
+        }
+      );
+      await user.click(getByRole('radio', { name: FEEDBACK_YES }));
+
+      // When
+      await user.click(getByRole('button', { name: FEEDBACK_SUBMIT }));
+
+      // Then
+      expect(graphqlMocks.giveDeploymentFeedback).not.toHaveBeenCalled();
     });
 
     it.each([

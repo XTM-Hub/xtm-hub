@@ -128,7 +128,6 @@ describe('telemetryHelper', () => {
         service: ServiceDefinitionIdentifier.OpenctiRegistration,
         expected: false,
       },
-      { service: ServiceDefinitionIdentifier.Vault, expected: false },
       {
         service: ServiceDefinitionIdentifier.XtmPlatformBundle,
         expected: false,
@@ -275,12 +274,12 @@ describe('telemetryHelper', () => {
         TelemetryHelper.buildSubscribeEvent(
           makeOrganization(),
           USER_ID,
-          ServiceDefinitionIdentifier.Vault,
+          ServiceDefinitionIdentifier.Link,
           TIMESTAMP
         );
 
       // Then
-      expect(call).toThrow('No mapping found for key "vault"');
+      expect(call).toThrow('No mapping found for key "link"');
     });
   });
 

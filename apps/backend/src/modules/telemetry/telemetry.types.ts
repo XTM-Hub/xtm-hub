@@ -201,6 +201,5 @@ export type TelemetryEvent =
   | CreateDeploymentEvent
   | UpdateDeploymentEvent
   | TrialAccessGrantedEvent
-  | TrialAccessRemovedEvent;
-  | UpdateDeploymentEvent
+  | TrialAccessRemovedEvent
   | ReplySatisfactionEvent;
