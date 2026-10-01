@@ -257,6 +257,7 @@ type XtmoneIntegrationStatus {
 }
 
 type PlatformTrialStatus {
+  deploymentRequestId: DeploymentRequestId
   isBlacklisted: Boolean!
   hub_status: DeploymentRequestHubStatus
   end_date: Date

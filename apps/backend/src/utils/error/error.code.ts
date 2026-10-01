@@ -111,6 +111,7 @@ export enum UnknownErrorCode {
   NoAsyncContextAvailableError = 'NO_ASYNC_CONTEXT_AVAILABLE',
   CreateDeploymentRequestError = 'CREATE_DEPLOYMENT_REQUEST_ERROR',
   DeploymentRequestUnknownError = 'DEPLOYMENT_REQUEST_UNKNOWN_ERROR',
+  DeploymentFeedbackUnknownError = 'DEPLOYMENT_FEEDBACK_UNKNOWN_ERROR',
   HubspotError = 'HUBSPOT_ERROR',
   MissingMetadataMapping = 'MISSING_METADATA_MAPPING',
   VoteForFeatureError = 'VOTE_FOR_FEATURE_ERROR',

@@ -331,6 +331,7 @@
       "DEPLOYMENT_REQUEST_QUOTA_NOT_FOUND": "配備要求のクォータが見つからなかった。",
       "DEPLOYMENT_REQUEST_STATUS_UPDATE_NOT_ALLOWED": "不明なエラーが発生した",
       "DEPLOYMENT_REQUEST_UNKNOWN_ERROR": "不明なエラーが発生した",
+      "DEPLOYMENT_FEEDBACK_UNKNOWN_ERROR": "フィードバックの送信中に不明なエラーが発生しました",
       "DOCUMENT_CREATE_ERROR": "リソースの作成中にエラーが発生しました。",
       "DOCUMENT_FILE_MISSING": "ドキュメントファイルが見つからない",
       "DOCUMENT_MISSING_METADATA": "ドキュメントにメタデータがありません。",
@@ -1624,6 +1625,13 @@
           "Text": "トライアル終了前に、引き続き XTM Platform のフル体験をお楽しみください。"
         },
         "DaysLeft": "{days, plural, =1 {残り#日} other {残り#日}}",
+        "Feedback": {
+          "Question": "XTM Platform の体験は今のところ順調ですか？",
+          "Yes": "はい",
+          "No": "いいえ",
+          "Submit": "送信",
+          "Justification": "理由"
+        },
         "Page": {
           "Breadcrumb": "XTM Platform Trial",
           "Overline": "XTM Platform 無料トライアル",

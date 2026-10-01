@@ -849,6 +849,18 @@ export type GenericServiceCapability = Node & {
   name: Maybe<Scalars['String']['output']>;
 };
 
+export type GiveDeploymentFeedbackInput = {
+  answer: HasRepliedSatisfaction;
+  deploymentRequestId: Scalars['DeploymentRequestId']['input'];
+  justification: InputMaybe<Scalars['String']['input']>;
+};
+
+export enum HasRepliedSatisfaction {
+  Closed = 'closed',
+  No = 'no',
+  Yes = 'yes'
+}
+
 export type Integration = {
   active: Scalars['Boolean']['output'];
   blogpost_url: Maybe<Scalars['String']['output']>;
@@ -1059,6 +1071,7 @@ export type Mutation = {
   editUserService: Maybe<UserService>;
   frontendErrorLog: Maybe<Scalars['Boolean']['output']>;
   generateManifest: Success;
+  giveDeploymentFeedback: Success;
   incrementShareNumberDocument: Document;
   ingestManifestFragments: Success;
   login: Maybe<User>;
@@ -1365,6 +1378,11 @@ export type MutationGenerateManifestArgs = {
   product: PlatformIdentifier;
   type: ManifestType;
   version: Scalars['String']['input'];
+};
+
+
+export type MutationGiveDeploymentFeedbackArgs = {
+  input: GiveDeploymentFeedbackInput;
 };
 
 
@@ -1803,6 +1821,7 @@ export enum PlatformRegistrationStatus {
 
 export type PlatformTrialStatus = {
   __typename?: 'PlatformTrialStatus';
+  deploymentRequestId: Maybe<Scalars['DeploymentRequestId']['output']>;
   end_date: Maybe<Scalars['Date']['output']>;
   hub_status: Maybe<DeploymentRequestHubStatus>;
   isBlacklisted: Scalars['Boolean']['output'];
@@ -2944,6 +2963,7 @@ export type User = Node & {
   disabled: Maybe<Scalars['Boolean']['output']>;
   email: Scalars['String']['output'];
   first_name: Maybe<Scalars['String']['output']>;
+  has_replied_satisfaction: Maybe<HasRepliedSatisfaction>;
   id: Scalars['ID']['output'];
   invitation_date: Maybe<Scalars['Date']['output']>;
   last_login: Maybe<Scalars['Date']['output']>;
@@ -3519,12 +3539,19 @@ export type CreateDeploymentRequestMutationVariables = Exact<{
 
 export type CreateDeploymentRequestMutation = { __typename?: 'Mutation', createDeploymentRequest: { __typename?: 'DeploymentRequest', id: string, service_instance_id: any } };
 
+export type GiveDeploymentFeedbackMutationVariables = Exact<{
+  input: GiveDeploymentFeedbackInput;
+}>;
+
+
+export type GiveDeploymentFeedbackMutation = { __typename?: 'Mutation', giveDeploymentFeedback: { __typename?: 'Success', success: boolean } };
+
 export type PlatformTrialStatusQueryVariables = Exact<{
   organizationId: Scalars['OrganizationId']['input'];
 }>;
 
 
-export type PlatformTrialStatusQuery = { __typename?: 'Query', platformTrialStatus: { __typename?: 'PlatformTrialStatus', isBlacklisted: boolean, hub_status: DeploymentRequestHubStatus | null, end_date: any | null, ongoingStandaloneTrials: Array<PlatformIdentifier> } };
+export type PlatformTrialStatusQuery = { __typename?: 'Query', platformTrialStatus: { __typename?: 'PlatformTrialStatus', deploymentRequestId: any | null, isBlacklisted: boolean, hub_status: DeploymentRequestHubStatus | null, end_date: any | null, ongoingStandaloneTrials: Array<PlatformIdentifier> } };
 
 export type UseCaseAddMutationVariables = Exact<{
   input: AddUseCaseInput;
@@ -5826,9 +5853,39 @@ useCreateDeploymentRequestMutation.getKey = () => ['CreateDeploymentRequest'];
 useCreateDeploymentRequestMutation.getRootKey = () => ['CreateDeploymentRequest'] as const;
 useCreateDeploymentRequestMutation.fetcher = (client: GraphQLClient, variables: CreateDeploymentRequestMutationVariables, headers?: RequestInit['headers']) => fetcher<CreateDeploymentRequestMutation, CreateDeploymentRequestMutationVariables>(client, CreateDeploymentRequestDocument, variables, headers);
 
+export const GiveDeploymentFeedbackDocument = `
+    mutation GiveDeploymentFeedback($input: GiveDeploymentFeedbackInput!) {
+  giveDeploymentFeedback(input: $input) {
+    success
+  }
+}
+    `;
+
+export const useGiveDeploymentFeedbackMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<GiveDeploymentFeedbackMutation, TError, GiveDeploymentFeedbackMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<GiveDeploymentFeedbackMutation, TError, GiveDeploymentFeedbackMutationVariables, TContext>(
+      {
+    mutationKey: ['GiveDeploymentFeedback'],
+    mutationFn: (variables?: GiveDeploymentFeedbackMutationVariables) => fetcher<GiveDeploymentFeedbackMutation, GiveDeploymentFeedbackMutationVariables>(client, GiveDeploymentFeedbackDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useGiveDeploymentFeedbackMutation.getKey = () => ['GiveDeploymentFeedback'];
+useGiveDeploymentFeedbackMutation.getRootKey = () => ['GiveDeploymentFeedback'] as const;
+useGiveDeploymentFeedbackMutation.fetcher = (client: GraphQLClient, variables: GiveDeploymentFeedbackMutationVariables, headers?: RequestInit['headers']) => fetcher<GiveDeploymentFeedbackMutation, GiveDeploymentFeedbackMutationVariables>(client, GiveDeploymentFeedbackDocument, variables, headers);
+
 export const PlatformTrialStatusDocument = `
     query PlatformTrialStatus($organizationId: OrganizationId!) {
   platformTrialStatus(organizationId: $organizationId) {
+    deploymentRequestId
     isBlacklisted
     hub_status
     end_date

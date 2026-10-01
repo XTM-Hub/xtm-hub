@@ -16,6 +16,12 @@ enum UserOrdering {
   invitation_date
 }
 
+enum HasRepliedSatisfaction {
+  yes
+  no
+  closed
+}
+
 type Capability implements Node {
   id: ID!
   name: PortalCapability!
@@ -46,6 +52,7 @@ type User implements Node {
   pending_organization_id: OrganizationId
   status: UserAccountStatus
   invitation_date: Date
+  has_replied_satisfaction: HasRepliedSatisfaction
 }
 
 type UserEdge {

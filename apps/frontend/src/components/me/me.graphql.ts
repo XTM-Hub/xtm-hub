@@ -22,6 +22,7 @@ export const MeContextFragment = graphql`
       personal_space
     }
     selected_org_capabilities
+    has_replied_satisfaction
   }
 `;
 

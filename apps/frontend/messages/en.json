@@ -331,6 +331,7 @@
       "DEPLOYMENT_REQUEST_QUOTA_NOT_FOUND": "Deployment request quota was not found.",
       "DEPLOYMENT_REQUEST_STATUS_UPDATE_NOT_ALLOWED": "An unknown error occurred",
       "DEPLOYMENT_REQUEST_UNKNOWN_ERROR": "An unknown error occurred",
+      "DEPLOYMENT_FEEDBACK_UNKNOWN_ERROR": "An unknown error occurred while sending the feeback",
       "DOCUMENT_CREATE_ERROR": "An error occurred while creating the resource.",
       "DOCUMENT_FILE_MISSING": "Document file is missing",
       "DOCUMENT_MISSING_METADATA": "Document is missing metadata.",
@@ -1624,6 +1625,13 @@
           "Text": "Keep exploring the full XTM Platform experience before your trial ends."
         },
         "DaysLeft": "{days, plural, =1 {# day left} other {# days left}}",
+        "Feedback": {
+          "Question": "Is your XTM Platform trial experience going well so far?",
+          "Yes": "Yes, so far so good!",
+          "No": "Not really...",
+          "Submit": "Submit",
+          "Justification": "Sorry to hear that. Would you mind sharing the reason?"
+        },
         "Page": {
           "Breadcrumb": "XTM Platform Trial",
           "Overline": "XTM Platform free trial",

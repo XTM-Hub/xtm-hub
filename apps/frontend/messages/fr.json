@@ -331,6 +331,7 @@
       "DEPLOYMENT_REQUEST_QUOTA_NOT_FOUND": "Le quota de la demande de déploiement n'a pas été trouvé.",
       "DEPLOYMENT_REQUEST_STATUS_UPDATE_NOT_ALLOWED": "Une erreur inconnue s'est produite",
       "DEPLOYMENT_REQUEST_UNKNOWN_ERROR": "Une erreur inconnue s'est produite",
+      "DEPLOYMENT_FEEDBACK_UNKNOWN_ERROR": "Une erreur inconnue s'est produite lors de l'envoi du commentaire.",
       "DOCUMENT_CREATE_ERROR": "Une erreur s'est produite lors de la création de la ressource.",
       "DOCUMENT_FILE_MISSING": "Fichier du document manquant",
       "DOCUMENT_MISSING_METADATA": "Il manque des métadonnées au document.",
@@ -1624,6 +1625,13 @@
           "Text": "Continuez à découvrir l'expérience complète de la XTM Platform avant la fin de votre essai."
         },
         "DaysLeft": "{days, plural, =1 {# jour restant} other {# jours restants}}",
+        "Feedback": {
+          "Question": "Votre expérience de l'essai XTM Platform se passe-t-elle bien jusqu'à présent ?",
+          "Yes": "Oui",
+          "No": "Non",
+          "Submit": "Soumettre",
+          "Justification": "Justification"
+        },
         "Page": {
           "Breadcrumb": "XTM Platform Trial",
           "Overline": "Essai gratuit XTM Platform",

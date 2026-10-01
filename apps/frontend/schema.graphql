@@ -171,6 +171,7 @@ type Mutation {
   createCompetitor(input: CreateCompetitorInput!): Competitor!
   updateCompetitor(input: UpdateCompetitorInput!): Competitor!
   deleteCompetitor(id: CompetitorId!): Competitor!
+  giveDeploymentFeedback(input: GiveDeploymentFeedbackInput!): Success!
   createDeploymentRequest(input: CreateDeploymentRequestInput!): DeploymentRequest!
   updateDeploymentRequest(input: UpdateDeploymentRequestInput!): PlatformDeploymentRequest!
   reorderDeploymentRequestInQueue(input: ReorderDeploymentRequestInQueueInput!): Success!
@@ -250,6 +251,12 @@ type Mutation {
   createEpic(input: CreateEpicInput!, document: [Upload!]): Epic!
   updateEpic(id: ID!, input: UpdateEpicInput!, document: [Upload!]): Epic!
   deleteEpic(id: ID!): Epic
+}
+
+input GiveDeploymentFeedbackInput {
+  deploymentRequestId: DeploymentRequestId!
+  answer: HasRepliedSatisfaction!
+  justification: String
 }
 
 """
@@ -514,6 +521,7 @@ type XtmoneIntegrationStatus {
 }
 
 type PlatformTrialStatus {
+  deploymentRequestId: DeploymentRequestId
   isBlacklisted: Boolean!
   hub_status: DeploymentRequestHubStatus
   end_date: Date
@@ -1036,6 +1044,12 @@ enum UserOrdering {
   invitation_date
 }
 
+enum HasRepliedSatisfaction {
+  yes
+  no
+  closed
+}
+
 type Capability implements Node {
   id: ID!
   name: PortalCapability!
@@ -1066,6 +1080,7 @@ type User implements Node {
   pending_organization_id: OrganizationId
   status: UserAccountStatus
   invitation_date: Date
+  has_replied_satisfaction: HasRepliedSatisfaction
 }
 
 type UserEdge {

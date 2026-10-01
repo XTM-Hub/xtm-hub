@@ -842,6 +842,18 @@ export type GenericServiceCapability = Node & {
   name?: Maybe<Scalars['String']['output']>;
 };
 
+export type GiveDeploymentFeedbackInput = {
+  answer: HasRepliedSatisfaction;
+  deploymentRequestId: Scalars['DeploymentRequestId']['input'];
+  justification?: InputMaybe<Scalars['String']['input']>;
+};
+
+export enum HasRepliedSatisfaction {
+  Closed = 'closed',
+  No = 'no',
+  Yes = 'yes'
+}
+
 export type Integration = {
   active: Scalars['Boolean']['output'];
   blogpost_url?: Maybe<Scalars['String']['output']>;
@@ -1052,6 +1064,7 @@ export type Mutation = {
   editUserService?: Maybe<UserService>;
   frontendErrorLog?: Maybe<Scalars['Boolean']['output']>;
   generateManifest: Success;
+  giveDeploymentFeedback: Success;
   incrementShareNumberDocument: Document;
   ingestManifestFragments: Success;
   login?: Maybe<User>;
@@ -1358,6 +1371,11 @@ export type MutationGenerateManifestArgs = {
   product: PlatformIdentifier;
   type: ManifestType;
   version: Scalars['String']['input'];
+};
+
+
+export type MutationGiveDeploymentFeedbackArgs = {
+  input: GiveDeploymentFeedbackInput;
 };
 
 
@@ -1796,6 +1814,7 @@ export enum PlatformRegistrationStatus {
 
 export type PlatformTrialStatus = {
   __typename?: 'PlatformTrialStatus';
+  deploymentRequestId?: Maybe<Scalars['DeploymentRequestId']['output']>;
   end_date?: Maybe<Scalars['Date']['output']>;
   hub_status?: Maybe<DeploymentRequestHubStatus>;
   isBlacklisted: Scalars['Boolean']['output'];
@@ -2937,6 +2956,7 @@ export type User = Node & {
   disabled?: Maybe<Scalars['Boolean']['output']>;
   email: Scalars['String']['output'];
   first_name?: Maybe<Scalars['String']['output']>;
+  has_replied_satisfaction?: Maybe<HasRepliedSatisfaction>;
   id: Scalars['ID']['output'];
   invitation_date?: Maybe<Scalars['Date']['output']>;
   last_login?: Maybe<Scalars['Date']['output']>;
@@ -3317,6 +3337,8 @@ export type ResolversTypes = ResolversObject<{
   Filter: Filter;
   FilterKey: FilterKey;
   GenericServiceCapability: ResolverTypeWrapper<GenericServiceCapability>;
+  GiveDeploymentFeedbackInput: GiveDeploymentFeedbackInput;
+  HasRepliedSatisfaction: HasRepliedSatisfaction;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
   Integration: ResolverTypeWrapper<ResolversInterfaceTypes<ResolversTypes>['Integration']>;
@@ -3558,6 +3580,7 @@ export type ResolversParentTypes = ResolversObject<{
   FacetBucket: FacetBucket;
   Filter: Filter;
   GenericServiceCapability: GenericServiceCapability;
+  GiveDeploymentFeedbackInput: GiveDeploymentFeedbackInput;
   ID: Scalars['ID']['output'];
   Int: Scalars['Int']['output'];
   Integration: ResolversInterfaceTypes<ResolversParentTypes>['Integration'];
@@ -4245,6 +4268,7 @@ export type MutationResolvers<ContextType = PortalContext, ParentType extends Re
   editUserService?: Resolver<Maybe<ResolversTypes['UserService']>, ParentType, ContextType, RequireFields<MutationEditUserServiceArgs, 'input' | 'service_instance_id'>>;
   frontendErrorLog?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType, RequireFields<MutationFrontendErrorLogArgs, 'message'>>;
   generateManifest?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<MutationGenerateManifestArgs, 'product' | 'type' | 'version'>>;
+  giveDeploymentFeedback?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<MutationGiveDeploymentFeedbackArgs, 'input'>>;
   incrementShareNumberDocument?: Resolver<ResolversTypes['Document'], ParentType, ContextType, RequireFields<MutationIncrementShareNumberDocumentArgs, 'documentId'>>;
   ingestManifestFragments?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<MutationIngestManifestFragmentsArgs, 'manifestFragments'>>;
   login?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<MutationLoginArgs, 'email'>>;
@@ -4469,6 +4493,7 @@ export type PlatformProviderResolvers<ContextType = PortalContext, ParentType ex
 }>;
 
 export type PlatformTrialStatusResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['PlatformTrialStatus'] = ResolversParentTypes['PlatformTrialStatus']> = ResolversObject<{
+  deploymentRequestId?: Resolver<Maybe<ResolversTypes['DeploymentRequestId']>, ParentType, ContextType>;
   end_date?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   hub_status?: Resolver<Maybe<ResolversTypes['DeploymentRequestHubStatus']>, ParentType, ContextType>;
   isBlacklisted?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
@@ -4999,6 +5024,7 @@ export type UserResolvers<ContextType = PortalContext, ParentType extends Resolv
   disabled?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   email?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   first_name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  has_replied_satisfaction?: Resolver<Maybe<ResolversTypes['HasRepliedSatisfaction']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   invitation_date?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   last_login?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
