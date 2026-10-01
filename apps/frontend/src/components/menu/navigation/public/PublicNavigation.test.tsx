@@ -46,6 +46,7 @@ describe('PublicNavigation — open={true}', () => {
     expect(screen.getByText('OpenCTI')).toBeInTheDocument();
     expect(screen.getByText('OpenAEV')).toBeInTheDocument();
     expect(screen.getByText('XTM One')).toBeInTheDocument();
+    expect(screen.getByText('OpenCRQ')).toBeInTheDocument();
   });
 
   it('renders bottom links with their labels', () => {
@@ -98,6 +99,20 @@ describe('PublicNavigation — open={true}', () => {
 
     expect(screen.getByText('Menu.AICatalog')).toBeInTheDocument();
     expect(screen.getByText('Menu.ComingSoon')).toBeInTheDocument();
+  });
+
+  it('expanding the OpenCRQ accordion shows the external About link', async () => {
+    const user = userEvent.setup();
+    renderPublicNavigation();
+
+    await expandSection(user, 'OpenCRQ');
+
+    const aboutLink = screen.getByRole('link', { name: /Menu.About/ });
+    expect(aboutLink).toHaveAttribute(
+      'href',
+      'https://filigran.io/products/opencrq'
+    );
+    expect(aboutLink).toHaveAttribute('target', '_blank');
   });
 
   it('external sub-links have target="_blank" and rel="noopener noreferrer"', async () => {
@@ -203,6 +218,7 @@ describe('PublicNavigation — open={false}', () => {
     expect(screen.getByRole('button', { name: 'OpenCTI' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'OpenAEV' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'XTM One' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'OpenCRQ' })).toBeInTheDocument();
   });
 
   it('section labels are visually hidden (sr-only) in closed mode', () => {

@@ -173,6 +173,7 @@ describe('PrivateNavigation component — open={true}', () => {
     expect(screen.getByText('OpenCTI')).toBeInTheDocument();
     expect(screen.getByText('OpenAEV')).toBeInTheDocument();
     expect(screen.getByText('XTM One')).toBeInTheDocument();
+    expect(screen.getByText('OpenCRQ')).toBeInTheDocument();
 
     expect(screen.getByText('FiligranAcademy')).toBeInTheDocument();
     expect(screen.getByText('Blog')).toBeInTheDocument();
@@ -317,6 +318,7 @@ describe('PrivateNavigation component — open={false}', () => {
     expect(screen.getByRole('button', { name: 'OpenCTI' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'OpenAEV' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'XTM One' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'OpenCRQ' })).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'XTMPlatform' })
     ).toBeInTheDocument();
