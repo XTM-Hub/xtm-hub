@@ -17,7 +17,7 @@ import { UserServiceDomain } from '../modules/user-service/user-service.domain';
 import { logApp } from '../utils/app-logger.util';
 import { ErrorCode } from '../utils/error/error.code';
 import { BadRequestError, ForbiddenAccess } from '../utils/error/error.util';
-import { isUserAdminPlatform, isUserGranted } from './access';
+import { isUserAdminPlatform } from './access';
 
 export const securityGuard = {
   assertUserIsInOrganization: async (
@@ -153,7 +153,7 @@ export const assertUserCanManageService = async (
   user: UserLoadUserBy,
   serviceInstanceId: ServiceInstanceId
 ) => {
-  if (isUserGranted(user)) return;
+  if (isUserAdminPlatform(user)) return;
 
   const subscription = await SubscriptionDomain.loadSubscriptionBy({
     service_instance_id: serviceInstanceId,
@@ -179,7 +179,7 @@ export const assertUserHasCapaOnService = async (
   serviceInstanceId: ServiceInstanceId,
   capabilities: ServiceRestriction[]
 ) => {
-  if (isUserGranted(user)) return;
+  if (isUserAdminPlatform(user)) return;
 
   const subscription = await SubscriptionDomain.loadSubscriptionBy({
     service_instance_id: serviceInstanceId,
