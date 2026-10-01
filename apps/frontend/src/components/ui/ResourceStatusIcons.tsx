@@ -1,10 +1,11 @@
 'use client';
 
+import { cn } from '@/lib/utils';
 import {
   CampaignIcon,
+  LogoFiligranIcon,
   MotionPlayIcon,
   ThreatActorGroupIcon,
-  VerifiedIcon,
 } from '@filigran/icon';
 import {
   Tooltip,
@@ -61,13 +62,19 @@ export const ResourceStatusIcons = ({
       {verified && (
         <StatusIcon
           label={t('Service.ShareableResources.Details.SupportedByFiligran')}
-          icon={<VerifiedIcon className={iconClassName} />}
+          icon={
+            <LogoFiligranIcon className={cn(iconClassName, 'text-primary')} />
+          }
         />
       )}
       {!verified && displayUnverifiedIcon && (
         <StatusIcon
           label={t('Service.ShareableResources.Details.SupportedByCommunity')}
-          icon={<ThreatActorGroupIcon className={iconClassName} />}
+          icon={
+            <ThreatActorGroupIcon
+              className={cn(iconClassName, 'text-icon-disabled')}
+            />
+          }
         />
       )}
       {active && (
