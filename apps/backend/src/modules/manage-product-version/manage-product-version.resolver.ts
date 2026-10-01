@@ -4,8 +4,11 @@ import { ManageProductVersionApp } from './manage-product-version.app';
 
 const resolvers: Resolvers = {
   Query: {
-    registeredProductVersions: async (_, { product }) => {
-      return ManageProductVersionApp.loadRegisteredProductVersions(product);
+    registeredProductVersions: async (_, { product, search }) => {
+      return ManageProductVersionApp.loadRegisteredProductVersions(
+        product,
+        search
+      );
     },
   },
   Mutation: {

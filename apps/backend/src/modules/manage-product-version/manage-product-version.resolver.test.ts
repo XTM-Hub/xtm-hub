@@ -91,5 +91,31 @@ describe('manageProductVersionResolver', () => {
       expect(result).toHaveLength(1);
       expect((result as { version: string }[])[0]!.version).toBe('6.4.0');
     });
+
+    it('should forward the search term to only return matching versions', async () => {
+      await TestHelper.productVersion.create({
+        product: PlatformIdentifier.Opencti,
+        version: '6.4.0',
+        version_padded:
+          ManifestFragmentHelper.validateAndFormatManifestVersion('6.4.0'),
+      });
+      await TestHelper.productVersion.create({
+        product: PlatformIdentifier.Opencti,
+        version: '7.0.0',
+        version_padded:
+          ManifestFragmentHelper.validateAndFormatManifestVersion('7.0.0'),
+      });
+
+      const result = await resolvers.Query!.registeredProductVersions!(
+        {},
+        { product: PlatformIdentifier.Opencti, search: '7.0' },
+        contextSimpleUserFiligran2,
+        GRAPHQL_RESOLVE_INFO
+      );
+
+      expect(
+        (result as { version: string }[]).map((row) => row.version)
+      ).toEqual(['7.0.0']);
+    });
   });
 });
