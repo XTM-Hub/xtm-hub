@@ -30,6 +30,7 @@ interface ComboboxProps<T> {
   className?: string;
   keyValue?: keyof T | 'value';
   keyLabel?: keyof T | 'label';
+  renderItemAdornment?: (item: T) => React.ReactNode;
 }
 
 const Combobox = <T,>({
@@ -43,6 +44,7 @@ const Combobox = <T,>({
   className,
   keyLabel = 'label',
   keyValue = 'value',
+  renderItemAdornment,
 }: ComboboxProps<T>) => {
   const [open, setOpen] = React.useState(false);
 
@@ -109,19 +111,23 @@ const Combobox = <T,>({
                   value={String(data[keyValue as keyof T])}
                   onSelect={() =>
                     handleSelect(String(data[keyValue as keyof T]))
-                  }>
-                  <CheckIcon
-                    className={cn(
-                      'mr-2 h-4 w-4',
-                      (value as ComboboxItem)?.value ===
-                        data[keyValue as keyof T]
-                        ? 'opacity-100'
-                        : 'opacity-0'
-                    )}
-                  />
-                  <span className="mx-3 text-sm text-foreground">
-                    {String(data[keyLabel as keyof T])}
+                  }
+                  className="justify-between">
+                  <span className="flex items-center">
+                    <CheckIcon
+                      className={cn(
+                        'mr-2 h-4 w-4',
+                        (value as ComboboxItem)?.value ===
+                          data[keyValue as keyof T]
+                          ? 'opacity-100'
+                          : 'opacity-0'
+                      )}
+                    />
+                    <span className="mx-3 text-sm text-foreground">
+                      {String(data[keyLabel as keyof T])}
+                    </span>
                   </span>
+                  {renderItemAdornment?.(data)}
                 </CommandItem>
               ))}
             </CommandGroup>

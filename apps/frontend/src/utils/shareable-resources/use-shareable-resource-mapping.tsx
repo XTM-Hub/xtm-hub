@@ -8,6 +8,7 @@ import {
 } from '@/components/service/components/header/ServiceListHeader';
 import { IntegrationDeployableFilter } from '@/components/ui/shareable-resource/integration/IntegrationDeployableFilter';
 import { IntegrationLicenseTypeFilter } from '@/components/ui/shareable-resource/integration/IntegrationLicenseTypeFilter';
+import { IntegrationProductVersionFilter } from '@/components/ui/shareable-resource/integration/IntegrationProductVersionFilter';
 import { IntegrationSolutionCategoryFilter } from '@/components/ui/shareable-resource/integration/IntegrationSolutionCategoryFilter';
 import { IntegrationTypeFilter } from '@/components/ui/shareable-resource/integration/IntegrationTypeFilter';
 import { IntegrationVerifiedFilter } from '@/components/ui/shareable-resource/integration/IntegrationVerifiedFilter';
@@ -66,6 +67,11 @@ export const useShareableResourceMapping = (
 
   const filtersMap: Record<ServiceSlug, ServiceListFilterMap> = {
     [ServiceSlug.OPEN_CTI_INTEGRATIONS]: {
+      [ServiceListFilterKey.ProductVersion]: {
+        title: t('Service.OpenctiIntegrations.Filter.ProductVersion.Label'),
+        node: <IntegrationProductVersionFilter />,
+        noAccordion: true,
+      },
       [ServiceListFilterKey.Label]: labelFilter,
       [ServiceListFilterKey.IntegrationType]: {
         title: t('Service.OpenctiIntegrations.Filter.Type.Label'),

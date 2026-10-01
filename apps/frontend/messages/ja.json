@@ -1198,6 +1198,11 @@
           "Free": "無料",
           "Commercial": "商用"
         },
+        "ProductVersion": {
+          "Label": "OpenCTI 互換バージョン",
+          "Placeholder": "OpenCTI バージョン...",
+          "RegisteredTooltip": "あなたが登録した OpenCTI バージョンの一つです"
+        },
         "SolutionCategory": {
           "Label": "ソリューションカテゴリ",
           "Placeholder": "ソリューションカテゴリ..."
