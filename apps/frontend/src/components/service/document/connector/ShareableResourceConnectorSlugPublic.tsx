@@ -68,7 +68,7 @@ const ShareableResourceConnectorSlugPublic = ({
                 </>
               ) : (
                 <>
-                  <ThreatActorGroupIcon className="h-5 w-5 shrink-0 mr-xs" />
+                  <ThreatActorGroupIcon className="h-5 w-5 shrink-0 mr-xs text-icon-disabled" />
                   {t('Service.ShareableResources.Details.SupportedByCommunity')}
                 </>
               )}

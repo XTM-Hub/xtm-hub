@@ -1029,7 +1029,7 @@
         "IntegrationType": "Integration type",
         "UseCase": "Use case",
         "DeploymentType": "Deployment type",
-        "VerificationStatus": "Supported by",
+        "VerificationStatus": "Status",
         "SolutionCategory": "Solution category",
         "LicenseType": "License type",
         "ShortDescription": "Short description",
@@ -1203,10 +1203,10 @@
           "Placeholder": "Solution category..."
         },
         "Verified": {
-          "Label": "Supported by",
-          "Placeholder": "Supported by...",
-          "Verified": "Filigran",
-          "Unverified": "Community"
+          "Label": "Status",
+          "Placeholder": "Status...",
+          "Verified": "Supported by Filigran",
+          "Unverified": "Supported by Community"
         }
       },
       "Type": {
@@ -1374,7 +1374,7 @@
           "license_type": "License type",
           "product_version": "Connected products",
           "manager_supported": "Deployment type",
-          "verified": "Supported by",
+          "verified": "Status",
           "entity_type": "Entity type"
         }
       }

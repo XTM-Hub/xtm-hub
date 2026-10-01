@@ -70,7 +70,11 @@ export const ResourceStatusIcons = ({
       {!verified && displayUnverifiedIcon && (
         <StatusIcon
           label={t('Service.ShareableResources.Details.SupportedByCommunity')}
-          icon={<ThreatActorGroupIcon className={iconClassName} />}
+          icon={
+            <ThreatActorGroupIcon
+              className={cn(iconClassName, 'text-icon-disabled')}
+            />
+          }
         />
       )}
       {active && (
