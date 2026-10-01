@@ -57,7 +57,7 @@ You can filter feeds by:
 
 The XTM Hub facilitates seamless collaboration through its comprehensive sharing functionality.
 Users can generate universal links for any Integration, enabling cross-organization sharing with partners,
-clients, or team members without requiring recipients to maintain XTM Hub accounts.
+clients, or team members without requiring recipients to maintain Filigran accounts.
 
 This approach removes barriers to information sharing while maintaining the integrity and
 accessibility of threat intelligence data across different organizational boundaries.
