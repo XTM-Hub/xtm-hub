@@ -13,6 +13,7 @@ import {
   OrderingMode,
   PlatformIdentifier,
   ServiceGroupName,
+  UserAccountStatus,
   UserOrdering,
 } from '../../../../__generated__/resolvers-types';
 import { requestContext } from '../../../../context/request.context';
@@ -131,6 +132,49 @@ describe('users domain', () => {
       user_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID,
     });
   });
+
+  describe('updateUserAtLogin', () => {
+    let insertedUser: User | undefined;
+
+    afterEach(async () => {
+      if (insertedUser) {
+        await UserDomain.deleteUserBy({ id: insertedUser.id });
+        insertedUser = undefined;
+      }
+    });
+
+    it.each([UserAccountStatus.Invited, UserAccountStatus.Expired, null])(
+      'should clear a status=%s to null on login',
+      async (status) => {
+        insertedUser = await TestHelper.user.insert({
+          email: `login-${status}-${uuidv4()}@filigran.io`,
+          status,
+        });
+        const loadedUser = await UserDomain.loadUserBy({
+          'User.id': insertedUser.id,
+        });
+
+        const user = await UserDomain.updateUserAtLogin(loadedUser!);
+
+        expect(user.status).toBeNull();
+      }
+    );
+
+    it('should leave a status=waiting untouched until the service group grant succeeds', async () => {
+      insertedUser = await TestHelper.user.insert({
+        email: `login-waiting-${uuidv4()}@filigran.io`,
+        status: UserAccountStatus.Waiting,
+      });
+      const loadedUser = await UserDomain.loadUserBy({
+        'User.id': insertedUser.id,
+      });
+
+      const user = await UserDomain.updateUserAtLogin(loadedUser!);
+
+      expect(user.status).toBe(UserAccountStatus.Waiting);
+    });
+  });
+
   describe('loadUserConnection', () => {
     const opts = {
       first: 50,

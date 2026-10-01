@@ -5,7 +5,9 @@ import {
   PlatformIdentifier,
   ServiceGroupName,
 } from '../../../__generated__/resolvers-types';
-import { DeploymentRequestId } from '../../../model/kanel/public/DeploymentRequest';
+import DeploymentRequest, {
+  DeploymentRequestId,
+} from '../../../model/kanel/public/DeploymentRequest';
 import ServiceGroup, {
   ServiceGroupId,
   ServiceGroupMutator,
@@ -211,6 +213,31 @@ export const ServiceGroupDomain = {
       );
   },
 
+  loadUserDeploymentRequestsWithGroupName: async (
+    userId: UserId
+  ): Promise<DeploymentRequestWithServiceGroupName[]> => {
+    return db<DeploymentRequestWithServiceGroupName>('ServiceGroup_User')
+      .innerJoin(
+        'ServiceGroup',
+        'ServiceGroup.id',
+        '=',
+        'ServiceGroup_User.group_id'
+      )
+      .innerJoin(
+        'DeploymentRequest',
+        'DeploymentRequest.service_instance_id',
+        '=',
+        'ServiceGroup.service_instance_id'
+      )
+      .where('ServiceGroup_User.user_id', '=', userId)
+      .where(
+        'DeploymentRequest.hub_status',
+        '=',
+        DeploymentRequestHubStatus.Active
+      )
+      .select('DeploymentRequest.*', 'ServiceGroup.name as group_name');
+  },
+
   loadServiceInstanceGroupUsers: async (
     serviceInstanceId: ServiceInstanceId
   ): Promise<ServiceGroupUser[]> => {
@@ -251,4 +278,8 @@ export const ServiceGroupDomain = {
       userAdminId,
     ]);
   },
+};
+
+export type DeploymentRequestWithServiceGroupName = DeploymentRequest & {
+  group_name: ServiceGroupName;
 };

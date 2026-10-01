@@ -1,5 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
-import { OrganizationCapability } from '../../../../__generated__/resolvers-types';
+import {
+  FeatureFlag,
+  OrganizationCapability,
+  UserAccountStatus,
+} from '../../../../__generated__/resolvers-types';
+import { withTransaction } from '../../../../context/database.context';
 import Organization, {
   OrganizationId,
 } from '../../../../model/kanel/public/Organization';
@@ -8,6 +13,7 @@ import User, {
   UserInitializer,
 } from '../../../../model/kanel/public/User';
 import { sendMail } from '../../../../server/mail-service';
+import { hubspotInviteUserHook } from '../../../../thirdparty/hubspot/hubspot';
 import { logApp } from '../../../../utils/app-logger.util';
 import {
   BadRequestErrorCode,
@@ -17,6 +23,7 @@ import {
   BadRequestError,
   UnknownError,
 } from '../../../../utils/error/error.util';
+import { isFeatureEnabled } from '../../../../utils/feature-flag.util';
 import { hashPassword } from '../../../../utils/hash-password.util';
 import { isEmpty } from '../../../../utils/utils';
 import { extractDomain } from '../../../../utils/verify-email.util';
@@ -37,11 +44,32 @@ type UserProfile = Pick<
   'email' | 'first_name' | 'last_name' | 'picture'
 >;
 
+const notifyHubspotInvite = async (user: User): Promise<void> => {
+  await hubspotInviteUserHook(user);
+};
+
+const reinviteExpiredUser = async (user: User): Promise<User> =>
+  withTransaction(async () => {
+    const reinvitedUser = await UserDomain.updateUser(user.id, {
+      status: UserAccountStatus.Waiting,
+      invitation_date: new Date(),
+    });
+    if (!reinvitedUser) {
+      throw UnknownError(UnknownErrorCode.EditUserError);
+    }
+
+    await notifyHubspotInvite(reinvitedUser);
+
+    return reinvitedUser;
+  });
+
 export const UserProvisioningDomain = {
   createUser: async (
     data: UserProfile & {
       password?: string | null;
       selected_organization_id?: OrganizationId;
+      status?: UserAccountStatus | null;
+      invitation_date?: Date | null;
     },
     { sendWelcomeEmail = true }: WelcomeEmailOptions = {}
   ): Promise<User> => {
@@ -64,6 +92,8 @@ export const UserProvisioningDomain = {
       last_name: data.last_name,
       picture: data.picture,
       password: hash,
+      status: data.status,
+      invitation_date: data.invitation_date,
     });
 
     const [userOrgRelation] =
@@ -100,11 +130,38 @@ export const UserProvisioningDomain = {
     selected_organization_id?: OrganizationId;
   }): Promise<{ user: User; existed: boolean }> => {
     const [existingUser] = await UserDomain.loadUser({ email: data.email });
+    const isInviteFlagEnabled = isFeatureEnabled(FeatureFlag.TrialInvite);
+
     if (existingUser) {
+      if (
+        isInviteFlagEnabled &&
+        existingUser.status === UserAccountStatus.Expired
+      ) {
+        return {
+          user: await reinviteExpiredUser(existingUser),
+          existed: true,
+        };
+      }
+
       return { user: existingUser, existed: true };
     }
 
-    const user = await UserProvisioningDomain.createUser(data);
+    const user = await withTransaction(async () => {
+      const createdUser = await UserProvisioningDomain.createUser({
+        ...data,
+        ...(isInviteFlagEnabled && {
+          status: UserAccountStatus.Waiting,
+          invitation_date: new Date(),
+        }),
+      });
+
+      if (isInviteFlagEnabled) {
+        await notifyHubspotInvite(createdUser);
+      }
+
+      return createdUser;
+    });
+
     return { user, existed: false };
   },
 

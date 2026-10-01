@@ -1,11 +1,19 @@
 import { v4 as uuidv4 } from 'uuid';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { UserAccountStatus } from '../../../__generated__/resolvers-types';
 import { UserId } from '../../../model/kanel/public/User';
-import { UserLoadUserBy } from '../../../model/user';
+import { UserInfo, UserLoadUserBy } from '../../../model/user';
+import { ServiceGroupApp } from '../../deployment/group/service-group.app';
 import { UserDomain } from '../../organization-management/user/user-domain/user.domain';
 import { UserProvisioningApp } from '../../organization-management/user/user-provisioning/user-provisioning.app';
 import { UserHelper } from '../../organization-management/user/user.helper';
-import { isSessionUserActive } from './auth-user';
+import { authenticateUser, isSessionUserActive } from './auth-user';
+
+vi.mock('../../deployment/group/service-group.app', () => ({
+  ServiceGroupApp: {
+    grantAccessIfWaiting: vi.fn(),
+  },
+}));
 
 const asSessionUser = (id: string) => ({ id }) as UserLoadUserBy;
 
@@ -15,6 +23,19 @@ const createTestUser = async () => {
   const user = (await UserDomain.loadUserBy({ email }))!;
   return { email, user };
 };
+
+const buildRequest = () =>
+  ({ session: { save: vi.fn() } }) as unknown as Parameters<
+    typeof authenticateUser
+  >[0];
+const buildResponse = () =>
+  ({ cookie: vi.fn() }) as unknown as Parameters<typeof authenticateUser>[1];
+const asUserInfo = (email: string): UserInfo => ({
+  email,
+  first_name: 'Test',
+  last_name: 'User',
+  roles: [],
+});
 
 describe('isSessionUserActive', () => {
   describe('with a session that carries no usable identity', () => {
@@ -72,5 +93,52 @@ describe('isSessionUserActive', () => {
         isSessionUserActive(asSessionUser(uuidv4() as UserId))
       ).resolves.toBe(false);
     });
+  });
+});
+
+describe('authenticateUser', () => {
+  let email: string | undefined;
+
+  afterEach(async () => {
+    vi.clearAllMocks();
+    if (email) {
+      await UserHelper.removeUser({ email });
+      email = undefined;
+    }
+  });
+
+  it('should update the session then delegate the access grant to ServiceGroupApp', async () => {
+    const testUser = await createTestUser();
+    email = testUser.email;
+    await UserDomain.updateUser(testUser.user.id, {
+      status: UserAccountStatus.Waiting,
+    });
+
+    const req = buildRequest();
+    await authenticateUser(req, buildResponse(), asUserInfo(email));
+
+    expect(req.session.user?.id).toBe(testUser.user.id);
+    expect(
+      ServiceGroupApp.grantAccessIfWaiting
+    ).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        id: testUser.user.id,
+        status: UserAccountStatus.Waiting,
+      })
+    );
+  });
+
+  it('should reject and not touch the session for a disabled user', async () => {
+    const testUser = await createTestUser();
+    email = testUser.email;
+    await UserDomain.updateUser(testUser.user.id, { disabled: true });
+
+    const req = buildRequest();
+    await expect(
+      authenticateUser(req, buildResponse(), asUserInfo(email))
+    ).rejects.toThrow();
+
+    expect(req.session.user).toBeUndefined();
+    expect(ServiceGroupApp.grantAccessIfWaiting).not.toHaveBeenCalled();
   });
 });

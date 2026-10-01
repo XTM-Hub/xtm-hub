@@ -8,6 +8,7 @@ import {
   PlatformIdentifier,
   QueryUsersArgs,
   ServiceGroupName,
+  UserAccountStatus,
   UserConnection,
   User as UserGenerated,
 } from '../../../../__generated__/resolvers-types';
@@ -482,8 +483,11 @@ export const UserDomain = {
     await hubspotLoginHook(user.id);
 
     const organizations = user.organizations.filter((o) => !o.personal_space);
+    const shouldClearStatusNow =
+      user.status !== null && user.status !== UserAccountStatus.Waiting;
     const fields: UserMutator = {
       last_login: new Date(),
+      ...(shouldClearStatusNow && { status: null }),
     };
     if (organizations.length === 1) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
