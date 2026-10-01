@@ -10,12 +10,12 @@ import {
 } from '@/utils/path/constant';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
 import {
-  AnalyticsIcon,
   DiamondOutlinedIcon,
   HomeIcon,
   LogoXtmOneIcon,
   OpenAevIconIcon,
   OpenCtiIconIcon,
+  OpenGrcIcon,
   PapermapIcon,
   PostIcon,
   SchoolIcon,
@@ -125,13 +125,14 @@ export const usePublicNavigation = (
     {
       key: 'opencrq',
       label: 'OpenCRQ',
-      icon: AnalyticsIcon,
+      icon: OpenGrcIcon,
       pathPrefix: `/${locale}/cybersecurity-solutions/opencrq`,
       links: [
         {
           href: 'https://filigran.io/products/opencrq',
           label: t('Menu.About'),
           external: true,
+          badge: t('Menu.ComingSoon'),
         },
       ],
     },

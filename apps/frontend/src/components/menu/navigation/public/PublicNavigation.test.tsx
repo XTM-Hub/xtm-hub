@@ -1,5 +1,5 @@
 import testRender from '@/utils/test/test-render';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { usePathname } from 'next/navigation';
 import { describe, expect, it, vi } from 'vitest';
@@ -101,7 +101,7 @@ describe('PublicNavigation — open={true}', () => {
     expect(screen.getByText('Menu.ComingSoon')).toBeInTheDocument();
   });
 
-  it('expanding the OpenCRQ accordion shows the external About link', async () => {
+  it('should show an external About link with a coming soon badge when the OpenCRQ section is expanded', async () => {
     const user = userEvent.setup();
     renderPublicNavigation();
 
@@ -113,6 +113,7 @@ describe('PublicNavigation — open={true}', () => {
       'https://filigran.io/products/opencrq'
     );
     expect(aboutLink).toHaveAttribute('target', '_blank');
+    expect(within(aboutLink).getByText('Menu.ComingSoon')).toBeInTheDocument();
   });
 
   it('external sub-links have target="_blank" and rel="noopener noreferrer"', async () => {

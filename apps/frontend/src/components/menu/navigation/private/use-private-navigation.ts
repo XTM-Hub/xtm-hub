@@ -12,13 +12,13 @@ import {
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH, XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
 import {
-  AnalyticsIcon,
   DiamondOutlinedIcon,
   HomeIcon,
   IndividualIcon,
   LogoXtmOneIcon,
   OpenAevIconIcon,
   OpenCtiIconIcon,
+  OpenGrcIcon,
   PapermapIcon,
   PostIcon,
   SchoolIcon,
@@ -366,13 +366,14 @@ export const usePrivateNavigation = (): NavigationConfig => {
     {
       key: 'opencrq',
       label: 'OpenCRQ',
-      icon: AnalyticsIcon,
+      icon: OpenGrcIcon,
       pathPrefix: `/${locale}/cybersecurity-solutions/opencrq`,
       links: [
         {
           href: 'https://filigran.io/products/opencrq',
           label: tMenu('About'),
           external: true,
+          badge: tMenu('ComingSoon'),
         },
       ],
     },

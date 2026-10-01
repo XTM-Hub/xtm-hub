@@ -207,7 +207,7 @@ describe('usePrivateNavigation', () => {
     ]);
   });
 
-  it('returns the OpenCRQ section with an external About link', () => {
+  it('should return an external About link tagged coming soon when building the OpenCRQ section', () => {
     const { result } = renderUsePrivateNavigation({
       selectedOrganizationId: 'org-1',
     });
@@ -221,6 +221,7 @@ describe('usePrivateNavigation', () => {
           href: 'https://filigran.io/products/opencrq',
           label: 'About',
           external: true,
+          badge: 'ComingSoon',
         },
       ],
     });
