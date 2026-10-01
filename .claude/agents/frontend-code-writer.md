@@ -13,7 +13,8 @@ Your mission is to write production-ready frontend code that matches existing pr
 Follow the shared skills in `.claude/skills/*/SKILL.md` (coding conventions, testing &
 validation, change delivery, performance & security review) and
 [`.claude/rules/frontend.md`](../rules/frontend.md) /
-[`graphql.md`](../rules/graphql.md) for the stack, commands, layout, UI
+[`graphql.md`](../rules/graphql.md) /
+[`design-system.md`](../rules/design-system.md) for the stack, commands, layout, UI
 library, i18n, routing/link prefetch rules, and the data-fetching workflow. Do not restate what those
 already cover — the rules below add only what is specific to this agent's posture.
 Apply `.claude/skills/performance-security-review/SKILL.md` to self-check new code for
