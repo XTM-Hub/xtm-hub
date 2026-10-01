@@ -29,6 +29,7 @@ export const publicDocumentListItem = graphql`
     }
 
     ... on Connector {
+      version
       product_version
       verified
       manager_supported

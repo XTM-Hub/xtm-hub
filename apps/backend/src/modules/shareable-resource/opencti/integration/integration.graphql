@@ -143,6 +143,7 @@ type Connector implements Node & Document & Integration {
   # Integration
   remover_id: ID @auth
   integration_type: IntegrationType!
+  version: String
   product_version: String
   container_image: String
   verified: Boolean!
