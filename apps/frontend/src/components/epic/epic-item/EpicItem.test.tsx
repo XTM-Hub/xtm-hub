@@ -22,6 +22,9 @@ describe('EpicItem', () => {
     edition_type: EditionType.CommunityEdition,
     short_description: 'short description',
     description: 'long description',
+    problem_to_solve: 'problem to solve',
+    proposed_solution: 'proposed solution',
+    expected_value: 'expected value',
   } as epic_fragment$data;
 
   const defaultProps = {

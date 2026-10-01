@@ -106,10 +106,16 @@ export default class XTMPlatformRoadmapPage {
     edition_type = 'CE',
     slackLinkOption,
     slackLink,
+    problem_to_solve = 'Problem to solve',
+    proposed_solution = 'Proposed solution',
+    expected_value = 'Expected value',
   }: {
     title: string;
     short_description: string;
-    description: string;
+    description?: string;
+    problem_to_solve?: string;
+    proposed_solution?: string;
+    expected_value?: string;
     products?: string[];
     timeline?: string;
     integration?: boolean;
@@ -127,21 +133,24 @@ export default class XTMPlatformRoadmapPage {
     await form
       .getByRole('textbox', { name: 'Short description' })
       .fill(short_description);
-    await form
-      .getByRole('textbox', { name: 'This is a paragraph to' })
-      .fill(description);
+    await this.fillDescriptionSections(form, {
+      description,
+      problem_to_solve,
+      proposed_solution,
+      expected_value,
+    });
     await this.selectProducts(form, products);
     await this.fillSlackLink(form, { slackLinkOption, slackLink });
     await form.getByRole('radio', { name: edition_type, exact: true }).click();
     await this.selectTimeline(form, timeline);
     if (!draft) {
-      await form.getByRole('checkbox', { name: 'Active' }).check();
+      await form.getByRole('checkbox', { name: 'Publish now' }).check();
     }
     if (integration) {
       await form.getByRole('checkbox', { name: 'Is an integration' }).click();
       await this.uploadImageDocument(TEST_IMAGE_FILE.path);
     }
-    await form.getByRole('button', { name: 'Create' }).click();
+    await form.getByRole('button', { name: 'Create epic' }).click();
     await this.waitForFormToClose();
   }
 
@@ -163,10 +172,16 @@ export default class XTMPlatformRoadmapPage {
     edition_type,
     slackLinkOption,
     slackLink,
+    problem_to_solve,
+    proposed_solution,
+    expected_value,
   }: {
     title?: string;
     short_description?: string;
     description?: string;
+    problem_to_solve?: string;
+    proposed_solution?: string;
+    expected_value?: string;
     products?: string[];
     timeline?: string;
     draft: boolean;
@@ -184,10 +199,12 @@ export default class XTMPlatformRoadmapPage {
       await form
         .getByRole('textbox', { name: 'Short description' })
         .fill(short_description);
-    if (description)
-      await form
-        .getByRole('textbox', { name: 'This is a paragraph to' })
-        .fill(description);
+    await this.fillDescriptionSections(form, {
+      description,
+      problem_to_solve,
+      proposed_solution,
+      expected_value,
+    });
     if (products) {
       await this.selectProducts(form, products);
     }
@@ -201,7 +218,7 @@ export default class XTMPlatformRoadmapPage {
       await this.selectTimeline(form, timeline);
     }
     const publishedCheckbox = form.getByRole('checkbox', {
-      name: 'Is this EPIC published? (By default your EPIC is in draft mode)',
+      name: 'Publish now',
     });
     if (!draft) {
       await publishedCheckbox.check();
@@ -209,8 +226,30 @@ export default class XTMPlatformRoadmapPage {
     if (draft) {
       await publishedCheckbox.uncheck();
     }
-    await form.getByRole('button', { name: 'Update' }).click();
+    await form.getByRole('button', { name: 'Update epic' }).click();
     await this.waitForFormToClose();
+  }
+
+  private async fillDescriptionSections(
+    form: Locator,
+    sections: {
+      description?: string;
+      problem_to_solve?: string;
+      proposed_solution?: string;
+      expected_value?: string;
+    }
+  ) {
+    const fields = [
+      { name: 'Full description', value: sections.description },
+      { name: 'Problem to Solve', value: sections.problem_to_solve },
+      { name: 'Proposed Solution', value: sections.proposed_solution },
+      { name: 'Expected Value', value: sections.expected_value },
+    ];
+    for (const { name, value } of fields) {
+      if (value !== undefined) {
+        await form.getByRole('textbox', { name }).fill(value);
+      }
+    }
   }
 
   async uploadImageDocument(filePath: string) {

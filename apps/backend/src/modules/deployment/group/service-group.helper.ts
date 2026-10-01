@@ -35,7 +35,10 @@ import { TelemetryApp } from '../../telemetry/telemetry.app';
 import { TelemetryHelper } from '../../telemetry/telemetry.helper';
 import { DeploymentRequestDomain } from '../deployment.domain';
 import { UpdateGroupsPayload } from './service-group.app';
-import { ServiceGroupDomain } from './service-group.domain';
+import {
+  DeploymentRequestWithServiceGroupName,
+  ServiceGroupDomain,
+} from './service-group.domain';
 
 export type UserGroups = { user_id: UserId; group_ids: ServiceGroupId[] };
 
@@ -291,6 +294,58 @@ export const ServiceGroupHelper = {
         error,
       });
     }
+  },
+
+  sendBundleWelcomeEmailsForGrant: async (
+    deploymentRequestsWithGroupName: DeploymentRequestWithServiceGroupName[],
+    user: User
+  ): Promise<void> => {
+    const productsByBundleId = new Map<
+      DeploymentRequestId,
+      PlatformIdentifier[]
+    >();
+    deploymentRequestsWithGroupName.forEach((deploymentRequest) => {
+      if (
+        !deploymentRequest.parent_id ||
+        !deploymentRequest.platform_identifier
+      ) {
+        return;
+      }
+      const products =
+        productsByBundleId.get(deploymentRequest.parent_id) ?? [];
+      products.push(deploymentRequest.platform_identifier);
+      productsByBundleId.set(deploymentRequest.parent_id, products);
+    });
+
+    await Promise.all(
+      Array.from(productsByBundleId.entries()).map(
+        async ([bundleId, products]) => {
+          const bundleDeploymentRequest =
+            await DeploymentRequestDomain.loadDeploymentRequestBy({
+              id: bundleId,
+            });
+          if (!bundleDeploymentRequest) {
+            return;
+          }
+
+          const [requester] = await UserDomain.loadUsers([
+            bundleDeploymentRequest.user_requester_id,
+          ]);
+          // Unreachable: user_requester_id is non-nullable and a foreign key to User.
+          // This guard only narrows the `User | undefined` from the array destructuring.
+          if (!requester) {
+            return;
+          }
+
+          await ServiceGroupHelper.sendFreeTrialBundleWelcomeEmails({
+            endDate: bundleDeploymentRequest.end_date,
+            products,
+            newlyAddedUsers: [user],
+            adminEmail: requester.email,
+          });
+        }
+      )
+    );
   },
 
   updateAuth0Groups: async (
