@@ -79,6 +79,56 @@ describe('document security', () => {
       expect(result).toBe(true);
     });
 
+    it.each([
+      ServiceDefinitionIdentifier.OpenctiIntegrations,
+      ServiceDefinitionIdentifier.OpenctiCustomDashboards,
+      ServiceDefinitionIdentifier.OpenctiCustomViews,
+      ServiceDefinitionIdentifier.OpenctiPlaybooks,
+      ServiceDefinitionIdentifier.OpenaevScenarios,
+    ])(
+      'should return true without Upload capability on %s',
+      async (identifier) => {
+        vi.spyOn(
+          ServiceInstanceDomain,
+          'loadServiceDefinitionByServiceInstance'
+        ).mockResolvedValue(mockServiceDefinition(identifier));
+
+        const result = await isUserRestrictedToActiveDocument(
+          mockUser,
+          mockServiceInstanceId
+        );
+
+        expect(result).toBe(true);
+      }
+    );
+
+    it.each([
+      ServiceDefinitionIdentifier.OpenctiIntegrations,
+      ServiceDefinitionIdentifier.OpenctiCustomDashboards,
+      ServiceDefinitionIdentifier.OpenctiCustomViews,
+      ServiceDefinitionIdentifier.OpenctiPlaybooks,
+      ServiceDefinitionIdentifier.OpenaevScenarios,
+    ])(
+      'should return false with Upload capability on %s',
+      async (identifier) => {
+        vi.spyOn(
+          UserServiceCapabilityHelper,
+          'loadCapabilities'
+        ).mockResolvedValue([ServiceRestriction.Upload]);
+        vi.spyOn(
+          ServiceInstanceDomain,
+          'loadServiceDefinitionByServiceInstance'
+        ).mockResolvedValue(mockServiceDefinition(identifier));
+
+        const result = await isUserRestrictedToActiveDocument(
+          mockUser,
+          mockServiceInstanceId
+        );
+
+        expect(result).toBe(false);
+      }
+    );
+
     it('should return false when user lacks Upload capability but service definition is not restricted', async () => {
       vi.spyOn(
         ServiceInstanceDomain,
