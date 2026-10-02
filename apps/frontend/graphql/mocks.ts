@@ -678,8 +678,6 @@ export const mockEpic = (overrides?: Partial<Epic>, _relationshipsToOmit: Set<st
         timeline: overrides && overrides.hasOwnProperty('timeline') ? overrides.timeline! : Timeline.Finished,
         title: overrides && overrides.hasOwnProperty('title') ? overrides.title! : 'amplitudo',
         updated_at: overrides && overrides.hasOwnProperty('updated_at') ? overrides.updated_at! : '2021-04-10T05:21:11.658Z',
-        updater_id: overrides && overrides.hasOwnProperty('updater_id') ? overrides.updater_id! : 'aqua',
-        uploader_id: overrides && overrides.hasOwnProperty('uploader_id') ? overrides.uploader_id! : 'bis',
     };
 };
 

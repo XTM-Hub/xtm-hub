@@ -2212,8 +2212,6 @@ type Epic implements Node {
   epic_type: EpicType!
   document: Document
   document_id: DocumentId
-  uploader_id: String!
-  updater_id: String
   created_at: Date!
   updated_at: Date
 }
