@@ -149,31 +149,6 @@ export const securityGuard = {
   },
 };
 
-export const assertUserCanManageService = async (
-  user: UserLoadUserBy,
-  serviceInstanceId: ServiceInstanceId
-) => {
-  if (isUserAdminPlatform(user)) return;
-
-  const subscription = await SubscriptionDomain.loadSubscriptionBy({
-    service_instance_id: serviceInstanceId,
-    organization_id: user.selected_organization_id,
-  });
-
-  if (!subscription) {
-    throw ForbiddenAccess(ErrorCode.MissingCapabilityOnService);
-  }
-  const userServiceCapability =
-    await UserServiceDomain.loadUserServiceGenericCapability(
-      user.id,
-      subscription.id,
-      ServiceRestriction.ManageAccess
-    );
-
-  if (!userServiceCapability) {
-    throw ForbiddenAccess(ErrorCode.MissingCapabilityOnService);
-  }
-};
 export const assertUserHasCapaOnService = async (
   user: UserLoadUserBy,
   serviceInstanceId: ServiceInstanceId,

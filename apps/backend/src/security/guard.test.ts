@@ -20,11 +20,7 @@ import { AuthHelper } from '../modules/security-management/capability/auth.helpe
 import { SubscriptionDomain } from '../modules/subscription/subscription.domain';
 import { UserServiceDomain } from '../modules/user-service/user-service.domain';
 import { ErrorCode } from '../utils/error/error.code';
-import {
-  assertUserCanManageService,
-  assertUserHasCapaOnService,
-  securityGuard,
-} from './guard';
+import { assertUserHasCapaOnService, securityGuard } from './guard';
 
 describe('security Guard', () => {
   let isUserAllowedOnOrganizationSpy: MockInstance;
@@ -375,78 +371,6 @@ describe('security Guard', () => {
         requestContextAdminSecondOrga.user,
         SERVICES.INSTANCES.EPIC.ID,
         [ServiceRestriction.Upsert, ServiceRestriction.Delete]
-      );
-
-      // Then
-      await expect(call).resolves.toBeUndefined();
-    });
-  });
-
-  describe('assertUserCanManageService', () => {
-    let loadSubscriptionBySpy: MockInstance;
-    let loadUserServiceGenericCapabilitySpy: MockInstance;
-
-    beforeEach(() => {
-      loadSubscriptionBySpy = vi
-        .spyOn(SubscriptionDomain, 'loadSubscriptionBy')
-        .mockResolvedValue({ id: 'subscription-id' } as never);
-      loadUserServiceGenericCapabilitySpy = vi
-        .spyOn(UserServiceDomain, 'loadUserServiceGenericCapability')
-        .mockResolvedValue(undefined as never);
-    });
-
-    it('should bypass checks when user is a platform admin', async () => {
-      // When
-      await assertUserCanManageService(
-        contextBypassUser.user,
-        SERVICES.INSTANCES.EPIC.ID
-      );
-
-      // Then
-      expect(loadSubscriptionBySpy).not.toHaveBeenCalled();
-      expect(loadUserServiceGenericCapabilitySpy).not.toHaveBeenCalled();
-    });
-
-    it('should throw MissingCapabilityOnService when the organization has no subscription', async () => {
-      // Given
-      loadSubscriptionBySpy.mockResolvedValue(undefined);
-
-      // When
-      const call = assertUserCanManageService(
-        requestContextSimpleUserFiligran2.user,
-        SERVICES.INSTANCES.EPIC.ID
-      );
-
-      // Then
-      await expect(call).rejects.toThrow(ErrorCode.MissingCapabilityOnService);
-    });
-
-    it('should throw MissingCapabilityOnService when a logged-in user cannot manage access on the service', async () => {
-      // When
-      const call = assertUserCanManageService(
-        requestContextSimpleUserFiligran2.user,
-        SERVICES.INSTANCES.EPIC.ID
-      );
-
-      // Then
-      await expect(call).rejects.toThrow(ErrorCode.MissingCapabilityOnService);
-      expect(loadUserServiceGenericCapabilitySpy).toHaveBeenCalledWith(
-        requestContextSimpleUserFiligran2.user.id,
-        'subscription-id',
-        ServiceRestriction.ManageAccess
-      );
-    });
-
-    it('should allow access when the user can manage access on the service', async () => {
-      // Given
-      loadUserServiceGenericCapabilitySpy.mockResolvedValue({
-        id: 'user-service-id',
-      } as never);
-
-      // When
-      const call = assertUserCanManageService(
-        requestContextSimpleUserFiligran2.user,
-        SERVICES.INSTANCES.EPIC.ID
       );
 
       // Then
