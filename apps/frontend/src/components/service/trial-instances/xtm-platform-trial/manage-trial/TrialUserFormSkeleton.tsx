@@ -11,27 +11,28 @@ import {
 import { FormLabel, MultiSelectFormField } from '@filigran/ui/clients';
 import { PlatformIdentifier } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
+import { ReactNode } from 'react';
 import { UseFormReturn, useFormState, useWatch } from 'react-hook-form';
 import {
   RoleFormField,
   RolePanelConfig,
+  TrialUserOption,
   TrialUserRolesFormValues,
 } from './manage-trial.const';
 import { MixedRoleDefault } from './manage-trial.utils';
 import { ManageTrialRoleDescriptions } from './ManageTrialRoleDescriptions';
 import { TrialUserRolePanelFields } from './TrialUserRolePanelFields';
 
-interface UserOption {
-  label: string;
-  value: string;
-}
-
 interface TrialUserFormSkeletonProps {
   form: UseFormReturn<TrialUserRolesFormValues>;
   onSubmit: (values: TrialUserRolesFormValues) => void;
-  usersOptions: UserOption[];
+  usersOptions: TrialUserOption[];
+  // When set, the options are searched on the server from the typed text
+  onUsersInputChange?: (value: string) => void;
+  onUsersChange?: (values: string[]) => void;
   pickerLabel?: string;
   pickerPlaceholder: string;
+  pickerNotice?: ReactNode;
   products: PlatformIdentifier[];
   bundleRolePanels: RolePanelConfig[];
   mixedRoleDefaults?: Partial<Record<PlatformIdentifier, MixedRoleDefault>>;
@@ -43,8 +44,11 @@ export const TrialUserFormSkeleton = ({
   form,
   onSubmit,
   usersOptions,
+  onUsersInputChange,
+  onUsersChange,
   pickerLabel,
   pickerPlaceholder,
+  pickerNotice,
   products,
   bundleRolePanels,
   mixedRoleDefaults,
@@ -82,7 +86,12 @@ export const TrialUserFormSkeleton = ({
                     options={usersOptions}
                     defaultValue={field.value}
                     value={field.value}
-                    onValueChange={field.onChange}
+                    onValueChange={(values) => {
+                      field.onChange(values);
+                      onUsersChange?.(values);
+                    }}
+                    onInputChange={onUsersInputChange}
+                    shouldFilter={!onUsersInputChange}
                     noResultString={t('Utils.NotFound')}
                     placeholder={pickerPlaceholder}
                     variant="inverted"
@@ -95,6 +104,7 @@ export const TrialUserFormSkeleton = ({
                 </div>
               </FormControl>
               <FormMessage />
+              {pickerNotice}
             </FormItem>
           )}
         />

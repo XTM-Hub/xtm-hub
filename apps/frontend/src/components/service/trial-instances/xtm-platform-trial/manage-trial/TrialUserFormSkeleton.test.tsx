@@ -9,6 +9,7 @@ import testRender from '@/utils/test/test-render';
 import { PlatformIdentifier, ServiceGroupName } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { screen, waitFor } from '@testing-library/react';
+import { ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -23,6 +24,8 @@ interface WrapperProps {
   pickerLabel?: string;
   mixedRoleDefaults?: Partial<Record<PlatformIdentifier, MixedRoleDefault>>;
   defaultUserIds?: string[];
+  pickerNotice?: ReactNode;
+  onUsersChange?: (values: string[]) => void;
 }
 
 const Wrapper = ({
@@ -32,6 +35,8 @@ const Wrapper = ({
   pickerLabel,
   mixedRoleDefaults,
   defaultUserIds = [],
+  pickerNotice,
+  onUsersChange,
 }: WrapperProps) => {
   const form = useForm<TrialUserRolesFormValues>({
     resolver: zodResolver(trialUserRolesFormSchema),
@@ -48,6 +53,8 @@ const Wrapper = ({
       usersOptions={usersOptions}
       pickerLabel={pickerLabel}
       pickerPlaceholder="Pick a user"
+      pickerNotice={pickerNotice}
+      onUsersChange={onUsersChange}
       products={products}
       bundleRolePanels={bundleRolePanels}
       mixedRoleDefaults={mixedRoleDefaults}
@@ -167,6 +174,34 @@ describe('TrialUserFormSkeleton', () => {
         expect.anything()
       );
     });
+  });
+
+  it('renders the picker notice when provided', () => {
+    testRender(
+      <Wrapper
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+        pickerNotice={<p>Contact your admin</p>}
+      />
+    );
+
+    expect(screen.getByText('Contact your admin')).toBeInTheDocument();
+  });
+
+  it('notifies onUsersChange with the selected values', async () => {
+    const onUsersChange = vi.fn();
+    const { user } = testRender(
+      <Wrapper
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+        onUsersChange={onUsersChange}
+      />
+    );
+
+    await openUserPicker(user);
+    await user.click(await screen.findByText('user1@filigran.io'));
+
+    expect(onUsersChange).toHaveBeenCalledWith(['user-1']);
   });
 
   it('calls onCancel when Cancel is clicked', async () => {

@@ -19,6 +19,7 @@ import {
 } from '../../../../tests/tests.const';
 import {
   DeploymentRequestHubStatus,
+  OrganizationCapability,
   PlatformIdentifier,
   ServiceGroupName,
   ServiceInstanceCreationStatus,
@@ -32,7 +33,9 @@ import User, { UserId } from '../../../model/kanel/public/User';
 import type { UserLoadUserBy } from '../../../model/user';
 import * as mailService from '../../../server/mail-service';
 import { auth0ClientMock } from '../../../thirdparty/auth0/mock';
+import * as Hubspot from '../../../thirdparty/hubspot/hubspot';
 import { ErrorCode } from '../../../utils/error/error.code';
+import { isFeatureEnabled } from '../../../utils/feature-flag.util';
 import { formatName } from '../../../utils/format';
 
 import { TestHelper } from '../../../../tests/helper/test.helper';
@@ -46,6 +49,16 @@ const loadUser = async (userId: UserId): Promise<User> => {
   const [user] = await UserDomain.loadUsers([userId]);
   return user!;
 };
+
+const FREE_TRIAL_BUNDLE_USER_ADDED_TEMPLATE = 'free_trial_bundle_user_added';
+
+// Mocked (disabled by default) so tests don't depend on the local `enabled_features` config
+vi.mock('../../../utils/feature-flag.util', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('../../../utils/feature-flag.util')
+  >()),
+  isFeatureEnabled: vi.fn(() => false),
+}));
 
 describe('serviceGroupApp', () => {
   const adminGroupId = uuidv4() as ServiceGroupId;
@@ -1079,6 +1092,441 @@ describe('serviceGroupApp', () => {
         })
       );
     });
+
+    it.each([UserAccountStatus.Waiting, UserAccountStatus.Expired])(
+      'should store the trial access in DB only, without Auth0 sync nor welcome email, when the user is %s',
+      async (status) => {
+        // Given
+        const { user: member } = await TestHelper.user.insertInOrganization(
+          TEST_ORGANIZATIONS.FILIGRAN.ID,
+          { status }
+        );
+        const { bundle, groups } = await createBundleWithGroups({
+          endDate: inTenDays(),
+        });
+        const auth0Spy = vi
+          .spyOn(auth0ClientMock, 'updateUserRBACInstance')
+          .mockResolvedValue(undefined);
+        const sendMailSpy = vi
+          .spyOn(mailService, 'sendMail')
+          .mockResolvedValue(undefined);
+
+        // When
+        await ServiceGroupApp.addUsersToBundleGroups(
+          bundle.service_instance_id,
+          {
+            userIds: [member.id],
+            roles: [
+              {
+                product: PlatformIdentifier.Xtmone,
+                role: ServiceGroupName.User,
+              },
+            ],
+          }
+        );
+
+        // Then
+        const members = await TestHelper.serviceGroupUser.load({
+          group_id: groups.xtmoneUserGroupId,
+        });
+        expect(members?.map(({ user_id }) => user_id)).toEqual([member.id]);
+        expect(auth0Spy).not.toHaveBeenCalled();
+        expect(sendMailSpy).not.toHaveBeenCalled();
+        expect(telemetrySpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            event_type: TelemetryEventType.TRIAL_ACCESS_GRANTED,
+            email: member.email,
+          })
+        );
+      }
+    );
+
+    describe('with emails', () => {
+      const xtmoneUserRoles = [
+        { product: PlatformIdentifier.Xtmone, role: ServiceGroupName.User },
+      ];
+
+      beforeEach(() => {
+        vi.mocked(isFeatureEnabled).mockReturnValue(true);
+        vi.spyOn(auth0ClientMock, 'updateUserRBACInstance').mockResolvedValue(
+          undefined
+        );
+      });
+
+      afterEach(() => {
+        vi.mocked(isFeatureEnabled).mockReturnValue(false);
+      });
+
+      it('should ignore the emails and only add the selected users when the TRIAL_INVITE feature flag is disabled', async () => {
+        // Given
+        vi.mocked(isFeatureEnabled).mockReturnValue(false);
+        const { bundle, groups } = await createBundleWithGroups();
+        vi.spyOn(mailService, 'sendMail').mockResolvedValue(undefined);
+        const email = `new-${uuidv4()}@filigran.io`;
+
+        // When
+        await ServiceGroupApp.addUsersToBundleGroups(
+          bundle.service_instance_id,
+          {
+            userIds: [TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID],
+            emails: [email],
+            roles: xtmoneUserRoles,
+          }
+        );
+
+        // Then
+        const members = await TestHelper.serviceGroupUser.load({
+          group_id: groups.xtmoneUserGroupId,
+        });
+        expect(members?.map(({ user_id }) => user_id)).toEqual([
+          TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
+        ]);
+        expect(await TestHelper.user.loadAll({ email })).toEqual([]);
+      });
+
+      const addNewEmailAlongWithSelectedUser = async () => {
+        const { bundle, groups } = await createBundleWithGroups({
+          endDate: inTenDays(),
+        });
+        const auth0Spy = vi
+          .spyOn(auth0ClientMock, 'updateUserRBACInstance')
+          .mockResolvedValue(undefined);
+        const sendMailSpy = vi
+          .spyOn(mailService, 'sendMail')
+          .mockResolvedValue(undefined);
+        const hubspotInviteSpy = vi
+          .spyOn(Hubspot, 'hubspotInviteUserHook')
+          .mockResolvedValue(undefined);
+        const email = `new-${uuidv4()}@filigran.io`;
+
+        await ServiceGroupApp.addUsersToBundleGroups(
+          bundle.service_instance_id,
+          {
+            userIds: [TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID],
+            emails: [email, ` ${email.toUpperCase()} `],
+            roles: xtmoneUserRoles,
+          }
+        );
+
+        return { groups, email, auth0Spy, sendMailSpy, hubspotInviteSpy };
+      };
+
+      it('should add a single waiting user to the bundle organization and invite them through HubSpot when a new email is given', async () => {
+        // Given / When
+        const { email, hubspotInviteSpy } =
+          await addNewEmailAlongWithSelectedUser();
+
+        // Then
+        const createdUsers = await TestHelper.user.loadAll({ email });
+        expect(createdUsers).toEqual([
+          expect.objectContaining({ status: UserAccountStatus.Waiting }),
+        ]);
+        expect(
+          await TestHelper.user_Organization.load({
+            user_id: createdUsers[0]!.id,
+            organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+          })
+        ).toBeDefined();
+        expect(hubspotInviteSpy).toHaveBeenCalledExactlyOnceWith(
+          expect.objectContaining({ email })
+        );
+      });
+
+      it('should store the new user trial access in DB only, while syncing Auth0 and emailing the selected user, when a new email is given', async () => {
+        // Given / When
+        const { groups, email, auth0Spy, sendMailSpy } =
+          await addNewEmailAlongWithSelectedUser();
+
+        // Then
+        const [createdUser] = await TestHelper.user.loadAll({ email });
+        const members = await TestHelper.serviceGroupUser.load({
+          group_id: groups.xtmoneUserGroupId,
+        });
+        expect(members?.map(({ user_id }) => user_id)).toEqual(
+          expect.arrayContaining([
+            TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
+            createdUser!.id,
+          ])
+        );
+        expect(auth0Spy).toHaveBeenCalledExactlyOnceWith(
+          TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.EMAIL,
+          expect.anything()
+        );
+        const trialMailRecipients = sendMailSpy.mock.calls.flatMap(([mail]) =>
+          mail.template === FREE_TRIAL_BUNDLE_USER_ADDED_TEMPLATE
+            ? [mail.to]
+            : []
+        );
+        expect(trialMailRecipients).toEqual([
+          TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.EMAIL,
+        ]);
+      });
+
+      it('should sync Auth0 and send the welcome email at first login when the user was invited from the trial', async () => {
+        // Given
+        const { bundle, children } =
+          await TestHelper.deploymentRequest.createBundle({
+            bundle: { end_date: inTenDays() },
+            children: [
+              {
+                platform_identifier: PlatformIdentifier.Xtmone,
+                hub_status: DeploymentRequestHubStatus.Active,
+                platform_id: uuidv4(),
+                end_date: inTenDays(),
+              },
+            ],
+          });
+        createdBundleIds.push(bundle.id);
+        const [xtmoneChild] = children;
+        await TestHelper.serviceGroup.create({
+          id: uuidv4() as ServiceGroupId,
+          name: 'User',
+          service_instance_id: xtmoneChild!.service_instance_id,
+        });
+        const auth0Spy = vi
+          .spyOn(auth0ClientMock, 'updateUserRBACInstance')
+          .mockResolvedValue(undefined);
+        const sendMailSpy = vi
+          .spyOn(mailService, 'sendMail')
+          .mockResolvedValue(undefined);
+        vi.spyOn(Hubspot, 'hubspotInviteUserHook').mockResolvedValue(undefined);
+        const email = `new-${uuidv4()}@filigran.io`;
+        await ServiceGroupApp.addUsersToBundleGroups(
+          bundle.service_instance_id,
+          { userIds: [], emails: [email], roles: xtmoneUserRoles }
+        );
+        expect(auth0Spy).not.toHaveBeenCalled();
+        const [createdUser] = await TestHelper.user.loadAll({ email });
+        const invitedUser = await UserDomain.loadUserBy({
+          'User.id': createdUser!.id,
+        });
+
+        // When
+        await ServiceGroupApp.grantAccessIfWaiting(invitedUser!);
+
+        // Then
+        expect(auth0Spy).toHaveBeenCalledWith(email, {
+          [xtmoneChild!.platform_id as string]: { groups: ['User'] },
+        });
+        expect(sendMailSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            to: email,
+            template: FREE_TRIAL_BUNDLE_USER_ADDED_TEMPLATE,
+          })
+        );
+        expect(
+          (await TestHelper.user.load({ id: createdUser!.id })).status
+        ).toBeNull();
+      });
+
+      it('should reuse the member without inviting them again when the email belongs to an expired organization member', async () => {
+        // Given
+        const { user: member } = await TestHelper.user.insertInOrganization(
+          TEST_ORGANIZATIONS.FILIGRAN.ID,
+          {
+            status: UserAccountStatus.Expired,
+          }
+        );
+        const { bundle, groups } = await createBundleWithGroups();
+        const hubspotInviteSpy = vi
+          .spyOn(Hubspot, 'hubspotInviteUserHook')
+          .mockResolvedValue(undefined);
+
+        // When
+        await ServiceGroupApp.addUsersToBundleGroups(
+          bundle.service_instance_id,
+          { userIds: [], emails: [member.email], roles: xtmoneUserRoles }
+        );
+
+        // Then
+        expect(hubspotInviteSpy).not.toHaveBeenCalled();
+        expect((await TestHelper.user.load({ id: member.id })).status).toBe(
+          UserAccountStatus.Expired
+        );
+        const members = await TestHelper.serviceGroupUser.load({
+          group_id: groups.xtmoneUserGroupId,
+        });
+        expect(members?.map(({ user_id }) => user_id)).toEqual([member.id]);
+      });
+
+      it('should keep the member capabilities when the email belongs to an organization member', async () => {
+        // Given
+        const { user: member, userOrganization } =
+          await TestHelper.user.insertInOrganization(
+            TEST_ORGANIZATIONS.FILIGRAN.ID
+          );
+        await TestHelper.user_OrganizationCapability.create({
+          user_organization_id: userOrganization.id,
+          name: OrganizationCapability.ManageAccess,
+        });
+        const { bundle, groups } = await createBundleWithGroups();
+        const sendMailSpy = vi
+          .spyOn(mailService, 'sendMail')
+          .mockResolvedValue(undefined);
+
+        // When
+        await ServiceGroupApp.addUsersToBundleGroups(
+          bundle.service_instance_id,
+          {
+            userIds: [],
+            emails: [member.email],
+            roles: xtmoneUserRoles,
+          }
+        );
+
+        // Then
+        const capabilities =
+          await TestHelper.user_OrganizationCapability.loadAll({
+            user_organization_id: userOrganization.id,
+          });
+        expect(capabilities.map(({ name }) => name)).toEqual([
+          OrganizationCapability.ManageAccess,
+        ]);
+        const members = await TestHelper.serviceGroupUser.load({
+          group_id: groups.xtmoneUserGroupId,
+        });
+        expect(members?.map(({ user_id }) => user_id)).toEqual([member.id]);
+        expect(sendMailSpy).not.toHaveBeenCalledWith(
+          expect.objectContaining({ template: 'new_user_organization' })
+        );
+      });
+
+      it('should throw EmailOutsideOrganizationError and roll back every addition when one email is outside the organization domains', async () => {
+        // Given
+        const { bundle, groups } = await createBundleWithGroups();
+        vi.spyOn(mailService, 'sendMail').mockResolvedValue(undefined);
+        vi.spyOn(Hubspot, 'hubspotInviteUserHook').mockResolvedValue(undefined);
+        const newEmail = `new-${uuidv4()}@filigran.io`;
+
+        // When
+        const call = ServiceGroupApp.addUsersToBundleGroups(
+          bundle.service_instance_id,
+          {
+            userIds: [TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID],
+            emails: [newEmail, `someone-${uuidv4()}@second-orga.com`],
+            roles: xtmoneUserRoles,
+          }
+        );
+
+        // Then
+        await expect(call).rejects.toThrow(
+          ErrorCode.EmailOutsideOrganizationError
+        );
+        expect(await TestHelper.user.loadAll({ email: newEmail })).toEqual([]);
+        expect(
+          await TestHelper.serviceGroupUser.load({
+            group_id: groups.xtmoneUserGroupId,
+          })
+        ).toEqual([]);
+      });
+
+      it.each([
+        {
+          caller: 'an organization administrator',
+          context: requestContextSimpleUserFiligran2,
+        },
+        { caller: 'a bypass user', context: requestContextAdminUser },
+      ])(
+        'should throw InvalidEmail and roll back every addition when an email has an invalid format and the caller is $caller',
+        async ({ context }) => {
+          // Given
+          requestContext.set(context);
+          const { bundle } = await createBundleWithGroups();
+          vi.spyOn(mailService, 'sendMail').mockResolvedValue(undefined);
+          const newEmail = `new-${uuidv4()}@filigran.io`;
+
+          // When
+          const call = ServiceGroupApp.addUsersToBundleGroups(
+            bundle.service_instance_id,
+            {
+              userIds: [],
+              emails: [newEmail, 'not-an-email'],
+              roles: xtmoneUserRoles,
+            }
+          );
+
+          // Then
+          await expect(call).rejects.toThrow(ErrorCode.InvalidEmail);
+          expect(await TestHelper.user.loadAll({ email: newEmail })).toEqual(
+            []
+          );
+        }
+      );
+
+      it('should add the email when it is outside the organization domains and the caller is a bypass user', async () => {
+        // Given
+        requestContext.set(requestContextAdminUser);
+        const { bundle } = await createBundleWithGroups();
+        vi.spyOn(mailService, 'sendMail').mockResolvedValue(undefined);
+        const email = `someone-${uuidv4()}@second-orga.com`;
+
+        // When
+        await ServiceGroupApp.addUsersToBundleGroups(
+          bundle.service_instance_id,
+          { userIds: [], emails: [email], roles: xtmoneUserRoles }
+        );
+
+        // Then
+        expect(await TestHelper.user.loadAll({ email })).toHaveLength(1);
+      });
+
+      it('should throw MissingCapabilityOnOrganization when the caller can manage the trial but not the organization users', async () => {
+        // Given
+        const { user: caller, userOrganization } =
+          await TestHelper.user.insertInOrganization(
+            TEST_ORGANIZATIONS.FILIGRAN.ID
+          );
+        await TestHelper.user_OrganizationCapability.create({
+          user_organization_id: userOrganization.id,
+          name: OrganizationCapability.ManagePlatformRegistration,
+        });
+        requestContext.set({
+          ...requestContextSimpleUserFiligran2,
+          user: {
+            ...requestContextSimpleUserFiligran2.user,
+            id: caller.id,
+            email: caller.email,
+            selected_org_capabilities: [
+              OrganizationCapability.ManagePlatformRegistration,
+            ],
+          },
+        });
+        const { bundle } = await createBundleWithGroups();
+
+        // When
+        const call = ServiceGroupApp.addUsersToBundleGroups(
+          bundle.service_instance_id,
+          {
+            userIds: [],
+            emails: [`new-${uuidv4()}@filigran.io`],
+            roles: xtmoneUserRoles,
+          }
+        );
+
+        // Then
+        await expect(call).rejects.toThrow(
+          ErrorCode.MissingCapabilityOnOrganization
+        );
+      });
+
+      it('should throw UserDisabled when the email belongs to a disabled organization member', async () => {
+        // Given
+        const { user: member } = await TestHelper.user.insertInOrganization(
+          TEST_ORGANIZATIONS.FILIGRAN.ID,
+          { disabled: true }
+        );
+        const { bundle } = await createBundleWithGroups();
+
+        // When
+        const call = ServiceGroupApp.addUsersToBundleGroups(
+          bundle.service_instance_id,
+          { userIds: [], emails: [member.email], roles: xtmoneUserRoles }
+        );
+
+        // Then
+        await expect(call).rejects.toThrow(ErrorCode.UserDisabled);
+      });
+    });
   });
 
   describe('removeUsersFromBundleGroups', () => {
@@ -1151,6 +1599,36 @@ describe('serviceGroupApp', () => {
         groups: { openctiAdminGroupId, xtmoneUserGroupId },
       };
     };
+
+    it('should not sync Auth0 when removing a user who has no Auth0 account yet', async () => {
+      // Given
+      const { user: member } = await TestHelper.user.insertInOrganization(
+        TEST_ORGANIZATIONS.FILIGRAN.ID,
+        {
+          status: UserAccountStatus.Waiting,
+        }
+      );
+      const { bundle, groups } = await createBundleWithMember({
+        userId: member.id,
+      });
+      const auth0Spy = vi
+        .spyOn(auth0ClientMock, 'updateUserRBACInstance')
+        .mockResolvedValue(undefined);
+
+      // When
+      await ServiceGroupApp.removeUsersFromBundleGroups(
+        bundle.service_instance_id,
+        [member.id]
+      );
+
+      // Then
+      expect(auth0Spy).not.toHaveBeenCalled();
+      expect(
+        await TestHelper.serviceGroupUser.load({
+          group_id: groups.xtmoneUserGroupId,
+        })
+      ).toEqual([]);
+    });
 
     it('should remove the user from every service group tied to the bundle and sync Auth0 for each platform', async () => {
       // Given
@@ -1420,6 +1898,41 @@ describe('serviceGroupApp', () => {
         },
       };
     };
+
+    it('should not sync Auth0 when updating the roles of a user who has no Auth0 account yet', async () => {
+      // Given
+      const { bundle, groups } = await createBundleWithMembers();
+      const { user: member } = await TestHelper.user.insertInOrganization(
+        TEST_ORGANIZATIONS.FILIGRAN.ID,
+        {
+          status: UserAccountStatus.Expired,
+        }
+      );
+      await TestHelper.serviceGroupUser.create({
+        user_id: member.id,
+        group_id: groups.xtmoneUserGroupId,
+      });
+      const auth0Spy = vi
+        .spyOn(auth0ClientMock, 'updateUserRBACInstance')
+        .mockResolvedValue(undefined);
+
+      // When
+      await ServiceGroupApp.updateBundleUserGroups(bundle.service_instance_id, {
+        userIds: [member.id],
+        roles: [
+          { product: PlatformIdentifier.Opencti, role: ServiceGroupName.Admin },
+        ],
+      });
+
+      // Then
+      expect(auth0Spy).not.toHaveBeenCalled();
+      const openctiAdminMembers = await TestHelper.serviceGroupUser.load({
+        group_id: groups.openctiAdminGroupId,
+      });
+      expect(openctiAdminMembers?.map(({ user_id }) => user_id)).toContain(
+        member.id
+      );
+    });
 
     it('should update only the specified platform, leaving XTM One role untouched when no XTM One entry is provided', async () => {
       // Given

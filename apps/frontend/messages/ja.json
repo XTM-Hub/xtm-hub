@@ -2000,7 +2000,13 @@
         },
         "AddUserDialog": {
           "Title": "トライアルユーザーを追加",
-          "EmailPlaceholder": "メールアドレスを追加"
+          "EmailPlaceholder": "メールアドレスを追加",
+          "InviteEmail": "{email} を招待",
+          "NoPermissionToInvite": "このリストにないユーザーを追加する権限がありません。必要に応じて管理者にお問い合わせください",
+          "Status": {
+            "Expired": "期限切れ",
+            "Invited": "招待済み"
+          }
         },
         "EditUsersDialog": {
           "Title": "ユーザーを編集",

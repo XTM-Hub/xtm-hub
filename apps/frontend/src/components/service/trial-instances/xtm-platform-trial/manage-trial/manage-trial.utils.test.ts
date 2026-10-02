@@ -1,9 +1,15 @@
 import {
+  canInviteEmail,
   computeMixedRoleDefaults,
   formatEmailList,
+  getUserStatusLabel,
   UserPlatformGroups,
 } from '@/components/service/trial-instances/xtm-platform-trial/manage-trial/manage-trial.utils';
-import { PlatformIdentifier, ServiceGroupName } from '@graphql/generated';
+import {
+  PlatformIdentifier,
+  ServiceGroupName,
+  UserAccountStatus,
+} from '@graphql/generated';
 import { describe, expect, it } from 'vitest';
 
 describe('formatEmailList', () => {
@@ -194,4 +200,60 @@ describe('computeMixedRoleDefaults', () => {
       expected
     );
   });
+});
+
+describe('getUserStatusLabel', () => {
+  it.each([
+    { status: UserAccountStatus.Waiting, expected: 'Invited' },
+    { status: UserAccountStatus.Invited, expected: 'Invited' },
+    { status: UserAccountStatus.Expired, expected: 'Expired' },
+    { status: null, expected: null },
+    { status: undefined, expected: null },
+  ])('returns $expected for status $status', ({ status, expected }) => {
+    expect(getUserStatusLabel(status)).toBe(expected);
+  });
+});
+
+describe('canInviteEmail', () => {
+  const knownEmails = ['known@filigran.io'];
+  const organizationDomains = ['filigran.io'];
+
+  it.each([
+    {
+      email: 'new@filigran.io',
+      allowedDomains: organizationDomains,
+      expected: true,
+    },
+    {
+      email: '  new@filigran.io  ',
+      allowedDomains: organizationDomains,
+      expected: true,
+    },
+    {
+      email: 'new@outside.io',
+      allowedDomains: organizationDomains,
+      expected: false,
+    },
+    { email: 'new@outside.io', allowedDomains: null, expected: true },
+    { email: 'new@filigran.io', allowedDomains: [], expected: false },
+    {
+      email: 'known@filigran.io',
+      allowedDomains: organizationDomains,
+      expected: false,
+    },
+    {
+      email: 'KNOWN@filigran.io',
+      allowedDomains: organizationDomains,
+      expected: false,
+    },
+    { email: 'not-an-email', allowedDomains: null, expected: false },
+    { email: '', allowedDomains: null, expected: false },
+  ])(
+    'returns $expected for "$email" when the allowed domains are $allowedDomains',
+    ({ email, allowedDomains, expected }) => {
+      expect(canInviteEmail({ email, knownEmails, allowedDomains })).toBe(
+        expected
+      );
+    }
+  );
 });

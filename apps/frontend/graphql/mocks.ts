@@ -55,6 +55,7 @@ export const mockAddUsersToBundleGroupsInput = (overrides?: Partial<AddUsersToBu
     const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
     relationshipsToOmit.add('AddUsersToBundleGroupsInput');
     return {
+        emails: overrides && overrides.hasOwnProperty('emails') ? overrides.emails! : ['maxime'],
         roles: overrides && overrides.hasOwnProperty('roles') ? overrides.roles! : [relationshipsToOmit.has('BundleUserRoleAssignmentInput') ? {} as BundleUserRoleAssignmentInput : mockBundleUserRoleAssignmentInput({}, relationshipsToOmit)],
         userIds: overrides && overrides.hasOwnProperty('userIds') ? overrides.userIds! : ['texo'],
     };

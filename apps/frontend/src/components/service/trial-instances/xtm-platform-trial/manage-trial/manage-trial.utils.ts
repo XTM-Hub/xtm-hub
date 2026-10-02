@@ -1,5 +1,47 @@
-import { PlatformIdentifier, ServiceGroupName } from '@graphql/generated';
-import { RolePanelConfig } from './manage-trial.const';
+import {
+  PlatformIdentifier,
+  ServiceGroupName,
+  UserAccountStatus,
+} from '@graphql/generated';
+import { isValidEmail, RolePanelConfig } from './manage-trial.const';
+
+export type UserStatusLabel = 'Invited' | 'Expired';
+
+export const getUserStatusLabel = (
+  status: UserAccountStatus | null | undefined
+): UserStatusLabel | null => {
+  switch (status) {
+    case UserAccountStatus.Waiting:
+    case UserAccountStatus.Invited:
+      return 'Invited';
+    case UserAccountStatus.Expired:
+      return 'Expired';
+    default:
+      return null;
+  }
+};
+
+export const canInviteEmail = ({
+  email,
+  knownEmails,
+  allowedDomains,
+}: {
+  email: string;
+  knownEmails: string[];
+  // null when any domain is allowed (bypass user)
+  allowedDomains: string[] | null;
+}) => {
+  const trimmedEmail = email.trim();
+  const normalizedEmail = trimmedEmail.toLowerCase();
+  return (
+    isValidEmail(normalizedEmail) &&
+    (allowedDomains === null ||
+      allowedDomains.includes(trimmedEmail.split('@')[1] ?? '')) &&
+    !knownEmails.some(
+      (knownEmail) => knownEmail.toLowerCase() === normalizedEmail
+    )
+  );
+};
 
 export const formatEmailList = (
   emails: string[],

@@ -603,6 +603,7 @@ input BundleUserRoleAssignmentInput {
 
 input AddUsersToBundleGroupsInput {
   userIds: [UserId!]!
+  emails: [String!]
   roles: [BundleUserRoleAssignmentInput!]!
 }
 

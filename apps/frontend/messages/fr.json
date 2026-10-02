@@ -2000,7 +2000,13 @@
         },
         "AddUserDialog": {
           "Title": "Ajouter un utilisateur d'essai",
-          "EmailPlaceholder": "Ajouter un email"
+          "EmailPlaceholder": "Ajouter un email",
+          "InviteEmail": "Inviter {email}",
+          "NoPermissionToInvite": "Vous n'avez pas la permission d'ajouter des utilisateurs en dehors de cette liste. Si nécessaire, contactez votre administrateur",
+          "Status": {
+            "Expired": "Expiré",
+            "Invited": "Invité"
+          }
         },
         "EditUsersDialog": {
           "Title": "Modifier les utilisateurs",

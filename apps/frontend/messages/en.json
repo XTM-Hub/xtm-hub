@@ -2000,7 +2000,13 @@
         },
         "AddUserDialog": {
           "Title": "Add trial user",
-          "EmailPlaceholder": "Add email"
+          "EmailPlaceholder": "Add email",
+          "InviteEmail": "Invite {email}",
+          "NoPermissionToInvite": "You do not have permission to add users outside this list. If needed, contact your admin",
+          "Status": {
+            "Expired": "Expired",
+            "Invited": "Invited"
+          }
         },
         "EditUsersDialog": {
           "Title": "Edit users",

@@ -5,7 +5,9 @@ import {
 import portalConfig from '../../../../config';
 import { withTransaction } from '../../../../context/database.context';
 import { requestContext } from '../../../../context/request.context';
-import { OrganizationId } from '../../../../model/kanel/public/Organization';
+import Organization, {
+  OrganizationId,
+} from '../../../../model/kanel/public/Organization';
 import { UserId } from '../../../../model/kanel/public/User';
 import { UserLoadUserBy } from '../../../../model/user';
 import { securityGuard } from '../../../../security/guard';
@@ -16,6 +18,7 @@ import {
 import { logApp } from '../../../../utils/app-logger.util';
 import { ErrorCode } from '../../../../utils/error/error.code';
 import { formatName } from '../../../../utils/format';
+import { isValidEmail } from '../../../../utils/verify-email.util';
 import { OrganizationDomain } from '../../organization/organization.domain';
 import { UserDomain } from '../user-domain/user.domain';
 import { UserOrganizationPendingDomain } from '../user-pending/user-organization-pending.domain';
@@ -35,32 +38,101 @@ export const UserOrganizationApp = {
     if (!chosenOrganization) {
       throw new Error(ErrorCode.OrganizationNotFound);
     }
-    if (chosenOrganization.personal_space) {
+
+    await UserOrganizationApp.assertUserCanBeAddedToOrganization({
+      organization: chosenOrganization,
+      email: input.email,
+    });
+    return UserOrganizationApp.provisionOrganizationUser({
+      organization: chosenOrganization,
+      ...input,
+    });
+  },
+
+  assertUserCanBeAddedToOrganization: async ({
+    organization,
+    email,
+  }: {
+    organization: Organization;
+    email: string;
+  }): Promise<void> => {
+    if (organization.personal_space) {
       logApp.warn('You cannot add a user in your personal space');
       throw new Error(ErrorCode.CantAddUserToPersonalSpace);
     }
 
     await securityGuard.assertEmailMatchesOrganization(
-      contextUser,
-      input.email,
-      chosenOrganization.id
+      requestContext.requireUser(),
+      email,
+      organization.id
     );
+  },
 
+  provisionOrganizationUser: async ({
+    organization,
+    email,
+    password,
+    capabilities,
+  }: AddUserInput & {
+    organization: Organization;
+  }): Promise<UserLoadUserBy> => {
     return UserProvisioningApp.provisionUserForOrganizations({
       userData: {
-        email: input.email,
-        password: input.password,
-        selected_organization_id: chosenOrganization.id,
+        email,
+        password,
+        selected_organization_id: organization.id,
       },
       orgCapabilities: [
         {
-          organization_id: chosenOrganization.id,
-          capabilities: input.capabilities ?? [],
+          organization_id: organization.id,
+          capabilities: capabilities ?? [],
         },
       ],
       mode: 'add',
-      organizationForWelcomeEmail: chosenOrganization,
+      organizationForWelcomeEmail: organization,
     });
+  },
+
+  resolveOrganizationUserIdsByEmails: async ({
+    organization,
+    emails,
+  }: {
+    organization: Organization;
+    emails: string[];
+  }): Promise<UserId[]> => {
+    const userIds: UserId[] = [];
+    for (const email of emails) {
+      if (!isValidEmail(email)) {
+        throw new Error(ErrorCode.InvalidEmail);
+      }
+      const [existingUser] = await UserDomain.loadUser({ email });
+      if (existingUser?.disabled) {
+        throw new Error(ErrorCode.UserDisabled);
+      }
+      const [membership] = existingUser
+        ? await UserOrganizationDomain.loadUserOrganization({
+            user_id: existingUser.id,
+            organization_id: organization.id,
+          })
+        : [];
+      if (existingUser && membership) {
+        // Provisioning would reset the member capabilities
+        userIds.push(existingUser.id);
+        continue;
+      }
+
+      await UserOrganizationApp.assertUserCanBeAddedToOrganization({
+        organization,
+        email,
+      });
+      const provisionedUser =
+        await UserOrganizationApp.provisionOrganizationUser({
+          organization,
+          email,
+        });
+      userIds.push(provisionedUser.id);
+    }
+    return userIds;
   },
   changeSelectedOrganization: async (
     organization_id: OrganizationId
