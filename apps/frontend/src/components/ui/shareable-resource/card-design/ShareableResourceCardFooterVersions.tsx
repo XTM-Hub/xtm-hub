@@ -1,4 +1,5 @@
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
+import { ShareableResourceCardSupportIcons } from '@/components/ui/shareable-resource/card-design/ShareableResourceCardSupportIcons';
 import {
   ShareableResourceCardVersion,
   VersionBadgeStatus,
@@ -26,13 +27,6 @@ const BADGE_STATUS: Record<ConnectorCompatibilityStatus, VersionBadgeStatus> = {
   compatible: 'success',
   partial: 'warning',
   incompatible: 'error',
-};
-
-const TOOLTIP_KEY: Record<ConnectorCompatibilityStatus, string | undefined> = {
-  unknown: undefined,
-  compatible: 'Service.Connectors.CompatibleWith',
-  partial: 'Service.Connectors.PartiallyCompatible',
-  incompatible: 'Service.Connectors.Incompatible',
 };
 
 export const ShareableResourceCardFooterVersion = ({
@@ -75,16 +69,23 @@ export const ShareableResourceCardFooterVersion = ({
       !publicPath && deployable && !!version && !!minimumDeployableVersion,
   });
 
-  const tooltipKey = TOOLTIP_KEY[status];
-  // Every message takes what it needs; next-intl ignores the rest.
-  const tooltip = tooltipKey
-    ? t(tooltipKey, {
-        compatiblePlatforms,
-        incompatiblePlatforms,
-        platformToBeUpdated: incompatiblePlatforms,
-        count: incompatibleCount,
-      })
-    : undefined;
+  const tooltip =
+    status === 'compatible'
+      ? t('Service.Connectors.CompatibleWith', {
+          platforms: compatiblePlatforms,
+        })
+      : status === 'partial'
+        ? t('Service.Connectors.PartiallyCompatible', {
+            compatiblePlatforms,
+            incompatiblePlatforms,
+            count: incompatibleCount,
+          })
+        : status === 'incompatible'
+          ? t('Service.Connectors.Incompatible', {
+              platformToBeUpdated: incompatiblePlatforms,
+              count: incompatibleCount,
+            })
+          : undefined;
 
   return (
     <>
@@ -94,6 +95,7 @@ export const ShareableResourceCardFooterVersion = ({
           status={BADGE_STATUS[status]}
           tooltip={tooltip}
         />
+        <ShareableResourceCardSupportIcons document={document} />
       </div>
       <div className="flex flex-row shrink-0 pr-m">
         <ShareLinkButton

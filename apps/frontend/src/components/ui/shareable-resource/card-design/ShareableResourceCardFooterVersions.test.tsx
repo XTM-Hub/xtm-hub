@@ -30,6 +30,10 @@ vi.mock('@/hooks/use-connector-compatibility', () => ({
   useConnectorCompatibility: (params: unknown) => compatibilityMock(params),
 }));
 
+vi.mock('./ShareableResourceCardSupportIcons', () => ({
+  ShareableResourceCardSupportIcons: () => <span>support-icons</span>,
+}));
+
 const NEUTRAL = {
   status: 'unknown',
   compatiblePlatforms: '',
@@ -65,10 +69,11 @@ describe('ShareableResourceCardFooterVersion', () => {
     compatibilityMock.mockReturnValue(NEUTRAL);
   });
 
-  it('renders the version, the share button and the extra content', () => {
+  it('renders the version, the support icons, the share button and the extra content', () => {
     renderFooter({}, { extraContent: <span>extra</span> });
 
     expect(screen.getByText(CONNECTOR_VERSION)).toBeInTheDocument();
+    expect(screen.getByText('support-icons')).toBeInTheDocument();
     expect(screen.getByText('extra')).toBeInTheDocument();
     expect(screen.getByRole('button')).toBeInTheDocument();
   });
