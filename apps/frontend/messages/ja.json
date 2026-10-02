@@ -1148,7 +1148,9 @@
       "Search": "名前でコネクタを検索...",
       "VendorContact": "ベンダー連絡先",
       "VisitVendor": "ベンダーのページで詳細を確認し、連絡を取ってください。",
-      "Incompatible": "{platformToBeUpdated} {count, plural, =1 {needs} other {need}} to be updated to deploy this connector.",
+      "CompatibleWith": "このコネクタのバージョンは{compatiblePlatforms}と互換性があります。",
+      "PartiallyCompatible": "このコネクタのバージョンは{compatiblePlatforms}と互換性がありますが、{incompatiblePlatforms}{count, plural, =1 {を更新する必要があります} other {をすべて更新する必要があります}}。",
+      "Incompatible": "このコネクタをデプロイするには、{platformToBeUpdated}{count, plural, =1 {を更新する必要があります} other {をすべて更新する必要があります}}。",
       "UnavailableDeployments": "このコネクタは自動デプロイでは使用できません。"
     },
     "CreationStatus": "作成ステータス",
