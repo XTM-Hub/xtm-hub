@@ -1751,7 +1751,7 @@
       "Form": {
         "Region": "Région",
         "RegionPlaceholder": "Sélectionnez la région de votre choix pour l'hébergement",
-        "AssociatedEmail": "Email associé ：",
+        "AssociatedEmail": "Email associé :",
         "JobTitle": "Titre du poste",
         "JobTitlePlaceholder": "Sélectionnez votre fonction",
         "ActivitySector": "Secteur d'activité",
