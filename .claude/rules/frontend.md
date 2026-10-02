@@ -5,7 +5,7 @@ paths:
 
 # Frontend Instructions (`apps/frontend`)
 
-Next.js 16 (App Router + Turbopack) + React 19 + TailwindCSS 4 + `@filigran/ui`. Dev port **3002** (Docker production
+Next.js 16 (App Router + Turbopack) + React 19 + TailwindCSS 4 + `@filigran/design-system`. Dev port **3002** (Docker production
 serves on 3000 internally).
 
 Two data layers coexist mid-migration: **`@tanstack/react-query` is mandatory for all new data-fetching work**
@@ -71,12 +71,13 @@ Use them instead of deep relative paths.
 
 ## UI components
 
-`@filigran/ui` is Filigran's in-house component library and matches our design system. **Always reach for it first**
-for buttons, inputs, tables, dialogs and the like. Fall back to raw TailwindCSS or shadcn/ui primitives only when
-`@filigran/ui` genuinely has no equivalent.
+`@filigran/design-system` is Filigran's design system and the target for all UI. `@filigran/ui` now resolves to a
+legacy copy in `src/components/filigran-ui/` that shrinks as components migrate. Which one to use, and how to rebuild
+what the design system lacks, is in [`design-system.md`](design-system.md).
 
 - Icons: `@filigran/icon`
-- Styling: TailwindCSS 4 with `FiligranUIPlugin` (see `tailwind.config.ts`)
+- Styling: TailwindCSS 4, themed by `@filigran/design-system/tokens/theme.css` and the legacy
+  `src/components/filigran-ui/theme.css`, both imported in `styles/globals.css`
 - Forms: `react-hook-form` + `zod` (v4)
 - Markdown: `@uiw/react-md-editor`
 
