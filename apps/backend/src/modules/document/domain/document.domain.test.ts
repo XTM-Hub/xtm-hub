@@ -211,11 +211,7 @@ describe('document domain', () => {
       requestContext.set(undefined);
     });
 
-    const loadPage = (
-      pageIndex: number,
-      orderMode: OrderingMode,
-      options: DocumentListOptions = {}
-    ) =>
+    const loadPage = (pageIndex: number, orderMode: OrderingMode) =>
       DocumentDomain.loadParentDocumentsByServiceInstance(
         OPENCTI_INTEGRATION_DOCUMENT_TYPE,
         {
@@ -224,7 +220,6 @@ describe('document domain', () => {
           first: PAGE_SIZE,
           after: pageIndex > 0 ? btoa(String(PAGE_SIZE * pageIndex)) : null,
           serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
-          ...options,
         },
         INTEGRATION_METADATA_KEYS
       );
@@ -246,30 +241,11 @@ describe('document domain', () => {
       );
 
     it.each`
-      orderMode            | expectedFirstPage
-      ${OrderingMode.Asc}  | ${['a-active', 'b-active']}
-      ${OrderingMode.Desc} | ${['z-active', 'y-active']}
-    `(
-      'should keep the requested $orderMode order when draftsFirst is not set',
-      async ({
-        orderMode,
-        expectedFirstPage,
-      }: {
-        orderMode: OrderingMode;
-        expectedFirstPage: string[];
-      }) => {
-        const firstPage = await loadPage(0, orderMode);
-
-        expect(namesOf(firstPage)).toEqual(expectedFirstPage);
-      }
-    );
-
-    it.each`
       orderMode            | expectedNames
       ${OrderingMode.Asc}  | ${['m-draft', 'a-active', 'b-active', 'y-active', 'z-active']}
       ${OrderingMode.Desc} | ${['m-draft', 'z-active', 'y-active', 'b-active', 'a-active']}
     `(
-      'should put the draft first, then follow the requested $orderMode order, when draftsFirst is set',
+      'should put the draft first, then follow the requested $orderMode order',
       async ({
         orderMode,
         expectedNames,
@@ -277,17 +253,15 @@ describe('document domain', () => {
         orderMode: OrderingMode;
         expectedNames: string[];
       }) => {
-        const firstPage = await loadPage(0, orderMode, { draftsFirst: true });
+        const firstPage = await loadPage(0, orderMode);
 
         expect(namesOf(firstPage)).toEqual(expectedNames.slice(0, PAGE_SIZE));
       }
     );
 
-    it('should page through every document exactly once when draftsFirst is set', async () => {
+    it('should page through every document exactly once with the draft first', async () => {
       const pages = await Promise.all(
-        [0, 1, 2].map((pageIndex) =>
-          loadPage(pageIndex, OrderingMode.Asc, { draftsFirst: true })
-        )
+        [0, 1, 2].map((pageIndex) => loadPage(pageIndex, OrderingMode.Asc))
       );
 
       expect(pages.flatMap(namesOf)).toEqual([DRAFT_NAME, ...ACTIVE_NAMES]);
@@ -297,7 +271,7 @@ describe('document domain', () => {
     it.each`
       description                          | options                 | expectedNames                                                  | expectedTotal
       ${'drops the draft when activeOnly'} | ${{ activeOnly: true }} | ${['a-active', 'b-active', 'y-active', 'z-active']}            | ${4}
-      ${'keeps the draft otherwise'}       | ${{}}                   | ${['a-active', 'b-active', 'm-draft', 'y-active', 'z-active']} | ${5}
+      ${'keeps the draft otherwise'}       | ${{}}                   | ${['m-draft', 'a-active', 'b-active', 'y-active', 'z-active']} | ${5}
     `(
       'should $description',
       async ({
@@ -319,7 +293,7 @@ describe('document domain', () => {
     it.each`
       description                                               | serviceCapabilities            | expectedNames                                                  | expectedTotal
       ${'hide the draft from a user without upload capability'} | ${[]}                          | ${['a-active', 'b-active', 'y-active', 'z-active']}            | ${4}
-      ${'return the draft to a user with upload capability'}    | ${[ServiceRestriction.Upload]} | ${['a-active', 'b-active', 'm-draft', 'y-active', 'z-active']} | ${5}
+      ${'return the draft to a user with upload capability'}    | ${[ServiceRestriction.Upload]} | ${['m-draft', 'a-active', 'b-active', 'y-active', 'z-active']} | ${5}
     `(
       'should $description',
       async ({

@@ -6,7 +6,6 @@ import Document from '../../model/kanel/public/Document';
 import { MetadataArray } from '../../utils/metadata';
 
 export type DocumentListOptions = {
-  draftsFirst?: boolean;
   activeOnly?: boolean;
 };
 

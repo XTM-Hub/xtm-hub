@@ -356,7 +356,8 @@ export const DocumentDomain = {
       .tap(restrictDocumentToUserOrganization)
       .tap(restrictDocumentToAccessibleServiceInstance)
       .where(field)
-      .modify(applyDecouplingRestriction(field['Document.type'] as string));
+      .modify(applyDecouplingRestriction(field['Document.type'] as string))
+      .orderBy('Document.active', 'asc');
 
     if (
       opts.activeOnly ||
@@ -381,10 +382,6 @@ export const DocumentDomain = {
     }
 
     loadDocumentQuery.groupBy(['Document.id']);
-
-    if (opts.draftsFirst) {
-      loadDocumentQuery.orderBy('Document.active', 'asc');
-    }
 
     const connection = await paginate<Document, DocumentConnection>(
       'Document',
