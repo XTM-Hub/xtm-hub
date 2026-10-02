@@ -172,6 +172,7 @@ describe('usePrivateNavigation', () => {
       'opencti',
       'openaev',
       'xtm-one',
+      'opencrq',
     ]);
     expect(result.current.footerSections).toEqual([]);
     expect(result.current.bottomLinks).toEqual([
@@ -204,6 +205,26 @@ describe('usePrivateNavigation', () => {
         highlight: true,
       },
     ]);
+  });
+
+  it('should return an external About link tagged coming soon when building the OpenCRQ section', () => {
+    const { result } = renderUsePrivateNavigation({
+      selectedOrganizationId: 'org-1',
+    });
+
+    const opencrqSection = getSection(result.current.sections, 'opencrq');
+
+    expect(opencrqSection).toMatchObject({
+      label: 'OpenCRQ',
+      links: [
+        {
+          href: 'https://filigran.io/products/opencrq',
+          label: 'About',
+          external: true,
+          badge: 'ComingSoon',
+        },
+      ],
+    });
   });
 
   it('hides the xtm-platform-trial bottom link when organization is blacklisted', () => {
@@ -240,6 +261,7 @@ describe('usePrivateNavigation', () => {
       'opencti',
       'openaev',
       'xtm-one',
+      'opencrq',
     ]);
     expect(
       result.current.footerSections?.map((section) => section.key)
@@ -550,6 +572,7 @@ describe('usePrivateNavigation', () => {
         'opencti',
         'openaev',
         'xtm-one',
+        'opencrq',
       ]);
       expect(
         result.current.footerSections?.map((section) => section.key)

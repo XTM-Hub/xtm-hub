@@ -15,6 +15,7 @@ import {
   LogoXtmOneIcon,
   OpenAevIconIcon,
   OpenCtiIconIcon,
+  OpenGrcIcon,
   PapermapIcon,
   PostIcon,
   SchoolIcon,
@@ -119,6 +120,20 @@ export const usePublicNavigation = (
           external: true,
         },
         { label: t('Menu.AICatalog'), badge: t('Menu.ComingSoon') },
+      ],
+    },
+    {
+      key: 'opencrq',
+      label: 'OpenCRQ',
+      icon: OpenGrcIcon,
+      pathPrefix: `/${locale}/cybersecurity-solutions/opencrq`,
+      links: [
+        {
+          href: 'https://filigran.io/products/opencrq',
+          label: t('Menu.About'),
+          external: true,
+          badge: t('Menu.ComingSoon'),
+        },
       ],
     },
   ];
