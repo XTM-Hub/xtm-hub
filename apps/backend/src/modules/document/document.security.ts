@@ -4,7 +4,7 @@ import {
 } from '../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { UserLoadUserBy } from '../../model/user';
-import { isUserGranted } from '../../security/access';
+import { isUserAdminPlatform } from '../../security/access';
 import { ErrorCode } from '../../utils/error/error.code';
 import { UserServiceCapabilityHelper } from '../security-management/user-service-capability/user-service-capability.helper';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
@@ -13,7 +13,7 @@ export const isUserRestrictedToActiveDocument = async (
   user: UserLoadUserBy,
   serviceInstanceId: ServiceInstanceId
 ) => {
-  if (isUserGranted(user)) {
+  if (isUserAdminPlatform(user)) {
     return false;
   }
 

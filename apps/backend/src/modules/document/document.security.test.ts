@@ -47,7 +47,7 @@ const mockServiceDefinition = (identifier: ServiceDefinitionIdentifier) => ({
 describe('document security', () => {
   describe('isUserRestrictedToActiveDocument', () => {
     beforeEach(() => {
-      vi.spyOn(access, 'isUserGranted').mockReturnValue(false);
+      vi.spyOn(access, 'isUserAdminPlatform').mockReturnValue(false);
       vi.spyOn(
         UserServiceCapabilityHelper,
         'loadCapabilities'
@@ -62,8 +62,8 @@ describe('document security', () => {
       );
     });
 
-    it('should return false when user is granted', async () => {
-      vi.spyOn(access, 'isUserGranted').mockReturnValue(true);
+    it('should return false when user is a platform admin', async () => {
+      vi.spyOn(access, 'isUserAdminPlatform').mockReturnValue(true);
       const result = await isUserRestrictedToActiveDocument(
         mockUser,
         mockServiceInstanceId

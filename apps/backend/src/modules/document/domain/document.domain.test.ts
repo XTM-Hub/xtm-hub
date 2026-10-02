@@ -20,6 +20,7 @@ import {
   LogicalFilterInput,
   LogicalOperator,
   OrderingMode,
+  ServiceRestriction,
 } from '../../../__generated__/resolvers-types';
 import type { DocumentMetadataKey } from '../../../model/kanel/public/DocumentMetadata';
 import {
@@ -62,6 +63,7 @@ import {
   SYSTEM_USER_UUID,
 } from '../../../portal.const';
 import { isFeatureEnabled } from '../../../utils/feature-flag.util';
+import { UserServiceCapabilityHelper } from '../../security-management/user-service-capability/user-service-capability.helper';
 import { objectSolutionCategoryDomain } from '../../solution-category/object-solution-category/object-solution-category.domain';
 import { solutionCategoryDomain } from '../../solution-category/solution-category.domain';
 import { DocumentListOptions } from '../document.model';
@@ -205,6 +207,7 @@ describe('document domain', () => {
     });
 
     afterEach(() => {
+      vi.restoreAllMocks();
       requestContext.set(undefined);
     });
 
@@ -228,6 +231,19 @@ describe('document domain', () => {
 
     const namesOf = (connection: DocumentConnection) =>
       connection.edges.map(({ node }) => node.name);
+
+    const loadAll = (options: DocumentListOptions = {}) =>
+      DocumentDomain.loadParentDocumentsByServiceInstance(
+        OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        {
+          orderBy: DocumentOrdering.Name,
+          orderMode: OrderingMode.Asc,
+          first: 10,
+          serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
+          ...options,
+        },
+        INTEGRATION_METADATA_KEYS
+      );
 
     it.each`
       orderMode            | expectedFirstPage
@@ -293,18 +309,35 @@ describe('document domain', () => {
         expectedNames: string[];
         expectedTotal: number;
       }) => {
-        const connection =
-          await DocumentDomain.loadParentDocumentsByServiceInstance(
-            OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-            {
-              orderBy: DocumentOrdering.Name,
-              orderMode: OrderingMode.Asc,
-              first: 10,
-              serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
-              ...options,
-            },
-            INTEGRATION_METADATA_KEYS
-          );
+        const connection = await loadAll(options);
+
+        expect(namesOf(connection)).toEqual(expectedNames);
+        expect(Number(connection.totalCount)).toBe(expectedTotal);
+      }
+    );
+
+    it.each`
+      description                                               | serviceCapabilities            | expectedNames                                                  | expectedTotal
+      ${'hide the draft from a user without upload capability'} | ${[]}                          | ${['a-active', 'b-active', 'y-active', 'z-active']}            | ${4}
+      ${'return the draft to a user with upload capability'}    | ${[ServiceRestriction.Upload]} | ${['a-active', 'b-active', 'm-draft', 'y-active', 'z-active']} | ${5}
+    `(
+      'should $description',
+      async ({
+        serviceCapabilities,
+        expectedNames,
+        expectedTotal,
+      }: {
+        serviceCapabilities: ServiceRestriction[];
+        expectedNames: string[];
+        expectedTotal: number;
+      }) => {
+        requestContext.set(undefined);
+        vi.spyOn(
+          UserServiceCapabilityHelper,
+          'loadCapabilities'
+        ).mockResolvedValue(serviceCapabilities);
+
+        const connection = await loadAll();
 
         expect(namesOf(connection)).toEqual(expectedNames);
         expect(Number(connection.totalCount)).toBe(expectedTotal);
