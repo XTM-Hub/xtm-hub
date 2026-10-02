@@ -267,7 +267,7 @@ const resolvers: Resolvers = {
     },
     documents: async (_, input) => {
       try {
-        return await DocumentApp.loadDocuments(input);
+        return await DocumentApp.loadDocuments({ ...input, draftsFirst: true });
       } catch (error) {
         throw mapToGraphQLError(error);
       }

@@ -6,10 +6,12 @@ import {
   SERVICES,
 } from '../../../tests/tests.const';
 import {
+  DocumentOrdering,
   DocumentResolvers,
   IntegrationType,
   MutationCreateDocumentArgs,
   MutationUpdateDocumentArgs,
+  OrderingMode,
   Organization,
   PlatformIdentifier,
   QueryDocumentsArgs,
@@ -632,6 +634,32 @@ describe('documents GraphQL query', () => {
     );
 
     expect(result).toEqual(expected);
+  });
+
+  it('should ask for drafts first so a draft is not lost on a later page', async () => {
+    const loadDocumentsSpy = vi
+      .spyOn(DocumentApp, 'loadDocuments')
+      .mockResolvedValue(
+        [] as unknown as Awaited<ReturnType<typeof DocumentApp.loadDocuments>>
+      );
+    const args = {
+      serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+      first: 50,
+      orderBy: DocumentOrdering.Name,
+      orderMode: OrderingMode.Asc,
+    } as QueryDocumentsArgs;
+
+    await documentResolver.Query!.documents!(
+      {},
+      args,
+      contextSimpleUserFiligran2,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    expect(loadDocumentsSpy).toHaveBeenCalledWith({
+      ...args,
+      draftsFirst: true,
+    });
   });
 });
 
