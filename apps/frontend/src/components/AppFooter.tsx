@@ -66,9 +66,9 @@ export const AppFooter = ({ className }: AppFooterProps) => {
             <Link
               target="_blank"
               rel="noopener noreferrer"
-              href="https://filigran.io/terms-of-services/"
+              href="https://filigran.io/mssa/"
               className="transition-opacity hover:opacity-70">
-              {t('TermsOfServices')}
+              {t('TermsOfService')}
             </Link>
           </li>
           <li>

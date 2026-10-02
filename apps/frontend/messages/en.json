@@ -500,11 +500,11 @@
     "NotFound": "404 | This page could not be found"
   },
   "AppFooter": {
-    "AllRightsReserved": "All rights reserved",
+    "AllRightsReserved": "All rights reserved.",
     "FiligranWebsite": "Filigran website",
     "Documentation": "XTM Hub documentation",
     "PrivacyPolicy": "Privacy Policy",
-    "TermsOfServices": "Terms of Services",
+    "TermsOfService": "Terms of Service",
     "Licenses": "Licenses"
   },
   "PublicLayout": {
