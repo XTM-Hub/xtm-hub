@@ -9071,6 +9071,7 @@ __metadata:
     graphql-sse: "catalog:"
     i18n-auto-translation: "npm:2.2.3"
     jsdom: "npm:29.1.1"
+    lucide-react: "npm:1.23.0"
     monocart-reporter: "catalog:"
     msw: "npm:2.15.0"
     next: "npm:16.3.6"

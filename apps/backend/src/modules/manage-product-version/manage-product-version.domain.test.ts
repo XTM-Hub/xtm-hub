@@ -104,5 +104,104 @@ describe('manageProductVersionDomain', () => {
 
       expect(result.map((row) => row.version)).toEqual(['6.5.0', '6.4.0']);
     });
+
+    it('should return every matching version when no limit is provided (REST endpoints contract)', async () => {
+      for (const version of [
+        '6.1.0',
+        '6.2.0',
+        '6.3.0',
+        '6.4.0',
+        '6.5.0',
+        '6.6.0',
+      ]) {
+        await TestHelper.productVersion.create({
+          product: PlatformIdentifier.Opencti,
+          version,
+          version_padded:
+            ManifestFragmentHelper.validateAndFormatManifestVersion(version),
+        });
+      }
+
+      const result =
+        await ManageProductVersionDomain.loadRegisteredProductVersions(
+          PlatformIdentifier.Opencti
+        );
+
+      expect(result).toHaveLength(6);
+    });
+
+    it('should cap the results to the given limit, most recent first', async () => {
+      for (const version of [
+        '6.1.0',
+        '6.2.0',
+        '6.3.0',
+        '6.4.0',
+        '6.5.0',
+        '6.6.0',
+      ]) {
+        await TestHelper.productVersion.create({
+          product: PlatformIdentifier.Opencti,
+          version,
+          version_padded:
+            ManifestFragmentHelper.validateAndFormatManifestVersion(version),
+        });
+      }
+
+      const result =
+        await ManageProductVersionDomain.loadRegisteredProductVersions(
+          PlatformIdentifier.Opencti,
+          { limit: 5 }
+        );
+
+      expect(result.map((row) => row.version)).toEqual([
+        '6.6.0',
+        '6.5.0',
+        '6.4.0',
+        '6.3.0',
+        '6.2.0',
+      ]);
+    });
+
+    it('should only return versions matching the search term, case-insensitively', async () => {
+      await TestHelper.productVersion.create({
+        product: PlatformIdentifier.Opencti,
+        version: '6.4.0-lts.1',
+        version_padded:
+          ManifestFragmentHelper.validateAndFormatManifestVersion(
+            '6.4.0-lts.1'
+          ),
+      });
+      await TestHelper.productVersion.create({
+        product: PlatformIdentifier.Opencti,
+        version: '7.0.0',
+        version_padded:
+          ManifestFragmentHelper.validateAndFormatManifestVersion('7.0.0'),
+      });
+
+      const result =
+        await ManageProductVersionDomain.loadRegisteredProductVersions(
+          PlatformIdentifier.Opencti,
+          { search: 'LTS' }
+        );
+
+      expect(result.map((row) => row.version)).toEqual(['6.4.0-lts.1']);
+    });
+
+    it('should return every version when the search term is empty', async () => {
+      await TestHelper.productVersion.create({
+        product: PlatformIdentifier.Opencti,
+        version: '6.4.0',
+        version_padded:
+          ManifestFragmentHelper.validateAndFormatManifestVersion('6.4.0'),
+      });
+
+      const result =
+        await ManageProductVersionDomain.loadRegisteredProductVersions(
+          PlatformIdentifier.Opencti,
+          { search: '' }
+        );
+
+      expect(result.map((row) => row.version)).toEqual(['6.4.0']);
+    });
   });
 });

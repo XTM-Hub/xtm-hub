@@ -5,6 +5,7 @@ import {
   DeploymentRequestFilter,
   DeploymentRequestFilterKey,
   DocumentMetadataKeyCode,
+  FeatureFlag,
   Filter,
   FilterKey,
   LogicalFilterInput,
@@ -18,6 +19,7 @@ import { databaseContext } from './src/context/database.context';
 import { DocumentHelper } from './src/modules/document/document.helper';
 import { INTEGRATION_METADATA_KEYS } from './src/modules/shareable-resource/opencti/integration/integration.model';
 import { logApp } from './src/utils/app-logger.util';
+import { isFeatureEnabled } from './src/utils/feature-flag.util';
 import { extractId } from './src/utils/utils';
 import { compareVersions, isValidVersion } from './src/utils/versioning';
 
@@ -350,13 +352,24 @@ const createProductVersionFilter = (): FilterHandler => ({
       return;
     }
 
-    // Exclude documents whose product_version metadata exists and is strictly greater than the target.
-    // Documents with no product_version row (IS NULL case) pass through automatically.
+    // Exclude documents whose compatibility version metadata is strictly greater
+    // than the target. Legacy connectors (ingest-manifest pipeline) store this
+    // under `product_version`; connectors ingested through the newer
+    // manifest-fragment/decoupling pipeline store it under
+    // `minimum_deployable_version` instead (see ingest-manifest.domain.ts and
+    // manifest-fragment.domain.ts). Documents with no matching row (IS NULL
+    // case) pass through automatically.
+    const compatibilityVersionKey = isFeatureEnabled(
+      FeatureFlag.DecouplingConnectors
+    )
+      ? DocumentMetadataKeyCode.MinimumDeployableVersion
+      : FilterKey.ProductVersion;
+
     qb.whereNotExists(function () {
       this.select(dbRaw('1'))
         .from('Document_Metadata')
         .whereRaw('"Document_Metadata"."document_id" = "Document"."id"')
-        .andWhere('Document_Metadata.key', '=', FilterKey.ProductVersion)
+        .andWhere('Document_Metadata.key', '=', compatibilityVersionKey)
         .whereNotNull('Document_Metadata.value')
         .andWhereRaw(
           `string_to_array(replace("Document_Metadata"."value", '-lts', ''), '.')::int[] > string_to_array(?, '.')::int[]`,
