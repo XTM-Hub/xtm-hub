@@ -500,11 +500,11 @@
     "NotFound": "404 | Cette page est introuvable"
   },
   "AppFooter": {
-    "AllRightsReserved": "Tous droits réservés",
+    "AllRightsReserved": "Tous droits réservés.",
     "FiligranWebsite": "Site Filigran",
     "Documentation": "Documentation du Hub XTM",
     "PrivacyPolicy": "Politique de confidentialité",
-    "TermsOfServices": "Conditions d'utilisation",
+    "TermsOfService": "Conditions d'utilisation",
     "Licenses": "Licences"
   },
   "PublicLayout": {
