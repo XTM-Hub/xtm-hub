@@ -64,6 +64,7 @@ import {
 import { isFeatureEnabled } from '../../../utils/feature-flag.util';
 import { objectSolutionCategoryDomain } from '../../solution-category/object-solution-category/object-solution-category.domain';
 import { solutionCategoryDomain } from '../../solution-category/solution-category.domain';
+import { DocumentListOptions } from '../document.model';
 import { DocumentUploadsHelper } from '../document.uploads.helper';
 import { DocumentDomain } from './document.domain';
 
@@ -183,7 +184,7 @@ describe('document domain', () => {
     });
   });
 
-  describe('loadParentDocumentsByServiceInstance with draftsFirst', () => {
+  describe('loadParentDocumentsByServiceInstance with draft documents', () => {
     const PAGE_SIZE = 2;
     const DRAFT_NAME = 'm-draft';
     const ACTIVE_NAMES = ['a-active', 'b-active', 'y-active', 'z-active'];
@@ -210,7 +211,7 @@ describe('document domain', () => {
     const loadPage = (
       pageIndex: number,
       orderMode: OrderingMode,
-      draftsFirst?: boolean
+      options: DocumentListOptions = {}
     ) =>
       DocumentDomain.loadParentDocumentsByServiceInstance(
         OPENCTI_INTEGRATION_DOCUMENT_TYPE,
@@ -220,7 +221,7 @@ describe('document domain', () => {
           first: PAGE_SIZE,
           after: pageIndex > 0 ? btoa(String(PAGE_SIZE * pageIndex)) : null,
           serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
-          draftsFirst,
+          ...options,
         },
         INTEGRATION_METADATA_KEYS
       );
@@ -260,7 +261,7 @@ describe('document domain', () => {
         orderMode: OrderingMode;
         expectedNames: string[];
       }) => {
-        const firstPage = await loadPage(0, orderMode, true);
+        const firstPage = await loadPage(0, orderMode, { draftsFirst: true });
 
         expect(namesOf(firstPage)).toEqual(expectedNames.slice(0, PAGE_SIZE));
       }
@@ -269,13 +270,46 @@ describe('document domain', () => {
     it('should page through every document exactly once when draftsFirst is set', async () => {
       const pages = await Promise.all(
         [0, 1, 2].map((pageIndex) =>
-          loadPage(pageIndex, OrderingMode.Asc, true)
+          loadPage(pageIndex, OrderingMode.Asc, { draftsFirst: true })
         )
       );
 
       expect(pages.flatMap(namesOf)).toEqual([DRAFT_NAME, ...ACTIVE_NAMES]);
       pages.forEach((page) => expect(Number(page.totalCount)).toBe(5));
     });
+
+    it.each`
+      description                          | options                 | expectedNames                                                  | expectedTotal
+      ${'drops the draft when activeOnly'} | ${{ activeOnly: true }} | ${['a-active', 'b-active', 'y-active', 'z-active']}            | ${4}
+      ${'keeps the draft otherwise'}       | ${{}}                   | ${['a-active', 'b-active', 'm-draft', 'y-active', 'z-active']} | ${5}
+    `(
+      'should $description',
+      async ({
+        options,
+        expectedNames,
+        expectedTotal,
+      }: {
+        options: DocumentListOptions;
+        expectedNames: string[];
+        expectedTotal: number;
+      }) => {
+        const connection =
+          await DocumentDomain.loadParentDocumentsByServiceInstance(
+            OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+            {
+              orderBy: DocumentOrdering.Name,
+              orderMode: OrderingMode.Asc,
+              first: 10,
+              serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
+              ...options,
+            },
+            INTEGRATION_METADATA_KEYS
+          );
+
+        expect(namesOf(connection)).toEqual(expectedNames);
+        expect(Number(connection.totalCount)).toBe(expectedTotal);
+      }
+    );
   });
 
   describe(`loadParentDocumentsByServiceInstance`, () => {

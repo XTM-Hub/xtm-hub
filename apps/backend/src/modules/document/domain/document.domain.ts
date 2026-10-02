@@ -359,11 +359,12 @@ export const DocumentDomain = {
       .modify(applyDecouplingRestriction(field['Document.type'] as string));
 
     if (
-      field['Document.service_instance_id'] &&
-      (await isUserRestrictedToActiveDocument(
-        user,
-        field['Document.service_instance_id'] as ServiceInstanceId
-      ))
+      opts.activeOnly ||
+      (field['Document.service_instance_id'] &&
+        (await isUserRestrictedToActiveDocument(
+          user,
+          field['Document.service_instance_id'] as ServiceInstanceId
+        )))
     ) {
       loadDocumentQuery.tap(restrictDocumentToActive);
     }
