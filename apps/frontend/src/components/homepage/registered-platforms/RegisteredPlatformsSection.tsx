@@ -1,6 +1,5 @@
 import { mapRegisteredPlatformsToHomepageCards } from '@/components/homepage/Homepage.utils';
 import RegisteredPlatformCard from '@/components/homepage/registered-platforms/RegisteredPlatformCard';
-import TryOtherPlatformProductBlock from '@/components/homepage/registered-platforms/TryOtherPlatformProductBlock';
 import { RegisteredPlatformsQuery } from '@graphql/generated';
 import { getTranslations } from 'next-intl/server';
 
@@ -48,8 +47,6 @@ export const RegisteredPlatformsSection = async ({
             </div>
           ))}
         </div>
-
-        <TryOtherPlatformProductBlock />
       </div>
     </section>
   );

@@ -18,15 +18,15 @@ export const EpicPage = ({
   connectionID,
   onSearch,
 }: EpicPageProps) => {
-  const { selectedProduct, setSelectedProduct } = useEpicFilter();
+  const { selectedProducts, setSelectedProducts } = useEpicFilter();
 
   return (
     <EpicListContext.Provider value={{ connectionID }}>
       <EpicList
         epics={epics}
         serviceInstance={serviceInstance}
-        selectedProduct={selectedProduct}
-        onFilterChange={setSelectedProduct}
+        selectedProducts={selectedProducts}
+        onFilterChange={setSelectedProducts}
         onSearch={onSearch}
       />
     </EpicListContext.Provider>

@@ -120,11 +120,11 @@
   "DeploymentRequestUseCase": {
     "threat_profiling_cti": "Threat Profiling (CTI)",
     "threat_profiling_fimi": "Threat Profiling (FIMI)",
-    "threat_profiling_leo": "Threat Profiling (Law enforcement)",
+    "threat_profiling_leo": "Threat Profiling (Law Enforcement)",
     "threat_profiling_faml": "Threat Profiling (Fraud & AML)",
     "threat_hunting": "Threat Hunting",
-    "strategic_reporting": "Strategic Reporting (For Executives)",
-    "technical_reporting": "Strategic Reporting (for Analysts)'",
+    "strategic_reporting": "Strategic Reporting (for Executives)",
+    "technical_reporting": "Strategic Reporting (for Analysts)",
     "incident_response": "Coordinating Incident Response",
     "security_stack": "Integrating Security Stack",
     "detection_engineering": "Detection Engineering",
@@ -190,7 +190,15 @@
       "Title": "Title is required",
       "ShortDescription": "Short description is required",
       "ShortDescriptionMax": "Short description must be 215 characters or fewer",
-      "Description": "Description is required"
+      "DescriptionMax": "Description must be 500 characters or fewer",
+      "ProblemToSolve": "Problem to solve is required",
+      "ProblemToSolveMax": "Problem to solve must be 500 characters or fewer",
+      "ProposedSolution": "Proposed solution is required",
+      "ProposedSolutionMax": "Proposed solution must be 500 characters or fewer",
+      "ExpectedValue": "Expected value is required",
+      "ExpectedValueMax": "Expected value must be 500 characters or fewer",
+      "Product": "At least one product is required",
+      "SlackLink": "Must be a filigran-community Slack link"
     }
   },
   "Epic": {
@@ -216,22 +224,47 @@
       "Epic": "Epic",
       "Title": "Title",
       "ShortDesc": "Short description",
-      "Description": "Description",
+      "Description": "Full description",
+      "ProblemToSolve": "Problem to Solve",
+      "ProposedSolution": "Proposed Solution",
+      "ExpectedValue": "Expected Value",
       "EditionType": "Edition Type",
       "FiligranProduct": "Product",
       "FiligranProductPlaceholder": "OpenCTI",
+      "SlackLink": "Slack link",
+      "SlackLinkPlaceholder": "Pick a channel or paste a Slack link",
       "Timeline": "Timeline",
       "IsActive": "Is this epic published? (By default your epic is in draft mode)",
       "Integration": "Is an integration",
-      "IsLimited": "Limited to {maxChars} chars",
-      "AutomaticallyAdded": "Added automatically (not editable)"
+      "AutomaticallyAdded": "Added automatically (not editable)",
+      "CharacterCount": "{count} / {maxChars}",
+      "Placeholder": {
+        "Title": "e.g. Users can see all their active trials in one place",
+        "ShortDesc": "One sentence shown on the roadmap card",
+        "Description": "Explain the epic in more depth: context, scope, constraints",
+        "ProblemToSolve": "Pain points felt by the user",
+        "ProposedSolution": "How we plan to solve it",
+        "ExpectedValue": "What we gain once it ships"
+      },
+      "DetailsSection": "Epic details",
+      "PublishNow": "Publish now",
+      "PublishNowHint": "(otherwise saved as draft)",
+      "EditionTypeInfo": "Partial EE: works in Community Edition but some options need Enterprise Edition",
+      "TimelineOption": {
+        "now": "Now",
+        "next": "Next",
+        "under_consideration": "Under consideration",
+        "finished": "Finished"
+      }
     },
     "EpicActions": {
       "CreateEpic": "Create a new epic",
       "UpdateEpic": "Update an epic",
       "DeleteEpic": "Delete {epicName} epic",
       "SureDeleteEpic": "Are you sure you want to delete the {epicName} epic?",
-      "EpicDeleted": "The epic was deleted"
+      "EpicDeleted": "The epic was deleted",
+      "CreateEpicButton": "Create epic",
+      "UpdateEpicButton": "Update epic"
     },
     "JoinCommunity": "Stay in the loop on the Filigran Community"
   },
@@ -273,6 +306,7 @@
       "CANT_REQUEST_FREE_TRIAL_IN_PERSONAL_SPACE": "You cannot request a free trial in your personal space",
       "CANT_SUBSCRIBE_YOURSELF": "You cannot add yourself",
       "COMPETITOR_DOMAIN_ALREADY_EXISTS": "A competitor with the same domain already exists",
+      "DEPLOYMENT_FEEDBACK_ALREADY_EXISTS": "Deployment feedback already exists",
       "COMPETITOR_NOT_FOUND": "Competitor not found",
       "CONNECTOR_ID_ALREADY_EXISTS": "A connector with this identifier already exists",
       "CONNECTOR_VERSION_ALREADY_EXISTS": "A connector with this version already exists",
@@ -298,6 +332,7 @@
       "DEPLOYMENT_REQUEST_QUOTA_NOT_FOUND": "Deployment request quota was not found.",
       "DEPLOYMENT_REQUEST_STATUS_UPDATE_NOT_ALLOWED": "An unknown error occurred",
       "DEPLOYMENT_REQUEST_UNKNOWN_ERROR": "An unknown error occurred",
+      "DEPLOYMENT_FEEDBACK_UNKNOWN_ERROR": "An unknown error occurred while sending the feedback",
       "DOCUMENT_CREATE_ERROR": "An error occurred while creating the resource.",
       "DOCUMENT_FILE_MISSING": "Document file is missing",
       "DOCUMENT_MISSING_METADATA": "Document is missing metadata.",
@@ -440,10 +475,6 @@
       "Contract": "Contract",
       "Remaining": "remaining",
       "DaysRemaining": "{days, plural, =1 {# day} other {# days}}"
-    },
-    "TryOtherPlatform": {
-      "Title": "Extend and scale your XTM Platform",
-      "Cta": "Try {productName}"
     }
   },
   "PublicHomePage": {
@@ -469,11 +500,11 @@
     "NotFound": "404 | This page could not be found"
   },
   "AppFooter": {
-    "AllRightsReserved": "All rights reserved",
+    "AllRightsReserved": "All rights reserved.",
     "FiligranWebsite": "Filigran website",
     "Documentation": "XTM Hub documentation",
     "PrivacyPolicy": "Privacy Policy",
-    "TermsOfServices": "Terms of Services",
+    "TermsOfService": "Terms of Service",
     "Licenses": "Licenses"
   },
   "PublicLayout": {
@@ -564,7 +595,6 @@
   "Menu": {
     "XTMPlatform": "XTM Platform",
     "XTMPlatformTrial": "XTM Platform Trial",
-    "StartFreeTrial": "Start Free Trial",
     "CustomDashboards": "Custom Dashboards",
     "CustomViews": "Custom Views",
     "Integrations": "Integrations",
@@ -619,7 +649,7 @@
     }
   },
   "Metadata": {
-    "Title": "XTM Hub | Your Gateway to Cyber Threat Intelligence & Breach & Attack Simulation",
+    "Title": "XTM Hub | Your Gateway to Threat Intelligence & Exposure Validation",
     "Description": "XTM Hub is a central forum to access resources, optimize the use of Filigran’s products, and empower the community.",
     "ShortTitle": "XTM Hub | Cyber Threat Intelligence Platform",
     "ShortDescription": "XTM Hub is your gateway to Filigran's cybersecurity solutions.",
@@ -746,7 +776,6 @@
       "CancelTrial": "Cancel the trial"
     },
     "UpdateQuotasForm": {
-      "Title": "Update quotas for {platform} in {region}",
       "QuotasUpdated": "Quota has been updated successfully",
       "NewCapacityLabel": "New quota capacity",
       "AlertDialog": {
@@ -1005,7 +1034,6 @@
       "opencti_integrations": "OpenCTI Integrations",
       "opencti_playbooks": "OpenCTI Playbooks",
       "opencti_registration": "OpenCTI Registration",
-      "vault": "Vault",
       "xtm_platform_bundle": "XTM Platform Trial",
       "xtm_platform_roadmap": "XTM Platform Roadmap",
       "xtmone_registration": "XTM One Registration"
@@ -1032,7 +1060,7 @@
         "IntegrationType": "Integration type",
         "UseCase": "Use case",
         "DeploymentType": "Deployment type",
-        "VerificationStatus": "Verification status",
+        "VerificationStatus": "Status",
         "SolutionCategory": "Solution category",
         "LicenseType": "License type",
         "ShortDescription": "Short description",
@@ -1206,10 +1234,10 @@
           "Placeholder": "Solution category..."
         },
         "Verified": {
-          "Label": "Verification status",
-          "Placeholder": "Verification status...",
-          "Verified": "Verified",
-          "Unverified": "Unverified"
+          "Label": "Status",
+          "Placeholder": "Status...",
+          "Verified": "Supported by Filigran",
+          "Unverified": "Supported by Community"
         }
       },
       "Type": {
@@ -1377,7 +1405,7 @@
           "license_type": "License type",
           "product_version": "Connected products",
           "manager_supported": "Deployment type",
-          "verified": "Verification status",
+          "verified": "Status",
           "entity_type": "Entity type"
         }
       }
@@ -1498,9 +1526,6 @@
     "SubscribeService": "Subscribe to {serviceName} service",
     "SubscribeSuccessful": "You have successfully subscribed to the service. You can now find it in your subscribed services.",
     "Trials": {
-      "ExploreBold": "Free Trial!",
-      "ExplorePlatform": "Explore {platformName} platform with 30 days",
-      "ExploreProducts": "Explore OpenCTI or OpenAEV product with 30 days",
       "Active": "Your OpenCTI free trial is active",
       "Provisioning": "Your OpenCTI free trial is currently being provisioned.",
       "Requested": "Your OpenCTI free trial has been requested.",
@@ -1567,8 +1592,6 @@
           }
         }
       },
-      "StartTrial": "Start your free trial",
-      "StartTrialWithName": "Start your free {platformName} trial",
       "OpenAEVPlatformBreadcrumb": "OpenAEV Trial platform",
       "OpenCTIPlatformBreadcrumb": "OpenCTI Trial platform",
       "PageHeader": {
@@ -1579,7 +1602,7 @@
         "Title": "Important note about your trial environment's storage",
         "SaaSFeaturesLink": "Enterprise Edition SaaS features",
         "NoSLA": "<strong>The free trial environment does not include SLA.</strong> In the event of a cloud provider outage, recovery time is not guaranteed. We recommend not storing critical or irreplaceable data in your trial environment.",
-        "OpenCTIDescription": "The OpenCTI free trial provides users with a \"small\" SaaS instance, which includes all <link>Enterprise Edition SaaS features</link>, but with <strong>reduced computing power and storage (up to 40GB in intelligence data storage and 3GB in file storage).</strong> Ingesting large, premium feed with rich data sets during this trial could impact your storage quickly.",
+        "OpenCTIDescription": "The OpenCTI free trial provides users with a \"small\" SaaS instance, which includes all <link>Enterprise Edition SaaS features</link>, but with <strong>reduced computing power and storage (up to 40GB in intelligence data storage and 3GB in file storage).</strong> Ingesting large premium feeds with rich data sets during this trial could impact your storage quickly.",
         "OpenAEVDescription": "The OpenAEV free trial provides users with a \"small\" instance, which includes all <link>Enterprise Edition SaaS features</link>, but with a reduced computing power and a limited storage of <strong>16GB</strong>."
       },
       "XTMPlatform": {
@@ -1603,12 +1626,19 @@
           "Text": "Keep exploring the full XTM Platform experience before your trial ends."
         },
         "DaysLeft": "{days, plural, =1 {# day left} other {# days left}}",
+        "Feedback": {
+          "Question": "Is your XTM Platform trial experience going well so far?",
+          "Yes": "Yes, so far so good!",
+          "No": "Not really...",
+          "Submit": "Submit",
+          "Justification": "Sorry to hear that. Would you mind sharing the reason?"
+        },
         "Page": {
           "Breadcrumb": "XTM Platform Trial",
           "Overline": "XTM Platform free trial",
           "Title": "Start your 30-day free trial",
           "PitchTitle": "Explore the full XTM Platform experience",
-          "PitchDescription": "Get 30 days to explore the SaaS-based, enterprise editions of OpenCTI and OpenAEV, including XTM One's agentic orchestration capabilities. Unify your threat intelligence and validate your defenses with agentic, continuous exposure management and cyber risk reduction.",
+          "PitchDescription": "Get 30 days to explore the SaaS-based enterprise editions of OpenCTI and OpenAEV, including XTM One's agentic orchestration capabilities. Unify your threat intelligence and validate your defenses with agentic, continuous exposure management and cyber risk reduction.",
           "Products": {
             "opencti": {
               "Tagline": "Unify and prioritize your threat signals",
@@ -1620,7 +1650,7 @@
             },
             "xtmone": {
               "Tagline": "Your agentic threat management cockpit",
-              "Description": "XTM One is the agentic AI layer orchestrating assistive and agentic AI across OpenCTI and OpenAEV, moving you from threat signal to validated action at machine speed, human-in-the-loop, closing the loop on CTEM."
+              "Description": "XTM One is the AI layer that orchestrates assistive and agentic AI across OpenCTI and OpenAEV. It takes you from threat signal to validated action at machine speed, with a human in the loop, so you can close the loop on CTEM."
             }
           },
           "Limitations": {
@@ -1628,7 +1658,7 @@
             "Intro": "The XTM Platform free trial includes all Enterprise Edition SaaS features, but with limited computing power and storage:",
             "OpenCTI": "For OpenCTI: up to 40GB in intelligence data storage and 3GB in file storage.",
             "OpenAEV": "For OpenAEV: 16GB",
-            "Ingestion": "Ingesting large, premium feed with rich data sets during this trial could impact your storage quickly.",
+            "Ingestion": "Ingesting large premium feeds with rich data sets during this trial could impact your storage quickly.",
             "NoSLA": "Note that this trial does not include SLAs. In the event of a cloud provider outage, recovery time is not guaranteed. We recommend not storing critical or irreplaceable data in your trial environment."
           },
           "Form": {
@@ -1646,7 +1676,8 @@
           },
           "NotAdmin": {
             "Title": "To request a trial you must be an organization admin.",
-            "Description": "Please contact the organization’s admin in your company"
+            "Description": "Please contact the organization’s admin in your company",
+            "AdminListTitle": "{count, plural, =1 {Administrator} other {Administrators}}"
           },
           "PersonalSpace": {
             "Title": "Trials are not available in a personal space"
@@ -1720,15 +1751,18 @@
       "Form": {
         "Region": "Region",
         "RegionPlaceholder": "Select your preferred region for hosting",
-        "AssociatedEmail": "Associated Email：",
+        "AssociatedEmail": "Associated email:",
         "JobTitle": "Job title",
         "JobTitlePlaceholder": "Select your job title",
         "ActivitySector": "Activity sector",
         "ActivitySectorPlaceholder": "Select your activity sector",
         "UseCase": "Use case",
         "UseCasePlaceholder": "Select your use case",
-        "MSSA": "MSSA",
-        "MSSAAgreement": "I acknowledge that I have read, understand and agree to the trial terms of",
+        "Error": {
+          "AcceptTerms": "Please accept the trial terms to continue",
+          "UseCase": "Please select a use case"
+        },
+        "TermsAgreement": "I acknowledge that I have read, understood and agree to the <mssa>MSSA</mssa> trial terms and the <aiterms>AI terms</aiterms>",
         "FormRequested": "You have requested a free trial. You will receive an email as soon as the platform is ready!"
       },
       "Display": {
@@ -1742,11 +1776,6 @@
           "Title": "OpenAEV 30-days Free Trial",
           "FreeTrialDescription": "Explore OpenAEV to simulate real-life attack scenarios, evaluate your security posture, and improve cyber resilience - at a technical and human level."
         }
-      },
-      "CapacityWarning": {
-        "Title": "Availability Notice",
-        "Content": "A platform slot is not available in your region at this time. Would you like to receive a notification when it becomes available?",
-        "Continue": "Notify me"
       },
       "ManageUsers": {
         "Title": "Manage users",
@@ -1921,39 +1950,10 @@
         }
       }
     },
-    "Vault": {
-      "DeleteDocument": "Delete document",
-      "DropFile": "Drop the document here",
-      "File": "Document to send",
-      "FileExtension": "The document must have an extension",
-      "FileForm": {
-        "AddFile": "Add new document",
-        "AlreadyExists": "This document already exists. The old one will be erased.",
-        "DeleteDialog": "Are you sure you want to delete this document?",
-        "DescriptionLabel": "Description",
-        "DescriptionPlaceholder": "This is a short paragraph to describe the document.",
-        "DropDocuments": "Drop documents here",
-        "EditFile": "Edit document",
-        "File": "Document",
-        "FileAlreadyExists": "This document already exists",
-        "FileExistsDialog": "This document already exists. This document will erase the old one. Are you sure you want to continue?",
-        "NoDocument": "No document selected",
-        "SelectDocument": "Select document",
-        "ShortNameLabel": "Short name",
-        "ShortNamePlaceholder": "Filigran Pricing",
-        "UploadNewFile": "Upload a new document in Vault"
-      },
-      "FileTab": {
-        "Description": "Description",
-        "FileName": "Document name",
-        "NumberDownload": "Downloads",
-        "Search": "Search with document name...",
-        "UploadDate": "Upload date"
-      },
-      "ManageVault": "Manage vault",
-      "UpdateDocument": "Update document",
-      "Vault": "Partner Vault",
-      "VaultTitle": "Vault Administration"
+    "FileForm": {
+      "DropDocuments": "Drop documents here",
+      "NoDocument": "No document selected",
+      "SelectDocument": "Select document"
     },
     "OpenctiCustomViews": {
       "Actions": {
@@ -2057,6 +2057,7 @@
     }
   },
   "ServiceActions": {
+    "DocumentUpdated": "{file_name} has been modified",
     "OrganizationAdded": "{name} organization subscribed to the {serviceName} service",
     "OrganizationDeleted": "Organization {name} has been deleted",
     "UserCapabilitiesModified": "{email}'s capabilities have been modified",
@@ -2207,13 +2208,20 @@
     }
   },
   "UserListPage": {
+    "Action": "Action",
     "Country": "Country",
     "Email": "Email",
     "FirstName": "First name",
+    "InvitationDate": "Invitation date",
+    "InvitationExpired": "Expired",
+    "InvitationPending": "Pending",
+    "InvitationStatus": "Invitation status",
     "LastLogin": "Last login",
     "LastName": "Last name",
     "NoUsers": "No users found",
     "Organizations": "Organizations",
+    "ResendInvite": "Re-send Invite",
+    "ResendInviteSuccess": "Invitation re-sent",
     "Roles": "Roles",
     "Status": "Status",
     "TabTitle": "Users",
@@ -2275,12 +2283,6 @@
     "APAC_SG": "Singapore",
     "EU_WEST": "Europe West",
     "US_EAST": "United States East"
-  },
-  "VaultActions": {
-    "DocumentAdded": "{file_name} has been added",
-    "DocumentDeleted": "{file_name} has been deleted",
-    "DocumentUpdated": "{file_name} has been modified",
-    "UpdateDocument": "Update document"
   },
   "DeploymentRequestJobTitle": {
     "ceo": "CEO",

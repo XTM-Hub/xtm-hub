@@ -190,7 +190,15 @@
       "Title": "Le titre est obligatoire",
       "ShortDescription": "La description courte est obligatoire",
       "ShortDescriptionMax": "La description courte ne doit pas dépasser 215 caractères",
-      "Description": "La description est obligatoire"
+      "DescriptionMax": "La description ne doit pas dépasser 500 caractères",
+      "ProblemToSolve": "Le problème à résoudre est obligatoire",
+      "ProblemToSolveMax": "Le problème à résoudre ne doit pas dépasser 500 caractères",
+      "ProposedSolution": "La solution proposée est obligatoire",
+      "ProposedSolutionMax": "La solution proposée ne doit pas dépasser 500 caractères",
+      "ExpectedValue": "La valeur attendue est obligatoire",
+      "ExpectedValueMax": "La valeur attendue ne doit pas dépasser 500 caractères",
+      "Product": "Au moins un produit est obligatoire",
+      "SlackLink": "Doit être un lien Slack filigran-community"
     }
   },
   "Epic": {
@@ -216,22 +224,47 @@
       "Epic": "Epic",
       "Title": "Titre",
       "ShortDesc": "Description courte",
-      "Description": "Description",
+      "Description": "Description complète",
+      "ProblemToSolve": "Problème à résoudre",
+      "ProposedSolution": "Solution proposée",
+      "ExpectedValue": "Valeur attendue",
       "EditionType": "type d'édition",
       "FiligranProduct": "Produit",
       "FiligranProductPlaceholder": "OpenCTI",
+      "SlackLink": "Lien Slack",
+      "SlackLinkPlaceholder": "Choisissez un canal ou collez un lien Slack",
       "Timeline": "Ligne de temps",
       "IsActive": "Cet EPIC est-il publié ? (Par défaut votre EPIC est en mode brouillon)",
       "Integration": "Est une intégration",
-      "IsLimited": "Limité à {maxChars} caractères",
-      "AutomaticallyAdded": "Ajouté automatiquement (non modifiable)"
+      "AutomaticallyAdded": "Ajouté automatiquement (non modifiable)",
+      "CharacterCount": "{count} / {maxChars}",
+      "Placeholder": {
+        "Title": "ex. : les utilisateurs voient tous leurs essais actifs au même endroit",
+        "ShortDesc": "Une phrase affichée sur la carte de la roadmap",
+        "Description": "Détaillez l'epic : contexte, périmètre, contraintes",
+        "ProblemToSolve": "Les difficultés rencontrées par l'utilisateur",
+        "ProposedSolution": "Comment nous comptons le résoudre",
+        "ExpectedValue": "Ce que nous y gagnons une fois livré"
+      },
+      "DetailsSection": "Détails de l'epic",
+      "PublishNow": "Publier maintenant",
+      "PublishNowHint": "(sinon enregistré en brouillon)",
+      "EditionTypeInfo": "Partial EE : fonctionne en Community Edition mais certaines options nécessitent l'Enterprise Edition",
+      "TimelineOption": {
+        "now": "Maintenant",
+        "next": "Ensuite",
+        "under_consideration": "À l’étude",
+        "finished": "Terminé"
+      }
     },
     "EpicActions": {
       "CreateEpic": "Créer un nouvel épic",
       "UpdateEpic": "Mettre à jour un épic",
       "DeleteEpic": "Supprimer l'épic {epicName}",
       "SureDeleteEpic": "Êtes-vous sûr de vouloir supprimer l'épic {epicName} ?",
-      "EpicDeleted": "L'épic a été supprimé"
+      "EpicDeleted": "L'épic a été supprimé",
+      "CreateEpicButton": "Créer l'epic",
+      "UpdateEpicButton": "Mettre à jour l'epic"
     },
     "JoinCommunity": "Restez dans la boucle avec la communauté Filigran"
   },
@@ -273,6 +306,7 @@
       "CANT_REQUEST_FREE_TRIAL_IN_PERSONAL_SPACE": "Vous ne pouvez pas demander d'essai gratuit dans votre espace personnel",
       "CANT_SUBSCRIBE_YOURSELF": "Vous ne pouvez pas vous donner l'accès vous-même",
       "COMPETITOR_DOMAIN_ALREADY_EXISTS": "Il existe déjà un concurrent avec le même domaine",
+      "DEPLOYMENT_FEEDBACK_ALREADY_EXISTS": "Des retours d'expérience sur le déploiement existent déjà",
       "COMPETITOR_NOT_FOUND": "Concurrent non trouvé",
       "CONNECTOR_ID_ALREADY_EXISTS": "Un connecteur avec cet identifiant existe déjà",
       "CONNECTOR_VERSION_ALREADY_EXISTS": "Un connecteur avec cette version existe déjà",
@@ -298,6 +332,7 @@
       "DEPLOYMENT_REQUEST_QUOTA_NOT_FOUND": "Le quota de la demande de déploiement n'a pas été trouvé.",
       "DEPLOYMENT_REQUEST_STATUS_UPDATE_NOT_ALLOWED": "Une erreur inconnue s'est produite",
       "DEPLOYMENT_REQUEST_UNKNOWN_ERROR": "Une erreur inconnue s'est produite",
+      "DEPLOYMENT_FEEDBACK_UNKNOWN_ERROR": "Une erreur inconnue s'est produite lors de l'envoi du commentaire.",
       "DOCUMENT_CREATE_ERROR": "Une erreur s'est produite lors de la création de la ressource.",
       "DOCUMENT_FILE_MISSING": "Fichier du document manquant",
       "DOCUMENT_MISSING_METADATA": "Il manque des métadonnées au document.",
@@ -440,10 +475,6 @@
       "Contract": "Contrat",
       "Remaining": "restant",
       "DaysRemaining": "{days, plural, =1 {# jour} other {# jours}}"
-    },
-    "TryOtherPlatform": {
-      "Title": "Étendez et adaptez votre plateforme XTM",
-      "Cta": "Essayez {productName}"
     }
   },
   "PublicHomePage": {
@@ -469,11 +500,11 @@
     "NotFound": "404 | Cette page est introuvable"
   },
   "AppFooter": {
-    "AllRightsReserved": "Tous droits réservés",
+    "AllRightsReserved": "Tous droits réservés.",
     "FiligranWebsite": "Site Filigran",
     "Documentation": "Documentation du Hub XTM",
     "PrivacyPolicy": "Politique de confidentialité",
-    "TermsOfServices": "Conditions d'utilisation",
+    "TermsOfService": "Conditions d'utilisation",
     "Licenses": "Licences"
   },
   "PublicLayout": {
@@ -564,7 +595,6 @@
   "Menu": {
     "XTMPlatform": "Plateforme XTM",
     "XTMPlatformTrial": "Essai Plateforme XTM",
-    "StartFreeTrial": "Commencer l'essai gratuit",
     "CustomDashboards": "Tableaux de bord personnalisés",
     "CustomViews": "Vues personnalisées",
     "Integrations": "Intégrations",
@@ -746,7 +776,6 @@
       "CancelTrial": "Annuler l'essai"
     },
     "UpdateQuotasForm": {
-      "Title": "Mise à jour des quotas pour {platform} dans {region}",
       "QuotasUpdated": "Le quota a été mis à jour avec succès",
       "NewCapacityLabel": "Nouvelle capacité de quota",
       "AlertDialog": {
@@ -1005,7 +1034,6 @@
       "opencti_integrations": "OpenCTI Integrations",
       "opencti_playbooks": "OpenCTI Playbooks",
       "opencti_registration": "OpenCTI Registration",
-      "vault": "Vault",
       "xtm_platform_bundle": "XTM Platform Trial",
       "xtm_platform_roadmap": "XTM Platform Roadmap",
       "xtmone_registration": "XTM One Registration"
@@ -1032,7 +1060,7 @@
         "IntegrationType": "Type d'intégration",
         "UseCase": "Cas d'usage",
         "DeploymentType": "Type de déploiement",
-        "VerificationStatus": "Statut de vérification",
+        "VerificationStatus": "Statut",
         "SolutionCategory": "Catégorie de solution",
         "LicenseType": "Type de licence",
         "ShortDescription": "Description courte",
@@ -1206,10 +1234,10 @@
           "Placeholder": "Catégorie de solution..."
         },
         "Verified": {
-          "Label": "Statut de vérification",
-          "Placeholder": "Statut de vérification...",
-          "Verified": "Vérifié",
-          "Unverified": "Non vérifié"
+          "Label": "Statut",
+          "Placeholder": "Statut...",
+          "Verified": "Supporté par Filigran",
+          "Unverified": "Supporté par la communauté"
         }
       },
       "Type": {
@@ -1377,7 +1405,7 @@
           "license_type": "Type de licence",
           "product_version": "Produits connectés",
           "manager_supported": "Type de déploiement",
-          "verified": "Statut de vérification",
+          "verified": "Statut",
           "entity_type": "Type d'entité"
         }
       }
@@ -1498,9 +1526,6 @@
     "SubscribeService": "Souscrire au service {serviceName}",
     "SubscribeSuccessful": "Vous avez souscrit au service. Vous pouvez maintenant le retrouver dans les services souscrits !",
     "Trials": {
-      "ExploreBold": "Essai gratuit !",
-      "ExplorePlatform": "Explorez {platformName} pendant 30 jours",
-      "ExploreProducts": "Explorez le produit OpenCTI ou OpenAEV pendant 30 jours",
       "Active": "Votre essai gratuit d'OpenCTI est actif",
       "Provisioning": "Votre essai gratuit d'OpenCTI est en cours de provisionnement.",
       "Requested": "Votre essai gratuit d'OpenCTI a été demandé.",
@@ -1567,8 +1592,6 @@
           }
         }
       },
-      "StartTrial": "Commencez votre essai gratuit",
-      "StartTrialWithName": "Commencez votre essai gratuit de {platformName}",
       "OpenAEVPlatformBreadcrumb": "Plateforme d'essai OpenAEV",
       "OpenCTIPlatformBreadcrumb": "Plateforme d'essai OpenCTI",
       "PageHeader": {
@@ -1603,6 +1626,13 @@
           "Text": "Continuez à découvrir l'expérience complète de la XTM Platform avant la fin de votre essai."
         },
         "DaysLeft": "{days, plural, =1 {# jour restant} other {# jours restants}}",
+        "Feedback": {
+          "Question": "Votre expérience de l'essai XTM Platform se passe-t-elle bien jusqu'à présent ?",
+          "Yes": "Oui, pour l'instant, tout va bien !",
+          "No": "Pas vraiment...",
+          "Submit": "Soumettre",
+          "Justification": "Désolés de savoir ça. Pouvez-vous nous donner la raison ?"
+        },
         "Page": {
           "Breadcrumb": "XTM Platform Trial",
           "Overline": "Essai gratuit XTM Platform",
@@ -1646,7 +1676,8 @@
           },
           "NotAdmin": {
             "Title": "Vous devez être administrateur de l'organisation pour demander un essai.",
-            "Description": "Contactez l'administrateur de l'organisation dans votre entreprise"
+            "Description": "Contactez l'administrateur de l'organisation dans votre entreprise",
+            "AdminListTitle": "{count, plural, =1 {Administrateur} other {Administrateurs}}"
           },
           "PersonalSpace": {
             "Title": "Les essais ne sont pas disponibles dans un espace personnel"
@@ -1720,15 +1751,18 @@
       "Form": {
         "Region": "Région",
         "RegionPlaceholder": "Sélectionnez la région de votre choix pour l'hébergement",
-        "AssociatedEmail": "Email associé ：",
+        "AssociatedEmail": "Email associé :",
         "JobTitle": "Titre du poste",
         "JobTitlePlaceholder": "Sélectionnez votre fonction",
         "ActivitySector": "Secteur d'activité",
         "ActivitySectorPlaceholder": "Sélectionnez votre secteur d'activité",
         "UseCase": "Cas d'utilisation",
         "UseCasePlaceholder": "Sélectionnez votre cas d'utilisation",
-        "MSSA": "MSSA",
-        "MSSAAgreement": "*Je reconnais avoir lu, compris et accepté les conditions du procès de",
+        "Error": {
+          "AcceptTerms": "Veuillez accepter les conditions d'essai pour continuer",
+          "UseCase": "Veuillez sélectionner un cas d'utilisation"
+        },
+        "TermsAgreement": "Je reconnais avoir lu, compris et accepté les conditions d'essai du <mssa>MSSA</mssa> et les <aiterms>conditions d'utilisation de l'IA</aiterms>",
         "FormRequested": "Vous avez demandé un essai gratuit. Vous recevrez un e-mail dès que la plateforme sera prête !"
       },
       "Display": {
@@ -1742,11 +1776,6 @@
           "Title": "Essai gratuit d'OpenAEV pendant 30 jours",
           "FreeTrialDescription": "Explorez OpenAEV pour simuler des scénarios d'attaque réels, évaluer votre posture de sécurité et améliorer votre cyber-résilience - au niveau technique et humain."
         }
-      },
-      "CapacityWarning": {
-        "Title": "Aucune plateforme disponible",
-        "Content": "Aucune plateforme n'est disponible dans cette région pour le moment. Souhaitez-vous être averti lorsque nous en aurons une de disponible ?",
-        "Continue": "Me prévenir"
       },
       "ManageUsers": {
         "Title": "Gérer les utilisateurs",
@@ -1921,39 +1950,10 @@
         }
       }
     },
-    "Vault": {
-      "DeleteDocument": "Effacer le document",
-      "DropFile": "Lâchez le document ici",
-      "File": "Document à transmettre",
-      "FileExtension": "Le document doit avoir une extension",
-      "FileForm": {
-        "AddFile": "Ajouter un document",
-        "AlreadyExists": "Ce document existe déjà. L'ancien sera écrasé.",
-        "DeleteDialog": "Êtes-vous sûr de vouloir supprimer ce document ?",
-        "DescriptionLabel": "Description",
-        "DescriptionPlaceholder": "Ceci est une courte description du document.",
-        "DropDocuments": "Lâchez les documents ici",
-        "EditFile": "Editer le document",
-        "File": "Document",
-        "FileAlreadyExists": "Ce document existe déjà",
-        "FileExistsDialog": "Ce document existe déjà. Ce document écrasera l'ancien document. Êtes-vous sûr de vouloir continuer ?",
-        "NoDocument": "Pas de document sélectionné",
-        "SelectDocument": "Sélectionnez un document",
-        "ShortNameLabel": "Nom court",
-        "ShortNamePlaceholder": "Filigrane de la tarification",
-        "UploadNewFile": "Ajout d'un nouveau document dans le Vault"
-      },
-      "FileTab": {
-        "Description": "Description",
-        "FileName": "Nom de document",
-        "NumberDownload": "Téléchargements",
-        "Search": "Chercher par nom de document...",
-        "UploadDate": "Date d'ajout"
-      },
-      "ManageVault": "Gérer le service",
-      "UpdateDocument": "Mise à jour du document",
-      "Vault": "Partenaire Vault",
-      "VaultTitle": "Administration du Vault"
+    "FileForm": {
+      "DropDocuments": "Lâchez les documents ici",
+      "NoDocument": "Pas de document sélectionné",
+      "SelectDocument": "Sélectionnez un document"
     },
     "OpenctiCustomViews": {
       "Actions": {
@@ -2057,6 +2057,7 @@
     }
   },
   "ServiceActions": {
+    "DocumentUpdated": "{file_name} a été modifié",
     "OrganizationAdded": "L'organisation {name} a souscrit au service {serviceName}",
     "OrganizationDeleted": "L'organisation {name} a été supprimée",
     "UserCapabilitiesModified": "les capacités de {email}'s ont été modifiées",
@@ -2207,13 +2208,20 @@
     }
   },
   "UserListPage": {
+    "Action": "Action",
     "Country": "Pays",
     "Email": "Email",
     "FirstName": "Prénom",
+    "InvitationDate": "Date d'invitation",
+    "InvitationExpired": "Expirée",
+    "InvitationPending": "En attente",
+    "InvitationStatus": "Statut d'invitation",
     "LastLogin": "Dernière connexion",
     "LastName": "Nom de famille",
     "NoUsers": "Aucun utilisateur trouvé",
     "Organizations": "Organisations",
+    "ResendInvite": "Renvoyer l'invitation",
+    "ResendInviteSuccess": "Invitation renvoyée",
     "Roles": "Rôles",
     "Status": "Statut",
     "TabTitle": "Utilisateurs",
@@ -2275,12 +2283,6 @@
     "APAC_SG": "Singapour",
     "EU_WEST": "Europe Ouest",
     "US_EAST": "États-Unis Est"
-  },
-  "VaultActions": {
-    "DocumentAdded": "{file_name} a été ajouté",
-    "DocumentDeleted": "{file_name} a été supprimé",
-    "DocumentUpdated": "{file_name} a été modifié",
-    "UpdateDocument": "Modifier le document"
   },
   "DeploymentRequestJobTitle": {
     "ceo": "PDG",

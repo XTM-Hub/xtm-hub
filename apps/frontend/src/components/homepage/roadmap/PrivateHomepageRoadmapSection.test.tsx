@@ -45,7 +45,7 @@ describe('PrivateHomepageRoadmapSection', () => {
     expect(mockXtmRoadmap).toHaveBeenCalledWith(
       expect.objectContaining({
         seeMoreHref:
-          '/app/service/xtm_platform_roadmap/roadmap-1?product=opencti',
+          '/app/service/xtm_platform_roadmap/roadmap-1?products=opencti',
         titleProduct: 'opencti',
       }),
       undefined
@@ -70,7 +70,7 @@ describe('PrivateHomepageRoadmapSection', () => {
     expect(mockXtmRoadmap).toHaveBeenCalledWith(
       expect.objectContaining({
         seeMoreHref:
-          '/app/service/xtm_platform_roadmap/roadmap-2?product=openaev',
+          '/app/service/xtm_platform_roadmap/roadmap-2?products=openaev',
         titleProduct: 'openaev',
       }),
       undefined

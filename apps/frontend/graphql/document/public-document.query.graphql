@@ -99,7 +99,7 @@ query PublicDocumentsByServiceSlugQuery($serviceInstanceSlug: String!) {
 }
 
 query PublicDocumentsByServiceSlugSitemapQuery($serviceInstanceSlug: String!) {
-  publicDocumentsByServiceSlug(serviceInstanceSlug: $serviceInstanceSlug) {
+  publicDocumentSlugsByServiceSlug(serviceInstanceSlug: $serviceInstanceSlug) {
     slug
     created_at
     updated_at

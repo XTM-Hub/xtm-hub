@@ -236,7 +236,6 @@ export type CreateDeploymentRequestInput = {
   products: Array<PlatformIdentifier>;
   region: DeploymentRequestPlatformRegion;
   source: DeploymentRequestSource;
-  type: DeploymentRequestDeploymentType;
   use_cases_by_product?: InputMaybe<Array<ProductUseCaseInput>>;
 };
 
@@ -257,10 +256,14 @@ export type CreateEpicInput = {
   active?: InputMaybe<Scalars['Boolean']['input']>;
   description: Scalars['String']['input'];
   edition_type: EditionType;
+  expected_value: Scalars['String']['input'];
   illustration_document?: InputMaybe<Scalars['Upload']['input']>;
   is_integration?: InputMaybe<Scalars['Boolean']['input']>;
-  product: FiligranProduct;
+  problem_to_solve: Scalars['String']['input'];
+  products: Array<FiligranProduct>;
+  proposed_solution: Scalars['String']['input'];
   short_description: Scalars['String']['input'];
+  slack_link?: InputMaybe<Scalars['String']['input']>;
   timeline: Timeline;
   title: Scalars['String']['input'];
 };
@@ -403,12 +406,6 @@ export type DefaultDocument = Document & Node & {
   use_cases?: Maybe<Array<UseCase>>;
 };
 
-export type DeployedPlatform = {
-  __typename?: 'DeployedPlatform';
-  platformIdentifier: PlatformIdentifier;
-  serviceInstanceId: Scalars['ServiceInstanceId']['output'];
-};
-
 export type DeployedResource = {
   __typename?: 'DeployedResource';
   deployedAt: Scalars['Date']['output'];
@@ -421,7 +418,6 @@ export type DeploymentAvailability = {
   availableCount: Scalars['Int']['output'];
   capacity: Scalars['Int']['output'];
   id: Scalars['ID']['output'];
-  platform_identifier?: Maybe<PlatformIdentifier>;
   region: DeploymentRequestPlatformRegion;
 };
 
@@ -747,14 +743,16 @@ export type Epic = Node & {
   document_id?: Maybe<Scalars['DocumentId']['output']>;
   edition_type: EditionType;
   epic_type: EpicType;
+  expected_value: Scalars['String']['output'];
   id: Scalars['ID']['output'];
-  product: FiligranProduct;
+  problem_to_solve: Scalars['String']['output'];
+  products: Array<FiligranProduct>;
+  proposed_solution: Scalars['String']['output'];
   short_description: Scalars['String']['output'];
+  slack_link?: Maybe<Scalars['String']['output']>;
   timeline: Timeline;
   title: Scalars['String']['output'];
   updated_at?: Maybe<Scalars['Date']['output']>;
-  updater_id?: Maybe<Scalars['String']['output']>;
-  uploader_id: Scalars['String']['output'];
 };
 
 export type EpicConnection = {
@@ -806,7 +804,7 @@ export type FacetBucket = {
 export enum FeatureFlag {
   DecouplingConnectors = 'DECOUPLING_CONNECTORS',
   Dummy = 'DUMMY',
-  XtmPlatformTrial = 'XTM_PLATFORM_TRIAL'
+  TrialInvite = 'TRIAL_INVITE'
 }
 
 export enum FiligranProduct {
@@ -841,6 +839,18 @@ export type GenericServiceCapability = Node & {
   id: Scalars['ID']['output'];
   name?: Maybe<Scalars['String']['output']>;
 };
+
+export type GiveDeploymentFeedbackInput = {
+  answer: HasRepliedSatisfaction;
+  deploymentRequestId: Scalars['DeploymentRequestId']['input'];
+  justification?: InputMaybe<Scalars['String']['input']>;
+};
+
+export enum HasRepliedSatisfaction {
+  Closed = 'closed',
+  No = 'no',
+  Yes = 'yes'
+}
 
 export type Integration = {
   active: Scalars['Boolean']['output'];
@@ -1052,6 +1062,7 @@ export type Mutation = {
   editUserService?: Maybe<UserService>;
   frontendErrorLog?: Maybe<Scalars['Boolean']['output']>;
   generateManifest: Success;
+  giveDeploymentFeedback: Success;
   incrementShareNumberDocument: Document;
   ingestManifestFragments: Success;
   login?: Maybe<User>;
@@ -1361,6 +1372,11 @@ export type MutationGenerateManifestArgs = {
 };
 
 
+export type MutationGiveDeploymentFeedbackArgs = {
+  input: GiveDeploymentFeedbackInput;
+};
+
+
 export type MutationIncrementShareNumberDocumentArgs = {
   documentId: Scalars['DocumentId']['input'];
 };
@@ -1563,6 +1579,7 @@ export enum NewsFeedItemMetadataKey {
 export enum NewsFeedItemType {
   ResourceCustomDashboard = 'RESOURCE_CUSTOM_DASHBOARD',
   ResourceCustomView = 'RESOURCE_CUSTOM_VIEW',
+  ResourceIntegration = 'RESOURCE_INTEGRATION',
   ResourcePlaybook = 'RESOURCE_PLAYBOOK'
 }
 
@@ -1795,6 +1812,7 @@ export enum PlatformRegistrationStatus {
 
 export type PlatformTrialStatus = {
   __typename?: 'PlatformTrialStatus';
+  deploymentRequestId?: Maybe<Scalars['DeploymentRequestId']['output']>;
   end_date?: Maybe<Scalars['Date']['output']>;
   hub_status?: Maybe<DeploymentRequestHubStatus>;
   isBlacklisted: Scalars['Boolean']['output'];
@@ -1828,6 +1846,13 @@ export type ProvisionedNewsFeedItem = Node & {
   tags: Array<Scalars['String']['output']>;
   title: Scalars['String']['output'];
   type: NewsFeedItemType;
+};
+
+export type PublicDocumentSlugInfo = {
+  __typename?: 'PublicDocumentSlugInfo';
+  created_at: Scalars['Date']['output'];
+  slug?: Maybe<Scalars['String']['output']>;
+  updated_at?: Maybe<Scalars['Date']['output']>;
 };
 
 export type Query = {
@@ -1865,6 +1890,7 @@ export type Query = {
   platformAssociatedOrganization?: Maybe<Organization>;
   platformTrialStatus: PlatformTrialStatus;
   publicDocumentBySlug?: Maybe<Document>;
+  publicDocumentSlugsByServiceSlug: Array<PublicDocumentSlugInfo>;
   publicDocuments: DocumentConnection;
   publicDocumentsByServiceSlug: Array<Document>;
   registeredPlatform?: Maybe<RegisteredPlatform>;
@@ -1881,7 +1907,6 @@ export type Query = {
   solutionCategories?: Maybe<SolutionCategoryConnection>;
   subscriptionById?: Maybe<SubscriptionModel>;
   subscriptions: SubscriptionConnection;
-  trialDeployments: TrialsDeployments;
   updateOpenCTIManifest: Success;
   useCases?: Maybe<UseCaseConnection>;
   userOrganizations: Array<Organization>;
@@ -1929,11 +1954,6 @@ export type QueryDeploymentRequestsArgs = {
   after?: InputMaybe<Scalars['ID']['input']>;
   filters?: InputMaybe<Array<DeploymentRequestFilter>>;
   first: Scalars['Int']['input'];
-};
-
-
-export type QueryDeploymentRequestsAvailableArgs = {
-  platformIdentifier?: InputMaybe<PlatformIdentifier>;
 };
 
 
@@ -2065,6 +2085,11 @@ export type QueryPublicDocumentBySlugArgs = {
 };
 
 
+export type QueryPublicDocumentSlugsByServiceSlugArgs = {
+  serviceInstanceSlug: Scalars['String']['input'];
+};
+
+
 export type QueryPublicDocumentsArgs = {
   after?: InputMaybe<Scalars['ID']['input']>;
   first: Scalars['Int']['input'];
@@ -2156,11 +2181,6 @@ export type QuerySubscriptionsArgs = {
   orderBy: SubscriptionOrdering;
   orderMode: OrderingMode;
   searchTerm?: InputMaybe<Scalars['String']['input']>;
-};
-
-
-export type QueryTrialDeploymentsArgs = {
-  input: TrialDeploymentsInput;
 };
 
 
@@ -2434,7 +2454,6 @@ export enum ServiceDefinitionIdentifier {
   OpenctiIntegrations = 'opencti_integrations',
   OpenctiPlaybooks = 'opencti_playbooks',
   OpenctiRegistration = 'opencti_registration',
-  Vault = 'vault',
   XtmPlatformBundle = 'xtm_platform_bundle',
   XtmPlatformRoadmap = 'xtm_platform_roadmap',
   XtmoneRegistration = 'xtmone_registration'
@@ -2796,18 +2815,6 @@ export enum Timeline {
   UnderConsideration = 'under_consideration'
 }
 
-export type TrialDeploymentsInput = {
-  organizationId: Scalars['OrganizationId']['input'];
-  platformIdentifiers?: InputMaybe<Array<PlatformIdentifier>>;
-};
-
-export type TrialsDeployments = {
-  __typename?: 'TrialsDeployments';
-  availableTrials: Array<PlatformIdentifier>;
-  deployed: Array<DeployedPlatform>;
-  isBlacklisted: Scalars['Boolean']['output'];
-};
-
 export type UnregisterPlatformInput = {
   identifier: PlatformIdentifier;
   platformId: Scalars['String']['input'];
@@ -2833,7 +2840,6 @@ export type UpdateCompetitorInput = {
 
 export type UpdateDeploymentQuotaCapacityInput = {
   newCapacity: Scalars['Int']['input'];
-  platformIdentifier?: InputMaybe<PlatformIdentifier>;
   region: DeploymentRequestPlatformRegion;
 };
 
@@ -2865,10 +2871,14 @@ export type UpdateEpicInput = {
   active?: InputMaybe<Scalars['Boolean']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   edition_type: EditionType;
+  expected_value?: InputMaybe<Scalars['String']['input']>;
   illustration_document?: InputMaybe<Scalars['Upload']['input']>;
   is_integration?: InputMaybe<Scalars['Boolean']['input']>;
-  product?: InputMaybe<FiligranProduct>;
+  problem_to_solve?: InputMaybe<Scalars['String']['input']>;
+  products?: InputMaybe<Array<FiligranProduct>>;
+  proposed_solution?: InputMaybe<Scalars['String']['input']>;
   short_description?: InputMaybe<Scalars['String']['input']>;
+  slack_link?: InputMaybe<Scalars['String']['input']>;
   timeline?: InputMaybe<Timeline>;
   title?: InputMaybe<Scalars['String']['input']>;
 };
@@ -2944,7 +2954,9 @@ export type User = Node & {
   disabled?: Maybe<Scalars['Boolean']['output']>;
   email: Scalars['String']['output'];
   first_name?: Maybe<Scalars['String']['output']>;
+  has_replied_satisfaction?: Maybe<HasRepliedSatisfaction>;
   id: Scalars['ID']['output'];
+  invitation_date?: Maybe<Scalars['Date']['output']>;
   last_login?: Maybe<Scalars['Date']['output']>;
   last_name?: Maybe<Scalars['String']['output']>;
   organization_capabilities?: Maybe<Array<OrganizationCapabilities>>;
@@ -2955,7 +2967,14 @@ export type User = Node & {
   selected_language?: Maybe<Scalars['String']['output']>;
   selected_org_capabilities?: Maybe<Array<OrganizationCapability>>;
   selected_organization_id?: Maybe<Scalars['OrganizationId']['output']>;
+  status?: Maybe<UserAccountStatus>;
 };
+
+export enum UserAccountStatus {
+  Expired = 'expired',
+  Invited = 'invited',
+  Waiting = 'waiting'
+}
 
 export type UserConnection = {
   __typename?: 'UserConnection';
@@ -2975,6 +2994,7 @@ export enum UserOrdering {
   Disabled = 'disabled',
   Email = 'email',
   FirstName = 'first_name',
+  InvitationDate = 'invitation_date',
   LastLogin = 'last_login',
   LastName = 'last_name'
 }
@@ -3270,7 +3290,6 @@ export type ResolversTypes = ResolversObject<{
   CustomView: ResolverTypeWrapper<CustomView>;
   Date: ResolverTypeWrapper<Scalars['Date']['output']>;
   DefaultDocument: ResolverTypeWrapper<DefaultDocument>;
-  DeployedPlatform: ResolverTypeWrapper<DeployedPlatform>;
   DeployedResource: ResolverTypeWrapper<Omit<DeployedResource, 'document'> & { document: ResolversTypes['Document'] }>;
   DeploymentAvailability: ResolverTypeWrapper<DeploymentAvailability>;
   DeploymentRequest: ResolverTypeWrapper<DeploymentRequest>;
@@ -3316,6 +3335,8 @@ export type ResolversTypes = ResolversObject<{
   Filter: Filter;
   FilterKey: FilterKey;
   GenericServiceCapability: ResolverTypeWrapper<GenericServiceCapability>;
+  GiveDeploymentFeedbackInput: GiveDeploymentFeedbackInput;
+  HasRepliedSatisfaction: HasRepliedSatisfaction;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
   Integration: ResolverTypeWrapper<ResolversInterfaceTypes<ResolversTypes>['Integration']>;
@@ -3374,6 +3395,7 @@ export type ResolversTypes = ResolversObject<{
   PortalCapability: PortalCapability;
   ProductUseCaseInput: ProductUseCaseInput;
   ProvisionedNewsFeedItem: ResolverTypeWrapper<ProvisionedNewsFeedItem>;
+  PublicDocumentSlugInfo: ResolverTypeWrapper<PublicDocumentSlugInfo>;
   Query: ResolverTypeWrapper<{}>;
   RefreshPlatformRegistrationConnectivityStatusAllTenantsInput: RefreshPlatformRegistrationConnectivityStatusAllTenantsInput;
   RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse: ResolverTypeWrapper<RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse>;
@@ -3440,8 +3462,6 @@ export type ResolversTypes = ResolversObject<{
   TenantStatus: ResolverTypeWrapper<TenantStatus>;
   ThirdPartyIntegration: ResolverTypeWrapper<ThirdPartyIntegration>;
   Timeline: Timeline;
-  TrialDeploymentsInput: TrialDeploymentsInput;
-  TrialsDeployments: ResolverTypeWrapper<TrialsDeployments>;
   UnregisterPlatformInput: UnregisterPlatformInput;
   UpdateBundleUserGroupsInput: UpdateBundleUserGroupsInput;
   UpdateBundleUserGroupsRoleInput: UpdateBundleUserGroupsRoleInput;
@@ -3463,6 +3483,7 @@ export type ResolversTypes = ResolversObject<{
   UseCaseId: ResolverTypeWrapper<Scalars['UseCaseId']['output']>;
   UseCaseOrdering: UseCaseOrdering;
   User: ResolverTypeWrapper<User>;
+  UserAccountStatus: UserAccountStatus;
   UserConnection: ResolverTypeWrapper<UserConnection>;
   UserEdge: ResolverTypeWrapper<UserEdge>;
   UserId: ResolverTypeWrapper<Scalars['UserId']['output']>;
@@ -3532,7 +3553,6 @@ export type ResolversParentTypes = ResolversObject<{
   CustomView: CustomView;
   Date: Scalars['Date']['output'];
   DefaultDocument: DefaultDocument;
-  DeployedPlatform: DeployedPlatform;
   DeployedResource: Omit<DeployedResource, 'document'> & { document: ResolversParentTypes['Document'] };
   DeploymentAvailability: DeploymentAvailability;
   DeploymentRequest: DeploymentRequest;
@@ -3558,6 +3578,7 @@ export type ResolversParentTypes = ResolversObject<{
   FacetBucket: FacetBucket;
   Filter: Filter;
   GenericServiceCapability: GenericServiceCapability;
+  GiveDeploymentFeedbackInput: GiveDeploymentFeedbackInput;
   ID: Scalars['ID']['output'];
   Int: Scalars['Int']['output'];
   Integration: ResolversInterfaceTypes<ResolversParentTypes>['Integration'];
@@ -3601,6 +3622,7 @@ export type ResolversParentTypes = ResolversObject<{
   PlatformTrialStatus: PlatformTrialStatus;
   ProductUseCaseInput: ProductUseCaseInput;
   ProvisionedNewsFeedItem: ProvisionedNewsFeedItem;
+  PublicDocumentSlugInfo: PublicDocumentSlugInfo;
   Query: {};
   RefreshPlatformRegistrationConnectivityStatusAllTenantsInput: RefreshPlatformRegistrationConnectivityStatusAllTenantsInput;
   RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse: RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse;
@@ -3654,8 +3676,6 @@ export type ResolversParentTypes = ResolversObject<{
   TenantDetails: TenantDetails;
   TenantStatus: TenantStatus;
   ThirdPartyIntegration: ThirdPartyIntegration;
-  TrialDeploymentsInput: TrialDeploymentsInput;
-  TrialsDeployments: TrialsDeployments;
   UnregisterPlatformInput: UnregisterPlatformInput;
   UpdateBundleUserGroupsInput: UpdateBundleUserGroupsInput;
   UpdateBundleUserGroupsRoleInput: UpdateBundleUserGroupsRoleInput;
@@ -3930,12 +3950,6 @@ export type DefaultDocumentResolvers<ContextType = PortalContext, ParentType ext
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
-export type DeployedPlatformResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['DeployedPlatform'] = ResolversParentTypes['DeployedPlatform']> = ResolversObject<{
-  platformIdentifier?: Resolver<ResolversTypes['PlatformIdentifier'], ParentType, ContextType>;
-  serviceInstanceId?: Resolver<ResolversTypes['ServiceInstanceId'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
 export type DeployedResourceResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['DeployedResource'] = ResolversParentTypes['DeployedResource']> = ResolversObject<{
   deployedAt?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   deployedBy?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
@@ -3947,7 +3961,6 @@ export type DeploymentAvailabilityResolvers<ContextType = PortalContext, ParentT
   availableCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   capacity?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  platform_identifier?: Resolver<Maybe<ResolversTypes['PlatformIdentifier']>, ParentType, ContextType>;
   region?: Resolver<ResolversTypes['DeploymentRequestPlatformRegion'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -4049,14 +4062,16 @@ export type EpicResolvers<ContextType = PortalContext, ParentType extends Resolv
   document_id?: Resolver<Maybe<ResolversTypes['DocumentId']>, ParentType, ContextType>;
   edition_type?: Resolver<ResolversTypes['EditionType'], ParentType, ContextType>;
   epic_type?: Resolver<ResolversTypes['EpicType'], ParentType, ContextType>;
+  expected_value?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  product?: Resolver<ResolversTypes['FiligranProduct'], ParentType, ContextType>;
+  problem_to_solve?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  products?: Resolver<Array<ResolversTypes['FiligranProduct']>, ParentType, ContextType>;
+  proposed_solution?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   short_description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  slack_link?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   timeline?: Resolver<ResolversTypes['Timeline'], ParentType, ContextType>;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updated_at?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
-  updater_id?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  uploader_id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -4249,6 +4264,7 @@ export type MutationResolvers<ContextType = PortalContext, ParentType extends Re
   editUserService?: Resolver<Maybe<ResolversTypes['UserService']>, ParentType, ContextType, RequireFields<MutationEditUserServiceArgs, 'input' | 'service_instance_id'>>;
   frontendErrorLog?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType, RequireFields<MutationFrontendErrorLogArgs, 'message'>>;
   generateManifest?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<MutationGenerateManifestArgs, 'product' | 'type' | 'version'>>;
+  giveDeploymentFeedback?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<MutationGiveDeploymentFeedbackArgs, 'input'>>;
   incrementShareNumberDocument?: Resolver<ResolversTypes['Document'], ParentType, ContextType, RequireFields<MutationIncrementShareNumberDocumentArgs, 'documentId'>>;
   ingestManifestFragments?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<MutationIngestManifestFragmentsArgs, 'manifestFragments'>>;
   login?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<MutationLoginArgs, 'email'>>;
@@ -4473,6 +4489,7 @@ export type PlatformProviderResolvers<ContextType = PortalContext, ParentType ex
 }>;
 
 export type PlatformTrialStatusResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['PlatformTrialStatus'] = ResolversParentTypes['PlatformTrialStatus']> = ResolversObject<{
+  deploymentRequestId?: Resolver<Maybe<ResolversTypes['DeploymentRequestId']>, ParentType, ContextType>;
   end_date?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   hub_status?: Resolver<Maybe<ResolversTypes['DeploymentRequestHubStatus']>, ParentType, ContextType>;
   isBlacklisted?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
@@ -4491,6 +4508,13 @@ export type ProvisionedNewsFeedItemResolvers<ContextType = PortalContext, Parent
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type PublicDocumentSlugInfoResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['PublicDocumentSlugInfo'] = ResolversParentTypes['PublicDocumentSlugInfo']> = ResolversObject<{
+  created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  slug?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  updated_at?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type QueryResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = ResolversObject<{
   bundleProducts?: Resolver<Array<ResolversTypes['PlatformIdentifier']>, ParentType, ContextType, RequireFields<QueryBundleProductsArgs, 'serviceInstanceId'>>;
   bundleUserServiceGroups?: Resolver<Array<ResolversTypes['BundleUserServiceGroup']>, ParentType, ContextType, RequireFields<QueryBundleUserServiceGroupsArgs, 'serviceInstanceId'>>;
@@ -4499,7 +4523,7 @@ export type QueryResolvers<ContextType = PortalContext, ParentType extends Resol
   countEpicsPerTimeline?: Resolver<Array<ResolversTypes['EpicCountPerTimeline']>, ParentType, ContextType>;
   currentVotingRound?: Resolver<Maybe<ResolversTypes['VotingRound']>, ParentType, ContextType, RequireFields<QueryCurrentVotingRoundArgs, 'service_instance_id'>>;
   deploymentRequests?: Resolver<ResolversTypes['PlatformDeploymentRequestConnection'], ParentType, ContextType, RequireFields<QueryDeploymentRequestsArgs, 'first'>>;
-  deploymentRequestsAvailable?: Resolver<Array<ResolversTypes['DeploymentAvailability']>, ParentType, ContextType, Partial<QueryDeploymentRequestsAvailableArgs>>;
+  deploymentRequestsAvailable?: Resolver<Array<ResolversTypes['DeploymentAvailability']>, ParentType, ContextType>;
   deploymentRequestsList?: Resolver<ResolversTypes['DeploymentRequestConnection'], ParentType, ContextType, RequireFields<QueryDeploymentRequestsListArgs, 'first' | 'orderBy' | 'orderMode'>>;
   document?: Resolver<Maybe<ResolversTypes['Document']>, ParentType, ContextType, RequireFields<QueryDocumentArgs, 'documentId' | 'serviceInstanceId'>>;
   documentExists?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType, RequireFields<QueryDocumentExistsArgs, 'service_instance_id'>>;
@@ -4520,6 +4544,7 @@ export type QueryResolvers<ContextType = PortalContext, ParentType extends Resol
   platformAssociatedOrganization?: Resolver<Maybe<ResolversTypes['Organization']>, ParentType, ContextType, RequireFields<QueryPlatformAssociatedOrganizationArgs, 'platformId'>>;
   platformTrialStatus?: Resolver<ResolversTypes['PlatformTrialStatus'], ParentType, ContextType, RequireFields<QueryPlatformTrialStatusArgs, 'organizationId'>>;
   publicDocumentBySlug?: Resolver<Maybe<ResolversTypes['Document']>, ParentType, ContextType, RequireFields<QueryPublicDocumentBySlugArgs, 'serviceInstanceId' | 'slug'>>;
+  publicDocumentSlugsByServiceSlug?: Resolver<Array<ResolversTypes['PublicDocumentSlugInfo']>, ParentType, ContextType, RequireFields<QueryPublicDocumentSlugsByServiceSlugArgs, 'serviceInstanceSlug'>>;
   publicDocuments?: Resolver<ResolversTypes['DocumentConnection'], ParentType, ContextType, RequireFields<QueryPublicDocumentsArgs, 'first' | 'orderBy' | 'orderMode' | 'serviceInstanceId' | 'slug'>>;
   publicDocumentsByServiceSlug?: Resolver<Array<ResolversTypes['Document']>, ParentType, ContextType, RequireFields<QueryPublicDocumentsByServiceSlugArgs, 'serviceInstanceSlug'>>;
   registeredPlatform?: Resolver<Maybe<ResolversTypes['RegisteredPlatform']>, ParentType, ContextType, RequireFields<QueryRegisteredPlatformArgs, 'input'>>;
@@ -4536,7 +4561,6 @@ export type QueryResolvers<ContextType = PortalContext, ParentType extends Resol
   solutionCategories?: Resolver<Maybe<ResolversTypes['SolutionCategoryConnection']>, ParentType, ContextType, RequireFields<QuerySolutionCategoriesArgs, 'first' | 'orderBy' | 'orderMode'>>;
   subscriptionById?: Resolver<Maybe<ResolversTypes['SubscriptionModel']>, ParentType, ContextType, Partial<QuerySubscriptionByIdArgs>>;
   subscriptions?: Resolver<ResolversTypes['SubscriptionConnection'], ParentType, ContextType, RequireFields<QuerySubscriptionsArgs, 'first' | 'orderBy' | 'orderMode'>>;
-  trialDeployments?: Resolver<ResolversTypes['TrialsDeployments'], ParentType, ContextType, RequireFields<QueryTrialDeploymentsArgs, 'input'>>;
   updateOpenCTIManifest?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<QueryUpdateOpenCtiManifestArgs, 'tag'>>;
   useCases?: Resolver<Maybe<ResolversTypes['UseCaseConnection']>, ParentType, ContextType, RequireFields<QueryUseCasesArgs, 'first' | 'orderBy' | 'orderMode'>>;
   userOrganizations?: Resolver<Array<ResolversTypes['Organization']>, ParentType, ContextType>;
@@ -4961,13 +4985,6 @@ export type ThirdPartyIntegrationResolvers<ContextType = PortalContext, ParentTy
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
-export type TrialsDeploymentsResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['TrialsDeployments'] = ResolversParentTypes['TrialsDeployments']> = ResolversObject<{
-  availableTrials?: Resolver<Array<ResolversTypes['PlatformIdentifier']>, ParentType, ContextType>;
-  deployed?: Resolver<Array<ResolversTypes['DeployedPlatform']>, ParentType, ContextType>;
-  isBlacklisted?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
 export interface UploadScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['Upload'], any> {
   name: 'Upload';
 }
@@ -5003,7 +5020,9 @@ export type UserResolvers<ContextType = PortalContext, ParentType extends Resolv
   disabled?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   email?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   first_name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  has_replied_satisfaction?: Resolver<Maybe<ResolversTypes['HasRepliedSatisfaction']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  invitation_date?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   last_login?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   last_name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   organization_capabilities?: Resolver<Maybe<Array<ResolversTypes['OrganizationCapabilities']>>, ParentType, ContextType>;
@@ -5014,6 +5033,7 @@ export type UserResolvers<ContextType = PortalContext, ParentType extends Resolv
   selected_language?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   selected_org_capabilities?: Resolver<Maybe<Array<ResolversTypes['OrganizationCapability']>>, ParentType, ContextType>;
   selected_organization_id?: Resolver<Maybe<ResolversTypes['OrganizationId']>, ParentType, ContextType>;
+  status?: Resolver<Maybe<ResolversTypes['UserAccountStatus']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -5188,7 +5208,6 @@ export type Resolvers<ContextType = PortalContext> = ResolversObject<{
   CustomView?: CustomViewResolvers<ContextType>;
   Date?: GraphQLScalarType;
   DefaultDocument?: DefaultDocumentResolvers<ContextType>;
-  DeployedPlatform?: DeployedPlatformResolvers<ContextType>;
   DeployedResource?: DeployedResourceResolvers<ContextType>;
   DeploymentAvailability?: DeploymentAvailabilityResolvers<ContextType>;
   DeploymentRequest?: DeploymentRequestResolvers<ContextType>;
@@ -5237,6 +5256,7 @@ export type Resolvers<ContextType = PortalContext> = ResolversObject<{
   PlatformProvider?: PlatformProviderResolvers<ContextType>;
   PlatformTrialStatus?: PlatformTrialStatusResolvers<ContextType>;
   ProvisionedNewsFeedItem?: ProvisionedNewsFeedItemResolvers<ContextType>;
+  PublicDocumentSlugInfo?: PublicDocumentSlugInfoResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse?: RefreshPlatformRegistrationConnectivityStatusAllTenantsResponseResolvers<ContextType>;
   RefreshPlatformRegistrationConnectivityStatusResponse?: RefreshPlatformRegistrationConnectivityStatusResponseResolvers<ContextType>;
@@ -5279,7 +5299,6 @@ export type Resolvers<ContextType = PortalContext> = ResolversObject<{
   TelemetryResponse?: TelemetryResponseResolvers<ContextType>;
   TenantStatus?: TenantStatusResolvers<ContextType>;
   ThirdPartyIntegration?: ThirdPartyIntegrationResolvers<ContextType>;
-  TrialsDeployments?: TrialsDeploymentsResolvers<ContextType>;
   Upload?: GraphQLScalarType;
   UseCase?: UseCaseResolvers<ContextType>;
   UseCaseConnection?: UseCaseConnectionResolvers<ContextType>;

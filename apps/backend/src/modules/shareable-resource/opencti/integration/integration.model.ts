@@ -19,6 +19,13 @@ export const isIntegrationType = (
   );
 };
 
+export const isConnectorDocument = (document: Document): boolean => {
+  return (
+    (document as { integration_type?: IntegrationType }).integration_type ===
+    IntegrationType.Connector
+  );
+};
+
 export type Integration = Document & {
   integration_type: IntegrationType;
   datasheet_url?: string;

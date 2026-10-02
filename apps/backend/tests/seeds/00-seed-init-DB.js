@@ -132,12 +132,15 @@ export async function seed(knex) {
     .onConflict('id')
     .ignore();
 
-  await knex('User_RolePortal').insert([
-    {
-      user_id: filigranAdminUserId,
-      role_portal_id: '6b632cf2-9105-46ec-a463-ad59ab58c770',
-    },
-  ]);
+  await knex('User_RolePortal')
+    .insert([
+      {
+        user_id: filigranAdminUserId,
+        role_portal_id: '6b632cf2-9105-46ec-a463-ad59ab58c770',
+      },
+    ])
+    .onConflict(['user_id', 'role_portal_id'])
+    .ignore();
 
   await knex('CapabilityPortal')
     .insert([{ id: '85c9fe6f-901f-4992-a8aa-b8d56a7e2e09', name: 'BYPASS' }])
@@ -153,13 +156,6 @@ export async function seed(knex) {
 
   await knex('ServiceDefinition')
     .insert([
-      {
-        id: '2634d52b-f061-4ebc-bed2-c6cc94297ad1',
-        name: 'ServiceDef',
-        description: 'myDescription',
-        public: true,
-        identifier: 'vault',
-      },
       {
         id: '2634d52b-f061-4ebc-bed2-c6cc94297ad2',
         name: 'csv feeds',
@@ -208,16 +204,6 @@ export async function seed(knex) {
 
   await knex('ServiceInstance')
     .insert([
-      {
-        id: 'e88e8f80-ba9e-480b-ab27-8613a1565eff',
-        name: 'Vault',
-        description: 'short description for Vault',
-        creation_status: 'READY',
-        public: false,
-        tags: '{others}',
-        service_definition_id: '2634d52b-f061-4ebc-bed2-c6cc94297ad1',
-        ordering: 12,
-      },
       {
         id: 'ad003d3f-c406-4be8-a650-880d72f952e9',
         name: 'csv feeds',
@@ -279,18 +265,6 @@ export async function seed(knex) {
         service_definition_id: '17bda799-12c9-4039-b4d9-a8834494e234',
         ordering: 17,
         slug: 'opencti-custom-views',
-      },
-    ])
-    .onConflict('id')
-    .ignore();
-
-  await knex('Service_Link')
-    .insert([
-      {
-        id: '2baba29b-62f5-4d50-8d68-eb8a25887d9c',
-        service_instance_id: 'e88e8f80-ba9e-480b-ab27-8613a1565eff',
-        url: '/service/vault',
-        name: 'Vault',
       },
     ])
     .onConflict('id')

@@ -1,4 +1,5 @@
 import { hasProperty } from '@/utils/has-property';
+import { encodeRedirectValue } from '@/utils/redirect';
 import {
   OPENCTI_INTEGRATION_URL_CONFIGS,
   serviceConfigMap,
@@ -24,7 +25,7 @@ export function getServiceInfo(
   }
 
   return {
-    link: `/redirect/${config.redirectPath}?service_instance_id=${serviceInstance.id}&document_id=${documentId}`,
+    link: `/redirect/${config.redirectPath}?service_instance_id=${encodeRedirectValue(serviceInstance.id)}&document_id=${encodeRedirectValue(documentId)}`,
     description: config.description,
   };
 }

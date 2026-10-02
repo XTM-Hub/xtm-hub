@@ -38,9 +38,3 @@ export const serviceInstanceTagMappedByPlatformIdentifier: Record<
   [PlatformIdentifier.Openaev]: ServiceInstanceTag.OpenAev,
   [PlatformIdentifier.Xtmone]: ServiceInstanceTag.XtmOne,
 };
-
-// xtmone excluded: not registrable yet.
-export const REGISTRABLE_PLATFORM_IDENTIFIERS: PlatformIdentifier[] = [
-  PlatformIdentifier.Opencti,
-  PlatformIdentifier.Openaev,
-];

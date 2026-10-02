@@ -18,10 +18,13 @@ describe('EpicItem', () => {
     id: 'epic-1',
     title: 'Roadmap epic',
     epic_type: EpicType.Other,
-    product: FiligranProduct.Opencti,
+    products: [FiligranProduct.Opencti],
     edition_type: EditionType.CommunityEdition,
     short_description: 'short description',
     description: 'long description',
+    problem_to_solve: 'problem to solve',
+    proposed_solution: 'proposed solution',
+    expected_value: 'expected value',
   } as epic_fragment$data;
 
   const defaultProps = {

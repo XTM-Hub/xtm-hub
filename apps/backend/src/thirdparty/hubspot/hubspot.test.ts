@@ -26,7 +26,11 @@ import { logApp } from '../../utils/app-logger.util';
 import * as utils from '../../utils/utils';
 import { HUBSPOT_TYPE_TO_QUEUE } from '../pgboss/hubspot.jobs';
 import { PgBossProducer } from '../pgboss/producer';
-import { hubspotHook, hubspotReachOutSalesHook } from './hubspot';
+import {
+  hubspotHook,
+  hubspotInviteUserHook,
+  hubspotReachOutSalesHook,
+} from './hubspot';
 
 vi.mock('config', async (importOriginal) => {
   const mod = await importOriginal<{ default: typeof config }>();
@@ -303,6 +307,37 @@ describe('hubspot', () => {
             lastname: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.LAST_NAME,
             company: TEST_ORGANIZATIONS.FILIGRAN.NAME,
             message: 'opencti: Please contact me about the OpenCTI free trial',
+          }),
+        })
+      );
+    });
+  });
+
+  describe('inviteUser (direct sending)', () => {
+    beforeEach(() => {
+      fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue({} as Response);
+      vi.spyOn(utils, 'isValidUrl').mockReturnValue(true);
+      vi.mocked(config.get).mockImplementation((key: string) => {
+        if (key === 'hubspot_use_queue_processing') return false;
+        return realConfigGet(key);
+      });
+    });
+
+    it('should send the invited user email and name', async () => {
+      await hubspotInviteUserHook({
+        email: 'invited@filigran.io',
+        first_name: 'Jane',
+        last_name: 'Doe',
+      });
+
+      expect(fetchSpy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          body: JSON.stringify({
+            type: 'inviteUser',
+            email: 'invited@filigran.io',
+            first_name: 'Jane',
+            last_name: 'Doe',
           }),
         })
       );

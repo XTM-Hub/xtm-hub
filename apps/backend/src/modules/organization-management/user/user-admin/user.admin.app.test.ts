@@ -36,6 +36,7 @@ import { OrganizationHelper } from '../../organization/organization.helper';
 import { UserDomain } from '../user-domain/user.domain';
 import { UserOrganizationDomain } from '../user-organization/user-organization.domain';
 import { UserOrganizationPendingDomain } from '../user-pending/user-organization-pending.domain';
+import { UserProvisioningDomain } from '../user-provisioning/user-provisioning.domain';
 import { UserTransferRequestDomain } from '../user-transferRequest/user-transfer-request.domain';
 import { UserHelper } from '../user.helper';
 import { UserAdminApp } from './user.admin.app';
@@ -215,6 +216,87 @@ describe('users admin app', () => {
     });
   });
 
+  describe('addUser', () => {
+    const createdEmails: string[] = [];
+
+    beforeEach(() => {
+      requestContext.set(requestContextAdminUser);
+    });
+
+    afterEach(async () => {
+      await Promise.all(
+        createdEmails.splice(0).map((email) => UserHelper.removeUser({ email }))
+      );
+    });
+
+    it('should create a new user and grant the given organization capabilities', async () => {
+      const email = `add-user-${uuidv4()}@second-orga.com`;
+      createdEmails.push(email);
+
+      const user = await UserAdminApp.addUser({
+        email,
+        organization_capabilities: [
+          {
+            organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            capabilities: [OrganizationCapability.ManageAccess],
+          },
+        ],
+      });
+
+      expect(user.email).toBe(email);
+      const { capabilities } =
+        await UserDomain.loadUserCapabilitiesByOrganization(
+          user.id as UserId,
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+        );
+      expect(capabilities).toEqual([OrganizationCapability.ManageAccess]);
+    });
+
+    it('should replace prior organization memberships instead of adding to them', async () => {
+      const email = `add-user-${uuidv4()}@second-orga.com`;
+      createdEmails.push(email);
+      const existingUser = await TestHelper.user.insert({ email });
+      const priorOrganization = await TestHelper.organization.create();
+      await TestHelper.user_Organization.create({
+        user_id: existingUser.id,
+        organization_id: priorOrganization.id,
+      });
+
+      await UserAdminApp.addUser({
+        email,
+        organization_capabilities: [
+          {
+            organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            capabilities: [OrganizationCapability.ManageAccess],
+          },
+        ],
+      });
+
+      const priorMembership = await UserOrganizationDomain.loadUserOrganization(
+        {
+          user_id: existingUser.id,
+          organization_id: priorOrganization.id,
+        }
+      );
+      expect(priorMembership).toHaveLength(0);
+      const newMembership = await UserOrganizationDomain.loadUserOrganization({
+        user_id: existingUser.id,
+        organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+      });
+      expect(newMembership).toHaveLength(1);
+    });
+
+    it('should allow a platform admin to add a user with no organization, keeping only their personal space', async () => {
+      const email = `add-user-${uuidv4()}@no-organization-match.io`;
+      createdEmails.push(email);
+
+      const user = await UserAdminApp.addUser({ email });
+
+      expect(user.organizations).toHaveLength(1);
+      expect(user.organizations[0]).toMatchObject({ personal_space: true });
+    });
+  });
+
   describe('pending request cleanup', () => {
     const email = 'testPendingCleanup@second-orga.com';
     let createdUser: User;
@@ -224,9 +306,9 @@ describe('users admin app', () => {
       const secondOrga = (await OrganizationDomain.loadOrganizationBy({
         id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
       }))!;
-      createdUser = await UserHelper.createNewUserWithPendingOrga(
+      createdUser = await TestHelper.user.insertWithPendingOrganization(
         { email, first_name: 'pending', last_name: 'cleanup', picture: null },
-        secondOrga
+        secondOrga.id
       );
     });
 
@@ -352,21 +434,21 @@ describe('users admin app', () => {
 
       createdUsers = await Promise.all(
         userList.map((user) =>
-          UserHelper.createNewUserWithPendingOrga(user, secondOrga)
+          TestHelper.user.insertWithPendingOrganization(user, secondOrga.id)
         )
       );
 
       const filigranOrga = (await OrganizationDomain.loadOrganizationBy({
         id: TEST_ORGANIZATIONS.FILIGRAN.ID,
       }))!;
-      const filigranUser = await UserHelper.createNewUserWithPendingOrga(
+      const filigranUser = await TestHelper.user.insertWithPendingOrganization(
         {
           email: 'testFiligran@filigran.io',
           first_name: 'test',
           last_name: 'filigran',
           picture: null,
         },
-        filigranOrga
+        filigranOrga.id
       );
       createdUsers.push(filigranUser);
     });
@@ -568,14 +650,14 @@ describe('users admin app', () => {
       const filigranOrga = (await OrganizationDomain.loadOrganizationBy({
         id: TEST_ORGANIZATIONS.FILIGRAN.ID,
       }))!;
-      const filigranUser = await UserHelper.createNewUserWithPendingOrga(
+      const filigranUser = await TestHelper.user.insertWithPendingOrganization(
         {
           email: 'testFiligranRemoveBulk@filigran.io',
           first_name: 'test',
           last_name: 'filigran',
           picture: null,
         },
-        filigranOrga
+        filigranOrga.id
       );
       createdUsers.push(filigranUser);
     });
@@ -590,14 +672,14 @@ describe('users admin app', () => {
       const filigranOrga = (await OrganizationDomain.loadOrganizationBy({
         id: TEST_ORGANIZATIONS.FILIGRAN.ID,
       }))!;
-      const filigranUser = await UserHelper.createNewUserWithPendingOrga(
+      const filigranUser = await TestHelper.user.insertWithPendingOrganization(
         {
           email: 'testFiligran@filigran.io',
           first_name: 'test',
           last_name: 'filigran',
           picture: null,
         },
-        filigranOrga
+        filigranOrga.id
       );
 
       const call = UserAdminApp.bulkRemovePendingUserFromOrganization(
@@ -620,7 +702,7 @@ describe('users admin app', () => {
 
     describe('success', () => {
       it('should delete the user and its personal space organization', async () => {
-        const user = await UserHelper.createUserWithPersonalSpace(
+        const user = await UserProvisioningDomain.createUser(
           { email: `delete-user-${uuidv4()}@delete-user-test.io` },
           { sendWelcomeEmail: false }
         );
@@ -644,11 +726,11 @@ describe('users admin app', () => {
         >;
 
         beforeEach(async () => {
-          user = await UserHelper.createUserWithPersonalSpace(
+          user = await UserProvisioningDomain.createUser(
             { email: `delete-user-${uuidv4()}@delete-user-test.io` },
             { sendWelcomeEmail: false }
           );
-          otherUser = await UserHelper.createUserWithPersonalSpace(
+          otherUser = await UserProvisioningDomain.createUser(
             { email: `delete-user-${uuidv4()}@delete-user-test.io` },
             { sendWelcomeEmail: false }
           );
@@ -700,7 +782,7 @@ describe('users admin app', () => {
       });
 
       it('should cascade delete the RolePortal assignments of the user', async () => {
-        const user = await UserHelper.createUserWithPersonalSpace(
+        const user = await UserProvisioningDomain.createUser(
           { email: `delete-user-${uuidv4()}@delete-user-test.io` },
           { sendWelcomeEmail: false }
         );
@@ -720,7 +802,7 @@ describe('users admin app', () => {
       });
 
       it('should cascade delete the service capabilities granted through the user service subscription', async () => {
-        const user = await UserHelper.createUserWithPersonalSpace(
+        const user = await UserProvisioningDomain.createUser(
           { email: `delete-user-${uuidv4()}@delete-user-test.io` },
           { sendWelcomeEmail: false }
         );
@@ -750,7 +832,7 @@ describe('users admin app', () => {
       });
 
       it('should cascade delete the ServiceGroup membership of the user', async () => {
-        const user = await UserHelper.createUserWithPersonalSpace(
+        const user = await UserProvisioningDomain.createUser(
           { email: `delete-user-${uuidv4()}@delete-user-test.io` },
           { sendWelcomeEmail: false }
         );
@@ -774,7 +856,7 @@ describe('users admin app', () => {
       });
 
       it('should set user_id to null on the OneClickDeployment rows of the deleted user', async () => {
-        const user = await UserHelper.createUserWithPersonalSpace(
+        const user = await UserProvisioningDomain.createUser(
           { email: `delete-user-${uuidv4()}@delete-user-test.io` },
           { sendWelcomeEmail: false }
         );
@@ -800,7 +882,7 @@ describe('users admin app', () => {
       });
 
       it('should reassign the documents of the user to the system user', async () => {
-        const user = await UserHelper.createUserWithPersonalSpace(
+        const user = await UserProvisioningDomain.createUser(
           { email: `delete-user-${uuidv4()}@delete-user-test.io` },
           { sendWelcomeEmail: false }
         );
@@ -834,7 +916,7 @@ describe('users admin app', () => {
       });
 
       it('should reassign the epics of the user to the system user', async () => {
-        const user = await UserHelper.createUserWithPersonalSpace(
+        const user = await UserProvisioningDomain.createUser(
           { email: `delete-user-${uuidv4()}@delete-user-test.io` },
           { sendWelcomeEmail: false }
         );
@@ -857,7 +939,7 @@ describe('users admin app', () => {
         const destroySpy = vi
           .spyOn(sessionStoreManager, 'destroyUserSessions')
           .mockResolvedValue(undefined);
-        const user = await UserHelper.createUserWithPersonalSpace(
+        const user = await UserProvisioningDomain.createUser(
           { email: `delete-user-${uuidv4()}@delete-user-test.io` },
           { sendWelcomeEmail: false }
         );
@@ -869,7 +951,7 @@ describe('users admin app', () => {
 
       it('should delete the picture of the deleted user', async () => {
         const deletePictureSpy = vi.spyOn(UserHelper, 'deleteUserPicture');
-        const user = await UserHelper.createUserWithPersonalSpace(
+        const user = await UserProvisioningDomain.createUser(
           { email: `delete-user-${uuidv4()}@delete-user-test.io` },
           { sendWelcomeEmail: false }
         );
@@ -881,7 +963,7 @@ describe('users admin app', () => {
 
       it('should dispatch a delete event for the user and its personal space', async () => {
         const dispatchSpy = vi.spyOn(pub, 'dispatch');
-        const user = await UserHelper.createUserWithPersonalSpace(
+        const user = await UserProvisioningDomain.createUser(
           { email: `delete-user-${uuidv4()}@delete-user-test.io` },
           { sendWelcomeEmail: false }
         );
@@ -912,7 +994,7 @@ describe('users admin app', () => {
         const dispatchSpy = vi
           .spyOn(pub, 'dispatch')
           .mockRejectedValueOnce(new Error('subscriber unavailable'));
-        const user = await UserHelper.createUserWithPersonalSpace(
+        const user = await UserProvisioningDomain.createUser(
           { email: `delete-user-${uuidv4()}@delete-user-test.io` },
           { sendWelcomeEmail: false }
         );
@@ -927,7 +1009,7 @@ describe('users admin app', () => {
 
     describe('guards', () => {
       it('should map foreign key violations to a blocked-by-linked-data error', async () => {
-        const user = await UserHelper.createUserWithPersonalSpace(
+        const user = await UserProvisioningDomain.createUser(
           { email: `delete-user-${uuidv4()}@delete-user-test.io` },
           { sendWelcomeEmail: false }
         );
@@ -978,11 +1060,11 @@ describe('users admin app', () => {
       `(
         'should reject when a transfer request exists and $description',
         async ({ direction }) => {
-          const user = await UserHelper.createUserWithPersonalSpace(
+          const user = await UserProvisioningDomain.createUser(
             { email: `delete-user-${uuidv4()}@delete-user-test.io` },
             { sendWelcomeEmail: false }
           );
-          const counterpart = await UserHelper.createUserWithPersonalSpace(
+          const counterpart = await UserProvisioningDomain.createUser(
             { email: `delete-user-${uuidv4()}@delete-user-test.io` },
             { sendWelcomeEmail: false }
           );
@@ -1017,7 +1099,7 @@ describe('users admin app', () => {
       `(
         'should reject when a $hubStatus deployment request references the user',
         async ({ hubStatus }) => {
-          const user = await UserHelper.createUserWithPersonalSpace(
+          const user = await UserProvisioningDomain.createUser(
             { email: `delete-user-${uuidv4()}@delete-user-test.io` },
             { sendWelcomeEmail: false }
           );
@@ -1038,11 +1120,11 @@ describe('users admin app', () => {
       );
 
       it('should reject when the user cancelled a deployment request on behalf of someone else', async () => {
-        const user = await UserHelper.createUserWithPersonalSpace(
+        const user = await UserProvisioningDomain.createUser(
           { email: `delete-user-${uuidv4()}@delete-user-test.io` },
           { sendWelcomeEmail: false }
         );
-        const requester = await UserHelper.createUserWithPersonalSpace(
+        const requester = await UserProvisioningDomain.createUser(
           { email: `delete-user-${uuidv4()}@delete-user-test.io` },
           { sendWelcomeEmail: false }
         );
@@ -1069,7 +1151,7 @@ describe('users admin app', () => {
       `(
         'should reject when the user registered $description',
         async ({ status }) => {
-          const user = await UserHelper.createUserWithPersonalSpace(
+          const user = await UserProvisioningDomain.createUser(
             { email: `delete-user-${uuidv4()}@delete-user-test.io` },
             { sendWelcomeEmail: false }
           );
@@ -1094,7 +1176,7 @@ describe('users admin app', () => {
       );
 
       it('should reject when the user is the last member of a non personal organization', async () => {
-        const user = await UserHelper.createUserWithPersonalSpace(
+        const user = await UserProvisioningDomain.createUser(
           { email: `delete-user-${uuidv4()}@delete-user-test.io` },
           { sendWelcomeEmail: false }
         );
@@ -1129,11 +1211,11 @@ describe('users admin app', () => {
         >;
 
         beforeEach(async () => {
-          user = await UserHelper.createUserWithPersonalSpace(
+          user = await UserProvisioningDomain.createUser(
             { email: `delete-user-${uuidv4()}@delete-user-test.io` },
             { sendWelcomeEmail: false }
           );
-          otherUser = await UserHelper.createUserWithPersonalSpace(
+          otherUser = await UserProvisioningDomain.createUser(
             { email: `delete-user-${uuidv4()}@delete-user-test.io` },
             { sendWelcomeEmail: false }
           );
@@ -1199,11 +1281,11 @@ describe('users admin app', () => {
       });
 
       it('should reject when the personal space organization has pending users', async () => {
-        const user = await UserHelper.createUserWithPersonalSpace(
+        const user = await UserProvisioningDomain.createUser(
           { email: `delete-user-${uuidv4()}@delete-user-test.io` },
           { sendWelcomeEmail: false }
         );
-        const pendingUser = await UserHelper.createUserWithPersonalSpace(
+        const pendingUser = await UserProvisioningDomain.createUser(
           { email: `delete-user-${uuidv4()}@delete-user-test.io` },
           { sendWelcomeEmail: false }
         );
@@ -1220,11 +1302,11 @@ describe('users admin app', () => {
       });
 
       it('should not reassign the documents when the deletion is blocked', async () => {
-        const user = await UserHelper.createUserWithPersonalSpace(
+        const user = await UserProvisioningDomain.createUser(
           { email: `delete-user-${uuidv4()}@delete-user-test.io` },
           { sendWelcomeEmail: false }
         );
-        const counterpart = await UserHelper.createUserWithPersonalSpace(
+        const counterpart = await UserProvisioningDomain.createUser(
           { email: `delete-user-${uuidv4()}@delete-user-test.io` },
           { sendWelcomeEmail: false }
         );

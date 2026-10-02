@@ -375,6 +375,16 @@ describe('usersOrganizationApp', () => {
 
       expect(userShouldBeAdded).toHaveLength(1);
     });
+
+    it('should reject adding a user whose email domain is outside the organization', async () => {
+      const call = UserOrganizationApp.addUserToOrganization({
+        email: 'someone@second-orga.com',
+      });
+
+      await expect(call).rejects.toThrow(
+        ErrorCode.EmailOutsideOrganizationError
+      );
+    });
   });
   describe('changeSelectedOrganization', () => {
     it('should allow user to switch to an organization they belong to', async () => {

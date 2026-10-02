@@ -94,21 +94,21 @@ describe('userOrganizationPendingDomain', () => {
 
       createdUsers = await Promise.all(
         userList.map((user) =>
-          UserHelper.createNewUserWithPendingOrga(user, secondOrga)
+          TestHelper.user.insertWithPendingOrganization(user, secondOrga.id)
         )
       );
 
       const filigranOrga = (await OrganizationDomain.loadOrganizationBy({
         id: TEST_ORGANIZATIONS.FILIGRAN.ID,
       }))!;
-      const filigranUser = await UserHelper.createNewUserWithPendingOrga(
+      const filigranUser = await TestHelper.user.insertWithPendingOrganization(
         {
           email: 'testFiligran@filigran.io',
           first_name: 'test',
           last_name: 'filigran',
           picture: null,
         },
-        filigranOrga
+        filigranOrga.id
       );
       createdUsers.push(filigranUser);
     });
@@ -346,14 +346,14 @@ describe('userOrganizationPendingDomain', () => {
       const secondOrga = (await OrganizationDomain.loadOrganizationBy({
         id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
       }))!;
-      createdUser = await UserHelper.createNewUserWithPendingOrga(
+      createdUser = await TestHelper.user.insertWithPendingOrganization(
         {
           email: 'testRemovePending@second-orga.com',
           first_name: 'test',
           last_name: 'remove',
           picture: null,
         },
-        secondOrga
+        secondOrga.id
       );
     });
 

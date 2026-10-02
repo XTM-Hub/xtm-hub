@@ -42,7 +42,7 @@ interface EpicListProps {
   epics: epic_fragment$data[];
   serviceInstance:
     serviceInstance_fragment$data | seoServiceInstanceFragment$data;
-  selectedProduct?: EpicFilterType;
+  selectedProducts?: EpicFilterType;
   onFilterChange: (filter: EpicFilterType) => void;
   onSearch: (searchTerm: string) => void;
 }
@@ -54,7 +54,7 @@ const isServiceInstanceWithCapabilities = (
 export const EpicList = ({
   epics,
   serviceInstance,
-  selectedProduct,
+  selectedProducts,
   onFilterChange,
   onSearch,
 }: EpicListProps) => {
@@ -92,10 +92,13 @@ export const EpicList = ({
 
   const isBypass = useAdminByPass();
 
+  const selectedProductSet = new Set<string>(selectedProducts ?? []);
   const filteredEpics =
-    !selectedProduct || selectedProduct === 'all'
+    selectedProductSet.size === 0
       ? epics
-      : epics.filter((epic) => epic.product === selectedProduct);
+      : epics.filter((epic) =>
+          epic.products.some((product) => selectedProductSet.has(product))
+        );
 
   const { draft, now, next, under_consideration, finished } =
     useDraftAndTimelineEpics(filteredEpics);
@@ -166,7 +169,7 @@ export const EpicList = ({
       </div>
       <FeatureVotingCallout serviceInstanceId={serviceInstance.id} />
       <EpicFilter
-        selectedFilter={selectedProduct}
+        selectedFilter={selectedProducts}
         onSelectedFilterChange={onFilterChange}
         countsByProduct={countsByProduct}
         showFinished={showFinished}

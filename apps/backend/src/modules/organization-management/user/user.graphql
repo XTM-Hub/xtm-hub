@@ -1,5 +1,11 @@
 scalar UserId
 
+enum UserAccountStatus {
+  waiting
+  invited
+  expired
+}
+
 enum UserOrdering {
   email
   first_name
@@ -7,6 +13,13 @@ enum UserOrdering {
   disabled
   country
   last_login
+  invitation_date
+}
+
+enum HasRepliedSatisfaction {
+  yes
+  no
+  closed
 }
 
 type Capability implements Node {
@@ -37,6 +50,9 @@ type User implements Node {
   selected_org_capabilities: [OrganizationCapability!]
   last_login: Date
   pending_organization_id: OrganizationId
+  status: UserAccountStatus
+  invitation_date: Date
+  has_replied_satisfaction: HasRepliedSatisfaction
 }
 
 type UserEdge {
@@ -59,7 +75,7 @@ type Query {
   me: User
   usersWithCapabilitiesInOrganization(
     input: UsersWithCapabilitiesInOrganizationInput!
-  ): [User!]!
+  ): [User!]! @auth
   users(
     first: Int!
     after: ID

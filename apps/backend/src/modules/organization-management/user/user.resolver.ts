@@ -80,8 +80,6 @@ const resolvers: Resolvers = {
       try {
         const user = await UserOrganizationApp.addUserToOrganization(input);
 
-        await dispatch('User', 'add', user);
-
         return UserHelper.mapUserToGraphqlUser(user);
       } catch (error) {
         throw mapToGraphQLError(error, UnknownErrorCode.AddingUserError);

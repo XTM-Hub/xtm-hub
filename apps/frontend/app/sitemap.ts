@@ -2,9 +2,11 @@ import { defaultLocale, publicLocales } from '@/i18n/config';
 import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
 import { fetchSeoServiceInstances } from '@/utils/seo-service-instance/utils/seo-service-instance.server.utils';
+import { isExternalService } from '@/utils/services';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
 import { fetchDocumentSlugsForSitemap } from '@/utils/shareable-resources/utils/shareable-resources.server.utils';
 import SettingsQuery, { settingsQuery } from '@generated/settingsQuery.graphql';
+import { ServiceDefinitionIdentifier } from '@graphql/generated';
 import type { MetadataRoute } from 'next';
 
 export const dynamic = 'force-dynamic';
@@ -45,7 +47,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const seoServiceInstancesData = await fetchSeoServiceInstances();
   const routableSeoServiceInstances = seoServiceInstancesData.filter(
-    (service) => service.slug !== null && service.slug !== undefined
+    (service) =>
+      service.slug !== null &&
+      service.slug !== undefined &&
+      !isExternalService(
+        service.service_definition!.identifier as ServiceDefinitionIdentifier
+      )
   );
 
   const sitemap: MetadataRoute.Sitemap = [];

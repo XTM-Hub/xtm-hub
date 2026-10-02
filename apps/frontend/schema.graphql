@@ -105,9 +105,8 @@ input UpdateCompetitorInput {
 type Query {
   competitors(first: Int!, after: ID, orderBy: CompetitorOrdering!, orderMode: OrderingMode!): CompetitorConnection!
   deploymentRequests(first: Int!, after: ID, filters: [DeploymentRequestFilter!]): PlatformDeploymentRequestConnection!
-  deploymentRequestsAvailable(platformIdentifier: PlatformIdentifier): [DeploymentAvailability!]!
+  deploymentRequestsAvailable: [DeploymentAvailability!]!
   deploymentRequestsList(first: Int!, after: ID, filters: [DeploymentRequestFilter!], orderBy: DeploymentRequestOrdering!, orderMode: OrderingMode!, searchTerm: String): DeploymentRequestConnection!
-  trialDeployments(input: TrialDeploymentsInput!): TrialsDeployments!
   platformTrialStatus(organizationId: OrganizationId!): PlatformTrialStatus!
   xtmPlatformBundle: DeploymentRequest
   xtmonePlatformIntegrationStatus(serviceInstanceId: ServiceInstanceId!): XtmoneIntegrationStatus
@@ -117,6 +116,7 @@ type Query {
   documentExists(documentName: String, service_instance_id: ServiceInstanceId!): Boolean
   publicDocuments(slug: String!, first: Int!, after: ID, orderBy: DocumentOrdering!, orderMode: OrderingMode!, searchTerm: String, logicalFilters: LogicalFilterInput, serviceInstanceId: ServiceInstanceId!): DocumentConnection!
   publicDocumentsByServiceSlug(serviceInstanceSlug: String!): [Document!]!
+  publicDocumentSlugsByServiceSlug(serviceInstanceSlug: String!): [PublicDocumentSlugInfo!]!
   publicDocumentBySlug(serviceInstanceId: ServiceInstanceId!, slug: String!): Document
   documents(first: Int!, after: ID, orderBy: DocumentOrdering!, orderMode: OrderingMode!, searchTerm: String, logicalFilters: LogicalFilterInput, serviceInstanceId: ServiceInstanceId!, parentsOnly: Boolean): DocumentConnection!
   document(documentId: DocumentId!, serviceInstanceId: ServiceInstanceId!): Document
@@ -171,6 +171,7 @@ type Mutation {
   createCompetitor(input: CreateCompetitorInput!): Competitor!
   updateCompetitor(input: UpdateCompetitorInput!): Competitor!
   deleteCompetitor(id: CompetitorId!): Competitor!
+  giveDeploymentFeedback(input: GiveDeploymentFeedbackInput!): Success!
   createDeploymentRequest(input: CreateDeploymentRequestInput!): DeploymentRequest!
   updateDeploymentRequest(input: UpdateDeploymentRequestInput!): PlatformDeploymentRequest!
   reorderDeploymentRequestInQueue(input: ReorderDeploymentRequestInQueueInput!): Success!
@@ -250,6 +251,12 @@ type Mutation {
   createEpic(input: CreateEpicInput!, document: [Upload!]): Epic!
   updateEpic(id: ID!, input: UpdateEpicInput!, document: [Upload!]): Epic!
   deleteEpic(id: ID!): Epic
+}
+
+input GiveDeploymentFeedbackInput {
+  deploymentRequestId: DeploymentRequestId!
+  answer: HasRepliedSatisfaction!
+  justification: String
 }
 
 """
@@ -435,7 +442,6 @@ input CreateDeploymentRequestInput {
   products: [PlatformIdentifier!]!
   use_cases_by_product: [ProductUseCaseInput!]
   region: DeploymentRequestPlatformRegion!
-  type: DeploymentRequestDeploymentType!
   job_title: DeploymentRequestJobTitle
   activity_sector: DeploymentRequestActivitySector
   source: DeploymentRequestSource!
@@ -499,7 +505,6 @@ type DeploymentAvailability {
   region: DeploymentRequestPlatformRegion!
   availableCount: Int!
   capacity: Int!
-  platform_identifier: PlatformIdentifier
 }
 
 type XtmoneIntegrationStatusEntry {
@@ -515,18 +520,8 @@ type XtmoneIntegrationStatus {
   last_checked_at: String
 }
 
-type DeployedPlatform {
-  serviceInstanceId: ServiceInstanceId!
-  platformIdentifier: PlatformIdentifier!
-}
-
-type TrialsDeployments {
-  availableTrials: [PlatformIdentifier!]!
-  deployed: [DeployedPlatform!]!
-  isBlacklisted: Boolean!
-}
-
 type PlatformTrialStatus {
+  deploymentRequestId: DeploymentRequestId
   isBlacklisted: Boolean!
   hub_status: DeploymentRequestHubStatus
   end_date: Date
@@ -558,14 +553,8 @@ input ReorderDeploymentRequestInQueueInput {
 }
 
 input UpdateDeploymentQuotaCapacityInput {
-  platformIdentifier: PlatformIdentifier
   region: DeploymentRequestPlatformRegion!
   newCapacity: Int!
-}
-
-input TrialDeploymentsInput {
-  organizationId: OrganizationId!
-  platformIdentifiers: [PlatformIdentifier!]
 }
 
 """
@@ -696,6 +685,12 @@ enum DocumentOrdering {
   updated_at
   download_number
   name
+}
+
+type PublicDocumentSlugInfo {
+  slug: String
+  created_at: Date!
+  updated_at: Date
 }
 
 """
@@ -944,6 +939,7 @@ enum NewsFeedItemType {
   RESOURCE_CUSTOM_DASHBOARD
   RESOURCE_PLAYBOOK
   RESOURCE_CUSTOM_VIEW
+  RESOURCE_INTEGRATION
 }
 
 enum NewsFeedItemMetadataKey {
@@ -1032,6 +1028,12 @@ input OrganizationInput {
 """A Relay global ID for User, extracted to a branded UserId string"""
 scalar UserId
 
+enum UserAccountStatus {
+  waiting
+  invited
+  expired
+}
+
 enum UserOrdering {
   email
   first_name
@@ -1039,6 +1041,13 @@ enum UserOrdering {
   disabled
   country
   last_login
+  invitation_date
+}
+
+enum HasRepliedSatisfaction {
+  yes
+  no
+  closed
 }
 
 type Capability implements Node {
@@ -1069,6 +1078,9 @@ type User implements Node {
   selected_org_capabilities: [OrganizationCapability!]
   last_login: Date
   pending_organization_id: OrganizationId
+  status: UserAccountStatus
+  invitation_date: Date
+  has_replied_satisfaction: HasRepliedSatisfaction
 }
 
 type UserEdge {
@@ -1386,7 +1398,6 @@ type ServiceLink implements Node {
 }
 
 enum ServiceDefinitionIdentifier {
-  vault
   link
   opencti_custom_dashboards
   opencti_custom_views
@@ -1539,8 +1550,8 @@ type ServiceInstanceSubscription {
 
 enum FeatureFlag {
   DUMMY
-  XTM_PLATFORM_TRIAL
   DECOUPLING_CONNECTORS
+  TRIAL_INVITE
 }
 
 type PlatformProvider {
@@ -2190,15 +2201,17 @@ type Epic implements Node {
   title: String!
   short_description: String!
   description: String!
+  problem_to_solve: String!
+  proposed_solution: String!
+  expected_value: String!
   edition_type: EditionType!
   active: Boolean!
-  product: FiligranProduct!
+  products: [FiligranProduct!]!
+  slack_link: String
   timeline: Timeline!
   epic_type: EpicType!
   document: Document
   document_id: DocumentId
-  uploader_id: String!
-  updater_id: String
   created_at: Date!
   updated_at: Date
 }
@@ -2207,9 +2220,13 @@ input CreateEpicInput {
   title: String!
   short_description: String!
   description: String!
+  problem_to_solve: String!
+  proposed_solution: String!
+  expected_value: String!
   edition_type: EditionType!
   active: Boolean
-  product: FiligranProduct!
+  products: [FiligranProduct!]!
+  slack_link: String
   timeline: Timeline!
   is_integration: Boolean
   illustration_document: Upload
@@ -2219,9 +2236,13 @@ input UpdateEpicInput {
   title: String
   short_description: String
   description: String
+  problem_to_solve: String
+  proposed_solution: String
+  expected_value: String
   edition_type: EditionType!
   active: Boolean
-  product: FiligranProduct
+  products: [FiligranProduct!]
+  slack_link: String
   timeline: Timeline
   is_integration: Boolean
   illustration_document: Upload

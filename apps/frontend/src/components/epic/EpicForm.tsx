@@ -2,15 +2,29 @@
 
 import { EditionTypeMapping } from '@/components/epic/epic-item/EditionTypeMapping';
 import { FiligranProductMapping } from '@/components/epic/epic-item/FiligranProductMapping';
-import { ServiceFormDescriptionField } from '@/components/service/form/DescriptionField';
 import {
-  AutoForm,
+  EPIC_SLACK_LINK_OPTIONS,
+  EPIC_SLACK_LINK_REGEX,
+} from '@/components/epic/epic-slack-links';
+import {
+  FILIGRAN_PRODUCTS_ORDER,
+  sortFiligranProducts,
+} from '@/components/epic/filigran-products';
+import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
+import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { InfoIcon } from '@filigran/icon';
+import {
   Button,
+  Checkbox,
   FileInput,
+  Form,
   FormControl,
+  FormField,
   FormItem,
   FormLabel,
   FormMessage,
+  Input,
+  MultiSelectFormField,
   RadioGroup,
   RadioGroupItem,
   Select,
@@ -18,6 +32,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Separator,
+  SheetFooter,
+  Textarea,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from '@filigran/ui';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import {
@@ -26,235 +47,507 @@ import {
   FiligranProduct,
   Timeline,
 } from '@graphql/generated';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
-import { ControllerRenderProps, FieldValues } from 'react-hook-form';
+import { useMemo } from 'react';
+import { Control, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
-export const descriptionValue =
-  ' [Long Description] - no limit of chars\n' +
-  '### Problem to Solve\n' +
-  '            \n' +
-  'Description of pain point(s) felt by the user that this Epic is solving. This pain must be specific to this Epic (not a generic, high level pain such as “*Lack of visibility in my threat landscape*”)\n' +
-  '         \n' +
-  '### Proposed Solution\n' +
-  'What we are introducing to solve the problem\n' +
-  '\n' +
-  '### Expected Value\n' +
-  'Short point-form list (3-5 points) of what a customer will now be able to do and the value to be gained.\n' +
-  "'If EPIC is aimed at a specific persona, worth mentioning it here.\n";
-export const FILIGRAN_PRODUCTS_VALUES = Object.values(FiligranProduct);
+const TITLE_MAX_CHARS = 160;
+const SHORT_DESCRIPTION_MAX_CHARS = 215;
+const SECTION_MAX_CHARS = 500;
+const TEXTAREA_MIN_ROWS = 4;
+
 export const TIMELINE_VALUES = Object.values(Timeline);
+export const FILIGRAN_PRODUCTS_OPTIONS = FILIGRAN_PRODUCTS_ORDER.map(
+  (product) => ({
+    id: product,
+    label: FiligranProductMapping[product].name,
+  })
+);
+
 const buildEpicFormSchema = (t: (key: string) => string) =>
   z.object({
-    product: z.enum(FILIGRAN_PRODUCTS_VALUES),
+    products: z
+      .array(z.enum(FILIGRAN_PRODUCTS_ORDER))
+      .min(1, t('EpicForm.Error.Product')),
+    timeline: z.enum(TIMELINE_VALUES),
     edition_type: z.enum(EditionType),
-    title: z.string().min(2, t('EpicForm.Error.Title')).max(160),
+    is_integration: z.boolean().optional(),
+    illustration_document: z.custom<FileList>().optional(),
+    title: z.string().min(2, t('EpicForm.Error.Title')).max(TITLE_MAX_CHARS),
     short_description: z
       .string()
       .min(1, t('EpicForm.Error.ShortDescription'))
-      .max(215, t('EpicForm.Error.ShortDescriptionMax')),
-    description: z.string().min(1, t('EpicForm.Error.Description')),
-    timeline: z.enum(TIMELINE_VALUES),
+      .max(
+        SHORT_DESCRIPTION_MAX_CHARS,
+        t('EpicForm.Error.ShortDescriptionMax')
+      ),
+    description: z
+      .string()
+      .max(SECTION_MAX_CHARS, t('EpicForm.Error.DescriptionMax')),
+    problem_to_solve: z
+      .string()
+      .min(1, t('EpicForm.Error.ProblemToSolve'))
+      .max(SECTION_MAX_CHARS, t('EpicForm.Error.ProblemToSolveMax')),
+    proposed_solution: z
+      .string()
+      .min(1, t('EpicForm.Error.ProposedSolution'))
+      .max(SECTION_MAX_CHARS, t('EpicForm.Error.ProposedSolutionMax')),
+    expected_value: z
+      .string()
+      .min(1, t('EpicForm.Error.ExpectedValue'))
+      .max(SECTION_MAX_CHARS, t('EpicForm.Error.ExpectedValueMax')),
+    slack_link: z
+      .string()
+      .regex(EPIC_SLACK_LINK_REGEX, t('EpicForm.Error.SlackLink'))
+      .or(z.literal(''))
+      .optional(),
     active: z.boolean().optional(),
-    is_integration: z.boolean().optional(),
-    illustration_document: z.custom<FileList>().optional(),
   });
 
 export const epicFormSchema = buildEpicFormSchema((key) => key);
+
+type EpicFormValues = z.infer<typeof epicFormSchema>;
+type EpicFormControl = Control<EpicFormValues>;
+type EpicTextareaName =
+  | 'short_description'
+  | 'description'
+  | 'problem_to_solve'
+  | 'proposed_solution'
+  | 'expected_value';
+
+const EpicFieldLabel = ({
+  labelKey,
+  required = false,
+  infoKey,
+}: {
+  labelKey: string;
+  required?: boolean;
+  infoKey?: string;
+}) => {
+  const t = useTranslations();
+  return (
+    <FormLabel className="flex items-center gap-xs">
+      {t(labelKey)}
+      {required && <span className="text-sm text-destructive">*</span>}
+      {infoKey && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label={t(infoKey)}
+                className="text-muted-foreground">
+                <InfoIcon className="size-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>{t(infoKey)}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+    </FormLabel>
+  );
+};
+
+const CharacterCount = ({
+  value,
+  maxChars,
+}: {
+  value: string;
+  maxChars: number;
+}) => {
+  const t = useTranslations();
+  return (
+    <div className="flex items-start gap-s">
+      <FormMessage />
+      <p className="text-muted-foreground txt-sub-content ml-auto shrink-0">
+        {t('Epic.Form.CharacterCount', { count: value.length, maxChars })}
+      </p>
+    </div>
+  );
+};
+
+const EpicTextareaField = ({
+  control,
+  name,
+  labelKey,
+  placeholderKey,
+  maxChars,
+  required = false,
+}: {
+  control: EpicFormControl;
+  name: EpicTextareaName;
+  labelKey: string;
+  placeholderKey: string;
+  maxChars: number;
+  required?: boolean;
+}) => {
+  const t = useTranslations();
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <EpicFieldLabel
+            labelKey={labelKey}
+            required={required}
+          />
+          <FormControl>
+            <Textarea
+              {...field}
+              value={field.value ?? ''}
+              rows={TEXTAREA_MIN_ROWS}
+              className="field-sizing-content min-h-24 resize-none"
+              placeholder={t(placeholderKey)}
+            />
+          </FormControl>
+          <CharacterCount
+            value={field.value ?? ''}
+            maxChars={maxChars}
+          />
+        </FormItem>
+      )}
+    />
+  );
+};
 
 const EpicForm = ({
   epic,
   handleSubmit,
 }: {
   epic?: epic_fragment$data;
-  handleSubmit: (values: z.infer<typeof epicFormSchema>) => void;
+  handleSubmit: (values: EpicFormValues) => void;
 }) => {
   const t = useTranslations();
+  const { handleCloseSheet } = useDialogContext();
   const formSchema = useMemo(() => buildEpicFormSchema(t), [t]);
 
-  const [isIntegration, setIsIntegration] = useState(
-    epic?.epic_type === EpicType.Integration
+  const values = useMemo(
+    () => ({
+      title: epic?.title ?? '',
+      short_description: epic?.short_description ?? '',
+      description: epic?.description ?? '',
+      problem_to_solve: epic?.problem_to_solve ?? '',
+      proposed_solution: epic?.proposed_solution ?? '',
+      expected_value: epic?.expected_value ?? '',
+      edition_type:
+        (epic?.edition_type as EditionType) ?? EditionType.CommunityEdition,
+      products: sortFiligranProducts(
+        (epic?.products as FiligranProduct[]) ?? [FiligranProduct.Opencti]
+      ),
+      slack_link: epic?.slack_link ?? '',
+      timeline: (epic?.timeline as Timeline) ?? Timeline.Now,
+      active: epic?.active ?? false,
+      is_integration: epic?.epic_type === EpicType.Integration,
+      illustration_document: undefined,
+    }),
+    [
+      epic?.title,
+      epic?.short_description,
+      epic?.description,
+      epic?.problem_to_solve,
+      epic?.proposed_solution,
+      epic?.expected_value,
+      epic?.edition_type,
+      epic?.products,
+      epic?.slack_link,
+      epic?.timeline,
+      epic?.active,
+      epic?.epic_type,
+    ]
   );
 
+  const form = useForm<EpicFormValues>({
+    resolver: zodResolver(formSchema),
+    values,
+  });
+  const isIntegration = useWatch({
+    control: form.control,
+    name: 'is_integration',
+  });
+
   return (
-    <AutoForm
-      onSubmit={(values) => handleSubmit(values)}
-      onValuesChange={(values) => {
-        setIsIntegration(values.is_integration ?? false);
-      }}
-      formSchema={formSchema}
-      values={{
-        title: epic?.title ?? '',
-        short_description: epic?.short_description ?? '',
-        description: epic?.description ?? descriptionValue,
-        edition_type:
-          (epic?.edition_type as EditionType) ?? EditionType.CommunityEdition,
-        product: (epic?.product as FiligranProduct) ?? FiligranProduct.Opencti,
-        timeline: (epic?.timeline as Timeline) ?? Timeline.Now,
-        active: epic?.active ?? false,
-        is_integration: epic?.epic_type === EpicType.Integration,
-        illustration_document: undefined,
-      }}
-      fieldConfig={{
-        title: {
-          inputProps: {
-            placeholder: t('Epic.Form.IsLimited', { maxChars: '160' }),
-          },
-        },
-        short_description: {
-          label: t('Epic.Form.ShortDesc'),
-          inputProps: {
-            placeholder: t('Epic.Form.IsLimited', { maxChars: '215' }),
-          },
-        },
-        description: {
-          fieldType: ({
-            field,
-          }: {
-            field: ControllerRenderProps<FieldValues, string>;
-          }) => (
-            <>
-              <ServiceFormDescriptionField
-                field={field}
-                documentType={'Epic'}
-                required
-              />
-            </>
-          ),
-        },
-        product: {
-          fieldType: ({
-            field,
-          }: {
-            field: ControllerRenderProps<FieldValues, string>;
-          }) => (
-            <FormItem>
-              <FormLabel>
-                {t('Epic.Form.FiligranProduct')}
-                <span className="text-sm text-destructive"> *</span>
-              </FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                value={field.value}
-                defaultValue={epic?.product ?? FiligranProduct.Opencti}>
+    <Form {...form}>
+      <form
+        className="w-full space-y-l"
+        onSubmit={form.handleSubmit(handleSubmit)}>
+        <div className="grid gap-l sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="products"
+            render={({ field }) => (
+              <FormItem>
+                <EpicFieldLabel
+                  labelKey="Epic.Form.FiligranProduct"
+                  required
+                />
                 <FormControl>
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={t('Epic.Form.FiligranProductPlaceholder')}
-                    />
-                  </SelectTrigger>
+                  <MultiSelectFormField
+                    options={FILIGRAN_PRODUCTS_OPTIONS}
+                    popoverContentClassName="bg-elevation-background-layer-3"
+                    keyValue="id"
+                    keyLabel="label"
+                    defaultValue={field.value}
+                    value={field.value}
+                    onValueChange={(products) =>
+                      field.onChange(sortFiligranProducts(products))
+                    }
+                    noResultString={t('Utils.NotFound')}
+                    placeholder={t('Epic.Form.FiligranProduct')}
+                    variant="inverted"
+                  />
                 </FormControl>
-                <SelectContent>
-                  {Object.values(FiligranProduct).map((product) => {
-                    return (
-                      <SelectItem
-                        key={product}
-                        value={product}>
-                        {FiligranProductMapping[product].name}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          ),
-        },
-        timeline: {
-          fieldType: ({
-            field,
-          }: {
-            field: ControllerRenderProps<FieldValues, string>;
-          }) => (
-            <FormItem>
-              <FormLabel>
-                {t('Epic.Form.Timeline')}
-                <span className="text-sm text-destructive"> *</span>
-              </FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                defaultValue={epic?.timeline ?? Timeline.Now}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('Epic.Timeline.now')} />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {Object.values(Timeline).map((timeline) => {
-                    return (
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="timeline"
+            render={({ field }) => (
+              <FormItem>
+                <EpicFieldLabel
+                  labelKey="Epic.Form.Timeline"
+                  required
+                />
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value ?? Timeline.Now}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={t('Epic.Form.TimelineOption.now')}
+                      />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {TIMELINE_VALUES.map((timeline) => (
                       <SelectItem
                         key={timeline}
                         value={timeline}>
-                        {t(`Epic.Timeline.${timeline.toLowerCase()}`)}
+                        {t(
+                          `Epic.Form.TimelineOption.${timeline.toLowerCase()}`
+                        )}
                       </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-              <FormMessage />
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <FormField
+          control={form.control}
+          name="edition_type"
+          render={({ field }) => (
+            <FormItem>
+              <EpicFieldLabel
+                labelKey="Epic.Form.EditionType"
+                infoKey="Epic.Form.EditionTypeInfo"
+              />
+              <div className="flex flex-wrap items-center gap-l">
+                <FormControl>
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    value={field.value ?? EditionType.CommunityEdition}
+                    className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                    {Object.values(EditionType).map((value) => (
+                      <FormItem
+                        key={value}
+                        className="flex flex-row items-center gap-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value={value} />
+                        </FormControl>
+                        <FormLabel className="cursor-pointer font-normal">
+                          {EditionTypeMapping[value].label}
+                        </FormLabel>
+                      </FormItem>
+                    ))}
+                  </RadioGroup>
+                </FormControl>
+                <Separator
+                  orientation="vertical"
+                  className="h-6"
+                />
+                <FormField
+                  control={form.control}
+                  name="is_integration"
+                  render={({ field: integrationField }) => (
+                    <FormItem className="flex flex-row items-center gap-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={integrationField.value ?? false}
+                          onCheckedChange={integrationField.onChange}
+                        />
+                      </FormControl>
+                      <FormLabel className="cursor-pointer font-normal">
+                        {t('Epic.Form.Integration')}
+                      </FormLabel>
+                    </FormItem>
+                  )}
+                />
+              </div>
             </FormItem>
-          ),
-        },
-        illustration_document: {
-          fieldType: ({ field }) => {
-            if (!isIntegration) return null;
-            return (
+          )}
+        />
+
+        {isIntegration && (
+          <FormField
+            control={form.control}
+            name="illustration_document"
+            render={({ field }) => (
               <FormItem>
                 <FormLabel>{t('Service.Form.Illustration')}</FormLabel>
                 <FormControl>
                   <FileInput
                     {...field}
                     texts={{
-                      selectFile: t('Service.Vault.FileForm.SelectDocument'),
-                      noFile: t('Service.Vault.FileForm.NoDocument'),
-                      dropFiles: t('Service.Vault.FileForm.DropDocuments'),
+                      selectFile: t('Service.FileForm.SelectDocument'),
+                      noFile: t('Service.FileForm.NoDocument'),
+                      dropFiles: t('Service.FileForm.DropDocuments'),
                     }}
                     allowedTypes={'image/jpeg, image/gif, image/png, image/svg'}
                   />
                 </FormControl>
                 <FormMessage />
               </FormItem>
-            );
-          },
-        },
-        active: {
-          label: t('Epic.Form.IsActive'),
-        },
-        is_integration: {
-          label: t('Epic.Form.Integration'),
-        },
-        edition_type: {
-          fieldType: ({ field }) => (
+            )}
+          />
+        )}
+
+        <FormField
+          control={form.control}
+          name="title"
+          render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('Epic.Form.EditionType')}</FormLabel>
+              <EpicFieldLabel
+                labelKey="Epic.Form.Title"
+                required
+              />
               <FormControl>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  value={field.value ?? EditionType.CommunityEdition}
-                  className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                  {Object.values(EditionType).map((value) => (
-                    <FormItem
-                      key={value}
-                      className="flex flex-row items-center gap-3 space-y-0">
-                      <FormControl>
-                        <RadioGroupItem value={value} />
-                      </FormControl>
-                      <FormLabel className="cursor-pointer font-normal">
-                        {EditionTypeMapping[value].label}
-                      </FormLabel>
-                    </FormItem>
-                  ))}
-                </RadioGroup>
+                <Input
+                  {...field}
+                  value={field.value ?? ''}
+                  placeholder={t('Epic.Form.Placeholder.Title')}
+                />
               </FormControl>
+              <CharacterCount
+                value={field.value ?? ''}
+                maxChars={TITLE_MAX_CHARS}
+              />
             </FormItem>
-          ),
-        },
-      }}>
-      <div className="flex justify-end">
-        <Button>{epic ? t('Utils.Update') : t('Utils.Create')}</Button>
-      </div>
-    </AutoForm>
+          )}
+        />
+
+        <EpicTextareaField
+          control={form.control}
+          name="short_description"
+          labelKey="Epic.Form.ShortDesc"
+          placeholderKey="Epic.Form.Placeholder.ShortDesc"
+          maxChars={SHORT_DESCRIPTION_MAX_CHARS}
+          required
+        />
+
+        <Separator />
+        <p className="text-muted-foreground txt-category uppercase">
+          {t('Epic.Form.DetailsSection')}
+        </p>
+
+        <EpicTextareaField
+          control={form.control}
+          name="description"
+          labelKey="Epic.Form.Description"
+          placeholderKey="Epic.Form.Placeholder.Description"
+          maxChars={SECTION_MAX_CHARS}
+        />
+        <EpicTextareaField
+          control={form.control}
+          name="problem_to_solve"
+          labelKey="Epic.Form.ProblemToSolve"
+          placeholderKey="Epic.Form.Placeholder.ProblemToSolve"
+          maxChars={SECTION_MAX_CHARS}
+          required
+        />
+        <EpicTextareaField
+          control={form.control}
+          name="proposed_solution"
+          labelKey="Epic.Form.ProposedSolution"
+          placeholderKey="Epic.Form.Placeholder.ProposedSolution"
+          maxChars={SECTION_MAX_CHARS}
+          required
+        />
+        <EpicTextareaField
+          control={form.control}
+          name="expected_value"
+          labelKey="Epic.Form.ExpectedValue"
+          placeholderKey="Epic.Form.Placeholder.ExpectedValue"
+          maxChars={SECTION_MAX_CHARS}
+          required
+        />
+
+        <FormField
+          control={form.control}
+          name="slack_link"
+          render={({ field }) => (
+            <FormItem>
+              <EpicFieldLabel labelKey="Epic.Form.SlackLink" />
+              <FormControl>
+                <AutocompleteInput
+                  options={EPIC_SLACK_LINK_OPTIONS}
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder={t('Epic.Form.SlackLinkPlaceholder')}
+                  listLabel={t('Epic.Form.SlackLink')}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <SheetFooter className="bg-elevation-background-layer-2 sticky bottom-0 -mx-xl gap-l border-t px-xl py-m sm:items-center sm:justify-between">
+          <FormField
+            control={form.control}
+            name="active"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center gap-3 space-y-0">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value ?? false}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <FormLabel className="cursor-pointer font-normal">
+                  {t('Epic.Form.PublishNow')}
+                  <span className="text-muted-foreground ml-xs">
+                    {t('Epic.Form.PublishNowHint')}
+                  </span>
+                </FormLabel>
+              </FormItem>
+            )}
+          />
+          <div className="flex gap-s">
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={handleCloseSheet}>
+              {t('Utils.Cancel')}
+            </Button>
+            <Button type="submit">
+              {t(
+                epic
+                  ? 'Epic.EpicActions.UpdateEpicButton'
+                  : 'Epic.EpicActions.CreateEpicButton'
+              )}
+            </Button>
+          </div>
+        </SheetFooter>
+      </form>
+    </Form>
   );
 };
 

@@ -1,18 +1,13 @@
 import { loadCurrentUser } from '@/utils/load-me-user';
-import { isFeatureEnabled } from '@/utils/settings.service';
 import Page, {
   generateMetadata,
 } from '@app/(public)/[locale]/cybersecurity-solutions/xtm-platform-trial/page';
 import { render, screen } from '@testing-library/react';
-import { notFound, redirect } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/utils/load-me-user', () => ({
   loadCurrentUser: vi.fn(),
-}));
-
-vi.mock('@/utils/settings.service', () => ({
-  isFeatureEnabled: vi.fn(),
 }));
 
 vi.mock('next-intl/server', () => ({
@@ -39,8 +34,6 @@ describe('public xtm-platform-trial page', () => {
   beforeEach(() => {
     vi.mocked(loadCurrentUser).mockReset();
     vi.mocked(redirect).mockReset();
-    vi.mocked(notFound).mockClear();
-    vi.mocked(isFeatureEnabled).mockReset().mockResolvedValue(true);
   });
 
   it('redirects logged-in users to the private xtm-platform-trial page', async () => {
@@ -64,14 +57,6 @@ describe('public xtm-platform-trial page', () => {
       screen.getByText('Service.Trials.XtmPlatform.Page.Breadcrumb')
     ).toBeInTheDocument();
     expect(redirect).not.toHaveBeenCalled();
-  });
-
-  it('calls notFound when the XtmPlatformTrial feature flag is disabled', async () => {
-    vi.mocked(isFeatureEnabled).mockResolvedValue(false);
-
-    await Page({ params: Promise.resolve({ locale: 'en' }) });
-
-    expect(notFound).toHaveBeenCalled();
   });
 
   it('builds the SEO metadata for the page', async () => {

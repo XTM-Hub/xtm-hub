@@ -9,13 +9,15 @@ import { requestContext } from '../context/request.context';
 import { OrganizationId } from '../model/kanel/public/Organization';
 import { ServiceInstanceId } from '../model/kanel/public/ServiceInstance';
 import { UserLoadUserBy } from '../model/user';
+import { OrganizationDomain } from '../modules/organization-management/organization/organization.domain';
 import { UserOrganizationDomain } from '../modules/organization-management/user/user-organization/user-organization.domain';
 import { AuthHelper } from '../modules/security-management/capability/auth.helper';
 import { SubscriptionDomain } from '../modules/subscription/subscription.domain';
 import { UserServiceDomain } from '../modules/user-service/user-service.domain';
+import { logApp } from '../utils/app-logger.util';
 import { ErrorCode } from '../utils/error/error.code';
 import { BadRequestError, ForbiddenAccess } from '../utils/error/error.util';
-import { isUserAdminPlatform, isUserGranted } from './access';
+import { isUserAdminPlatform } from './access';
 
 export const securityGuard = {
   assertUserIsInOrganization: async (
@@ -111,6 +113,24 @@ export const securityGuard = {
     }
   },
 
+  assertEmailMatchesOrganization: async (
+    user: UserLoadUserBy,
+    email: string,
+    organizationId?: OrganizationId
+  ) => {
+    if (isUserAdminPlatform(user)) return;
+
+    const [organizationFromEmail] =
+      await OrganizationDomain.loadOrganizationsFromEmail(email);
+
+    if (organizationId !== organizationFromEmail?.id) {
+      logApp.warn(
+        'You cannot add a user whose email domain is outside your organization'
+      );
+      throw ForbiddenAccess(ErrorCode.EmailOutsideOrganizationError);
+    }
+  },
+
   assertUserPortalCapabilities: async (
     user: UserLoadUserBy,
     requiredCapabilities: PortalCapability[]
@@ -129,37 +149,12 @@ export const securityGuard = {
   },
 };
 
-export const assertUserCanManageService = async (
-  user: UserLoadUserBy,
-  serviceInstanceId: ServiceInstanceId
-) => {
-  if (isUserGranted(user)) return;
-
-  const subscription = await SubscriptionDomain.loadSubscriptionBy({
-    service_instance_id: serviceInstanceId,
-    organization_id: user.selected_organization_id,
-  });
-
-  if (!subscription) {
-    throw ForbiddenAccess(ErrorCode.MissingCapabilityOnService);
-  }
-  const userServiceCapability =
-    await UserServiceDomain.loadUserServiceGenericCapability(
-      user.id,
-      subscription.id,
-      ServiceRestriction.ManageAccess
-    );
-
-  if (!userServiceCapability) {
-    throw ForbiddenAccess(ErrorCode.MissingCapabilityOnService);
-  }
-};
 export const assertUserHasCapaOnService = async (
   user: UserLoadUserBy,
   serviceInstanceId: ServiceInstanceId,
   capabilities: ServiceRestriction[]
 ) => {
-  if (isUserGranted(user)) return;
+  if (isUserAdminPlatform(user)) return;
 
   const subscription = await SubscriptionDomain.loadSubscriptionBy({
     service_instance_id: serviceInstanceId,

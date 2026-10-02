@@ -1,10 +1,12 @@
 import {
   DeploymentRequestSource,
+  HasRepliedSatisfaction,
   IntegrationType,
   Organization,
   PlatformContract,
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
+  ServiceGroupName,
 } from '../../__generated__/resolvers-types';
 import Document from '../../model/kanel/public/Document';
 import { UserId } from '../../model/kanel/public/User';
@@ -30,9 +32,12 @@ import {
   LoginEvent,
   OneClickDeployEvent,
   RegisterPlatformEvent,
+  ReplySatisfactionEvent,
   ShareEvent,
   SubscribeEvent,
   TelemetryEventType,
+  TrialAccessGrantedEvent,
+  TrialAccessRemovedEvent,
   UnregisterPlatformEvent,
   UpdateDeploymentEvent,
   UpdateOrganizationEvent,
@@ -379,6 +384,27 @@ export const TelemetryHelper = {
       domains: organization.domains ?? [],
     };
   },
+  buildSatisfactionEvent: async (
+    answer: HasRepliedSatisfaction,
+    deployment_id: string,
+    justification?: string | null
+  ): Promise<ReplySatisfactionEvent> => {
+    const user = requestContext.requireUser();
+    const selectedOrga = await OrganizationDomain.loadOrganizationBy({
+      id: user.selected_organization_id,
+    });
+
+    const baseEvent = buildBaseEvent(selectedOrga, user.id);
+
+    return {
+      event_type: TelemetryEventType.REPLY_SATISFACTION,
+      ...baseEvent,
+      email: user.email,
+      answer,
+      justification,
+      deployment_id,
+    };
+  },
 
   buildCreateDeploymentEvent: (
     organization: Organization,
@@ -426,6 +452,43 @@ export const TelemetryHelper = {
       ...baseEvent,
       ...additional_data,
       event_type: TelemetryEventType.UPDATE_DEPLOYMENT,
+    };
+  },
+
+  buildTrialAccessGrantedEvent: (
+    organization: Organization | undefined,
+    actor_user_id: UserId,
+    data: {
+      deployment_id: string;
+      role: ServiceGroupName;
+      email: string;
+    },
+    timestamp?: Date
+  ): TrialAccessGrantedEvent => {
+    const baseEvent = buildBaseEvent(organization, actor_user_id, timestamp);
+
+    return {
+      ...baseEvent,
+      ...data,
+      event_type: TelemetryEventType.TRIAL_ACCESS_GRANTED,
+    };
+  },
+
+  buildTrialAccessRemovedEvent: (
+    organization: Organization | undefined,
+    actor_user_id: UserId,
+    data: {
+      deployment_id: string;
+      email: string;
+    },
+    timestamp?: Date
+  ): TrialAccessRemovedEvent => {
+    const baseEvent = buildBaseEvent(organization, actor_user_id, timestamp);
+
+    return {
+      ...baseEvent,
+      ...data,
+      event_type: TelemetryEventType.TRIAL_ACCESS_REMOVED,
     };
   },
 };

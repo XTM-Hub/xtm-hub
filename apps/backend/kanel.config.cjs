@@ -26,12 +26,10 @@ const COLUMN_ENUM_MAP = {
     source: 'DeploymentRequestSource',
   },
   DeploymentRequestQuota: {
-    platform_identifier: 'PlatformIdentifier',
     region: 'DeploymentRequestPlatformRegion',
-    type: 'DeploymentRequestDeploymentType',
   },
   Epic: {
-    product: 'FiligranProduct',
+    products: 'FiligranProduct',
     timeline: 'Timeline',
     epic_type: 'EpicType',
     edition_type: 'EditionType',
@@ -76,6 +74,10 @@ const COLUMN_ENUM_MAP = {
   },
   ProductVersion: {
     product: 'PlatformIdentifier',
+  },
+  User: {
+    status: 'UserAccountStatus',
+    has_replied_satisfaction: 'HasRepliedSatisfaction',
   },
 };
 

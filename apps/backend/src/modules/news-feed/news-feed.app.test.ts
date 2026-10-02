@@ -8,6 +8,7 @@ import {
   TEST_ORGANIZATIONS,
 } from '../../../tests/tests.const';
 import {
+  IntegrationType,
   NewsFeedItemMetadataKey,
   NewsFeedItemType,
   PlatformContract,
@@ -27,6 +28,7 @@ import { objectUseCaseDomain } from '../use-case/object-use-case/object-use-case
 import { useCaseDomain } from '../use-case/use-case.domain';
 import { NewsFeedApp } from './news-feed.app';
 import { NewsFeedDomain } from './news-feed.domain';
+import { NewsFeedHelper } from './news-feed.helper';
 
 vi.mock('config', async (importOriginal) => {
   const mod = await importOriginal<{ default: typeof config }>();
@@ -308,29 +310,6 @@ describe('newsFeedApp', () => {
     });
   });
 
-  describe('isNewsFeedConfigured', () => {
-    it.each`
-      identifier                                             | expected | description
-      ${ServiceDefinitionIdentifier.OpenctiCustomDashboards} | ${true}  | ${'configured service definition'}
-      ${ServiceDefinitionIdentifier.OpenctiPlaybooks}        | ${true}  | ${'playbooks service definition'}
-      ${ServiceDefinitionIdentifier.OpenctiIntegrations}     | ${false} | ${'non-configured service definition'}
-      ${ServiceDefinitionIdentifier.OpenctiRegistration}     | ${false} | ${'registration identifier'}
-      ${ServiceDefinitionIdentifier.Vault}                   | ${false} | ${'vault identifier'}
-      ${ServiceDefinitionIdentifier.OpenaevScenarios}        | ${false} | ${'openaev scenarios identifier'}
-    `(
-      'should return $expected for $description ($identifier)',
-      ({
-        identifier,
-        expected,
-      }: {
-        identifier: ServiceDefinitionIdentifier;
-        expected: boolean;
-      }) => {
-        expect(NewsFeedApp.isNewsFeedConfigured(identifier)).toBe(expected);
-      }
-    );
-  });
-
   describe('resource news feed item', () => {
     let document: Document;
 
@@ -367,7 +346,7 @@ describe('newsFeedApp', () => {
         await NewsFeedApp.createResourceNewsFeedItem({
           document,
           serviceDefinitionIdentifier:
-            ServiceDefinitionIdentifier.OpenctiIntegrations,
+            ServiceDefinitionIdentifier.OpenctiRegistration,
         });
 
         const items = await TestHelper.newsFeed.loadItems();
@@ -465,6 +444,46 @@ describe('newsFeedApp', () => {
           tags: expect.arrayContaining(['Use Case Alpha', 'Use Case Beta']),
         });
       });
+
+      it('should create a news feed item for a non-connector integration document', async () => {
+        await createOpenCTIPlatformForOrganization(
+          uuidv4(),
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+        );
+
+        const integrationDocument = {
+          ...document,
+          integration_type: IntegrationType.CsvFeed,
+        } as Document & { integration_type: IntegrationType };
+
+        await NewsFeedApp.createResourceNewsFeedItem({
+          document: integrationDocument,
+          serviceDefinitionIdentifier:
+            ServiceDefinitionIdentifier.OpenctiIntegrations,
+        });
+
+        const items = await TestHelper.newsFeed.loadItems();
+        expect(items).toHaveLength(1);
+        expect(items[0]).toMatchObject({
+          type: NewsFeedItemType.ResourceIntegration,
+        });
+      });
+
+      it('should not create a news feed item for a connector document', async () => {
+        const connectorDocument = {
+          ...document,
+          integration_type: IntegrationType.Connector,
+        } as Document & { integration_type: IntegrationType };
+
+        await NewsFeedApp.createResourceNewsFeedItem({
+          document: connectorDocument,
+          serviceDefinitionIdentifier:
+            ServiceDefinitionIdentifier.OpenctiIntegrations,
+        });
+
+        const items = await TestHelper.newsFeed.loadItems();
+        expect(items).toHaveLength(0);
+      });
     });
 
     describe('updateResourceNewsFeedItem', () => {
@@ -486,7 +505,7 @@ describe('newsFeedApp', () => {
         await NewsFeedApp.updateResourceNewsFeedItem({
           document,
           serviceDefinitionIdentifier:
-            ServiceDefinitionIdentifier.OpenctiIntegrations,
+            ServiceDefinitionIdentifier.OpenctiRegistration,
         });
 
         const items = await TestHelper.newsFeed.loadItems();
@@ -670,6 +689,34 @@ describe('newsFeedApp', () => {
         });
         expect(provisioned).toHaveLength(0);
       });
+
+      it('should not update a news feed item for a connector document', async () => {
+        const integrationDocument = {
+          ...document,
+          integration_type: IntegrationType.CsvFeed,
+        } as Document & { integration_type: IntegrationType };
+
+        await NewsFeedApp.createResourceNewsFeedItem({
+          document: integrationDocument,
+          serviceDefinitionIdentifier:
+            ServiceDefinitionIdentifier.OpenctiIntegrations,
+        });
+
+        const connectorDocument = {
+          ...document,
+          name: 'Updated name',
+          integration_type: IntegrationType.Connector,
+        } as Document & { integration_type: IntegrationType };
+
+        await NewsFeedApp.updateResourceNewsFeedItem({
+          document: connectorDocument,
+          serviceDefinitionIdentifier:
+            ServiceDefinitionIdentifier.OpenctiIntegrations,
+        });
+
+        const items = await TestHelper.newsFeed.loadItems();
+        expect(items[0]?.title).not.toBe('Updated name');
+      });
     });
 
     describe('playbook provisioning compatibility', () => {
@@ -807,7 +854,9 @@ describe('newsFeedApp', () => {
     describe('upsertResourceNewsFeed', () => {
       it('should do nothing when the service definition is not configured', async () => {
         // Given
-        vi.spyOn(NewsFeedApp, 'isNewsFeedConfigured').mockReturnValue(false);
+        vi.spyOn(NewsFeedHelper, 'getNewsFeedConfiguration').mockReturnValue(
+          undefined
+        );
         const createResourceNewsFeedItemSpy = vi
           .spyOn(NewsFeedApp, 'createResourceNewsFeedItem')
           .mockResolvedValue();
@@ -830,7 +879,10 @@ describe('newsFeedApp', () => {
 
       it('should create a news feed item when document is created as active', async () => {
         // Given
-        vi.spyOn(NewsFeedApp, 'isNewsFeedConfigured').mockReturnValue(true);
+        vi.spyOn(NewsFeedHelper, 'getNewsFeedConfiguration').mockReturnValue({
+          newsFeedType: NewsFeedItemType.ResourceCustomDashboard,
+          platformIdentifier: PlatformIdentifier.Opencti,
+        });
         const createResourceNewsFeedItemSpy = vi
           .spyOn(NewsFeedApp, 'createResourceNewsFeedItem')
           .mockResolvedValue();
@@ -860,7 +912,10 @@ describe('newsFeedApp', () => {
 
       it('should update the existing news feed item when document stays active', async () => {
         // Given
-        vi.spyOn(NewsFeedApp, 'isNewsFeedConfigured').mockReturnValue(true);
+        vi.spyOn(NewsFeedHelper, 'getNewsFeedConfiguration').mockReturnValue({
+          newsFeedType: NewsFeedItemType.ResourceCustomDashboard,
+          platformIdentifier: PlatformIdentifier.Opencti,
+        });
         const createResourceNewsFeedItemSpy = vi
           .spyOn(NewsFeedApp, 'createResourceNewsFeedItem')
           .mockResolvedValue();
@@ -890,7 +945,10 @@ describe('newsFeedApp', () => {
 
       it('should do nothing when updated document is inactive', async () => {
         // Given
-        vi.spyOn(NewsFeedApp, 'isNewsFeedConfigured').mockReturnValue(true);
+        vi.spyOn(NewsFeedHelper, 'getNewsFeedConfiguration').mockReturnValue({
+          newsFeedType: NewsFeedItemType.ResourceCustomDashboard,
+          platformIdentifier: PlatformIdentifier.Opencti,
+        });
         const createResourceNewsFeedItemSpy = vi
           .spyOn(NewsFeedApp, 'createResourceNewsFeedItem')
           .mockResolvedValue();
@@ -914,7 +972,10 @@ describe('newsFeedApp', () => {
       it('should log creation failure message when create branch fails during creation flow', async () => {
         // Given
         const error = new Error('create-failed');
-        vi.spyOn(NewsFeedApp, 'isNewsFeedConfigured').mockReturnValue(true);
+        vi.spyOn(NewsFeedHelper, 'getNewsFeedConfiguration').mockReturnValue({
+          newsFeedType: NewsFeedItemType.ResourceCustomDashboard,
+          platformIdentifier: PlatformIdentifier.Opencti,
+        });
         vi.spyOn(NewsFeedApp, 'createResourceNewsFeedItem').mockRejectedValue(
           error
         );
@@ -944,7 +1005,10 @@ describe('newsFeedApp', () => {
       it('should log update-branch failure message when update fails during update flow', async () => {
         // Given
         const error = new Error('update-failed');
-        vi.spyOn(NewsFeedApp, 'isNewsFeedConfigured').mockReturnValue(true);
+        vi.spyOn(NewsFeedHelper, 'getNewsFeedConfiguration').mockReturnValue({
+          newsFeedType: NewsFeedItemType.ResourceCustomDashboard,
+          platformIdentifier: PlatformIdentifier.Opencti,
+        });
         vi.spyOn(NewsFeedApp, 'updateResourceNewsFeedItem').mockRejectedValue(
           error
         );

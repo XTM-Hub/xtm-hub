@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   // eslint-disable-next-line no-restricted-imports
   requestContextAdminUser,
-  TEST_ORGANIZATIONS,
 } from '../../../../tests/tests.const';
 import { OrganizationCapability } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
@@ -12,149 +11,17 @@ import Organization, {
 } from '../../../model/kanel/public/Organization';
 import { UserId } from '../../../model/kanel/public/User';
 import { UserLoadUserBy } from '../../../model/user';
-import * as MailService from '../../../server/mail-service';
 import { logApp } from '../../../utils/app-logger.util';
-import { ErrorCode } from '../../../utils/error/error.code';
 import { UserOrganizationCapabilityDomain } from '../../security-management/user-organization-capability/user-organization-capability.domain';
-import { TelemetryApp } from '../../telemetry/telemetry.app';
-import { TelemetrySource } from '../../telemetry/telemetry.const';
-import { TelemetryEventType } from '../../telemetry/telemetry.types';
 import { OrganizationDomain } from '../organization/organization.domain';
 import { UserDomain } from './user-domain/user.domain';
 import { UserOrganizationDomain } from './user-organization/user-organization.domain';
-import { UserOrganizationPendingDomain } from './user-pending/user-organization-pending.domain';
+import { UserProvisioningApp } from './user-provisioning/user-provisioning.app';
 import { isUserLastOrganizationAdministrator, UserHelper } from './user.helper';
 
 describe('user helpers', async () => {
   afterEach(async () => {
     vi.useRealTimers();
-  });
-  describe('createNewUserFromInvitation', () => {
-    it('should create a new user with Role USER and not add in an existing Organization, but in pending organization', async () => {
-      const testMail = `testCreateNewUserFromInvitation${uuidv4()}@filigran.io`;
-      await UserHelper.createNewUserFromInvitation({
-        email: testMail,
-      });
-      const newUser = (await UserDomain.loadUserBy({ email: testMail }))!;
-      const newUserPendingOrg =
-        await UserOrganizationPendingDomain.loadUserOrganizationPending({
-          user_id: newUser.id,
-        });
-      expect(newUser).toBeTruthy();
-      expect(newUser.selected_org_capabilities).toHaveLength(1);
-      expect(newUser.organizations[0]?.personal_space).toBe(true);
-      expect(newUserPendingOrg).toHaveLength(1);
-      expect(newUserPendingOrg[0]?.organization_id).toBe(
-        TEST_ORGANIZATIONS.FILIGRAN.ID
-      );
-
-      // Delete corresponding in order to avoid issue with other tests
-      await UserHelper.removeUser({ email: newUser.email });
-    });
-    it('should add new user with Role admin organization with an new Organization', async () => {
-      const organizationName = 'test-new-organization.fr';
-      const testMail = `testCreateNewUserFromInvitation${uuidv4()}@${organizationName}`;
-
-      vi.useFakeTimers();
-      const date = new Date(Date.UTC(2025, 1, 3, 13, 12, 15));
-      vi.setSystemTime(date);
-      const telemetrySpy = vi
-        .spyOn(TelemetryApp, 'sendTelemetryEvent')
-        .mockResolvedValue();
-
-      await UserHelper.createNewUserFromInvitation({
-        email: testMail,
-      });
-      const newUser = (await UserDomain.loadUserBy({ email: testMail }))!;
-      const newUserPendingOrg =
-        await UserOrganizationPendingDomain.loadUserOrganizationPending({
-          user_id: newUser.id,
-        });
-
-      expect(newUser).toBeTruthy();
-      expect(newUserPendingOrg).toHaveLength(0);
-
-      const newOrganization = await OrganizationDomain.loadOrganizationBy({
-        name: organizationName,
-      });
-      if (!newOrganization) {
-        throw new Error(ErrorCode.OrganizationNotFound);
-      }
-      const userOrgCapa = await UserDomain.loadUserCapabilitiesByOrganization(
-        newUser.id as UserId,
-        newOrganization.id
-      );
-      expect(userOrgCapa.capabilities?.length).toBe(1);
-      expect(
-        userOrgCapa.capabilities?.includes(
-          OrganizationCapability.AdministrateOrganization
-        )
-      ).toBeTruthy();
-
-      expect(newOrganization).toBeTruthy();
-
-      expect(telemetrySpy).toHaveBeenCalledExactlyOnceWith({
-        '@timestamp': '2025-02-03T13:12:15.000Z',
-        event_type: TelemetryEventType.CREATE_ORGANIZATION,
-        organization_id: expect.any(String),
-        organization_name: newOrganization.name,
-        organization_type: 'Professional',
-        source: TelemetrySource.XTMHUB,
-        user_id: newUser!.id,
-        domains: ['test-new-organization.fr'],
-      });
-
-      // Delete corresponding in order to avoid issue with other tests
-      await UserHelper.removeUser({ email: testMail });
-      await OrganizationDomain.deleteOrganizationBy({ name: organizationName });
-    });
-
-    it('should create a new user with Role USER and should not add it to pending organization if orga does not exist', async () => {
-      const testMail = `testCreateNewUserFromInvitation${uuidv4()}@whatever.io`;
-      await UserHelper.createNewUserFromInvitation({
-        email: testMail,
-      });
-      const newUser = (await UserDomain.loadUserBy({ email: testMail }))!;
-      const newUserPendingOrg =
-        await UserOrganizationPendingDomain.loadUserOrganizationPending({
-          user_id: newUser.id,
-        });
-      expect(newUser).toBeTruthy();
-      expect(newUser.selected_org_capabilities).toHaveLength(1);
-
-      expect(newUserPendingOrg).toHaveLength(0);
-    });
-
-    it('should send a welcome email by default when creating a new user', async () => {
-      const sendMailSpy = vi.spyOn(MailService, 'sendMail').mockResolvedValue();
-      const testMail = `testWelcomeEmail${uuidv4()}@whatever.io`;
-
-      await UserHelper.createNewUserFromInvitation({ email: testMail });
-
-      expect(sendMailSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ to: testMail, template: 'welcome' })
-      );
-
-      await UserHelper.removeUser({ email: testMail });
-      sendMailSpy.mockRestore();
-    });
-
-    it('should not send a welcome email when sendWelcomeEmail is false', async () => {
-      const sendMailSpy = vi.spyOn(MailService, 'sendMail').mockResolvedValue();
-      const testMail = `testWelcomeEmail${uuidv4()}@whatever.io`;
-
-      await UserHelper.createNewUserFromInvitation(
-        { email: testMail },
-        { sendWelcomeEmail: false }
-      );
-
-      expect(sendMailSpy).not.toHaveBeenCalledWith(
-        expect.objectContaining({ template: 'welcome' })
-      );
-
-      await UserHelper.removeUser({ email: testMail });
-      sendMailSpy.mockRestore();
-    });
   });
 
   describe('delete last administrator prevention', () => {
@@ -165,7 +32,7 @@ describe('user helpers', async () => {
 
     beforeEach(async () => {
       const userEmail = `testLastOrganizationAdministrator${uuidv4()}@${organizationName}`;
-      await UserHelper.createNewUserFromInvitation({
+      await UserProvisioningApp.autoProvisionNewUser({
         email: userEmail,
       });
       const loadedOrganization = await OrganizationDomain.loadOrganizationBy({
@@ -207,7 +74,7 @@ describe('user helpers', async () => {
         requestContext.set(requestContextAdminUser);
 
         const anotherUserEmail = `testLastOrganizationAdministrator-anotherUser${uuidv4()}@${organizationName}`;
-        await UserHelper.createNewUserFromInvitation({
+        await UserProvisioningApp.autoProvisionNewUser({
           email: anotherUserEmail,
         });
 
@@ -271,7 +138,7 @@ describe('user helpers', async () => {
         requestContext.set(requestContextAdminUser);
 
         const anotherUserEmail = `testLastOrganizationAdministrator-anotherUser${uuidv4()}@${organizationName}.fr`;
-        await UserHelper.createNewUserFromInvitation({
+        await UserProvisioningApp.autoProvisionNewUser({
           email: anotherUserEmail,
         });
 

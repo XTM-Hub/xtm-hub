@@ -24,8 +24,9 @@ const nextConfig = {
         : []),
 
       {
-        source: '/app/service/free-trial',
-        destination: '/app/service/opencti-free-trial',
+        source:
+          '/app/service/(free-trial|opencti-free-trial|openaev-free-trial)',
+        destination: '/app/service/xtm-platform-trial',
         permanent: true,
       },
       {
@@ -71,8 +72,15 @@ const nextConfig = {
         permanent: true,
       },
       {
-        source: '/cybersecurity-solutions/free-trial',
-        destination: '/cybersecurity-solutions/opencti-free-trial',
+        source:
+          '/cybersecurity-solutions/(free-trial|opencti-free-trial|openaev-free-trial)',
+        destination: '/cybersecurity-solutions/xtm-platform-trial',
+        permanent: true,
+      },
+      {
+        source:
+          '/:locale(en|ja)/cybersecurity-solutions/(opencti-free-trial|openaev-free-trial)',
+        destination: '/:locale/cybersecurity-solutions/xtm-platform-trial',
         permanent: true,
       },
       {

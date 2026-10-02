@@ -25,21 +25,27 @@ export async function seed(knex) {
     email: 'revenue_sales@filigran.io',
   });
 
-  await knex('User_RolePortal').insert([
-    {
-      user_id: userRevenueSalesId,
-      role_portal_id: REVENUE_SALES_UUID,
-    },
-  ]);
+  await knex('User_RolePortal')
+    .insert([
+      {
+        user_id: userRevenueSalesId,
+        role_portal_id: REVENUE_SALES_UUID,
+      },
+    ])
+    .onConflict(['user_id', 'role_portal_id'])
+    .ignore();
   const { userId: userRevenueLeadershipId } = await createUser({
     knex,
     email: 'revenue_leadership@filigran.io',
   });
 
-  await knex('User_RolePortal').insert([
-    {
-      user_id: userRevenueLeadershipId,
-      role_portal_id: REVENUE_LEADERSHIP_UUID,
-    },
-  ]);
+  await knex('User_RolePortal')
+    .insert([
+      {
+        user_id: userRevenueLeadershipId,
+        role_portal_id: REVENUE_LEADERSHIP_UUID,
+      },
+    ])
+    .onConflict(['user_id', 'role_portal_id'])
+    .ignore();
 }

@@ -9,6 +9,7 @@ import {
   SubscriptionMutator,
 } from '../../model/kanel/public/Subscription';
 import { SubscriptionCapabilityId } from '../../model/kanel/public/SubscriptionCapability';
+import { PortalContext } from '../../model/portal-context';
 import {
   ErrorCode,
   NotFoundErrorCode,
@@ -17,30 +18,38 @@ import {
 import { mapToGraphQLError } from '../../utils/error/error.mapping';
 import { NotFoundError } from '../../utils/error/error.util';
 import { createRelayIdScalar } from '../../utils/scalar.util';
-import { OrganizationDomain } from '../organization-management/organization/organization.domain';
-import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { subscriptionApp } from './subscription.app';
 import { SubscriptionDomain } from './subscription.domain';
 
 const resolvers: Resolvers = {
   SubscriptionId: createRelayIdScalar<SubscriptionId>('Subscription'),
   SubscriptionModel: {
-    subscription_capability: ({ id }, _) =>
-      SubscriptionDomain.getSubscriptionCapability(id as SubscriptionId),
-    service_instance: async ({ service_instance_id }, _) => {
-      const instance = await ServiceInstanceDomain.loadServiceInstanceBy({
-        id: service_instance_id,
-      });
+    subscription_capability: ({ id }, _, context: PortalContext) =>
+      context.dataLoaders.subscription.subscriptionCapabilitiesBySubscriptionIdLoader.load(
+        id as SubscriptionId
+      ),
+    service_instance: async (
+      { service_instance_id },
+      _,
+      context: PortalContext
+    ) => {
+      const instance =
+        await context.dataLoaders.subscription.serviceInstanceBySubscriptionServiceInstanceIdLoader.load(
+          service_instance_id
+        );
       if (!instance)
         throw NotFoundError(NotFoundErrorCode.ServiceInstanceNotFound);
       return instance as unknown as ServiceInstance;
     },
-    user_service: ({ id }, _) =>
-      SubscriptionDomain.getUserService(id as SubscriptionId),
-    organization: async ({ organization_id }, _) => {
-      const orga = await OrganizationDomain.loadOrganizationBy({
-        id: organization_id,
-      });
+    user_service: ({ id }, _, context: PortalContext) =>
+      context.dataLoaders.subscription.userServicesBySubscriptionIdLoader.load(
+        id as SubscriptionId
+      ),
+    organization: async ({ organization_id }, _, context: PortalContext) => {
+      const orga =
+        await context.dataLoaders.subscription.organizationBySubscriptionOrganizationIdLoader.load(
+          organization_id
+        );
       if (!orga) {
         throw new Error(ErrorCode.OrganizationNotFound);
       }
@@ -48,8 +57,10 @@ const resolvers: Resolvers = {
     },
   },
   SubscriptionCapability: {
-    service_capability: ({ id }, _) =>
-      SubscriptionDomain.getServiceCapability(id as SubscriptionCapabilityId),
+    service_capability: ({ id }, _, context: PortalContext) =>
+      context.dataLoaders.subscription.serviceCapabilityBySubscriptionCapabilityIdLoader.load(
+        id as SubscriptionCapabilityId
+      ),
   },
   Mutation: {
     createSubscriptions: async (_, { input }) => {

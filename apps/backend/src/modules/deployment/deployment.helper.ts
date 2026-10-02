@@ -13,16 +13,6 @@ import {
 } from '../../utils/error/error.code';
 import { DeploymentRequestDomain } from './deployment.domain';
 
-export type ValidatedDeploymentRequestProducts =
-  | {
-      type: DeploymentRequestDeploymentType.Bundle;
-      products: PlatformIdentifier[];
-    }
-  | {
-      type: DeploymentRequestDeploymentType.Trial;
-      platformIdentifier: PlatformIdentifier;
-    };
-
 type HubStatusTransition = {
   from: DeploymentRequestHubStatus;
   to: DeploymentRequestHubStatus;
@@ -163,32 +153,14 @@ export const DeploymentHelper = {
     );
   },
 
-  assertFreeTrialsLimit: async (
-    organizationId: OrganizationId,
-    validatedProducts: ValidatedDeploymentRequestProducts
-  ) => {
-    if (validatedProducts.type === DeploymentRequestDeploymentType.Bundle) {
-      const existingBundle =
-        await DeploymentRequestDomain.loadDeploymentRequestBy({
-          organization_requester_id: organizationId,
-          type: DeploymentRequestDeploymentType.Bundle,
-          counts_in_orga_quota: true,
-        });
-      if (existingBundle) {
-        throw new Error(AlreadyExistsErrorCode.FreeTrialAlreadyExists);
-      }
-
-      return;
-    }
-
-    const freeTrialsRequests =
+  assertFreeTrialsLimit: async (organizationId: OrganizationId) => {
+    const existingBundle =
       await DeploymentRequestDomain.loadDeploymentRequestBy({
         organization_requester_id: organizationId,
-        type: DeploymentRequestDeploymentType.Trial,
+        type: DeploymentRequestDeploymentType.Bundle,
         counts_in_orga_quota: true,
-        platform_identifier: validatedProducts.platformIdentifier,
       });
-    if (freeTrialsRequests) {
+    if (existingBundle) {
       throw new Error(AlreadyExistsErrorCode.FreeTrialAlreadyExists);
     }
   },

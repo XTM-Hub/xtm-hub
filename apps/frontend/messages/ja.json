@@ -190,7 +190,15 @@
       "Title": "タイトルは必須です",
       "ShortDescription": "概要は必須です",
       "ShortDescriptionMax": "概要は215文字以内で入力してください",
-      "Description": "説明は必須です"
+      "DescriptionMax": "説明は500文字以内で入力してください",
+      "ProblemToSolve": "解決する課題は必須です",
+      "ProblemToSolveMax": "解決する課題は500文字以内で入力してください",
+      "ProposedSolution": "提案する解決策は必須です",
+      "ProposedSolutionMax": "提案する解決策は500文字以内で入力してください",
+      "ExpectedValue": "期待される価値は必須です",
+      "ExpectedValueMax": "期待される価値は500文字以内で入力してください",
+      "Product": "少なくとも1つの製品が必要です",
+      "SlackLink": "filigran-community のSlackリンクである必要があります"
     }
   },
   "Epic": {
@@ -216,22 +224,47 @@
       "Epic": "エピック",
       "Title": "タイトル",
       "ShortDesc": "簡単な説明",
-      "Description": "説明文",
+      "Description": "詳細な説明",
+      "ProblemToSolve": "解決する課題",
+      "ProposedSolution": "提案する解決策",
+      "ExpectedValue": "期待される価値",
       "EditionType": "エディション・タイプ",
       "FiligranProduct": "製品名",
       "FiligranProductPlaceholder": "オープンCTI",
+      "SlackLink": "Slackリンク",
+      "SlackLinkPlaceholder": "チャンネルを選択するか、Slackリンクを貼り付けてください",
       "Timeline": "タイムライン",
       "IsActive": "このエピックは公開されていますか？(デフォルトでは下書きモードです)",
       "Integration": "統合されているか",
-      "IsLimited": "{maxChars}文字以内",
-      "AutomaticallyAdded": "自動的に追加される（編集不可）"
+      "AutomaticallyAdded": "自動的に追加される（編集不可）",
+      "CharacterCount": "{count} / {maxChars}",
+      "Placeholder": {
+        "Title": "例：ユーザーが有効なトライアルをすべて一覧できる",
+        "ShortDesc": "ロードマップカードに表示される一文",
+        "Description": "エピックの詳細：背景、範囲、制約",
+        "ProblemToSolve": "ユーザーが感じている課題",
+        "ProposedSolution": "どのように解決するか",
+        "ExpectedValue": "リリース後に得られる価値"
+      },
+      "DetailsSection": "エピックの詳細",
+      "PublishNow": "今すぐ公開",
+      "PublishNowHint": "（それ以外は下書きとして保存）",
+      "EditionTypeInfo": "Partial EE：Community Edition で動作しますが、一部のオプションには Enterprise Edition が必要です",
+      "TimelineOption": {
+        "now": "現在",
+        "next": "次",
+        "under_consideration": "検討中",
+        "finished": "完了"
+      }
     },
     "EpicActions": {
       "CreateEpic": "新しい叙事詩を作成する",
       "UpdateEpic": "エピックの更新",
       "DeleteEpic": "{epicName} エピックを削除する",
       "SureDeleteEpic": "本当に {epicName} エピックを削除しますか？",
-      "EpicDeleted": "エピックを削除しました"
+      "EpicDeleted": "エピックを削除しました",
+      "CreateEpicButton": "エピックを作成",
+      "UpdateEpicButton": "エピックを更新"
     },
     "JoinCommunity": "フィリグランコミュニティの輪に入る"
   },
@@ -273,6 +306,7 @@
       "CANT_REQUEST_FREE_TRIAL_IN_PERSONAL_SPACE": "個人的なスペースで無料体験を申し込むことはできない",
       "CANT_SUBSCRIBE_YOURSELF": "自分を追加することはできません",
       "COMPETITOR_DOMAIN_ALREADY_EXISTS": "同じドメインの競合がすでに存在する",
+      "DEPLOYMENT_FEEDBACK_ALREADY_EXISTS": "導入に関するフィードバックはすでに存在しています",
       "COMPETITOR_NOT_FOUND": "競合他社が見つかりません",
       "CONNECTOR_ID_ALREADY_EXISTS": "この識別子を持つコネクタは既に存在します",
       "CONNECTOR_VERSION_ALREADY_EXISTS": "このバージョンのコネクタは既に存在します",
@@ -298,6 +332,7 @@
       "DEPLOYMENT_REQUEST_QUOTA_NOT_FOUND": "配備要求のクォータが見つからなかった。",
       "DEPLOYMENT_REQUEST_STATUS_UPDATE_NOT_ALLOWED": "不明なエラーが発生した",
       "DEPLOYMENT_REQUEST_UNKNOWN_ERROR": "不明なエラーが発生した",
+      "DEPLOYMENT_FEEDBACK_UNKNOWN_ERROR": "フィードバックの送信中に不明なエラーが発生しました",
       "DOCUMENT_CREATE_ERROR": "リソースの作成中にエラーが発生しました。",
       "DOCUMENT_FILE_MISSING": "ドキュメントファイルが見つからない",
       "DOCUMENT_MISSING_METADATA": "ドキュメントにメタデータがありません。",
@@ -440,10 +475,6 @@
       "Contract": "契約",
       "Remaining": "残り",
       "DaysRemaining": "{days, plural, =1 {#日} other {#日}}"
-    },
-    "TryOtherPlatform": {
-      "Title": "XTMプラットフォームを拡張・スケールアップ",
-      "Cta": "{productName}を試してみてください"
     }
   },
   "PublicHomePage": {
@@ -473,7 +504,7 @@
     "FiligranWebsite": "Filigranウェブサイト",
     "Documentation": "XTM Hubのドキュメント",
     "PrivacyPolicy": "プライバシーポリシー",
-    "TermsOfServices": "利用規約",
+    "TermsOfService": "利用規約",
     "Licenses": "ライセンス"
   },
   "PublicLayout": {
@@ -564,7 +595,6 @@
   "Menu": {
     "XTMPlatform": "XTMプラットフォーム",
     "XTMPlatformTrial": "XTMプラットフォームトライアル",
-    "StartFreeTrial": "無料トライアルを開始",
     "CustomDashboards": "カスタムダッシュボード",
     "CustomViews": "カスタムビュー",
     "Integrations": "連携機能",
@@ -746,7 +776,6 @@
       "CancelTrial": "トライアルをキャンセルする"
     },
     "UpdateQuotasForm": {
-      "Title": "{region}で{platform}のクォータを更新する",
       "QuotasUpdated": "クォータは正常に更新されました",
       "NewCapacityLabel": "新しいクォータ容量",
       "AlertDialog": {
@@ -1005,7 +1034,6 @@
       "opencti_integrations": "OpenCTI 統合",
       "opencti_playbooks": "OpenCTIプレイブック",
       "opencti_registration": "OpenCTI 登録",
-      "vault": "ボールト",
       "xtm_platform_bundle": "XTMプラットフォームトライアル",
       "xtm_platform_roadmap": "XTM Platform ロードマップ",
       "xtmone_registration": "XTM One 登録"
@@ -1032,7 +1060,7 @@
         "IntegrationType": "インテグレーションタイプ",
         "UseCase": "ユースケース",
         "DeploymentType": "デプロイタイプ",
-        "VerificationStatus": "検証ステータス",
+        "VerificationStatus": "ステータス",
         "SolutionCategory": "ソリューションカテゴリ",
         "LicenseType": "ライセンスタイプ",
         "ShortDescription": "概要",
@@ -1206,10 +1234,10 @@
           "Placeholder": "ソリューションカテゴリ..."
         },
         "Verified": {
-          "Label": "検証ステータス",
-          "Placeholder": "検証状況...",
-          "Verified": "確認済み",
-          "Unverified": "未確認"
+          "Label": "ステータス",
+          "Placeholder": "ステータス...",
+          "Verified": "Filigranの提供による",
+          "Unverified": "コミュニティの提供による"
         }
       },
       "Type": {
@@ -1377,7 +1405,7 @@
           "license_type": "ライセンス種別",
           "product_version": "接続済み製品",
           "manager_supported": "配備タイプ",
-          "verified": "検証状況",
+          "verified": "ステータス",
           "entity_type": "エンティティタイプ"
         }
       }
@@ -1498,9 +1526,6 @@
     "SubscribeService": "{serviceName} サービスを購読する",
     "SubscribeSuccessful": "サービスへの登録が完了しました。これで登録したサービスにこのサービスが表示されます。",
     "Trials": {
-      "ExploreBold": "無料トライアル",
-      "ExplorePlatform": "30日間、{platformName} プラットフォームをお試しください。",
-      "ExploreProducts": "OpenCTI または OpenAEV プラットフォームを 30 日間お試しいただけます。",
       "Active": "OpenCTI 無料トライアルは有効です",
       "Provisioning": "OpenCTI 無料トライアルは現在プロビジョニング中です。",
       "Requested": "OpenCTI 無料トライアルがリクエストされました。",
@@ -1567,8 +1592,6 @@
           }
         }
       },
-      "StartTrial": "無料トライアルを開始する",
-      "StartTrialWithName": "無料 {platformName} トライアルを開始する",
       "OpenAEVPlatformBreadcrumb": "OpenAEV トライアルプラットフォーム",
       "OpenCTIPlatformBreadcrumb": "OpenCTI トライアルプラットフォーム",
       "PageHeader": {
@@ -1603,6 +1626,13 @@
           "Text": "トライアル終了前に、引き続き XTM Platform のフル体験をお楽しみください。"
         },
         "DaysLeft": "{days, plural, =1 {残り#日} other {残り#日}}",
+        "Feedback": {
+          "Question": "XTM Platform の体験は今のところ順調ですか？",
+          "Yes": "うん、今のところ順調だね！",
+          "No": "そうでもないんだけど……",
+          "Submit": "送信",
+          "Justification": "それはお気の毒ですね。その理由を教えていただけませんか？"
+        },
         "Page": {
           "Breadcrumb": "XTM Platform Trial",
           "Overline": "XTM Platform 無料トライアル",
@@ -1646,7 +1676,8 @@
           },
           "NotAdmin": {
             "Title": "トライアルを申請するには組織の管理者である必要があります。",
-            "Description": "所属企業の組織管理者にお問い合わせください"
+            "Description": "所属企業の組織管理者にお問い合わせください",
+            "AdminListTitle": "{count, plural, =1 {管理者} other {管理者}}"
           },
           "PersonalSpace": {
             "Title": "個人スペースではトライアルをご利用いただけません"
@@ -1727,8 +1758,11 @@
         "ActivitySectorPlaceholder": "業種を選択してください",
         "UseCase": "用途",
         "UseCasePlaceholder": "ユースケースを選択してください",
-        "MSSA": "MSSA",
-        "MSSAAgreement": "の試用規約を読み、理解し、同意します。",
+        "Error": {
+          "AcceptTerms": "続行するには試用条件に同意してください",
+          "UseCase": "ユースケースを選択してください"
+        },
+        "TermsAgreement": "<mssa>MSSA</mssa>および<aiterms>AI利用規約</aiterms>の試用条件を読み、理解し、同意します。",
         "FormRequested": "無料トライアルを申し込みました。プラットフォームの準備が整い次第、Eメールをお送りします！"
       },
       "Display": {
@@ -1742,11 +1776,6 @@
           "Title": "OpenAEV 30日間無料トライアル",
           "FreeTrialDescription": "OpenAEV を使って、実際の攻撃シナリオをシミュレートし、セキュリティ態勢を評価し、サイバー耐性を向上させましょう。"
         }
-      },
-      "CapacityWarning": {
-        "Title": "提供開始のお知らせ",
-        "Content": "プラットフォームスロットは現在お住まいの地域ではご利用いただけません。利用可能になった際に通知を受け取りたいですか？",
-        "Continue": "通知する"
       },
       "ManageUsers": {
         "Title": "ユーザーを管理する",
@@ -1921,39 +1950,10 @@
         }
       }
     },
-    "Vault": {
-      "DeleteDocument": "ドキュメント削除",
-      "DropFile": "ここに書類を置く",
-      "File": "送信する文書",
-      "FileExtension": "ドキュメントの拡張子は",
-      "FileForm": {
-        "AddFile": "新しい文書を追加する",
-        "AlreadyExists": "このドキュメントは既に存在します。古いものは消去されます。",
-        "DeleteDialog": "本当に削除しますか？",
-        "DescriptionLabel": "説明",
-        "DescriptionPlaceholder": "この文書について説明してください。",
-        "DropDocuments": "ここにドキュメントをドロップする",
-        "EditFile": "文書を編集する",
-        "File": "ドキュメント",
-        "FileAlreadyExists": "このドキュメントは既に存在します",
-        "FileExistsDialog": "このドキュメントはすでに存在します。このドキュメントは古いものを消去します。本当に続けますか？",
-        "NoDocument": "選択した文書がありません。",
-        "SelectDocument": "ドキュメントを選択",
-        "ShortNameLabel": "短い名前",
-        "ShortNamePlaceholder": "フィリグラン価格",
-        "UploadNewFile": "Vaultに新しい文書をアップロードする"
-      },
-      "FileTab": {
-        "Description": "説明",
-        "FileName": "ドキュメント名",
-        "NumberDownload": "ダウンロード",
-        "Search": "文書名で検索...",
-        "UploadDate": "アップロード日"
-      },
-      "ManageVault": "保管庫の管理",
-      "UpdateDocument": "ドキュメントの更新",
-      "Vault": "パートナー保管庫",
-      "VaultTitle": "保管庫管理"
+    "FileForm": {
+      "DropDocuments": "ここにドキュメントをドロップする",
+      "NoDocument": "選択した文書がありません。",
+      "SelectDocument": "ドキュメントを選択"
     },
     "OpenctiCustomViews": {
       "Actions": {
@@ -2057,6 +2057,7 @@
     }
   },
   "ServiceActions": {
+    "DocumentUpdated": "{file_name} は修正されました",
     "OrganizationAdded": "{name} 組織は {serviceName} サービスを購読している。",
     "OrganizationDeleted": "組織 {name} は削除されました。",
     "UserCapabilitiesModified": "{email} の機能が変更されました",
@@ -2207,13 +2208,20 @@
     }
   },
   "UserListPage": {
+    "Action": "アクション",
     "Country": "国名",
     "Email": "Eメール",
     "FirstName": "ファーストネーム",
+    "InvitationDate": "招待日",
+    "InvitationExpired": "期限切れ",
+    "InvitationPending": "保留中",
+    "InvitationStatus": "招待ステータス",
     "LastLogin": "姓",
     "LastName": "姓",
     "NoUsers": "ユーザーが見つかりません",
     "Organizations": "団体名",
+    "ResendInvite": "招待を再送信",
+    "ResendInviteSuccess": "招待を再送信しました",
     "Roles": "役割",
     "Status": "地位",
     "TabTitle": "ユーザー",
@@ -2275,12 +2283,6 @@
     "APAC_SG": "シンガポール",
     "EU_WEST": "西ヨーロッパ",
     "US_EAST": "アメリカ東部"
-  },
-  "VaultActions": {
-    "DocumentAdded": "{file_name} が追加されました",
-    "DocumentDeleted": "{file_name} は削除されました",
-    "DocumentUpdated": "{file_name} は修正されました",
-    "UpdateDocument": "ドキュメントの更新"
   },
   "DeploymentRequestJobTitle": {
     "ceo": "CEO",

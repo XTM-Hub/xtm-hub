@@ -26,7 +26,7 @@ jobs:
       - name: Setup Node Js
         uses: actions/setup-node@v6
         with:
-          node-version: "24.19.0"
+          node-version: "24.21.0"
       - name: Install AWX cli
         run: pip install awxkit
       - name: Define NODE_ENV based on branch name

@@ -21,7 +21,9 @@ export default class ServicePage {
     await this.page.getByText('Name', { exact: true }).click();
   }
 
-  async navigateToServiceItemAdmin(serviceName: string = 'Vault') {
+  async navigateToServiceItemAdmin(
+    serviceName: string = 'OpenCTI Integrations Library'
+  ) {
     await clickRowAction(
       this.page,
       this.page.getByRole('row', { name: serviceName }),

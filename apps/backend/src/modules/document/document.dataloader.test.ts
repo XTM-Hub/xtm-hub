@@ -1,14 +1,81 @@
 import { toGlobalId } from 'graphql-relay/node/node.js';
 import { describe, expect, it, vi } from 'vitest';
-import { IntegrationType } from '../../__generated__/resolvers-types';
+import { TestHelper } from '../../../tests/helper/test.helper';
+import {
+  FiligranProduct,
+  IntegrationType,
+} from '../../__generated__/resolvers-types';
+import { DocumentId } from '../../model/kanel/public/Document';
+import SolutionCategory, {
+  SolutionCategoryId,
+} from '../../model/kanel/public/SolutionCategory';
 import User from '../../model/kanel/public/User';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { solutionCategoryDomain } from '../solution-category/solution-category.domain';
 import { DocumentDataLoader } from './document.dataloader';
+import { Document, WithDocumentId, WithParentId } from './document.helper';
 import { DocumentChildrenDomain } from './domain/document.children.domain';
+import { DocumentDomain } from './domain/document.domain';
 import { DocumentMetadataDomain } from './domain/document.metadata.domain';
 
+const buildChildDocument = (
+  overrides: Partial<WithParentId<Document>> = {}
+): WithParentId<Document> => ({
+  ...TestHelper.document.build(),
+  _parent_id: 'doc-1',
+  ...overrides,
+});
+
+const buildSolutionCategory = (
+  overrides: Partial<WithDocumentId<SolutionCategory>> = {}
+): WithDocumentId<SolutionCategory> => ({
+  id: 'cat-1' as SolutionCategoryId,
+  name: 'Threat Intelligence',
+  product: [FiligranProduct.Opencti],
+  _document_id: 'doc-1',
+  ...overrides,
+});
+
 describe('documentDataLoader', () => {
+  it('should map documents by id and return null for missing ids', async () => {
+    vi.spyOn(
+      DocumentDomain,
+      'loadDocumentsWithMetadataByIds'
+    ).mockResolvedValue([
+      TestHelper.document.build({ id: 'doc-1' as DocumentId }),
+    ]);
+
+    const result = await DocumentDataLoader.batchLoadDocumentsById([
+      'doc-1',
+      'doc-2',
+    ]);
+
+    expect(DocumentDomain.loadDocumentsWithMetadataByIds).toHaveBeenCalledWith([
+      'doc-1',
+      'doc-2',
+    ]);
+    expect(result).toEqual([
+      TestHelper.document.build({ id: 'doc-1' as DocumentId }),
+      null,
+    ]);
+  });
+
+  it('should wire the document loader in create()', async () => {
+    const batchLoadDocumentsByIdSpy = vi
+      .spyOn(DocumentDataLoader, 'batchLoadDocumentsById')
+      .mockResolvedValue([
+        TestHelper.document.build({ id: 'doc-1' as DocumentId }),
+      ]);
+
+    const loaders = DocumentDataLoader.create();
+    const result = await loaders.documentByIdLoader.load('doc-1');
+
+    expect(batchLoadDocumentsByIdSpy).toHaveBeenCalledWith(['doc-1']);
+    expect(result).toEqual(
+      TestHelper.document.build({ id: 'doc-1' as DocumentId })
+    );
+  });
+
   it('should map users by id and return null for missing users', async () => {
     vi.spyOn(UserDomain, 'loadUsers').mockResolvedValue([
       { id: 'user-1' } as User,
@@ -27,17 +94,17 @@ describe('documentDataLoader', () => {
       solutionCategoryDomain,
       'buildSolutionCategoriesByDocumentIdQuery'
     ).mockResolvedValue([
-      {
-        id: 'cat-1',
+      buildSolutionCategory({
+        id: 'cat-1' as SolutionCategoryId,
         name: 'Threat Intelligence',
         _document_id: 'doc-1',
-      },
-      {
-        id: 'cat-2',
+      }),
+      buildSolutionCategory({
+        id: 'cat-2' as SolutionCategoryId,
         name: 'Network Security',
         _document_id: 'doc-1',
-      },
-    ] as never);
+      }),
+    ]);
 
     const result =
       await DocumentDataLoader.batchLoadSolutionCategoriesByDocumentId([
@@ -47,8 +114,16 @@ describe('documentDataLoader', () => {
 
     expect(result).toEqual([
       [
-        { id: 'cat-1', name: 'Threat Intelligence', _document_id: 'doc-1' },
-        { id: 'cat-2', name: 'Network Security', _document_id: 'doc-1' },
+        buildSolutionCategory({
+          id: 'cat-1' as SolutionCategoryId,
+          name: 'Threat Intelligence',
+          _document_id: 'doc-1',
+        }),
+        buildSolutionCategory({
+          id: 'cat-2' as SolutionCategoryId,
+          name: 'Network Security',
+          _document_id: 'doc-1',
+        }),
       ],
       [],
     ]);
@@ -57,15 +132,15 @@ describe('documentDataLoader', () => {
   it('should convert image ids to global ids and keep grouping by parent id', async () => {
     vi.spyOn(DocumentChildrenDomain, 'loadImagesByParentIds').mockResolvedValue(
       [
-        {
-          id: 'image-1',
+        buildChildDocument({
+          id: 'image-1' as DocumentId,
           _parent_id: 'doc-1',
-        },
-        {
-          id: 'image-2',
+        }),
+        buildChildDocument({
+          id: 'image-2' as DocumentId,
           _parent_id: 'doc-2',
-        },
-      ] as never
+        }),
+      ]
     );
 
     const result = await DocumentDataLoader.batchLoadImagesByDocumentId([
@@ -74,8 +149,18 @@ describe('documentDataLoader', () => {
     ]);
 
     expect(result).toEqual([
-      [{ id: toGlobalId('Document', 'image-1'), _parent_id: 'doc-1' }],
-      [{ id: toGlobalId('Document', 'image-2'), _parent_id: 'doc-2' }],
+      [
+        buildChildDocument({
+          id: toGlobalId('Document', 'image-1') as DocumentId,
+          _parent_id: 'doc-1',
+        }),
+      ],
+      [
+        buildChildDocument({
+          id: toGlobalId('Document', 'image-2') as DocumentId,
+          _parent_id: 'doc-2',
+        }),
+      ],
     ]);
   });
 
@@ -84,19 +169,10 @@ describe('documentDataLoader', () => {
       DocumentChildrenDomain,
       'loadChildrenDocumentsByParentIds'
     ).mockResolvedValue([
-      {
-        id: 'child-1',
-        _parent_id: 'doc-1',
-      },
-      {
-        id: 'child-2',
-        _parent_id: 'doc-1',
-      },
-      {
-        id: 'child-3',
-        _parent_id: 'doc-2',
-      },
-    ] as never);
+      buildChildDocument({ id: 'child-1' as DocumentId, _parent_id: 'doc-1' }),
+      buildChildDocument({ id: 'child-2' as DocumentId, _parent_id: 'doc-1' }),
+      buildChildDocument({ id: 'child-3' as DocumentId, _parent_id: 'doc-2' }),
+    ]);
 
     const result = await DocumentDataLoader.batchLoadChildrenDocuments([
       'doc-1',
@@ -106,10 +182,21 @@ describe('documentDataLoader', () => {
 
     expect(result).toEqual([
       [
-        { id: 'child-1', _parent_id: 'doc-1' },
-        { id: 'child-2', _parent_id: 'doc-1' },
+        buildChildDocument({
+          id: 'child-1' as DocumentId,
+          _parent_id: 'doc-1',
+        }),
+        buildChildDocument({
+          id: 'child-2' as DocumentId,
+          _parent_id: 'doc-1',
+        }),
       ],
-      [{ id: 'child-3', _parent_id: 'doc-2' }],
+      [
+        buildChildDocument({
+          id: 'child-3' as DocumentId,
+          _parent_id: 'doc-2',
+        }),
+      ],
       [],
     ]);
   });

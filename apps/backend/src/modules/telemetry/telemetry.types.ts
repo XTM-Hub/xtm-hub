@@ -5,6 +5,8 @@ import {
   DeploymentRequestJobTitle,
   DeploymentRequestPlatformRegion,
   DeploymentRequestUseCase,
+  HasRepliedSatisfaction,
+  ServiceGroupName,
 } from '../../__generated__/resolvers-types';
 import { DeploymentRequestId } from '../../model/kanel/public/DeploymentRequest';
 import {
@@ -29,6 +31,9 @@ export enum TelemetryEventType {
   CREATE_DEPLOYMENT = 'create_deployment',
   UPDATE_DEPLOYMENT = 'update_deployment',
   EXPORT = 'export',
+  TRIAL_ACCESS_GRANTED = 'trial_access_granted',
+  TRIAL_ACCESS_REMOVED = 'trial_access_removed',
+  REPLY_SATISFACTION = 'reply_satisfaction',
 }
 
 export interface BaseTelemetryEvent {
@@ -135,6 +140,14 @@ export interface CreateOrganizationEvent extends BaseTelemetryEvent {
   domains: string[];
 }
 
+export interface ReplySatisfactionEvent extends BaseTelemetryEvent {
+  event_type: TelemetryEventType.REPLY_SATISFACTION;
+  email: string;
+  deployment_id: string;
+  answer: HasRepliedSatisfaction;
+  justification?: string | null;
+}
+
 export interface CreateDeploymentEvent extends BaseTelemetryEvent {
   activity_sector: DeploymentRequestActivitySector | null;
   deployment_id: string;
@@ -160,6 +173,19 @@ export interface UpdateDeploymentEvent extends BaseTelemetryEvent {
   cancellation_reason: string | null | undefined;
 }
 
+export interface TrialAccessGrantedEvent extends BaseTelemetryEvent {
+  event_type: TelemetryEventType.TRIAL_ACCESS_GRANTED;
+  deployment_id: string;
+  role: ServiceGroupName;
+  email: string;
+}
+
+export interface TrialAccessRemovedEvent extends BaseTelemetryEvent {
+  event_type: TelemetryEventType.TRIAL_ACCESS_REMOVED;
+  deployment_id: string;
+  email: string;
+}
+
 export type TelemetryEvent =
   | LoginEvent
   | SubscribeEvent
@@ -173,4 +199,7 @@ export type TelemetryEvent =
   | UpdateOrganizationEvent
   | CreateOrganizationEvent
   | CreateDeploymentEvent
-  | UpdateDeploymentEvent;
+  | UpdateDeploymentEvent
+  | TrialAccessGrantedEvent
+  | TrialAccessRemovedEvent
+  | ReplySatisfactionEvent;

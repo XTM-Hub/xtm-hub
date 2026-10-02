@@ -23,6 +23,7 @@ import UserServiceCapability, {
   UserServiceCapabilityId,
 } from '../../model/kanel/public/UserServiceCapability';
 import * as mailService from '../../server/mail-service';
+import { ForbiddenErrorCode } from '../../utils/error/error.code';
 import { UserDomain } from '../organization-management/user/user-domain/user.domain';
 import { UserHelper } from '../organization-management/user/user.helper';
 import { GenericServiceCapabilityIds } from '../security-management/service-capability/generic-service-capability.const';
@@ -69,7 +70,7 @@ const makeSubscription = (overrides?: {
 }) => ({
   id: (overrides?.id ?? uuidv4()) as SubscriptionId,
   service_instance_id:
-    overrides?.service_instance_id ?? SERVICES.INSTANCES.VAULT.ID,
+    overrides?.service_instance_id ?? SERVICES.INSTANCES.INTEGRATIONS.ID,
   organization_id: overrides?.organization_id ?? SECOND_ORG_ID,
   start_date: overrides?.start_date ?? new Date(),
   end_date: overrides?.end_date !== undefined ? overrides.end_date : undefined,
@@ -355,7 +356,7 @@ describe('userServiceDomain', () => {
       ).toBe(true);
     });
 
-    it('should throw a GraphQL error when an email domain does not match the org', async () => {
+    it('should throw a ForbiddenAccess error when an email domain does not match the org', async () => {
       const outsiderEmail = `outsider-${uuidv4()}@filigran.io`;
       const subscription = await getSubscription();
 
@@ -365,7 +366,7 @@ describe('userServiceDomain', () => {
         [ServiceRestriction.Access]
       );
       await expect(call).rejects.toThrow(
-        'The email address does not correspond to the current organization'
+        ForbiddenErrorCode.EmailOutsideOrganizationError
       );
 
       const rows = await TestHelper.user_Service.loadAll({
@@ -598,7 +599,7 @@ describe('userServiceDomain', () => {
     beforeEach(async () => {
       filigranSubId = await createTestSubscription({
         organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-        service_instance_id: SERVICES.INSTANCES.VAULT.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
         start_date: new Date(),
         end_date: undefined,
       });
@@ -687,7 +688,7 @@ describe('userServiceDomain', () => {
     it('should not match a user service belonging to another subscription', async () => {
       const otherSubscriptionId = await createTestSubscription({
         organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-        service_instance_id: SERVICES.INSTANCES.VAULT.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
         start_date: new Date(),
         end_date: undefined,
       });

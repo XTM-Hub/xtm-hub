@@ -4,11 +4,13 @@ import {
   ServiceDefinitionIdentifier,
 } from '../../__generated__/resolvers-types';
 
+export interface NewsFeedConfiguration {
+  newsFeedType: NewsFeedItemType;
+  platformIdentifier: PlatformIdentifier;
+}
+
 export const newsFeedConfigurationMapping: Partial<
-  Record<
-    ServiceDefinitionIdentifier,
-    { newsFeedType: NewsFeedItemType; platformIdentifier: PlatformIdentifier }
-  >
+  Record<ServiceDefinitionIdentifier, NewsFeedConfiguration>
 > = {
   [ServiceDefinitionIdentifier.OpenctiCustomDashboards]: {
     newsFeedType: NewsFeedItemType.ResourceCustomDashboard,
@@ -20,6 +22,10 @@ export const newsFeedConfigurationMapping: Partial<
   },
   [ServiceDefinitionIdentifier.OpenctiCustomViews]: {
     newsFeedType: NewsFeedItemType.ResourceCustomView,
+    platformIdentifier: PlatformIdentifier.Opencti,
+  },
+  [ServiceDefinitionIdentifier.OpenctiIntegrations]: {
+    newsFeedType: NewsFeedItemType.ResourceIntegration,
     platformIdentifier: PlatformIdentifier.Opencti,
   },
 };

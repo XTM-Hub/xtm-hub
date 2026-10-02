@@ -243,7 +243,6 @@ export type CreateDeploymentRequestInput = {
   products: Array<PlatformIdentifier>;
   region: DeploymentRequestPlatformRegion;
   source: DeploymentRequestSource;
-  type: DeploymentRequestDeploymentType;
   use_cases_by_product: InputMaybe<Array<ProductUseCaseInput>>;
 };
 
@@ -264,10 +263,14 @@ export type CreateEpicInput = {
   active: InputMaybe<Scalars['Boolean']['input']>;
   description: Scalars['String']['input'];
   edition_type: EditionType;
+  expected_value: Scalars['String']['input'];
   illustration_document: InputMaybe<Scalars['Upload']['input']>;
   is_integration: InputMaybe<Scalars['Boolean']['input']>;
-  product: FiligranProduct;
+  problem_to_solve: Scalars['String']['input'];
+  products: Array<FiligranProduct>;
+  proposed_solution: Scalars['String']['input'];
   short_description: Scalars['String']['input'];
+  slack_link: InputMaybe<Scalars['String']['input']>;
   timeline: Timeline;
   title: Scalars['String']['input'];
 };
@@ -410,12 +413,6 @@ export type DefaultDocument = Document & Node & {
   use_cases: Maybe<Array<UseCase>>;
 };
 
-export type DeployedPlatform = {
-  __typename?: 'DeployedPlatform';
-  platformIdentifier: PlatformIdentifier;
-  serviceInstanceId: Scalars['ServiceInstanceId']['output'];
-};
-
 export type DeployedResource = {
   __typename?: 'DeployedResource';
   deployedAt: Scalars['Date']['output'];
@@ -428,7 +425,6 @@ export type DeploymentAvailability = {
   availableCount: Scalars['Int']['output'];
   capacity: Scalars['Int']['output'];
   id: Scalars['ID']['output'];
-  platform_identifier: Maybe<PlatformIdentifier>;
   region: DeploymentRequestPlatformRegion;
 };
 
@@ -754,14 +750,16 @@ export type Epic = Node & {
   document_id: Maybe<Scalars['DocumentId']['output']>;
   edition_type: EditionType;
   epic_type: EpicType;
+  expected_value: Scalars['String']['output'];
   id: Scalars['ID']['output'];
-  product: FiligranProduct;
+  problem_to_solve: Scalars['String']['output'];
+  products: Array<FiligranProduct>;
+  proposed_solution: Scalars['String']['output'];
   short_description: Scalars['String']['output'];
+  slack_link: Maybe<Scalars['String']['output']>;
   timeline: Timeline;
   title: Scalars['String']['output'];
   updated_at: Maybe<Scalars['Date']['output']>;
-  updater_id: Maybe<Scalars['String']['output']>;
-  uploader_id: Scalars['String']['output'];
 };
 
 export type EpicConnection = {
@@ -813,7 +811,7 @@ export type FacetBucket = {
 export enum FeatureFlag {
   DecouplingConnectors = 'DECOUPLING_CONNECTORS',
   Dummy = 'DUMMY',
-  XtmPlatformTrial = 'XTM_PLATFORM_TRIAL'
+  TrialInvite = 'TRIAL_INVITE'
 }
 
 export enum FiligranProduct {
@@ -848,6 +846,18 @@ export type GenericServiceCapability = Node & {
   id: Scalars['ID']['output'];
   name: Maybe<Scalars['String']['output']>;
 };
+
+export type GiveDeploymentFeedbackInput = {
+  answer: HasRepliedSatisfaction;
+  deploymentRequestId: Scalars['DeploymentRequestId']['input'];
+  justification: InputMaybe<Scalars['String']['input']>;
+};
+
+export enum HasRepliedSatisfaction {
+  Closed = 'closed',
+  No = 'no',
+  Yes = 'yes'
+}
 
 export type Integration = {
   active: Scalars['Boolean']['output'];
@@ -1059,6 +1069,7 @@ export type Mutation = {
   editUserService: Maybe<UserService>;
   frontendErrorLog: Maybe<Scalars['Boolean']['output']>;
   generateManifest: Success;
+  giveDeploymentFeedback: Success;
   incrementShareNumberDocument: Document;
   ingestManifestFragments: Success;
   login: Maybe<User>;
@@ -1368,6 +1379,11 @@ export type MutationGenerateManifestArgs = {
 };
 
 
+export type MutationGiveDeploymentFeedbackArgs = {
+  input: GiveDeploymentFeedbackInput;
+};
+
+
 export type MutationIncrementShareNumberDocumentArgs = {
   documentId: Scalars['DocumentId']['input'];
 };
@@ -1570,6 +1586,7 @@ export enum NewsFeedItemMetadataKey {
 export enum NewsFeedItemType {
   ResourceCustomDashboard = 'RESOURCE_CUSTOM_DASHBOARD',
   ResourceCustomView = 'RESOURCE_CUSTOM_VIEW',
+  ResourceIntegration = 'RESOURCE_INTEGRATION',
   ResourcePlaybook = 'RESOURCE_PLAYBOOK'
 }
 
@@ -1802,6 +1819,7 @@ export enum PlatformRegistrationStatus {
 
 export type PlatformTrialStatus = {
   __typename?: 'PlatformTrialStatus';
+  deploymentRequestId: Maybe<Scalars['DeploymentRequestId']['output']>;
   end_date: Maybe<Scalars['Date']['output']>;
   hub_status: Maybe<DeploymentRequestHubStatus>;
   isBlacklisted: Scalars['Boolean']['output'];
@@ -1835,6 +1853,13 @@ export type ProvisionedNewsFeedItem = Node & {
   tags: Array<Scalars['String']['output']>;
   title: Scalars['String']['output'];
   type: NewsFeedItemType;
+};
+
+export type PublicDocumentSlugInfo = {
+  __typename?: 'PublicDocumentSlugInfo';
+  created_at: Scalars['Date']['output'];
+  slug: Maybe<Scalars['String']['output']>;
+  updated_at: Maybe<Scalars['Date']['output']>;
 };
 
 export type Query = {
@@ -1872,6 +1897,7 @@ export type Query = {
   platformAssociatedOrganization: Maybe<Organization>;
   platformTrialStatus: PlatformTrialStatus;
   publicDocumentBySlug: Maybe<Document>;
+  publicDocumentSlugsByServiceSlug: Array<PublicDocumentSlugInfo>;
   publicDocuments: DocumentConnection;
   publicDocumentsByServiceSlug: Array<Document>;
   registeredPlatform: Maybe<RegisteredPlatform>;
@@ -1888,7 +1914,6 @@ export type Query = {
   solutionCategories: Maybe<SolutionCategoryConnection>;
   subscriptionById: Maybe<SubscriptionModel>;
   subscriptions: SubscriptionConnection;
-  trialDeployments: TrialsDeployments;
   updateOpenCTIManifest: Success;
   useCases: Maybe<UseCaseConnection>;
   userOrganizations: Array<Organization>;
@@ -1936,11 +1961,6 @@ export type QueryDeploymentRequestsArgs = {
   after: InputMaybe<Scalars['ID']['input']>;
   filters: InputMaybe<Array<DeploymentRequestFilter>>;
   first: Scalars['Int']['input'];
-};
-
-
-export type QueryDeploymentRequestsAvailableArgs = {
-  platformIdentifier: InputMaybe<PlatformIdentifier>;
 };
 
 
@@ -2072,6 +2092,11 @@ export type QueryPublicDocumentBySlugArgs = {
 };
 
 
+export type QueryPublicDocumentSlugsByServiceSlugArgs = {
+  serviceInstanceSlug: Scalars['String']['input'];
+};
+
+
 export type QueryPublicDocumentsArgs = {
   after: InputMaybe<Scalars['ID']['input']>;
   first: Scalars['Int']['input'];
@@ -2163,11 +2188,6 @@ export type QuerySubscriptionsArgs = {
   orderBy: SubscriptionOrdering;
   orderMode: OrderingMode;
   searchTerm: InputMaybe<Scalars['String']['input']>;
-};
-
-
-export type QueryTrialDeploymentsArgs = {
-  input: TrialDeploymentsInput;
 };
 
 
@@ -2441,7 +2461,6 @@ export enum ServiceDefinitionIdentifier {
   OpenctiIntegrations = 'opencti_integrations',
   OpenctiPlaybooks = 'opencti_playbooks',
   OpenctiRegistration = 'opencti_registration',
-  Vault = 'vault',
   XtmPlatformBundle = 'xtm_platform_bundle',
   XtmPlatformRoadmap = 'xtm_platform_roadmap',
   XtmoneRegistration = 'xtmone_registration'
@@ -2803,18 +2822,6 @@ export enum Timeline {
   UnderConsideration = 'under_consideration'
 }
 
-export type TrialDeploymentsInput = {
-  organizationId: Scalars['OrganizationId']['input'];
-  platformIdentifiers: InputMaybe<Array<PlatformIdentifier>>;
-};
-
-export type TrialsDeployments = {
-  __typename?: 'TrialsDeployments';
-  availableTrials: Array<PlatformIdentifier>;
-  deployed: Array<DeployedPlatform>;
-  isBlacklisted: Scalars['Boolean']['output'];
-};
-
 export type UnregisterPlatformInput = {
   identifier: PlatformIdentifier;
   platformId: Scalars['String']['input'];
@@ -2840,7 +2847,6 @@ export type UpdateCompetitorInput = {
 
 export type UpdateDeploymentQuotaCapacityInput = {
   newCapacity: Scalars['Int']['input'];
-  platformIdentifier: InputMaybe<PlatformIdentifier>;
   region: DeploymentRequestPlatformRegion;
 };
 
@@ -2872,10 +2878,14 @@ export type UpdateEpicInput = {
   active: InputMaybe<Scalars['Boolean']['input']>;
   description: InputMaybe<Scalars['String']['input']>;
   edition_type: EditionType;
+  expected_value: InputMaybe<Scalars['String']['input']>;
   illustration_document: InputMaybe<Scalars['Upload']['input']>;
   is_integration: InputMaybe<Scalars['Boolean']['input']>;
-  product: InputMaybe<FiligranProduct>;
+  problem_to_solve: InputMaybe<Scalars['String']['input']>;
+  products: InputMaybe<Array<FiligranProduct>>;
+  proposed_solution: InputMaybe<Scalars['String']['input']>;
   short_description: InputMaybe<Scalars['String']['input']>;
+  slack_link: InputMaybe<Scalars['String']['input']>;
   timeline: InputMaybe<Timeline>;
   title: InputMaybe<Scalars['String']['input']>;
 };
@@ -2951,7 +2961,9 @@ export type User = Node & {
   disabled: Maybe<Scalars['Boolean']['output']>;
   email: Scalars['String']['output'];
   first_name: Maybe<Scalars['String']['output']>;
+  has_replied_satisfaction: Maybe<HasRepliedSatisfaction>;
   id: Scalars['ID']['output'];
+  invitation_date: Maybe<Scalars['Date']['output']>;
   last_login: Maybe<Scalars['Date']['output']>;
   last_name: Maybe<Scalars['String']['output']>;
   organization_capabilities: Maybe<Array<OrganizationCapabilities>>;
@@ -2962,7 +2974,14 @@ export type User = Node & {
   selected_language: Maybe<Scalars['String']['output']>;
   selected_org_capabilities: Maybe<Array<OrganizationCapability>>;
   selected_organization_id: Maybe<Scalars['OrganizationId']['output']>;
+  status: Maybe<UserAccountStatus>;
 };
+
+export enum UserAccountStatus {
+  Expired = 'expired',
+  Invited = 'invited',
+  Waiting = 'waiting'
+}
 
 export type UserConnection = {
   __typename?: 'UserConnection';
@@ -2982,6 +3001,7 @@ export enum UserOrdering {
   Disabled = 'disabled',
   Email = 'email',
   FirstName = 'first_name',
+  InvitationDate = 'invitation_date',
   LastLogin = 'last_login',
   LastName = 'last_name'
 }
@@ -3192,7 +3212,7 @@ export type TrialsProductFragment = { __typename?: 'DeploymentRequest', id: stri
 
 export type TrialsRowFragment = { __typename?: 'DeploymentRequest', id: string, service_instance_id: any, ordering: number, hub_status: DeploymentRequestHubStatus, requester_email: string | null, organization_name: string | null, organization_requester_id: any, region: DeploymentRequestPlatformRegion, request_date: any, start_date: any | null, end_date: any | null, cancellation_date: any | null, cancellation_user_email: string | null, cancellation_reason: string | null, platform_identifier: PlatformIdentifier | null, platform_id: string | null, platform_url: string | null, url: string | null, children: Array<{ __typename?: 'DeploymentRequest', id: string, platform_identifier: PlatformIdentifier | null, hub_status: DeploymentRequestHubStatus, platform_id: string | null, platform_url: string | null, url: string | null }> | null };
 
-export type TrialsQuotaFragment = { __typename?: 'DeploymentAvailability', id: string, region: DeploymentRequestPlatformRegion, availableCount: number, capacity: number, platform_identifier: PlatformIdentifier | null };
+export type TrialsQuotaFragment = { __typename?: 'DeploymentAvailability', id: string, region: DeploymentRequestPlatformRegion, availableCount: number, capacity: number };
 
 export type TrialsListQueryVariables = Exact<{
   count: Scalars['Int']['input'];
@@ -3206,12 +3226,10 @@ export type TrialsListQueryVariables = Exact<{
 
 export type TrialsListQuery = { __typename?: 'Query', deploymentRequestsList: { __typename?: 'DeploymentRequestConnection', totalCount: number, edges: Array<{ __typename?: 'DeploymentRequestEdge', node: { __typename?: 'DeploymentRequest', id: string, service_instance_id: any, ordering: number, hub_status: DeploymentRequestHubStatus, requester_email: string | null, organization_name: string | null, organization_requester_id: any, region: DeploymentRequestPlatformRegion, request_date: any, start_date: any | null, end_date: any | null, cancellation_date: any | null, cancellation_user_email: string | null, cancellation_reason: string | null, platform_identifier: PlatformIdentifier | null, platform_id: string | null, platform_url: string | null, url: string | null, children: Array<{ __typename?: 'DeploymentRequest', id: string, platform_identifier: PlatformIdentifier | null, hub_status: DeploymentRequestHubStatus, platform_id: string | null, platform_url: string | null, url: string | null }> | null } }> } };
 
-export type TrialsQuotasQueryVariables = Exact<{
-  platformIdentifier: InputMaybe<PlatformIdentifier>;
-}>;
+export type TrialsQuotasQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type TrialsQuotasQuery = { __typename?: 'Query', deploymentRequestsAvailable: Array<{ __typename?: 'DeploymentAvailability', id: string, region: DeploymentRequestPlatformRegion, availableCount: number, capacity: number, platform_identifier: PlatformIdentifier | null }> };
+export type TrialsQuotasQuery = { __typename?: 'Query', deploymentRequestsAvailable: Array<{ __typename?: 'DeploymentAvailability', id: string, region: DeploymentRequestPlatformRegion, availableCount: number, capacity: number }> };
 
 export type XtmPlatformBundleProductFragment = { __typename?: 'DeploymentRequest', platform_identifier: PlatformIdentifier | null, service_instance_id: any, url: string | null, service_instance: { __typename?: 'ServiceInstance', name: string } | null, registered_platform: { __typename?: 'RegisteredPlatform', status: PlatformConfigurationStatus | null, last_connectivity_check: any | null, url: string, myGroups: Array<{ __typename?: 'ServiceGroup', id: string, name: ServiceGroupName }> | null } | null };
 
@@ -3328,7 +3346,7 @@ export type PublicDocumentsByServiceSlugSitemapQueryQueryVariables = Exact<{
 }>;
 
 
-export type PublicDocumentsByServiceSlugSitemapQueryQuery = { __typename?: 'Query', publicDocumentsByServiceSlug: Array<{ __typename?: 'Connector', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'CsvFeed', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'CustomDashboard', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'CustomView', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'DefaultDocument', slug: string | null, created_at: any, updated_at: any | null } | { __typename?: 'IntegrationHack', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'OpenAEVScenario', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'OpenCTIPlaybook', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'RssFeed', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'Stream', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'TaxiiFeed', slug: string, created_at: any, updated_at: any | null } | { __typename?: 'ThirdPartyIntegration', slug: string, created_at: any, updated_at: any | null }> };
+export type PublicDocumentsByServiceSlugSitemapQueryQuery = { __typename?: 'Query', publicDocumentSlugsByServiceSlug: Array<{ __typename?: 'PublicDocumentSlugInfo', slug: string | null, created_at: any, updated_at: any | null }> };
 
 export type FeatureVoteMutationVariables = Exact<{
   feature_id: Scalars['VotableFeatureId']['input'];
@@ -3519,19 +3537,19 @@ export type CreateDeploymentRequestMutationVariables = Exact<{
 
 export type CreateDeploymentRequestMutation = { __typename?: 'Mutation', createDeploymentRequest: { __typename?: 'DeploymentRequest', id: string, service_instance_id: any } };
 
+export type GiveDeploymentFeedbackMutationVariables = Exact<{
+  input: GiveDeploymentFeedbackInput;
+}>;
+
+
+export type GiveDeploymentFeedbackMutation = { __typename?: 'Mutation', giveDeploymentFeedback: { __typename?: 'Success', success: boolean } };
+
 export type PlatformTrialStatusQueryVariables = Exact<{
   organizationId: Scalars['OrganizationId']['input'];
 }>;
 
 
-export type PlatformTrialStatusQuery = { __typename?: 'Query', platformTrialStatus: { __typename?: 'PlatformTrialStatus', isBlacklisted: boolean, hub_status: DeploymentRequestHubStatus | null, end_date: any | null, ongoingStandaloneTrials: Array<PlatformIdentifier> } };
-
-export type TrialDeploymentsEligibilityQueryVariables = Exact<{
-  input: TrialDeploymentsInput;
-}>;
-
-
-export type TrialDeploymentsEligibilityQuery = { __typename?: 'Query', trialDeployments: { __typename?: 'TrialsDeployments', availableTrials: Array<PlatformIdentifier>, isBlacklisted: boolean } };
+export type PlatformTrialStatusQuery = { __typename?: 'Query', platformTrialStatus: { __typename?: 'PlatformTrialStatus', deploymentRequestId: any | null, isBlacklisted: boolean, hub_status: DeploymentRequestHubStatus | null, end_date: any | null, ongoingStandaloneTrials: Array<PlatformIdentifier> } };
 
 export type UseCaseAddMutationVariables = Exact<{
   input: AddUseCaseInput;
@@ -3581,6 +3599,20 @@ export type ChangeSelectedOrganizationMutationVariables = Exact<{
 
 
 export type ChangeSelectedOrganizationMutation = { __typename?: 'Mutation', changeSelectedOrganization: { __typename?: 'User', id: string, selected_organization_id: any | null, selected_org_capabilities: Array<OrganizationCapability> | null } | null };
+
+export type UserResendInviteMutationVariables = Exact<{
+  input: AddUserInput;
+}>;
+
+
+export type UserResendInviteMutation = { __typename?: 'Mutation', addUser: { __typename?: 'User', id: string } | null };
+
+export type UserAdminResendInviteMutationVariables = Exact<{
+  input: AdminAddUserInput;
+}>;
+
+
+export type UserAdminResendInviteMutation = { __typename?: 'Mutation', adminAddUser: { __typename?: 'User', id: string } | null };
 
 export type UsersQueryVariables = Exact<{
   first: Scalars['Int']['input'];
@@ -3716,7 +3748,6 @@ export const TrialsQuotaFragmentDoc = `
   region
   availableCount
   capacity
-  platform_identifier
 }
     `;
 export const XtmPlatformBundleProductFragmentDoc = `
@@ -4114,8 +4145,8 @@ useInfiniteTrialsListQuery.getRootKey = () => ['TrialsList.infinite'] as const;
 useTrialsListQuery.fetcher = (client: GraphQLClient, variables: TrialsListQueryVariables, headers?: RequestInit['headers']) => fetcher<TrialsListQuery, TrialsListQueryVariables>(client, TrialsListDocument, variables, headers);
 
 export const TrialsQuotasDocument = `
-    query TrialsQuotas($platformIdentifier: PlatformIdentifier) {
-  deploymentRequestsAvailable(platformIdentifier: $platformIdentifier) {
+    query TrialsQuotas {
+  deploymentRequestsAvailable {
     ...TrialsQuota
   }
 }
@@ -4578,7 +4609,7 @@ usePublicDocumentsByServiceSlugQueryQuery.fetcher = (client: GraphQLClient, vari
 
 export const PublicDocumentsByServiceSlugSitemapQueryDocument = `
     query PublicDocumentsByServiceSlugSitemapQuery($serviceInstanceSlug: String!) {
-  publicDocumentsByServiceSlug(serviceInstanceSlug: $serviceInstanceSlug) {
+  publicDocumentSlugsByServiceSlug(serviceInstanceSlug: $serviceInstanceSlug) {
     slug
     created_at
     updated_at
@@ -5820,9 +5851,39 @@ useCreateDeploymentRequestMutation.getKey = () => ['CreateDeploymentRequest'];
 useCreateDeploymentRequestMutation.getRootKey = () => ['CreateDeploymentRequest'] as const;
 useCreateDeploymentRequestMutation.fetcher = (client: GraphQLClient, variables: CreateDeploymentRequestMutationVariables, headers?: RequestInit['headers']) => fetcher<CreateDeploymentRequestMutation, CreateDeploymentRequestMutationVariables>(client, CreateDeploymentRequestDocument, variables, headers);
 
+export const GiveDeploymentFeedbackDocument = `
+    mutation GiveDeploymentFeedback($input: GiveDeploymentFeedbackInput!) {
+  giveDeploymentFeedback(input: $input) {
+    success
+  }
+}
+    `;
+
+export const useGiveDeploymentFeedbackMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<GiveDeploymentFeedbackMutation, TError, GiveDeploymentFeedbackMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<GiveDeploymentFeedbackMutation, TError, GiveDeploymentFeedbackMutationVariables, TContext>(
+      {
+    mutationKey: ['GiveDeploymentFeedback'],
+    mutationFn: (variables?: GiveDeploymentFeedbackMutationVariables) => fetcher<GiveDeploymentFeedbackMutation, GiveDeploymentFeedbackMutationVariables>(client, GiveDeploymentFeedbackDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useGiveDeploymentFeedbackMutation.getKey = () => ['GiveDeploymentFeedback'];
+useGiveDeploymentFeedbackMutation.getRootKey = () => ['GiveDeploymentFeedback'] as const;
+useGiveDeploymentFeedbackMutation.fetcher = (client: GraphQLClient, variables: GiveDeploymentFeedbackMutationVariables, headers?: RequestInit['headers']) => fetcher<GiveDeploymentFeedbackMutation, GiveDeploymentFeedbackMutationVariables>(client, GiveDeploymentFeedbackDocument, variables, headers);
+
 export const PlatformTrialStatusDocument = `
     query PlatformTrialStatus($organizationId: OrganizationId!) {
   platformTrialStatus(organizationId: $organizationId) {
+    deploymentRequestId
     isBlacklisted
     hub_status
     end_date
@@ -5875,60 +5936,6 @@ export const useInfinitePlatformTrialStatusQuery = <
 useInfinitePlatformTrialStatusQuery.getKey = (variables: PlatformTrialStatusQueryVariables) => ['PlatformTrialStatus.infinite', variables];
 useInfinitePlatformTrialStatusQuery.getRootKey = () => ['PlatformTrialStatus.infinite'] as const;
 usePlatformTrialStatusQuery.fetcher = (client: GraphQLClient, variables: PlatformTrialStatusQueryVariables, headers?: RequestInit['headers']) => fetcher<PlatformTrialStatusQuery, PlatformTrialStatusQueryVariables>(client, PlatformTrialStatusDocument, variables, headers);
-
-export const TrialDeploymentsEligibilityDocument = `
-    query TrialDeploymentsEligibility($input: TrialDeploymentsInput!) {
-  trialDeployments(input: $input) {
-    availableTrials
-    isBlacklisted
-  }
-}
-    `;
-
-export const useTrialDeploymentsEligibilityQuery = <
-      TData = TrialDeploymentsEligibilityQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: TrialDeploymentsEligibilityQueryVariables,
-      options?: Omit<UseQueryOptions<TrialDeploymentsEligibilityQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<TrialDeploymentsEligibilityQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<TrialDeploymentsEligibilityQuery, TError, TData>(
-      {
-    queryKey: ['TrialDeploymentsEligibility', variables],
-    queryFn: fetcher<TrialDeploymentsEligibilityQuery, TrialDeploymentsEligibilityQueryVariables>(client, TrialDeploymentsEligibilityDocument, variables, headers),
-    ...options
-  }
-    )};
-
-useTrialDeploymentsEligibilityQuery.getKey = (variables: TrialDeploymentsEligibilityQueryVariables) => ['TrialDeploymentsEligibility', variables];
-useTrialDeploymentsEligibilityQuery.getRootKey = () => ['TrialDeploymentsEligibility'] as const;
-export const useInfiniteTrialDeploymentsEligibilityQuery = <
-      TData = InfiniteData<TrialDeploymentsEligibilityQuery>,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: TrialDeploymentsEligibilityQueryVariables,
-      options: Omit<UseInfiniteQueryOptions<TrialDeploymentsEligibilityQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<TrialDeploymentsEligibilityQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useInfiniteQuery<TrialDeploymentsEligibilityQuery, TError, TData>(
-      (() => {
-    const { queryKey: optionsQueryKey, ...restOptions } = options;
-    return {
-      queryKey: optionsQueryKey ?? ['TrialDeploymentsEligibility.infinite', variables],
-      queryFn: (metaData) => fetcher<TrialDeploymentsEligibilityQuery, TrialDeploymentsEligibilityQueryVariables>(client, TrialDeploymentsEligibilityDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
-      ...restOptions
-    }
-  })()
-    )};
-
-useInfiniteTrialDeploymentsEligibilityQuery.getKey = (variables: TrialDeploymentsEligibilityQueryVariables) => ['TrialDeploymentsEligibility.infinite', variables];
-useInfiniteTrialDeploymentsEligibilityQuery.getRootKey = () => ['TrialDeploymentsEligibility.infinite'] as const;
-useTrialDeploymentsEligibilityQuery.fetcher = (client: GraphQLClient, variables: TrialDeploymentsEligibilityQueryVariables, headers?: RequestInit['headers']) => fetcher<TrialDeploymentsEligibilityQuery, TrialDeploymentsEligibilityQueryVariables>(client, TrialDeploymentsEligibilityDocument, variables, headers);
 
 export const UseCaseAddDocument = `
     mutation UseCaseAdd($input: AddUseCaseInput!) {
@@ -6143,6 +6150,64 @@ export const useChangeSelectedOrganizationMutation = <
 useChangeSelectedOrganizationMutation.getKey = () => ['ChangeSelectedOrganization'];
 useChangeSelectedOrganizationMutation.getRootKey = () => ['ChangeSelectedOrganization'] as const;
 useChangeSelectedOrganizationMutation.fetcher = (client: GraphQLClient, variables: ChangeSelectedOrganizationMutationVariables, headers?: RequestInit['headers']) => fetcher<ChangeSelectedOrganizationMutation, ChangeSelectedOrganizationMutationVariables>(client, ChangeSelectedOrganizationDocument, variables, headers);
+
+export const UserResendInviteDocument = `
+    mutation UserResendInvite($input: AddUserInput!) {
+  addUser(input: $input) {
+    id
+  }
+}
+    `;
+
+export const useUserResendInviteMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UserResendInviteMutation, TError, UserResendInviteMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UserResendInviteMutation, TError, UserResendInviteMutationVariables, TContext>(
+      {
+    mutationKey: ['UserResendInvite'],
+    mutationFn: (variables?: UserResendInviteMutationVariables) => fetcher<UserResendInviteMutation, UserResendInviteMutationVariables>(client, UserResendInviteDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUserResendInviteMutation.getKey = () => ['UserResendInvite'];
+useUserResendInviteMutation.getRootKey = () => ['UserResendInvite'] as const;
+useUserResendInviteMutation.fetcher = (client: GraphQLClient, variables: UserResendInviteMutationVariables, headers?: RequestInit['headers']) => fetcher<UserResendInviteMutation, UserResendInviteMutationVariables>(client, UserResendInviteDocument, variables, headers);
+
+export const UserAdminResendInviteDocument = `
+    mutation UserAdminResendInvite($input: AdminAddUserInput!) {
+  adminAddUser(input: $input) {
+    id
+  }
+}
+    `;
+
+export const useUserAdminResendInviteMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UserAdminResendInviteMutation, TError, UserAdminResendInviteMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UserAdminResendInviteMutation, TError, UserAdminResendInviteMutationVariables, TContext>(
+      {
+    mutationKey: ['UserAdminResendInvite'],
+    mutationFn: (variables?: UserAdminResendInviteMutationVariables) => fetcher<UserAdminResendInviteMutation, UserAdminResendInviteMutationVariables>(client, UserAdminResendInviteDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUserAdminResendInviteMutation.getKey = () => ['UserAdminResendInvite'];
+useUserAdminResendInviteMutation.getRootKey = () => ['UserAdminResendInvite'] as const;
+useUserAdminResendInviteMutation.fetcher = (client: GraphQLClient, variables: UserAdminResendInviteMutationVariables, headers?: RequestInit['headers']) => fetcher<UserAdminResendInviteMutation, UserAdminResendInviteMutationVariables>(client, UserAdminResendInviteDocument, variables, headers);
 
 export const UsersDocument = `
     query Users($first: Int!, $orderBy: UserOrdering!, $orderMode: OrderingMode!, $filters: [Filter!]) {

@@ -5,6 +5,7 @@ import {
   // eslint-disable-next-line no-restricted-imports
   contextBypassUser,
   requestContextAdminSecondOrga,
+  requestContextSimpleUserFiligran2,
   SERVICES,
   TEST_ORGANIZATIONS,
 } from '../../tests/tests.const';
@@ -14,11 +15,11 @@ import {
   ServiceRestriction,
 } from '../__generated__/resolvers-types';
 import { requestContext } from '../context/request.context';
+import { OrganizationDomain } from '../modules/organization-management/organization/organization.domain';
 import { AuthHelper } from '../modules/security-management/capability/auth.helper';
 import { SubscriptionDomain } from '../modules/subscription/subscription.domain';
 import { UserServiceDomain } from '../modules/user-service/user-service.domain';
 import { ErrorCode } from '../utils/error/error.code';
-import * as access from './access';
 import { assertUserHasCapaOnService, securityGuard } from './guard';
 
 describe('security Guard', () => {
@@ -141,13 +142,81 @@ describe('security Guard', () => {
     });
   });
 
+  describe('assertEmailMatchesOrganization', () => {
+    let loadOrganizationsFromEmailSpy: MockInstance;
+
+    beforeEach(() => {
+      loadOrganizationsFromEmailSpy = vi.spyOn(
+        OrganizationDomain,
+        'loadOrganizationsFromEmail'
+      );
+    });
+
+    it('should not throw when user has bypass capability, even on a mismatched domain', async () => {
+      loadOrganizationsFromEmailSpy.mockResolvedValue([
+        { id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID },
+      ]);
+
+      await expect(
+        securityGuard.assertEmailMatchesOrganization(
+          contextBypassUser.user,
+          'user@filigran.io',
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+        )
+      ).resolves.not.toThrow();
+      expect(loadOrganizationsFromEmailSpy).not.toHaveBeenCalled();
+    });
+
+    it('should not throw when the email domain matches the target organization', async () => {
+      loadOrganizationsFromEmailSpy.mockResolvedValue([
+        { id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID },
+      ]);
+
+      await expect(
+        securityGuard.assertEmailMatchesOrganization(
+          requestContextAdminSecondOrga.user,
+          'user@second-orga.com',
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+        )
+      ).resolves.not.toThrow();
+    });
+
+    it('should throw EmailOutsideOrganizationError when the email domain does not match the target organization', async () => {
+      loadOrganizationsFromEmailSpy.mockResolvedValue([
+        { id: TEST_ORGANIZATIONS.FILIGRAN.ID },
+      ]);
+
+      const call = securityGuard.assertEmailMatchesOrganization(
+        requestContextAdminSecondOrga.user,
+        'user@filigran.io',
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+      );
+
+      await expect(call).rejects.toThrow(
+        ErrorCode.EmailOutsideOrganizationError
+      );
+    });
+
+    it('should throw EmailOutsideOrganizationError when no organization matches the email domain', async () => {
+      loadOrganizationsFromEmailSpy.mockResolvedValue([]);
+
+      const call = securityGuard.assertEmailMatchesOrganization(
+        requestContextAdminSecondOrga.user,
+        'user@unknown-domain.com',
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+      );
+
+      await expect(call).rejects.toThrow(
+        ErrorCode.EmailOutsideOrganizationError
+      );
+    });
+  });
+
   describe('assertUserHasCapaOnService', () => {
-    let isUserGrantedSpy: MockInstance;
     let loadSubscriptionBySpy: MockInstance;
     let loadUserServiceWithCapabilitiesBySpy: MockInstance;
 
     beforeEach(() => {
-      isUserGrantedSpy = vi.spyOn(access, 'isUserGranted');
       loadSubscriptionBySpy = vi.spyOn(
         SubscriptionDomain,
         'loadSubscriptionBy'
@@ -157,7 +226,6 @@ describe('security Guard', () => {
         'loadUserServiceWithCapabilitiesBy'
       );
 
-      isUserGrantedSpy.mockReturnValue(false);
       loadSubscriptionBySpy.mockResolvedValue({ id: 'subscription-id' });
       loadUserServiceWithCapabilitiesBySpy.mockResolvedValue([
         {
@@ -166,10 +234,7 @@ describe('security Guard', () => {
       ]);
     });
 
-    it('should bypass checks when user is granted', async () => {
-      // Given
-      isUserGrantedSpy.mockReturnValue(true);
-
+    it('should bypass checks when user is a platform admin', async () => {
       // When
       await assertUserHasCapaOnService(
         contextBypassUser.user,
@@ -180,6 +245,19 @@ describe('security Guard', () => {
       // Then
       expect(loadSubscriptionBySpy).not.toHaveBeenCalled();
       expect(loadUserServiceWithCapabilitiesBySpy).not.toHaveBeenCalled();
+    });
+
+    it('should throw MissingCapabilityOnService when a logged-in user has no capability on the service', async () => {
+      // When
+      const call = assertUserHasCapaOnService(
+        requestContextSimpleUserFiligran2.user,
+        SERVICES.INSTANCES.EPIC.ID,
+        [ServiceRestriction.Upsert]
+      );
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.MissingCapabilityOnService);
+      expect(loadSubscriptionBySpy).toHaveBeenCalled();
     });
 
     it('should allow access when one required capability is present', async () => {

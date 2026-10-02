@@ -13,6 +13,7 @@ import portalConfig from '../../config';
 import { requestContext } from '../../context/request.context';
 import Epic, { EpicId } from '../../model/kanel/public/Epic';
 import User from '../../model/kanel/public/User';
+import { isUserAdminPlatform } from '../../security/access';
 import { assertUserHasCapaOnService } from '../../security/guard';
 import { buildServiceLink, sendMail } from '../../server/mail-service';
 import { MinIOClient } from '../../thirdparty/minio/client';
@@ -22,12 +23,13 @@ import {
   UnknownErrorCode,
 } from '../../utils/error/error.code';
 import { isRoadmapReminderDay } from '../../utils/roadmap-reminder.util';
-import { stripNulls } from '../../utils/typescript';
+import { applyUpdate, stripNulls } from '../../utils/typescript';
 import {
   DocumentUploadsHelper,
   Upload,
 } from '../document/document.uploads.helper';
 import { DocumentDomain } from '../document/domain/document.domain';
+import { UserServiceCapabilityHelper } from '../security-management/user-service-capability/user-service-capability.helper';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { EpicDomain } from './epic.domain';
 
@@ -68,9 +70,38 @@ const addImage = async (user: User, uploads: Upload[]) => {
 
 const PLATFORM_ROADMAP_SLUG = 'xtm-platform-roadmap';
 
+const normalizeSlackLink = <T extends { slack_link?: string | null }>(
+  input: T
+): T => (input.slack_link === '' ? { ...input, slack_link: null } : input);
+
+// Draft epics are only visible to platform admins and to users who can edit the roadmap.
+const canViewInactiveEpics = async (): Promise<boolean> => {
+  const user = requestContext.get()?.user;
+  if (!user) {
+    return false;
+  }
+  if (isUserAdminPlatform(user)) {
+    return true;
+  }
+  const serviceInstance = await ServiceInstanceDomain.loadServiceInstanceBy({
+    slug: PLATFORM_ROADMAP_SLUG,
+  });
+  if (!serviceInstance) {
+    return false;
+  }
+  const capabilities = await UserServiceCapabilityHelper.loadCapabilities(
+    serviceInstance.id,
+    user.id,
+    user.selected_organization_id
+  );
+  return capabilities?.includes(ServiceRestriction.Upsert) ?? false;
+};
+
 export const EpicApp = {
   loadEpics: async (opts: Partial<QueryEpicsArgs>): Promise<EpicConnection> => {
-    return EpicDomain.loadEpics(opts);
+    return EpicDomain.loadEpics(opts, {
+      includeInactive: await canViewInactiveEpics(),
+    });
   },
   countEpicsPerTimeline: async (): Promise<EpicCountPerTimeline[]> => {
     return EpicDomain.countEpicsPerTimeline();
@@ -96,7 +127,7 @@ export const EpicApp = {
     const createdDocument = await addImage(user, uploads);
 
     const epicData: Partial<Epic> = {
-      ...stripNulls(restInput),
+      ...stripNulls(normalizeSlackLink(restInput)),
       id: uuidv4() as EpicId,
       uploader_id: user.id,
       created_at: new Date(),
@@ -128,7 +159,7 @@ export const EpicApp = {
       oldEpic = loadedOldEpic;
     }
     const epicData: Partial<Epic> = {
-      ...stripNulls(restInput),
+      ...applyUpdate(normalizeSlackLink(restInput), ['slack_link']),
       updater_id: user.id,
       updated_at: new Date(),
       epic_type: is_integration ? EpicType.Integration : EpicType.Other,

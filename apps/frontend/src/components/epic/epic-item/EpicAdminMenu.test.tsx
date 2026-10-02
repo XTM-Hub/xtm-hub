@@ -37,7 +37,7 @@ describe('EpicAdminMenu', () => {
       filterByProduct: vi.fn(),
     });
     useEpicFilterMock.mockReturnValue({
-      setSelectedProduct: vi.fn(),
+      setSelectedProducts: vi.fn(),
     });
   });
 

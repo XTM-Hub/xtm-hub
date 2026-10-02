@@ -17,7 +17,6 @@ import { Input } from '@filigran/ui/servers';
 import { trialsQuotasKeys } from '@graphql/deployment/deployment.keys';
 import {
   DeploymentRequestPlatformRegion,
-  PlatformIdentifier,
   TrialsQuotaFragment,
   useTrialsUpdateDeploymentQuotaCapacityMutation,
 } from '@graphql/generated';
@@ -35,7 +34,6 @@ interface TrialsTabQuotasPlatformUpdateFormProps {
 
 const formSchema = z.object({
   region: z.enum(DeploymentRequestPlatformRegion),
-  platformIdentifier: z.enum(PlatformIdentifier).nullable(),
   newCapacity: z.int().min(0),
 });
 
@@ -49,7 +47,6 @@ export const TrialsTabQuotasPlatformUpdateForm = ({
     resolver: zodResolver(formSchema),
     defaultValues: {
       region: quota.region,
-      platformIdentifier: quota.platform_identifier,
       newCapacity: quota.capacity,
     },
   });

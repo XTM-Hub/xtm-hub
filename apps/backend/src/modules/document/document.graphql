@@ -66,6 +66,12 @@ enum DocumentOrdering {
   name
 }
 
+type PublicDocumentSlugInfo {
+  slug: String
+  created_at: Date!
+  updated_at: Date
+}
+
 """
 /!\ WARNING Do not use this type.
 It exists only to cover cases where we failed to map to a specific Document.
@@ -201,6 +207,9 @@ type Query {
     serviceInstanceId: ServiceInstanceId!
   ): DocumentConnection!
   publicDocumentsByServiceSlug(serviceInstanceSlug: String!): [Document!]!
+  publicDocumentSlugsByServiceSlug(
+    serviceInstanceSlug: String!
+  ): [PublicDocumentSlugInfo!]!
   publicDocumentBySlug(
     serviceInstanceId: ServiceInstanceId!
     slug: String!

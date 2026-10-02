@@ -10,6 +10,7 @@ import { TelemetryEventType } from '../../telemetry/telemetry.types';
 import { UserDomain } from '../user/user-domain/user.domain';
 import { UserOrganizationDomain } from '../user/user-organization/user-organization.domain';
 import { UserOrganizationPendingDomain } from '../user/user-pending/user-organization-pending.domain';
+import { UserProvisioningDomain } from '../user/user-provisioning/user-provisioning.domain';
 import { UserHelper } from '../user/user.helper';
 import { OrganizationApp } from './organization.app';
 import { OrganizationHelper } from './organization.helper';
@@ -135,7 +136,7 @@ describe('organizationApp', () => {
       const organization = await TestHelper.organization.create({
         name: 'singleUserOrganization',
       });
-      const user = await UserHelper.createUserWithPersonalSpace(
+      const user = await UserProvisioningDomain.createUser(
         { email: `delete-orga-${uuidv4()}@delete-orga-test.io` },
         { sendWelcomeEmail: false }
       );
@@ -163,11 +164,11 @@ describe('organizationApp', () => {
       const organization = await TestHelper.organization.create({
         name: 'multiUserOrganization',
       });
-      const firstUser = await UserHelper.createUserWithPersonalSpace(
+      const firstUser = await UserProvisioningDomain.createUser(
         { email: `delete-orga-${uuidv4()}@delete-orga-test.io` },
         { sendWelcomeEmail: false }
       );
-      const secondUser = await UserHelper.createUserWithPersonalSpace(
+      const secondUser = await UserProvisioningDomain.createUser(
         { email: `delete-orga-${uuidv4()}@delete-orga-test.io` },
         { sendWelcomeEmail: false }
       );
@@ -194,11 +195,11 @@ describe('organizationApp', () => {
       const organization = await TestHelper.organization.create({
         name: 'pendingUserOrganization',
       });
-      const linkedUser = await UserHelper.createUserWithPersonalSpace(
+      const linkedUser = await UserProvisioningDomain.createUser(
         { email: `delete-orga-${uuidv4()}@delete-orga-test.io` },
         { sendWelcomeEmail: false }
       );
-      const pendingUser = await UserHelper.createUserWithPersonalSpace(
+      const pendingUser = await UserProvisioningDomain.createUser(
         { email: `delete-orga-${uuidv4()}@delete-orga-test.io` },
         { sendWelcomeEmail: false }
       );
@@ -225,7 +226,7 @@ describe('organizationApp', () => {
       const organization = await TestHelper.organization.create({
         name: 'connectedProductOrganization',
       });
-      const linkedUser = await UserHelper.createUserWithPersonalSpace(
+      const linkedUser = await UserProvisioningDomain.createUser(
         { email: `delete-orga-${uuidv4()}@delete-orga-test.io` },
         { sendWelcomeEmail: false }
       );
@@ -263,12 +264,12 @@ describe('organizationApp', () => {
     });
 
     it('should not apply the guards on a personal space organization', async () => {
-      const user = await UserHelper.createUserWithPersonalSpace(
+      const user = await UserProvisioningDomain.createUser(
         { email: `delete-orga-${uuidv4()}@delete-orga-test.io` },
         { sendWelcomeEmail: false }
       );
       const personalSpaceId = OrganizationHelper.personalSpaceIdOf(user);
-      const pendingUser = await UserHelper.createUserWithPersonalSpace(
+      const pendingUser = await UserProvisioningDomain.createUser(
         { email: `delete-orga-${uuidv4()}@delete-orga-test.io` },
         { sendWelcomeEmail: false }
       );

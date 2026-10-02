@@ -25,15 +25,12 @@ import {
   QueryDeploymentRequestsListArgs,
   RegisteredPlatform,
   ReorderDeploymentRequestInQueueDirection,
-  TrialDeploymentsInput,
 } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
 import { DeploymentRequestId } from '../../model/kanel/public/DeploymentRequest';
 import DeploymentRequestQuota from '../../model/kanel/public/DeploymentRequestQuota';
 import { ErrorCode } from '../../utils/error/error.code';
 import { ErrorType } from '../../utils/error/error.type';
-import { RegistrationApp } from '../registration/registration.app';
-import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { DeploymentApp } from './deployment.app';
 import { DeploymentRequestDomain } from './deployment.domain';
 import resolver from './deployment.resolver';
@@ -46,7 +43,7 @@ describe('deployment resolver', () => {
     beforeEach(() => {
       requestContext.set(requestContextRegistererUserSecondOrga);
     });
-    it('should return the deployment request created', async () => {
+    it('should return the bundle deployment request created', async () => {
       const deployment = await resolver.Mutation.createDeploymentRequest(
         undefined,
         {
@@ -60,9 +57,8 @@ describe('deployment resolver', () => {
                 use_case: DeploymentRequestUseCase.ThreatHunting,
               },
             ],
-            products: [PlatformIdentifier.Opencti],
+            products: [PlatformIdentifier.Xtmone, PlatformIdentifier.Opencti],
             region: DeploymentRequestPlatformRegion.UsEast,
-            type: DeploymentRequestDeploymentType.Trial,
             source: DeploymentRequestSource.Xtmhub,
           },
         }
@@ -71,10 +67,10 @@ describe('deployment resolver', () => {
         activity_sector:
           DeploymentRequestActivitySector.ComputerNetworkSecurity,
         job_title: DeploymentRequestJobTitle.CybersecurityEngineer,
-        use_case: DeploymentRequestUseCase.ThreatHunting,
-        platform_identifier: PlatformIdentifier.Opencti,
+        use_case: null,
+        platform_identifier: null,
         region: DeploymentRequestPlatformRegion.UsEast,
-        type: DeploymentRequestDeploymentType.Trial,
+        type: DeploymentRequestDeploymentType.Bundle,
         hub_status: DeploymentRequestHubStatus.Pending,
         target_state: DeploymentRequestPlatformState.Active,
         actual_state: DeploymentRequestPlatformState.Unprovisioned,
@@ -86,22 +82,16 @@ describe('deployment resolver', () => {
     let initialDeployment: DeploymentRequest;
 
     beforeEach(async () => {
-      requestContext.set(requestContextRegistererUserSecondOrga);
-      initialDeployment = await DeploymentApp.createDeploymentRequest({
-        activity_sector:
-          DeploymentRequestActivitySector.ComputerNetworkSecurity,
-        job_title: DeploymentRequestJobTitle.CybersecurityEngineer,
-        use_cases_by_product: [
+      initialDeployment =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
           {
-            platform_identifier: PlatformIdentifier.Opencti,
-            use_case: DeploymentRequestUseCase.ThreatHunting,
-          },
-        ],
-        products: [PlatformIdentifier.Opencti],
-        region: DeploymentRequestPlatformRegion.UsEast,
-        type: DeploymentRequestDeploymentType.Trial,
-        source: DeploymentRequestSource.Xtmhub,
-      });
+            organization_requester_id:
+              TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            user_requester_id:
+              TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+            actual_state: DeploymentRequestPlatformState.Unprovisioned,
+          }
+        );
       requestContext.set(requestContextSystemUserManageDeployment);
     });
     it('should return the updated deployment request', async () => {
@@ -213,9 +203,7 @@ describe('deployment resolver', () => {
           DeploymentRequestPlatformRegion.UsEast,
         ]);
       const availableDeployments =
-        await resolver.Query.deploymentRequestsAvailable(undefined, {
-          platformIdentifier: PlatformIdentifier.Opencti,
-        });
+        await resolver.Query.deploymentRequestsAvailable();
 
       expect(availableDeployments).toStrictEqual([
         {
@@ -223,28 +211,24 @@ describe('deployment resolver', () => {
           region: DeploymentRequestPlatformRegion.ApacAu,
           availableCount: 10,
           capacity: 10,
-          platform_identifier: PlatformIdentifier.Opencti,
         },
         {
           id: expect.any(String),
           region: DeploymentRequestPlatformRegion.ApacSg,
           availableCount: 10,
           capacity: 10,
-          platform_identifier: PlatformIdentifier.Opencti,
         },
         {
           id: expect.any(String),
           region: DeploymentRequestPlatformRegion.EuWest,
           availableCount: 20,
           capacity: 20,
-          platform_identifier: PlatformIdentifier.Opencti,
         },
         {
           id: expect.any(String),
           region: DeploymentRequestPlatformRegion.UsEast,
           availableCount: 20,
           capacity: 20,
-          platform_identifier: PlatformIdentifier.Opencti,
         },
       ]);
     });
@@ -313,34 +297,6 @@ describe('deployment resolver — unit tests', () => {
         {} as unknown as QueryDeploymentRequestsListArgs
       );
       await expect(call).rejects.toMatchObject({ name: ErrorType.BadRequest });
-    });
-  });
-
-  describe('trial deployments GraphQL query', () => {
-    it('should delegate to DeploymentApp.loadTrialDeployments and return result', async () => {
-      const expected = [] as unknown as Awaited<
-        ReturnType<typeof DeploymentApp.loadTrialDeployments>
-      >;
-      vi.spyOn(DeploymentApp, 'loadTrialDeployments').mockResolvedValue(
-        expected
-      );
-
-      const result = await resolver.Query.trialDeployments(undefined, {
-        input: {} as unknown as TrialDeploymentsInput,
-      });
-
-      expect(result).toEqual(expected);
-    });
-
-    it('should map to NotFound for DeploymentRequestQuotaNotFound error', async () => {
-      vi.spyOn(DeploymentApp, 'loadTrialDeployments').mockRejectedValue(
-        new Error(ErrorCode.DeploymentRequestQuotaNotFound)
-      );
-
-      const call = resolver.Query.trialDeployments(undefined, {
-        input: {} as unknown as TrialDeploymentsInput,
-      });
-      await expect(call).rejects.toMatchObject({ name: ErrorType.NotFound });
     });
   });
 
@@ -494,12 +450,16 @@ describe('deployment resolver — unit tests', () => {
       expect(result).toEqual(children);
     });
 
-    it('registered_platform should load the registered platform for the service instance', async () => {
+    it('registered_platform should load the registered platform for the service instance via the batched loader', async () => {
       const registeredPlatform = {
         id: 'si-1',
       } as unknown as RegisteredPlatform;
       const spy = vi
-        .spyOn(RegistrationApp, 'loadRegisteredPlatform')
+        .spyOn(
+          contextRegistererUserSecondOrga.dataLoaders.registration
+            .registeredPlatformByServiceInstanceLoader,
+          'load'
+        )
         .mockResolvedValue(registeredPlatform);
 
       const result = await resolver.DeploymentRequest!.registered_platform!(
@@ -513,15 +473,21 @@ describe('deployment resolver — unit tests', () => {
       expect(result).toEqual(registeredPlatform);
     });
 
-    it('service_instance should load the service instance for the deployment request', async () => {
+    it('service_instance should load the service instance for the deployment request via the batched loader', async () => {
       const serviceInstance = {
         id: 'si-1',
         name: 'Instance',
       } as unknown as Awaited<
-        ReturnType<typeof ServiceInstanceDomain.loadServiceInstanceBy>
+        ReturnType<
+          typeof contextRegistererUserSecondOrga.dataLoaders.serviceInstance.serviceInstanceByIdLoader.load
+        >
       >;
       const spy = vi
-        .spyOn(ServiceInstanceDomain, 'loadServiceInstanceBy')
+        .spyOn(
+          contextRegistererUserSecondOrga.dataLoaders.serviceInstance
+            .serviceInstanceByIdLoader,
+          'load'
+        )
         .mockResolvedValue(serviceInstance);
 
       const result = await resolver.DeploymentRequest!.service_instance!(
@@ -531,7 +497,7 @@ describe('deployment resolver — unit tests', () => {
         GRAPHQL_RESOLVE_INFO
       );
 
-      expect(spy).toHaveBeenCalledWith({ id: 'si-1' });
+      expect(spy).toHaveBeenCalledWith('si-1');
       expect(result).toMatchObject({ id: 'si-1', name: 'Instance' });
     });
   });

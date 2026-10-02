@@ -17,7 +17,7 @@ test.describe('XTM Platform Roadmap', () => {
       title: 'TitleDraft1',
       short_description: 'Short description for a draft',
       description: 'This is a draft epic',
-      product: 'opencti',
+      products: ['opencti'],
       active: false,
       timeline: 'next',
       uploader_id: ADMIN_USER.ID,
@@ -26,7 +26,7 @@ test.describe('XTM Platform Roadmap', () => {
       title: 'Title2',
       short_description: 'Short description',
       description: 'This is an epic',
-      product: 'opencti',
+      products: ['opencti'],
       active: true,
       timeline: 'next',
       uploader_id: ADMIN_USER.ID,
@@ -35,7 +35,10 @@ test.describe('XTM Platform Roadmap', () => {
       title: 'Title3',
       short_description: 'Short description for another epic',
       description: 'This is a second epic',
-      product: 'openaev',
+      problem_to_solve: 'Problem of the second epic',
+      proposed_solution: 'Solution of the second epic',
+      expected_value: 'Value of the second epic',
+      products: ['openaev'],
       active: true,
       timeline: 'next',
       uploader_id: ADMIN_USER.ID,
@@ -52,31 +55,51 @@ test.describe('XTM Platform Roadmap', () => {
         title: 'Title',
         short_description: 'Short description',
         description: 'This is a test epic',
+        problem_to_solve: 'Users lose track of indicators',
+        proposed_solution: 'Watch them around the clock',
+        expected_value: 'Indicators triaged in time',
         edition_type: 'EE',
       });
 
       await expect(
-        page.getByRole('combobox').filter({ hasText: 'OpenCTI (1)' })
+        page.getByRole('button').filter({ hasText: 'OpenCTI (1)' })
       ).toBeVisible();
 
       await expect(page.getByText(/^Title$/)).toBeVisible();
       await expect(page.getByText(/^EE$/)).toBeVisible();
+
+      const detail = await xtmPlatformRoadmapPage.openEpicDetail('Title');
+      await expect(detail.getByText('Short description')).toBeVisible();
+      await expect(
+        detail.getByRole('heading', { level: 3, name: 'Problem to Solve' })
+      ).toBeVisible();
+      await expect(
+        detail.getByText('Users lose track of indicators')
+      ).toBeVisible();
+      await xtmPlatformRoadmapPage.closeEpicDetail();
     });
     await test.step('Update an epic', async () => {
       await xtmPlatformRoadmapPage.updateEpic({
         title: 'TitleModified',
-        description: 'This is a test epicModified',
+        description: '',
+        problem_to_solve: 'Problem modified',
         draft: false,
       });
       await expect(
-        page.getByRole('combobox').filter({ hasText: 'OpenCTI (1)' })
+        page.getByRole('button').filter({ hasText: 'OpenCTI (1)' })
       ).toBeVisible();
       await expect(page.getByText('TitleModified')).toBeVisible();
+
+      const detail =
+        await xtmPlatformRoadmapPage.openEpicDetail('TitleModified');
+      await expect(detail.getByText('This is a test epic')).not.toBeVisible();
+      await expect(detail.getByText('Problem modified')).toBeVisible();
+      await xtmPlatformRoadmapPage.closeEpicDetail();
     });
     await test.step('Delete an epic', async () => {
       await xtmPlatformRoadmapPage.deleteEpic();
       await expect(
-        page.getByRole('combobox').filter({ hasText: 'OpenCTI (0)' })
+        page.getByRole('button').filter({ hasText: 'OpenCTI (0)' })
       ).toBeVisible();
     });
     await test.step('Create an epic integration', async () => {
@@ -87,7 +110,7 @@ test.describe('XTM Platform Roadmap', () => {
         integration: true,
       });
       await expect(
-        page.getByRole('combobox').filter({ hasText: 'OpenCTI (1)' })
+        page.getByRole('button').filter({ hasText: 'OpenCTI (1)' })
       ).toBeVisible();
       await expect(page.getByText(/^EE$/)).not.toBeVisible();
       await expect(page.getByText(/^CE$/)).not.toBeVisible();
@@ -101,8 +124,62 @@ test.describe('XTM Platform Roadmap', () => {
         draft: true,
       });
       await expect(
-        page.getByRole('combobox').filter({ hasText: 'OpenCTI (2)' })
+        page.getByRole('button').filter({ hasText: 'OpenCTI (2)' })
       ).toBeVisible();
+    });
+    await test.step('Create an epic on several products', async () => {
+      await xtmPlatformRoadmapPage.addEpic({
+        title: 'TitleMultiProduct',
+        short_description: 'Short description for several products',
+        description: 'This is a multi product epic',
+        products: ['OpenCTI', 'OpenAEV'],
+      });
+
+      await xtmPlatformRoadmapPage.filterByProducts(['OpenAEV (1)']);
+      await expect(page.getByText('TitleMultiProduct')).toBeVisible();
+
+      await xtmPlatformRoadmapPage.filterByProducts(['OpenCTI (3)']);
+      await expect(page.getByText('TitleMultiProduct')).toBeVisible();
+    });
+    await test.step('Create an epic with a slack link picked from the list', async () => {
+      await xtmPlatformRoadmapPage.addEpic({
+        title: 'TitleSlackOption',
+        short_description: 'Short description for a picked slack link',
+        description: 'This is an epic with a picked slack link',
+        slackLinkOption: 'XTM Hub',
+      });
+
+      const detail =
+        await xtmPlatformRoadmapPage.openEpicDetail('TitleSlackOption');
+      await expect(
+        detail.getByRole('link', {
+          name: 'Stay in the loop on the Filigran Community',
+        })
+      ).toHaveAttribute(
+        'href',
+        'https://filigran-community.slack.com/archives/C08HU35NPD4'
+      );
+      await xtmPlatformRoadmapPage.closeEpicDetail();
+    });
+    await test.step('Create an epic with a slack link typed by hand', async () => {
+      await xtmPlatformRoadmapPage.addEpic({
+        title: 'TitleSlackFreeText',
+        short_description: 'Short description for a typed slack link',
+        description: 'This is an epic with a typed slack link',
+        slackLink: 'https://filigran-community.slack.com/archives/C0BMANSB4CW',
+      });
+
+      const detail =
+        await xtmPlatformRoadmapPage.openEpicDetail('TitleSlackFreeText');
+      await expect(
+        detail.getByRole('link', {
+          name: 'Stay in the loop on the Filigran Community',
+        })
+      ).toHaveAttribute(
+        'href',
+        'https://filigran-community.slack.com/archives/C0BMANSB4CW'
+      );
+      await xtmPlatformRoadmapPage.closeEpicDetail();
     });
   });
 
@@ -170,17 +247,37 @@ test.describe('XTM Platform Roadmap', () => {
       await expect(page.getByText('Title2', { exact: true })).toBeVisible();
       await expect(page.getByText('Title3', { exact: true })).toBeVisible();
     });
-    await test.step('It should filter', async () => {
-      await page.getByText('Filter by product').click();
-      await page.getByText('OpenAEV (1)').click();
+    await test.step('It should filter on a single product', async () => {
+      await xtmPlatformRoadmapPage.filterByProducts(['OpenAEV (1)']);
       await expect(page.getByText('Title2', { exact: true })).not.toBeVisible();
+      await expect(page.getByText('Title3', { exact: true })).toBeVisible();
+    });
+
+    await test.step('It should filter on several products', async () => {
+      await xtmPlatformRoadmapPage.filterByProducts([
+        'OpenAEV (1)',
+        'OpenCTI (1)',
+      ]);
+      await expect(page.getByText('Title2', { exact: true })).toBeVisible();
       await expect(page.getByText('Title3', { exact: true })).toBeVisible();
     });
 
     await test.step('It should display details', async () => {
       await page.getByText('Title3').click();
       await expect(
+        page.getByText('Short description for another epic', { exact: true })
+      ).toBeVisible();
+      await expect(
         page.getByText('This is a second epic', { exact: true })
+      ).toBeVisible();
+      await expect(
+        page.getByText('Problem of the second epic', { exact: true })
+      ).toBeVisible();
+      await expect(
+        page.getByText('Solution of the second epic', { exact: true })
+      ).toBeVisible();
+      await expect(
+        page.getByText('Value of the second epic', { exact: true })
       ).toBeVisible();
     });
   }

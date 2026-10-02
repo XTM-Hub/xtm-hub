@@ -1,3 +1,4 @@
+import { Knex } from 'knex';
 import { db, dbRaw } from '../../../knexfile';
 import {
   FiligranProduct,
@@ -47,6 +48,32 @@ const PRODUCT_DISPLAY_ORDER: FiligranProduct[] = [
 // order instead of whichever one Postgres happens to return first.
 const PRODUCT_THEN_POSITION_SQL =
   'array_position(?::text[], "VotableFeature"."product"), "VotableFeature"."position" asc, "VotableFeature"."created_at" asc';
+
+const HAS_MY_VOTE_SQL =
+  'EXISTS(SELECT 1 FROM "FeatureVote" WHERE "FeatureVote"."votable_feature_id" = "VotableFeature"."id" AND "FeatureVote"."user_id" = ?) as has_my_vote';
+
+const selectVotableFeaturesWithVote = (
+  query: Knex.QueryBuilder<VotableFeature>,
+  userId?: UserId
+): Knex.QueryBuilder<VotableFeature, VotableFeatureWithVote[]> =>
+  query
+    .orderByRaw(PRODUCT_THEN_POSITION_SQL, [PRODUCT_DISPLAY_ORDER])
+    .select<VotableFeatureWithVote[]>(
+      'VotableFeature.*',
+      userId ? dbRaw(HAS_MY_VOTE_SQL, [userId]) : dbRaw('false as has_my_vote')
+    );
+
+const attachUseCases = async (
+  features: VotableFeatureWithVote[]
+): Promise<VotableFeatureWithVote[]> => {
+  const useCases = await featureVotingDomain.loadUseCasesByFeature(
+    features.map(({ id }) => id)
+  );
+  return features.map((feature) => ({
+    ...feature,
+    use_cases: useCases.get(feature.id) ?? [],
+  }));
+};
 
 export const featureVotingDomain = {
   loadVotingRounds: (
@@ -122,7 +149,7 @@ export const featureVotingDomain = {
     userId?: UserId;
     onlyActive?: boolean;
   }): Promise<VotableFeatureWithVote[]> => {
-    const features = await db<VotableFeature>('VotableFeature')
+    const query = db<VotableFeature>('VotableFeature')
       .where('VotableFeature.voting_round_id', opts.roundId)
       .modify((queryBuilder) => {
         if (opts.onlyActive) {
@@ -131,27 +158,34 @@ export const featureVotingDomain = {
         if (opts.product) {
           queryBuilder.andWhere('VotableFeature.product', opts.product);
         }
-      })
-      .orderByRaw(PRODUCT_THEN_POSITION_SQL, [PRODUCT_DISPLAY_ORDER])
-      .select<VotableFeatureWithVote[]>(
-        'VotableFeature.*',
-        opts.userId
-          ? dbRaw(
-              'EXISTS(SELECT 1 FROM "FeatureVote" WHERE "FeatureVote"."votable_feature_id" = "VotableFeature"."id" AND "FeatureVote"."user_id" = ?) as has_my_vote',
-              [opts.userId]
-            )
-          : dbRaw('false as has_my_vote')
-      );
+      });
+    const features = await selectVotableFeaturesWithVote(query, opts.userId);
+    return attachUseCases(features);
+  },
 
-    // Attached here rather than left to the field resolver, which would run one
-    // query per feature on a page that lists them all.
-    const useCases = await featureVotingDomain.loadUseCasesByFeature(
-      features.map(({ id }) => id)
+  loadVotableFeaturesByRoundIds: async (
+    roundIds: VotingRoundId[],
+    userId?: UserId
+  ): Promise<Map<VotingRoundId, VotableFeatureWithVote[]>> => {
+    const grouped = new Map<VotingRoundId, VotableFeatureWithVote[]>();
+    if (roundIds.length === 0) {
+      return grouped;
+    }
+
+    const query = db<VotableFeature>('VotableFeature').whereIn(
+      'VotableFeature.voting_round_id',
+      roundIds
     );
-    return features.map((feature) => ({
-      ...feature,
-      use_cases: useCases.get(feature.id) ?? [],
-    }));
+    const features = await attachUseCases(
+      await selectVotableFeaturesWithVote(query, userId)
+    );
+
+    for (const feature of features) {
+      const current = grouped.get(feature.voting_round_id) ?? [];
+      current.push(feature);
+      grouped.set(feature.voting_round_id, current);
+    }
+    return grouped;
   },
 
   loadVotableFeatureBy: (

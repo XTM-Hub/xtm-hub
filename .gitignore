@@ -4,6 +4,10 @@
 .zed
 .rules
 
+# Claude Code — the shared config in .claude/settings.json is committed,
+# per-developer overrides are not
+.claude/settings.local.json
+
 # System files
 *~
 .DS_Store

@@ -1,19 +1,17 @@
 import { Resolvers } from '../../__generated__/resolvers-types';
-import { DocumentId } from '../../model/kanel/public/Document';
 import Epic, { EpicId } from '../../model/kanel/public/Epic';
+import { PortalContext } from '../../model/portal-context';
 import { UnknownErrorCode } from '../../utils/error/error.code';
 import { mapToGraphQLError } from '../../utils/error/error.mapping';
-import { DocumentDomain } from '../document/domain/document.domain';
 import { EpicApp } from './epic.app';
 
 const resolvers: Resolvers = {
   Epic: {
-    document: async (epic, _) => {
+    document: async (epic, _args, context: PortalContext) => {
       const { document_id } = epic as Epic;
       if (!document_id) return null;
-      const document = await DocumentDomain.loadDocumentBy({
-        id: document_id as DocumentId,
-      });
+      const document =
+        await context.dataLoaders.document.documentByIdLoader.load(document_id);
       return document ?? null;
     },
   },

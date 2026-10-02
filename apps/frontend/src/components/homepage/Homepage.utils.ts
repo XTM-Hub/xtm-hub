@@ -7,7 +7,6 @@ import {
   PlatformContract,
   PlatformIdentifier,
   RegisteredPlatformsQuery,
-  TrialsDeployments,
 } from '@graphql/generated';
 
 type RegisteredPlatformForHomepage =
@@ -83,30 +82,6 @@ export const mapRegisteredPlatformsToHomepageCards = (
       },
     ];
   });
-};
-
-export const resolveHomepageCrossSellProduct = (
-  trialDeploymentsEligibility:
-    Pick<TrialsDeployments, 'availableTrials' | 'isBlacklisted'> | undefined
-): PlatformIdentifier | undefined => {
-  if (
-    !trialDeploymentsEligibility ||
-    trialDeploymentsEligibility.isBlacklisted
-  ) {
-    return undefined;
-  }
-
-  const { availableTrials } = trialDeploymentsEligibility;
-
-  if (availableTrials.includes(PlatformIdentifier.Opencti)) {
-    return PlatformIdentifier.Opencti;
-  }
-
-  if (availableTrials.includes(PlatformIdentifier.Openaev)) {
-    return PlatformIdentifier.Openaev;
-  }
-
-  return undefined;
 };
 
 export const findLogoUrl = (

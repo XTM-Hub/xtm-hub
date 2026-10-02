@@ -17,7 +17,6 @@ import {
   DeploymentRequestHubStatus,
   OrganizationCapability,
   PlatformContract,
-  PlatformIdentifier,
   PortalCapability,
 } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
@@ -281,10 +280,6 @@ export const RegistrationDetails = ({
       )}
       {platform.deployment_request && (
         <TrialCancelSheet
-          platformIdentifier={
-            platform.deployment_request
-              .platform_identifier as PlatformIdentifier
-          }
           deploymentRequestId={platform.deployment_request.id}
           isCancellationDefinitive={isCancellationDefinitive}
           open={openCancelSheet}

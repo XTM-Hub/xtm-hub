@@ -72,10 +72,13 @@ const makeEpic = (
   id: 'epic-id',
   short_description: 'short description',
   description: 'description',
+  problem_to_solve: 'problem to solve',
+  proposed_solution: 'proposed solution',
+  expected_value: 'expected value',
   title: NOW_EPIC_TITLE,
   timeline: Timeline.Now,
   edition_type: EditionType.CommunityEdition,
-  product: FiligranProduct.Opencti,
+  products: [FiligranProduct.Opencti],
   active: true,
   epic_type: EpicType.Other,
   document_id: null,
@@ -99,7 +102,7 @@ const renderEpicList = (
   const defaultProps: ComponentProps<typeof EpicList> = {
     epics: [makeEpic()],
     serviceInstance,
-    selectedProduct: 'all',
+    selectedProducts: [],
     onFilterChange: vi.fn(),
     onSearch: vi.fn(),
   };
@@ -159,23 +162,69 @@ describe('EpicList', () => {
       makeEpic({
         id: 'opencti-epic',
         title: NOW_EPIC_TITLE,
-        product: FiligranProduct.Opencti,
+        products: [FiligranProduct.Opencti],
       }),
       makeEpic({
         id: 'openaev-epic',
         title: NEXT_EPIC_TITLE,
-        product: FiligranProduct.Openaev,
+        products: [FiligranProduct.Openaev],
       }),
     ];
 
     // When
     renderEpicList({
       epics,
-      selectedProduct: FiligranProduct.Opencti,
+      selectedProducts: [FiligranProduct.Opencti],
     });
 
     // Then
     expect(screen.queryByText(NEXT_EPIC_TITLE)).not.toBeInTheDocument();
+  });
+
+  it('should render epics from every selected product', () => {
+    // Given
+    const epics = [
+      makeEpic({
+        id: 'opencti-epic',
+        title: NOW_EPIC_TITLE,
+        products: [FiligranProduct.Opencti],
+      }),
+      makeEpic({
+        id: 'openaev-epic',
+        title: NEXT_EPIC_TITLE,
+        products: [FiligranProduct.Openaev],
+      }),
+    ];
+
+    // When
+    renderEpicList({
+      epics,
+      selectedProducts: [FiligranProduct.Opencti, FiligranProduct.Openaev],
+    });
+
+    // Then
+    expect(screen.getByText(NOW_EPIC_TITLE)).toBeInTheDocument();
+    expect(screen.getByText(NEXT_EPIC_TITLE)).toBeInTheDocument();
+  });
+
+  it('should render an epic targeting several products under each of its products', () => {
+    // Given
+    const epics = [
+      makeEpic({
+        id: 'multi-product-epic',
+        title: NOW_EPIC_TITLE,
+        products: [FiligranProduct.Opencti, FiligranProduct.Openaev],
+      }),
+    ];
+
+    // When
+    renderEpicList({
+      epics,
+      selectedProducts: [FiligranProduct.Openaev],
+    });
+
+    // Then
+    expect(screen.getByText(NOW_EPIC_TITLE)).toBeInTheDocument();
   });
 
   it('should show finished timeline when user enables finished epics display', async () => {

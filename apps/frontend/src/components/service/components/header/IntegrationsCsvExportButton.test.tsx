@@ -1,5 +1,5 @@
 import { IntegrationsCsvExportButton } from '@/components/service/components/header/IntegrationsCsvExportButton';
-import { buildLoginRedirect } from '@/utils/redirect';
+import { buildSignupRedirect } from '@/utils/redirect';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import testRender from '@/utils/test/test-render';
 import { fireEvent, screen } from '@testing-library/react';
@@ -67,7 +67,7 @@ describe('IntegrationsCsvExportButton', () => {
     expect(pushMock).not.toHaveBeenCalled();
   });
 
-  it('redirects to login instead of opening the dialog when logged out', () => {
+  it('redirects to sign-up instead of opening the dialog when logged out', () => {
     // Given
     testRender(
       <IntegrationsCsvExportButton
@@ -85,7 +85,7 @@ describe('IntegrationsCsvExportButton', () => {
 
     // Then
     expect(pushMock).toHaveBeenCalledWith(
-      buildLoginRedirect('/app/service/opencti_integrations/service-1')
+      buildSignupRedirect('/app/service/opencti_integrations/service-1')
     );
     expect(
       screen.queryByText('Service.CsvExport.DialogTitle')

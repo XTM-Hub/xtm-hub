@@ -15,8 +15,6 @@ import ServiceInstance from '../../model/kanel/public/ServiceInstance';
 import { SubscriptionId } from '../../model/kanel/public/Subscription';
 import { UnknownErrorCode } from '../../utils/error/error.code';
 import * as errorMapping from '../../utils/error/error.mapping';
-import { OrganizationDomain } from '../organization-management/organization/organization.domain';
-import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { subscriptionApp } from './subscription.app';
 import { SubscriptionDomain } from './subscription.domain';
 import subscriptionResolver from './subscription.resolver';
@@ -27,16 +25,21 @@ describe('subscription resolver - unit tests', () => {
   });
 
   describe('subscriptionModel field resolvers', () => {
-    it('subscription_capability should call getSubscriptionCapability with subscription id', async () => {
+    it('subscription_capability should call subscriptionCapabilitiesBySubscriptionIdLoader.load with subscription id', async () => {
       // Given
       const id = uuidv4();
       const expected = [] as unknown as Awaited<
-        ReturnType<typeof SubscriptionDomain.getSubscriptionCapability>
+        ReturnType<
+          typeof SubscriptionDomain.loadSubscriptionCapabilitiesBySubscriptionIds
+        >
       >;
-      vi.spyOn(
-        SubscriptionDomain,
-        'getSubscriptionCapability'
-      ).mockResolvedValue(expected);
+      const loadSpy = vi
+        .spyOn(
+          contextSimpleUserFiligran2.dataLoaders.subscription
+            .subscriptionCapabilitiesBySubscriptionIdLoader,
+          'load'
+        )
+        .mockResolvedValue(expected as never);
 
       // When
       const result = await (
@@ -49,21 +52,22 @@ describe('subscription resolver - unit tests', () => {
       );
 
       // Then
-      expect(SubscriptionDomain.getSubscriptionCapability).toHaveBeenCalledWith(
-        id
-      );
+      expect(loadSpy).toHaveBeenCalledWith(id);
       expect(result).toEqual(expected);
     });
 
-    it('service_instance should call loadServiceInstanceBy with service_instance_id', async () => {
+    it('service_instance should call serviceInstanceBySubscriptionServiceInstanceIdLoader.load with service_instance_id', async () => {
       // Given
       const serviceInstanceId = SERVICES.INSTANCES.EPIC.ID;
       const expected = { id: serviceInstanceId } as unknown as
         ServiceInstance | undefined;
-      vi.spyOn(
-        ServiceInstanceDomain,
-        'loadServiceInstanceBy'
-      ).mockResolvedValue(expected);
+      const loadSpy = vi
+        .spyOn(
+          contextSimpleUserFiligran2.dataLoaders.subscription
+            .serviceInstanceBySubscriptionServiceInstanceIdLoader,
+          'load'
+        )
+        .mockResolvedValue(expected as never);
 
       // When
       const result = await (
@@ -79,21 +83,23 @@ describe('subscription resolver - unit tests', () => {
       );
 
       // Then
-      expect(ServiceInstanceDomain.loadServiceInstanceBy).toHaveBeenCalledWith({
-        id: serviceInstanceId,
-      });
+      expect(loadSpy).toHaveBeenCalledWith(serviceInstanceId);
       expect(result).toEqual(expected);
     });
 
-    it('user_service should call getUserService with subscription id', async () => {
+    it('user_service should call userServicesBySubscriptionIdLoader.load with subscription id', async () => {
       // Given
       const id = uuidv4();
       const expected = [] as unknown as Awaited<
-        ReturnType<typeof SubscriptionDomain.getUserService>
+        ReturnType<typeof SubscriptionDomain.loadUserServicesBySubscriptionIds>
       >;
-      vi.spyOn(SubscriptionDomain, 'getUserService').mockResolvedValue(
-        expected
-      );
+      const loadSpy = vi
+        .spyOn(
+          contextSimpleUserFiligran2.dataLoaders.subscription
+            .userServicesBySubscriptionIdLoader,
+          'load'
+        )
+        .mockResolvedValue(expected as never);
 
       // When
       const result = await (
@@ -106,17 +112,21 @@ describe('subscription resolver - unit tests', () => {
       );
 
       // Then
-      expect(SubscriptionDomain.getUserService).toHaveBeenCalledWith(id);
+      expect(loadSpy).toHaveBeenCalledWith(id);
       expect(result).toEqual(expected);
     });
 
-    it('organization should call loadOrganizationBy with organization_id', async () => {
+    it('organization should call organizationBySubscriptionOrganizationIdLoader.load with organization_id', async () => {
       // Given
       const organizationId = TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID;
       const expected = { id: organizationId };
-      vi.spyOn(OrganizationDomain, 'loadOrganizationBy').mockResolvedValue(
-        expected as never
-      );
+      const loadSpy = vi
+        .spyOn(
+          contextSimpleUserFiligran2.dataLoaders.subscription
+            .organizationBySubscriptionOrganizationIdLoader,
+          'load'
+        )
+        .mockResolvedValue(expected as never);
 
       // When
       const result = await (
@@ -132,23 +142,27 @@ describe('subscription resolver - unit tests', () => {
       );
 
       // Then
-      expect(OrganizationDomain.loadOrganizationBy).toHaveBeenCalledWith({
-        id: organizationId,
-      });
+      expect(loadSpy).toHaveBeenCalledWith(organizationId);
       expect(result).toMatchObject(expected);
     });
   });
 
   describe('subscriptionCapability field resolvers', () => {
-    it('service_capability should call getServiceCapability with subscription capability id', async () => {
+    it('service_capability should call serviceCapabilityBySubscriptionCapabilityIdLoader.load with subscription capability id', async () => {
       // Given
       const id = uuidv4();
       const expected = { id: uuidv4() } as unknown as Awaited<
-        ReturnType<typeof SubscriptionDomain.getServiceCapability>
+        ReturnType<
+          typeof SubscriptionDomain.loadServiceCapabilitiesBySubscriptionCapabilityIds
+        >
       >;
-      vi.spyOn(SubscriptionDomain, 'getServiceCapability').mockResolvedValue(
-        expected
-      );
+      const loadSpy = vi
+        .spyOn(
+          contextSimpleUserFiligran2.dataLoaders.subscription
+            .serviceCapabilityBySubscriptionCapabilityIdLoader,
+          'load'
+        )
+        .mockResolvedValue(expected as never);
 
       // When
       const result = await (
@@ -161,7 +175,7 @@ describe('subscription resolver - unit tests', () => {
       );
 
       // Then
-      expect(SubscriptionDomain.getServiceCapability).toHaveBeenCalledWith(id);
+      expect(loadSpy).toHaveBeenCalledWith(id);
       expect(result).toEqual(expected);
     });
   });

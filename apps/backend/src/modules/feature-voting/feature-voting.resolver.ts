@@ -1,11 +1,9 @@
 import { Resolvers } from '../../__generated__/resolvers-types';
-import { DocumentId } from '../../model/kanel/public/Document';
 import { VotableFeatureId } from '../../model/kanel/public/VotableFeature';
 import { VotingRoundId } from '../../model/kanel/public/VotingRound';
 import { UnknownErrorCode } from '../../utils/error/error.code';
 import { mapToGraphQLError } from '../../utils/error/error.mapping';
 import { createRelayIdScalar } from '../../utils/scalar.util';
-import { DocumentDomain } from '../document/domain/document.domain';
 import { featureVotingApp } from './feature-voting.app';
 
 const resolvers: Resolvers = {
@@ -14,27 +12,36 @@ const resolvers: Resolvers = {
 
   // Rounds come either with their features already resolved and filtered for
   // the audience, or as a bare row from the admin listing. Both fields fall
-  // back to a query only when the value is missing, so listing rounds never
-  // pays for feature bodies it will not render.
+  // back to a DataLoader only when the value is missing, batched per request so
+  // listing many rounds never pays for one feature query per round.
   VotingRound: {
-    features: (round) =>
-      round.features ?? featureVotingApp.loadRoundFeatures(round.id),
+    features: (round, _args, context) =>
+      round.features ??
+      context.dataLoaders.featureVoting.roundFeaturesByRoundIdLoader.load(
+        round.id
+      ),
     feature_count: (round) =>
       round.feature_count ?? round.features?.length ?? 0,
   },
 
   // Features arrive from a round with their use cases already batched in. The
-  // fallback only covers the features returned on their own, by a mutation.
+  // fallback only covers the features returned on their own, by a mutation,
+  // but still goes through a request-scoped DataLoader to keep the field
+  // batchable regardless of where the feature came from.
   VotableFeature: {
-    use_cases: (feature) =>
-      feature.use_cases ?? featureVotingApp.loadFeatureUseCases(feature.id),
-    illustration_document: async (feature) => {
+    use_cases: (feature, _args, context) =>
+      feature.use_cases ??
+      context.dataLoaders.featureVoting.useCasesByFeatureIdLoader.load(
+        feature.id
+      ),
+    illustration_document: async (feature, _args, context) => {
       if (!feature.illustration_document_id) {
         return null;
       }
-      const document = await DocumentDomain.loadDocumentBy({
-        id: feature.illustration_document_id as DocumentId,
-      });
+      const document =
+        await context.dataLoaders.document.documentByIdLoader.load(
+          feature.illustration_document_id
+        );
       return document ?? null;
     },
   },

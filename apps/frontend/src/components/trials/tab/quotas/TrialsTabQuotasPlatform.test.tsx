@@ -1,9 +1,7 @@
 import { TrialsTabQuotasPlatform } from '@/components/trials/tab/quotas/TrialsTabQuotasPlatform';
-import { BUNDLE_SCOPE } from '@/components/trials/trials.const';
 import testRender from '@/utils/test/test-render';
 import {
   DeploymentRequestPlatformRegion,
-  PlatformIdentifier,
   PortalCapability,
   TrialsQuotaFragment,
 } from '@graphql/generated';
@@ -62,11 +60,10 @@ const makeQuota = (
   region,
   capacity,
   availableCount,
-  platform_identifier: PlatformIdentifier.Opencti,
 });
 
 const renderQuotas = () =>
-  testRender(<TrialsTabQuotasPlatform scope={BUNDLE_SCOPE} />, {
+  testRender(<TrialsTabQuotasPlatform />, {
     me: {
       capabilities: [{ name: PortalCapability.ModifyTrialsQuota } as never],
     },

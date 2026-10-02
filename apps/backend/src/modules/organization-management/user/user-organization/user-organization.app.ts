@@ -8,7 +8,6 @@ import { requestContext } from '../../../../context/request.context';
 import { OrganizationId } from '../../../../model/kanel/public/Organization';
 import { UserId } from '../../../../model/kanel/public/User';
 import { UserLoadUserBy } from '../../../../model/user';
-import { isUserAdminPlatform } from '../../../../security/access';
 import { securityGuard } from '../../../../security/guard';
 import {
   buildPendingUserActionLink,
@@ -16,11 +15,11 @@ import {
 } from '../../../../server/mail-service';
 import { logApp } from '../../../../utils/app-logger.util';
 import { ErrorCode } from '../../../../utils/error/error.code';
-import { ForbiddenAccess } from '../../../../utils/error/error.util';
 import { formatName } from '../../../../utils/format';
 import { OrganizationDomain } from '../../organization/organization.domain';
 import { UserDomain } from '../user-domain/user.domain';
 import { UserOrganizationPendingDomain } from '../user-pending/user-organization-pending.domain';
+import { UserProvisioningApp } from '../user-provisioning/user-provisioning.app';
 import { UserHelper } from '../user.helper';
 import { UserOrganizationDomain } from './user-organization.domain';
 
@@ -29,9 +28,6 @@ export const UserOrganizationApp = {
     input: AddUserInput
   ): Promise<UserLoadUserBy> => {
     const contextUser = requestContext.requireUser();
-    const [organizationFromEmail] =
-      await OrganizationDomain.loadOrganizationsFromEmail(input.email);
-
     const chosenOrganization = await OrganizationDomain.loadOrganizationBy({
       id: contextUser.selected_organization_id,
     });
@@ -44,54 +40,27 @@ export const UserOrganizationApp = {
       throw new Error(ErrorCode.CantAddUserToPersonalSpace);
     }
 
-    // The admin orga should only allow to add users in the same organization and with the same domain.
-    // Only the admin PLTFM can by pass this check
-    const isEmailOutsideOrganization =
-      chosenOrganization.id !== organizationFromEmail?.id;
-    if (isEmailOutsideOrganization && !isUserAdminPlatform(contextUser)) {
-      logApp.warn(
-        'You cannot add a user whose email domain is outside your organization'
-      );
-      throw ForbiddenAccess(ErrorCode.EmailOutsideOrganizationError);
-    }
+    await securityGuard.assertEmailMatchesOrganization(
+      contextUser,
+      input.email,
+      chosenOrganization.id
+    );
 
-    const [existingUser] = await UserDomain.loadUser({ email: input.email });
-
-    const { user, pendingRemoved } = await withTransaction(async () => {
-      const user = existingUser
-        ? existingUser
-        : await UserHelper.createUserWithPersonalSpace({
-            email: input.email,
-            password: input.password ?? undefined,
-            selected_organization_id: chosenOrganization.id,
-          });
-
-      await UserOrganizationDomain.createUserOrgCapabilities({
-        user,
-        organization: chosenOrganization,
-        orgCapabilities: input.capabilities ?? [],
-        userExists: !!existingUser,
-      });
-
-      const pendingRemoved = await UserHelper.removePending(
-        user,
-        chosenOrganization.id
-      );
-
-      return { user, pendingRemoved };
+    return UserProvisioningApp.provisionUserForOrganizations({
+      userData: {
+        email: input.email,
+        password: input.password,
+        selected_organization_id: chosenOrganization.id,
+      },
+      orgCapabilities: [
+        {
+          organization_id: chosenOrganization.id,
+          capabilities: input.capabilities ?? [],
+        },
+      ],
+      mode: 'add',
+      organizationForWelcomeEmail: chosenOrganization,
     });
-
-    if (pendingRemoved) {
-      await UserHelper.dispatchPendingDeleted(user, chosenOrganization.id);
-    }
-
-    const updatedUser = await UserDomain.loadUserBy({
-      'User.id': user.id,
-    });
-    if (!updatedUser) {
-      throw new Error(ErrorCode.UserNotFound);
-    }
-    return updatedUser;
   },
   changeSelectedOrganization: async (
     organization_id: OrganizationId

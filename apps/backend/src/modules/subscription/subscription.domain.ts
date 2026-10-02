@@ -64,24 +64,40 @@ export const SubscriptionDomain = {
     return db<Subscription>('Subscription').whereIn('id', ids).delete('*');
   },
 
-  getSubscriptionCapability: async (
-    id: SubscriptionId
+  loadSubscriptionCapabilitiesBySubscriptionIds: async (
+    ids: SubscriptionId[]
   ): Promise<SubscriptionCapability[]> => {
+    if (ids.length === 0) {
+      return [];
+    }
+
     return db<SubscriptionCapability>('Subscription_Capability')
-      .where('Subscription_Capability.subscription_id', '=', id)
+      .whereIn('Subscription_Capability.subscription_id', ids)
       .select('Subscription_Capability.*');
   },
 
-  getUserService: (id: SubscriptionId): Promise<UserService[]> => {
+  loadUserServicesBySubscriptionIds: (
+    ids: SubscriptionId[]
+  ): Promise<UserService[]> => {
+    if (ids.length === 0) {
+      return Promise.resolve([]);
+    }
+
     return db<UserService>('User_Service')
       .tap(restrictSubscriptionToUserOrganization)
-      .where('User_Service.subscription_id', '=', id)
+      .whereIn('User_Service.subscription_id', ids)
       .select('User_Service.*');
   },
 
-  getServiceCapability: async (
-    id: SubscriptionCapabilityId
-  ): Promise<ServiceCapability | undefined> => {
+  loadServiceCapabilitiesBySubscriptionCapabilityIds: async (
+    ids: SubscriptionCapabilityId[]
+  ): Promise<
+    (ServiceCapability & { subscription_capability_id: string })[]
+  > => {
+    if (ids.length === 0) {
+      return [];
+    }
+
     return db<ServiceCapability>('Service_Capability')
       .leftJoin(
         'Subscription_Capability',
@@ -89,9 +105,11 @@ export const SubscriptionDomain = {
         '=',
         'Service_Capability.id'
       )
-      .where('Subscription_Capability.id', '=', id)
-      .select('Service_Capability.*')
-      .first();
+      .whereIn('Subscription_Capability.id', ids)
+      .select([
+        'Service_Capability.*',
+        'Subscription_Capability.id as subscription_capability_id',
+      ]);
   },
 
   transferSubscriptionToOrganization: async ({

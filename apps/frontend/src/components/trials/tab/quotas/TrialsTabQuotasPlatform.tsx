@@ -1,6 +1,6 @@
 'use client';
 import { TrialsTabQuotasPlatformUpdate } from '@/components/trials/tab/quotas/TrialsTabQuotasPlatformUpdate';
-import { TrialsScope, trialsRegionKey } from '@/components/trials/trials.const';
+import { trialsRegionKey } from '@/components/trials/trials.const';
 import { useUserHasPortalCapability } from '@/hooks/use-portal-capability';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { DataTable } from '@filigran/ui';
@@ -14,13 +14,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
-interface TrialsTabQuotasPlatformProps {
-  scope: TrialsScope;
-}
-
-export const TrialsTabQuotasPlatform = ({
-  scope,
-}: TrialsTabQuotasPlatformProps) => {
+export const TrialsTabQuotasPlatform = () => {
   const t = useTranslations();
   const userHasModifyTrialQuotaCapa = useUserHasPortalCapability([
     PortalCapability.ModifyTrialsQuota,
@@ -29,16 +23,8 @@ export const TrialsTabQuotasPlatform = ({
     undefined
   );
 
-  const variables = useMemo(
-    () => ({
-      platformIdentifier:
-        scope.kind === 'product' ? scope.platformIdentifier : null,
-    }),
-    [scope]
-  );
-
-  const { data } = useTrialsQuotasQuery(portalGraphqlClient, variables, {
-    queryKey: trialsQuotasKeys.list(variables),
+  const { data } = useTrialsQuotasQuery(portalGraphqlClient, undefined, {
+    queryKey: trialsQuotasKeys.list(),
   });
 
   const columns: ColumnDef<TrialsQuotaFragment>[] = useMemo(
@@ -93,7 +79,6 @@ export const TrialsTabQuotasPlatform = ({
       {quotaEdit && userHasModifyTrialQuotaCapa && (
         <TrialsTabQuotasPlatformUpdate
           quota={quotaEdit}
-          scope={scope}
           key={quotaEdit.id}
           defaultStateOpen={!!quotaEdit}
           onCloseSheet={() => setQuotaEdit(undefined)}

@@ -91,7 +91,7 @@ export async function fetchDocumentSlugsForSitemap(
     }
   );
 
-  return data.publicDocumentsByServiceSlug;
+  return data.publicDocumentSlugsByServiceSlug;
 }
 
 /** Fetches a single public document by slug; same caching as `fetchAllDocuments`. */

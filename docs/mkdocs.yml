@@ -25,7 +25,7 @@ theme:
   palette:
     scheme: filigran
   font:
-    text: Geologica
+    text: IBM Plex Sans
     code: Roboto Mono
 # CSS
 extra_css:

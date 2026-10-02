@@ -9,7 +9,6 @@ import {
   SectionConfig,
   SectionLink,
 } from '@/components/menu/navigation/shared/navigation.type';
-import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH, XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
 import {
@@ -19,6 +18,7 @@ import {
   LogoXtmOneIcon,
   OpenAevIconIcon,
   OpenCtiIconIcon,
+  OpenGrcIcon,
   PapermapIcon,
   PostIcon,
   SchoolIcon,
@@ -26,23 +26,22 @@ import {
   SlackIcon,
 } from '@filigran/icon';
 import {
-  FeatureFlag,
   OrderingMode,
   OrganizationCapability,
   PlatformIdentifier,
+  PlatformTrialStatusQueryVariables,
   PortalCapability,
   ServiceDefinitionIdentifier,
   ServiceInstanceFilterKey,
   ServiceInstanceOrdering,
   ServiceInstancesListQueryVariables,
-  TrialDeploymentsEligibilityQueryVariables,
+  usePlatformTrialStatusQuery,
   useRegisteredPlatformsListQuery,
   useServiceInstancesListQuery,
-  useTrialDeploymentsEligibilityQuery,
 } from '@graphql/generated';
 import { registeredPlatformsKeys } from '@graphql/registered-platforms/registered-platforms.keys';
 import { serviceInstancesKeys } from '@graphql/service-instances/service-instances.keys';
-import { trialKeys } from '@graphql/trial/trial.keys';
+import { platformTrialKeys } from '@graphql/trial/trial.keys';
 import { useLocale, useTranslations } from 'next-intl';
 import { useContext, useMemo } from 'react';
 
@@ -94,9 +93,6 @@ export const usePrivateNavigation = (): NavigationConfig => {
     useContext(PortalContext);
   const tMenu = useTranslations('Menu');
   const tMenuLinks = useTranslations('MenuLinks');
-  const isXtmPlatformTrialEnabled = useIsFeatureEnabled(
-    FeatureFlag.XtmPlatformTrial
-  );
   const locale = useLocale();
   const selectedOrganizationId = me?.selected_organization_id;
   const currentOrganization = me?.organizations.find(
@@ -139,15 +135,11 @@ export const usePrivateNavigation = (): NavigationConfig => {
       href: `/${APP_PATH}/admin/service`,
       label: tMenuLinks('Service'),
     },
-    ...(isXtmPlatformTrialEnabled
-      ? [
-          {
-            href: `/${APP_PATH}/admin/manage-trials`,
-            label: tMenuLinks('ManageTrials'),
-            restriction: [PortalCapability.ReadTrials],
-          },
-        ]
-      : []),
+    {
+      href: `/${APP_PATH}/admin/manage-trials`,
+      label: tMenuLinks('ManageTrials'),
+      restriction: [PortalCapability.ReadTrials],
+    },
     {
       href: `/${APP_PATH}/admin/opencti-trials`,
       label: tMenuLinks('OpenCTITrial'),
@@ -202,16 +194,9 @@ export const usePrivateNavigation = (): NavigationConfig => {
         ...link
       }) => link
     );
-  const privateNavigationTrialEligibilityVariables: TrialDeploymentsEligibilityQueryVariables =
-    {
-      input: {
-        organizationId: selectedOrganizationId ?? '',
-        platformIdentifiers: [
-          PlatformIdentifier.Opencti,
-          PlatformIdentifier.Openaev,
-        ],
-      },
-    };
+  const platformTrialStatusVariables: PlatformTrialStatusQueryVariables = {
+    organizationId: selectedOrganizationId ?? '',
+  };
   const { data: serviceInstancesQueryData } = useServiceInstancesListQuery(
     portalGraphqlClient,
     PRIVATE_NAVIGATION_SERVICE_INSTANCES_VARIABLES,
@@ -231,17 +216,13 @@ export const usePrivateNavigation = (): NavigationConfig => {
         ),
       }
     );
-  const {
-    data: trialEligibilityData,
-    isLoading: isTrialEligibilityLoading,
-    isPending: isTrialEligibilityPending,
-  } = useTrialDeploymentsEligibilityQuery(
+  const { data: platformTrialStatusData } = usePlatformTrialStatusQuery(
     portalGraphqlClient,
-    privateNavigationTrialEligibilityVariables,
+    platformTrialStatusVariables,
     {
       enabled: !!selectedOrganizationId,
-      queryKey: trialKeys.trialDeploymentsEligibility(
-        privateNavigationTrialEligibilityVariables
+      queryKey: platformTrialKeys.platformTrialStatus(
+        platformTrialStatusVariables
       ),
     }
   );
@@ -265,48 +246,8 @@ export const usePrivateNavigation = (): NavigationConfig => {
       ),
     [registeredPlatformsQueryData]
   );
-  const trialDeployments = trialEligibilityData?.trialDeployments;
   const canShowXtmPlatformTrialLink =
-    isXtmPlatformTrialEnabled && !trialDeployments?.isBlacklisted;
-  const getStartFreeTrialLinks = (
-    platformIdentifier: PlatformIdentifier,
-    href: string
-  ): SectionLink[] => {
-    if (isXtmPlatformTrialEnabled) {
-      return [];
-    }
-    if (trialDeployments) {
-      if (trialDeployments.isBlacklisted) {
-        return [];
-      }
-      const availableTrials = trialDeployments.availableTrials.map((trial) =>
-        trial.toLowerCase()
-      );
-      if (!availableTrials.includes(platformIdentifier.toLowerCase())) {
-        return [];
-      }
-      return [
-        {
-          href,
-          label: tMenu('StartFreeTrial'),
-          highlight: true,
-        },
-      ];
-    }
-    if (
-      !selectedOrganizationId ||
-      isTrialEligibilityLoading ||
-      isTrialEligibilityPending
-    ) {
-      return [
-        {
-          label: tMenu('StartFreeTrial'),
-          highlight: true,
-        },
-      ];
-    }
-    return [];
-  };
+    !platformTrialStatusData?.platformTrialStatus.isBlacklisted;
   const buildServiceLink = (
     identifier: ServiceDefinitionIdentifier
   ): SectionLink[] => {
@@ -369,10 +310,6 @@ export const usePrivateNavigation = (): NavigationConfig => {
       icon: OpenCtiIconIcon,
       pathPrefix: `/${APP_PATH}/service/opencti`,
       links: [
-        ...getStartFreeTrialLinks(
-          PlatformIdentifier.Opencti,
-          `/${APP_PATH}/service/opencti-free-trial`
-        ),
         ...openctiMyProductLinks,
         ...buildServiceLink(
           ServiceDefinitionIdentifier.OpenctiCustomDashboards
@@ -398,10 +335,6 @@ export const usePrivateNavigation = (): NavigationConfig => {
       icon: OpenAevIconIcon,
       pathPrefix: `/${APP_PATH}/service/openaev`,
       links: [
-        ...getStartFreeTrialLinks(
-          PlatformIdentifier.Openaev,
-          `/${APP_PATH}/service/openaev-free-trial`
-        ),
         ...openaevMyProductLinks,
         ...buildServiceLink(ServiceDefinitionIdentifier.OpenaevScenarios),
         {
@@ -428,6 +361,20 @@ export const usePrivateNavigation = (): NavigationConfig => {
           external: true,
         },
         { label: tMenu('AICatalog'), badge: tMenu('ComingSoon') },
+      ],
+    },
+    {
+      key: 'opencrq',
+      label: 'OpenCRQ',
+      icon: OpenGrcIcon,
+      pathPrefix: `/${locale}/cybersecurity-solutions/opencrq`,
+      links: [
+        {
+          href: 'https://filigran.io/products/opencrq',
+          label: tMenu('About'),
+          external: true,
+          badge: tMenu('ComingSoon'),
+        },
       ],
     },
   ];

@@ -217,6 +217,9 @@ const searchAttributes = [
   'file_name',
   'description',
   'short_description',
+  'problem_to_solve',
+  'proposed_solution',
+  'expected_value',
   'email',
   'first_name',
   'last_name',
@@ -260,28 +263,27 @@ type FilterHandler = {
 
 const createLabelFilter = (): FilterHandler => ({
   key: FilterKey.Label,
-  addJoin: (qb, type) => {
-    qb.leftJoin('Object_UseCase as ouc', 'ouc.object_id', '=', `${type}.id`);
-  },
-  addWhere: (qb, _type, values) => {
+  addWhere: (qb, type, values) => {
     if (!values.length) return;
-    qb.whereIn('ouc.use_case_id', values.map(extractId));
+    qb.whereExists(function () {
+      this.select(dbRaw('1'))
+        .from('Object_UseCase as ouc')
+        .whereRaw('?? = ??', ['ouc.object_id', `${type}.id`])
+        .whereIn('ouc.use_case_id', values.map(extractId));
+    });
   },
 });
 
 const createSolutionCategoryFilter = (): FilterHandler => ({
   key: FilterKey.SolutionCategory,
-  addJoin: (qb, type) => {
-    qb.leftJoin(
-      'Object_SolutionCategory as osc',
-      'osc.object_id',
-      '=',
-      `${type}.id`
-    );
-  },
-  addWhere: (qb, _type, values) => {
+  addWhere: (qb, type, values) => {
     if (!values.length) return;
-    qb.whereIn('osc.solution_category_id', values.map(extractId));
+    qb.whereExists(function () {
+      this.select(dbRaw('1'))
+        .from('Object_SolutionCategory as osc')
+        .whereRaw('?? = ??', ['osc.object_id', `${type}.id`])
+        .whereIn('osc.solution_category_id', values.map(extractId));
+    });
   },
 });
 
@@ -534,6 +536,18 @@ export const applySearch = async <T extends object>(
             .join('UseCase', 'UseCase.id', '=', 'Object_UseCase.use_case_id')
             .whereRaw('"Object_UseCase"."object_id" = "Document"."id"')
             .andWhereILike('UseCase.name', `%${searchTerm}%`);
+        });
+        qb.orWhereExists(function () {
+          this.select(dbRaw('1'))
+            .from('Object_SolutionCategory')
+            .join(
+              'SolutionCategory',
+              'SolutionCategory.id',
+              '=',
+              'Object_SolutionCategory.solution_category_id'
+            )
+            .whereRaw('"Object_SolutionCategory"."object_id" = "Document"."id"')
+            .andWhereILike('SolutionCategory.name', `%${searchTerm}%`);
         });
       }
       qb.orWhereILike(`${type}.${first}`, `%${normalizedSearchTerm}%`);

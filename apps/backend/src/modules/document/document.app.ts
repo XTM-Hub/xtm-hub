@@ -625,6 +625,26 @@ export const DocumentApp = {
     );
   },
 
+  loadPublicDocumentSlugsByServiceSlug: async (
+    serviceInstanceSlug: string
+  ): Promise<Pick<Document, 'slug' | 'created_at' | 'updated_at'>[]> => {
+    const serviceDefinition =
+      await ServiceDefinitionDomain.loadServiceDefinitionByServiceInstanceSlug(
+        serviceInstanceSlug
+      );
+    if (!serviceDefinition) {
+      throw new Error(ErrorCode.ServiceDefinitionNotFound);
+    }
+
+    const { documentType } =
+      getMetadataKeysAndDocumentTypeFromServiceDefinition(serviceDefinition);
+
+    return DocumentDomain.loadSeoDocumentSlugsByServiceSlug(
+      documentType,
+      serviceInstanceSlug
+    );
+  },
+
   loadPublicDocumentBySlug: async (
     serviceInstanceId: ServiceInstanceId,
     slug: string
@@ -709,7 +729,7 @@ export const DocumentApp = {
     const NEWEST_DOCUMENTS_MAX_LIMIT = 20;
 
     // Default to all shareable service definitions so that non-shareable
-    // types (e.g. vault, service_picture) are never exposed when no platform
+    // types (e.g. service_picture) are never exposed when no platform
     // filter is provided.
     const allShareableIdentifiers = [
       ...ServiceDefinitionIdentifiersByPlatformIdentifier.values(),

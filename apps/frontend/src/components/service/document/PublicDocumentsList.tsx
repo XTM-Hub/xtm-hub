@@ -1,4 +1,5 @@
 import { FilterSidebar } from '@/components/service/components/header/filter/FilterSidebar';
+import { IntegrationsCsvExportButton } from '@/components/service/components/header/IntegrationsCsvExportButton';
 import { ServiceListHeader } from '@/components/service/components/header/ServiceListHeader';
 import { AppServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
 import {
@@ -12,6 +13,8 @@ import useScrollPosition from '@/hooks/use-scroll-position';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
 import { useStickyHeaderOffset } from '@/hooks/use-sticky-header-offset';
 import { useTablePagination } from '@/hooks/use-table-pagination';
+import { APP_PATH } from '@/utils/path/constant';
+import { encodeRedirectValue } from '@/utils/redirect';
 import {
   SERVICE_SLUG_SHAREABLE_RESOURCE_MAPPING,
   ServiceSlug,
@@ -23,7 +26,7 @@ import publicDocumentListGraphql, {
 import { publicDocumentListItemFragment$key } from '@generated/publicDocumentListItemFragment.graphql';
 import { publicDocumentsQuery } from '@generated/publicDocumentsQuery.graphql';
 import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
-import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import {
   PreloadedQuery,
   readInlineData,
@@ -70,6 +73,8 @@ const PublicDocumentsList = ({
     productVersions,
     licenseTypes,
     solutionCategories,
+    orderBy,
+    orderMode,
   } = useServiceListLocalStorage(localStorageKey);
 
   const facetCounts = useDocumentFacetCounts({
@@ -110,7 +115,7 @@ const PublicDocumentsList = ({
     restore();
   }, [restore]);
 
-  const { pagination, onPaginationChange } = useTablePagination({
+  const { pagination, setPagination, onPaginationChange } = useTablePagination({
     pageSize,
     setPageSize,
     onPaginationChange: (nextPagination, nextCursor) => {
@@ -118,8 +123,29 @@ const PublicDocumentsList = ({
     },
   });
 
+  // Reset the page on search/filter/sort change so it stays in sync with the refetched data.
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [
+    setPagination,
+    search,
+    labels,
+    entityTypes,
+    integrationTypes,
+    deployable,
+    verified,
+    productVersions,
+    licenseTypes,
+    solutionCategories,
+    orderBy,
+    orderMode,
+  ]);
+
   const headerRef = useRef<HTMLDivElement>(null);
   useStickyHeaderOffset(headerRef);
+
+  const isIntegrationsService =
+    serviceInstanceSlug === ServiceSlug.OPEN_CTI_INTEGRATIONS;
 
   return (
     <AppServiceListLocalStorageKeyContext localStorageKey={localStorageKey}>
@@ -131,6 +157,18 @@ const PublicDocumentsList = ({
           onSearchChange={setSearch}
           className="mb-3"
           onDisplayModeChange={setDisplayMode}
+          actions={
+            isIntegrationsService ? (
+              <IntegrationsCsvExportButton
+                serviceInstanceId={serviceInstance.id}
+                isAuthenticated={false}
+                loginRedirectPath={`/${APP_PATH}/service/opencti_integrations/${encodeRedirectValue(serviceInstance.id)}`}
+                type={
+                  SERVICE_SLUG_SHAREABLE_RESOURCE_MAPPING[serviceInstanceSlug]
+                }
+              />
+            ) : undefined
+          }
           paginationControls={
             <PaginationControls
               totalCount={data.publicDocuments.totalCount}

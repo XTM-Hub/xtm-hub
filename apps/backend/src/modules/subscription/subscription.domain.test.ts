@@ -1,11 +1,18 @@
 import { v4 as uuidv4 } from 'uuid';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
-import { SERVICES, TEST_ORGANIZATIONS } from '../../../tests/tests.const';
+import {
+  requestContextAdminSecondOrga,
+  SERVICES,
+  TEST_ORGANIZATIONS,
+} from '../../../tests/tests.const';
+import { requestContext } from '../../context/request.context';
 import { OrganizationId } from '../../model/kanel/public/Organization';
 import { ServiceCapabilityId } from '../../model/kanel/public/ServiceCapability';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { SubscriptionId } from '../../model/kanel/public/Subscription';
+import { SubscriptionCapabilityId } from '../../model/kanel/public/SubscriptionCapability';
+import { UserServiceId } from '../../model/kanel/public/UserService';
 import { SubscriptionCapabilityDomain } from '../security-management/subscription-capability/subscription-capability.domain';
 import { SubscriptionDomain } from './subscription.domain';
 
@@ -171,8 +178,8 @@ describe('subscription domain', () => {
     });
   });
 
-  describe('should test getSubscriptionCapability', () => {
-    it('should return capabilities linked to the subscription', async () => {
+  describe('should test loadSubscriptionCapabilitiesBySubscriptionIds', () => {
+    it('should return capabilities linked to the given subscriptions', async () => {
       const id = uuidv4() as SubscriptionId;
       await SubscriptionDomain.createSubscription({
         id,
@@ -186,7 +193,10 @@ describe('subscription domain', () => {
         SERVICES.INSTANCES.INTEGRATIONS.CAPABILITIES.DELETE.ID,
       ]);
 
-      const result = await SubscriptionDomain.getSubscriptionCapability(id);
+      const result =
+        await SubscriptionDomain.loadSubscriptionCapabilitiesBySubscriptionIds([
+          id,
+        ]);
 
       expect(result).toHaveLength(2);
       const capabilityIds = result.map(
@@ -212,12 +222,117 @@ describe('subscription domain', () => {
         end_date: null,
       });
 
-      const result = await SubscriptionDomain.getSubscriptionCapability(id);
+      const result =
+        await SubscriptionDomain.loadSubscriptionCapabilitiesBySubscriptionIds([
+          id,
+        ]);
       expect(result).toHaveLength(0);
+    });
+
+    it('should return an empty array when given no ids', async () => {
+      const result =
+        await SubscriptionDomain.loadSubscriptionCapabilitiesBySubscriptionIds(
+          []
+        );
+      expect(result).toEqual([]);
     });
   });
 
-  describe('should test getServiceCapability', () => {
+  describe('should test loadUserServicesBySubscriptionIds', () => {
+    it('should return an empty array when given no ids', async () => {
+      const result = await SubscriptionDomain.loadUserServicesBySubscriptionIds(
+        []
+      );
+      expect(result).toEqual([]);
+    });
+
+    it('should return user services for multiple subscription ids, restricted to the selected organization', async () => {
+      const filigranSubscriptionId = uuidv4() as SubscriptionId;
+      const otherFiligranSubscriptionId = uuidv4() as SubscriptionId;
+      const secondOrgSubscriptionId = uuidv4() as SubscriptionId;
+
+      await SubscriptionDomain.createSubscription({
+        id: filigranSubscriptionId,
+        organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: serviceInstanceId,
+        start_date: new Date(),
+        end_date: null,
+      });
+      await SubscriptionDomain.createSubscription({
+        id: otherFiligranSubscriptionId,
+        organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: serviceInstanceId,
+        start_date: new Date(),
+        end_date: null,
+      });
+      await SubscriptionDomain.createSubscription({
+        id: secondOrgSubscriptionId,
+        organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        service_instance_id: serviceInstanceId,
+        start_date: new Date(),
+        end_date: null,
+      });
+
+      const filigranUserService = await TestHelper.user_Service.create({
+        id: uuidv4() as UserServiceId,
+        user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE.ID,
+        subscription_id: filigranSubscriptionId,
+      });
+      const otherFiligranUserService = await TestHelper.user_Service.create({
+        id: uuidv4() as UserServiceId,
+        user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+        subscription_id: otherFiligranSubscriptionId,
+      });
+      const secondOrgUserService = await TestHelper.user_Service.create({
+        id: uuidv4() as UserServiceId,
+        user_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID,
+        subscription_id: secondOrgSubscriptionId,
+      });
+
+      const result = await SubscriptionDomain.loadUserServicesBySubscriptionIds(
+        [
+          filigranSubscriptionId,
+          otherFiligranSubscriptionId,
+          secondOrgSubscriptionId,
+        ]
+      );
+
+      expect(result.map((userService) => userService.id).sort()).toEqual(
+        [filigranUserService!.id, otherFiligranUserService!.id].sort()
+      );
+      expect(
+        result.some(
+          (userService) => userService.id === secondOrgUserService!.id
+        )
+      ).toBe(false);
+    });
+
+    it('should return no user services when the selected organization does not match the subscription organization', async () => {
+      requestContext.set(requestContextAdminSecondOrga);
+
+      const filigranSubscriptionId = uuidv4() as SubscriptionId;
+      await SubscriptionDomain.createSubscription({
+        id: filigranSubscriptionId,
+        organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: serviceInstanceId,
+        start_date: new Date(),
+        end_date: null,
+      });
+      await TestHelper.user_Service.create({
+        id: uuidv4() as UserServiceId,
+        user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE.ID,
+        subscription_id: filigranSubscriptionId,
+      });
+
+      const result = await SubscriptionDomain.loadUserServicesBySubscriptionIds(
+        [filigranSubscriptionId]
+      );
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('should test loadServiceCapabilitiesBySubscriptionCapabilityIds', () => {
     it('should return the service capability linked to a subscription_capability id', async () => {
       const subscriptionId = uuidv4() as SubscriptionId;
       await SubscriptionDomain.createSubscription({
@@ -233,21 +348,34 @@ describe('subscription domain', () => {
           [SERVICES.INSTANCES.INTEGRATIONS.CAPABILITIES.UPLOAD.ID]
         );
 
-      const result = await SubscriptionDomain.getServiceCapability(
-        subscriptionCapability!.id
-      );
+      const result =
+        await SubscriptionDomain.loadServiceCapabilitiesBySubscriptionCapabilityIds(
+          [subscriptionCapability!.id]
+        );
 
-      expect(result).toBeDefined();
-      expect(result.id).toBe(
+      expect(result).toHaveLength(1);
+      expect(result[0]!.id).toBe(
         SERVICES.INSTANCES.INTEGRATIONS.CAPABILITIES.UPLOAD.ID
+      );
+      expect(result[0]!.subscription_capability_id).toBe(
+        subscriptionCapability!.id
       );
     });
 
-    it('should return undefined when the subscription_capability id does not exist', async () => {
-      const result = await SubscriptionDomain.getServiceCapability(
-        uuidv4() as ServiceCapabilityId
-      );
-      expect(result).toBeUndefined();
+    it('should return an empty array when the subscription_capability id does not exist', async () => {
+      const result =
+        await SubscriptionDomain.loadServiceCapabilitiesBySubscriptionCapabilityIds(
+          [uuidv4() as SubscriptionCapabilityId]
+        );
+      expect(result).toEqual([]);
+    });
+
+    it('should return an empty array when given no ids', async () => {
+      const result =
+        await SubscriptionDomain.loadServiceCapabilitiesBySubscriptionCapabilityIds(
+          []
+        );
+      expect(result).toEqual([]);
     });
   });
 

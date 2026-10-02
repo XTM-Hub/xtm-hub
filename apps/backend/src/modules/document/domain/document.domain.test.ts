@@ -1,3 +1,4 @@
+import { toGlobalId } from 'graphql-relay/node/node.js';
 import { v4 as uuidv4 } from 'uuid';
 import {
   afterAll,
@@ -16,11 +17,13 @@ import {
   FilterKey,
   Integration,
   IntegrationType,
+  LogicalFilterInput,
   LogicalOperator,
   OrderingMode,
 } from '../../../__generated__/resolvers-types';
 import type { DocumentMetadataKey } from '../../../model/kanel/public/DocumentMetadata';
 import {
+  ManifestFragmentHelper,
   TAG_DECOUPLING,
   TAG_LATEST,
   TAG_LATEST_LTS,
@@ -46,8 +49,10 @@ import {
 } from '../../../../tests/tests.const';
 import { requestContext } from '../../../context/request.context';
 import Document from '../../../model/kanel/public/Document';
+import { ObjectSolutionCategoryObjectId } from '../../../model/kanel/public/ObjectSolutionCategory';
 import { ObjectUseCaseObjectId } from '../../../model/kanel/public/ObjectUseCase';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
+import { SolutionCategoryId } from '../../../model/kanel/public/SolutionCategory';
 import { UseCaseId } from '../../../model/kanel/public/UseCase';
 import {
   ADMIN_UUID,
@@ -55,6 +60,8 @@ import {
   SYSTEM_USER_UUID,
 } from '../../../portal.const';
 import { isFeatureEnabled } from '../../../utils/feature-flag.util';
+import { objectSolutionCategoryDomain } from '../../solution-category/object-solution-category/object-solution-category.domain';
+import { solutionCategoryDomain } from '../../solution-category/solution-category.domain';
 import { DocumentUploadsHelper } from '../document.uploads.helper';
 import { DocumentDomain } from './document.domain';
 
@@ -1015,6 +1022,112 @@ describe('document domain', () => {
     });
   });
 
+  describe('loadSeoDocumentSlugsByServiceSlug', () => {
+    const TEST_SERVICE_SLUG = 'opencti-integrations';
+
+    let parentDoc: Document;
+    let childDoc: Document;
+    let inactiveDoc: Document;
+    let otherServiceDoc: Document;
+
+    beforeEach(async () => {
+      await TestHelper.documentChildren.delete({});
+      await TestHelper.documentMetadata.delete({});
+      await TestHelper.document.delete({});
+
+      parentDoc = await TestHelper.document.create({
+        name: 'Parent SEO Doc',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'parent-seo',
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        active: true,
+        created_at: new Date('2023-01-01T10:00:00Z'),
+        updated_at: new Date('2023-01-02T10:00:00Z'),
+      });
+      childDoc = await TestHelper.document.create({
+        name: 'Child SEO Doc',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'child-seo',
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        active: true,
+        created_at: new Date('2023-01-01T11:00:00Z'),
+        updated_at: new Date('2023-01-02T11:00:00Z'),
+      });
+      await TestHelper.documentChildren.create({
+        parent_document_id: parentDoc.id,
+        child_document_id: childDoc.id,
+      });
+
+      inactiveDoc = await TestHelper.document.create({
+        name: 'Inactive SEO Doc',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'inactive-seo',
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        active: false,
+        created_at: new Date('2023-01-01T12:00:00Z'),
+        updated_at: new Date('2023-01-02T12:00:00Z'),
+      });
+
+      otherServiceDoc = await TestHelper.document.create({
+        name: 'Other Service Doc',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'other-service-doc',
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: SERVICES.INSTANCES.EPIC.ID,
+        active: true,
+        created_at: new Date('2023-01-01T13:00:00Z'),
+        updated_at: new Date('2023-01-02T13:00:00Z'),
+      });
+    });
+
+    it('should return only slug/created_at/updated_at of active parent documents', async () => {
+      const docs = await DocumentDomain.loadSeoDocumentSlugsByServiceSlug(
+        OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        TEST_SERVICE_SLUG
+      );
+
+      expect(docs).toHaveLength(1);
+      // `__typename` is injected by the shared `db()` helper's postProcessResponse
+      // regardless of the selected columns; assert it alongside the projected
+      // fields to confirm no other Document columns (e.g. name, description) leak in.
+      expect(Object.keys(docs[0]).sort()).toEqual(
+        ['__typename', 'created_at', 'slug', 'updated_at'].sort()
+      );
+      expect(docs[0]).toMatchObject({
+        slug: parentDoc.slug,
+        created_at: parentDoc.created_at,
+        updated_at: parentDoc.updated_at,
+      });
+    });
+
+    it('should not return child, inactive, or other-service documents', async () => {
+      const docs = await DocumentDomain.loadSeoDocumentSlugsByServiceSlug(
+        OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        TEST_SERVICE_SLUG
+      );
+      const slugs = docs.map((d) => d.slug);
+      expect(slugs).not.toContain(childDoc.slug);
+      expect(slugs).not.toContain(inactiveDoc.slug);
+      expect(slugs).not.toContain(otherServiceDoc.slug);
+    });
+
+    it('should return empty array if no documents match', async () => {
+      const docs = await DocumentDomain.loadSeoDocumentSlugsByServiceSlug(
+        'nonexistent-type',
+        'nonexistent-slug'
+      );
+      expect(Array.isArray(docs)).toBe(true);
+      expect(docs).toHaveLength(0);
+    });
+  });
+
   describe('loadDocumentsByMetadata', () => {
     let doc1: Document;
     let doc2: Document;
@@ -1487,6 +1600,10 @@ describe('document domain', () => {
   });
 
   describe('loadBestCompatibleConnectorsBySlugs', () => {
+    // Mirrors the real ingestion path (manifest-fragment.domain.ts): `Document.version`
+    // stores the raw manifest version (e.g. `7.260309.0-lts.1`), while the zero-padded,
+    // uppercased form used for filtering/ordering is written separately as
+    // `Document_Metadata.version_padded`.
     const createConnector = async ({
       manifestFragmentId,
       slug,
@@ -1519,6 +1636,11 @@ describe('document domain', () => {
         document_id: doc.id,
         key: DocumentMetadataKeyCode.ManifestFragmentId as unknown as DocumentMetadataKey,
         value: manifestFragmentId,
+      });
+      await TestHelper.documentMetadata.create({
+        document_id: doc.id,
+        key: DocumentMetadataKeyCode.VersionPadded as unknown as DocumentMetadataKey,
+        value: ManifestFragmentHelper.validateAndFormatManifestVersion(version),
       });
       if (minimumDeployableVersionPadded) {
         await TestHelper.documentMetadata.create({
@@ -1572,7 +1694,7 @@ describe('document domain', () => {
         const doc = await createConnector({
           manifestFragmentId: 'fragment-a',
           slug: 'connector-a',
-          version: '007.260309.000',
+          version: '7.260309.0',
           minimumDeployableVersionPadded,
         });
 
@@ -1590,7 +1712,7 @@ describe('document domain', () => {
       await createConnector({
         manifestFragmentId: 'fragment-a',
         slug: 'connector-a',
-        version: '007.260309.000',
+        version: '7.260309.0',
         minimumDeployableVersionPadded: '007.260601.000',
       });
 
@@ -1606,7 +1728,7 @@ describe('document domain', () => {
       await createConnector({
         manifestFragmentId: 'fragment-a',
         slug: 'connector-a',
-        version: '007.260309.000',
+        version: '7.260309.0',
         active: false,
       });
 
@@ -1622,7 +1744,7 @@ describe('document domain', () => {
       await createConnector({
         manifestFragmentId: 'fragment-a',
         slug: 'connector-a',
-        version: '007.260309.000',
+        version: '7.260309.0',
         isDecommissioned: true,
       });
 
@@ -1638,7 +1760,7 @@ describe('document domain', () => {
       await createConnector({
         manifestFragmentId: 'fragment-a',
         slug: 'connector-a',
-        version: '007.260309.000',
+        version: '7.260309.0',
         integrationType: IntegrationType.CsvFeed,
       });
 
@@ -1654,12 +1776,12 @@ describe('document domain', () => {
       await createConnector({
         manifestFragmentId: 'fragment-a',
         slug: 'connector-a',
-        version: '007.260309.000',
+        version: '7.260309.0',
       });
       await createConnector({
         manifestFragmentId: 'fragment-b',
         slug: 'connector-b',
-        version: '007.260309.000',
+        version: '7.260309.0',
       });
 
       const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
@@ -1675,19 +1797,19 @@ describe('document domain', () => {
       await createConnector({
         manifestFragmentId: 'fragment-a',
         slug: 'connector-a',
-        version: '007.260309.000',
+        version: '7.260309.0',
         minimumDeployableVersionPadded: '007.260101.000',
       });
       await createConnector({
         manifestFragmentId: 'fragment-b',
         slug: 'connector-b',
-        version: '007.260309.000',
+        version: '7.260309.0',
         minimumDeployableVersionPadded: '007.260601.000',
       });
       await createConnector({
         manifestFragmentId: 'fragment-c',
         slug: 'connector-c',
-        version: '007.260101.000',
+        version: '7.260101.0',
       });
 
       const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
@@ -1706,19 +1828,19 @@ describe('document domain', () => {
       await createConnector({
         manifestFragmentId: 'fragment-a-newest-incompatible',
         slug: 'connector-a',
-        version: '007.260701.000',
+        version: '7.260701.0',
         minimumDeployableVersionPadded: '007.260601.000',
       });
       const expected = await createConnector({
         manifestFragmentId: 'fragment-a-newest-compatible',
         slug: 'connector-a',
-        version: '007.260401.000',
+        version: '7.260401.0',
         minimumDeployableVersionPadded: '007.260101.000',
       });
       await createConnector({
         manifestFragmentId: 'fragment-a-older-compatible',
         slug: 'connector-a',
-        version: '007.260101.000',
+        version: '7.260101.0',
       });
 
       const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
@@ -1734,7 +1856,7 @@ describe('document domain', () => {
       await createConnector({
         manifestFragmentId: 'fragment-a',
         slug: 'connector-a',
-        version: '007.260309.000.LTS.005',
+        version: '7.260309.0-lts.5',
         minimumDeployableVersionPadded: '007.260101.000.LTS.001',
       });
 
@@ -1750,7 +1872,7 @@ describe('document domain', () => {
       await createConnector({
         manifestFragmentId: 'fragment-a',
         slug: 'connector-a',
-        version: '007.260309.000',
+        version: '7.260309.0',
       });
 
       const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
@@ -1765,7 +1887,7 @@ describe('document domain', () => {
       const doc = await createConnector({
         manifestFragmentId: 'fragment-a',
         slug: 'connector-a',
-        version: '007.260101.000.LTS.001',
+        version: '7.260101.0-lts.1',
         minimumDeployableVersionPadded: '007.260101.000.LTS.001',
       });
 
@@ -1776,6 +1898,85 @@ describe('document domain', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0]!.id).toBe(doc.id);
+    });
+
+    // LTS versions must only ever be ranked against other LTS versions (and
+    // vice versa for non-LTS): the LTS filter partitions the set before
+    // ordering, so a newer non-LTS build must never outrank an older LTS one
+    // when the requested manifest version is LTS.
+    it('returns the latest LTS version among several compatible LTS versions of the same slug', async () => {
+      const expected = await createConnector({
+        manifestFragmentId: 'fragment-a-lts-newer',
+        slug: 'connector-a',
+        version: '7.260207.0-lts.2',
+      });
+      await createConnector({
+        manifestFragmentId: 'fragment-a-lts-older',
+        slug: 'connector-a',
+        version: '7.260101.0-lts.1',
+      });
+
+      // Newer than both LTS builds, but not LTS: must not win an LTS request.
+      await createConnector({
+        manifestFragmentId: 'fragment-a-non-lts-newest',
+        slug: 'connector-a',
+        version: '7.260904.0',
+      });
+
+      const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
+        ['connector-a'],
+        '7.260309.0-lts.5'
+      );
+
+      expect(result).toHaveLength(1);
+      expect(result[0]!.id).toBe(expected.id);
+    });
+
+    it('excludes a raw lowercase-suffixed LTS connector when manifest version is not LTS', async () => {
+      await createConnector({
+        manifestFragmentId: 'fragment-a',
+        slug: 'connector-a',
+        version: '7.260309.0-lts.5',
+      });
+
+      const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
+        ['connector-a'],
+        '7.260904.0'
+      );
+
+      expect(result).toHaveLength(0);
+    });
+
+    // Regression test for #3575: ordering used to be lexicographic over the
+    // raw, unpadded `Document.version` column, so `7.260309.9` (a string)
+    // sorted above `7.260309.10`. Comparing the zero-padded `version_padded`
+    // metadata instead makes the ordering numeric.
+    it('returns the highest padded version even when the raw patch has fewer digits (10 vs 9)', async () => {
+      const expected = await createConnector({
+        manifestFragmentId: 'fragment-a-patch-10',
+        slug: 'connector-a',
+        version: '7.260309.10',
+      });
+
+      await createConnector({
+        manifestFragmentId: 'fragment-a-patch-9',
+        slug: 'connector-a',
+        version: '7.260309.9',
+      });
+
+      await createConnector({
+        manifestFragmentId: 'fragment-a-lts-older',
+        slug: 'connector-a',
+        version: '7.260401.0-lts.1',
+      });
+
+      const result = await DocumentDomain.loadBestCompatibleConnectorsBySlugs(
+        ['connector-a'],
+        '7.260309.10'
+      );
+
+      expect(result).toHaveLength(1);
+      expect(result[0]!.id).toBe(expected.id);
     });
   });
 
@@ -2160,5 +2361,198 @@ describe('document domain', () => {
 
       expect(ids).toContain(orphan.id);
     });
+  });
+
+  describe('loadPaginatedSeoDocumentsByServiceSlug - relation filters without duplicate edges', () => {
+    type UseCaseKey = 'A' | 'B';
+    type SolutionCategoryKey = 'X' | 'Y';
+
+    let useCaseIds: Record<UseCaseKey, UseCaseId>;
+    let solutionCategoryIds: Record<SolutionCategoryKey, SolutionCategoryId>;
+    let visibleDocument: Document;
+    let controlDocument: Document;
+
+    beforeAll(async () => {
+      const [useCaseA, useCaseB] = await Promise.all([
+        TestHelper.useCase.create({
+          name: `dup-edges-use-case-a-${uuidv4()}`,
+          color: '#ff0000',
+        }),
+        TestHelper.useCase.create({
+          name: `dup-edges-use-case-b-${uuidv4()}`,
+          color: '#00ff00',
+        }),
+      ]);
+      useCaseIds = { A: useCaseA.id, B: useCaseB.id };
+
+      const [solutionCategoryX, solutionCategoryY] = await Promise.all([
+        solutionCategoryDomain.insertSolutionCategory({
+          name: `dup-edges-solution-category-x-${uuidv4()}`,
+        }),
+        solutionCategoryDomain.insertSolutionCategory({
+          name: `dup-edges-solution-category-y-${uuidv4()}`,
+        }),
+      ]);
+      solutionCategoryIds = {
+        X: solutionCategoryX.id,
+        Y: solutionCategoryY.id,
+      };
+    });
+
+    beforeEach(async () => {
+      const publicIntegrationFields = {
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+        active: true,
+        tags: [],
+      };
+
+      visibleDocument = await TestHelper.document.create({
+        ...publicIntegrationFields,
+        name: 'dup-edges-visible',
+        slug: `dup-edges-visible-${uuidv4()}`,
+      });
+      controlDocument = await TestHelper.document.create({
+        ...publicIntegrationFields,
+        name: 'dup-edges-control',
+        slug: `dup-edges-control-${uuidv4()}`,
+      });
+
+      const visibleObjectId =
+        visibleDocument.id as unknown as ObjectUseCaseObjectId;
+      const visibleSolutionCategoryObjectId =
+        visibleDocument.id as unknown as ObjectSolutionCategoryObjectId;
+      await TestHelper.objectUseCase.insert([
+        { object_id: visibleObjectId, use_case_id: useCaseIds.A },
+        { object_id: visibleObjectId, use_case_id: useCaseIds.B },
+      ]);
+      await objectSolutionCategoryDomain.insertObjectSolutionCategory([
+        {
+          object_id: visibleSolutionCategoryObjectId,
+          solution_category_id: solutionCategoryIds.X,
+        },
+        {
+          object_id: visibleSolutionCategoryObjectId,
+          solution_category_id: solutionCategoryIds.Y,
+        },
+      ]);
+    });
+
+    afterEach(async () => {
+      await TestHelper.objectUseCase.delete({
+        object_id: visibleDocument.id as unknown as ObjectUseCaseObjectId,
+      });
+      await TestHelper.objectSolutionCategory.delete({
+        object_id:
+          visibleDocument.id as unknown as ObjectSolutionCategoryObjectId,
+      });
+    });
+
+    afterAll(async () => {
+      await Promise.all([
+        TestHelper.useCase.delete({ id: useCaseIds.A }),
+        TestHelper.useCase.delete({ id: useCaseIds.B }),
+        solutionCategoryDomain.deleteSolutionCategory({
+          id: solutionCategoryIds.X,
+        }),
+        solutionCategoryDomain.deleteSolutionCategory({
+          id: solutionCategoryIds.Y,
+        }),
+      ]);
+    });
+
+    const buildIntegrationsLogicalFilters = (
+      useCaseKeys: UseCaseKey[],
+      solutionCategoryKeys: SolutionCategoryKey[]
+    ): LogicalFilterInput => ({
+      operator: LogicalOperator.And,
+      children: [
+        {
+          leaf: {
+            key: FilterKey.Label,
+            value: useCaseKeys.map((k) => toGlobalId('UseCase', useCaseIds[k])),
+          },
+        },
+        { leaf: { key: FilterKey.ManagerSupported, value: [] } },
+        { leaf: { key: FilterKey.Verified, value: [] } },
+        { leaf: { key: FilterKey.IntegrationType, value: [] } },
+        { leaf: { key: FilterKey.ProductVersion, value: [] } },
+        {
+          leaf: {
+            key: FilterKey.SolutionCategory,
+            value: solutionCategoryKeys.map((k) =>
+              toGlobalId('SolutionCategory', solutionCategoryIds[k])
+            ),
+          },
+        },
+        { leaf: { key: FilterKey.LicenseType, value: [] } },
+      ],
+    });
+
+    it.each<{
+      description: string;
+      useCaseKeys: UseCaseKey[];
+      solutionCategoryKeys: SolutionCategoryKey[];
+      controlVisible: boolean;
+    }>([
+      {
+        description: 'all leaves empty (production case)',
+        useCaseKeys: [],
+        solutionCategoryKeys: [],
+        controlVisible: true,
+      },
+      {
+        description: 'use case filter matching two use cases',
+        useCaseKeys: ['A', 'B'],
+        solutionCategoryKeys: [],
+        controlVisible: false,
+      },
+      {
+        description: 'use case filter with empty solution category leaf',
+        useCaseKeys: ['A'],
+        solutionCategoryKeys: [],
+        controlVisible: false,
+      },
+      {
+        description: 'use case and solution category filters both narrowed',
+        useCaseKeys: ['A'],
+        solutionCategoryKeys: ['X'],
+        controlVisible: false,
+      },
+    ])(
+      'should return each matching document exactly once ($description)',
+      async ({ useCaseKeys, solutionCategoryKeys, controlVisible }) => {
+        const result =
+          await DocumentDomain.loadPaginatedSeoDocumentsByServiceSlug(
+            OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+            'opencti-integrations',
+            {
+              first: 100,
+              logicalFilters: buildIntegrationsLogicalFilters(
+                useCaseKeys,
+                solutionCategoryKeys
+              ),
+            }
+          );
+
+        const edgeIds = result.edges.map(({ node }) => node.id);
+
+        expect(edgeIds).toContain(visibleDocument.id);
+
+        const expectedTotalCount = controlVisible ? 2 : 1;
+        expect(Number(result.totalCount)).toBe(expectedTotalCount);
+        expect(edgeIds).toHaveLength(expectedTotalCount);
+
+        expect(new Set(edgeIds).size).toBe(edgeIds.length);
+
+        if (controlVisible) {
+          expect(edgeIds).toContain(controlDocument.id);
+        } else {
+          expect(edgeIds).not.toContain(controlDocument.id);
+        }
+      }
+    );
   });
 });

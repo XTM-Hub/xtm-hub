@@ -5,6 +5,7 @@ import {
   buildLoginRedirect,
   buildOidcRedirect,
   decodeSafeRedirect,
+  encodeRedirectValue,
   isSafeRedirect,
 } from './redirect';
 
@@ -26,6 +27,26 @@ describe('isSafeRedirect', () => {
     ['', false],
   ])('isSafeRedirect(%s) === %s', (url, expected) => {
     expect(isSafeRedirect(url)).toBe(expected);
+  });
+});
+
+describe('encodeRedirectValue', () => {
+  it('percent-encodes characters found in base64 relay global IDs', () => {
+    // A relay global ID such as `toGlobalId('ServiceInstance', uuid)` is itself
+    // base64 and may contain `+`, `/` and `=`.
+    const relayGlobalId = 'U2VydmljZUluc3RhbmNlOnh4eHg/+/+PT0=';
+    expect(encodeRedirectValue(relayGlobalId)).toBe(
+      encodeURIComponent(relayGlobalId)
+    );
+    expect(encodeRedirectValue(relayGlobalId)).not.toContain('+');
+    expect(encodeRedirectValue(relayGlobalId)).not.toContain('/');
+    expect(encodeRedirectValue(relayGlobalId)).not.toContain('=');
+  });
+
+  it('round-trips a value containing + through a query string unchanged', () => {
+    const value = 'abc+def/ghi==';
+    const query = `service_instance_id=${encodeRedirectValue(value)}`;
+    expect(new URLSearchParams(query).get('service_instance_id')).toBe(value);
   });
 });
 

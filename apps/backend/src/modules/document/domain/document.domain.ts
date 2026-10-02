@@ -466,10 +466,11 @@ export const DocumentDomain = {
   buildSeoDocumentsByServiceSlugQuery: (
     type: string,
     serviceSlug: string,
-    orderResults: boolean = true
+    orderResults: boolean = true,
+    columns: string | string[] = 'Document.*'
   ): Knex.QueryBuilder => {
     return db<Document>('Document')
-      .select('Document.*')
+      .select(columns)
       .leftJoin(
         'ServiceInstance',
         'Document.service_instance_id',
@@ -511,6 +512,22 @@ export const DocumentDomain = {
       );
 
     return DocumentMetadataDomain.hydrateMetadata(documents, include_metadata);
+  },
+
+  // Sitemap-only projection: selects just slug/created_at/updated_at (skipping the
+  // rest of `Document`'s columns) and skips metadata hydration entirely, since the
+  // sitemap never reads document metadata. See `buildSeoDocumentsByServiceSlugQuery`
+  // for the shared filtering/decoupling logic.
+  loadSeoDocumentSlugsByServiceSlug: async (
+    type: string,
+    serviceSlug: string
+  ): Promise<Pick<Document, 'slug' | 'created_at' | 'updated_at'>[]> => {
+    return DocumentDomain.buildSeoDocumentsByServiceSlugQuery(
+      type,
+      serviceSlug,
+      true,
+      ['Document.slug', 'Document.created_at', 'Document.updated_at']
+    );
   },
 
   updateDocument: async ({
@@ -706,6 +723,12 @@ export const DocumentDomain = {
           DocumentMetadataKeyCode.MinimumDeployableVersionPadded
         );
       })
+      .leftJoin({ dm_version: 'Document_Metadata' }, function () {
+        this.on('dm_version.document_id', '=', 'Document.id').andOnVal(
+          'dm_version.key',
+          DocumentMetadataKeyCode.VersionPadded
+        );
+      })
       .where('dm_type.key', DocumentMetadataKeyCode.IntegrationType)
       .andWhere('dm_type.value', IntegrationType.Connector)
       .whereIn('Document.slug', slugs)
@@ -715,11 +738,11 @@ export const DocumentDomain = {
       .groupBy('Document.id', 'Document.slug')
       .havingRaw(
         `(MAX("dm_min"."value") IS NULL OR MAX("dm_min"."value") <= ?)
-         AND "Document"."version" ${isLts ? 'LIKE' : 'NOT LIKE'} '%.LTS.%'`,
+         AND MAX("dm_version"."value") ${isLts ? 'LIKE' : 'NOT LIKE'} '%.LTS.%'`,
         [paddedVersion]
       )
       .orderByRaw(
-        `"Document"."slug" ASC, "Document"."version" DESC NULLS LAST`
+        `"Document"."slug" ASC, MAX("dm_version"."value") DESC NULLS LAST`
       );
 
     return DocumentMetadataDomain.hydrateMetadata(connectors, metadataKeys);

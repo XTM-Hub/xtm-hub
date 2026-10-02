@@ -1,5 +1,5 @@
 import { IntegrationsCsvExportDialog } from '@/components/service/components/header/IntegrationsCsvExportDialog';
-import { buildLoginRedirect } from '@/utils/redirect';
+import { buildSignupRedirect } from '@/utils/redirect';
 import { DownloadIcon } from '@filigran/icon';
 import {
   Button,
@@ -31,7 +31,7 @@ export const IntegrationsCsvExportButton = ({
 
   const handleClick = () => {
     if (!isAuthenticated) {
-      router.push(buildLoginRedirect(loginRedirectPath));
+      router.push(buildSignupRedirect(loginRedirectPath));
       return;
     }
     setOpen(true);

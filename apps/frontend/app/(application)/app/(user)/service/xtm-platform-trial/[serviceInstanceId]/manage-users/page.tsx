@@ -3,9 +3,7 @@ import {
   MANAGE_USERS_ORIGIN_DASHBOARD,
   MANAGE_USERS_ORIGIN_PARAM,
 } from '@/utils/path/constant';
-import { isFeatureEnabled } from '@/utils/settings.service';
-import { FeatureFlag, OrganizationCapability } from '@graphql/generated';
-import { notFound } from 'next/navigation';
+import { OrganizationCapability } from '@graphql/generated';
 import ClientSection from './client-section';
 
 export interface ServiceXtmPlatformBundleManageUsersPageProps {
@@ -17,13 +15,6 @@ const Page = async ({
   params,
   searchParams,
 }: ServiceXtmPlatformBundleManageUsersPageProps) => {
-  const xtmPlatformTrialEnabled = await isFeatureEnabled(
-    FeatureFlag.XtmPlatformTrial
-  );
-  if (!xtmPlatformTrialEnabled) {
-    notFound();
-  }
-
   const fromParam = (await searchParams)[MANAGE_USERS_ORIGIN_PARAM];
   const fromValue = Array.isArray(fromParam) ? fromParam[0] : fromParam;
   const fromDashboard = fromValue === MANAGE_USERS_ORIGIN_DASHBOARD;
