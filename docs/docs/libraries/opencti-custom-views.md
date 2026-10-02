@@ -78,7 +78,7 @@ The target entity type of the view is passed automatically, so the view is creat
 
 The XTM Hub facilitates seamless collaboration through its comprehensive sharing functionality.
 Users can generate universal links for any custom view, enabling cross-organization sharing with partners,
-clients, or team members without requiring recipients to maintain XTM Hub accounts.
+clients, or team members without requiring recipients to maintain Filigran accounts.
 This approach removes barriers to information sharing while maintaining the integrity and
 accessibility of intelligence views across different organizational boundaries.
 
