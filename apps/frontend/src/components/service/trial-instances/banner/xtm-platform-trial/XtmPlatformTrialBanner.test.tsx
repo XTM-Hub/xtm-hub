@@ -1,10 +1,12 @@
 import { XtmPlatformTrialBanner } from '@/components/service/trial-instances/banner/xtm-platform-trial/XtmPlatformTrialBanner';
 import testRender from '@/utils/test/test-render';
-import { afterEach, describe, expect, it } from 'vitest';
+import { usePathname } from 'next/navigation';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 describe('XtmPlatformTrialBanner', () => {
   afterEach(() => {
     window.localStorage.clear();
+    vi.mocked(usePathname).mockReset();
   });
 
   it('should render nothing for the "none" state', () => {
@@ -26,6 +28,40 @@ describe('XtmPlatformTrialBanner', () => {
     ).toBeInTheDocument();
     expect(getByText('Service.Trials.LearnMore.Link')).toBeInTheDocument();
     expect(getByRole('button', { name: 'Utils.Close' })).toBeInTheDocument();
+  });
+
+  it('should hide the learn more link when already on the signed-in trial page', () => {
+    vi.mocked(usePathname).mockReturnValue('/app/service/xtm-platform-trial');
+
+    const { getByText, queryByText } = testRender(
+      <XtmPlatformTrialBanner
+        state="no-trial"
+        learnMoreHref="https://hub.filigran.io/app/service/xtm-platform-trial"
+      />
+    );
+
+    expect(
+      getByText('Service.Trials.XtmPlatform.NoTrial.Text')
+    ).toBeInTheDocument();
+    expect(queryByText('Service.Trials.LearnMore.Link')).toBeNull();
+  });
+
+  it('should hide the learn more link when already on the public trial page', () => {
+    vi.mocked(usePathname).mockReturnValue(
+      '/en/cybersecurity-solutions/xtm-platform-trial'
+    );
+
+    const { getByText, queryByText } = testRender(
+      <XtmPlatformTrialBanner
+        state="no-trial"
+        learnMoreHref="/en/cybersecurity-solutions/xtm-platform-trial"
+      />
+    );
+
+    expect(
+      getByText('Service.Trials.XtmPlatform.NoTrial.Text')
+    ).toBeInTheDocument();
+    expect(queryByText('Service.Trials.LearnMore.Link')).toBeNull();
   });
 
   it('should render the active copy, days-left badge and a dismiss button', () => {
