@@ -473,6 +473,7 @@ export enum DeploymentRequestActivitySector {
   Military = 'military',
   NonProfit = 'non_profit',
   OilEnergy = 'oil_energy',
+  Other = 'other',
   Pharmaceuticals = 'pharmaceuticals',
   Photography = 'photography',
   Retail = 'retail',

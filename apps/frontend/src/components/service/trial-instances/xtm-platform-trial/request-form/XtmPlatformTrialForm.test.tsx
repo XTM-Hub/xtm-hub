@@ -4,6 +4,7 @@ import {
   xtmPlatformTrialFormSchema,
 } from '@/components/service/trial-instances/xtm-platform-trial/request-form/XtmPlatformTrialForm';
 import testRender from '@/utils/test/test-render';
+import { DeploymentRequestActivitySector } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -141,6 +142,22 @@ describe('XtmPlatformTrialForm', () => {
         name: 'Service.Trials.XtmPlatform.Page.Form.Submit',
       })
     ).toBeEnabled();
+  });
+
+  it('lists the "Other" activity sector last', () => {
+    testRender(<XtmPlatformTrialForm handleSubmit={vi.fn()} />);
+
+    const [, , activitySectorSelect] = screen.getAllByRole('combobox');
+    const options = Array.from(
+      (activitySectorSelect as HTMLSelectElement).options
+    );
+
+    expect(options.at(-1)?.value).toBe(DeploymentRequestActivitySector.Other);
+    expect(
+      options.filter(
+        (option) => option.value === DeploymentRequestActivitySector.Other
+      )
+    ).toHaveLength(1);
   });
 
   it('submits the expected values when the form is filled and submitted', async () => {
