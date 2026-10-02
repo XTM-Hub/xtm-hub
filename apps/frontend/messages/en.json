@@ -120,11 +120,11 @@
   "DeploymentRequestUseCase": {
     "threat_profiling_cti": "Threat Profiling (CTI)",
     "threat_profiling_fimi": "Threat Profiling (FIMI)",
-    "threat_profiling_leo": "Threat Profiling (Law enforcement)",
+    "threat_profiling_leo": "Threat Profiling (Law Enforcement)",
     "threat_profiling_faml": "Threat Profiling (Fraud & AML)",
     "threat_hunting": "Threat Hunting",
-    "strategic_reporting": "Strategic Reporting (For Executives)",
-    "technical_reporting": "Strategic Reporting (for Analysts)'",
+    "strategic_reporting": "Strategic Reporting (for Executives)",
+    "technical_reporting": "Strategic Reporting (for Analysts)",
     "incident_response": "Coordinating Incident Response",
     "security_stack": "Integrating Security Stack",
     "detection_engineering": "Detection Engineering",
@@ -649,7 +649,7 @@
     }
   },
   "Metadata": {
-    "Title": "XTM Hub | Your Gateway to Cyber Threat Intelligence & Breach & Attack Simulation",
+    "Title": "XTM Hub | Your Gateway to Threat Intelligence & Exposure Validation",
     "Description": "XTM Hub is a central forum to access resources, optimize the use of Filigran’s products, and empower the community.",
     "ShortTitle": "XTM Hub | Cyber Threat Intelligence Platform",
     "ShortDescription": "XTM Hub is your gateway to Filigran's cybersecurity solutions.",
@@ -1602,7 +1602,7 @@
         "Title": "Important note about your trial environment's storage",
         "SaaSFeaturesLink": "Enterprise Edition SaaS features",
         "NoSLA": "<strong>The free trial environment does not include SLA.</strong> In the event of a cloud provider outage, recovery time is not guaranteed. We recommend not storing critical or irreplaceable data in your trial environment.",
-        "OpenCTIDescription": "The OpenCTI free trial provides users with a \"small\" SaaS instance, which includes all <link>Enterprise Edition SaaS features</link>, but with <strong>reduced computing power and storage (up to 40GB in intelligence data storage and 3GB in file storage).</strong> Ingesting large, premium feed with rich data sets during this trial could impact your storage quickly.",
+        "OpenCTIDescription": "The OpenCTI free trial provides users with a \"small\" SaaS instance, which includes all <link>Enterprise Edition SaaS features</link>, but with <strong>reduced computing power and storage (up to 40GB in intelligence data storage and 3GB in file storage).</strong> Ingesting large premium feeds with rich data sets during this trial could impact your storage quickly.",
         "OpenAEVDescription": "The OpenAEV free trial provides users with a \"small\" instance, which includes all <link>Enterprise Edition SaaS features</link>, but with a reduced computing power and a limited storage of <strong>16GB</strong>."
       },
       "XTMPlatform": {
@@ -1638,7 +1638,7 @@
           "Overline": "XTM Platform free trial",
           "Title": "Start your 30-day free trial",
           "PitchTitle": "Explore the full XTM Platform experience",
-          "PitchDescription": "Get 30 days to explore the SaaS-based, enterprise editions of OpenCTI and OpenAEV, including XTM One's agentic orchestration capabilities. Unify your threat intelligence and validate your defenses with agentic, continuous exposure management and cyber risk reduction.",
+          "PitchDescription": "Get 30 days to explore the SaaS-based enterprise editions of OpenCTI and OpenAEV, including XTM One's agentic orchestration capabilities. Unify your threat intelligence and validate your defenses with agentic, continuous exposure management and cyber risk reduction.",
           "Products": {
             "opencti": {
               "Tagline": "Unify and prioritize your threat signals",
@@ -1650,7 +1650,7 @@
             },
             "xtmone": {
               "Tagline": "Your agentic threat management cockpit",
-              "Description": "XTM One is the agentic AI layer orchestrating assistive and agentic AI across OpenCTI and OpenAEV, moving you from threat signal to validated action at machine speed, human-in-the-loop, closing the loop on CTEM."
+              "Description": "XTM One is the AI layer that orchestrates assistive and agentic AI across OpenCTI and OpenAEV. It takes you from threat signal to validated action at machine speed, with a human in the loop, so you can close the loop on CTEM."
             }
           },
           "Limitations": {
@@ -1658,7 +1658,7 @@
             "Intro": "The XTM Platform free trial includes all Enterprise Edition SaaS features, but with limited computing power and storage:",
             "OpenCTI": "For OpenCTI: up to 40GB in intelligence data storage and 3GB in file storage.",
             "OpenAEV": "For OpenAEV: 16GB",
-            "Ingestion": "Ingesting large, premium feed with rich data sets during this trial could impact your storage quickly.",
+            "Ingestion": "Ingesting large premium feeds with rich data sets during this trial could impact your storage quickly.",
             "NoSLA": "Note that this trial does not include SLAs. In the event of a cloud provider outage, recovery time is not guaranteed. We recommend not storing critical or irreplaceable data in your trial environment."
           },
           "Form": {
@@ -1751,7 +1751,7 @@
       "Form": {
         "Region": "Region",
         "RegionPlaceholder": "Select your preferred region for hosting",
-        "AssociatedEmail": "Associated Email：",
+        "AssociatedEmail": "Associated email:",
         "JobTitle": "Job title",
         "JobTitlePlaceholder": "Select your job title",
         "ActivitySector": "Activity sector",
@@ -1762,7 +1762,7 @@
           "AcceptTerms": "Please accept the trial terms to continue",
           "UseCase": "Please select a use case"
         },
-        "TermsAgreement": "I acknowledge that I have read, understand and agree to the trial terms of <mssa>MSSA</mssa> and <aiterms>AI terms</aiterms>",
+        "TermsAgreement": "I acknowledge that I have read, understood and agree to the <mssa>MSSA</mssa> trial terms and the <aiterms>AI terms</aiterms>",
         "FormRequested": "You have requested a free trial. You will receive an email as soon as the platform is ready!"
       },
       "Display": {
