@@ -306,6 +306,7 @@
       "CANT_REQUEST_FREE_TRIAL_IN_PERSONAL_SPACE": "You cannot request a free trial in your personal space",
       "CANT_SUBSCRIBE_YOURSELF": "You cannot add yourself",
       "COMPETITOR_DOMAIN_ALREADY_EXISTS": "A competitor with the same domain already exists",
+      "DEPLOYMENT_FEEDBACK_ALREADY_EXISTS": "Deployment feedback already exists",
       "COMPETITOR_NOT_FOUND": "Competitor not found",
       "CONNECTOR_ID_ALREADY_EXISTS": "A connector with this identifier already exists",
       "CONNECTOR_VERSION_ALREADY_EXISTS": "A connector with this version already exists",

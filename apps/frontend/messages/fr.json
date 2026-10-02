@@ -306,6 +306,7 @@
       "CANT_REQUEST_FREE_TRIAL_IN_PERSONAL_SPACE": "Vous ne pouvez pas demander d'essai gratuit dans votre espace personnel",
       "CANT_SUBSCRIBE_YOURSELF": "Vous ne pouvez pas vous donner l'accès vous-même",
       "COMPETITOR_DOMAIN_ALREADY_EXISTS": "Il existe déjà un concurrent avec le même domaine",
+      "DEPLOYMENT_FEEDBACK_ALREADY_EXISTS": "Des retours d'expérience sur le déploiement existent déjà",
       "COMPETITOR_NOT_FOUND": "Concurrent non trouvé",
       "CONNECTOR_ID_ALREADY_EXISTS": "Un connecteur avec cet identifiant existe déjà",
       "CONNECTOR_VERSION_ALREADY_EXISTS": "Un connecteur avec cette version existe déjà",
@@ -1627,10 +1628,10 @@
         "DaysLeft": "{days, plural, =1 {# jour restant} other {# jours restants}}",
         "Feedback": {
           "Question": "Votre expérience de l'essai XTM Platform se passe-t-elle bien jusqu'à présent ?",
-          "Yes": "Oui",
-          "No": "Non",
+          "Yes": "Oui, pour l'instant, tout va bien !",
+          "No": "Pas vraiment...",
           "Submit": "Soumettre",
-          "Justification": "Justification"
+          "Justification": "Désolés de savoir ça. Pouvez-vous nous donner la raison ?"
         },
         "Page": {
           "Breadcrumb": "XTM Platform Trial",

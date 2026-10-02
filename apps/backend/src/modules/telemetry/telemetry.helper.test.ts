@@ -935,7 +935,7 @@ describe('telemetryHelper', () => {
         organization_type: TelemetryOrganizationType.PROFESSIONAL,
         source: TelemetrySource.XTMHUB,
         user_id: CURRENT_USER.ID,
-        user_email: CURRENT_USER.EMAIL,
+        email: CURRENT_USER.EMAIL,
         answer: HasRepliedSatisfaction.No,
         justification: JUSTIFICATION,
         deployment_id: DEPLOYMENT_ID,

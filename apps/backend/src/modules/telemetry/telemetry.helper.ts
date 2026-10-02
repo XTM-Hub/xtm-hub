@@ -399,7 +399,7 @@ export const TelemetryHelper = {
     return {
       event_type: TelemetryEventType.REPLY_SATISFACTION,
       ...baseEvent,
-      user_email: user.email,
+      email: user.email,
       answer,
       justification,
       deployment_id,

@@ -1,9 +1,19 @@
 import { v4 as uuidv4 } from 'uuid';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
-import { TEST_ORGANIZATIONS } from '../../../../tests/tests.const';
+import {
+  contextSimpleUserFiligran2,
+  TEST_ORGANIZATIONS,
+} from '../../../../tests/tests.const';
 import { HasRepliedSatisfaction } from '../../../__generated__/resolvers-types';
+import { requestContext } from '../../../context/request.context';
 import { DeploymentRequestId } from '../../../model/kanel/public/DeploymentRequest';
+import { OrganizationId } from '../../../model/kanel/public/Organization';
+import { UserId } from '../../../model/kanel/public/User';
+import {
+  AlreadyExistsErrorCode,
+  ErrorCode,
+} from '../../../utils/error/error.code';
 import { TelemetryApp } from '../../telemetry/telemetry.app';
 import {
   TelemetryOrganizationType,
@@ -14,6 +24,17 @@ import { DeploymentFeedbackApp } from './deployment-feedback.app';
 
 const CURRENT_USER = TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2;
 const JUSTIFICATION = 'Deployment took too long';
+const DEPLOYMENT_REQUEST_ID = uuidv4() as DeploymentRequestId;
+
+const createDeploymentRequest = (
+  organizationRequesterId: OrganizationId,
+  userRequesterId: UserId
+) =>
+  TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription({
+    id: DEPLOYMENT_REQUEST_ID,
+    organization_requester_id: organizationRequesterId,
+    user_requester_id: userRequesterId,
+  });
 
 describe('deploymentFeedbackApp', () => {
   describe('giveDeploymentFeedback', () => {
@@ -24,6 +45,7 @@ describe('deploymentFeedbackApp', () => {
     afterEach(async () => {
       vi.useRealTimers();
       vi.restoreAllMocks();
+      await TestHelper.deploymentRequest.deleteBundle(DEPLOYMENT_REQUEST_ID);
       await TestHelper.user.update(
         { id: CURRENT_USER.ID },
         { has_replied_satisfaction: null }
@@ -34,11 +56,14 @@ describe('deploymentFeedbackApp', () => {
       // Given
       vi.useFakeTimers();
       vi.setSystemTime(new Date(Date.UTC(2025, 1, 3, 13, 12, 15)));
-      const deploymentRequestId = uuidv4() as DeploymentRequestId;
+      await createDeploymentRequest(
+        TEST_ORGANIZATIONS.FILIGRAN.ID,
+        CURRENT_USER.ID
+      );
 
       // When
       await DeploymentFeedbackApp.giveDeploymentFeedback({
-        deploymentRequestId,
+        deploymentRequestId: DEPLOYMENT_REQUEST_ID,
         answer: HasRepliedSatisfaction.No,
         justification: JUSTIFICATION,
       });
@@ -52,10 +77,10 @@ describe('deploymentFeedbackApp', () => {
         organization_type: TelemetryOrganizationType.PROFESSIONAL,
         source: TelemetrySource.XTMHUB,
         user_id: CURRENT_USER.ID,
-        user_email: CURRENT_USER.EMAIL,
+        email: CURRENT_USER.EMAIL,
         answer: HasRepliedSatisfaction.No,
         justification: JUSTIFICATION,
-        deployment_id: deploymentRequestId,
+        deployment_id: DEPLOYMENT_REQUEST_ID,
       });
     });
 
@@ -63,11 +88,14 @@ describe('deploymentFeedbackApp', () => {
       'should store the %s answer on the current user',
       async (answer) => {
         // Given
-        const deploymentRequestId = uuidv4() as DeploymentRequestId;
+        await createDeploymentRequest(
+          TEST_ORGANIZATIONS.FILIGRAN.ID,
+          CURRENT_USER.ID
+        );
 
         // When
         await DeploymentFeedbackApp.giveDeploymentFeedback({
-          deploymentRequestId,
+          deploymentRequestId: DEPLOYMENT_REQUEST_ID,
           answer,
         });
 
@@ -76,5 +104,68 @@ describe('deploymentFeedbackApp', () => {
         expect(user.has_replied_satisfaction).toBe(answer);
       }
     );
+
+    it.each([
+      HasRepliedSatisfaction.Yes,
+      HasRepliedSatisfaction.No,
+      HasRepliedSatisfaction.Closed,
+    ])(
+      'should throw DeploymentFeedbackAlreadyExists when the user has already replied %s',
+      async (previousAnswer) => {
+        // Given
+        await createDeploymentRequest(
+          TEST_ORGANIZATIONS.FILIGRAN.ID,
+          CURRENT_USER.ID
+        );
+        requestContext.update({
+          user: {
+            ...contextSimpleUserFiligran2.user,
+            has_replied_satisfaction: previousAnswer,
+          },
+        });
+
+        // When
+        const call = DeploymentFeedbackApp.giveDeploymentFeedback({
+          deploymentRequestId: DEPLOYMENT_REQUEST_ID,
+          answer: HasRepliedSatisfaction.Yes,
+        });
+
+        // Then
+        await expect(call).rejects.toThrow(
+          AlreadyExistsErrorCode.DeploymentFeedbackAlreadyExists
+        );
+      }
+    );
+
+    it('should throw UserIsNotInOrganization when the deployment request belongs to another organization', async () => {
+      // Given
+      await createDeploymentRequest(
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.ID
+      );
+
+      // When
+      const call = DeploymentFeedbackApp.giveDeploymentFeedback({
+        deploymentRequestId: DEPLOYMENT_REQUEST_ID,
+        answer: HasRepliedSatisfaction.Yes,
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.UserIsNotInOrganization);
+    });
+
+    it('should throw UserIsNotInOrganization when the deployment request does not exist', async () => {
+      // Given
+      const unknownDeploymentRequestId = uuidv4() as DeploymentRequestId;
+
+      // When
+      const call = DeploymentFeedbackApp.giveDeploymentFeedback({
+        deploymentRequestId: unknownDeploymentRequestId,
+        answer: HasRepliedSatisfaction.Yes,
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.UserIsNotInOrganization);
+    });
   });
 });

@@ -142,7 +142,7 @@ export interface CreateOrganizationEvent extends BaseTelemetryEvent {
 
 export interface ReplySatisfactionEvent extends BaseTelemetryEvent {
   event_type: TelemetryEventType.REPLY_SATISFACTION;
-  user_email: string;
+  email: string;
   deployment_id: string;
   answer: HasRepliedSatisfaction;
   justification?: string | null;
