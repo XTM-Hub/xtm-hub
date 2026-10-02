@@ -1878,6 +1878,11 @@ export type Query = {
   publicDocumentsByServiceSlug: Array<Document>;
   registeredPlatform?: Maybe<RegisteredPlatform>;
   registeredPlatforms: Array<RegisteredPlatform>;
+  /**
+   * Returns at most the 5 latest registered versions for the given product,
+   * most recent first. When `search` is provided, only versions whose string
+   * contains it (case-insensitive) are considered.
+   */
   registeredProductVersions: Array<RegisteredProductVersion>;
   seoServiceInstance: SeoServiceInstance;
   seoServiceInstanceMetadata: Array<SeoServiceInstanceMetadata>;
@@ -2102,6 +2107,7 @@ export type QueryRegisteredPlatformsArgs = {
 
 export type QueryRegisteredProductVersionsArgs = {
   product: PlatformIdentifier;
+  search?: InputMaybe<Scalars['String']['input']>;
 };
 
 
