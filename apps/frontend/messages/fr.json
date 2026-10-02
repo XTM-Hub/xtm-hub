@@ -172,7 +172,8 @@
     "telecommunications": "Télécommunications",
     "transportation": "Transport/camionnage/chemin de fer",
     "utilities": "Services publics",
-    "wireless": "Sans fil"
+    "wireless": "Sans fil",
+    "other": "Autre"
   },
   "DeleteUseCaseDialog": {
     "TextDeleteUseCase": "Voulez-vous vraiment supprimer cette étiquette {name} ? ?"

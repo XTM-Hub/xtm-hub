@@ -69,6 +69,14 @@ export const xtmPlatformTrialFormSchema = buildXtmPlatformTrialFormSchema(
   (key) => key
 );
 
+// Generated enums are sorted alphabetically: keep "Other" at the end of the list.
+const ACTIVITY_SECTORS = [
+  ...Object.values(DeploymentRequestActivitySector).filter(
+    (activitySector) => activitySector !== DeploymentRequestActivitySector.Other
+  ),
+  DeploymentRequestActivitySector.Other,
+];
+
 const SELECTABLE_PRODUCTS = [
   PlatformIdentifier.Opencti,
   PlatformIdentifier.Openaev,
@@ -333,7 +341,7 @@ export const XtmPlatformTrialForm = ({
                 field={field}
                 label={t('Service.Trials.Form.ActivitySector')}
                 placeholder={t('Service.Trials.Form.ActivitySectorPlaceholder')}
-                values={Object.values(DeploymentRequestActivitySector)}
+                values={ACTIVITY_SECTORS}
                 translationNamespace="DeploymentRequestActivitySector"
                 selectClassName={selectLayerClassName}
               />

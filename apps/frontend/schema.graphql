@@ -357,6 +357,7 @@ enum DeploymentRequestActivitySector {
   transportation
   utilities
   wireless
+  other
 }
 
 enum DeploymentRequestJobTitle {

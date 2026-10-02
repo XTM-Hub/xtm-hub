@@ -172,7 +172,8 @@
     "telecommunications": "Telecommunications",
     "transportation": "Transportation/Trucking/Railroad",
     "utilities": "Utilities",
-    "wireless": "Wireless"
+    "wireless": "Wireless",
+    "other": "Other"
   },
   "DeleteUseCaseDialog": {
     "TextDeleteUseCase": "Do you really want to delete this use case {name} ?"

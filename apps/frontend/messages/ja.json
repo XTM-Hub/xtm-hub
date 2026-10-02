@@ -172,7 +172,8 @@
     "telecommunications": "電気通信",
     "transportation": "運輸・トラック・鉄道",
     "utilities": "公益事業",
-    "wireless": "ワイヤレス"
+    "wireless": "ワイヤレス",
+    "other": "その他"
   },
   "DeleteUseCaseDialog": {
     "TextDeleteUseCase": "このユースケース {name} を本当に削除しますか？"
