@@ -306,6 +306,7 @@
       "CANT_REQUEST_FREE_TRIAL_IN_PERSONAL_SPACE": "個人的なスペースで無料体験を申し込むことはできない",
       "CANT_SUBSCRIBE_YOURSELF": "自分を追加することはできません",
       "COMPETITOR_DOMAIN_ALREADY_EXISTS": "同じドメインの競合がすでに存在する",
+      "DEPLOYMENT_FEEDBACK_ALREADY_EXISTS": "導入に関するフィードバックはすでに存在しています",
       "COMPETITOR_NOT_FOUND": "競合他社が見つかりません",
       "CONNECTOR_ID_ALREADY_EXISTS": "この識別子を持つコネクタは既に存在します",
       "CONNECTOR_VERSION_ALREADY_EXISTS": "このバージョンのコネクタは既に存在します",
@@ -331,6 +332,7 @@
       "DEPLOYMENT_REQUEST_QUOTA_NOT_FOUND": "配備要求のクォータが見つからなかった。",
       "DEPLOYMENT_REQUEST_STATUS_UPDATE_NOT_ALLOWED": "不明なエラーが発生した",
       "DEPLOYMENT_REQUEST_UNKNOWN_ERROR": "不明なエラーが発生した",
+      "DEPLOYMENT_FEEDBACK_UNKNOWN_ERROR": "フィードバックの送信中に不明なエラーが発生しました",
       "DOCUMENT_CREATE_ERROR": "リソースの作成中にエラーが発生しました。",
       "DOCUMENT_FILE_MISSING": "ドキュメントファイルが見つからない",
       "DOCUMENT_MISSING_METADATA": "ドキュメントにメタデータがありません。",
@@ -1624,6 +1626,13 @@
           "Text": "トライアル終了前に、引き続き XTM Platform のフル体験をお楽しみください。"
         },
         "DaysLeft": "{days, plural, =1 {残り#日} other {残り#日}}",
+        "Feedback": {
+          "Question": "XTM Platform の体験は今のところ順調ですか？",
+          "Yes": "うん、今のところ順調だね！",
+          "No": "そうでもないんだけど……",
+          "Submit": "送信",
+          "Justification": "それはお気の毒ですね。その理由を教えていただけませんか？"
+        },
         "Page": {
           "Breadcrumb": "XTM Platform Trial",
           "Overline": "XTM Platform 無料トライアル",

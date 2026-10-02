@@ -77,6 +77,7 @@ const COLUMN_ENUM_MAP = {
   },
   User: {
     status: 'UserAccountStatus',
+    has_replied_satisfaction: 'HasRepliedSatisfaction',
   },
 };
 

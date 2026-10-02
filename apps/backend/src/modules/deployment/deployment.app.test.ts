@@ -2011,6 +2011,7 @@ describe('deployment app', () => {
         isBlacklisted: false,
         hub_status: null,
         end_date: null,
+        deploymentRequestId: null,
       });
     });
 
@@ -2035,6 +2036,7 @@ describe('deployment app', () => {
         isBlacklisted: false,
         hub_status: DeploymentRequestHubStatus.Active,
         end_date: bundle.end_date,
+        deploymentRequestId: bundle.id,
       });
     });
 
@@ -2058,6 +2060,7 @@ describe('deployment app', () => {
         isBlacklisted: false,
         hub_status: null,
         end_date: null,
+        deploymentRequestId: null,
       });
     });
 
@@ -2078,6 +2081,7 @@ describe('deployment app', () => {
         isBlacklisted: true,
         hub_status: null,
         end_date: null,
+        deploymentRequestId: null,
       });
 
       await TestHelper.competitor.delete({});
@@ -2118,6 +2122,7 @@ describe('deployment app', () => {
         isBlacklisted: false,
         hub_status: null,
         end_date: null,
+        deploymentRequestId: null,
       });
     });
 

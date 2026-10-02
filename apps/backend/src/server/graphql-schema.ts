@@ -3,6 +3,7 @@ import { makeExecutableSchema } from '@graphql-tools/schema';
 import { glob } from 'glob';
 import fs from 'node:fs';
 import competitorResolver from '../modules/deployment/competitor/competitor.resolver';
+import deploymentFeedbackResolver from '../modules/deployment/deployment-feedback/deployment-feedback.resolver';
 import deploymentResolver from '../modules/deployment/deployment.resolver';
 import serviceGroupResolver from '../modules/deployment/group/service-group.resolver';
 import documentResolver from '../modules/document/document.resolver';
@@ -47,6 +48,7 @@ const typeDefFiles = await getGlobContent('src/**/*.graphql');
 const typeDefs = mergeTypeDefs(typeDefFiles);
 
 const resolvers = mergeResolvers([
+  deploymentFeedbackResolver,
   seoServiceInstanceResolver,
   solutionCategoryResolver,
   nodesResolver,
