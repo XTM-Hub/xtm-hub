@@ -1,7 +1,4 @@
 'use client';
-import BadgeOverflowCounter, {
-  BadgeOverflow,
-} from '@/components/ui/BadgeOverflowCounter';
 import { ShareableResourceCardDescription } from '@/components/ui/shareable-resource/card-design/ShareableResourceCardDescription';
 import { ShareableResourceCardFooterAuthor } from '@/components/ui/shareable-resource/card-design/ShareableResourceCardFooterAuthor';
 import { ShareableResourceCardFooterVersion } from '@/components/ui/shareable-resource/card-design/ShareableResourceCardFooterVersions';
@@ -69,28 +66,14 @@ const ShareableResourceCard = ({
         prefetch={false}>
         <ShareableResourceCardHeader
           document={document}
-          shouldDisplayBothIcons={isConnector}
           isConnector={isConnector}
           serviceInstanceId={serviceInstance.id}
         />
-        {isConnector ? (
-          <div className="p-m flex flex-col gap-s flex-1 min-h-0">
-            <ShareableResourceCardDescription
-              description={document.short_description}
-            />
-            <BadgeOverflowCounter
-              formatLabel={false}
-              badges={document.use_cases as BadgeOverflow[]}
-              className="z-2 shrink-0"
-            />
-          </div>
-        ) : (
-          <div className="p-m">
-            <ShareableResourceCardDescription
-              description={document.short_description}
-            />
-          </div>
-        )}
+        <div className="p-m">
+          <ShareableResourceCardDescription
+            description={document.short_description}
+          />
+        </div>
       </Link>
       <div className="flex items-center justify-between gap-m pl-m pb-m mt-auto">
         {isConnector ? (

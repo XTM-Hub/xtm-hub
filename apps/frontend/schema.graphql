@@ -1794,6 +1794,7 @@ type Connector implements Node & Document & Integration {
   children_documents: [ShareableResource!]
   remover_id: ID
   integration_type: IntegrationType!
+  version: String
   product_version: String
   container_image: String
   verified: Boolean!

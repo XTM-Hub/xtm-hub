@@ -42,6 +42,7 @@ export function getServiceInfo(
  */
 type DocumentMetadataValueType = {
   integration_type: string;
+  version: string | null;
   product_version: string | null;
   manager_supported: boolean;
   verified: boolean;

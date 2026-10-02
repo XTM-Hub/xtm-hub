@@ -1,56 +1,60 @@
-import { useBuildCompatibilityTranslationKey } from '@/hooks/use-build-compatibility-translation-key';
-import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
 import { cn } from '@/lib/utils';
-import { CheckIndeterminateIcon } from '@filigran/icon';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/ui/clients';
-import { PlatformIdentifier } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
+import { Badge } from '@filigran/ui/servers';
+
+export type VersionBadgeStatus = 'neutral' | 'success' | 'warning' | 'error';
 
 interface ShareableResourceCardVersionProps {
-  requiredProductVersion?: string | null;
-  product_version?: string | null;
-  className?: string;
+  version?: string | null;
+  status?: VersionBadgeStatus;
+  tooltip?: string;
 }
 
-export const ShareableResourceCardVersion = ({
-  requiredProductVersion,
-  product_version,
-  className,
-}: ShareableResourceCardVersionProps) => {
-  const t = useTranslations();
-  const { platforms } = useRegisteredPlatforms(PlatformIdentifier.Opencti, {
-    onlyActive: true,
-  });
-  const { platformToBeUpdated, incompatiblePlatformsCount } =
-    useBuildCompatibilityTranslationKey({
-      platforms,
-      requiredProductVersion,
-    });
+// Badge wraps its content in a child forcing text-foreground, so the status
+// colour has to be handed down explicitly for the version itself to take it.
+const INHERIT_TEXT = '[&>div]:text-inherit';
 
-  if (incompatiblePlatformsCount > 0) {
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className={cn('flex items-center gap-s', className)}>
-              {product_version}
-              <CheckIndeterminateIcon className="h-4 w-4" />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>
-            {t(`Service.Connectors.Incompatible`, {
-              platformToBeUpdated,
-              count: incompatiblePlatformsCount,
-            })}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
+const STATUS_CLASSNAME: Record<VersionBadgeStatus, string> = {
+  neutral: '',
+  success: `border-alert-success-primary text-alert-success-primary ${INHERIT_TEXT}`,
+  warning: `border-alert-warning-primary text-alert-warning-primary ${INHERIT_TEXT}`,
+  error: `border-alert-error-primary text-alert-error-primary ${INHERIT_TEXT}`,
+};
+
+export const ShareableResourceCardVersion = ({
+  version,
+  status = 'neutral',
+  tooltip,
+}: ShareableResourceCardVersionProps) => {
+  if (!version) {
+    return null;
   }
-  return <span className={className}>{product_version}</span>;
+
+  const badge = (
+    <Badge
+      // Only a badge carrying a tooltip is focusable, so keyboard users can
+      // reach the detail without adding an empty tab stop.
+      tabIndex={tooltip ? 0 : undefined}
+      className={cn('whitespace-nowrap', STATUS_CLASSNAME[status])}>
+      {version}
+    </Badge>
+  );
+
+  if (!tooltip) {
+    return badge;
+  }
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>{badge}</TooltipTrigger>
+        <TooltipContent>{tooltip}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 };
