@@ -263,9 +263,11 @@ export const COVERAGE_KEYWORD_RULES: Readonly<
 };
 
 // URLs often embed words such as "report" or "blog" that say nothing about the coverage: any scheme,
-// scheme-relative (//host), www. and bare host/path URLs are removed before matching.
+// scheme-relative (//host), www. and bare host URLs are removed before matching. A bare host
+// (malware.example.com) ends with a path, a port, whitespace, closing punctuation, a sentence period
+// or the end of the text; one-letter labels (e.g., i.e.) are never taken for a host.
 const URL_PATTERN =
-  /(?:\b[a-z][a-z0-9+.-]*:\/\/|(?<![\w:/])\/\/|\bwww\.|\b(?:[a-z0-9-]+\.)+[a-z]{2,}\/)\S*/gi;
+  /(?:\b[a-z][a-z0-9+.-]*:\/\/|(?<![\w:/])\/\/|\bwww\.)\S*|\b(?:[a-z0-9-]+\.)+[a-z]{2,}(?::\d+)?(?:\/\S*|(?=[\s),;:!?'"\]>]|\.(?:\s|$)|$))/gi;
 
 export const buildCoverageInferenceText = (
   source: CoverageInferenceSource

@@ -80,6 +80,11 @@ describe('integration-coverage.inference', () => {
       'See //example.com/blog/malware for the documentation',
       'See example.com/reports/malware for the documentation',
       'See ftp://example.com/malware/ip for the documentation',
+      'See malware.example.com for the documentation',
+      'Documentation: malware.example.com',
+      'Documentation at malware.example.com.',
+      'Documentation (malware.example.com), updated daily',
+      'Documentation at malware.example.com:8443',
     ])(
       'should ignore keywords inside a bare or scheme-relative URL: %s',
       (description) => {
@@ -99,6 +104,17 @@ describe('integration-coverage.inference', () => {
 
       // Then
       expect(coverage.object_types).toEqual(['Malware']);
+    });
+
+    it('should keep the keywords next to abbreviations and around a bare host', () => {
+      // Given / When
+      const coverage = inferIntegrationCoverage({
+        description:
+          'Covers e.g. malware, i.e. every vulnerability. Docs: example.com',
+      });
+
+      // Then
+      expect(coverage.object_types).toEqual(['Vulnerability', 'Malware']);
     });
 
     it('should infer from use cases and solution categories', () => {
