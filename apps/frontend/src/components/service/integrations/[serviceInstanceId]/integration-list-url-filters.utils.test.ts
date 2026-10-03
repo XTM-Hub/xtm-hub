@@ -7,8 +7,11 @@ import {
   emptyFilters,
   INTEGRATION_TYPE_PARAM,
   LABEL_PARAM,
+  OBJECT_TYPE_PARAM,
   parseAllFiltersFromWindowSearch,
   parseSelection,
+  REGION_PARAM,
+  SECTOR_PARAM,
   serializeSelection,
   VERIFIED_PARAM,
 } from './integration-list-url-filters.utils';
@@ -45,6 +48,45 @@ describe('parseSelection (simple filter)', () => {
     ${'empty entry'}   | ${',id1'}    | ${{ id1: [] }}
   `('$description', ({ raw, expected }) => {
     expect(parseSelection(raw, LABEL_PARAM)).toEqual(expected);
+  });
+});
+
+describe('coverage filters (free text)', () => {
+  it('round-trips values holding commas and colons', () => {
+    const filters = {
+      ...emptyFilters(),
+      [SECTOR_PARAM]: { 'Retail, consumer goods': [], Finance: [] },
+      [REGION_PARAM]: { 'Europe: Western': [] },
+      [OBJECT_TYPE_PARAM]: { Malware: [] },
+    };
+    const params = new URLSearchParams(buildAllFiltersSearchParams(filters));
+    expect(params.get(SECTOR_PARAM)).toBe(
+      '["Finance","Retail, consumer goods"]'
+    );
+    expect(parseSelection(params.get(SECTOR_PARAM), SECTOR_PARAM)).toEqual(
+      filters[SECTOR_PARAM]
+    );
+    expect(parseSelection(params.get(REGION_PARAM), REGION_PARAM)).toEqual(
+      filters[REGION_PARAM]
+    );
+    expect(
+      parseSelection(params.get(OBJECT_TYPE_PARAM), OBJECT_TYPE_PARAM)
+    ).toEqual(filters[OBJECT_TYPE_PARAM]);
+  });
+
+  it.each`
+    description                                 | raw                  | expected
+    ${'comma-separated links of earlier pages'} | ${'Finance,Energy'}  | ${{ Finance: [], Energy: [] }}
+    ${'malformed JSON read as a legacy list'}   | ${'[Finance'}        | ${{ '[Finance': [] }}
+    ${'blank JSON values dropped'}              | ${'["Finance"," "]'} | ${{ Finance: [] }}
+  `('parses $description', ({ raw, expected }) => {
+    expect(parseSelection(raw, SECTOR_PARAM)).toEqual(expected);
+  });
+
+  it('keeps the compact format for the other params', () => {
+    expect(serializeSelection({ id2: [], id1: [] }, LABEL_PARAM)).toBe(
+      'id1,id2'
+    );
   });
 });
 
