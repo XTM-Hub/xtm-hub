@@ -114,15 +114,21 @@ export const PulseHelper = {
   },
 
   // Ranked by growth, then recent distinct platforms, then key for a stable
-  // order; only the best items of every object type are kept.
+  // order; only the best items of every object type are kept. The recent
+  // period reaches k by construction; a previous period below k weighs 0.
   rankTrending: (
-    counts: readonly PulseTrendingCount[]
+    counts: readonly PulseTrendingCount[],
+    kThreshold: number
   ): PulseRankedTrendingCount[] => {
     const ranked = counts
       .map((count) => {
-        const baseline = (count.prev1 + count.prev2) / 2;
+        const prev1 = PulseStats.suppressBelowK(count.prev1, kThreshold);
+        const prev2 = PulseStats.suppressBelowK(count.prev2, kThreshold);
+        const baseline = (prev1 + prev2) / 2;
         return {
           ...count,
+          prev1,
+          prev2,
           baseline,
           growth: PulseStats.growth(count.recent, baseline),
         };
@@ -172,10 +178,10 @@ export const PulseHelper = {
       platforms_bucket: PulseStats.platformsBucket(networkPlatforms),
       first_seen_network: seen.firstSeen,
       last_seen_network: seen.lastSeen,
-      trend: PulseStats.weeklyTrend(presence.weekly),
+      trend: PulseStats.weeklyTrend(presence.weekly, kThreshold),
       trend_series: PulseStats.trendSeries(presence.weekly, kThreshold),
       sector_trend: sectorPublished
-        ? PulseStats.weeklyTrend(presence.sectorWeekly)
+        ? PulseStats.weeklyTrend(presence.sectorWeekly, kThreshold)
         : null,
       sector_platforms_bucket: sectorPublished
         ? PulseStats.platformsBucket(presence.sectorPlatformsInWindow)

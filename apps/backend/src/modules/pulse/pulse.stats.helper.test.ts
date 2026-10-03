@@ -152,11 +152,16 @@ describe('pulseStats', () => {
         weekly: [6, 6, 6, 6, 9, 9, 9, 9, 9, 9, 9, 9],
         expected: PulseTrendDirection.Stable,
       },
+      {
+        // Two reporters this week, nobody before: both below k, no direction.
+        weekly: [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        expected: PulseTrendDirection.Stable,
+      },
     ])(
-      'should compare the last week with the mean of the 3 weeks before ($expected)',
+      'should compare the last week with the mean of the 3 weeks before, each below k as 0 ($expected)',
       ({ weekly, expected }) => {
         // When
-        const trend = PulseStats.weeklyTrend(weekly);
+        const trend = PulseStats.weeklyTrend(weekly, K);
 
         // Then
         expect(trend).toBe(expected);
@@ -165,7 +170,7 @@ describe('pulseStats', () => {
   });
 
   describe('trendSeries', () => {
-    it('should return oldest first and report weeks below k as 0', () => {
+    it('should return oldest first, 0 below k and the lower bound of each platforms range', () => {
       // Given newest first
       const weekly = [7, 4, 5, 0, 1, 2, 3, 4, 5, 6, 7, 8];
 
@@ -173,7 +178,18 @@ describe('pulseStats', () => {
       const series = PulseStats.trendSeries(weekly, K);
 
       // Then
-      expect(series).toEqual([8, 7, 6, 5, 0, 0, 0, 0, 0, 5, 0, 7]);
+      expect(series).toEqual([5, 5, 5, 5, 0, 0, 0, 0, 0, 5, 0, 5]);
+    });
+
+    it('should never return an exact platform count', () => {
+      // Given newest first
+      const weekly = [260, 120, 51, 30, 12, 9, 0, 0, 0, 0, 0, 0];
+
+      // When
+      const series = PulseStats.trendSeries(weekly, K);
+
+      // Then
+      expect(series).toEqual([0, 0, 0, 0, 0, 0, 5, 10, 25, 50, 100, 250]);
     });
   });
 

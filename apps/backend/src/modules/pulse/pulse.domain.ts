@@ -22,8 +22,10 @@ import {
   PulseLedgerRecord,
   PulsePlatformRecord,
   PulsePlatformTotal,
+  PulsePublicationPolicy,
   PulseRateLimitBucket,
   PulseSeenRange,
+  PulseStoredTrendingSnapshot,
   PulseTotalIncrement,
   PulseTrendingCount,
   PulseTrendingSnapshotItem,
@@ -493,17 +495,34 @@ export const PulseDomain = {
     sectorScope: string;
     regionScope: string;
   }): Promise<
-    { computedAt: Date; items: PulseTrendingSnapshotItem[] } | undefined
+    | {
+        computedAt: Date;
+        policy: PulsePublicationPolicy | null;
+        items: PulseTrendingSnapshotItem[];
+      }
+    | undefined
   > => {
     const [row] = await query<{
       computed_at: Date;
-      items: PulseTrendingSnapshotItem[];
+      items: PulseStoredTrendingSnapshot | unknown;
     }>(
       `SELECT computed_at, items FROM "PulseTrendingSnapshot"
        WHERE day = ?::date AND period = ? AND sector_scope = ? AND region_scope = ?`,
       [day, period, sectorScope, regionScope]
     );
-    return row ? { computedAt: row.computed_at, items: row.items } : undefined;
+    if (!row) {
+      return undefined;
+    }
+    // A snapshot written before the publication policy was stored has none:
+    // it never matches, so it is recomputed.
+    const stored = row.items as Partial<PulseStoredTrendingSnapshot> | null;
+    const isStored =
+      !!stored && !Array.isArray(stored) && Array.isArray(stored.items);
+    return {
+      computedAt: row.computed_at,
+      policy: isStored ? (stored.policy ?? null) : null,
+      items: isStored ? (stored.items ?? []) : [],
+    };
   },
 
   saveTrendingSnapshot: async ({
@@ -512,6 +531,7 @@ export const PulseDomain = {
     sectorScope,
     regionScope,
     computedAt,
+    policy,
     items,
   }: {
     day: string;
@@ -519,8 +539,10 @@ export const PulseDomain = {
     sectorScope: string;
     regionScope: string;
     computedAt: Date;
+    policy: PulsePublicationPolicy;
     items: readonly PulseTrendingSnapshotItem[];
   }): Promise<void> => {
+    const stored: PulseStoredTrendingSnapshot = { policy, items: [...items] };
     await query(
       `INSERT INTO "PulseTrendingSnapshot" (day, period, sector_scope, region_scope, computed_at, items)
        VALUES (?::date, ?, ?, ?, to_timestamp(?::float8 / 1000), ?::jsonb)
@@ -532,7 +554,7 @@ export const PulseDomain = {
         sectorScope,
         regionScope,
         computedAt.getTime(),
-        toJson(items),
+        toJson(stored),
       ]
     );
   },

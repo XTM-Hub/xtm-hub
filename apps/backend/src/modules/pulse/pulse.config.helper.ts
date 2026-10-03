@@ -15,13 +15,21 @@ export interface PulseSecrets {
   platformKey: Buffer;
 }
 
+// `retentionMonths` is read on its own: an invalid unrelated setting disables
+// the API but never keeps contributions past a valid retention period.
 export type PulseRuntimeConfig =
-  | { enabled: true; settings: PulseSettings; secrets: PulseSecrets }
+  | {
+      enabled: true;
+      settings: PulseSettings;
+      secrets: PulseSecrets;
+      retentionMonths: number;
+    }
   | {
       enabled: false;
       reason: string;
       severity: 'info' | 'error';
       settings: PulseSettings | null;
+      retentionMonths: number | null;
     };
 
 export const PULSE_RECOMMENDED_MIN_K_THRESHOLD = 5;
@@ -137,11 +145,30 @@ const readSettings = (raw: PulseRawConfig): PulseSettings => ({
   },
 });
 
+const readRetentionMonths = (raw: PulseRawConfig): number | null => {
+  try {
+    return readInteger(
+      'retention_months',
+      raw.retention_months,
+      SETTINGS_RANGES.retention_months
+    );
+  } catch {
+    return null;
+  }
+};
+
 const disabled = (
   reason: string,
   settings: PulseSettings | null,
+  retentionMonths: number | null,
   severity: 'info' | 'error' = 'error'
-): PulseRuntimeConfig => ({ enabled: false, reason, severity, settings });
+): PulseRuntimeConfig => ({
+  enabled: false,
+  reason,
+  severity,
+  settings,
+  retentionMonths,
+});
 
 const resolveSecrets = (
   raw: PulseRawConfig,
@@ -171,31 +198,39 @@ const resolveSecrets = (
 };
 
 // Invalid values disable the service with a reason instead of crashing the
-// API; the settings stay available to the retention job whenever they parse.
+// API; the retention period stays available to the retention job whenever it
+// parses, whatever the other settings.
 export const resolvePulseConfig = (
   raw: PulseRawConfig,
   environment: string
 ): PulseRuntimeConfig => {
+  const retentionMonths = readRetentionMonths(raw);
   let settings: PulseSettings;
   try {
     settings = readSettings(raw);
   } catch (error) {
-    return disabled(getErrorMessage(error), null);
+    return disabled(getErrorMessage(error), null, retentionMonths);
   }
   try {
     if (!readBoolean('enabled', raw.enabled)) {
       return disabled(
         'disabled by configuration (PULSE_ENABLED=false)',
         settings,
+        settings.retentionMonths,
         'info'
       );
     }
     const secrets = resolveSecrets(raw, environment);
     if (typeof secrets === 'string') {
-      return disabled(secrets, settings);
+      return disabled(secrets, settings, settings.retentionMonths);
     }
-    return { enabled: true, settings, secrets };
+    return {
+      enabled: true,
+      settings,
+      secrets,
+      retentionMonths: settings.retentionMonths,
+    };
   } catch (error) {
-    return disabled(getErrorMessage(error), settings);
+    return disabled(getErrorMessage(error), settings, settings.retentionMonths);
   }
 };

@@ -26,6 +26,7 @@ import {
   PULSE_MAINTENANCE_BATCH_SIZE,
   PULSE_MAX_BENCHMARK_ITEMS,
   PULSE_PERIOD_DAYS,
+  PULSE_PUBLICATION_POLICY_VERSION,
   PULSE_PUSH_DEADLOCK_ATTEMPTS,
   PULSE_RATE_LIMIT_BUCKET_SECONDS,
   PULSE_RATE_LIMIT_MAX_WINDOW_SECONDS,
@@ -52,6 +53,7 @@ import {
   PulseKeyRef,
   PulseLedgerRecord,
   PulsePlatformRecord,
+  PulsePublicationPolicy,
   PulseTrendingSnapshotItem,
 } from './pulse.types';
 import {
@@ -197,6 +199,9 @@ const enforceRateLimit = async ({
   }
 };
 
+const canonicalUuid = (value: string): string =>
+  value.trim().toLowerCase().replace(/[{}-]/g, '');
+
 // Every operation needs an active OpenCTI registration on top of the
 // @platform_token directive, which also accepts pending deployment tokens.
 const authorize = async (
@@ -226,14 +231,21 @@ const authorize = async (
   if (registration.platformIdentifier !== PlatformIdentifier.Opencti) {
     throw PulseErrors.forbidden('Threat Pulse only accepts OpenCTI platforms');
   }
-  if (requiredPlatformId !== undefined && requiredPlatformId !== platformId) {
+  // PostgreSQL authenticates every spelling of a UUID (case, braces, hyphens):
+  // the pseudonym, the rate limit and the purge scope use the registration's
+  // canonical id, so one registration is always one contributor.
+  const canonicalPlatformId = registration.platformConfiguration.platform_id;
+  if (
+    requiredPlatformId !== undefined &&
+    canonicalUuid(requiredPlatformId) !== canonicalUuid(canonicalPlatformId)
+  ) {
     throw PulseErrors.forbidden(
       'platformId must match the XTM-Hub-Platform-Id header'
     );
   }
 
   const pseudonym = PulseCrypto.platformPseudonym(
-    platformId,
+    canonicalPlatformId,
     config.secrets.platformKey
   );
   const now = PulseClock.now();
@@ -359,7 +371,7 @@ const computeTrendingItems = async ({
     kThreshold: settings.kThreshold,
     retentionStart,
   });
-  const ranked = PulseHelper.rankTrending(counts);
+  const ranked = PulseHelper.rankTrending(counts, settings.kThreshold);
   if (ranked.length === 0) {
     return [];
   }
@@ -419,8 +431,19 @@ const loadTrendingItems = async ({
     regionScope: input.regionBucket ?? PULSE_SCOPE_ALL,
   };
   const ttlMs = settings.trendingCacheTtlMinutes * 60 * 1000;
-  const isFresh = (snapshot: { computedAt: Date } | undefined) =>
+  const policy: PulsePublicationPolicy = {
+    version: PULSE_PUBLICATION_POLICY_VERSION,
+    kThreshold: settings.kThreshold,
+  };
+  // A snapshot published under other rules (an older version, another k) is
+  // never served, however fresh.
+  const isFresh = (
+    snapshot:
+      { computedAt: Date; policy: PulsePublicationPolicy | null } | undefined
+  ) =>
     !!snapshot &&
+    snapshot.policy?.version === policy.version &&
+    snapshot.policy.kThreshold === policy.kThreshold &&
     now.getTime() - snapshot.computedAt.getTime() < ttlMs &&
     snapshot.computedAt.getTime() <= now.getTime();
 
@@ -440,6 +463,7 @@ const loadTrendingItems = async ({
       await PulseDomain.saveTrendingSnapshot({
         ...scope,
         computedAt: now,
+        policy,
         items,
       });
       return items;
@@ -790,16 +814,16 @@ export const PulseApp = {
   // Runs even when the service is disabled: data must never outlive the
   // retention period.
   applyRetention: async (now: Date = PulseClock.now()): Promise<void> => {
-    const { settings } = PulseConfig.get();
-    if (!settings) {
+    const { retentionMonths } = PulseConfig.get();
+    if (retentionMonths === null) {
       logApp.error(
-        '[Pulse] Retention skipped: the Threat Pulse configuration is invalid'
+        '[Pulse] Retention skipped: PULSE_RETENTION_MONTHS is invalid'
       );
       return;
     }
     const cutoff = PulseDay.retentionStart(
       PulseDay.today(now),
-      settings.retentionMonths
+      retentionMonths
     );
     const deleted: Record<string, number> = {};
     for (const table of [
