@@ -26,6 +26,9 @@ type IntegrationFiltersParams = {
   productVersions: LogicalMultiSelectSelection;
   licenseTypes?: LogicalMultiSelectSelection;
   solutionCategories?: LogicalMultiSelectSelection;
+  objectTypes?: LogicalMultiSelectSelection;
+  sectors?: LogicalMultiSelectSelection;
+  regions?: LogicalMultiSelectSelection;
 };
 
 export type LogicalFiltersParams =
@@ -45,6 +48,9 @@ export const useLogicalFiltersFromStorage = (params: LogicalFiltersParams) => {
     'licenseTypes' in params ? params.licenseTypes : undefined;
   const solutionCategories =
     'solutionCategories' in params ? params.solutionCategories : undefined;
+  const objectTypes = 'objectTypes' in params ? params.objectTypes : undefined;
+  const sectors = 'sectors' in params ? params.sectors : undefined;
+  const regions = 'regions' in params ? params.regions : undefined;
 
   return useMemo(() => {
     if (serviceInstanceSlug === ServiceSlug.OPEN_CTI_INTEGRATIONS) {
@@ -88,6 +94,24 @@ export const useLogicalFiltersFromStorage = (params: LogicalFiltersParams) => {
               value: Object.keys(licenseTypes ?? {}),
             },
           },
+          {
+            leaf: {
+              key: FilterKey.ObjectType,
+              value: Object.keys(objectTypes ?? {}),
+            },
+          },
+          {
+            leaf: {
+              key: FilterKey.Sector,
+              value: Object.keys(sectors ?? {}),
+            },
+          },
+          {
+            leaf: {
+              key: FilterKey.Region,
+              value: Object.keys(regions ?? {}),
+            },
+          },
         ],
       };
     }
@@ -119,5 +143,8 @@ export const useLogicalFiltersFromStorage = (params: LogicalFiltersParams) => {
     productVersions,
     licenseTypes,
     solutionCategories,
+    objectTypes,
+    sectors,
+    regions,
   ]);
 };

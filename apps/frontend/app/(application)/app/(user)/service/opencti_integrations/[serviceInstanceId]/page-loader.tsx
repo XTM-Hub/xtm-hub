@@ -22,6 +22,9 @@ const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
     productVersions,
     licenseTypes,
     solutionCategories,
+    objectTypes,
+    sectors,
+    regions,
     setSearch,
     deployable,
     verified,
@@ -47,6 +50,9 @@ const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
     productVersions,
     licenseTypes,
     solutionCategories,
+    objectTypes,
+    sectors,
+    regions,
   });
 
   const { queryRef } = useShareableResourceQueryLoader({

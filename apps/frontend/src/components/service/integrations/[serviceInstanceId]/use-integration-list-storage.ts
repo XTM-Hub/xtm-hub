@@ -6,7 +6,10 @@ import {
   INTEGRATION_TYPE_PARAM,
   LABEL_PARAM,
   LICENSE_TYPE_PARAM,
+  OBJECT_TYPE_PARAM,
   PRODUCT_VERSION_PARAM,
+  REGION_PARAM,
+  SECTOR_PARAM,
   SOLUTION_CATEGORY_PARAM,
   VERIFIED_PARAM,
 } from '@/components/service/integrations/[serviceInstanceId]/integration-list-url-filters.utils';
@@ -28,6 +31,9 @@ export const useIntegrationListStorage = () => {
     productVersions,
     licenseTypes,
     solutionCategories,
+    objectTypes,
+    sectors,
+    regions,
     setIntegrationTypes,
     setLabels,
     setDeployable,
@@ -35,6 +41,9 @@ export const useIntegrationListStorage = () => {
     setProductVersions,
     setLicenseTypes,
     setSolutionCategories,
+    setObjectTypes,
+    setSectors,
+    setRegions,
   } = store;
 
   const filters = useMemo<AllFilters>(
@@ -46,6 +55,9 @@ export const useIntegrationListStorage = () => {
       [PRODUCT_VERSION_PARAM]: productVersions,
       [LICENSE_TYPE_PARAM]: licenseTypes,
       [SOLUTION_CATEGORY_PARAM]: solutionCategories,
+      [OBJECT_TYPE_PARAM]: objectTypes,
+      [SECTOR_PARAM]: sectors,
+      [REGION_PARAM]: regions,
     }),
     [
       integrationTypes,
@@ -55,6 +67,9 @@ export const useIntegrationListStorage = () => {
       productVersions,
       licenseTypes,
       solutionCategories,
+      objectTypes,
+      sectors,
+      regions,
     ]
   );
 
@@ -67,6 +82,9 @@ export const useIntegrationListStorage = () => {
       setProductVersions(value[PRODUCT_VERSION_PARAM] ?? {});
       setLicenseTypes(value[LICENSE_TYPE_PARAM] ?? {});
       setSolutionCategories(value[SOLUTION_CATEGORY_PARAM] ?? {});
+      setObjectTypes(value[OBJECT_TYPE_PARAM] ?? {});
+      setSectors(value[SECTOR_PARAM] ?? {});
+      setRegions(value[REGION_PARAM] ?? {});
     },
     [
       setIntegrationTypes,
@@ -76,6 +94,9 @@ export const useIntegrationListStorage = () => {
       setProductVersions,
       setLicenseTypes,
       setSolutionCategories,
+      setObjectTypes,
+      setSectors,
+      setRegions,
     ]
   );
 

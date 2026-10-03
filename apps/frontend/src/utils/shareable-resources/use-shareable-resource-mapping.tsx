@@ -6,6 +6,7 @@ import {
   ServiceListFilterKey,
   ServiceListFilterMap,
 } from '@/components/service/components/header/ServiceListHeader';
+import { IntegrationCoverageFilter } from '@/components/ui/shareable-resource/integration/IntegrationCoverageFilter';
 import { IntegrationDeployableFilter } from '@/components/ui/shareable-resource/integration/IntegrationDeployableFilter';
 import { IntegrationLicenseTypeFilter } from '@/components/ui/shareable-resource/integration/IntegrationLicenseTypeFilter';
 import { IntegrationSolutionCategoryFilter } from '@/components/ui/shareable-resource/integration/IntegrationSolutionCategoryFilter';
@@ -99,6 +100,33 @@ export const useShareableResourceMapping = (
         node: (
           <IntegrationLicenseTypeFilter
             facetCounts={facetCounts?.licenseType}
+          />
+        ),
+      },
+      [ServiceListFilterKey.ObjectType]: {
+        title: t('Service.OpenctiIntegrations.Filter.ObjectType.Label'),
+        node: (
+          <IntegrationCoverageFilter
+            family="objectType"
+            facetCounts={facetCounts?.objectType}
+          />
+        ),
+      },
+      [ServiceListFilterKey.Sector]: {
+        title: t('Service.OpenctiIntegrations.Filter.Sector.Label'),
+        node: (
+          <IntegrationCoverageFilter
+            family="sector"
+            facetCounts={facetCounts?.sector}
+          />
+        ),
+      },
+      [ServiceListFilterKey.Region]: {
+        title: t('Service.OpenctiIntegrations.Filter.Region.Label'),
+        node: (
+          <IntegrationCoverageFilter
+            family="region"
+            facetCounts={facetCounts?.region}
           />
         ),
       },

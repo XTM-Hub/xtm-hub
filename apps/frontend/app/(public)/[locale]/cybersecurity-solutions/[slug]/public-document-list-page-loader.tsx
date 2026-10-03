@@ -41,6 +41,9 @@ export const PublicDocumentListPageLoader = ({
     productVersions,
     licenseTypes,
     solutionCategories,
+    objectTypes,
+    sectors,
+    regions,
     orderMode,
     orderBy,
   } = useServiceListLocalStorage(localStorageKey);
@@ -56,6 +59,9 @@ export const PublicDocumentListPageLoader = ({
           productVersions,
           licenseTypes,
           solutionCategories,
+          objectTypes,
+          sectors,
+          regions,
         }
       : {
           serviceInstanceSlug: serviceInstanceSlug as

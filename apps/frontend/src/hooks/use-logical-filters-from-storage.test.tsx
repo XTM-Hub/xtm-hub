@@ -24,6 +24,9 @@ describe('useLogicalFiltersFromStorage', () => {
       productVersions: { [productVersionValue]: [] },
       solutionCategories: { [solutionCategoryValue]: [] },
       licenseTypes: { [licenseTypeValue]: [] },
+      objectTypes: { Malware: [] },
+      sectors: { Finance: [] },
+      regions: { France: [] },
     };
 
     // When
@@ -75,6 +78,24 @@ describe('useLogicalFiltersFromStorage', () => {
             value: [licenseTypeValue],
           },
         },
+        {
+          leaf: {
+            key: FilterKey.ObjectType,
+            value: ['Malware'],
+          },
+        },
+        {
+          leaf: {
+            key: FilterKey.Sector,
+            value: ['Finance'],
+          },
+        },
+        {
+          leaf: {
+            key: FilterKey.Region,
+            value: ['France'],
+          },
+        },
       ],
     });
   });
@@ -106,6 +127,15 @@ describe('useLogicalFiltersFromStorage', () => {
         value: [],
       },
     });
+    for (const key of [
+      FilterKey.ObjectType,
+      FilterKey.Sector,
+      FilterKey.Region,
+    ]) {
+      expect(result.current.children).toContainEqual({
+        leaf: { key, value: [] },
+      });
+    }
   });
 
   it('should include entity type leaf when service slug is not OpenCTI integrations and entity types exist', () => {

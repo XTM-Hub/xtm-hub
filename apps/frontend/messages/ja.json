@@ -1204,7 +1204,14 @@
       "VendorUrlLabel": "ベンダーリンク (url)",
       "VerifiedLabel": "検証済み",
       "EntityTypesLabel": "エンティティタイプ",
-      "EntityTypesPlaceholder": "エンティティタイプを追加"
+      "EntityTypesPlaceholder": "エンティティタイプを追加",
+      "CoveredObjectTypesLabel": "対象のオブジェクトタイプ",
+      "CoveredObjectTypesPlaceholder": "対象のオブジェクトタイプ...",
+      "CoverageDescription": "カバレッジを空にすると、Hub が名前、説明、ユースケース、ソリューションカテゴリから推定します。",
+      "CoveredSectorsLabel": "対象のセクター",
+      "CoveredSectorsPlaceholder": "セクターを追加（例: Finance）",
+      "CoveredRegionsLabel": "対象の地域",
+      "CoveredRegionsPlaceholder": "地域または国を追加（例: Europe）"
     },
     "OpenctiIntegrations": {
       "Actions": {
@@ -1238,6 +1245,15 @@
           "Placeholder": "ステータス...",
           "Verified": "Filigranの提供による",
           "Unverified": "コミュニティの提供による"
+        },
+        "ObjectType": {
+          "Label": "オブジェクトタイプ"
+        },
+        "Sector": {
+          "Label": "セクター"
+        },
+        "Region": {
+          "Label": "地域"
         }
       },
       "Type": {
@@ -1516,7 +1532,11 @@
         "DemoURL": "デモURL",
         "EntityType": "エンティティタイプ",
         "SupportedByFiligran": "Filigranの提供による",
-        "SupportedByCommunity": "コミュニティの提供による"
+        "SupportedByCommunity": "コミュニティの提供による",
+        "CoveredObjectTypes": "対象のオブジェクトタイプ",
+        "CoveredSectors": "対象のセクター",
+        "CoveredRegions": "対象の地域",
+        "CoverageInferred": "説明から推定"
       },
       "Download": "ダウンロード",
       "FromVersion": "バージョンから",

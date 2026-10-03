@@ -8,6 +8,9 @@ export interface ServiceListFacetCounts {
   verified?: Record<string, number>;
   solutionCategory?: Record<string, number>;
   licenseType?: Record<string, number>;
+  objectType?: Record<string, number>;
+  sector?: Record<string, number>;
+  region?: Record<string, number>;
 }
 
 type FacetData = DocumentFacetsQuery['documentFacets'] | undefined;
@@ -27,4 +30,7 @@ export const toServiceListFacetCounts = (
   solutionCategory: toMap(facets?.solution_category ?? []),
   useCase: toMap(facets?.use_case ?? []),
   entityType: toMap(facets?.entity_type ?? []),
+  objectType: toMap(facets?.object_type ?? []),
+  sector: toMap(facets?.sector ?? []),
+  region: toMap(facets?.region ?? []),
 });

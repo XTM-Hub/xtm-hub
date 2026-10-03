@@ -27,6 +27,9 @@ const csvFeedFormSchema = z.object({
   use_cases: z.array(z.string()).min(1, 'Required'),
   solution_categories: z.array(z.string()).min(1, 'Required'),
   license_type: z.enum(['Free', 'Commercial']).optional(),
+  covered_object_types: z.array(z.string()).optional(),
+  covered_sectors: z.array(z.string()).optional(),
+  covered_regions: z.array(z.string()).optional(),
   active: z.boolean().optional(),
   datasheet_url: z.url().or(z.literal('')).nullish(),
   blogpost_url: z.url().or(z.literal('')).nullish(),
@@ -76,6 +79,9 @@ export const CsvFeedForm = ({ handleSubmit, document }: CsvFeedFormProps) => {
           (label) => label.id
         ),
         license_type: document?.license_type ?? undefined,
+        covered_object_types: [...(document?.covered_object_types ?? [])],
+        covered_sectors: [...(document?.covered_sectors ?? [])],
+        covered_regions: [...(document?.covered_regions ?? [])],
         uploader_id: document?.uploader?.id ?? me!.id,
         uploader_organization_id:
           (isCreation
@@ -106,6 +112,9 @@ export const CsvFeedForm = ({ handleSubmit, document }: CsvFeedFormProps) => {
     use_cases,
     solution_categories,
     license_type,
+    covered_object_types,
+    covered_sectors,
+    covered_regions,
     uploader_id,
     uploader_organization_id,
     integration_type,
@@ -146,6 +155,9 @@ export const CsvFeedForm = ({ handleSubmit, document }: CsvFeedFormProps) => {
           description,
           use_cases,
           solution_categories,
+          covered_object_types,
+          covered_sectors,
+          covered_regions,
           license_type: {
             ...license_type,
             fieldType: 'radio',

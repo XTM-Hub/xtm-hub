@@ -19,6 +19,9 @@ export enum ServiceListFilterKey {
   ProductVersion = 'product_version',
   ManagerSupported = 'manager_supported',
   Verified = 'verified',
+  ObjectType = 'object_type',
+  Sector = 'sector',
+  Region = 'region',
 }
 
 export interface ServiceListFilter {

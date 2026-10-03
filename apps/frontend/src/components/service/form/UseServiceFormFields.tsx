@@ -1,3 +1,7 @@
+import {
+  ServiceFormCoverageTagsField,
+  ServiceFormCoveredObjectTypesField,
+} from '@/components/service/form/CoverageFields';
 import { ServiceFormDescriptionField } from '@/components/service/form/DescriptionField';
 import { ServiceFormEntityTypesField } from '@/components/service/form/EntityTypesField';
 import { ServiceFormLogoField } from '@/components/service/form/LogoField';
@@ -65,6 +69,9 @@ type AvailableFields =
   | 'solution_categories'
   | 'license_type'
   | 'entity_types'
+  | 'covered_object_types'
+  | 'covered_sectors'
+  | 'covered_regions'
   | 'images'
   | 'integration_type'
   | 'active'
@@ -193,6 +200,44 @@ export const useServiceFormFields = ({
           <ServiceFormEntityTypesField
             field={field}
             disabled={disabledFields.includes('entity_types')}
+          />
+        ),
+      },
+      covered_object_types: {
+        fieldType: ({
+          field,
+        }: {
+          field: ControllerRenderProps<FieldValues, string>;
+        }) => (
+          <ServiceFormCoveredObjectTypesField
+            field={field}
+            disabled={disabledFields.includes('covered_object_types')}
+          />
+        ),
+      },
+      covered_sectors: {
+        fieldType: ({
+          field,
+        }: {
+          field: ControllerRenderProps<FieldValues, string>;
+        }) => (
+          <ServiceFormCoverageTagsField
+            family="sectors"
+            field={field}
+            disabled={disabledFields.includes('covered_sectors')}
+          />
+        ),
+      },
+      covered_regions: {
+        fieldType: ({
+          field,
+        }: {
+          field: ControllerRenderProps<FieldValues, string>;
+        }) => (
+          <ServiceFormCoverageTagsField
+            family="regions"
+            field={field}
+            disabled={disabledFields.includes('covered_regions')}
           />
         ),
       },
