@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../../../../tests/helper/test.helper';
 import {
   TEST_ORGANIZATIONS,
@@ -11,7 +11,6 @@ import {
 } from '../../../../../portal.const';
 import { minioInit } from '../../../../../server/initialize';
 import { DocumentChildrenDomain } from '../../../../document/domain/document.children.domain';
-import { DocumentDomain } from '../../../../document/domain/document.domain';
 import { useCaseDomain } from '../../../../use-case/use-case.domain';
 import { IntegrationCoverageDomain } from '../integration-coverage/integration-coverage.domain';
 import {
@@ -506,35 +505,44 @@ describe('upsertConnectors', () => {
       });
     });
 
-    it('should keep an admin coverage declared after the ingestion read the connectors', async () => {
-      // Given - an admin declares a coverage right after the batch read of the existing connectors
-      const manifest = buildCoverageManifest('coverage-admin-during-ingestion');
-      const [created] = await IngestManifestDomain.upsertConnectors([manifest]);
-      const declaredCoverage = {
+    it('should keep the coverage of a connector created by a concurrent ingestion', async () => {
+      // Given - two ingestions of a new connector run at the same time, only one declares a coverage
+      const manifest = buildCoverageManifest('coverage-concurrent-creation', {
+        name: 'Ransomware tracker',
+      });
+
+      // When
+      const [[declaring], [undeclaring]] = await Promise.all([
+        IngestManifestDomain.upsertConnectors([
+          { ...manifest, coverage: { sectors: [FINANCE] } },
+        ]),
+        IngestManifestDomain.upsertConnectors([manifest]),
+      ]);
+
+      // Then - one connector, and the declaration wins whatever the order
+      expect(undeclaring!.id).toEqual(declaring!.id);
+      expect(await loadCoverage(declaring)).toEqual({
         object_types: [],
         sectors: [FINANCE],
         regions: [],
         inferred: false,
-      };
-      const loadDocumentsByMetadata = DocumentDomain.loadDocumentsByMetadata;
-      const spy = vi
-        .spyOn(DocumentDomain, 'loadDocumentsByMetadata')
-        .mockImplementationOnce(async (...args) => {
-          const snapshot = await loadDocumentsByMetadata(...args);
-          await IntegrationCoverageDomain.upsertCoverageMetadata([
-            { documentId: created!.id, coverage: declaredCoverage },
-          ]);
-          return snapshot;
-        });
+      });
+    });
+
+    it('should keep the curated links of the connector it updates', async () => {
+      // Given
+      const manifest = buildCoverageManifest('coverage-curated-links');
+      await IngestManifestDomain.upsertConnectors([
+        { ...manifest, datasheet_url: 'https://example.com/datasheet' },
+      ]);
 
       // When
       const [updated] = await IngestManifestDomain.upsertConnectors([
-        { ...manifest, name: 'Ransomware tracker' },
+        { ...manifest, datasheet_url: undefined },
       ]);
-      spy.mockRestore();
 
       // Then
-      expect(await loadCoverage(updated)).toEqual(declaredCoverage);
+      expect(updated!.datasheet_url).toEqual('https://example.com/datasheet');
     });
 
     it('should let a coverage declared by the manifest replace the stored one', async () => {

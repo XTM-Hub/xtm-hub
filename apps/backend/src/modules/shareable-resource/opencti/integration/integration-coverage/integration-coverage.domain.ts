@@ -254,25 +254,6 @@ export const IntegrationCoverageDomain = {
   },
 
   /**
-   * Stored coverage read after locking the document row, so the caller's
-   * transaction resolves its write against the current value. Must run
-   * inside `databaseContext.withTransaction`.
-   */
-  loadStoredCoverageForUpdate: async (
-    documentId: DocumentId
-  ): Promise<StoredIntegrationCoverage | null> => {
-    const locked: Pick<Document, 'id'> | undefined = await db<Document>(
-      'Document'
-    )
-      .where('id', documentId)
-      .select('id')
-      .forUpdate()
-      .first();
-    if (!locked) return null;
-    return IntegrationCoverageDomain.loadStoredCoverage(documentId);
-  },
-
-  /**
    * Text the coverage inference falls back to, read after locking the
    * document row: an update never infers from a name or description that a
    * concurrent update replaced after it first read the document. Must run

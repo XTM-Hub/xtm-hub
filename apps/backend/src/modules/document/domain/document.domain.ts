@@ -573,6 +573,21 @@ export const DocumentDomain = {
     return updatedDocument;
   },
 
+  /**
+   * Document that `upsertOnSlug` updates for this slug: the latest one outside
+   * the decoupling tag. `forUpdate` locks its row in the caller's transaction.
+   */
+  findLatestBySlug: async (
+    slug: string,
+    { forUpdate = false }: { forUpdate?: boolean } = {}
+  ): Promise<DocumentModel | undefined> => {
+    const query = db<DocumentModel>('Document')
+      .where('slug', '=', slug)
+      .modify(excludeDecouplingTag)
+      .orderBy('created_at', 'desc');
+    return (forUpdate ? query.forUpdate() : query).first();
+  },
+
   upsertOnSlug: async <
     T extends DocumentModel,
     TUseCase extends string = UseCaseValue,
@@ -595,11 +610,7 @@ export const DocumentDomain = {
     const slug = (documentData as { slug?: string }).slug;
 
     const existingDocument = slug
-      ? await db<DocumentModel>('Document')
-          .where('slug', '=', slug)
-          .modify(excludeDecouplingTag)
-          .orderBy('created_at', 'desc')
-          .first()
+      ? await DocumentDomain.findLatestBySlug(slug)
       : undefined;
 
     if (existingDocument) {
