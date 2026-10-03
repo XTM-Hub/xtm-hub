@@ -4,6 +4,7 @@ import { DeploymentApp } from './modules/deployment/deployment.app';
 import { ServiceGroupApp } from './modules/deployment/group/service-group.app';
 import { NewsFeedApp } from './modules/news-feed/news-feed.app';
 import { UserOrganizationApp } from './modules/organization-management/user/user-organization/user-organization.app';
+import { PulseApp } from './modules/pulse/pulse.app';
 import { EpicApp } from './modules/xtm-platform-roadmap/epic.app';
 import { CRONS_USER_CONTEXT } from './portal.const';
 import { logApp } from './utils/app-logger.util';
@@ -65,6 +66,38 @@ const cleanExpiredNewsFeedItems = async (): Promise<void> => {
   });
 };
 
+const cleanExpiredPulseSalts = async (): Promise<void> => {
+  logApp.info('Running cleanExpiredPulseSalts job');
+  await requestContext.run(CRONS_USER_CONTEXT, async () => {
+    try {
+      await PulseApp.cleanExpiredSalts();
+    } catch (error) {
+      logApp.error('cleanExpiredPulseSalts job failed:', { error });
+    }
+  });
+};
+
+const applyPulseRetention = async (): Promise<void> => {
+  logApp.info('Running applyPulseRetention job');
+  await requestContext.run(CRONS_USER_CONTEXT, async () => {
+    try {
+      await PulseApp.applyRetention();
+    } catch (error) {
+      logApp.error('applyPulseRetention job failed:', { error });
+    }
+  });
+};
+
+const cleanPulseRateLimits = async (): Promise<void> => {
+  await requestContext.run(CRONS_USER_CONTEXT, async () => {
+    try {
+      await PulseApp.cleanRateLimitBuckets();
+    } catch (error) {
+      logApp.error('cleanPulseRateLimits job failed:', { error });
+    }
+  });
+};
+
 export const initCronJobs = () => {
   logApp.info('Initializing cron jobs');
   scheduledTasks.push(cron.schedule('0 2 * * *', expireTrials));
@@ -76,6 +109,14 @@ export const initCronJobs = () => {
   );
   scheduledTasks.push(cron.schedule('0 3 * * *', cleanExpiredTrialGroups));
   scheduledTasks.push(cron.schedule('0 4 * * *', cleanExpiredNewsFeedItems));
+  // Threat Pulse days are UTC days.
+  scheduledTasks.push(
+    cron.schedule('5 0 * * *', cleanExpiredPulseSalts, { timezone: 'Etc/UTC' })
+  );
+  scheduledTasks.push(
+    cron.schedule('30 1 * * *', applyPulseRetention, { timezone: 'Etc/UTC' })
+  );
+  scheduledTasks.push(cron.schedule('15 * * * *', cleanPulseRateLimits));
 };
 
 export const stopCronJobs = () => {

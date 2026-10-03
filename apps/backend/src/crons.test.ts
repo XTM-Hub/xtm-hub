@@ -12,6 +12,9 @@ const cronMocks = vi.hoisted(() => ({
   sendPublicRoadmapMonthlyReminderMock: vi.fn(async () => undefined),
   removeExpiredGroupsMock: vi.fn(async () => undefined),
   cleanExpiredNewsFeedItemsMock: vi.fn(async () => undefined),
+  cleanExpiredPulseSaltsMock: vi.fn(async () => 0),
+  applyPulseRetentionMock: vi.fn(async () => undefined),
+  cleanPulseRateLimitsMock: vi.fn(async () => 0),
 }));
 
 vi.mock('node-cron', () => ({
@@ -75,6 +78,14 @@ vi.mock('./modules/news-feed/news-feed.app', () => ({
   },
 }));
 
+vi.mock('./modules/pulse/pulse.app', () => ({
+  PulseApp: {
+    cleanExpiredSalts: cronMocks.cleanExpiredPulseSaltsMock,
+    applyRetention: cronMocks.applyPulseRetentionMock,
+    cleanRateLimitBuckets: cronMocks.cleanPulseRateLimitsMock,
+  },
+}));
+
 import { initCronJobs, stopCronJobs } from './crons';
 import { CRONS_USER_CONTEXT } from './portal.const';
 
@@ -89,13 +100,13 @@ describe('crons', () => {
   it('should set CRONS_USER_CONTEXT for every cron task execution', async () => {
     initCronJobs();
 
-    expect(cronMocks.scheduledCallbacks).toHaveLength(5);
+    expect(cronMocks.scheduledCallbacks).toHaveLength(8);
 
     for (const callback of cronMocks.scheduledCallbacks) {
       await callback();
     }
 
-    expect(cronMocks.requestContextRunMock).toHaveBeenCalledTimes(5);
+    expect(cronMocks.requestContextRunMock).toHaveBeenCalledTimes(8);
     expect(cronMocks.requestContextRunMock).toHaveBeenNthCalledWith(
       1,
       CRONS_USER_CONTEXT,
@@ -129,6 +140,9 @@ describe('crons', () => {
     ).toHaveBeenCalledTimes(1);
     expect(cronMocks.removeExpiredGroupsMock).toHaveBeenCalledTimes(1);
     expect(cronMocks.cleanExpiredNewsFeedItemsMock).toHaveBeenCalledTimes(1);
+    expect(cronMocks.cleanExpiredPulseSaltsMock).toHaveBeenCalledTimes(1);
+    expect(cronMocks.applyPulseRetentionMock).toHaveBeenCalledTimes(1);
+    expect(cronMocks.cleanPulseRateLimitsMock).toHaveBeenCalledTimes(1);
   });
 
   it('should stop all scheduled tasks', () => {
@@ -136,7 +150,7 @@ describe('crons', () => {
 
     stopCronJobs();
 
-    expect(cronMocks.scheduledTaskStops).toHaveLength(5);
+    expect(cronMocks.scheduledTaskStops).toHaveLength(8);
     for (const stop of cronMocks.scheduledTaskStops) {
       expect(stop).toHaveBeenCalledTimes(1);
     }

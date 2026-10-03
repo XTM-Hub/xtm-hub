@@ -133,6 +133,44 @@ describe('createPlatformTokenResolver', () => {
       expect(result.selected_organization_id).toBe(orgId);
     });
 
+    it.each([
+      {
+        description: 'the platform headers are missing',
+        headers: {},
+        mockLookups: () => undefined,
+      },
+      {
+        description: 'no registration matches the headers',
+        headers: validHeaders,
+        mockLookups: () => {
+          vi.spyOn(
+            DeploymentRequestDomain,
+            'loadDeploymentRequestBy'
+          ).mockResolvedValue(undefined);
+          vi.spyOn(
+            PlatformConfigurationDomain,
+            'loadConfigurationByPlatformAndToken'
+          ).mockResolvedValue(undefined);
+        },
+      },
+    ])(
+      'should answer UNAUTHENTICATED when $description',
+      async ({ headers, mockLookups }) => {
+        // Given
+        mockLookups();
+        const resolver = createPlatformTokenResolver(vi.fn());
+        const context = makePortalContext(headers);
+
+        // When
+        const call = runResolver(resolver, context);
+
+        // Then
+        await expect(call).rejects.toMatchObject({
+          extensions: { code: 'UNAUTHENTICATED' },
+        });
+      }
+    );
+
     it('should throw when neither a deployment request nor a service configuration is found', async () => {
       vi.spyOn(
         DeploymentRequestDomain,

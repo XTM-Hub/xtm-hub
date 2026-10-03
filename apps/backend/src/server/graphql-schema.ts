@@ -13,6 +13,7 @@ import logResolver from '../modules/log/log.resolver';
 import manageProductVersionResolver from '../modules/manage-product-version/manage-product-version.resolver';
 import newsFeedResolver from '../modules/news-feed/news-feed.resolver';
 import organizationResolver from '../modules/organization-management/organization/organization.resolver';
+import pulseResolver from '../modules/pulse/pulse.resolver';
 import userResolver from '../modules/organization-management/user/user.resolver';
 import registrationResolver from '../modules/registration/registration.resolver';
 import serviceCapabilityResolver from '../modules/security-management/service-capability/service-capability.resolver';
@@ -83,6 +84,7 @@ const resolvers = mergeResolvers([
   manifestFragmentResolver,
   manageProductVersionResolver,
   featureVotingResolver,
+  pulseResolver,
 ]);
 
 const createSchema = () => {

@@ -45,6 +45,18 @@ interface PortalConfig {
   environment: string;
   enabled_features: string[];
   dev_users?: DevUser[];
+  pulse: PulseRawConfig;
+}
+
+export interface PulseRawConfig {
+  enabled: unknown;
+  at_rest_key: unknown;
+  platform_key: unknown;
+  k_threshold: unknown;
+  retention_months: unknown;
+  contribution_window_days: unknown;
+  trending_cache_ttl_minutes: unknown;
+  rate_limits: Record<string, unknown>;
 }
 
 const portalConfig: PortalConfig = {
@@ -100,5 +112,17 @@ const portalConfig: PortalConfig = {
   environment: config.get<string>('environment'),
   enabled_features: config.get<string[]>('enabled_features') ?? [],
   dev_users: parseAndValidateDevUsers(),
+  // Validated by the Threat Pulse module, which disables itself with a clear
+  // log instead of crashing the API when a value is invalid.
+  pulse: {
+    enabled: config.get('pulse.enabled'),
+    at_rest_key: config.get('pulse.at_rest_key'),
+    platform_key: config.get('pulse.platform_key'),
+    k_threshold: config.get('pulse.k_threshold'),
+    retention_months: config.get('pulse.retention_months'),
+    contribution_window_days: config.get('pulse.contribution_window_days'),
+    trending_cache_ttl_minutes: config.get('pulse.trending_cache_ttl_minutes'),
+    rate_limits: config.get<Record<string, unknown>>('pulse.rate_limits'),
+  },
 };
 export default portalConfig;
