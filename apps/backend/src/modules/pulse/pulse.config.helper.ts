@@ -47,9 +47,17 @@ const DEVELOPMENT_SECRETS = new Set([
   '5f3d1b9f7e5d3c1b9f7e5d3c1b9f7e5d5f3d1b9f7e5d3c1b9f7e5d3c1b9f7e5d',
 ]);
 
+// The 90-day trending compares the last period with the two before it, 270
+// days in all: 9 months, at least 273 days, is the shortest retention that
+// never prunes a compared period (pruned history would read as no activity).
+// A shorter retention disables the API, while the retention job still prunes
+// at the configured period: a deployment never keeps data longer than it asked.
+export const PULSE_MIN_RETENTION_MONTHS = 9;
+
 const SETTINGS_RANGES = {
   k_threshold: { min: MIN_K_THRESHOLD, max: 1000 },
   retention_months: { min: 1, max: 120 },
+  service_retention_months: { min: PULSE_MIN_RETENTION_MONTHS, max: 120 },
   contribution_window_days: { min: 1, max: 365 },
   contribution_grace_days: { min: 1, max: 365 },
   digest_size: { min: 100, max: 20_000 },
@@ -137,7 +145,7 @@ const readSettings = (raw: PulseRawConfig): PulseSettings => ({
   retentionMonths: readInteger(
     'retention_months',
     raw.retention_months,
-    SETTINGS_RANGES.retention_months
+    SETTINGS_RANGES.service_retention_months
   ),
   ...readContributionDays(raw),
   digestSize: readInteger(

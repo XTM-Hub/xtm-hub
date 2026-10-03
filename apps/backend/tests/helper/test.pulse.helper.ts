@@ -190,6 +190,33 @@ export const TestPulseHelper = {
       return rows.map((row: { platform_count: number }) => row.platform_count);
     },
 
+    loadPlatformBuckets: async (): Promise<
+      {
+        sector_bucket: string;
+        region_bucket: string;
+        last_contribution_day: string;
+      }[]
+    > => {
+      const rows = await db('PulsePlatform')
+        .select(
+          'sector_bucket',
+          'region_bucket',
+          dbRaw('last_contribution_day::text AS last_contribution_day')
+        )
+        .orderBy('id');
+      return rows.map(
+        (row: {
+          sector_bucket: string;
+          region_bucket: string;
+          last_contribution_day: string;
+        }) => ({
+          sector_bucket: row.sector_bucket,
+          region_bucket: row.region_bucket,
+          last_contribution_day: row.last_contribution_day,
+        })
+      );
+    },
+
     loadSaltDays: async (): Promise<string[]> => {
       const rows = await db('PulseSalt')
         .select(dbRaw('day::text AS day'))

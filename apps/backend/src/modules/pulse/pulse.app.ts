@@ -817,10 +817,12 @@ export const PulseApp = {
         });
         for (const presence of presences) {
           const keyId = pulseKeyId(presence);
-          presenceByKey.set(keyId, [
-            ...(presenceByKey.get(keyId) ?? []),
-            presence,
-          ]);
+          const keyPresences = presenceByKey.get(keyId);
+          if (keyPresences) {
+            keyPresences.push(presence);
+          } else {
+            presenceByKey.set(keyId, [presence]);
+          }
         }
         activeContributors = await PulseDomain.countActiveContributors({
           fromDay: activityWindowStart(validated.day),

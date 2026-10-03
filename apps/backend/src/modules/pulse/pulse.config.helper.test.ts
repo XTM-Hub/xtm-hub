@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { PulseRawConfig } from '../../config';
-import { resolvePulseConfig } from './pulse.config.helper';
+import {
+  PULSE_MIN_RETENTION_MONTHS,
+  resolvePulseConfig,
+} from './pulse.config.helper';
 
 const AT_REST_KEY =
   '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
@@ -246,6 +249,35 @@ describe('resolvePulseConfig', () => {
       settings: null,
       retentionMonths: 13,
     });
+  });
+
+  it('should disable the service but keep pruning when the retention cannot hold the 90-day trends', () => {
+    // When
+    const config = resolvePulseConfig(
+      makeRawConfig({ retention_months: PULSE_MIN_RETENTION_MONTHS - 1 }),
+      'production'
+    );
+
+    // Then
+    expect(config).toMatchObject({
+      enabled: false,
+      settings: null,
+      retentionMonths: PULSE_MIN_RETENTION_MONTHS - 1,
+    });
+    expect(config.enabled ? '' : config.reason).toContain(
+      `between ${PULSE_MIN_RETENTION_MONTHS} and 120`
+    );
+  });
+
+  it('should accept the shortest retention that holds the 90-day trends', () => {
+    // When
+    const config = resolvePulseConfig(
+      makeRawConfig({ retention_months: PULSE_MIN_RETENTION_MONTHS }),
+      'production'
+    );
+
+    // Then
+    expect(config.settings?.retentionMonths).toBe(PULSE_MIN_RETENTION_MONTHS);
   });
 
   it('should give the retention job no period when the retention itself is invalid', () => {

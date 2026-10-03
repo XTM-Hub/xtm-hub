@@ -364,6 +364,47 @@ describe('pulseApp platform API', PULSE_INTEGRATION_SUITE, () => {
       }).toEqual({ keys: 1, days: [PULSE_TEST_YESTERDAY, PULSE_TEST_TODAY] });
     });
 
+    it('should keep the buckets of the newest day when a late batch arrives', async () => {
+      // Given a platform that contributed today as finance / europe
+      const client = await registerClient();
+      const records = [
+        { objectType: PulseObjectType.Indicator, value: IP_VALUE },
+      ];
+      await client.push({ day: PULSE_TEST_TODAY, records });
+
+      // When yesterday's batch arrives late, with other buckets
+      await client.push({
+        day: PULSE_TEST_YESTERDAY,
+        records,
+        sector: PulseSectorBucket.Healthcare,
+        region: PulseRegionBucket.AsiaPacific,
+      });
+
+      // Then the platform keeps today's buckets
+      expect(await TestHelper.pulse.loadPlatformBuckets()).toEqual([
+        {
+          sector_bucket: PulseSectorBucket.Finance,
+          region_bucket: PulseRegionBucket.Europe,
+          last_contribution_day: PULSE_TEST_TODAY,
+        },
+      ]);
+
+      // And a batch of the newest day still moves them
+      await client.push({
+        day: PULSE_TEST_TODAY,
+        records,
+        sector: PulseSectorBucket.Healthcare,
+        region: PulseRegionBucket.AsiaPacific,
+      });
+      expect(await TestHelper.pulse.loadPlatformBuckets()).toEqual([
+        {
+          sector_bucket: PulseSectorBucket.Healthcare,
+          region_bucket: PulseRegionBucket.AsiaPacific,
+          last_contribution_day: PULSE_TEST_TODAY,
+        },
+      ]);
+    });
+
     it.each([
       {
         description: 'a raw value instead of a hash',

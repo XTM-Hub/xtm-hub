@@ -107,8 +107,11 @@ export const PulseDomain = {
          (pseudonym, sector_bucket, region_bucket, first_contribution_day, last_contribution_day)
        VALUES (decode(?, 'hex'), ?, ?, ?::date, ?::date)
        ON CONFLICT (pseudonym) DO UPDATE SET
-         sector_bucket = EXCLUDED.sector_bucket,
-         region_bucket = EXCLUDED.region_bucket,
+         -- A late batch (an earlier day) never overrides the buckets of a newer one.
+         sector_bucket = CASE WHEN p.last_contribution_day IS NULL OR EXCLUDED.last_contribution_day >= p.last_contribution_day
+                              THEN EXCLUDED.sector_bucket ELSE p.sector_bucket END,
+         region_bucket = CASE WHEN p.last_contribution_day IS NULL OR EXCLUDED.last_contribution_day >= p.last_contribution_day
+                              THEN EXCLUDED.region_bucket ELSE p.region_bucket END,
          first_contribution_day = LEAST(p.first_contribution_day, EXCLUDED.first_contribution_day),
          last_contribution_day = GREATEST(p.last_contribution_day, EXCLUDED.last_contribution_day),
          updated_at = now()
