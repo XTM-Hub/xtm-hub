@@ -61,6 +61,7 @@ describe('integration-coverage.resolver', () => {
         },
       ],
       facets: EMPTY_FACETS,
+      truncated: false,
     };
     vi.spyOn(
       IntegrationCoverageApp,
