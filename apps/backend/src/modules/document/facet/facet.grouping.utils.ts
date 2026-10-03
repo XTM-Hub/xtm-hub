@@ -13,10 +13,14 @@ export type FacetField =
   | 'product_version'
   | 'solution_category'
   | 'use_case'
-  | 'entity_type';
+  | 'entity_type'
+  | 'object_type'
+  | 'sector'
+  | 'region';
 
+/** `metadataList` reads a JSON array stored under `metadataKey`, one bucket per element. */
 export type FacetSource =
-  'metadata' | 'useCase' | 'solutionCategory' | 'entityType';
+  'metadata' | 'useCase' | 'solutionCategory' | 'metadataList';
 
 export type FacetSpec = {
   field: FacetField;
@@ -69,7 +73,26 @@ export const FACET_SPECS: readonly FacetSpec[] = [
   {
     field: 'entity_type',
     filterKey: FilterKey.EntityType,
-    source: 'entityType',
+    source: 'metadataList',
+    metadataKey: DocumentMetadataKeyCode.EntityTypes,
+  },
+  {
+    field: 'object_type',
+    filterKey: FilterKey.ObjectType,
+    source: 'metadataList',
+    metadataKey: DocumentMetadataKeyCode.CoveredObjectTypes,
+  },
+  {
+    field: 'sector',
+    filterKey: FilterKey.Sector,
+    source: 'metadataList',
+    metadataKey: DocumentMetadataKeyCode.CoveredSectors,
+  },
+  {
+    field: 'region',
+    filterKey: FilterKey.Region,
+    source: 'metadataList',
+    metadataKey: DocumentMetadataKeyCode.CoveredRegions,
   },
 ] as const;
 

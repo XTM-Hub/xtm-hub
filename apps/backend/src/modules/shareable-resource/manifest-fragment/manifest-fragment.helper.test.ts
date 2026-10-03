@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { DocumentMetadataKeyCode } from '../../../__generated__/resolvers-types';
 import { BadRequestErrorCode } from '../../../utils/error/error.code';
 import {
+  ConnectorCoverageSnapshot,
   ManifestFragmentHelper,
   MAX_CONTACT_LENGTH,
 } from './manifest-fragment.helper';
@@ -323,4 +325,70 @@ describe('parseContact', () => {
       expect(result).toBeUndefined();
     }
   );
+});
+
+describe('getDeclaredCoverageFromExisting', () => {
+  const declaredSnapshot = (
+    sectors: string[],
+    version_padded?: string
+  ): ConnectorCoverageSnapshot => ({
+    version_padded,
+    [DocumentMetadataKeyCode.CoveredObjectTypes]: '[]',
+    [DocumentMetadataKeyCode.CoveredSectors]: JSON.stringify(sectors),
+    [DocumentMetadataKeyCode.CoveredRegions]: '[]',
+    [DocumentMetadataKeyCode.CoverageInferred]: 'false',
+  });
+  const inferredSnapshot: ConnectorCoverageSnapshot = {
+    version_padded: '007.260310.000',
+    [DocumentMetadataKeyCode.CoveredSectors]: JSON.stringify(['Energy']),
+    [DocumentMetadataKeyCode.CoverageInferred]: 'true',
+  };
+
+  it('should prefer the declared coverage of the current latest connector', () => {
+    // Given
+    const currentLatestConnector = declaredSnapshot(['Finance']);
+    const existingBatchConnectors = [
+      declaredSnapshot(['Retail'], '007.260309.000'),
+    ];
+
+    // When
+    const coverage = ManifestFragmentHelper.getDeclaredCoverageFromExisting({
+      currentLatestConnector,
+      existingBatchConnectors,
+    });
+
+    // Then
+    expect(coverage?.sectors).toEqual(['Finance']);
+  });
+
+  it('should fall back to the highest version with a declared coverage', () => {
+    // Given
+    const existingBatchConnectors = [
+      declaredSnapshot(['Retail'], '007.260301.000'),
+      inferredSnapshot,
+      declaredSnapshot(['Finance'], '007.260308.000'),
+    ];
+
+    // When
+    const coverage = ManifestFragmentHelper.getDeclaredCoverageFromExisting({
+      existingBatchConnectors,
+    });
+
+    // Then
+    expect(coverage?.sectors).toEqual(['Finance']);
+  });
+
+  it.each([
+    ['no existing version', []],
+    ['only inferred coverage', [inferredSnapshot]],
+    ['an empty declared coverage', [declaredSnapshot([], '007.260308.000')]],
+  ])('should return null with %s', (_description, existingBatchConnectors) => {
+    // Given / When
+    const coverage = ManifestFragmentHelper.getDeclaredCoverageFromExisting({
+      existingBatchConnectors,
+    });
+
+    // Then
+    expect(coverage).toBeNull();
+  });
 });

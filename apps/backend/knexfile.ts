@@ -309,6 +309,39 @@ const createEntityTypeFilter = (): FilterHandler => ({
   },
 });
 
+/** Case-insensitive intersection between a JSON array metadata value and `values`. */
+export const whereMetadataListContainsAny = (
+  qb: Knex.QueryBuilder,
+  metadataKey: string,
+  values: readonly string[]
+) => {
+  const comparableValues = [
+    ...new Set(values.map((value) => value.toLowerCase())),
+  ];
+  if (!comparableValues.length) return;
+  const placeholders = comparableValues.map(() => '?').join(',');
+  qb.whereExists(function () {
+    this.select(dbRaw('1'))
+      .from('Document_Metadata as listMetadata')
+      .whereRaw('"listMetadata"."document_id" = "Document"."id"')
+      .andWhere('listMetadata.key', '=', metadataKey)
+      .whereRaw(
+        `EXISTS (SELECT 1 FROM jsonb_array_elements_text("listMetadata"."value"::jsonb) AS "listValue"("value") WHERE lower("listValue"."value") IN (${placeholders}))`,
+        comparableValues
+      );
+  });
+};
+
+const createMetadataListFilter = (
+  key: FilterKey,
+  metadataKey: DocumentMetadataKeyCode
+): FilterHandler => ({
+  key,
+  addWhere: (qb, _type, values) => {
+    whereMetadataListContainsAny(qb, metadataKey, values);
+  },
+});
+
 const createTagsFilter = (): FilterHandler => ({
   key: ServiceInstanceFilterKey.Tags,
   addWhere: (qb, _type, values) => {
@@ -440,6 +473,18 @@ const filterHandlers: Record<string, FilterHandler> = {
   [FilterKey.Label]: createLabelFilter(),
   [FilterKey.SolutionCategory]: createSolutionCategoryFilter(),
   [FilterKey.EntityType]: createEntityTypeFilter(),
+  [FilterKey.ObjectType]: createMetadataListFilter(
+    FilterKey.ObjectType,
+    DocumentMetadataKeyCode.CoveredObjectTypes
+  ),
+  [FilterKey.Sector]: createMetadataListFilter(
+    FilterKey.Sector,
+    DocumentMetadataKeyCode.CoveredSectors
+  ),
+  [FilterKey.Region]: createMetadataListFilter(
+    FilterKey.Region,
+    DocumentMetadataKeyCode.CoveredRegions
+  ),
   [ServiceInstanceFilterKey.Tags]: createTagsFilter(),
   [ServiceInstanceFilterKey.ServiceDefinitionIdentifier]:
     createServiceDefinitionIdentifierFilter(),

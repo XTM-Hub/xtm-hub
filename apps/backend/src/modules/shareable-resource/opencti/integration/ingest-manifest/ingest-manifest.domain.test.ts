@@ -12,6 +12,7 @@ import {
 import { minioInit } from '../../../../../server/initialize';
 import { DocumentChildrenDomain } from '../../../../document/domain/document.children.domain';
 import { useCaseDomain } from '../../../../use-case/use-case.domain';
+import { IntegrationCoverageDomain } from '../integration-coverage/integration-coverage.domain';
 import {
   Connector,
   INTEGRATION_SERVICE_INSTANCE_ID,
@@ -410,6 +411,119 @@ describe('upsertConnectors', () => {
       expect(secondResult!.datasheet_url).toBe(initialDatasheetUrl);
       expect(secondResult!.demo_url).toBe(initialDemoUrl);
       expect(secondResult!.blogpost_url).toBe(initialBlogpostUrl);
+    });
+  });
+
+  describe('coverage', () => {
+    const baseManifest = sampleExtractedManifest[0] as ManifestInformation;
+    const FINANCE = 'Finance';
+
+    const buildCoverageManifest = (
+      slug: string,
+      overrides: Partial<ManifestInformation> = {}
+    ): ManifestInformation => ({
+      ...baseManifest,
+      slug,
+      name: 'Coverage connector',
+      description: 'Generic description',
+      short_description: 'Generic',
+      use_cases: [],
+      solution_categories: [],
+      ...overrides,
+    });
+
+    const loadCoverage = async (document: Connector | undefined) =>
+      IntegrationCoverageDomain.loadStoredCoverage(document!.id);
+
+    it('should store the coverage declared by the manifest', async () => {
+      // Given
+      const manifest = buildCoverageManifest('coverage-declared', {
+        coverage: { object_types: ['malware'], regions: ['Europe'] },
+      });
+
+      // When
+      const [document] = await IngestManifestDomain.upsertConnectors([
+        manifest,
+      ]);
+
+      // Then
+      expect(await loadCoverage(document)).toEqual({
+        object_types: ['Malware'],
+        sectors: [],
+        regions: ['Europe'],
+        inferred: false,
+      });
+    });
+
+    it('should infer the coverage when the manifest declares none', async () => {
+      // Given
+      const manifest = buildCoverageManifest('coverage-inferred', {
+        name: 'Ransomware tracker',
+      });
+
+      // When
+      const [document] = await IngestManifestDomain.upsertConnectors([
+        manifest,
+      ]);
+
+      // Then
+      expect(await loadCoverage(document)).toEqual({
+        object_types: ['Malware', 'Intrusion-Set'],
+        sectors: [],
+        regions: [],
+        inferred: true,
+      });
+    });
+
+    it('should keep an admin declared coverage when the manifest declares none', async () => {
+      // Given
+      const manifest = buildCoverageManifest('coverage-admin-kept');
+      const [created] = await IngestManifestDomain.upsertConnectors([manifest]);
+      await IntegrationCoverageDomain.upsertCoverageMetadata([
+        {
+          documentId: created!.id,
+          coverage: {
+            object_types: [],
+            sectors: [FINANCE],
+            regions: [],
+            inferred: false,
+          },
+        },
+      ]);
+
+      // When
+      const [updated] = await IngestManifestDomain.upsertConnectors([
+        { ...manifest, name: 'Ransomware tracker' },
+      ]);
+
+      // Then
+      expect(await loadCoverage(updated)).toEqual({
+        object_types: [],
+        sectors: [FINANCE],
+        regions: [],
+        inferred: false,
+      });
+    });
+
+    it('should let a coverage declared by the manifest replace the stored one', async () => {
+      // Given
+      const manifest = buildCoverageManifest('coverage-manifest-wins', {
+        coverage: { sectors: [FINANCE] },
+      });
+      await IngestManifestDomain.upsertConnectors([manifest]);
+
+      // When
+      const [updated] = await IngestManifestDomain.upsertConnectors([
+        { ...manifest, coverage: { regions: ['Global'] } },
+      ]);
+
+      // Then
+      expect(await loadCoverage(updated)).toEqual({
+        object_types: [],
+        sectors: [],
+        regions: ['Global'],
+        inferred: false,
+      });
     });
   });
 });

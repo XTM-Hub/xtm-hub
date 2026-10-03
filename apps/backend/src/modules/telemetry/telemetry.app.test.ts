@@ -636,6 +636,64 @@ describe('telemetryApp', () => {
     });
   });
 
+  describe('countEventsByDocumentIds', () => {
+    const DOCUMENT_A = 'document-a';
+    const DOCUMENT_B = 'document-b';
+
+    it('should not query Elasticsearch when no document id is given', async () => {
+      // Given
+      const searchSpy = vi.spyOn(esDbClient, 'search');
+
+      // When
+      const counts = await TelemetryApp.countEventsByDocumentIds(
+        TelemetryEventType.DOWNLOAD,
+        []
+      );
+
+      // Then
+      expect({ size: counts.size, searched: searchSpy.mock.calls.length }).toEqual(
+        { size: 0, searched: 0 }
+      );
+    });
+
+    it('should count the events of every document in one aggregation', async () => {
+      // Given
+      const searchSpy = vi.spyOn(esDbClient, 'search').mockResolvedValue({
+        took: 1,
+        timed_out: false,
+        _shards: { total: 1, successful: 1, failed: 0 },
+        hits: { hits: [] },
+        aggregations: {
+          by_resource: {
+            buckets: [{ key: DOCUMENT_A, doc_count: 7 }],
+          },
+        },
+      });
+
+      // When
+      const counts = await TelemetryApp.countEventsByDocumentIds(
+        TelemetryEventType.DOWNLOAD,
+        [DOCUMENT_A, DOCUMENT_B]
+      );
+
+      // Then
+      expect({
+        counts: Object.fromEntries(counts),
+        query: searchSpy.mock.calls[0]?.[0]?.query,
+      }).toEqual({
+        counts: { [DOCUMENT_A]: 7 },
+        query: {
+          bool: {
+            filter: [
+              { term: { event_type: TelemetryEventType.DOWNLOAD } },
+              { terms: { resource_id: [DOCUMENT_A, DOCUMENT_B] } },
+            ],
+          },
+        },
+      });
+    });
+  });
+
   afterEach(async () => {
     vi.useRealTimers();
   });

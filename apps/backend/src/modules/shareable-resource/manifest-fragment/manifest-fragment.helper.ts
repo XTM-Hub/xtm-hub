@@ -1,5 +1,8 @@
+import { DocumentMetadataKeyCode } from '../../../__generated__/resolvers-types';
 import { BadRequestErrorCode } from '../../../utils/error/error.code';
 import { compareVersions, isLtsVersion } from '../../../utils/versioning';
+import { IntegrationCoverageHelper } from '../opencti/integration/integration-coverage/integration-coverage.helper';
+import type { StoredIntegrationCoverage } from '../opencti/integration/integration-coverage/integration-coverage.model';
 
 export const MANIFEST_VERSION_PATTERN = String.raw`(\d+)\.(\d{1,6})\.(\d+)(?:-lts\.(\d+))?`;
 const manifestVersionRegex = new RegExp(`^${MANIFEST_VERSION_PATTERN}$`, 'i');
@@ -15,6 +18,10 @@ export type ConnectorMetadataSnapshot = {
   blogpost_url?: string;
   demo_url?: string;
 };
+
+export type ConnectorCoverageSnapshot = Partial<
+  Record<DocumentMetadataKeyCode, unknown>
+> & { version_padded?: string };
 
 export const ManifestFragmentHelper = {
   validateAndFormatManifestVersion: (version: string): string => {
@@ -96,6 +103,37 @@ export const ManifestFragmentHelper = {
     }
 
     return metadataFromExisting;
+  },
+
+  /**
+   * Declared coverage (manifest or admin) of an earlier version of the same
+   * connector: the current latest first, then the highest version.
+   */
+  getDeclaredCoverageFromExisting: ({
+    currentLatestConnector,
+    existingBatchConnectors,
+  }: {
+    currentLatestConnector?: ConnectorCoverageSnapshot;
+    existingBatchConnectors: ConnectorCoverageSnapshot[];
+  }): StoredIntegrationCoverage | null => {
+    const byVersionDesc = [...existingBatchConnectors].sort((left, right) =>
+      (right.version_padded ?? '').localeCompare(left.version_padded ?? '')
+    );
+    const candidates = currentLatestConnector
+      ? [currentLatestConnector, ...byVersionDesc]
+      : byVersionDesc;
+
+    for (const connector of candidates) {
+      const stored = IntegrationCoverageHelper.parseStoredCoverage(connector);
+      if (
+        stored &&
+        !stored.inferred &&
+        IntegrationCoverageHelper.hasValues(stored)
+      ) {
+        return stored;
+      }
+    }
+    return null;
   },
 
   getConnectorDocumentTags: (

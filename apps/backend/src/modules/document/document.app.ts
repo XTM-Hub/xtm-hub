@@ -26,6 +26,9 @@ import { ForbiddenAccess } from '../../utils/error/error.util';
 import { NewsFeedApp } from '../news-feed/news-feed.app';
 import { RegistrationApp } from '../registration/registration.app';
 import { ServiceDefinitionDomain } from '../service/definition/service-definition.domain';
+import { IntegrationCoverageApp } from '../shareable-resource/opencti/integration/integration-coverage/integration-coverage.app';
+import { IntegrationCoverageHelper } from '../shareable-resource/opencti/integration/integration-coverage/integration-coverage.helper';
+import { OPENCTI_INTEGRATION_DOCUMENT_TYPE } from '../shareable-resource/opencti/integration/integration.model';
 import { objectSolutionCategoryDomain } from '../solution-category/object-solution-category/object-solution-category.domain';
 import { solutionCategoryApp } from '../solution-category/solution-category.app';
 import { TelemetryApp } from '../telemetry/telemetry.app';
@@ -107,7 +110,7 @@ export const DocumentApp = {
     const documentMetadata: DocumentMetadataResolverType[] =
       DocumentHelper.buildCompleteMetadataFromDocumentFile({
         sourceDocumentFile,
-        metadata,
+        metadata: IntegrationCoverageHelper.withoutCoverageMetadata(metadata),
       });
 
     if (input.entity_types != null) {
@@ -144,9 +147,20 @@ export const DocumentApp = {
       documentMetadata,
     });
 
+    if (documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE) {
+      const coverage =
+        await IntegrationCoverageApp.resolveCoverageForCreate(input);
+      documentMetadata.push(
+        ...IntegrationCoverageHelper.toMetadataEntries(coverage)
+      );
+    }
+
     const {
       entity_types: _entityTypes,
       license_type: _licenseType,
+      covered_object_types: _coveredObjectTypes,
+      covered_sectors: _coveredSectors,
+      covered_regions: _coveredRegions,
       ...documentColumnInput
     } = input;
     const documentData: DocumentData<Document> = {
@@ -300,7 +314,7 @@ export const DocumentApp = {
     let documentMetadata = DocumentHelper.buildCompleteMetadataFromDocumentFile(
       {
         sourceDocumentFile,
-        metadata,
+        metadata: IntegrationCoverageHelper.withoutCoverageMetadata(metadata),
       }
     );
 
@@ -342,6 +356,18 @@ export const DocumentApp = {
         },
       ];
     }
+    // The metadata below is deleted then reinserted, so coverage is always re-resolved.
+    if (documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE) {
+      const coverage = await IntegrationCoverageApp.resolveCoverageForUpdate({
+        documentId: parentDocumentId,
+        documentBeforeUpdate,
+        input,
+      });
+      documentMetadata = [
+        ...documentMetadata,
+        ...IntegrationCoverageHelper.toMetadataEntries(coverage),
+      ];
+    }
 
     DocumentHelper.assertMetadataIsNotMissing(
       serviceDefinition.identifier as ManageableServiceDefinitionIdentifier,
@@ -360,10 +386,13 @@ export const DocumentApp = {
         ? sourceDocumentFile
         : undefined;
 
-      // entity_types and license_type are persisted as metadata (see above), not as Document columns.
+      // entity_types, license_type and coverage are persisted as metadata (see above), not as Document columns.
       const {
         entity_types: _entityTypes,
         license_type: _licenseType,
+        covered_object_types: _coveredObjectTypes,
+        covered_sectors: _coveredSectors,
+        covered_regions: _coveredRegions,
         ...documentColumnData
       } = input;
       const doc = await DocumentDomain.updateDocument({

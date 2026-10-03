@@ -123,3 +123,69 @@ describe('integration field resolvers', () => {
     });
   });
 });
+
+describe('integration coverage field resolvers', () => {
+  const COVERED_OBJECT_TYPES = ['Malware', 'Indicator'];
+
+  // Parents hold the raw Document_Metadata values, not the GraphQL shape.
+  const resolveCoverageField = <
+    F extends
+      | 'covered_object_types'
+      | 'covered_sectors'
+      | 'covered_regions'
+      | 'coverage_inferred',
+  >(
+    field: F,
+    parent: Record<string, unknown>
+  ) =>
+    integrationResolver.Integration![field]!(
+      parent as unknown as Connector,
+      {},
+      contextSimpleUserFiligran2,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+  it.each([
+    ['covered_object_types' as const],
+    ['covered_sectors' as const],
+    ['covered_regions' as const],
+  ])('should parse the stored JSON list of %s', async (field) => {
+    // Given
+    const parent = { [field]: JSON.stringify(COVERED_OBJECT_TYPES) };
+
+    // When
+    const result = await resolveCoverageField(field, parent);
+
+    // Then
+    expect(result).toEqual(COVERED_OBJECT_TYPES);
+  });
+
+  it('should resolve an empty list when no coverage is stored', async () => {
+    // Given
+    const parent = { covered_regions: null };
+
+    // When
+    const result = await resolveCoverageField('covered_regions', parent);
+
+    // Then
+    expect(result).toEqual([]);
+  });
+
+  it.each([
+    ['false', false],
+    ['true', true],
+    [null, true],
+  ])(
+    'should resolve coverage_inferred %s as %s',
+    async (storedValue, expected) => {
+      // Given
+      const parent = { coverage_inferred: storedValue };
+
+      // When
+      const result = await resolveCoverageField('coverage_inferred', parent);
+
+      // Then
+      expect(result).toBe(expected);
+    }
+  );
+});
