@@ -178,6 +178,64 @@ describe('errorLoggingPlugin redaction', () => {
     });
   });
 
+  it('should never log the operation name or the aliased path of a Threat Pulse request', async () => {
+    // Given a hash used as the operation name and as a field alias
+    const info = vi.spyOn(logApp, 'info').mockImplementation(() => undefined);
+    const error = vi.spyOn(logApp, 'error').mockImplementation(() => undefined);
+    const operationName = `h${HASH}`;
+    const query = `query ${operationName} { h${HASH}: pulseStatus { day } }`;
+    const plugin: Plugin = errorLoggingPlugin();
+    const listener = await plugin.requestDidStart?.({
+      request: { query, operationName },
+      contextValue: { req: { body: { variables: {} } } },
+    } as unknown as GraphQLRequestContext<Context>);
+
+    // When
+    await listener?.didEncounterErrors?.({
+      errors: [
+        new GraphQLError('PULSE_RATE_LIMITED', {
+          path: [`h${HASH}`],
+          extensions: { code: 'PULSE_RATE_LIMITED' },
+        }),
+      ],
+      operationName,
+      request: { query, operationName },
+      contextValue: { req: { body: { variables: {} } } },
+    } as unknown as GraphQLRequestContextDidEncounterErrors<Context>);
+
+    // Then
+    const logged = JSON.stringify([info.mock.calls, error.mock.calls]);
+    expect(logged).not.toContain(HASH);
+    expect(info.mock.calls[0]?.[1]).toMatchObject({ operationName: REDACTED });
+    expect(error.mock.calls[0]?.[1]).toMatchObject({
+      operationName: REDACTED,
+      path: undefined,
+      code: 'PULSE_RATE_LIMITED',
+    });
+  });
+
+  it('should keep the operation name and path of other operations', async () => {
+    // Given
+    vi.spyOn(logApp, 'info').mockImplementation(() => undefined);
+    const error = vi.spyOn(logApp, 'error').mockImplementation(() => undefined);
+    const query = 'query Me { me { id } }';
+    const listener = await startRequest(query, {});
+
+    // When
+    await listener.didEncounterErrors?.({
+      errors: [new GraphQLError('boom', { path: ['me'] })],
+      operationName: 'Me',
+      request: { query, operationName: 'Me' },
+      contextValue: { req: { body: { variables: {} } } },
+    } as unknown as GraphQLRequestContextDidEncounterErrors<Context>);
+
+    // Then
+    expect(error.mock.calls[0]?.[1]).toMatchObject({
+      operationName: 'Me',
+      path: ['me'],
+    });
+  });
+
   it('should keep the message and stack of other operations', async () => {
     // Given
     vi.spyOn(logApp, 'info').mockImplementation(() => undefined);

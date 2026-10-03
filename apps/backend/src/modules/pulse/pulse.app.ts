@@ -176,12 +176,14 @@ const enforceRateLimit = async ({
       const buckets = await PulseDomain.loadRateLimitBuckets({
         pseudonym,
         operation,
-        sinceSeconds: nowSeconds - windowSeconds,
+        sinceSeconds:
+          nowSeconds - windowSeconds - PULSE_RATE_LIMIT_BUCKET_SECONDS,
       });
       const result = PulseStats.decideRateLimit({
         buckets,
         nowSeconds,
         windowSeconds,
+        bucketSeconds: PULSE_RATE_LIMIT_BUCKET_SECONDS,
         limit,
       });
       if (result.allowed) {
@@ -866,7 +868,9 @@ export const PulseApp = {
   ): Promise<number> => {
     const nowSeconds = Math.floor(now.getTime() / 1000);
     return PulseDomain.deleteRateLimitBucketsBefore(
-      nowSeconds - PULSE_RATE_LIMIT_MAX_WINDOW_SECONDS
+      nowSeconds -
+        PULSE_RATE_LIMIT_MAX_WINDOW_SECONDS -
+        PULSE_RATE_LIMIT_BUCKET_SECONDS
     );
   },
 };

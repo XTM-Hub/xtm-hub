@@ -407,6 +407,7 @@ describe('pulseStats', () => {
   describe('decideRateLimit', () => {
     const NOW_SECONDS = 1_000_000;
     const WINDOW = 3600;
+    const BUCKET = 60;
 
     it('should allow a request under the limit', () => {
       // Given
@@ -417,6 +418,7 @@ describe('pulseStats', () => {
         buckets,
         nowSeconds: NOW_SECONDS,
         windowSeconds: WINDOW,
+        bucketSeconds: BUCKET,
         limit: 3,
       });
 
@@ -427,7 +429,7 @@ describe('pulseStats', () => {
     it('should ignore buckets that left the rolling window', () => {
       // Given
       const buckets = [
-        { startSeconds: NOW_SECONDS - WINDOW, count: 50 },
+        { startSeconds: NOW_SECONDS - WINDOW - BUCKET, count: 50 },
         { startSeconds: NOW_SECONDS - 60, count: 2 },
       ];
 
@@ -436,11 +438,29 @@ describe('pulseStats', () => {
         buckets,
         nowSeconds: NOW_SECONDS,
         windowSeconds: WINDOW,
+        bucketSeconds: BUCKET,
         limit: 3,
       });
 
       // Then
       expect(decision.allowed).toBe(true);
+    });
+
+    it('should keep counting a bucket until its end leaves the window', () => {
+      // Given 3 requests at 10:00:59, stored under 10:00:00, and now 11:00:00
+      const buckets = [{ startSeconds: NOW_SECONDS - WINDOW, count: 3 }];
+
+      // When they are only 59 minutes old
+      const decision = PulseStats.decideRateLimit({
+        buckets,
+        nowSeconds: NOW_SECONDS,
+        windowSeconds: WINDOW,
+        bucketSeconds: BUCKET,
+        limit: 3,
+      });
+
+      // Then the allowance is not renewed before the bucket end leaves
+      expect(decision).toEqual({ allowed: false, retryAfterSeconds: BUCKET });
     });
 
     it('should return when the oldest needed bucket leaves the window', () => {
@@ -455,13 +475,14 @@ describe('pulseStats', () => {
         buckets,
         nowSeconds: NOW_SECONDS,
         windowSeconds: WINDOW,
+        bucketSeconds: BUCKET,
         limit: 4,
       });
 
       // Then
       expect(decision).toEqual({
         allowed: false,
-        retryAfterSeconds: WINDOW - 1000,
+        retryAfterSeconds: WINDOW - 1000 + BUCKET,
       });
     });
 
@@ -478,11 +499,12 @@ describe('pulseStats', () => {
         buckets,
         nowSeconds: NOW_SECONDS,
         windowSeconds: WINDOW,
+        bucketSeconds: BUCKET,
         limit: 2,
       });
 
       // Then
-      expect(decision.retryAfterSeconds).toBe(WINDOW - 2000);
+      expect(decision.retryAfterSeconds).toBe(WINDOW - 2000 + BUCKET);
     });
   });
 });

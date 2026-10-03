@@ -238,21 +238,27 @@ export const PulseStats = {
     };
   },
 
-  // Requests are counted in buckets; the oldest buckets leave the rolling
-  // window first, which gives the earliest moment a new request fits.
+  // Requests are counted in buckets of `bucketSeconds`; a request may sit
+  // anywhere in its bucket, so a bucket counts until its END leaves the
+  // rolling window. The oldest buckets leave first, which gives the earliest
+  // moment a new request fits.
   decideRateLimit: ({
     buckets,
     nowSeconds,
     windowSeconds,
+    bucketSeconds,
     limit,
   }: {
     buckets: readonly PulseRateLimitBucket[];
     nowSeconds: number;
     windowSeconds: number;
+    bucketSeconds: number;
     limit: number;
   }): PulseRateLimitDecision => {
+    const expiry = (bucket: PulseRateLimitBucket) =>
+      bucket.startSeconds + bucketSeconds + windowSeconds;
     const live = buckets
-      .filter((bucket) => bucket.startSeconds > nowSeconds - windowSeconds)
+      .filter((bucket) => expiry(bucket) > nowSeconds)
       .sort((a, b) => a.startSeconds - b.startSeconds);
     const used = live.reduce((sum, bucket) => sum + bucket.count, 0);
     if (used < limit) {
@@ -266,7 +272,7 @@ export const PulseStats = {
           allowed: false,
           retryAfterSeconds: Math.max(
             1,
-            Math.ceil(bucket.startSeconds + windowSeconds - nowSeconds)
+            Math.ceil(expiry(bucket) - nowSeconds)
           ),
         };
       }

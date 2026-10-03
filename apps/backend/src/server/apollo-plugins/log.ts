@@ -36,6 +36,19 @@ export const loggableVariables = (
 export const loggableQuery = (query: string | undefined): string | undefined =>
   isRedactedOperation(query) ? REDACTED : query;
 
+// The operation name and the field aliases of an error path are chosen by the
+// client, so a hash can travel in them as well.
+export const loggableOperationName = (
+  query: string | undefined,
+  operationName: string | null | undefined
+): string | null | undefined =>
+  isRedactedOperation(query) ? REDACTED : operationName;
+
+export const loggablePath = (
+  query: string | undefined,
+  path: GraphQLError['path']
+): GraphQLError['path'] => (isRedactedOperation(query) ? undefined : path);
+
 const errorLogEntry = (
   error: GraphQLError,
   query: string | undefined
@@ -60,7 +73,10 @@ export const errorLoggingPlugin = (): ApolloServerPlugin<Context> => ({
     logApp.info(
       'GraphQL request received',
       {
-        operationName: request.operationName,
+        operationName: loggableOperationName(
+          request.query,
+          request.operationName
+        ),
         query: loggableQuery(request.query),
         variables: loggableVariables(request.query, req?.body?.variables),
         user,
@@ -85,10 +101,13 @@ export const errorLoggingPlugin = (): ApolloServerPlugin<Context> => ({
           logApp[logLevel](
             message,
             {
-              path: error.path,
+              path: loggablePath(request.query, error.path),
               locations: error.locations,
               code,
-              operationName,
+              operationName: loggableOperationName(
+                request.query,
+                operationName
+              ),
               user: contextValue?.user,
               serviceId: contextValue?.serviceId,
               codeStack,
