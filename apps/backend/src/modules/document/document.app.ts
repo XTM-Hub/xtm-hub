@@ -27,6 +27,7 @@ import { NewsFeedApp } from '../news-feed/news-feed.app';
 import { RegistrationApp } from '../registration/registration.app';
 import { ServiceDefinitionDomain } from '../service/definition/service-definition.domain';
 import { IntegrationCoverageApp } from '../shareable-resource/opencti/integration/integration-coverage/integration-coverage.app';
+import { IntegrationCoverageDomain } from '../shareable-resource/opencti/integration/integration-coverage/integration-coverage.domain';
 import { IntegrationCoverageHelper } from '../shareable-resource/opencti/integration/integration-coverage/integration-coverage.helper';
 import { OPENCTI_INTEGRATION_DOCUMENT_TYPE } from '../shareable-resource/opencti/integration/integration.model';
 import { objectSolutionCategoryDomain } from '../solution-category/object-solution-category/object-solution-category.domain';
@@ -356,25 +357,29 @@ export const DocumentApp = {
         },
       ];
     }
-    // The metadata below is deleted then reinserted, so coverage is always re-resolved.
-    if (documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE) {
-      const coverage = await IntegrationCoverageApp.resolveCoverageForUpdate({
-        documentId: parentDocumentId,
-        documentBeforeUpdate,
-        input,
-      });
-      documentMetadata = [
-        ...documentMetadata,
-        ...IntegrationCoverageHelper.toMetadataEntries(coverage),
-      ];
-    }
-
     DocumentHelper.assertMetadataIsNotMissing(
       serviceDefinition.identifier as ManageableServiceDefinitionIdentifier,
       documentMetadata
     );
 
     const updatedDocument = await withTransaction(async () => {
+      // The metadata below is deleted then reinserted, so coverage is always re-resolved, against the stored
+      // coverage read under the document lock: a declaration committed meanwhile (manifest ingestion, another
+      // admin) is never replaced by a stale value.
+      if (documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE) {
+        await IntegrationCoverageDomain.loadStoredCoverageForUpdate(
+          parentDocumentId
+        );
+        const coverage = await IntegrationCoverageApp.resolveCoverageForUpdate({
+          documentId: parentDocumentId,
+          documentBeforeUpdate,
+          input,
+        });
+        documentMetadata = [
+          ...documentMetadata,
+          ...IntegrationCoverageHelper.toMetadataEntries(coverage),
+        ];
+      }
       const user = requestContext.requireUser();
       const uploader_organization_id = input.uploader_organization_id ?? null;
       const uploader_id = input.uploader_id ?? user.id;
