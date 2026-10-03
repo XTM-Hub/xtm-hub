@@ -167,7 +167,11 @@ describe('pulseHelper', () => {
   describe('buildLookupResult', () => {
     it.each([
       { description: 'below k platforms', networkPlatforms: 4, seen: SEEN },
-      { description: 'with no aggregate left', networkPlatforms: 9, seen: undefined },
+      {
+        description: 'with no aggregate left',
+        networkPlatforms: 9,
+        seen: undefined,
+      },
     ])(
       'should return every statistic as null $description',
       ({ networkPlatforms, seen }) => {

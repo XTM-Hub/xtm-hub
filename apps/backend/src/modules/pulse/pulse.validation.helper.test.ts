@@ -103,9 +103,18 @@ describe('pulseValidation', () => {
     });
 
     it.each([
-      { description: 'a day two days ago', input: makePushInput({ day: '2026-10-01' }) },
-      { description: 'a future day', input: makePushInput({ day: '2026-10-04' }) },
-      { description: 'a malformed day', input: makePushInput({ day: '03/10/2026' }) },
+      {
+        description: 'a day two days ago',
+        input: makePushInput({ day: '2026-10-01' }),
+      },
+      {
+        description: 'a future day',
+        input: makePushInput({ day: '2026-10-04' }),
+      },
+      {
+        description: 'a malformed day',
+        input: makePushInput({ day: '03/10/2026' }),
+      },
       { description: 'an empty batch', input: makePushInput({ records: [] }) },
       {
         description: 'more than 5000 records',
@@ -123,13 +132,20 @@ describe('pulseValidation', () => {
       },
       {
         description: 'a raw value instead of a hash',
-        input: makePushInput({ records: [makeRecord({ hash: '198.51.100.7' })] }),
+        input: makePushInput({
+          records: [makeRecord({ hash: '198.51.100.7' })],
+        }),
       },
       {
         description: 'a 31-character hash',
-        input: makePushInput({ records: [makeRecord({ hash: HASH_A.slice(1) })] }),
+        input: makePushInput({
+          records: [makeRecord({ hash: HASH_A.slice(1) })],
+        }),
       },
-      { description: 'a zero count', input: makePushInput({ records: [makeRecord({ count: 0 })] }) },
+      {
+        description: 'a zero count',
+        input: makePushInput({ records: [makeRecord({ count: 0 })] }),
+      },
       {
         description: 'a count above 100000',
         input: makePushInput({ records: [makeRecord({ count: 100001 })] }),
@@ -140,7 +156,9 @@ describe('pulseValidation', () => {
       },
       {
         description: 'a repeated (hash, object_type, event_kind) tuple',
-        input: makePushInput({ records: [makeRecord(), makeRecord({ count: 3 })] }),
+        input: makePushInput({
+          records: [makeRecord(), makeRecord({ count: 3 })],
+        }),
       },
       {
         description: 'an unknown object type',
@@ -189,7 +207,10 @@ describe('pulseValidation', () => {
         description: 'an invalid hash',
         input: makeLookupInput({ hashes: [HASH_A, 'lockbit'] }),
       },
-      { description: 'an old day', input: makeLookupInput({ day: '2026-09-01' }) },
+      {
+        description: 'an old day',
+        input: makeLookupInput({ day: '2026-09-01' }),
+      },
     ])('should reject $description with BAD_USER_INPUT', ({ input }) => {
       // When
       const code = errorCodeOf(() => PulseValidation.lookupInput(input, NOW));
@@ -248,9 +269,15 @@ describe('pulseValidation', () => {
     });
 
     it.each([
-      { description: 'first above 200', input: makeTrendingInput({ first: 201 }) },
+      {
+        description: 'first above 200',
+        input: makeTrendingInput({ first: 201 }),
+      },
       { description: 'first at 0', input: makeTrendingInput({ first: 0 }) },
-      { description: 'an empty object types list', input: makeTrendingInput({ object_types: [] }) },
+      {
+        description: 'an empty object types list',
+        input: makeTrendingInput({ object_types: [] }),
+      },
       {
         description: 'a repeated object type',
         input: makeTrendingInput({
@@ -280,7 +307,9 @@ describe('pulseValidation', () => {
       };
 
       // When
-      const code = errorCodeOf(() => PulseValidation.benchmarkInput(input, NOW));
+      const code = errorCodeOf(() =>
+        PulseValidation.benchmarkInput(input, NOW)
+      );
 
       // Then
       expect(code).toBe(PulseErrorCode.BadUserInput);

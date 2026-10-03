@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { PulseRawConfig } from '../../config';
 import { resolvePulseConfig } from './pulse.config.helper';
 
-const AT_REST_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+const AT_REST_KEY =
+  '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
 const PLATFORM_KEY =
   'fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210';
 const DEVELOPMENT_AT_REST_KEY =
@@ -168,7 +169,10 @@ describe('resolvePulseConfig', () => {
   it.each([
     { description: 'k below 2', raw: makeRawConfig({ k_threshold: 1 }) },
     { description: 'a fractional k', raw: makeRawConfig({ k_threshold: 4.5 }) },
-    { description: 'no retention', raw: makeRawConfig({ retention_months: 0 }) },
+    {
+      description: 'no retention',
+      raw: makeRawConfig({ retention_months: 0 }),
+    },
     {
       description: 'a contribution window above one year',
       raw: makeRawConfig({ contribution_window_days: 366 }),

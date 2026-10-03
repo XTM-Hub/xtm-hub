@@ -1,6 +1,6 @@
 import { ApolloServer } from '@apollo/server';
-import type { GraphQLFormattedError } from 'graphql';
 import express from 'express';
+import type { GraphQLFormattedError } from 'graphql';
 import { vi } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import { contextSimpleUserFiligran2 } from '../../../../tests/tests.const';
@@ -144,9 +144,8 @@ export const executePulse = async <T>({
   };
 };
 
-export const errorCodes = (
-  result: PulseOperationResult<unknown>
-): unknown[] => (result.errors ?? []).map((error) => error.extensions?.code);
+export const errorCodes = (result: PulseOperationResult<unknown>): unknown[] =>
+  (result.errors ?? []).map((error) => error.extensions?.code);
 
 // Moves the service clock; every Pulse day computation reads PulseClock.
 export const usePulseClock = (initialIso: string = PULSE_TEST_NOW) => {

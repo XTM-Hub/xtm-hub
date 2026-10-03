@@ -7,22 +7,21 @@ describe('loggableVariables', () => {
   it.each([
     {
       operation: 'pushPulse',
-      query: 'mutation Push($input: PushPulseInput!) { pushPulse(input: $input) { accepted } }',
+      query:
+        'mutation Push($input: PushPulseInput!) { pushPulse(input: $input) { accepted } }',
     },
     {
       operation: 'pulseLookup',
-      query: 'query Lookup($input: PulseLookupInput!) { pulseLookup(input: $input) { hash } }',
+      query:
+        'query Lookup($input: PulseLookupInput!) { pulseLookup(input: $input) { hash } }',
     },
-  ])(
-    'should redact the variables of $operation requests',
-    ({ query }) => {
-      // When
-      const variables = loggableVariables(query, VARIABLES);
+  ])('should redact the variables of $operation requests', ({ query }) => {
+    // When
+    const variables = loggableVariables(query, VARIABLES);
 
-      // Then
-      expect(variables).toBe(REDACTED_VARIABLES);
-    }
-  );
+    // Then
+    expect(variables).toBe(REDACTED_VARIABLES);
+  });
 
   it.each([
     { operation: 'pulseStatus', query: 'query { pulseStatus { day } }' },
