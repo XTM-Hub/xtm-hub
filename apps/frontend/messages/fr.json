@@ -1248,13 +1248,16 @@
           "Unverified": "Supporté par la communauté"
         },
         "ObjectType": {
-          "Label": "Type d'objet"
+          "Label": "Type d'objet",
+          "Placeholder": "Type d'objet..."
         },
         "Sector": {
-          "Label": "Secteur"
+          "Label": "Secteur",
+          "Placeholder": "Secteur..."
         },
         "Region": {
-          "Label": "Région"
+          "Label": "Région",
+          "Placeholder": "Région..."
         }
       },
       "Type": {

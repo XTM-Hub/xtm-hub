@@ -31,7 +31,18 @@ const { storageMock } = vi.hoisted(() => ({
     verified: {} as Record<string, string[]>,
     deployable: {} as Record<string, string[]>,
     labels: {} as Record<string, string[]>,
+    objectTypes: {} as Record<string, string[]>,
+    sectors: {} as Record<string, string[]>,
+    regions: {} as Record<string, string[]>,
   },
+}));
+
+vi.mock('@/hooks/use-coverage-facet-counts', () => ({
+  useCoverageFacetCounts: () => ({
+    objectType: { Malware: 3, Indicator: 1 },
+    sector: { Finance: 2 },
+    region: { Europe: 2 },
+  }),
 }));
 
 vi.mock(
@@ -66,6 +77,9 @@ const EMPTY_FILTERS = {
   solutionCategories: [],
   verified: [],
   deployable: [],
+  objectTypes: [],
+  sectors: [],
+  regions: [],
 };
 
 const openColumnsCombobox = async (
@@ -85,6 +99,9 @@ describe('IntegrationsCsvExportDialog', () => {
     storageMock.verified = {};
     storageMock.deployable = {};
     storageMock.labels = {};
+    storageMock.objectTypes = {};
+    storageMock.sectors = {};
+    storageMock.regions = {};
   });
 
   it('renders every selectable column in the columns combobox', async () => {
@@ -305,5 +322,45 @@ describe('IntegrationsCsvExportDialog', () => {
       );
     });
     expect(storageMock.verified).toEqual({});
+  });
+
+  it("exports the list's coverage filters with the rows the list shows", async () => {
+    // Given: the list is filtered on a sector, a region and an object type
+    downloadIntegrationsCsvMock.mockResolvedValue(undefined);
+    storageMock.objectTypes = { Malware: [] };
+    storageMock.sectors = { 'Space Industry': [] };
+    storageMock.regions = { Europe: [] };
+    testRender(
+      <IntegrationsCsvExportDialog
+        open={true}
+        setOpen={vi.fn()}
+        serviceInstanceId="service-1"
+        type={ShareableResourceType.OPENCTI_INTEGRATION}
+      />
+    );
+
+    // When
+    expect(
+      within(
+        screen.getByTestId('integrations-csv-export-filter-sector')
+      ).getByText('Space Industry')
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Service.CsvExport.ExportButton' })
+    );
+
+    // Then
+    await waitFor(() => {
+      expect(downloadIntegrationsCsvMock).toHaveBeenCalledWith(
+        'service-1',
+        INTEGRATION_CSV_EXPORT_COLUMNS.map((column) => column.key),
+        {
+          ...EMPTY_FILTERS,
+          objectTypes: ['Malware'],
+          sectors: ['Space Industry'],
+          regions: ['Europe'],
+        }
+      );
+    });
   });
 });

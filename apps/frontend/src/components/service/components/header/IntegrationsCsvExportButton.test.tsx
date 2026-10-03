@@ -26,7 +26,14 @@ vi.mock('@/hooks/use-service-list-local-storage', () => ({
     verified: {},
     deployable: {},
     labels: {},
+    objectTypes: {},
+    sectors: {},
+    regions: {},
   }),
+}));
+
+vi.mock('@/hooks/use-coverage-facet-counts', () => ({
+  useCoverageFacetCounts: () => undefined,
 }));
 
 vi.mock('@/components/admin/use-case/use-use-cases', () => ({

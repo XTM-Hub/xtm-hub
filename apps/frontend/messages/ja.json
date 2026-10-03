@@ -1248,13 +1248,16 @@
           "Unverified": "コミュニティの提供による"
         },
         "ObjectType": {
-          "Label": "オブジェクトタイプ"
+          "Label": "オブジェクトタイプ",
+          "Placeholder": "オブジェクトタイプ..."
         },
         "Sector": {
-          "Label": "セクター"
+          "Label": "セクター",
+          "Placeholder": "セクター..."
         },
         "Region": {
-          "Label": "地域"
+          "Label": "地域",
+          "Placeholder": "地域..."
         }
       },
       "Type": {

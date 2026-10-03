@@ -22,9 +22,11 @@ export enum IntegrationCsvColumnKey {
 }
 
 // Maps export query params to FilterKey; `use_case` maps to `Label`, the FilterKey used internally for the Object_UseCase join.
+// Coverage values are free text that may contain commas: they come as repeated params and are never split.
 export const EXPORT_FILTER_PARAMS: Array<{
   queryParam: string;
   key: FilterKey;
+  repeated?: boolean;
 }> = [
   { queryParam: 'integration_type', key: FilterKey.IntegrationType },
   { queryParam: 'license_type', key: FilterKey.LicenseType },
@@ -32,6 +34,9 @@ export const EXPORT_FILTER_PARAMS: Array<{
   { queryParam: 'solution_category', key: FilterKey.SolutionCategory },
   { queryParam: 'verified', key: FilterKey.Verified },
   { queryParam: 'use_case', key: FilterKey.Label },
+  { queryParam: 'object_type', key: FilterKey.ObjectType, repeated: true },
+  { queryParam: 'sector', key: FilterKey.Sector, repeated: true },
+  { queryParam: 'region', key: FilterKey.Region, repeated: true },
 ];
 
 export const INTEGRATION_CSV_EXPORT_COLUMNS: Array<{
@@ -203,14 +208,14 @@ export const parseRequestedFilters = (
   query: Record<string, unknown>
 ): LogicalFilterInput | undefined => {
   const children: Array<{ leaf: Filter }> = EXPORT_FILTER_PARAMS.flatMap(
-    ({ queryParam, key }) => {
+    ({ queryParam, key, repeated }) => {
       const raw = query[queryParam] as string | string[] | undefined;
       if (!raw) {
         return [];
       }
       // Express gives an array on repeated params; split each element too, so a,b&c isn't dropped.
       const values = (Array.isArray(raw) ? raw : [raw])
-        .flatMap((value) => value.split(','))
+        .flatMap((value) => (repeated ? [value] : value.split(',')))
         .map((value) => value.trim())
         .filter((value) => value.length > 0);
       return values.length > 0 ? [{ leaf: { key, value: values } }] : [];

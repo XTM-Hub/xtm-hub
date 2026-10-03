@@ -185,6 +185,30 @@ describe('parseRequestedFilters', () => {
     });
   });
 
+  it('keeps repeated coverage params whole, commas included', () => {
+    expect(
+      parseRequestedFilters({
+        object_type: ['Malware', 'Indicator'],
+        sector: 'Retail, consumer goods',
+        region: ['Europe'],
+      })
+    ).toEqual({
+      operator: LogicalOperator.And,
+      children: [
+        {
+          leaf: {
+            key: FilterKey.ObjectType,
+            value: ['Malware', 'Indicator'],
+          },
+        },
+        {
+          leaf: { key: FilterKey.Sector, value: ['Retail, consumer goods'] },
+        },
+        { leaf: { key: FilterKey.Region, value: ['Europe'] } },
+      ],
+    });
+  });
+
   it('maps the use_case query param to the Label FilterKey', () => {
     expect(
       parseRequestedFilters({ use_case: 'VXNlQ2FzZTo0NTY=,VXNlQ2FzZTo3ODk=' })

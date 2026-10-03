@@ -1248,13 +1248,16 @@
           "Unverified": "Supported by Community"
         },
         "ObjectType": {
-          "Label": "Object type"
+          "Label": "Object type",
+          "Placeholder": "Object type..."
         },
         "Sector": {
-          "Label": "Sector"
+          "Label": "Sector",
+          "Placeholder": "Sector..."
         },
         "Region": {
-          "Label": "Region"
+          "Label": "Region",
+          "Placeholder": "Region..."
         }
       },
       "Type": {
