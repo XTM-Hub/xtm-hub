@@ -97,6 +97,8 @@ export const ServiceFormCoverageTagsField = ({
           disabled={disabled}
           placeholder={t(placeholderKey)}
           tags={tags}
+          // Commas belong to sector and region values: only Enter adds a tag
+          delimiterList={['Enter']}
           validateTag={(tag: string) =>
             tags.length < MAX_COVERAGE_VALUES &&
             tag.trim().length > 0 &&
