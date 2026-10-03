@@ -224,6 +224,37 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
       });
     });
 
+    it('should not count the platforms that first reported the key after the requested day', async () => {
+      // Given four platforms yesterday, a fifth one today
+      const clients = await registerPulseClients(5);
+      await pushFromEach(clients.slice(0, 4), {
+        day: PULSE_TEST_YESTERDAY,
+        records: [malware(LOCKBIT)],
+      });
+      await clients[4]!.push({
+        day: PULSE_TEST_TODAY,
+        records: [malware(LOCKBIT)],
+      });
+
+      // When
+      const [yesterday] = await clients[0]!.lookup({
+        day: PULSE_TEST_YESTERDAY,
+        objectType: MALWARE,
+        values: [LOCKBIT],
+      });
+      const [today] = await clients[0]!.lookup({
+        day: PULSE_TEST_TODAY,
+        objectType: MALWARE,
+        values: [LOCKBIT],
+      });
+
+      // Then
+      expect({
+        yesterday: yesterday?.published,
+        today: today?.published,
+      }).toEqual({ yesterday: false, today: true });
+    });
+
     it('should report weeks below k as 0 in the trend series and never date the key from them', async () => {
       // Given two platforms one week ago, five this week
       const clients = await registerPulseClients(5);

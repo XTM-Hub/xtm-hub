@@ -296,25 +296,6 @@ export const PulseDomain = {
   // endregion
 
   // region Key statistics
-  countKeyContributors: async ({
-    keys,
-    sinceDay,
-  }: {
-    keys: readonly PulseKeyRef[];
-    sinceDay: string;
-  }): Promise<Map<string, number>> => {
-    const rows = await query<PulseKeyRef & { platforms: number }>(
-      `SELECT encode(kc.at_rest_key, 'hex') AS k, kc.object_type AS t, COUNT(*)::int AS platforms
-       FROM "PulseKeyContributor" kc
-       JOIN jsonb_to_recordset(?::jsonb) AS r(k text, t text)
-         ON kc.at_rest_key = decode(r.k, 'hex') AND kc.object_type = r.t
-       WHERE kc.last_day >= ?::date
-       GROUP BY kc.at_rest_key, kc.object_type`,
-      [keyRefsJson(keys), sinceDay]
-    );
-    return new Map(rows.map((row) => [pulseKeyId(row), row.platforms]));
-  },
-
   countKeyPlatformsInWindow: async ({
     keys,
     fromDay,

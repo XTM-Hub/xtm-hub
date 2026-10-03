@@ -362,9 +362,9 @@ describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
   });
 
   describe('cleanExpiredSalts', () => {
-    it('should delete the salts older than 3 days and keep the recent ones', async () => {
+    it('should keep the salts of the current and the two previous days only', async () => {
       // Given
-      for (const daysAgo of [5, 4, 3]) {
+      for (const daysAgo of [5, 4, 3, 2, 1]) {
         await TestHelper.pulse.insertSalt(
           PulseDay.addDays('2027-03-10', -daysAgo),
           SALT_A
@@ -377,10 +377,11 @@ describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
 
       // Then
       const days = await TestHelper.pulse.loadSaltDays();
-      expect({
-        expired: days.filter((day) => day < '2027-03-07'),
-        march: days.filter((day) => day.startsWith('2027-03')),
-      }).toEqual({ expired: [], march: ['2027-03-07', '2027-03-10'] });
+      expect(days.filter((day) => day.startsWith('2027-03'))).toEqual([
+        '2027-03-08',
+        '2027-03-09',
+        '2027-03-10',
+      ]);
     });
   });
 

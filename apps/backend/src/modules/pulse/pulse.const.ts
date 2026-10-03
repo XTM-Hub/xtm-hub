@@ -25,7 +25,8 @@ export const PULSE_DAYS_PER_WEEK = 7;
 
 export const PULSE_SALT_BYTES = 16;
 export const PULSE_SECRET_BYTES = 32;
-// Salts of the last 3 days are kept on top of the current day.
+// Salts live 3 UTC days: the current day and the two previous ones (requests
+// only use the current or the previous day); older salts are deleted.
 export const PULSE_SALT_RETENTION_DAYS = 3;
 
 // Snapshots keep the best ranked items of every object type so that any

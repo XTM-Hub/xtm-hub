@@ -231,7 +231,7 @@ const authorize = async (
   const registration =
     await PlatformConfigurationDomain.loadResolvedConfigurationByPlatformAndToken(
       { platform_id: platformId, token }
-    ).catch(() => undefined);
+    );
   if (
     !registration ||
     registration.platformConfiguration.status !==
@@ -818,9 +818,12 @@ export const PulseApp = {
         validated.day,
         retentionMonths
       );
-      const networkPlatforms = await PulseDomain.countKeyContributors({
+      // Bounded by the requested day too: a lookup of yesterday never counts
+      // the platforms that first contributed the key today.
+      const networkPlatforms = await PulseDomain.countKeyPlatformsInWindow({
         keys,
-        sinceDay: retentionStart,
+        fromDay: retentionStart,
+        toDay: validated.day,
       });
       const publishedKeys = keys.filter(
         (key) => (networkPlatforms.get(pulseKeyId(key)) ?? 0) >= kThreshold
@@ -995,7 +998,7 @@ export const PulseApp = {
   cleanExpiredSalts: async (now: Date = PulseClock.now()): Promise<number> => {
     const cutoff = PulseDay.addDays(
       PulseDay.today(now),
-      -PULSE_SALT_RETENTION_DAYS
+      -(PULSE_SALT_RETENTION_DAYS - 1)
     );
     const deleted = await PulseDomain.deleteSaltsBefore(cutoff);
     for (const day of [...saltCache.keys()]) {
