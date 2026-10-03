@@ -33,6 +33,7 @@ import {
   PULSE_RATE_LIMIT_WINDOW_SECONDS,
   PULSE_SALT_RETENTION_DAYS,
   PULSE_SCOPE_ALL,
+  PULSE_TRENDING_ITEMS_PER_OBJECT_TYPE,
   PulseOperation,
 } from './pulse.const';
 import { PulseCrypto } from './pulse.crypto.helper';
@@ -370,6 +371,7 @@ const computeTrendingItems = async ({
     regionBucket: input.regionBucket,
     kThreshold: settings.kThreshold,
     retentionStart,
+    limitPerObjectType: PULSE_TRENDING_ITEMS_PER_OBJECT_TYPE,
   });
   const ranked = PulseHelper.rankTrending(counts, settings.kThreshold);
   if (ranked.length === 0) {

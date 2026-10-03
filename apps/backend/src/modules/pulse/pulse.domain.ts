@@ -11,6 +11,7 @@ import { databaseContext } from '../../context/database.context';
 import {
   PULSE_ACTIVITY_WINDOW_DAYS,
   PULSE_DAYS_PER_WEEK,
+  PULSE_PLATFORMS_BUCKETS,
   PULSE_TREND_SERIES_WEEKS,
 } from './pulse.const';
 import {
@@ -413,8 +414,10 @@ export const PulseDomain = {
 
   // region Trending
   // Distinct platforms of the bucket over the period and the two previous
-  // periods, for every key published network-wide that reaches k in the
-  // period.
+  // periods, coarsened like platforms_bucket (0 below k), for every key
+  // published network-wide that reaches k in the period. The ranking of
+  // PulseHelper.rankTrending and its per-type limit run in the database, so a
+  // large network never materializes every candidate in the API process.
   loadTrendingCounts: async ({
     day,
     periodDays,
@@ -422,6 +425,7 @@ export const PulseDomain = {
     regionBucket,
     kThreshold,
     retentionStart,
+    limitPerObjectType,
   }: {
     day: string;
     periodDays: number;
@@ -429,6 +433,7 @@ export const PulseDomain = {
     regionBucket: PulseRegionBucket | null;
     kThreshold: number;
     retentionStart: string;
+    limitPerObjectType: number;
   }): Promise<PulseTrendingCount[]> =>
     query<PulseTrendingCount>(
       `WITH presence AS (
@@ -452,15 +457,37 @@ export const PulseDomain = {
          FROM presence
          GROUP BY at_rest_key, object_type
          HAVING COUNT(*) FILTER (WHERE in_recent) >= ?
+       ),
+       eligible AS (
+         SELECT counts.* FROM counts
+         WHERE (
+           SELECT COUNT(*) FROM "PulseKeyContributor" kc
+           WHERE kc.at_rest_key = counts.at_rest_key AND kc.object_type = counts.object_type
+             AND kc.last_day >= ?::date
+         ) >= ?
+       ),
+       buckets AS (
+         SELECT value::int AS min FROM jsonb_array_elements_text(?::jsonb)
+       ),
+       coarse AS (
+         SELECT e.at_rest_key, e.object_type,
+                CASE WHEN e.recent >= ? THEN COALESCE((SELECT MAX(b.min) FROM buckets b WHERE b.min <= e.recent), 0) ELSE 0 END AS recent,
+                CASE WHEN e.prev1 >= ? THEN COALESCE((SELECT MAX(b.min) FROM buckets b WHERE b.min <= e.prev1), 0) ELSE 0 END AS prev1,
+                CASE WHEN e.prev2 >= ? THEN COALESCE((SELECT MAX(b.min) FROM buckets b WHERE b.min <= e.prev2), 0) ELSE 0 END AS prev2
+         FROM eligible e
+       ),
+       ranked AS (
+         SELECT coarse.*,
+                ROW_NUMBER() OVER (
+                  PARTITION BY object_type
+                  ORDER BY (recent + 1)::float8 / ((prev1 + prev2) / 2.0 + 1) DESC, recent DESC, at_rest_key
+                ) AS position
+         FROM coarse
        )
-       SELECT encode(counts.at_rest_key, 'hex') AS k, counts.object_type AS t,
-              counts.recent, counts.prev1, counts.prev2
-       FROM counts
-       WHERE (
-         SELECT COUNT(*) FROM "PulseKeyContributor" kc
-         WHERE kc.at_rest_key = counts.at_rest_key AND kc.object_type = counts.object_type
-           AND kc.last_day >= ?::date
-       ) >= ?`,
+       SELECT encode(at_rest_key, 'hex') AS k, object_type AS t, recent, prev1, prev2
+       FROM ranked
+       WHERE position <= ?
+       ORDER BY object_type, position`,
       [
         day,
         periodDays,
@@ -481,6 +508,11 @@ export const PulseDomain = {
         kThreshold,
         retentionStart,
         kThreshold,
+        toJson(PULSE_PLATFORMS_BUCKETS.map((bucket) => bucket.min)),
+        kThreshold,
+        kThreshold,
+        kThreshold,
+        limitPerObjectType,
       ]
     ),
 
@@ -601,8 +633,9 @@ export const PulseDomain = {
     }));
   },
 
-  // Keys of the caller published in its sector over the period, with the
-  // median of the per-platform sums of the sector platforms on each key.
+  // Keys of the caller published in its sector over the period where the
+  // caller is above the median of the per-platform sums of the sector
+  // platforms, strongest relative outliers first.
   loadBenchmarkTopItems: async ({
     platformId,
     fromDay,
@@ -646,7 +679,8 @@ export const PulseDomain = {
        SELECT encode(m.at_rest_key, 'hex') AS k, m.object_type AS t, m.my_count, s.median
        FROM mine m
        JOIN stats s ON s.at_rest_key = m.at_rest_key AND s.object_type = m.object_type
-       ORDER BY m.my_count DESC, m.my_count / s.median DESC, m.at_rest_key, m.object_type
+       WHERE s.median > 0 AND m.my_count > s.median
+       ORDER BY m.my_count / s.median DESC, m.my_count DESC, m.at_rest_key, m.object_type
        LIMIT ?`,
       [
         kThreshold,

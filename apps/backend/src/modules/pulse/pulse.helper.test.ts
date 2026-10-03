@@ -125,22 +125,44 @@ describe('pulseHelper', () => {
       // Given
       const counts = [
         makeCount({ k: 'k-stable', recent: 10, prev1: 10, prev2: 10 }),
-        makeCount({ k: 'k-rising', recent: 9, prev1: 4, prev2: 4 }),
-        makeCount({ k: 'k-rising-bigger', recent: 19, prev1: 9, prev2: 9 }),
+        makeCount({ k: 'k-rising', recent: 25, prev1: 10, prev2: 10 }),
+        makeCount({ k: 'k-rising-faster', recent: 12, prev1: 6, prev2: 0 }),
         makeCount({ k: 'k-same-b', recent: 5, prev1: 5, prev2: 5 }),
-        makeCount({ k: 'k-same-a', recent: 5, prev1: 5, prev2: 5 }),
+        makeCount({ k: 'k-same-a', recent: 7, prev1: 9, prev2: 6 }),
       ];
 
-      // When every count reaches k
-      const ranked = PulseHelper.rankTrending(counts, 4);
+      // When every count is coarsened like platforms_bucket
+      const ranked = PulseHelper.rankTrending(counts, 5);
 
       // Then
       expect(ranked.map(({ k, growth }) => ({ k, growth }))).toEqual([
-        { k: 'k-rising-bigger', growth: 2 },
-        { k: 'k-rising', growth: 2 },
+        { k: 'k-rising-faster', growth: 11 / 3.5 },
+        { k: 'k-rising', growth: 26 / 11 },
         { k: 'k-stable', growth: 1 },
         { k: 'k-same-a', growth: 1 },
         { k: 'k-same-b', growth: 1 },
+      ]);
+    });
+
+    it('should derive growth from coarse counts, so it never reveals an exact platform count', () => {
+      // Given a first-seen object reported by 5 to 9 platforms
+      const counts = [5, 6, 7, 8, 9].map((recent) =>
+        makeCount({ k: `k-${recent}`, recent, prev1: 0, prev2: 0 })
+      );
+
+      // When
+      const ranked = PulseHelper.rankTrending(counts, 5);
+
+      // Then every count of the 5-9 bucket publishes the same figures
+      expect(
+        new Set(ranked.map(({ recent, growth }) => `${recent}:${growth}`))
+      ).toEqual(new Set(['5:6']));
+      expect(ranked.map(({ k }) => k)).toEqual([
+        'k-5',
+        'k-6',
+        'k-7',
+        'k-8',
+        'k-9',
       ]);
     });
 

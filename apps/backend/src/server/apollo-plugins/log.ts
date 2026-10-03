@@ -23,8 +23,10 @@ const PULSE_OPERATION_FIELDS =
 export const REDACTED = '[redacted]';
 export const REDACTED_PULSE_ERROR_MESSAGE = 'Threat Pulse request failed';
 
+// A request without query text (an automatic persisted query sent as a hash
+// only) cannot be classified, so it is redacted as well.
 export const isRedactedOperation = (query: string | undefined): boolean =>
-  !!query && PULSE_OPERATION_FIELDS.test(query);
+  !query || PULSE_OPERATION_FIELDS.test(query);
 
 export const loggableVariables = (
   query: string | undefined,

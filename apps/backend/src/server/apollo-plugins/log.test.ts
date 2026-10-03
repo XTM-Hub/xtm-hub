@@ -84,12 +84,58 @@ describe('errorLoggingPlugin redaction', () => {
     }
   );
 
-  it.each([
-    { operation: 'another operation', query: 'query { me { id } }' },
-    { operation: 'no query', query: undefined },
-  ])('should keep the query and variables of $operation', ({ query }) => {
+  it('should keep the query and variables of another operation', () => {
+    const query = 'query { me { id } }';
+    expect(isRedactedOperation(query)).toBe(false);
     expect(loggableQuery(query)).toBe(query);
     expect(loggableVariables(query, VARIABLES)).toBe(VARIABLES);
+  });
+
+  it.each([
+    { operation: 'no query', query: undefined },
+    { operation: 'an empty query', query: '' },
+  ])('should redact the variables of $operation', ({ query }) => {
+    expect(isRedactedOperation(query)).toBe(true);
+    expect(loggableQuery(query)).toBe(REDACTED);
+    expect(loggableVariables(query, VARIABLES)).toBe(REDACTED);
+  });
+
+  it('should never log the variables of a hash-only persisted query', async () => {
+    // Given
+    const info = vi.spyOn(logApp, 'info').mockImplementation(() => undefined);
+    const error = vi.spyOn(logApp, 'error').mockImplementation(() => undefined);
+    const variables = {
+      input: { day: '2026-10-03', hashes: [HASH], value: RAW_VALUE },
+    };
+    const plugin: Plugin = errorLoggingPlugin();
+    const listener = await plugin.requestDidStart?.({
+      request: {
+        operationName: 'Lookup',
+        extensions: {
+          persistedQuery: { version: 1, sha256Hash: 'f0'.repeat(32) },
+        },
+      },
+      contextValue: { req: { body: { variables } } },
+    } as unknown as GraphQLRequestContext<Context>);
+
+    // When
+    await listener?.didEncounterErrors?.({
+      errors: [coercionError()],
+      operationName: 'Lookup',
+      request: {},
+      contextValue: { req: { body: { variables } } },
+    } as unknown as GraphQLRequestContextDidEncounterErrors<Context>);
+
+    // Then
+    const logged = JSON.stringify([info.mock.calls, error.mock.calls]);
+    expect(logged).not.toContain(HASH);
+    expect(logged).not.toContain(RAW_VALUE);
+    expect(info.mock.calls[0]?.[1]).toMatchObject({ variables: REDACTED });
+    expect(error.mock.calls[0]?.[0]).toBe(REDACTED_PULSE_ERROR_MESSAGE);
+    expect(error.mock.calls[0]?.[1]).toMatchObject({
+      codeStack: undefined,
+      variables: REDACTED,
+    });
   });
 
   it('should never log the hashes or raw values of an inline pushPulse request', async () => {
