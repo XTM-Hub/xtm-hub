@@ -37,7 +37,7 @@ export interface ValidatedTrendingInput {
 
 export interface ValidatedDigestInput {
   day: string;
-  sectorBucket: PulseSectorBucket;
+  sectorBucket: PulseSectorBucket | null;
   regionBucket: PulseRegionBucket | null;
 }
 
@@ -205,13 +205,15 @@ export const PulseValidation = {
 
   digestInput: (input: PulseDigestInput, now: Date): ValidatedDigestInput => {
     PulseValidation.requestDay(input.day, now);
-    assertEnum('sector_bucket', input.sector_bucket, SECTOR_BUCKETS);
+    if (input.sector_bucket) {
+      assertEnum('sector_bucket', input.sector_bucket, SECTOR_BUCKETS);
+    }
     if (input.region_bucket) {
       assertEnum('region_bucket', input.region_bucket, REGION_BUCKETS);
     }
     return {
       day: input.day,
-      sectorBucket: input.sector_bucket,
+      sectorBucket: input.sector_bucket ?? null,
       regionBucket: input.region_bucket ?? null,
     };
   },

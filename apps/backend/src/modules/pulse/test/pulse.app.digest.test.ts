@@ -161,6 +161,21 @@ describe(
         ).toEqual([]);
       });
 
+      it('should answer the network trending to a platform that discloses no sector', async () => {
+        const clients = await registerPulseClients(5);
+        await pushFromEach(clients, {
+          day: PULSE_TEST_TODAY,
+          records: [malware('lockbit')],
+          sector: PulseSectorBucket.Healthcare,
+        });
+        const digest = await clients[0]!.digest({
+          day: PULSE_TEST_TODAY,
+          sector: null,
+        });
+        expect(digest.sector_bucket).toBeNull();
+        expect(digest.trending.items).toHaveLength(1);
+      });
+
       it('should reject an unknown sector bucket', async () => {
         const [client] = await registerPulseClients(1);
         const result = await client!.digestResult({

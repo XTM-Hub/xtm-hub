@@ -317,6 +317,12 @@ describe('pulseValidation', () => {
   });
 
   describe('digestInput', () => {
+    it('should read a digest without a sector as the network trending', () => {
+      expect(
+        PulseValidation.digestInput({ day: TODAY, sector_bucket: null }, NOW)
+      ).toEqual({ day: TODAY, sectorBucket: null, regionBucket: null });
+    });
+
     it('should keep the sector and default the region to every region', () => {
       // When
       const validated = PulseValidation.digestInput(

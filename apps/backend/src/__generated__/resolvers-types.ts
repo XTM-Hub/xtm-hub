@@ -1923,7 +1923,7 @@ export type PulseDigest = {
   /** The most prevalent published keys of the network, PULSE_DIGEST_SIZE at most */
   items: Array<PulseDigestItem>;
   region_bucket?: Maybe<PulseRegionBucket>;
-  sector_bucket: PulseSectorBucket;
+  sector_bucket?: Maybe<PulseSectorBucket>;
   trending: PulseDigestTrending;
 };
 
@@ -1932,7 +1932,8 @@ export type PulseDigestInput = {
   day: Scalars['String']['input'];
   /** The sector trending of every region when absent */
   region_bucket?: InputMaybe<PulseRegionBucket>;
-  sector_bucket: PulseSectorBucket;
+  /** The network trending when absent */
+  sector_bucket?: InputMaybe<PulseSectorBucket>;
 };
 
 export type PulseDigestItem = {
@@ -4917,7 +4918,7 @@ export type PulseDigestResolvers<ContextType = PortalContext, ParentType extends
   day?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   items?: Resolver<Array<ResolversTypes['PulseDigestItem']>, ParentType, ContextType>;
   region_bucket?: Resolver<Maybe<ResolversTypes['PulseRegionBucket']>, ParentType, ContextType>;
-  sector_bucket?: Resolver<ResolversTypes['PulseSectorBucket'], ParentType, ContextType>;
+  sector_bucket?: Resolver<Maybe<ResolversTypes['PulseSectorBucket']>, ParentType, ContextType>;
   trending?: Resolver<ResolversTypes['PulseDigestTrending'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;

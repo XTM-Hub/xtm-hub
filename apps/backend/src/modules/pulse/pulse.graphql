@@ -219,7 +219,8 @@ type PulseStatus {
 input PulseDigestInput {
   "UTC day of the salt the digest hashes are computed with"
   day: String!
-  sector_bucket: PulseSectorBucket!
+  "The network trending when absent"
+  sector_bucket: PulseSectorBucket
   "The sector trending of every region when absent"
   region_bucket: PulseRegionBucket
 }
@@ -250,7 +251,7 @@ type PulseDigestTrending {
 
 type PulseDigest {
   day: String!
-  sector_bucket: PulseSectorBucket!
+  sector_bucket: PulseSectorBucket
   region_bucket: PulseRegionBucket
   "The most prevalent published keys of the network, PULSE_DIGEST_SIZE at most"
   items: [PulseDigestItem!]!

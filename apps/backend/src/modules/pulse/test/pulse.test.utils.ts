@@ -325,7 +325,7 @@ export const pulseClient = (platform: TestPulsePlatform) => {
     region = null,
   }: {
     day: string;
-    sector?: PulseSectorBucket;
+    sector?: PulseSectorBucket | null;
     region?: PulseRegionBucket | null;
   }): Promise<PulseOperationResult<{ pulseDigest: PulseDigest }>> =>
     executePulse<{ pulseDigest: PulseDigest }>({
