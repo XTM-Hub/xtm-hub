@@ -364,15 +364,19 @@ export const DocumentApp = {
 
     const updatedDocument = await withTransaction(async () => {
       // The metadata below is deleted then reinserted, so coverage is always re-resolved, against the stored
-      // coverage read under the document lock: a declaration committed meanwhile (manifest ingestion, another
-      // admin) is never replaced by a stale value.
+      // coverage and the document text read under the document lock: a declaration or a name committed
+      // meanwhile (manifest ingestion, another admin) is never replaced or inferred from a stale value.
       if (documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE) {
-        await IntegrationCoverageDomain.loadStoredCoverageForUpdate(
-          parentDocumentId
-        );
+        const lockedDocument =
+          await IntegrationCoverageDomain.loadInferenceTextForUpdate(
+            parentDocumentId
+          );
+        if (!lockedDocument) {
+          throw new Error(ErrorCode.DocumentNotFound);
+        }
         const coverage = await IntegrationCoverageApp.resolveCoverageForUpdate({
           documentId: parentDocumentId,
-          documentBeforeUpdate,
+          currentDocument: lockedDocument,
           input,
         });
         documentMetadata = [

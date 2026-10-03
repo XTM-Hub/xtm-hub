@@ -272,6 +272,23 @@ export const IntegrationCoverageDomain = {
     return IntegrationCoverageDomain.loadStoredCoverage(documentId);
   },
 
+  /**
+   * Text the coverage inference falls back to, read after locking the
+   * document row: an update never infers from a name or description that a
+   * concurrent update replaced after it first read the document. Must run
+   * inside `databaseContext.withTransaction`.
+   */
+  loadInferenceTextForUpdate: async (
+    documentId: DocumentId
+  ): Promise<
+    Pick<Document, 'name' | 'short_description' | 'description'> | undefined
+  > =>
+    db<Document>('Document')
+      .where('id', documentId)
+      .select('name', 'short_description', 'description')
+      .forUpdate()
+      .first(),
+
   loadUseCaseNamesByIds: async (ids: readonly string[]): Promise<string[]> => {
     if (ids.length === 0) return [];
     const rows: Pick<UseCase, 'name'>[] = await db<UseCase>('UseCase')

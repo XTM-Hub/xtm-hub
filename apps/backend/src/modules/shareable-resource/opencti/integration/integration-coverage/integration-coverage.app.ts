@@ -228,11 +228,12 @@ export const IntegrationCoverageApp = {
 
   resolveCoverageForUpdate: async ({
     documentId,
-    documentBeforeUpdate,
+    currentDocument,
     input,
   }: {
     documentId: DocumentId;
-    documentBeforeUpdate: Pick<
+    // Read under the document lock: the inference falls back to this text for the fields the update omits
+    currentDocument: Pick<
       Document,
       'name' | 'short_description' | 'description'
     >;
@@ -263,10 +264,10 @@ export const IntegrationCoverageApp = {
       input: declaration,
       existing,
       inferenceSource: {
-        name: input.name ?? documentBeforeUpdate.name,
+        name: input.name ?? currentDocument.name,
         short_description:
-          input.short_description ?? documentBeforeUpdate.short_description,
-        description: input.description ?? documentBeforeUpdate.description,
+          input.short_description ?? currentDocument.short_description,
+        description: input.description ?? currentDocument.description,
         use_cases: useCaseNames,
         solution_categories: solutionCategoryNames,
       },

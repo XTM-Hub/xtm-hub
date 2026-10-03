@@ -13,6 +13,7 @@ import type { ServiceInstanceId } from '../../../../../model/kanel/public/Servic
 import { BadRequestErrorCode } from '../../../../../utils/error/error.code';
 import { isFeatureEnabled } from '../../../../../utils/feature-flag.util';
 import { DocumentApp } from '../../../../document/document.app';
+import { DocumentDomain } from '../../../../document/domain/document.domain';
 import { TelemetryApp } from '../../../../telemetry/telemetry.app';
 import {
   TAG_DECOUPLING,
@@ -743,6 +744,36 @@ describe('integrationCoverageApp', () => {
       // Then
       expect(await loadStoredCoverage(document)).toEqual(
         inferred({ object_types: [MALWARE] })
+      );
+    });
+
+    it('should infer from the text read under the document lock, not from the text read before it', async () => {
+      // Given - another admin renamed the integration after this update first read it
+      const document = await createThirdPartyIntegration({
+        name: 'Malware feed',
+      });
+      const staleRead = await DocumentDomain.loadDocumentBy({
+        id: document.id,
+      });
+      await TestHelper.document.update(
+        { id: document.id },
+        { name: 'Vulnerability feed' }
+      );
+      const loadSpy = vi
+        .spyOn(DocumentDomain, 'loadDocumentBy')
+        .mockResolvedValueOnce(staleRead);
+
+      // When - the update keeps the name and returns the coverage to inference
+      await updateThirdPartyIntegration(document, {
+        covered_object_types: [],
+        covered_sectors: [],
+        covered_regions: [],
+      });
+      loadSpy.mockRestore();
+
+      // Then
+      expect(await loadStoredCoverage(document)).toEqual(
+        inferred({ object_types: [VULNERABILITY] })
       );
     });
 
