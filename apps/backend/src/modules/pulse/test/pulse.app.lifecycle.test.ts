@@ -7,6 +7,7 @@ import {
 import { PulseApp } from '../pulse.app';
 import { PulseConfig } from '../pulse.config';
 import { PulseDay } from '../pulse.day.helper';
+import { PulseDomain } from '../pulse.domain';
 import { PulseErrorCode } from '../pulse.errors';
 import {
   cleanPulseState,
@@ -24,6 +25,32 @@ const RETENTION_DAY = '2026-10-03';
 const SALT_A = '000102030405060708090a0b0c0d0e0f';
 
 const malware = (value: string) => ({ objectType: MALWARE, value });
+
+type SnapshotSave = 'saveTrendingSnapshot' | 'saveDigestSnapshot';
+
+// Holds the next snapshot save until `release()`: the computation has read the
+// data, its result is not saved yet.
+const pauseNextSave = (method: SnapshotSave) => {
+  let markReached = (): void => undefined;
+  let release = (): void => undefined;
+  const reached = new Promise<void>((resolve) => {
+    markReached = resolve;
+  });
+  const released = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const domain = PulseDomain as unknown as Record<
+    SnapshotSave,
+    (snapshot: unknown) => Promise<void>
+  >;
+  const save = domain[method];
+  vi.spyOn(domain, method).mockImplementationOnce(async (snapshot) => {
+    markReached();
+    await released;
+    return save(snapshot);
+  });
+  return { reached, release: () => release() };
+};
 
 describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
   let clock: ReturnType<typeof usePulseClock>;
@@ -144,6 +171,57 @@ describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
       }).toEqual({ before: 1, after: 0 });
     });
 
+    it('should never publish a trending ranking computed across a purge', async () => {
+      // Given a ranking computed while five platforms reported LockBit, not saved yet
+      const clients = await registerPulseClients(5);
+      await pushFromEach(clients, {
+        day: PULSE_TEST_TODAY,
+        records: [malware(LOCKBIT)],
+      });
+      const request = { day: PULSE_TEST_TODAY, period: PulsePeriod.Last_7Days };
+      const pause = pauseNextSave('saveTrendingSnapshot');
+      const inFlight = clients[1]!.trending(request);
+      await pause.reached;
+
+      // When one of them purges its contributions before the ranking is saved
+      await clients[0]!.purge();
+      pause.release();
+      const during = await inFlight;
+      const after = await clients[1]!.trending(request);
+
+      // Then the ranking computed with five platforms is never served again
+      expect({
+        during: during.items.length,
+        after: after.items.length,
+      }).toEqual({ during: 1, after: 0 });
+    });
+
+    it('should never publish a digest computed across a purge', async () => {
+      // Given a digest computed while five platforms reported LockBit, not saved yet
+      const clients = await registerPulseClients(5);
+      await pushFromEach(clients, {
+        day: PULSE_TEST_TODAY,
+        records: [malware(LOCKBIT)],
+      });
+      const pause = pauseNextSave('saveDigestSnapshot');
+      const inFlight = clients[1]!.digest({ day: PULSE_TEST_TODAY });
+      await pause.reached;
+
+      // When one of them purges its contributions before the digest is saved
+      await clients[0]!.purge();
+      pause.release();
+      const during = await inFlight;
+      const saved = await PulseDomain.loadDigestSnapshot(PULSE_TEST_TODAY);
+      const after = await clients[1]!.digest({ day: PULSE_TEST_TODAY });
+
+      // Then the digest computed with five platforms is neither saved nor served
+      expect({
+        during: during.items.length,
+        saved,
+        after: after.items.length,
+      }).toEqual({ during: 1, saved: undefined, after: 0 });
+    });
+
     it('should limit purges to 5 per 24 hours', async () => {
       // Given
       const [client] = await registerPulseClients(1);
@@ -258,6 +336,28 @@ describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
         keyPlatformCounts: await TestHelper.pulse.loadKeyPlatformCounts(),
         platforms: await TestHelper.pulse.countRows('PulsePlatform'),
       }).toEqual({ published: false, keyPlatformCounts: [1], platforms: 1 });
+    });
+
+    it('should never save a snapshot computed before a retention run', async () => {
+      // Given a digest computed before a retention run, not saved yet
+      const clients = await registerPulseClients(5);
+      await pushFromEach(clients, {
+        day: PULSE_TEST_TODAY,
+        records: [malware(LOCKBIT)],
+      });
+      const pause = pauseNextSave('saveDigestSnapshot');
+      const inFlight = clients[1]!.digest({ day: PULSE_TEST_TODAY });
+      await pause.reached;
+
+      // When the retention run ends before the digest is saved
+      await PulseApp.applyRetention(clock.now());
+      pause.release();
+      await inFlight;
+
+      // Then
+      expect(
+        await PulseDomain.loadDigestSnapshot(PULSE_TEST_TODAY)
+      ).toBeUndefined();
     });
   });
 

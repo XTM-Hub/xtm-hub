@@ -81,6 +81,8 @@ export interface PulsePublicationPolicy {
 
 export interface PulseStoredTrendingSnapshot {
   policy: PulsePublicationPolicy;
+  // Data generation the items were computed from (see PulseDataGeneration).
+  generation: number;
   items: PulseTrendingSnapshotItem[];
 }
 
@@ -98,6 +100,8 @@ export interface PulseDigestSnapshotItem extends PulseKeyRef {
 export interface PulseStoredDigestSnapshot {
   policy: PulsePublicationPolicy;
   size: number;
+  // Data generation the items were computed from (see PulseDataGeneration).
+  generation: number;
   items: PulseDigestSnapshotItem[];
 }
 

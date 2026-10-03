@@ -48,6 +48,9 @@ const query = async <T>(
 
 const toJson = (value: unknown): string => JSON.stringify(value);
 
+const CURRENT_DATA_GENERATION =
+  'COALESCE((SELECT generation FROM "PulseDataGeneration" WHERE id = 1), 0)';
+
 const keyRefsJson = (keys: readonly PulseKeyRef[]): string =>
   toJson(keys.map(({ k, t }) => ({ k, t })));
 
@@ -553,6 +556,7 @@ export const PulseDomain = {
     | {
         computedAt: Date;
         policy: PulsePublicationPolicy | null;
+        generation: number | null;
         items: PulseTrendingSnapshotItem[];
       }
     | undefined
@@ -576,10 +580,14 @@ export const PulseDomain = {
     return {
       computedAt: row.computed_at,
       policy: isStored ? (stored.policy ?? null) : null,
+      generation: isStored ? (stored.generation ?? null) : null,
       items: isStored ? (stored.items ?? []) : [],
     };
   },
 
+  // Saved only while `generation` is still the current data generation: a
+  // computation that read the data before a purge or a retention run finished
+  // never publishes its result.
   saveTrendingSnapshot: async ({
     day,
     period,
@@ -587,6 +595,7 @@ export const PulseDomain = {
     regionScope,
     computedAt,
     policy,
+    generation,
     items,
   }: {
     day: string;
@@ -595,12 +604,18 @@ export const PulseDomain = {
     regionScope: string;
     computedAt: Date;
     policy: PulsePublicationPolicy;
+    generation: number;
     items: readonly PulseTrendingSnapshotItem[];
   }): Promise<void> => {
-    const stored: PulseStoredTrendingSnapshot = { policy, items: [...items] };
+    const stored: PulseStoredTrendingSnapshot = {
+      policy,
+      generation,
+      items: [...items],
+    };
     await query(
       `INSERT INTO "PulseTrendingSnapshot" (day, period, sector_scope, region_scope, computed_at, items)
-       VALUES (?::date, ?, ?, ?, to_timestamp(?::float8 / 1000), ?::jsonb)
+       SELECT ?::date, ?, ?, ?, to_timestamp(?::float8 / 1000), ?::jsonb
+       WHERE ${CURRENT_DATA_GENERATION} = ?
        ON CONFLICT (day, period, sector_scope, region_scope)
        DO UPDATE SET computed_at = EXCLUDED.computed_at, items = EXCLUDED.items`,
       [
@@ -610,6 +625,7 @@ export const PulseDomain = {
         regionScope,
         computedAt.getTime(),
         toJson(stored),
+        generation,
       ]
     );
   },
@@ -700,11 +716,14 @@ export const PulseDomain = {
     if (!row) {
       return undefined;
     }
+    // A snapshot written before the data generation was stored has none: it
+    // is never served, so it is recomputed.
     const stored = row.items as Partial<PulseStoredDigestSnapshot> | null;
     const isStored =
       !!stored &&
       !!stored.policy &&
       typeof stored.size === 'number' &&
+      typeof stored.generation === 'number' &&
       Array.isArray(stored.items);
     return {
       computedAt: row.computed_at,
@@ -723,15 +742,35 @@ export const PulseDomain = {
   }): Promise<void> => {
     await query(
       `INSERT INTO "PulseDigestSnapshot" (day, computed_at, items)
-       VALUES (?::date, to_timestamp(?::float8 / 1000), ?::jsonb)
+       SELECT ?::date, to_timestamp(?::float8 / 1000), ?::jsonb
+       WHERE ${CURRENT_DATA_GENERATION} = ?
        ON CONFLICT (day)
        DO UPDATE SET computed_at = EXCLUDED.computed_at, items = EXCLUDED.items`,
-      [day, computedAt.getTime(), toJson(stored)]
+      [day, computedAt.getTime(), toJson(stored), stored.generation]
     );
   },
 
   deleteDigestSnapshots: async (): Promise<void> => {
     await query('DELETE FROM "PulseDigestSnapshot"');
+  },
+  // endregion
+
+  // region Data generation
+  // Bumped once a purge or a retention run has deleted contributions: every
+  // snapshot computed from an earlier generation is then neither saved nor
+  // served.
+  loadDataGeneration: async (): Promise<number> => {
+    const [row] = await query<{ generation: number }>(
+      `SELECT ${CURRENT_DATA_GENERATION} AS generation`
+    );
+    return row?.generation ?? 0;
+  },
+
+  bumpDataGeneration: async (): Promise<void> => {
+    await query(
+      `INSERT INTO "PulseDataGeneration" (id, generation) VALUES (1, 1)
+       ON CONFLICT (id) DO UPDATE SET generation = "PulseDataGeneration".generation + 1`
+    );
   },
   // endregion
 

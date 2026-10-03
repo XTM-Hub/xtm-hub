@@ -631,6 +631,7 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
           version: PULSE_PUBLICATION_POLICY_VERSION - 1,
           kThreshold: 5,
         },
+        generation: await PulseDomain.loadDataGeneration(),
         items: [],
       });
 

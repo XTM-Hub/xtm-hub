@@ -463,28 +463,38 @@ const loadTrendingItems = async ({
     version: PULSE_PUBLICATION_POLICY_VERSION,
     kThreshold: settings.kThreshold,
   };
-  // A snapshot published under other rules (an older version, another k) is
-  // never served, however fresh.
+  // A snapshot published under other rules (an older version, another k) or
+  // computed before the last purge or retention run is never served, however
+  // fresh.
   const isFresh = (
     snapshot:
-      { computedAt: Date; policy: PulsePublicationPolicy | null } | undefined
+      | {
+          computedAt: Date;
+          policy: PulsePublicationPolicy | null;
+          generation: number | null;
+        }
+      | undefined,
+    generation: number
   ) =>
     !!snapshot &&
     snapshot.policy?.version === policy.version &&
     snapshot.policy.kThreshold === policy.kThreshold &&
+    snapshot.generation === generation &&
     now.getTime() - snapshot.computedAt.getTime() < ttlMs &&
     snapshot.computedAt.getTime() <= now.getTime();
 
   const cached = await PulseDomain.loadTrendingSnapshot(scope);
-  if (cached && isFresh(cached)) {
+  if (cached && isFresh(cached, await PulseDomain.loadDataGeneration())) {
     return cached.items;
   }
   return withAdvisoryLock(
     PULSE_LOCK_TRENDING,
     `${scope.day}:${scope.period}:${scope.sectorScope}:${scope.regionScope}`,
     async () => {
+      // Read before the data: the items are only saved under this generation.
+      const generation = await PulseDomain.loadDataGeneration();
       const current = await PulseDomain.loadTrendingSnapshot(scope);
-      if (current && isFresh(current)) {
+      if (current && isFresh(current, generation)) {
         return current.items;
       }
       const items = await computeTrendingItems({ settings, input });
@@ -492,6 +502,7 @@ const loadTrendingItems = async ({
         ...scope,
         computedAt: now,
         policy,
+        generation,
         items,
       });
       return items;
@@ -548,35 +559,43 @@ const loadDigestItems = async ({
   };
   const isFresh = (
     snapshot:
-      { computedAt: Date; stored: PulseStoredDigestSnapshot | null } | undefined
+      | { computedAt: Date; stored: PulseStoredDigestSnapshot | null }
+      | undefined,
+    generation: number
   ): snapshot is { computedAt: Date; stored: PulseStoredDigestSnapshot } =>
     !!snapshot?.stored &&
     snapshot.stored.policy.version === policy.version &&
     snapshot.stored.policy.kThreshold === policy.kThreshold &&
     snapshot.stored.size === settings.digestSize &&
+    snapshot.stored.generation === generation &&
     now.getTime() - snapshot.computedAt.getTime() < ttlMs &&
     snapshot.computedAt.getTime() <= now.getTime();
 
   const cached = await PulseDomain.loadDigestSnapshot(day);
-  if (isFresh(cached)) {
+  if (isFresh(cached, await PulseDomain.loadDataGeneration())) {
     return cached.stored.items;
   }
   return withAdvisoryLock(PULSE_LOCK_DIGEST, day, async () => {
+    // Read before the data: the items are only saved under this generation.
+    const generation = await PulseDomain.loadDataGeneration();
     const current = await PulseDomain.loadDigestSnapshot(day);
-    if (isFresh(current)) {
+    if (isFresh(current, generation)) {
       return current.stored.items;
     }
     const items = await computeDigestItems({ settings, day });
     await PulseDomain.saveDigestSnapshot({
       day,
       computedAt: now,
-      stored: { policy, size: settings.digestSize, items },
+      stored: { policy, size: settings.digestSize, generation, items },
     });
     return items;
   });
 };
 
-const deleteSnapshots = async (): Promise<void> => {
+// After contributions were deleted: the generation moves first, so a snapshot
+// computed from the deleted data and saved meanwhile is never served.
+const invalidateSnapshots = async (): Promise<void> => {
+  await PulseDomain.bumpDataGeneration();
   await PulseDomain.deleteTrendingSnapshots();
   await PulseDomain.deleteDigestSnapshots();
 };
@@ -626,7 +645,7 @@ const purgePlatform = async (pseudonym: string): Promise<number> => {
     await PulseDomain.deletePlatform(platform.id);
     return lateRows;
   });
-  await deleteSnapshots();
+  await invalidateSnapshots();
   return deleted;
 };
 
@@ -1018,7 +1037,7 @@ export const PulseApp = {
     await PulseDomain.deleteUnpublishedKeys();
     deleted.PulsePlatform = await PulseDomain.deleteInactivePlatforms(cutoff);
     await PulseDomain.refreshFirstContributionDays(cutoff);
-    await deleteSnapshots();
+    await invalidateSnapshots();
     for (const [table, count] of Object.entries(deleted)) {
       pulseRetentionDeletedRowsCounter.inc({ table }, count);
     }
