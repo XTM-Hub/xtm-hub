@@ -502,13 +502,17 @@ export const DocumentDomain = {
     type: string,
     serviceSlug: string,
     include_metadata: DocumentMetadataKeyCode[] = [],
-    orderResults: boolean = true
+    orderResults: boolean = true,
+    // PROTOTYPE: lets callers pass a GraphQL-selection-derived column list (see
+    // document.field-selection.util.ts) instead of always fetching `Document.*`.
+    columns: string | string[] = 'Document.*'
   ): Promise<Document[]> => {
     const documents: Document[] =
       await DocumentDomain.buildSeoDocumentsByServiceSlugQuery(
         type,
         serviceSlug,
-        orderResults
+        orderResults,
+        columns
       );
 
     return DocumentMetadataDomain.hydrateMetadata(documents, include_metadata);

@@ -1,3 +1,4 @@
+import { GraphQLResolveInfo } from 'graphql';
 import {
   CreateDocumentInput,
   DocumentImageType,
@@ -44,6 +45,7 @@ import {
 import { DocumentUploadsHelper, Upload } from './document.uploads.helper';
 import { DocumentChildrenDomain } from './domain/document.children.domain';
 import { DocumentData, DocumentDomain } from './domain/document.domain';
+import { getRequestedDocumentColumns } from './domain/document.field-selection.util';
 import {
   DocumentMetadataDomain,
   DocumentMetadataKeys,
@@ -605,7 +607,12 @@ export const DocumentApp = {
   },
 
   loadPublicDocumentsByServiceSlug: async (
-    serviceInstanceSlug: string
+    serviceInstanceSlug: string,
+    // PROTOTYPE: when the resolver passes its `GraphQLResolveInfo`, the SQL
+    // `SELECT` is narrowed to exactly the columns the client's selection needs
+    // (see document.field-selection.util.ts) instead of always fetching
+    // `Document.*`. Omit `info` to keep today's full-column behavior.
+    info?: GraphQLResolveInfo
   ): Promise<Document[]> => {
     const serviceDefinition =
       await ServiceDefinitionDomain.loadServiceDefinitionByServiceInstanceSlug(
@@ -618,10 +625,14 @@ export const DocumentApp = {
     const { documentType, metadataKeys } =
       getMetadataKeysAndDocumentTypeFromServiceDefinition(serviceDefinition);
 
+    const columns = info ? getRequestedDocumentColumns(info) : undefined;
+
     return DocumentDomain.loadSeoDocumentsByServiceSlug(
       documentType,
       serviceInstanceSlug,
-      metadataKeys
+      metadataKeys,
+      true,
+      columns
     );
   },
 
