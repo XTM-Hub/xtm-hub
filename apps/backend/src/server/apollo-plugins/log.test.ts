@@ -4,6 +4,8 @@ import type {
   GraphQLRequestListener,
 } from '@apollo/server';
 import { GraphQLError } from 'graphql';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import { logApp } from '../../utils/app-logger.util';
 import {
@@ -28,8 +30,30 @@ const PULSE_QUERIES = [
   'query { pulseBenchmark(input: { platformId: "p", day: "2026-10-03", period: last_7_days }) { period } }',
   'query { pulseSalt(day: "2026-10-03") { salt } }',
   'query { pulseStatus { day } }',
+  'query { pulseDigest(input: { day: "2026-10-03", sector_bucket: finance, region_bucket: europe }) { day } }',
   'mutation { pulsePurge(platformId: "p") { success } }',
 ];
+
+// Every Query and Mutation field of the Threat Pulse schema.
+const pulseSchemaFields = (): string[] => {
+  const schema = readFileSync(
+    fileURLToPath(
+      new URL('../../modules/pulse/pulse.graphql', import.meta.url)
+    ),
+    'utf8'
+  );
+  const fields: string[] = [];
+  for (const block of schema.matchAll(
+    /extend type (?:Query|Mutation) \{([^}]*)\}/g
+  )) {
+    for (const field of (block[1] ?? '').matchAll(/^\s*(\w+)\s*[(:]/gm)) {
+      if (field[1]) {
+        fields.push(field[1]);
+      }
+    }
+  }
+  return fields;
+};
 
 type Plugin = ReturnType<typeof errorLoggingPlugin>;
 
@@ -83,6 +107,60 @@ describe('errorLoggingPlugin redaction', () => {
       expect(loggableVariables(query, VARIABLES)).toBe(REDACTED);
     }
   );
+
+  it('should redact every Query and Mutation field of the Threat Pulse schema', () => {
+    const fields = pulseSchemaFields();
+    expect(fields).toEqual(
+      expect.arrayContaining(['pulseDigest', 'pushPulse'])
+    );
+    expect(
+      fields.filter((field) => !isRedactedOperation(`query { ${field} }`))
+    ).toEqual([]);
+  });
+
+  it('should never log the raw value, the hash alias or the operation name of a malformed digest request', async () => {
+    // Given a digest request with an extra field and a hash in its alias and operation name
+    const info = vi.spyOn(logApp, 'info').mockImplementation(() => undefined);
+    const error = vi.spyOn(logApp, 'error').mockImplementation(() => undefined);
+    const operationName = `h${HASH}`;
+    const query = `query ${operationName} { h${HASH}: pulseDigest(input: { day: "2026-10-03", sector_bucket: finance, region_bucket: europe, value: "${RAW_VALUE}" }) { day } }`;
+    const plugin: Plugin = errorLoggingPlugin();
+    const listener = await plugin.requestDidStart?.({
+      request: { query, operationName },
+      contextValue: { req: { body: { variables: {} } } },
+    } as unknown as GraphQLRequestContext<Context>);
+
+    // When GraphQL rejects the extra field, echoing it
+    await listener?.didEncounterErrors?.({
+      errors: [
+        new GraphQLError(
+          `Field "value" is not defined by type "PulseDigestInput". Value: "${RAW_VALUE}"`,
+          {
+            path: [`h${HASH}`],
+            extensions: { code: 'GRAPHQL_VALIDATION_FAILED' },
+          }
+        ),
+      ],
+      operationName,
+      request: { query, operationName },
+      contextValue: { req: { body: { variables: {} } } },
+    } as unknown as GraphQLRequestContextDidEncounterErrors<Context>);
+
+    // Then
+    const logged = JSON.stringify([info.mock.calls, error.mock.calls]);
+    expect(logged).not.toContain(HASH);
+    expect(logged).not.toContain(RAW_VALUE);
+    expect(info.mock.calls[0]?.[1]).toMatchObject({
+      query: REDACTED,
+      operationName: REDACTED,
+    });
+    expect(error.mock.calls[0]?.[0]).toBe(REDACTED_PULSE_ERROR_MESSAGE);
+    expect(error.mock.calls[0]?.[1]).toMatchObject({
+      operationName: REDACTED,
+      path: undefined,
+      code: 'GRAPHQL_VALIDATION_FAILED',
+    });
+  });
 
   it('should keep the query and variables of another operation', () => {
     const query = 'query { me { id } }';

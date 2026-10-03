@@ -18,8 +18,9 @@ export interface Context extends BaseContext {
 // Threat Pulse requests carry pseudonymous hashes, and a malformed one can
 // carry raw values: their query text, variables, error messages and stacks
 // (GraphQL coercion errors echo the rejected input) never reach the logs.
-const PULSE_OPERATION_FIELDS =
-  /\b(pushPulse|pulseLookup|pulseTrending|pulseBenchmark|pulseSalt|pulseStatus|pulsePurge)\b/;
+// Every Threat Pulse field is `pushPulse` or `pulse<Name>`: a new operation is
+// covered without being listed (log.test.ts checks each field of the schema).
+const PULSE_OPERATION_FIELDS = /\b(pushPulse|pulse[A-Z]\w*)\b/;
 export const REDACTED = '[redacted]';
 export const REDACTED_PULSE_ERROR_MESSAGE = 'Threat Pulse request failed';
 
