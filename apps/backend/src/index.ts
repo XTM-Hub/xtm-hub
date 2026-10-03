@@ -27,6 +27,7 @@ import { DeploymentRequestDataLoader } from './modules/deployment/deployment.dat
 import { DocumentDataLoader } from './modules/document/document.dataloader';
 import { FeatureVotingDataLoader } from './modules/feature-voting/feature-voting.dataloader';
 import { NewsFeedDataLoader } from './modules/news-feed/news-feed.dataloader';
+import { PulseConfig } from './modules/pulse/pulse.config';
 import { RegistrationDataLoader } from './modules/registration/registration.dataloader';
 import { initAuthPlatform } from './modules/security-management/authentication/auth-platform';
 import { ServiceInstanceDataLoader } from './modules/service/instance/service-instance.dataloader';
@@ -456,6 +457,7 @@ if (!process.env.VITEST_MODE || process.env.START_DEV_SERVER) {
   );
 
   initCronJobs();
+  PulseConfig.logStatus();
 
   // Anonymous usage gauge telemetry (fire-and-forget: probes the collector
   // and self-disables when unreachable, never blocks or breaks the boot).

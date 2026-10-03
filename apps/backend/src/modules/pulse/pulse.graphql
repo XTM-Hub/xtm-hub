@@ -1,0 +1,228 @@
+# Threat Pulse: privacy-preserving aggregation of OpenCTI contributions.
+# Warning ! Used by OpenCTI (wire contract), keep every type and field stable.
+
+enum PulseObjectType {
+  indicator
+  attack_pattern
+  vulnerability
+  intrusion_set
+  malware
+  tool
+}
+
+enum PulseEventKind {
+  created
+  sighted
+  detected
+  hunted
+  referenced
+}
+
+enum PulseSectorBucket {
+  finance
+  government
+  defense
+  healthcare
+  energy_utilities
+  telecommunications
+  technology
+  manufacturing
+  transportation
+  retail_consumer
+  education_research
+  non_profit
+  other
+  undisclosed
+}
+
+enum PulseRegionBucket {
+  africa
+  asia_pacific
+  europe
+  latin_america
+  middle_east
+  north_america
+  global
+  undisclosed
+}
+
+enum PulsePeriod {
+  last_7_days
+  last_30_days
+  last_90_days
+}
+
+enum PulsePrevalenceBucket {
+  rare
+  uncommon
+  common
+  widespread
+}
+
+enum PulseTrendDirection {
+  rising
+  stable
+  falling
+}
+
+type PulseSalt {
+  "UTC day, YYYY-MM-DD"
+  day: String!
+  "32 lowercase hex characters (16 random bytes, generated once per UTC day)"
+  salt: String!
+}
+
+input PulseRecordInput {
+  "AES-128-ECB of the stable key under the day's salt, ^[0-9a-f]{32}$"
+  hash: String!
+  object_type: PulseObjectType!
+  event_kind: PulseEventKind!
+  "1..100000"
+  count: Int!
+}
+
+input PushPulseInput {
+  "Salt day used for every hash of the batch (today or yesterday, UTC)"
+  day: String!
+  sector_bucket: PulseSectorBucket!
+  region_bucket: PulseRegionBucket!
+  "1..5000 records, (hash, object_type, event_kind) unique inside a batch"
+  records: [PulseRecordInput!]!
+}
+
+type PushPulseResult {
+  accepted: Int!
+  day: String!
+}
+
+input PulseLookupInput {
+  day: String!
+  object_type: PulseObjectType!
+  "1..1000 hashes under the day's salt"
+  hashes: [String!]!
+}
+
+type PulseLookupResult {
+  "Echo of the requested hash, same order as the request"
+  hash: String!
+  "Distinct platforms over the retention period >= k"
+  published: Boolean!
+  prevalence_bucket: PulsePrevalenceBucket
+  "5-9, 10-24, 25-49, 50-99, 100-249 or 250+"
+  platforms_bucket: String
+  first_seen_network: String
+  last_seen_network: String
+  trend: PulseTrendDirection
+  "12 weekly distinct-platform counts, oldest first, weeks below k reported as 0"
+  trend_series: [Int!]
+  "Null unless the caller's sector bucket has at least k platforms on the key over 30 days"
+  sector_trend: PulseTrendDirection
+  sector_platforms_bucket: String
+}
+
+input PulseTrendingInput {
+  day: String!
+  period: PulsePeriod!
+  "Null for the whole network"
+  sector_bucket: PulseSectorBucket
+  "Null for every region"
+  region_bucket: PulseRegionBucket
+  "Null for every object type"
+  object_types: [PulseObjectType!]
+  "Default 50, max 200"
+  first: Int
+}
+
+type PulseTrendingItem {
+  "Hash of the item under the requested day's salt"
+  hash: String!
+  object_type: PulseObjectType!
+  platforms_bucket: String!
+  prevalence_bucket: PulsePrevalenceBucket!
+  trend: PulseTrendDirection!
+  "(recent + 1) / (baseline + 1)"
+  growth: Float!
+  first_seen_network: String!
+}
+
+type PulseTrendingResult {
+  day: String!
+  period: PulsePeriod!
+  sector_bucket: PulseSectorBucket
+  region_bucket: PulseRegionBucket
+  items: [PulseTrendingItem!]!
+}
+
+input PulseBenchmarkInput {
+  "Must equal the XTM-Hub-Platform-Id header"
+  platformId: String!
+  day: String!
+  period: PulsePeriod!
+}
+
+type PulseBenchmarkMetric {
+  object_type: PulseObjectType!
+  event_kind: PulseEventKind!
+  platform_count: Int!
+  "Null when the sector bucket has fewer than k active platforms in the period"
+  sector_median: Float
+  "Null when the network has fewer than k active platforms in the period"
+  network_median: Float
+}
+
+type PulseBenchmarkItem {
+  hash: String!
+  object_type: PulseObjectType!
+  platform_count: Int!
+  sector_median: Float!
+  ratio: Float!
+}
+
+type PulseBenchmarkResult {
+  period: PulsePeriod!
+  sector_bucket: PulseSectorBucket!
+  region_bucket: PulseRegionBucket!
+  "Null when the sector bucket has fewer than k active platforms in the period"
+  sector_platforms_bucket: String
+  metrics: [PulseBenchmarkMetric!]!
+  "At most 50 items"
+  top_items: [PulseBenchmarkItem!]!
+}
+
+type PulseStatus {
+  day: String!
+  k_threshold: Int!
+  retention_months: Int!
+  "Active contributors over 30 days: <5 or a platforms bucket"
+  contributors_bucket: String!
+  "The caller contributed at least one record over the contribution window"
+  read_access: Boolean!
+  last_contribution_day: String
+}
+
+type PulsePurgeResult {
+  success: Boolean!
+  deleted_records: Int!
+}
+
+extend type Query {
+  # Warning ! Used by OpenCTI
+  pulseSalt(day: String!): PulseSalt! @platform_token
+  # Warning ! Used by OpenCTI
+  pulseStatus: PulseStatus! @platform_token
+  # Warning ! Used by OpenCTI
+  pulseLookup(input: PulseLookupInput!): [PulseLookupResult!]! @platform_token
+  # Warning ! Used by OpenCTI
+  pulseTrending(input: PulseTrendingInput!): PulseTrendingResult!
+    @platform_token
+  # Warning ! Used by OpenCTI
+  pulseBenchmark(input: PulseBenchmarkInput!): PulseBenchmarkResult!
+    @platform_token
+}
+
+extend type Mutation {
+  # Warning ! Used by OpenCTI
+  pushPulse(input: PushPulseInput!): PushPulseResult! @platform_token
+  # Warning ! Used by OpenCTI
+  pulsePurge(platformId: String!): PulsePurgeResult! @platform_token
+}
