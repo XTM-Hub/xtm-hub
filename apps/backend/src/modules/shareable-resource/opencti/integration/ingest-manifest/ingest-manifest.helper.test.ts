@@ -275,6 +275,11 @@ describe('ingest manifest helper', () => {
         ['a blank value', { sectors: ['  '] }],
         ['too many values', { regions: Array.from({ length: 51 }, String) }],
         ['a value that is too long', { object_types: ['x'.repeat(129)] }],
+        ['an unknown family', { objectTypes: ['Malware'] }],
+        [
+          'a known family next to an unknown one',
+          { sectors: ['Finance'], region: ['Europe'] },
+        ],
       ])(
         'should ignore %s without rejecting the contract',
         (_description, coverage) => {

@@ -32,12 +32,17 @@ const CoverageValuesSchema = z
   .max(COVERAGE_MAX_VALUES)
   .nullish();
 
-/** Validation rules shared by the manifest, the manifest fragments and the admin form. */
-export const IntegrationCoverageDeclarationSchema = z.object({
-  object_types: CoverageValuesSchema,
-  sectors: CoverageValuesSchema,
-  regions: CoverageValuesSchema,
-});
+/**
+ * Validation rules shared by the manifest, the manifest fragments and the admin form. Strict: a misspelled family
+ * (`objectTypes`) makes the declaration invalid instead of being silently dropped.
+ */
+export const IntegrationCoverageDeclarationSchema = z
+  .object({
+    object_types: CoverageValuesSchema,
+    sectors: CoverageValuesSchema,
+    regions: CoverageValuesSchema,
+  })
+  .strict();
 
 const CANONICAL_OBJECT_TYPES = new Map<string, string>([
   ...KNOWN_OBJECT_TYPES.map((type) => [type.toLowerCase(), type] as const),
