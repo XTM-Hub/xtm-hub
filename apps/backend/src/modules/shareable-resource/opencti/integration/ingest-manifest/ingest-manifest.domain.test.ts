@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../../../tests/helper/test.helper';
 import {
   TEST_ORGANIZATIONS,
@@ -11,6 +11,7 @@ import {
 } from '../../../../../portal.const';
 import { minioInit } from '../../../../../server/initialize';
 import { DocumentChildrenDomain } from '../../../../document/domain/document.children.domain';
+import { DocumentDomain } from '../../../../document/domain/document.domain';
 import { useCaseDomain } from '../../../../use-case/use-case.domain';
 import { IntegrationCoverageDomain } from '../integration-coverage/integration-coverage.domain';
 import {
@@ -503,6 +504,37 @@ describe('upsertConnectors', () => {
         regions: [],
         inferred: false,
       });
+    });
+
+    it('should keep an admin coverage declared after the ingestion read the connectors', async () => {
+      // Given - an admin declares a coverage right after the batch read of the existing connectors
+      const manifest = buildCoverageManifest('coverage-admin-during-ingestion');
+      const [created] = await IngestManifestDomain.upsertConnectors([manifest]);
+      const declaredCoverage = {
+        object_types: [],
+        sectors: [FINANCE],
+        regions: [],
+        inferred: false,
+      };
+      const loadDocumentsByMetadata = DocumentDomain.loadDocumentsByMetadata;
+      const spy = vi
+        .spyOn(DocumentDomain, 'loadDocumentsByMetadata')
+        .mockImplementationOnce(async (...args) => {
+          const snapshot = await loadDocumentsByMetadata(...args);
+          await IntegrationCoverageDomain.upsertCoverageMetadata([
+            { documentId: created!.id, coverage: declaredCoverage },
+          ]);
+          return snapshot;
+        });
+
+      // When
+      const [updated] = await IngestManifestDomain.upsertConnectors([
+        { ...manifest, name: 'Ransomware tracker' },
+      ]);
+      spy.mockRestore();
+
+      // Then
+      expect(await loadCoverage(updated)).toEqual(declaredCoverage);
     });
 
     it('should let a coverage declared by the manifest replace the stored one', async () => {

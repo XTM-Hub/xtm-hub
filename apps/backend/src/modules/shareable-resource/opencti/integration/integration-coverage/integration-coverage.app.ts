@@ -16,6 +16,7 @@ import { TelemetryEventType } from '../../../../telemetry/telemetry.types';
 import { isIntegrationType } from '../integration.model';
 import {
   CoverageCandidateRow,
+  CoverageInferenceRow,
   IntegrationCoverageDomain,
 } from './integration-coverage.domain';
 import { IntegrationCoverageHelper } from './integration-coverage.helper';
@@ -136,6 +137,33 @@ const toInferenceSourceFields = (
   short_description: document.short_description,
   description: document.description,
 });
+
+/** Inferred coverage of every row whose stored inferred coverage is missing or outdated. */
+const inferOutdatedCoverage = async (
+  rows: CoverageInferenceRow[]
+): Promise<
+  Array<{ documentId: string; coverage: StoredIntegrationCoverage }>
+> => {
+  const documentIds = rows.map(({ id }) => id);
+  const [useCaseNames, solutionCategoryNames] = await Promise.all([
+    IntegrationCoverageDomain.loadUseCaseNamesByDocumentIds(documentIds),
+    IntegrationCoverageDomain.loadSolutionCategoryNamesByDocumentIds(
+      documentIds
+    ),
+  ]);
+  return rows.flatMap((row) => {
+    const inferred = IntegrationCoverageHelper.inferCoverage({
+      ...toInferenceSourceFields(row),
+      use_cases: useCaseNames.get(row.id),
+      solution_categories: solutionCategoryNames.get(row.id),
+    });
+    const stored = IntegrationCoverageHelper.parseStoredCoverage(row);
+    const isUpToDate =
+      stored?.inferred === true &&
+      IntegrationCoverageHelper.isSameCoverage(stored, inferred);
+    return isUpToDate ? [] : [{ documentId: row.id, coverage: inferred }];
+  });
+};
 
 export const IntegrationCoverageApp = {
   searchIntegrationsByCoverage: async (
@@ -267,28 +295,11 @@ export const IntegrationCoverageApp = {
             limit: REFRESH_BATCH_SIZE,
           }
         );
-      const documentIds = rows.map(({ id }) => id);
-      const [useCaseNames, solutionCategoryNames] = await Promise.all([
-        IntegrationCoverageDomain.loadUseCaseNamesByDocumentIds(documentIds),
-        IntegrationCoverageDomain.loadSolutionCategoryNamesByDocumentIds(
-          documentIds
-        ),
-      ]);
-
-      const updates = rows.flatMap((row) => {
-        const inferred = IntegrationCoverageHelper.inferCoverage({
-          ...toInferenceSourceFields(row),
-          use_cases: useCaseNames.get(row.id),
-          solution_categories: solutionCategoryNames.get(row.id),
-        });
-        const stored = IntegrationCoverageHelper.parseStoredCoverage(row);
-        const isUpToDate =
-          stored?.inferred === true &&
-          IntegrationCoverageHelper.isSameCoverage(stored, inferred);
-        return isUpToDate ? [] : [{ documentId: row.id, coverage: inferred }];
-      });
-      const written =
-        await IntegrationCoverageDomain.writeInferredCoverage(updates);
+      const candidates = await inferOutdatedCoverage(rows);
+      const written = await IntegrationCoverageDomain.writeInferredCoverage(
+        candidates.map(({ documentId }) => documentId),
+        inferOutdatedCoverage
+      );
 
       scanned += rows.length;
       updated += written;

@@ -521,12 +521,15 @@ describe('integrationCoverageApp', () => {
       });
 
       // When - the stale inferred write lands after the declaration
-      const written = await IntegrationCoverageDomain.writeInferredCoverage([
-        {
-          documentId: document.id,
-          coverage: inferred({ object_types: [MALWARE] }),
-        },
-      ]);
+      const written = await IntegrationCoverageDomain.writeInferredCoverage(
+        [document.id],
+        async () => [
+          {
+            documentId: document.id,
+            coverage: inferred({ object_types: [MALWARE] }),
+          },
+        ]
+      );
 
       // Then
       expect({ written, coverage: await loadStoredCoverage(document) }).toEqual(
@@ -535,6 +538,74 @@ describe('integrationCoverageApp', () => {
           coverage,
         }
       );
+    });
+
+    it('should infer again from the current text when the integration changed after the refresh read', async () => {
+      // Given - the refresh read the integration, then its text changed
+      const document = await createIntegration({
+        slug: 'renamed-during-refresh',
+        name: 'Malware feed',
+        coverage: inferred({ object_types: [MALWARE] }),
+      });
+      await TestHelper.document.update(
+        { id: document.id },
+        { name: 'Vulnerability feed' }
+      );
+      const seenNames: string[] = [];
+
+      // When
+      const written = await IntegrationCoverageDomain.writeInferredCoverage(
+        [document.id],
+        async (rows) =>
+          rows.map((row) => {
+            seenNames.push(row.name);
+            return {
+              documentId: row.id,
+              coverage: inferred({ object_types: [VULNERABILITY] }),
+            };
+          })
+      );
+
+      // Then
+      expect({
+        written,
+        seenNames,
+        coverage: await loadStoredCoverage(document),
+      }).toEqual({
+        written: 1,
+        seenNames: ['Vulnerability feed'],
+        coverage: inferred({ object_types: [VULNERABILITY] }),
+      });
+    });
+
+    it('should skip an integration deleted after the refresh read and write the others', async () => {
+      // Given
+      const kept = await createIntegration({
+        slug: 'kept-during-refresh',
+        name: 'Malware feed',
+      });
+      const deletedId = uuidv4();
+
+      // When
+      const written = await IntegrationCoverageDomain.writeInferredCoverage(
+        [kept.id, deletedId],
+        async () => [
+          {
+            documentId: deletedId,
+            coverage: inferred({ object_types: [MALWARE] }),
+          },
+          {
+            documentId: kept.id,
+            coverage: inferred({ object_types: [MALWARE] }),
+          },
+        ]
+      );
+
+      // Then
+      expect({ written, coverage: await loadStoredCoverage(kept) }).toEqual({
+        written: 1,
+        coverage: inferred({ object_types: [MALWARE] }),
+      });
     });
 
     it('should refresh a stale inferred coverage and be idempotent', async () => {

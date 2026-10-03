@@ -253,6 +253,25 @@ export const IntegrationCoverageDomain = {
       : null;
   },
 
+  /**
+   * Stored coverage read after locking the document row, so the caller's
+   * transaction resolves its write against the current value. Must run
+   * inside `databaseContext.withTransaction`.
+   */
+  loadStoredCoverageForUpdate: async (
+    documentId: DocumentId
+  ): Promise<StoredIntegrationCoverage | null> => {
+    const locked: Pick<Document, 'id'> | undefined = await db<Document>(
+      'Document'
+    )
+      .where('id', documentId)
+      .select('id')
+      .forUpdate()
+      .first();
+    if (!locked) return null;
+    return IntegrationCoverageDomain.loadStoredCoverage(documentId);
+  },
+
   loadUseCaseNamesByIds: async (ids: readonly string[]): Promise<string[]> => {
     if (ids.length === 0) return [];
     const rows: Pick<UseCase, 'name'>[] = await db<UseCase>('UseCase')
@@ -293,12 +312,17 @@ export const IntegrationCoverageDomain = {
     );
   },
 
-  /** Every parent integration whose coverage is not declared, in id order (keyset pagination). */
+  /**
+   * Every parent integration whose coverage is not declared, in id order (keyset pagination),
+   * optionally restricted to the given documents.
+   */
   loadIntegrationsWithoutDeclaredCoverage: async ({
     afterId,
+    documentIds,
     limit,
   }: {
     afterId?: string;
+    documentIds?: readonly string[];
     limit: number;
   }): Promise<CoverageInferenceRow[]> => {
     const rows: CoverageInferenceRow[] = await db<Document>('Document')
@@ -326,6 +350,9 @@ export const IntegrationCoverageDomain = {
         if (afterId) {
           builder.where('Document.id', '>', afterId);
         }
+        if (documentIds) {
+          builder.whereIn('Document.id', documentIds);
+        }
       })
       .orderBy('Document.id', 'asc')
       .limit(limit);
@@ -334,35 +361,39 @@ export const IntegrationCoverageDomain = {
   },
 
   /**
-   * Writes refreshed inferred coverage. The documents are locked and rechecked
-   * in the same transaction, so a coverage declared between the refresh read and
-   * this write is never overwritten. Returns the number of documents written.
+   * Writes refreshed inferred coverage. The candidate documents are locked, then
+   * read again in the same transaction: a document deleted or declared since the
+   * refresh read its batch is dropped, and `inferUpdates` runs on the current,
+   * lock-protected rows, so a stale batch never overwrites a declaration or a
+   * newer inference. Returns the number of documents written.
    */
   writeInferredCoverage: async (
-    updates: Array<{
-      documentId: string;
-      coverage: StoredIntegrationCoverage;
-    }>
+    documentIds: readonly string[],
+    inferUpdates: (rows: CoverageInferenceRow[]) => Promise<
+      Array<{
+        documentId: string;
+        coverage: StoredIntegrationCoverage;
+      }>
+    >
   ): Promise<number> => {
-    const inferredUpdates = updates.filter(({ coverage }) => coverage.inferred);
-    if (inferredUpdates.length === 0) return 0;
+    if (documentIds.length === 0) return 0;
     return databaseContext.withTransaction(async () => {
-      const documentIds = inferredUpdates.map(({ documentId }) => documentId);
-      await db<Document>('Document')
+      const lockedRows: Pick<Document, 'id'>[] = await db<Document>('Document')
         .whereIn('id', documentIds)
         .select('id')
         .forUpdate();
-      const declaredRows: Pick<DocumentMetadata, 'document_id'>[] =
-        await db<DocumentMetadata>('Document_Metadata')
-          .whereIn('document_id', documentIds)
-          .andWhere('key', DocumentMetadataKeyCode.CoverageInferred)
-          .andWhere('value', 'false')
-          .select('document_id');
-      const declaredIds = new Set<string>(
-        declaredRows.map(({ document_id }) => document_id)
-      );
-      const writable = inferredUpdates.filter(
-        ({ documentId }) => !declaredIds.has(documentId)
+      if (lockedRows.length === 0) return 0;
+      const currentRows =
+        await IntegrationCoverageDomain.loadIntegrationsWithoutDeclaredCoverage(
+          {
+            documentIds: lockedRows.map(({ id }) => id),
+            limit: lockedRows.length,
+          }
+        );
+      const currentIds = new Set<string>(currentRows.map(({ id }) => id));
+      const writable = (await inferUpdates(currentRows)).filter(
+        ({ documentId, coverage }) =>
+          coverage.inferred && currentIds.has(documentId)
       );
       await IntegrationCoverageDomain.upsertCoverageMetadata(writable);
       return writable.length;

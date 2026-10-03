@@ -10,6 +10,8 @@ import { DocumentApp } from '../../../../document/document.app';
 import { DocumentDomain } from '../../../../document/domain/document.domain';
 import { TelemetryApp } from '../../../../telemetry/telemetry.app';
 import { TelemetryHelper } from '../../../../telemetry/telemetry.helper';
+import { databaseContext } from '../../../../../context/database.context';
+import { IntegrationCoverageDomain } from '../integration-coverage/integration-coverage.domain';
 import { IntegrationCoverageHelper } from '../integration-coverage/integration-coverage.helper';
 import {
   Connector,
@@ -70,16 +72,21 @@ export const IngestManifestDomain = {
           }
         }
 
-        const coverage = IntegrationCoverageHelper.resolveCoverage({
-          declared: connector.coverage,
-          existing: existingConnector
-            ? IntegrationCoverageHelper.parseStoredCoverage(existingConnector)
-            : null,
-          inferenceSource: connector,
-        });
-
-        const doc =
-          await DocumentApp.upsertDocumentWithExternalImage<Connector>(
+        // The existing coverage is read again under the document lock: an admin
+        // declaration committed after the batch read is kept when the manifest
+        // declares nothing.
+        const doc = await databaseContext.withTransaction(async () => {
+          const existingCoverage = existingConnector
+            ? await IntegrationCoverageDomain.loadStoredCoverageForUpdate(
+                existingConnector.id
+              )
+            : null;
+          const coverage = IntegrationCoverageHelper.resolveCoverage({
+            declared: connector.coverage,
+            existing: existingCoverage,
+            inferenceSource: connector,
+          });
+          return DocumentApp.upsertDocumentWithExternalImage<Connector>(
             OPENCTI_INTEGRATION_DOCUMENT_TYPE,
             {
               ...omit(connector, ['logo', 'coverage']),
@@ -89,6 +96,7 @@ export const IngestManifestDomain = {
             INTEGRATION_CONNECTOR_METADATA_KEYS,
             FiligranProduct.Opencti
           );
+        });
         const newDocIsCreated = !doc.updated_at;
         if (newDocIsCreated) {
           const createEvent = await TelemetryHelper.buildCreateEvent(doc);
