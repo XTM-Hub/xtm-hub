@@ -1,5 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
-import { DatabaseType, getCachedColumnInfo } from './knexfile';
+import {
+  applyFilter,
+  database,
+  DatabaseType,
+  getCachedColumnInfo,
+} from './knexfile';
+import {
+  DocumentMetadataKeyCode,
+  FilterKey,
+} from './src/__generated__/resolvers-types';
 
 const fakeType = (): DatabaseType =>
   `test-only-${crypto.randomUUID()}` as DatabaseType;
@@ -79,6 +88,39 @@ describe('knexfile', () => {
       const result = await getCachedColumnInfo(type, fetchColumns);
       expect(result).toEqual(['id']);
       expect(fetchColumns).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('applyFilter with coverage keys', () => {
+    it('should filter catalog documents on their coverage metadata', () => {
+      // Given / When
+      const { sql, bindings } = applyFilter(database('Document'), 'Document', {
+        key: FilterKey.Region,
+        value: ['Europe'],
+      }).toSQL();
+
+      // Then
+      expect(sql).toContain('"Document_Metadata" as "listMetadata"');
+      expect(bindings).toEqual(
+        expect.arrayContaining([
+          DocumentMetadataKeyCode.CoveredRegions,
+          'europe',
+        ])
+      );
+    });
+
+    it('should keep the plain column filter of other tables sharing the key', () => {
+      // Given / When
+      const { sql, bindings } = applyFilter(
+        database('DeploymentRequest'),
+        'DeploymentRequest',
+        { key: FilterKey.Region, value: ['eu-west'] }
+      ).toSQL();
+
+      // Then
+      expect(sql).not.toContain('Document_Metadata');
+      expect(sql).toContain('"region" in (?)');
+      expect(bindings).toEqual(['eu-west']);
     });
   });
 });

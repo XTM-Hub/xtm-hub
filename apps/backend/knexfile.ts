@@ -337,7 +337,12 @@ const createMetadataListFilter = (
   metadataKey: DocumentMetadataKeyCode
 ): FilterHandler => ({
   key,
-  addWhere: (qb, _type, values) => {
+  addWhere: (qb, type, values) => {
+    // The same keys are plain columns elsewhere (deployment requests have a `region` column)
+    if (type !== 'Document') {
+      createDefaultFilterHandler(key).addWhere(qb, type, values);
+      return;
+    }
     whereMetadataListContainsAny(qb, metadataKey, values);
   },
 });

@@ -52,6 +52,24 @@ You can filter feeds by:
 - Integration Feed type (CSV Feed, Connector, etc.)
 - Product compatibility (with connected OpenCTI products)
 - Deployment mode (automatic or manual)
+- Coverage: covered object types, sectors and regions
+
+### Coverage
+
+Each Integration describes what it covers: the OpenCTI object types it produces (Indicator, Malware, Vulnerability...),
+the sectors (Finance, Energy...) and the regions or countries (Europe, France...) its data is about.
+The coverage is shown on the Integration details page and can be used as a filter in the library.
+
+- **Declared coverage** comes from the connector manifest (optional `coverage` block with `object_types`,
+  `sectors` and `regions`) or is set by a Hub administrator on the Integration. It is never changed automatically.
+- **Inferred coverage** is derived from the Integration name, descriptions, use cases and solution categories
+  when nothing is declared, and is flagged as inferred. It is refreshed automatically when the Integration changes.
+
+OpenCTI uses the coverage to recommend Integrations for its collection gaps: Source Intelligence finds the
+Priority Intelligence Requirement (PIR) criteria with too little recent knowledge and queries the library for the
+Integrations covering their object types, sectors and regions. Declared coverage ranks above inferred coverage, and
+an Integration covering `Global` matches every region. A recommended Connector can then be deployed with the
+One-Click Deployment described below.
 
 ### Sharing and Collaborating
 

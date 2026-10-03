@@ -9,6 +9,7 @@ import {
   DocumentMetadataKeyCode,
   Facet,
 } from '../../../../../__generated__/resolvers-types';
+import { databaseContext } from '../../../../../context/database.context';
 import type Document from '../../../../../model/kanel/public/Document';
 import type { DocumentId } from '../../../../../model/kanel/public/Document';
 import type DocumentMetadata from '../../../../../model/kanel/public/DocumentMetadata';
@@ -166,12 +167,17 @@ const loadCandidateRows = async (
     )
     .orderBy('Document.name', 'asc')
     .orderBy('Document.id', 'asc')
-    .limit(COVERAGE_SEARCH_MAX_CANDIDATES);
+    // One extra row tells whether the candidate population was truncated
+    .limit(COVERAGE_SEARCH_MAX_CANDIDATES + 1);
 
 export const IntegrationCoverageDomain = {
   loadCandidatesAndFacets: async (
     request: CoverageSearchRequest
-  ): Promise<{ candidates: CoverageCandidateRow[]; facets: Facet }> => {
+  ): Promise<{
+    candidates: CoverageCandidateRow[];
+    facets: Facet;
+    truncated: boolean;
+  }> => {
     const { query } = await buildCandidatesQuery(request);
     const documentIdsQuery = query.clone().select('Document.id');
 
@@ -207,12 +213,14 @@ export const IntegrationCoverageDomain = {
       ),
     ]);
 
+    const truncated = rows.length > COVERAGE_SEARCH_MAX_CANDIDATES;
     const candidates = await DocumentMetadataDomain.hydrateMetadata(
-      rows,
+      rows.slice(0, COVERAGE_SEARCH_MAX_CANDIDATES),
       CANDIDATE_METADATA_KEYS
     );
 
     return {
+      truncated,
       candidates,
       facets: {
         integration_type:
@@ -323,6 +331,40 @@ export const IntegrationCoverageDomain = {
       .limit(limit);
 
     return DocumentMetadataDomain.hydrateMetadata(rows, COVERAGE_METADATA_KEYS);
+  },
+
+  /**
+   * Writes refreshed inferred coverage. The documents are locked and rechecked
+   * in the same transaction, so a coverage declared between the refresh read and
+   * this write is never overwritten. Returns the number of documents written.
+   */
+  writeInferredCoverage: async (
+    updates: Array<{
+      documentId: string;
+      coverage: StoredIntegrationCoverage;
+    }>
+  ): Promise<number> => {
+    const inferredUpdates = updates.filter(({ coverage }) => coverage.inferred);
+    if (inferredUpdates.length === 0) return 0;
+    return databaseContext.withTransaction(async () => {
+      const documentIds = inferredUpdates.map(({ documentId }) => documentId);
+      await db<Document>('Document')
+        .whereIn('id', documentIds)
+        .select('id')
+        .forUpdate();
+      const declaredIds = new Set<string>(
+        await db<DocumentMetadata>('Document_Metadata')
+          .whereIn('document_id', documentIds)
+          .andWhere('key', DocumentMetadataKeyCode.CoverageInferred)
+          .andWhere('value', 'false')
+          .pluck('document_id')
+      );
+      const writable = inferredUpdates.filter(
+        ({ documentId }) => !declaredIds.has(documentId)
+      );
+      await IntegrationCoverageDomain.upsertCoverageMetadata(writable);
+      return writable.length;
+    });
   },
 
   upsertCoverageMetadata: async (

@@ -946,6 +946,7 @@ export type IntegrationCoverageSearchResult = {
   __typename?: 'IntegrationCoverageSearchResult';
   facets: Facet;
   matches: Array<IntegrationCoverageMatch>;
+  truncated: Scalars['Boolean']['output'];
 };
 
 export type IntegrationHack = Document & Integration & Node & {
@@ -4293,6 +4294,7 @@ export type IntegrationCoverageMatchResolvers<ContextType = PortalContext, Paren
 export type IntegrationCoverageSearchResultResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['IntegrationCoverageSearchResult'] = ResolversParentTypes['IntegrationCoverageSearchResult']> = ResolversObject<{
   facets?: Resolver<ResolversTypes['Facet'], ParentType, ContextType>;
   matches?: Resolver<Array<ResolversTypes['IntegrationCoverageMatch']>, ParentType, ContextType>;
+  truncated?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 

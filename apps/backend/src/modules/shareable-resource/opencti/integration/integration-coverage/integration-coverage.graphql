@@ -35,6 +35,8 @@ type IntegrationCoverageMatch {
 type IntegrationCoverageSearchResult {
   matches: [IntegrationCoverageMatch!]!
   facets: Facet!
+  # True when more integrations matched than the candidates ranked by the search
+  truncated: Boolean!
 }
 
 extend type Query {

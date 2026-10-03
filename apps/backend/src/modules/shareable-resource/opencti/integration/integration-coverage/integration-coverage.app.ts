@@ -20,6 +20,7 @@ import {
 } from './integration-coverage.domain';
 import { IntegrationCoverageHelper } from './integration-coverage.helper';
 import {
+  COVERAGE_SEARCH_MAX_CANDIDATES,
   IntegrationCoverageDeclaration,
   StoredIntegrationCoverage,
 } from './integration-coverage.model';
@@ -144,8 +145,14 @@ export const IntegrationCoverageApp = {
     const hasRequestedFacets =
       IntegrationCoverageSearchHelper.hasRequestedFacets(request);
 
-    const { candidates, facets } =
+    const { candidates, facets, truncated } =
       await IntegrationCoverageDomain.loadCandidatesAndFacets(request);
+    if (truncated) {
+      logApp.warn(
+        '[COVERAGE] Coverage search truncated, the matches only rank the first candidates',
+        { maxCandidates: COVERAGE_SEARCH_MAX_CANDIDATES }
+      );
+    }
 
     const scored = candidates
       .flatMap((candidate) => toScoredMatch(request, candidate))
@@ -161,7 +168,7 @@ export const IntegrationCoverageApp = {
       .slice(0, request.first)
       .map(({ download_number: _downloadNumber, ...match }) => match);
 
-    return { matches, facets };
+    return { matches, facets, truncated };
   },
 
   resolveCoverageForCreate: async (
@@ -280,10 +287,11 @@ export const IntegrationCoverageApp = {
           IntegrationCoverageHelper.isSameCoverage(stored, inferred);
         return isUpToDate ? [] : [{ documentId: row.id, coverage: inferred }];
       });
-      await IntegrationCoverageDomain.upsertCoverageMetadata(updates);
+      const written =
+        await IntegrationCoverageDomain.writeInferredCoverage(updates);
 
       scanned += rows.length;
-      updated += updates.length;
+      updated += written;
       afterId = rows.at(-1)?.id;
       hasMore = rows.length === REFRESH_BATCH_SIZE;
     }

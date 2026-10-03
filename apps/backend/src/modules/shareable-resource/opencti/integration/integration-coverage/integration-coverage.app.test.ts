@@ -511,6 +511,32 @@ describe('integrationCoverageApp', () => {
       expect(await loadStoredCoverage(document)).toEqual(coverage);
     });
 
+    it('should keep a coverage declared after the refresh read its batch', async () => {
+      // Given - the refresh computed an inferred coverage, then an admin declared one
+      const coverage = declared({ regions: [FRANCE] });
+      const document = await createIntegration({
+        slug: 'declared-during-refresh',
+        name: 'Malware feed',
+        coverage,
+      });
+
+      // When - the stale inferred write lands after the declaration
+      const written = await IntegrationCoverageDomain.writeInferredCoverage([
+        {
+          documentId: document.id,
+          coverage: inferred({ object_types: [MALWARE] }),
+        },
+      ]);
+
+      // Then
+      expect({ written, coverage: await loadStoredCoverage(document) }).toEqual(
+        {
+          written: 0,
+          coverage,
+        }
+      );
+    });
+
     it('should refresh a stale inferred coverage and be idempotent', async () => {
       // Given
       const document = await createIntegration({

@@ -1725,6 +1725,7 @@ type IntegrationCoverageMatch {
 type IntegrationCoverageSearchResult {
   matches: [IntegrationCoverageMatch!]!
   facets: Facet!
+  truncated: Boolean!
 }
 
 enum IntegrationType {
