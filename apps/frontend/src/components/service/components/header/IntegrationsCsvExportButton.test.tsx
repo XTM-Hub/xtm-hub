@@ -21,6 +21,7 @@ vi.mock(
 vi.mock('@/hooks/use-service-list-local-storage', () => ({
   useServiceListLocalStorage: () => ({
     integrationTypes: {},
+    connectorTypes: {},
     licenseTypes: {},
     solutionCategories: {},
     verified: {},

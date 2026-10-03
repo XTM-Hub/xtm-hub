@@ -353,6 +353,7 @@
       "INCREMENT_SHARE_NUMBER": "共有番号の増加中にエラーが発生しました",
       "INTEGRATION_TYPE_NOT_MANAGEABLE": "このタイプの統合は管理できません。",
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "このタイプの統合は認識されない",
+      "CONNECTOR_TYPE_NOT_RECOGNIZED": "このコネクタタイプは認識されません",
       "INVALID_ACTION_SIZE": "不明なエラーが発生した",
       "INVALID_EMAIL": "電子メールは有効な形式でなければなりません。",
       "INVALID_IMAGE_URL": "画像のURLが不正",
@@ -1217,6 +1218,10 @@
           "Label": "統合タイプ",
           "Placeholder": "統合タイプ..."
         },
+        "ConnectorType": {
+          "Label": "コネクタタイプ",
+          "Placeholder": "コネクタタイプ..."
+        },
         "ManagerSupported": {
           "Label": "配備タイプ",
           "Placeholder": "デプロイメントタイプ...",
@@ -1247,6 +1252,26 @@
         "taxii_feed": "TAXIIフィード",
         "stream": "OpenCTI ストリーム",
         "third_party_integration": "サードパーティとの統合"
+      },
+      "ConnectorType": {
+        "EXTERNAL_IMPORT": "外部輸入",
+        "INTERNAL_ENRICHMENT": "内部強化",
+        "INTERNAL_IMPORT_FILE": "内部インポートファイル",
+        "INTERNAL_EXPORT_FILE": "内部エクスポートファイル",
+        "INTERNAL_ANALYSIS": "内部分析",
+        "INTERNAL_HUNT": "内部ハント",
+        "STREAM": "ストリーム"
+      },
+      "HuntPlatform": {
+        "splunk": "Splunk",
+        "microsoft-sentinel": "Microsoft Sentinel",
+        "elastic-security": "Elastic Security",
+        "crowdstrike-logscale": "CrowdStrike Falcon LogScale",
+        "google-secops": "Google Security Operations",
+        "opensearch": "OpenSearch",
+        "clickhouse": "ClickHouse",
+        "s3-ocsf": "Amazon S3 上の OCSF データレイク",
+        "internet": "インターネットスキャンサービス"
       }
     },
     "CsvFeed": {
@@ -1506,6 +1531,8 @@
         "Shares": "シェア",
         "ContributorContact": "貢献者の連絡先",
         "IntegrationType": "タイプ",
+        "ConnectorType": "コネクタタイプ",
+        "HuntedPlatform": "ハント対象プラットフォーム",
         "IntegrationSolutionCategory": "解答カテゴリ",
         "IntegrationLicenseType": "ライセンスの種類",
         "GithubURL": "Github URL",

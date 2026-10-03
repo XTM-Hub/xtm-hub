@@ -353,6 +353,7 @@
       "INCREMENT_SHARE_NUMBER": "Error occurred while incrementing share number",
       "INTEGRATION_TYPE_NOT_MANAGEABLE": "This type of integration is not manageable.",
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "This type of integration is not recognized",
+      "CONNECTOR_TYPE_NOT_RECOGNIZED": "This type of connector is not recognized",
       "INVALID_ACTION_SIZE": "An unknown error occurred",
       "INVALID_EMAIL": "The email should be in valid format.",
       "INVALID_IMAGE_URL": "The image URL is not valid",
@@ -1217,6 +1218,10 @@
           "Label": "Integration type",
           "Placeholder": "Integration type..."
         },
+        "ConnectorType": {
+          "Label": "Connector type",
+          "Placeholder": "Connector type..."
+        },
         "ManagerSupported": {
           "Label": "Deployment type",
           "Placeholder": "Deployment type...",
@@ -1247,6 +1252,26 @@
         "taxii_feed": "TAXII Feeds",
         "stream": "OpenCTI Streams",
         "third_party_integration": "Third party integrations"
+      },
+      "ConnectorType": {
+        "EXTERNAL_IMPORT": "External import",
+        "INTERNAL_ENRICHMENT": "Internal enrichment",
+        "INTERNAL_IMPORT_FILE": "Internal import file",
+        "INTERNAL_EXPORT_FILE": "Internal export file",
+        "INTERNAL_ANALYSIS": "Internal analysis",
+        "INTERNAL_HUNT": "Internal hunt",
+        "STREAM": "Stream"
+      },
+      "HuntPlatform": {
+        "splunk": "Splunk",
+        "microsoft-sentinel": "Microsoft Sentinel",
+        "elastic-security": "Elastic Security",
+        "crowdstrike-logscale": "CrowdStrike Falcon LogScale",
+        "google-secops": "Google Security Operations",
+        "opensearch": "OpenSearch",
+        "clickhouse": "ClickHouse",
+        "s3-ocsf": "OCSF data lake on Amazon S3",
+        "internet": "Internet scanning services"
       }
     },
     "CsvFeed": {
@@ -1506,6 +1531,8 @@
         "Shares": "Shares",
         "ContributorContact": "Contributor contact",
         "IntegrationType": "Type",
+        "ConnectorType": "Connector type",
+        "HuntedPlatform": "Hunted platform",
         "IntegrationSolutionCategory": "Solution category",
         "IntegrationLicenseType": "License type",
         "GithubURL": "Github URL",

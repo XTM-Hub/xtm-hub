@@ -195,6 +195,7 @@ export const mockConnector = (overrides?: Partial<Connector>, _relationshipsToOm
         active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : true,
         blogpost_url: overrides && overrides.hasOwnProperty('blogpost_url') ? overrides.blogpost_url! : 'caute',
         children_documents: overrides && overrides.hasOwnProperty('children_documents') ? overrides.children_documents! : [relationshipsToOmit.has('ShareableResource') ? {} as ShareableResource : mockShareableResource({}, relationshipsToOmit)],
+        connector_type: overrides && overrides.hasOwnProperty('connector_type') ? overrides.connector_type! : 'comedo',
         contact: overrides && overrides.hasOwnProperty('contact') ? overrides.contact! : 'cubo',
         container_image: overrides && overrides.hasOwnProperty('container_image') ? overrides.container_image! : 'sollers',
         created_at: overrides && overrides.hasOwnProperty('created_at') ? overrides.created_at! : '2021-06-06T02:21:37.850Z',
@@ -203,6 +204,7 @@ export const mockConnector = (overrides?: Partial<Connector>, _relationshipsToOm
         description: overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'tamen',
         download_number: overrides && overrides.hasOwnProperty('download_number') ? overrides.download_number! : 1433,
         file_name: overrides && overrides.hasOwnProperty('file_name') ? overrides.file_name! : 'defungo',
+        hunt_platform: overrides && overrides.hasOwnProperty('hunt_platform') ? overrides.hunt_platform! : 'sto',
         id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : '2d6afa55-5d34-423e-a46f-e5ca9fc9ace2',
         integration_type: overrides && overrides.hasOwnProperty('integration_type') ? overrides.integration_type! : IntegrationType.Connector,
         license_type: overrides && overrides.hasOwnProperty('license_type') ? overrides.license_type! : LicenseType.Commercial,
@@ -717,6 +719,7 @@ export const mockFacet = (overrides?: Partial<Facet>, _relationshipsToOmit: Set<
     relationshipsToOmit.add('Facet');
     return {
         __typename: 'Facet',
+        connector_type: overrides && overrides.hasOwnProperty('connector_type') ? overrides.connector_type! : [relationshipsToOmit.has('FacetBucket') ? {} as FacetBucket : mockFacetBucket({}, relationshipsToOmit)],
         entity_type: overrides && overrides.hasOwnProperty('entity_type') ? overrides.entity_type! : [relationshipsToOmit.has('FacetBucket') ? {} as FacetBucket : mockFacetBucket({}, relationshipsToOmit)],
         integration_type: overrides && overrides.hasOwnProperty('integration_type') ? overrides.integration_type! : [relationshipsToOmit.has('FacetBucket') ? {} as FacetBucket : mockFacetBucket({}, relationshipsToOmit)],
         license_type: overrides && overrides.hasOwnProperty('license_type') ? overrides.license_type! : [relationshipsToOmit.has('FacetBucket') ? {} as FacetBucket : mockFacetBucket({}, relationshipsToOmit)],
@@ -742,7 +745,7 @@ export const mockFilter = (overrides?: Partial<Filter>, _relationshipsToOmit: Se
     const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
     relationshipsToOmit.add('Filter');
     return {
-        key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : FilterKey.EntityType,
+        key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : FilterKey.ConnectorType,
         value: overrides && overrides.hasOwnProperty('value') ? overrides.value! : ['alo'],
     };
 };

@@ -7,6 +7,8 @@ import {
 } from '@/components/service/components/header/integrations-csv-export.utils';
 import { useServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
 import { useSolutionCategories } from '@/components/service/form/UseSolutionCategories';
+import { CONNECTOR_TYPES } from '@/components/service/integrations/connector-type/connector-type.utils';
+import { useConnectorTypeLabels } from '@/components/service/integrations/connector-type/use-connector-type-labels';
 import { availableIntegrationTypes } from '@/components/service/integrations/Integration.utils';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
 import {
@@ -54,6 +56,7 @@ const toCanonicalOrder = (selectedKeys: string[]): string[] =>
 const csvExportFormSchema = z.object({
   columns: z.array(z.string()).min(1),
   integration_type: z.array(z.string()).optional(),
+  connector_type: z.array(z.string()).optional(),
   use_case: z.array(z.string()).optional(),
   license_type: z.array(z.string()).optional(),
   solution_category: z.array(z.string()).optional(),
@@ -113,16 +116,19 @@ export const IntegrationsCsvExportDialog = ({
   const { localStorageKey } = useServiceListLocalStorageKeyContext();
   const {
     integrationTypes,
+    connectorTypes,
     licenseTypes,
     solutionCategories: storedSolutionCategories,
     verified,
     deployable,
     labels,
   } = useServiceListLocalStorage(localStorageKey);
+  const { connectorTypeLabel } = useConnectorTypeLabels();
 
   const [seededValues, setSeededValues] = useState<CsvExportFormValues>(() => ({
     columns: defaultSelectedColumns(),
     integration_type: [],
+    connector_type: [],
     use_case: [],
     license_type: [],
     solution_category: [],
@@ -135,6 +141,7 @@ export const IntegrationsCsvExportDialog = ({
     setSeededValues({
       columns: defaultSelectedColumns(),
       integration_type: Object.keys(integrationTypes),
+      connector_type: Object.keys(connectorTypes),
       use_case: Object.keys(labels),
       license_type: Object.keys(licenseTypes),
       solution_category: Object.keys(storedSolutionCategories),
@@ -174,6 +181,15 @@ export const IntegrationsCsvExportDialog = ({
       .sort((a, b) => a.label.localeCompare(b.label));
     return [...available, ...comingSoon];
   }, [t]);
+
+  const connectorTypeOptions = useMemo(
+    () =>
+      CONNECTOR_TYPES.map((connectorType) => ({
+        label: connectorTypeLabel(connectorType),
+        value: connectorType,
+      })).sort((a, b) => a.label.localeCompare(b.label)),
+    [connectorTypeLabel]
+  );
 
   const licenseTypeOptions = useMemo(
     () => [
@@ -244,6 +260,7 @@ export const IntegrationsCsvExportDialog = ({
     try {
       const filters: IntegrationCsvExportFilters = {
         integrationTypes: values.integration_type,
+        connectorTypes: values.connector_type,
         useCases: values.use_case,
         licenseTypes: values.license_type,
         solutionCategories: values.solution_category,
@@ -328,6 +345,21 @@ export const IntegrationsCsvExportDialog = ({
                     testId="integrations-csv-export-filter-integration-type"
                   />
                 </>
+              ),
+            },
+            connector_type: {
+              fieldType: ({ field }) => (
+                <IntegrationsCsvExportFilterField
+                  field={field}
+                  options={connectorTypeOptions}
+                  label={t(
+                    'Service.OpenctiIntegrations.Filter.ConnectorType.Label'
+                  )}
+                  placeholder={t(
+                    'Service.OpenctiIntegrations.Filter.ConnectorType.Placeholder'
+                  )}
+                  testId="integrations-csv-export-filter-connector-type"
+                />
               ),
             },
             use_case: {

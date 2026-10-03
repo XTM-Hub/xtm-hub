@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   allFiltersKey,
   buildAllFiltersSearchParams,
+  CONNECTOR_TYPE_PARAM,
   DEPLOYABLE_PARAM,
   emptyFilters,
   INTEGRATION_TYPE_PARAM,
@@ -33,6 +34,25 @@ describe('parseSelection (integrationType)', () => {
     ${'invalid type is dropped'} | ${'not_a_type'}        | ${{}}
   `('$description', ({ raw, expected }) => {
     expect(parseSelection(raw, INTEGRATION_TYPE_PARAM)).toEqual(expected);
+  });
+});
+
+describe('connector type URL param', () => {
+  it('round-trips the connector type selection through the URL', () => {
+    const filters = {
+      ...emptyFilters(),
+      [CONNECTOR_TYPE_PARAM]: { INTERNAL_HUNT: [] },
+    };
+
+    const search = buildAllFiltersSearchParams(filters);
+
+    expect(search).toBe('connectorType=INTERNAL_HUNT');
+    expect(
+      parseSelection(
+        new URLSearchParams(search).get(CONNECTOR_TYPE_PARAM),
+        CONNECTOR_TYPE_PARAM
+      )
+    ).toEqual({ INTERNAL_HUNT: [] });
   });
 });
 
@@ -74,7 +94,7 @@ describe('buildAllFiltersSearchParams', () => {
 
 describe('allFiltersKey', () => {
   it('is empty for empty filters', () => {
-    expect(allFiltersKey(emptyFilters())).toBe('||||||||||||');
+    expect(allFiltersKey(emptyFilters())).toBe('||||||||||||||');
   });
 
   it('differs when any filter changes', () => {

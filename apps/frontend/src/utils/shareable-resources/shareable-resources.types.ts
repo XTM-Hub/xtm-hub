@@ -61,6 +61,8 @@ export type ConnectorFields = IntegrationFields & {
   playbook_supported: boolean;
   minimum_deployable_version: string | null;
   contact: string | null;
+  connector_type: string | null;
+  hunt_platform: string | null;
 };
 
 export enum ShareableResourceType {
