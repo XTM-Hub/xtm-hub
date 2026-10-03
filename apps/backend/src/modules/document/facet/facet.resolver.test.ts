@@ -17,6 +17,9 @@ describe('facet.resolver', () => {
       solution_category: [],
       use_case: [],
       entity_type: [],
+      object_type: [],
+      sector: [],
+      region: [],
     };
     vi.spyOn(FacetApp, 'loadDocumentFacets').mockResolvedValue(expectedFacets);
 

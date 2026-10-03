@@ -1204,7 +1204,14 @@
       "VendorUrlLabel": "Vendor link (url)",
       "VerifiedLabel": "Verified",
       "EntityTypesLabel": "Entity types",
-      "EntityTypesPlaceholder": "Add entity types"
+      "EntityTypesPlaceholder": "Add entity types",
+      "CoveredObjectTypesLabel": "Covered object types",
+      "CoveredObjectTypesPlaceholder": "Covered object types...",
+      "CoverageDescription": "Leave the coverage empty to let the Hub infer it from the name, descriptions, use cases and solution categories.",
+      "CoveredSectorsLabel": "Covered sectors",
+      "CoveredSectorsPlaceholder": "Add a sector, for example Finance",
+      "CoveredRegionsLabel": "Covered regions",
+      "CoveredRegionsPlaceholder": "Add a region or a country, for example Europe"
     },
     "OpenctiIntegrations": {
       "Actions": {
@@ -1238,6 +1245,15 @@
           "Placeholder": "Status...",
           "Verified": "Supported by Filigran",
           "Unverified": "Supported by Community"
+        },
+        "ObjectType": {
+          "Label": "Object type"
+        },
+        "Sector": {
+          "Label": "Sector"
+        },
+        "Region": {
+          "Label": "Region"
         }
       },
       "Type": {
@@ -1516,7 +1532,11 @@
         "DemoURL": "Demo URL",
         "EntityType": "Entity type",
         "SupportedByFiligran": "Supported by Filigran",
-        "SupportedByCommunity": "Supported by community"
+        "SupportedByCommunity": "Supported by community",
+        "CoveredObjectTypes": "Covered object types",
+        "CoveredSectors": "Covered sectors",
+        "CoveredRegions": "Covered regions",
+        "CoverageInferred": "Inferred from the description"
       },
       "Download": "Download",
       "FromVersion": "From version",

@@ -126,8 +126,10 @@ export const loadSolutionCategoryFacetBuckets = async (
   return toFacetBuckets(rows);
 };
 
-export const loadEntityTypeFacetBuckets = async (
-  documentIdsQuery: DocumentIdsQuery
+/** One bucket per element of a JSON array metadata value. */
+export const loadMetadataListFacetBuckets = async (
+  documentIdsQuery: DocumentIdsQuery,
+  metadataKey: DocumentMetadataKeyCode
 ) => {
   const rows = (await db('Document_Metadata')
     .from('Document_Metadata as metadata')
@@ -136,7 +138,7 @@ export const loadEntityTypeFacetBuckets = async (
     )
     .select('entity.value as value')
     .countDistinct({ count: 'metadata.document_id' })
-    .where('metadata.key', '=', DocumentMetadataKeyCode.EntityTypes)
+    .where('metadata.key', '=', metadataKey)
     .whereNotNull('metadata.value')
     .whereIn('metadata.document_id', documentIdsQuery.clone())
     .groupBy('entity.value')
@@ -145,3 +147,11 @@ export const loadEntityTypeFacetBuckets = async (
 
   return toFacetBuckets(rows);
 };
+
+export const loadEntityTypeFacetBuckets = async (
+  documentIdsQuery: DocumentIdsQuery
+) =>
+  loadMetadataListFacetBuckets(
+    documentIdsQuery,
+    DocumentMetadataKeyCode.EntityTypes
+  );

@@ -40,6 +40,10 @@ interface Integration implements Node & Document {
   blogpost_url: String
   demo_url: String
   license_type: LicenseType
+  covered_object_types: [String!]!
+  covered_sectors: [String!]!
+  covered_regions: [String!]!
+  coverage_inferred: Boolean!
 }
 
 # Strictly equal to Integration. Otherwise we have typing issues because no type overlaps
@@ -76,6 +80,10 @@ type IntegrationHack implements Node & Document & Integration {
   blogpost_url: String
   demo_url: String
   license_type: LicenseType
+  covered_object_types: [String!]!
+  covered_sectors: [String!]!
+  covered_regions: [String!]!
+  coverage_inferred: Boolean!
 }
 
 type CsvFeed implements Node & Document & Integration {
@@ -112,6 +120,10 @@ type CsvFeed implements Node & Document & Integration {
   blogpost_url: String
   demo_url: String
   license_type: LicenseType
+  covered_object_types: [String!]!
+  covered_sectors: [String!]!
+  covered_regions: [String!]!
+  coverage_inferred: Boolean!
 }
 
 type Connector implements Node & Document & Integration {
@@ -156,6 +168,10 @@ type Connector implements Node & Document & Integration {
   minimum_deployable_version: String
   license_type: LicenseType
   contact: String
+  covered_object_types: [String!]!
+  covered_sectors: [String!]!
+  covered_regions: [String!]!
+  coverage_inferred: Boolean!
 }
 
 type TaxiiFeed implements Node & Document & Integration {
@@ -192,6 +208,10 @@ type TaxiiFeed implements Node & Document & Integration {
   blogpost_url: String
   demo_url: String
   license_type: LicenseType
+  covered_object_types: [String!]!
+  covered_sectors: [String!]!
+  covered_regions: [String!]!
+  coverage_inferred: Boolean!
 }
 type RssFeed implements Node & Document & Integration {
   # Node
@@ -227,6 +247,10 @@ type RssFeed implements Node & Document & Integration {
   blogpost_url: String
   demo_url: String
   license_type: LicenseType
+  covered_object_types: [String!]!
+  covered_sectors: [String!]!
+  covered_regions: [String!]!
+  coverage_inferred: Boolean!
 }
 
 type Stream implements Node & Document & Integration {
@@ -263,6 +287,10 @@ type Stream implements Node & Document & Integration {
   blogpost_url: String
   demo_url: String
   license_type: LicenseType
+  covered_object_types: [String!]!
+  covered_sectors: [String!]!
+  covered_regions: [String!]!
+  coverage_inferred: Boolean!
 }
 
 type ThirdPartyIntegration implements Node & Document & Integration {
@@ -301,4 +329,8 @@ type ThirdPartyIntegration implements Node & Document & Integration {
   blogpost_url: String
   demo_url: String
   license_type: LicenseType
+  covered_object_types: [String!]!
+  covered_sectors: [String!]!
+  covered_regions: [String!]!
+  coverage_inferred: Boolean!
 }

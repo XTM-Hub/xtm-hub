@@ -10,6 +10,7 @@ import { DocumentApp } from '../../../../document/document.app';
 import { DocumentDomain } from '../../../../document/domain/document.domain';
 import { TelemetryApp } from '../../../../telemetry/telemetry.app';
 import { TelemetryHelper } from '../../../../telemetry/telemetry.helper';
+import { IntegrationCoverageHelper } from '../integration-coverage/integration-coverage.helper';
 import {
   Connector,
   INTEGRATION_CONNECTOR_METADATA_KEYS,
@@ -69,10 +70,21 @@ export const IngestManifestDomain = {
           }
         }
 
+        const coverage = IntegrationCoverageHelper.resolveCoverage({
+          declared: connector.coverage,
+          existing: existingConnector
+            ? IntegrationCoverageHelper.parseStoredCoverage(existingConnector)
+            : null,
+          inferenceSource: connector,
+        });
+
         const doc =
           await DocumentApp.upsertDocumentWithExternalImage<Connector>(
             OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-            { ...omit(connector, ['logo']) },
+            {
+              ...omit(connector, ['logo', 'coverage']),
+              ...IntegrationCoverageHelper.toDocumentFields(coverage),
+            },
             uploadLogo,
             INTEGRATION_CONNECTOR_METADATA_KEYS,
             FiligranProduct.Opencti

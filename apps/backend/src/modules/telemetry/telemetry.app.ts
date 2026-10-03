@@ -1,3 +1,4 @@
+import type { estypes } from '@elastic/elasticsearch';
 import config from 'config';
 import { OneClickDeployInput } from '../../__generated__/resolvers-types';
 import portalConfig from '../../config';
@@ -34,6 +35,11 @@ const toOneClickDeploymentInitializer = (
   user_id: event.user_id ?? null,
   deployed_at: new Date(event['@timestamp']),
 });
+
+const isStringTermsAggregate = (
+  aggregate: estypes.AggregationsAggregate | undefined
+): aggregate is estypes.AggregationsStringTermsAggregate =>
+  aggregate !== undefined && 'buckets' in aggregate;
 
 const useQueueProcessing = (): boolean =>
   config.get<boolean>('telemetry_use_queue_processing');
@@ -163,6 +169,45 @@ export const TelemetryApp = {
         },
       },
     });
+  },
+
+  /** One aggregation for many documents; ids without events are absent from the map. */
+  async countEventsByDocumentIds(
+    eventType: TelemetryEventType,
+    documentIds: readonly string[]
+  ): Promise<Map<string, number>> {
+    const counts = new Map<string, number>();
+    if (documentIds.length === 0) {
+      return counts;
+    }
+
+    const response = await esDbClient.search({
+      index: TELEMETRY_INDEX,
+      size: 0,
+      query: {
+        bool: {
+          filter: [
+            { term: { event_type: eventType } },
+            { terms: { resource_id: [...documentIds] } },
+          ],
+        },
+      },
+      aggs: {
+        by_resource: {
+          terms: { field: 'resource_id', size: documentIds.length },
+        },
+      },
+    });
+
+    const aggregate = response.aggregations?.by_resource;
+    const buckets =
+      isStringTermsAggregate(aggregate) && Array.isArray(aggregate.buckets)
+        ? aggregate.buckets
+        : [];
+    for (const bucket of buckets) {
+      counts.set(String(bucket.key), bucket.doc_count);
+    }
+    return counts;
   },
 
   async sendOneClickDeployEvent({

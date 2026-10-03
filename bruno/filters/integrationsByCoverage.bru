@@ -1,0 +1,80 @@
+meta {
+  name: integrationsByCoverage
+  type: graphql
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/graphql-api
+  body: graphql
+}
+
+headers {
+  cookie: {{cookie}}
+}
+
+body:graphql {
+  query integrationsByCoverage(
+    $input: IntegrationCoverageSearchInput!
+  ) {
+    integrationsByCoverage(
+      input: $input
+    ) {
+      truncated
+      matches {
+        id
+        slug
+        name
+        short_description
+        integration_type
+        license_type
+        verified
+        manager_supported
+        object_types
+        sectors
+        regions
+        coverage_inferred
+        matched_object_types
+        matched_sectors
+        matched_regions
+        score
+      }
+      facets {
+        object_type {
+          value
+          count
+        }
+        sector {
+          value
+          count
+        }
+        region {
+          value
+          count
+        }
+        integration_type {
+          value
+          count
+        }
+      }
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "input": {
+      "objectTypes": ["Indicator", "Malware"],
+      "sectors": ["Finance"],
+      "regions": ["France"],
+      "integrationTypes": ["connector"],
+      "searchTerm": null,
+      "first": 10
+    }
+  }
+}
+
+docs {
+  Catalog integrations ranked by how well their coverage (object types, sectors, regions) matches the request.
+  Used by OpenCTI Source Intelligence to recommend integrations for PIR collection gaps; public, no session needed.
+}

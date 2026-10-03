@@ -21,6 +21,11 @@ import { DocumentDomain } from '../../document/domain/document.domain';
 import { solutionCategoryApp } from '../../solution-category/solution-category.app';
 import { isFiligranProduct } from '../../solution-category/solution-category.utils';
 import { IngestManifestHelper } from '../opencti/integration/ingest-manifest/ingest-manifest.helper';
+import { IntegrationCoverageHelper } from '../opencti/integration/integration-coverage/integration-coverage.helper';
+import {
+  COVERAGE_METADATA_KEYS,
+  type StoredIntegrationCoverage,
+} from '../opencti/integration/integration-coverage/integration-coverage.model';
 import {
   INTEGRATION_CONNECTOR_V2_METADATA_KEYS,
   INTEGRATION_SERVICE_INSTANCE_ID,
@@ -34,6 +39,10 @@ type ConnectorWithMetadata = Document & {
   datasheet_url?: string;
   blogpost_url?: string;
   demo_url?: string;
+  covered_object_types?: string;
+  covered_sectors?: string;
+  covered_regions?: string;
+  coverage_inferred?: string;
 };
 
 const toObjectSolutionCategoryObjectId = (
@@ -80,6 +89,7 @@ const createConnectorDocument = async ({
   metadataFromExisting,
   licenseType,
   contact,
+  coverage,
 }: {
   fragment: ManifestFragmentInput;
   formattedVersion: string;
@@ -90,6 +100,7 @@ const createConnectorDocument = async ({
   >;
   licenseType?: LicenseType;
   contact?: string;
+  coverage: StoredIntegrationCoverage;
 }): Promise<ConnectorV2> => {
   const createdConnector =
     await DocumentApp.createDocumentWithChildrenAndMetadata<ConnectorV2>(
@@ -126,6 +137,7 @@ const createConnectorDocument = async ({
         demo_url: metadataFromExisting?.demo_url,
         additional_properties: JSON.stringify(fragment.additional_properties),
         config_schema: JSON.stringify(fragment.config_schema),
+        ...IntegrationCoverageHelper.toDocumentFields(coverage),
       },
       INTEGRATION_CONNECTOR_V2_METADATA_KEYS
     );
@@ -172,6 +184,7 @@ export const ManifestFragmentDomain = {
     ManifestFragmentHelper.validateSolutionCategories(
       fragment.solution_categories
     );
+    IntegrationCoverageHelper.assertValidDeclaration(fragment.coverage);
     const licenseType = fragment.license_type ?? undefined;
     const contact = ManifestFragmentHelper.parseContact(fragment.contact);
     const formattedVersion =
@@ -231,6 +244,7 @@ export const ManifestFragmentDomain = {
             DocumentMetadataKeyCode.DatasheetUrl,
             DocumentMetadataKeyCode.BlogpostUrl,
             DocumentMetadataKeyCode.DemoUrl,
+            ...COVERAGE_METADATA_KEYS,
           ]
         )) as ConnectorWithMetadata[];
 
@@ -250,6 +264,21 @@ export const ManifestFragmentDomain = {
           currentLatestConnector,
           existingBatchConnectors,
         });
+
+      const coverage = IntegrationCoverageHelper.resolveCoverage({
+        declared: fragment.coverage,
+        existing: ManifestFragmentHelper.getDeclaredCoverageFromExisting({
+          currentLatestConnector,
+          existingBatchConnectors,
+        }),
+        inferenceSource: {
+          name: fragment.title,
+          short_description: fragment.short_description,
+          description: fragment.description,
+          use_cases: fragment.use_cases,
+          solution_categories: fragment.solution_categories,
+        },
+      });
 
       const shouldPromoteAsLatest =
         !currentLatestConnector ||
@@ -278,6 +307,7 @@ export const ManifestFragmentDomain = {
           metadataFromExisting,
           licenseType,
           contact,
+          coverage,
         });
 
         const platform = fragment.platform.trim().toLowerCase();

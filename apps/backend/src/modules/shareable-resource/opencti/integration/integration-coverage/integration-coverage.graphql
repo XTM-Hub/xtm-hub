@@ -1,0 +1,47 @@
+input IntegrationCoverageInput {
+  object_types: [String!]
+  sectors: [String!]
+  regions: [String!]
+}
+
+input IntegrationCoverageSearchInput {
+  objectTypes: [String!]
+  sectors: [String!]
+  regions: [String!]
+  integrationTypes: [IntegrationType!]
+  searchTerm: String
+  first: Int
+}
+
+type IntegrationCoverageMatch {
+  id: ID!
+  slug: String!
+  name: String!
+  short_description: String
+  integration_type: IntegrationType!
+  license_type: LicenseType
+  verified: Boolean
+  manager_supported: Boolean
+  object_types: [String!]!
+  sectors: [String!]!
+  regions: [String!]!
+  coverage_inferred: Boolean!
+  matched_object_types: [String!]!
+  matched_sectors: [String!]!
+  matched_regions: [String!]!
+  score: Float!
+}
+
+type IntegrationCoverageSearchResult {
+  matches: [IntegrationCoverageMatch!]!
+  facets: Facet!
+  # True when more integrations matched than the candidates ranked by the search
+  truncated: Boolean!
+}
+
+extend type Query {
+  # Warning ! Used by OpenCTI
+  integrationsByCoverage(
+    input: IntegrationCoverageSearchInput!
+  ): IntegrationCoverageSearchResult!
+}

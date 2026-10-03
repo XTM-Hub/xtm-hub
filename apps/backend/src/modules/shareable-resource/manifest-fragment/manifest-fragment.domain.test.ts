@@ -15,6 +15,7 @@ import { ObjectSolutionCategoryObjectId } from '../../../model/kanel/public/Obje
 import { SYSTEM_USER_CONTEXT } from '../../../portal.const';
 import { minioInit } from '../../../server/initialize';
 import { BadRequestErrorCode } from '../../../utils/error/error.code';
+import { IntegrationCoverageDomain } from '../opencti/integration/integration-coverage/integration-coverage.domain';
 import {
   INTEGRATION_SERVICE_INSTANCE_ID,
   OPENCTI_INTEGRATION_DOCUMENT_TYPE,
@@ -688,6 +689,107 @@ describe('manifestFragmentDomain', () => {
       expect(newDocument!.tags).toContain('decoupling');
       expect(newDocument!.tags).not.toContain('latest');
       expect(newDocument!.tags).not.toContain('latest-lts');
+    });
+  });
+
+  describe('ingestManifestFragment coverage', () => {
+    const loadIngestedCoverage = async (slug: string, version: string) => {
+      const document = await TestHelper.document.load({ slug, version });
+      _createdDocumentIds.push(document!.id);
+      return IntegrationCoverageDomain.loadStoredCoverage(document!.id);
+    };
+
+    it('stores the coverage declared by the fragment', async () => {
+      // Given
+      const slug = 'misp-coverage-declared';
+      const fragment = {
+        ...buildManifestFragment(ManifestType.Connector, {
+          slug,
+          id: 'coverage-declared',
+        }),
+        coverage: { object_types: ['indicator'], sectors: ['Finance'] },
+      };
+
+      // When
+      await ManifestFragmentDomain.ingestManifestFragment(fragment);
+
+      // Then
+      expect(await loadIngestedCoverage(slug, fragment.version)).toEqual({
+        object_types: ['Indicator'],
+        sectors: ['Finance'],
+        regions: [],
+        inferred: false,
+      });
+    });
+
+    it('infers the coverage when the fragment declares none', async () => {
+      // Given
+      const slug = 'misp-coverage-inferred';
+      const fragment = buildManifestFragment(ManifestType.Connector, {
+        slug,
+        id: 'coverage-inferred',
+      });
+
+      // When
+      await ManifestFragmentDomain.ingestManifestFragment(fragment);
+
+      // Then
+      expect(await loadIngestedCoverage(slug, fragment.version)).toEqual({
+        object_types: ['Indicator'],
+        sectors: [],
+        regions: [],
+        inferred: true,
+      });
+    });
+
+    it('carries the declared coverage of the previous version over to a new version', async () => {
+      // Given
+      const slug = 'misp-coverage-carried';
+      const firstFragment = {
+        ...buildManifestFragment(ManifestType.Connector, {
+          slug,
+          id: 'coverage-carried',
+          version: '7.260308.0',
+        }),
+        coverage: { regions: ['Global'] },
+      };
+      const secondFragment = buildManifestFragment(ManifestType.Connector, {
+        slug,
+        id: 'coverage-carried',
+        version: '7.260309.0',
+      });
+      await ManifestFragmentDomain.ingestManifestFragment(firstFragment);
+      await loadIngestedCoverage(slug, firstFragment.version);
+
+      // When
+      await ManifestFragmentDomain.ingestManifestFragment(secondFragment);
+
+      // Then
+      expect(await loadIngestedCoverage(slug, secondFragment.version)).toEqual({
+        object_types: [],
+        sectors: [],
+        regions: ['Global'],
+        inferred: false,
+      });
+    });
+
+    it('throws when the declared coverage exceeds the bounds', async () => {
+      // Given
+      const fragment = {
+        ...buildManifestFragment(ManifestType.Connector, {
+          slug: 'misp-coverage-invalid',
+          id: 'coverage-invalid',
+        }),
+        coverage: { object_types: ['x'.repeat(129)] },
+      };
+
+      // When
+      const call = ManifestFragmentDomain.ingestManifestFragment(fragment);
+
+      // Then
+      await expect(call).rejects.toThrow(
+        BadRequestErrorCode.InvalidIntegrationCoverage
+      );
     });
   });
 

@@ -73,6 +73,8 @@ export enum BadRequestErrorCode {
   InvalidUseCasesForProducts = 'INVALID_USE_CASES_FOR_PRODUCTS',
   SolutionCategoriesRequired = 'SOLUTION_CATEGORIES_REQUIRED',
   XtmOneRoleRequired = 'XTM_ONE_ROLE_REQUIRED',
+  InvalidIntegrationCoverage = 'INVALID_INTEGRATION_COVERAGE',
+  InvalidCoverageSearchInput = 'INVALID_COVERAGE_SEARCH_INPUT',
 }
 
 export enum UnknownErrorCode {
@@ -118,6 +120,7 @@ export enum UnknownErrorCode {
   VotingRoundMutationError = 'VOTING_ROUND_MUTATION_ERROR',
   VotableFeatureMutationError = 'VOTABLE_FEATURE_MUTATION_ERROR',
   ListFacetError = 'LIST_FACET_ERROR',
+  IntegrationCoverageSearchError = 'INTEGRATION_COVERAGE_SEARCH_ERROR',
 }
 
 export enum AlreadyExistsErrorCode {

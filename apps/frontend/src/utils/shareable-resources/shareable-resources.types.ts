@@ -48,6 +48,10 @@ export type IntegrationFields = {
   demo_url: string | null;
   solution_categories: ReadonlyArray<{ id: string; name: string }> | null;
   license_type: string | null;
+  covered_object_types: ReadonlyArray<string>;
+  covered_sectors: ReadonlyArray<string>;
+  covered_regions: ReadonlyArray<string>;
+  coverage_inferred: boolean;
 };
 
 /** Fields only present on `Connector` documents (a subtype of `Integration`). */

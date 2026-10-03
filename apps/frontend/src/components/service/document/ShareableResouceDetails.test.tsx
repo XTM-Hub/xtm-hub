@@ -109,6 +109,49 @@ describe('ShareableResourceDetails', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('should render the declared coverage of an integration', () => {
+    testRender(
+      <ShareableResourceDetails
+        documentData={buildDocumentData({
+          covered_object_types: ['Indicator', 'Malware'],
+          covered_sectors: ['Finance'],
+          covered_regions: [],
+          coverage_inferred: false,
+        })}
+      />
+    );
+
+    expect(
+      screen.getByText('Service.ShareableResources.Details.CoveredObjectTypes')
+    ).toBeInTheDocument();
+    expect(screen.getByText('Indicator, Malware')).toBeInTheDocument();
+    expect(screen.getByText('Finance')).toBeInTheDocument();
+    expect(
+      screen.queryByText('Service.ShareableResources.Details.CoveredRegions')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Service.ShareableResources.Details.CoverageInferred')
+    ).not.toBeInTheDocument();
+  });
+
+  it('should flag an inferred coverage', () => {
+    testRender(
+      <ShareableResourceDetails
+        documentData={buildDocumentData({
+          covered_object_types: ['Vulnerability'],
+          covered_sectors: [],
+          covered_regions: [],
+          coverage_inferred: true,
+        })}
+      />
+    );
+
+    expect(screen.getByText('Vulnerability')).toBeInTheDocument();
+    expect(
+      screen.getByText('Service.ShareableResources.Details.CoverageInferred')
+    ).toBeInTheDocument();
+  });
+
   it('should fallback to Filigran when organization is undefined', () => {
     testRender(
       <ShareableResourceDetails

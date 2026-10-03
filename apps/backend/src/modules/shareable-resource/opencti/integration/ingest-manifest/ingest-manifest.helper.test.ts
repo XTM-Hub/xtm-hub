@@ -245,6 +245,78 @@ describe('ingest manifest helper', () => {
       );
     });
 
+    describe('with coverage values', () => {
+      it.each([
+        [
+          'every family',
+          {
+            object_types: ['Malware', 'Indicator'],
+            sectors: ['Finance'],
+            regions: ['Europe'],
+          },
+        ],
+        ['a single family', { regions: ['Global'] }],
+        ['empty lists', { object_types: [], sectors: [], regions: [] }],
+      ])('should keep a coverage declaring %s', (_description, coverage) => {
+        // Given
+        const manifest = buildManifest({ coverage });
+
+        // When
+        const result =
+          IngestManifestHelper.extractManifestInformation(manifest);
+
+        // Then
+        expect(result.validContracts[0]?.coverage).toEqual(coverage);
+      });
+
+      it.each([
+        ['a non-object value', 'Malware'],
+        ['a non-array family', { object_types: 'Malware' }],
+        ['a blank value', { sectors: ['  '] }],
+        ['too many values', { regions: Array.from({ length: 51 }, String) }],
+        ['a value that is too long', { object_types: ['x'.repeat(129)] }],
+      ])(
+        'should ignore %s without rejecting the contract',
+        (_description, coverage) => {
+          // Given
+          const manifest = buildManifest({ coverage });
+
+          // When
+          const result =
+            IngestManifestHelper.extractManifestInformation(manifest);
+
+          // Then
+          expect({
+            validContracts: result.validContracts.length,
+            errors: result.errors.length,
+            coverage: result.validContracts[0]?.coverage,
+            warned: warnSpy.mock.calls.some(
+              ([message]) =>
+                message ===
+                'Invalid coverage in manifest contract, field ignored'
+            ),
+          }).toEqual({
+            validContracts: 1,
+            errors: 0,
+            coverage: undefined,
+            warned: true,
+          });
+        }
+      );
+
+      it('should leave the coverage undefined when the contract omits it', () => {
+        // Given
+        const manifest = buildManifest({});
+
+        // When
+        const result =
+          IngestManifestHelper.extractManifestInformation(manifest);
+
+        // Then
+        expect(result.validContracts[0]?.coverage).toBeUndefined();
+      });
+    });
+
     describe('with invalid manifest data', () => {
       it('should return empty validContracts and error for invalid data structure', () => {
         const invalidData = {

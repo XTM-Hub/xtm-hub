@@ -30,6 +30,7 @@ import { NewsFeedDataLoader } from './modules/news-feed/news-feed.dataloader';
 import { RegistrationDataLoader } from './modules/registration/registration.dataloader';
 import { initAuthPlatform } from './modules/security-management/authentication/auth-platform';
 import { ServiceInstanceDataLoader } from './modules/service/instance/service-instance.dataloader';
+import { IntegrationCoverageApp } from './modules/shareable-resource/opencti/integration/integration-coverage/integration-coverage.app';
 import { SubscriptionDataLoader } from './modules/subscription/subscription.dataloader';
 import { TelemetrySnapshotApp } from './modules/telemetry/telemetry-snapshot.app';
 import { errorLoggingPlugin } from './server/apollo-plugins/log';
@@ -456,6 +457,14 @@ if (!process.env.VITEST_MODE || process.env.START_DEV_SERVER) {
   );
 
   initCronJobs();
+
+  // Infers the coverage of integrations that have none declared; idempotent,
+  // never blocks the boot.
+  void IntegrationCoverageApp.refreshInferredCoverage().catch((error) => {
+    logApp.error('[COVERAGE] Inferred integration coverage refresh failed', {
+      error,
+    });
+  });
 
   // Anonymous usage gauge telemetry (fire-and-forget: probes the collector
   // and self-disables when unreachable, never blocks or breaks the boot).

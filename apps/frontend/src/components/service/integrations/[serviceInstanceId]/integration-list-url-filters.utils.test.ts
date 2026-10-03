@@ -74,7 +74,7 @@ describe('buildAllFiltersSearchParams', () => {
 
 describe('allFiltersKey', () => {
   it('is empty for empty filters', () => {
-    expect(allFiltersKey(emptyFilters())).toBe('||||||||||||');
+    expect(allFiltersKey(emptyFilters())).toBe('||||||||||||||||||');
   });
 
   it('differs when any filter changes', () => {

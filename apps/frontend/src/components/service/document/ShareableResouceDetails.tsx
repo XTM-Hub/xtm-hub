@@ -43,6 +43,12 @@ const DOCUMENTATION_URLS: Partial<Record<IntegrationType, string>> = {
   [IntegrationType.TaxiiFeed]: TAXII_FEED_DOCUMENTATION,
 };
 
+const COVERAGE_ITEMS = [
+  { field: 'covered_object_types', translationKey: 'CoveredObjectTypes' },
+  { field: 'covered_sectors', translationKey: 'CoveredSectors' },
+  { field: 'covered_regions', translationKey: 'CoveredRegions' },
+] as const;
+
 const ShareableResourceDetails = ({
   documentData,
   downloadNumber,
@@ -132,6 +138,26 @@ const ShareableResourceDetails = ({
               </div>
             </ShareableResourceDetailItem>
           )}
+          {COVERAGE_ITEMS.map(({ field, translationKey }) => {
+            const values = documentData[field] ?? [];
+            if (values.length === 0) return null;
+            return (
+              <ShareableResourceDetailItem
+                key={field}
+                label={t(
+                  `Service.ShareableResources.Details.${translationKey}`
+                )}>
+                <div className="flex flex-col gap-xs">
+                  <span>{values.join(', ')}</span>
+                  {documentData.coverage_inferred && (
+                    <span className="txt-sub-content">
+                      {t('Service.ShareableResources.Details.CoverageInferred')}
+                    </span>
+                  )}
+                </div>
+              </ShareableResourceDetailItem>
+            );
+          })}
         </>
       )}
       <ShareableResourceDetailMetadataItem
