@@ -1208,6 +1208,7 @@
       "CoveredObjectTypesLabel": "Types d'objets couverts",
       "CoveredObjectTypesPlaceholder": "Types d'objets couverts...",
       "CoverageDescription": "Laissez la couverture vide pour que le Hub la déduise du nom, des descriptions, des cas d'usage et des catégories de solution.",
+      "CoverageLimit": "Jusqu'à {max} valeurs par champ.",
       "CoveredSectorsLabel": "Secteurs couverts",
       "CoveredSectorsPlaceholder": "Ajoutez un secteur, par exemple Finance",
       "CoveredRegionsLabel": "Régions couvertes",

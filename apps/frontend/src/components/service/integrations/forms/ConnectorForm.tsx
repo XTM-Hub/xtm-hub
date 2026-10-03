@@ -1,4 +1,5 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
+import { coverageValuesSchema } from '@/components/service/form/CoverageFields';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
@@ -49,9 +50,9 @@ const connectorSchema = z.object({
   use_cases: z.array(z.string()).optional(),
   solution_categories: z.array(z.string()).min(1, 'Required'),
   license_type: z.enum(['Free', 'Commercial']).optional(),
-  covered_object_types: z.array(z.string()).optional(),
-  covered_sectors: z.array(z.string()).optional(),
-  covered_regions: z.array(z.string()).optional(),
+  covered_object_types: coverageValuesSchema,
+  covered_sectors: coverageValuesSchema,
+  covered_regions: coverageValuesSchema,
   active: z.boolean().optional(),
   verified: z.boolean().optional(),
   manager_supported: z.boolean().optional(),

@@ -10,6 +10,17 @@ import {
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
+import { z } from 'zod';
+
+// Same bounds as COVERAGE_MAX_VALUES and COVERAGE_MAX_VALUE_LENGTH in the backend coverage model
+export const MAX_COVERAGE_VALUES = 50;
+const MAX_COVERAGE_VALUE_LENGTH = 128;
+
+/** Form schema of one coverage family (object types, sectors or regions). */
+export const coverageValuesSchema = z
+  .array(z.string().max(MAX_COVERAGE_VALUE_LENGTH))
+  .max(MAX_COVERAGE_VALUES)
+  .optional();
 
 interface CoverageFieldProps {
   field: ControllerRenderProps<FieldValues, string>;
@@ -34,21 +45,21 @@ export const ServiceFormCoveredObjectTypesField = ({
           keyLabel="name"
           defaultValue={field.value ?? []}
           value={field.value ?? []}
-          onValueChange={field.onChange}
+          onValueChange={(values: string[]) =>
+            field.onChange(values.slice(0, MAX_COVERAGE_VALUES))
+          }
           popoverContentClassName="bg-elevation-background-layer-3"
           placeholder={t('Service.Form.CoveredObjectTypesPlaceholder')}
           variant="inverted"
         />
       </FormControl>
       <p className="text-sm txt-sub-content">
-        {t('Service.Form.CoverageDescription')}
+        {t('Service.Form.CoverageDescription')}{' '}
+        {t('Service.Form.CoverageLimit', { max: MAX_COVERAGE_VALUES })}
       </p>
     </FormItem>
   );
 };
-
-// Same bound as COVERAGE_MAX_VALUE_LENGTH in the backend coverage model
-const MAX_COVERAGE_VALUE_LENGTH = 128;
 
 interface CoverageTagsFieldProps extends CoverageFieldProps {
   family: 'sectors' | 'regions';
@@ -87,16 +98,22 @@ export const ServiceFormCoverageTagsField = ({
           placeholder={t(placeholderKey)}
           tags={tags}
           validateTag={(tag: string) =>
-            tag.trim().length > 0 && tag.length <= MAX_COVERAGE_VALUE_LENGTH
+            tags.length < MAX_COVERAGE_VALUES &&
+            tag.trim().length > 0 &&
+            tag.length <= MAX_COVERAGE_VALUE_LENGTH
           }
           activeTagIndex={activeTagIndex}
           setActiveTagIndex={setActiveTagIndex}
           setTags={(newTags) => {
-            setTags(newTags as Tag[]);
-            field.onChange((newTags as Tag[]).map((tag) => tag.text.trim()));
+            const bounded = (newTags as Tag[]).slice(0, MAX_COVERAGE_VALUES);
+            setTags(bounded);
+            field.onChange(bounded.map((tag) => tag.text.trim()));
           }}
         />
       </FormControl>
+      <p className="text-sm txt-sub-content">
+        {t('Service.Form.CoverageLimit', { max: MAX_COVERAGE_VALUES })}
+      </p>
     </FormItem>
   );
 };

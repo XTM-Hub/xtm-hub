@@ -1208,6 +1208,7 @@
       "CoveredObjectTypesLabel": "対象のオブジェクトタイプ",
       "CoveredObjectTypesPlaceholder": "対象のオブジェクトタイプ...",
       "CoverageDescription": "カバレッジを空にすると、Hub が名前、説明、ユースケース、ソリューションカテゴリから推定します。",
+      "CoverageLimit": "各フィールドに最大 {max} 個の値を指定できます。",
       "CoveredSectorsLabel": "対象のセクター",
       "CoveredSectorsPlaceholder": "セクターを追加（例: Finance）",
       "CoveredRegionsLabel": "対象の地域",

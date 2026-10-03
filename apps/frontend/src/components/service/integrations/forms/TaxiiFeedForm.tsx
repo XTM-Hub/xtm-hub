@@ -1,4 +1,5 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
+import { coverageValuesSchema } from '@/components/service/form/CoverageFields';
 import { ServiceFormJsonFileField } from '@/components/service/form/JsonFileField';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
@@ -27,9 +28,9 @@ const taxiiFeedFormSchema = z.object({
   use_cases: z.array(z.string()).min(1, 'Required'),
   solution_categories: z.array(z.string()).min(1, 'Required'),
   license_type: z.enum(['Free', 'Commercial']).optional(),
-  covered_object_types: z.array(z.string()).optional(),
-  covered_sectors: z.array(z.string()).optional(),
-  covered_regions: z.array(z.string()).optional(),
+  covered_object_types: coverageValuesSchema,
+  covered_sectors: coverageValuesSchema,
+  covered_regions: coverageValuesSchema,
   active: z.boolean().optional(),
   datasheet_url: z.url().or(z.literal('')).nullish(),
   blogpost_url: z.url().or(z.literal('')).nullish(),
