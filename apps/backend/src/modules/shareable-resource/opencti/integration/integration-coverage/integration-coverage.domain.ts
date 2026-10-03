@@ -170,47 +170,90 @@ const loadCandidateRows = async (
     // One extra row tells whether the candidate population was truncated
     .limit(COVERAGE_SEARCH_MAX_CANDIDATES + 1);
 
+export const EMPTY_COVERAGE_FACETS: Facet = {
+  integration_type: [],
+  license_type: [],
+  manager_supported: [],
+  verified: [],
+  product_version: [],
+  use_case: [],
+  solution_category: [],
+  entity_type: [],
+  object_type: [],
+  sector: [],
+  region: [],
+};
+
+const loadFacets = async (
+  documentIdsQuery: Knex.QueryBuilder
+): Promise<Facet> => {
+  const [
+    metadataBuckets,
+    useCaseBuckets,
+    solutionCategoryBuckets,
+    entityTypeBuckets,
+    objectTypeBuckets,
+    sectorBuckets,
+    regionBuckets,
+  ] = await Promise.all([
+    loadMetadataFacetBucketsGrouped(documentIdsQuery, FACET_METADATA_KEYS),
+    loadUseCaseFacetBuckets(documentIdsQuery),
+    loadSolutionCategoryFacetBuckets(documentIdsQuery),
+    loadMetadataListFacetBuckets(
+      documentIdsQuery,
+      DocumentMetadataKeyCode.EntityTypes
+    ),
+    loadMetadataListFacetBuckets(
+      documentIdsQuery,
+      DocumentMetadataKeyCode.CoveredObjectTypes
+    ),
+    loadMetadataListFacetBuckets(
+      documentIdsQuery,
+      DocumentMetadataKeyCode.CoveredSectors
+    ),
+    loadMetadataListFacetBuckets(
+      documentIdsQuery,
+      DocumentMetadataKeyCode.CoveredRegions
+    ),
+  ]);
+  return {
+    integration_type:
+      metadataBuckets[DocumentMetadataKeyCode.IntegrationType] ?? [],
+    license_type: metadataBuckets[DocumentMetadataKeyCode.LicenseType] ?? [],
+    manager_supported:
+      metadataBuckets[DocumentMetadataKeyCode.ManagerSupported] ?? [],
+    verified: metadataBuckets[DocumentMetadataKeyCode.Verified] ?? [],
+    product_version:
+      metadataBuckets[DocumentMetadataKeyCode.ProductVersion] ?? [],
+    use_case: useCaseBuckets,
+    solution_category: solutionCategoryBuckets,
+    entity_type: entityTypeBuckets,
+    object_type: objectTypeBuckets,
+    sector: sectorBuckets,
+    region: regionBuckets,
+  };
+};
+
 export const IntegrationCoverageDomain = {
+  /**
+   * Ranked candidates of a coverage search and, when the caller selects
+   * them, the facets of the candidate population (seven aggregations).
+   */
   loadCandidatesAndFacets: async (
-    request: CoverageSearchRequest
+    request: CoverageSearchRequest,
+    { withFacets = true }: { withFacets?: boolean } = {}
   ): Promise<{
     candidates: CoverageCandidateRow[];
     facets: Facet;
     truncated: boolean;
   }> => {
     const { query } = await buildCandidatesQuery(request);
-    const documentIdsQuery = query.clone().select('Document.id');
 
-    const [
-      rows,
-      metadataBuckets,
-      useCaseBuckets,
-      solutionCategoryBuckets,
-      entityTypeBuckets,
-      objectTypeBuckets,
-      sectorBuckets,
-      regionBuckets,
-    ] = await Promise.all([
+    const [rows, facets] = await Promise.all([
       loadCandidateRows(query),
-      loadMetadataFacetBucketsGrouped(documentIdsQuery, FACET_METADATA_KEYS),
-      loadUseCaseFacetBuckets(documentIdsQuery),
-      loadSolutionCategoryFacetBuckets(documentIdsQuery),
-      loadMetadataListFacetBuckets(
-        documentIdsQuery,
-        DocumentMetadataKeyCode.EntityTypes
-      ),
-      loadMetadataListFacetBuckets(
-        documentIdsQuery,
-        DocumentMetadataKeyCode.CoveredObjectTypes
-      ),
-      loadMetadataListFacetBuckets(
-        documentIdsQuery,
-        DocumentMetadataKeyCode.CoveredSectors
-      ),
-      loadMetadataListFacetBuckets(
-        documentIdsQuery,
-        DocumentMetadataKeyCode.CoveredRegions
-      ),
+      withFacets
+        ? loadFacets(query.clone().select('Document.id'))
+        : Promise.resolve(EMPTY_COVERAGE_FACETS),
     ]);
 
     const truncated = rows.length > COVERAGE_SEARCH_MAX_CANDIDATES;
@@ -219,27 +262,7 @@ export const IntegrationCoverageDomain = {
       CANDIDATE_METADATA_KEYS
     );
 
-    return {
-      truncated,
-      candidates,
-      facets: {
-        integration_type:
-          metadataBuckets[DocumentMetadataKeyCode.IntegrationType] ?? [],
-        license_type:
-          metadataBuckets[DocumentMetadataKeyCode.LicenseType] ?? [],
-        manager_supported:
-          metadataBuckets[DocumentMetadataKeyCode.ManagerSupported] ?? [],
-        verified: metadataBuckets[DocumentMetadataKeyCode.Verified] ?? [],
-        product_version:
-          metadataBuckets[DocumentMetadataKeyCode.ProductVersion] ?? [],
-        use_case: useCaseBuckets,
-        solution_category: solutionCategoryBuckets,
-        entity_type: entityTypeBuckets,
-        object_type: objectTypeBuckets,
-        sector: sectorBuckets,
-        region: regionBuckets,
-      },
-    };
+    return { truncated, candidates, facets };
   },
 
   loadStoredCoverage: async (

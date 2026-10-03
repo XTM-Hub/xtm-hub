@@ -24,7 +24,10 @@ import {
   OPENCTI_INTEGRATION_DOCUMENT_TYPE,
 } from '../integration.model';
 import { IntegrationCoverageApp } from './integration-coverage.app';
-import { IntegrationCoverageDomain } from './integration-coverage.domain';
+import {
+  EMPTY_COVERAGE_FACETS,
+  IntegrationCoverageDomain,
+} from './integration-coverage.domain';
 import { IntegrationCoverageHelper } from './integration-coverage.helper';
 import { StoredIntegrationCoverage } from './integration-coverage.model';
 
@@ -192,6 +195,28 @@ describe('integrationCoverageApp', () => {
           matched_sectors: [FINANCE],
         }),
       ]);
+    });
+
+    it('should rank the same matches without computing the facets when they are not requested', async () => {
+      // Given
+      await createIntegration({
+        slug: 'global-feed-without-facets',
+        coverage: declared({ regions: ['Global'], sectors: [FINANCE] }),
+      });
+      const input = { regions: [FRANCE], sectors: ['finance'] };
+
+      // When
+      const withFacets =
+        await IntegrationCoverageApp.searchIntegrationsByCoverage(input);
+      const withoutFacets =
+        await IntegrationCoverageApp.searchIntegrationsByCoverage(input, {
+          withFacets: false,
+        });
+
+      // Then
+      expect(withoutFacets.matches).toEqual(withFacets.matches);
+      expect(withFacets.facets.sector.length).toBeGreaterThan(0);
+      expect(withoutFacets.facets).toEqual(EMPTY_COVERAGE_FACETS);
     });
 
     it('should only expose active integrations of the public integrations service', async () => {

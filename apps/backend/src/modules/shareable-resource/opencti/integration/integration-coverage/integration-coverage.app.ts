@@ -167,14 +167,17 @@ const inferOutdatedCoverage = async (
 
 export const IntegrationCoverageApp = {
   searchIntegrationsByCoverage: async (
-    input: IntegrationCoverageSearchInput
+    input: IntegrationCoverageSearchInput,
+    { withFacets = true }: { withFacets?: boolean } = {}
   ): Promise<IntegrationCoverageSearchResult> => {
     const request = IntegrationCoverageSearchHelper.normalizeSearchInput(input);
     const hasRequestedFacets =
       IntegrationCoverageSearchHelper.hasRequestedFacets(request);
 
     const { candidates, facets, truncated } =
-      await IntegrationCoverageDomain.loadCandidatesAndFacets(request);
+      await IntegrationCoverageDomain.loadCandidatesAndFacets(request, {
+        withFacets,
+      });
     if (truncated) {
       logApp.warn(
         '[COVERAGE] Coverage search truncated, the matches only rank the first candidates',

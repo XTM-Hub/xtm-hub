@@ -1,3 +1,4 @@
+import { GraphQLResolveInfo, Kind } from 'graphql';
 import { describe, expect, it, vi } from 'vitest';
 import {
   contextSimpleUserFiligran2,
@@ -75,6 +76,55 @@ describe('integration-coverage.resolver', () => {
 
     // Then
     expect(result).toEqual(expected);
+  });
+
+  it('should compute the facets only when the query selects them', async () => {
+    // Given
+    const search = vi
+      .spyOn(IntegrationCoverageApp, 'searchIntegrationsByCoverage')
+      .mockResolvedValue({
+        matches: [],
+        facets: EMPTY_FACETS,
+        truncated: false,
+      });
+    const infoSelecting = (field: string) =>
+      ({
+        fieldNodes: [
+          {
+            kind: Kind.FIELD,
+            name: { kind: Kind.NAME, value: 'integrationsByCoverage' },
+            selectionSet: {
+              kind: Kind.SELECTION_SET,
+              selections: [
+                { kind: Kind.FIELD, name: { kind: Kind.NAME, value: field } },
+              ],
+            },
+          },
+        ],
+        fragments: {},
+      }) as unknown as GraphQLResolveInfo;
+
+    // When
+    await resolver.Query!.integrationsByCoverage!(
+      {},
+      { input: { objectTypes: ['Malware'] } },
+      contextSimpleUserFiligran2,
+      infoSelecting('matches')
+    );
+    await resolver.Query!.integrationsByCoverage!(
+      {},
+      { input: { objectTypes: ['Malware'] } },
+      contextSimpleUserFiligran2,
+      infoSelecting('facets')
+    );
+
+    // Then
+    expect(search).toHaveBeenNthCalledWith(1, expect.anything(), {
+      withFacets: false,
+    });
+    expect(search).toHaveBeenNthCalledWith(2, expect.anything(), {
+      withFacets: true,
+    });
   });
 
   it('should surface a validation failure as a bad request', async () => {
