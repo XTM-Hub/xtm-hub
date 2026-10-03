@@ -9,9 +9,14 @@ export type CoverageKeywordRule = {
   values: readonly string[];
 };
 
-/** OpenCTI entity types, in their canonical OpenCTI spelling. */
+/**
+ * OpenCTI entity types, in their canonical OpenCTI spelling: every STIX domain
+ * object and cyber observable type registered by the platform, plus the
+ * abstract Threat-Actor. Kept in sync with the OpenCTI schema registries.
+ */
 export const KNOWN_OBJECT_TYPES: readonly string[] = [
   'Administrative-Area',
+  'AI-Prompt',
   'Artifact',
   'Attack-Pattern',
   'Autonomous-System',
@@ -33,9 +38,14 @@ export const KNOWN_OBJECT_TYPES: readonly string[] = [
   'Domain-Name',
   'Email-Addr',
   'Email-Message',
+  'Email-Mime-Part-Type',
   'Event',
+  'Feedback',
   'Grouping',
   'Hostname',
+  'ICCID',
+  'IMEI',
+  'IMSI',
   'Incident',
   'Indicator',
   'Individual',
@@ -43,9 +53,11 @@ export const KNOWN_OBJECT_TYPES: readonly string[] = [
   'Intrusion-Set',
   'IPv4-Addr',
   'IPv6-Addr',
+  'Language',
   'Mac-Addr',
   'Malware',
   'Malware-Analysis',
+  'Media-Content',
   'Mutex',
   'Narrative',
   'Network-Traffic',
@@ -54,25 +66,33 @@ export const KNOWN_OBJECT_TYPES: readonly string[] = [
   'Opinion',
   'Organization',
   'Payment-Card',
+  'Persona',
   'Phone-Number',
   'Position',
   'Process',
   'Region',
   'Report',
   'Sector',
+  'Security-Coverage',
+  'Security-Coverage-Result',
+  'SecurityPlatform',
   'Software',
+  'SSH-Key',
   'StixFile',
   'System',
+  'Task',
   'Text',
   'Threat-Actor',
   'Threat-Actor-Group',
   'Threat-Actor-Individual',
   'Tool',
+  'Tracking-Number',
   'Url',
   'User-Account',
   'User-Agent',
   'Vulnerability',
   'Windows-Registry-Key',
+  'Windows-Registry-Value-Type',
   'X509-Certificate',
 ];
 
@@ -80,6 +100,7 @@ export const KNOWN_OBJECT_TYPES: readonly string[] = [
 export const OBJECT_TYPE_ALIASES: Readonly<Record<string, string>> = {
   file: 'StixFile',
   'stix-file': 'StixFile',
+  'security-platform': 'SecurityPlatform',
 };
 
 // Patterns never carry the `g` flag: RegExp#test would then keep state between calls.

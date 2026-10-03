@@ -202,6 +202,41 @@ describe('integration-coverage.inference', () => {
       expect(globalPatterns).toEqual([]);
     });
 
+    it.each([
+      'AI-Prompt',
+      'Email-Mime-Part-Type',
+      'Feedback',
+      'ICCID',
+      'IMEI',
+      'IMSI',
+      'Language',
+      'Media-Content',
+      'Persona',
+      'Security-Coverage',
+      'Security-Coverage-Result',
+      'SecurityPlatform',
+      'SSH-Key',
+      'Task',
+      'Tracking-Number',
+      'Windows-Registry-Value-Type',
+    ])('should offer the OpenCTI entity type %s', (type) => {
+      // Given / When / Then
+      expect(KNOWN_OBJECT_TYPES).toContain(type);
+    });
+
+    it('should list each OpenCTI entity type once, in alphabetical order', () => {
+      // Given / When
+      const sorted = [...KNOWN_OBJECT_TYPES].sort((a, b) =>
+        a.toLowerCase().localeCompare(b.toLowerCase())
+      );
+
+      // Then
+      expect({
+        unique: new Set(KNOWN_OBJECT_TYPES).size,
+        order: KNOWN_OBJECT_TYPES,
+      }).toEqual({ unique: KNOWN_OBJECT_TYPES.length, order: sorted });
+    });
+
     it('should only produce known OpenCTI entity types', () => {
       // Given
       const knownTypes = new Set(KNOWN_OBJECT_TYPES);

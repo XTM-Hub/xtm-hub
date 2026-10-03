@@ -32,6 +32,12 @@ describe('integrationCoverageHelper', () => {
       ['lowercase dashed', ['ipv4-addr'], ['IPv4-Addr']],
       ['spaces instead of dashes', ['attack pattern'], ['Attack-Pattern']],
       ['an alias', ['File'], ['StixFile']],
+      ['a spaced platform type', ['security platform'], ['SecurityPlatform']],
+      [
+        'an uppercase observable type',
+        ['imei', 'ssh key'],
+        ['IMEI', 'SSH-Key'],
+      ],
       ['an unknown type kept as is', ['  Custom-Type  '], ['Custom-Type']],
       ['case duplicates', ['Malware', 'malware', 'MALWARE'], ['Malware']],
       ['empty values', ['', '   '], []],
