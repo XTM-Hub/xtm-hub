@@ -34,7 +34,7 @@ import ServiceInstance, {
   ServiceInstanceId,
 } from '../../model/kanel/public/ServiceInstance';
 import { MinIOClient } from '../../thirdparty/minio/client';
-import { ErrorCode } from '../../utils/error/error.code';
+import { BadRequestErrorCode, ErrorCode } from '../../utils/error/error.code';
 import { NewsFeedApp } from '../news-feed/news-feed.app';
 import { RegistrationApp } from '../registration/registration.app';
 import { ServiceDefinitionDomain } from '../service/definition/service-definition.domain';
@@ -136,6 +136,87 @@ describe('documentApp', () => {
 
   afterAll(async () => {
     vi.useRealTimers();
+  });
+
+  describe('hunt packs', () => {
+    const huntPackContent = {
+      type: 'bundle',
+      id: 'bundle--1d4f7c2b-6a3e-4f5b-9c8d-0e1f2a3b4c5d',
+      objects: [
+        {
+          type: 'attack-pattern',
+          id: 'attack-pattern--1',
+          x_mitre_id: 'T1059.001',
+        },
+        {
+          type: 'hunt',
+          id: 'hunt--1',
+          name: 'Encoded PowerShell',
+          technique_refs: ['attack-pattern--1'],
+          native_queries: [
+            { platform: 'splunk', language: 'spl', query: 'index=main' },
+          ],
+        },
+      ],
+    };
+    const huntPackFile = (jsonContent: Record<string, unknown>) => ({
+      ...minioFileMock,
+      fileName: 'hunt-pack.json',
+      mimeType: 'application/json',
+      jsonContent,
+    });
+
+    it('should store the summary extracted from the hunt pack and the OpenCTI version floor', async () => {
+      // Given
+      vi.spyOn(DocumentUploadsHelper, 'processUploads').mockResolvedValueOnce([
+        huntPackFile(huntPackContent),
+      ]);
+
+      // When
+      const result = await DocumentApp.createDocument({
+        input: { ...documentData, slug: `hunt-pack-${uuidv4()}` },
+        metadata: [
+          { key: DocumentMetadataKeyCode.ProductVersion, value: '6.8.0' },
+          { key: DocumentMetadataKeyCode.HuntCount, value: '999' },
+        ],
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        sourceDocument: mockUpload,
+      });
+
+      // Then
+      expect(result).toMatchObject({
+        product_version: '7.261003.0',
+        hunt_count: '1',
+        attack_techniques: '["T1059.001"]',
+        hunt_platforms: '["splunk"]',
+        service_instance_id: SERVICES.INSTANCES.HUNT_PACKS.ID,
+      });
+    });
+
+    it('should reject a file that is not a hunt pack and delete it from storage', async () => {
+      // Given
+      vi.spyOn(DocumentUploadsHelper, 'processUploads').mockResolvedValueOnce([
+        huntPackFile({ type: 'bundle', objects: [] }),
+      ]);
+      const slug = `not-a-hunt-pack-${uuidv4()}`;
+
+      // When
+      const call = DocumentApp.createDocument({
+        input: { ...documentData, slug },
+        metadata: [
+          { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+        ],
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        sourceDocument: mockUpload,
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(BadRequestErrorCode.HuntPackEmpty);
+      expect(MinIOClient.deleteFile).toHaveBeenCalledWith(
+        minioFileMock.minioName
+      );
+      expect(await TestHelper.document.load({ slug })).toBeUndefined();
+    });
   });
 
   describe('createDocument', () => {

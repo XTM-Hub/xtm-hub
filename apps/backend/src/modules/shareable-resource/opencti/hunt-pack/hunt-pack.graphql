@@ -1,0 +1,27 @@
+type OpenCTIHuntPack implements Document & Node {
+  id: ID!
+  type: String!
+  uploader: User
+  uploader_organization: Organization
+  name: String!
+  short_description: String
+  description: String
+  file_name: String! @auth
+  active: Boolean!
+  created_at: Date!
+  updated_at: Date
+  updater_id: String @auth
+  download_number: Int
+  share_number: Int
+  slug: String!
+  use_cases: [UseCase!]
+  service_instance_id: ServiceInstanceId
+  service_instance: ServiceInstance @auth
+  subscription: SubscriptionModel @auth
+  children_documents: [ShareableResource!]
+  # Specific fields for OpenCTI hunt packs, extracted from the pack file
+  product_version: String
+  hunt_count: Int
+  attack_techniques: [String!]!
+  hunt_platforms: [String!]!
+}

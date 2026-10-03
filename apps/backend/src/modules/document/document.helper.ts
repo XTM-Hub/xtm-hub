@@ -35,6 +35,11 @@ import {
   OPENCTI_CUSTOM_VIEW_DOCUMENT_TYPE,
 } from '../shareable-resource/opencti/custom-view/custom-view.model';
 import {
+  OPENCTI_HUNT_PACK_DOCUMENT_TYPE,
+  OPENCTI_HUNT_PACK_METADATA,
+  OPENCTI_HUNT_PACK_METADATA_KEYS,
+} from '../shareable-resource/opencti/hunt-pack/hunt-pack.model';
+import {
   INTEGRATION_CONNECTOR_METADATA,
   INTEGRATION_CSV_FEED_METADATA,
   INTEGRATION_METADATA_KEYS,
@@ -78,6 +83,7 @@ export const ALL_METADATA_KEYS: DocumentMetadataKeyCode[] = Array.from(
     ...CUSTOM_VIEW_METADATA_KEYS,
     ...OPENAEV_SCENARIO_METADATA_KEYS,
     ...OPENCTI_PLAYBOOK_METADATA_KEYS,
+    ...OPENCTI_HUNT_PACK_METADATA_KEYS,
     ...DOCUMENT_IMAGE_METADATA_KEYS,
   ])
 );
@@ -93,6 +99,7 @@ export const ServiceDefinitionIdentifiersByPlatformIdentifier = new Map<
       ServiceDefinitionIdentifier.OpenctiCustomDashboards,
       ServiceDefinitionIdentifier.OpenctiCustomViews,
       ServiceDefinitionIdentifier.OpenctiPlaybooks,
+      ServiceDefinitionIdentifier.OpenctiHuntPacks,
     ],
   ],
   [PlatformIdentifier.Openaev, [ServiceDefinitionIdentifier.OpenaevScenarios]],
@@ -103,14 +110,16 @@ export type ManageableServiceDefinitionIdentifier =
   | ServiceDefinitionIdentifier.OpenctiCustomDashboards
   | ServiceDefinitionIdentifier.OpenctiCustomViews
   | ServiceDefinitionIdentifier.OpenaevScenarios
-  | ServiceDefinitionIdentifier.OpenctiPlaybooks;
+  | ServiceDefinitionIdentifier.OpenctiPlaybooks
+  | ServiceDefinitionIdentifier.OpenctiHuntPacks;
 
 export type DOCUMENT_TYPE =
   | typeof OPENCTI_INTEGRATION_DOCUMENT_TYPE
   | typeof OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE
   | typeof OPENCTI_CUSTOM_VIEW_DOCUMENT_TYPE
   | typeof OPENAEV_SCENARIO_DOCUMENT_TYPE
-  | typeof OPENCTI_PLAYBOOK_DOCUMENT_TYPE;
+  | typeof OPENCTI_PLAYBOOK_DOCUMENT_TYPE
+  | typeof OPENCTI_HUNT_PACK_DOCUMENT_TYPE;
 
 export const DocumentTypeMappedByServiceDefinition: Record<
   ManageableServiceDefinitionIdentifier,
@@ -126,6 +135,8 @@ export const DocumentTypeMappedByServiceDefinition: Record<
     OPENAEV_SCENARIO_DOCUMENT_TYPE,
   [ServiceDefinitionIdentifier.OpenctiPlaybooks]:
     OPENCTI_PLAYBOOK_DOCUMENT_TYPE,
+  [ServiceDefinitionIdentifier.OpenctiHuntPacks]:
+    OPENCTI_HUNT_PACK_DOCUMENT_TYPE,
 };
 
 const DocumentMetadataMappedByServiceIdentifier: Record<
@@ -171,6 +182,8 @@ const DocumentMetadataMappedByServiceIdentifier: Record<
     OPENAEV_SCENARIO_METADATA,
   [ServiceDefinitionIdentifier.OpenctiPlaybooks]: () =>
     OPENCTI_PLAYBOOK_METADATA,
+  [ServiceDefinitionIdentifier.OpenctiHuntPacks]: () =>
+    OPENCTI_HUNT_PACK_METADATA,
 };
 
 export const DocumentHelper = {
@@ -238,6 +251,8 @@ export const DocumentHelper = {
         OPENAEV_SCENARIO_METADATA_KEYS,
       [ServiceDefinitionIdentifier.OpenctiPlaybooks]:
         OPENCTI_PLAYBOOK_METADATA_KEYS,
+      [ServiceDefinitionIdentifier.OpenctiHuntPacks]:
+        OPENCTI_HUNT_PACK_METADATA_KEYS,
     };
 
     return mapping[serviceDefinitionIdentifier] ?? [];

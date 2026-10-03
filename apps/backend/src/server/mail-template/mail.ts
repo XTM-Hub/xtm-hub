@@ -140,6 +140,7 @@ export const ServiceIdentifierToMailTemplate = new Map<
   [ServiceDefinitionIdentifier.OpenctiCustomViews, 'opencti_custom_views'],
   [ServiceDefinitionIdentifier.OpenctiIntegrations, 'opencti_integrations'],
   [ServiceDefinitionIdentifier.OpenctiPlaybooks, 'opencti_playbooks'],
+  [ServiceDefinitionIdentifier.OpenctiHuntPacks, 'opencti_hunt_packs'],
 ]);
 // ATTENTION, the key should be the same as the template file
 export type MailTemplates = {
@@ -148,6 +149,7 @@ export type MailTemplates = {
   opencti_custom_views: GenericServiceMailModel;
   opencti_integrations: GenericServiceMailModel;
   opencti_playbooks: GenericServiceMailModel;
+  opencti_hunt_packs: GenericServiceMailModel;
   openaev_scenarios: GenericServiceMailModel;
   new_user_organization: NewUserOrganizationMailModel;
   request_transfer_personal_space: RequestTransferPersonalSpaceMailModel;
@@ -180,6 +182,8 @@ export const templateSubjects: {
   opencti_integrations: (params: GenericServiceMailModel) =>
     `XTM Hub - You've been invited to the ${params.serviceName}`,
   opencti_playbooks: (params: GenericServiceMailModel) =>
+    `XTM Hub - You've been invited to the ${params.serviceName}`,
+  opencti_hunt_packs: (params: GenericServiceMailModel) =>
     `XTM Hub - You've been invited to the ${params.serviceName}`,
   openaev_scenarios: (params: GenericServiceMailModel) =>
     `XTM Hub - You've been invited to the ${params.serviceName}`,

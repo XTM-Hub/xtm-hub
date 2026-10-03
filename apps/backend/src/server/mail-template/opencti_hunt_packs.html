@@ -1,0 +1,81 @@
+{{#> layout}}
+<h1
+  class="sm-leading-8"
+  style="margin: 0 0 24px; font-size: 24px; font-weight: 400">
+  Welcome to the {{ serviceName }}!
+</h1>
+<p style="margin: 0; line-height: 24px">
+  Access a growing library of hunt packs: ready-to-review threat hunts with
+  their hypotheses, Sigma rules, native queries and ATT&amp;CK techniques. Import
+  them into OpenCTI as draft hunts and run them on your own security platforms.
+</p>
+<p style="margin: 16px 0 8px; line-height: 24px">With this library, you can:</p>
+<ul style="margin: 0 0 24px; padding-left: 24px; line-height: 24px">
+  <li style="margin-bottom: 8px">
+    <strong>Download ready-to-use hunt packs</strong>
+    to start hunting for the threats that matter to you.
+  </li>
+  <li>
+    <strong>Deploy hunt packs in one click</strong>: the hunts land in OpenCTI
+    as drafts, ready for your review.
+  </li>
+</ul>
+<div style="text-align: center">
+  <a
+    href="{{ serviceLink }}"
+    style="
+      color: #f4f4f6;
+      background-color: #001bdb;
+      display: inline-block;
+      border-radius: 4px;
+      padding: 16px 24px;
+      font-size: 16px;
+      line-height: 1;
+      font-weight: 600;
+      text-decoration: none;
+    ">
+    <!--[if mso]>
+      <i
+        style="mso-font-width: 150%; mso-text-raise: 30px"
+        hidden
+        >&emsp;</i
+      >
+    <![endif]-->
+    <span style="mso-text-raise: 16px"> Access {{ serviceName }} </span>
+    <!--[if mso]>
+      <i
+        hidden
+        style="mso-font-width: 150%"
+        >&emsp;&#8203;</i
+      >
+    <![endif]-->
+  </a>
+</div>
+<p style="margin: 24px 0 0; line-height: 24px">
+  To learn more about all available features,
+  <a
+    href="https://docs.hub.filigran.io/latest/libraries/opencti-custom-views/"
+    style="color: #001bdb"
+    >click here</a
+  >.
+</p>
+<p style="margin: 16px 0 0">
+  Best regards, <br />
+  <strong>The Filigran Team</strong>
+</p>
+<div
+  role="separator"
+  style="
+    height: 1px;
+    line-height: 1px;
+    margin: 24px 0;
+    background-color: #cbd5e1;
+  ">
+  &zwj;
+</div>
+<p style="margin: 0; font-size: 14px">
+  If you have any questions or need support, don’t hesitate to reach out to us
+  at
+  <a href="mailto:{{ contactEmail }}">{{ contactEmail }}</a>.
+</p>
+{{/layout}}

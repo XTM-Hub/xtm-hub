@@ -198,6 +198,13 @@ export async function seed(knex) {
         public: true,
         identifier: 'opencti_custom_views',
       },
+      {
+        id: '5b3f8f6e-2d0c-4a8e-9f7b-1c2d3e4f5a61',
+        name: 'hunt packs',
+        description: 'hunt packs description',
+        public: true,
+        identifier: 'opencti_hunt_packs',
+      },
     ])
     .onConflict('id')
     .ignore();
@@ -265,6 +272,17 @@ export async function seed(knex) {
         service_definition_id: '17bda799-12c9-4039-b4d9-a8834494e234',
         ordering: 17,
         slug: 'opencti-custom-views',
+      },
+      {
+        id: 'b7a1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d',
+        name: 'hunt packs',
+        description: 'short description for hunt packs',
+        creation_status: 'READY',
+        public: true,
+        tags: '{others}',
+        service_definition_id: '5b3f8f6e-2d0c-4a8e-9f7b-1c2d3e4f5a61',
+        ordering: 18,
+        slug: 'opencti-hunt-packs',
       },
     ])
     .onConflict('id')

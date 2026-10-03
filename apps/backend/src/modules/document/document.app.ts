@@ -26,6 +26,7 @@ import { ForbiddenAccess } from '../../utils/error/error.util';
 import { NewsFeedApp } from '../news-feed/news-feed.app';
 import { RegistrationApp } from '../registration/registration.app';
 import { ServiceDefinitionDomain } from '../service/definition/service-definition.domain';
+import { HuntPackApp } from '../shareable-resource/opencti/hunt-pack/hunt-pack.app';
 import {
   ConnectorTypeHelper,
   INGESTION_OWNED_CONNECTOR_METADATA_KEYS,
@@ -110,9 +111,13 @@ export const DocumentApp = {
     );
 
     const documentMetadata: DocumentMetadataResolverType[] =
-      DocumentHelper.buildCompleteMetadataFromDocumentFile({
+      await HuntPackApp.buildDocumentMetadata({
+        serviceDefinitionIdentifier: serviceDefinition.identifier,
+        metadata: DocumentHelper.buildCompleteMetadataFromDocumentFile({
+          sourceDocumentFile,
+          metadata,
+        }),
         sourceDocumentFile,
-        metadata,
       });
 
     if (input.entity_types != null) {
@@ -302,12 +307,15 @@ export const DocumentApp = {
       serviceInstanceId
     );
 
-    let documentMetadata = DocumentHelper.buildCompleteMetadataFromDocumentFile(
-      {
+    let documentMetadata = await HuntPackApp.buildDocumentMetadata({
+      serviceDefinitionIdentifier: serviceDefinition.identifier,
+      metadata: DocumentHelper.buildCompleteMetadataFromDocumentFile({
         sourceDocumentFile,
         metadata,
-      }
-    );
+      }),
+      sourceDocumentFile,
+      existingDocumentId: parentDocumentId,
+    });
 
     const updatedDocument = await withTransaction(async () => {
       // The stored metadata the update keeps is read under the row lock, so a

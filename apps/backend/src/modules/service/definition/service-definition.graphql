@@ -4,6 +4,7 @@ enum ServiceDefinitionIdentifier {
   opencti_custom_views
   opencti_integrations
   opencti_playbooks
+  opencti_hunt_packs
   openaev_scenarios
   opencti_registration
   openaev_registration

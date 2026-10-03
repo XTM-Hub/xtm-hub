@@ -137,6 +137,10 @@ export const SERVICES = {
       ID: '9785fa07-309f-47ab-bcc0-c0c3447f7e29' as ServiceInstanceId,
       SLUG: 'opencti-custom-views',
     },
+    HUNT_PACKS: {
+      ID: 'b7a1c2d3-4e5f-4a6b-8c7d-9e0f1a2b3c4d' as ServiceInstanceId,
+      SLUG: 'opencti-hunt-packs',
+    },
     EPIC: {
       ID: '3260f536-49b8-4c6f-8e87-61c8be1ae103' as ServiceInstanceId,
     },
