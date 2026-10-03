@@ -189,15 +189,72 @@ type PulseBenchmarkResult {
   top_items: [PulseBenchmarkItem!]!
 }
 
+enum PulseContributionStatus {
+  "The caller contributed within the contribution window"
+  active
+  "The caller contributed within the grace period, not within the window"
+  grace
+  "The caller's last contribution is older than the grace period"
+  lapsed
+  "The caller never contributed"
+  none
+}
+
 type PulseStatus {
   day: String!
   k_threshold: Int!
   retention_months: Int!
   "Active contributors over 30 days: <5 or a platforms bucket"
   contributors_bucket: String!
-  "The caller contributed at least one record over the contribution window"
+  "The caller can read lookups, trending and benchmarks (active or grace)"
   read_access: Boolean!
   last_contribution_day: String
+  contribution_status: PulseContributionStatus!
+  "Last day of read access without a new contribution"
+  read_access_until: String
+  contribution_window_days: Int!
+  contribution_grace_days: Int!
+}
+
+input PulseDigestInput {
+  "UTC day of the salt the digest hashes are computed with"
+  day: String!
+  sector_bucket: PulseSectorBucket!
+  "The sector trending of every region when absent"
+  region_bucket: PulseRegionBucket
+}
+
+type PulseDigestItem {
+  "Transport hash under the salt of the digest day"
+  hash: String!
+  object_type: PulseObjectType!
+  prevalence_bucket: PulsePrevalenceBucket!
+  trend: PulseTrendDirection!
+}
+
+type PulseDigestTrendingItem {
+  rank: Int!
+  hash: String!
+  object_type: PulseObjectType!
+  prevalence_bucket: PulsePrevalenceBucket!
+  trend: PulseTrendDirection!
+}
+
+type PulseDigestTrending {
+  period: PulsePeriod!
+  "The first ranks only"
+  items: [PulseDigestTrendingItem!]!
+  "Ranks after the named ones, up to 10, counted but not named"
+  locked_count: Int!
+}
+
+type PulseDigest {
+  day: String!
+  sector_bucket: PulseSectorBucket!
+  region_bucket: PulseRegionBucket
+  "The most prevalent published keys of the network, PULSE_DIGEST_SIZE at most"
+  items: [PulseDigestItem!]!
+  trending: PulseDigestTrending!
 }
 
 type PulsePurgeResult {
@@ -210,6 +267,8 @@ extend type Query {
   pulseSalt(day: String!): PulseSalt! @platform_token
   # Warning ! Used by OpenCTI
   pulseStatus: PulseStatus! @platform_token
+  # Warning ! Used by OpenCTI
+  pulseDigest(input: PulseDigestInput!): PulseDigest! @platform_token
   # Warning ! Used by OpenCTI
   pulseLookup(input: PulseLookupInput!): [PulseLookupResult!]! @platform_token
   # Warning ! Used by OpenCTI

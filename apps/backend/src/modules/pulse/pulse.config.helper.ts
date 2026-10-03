@@ -6,6 +6,8 @@ export interface PulseSettings {
   kThreshold: number;
   retentionMonths: number;
   contributionWindowDays: number;
+  contributionGraceDays: number;
+  digestSize: number;
   trendingCacheTtlMinutes: number;
   rateLimits: Record<PulseOperation, number>;
 }
@@ -49,6 +51,8 @@ const SETTINGS_RANGES = {
   k_threshold: { min: MIN_K_THRESHOLD, max: 1000 },
   retention_months: { min: 1, max: 120 },
   contribution_window_days: { min: 1, max: 365 },
+  contribution_grace_days: { min: 1, max: 365 },
+  digest_size: { min: 100, max: 20_000 },
   trending_cache_ttl_minutes: { min: 1, max: 1440 },
   rate_limit: { min: 1, max: 1_000_000 },
 } as const;
@@ -101,6 +105,29 @@ const readRateLimit = (raw: PulseRawConfig, operation: PulseOperation) =>
     SETTINGS_RANGES.rate_limit
   );
 
+// The grace period starts at the last contribution like the activity window,
+// so it can only extend it.
+const readContributionDays = (
+  raw: PulseRawConfig
+): { contributionWindowDays: number; contributionGraceDays: number } => {
+  const contributionWindowDays = readInteger(
+    'contribution_window_days',
+    raw.contribution_window_days,
+    SETTINGS_RANGES.contribution_window_days
+  );
+  const contributionGraceDays = readInteger(
+    'contribution_grace_days',
+    raw.contribution_grace_days,
+    SETTINGS_RANGES.contribution_grace_days
+  );
+  if (contributionGraceDays < contributionWindowDays) {
+    throw new Error(
+      'pulse.contribution_grace_days must be greater than or equal to pulse.contribution_window_days'
+    );
+  }
+  return { contributionWindowDays, contributionGraceDays };
+};
+
 const readSettings = (raw: PulseRawConfig): PulseSettings => ({
   kThreshold: readInteger(
     'k_threshold',
@@ -112,10 +139,11 @@ const readSettings = (raw: PulseRawConfig): PulseSettings => ({
     raw.retention_months,
     SETTINGS_RANGES.retention_months
   ),
-  contributionWindowDays: readInteger(
-    'contribution_window_days',
-    raw.contribution_window_days,
-    SETTINGS_RANGES.contribution_window_days
+  ...readContributionDays(raw),
+  digestSize: readInteger(
+    'digest_size',
+    raw.digest_size,
+    SETTINGS_RANGES.digest_size
   ),
   trendingCacheTtlMinutes: readInteger(
     'trending_cache_ttl_minutes',
@@ -140,6 +168,10 @@ const readSettings = (raw: PulseRawConfig): PulseSettings => ({
     [PulseOperation.PulseStatus]: readRateLimit(
       raw,
       PulseOperation.PulseStatus
+    ),
+    [PulseOperation.PulseDigest]: readRateLimit(
+      raw,
+      PulseOperation.PulseDigest
     ),
     [PulseOperation.PulsePurge]: readRateLimit(raw, PulseOperation.PulsePurge),
   },

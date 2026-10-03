@@ -55,6 +55,8 @@ export interface PulseRawConfig {
   k_threshold: unknown;
   retention_months: unknown;
   contribution_window_days: unknown;
+  contribution_grace_days: unknown;
+  digest_size: unknown;
   trending_cache_ttl_minutes: unknown;
   rate_limits: Record<string, unknown>;
 }
@@ -121,6 +123,8 @@ const portalConfig: PortalConfig = {
     k_threshold: config.get('pulse.k_threshold'),
     retention_months: config.get('pulse.retention_months'),
     contribution_window_days: config.get('pulse.contribution_window_days'),
+    contribution_grace_days: config.get('pulse.contribution_grace_days'),
+    digest_size: config.get('pulse.digest_size'),
     trending_cache_ttl_minutes: config.get('pulse.trending_cache_ttl_minutes'),
     rate_limits: config.get<Record<string, unknown>>('pulse.rate_limits'),
   },

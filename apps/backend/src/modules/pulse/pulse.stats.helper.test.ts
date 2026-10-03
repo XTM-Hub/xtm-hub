@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  PulseContributionStatus,
   PulseEventKind,
   PulseObjectType,
   PulsePrevalenceBucket,
@@ -506,5 +507,59 @@ describe('pulseStats', () => {
       // Then
       expect(decision.retryAfterSeconds).toBe(WINDOW - 2000 + BUCKET);
     });
+  });
+  describe('contributionState', () => {
+    const TODAY = '2026-10-03';
+
+    it.each([
+      {
+        last: null,
+        status: PulseContributionStatus.None,
+        readAccess: false,
+        until: null,
+      },
+      {
+        last: '2026-10-03',
+        status: PulseContributionStatus.Active,
+        readAccess: true,
+        until: '2026-10-16',
+      },
+      {
+        last: '2026-09-27',
+        status: PulseContributionStatus.Active,
+        readAccess: true,
+        until: '2026-10-10',
+      },
+      {
+        last: '2026-09-26',
+        status: PulseContributionStatus.Grace,
+        readAccess: true,
+        until: '2026-10-09',
+      },
+      {
+        last: '2026-09-20',
+        status: PulseContributionStatus.Grace,
+        readAccess: true,
+        until: '2026-10-03',
+      },
+      {
+        last: '2026-09-19',
+        status: PulseContributionStatus.Lapsed,
+        readAccess: false,
+        until: '2026-10-02',
+      },
+    ])(
+      'should be $status for a last contribution on $last',
+      ({ last, status, readAccess, until }) => {
+        expect(
+          PulseStats.contributionState({
+            lastContributionDay: last,
+            today: TODAY,
+            windowDays: 7,
+            graceDays: 14,
+          })
+        ).toEqual({ status, readAccess, readAccessUntil: until });
+      }
+    );
   });
 });

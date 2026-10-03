@@ -4,6 +4,7 @@ import {
   PulsePrevalenceBucket,
   PulseRegionBucket,
   PulseSectorBucket,
+  PulseTrendDirection,
 } from '../../__generated__/resolvers-types';
 
 // `k` is the hex at-rest key, `t` the object type: the identity of a key in
@@ -81,6 +82,23 @@ export interface PulsePublicationPolicy {
 export interface PulseStoredTrendingSnapshot {
   policy: PulsePublicationPolicy;
   items: PulseTrendingSnapshotItem[];
+}
+
+export interface PulseDigestCandidate extends PulseKeyRef {
+  platformsInWindow: number;
+  // Distinct platforms of the recent week and of the baseline weeks, newest first.
+  weekly: number[];
+}
+
+export interface PulseDigestSnapshotItem extends PulseKeyRef {
+  prevalence: PulsePrevalenceBucket;
+  trend: PulseTrendDirection;
+}
+
+export interface PulseStoredDigestSnapshot {
+  policy: PulsePublicationPolicy;
+  size: number;
+  items: PulseDigestSnapshotItem[];
 }
 
 export interface PulsePlatformTotal {

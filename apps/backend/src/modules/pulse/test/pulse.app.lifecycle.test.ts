@@ -237,7 +237,7 @@ describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
         day: RETENTION_DAY,
         records: [malware(LOCKBIT)],
       });
-      clock.setTime('2027-10-20T10:00:00.000Z');
+      clock.setTime('2027-10-28T10:00:00.000Z');
       await clients[4]!.push({
         day: clock.today(),
         records: [malware(LOCKBIT)],

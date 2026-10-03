@@ -76,6 +76,14 @@
       "__name": "PULSE_CONTRIBUTION_WINDOW_DAYS",
       "__format": "number"
     },
+    "contribution_grace_days": {
+      "__name": "PULSE_CONTRIBUTION_GRACE_DAYS",
+      "__format": "number"
+    },
+    "digest_size": {
+      "__name": "PULSE_DIGEST_SIZE",
+      "__format": "number"
+    },
     "trending_cache_ttl_minutes": {
       "__name": "PULSE_TRENDING_CACHE_TTL_MINUTES",
       "__format": "number"
@@ -103,6 +111,10 @@
       },
       "pulse_status": {
         "__name": "PULSE_RATE_LIMIT_PULSE_STATUS",
+        "__format": "number"
+      },
+      "pulse_digest": {
+        "__name": "PULSE_RATE_LIMIT_PULSE_DIGEST",
         "__format": "number"
       },
       "pulse_purge": {

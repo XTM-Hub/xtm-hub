@@ -12,11 +12,13 @@ import {
   PULSE_ACTIVITY_WINDOW_DAYS,
   PULSE_DAYS_PER_WEEK,
   PULSE_PLATFORMS_BUCKETS,
+  PULSE_TREND_BASELINE_WEEKS,
   PULSE_TREND_SERIES_WEEKS,
 } from './pulse.const';
 import {
   PulseAggregateIncrement,
   PulseBenchmarkTopItemRow,
+  PulseDigestCandidate,
   pulseKeyId,
   PulseKeyPresence,
   PulseKeyRef,
@@ -26,6 +28,7 @@ import {
   PulsePublicationPolicy,
   PulseRateLimitBucket,
   PulseSeenRange,
+  PulseStoredDigestSnapshot,
   PulseStoredTrendingSnapshot,
   PulseTotalIncrement,
   PulseTrendingCount,
@@ -610,6 +613,122 @@ export const PulseDomain = {
 
   deleteTrendingSnapshots: async (): Promise<void> => {
     await query('DELETE FROM "PulseTrendingSnapshot"');
+  },
+  // endregion
+
+  // region Digest
+  // The `limit` keys of the network that the most distinct platforms reported
+  // over the activity window, k at least, with their distinct platforms per
+  // week over the trend baseline (newest week first).
+  loadDigestCandidates: async ({
+    day,
+    kThreshold,
+    limit,
+  }: {
+    day: string;
+    kThreshold: number;
+    limit: number;
+  }): Promise<PulseDigestCandidate[]> => {
+    const weeks = PULSE_TREND_BASELINE_WEEKS + 1;
+    const rows = await query<
+      PulseKeyRef & { in_window: number; weeks: [number, number][] }
+    >(
+      `WITH top AS (
+         SELECT c.at_rest_key, c.object_type,
+                COUNT(DISTINCT c.pulse_platform_id)::int AS in_window
+         FROM "PulseContribution" c
+         WHERE c.day > ?::date - ?::int AND c.day <= ?::date
+         GROUP BY c.at_rest_key, c.object_type
+         HAVING COUNT(DISTINCT c.pulse_platform_id) >= ?
+         ORDER BY in_window DESC, c.at_rest_key, c.object_type
+         LIMIT ?
+       ),
+       weekly AS (
+         SELECT c.at_rest_key, c.object_type,
+                ((?::date - c.day) / ?::int)::int AS week,
+                COUNT(DISTINCT c.pulse_platform_id)::int AS platforms
+         FROM "PulseContribution" c
+         JOIN top ON top.at_rest_key = c.at_rest_key AND top.object_type = c.object_type
+         WHERE c.day > ?::date - ?::int AND c.day <= ?::date
+         GROUP BY c.at_rest_key, c.object_type, week
+       )
+       SELECT encode(top.at_rest_key, 'hex') AS k, top.object_type AS t, top.in_window,
+              COALESCE(
+                jsonb_agg(jsonb_build_array(w.week, w.platforms)) FILTER (WHERE w.week IS NOT NULL),
+                '[]'::jsonb
+              ) AS weeks
+       FROM top
+       LEFT JOIN weekly w ON w.at_rest_key = top.at_rest_key AND w.object_type = top.object_type
+       GROUP BY top.at_rest_key, top.object_type, top.in_window
+       ORDER BY top.in_window DESC, top.at_rest_key, top.object_type`,
+      [
+        day,
+        PULSE_ACTIVITY_WINDOW_DAYS,
+        day,
+        kThreshold,
+        limit,
+        day,
+        PULSE_DAYS_PER_WEEK,
+        day,
+        weeks * PULSE_DAYS_PER_WEEK,
+        day,
+      ]
+    );
+    return rows.map((row) => {
+      const weekly = Array.from({ length: weeks }, () => 0);
+      for (const [week, platforms] of row.weeks) {
+        if (week >= 0 && week < weeks) {
+          weekly[week] = platforms;
+        }
+      }
+      return { k: row.k, t: row.t, platformsInWindow: row.in_window, weekly };
+    });
+  },
+
+  loadDigestSnapshot: async (
+    day: string
+  ): Promise<
+    { computedAt: Date; stored: PulseStoredDigestSnapshot | null } | undefined
+  > => {
+    const [row] = await query<{ computed_at: Date; items: unknown }>(
+      `SELECT computed_at, items FROM "PulseDigestSnapshot" WHERE day = ?::date`,
+      [day]
+    );
+    if (!row) {
+      return undefined;
+    }
+    const stored = row.items as Partial<PulseStoredDigestSnapshot> | null;
+    const isStored =
+      !!stored &&
+      !!stored.policy &&
+      typeof stored.size === 'number' &&
+      Array.isArray(stored.items);
+    return {
+      computedAt: row.computed_at,
+      stored: isStored ? (stored as PulseStoredDigestSnapshot) : null,
+    };
+  },
+
+  saveDigestSnapshot: async ({
+    day,
+    computedAt,
+    stored,
+  }: {
+    day: string;
+    computedAt: Date;
+    stored: PulseStoredDigestSnapshot;
+  }): Promise<void> => {
+    await query(
+      `INSERT INTO "PulseDigestSnapshot" (day, computed_at, items)
+       VALUES (?::date, to_timestamp(?::float8 / 1000), ?::jsonb)
+       ON CONFLICT (day)
+       DO UPDATE SET computed_at = EXCLUDED.computed_at, items = EXCLUDED.items`,
+      [day, computedAt.getTime(), toJson(stored)]
+    );
+  },
+
+  deleteDigestSnapshots: async (): Promise<void> => {
+    await query('DELETE FROM "PulseDigestSnapshot"');
   },
   // endregion
 

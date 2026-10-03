@@ -67,6 +67,7 @@ export enum PulseOperation {
   PulseBenchmark = 'pulse_benchmark',
   PulseSalt = 'pulse_salt',
   PulseStatus = 'pulse_status',
+  PulseDigest = 'pulse_digest',
   PulsePurge = 'pulse_purge',
 }
 
@@ -82,8 +83,16 @@ export const PULSE_RATE_LIMIT_WINDOW_SECONDS: Record<PulseOperation, number> = {
   [PulseOperation.PulseBenchmark]: ONE_HOUR_SECONDS,
   [PulseOperation.PulseSalt]: ONE_HOUR_SECONDS,
   [PulseOperation.PulseStatus]: ONE_HOUR_SECONDS,
+  [PulseOperation.PulseDigest]: ONE_HOUR_SECONDS,
   [PulseOperation.PulsePurge]: 24 * ONE_HOUR_SECONDS,
 };
+
+// The preview digest: the most prevalent published keys of the network with
+// their prevalence and trend only, plus the sector trending of the last 7
+// days of which only the first ranks are named.
+export const PULSE_DIGEST_TRENDING_PERIOD = PulsePeriod.Last_7Days;
+export const PULSE_DIGEST_TRENDING_RANKS = 10;
+export const PULSE_DIGEST_TRENDING_NAMED_RANKS = 3;
 export const PULSE_RATE_LIMIT_BUCKET_SECONDS = 60;
 export const PULSE_RATE_LIMIT_MAX_WINDOW_SECONDS = Math.max(
   ...Object.values(PULSE_RATE_LIMIT_WINDOW_SECONDS)
@@ -119,4 +128,5 @@ export const PULSE_GRAPHQL_INT_MAX = 2147483647;
 export const PULSE_LOCK_PLATFORM = 'pulse-platform';
 export const PULSE_LOCK_RATE_LIMIT = 'pulse-rate-limit';
 export const PULSE_LOCK_TRENDING = 'pulse-trending';
+export const PULSE_LOCK_DIGEST = 'pulse-digest';
 export const PULSE_LOCK_SALT = 'pulse-salt';

@@ -19,6 +19,7 @@ import { mockPlatformConfig } from './test-platform-configuration.helper';
 const STABLE_KEY_HMAC_KEY = 'opencti-pulse-v1';
 
 export const PULSE_TABLES = [
+  'PulseDigestSnapshot',
   'PulseTrendingSnapshot',
   'PulseRateLimit',
   'PulsePlatformDailyTotal',

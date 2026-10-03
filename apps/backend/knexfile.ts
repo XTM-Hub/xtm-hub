@@ -109,7 +109,8 @@ type BaseDatabaseType =
   | 'PulseKeyContributor'
   | 'PulsePlatformDailyTotal'
   | 'PulseRateLimit'
-  | 'PulseTrendingSnapshot';
+  | 'PulseTrendingSnapshot'
+  | 'PulseDigestSnapshot';
 
 export type DatabaseType =
   | BaseDatabaseType

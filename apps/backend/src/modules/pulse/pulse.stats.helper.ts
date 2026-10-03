@@ -1,5 +1,6 @@
 import {
   PulseBenchmarkMetric,
+  PulseContributionStatus,
   PulseEventKind,
   PulseObjectType,
   PulsePrevalenceBucket,
@@ -20,6 +21,7 @@ import {
   PULSE_TREND_RISING_RATIO,
   PULSE_TREND_SERIES_WEEKS,
 } from './pulse.const';
+import { PulseDay } from './pulse.day.helper';
 import {
   PulsePlatformTotal,
   PulsePresence,
@@ -44,6 +46,12 @@ export interface PulseBenchmarkSummary {
   networkPlatforms: number;
 }
 
+export interface PulseContributionState {
+  status: PulseContributionStatus;
+  readAccess: boolean;
+  readAccessUntil: string | null;
+}
+
 const ROUNDING_DECIMALS = 4;
 
 const weeklyCountsFromMasks = (masks: readonly number[]): number[] =>
@@ -56,6 +64,52 @@ const metricKey = (objectType: PulseObjectType, eventKind: PulseEventKind) =>
   `${objectType}:${eventKind}`;
 
 export const PulseStats = {
+  // Reciprocity: a platform reads lookups, trending and benchmarks while its
+  // last contribution is within the grace period; inside the (shorter)
+  // contribution window it is an active contributor.
+  contributionState: ({
+    lastContributionDay,
+    today,
+    windowDays,
+    graceDays,
+  }: {
+    lastContributionDay: string | null;
+    today: string;
+    windowDays: number;
+    graceDays: number;
+  }): PulseContributionState => {
+    if (!lastContributionDay) {
+      return {
+        status: PulseContributionStatus.None,
+        readAccess: false,
+        readAccessUntil: null,
+      };
+    }
+    const readAccessUntil = PulseDay.addDays(
+      lastContributionDay,
+      graceDays - 1
+    );
+    if (lastContributionDay >= PulseDay.addDays(today, -(windowDays - 1))) {
+      return {
+        status: PulseContributionStatus.Active,
+        readAccess: true,
+        readAccessUntil,
+      };
+    }
+    if (today <= readAccessUntil) {
+      return {
+        status: PulseContributionStatus.Grace,
+        readAccess: true,
+        readAccessUntil,
+      };
+    }
+    return {
+      status: PulseContributionStatus.Lapsed,
+      readAccess: false,
+      readAccessUntil,
+    };
+  },
+
   platformsBucket: (count: number): string =>
     PULSE_PLATFORMS_BUCKETS.find((bucket) => count >= bucket.min)?.label ??
     PULSE_BELOW_SMALLEST_BUCKET_LABEL,

@@ -1,5 +1,6 @@
 import {
   PulseBenchmarkInput,
+  PulseDigestInput,
   PulseLookupInput,
   PulseObjectType,
   PulsePeriod,
@@ -32,6 +33,12 @@ export interface ValidatedTrendingInput {
   regionBucket: PulseRegionBucket | null;
   objectTypes: ReadonlySet<PulseObjectType> | null;
   first: number;
+}
+
+export interface ValidatedDigestInput {
+  day: string;
+  sectorBucket: PulseSectorBucket;
+  regionBucket: PulseRegionBucket | null;
 }
 
 const SECTOR_BUCKETS: ReadonlySet<string> = new Set(
@@ -194,5 +201,18 @@ export const PulseValidation = {
     PulseValidation.requestDay(input.day, now);
     assertPeriod(input.period);
     return input;
+  },
+
+  digestInput: (input: PulseDigestInput, now: Date): ValidatedDigestInput => {
+    PulseValidation.requestDay(input.day, now);
+    assertEnum('sector_bucket', input.sector_bucket, SECTOR_BUCKETS);
+    if (input.region_bucket) {
+      assertEnum('region_bucket', input.region_bucket, REGION_BUCKETS);
+    }
+    return {
+      day: input.day,
+      sectorBucket: input.sector_bucket,
+      regionBucket: input.region_bucket ?? null,
+    };
   },
 };

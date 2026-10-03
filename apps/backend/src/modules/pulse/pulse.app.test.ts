@@ -3,6 +3,7 @@ import { TestHelper } from '../../../tests/helper/test.helper';
 import { SERVICES } from '../../../tests/tests.const';
 import {
   PlatformConfigurationStatus,
+  PulseContributionStatus,
   PulseEventKind,
   PulseObjectType,
   PulsePeriod,
@@ -570,6 +571,10 @@ describe('pulseApp platform API', PULSE_INTEGRATION_SUITE, () => {
         contributors_bucket: '<5',
         read_access: false,
         last_contribution_day: null,
+        contribution_status: PulseContributionStatus.None,
+        read_access_until: null,
+        contribution_window_days: 7,
+        contribution_grace_days: 14,
       });
     });
 
@@ -588,6 +593,8 @@ describe('pulseApp platform API', PULSE_INTEGRATION_SUITE, () => {
       expect(status).toMatchObject({
         read_access: true,
         last_contribution_day: PULSE_TEST_YESTERDAY,
+        contribution_status: PulseContributionStatus.Active,
+        read_access_until: PulseDay.addDays(PULSE_TEST_YESTERDAY, 13),
       });
     });
   });
@@ -636,10 +643,10 @@ describe('pulseApp platform API', PULSE_INTEGRATION_SUITE, () => {
     );
 
     it.each([
-      { daysLater: 29, expectedCodes: [] },
-      { daysLater: 30, expectedCodes: [PulseErrorCode.ContributionRequired] },
+      { daysLater: 13, expectedCodes: [] },
+      { daysLater: 14, expectedCodes: [PulseErrorCode.ContributionRequired] },
     ])(
-      'should evaluate read access over 30 days ($daysLater days after the contribution)',
+      'should keep read access for the 14-day grace period ($daysLater days after the contribution)',
       async ({ daysLater, expectedCodes }) => {
         // Given
         const clock = usePulseClock();
@@ -677,7 +684,8 @@ describe('pulseApp platform API', PULSE_INTEGRATION_SUITE, () => {
       // Then
       expect(result.errors?.[0]?.extensions).toMatchObject({
         code: PulseErrorCode.RateLimited,
-        retry_after_seconds: 3600,
+        // The requests of the current minute bucket leave the window with its end.
+        retry_after_seconds: 3660,
       });
     });
 

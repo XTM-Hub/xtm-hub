@@ -3,6 +3,8 @@ import {
   PlatformIdentifier,
   PulseBenchmarkInput,
   PulseBenchmarkResult,
+  PulseDigest,
+  PulseDigestInput,
   PulseLookupInput,
   PulseLookupResult,
   PulsePurgeResult,
@@ -20,6 +22,10 @@ import { PlatformConfigurationDomain } from '../registration/platform-configurat
 import { PulseConfig, PulseSecrets, PulseSettings } from './pulse.config';
 import {
   PULSE_ACTIVITY_WINDOW_DAYS,
+  PULSE_DIGEST_TRENDING_NAMED_RANKS,
+  PULSE_DIGEST_TRENDING_PERIOD,
+  PULSE_DIGEST_TRENDING_RANKS,
+  PULSE_LOCK_DIGEST,
   PULSE_LOCK_PLATFORM,
   PULSE_LOCK_RATE_LIMIT,
   PULSE_LOCK_TRENDING,
@@ -49,12 +55,14 @@ import {
 } from './pulse.metrics';
 import { PulseStats } from './pulse.stats.helper';
 import {
+  PulseDigestSnapshotItem,
   pulseKeyId,
   PulseKeyPresence,
   PulseKeyRef,
   PulseLedgerRecord,
   PulsePlatformRecord,
   PulsePublicationPolicy,
+  PulseStoredDigestSnapshot,
   PulseTrendingSnapshotItem,
 } from './pulse.types';
 import {
@@ -267,14 +275,28 @@ const authorize = async (
   };
 };
 
+const contributionStateOf = (
+  caller: PulseCaller,
+  platform: PulsePlatformRecord | undefined
+) =>
+  PulseStats.contributionState({
+    lastContributionDay: platform?.last_contribution_day ?? null,
+    today: caller.today,
+    windowDays: caller.settings.contributionWindowDays,
+    graceDays: caller.settings.contributionGraceDays,
+  });
+
+// Reciprocity is enforced here, never only in OpenCTI: lookups, trending and
+// benchmarks need a contribution within the grace period; the salt and the
+// digest stay open to every registered platform.
 const requireReadAccess = async (
   caller: PulseCaller
 ): Promise<PulsePlatformRecord> => {
-  const windowDays = caller.settings.contributionWindowDays;
   const platform = await PulseDomain.loadPlatformByPseudonym(caller.pseudonym);
-  const windowStart = PulseDay.addDays(caller.today, -(windowDays - 1));
-  if (!platform || platform.last_contribution_day < windowStart) {
-    throw PulseErrors.contributionRequired(windowDays);
+  if (!platform || !contributionStateOf(caller, platform).readAccess) {
+    throw PulseErrors.contributionRequired(
+      caller.settings.contributionGraceDays
+    );
   }
   return platform;
 };
@@ -477,6 +499,88 @@ const loadTrendingItems = async ({
   );
 };
 
+const computeDigestItems = async ({
+  settings,
+  day,
+}: {
+  settings: PulseSettings;
+  day: string;
+}): Promise<PulseDigestSnapshotItem[]> => {
+  const candidates = await PulseDomain.loadDigestCandidates({
+    day,
+    kThreshold: settings.kThreshold,
+    limit: settings.digestSize,
+  });
+  if (candidates.length === 0) {
+    return [];
+  }
+  const activeContributors = await PulseDomain.countActiveContributors({
+    fromDay: activityWindowStart(day),
+    toDay: day,
+  });
+  return candidates.map((candidate) => ({
+    k: candidate.k,
+    t: candidate.t,
+    prevalence: PulseStats.prevalenceBucket({
+      platformsInWindow: candidate.platformsInWindow,
+      activeContributors,
+      kThreshold: settings.kThreshold,
+    }),
+    trend: PulseStats.weeklyTrend(candidate.weekly, settings.kThreshold),
+  }));
+};
+
+// One digest per day for the whole network, computed once per TTL under a
+// lock like the trending snapshots.
+const loadDigestItems = async ({
+  settings,
+  day,
+  now,
+}: {
+  settings: PulseSettings;
+  day: string;
+  now: Date;
+}): Promise<PulseDigestSnapshotItem[]> => {
+  const ttlMs = settings.trendingCacheTtlMinutes * 60 * 1000;
+  const policy: PulsePublicationPolicy = {
+    version: PULSE_PUBLICATION_POLICY_VERSION,
+    kThreshold: settings.kThreshold,
+  };
+  const isFresh = (
+    snapshot:
+      { computedAt: Date; stored: PulseStoredDigestSnapshot | null } | undefined
+  ): snapshot is { computedAt: Date; stored: PulseStoredDigestSnapshot } =>
+    !!snapshot?.stored &&
+    snapshot.stored.policy.version === policy.version &&
+    snapshot.stored.policy.kThreshold === policy.kThreshold &&
+    snapshot.stored.size === settings.digestSize &&
+    now.getTime() - snapshot.computedAt.getTime() < ttlMs &&
+    snapshot.computedAt.getTime() <= now.getTime();
+
+  const cached = await PulseDomain.loadDigestSnapshot(day);
+  if (isFresh(cached)) {
+    return cached.stored.items;
+  }
+  return withAdvisoryLock(PULSE_LOCK_DIGEST, day, async () => {
+    const current = await PulseDomain.loadDigestSnapshot(day);
+    if (isFresh(current)) {
+      return current.stored.items;
+    }
+    const items = await computeDigestItems({ settings, day });
+    await PulseDomain.saveDigestSnapshot({
+      day,
+      computedAt: now,
+      stored: { policy, size: settings.digestSize, items },
+    });
+    return items;
+  });
+};
+
+const deleteSnapshots = async (): Promise<void> => {
+  await PulseDomain.deleteTrendingSnapshots();
+  await PulseDomain.deleteDigestSnapshots();
+};
+
 const purgeNextContributionDay = async (
   platformId: number
 ): Promise<number | null> => {
@@ -522,7 +626,7 @@ const purgePlatform = async (pseudonym: string): Promise<number> => {
     await PulseDomain.deletePlatform(platform.id);
     return lateRows;
   });
-  await PulseDomain.deleteTrendingSnapshots();
+  await deleteSnapshots();
   return deleted;
 };
 
@@ -557,18 +661,74 @@ export const PulseApp = {
         fromDay: activityWindowStart(caller.today),
         toDay: caller.today,
       });
-      const readWindowStart = PulseDay.addDays(
-        caller.today,
-        -(caller.settings.contributionWindowDays - 1)
-      );
+      const contribution = contributionStateOf(caller, platform);
       return {
         day: caller.today,
         k_threshold: caller.settings.kThreshold,
         retention_months: caller.settings.retentionMonths,
         contributors_bucket: PulseStats.platformsBucket(activeContributors),
-        read_access:
-          !!platform && platform.last_contribution_day >= readWindowStart,
+        read_access: contribution.readAccess,
         last_contribution_day: platform?.last_contribution_day ?? null,
+        contribution_status: contribution.status,
+        read_access_until: contribution.readAccessUntil,
+        contribution_window_days: caller.settings.contributionWindowDays,
+        contribution_grace_days: caller.settings.contributionGraceDays,
+      };
+    }),
+
+  // The preview: open to every registered platform, contributing or not, and
+  // it reads nothing from the caller but its sector and region buckets.
+  pulseDigest: (
+    request: PulseRequest,
+    input: PulseDigestInput
+  ): Promise<PulseDigest> =>
+    runOperation(PulseOperation.PulseDigest, async () => {
+      const caller = await authorize(request, PulseOperation.PulseDigest);
+      const validated = PulseValidation.digestInput(input, caller.now);
+      const salt = await loadOrCreateSalt(validated.day);
+      const toHash = (k: string) =>
+        PulseCrypto.atRestKeyToTransportHash(k, salt, caller.secrets.atRestKey);
+      const items = await loadDigestItems({
+        settings: caller.settings,
+        day: validated.day,
+        now: caller.now,
+      });
+      const trending = (
+        await loadTrendingItems({
+          settings: caller.settings,
+          input: {
+            day: validated.day,
+            period: PULSE_DIGEST_TRENDING_PERIOD,
+            sectorBucket: validated.sectorBucket,
+            regionBucket: validated.regionBucket,
+            objectTypes: null,
+            first: PULSE_DIGEST_TRENDING_RANKS,
+          },
+          now: caller.now,
+        })
+      ).slice(0, PULSE_DIGEST_TRENDING_RANKS);
+      const named = trending.slice(0, PULSE_DIGEST_TRENDING_NAMED_RANKS);
+      return {
+        day: validated.day,
+        sector_bucket: validated.sectorBucket,
+        region_bucket: validated.regionBucket,
+        items: items.map((item) => ({
+          hash: toHash(item.k),
+          object_type: item.t,
+          prevalence_bucket: item.prevalence,
+          trend: item.trend,
+        })),
+        trending: {
+          period: PULSE_DIGEST_TRENDING_PERIOD,
+          items: named.map((item, index) => ({
+            rank: index + 1,
+            hash: toHash(item.k),
+            object_type: item.t,
+            prevalence_bucket: item.prevalence,
+            trend: PulseStats.trendDirection(item.recent, item.baseline),
+          })),
+          locked_count: trending.length - named.length,
+        },
       };
     }),
 
@@ -856,7 +1016,7 @@ export const PulseApp = {
     await PulseDomain.deleteUnpublishedKeys();
     deleted.PulsePlatform = await PulseDomain.deleteInactivePlatforms(cutoff);
     await PulseDomain.refreshFirstContributionDays(cutoff);
-    await PulseDomain.deleteTrendingSnapshots();
+    await deleteSnapshots();
     for (const [table, count] of Object.entries(deleted)) {
       pulseRetentionDeletedRowsCounter.inc({ table }, count);
     }

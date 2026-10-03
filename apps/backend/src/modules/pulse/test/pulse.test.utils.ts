@@ -6,6 +6,7 @@ import { TestHelper } from '../../../../tests/helper/test.helper';
 import { contextSimpleUserFiligran2 } from '../../../../tests/tests.const';
 import {
   PulseBenchmarkResult,
+  PulseDigest,
   PulseEventKind,
   PulseLookupResult,
   PulseObjectType,
@@ -57,6 +58,7 @@ export const PULSE_STATUS_QUERY = `
   query PulseStatus {
     pulseStatus {
       day k_threshold retention_months contributors_bucket read_access last_contribution_day
+      contribution_status read_access_until contribution_window_days contribution_grace_days
     }
   }
 `;
@@ -91,6 +93,16 @@ export const PULSE_BENCHMARK_QUERY = `
       period sector_bucket region_bucket sector_platforms_bucket
       metrics { object_type event_kind platform_count sector_median network_median }
       top_items { hash object_type platform_count sector_median ratio }
+    }
+  }
+`;
+
+export const PULSE_DIGEST_QUERY = `
+  query PulseDigest($input: PulseDigestInput!) {
+    pulseDigest(input: $input) {
+      day sector_bucket region_bucket
+      items { hash object_type prevalence_bucket trend }
+      trending { period locked_count items { rank hash object_type prevalence_bucket trend } }
     }
   }
 `;
@@ -307,6 +319,23 @@ export const pulseClient = (platform: TestPulsePlatform) => {
       platform,
     });
 
+  const digestResult = ({
+    day,
+    sector = PulseSectorBucket.Finance,
+    region = null,
+  }: {
+    day: string;
+    sector?: PulseSectorBucket;
+    region?: PulseRegionBucket | null;
+  }): Promise<PulseOperationResult<{ pulseDigest: PulseDigest }>> =>
+    executePulse<{ pulseDigest: PulseDigest }>({
+      query: PULSE_DIGEST_QUERY,
+      variables: {
+        input: { day, sector_bucket: sector, region_bucket: region },
+      },
+      platform,
+    });
+
   const purgeResult = (
     platformId: string = platform.platformId
   ): Promise<PulseOperationResult<{ pulsePurge: PulsePurgeResult }>> =>
@@ -339,6 +368,11 @@ export const pulseClient = (platform: TestPulsePlatform) => {
     statusResult,
     status: async (): Promise<PulseStatus> =>
       requireData(await statusResult()).pulseStatus,
+    digestResult,
+    digest: async (
+      options: Parameters<typeof digestResult>[0]
+    ): Promise<PulseDigest> =>
+      requireData(await digestResult(options)).pulseDigest,
     purgeResult,
     purge: async (): Promise<PulsePurgeResult> =>
       requireData(await purgeResult()).pulsePurge,

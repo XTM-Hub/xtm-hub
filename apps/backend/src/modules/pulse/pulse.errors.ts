@@ -32,10 +32,10 @@ export const PulseErrors = {
     pulseError(PulseErrorCode.Forbidden, message),
   badUserInput: (message: string): GraphQLError =>
     pulseError(PulseErrorCode.BadUserInput, message),
-  contributionRequired: (windowDays: number): GraphQLError =>
+  contributionRequired: (graceDays: number): GraphQLError =>
     pulseError(
       PulseErrorCode.ContributionRequired,
-      `Reading Threat Pulse requires a contribution over the last ${windowDays} days`
+      `Reading Threat Pulse requires a contribution over the last ${graceDays} days; the digest stays available`
     ),
   rateLimited: (retryAfterSeconds: number): GraphQLError =>
     pulseError(

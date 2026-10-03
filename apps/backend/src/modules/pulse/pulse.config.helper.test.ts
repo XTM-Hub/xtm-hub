@@ -19,7 +19,9 @@ const makeRawConfig = (
   platform_key: PLATFORM_KEY,
   k_threshold: 5,
   retention_months: 13,
-  contribution_window_days: 30,
+  contribution_window_days: 7,
+  contribution_grace_days: 14,
+  digest_size: 5000,
   trending_cache_ttl_minutes: 60,
   rate_limits: {
     push_pulse: 120,
@@ -28,6 +30,7 @@ const makeRawConfig = (
     pulse_benchmark: 30,
     pulse_salt: 120,
     pulse_status: 120,
+    pulse_digest: 24,
     pulse_purge: 5,
   },
   ...overrides,
@@ -44,7 +47,9 @@ describe('resolvePulseConfig', () => {
       settings: {
         kThreshold: 5,
         retentionMonths: 13,
-        contributionWindowDays: 30,
+        contributionWindowDays: 7,
+        contributionGraceDays: 14,
+        digestSize: 5000,
         trendingCacheTtlMinutes: 60,
         rateLimits: {
           push_pulse: 120,
@@ -53,6 +58,7 @@ describe('resolvePulseConfig', () => {
           pulse_benchmark: 30,
           pulse_salt: 120,
           pulse_status: 120,
+          pulse_digest: 24,
           pulse_purge: 5,
         },
       },
@@ -176,6 +182,21 @@ describe('resolvePulseConfig', () => {
     {
       description: 'a contribution window above one year',
       raw: makeRawConfig({ contribution_window_days: 366 }),
+    },
+    {
+      description: 'a grace period shorter than the contribution window',
+      raw: makeRawConfig({
+        contribution_window_days: 14,
+        contribution_grace_days: 7,
+      }),
+    },
+    {
+      description: 'a digest below 100 keys',
+      raw: makeRawConfig({ digest_size: 99 }),
+    },
+    {
+      description: 'a digest above 20000 keys',
+      raw: makeRawConfig({ digest_size: 20_001 }),
     },
     {
       description: 'a missing rate limit',

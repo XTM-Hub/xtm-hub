@@ -315,4 +315,46 @@ describe('pulseValidation', () => {
       expect(code).toBe(PulseErrorCode.BadUserInput);
     });
   });
+
+  describe('digestInput', () => {
+    it('should keep the sector and default the region to every region', () => {
+      // When
+      const validated = PulseValidation.digestInput(
+        { day: YESTERDAY, sector_bucket: PulseSectorBucket.Healthcare },
+        NOW
+      );
+
+      // Then
+      expect(validated).toEqual({
+        day: YESTERDAY,
+        sectorBucket: PulseSectorBucket.Healthcare,
+        regionBucket: null,
+      });
+    });
+
+    it.each([
+      {
+        description: 'a day outside today and yesterday',
+        input: { day: '2026-09-30', sector_bucket: PulseSectorBucket.Finance },
+      },
+      {
+        description: 'an unknown sector',
+        input: { day: TODAY, sector_bucket: 'oil' as PulseSectorBucket },
+      },
+      {
+        description: 'an unknown region',
+        input: {
+          day: TODAY,
+          sector_bucket: PulseSectorBucket.Finance,
+          region_bucket: 'atlantis' as PulseRegionBucket,
+        },
+      },
+    ])('should reject $description', ({ input }) => {
+      // When
+      const code = errorCodeOf(() => PulseValidation.digestInput(input, NOW));
+
+      // Then
+      expect(code).toBe(PulseErrorCode.BadUserInput);
+    });
+  });
 });
