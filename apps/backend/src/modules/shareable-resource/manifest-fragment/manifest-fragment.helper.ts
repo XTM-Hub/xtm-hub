@@ -107,7 +107,11 @@ export const ManifestFragmentHelper = {
 
   /**
    * Declared coverage (manifest or admin) of an earlier version of the same
-   * connector: the current latest first, then the highest version.
+   * connector. The current latest version is authoritative as soon as it
+   * stores coverage: an inferred state there (an admin cleared the declared
+   * coverage, or none was ever declared) is kept, older versions are never
+   * used to bring a removed declaration back. Older versions, highest first,
+   * are only searched when the current latest stores no coverage at all.
    */
   getDeclaredCoverageFromExisting: ({
     currentLatestConnector,
@@ -116,20 +120,26 @@ export const ManifestFragmentHelper = {
     currentLatestConnector?: ConnectorCoverageSnapshot;
     existingBatchConnectors: ConnectorCoverageSnapshot[];
   }): StoredIntegrationCoverage | null => {
+    const isDeclared = (
+      stored: StoredIntegrationCoverage | null
+    ): stored is StoredIntegrationCoverage =>
+      !!stored &&
+      !stored.inferred &&
+      IntegrationCoverageHelper.hasValues(stored);
+
+    const latest = currentLatestConnector
+      ? IntegrationCoverageHelper.parseStoredCoverage(currentLatestConnector)
+      : null;
+    if (latest) {
+      return isDeclared(latest) ? latest : null;
+    }
+
     const byVersionDesc = [...existingBatchConnectors].sort((left, right) =>
       (right.version_padded ?? '').localeCompare(left.version_padded ?? '')
     );
-    const candidates = currentLatestConnector
-      ? [currentLatestConnector, ...byVersionDesc]
-      : byVersionDesc;
-
-    for (const connector of candidates) {
+    for (const connector of byVersionDesc) {
       const stored = IntegrationCoverageHelper.parseStoredCoverage(connector);
-      if (
-        stored &&
-        !stored.inferred &&
-        IntegrationCoverageHelper.hasValues(stored)
-      ) {
+      if (isDeclared(stored)) {
         return stored;
       }
     }

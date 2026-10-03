@@ -378,6 +378,42 @@ describe('getDeclaredCoverageFromExisting', () => {
     expect(coverage?.sectors).toEqual(['Finance']);
   });
 
+  it('should keep the coverage an admin cleared on the current latest connector', () => {
+    // Given - the latest version returned to inference, an older one still declares Finance
+    const currentLatestConnector = inferredSnapshot;
+    const existingBatchConnectors = [
+      declaredSnapshot(['Finance'], '007.260308.000'),
+    ];
+
+    // When
+    const coverage = ManifestFragmentHelper.getDeclaredCoverageFromExisting({
+      currentLatestConnector,
+      existingBatchConnectors,
+    });
+
+    // Then
+    expect(coverage).toBeNull();
+  });
+
+  it('should search older versions when the current latest connector stores no coverage', () => {
+    // Given
+    const currentLatestConnector: ConnectorCoverageSnapshot = {
+      version_padded: '007.260310.000',
+    };
+    const existingBatchConnectors = [
+      declaredSnapshot(['Finance'], '007.260308.000'),
+    ];
+
+    // When
+    const coverage = ManifestFragmentHelper.getDeclaredCoverageFromExisting({
+      currentLatestConnector,
+      existingBatchConnectors,
+    });
+
+    // Then
+    expect(coverage?.sectors).toEqual(['Finance']);
+  });
+
   it.each([
     ['no existing version', []],
     ['only inferred coverage', [inferredSnapshot]],
