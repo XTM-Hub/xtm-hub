@@ -10,8 +10,8 @@ import {
 } from './pulse.const';
 import { PulsePresenceSummary, PulseStats } from './pulse.stats.helper';
 import {
-  pulseKeyId,
   PulseAggregateIncrement,
+  pulseKeyId,
   PulseKeyRef,
   PulseLedgerRecord,
   PulseSeenRange,
@@ -64,14 +64,13 @@ export const PulseHelper = {
   sortLedgerRecords: (
     records: readonly PulseLedgerRecord[]
   ): PulseLedgerRecord[] =>
-    [...records].sort(
-      (a, b) => compareKeyRefs(a, b) || a.e.localeCompare(b.e)
-    ),
+    [...records].sort((a, b) => compareKeyRefs(a, b) || a.e.localeCompare(b.e)),
 
   uniqueKeyRefs: (refs: readonly PulseKeyRef[]): PulseKeyRef[] =>
     PulseHelper.sortKeyRefs([
-      ...new Map(refs.map(({ k, t }) => [pulseKeyId({ k, t }), { k, t }]))
-        .values(),
+      ...new Map(
+        refs.map(({ k, t }) => [pulseKeyId({ k, t }), { k, t }])
+      ).values(),
     ]),
 
   // `existingTupleKeys` holds the keys this platform already reported for the
@@ -130,9 +129,7 @@ export const PulseHelper = {
       })
       .sort(
         (a, b) =>
-          b.growth - a.growth ||
-          b.recent - a.recent ||
-          compareKeyRefs(a, b)
+          b.growth - a.growth || b.recent - a.recent || compareKeyRefs(a, b)
       );
     const keptPerType = new Map<PulseObjectType, number>();
     return ranked.filter((item) => {

@@ -106,8 +106,16 @@ export const PulseValidation = {
     const seen = new Set<string>();
     input.records.forEach((record, index) => {
       assertHash(`records[${index}].hash`, record.hash);
-      assertEnum(`records[${index}].object_type`, record.object_type, OBJECT_TYPES);
-      assertEnum(`records[${index}].event_kind`, record.event_kind, EVENT_KINDS);
+      assertEnum(
+        `records[${index}].object_type`,
+        record.object_type,
+        OBJECT_TYPES
+      );
+      assertEnum(
+        `records[${index}].event_kind`,
+        record.event_kind,
+        EVENT_KINDS
+      );
       assertInRange(
         `records[${index}].count`,
         record.count,
@@ -134,9 +142,7 @@ export const PulseValidation = {
       PULSE_MIN_LOOKUP_HASHES,
       PULSE_MAX_LOOKUP_HASHES
     );
-    input.hashes.forEach((hash, index) =>
-      assertHash(`hashes[${index}]`, hash)
-    );
+    input.hashes.forEach((hash, index) => assertHash(`hashes[${index}]`, hash));
     return input;
   },
 

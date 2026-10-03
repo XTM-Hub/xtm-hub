@@ -46,8 +46,7 @@ export const errorLoggingPlugin = (): ApolloServerPlugin<Context> => ({
 
     return {
       async didEncounterErrors(requestContext) {
-        const { errors, operationName, contextValue, request } =
-          requestContext;
+        const { errors, operationName, contextValue, request } = requestContext;
 
         errors.forEach((error) => {
           const logLevel: ErrorLogLevel =

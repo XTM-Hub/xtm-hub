@@ -22,9 +22,9 @@ import {
   PULSE_STATUS_QUERY,
   PULSE_TEST_TODAY,
   PULSE_TEST_YESTERDAY,
-  PUSH_PULSE_MUTATION,
   pulseClient,
   PulseTestClient,
+  PUSH_PULSE_MUTATION,
   usePulseClock,
 } from './test/pulse.test.utils';
 
@@ -78,7 +78,10 @@ describe('pulseApp platform API', PULSE_INTEGRATION_SUITE, () => {
       // When
       const result = await executePulse({
         query: PULSE_STATUS_QUERY,
-        platform: { ...platform, token: '00000000-0000-4000-8000-000000000000' },
+        platform: {
+          ...platform,
+          token: '00000000-0000-4000-8000-000000000000',
+        },
       });
 
       // Then
@@ -257,7 +260,9 @@ describe('pulseApp platform API', PULSE_INTEGRATION_SUITE, () => {
       // Given
       const first = await registerClient();
       const second = await registerClient();
-      const records = [{ objectType: PulseObjectType.Indicator, value: IP_VALUE }];
+      const records = [
+        { objectType: PulseObjectType.Indicator, value: IP_VALUE },
+      ];
 
       // When
       await first.push({ day: PULSE_TEST_TODAY, records });
@@ -270,7 +275,9 @@ describe('pulseApp platform API', PULSE_INTEGRATION_SUITE, () => {
     it('should link the same value pushed on two days under two salts', async () => {
       // Given
       const client = await registerClient();
-      const records = [{ objectType: PulseObjectType.Indicator, value: IP_VALUE }];
+      const records = [
+        { objectType: PulseObjectType.Indicator, value: IP_VALUE },
+      ];
 
       // When
       await client.push({ day: PULSE_TEST_YESTERDAY, records });

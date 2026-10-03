@@ -386,9 +386,7 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
         });
 
         // Then
-        expect(trending.items.map((item) => item.hash)).toEqual(
-          expectedHashes
-        );
+        expect(trending.items.map((item) => item.hash)).toEqual(expectedHashes);
       }
     );
 
@@ -528,7 +526,9 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
         sector: benchmark.sector_bucket,
         region: benchmark.region_bucket,
         sectorPlatforms: benchmark.sector_platforms_bucket,
-        metrics: benchmark.metrics.filter((metric) => metric.platform_count > 0),
+        metrics: benchmark.metrics.filter(
+          (metric) => metric.platform_count > 0
+        ),
         topItems: benchmark.top_items,
       }).toEqual({
         sector: PulseSectorBucket.Finance,

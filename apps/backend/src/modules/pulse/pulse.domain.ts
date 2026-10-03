@@ -14,9 +14,9 @@ import {
   PULSE_TREND_SERIES_WEEKS,
 } from './pulse.const';
 import {
-  pulseKeyId,
   PulseAggregateIncrement,
   PulseBenchmarkTopItemRow,
+  pulseKeyId,
   PulseKeyPresence,
   PulseKeyRef,
   PulseLedgerRecord,
@@ -596,7 +596,9 @@ export const PulseDomain = {
     kThreshold: number;
     limit: number;
   }): Promise<PulseBenchmarkTopItemRow[]> => {
-    const rows = await query<PulseKeyRef & { my_count: number; median: number }>(
+    const rows = await query<
+      PulseKeyRef & { my_count: number; median: number }
+    >(
       `WITH mine AS (
          SELECT c.at_rest_key, c.object_type, SUM(c.event_count)::float8 AS my_count
          FROM "PulseContribution" c
@@ -820,7 +822,8 @@ export const PulseDomain = {
     day,
     batchSize,
   }: {
-    table: 'PulseContribution' | 'PulseDailyAggregate' | 'PulsePlatformDailyTotal';
+    table:
+      'PulseContribution' | 'PulseDailyAggregate' | 'PulsePlatformDailyTotal';
     day: string;
     batchSize: number;
   }): Promise<number> => {

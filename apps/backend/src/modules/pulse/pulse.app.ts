@@ -293,8 +293,11 @@ const recordContributions = async ({
   input: PushPulseInput;
   records: readonly PulseLedgerRecord[];
 }): Promise<void> => {
-  const { day, sector_bucket: sectorBucket, region_bucket: regionBucket } =
-    input;
+  const {
+    day,
+    sector_bucket: sectorBucket,
+    region_bucket: regionBucket,
+  } = input;
   const platformId = await PulseDomain.upsertPlatformContribution({
     pseudonym,
     sectorBucket,
@@ -828,7 +831,9 @@ export const PulseApp = {
     logApp.info('[Pulse] Retention applied', { cutoff, deleted });
   },
 
-  cleanRateLimitBuckets: async (now: Date = PulseClock.now()): Promise<number> => {
+  cleanRateLimitBuckets: async (
+    now: Date = PulseClock.now()
+  ): Promise<number> => {
     const nowSeconds = Math.floor(now.getTime() / 1000);
     return PulseDomain.deleteRateLimitBucketsBefore(
       nowSeconds - PULSE_RATE_LIMIT_MAX_WINDOW_SECONDS

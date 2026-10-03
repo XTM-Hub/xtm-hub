@@ -150,7 +150,9 @@ describe('pulse resolver', () => {
       calls: vi.mocked(PulseApp.pulsePurge).mock.calls,
     }).toEqual({
       result: { success: true, deleted_records: 12 },
-      calls: [[{ platformId: PLATFORM_ID, token: PLATFORM_TOKEN }, PLATFORM_ID]],
+      calls: [
+        [{ platformId: PLATFORM_ID, token: PLATFORM_TOKEN }, PLATFORM_ID],
+      ],
     });
   });
 });

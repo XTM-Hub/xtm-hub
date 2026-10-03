@@ -244,10 +244,7 @@ describe('pulseCrypto', () => {
     it('should reject a key that is not an AES-128 or AES-256 key', () => {
       // When
       const call = () =>
-        PulseCrypto.stableKeyToAtRestKey(
-          Buffer.alloc(16),
-          Buffer.alloc(24)
-        );
+        PulseCrypto.stableKeyToAtRestKey(Buffer.alloc(16), Buffer.alloc(24));
 
       // Then
       expect(call).toThrow('Unsupported AES key length');

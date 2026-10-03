@@ -75,16 +75,15 @@ export const PULSE_OPERATIONS: readonly PulseOperation[] =
 
 const ONE_HOUR_SECONDS = 60 * 60;
 
-export const PULSE_RATE_LIMIT_WINDOW_SECONDS: Record<PulseOperation, number> =
-  {
-    [PulseOperation.PushPulse]: ONE_HOUR_SECONDS,
-    [PulseOperation.PulseLookup]: ONE_HOUR_SECONDS,
-    [PulseOperation.PulseTrending]: ONE_HOUR_SECONDS,
-    [PulseOperation.PulseBenchmark]: ONE_HOUR_SECONDS,
-    [PulseOperation.PulseSalt]: ONE_HOUR_SECONDS,
-    [PulseOperation.PulseStatus]: ONE_HOUR_SECONDS,
-    [PulseOperation.PulsePurge]: 24 * ONE_HOUR_SECONDS,
-  };
+export const PULSE_RATE_LIMIT_WINDOW_SECONDS: Record<PulseOperation, number> = {
+  [PulseOperation.PushPulse]: ONE_HOUR_SECONDS,
+  [PulseOperation.PulseLookup]: ONE_HOUR_SECONDS,
+  [PulseOperation.PulseTrending]: ONE_HOUR_SECONDS,
+  [PulseOperation.PulseBenchmark]: ONE_HOUR_SECONDS,
+  [PulseOperation.PulseSalt]: ONE_HOUR_SECONDS,
+  [PulseOperation.PulseStatus]: ONE_HOUR_SECONDS,
+  [PulseOperation.PulsePurge]: 24 * ONE_HOUR_SECONDS,
+};
 export const PULSE_RATE_LIMIT_BUCKET_SECONDS = 60;
 export const PULSE_RATE_LIMIT_MAX_WINDOW_SECONDS = Math.max(
   ...Object.values(PULSE_RATE_LIMIT_WINDOW_SECONDS)

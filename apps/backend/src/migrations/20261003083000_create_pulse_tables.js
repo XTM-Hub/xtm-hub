@@ -57,7 +57,11 @@ export async function up(knex) {
         'sector_bucket',
         'region_bucket',
       ]);
-      table.check('?? > 0', ['event_count'], 'pulse_contribution_event_count_positive');
+      table.check(
+        '?? > 0',
+        ['event_count'],
+        'pulse_contribution_event_count_positive'
+      );
     });
   }
   // Lookups, trending and benchmark medians read the ledger by key over a day

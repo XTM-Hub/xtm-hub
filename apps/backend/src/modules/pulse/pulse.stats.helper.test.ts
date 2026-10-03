@@ -320,7 +320,11 @@ describe('pulseStats', () => {
             metric.object_type === PulseObjectType.Indicator &&
             metric.event_kind === PulseEventKind.Sighted
         )
-      ).toMatchObject({ platform_count: 8, sector_median: 0, network_median: 0 });
+      ).toMatchObject({
+        platform_count: 8,
+        sector_median: 0,
+        network_median: 0,
+      });
     });
 
     it('should compute the sector median over the sector platforms only', () => {
