@@ -352,12 +352,14 @@ export const IntegrationCoverageDomain = {
         .whereIn('id', documentIds)
         .select('id')
         .forUpdate();
-      const declaredIds = new Set<string>(
+      const declaredRows: Pick<DocumentMetadata, 'document_id'>[] =
         await db<DocumentMetadata>('Document_Metadata')
           .whereIn('document_id', documentIds)
           .andWhere('key', DocumentMetadataKeyCode.CoverageInferred)
           .andWhere('value', 'false')
-          .pluck('document_id')
+          .select('document_id');
+      const declaredIds = new Set<string>(
+        declaredRows.map(({ document_id }) => document_id)
       );
       const writable = inferredUpdates.filter(
         ({ documentId }) => !declaredIds.has(documentId)
