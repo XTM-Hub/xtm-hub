@@ -1947,6 +1947,7 @@ export type Query = {
   documentFacets?: Maybe<Facet>;
   documents: DocumentConnection;
   epics?: Maybe<EpicConnection>;
+  integrationCoverageObjectTypes: Array<Scalars['String']['output']>;
   integrationsByCoverage: IntegrationCoverageSearchResult;
   isPlatformRegistered: IsPlatformRegisteredResponse;
   lastDeployedOverview: LastDeployedOverview;
@@ -4683,6 +4684,7 @@ export type QueryResolvers<ContextType = PortalContext, ParentType extends Resol
   documentFacets?: Resolver<Maybe<ResolversTypes['Facet']>, ParentType, ContextType, RequireFields<QueryDocumentFacetsArgs, 'input'>>;
   documents?: Resolver<ResolversTypes['DocumentConnection'], ParentType, ContextType, RequireFields<QueryDocumentsArgs, 'first' | 'orderBy' | 'orderMode' | 'serviceInstanceId'>>;
   epics?: Resolver<Maybe<ResolversTypes['EpicConnection']>, ParentType, ContextType, RequireFields<QueryEpicsArgs, 'first' | 'orderBy' | 'orderMode'>>;
+  integrationCoverageObjectTypes?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
   integrationsByCoverage?: Resolver<ResolversTypes['IntegrationCoverageSearchResult'], ParentType, ContextType, RequireFields<QueryIntegrationsByCoverageArgs, 'input'>>;
   isPlatformRegistered?: Resolver<ResolversTypes['IsPlatformRegisteredResponse'], ParentType, ContextType, RequireFields<QueryIsPlatformRegisteredArgs, 'input'>>;
   lastDeployedOverview?: Resolver<ResolversTypes['LastDeployedOverview'], ParentType, ContextType, RequireFields<QueryLastDeployedOverviewArgs, 'limit' | 'serviceInstanceId'>>;

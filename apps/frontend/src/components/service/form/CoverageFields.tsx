@@ -1,4 +1,4 @@
-import { ENTITY_TYPES } from '@/utils/shareable-resources/entity-type';
+import { useCoverageObjectTypes } from '@/components/service/form/UseCoverageObjectTypes';
 import {
   FormControl,
   FormItem,
@@ -21,6 +21,7 @@ export const ServiceFormCoveredObjectTypesField = ({
   disabled,
 }: CoverageFieldProps) => {
   const t = useTranslations();
+  const objectTypes = useCoverageObjectTypes();
   return (
     <FormItem>
       <FormLabel>{t('Service.Form.CoveredObjectTypesLabel')}</FormLabel>
@@ -28,7 +29,7 @@ export const ServiceFormCoveredObjectTypesField = ({
         <MultiSelectFormField
           disabled={disabled}
           noResultString={t('Utils.NotFound')}
-          options={ENTITY_TYPES}
+          options={objectTypes}
           keyValue="id"
           keyLabel="name"
           defaultValue={field.value ?? []}
@@ -46,7 +47,8 @@ export const ServiceFormCoveredObjectTypesField = ({
   );
 };
 
-const MAX_COVERAGE_VALUE_LENGTH = 100;
+// Same bound as COVERAGE_MAX_VALUE_LENGTH in the backend coverage model
+const MAX_COVERAGE_VALUE_LENGTH = 128;
 
 interface CoverageTagsFieldProps extends CoverageFieldProps {
   family: 'sectors' | 'regions';

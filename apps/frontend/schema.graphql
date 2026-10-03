@@ -161,6 +161,7 @@ type Query {
   settings: Settings!
   updateOpenCTIManifest(tag: String!): Success!
   integrationsByCoverage(input: IntegrationCoverageSearchInput!): IntegrationCoverageSearchResult!
+  integrationCoverageObjectTypes: [String!]!
   solutionCategories(first: Int!, after: ID, orderBy: SolutionCategoryOrdering!, orderMode: OrderingMode!, searchTerm: String, product: FiligranProduct): SolutionCategoryConnection
   subscriptionById(subscription_id: SubscriptionId): SubscriptionModel
   subscriptions(first: Int!, after: ID, orderBy: SubscriptionOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [SubscriptionFilter!]): SubscriptionConnection!

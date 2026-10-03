@@ -1954,6 +1954,7 @@ export type Query = {
   documentFacets: Maybe<Facet>;
   documents: DocumentConnection;
   epics: Maybe<EpicConnection>;
+  integrationCoverageObjectTypes: Array<Scalars['String']['output']>;
   integrationsByCoverage: IntegrationCoverageSearchResult;
   isPlatformRegistered: IsPlatformRegisteredResponse;
   lastDeployedOverview: LastDeployedOverview;
@@ -3405,6 +3406,11 @@ export type LastDeployedOverviewQueryQueryVariables = Exact<{
 
 export type LastDeployedOverviewQueryQuery = { __typename?: 'Query', lastDeployedOverview: { __typename?: 'LastDeployedOverview', resources: Array<{ __typename?: 'DeployedResource', deployedAt: any, document: { __typename?: 'Connector', verified: boolean, manager_supported: boolean, id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'CsvFeed', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'CustomDashboard', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'CustomView', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'DefaultDocument', id: string, name: string | null, short_description: string | null, type: string, active: boolean, slug: string | null, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'IntegrationHack', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'OpenAEVScenario', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'OpenCTIPlaybook', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'RssFeed', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'Stream', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'TaxiiFeed', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null } | { __typename?: 'ThirdPartyIntegration', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null }, deployedBy: { __typename?: 'User', id: string, first_name: string | null, last_name: string | null, email: string, picture: string | null } | null }> } };
 
+export type IntegrationCoverageObjectTypesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type IntegrationCoverageObjectTypesQuery = { __typename?: 'Query', integrationCoverageObjectTypes: Array<string> };
+
 type PublicDocumentByServiceSlugItem_Connector_Fragment = { __typename: 'Connector', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, covered_object_types: Array<string>, covered_sectors: Array<string>, covered_regions: Array<string>, coverage_inferred: boolean, product_version: string | null, container_image: string | null, verified: boolean, source_code: string | null, subscription_link: string | null, manager_supported: boolean, playbook_supported: boolean, minimum_deployable_version: string | null, contact: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, active: boolean, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
 
 type PublicDocumentByServiceSlugItem_CsvFeed_Fragment = { __typename: 'CsvFeed', integration_type: IntegrationType, datasheet_url: string | null, blogpost_url: string | null, demo_url: string | null, license_type: LicenseType | null, covered_object_types: Array<string>, covered_sectors: Array<string>, covered_regions: Array<string>, coverage_inferred: boolean, feed_url: string | null, id: string, name: string, description: string | null, short_description: string | null, created_at: any, updated_at: any | null, slug: string, download_number: number | null, share_number: number | null, active: boolean, type: string, solution_categories: Array<{ __typename?: 'SolutionCategory', id: string, name: string }> | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null, source_type: DocumentSourceType }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string, color: string }> | null, uploader: { __typename?: 'User', first_name: string | null, last_name: string | null, picture: string | null } | null, uploader_organization: { __typename?: 'Organization', id: string, personal_space: boolean, name: string } | null };
@@ -4666,6 +4672,57 @@ export const useInfiniteLastDeployedOverviewQueryQuery = <
 useInfiniteLastDeployedOverviewQueryQuery.getKey = (variables: LastDeployedOverviewQueryQueryVariables) => ['LastDeployedOverviewQuery.infinite', variables];
 useInfiniteLastDeployedOverviewQueryQuery.getRootKey = () => ['LastDeployedOverviewQuery.infinite'] as const;
 useLastDeployedOverviewQueryQuery.fetcher = (client: GraphQLClient, variables: LastDeployedOverviewQueryQueryVariables, headers?: RequestInit['headers']) => fetcher<LastDeployedOverviewQueryQuery, LastDeployedOverviewQueryQueryVariables>(client, LastDeployedOverviewQueryDocument, variables, headers);
+
+export const IntegrationCoverageObjectTypesDocument = `
+    query IntegrationCoverageObjectTypes {
+  integrationCoverageObjectTypes
+}
+    `;
+
+export const useIntegrationCoverageObjectTypesQuery = <
+      TData = IntegrationCoverageObjectTypesQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: IntegrationCoverageObjectTypesQueryVariables,
+      options?: Omit<UseQueryOptions<IntegrationCoverageObjectTypesQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<IntegrationCoverageObjectTypesQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<IntegrationCoverageObjectTypesQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['IntegrationCoverageObjectTypes'] : ['IntegrationCoverageObjectTypes', variables],
+    queryFn: fetcher<IntegrationCoverageObjectTypesQuery, IntegrationCoverageObjectTypesQueryVariables>(client, IntegrationCoverageObjectTypesDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useIntegrationCoverageObjectTypesQuery.getKey = (variables?: IntegrationCoverageObjectTypesQueryVariables) => variables === undefined ? ['IntegrationCoverageObjectTypes'] : ['IntegrationCoverageObjectTypes', variables];
+useIntegrationCoverageObjectTypesQuery.getRootKey = () => ['IntegrationCoverageObjectTypes'] as const;
+export const useInfiniteIntegrationCoverageObjectTypesQuery = <
+      TData = InfiniteData<IntegrationCoverageObjectTypesQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: IntegrationCoverageObjectTypesQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<IntegrationCoverageObjectTypesQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<IntegrationCoverageObjectTypesQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<IntegrationCoverageObjectTypesQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['IntegrationCoverageObjectTypes.infinite'] : ['IntegrationCoverageObjectTypes.infinite', variables],
+      queryFn: (metaData) => fetcher<IntegrationCoverageObjectTypesQuery, IntegrationCoverageObjectTypesQueryVariables>(client, IntegrationCoverageObjectTypesDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteIntegrationCoverageObjectTypesQuery.getKey = (variables?: IntegrationCoverageObjectTypesQueryVariables) => variables === undefined ? ['IntegrationCoverageObjectTypes.infinite'] : ['IntegrationCoverageObjectTypes.infinite', variables];
+useInfiniteIntegrationCoverageObjectTypesQuery.getRootKey = () => ['IntegrationCoverageObjectTypes.infinite'] as const;
+useIntegrationCoverageObjectTypesQuery.fetcher = (client: GraphQLClient, variables?: IntegrationCoverageObjectTypesQueryVariables, headers?: RequestInit['headers']) => fetcher<IntegrationCoverageObjectTypesQuery, IntegrationCoverageObjectTypesQueryVariables>(client, IntegrationCoverageObjectTypesDocument, variables, headers);
 
 export const PublicDocumentsByServiceSlugQueryDocument = `
     query PublicDocumentsByServiceSlugQuery($serviceInstanceSlug: String!) {

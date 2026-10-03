@@ -62,6 +62,8 @@ The coverage is shown on the Integration details page and can be used as a filte
 
 - **Declared coverage** comes from the connector manifest (optional `coverage` block with `object_types`,
   `sectors` and `regions`) or is set by a Hub administrator on the Integration. It is never changed automatically.
+  Object types are OpenCTI entity types (every entity and observable type, for example `Indicator`, `IPv4-Addr` or
+  `Autonomous-System`); sectors and regions are free values of up to 128 characters.
 - **Inferred coverage** is derived from the Integration name, descriptions, use cases and solution categories
   when nothing is declared, and is flagged as inferred. It is refreshed automatically when the Integration changes.
 

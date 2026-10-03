@@ -2,6 +2,7 @@ import { Resolvers } from '../../../../../__generated__/resolvers-types';
 import { UnknownErrorCode } from '../../../../../utils/error/error.code';
 import { mapToGraphQLError } from '../../../../../utils/error/error.mapping';
 import { IntegrationCoverageApp } from './integration-coverage.app';
+import { KNOWN_OBJECT_TYPES } from './integration-coverage.inference';
 
 const resolvers: Resolvers = {
   Query: {
@@ -15,6 +16,7 @@ const resolvers: Resolvers = {
         );
       }
     },
+    integrationCoverageObjectTypes: () => [...KNOWN_OBJECT_TYPES],
   },
 };
 

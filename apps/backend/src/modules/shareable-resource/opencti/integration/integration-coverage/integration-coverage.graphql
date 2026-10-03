@@ -44,4 +44,6 @@ extend type Query {
   integrationsByCoverage(
     input: IntegrationCoverageSearchInput!
   ): IntegrationCoverageSearchResult!
+  # OpenCTI entity types accepted as covered object types, in their canonical spelling
+  integrationCoverageObjectTypes: [String!]!
 }
