@@ -1,5 +1,8 @@
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { useIntegrationCoverageObjectTypesQuery } from '@graphql/generated';
+import {
+  IntegrationCoverageObjectTypesQuery,
+  useIntegrationCoverageObjectTypesQuery,
+} from '@graphql/generated';
 import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCoverageObjectTypes } from './UseCoverageObjectTypes';
@@ -9,15 +12,21 @@ vi.mock('@graphql/generated', async (importOriginal) => ({
   useIntegrationCoverageObjectTypesQuery: vi.fn(),
 }));
 
+const mockObjectTypesQueryResult = (
+  data: IntegrationCoverageObjectTypesQuery | undefined
+) => {
+  vi.mocked(useIntegrationCoverageObjectTypesQuery).mockReturnValue({
+    data,
+  } as ReturnType<typeof useIntegrationCoverageObjectTypesQuery>);
+};
+
 describe('useCoverageObjectTypes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('should query the object types accepted by the backend', () => {
-    vi.mocked(useIntegrationCoverageObjectTypesQuery).mockReturnValue({
-      data: undefined,
-    } as never);
+    mockObjectTypesQueryResult(undefined);
 
     const { result } = renderHook(() => useCoverageObjectTypes());
 
@@ -29,16 +38,14 @@ describe('useCoverageObjectTypes', () => {
   });
 
   it('should expose every type with its label, including the types outside the Custom View subset', () => {
-    vi.mocked(useIntegrationCoverageObjectTypesQuery).mockReturnValue({
-      data: {
-        integrationCoverageObjectTypes: [
-          'Administrative-Area',
-          'Indicator',
-          'IPv4-Addr',
-          'Autonomous-System',
-        ],
-      },
-    } as never);
+    mockObjectTypesQueryResult({
+      integrationCoverageObjectTypes: [
+        'Administrative-Area',
+        'Indicator',
+        'IPv4-Addr',
+        'Autonomous-System',
+      ],
+    });
 
     const { result } = renderHook(() => useCoverageObjectTypes());
 
