@@ -147,17 +147,18 @@ const ShareableResourceDetails = ({
                 label={t(
                   `Service.ShareableResources.Details.${translationKey}`
                 )}>
-                <div className="flex flex-col gap-xs">
-                  <span>{values.join(', ')}</span>
-                  {documentData.coverage_inferred && (
-                    <span className="txt-sub-content">
-                      {t('Service.ShareableResources.Details.CoverageInferred')}
-                    </span>
-                  )}
-                </div>
+                <span>{values.join(', ')}</span>
               </ShareableResourceDetailItem>
             );
           })}
+          {documentData.coverage_inferred &&
+            COVERAGE_ITEMS.some(
+              ({ field }) => (documentData[field] ?? []).length > 0
+            ) && (
+              <span className="txt-sub-content">
+                {t('Service.ShareableResources.Details.CoverageInferred')}
+              </span>
+            )}
         </>
       )}
       <ShareableResourceDetailMetadataItem

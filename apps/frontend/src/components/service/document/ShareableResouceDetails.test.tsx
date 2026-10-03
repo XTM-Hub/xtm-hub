@@ -152,6 +152,23 @@ describe('ShareableResourceDetails', () => {
     ).toBeInTheDocument();
   });
 
+  it('should flag an inferred coverage once for every coverage family', () => {
+    testRender(
+      <ShareableResourceDetails
+        documentData={buildDocumentData({
+          covered_object_types: ['Vulnerability'],
+          covered_sectors: ['Finance'],
+          covered_regions: ['France'],
+          coverage_inferred: true,
+        })}
+      />
+    );
+
+    expect(
+      screen.getAllByText('Service.ShareableResources.Details.CoverageInferred')
+    ).toHaveLength(1);
+  });
+
   it('should fallback to Filigran when organization is undefined', () => {
     testRender(
       <ShareableResourceDetails
