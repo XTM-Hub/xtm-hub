@@ -3,6 +3,7 @@ import {
   FiligranProduct,
   IntegrationType,
 } from '../../../../../__generated__/resolvers-types';
+import { databaseContext } from '../../../../../context/database.context';
 import { logApp } from '../../../../../utils/app-logger.util';
 import { toError } from '../../../../../utils/error/error-guard.util';
 import { omit } from '../../../../../utils/utils';
@@ -10,7 +11,6 @@ import { DocumentApp } from '../../../../document/document.app';
 import { DocumentDomain } from '../../../../document/domain/document.domain';
 import { TelemetryApp } from '../../../../telemetry/telemetry.app';
 import { TelemetryHelper } from '../../../../telemetry/telemetry.helper';
-import { databaseContext } from '../../../../../context/database.context';
 import { IntegrationCoverageDomain } from '../integration-coverage/integration-coverage.domain';
 import { IntegrationCoverageHelper } from '../integration-coverage/integration-coverage.helper';
 import {
