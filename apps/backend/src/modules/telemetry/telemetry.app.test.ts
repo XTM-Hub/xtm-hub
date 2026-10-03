@@ -651,9 +651,10 @@ describe('telemetryApp', () => {
       );
 
       // Then
-      expect({ size: counts.size, searched: searchSpy.mock.calls.length }).toEqual(
-        { size: 0, searched: 0 }
-      );
+      expect({
+        size: counts.size,
+        searched: searchSpy.mock.calls.length,
+      }).toEqual({ size: 0, searched: 0 });
     });
 
     it('should count the events of every document in one aggregation', async () => {

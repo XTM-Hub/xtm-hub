@@ -52,7 +52,7 @@ const makeRanked = (
   ...overrides,
 });
 
-describe('IntegrationCoverageSearchHelper', () => {
+describe('integrationCoverageSearchHelper', () => {
   describe('clampFirst', () => {
     it.each([
       [null, COVERAGE_SEARCH_DEFAULT_FIRST],
@@ -79,12 +79,16 @@ describe('IntegrationCoverageSearchHelper', () => {
         objectTypes: ['malware', ' Malware ', 'ipv4-addr'],
         sectors: ['finance'],
         regions: [' France '],
-        integrationTypes: [IntegrationType.Connector, IntegrationType.Connector],
+        integrationTypes: [
+          IntegrationType.Connector,
+          IntegrationType.Connector,
+        ],
         searchTerm: '  ',
       };
 
       // When
-      const request = IntegrationCoverageSearchHelper.normalizeSearchInput(input);
+      const request =
+        IntegrationCoverageSearchHelper.normalizeSearchInput(input);
 
       // Then
       expect(request).toEqual({
@@ -128,15 +132,14 @@ describe('IntegrationCoverageSearchHelper', () => {
     it('should accept the maximum number of values of the maximum length', () => {
       // Given
       const input = {
-        sectors: Array.from(
-          { length: COVERAGE_MAX_VALUES },
-          (_, index) =>
-            `${index}`.padEnd(COVERAGE_MAX_VALUE_LENGTH, 'x')
+        sectors: Array.from({ length: COVERAGE_MAX_VALUES }, (_, index) =>
+          `${index}`.padEnd(COVERAGE_MAX_VALUE_LENGTH, 'x')
         ),
       };
 
       // When
-      const request = IntegrationCoverageSearchHelper.normalizeSearchInput(input);
+      const request =
+        IntegrationCoverageSearchHelper.normalizeSearchInput(input);
 
       // Then
       expect(request.sectors).toHaveLength(COVERAGE_MAX_VALUES);
@@ -188,19 +191,16 @@ describe('IntegrationCoverageSearchHelper', () => {
         0,
       ],
       ['no requested facet', makeRequest(), makeCoverage(), 0],
-    ])(
-      'should score %s',
-      (_description, request, coverage, expectedScore) => {
-        // Given / When
-        const { score } = IntegrationCoverageSearchHelper.scoreCoverage(
-          request,
-          coverage
-        );
+    ])('should score %s', (_description, request, coverage, expectedScore) => {
+      // Given / When
+      const { score } = IntegrationCoverageSearchHelper.scoreCoverage(
+        request,
+        coverage
+      );
 
-        // Then
-        expect(score).toBe(expectedScore);
-      }
-    );
+      // Then
+      expect(score).toBe(expectedScore);
+    });
 
     it.each([['Global'], ['Worldwide'], ['worldwide']])(
       'should match every requested region with a %s coverage',
@@ -274,7 +274,8 @@ describe('IntegrationCoverageSearchHelper', () => {
       const regions = [FRANCE];
 
       // When
-      const keys = IntegrationCoverageSearchHelper.buildRegionMatchKeys(regions);
+      const keys =
+        IntegrationCoverageSearchHelper.buildRegionMatchKeys(regions);
 
       // Then
       expect(keys).toEqual(['france', 'global', 'worldwide']);

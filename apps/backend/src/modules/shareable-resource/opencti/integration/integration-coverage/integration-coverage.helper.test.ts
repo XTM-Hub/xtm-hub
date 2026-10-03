@@ -26,7 +26,7 @@ const makeCoverage = (
   ...overrides,
 });
 
-describe('IntegrationCoverageHelper', () => {
+describe('integrationCoverageHelper', () => {
   describe('normalizeValues', () => {
     it.each([
       ['lowercase dashed', ['ipv4-addr'], ['IPv4-Addr']],
@@ -52,22 +52,24 @@ describe('IntegrationCoverageHelper', () => {
 
     it.each([
       ['a known sector', 'sectors' as const, ['finance'], [FINANCE]],
-      ['an unknown sector', 'sectors' as const, ['Space  Industry'], ['Space Industry']],
+      [
+        'an unknown sector',
+        'sectors' as const,
+        ['Space  Industry'],
+        ['Space Industry'],
+      ],
       ['a known region', 'regions' as const, ['EUROPE'], [EUROPE]],
       ['worldwide', 'regions' as const, ['worldwide'], ['Worldwide']],
-    ])(
-      'should canonicalize %s',
-      (_description, family, values, expected) => {
-        // Given / When
-        const normalized = IntegrationCoverageHelper.normalizeValues(
-          family,
-          values
-        );
+    ])('should canonicalize %s', (_description, family, values, expected) => {
+      // Given / When
+      const normalized = IntegrationCoverageHelper.normalizeValues(
+        family,
+        values
+      );
 
-        // Then
-        expect(normalized).toEqual(expected);
-      }
-    );
+      // Then
+      expect(normalized).toEqual(expected);
+    });
   });
 
   describe('assertValidDeclaration', () => {
@@ -76,7 +78,12 @@ describe('IntegrationCoverageHelper', () => {
       ['empty lists', { object_types: [], sectors: [], regions: [] }],
       [
         'the maximum number of values',
-        { sectors: Array.from({ length: COVERAGE_MAX_VALUES }, (_, i) => `s${i}`) },
+        {
+          sectors: Array.from(
+            { length: COVERAGE_MAX_VALUES },
+            (_, i) => `s${i}`
+          ),
+        },
       ],
       [
         'the maximum value length',
@@ -118,19 +125,26 @@ describe('IntegrationCoverageHelper', () => {
 
   describe('parsing stored values', () => {
     it.each([
-      ['a JSON array', JSON.stringify([MALWARE, INDICATOR]), [MALWARE, INDICATOR]],
+      [
+        'a JSON array',
+        JSON.stringify([MALWARE, INDICATOR]),
+        [MALWARE, INDICATOR],
+      ],
       ['an already parsed array', [MALWARE], [MALWARE]],
       ['invalid JSON', '{not json', []],
       ['a JSON object', JSON.stringify({ value: MALWARE }), []],
       ['non string items', JSON.stringify([MALWARE, 3, null]), [MALWARE]],
       ['null', null, []],
-    ])('should parse a stored list from %s', (_description, value, expected) => {
-      // Given / When
-      const parsed = IntegrationCoverageHelper.parseStoredList(value);
+    ])(
+      'should parse a stored list from %s',
+      (_description, value, expected) => {
+        // Given / When
+        const parsed = IntegrationCoverageHelper.parseStoredList(value);
 
-      // Then
-      expect(parsed).toEqual(expected);
-    });
+        // Then
+        expect(parsed).toEqual(expected);
+      }
+    );
 
     it.each([
       ['"false"', 'false', false],
@@ -290,7 +304,10 @@ describe('IntegrationCoverageHelper', () => {
 
     it('should keep the coverage inferred when the inferred values are submitted unchanged', () => {
       // Given
-      const existing = makeCoverage({ object_types: [MALWARE], inferred: true });
+      const existing = makeCoverage({
+        object_types: [MALWARE],
+        inferred: true,
+      });
 
       // When
       const coverage = IntegrationCoverageHelper.resolveAdminCoverage({
@@ -307,7 +324,10 @@ describe('IntegrationCoverageHelper', () => {
 
     it('should declare the coverage when the admin edits inferred values', () => {
       // Given
-      const existing = makeCoverage({ object_types: [MALWARE], inferred: true });
+      const existing = makeCoverage({
+        object_types: [MALWARE],
+        inferred: true,
+      });
 
       // When
       const coverage = IntegrationCoverageHelper.resolveAdminCoverage({

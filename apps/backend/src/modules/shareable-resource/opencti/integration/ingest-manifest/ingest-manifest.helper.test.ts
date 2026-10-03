@@ -262,7 +262,8 @@ describe('ingest manifest helper', () => {
         const manifest = buildManifest({ coverage });
 
         // When
-        const result = IngestManifestHelper.extractManifestInformation(manifest);
+        const result =
+          IngestManifestHelper.extractManifestInformation(manifest);
 
         // Then
         expect(result.validContracts[0]?.coverage).toEqual(coverage);
@@ -308,7 +309,8 @@ describe('ingest manifest helper', () => {
         const manifest = buildManifest({});
 
         // When
-        const result = IngestManifestHelper.extractManifestInformation(manifest);
+        const result =
+          IngestManifestHelper.extractManifestInformation(manifest);
 
         // Then
         expect(result.validContracts[0]?.coverage).toBeUndefined();

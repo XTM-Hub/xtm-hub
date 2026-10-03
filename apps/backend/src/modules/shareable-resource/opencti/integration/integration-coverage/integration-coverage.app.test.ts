@@ -116,7 +116,7 @@ const cleanDatabase = async () => {
   await TestHelper.document.delete({});
 };
 
-describe('IntegrationCoverageApp', () => {
+describe('integrationCoverageApp', () => {
   const createdServiceInstanceIds: ServiceInstanceId[] = [];
 
   beforeEach(async () => {
