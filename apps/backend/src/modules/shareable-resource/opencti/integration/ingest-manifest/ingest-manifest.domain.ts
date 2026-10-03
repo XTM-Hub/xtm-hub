@@ -10,6 +10,7 @@ import { DocumentApp } from '../../../../document/document.app';
 import { DocumentDomain } from '../../../../document/domain/document.domain';
 import { TelemetryApp } from '../../../../telemetry/telemetry.app';
 import { TelemetryHelper } from '../../../../telemetry/telemetry.helper';
+import { ConnectorTypeHelper } from '../connector-type.helper';
 import {
   Connector,
   INTEGRATION_CONNECTOR_METADATA_KEYS,
@@ -67,6 +68,16 @@ export const IngestManifestDomain = {
           if (existingConnector.demo_url) {
             connector.demo_url = existingConnector.demo_url;
           }
+        }
+
+        const minimumDeployableVersion =
+          ConnectorTypeHelper.resolveMinimumDeployableVersion(
+            ConnectorTypeHelper.normalize(connector.image_type),
+            connector.minimum_deployable_version ??
+              existingConnector?.minimum_deployable_version
+          );
+        if (minimumDeployableVersion) {
+          connector.minimum_deployable_version = minimumDeployableVersion;
         }
 
         const doc =

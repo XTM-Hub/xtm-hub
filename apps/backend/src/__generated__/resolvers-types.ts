@@ -183,6 +183,7 @@ export type Connector = Document & Integration & Node & {
   active: Scalars['Boolean']['output'];
   blogpost_url?: Maybe<Scalars['String']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
+  connector_type?: Maybe<Scalars['String']['output']>;
   contact?: Maybe<Scalars['String']['output']>;
   container_image?: Maybe<Scalars['String']['output']>;
   created_at: Scalars['Date']['output'];
@@ -191,6 +192,7 @@ export type Connector = Document & Integration & Node & {
   description?: Maybe<Scalars['String']['output']>;
   download_number?: Maybe<Scalars['Int']['output']>;
   file_name?: Maybe<Scalars['String']['output']>;
+  hunt_platform?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   integration_type: IntegrationType;
   license_type?: Maybe<LicenseType>;
@@ -785,6 +787,7 @@ export enum EpicType {
 
 export type Facet = {
   __typename?: 'Facet';
+  connector_type: Array<FacetBucket>;
   entity_type: Array<FacetBucket>;
   integration_type: Array<FacetBucket>;
   license_type: Array<FacetBucket>;
@@ -820,6 +823,7 @@ export type Filter = {
 };
 
 export enum FilterKey {
+  ConnectorType = 'connector_type',
   EntityType = 'entity_type',
   FeedUrl = 'feed_url',
   IntegrationType = 'integration_type',
@@ -3797,6 +3801,7 @@ export type ConnectorResolvers<ContextType = PortalContext, ParentType extends R
   active?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   blogpost_url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
+  connector_type?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   contact?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   container_image?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
@@ -3805,6 +3810,7 @@ export type ConnectorResolvers<ContextType = PortalContext, ParentType extends R
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   download_number?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   file_name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  hunt_platform?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   integration_type?: Resolver<ResolversTypes['IntegrationType'], ParentType, ContextType>;
   license_type?: Resolver<Maybe<ResolversTypes['LicenseType']>, ParentType, ContextType>;
@@ -4095,6 +4101,7 @@ export type EpicEdgeResolvers<ContextType = PortalContext, ParentType extends Re
 }>;
 
 export type FacetResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['Facet'] = ResolversParentTypes['Facet']> = ResolversObject<{
+  connector_type?: Resolver<Array<ResolversTypes['FacetBucket']>, ParentType, ContextType>;
   entity_type?: Resolver<Array<ResolversTypes['FacetBucket']>, ParentType, ContextType>;
   integration_type?: Resolver<Array<ResolversTypes['FacetBucket']>, ParentType, ContextType>;
   license_type?: Resolver<Array<ResolversTypes['FacetBucket']>, ParentType, ContextType>;

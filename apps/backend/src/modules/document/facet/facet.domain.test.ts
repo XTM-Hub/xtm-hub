@@ -45,6 +45,7 @@ const VERIFIED_TRUE_VALUE = 'true';
 const VERIFIED_FALSE_VALUE = 'false';
 const ENTITY_TYPE_MALWARE = 'Malware';
 const ENTITY_TYPE_THREAT_ACTOR = 'Threat-Actor';
+const CONNECTOR_TYPE_INTERNAL_HUNT = 'INTERNAL_HUNT';
 
 vi.mock('../../../utils/feature-flag.util', () => ({
   isFeatureEnabled: vi.fn(() => false),
@@ -469,6 +470,7 @@ describe('facet.domain', () => {
         solutionCategory,
         useCase,
         entityType,
+        connectorType,
       ] = await Promise.all([
         buildNaiveScopedQuery(
           input,
@@ -525,6 +527,15 @@ describe('facet.domain', () => {
           FilterKey.EntityType,
           restrictToActive
         ).then(({ scoped }) => loadEntityTypeFacetBuckets(scoped)),
+        buildNaiveScopedQuery(
+          input,
+          FilterKey.ConnectorType,
+          restrictToActive
+        ).then(({ scoped }) =>
+          loadMetadataFacetBucketsGrouped(scoped, [
+            DocumentMetadataKeyCode.ImageType,
+          ]).then((byKey) => byKey[DocumentMetadataKeyCode.ImageType])
+        ),
       ]);
 
       return {
@@ -536,6 +547,7 @@ describe('facet.domain', () => {
         solution_category: solutionCategory,
         use_case: useCase,
         entity_type: entityType,
+        connector_type: connectorType ?? [],
       };
     };
 
@@ -667,6 +679,11 @@ describe('facet.domain', () => {
           key: DocumentMetadataKeyCode.EntityTypes,
           value: JSON.stringify([ENTITY_TYPE_THREAT_ACTOR]),
         }),
+        TestHelper.documentMetadata.create({
+          document_id: docAId,
+          key: DocumentMetadataKeyCode.ImageType,
+          value: CONNECTOR_TYPE_INTERNAL_HUNT,
+        }),
         objectUseCaseDomain.insertObjectUseCase({
           object_id: docAId,
           use_case_id: useCaseAId,
@@ -733,6 +750,16 @@ describe('facet.domain', () => {
             { leaf: { key: FilterKey.Verified, value: ['true'] } },
             { leaf: { key: FilterKey.ProductVersion, value: ['1.0.0'] } },
           ],
+        },
+        null,
+      ],
+      [
+        'a connector type filter',
+        {
+          leaf: {
+            key: FilterKey.ConnectorType,
+            value: [CONNECTOR_TYPE_INTERNAL_HUNT],
+          },
         },
         null,
       ],

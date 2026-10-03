@@ -11,6 +11,7 @@ import { getErrorMessage } from '../../../utils/error/error-guard.util';
 import { ManifestKey } from '../manifest/manifest.consts';
 import { ManifestDomain } from '../manifest/manifest.domain';
 import { ManifestHelper } from '../manifest/manifest.helper';
+import { ConnectorTypeHelper } from '../opencti/integration/connector-type.helper';
 import { ManifestFragmentDomain } from './manifest-fragment.domain';
 import { ManifestFragmentHelper } from './manifest-fragment.helper';
 
@@ -36,6 +37,9 @@ export const ManifestFragmentApp = {
 
     const isLts =
       ManifestFragmentHelper.assertHomogeneousLtsBatch(manifestFragments);
+    for (const fragment of manifestFragments) {
+      ConnectorTypeHelper.parse(fragment.image_type);
+    }
 
     for (const fragment of manifestFragments) {
       await ManifestFragmentDomain.ingestManifestFragment(fragment);

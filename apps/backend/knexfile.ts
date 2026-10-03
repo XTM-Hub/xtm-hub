@@ -444,6 +444,9 @@ const filterHandlers: Record<string, FilterHandler> = {
   [ServiceInstanceFilterKey.ServiceDefinitionIdentifier]:
     createServiceDefinitionIdentifierFilter(),
   [FilterKey.ProductVersion]: createProductVersionFilter(),
+  [FilterKey.ConnectorType]: createMetadataFilterHandler(
+    DocumentMetadataKeyCode.ImageType
+  ),
   [DeploymentRequestFilterKey.PlatformIdentifier]:
     createPlatformIdentifierFilterHandler(),
   [DeploymentRequestFilterKey.ParentId]: createParentIdFilterHandler(),

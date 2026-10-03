@@ -4,8 +4,22 @@ import {
   ShareableResource,
 } from '../../../../__generated__/resolvers-types';
 import { logApp } from '../../../../utils/app-logger.util';
+import { ConnectorTypeHelper } from './connector-type.helper';
+
+type ConnectorTypeSource = {
+  image_type?: string | null;
+  config_schema?: string | null;
+};
 
 const resolvers: Resolvers = {
+  Connector: {
+    connector_type: (connector) =>
+      ConnectorTypeHelper.normalize(
+        (connector as ConnectorTypeSource).image_type
+      ) ?? null,
+    hunt_platform: (connector) =>
+      ConnectorTypeHelper.resolveHuntPlatform(connector as ConnectorTypeSource),
+  },
   Integration: {
     __resolveType(feed) {
       const mapping = {

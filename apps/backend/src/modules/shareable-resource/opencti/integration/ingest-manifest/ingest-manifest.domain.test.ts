@@ -374,6 +374,48 @@ describe('upsertConnectors', () => {
       expect(result).toBeDefined();
       expect(result!.minimum_deployable_version).toBe('2.2.2');
     });
+
+    it('should set the first OpenCTI version with hunts as the minimum of a new hunt connector', async () => {
+      const manifest: ManifestInformation = {
+        ...baseManifest,
+        slug: 'min-deployable-hunt-new',
+        name: 'Min Deployable Hunt New',
+        product_version: '7.261002.0',
+        manager_supported: true,
+        image_type: 'INTERNAL_HUNT',
+        minimum_deployable_version: undefined,
+      };
+
+      const [result] = await IngestManifestDomain.upsertConnectors([manifest]);
+
+      expect(result).toBeDefined();
+      expect(result!.image_type).toBe('INTERNAL_HUNT');
+      expect(result!.minimum_deployable_version).toBe('7.261003.0');
+    });
+
+    it('should raise the stored minimum of a hunt connector below the first OpenCTI version with hunts', async () => {
+      const manifest: ManifestInformation = {
+        ...baseManifest,
+        slug: 'min-deployable-hunt-existing',
+        name: 'Min Deployable Hunt Existing',
+        product_version: '7.260930.0',
+        manager_supported: true,
+        minimum_deployable_version: '7.260930.0',
+      };
+      await IngestManifestDomain.upsertConnectors([manifest]);
+
+      const [result] = await IngestManifestDomain.upsertConnectors([
+        {
+          ...manifest,
+          product_version: '7.261010.0',
+          image_type: 'INTERNAL_HUNT',
+          minimum_deployable_version: undefined,
+        },
+      ]);
+
+      expect(result).toBeDefined();
+      expect(result!.minimum_deployable_version).toBe('7.261003.0');
+    });
   });
 
   describe('datasheet_url, demo_url and blogpost_url preservation', () => {
