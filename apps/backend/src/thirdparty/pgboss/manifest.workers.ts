@@ -46,5 +46,13 @@ export const ManifestWorkers = {
     );
 
     logApp.info('[PgBoss] Manifest workers started');
+
+    try {
+      await ManifestApp.resumePendingRebuilds();
+    } catch (error) {
+      logApp.error('[PgBoss] Unable to resume pending manifest rebuilds', {
+        error,
+      });
+    }
   },
 };

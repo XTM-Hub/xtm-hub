@@ -1,3 +1,4 @@
+import { DocumentMetadataKeyCode } from '../../../../__generated__/resolvers-types';
 import { BadRequestErrorCode } from '../../../../utils/error/error.code';
 import { ManifestFragmentHelper } from '../../manifest-fragment/manifest-fragment.helper';
 
@@ -27,6 +28,24 @@ export const MINIMUM_PLATFORM_VERSION_BY_CONNECTOR_TYPE: Readonly<
   // 7.261002 is the last OpenCTI release without hunts.
   INTERNAL_HUNT: '7.261003.0',
 };
+
+/**
+ * Connector metadata written by catalog ingestion (manifest fragments and the
+ * legacy manifest) that the connector form never submits.
+ */
+export const INGESTION_OWNED_CONNECTOR_METADATA_KEYS: readonly DocumentMetadataKeyCode[] =
+  [
+    DocumentMetadataKeyCode.ImageType,
+    DocumentMetadataKeyCode.ImageName,
+    DocumentMetadataKeyCode.ConfigSchema,
+    DocumentMetadataKeyCode.AdditionalProperties,
+    DocumentMetadataKeyCode.ManifestFragmentId,
+    DocumentMetadataKeyCode.VersionPadded,
+    DocumentMetadataKeyCode.LastVerifiedDate,
+    DocumentMetadataKeyCode.MinimumDeployableVersionPadded,
+  ];
+
+type MetadataEntry = { key: DocumentMetadataKeyCode; value: string };
 
 const HUNT_PLATFORM_PATTERN = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
@@ -96,6 +115,67 @@ export const ConnectorTypeHelper = {
     const floorPadded = toPaddedVersion(floor);
     if (!declaredPadded || !floorPadded) return floor;
     return declaredPadded >= floorPadded ? declared : floor;
+  },
+
+  /**
+   * Metadata to store for an edited connector: the submitted entries plus the
+   * stored ingestion-owned entries the edit does not carry. The minimum
+   * deployable version keeps the floor of the connector type, and its padded
+   * form follows it, so an edit never offers a connector to a platform that
+   * cannot register it.
+   */
+  mergeEditedMetadata: (
+    submitted: MetadataEntry[],
+    stored: MetadataEntry[]
+  ): MetadataEntry[] => {
+    const submittedKeys = new Set(submitted.map(({ key }) => key));
+    const merged: MetadataEntry[] = [
+      ...submitted,
+      ...stored.filter(
+        ({ key }) =>
+          INGESTION_OWNED_CONNECTOR_METADATA_KEYS.includes(key) &&
+          !submittedKeys.has(key)
+      ),
+    ];
+    const valueOf = (key: DocumentMetadataKeyCode) =>
+      merged.find((entry) => entry.key === key)?.value;
+
+    const connectorType = ConnectorTypeHelper.normalize(
+      valueOf(DocumentMetadataKeyCode.ImageType)
+    );
+    const hasFloor = Boolean(
+      connectorType && MINIMUM_PLATFORM_VERSION_BY_CONNECTOR_TYPE[connectorType]
+    );
+    const hasPadded =
+      valueOf(DocumentMetadataKeyCode.MinimumDeployableVersionPadded) !==
+      undefined;
+    if (!hasFloor && !hasPadded) {
+      return merged;
+    }
+
+    const minimum = ConnectorTypeHelper.resolveMinimumDeployableVersion(
+      connectorType,
+      valueOf(DocumentMetadataKeyCode.MinimumDeployableVersion)
+    );
+    const minimumPadded = minimum ? toPaddedVersion(minimum) : undefined;
+    const result = merged.filter(
+      ({ key }) =>
+        key !== DocumentMetadataKeyCode.MinimumDeployableVersion &&
+        key !== DocumentMetadataKeyCode.MinimumDeployableVersionPadded
+    );
+    if (minimum) {
+      result.push({
+        key: DocumentMetadataKeyCode.MinimumDeployableVersion,
+        value: minimum,
+      });
+    }
+    if (hasPadded && minimumPadded) {
+      result.push({
+        key: DocumentMetadataKeyCode.MinimumDeployableVersionPadded,
+        value: minimumPadded,
+      });
+    }
+    return result;
   },
 
   /** The platform an `INTERNAL_HUNT` connector hunts on: the `CONNECTOR_SCOPE` default of its config schema. */

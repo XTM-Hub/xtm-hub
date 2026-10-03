@@ -152,6 +152,25 @@ export const ManifestApp = {
     await ManifestHelper.enqueueImmediateRebuild(key);
   },
 
+  /**
+   * Rebuild requests are only processed when a job is sent for their key.
+   * Requests queued without a job (by a database migration, or left behind
+   * by a stopped process) are sent again when the workers start.
+   */
+  resumePendingRebuilds: async (): Promise<number> => {
+    const keys = await ManifestDomain.loadPendingRebuildKeys();
+    for (const key of keys) {
+      await ManifestHelper.enqueueImmediateRebuild(key);
+    }
+    if (keys.length > 0) {
+      logApp.info('Pending manifest rebuilds resumed', {
+        count: keys.length,
+        keys,
+      });
+    }
+    return keys.length;
+  },
+
   processManifestQueue: async (manifest?: ManifestKey) => {
     const recovered = await ManifestDomain.recoverStuckProcessingEntries();
     if (recovered.length > 0) {

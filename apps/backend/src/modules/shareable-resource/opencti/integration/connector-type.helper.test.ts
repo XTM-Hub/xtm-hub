@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DocumentMetadataKeyCode } from '../../../../__generated__/resolvers-types';
 import { BadRequestErrorCode } from '../../../../utils/error/error.code';
 import {
   ConnectorTypeHelper,
@@ -130,5 +131,125 @@ describe('connectorTypeHelper.resolveHuntPlatform', () => {
         config_schema: configSchema,
       })
     ).toBeNull();
+  });
+});
+
+describe('connectorTypeHelper.mergeEditedMetadata', () => {
+  const entry = (key: DocumentMetadataKeyCode, value: string) => ({
+    key,
+    value,
+  });
+  const valueOf = (
+    metadata: { key: DocumentMetadataKeyCode; value: string }[],
+    key: DocumentMetadataKeyCode
+  ) => metadata.filter((item) => item.key === key).map((item) => item.value);
+
+  it('keeps the stored ingestion metadata the edit does not carry', () => {
+    const merged = ConnectorTypeHelper.mergeEditedMetadata(
+      [entry(DocumentMetadataKeyCode.DatasheetUrl, 'https://example.com')],
+      [
+        entry(DocumentMetadataKeyCode.ImageType, 'EXTERNAL_IMPORT'),
+        entry(DocumentMetadataKeyCode.ConfigSchema, '{}'),
+      ]
+    );
+
+    expect(merged).toEqual([
+      entry(DocumentMetadataKeyCode.DatasheetUrl, 'https://example.com'),
+      entry(DocumentMetadataKeyCode.ImageType, 'EXTERNAL_IMPORT'),
+      entry(DocumentMetadataKeyCode.ConfigSchema, '{}'),
+    ]);
+  });
+
+  it('lets submitted values win and never restores metadata the form owns', () => {
+    const merged = ConnectorTypeHelper.mergeEditedMetadata(
+      [entry(DocumentMetadataKeyCode.ImageType, 'STREAM')],
+      [
+        entry(DocumentMetadataKeyCode.ImageType, 'EXTERNAL_IMPORT'),
+        entry(DocumentMetadataKeyCode.DatasheetUrl, 'https://example.com'),
+      ]
+    );
+
+    expect(merged).toEqual([
+      entry(DocumentMetadataKeyCode.ImageType, 'STREAM'),
+    ]);
+  });
+
+  it.each`
+    submitted       | expected
+    ${'7.260900.0'} | ${HUNT_FLOOR}
+    ${undefined}    | ${HUNT_FLOOR}
+    ${'7.261020.0'} | ${'7.261020.0'}
+  `(
+    'keeps the hunt floor when the minimum deployable version is $submitted',
+    ({ submitted, expected }: { submitted?: string; expected: string }) => {
+      const merged = ConnectorTypeHelper.mergeEditedMetadata(
+        submitted
+          ? [entry(DocumentMetadataKeyCode.MinimumDeployableVersion, submitted)]
+          : [],
+        [entry(DocumentMetadataKeyCode.ImageType, 'internal-hunt')]
+      );
+
+      expect(
+        valueOf(merged, DocumentMetadataKeyCode.MinimumDeployableVersion)
+      ).toEqual([expected]);
+      expect(
+        valueOf(merged, DocumentMetadataKeyCode.MinimumDeployableVersionPadded)
+      ).toEqual([]);
+    }
+  );
+
+  it('realigns a stored padded minimum version on the edited minimum version', () => {
+    const merged = ConnectorTypeHelper.mergeEditedMetadata(
+      [entry(DocumentMetadataKeyCode.MinimumDeployableVersion, '6.9.0')],
+      [
+        entry(DocumentMetadataKeyCode.ImageType, 'EXTERNAL_IMPORT'),
+        entry(
+          DocumentMetadataKeyCode.MinimumDeployableVersionPadded,
+          '006.000008.000'
+        ),
+      ]
+    );
+
+    expect(
+      valueOf(merged, DocumentMetadataKeyCode.MinimumDeployableVersion)
+    ).toEqual(['6.9.0']);
+    expect(
+      valueOf(merged, DocumentMetadataKeyCode.MinimumDeployableVersionPadded)
+    ).toEqual(['006.000009.000']);
+  });
+
+  it('drops a stored padded minimum version when the edit clears the minimum version', () => {
+    const merged = ConnectorTypeHelper.mergeEditedMetadata(
+      [entry(DocumentMetadataKeyCode.DatasheetUrl, 'https://example.com')],
+      [
+        entry(DocumentMetadataKeyCode.ImageType, 'EXTERNAL_IMPORT'),
+        entry(
+          DocumentMetadataKeyCode.MinimumDeployableVersionPadded,
+          '006.000008.000'
+        ),
+      ]
+    );
+
+    expect(
+      valueOf(merged, DocumentMetadataKeyCode.MinimumDeployableVersion)
+    ).toEqual([]);
+    expect(
+      valueOf(merged, DocumentMetadataKeyCode.MinimumDeployableVersionPadded)
+    ).toEqual([]);
+  });
+
+  it('leaves the minimum version of a connector type without floor untouched', () => {
+    const submitted = [
+      entry(DocumentMetadataKeyCode.MinimumDeployableVersion, ''),
+    ];
+
+    expect(
+      ConnectorTypeHelper.mergeEditedMetadata(submitted, [
+        entry(DocumentMetadataKeyCode.ImageType, 'EXTERNAL_IMPORT'),
+      ])
+    ).toEqual([
+      ...submitted,
+      entry(DocumentMetadataKeyCode.ImageType, 'EXTERNAL_IMPORT'),
+    ]);
   });
 });

@@ -636,4 +636,48 @@ describe('manifestApp', () => {
       expect(ManifestApp.generateManifest).not.toHaveBeenCalled();
     });
   });
+
+  describe('resumePendingRebuilds', () => {
+    it('sends one rebuild job per pending key and skips keys being processed', async () => {
+      // Given
+      const enqueueImmediateRebuildSpy = vi
+        .spyOn(ManifestHelper, 'enqueueImmediateRebuild')
+        .mockResolvedValue(undefined);
+      await TestHelper.manifestRebuildQueue.create({
+        product: PlatformIdentifier.Opencti,
+        version: '7.261002.0',
+        status: ManifestRebuildQueueStatus.Pending,
+      });
+      await TestHelper.manifestRebuildQueue.create({
+        product: PlatformIdentifier.Opencti,
+        version: '7.261001.0',
+        status: ManifestRebuildQueueStatus.Processing,
+      });
+
+      // When
+      const resumed = await ManifestApp.resumePendingRebuilds();
+
+      // Then
+      expect(resumed).toBe(1);
+      expect(enqueueImmediateRebuildSpy).toHaveBeenCalledExactlyOnceWith({
+        platformIdentifier: PlatformIdentifier.Opencti,
+        version: '7.261002.0',
+        type: ManifestType.Connector,
+      });
+    });
+
+    it('sends nothing when no rebuild is pending', async () => {
+      // Given
+      const enqueueImmediateRebuildSpy = vi
+        .spyOn(ManifestHelper, 'enqueueImmediateRebuild')
+        .mockResolvedValue(undefined);
+
+      // When
+      const resumed = await ManifestApp.resumePendingRebuilds();
+
+      // Then
+      expect(resumed).toBe(0);
+      expect(enqueueImmediateRebuildSpy).not.toHaveBeenCalled();
+    });
+  });
 });

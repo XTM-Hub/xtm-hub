@@ -54,6 +54,17 @@ export const ManifestDomain = {
       .andWhere('version_padded', isLts ? 'like' : 'not like', '%.LTS.%');
   },
 
+  loadPendingRebuildKeys: async (): Promise<ManifestKey[]> => {
+    const rows = await db<ManifestRebuildQueue>('ManifestRebuildQueue')
+      .distinct('product', 'version', 'type')
+      .where({ status: ManifestRebuildQueueStatus.Pending });
+    return rows.map(({ product, version, type }) => ({
+      platformIdentifier: product,
+      version,
+      type,
+    }));
+  },
+
   loadPendingManifestsForProcessing: async (
     filter?: ManifestKey
   ): Promise<ManifestRebuildQueue[]> => {
