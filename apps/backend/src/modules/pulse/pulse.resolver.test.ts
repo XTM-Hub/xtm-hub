@@ -10,10 +10,12 @@ import {
   PulseSectorBucket,
 } from '../../__generated__/resolvers-types';
 import { PortalContext } from '../../model/portal-context';
+import { REDACTED_PULSE_ERROR_MESSAGE } from '../../server/apollo-plugins/log';
+import { logApp } from '../../utils/app-logger.util';
 import { UnknownErrorCode } from '../../utils/error/error.code';
 import { PulseApp } from './pulse.app';
 import { PulseErrorCode, PulseErrors } from './pulse.errors';
-import pulseResolver from './pulse.resolver';
+import pulseResolver, { sanitizePulseFailure } from './pulse.resolver';
 
 const PLATFORM_ID = 'platform-abc';
 const PLATFORM_TOKEN = 'token-xyz';
@@ -127,6 +129,65 @@ describe('pulse resolver', () => {
 
     // Then
     await expect(call).rejects.toThrow(UnknownErrorCode.UnknownError);
+  });
+
+  it('should never log the text of an unexpected failure', async () => {
+    // Given
+    const failure = Object.assign(
+      new Error(
+        `duplicate key value violates unique constraint: insert into "PulseKeyContributor" values (decode('a1b2c3d4', 'hex'), 'pseudonym-9f8e')`
+      ),
+      { code: '23505' }
+    );
+    vi.spyOn(PulseApp, 'pushPulse').mockRejectedValue(failure);
+    const logged = vi
+      .spyOn(logApp, 'error')
+      .mockImplementation(() => undefined);
+
+    // When
+    const call = pulseResolver.Mutation!.pushPulse!(
+      {},
+      {
+        input: {
+          day: DAY,
+          sector_bucket: PulseSectorBucket.Finance,
+          region_bucket: PulseRegionBucket.Europe,
+          records: [],
+        },
+      },
+      makeContext(),
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    // Then
+    await expect(call).rejects.toThrow(UnknownErrorCode.UnknownError);
+    expect(logged).toHaveBeenCalled();
+    const serialized = JSON.stringify(logged.mock.calls, (_, value) =>
+      value instanceof Error
+        ? { ...value, message: value.message, stack: value.stack }
+        : value
+    );
+    expect(serialized).not.toContain('a1b2c3d4');
+    expect(serialized).not.toContain('pseudonym-9f8e');
+    expect(serialized).not.toContain('PulseKeyContributor');
+    expect(serialized).toContain(REDACTED_PULSE_ERROR_MESSAGE);
+    expect(serialized).toContain('23505');
+  });
+
+  it('should keep a code-only message so the shared error mapping still applies', () => {
+    // Given
+    const failure = new TypeError('FORBIDDEN_ACCESS');
+
+    // When
+    const sanitized = sanitizePulseFailure(failure);
+
+    // Then
+    expect(sanitized.message).toBe('FORBIDDEN_ACCESS');
+    expect(sanitized.name).toBe('TypeError');
+    expect(sanitized.stack).toBe('TypeError: FORBIDDEN_ACCESS');
+    expect(sanitizePulseFailure('raw string failure').message).toBe(
+      REDACTED_PULSE_ERROR_MESSAGE
+    );
   });
 
   it('should pass the purge platform id argument to the app', async () => {

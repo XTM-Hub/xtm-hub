@@ -328,24 +328,39 @@ export const PulseDomain = {
     return new Map(rows.map((row) => [pulseKeyId(row), row.platforms]));
   },
 
+  // First and last day of the key over the weeks (counted back from `day`,
+  // like the trend series) that k distinct platforms reached: a day of a
+  // week below k is published nowhere else, so it never bounds the range.
   loadSeenRanges: async ({
     keys,
     sinceDay,
+    day,
+    kThreshold,
   }: {
     keys: readonly PulseKeyRef[];
     sinceDay: string;
+    day: string;
+    kThreshold: number;
   }): Promise<Map<string, PulseSeenRange>> => {
     const rows = await query<
       PulseKeyRef & { first_seen: string; last_seen: string }
     >(
-      `SELECT encode(a.at_rest_key, 'hex') AS k, a.object_type AS t,
-              MIN(a.day)::text AS first_seen, MAX(a.day)::text AS last_seen
-       FROM "PulseDailyAggregate" a
-       JOIN jsonb_to_recordset(?::jsonb) AS r(k text, t text)
-         ON a.at_rest_key = decode(r.k, 'hex') AND a.object_type = r.t
-       WHERE a.day >= ?::date
-       GROUP BY a.at_rest_key, a.object_type`,
-      [keyRefsJson(keys), sinceDay]
+      `WITH weekly AS (
+         SELECT c.at_rest_key, c.object_type,
+                COUNT(DISTINCT c.pulse_platform_id) AS platforms,
+                MIN(c.day) AS first_day, MAX(c.day) AS last_day
+         FROM "PulseContribution" c
+         JOIN jsonb_to_recordset(?::jsonb) AS r(k text, t text)
+           ON c.at_rest_key = decode(r.k, 'hex') AND c.object_type = r.t
+         WHERE c.day >= ?::date AND c.day <= ?::date
+         GROUP BY c.at_rest_key, c.object_type, (?::date - c.day) / ?::int
+       )
+       SELECT encode(at_rest_key, 'hex') AS k, object_type AS t,
+              MIN(first_day)::text AS first_seen, MAX(last_day)::text AS last_seen
+       FROM weekly
+       WHERE platforms >= ?
+       GROUP BY at_rest_key, object_type`,
+      [keyRefsJson(keys), sinceDay, day, day, PULSE_DAYS_PER_WEEK, kThreshold]
     );
     return new Map(
       rows.map((row) => [
@@ -414,10 +429,12 @@ export const PulseDomain = {
 
   // region Trending
   // Distinct platforms of the bucket over the period and the two previous
-  // periods, coarsened like platforms_bucket (0 below k), for every key
-  // published network-wide that reaches k in the period. The ranking of
-  // PulseHelper.rankTrending and its per-type limit run in the database, so a
-  // large network never materializes every candidate in the API process.
+  // periods, raw, for every key published network-wide that reaches k in the
+  // period. The ranking of PulseHelper.rankTrending (on the counts coarsened
+  // like platforms_bucket, 0 below k) and its per-type limit run in the
+  // database, so a large network never materializes every candidate in the
+  // API process; the counts stay raw so PulseHelper.rankTrending coarsens
+  // them exactly once.
   loadTrendingCounts: async ({
     day,
     periodDays,
@@ -470,17 +487,17 @@ export const PulseDomain = {
          SELECT value::int AS min FROM jsonb_array_elements_text(?::jsonb)
        ),
        coarse AS (
-         SELECT e.at_rest_key, e.object_type,
-                CASE WHEN e.recent >= ? THEN COALESCE((SELECT MAX(b.min) FROM buckets b WHERE b.min <= e.recent), 0) ELSE 0 END AS recent,
-                CASE WHEN e.prev1 >= ? THEN COALESCE((SELECT MAX(b.min) FROM buckets b WHERE b.min <= e.prev1), 0) ELSE 0 END AS prev1,
-                CASE WHEN e.prev2 >= ? THEN COALESCE((SELECT MAX(b.min) FROM buckets b WHERE b.min <= e.prev2), 0) ELSE 0 END AS prev2
+         SELECT e.at_rest_key, e.object_type, e.recent, e.prev1, e.prev2,
+                CASE WHEN e.recent >= ? THEN COALESCE((SELECT MAX(b.min) FROM buckets b WHERE b.min <= e.recent), 0) ELSE 0 END AS coarse_recent,
+                CASE WHEN e.prev1 >= ? THEN COALESCE((SELECT MAX(b.min) FROM buckets b WHERE b.min <= e.prev1), 0) ELSE 0 END AS coarse_prev1,
+                CASE WHEN e.prev2 >= ? THEN COALESCE((SELECT MAX(b.min) FROM buckets b WHERE b.min <= e.prev2), 0) ELSE 0 END AS coarse_prev2
          FROM eligible e
        ),
        ranked AS (
          SELECT coarse.*,
                 ROW_NUMBER() OVER (
                   PARTITION BY object_type
-                  ORDER BY (recent + 1)::float8 / ((prev1 + prev2) / 2.0 + 1) DESC, recent DESC, at_rest_key
+                  ORDER BY (coarse_recent + 1)::float8 / ((coarse_prev1 + coarse_prev2) / 2.0 + 1) DESC, coarse_recent DESC, at_rest_key
                 ) AS position
          FROM coarse
        )

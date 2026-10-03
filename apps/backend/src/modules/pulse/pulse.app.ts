@@ -386,6 +386,8 @@ const computeTrendingItems = async ({
   const seen = await PulseDomain.loadSeenRanges({
     keys,
     sinceDay: retentionStart,
+    day,
+    kThreshold: settings.kThreshold,
   });
   const activeContributors = await PulseDomain.countActiveContributors({
     fromDay: activityWindowStart(day),
@@ -643,6 +645,8 @@ export const PulseApp = {
         seen = await PulseDomain.loadSeenRanges({
           keys: publishedKeys,
           sinceDay: retentionStart,
+          day: validated.day,
+          kThreshold,
         });
         const presences = await PulseDomain.loadKeyPresence({
           keys: publishedKeys,

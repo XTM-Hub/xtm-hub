@@ -224,7 +224,7 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
       });
     });
 
-    it('should report weeks below k as 0 in the trend series', async () => {
+    it('should report weeks below k as 0 in the trend series and never date the key from them', async () => {
       // Given two platforms one week ago, five this week
       const clients = await registerPulseClients(5);
       clock.addDays(-7);
@@ -245,11 +245,46 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
         values: [LOCKBIT],
       });
 
-      // Then
+      const trending = await clients[0]!.trending({
+        day: PULSE_TEST_TODAY,
+        period: PulsePeriod.Last_30Days,
+      });
+
+      // Then the week of the two platforms bounds neither the series nor the dates
       expect(result).toMatchObject({
         trend: PulseTrendDirection.Rising,
         trend_series: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5],
-        first_seen_network: PulseDay.addDays(PULSE_TEST_TODAY, -7),
+        first_seen_network: PULSE_TEST_TODAY,
+        last_seen_network: PULSE_TEST_TODAY,
+      });
+      expect(trending.items[0]?.first_seen_network).toBe(PULSE_TEST_TODAY);
+    });
+
+    it('should keep the last day of the latest week that reached k', async () => {
+      // Given five platforms two weeks ago, then one platform this week
+      const clients = await registerPulseClients(5);
+      clock.addDays(-14);
+      await pushFromEach(clients, {
+        day: clock.today(),
+        records: [malware(LOCKBIT)],
+      });
+      clock.addDays(14);
+      await pushFromEach(clients.slice(0, 1), {
+        day: PULSE_TEST_TODAY,
+        records: [malware(LOCKBIT)],
+      });
+
+      // When
+      const [result] = await clients[0]!.lookup({
+        day: PULSE_TEST_TODAY,
+        objectType: MALWARE,
+        values: [LOCKBIT],
+      });
+
+      // Then the single reporter of this week does not move the last seen day
+      expect(result).toMatchObject({
+        first_seen_network: PulseDay.addDays(PULSE_TEST_TODAY, -14),
+        last_seen_network: PulseDay.addDays(PULSE_TEST_TODAY, -14),
       });
     });
 
@@ -510,6 +545,44 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
       ).toEqual([
         { platforms_bucket: '5-9', growth: 6 },
         { platforms_bucket: '5-9', growth: 6 },
+      ]);
+    });
+
+    it('should coarsen the trending counts once when k is not a bucket boundary', async () => {
+      // Given k=7 and a family reported by seven platforms today
+      const config = PulseConfig.get();
+      if (!config.enabled) {
+        throw new Error('Threat Pulse must be enabled in tests');
+      }
+      vi.spyOn(PulseConfig, 'get').mockReturnValue({
+        ...config,
+        settings: { ...config.settings, kThreshold: 7 },
+      });
+      const clients = await registerPulseClients(7);
+      await pushFromEach(clients, {
+        day: PULSE_TEST_TODAY,
+        records: [malware(LOCKBIT)],
+      });
+
+      // When
+      const trending = await clients[0]!.trending({
+        day: PULSE_TEST_TODAY,
+        period: PulsePeriod.Last_7Days,
+      });
+
+      // Then seven reporters publish the 5-9 range, not a count below k
+      expect(
+        trending.items.map(({ platforms_bucket, growth, trend }) => ({
+          platforms_bucket,
+          growth,
+          trend,
+        }))
+      ).toEqual([
+        {
+          platforms_bucket: '5-9',
+          growth: 6,
+          trend: PulseTrendDirection.Rising,
+        },
       ]);
     });
 
