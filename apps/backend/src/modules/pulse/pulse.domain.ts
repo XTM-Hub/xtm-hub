@@ -813,7 +813,11 @@ export const PulseDomain = {
 
   // Keys of the caller published in its sector over the period where the
   // caller is above the median of the per-platform sums of the sector
-  // platforms, strongest relative outliers first.
+  // platforms, strongest relative outliers first. Like the metric medians, the
+  // median runs over every platform active in the sector, a platform that did
+  // not report the key counting 0; k distinct reporters are still required.
+  // The zeros are not materialized: they are the first positions of the
+  // sorted totals, so percentile_cont(0.5) is read from the reported ones.
   loadBenchmarkTopItems: async ({
     platformId,
     fromDay,
@@ -840,6 +844,11 @@ export const PulseDomain = {
            AND c.day >= ?::date AND c.day <= ?::date
          GROUP BY c.at_rest_key, c.object_type
        ),
+       sector_size AS (
+         SELECT COUNT(DISTINCT pulse_platform_id)::int AS platforms
+         FROM "PulsePlatformDailyTotal"
+         WHERE sector_bucket = ? AND day >= ?::date AND day <= ?::date
+       ),
        per_platform AS (
          SELECT c.at_rest_key, c.object_type, c.pulse_platform_id, SUM(c.event_count)::float8 AS total
          FROM "PulseContribution" c
@@ -847,12 +856,31 @@ export const PulseDomain = {
          WHERE c.sector_bucket = ? AND c.day >= ?::date AND c.day <= ?::date
          GROUP BY c.at_rest_key, c.object_type, c.pulse_platform_id
        ),
-       stats AS (
-         SELECT at_rest_key, object_type,
-                percentile_cont(0.5) WITHIN GROUP (ORDER BY total) AS median
+       reported AS (
+         SELECT at_rest_key, object_type, array_agg(total ORDER BY total) AS totals
          FROM per_platform
          GROUP BY at_rest_key, object_type
          HAVING COUNT(*) >= ?
+       ),
+       positions AS (
+         SELECT r.at_rest_key, r.object_type, r.totals,
+                GREATEST(z.platforms, cardinality(r.totals)) - cardinality(r.totals) AS zeros,
+                floor((GREATEST(z.platforms, cardinality(r.totals)) - 1) * 0.5)::int AS low,
+                ceil((GREATEST(z.platforms, cardinality(r.totals)) - 1) * 0.5)::int AS high,
+                (((GREATEST(z.platforms, cardinality(r.totals)) - 1) * 0.5)
+                  - floor((GREATEST(z.platforms, cardinality(r.totals)) - 1) * 0.5))::float8 AS fraction
+         FROM reported r CROSS JOIN sector_size z
+       ),
+       bounds AS (
+         SELECT at_rest_key, object_type, fraction,
+                CASE WHEN low < zeros THEN 0 ELSE totals[low - zeros + 1] END AS low_value,
+                CASE WHEN high < zeros THEN 0 ELSE totals[high - zeros + 1] END AS high_value
+         FROM positions
+       ),
+       stats AS (
+         SELECT at_rest_key, object_type,
+                (low_value + (high_value - low_value) * fraction)::float8 AS median
+         FROM bounds
        )
        SELECT encode(m.at_rest_key, 'hex') AS k, m.object_type AS t, m.my_count, s.median
        FROM mine m
@@ -863,6 +891,9 @@ export const PulseDomain = {
       [
         kThreshold,
         platformId,
+        fromDay,
+        toDay,
+        sectorBucket,
         fromDay,
         toDay,
         sectorBucket,

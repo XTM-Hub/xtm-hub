@@ -77,6 +77,9 @@ export interface PulseTrendingSnapshotItem extends PulseKeyRef {
 export interface PulsePublicationPolicy {
   version: number;
   kThreshold: number;
+  // Bounds the history behind first seen days: a snapshot computed under
+  // another retention would publish days the current one excludes.
+  retentionMonths: number;
 }
 
 export interface PulseStoredTrendingSnapshot {

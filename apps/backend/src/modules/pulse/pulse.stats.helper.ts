@@ -114,6 +114,11 @@ export const PulseStats = {
     PULSE_PLATFORMS_BUCKETS.find((bucket) => count >= bucket.min)?.label ??
     PULSE_BELOW_SMALLEST_BUCKET_LABEL,
 
+  // The network size every connected platform reads: below the anonymity
+  // threshold it only says so, whatever the bucket the count falls in.
+  contributorsBucket: (count: number, kThreshold: number): string =>
+    count < kThreshold ? `<${kThreshold}` : PulseStats.platformsBucket(count),
+
   prevalenceBucket: ({
     platformsInWindow,
     activeContributors,

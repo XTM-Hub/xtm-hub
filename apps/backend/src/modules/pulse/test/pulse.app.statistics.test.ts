@@ -614,6 +614,43 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
       }).toEqual({ before: 1, after: 0 });
     });
 
+    it('should never serve a fresh snapshot computed under another retention', async () => {
+      // Given a ranking whose first seen day is 300 days old, computed under a 13-month retention
+      const clients = await registerPulseClients(5);
+      clock.setTime(`${PULSE_TEST_TODAY}T10:00:00.000Z`);
+      clock.addDays(-300);
+      const longAgo = clock.today();
+      await pushFromEach(clients, {
+        day: longAgo,
+        records: [malware(LOCKBIT)],
+      });
+      clock.setTime(`${PULSE_TEST_TODAY}T10:00:00.000Z`);
+      await pushFromEach(clients, {
+        day: PULSE_TEST_TODAY,
+        records: [malware(LOCKBIT)],
+      });
+      const request = { day: PULSE_TEST_TODAY, period: PulsePeriod.Last_7Days };
+      const before = await clients[0]!.trending(request);
+      const config = PulseConfig.get();
+      if (!config.enabled) {
+        throw new Error('Threat Pulse must be enabled in tests');
+      }
+      vi.spyOn(PulseConfig, 'get').mockReturnValue({
+        ...config,
+        retentionMonths: 9,
+        settings: { ...config.settings, retentionMonths: 9 },
+      });
+
+      // When the retention is lowered to 9 months while the snapshot is fresh
+      const after = await clients[0]!.trending(request);
+
+      // Then the first seen day no longer reaches beyond the retention
+      expect({
+        before: before.items[0]?.first_seen_network,
+        after: after.items[0]?.first_seen_network,
+      }).toEqual({ before: longAgo, after: PULSE_TEST_TODAY });
+    });
+
     it('should recompute a snapshot published under an older policy version', async () => {
       // Given a fresh snapshot of an older publication policy
       const clients = await registerPulseClients(5);
@@ -630,6 +667,7 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
         policy: {
           version: PULSE_PUBLICATION_POLICY_VERSION - 1,
           kThreshold: 5,
+          retentionMonths: 13,
         },
         generation: await PulseDomain.loadDataGeneration(),
         items: [],
@@ -807,6 +845,39 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
           platform_count: 20,
           sector_median: 10,
           ratio: 2,
+        },
+      ]);
+    });
+
+    it('should count the active sector platforms that did not report a key as 0 in its median', async () => {
+      // Given seven active finance platforms, five of them reporting LockBit with totals 3 (the caller), 1, 2, 4 and 10
+      const clients = await registerPulseClients(7);
+      const lockbitCounts = [3, 1, 2, 4, 10];
+      for (const [index, client] of clients.entries()) {
+        await client.push({
+          day: PULSE_TEST_TODAY,
+          records: [
+            index < lockbitCounts.length
+              ? malware(LOCKBIT, lockbitCounts[index])
+              : malware('other-family'),
+          ],
+        });
+      }
+
+      // When
+      const benchmark = await clients[0]!.benchmark({
+        day: PULSE_TEST_TODAY,
+        period: PulsePeriod.Last_30Days,
+      });
+
+      // Then the median of 0, 0, 1, 2, 3, 4, 10 is 2, and the caller is above it
+      expect(benchmark.top_items).toEqual([
+        {
+          hash: await clients[0]!.hash(PULSE_TEST_TODAY, MALWARE, LOCKBIT),
+          object_type: MALWARE,
+          platform_count: 3,
+          sector_median: 2,
+          ratio: 1.5,
         },
       ]);
     });

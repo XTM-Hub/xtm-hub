@@ -204,7 +204,7 @@ type PulseStatus {
   day: String!
   k_threshold: Int!
   retention_months: Int!
-  "Active contributors over 30 days: <5 or a platforms bucket"
+  "Active contributors over 30 days: <k below the anonymity threshold, else a platforms bucket"
   contributors_bucket: String!
   "The caller can read lookups, trending and benchmarks (active or grace)"
   read_access: Boolean!

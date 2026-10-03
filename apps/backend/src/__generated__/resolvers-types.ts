@@ -2075,7 +2075,7 @@ export type PulseStatus = {
   contribution_grace_days: Scalars['Int']['output'];
   contribution_status: PulseContributionStatus;
   contribution_window_days: Scalars['Int']['output'];
-  /** Active contributors over 30 days: <5 or a platforms bucket */
+  /** Active contributors over 30 days: <k below the anonymity threshold, else a platforms bucket */
   contributors_bucket: Scalars['String']['output'];
   day: Scalars['String']['output'];
   k_threshold: Scalars['Int']['output'];

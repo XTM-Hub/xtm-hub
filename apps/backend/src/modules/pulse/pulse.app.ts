@@ -462,10 +462,11 @@ const loadTrendingItems = async ({
   const policy: PulsePublicationPolicy = {
     version: PULSE_PUBLICATION_POLICY_VERSION,
     kThreshold: settings.kThreshold,
+    retentionMonths: settings.retentionMonths,
   };
-  // A snapshot published under other rules (an older version, another k) or
-  // computed before the last purge or retention run is never served, however
-  // fresh.
+  // A snapshot published under other rules (an older version, another k or
+  // retention) or computed before the last purge or retention run is never
+  // served, however fresh.
   const isFresh = (
     snapshot:
       | {
@@ -479,6 +480,7 @@ const loadTrendingItems = async ({
     !!snapshot &&
     snapshot.policy?.version === policy.version &&
     snapshot.policy.kThreshold === policy.kThreshold &&
+    snapshot.policy.retentionMonths === policy.retentionMonths &&
     snapshot.generation === generation &&
     now.getTime() - snapshot.computedAt.getTime() < ttlMs &&
     snapshot.computedAt.getTime() <= now.getTime();
@@ -556,6 +558,7 @@ const loadDigestItems = async ({
   const policy: PulsePublicationPolicy = {
     version: PULSE_PUBLICATION_POLICY_VERSION,
     kThreshold: settings.kThreshold,
+    retentionMonths: settings.retentionMonths,
   };
   const isFresh = (
     snapshot:
@@ -566,6 +569,7 @@ const loadDigestItems = async ({
     !!snapshot?.stored &&
     snapshot.stored.policy.version === policy.version &&
     snapshot.stored.policy.kThreshold === policy.kThreshold &&
+    snapshot.stored.policy.retentionMonths === policy.retentionMonths &&
     snapshot.stored.size === settings.digestSize &&
     snapshot.stored.generation === generation &&
     now.getTime() - snapshot.computedAt.getTime() < ttlMs &&
@@ -685,7 +689,10 @@ export const PulseApp = {
         day: caller.today,
         k_threshold: caller.settings.kThreshold,
         retention_months: caller.settings.retentionMonths,
-        contributors_bucket: PulseStats.platformsBucket(activeContributors),
+        contributors_bucket: PulseStats.contributorsBucket(
+          activeContributors,
+          caller.settings.kThreshold
+        ),
         read_access: contribution.readAccess,
         last_contribution_day: platform?.last_contribution_day ?? null,
         contribution_status: contribution.status,

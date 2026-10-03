@@ -638,6 +638,36 @@ describe('pulseApp platform API', PULSE_INTEGRATION_SUITE, () => {
         read_access_until: PulseDay.addDays(PULSE_TEST_YESTERDAY, 13),
       });
     });
+
+    it('should not range the contributors before the anonymity threshold is reached', async () => {
+      // Given k = 10 and five active contributors
+      const config = PulseConfig.get();
+      if (!config.enabled) {
+        throw new Error('Threat Pulse must be enabled in tests');
+      }
+      vi.spyOn(PulseConfig, 'get').mockReturnValue({
+        ...config,
+        settings: { ...config.settings, kThreshold: 10 },
+      });
+      const clients = await Promise.all(
+        Array.from({ length: 5 }, () => registerClient())
+      );
+      for (const client of clients) {
+        await client.push({
+          day: PULSE_TEST_TODAY,
+          records: [{ objectType: PulseObjectType.Malware, value: 'lockbit' }],
+        });
+      }
+
+      // When
+      const status = await clients[0]!.status();
+
+      // Then
+      expect(status).toMatchObject({
+        k_threshold: 10,
+        contributors_bucket: '<10',
+      });
+    });
   });
 
   describe('contribute to read', () => {
