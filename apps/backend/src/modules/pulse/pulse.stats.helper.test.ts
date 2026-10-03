@@ -169,6 +169,37 @@ describe('pulseStats', () => {
     );
   });
 
+  describe('coarseCount', () => {
+    it.each([
+      { count: 0, expected: 0 },
+      { count: 4, expected: 0 },
+      { count: 5, expected: 5 },
+      { count: 9, expected: 5 },
+      { count: 10, expected: 10 },
+      { count: 49, expected: 25 },
+      { count: 99, expected: 50 },
+      { count: 249, expected: 100 },
+      { count: 1000, expected: 250 },
+    ])(
+      'should return the lower bound of the platforms range of $count, 0 below k',
+      ({ count, expected }) => {
+        // When
+        const coarse = PulseStats.coarseCount(count, K);
+
+        // Then
+        expect(coarse).toBe(expected);
+      }
+    );
+
+    it('should return 0 for a count below a k larger than the smallest range', () => {
+      // When k is 7, 6 reporters are below k although 6 is in the 5-9 range
+      const coarse = PulseStats.coarseCount(6, 7);
+
+      // Then
+      expect(coarse).toBe(0);
+    });
+  });
+
   describe('trendSeries', () => {
     it('should return oldest first, 0 below k and the lower bound of each platforms range', () => {
       // Given newest first

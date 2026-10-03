@@ -31,9 +31,9 @@ Objects marked `TLP:RED`, `TLP:AMBER+STRICT` or `PAP:RED`, objects with restrict
 2. **Re-keying at rest.** On reception, XTM Hub decrypts each hash with the salt of its day and immediately re-keys it with a secret key held only by XTM Hub (`PULSE_AT_REST_KEY`). The stored key cannot be computed by a platform, so the database alone does not reveal which objects a platform holds.
 3. **Pseudonymized platforms.** Platform identifiers are stored as keyed pseudonyms (`PULSE_PLATFORM_KEY`), never in clear.
 4. **k-anonymity.** Every published statistic (prevalence, first-seen, trends, trending lists, benchmarks) requires at least `k` distinct contributing platforms, 5 by default. Below the threshold, XTM Hub answers that the object is unpublished and returns no count. A week or a period below `k` weighs 0 in everything derived from it (the weekly series, the trend directions, the trending growth), so no published figure reveals it.
-5. **Coarse buckets.** Platform counts are returned as ranges (`5-9`, `10-24`, ... `250+`), never as exact numbers; the 12-week series carries, for each week, the lower bound of its range (5, 10, 25, 50, 100 or 250).
+5. **Coarse buckets.** Platform counts are returned as ranges (`5-9`, `10-24`, ... `250+`), never as exact numbers; the 12-week series carries, for each week, the lower bound of its range (5, 10, 25, 50, 100 or 250), and the trending growth and order are computed from those lower bounds, so two objects in the same range always publish the same growth.
 6. **Retention.** Contributions older than the retention period (13 months by default) are deleted every night.
-7. **Nothing in the logs.** The request logs never keep the text, the variables, the error messages or the stacks of Threat Pulse requests.
+7. **Nothing in the logs.** The request logs never keep the text, the variables, the error messages or the stacks of Threat Pulse requests, nor the variables of any request sent without its query text (an automatic persisted query).
 8. **Right to purge.** An administrator can purge every contribution of the platform from OpenCTI at any time (`pulsePurge`). XTM Hub deletes them and recomputes the statistics.
 
 ## What a platform reads
@@ -45,7 +45,7 @@ Reading requires contributing: XTM Hub answers lookups, trending lists and bench
 | `pulseStatus` | Day, anonymity threshold, retention, contributors range and read access of the platform. |
 | `pulseLookup` | Community prevalence (`rare`, `uncommon`, `common`, `widespread`), contributing platforms range, network first and last seen days, 12-week trend and sector trend of up to 1,000 hashes. |
 | `pulseTrending` | Objects rising in a sector and region over 7, 30 or 90 days, returned as hashes the platform matches against its own objects. |
-| `pulseBenchmark` | The platform's activity per object type and event kind compared with the median of its sector, and the objects it reports most above that median. |
+| `pulseBenchmark` | The platform's activity per object type and event kind compared with the median of its sector, and the objects it reports above that median, ordered by their ratio to the median. |
 
 Every operation authenticates with the platform token of the connected product and is rate limited per platform.
 

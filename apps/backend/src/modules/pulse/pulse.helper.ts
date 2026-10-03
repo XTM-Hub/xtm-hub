@@ -114,23 +114,27 @@ export const PulseHelper = {
   },
 
   // Ranked by growth, then recent distinct platforms, then key for a stable
-  // order; only the best items of every object type are kept. The recent
-  // period reaches k by construction; a previous period below k weighs 0.
+  // order; only the best items of every object type are kept. Every count is
+  // coarsened like platforms_bucket first (a period below k weighs 0), so
+  // neither the published growth nor the order reveals an exact platform
+  // count. PulseDomain.loadTrendingCounts applies the same ranking in SQL.
   rankTrending: (
     counts: readonly PulseTrendingCount[],
     kThreshold: number
   ): PulseRankedTrendingCount[] => {
     const ranked = counts
       .map((count) => {
-        const prev1 = PulseStats.suppressBelowK(count.prev1, kThreshold);
-        const prev2 = PulseStats.suppressBelowK(count.prev2, kThreshold);
+        const recent = PulseStats.coarseCount(count.recent, kThreshold);
+        const prev1 = PulseStats.coarseCount(count.prev1, kThreshold);
+        const prev2 = PulseStats.coarseCount(count.prev2, kThreshold);
         const baseline = (prev1 + prev2) / 2;
         return {
           ...count,
+          recent,
           prev1,
           prev2,
           baseline,
-          growth: PulseStats.growth(count.recent, baseline),
+          growth: PulseStats.growth(recent, baseline),
         };
       })
       .sort(

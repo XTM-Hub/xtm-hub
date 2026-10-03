@@ -327,7 +327,7 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
             platforms_bucket: '5-9',
             prevalence_bucket: PulsePrevalenceBucket.Widespread,
             trend: PulseTrendDirection.Rising,
-            growth: 7,
+            growth: 6,
             first_seen_network: PULSE_TEST_TODAY,
           },
           {
@@ -481,6 +481,36 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
       // Then the growth is the one of an empty history, and the series hides it too
       expect(trending.items[0]?.growth).toBe(6);
       expect(lookup?.trend_series?.slice(-3)).toEqual([0, 0, 5]);
+    });
+
+    it('should publish the same growth for every reporter count of a platforms range', async () => {
+      // Given a family reported by five platforms and another by nine, both first seen today
+      const clients = await registerPulseClients(9);
+      await pushFromEach(clients.slice(0, 5), {
+        day: PULSE_TEST_TODAY,
+        records: [malware('five-reporters')],
+      });
+      await pushFromEach(clients, {
+        day: PULSE_TEST_TODAY,
+        records: [malware('nine-reporters')],
+      });
+
+      // When
+      const trending = await clients[0]!.trending({
+        day: PULSE_TEST_TODAY,
+        period: PulsePeriod.Last_7Days,
+      });
+
+      // Then neither the growth nor the bucket tells five from nine
+      expect(
+        trending.items.map(({ platforms_bucket, growth }) => ({
+          platforms_bucket,
+          growth,
+        }))
+      ).toEqual([
+        { platforms_bucket: '5-9', growth: 6 },
+        { platforms_bucket: '5-9', growth: 6 },
+      ]);
     });
 
     it('should never serve a fresh snapshot published under another k', async () => {
@@ -654,6 +684,57 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
           },
         ],
       });
+    });
+
+    it('should list only the keys above the sector median, strongest relative outliers first', async () => {
+      // Given the caller far above a low median, above a high median, and below a median
+      const clients = await registerPulseClients(5);
+      const reports: Array<{ family: string; caller: number; others: number }> =
+        [
+          { family: 'low-median-family', caller: 4, others: 1 },
+          { family: 'high-median-family', caller: 20, others: 10 },
+          { family: 'below-median-family', caller: 1, others: 5 },
+        ];
+      for (const [index, client] of clients.entries()) {
+        await client.push({
+          day: PULSE_TEST_TODAY,
+          records: reports.map(({ family, caller, others }) =>
+            malware(family, index === 0 ? caller : others)
+          ),
+        });
+      }
+
+      // When
+      const benchmark = await clients[0]!.benchmark({
+        day: PULSE_TEST_TODAY,
+        period: PulsePeriod.Last_30Days,
+      });
+
+      // Then the ratio orders the items, not the raw count
+      expect(benchmark.top_items).toEqual([
+        {
+          hash: await clients[0]!.hash(
+            PULSE_TEST_TODAY,
+            MALWARE,
+            'low-median-family'
+          ),
+          object_type: MALWARE,
+          platform_count: 4,
+          sector_median: 1,
+          ratio: 4,
+        },
+        {
+          hash: await clients[0]!.hash(
+            PULSE_TEST_TODAY,
+            MALWARE,
+            'high-median-family'
+          ),
+          object_type: MALWARE,
+          platform_count: 20,
+          sector_median: 10,
+          ratio: 2,
+        },
+      ]);
     });
 
     it('should count only the days of the requested period', async () => {

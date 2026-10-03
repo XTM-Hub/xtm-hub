@@ -123,20 +123,22 @@ export const PulseStats = {
     return PulseStats.trendDirection(recent, baseline);
   },
 
-  // Oldest week first; each week is the lower bound of its platforms range
-  // (5, 10, 25, ...), 0 below k: the series is as coarse as platforms_bucket.
+  // Lower bound of the platforms range of a count (5, 10, 25, ...), 0 below
+  // k: a figure derived from it is exactly as coarse as platforms_bucket.
+  coarseCount: (count: number, kThreshold: number): number =>
+    count >= kThreshold
+      ? (PULSE_PLATFORMS_BUCKETS.find((bucket) => count >= bucket.min)?.min ??
+        0)
+      : 0,
+
+  // Oldest week first, each week coarsened like platforms_bucket.
   trendSeries: (
     weeklyNewestFirst: readonly number[],
     kThreshold: number
   ): number[] =>
     [...weeklyNewestFirst]
       .reverse()
-      .map((count) =>
-        count >= kThreshold
-          ? (PULSE_PLATFORMS_BUCKETS.find((bucket) => count >= bucket.min)
-              ?.min ?? 0)
-          : 0
-      ),
+      .map((count) => PulseStats.coarseCount(count, kThreshold)),
 
   growth: (recent: number, baseline: number): number =>
     (recent + 1) / (baseline + 1),
