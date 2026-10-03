@@ -80,6 +80,7 @@ import {
 import { TestDeploymentHelper } from './test.deployment.helper';
 import { TestDocumentHelper } from './test.document.helper';
 import { TestNewsfeedHelper } from './test.newsfeed.helper';
+import { TestPulseHelper } from './test.pulse.helper';
 import { TestServiceHelper } from './test.service.helper';
 import { TestUserHelper } from './test.user.helper';
 
@@ -101,6 +102,7 @@ export const TestHelper = {
   ...TestUserHelper,
   ...TestDeploymentHelper,
   ...TestNewsfeedHelper,
+  ...TestPulseHelper,
   subscription: {
     create: async (data?: Partial<Subscription>): Promise<Subscription> => {
       const [subscription] = await db<Subscription>('Subscription')

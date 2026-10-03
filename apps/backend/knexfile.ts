@@ -100,7 +100,16 @@ type BaseDatabaseType =
   | 'VotingRound'
   | 'VotableFeature'
   | 'VotableFeature_UseCase'
-  | 'FeatureVote';
+  | 'FeatureVote'
+  | 'PulseSalt'
+  | 'PulsePlatform'
+  | 'PulseContribution'
+  | 'PulseDailyAggregate'
+  | 'PulseKey'
+  | 'PulseKeyContributor'
+  | 'PulsePlatformDailyTotal'
+  | 'PulseRateLimit'
+  | 'PulseTrendingSnapshot';
 
 export type DatabaseType =
   | BaseDatabaseType

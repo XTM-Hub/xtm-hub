@@ -13,6 +13,7 @@ import {
 } from '../../../modules/security-management/token/platform-token.util';
 import { PLATFORM_USER_EMAIL, PLATFORM_USER_UUID } from '../../../portal.const';
 import { ErrorCode } from '../../../utils/error/error.code';
+import { UnauthenticatedAccess } from '../../../utils/error/error.util';
 
 export {
   extractPlatformId,
@@ -30,7 +31,7 @@ const loadOrganizationFromPlatformIdAndTokenHeaders = async (
 ) => {
   const extractedAuth = validateExistsPlatformAndToken(req);
   if (!extractedAuth) {
-    throw new Error('Invalid platform token provided');
+    throw UnauthenticatedAccess('Invalid platform token provided');
   }
   const { token, platform_id } = extractedAuth;
 
@@ -59,7 +60,7 @@ const loadOrganizationFromPlatformIdAndTokenHeaders = async (
     });
   }
 
-  throw new Error('Invalid token provided');
+  throw UnauthenticatedAccess('Invalid token provided');
 };
 
 type ResolverArgumentValue =

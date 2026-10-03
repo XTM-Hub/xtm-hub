@@ -14,6 +14,19 @@ export interface Context extends BaseContext {
   serviceId?: string;
 }
 
+// Threat Pulse batches carry up to thousands of pseudonymous hashes: logging
+// them adds volume and keeps linkable material in log storage.
+const REDACTED_VARIABLES_FIELDS = /\b(pushPulse|pulseLookup)\b/;
+export const REDACTED_VARIABLES = '[redacted]';
+
+export const loggableVariables = (
+  query: string | undefined,
+  variables: unknown
+): unknown =>
+  query && REDACTED_VARIABLES_FIELDS.test(query)
+    ? REDACTED_VARIABLES
+    : variables;
+
 export const errorLoggingPlugin = (): ApolloServerPlugin<Context> => ({
   async requestDidStart(requestContext) {
     const { request, contextValue } = requestContext;
@@ -24,7 +37,7 @@ export const errorLoggingPlugin = (): ApolloServerPlugin<Context> => ({
       {
         operationName: request.operationName,
         query: request.query,
-        variables: req?.body?.variables,
+        variables: loggableVariables(request.query, req?.body?.variables),
         user,
         serviceId,
       },
@@ -33,7 +46,8 @@ export const errorLoggingPlugin = (): ApolloServerPlugin<Context> => ({
 
     return {
       async didEncounterErrors(requestContext) {
-        const { errors, operationName, contextValue } = requestContext;
+        const { errors, operationName, contextValue, request } =
+          requestContext;
 
         errors.forEach((error) => {
           const logLevel: ErrorLogLevel =
@@ -49,7 +63,10 @@ export const errorLoggingPlugin = (): ApolloServerPlugin<Context> => ({
               user: contextValue?.user,
               serviceId: contextValue?.serviceId,
               codeStack: error.originalError?.stack,
-              variables: contextValue?.req?.body?.variables,
+              variables: loggableVariables(
+                request.query,
+                contextValue?.req?.body?.variables
+              ),
             },
             AppLogsCategory.GRAPHQL
           );
