@@ -8,8 +8,9 @@ import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDi
 import { useEpicFilter } from '@/hooks/use-epic-filter';
 import { useEpicListContext } from '@/hooks/use-epic-list-context';
 import { fileListToUploadableMap } from '@/relay/environment/fetch-form-data';
+import { Button } from '@filigran/design-system';
 import { AddIcon } from '@filigran/icon';
-import { Button, useToast } from '@filigran/ui';
+import { useToast } from '@filigran/ui';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -125,7 +126,7 @@ export const EpicFormSheet = ({
           <></>
         ) : (
           triggerElement || (
-            <Button variant="tertiary">
+            <Button priority="tertiary">
               <AddIcon className="size-4 mr-s" />
               {t('Utils.Create')}
             </Button>

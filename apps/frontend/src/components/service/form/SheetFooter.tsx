@@ -1,4 +1,5 @@
-import { Button, SheetFooter } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
+import { SheetFooter } from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 
 interface ServiceFormSheetFooterProps {
@@ -13,7 +14,7 @@ export const ServiceFormSheetFooter = ({
     <SheetFooter className="sm:justify-between pt-2">
       <div className="ml-auto flex gap-s">
         <Button
-          variant="secondary"
+          priority="secondary"
           type="button"
           onClick={(e) => handleCloseSheet(e)}>
           {t('Utils.Cancel')}

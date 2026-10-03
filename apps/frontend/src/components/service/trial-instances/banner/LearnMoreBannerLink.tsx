@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { buttonVariants } from '@filigran/ui/servers';
+import { buttonVariants } from '@filigran/design-system';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
@@ -16,7 +16,7 @@ export const LearnMoreBannerLink = ({ href }: LearnMoreBannerLinkProps) => {
     <Link
       href={href}
       className={cn(
-        buttonVariants({ variant: 'secondary' }),
+        buttonVariants({ priority: 'secondary' }),
         'ml-s mr-s text-[12px] px-2 py-0.5 min-h-0 h-auto text-inherit border-current hover:bg-current/10 focus-visible:ring-current/70'
       )}>
       {t('Service.Trials.LearnMore.Link')}

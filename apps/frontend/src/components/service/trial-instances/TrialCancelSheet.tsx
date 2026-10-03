@@ -5,10 +5,10 @@ import { SelectWithEditableField } from '@/components/service/registration/Selec
 import { CancelDeploymentRequestMutation } from '@/components/service/trial-instances/trial-instances.graphql';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
+import { Button } from '@filigran/design-system';
 import { CheckIndeterminateIcon } from '@filigran/icon';
 import {
   AutoForm,
-  Button,
   FormItem,
   FormLabel,
   FormMessage,
@@ -157,7 +157,7 @@ export const TrialCancelSheet = ({
         }}>
         <div className="flex justify-end gap-s">
           <Button
-            variant="secondary"
+            priority="secondary"
             type="button"
             onClick={() => setOpen(false)}>
             {t('Utils.Cancel')}

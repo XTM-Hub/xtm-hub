@@ -3,10 +3,10 @@
 import { invalidatePrivateNavigationQueries } from '@/components/menu/navigation/private/private-navigation-query-invalidation';
 import { SelectWithEditableField } from '@/components/service/registration/SelectWithEditableField';
 import { CancelDeploymentRequestMutation } from '@/components/service/trial-instances/trial-instances.graphql';
+import { Button } from '@filigran/design-system';
 import { WarningIcon } from '@filigran/icon';
 import {
   AutoForm,
-  Button,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -172,7 +172,7 @@ export const BundleCancelSheet = ({
           </div>
           <DialogFooter className="justify-end gap-s">
             <Button
-              variant="outline"
+              priority="secondary"
               type="button"
               onClick={() => setOpen(false)}>
               {t('Utils.Cancel')}

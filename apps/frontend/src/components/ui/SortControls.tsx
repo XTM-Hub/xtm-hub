@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { IconButton } from '@filigran/design-system';
 import { ArrowDownwardIcon, ArrowUpwardIcon } from '@filigran/icon';
 import {
   Select,
@@ -7,7 +8,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
 import { OrderingMode } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
 
@@ -51,24 +51,25 @@ export const SortControls = ({
           ))}
         </SelectContent>
       </Select>
-      <Button
-        size="icon"
+      <IconButton
         className="flex-none basis-9"
-        variant="tertiary"
+        priority="tertiary"
         aria-label={`${t('SortControls.SortBy')} ${selectedOrderMode}`}
+        icon={
+          selectedOrderMode === OrderingMode.Desc ? (
+            <ArrowUpwardIcon className="h-4 w-4" />
+          ) : (
+            <ArrowDownwardIcon className="h-4 w-4" />
+          )
+        }
         onClick={() =>
           onOrderModeChange(
             selectedOrderMode === OrderingMode.Asc
               ? OrderingMode.Desc
               : OrderingMode.Asc
           )
-        }>
-        {selectedOrderMode === OrderingMode.Desc ? (
-          <ArrowUpwardIcon className="h-4 w-4" />
-        ) : (
-          <ArrowDownwardIcon className="h-4 w-4" />
-        )}
-      </Button>
+        }
+      />
     </div>
   );
 };

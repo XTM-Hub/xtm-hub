@@ -19,6 +19,7 @@ import {
 } from '@dnd-kit/sortable';
 import type { Arguments } from '@dnd-kit/sortable/dist/hooks/useSortable';
 import { type Transform } from '@dnd-kit/utilities';
+import { IconButton } from '@filigran/design-system';
 import {
   ArrowNextIcon,
   ArrowPreviousIcon,
@@ -58,7 +59,7 @@ import {
   type Ref,
   type SetStateAction,
 } from 'react';
-import { Button, Skeleton } from '../servers';
+import { Skeleton } from '../servers';
 import { Checkbox } from './Checkbox';
 import {
   DropdownMenu,
@@ -104,6 +105,8 @@ interface DataTableProps<TData extends { id: string }, TValue> {
 interface DatatableI18nKey {
   'Rows per page': string;
   'Manage columns visibility': string;
+  'Column options': string;
+  'Clear selection': string;
   Asc: string;
   Desc: string;
   Hide: string;
@@ -117,6 +120,8 @@ interface DatatableI18nKey {
 const defaultI18nKey: DatatableI18nKey = {
   'Rows per page': 'Rows per page',
   'Manage columns visibility': 'Manage columns visibility',
+  'Column options': 'Column options',
+  'Clear selection': 'Clear selection',
   Asc: 'Asc',
   Desc: 'Desc',
   Hide: 'Hide',
@@ -172,13 +177,14 @@ const DataTableSelectColumnVisibility = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
+        <IconButton
+          priority="tertiary"
           className="h-9 w-9 rounded-none shrink-0"
-          aria-label={t_i18n('Manage columns visibility')}>
-          <TableTuneIcon className="h-[1.125rem] w-[1.125rem] text-primary" />
-        </Button>
+          aria-label={t_i18n('Manage columns visibility')}
+          icon={
+            <TableTuneIcon className="h-[1.125rem] w-[1.125rem] text-primary" />
+          }
+        />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => onClickResetTable()}>
@@ -264,12 +270,12 @@ const DataTableOptionsHeader = <TData, TValue>({
     <div className={className}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="w-6 text-muted-foreground">
-            <MoreVertIcon className="size-4" />
-          </Button>
+          <IconButton
+            priority="tertiary"
+            className="w-6 text-muted-foreground"
+            aria-label={t_i18n('Column options')}
+            icon={<MoreVertIcon className="size-4" />}
+          />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
           {column.getCanSort() && (
@@ -423,15 +429,14 @@ const DataTableHeadBarOptions = () => {
   return (
     <>
       <div className="shrink-0 box-border inline-flex h-9 items-center rounded border border-elevation-border-strong-layer-2">
-        <Button
-          variant="ghost"
-          size="icon"
+        <IconButton
+          priority="tertiary"
           className="h-9 w-9 rounded-none"
           onClick={() => table.previousPage()}
           disabled={!table.getCanPreviousPage()}
-          aria-label={t_i18n('Go to previous page')}>
-          <ArrowPreviousIcon className="size-3 text-primary" />
-        </Button>
+          aria-label={t_i18n('Go to previous page')}
+          icon={<ArrowPreviousIcon className="size-3 text-primary" />}
+        />
         <div className="px-s leading-none text-text-secondary txt-sub-content ">
           <span className="text-foreground">
             {table.getRowCount() > 0 ? pageIndex * pageSize + 1 : 0}
@@ -440,15 +445,14 @@ const DataTableHeadBarOptions = () => {
           </span>{' '}
           / {table.getRowCount()}
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
+        <IconButton
+          priority="tertiary"
           className="h-9 w-9 rounded-none"
           onClick={() => table.nextPage()}
           disabled={!table.getCanNextPage()}
-          aria-label={t_i18n('Go to next page')}>
-          <ArrowNextIcon className="size-3 text-primary" />
-        </Button>
+          aria-label={t_i18n('Go to next page')}
+          icon={<ArrowNextIcon className="size-3 text-primary" />}
+        />
 
         <DataTableSelectColumnVisibility />
       </div>
@@ -638,7 +642,7 @@ const DefaultSelectionHeader = ({
   actions,
   selectionState,
 }: SelectionHeaderProps) => {
-  const { table, selectionHandlers } = useContext(TableContext);
+  const { table, t_i18n, selectionHandlers } = useContext(TableContext);
 
   if (!selectionHandlers) return null;
 
@@ -658,14 +662,13 @@ const DefaultSelectionHeader = ({
           <span className="text-sm font-normal lowercase">
             {`${selectedCount} selected`}
           </span>
-          <Button
-            variant="ghost-primary"
-            size="icon"
+          <IconButton
+            priority="tertiary"
             className="h-5 w-5"
             onClick={selectionHandlers.clearSelection}
-            title="Clear selection">
-            <CloseIcon className="h-2 w-2" />
-          </Button>
+            aria-label={t_i18n('Clear selection')}
+            icon={<CloseIcon className="h-2 w-2" />}
+          />
         </div>
       </div>
       {actions && (

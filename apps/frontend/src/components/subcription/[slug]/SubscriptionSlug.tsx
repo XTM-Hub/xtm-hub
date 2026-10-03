@@ -9,7 +9,6 @@ import BadgeOverflowCounter, {
 import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
 import {
   Badge,
-  Button,
   DataTable,
   DataTableHeadBarOptions,
   SelectionState,
@@ -45,6 +44,7 @@ import ServiceSlugHeader from '@/components/service/[slug]/ServiceSlugHeader';
 import { SubscriptionSlugAddCapabilities } from '@/components/subcription/[slug]/SubscriptionSlugAddCapabilities';
 import { useAdminByPass } from '@/hooks/use-portal-capability';
 import { APP_PATH } from '@/utils/path/constant';
+import { Button } from '@filigran/design-system';
 import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import { subscriptionByIdQuery } from '@generated/subscriptionByIdQuery.graphql';
@@ -333,7 +333,7 @@ const SubscriptionSlug = ({
                   actions: () => (
                     <>
                       <Button
-                        variant="tertiary"
+                        priority="tertiary"
                         size="sm"
                         className="cursor-pointer"
                         onClick={() => setOpenAddCapabilities(true)}>
@@ -343,7 +343,8 @@ const SubscriptionSlug = ({
                         )}
                       </Button>
                       <Button
-                        variant="tertiary-destructive"
+                        variant="destructive"
+                        priority="tertiary"
                         size="sm"
                         className="cursor-pointer"
                         onClick={() =>

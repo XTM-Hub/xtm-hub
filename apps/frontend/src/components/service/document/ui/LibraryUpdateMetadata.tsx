@@ -4,10 +4,10 @@ import GuardCapacityComponent from '@/components/AdminGuard';
 import { useServiceContext } from '@/components/service/components/ServiceContext';
 import { Locale, locales } from '@/i18n/config';
 import { portalGraphqlClient } from '@/lib/graphql-client';
+import { Button } from '@filigran/design-system';
 import { EditIcon } from '@filigran/icon';
 import {
   AutoForm,
-  Button,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -180,7 +180,7 @@ export const LibraryUpdateMetadata = () => {
       portalCapabilityRestriction={[PortalCapability.ModifyServiceMetadata]}>
       <>
         <Button
-          variant="tertiary"
+          priority="tertiary"
           onClick={() => setIsOpen(true)}>
           <EditIcon className="h-4 w-4 mr-s " />
           {t('Utils.Edit')}
@@ -200,7 +200,7 @@ export const LibraryUpdateMetadata = () => {
               onSubmit={handleSubmit}>
               <DialogFooter className="pt-s">
                 <Button
-                  variant="secondary"
+                  priority="secondary"
                   type="button"
                   onClick={() => setIsOpen(false)}>
                   {t('Utils.Cancel')}

@@ -3,8 +3,8 @@ import { userFormSchema } from '@/components/admin/user/forms/user-form.schema';
 import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { isEmpty } from '@/lib/utils';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   Form,
   FormControl,
   FormField,
@@ -85,7 +85,7 @@ export const UserForm = ({ handleSubmit, validationSchema }: UserFormProps) => {
 
         <SheetFooter className="pt-2">
           <Button
-            variant="secondary"
+            priority="secondary"
             type="button"
             onClick={(e) => handleCloseSheet(e)}>
             {t('Utils.Cancel')}

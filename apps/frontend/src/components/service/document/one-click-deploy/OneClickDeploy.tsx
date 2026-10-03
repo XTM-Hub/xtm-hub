@@ -16,8 +16,8 @@ import {
   requiresEnterpriseEdition,
 } from '@/utils/platform';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
+import { Button } from '@filigran/design-system';
 import { AlertDialog, AlertDialogContent, SimpleTooltip } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { OneClickDeployMutation as OneClickDeployMutationType } from '@generated/OneClickDeployMutation.graphql';
 import { useTranslations } from 'next-intl';

@@ -4,8 +4,8 @@ import { getFeatureVotingPrivatePath } from '@/components/feature-voting/feature
 import { useFeatureVote } from '@/hooks/use-feature-vote';
 import usePublicPath from '@/hooks/use-public-path';
 import { buildSignupRedirect } from '@/utils/redirect';
+import { Button } from '@filigran/design-system';
 import { CheckCircleIcon } from '@filigran/icon';
-import { Button } from '@filigran/ui/servers';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
@@ -51,7 +51,7 @@ export const FeatureVoteButton = ({
   if (hasMyVote) {
     return (
       <Button
-        variant="secondary"
+        priority="secondary"
         className={className}
         disabled>
         <CheckCircleIcon className="mr-s size-4" />

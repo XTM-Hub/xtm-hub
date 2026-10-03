@@ -11,7 +11,7 @@ import { TrialsManageUsersDialog } from '@/components/service/trial-instances/ma
 import { TrialCancelSheet } from '@/components/service/trial-instances/TrialCancelSheet';
 import { isWithinLastMonths, useDateFormatter } from '@/utils/date';
 import { formatTitleCase } from '@/utils/format/case';
-import { Button } from '@filigran/ui/servers';
+import { Button } from '@filigran/design-system';
 import { registeredPlatformByServiceInstanceId_fragment$key } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
 import {
   DeploymentRequestHubStatus,
@@ -121,8 +121,9 @@ export const RegistrationDetails = ({
             {formatTitleCase(platform.deployment_request?.hub_status)}
             {isCancellable && (
               <Button
-                variant="link-destructive"
-                className="m-0 p-0 ml-4 h-full"
+                priority="tertiary"
+                variant="destructive"
+                className="m-0 p-0 ml-4 h-full underline"
                 onClick={() => setOpenCancelSheet(true)}>
                 {t('Utils.Cancel')}
               </Button>
@@ -260,7 +261,7 @@ export const RegistrationDetails = ({
           )}
         {displayUpdatePlatform && (
           <Button
-            variant="secondary"
+            priority="secondary"
             onClick={() => setOpenPlatformSheet(true)}>
             {t('Platform.Update')}
           </Button>

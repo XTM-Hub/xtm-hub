@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { buttonVariants } from '@filigran/design-system';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,7 +10,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-  buttonVariants,
 } from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 import React, { ReactNode } from 'react';
@@ -25,15 +25,7 @@ interface AlertDialogProps {
   children: ReactNode;
   onClickContinue: (e: React.MouseEvent<HTMLButtonElement>) => void;
   continueButtonDisabled?: boolean;
-  variantName?:
-    | 'default'
-    | 'destructive'
-    | 'outline'
-    | 'secondary'
-    | 'tertiary'
-    | 'link'
-    | null
-    | undefined;
+  variantName?: 'default' | 'destructive' | null | undefined;
 }
 
 /*
@@ -46,12 +38,11 @@ Example of use :
             actionButtonText={"Delete"} /*optional
             displayCancelButton={false} /*optional, default true
             triggerElement={
-              <Button
-                variant="tertiary"
-                size="icon"
-                aria-label="aria-description">
-                My button trigger text.
-              </Button>
+              <IconButton
+                priority="tertiary"
+                aria-label="aria-description"
+                icon={<MyIcon />}
+              />
             } /* If you dont want to trigger it with triggerButton, you can choose open/isOpen option instead.
             onClickContinue={() => myCustomFunction(randomParam)}>
             Are you sure XXX ?

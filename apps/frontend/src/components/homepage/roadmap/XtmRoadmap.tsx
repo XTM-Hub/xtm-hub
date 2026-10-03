@@ -8,7 +8,7 @@ import { PublicLocale } from '@/i18n/config';
 import { serverGraphqlFetch } from '@/lib/server-graphql-fetch';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '@/utils/constant';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
-import { Button } from '@filigran/ui/servers';
+import { Button } from '@filigran/design-system';
 import {
   EpicCountPerTimelineQueryDocument,
   EpicCountPerTimelineQueryQuery,
@@ -75,7 +75,7 @@ const XtmRoadmap = async ({
         <div>
           <Button
             asChild
-            variant="secondary"
+            priority="secondary"
             className="border-elevation-border-strong">
             <Link
               href={seeMoreHref ?? defaultSeeMoreHref}

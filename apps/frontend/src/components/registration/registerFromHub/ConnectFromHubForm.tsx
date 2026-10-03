@@ -1,6 +1,7 @@
 'use client';
 
-import { AutoForm, Button } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
+import { AutoForm } from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 import { z } from 'zod';
 

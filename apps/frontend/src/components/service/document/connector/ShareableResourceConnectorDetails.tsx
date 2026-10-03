@@ -3,8 +3,8 @@ import { ShareableResourceDetailsLink } from '@/components/service/document/Shar
 import { ShareableResourceBasicInformation } from '@/components/service/document/ui/ShareableResourceBasicInformation';
 import { ShareableResourceDetailItem } from '@/components/service/document/ui/ShareableResourceDetailItem';
 import { roundToNearest } from '@/lib/utils';
+import { Button } from '@filigran/design-system';
 import { LogoGitIcon, OpenInNewIcon } from '@filigran/icon';
-import { Button } from '@filigran/ui/servers';
 import { PlatformIdentifier } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -43,8 +43,8 @@ export const ShareableResourceConnectorDetails = ({
         <ShareableResourceDetailItem
           label={t('Service.Connectors.IntegrationDocumentationAndCode')}>
           <Button
-            className="p-0"
-            variant="link"
+            className="p-0 underline"
+            priority="tertiary"
             asChild>
             <Link
               href={connectorDetails.source_code}
@@ -59,8 +59,8 @@ export const ShareableResourceConnectorDetails = ({
         <ShareableResourceDetailItem
           label={t('Service.Connectors.VisitVendor')}>
           <Button
-            className="p-0 uppercase"
-            variant="link"
+            className="p-0 uppercase underline"
+            priority="tertiary"
             asChild>
             <Link
               href={connectorDetails.subscription_link}

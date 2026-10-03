@@ -1,9 +1,9 @@
 'use client';
 
 import { formatTier } from '@/components/competitor/competitor.utils';
+import { Button } from '@filigran/design-system';
 import {
   AutoForm,
-  Button,
   FormControl,
   FormItem,
   FormLabel,
@@ -105,7 +105,7 @@ const CompetitorForm = ({
       <SheetFooter className={'sm:justify-end pb-0'}>
         <div className="flex gap-s">
           <Button
-            variant="secondary"
+            priority="secondary"
             type="button"
             onClick={onClose}>
             {t('Utils.Cancel')}

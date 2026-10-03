@@ -7,9 +7,9 @@ import {
   SectionSubLink,
 } from '@/components/menu/navigation/shared/navigation.type';
 import { cn } from '@/lib/utils';
+import { buttonVariants } from '@filigran/design-system';
 import { OpenInNewIcon } from '@filigran/icon';
 import {
-  buttonVariants,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -35,7 +35,7 @@ export const PublicSubLink = ({
   const isActive = !!href && currentPath === href;
   const sharedClassName = cn(
     buttonVariants({
-      variant: 'tertiary',
+      priority: 'tertiary',
       className: cn(
         'flex items-center justify-between w-full h-9 pl-6 rounded-none normal-case content-body-compact text-text-default-secondary text-xs',
         highlight &&
@@ -168,7 +168,7 @@ export const NavigationLinkMenu = ({
       rel={external ? 'noopener noreferrer' : undefined}
       className={cn(
         buttonVariants({
-          variant: 'ghost',
+          priority: 'tertiary',
           className:
             'h-9 w-full justify-start rounded-none normal-case pl-5 pr-s content-body-compact text-text-default-secondary text-xs',
         }),

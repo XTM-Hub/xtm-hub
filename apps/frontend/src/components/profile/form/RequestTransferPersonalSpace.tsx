@@ -2,6 +2,7 @@
 
 import { MeRequestTransferPersonalSpaceMutation } from '@/components/me/me.graphql';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { Button } from '@filigran/design-system';
 import {
   AutoForm,
   Card,
@@ -11,7 +12,6 @@ import {
   Separator,
   toast,
 } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -86,7 +86,7 @@ export const RequestTransferPersonalSpace = () => {
             }}>
             <div className="mt-xl flex justify-end">
               <Button
-                variant={'destructive'}
+                variant="destructive"
                 aria-label={t('ProfilePage.PersonalSpace.TransferPersoSpace')}>
                 {t('ProfilePage.PersonalSpace.Transfer')}
               </Button>

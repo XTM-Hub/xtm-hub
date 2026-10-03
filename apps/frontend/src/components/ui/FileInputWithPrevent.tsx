@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@filigran/design-system';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -9,7 +10,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-  Button,
 } from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';

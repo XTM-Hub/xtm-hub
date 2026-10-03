@@ -1,5 +1,5 @@
 'use client';
-import { Button, toast } from '@filigran/ui';
+import { toast } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { ServiceRestriction } from '@graphql/generated';
 
@@ -10,6 +10,7 @@ import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDi
 import useServiceCapability from '@/hooks/use-service-capability';
 import revalidatePathActions from '@/utils/actions/revalidate-path.actions';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
+import { Button } from '@filigran/design-system';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -92,7 +93,7 @@ export const ServiceManageSheet = ({
             setOpen={setOpenSheet}
             trigger={
               variant === 'button' ? (
-                <Button variant="secondary">{t('Utils.Update')}</Button>
+                <Button priority="secondary">{t('Utils.Update')}</Button>
               ) : undefined
             }
             title={t(`${translationKey}.UpdateService`, {

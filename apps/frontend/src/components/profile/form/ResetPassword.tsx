@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@filigran/design-system';
 import {
   Card,
   CardContent,
@@ -7,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
 import { useTranslations } from 'next-intl';
 
 interface ProfileFormResetPasswordProps {

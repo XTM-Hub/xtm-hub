@@ -3,8 +3,9 @@
 import { ResolvedServiceInstanceLink } from '@/components/service/service-instance-link.util';
 import useScrollPosition from '@/hooks/use-scroll-position';
 import { cn } from '@/lib/utils';
+import { Button } from '@filigran/design-system';
 import { ArrowOutwardIcon, LogoFiligranIcon } from '@filigran/icon';
-import { AspectRatio, Button } from '@filigran/ui/servers';
+import { AspectRatio } from '@filigran/ui/servers';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ReactNode, useCallback, useEffect } from 'react';
@@ -14,7 +15,7 @@ export type PlatformHoverAction = {
   label: string;
   href?: string;
   target?: string;
-  variant?: 'secondary';
+  priority?: 'secondary';
 };
 
 export interface ServiceInstanceCardData {
@@ -63,7 +64,7 @@ const ServiceInstanceCard = ({
     return (
       <Button
         key={action.id}
-        {...(action.variant ? { variant: action.variant } : {})}>
+        {...(action.priority ? { priority: action.priority } : {})}>
         <Link
           href={action.href}
           prefetch={false}

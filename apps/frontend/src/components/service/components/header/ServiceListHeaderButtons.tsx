@@ -9,7 +9,7 @@ import useServiceCapability, {
 } from '@/hooks/use-service-capability';
 import { APP_PATH } from '@/utils/path/constant';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { Button } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
 import { OrganizationCapability, ServiceRestriction } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -54,7 +54,7 @@ const ServiceListHeaderButtons = ({}) => {
       )}
       {(hasCapaManageAccess || isAdminOrga || isBypass) && subscriptionId && (
         <Button
-          variant="secondary"
+          priority="secondary"
           asChild>
           <Link
             href={`/${APP_PATH}/manage/service/${serviceInstance.id}/subscription/${subscriptionId}`}

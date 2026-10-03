@@ -1,9 +1,9 @@
 'use client';
 
 import { cn } from '@/components/filigran-ui/lib/utils';
+import { buttonVariants } from '@filigran/design-system';
 import * as AlertDialogPrimitive from '@radix-ui/react-alert-dialog';
 import * as React from 'react';
-import { buttonVariants } from '../servers';
 
 const AlertDialog = AlertDialogPrimitive.Root;
 
@@ -116,7 +116,7 @@ const AlertDialogCancel = React.forwardRef<
   <AlertDialogPrimitive.Cancel
     ref={ref}
     className={cn(
-      buttonVariants({ variant: 'outline' }),
+      buttonVariants({ priority: 'secondary' }),
       'mt-2 sm:mt-0',
       className
     )}

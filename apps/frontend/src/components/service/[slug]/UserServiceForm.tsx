@@ -11,8 +11,8 @@ import {
 } from '@/components/service/user_service.graphql';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useUsersList } from '@/hooks/use-users-list';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   Checkbox,
   Form,
   FormControl,
@@ -374,7 +374,7 @@ export const UserServiceForm = ({
 
         <SheetFooter className="pt-2">
           <Button
-            variant="secondary"
+            priority="secondary"
             type="button"
             onClick={(e) => handleCloseSheet(e)}>
             {t('Utils.Cancel')}

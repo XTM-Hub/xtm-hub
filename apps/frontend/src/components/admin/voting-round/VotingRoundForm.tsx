@@ -1,7 +1,7 @@
 import { RoadmapServiceInstance } from '@/components/admin/voting-round/use-roadmap-service-instances';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   Form,
   FormControl,
   FormField,
@@ -231,7 +231,9 @@ const VotingRoundForm = ({
               actionButtonText={t('MenuActions.Delete')}
               variantName="destructive"
               triggerElement={
-                <Button variant="secondary-destructive">
+                <Button
+                  variant="destructive"
+                  priority="secondary">
                   {t('MenuActions.Delete')}
                 </Button>
               }
@@ -241,7 +243,7 @@ const VotingRoundForm = ({
           )}
           <div className="flex gap-s">
             <Button
-              variant="secondary"
+              priority="secondary"
               type="button"
               onClick={onClose}>
               {t('Utils.Cancel')}

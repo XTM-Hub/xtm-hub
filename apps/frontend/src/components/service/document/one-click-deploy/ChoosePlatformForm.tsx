@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils';
 import { isEeCapableContract } from '@/utils/platform';
 import { SHAREABLE_RESOURCE_TYPE_NAME_MAPPING } from '@/utils/shareable-resources/shareable-resources.types';
 import { doesVersionSatisfy } from '@/utils/versioning';
+import { Button } from '@filigran/design-system';
 import {
   AutoForm,
   FormItem,
@@ -15,7 +16,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/ui/clients';
-import { Button } from '@filigran/ui/servers';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
 import { useTranslations } from 'next-intl';
@@ -143,7 +143,7 @@ const ChoosePlatformForm = ({
         <div className="flex justify-end gap-s">
           <Button
             type="button"
-            variant="secondary"
+            priority="secondary"
             onClick={() => {
               setIsOpen(false);
             }}>

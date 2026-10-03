@@ -1,7 +1,8 @@
 'use client';
 
 import { XTM_PLATFORM_TRIAL_GUIDE_PATH } from '@/utils/path/constant';
-import { Button, Card, CardContent } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
+import { Card, CardContent } from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
@@ -19,7 +20,7 @@ export const BundleGuideCard = () => {
             </p>
           </div>
           <Button
-            variant="secondary"
+            priority="secondary"
             className="self-start"
             asChild>
             <Link href={XTM_PLATFORM_TRIAL_GUIDE_PATH}>

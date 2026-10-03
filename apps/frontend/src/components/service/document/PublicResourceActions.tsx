@@ -15,6 +15,7 @@ import {
   isResourceDeployable,
   isResourceDownloadable,
 } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
+import { Button, IconButton } from '@filigran/design-system';
 import { DownloadIcon } from '@filigran/icon';
 import { SimpleTooltip } from '@filigran/ui';
 import {
@@ -23,7 +24,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/ui/clients';
-import { Button } from '@filigran/ui/servers';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
@@ -72,17 +72,14 @@ export const PublicResourceActions = ({
               delayDuration={50}
               disableHoverableContent={true}>
               <TooltipTrigger asChild>
-                <Button
+                <IconButton
                   asChild
-                  variant="tertiary"
-                  size="icon"
-                  className="z-[2] text-primary">
-                  <Link
-                    href={signupHref}
-                    aria-label={t('Service.ShareableResources.Download')}>
-                    <DownloadIcon className="h-4 w-4" />
-                  </Link>
-                </Button>
+                  priority="tertiary"
+                  className="z-[2] text-primary"
+                  aria-label={t('Service.ShareableResources.Download')}
+                  icon={<DownloadIcon className="h-4 w-4" />}>
+                  <Link href={signupHref} />
+                </IconButton>
               </TooltipTrigger>
               <TooltipContent>
                 <p>{t('Service.ShareableResources.Download')}</p>

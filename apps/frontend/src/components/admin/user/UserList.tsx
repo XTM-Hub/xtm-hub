@@ -31,10 +31,10 @@ import { portalGraphqlClient } from '@/lib/graphql-client';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { useDateFormatter } from '@/utils/date';
+import { Button } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
 import {
   Badge,
-  Button,
   DataTable,
   DataTableHeadBarOptions,
   useToast,
@@ -435,7 +435,6 @@ const UserList = ({ organization }: UserListProps) => {
                 if (!canResendInvite(row.original.status)) return null;
                 return (
                   <Button
-                    variant="default"
                     size="sm"
                     disabled={isResendingInvite}
                     onClick={(event) =>

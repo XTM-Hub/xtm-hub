@@ -1,9 +1,9 @@
 import { ServiceFormUseCasesField } from '@/components/service/form/UseCasesField';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import MarkdownInput from '@/components/ui/MarkdownInput';
+import { Button, IconButton } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
 import {
-  Button,
   FileInput,
   Form,
   FormControl,
@@ -222,19 +222,19 @@ const VotableFeatureForm = ({
                   }}
                   className="relative min-h-[10rem] rounded border">
                   <div className="flex h-12 flex-row items-center justify-end bg-elevation-background-layer-1 opacity-90">
-                    <Button
-                      variant="secondary-destructive"
-                      size="icon"
+                    <IconButton
+                      variant="destructive"
+                      priority="secondary"
                       type="button"
                       aria-label={t('VotingRound.Feature.RemoveIllustration')}
                       className="m-s"
+                      icon={<DeleteIcon className="size-4" />}
                       onClick={() =>
                         form.setValue('remove_illustration', true, {
                           shouldDirty: true,
                         })
-                      }>
-                      <DeleteIcon className="size-4" />
-                    </Button>
+                      }
+                    />
                   </div>
                 </div>
               )}
@@ -294,7 +294,9 @@ const VotableFeatureForm = ({
               actionButtonText={t('MenuActions.Delete')}
               variantName="destructive"
               triggerElement={
-                <Button variant="secondary-destructive">
+                <Button
+                  variant="destructive"
+                  priority="secondary">
                   {t('MenuActions.Delete')}
                 </Button>
               }
@@ -304,7 +306,7 @@ const VotableFeatureForm = ({
           )}
           <div className="flex gap-s">
             <Button
-              variant="secondary"
+              priority="secondary"
               type="button"
               onClick={onClose}>
               {t('Utils.Cancel')}

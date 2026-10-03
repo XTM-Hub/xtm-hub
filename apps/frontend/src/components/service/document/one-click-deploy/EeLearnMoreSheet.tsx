@@ -1,5 +1,6 @@
 import EeBadge from '@/components/service/document/one-click-deploy/EeBadge';
 import { ReachSalesMutation } from '@/components/service/trial-instances/reach-sales.graphql';
+import { Button } from '@filigran/design-system';
 import {
   Form,
   FormControl,
@@ -15,7 +16,6 @@ import {
   toast,
 } from '@filigran/ui';
 import { Separator } from '@filigran/ui/clients';
-import { Button } from '@filigran/ui/servers';
 import { reachSalesMutation as ReachSalesMutationType } from '@generated/reachSalesMutation.graphql';
 import { PlatformIdentifier } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';

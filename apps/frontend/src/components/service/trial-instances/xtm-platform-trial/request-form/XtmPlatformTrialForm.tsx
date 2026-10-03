@@ -8,9 +8,9 @@ import { buildOngoingTrialWarningParams } from '@/components/service/trial-insta
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { TranslatableEnumSelectField } from '@/components/ui/TranslatableEnumSelectField';
 import { cn } from '@/lib/utils';
+import { Button } from '@filigran/design-system';
 import { WarningIcon } from '@filigran/icon';
 import {
-  Button,
   Checkbox,
   Form,
   FormField,

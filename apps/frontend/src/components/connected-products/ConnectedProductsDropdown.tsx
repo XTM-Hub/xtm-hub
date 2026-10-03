@@ -3,9 +3,9 @@
 import { ConnectedProductItem } from '@/components/connected-products/ConnectedProductItem';
 import { ConnectProductButton } from '@/components/connected-products/ConnectProductButton';
 import { useConnectedPlatforms } from '@/components/connected-products/useConnectedPlatforms';
+import { Button } from '@filigran/design-system';
 import { ArrowDropDownIcon } from '@filigran/icon';
 import {
-  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -33,7 +33,7 @@ export const ConnectedProductsDropdown = () => {
       onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="tertiary"
+          priority="tertiary"
           className="flex flex-row items-center gap-xs text-primary font-medium">
           <span>
             {t('Header.ConnectedProducts.Count', {
@@ -68,7 +68,7 @@ export const ConnectedProductsDropdown = () => {
         )}
         <div className="flex flex-col gap-s p-m">
           <ConnectProductButton
-            variant="tertiary"
+            priority="tertiary"
             onCloseDropdown={() => setOpen(false)}
           />
         </div>

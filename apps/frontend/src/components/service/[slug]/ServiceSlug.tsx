@@ -20,6 +20,7 @@ import useAdminPath from '@/hooks/use-admin-path';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { APP_PATH } from '@/utils/path/constant';
+import { Button } from '@filigran/design-system';
 import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
 import {
   DataTable,
@@ -27,7 +28,6 @@ import {
   SelectionState,
   Switch,
 } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
 import { serviceInstanceByIdQuery } from '@generated/serviceInstanceByIdQuery.graphql';
 import { serviceInstanceForSubscriptions_fragment$key } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
@@ -289,7 +289,7 @@ const ServiceSlug = ({
                 actions: () => (
                   <>
                     <Button
-                      variant="tertiary"
+                      priority="tertiary"
                       size="sm"
                       className="cursor-pointer"
                       onClick={() => setOpenAddCapabilities(true)}>
@@ -299,7 +299,8 @@ const ServiceSlug = ({
                       )}
                     </Button>
                     <Button
-                      variant="tertiary-destructive"
+                      variant="destructive"
+                      priority="tertiary"
                       size="sm"
                       className="cursor-pointer"
                       onClick={() =>

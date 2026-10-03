@@ -12,8 +12,8 @@ import { subscription_fragment$data } from '@generated/subscription_fragment.gra
 import { useSubscriptionDefaultValues } from './use-subscription-default-values';
 
 import { DEBOUNCE_TIME } from '@/utils/constant';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   Checkbox,
   DatePicker,
   Form,
@@ -301,7 +301,7 @@ export const ServiceSlugOrgaForm = ({
 
           <SheetFooter className="pt-2">
             <Button
-              variant="secondary"
+              priority="secondary"
               type="button"
               onClick={(e) => handleCloseSheet(e)}>
               {t('Utils.Cancel')}

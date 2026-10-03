@@ -1,7 +1,7 @@
 import { organizationFormSchema } from '@/components/organization/OrganizationForm.schema';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   Form,
   FormControl,
   FormField,
@@ -134,7 +134,7 @@ export const OrganizationForm = ({
 
         <SheetFooter className="pt-2">
           <Button
-            variant="secondary"
+            priority="secondary"
             type="button"
             onClick={(e) => handleCloseSheet(e)}>
             {t('Utils.Cancel')}

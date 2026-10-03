@@ -1,6 +1,6 @@
 import { cn } from '@/components/filigran-ui/lib/utils';
+import { Button, type ButtonProps } from '@filigran/design-system';
 import * as React from 'react';
-import { Button, type ButtonProps } from './Button';
 
 type GradientVariant = 'highlight' | 'ia';
 

@@ -2,7 +2,7 @@
 
 import { useConsent } from '@/components/cookie-consent/CookieConsentProvider';
 import { cn } from '@/lib/utils';
-import { Button } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
 import { useTranslations } from 'next-intl';
 
 export const CookieSettingsLink = ({ className }: { className?: string }) => {
@@ -11,10 +11,10 @@ export const CookieSettingsLink = ({ className }: { className?: string }) => {
 
   return (
     <Button
-      variant="link"
+      priority="tertiary"
       onClick={openPreferences}
       className={cn(
-        'h-auto p-0 no-underline hover:no-underline cursor-pointer text-content-body-compact-link',
+        'h-auto cursor-pointer p-0 underline text-content-body-compact-link',
         className
       )}>
       {t('CookieSettingsLink')}

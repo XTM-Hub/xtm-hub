@@ -19,6 +19,7 @@ import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
 import { cn } from '@/lib/utils';
 import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
 import { getPlatformIdentifier } from '@/utils/platform';
+import { Button } from '@filigran/design-system';
 import {
   InfoIcon,
   LogoFiligranIcon,
@@ -26,7 +27,6 @@ import {
   ThreatActorGroupIcon,
 } from '@filigran/icon';
 import { SimpleTooltip } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import Image from 'next/image';

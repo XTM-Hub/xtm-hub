@@ -1,8 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   FileInput,
   FileInputDropZone,
   Form,
@@ -103,7 +103,7 @@ export const ServiceForm = ({ handleSubmit }: ServiceFormProps) => {
 
           <SheetFooter className="pt-2">
             <Button
-              variant="secondary"
+              priority="secondary"
               type="button"
               onClick={(e) => handleCloseSheet(e)}>
               {t('Utils.Cancel')}

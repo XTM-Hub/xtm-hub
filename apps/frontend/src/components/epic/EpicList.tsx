@@ -17,8 +17,8 @@ import useServiceCapability, {
 import { cn } from '@/lib/utils';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { APP_PATH } from '@/utils/path/constant';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -158,7 +158,7 @@ export const EpicList = ({
           {(canManageService || isBypass) && subscriptionId && (
             <Button
               asChild
-              variant="secondary">
+              priority="secondary">
               <Link
                 href={`/${APP_PATH}/manage/service/${serviceInstance.id}/subscription/${subscriptionId}`}>
                 {t('Service.Capabilities.ManageAccessName')}

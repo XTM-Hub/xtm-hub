@@ -1,7 +1,7 @@
 'use client';
 import { cn } from '@/lib/utils';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -52,7 +52,7 @@ export const IconActions = ({
         <div className="flex items-center gap-s cursor-pointer">
           {label}
           <Button
-            variant="tertiary"
+            priority="tertiary"
             className={cn('h-8 w-8 p-0 data-[state=open]:bg-hover', className)}>
             {icon}
           </Button>
@@ -76,7 +76,7 @@ export const IconActionsButton = ({
 }: IconActionsButtonProps) => {
   return (
     <Button
-      variant="tertiary"
+      priority="tertiary"
       className={cn('w-full justify-start normal-case', className)}
       onClick={(e) => e.stopPropagation()}
       {...props}>

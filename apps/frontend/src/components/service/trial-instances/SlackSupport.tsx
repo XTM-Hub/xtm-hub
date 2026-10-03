@@ -1,5 +1,5 @@
 'use client';
-import { Button } from '@filigran/ui/servers';
+import { Button } from '@filigran/design-system';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 

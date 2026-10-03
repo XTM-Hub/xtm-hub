@@ -1,6 +1,7 @@
 import { fileToBase64 } from '@/lib/utils';
 import { docIsExistingFile, ExistingFile, NewFile } from '@/utils/documents';
 import { EntityTypeOrFiligranLogo } from '@/utils/shareable-resources/entity-type';
+import { IconButton } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
 import {
   FileInput,
@@ -10,7 +11,6 @@ import {
   FormMessage,
 } from '@filigran/ui';
 import { TooltipProvider } from '@filigran/ui/clients';
-import { Button } from '@filigran/ui/servers';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { DocumentSourceType } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
@@ -52,17 +52,18 @@ export const ServiceFormLogoField = ({
                 <div className="truncate overflow-hidden whitespace-nowrap text-ellipsis ml-s mr-s flex-1 min-w-0">
                   {(logo as ExistingFile)?.file_name ?? (logo as NewFile)?.name}
                 </div>
-                <Button
+                <IconButton
                   disabled={logo.source_type === DocumentSourceType.External}
-                  variant="secondary-destructive"
-                  size="icon"
+                  variant="destructive"
+                  priority="secondary"
                   type="button"
                   className="ml-auto m-s"
+                  aria-label={t('Utils.Delete')}
+                  icon={<DeleteIcon className="size-4" />}
                   onClick={() => {
                     field.onChange([]);
-                  }}>
-                  <DeleteIcon className="size-4" />
-                </Button>
+                  }}
+                />
               </div>
             </div>
           </TooltipProvider>

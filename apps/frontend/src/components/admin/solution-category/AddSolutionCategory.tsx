@@ -4,7 +4,8 @@ import SolutionCategoryForm, {
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { prependToQueryCache } from '@/utils/query-cache';
-import { Button, toast } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
+import { toast } from '@filigran/ui';
 import {
   SolutionCategoriesListQuery,
   SolutionCategoryAddMutation,
