@@ -262,8 +262,10 @@ export const COVERAGE_KEYWORD_RULES: Readonly<
   regions: REGION_KEYWORD_RULES,
 };
 
-// URLs often embed words such as "report" or "blog" that say nothing about the coverage.
-const URL_PATTERN = /\bhttps?:\/\/\S+/gi;
+// URLs often embed words such as "report" or "blog" that say nothing about the coverage: any scheme,
+// scheme-relative (//host), www. and bare host/path URLs are removed before matching.
+const URL_PATTERN =
+  /(?:\b[a-z][a-z0-9+.-]*:\/\/|(?<![\w:/])\/\/|\bwww\.|\b(?:[a-z0-9-]+\.)+[a-z]{2,}\/)\S*/gi;
 
 export const buildCoverageInferenceText = (
   source: CoverageInferenceSource

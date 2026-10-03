@@ -75,6 +75,32 @@ describe('integration-coverage.inference', () => {
       expect(coverage.object_types).toEqual([]);
     });
 
+    it.each([
+      'See www.example.com/reports/malware for the documentation',
+      'See //example.com/blog/malware for the documentation',
+      'See example.com/reports/malware for the documentation',
+      'See ftp://example.com/malware/ip for the documentation',
+    ])(
+      'should ignore keywords inside a bare or scheme-relative URL: %s',
+      (description) => {
+        // Given / When
+        const coverage = inferIntegrationCoverage({ description });
+
+        // Then
+        expect(coverage.object_types).toEqual([]);
+      }
+    );
+
+    it('should keep the keywords around a URL', () => {
+      // Given / When
+      const coverage = inferIntegrationCoverage({
+        description: 'Malware feed, see www.example.com/docs',
+      });
+
+      // Then
+      expect(coverage.object_types).toEqual(['Malware']);
+    });
+
     it('should infer from use cases and solution categories', () => {
       // Given
       const source = {
