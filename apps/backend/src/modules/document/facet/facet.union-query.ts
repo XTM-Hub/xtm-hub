@@ -84,14 +84,18 @@ const buildMetadataListFacetBranch = (
     .joinRaw(
       'CROSS JOIN LATERAL jsonb_array_elements_text("metadata"."value"::jsonb) as entity(value)'
     )
-    .select(dbRaw('? as facet', [spec.field]), 'entity.value as value')
+    .select(
+      dbRaw('? as facet', [spec.field]),
+      // Same case-insensitive buckets as loadMetadataListFacetBuckets
+      dbRaw('MIN("entity"."value" COLLATE "C") as value')
+    )
     .countDistinct({ count: 'metadata.document_id' })
     .where('metadata.key', '=', spec.metadataKey)
     .whereNotNull('metadata.value')
     .whereIn('metadata.document_id', selectIdsFromCte(cteName))
-    .groupBy('entity.value')
+    .groupByRaw('LOWER("entity"."value")')
     .orderBy('count', 'desc')
-    .orderBy('entity.value', 'asc');
+    .orderByRaw('MIN("entity"."value" COLLATE "C") COLLATE "default" asc');
 };
 
 const buildFacetBranch = (

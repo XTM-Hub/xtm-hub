@@ -126,7 +126,11 @@ export const loadSolutionCategoryFacetBuckets = async (
   return toFacetBuckets(rows);
 };
 
-/** One bucket per element of a JSON array metadata value. */
+/**
+ * One bucket per element of a JSON array metadata value. List filters match case-insensitively, so values that
+ * differ only by case form one bucket, shown with a stable spelling: the smallest in byte order, whatever the
+ * database collation.
+ */
 export const loadMetadataListFacetBuckets = async (
   documentIdsQuery: DocumentIdsQuery,
   metadataKey: DocumentMetadataKeyCode
@@ -136,14 +140,16 @@ export const loadMetadataListFacetBuckets = async (
     .joinRaw(
       'CROSS JOIN LATERAL jsonb_array_elements_text("metadata"."value"::jsonb) as entity(value)'
     )
-    .select('entity.value as value')
+    .select(dbRaw('MIN("entity"."value" COLLATE "C") as value'))
     .countDistinct({ count: 'metadata.document_id' })
     .where('metadata.key', '=', metadataKey)
     .whereNotNull('metadata.value')
     .whereIn('metadata.document_id', documentIdsQuery.clone())
-    .groupBy('entity.value')
+    .groupByRaw('LOWER("entity"."value")')
     .orderBy('count', 'desc')
-    .orderBy('entity.value', 'asc')) as FacetRow[];
+    .orderByRaw(
+      'MIN("entity"."value" COLLATE "C") COLLATE "default" asc'
+    )) as FacetRow[];
 
   return toFacetBuckets(rows);
 };

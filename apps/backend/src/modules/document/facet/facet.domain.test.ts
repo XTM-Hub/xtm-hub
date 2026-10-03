@@ -1041,6 +1041,46 @@ describe('facet.domain', () => {
       });
     });
 
+    it('should count values differing only by case in one bucket, like the case-insensitive filter', async () => {
+      // Given
+      await createCoveredDocument('coverage-space-upper', {
+        objectTypes: [],
+        sectors: ['Space Industry'],
+        regions: ['Antarctica'],
+      });
+      await createCoveredDocument('coverage-space-lower', {
+        objectTypes: [],
+        sectors: ['space industry'],
+        regions: ['Antarctica'],
+      });
+
+      // When
+      const facets = await FacetDomain.loadDocumentFacets({
+        serviceInstanceId: coverageServiceInstance.id,
+        documentType: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+      });
+      const filtered = await FacetDomain.loadDocumentFacets({
+        serviceInstanceId: coverageServiceInstance.id,
+        documentType: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        logicalFilters: {
+          leaf: { key: FilterKey.Sector, value: ['space industry'] },
+        },
+      });
+
+      // Then - the bucket counts the two documents the filter on either spelling returns
+      expect({
+        sector: facets.sector,
+        filteredRegion: filtered.region,
+      }).toEqual({
+        sector: [
+          { value: 'Space Industry', count: 2 },
+          { value: COVERAGE_ENERGY, count: 1 },
+          { value: COVERAGE_FINANCE, count: 1 },
+        ],
+        filteredRegion: [{ value: 'Antarctica', count: 2 }],
+      });
+    });
+
     it('should filter case-insensitively on a coverage key while its own facet ignores the filter', async () => {
       // Given
       const logicalFilters = {
