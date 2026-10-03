@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import {
   PulseEventKind,
@@ -9,7 +9,13 @@ import {
   PulseSectorBucket,
   PulseTrendDirection,
 } from '../../../__generated__/resolvers-types';
+import { PulseConfig } from '../pulse.config';
+import {
+  PULSE_PUBLICATION_POLICY_VERSION,
+  PULSE_SCOPE_ALL,
+} from '../pulse.const';
 import { PulseDay } from '../pulse.day.helper';
+import { PulseDomain } from '../pulse.domain';
 import { PulseErrorCode } from '../pulse.errors';
 import {
   cleanPulseState,
@@ -445,6 +451,94 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
         cached: cached.items.length,
         refreshed: refreshed.items.length,
       }).toEqual({ cached: 1, refreshed: 2 });
+    });
+
+    it('should not reveal a previous period below k through the growth', async () => {
+      // Given two platforms 10 days ago (previous 7-day period), five today
+      const clients = await registerPulseClients(5);
+      clock.addDays(-10);
+      await pushFromEach(clients.slice(0, 2), {
+        day: clock.today(),
+        records: [malware(LOCKBIT)],
+      });
+      clock.addDays(10);
+      await pushFromEach(clients, {
+        day: PULSE_TEST_TODAY,
+        records: [malware(LOCKBIT)],
+      });
+
+      // When
+      const trending = await clients[0]!.trending({
+        day: PULSE_TEST_TODAY,
+        period: PulsePeriod.Last_7Days,
+      });
+      const [lookup] = await clients[0]!.lookup({
+        day: PULSE_TEST_TODAY,
+        objectType: MALWARE,
+        values: [LOCKBIT],
+      });
+
+      // Then the growth is the one of an empty history, and the series hides it too
+      expect(trending.items[0]?.growth).toBe(6);
+      expect(lookup?.trend_series?.slice(-3)).toEqual([0, 0, 5]);
+    });
+
+    it('should never serve a fresh snapshot published under another k', async () => {
+      // Given a snapshot computed with k=5
+      const clients = await registerPulseClients(5);
+      await pushFromEach(clients, {
+        day: PULSE_TEST_TODAY,
+        records: [malware(LOCKBIT)],
+      });
+      const request = { day: PULSE_TEST_TODAY, period: PulsePeriod.Last_7Days };
+      const before = await clients[0]!.trending(request);
+      const config = PulseConfig.get();
+      if (!config.enabled) {
+        throw new Error('Threat Pulse must be enabled in tests');
+      }
+      vi.spyOn(PulseConfig, 'get').mockReturnValue({
+        ...config,
+        settings: { ...config.settings, kThreshold: 10 },
+      });
+
+      // When k is raised to 10 while the snapshot is fresh
+      const after = await clients[0]!.trending(request);
+
+      // Then
+      expect({
+        before: before.items.length,
+        after: after.items.length,
+      }).toEqual({ before: 1, after: 0 });
+    });
+
+    it('should recompute a snapshot published under an older policy version', async () => {
+      // Given a fresh snapshot of an older publication policy
+      const clients = await registerPulseClients(5);
+      await pushFromEach(clients, {
+        day: PULSE_TEST_TODAY,
+        records: [malware(LOCKBIT)],
+      });
+      await PulseDomain.saveTrendingSnapshot({
+        day: PULSE_TEST_TODAY,
+        period: PulsePeriod.Last_7Days,
+        sectorScope: PULSE_SCOPE_ALL,
+        regionScope: PULSE_SCOPE_ALL,
+        computedAt: clock.now(),
+        policy: {
+          version: PULSE_PUBLICATION_POLICY_VERSION - 1,
+          kThreshold: 5,
+        },
+        items: [],
+      });
+
+      // When
+      const result = await clients[0]!.trending({
+        day: PULSE_TEST_TODAY,
+        period: PulsePeriod.Last_7Days,
+      });
+
+      // Then
+      expect(result.items).toHaveLength(1);
     });
   });
 

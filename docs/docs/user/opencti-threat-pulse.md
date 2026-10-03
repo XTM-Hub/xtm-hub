@@ -30,10 +30,11 @@ Objects marked `TLP:RED`, `TLP:AMBER+STRICT` or `PAP:RED`, objects with restrict
 1. **Daily salt.** XTM Hub draws a new random salt every UTC day (`pulseSalt`). The platform encrypts a stable keyed hash of each object under that salt, so the hashes on the wire change every day and cannot be linked across days by anyone who only sees the traffic. Salts are deleted after 3 days.
 2. **Re-keying at rest.** On reception, XTM Hub decrypts each hash with the salt of its day and immediately re-keys it with a secret key held only by XTM Hub (`PULSE_AT_REST_KEY`). The stored key cannot be computed by a platform, so the database alone does not reveal which objects a platform holds.
 3. **Pseudonymized platforms.** Platform identifiers are stored as keyed pseudonyms (`PULSE_PLATFORM_KEY`), never in clear.
-4. **k-anonymity.** Every published statistic (prevalence, first-seen, trends, trending lists, benchmarks) requires at least `k` distinct contributing platforms, 5 by default. Below the threshold, XTM Hub answers that the object is unpublished and returns no count.
-5. **Coarse buckets.** Platform counts are returned as ranges (`5-9`, `10-24`, ... `250+`), never as exact numbers.
+4. **k-anonymity.** Every published statistic (prevalence, first-seen, trends, trending lists, benchmarks) requires at least `k` distinct contributing platforms, 5 by default. Below the threshold, XTM Hub answers that the object is unpublished and returns no count. A week or a period below `k` weighs 0 in everything derived from it (the weekly series, the trend directions, the trending growth), so no published figure reveals it.
+5. **Coarse buckets.** Platform counts are returned as ranges (`5-9`, `10-24`, ... `250+`), never as exact numbers; the 12-week series carries, for each week, the lower bound of its range (5, 10, 25, 50, 100 or 250).
 6. **Retention.** Contributions older than the retention period (13 months by default) are deleted every night.
-7. **Right to purge.** An administrator can purge every contribution of the platform from OpenCTI at any time (`pulsePurge`). XTM Hub deletes them and recomputes the statistics.
+7. **Nothing in the logs.** The request logs never keep the text, the variables, the error messages or the stacks of Threat Pulse requests.
+8. **Right to purge.** An administrator can purge every contribution of the platform from OpenCTI at any time (`pulsePurge`). XTM Hub deletes them and recomputes the statistics.
 
 ## What a platform reads
 
@@ -66,4 +67,4 @@ Every operation authenticates with the platform token of the connected product a
 
     Changing `PULSE_AT_REST_KEY` or `PULSE_PLATFORM_KEY` unlinks every stored statistic from the new contributions. The Helm chart generates both keys once and keeps them on upgrades.
 
-When a key is missing or invalid, the service stays disabled and logs the reason; the rest of XTM Hub is not affected.
+When a key or a setting is missing or invalid, the service stays disabled and logs the reason; the rest of XTM Hub is not affected, and the nightly retention still applies whenever `PULSE_RETENTION_MONTHS` is valid. Trending lists computed under another anonymity threshold are recomputed, never served.

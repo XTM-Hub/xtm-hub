@@ -71,6 +71,18 @@ export interface PulseTrendingSnapshotItem extends PulseKeyRef {
   firstSeen: string;
 }
 
+// The rules a trending snapshot was published under: a snapshot is only
+// served while they are the ones in force.
+export interface PulsePublicationPolicy {
+  version: number;
+  kThreshold: number;
+}
+
+export interface PulseStoredTrendingSnapshot {
+  policy: PulsePublicationPolicy;
+  items: PulseTrendingSnapshotItem[];
+}
+
 export interface PulsePlatformTotal {
   platform: number;
   objectType: PulseObjectType;

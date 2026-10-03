@@ -1,10 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import {
   PulseObjectType,
   PulsePeriod,
 } from '../../../__generated__/resolvers-types';
 import { PulseApp } from '../pulse.app';
+import { PulseConfig } from '../pulse.config';
 import { PulseDay } from '../pulse.day.helper';
 import { PulseErrorCode } from '../pulse.errors';
 import {
@@ -186,6 +187,29 @@ describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
         keys: 0,
         platforms: 0,
       });
+    });
+
+    it('should still delete expired contributions when an unrelated setting disables the service', async () => {
+      // Given
+      const clients = await registerPulseClients(5);
+      await pushFromEach(clients, {
+        day: RETENTION_DAY,
+        records: [malware(LOCKBIT)],
+      });
+      vi.spyOn(PulseConfig, 'get').mockReturnValue({
+        enabled: false,
+        reason:
+          'pulse.rate_limits.push_pulse must be an integer between 1 and 1000000',
+        severity: 'error',
+        settings: null,
+        retentionMonths: 13,
+      });
+
+      // When 13 months and 1 day later
+      await PulseApp.applyRetention(new Date('2027-11-04T02:00:00.000Z'));
+
+      // Then
+      expect(await TestHelper.pulse.countRows('PulseContribution')).toBe(0);
     });
 
     it('should keep contributions inside the retention period', async () => {

@@ -1,5 +1,6 @@
 import { ApolloServerPlugin, BaseContext } from '@apollo/server';
 import type { Request, Response } from 'express';
+import type { GraphQLError } from 'graphql';
 import type { UserLoadUserBy } from '../../model/user';
 import { AppLogsCategory, logApp } from '../../utils/app-logger.util';
 import type {
@@ -14,18 +15,40 @@ export interface Context extends BaseContext {
   serviceId?: string;
 }
 
-// Threat Pulse batches carry up to thousands of pseudonymous hashes: logging
-// them adds volume and keeps linkable material in log storage.
-const REDACTED_VARIABLES_FIELDS = /\b(pushPulse|pulseLookup)\b/;
-export const REDACTED_VARIABLES = '[redacted]';
+// Threat Pulse requests carry pseudonymous hashes, and a malformed one can
+// carry raw values: their query text, variables, error messages and stacks
+// (GraphQL coercion errors echo the rejected input) never reach the logs.
+const PULSE_OPERATION_FIELDS =
+  /\b(pushPulse|pulseLookup|pulseTrending|pulseBenchmark|pulseSalt|pulseStatus|pulsePurge)\b/;
+export const REDACTED = '[redacted]';
+export const REDACTED_PULSE_ERROR_MESSAGE = 'Threat Pulse request failed';
+
+export const isRedactedOperation = (query: string | undefined): boolean =>
+  !!query && PULSE_OPERATION_FIELDS.test(query);
 
 export const loggableVariables = (
   query: string | undefined,
   variables: unknown
-): unknown =>
-  query && REDACTED_VARIABLES_FIELDS.test(query)
-    ? REDACTED_VARIABLES
-    : variables;
+): unknown => (isRedactedOperation(query) ? REDACTED : variables);
+
+export const loggableQuery = (query: string | undefined): string | undefined =>
+  isRedactedOperation(query) ? REDACTED : query;
+
+const errorLogEntry = (
+  error: GraphQLError,
+  query: string | undefined
+): { message: string; codeStack: string | undefined; code: unknown } =>
+  isRedactedOperation(query)
+    ? {
+        message: REDACTED_PULSE_ERROR_MESSAGE,
+        codeStack: undefined,
+        code: error.extensions?.code,
+      }
+    : {
+        message: error.message,
+        codeStack: error.originalError?.stack,
+        code: error.extensions?.code,
+      };
 
 export const errorLoggingPlugin = (): ApolloServerPlugin<Context> => ({
   async requestDidStart(requestContext) {
@@ -36,7 +59,7 @@ export const errorLoggingPlugin = (): ApolloServerPlugin<Context> => ({
       'GraphQL request received',
       {
         operationName: request.operationName,
-        query: request.query,
+        query: loggableQuery(request.query),
         variables: loggableVariables(request.query, req?.body?.variables),
         user,
         serviceId,
@@ -52,16 +75,21 @@ export const errorLoggingPlugin = (): ApolloServerPlugin<Context> => ({
           const logLevel: ErrorLogLevel =
             (error.originalError as CustomApolloError | null)?._logLevel ??
             'error';
+          const { message, codeStack, code } = errorLogEntry(
+            error,
+            request.query
+          );
 
           logApp[logLevel](
-            error.message,
+            message,
             {
               path: error.path,
               locations: error.locations,
+              code,
               operationName,
               user: contextValue?.user,
               serviceId: contextValue?.serviceId,
-              codeStack: error.originalError?.stack,
+              codeStack,
               variables: loggableVariables(
                 request.query,
                 contextValue?.req?.body?.variables

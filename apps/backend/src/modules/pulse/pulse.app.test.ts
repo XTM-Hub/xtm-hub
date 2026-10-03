@@ -63,6 +63,78 @@ describe('pulseApp platform API', PULSE_INTEGRATION_SUITE, () => {
   });
 
   describe('authentication', () => {
+    const spellings = (platformId: string) => [
+      platformId,
+      platformId.toUpperCase(),
+      `{${platformId}}`,
+      platformId.replace(/-/g, ''),
+    ];
+
+    it('should count every spelling of a platform id as one contributor', async () => {
+      // Given
+      const platform = await TestHelper.pulse.registerPlatform();
+      const clients = spellings(platform.platformId).map((platformId) =>
+        pulseClient({ ...platform, platformId })
+      );
+
+      // When
+      for (const client of clients) {
+        await client.push({
+          day: PULSE_TEST_TODAY,
+          records: [
+            { objectType: PulseObjectType.Vulnerability, value: CVE_VALUE },
+          ],
+        });
+      }
+
+      // Then
+      expect({
+        platforms: await TestHelper.pulse.countRows('PulsePlatform'),
+        contributors: await TestHelper.pulse.countRows('PulseKeyContributor'),
+      }).toEqual({ platforms: 1, contributors: 1 });
+    });
+
+    it('should share one rate limit between every spelling of a platform id', async () => {
+      // Given
+      withPulseSettings({ rateLimits: { [PulseOperation.PulseStatus]: 1 } });
+      const platform = await TestHelper.pulse.registerPlatform();
+      const [canonical, upperCase] = spellings(platform.platformId).map(
+        (platformId) => pulseClient({ ...platform, platformId })
+      );
+      await canonical?.status();
+
+      // When
+      const result = await upperCase?.statusResult();
+
+      // Then
+      expect(result && errorCodes(result)).toEqual([
+        PulseErrorCode.RateLimited,
+      ]);
+    });
+
+    it('should purge the platform whatever the spelling of its id', async () => {
+      // Given
+      const platform = await TestHelper.pulse.registerPlatform();
+      const client = pulseClient(platform);
+      await client.push({
+        day: PULSE_TEST_TODAY,
+        records: [
+          { objectType: PulseObjectType.Vulnerability, value: CVE_VALUE },
+        ],
+      });
+      const upperCase = pulseClient({
+        ...platform,
+        platformId: platform.platformId.toUpperCase(),
+      });
+
+      // When
+      const result = await upperCase.purgeResult(`{${platform.platformId}}`);
+
+      // Then
+      expect(result.errors).toBeUndefined();
+      expect(await TestHelper.pulse.countRows('PulseContribution')).toBe(0);
+    });
+
     it('should answer UNAUTHENTICATED without platform headers', async () => {
       // When
       const result = await executePulse({ query: PULSE_STATUS_QUERY });
@@ -122,6 +194,7 @@ describe('pulseApp platform API', PULSE_INTEGRATION_SUITE, () => {
         reason: 'secrets missing',
         severity: 'error',
         settings: null,
+        retentionMonths: null,
       });
 
       // When

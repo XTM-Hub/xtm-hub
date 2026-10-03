@@ -207,5 +207,34 @@ describe('resolvePulseConfig', () => {
 
     // Then
     expect(config.settings?.retentionMonths).toBe(13);
+    expect(config.retentionMonths).toBe(13);
+  });
+
+  it('should keep a valid retention period when an unrelated setting is invalid', () => {
+    // When
+    const config = resolvePulseConfig(
+      makeRawConfig({
+        rate_limits: { ...makeRawConfig().rate_limits, push_pulse: 0 },
+      }),
+      'production'
+    );
+
+    // Then
+    expect(config).toMatchObject({
+      enabled: false,
+      settings: null,
+      retentionMonths: 13,
+    });
+  });
+
+  it('should give the retention job no period when the retention itself is invalid', () => {
+    // When
+    const config = resolvePulseConfig(
+      makeRawConfig({ retention_months: 0 }),
+      'production'
+    );
+
+    // Then
+    expect(config).toMatchObject({ enabled: false, retentionMonths: null });
   });
 });

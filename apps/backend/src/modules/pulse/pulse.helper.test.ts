@@ -131,8 +131,8 @@ describe('pulseHelper', () => {
         makeCount({ k: 'k-same-a', recent: 5, prev1: 5, prev2: 5 }),
       ];
 
-      // When
-      const ranked = PulseHelper.rankTrending(counts);
+      // When every count reaches k
+      const ranked = PulseHelper.rankTrending(counts, 4);
 
       // Then
       expect(ranked.map(({ k, growth }) => ({ k, growth }))).toEqual([
@@ -142,6 +142,22 @@ describe('pulseHelper', () => {
         { k: 'k-same-a', growth: 1 },
         { k: 'k-same-b', growth: 1 },
       ]);
+    });
+
+    it('should weigh a previous period below k as 0, so growth never reveals it', () => {
+      // Given recent=5 published, prev1=2 and prev2=0 below k=5
+      const counts = [makeCount({ k: 'k-1', recent: 5, prev1: 2, prev2: 0 })];
+
+      // When
+      const [ranked] = PulseHelper.rankTrending(counts, 5);
+
+      // Then the growth is the one of an empty history: (5 + 1) / (0 + 1)
+      expect(ranked).toMatchObject({
+        prev1: 0,
+        prev2: 0,
+        baseline: 0,
+        growth: 6,
+      });
     });
 
     it('should keep at most 200 items per object type', () => {
@@ -154,7 +170,7 @@ describe('pulseHelper', () => {
       ];
 
       // When
-      const ranked = PulseHelper.rankTrending(counts);
+      const ranked = PulseHelper.rankTrending(counts, 5);
 
       // Then
       expect({
@@ -221,9 +237,35 @@ describe('pulseHelper', () => {
         first_seen_network: SEEN.firstSeen,
         last_seen_network: SEEN.lastSeen,
         trend: PulseTrendDirection.Rising,
-        trend_series: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9],
+        trend_series: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5],
         sector_trend: null,
         sector_platforms_bucket: null,
+      });
+    });
+
+    it('should derive no direction from weeks below k on a published key', () => {
+      // Given two recent reporters and an empty baseline, the key published over the retention
+      const presence = makePresence({
+        weekly: [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        sectorWeekly: [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        sectorPlatformsInWindow: K,
+      });
+
+      // When
+      const result = PulseHelper.buildLookupResult({
+        hash: HASH,
+        networkPlatforms: 12,
+        seen: SEEN,
+        presence,
+        activeContributors: 20,
+        kThreshold: K,
+      });
+
+      // Then the series hides the week and no direction reveals it
+      expect(result).toMatchObject({
+        trend: PulseTrendDirection.Stable,
+        sector_trend: PulseTrendDirection.Stable,
+        trend_series: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       });
     });
 

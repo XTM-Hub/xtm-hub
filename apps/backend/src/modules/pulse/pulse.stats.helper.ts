@@ -101,27 +101,42 @@ export const PulseStats = {
     return PulseTrendDirection.Stable;
   },
 
+  // A count below k is never published, nor anything derived from it: it
+  // weighs as 0 in every published figure, direction and ranking.
+  suppressBelowK: (count: number, kThreshold: number): number =>
+    count >= kThreshold ? count : 0,
+
   // Weekly counts are newest first: week 0 is the recent week, the baseline is
-  // the mean of the 3 weeks before it.
-  weeklyTrend: (weeklyNewestFirst: readonly number[]): PulseTrendDirection => {
-    const recent = weeklyNewestFirst[0] ?? 0;
-    const baselineWeeks = weeklyNewestFirst.slice(
-      1,
-      1 + PULSE_TREND_BASELINE_WEEKS
+  // the mean of the 3 weeks before it, each week suppressed below k.
+  weeklyTrend: (
+    weeklyNewestFirst: readonly number[],
+    kThreshold: number
+  ): PulseTrendDirection => {
+    const weekly = weeklyNewestFirst.map((count) =>
+      PulseStats.suppressBelowK(count, kThreshold)
     );
+    const recent = weekly[0] ?? 0;
+    const baselineWeeks = weekly.slice(1, 1 + PULSE_TREND_BASELINE_WEEKS);
     const baseline =
       baselineWeeks.reduce((sum, count) => sum + count, 0) /
       PULSE_TREND_BASELINE_WEEKS;
     return PulseStats.trendDirection(recent, baseline);
   },
 
+  // Oldest week first; each week is the lower bound of its platforms range
+  // (5, 10, 25, ...), 0 below k: the series is as coarse as platforms_bucket.
   trendSeries: (
     weeklyNewestFirst: readonly number[],
     kThreshold: number
   ): number[] =>
     [...weeklyNewestFirst]
       .reverse()
-      .map((count) => (count >= kThreshold ? count : 0)),
+      .map((count) =>
+        count >= kThreshold
+          ? (PULSE_PLATFORMS_BUCKETS.find((bucket) => count >= bucket.min)
+              ?.min ?? 0)
+          : 0
+      ),
 
   growth: (recent: number, baseline: number): number =>
     (recent + 1) / (baseline + 1),
