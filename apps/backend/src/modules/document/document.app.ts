@@ -119,21 +119,22 @@ export const DocumentApp = {
       }
     }
 
-    const [sourceDocumentFile] = await DocumentUploadsHelper.processUploads(
-      sourceDocument,
-      serviceInstanceId
-    );
-    const imagesFiles = await DocumentUploadsHelper.processUploads(
-      images,
-      serviceInstanceId
-    );
-    const [logoFile] = await DocumentUploadsHelper.processUploads(
-      logo,
-      serviceInstanceId
-    );
-
     // Nothing references the uploads before the creation commits
+    const storedUploads: Awaited<
+      ReturnType<typeof DocumentUploadsHelper.processUploads>
+    > = [];
+    const storeUploads = async (uploads: Upload[] | Upload | undefined) => {
+      const files = await DocumentUploadsHelper.processUploads(
+        uploads,
+        serviceInstanceId
+      );
+      storedUploads.push(...files);
+      return files;
+    };
     const createFromUploads = async () => {
+      const [sourceDocumentFile] = await storeUploads(sourceDocument);
+      const imagesFiles = await storeUploads(images);
+      const [logoFile] = await storeUploads(logo);
       const documentMetadata: DocumentMetadataResolverType[] =
         DocumentHelper.buildCompleteMetadataFromDocumentFile({
           sourceDocumentFile,
@@ -281,14 +282,10 @@ export const DocumentApp = {
         return document;
       });
     };
-    // A refused or failed creation, before or inside its transaction, removes its uploads
+    // A refused or failed creation, at any step after its first upload, removes the uploads it stored
     const createdDocument = await createFromUploads().catch(
       async (error: unknown) => {
-        await DocumentUploadsHelper.removeUploads([
-          sourceDocumentFile,
-          ...imagesFiles,
-          logoFile,
-        ]);
+        await DocumentUploadsHelper.removeUploads(storedUploads);
         throw error;
       }
     );

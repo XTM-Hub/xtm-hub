@@ -25,9 +25,21 @@ export const DocumentUploadsHelper = {
     const uploadList = Array.isArray(uploads) ? uploads : [uploads];
     await DocumentUploadsHelper.waitForUploads(uploadList);
 
-    return Promise.all(
+    // A batch that fails part-way removes the files it stored before failing
+    const results = await Promise.allSettled(
       uploadList.map((doc) => MinIOClient.createFile(doc, serviceInstanceId))
     );
+    const stored = results.flatMap((result) =>
+      result.status === 'fulfilled' ? [result.value] : []
+    );
+    const failure = results.find(
+      (result): result is PromiseRejectedResult => result.status === 'rejected'
+    );
+    if (failure) {
+      await DocumentUploadsHelper.removeUploads(stored);
+      throw failure.reason;
+    }
+    return stored;
   },
 
   /**

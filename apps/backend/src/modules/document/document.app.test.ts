@@ -215,6 +215,32 @@ describe('documentApp', () => {
       expect(DocumentUploadsHelper.processUploads).not.toHaveBeenCalled();
     });
 
+    it('should remove the stored uploads when a later upload of the creation fails', async () => {
+      // Given: the source document is stored, then the images fail to upload
+      vi.mocked(DocumentUploadsHelper.processUploads)
+        .mockResolvedValueOnce([{ ...minioFileMock, minioName: 'source' }])
+        .mockRejectedValueOnce(new Error('Storage unavailable'));
+
+      // When
+      const call = DocumentApp.createDocument({
+        input: { ...documentData, slug: 'slug-with-failed-upload' },
+        metadata: integrationMetadata,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        sourceDocument: mockUpload,
+        images: [mockUpload],
+        logo: mockUpload,
+      });
+
+      // Then
+      await expect(call).rejects.toThrow('Storage unavailable');
+      expect(
+        vi.mocked(MinIOClient.deleteFile).mock.calls.map(([name]) => name)
+      ).toEqual(['source']);
+      expect(
+        await TestHelper.document.loadAll({ slug: 'slug-with-failed-upload' })
+      ).toHaveLength(0);
+    });
+
     it('should remove the uploads of a creation refused after uploading, before its transaction', async () => {
       // Given
       vi.mocked(DocumentUploadsHelper.processUploads)
