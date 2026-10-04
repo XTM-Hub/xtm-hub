@@ -18,7 +18,7 @@ import {
   isObjectNotFoundError,
   StorageUnavailableError,
 } from './storage-error';
-import { MinioFile, UploadedFile } from './types';
+import { MinioFile, UploadedFile, UploadLimit } from './types';
 
 const getEndpoint = () => {
   // If using AWS S3, unset the endpoint to let the library choose the best endpoint
@@ -61,7 +61,8 @@ export const MinIOClient = {
 
   createFile: async (
     jsonFile: Upload,
-    serviceInstanceId: ServiceInstanceId
+    serviceInstanceId: ServiceInstanceId,
+    limit?: UploadLimit
   ): Promise<MinioFile> => {
     const user = requestContext.requireUser();
     const fileName = DocumentHelper.normalizeDocumentName(
@@ -71,7 +72,8 @@ export const MinIOClient = {
       jsonFile.file,
       fileName,
       user.id,
-      serviceInstanceId
+      serviceInstanceId,
+      limit
     );
 
     return {
@@ -108,7 +110,8 @@ export const MinIOClient = {
     file: UploadedFile,
     filename: string,
     userId: string,
-    serviceInstanceId: ServiceInstanceId
+    serviceInstanceId: ServiceInstanceId,
+    limit?: UploadLimit
   ): Promise<{ minioName: string; jsonContent?: Record<string, unknown> }> => {
     const fullMetadata = {
       mimetype: file.mimetype,
@@ -118,7 +121,9 @@ export const MinIOClient = {
       ServiceInstanceId: serviceInstanceId,
     };
 
-    const stream = file.createReadStream();
+    const stream = limit
+      ? limitStreamSize(file.createReadStream(), limit)
+      : file.createReadStream();
 
     const jsonContent =
       file.mimetype === 'application/json'
@@ -198,10 +203,37 @@ export const MinIOClient = {
   },
 };
 
+// Refuses an upload above its limit while it streams, before it is buffered or stored.
+const limitStreamSize = (
+  stream: Stream.Readable,
+  limit: UploadLimit
+): Stream.Readable => {
+  let size = 0;
+  const limited = new Stream.Transform({
+    transform(chunk: Buffer, _encoding, callback) {
+      size += chunk.length;
+      callback(
+        size > limit.maxBytes ? new Error(limit.errorCode) : null,
+        chunk
+      );
+    },
+  });
+  stream.on('error', (error) => limited.destroy(error));
+  return stream.pipe(limited);
+};
+
+const readStreamText = async (stream: Stream.Readable): Promise<string> => {
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return new TextDecoder().decode(Buffer.concat(chunks));
+};
+
 const parseJsonStream = async (
   stream: Stream.Readable
 ): Promise<Record<string, unknown> | undefined> => {
-  const content = await new Response(stream).text();
+  const content = await readStreamText(stream);
   try {
     return JSON.parse(content);
   } catch (err) {

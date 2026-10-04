@@ -96,6 +96,29 @@ describe('huntPackHelper.summarize', () => {
     expect(summary.huntPlatforms).toEqual(['elastic-security', 'splunk']);
   });
 
+  it('counts and checks a hunt listed twice once, as its last occurrence', () => {
+    const summary = HuntPackHelper.summarize(
+      bundle([
+        { ...hunt('hunt--1'), name: '' },
+        hunt('hunt--1', [], ['splunk']),
+        hunt('hunt--2'),
+      ])
+    );
+
+    expect(summary.huntCount).toBe(2);
+    expect(summary.huntPlatforms).toEqual(['splunk']);
+  });
+
+  it('accepts more hunt occurrences than the limit when the distinct hunts fit', () => {
+    const hunts = Array.from({ length: HUNT_PACK_MAX_HUNTS }, (_, index) =>
+      hunt(`hunt--${index}`)
+    );
+
+    expect(
+      HuntPackHelper.summarize(bundle([...hunts, hunt('hunt--0')])).huntCount
+    ).toBe(HUNT_PACK_MAX_HUNTS);
+  });
+
   it('ignores malformed technique references', () => {
     const summary = HuntPackHelper.summarize(
       bundle([

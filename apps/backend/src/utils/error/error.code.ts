@@ -64,6 +64,7 @@ export enum BadRequestErrorCode {
   HuntPackEmpty = 'HUNT_PACK_EMPTY',
   HuntPackTooLarge = 'HUNT_PACK_TOO_LARGE',
   HuntPackInvalidHunt = 'HUNT_PACK_INVALID_HUNT',
+  HuntPackFileTooLarge = 'HUNT_PACK_FILE_TOO_LARGE',
   MissingAutoRegisterPlatformArgument = 'MISSING_AUTO_REGISTER_PLATFORM_ARGUMENT',
   DocumentFileMissing = 'DOCUMENT_FILE_MISSING',
   TenantIdMandatory = 'TENANT_ID_MANDATORY',

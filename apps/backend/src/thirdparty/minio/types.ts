@@ -7,6 +7,12 @@ export interface UploadedFile {
   encoding: string;
 }
 
+/** A size above which an upload is refused, with the error code to raise. */
+export interface UploadLimit {
+  maxBytes: number;
+  errorCode: string;
+}
+
 export interface MinioFile {
   minioName: string;
   fileName: string;

@@ -4,7 +4,6 @@ import {
   ServiceDefinitionIdentifier,
 } from '../../../../__generated__/resolvers-types';
 import type { DocumentId } from '../../../../model/kanel/public/Document';
-import { MinIOClient } from '../../../../thirdparty/minio/client';
 import {
   BadRequestErrorCode,
   ErrorCode,
@@ -71,11 +70,7 @@ describe('huntPackApp.buildDocumentMetadata', () => {
     ]);
   });
 
-  it('deletes a rejected upload from storage and rethrows the validation error', async () => {
-    const deleteFile = vi
-      .spyOn(MinIOClient, 'deleteFile')
-      .mockResolvedValue(undefined);
-
+  it('rethrows the validation error of a rejected upload', async () => {
     await expect(
       HuntPackApp.buildDocumentMetadata({
         serviceDefinitionIdentifier:
@@ -84,7 +79,18 @@ describe('huntPackApp.buildDocumentMetadata', () => {
         sourceDocumentFile: huntPackFile({ type: 'bundle', objects: [] }),
       })
     ).rejects.toThrow(BadRequestErrorCode.HuntPackEmpty);
-    expect(deleteFile).toHaveBeenCalledWith('hunt-pack-minio-name');
+  });
+
+  it('limits the hunt pack file to the 20 MiB the OpenCTI import accepts', () => {
+    expect(
+      HuntPackApp.uploadLimit(ServiceDefinitionIdentifier.OpenctiHuntPacks)
+    ).toEqual({
+      maxBytes: 20 * 1024 * 1024,
+      errorCode: BadRequestErrorCode.HuntPackFileTooLarge,
+    });
+    expect(
+      HuntPackApp.uploadLimit(ServiceDefinitionIdentifier.OpenctiCustomViews)
+    ).toBeUndefined();
   });
 
   it('rejects a new hunt pack without a pack file', async () => {

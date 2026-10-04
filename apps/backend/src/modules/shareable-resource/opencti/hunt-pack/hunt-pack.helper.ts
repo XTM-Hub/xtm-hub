@@ -87,9 +87,17 @@ export const HuntPackHelper = {
       throw new Error(BadRequestErrorCode.HuntPackInvalidBundle);
     }
     const objects = content.objects.filter(isRecord);
-    const hunts = objects.filter(
-      (object) =>
-        typeof object.type === 'string' && HUNT_STIX_TYPES.includes(object.type)
+    // A hunt listed twice is imported once by OpenCTI, as its last occurrence
+    const hunts = Array.from(
+      new Map(
+        objects
+          .filter(
+            (object) =>
+              typeof object.type === 'string' &&
+              HUNT_STIX_TYPES.includes(object.type)
+          )
+          .map((hunt) => [hunt.id, hunt])
+      ).values()
     );
     if (hunts.length === 0) {
       throw new Error(BadRequestErrorCode.HuntPackEmpty);

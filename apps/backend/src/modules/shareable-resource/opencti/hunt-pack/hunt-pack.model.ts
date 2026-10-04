@@ -7,8 +7,9 @@ export const OPENCTI_HUNT_PACK_DOCUMENT_TYPE = 'opencti_hunt_pack';
 /** First OpenCTI version able to import hunt packs. */
 export const HUNT_PACK_MINIMUM_PRODUCT_VERSION = '7.261003.0';
 
-/** Same limit as the OpenCTI hunt pack import. */
+/** Same limits as the OpenCTI hunt pack import. */
 export const HUNT_PACK_MAX_HUNTS = 200;
+export const HUNT_PACK_MAX_BYTES = 20 * 1024 * 1024;
 export const HUNT_PACK_MAX_TECHNIQUES = 500;
 export const HUNT_PACK_MAX_PLATFORMS = 50;
 

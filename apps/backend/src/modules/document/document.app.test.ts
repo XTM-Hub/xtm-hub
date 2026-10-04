@@ -244,6 +244,48 @@ describe('documentApp', () => {
       );
     });
 
+    it('should delete every stored file when the creation fails after the uploads', async () => {
+      // Given a request whose document cannot be saved
+      let storedCount = 0;
+      vi.spyOn(DocumentUploadsHelper, 'processUploads').mockImplementation(
+        async (uploads) => {
+          if (!uploads) return [];
+          const uploadList = Array.isArray(uploads) ? uploads : [uploads];
+          return uploadList.map(() => {
+            storedCount += 1;
+            return {
+              ...huntPackFile(huntPackContent),
+              minioName: `stored-${storedCount}`,
+            };
+          });
+        }
+      );
+      vi.spyOn(DocumentDomain, 'createDocument').mockRejectedValueOnce(
+        new Error('DOCUMENT_INSERT_FAILED')
+      );
+
+      // When
+      const call = DocumentApp.createDocument({
+        input: { ...documentData, slug: `failed-insert-${uuidv4()}` },
+        metadata: [
+          { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+        ],
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        sourceDocument: mockUpload,
+        logo: mockUpload,
+        images: [mockUpload],
+      });
+
+      // Then the pack file, the image and the logo are all deleted
+      await expect(call).rejects.toThrow('DOCUMENT_INSERT_FAILED');
+      expect(
+        vi
+          .mocked(MinIOClient.deleteFile)
+          .mock.calls.map(([minioName]) => minioName)
+          .sort()
+      ).toEqual(['stored-1', 'stored-2', 'stored-3']);
+    });
+
     it('should store no logo or image when the hunt pack file is missing', async () => {
       // Given a request with a logo and an image but no pack file
       const processUploadsSpy = vi
@@ -267,7 +309,8 @@ describe('documentApp', () => {
       await expect(call).rejects.toThrow(ErrorCode.DocumentFileMissing);
       expect(processUploadsSpy).toHaveBeenCalledExactlyOnceWith(
         undefined,
-        SERVICES.INSTANCES.HUNT_PACKS.ID
+        SERVICES.INSTANCES.HUNT_PACKS.ID,
+        expect.objectContaining({ maxBytes: 20 * 1024 * 1024 })
       );
     });
   });

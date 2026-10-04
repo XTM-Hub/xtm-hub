@@ -3,16 +3,33 @@ import {
   ServiceDefinitionIdentifier,
 } from '../../../../__generated__/resolvers-types';
 import type { DocumentId } from '../../../../model/kanel/public/Document';
-import { MinIOClient } from '../../../../thirdparty/minio/client';
-import type { MinioFile } from '../../../../thirdparty/minio/types';
-import { logApp } from '../../../../utils/app-logger.util';
-import { getErrorMessage } from '../../../../utils/error/error-guard.util';
-import { ErrorCode } from '../../../../utils/error/error.code';
+import type {
+  MinioFile,
+  UploadLimit,
+} from '../../../../thirdparty/minio/types';
+import {
+  BadRequestErrorCode,
+  ErrorCode,
+} from '../../../../utils/error/error.code';
 import { DocumentMetadataDomain } from '../../../document/domain/document.metadata.domain';
 import { HuntPackHelper } from './hunt-pack.helper';
-import { HUNT_PACK_EXTRACTED_METADATA_KEYS } from './hunt-pack.model';
+import {
+  HUNT_PACK_EXTRACTED_METADATA_KEYS,
+  HUNT_PACK_MAX_BYTES,
+} from './hunt-pack.model';
 
 export const HuntPackApp = {
+  /** The size limit of the file of a library, if it has one. */
+  uploadLimit: (
+    serviceDefinitionIdentifier: ServiceDefinitionIdentifier
+  ): UploadLimit | undefined =>
+    serviceDefinitionIdentifier === ServiceDefinitionIdentifier.OpenctiHuntPacks
+      ? {
+          maxBytes: HUNT_PACK_MAX_BYTES,
+          errorCode: BadRequestErrorCode.HuntPackFileTooLarge,
+        }
+      : undefined,
+
   /**
    * Metadata of a hunt pack document: the declared fields of the form, the
    * product version floor, and the summary extracted from the uploaded pack,
@@ -41,22 +58,8 @@ export const HuntPackApp = {
     );
 
     if (sourceDocumentFile) {
-      try {
-        const summary = HuntPackHelper.summarize(
-          sourceDocumentFile.jsonContent
-        );
-        return [...declaredMetadata, ...HuntPackHelper.toMetadata(summary)];
-      } catch (error) {
-        try {
-          await MinIOClient.deleteFile(sourceDocumentFile.minioName);
-        } catch (cleanupError) {
-          logApp.error('[HUNT_PACK] Unable to delete a rejected hunt pack', {
-            minioName: sourceDocumentFile.minioName,
-            error: getErrorMessage(cleanupError),
-          });
-        }
-        throw error;
-      }
+      const summary = HuntPackHelper.summarize(sourceDocumentFile.jsonContent);
+      return [...declaredMetadata, ...HuntPackHelper.toMetadata(summary)];
     }
 
     if (!existingDocumentId) {
