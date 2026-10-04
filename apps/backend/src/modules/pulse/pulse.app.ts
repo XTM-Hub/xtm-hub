@@ -438,27 +438,23 @@ const computeTrendingItems = async ({
     fromDay: activityWindowStart(day),
     toDay: day,
   });
-  return ranked.flatMap((item) => {
+  // An item reaches k over the period; its first seen day is only published
+  // when one week of the history reaches k too, so it can be null.
+  return ranked.map((item) => {
     const keyId = pulseKeyId(item);
-    const range = seen.get(keyId);
-    if (!range) {
-      return [];
-    }
-    return [
-      {
-        k: item.k,
-        t: item.t,
-        recent: item.recent,
-        baseline: item.baseline,
-        growth: item.growth,
-        prevalence: PulseStats.prevalenceBucket({
-          platformsInWindow: platformsInWindow.get(keyId) ?? 0,
-          activeContributors,
-          kThreshold: settings.kThreshold,
-        }),
-        firstSeen: range.firstSeen,
-      },
-    ];
+    return {
+      k: item.k,
+      t: item.t,
+      recent: item.recent,
+      baseline: item.baseline,
+      growth: item.growth,
+      prevalence: PulseStats.prevalenceBucket({
+        platformsInWindow: platformsInWindow.get(keyId) ?? 0,
+        activeContributors,
+        kThreshold: settings.kThreshold,
+      }),
+      firstSeen: seen.get(keyId)?.firstSeen ?? null,
+    };
   });
 };
 
@@ -864,25 +860,30 @@ export const PulseApp = {
       const salt = await loadOrCreateSalt(validated.day);
       const toHash = (k: string) =>
         PulseCrypto.atRestKeyToTransportHash(k, salt, caller.secrets.atRestKey);
-      const items = await loadDigestItems({
-        settings: caller.settings,
-        day: validated.day,
-        now: caller.now,
-      });
-      const trending = (
-        await loadTrendingItems({
+      // The digest items and the trending section come from one data
+      // generation: a purge or a retention step committed between them makes
+      // both be read again.
+      const { items, trending } = await readUnderOneGeneration(async () => ({
+        items: await loadDigestItems({
           settings: caller.settings,
-          input: {
-            day: validated.day,
-            period: PULSE_DIGEST_TRENDING_PERIOD,
-            sectorBucket: validated.sectorBucket,
-            regionBucket: validated.regionBucket,
-            objectTypes: null,
-            first: PULSE_DIGEST_TRENDING_RANKS,
-          },
+          day: validated.day,
           now: caller.now,
-        })
-      ).slice(0, PULSE_DIGEST_TRENDING_RANKS);
+        }),
+        trending: (
+          await loadTrendingItems({
+            settings: caller.settings,
+            input: {
+              day: validated.day,
+              period: PULSE_DIGEST_TRENDING_PERIOD,
+              sectorBucket: validated.sectorBucket,
+              regionBucket: validated.regionBucket,
+              objectTypes: null,
+              first: PULSE_DIGEST_TRENDING_RANKS,
+            },
+            now: caller.now,
+          })
+        ).slice(0, PULSE_DIGEST_TRENDING_RANKS),
+      }));
       const named = trending.slice(0, PULSE_DIGEST_TRENDING_NAMED_RANKS);
       return {
         day: validated.day,

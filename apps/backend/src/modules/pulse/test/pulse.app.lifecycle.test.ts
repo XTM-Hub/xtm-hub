@@ -54,7 +54,10 @@ const pauseNextSave = (method: SnapshotSave) => {
 };
 
 type PausableRead =
-  'upsertPlatformDailyTotals' | 'loadSeenRanges' | 'loadBenchmarkTopItems';
+  | 'upsertPlatformDailyTotals'
+  | 'loadSeenRanges'
+  | 'loadBenchmarkTopItems'
+  | 'loadTrendingSnapshot';
 
 // Holds the next call of a domain function until `release()`: what ran before
 // it is read or written, what follows is not.
@@ -251,6 +254,31 @@ describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
         saved: saved?.stored?.items,
         after: after.items.length,
       }).toEqual({ during: 0, saved: [], after: 0 });
+    });
+
+    it('should never answer a digest whose items and trending section were read across a purge', async () => {
+      // Given five platforms reporting LockBit and a digest paused once its
+      // items are read, before its trending section
+      const clients = await registerPulseClients(5);
+      await pushFromEach(clients, {
+        day: PULSE_TEST_TODAY,
+        records: [malware(LOCKBIT)],
+      });
+      const pause = pauseNextCall('loadTrendingSnapshot');
+      const inFlight = clients[1]!.digest({ day: PULSE_TEST_TODAY });
+      await pause.reached;
+
+      // When one of them purges before the trending section is read
+      await clients[0]!.purge();
+      pause.release();
+      const digest = await inFlight;
+
+      // Then both parts are read again after the purge: four platforms stay below k
+      expect({
+        items: digest.items.length,
+        trending: digest.trending.items.length,
+        locked: digest.trending.locked_count,
+      }).toEqual({ items: 0, trending: 0, locked: 0 });
     });
 
     it('should record nothing for a batch accepted before a purge and retried after it', async () => {
