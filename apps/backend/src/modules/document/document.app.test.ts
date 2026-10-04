@@ -243,6 +243,33 @@ describe('documentApp', () => {
         minioFileMock.minioName
       );
     });
+
+    it('should store no logo or image when the hunt pack file is missing', async () => {
+      // Given a request with a logo and an image but no pack file
+      const processUploadsSpy = vi
+        .spyOn(DocumentUploadsHelper, 'processUploads')
+        .mockImplementation(async (uploads) =>
+          uploads ? [minioFileMock] : []
+        );
+
+      // When
+      const call = DocumentApp.createDocument({
+        input: { ...documentData, slug: `missing-pack-${uuidv4()}` },
+        metadata: [
+          { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+        ],
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        logo: mockUpload,
+        images: [mockUpload],
+      });
+
+      // Then the request is rejected before any file is stored
+      await expect(call).rejects.toThrow(ErrorCode.DocumentFileMissing);
+      expect(processUploadsSpy).toHaveBeenCalledExactlyOnceWith(
+        undefined,
+        SERVICES.INSTANCES.HUNT_PACKS.ID
+      );
+    });
   });
 
   describe('createDocument', () => {

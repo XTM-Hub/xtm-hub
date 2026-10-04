@@ -65,6 +65,15 @@ export async function down(knex) {
     .where({ identifier: SERVICE_IDENTIFIER })
     .select('id');
   for (const serviceDefinition of serviceDefinitions) {
+    // Subscription_Capability does not cascade on Service_Capability deletion.
+    await knex('Subscription_Capability')
+      .whereIn(
+        'service_capability_id',
+        knex('Service_Capability')
+          .where({ service_definition_id: serviceDefinition.id })
+          .select('id')
+      )
+      .delete();
     await knex('Service_Capability')
       .where({ service_definition_id: serviceDefinition.id })
       .delete();

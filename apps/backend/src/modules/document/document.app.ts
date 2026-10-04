@@ -101,8 +101,6 @@ export const DocumentApp = {
       sourceDocument,
       serviceInstanceId
     );
-    // Validated before the logo and images are stored, so a rejected pack
-    // leaves no file behind.
     const documentMetadata: DocumentMetadataResolverType[] =
       await HuntPackApp.buildDocumentMetadata({
         serviceDefinitionIdentifier: serviceDefinition.identifier,
@@ -112,14 +110,6 @@ export const DocumentApp = {
         }),
         sourceDocumentFile,
       });
-    const imagesFiles = await DocumentUploadsHelper.processUploads(
-      images,
-      serviceInstanceId
-    );
-    const [logoFile] = await DocumentUploadsHelper.processUploads(
-      logo,
-      serviceInstanceId
-    );
 
     if (input.entity_types != null) {
       documentMetadata.push({
@@ -149,6 +139,17 @@ export const DocumentApp = {
       documentType,
       documentMetadata,
     });
+
+    // Stored only once the request is valid, so a rejected request leaves no
+    // logo or image behind.
+    const imagesFiles = await DocumentUploadsHelper.processUploads(
+      images,
+      serviceInstanceId
+    );
+    const [logoFile] = await DocumentUploadsHelper.processUploads(
+      logo,
+      serviceInstanceId
+    );
 
     const isDocumentFileRequired = DocumentHelper.isDocumentFileRequired({
       documentType,

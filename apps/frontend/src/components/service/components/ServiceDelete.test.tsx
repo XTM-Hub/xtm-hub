@@ -49,6 +49,7 @@ describe('ServiceDelete', () => {
     ${IntegrationType.ThirdPartyIntegration}          | ${'Service.ThirdPartyIntegration.SureDeleteService'}
     ${ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD} | ${'Service.OpenctiCustomDashboards.SureDeleteService'}
     ${ShareableResourceType.OPENAEV_SCENARIO}         | ${'Service.OpenAEVScenario.SureDeleteService'}
+    ${ShareableResourceType.OPENCTI_HUNT_PACK}        | ${'Service.OpenCTIHuntPack.SureDeleteService'}
   `(
     'maps deletion texts for shareableResourceType=shareableResourceType',
     async ({ shareableResourceType, expectedTextKey }) => {

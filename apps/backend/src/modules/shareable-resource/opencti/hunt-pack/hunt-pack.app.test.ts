@@ -5,7 +5,10 @@ import {
 } from '../../../../__generated__/resolvers-types';
 import type { DocumentId } from '../../../../model/kanel/public/Document';
 import { MinIOClient } from '../../../../thirdparty/minio/client';
-import { BadRequestErrorCode } from '../../../../utils/error/error.code';
+import {
+  BadRequestErrorCode,
+  ErrorCode,
+} from '../../../../utils/error/error.code';
 import { DocumentMetadataDomain } from '../../../document/domain/document.metadata.domain';
 import { HuntPackApp } from './hunt-pack.app';
 
@@ -81,6 +84,18 @@ describe('huntPackApp.buildDocumentMetadata', () => {
       })
     ).rejects.toThrow(BadRequestErrorCode.HuntPackEmpty);
     expect(deleteFile).toHaveBeenCalledWith('hunt-pack-minio-name');
+  });
+
+  it('rejects a new hunt pack without a pack file', async () => {
+    await expect(
+      HuntPackApp.buildDocumentMetadata({
+        serviceDefinitionIdentifier:
+          ServiceDefinitionIdentifier.OpenctiHuntPacks,
+        metadata: [
+          { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+        ],
+      })
+    ).rejects.toThrow(ErrorCode.DocumentFileMissing);
   });
 
   it('keeps the extracted metadata of the current version when no new file is uploaded', async () => {

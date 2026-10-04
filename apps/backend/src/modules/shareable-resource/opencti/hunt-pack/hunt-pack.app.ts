@@ -7,6 +7,7 @@ import { MinIOClient } from '../../../../thirdparty/minio/client';
 import type { MinioFile } from '../../../../thirdparty/minio/types';
 import { logApp } from '../../../../utils/app-logger.util';
 import { getErrorMessage } from '../../../../utils/error/error-guard.util';
+import { ErrorCode } from '../../../../utils/error/error.code';
 import { DocumentMetadataDomain } from '../../../document/domain/document.metadata.domain';
 import { HuntPackHelper } from './hunt-pack.helper';
 import { HUNT_PACK_EXTRACTED_METADATA_KEYS } from './hunt-pack.model';
@@ -15,7 +16,8 @@ export const HuntPackApp = {
   /**
    * Metadata of a hunt pack document: the declared fields of the form, the
    * product version floor, and the summary extracted from the uploaded pack,
-   * or kept from the current version when no new file is uploaded.
+   * or kept from the current version when no new file is uploaded. A new
+   * hunt pack requires its pack file.
    */
   buildDocumentMetadata: async ({
     serviceDefinitionIdentifier,
@@ -58,7 +60,7 @@ export const HuntPackApp = {
     }
 
     if (!existingDocumentId) {
-      return declaredMetadata;
+      throw new Error(ErrorCode.DocumentFileMissing);
     }
     const keptMetadata = await Promise.all(
       HUNT_PACK_EXTRACTED_METADATA_KEYS.map(async (key) => ({
