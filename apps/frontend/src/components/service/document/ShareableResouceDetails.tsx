@@ -1,5 +1,6 @@
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
 import { ShareableResourceDetailsLink } from '@/components/service/document/ShareableResourceDetailsLink';
+import { IntegrationCoverageDetails } from '@/components/service/document/ui/IntegrationCoverageDetails';
 import { ShareableResourceBasicInformation } from '@/components/service/document/ui/ShareableResourceBasicInformation';
 import { ShareableResourceDetailItem } from '@/components/service/document/ui/ShareableResourceDetailItem';
 import { ShareableResourceDetailMetadataItem } from '@/components/service/document/ui/ShareableResourceDetailMetadataItem';
@@ -21,7 +22,6 @@ import {
   isResourceDownloadable,
 } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
 import { LogoFiligranIcon } from '@filigran/icon';
-import { SimpleTooltip } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { DocumentMetadataKeyCode, IntegrationType } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
@@ -43,12 +43,6 @@ const DOCUMENTATION_URLS: Partial<Record<IntegrationType, string>> = {
   [IntegrationType.Stream]: STREAM_DOCUMENTATION,
   [IntegrationType.TaxiiFeed]: TAXII_FEED_DOCUMENTATION,
 };
-
-const COVERAGE_ITEMS = [
-  { field: 'covered_object_types', translationKey: 'CoveredObjectTypes' },
-  { field: 'covered_sectors', translationKey: 'CoveredSectors' },
-  { field: 'covered_regions', translationKey: 'CoveredRegions' },
-] as const;
 
 const ShareableResourceDetails = ({
   documentData,
@@ -139,34 +133,7 @@ const ShareableResourceDetails = ({
               </div>
             </ShareableResourceDetailItem>
           )}
-          {COVERAGE_ITEMS.map(({ field, translationKey }) => {
-            const values = documentData[field] ?? [];
-            if (values.length === 0) return null;
-            return (
-              <ShareableResourceDetailItem
-                key={field}
-                label={t(
-                  `Service.ShareableResources.Details.${translationKey}`
-                )}>
-                <span>{values.join(', ')}</span>
-              </ShareableResourceDetailItem>
-            );
-          })}
-          {documentData.coverage_inferred &&
-            COVERAGE_ITEMS.some(
-              ({ field }) => (documentData[field] ?? []).length > 0
-            ) && (
-              <SimpleTooltip
-                title={t(
-                  'Service.ShareableResources.Details.CoverageInferredTooltip'
-                )}>
-                <span
-                  className="txt-sub-content underline decoration-dotted underline-offset-2 w-fit"
-                  tabIndex={0}>
-                  {t('Service.ShareableResources.Details.CoverageInferred')}
-                </span>
-              </SimpleTooltip>
-            )}
+          <IntegrationCoverageDetails coverage={documentData} />
         </>
       )}
       <ShareableResourceDetailMetadataItem

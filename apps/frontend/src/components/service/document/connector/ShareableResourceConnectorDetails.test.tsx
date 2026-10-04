@@ -34,4 +34,31 @@ describe('ShareableResourceConnectorDetails', () => {
     // Then no empty label is shown
     expect(screen.queryByText(CONTACT_LABEL)).not.toBeInTheDocument();
   });
+
+  it('should display an inferred coverage with its origin', () => {
+    // Given a connector whose coverage was inferred from its contract
+    testRender(
+      <ShareableResourceConnectorDetails
+        connectorDetails={{
+          name: CONNECTOR_NAME,
+          covered_object_types: ['Indicator', 'Report'],
+          covered_sectors: [],
+          coverage_inferred: true,
+        }}
+      />
+    );
+
+    // When the details panel is rendered
+    // Then the covered values and the inferred label are shown, empty families are not
+    expect(
+      screen.getByText('Service.ShareableResources.Details.CoveredObjectTypes')
+    ).toBeInTheDocument();
+    expect(screen.getByText('Indicator, Report')).toBeInTheDocument();
+    expect(
+      screen.queryByText('Service.ShareableResources.Details.CoveredSectors')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText('Service.ShareableResources.Details.CoverageInferred')
+    ).toBeInTheDocument();
+  });
 });
