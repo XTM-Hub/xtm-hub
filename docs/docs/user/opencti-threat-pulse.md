@@ -80,6 +80,6 @@ Every operation authenticates with the platform token of the connected product a
 
 !!! warning "Keep the keys stable"
 
-    Changing `PULSE_AT_REST_KEY` or `PULSE_PLATFORM_KEY` unlinks every stored statistic from the new contributions. The Helm chart generates both keys once and keeps them on upgrades.
+    Changing `PULSE_AT_REST_KEY` or `PULSE_PLATFORM_KEY` unlinks every stored statistic and every platform pseudonym from the new contributions, and a purge no longer finds the contributions stored before. With `helm install` and `helm upgrade`, the Helm chart generates both keys once and keeps them by reading its Secret from the cluster. A render without access to the cluster (`helm template`, GitOps tools) cannot read it and would generate new keys at every render: set `xtmhub.api.pulse.atRestKey` and `xtmhub.api.pulse.platformKey` (64 hexadecimal characters each, checked when the chart renders), or `xtmhub.api.pulse.existingSecret`, the name of a Secret managed outside the chart that holds `PULSE_AT_REST_KEY` and `PULSE_PLATFORM_KEY`. A key set in the values wins over the one already in the chart's Secret.
 
 When a key or a setting is missing or invalid, the service stays disabled and logs the reason; the rest of XTM Hub is not affected, and the nightly retention still applies whenever `PULSE_RETENTION_MONTHS` is valid. Trending lists and digests computed under another anonymity threshold, digest size or publication rule are recomputed, never served; a purge or the nightly retention discards them at once.
