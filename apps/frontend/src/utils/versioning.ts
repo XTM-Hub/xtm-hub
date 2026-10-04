@@ -20,6 +20,10 @@ export const doesVersionSatisfy = ({
   givenVersion: string;
   requiredVersion: string;
 }): boolean => {
+  // A requirement that cannot be read is never met.
+  if (!isValidVersion(normalizeLtsRevision(requiredVersion))) {
+    return false;
+  }
   return compareVersions(givenVersion, requiredVersion) >= 0;
 };
 

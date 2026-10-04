@@ -49,6 +49,9 @@ describe('Versioning', () => {
       ${'7.261015.0-lts.2'} | ${'7.261015.0-LTS.2'} | ${true}
       ${'7.261015.0-LTS3'}  | ${'7.261015.0-lts.2'} | ${true}
       ${'7.261015.0-LTS.1'} | ${'7.261015.0-lts2'}  | ${false}
+      ${'7.260811.0-lts.1'} | ${'7.261015.0-lts.'}  | ${false}
+      ${'7.261020.0-lts.1'} | ${'7.261015.0-lts.'}  | ${false}
+      ${'7.261020.0'}       | ${'latest'}           | ${false}
     `(
       '$given satisfies $required = $expected',
       ({ given, required, expected }) => {

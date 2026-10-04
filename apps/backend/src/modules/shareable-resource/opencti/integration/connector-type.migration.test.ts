@@ -176,6 +176,8 @@ describe('apply_internal_hunt_minimum_deployable_version migration', () => {
     expect(toPaddedVersion('7.261015.0-lts')).toBe('007.261015.000.LTS.000');
     expect(toPaddedVersion('7.261015.0-lts2')).toBe('007.261015.000.LTS.002');
     expect(toPaddedVersion('latest')).toBeUndefined();
+    expect(toPaddedVersion('7.261015.0-lts.')).toBeUndefined();
+    expect(helperPaddedVersion('7.261015.0-lts.')).toBeUndefined();
   });
 
   it('keeps an LTS minimum above the floor whatever its spelling', async () => {
@@ -192,6 +194,10 @@ describe('apply_internal_hunt_minimum_deployable_version migration', () => {
       [DocumentMetadataKeyCode.ImageType]: 'INTERNAL_HUNT',
       [DocumentMetadataKeyCode.MinimumDeployableVersion]: '7.260811.0-lts',
     });
+    const revisionlessDot = await createConnector({
+      [DocumentMetadataKeyCode.ImageType]: 'INTERNAL_HUNT',
+      [DocumentMetadataKeyCode.MinimumDeployableVersion]: '7.261015.0-lts.',
+    });
 
     // When
     await up(db);
@@ -207,6 +213,10 @@ describe('apply_internal_hunt_minimum_deployable_version migration', () => {
       padded: '007.261015.000.LTS.002',
     });
     expect(await loadMinimumVersions(olderLts)).toEqual({
+      version: '7.261003.0',
+      padded: '007.261003.000',
+    });
+    expect(await loadMinimumVersions(revisionlessDot)).toEqual({
       version: '7.261003.0',
       padded: '007.261003.000',
     });

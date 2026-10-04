@@ -77,7 +77,10 @@ describe('connectorTypeHelper.resolveMinimumDeployableVersion', () => {
     ${'INTERNAL_HUNT'}   | ${undefined}          | ${HUNT_FLOOR}
     ${'INTERNAL_HUNT'}   | ${''}                 | ${HUNT_FLOOR}
     ${'INTERNAL_HUNT'}   | ${'not-a-version'}    | ${HUNT_FLOOR}
+    ${'INTERNAL_HUNT'}   | ${'7.261015.0-lts.'}  | ${HUNT_FLOOR}
     ${'INTERNAL_HUNT'}   | ${'7.261003.0'}       | ${'7.261003.0'}
+    ${'INTERNAL_HUNT'}   | ${'7.261015.0-lts'}   | ${'7.261015.0-lts'}
+    ${'INTERNAL_HUNT'}   | ${'7.261015.0-lts2'}  | ${'7.261015.0-lts2'}
     ${'INTERNAL_HUNT'}   | ${'7.261015.2'}       | ${'7.261015.2'}
     ${'INTERNAL_HUNT'}   | ${'7.261210.0-lts.1'} | ${'7.261210.0-lts.1'}
     ${'EXTERNAL_IMPORT'} | ${'7.260811.0'}       | ${'7.260811.0'}

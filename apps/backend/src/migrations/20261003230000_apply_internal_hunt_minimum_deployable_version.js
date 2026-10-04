@@ -41,7 +41,8 @@ const canonicalizeConnectorTypes = async (knex) => {
 // Must match toPaddedVersion in connector-type.helper.ts: the accepted LTS
 // spellings (`-lts`, `-lts.N`, `-ltsN`) are padded as `-lts.N`, a missing
 // revision being 0, then formatted like validateAndFormatManifestVersion.
-const MANIFEST_VERSION_REGEX = /^(\d+)\.(\d{1,6})\.(\d+)(?:-lts\.?(\d+)?)?$/i;
+const MANIFEST_VERSION_REGEX =
+  /^(\d+)\.(\d{1,6})\.(\d+)(?:-lts(?:\.?(\d+))?)?$/i;
 
 export const toPaddedVersion = (version) => {
   const match =

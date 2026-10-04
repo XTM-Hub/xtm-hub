@@ -53,7 +53,7 @@ const isOpenCtiConnectorType = (value: string): value is OpenCtiConnectorType =>
   (OPENCTI_CONNECTOR_TYPES as readonly string[]).includes(value);
 
 // Versions accept `-lts`, `-lts.N` and `-ltsN` (utils/versioning.ts); padding needs `-lts.N`.
-const LTS_SPELLING = /^(\d+\.\d+\.\d+)-lts\.?(\d+)?$/i;
+const LTS_SPELLING = /^(\d+\.\d+\.\d+)-lts(?:\.?(\d+))?$/i;
 
 export const toPaddedVersion = (version: string): string | undefined => {
   const canonical = version
