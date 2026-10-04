@@ -153,11 +153,9 @@ export const ServiceFormCoverageTagsField = ({
     family === 'sectors'
       ? 'Service.Form.CoveredSectorsPlaceholder'
       : 'Service.Form.CoveredRegionsPlaceholder';
-  const [tags, setTags] = useState<Tag[]>(
-    ((field.value as string[] | undefined) ?? []).map((text) => ({
-      id: text,
-      text,
-    }))
+  // The form value is the only state: a form reset or a value set by the parent shows at once
+  const tags: Tag[] = ((field.value as string[] | undefined) ?? []).map(
+    (text) => ({ id: text, text })
   );
   const [activeTagIndex, setActiveTagIndex] = useState<number | null>(null);
 
@@ -184,9 +182,13 @@ export const ServiceFormCoverageTagsField = ({
           activeTagIndex={activeTagIndex}
           setActiveTagIndex={setActiveTagIndex}
           setTags={(newTags) => {
-            const bounded = (newTags as Tag[]).slice(0, MAX_COVERAGE_VALUES);
-            setTags(bounded);
-            field.onChange(bounded.map((tag) => tag.text.trim()));
+            const next =
+              typeof newTags === 'function' ? newTags(tags) : newTags;
+            field.onChange(
+              next
+                .slice(0, MAX_COVERAGE_VALUES)
+                .map((tag: Tag) => tag.text.trim())
+            );
           }}
         />
       </FormControl>

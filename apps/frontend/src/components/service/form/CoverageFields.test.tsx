@@ -99,7 +99,60 @@ describe('ServiceFormCoverageTagsField', () => {
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange).toHaveBeenLastCalledWith(['Consumer goods']);
   });
+
+  it('should show the values of a form reset and edit from them', () => {
+    const onChange = vi.fn();
+    testRender(<ResettableForm onChange={onChange} />);
+
+    const input = screen.getByPlaceholderText(
+      'Service.Form.CoveredSectorsPlaceholder'
+    );
+    fireEvent.change(input, { target: { value: 'Retail' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(screen.getByText('Retail')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+    expect(screen.getByText('Energy')).toBeInTheDocument();
+    expect(screen.queryByText('Retail')).toBeNull();
+
+    fireEvent.change(input, { target: { value: 'Finance' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onChange).toHaveBeenLastCalledWith(['Energy', 'Finance']);
+  });
 });
+
+const ResettableForm = ({
+  onChange,
+}: {
+  onChange: (values: string[]) => void;
+}) => {
+  const form = useForm<FormValues>({ defaultValues: { covered_sectors: [] } });
+  return (
+    <Form {...form}>
+      <FormField
+        control={form.control}
+        name="covered_sectors"
+        render={({ field }) => (
+          <ServiceFormCoverageTagsField
+            family="sectors"
+            field={{
+              ...field,
+              onChange: (values: string[]) => {
+                field.onChange(values);
+                onChange(values);
+              },
+            }}
+          />
+        )}
+      />
+      <button
+        type="button"
+        onClick={() => form.reset({ covered_sectors: ['Energy'] })}>
+        Reset
+      </button>
+    </Form>
+  );
+};
 
 vi.mock('@/components/service/form/UseCoverageObjectTypes', () => ({
   useCoverageObjectTypes: () => [{ id: 'Malware', name: 'Malware' }],
