@@ -108,7 +108,34 @@ describe('huntPackApp.buildDocumentMetadata', () => {
     ).rejects.toThrow(ErrorCode.DocumentFileMissing);
   });
 
-  it('keeps the extracted metadata of the current version when no new file is uploaded', async () => {
+  it('leaves the summary of an edit without a new file to withKeptMetadata', async () => {
+    const loadMetadataValueByKey = vi.spyOn(
+      DocumentMetadataDomain,
+      'loadMetadataValueByKey'
+    );
+
+    const result = await HuntPackApp.buildDocumentMetadata({
+      serviceDefinitionIdentifier: ServiceDefinitionIdentifier.OpenctiHuntPacks,
+      metadata: [
+        { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+        { key: DocumentMetadataKeyCode.HuntCount, value: '999' },
+      ],
+      existingDocumentId: 'existing-hunt-pack' as DocumentId,
+    });
+
+    expect(result).toEqual([
+      { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+    ]);
+    expect(loadMetadataValueByKey).not.toHaveBeenCalled();
+  });
+});
+
+describe('huntPackApp.withKeptMetadata', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('adds the summary of the current version to an edit without a new file', async () => {
     const storedValues: Record<string, string | null> = {
       [DocumentMetadataKeyCode.HuntCount]: '4',
       [DocumentMetadataKeyCode.AttackTechniques]: '["T1003"]',
@@ -119,12 +146,12 @@ describe('huntPackApp.buildDocumentMetadata', () => {
       'loadMetadataValueByKey'
     ).mockImplementation(async (_id, key) => storedValues[key] ?? null);
 
-    const result = await HuntPackApp.buildDocumentMetadata({
+    const result = await HuntPackApp.withKeptMetadata({
       serviceDefinitionIdentifier: ServiceDefinitionIdentifier.OpenctiHuntPacks,
       metadata: [
         { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
       ],
-      existingDocumentId: 'existing-hunt-pack' as DocumentId,
+      documentId: 'existing-hunt-pack' as DocumentId,
     });
 
     expect(result).toEqual([
@@ -132,5 +159,25 @@ describe('huntPackApp.buildDocumentMetadata', () => {
       { key: DocumentMetadataKeyCode.HuntCount, value: '4' },
       { key: DocumentMetadataKeyCode.AttackTechniques, value: '["T1003"]' },
     ]);
+  });
+
+  it('leaves the metadata of other libraries untouched', async () => {
+    const loadMetadataValueByKey = vi.spyOn(
+      DocumentMetadataDomain,
+      'loadMetadataValueByKey'
+    );
+    const metadata = [
+      { key: DocumentMetadataKeyCode.ProductVersion, value: '6.8.0' },
+    ];
+
+    await expect(
+      HuntPackApp.withKeptMetadata({
+        serviceDefinitionIdentifier:
+          ServiceDefinitionIdentifier.OpenctiCustomViews,
+        metadata,
+        documentId: 'custom-view' as DocumentId,
+      })
+    ).resolves.toBe(metadata);
+    expect(loadMetadataValueByKey).not.toHaveBeenCalled();
   });
 });

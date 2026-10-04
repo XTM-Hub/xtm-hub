@@ -314,66 +314,81 @@ export const DocumentApp = {
         const imagesFiles = await storeUploads(images);
         const [logoFile] = await storeUploads(logo);
 
-        if (
-          !documentMetadata.some(
-            ({ key }) => key === DocumentMetadataKeyCode.FeedUrl
-          )
-        ) {
-          const existingFeedUrl =
-            await DocumentMetadataDomain.loadMetadataValueByKey(
-              parentDocumentId,
-              DocumentMetadataKeyCode.FeedUrl
+        return withTransaction(async () => {
+          // What the update keeps or replaces is read under the row lock, so
+          // a concurrent update cannot interleave between the read and the write
+          const currentMinioName =
+            await DocumentDomain.lockDocumentFile(parentDocumentId);
+          if (!sourceDocumentFile) {
+            documentMetadata = await HuntPackApp.withKeptMetadata({
+              serviceDefinitionIdentifier: serviceDefinition.identifier,
+              metadata: documentMetadata,
+              documentId: parentDocumentId,
+            });
+          }
+
+          if (
+            !documentMetadata.some(
+              ({ key }) => key === DocumentMetadataKeyCode.FeedUrl
+            )
+          ) {
+            const existingFeedUrl =
+              await DocumentMetadataDomain.loadMetadataValueByKey(
+                parentDocumentId,
+                DocumentMetadataKeyCode.FeedUrl
+              );
+            if (existingFeedUrl) {
+              documentMetadata = [
+                ...documentMetadata,
+                {
+                  key: DocumentMetadataKeyCode.FeedUrl,
+                  value: existingFeedUrl,
+                },
+              ];
+            }
+          }
+
+          if (
+            documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE &&
+            documentMetadata.length > 0
+          ) {
+            const storedIngestionMetadata =
+              await DocumentMetadataDomain.loadMetadataByKeys(
+                parentDocumentId,
+                INGESTION_OWNED_CONNECTOR_METADATA_KEYS
+              );
+            documentMetadata = ConnectorTypeHelper.mergeEditedMetadata(
+              documentMetadata,
+              storedIngestionMetadata
             );
-          if (existingFeedUrl) {
+          }
+
+          // entity_types is multi-valued: serialize it as a JSON metadata entry so it is
+          // persisted in Document_Metadata (and stripped from the Document column update below).
+          if (input.entity_types != null) {
             documentMetadata = [
               ...documentMetadata,
-              { key: DocumentMetadataKeyCode.FeedUrl, value: existingFeedUrl },
+              {
+                key: DocumentMetadataKeyCode.EntityTypes,
+                value: JSON.stringify(input.entity_types),
+              },
             ];
           }
-        }
+          if (input.license_type != null) {
+            documentMetadata = [
+              ...documentMetadata,
+              {
+                key: DocumentMetadataKeyCode.LicenseType,
+                value: input.license_type,
+              },
+            ];
+          }
 
-        if (
-          documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE &&
-          documentMetadata.length > 0
-        ) {
-          const storedIngestionMetadata =
-            await DocumentMetadataDomain.loadMetadataByKeys(
-              parentDocumentId,
-              INGESTION_OWNED_CONNECTOR_METADATA_KEYS
-            );
-          documentMetadata = ConnectorTypeHelper.mergeEditedMetadata(
-            documentMetadata,
-            storedIngestionMetadata
+          DocumentHelper.assertMetadataIsNotMissing(
+            serviceDefinition.identifier as ManageableServiceDefinitionIdentifier,
+            documentMetadata
           );
-        }
 
-        // entity_types is multi-valued: serialize it as a JSON metadata entry so it is
-        // persisted in Document_Metadata (and stripped from the Document column update below).
-        if (input.entity_types != null) {
-          documentMetadata = [
-            ...documentMetadata,
-            {
-              key: DocumentMetadataKeyCode.EntityTypes,
-              value: JSON.stringify(input.entity_types),
-            },
-          ];
-        }
-        if (input.license_type != null) {
-          documentMetadata = [
-            ...documentMetadata,
-            {
-              key: DocumentMetadataKeyCode.LicenseType,
-              value: input.license_type,
-            },
-          ];
-        }
-
-        DocumentHelper.assertMetadataIsNotMissing(
-          serviceDefinition.identifier as ManageableServiceDefinitionIdentifier,
-          documentMetadata
-        );
-
-        return withTransaction(async () => {
           const user = requestContext.requireUser();
           const uploader_organization_id =
             input.uploader_organization_id ?? null;
@@ -385,10 +400,7 @@ export const DocumentApp = {
           })
             ? sourceDocumentFile
             : undefined;
-          // Read under the row lock: concurrent replacements each get the file they replace
-          const replacedMinioName = file
-            ? await DocumentDomain.lockDocumentFile(parentDocumentId)
-            : null;
+          const replacedMinioName = file ? currentMinioName : null;
 
           // entity_types and license_type are persisted as metadata (see above), not as Document columns.
           const {

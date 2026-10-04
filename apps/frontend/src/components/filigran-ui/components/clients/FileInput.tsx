@@ -41,6 +41,13 @@ interface FileInputContextProps {
   isDragActive: boolean;
   setIsDragActive: React.Dispatch<React.SetStateAction<boolean>>;
 }
+// `allowedTypes` lists MIME types, such as "image/jpeg, image/png": a file is
+// accepted when its extension is the subtype of one of them.
+const allowedExtensions = (allowedTypes: string) =>
+  allowedTypes
+    .split(',')
+    .map((type) => type.trim().split('/').pop()?.toLowerCase() ?? '');
+
 const FileInputContext = createContext<FileInputContextProps>({
   isDragActive: false,
   setIsDragActive: () => {},
@@ -112,7 +119,10 @@ const GenericFileInput = (
         ? undefined
         : firstFile.name.slice(extensionStart + 1).toLowerCase();
 
-    if (allowedTypes && (!extension || !allowedTypes.includes(extension))) {
+    if (
+      allowedTypes &&
+      (!extension || !allowedExtensions(allowedTypes).includes(extension))
+    ) {
       form.setError(props.name, {
         message: 'Format not accepted',
       });

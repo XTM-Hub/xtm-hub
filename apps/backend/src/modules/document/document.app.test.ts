@@ -403,6 +403,65 @@ describe('documentApp', () => {
           .sort()
       );
     });
+
+    it('should keep the summary of the new file when an edit without file runs alongside its replacement', async () => {
+      // Given a hunt pack of one hunt, and a replacement file of two hunts
+      const metadata = [
+        { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+      ];
+      const slug = `edited-pack-${uuidv4()}`;
+      const [, firstHunt] = huntPackContent.objects;
+      const twoHuntsContent = {
+        ...huntPackContent,
+        objects: [
+          ...huntPackContent.objects,
+          {
+            ...firstHunt,
+            id: 'hunt--7d2e4b18-3c5a-4f69-8b1e-2a9c0d6f4e85',
+            name: 'Encoded PowerShell from Office',
+          },
+        ],
+      };
+      const storedFiles = [
+        { ...huntPackFile(huntPackContent), minioName: 'one-hunt.json' },
+        { ...huntPackFile(twoHuntsContent), minioName: 'two-hunts.json' },
+      ];
+      vi.spyOn(DocumentUploadsHelper, 'processUploads').mockImplementation(
+        async (uploads) => {
+          if (!uploads) return [];
+          const uploadList = Array.isArray(uploads) ? uploads : [uploads];
+          return uploadList.map(() => storedFiles.shift()!);
+        }
+      );
+      const huntPack = await DocumentApp.createDocument({
+        input: { ...documentData, slug },
+        metadata,
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        sourceDocument: mockUpload,
+      });
+      const update = (sourceDocument?: typeof mockUpload) =>
+        DocumentApp.updateDocument({
+          parentDocumentId: huntPack.id,
+          serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+          metadata,
+          input: { ...documentData, slug },
+          existingImageIds: [],
+          sourceDocument,
+        });
+
+      // When the file is replaced while another edit brings no file
+      await Promise.all([update(mockUpload), update()]);
+
+      // Then the summary describes the file the hunt pack points to
+      const stored = await TestHelper.document.load({ slug });
+      expect(stored?.minio_name).toBe('two-hunts.json');
+      expect(
+        await DocumentMetadataDomain.loadMetadataValueByKey(
+          huntPack.id,
+          DocumentMetadataKeyCode.HuntCount
+        )
+      ).toBe('2');
+    });
   });
 
   describe('createDocument', () => {

@@ -35,9 +35,9 @@ export const HuntPackApp = {
 
   /**
    * Metadata of a hunt pack document: the declared fields of the form, the
-   * product version floor, and the summary extracted from the uploaded pack,
-   * or kept from the current version when no new file is uploaded. A new
-   * hunt pack requires its pack file.
+   * product version floor, and the summary extracted from the uploaded pack.
+   * An edit without a new file gets the summary of the current version from
+   * withKeptMetadata. A new hunt pack requires its pack file.
    */
   buildDocumentMetadata: async ({
     serviceDefinitionIdentifier,
@@ -68,17 +68,40 @@ export const HuntPackApp = {
     if (!existingDocumentId) {
       throw new Error(ErrorCode.DocumentFileMissing);
     }
+    return declaredMetadata;
+  },
+
+  /**
+   * Adds the summary of the current pack file to an edit that uploads none.
+   * Call it with the document row locked, so a concurrent file replacement
+   * cannot be overwritten with the summary of the previous file.
+   */
+  withKeptMetadata: async ({
+    serviceDefinitionIdentifier,
+    metadata,
+    documentId,
+  }: {
+    serviceDefinitionIdentifier: ServiceDefinitionIdentifier;
+    metadata: DocumentMetadataResolverType[];
+    documentId: DocumentId;
+  }): Promise<DocumentMetadataResolverType[]> => {
+    if (
+      serviceDefinitionIdentifier !==
+      ServiceDefinitionIdentifier.OpenctiHuntPacks
+    ) {
+      return metadata;
+    }
     const keptMetadata = await Promise.all(
       HUNT_PACK_EXTRACTED_METADATA_KEYS.map(async (key) => ({
         key,
         value: await DocumentMetadataDomain.loadMetadataValueByKey(
-          existingDocumentId,
+          documentId,
           key
         ),
       }))
     );
     return [
-      ...declaredMetadata,
+      ...metadata,
       ...keptMetadata.filter(
         (entry): entry is DocumentMetadataResolverType => entry.value !== null
       ),
