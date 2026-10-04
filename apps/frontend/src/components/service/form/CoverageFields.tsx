@@ -17,6 +17,10 @@ import { z } from 'zod';
 export const MAX_COVERAGE_VALUES = 50;
 const MAX_COVERAGE_VALUE_LENGTH = 128;
 
+// The backend keeps one value per spelling compared this way: spaces collapsed, case ignored
+const coverageValueKey = (value: string) =>
+  value.trim().replace(/\s+/g, ' ').toLowerCase();
+
 /** Form schema of one coverage family (object types, sectors or regions). */
 export const coverageValuesSchema = z
   .array(z.string().max(MAX_COVERAGE_VALUE_LENGTH))
@@ -152,7 +156,11 @@ export const ServiceFormCoverageTagsField = ({
           validateTag={(tag: string) =>
             tags.length < MAX_COVERAGE_VALUES &&
             tag.trim().length > 0 &&
-            tag.length <= MAX_COVERAGE_VALUE_LENGTH
+            tag.length <= MAX_COVERAGE_VALUE_LENGTH &&
+            !tags.some(
+              (existing) =>
+                coverageValueKey(existing.text) === coverageValueKey(tag)
+            )
           }
           activeTagIndex={activeTagIndex}
           setActiveTagIndex={setActiveTagIndex}

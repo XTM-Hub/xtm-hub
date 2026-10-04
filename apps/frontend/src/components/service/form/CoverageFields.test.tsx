@@ -82,6 +82,22 @@ describe('ServiceFormCoverageTagsField', () => {
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(onChange).toHaveBeenLastCalledWith(['Retail, consumer goods']);
   });
+
+  it('should not add a value differing from an existing one only by case or spacing', () => {
+    const onChange = vi.fn();
+    testRender(<TestForm onChange={onChange} />);
+
+    const input = screen.getByPlaceholderText(
+      'Service.Form.CoveredSectorsPlaceholder'
+    );
+    fireEvent.change(input, { target: { value: 'Consumer goods' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    fireEvent.change(input, { target: { value: ' consumer   GOODS ' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenLastCalledWith(['Consumer goods']);
+  });
 });
 
 vi.mock('@/components/service/form/UseCoverageObjectTypes', () => ({
