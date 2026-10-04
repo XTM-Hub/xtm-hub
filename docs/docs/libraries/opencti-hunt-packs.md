@@ -51,7 +51,7 @@ OpenCTI. The hunts of the pack land in Defense > Hunts as drafts, with "XTM Hub"
 reviewed and activated. Hunts need an internal hunt Connector for each hunted platform to run; deploy them from the
 [integrations library](integrations.md#connector-types).
 
-![Details page of a hunt pack with Deploy in OpenCTI as primary action for an organization with a connected OpenCTI product that provides hunts](../assets/images/opencti-hunt-packs-deploy.png)
+![Details page of a hunt pack with Deploy in OpenCTI as primary action for an organization with a connected OpenCTI product that provides hunts](../assets/images/opencti-hunt-packs-details.png)
 
 When several OpenCTI products are connected, the deployment asks which one to use. A product older than the version
 the pack requires cannot be selected, and its tooltip names the version to reach.
