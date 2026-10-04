@@ -1208,6 +1208,7 @@
       "CoveredObjectTypesLabel": "対象のオブジェクトタイプ",
       "CoveredObjectTypesPlaceholder": "対象のオブジェクトタイプ...",
       "CoverageDescription": "カバレッジを空にすると、Hub が名前、説明、ユースケース、ソリューションカテゴリから推定します。",
+      "CoverageInferredNote": "現在のカバレッジは自動推定されたものです。カバレッジを編集して確認または修正してください。保存した値は宣言済みとなり、推定に代わります。",
       "CoverageLimit": "各フィールドに最大 {max} 個の値を指定できます。",
       "CoveredSectorsLabel": "対象のセクター",
       "CoveredSectorsPlaceholder": "セクターを追加（例: Finance）",
@@ -1541,7 +1542,7 @@
         "CoveredSectors": "対象のセクター",
         "CoveredRegions": "対象の地域",
         "CoverageInferred": "自動推定",
-        "CoverageInferredTooltip": "公開者はこのカバレッジを宣言していません。Hub が統合の名前、説明、ユースケース、ソリューションカテゴリから推定しました。マニフェストまたは統合フォームで宣言されたカバレッジがこれに代わります。"
+        "CoverageInferredTooltip": "公開者はこのカバレッジを宣言していません。Hub が統合の名前、説明、ユースケース、ソリューションカテゴリから推定しました。統合フォームでカバレッジを編集して、確認または修正してください。"
       },
       "Download": "ダウンロード",
       "FromVersion": "バージョンから",

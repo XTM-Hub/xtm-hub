@@ -212,6 +212,11 @@ export const useServiceFormFields = ({
           <ServiceFormCoveredObjectTypesField
             field={field}
             disabled={disabledFields.includes('covered_object_types')}
+            inferred={
+              !!document &&
+              'coverage_inferred' in document &&
+              document.coverage_inferred === true
+            }
           />
         ),
       },

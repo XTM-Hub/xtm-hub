@@ -1208,6 +1208,7 @@
       "CoveredObjectTypesLabel": "Covered object types",
       "CoveredObjectTypesPlaceholder": "Covered object types...",
       "CoverageDescription": "Leave the coverage empty to let the Hub infer it from the name, descriptions, use cases and solution categories.",
+      "CoverageInferredNote": "The current coverage was inferred automatically. Edit the coverage to confirm or correct it: the values you save are declared and replace the inference.",
       "CoverageLimit": "Up to {max} values per field.",
       "CoveredSectorsLabel": "Covered sectors",
       "CoveredSectorsPlaceholder": "Add a sector, for example Finance",
@@ -1541,7 +1542,7 @@
         "CoveredSectors": "Covered sectors",
         "CoveredRegions": "Covered regions",
         "CoverageInferred": "Inferred automatically",
-        "CoverageInferredTooltip": "The publisher did not declare this coverage: the Hub inferred it from the name, descriptions, use cases and solution categories of the integration. A coverage declared in the manifest or in the integration form replaces it."
+        "CoverageInferredTooltip": "The publisher did not declare this coverage: the Hub inferred it from the name, descriptions, use cases and solution categories of the integration. Edit the coverage in the integration form to confirm or correct it."
       },
       "Download": "Download",
       "FromVersion": "From version",

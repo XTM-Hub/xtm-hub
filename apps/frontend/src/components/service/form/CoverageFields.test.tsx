@@ -7,6 +7,7 @@ import {
   coverageValuesSchema,
   MAX_COVERAGE_VALUES,
   ServiceFormCoverageTagsField,
+  ServiceFormCoveredObjectTypesField,
 } from './CoverageFields';
 
 describe('coverageValuesSchema', () => {
@@ -79,5 +80,45 @@ describe('ServiceFormCoverageTagsField', () => {
 
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(onChange).toHaveBeenLastCalledWith(['Retail, consumer goods']);
+  });
+});
+
+vi.mock('@/components/service/form/UseCoverageObjectTypes', () => ({
+  useCoverageObjectTypes: () => [{ id: 'Malware', name: 'Malware' }],
+}));
+
+const ObjectTypesForm = ({ inferred }: { inferred: boolean }) => {
+  const form = useForm<{ covered_object_types?: string[] }>({
+    defaultValues: { covered_object_types: ['Malware'] },
+  });
+  return (
+    <Form {...form}>
+      <FormField
+        control={form.control}
+        name="covered_object_types"
+        render={({ field }) => (
+          <ServiceFormCoveredObjectTypesField
+            field={field}
+            inferred={inferred}
+          />
+        )}
+      />
+    </Form>
+  );
+};
+
+describe('ServiceFormCoveredObjectTypesField', () => {
+  it('should invite to edit an inferred coverage to confirm or correct it', () => {
+    testRender(<ObjectTypesForm inferred />);
+
+    expect(screen.getByTestId('coverage-inferred-note')).toHaveTextContent(
+      'Service.Form.CoverageInferredNote'
+    );
+  });
+
+  it('should not show the note for a declared coverage', () => {
+    testRender(<ObjectTypesForm inferred={false} />);
+
+    expect(screen.queryByTestId('coverage-inferred-note')).toBeNull();
   });
 });

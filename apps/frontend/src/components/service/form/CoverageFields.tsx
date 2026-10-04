@@ -27,15 +27,28 @@ interface CoverageFieldProps {
   disabled?: boolean;
 }
 
+interface CoveredObjectTypesFieldProps extends CoverageFieldProps {
+  // The current coverage of the edited integration was inferred by the Hub
+  inferred?: boolean;
+}
+
 export const ServiceFormCoveredObjectTypesField = ({
   field,
   disabled,
-}: CoverageFieldProps) => {
+  inferred = false,
+}: CoveredObjectTypesFieldProps) => {
   const t = useTranslations();
   const objectTypes = useCoverageObjectTypes();
   return (
     <FormItem>
       <FormLabel>{t('Service.Form.CoveredObjectTypesLabel')}</FormLabel>
+      {inferred && (
+        <p
+          className="text-sm txt-sub-content"
+          data-testid="coverage-inferred-note">
+          {t('Service.Form.CoverageInferredNote')}
+        </p>
+      )}
       <FormControl>
         <MultiSelectFormField
           disabled={disabled}

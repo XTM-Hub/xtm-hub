@@ -1208,6 +1208,7 @@
       "CoveredObjectTypesLabel": "Types d'objets couverts",
       "CoveredObjectTypesPlaceholder": "Types d'objets couverts...",
       "CoverageDescription": "Laissez la couverture vide pour que le Hub la déduise du nom, des descriptions, des cas d'usage et des catégories de solution.",
+      "CoverageInferredNote": "La couverture actuelle a été déduite automatiquement. Modifiez la couverture pour la confirmer ou la corriger : les valeurs enregistrées sont déclarées et remplacent la déduction.",
       "CoverageLimit": "Jusqu'à {max} valeurs par champ.",
       "CoveredSectorsLabel": "Secteurs couverts",
       "CoveredSectorsPlaceholder": "Ajoutez un secteur, par exemple Finance",
@@ -1541,7 +1542,7 @@
         "CoveredSectors": "Secteurs couverts",
         "CoveredRegions": "Régions couvertes",
         "CoverageInferred": "Déduite automatiquement",
-        "CoverageInferredTooltip": "L'éditeur n'a pas déclaré cette couverture : le Hub l'a déduite du nom, des descriptions, des cas d'usage et des catégories de solution de l'intégration. Une couverture déclarée dans le manifeste ou dans le formulaire de l'intégration la remplace."
+        "CoverageInferredTooltip": "L'éditeur n'a pas déclaré cette couverture : le Hub l'a déduite du nom, des descriptions, des cas d'usage et des catégories de solution de l'intégration. Modifiez la couverture dans le formulaire de l'intégration pour la confirmer ou la corriger."
       },
       "Download": "Télécharger",
       "FromVersion": "Depuis la version",
