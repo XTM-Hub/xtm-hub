@@ -7,6 +7,7 @@ import {
   MultiSelectFormField,
   Tag,
   TagInput,
+  useFormField,
 } from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -56,7 +57,8 @@ export const hasCoverageValues = (document: object | null | undefined) =>
     return Array.isArray(values) && values.length > 0;
   });
 
-export const ServiceFormCoveredObjectTypesField = ({
+// Rendered inside the form item: the inferred note and the guidance are the accessible description of the control
+const CoveredObjectTypesControl = ({
   field,
   disabled,
   inferred = false,
@@ -64,11 +66,21 @@ export const ServiceFormCoveredObjectTypesField = ({
 }: CoveredObjectTypesFieldProps) => {
   const t = useTranslations();
   const objectTypes = useCoverageObjectTypes();
+  const { error, formDescriptionId, formMessageId } = useFormField();
+  const inferredNoteId = `${formDescriptionId}-inferred-note`;
+  const describedBy = [
+    inferred ? inferredNoteId : null,
+    formDescriptionId,
+    error ? formMessageId : null,
+  ]
+    .filter(Boolean)
+    .join(' ');
   return (
-    <FormItem>
+    <>
       <FormLabel>{t('Service.Form.CoveredObjectTypesLabel')}</FormLabel>
       {inferred && (
         <p
+          id={inferredNoteId}
           className="text-sm txt-sub-content"
           data-testid="coverage-inferred-note">
           {inferredEmpty
@@ -76,7 +88,7 @@ export const ServiceFormCoveredObjectTypesField = ({
             : t('Service.Form.CoverageInferredNote')}
         </p>
       )}
-      <FormControl>
+      <FormControl aria-describedby={describedBy}>
         <MultiSelectFormField
           disabled={disabled}
           noResultString={t('Utils.NotFound')}
@@ -93,13 +105,23 @@ export const ServiceFormCoveredObjectTypesField = ({
           variant="inverted"
         />
       </FormControl>
-      <p className="text-sm txt-sub-content">
+      <p
+        id={formDescriptionId}
+        className="text-sm txt-sub-content">
         {t('Service.Form.CoverageDescription')}{' '}
         {t('Service.Form.CoverageLimit', { max: MAX_COVERAGE_VALUES })}
       </p>
-    </FormItem>
+    </>
   );
 };
+
+export const ServiceFormCoveredObjectTypesField = (
+  props: CoveredObjectTypesFieldProps
+) => (
+  <FormItem>
+    <CoveredObjectTypesControl {...props} />
+  </FormItem>
+);
 
 /**
  * Shown when the edited coverage was inferred: saving the inferred values unchanged keeps them inferred, unless the

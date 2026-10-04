@@ -233,6 +233,19 @@ describe('ServiceFormCoveredObjectTypesField', () => {
 
     expect(screen.queryByTestId('coverage-inferred-note')).toBeNull();
   });
+
+  it('should describe the control with the inferred note and the coverage guidance', () => {
+    const { container } = testRender(<ObjectTypesForm inferred />);
+
+    const control = container.querySelector('[aria-describedby]');
+    const descriptions = (control?.getAttribute('aria-describedby') ?? '')
+      .split(' ')
+      .map((id) => document.getElementById(id)?.textContent ?? '');
+    expect(descriptions).toEqual([
+      'Service.Form.CoverageInferredNote',
+      'Service.Form.CoverageDescription Service.Form.CoverageLimit',
+    ]);
+  });
 });
 
 const ConfirmationForm = ({
