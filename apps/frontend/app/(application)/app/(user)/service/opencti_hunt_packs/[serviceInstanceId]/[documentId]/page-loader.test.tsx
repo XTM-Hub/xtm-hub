@@ -27,7 +27,14 @@ vi.mock(
 
 const serviceInstance = {
   id: 'service-1',
+  name: 'OpenCTI Hunt Packs Library',
+  service_definition: { identifier: 'opencti_hunt_packs' },
 } as unknown as serviceInstance_fragment$data;
+
+const expectLibraryLink = () =>
+  expect(
+    screen.getByRole('link', { name: 'OpenCTI Hunt Packs Library' })
+  ).toHaveAttribute('href', '/app/service/opencti_hunt_packs/service-1');
 
 const mockQuery = (result: Record<string, unknown>) =>
   vi
@@ -79,6 +86,7 @@ describe('hunt pack page loader', () => {
 
     expect(screen.getByText('Utils.DocumentNotFound')).toBeInTheDocument();
     expect(screen.queryByTestId('hunt-pack-slug')).not.toBeInTheDocument();
+    expectLibraryLink();
   });
 
   it('shows the not-found message when the API does not find the hunt pack', () => {
@@ -93,6 +101,7 @@ describe('hunt pack page loader', () => {
 
     expect(screen.getByText('Utils.DocumentNotFound')).toBeInTheDocument();
     expect(screen.queryByText('Error.AnErrorOccured')).not.toBeInTheDocument();
+    expectLibraryLink();
   });
 
   it('shows the application error with a way to try again when the hunt pack cannot be read', async () => {
@@ -112,6 +121,7 @@ describe('hunt pack page loader', () => {
     expect(alert).toHaveTextContent('Error.SomethingWentWrong');
     expect(alert).toHaveTextContent('Error.AnErrorOccured');
     expect(screen.queryByTestId('hunt-pack-slug')).not.toBeInTheDocument();
+    expectLibraryLink();
 
     await userEvent.click(
       screen.getByRole('button', { name: 'Error.TryAgain' })

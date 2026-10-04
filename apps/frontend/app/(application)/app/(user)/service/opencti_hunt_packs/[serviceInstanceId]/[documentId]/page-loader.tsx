@@ -4,7 +4,9 @@ import Loader from '@/components/Loader';
 import HuntPackLoadError from '@/components/service/opencti-hunt-packs/HuntPackLoadError';
 import OpenctiHuntPackSlug from '@/components/service/opencti-hunt-packs/[slug]/OpenctiHuntPackSlug';
 import { toDocumentItem } from '@/components/service/opencti-hunt-packs/hunt-pack-documents';
+import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
 import { portalGraphqlClient } from '@/lib/graphql-client';
+import { APP_PATH } from '@/utils/path/constant';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import { useHuntPackDocumentQuery } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
@@ -21,7 +23,25 @@ const PageLoader = ({ documentId, serviceInstance }: PreloaderProps) => {
       documentId,
       serviceInstanceId: serviceInstance.id,
     });
-  const notFound = <h1>{t('Utils.DocumentNotFound')}</h1>;
+  // Without a hunt pack to show, the way back to the library stays visible.
+  const libraryBreadcrumb = (
+    <BreadcrumbNav
+      value={[
+        { label: 'MenuLinks.Home', href: `/${APP_PATH}` },
+        {
+          label: serviceInstance.name,
+          href: `/${APP_PATH}/service/${serviceInstance.service_definition?.identifier}/${serviceInstance.id}`,
+          original: true,
+        },
+      ]}
+    />
+  );
+  const notFound = (
+    <>
+      {libraryBreadcrumb}
+      <h1>{t('Utils.DocumentNotFound')}</h1>
+    </>
+  );
 
   if (isPending) {
     return <Loader />;
@@ -31,11 +51,14 @@ const PageLoader = ({ documentId, serviceInstance }: PreloaderProps) => {
     return error instanceof Error && error.message === 'DOCUMENT_NOT_FOUND' ? (
       notFound
     ) : (
-      <HuntPackLoadError
-        error={error}
-        retrying={isFetching}
-        onRetry={() => refetch()}
-      />
+      <>
+        {libraryBreadcrumb}
+        <HuntPackLoadError
+          error={error}
+          retrying={isFetching}
+          onRetry={() => refetch()}
+        />
+      </>
     );
   }
   if (!data.document) {
