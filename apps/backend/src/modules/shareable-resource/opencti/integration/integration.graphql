@@ -156,6 +156,10 @@ type Connector implements Node & Document & Integration {
   minimum_deployable_version: String
   license_type: LicenseType
   contact: String
+  # OpenCTI connector type (EXTERNAL_IMPORT, INTERNAL_HUNT, ...), null when not known
+  connector_type: String
+  # Platform an INTERNAL_HUNT connector hunts on (splunk, microsoft-sentinel, ...)
+  hunt_platform: String
 }
 
 type TaxiiFeed implements Node & Document & Integration {

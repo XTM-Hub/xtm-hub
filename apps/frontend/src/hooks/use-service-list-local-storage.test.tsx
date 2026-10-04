@@ -110,7 +110,7 @@ describe('useServiceListLocalStorage', () => {
 
     result.current.resetAll();
 
-    expect(testState.removeFns).toHaveLength(13);
+    expect(testState.removeFns).toHaveLength(14);
     for (const remove of testState.removeFns) {
       expect(remove).toHaveBeenCalledOnce();
     }

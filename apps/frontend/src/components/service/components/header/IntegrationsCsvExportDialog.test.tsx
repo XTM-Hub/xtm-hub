@@ -26,6 +26,7 @@ vi.mock(
 const { storageMock } = vi.hoisted(() => ({
   storageMock: {
     integrationTypes: {} as Record<string, string[]>,
+    connectorTypes: {} as Record<string, string[]>,
     licenseTypes: {} as Record<string, string[]>,
     solutionCategories: {} as Record<string, string[]>,
     verified: {} as Record<string, string[]>,
@@ -61,6 +62,7 @@ vi.mock('@/components/service/form/UseSolutionCategories', () => ({
 
 const EMPTY_FILTERS = {
   integrationTypes: [],
+  connectorTypes: [],
   useCases: [],
   licenseTypes: [],
   solutionCategories: [],
@@ -80,6 +82,7 @@ describe('IntegrationsCsvExportDialog', () => {
     downloadIntegrationsCsvMock.mockReset();
     vi.spyOn(FiligranUI, 'toast').mockImplementation(() => undefined);
     storageMock.integrationTypes = {};
+    storageMock.connectorTypes = {};
     storageMock.licenseTypes = {};
     storageMock.solutionCategories = {};
     storageMock.verified = {};

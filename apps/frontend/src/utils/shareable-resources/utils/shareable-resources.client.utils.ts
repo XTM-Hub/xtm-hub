@@ -59,6 +59,8 @@ type DocumentMetadataValueType = {
   subscription_link: string | null;
   minimum_deployable_version: string | null;
   contact: string | null;
+  connector_type: string | null;
+  hunt_platform: string | null;
   entity_types: readonly string[] | null;
 };
 

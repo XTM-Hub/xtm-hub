@@ -353,6 +353,7 @@
       "INCREMENT_SHARE_NUMBER": "Error occurred while incrementing share number",
       "INTEGRATION_TYPE_NOT_MANAGEABLE": "This type of integration is not manageable.",
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "This type of integration is not recognized",
+      "CONNECTOR_TYPE_NOT_RECOGNIZED": "The connector type of this manifest is not recognized. Use one of the OpenCTI connector types listed in the documentation.",
       "INVALID_ACTION_SIZE": "An unknown error occurred",
       "INVALID_EMAIL": "The email should be in valid format.",
       "INVALID_IMAGE_URL": "The image URL is not valid",
@@ -1148,7 +1149,7 @@
       "Search": "Search a connector with name...",
       "VendorContact": "Vendor Contact",
       "VisitVendor": "Visit the vendor's page to learn more and get in touch",
-      "Incompatible": "{platformToBeUpdated} {count, plural, =1 {needs} other {need}} to be updated to deploy this connector.",
+      "Incompatible": "Update {platformToBeUpdated} to OpenCTI {version} or later to deploy this connector.",
       "UnavailableDeployments": "This connector is not available for automatic deployment."
     },
     "CreationStatus": "Creation status",
@@ -1217,6 +1218,10 @@
           "Label": "Integration type",
           "Placeholder": "Integration type..."
         },
+        "ConnectorType": {
+          "Label": "Connector type",
+          "Placeholder": "Connector type..."
+        },
         "ManagerSupported": {
           "Label": "Deployment type",
           "Placeholder": "Deployment type...",
@@ -1247,6 +1252,26 @@
         "taxii_feed": "TAXII Feeds",
         "stream": "OpenCTI Streams",
         "third_party_integration": "Third party integrations"
+      },
+      "ConnectorType": {
+        "EXTERNAL_IMPORT": "External import",
+        "INTERNAL_ENRICHMENT": "Internal enrichment",
+        "INTERNAL_IMPORT_FILE": "Internal import file",
+        "INTERNAL_EXPORT_FILE": "Internal export file",
+        "INTERNAL_ANALYSIS": "Internal analysis",
+        "INTERNAL_HUNT": "Internal hunt",
+        "STREAM": "Stream"
+      },
+      "HuntPlatform": {
+        "splunk": "Splunk",
+        "microsoft-sentinel": "Microsoft Sentinel",
+        "elastic-security": "Elastic Security",
+        "crowdstrike-logscale": "CrowdStrike Falcon LogScale",
+        "google-secops": "Google Security Operations",
+        "opensearch": "OpenSearch",
+        "clickhouse": "ClickHouse",
+        "s3-ocsf": "OCSF data lake on Amazon S3",
+        "internet": "Internet scanning services"
       }
     },
     "CsvFeed": {
@@ -1472,7 +1497,7 @@
         "DeployPlatform": "Deploy in {platformName}",
         "DeployQuestionTag": "In which {platformType} platform do you want to deploy it?",
         "DeployResourceDescription": "You're about to deploy the {resourceName} {resourceType}.",
-        "DeployIncompatibleVersion": "The resource can't be deployed to your OpenCTI platform \"{platformTitle}\" because the platform version is no longer compatible with this resource. You’ll need to update the platform or use a compatible resource version before proceeding.",
+        "DeployIncompatibleVersion": "Update {platformTitle} to OpenCTI {version} or later to deploy this resource.",
         "EE": {
           "Tag": "EE",
           "HoverTitle": "Available in Enterprise Edition",
@@ -1506,6 +1531,8 @@
         "Shares": "Shares",
         "ContributorContact": "Contributor contact",
         "IntegrationType": "Type",
+        "ConnectorType": "Connector type",
+        "HuntedPlatform": "Hunted platform",
         "IntegrationSolutionCategory": "Solution category",
         "IntegrationLicenseType": "License type",
         "GithubURL": "Github URL",

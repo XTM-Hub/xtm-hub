@@ -27,6 +27,7 @@ export const EXPORT_FILTER_PARAMS: Array<{
   key: FilterKey;
 }> = [
   { queryParam: 'integration_type', key: FilterKey.IntegrationType },
+  { queryParam: 'connector_type', key: FilterKey.ConnectorType },
   { queryParam: 'license_type', key: FilterKey.LicenseType },
   { queryParam: 'manager_supported', key: FilterKey.ManagerSupported },
   { queryParam: 'solution_category', key: FilterKey.SolutionCategory },

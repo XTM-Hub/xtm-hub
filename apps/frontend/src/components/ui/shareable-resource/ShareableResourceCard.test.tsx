@@ -39,6 +39,39 @@ describe('ShareableResourceCard', () => {
 
     expect(screen.getByText('My Connector')).toBeInTheDocument();
     expect(screen.getByText('A connector description')).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Service\.OpenctiIntegrations\.ConnectorType/)
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows the connector type of a connector card', () => {
+    vi.mocked(useIsFeatureEnabled).mockReturnValue(true);
+
+    testRender(
+      <ShareableResourceCard
+        document={
+          {
+            __typename: 'Connector',
+            id: 'doc-3',
+            name: 'Splunk Hunt',
+            type: 'opencti_integration',
+            short_description: 'Runs OpenCTI hunts on Splunk',
+            integration_type: IntegrationType.Connector,
+            connector_type: 'INTERNAL_HUNT',
+            use_cases: [],
+          } as unknown as documentItem_fragment$data
+        }
+        detailUrl="/details"
+        shareLinkUrl="/share"
+        serviceInstance={serviceInstance}
+      />
+    );
+
+    expect(
+      screen.getByText(
+        'Service.OpenctiIntegrations.ConnectorType.INTERNAL_HUNT'
+      )
+    ).toBeInTheDocument();
   });
 
   it('renders non-connector card and applies the correct height class', async () => {

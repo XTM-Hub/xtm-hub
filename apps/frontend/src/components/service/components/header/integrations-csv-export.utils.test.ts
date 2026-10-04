@@ -48,6 +48,18 @@ describe('integrations-csv-export.utils', () => {
       );
     });
 
+    it('appends the connector type filter', () => {
+      // When
+      const url = buildIntegrationsCsvExportUrl('service-1', [], {
+        connectorTypes: ['INTERNAL_HUNT', 'STREAM'],
+      });
+
+      // Then
+      expect(url).toBe(
+        '/document/csv-export/service-1?connector_type=INTERNAL_HUNT%2CSTREAM'
+      );
+    });
+
     it('omits filters that are empty or not provided', () => {
       // When
       const url = buildIntegrationsCsvExportUrl('service-1', ['use_case'], {

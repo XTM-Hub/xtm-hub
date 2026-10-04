@@ -374,6 +374,76 @@ describe('upsertConnectors', () => {
       expect(result).toBeDefined();
       expect(result!.minimum_deployable_version).toBe('2.2.2');
     });
+
+    it('should set the first OpenCTI version with hunts as the minimum of a new hunt connector', async () => {
+      const manifest: ManifestInformation = {
+        ...baseManifest,
+        slug: 'min-deployable-hunt-new',
+        name: 'Min Deployable Hunt New',
+        product_version: '7.261002.0',
+        manager_supported: true,
+        image_type: 'INTERNAL_HUNT',
+        minimum_deployable_version: undefined,
+      };
+
+      const [result] = await IngestManifestDomain.upsertConnectors([manifest]);
+
+      expect(result).toBeDefined();
+      expect(result!.image_type).toBe('INTERNAL_HUNT');
+      expect(result!.minimum_deployable_version).toBe('7.261003.0');
+    });
+
+    it('should raise the stored minimum of a hunt connector below the first OpenCTI version with hunts', async () => {
+      const manifest: ManifestInformation = {
+        ...baseManifest,
+        slug: 'min-deployable-hunt-existing',
+        name: 'Min Deployable Hunt Existing',
+        product_version: '7.260930.0',
+        manager_supported: true,
+        minimum_deployable_version: '7.260930.0',
+      };
+      await IngestManifestDomain.upsertConnectors([manifest]);
+
+      const [result] = await IngestManifestDomain.upsertConnectors([
+        {
+          ...manifest,
+          product_version: '7.261010.0',
+          image_type: 'INTERNAL_HUNT',
+          minimum_deployable_version: undefined,
+        },
+      ]);
+
+      expect(result).toBeDefined();
+      expect(result!.minimum_deployable_version).toBe('7.261003.0');
+    });
+
+    it.each`
+      storedMinimum
+      ${'7.261015.0-lts'}
+      ${'7.261015.0-lts2'}
+      ${'7.261015.0-lts.2'}
+    `(
+      'should keep the stored LTS minimum $storedMinimum of a hunt connector above the floor on re-ingestion',
+      async ({ storedMinimum }: { storedMinimum: string }) => {
+        const manifest: ManifestInformation = {
+          ...baseManifest,
+          slug: `min-deployable-hunt-lts-${storedMinimum}`,
+          name: `Min Deployable Hunt LTS ${storedMinimum}`,
+          product_version: '7.261015.0',
+          manager_supported: true,
+          image_type: 'INTERNAL_HUNT',
+          minimum_deployable_version: storedMinimum,
+        };
+        await IngestManifestDomain.upsertConnectors([manifest]);
+
+        const [result] = await IngestManifestDomain.upsertConnectors([
+          { ...manifest, minimum_deployable_version: undefined },
+        ]);
+
+        expect(result).toBeDefined();
+        expect(result!.minimum_deployable_version).toBe(storedMinimum);
+      }
+    );
   });
 
   describe('datasheet_url, demo_url and blogpost_url preservation', () => {

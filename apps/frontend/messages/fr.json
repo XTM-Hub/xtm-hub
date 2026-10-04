@@ -353,6 +353,7 @@
       "INCREMENT_SHARE_NUMBER": "Une erreur s'est produite lors de l'incrémentation du numéro de part",
       "INTEGRATION_TYPE_NOT_MANAGEABLE": "Ce type d'intégration n'est pas gérable.",
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "Ce type d'intégration n'est pas reconnu",
+      "CONNECTOR_TYPE_NOT_RECOGNIZED": "Le type de connecteur de ce manifeste n'est pas reconnu. Utilisez l'un des types de connecteurs OpenCTI listés dans la documentation.",
       "INVALID_ACTION_SIZE": "Une erreur inconnue s'est produite",
       "INVALID_EMAIL": "L'email doit être dans un format valide.",
       "INVALID_IMAGE_URL": "L'URL de l'image n'est pas valide",
@@ -1148,7 +1149,7 @@
       "Search": "Rechercher un connecteur par nom...",
       "VendorContact": "Contact vendeur",
       "VisitVendor": "Visitez la page web du vendeur pour en savoir plus et rester en contact",
-      "Incompatible": "{platformToBeUpdated} {count, plural, =1 {doit} other {doivent}} être mises à jour pour déployer ce connecteur.",
+      "Incompatible": "Mettez à jour {platformToBeUpdated} vers OpenCTI {version} ou une version ultérieure pour déployer ce connecteur.",
       "UnavailableDeployments": "Ce connecteur n'est pas disponible pour le déploiement automatique."
     },
     "CreationStatus": "Statut de la création",
@@ -1217,6 +1218,10 @@
           "Label": "Type d'intégration",
           "Placeholder": "Type d'intégration..."
         },
+        "ConnectorType": {
+          "Label": "Type de connecteur",
+          "Placeholder": "Type de connecteur..."
+        },
         "ManagerSupported": {
           "Label": "Type de déploiement",
           "Placeholder": "Type de déploiement...",
@@ -1247,6 +1252,26 @@
         "taxii_feed": "Flux TAXII",
         "stream": "Flux OpenCTI",
         "third_party_integration": "Intégrations tierces (bientôt disponible)"
+      },
+      "ConnectorType": {
+        "EXTERNAL_IMPORT": "Importation externe",
+        "INTERNAL_ENRICHMENT": "Enrichissement interne",
+        "INTERNAL_IMPORT_FILE": "Importation interne de fichier",
+        "INTERNAL_EXPORT_FILE": "Exportation interne de fichier",
+        "INTERNAL_ANALYSIS": "Analyse interne",
+        "INTERNAL_HUNT": "Chasse interne",
+        "STREAM": "Stream"
+      },
+      "HuntPlatform": {
+        "splunk": "Splunk",
+        "microsoft-sentinel": "Microsoft Sentinel",
+        "elastic-security": "Elastic Security",
+        "crowdstrike-logscale": "CrowdStrike Falcon LogScale",
+        "google-secops": "Google Security Operations",
+        "opensearch": "OpenSearch",
+        "clickhouse": "ClickHouse",
+        "s3-ocsf": "Lac de données OCSF sur Amazon S3",
+        "internet": "Services de scan d'Internet"
       }
     },
     "CsvFeed": {
@@ -1472,7 +1497,7 @@
         "DeployPlatform": "Déployer dans {platformName}",
         "DeployQuestionTag": "Sur quelle plateforme {platformType} voulez-vous le déployer ?",
         "DeployResourceDescription": "Vous êtes sur le point de déployer le {resourceType} {resourceName}.",
-        "DeployIncompatibleVersion": "La ressource ne peut pas être déployée sur votre plateforme OpenCTI \"{platformTitle}\" ; car la version de la plateforme n'est plus compatible avec cette ressource. Vous devrez mettre à jour la plateforme ou utiliser une version de ressource compatible avant de continuer.",
+        "DeployIncompatibleVersion": "Mettez à jour {platformTitle} vers OpenCTI {version} ou une version ultérieure pour déployer cette ressource.",
         "EE": {
           "Tag": "EE",
           "HoverTitle": "Disponible dans l'Enterprise Edition",
@@ -1506,6 +1531,8 @@
         "Shares": "Actions",
         "ContributorContact": "Contact du contributeur",
         "IntegrationType": "Type",
+        "ConnectorType": "Type de connecteur",
+        "HuntedPlatform": "Plateforme de chasse",
         "IntegrationSolutionCategory": "Catégorie de solutions",
         "IntegrationLicenseType": "Type de licence",
         "GithubURL": "URL Github",

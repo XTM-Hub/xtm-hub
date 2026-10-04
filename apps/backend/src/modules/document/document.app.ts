@@ -26,6 +26,11 @@ import { ForbiddenAccess } from '../../utils/error/error.util';
 import { NewsFeedApp } from '../news-feed/news-feed.app';
 import { RegistrationApp } from '../registration/registration.app';
 import { ServiceDefinitionDomain } from '../service/definition/service-definition.domain';
+import {
+  ConnectorTypeHelper,
+  INGESTION_OWNED_CONNECTOR_METADATA_KEYS,
+} from '../shareable-resource/opencti/integration/connector-type.helper';
+import { OPENCTI_INTEGRATION_DOCUMENT_TYPE } from '../shareable-resource/opencti/integration/integration.model';
 import { objectSolutionCategoryDomain } from '../solution-category/object-solution-category/object-solution-category.domain';
 import { solutionCategoryApp } from '../solution-category/solution-category.app';
 import { TelemetryApp } from '../telemetry/telemetry.app';
@@ -320,6 +325,21 @@ export const DocumentApp = {
           { key: DocumentMetadataKeyCode.FeedUrl, value: existingFeedUrl },
         ];
       }
+    }
+
+    if (
+      documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE &&
+      documentMetadata.length > 0
+    ) {
+      const storedIngestionMetadata =
+        await DocumentMetadataDomain.loadMetadataByKeys(
+          parentDocumentId,
+          INGESTION_OWNED_CONNECTOR_METADATA_KEYS
+        );
+      documentMetadata = ConnectorTypeHelper.mergeEditedMetadata(
+        documentMetadata,
+        storedIngestionMetadata
+      );
     }
 
     // entity_types is multi-valued: serialize it as a JSON metadata entry so it is

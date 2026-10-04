@@ -31,6 +31,7 @@ export const FacetDomain = {
       solution_category: byField.solution_category ?? [],
       use_case: byField.use_case ?? [],
       entity_type: byField.entity_type ?? [],
+      connector_type: byField.connector_type ?? [],
     };
   },
 };

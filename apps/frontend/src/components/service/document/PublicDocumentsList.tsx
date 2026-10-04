@@ -73,6 +73,7 @@ const PublicDocumentsList = ({
     productVersions,
     licenseTypes,
     solutionCategories,
+    connectorTypes,
     orderBy,
     orderMode,
   } = useServiceListLocalStorage(localStorageKey);
@@ -91,6 +92,7 @@ const PublicDocumentsList = ({
     productVersions,
     licenseTypes,
     solutionCategories,
+    connectorTypes,
   });
 
   const documents = useMemo(() => {
@@ -137,6 +139,7 @@ const PublicDocumentsList = ({
     productVersions,
     licenseTypes,
     solutionCategories,
+    connectorTypes,
     orderBy,
     orderMode,
   ]);

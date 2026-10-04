@@ -126,7 +126,10 @@ const ChoosePlatformForm = ({
                                   )
                                 : t(
                                     'Service.ShareableResources.Deploy.DeployIncompatibleVersion',
-                                    { platformTitle: platform.title }
+                                    {
+                                      platformTitle: platform.title,
+                                      version: requiredProductVersion ?? '',
+                                    }
                                   )}
                             </p>
                           </TooltipContent>

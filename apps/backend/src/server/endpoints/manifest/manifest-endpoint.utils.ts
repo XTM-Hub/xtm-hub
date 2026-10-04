@@ -11,7 +11,7 @@ import { MANIFEST_LIST_DEFAULT_COUNT } from '../../../modules/shareable-resource
 import { isProduct } from '../shared/product.util';
 
 const MANIFEST_NAME_PATTERN = new RegExp(
-  `^connector-manifest-(?:${MANIFEST_VERSION_PATTERN})-\\d{12}$`,
+  `^connector-manifest-(?:${MANIFEST_VERSION_PATTERN})-\\d{12}(?:-[0-9a-f]{8})?$`,
   'i'
 );
 

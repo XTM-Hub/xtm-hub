@@ -123,3 +123,56 @@ describe('integration field resolvers', () => {
     });
   });
 });
+
+describe('connector type field resolvers', () => {
+  const huntConfigSchema = JSON.stringify({
+    type: 'object',
+    properties: {
+      CONNECTOR_SCOPE: { type: 'string', default: 'splunk' },
+    },
+  });
+
+  const resolveConnectorField = (
+    field: 'connector_type' | 'hunt_platform',
+    connector: Record<string, unknown>
+  ) =>
+    (
+      integrationResolver.Connector as unknown as Record<
+        typeof field,
+        (parent: Connector) => string | null
+      >
+    )[field](connector as unknown as Connector);
+
+  it.each`
+    imageType                | expected
+    ${'INTERNAL_HUNT'}       | ${'INTERNAL_HUNT'}
+    ${'internal_enrichment'} | ${'INTERNAL_ENRICHMENT'}
+    ${'SOMETHING_ELSE'}      | ${null}
+    ${undefined}             | ${null}
+  `(
+    'should resolve connector_type $expected from image_type $imageType',
+    ({ imageType, expected }) => {
+      expect(
+        resolveConnectorField('connector_type', { image_type: imageType })
+      ).toBe(expected);
+    }
+  );
+
+  it('should resolve the hunted platform of a hunt connector', () => {
+    expect(
+      resolveConnectorField('hunt_platform', {
+        image_type: 'INTERNAL_HUNT',
+        config_schema: huntConfigSchema,
+      })
+    ).toBe('splunk');
+  });
+
+  it('should not resolve a hunted platform for another connector type', () => {
+    expect(
+      resolveConnectorField('hunt_platform', {
+        image_type: 'EXTERNAL_IMPORT',
+        config_schema: huntConfigSchema,
+      })
+    ).toBeNull();
+  });
+});

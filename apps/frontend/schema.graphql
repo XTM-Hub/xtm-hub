@@ -32,6 +32,7 @@ enum FilterKey {
   entity_type
   license_type
   solution_category
+  connector_type
 }
 
 enum LogicalOperator {
@@ -809,6 +810,7 @@ type Facet {
   solution_category: [FacetBucket!]!
   use_case: [FacetBucket!]!
   entity_type: [FacetBucket!]!
+  connector_type: [FacetBucket!]!
 }
 
 input LoadDocumentFacetInput {
@@ -1807,6 +1809,8 @@ type Connector implements Node & Document & Integration {
   minimum_deployable_version: String
   license_type: LicenseType
   contact: String
+  connector_type: String
+  hunt_platform: String
 }
 
 type TaxiiFeed implements Node & Document & Integration {

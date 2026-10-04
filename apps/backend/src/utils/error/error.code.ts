@@ -59,6 +59,7 @@ export enum BadRequestErrorCode {
   DeploymentRequestHubStatusNotQueued = 'DEPLOYMENT_REQUEST_HUB_STATUS_NOT_QUEUED',
   DocumentMissingMetadata = 'DOCUMENT_MISSING_METADATA',
   IntegrationTypeNotRecognized = 'INTEGRATION_TYPE_NOT_RECOGNIZED',
+  ConnectorTypeNotRecognized = 'CONNECTOR_TYPE_NOT_RECOGNIZED',
   MissingAutoRegisterPlatformArgument = 'MISSING_AUTO_REGISTER_PLATFORM_ARGUMENT',
   DocumentFileMissing = 'DOCUMENT_FILE_MISSING',
   TenantIdMandatory = 'TENANT_ID_MANDATORY',
@@ -118,6 +119,7 @@ export enum UnknownErrorCode {
   VotingRoundMutationError = 'VOTING_ROUND_MUTATION_ERROR',
   VotableFeatureMutationError = 'VOTABLE_FEATURE_MUTATION_ERROR',
   ListFacetError = 'LIST_FACET_ERROR',
+  ManifestRebuildClaimLost = 'MANIFEST_REBUILD_CLAIM_LOST',
 }
 
 export enum AlreadyExistsErrorCode {

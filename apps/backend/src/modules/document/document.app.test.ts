@@ -787,6 +787,145 @@ describe('documentApp', () => {
       });
     });
 
+    describe('connector metadata written by catalog ingestion', () => {
+      const connectorFormMetadata = [
+        {
+          key: DocumentMetadataKeyCode.IntegrationType,
+          value: IntegrationType.Connector,
+        },
+        { key: DocumentMetadataKeyCode.ProductVersion, value: '1.0.0' },
+        { key: DocumentMetadataKeyCode.Verified, value: 'true' },
+        { key: DocumentMetadataKeyCode.ManagerSupported, value: 'true' },
+        { key: DocumentMetadataKeyCode.PlaybookSupported, value: 'false' },
+        {
+          key: DocumentMetadataKeyCode.ContainerImage,
+          value: 'opencti/connector-splunk-hunt',
+        },
+        { key: DocumentMetadataKeyCode.SourceCode, value: 'source_code_value' },
+      ];
+
+      const loadValue = (documentId: Document['id'], key: string) =>
+        DocumentMetadataDomain.loadMetadataValueByKey(documentId, key);
+
+      it('keeps the connector type and the hunt floor when the connector form is saved', async () => {
+        // Given
+        const ingested = await DocumentApp.createDocument({
+          input: { ...documentData, slug: `hunt-edit-${uuidv4()}` },
+          metadata: [
+            ...connectorFormMetadata,
+            {
+              key: DocumentMetadataKeyCode.MinimumDeployableVersion,
+              value: '7.261003.0',
+            },
+            { key: DocumentMetadataKeyCode.ImageType, value: 'INTERNAL_HUNT' },
+          ],
+          serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        });
+
+        // When
+        const result = await DocumentApp.updateDocument({
+          parentDocumentId: ingested.id,
+          serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+          metadata: [
+            ...connectorFormMetadata,
+            {
+              key: DocumentMetadataKeyCode.MinimumDeployableVersion,
+              value: '7.260900.0',
+            },
+            {
+              key: DocumentMetadataKeyCode.DatasheetUrl,
+              value: 'https://example.com/datasheet',
+            },
+          ],
+          input: documentUpdateData,
+          existingImageIds: [],
+        });
+
+        // Then
+        expect(
+          await loadValue(result.id, DocumentMetadataKeyCode.ImageType)
+        ).toBe('INTERNAL_HUNT');
+        expect(
+          await loadValue(
+            result.id,
+            DocumentMetadataKeyCode.MinimumDeployableVersion
+          )
+        ).toBe('7.261003.0');
+        expect(
+          await loadValue(result.id, DocumentMetadataKeyCode.DatasheetUrl)
+        ).toBe('https://example.com/datasheet');
+      });
+
+      it('keeps the manifest fragment metadata and realigns the padded minimum version', async () => {
+        // Given
+        const ingested = await DocumentApp.createDocument({
+          input: { ...documentData, slug: `fragment-edit-${uuidv4()}` },
+          metadata: [
+            ...connectorFormMetadata,
+            {
+              key: DocumentMetadataKeyCode.MinimumDeployableVersion,
+              value: '6.8.0',
+            },
+            {
+              key: DocumentMetadataKeyCode.MinimumDeployableVersionPadded,
+              value: '006.000008.000',
+            },
+            {
+              key: DocumentMetadataKeyCode.ImageType,
+              value: 'EXTERNAL_IMPORT',
+            },
+            {
+              key: DocumentMetadataKeyCode.ConfigSchema,
+              value: '{"properties":{}}',
+            },
+            {
+              key: DocumentMetadataKeyCode.ManifestFragmentId,
+              value: 'fragment-id',
+            },
+          ],
+          serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        });
+
+        // When
+        const result = await DocumentApp.updateDocument({
+          parentDocumentId: ingested.id,
+          serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+          metadata: [
+            ...connectorFormMetadata,
+            {
+              key: DocumentMetadataKeyCode.MinimumDeployableVersion,
+              value: '6.9.0',
+            },
+          ],
+          input: documentUpdateData,
+          existingImageIds: [],
+        });
+
+        // Then
+        expect(
+          await loadValue(result.id, DocumentMetadataKeyCode.ImageType)
+        ).toBe('EXTERNAL_IMPORT');
+        expect(
+          await loadValue(result.id, DocumentMetadataKeyCode.ConfigSchema)
+        ).toBe('{"properties":{}}');
+        expect(
+          await loadValue(result.id, DocumentMetadataKeyCode.ManifestFragmentId)
+        ).toBe('fragment-id');
+        expect(
+          await loadValue(
+            result.id,
+            DocumentMetadataKeyCode.MinimumDeployableVersion
+          )
+        ).toBe('6.9.0');
+        expect(
+          await loadValue(
+            result.id,
+            DocumentMetadataKeyCode.MinimumDeployableVersionPadded
+          )
+        ).toBe('006.000009.000');
+      });
+    });
+
     it('should preserve slug when updating a document', async () => {
       // Given
       const originalSlug = 'my-original-slug';

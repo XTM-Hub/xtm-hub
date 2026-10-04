@@ -180,6 +180,8 @@ export const documentItem = graphql`
       playbook_supported
       minimum_deployable_version
       contact
+      connector_type
+      hunt_platform
     }
 
     ... on OpenAEVScenario {

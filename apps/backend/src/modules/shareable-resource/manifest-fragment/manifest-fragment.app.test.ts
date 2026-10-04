@@ -11,6 +11,7 @@ import { requestContext } from '../../../context/request.context';
 import type { DocumentId } from '../../../model/kanel/public/Document';
 import { SYSTEM_USER_CONTEXT } from '../../../portal.const';
 import { minioInit } from '../../../server/initialize';
+import { BadRequestErrorCode } from '../../../utils/error/error.code';
 import { ManifestRebuildQueueStatus } from '../manifest/manifest.consts';
 import { ManifestHelper } from '../manifest/manifest.helper';
 import { ManifestFragmentApp } from './manifest-fragment.app';
@@ -295,6 +296,28 @@ describe('manifestFragmentApp', () => {
         slug: 'misp-mixed-lts',
       });
       expect(createdDocument).toBeUndefined();
+    });
+
+    it('rejects the whole batch before ingesting anything when a fragment has an unknown connector type', async () => {
+      const unknownTypeFragment = buildManifestFragment({
+        slug: 'misp-unknown-type-second',
+      });
+      unknownTypeFragment.image_type = 'INTERNAL_HUNTS';
+      const args: MutationIngestManifestFragmentsArgs = {
+        manifestFragments: [
+          buildManifestFragment({ slug: 'misp-unknown-type-first' }),
+          unknownTypeFragment,
+        ],
+      };
+
+      await expect(
+        ManifestFragmentApp.ingestManifestFragments(args)
+      ).rejects.toThrow(BadRequestErrorCode.ConnectorTypeNotRecognized);
+
+      const firstDocument = await TestHelper.document.load({
+        slug: 'misp-unknown-type-first',
+      });
+      expect(firstDocument).toBeUndefined();
     });
   });
 

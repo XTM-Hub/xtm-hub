@@ -28,5 +28,9 @@ query DocumentFacets($input: LoadDocumentFacetInput!) {
       value
       count
     }
+    connector_type {
+      value
+      count
+    }
   }
 }
