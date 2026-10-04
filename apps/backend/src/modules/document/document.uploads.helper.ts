@@ -4,6 +4,7 @@ import { MinIOClient } from '../../thirdparty/minio/client';
 import { MinioFile, UploadRules } from '../../thirdparty/minio/types';
 import { logApp } from '../../utils/app-logger.util';
 import { getErrorMessage } from '../../utils/error/error-guard.util';
+import { DocumentDomain } from './domain/document.domain';
 
 export interface Upload {
   file: FileUpload;
@@ -95,8 +96,46 @@ export const DocumentUploadsHelper = {
   },
 
   /**
+   * Removes the files of a failed request that no document refers to. A
+   * transaction that reports an error may still be committed (the connection
+   * can drop after COMMIT), so a file a document refers to is kept, and every
+   * file is kept when that cannot be read.
+   */
+  deleteUnreferencedFiles: async (files: MinioFile[]) => {
+    if (files.length === 0) {
+      return;
+    }
+    let referenced: Set<string>;
+    try {
+      referenced = new Set(
+        await DocumentDomain.loadReferencedMinioNames(
+          files.map(({ minioName }) => minioName)
+        )
+      );
+    } catch (error) {
+      logApp.error(
+        '[DOCUMENT] Unable to read whether a failed request saved its files',
+        {
+          minioNames: files.map(({ minioName }) => minioName),
+          error: getErrorMessage(error),
+        }
+      );
+      return;
+    }
+    if (referenced.size > 0) {
+      logApp.warn('[DOCUMENT] Files kept: a failed request saved them', {
+        minioNames: [...referenced],
+      });
+    }
+    await DocumentUploadsHelper.deleteStoredFiles(
+      files.filter(({ minioName }) => !referenced.has(minioName))
+    );
+  },
+
+  /**
    * Runs a request with an uploader that records every stored file, and
-   * removes them all when the request fails, so it leaves no file behind.
+   * removes the ones no document refers to when the request fails, so it
+   * leaves no file behind.
    */
   withUploadsCleanup: async <T>(
     serviceInstanceId: ServiceInstanceId,
@@ -114,7 +153,7 @@ export const DocumentUploadsHelper = {
         return files;
       });
     } catch (error) {
-      await DocumentUploadsHelper.deleteStoredFiles(storedFiles);
+      await DocumentUploadsHelper.deleteUnreferencedFiles(storedFiles);
       throw error;
     }
   },

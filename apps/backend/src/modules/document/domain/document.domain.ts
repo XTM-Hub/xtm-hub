@@ -265,6 +265,17 @@ export const DocumentDomain = {
     return document?.minio_name ?? null;
   },
 
+  /** The stored files, among `minioNames`, that a document or a document image refers to. */
+  loadReferencedMinioNames: async (minioNames: string[]): Promise<string[]> => {
+    if (minioNames.length === 0) {
+      return [];
+    }
+    const documents = await db<DocumentModel>('Document')
+      .whereIn('minio_name', minioNames)
+      .distinct('minio_name');
+    return documents.map(({ minio_name }) => minio_name as string);
+  },
+
   loadDocumentsByMetadata: async (
     key: string,
     value: string,

@@ -287,6 +287,166 @@ describe('documentApp', () => {
       ).toEqual(['stored-1', 'stored-2', 'stored-3']);
     });
 
+    describe('when a failed transaction may have been committed', () => {
+      const storeNumberedFiles = () => {
+        let storedCount = 0;
+        vi.spyOn(DocumentUploadsHelper, 'processUploads').mockImplementation(
+          async (uploads) => {
+            if (!uploads) return [];
+            const uploadList = Array.isArray(uploads) ? uploads : [uploads];
+            return uploadList.map(() => {
+              storedCount += 1;
+              return {
+                ...huntPackFile(huntPackContent),
+                minioName: `stored-${storedCount}`,
+              };
+            });
+          }
+        );
+      };
+      const createHuntPack = (slug: string) =>
+        DocumentApp.createDocument({
+          input: { ...documentData, slug },
+          metadata: [
+            {
+              key: DocumentMetadataKeyCode.ProductVersion,
+              value: '7.261010.0',
+            },
+          ],
+          serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+          sourceDocument: mockUpload,
+          logo: mockUpload,
+          images: [mockUpload],
+        });
+
+      it('should keep the files of a creation whose documents refer to them', async () => {
+        // Given a creation that reports an error once its rows are committed
+        storeNumberedFiles();
+        vi.spyOn(DocumentDomain, 'createDocument').mockRejectedValueOnce(
+          new Error('Connection terminated unexpectedly')
+        );
+        const lookup = vi
+          .spyOn(DocumentDomain, 'loadReferencedMinioNames')
+          .mockResolvedValueOnce(['stored-1', 'stored-2', 'stored-3']);
+
+        // When
+        const call = createHuntPack(`ambiguous-create-${uuidv4()}`);
+
+        // Then no file a saved document refers to is deleted
+        await expect(call).rejects.toThrow(
+          'Connection terminated unexpectedly'
+        );
+        expect(lookup).toHaveBeenCalledExactlyOnceWith([
+          'stored-1',
+          'stored-2',
+          'stored-3',
+        ]);
+        expect(MinIOClient.deleteFile).not.toHaveBeenCalled();
+      });
+
+      it('should keep every file of a failed creation when it cannot read whether it was saved', async () => {
+        // Given a failed creation, and a database that cannot be read afterwards
+        storeNumberedFiles();
+        vi.spyOn(DocumentDomain, 'createDocument').mockRejectedValueOnce(
+          new Error('Connection terminated unexpectedly')
+        );
+        vi.spyOn(
+          DocumentDomain,
+          'loadReferencedMinioNames'
+        ).mockRejectedValueOnce(new Error('Connection refused'));
+
+        // When
+        const call = createHuntPack(`unreadable-create-${uuidv4()}`);
+
+        // Then the original error is reported and every file is kept
+        await expect(call).rejects.toThrow(
+          'Connection terminated unexpectedly'
+        );
+        expect(MinIOClient.deleteFile).not.toHaveBeenCalled();
+      });
+
+      it('should keep the replacement file of an update whose document refers to it', async () => {
+        // Given a hunt pack, and an update of its file that reports an error
+        // once its rows are committed
+        const metadata = [
+          {
+            key: DocumentMetadataKeyCode.ProductVersion,
+            value: '7.261010.0',
+          },
+        ];
+        const slug = `ambiguous-update-${uuidv4()}`;
+        vi.spyOn(DocumentUploadsHelper, 'processUploads').mockImplementation(
+          async (uploads) =>
+            uploads
+              ? [
+                  {
+                    ...huntPackFile(huntPackContent),
+                    minioName: 'previous-pack.json',
+                  },
+                ]
+              : []
+        );
+        const huntPack = await DocumentApp.createDocument({
+          input: { ...documentData, slug },
+          metadata,
+          serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+          sourceDocument: mockUpload,
+        });
+        vi.spyOn(DocumentUploadsHelper, 'processUploads').mockImplementation(
+          async (uploads) =>
+            uploads
+              ? [
+                  {
+                    ...huntPackFile(huntPackContent),
+                    minioName: 'replacement-pack.json',
+                  },
+                ]
+              : []
+        );
+        vi.spyOn(DocumentDomain, 'updateDocument').mockRejectedValueOnce(
+          new Error('Connection terminated unexpectedly')
+        );
+        vi.spyOn(
+          DocumentDomain,
+          'loadReferencedMinioNames'
+        ).mockResolvedValueOnce(['replacement-pack.json']);
+
+        // When
+        const call = DocumentApp.updateDocument({
+          parentDocumentId: huntPack.id,
+          serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+          metadata,
+          input: { ...documentData, slug },
+          existingImageIds: [],
+          sourceDocument: mockUpload,
+        });
+
+        // Then neither the replacement nor the replaced file is deleted
+        await expect(call).rejects.toThrow(
+          'Connection terminated unexpectedly'
+        );
+        expect(MinIOClient.deleteFile).not.toHaveBeenCalled();
+      });
+
+      it('should read which stored files a document or a document image refers to', async () => {
+        // Given a document that refers to one stored file
+        const document = await TestHelper.document.create({
+          name: 'referenced-file',
+          slug: `referenced-file-${uuidv4()}`,
+          minio_name: `referenced-${uuidv4()}`,
+        });
+
+        // When
+        const referenced = await DocumentDomain.loadReferencedMinioNames([
+          document.minio_name!,
+          `unreferenced-${uuidv4()}`,
+        ]);
+
+        // Then
+        expect(referenced).toEqual([document.minio_name]);
+      });
+    });
+
     it('should store no logo or image when the hunt pack file is missing', async () => {
       // Given a request with a logo and an image but no pack file
       const processUploadsSpy = vi
