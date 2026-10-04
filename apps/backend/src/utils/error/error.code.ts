@@ -119,6 +119,7 @@ export enum UnknownErrorCode {
   VotingRoundMutationError = 'VOTING_ROUND_MUTATION_ERROR',
   VotableFeatureMutationError = 'VOTABLE_FEATURE_MUTATION_ERROR',
   ListFacetError = 'LIST_FACET_ERROR',
+  ManifestRebuildClaimLost = 'MANIFEST_REBUILD_CLAIM_LOST',
 }
 
 export enum AlreadyExistsErrorCode {

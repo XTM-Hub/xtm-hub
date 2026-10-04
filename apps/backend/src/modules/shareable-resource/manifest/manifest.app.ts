@@ -8,7 +8,10 @@ import {
 import { withTransaction } from '../../../context/database.context';
 import type { DocumentId } from '../../../model/kanel/public/Document';
 import { logApp } from '../../../utils/app-logger.util';
-import { BadRequestErrorCode } from '../../../utils/error/error.code';
+import {
+  BadRequestErrorCode,
+  UnknownErrorCode,
+} from '../../../utils/error/error.code';
 import { BadRequestError } from '../../../utils/error/error.util';
 import { isLtsVersion } from '../../../utils/versioning';
 import { DocumentDomain } from '../../document/domain/document.domain';
@@ -56,10 +59,12 @@ const saveManifestToDatabase = async (
       claimId
     );
     if (deletedCount === 0) {
-      logApp.error('No processing queue entry found to delete', {
-        key,
-        claimId,
-      });
+      if (claimId) {
+        // The claim expired and another job handled the request: publishing
+        // this build would serve contracts older than the replacement's.
+        throw new Error(UnknownErrorCode.ManifestRebuildClaimLost);
+      }
+      logApp.error('No processing queue entry found to delete', { key });
     }
   });
 };

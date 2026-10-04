@@ -15,7 +15,10 @@ import type { DocumentMetadataKey } from '../../../model/kanel/public/DocumentMe
 import type { ObjectUseCaseObjectId } from '../../../model/kanel/public/ObjectUseCase';
 import { MinIOClient } from '../../../thirdparty/minio/client';
 import { logApp } from '../../../utils/app-logger.util';
-import { BadRequestErrorCode } from '../../../utils/error/error.code';
+import {
+  BadRequestErrorCode,
+  UnknownErrorCode,
+} from '../../../utils/error/error.code';
 import { DocumentChildrenDomain } from '../../document/domain/document.children.domain';
 import { DocumentDomain } from '../../document/domain/document.domain';
 import {
@@ -356,6 +359,39 @@ describe('manifestApp', () => {
         const remaining = await TestHelper.manifestRebuildQueue.loadAll({});
         expect(remaining).toHaveLength(1);
         expect(remaining[0]!.product).toBe(PlatformIdentifier.Openaev);
+      });
+
+      it('publishes nothing when its claim expired and a replacement job completed the request', async () => {
+        // Given worker A whose claim expired, and worker B that recovered the
+        // request and published the rebuild
+        await TestHelper.manifestRebuildQueue.delete({});
+        await createConnectorDocument([TAG_LATEST]);
+        const claimA = randomUUID();
+        await TestHelper.manifestRebuildQueue.create({
+          product: MANIFEST_KEY.platformIdentifier,
+          version: MANIFEST_KEY.version,
+          type: MANIFEST_KEY.type,
+          status: ManifestRebuildQueueStatus.Processing,
+          claimed_at: new Date(Date.now() - 31 * 60 * 1000),
+          claim_id: claimA,
+        });
+        await ManifestDomain.recoverStuckProcessingEntries();
+        const claimB = randomUUID();
+        await ManifestDomain.loadPendingManifestsForProcessing(
+          MANIFEST_KEY,
+          claimB
+        );
+        await ManifestApp.generateManifest(MANIFEST_KEY, claimB);
+
+        // When worker A finishes last
+        const lateBuild = ManifestApp.generateManifest(MANIFEST_KEY, claimA);
+
+        // Then its build is rolled back and only the replacement is served
+        await expect(lateBuild).rejects.toThrow(
+          UnknownErrorCode.ManifestRebuildClaimLost
+        );
+        expect(await TestHelper.manifest.loadAll({})).toHaveLength(1);
+        expect(await TestHelper.manifestRebuildQueue.loadAll({})).toEqual([]);
       });
 
       it('logs an error and still persists the manifest when no processing queue entry exists for the key', async () => {
