@@ -101,15 +101,8 @@ export const DocumentApp = {
       sourceDocument,
       serviceInstanceId
     );
-    const imagesFiles = await DocumentUploadsHelper.processUploads(
-      images,
-      serviceInstanceId
-    );
-    const [logoFile] = await DocumentUploadsHelper.processUploads(
-      logo,
-      serviceInstanceId
-    );
-
+    // Validated before the logo and images are stored, so a rejected pack
+    // leaves no file behind.
     const documentMetadata: DocumentMetadataResolverType[] =
       await HuntPackApp.buildDocumentMetadata({
         serviceDefinitionIdentifier: serviceDefinition.identifier,
@@ -119,6 +112,14 @@ export const DocumentApp = {
         }),
         sourceDocumentFile,
       });
+    const imagesFiles = await DocumentUploadsHelper.processUploads(
+      images,
+      serviceInstanceId
+    );
+    const [logoFile] = await DocumentUploadsHelper.processUploads(
+      logo,
+      serviceInstanceId
+    );
 
     if (input.entity_types != null) {
       documentMetadata.push({
@@ -298,15 +299,8 @@ export const DocumentApp = {
       sourceDocument,
       serviceInstanceId
     );
-    const imagesFiles = await DocumentUploadsHelper.processUploads(
-      images,
-      serviceInstanceId
-    );
-    const [logoFile] = await DocumentUploadsHelper.processUploads(
-      logo,
-      serviceInstanceId
-    );
-
+    // Validated before the logo and images are stored, so a rejected pack
+    // leaves no file behind.
     let documentMetadata = await HuntPackApp.buildDocumentMetadata({
       serviceDefinitionIdentifier: serviceDefinition.identifier,
       metadata: DocumentHelper.buildCompleteMetadataFromDocumentFile({
@@ -316,6 +310,14 @@ export const DocumentApp = {
       sourceDocumentFile,
       existingDocumentId: parentDocumentId,
     });
+    const imagesFiles = await DocumentUploadsHelper.processUploads(
+      images,
+      serviceInstanceId
+    );
+    const [logoFile] = await DocumentUploadsHelper.processUploads(
+      logo,
+      serviceInstanceId
+    );
 
     const updatedDocument = await withTransaction(async () => {
       // The stored metadata the update keeps is read under the row lock, so a

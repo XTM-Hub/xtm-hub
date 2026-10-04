@@ -217,6 +217,32 @@ describe('documentApp', () => {
       );
       expect(await TestHelper.document.load({ slug })).toBeUndefined();
     });
+
+    it('should store no logo or image when the hunt pack is rejected', async () => {
+      // Given a rejected pack submitted with a logo and an image
+      const processUploadsSpy = vi
+        .spyOn(DocumentUploadsHelper, 'processUploads')
+        .mockResolvedValueOnce([huntPackFile({ type: 'bundle', objects: [] })]);
+
+      // When
+      const call = DocumentApp.createDocument({
+        input: { ...documentData, slug: `rejected-pack-${uuidv4()}` },
+        metadata: [
+          { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+        ],
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        sourceDocument: mockUpload,
+        logo: mockUpload,
+        images: [mockUpload],
+      });
+
+      // Then only the pack file was stored, and it was deleted
+      await expect(call).rejects.toThrow(BadRequestErrorCode.HuntPackEmpty);
+      expect(processUploadsSpy).toHaveBeenCalledTimes(1);
+      expect(MinIOClient.deleteFile).toHaveBeenCalledExactlyOnceWith(
+        minioFileMock.minioName
+      );
+    });
   });
 
   describe('createDocument', () => {

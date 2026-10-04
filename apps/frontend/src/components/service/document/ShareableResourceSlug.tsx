@@ -28,6 +28,7 @@ import useDecodedParams from '@/hooks/use-decoded-params';
 import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
 import { EntityTypeOrFiligranLogo } from '@/utils/shareable-resources/entity-type';
+import { isHuntPackResource } from '@/utils/shareable-resources/shareable-resources.types';
 import {
   isResourceDeployable,
   isResourceDownloadable,
@@ -67,6 +68,10 @@ const ShareableResourceSlug = ({
     () => isResourceDeployable(documentData),
     [documentData]
   );
+
+  const requiredProductVersion = isHuntPackResource(documentData)
+    ? documentData.product_version
+    : undefined;
 
   const carouselImages = useMemo(() => {
     return filterDocumentImages(documentData);
@@ -148,7 +153,10 @@ const ShareableResourceSlug = ({
                 </>
               )}
               {shouldShowOneClickDeployComponent && (
-                <OneClickDeploy documentData={documentData} />
+                <OneClickDeploy
+                  documentData={documentData}
+                  requiredProductVersion={requiredProductVersion}
+                />
               )}
             </div>
           </div>

@@ -70,7 +70,7 @@ describe('huntPackApp.buildDocumentMetadata', () => {
   it('deletes a rejected upload from storage and rethrows the validation error', async () => {
     const deleteFile = vi
       .spyOn(MinIOClient, 'deleteFile')
-      .mockResolvedValue(undefined as never);
+      .mockResolvedValue(undefined);
 
     await expect(
       HuntPackApp.buildDocumentMetadata({
