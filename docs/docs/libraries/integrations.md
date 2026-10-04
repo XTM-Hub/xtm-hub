@@ -118,8 +118,9 @@ Some Connectors also display a **Verified** badge. This badge means the Connecto
 
 ### Connector types
 
-The Connector details page shows the type of each Connector, and the **Connector type** filter of the library lists
-the Connectors of the selected types. The types are those of OpenCTI:
+Connector cards and the Connector details page show the type of each Connector, and the **Connector type** filter of
+the library lists the Connectors of the selected types, with their count. The CSV export of the library can be
+restricted to the same types. The types are those of OpenCTI:
 
 | Connector type | What the Connector does |
 |---|---|
@@ -131,7 +132,9 @@ the Connectors of the selected types. The types are those of OpenCTI:
 | Internal hunt | Executes OpenCTI hunts on one hunted platform and reports sightings, observed indicators and a redacted evidence sample. |
 | Stream | Pushes OpenCTI knowledge to another platform in real time. |
 
-![OpenCTI integrations library filtered on the Internal hunt connector type, with the count of Connectors of each type](../assets/images/integrations-connector-type-filter.png)
+![OpenCTI integrations library filtered on the Internal hunt connector type, with the count of Connectors of each type and the type on each card](../assets/images/integrations-connector-type-filter.png)
+
+![CSV export dialog of the integrations library with the Connector type filter set to Internal hunt](../assets/images/integrations-csv-export-connector-type.png)
 
 **Internal hunt** Connectors run the hunts of OpenCTI (a Sigma rule or a native query over a time window) on a
 Security Platform or data lake, such as Splunk, Microsoft Sentinel or Elastic Security. Their details page also shows
@@ -147,6 +150,10 @@ To deploy one:
   and is not offered for deployment;
 - prepare the URL of the hunted platform and an account or token limited to read-only search: the deployment form of
   OpenCTI asks for them, and XTM Composer receives the credentials encrypted.
+
+When a connected product is too old, the details page names the version to reach and the deploy button stays disabled:
+
+![Details page of the Splunk Hunt Connector for an organization whose only OpenCTI product runs 7.261002.0, asking to update it to OpenCTI 7.261003.0 or later](../assets/images/integrations-hunt-connector-incompatible-platform.png)
 
 ## Technical Requirements and Best Practices
 
