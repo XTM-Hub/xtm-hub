@@ -8,6 +8,7 @@ import {
 import {
   DocumentMetadataKeyCode,
   Facet,
+  FiligranProduct,
 } from '../../../../../__generated__/resolvers-types';
 import { databaseContext } from '../../../../../context/database.context';
 import type Document from '../../../../../model/kanel/public/Document';
@@ -26,6 +27,10 @@ import {
   loadUseCaseFacetBuckets,
 } from '../../../../document/facet/facet.queries';
 import { solutionCategoryDomain } from '../../../../solution-category/solution-category.domain';
+import {
+  buildSolutionCategoryIndex,
+  resolveSolutionCategoryNames,
+} from '../../../../solution-category/solution-category.utils';
 import { useCaseDomain } from '../../../../use-case/use-case.domain';
 import {
   INTEGRATION_SERVICE_INSTANCE_ID,
@@ -299,6 +304,43 @@ export const IntegrationCoverageDomain = {
       .whereIn('id', ids)
       .select('name');
     return rows.map(({ name }) => name);
+  },
+
+  /**
+   * The use case and solution category names the document linkers resolve: an unknown name is dropped by the
+   * upsert, so coverage is never inferred from it. Without a product, no solution category is linked.
+   */
+  keepLinkableNames: async ({
+    useCases,
+    solutionCategories,
+    product = FiligranProduct.Opencti,
+  }: {
+    useCases: readonly string[];
+    solutionCategories: readonly string[];
+    product?: FiligranProduct | null;
+  }): Promise<{ use_cases: string[]; solution_categories: string[] }> => {
+    const linkableUseCases: string[] = [];
+    for (const name of useCases) {
+      if (await useCaseDomain.loadUseCaseByNameCaseInsensitive(name)) {
+        linkableUseCases.push(name);
+      }
+    }
+    if (solutionCategories.length === 0 || !product) {
+      return { use_cases: linkableUseCases, solution_categories: [] };
+    }
+    const index = buildSolutionCategoryIndex(
+      await solutionCategoryDomain.loadAllSolutionCategories(),
+      product
+    );
+    const unknown = new Set(
+      resolveSolutionCategoryNames(solutionCategories, index).unknown
+    );
+    return {
+      use_cases: linkableUseCases,
+      solution_categories: solutionCategories.filter(
+        (name) => !unknown.has(name)
+      ),
+    };
   },
 
   loadSolutionCategoryNamesByIds: async (

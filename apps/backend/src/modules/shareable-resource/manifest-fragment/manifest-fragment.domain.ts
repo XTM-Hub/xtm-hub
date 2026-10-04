@@ -21,6 +21,7 @@ import { DocumentDomain } from '../../document/domain/document.domain';
 import { solutionCategoryApp } from '../../solution-category/solution-category.app';
 import { isFiligranProduct } from '../../solution-category/solution-category.utils';
 import { IngestManifestHelper } from '../opencti/integration/ingest-manifest/ingest-manifest.helper';
+import { IntegrationCoverageDomain } from '../opencti/integration/integration-coverage/integration-coverage.domain';
 import { IntegrationCoverageHelper } from '../opencti/integration/integration-coverage/integration-coverage.helper';
 import {
   COVERAGE_METADATA_KEYS,
@@ -270,6 +271,17 @@ export const ManifestFragmentDomain = {
             existingBatchConnectors,
           });
 
+        // Inferred from the names the document linkers resolve, never from a dropped one
+        const fragmentProduct = fragment.platform.trim().toLowerCase();
+        const linkableNames = await IntegrationCoverageDomain.keepLinkableNames(
+          {
+            useCases: fragment.use_cases ?? [],
+            solutionCategories: fragment.solution_categories ?? [],
+            product: isFiligranProduct(fragmentProduct)
+              ? fragmentProduct
+              : null,
+          }
+        );
         const coverage = IntegrationCoverageHelper.resolveCoverage({
           declared: fragment.coverage,
           existing: ManifestFragmentHelper.getDeclaredCoverageFromExisting({
@@ -280,8 +292,7 @@ export const ManifestFragmentDomain = {
             name: fragment.title,
             short_description: fragment.short_description,
             description: fragment.description,
-            use_cases: fragment.use_cases,
-            solution_categories: fragment.solution_categories,
+            ...linkableNames,
           },
         });
 

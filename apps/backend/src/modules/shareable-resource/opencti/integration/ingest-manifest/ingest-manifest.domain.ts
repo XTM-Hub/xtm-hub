@@ -27,22 +27,28 @@ import { ManifestInformation } from './ingest-manifest.model';
 /**
  * The values the connector document holds after the upsert, which keeps the
  * stored use cases when the manifest lists none and the stored solution
- * categories when the manifest omits them: coverage is inferred from those.
+ * categories when the manifest omits them, and drops the manifest names it
+ * cannot link: coverage is inferred from those.
  */
 const loadEffectiveInferenceSource = async (
   connector: ManifestInformation,
-  existingConnector: Connector
+  existingConnector: Connector | undefined
 ): Promise<CoverageInferenceSource> => {
-  const useCases = connector.use_cases?.length
-    ? connector.use_cases
-    : ((
-        await IntegrationCoverageDomain.loadUseCaseNamesByDocumentIds([
-          existingConnector.id,
-        ])
-      ).get(existingConnector.id) ?? []);
+  const fromManifest = await IntegrationCoverageDomain.keepLinkableNames({
+    useCases: connector.use_cases ?? [],
+    solutionCategories: connector.solution_categories ?? [],
+  });
+  const useCases =
+    connector.use_cases?.length || !existingConnector
+      ? fromManifest.use_cases
+      : ((
+          await IntegrationCoverageDomain.loadUseCaseNamesByDocumentIds([
+            existingConnector.id,
+          ])
+        ).get(existingConnector.id) ?? []);
   const solutionCategories =
-    connector.solution_categories !== undefined
-      ? connector.solution_categories
+    connector.solution_categories !== undefined || !existingConnector
+      ? fromManifest.solution_categories
       : ((
           await IntegrationCoverageDomain.loadSolutionCategoryNamesByDocumentIds(
             [existingConnector.id]
@@ -139,12 +145,10 @@ export const IngestManifestDomain = {
             const coverage = IntegrationCoverageHelper.resolveCoverage({
               declared: connector.coverage,
               existing: existingCoverage,
-              inferenceSource: existingConnector
-                ? await loadEffectiveInferenceSource(
-                    connector,
-                    existingConnector
-                  )
-                : connector,
+              inferenceSource: await loadEffectiveInferenceSource(
+                connector,
+                existingConnector
+              ),
             });
             return DocumentApp.upsertDocumentWithExternalImage<Connector>(
               OPENCTI_INTEGRATION_DOCUMENT_TYPE,

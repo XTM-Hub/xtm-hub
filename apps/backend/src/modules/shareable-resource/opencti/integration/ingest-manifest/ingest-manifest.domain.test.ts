@@ -301,6 +301,27 @@ describe('upsertConnectors', () => {
       });
       expect(links).toHaveLength(0);
     });
+
+    it('should not infer coverage from a use case it cannot link', async () => {
+      const baseManifest = sampleExtractedManifest[0] as ManifestInformation;
+      const [doc] = await IngestManifestDomain.upsertConnectors([
+        {
+          ...baseManifest,
+          slug: 'unknown-ransomware-use-case',
+          name: 'Neutral connector',
+          short_description: 'Neutral',
+          description: 'Neutral',
+          use_cases: ['Ransomware Nonexistent XYZ'],
+          solution_categories: ['Ransomware Nonexistent Category XYZ'],
+          coverage: undefined,
+        },
+      ]);
+
+      const coverage = await IntegrationCoverageDomain.loadStoredCoverage(
+        doc!.id
+      );
+      expect(coverage?.object_types ?? []).not.toContain('Malware');
+    });
   });
 
   describe('slug shared with another document type', () => {
