@@ -1,4 +1,5 @@
 import { ipKeyGenerator } from 'express-rate-limit';
+import { logApp } from '../../../../../utils/app-logger.util';
 import { TooManyRequestsErrorCode } from '../../../../../utils/error/error.code';
 
 /**
@@ -75,12 +76,30 @@ const coverageFacetsLimiter = createFixedWindowLimiter({
   maxKeys: MAX_TRACKED_CALLERS,
 });
 
+// One refusal warning per caller and window, as the hub's REST rate limiters log
+const refusalLogLimiter = createFixedWindowLimiter({
+  windowMs: COVERAGE_FACETS_RATE_LIMIT.windowMs,
+  limit: 1,
+  maxKeys: MAX_TRACKED_CALLERS,
+});
+
 export const IntegrationCoverageRateLimit = {
   assertFacetsAllowed: (caller: { userId?: string; ip?: string }): void => {
-    if (!coverageFacetsLimiter.consume(coverageFacetsCallerKey(caller))) {
-      // Mapped (HTTP 429) and logged once, by the resolver
-      throw new Error(TooManyRequestsErrorCode.CoverageSearchRateLimited);
+    const key = coverageFacetsCallerKey(caller);
+    if (coverageFacetsLimiter.consume(key)) {
+      return;
     }
+    if (refusalLogLimiter.consume(key)) {
+      logApp.warn('[RATE-LIMIT] Coverage search with facets rate limited', {
+        caller: key,
+        ...COVERAGE_FACETS_RATE_LIMIT,
+      });
+    }
+    // Mapped by the resolver to an HTTP 429 response, logged there at debug level only
+    throw new Error(TooManyRequestsErrorCode.CoverageSearchRateLimited);
   },
-  reset: () => coverageFacetsLimiter.clear(),
+  reset: () => {
+    coverageFacetsLimiter.clear();
+    refusalLogLimiter.clear();
+  },
 };

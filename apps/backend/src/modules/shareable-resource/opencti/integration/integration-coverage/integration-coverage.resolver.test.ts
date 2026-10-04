@@ -177,6 +177,7 @@ describe('integration-coverage.resolver', () => {
     await expect(limited).rejects.toMatchObject({
       message: TooManyRequestsErrorCode.CoverageSearchRateLimited,
       data: expect.objectContaining({ http_status: 429 }),
+      extensions: expect.objectContaining({ http: { status: 429 } }),
     });
     await expect(
       callSelecting(anonymous('203.0.113.7'), infoSelecting())

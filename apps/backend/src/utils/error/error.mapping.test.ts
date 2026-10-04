@@ -28,7 +28,8 @@ describe('error mapping', () => {
       expect(builtError.data.http_status).toBe(429);
       expect(builtError.data.genre).toBe(ErrorCategory.BadRequest);
       expect(builtError.message).toBe(ErrorCode.CoverageSearchRateLimited);
-      expect(builtError._logLevel).toBe('warn');
+      expect(builtError.extensions?.http?.status).toBe(429);
+      expect(builtError._logLevel).toBe('debug');
     });
 
     it('should return unknown error when error is unknown', () => {

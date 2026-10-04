@@ -1,10 +1,38 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { logApp } from '../../../../../utils/app-logger.util';
+import { TooManyRequestsErrorCode } from '../../../../../utils/error/error.code';
 import {
+  COVERAGE_FACETS_RATE_LIMIT,
   coverageFacetsCallerKey,
   createFixedWindowLimiter,
+  IntegrationCoverageRateLimit,
 } from './integration-coverage.rate-limit';
 
 describe('integration-coverage.rate-limit', () => {
+  it('should log one warning per refused caller, however many requests it sends', () => {
+    // Given
+    IntegrationCoverageRateLimit.reset();
+    const warn = vi.spyOn(logApp, 'warn').mockImplementation(() => {});
+    const caller = { ip: '198.51.100.7' };
+    for (let i = 0; i < COVERAGE_FACETS_RATE_LIMIT.limit; i += 1) {
+      IntegrationCoverageRateLimit.assertFacetsAllowed(caller);
+    }
+
+    // When
+    const refusals = Array.from(
+      { length: 50 },
+      () => () => IntegrationCoverageRateLimit.assertFacetsAllowed(caller)
+    );
+
+    // Then
+    refusals.forEach((refuse) =>
+      expect(refuse).toThrow(TooManyRequestsErrorCode.CoverageSearchRateLimited)
+    );
+    expect(warn).toHaveBeenCalledTimes(1);
+    IntegrationCoverageRateLimit.reset();
+    warn.mockRestore();
+  });
+
   it('should refuse a key past its limit until its window ends', () => {
     // Given
     const limiter = createFixedWindowLimiter({

@@ -153,8 +153,11 @@ export const logApp = {
     }
     logApp._log(level, message, error, meta, category);
   },
-  debug: (message: string, meta: Record<string, unknown> = {}) =>
-    logApp._log('debug', message, null, meta),
+  debug: (
+    message: string,
+    meta: Record<string, unknown> = {},
+    category: AppLogsCategory = AppLogsCategory.BACKEND
+  ) => logApp._log('debug', message, null, meta, category),
   info: (
     message: string,
     meta: Record<string, unknown> = {},
