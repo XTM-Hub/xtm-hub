@@ -60,12 +60,26 @@ Each Integration describes what it covers: the OpenCTI object types it produces 
 the sectors (Finance, Energy...) and the regions or countries (Europe, France...) its data is about.
 The coverage is shown on the Integration details page and can be used as a filter in the library.
 
+![Coverage filters of the Integrations library](../assets/images/integration-coverage-filter.png)
+
+The Object type, Sector and Region filters list the values of the Integrations matching the other filters, with
+their number of Integrations. Values selected earlier stay listed even when the other filters leave them without
+Integration.
+
 - **Declared coverage** comes from the connector manifest (optional `coverage` block with `object_types`,
   `sectors` and `regions`) or is set by a Hub administrator on the Integration. It is never changed automatically.
   Object types are OpenCTI entity types (every entity and observable type, for example `Indicator`, `IPv4-Addr` or
   `Autonomous-System`); sectors and regions are free values of up to 128 characters.
 - **Inferred coverage** is derived from the Integration name, descriptions, use cases and solution categories
   when nothing is declared, and is flagged as inferred. It is refreshed automatically when the Integration changes.
+
+![Inferred coverage on the Integration details page](../assets/images/integration-coverage-details.png)
+
+On the details page, an inferred coverage is marked "Inferred automatically"; its tooltip explains where it comes
+from. In the Integration form, a Hub administrator sees when the current coverage was inferred: saving values in
+the coverage fields declares them and replaces the inference, and leaving the fields empty lets the Hub infer it.
+
+![Coverage fields of the Integration form](../assets/images/integration-coverage-form.png)
 
 OpenCTI uses the coverage to recommend Integrations for its collection gaps: Source Intelligence finds the
 Priority Intelligence Requirement (PIR) criteria with too little recent knowledge and queries the library for the
