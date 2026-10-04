@@ -347,6 +347,52 @@ describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
       });
     });
 
+    it('should commit each key contributor batch of a purge on its own', async () => {
+      // Given a platform that contributed two keys, purged one key contributor
+      // per batch, and a purge that stops at its second batch
+      const [client] = await registerPulseClients(1);
+      await client!.push({
+        day: PULSE_TEST_TODAY,
+        records: [malware(LOCKBIT), malware('conti')],
+      });
+      const purgeBatch = PulseDomain.purgeKeyContributorsBatch;
+      let calls = 0;
+      vi.spyOn(PulseDomain, 'purgeKeyContributorsBatch').mockImplementation(
+        async ({ platformId }) => {
+          calls += 1;
+          if (calls === 2) {
+            throw new Error('Purge stopped');
+          }
+          return purgeBatch({ platformId, batchSize: 1 });
+        }
+      );
+
+      // When the purge stops, then runs again
+      const stopped = await client!.purgeResult();
+      const afterStop = {
+        contributors: await TestHelper.pulse.countRows('PulseKeyContributor'),
+        keys: await TestHelper.pulse.countRows('PulseKey'),
+        platforms: await TestHelper.pulse.countRows('PulsePlatform'),
+      };
+      await client!.purge();
+
+      // Then the first batch committed without waiting for the whole sweep,
+      // and the second run removed the rest with the platform
+      expect({
+        failed: errorCodes(stopped).length > 0,
+        afterStop,
+        contributors: await TestHelper.pulse.countRows('PulseKeyContributor'),
+        keys: await TestHelper.pulse.countRows('PulseKey'),
+        platforms: await TestHelper.pulse.countRows('PulsePlatform'),
+      }).toEqual({
+        failed: true,
+        afterStop: { contributors: 1, keys: 1, platforms: 1 },
+        contributors: 0,
+        keys: 0,
+        platforms: 0,
+      });
+    });
+
     it('should purge a first contribution still being written when the purge starts', async () => {
       // Given a first push paused inside its transaction, under the platform lock
       const [client] = await registerPulseClients(1);

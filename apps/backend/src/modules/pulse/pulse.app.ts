@@ -766,18 +766,27 @@ const purgeNextContributionDay = async (
     : null;
 };
 
+// Runs inside the platform lock, whose transaction it joins.
+const purgeNextKeyContributors = (platformId: number): Promise<number> =>
+  deleteStep(
+    () =>
+      PulseDomain.purgeKeyContributorsBatch({
+        platformId,
+        batchSize: PULSE_MAINTENANCE_BATCH_SIZE,
+      }),
+    removedRows
+  );
+
 const purgeAllKeyContributors = async (platformId: number): Promise<void> => {
   let removed: number;
   do {
-    removed = await PulseDomain.purgeKeyContributorsBatch({
-      platformId,
-      batchSize: PULSE_MAINTENANCE_BATCH_SIZE,
-    });
+    removed = await purgeNextKeyContributors(platformId);
   } while (removed > 0);
 };
 
-// Day by day under the platform lock, each step keeping the aggregates equal
-// to the ledger; the last step deletes the platform record itself.
+// Day by day, then key contributor batch by batch, each step in its own
+// transaction under the platform lock and keeping the aggregates equal to the
+// ledger; the last step deletes the platform record itself.
 const purgePlatform = async (pseudonym: string): Promise<number> => {
   // Under the lock too: a first contribution still being written is waited
   // for, then purged with the rest.
@@ -797,6 +806,14 @@ const purgePlatform = async (pseudonym: string): Promise<number> => {
       purgeNextContributionDay(platform.id)
     );
   }
+  let contributors: number;
+  do {
+    contributors = await withPlatformLock(pseudonym, () =>
+      purgeNextKeyContributors(platform.id)
+    );
+  } while (contributors > 0);
+  // Only what a push committed between the steps above is left: the platform
+  // lock is held for that remainder, not for the whole sweep.
   deleted += await withPlatformLock(pseudonym, async () => {
     let lateRows = 0;
     let lateDay = await purgeNextContributionDay(platform.id);
