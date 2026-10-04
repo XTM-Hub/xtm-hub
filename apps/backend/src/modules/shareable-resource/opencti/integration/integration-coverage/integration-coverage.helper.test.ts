@@ -328,6 +328,27 @@ describe('integrationCoverageHelper', () => {
       );
     });
 
+    it('should declare the inferred values submitted unchanged when the admin confirms them', () => {
+      // Given
+      const existing = makeCoverage({
+        object_types: [MALWARE],
+        inferred: true,
+      });
+
+      // When
+      const coverage = IntegrationCoverageHelper.resolveAdminCoverage({
+        input: { object_types: ['malware'], sectors: [], regions: [] },
+        existing,
+        inferenceSource: { name: 'Indicator feed' },
+        confirmed: true,
+      });
+
+      // Then
+      expect(coverage).toEqual(
+        makeCoverage({ object_types: [MALWARE], inferred: false })
+      );
+    });
+
     it('should declare the coverage when the admin edits inferred values', () => {
       // Given
       const existing = makeCoverage({

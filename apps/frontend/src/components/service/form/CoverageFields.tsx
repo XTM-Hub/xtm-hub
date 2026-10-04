@@ -1,5 +1,6 @@
 import { useCoverageObjectTypes } from '@/components/service/form/UseCoverageObjectTypes';
 import {
+  Checkbox,
   FormControl,
   FormItem,
   FormLabel,
@@ -21,6 +22,9 @@ export const coverageValuesSchema = z
   .array(z.string().max(MAX_COVERAGE_VALUE_LENGTH))
   .max(MAX_COVERAGE_VALUES)
   .optional();
+
+/** Form schema of the confirmation of an inferred coverage. */
+export const coverageConfirmedSchema = z.boolean().optional();
 
 interface CoverageFieldProps {
   field: ControllerRenderProps<FieldValues, string>;
@@ -70,6 +74,39 @@ export const ServiceFormCoveredObjectTypesField = ({
         {t('Service.Form.CoverageDescription')}{' '}
         {t('Service.Form.CoverageLimit', { max: MAX_COVERAGE_VALUES })}
       </p>
+    </FormItem>
+  );
+};
+
+/**
+ * Shown when the edited coverage was inferred: saving the inferred values unchanged keeps them inferred, unless the
+ * administrator confirms them here.
+ */
+export const ServiceFormCoverageConfirmationField = ({
+  field,
+  disabled,
+  inferred = false,
+}: CoveredObjectTypesFieldProps) => {
+  const t = useTranslations();
+  if (!inferred) {
+    return null;
+  }
+  return (
+    <FormItem className="flex flex-row items-center gap-s space-y-0">
+      <FormControl>
+        <Checkbox
+          checked={field.value === true}
+          disabled={disabled}
+          onCheckedChange={(checked) => field.onChange(checked === true)}
+          data-testid="coverage-confirm"
+        />
+      </FormControl>
+      <FormLabel className="cursor-pointer font-normal">
+        {t('Service.Form.CoverageConfirmLabel')}
+        <span className="txt-sub-content ml-xs">
+          {t('Service.Form.CoverageConfirmHint')}
+        </span>
+      </FormLabel>
     </FormItem>
   );
 };

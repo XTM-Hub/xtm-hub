@@ -50,6 +50,7 @@ type DocumentFormValues = ServiceFormValues & {
   covered_object_types?: string[] | null;
   covered_sectors?: string[] | null;
   covered_regions?: string[] | null;
+  coverage_confirmed?: boolean | null;
 };
 
 // Typed document input fields; every other form value is stored as document metadata
@@ -67,6 +68,7 @@ const documentBaseKeys: Array<keyof DocumentFormValues> = [
   'covered_object_types',
   'covered_sectors',
   'covered_regions',
+  'coverage_confirmed',
   'active',
 ];
 

@@ -266,6 +266,7 @@ export const IntegrationCoverageApp = {
     return IntegrationCoverageHelper.resolveAdminCoverage({
       input: declaration,
       existing,
+      confirmed: input.coverage_confirmed === true,
       inferenceSource: {
         name: input.name ?? currentDocument.name,
         short_description:

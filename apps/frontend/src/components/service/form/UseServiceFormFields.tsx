@@ -1,4 +1,5 @@
 import {
+  ServiceFormCoverageConfirmationField,
   ServiceFormCoverageTagsField,
   ServiceFormCoveredObjectTypesField,
 } from '@/components/service/form/CoverageFields';
@@ -72,6 +73,7 @@ type AvailableFields =
   | 'covered_object_types'
   | 'covered_sectors'
   | 'covered_regions'
+  | 'coverage_confirmed'
   | 'images'
   | 'integration_type'
   | 'active'
@@ -106,6 +108,10 @@ export const useServiceFormFields = ({
   disabledFields = [],
 }: Props) => {
   const isCreation = !document;
+  const coverageInferred =
+    !!document &&
+    'coverage_inferred' in document &&
+    document.coverage_inferred === true;
   const [images, setImages] = useState<
     Array<ServiceFormMultipleImagesFieldImages>
   >(
@@ -212,11 +218,7 @@ export const useServiceFormFields = ({
           <ServiceFormCoveredObjectTypesField
             field={field}
             disabled={disabledFields.includes('covered_object_types')}
-            inferred={
-              !!document &&
-              'coverage_inferred' in document &&
-              document.coverage_inferred === true
-            }
+            inferred={coverageInferred}
           />
         ),
       },
@@ -243,6 +245,19 @@ export const useServiceFormFields = ({
             family="regions"
             field={field}
             disabled={disabledFields.includes('covered_regions')}
+          />
+        ),
+      },
+      coverage_confirmed: {
+        fieldType: ({
+          field,
+        }: {
+          field: ControllerRenderProps<FieldValues, string>;
+        }) => (
+          <ServiceFormCoverageConfirmationField
+            field={field}
+            disabled={disabledFields.includes('coverage_confirmed')}
+            inferred={coverageInferred}
           />
         ),
       },
@@ -421,6 +436,7 @@ export const useServiceFormFields = ({
       t,
       isCreation,
       document,
+      coverageInferred,
       integrationType,
       images,
       setImages,

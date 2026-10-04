@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   coverageValuesSchema,
   MAX_COVERAGE_VALUES,
+  ServiceFormCoverageConfirmationField,
   ServiceFormCoverageTagsField,
   ServiceFormCoveredObjectTypesField,
 } from './CoverageFields';
@@ -120,5 +121,66 @@ describe('ServiceFormCoveredObjectTypesField', () => {
     testRender(<ObjectTypesForm inferred={false} />);
 
     expect(screen.queryByTestId('coverage-inferred-note')).toBeNull();
+  });
+});
+
+const ConfirmationForm = ({
+  inferred,
+  onChange,
+}: {
+  inferred: boolean;
+  onChange: (value: boolean) => void;
+}) => {
+  const form = useForm<{ coverage_confirmed?: boolean }>({
+    defaultValues: { coverage_confirmed: false },
+  });
+  return (
+    <Form {...form}>
+      <FormField
+        control={form.control}
+        name="coverage_confirmed"
+        render={({ field }) => (
+          <ServiceFormCoverageConfirmationField
+            field={{
+              ...field,
+              onChange: (value: boolean) => {
+                field.onChange(value);
+                onChange(value);
+              },
+            }}
+            inferred={inferred}
+          />
+        )}
+      />
+    </Form>
+  );
+};
+
+describe('ServiceFormCoverageConfirmationField', () => {
+  it('should let an administrator confirm an inferred coverage unchanged', () => {
+    const onChange = vi.fn();
+    testRender(
+      <ConfirmationForm
+        inferred
+        onChange={onChange}
+      />
+    );
+
+    expect(
+      screen.getByText('Service.Form.CoverageConfirmLabel')
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('coverage-confirm'));
+    expect(onChange).toHaveBeenLastCalledWith(true);
+  });
+
+  it('should not offer the confirmation for a declared coverage', () => {
+    testRender(
+      <ConfirmationForm
+        inferred={false}
+        onChange={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByTestId('coverage-confirm')).toBeNull();
   });
 });

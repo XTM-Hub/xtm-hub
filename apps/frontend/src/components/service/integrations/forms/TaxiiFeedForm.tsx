@@ -1,5 +1,8 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
-import { coverageValuesSchema } from '@/components/service/form/CoverageFields';
+import {
+  coverageConfirmedSchema,
+  coverageValuesSchema,
+} from '@/components/service/form/CoverageFields';
 import { ServiceFormJsonFileField } from '@/components/service/form/JsonFileField';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
@@ -31,6 +34,7 @@ const taxiiFeedFormSchema = z.object({
   covered_object_types: coverageValuesSchema,
   covered_sectors: coverageValuesSchema,
   covered_regions: coverageValuesSchema,
+  coverage_confirmed: coverageConfirmedSchema,
   active: z.boolean().optional(),
   datasheet_url: z.url().or(z.literal('')).nullish(),
   blogpost_url: z.url().or(z.literal('')).nullish(),
@@ -86,6 +90,7 @@ export const TaxiiFeedForm = ({
         covered_object_types: [...(document?.covered_object_types ?? [])],
         covered_sectors: [...(document?.covered_sectors ?? [])],
         covered_regions: [...(document?.covered_regions ?? [])],
+        coverage_confirmed: false,
         uploader_id: document?.uploader?.id ?? me!.id,
         uploader_organization_id:
           (isCreation
@@ -118,6 +123,7 @@ export const TaxiiFeedForm = ({
     covered_object_types,
     covered_sectors,
     covered_regions,
+    coverage_confirmed,
     uploader_organization_id,
     uploader_id,
     integration_type,
@@ -161,6 +167,7 @@ export const TaxiiFeedForm = ({
           covered_object_types,
           covered_sectors,
           covered_regions,
+          coverage_confirmed,
           license_type: {
             ...license_type,
             fieldType: 'radio',

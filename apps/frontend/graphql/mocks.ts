@@ -273,6 +273,7 @@ export const mockCreateDocumentInput = (overrides?: Partial<CreateDocumentInput>
     relationshipsToOmit.add('CreateDocumentInput');
     return {
         active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : false,
+        coverage_confirmed: overrides && overrides.hasOwnProperty('coverage_confirmed') ? overrides.coverage_confirmed! : true,
         covered_object_types: overrides && overrides.hasOwnProperty('covered_object_types') ? overrides.covered_object_types! : ['comitatus'],
         covered_regions: overrides && overrides.hasOwnProperty('covered_regions') ? overrides.covered_regions! : ['cauda'],
         covered_sectors: overrides && overrides.hasOwnProperty('covered_sectors') ? overrides.covered_sectors! : ['victus'],
@@ -2262,6 +2263,7 @@ export const mockUpdateDocumentInput = (overrides?: Partial<UpdateDocumentInput>
     relationshipsToOmit.add('UpdateDocumentInput');
     return {
         active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : true,
+        coverage_confirmed: overrides && overrides.hasOwnProperty('coverage_confirmed') ? overrides.coverage_confirmed! : false,
         covered_object_types: overrides && overrides.hasOwnProperty('covered_object_types') ? overrides.covered_object_types! : ['vigilo'],
         covered_regions: overrides && overrides.hasOwnProperty('covered_regions') ? overrides.covered_regions! : ['cernuus'],
         covered_sectors: overrides && overrides.hasOwnProperty('covered_sectors') ? overrides.covered_sectors! : ['truculenter'],

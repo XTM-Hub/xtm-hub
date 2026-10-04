@@ -168,6 +168,7 @@ export const DocumentApp = {
       covered_object_types: _coveredObjectTypes,
       covered_sectors: _coveredSectors,
       covered_regions: _coveredRegions,
+      coverage_confirmed: _coverageConfirmed,
       ...documentColumnInput
     } = input;
     const documentData: DocumentData<Document> = {
@@ -415,6 +416,7 @@ export const DocumentApp = {
         covered_object_types: _coveredObjectTypes,
         covered_sectors: _coveredSectors,
         covered_regions: _coveredRegions,
+        coverage_confirmed: _coverageConfirmed,
         ...documentColumnData
       } = input;
       const doc = await DocumentDomain.updateDocument({

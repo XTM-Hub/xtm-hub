@@ -252,6 +252,11 @@ export type CreateDeploymentRequestInput = {
 
 export type CreateDocumentInput = {
   active: Scalars['Boolean']['input'];
+  /**
+   * Saves the submitted coverage as declared even when it equals the inferred one.
+   * Without effect on creation, which has no inferred coverage yet.
+   */
+  coverage_confirmed: InputMaybe<Scalars['Boolean']['input']>;
   covered_object_types: InputMaybe<Array<Scalars['String']['input']>>;
   covered_regions: InputMaybe<Array<Scalars['String']['input']>>;
   covered_sectors: InputMaybe<Array<Scalars['String']['input']>>;
@@ -2958,6 +2963,8 @@ export type UpdateDeploymentRequestInput = {
 
 export type UpdateDocumentInput = {
   active: InputMaybe<Scalars['Boolean']['input']>;
+  /** Saves the submitted coverage as declared even when it equals the inferred one. */
+  coverage_confirmed: InputMaybe<Scalars['Boolean']['input']>;
   covered_object_types: InputMaybe<Array<Scalars['String']['input']>>;
   covered_regions: InputMaybe<Array<Scalars['String']['input']>>;
   covered_sectors: InputMaybe<Array<Scalars['String']['input']>>;

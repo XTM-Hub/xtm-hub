@@ -1,5 +1,8 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
-import { coverageValuesSchema } from '@/components/service/form/CoverageFields';
+import {
+  coverageConfirmedSchema,
+  coverageValuesSchema,
+} from '@/components/service/form/CoverageFields';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
@@ -33,6 +36,7 @@ const thirdPartyIntegrationFormSchema = z.object({
   covered_object_types: coverageValuesSchema,
   covered_sectors: coverageValuesSchema,
   covered_regions: coverageValuesSchema,
+  coverage_confirmed: coverageConfirmedSchema,
   vendor_url: z.url().min(1, 'Required'),
   github_url: z.url().nullish(),
   product_version: z
@@ -98,6 +102,7 @@ export const ThirdPartyIntegrationForm = ({
         covered_object_types: [...(document?.covered_object_types ?? [])],
         covered_sectors: [...(document?.covered_sectors ?? [])],
         covered_regions: [...(document?.covered_regions ?? [])],
+        coverage_confirmed: false,
         uploader_id: document?.uploader?.id ?? me!.id,
         uploader_organization_id:
           (isCreation
@@ -152,6 +157,7 @@ export const ThirdPartyIntegrationForm = ({
     covered_object_types,
     covered_sectors,
     covered_regions,
+    coverage_confirmed,
     uploader_id,
     uploader_organization_id,
     integration_type,
@@ -201,6 +207,7 @@ export const ThirdPartyIntegrationForm = ({
           covered_object_types,
           covered_sectors,
           covered_regions,
+          coverage_confirmed,
           license_type: {
             ...license_type,
             fieldType: 'radio',

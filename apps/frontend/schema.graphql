@@ -770,6 +770,11 @@ input CreateDocumentInput {
   covered_object_types: [String!]
   covered_sectors: [String!]
   covered_regions: [String!]
+  """
+  Saves the submitted coverage as declared even when it equals the inferred one.
+  Without effect on creation, which has no inferred coverage yet.
+  """
+  coverage_confirmed: Boolean
   uploader_id: UserId!
 }
 
@@ -785,6 +790,8 @@ input UpdateDocumentInput {
   covered_object_types: [String!]
   covered_sectors: [String!]
   covered_regions: [String!]
+  "Saves the submitted coverage as declared even when it equals the inferred one."
+  coverage_confirmed: Boolean
   uploader_organization_id: OrganizationId
   uploader_id: UserId
 }

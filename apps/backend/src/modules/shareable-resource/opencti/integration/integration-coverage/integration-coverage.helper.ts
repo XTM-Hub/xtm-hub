@@ -237,16 +237,18 @@ export const IntegrationCoverageHelper = {
   /**
    * Admin form semantics: an omitted list keeps its stored declared value,
    * clearing every list returns to inference, and submitting the inferred
-   * values unchanged keeps the coverage inferred.
+   * values unchanged keeps the coverage inferred unless `confirmed` declares it.
    */
   resolveAdminCoverage: ({
     input,
     existing,
     inferenceSource,
+    confirmed = false,
   }: {
     input: IntegrationCoverageDeclaration;
     existing?: StoredIntegrationCoverage | null;
     inferenceSource: CoverageInferenceSource;
+    confirmed?: boolean;
   }): StoredIntegrationCoverage => {
     const providedFamilies = COVERAGE_FAMILIES.filter(
       (family) => input[family] != null
@@ -278,6 +280,7 @@ export const IntegrationCoverageHelper = {
       return IntegrationCoverageHelper.inferCoverage(inferenceSource);
     }
     if (
+      !confirmed &&
       existing?.inferred &&
       IntegrationCoverageHelper.isSameCoverage(submitted, existing)
     ) {
