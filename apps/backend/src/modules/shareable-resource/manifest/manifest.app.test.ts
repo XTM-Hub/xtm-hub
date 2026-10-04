@@ -33,6 +33,7 @@ import type { ManifestKey } from './manifest.consts';
 import { ManifestRebuildQueueStatus } from './manifest.consts';
 import { ManifestDomain } from './manifest.domain';
 import { ManifestHelper } from './manifest.helper';
+import type { ManifestOutput } from './manifest.types';
 
 const MANIFEST_KEY: ManifestKey = {
   platformIdentifier: PlatformIdentifier.Opencti,
@@ -112,6 +113,7 @@ const createConnectorWithFragment = async ({
 describe('manifestApp', () => {
   beforeEach(() => {
     vi.spyOn(ManifestHelper, 'uploadManifest').mockResolvedValue(undefined);
+    vi.spyOn(ManifestHelper, 'deleteManifest').mockResolvedValue(undefined);
   });
 
   afterEach(async () => {
@@ -317,8 +319,16 @@ describe('manifestApp', () => {
         vi.useRealTimers();
 
         const [manifest] = await TestHelper.manifest.loadAll({});
-        expect(manifest!.name).toBe(
-          'connector-manifest-7.260309.0-260701120000'
+        expect(manifest!.name).toMatch(
+          /^connector-manifest-7\.260309\.0-260701120000-[0-9a-f]{8}$/
+        );
+        expect(ManifestHelper.uploadManifest).toHaveBeenCalledWith(
+          expect.objectContaining({ manifest_version: manifest!.name }),
+          ManifestHelper.buildManifestObjectKey(
+            MANIFEST_KEY.platformIdentifier,
+            MANIFEST_KEY.version,
+            manifest!.name
+          )
         );
       });
 
@@ -392,6 +402,79 @@ describe('manifestApp', () => {
         );
         expect(await TestHelper.manifest.loadAll({})).toHaveLength(1);
         expect(await TestHelper.manifestRebuildQueue.loadAll({})).toEqual([]);
+      });
+
+      it('keeps serving the replacement file when a late build of the same second is rolled back', async () => {
+        // Given worker B that recovered the request from worker A, and a
+        // storage that keeps one file per key
+        await TestHelper.manifestRebuildQueue.delete({});
+        await createConnectorWithFragment({
+          manifestFragmentId: 'fragment-current',
+          tags: [TAG_LATEST],
+        });
+        const storedFiles = new Map<string, ManifestOutput>();
+        vi.mocked(ManifestHelper.uploadManifest).mockImplementation(
+          async (manifest, fileName) => {
+            storedFiles.set(fileName, manifest);
+          }
+        );
+        vi.mocked(ManifestHelper.deleteManifest).mockImplementation(
+          async (fileName) => {
+            storedFiles.delete(fileName);
+          }
+        );
+        const claimA = randomUUID();
+        await TestHelper.manifestRebuildQueue.create({
+          product: MANIFEST_KEY.platformIdentifier,
+          version: MANIFEST_KEY.version,
+          type: MANIFEST_KEY.type,
+          status: ManifestRebuildQueueStatus.Processing,
+          claimed_at: new Date(Date.now() - 31 * 60 * 1000),
+          claim_id: claimA,
+        });
+        await ManifestDomain.recoverStuckProcessingEntries();
+        const claimB = randomUUID();
+        await ManifestDomain.loadPendingManifestsForProcessing(
+          MANIFEST_KEY,
+          claimB
+        );
+
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(new Date('2026-07-01T12:00:00Z'));
+        try {
+          await ManifestApp.generateManifest(MANIFEST_KEY, claimB);
+
+          // When worker A, which read other contracts, uploads in the same second
+          await createConnectorWithFragment({
+            manifestFragmentId: 'fragment-stale',
+            tags: [TAG_LATEST],
+          });
+          await expect(
+            ManifestApp.generateManifest(MANIFEST_KEY, claimA)
+          ).rejects.toThrow(UnknownErrorCode.ManifestRebuildClaimLost);
+        } finally {
+          vi.useRealTimers();
+        }
+
+        // Then the served manifest file still holds the replacement's contracts
+        const [served] = await TestHelper.manifest.loadAll({});
+        const servedFile = storedFiles.get(
+          ManifestHelper.buildManifestObjectKey(
+            MANIFEST_KEY.platformIdentifier,
+            MANIFEST_KEY.version,
+            served!.name
+          )
+        );
+        expect([...storedFiles.keys()]).toEqual([
+          ManifestHelper.buildManifestObjectKey(
+            MANIFEST_KEY.platformIdentifier,
+            MANIFEST_KEY.version,
+            served!.name
+          ),
+        ]);
+        expect(servedFile?.contracts.map((contract) => contract.id)).toEqual([
+          'fragment-current',
+        ]);
       });
 
       it('logs an error and still persists the manifest when no processing queue entry exists for the key', async () => {

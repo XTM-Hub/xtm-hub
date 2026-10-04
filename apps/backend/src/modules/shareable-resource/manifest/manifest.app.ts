@@ -8,6 +8,7 @@ import {
 import { withTransaction } from '../../../context/database.context';
 import type { DocumentId } from '../../../model/kanel/public/Document';
 import { logApp } from '../../../utils/app-logger.util';
+import { getErrorMessage } from '../../../utils/error/error-guard.util';
 import {
   BadRequestErrorCode,
   UnknownErrorCode,
@@ -321,19 +322,30 @@ export const ManifestApp = {
       solutionCategoriesByConnectorId
     );
 
-    const minioFileName = ManifestHelper.buildManifestFileNameWithPath(
+    const minioFileName = ManifestHelper.buildManifestObjectKey(
       key.platformIdentifier,
       key.version,
-      now
+      manifest.manifest_version
     );
     await ManifestHelper.uploadManifest(manifest, minioFileName);
 
-    await saveManifestToDatabase(
-      key,
-      connectors.map((c) => c.id),
-      manifest.manifest_version,
-      claimId
-    );
+    try {
+      await saveManifestToDatabase(
+        key,
+        connectors.map((c) => c.id),
+        manifest.manifest_version,
+        claimId
+      );
+    } catch (error) {
+      await ManifestHelper.deleteManifest(minioFileName).catch(
+        (deleteError: unknown) =>
+          logApp.error('[MANIFEST] Failed to delete an unpublished manifest', {
+            minioFileName,
+            error: getErrorMessage(deleteError),
+          })
+      );
+      throw error;
+    }
 
     logApp.info('Manifest uploaded to MinIO', { minioFileName });
     return manifest;

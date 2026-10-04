@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { Readable } from 'stream';
 import { DocumentImageType } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
@@ -40,8 +41,11 @@ export const MANIFEST_SCHEMA_VERSION = '1';
  */
 const MANIFEST_LOGO_DOWNLOAD_CONCURRENCY = 12;
 
+// The name is also the storage key: the random build id keeps two builds of
+// the same second from overwriting each other's file.
 const buildManifestVersion = (version: string, now: Date): string => {
-  return `connector-manifest-${version}-${formatDateCompact(now)}`;
+  const buildId = randomBytes(4).toString('hex');
+  return `connector-manifest-${version}-${formatDateCompact(now)}-${buildId}`;
 };
 
 const DEFAULT_LOGO_MIME_TYPE = 'image/png';
@@ -181,14 +185,6 @@ export const ManifestHelper = {
     return { compatible, incompatible };
   },
 
-  buildManifestFileNameWithPath: (
-    product: string,
-    version: string,
-    now: Date = new Date()
-  ): string => {
-    return `${product}/${version}/connector/manifest/${buildManifestVersion(version, now)}.json`;
-  },
-
   buildManifestObjectKey: (
     product: string,
     version: string,
@@ -210,6 +206,10 @@ export const ManifestHelper = {
       encoding: 'utf-8',
     };
     await MinIOClient.uploadFile(uploadedFile, fileName, user.id, fileName);
+  },
+
+  deleteManifest: async (fileName: string): Promise<void> => {
+    await MinIOClient.deleteFile(fileName);
   },
 
   buildConnectorManifestOutput: (
