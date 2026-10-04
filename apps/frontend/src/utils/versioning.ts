@@ -23,10 +23,11 @@ export const doesVersionSatisfy = ({
   return compareVersions(givenVersion, requiredVersion) >= 0;
 };
 
-// The API also accepts the inline LTS revision (`-lts2`), compared as `-lts.2`.
-const INLINE_LTS_REVISION = /^(\d+\.\d+\.\d+-lts)(\d+)$/i;
+// The API accepts any LTS case and the inline revision (`-LTS2`), compared as
+// `-lts.2`.
+const INLINE_LTS_REVISION = /^(\d+\.\d+\.\d+-lts)(\d+)$/;
 const normalizeLtsRevision = (version: string) =>
-  version.trim().replace(INLINE_LTS_REVISION, '$1.$2');
+  version.trim().toLowerCase().replace(INLINE_LTS_REVISION, '$1.$2');
 
 export const compareVersions = (rawA: string, rawB: string) => {
   const a = normalizeLtsRevision(rawA);
