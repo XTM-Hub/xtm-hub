@@ -160,13 +160,14 @@ interface CoverageTagsFieldProps extends CoverageFieldProps {
   family: 'sectors' | 'regions';
 }
 
-/** Sectors and regions are open lists: free text tags, matched case-insensitively by the catalog search. */
-export const ServiceFormCoverageTagsField = ({
+// Rendered inside the form item: the coverage limit is the accessible description of the tag input
+const CoverageTagsControl = ({
   field,
   disabled,
   family,
 }: CoverageTagsFieldProps) => {
   const t = useTranslations();
+  const { error, formDescriptionId, formMessageId } = useFormField();
   const labelKey =
     family === 'sectors'
       ? 'Service.Form.CoveredSectorsLabel'
@@ -182,13 +183,20 @@ export const ServiceFormCoverageTagsField = ({
   const [activeTagIndex, setActiveTagIndex] = useState<number | null>(null);
 
   return (
-    <FormItem>
+    <>
       <FormLabel>{t(labelKey)}</FormLabel>
       <FormControl>
         <TagInput
           {...field}
           disabled={disabled}
           placeholder={t(placeholderKey)}
+          // The tag input passes only these attributes on to its text field
+          inputProps={{
+            'aria-describedby': error
+              ? `${formDescriptionId} ${formMessageId}`
+              : formDescriptionId,
+            'aria-invalid': !!error,
+          }}
           tags={tags}
           // Commas belong to sector and region values: only Enter adds a tag
           delimiterList={['Enter']}
@@ -214,9 +222,18 @@ export const ServiceFormCoverageTagsField = ({
           }}
         />
       </FormControl>
-      <p className="text-sm txt-sub-content">
+      <p
+        id={formDescriptionId}
+        className="text-sm txt-sub-content">
         {t('Service.Form.CoverageLimit', { max: MAX_COVERAGE_VALUES })}
       </p>
-    </FormItem>
+    </>
   );
 };
+
+/** Sectors and regions are open lists: free text tags, matched case-insensitively by the catalog search. */
+export const ServiceFormCoverageTagsField = (props: CoverageTagsFieldProps) => (
+  <FormItem>
+    <CoverageTagsControl {...props} />
+  </FormItem>
+);

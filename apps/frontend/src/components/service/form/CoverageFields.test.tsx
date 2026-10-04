@@ -100,6 +100,19 @@ describe('ServiceFormCoverageTagsField', () => {
     expect(onChange).toHaveBeenLastCalledWith(['Consumer goods']);
   });
 
+  it('should describe the tag input with the coverage limit', () => {
+    testRender(<TestForm onChange={vi.fn()} />);
+
+    const input = screen.getByPlaceholderText(
+      'Service.Form.CoveredSectorsPlaceholder'
+    );
+    const describedBy = input.getAttribute('aria-describedby');
+    expect(describedBy).toBeTruthy();
+    expect(document.getElementById(describedBy!)).toHaveTextContent(
+      'Service.Form.CoverageLimit'
+    );
+  });
+
   it('should show the values of a form reset and edit from them', () => {
     const onChange = vi.fn();
     testRender(<ResettableForm onChange={onChange} />);
