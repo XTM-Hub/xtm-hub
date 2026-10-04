@@ -81,15 +81,18 @@ describe('huntPackApp.buildDocumentMetadata', () => {
     ).rejects.toThrow(BadRequestErrorCode.HuntPackEmpty);
   });
 
-  it('limits the hunt pack file to the 20 MiB the OpenCTI import accepts', () => {
+  it('reads a hunt pack file as JSON of at most the 20 MiB the OpenCTI import accepts', () => {
     expect(
-      HuntPackApp.uploadLimit(ServiceDefinitionIdentifier.OpenctiHuntPacks)
+      HuntPackApp.uploadRules(ServiceDefinitionIdentifier.OpenctiHuntPacks)
     ).toEqual({
-      maxBytes: 20 * 1024 * 1024,
-      errorCode: BadRequestErrorCode.HuntPackFileTooLarge,
+      limit: {
+        maxBytes: 20 * 1024 * 1024,
+        errorCode: BadRequestErrorCode.HuntPackFileTooLarge,
+      },
+      json: true,
     });
     expect(
-      HuntPackApp.uploadLimit(ServiceDefinitionIdentifier.OpenctiCustomViews)
+      HuntPackApp.uploadRules(ServiceDefinitionIdentifier.OpenctiCustomViews)
     ).toBeUndefined();
   });
 

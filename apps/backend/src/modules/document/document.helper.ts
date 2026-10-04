@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import {
   DocumentMetadataKeyCode,
   DocumentMetadata as DocumentMetadataResolverType,
@@ -343,7 +344,9 @@ export const DocumentHelper = {
     const splitName = documentName.split('.');
     const nameWithoutExtension = splitName[0];
     const extensionName = splitName[1];
-    return `${nameWithoutExtension}_${Date.now()}.${extensionName}`;
+    // The random part keeps two uploads of the same name in the same
+    // millisecond on distinct keys: a failed request deletes only its own.
+    return `${nameWithoutExtension}_${Date.now()}_${randomUUID()}.${extensionName}`;
   },
 
   normalizeDocumentName: (documentName: string = ''): string => {

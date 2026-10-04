@@ -7,10 +7,12 @@ export interface UploadedFile {
   encoding: string;
 }
 
-/** A size above which an upload is refused, with the error code to raise. */
-export interface UploadLimit {
-  maxBytes: number;
-  errorCode: string;
+/** How the file of a library is received. */
+export interface UploadRules {
+  /** Refused above this size, with the error code to raise. */
+  limit?: { maxBytes: number; errorCode: string };
+  /** Read as JSON whatever media type the browser declared. */
+  json?: boolean;
 }
 
 export interface MinioFile {

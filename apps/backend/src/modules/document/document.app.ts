@@ -102,7 +102,7 @@ export const DocumentApp = {
       async (storeUploads) => {
         const [sourceDocumentFile] = await storeUploads(
           sourceDocument,
-          HuntPackApp.uploadLimit(serviceDefinition.identifier)
+          HuntPackApp.uploadRules(serviceDefinition.identifier)
         );
         const documentMetadata: DocumentMetadataResolverType[] =
           await HuntPackApp.buildDocumentMetadata({
@@ -300,7 +300,7 @@ export const DocumentApp = {
       async (storeUploads) => {
         const [sourceDocumentFile] = await storeUploads(
           sourceDocument,
-          HuntPackApp.uploadLimit(serviceDefinition.identifier)
+          HuntPackApp.uploadRules(serviceDefinition.identifier)
         );
         let documentMetadata = await HuntPackApp.buildDocumentMetadata({
           serviceDefinitionIdentifier: serviceDefinition.identifier,

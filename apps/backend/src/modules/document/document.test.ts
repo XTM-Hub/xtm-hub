@@ -125,7 +125,16 @@ describe('getFileName', () => {
       new Date('2023-01-01T00:00:00Z').getTime()
     );
     const result = DocumentHelper.getDocumentName('test.pdf');
-    expect(result).toEqual('test_1672531200000.pdf');
+    expect(result).toMatch(/^test_1672531200000_[0-9a-f-]{36}\.pdf$/);
+  });
+
+  it('should give two uploads of the same name in the same millisecond distinct names', () => {
+    vi.spyOn(Date, 'now').mockReturnValue(
+      new Date('2023-01-01T00:00:00Z').getTime()
+    );
+    expect(DocumentHelper.getDocumentName('pack.json')).not.toEqual(
+      DocumentHelper.getDocumentName('pack.json')
+    );
   });
 });
 

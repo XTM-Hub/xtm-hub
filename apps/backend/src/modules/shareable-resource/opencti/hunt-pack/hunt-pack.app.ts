@@ -5,7 +5,7 @@ import {
 import type { DocumentId } from '../../../../model/kanel/public/Document';
 import type {
   MinioFile,
-  UploadLimit,
+  UploadRules,
 } from '../../../../thirdparty/minio/types';
 import {
   BadRequestErrorCode,
@@ -19,14 +19,17 @@ import {
 } from './hunt-pack.model';
 
 export const HuntPackApp = {
-  /** The size limit of the file of a library, if it has one. */
-  uploadLimit: (
+  /** How the file of a library is received, when it has its own rules. */
+  uploadRules: (
     serviceDefinitionIdentifier: ServiceDefinitionIdentifier
-  ): UploadLimit | undefined =>
+  ): UploadRules | undefined =>
     serviceDefinitionIdentifier === ServiceDefinitionIdentifier.OpenctiHuntPacks
       ? {
-          maxBytes: HUNT_PACK_MAX_BYTES,
-          errorCode: BadRequestErrorCode.HuntPackFileTooLarge,
+          limit: {
+            maxBytes: HUNT_PACK_MAX_BYTES,
+            errorCode: BadRequestErrorCode.HuntPackFileTooLarge,
+          },
+          json: true,
         }
       : undefined,
 

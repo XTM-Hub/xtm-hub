@@ -18,7 +18,7 @@ import {
   isObjectNotFoundError,
   StorageUnavailableError,
 } from './storage-error';
-import { MinioFile, UploadedFile, UploadLimit } from './types';
+import { MinioFile, UploadedFile, UploadRules } from './types';
 
 const getEndpoint = () => {
   // If using AWS S3, unset the endpoint to let the library choose the best endpoint
@@ -62,7 +62,7 @@ export const MinIOClient = {
   createFile: async (
     jsonFile: Upload,
     serviceInstanceId: ServiceInstanceId,
-    limit?: UploadLimit
+    rules?: UploadRules
   ): Promise<MinioFile> => {
     const user = requestContext.requireUser();
     const fileName = DocumentHelper.normalizeDocumentName(
@@ -73,13 +73,13 @@ export const MinIOClient = {
       fileName,
       user.id,
       serviceInstanceId,
-      limit
+      rules
     );
 
     return {
       minioName,
       fileName,
-      mimeType: jsonFile.file.mimetype,
+      mimeType: rules?.json ? JSON_MIME_TYPE : jsonFile.file.mimetype,
       jsonContent,
     };
   },
@@ -111,22 +111,22 @@ export const MinIOClient = {
     filename: string,
     userId: string,
     serviceInstanceId: ServiceInstanceId,
-    limit?: UploadLimit
+    rules?: UploadRules
   ): Promise<{ minioName: string; jsonContent?: Record<string, unknown> }> => {
     const fullMetadata = {
-      mimetype: file.mimetype,
+      mimetype: rules?.json ? JSON_MIME_TYPE : file.mimetype,
       filename,
       encoding: file.encoding,
       Uploadinguserid: userId,
       ServiceInstanceId: serviceInstanceId,
     };
 
-    const stream = limit
-      ? limitStreamSize(file.createReadStream(), limit)
+    const stream = rules?.limit
+      ? limitStreamSize(file.createReadStream(), rules.limit)
       : file.createReadStream();
 
     const jsonContent =
-      file.mimetype === 'application/json'
+      rules?.json || isJsonMimeType(file.mimetype)
         ? await parseJsonStream(stream)
         : undefined;
 
@@ -203,10 +203,16 @@ export const MinIOClient = {
   },
 };
 
+const JSON_MIME_TYPE = 'application/json';
+
+// A JSON media type may carry parameters, such as its charset
+const isJsonMimeType = (mimetype: string) =>
+  mimetype.split(';')[0]?.trim().toLowerCase() === JSON_MIME_TYPE;
+
 // Refuses an upload above its limit while it streams, before it is buffered or stored.
 const limitStreamSize = (
   stream: Stream.Readable,
-  limit: UploadLimit
+  limit: NonNullable<UploadRules['limit']>
 ): Stream.Readable => {
   let size = 0;
   const limited = new Stream.Transform({

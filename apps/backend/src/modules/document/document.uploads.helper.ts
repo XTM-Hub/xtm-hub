@@ -1,7 +1,7 @@
 import { FileUpload } from 'graphql-upload/processRequest.mjs';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { MinIOClient } from '../../thirdparty/minio/client';
-import { MinioFile, UploadLimit } from '../../thirdparty/minio/types';
+import { MinioFile, UploadRules } from '../../thirdparty/minio/types';
 import { logApp } from '../../utils/app-logger.util';
 import { getErrorMessage } from '../../utils/error/error-guard.util';
 
@@ -12,7 +12,7 @@ export interface Upload {
 
 type StoreUploads = (
   uploads: Upload[] | Upload | undefined | null,
-  limit?: UploadLimit
+  rules?: UploadRules
 ) => Promise<MinioFile[]>;
 
 export const DocumentUploadsHelper = {
@@ -24,7 +24,7 @@ export const DocumentUploadsHelper = {
   processUploads: async (
     uploads: Upload[] | Upload | undefined | null,
     serviceInstanceId: ServiceInstanceId,
-    limit?: UploadLimit
+    rules?: UploadRules
   ): Promise<MinioFile[]> => {
     if (uploads === undefined || uploads === null) {
       return [];
@@ -35,7 +35,7 @@ export const DocumentUploadsHelper = {
 
     const results = await Promise.allSettled(
       uploadList.map((doc) =>
-        MinIOClient.createFile(doc, serviceInstanceId, limit)
+        MinIOClient.createFile(doc, serviceInstanceId, rules)
       )
     );
     const rejected = results.find(
@@ -83,11 +83,11 @@ export const DocumentUploadsHelper = {
   ): Promise<T> => {
     const storedFiles: MinioFile[] = [];
     try {
-      return await work(async (uploads, limit) => {
+      return await work(async (uploads, rules) => {
         const files = await DocumentUploadsHelper.processUploads(
           uploads,
           serviceInstanceId,
-          limit
+          rules
         );
         storedFiles.push(...files);
         return files;

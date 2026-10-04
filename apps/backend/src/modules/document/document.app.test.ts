@@ -310,7 +310,10 @@ describe('documentApp', () => {
       expect(processUploadsSpy).toHaveBeenCalledExactlyOnceWith(
         undefined,
         SERVICES.INSTANCES.HUNT_PACKS.ID,
-        expect.objectContaining({ maxBytes: 20 * 1024 * 1024 })
+        expect.objectContaining({
+          json: true,
+          limit: expect.objectContaining({ maxBytes: 20 * 1024 * 1024 }),
+        })
       );
     });
   });
