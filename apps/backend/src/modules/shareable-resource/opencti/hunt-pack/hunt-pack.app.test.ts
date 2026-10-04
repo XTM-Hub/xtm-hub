@@ -24,6 +24,7 @@ const validPack = {
     { type: 'attack-pattern', id: 'attack-pattern--1', x_mitre_id: 'T1059' },
     {
       type: 'hunt',
+      spec_version: '2.1',
       id: 'hunt--3f9b2a64-8d1c-4e57-9a0b-6c2d1e4f5a73',
       name: 'Encoded PowerShell',
       technique_refs: ['attack-pattern--1'],

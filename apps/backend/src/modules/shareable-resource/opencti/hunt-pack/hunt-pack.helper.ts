@@ -108,6 +108,10 @@ export const HuntPackHelper = {
       logApp.info('[HUNT_PACK] Hunt without a valid STIX identifier refused');
       throw new Error(BadRequestErrorCode.HuntPackInvalidBundle);
     }
+    if (!huntObjects.every((hunt) => hunt.spec_version === '2.1')) {
+      logApp.info('[HUNT_PACK] Hunt that is not a STIX 2.1 object refused');
+      throw new Error(BadRequestErrorCode.HuntPackInvalidBundle);
+    }
     // A hunt listed twice is imported once by OpenCTI, as its last occurrence
     const hunts = Array.from(
       new Map(huntObjects.map((hunt) => [hunt.id, hunt])).values()

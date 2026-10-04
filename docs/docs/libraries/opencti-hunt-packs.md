@@ -69,7 +69,7 @@ Users allowed to upload to the library publish packs from the library page with 
 1. In OpenCTI, select the hunts to share in Defense > Hunts and export them as a hunt pack.
 2. Upload the exported file. The XTM Hub accepts a STIX 2.1 bundle of 1 to 200 hunts of at most 20 MB, the format OpenCTI exports
    and imports, and rejects any other file with an explanation, including a bundle with a hunt that has no STIX
-   identifier. It also runs the checks of the OpenCTI import on every hunt: a name, a valid Sigma rule when the
+   identifier or does not declare `spec_version` 2.1. It also runs the checks of the OpenCTI import on every hunt: a name, a valid Sigma rule when the
    hunt has one, native queries for hunted platforms OpenCTI supports
    (one per platform, each with a language and a query), a schedule that is manual, standing or a cron expression
    firing at most every 15 minutes, and a time window, escalation threshold and result limit within the OpenCTI

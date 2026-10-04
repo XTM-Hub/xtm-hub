@@ -209,6 +209,19 @@ describe('huntPackHelper.summarize', () => {
     ).toThrow(BadRequestErrorCode.HuntPackInvalidBundle);
   });
 
+  it.each`
+    case                           | specVersion
+    ${'no spec_version'}           | ${undefined}
+    ${'the STIX 2.0 spec_version'} | ${'2.0'}
+    ${'a numeric spec_version'}    | ${2.1}
+  `('rejects a bundle with a hunt that has $case', ({ specVersion }) => {
+    expect(() =>
+      HuntPackHelper.summarize(
+        bundle([hunt(1), { ...hunt(2), spec_version: specVersion }])
+      )
+    ).toThrow(BadRequestErrorCode.HuntPackInvalidBundle);
+  });
+
   it('rejects hunts without identifier instead of counting them as one', () => {
     expect(() =>
       HuntPackHelper.summarize(
