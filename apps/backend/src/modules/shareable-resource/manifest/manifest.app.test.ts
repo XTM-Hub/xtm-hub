@@ -623,6 +623,88 @@ describe('manifestApp', () => {
       expect(ManifestApp.generateManifest).toHaveBeenCalledWith(MANIFEST_KEY);
     });
 
+    it('returns a failed rebuild to pending so that the next sweep resumes it', async () => {
+      // Given a request queued two hours ago whose generation fails
+      vi.mocked(ManifestApp.generateManifest).mockRejectedValueOnce(
+        new Error('storage unavailable')
+      );
+      await TestHelper.manifestRebuildQueue.create({
+        product: PlatformIdentifier.Opencti,
+        version: '7.261002.0',
+        status: ManifestRebuildQueueStatus.Pending,
+        created_at: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      });
+      const enqueueImmediateRebuildSpy = vi
+        .spyOn(ManifestHelper, 'enqueueImmediateRebuild')
+        .mockResolvedValue(undefined);
+
+      // When the rebuild fails, then the idle sweep runs
+      await ManifestApp.processManifestQueue();
+      const rows = await TestHelper.manifestRebuildQueue.loadAll({});
+      const resumed = await ManifestApp.resumePendingRebuilds({
+        createdBefore: new Date(Date.now() - 60 * 60 * 1000),
+      });
+
+      // Then the request is pending again and sent once more
+      expect(rows).toEqual([
+        expect.objectContaining({
+          version: '7.261002.0',
+          status: ManifestRebuildQueueStatus.Pending,
+        }),
+      ]);
+      expect(resumed).toEqual({ resumed: 1, failed: 0 });
+      expect(enqueueImmediateRebuildSpy).toHaveBeenCalledExactlyOnceWith({
+        platformIdentifier: PlatformIdentifier.Opencti,
+        version: '7.261002.0',
+        type: ManifestType.Connector,
+      });
+    });
+
+    it('drops a failed rebuild when a pending request already covers its key', async () => {
+      // Given a failing rebuild and a newer pending request for the same key
+      await TestHelper.manifestRebuildQueue.create({
+        product: PlatformIdentifier.Opencti,
+        version: '7.261002.0',
+        status: ManifestRebuildQueueStatus.Pending,
+      });
+      vi.mocked(ManifestApp.generateManifest).mockImplementationOnce(
+        async () => {
+          await TestHelper.manifestRebuildQueue.create({
+            product: PlatformIdentifier.Opencti,
+            version: '7.261002.0',
+            status: ManifestRebuildQueueStatus.Pending,
+          });
+          throw new Error('storage unavailable');
+        }
+      );
+
+      // When the rebuild fails
+      await ManifestApp.processManifestQueue();
+
+      // Then only the pending request remains
+      expect(await TestHelper.manifestRebuildQueue.loadAll({})).toEqual([
+        expect.objectContaining({
+          status: ManifestRebuildQueueStatus.Pending,
+        }),
+      ]);
+    });
+
+    it('removes a request that has nothing to publish', async () => {
+      // Given a request whose generation finds no connector
+      vi.mocked(ManifestApp.generateManifest).mockResolvedValueOnce(null);
+      await TestHelper.manifestRebuildQueue.create({
+        product: PlatformIdentifier.Opencti,
+        version: '7.261002.0',
+        status: ManifestRebuildQueueStatus.Pending,
+      });
+
+      // When the queue is processed
+      await ManifestApp.processManifestQueue();
+
+      // Then the request leaves the queue instead of staying in processing
+      expect(await TestHelper.manifestRebuildQueue.loadAll({})).toEqual([]);
+    });
+
     it("ignores rows with status 'processing'", async () => {
       await TestHelper.manifestRebuildQueue.create({
         product: PlatformIdentifier.Opencti,

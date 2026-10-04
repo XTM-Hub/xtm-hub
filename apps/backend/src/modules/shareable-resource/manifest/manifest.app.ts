@@ -214,14 +214,31 @@ export const ManifestApp = {
     logApp.info('Manifests locked for processing', { count: rows.length });
 
     for (const row of rows) {
+      const key: ManifestKey = {
+        platformIdentifier: row.product,
+        version: row.version,
+        type: row.type,
+      };
       try {
-        await ManifestApp.generateManifest({
-          platformIdentifier: row.product,
-          version: row.version,
-          type: row.type,
-        });
+        const manifest = await ManifestApp.generateManifest(key);
+        if (!manifest) {
+          // Nothing to publish for this key: the request is done.
+          await ManifestDomain.deleteFromRebuildQueue(key);
+        }
       } catch (error) {
         logApp.error('Unable to process manifest', { error, manifest: row });
+        try {
+          // Pending again, the request is resumed by the next sweep.
+          await ManifestDomain.returnToPending(key);
+        } catch (requeueError) {
+          logApp.error(
+            'Unable to return a failed manifest rebuild to pending',
+            {
+              error: requeueError,
+              manifest: row,
+            }
+          );
+        }
       }
     }
   },
