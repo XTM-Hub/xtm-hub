@@ -29,6 +29,9 @@ const MONTH_NAMES = [
 const DAY_NAMES = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 // A schedule repeats at least once a year: 5 years of days bound the search
 const MAX_SEARCH_DAYS = 366 * 5;
+// Listing every value of every field takes about 360 characters: a longer
+// schedule is refused before it is split.
+export const MAX_SCHEDULE_LENGTH = 512;
 const MINUTE_MS = 60 * 1000;
 const WEEK_MS = 7 * 24 * 60 * MINUTE_MS;
 
@@ -202,6 +205,9 @@ const nextOccurrence = (cron: ParsedCron, after: Date): Date | null => {
 export const huntScheduleError = (schedule: string): string | null => {
   if (HUNT_SCHEDULE_KEYWORDS.includes(schedule)) {
     return null;
+  }
+  if (schedule.length > MAX_SCHEDULE_LENGTH) {
+    return `the schedule is not a valid cron expression: it exceeds ${MAX_SCHEDULE_LENGTH} characters`;
   }
   let cron: ParsedCron;
   try {

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { huntScheduleError } from './hunt-pack.schedule';
+import { describe, expect, it, vi } from 'vitest';
+import { huntScheduleError, MAX_SCHEDULE_LENGTH } from './hunt-pack.schedule';
 
 describe('huntScheduleError', () => {
   it.each`
@@ -33,5 +33,28 @@ describe('huntScheduleError', () => {
     ${'0,5 * * * *'}    | ${'more than once every 15 minutes'}
   `('refuses $schedule', ({ schedule, error }) => {
     expect(huntScheduleError(schedule)).toContain(error);
+  });
+
+  it('accepts a schedule that lists every hour, day, month and weekday', () => {
+    const list = (min: number, max: number) =>
+      Array.from({ length: max - min + 1 }, (_, index) => min + index).join(
+        ','
+      );
+    const schedule = `0,15,30,45 ${list(0, 23)} ${list(1, 31)} ${list(1, 12)} ${list(0, 7)}`;
+
+    expect(schedule.length).toBeLessThanOrEqual(MAX_SCHEDULE_LENGTH);
+    expect(huntScheduleError(schedule)).toBeNull();
+  });
+
+  it('refuses a schedule of millions of entries before splitting it', () => {
+    const schedule = `${'0,'.repeat(2_000_000)}0 * * * *`;
+    const split = vi.spyOn(String.prototype, 'split');
+
+    const error = huntScheduleError(schedule);
+    const splitCalls = split.mock.calls.length;
+    split.mockRestore();
+
+    expect(splitCalls).toBe(0);
+    expect(error).toContain(`exceeds ${MAX_SCHEDULE_LENGTH} characters`);
   });
 });
