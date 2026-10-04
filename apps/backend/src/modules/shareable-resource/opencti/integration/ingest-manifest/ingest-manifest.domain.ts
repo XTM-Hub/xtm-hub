@@ -117,11 +117,7 @@ export const IngestManifestDomain = {
           slug,
           async () => {
             const current = await DocumentDomain.findLatestBySlug(
-              {
-                slug,
-                type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-                serviceInstanceId: connector.service_instance_id,
-              },
+              { slug, type: OPENCTI_INTEGRATION_DOCUMENT_TYPE },
               { forUpdate: true }
             );
             const existingConnector =

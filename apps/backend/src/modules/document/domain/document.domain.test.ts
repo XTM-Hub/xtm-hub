@@ -181,6 +181,28 @@ describe('document domain', () => {
     });
   });
 
+  describe('findLatestBySlug', () => {
+    it('should find the document of a type and slug in any service instance, as the unique constraint does', async () => {
+      const elsewhere = await TestHelper.document.create({
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'shared-slug',
+        service_instance_id: null,
+      });
+      await TestHelper.document.create({
+        type: OPENCTI_CUSTOM_VIEW_DOCUMENT_TYPE,
+        slug: 'shared-slug',
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+      });
+
+      const found = await DocumentDomain.findLatestBySlug({
+        slug: 'shared-slug',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+      });
+
+      expect(found?.id).toEqual(elsewhere.id);
+    });
+  });
+
   describe(`loadParentDocumentsByServiceInstance`, () => {
     let csvFeed: Document;
     beforeEach(async () => {
