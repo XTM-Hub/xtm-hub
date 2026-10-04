@@ -76,7 +76,12 @@ Integration.
 ![Inferred coverage on the Integration details page](../assets/images/integration-coverage-details.png)
 
 On the details page, an inferred coverage is marked "Inferred automatically"; its tooltip explains where it comes
-from. In the Integration form, a Hub administrator sees when the current coverage was inferred: changing the
+from. When the inference found no object type, sector or region, the details page says "No coverage inferred", and
+its tooltip invites to declare the coverage in the Integration form:
+
+![An inference that found no coverage on the Integration details page](../assets/images/integration-coverage-details-none.png)
+
+In the Integration form, a Hub administrator sees when the current coverage was inferred: changing the
 coverage, or checking "Confirm this coverage" to keep it as it is, declares it and replaces the inference. Saving the
 form without either keeps the coverage inferred, and leaving the fields empty lets the Hub infer it.
 
