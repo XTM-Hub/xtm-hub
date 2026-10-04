@@ -1,11 +1,11 @@
 import testRender from '@/utils/test/test-render';
 import { screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   buildCoverageOptionCounts,
   buildCoverageOptions,
+  createSeenCoverageValues,
   IntegrationCoverageFilter,
-  resetSeenCoverageValues,
 } from './IntegrationCoverageFilter';
 
 const setObjectTypesMock = vi.fn();
@@ -89,10 +89,6 @@ describe('buildCoverageOptions', () => {
 });
 
 describe('IntegrationCoverageFilter', () => {
-  beforeEach(() => {
-    resetSeenCoverageValues();
-  });
-
   it('renders the covered object types of the matched population', () => {
     // Given / When
     testRender(
@@ -155,11 +151,13 @@ describe('IntegrationCoverageFilter', () => {
   });
 
   it('keeps a value seen before its filter section was closed and reopened', () => {
-    // Given - the section shows Germany, then closes (the filter unmounts)
+    // Given - on one list page, the section shows Germany, then closes (the filter unmounts)
+    const pageSeenValues = createSeenCoverageValues();
     const { unmount } = testRender(
       <IntegrationCoverageFilter
         family="region"
         facetCounts={{ France: 1, Germany: 2 }}
+        seenValues={pageSeenValues}
       />
     );
     unmount();
@@ -169,6 +167,7 @@ describe('IntegrationCoverageFilter', () => {
       <IntegrationCoverageFilter
         family="region"
         facetCounts={{ France: 1 }}
+        seenValues={pageSeenValues}
       />
     );
 

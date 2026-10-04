@@ -6,7 +6,10 @@ import {
   ServiceListFilterKey,
   ServiceListFilterMap,
 } from '@/components/service/components/header/ServiceListHeader';
-import { IntegrationCoverageFilter } from '@/components/ui/shareable-resource/integration/IntegrationCoverageFilter';
+import {
+  createSeenCoverageValues,
+  IntegrationCoverageFilter,
+} from '@/components/ui/shareable-resource/integration/IntegrationCoverageFilter';
 import { IntegrationDeployableFilter } from '@/components/ui/shareable-resource/integration/IntegrationDeployableFilter';
 import { IntegrationLicenseTypeFilter } from '@/components/ui/shareable-resource/integration/IntegrationLicenseTypeFilter';
 import { IntegrationSolutionCategoryFilter } from '@/components/ui/shareable-resource/integration/IntegrationSolutionCategoryFilter';
@@ -18,12 +21,15 @@ import {
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 
 export const useShareableResourceMapping = (
   slug: ServiceSlug,
   facetCounts?: ServiceListFacetCounts
 ) => {
   const t = useTranslations();
+  // Coverage values seen while this list page is open, kept when a filter section closes
+  const [seenCoverageValues] = useState(createSeenCoverageValues);
   const localStorageKeyMapping: Record<
     ServiceSlug,
     ServiceListLocalStorageKey
@@ -109,6 +115,7 @@ export const useShareableResourceMapping = (
           <IntegrationCoverageFilter
             family="objectType"
             facetCounts={facetCounts?.objectType}
+            seenValues={seenCoverageValues}
           />
         ),
       },
@@ -118,6 +125,7 @@ export const useShareableResourceMapping = (
           <IntegrationCoverageFilter
             family="sector"
             facetCounts={facetCounts?.sector}
+            seenValues={seenCoverageValues}
           />
         ),
       },
@@ -127,6 +135,7 @@ export const useShareableResourceMapping = (
           <IntegrationCoverageFilter
             family="region"
             facetCounts={facetCounts?.region}
+            seenValues={seenCoverageValues}
           />
         ),
       },

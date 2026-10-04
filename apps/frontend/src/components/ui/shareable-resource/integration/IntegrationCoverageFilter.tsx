@@ -5,7 +5,7 @@ import {
   useServiceListLocalStorage,
 } from '@/hooks/use-service-list-local-storage';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 
 export type IntegrationCoverageFamily = 'objectType' | 'sector' | 'region';
 
@@ -66,54 +66,60 @@ export const buildCoverageOptionCounts = (
   );
 };
 
-// Values the facets returned during the page session, kept outside the filter: a closed filter section unmounts it
-const seenValues: Record<IntegrationCoverageFamily, readonly string[]> = {
-  objectType: [],
-  sector: [],
-  region: [],
-};
-const seenListeners = new Set<() => void>();
-const NOTHING_SEEN: readonly string[] = [];
+/**
+ * Values the facets returned while a list page is open. The page owns the store: a closed filter section unmounts
+ * its filter without forgetting them, and leaving the page does.
+ */
+export interface SeenCoverageValues {
+  get: (family: IntegrationCoverageFamily) => readonly string[];
+  remember: (
+    family: IntegrationCoverageFamily,
+    values: readonly string[]
+  ) => void;
+  subscribe: (listener: () => void) => () => void;
+}
 
-const subscribeSeenValues = (listener: () => void) => {
-  seenListeners.add(listener);
-  return () => {
-    seenListeners.delete(listener);
+export const createSeenCoverageValues = (): SeenCoverageValues => {
+  const seen: Record<IntegrationCoverageFamily, readonly string[]> = {
+    objectType: [],
+    sector: [],
+    region: [],
+  };
+  const listeners = new Set<() => void>();
+  return {
+    get: (family) => seen[family],
+    remember: (family, values) => {
+      const added = values.filter((value) => !seen[family].includes(value));
+      if (added.length > 0) {
+        seen[family] = [...seen[family], ...added];
+        listeners.forEach((listener) => listener());
+      }
+    },
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
   };
 };
 
-const rememberSeenValues = (
-  family: IntegrationCoverageFamily,
-  values: readonly string[]
-) => {
-  const added = values.filter((value) => !seenValues[family].includes(value));
-  if (added.length > 0) {
-    seenValues[family] = [...seenValues[family], ...added];
-    seenListeners.forEach((listener) => listener());
-  }
-};
+const NOTHING_SEEN: readonly string[] = [];
 
-/** Forgets the values seen so far (a new page session). */
-export const resetSeenCoverageValues = () => {
-  seenValues.objectType = [];
-  seenValues.sector = [];
-  seenValues.region = [];
-  seenListeners.forEach((listener) => listener());
-};
-
-/** Every value the facets returned during the page session, the current ones included. */
+/** Every value the facets returned while the page is open, the current ones included. */
 const useSeenFacetValues = (
+  store: SeenCoverageValues,
   family: IntegrationCoverageFamily,
   facetCounts: Record<string, number> | undefined
 ) => {
   const seen = useSyncExternalStore(
-    subscribeSeenValues,
-    () => seenValues[family],
+    store.subscribe,
+    () => store.get(family),
     () => NOTHING_SEEN
   );
   useEffect(() => {
-    rememberSeenValues(family, Object.keys(facetCounts ?? {}));
-  }, [family, facetCounts]);
+    store.remember(family, Object.keys(facetCounts ?? {}));
+  }, [store, family, facetCounts]);
   return useMemo(
     () => [...new Set([...seen, ...Object.keys(facetCounts ?? {})])],
     [seen, facetCounts]
@@ -123,12 +129,16 @@ const useSeenFacetValues = (
 interface IntegrationCoverageFilterProps {
   family: IntegrationCoverageFamily;
   facetCounts?: Record<string, number>;
+  // The store of the list page; without it, the values are kept while the filter is mounted
+  seenValues?: SeenCoverageValues;
 }
 
 export const IntegrationCoverageFilter = ({
   family,
   facetCounts,
+  seenValues,
 }: IntegrationCoverageFilterProps) => {
+  const [ownSeenValues] = useState(createSeenCoverageValues);
   const t = useTranslations();
   const storage = useServiceListLocalStorage(
     ServiceListLocalStorageKey.OpenCTIIntegrationFeeds
@@ -141,7 +151,11 @@ export const IntegrationCoverageFilter = ({
     sector: { selection: storage.sectors, setSelection: storage.setSectors },
     region: { selection: storage.regions, setSelection: storage.setRegions },
   }[family];
-  const seen = useSeenFacetValues(family, facetCounts);
+  const seen = useSeenFacetValues(
+    seenValues ?? ownSeenValues,
+    family,
+    facetCounts
+  );
   const objectTypeLabel = useCoverageObjectTypeLabel();
 
   const options = useMemo(
