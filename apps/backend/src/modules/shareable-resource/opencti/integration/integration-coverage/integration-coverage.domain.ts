@@ -21,6 +21,7 @@ import { restrictServiceInstanceToPublic } from '../../../../../security/restric
 import { applyDecouplingRestriction } from '../../../../document/domain/document.domain';
 import { DocumentMetadataDomain } from '../../../../document/domain/document.metadata.domain';
 import {
+  loadEntityTypeFacetBuckets,
   loadMetadataFacetBucketsGrouped,
   loadMetadataListFacetBuckets,
   loadSolutionCategoryFacetBuckets,
@@ -189,38 +190,30 @@ export const EMPTY_COVERAGE_FACETS: Facet = {
   region: [],
 };
 
+// One aggregation at a time: a public request never holds more than one pooled connection
 const loadFacets = async (
   documentIdsQuery: Knex.QueryBuilder
 ): Promise<Facet> => {
-  const [
-    metadataBuckets,
-    useCaseBuckets,
-    solutionCategoryBuckets,
-    entityTypeBuckets,
-    objectTypeBuckets,
-    sectorBuckets,
-    regionBuckets,
-  ] = await Promise.all([
-    loadMetadataFacetBucketsGrouped(documentIdsQuery, FACET_METADATA_KEYS),
-    loadUseCaseFacetBuckets(documentIdsQuery),
-    loadSolutionCategoryFacetBuckets(documentIdsQuery),
-    loadMetadataListFacetBuckets(
-      documentIdsQuery,
-      DocumentMetadataKeyCode.EntityTypes
-    ),
-    loadMetadataListFacetBuckets(
-      documentIdsQuery,
-      DocumentMetadataKeyCode.CoveredObjectTypes
-    ),
-    loadMetadataListFacetBuckets(
-      documentIdsQuery,
-      DocumentMetadataKeyCode.CoveredSectors
-    ),
-    loadMetadataListFacetBuckets(
-      documentIdsQuery,
-      DocumentMetadataKeyCode.CoveredRegions
-    ),
-  ]);
+  const metadataBuckets = await loadMetadataFacetBucketsGrouped(
+    documentIdsQuery,
+    FACET_METADATA_KEYS
+  );
+  const useCaseBuckets = await loadUseCaseFacetBuckets(documentIdsQuery);
+  const solutionCategoryBuckets =
+    await loadSolutionCategoryFacetBuckets(documentIdsQuery);
+  const entityTypeBuckets = await loadEntityTypeFacetBuckets(documentIdsQuery);
+  const objectTypeBuckets = await loadMetadataListFacetBuckets(
+    documentIdsQuery,
+    DocumentMetadataKeyCode.CoveredObjectTypes
+  );
+  const sectorBuckets = await loadMetadataListFacetBuckets(
+    documentIdsQuery,
+    DocumentMetadataKeyCode.CoveredSectors
+  );
+  const regionBuckets = await loadMetadataListFacetBuckets(
+    documentIdsQuery,
+    DocumentMetadataKeyCode.CoveredRegions
+  );
   return {
     integration_type:
       metadataBuckets[DocumentMetadataKeyCode.IntegrationType] ?? [],
@@ -247,7 +240,7 @@ export interface LinkableVocabulary {
 export const IntegrationCoverageDomain = {
   /**
    * Ranked candidates of a coverage search and, when the caller selects
-   * them, the facets of the candidate population (seven aggregations).
+   * them, the facets of the candidate population (seven aggregations, one after the other).
    */
   loadCandidatesAndFacets: async (
     request: CoverageSearchRequest,
@@ -259,12 +252,10 @@ export const IntegrationCoverageDomain = {
   }> => {
     const { query } = await buildCandidatesQuery(request);
 
-    const [rows, facets] = await Promise.all([
-      loadCandidateRows(query),
-      withFacets
-        ? loadFacets(query.clone().select('Document.id'))
-        : Promise.resolve(EMPTY_COVERAGE_FACETS),
-    ]);
+    const rows = await loadCandidateRows(query);
+    const facets = withFacets
+      ? await loadFacets(query.clone().select('Document.id'))
+      : EMPTY_COVERAGE_FACETS;
 
     const truncated = rows.length > COVERAGE_SEARCH_MAX_CANDIDATES;
     const candidates = await DocumentMetadataDomain.hydrateMetadata(
