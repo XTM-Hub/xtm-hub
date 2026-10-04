@@ -101,12 +101,14 @@ export const ShareableResourceConnectorDetails = ({
           <span>{huntPlatformLabel(connectorDetails.hunt_platform)}</span>
         </ShareableResourceDetailItem>
       )}
-      <ShareableResourceDetailItem
-        label={t('Service.ShareableResources.Details.ProductVersion', {
-          platform: platformName,
-        })}>
-        <span>{connectorDetails?.product_version}</span>
-      </ShareableResourceDetailItem>
+      {!!connectorDetails.product_version && (
+        <ShareableResourceDetailItem
+          label={t('Service.ShareableResources.Details.ProductVersion', {
+            platform: platformName,
+          })}>
+          <span>{connectorDetails.product_version}</span>
+        </ShareableResourceDetailItem>
+      )}
       {!!connectorDetails?.minimum_deployable_version && (
         <ShareableResourceDetailItem
           label={t(

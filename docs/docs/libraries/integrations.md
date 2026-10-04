@@ -131,10 +131,16 @@ the Connectors of the selected types. The types are those of OpenCTI:
 | Internal hunt | Executes OpenCTI hunts on one hunted platform and reports sightings, observed indicators and a redacted evidence sample. |
 | Stream | Pushes OpenCTI knowledge to another platform in real time. |
 
+![OpenCTI integrations library filtered on the Internal hunt connector type, with the count of Connectors of each type](../assets/images/integrations-connector-type-filter.png)
+
 **Internal hunt** Connectors run the hunts of OpenCTI (a Sigma rule or a native query over a time window) on a
 Security Platform or data lake, such as Splunk, Microsoft Sentinel or Elastic Security. Their details page also shows
 the **Hunted platform**. Raw events never leave the hunted platform: OpenCTI only receives hit counts, sightings,
-observed indicators and a hashed, truncated evidence sample. To deploy one:
+observed indicators and a hashed, truncated evidence sample.
+
+![Details page of the Splunk Hunt Connector showing its Internal hunt connector type, Splunk as hunted platform and OpenCTI 7.261003.0 as minimum deployable version](../assets/images/integrations-hunt-connector-details.png)
+
+To deploy one:
 
 - your OpenCTI product must provide hunts. Internal hunt Connectors require OpenCTI 7.261003.0 or later; on an older
   product, including a long-term support release based on an older version, the Connector is marked as incompatible

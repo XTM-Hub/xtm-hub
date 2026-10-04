@@ -81,4 +81,33 @@ describe('ShareableResourceConnectorDetails', () => {
       screen.queryByText('Service.ShareableResources.Details.HuntedPlatform')
     ).not.toBeInTheDocument();
   });
+
+  it('should display the compatibility version only when the connector declares one', () => {
+    // Given a connector from a manifest fragment, which declares no product version,
+    // and a connector of the legacy manifest, which declares one
+    const { unmount } = testRender(
+      <ShareableResourceConnectorDetails
+        connectorDetails={{
+          name: 'Splunk Hunt',
+          connector_type: 'INTERNAL_HUNT',
+        }}
+      />
+    );
+
+    // Then no empty compatibility row is shown for the first one
+    expect(
+      screen.queryByText('Service.ShareableResources.Details.ProductVersion')
+    ).not.toBeInTheDocument();
+    unmount();
+
+    testRender(
+      <ShareableResourceConnectorDetails
+        connectorDetails={{ name: CONNECTOR_NAME, product_version: '6.8.3' }}
+      />
+    );
+    expect(
+      screen.getByText('Service.ShareableResources.Details.ProductVersion')
+    ).toBeInTheDocument();
+    expect(screen.getByText('6.8.3')).toBeInTheDocument();
+  });
 });
