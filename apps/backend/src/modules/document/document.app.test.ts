@@ -354,6 +354,55 @@ describe('documentApp', () => {
         'previous-pack.json'
       );
     });
+
+    it('should delete the file each of two concurrent replacements replaced', async () => {
+      // Given a hunt pack stored with a first file
+      const metadata = [
+        { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+      ];
+      const slug = `concurrent-pack-${uuidv4()}`;
+      const storedNames = ['original-pack.json', 'first.json', 'second.json'];
+      vi.spyOn(DocumentUploadsHelper, 'processUploads').mockImplementation(
+        async (uploads) => {
+          if (!uploads) return [];
+          const uploadList = Array.isArray(uploads) ? uploads : [uploads];
+          return uploadList.map(() => ({
+            ...huntPackFile(huntPackContent),
+            minioName: storedNames.shift()!,
+          }));
+        }
+      );
+      const huntPack = await DocumentApp.createDocument({
+        input: { ...documentData, slug },
+        metadata,
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        sourceDocument: mockUpload,
+      });
+      const replace = () =>
+        DocumentApp.updateDocument({
+          parentDocumentId: huntPack.id,
+          serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+          metadata,
+          input: { ...documentData, slug },
+          existingImageIds: [],
+          sourceDocument: mockUpload,
+        });
+
+      // When two replacements run at the same time
+      await Promise.all([replace(), replace()]);
+
+      // Then only the file both replacements left behind remains stored
+      const stored = await TestHelper.document.load({ slug });
+      const deleted = vi
+        .mocked(MinIOClient.deleteFile)
+        .mock.calls.map(([minioName]) => minioName);
+      expect(['first.json', 'second.json']).toContain(stored?.minio_name);
+      expect(deleted.sort()).toEqual(
+        ['original-pack.json', 'first.json', 'second.json']
+          .filter((name) => name !== stored?.minio_name)
+          .sort()
+      );
+    });
   });
 
   describe('createDocument', () => {

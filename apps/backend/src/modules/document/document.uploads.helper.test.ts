@@ -88,8 +88,8 @@ describe('documentUploadsHelper', () => {
       .mockResolvedValue(undefined);
 
     await DocumentUploadsHelper.deleteReplacedFile(
-      { minio_name: 'previous.json' },
-      { minio_name: 'replacement.json' }
+      'previous.json',
+      'replacement.json'
     );
 
     expect(deleteFile).toHaveBeenCalledExactlyOnceWith('previous.json');
@@ -102,10 +102,7 @@ describe('documentUploadsHelper', () => {
   `('keeps every file when $case', async ({ previous, current }) => {
     const deleteFile = vi.spyOn(MinIOClient, 'deleteFile');
 
-    await DocumentUploadsHelper.deleteReplacedFile(
-      { minio_name: previous },
-      { minio_name: current }
-    );
+    await DocumentUploadsHelper.deleteReplacedFile(previous, current);
 
     expect(deleteFile).not.toHaveBeenCalled();
   });
@@ -117,8 +114,8 @@ describe('documentUploadsHelper', () => {
 
     await expect(
       DocumentUploadsHelper.deleteReplacedFile(
-        { minio_name: 'previous.json' },
-        { minio_name: 'replacement.json' }
+        'previous.json',
+        'replacement.json'
       )
     ).resolves.toBeUndefined();
   });

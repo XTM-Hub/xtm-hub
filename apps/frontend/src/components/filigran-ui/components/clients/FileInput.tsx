@@ -106,7 +106,11 @@ const GenericFileInput = (
     if (!firstFile) {
       return false;
     }
-    const extension = firstFile.name.split('.')[1];
+    const extensionStart = firstFile.name.lastIndexOf('.');
+    const extension =
+      extensionStart === -1
+        ? undefined
+        : firstFile.name.slice(extensionStart + 1).toLowerCase();
 
     if (allowedTypes && (!extension || !allowedTypes.includes(extension))) {
       form.setError(props.name, {

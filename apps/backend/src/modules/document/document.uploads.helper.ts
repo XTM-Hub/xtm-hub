@@ -78,17 +78,17 @@ export const DocumentUploadsHelper = {
    * is stored under its own key, so no other document refers to it.
    */
   deleteReplacedFile: async (
-    previous: { minio_name: string | null },
-    current: { minio_name: string | null }
+    replacedMinioName: string | null,
+    currentMinioName: string | null
   ) => {
-    if (!previous.minio_name || previous.minio_name === current.minio_name) {
+    if (!replacedMinioName || replacedMinioName === currentMinioName) {
       return;
     }
     try {
-      await MinIOClient.deleteFile(previous.minio_name);
+      await MinIOClient.deleteFile(replacedMinioName);
     } catch (error) {
       logApp.error('[DOCUMENT] Unable to delete the file an update replaced', {
-        minioName: previous.minio_name,
+        minioName: replacedMinioName,
         error: getErrorMessage(error),
       });
     }

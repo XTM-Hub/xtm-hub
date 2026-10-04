@@ -295,7 +295,7 @@ export const DocumentApp = {
       DocumentHelper.retrieveDocumentTypeFromServiceDefinition(
         serviceDefinition.identifier as ManageableServiceDefinitionIdentifier
       );
-    const updatedDocument = await DocumentUploadsHelper.withUploadsCleanup(
+    const update = await DocumentUploadsHelper.withUploadsCleanup(
       serviceInstanceId,
       async (storeUploads) => {
         const [sourceDocumentFile] = await storeUploads(
@@ -385,6 +385,10 @@ export const DocumentApp = {
           })
             ? sourceDocumentFile
             : undefined;
+          // Read under the row lock: concurrent replacements each get the file they replace
+          const replacedMinioName = file
+            ? await DocumentDomain.lockDocumentFile(parentDocumentId)
+            : null;
 
           // entity_types and license_type are persisted as metadata (see above), not as Document columns.
           const {
@@ -480,13 +484,14 @@ export const DocumentApp = {
             );
           }
 
-          return doc;
+          return { doc, replacedMinioName };
         });
       }
     );
+    const updatedDocument = update.doc;
     await DocumentUploadsHelper.deleteReplacedFile(
-      documentBeforeUpdate,
-      updatedDocument
+      update.replacedMinioName,
+      updatedDocument.minio_name
     );
 
     void NewsFeedApp.upsertResourceNewsFeed({
