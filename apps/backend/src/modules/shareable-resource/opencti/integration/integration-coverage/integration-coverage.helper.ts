@@ -257,9 +257,10 @@ export const IntegrationCoverageHelper = {
   },
 
   /**
-   * Admin form semantics: an omitted list keeps its stored declared value,
-   * clearing every list returns to inference, and submitting the inferred
-   * values unchanged keeps the coverage inferred unless `confirmed` declares it.
+   * Admin form semantics: an omitted list keeps its stored value, declared or
+   * inferred, clearing every list returns to inference, and submitting the
+   * inferred values unchanged keeps the coverage inferred unless `confirmed`
+   * declares it.
    */
   resolveAdminCoverage: ({
     input,
@@ -282,10 +283,7 @@ export const IntegrationCoverageHelper = {
       });
     }
 
-    const base =
-      existing && !existing.inferred
-        ? existing
-        : IntegrationCoverageHelper.emptyCoverage();
+    const base = existing ?? IntegrationCoverageHelper.emptyCoverage();
     const submitted: IntegrationCoverage = {
       object_types: base.object_types,
       sectors: base.sectors,

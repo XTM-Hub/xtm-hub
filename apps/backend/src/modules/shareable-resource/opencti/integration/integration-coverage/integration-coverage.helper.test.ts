@@ -299,6 +299,32 @@ describe('integrationCoverageHelper', () => {
       );
     });
 
+    it('should merge a partial submission with the stored inferred coverage and declare it', () => {
+      // Given
+      const existing = makeCoverage({
+        object_types: [MALWARE],
+        regions: [EUROPE],
+        inferred: true,
+      });
+
+      // When
+      const coverage = IntegrationCoverageHelper.resolveAdminCoverage({
+        input: { sectors: [FINANCE] },
+        existing,
+        inferenceSource: MALWARE_SOURCE,
+      });
+
+      // Then
+      expect(coverage).toEqual(
+        makeCoverage({
+          object_types: [MALWARE],
+          sectors: [FINANCE],
+          regions: [EUROPE],
+          inferred: false,
+        })
+      );
+    });
+
     it('should return to inference when every list is cleared', () => {
       // Given
       const existing = makeCoverage({ sectors: [FINANCE] });
