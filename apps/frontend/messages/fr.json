@@ -1521,6 +1521,7 @@
         "DeployPlatform": "Déployer dans {platformName}",
         "DeployQuestionTag": "Sur quelle plateforme {platformType} voulez-vous le déployer ?",
         "DeployResourceDescription": "Vous êtes sur le point de déployer le {resourceType} {resourceName}.",
+        "DeployHuntPackDescription": "Vous êtes sur le point de déployer le pack de chasse {resourceName} dans OpenCTI.",
         "DeployIncompatibleVersion": "Mettez à jour {platformTitle} vers OpenCTI {version} ou une version ultérieure pour déployer cette ressource.",
         "EE": {
           "Tag": "EE",

@@ -1521,6 +1521,7 @@
         "DeployPlatform": "{platformName} にデプロイしますか？",
         "DeployQuestionTag": "どの {platformType} プラットフォームに配置しますか？",
         "DeployResourceDescription": "あなたは {resourceName} {resourceType} をデプロイしようとしています。",
+        "DeployHuntPackDescription": "ハントパック {resourceName} を OpenCTI にデプロイしようとしています。",
         "DeployIncompatibleVersion": "このリソースをデプロイするには、{platformTitle} を OpenCTI {version} 以降に更新してください。",
         "EE": {
           "Tag": "EE",

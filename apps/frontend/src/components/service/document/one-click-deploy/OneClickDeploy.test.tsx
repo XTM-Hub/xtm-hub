@@ -37,12 +37,13 @@ const platform = (id: string, title: string, version: string) =>
   }) as unknown as useRegisteredPlatformsFragment$data;
 
 const renderWithPlatforms = (
-  platforms: useRegisteredPlatformsFragment$data[]
+  platforms: useRegisteredPlatformsFragment$data[],
+  documentData = huntPack
 ) => {
   vi.mocked(useRegisteredPlatforms).mockReturnValue({ platforms });
   return testRender(
     <OneClickDeploy
-      documentData={huntPack}
+      documentData={documentData}
       requiredProductVersion="7.261003.0"
     />
   );
@@ -60,10 +61,18 @@ describe('OneClickDeploy - version floor of a hunt pack', () => {
     expect(deployButton()).toBeDisabled();
   });
 
-  it('should allow deployment when the only OpenCTI meets the pack version', () => {
-    renderWithPlatforms([platform('production', 'Production', '7.261003.0')]);
+  it('should allow deployment when the only OpenCTI meets the pack version', async () => {
+    const { user } = renderWithPlatforms([
+      platform('production', 'Production', '7.261003.0'),
+    ]);
 
     expect(deployButton()).toBeEnabled();
+    await user.click(deployButton()!);
+    expect(
+      screen.getByText(
+        'Service.ShareableResources.Deploy.DeployHuntPackDescription'
+      )
+    ).toBeInTheDocument();
   });
 
   it('should only offer the OpenCTI platforms that meet the pack version', async () => {
@@ -74,7 +83,35 @@ describe('OneClickDeploy - version floor of a hunt pack', () => {
 
     await user.click(deployButton()!);
 
+    expect(
+      screen.getByText(
+        'Service.ShareableResources.Deploy.DeployHuntPackDescription'
+      )
+    ).toBeInTheDocument();
     expect(screen.getByLabelText('Production')).toBeDisabled();
     expect(screen.getByLabelText('Staging')).toBeEnabled();
+  });
+
+  it('should keep the shared deployment sentence for other resources', async () => {
+    const customDashboard = {
+      ...huntPack,
+      __typename: 'CustomDashboard',
+      type: 'opencti_custom_dashboard',
+    } as unknown as documentItem_fragment$data;
+    const { user } = renderWithPlatforms(
+      [
+        platform('production', 'Production', '7.261003.0'),
+        platform('staging', 'Staging', '7.261003.0'),
+      ],
+      customDashboard
+    );
+
+    await user.click(deployButton()!);
+
+    expect(
+      screen.getByText(
+        'Service.ShareableResources.Deploy.DeployResourceDescription'
+      )
+    ).toBeInTheDocument();
   });
 });

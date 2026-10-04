@@ -1,6 +1,6 @@
+import { useDeployResourceTitle } from '@/components/service/document/one-click-deploy/use-deploy-resource-title';
 import { cn } from '@/lib/utils';
 import { isEeCapableContract } from '@/utils/platform';
-import { SHAREABLE_RESOURCE_TYPE_NAME_MAPPING } from '@/utils/shareable-resources/shareable-resources.types';
 import { doesVersionSatisfy } from '@/utils/versioning';
 import {
   AutoForm,
@@ -45,19 +45,12 @@ const ChoosePlatformForm = ({
   requiresEe,
 }: ChoosePlatformFormProps) => {
   const t = useTranslations();
+  const title = useDeployResourceTitle(documentData);
 
   return (
     <div className="flex flex-col h-full justify-between gap-m">
       <div className="space-y-m">
-        <h1>
-          {t('Service.ShareableResources.Deploy.DeployResourceDescription', {
-            resourceName: documentData.name ?? '',
-            resourceType:
-              SHAREABLE_RESOURCE_TYPE_NAME_MAPPING[
-                documentData.type as keyof typeof SHAREABLE_RESOURCE_TYPE_NAME_MAPPING
-              ],
-          })}
-        </h1>
+        <h1>{title}</h1>
         <p>
           {t('Service.ShareableResources.Deploy.DeployQuestionTag', {
             platformType: translatedPlatformIdentifier,
