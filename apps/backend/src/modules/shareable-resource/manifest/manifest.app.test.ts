@@ -477,6 +477,74 @@ describe('manifestApp', () => {
         ]);
       });
 
+      it('keeps the file and returns the manifest when its save is committed but reports an error', async () => {
+        // Given a save whose commit is durable although it reports an error
+        await createConnectorDocument([TAG_LATEST]);
+        vi.spyOn(
+          ManifestDomain,
+          'deleteFromRebuildQueue'
+        ).mockRejectedValueOnce(
+          new Error('Connection terminated unexpectedly')
+        );
+        vi.spyOn(ManifestDomain, 'getManifestByName').mockImplementationOnce(
+          async (_product, _version, _type, name) => ({
+            name,
+            created_at: new Date(),
+          })
+        );
+
+        // When
+        const manifest = await ManifestApp.generateManifest(MANIFEST_KEY);
+
+        // Then
+        expect(manifest).not.toBeNull();
+        expect(ManifestHelper.deleteManifest).not.toHaveBeenCalled();
+      });
+
+      it('keeps the file when it cannot read whether a failed save was committed', async () => {
+        // Given a failed save, and a database that cannot be read afterwards
+        await createConnectorDocument([TAG_LATEST]);
+        vi.spyOn(
+          ManifestDomain,
+          'deleteFromRebuildQueue'
+        ).mockRejectedValueOnce(
+          new Error('Connection terminated unexpectedly')
+        );
+        vi.spyOn(ManifestDomain, 'getManifestByName').mockRejectedValueOnce(
+          new Error('Connection refused')
+        );
+
+        // When
+        const generation = ManifestApp.generateManifest(MANIFEST_KEY);
+
+        // Then
+        await expect(generation).rejects.toThrow(
+          'Connection terminated unexpectedly'
+        );
+        expect(ManifestHelper.deleteManifest).not.toHaveBeenCalled();
+      });
+
+      it('deletes the file of a save that was rolled back', async () => {
+        // Given
+        await createConnectorDocument([TAG_LATEST]);
+        vi.spyOn(
+          ManifestDomain,
+          'deleteFromRebuildQueue'
+        ).mockRejectedValueOnce(
+          new Error('Connection terminated unexpectedly')
+        );
+
+        // When
+        const generation = ManifestApp.generateManifest(MANIFEST_KEY);
+
+        // Then
+        await expect(generation).rejects.toThrow(
+          'Connection terminated unexpectedly'
+        );
+        expect(await TestHelper.manifest.loadAll({})).toEqual([]);
+        expect(ManifestHelper.deleteManifest).toHaveBeenCalledTimes(1);
+      });
+
       it('logs an error and still persists the manifest when no processing queue entry exists for the key', async () => {
         // Remove the Processing queue entry created in beforeEach so
         // deleteFromRebuildQueue really deletes 0 rows (no mocking).

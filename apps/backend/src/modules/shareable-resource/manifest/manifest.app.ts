@@ -337,13 +337,46 @@ export const ManifestApp = {
         claimId
       );
     } catch (error) {
-      await ManifestHelper.deleteManifest(minioFileName).catch(
-        (deleteError: unknown) =>
-          logApp.error('[MANIFEST] Failed to delete an unpublished manifest', {
-            minioFileName,
-            error: getErrorMessage(deleteError),
-          })
+      // A save that reports an error may still be committed (the connection can
+      // drop after COMMIT): the file is deleted only once the manifest is known
+      // not to be saved, and kept when that cannot be read.
+      const saved = await ManifestDomain.getManifestByName(
+        key.platformIdentifier,
+        key.version,
+        key.type,
+        manifest.manifest_version
+      ).then(
+        (savedManifest) => savedManifest !== undefined,
+        (readError: unknown) => {
+          logApp.error(
+            '[MANIFEST] Unable to read whether a manifest is saved',
+            {
+              minioFileName,
+              error: getErrorMessage(readError),
+            }
+          );
+          return undefined;
+        }
       );
+      if (saved) {
+        logApp.warn('[MANIFEST] Manifest saved although its save failed', {
+          minioFileName,
+          error: getErrorMessage(error),
+        });
+        return manifest;
+      }
+      if (saved === false) {
+        await ManifestHelper.deleteManifest(minioFileName).catch(
+          (deleteError: unknown) =>
+            logApp.error(
+              '[MANIFEST] Failed to delete an unpublished manifest',
+              {
+                minioFileName,
+                error: getErrorMessage(deleteError),
+              }
+            )
+        );
+      }
       throw error;
     }
 
