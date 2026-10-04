@@ -118,6 +118,7 @@ nav:
         - Custom Views library: libraries/opencti-custom-views.md
         - Integrations library: libraries/integrations.md
         - Playbooks library: libraries/opencti-playbooks.md
+        - Hunt packs library: libraries/opencti-hunt-packs.md
       - OpenAEV:
         - Connection: user/openaev-connection.md
         - Scenarios library: libraries/openaev-scenarios.md
