@@ -8,6 +8,7 @@ import {
   PlatformIdentifier,
 } from '../../../../__generated__/resolvers-types';
 import {
+  BATCH_SIZE,
   fromPaddedVersion,
   INTERNAL_HUNT_MINIMUM_VERSION,
   INTERNAL_HUNT_MINIMUM_VERSION_PADDED,
@@ -325,6 +326,62 @@ describe('apply_internal_hunt_minimum_deployable_version migration', () => {
       padded: '007.260811.000',
     });
     expect(await loadImageType(unknown)).toBe('custom-type');
+  });
+
+  it('rewrites and raises more hunt connectors than one batch holds', async () => {
+    // Given
+    const documentIds = Array.from(
+      { length: BATCH_SIZE + 1 },
+      () => uuidv4() as DocumentId
+    );
+    await TestHelper.document.createMany(
+      documentIds.map((id) => ({
+        id,
+        name: `hunt-floor-batch-${id}`,
+        slug: `hunt-floor-batch-${id}`,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        active: true,
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+      }))
+    );
+    await TestHelper.documentMetadata.createMany(
+      documentIds.flatMap((id) => [
+        {
+          document_id: id,
+          key: DocumentMetadataKeyCode.ImageType,
+          value: 'internal-hunt',
+        },
+        {
+          document_id: id,
+          key: DocumentMetadataKeyCode.MinimumDeployableVersion,
+          value: '7.261001.0',
+        },
+      ])
+    );
+
+    try {
+      // When
+      await up(db);
+
+      // Then
+      const rows =
+        await TestHelper.documentMetadata.loadAllByDocumentIds(documentIds);
+      const valuesOf = (key: DocumentMetadataKeyCode) =>
+        new Set(rows.filter((row) => row.key === key).map((row) => row.value));
+      expect(rows).toHaveLength(documentIds.length * 3);
+      expect(valuesOf(DocumentMetadataKeyCode.ImageType)).toEqual(
+        new Set(['INTERNAL_HUNT'])
+      );
+      expect(
+        valuesOf(DocumentMetadataKeyCode.MinimumDeployableVersion)
+      ).toEqual(new Set([INTERNAL_HUNT_MINIMUM_VERSION]));
+      expect(
+        valuesOf(DocumentMetadataKeyCode.MinimumDeployableVersionPadded)
+      ).toEqual(new Set([INTERNAL_HUNT_MINIMUM_VERSION_PADDED]));
+    } finally {
+      await TestHelper.documentMetadata.deleteByDocumentIds(documentIds);
+      await TestHelper.document.deleteByIds(documentIds);
+    }
   });
 
   describe('manifests published before the floor', () => {

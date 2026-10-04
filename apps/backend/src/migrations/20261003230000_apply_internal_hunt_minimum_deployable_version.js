@@ -19,22 +19,46 @@ export const normalizeConnectorType = (value) => {
   return OPENCTI_CONNECTOR_TYPES.includes(candidate) ? candidate : undefined;
 };
 
+// Bounds the bind parameters and the duration of every statement on a large catalog.
+export const BATCH_SIZE = 1000;
+
+const inBatches = (items) => {
+  const batches = [];
+  for (let start = 0; start < items.length; start += BATCH_SIZE) {
+    batches.push(items.slice(start, start + BATCH_SIZE));
+  }
+  return batches;
+};
+
+const upsertMetadataValues = async (knex, entries) => {
+  for (const batch of inBatches(entries)) {
+    await knex('Document_Metadata')
+      .insert(batch)
+      .onConflict(['document_id', 'key'])
+      .merge(['value']);
+  }
+};
+
 const canonicalizeConnectorTypes = async (knex) => {
   const rows = await knex('Document_Metadata')
     .select('document_id', 'value')
     .where({ key: 'image_type' });
+  const replacements = [];
   const huntConnectorIds = [];
   for (const row of rows) {
     const connectorType = normalizeConnectorType(row.value);
     if (connectorType && connectorType !== row.value) {
-      await knex('Document_Metadata')
-        .where({ document_id: row.document_id, key: 'image_type' })
-        .update({ value: connectorType });
+      replacements.push({
+        document_id: row.document_id,
+        key: 'image_type',
+        value: connectorType,
+      });
     }
     if (connectorType === 'INTERNAL_HUNT') {
       huntConnectorIds.push(row.document_id);
     }
   }
+  await upsertMetadataValues(knex, replacements);
   return huntConnectorIds;
 };
 
@@ -89,13 +113,18 @@ export const fromPaddedVersion = (padded) => {
  * connector that only stores the padded form gets its raw form decoded from it.
  */
 const applyHuntFloor = async (knex, huntConnectorIds) => {
-  const rows = await knex('Document_Metadata')
-    .select('document_id', 'key', 'value')
-    .whereIn('document_id', huntConnectorIds)
-    .whereIn('key', [
-      'minimum_deployable_version',
-      'minimum_deployable_version_padded',
-    ]);
+  const rows = [];
+  for (const batch of inBatches(huntConnectorIds)) {
+    rows.push(
+      ...(await knex('Document_Metadata')
+        .select('document_id', 'key', 'value')
+        .whereIn('document_id', batch)
+        .whereIn('key', [
+          'minimum_deployable_version',
+          'minimum_deployable_version_padded',
+        ]))
+    );
+  }
   const storedByDocumentId = new Map();
   for (const row of rows) {
     const stored = storedByDocumentId.get(row.document_id) ?? {};
@@ -130,14 +159,7 @@ const applyHuntFloor = async (knex, huntConnectorIds) => {
       }
     }
   }
-  if (updates.length === 0) {
-    return;
-  }
-
-  await knex('Document_Metadata')
-    .insert(updates)
-    .onConflict(['document_id', 'key'])
-    .merge(['value']);
+  await upsertMetadataValues(knex, updates);
 };
 
 /**
@@ -147,40 +169,47 @@ const applyHuntFloor = async (knex, huntConnectorIds) => {
  * (resumed at startup by ManifestApp.resumePendingRebuilds).
  */
 const withdrawStaleManifests = async (knex, huntConnectorIds) => {
-  const staleManifests = await knex('Manifest as manifest')
-    .join('Manifest_Document as link', 'link.manifest_id', 'manifest.id')
-    .whereIn('link.document_id', huntConnectorIds)
-    .andWhere(
-      'manifest.version_padded',
-      '<',
-      INTERNAL_HUNT_MINIMUM_VERSION_PADDED
-    )
-    .distinct(
-      'manifest.id',
-      'manifest.product',
-      'manifest.version',
-      'manifest.type'
-    );
-  if (staleManifests.length === 0) {
+  const staleManifestsById = new Map();
+  for (const batch of inBatches(huntConnectorIds)) {
+    const manifests = await knex('Manifest as manifest')
+      .join('Manifest_Document as link', 'link.manifest_id', 'manifest.id')
+      .whereIn('link.document_id', batch)
+      .andWhere(
+        'manifest.version_padded',
+        '<',
+        INTERNAL_HUNT_MINIMUM_VERSION_PADDED
+      )
+      .distinct(
+        'manifest.id',
+        'manifest.product',
+        'manifest.version',
+        'manifest.type'
+      );
+    for (const manifest of manifests) {
+      staleManifestsById.set(manifest.id, manifest);
+    }
+  }
+  if (staleManifestsById.size === 0) {
     return;
   }
 
   const rebuildKeys = new Map(
-    staleManifests.map(({ product, version, type }) => [
+    Array.from(staleManifestsById.values(), ({ product, version, type }) => [
       `${product}|${version}|${type}`,
       { product, version, type, status: 'pending' },
     ])
   );
-  await knex('ManifestRebuildQueue')
-    .insert(Array.from(rebuildKeys.values()))
-    .onConflict(['product', 'version', 'type', 'status'])
-    .ignore();
+  for (const batch of inBatches(Array.from(rebuildKeys.values()))) {
+    await knex('ManifestRebuildQueue')
+      .insert(batch)
+      .onConflict(['product', 'version', 'type', 'status'])
+      .ignore();
+  }
 
-  const staleManifestIds = staleManifests.map(({ id }) => id);
-  await knex('Manifest_Document')
-    .whereIn('manifest_id', staleManifestIds)
-    .delete();
-  await knex('Manifest').whereIn('id', staleManifestIds).delete();
+  for (const batch of inBatches(Array.from(staleManifestsById.keys()))) {
+    await knex('Manifest_Document').whereIn('manifest_id', batch).delete();
+    await knex('Manifest').whereIn('id', batch).delete();
+  }
 };
 
 /**
