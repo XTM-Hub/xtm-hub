@@ -21,15 +21,19 @@ const attackPattern = (id: string, mitreId: string, viaReference = false) => ({
     : { x_mitre_id: mitreId }),
 });
 
+const huntId = (index: number, type = 'hunt') =>
+  `${type}--00000000-0000-4000-8000-${String(index).padStart(12, '0')}`;
+
 const hunt = (
-  id: string,
+  index: number,
   techniqueRefs: string[] = [],
-  platforms: string[] = []
+  platforms: string[] = [],
+  type = 'hunt'
 ) => ({
-  type: 'hunt',
+  type,
   spec_version: '2.1',
-  id,
-  name: `Hunt ${id}`,
+  id: huntId(index, type),
+  name: `Hunt ${index}`,
   hypothesis: 'An adversary uses encoded PowerShell commands',
   technique_refs: techniqueRefs,
   native_queries: platforms.map((platform) => ({
@@ -52,16 +56,12 @@ describe('huntPackHelper.summarize', () => {
         attackPattern('attack-pattern--1', 'T1059.001'),
         attackPattern('attack-pattern--2', 'T1003', true),
         hunt(
-          'hunt--1',
+          1,
           ['attack-pattern--1', 'attack-pattern--2'],
           ['splunk', 'microsoft-sentinel']
         ),
-        hunt(
-          'hunt--2',
-          ['attack-pattern--1', 'attack-pattern--missing'],
-          ['splunk']
-        ),
-        { ...hunt('hunt--3'), type: 'x-opencti-hunt' },
+        hunt(2, ['attack-pattern--1', 'attack-pattern--missing'], ['splunk']),
+        hunt(3, [], [], 'x-opencti-hunt'),
         { type: 'identity', id: 'identity--1', name: 'Filigran' },
       ])
     );
@@ -77,11 +77,11 @@ describe('huntPackHelper.summarize', () => {
     const summary = HuntPackHelper.summarize(
       bundle([
         {
-          ...hunt('hunt--1'),
+          ...hunt(1),
           native_queries: { platform: 'splunk', language: 'spl', query: 'x' },
         },
         {
-          ...hunt('hunt--2'),
+          ...hunt(2),
           native_queries: [
             JSON.stringify({
               platform: 'elastic-security',
@@ -98,11 +98,7 @@ describe('huntPackHelper.summarize', () => {
 
   it('counts and checks a hunt listed twice once, as its last occurrence', () => {
     const summary = HuntPackHelper.summarize(
-      bundle([
-        { ...hunt('hunt--1'), name: '' },
-        hunt('hunt--1', [], ['splunk']),
-        hunt('hunt--2'),
-      ])
+      bundle([{ ...hunt(1), name: '' }, hunt(1, [], ['splunk']), hunt(2)])
     );
 
     expect(summary.huntCount).toBe(2);
@@ -111,11 +107,11 @@ describe('huntPackHelper.summarize', () => {
 
   it('accepts more hunt occurrences than the limit when the distinct hunts fit', () => {
     const hunts = Array.from({ length: HUNT_PACK_MAX_HUNTS }, (_, index) =>
-      hunt(`hunt--${index}`)
+      hunt(index)
     );
 
     expect(
-      HuntPackHelper.summarize(bundle([...hunts, hunt('hunt--0')])).huntCount
+      HuntPackHelper.summarize(bundle([...hunts, hunt(0)])).huntCount
     ).toBe(HUNT_PACK_MAX_HUNTS);
   });
 
@@ -123,7 +119,7 @@ describe('huntPackHelper.summarize', () => {
     const summary = HuntPackHelper.summarize(
       bundle([
         {
-          ...hunt('hunt--1'),
+          ...hunt(1),
           technique_refs: [42, null],
         },
       ])
@@ -146,7 +142,7 @@ describe('huntPackHelper.summarize', () => {
           x_mitre_id: 'invalid',
         },
         { type: 'malware', id: 'malware--1', x_mitre_id: 'T1566' },
-        hunt('hunt--1', [
+        hunt(1, [
           'attack-pattern--1',
           'attack-pattern--2',
           'attack-pattern--3',
@@ -165,7 +161,7 @@ describe('huntPackHelper.summarize', () => {
           ...attackPattern('attack-pattern--1', 'T1003', true),
           x_mitre_id: 'invalid',
         },
-        hunt('hunt--1', ['attack-pattern--1']),
+        hunt(1, ['attack-pattern--1']),
       ])
     );
 
@@ -195,17 +191,38 @@ describe('huntPackHelper.summarize', () => {
   it('rejects a bundle with a hunt the OpenCTI import refuses', () => {
     expect(() =>
       HuntPackHelper.summarize(
-        bundle([
-          hunt('hunt--1'),
-          { ...hunt('hunt--2'), sigma_rule: 'title: No detection' },
-        ])
+        bundle([hunt(1), { ...hunt(2), sigma_rule: 'title: No detection' }])
       )
     ).toThrow(BadRequestErrorCode.HuntPackInvalidHunt);
   });
 
+  it.each`
+    case                                       | id
+    ${'no identifier'}                         | ${undefined}
+    ${'a non text identifier'}                 | ${42}
+    ${'an identifier without UUID'}            | ${'hunt--1'}
+    ${'the identifier of another object type'} | ${huntId(2, 'attack-pattern')}
+    ${'the identifier of the other hunt type'} | ${huntId(2, 'x-opencti-hunt')}
+  `('rejects a bundle with a hunt that has $case', ({ id }) => {
+    expect(() =>
+      HuntPackHelper.summarize(bundle([hunt(1), { ...hunt(2), id }, hunt(3)]))
+    ).toThrow(BadRequestErrorCode.HuntPackInvalidBundle);
+  });
+
+  it('rejects hunts without identifier instead of counting them as one', () => {
+    expect(() =>
+      HuntPackHelper.summarize(
+        bundle([
+          { ...hunt(1), id: undefined },
+          { ...hunt(2), id: undefined },
+        ])
+      )
+    ).toThrow(BadRequestErrorCode.HuntPackInvalidBundle);
+  });
+
   it('rejects a bundle with more hunts than an OpenCTI import accepts', () => {
     const hunts = Array.from({ length: HUNT_PACK_MAX_HUNTS + 1 }, (_, index) =>
-      hunt(`hunt--${index}`)
+      hunt(index)
     );
 
     expect(() => HuntPackHelper.summarize(bundle(hunts))).toThrow(
@@ -215,7 +232,7 @@ describe('huntPackHelper.summarize', () => {
 
   it('accepts the largest hunt pack an OpenCTI import accepts', () => {
     const hunts = Array.from({ length: HUNT_PACK_MAX_HUNTS }, (_, index) =>
-      hunt(`hunt--${index}`)
+      hunt(index)
     );
 
     expect(HuntPackHelper.summarize(bundle(hunts)).huntCount).toBe(

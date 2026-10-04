@@ -81,4 +81,45 @@ describe('documentUploadsHelper', () => {
     expect(result).toEqual([storedFile('pack.json')]);
     expect(deleteFile).not.toHaveBeenCalled();
   });
+
+  it('removes the file a committed update replaced', async () => {
+    const deleteFile = vi
+      .spyOn(MinIOClient, 'deleteFile')
+      .mockResolvedValue(undefined);
+
+    await DocumentUploadsHelper.deleteReplacedFile(
+      { minio_name: 'previous.json' },
+      { minio_name: 'replacement.json' }
+    );
+
+    expect(deleteFile).toHaveBeenCalledExactlyOnceWith('previous.json');
+  });
+
+  it.each`
+    case                                 | previous       | current
+    ${'the update kept the same file'}   | ${'pack.json'} | ${'pack.json'}
+    ${'the document had no file before'} | ${null}        | ${'pack.json'}
+  `('keeps every file when $case', async ({ previous, current }) => {
+    const deleteFile = vi.spyOn(MinIOClient, 'deleteFile');
+
+    await DocumentUploadsHelper.deleteReplacedFile(
+      { minio_name: previous },
+      { minio_name: current }
+    );
+
+    expect(deleteFile).not.toHaveBeenCalled();
+  });
+
+  it('does not fail a committed update when the replaced file cannot be removed', async () => {
+    vi.spyOn(MinIOClient, 'deleteFile').mockRejectedValue(
+      new Error('STORAGE_UNAVAILABLE')
+    );
+
+    await expect(
+      DocumentUploadsHelper.deleteReplacedFile(
+        { minio_name: 'previous.json' },
+        { minio_name: 'replacement.json' }
+      )
+    ).resolves.toBeUndefined();
+  });
 });

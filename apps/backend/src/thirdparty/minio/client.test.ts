@@ -57,6 +57,41 @@ describe('minIOClient.sendFile', () => {
     expect(insertFile).not.toHaveBeenCalled();
   });
 
+  it('stops reading the source of a file refused for its size', async () => {
+    vi.spyOn(MinIOClient, 'insertFile').mockResolvedValue('stored-key');
+    const source = Readable.from(
+      (function* () {
+        yield Buffer.from('{"padding":"');
+        for (let index = 0; index < 1000; index += 1) {
+          yield Buffer.from('x'.repeat(32));
+        }
+      })()
+    );
+
+    const call = sendFile(
+      { ...uploadedFile(''), createReadStream: () => source },
+      { limit }
+    );
+
+    await expect(call).rejects.toThrow(limit.errorCode);
+    await vi.waitFor(() => expect(source.destroyed).toBe(true));
+  });
+
+  it('reports an error of the source of a limited upload', async () => {
+    const source = new Readable({
+      read() {
+        this.destroy(new Error('UPLOAD_ABORTED'));
+      },
+    });
+
+    const call = sendFile(
+      { ...uploadedFile(''), createReadStream: () => source },
+      { limit }
+    );
+
+    await expect(call).rejects.toThrow('UPLOAD_ABORTED');
+  });
+
   it('reads a file as JSON whatever media type the browser declared when the library expects JSON', async () => {
     const insertFile = vi
       .spyOn(MinIOClient, 'insertFile')

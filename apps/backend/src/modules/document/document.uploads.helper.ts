@@ -74,6 +74,27 @@ export const DocumentUploadsHelper = {
   },
 
   /**
+   * Best-effort removal of the file a committed update replaced. Every upload
+   * is stored under its own key, so no other document refers to it.
+   */
+  deleteReplacedFile: async (
+    previous: { minio_name: string | null },
+    current: { minio_name: string | null }
+  ) => {
+    if (!previous.minio_name || previous.minio_name === current.minio_name) {
+      return;
+    }
+    try {
+      await MinIOClient.deleteFile(previous.minio_name);
+    } catch (error) {
+      logApp.error('[DOCUMENT] Unable to delete the file an update replaced', {
+        minioName: previous.minio_name,
+        error: getErrorMessage(error),
+      });
+    }
+  },
+
+  /**
    * Runs a request with an uploader that records every stored file, and
    * removes them all when the request fails, so it leaves no file behind.
    */

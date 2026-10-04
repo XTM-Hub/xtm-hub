@@ -224,8 +224,9 @@ const limitStreamSize = (
       );
     },
   });
-  stream.on('error', (error) => limited.destroy(error));
-  return stream.pipe(limited);
+  // pipeline destroys both streams when either fails; the reader of
+  // `limited` receives the error, so the callback has nothing left to do.
+  return Stream.pipeline(stream, limited, () => undefined);
 };
 
 const readStreamText = async (stream: Stream.Readable): Promise<string> => {

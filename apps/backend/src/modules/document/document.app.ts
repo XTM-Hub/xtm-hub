@@ -484,6 +484,10 @@ export const DocumentApp = {
         });
       }
     );
+    await DocumentUploadsHelper.deleteReplacedFile(
+      documentBeforeUpdate,
+      updatedDocument
+    );
 
     void NewsFeedApp.upsertResourceNewsFeed({
       documentBeforeUpdate,

@@ -150,7 +150,7 @@ describe('documentApp', () => {
         },
         {
           type: 'hunt',
-          id: 'hunt--1',
+          id: 'hunt--3f9b2a64-8d1c-4e57-9a0b-6c2d1e4f5a73',
           name: 'Encoded PowerShell',
           technique_refs: ['attack-pattern--1'],
           native_queries: [
@@ -314,6 +314,44 @@ describe('documentApp', () => {
           json: true,
           limit: expect.objectContaining({ maxBytes: 20 * 1024 * 1024 }),
         })
+      );
+    });
+
+    it('should delete the previous hunt pack file once its replacement is committed', async () => {
+      // Given a hunt pack stored with a first file
+      const storePackAs = (minioName: string) =>
+        vi
+          .spyOn(DocumentUploadsHelper, 'processUploads')
+          .mockImplementation(async (uploads) =>
+            uploads ? [{ ...huntPackFile(huntPackContent), minioName }] : []
+          );
+      const metadata = [
+        { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+      ];
+      const slug = `replaced-pack-${uuidv4()}`;
+      storePackAs('previous-pack.json');
+      const huntPack = await DocumentApp.createDocument({
+        input: { ...documentData, slug },
+        metadata,
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        sourceDocument: mockUpload,
+      });
+      storePackAs('replacement-pack.json');
+
+      // When its file is replaced
+      const result = await DocumentApp.updateDocument({
+        parentDocumentId: huntPack.id,
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        metadata,
+        input: { ...documentData, slug },
+        existingImageIds: [],
+        sourceDocument: mockUpload,
+      });
+
+      // Then the document points to the new file and only the previous one is deleted
+      expect(result.minio_name).toBe('replacement-pack.json');
+      expect(MinIOClient.deleteFile).toHaveBeenCalledExactlyOnceWith(
+        'previous-pack.json'
       );
     });
   });

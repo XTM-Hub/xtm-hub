@@ -1,3 +1,4 @@
+import { validate as isUuid } from 'uuid';
 import {
   DocumentMetadataKeyCode,
   DocumentMetadata as DocumentMetadataResolverType,
@@ -35,6 +36,17 @@ export interface HuntPackSummary {
 
 const isRecord = (value: unknown): value is StixObject =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/** A STIX 2.1 identifier: the object type, then `--` and a UUID. */
+const hasStixIdentifier = (
+  object: StixObject
+): object is StixObject & { id: string } => {
+  if (typeof object.id !== 'string' || typeof object.type !== 'string') {
+    return false;
+  }
+  const prefix = `${object.type}--`;
+  return object.id.startsWith(prefix) && isUuid(object.id.slice(prefix.length));
+};
 
 const toAttackTechniqueId = (value: unknown) => {
   const id = typeof value === 'string' ? value.trim().toUpperCase() : '';
@@ -87,17 +99,18 @@ export const HuntPackHelper = {
       throw new Error(BadRequestErrorCode.HuntPackInvalidBundle);
     }
     const objects = content.objects.filter(isRecord);
+    const huntObjects = objects.filter(
+      (object) =>
+        typeof object.type === 'string' && HUNT_STIX_TYPES.includes(object.type)
+    );
+    // OpenCTI identifies the hunts of a pack by their STIX identifier
+    if (!huntObjects.every(hasStixIdentifier)) {
+      logApp.info('[HUNT_PACK] Hunt without a valid STIX identifier refused');
+      throw new Error(BadRequestErrorCode.HuntPackInvalidBundle);
+    }
     // A hunt listed twice is imported once by OpenCTI, as its last occurrence
     const hunts = Array.from(
-      new Map(
-        objects
-          .filter(
-            (object) =>
-              typeof object.type === 'string' &&
-              HUNT_STIX_TYPES.includes(object.type)
-          )
-          .map((hunt) => [hunt.id, hunt])
-      ).values()
+      new Map(huntObjects.map((hunt) => [hunt.id, hunt])).values()
     );
     if (hunts.length === 0) {
       throw new Error(BadRequestErrorCode.HuntPackEmpty);
