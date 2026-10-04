@@ -27,6 +27,7 @@ export const PULSE_TABLES = [
   'PulseKey',
   'PulseDailyAggregate',
   'PulseContribution',
+  'PulseBatch',
   'PulsePlatform',
   'PulseSalt',
 ] as const;

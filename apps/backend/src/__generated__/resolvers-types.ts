@@ -2129,6 +2129,8 @@ export type PulseTrendingResult = {
 };
 
 export type PushPulseInput = {
+  /** Random UUID the platform draws once per batch and sends again on every retry: a batch already recorded is answered with its first result and counted once */
+  batch_id: Scalars['String']['input'];
   /** Salt day used for every hash of the batch (today or yesterday, UTC) */
   day: Scalars['String']['input'];
   /** 1..5000 records, (hash, object_type, event_kind) unique inside a batch */

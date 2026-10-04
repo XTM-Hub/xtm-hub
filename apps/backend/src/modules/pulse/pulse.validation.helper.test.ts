@@ -18,6 +18,7 @@ const NOW = new Date('2026-10-03T12:00:00.000Z');
 const TODAY = '2026-10-03';
 const YESTERDAY = '2026-10-02';
 const HASH_A = '9913881f71e8c61c79d05b20cf144d42';
+const BATCH_ID = '3f0c6a2e-8d4b-4c1e-9a77-2b5d1e8f6c40';
 const HASH_B = '541df1cb0fe4d5b0a879c3ead7dcde0f';
 
 const makeRecord = (
@@ -33,6 +34,7 @@ const makeRecord = (
 const makePushInput = (
   overrides: Partial<PushPulseInput> = {}
 ): PushPulseInput => ({
+  batch_id: BATCH_ID,
   day: TODAY,
   sector_bucket: PulseSectorBucket.Finance,
   region_bucket: PulseRegionBucket.Europe,
@@ -99,7 +101,18 @@ describe('pulseValidation', () => {
       const validated = PulseValidation.pushInput(input, NOW);
 
       // Then
-      expect(validated).toBe(input);
+      expect(validated).toEqual(input);
+    });
+
+    it('should spell the batch id of a retry in lower case', () => {
+      // When
+      const validated = PulseValidation.pushInput(
+        makePushInput({ batch_id: BATCH_ID.toUpperCase() }),
+        NOW
+      );
+
+      // Then
+      expect(validated.batch_id).toBe(BATCH_ID);
     });
 
     it.each([
@@ -173,6 +186,14 @@ describe('pulseValidation', () => {
         input: makePushInput({
           sector_bucket: 'acme_corp' as PulseSectorBucket,
         }),
+      },
+      {
+        description: 'a batch id that is not a UUID',
+        input: makePushInput({ batch_id: 'batch-1' }),
+      },
+      {
+        description: 'an empty batch id',
+        input: makePushInput({ batch_id: '' }),
       },
     ])('should reject $description with BAD_USER_INPUT', ({ input }) => {
       // When

@@ -112,9 +112,10 @@ export const PULSE_PLATFORMS_BUCKETS: readonly {
 ];
 export const PULSE_BELOW_SMALLEST_BUCKET_LABEL = '<5';
 
-// Bumped whenever the publication rules change (suppression, coarsening):
-// trending snapshots computed under another version are recomputed.
-export const PULSE_PUBLICATION_POLICY_VERSION = 4;
+// Bumped whenever the publication rules change (suppression, coarsening,
+// ordering): trending and digest snapshots computed under another version are
+// recomputed.
+export const PULSE_PUBLICATION_POLICY_VERSION = 5;
 
 export const PULSE_PREVALENCE_RARE_BELOW = 0.02;
 export const PULSE_PREVALENCE_UNCOMMON_BELOW = 0.1;

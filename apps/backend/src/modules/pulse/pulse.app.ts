@@ -329,7 +329,7 @@ const recordContributions = async ({
   pseudonym: string;
   input: PushPulseInput;
   records: readonly PulseLedgerRecord[];
-}): Promise<void> => {
+}): Promise<{ accepted: number; duplicate: boolean }> => {
   const {
     day,
     sector_bucket: sectorBucket,
@@ -341,6 +341,17 @@ const recordContributions = async ({
     regionBucket,
     day,
   });
+  // In the same transaction as the counts: a retry of a batch whose response
+  // was lost gets its first result and changes nothing.
+  const batch = await PulseDomain.recordBatch({
+    platformId,
+    batchId: input.batch_id,
+    day,
+    accepted: records.length,
+  });
+  if (!batch.recorded) {
+    return { accepted: batch.accepted, duplicate: true };
+  }
   const existingTupleKeys = await PulseDomain.loadExistingTupleKeys({
     platformId,
     day,
@@ -377,6 +388,7 @@ const recordContributions = async ({
     regionBucket,
     totals: aggregation.totals,
   });
+  return { accepted: records.length, duplicate: false };
 };
 
 const computeTrendingItems = async ({
@@ -778,17 +790,19 @@ export const PulseApp = {
           c: record.count,
         }))
       );
-      await withPlatformLock(caller.pseudonym, () =>
+      const result = await withPlatformLock(caller.pseudonym, () =>
         recordContributions({
           pseudonym: caller.pseudonym,
           input: validated,
           records,
         })
       );
-      for (const record of records) {
-        pulseRecordsAcceptedCounter.inc({ object_type: record.t });
+      if (!result.duplicate) {
+        for (const record of records) {
+          pulseRecordsAcceptedCounter.inc({ object_type: record.t });
+        }
       }
-      return { accepted: records.length, day: validated.day };
+      return { accepted: result.accepted, day: validated.day };
     }),
 
   pulseLookup: (
@@ -1006,7 +1020,10 @@ export const PulseApp = {
         saltCache.delete(day);
       }
     }
-    logApp.info('[Pulse] Expired salts cleaned', { deleted, cutoff });
+    // A batch can no longer be pushed once the salt of its day is gone: its
+    // receipt goes with it.
+    const batches = await PulseDomain.deleteBatchesBefore(cutoff);
+    logApp.info('[Pulse] Expired salts cleaned', { deleted, batches, cutoff });
     return deleted;
   },
 

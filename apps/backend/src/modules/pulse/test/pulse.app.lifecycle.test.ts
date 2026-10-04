@@ -383,6 +383,29 @@ describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
         '2027-03-10',
       ]);
     });
+
+    it('should delete the batch receipts with the salt of their day', async () => {
+      // Given
+      const [client] = await registerPulseClients(1);
+      await client!.push({ day: PULSE_TEST_TODAY, records: [malware(LOCKBIT)] });
+      const pushed = await TestHelper.pulse.countRows('PulseBatch');
+
+      // When
+      await PulseApp.cleanExpiredSalts(
+        new Date(`${PulseDay.addDays(PULSE_TEST_TODAY, 2)}T00:05:00.000Z`)
+      );
+      const kept = await TestHelper.pulse.countRows('PulseBatch');
+      await PulseApp.cleanExpiredSalts(
+        new Date(`${PulseDay.addDays(PULSE_TEST_TODAY, 3)}T00:05:00.000Z`)
+      );
+
+      // Then
+      expect({
+        pushed,
+        kept,
+        deleted: await TestHelper.pulse.countRows('PulseBatch'),
+      }).toEqual({ pushed: 1, kept: 1, deleted: 0 });
+    });
   });
 
   describe('cleanRateLimitBuckets', () => {

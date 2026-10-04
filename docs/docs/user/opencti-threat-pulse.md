@@ -20,6 +20,7 @@ Every hour, a contributing OpenCTI platform sends one batch per UTC day with:
 | `event_kind` | `created`, `sighted`, `detected`, `hunted` or `referenced`. |
 | `count` | How many such events the platform recorded that day. |
 | `sector_bucket`, `region_bucket` | Coarse buckets chosen by the administrator (for example `finance`, `europe`), or `undisclosed`. |
+| `batch_id` | A random UUID drawn for the batch and sent again when the platform retries it. XTM Hub answers a batch it already recorded with its first result and counts it once, so a retry after a lost response never inflates the counts. It is kept as long as the salt of its day, then deleted. |
 
 The batch schema accepts no other field: XTM Hub rejects any batch that carries anything else.
 
@@ -42,7 +43,7 @@ Objects marked `TLP:RED`, `TLP:AMBER+STRICT` or `PAP:RED`, objects with restrict
 
 `pulseSalt` and `pulseDigest` answer every connected platform, contributing or not. The digest is a download: the request carries the day and the coarse sector and region buckets of the platform, nothing about its objects. It holds:
 
-- the `PULSE_DIGEST_SIZE` objects (5,000 by default) that the most distinct platforms reported over the last 30 days, `k` platforms at least, each as a hash under the salt of the day with its community prevalence and its trend only;
+- the `PULSE_DIGEST_SIZE` objects (5,000 by default) in the widest platforms ranges over the last 30 days, `k` platforms at least, each as a hash under the salt of the day with its community prevalence and its trend only. Objects are chosen and listed by platforms range (5-9, 10-24, ...), then by hash: the order never tells which of two objects of one range more platforms reported;
 - the trending list of the sector (and region) over the last 7 days: the first 3 ranks as hashes with their prevalence and trend, the next ones (up to rank 10) as a count only.
 
 OpenCTI computes the hashes of its own objects locally, matches them against the digest and shows the result as the Threat Pulse preview. Nothing is sent back.

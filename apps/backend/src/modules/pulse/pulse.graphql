@@ -82,6 +82,8 @@ input PulseRecordInput {
 }
 
 input PushPulseInput {
+  "Random UUID the platform draws once per batch and sends again on every retry: a batch already recorded is answered with its first result and counted once"
+  batch_id: String!
   "Salt day used for every hash of the batch (today or yesterday, UTC)"
   day: String!
   sector_bucket: PulseSectorBucket!

@@ -80,6 +80,46 @@ export const PulseDomain = {
   },
   // endregion
 
+  // region Batches
+  // Records the batch of the platform, or answers how many records it accepted
+  // the first time when the platform already pushed it.
+  recordBatch: async ({
+    platformId,
+    batchId,
+    day,
+    accepted,
+  }: {
+    platformId: number;
+    batchId: string;
+    day: string;
+    accepted: number;
+  }): Promise<{ recorded: boolean; accepted: number }> => {
+    const inserted = await query<{ accepted: number }>(
+      `INSERT INTO "PulseBatch" (pulse_platform_id, batch_id, day, accepted)
+       VALUES (?, ?::uuid, ?::date, ?)
+       ON CONFLICT (pulse_platform_id, batch_id) DO NOTHING
+       RETURNING accepted`,
+      [platformId, batchId, day, accepted]
+    );
+    if (inserted.length > 0) {
+      return { recorded: true, accepted };
+    }
+    const [existing] = await query<{ accepted: number }>(
+      'SELECT accepted FROM "PulseBatch" WHERE pulse_platform_id = ? AND batch_id = ?::uuid',
+      [platformId, batchId]
+    );
+    return { recorded: false, accepted: existing?.accepted ?? 0 };
+  },
+
+  deleteBatchesBefore: async (day: string): Promise<number> => {
+    const rows = await query<{ batch_id: string }>(
+      'DELETE FROM "PulseBatch" WHERE day < ?::date RETURNING batch_id::text AS batch_id',
+      [day]
+    );
+    return rows.length;
+  },
+  // endregion
+
   // region Platforms
   loadPlatformByPseudonym: async (
     pseudonym: string
@@ -617,9 +657,11 @@ export const PulseDomain = {
   // endregion
 
   // region Digest
-  // The `limit` keys of the network that the most distinct platforms reported
-  // over the activity window, k at least, with their distinct platforms per
-  // week over the trend baseline (newest week first).
+  // The `limit` keys of the network in the widest platforms ranges over the
+  // activity window, k platforms at least, with their distinct platforms per
+  // week over the trend baseline (newest week first). Selected and ordered by
+  // platforms range, then by key: the order never tells which of two keys of
+  // one range more platforms reported.
   loadDigestCandidates: async ({
     day,
     kThreshold,
@@ -633,14 +675,20 @@ export const PulseDomain = {
     const rows = await query<
       PulseKeyRef & { in_window: number; weeks: [number, number][] }
     >(
-      `WITH top AS (
+      `WITH counted AS (
          SELECT c.at_rest_key, c.object_type,
                 COUNT(DISTINCT c.pulse_platform_id)::int AS in_window
          FROM "PulseContribution" c
          WHERE c.day > ?::date - ?::int AND c.day <= ?::date
          GROUP BY c.at_rest_key, c.object_type
          HAVING COUNT(DISTINCT c.pulse_platform_id) >= ?
-         ORDER BY in_window DESC, c.at_rest_key, c.object_type
+       ),
+       top AS (
+         SELECT counted.*,
+                (SELECT COUNT(*) FROM jsonb_array_elements_text(?::jsonb) AS bucket(min)
+                 WHERE counted.in_window >= bucket.min::int)::int AS platforms_range
+         FROM counted
+         ORDER BY platforms_range DESC, counted.at_rest_key, counted.object_type
          LIMIT ?
        ),
        weekly AS (
@@ -659,13 +707,14 @@ export const PulseDomain = {
               ) AS weeks
        FROM top
        LEFT JOIN weekly w ON w.at_rest_key = top.at_rest_key AND w.object_type = top.object_type
-       GROUP BY top.at_rest_key, top.object_type, top.in_window
-       ORDER BY top.in_window DESC, top.at_rest_key, top.object_type`,
+       GROUP BY top.at_rest_key, top.object_type, top.in_window, top.platforms_range
+       ORDER BY top.platforms_range DESC, top.at_rest_key, top.object_type`,
       [
         day,
         PULSE_ACTIVITY_WINDOW_DAYS,
         day,
         kThreshold,
+        JSON.stringify(PULSE_PLATFORMS_BUCKETS.map((bucket) => bucket.min)),
         limit,
         day,
         PULSE_DAYS_PER_WEEK,

@@ -1,5 +1,6 @@
 import { ApolloServer } from '@apollo/server';
 import express from 'express';
+import { randomUUID } from 'node:crypto';
 import type { GraphQLFormattedError } from 'graphql';
 import { vi } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
@@ -192,6 +193,8 @@ export interface PulsePushOptions {
   records: readonly PulseTestRecord[];
   sector?: PulseSectorBucket;
   region?: PulseRegionBucket;
+  // A new batch unless given: a retry sends the id of the batch again.
+  batchId?: string;
 }
 
 export interface PulseLookupOptions {
@@ -239,6 +242,7 @@ export const pulseClient = (platform: TestPulsePlatform) => {
     records,
     sector = PulseSectorBucket.Finance,
     region = PulseRegionBucket.Europe,
+    batchId = randomUUID(),
   }: PulsePushOptions): Promise<
     PulseOperationResult<{ pushPulse: PushPulseResult }>
   > => {
@@ -247,6 +251,7 @@ export const pulseClient = (platform: TestPulsePlatform) => {
       query: PUSH_PULSE_MUTATION,
       variables: {
         input: {
+          batch_id: batchId,
           day,
           sector_bucket: sector,
           region_bucket: region,

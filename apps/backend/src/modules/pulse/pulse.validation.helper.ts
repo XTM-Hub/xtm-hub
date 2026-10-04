@@ -79,6 +79,9 @@ const assertHash = (name: string, hash: string): void => {
   }
 };
 
+const BATCH_ID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
 const assertPeriod = (period: string): void => {
   if (!Object.hasOwn(PULSE_PERIOD_DAYS, period)) {
     throw PulseErrors.badUserInput('period has an unsupported value');
@@ -101,6 +104,12 @@ export const PulseValidation = {
   },
 
   pushInput: (input: PushPulseInput, now: Date): PushPulseInput => {
+    // One spelling per batch: a retry in another case is still the same batch.
+    const batchId =
+      typeof input.batch_id === 'string' ? input.batch_id.toLowerCase() : '';
+    if (!BATCH_ID_PATTERN.test(batchId)) {
+      throw PulseErrors.badUserInput('batch_id must be a UUID');
+    }
     PulseValidation.requestDay(input.day, now);
     assertEnum('sector_bucket', input.sector_bucket, SECTOR_BUCKETS);
     assertEnum('region_bucket', input.region_bucket, REGION_BUCKETS);
@@ -137,7 +146,7 @@ export const PulseValidation = {
       }
       seen.add(uniqueKey);
     });
-    return input;
+    return { ...input, batch_id: batchId };
   },
 
   lookupInput: (input: PulseLookupInput, now: Date): PulseLookupInput => {

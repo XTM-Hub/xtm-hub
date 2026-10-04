@@ -32,6 +32,7 @@ import {
 const IP_VALUE = 'observable:ipv4-addr:value:198.51.100.7';
 const CVE_VALUE = 'CVE-2024-3400';
 const VALID_HASH = '9913881f71e8c61c79d05b20cf144d42';
+const BATCH_ID = '3f0c6a2e-8d4b-4c1e-9a77-2b5d1e8f6c40';
 
 const registerClient = async (
   options?: Parameters<typeof TestHelper.pulse.registerPlatform>[0]
@@ -330,6 +331,61 @@ describe('pulseApp platform API', PULSE_INTEGRATION_SUITE, () => {
       ]);
     });
 
+    it('should count a retried batch once and answer it with its first result', async () => {
+      // Given a batch the Hub recorded, whose response the platform never received
+      const client = await registerClient();
+      const records = [
+        { objectType: PulseObjectType.Indicator, value: IP_VALUE, count: 2 },
+        { objectType: PulseObjectType.Vulnerability, value: CVE_VALUE },
+      ];
+      const first = await client.push({
+        day: PULSE_TEST_TODAY,
+        records,
+        batchId: BATCH_ID,
+      });
+      const before = {
+        aggregates: await TestHelper.pulse.loadDailyAggregates(),
+        contributions: await TestHelper.pulse.countRows('PulseContribution'),
+      };
+
+      // When it pushes the same batch again, its id in another case
+      const retry = await client.push({
+        day: PULSE_TEST_TODAY,
+        records,
+        batchId: BATCH_ID.toUpperCase(),
+      });
+
+      // Then
+      expect({
+        first,
+        retry,
+        aggregates: await TestHelper.pulse.loadDailyAggregates(),
+        contributions: await TestHelper.pulse.countRows('PulseContribution'),
+      }).toEqual({
+        first: { accepted: 2, day: PULSE_TEST_TODAY },
+        retry: { accepted: 2, day: PULSE_TEST_TODAY },
+        ...before,
+      });
+    });
+
+    it('should reject a batch without a UUID batch_id', async () => {
+      // Given
+      const client = await registerClient();
+
+      // When
+      const result = await client.pushResult({
+        day: PULSE_TEST_TODAY,
+        records: [{ objectType: PulseObjectType.Indicator, value: IP_VALUE }],
+        batchId: 'batch-1',
+      });
+
+      // Then
+      expect({
+        codes: errorCodes(result),
+        stored: await TestHelper.pulse.countRows('PulseContribution'),
+      }).toEqual({ codes: [PulseErrorCode.BadUserInput], stored: 0 });
+    });
+
     it('should count every distinct platform in the daily aggregate', async () => {
       // Given
       const first = await registerClient();
@@ -507,6 +563,7 @@ describe('pulseApp platform API', PULSE_INTEGRATION_SUITE, () => {
         query: PUSH_PULSE_MUTATION,
         variables: {
           input: {
+            batch_id: BATCH_ID,
             day: PULSE_TEST_TODAY,
             sector_bucket: PulseSectorBucket.Finance,
             region_bucket: PulseRegionBucket.Europe,
@@ -543,7 +600,7 @@ describe('pulseApp platform API', PULSE_INTEGRATION_SUITE, () => {
       const result = await executePulse({
         query: `mutation {
           pushPulse(input: {
-            day: "${PULSE_TEST_TODAY}", sector_bucket: finance, region_bucket: europe,
+            batch_id: "${BATCH_ID}", day: "${PULSE_TEST_TODAY}", sector_bucket: finance, region_bucket: europe,
             records: [{ hash: "${VALID_HASH}", object_type: indicator, event_kind: created, count: 1, value: "198.51.100.7" }]
           }) { accepted day }
         }`,

@@ -107,8 +107,8 @@ describe(
         });
       });
 
-      it('should keep the digest within PULSE_DIGEST_SIZE, most prevalent keys first', async () => {
-        // Given a digest of 100 keys at most and 101 published keys
+      it('should keep the digest within PULSE_DIGEST_SIZE, the keys of the widest platforms range first', async () => {
+        // Given a digest of 100 keys at most and 101 published keys, one of them in the 10-24 range
         const config = PulseConfig.get();
         if (!config.enabled) {
           throw new Error('Threat Pulse must be enabled in tests');
@@ -117,7 +117,7 @@ describe(
           ...config,
           settings: { ...config.settings, digestSize: 100 },
         });
-        const clients = await registerPulseClients(6);
+        const clients = await registerPulseClients(10);
         const families = Array.from({ length: 100 }, (_, i) => `family-${i}`);
         await pushFromEach(clients.slice(0, 5), {
           day: PULSE_TEST_TODAY,
@@ -125,7 +125,7 @@ describe(
         });
         await pushFromEach(clients, {
           day: PULSE_TEST_TODAY,
-          records: [malware('six-reporters')],
+          records: [malware('ten-reporters')],
         });
 
         // When
@@ -134,8 +134,38 @@ describe(
         // Then
         expect(digest.items).toHaveLength(100);
         expect(digest.items[0]?.hash).toBe(
-          await clients[0]!.hash(PULSE_TEST_TODAY, MALWARE, 'six-reporters')
+          await clients[0]!.hash(PULSE_TEST_TODAY, MALWARE, 'ten-reporters')
         );
+      });
+
+      it('should order the keys of one platforms range by key, never by their exact count', async () => {
+        // Given 'alpha' and 'beta' in the 5-9 range, reported by six and five platforms, then the other way round
+        const orderOf = async (six: string, five: string) => {
+          const clients = await registerPulseClients(6);
+          await pushFromEach(clients, {
+            day: PULSE_TEST_TODAY,
+            records: [malware(six)],
+          });
+          await pushFromEach(clients.slice(0, 5), {
+            day: PULSE_TEST_TODAY,
+            records: [malware(five)],
+          });
+          const alpha = await clients[0]!.hash(PULSE_TEST_TODAY, MALWARE, 'alpha');
+          const digest = await clients[0]!.digest({ day: PULSE_TEST_TODAY });
+          const order = digest.items.map(({ hash }) =>
+            hash === alpha ? 'alpha' : 'beta'
+          );
+          await cleanPulseState();
+          return order;
+        };
+
+        // When
+        const alphaSix = await orderOf('alpha', 'beta');
+        const betaSix = await orderOf('beta', 'alpha');
+
+        // Then the order does not tell which key more platforms reported
+        expect(alphaSix).toHaveLength(2);
+        expect(betaSix).toEqual(alphaSix);
       });
 
       it('should forget a purged platform at once', async () => {
