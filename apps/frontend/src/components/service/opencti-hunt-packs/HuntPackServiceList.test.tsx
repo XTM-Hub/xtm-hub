@@ -3,7 +3,8 @@ import { portalGraphqlClient } from '@/lib/graphql-client';
 import testRender from '@/utils/test/test-render';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import { useHuntPackDocumentsQuery } from '@graphql/generated';
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@graphql/generated', async (importOriginal) => ({
@@ -113,20 +114,38 @@ describe('HuntPackServiceList', () => {
     expect(screen.getByTestId('pagination')).toHaveTextContent('2');
   });
 
-  it('shows no list while the first page loads', () => {
+  it('shows card placeholders in the shape of the list while the first page loads', () => {
     mockQuery({ data: undefined, isPending: true, isError: false });
 
     renderList();
 
+    const placeholders = screen.getByRole('list', { name: 'Utils.Loading' });
+    expect(placeholders).toHaveAttribute('aria-busy', 'true');
+    expect(within(placeholders).getAllByRole('listitem')).toHaveLength(6);
     expect(screen.queryByTestId('active')).not.toBeInTheDocument();
   });
 
-  it('shows an error message when the hunt packs cannot be read', () => {
-    mockQuery({ data: undefined, isPending: false, isError: true });
+  it('shows the application error with a way to try again when the hunt packs cannot be read', async () => {
+    const refetch = vi.fn();
+    mockQuery({
+      data: undefined,
+      error: new Error('Network request failed'),
+      isPending: false,
+      isError: true,
+      isFetching: false,
+      refetch,
+    });
 
     renderList();
 
-    expect(screen.getByText('Error.AnErrorOccured')).toBeInTheDocument();
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveTextContent('Error.SomethingWentWrong');
+    expect(alert).toHaveTextContent('Error.AnErrorOccured');
     expect(screen.queryByTestId('active')).not.toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Error.TryAgain' })
+    );
+    expect(refetch).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,6 +1,7 @@
 import { AppServiceContext } from '@/components/service/components/ServiceContext';
 import ServiceList from '@/components/service/components/ServiceList';
 import { AppServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
+import HuntPackLoadError from '@/components/service/opencti-hunt-packs/HuntPackLoadError';
 import {
   toDocumentItem,
   useHuntPackDocumentContext,
@@ -32,6 +33,7 @@ import { useEffect, useMemo } from 'react';
 
 const LOCAL_STORAGE_KEY = ServiceListLocalStorageKey.OpenCTIHuntPacks;
 const TYPE = ShareableResourceType.OPENCTI_HUNT_PACK;
+const SKELETON_CARD_COUNT = 6;
 
 interface HuntPackServiceListProps {
   serviceInstance: serviceInstance_fragment$data;
@@ -92,19 +94,20 @@ const HuntPackServiceList = ({
     orderMode,
   ]);
 
-  const { data, isPending, isError } = useHuntPackDocumentsQuery(
-    portalGraphqlClient,
-    {
-      count: pagination.pageSize,
-      cursor: pagination.pageIndex > 0 ? cursor : null,
-      orderBy,
-      orderMode,
-      searchTerm: search,
-      logicalFilters: logicalFilters as LogicalFilterInput,
-      serviceInstanceId: serviceInstance.id,
-    },
-    { placeholderData: keepPreviousData }
-  );
+  const { data, error, isPending, isError, isFetching, refetch } =
+    useHuntPackDocumentsQuery(
+      portalGraphqlClient,
+      {
+        count: pagination.pageSize,
+        cursor: pagination.pageIndex > 0 ? cursor : null,
+        orderBy,
+        orderMode,
+        searchTerm: search,
+        logicalFilters: logicalFilters as LogicalFilterInput,
+        serviceInstanceId: serviceInstance.id,
+      },
+      { placeholderData: keepPreviousData }
+    );
 
   const [active, draft] = useMemo(() => {
     const documents = (data?.documents.edges ?? []).map(({ node }) =>
@@ -139,10 +142,27 @@ const HuntPackServiceList = ({
   );
 
   if (isPending) {
-    return <Skeleton className="w-full inset-1/2" />;
+    return (
+      <ul
+        aria-busy="true"
+        aria-label={t('Utils.Loading')}
+        className="grid grid-cols-[repeat(auto-fill,minmax(min(280px,100%),1fr))] gap-l px-m pb-m">
+        {Array.from({ length: SKELETON_CARD_COUNT }, (_, index) => (
+          <li key={index}>
+            <Skeleton className="rounded h-[300px] sm:h-[348px]" />
+          </li>
+        ))}
+      </ul>
+    );
   }
   if (isError) {
-    return <p className="text-muted-foreground">{t('Error.AnErrorOccured')}</p>;
+    return (
+      <HuntPackLoadError
+        error={error}
+        retrying={isFetching}
+        onRetry={() => refetch()}
+      />
+    );
   }
 
   return (

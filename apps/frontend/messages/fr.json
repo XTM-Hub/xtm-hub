@@ -433,6 +433,7 @@
       "VOTABLE_FEATURE_MUTATION_ERROR": "Une erreur est survenue lors de l'enregistrement de la fonctionnalité"
     },
     "SomethingWentWrong": "Quelque chose s'est mal passé",
+    "TryAgain": "Réessayer",
     "YouAreNotAuthorized": "Vous n'êtes pas autorisé à accéder à cette page."
   },
   "GenericActions": {

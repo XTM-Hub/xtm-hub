@@ -4,6 +4,7 @@ import PageLoader from '@app/(application)/app/(user)/service/opencti_hunt_packs
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import { useHuntPackDocumentQuery } from '@graphql/generated';
 import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@graphql/generated', async (importOriginal) => ({
@@ -94,17 +95,44 @@ describe('hunt pack page loader', () => {
     expect(screen.queryByText('Error.AnErrorOccured')).not.toBeInTheDocument();
   });
 
-  it('shows an error message when the hunt pack cannot be read', () => {
+  it('shows the application error with a way to try again when the hunt pack cannot be read', async () => {
+    const refetch = vi.fn();
     mockQuery({
       data: undefined,
       error: new Error('Network request failed'),
       isPending: false,
       isError: true,
+      isFetching: false,
+      refetch,
     });
 
     renderLoader();
 
-    expect(screen.getByText('Error.AnErrorOccured')).toBeInTheDocument();
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveTextContent('Error.SomethingWentWrong');
+    expect(alert).toHaveTextContent('Error.AnErrorOccured');
     expect(screen.queryByTestId('hunt-pack-slug')).not.toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Error.TryAgain' })
+    );
+    expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables the try again button while the hunt pack is read again', () => {
+    mockQuery({
+      data: undefined,
+      error: new Error('Network request failed'),
+      isPending: false,
+      isError: true,
+      isFetching: true,
+      refetch: vi.fn(),
+    });
+
+    renderLoader();
+
+    expect(
+      screen.getByRole('button', { name: 'Error.TryAgain' })
+    ).toBeDisabled();
   });
 });

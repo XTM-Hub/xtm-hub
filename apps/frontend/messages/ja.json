@@ -433,6 +433,7 @@
       "VOTABLE_FEATURE_MUTATION_ERROR": "機能の保存中にエラーが発生しました"
     },
     "SomethingWentWrong": "何かが間違っている",
+    "TryAgain": "再試行",
     "YouAreNotAuthorized": "このページを表示する権限がありません。"
   },
   "GenericActions": {

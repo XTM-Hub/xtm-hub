@@ -433,6 +433,7 @@
       "VOTABLE_FEATURE_MUTATION_ERROR": "An error occurred while saving the feature"
     },
     "SomethingWentWrong": "Something went wrong",
+    "TryAgain": "Try again",
     "YouAreNotAuthorized": "You are not authorized to get this page."
   },
   "GenericActions": {
