@@ -416,6 +416,34 @@ describe('upsertConnectors', () => {
       expect(result).toBeDefined();
       expect(result!.minimum_deployable_version).toBe('7.261003.0');
     });
+
+    it.each`
+      storedMinimum
+      ${'7.261015.0-lts'}
+      ${'7.261015.0-lts2'}
+      ${'7.261015.0-lts.2'}
+    `(
+      'should keep the stored LTS minimum $storedMinimum of a hunt connector above the floor on re-ingestion',
+      async ({ storedMinimum }: { storedMinimum: string }) => {
+        const manifest: ManifestInformation = {
+          ...baseManifest,
+          slug: `min-deployable-hunt-lts-${storedMinimum}`,
+          name: `Min Deployable Hunt LTS ${storedMinimum}`,
+          product_version: '7.261015.0',
+          manager_supported: true,
+          image_type: 'INTERNAL_HUNT',
+          minimum_deployable_version: storedMinimum,
+        };
+        await IngestManifestDomain.upsertConnectors([manifest]);
+
+        const [result] = await IngestManifestDomain.upsertConnectors([
+          { ...manifest, minimum_deployable_version: undefined },
+        ]);
+
+        expect(result).toBeDefined();
+        expect(result!.minimum_deployable_version).toBe(storedMinimum);
+      }
+    );
   });
 
   describe('datasheet_url, demo_url and blogpost_url preservation', () => {

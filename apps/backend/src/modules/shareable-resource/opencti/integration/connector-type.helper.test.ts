@@ -238,6 +238,62 @@ describe('connectorTypeHelper.mergeEditedMetadata', () => {
     ).toEqual([]);
   });
 
+  it.each`
+    submitted            | type                 | expectedMinimum      | expectedPadded
+    ${'7.261015.0-lts'}  | ${'INTERNAL_HUNT'}   | ${'7.261015.0-lts'}  | ${'007.261015.000.LTS.000'}
+    ${'7.261015.0-lts2'} | ${'INTERNAL_HUNT'}   | ${'7.261015.0-lts2'} | ${'007.261015.000.LTS.002'}
+    ${'7.260811.0-lts'}  | ${'INTERNAL_HUNT'}   | ${HUNT_FLOOR}        | ${'007.261003.000'}
+    ${'6.9.0-lts'}       | ${'EXTERNAL_IMPORT'} | ${'6.9.0-lts'}       | ${'006.000009.000.LTS.000'}
+  `(
+    'pads the LTS minimum $submitted of a $type connector',
+    ({
+      submitted,
+      type,
+      expectedMinimum,
+      expectedPadded,
+    }: {
+      submitted: string;
+      type: string;
+      expectedMinimum: string;
+      expectedPadded: string;
+    }) => {
+      const merged = ConnectorTypeHelper.mergeEditedMetadata(
+        [entry(DocumentMetadataKeyCode.MinimumDeployableVersion, submitted)],
+        [
+          entry(DocumentMetadataKeyCode.ImageType, type),
+          entry(
+            DocumentMetadataKeyCode.MinimumDeployableVersionPadded,
+            '006.000008.000'
+          ),
+        ]
+      );
+
+      expect(
+        valueOf(merged, DocumentMetadataKeyCode.MinimumDeployableVersion)
+      ).toEqual([expectedMinimum]);
+      expect(
+        valueOf(merged, DocumentMetadataKeyCode.MinimumDeployableVersionPadded)
+      ).toEqual([expectedPadded]);
+    }
+  );
+
+  it('keeps the stored padded minimum when the edited minimum cannot be padded', () => {
+    const merged = ConnectorTypeHelper.mergeEditedMetadata(
+      [entry(DocumentMetadataKeyCode.MinimumDeployableVersion, 'next')],
+      [
+        entry(DocumentMetadataKeyCode.ImageType, 'EXTERNAL_IMPORT'),
+        entry(
+          DocumentMetadataKeyCode.MinimumDeployableVersionPadded,
+          '006.000008.000'
+        ),
+      ]
+    );
+
+    expect(
+      valueOf(merged, DocumentMetadataKeyCode.MinimumDeployableVersionPadded)
+    ).toEqual(['006.000008.000']);
+  });
+
   it('leaves the minimum version of a connector type without floor untouched', () => {
     const submitted = [
       entry(DocumentMetadataKeyCode.MinimumDeployableVersion, ''),

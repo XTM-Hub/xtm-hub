@@ -18,7 +18,10 @@ import type { ManifestId } from '../../../../model/kanel/public/Manifest';
 import { ManifestFragmentHelper } from '../../manifest-fragment/manifest-fragment.helper';
 import { ManifestRebuildQueueStatus } from '../../manifest/manifest.consts';
 import { ManifestDomain } from '../../manifest/manifest.domain';
-import { MINIMUM_PLATFORM_VERSION_BY_CONNECTOR_TYPE } from './connector-type.helper';
+import {
+  toPaddedVersion as helperPaddedVersion,
+  MINIMUM_PLATFORM_VERSION_BY_CONNECTOR_TYPE,
+} from './connector-type.helper';
 import {
   INTEGRATION_SERVICE_INSTANCE_ID,
   OPENCTI_INTEGRATION_DOCUMENT_TYPE,
@@ -154,13 +157,58 @@ describe('apply_internal_hunt_minimum_deployable_version migration', () => {
     expect(await loadMinimumVersions(legacyInvalid)).toEqual(floor);
   });
 
-  it('pads versions like the manifest fragment helper', () => {
+  it('pads versions like the manifest fragment helper and the connector type helper', () => {
     for (const version of ['7.261003.0', '6.8.13', '7.260811.2-lts.4']) {
       expect(toPaddedVersion(version)).toBe(
         ManifestFragmentHelper.validateAndFormatManifestVersion(version)
       );
     }
+    for (const version of [
+      '7.261015.0-lts',
+      '7.261015.0-lts2',
+      '7.261015.0-lts.2',
+      ' 7.261015.0 ',
+      'latest',
+    ]) {
+      expect(toPaddedVersion(version)).toBe(helperPaddedVersion(version));
+    }
+    expect(toPaddedVersion('7.261015.0-lts')).toBe('007.261015.000.LTS.000');
+    expect(toPaddedVersion('7.261015.0-lts2')).toBe('007.261015.000.LTS.002');
     expect(toPaddedVersion('latest')).toBeUndefined();
+  });
+
+  it('keeps an LTS minimum above the floor whatever its spelling', async () => {
+    // Given
+    const bareLts = await createConnector({
+      [DocumentMetadataKeyCode.ImageType]: 'INTERNAL_HUNT',
+      [DocumentMetadataKeyCode.MinimumDeployableVersion]: '7.261015.0-lts',
+    });
+    const inlineRevision = await createConnector({
+      [DocumentMetadataKeyCode.ImageType]: 'INTERNAL_HUNT',
+      [DocumentMetadataKeyCode.MinimumDeployableVersion]: '7.261015.0-lts2',
+    });
+    const olderLts = await createConnector({
+      [DocumentMetadataKeyCode.ImageType]: 'INTERNAL_HUNT',
+      [DocumentMetadataKeyCode.MinimumDeployableVersion]: '7.260811.0-lts',
+    });
+
+    // When
+    await up(db);
+    await up(db);
+
+    // Then
+    expect(await loadMinimumVersions(bareLts)).toEqual({
+      version: '7.261015.0-lts',
+      padded: '007.261015.000.LTS.000',
+    });
+    expect(await loadMinimumVersions(inlineRevision)).toEqual({
+      version: '7.261015.0-lts2',
+      padded: '007.261015.000.LTS.002',
+    });
+    expect(await loadMinimumVersions(olderLts)).toEqual({
+      version: '7.261003.0',
+      padded: '007.261003.000',
+    });
   });
 
   it('stores legacy connector type spellings in their canonical form and applies the floor to them', async () => {

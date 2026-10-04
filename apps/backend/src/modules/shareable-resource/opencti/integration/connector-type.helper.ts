@@ -52,9 +52,19 @@ const HUNT_PLATFORM_PATTERN = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const isOpenCtiConnectorType = (value: string): value is OpenCtiConnectorType =>
   (OPENCTI_CONNECTOR_TYPES as readonly string[]).includes(value);
 
-const toPaddedVersion = (version: string): string | undefined => {
+// Versions accept `-lts`, `-lts.N` and `-ltsN` (utils/versioning.ts); padding needs `-lts.N`.
+const LTS_SPELLING = /^(\d+\.\d+\.\d+)-lts\.?(\d+)?$/i;
+
+export const toPaddedVersion = (version: string): string | undefined => {
+  const canonical = version
+    .trim()
+    .replace(
+      LTS_SPELLING,
+      (_match, core: string, revision?: string) =>
+        `${core}-lts.${revision ?? '0'}`
+    );
   try {
-    return ManifestFragmentHelper.validateAndFormatManifestVersion(version);
+    return ManifestFragmentHelper.validateAndFormatManifestVersion(canonical);
   } catch {
     return undefined;
   }
@@ -157,7 +167,12 @@ export const ConnectorTypeHelper = {
       connectorType,
       valueOf(DocumentMetadataKeyCode.MinimumDeployableVersion)
     );
-    const minimumPadded = minimum ? toPaddedVersion(minimum) : undefined;
+    // A minimum that cannot be padded keeps the stored padded value: dropping
+    // it would make the connector unrestricted for the manifests.
+    const minimumPadded = minimum
+      ? (toPaddedVersion(minimum) ??
+        valueOf(DocumentMetadataKeyCode.MinimumDeployableVersionPadded))
+      : undefined;
     const result = merged.filter(
       ({ key }) =>
         key !== DocumentMetadataKeyCode.MinimumDeployableVersion &&

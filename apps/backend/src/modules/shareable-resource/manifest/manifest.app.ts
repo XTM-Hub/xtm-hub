@@ -154,21 +154,41 @@ export const ManifestApp = {
 
   /**
    * Rebuild requests are only processed when a job is sent for their key.
-   * Requests queued without a job (by a database migration, or left behind
-   * by a stopped process) are sent again when the workers start.
+   * Requests queued without a job (by a database migration, by a failed
+   * enqueue or by a stopped process) are sent again: all of them when the
+   * workers start, and periodically those pending since before
+   * `createdBefore`. Each key is attempted on its own, and a key that fails
+   * stays pending for the next attempt.
    */
-  resumePendingRebuilds: async (): Promise<number> => {
-    const keys = await ManifestDomain.loadPendingRebuildKeys();
+  resumePendingRebuilds: async ({
+    createdBefore,
+  }: { createdBefore?: Date } = {}): Promise<{
+    resumed: number;
+    failed: number;
+  }> => {
+    const keys = await ManifestDomain.loadPendingRebuildKeys(createdBefore);
+    let resumed = 0;
+    const failedKeys: ManifestKey[] = [];
     for (const key of keys) {
-      await ManifestHelper.enqueueImmediateRebuild(key);
+      try {
+        await ManifestHelper.enqueueImmediateRebuild(key);
+        resumed += 1;
+      } catch (error) {
+        failedKeys.push(key);
+        logApp.error('Unable to resume a pending manifest rebuild', {
+          error,
+          key,
+        });
+      }
     }
     if (keys.length > 0) {
       logApp.info('Pending manifest rebuilds resumed', {
-        count: keys.length,
-        keys,
+        resumed,
+        failed: failedKeys.length,
+        failedKeys,
       });
     }
-    return keys.length;
+    return { resumed, failed: failedKeys.length };
   },
 
   processManifestQueue: async (manifest?: ManifestKey) => {

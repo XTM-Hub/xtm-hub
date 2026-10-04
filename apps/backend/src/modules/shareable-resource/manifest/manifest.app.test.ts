@@ -658,7 +658,7 @@ describe('manifestApp', () => {
       const resumed = await ManifestApp.resumePendingRebuilds();
 
       // Then
-      expect(resumed).toBe(1);
+      expect(resumed).toEqual({ resumed: 1, failed: 0 });
       expect(enqueueImmediateRebuildSpy).toHaveBeenCalledExactlyOnceWith({
         platformIdentifier: PlatformIdentifier.Opencti,
         version: '7.261002.0',
@@ -676,8 +676,67 @@ describe('manifestApp', () => {
       const resumed = await ManifestApp.resumePendingRebuilds();
 
       // Then
-      expect(resumed).toBe(0);
+      expect(resumed).toEqual({ resumed: 0, failed: 0 });
       expect(enqueueImmediateRebuildSpy).not.toHaveBeenCalled();
+    });
+
+    it('attempts every key when an enqueue fails and keeps the failed key pending', async () => {
+      // Given
+      const enqueueImmediateRebuildSpy = vi
+        .spyOn(ManifestHelper, 'enqueueImmediateRebuild')
+        .mockRejectedValueOnce(new Error('queue unavailable'))
+        .mockResolvedValue(undefined);
+      for (const version of ['7.261001.0', '7.261002.0']) {
+        await TestHelper.manifestRebuildQueue.create({
+          product: PlatformIdentifier.Opencti,
+          version,
+          status: ManifestRebuildQueueStatus.Pending,
+        });
+      }
+
+      // When
+      const resumed = await ManifestApp.resumePendingRebuilds();
+
+      // Then
+      expect(resumed).toEqual({ resumed: 1, failed: 1 });
+      expect(enqueueImmediateRebuildSpy).toHaveBeenCalledTimes(2);
+      expect(
+        await TestHelper.manifestRebuildQueue.loadAll({
+          status: ManifestRebuildQueueStatus.Pending,
+        })
+      ).toHaveLength(2);
+    });
+
+    it('only resumes the keys pending since before the given date', async () => {
+      // Given
+      const enqueueImmediateRebuildSpy = vi
+        .spyOn(ManifestHelper, 'enqueueImmediateRebuild')
+        .mockResolvedValue(undefined);
+      const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+      await TestHelper.manifestRebuildQueue.create({
+        product: PlatformIdentifier.Opencti,
+        version: '7.261001.0',
+        status: ManifestRebuildQueueStatus.Pending,
+        created_at: twoHoursAgo,
+      });
+      await TestHelper.manifestRebuildQueue.create({
+        product: PlatformIdentifier.Opencti,
+        version: '7.261002.0',
+        status: ManifestRebuildQueueStatus.Pending,
+      });
+
+      // When
+      const resumed = await ManifestApp.resumePendingRebuilds({
+        createdBefore: new Date(Date.now() - 60 * 60 * 1000),
+      });
+
+      // Then
+      expect(resumed).toEqual({ resumed: 1, failed: 0 });
+      expect(enqueueImmediateRebuildSpy).toHaveBeenCalledExactlyOnceWith({
+        platformIdentifier: PlatformIdentifier.Opencti,
+        version: '7.261001.0',
+        type: ManifestType.Connector,
+      });
     });
   });
 });

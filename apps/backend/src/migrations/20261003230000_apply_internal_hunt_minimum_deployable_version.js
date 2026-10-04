@@ -38,12 +38,16 @@ const canonicalizeConnectorTypes = async (knex) => {
   return huntConnectorIds;
 };
 
-// Must match MANIFEST_VERSION_PATTERN and validateAndFormatManifestVersion in manifest-fragment.helper.ts.
-const MANIFEST_VERSION_REGEX = /^(\d+)\.(\d{1,6})\.(\d+)(?:-lts\.(\d+))?$/i;
+// Must match toPaddedVersion in connector-type.helper.ts: the accepted LTS
+// spellings (`-lts`, `-lts.N`, `-ltsN`) are padded as `-lts.N`, a missing
+// revision being 0, then formatted like validateAndFormatManifestVersion.
+const MANIFEST_VERSION_REGEX = /^(\d+)\.(\d{1,6})\.(\d+)(?:-lts\.?(\d+)?)?$/i;
 
 export const toPaddedVersion = (version) => {
   const match =
-    typeof version === 'string' ? version.match(MANIFEST_VERSION_REGEX) : null;
+    typeof version === 'string'
+      ? version.trim().match(MANIFEST_VERSION_REGEX)
+      : null;
   if (!match) return undefined;
   const major = match[1].padStart(3, '0');
   const datePart = match[2].padStart(6, '0');
