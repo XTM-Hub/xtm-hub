@@ -167,11 +167,13 @@ export const PulseStats = {
   },
 
   // Lower bound of the platforms range of a count (5, 10, 25, ...), 0 below
-  // k: a figure derived from it is exactly as coarse as platforms_bucket.
+  // k: a figure derived from it is exactly as coarse as platforms_bucket. With
+  // a threshold below the smallest bucket, a count between k and that bucket is
+  // published as "<5" and represented by k, the lower bound of that range.
   coarseCount: (count: number, kThreshold: number): number =>
     count >= kThreshold
       ? (PULSE_PLATFORMS_BUCKETS.find((bucket) => count >= bucket.min)?.min ??
-        0)
+        kThreshold)
       : 0,
 
   // Oldest week first, each week coarsened like platforms_bucket.

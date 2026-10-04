@@ -362,12 +362,14 @@ describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
       });
       await pause.reached;
 
-      // When the purge starts before that push commits
+      // When the purge starts before that push commits and blocks on the
+      // platform lock the push holds
       const purging = client!.purge();
-      await new Promise((resolve) => {
-        setTimeout(resolve, 300);
-      });
-      pause.release();
+      try {
+        await TestHelper.pulse.waitForBlockedAdvisoryLock();
+      } finally {
+        pause.release();
+      }
       await pushing;
       const result = await purging;
 

@@ -106,7 +106,8 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
         published: true,
         prevalence_bucket: PulsePrevalenceBucket.Widespread,
         platforms_bucket: '5-9',
-        first_seen_network: PULSE_TEST_TODAY,
+        // The boundaries of the week ending today, never a contribution day
+        first_seen_network: PulseDay.addDays(PULSE_TEST_TODAY, -6),
         last_seen_network: PULSE_TEST_TODAY,
         trend: PulseTrendDirection.Rising,
         trend_series: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5],
@@ -219,7 +220,7 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
       // Then
       expect(result).toMatchObject({
         published: true,
-        first_seen_network: PULSE_TEST_YESTERDAY,
+        first_seen_network: PulseDay.addDays(PULSE_TEST_TODAY, -6),
         last_seen_network: PULSE_TEST_TODAY,
       });
     });
@@ -285,10 +286,12 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
       expect(result).toMatchObject({
         trend: PulseTrendDirection.Rising,
         trend_series: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5],
-        first_seen_network: PULSE_TEST_TODAY,
+        first_seen_network: PulseDay.addDays(PULSE_TEST_TODAY, -6),
         last_seen_network: PULSE_TEST_TODAY,
       });
-      expect(trending.items[0]?.first_seen_network).toBe(PULSE_TEST_TODAY);
+      expect(trending.items[0]?.first_seen_network).toBe(
+        PulseDay.addDays(PULSE_TEST_TODAY, -6)
+      );
     });
 
     it('should keep the last day of the latest week that reached k', async () => {
@@ -312,10 +315,80 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
         values: [LOCKBIT],
       });
 
-      // Then the single reporter of this week does not move the last seen day
+      // Then the single reporter of this week does not move the last seen day:
+      // both days bound the week two weeks back
       expect(result).toMatchObject({
-        first_seen_network: PulseDay.addDays(PULSE_TEST_TODAY, -14),
+        first_seen_network: PulseDay.addDays(PULSE_TEST_TODAY, -20),
         last_seen_network: PulseDay.addDays(PULSE_TEST_TODAY, -14),
+      });
+    });
+
+    it('should publish week boundaries, never the day of a single platform inside a week that reached k', async () => {
+      // Given k=5 and a week (20 to 14 days ago) where one platform reports on
+      // its first day, three in the middle and one on its last day, and a
+      // reader contributing something else today
+      const [reader, ...clients] = await registerPulseClients(6);
+      await reader!.push({
+        day: PULSE_TEST_TODAY,
+        records: [malware('unrelated-family')],
+      });
+      for (const [daysAgo, reporters] of [
+        [20, clients.slice(0, 1)],
+        [17, clients.slice(1, 4)],
+        [14, clients.slice(4)],
+      ] as const) {
+        clock.addDays(-daysAgo);
+        await pushFromEach(reporters, {
+          day: clock.today(),
+          records: [malware(LOCKBIT)],
+        });
+        clock.addDays(daysAgo);
+      }
+
+      // When
+      const [result] = await reader!.lookup({
+        day: PULSE_TEST_TODAY,
+        objectType: MALWARE,
+        values: [LOCKBIT],
+      });
+      const trending = await reader!.trending({
+        day: PULSE_TEST_TODAY,
+        period: PulsePeriod.Last_30Days,
+      });
+
+      // Then the dates are the week's boundaries, whichever days its single
+      // reporters chose inside it
+      expect(result).toMatchObject({
+        published: true,
+        first_seen_network: PulseDay.addDays(PULSE_TEST_TODAY, -20),
+        last_seen_network: PulseDay.addDays(PULSE_TEST_TODAY, -14),
+      });
+      expect(trending.items[0]?.first_seen_network).toBe(
+        PulseDay.addDays(PULSE_TEST_TODAY, -20)
+      );
+
+      // And when the reporters of the boundary days move inside the week, the
+      // published dates do not change
+      await cleanPulseState();
+      const [movedReader, ...movedClients] = await registerPulseClients(6);
+      await movedReader!.push({
+        day: PULSE_TEST_TODAY,
+        records: [malware('unrelated-family')],
+      });
+      clock.addDays(-17);
+      await pushFromEach(movedClients, {
+        day: clock.today(),
+        records: [malware(LOCKBIT)],
+      });
+      clock.addDays(17);
+      const [moved] = await movedReader!.lookup({
+        day: PULSE_TEST_TODAY,
+        objectType: MALWARE,
+        values: [LOCKBIT],
+      });
+      expect(moved).toMatchObject({
+        first_seen_network: result?.first_seen_network,
+        last_seen_network: result?.last_seen_network,
       });
     });
 
@@ -394,7 +467,7 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
             prevalence_bucket: PulsePrevalenceBucket.Widespread,
             trend: PulseTrendDirection.Rising,
             growth: 6,
-            first_seen_network: PULSE_TEST_TODAY,
+            first_seen_network: PulseDay.addDays(PULSE_TEST_TODAY, -6),
           },
           {
             hash: await clients[0]!.hash(
@@ -407,7 +480,8 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
             prevalence_bucket: PulsePrevalenceBucket.Widespread,
             trend: PulseTrendDirection.Stable,
             growth: 1,
-            first_seen_network: PulseDay.addDays(PULSE_TEST_TODAY, -17),
+            // Reported 17 days ago: the first day of the week two weeks back
+            first_seen_network: PulseDay.addDays(PULSE_TEST_TODAY, -20),
           },
         ],
       });
@@ -653,6 +727,58 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
       ]);
     });
 
+    it.each([2, 4])(
+      'should rank and publish the "<5" range when k is %i',
+      async (kThreshold) => {
+        // Given k below the smallest platforms range and k platforms today
+        const config = PulseConfig.get();
+        if (!config.enabled) {
+          throw new Error('Threat Pulse must be enabled in tests');
+        }
+        vi.spyOn(PulseConfig, 'get').mockReturnValue({
+          ...config,
+          settings: { ...config.settings, kThreshold },
+        });
+        const clients = await registerPulseClients(kThreshold);
+        await pushFromEach(clients, {
+          day: PULSE_TEST_TODAY,
+          records: [malware(LOCKBIT)],
+        });
+
+        // When
+        const trending = await clients[0]!.trending({
+          day: PULSE_TEST_TODAY,
+          period: PulsePeriod.Last_7Days,
+        });
+        const [result] = await clients[0]!.lookup({
+          day: PULSE_TEST_TODAY,
+          objectType: MALWARE,
+          values: [LOCKBIT],
+        });
+
+        // Then the week counts k, never 0: the item rises in both answers
+        expect(
+          trending.items.map(({ platforms_bucket, growth, trend }) => ({
+            platforms_bucket,
+            growth,
+            trend,
+          }))
+        ).toEqual([
+          {
+            platforms_bucket: '<5',
+            growth: kThreshold + 1,
+            trend: PulseTrendDirection.Rising,
+          },
+        ]);
+        expect(result).toMatchObject({
+          published: true,
+          platforms_bucket: '<5',
+          trend: PulseTrendDirection.Rising,
+          trend_series: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, kThreshold],
+        });
+      }
+    );
+
     it('should never serve a fresh snapshot published under another k', async () => {
       // Given a snapshot computed with k=5
       const clients = await registerPulseClients(5);
@@ -711,11 +837,15 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
       // When the retention is lowered to 9 months while the snapshot is fresh
       const after = await clients[0]!.trending(request);
 
-      // Then the first seen day no longer reaches beyond the retention
+      // Then the first seen day no longer reaches beyond the retention (300
+      // days ago is the first day of its week, counted back from today)
       expect({
         before: before.items[0]?.first_seen_network,
         after: after.items[0]?.first_seen_network,
-      }).toEqual({ before: longAgo, after: PULSE_TEST_TODAY });
+      }).toEqual({
+        before: longAgo,
+        after: PulseDay.addDays(PULSE_TEST_TODAY, -6),
+      });
     });
 
     it('should recompute a snapshot published under an older policy version', async () => {

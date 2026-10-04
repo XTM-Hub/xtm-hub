@@ -374,9 +374,13 @@ export const PulseDomain = {
     return new Map(rows.map((row) => [pulseKeyId(row), row.platforms]));
   },
 
-  // First and last day of the key over the weeks (counted back from `day`,
-  // like the trend series) that k distinct platforms reached: a day of a
-  // week below k is published nowhere else, so it never bounds the range.
+  // First and last seen days of the key over the weeks (counted back from
+  // `day`, like the trend series) that k distinct platforms reached, published
+  // as week boundaries: the first day of the oldest of those weeks (never
+  // before `sinceDay`) and the last day of the newest one. A week below k is
+  // published nowhere else, so it never bounds the range, and a day inside a
+  // qualifying week may hold a single platform, so no contribution day is
+  // ever published as such.
   loadSeenRanges: async ({
     keys,
     sinceDay,
@@ -393,20 +397,34 @@ export const PulseDomain = {
     >(
       `WITH weekly AS (
          SELECT c.at_rest_key, c.object_type,
-                COUNT(DISTINCT c.pulse_platform_id) AS platforms,
-                MIN(c.day) AS first_day, MAX(c.day) AS last_day
+                (?::date - c.day) / ?::int AS week,
+                COUNT(DISTINCT c.pulse_platform_id) AS platforms
          FROM "PulseContribution" c
          JOIN jsonb_to_recordset(?::jsonb) AS r(k text, t text)
            ON c.at_rest_key = decode(r.k, 'hex') AND c.object_type = r.t
          WHERE c.day >= ?::date AND c.day <= ?::date
-         GROUP BY c.at_rest_key, c.object_type, (?::date - c.day) / ?::int
+         GROUP BY c.at_rest_key, c.object_type, week
        )
        SELECT encode(at_rest_key, 'hex') AS k, object_type AS t,
-              MIN(first_day)::text AS first_seen, MAX(last_day)::text AS last_seen
+              GREATEST(?::date - (MAX(week) * ?::int + ?::int - 1), ?::date)::text AS first_seen,
+              (?::date - MIN(week) * ?::int)::text AS last_seen
        FROM weekly
        WHERE platforms >= ?
        GROUP BY at_rest_key, object_type`,
-      [keyRefsJson(keys), sinceDay, day, day, PULSE_DAYS_PER_WEEK, kThreshold]
+      [
+        day,
+        PULSE_DAYS_PER_WEEK,
+        keyRefsJson(keys),
+        sinceDay,
+        day,
+        day,
+        PULSE_DAYS_PER_WEEK,
+        PULSE_DAYS_PER_WEEK,
+        sinceDay,
+        day,
+        PULSE_DAYS_PER_WEEK,
+        kThreshold,
+      ]
     );
     return new Map(
       rows.map((row) => [
@@ -565,9 +583,9 @@ export const PulseDomain = {
        ),
        coarse AS (
          SELECT e.at_rest_key, e.object_type, e.recent, e.prev1, e.prev2,
-                CASE WHEN e.recent >= ? THEN COALESCE((SELECT MAX(b.min) FROM buckets b WHERE b.min <= e.recent), 0) ELSE 0 END AS coarse_recent,
-                CASE WHEN e.prev1 >= ? THEN COALESCE((SELECT MAX(b.min) FROM buckets b WHERE b.min <= e.prev1), 0) ELSE 0 END AS coarse_prev1,
-                CASE WHEN e.prev2 >= ? THEN COALESCE((SELECT MAX(b.min) FROM buckets b WHERE b.min <= e.prev2), 0) ELSE 0 END AS coarse_prev2
+                CASE WHEN e.recent >= ? THEN COALESCE((SELECT MAX(b.min) FROM buckets b WHERE b.min <= e.recent), ?) ELSE 0 END AS coarse_recent,
+                CASE WHEN e.prev1 >= ? THEN COALESCE((SELECT MAX(b.min) FROM buckets b WHERE b.min <= e.prev1), ?) ELSE 0 END AS coarse_prev1,
+                CASE WHEN e.prev2 >= ? THEN COALESCE((SELECT MAX(b.min) FROM buckets b WHERE b.min <= e.prev2), ?) ELSE 0 END AS coarse_prev2
          FROM eligible e
        ),
        ranked AS (
@@ -603,6 +621,11 @@ export const PulseDomain = {
         retentionStart,
         kThreshold,
         toJson(PULSE_PLATFORMS_BUCKETS.map((bucket) => bucket.min)),
+        // Each coarse count: the k it starts at, then its value below the
+        // smallest bucket (the "<5" range starting at k).
+        kThreshold,
+        kThreshold,
+        kThreshold,
         kThreshold,
         kThreshold,
         kThreshold,

@@ -146,6 +146,32 @@ export const TestPulseHelper = {
       return Number(row?.count ?? 0);
     },
 
+    // Resolves once a session of this database waits for an advisory lock
+    // another session holds - the observable proof that a concurrent call
+    // reached a Threat Pulse lock and is blocked on it - and fails after
+    // `timeoutMs` otherwise.
+    waitForBlockedAdvisoryLock: async (timeoutMs = 10_000): Promise<void> => {
+      const deadline = Date.now() + timeoutMs;
+      while (Date.now() < deadline) {
+        const result: { rows: { waiting: number }[] } = await dbRaw(
+          `SELECT COUNT(*)::int AS waiting
+           FROM pg_locks l
+           JOIN pg_database d ON d.oid = l.database
+           WHERE l.locktype = 'advisory' AND NOT l.granted
+             AND d.datname = current_database()`
+        );
+        if ((result.rows[0]?.waiting ?? 0) > 0) {
+          return;
+        }
+        await new Promise((resolve) => {
+          setTimeout(resolve, 25);
+        });
+      }
+      throw new Error(
+        `No session waited for an advisory lock within ${timeoutMs} ms`
+      );
+    },
+
     loadContributionDays: async (): Promise<string[]> => {
       const rows = await db('PulseContribution')
         .distinct(dbRaw('day::text AS day'))

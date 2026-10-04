@@ -221,6 +221,50 @@ describe('pulseStats', () => {
       // Then
       expect(coarse).toBe(0);
     });
+
+    it.each([
+      { k: 2, count: 1, expected: 0 },
+      { k: 2, count: 2, expected: 2 },
+      { k: 2, count: 4, expected: 2 },
+      { k: 2, count: 5, expected: 5 },
+      { k: 4, count: 3, expected: 0 },
+      { k: 4, count: 4, expected: 4 },
+      { k: 4, count: 9, expected: 5 },
+    ])(
+      'should represent a count published as "<5" by k when k is $k (count $count)',
+      ({ k, count, expected }) => {
+        // When
+        const coarse = PulseStats.coarseCount(count, k);
+
+        // Then
+        expect(coarse).toBe(expected);
+      }
+    );
+  });
+
+  describe('a k below the smallest platforms range', () => {
+    it('should give the weeks of the "<5" range a direction and a series value', () => {
+      // Given k=2 and three reporters this week, nobody before
+      const weekly = [3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+      // When
+      const trend = PulseStats.weeklyTrend(weekly, 2);
+      const series = PulseStats.trendSeries(weekly, 2);
+
+      // Then the week that reached k is neither stable nor dropped
+      expect(trend).toBe(PulseTrendDirection.Rising);
+      expect(series).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2]);
+    });
+
+    it('should keep two series of the same published ranges on the same direction', () => {
+      // Given k=2 and two series whose weeks are all published as "<5"
+      const moreThisWeek = PulseStats.weeklyTrend([4, 2, 2, 2], 2);
+      const fewerThisWeek = PulseStats.weeklyTrend([2, 4, 3, 4], 2);
+
+      // Then the exact counts inside the range never show in the direction
+      expect(moreThisWeek).toBe(PulseTrendDirection.Stable);
+      expect(fewerThisWeek).toBe(PulseTrendDirection.Stable);
+    });
   });
 
   describe('trendSeries', () => {
