@@ -602,6 +602,7 @@ describe('pulseApp platform API', PULSE_INTEGRATION_SUITE, () => {
           query: PUSH_PULSE_MUTATION,
           variables: {
             input: {
+              batch_id: BATCH_ID,
               day: PULSE_TEST_TODAY,
               sector_bucket: PulseSectorBucket.Finance,
               region_bucket: PulseRegionBucket.Europe,

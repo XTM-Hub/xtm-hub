@@ -423,16 +423,21 @@ describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
       const pause = pauseNextSave('saveDigestSnapshot');
       const inFlight = clients[1]!.digest({ day: PULSE_TEST_TODAY });
       await pause.reached;
+      const before = await PulseDomain.loadDataGeneration();
 
       // When the retention run ends before the digest is saved
       await PulseApp.applyRetention(clock.now());
       pause.release();
       await inFlight;
 
-      // Then
-      expect(
-        await PulseDomain.loadDigestSnapshot(PULSE_TEST_TODAY)
-      ).toBeUndefined();
+      // Then the digest computed before the run is not the one saved: the
+      // request in flight computed it again under the new generation
+      const current = await PulseDomain.loadDataGeneration();
+      const saved = await PulseDomain.loadDigestSnapshot(PULSE_TEST_TODAY);
+      expect({
+        moved: current > before,
+        savedUnder: saved?.stored?.generation,
+      }).toEqual({ moved: true, savedUnder: current });
     });
 
     it('should move the data generation with the first batch a stopped retention run deleted', async () => {
