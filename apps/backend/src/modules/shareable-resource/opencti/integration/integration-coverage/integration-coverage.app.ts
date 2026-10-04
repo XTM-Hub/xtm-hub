@@ -202,6 +202,11 @@ export const IntegrationCoverageApp = {
     return { matches, facets, truncated };
   },
 
+  /** Bounds of a submitted coverage, checked before anything is uploaded or written. */
+  assertValidCoverageInput: (input: CoverageInput): void => {
+    IntegrationCoverageHelper.assertValidDeclaration(toDeclaration(input));
+  },
+
   resolveCoverageForCreate: async (
     input: CreateDocumentInput
   ): Promise<StoredIntegrationCoverage> => {

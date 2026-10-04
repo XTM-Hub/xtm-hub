@@ -101,6 +101,15 @@ export const DocumentApp = {
       throw new Error(ErrorCode.ServiceDefinitionNotFound);
     }
 
+    const documentType =
+      DocumentHelper.retrieveDocumentTypeFromServiceDefinition(
+        serviceDefinition.identifier as ManageableServiceDefinitionIdentifier
+      );
+    // Rejected before the uploads, which would otherwise stay in the storage
+    if (documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE) {
+      IntegrationCoverageApp.assertValidCoverageInput(input);
+    }
+
     const [sourceDocumentFile] = await DocumentUploadsHelper.processUploads(
       sourceDocument,
       serviceInstanceId
@@ -137,11 +146,6 @@ export const DocumentApp = {
       serviceDefinition.identifier as ManageableServiceDefinitionIdentifier,
       documentMetadata
     );
-
-    const documentType =
-      DocumentHelper.retrieveDocumentTypeFromServiceDefinition(
-        serviceDefinition.identifier as ManageableServiceDefinitionIdentifier
-      );
 
     DocumentHelper.assertDocumentFileIsNotMissing({
       hasDocument: !!sourceDocument,
@@ -313,6 +317,10 @@ export const DocumentApp = {
       DocumentHelper.retrieveDocumentTypeFromServiceDefinition(
         serviceDefinition.identifier as ManageableServiceDefinitionIdentifier
       );
+    // Rejected before the uploads, which would otherwise stay in the storage
+    if (documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE) {
+      IntegrationCoverageApp.assertValidCoverageInput(input);
+    }
     const [sourceDocumentFile] = await DocumentUploadsHelper.processUploads(
       sourceDocument,
       serviceInstanceId

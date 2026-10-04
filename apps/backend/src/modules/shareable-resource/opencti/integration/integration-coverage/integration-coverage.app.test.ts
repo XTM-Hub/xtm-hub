@@ -13,6 +13,7 @@ import type { ServiceInstanceId } from '../../../../../model/kanel/public/Servic
 import { BadRequestErrorCode } from '../../../../../utils/error/error.code';
 import { isFeatureEnabled } from '../../../../../utils/feature-flag.util';
 import { DocumentApp } from '../../../../document/document.app';
+import { DocumentUploadsHelper } from '../../../../document/document.uploads.helper';
 import { DocumentDomain } from '../../../../document/domain/document.domain';
 import { TelemetryApp } from '../../../../telemetry/telemetry.app';
 import {
@@ -782,6 +783,34 @@ describe('integrationCoverageApp', () => {
         );
       }
     );
+
+    it('should reject an invalid coverage before uploading anything, at creation and update', async () => {
+      // Given
+      const document = await createThirdPartyIntegration();
+      const uploads = vi.spyOn(DocumentUploadsHelper, 'processUploads');
+      const tooLong = ['x'.repeat(129)];
+
+      try {
+        // When
+        const create = createThirdPartyIntegration({
+          covered_sectors: tooLong,
+        });
+        const update = updateThirdPartyIntegration(document, {
+          covered_regions: tooLong,
+        });
+
+        // Then
+        await expect(create).rejects.toThrow(
+          BadRequestErrorCode.InvalidIntegrationCoverage
+        );
+        await expect(update).rejects.toThrow(
+          BadRequestErrorCode.InvalidIntegrationCoverage
+        );
+        expect(uploads).not.toHaveBeenCalled();
+      } finally {
+        uploads.mockRestore();
+      }
+    });
 
     it('should return to inference when an update clears every list', async () => {
       // Given
