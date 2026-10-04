@@ -188,6 +188,21 @@ describe('huntPackHelper.summarize', () => {
     ).toThrow(BadRequestErrorCode.HuntPackEmpty);
   });
 
+  it.each`
+    case          | member
+    ${'null'}     | ${null}
+    ${'a number'} | ${42}
+    ${'a string'} | ${'hunt--00000000-0000-4000-8000-000000000002'}
+    ${'an array'} | ${[hunt(2)]}
+  `(
+    'rejects a bundle with a valid hunt and $case as another member',
+    ({ member }) => {
+      expect(() => HuntPackHelper.summarize(bundle([hunt(1), member]))).toThrow(
+        BadRequestErrorCode.HuntPackInvalidBundle
+      );
+    }
+  );
+
   it('rejects a bundle with a hunt the OpenCTI import refuses', () => {
     expect(() =>
       HuntPackHelper.summarize(

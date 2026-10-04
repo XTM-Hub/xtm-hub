@@ -98,7 +98,16 @@ export const HuntPackHelper = {
     ) {
       throw new Error(BadRequestErrorCode.HuntPackInvalidBundle);
     }
-    const objects = content.objects.filter(isRecord);
+    // The pack is stored and deployed as uploaded: every member must be a
+    // STIX object, a null or scalar member would reach OpenCTI.
+    const members: unknown[] = content.objects;
+    if (!members.every(isRecord)) {
+      logApp.info(
+        '[HUNT_PACK] Bundle member that is not a STIX object refused'
+      );
+      throw new Error(BadRequestErrorCode.HuntPackInvalidBundle);
+    }
+    const objects = members;
     const huntObjects = objects.filter(
       (object) =>
         typeof object.type === 'string' && HUNT_STIX_TYPES.includes(object.type)
