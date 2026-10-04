@@ -592,9 +592,10 @@ export const DocumentDomain = {
   },
 
   /**
-   * Whether a live document of this type, outside the decoupling tag, holds
-   * the slug. Documents without a version escape the unique constraint, so a
-   * creation checks this under the lock that serializes the slug.
+   * Whether a live document of this type holds the slug, a decoupled
+   * connector included: the decoupling tag only decides the listings.
+   * Documents without a version escape the unique constraint, so a creation
+   * checks this under the lock that serializes the slug.
    */
   isSlugTaken: async ({
     slug,
@@ -607,7 +608,6 @@ export const DocumentDomain = {
       .where('slug', '=', slug)
       .where('type', '=', type)
       .where('active', '=', true)
-      .modify(excludeDecouplingTag)
       .first('Document.id');
     return !!document;
   },

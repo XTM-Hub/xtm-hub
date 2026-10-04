@@ -203,6 +203,37 @@ describe('document domain', () => {
     });
   });
 
+  describe('isSlugTaken', () => {
+    it('should count a live decoupled connector as holding its slug, never a removed document', async () => {
+      await TestHelper.document.create({
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'decoupled-slug',
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+        active: true,
+        tags: [TAG_DECOUPLING],
+      });
+      await TestHelper.document.create({
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'removed-slug',
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+        active: false,
+      });
+
+      await expect(
+        DocumentDomain.isSlugTaken({
+          slug: 'decoupled-slug',
+          type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        })
+      ).resolves.toBe(true);
+      await expect(
+        DocumentDomain.isSlugTaken({
+          slug: 'removed-slug',
+          type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        })
+      ).resolves.toBe(false);
+    });
+  });
+
   describe(`loadParentDocumentsByServiceInstance`, () => {
     let csvFeed: Document;
     beforeEach(async () => {
