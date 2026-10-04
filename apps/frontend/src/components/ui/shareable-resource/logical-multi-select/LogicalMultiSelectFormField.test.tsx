@@ -51,6 +51,32 @@ describe('LogicalMultiSelectFormField', () => {
     expect(onValueChange).toHaveBeenLastCalledWith({});
   });
 
+  it('follows a selection reset by its parent while it stays mounted', async () => {
+    const onValueChange = vi.fn();
+    const field = (initialValue: Record<string, string[]>) => (
+      <LogicalMultiSelectFormField
+        options={[
+          { label: 'Finance', value: 'Finance' },
+          { label: 'Energy', value: 'Energy' },
+        ]}
+        initialValue={initialValue}
+        noResultString="no-result"
+        optionLabel="label"
+        onValueChange={onValueChange}
+      />
+    );
+    const { user, rerender } = testRender(field({ Finance: [] }));
+    expect(screen.getByRole('checkbox', { name: 'Finance' })).toBeChecked();
+
+    // Filters reset by the parent
+    rerender(field({}));
+    expect(screen.getByRole('checkbox', { name: 'Finance' })).not.toBeChecked();
+
+    // The next click starts from the reset selection, not the stale one
+    await user.click(screen.getByRole('checkbox', { name: 'Energy' }));
+    expect(onValueChange).toHaveBeenLastCalledWith({ Energy: [] });
+  });
+
   it('resolves facet counts when the option value is a Relay global id but the facet bucket is keyed by the raw uuid', () => {
     const globalId =
       'VXNlQ2FzZTowMGU4YjQ0ZC04MzBhLTQwNjYtYmM5Ny1mOGM0ZWU1YjUzYTU=';

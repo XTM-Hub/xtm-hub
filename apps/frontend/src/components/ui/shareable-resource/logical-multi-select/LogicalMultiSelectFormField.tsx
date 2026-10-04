@@ -75,6 +75,15 @@ const LogicalMultiSelectFormField = React.forwardRef<
     const [selectedValues, setSelectedValues] = React.useState<Selection>(
       initialValue || {}
     );
+    // A parent resetting or restoring the selection (filters reset, link opened) is followed, compared by value
+    const initialValueKey = JSON.stringify(initialValue ?? {});
+    const followedInitialValueKey = React.useRef(initialValueKey);
+    React.useEffect(() => {
+      if (followedInitialValueKey.current !== initialValueKey) {
+        followedInitialValueKey.current = initialValueKey;
+        setSelectedValues(initialValue ?? {});
+      }
+    }, [initialValueKey, initialValue]);
 
     const flatOptions = useMemo<FlatOption[]>(() => {
       const res: FlatOption[] = [];
