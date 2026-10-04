@@ -10,6 +10,7 @@ import {
   DocumentDeleteMutation,
   DocumentUpdateMutation,
 } from '@/components/service/document/document.graphql';
+import { unchangedCoverageKeys } from '@/components/service/form/CoverageFields';
 import { ConnectorForm } from '@/components/service/integrations/forms/ConnectorForm';
 import { CsvFeedForm } from '@/components/service/integrations/forms/CsvFeedForm';
 import { RssFeedForm } from '@/components/service/integrations/forms/RssFeedForm';
@@ -203,7 +204,7 @@ export function useDocumentContext({
         ...pick(values as DocumentFormValues, documentBaseKeys),
         uploader_id: values?.uploader_id ?? '',
       },
-      ['slug']
+      ['slug', ...unchangedCoverageKeys(values, resource)]
     );
 
     const metadata = omit(values as DocumentFormValues, [

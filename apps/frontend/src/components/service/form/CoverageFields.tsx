@@ -49,6 +49,38 @@ const COVERAGE_VALUE_KEYS = [
   'covered_regions',
 ] as const;
 
+type CoverageValueKey = (typeof COVERAGE_VALUE_KEYS)[number];
+
+const sameCoverageValues = (left: unknown, right: unknown) => {
+  const keys = (values: unknown) =>
+    (Array.isArray(values) ? values : [])
+      .map(String)
+      .map(coverageValueKey)
+      .sort();
+  const [a, b] = [keys(left), keys(right)];
+  return a.length === b.length && a.every((value, index) => value === b[index]);
+};
+
+/**
+ * Coverage lists an update leaves out: the ones unchanged since the form opened, unless the administrator confirms the
+ * coverage. The backend keeps an omitted list as stored, so a coverage inferred again while the form was open is never
+ * saved as declared.
+ */
+export const unchangedCoverageKeys = (
+  values: object,
+  opened: object | null | undefined
+): CoverageValueKey[] => {
+  if ((values as Record<string, unknown>).coverage_confirmed === true) {
+    return [];
+  }
+  return COVERAGE_VALUE_KEYS.filter((key) =>
+    sameCoverageValues(
+      (values as Record<string, unknown>)[key],
+      (opened as Record<string, unknown> | null | undefined)?.[key]
+    )
+  );
+};
+
 /** Whether an integration carries at least one coverage value, inferred or declared. */
 export const hasCoverageValues = (document: object | null | undefined) =>
   !!document &&

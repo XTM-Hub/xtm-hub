@@ -10,6 +10,7 @@ import {
   ServiceFormCoverageConfirmationField,
   ServiceFormCoverageTagsField,
   ServiceFormCoveredObjectTypesField,
+  unchangedCoverageKeys,
 } from './CoverageFields';
 
 describe('coverageValuesSchema', () => {
@@ -197,6 +198,43 @@ const ObjectTypesForm = ({
     </Form>
   );
 };
+
+describe('unchangedCoverageKeys', () => {
+  const opened = {
+    covered_object_types: ['Malware', 'Indicator'],
+    covered_sectors: ['Finance'],
+    covered_regions: [],
+  };
+
+  it('should leave out of an update every list unchanged since the form opened, in any order', () => {
+    expect(
+      unchangedCoverageKeys(
+        {
+          covered_object_types: ['Indicator', 'Malware'],
+          covered_sectors: ['finance'],
+          covered_regions: [],
+          coverage_confirmed: false,
+        },
+        opened
+      )
+    ).toEqual(['covered_object_types', 'covered_sectors', 'covered_regions']);
+  });
+
+  it('should send a list the administrator changed', () => {
+    expect(
+      unchangedCoverageKeys(
+        { ...opened, covered_sectors: ['Finance', 'Energy'] },
+        opened
+      )
+    ).toEqual(['covered_object_types', 'covered_regions']);
+  });
+
+  it('should send every list of a confirmed coverage', () => {
+    expect(
+      unchangedCoverageKeys({ ...opened, coverage_confirmed: true }, opened)
+    ).toEqual([]);
+  });
+});
 
 describe('hasCoverageValues', () => {
   it('should tell whether an integration carries a coverage value', () => {
