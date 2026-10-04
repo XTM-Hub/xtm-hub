@@ -80,8 +80,27 @@ describe('hunt pack page loader', () => {
     expect(screen.queryByTestId('hunt-pack-slug')).not.toBeInTheDocument();
   });
 
+  it('shows the not-found message when the API does not find the hunt pack', () => {
+    mockQuery({
+      data: undefined,
+      error: new Error('DOCUMENT_NOT_FOUND'),
+      isPending: false,
+      isError: true,
+    });
+
+    renderLoader();
+
+    expect(screen.getByText('Utils.DocumentNotFound')).toBeInTheDocument();
+    expect(screen.queryByText('Error.AnErrorOccured')).not.toBeInTheDocument();
+  });
+
   it('shows an error message when the hunt pack cannot be read', () => {
-    mockQuery({ data: undefined, isPending: false, isError: true });
+    mockQuery({
+      data: undefined,
+      error: new Error('Network request failed'),
+      isPending: false,
+      isError: true,
+    });
 
     renderLoader();
 

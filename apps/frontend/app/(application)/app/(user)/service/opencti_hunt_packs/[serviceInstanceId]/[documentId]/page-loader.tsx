@@ -15,19 +15,25 @@ interface PreloaderProps {
 
 const PageLoader = ({ documentId, serviceInstance }: PreloaderProps) => {
   const t = useTranslations();
-  const { data, isPending, isError } = useHuntPackDocumentQuery(
+  const { data, error, isPending, isError } = useHuntPackDocumentQuery(
     portalGraphqlClient,
     { documentId, serviceInstanceId: serviceInstance.id }
   );
+  const notFound = <h1>{t('Utils.DocumentNotFound')}</h1>;
 
   if (isPending) {
     return <Loader />;
   }
   if (isError) {
-    return <p className="text-muted-foreground">{t('Error.AnErrorOccured')}</p>;
+    // The API reports an unknown or inaccessible document as DOCUMENT_NOT_FOUND.
+    return error instanceof Error && error.message === 'DOCUMENT_NOT_FOUND' ? (
+      notFound
+    ) : (
+      <p className="text-muted-foreground">{t('Error.AnErrorOccured')}</p>
+    );
   }
   if (!data.document) {
-    return <h1>{t('Utils.DocumentNotFound')}</h1>;
+    return notFound;
   }
 
   return (
