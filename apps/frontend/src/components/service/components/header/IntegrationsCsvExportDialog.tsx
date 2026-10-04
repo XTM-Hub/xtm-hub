@@ -6,6 +6,7 @@ import {
   toIntegrationCsvColumnLabelKey,
 } from '@/components/service/components/header/integrations-csv-export.utils';
 import { useServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
+import { useCoverageObjectTypeLabel } from '@/components/service/form/UseCoverageObjectTypes';
 import { useSolutionCategories } from '@/components/service/form/UseSolutionCategories';
 import { availableIntegrationTypes } from '@/components/service/integrations/Integration.utils';
 import { buildCoverageOptions } from '@/components/ui/shareable-resource/integration/IntegrationCoverageFilter';
@@ -165,11 +166,14 @@ export const IntegrationsCsvExportDialog = ({
     documentType: type,
     enabled: open,
   });
+  const objectTypeLabel = useCoverageObjectTypeLabel();
   const coverageOptions = useMemo(
     () => ({
       objectType: buildCoverageOptions(
         coverageFacetCounts?.objectType,
-        seededValues.object_type ?? []
+        seededValues.object_type ?? [],
+        [],
+        objectTypeLabel
       ),
       sector: buildCoverageOptions(
         coverageFacetCounts?.sector,
@@ -180,7 +184,7 @@ export const IntegrationsCsvExportDialog = ({
         seededValues.region ?? []
       ),
     }),
-    [coverageFacetCounts, seededValues]
+    [coverageFacetCounts, seededValues, objectTypeLabel]
   );
 
   const columnOptions = useMemo(

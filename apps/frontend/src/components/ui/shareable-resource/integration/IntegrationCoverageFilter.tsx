@@ -1,3 +1,4 @@
+import { useCoverageObjectTypeLabel } from '@/components/service/form/UseCoverageObjectTypes';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
 import {
   ServiceListLocalStorageKey,
@@ -20,12 +21,14 @@ const coverageKey = (value: string) => value.toLowerCase();
 /**
  * Coverage values are open lists: the options are the values of the matched population, the values seen earlier in
  * the session and the current selection. A value the current filters leave without integration stays listed. Values
- * differing only by case are one option, spelled as selected so the selection keeps its option.
+ * differing only by case are one option, spelled as selected so the selection keeps its option. Options are sorted
+ * by label; the value stays the stored one.
  */
 export const buildCoverageOptions = (
   facetCounts: Record<string, number> | undefined,
   selected: readonly string[],
-  seen: readonly string[] = []
+  seen: readonly string[] = [],
+  labelOf: (value: string) => string = (value) => value
 ) => {
   const byKey = new Map<string, string>();
   for (const value of [
@@ -38,8 +41,8 @@ export const buildCoverageOptions = (
     }
   }
   return [...byKey.values()]
-    .sort((a, b) => a.localeCompare(b))
-    .map((value) => ({ label: value, value }));
+    .map((value) => ({ label: labelOf(value), value }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 };
 
 /** Facet counts keyed by the option values, whatever the case of the facet values. */
@@ -103,10 +106,17 @@ export const IntegrationCoverageFilter = ({
     region: { selection: storage.regions, setSelection: storage.setRegions },
   }[family];
   const seen = useSeenFacetValues(facetCounts);
+  const objectTypeLabel = useCoverageObjectTypeLabel();
 
   const options = useMemo(
-    () => buildCoverageOptions(facetCounts, Object.keys(selection), seen),
-    [facetCounts, selection, seen]
+    () =>
+      buildCoverageOptions(
+        facetCounts,
+        Object.keys(selection),
+        seen,
+        family === 'objectType' ? objectTypeLabel : undefined
+      ),
+    [facetCounts, selection, seen, family, objectTypeLabel]
   );
   const optionCounts = useMemo(
     () => buildCoverageOptionCounts(facetCounts, options),

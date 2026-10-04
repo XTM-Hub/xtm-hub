@@ -1,4 +1,5 @@
 import { ShareableResourceDetailItem } from '@/components/service/document/ui/ShareableResourceDetailItem';
+import { useCoverageObjectTypeLabel } from '@/components/service/form/UseCoverageObjectTypes';
 import { SimpleTooltip } from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 
@@ -21,9 +22,13 @@ export const IntegrationCoverageDetails = ({
   coverage: IntegrationCoverage;
 }) => {
   const t = useTranslations();
+  const objectTypeLabel = useCoverageObjectTypeLabel();
   const items = COVERAGE_ITEMS.map((item) => ({
     ...item,
-    values: coverage[item.field] ?? [],
+    values:
+      item.field === 'covered_object_types'
+        ? (coverage[item.field] ?? []).map(objectTypeLabel)
+        : (coverage[item.field] ?? []),
   })).filter(({ values }) => values.length > 0);
 
   if (items.length === 0) {

@@ -63,6 +63,28 @@ describe('buildCoverageOptions', () => {
     expect(counts).toEqual({ Energy: 1, finance: 4 });
     expect(buildCoverageOptionCounts(undefined, options)).toBeUndefined();
   });
+
+  it('should show labels sorted by label, keeping the keys as values', () => {
+    // Given / When
+    const labels: Record<string, string> = {
+      'IPv4-Addr': 'IPv4 address',
+      'Attack-Pattern': 'Attack pattern',
+      Url: 'URL',
+    };
+    const options = buildCoverageOptions(
+      { Url: 1, 'IPv4-Addr': 2, 'Attack-Pattern': 3 },
+      [],
+      [],
+      (value) => labels[value] ?? value
+    );
+
+    // Then
+    expect(options).toEqual([
+      { label: 'Attack pattern', value: 'Attack-Pattern' },
+      { label: 'IPv4 address', value: 'IPv4-Addr' },
+      { label: 'URL', value: 'Url' },
+    ]);
+  });
 });
 
 describe('IntegrationCoverageFilter', () => {
