@@ -70,11 +70,17 @@ const parseFreeTextValues = (raw: string): string[] | null => {
   }
 };
 
+// Coverage values match regardless of case and spacing, like the coverage facets and filters
+const coverageValueKey = (value: string) =>
+  value.trim().replace(/\s+/g, ' ').toLowerCase();
+
 /**
  * Parses a compact param string into a LogicalMultiSelectSelection.
  * For integrationType, validates types against known enums.
  * For the free-text coverage params, reads the JSON array, and falls back to
- * the comma-separated format of earlier links.
+ * the comma-separated format of earlier links, a colon being part of the
+ * value; values differing only by case or spacing are selected once, with
+ * their first spelling.
  * For other params, accepts any non-empty key.
  *
  * Example: 'connector,csv_feed'
@@ -86,12 +92,13 @@ export const parseSelection = (
 ): LogicalMultiSelectSelection => {
   if (!raw) return {};
   const result: LogicalMultiSelectSelection = {};
-  const freeTextValues = FREE_TEXT_PARAMS.has(paramName)
-    ? parseFreeTextValues(raw)
-    : null;
-  if (freeTextValues) {
-    for (const value of freeTextValues) {
-      if (value.trim()) result[value] = [];
+  if (FREE_TEXT_PARAMS.has(paramName)) {
+    const seen = new Set<string>();
+    for (const value of parseFreeTextValues(raw) ?? raw.split(',')) {
+      const key = coverageValueKey(value);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      result[value.trim()] = [];
     }
     return result;
   }

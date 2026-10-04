@@ -75,12 +75,24 @@ describe('coverage filters (free text)', () => {
   });
 
   it.each`
-    description                                 | raw                  | expected
-    ${'comma-separated links of earlier pages'} | ${'Finance,Energy'}  | ${{ Finance: [], Energy: [] }}
-    ${'malformed JSON read as a legacy list'}   | ${'[Finance'}        | ${{ '[Finance': [] }}
-    ${'blank JSON values dropped'}              | ${'["Finance"," "]'} | ${{ Finance: [] }}
+    description                                 | raw                                             | expected
+    ${'comma-separated links of earlier pages'} | ${'Finance,Energy'}                             | ${{ Finance: [], Energy: [] }}
+    ${'malformed JSON read as a legacy list'}   | ${'[Finance'}                                   | ${{ '[Finance': [] }}
+    ${'blank JSON values dropped'}              | ${'["Finance"," "]'}                            | ${{ Finance: [] }}
+    ${'a colon kept in a legacy list value'}    | ${'Europe: Western,Asia'}                       | ${{ 'Europe: Western': [], Asia: [] }}
+    ${'case and spacing duplicates once'}       | ${'["Finance","finance"," FINANCE ","Energy"]'} | ${{ Finance: [], Energy: [] }}
+    ${'legacy list duplicates once'}            | ${'Finance,finance,Retail  goods,retail goods'} | ${{ Finance: [], 'Retail  goods': [] }}
   `('parses $description', ({ raw, expected }) => {
     expect(parseSelection(raw, SECTOR_PARAM)).toEqual(expected);
+  });
+
+  it('keeps a colon in every free-text coverage param of a legacy link', () => {
+    expect(parseSelection('Europe: Western', REGION_PARAM)).toEqual({
+      'Europe: Western': [],
+    });
+    expect(parseSelection('Threat-Actor:Group', OBJECT_TYPE_PARAM)).toEqual({
+      'Threat-Actor:Group': [],
+    });
   });
 
   it('keeps the compact format for the other params', () => {
