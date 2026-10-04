@@ -95,6 +95,10 @@ describe('integrationCoverageHelper', () => {
         'the maximum value length',
         { regions: ['r'.repeat(COVERAGE_MAX_VALUE_LENGTH)] },
       ],
+      [
+        'OpenCTI object types in any case or with an alias',
+        { object_types: ['Indicator', 'ipv4 addr', 'threat_actor_group'] },
+      ],
     ])('should accept %s', (_description, declaration) => {
       // Given / When
       const call = () =>
@@ -119,6 +123,10 @@ describe('integrationCoverageHelper', () => {
         { sectors: ['s'.repeat(COVERAGE_MAX_VALUE_LENGTH + 1)] },
       ],
       ['a blank value', { regions: ['   '] }],
+      [
+        'an object type outside the OpenCTI types',
+        { object_types: ['Indicator', 'not-an-opencti-type'] },
+      ],
     ])('should reject %s', (_description, declaration) => {
       // Given / When
       const call = () =>

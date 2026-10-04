@@ -65,11 +65,22 @@ const CANONICAL_VOCABULARY: Record<
   regions: buildVocabulary('regions', ['Worldwide']),
 };
 
+const collapseSpaces = (value: string): string =>
+  value.trim().replace(/\s+/g, ' ');
+
+const objectTypeKey = (value: string): string =>
+  collapseSpaces(value)
+    .toLowerCase()
+    .replace(/[\s_]+/g, '-');
+
+/** An OpenCTI entity or observable type, in any case or spelled with an accepted alias. */
+const isKnownObjectType = (value: string): boolean =>
+  CANONICAL_OBJECT_TYPES.has(objectTypeKey(value));
+
 const canonicalizeValue = (family: CoverageFamily, value: string): string => {
-  const collapsed = value.trim().replace(/\s+/g, ' ');
+  const collapsed = collapseSpaces(value);
   if (family === 'object_types') {
-    const key = collapsed.toLowerCase().replace(/[\s_]+/g, '-');
-    return CANONICAL_OBJECT_TYPES.get(key) ?? collapsed;
+    return CANONICAL_OBJECT_TYPES.get(objectTypeKey(value)) ?? collapsed;
   }
   return CANONICAL_VOCABULARY[family].get(collapsed.toLowerCase()) ?? collapsed;
 };
@@ -151,6 +162,10 @@ export const IntegrationCoverageHelper = {
       return;
     }
     if (!IntegrationCoverageDeclarationSchema.safeParse(declaration).success) {
+      throw new Error(BadRequestErrorCode.InvalidIntegrationCoverage);
+    }
+    // Object types are the closed OpenCTI vocabulary served by integrationCoverageObjectTypes
+    if (!(declaration.object_types ?? []).every(isKnownObjectType)) {
       throw new Error(BadRequestErrorCode.InvalidIntegrationCoverage);
     }
   },
