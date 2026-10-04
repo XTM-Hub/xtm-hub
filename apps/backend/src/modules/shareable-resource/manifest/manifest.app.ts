@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import {
   DocumentMetadataKeyCode,
   IntegrationType,
@@ -31,7 +32,8 @@ import { ManifestOutput } from './manifest.types';
 const saveManifestToDatabase = async (
   key: ManifestKey,
   documentIds: DocumentId[],
-  manifestName: string
+  manifestName: string,
+  claimId?: string
 ): Promise<void> => {
   await withTransaction(async () => {
     const savedManifest = await ManifestDomain.insertManifest({
@@ -49,9 +51,15 @@ const saveManifestToDatabase = async (
       documentIds
     );
 
-    const deletedCount = await ManifestDomain.deleteFromRebuildQueue(key);
+    const deletedCount = await ManifestDomain.deleteFromRebuildQueue(
+      key,
+      claimId
+    );
     if (deletedCount === 0) {
-      logApp.error('No processing queue entry found to delete', { key });
+      logApp.error('No processing queue entry found to delete', {
+        key,
+        claimId,
+      });
     }
   });
 };
@@ -124,6 +132,24 @@ const fetchConnectors = async (
   return [...compatible, ...fallbacks];
 };
 
+const recoverExpiredClaims = async (): Promise<void> => {
+  const recovered = await ManifestDomain.recoverStuckProcessingEntries();
+  if (recovered.length > 0) {
+    logApp.error(
+      'Manifest queue recovery: resetting stuck processing entries',
+      {
+        count: recovered.length,
+        entries: recovered.map((row) => ({
+          product: row.product,
+          version: row.version,
+          type: row.type,
+          created_at: row.created_at,
+        })),
+      }
+    );
+  }
+};
+
 export const ManifestApp = {
   requestManifestGeneration: async ({
     product,
@@ -155,10 +181,11 @@ export const ManifestApp = {
   /**
    * Rebuild requests are only processed when a job is sent for their key.
    * Requests queued without a job (by a database migration, by a failed
-   * enqueue or by a stopped process) are sent again: all of them when the
-   * workers start, and periodically those pending since before
-   * `createdBefore`. Each key is attempted on its own, and a key that fails
-   * stays pending for the next attempt.
+   * enqueue or by a process stopped during a rebuild, whose expired claim is
+   * released first) are sent again: all of them when the workers start, and
+   * periodically those pending since before `createdBefore`. Each key is
+   * attempted on its own, and a key that fails stays pending for the next
+   * attempt.
    */
   resumePendingRebuilds: async ({
     createdBefore,
@@ -166,6 +193,7 @@ export const ManifestApp = {
     resumed: number;
     failed: number;
   }> => {
+    await recoverExpiredClaims();
     const keys = await ManifestDomain.loadPendingRebuildKeys(createdBefore);
     let resumed = 0;
     const failedKeys: ManifestKey[] = [];
@@ -192,26 +220,18 @@ export const ManifestApp = {
   },
 
   processManifestQueue: async (manifest?: ManifestKey) => {
-    const recovered = await ManifestDomain.recoverStuckProcessingEntries();
-    if (recovered.length > 0) {
-      logApp.error(
-        'Manifest queue recovery: resetting stuck processing entries',
-        {
-          count: recovered.length,
-          entries: recovered.map((row) => ({
-            product: row.product,
-            version: row.version,
-            type: row.type,
-            created_at: row.created_at,
-          })),
-        }
-      );
-    }
+    await recoverExpiredClaims();
 
     logApp.info('Processing manifest queue');
-    const rows =
-      await ManifestDomain.loadPendingManifestsForProcessing(manifest);
-    logApp.info('Manifests locked for processing', { count: rows.length });
+    const claimId = randomUUID();
+    const rows = await ManifestDomain.loadPendingManifestsForProcessing(
+      manifest,
+      claimId
+    );
+    logApp.info('Manifests locked for processing', {
+      count: rows.length,
+      claimId,
+    });
 
     for (const row of rows) {
       const key: ManifestKey = {
@@ -220,16 +240,16 @@ export const ManifestApp = {
         type: row.type,
       };
       try {
-        const manifest = await ManifestApp.generateManifest(key);
+        const manifest = await ManifestApp.generateManifest(key, claimId);
         if (!manifest) {
           // Nothing to publish for this key: the request is done.
-          await ManifestDomain.deleteFromRebuildQueue(key);
+          await ManifestDomain.deleteFromRebuildQueue(key, claimId);
         }
       } catch (error) {
         logApp.error('Unable to process manifest', { error, manifest: row });
         try {
           // Pending again, the request is resumed by the next sweep.
-          await ManifestDomain.returnToPending(key);
+          await ManifestDomain.returnToPending(key, claimId);
         } catch (requeueError) {
           logApp.error(
             'Unable to return a failed manifest rebuild to pending',
@@ -244,7 +264,8 @@ export const ManifestApp = {
   },
 
   generateManifest: async (
-    key: ManifestKey
+    key: ManifestKey,
+    claimId?: string
   ): Promise<ManifestOutput | null> => {
     if (key.type != ManifestType.Connector) {
       logApp.error('UnsupportedManifestType', { type: key.type });
@@ -305,7 +326,8 @@ export const ManifestApp = {
     await saveManifestToDatabase(
       key,
       connectors.map((c) => c.id),
-      manifest.manifest_version
+      manifest.manifest_version,
+      claimId
     );
 
     logApp.info('Manifest uploaded to MinIO', { minioFileName });

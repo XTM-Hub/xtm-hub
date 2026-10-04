@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { afterEach, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import {
@@ -20,7 +21,10 @@ describe('manifestDomain', () => {
     });
 
     it('should return an empty array when the queue is empty', async () => {
-      const result = await ManifestDomain.loadPendingManifestsForProcessing();
+      const result = await ManifestDomain.loadPendingManifestsForProcessing(
+        undefined,
+        randomUUID()
+      );
       expect(result).toEqual([]);
     });
 
@@ -38,7 +42,10 @@ describe('manifestDomain', () => {
         status: ManifestRebuildQueueStatus.Pending,
       });
 
-      const result = await ManifestDomain.loadPendingManifestsForProcessing();
+      const result = await ManifestDomain.loadPendingManifestsForProcessing(
+        undefined,
+        randomUUID()
+      );
 
       expect(result).toHaveLength(2);
       const rows = await TestHelper.manifestRebuildQueue.loadAll({});
@@ -61,7 +68,10 @@ describe('manifestDomain', () => {
         status: ManifestRebuildQueueStatus.Processing,
       });
 
-      const result = await ManifestDomain.loadPendingManifestsForProcessing();
+      const result = await ManifestDomain.loadPendingManifestsForProcessing(
+        undefined,
+        randomUUID()
+      );
 
       expect(result).toHaveLength(1);
       expect(result[0]!.product).toBe(PlatformIdentifier.Opencti);
@@ -81,8 +91,10 @@ describe('manifestDomain', () => {
         status: ManifestRebuildQueueStatus.Pending,
       });
 
-      const result =
-        await ManifestDomain.loadPendingManifestsForProcessing(MANIFEST_KEY);
+      const result = await ManifestDomain.loadPendingManifestsForProcessing(
+        MANIFEST_KEY,
+        randomUUID()
+      );
 
       expect(result).toHaveLength(1);
       expect(result[0]!.product).toBe(PlatformIdentifier.Opencti);
@@ -105,8 +117,10 @@ describe('manifestDomain', () => {
         status: ManifestRebuildQueueStatus.Pending,
       });
 
-      const result =
-        await ManifestDomain.loadPendingManifestsForProcessing(MANIFEST_KEY);
+      const result = await ManifestDomain.loadPendingManifestsForProcessing(
+        MANIFEST_KEY,
+        randomUUID()
+      );
 
       expect(result).toHaveLength(0);
       const rows = await TestHelper.manifestRebuildQueue.loadAll({

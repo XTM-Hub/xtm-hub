@@ -71,8 +71,10 @@ export const ManifestDomain = {
     }));
   },
 
+  /** Claims the pending requests for `claimId`: completion and failure then only act on this claim. */
   loadPendingManifestsForProcessing: async (
-    filter?: ManifestKey
+    filter: ManifestKey | undefined,
+    claimId: string
   ): Promise<ManifestRebuildQueue[]> => {
     // transaction is not mandatory since done in a single query, but forUpdate and skipLocked are still needed in the subquery
     const subquery = db<ManifestRebuildQueue>('ManifestRebuildQueue')
@@ -104,7 +106,11 @@ export const ManifestDomain = {
 
     return db<ManifestRebuildQueue>('ManifestRebuildQueue')
       .whereIn('id', subquery)
-      .update({ status: ManifestRebuildQueueStatus.Processing })
+      .update({
+        status: ManifestRebuildQueueStatus.Processing,
+        claimed_at: new Date(),
+        claim_id: claimId,
+      })
       .returning('*');
   },
 
@@ -134,11 +140,11 @@ export const ManifestDomain = {
     await db<ManifestDocument>('Manifest_Document').insert(rows);
   },
 
-  deleteFromRebuildQueue: async ({
-    platformIdentifier,
-    version,
-    type,
-  }: ManifestKey): Promise<number> => {
+  /** Completes the processing request of `key`; with a `claimId`, only when that claim still owns it. */
+  deleteFromRebuildQueue: async (
+    { platformIdentifier, version, type }: ManifestKey,
+    claimId?: string
+  ): Promise<number> => {
     // .returning('id') is required here: a bare .delete() result is a plain
     // number, which postProcessResponse silently turns into undefined.
     const deletedRows = await db<ManifestRebuildQueue>('ManifestRebuildQueue')
@@ -147,28 +153,36 @@ export const ManifestDomain = {
         version,
         type,
         status: ManifestRebuildQueueStatus.Processing,
+        ...(claimId ? { claim_id: claimId } : {}),
       })
       .delete()
       .returning('id');
     return deletedRows.length;
   },
 
-  /** Puts a rebuild that failed back in the queue, unless a pending request already covers its key. */
-  returnToPending: async ({
-    platformIdentifier,
-    version,
-    type,
-  }: ManifestKey): Promise<void> => {
+  /**
+   * Puts a failed rebuild back in the queue when `claimId` still owns it,
+   * unless a pending request already covers its key.
+   */
+  returnToPending: async (
+    { platformIdentifier, version, type }: ManifestKey,
+    claimId: string
+  ): Promise<void> => {
     const processing = {
       product: platformIdentifier,
       version,
       type,
       status: ManifestRebuildQueueStatus.Processing,
+      claim_id: claimId,
     };
     try {
       await db<ManifestRebuildQueue>('ManifestRebuildQueue')
         .where(processing)
-        .update({ status: ManifestRebuildQueueStatus.Pending });
+        .update({
+          status: ManifestRebuildQueueStatus.Pending,
+          claimed_at: null,
+          claim_id: null,
+        });
     } catch (error) {
       if (
         !isUniqueConstraintViolation(
@@ -184,18 +198,30 @@ export const ManifestDomain = {
     }
   },
 
+  /**
+   * Releases the claims older than 30 minutes, aged from the claim itself
+   * (rows claimed before claims were recorded fall back to their creation).
+   */
   recoverStuckProcessingEntries: async (): Promise<ManifestRebuildQueue[]> => {
     const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
     const stuckRows = await db<ManifestRebuildQueue>('ManifestRebuildQueue')
       .where({ status: ManifestRebuildQueueStatus.Processing })
-      .where('created_at', '<', thirtyMinutesAgo);
+      .whereRaw('COALESCE("claimed_at", "created_at") < ?', [thirtyMinutesAgo]);
 
     const recovered: ManifestRebuildQueue[] = [];
     for (const row of stuckRows) {
       try {
         const [updated] = await db<ManifestRebuildQueue>('ManifestRebuildQueue')
-          .where({ id: row.id })
-          .update({ status: ManifestRebuildQueueStatus.Pending })
+          .where({
+            id: row.id,
+            status: ManifestRebuildQueueStatus.Processing,
+          })
+          .whereRaw('"claim_id" IS NOT DISTINCT FROM ?', [row.claim_id])
+          .update({
+            status: ManifestRebuildQueueStatus.Pending,
+            claimed_at: null,
+            claim_id: null,
+          })
           .returning('*');
         if (updated) recovered.push(updated);
       } catch (error) {

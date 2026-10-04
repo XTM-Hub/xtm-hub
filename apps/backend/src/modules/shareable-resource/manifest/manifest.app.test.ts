@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Readable } from 'stream';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
@@ -591,16 +592,22 @@ describe('manifestApp', () => {
       await ManifestApp.processManifestQueue();
 
       expect(ManifestApp.generateManifest).toHaveBeenCalledTimes(2);
-      expect(ManifestApp.generateManifest).toHaveBeenCalledWith({
-        platformIdentifier: PlatformIdentifier.Opencti,
-        version: '6.4.0',
-        type: ManifestType.Connector,
-      });
-      expect(ManifestApp.generateManifest).toHaveBeenCalledWith({
-        platformIdentifier: PlatformIdentifier.Openaev,
-        version: '1.0.0',
-        type: ManifestType.Connector,
-      });
+      expect(ManifestApp.generateManifest).toHaveBeenCalledWith(
+        {
+          platformIdentifier: PlatformIdentifier.Opencti,
+          version: '6.4.0',
+          type: ManifestType.Connector,
+        },
+        expect.any(String)
+      );
+      expect(ManifestApp.generateManifest).toHaveBeenCalledWith(
+        {
+          platformIdentifier: PlatformIdentifier.Openaev,
+          version: '1.0.0',
+          type: ManifestType.Connector,
+        },
+        expect.any(String)
+      );
     });
 
     it('only processes the matching row when a filter key is passed', async () => {
@@ -620,7 +627,10 @@ describe('manifestApp', () => {
       await ManifestApp.processManifestQueue(MANIFEST_KEY);
 
       expect(ManifestApp.generateManifest).toHaveBeenCalledOnce();
-      expect(ManifestApp.generateManifest).toHaveBeenCalledWith(MANIFEST_KEY);
+      expect(ManifestApp.generateManifest).toHaveBeenCalledWith(
+        MANIFEST_KEY,
+        expect.any(String)
+      );
     });
 
     it('returns a failed rebuild to pending so that the next sweep resumes it', async () => {
@@ -741,6 +751,76 @@ describe('manifestApp', () => {
 
       // Then
       expect(resumed).toEqual({ resumed: 1, failed: 0 });
+      expect(enqueueImmediateRebuildSpy).toHaveBeenCalledExactlyOnceWith({
+        platformIdentifier: PlatformIdentifier.Opencti,
+        version: '7.261002.0',
+        type: ManifestType.Connector,
+      });
+    });
+
+    it('keeps the fresh claim of a worker on an hour-old request while another worker runs', async () => {
+      // Given an hour-old request that worker A has just claimed
+      const generateManifestSpy = vi
+        .spyOn(ManifestApp, 'generateManifest')
+        .mockResolvedValue(null);
+      const key = {
+        platformIdentifier: PlatformIdentifier.Opencti,
+        version: '7.261002.0',
+        type: ManifestType.Connector,
+      };
+      await TestHelper.manifestRebuildQueue.create({
+        product: key.platformIdentifier,
+        version: key.version,
+        status: ManifestRebuildQueueStatus.Pending,
+        created_at: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      });
+      const claimA = randomUUID();
+      await ManifestDomain.loadPendingManifestsForProcessing(undefined, claimA);
+
+      // When worker B processes the queue and completes with its own claim
+      await ManifestApp.processManifestQueue();
+      const deletedByB = await ManifestDomain.deleteFromRebuildQueue(
+        key,
+        randomUUID()
+      );
+
+      // Then the claim of A is neither released nor completed by B
+      expect(generateManifestSpy).not.toHaveBeenCalled();
+      expect(deletedByB).toBe(0);
+      expect(await TestHelper.manifestRebuildQueue.loadAll({})).toEqual([
+        expect.objectContaining({
+          status: ManifestRebuildQueueStatus.Processing,
+          claim_id: claimA,
+        }),
+      ]);
+      expect(await ManifestDomain.deleteFromRebuildQueue(key, claimA)).toBe(1);
+    });
+
+    it('recovers the expired claim of a stopped process on an idle installation', async () => {
+      // Given a rebuild claimed 31 minutes ago by a process that stopped
+      const enqueueImmediateRebuildSpy = vi
+        .spyOn(ManifestHelper, 'enqueueImmediateRebuild')
+        .mockResolvedValue(undefined);
+      await TestHelper.manifestRebuildQueue.create({
+        product: PlatformIdentifier.Opencti,
+        version: '7.261002.0',
+        status: ManifestRebuildQueueStatus.Processing,
+        claimed_at: new Date(Date.now() - 31 * 60 * 1000),
+        claim_id: randomUUID(),
+      });
+
+      // When the startup or periodic sweep runs, with no other job
+      const resumed = await ManifestApp.resumePendingRebuilds();
+
+      // Then the request is pending again and sent once more
+      expect(resumed).toEqual({ resumed: 1, failed: 0 });
+      expect(await TestHelper.manifestRebuildQueue.loadAll({})).toEqual([
+        expect.objectContaining({
+          status: ManifestRebuildQueueStatus.Pending,
+          claim_id: null,
+          claimed_at: null,
+        }),
+      ]);
       expect(enqueueImmediateRebuildSpy).toHaveBeenCalledExactlyOnceWith({
         platformIdentifier: PlatformIdentifier.Opencti,
         version: '7.261002.0',
