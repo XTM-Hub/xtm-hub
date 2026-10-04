@@ -39,6 +39,7 @@ import {
   PULSE_RATE_LIMIT_WINDOW_SECONDS,
   PULSE_SALT_RETENTION_DAYS,
   PULSE_SCOPE_ALL,
+  PULSE_SNAPSHOT_COMPUTE_ATTEMPTS,
   PULSE_TRENDING_ITEMS_PER_OBJECT_TYPE,
   PulseOperation,
 } from './pulse.const';
@@ -335,23 +336,31 @@ const recordContributions = async ({
     sector_bucket: sectorBucket,
     region_bucket: regionBucket,
   } = input;
+  // Under the platform lock and before anything is written: a retry of a
+  // batch whose response was lost gets its first result and changes nothing,
+  // neither the counts nor the buckets or the last contribution day.
+  const known = await PulseDomain.loadPlatformByPseudonym(pseudonym);
+  if (known) {
+    const accepted = await PulseDomain.loadBatchReceipt({
+      platformId: known.id,
+      batchId: input.batch_id,
+    });
+    if (accepted !== undefined) {
+      return { accepted, duplicate: true };
+    }
+  }
   const platformId = await PulseDomain.upsertPlatformContribution({
     pseudonym,
     sectorBucket,
     regionBucket,
     day,
   });
-  // In the same transaction as the counts: a retry of a batch whose response
-  // was lost gets its first result and changes nothing.
-  const batch = await PulseDomain.recordBatch({
+  await PulseDomain.recordBatch({
     platformId,
     batchId: input.batch_id,
     day,
     accepted: records.length,
   });
-  if (!batch.recorded) {
-    return { accepted: batch.accepted, duplicate: true };
-  }
   const existingTupleKeys = await PulseDomain.loadExistingTupleKeys({
     platformId,
     day,
@@ -505,21 +514,35 @@ const loadTrendingItems = async ({
     PULSE_LOCK_TRENDING,
     `${scope.day}:${scope.period}:${scope.sectorScope}:${scope.regionScope}`,
     async () => {
-      // Read before the data: the items are only saved under this generation.
-      const generation = await PulseDomain.loadDataGeneration();
-      const current = await PulseDomain.loadTrendingSnapshot(scope);
-      if (current && isFresh(current, generation)) {
-        return current.items;
+      for (
+        let attempt = 0;
+        attempt < PULSE_SNAPSHOT_COMPUTE_ATTEMPTS;
+        attempt += 1
+      ) {
+        // Read before the data: the items are only saved under this generation.
+        const generation = await PulseDomain.loadDataGeneration();
+        const current = await PulseDomain.loadTrendingSnapshot(scope);
+        if (current && isFresh(current, generation)) {
+          return current.items;
+        }
+        const items = await computeTrendingItems({ settings, input });
+        await PulseDomain.saveTrendingSnapshot({
+          ...scope,
+          computedAt: now,
+          policy,
+          generation,
+          items,
+        });
+        // A purge or a retention run during the computation moved the
+        // generation: the items may hold deleted data, they are computed
+        // again and never served.
+        if ((await PulseDomain.loadDataGeneration()) === generation) {
+          return items;
+        }
       }
-      const items = await computeTrendingItems({ settings, input });
-      await PulseDomain.saveTrendingSnapshot({
-        ...scope,
-        computedAt: now,
-        policy,
-        generation,
-        items,
-      });
-      return items;
+      throw new Error(
+        'Threat Pulse contributions kept changing while the trending was computed'
+      );
     }
   );
 };
@@ -592,19 +615,32 @@ const loadDigestItems = async ({
     return cached.stored.items;
   }
   return withAdvisoryLock(PULSE_LOCK_DIGEST, day, async () => {
-    // Read before the data: the items are only saved under this generation.
-    const generation = await PulseDomain.loadDataGeneration();
-    const current = await PulseDomain.loadDigestSnapshot(day);
-    if (isFresh(current, generation)) {
-      return current.stored.items;
+    for (
+      let attempt = 0;
+      attempt < PULSE_SNAPSHOT_COMPUTE_ATTEMPTS;
+      attempt += 1
+    ) {
+      // Read before the data: the items are only saved under this generation.
+      const generation = await PulseDomain.loadDataGeneration();
+      const current = await PulseDomain.loadDigestSnapshot(day);
+      if (isFresh(current, generation)) {
+        return current.stored.items;
+      }
+      const items = await computeDigestItems({ settings, day });
+      await PulseDomain.saveDigestSnapshot({
+        day,
+        computedAt: now,
+        stored: { policy, size: settings.digestSize, generation, items },
+      });
+      // Same as the trending: a digest computed across a purge or a
+      // retention run is computed again, never served.
+      if ((await PulseDomain.loadDataGeneration()) === generation) {
+        return items;
+      }
     }
-    const items = await computeDigestItems({ settings, day });
-    await PulseDomain.saveDigestSnapshot({
-      day,
-      computedAt: now,
-      stored: { policy, size: settings.digestSize, generation, items },
-    });
-    return items;
+    throw new Error(
+      'Threat Pulse contributions kept changing while the digest was computed'
+    );
   });
 };
 

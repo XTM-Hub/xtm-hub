@@ -111,6 +111,7 @@ type BaseDatabaseType =
   | 'PulseRateLimit'
   | 'PulseTrendingSnapshot'
   | 'PulseDigestSnapshot'
+  | 'PulseDataGeneration'
   | 'PulseBatch';
 
 export type DatabaseType =

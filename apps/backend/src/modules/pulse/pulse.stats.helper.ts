@@ -284,6 +284,11 @@ export const PulseStats = {
           platform_count: PulseStats.clampToGraphQLInt(
             entry?.network.get(callerPlatform) ?? 0
           ),
+          // Compared with the sector median: the caller's events in its
+          // current sector only, the scope of every total of that median.
+          sector_platform_count: PulseStats.clampToGraphQLInt(
+            entry?.sector.get(callerPlatform) ?? 0
+          ),
           sector_median: sectorMedian,
           network_median: networkMedian,
         };

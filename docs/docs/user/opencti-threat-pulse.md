@@ -58,7 +58,7 @@ Reciprocity is enforced by XTM Hub: lookups, trending lists and benchmarks answe
 | `pulseDigest` | The preview described above. Open to every connected platform. |
 | `pulseLookup` | Community prevalence (`rare`, `uncommon`, `common`, `widespread`), contributing platforms range, network first and last seen days, 12-week trend and sector trend of up to 1,000 hashes. |
 | `pulseTrending` | Objects rising in a sector and region over 7, 30 or 90 days, returned as hashes the platform matches against its own objects. |
-| `pulseBenchmark` | The platform's activity per object type and event kind compared with the median of its sector, and the objects it reports above that median, ordered by their ratio to the median. |
+| `pulseBenchmark` | The platform's activity per object type and event kind compared with the median of its sector, and the objects it reports above that median, ordered by their ratio to the median. Sector comparisons only count what the platform reported in its current sector (`sector_platform_count`); network comparisons count everything it reported over the period (`platform_count`). |
 
 Every operation authenticates with the platform token of the connected product and is rate limited per platform.
 

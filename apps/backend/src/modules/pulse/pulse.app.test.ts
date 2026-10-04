@@ -461,6 +461,72 @@ describe('pulseApp platform API', PULSE_INTEGRATION_SUITE, () => {
       ]);
     });
 
+    it('should not restore the buckets of a retried batch after a newer one', async () => {
+      // Given a first batch as finance / europe, then a second one as healthcare / asia_pacific
+      const client = await registerClient();
+      const records = [
+        { objectType: PulseObjectType.Indicator, value: IP_VALUE },
+      ];
+      await client.push({ day: PULSE_TEST_TODAY, records, batchId: BATCH_ID });
+      await client.push({
+        day: PULSE_TEST_TODAY,
+        records,
+        sector: PulseSectorBucket.Healthcare,
+        region: PulseRegionBucket.AsiaPacific,
+      });
+
+      // When the first batch is retried
+      await client.push({ day: PULSE_TEST_TODAY, records, batchId: BATCH_ID });
+
+      // Then the platform keeps the buckets of its newest batch
+      expect(await TestHelper.pulse.loadPlatformBuckets()).toEqual([
+        {
+          sector_bucket: PulseSectorBucket.Healthcare,
+          region_bucket: PulseRegionBucket.AsiaPacific,
+          last_contribution_day: PULSE_TEST_TODAY,
+        },
+      ]);
+    });
+
+    it('should not move the last contribution day for a retried batch carrying a newer day', async () => {
+      // Given a batch of yesterday
+      const client = await registerClient();
+      const records = [
+        { objectType: PulseObjectType.Indicator, value: IP_VALUE },
+      ];
+      await client.push({
+        day: PULSE_TEST_YESTERDAY,
+        records,
+        batchId: BATCH_ID,
+      });
+
+      // When the same batch id comes again with today's day
+      const retry = await client.push({
+        day: PULSE_TEST_TODAY,
+        records,
+        batchId: BATCH_ID,
+      });
+
+      // Then nothing is recorded for today
+      expect({
+        retry: retry.accepted,
+        platforms: await TestHelper.pulse.loadPlatformBuckets(),
+        aggregates: (await TestHelper.pulse.loadDailyAggregates()).map(
+          ({ day }) => day
+        ),
+      }).toEqual({
+        retry: 1,
+        platforms: [
+          {
+            sector_bucket: PulseSectorBucket.Finance,
+            region_bucket: PulseRegionBucket.Europe,
+            last_contribution_day: PULSE_TEST_YESTERDAY,
+          },
+        ],
+        aggregates: [PULSE_TEST_YESTERDAY],
+      });
+    });
+
     it.each([
       {
         description: 'a raw value instead of a hash',

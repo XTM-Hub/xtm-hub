@@ -403,6 +403,31 @@ describe('pulseStats', () => {
         metric: { platform_count: 1, sector_median: 3, network_median: 4 },
       });
     });
+
+    it('should compare the caller with its sector on its events in that sector only', () => {
+      // Given a caller that reported 100 events in its former sector and 1 in its current one
+      const totals = [
+        makeTotal({ platform: CALLER, total: 101, sectorTotal: 1 }),
+        ...[2, 3, 4, 5].map((platform) =>
+          makeTotal({ platform, total: 2, sectorTotal: 2 })
+        ),
+      ];
+
+      // When
+      const { metrics } = PulseStats.summarizeBenchmark({
+        totals,
+        callerPlatform: CALLER,
+        kThreshold: K,
+      });
+
+      // Then the network comparison keeps every sector, the sector one does not
+      expect(metrics[0]).toMatchObject({
+        platform_count: 101,
+        sector_platform_count: 1,
+        sector_median: 2,
+        network_median: 2,
+      });
+    });
   });
 
   describe('decideRateLimit', () => {

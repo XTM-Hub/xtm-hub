@@ -1889,9 +1889,12 @@ export type PulseBenchmarkMetric = {
   /** Null when the network has fewer than k active platforms in the period */
   network_median?: Maybe<Scalars['Float']['output']>;
   object_type: PulseObjectType;
+  /** Events of the calling platform over the period, in every sector it reported under; compared with network_median */
   platform_count: Scalars['Int']['output'];
   /** Null when the sector bucket has fewer than k active platforms in the period */
   sector_median?: Maybe<Scalars['Float']['output']>;
+  /** Events of the calling platform over the period in its current sector only; compared with sector_median */
+  sector_platform_count: Scalars['Int']['output'];
 };
 
 export type PulseBenchmarkResult = {
@@ -4903,6 +4906,7 @@ export type PulseBenchmarkMetricResolvers<ContextType = PortalContext, ParentTyp
   object_type?: Resolver<ResolversTypes['PulseObjectType'], ParentType, ContextType>;
   platform_count?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   sector_median?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  sector_platform_count?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 

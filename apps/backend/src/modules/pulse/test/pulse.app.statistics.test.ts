@@ -829,6 +829,37 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
       });
     });
 
+    it('should compare the caller with its sector on what it reported in that sector only', async () => {
+      // Given a caller that reported LockBit 100 times as healthcare yesterday
+      // and once as finance today, and four finance platforms twice each
+      const clients = await registerPulseClients(5);
+      await clients[0]!.push({
+        day: PULSE_TEST_YESTERDAY,
+        records: [malware(LOCKBIT, 100)],
+        sector: PulseSectorBucket.Healthcare,
+      });
+      await clients[0]!.push({
+        day: PULSE_TEST_TODAY,
+        records: [malware(LOCKBIT, 1)],
+      });
+      for (const client of clients.slice(1)) {
+        await client.push({
+          day: PULSE_TEST_TODAY,
+          records: [malware(LOCKBIT, 2)],
+        });
+      }
+
+      // When
+      const benchmark = await clients[0]!.benchmark({
+        day: PULSE_TEST_TODAY,
+        period: PulsePeriod.Last_30Days,
+      });
+
+      // Then the caller is not above the finance median: its healthcare
+      // reports do not count against it
+      expect(benchmark.top_items).toEqual([]);
+    });
+
     it('should list only the keys above the sector median, strongest relative outliers first', async () => {
       // Given the caller far above a low median, above a high median, and below a median
       const clients = await registerPulseClients(5);

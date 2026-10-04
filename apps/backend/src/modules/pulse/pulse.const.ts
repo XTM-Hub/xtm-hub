@@ -117,6 +117,10 @@ export const PULSE_BELOW_SMALLEST_BUCKET_LABEL = '<5';
 // recomputed.
 export const PULSE_PUBLICATION_POLICY_VERSION = 5;
 
+// A trending or digest computation that a purge or a retention run overlapped
+// is computed again, this many times at most before the request fails.
+export const PULSE_SNAPSHOT_COMPUTE_ATTEMPTS = 3;
+
 export const PULSE_PREVALENCE_RARE_BELOW = 0.02;
 export const PULSE_PREVALENCE_UNCOMMON_BELOW = 0.1;
 export const PULSE_PREVALENCE_COMMON_BELOW = 0.3;

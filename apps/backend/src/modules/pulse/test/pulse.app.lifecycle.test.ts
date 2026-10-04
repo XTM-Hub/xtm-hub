@@ -189,11 +189,12 @@ describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
       const during = await inFlight;
       const after = await clients[1]!.trending(request);
 
-      // Then the ranking computed with five platforms is never served again
+      // Then the ranking computed with five platforms is served neither to the
+      // request in flight nor afterwards
       expect({
         during: during.items.length,
         after: after.items.length,
-      }).toEqual({ during: 1, after: 0 });
+      }).toEqual({ during: 0, after: 0 });
     });
 
     it('should never publish a digest computed across a purge', async () => {
@@ -214,12 +215,14 @@ describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
       const saved = await PulseDomain.loadDigestSnapshot(PULSE_TEST_TODAY);
       const after = await clients[1]!.digest({ day: PULSE_TEST_TODAY });
 
-      // Then the digest computed with five platforms is neither saved nor served
+      // Then the digest computed with five platforms is neither saved nor
+      // served, not even to the request in flight, which gets the digest
+      // computed again after the purge
       expect({
         during: during.items.length,
-        saved,
+        saved: saved?.stored?.items,
         after: after.items.length,
-      }).toEqual({ during: 1, saved: undefined, after: 0 });
+      }).toEqual({ during: 0, saved: [], after: 0 });
     });
 
     it('should limit purges to 5 per 24 hours', async () => {

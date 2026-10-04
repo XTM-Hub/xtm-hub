@@ -81,8 +81,7 @@ export const PulseDomain = {
   // endregion
 
   // region Batches
-  // Records the batch of the platform, or answers how many records it accepted
-  // the first time when the platform already pushed it.
+  // The receipt of a batch, written in the transaction of its counts.
   recordBatch: async ({
     platformId,
     batchId,
@@ -93,22 +92,28 @@ export const PulseDomain = {
     batchId: string;
     day: string;
     accepted: number;
-  }): Promise<{ recorded: boolean; accepted: number }> => {
-    const inserted = await query<{ accepted: number }>(
+  }): Promise<void> => {
+    await query(
       `INSERT INTO "PulseBatch" (pulse_platform_id, batch_id, day, accepted)
        VALUES (?, ?::uuid, ?::date, ?)
-       ON CONFLICT (pulse_platform_id, batch_id) DO NOTHING
-       RETURNING accepted`,
+       ON CONFLICT (pulse_platform_id, batch_id) DO NOTHING`,
       [platformId, batchId, day, accepted]
     );
-    if (inserted.length > 0) {
-      return { recorded: true, accepted };
-    }
-    const [existing] = await query<{ accepted: number }>(
+  },
+
+  // How many records the batch accepted when the platform pushed it, if it did.
+  loadBatchReceipt: async ({
+    platformId,
+    batchId,
+  }: {
+    platformId: number;
+    batchId: string;
+  }): Promise<number | undefined> => {
+    const [row] = await query<{ accepted: number }>(
       'SELECT accepted FROM "PulseBatch" WHERE pulse_platform_id = ? AND batch_id = ?::uuid',
       [platformId, batchId]
     );
-    return { recorded: false, accepted: existing?.accepted ?? 0 };
+    return row?.accepted;
   },
 
   deleteBatchesBefore: async (day: string): Promise<number> => {
@@ -867,10 +872,13 @@ export const PulseDomain = {
       PulseKeyRef & { my_count: number; median: number }
     >(
       `WITH mine AS (
+         -- The caller's counts in the sector only, like the per-platform
+         -- totals its median is computed from.
          SELECT c.at_rest_key, c.object_type, SUM(c.event_count)::float8 AS my_count
          FROM "PulseContribution" c
          JOIN "PulseKey" pk ON pk.at_rest_key = c.at_rest_key AND pk.object_type = c.object_type
          WHERE pk.platform_count >= ? AND c.pulse_platform_id = ?
+           AND c.sector_bucket = ?
            AND c.day >= ?::date AND c.day <= ?::date
          GROUP BY c.at_rest_key, c.object_type
        ),
@@ -921,6 +929,7 @@ export const PulseDomain = {
       [
         kThreshold,
         platformId,
+        sectorBucket,
         fromDay,
         toDay,
         sectorBucket,

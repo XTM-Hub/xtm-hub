@@ -165,7 +165,10 @@ input PulseBenchmarkInput {
 type PulseBenchmarkMetric {
   object_type: PulseObjectType!
   event_kind: PulseEventKind!
+  "Events of the calling platform over the period, in every sector it reported under; compared with network_median"
   platform_count: Int!
+  "Events of the calling platform over the period in its current sector only; compared with sector_median"
+  sector_platform_count: Int!
   "Null when the sector bucket has fewer than k active platforms in the period"
   sector_median: Float
   "Null when the network has fewer than k active platforms in the period"
