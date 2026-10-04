@@ -18,7 +18,7 @@ Every hour, a contributing OpenCTI platform sends one batch per UTC day with:
 | `hash` | 32 hexadecimal characters derived from the object, encrypted under the salt of the day (see below). Never a value, a name or an identifier. |
 | `object_type` | `indicator`, `attack_pattern`, `vulnerability`, `intrusion_set`, `malware` or `tool`. |
 | `event_kind` | `created`, `sighted`, `detected`, `hunted` or `referenced`. |
-| `count` | How many such events the platform recorded that day. |
+| `count` | How many such events of the batch's UTC day this batch carries: the events recorded since the previous batch, never a running total of the day. XTM Hub adds the count of every new batch, so the events of a day sent across several batches are counted once each. |
 | `sector_bucket`, `region_bucket` | Coarse buckets chosen by the administrator (for example `finance`, `europe`), or `undisclosed`. |
 | `batch_id` | A random UUID drawn for the batch and sent again when the platform retries it. XTM Hub answers a batch it already recorded with its first result (its day and its number of records) and counts it once, so a retry after a lost response never inflates the counts. It is kept as long as the salt of its day, then deleted. A purge keeps it with a count of 0, so a batch accepted before the purge and sent again after it records nothing. |
 
