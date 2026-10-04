@@ -1,45 +1,22 @@
 import { AppServiceContext } from '@/components/service/components/ServiceContext';
 import { ServiceManageSheet } from '@/components/service/components/ServiceManageSheet';
 import DeleteShareableResourceSlug from '@/components/service/document/DeleteShareableResourceSlug';
-import {
-  documentItem,
-  DocumentsItemQuery,
-} from '@/components/service/document/document.graphql';
 import ShareableResourceSlug from '@/components/service/document/ShareableResourceSlug';
-import { useDocumentContext } from '@/components/service/document/use-document-context';
+import { useHuntPackDocumentContext } from '@/components/service/opencti-hunt-packs/hunt-pack-documents';
 import { APP_PATH } from '@/utils/path/constant';
-import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { documentItem_fragment$key } from '@generated/documentItem_fragment.graphql';
-import { documentQuery } from '@generated/documentQuery.graphql';
+import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { useTranslations } from 'next-intl';
-import { PreloadedQuery, readInlineData, usePreloadedQuery } from 'react-relay';
 
 interface OpenCTIHuntPackSlugProps {
-  queryRef: PreloadedQuery<documentQuery>;
+  documentData: documentItem_fragment$data;
   serviceInstance: serviceInstance_fragment$data;
 }
 
 const OpenctiHuntPackSlug = ({
-  queryRef,
+  documentData,
   serviceInstance,
 }: OpenCTIHuntPackSlugProps) => {
-  const t = useTranslations();
-  const data = usePreloadedQuery<documentQuery>(DocumentsItemQuery, queryRef);
-
-  const documentData = readInlineData<documentItem_fragment$key>(
-    documentItem,
-    data.document
-  );
-
-  const context = useDocumentContext({
-    serviceInstance,
-    type: ShareableResourceType.OPENCTI_HUNT_PACK,
-  });
-
-  if (!documentData) {
-    return <h1>{t('Utils.DocumentNotFound')}</h1>;
-  }
+  const context = useHuntPackDocumentContext(serviceInstance);
 
   const breadcrumbValue = [
     {

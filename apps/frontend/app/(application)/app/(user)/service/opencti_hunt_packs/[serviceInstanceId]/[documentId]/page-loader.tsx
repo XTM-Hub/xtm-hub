@@ -1,12 +1,12 @@
 'use client';
 
 import Loader from '@/components/Loader';
-import { DocumentsItemQuery } from '@/components/service/document/document.graphql';
 import OpenctiHuntPackSlug from '@/components/service/opencti-hunt-packs/[slug]/OpenctiHuntPackSlug';
-import useMountingLoader from '@/hooks/use-mounting-loader';
-import { documentQuery } from '@generated/documentQuery.graphql';
+import { toDocumentItem } from '@/components/service/opencti-hunt-packs/hunt-pack-documents';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { useQueryLoader } from 'react-relay';
+import { useHuntPackDocumentQuery } from '@graphql/generated';
+import { useTranslations } from 'next-intl';
 
 interface PreloaderProps {
   documentId: string;
@@ -14,20 +14,27 @@ interface PreloaderProps {
 }
 
 const PageLoader = ({ documentId, serviceInstance }: PreloaderProps) => {
-  const [queryRef, loadQuery] =
-    useQueryLoader<documentQuery>(DocumentsItemQuery);
-  useMountingLoader(loadQuery, {
-    documentId,
-    serviceInstanceId: serviceInstance?.id,
-  });
+  const t = useTranslations();
+  const { data, isPending, isError } = useHuntPackDocumentQuery(
+    portalGraphqlClient,
+    { documentId, serviceInstanceId: serviceInstance.id }
+  );
 
-  return queryRef && serviceInstance ? (
+  if (isPending) {
+    return <Loader />;
+  }
+  if (isError) {
+    return <p className="text-muted-foreground">{t('Error.AnErrorOccured')}</p>;
+  }
+  if (!data.document) {
+    return <h1>{t('Utils.DocumentNotFound')}</h1>;
+  }
+
+  return (
     <OpenctiHuntPackSlug
       serviceInstance={serviceInstance}
-      queryRef={queryRef}
+      documentData={toDocumentItem(data.document)}
     />
-  ) : (
-    <Loader />
   );
 };
 

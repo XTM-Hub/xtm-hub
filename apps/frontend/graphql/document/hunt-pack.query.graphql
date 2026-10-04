@@ -1,0 +1,93 @@
+fragment HuntPackDocumentItem on Document {
+  __typename
+  id
+  type
+  file_name
+  created_at
+  name
+  short_description
+  description
+  download_number
+  share_number
+  active
+  updated_at
+  use_cases {
+    id
+    name
+    color
+  }
+  uploader {
+    id
+    email
+    first_name
+    last_name
+    picture
+  }
+  uploader_organization {
+    id
+    name
+    personal_space
+  }
+  children_documents {
+    id
+    file_name
+    created_at
+    name
+    description
+    download_number
+    active
+    source_type
+    image_type
+  }
+  slug
+  service_instance {
+    id
+    slug
+  }
+  subscription {
+    id
+  }
+
+  ... on OpenCTIHuntPack {
+    product_version
+    hunt_count
+    attack_techniques
+    hunt_platforms
+  }
+}
+
+query HuntPackDocument(
+  $documentId: DocumentId!
+  $serviceInstanceId: ServiceInstanceId!
+) {
+  document(documentId: $documentId, serviceInstanceId: $serviceInstanceId) {
+    ...HuntPackDocumentItem
+  }
+}
+
+query HuntPackDocuments(
+  $count: Int!
+  $cursor: ID
+  $orderBy: DocumentOrdering!
+  $orderMode: OrderingMode!
+  $logicalFilters: LogicalFilterInput
+  $searchTerm: String
+  $serviceInstanceId: ServiceInstanceId!
+) {
+  documents(
+    first: $count
+    after: $cursor
+    orderBy: $orderBy
+    orderMode: $orderMode
+    searchTerm: $searchTerm
+    logicalFilters: $logicalFilters
+    serviceInstanceId: $serviceInstanceId
+  ) {
+    totalCount
+    edges {
+      node {
+        ...HuntPackDocumentItem
+      }
+    }
+  }
+}
