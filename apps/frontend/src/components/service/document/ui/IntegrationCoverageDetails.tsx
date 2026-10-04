@@ -44,9 +44,7 @@ export const IntegrationCoverageDetails = ({
           title={t(
             'Service.ShareableResources.Details.CoverageInferredTooltip'
           )}>
-          <span
-            className="txt-sub-content underline decoration-dotted underline-offset-2 w-fit"
-            tabIndex={0}>
+          <span className="txt-sub-content underline decoration-dotted underline-offset-2 w-fit">
             {t('Service.ShareableResources.Details.CoverageInferred')}
           </span>
         </SimpleTooltip>
