@@ -215,6 +215,30 @@ describe('documentApp', () => {
       expect(DocumentUploadsHelper.processUploads).not.toHaveBeenCalled();
     });
 
+    it('should remove the uploads of a creation refused after uploading, before its transaction', async () => {
+      // Given
+      vi.mocked(DocumentUploadsHelper.processUploads)
+        .mockResolvedValueOnce([{ ...minioFileMock, minioName: 'source' }])
+        .mockResolvedValueOnce([{ ...minioFileMock, minioName: 'image' }])
+        .mockResolvedValueOnce([{ ...minioFileMock, minioName: 'logo' }]);
+
+      // When: the metadata of the service are missing
+      const call = DocumentApp.createDocument({
+        input: documentData,
+        metadata: [],
+        serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+        sourceDocument: mockUpload,
+        images: [mockUpload],
+        logo: mockUpload,
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.DocumentMissingMetadata);
+      expect(
+        vi.mocked(MinIOClient.deleteFile).mock.calls.map(([name]) => name)
+      ).toEqual(['source', 'image', 'logo']);
+    });
+
     it('should remove the uploads of a creation refused under the slug lock', async () => {
       // Given: the slug is free when the creation starts, taken once its lock is held
       vi.spyOn(DocumentDomain, 'isSlugTaken')

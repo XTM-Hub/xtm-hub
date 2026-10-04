@@ -132,156 +132,166 @@ export const DocumentApp = {
       serviceInstanceId
     );
 
-    const documentMetadata: DocumentMetadataResolverType[] =
-      DocumentHelper.buildCompleteMetadataFromDocumentFile({
-        sourceDocumentFile,
-        metadata: IntegrationCoverageHelper.withoutCoverageMetadata(metadata),
-      });
+    // Nothing references the uploads before the creation commits
+    const createFromUploads = async () => {
+      const documentMetadata: DocumentMetadataResolverType[] =
+        DocumentHelper.buildCompleteMetadataFromDocumentFile({
+          sourceDocumentFile,
+          metadata: IntegrationCoverageHelper.withoutCoverageMetadata(metadata),
+        });
 
-    if (input.entity_types != null) {
-      documentMetadata.push({
-        key: DocumentMetadataKeyCode.EntityTypes,
-        value: JSON.stringify(input.entity_types),
-      });
-    }
-    if (input.license_type != null) {
-      documentMetadata.push({
-        key: DocumentMetadataKeyCode.LicenseType,
-        value: input.license_type,
-      });
-    }
-
-    DocumentHelper.assertMetadataIsNotMissing(
-      serviceDefinition.identifier as ManageableServiceDefinitionIdentifier,
-      documentMetadata
-    );
-
-    DocumentHelper.assertDocumentFileIsNotMissing({
-      hasDocument: !!sourceDocument,
-      documentType,
-      documentMetadata,
-    });
-
-    const isDocumentFileRequired = DocumentHelper.isDocumentFileRequired({
-      documentType,
-      documentMetadata,
-    });
-
-    if (documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE) {
-      const coverage =
-        await IntegrationCoverageApp.resolveCoverageForCreate(input);
-      documentMetadata.push(
-        ...IntegrationCoverageHelper.toMetadataEntries(coverage)
-      );
-    }
-
-    const {
-      entity_types: _entityTypes,
-      license_type: _licenseType,
-      covered_object_types: _coveredObjectTypes,
-      covered_sectors: _coveredSectors,
-      covered_regions: _coveredRegions,
-      coverage_confirmed: _coverageConfirmed,
-      ...documentColumnInput
-    } = input;
-    const documentData: DocumentData<Document> = {
-      ...documentColumnInput,
-      use_cases: input.use_cases ?? undefined,
-      solution_categories: input.solution_categories ?? undefined,
-      service_instance_id: serviceInstanceId,
-      type: documentType,
-      ...(sourceDocumentFile && isDocumentFileRequired
-        ? {
-            file_name: sourceDocumentFile.fileName,
-            minio_name: sourceDocumentFile.minioName,
-            mime_type: sourceDocumentFile.mimeType,
-          }
-        : {}),
-    };
-
-    // An integration is created under the slug lock of the manifest ingestion,
-    // which would otherwise resolve its coverage without this declaration.
-    const inCreationTransaction = <T>(callback: () => Promise<T>) =>
-      documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE
-        ? withAdvisoryLock(CONNECTOR_SLUG_LOCK_NAMESPACE, input.slug, callback)
-        : withTransaction(callback);
-
-    const createdDocument = await inCreationTransaction(async () => {
-      // Read under the slug lock: an ingestion or a creation that held it may
-      // have committed an integration of this slug in the meantime
-      if (
-        documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE &&
-        input.slug &&
-        (await DocumentDomain.isSlugTaken({
-          slug: input.slug,
-          type: documentType,
-        }))
-      ) {
-        throw new Error(ErrorCode.DocumentUniqueSlugError);
+      if (input.entity_types != null) {
+        documentMetadata.push({
+          key: DocumentMetadataKeyCode.EntityTypes,
+          value: JSON.stringify(input.entity_types),
+        });
       }
-      const metadataKeys = documentMetadata.map(
-        ({ key }) => key
-      ) as DocumentMetadataKeys<Document>;
-      const document = await DocumentDomain.createDocument(
-        documentData,
-        metadataKeys
+      if (input.license_type != null) {
+        documentMetadata.push({
+          key: DocumentMetadataKeyCode.LicenseType,
+          value: input.license_type,
+        });
+      }
+
+      DocumentHelper.assertMetadataIsNotMissing(
+        serviceDefinition.identifier as ManageableServiceDefinitionIdentifier,
+        documentMetadata
       );
 
-      if (documentMetadata.length) {
-        await DocumentMetadataDomain.insertMetadataFromKeyValue(
-          document.id,
-          documentMetadata
+      DocumentHelper.assertDocumentFileIsNotMissing({
+        hasDocument: !!sourceDocument,
+        documentType,
+        documentMetadata,
+      });
+
+      const isDocumentFileRequired = DocumentHelper.isDocumentFileRequired({
+        documentType,
+        documentMetadata,
+      });
+
+      if (documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE) {
+        const coverage =
+          await IntegrationCoverageApp.resolveCoverageForCreate(input);
+        documentMetadata.push(
+          ...IntegrationCoverageHelper.toMetadataEntries(coverage)
+        );
+      }
+
+      const {
+        entity_types: _entityTypes,
+        license_type: _licenseType,
+        covered_object_types: _coveredObjectTypes,
+        covered_sectors: _coveredSectors,
+        covered_regions: _coveredRegions,
+        coverage_confirmed: _coverageConfirmed,
+        ...documentColumnInput
+      } = input;
+      const documentData: DocumentData<Document> = {
+        ...documentColumnInput,
+        use_cases: input.use_cases ?? undefined,
+        solution_categories: input.solution_categories ?? undefined,
+        service_instance_id: serviceInstanceId,
+        type: documentType,
+        ...(sourceDocumentFile && isDocumentFileRequired
+          ? {
+              file_name: sourceDocumentFile.fileName,
+              minio_name: sourceDocumentFile.minioName,
+              mime_type: sourceDocumentFile.mimeType,
+            }
+          : {}),
+      };
+
+      // An integration is created under the slug lock of the manifest ingestion,
+      // which would otherwise resolve its coverage without this declaration.
+      const inCreationTransaction = <T>(callback: () => Promise<T>) =>
+        documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE
+          ? withAdvisoryLock(
+              CONNECTOR_SLUG_LOCK_NAMESPACE,
+              input.slug,
+              callback
+            )
+          : withTransaction(callback);
+
+      return inCreationTransaction(async () => {
+        // Read under the slug lock: an ingestion or a creation that held it may
+        // have committed an integration of this slug in the meantime
+        if (
+          documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE &&
+          input.slug &&
+          (await DocumentDomain.isSlugTaken({
+            slug: input.slug,
+            type: documentType,
+          }))
+        ) {
+          throw new Error(ErrorCode.DocumentUniqueSlugError);
+        }
+        const metadataKeys = documentMetadata.map(
+          ({ key }) => key
+        ) as DocumentMetadataKeys<Document>;
+        const document = await DocumentDomain.createDocument(
+          documentData,
+          metadataKeys
         );
 
-        for (const meta of documentMetadata) {
-          setDocumentMetadataValue(document, meta.key, meta.value);
+        if (documentMetadata.length) {
+          await DocumentMetadataDomain.insertMetadataFromKeyValue(
+            document.id,
+            documentMetadata
+          );
+
+          for (const meta of documentMetadata) {
+            setDocumentMetadataValue(document, meta.key, meta.value);
+          }
         }
-      }
 
-      await DocumentChildrenDomain.createImageDocuments(
-        document.id,
-        serviceInstanceId,
-        imagesFiles,
-        DocumentImageType.Image
-      );
-
-      if (logoFile) {
         await DocumentChildrenDomain.createImageDocuments(
           document.id,
           serviceInstanceId,
-          [logoFile],
-          DocumentImageType.Logo
+          imagesFiles,
+          DocumentImageType.Image
         );
-      }
 
-      if (documentData.use_cases?.length) {
-        await objectUseCaseDomain.insertObjectUseCase(
-          documentData.use_cases.map((id) => ({
-            object_id: toObjectUseCaseObjectId(document.id),
-            use_case_id: id,
-          }))
-        );
-      }
+        if (logoFile) {
+          await DocumentChildrenDomain.createImageDocuments(
+            document.id,
+            serviceInstanceId,
+            [logoFile],
+            DocumentImageType.Logo
+          );
+        }
 
-      if (input.solution_categories?.length) {
-        await objectSolutionCategoryDomain.insertObjectSolutionCategory(
-          input.solution_categories.map((solutionCategoryId) => ({
-            object_id: toObjectSolutionCategoryObjectId(document.id),
-            solution_category_id: solutionCategoryId,
-          }))
-        );
-      }
+        if (documentData.use_cases?.length) {
+          await objectUseCaseDomain.insertObjectUseCase(
+            documentData.use_cases.map((id) => ({
+              object_id: toObjectUseCaseObjectId(document.id),
+              use_case_id: id,
+            }))
+          );
+        }
 
-      return document;
-    }).catch(async (error: unknown) => {
-      // The rolled back creation leaves its uploads unreferenced
-      await DocumentUploadsHelper.removeUploads([
-        sourceDocumentFile,
-        ...imagesFiles,
-        logoFile,
-      ]);
-      throw error;
-    });
+        if (input.solution_categories?.length) {
+          await objectSolutionCategoryDomain.insertObjectSolutionCategory(
+            input.solution_categories.map((solutionCategoryId) => ({
+              object_id: toObjectSolutionCategoryObjectId(document.id),
+              solution_category_id: solutionCategoryId,
+            }))
+          );
+        }
+
+        return document;
+      });
+    };
+    // A refused or failed creation, before or inside its transaction, removes its uploads
+    const createdDocument = await createFromUploads().catch(
+      async (error: unknown) => {
+        await DocumentUploadsHelper.removeUploads([
+          sourceDocumentFile,
+          ...imagesFiles,
+          logoFile,
+        ]);
+        throw error;
+      }
+    );
 
     try {
       const createEvent =
