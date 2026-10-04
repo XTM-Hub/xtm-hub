@@ -1540,7 +1540,8 @@
         "CoveredObjectTypes": "Types d'objets couverts",
         "CoveredSectors": "Secteurs couverts",
         "CoveredRegions": "Régions couvertes",
-        "CoverageInferred": "Déduit de la description"
+        "CoverageInferred": "Déduite automatiquement",
+        "CoverageInferredTooltip": "L'éditeur n'a pas déclaré cette couverture : le Hub l'a déduite du nom, des descriptions, des cas d'usage et des catégories de solution de l'intégration. Une couverture déclarée dans le manifeste ou dans le formulaire de l'intégration la remplace."
       },
       "Download": "Télécharger",
       "FromVersion": "Depuis la version",

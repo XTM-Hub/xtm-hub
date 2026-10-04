@@ -1540,7 +1540,8 @@
         "CoveredObjectTypes": "対象のオブジェクトタイプ",
         "CoveredSectors": "対象のセクター",
         "CoveredRegions": "対象の地域",
-        "CoverageInferred": "説明から推定"
+        "CoverageInferred": "自動推定",
+        "CoverageInferredTooltip": "公開者はこのカバレッジを宣言していません。Hub が統合の名前、説明、ユースケース、ソリューションカテゴリから推定しました。マニフェストまたは統合フォームで宣言されたカバレッジがこれに代わります。"
       },
       "Download": "ダウンロード",
       "FromVersion": "バージョンから",

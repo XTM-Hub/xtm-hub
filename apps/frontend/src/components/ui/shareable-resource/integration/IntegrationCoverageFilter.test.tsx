@@ -85,6 +85,41 @@ describe('IntegrationCoverageFilter', () => {
     ).toBeInTheDocument();
   });
 
+  it('keeps a value the filters leave without integration listed, with a zero count and disabled', () => {
+    // Given
+    const { rerender } = testRender(
+      <IntegrationCoverageFilter
+        family="region"
+        facetCounts={{ France: 1, Germany: 2 }}
+      />
+    );
+
+    // When
+    rerender(
+      <IntegrationCoverageFilter
+        family="region"
+        facetCounts={{ France: 1 }}
+      />
+    );
+
+    // Then
+    expect(screen.getByRole('checkbox', { name: /Germany/ })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: /France/ })).toBeEnabled();
+  });
+
+  it('keeps a selected value enabled even without integration, so it can be unselected', () => {
+    // Given / When
+    testRender(
+      <IntegrationCoverageFilter
+        family="sector"
+        facetCounts={{ Finance: 1 }}
+      />
+    );
+
+    // Then
+    expect(screen.getByRole('checkbox', { name: /Energy/ })).toBeEnabled();
+  });
+
   it('updates the region selection', async () => {
     // Given
     const { user } = testRender(

@@ -21,6 +21,7 @@ import {
   isResourceDownloadable,
 } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
 import { LogoFiligranIcon } from '@filigran/icon';
+import { SimpleTooltip } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { DocumentMetadataKeyCode, IntegrationType } from '@graphql/generated';
 import { useTranslations } from 'next-intl';
@@ -155,9 +156,16 @@ const ShareableResourceDetails = ({
             COVERAGE_ITEMS.some(
               ({ field }) => (documentData[field] ?? []).length > 0
             ) && (
-              <span className="txt-sub-content">
-                {t('Service.ShareableResources.Details.CoverageInferred')}
-              </span>
+              <SimpleTooltip
+                title={t(
+                  'Service.ShareableResources.Details.CoverageInferredTooltip'
+                )}>
+                <span
+                  className="txt-sub-content underline decoration-dotted underline-offset-2 w-fit"
+                  tabIndex={0}>
+                  {t('Service.ShareableResources.Details.CoverageInferred')}
+                </span>
+              </SimpleTooltip>
             )}
         </>
       )}

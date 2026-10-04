@@ -48,6 +48,8 @@ interface MultiSelectFormFieldProps<
   onValueChange: (value: Selection) => void;
   optionLabel: string;
   facetCounts?: Record<string, number>;
+  // Options without any match in the facets are disabled unless selected, so they can still be unselected
+  disableEmptyFacets?: boolean;
 }
 
 const LogicalMultiSelectFormField = React.forwardRef<
@@ -65,6 +67,7 @@ const LogicalMultiSelectFormField = React.forwardRef<
       optionLabel,
       noResultString = 'No results found',
       facetCounts,
+      disableEmptyFacets = false,
       ...props
     },
     ref
@@ -208,12 +211,20 @@ const LogicalMultiSelectFormField = React.forwardRef<
             if (option.type === 'parent') {
               const checked = isParentFullySelected(option.value);
               const indeterminate = isParentPartiallySelected(option.value);
+              const disabled =
+                disableEmptyFacets &&
+                !!facetCounts &&
+                !checked &&
+                !indeterminate &&
+                getFacetCount(facetCounts, option.value) === 0;
               return (
                 <label
                   key={option.value}
-                  className="flex items-center gap-s content-body-compact text-[13px] cursor-pointer">
+                  aria-disabled={disabled || undefined}
+                  className={`flex items-center gap-s content-body-compact text-[13px] ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
                   <Checkbox
                     className="shrink-0"
+                    disabled={disabled}
                     checked={indeterminate ? 'indeterminate' : checked}
                     onCheckedChange={() => toggleParent(option.value)}
                   />

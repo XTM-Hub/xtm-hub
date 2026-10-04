@@ -1540,7 +1540,8 @@
         "CoveredObjectTypes": "Covered object types",
         "CoveredSectors": "Covered sectors",
         "CoveredRegions": "Covered regions",
-        "CoverageInferred": "Inferred from the description"
+        "CoverageInferred": "Inferred automatically",
+        "CoverageInferredTooltip": "The publisher did not declare this coverage: the Hub inferred it from the name, descriptions, use cases and solution categories of the integration. A coverage declared in the manifest or in the integration form replaces it."
       },
       "Download": "Download",
       "FromVersion": "From version",
