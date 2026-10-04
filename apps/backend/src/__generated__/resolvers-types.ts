@@ -1996,7 +1996,7 @@ export type PulseLookupResult = {
   /** Null unless the caller's sector bucket has at least k platforms on the key over 30 days */
   sector_trend?: Maybe<PulseTrendDirection>;
   trend?: Maybe<PulseTrendDirection>;
-  /** 12 weekly distinct-platform counts, oldest first, weeks below k reported as 0 */
+  /** 12 weekly values, oldest first, never exact counts: each is the lower bound of the platforms range of its week (5, 10, 25, ...), 0 below k, and k for a week published as the <5 range */
   trend_series?: Maybe<Array<Scalars['Int']['output']>>;
 };
 
