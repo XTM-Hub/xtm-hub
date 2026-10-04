@@ -356,6 +356,7 @@
       "HUNT_PACK_INVALID_BUNDLE": "This file is not a hunt pack: export a STIX 2.1 bundle of hunts from OpenCTI and upload it again.",
       "HUNT_PACK_EMPTY": "This hunt pack contains no hunt: export at least one hunt from OpenCTI.",
       "HUNT_PACK_TOO_LARGE": "This hunt pack contains more than 200 hunts: split it into several packs.",
+      "HUNT_PACK_INVALID_HUNT": "OpenCTI would refuse a hunt of this pack: check that every hunt has a name, a valid Sigma rule, a valid schedule and limits within the OpenCTI defaults.",
       "CONNECTOR_TYPE_NOT_RECOGNIZED": "The connector type of this manifest is not recognized. Use one of the OpenCTI connector types listed in the documentation.",
       "INVALID_ACTION_SIZE": "An unknown error occurred",
       "INVALID_EMAIL": "The email should be in valid format.",

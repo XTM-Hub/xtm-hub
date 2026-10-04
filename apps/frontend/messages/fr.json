@@ -356,6 +356,7 @@
       "HUNT_PACK_INVALID_BUNDLE": "Ce fichier n'est pas un pack de chasse : exportez un bundle STIX 2.1 de chasses depuis OpenCTI et téléversez-le à nouveau.",
       "HUNT_PACK_EMPTY": "Ce pack de chasse ne contient aucune chasse : exportez au moins une chasse depuis OpenCTI.",
       "HUNT_PACK_TOO_LARGE": "Ce pack de chasse contient plus de 200 chasses : répartissez-les dans plusieurs packs.",
+      "HUNT_PACK_INVALID_HUNT": "OpenCTI refuserait une chasse de ce pack : vérifiez que chaque chasse a un nom, une règle Sigma valide, une planification valide et des limites dans les valeurs par défaut d'OpenCTI.",
       "CONNECTOR_TYPE_NOT_RECOGNIZED": "Le type de connecteur de ce manifeste n'est pas reconnu. Utilisez l'un des types de connecteurs OpenCTI listés dans la documentation.",
       "INVALID_ACTION_SIZE": "Une erreur inconnue s'est produite",
       "INVALID_EMAIL": "L'email doit être dans un format valide.",

@@ -2,6 +2,7 @@ import {
   DocumentMetadataKeyCode,
   DocumentMetadata as DocumentMetadataResolverType,
 } from '../../../../__generated__/resolvers-types';
+import { logApp } from '../../../../utils/app-logger.util';
 import { BadRequestErrorCode } from '../../../../utils/error/error.code';
 import { ManifestFragmentHelper } from '../../manifest-fragment/manifest-fragment.helper';
 import {
@@ -11,6 +12,7 @@ import {
   HUNT_PACK_MAX_TECHNIQUES,
   HUNT_PACK_MINIMUM_PRODUCT_VERSION,
 } from './hunt-pack.model';
+import { huntImportErrors } from './hunt-pack.validation';
 
 /** STIX types OpenCTI exports hunts as (see hunt-pack.ts in OpenCTI). */
 const HUNT_STIX_TYPES = ['hunt', 'x-opencti-hunt'];
@@ -67,7 +69,8 @@ const toPaddedVersion = (version: string): string | undefined => {
 export const HuntPackHelper = {
   /**
    * Validates a hunt pack with the rules of the OpenCTI import (a STIX 2.1
-   * bundle with 1 to HUNT_PACK_MAX_HUNTS hunts) and summarizes its content.
+   * bundle with 1 to HUNT_PACK_MAX_HUNTS hunts, each accepted by the hunt
+   * import checks) and summarizes its content.
    */
   summarize: (content: unknown): HuntPackSummary => {
     if (
@@ -87,6 +90,16 @@ export const HuntPackHelper = {
     }
     if (hunts.length > HUNT_PACK_MAX_HUNTS) {
       throw new Error(BadRequestErrorCode.HuntPackTooLarge);
+    }
+    for (const hunt of hunts) {
+      const errors = huntImportErrors(hunt);
+      if (errors.length > 0) {
+        logApp.info('[HUNT_PACK] Hunt refused by the OpenCTI import rules', {
+          hunt: hunt.id,
+          errors,
+        });
+        throw new Error(BadRequestErrorCode.HuntPackInvalidHunt);
+      }
     }
 
     const objectsById = new Map(

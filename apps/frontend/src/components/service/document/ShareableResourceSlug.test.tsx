@@ -1,5 +1,4 @@
 import ShareableResourceSlug from '@/components/service/document/ShareableResourceSlug';
-import { SettingsContext } from '@/components/settings/EnvPortalContext';
 import testRender from '@/utils/test/test-render';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
@@ -31,10 +30,6 @@ vi.mock('./one-click-deploy/OneClickDeploy', () => ({
   ),
 }));
 
-const mockSettings = {
-  base_url_front: 'https://test.com',
-};
-
 describe('Component: ShareableResourceSlug - OneClickDeploy Logic', () => {
   const serviceInstance = {
     id: 'service-instance-1',
@@ -42,13 +37,12 @@ describe('Component: ShareableResourceSlug - OneClickDeploy Logic', () => {
 
   const renderSlug = (documentData: documentItem_fragment$data) =>
     testRender(
-      <SettingsContext.Provider value={{ settings: mockSettings as never }}>
-        <ShareableResourceSlug
-          breadcrumbValue={[]}
-          documentData={documentData}
-          serviceInstance={serviceInstance}
-        />
-      </SettingsContext.Provider>
+      <ShareableResourceSlug
+        breadcrumbValue={[]}
+        documentData={documentData}
+        serviceInstance={serviceInstance}
+      />,
+      { settings: { base_url_front: 'https://test.com' } }
     );
 
   it.each`

@@ -26,6 +26,7 @@ const validPack = {
     {
       type: 'hunt',
       id: 'hunt--1',
+      name: 'Encoded PowerShell',
       technique_refs: ['attack-pattern--1'],
       native_queries: [{ platform: 'splunk', language: 'spl', query: 'x' }],
     },

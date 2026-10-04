@@ -115,6 +115,17 @@ describe('huntPackHelper.summarize', () => {
     ).toThrow(BadRequestErrorCode.HuntPackEmpty);
   });
 
+  it('rejects a bundle with a hunt the OpenCTI import refuses', () => {
+    expect(() =>
+      HuntPackHelper.summarize(
+        bundle([
+          hunt('hunt--1'),
+          { ...hunt('hunt--2'), sigma_rule: 'title: No detection' },
+        ])
+      )
+    ).toThrow(BadRequestErrorCode.HuntPackInvalidHunt);
+  });
+
   it('rejects a bundle with more hunts than an OpenCTI import accepts', () => {
     const hunts = Array.from({ length: HUNT_PACK_MAX_HUNTS + 1 }, (_, index) =>
       hunt(`hunt--${index}`)
