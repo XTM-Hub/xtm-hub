@@ -699,6 +699,7 @@ describe('integrationCoverageApp', () => {
         covered_object_types?: string[];
         covered_sectors?: string[];
         covered_regions?: string[];
+        coverage_confirmed?: boolean;
       },
       metadata = thirdPartyMetadata
     ) =>
@@ -751,6 +752,36 @@ describe('integrationCoverageApp', () => {
         declared({ sectors: [FINANCE] })
       );
     });
+
+    it.each([
+      ['keep it inferred without confirmation', false, false],
+      ['declare it when the admin confirms it', true, true],
+    ])(
+      'should, for inferred values submitted unchanged, %s',
+      async (_description, coverageConfirmed, expectDeclared) => {
+        // Given
+        const document = await createThirdPartyIntegration({
+          name: 'Acme ransomware tracker',
+        });
+        const before = await loadStoredCoverage(document);
+
+        // When
+        await updateThirdPartyIntegration(document, {
+          covered_object_types: before!.object_types,
+          covered_sectors: before!.sectors,
+          covered_regions: before!.regions,
+          coverage_confirmed: coverageConfirmed,
+        });
+
+        // Then
+        const { object_types, sectors, regions } = before!;
+        expect(await loadStoredCoverage(document)).toEqual(
+          expectDeclared
+            ? declared({ object_types, sectors, regions })
+            : inferred({ object_types, sectors, regions })
+        );
+      }
+    );
 
     it('should return to inference when an update clears every list', async () => {
       // Given
