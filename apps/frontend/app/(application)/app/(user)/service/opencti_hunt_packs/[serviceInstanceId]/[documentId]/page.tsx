@@ -21,16 +21,15 @@ const Page = async ({ params }: ServiceHuntPackPageProps) => {
       service_instance_id: decodedServiceInstanceId,
     }
   );
+  const serviceInstance = response?.data?.serviceInstanceById as unknown as
+    serviceInstance_fragment$data | null | undefined;
 
   return (
     <>
-      {decodedDocumentId && response ? (
+      {decodedDocumentId && serviceInstance ? (
         <PageLoader
           documentId={decodedDocumentId}
-          serviceInstance={
-            response.data
-              .serviceInstanceById as unknown as serviceInstance_fragment$data
-          }
+          serviceInstance={serviceInstance}
         />
       ) : (
         <h1>{t('Utils.DocumentNotFound')}</h1>

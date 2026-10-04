@@ -22,6 +22,8 @@ const Page = async ({ params }: ServiceHuntPacksPageProps) => {
       service_instance_id: decodedServiceInstanceId,
     }
   );
+  const serviceInstance = response?.data?.serviceInstanceById as unknown as
+    serviceInstance_fragment$data | null | undefined;
 
   const breadcrumbs = [
     {
@@ -29,26 +31,17 @@ const Page = async ({ params }: ServiceHuntPacksPageProps) => {
       href: `/${APP_PATH}`,
     },
     {
-      label:
-        (
-          response?.data
-            .serviceInstanceById as unknown as serviceInstance_fragment$data
-        )?.name ?? '',
+      label: serviceInstance?.name ?? '',
       original: true,
     },
   ];
 
   return (
     <>
-      {response ? (
+      {serviceInstance ? (
         <>
           <BreadcrumbNav value={breadcrumbs} />
-          <PageLoader
-            serviceInstance={
-              response.data
-                .serviceInstanceById as unknown as serviceInstance_fragment$data
-            }
-          />
+          <PageLoader serviceInstance={serviceInstance} />
         </>
       ) : (
         <h1>{t('Utils.ServiceNotFound')}</h1>

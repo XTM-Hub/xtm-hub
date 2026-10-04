@@ -12,6 +12,7 @@ import { ShareableResourceType } from '@/utils/shareable-resources/shareable-res
 import { documentItem_fragment$key } from '@generated/documentItem_fragment.graphql';
 import { documentQuery } from '@generated/documentQuery.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
+import { useTranslations } from 'next-intl';
 import { PreloadedQuery, readInlineData, usePreloadedQuery } from 'react-relay';
 
 interface OpenCTIHuntPackSlugProps {
@@ -23,12 +24,22 @@ const OpenctiHuntPackSlug = ({
   queryRef,
   serviceInstance,
 }: OpenCTIHuntPackSlugProps) => {
+  const t = useTranslations();
   const data = usePreloadedQuery<documentQuery>(DocumentsItemQuery, queryRef);
 
   const documentData = readInlineData<documentItem_fragment$key>(
     documentItem,
     data.document
   );
+
+  const context = useDocumentContext({
+    serviceInstance,
+    type: ShareableResourceType.OPENCTI_HUNT_PACK,
+  });
+
+  if (!documentData) {
+    return <h1>{t('Utils.DocumentNotFound')}</h1>;
+  }
 
   const breadcrumbValue = [
     {
@@ -41,35 +52,28 @@ const OpenctiHuntPackSlug = ({
       original: true,
     },
     {
-      label: documentData!.name!,
+      label: documentData.name ?? '',
       original: true,
     },
   ];
 
-  const context = useDocumentContext({
-    serviceInstance,
-    type: ShareableResourceType.OPENCTI_HUNT_PACK,
-  });
-
   return (
-    documentData && (
-      <AppServiceContext {...context}>
-        <ShareableResourceSlug
-          serviceInstance={serviceInstance}
-          breadcrumbValue={breadcrumbValue}
-          documentData={documentData}
-          updateActions={
-            <>
-              <DeleteShareableResourceSlug document={documentData} />
-              <ServiceManageSheet
-                document={documentData}
-                variant={'button'}
-              />
-            </>
-          }
-        />
-      </AppServiceContext>
-    )
+    <AppServiceContext {...context}>
+      <ShareableResourceSlug
+        serviceInstance={serviceInstance}
+        breadcrumbValue={breadcrumbValue}
+        documentData={documentData}
+        updateActions={
+          <>
+            <DeleteShareableResourceSlug document={documentData} />
+            <ServiceManageSheet
+              document={documentData}
+              variant={'button'}
+            />
+          </>
+        }
+      />
+    </AppServiceContext>
   );
 };
 
