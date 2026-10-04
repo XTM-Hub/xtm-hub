@@ -353,6 +353,9 @@
       "INCREMENT_SHARE_NUMBER": "Error occurred while incrementing share number",
       "INTEGRATION_TYPE_NOT_MANAGEABLE": "This type of integration is not manageable.",
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "This type of integration is not recognized",
+      "HUNT_PACK_INVALID_BUNDLE": "This file is not a hunt pack: export a STIX 2.1 bundle of hunts from OpenCTI and upload it again.",
+      "HUNT_PACK_EMPTY": "This hunt pack contains no hunt: export at least one hunt from OpenCTI.",
+      "HUNT_PACK_TOO_LARGE": "This hunt pack contains more than 200 hunts: split it into several packs.",
       "CONNECTOR_TYPE_NOT_RECOGNIZED": "The connector type of this manifest is not recognized. Use one of the OpenCTI connector types listed in the documentation.",
       "INVALID_ACTION_SIZE": "An unknown error occurred",
       "INVALID_EMAIL": "The email should be in valid format.",
@@ -600,6 +603,7 @@
     "CustomViews": "Custom Views",
     "Integrations": "Integrations",
     "Playbooks": "Playbooks",
+    "HuntPacks": "Hunt Packs",
     "LiveDemo": "Live Demo",
     "Documentation": "Documentation",
     "Scenarios": "Scenarios",
@@ -1406,6 +1410,24 @@
       "NonActive": "Draft",
       "Active": "Published"
     },
+    "OpenCTIHuntPack": {
+      "Actions": {
+        "Added": "The hunt pack {name} has been added successfully",
+        "Deleted": "The hunt pack {name} has been deleted successfully",
+        "Updated": "The hunt pack {name} has been modified successfully",
+        "Share": "Share Hunt Pack"
+      },
+      "AddService": "Add new hunt pack",
+      "UpdateService": "Update the hunt pack {name}",
+      "DeleteService": "Delete the hunt pack {name}",
+      "SureDeleteService": "Are you sure you want to delete the hunt pack {name}?",
+      "NonActive": "Draft",
+      "Active": "Published",
+      "Form": {
+        "SelectHuntPackFile": "Hunt pack file",
+        "SelectHuntPackFileDescription": "A hunt pack exported from OpenCTI (STIX 2.1 bundle of 1 to 200 hunts). The hunt count, ATT&CK techniques and hunted platforms are read from the file."
+      }
+    },
     "Description": "Description",
     "GoTo": "Go to service page",
     "GoToAdminLabel": "Manage",
@@ -1533,6 +1555,12 @@
         "IntegrationType": "Type",
         "ConnectorType": "Connector type",
         "HuntedPlatform": "Hunted platform",
+        "Hunts": "Hunts",
+        "HuntCount": "{count, plural, one {# hunt} other {# hunts}}",
+        "AttackTechniques": "ATT&CK techniques",
+        "HuntedPlatforms": "Hunted platforms",
+        "MoreItems": "and {count} more",
+        "ShowFewerItems": "Show fewer",
         "IntegrationSolutionCategory": "Solution category",
         "IntegrationLicenseType": "License type",
         "GithubURL": "Github URL",

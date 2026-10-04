@@ -20,6 +20,7 @@ const OPENCTI_URL_CONFIGS = {
   opencti_custom_view: 'deploy-custom-view',
   opencti_integration: 'deploy-csv-feed',
   opencti_playbook: 'deploy-playbook',
+  opencti_hunt_pack: 'deploy-hunt-pack',
 };
 
 interface Props {

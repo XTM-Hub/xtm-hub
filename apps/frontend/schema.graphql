@@ -665,6 +665,9 @@ enum DocumentMetadataKeyCode {
   solution_categories
   license_type
   contact
+  hunt_count
+  attack_techniques
+  hunt_platforms
 }
 
 type ShareableResource {
@@ -1405,6 +1408,7 @@ enum ServiceDefinitionIdentifier {
   opencti_custom_views
   opencti_integrations
   opencti_playbooks
+  opencti_hunt_packs
   openaev_scenarios
   opencti_registration
   openaev_registration
@@ -1670,6 +1674,33 @@ type CustomView implements Document & Node {
   children_documents: [ShareableResource!]
   product_version: String
   entity_types: [String!]
+}
+
+type OpenCTIHuntPack implements Document & Node {
+  id: ID!
+  type: String!
+  uploader: User
+  uploader_organization: Organization
+  name: String!
+  short_description: String
+  description: String
+  file_name: String!
+  active: Boolean!
+  created_at: Date!
+  updated_at: Date
+  updater_id: String
+  download_number: Int
+  share_number: Int
+  slug: String!
+  use_cases: [UseCase!]
+  service_instance_id: ServiceInstanceId
+  service_instance: ServiceInstance
+  subscription: SubscriptionModel
+  children_documents: [ShareableResource!]
+  product_version: String
+  hunt_count: Int
+  attack_techniques: [String!]!
+  hunt_platforms: [String!]!
 }
 
 enum IntegrationType {

@@ -353,6 +353,9 @@
       "INCREMENT_SHARE_NUMBER": "Une erreur s'est produite lors de l'incrémentation du numéro de part",
       "INTEGRATION_TYPE_NOT_MANAGEABLE": "Ce type d'intégration n'est pas gérable.",
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "Ce type d'intégration n'est pas reconnu",
+      "HUNT_PACK_INVALID_BUNDLE": "Ce fichier n'est pas un pack de chasse : exportez un bundle STIX 2.1 de chasses depuis OpenCTI et téléversez-le à nouveau.",
+      "HUNT_PACK_EMPTY": "Ce pack de chasse ne contient aucune chasse : exportez au moins une chasse depuis OpenCTI.",
+      "HUNT_PACK_TOO_LARGE": "Ce pack de chasse contient plus de 200 chasses : répartissez-les dans plusieurs packs.",
       "CONNECTOR_TYPE_NOT_RECOGNIZED": "Le type de connecteur de ce manifeste n'est pas reconnu. Utilisez l'un des types de connecteurs OpenCTI listés dans la documentation.",
       "INVALID_ACTION_SIZE": "Une erreur inconnue s'est produite",
       "INVALID_EMAIL": "L'email doit être dans un format valide.",
@@ -600,6 +603,7 @@
     "CustomViews": "Vues personnalisées",
     "Integrations": "Intégrations",
     "Playbooks": "Guides pratiques",
+    "HuntPacks": "Packs de chasse",
     "LiveDemo": "Démonstration en direct",
     "Documentation": "Documentation",
     "Scenarios": "Scénarios",
@@ -1406,6 +1410,24 @@
       "NonActive": "Brouillon",
       "Active": "Publié"
     },
+    "OpenCTIHuntPack": {
+      "Actions": {
+        "Added": "Le pack de chasse {name} a été ajouté avec succès",
+        "Deleted": "Le pack de chasse {name} a été supprimé avec succès",
+        "Updated": "Le pack de chasse {name} a été modifié avec succès",
+        "Share": "Partager le pack de chasse"
+      },
+      "AddService": "Ajouter un nouveau pack de chasse",
+      "UpdateService": "Mettre à jour le pack de chasse {name}",
+      "DeleteService": "Supprimer le pack de chasse {name}",
+      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le pack de chasse {name}?",
+      "NonActive": "Brouillon",
+      "Active": "Publié",
+      "Form": {
+        "SelectHuntPackFile": "Fichier du pack de chasse",
+        "SelectHuntPackFileDescription": "Un pack de chasse exporté d'OpenCTI (bundle STIX 2.1 de 1 à 200 chasses). Le nombre de chasses, les techniques ATT&CK et les plateformes de chasse sont lus dans le fichier."
+      }
+    },
     "Description": "Description",
     "GoTo": "Aller au service",
     "GoToAdminLabel": "Administrer",
@@ -1533,6 +1555,12 @@
         "IntegrationType": "Type",
         "ConnectorType": "Type de connecteur",
         "HuntedPlatform": "Plateforme de chasse",
+        "Hunts": "Chasses",
+        "HuntCount": "{count, plural, one {# chasse} other {# chasses}}",
+        "AttackTechniques": "Techniques ATT&CK",
+        "HuntedPlatforms": "Plateformes de chasse",
+        "MoreItems": "et {count} de plus",
+        "ShowFewerItems": "Afficher moins",
         "IntegrationSolutionCategory": "Catégorie de solutions",
         "IntegrationLicenseType": "Type de licence",
         "GithubURL": "URL Github",

@@ -12,6 +12,7 @@ type SimpleFiltersParams = {
     | ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS
     | ServiceSlug.OPEN_AEV_SCENARIOS
     | ServiceSlug.OPEN_CTI_PLAYBOOKS
+    | ServiceSlug.OPEN_CTI_HUNT_PACKS
     | ServiceSlug.OPEN_CTI_CUSTOM_VIEWS;
   labels: LogicalMultiSelectSelection;
   entityTypes?: LogicalMultiSelectSelection;

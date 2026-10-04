@@ -47,6 +47,8 @@ const FALLBACK_DESCRIPTION_KEYS: Record<ServiceSlug, string> = {
     'Metadata.DocumentFallbackDescriptionScenario',
   [ServiceSlug.OPEN_CTI_PLAYBOOKS]:
     'Metadata.DocumentFallbackDescriptionGeneric',
+  [ServiceSlug.OPEN_CTI_HUNT_PACKS]:
+    'Metadata.DocumentFallbackDescriptionGeneric',
 };
 
 /**

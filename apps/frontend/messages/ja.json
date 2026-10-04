@@ -353,6 +353,9 @@
       "INCREMENT_SHARE_NUMBER": "共有番号の増加中にエラーが発生しました",
       "INTEGRATION_TYPE_NOT_MANAGEABLE": "このタイプの統合は管理できません。",
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "このタイプの統合は認識されない",
+      "HUNT_PACK_INVALID_BUNDLE": "このファイルはハントパックではありません。OpenCTI からハントの STIX 2.1 バンドルをエクスポートして、もう一度アップロードしてください。",
+      "HUNT_PACK_EMPTY": "このハントパックにはハントが含まれていません。OpenCTI から少なくとも 1 件のハントをエクスポートしてください。",
+      "HUNT_PACK_TOO_LARGE": "このハントパックには 200 件を超えるハントが含まれています。複数のパックに分割してください。",
       "CONNECTOR_TYPE_NOT_RECOGNIZED": "このマニフェストのコネクタタイプは認識されません。ドキュメントに記載されている OpenCTI のコネクタタイプのいずれかを使用してください。",
       "INVALID_ACTION_SIZE": "不明なエラーが発生した",
       "INVALID_EMAIL": "電子メールは有効な形式でなければなりません。",
@@ -600,6 +603,7 @@
     "CustomViews": "カスタムビュー",
     "Integrations": "連携機能",
     "Playbooks": "プレイブック",
+    "HuntPacks": "ハントパック",
     "LiveDemo": "ライブデモ",
     "Documentation": "ドキュメント",
     "Scenarios": "ユースケース",
@@ -1406,6 +1410,24 @@
       "NonActive": "草案",
       "Active": "公開"
     },
+    "OpenCTIHuntPack": {
+      "Actions": {
+        "Added": "ハントパック {name} は正常に追加されました。",
+        "Deleted": "ハントパック {name} は正常に削除されました。",
+        "Updated": "ハントパック {name} は正常に変更されました。",
+        "Share": "ハントパックを共有する"
+      },
+      "AddService": "新しいハントパックを追加する",
+      "UpdateService": "ハントパックを更新する {name}",
+      "DeleteService": "ハントパックを削除する {name}",
+      "SureDeleteService": "本当にハントパック {name} を削除しますか？",
+      "NonActive": "草案",
+      "Active": "公開",
+      "Form": {
+        "SelectHuntPackFile": "ハントパックファイル",
+        "SelectHuntPackFileDescription": "OpenCTI からエクスポートしたハントパック（1〜200 件のハントを含む STIX 2.1 バンドル）。ハント数、ATT&CK テクニック、ハント対象プラットフォームはファイルから読み取られます。"
+      }
+    },
     "Description": "出版",
     "GoTo": "サービスページへ",
     "GoToAdminLabel": "管理する",
@@ -1533,6 +1555,12 @@
         "IntegrationType": "タイプ",
         "ConnectorType": "コネクタタイプ",
         "HuntedPlatform": "ハント対象プラットフォーム",
+        "Hunts": "ハント",
+        "HuntCount": "{count, plural, other {# 件のハント}}",
+        "AttackTechniques": "ATT&CK テクニック",
+        "HuntedPlatforms": "ハント対象プラットフォーム",
+        "MoreItems": "ほか {count} 件",
+        "ShowFewerItems": "表示を減らす",
         "IntegrationSolutionCategory": "解答カテゴリ",
         "IntegrationLicenseType": "ライセンスの種類",
         "GithubURL": "Github URL",
