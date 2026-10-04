@@ -2,6 +2,7 @@ import testRender from '@/utils/test/test-render';
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  buildCoverageOptionCounts,
   buildCoverageOptions,
   IntegrationCoverageFilter,
 } from './IntegrationCoverageFilter';
@@ -42,6 +43,25 @@ describe('buildCoverageOptions', () => {
 
   it('should be empty without facets nor selection', () => {
     expect(buildCoverageOptions(undefined, [])).toEqual([]);
+  });
+
+  it('should merge values differing only by case, spelled as selected, with the facet count', () => {
+    // Given / When
+    const options = buildCoverageOptions({ Finance: 4, Energy: 1 }, [
+      'finance',
+    ]);
+    const counts = buildCoverageOptionCounts(
+      { Finance: 4, Energy: 1 },
+      options
+    );
+
+    // Then
+    expect(options).toEqual([
+      { label: 'Energy', value: 'Energy' },
+      { label: 'finance', value: 'finance' },
+    ]);
+    expect(counts).toEqual({ Energy: 1, finance: 4 });
+    expect(buildCoverageOptionCounts(undefined, options)).toBeUndefined();
   });
 });
 
