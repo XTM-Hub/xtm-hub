@@ -24,7 +24,7 @@ Every hour, a contributing OpenCTI platform sends one batch per UTC day with:
 
 The batch schema accepts no other field: XTM Hub rejects any batch that carries anything else.
 
-Objects marked `TLP:RED`, `TLP:AMBER+STRICT` or `PAP:RED`, objects with restricted access and the markings the administrator excludes never leave the platform. The identity of the organization never leaves the platform either: XTM Hub only knows the connected platform.
+Objects marked `TLP:RED`, `TLP:AMBER+STRICT` or `PAP:RED`, objects with restricted access and the markings the administrator excludes never leave the platform. No batch carries the name or an identifier of the organization, and the Threat Pulse tables of XTM Hub hold none: contributions are recorded under an internal platform number. XTM Hub still knows which organization registered the connected platform, because it validates the platform token against that organization's subscription; what Threat Pulse guarantees is that nothing about the organization travels with the contributions or is stored with them.
 
 ## How XTM Hub protects the contributions
 
