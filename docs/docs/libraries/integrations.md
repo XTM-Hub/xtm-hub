@@ -76,8 +76,9 @@ Integration.
 ![Inferred coverage on the Integration details page](../assets/images/integration-coverage-details.png)
 
 On the details page, an inferred coverage is marked "Inferred automatically"; its tooltip explains where it comes
-from. In the Integration form, a Hub administrator sees when the current coverage was inferred: saving values in
-the coverage fields declares them and replaces the inference, and leaving the fields empty lets the Hub infer it.
+from. In the Integration form, a Hub administrator sees when the current coverage was inferred: changing the
+coverage, or checking "Confirm this coverage" to keep it as it is, declares it and replaces the inference. Saving the
+form without either keeps the coverage inferred, and leaving the fields empty lets the Hub infer it.
 
 ![Coverage fields of the Integration form](../assets/images/integration-coverage-form.png)
 
