@@ -138,8 +138,9 @@ restricted to the same types. The types are those of OpenCTI:
 
 **Internal hunt** Connectors run the hunts of OpenCTI (a Sigma rule or a native query over a time window) on a
 Security Platform or data lake, such as Splunk, Microsoft Sentinel or Elastic Security. Their details page also shows
-the **Hunted platform**. Raw events never leave the hunted platform: OpenCTI only receives hit counts, sightings,
-observed indicators and a hashed, truncated evidence sample.
+the **Hunted platform**. The Connector fetches the matching raw events from the hunted platform API and processes
+them; raw events never leave the Connector. OpenCTI only receives hit counts, sightings, observed indicators and a
+hashed, truncated evidence sample.
 
 ![Details page of the Splunk Hunt Connector showing its Internal hunt connector type, Splunk as hunted platform and OpenCTI 7.261003.0 as minimum deployable version](../assets/images/integrations-hunt-connector-details.png)
 
