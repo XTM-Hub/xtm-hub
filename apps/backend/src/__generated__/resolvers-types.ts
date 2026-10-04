@@ -2111,7 +2111,8 @@ export type PulseTrendingInput = {
 
 export type PulseTrendingItem = {
   __typename?: 'PulseTrendingItem';
-  first_seen_network: Scalars['String']['output'];
+  /** First day one week of the history reached k platforms; null while no week did */
+  first_seen_network?: Maybe<Scalars['String']['output']>;
   /** (recent + 1) / (baseline + 1) */
   growth: Scalars['Float']['output'];
   /** Hash of the item under the requested day's salt */
@@ -4994,7 +4995,7 @@ export type PulseStatusResolvers<ContextType = PortalContext, ParentType extends
 }>;
 
 export type PulseTrendingItemResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['PulseTrendingItem'] = ResolversParentTypes['PulseTrendingItem']> = ResolversObject<{
-  first_seen_network?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  first_seen_network?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   growth?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   hash?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   object_type?: Resolver<ResolversTypes['PulseObjectType'], ParentType, ContextType>;

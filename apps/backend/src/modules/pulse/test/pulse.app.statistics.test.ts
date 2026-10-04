@@ -549,6 +549,42 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
       expect(lookup?.trend_series?.slice(-3)).toEqual([0, 0, 5]);
     });
 
+    it.each([
+      { period: PulsePeriod.Last_30Days, daysAgo: [0, 8, 16, 24, 29] },
+      { period: PulsePeriod.Last_90Days, daysAgo: [0, 20, 40, 60, 85] },
+    ])(
+      'should publish a $period trending item whose first seen day is withheld',
+      async ({ period, daysAgo }) => {
+        // Given five platforms reporting LockBit in five different weeks: the
+        // period reaches k, no week does
+        const clients = await registerPulseClients(5);
+        for (const [index, client] of clients.entries()) {
+          clock.addDays(-daysAgo[index]!);
+          await client.push({
+            day: clock.today(),
+            records: [malware(LOCKBIT)],
+          });
+          clock.addDays(daysAgo[index]!);
+        }
+
+        // When
+        const trending = await clients[0]!.trending({
+          day: PULSE_TEST_TODAY,
+          period,
+        });
+
+        // Then the item is published, its first seen day is not
+        expect(trending.items).toMatchObject([
+          {
+            object_type: MALWARE,
+            platforms_bucket: '5-9',
+            growth: 6,
+            first_seen_network: null,
+          },
+        ]);
+      }
+    );
+
     it('should publish the same growth for every reporter count of a platforms range', async () => {
       // Given a family reported by five platforms and another by nine, both first seen today
       const clients = await registerPulseClients(9);

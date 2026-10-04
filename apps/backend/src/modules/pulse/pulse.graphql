@@ -144,7 +144,8 @@ type PulseTrendingItem {
   trend: PulseTrendDirection!
   "(recent + 1) / (baseline + 1)"
   growth: Float!
-  first_seen_network: String!
+  "First day one week of the history reached k platforms; null while no week did"
+  first_seen_network: String
 }
 
 type PulseTrendingResult {

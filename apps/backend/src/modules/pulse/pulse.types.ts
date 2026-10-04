@@ -70,7 +70,9 @@ export interface PulseTrendingSnapshotItem extends PulseKeyRef {
   baseline: number;
   growth: number;
   prevalence: PulsePrevalenceBucket;
-  firstSeen: string;
+  // Null when no week of the history reaches k: the day stays withheld while
+  // the item itself is published.
+  firstSeen: string | null;
 }
 
 // The rules a trending snapshot was published under: a snapshot is only
