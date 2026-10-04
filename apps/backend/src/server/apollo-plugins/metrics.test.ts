@@ -16,13 +16,14 @@ import {
 
 const HASH = 'a1'.repeat(16);
 
-// Resolves one operation through the plugin; `queryText` is what the request
-// carries (nothing for a hash-only persisted query).
+// Resolves one operation through the plugin; a hash-only persisted query
+// (`withQueryText: false`) carries no query text in the request.
 const resolveOperation = async (
   document: string,
   operationName: string,
-  queryText: string | undefined = document
+  { withQueryText = true }: { withQueryText?: boolean } = {}
 ): Promise<void> => {
+  const queryText = withQueryText ? document : undefined;
   const listener = await operationMetricsPlugin.requestDidStart?.(
     {} as GraphQLRequestContext<BaseContext>
   );
@@ -82,7 +83,7 @@ describe('operationMetricsPlugin labels', () => {
     const document = `query P_${HASH} { pulseLookup(input: { day: "2026-10-03", object_type: indicator, hashes: [] }) { hash } }`;
 
     // When
-    await resolveOperation(document, `P_${HASH}`, undefined);
+    await resolveOperation(document, `P_${HASH}`, { withQueryText: false });
 
     // Then
     expect((await metricLabels()).some((label) => label.includes(HASH))).toBe(
