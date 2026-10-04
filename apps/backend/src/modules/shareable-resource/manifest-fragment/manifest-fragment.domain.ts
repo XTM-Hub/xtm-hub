@@ -201,10 +201,11 @@ export const ManifestFragmentDomain = {
       CONNECTOR_SLUG_LOCK_NAMESPACE,
       fragment.slug,
       async () => {
-        await DocumentDomain.lockDocumentsBySlugTypeAndServiceInstance({
+        // The family spans every service instance, like the slug lock and the
+        // unique constraint on type, slug and version
+        await DocumentDomain.lockDocumentsBySlugAndType({
           slug: fragment.slug,
           type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-          serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
         });
 
         // Re-read the whole family after the lock statement so this transaction
@@ -215,7 +216,6 @@ export const ManifestFragmentDomain = {
             .where({
               slug: fragment.slug,
               type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-              service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
             })
             .select('id');
 
@@ -228,10 +228,7 @@ export const ManifestFragmentDomain = {
             DocumentMetadataKeyCode.ManifestFragmentId,
             fragment.id,
             [],
-            {
-              type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-              service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
-            }
+            { type: OPENCTI_INTEGRATION_DOCUMENT_TYPE }
           );
 
         const conflictingConnector = existingConnectorsWithSameId.find(

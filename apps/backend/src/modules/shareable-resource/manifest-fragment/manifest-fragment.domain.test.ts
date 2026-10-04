@@ -598,6 +598,51 @@ describe('manifestFragmentDomain', () => {
       expect(newDocument!.tags).not.toContain('latest-lts');
     });
 
+    it('treats a connector of the same slug in another service instance as part of the family, like the unique constraint', async () => {
+      // Given
+      const elsewhere = await TestHelper.document.create({
+        slug: 'misp-family-elsewhere',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        service_instance_id: null,
+        source_type: DocumentSourceType.External,
+        version: '7.260308.0',
+        tags: ['decoupling', 'latest'],
+      });
+      _createdDocumentIds.push(elsewhere.id);
+      await TestHelper.documentMetadata.create({
+        document_id: elsewhere.id,
+        key: DocumentMetadataKeyCode.VersionPadded as DocumentMetadataKey,
+        value: '007.260308.000',
+      });
+
+      // When: a newer version, then the same version again
+      await ManifestFragmentDomain.ingestManifestFragment(
+        buildManifestFragment(ManifestType.Connector, {
+          slug: 'misp-family-elsewhere',
+          version: '7.260309.0',
+        })
+      );
+      await expect(
+        ManifestFragmentDomain.ingestManifestFragment(
+          buildManifestFragment(ManifestType.Connector, {
+            slug: 'misp-family-elsewhere',
+            version: '7.260308.0',
+          })
+        )
+      ).rejects.toThrow(BadRequestErrorCode.ConnectorVersionAlreadyExists);
+
+      // Then: one family with one latest version
+      const demoted = await TestHelper.document.load({ id: elsewhere.id });
+      expect(demoted!.tags).not.toContain('latest');
+      const promoted = await TestHelper.document.load({
+        slug: 'misp-family-elsewhere',
+        version: '7.260309.0',
+      });
+      expect(promoted).toBeDefined();
+      _createdDocumentIds.push(promoted!.id);
+      expect(promoted!.tags).toContain('latest');
+    });
+
     it('promotes latest tag to the newer version when the same slug is ingested twice', async () => {
       // Given
       const slug = 'misp-same-slug-newer-version';

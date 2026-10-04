@@ -237,21 +237,19 @@ export const DocumentDomain = {
     return DocumentMetadataDomain.hydrateMetadata(documents, include_metadata);
   },
 
-  lockDocumentsBySlugTypeAndServiceInstance: async ({
+  /**
+   * Locks every document of this type and slug, in every service instance:
+   * the scope of the unique constraint `document_type_slug_version_unique`.
+   */
+  lockDocumentsBySlugAndType: async ({
     slug,
     type,
-    serviceInstanceId,
   }: {
     slug: string;
     type: string;
-    serviceInstanceId: ServiceInstanceId;
   }): Promise<Pick<DocumentModel, 'id'>[]> => {
     return db<DocumentModel>('Document')
-      .where({
-        slug,
-        type,
-        service_instance_id: serviceInstanceId,
-      })
+      .where({ slug, type })
       .select('id')
       .forUpdate();
   },
