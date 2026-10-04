@@ -42,16 +42,17 @@ export interface PulsePlatformRecord {
   last_contribution_day: string;
 }
 
-// Bit i of the masks is set when the platform contributed during week i,
-// week 0 being the 7 days ending on the request day.
-export interface PulsePresence {
-  weeks: number;
-  inWindow: boolean;
-  sectorWeeks: number;
-  sectorInWindow: boolean;
+// Distinct platforms per week over the trend series, newest first (week 0 is
+// the 7 days ending on the request day), and over the activity window, for the
+// network and for the sector of the caller.
+export interface PulsePresenceSummary {
+  weekly: number[];
+  platformsInWindow: number;
+  sectorWeekly: number[];
+  sectorPlatformsInWindow: number;
 }
 
-export interface PulseKeyPresence extends PulseKeyRef, PulsePresence {}
+export interface PulseKeyPresence extends PulseKeyRef, PulsePresenceSummary {}
 
 export interface PulseSeenRange {
   firstSeen: string;
@@ -108,13 +109,22 @@ export interface PulseStoredDigestSnapshot {
   items: PulseDigestSnapshotItem[];
 }
 
-export interface PulsePlatformTotal {
-  platform: number;
+// One (type, kind) pair reported over a benchmark period: the caller's events
+// (network-wide, and in its current sector only) and the medians of the
+// per-platform totals, before k is applied (null for an empty population).
+export interface PulseBenchmarkMetricRow {
   objectType: PulseObjectType;
   eventKind: PulseEventKind;
-  total: number;
-  sectorTotal: number;
-  inSector: boolean;
+  callerTotal: number;
+  callerSectorTotal: number;
+  networkMedian: number | null;
+  sectorMedian: number | null;
+}
+
+export interface PulseBenchmarkMetrics {
+  networkPlatforms: number;
+  sectorPlatforms: number;
+  metrics: PulseBenchmarkMetricRow[];
 }
 
 export interface PulseBenchmarkTopItemRow extends PulseKeyRef {

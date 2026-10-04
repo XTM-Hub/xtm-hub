@@ -6,8 +6,11 @@ import {
   PulseTrendDirection,
 } from '../../__generated__/resolvers-types';
 import { PulseHelper } from './pulse.helper';
-import { PulsePresenceSummary } from './pulse.stats.helper';
-import { PulseLedgerRecord, PulseTrendingCount } from './pulse.types';
+import {
+  PulseLedgerRecord,
+  PulsePresenceSummary,
+  PulseTrendingCount,
+} from './pulse.types';
 
 const K = 5;
 const HASH = '9913881f71e8c61c79d05b20cf144d42';

@@ -690,7 +690,7 @@ const loadLookupData = async ({
   const publishedKeys = keys.filter(
     (key) => (networkPlatforms.get(pulseKeyId(key)) ?? 0) >= kThreshold
   );
-  const presenceByKey = new Map<string, PulseKeyPresence[]>();
+  const presenceByKey = new Map<string, PulseKeyPresence>();
   let seen = new Map<string, { firstSeen: string; lastSeen: string }>();
   let activeContributors = 0;
   if (publishedKeys.length > 0) {
@@ -706,13 +706,7 @@ const loadLookupData = async ({
       sectorBucket,
     });
     for (const presence of presences) {
-      const keyId = pulseKeyId(presence);
-      const keyPresences = presenceByKey.get(keyId);
-      if (keyPresences) {
-        keyPresences.push(presence);
-      } else {
-        presenceByKey.set(keyId, [presence]);
-      }
+      presenceByKey.set(pulseKeyId(presence), presence);
     }
     activeContributors = await PulseDomain.countActiveContributors({
       fromDay: activityWindowStart(day),
@@ -999,9 +993,7 @@ export const PulseApp = {
           hash,
           networkPlatforms: networkPlatforms.get(keyId) ?? 0,
           seen: seen.get(keyId),
-          presence: PulseStats.summarizePresence(
-            presenceByKey.get(keyId) ?? []
-          ),
+          presence: presenceByKey.get(keyId) ?? PulseStats.emptyPresence(),
           activeContributors,
           kThreshold,
         });
@@ -1066,17 +1058,14 @@ export const PulseApp = {
 
       // The medians and the top items come from one data generation.
       const { summary, topItems } = await readUnderOneGeneration(async () => {
-        const totals = await PulseDomain.loadPlatformTotals({
+        const benchmark = await PulseDomain.loadBenchmarkMetrics({
+          platformId: platform.id,
           fromDay,
           toDay: validated.day,
           sectorBucket: platform.sector_bucket,
         });
         return {
-          summary: PulseStats.summarizeBenchmark({
-            totals,
-            callerPlatform: platform.id,
-            kThreshold,
-          }),
+          summary: PulseStats.summarizeBenchmark({ benchmark, kThreshold }),
           topItems: await PulseDomain.loadBenchmarkTopItems({
             platformId: platform.id,
             fromDay,

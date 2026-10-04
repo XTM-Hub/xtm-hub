@@ -17,6 +17,7 @@ import {
 } from './pulse.const';
 import {
   PulseAggregateIncrement,
+  PulseBenchmarkMetrics,
   PulseBenchmarkTopItemRow,
   PulseDigestCandidate,
   pulseKeyId,
@@ -24,7 +25,6 @@ import {
   PulseKeyRef,
   PulseLedgerRecord,
   PulsePlatformRecord,
-  PulsePlatformTotal,
   PulsePublicationPolicy,
   PulseRateLimitBucket,
   PulseSeenRange,
@@ -416,8 +416,10 @@ export const PulseDomain = {
     );
   },
 
-  // One row per (key, platform) over the 12 weeks ending on `day`, with the
-  // week bitmasks and the 30-day flags for the network and the sector.
+  // One row per key over the 12 weeks ending on `day`: the distinct platforms
+  // of each week (newest first) and of the 30-day window, for the network and
+  // for the sector. Summarized in the database, so a lookup transfers at most
+  // one row per requested key whatever the number of reporting platforms.
   loadKeyPresence: async ({
     keys,
     day,
@@ -429,22 +431,50 @@ export const PulseDomain = {
   }): Promise<PulseKeyPresence[]> => {
     const rows = await query<
       PulseKeyRef & {
-        weeks: number;
-        in_window: boolean;
-        sector_weeks: number;
-        sector_in_window: boolean;
+        weekly: number[];
+        in_window: number;
+        sector_weekly: number[];
+        sector_in_window: number;
       }
     >(
-      `SELECT encode(c.at_rest_key, 'hex') AS k, c.object_type AS t,
-              bit_or(1 << ((?::date - c.day) / ?::int)) AS weeks,
-              bool_or(c.day > ?::date - ?::int) AS in_window,
-              bit_or(CASE WHEN c.sector_bucket = ? THEN 1 << ((?::date - c.day) / ?::int) ELSE 0 END) AS sector_weeks,
-              bool_or(c.sector_bucket = ? AND c.day > ?::date - ?::int) AS sector_in_window
-       FROM "PulseContribution" c
-       JOIN jsonb_to_recordset(?::jsonb) AS r(k text, t text)
-         ON c.at_rest_key = decode(r.k, 'hex') AND c.object_type = r.t
-       WHERE c.day > ?::date - ?::int AND c.day <= ?::date
-       GROUP BY c.at_rest_key, c.object_type, c.pulse_platform_id`,
+      `WITH presence AS (
+         SELECT c.at_rest_key, c.object_type,
+                bit_or(1 << ((?::date - c.day) / ?::int)) AS weeks,
+                bool_or(c.day > ?::date - ?::int) AS in_window,
+                bit_or(CASE WHEN c.sector_bucket = ? THEN 1 << ((?::date - c.day) / ?::int) ELSE 0 END) AS sector_weeks,
+                bool_or(c.sector_bucket = ? AND c.day > ?::date - ?::int) AS sector_in_window
+         FROM "PulseContribution" c
+         JOIN jsonb_to_recordset(?::jsonb) AS r(k text, t text)
+           ON c.at_rest_key = decode(r.k, 'hex') AND c.object_type = r.t
+         WHERE c.day > ?::date - ?::int AND c.day <= ?::date
+         GROUP BY c.at_rest_key, c.object_type, c.pulse_platform_id
+       ),
+       weekly AS (
+         SELECT p.at_rest_key, p.object_type, w.week,
+                COUNT(*) FILTER (WHERE (p.weeks & (1 << w.week)) <> 0) AS platforms,
+                COUNT(*) FILTER (WHERE (p.sector_weeks & (1 << w.week)) <> 0) AS sector_platforms
+         FROM presence p
+         CROSS JOIN generate_series(0, ?::int - 1) AS w(week)
+         GROUP BY p.at_rest_key, p.object_type, w.week
+       ),
+       series AS (
+         SELECT at_rest_key, object_type,
+                jsonb_agg(platforms ORDER BY week) AS weekly,
+                jsonb_agg(sector_platforms ORDER BY week) AS sector_weekly
+         FROM weekly
+         GROUP BY at_rest_key, object_type
+       ),
+       windows AS (
+         SELECT at_rest_key, object_type,
+                (COUNT(*) FILTER (WHERE in_window))::int AS in_window,
+                (COUNT(*) FILTER (WHERE sector_in_window))::int AS sector_in_window
+         FROM presence
+         GROUP BY at_rest_key, object_type
+       )
+       SELECT encode(s.at_rest_key, 'hex') AS k, s.object_type AS t,
+              s.weekly, w.in_window, s.sector_weekly, w.sector_in_window
+       FROM series s
+       JOIN windows w ON w.at_rest_key = s.at_rest_key AND w.object_type = s.object_type`,
       [
         day,
         PULSE_DAYS_PER_WEEK,
@@ -460,15 +490,16 @@ export const PulseDomain = {
         day,
         PULSE_TREND_SERIES_WEEKS * PULSE_DAYS_PER_WEEK,
         day,
+        PULSE_TREND_SERIES_WEEKS,
       ]
     );
     return rows.map((row) => ({
       k: row.k,
       t: row.t,
-      weeks: row.weeks,
-      inWindow: row.in_window,
-      sectorWeeks: row.sector_weeks,
-      sectorInWindow: row.sector_in_window,
+      weekly: row.weekly,
+      platformsInWindow: row.in_window,
+      sectorWeekly: row.sector_weekly,
+      sectorPlatformsInWindow: row.sector_in_window,
     }));
   },
   // endregion
@@ -824,40 +855,126 @@ export const PulseDomain = {
   // endregion
 
   // region Benchmark
-  loadPlatformTotals: async ({
+  // The platforms active over the period (network) and in the caller's sector,
+  // and for every (type, kind) pair reported: the caller's totals and the
+  // medians of the per-platform totals over those populations, a platform
+  // without the pair counting 0 (its sector total: its events in that sector
+  // only). Computed in the database like loadBenchmarkTopItems, the zeros
+  // being the first positions of the sorted totals, so a benchmark transfers
+  // one row per pair whatever the size of the network. k is applied by
+  // PulseStats.summarizeBenchmark.
+  loadBenchmarkMetrics: async ({
+    platformId,
     fromDay,
     toDay,
     sectorBucket,
   }: {
+    platformId: number;
     fromDay: string;
     toDay: string;
     sectorBucket: PulseSectorBucket;
-  }): Promise<PulsePlatformTotal[]> => {
+  }): Promise<PulseBenchmarkMetrics> => {
     const rows = await query<{
-      platform: number;
-      t: PulseObjectType;
-      e: PulseEventKind;
-      total: number;
-      sector_total: number;
-      in_sector: boolean;
+      network_platforms: number;
+      sector_platforms: number;
+      t: PulseObjectType | null;
+      e: PulseEventKind | null;
+      caller_total: number | null;
+      caller_sector_total: number | null;
+      network_median: number | null;
+      sector_median: number | null;
     }>(
-      `SELECT pulse_platform_id AS platform, object_type AS t, event_kind AS e,
-              SUM(event_count)::float8 AS total,
-              COALESCE(SUM(event_count) FILTER (WHERE sector_bucket = ?), 0)::float8 AS sector_total,
-              bool_or(sector_bucket = ?) AS in_sector
-       FROM "PulsePlatformDailyTotal"
-       WHERE day >= ?::date AND day <= ?::date
-       GROUP BY pulse_platform_id, object_type, event_kind`,
-      [sectorBucket, sectorBucket, fromDay, toDay]
+      `WITH platform_totals AS (
+         SELECT pulse_platform_id AS platform, object_type, event_kind,
+                SUM(event_count)::float8 AS total,
+                COALESCE(SUM(event_count) FILTER (WHERE sector_bucket = ?), 0)::float8 AS sector_total
+         FROM "PulsePlatformDailyTotal"
+         WHERE day >= ?::date AND day <= ?::date
+         GROUP BY pulse_platform_id, object_type, event_kind
+       ),
+       population AS (
+         SELECT COUNT(DISTINCT pulse_platform_id)::int AS network,
+                (COUNT(DISTINCT pulse_platform_id) FILTER (WHERE sector_bucket = ?))::int AS sector
+         FROM "PulsePlatformDailyTotal"
+         WHERE day >= ?::date AND day <= ?::date
+       ),
+       metrics AS (
+         SELECT object_type, event_kind,
+                COALESCE(array_agg(total ORDER BY total) FILTER (WHERE total > 0), '{}') AS network_totals,
+                COALESCE(array_agg(sector_total ORDER BY sector_total) FILTER (WHERE sector_total > 0), '{}') AS sector_totals,
+                COALESCE(SUM(total) FILTER (WHERE platform = ?), 0)::float8 AS caller_total,
+                COALESCE(SUM(sector_total) FILTER (WHERE platform = ?), 0)::float8 AS caller_sector_total
+         FROM platform_totals
+         GROUP BY object_type, event_kind
+       ),
+       scoped AS (
+         SELECT m.object_type, m.event_kind, 'network' AS scope, m.network_totals AS totals,
+                GREATEST(p.network, cardinality(m.network_totals)) AS size
+         FROM metrics m CROSS JOIN population p
+         UNION ALL
+         SELECT m.object_type, m.event_kind, 'sector', m.sector_totals,
+                GREATEST(p.sector, cardinality(m.sector_totals))
+         FROM metrics m CROSS JOIN population p
+       ),
+       positions AS (
+         SELECT object_type, event_kind, scope, totals, size,
+                size - cardinality(totals) AS zeros,
+                floor((size - 1) * 0.5)::int AS low,
+                ceil((size - 1) * 0.5)::int AS high,
+                (((size - 1) * 0.5) - floor((size - 1) * 0.5))::float8 AS fraction
+         FROM scoped
+       ),
+       bounds AS (
+         SELECT object_type, event_kind, scope, size, fraction,
+                CASE WHEN low < zeros THEN 0 ELSE totals[low - zeros + 1] END AS low_value,
+                CASE WHEN high < zeros THEN 0 ELSE totals[high - zeros + 1] END AS high_value
+         FROM positions
+       ),
+       medians AS (
+         SELECT object_type, event_kind,
+                MAX(low_value + (high_value - low_value) * fraction)
+                  FILTER (WHERE scope = 'network' AND size > 0) AS network_median,
+                MAX(low_value + (high_value - low_value) * fraction)
+                  FILTER (WHERE scope = 'sector' AND size > 0) AS sector_median
+         FROM bounds
+         GROUP BY object_type, event_kind
+       )
+       SELECT p.network AS network_platforms, p.sector AS sector_platforms,
+              m.object_type AS t, m.event_kind AS e, m.caller_total, m.caller_sector_total,
+              d.network_median::float8 AS network_median, d.sector_median::float8 AS sector_median
+       FROM population p
+       LEFT JOIN metrics m ON true
+       LEFT JOIN medians d ON d.object_type = m.object_type AND d.event_kind = m.event_kind`,
+      [
+        sectorBucket,
+        fromDay,
+        toDay,
+        sectorBucket,
+        fromDay,
+        toDay,
+        platformId,
+        platformId,
+      ]
     );
-    return rows.map((row) => ({
-      platform: row.platform,
-      objectType: row.t,
-      eventKind: row.e,
-      total: row.total,
-      sectorTotal: row.sector_total,
-      inSector: row.in_sector,
-    }));
+    const [first] = rows;
+    return {
+      networkPlatforms: first?.network_platforms ?? 0,
+      sectorPlatforms: first?.sector_platforms ?? 0,
+      metrics: rows.flatMap((row) =>
+        row.t && row.e
+          ? [
+              {
+                objectType: row.t,
+                eventKind: row.e,
+                callerTotal: row.caller_total ?? 0,
+                callerSectorTotal: row.caller_sector_total ?? 0,
+                networkMedian: row.network_median,
+                sectorMedian: row.sector_median,
+              },
+            ]
+          : []
+      ),
+    };
   },
 
   // Keys of the caller published in its sector over the period where the

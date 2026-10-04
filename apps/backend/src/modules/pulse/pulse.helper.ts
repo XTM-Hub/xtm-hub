@@ -8,12 +8,13 @@ import {
   PULSE_OBJECT_TYPES,
   PULSE_TRENDING_ITEMS_PER_OBJECT_TYPE,
 } from './pulse.const';
-import { PulsePresenceSummary, PulseStats } from './pulse.stats.helper';
+import { PulseStats } from './pulse.stats.helper';
 import {
   PulseAggregateIncrement,
   pulseKeyId,
   PulseKeyRef,
   PulseLedgerRecord,
+  PulsePresenceSummary,
   PulseSeenRange,
   PulseTotalIncrement,
   PulseTrendingCount,

@@ -829,6 +829,45 @@ describe('pulseApp statistics', PULSE_INTEGRATION_SUITE, () => {
       });
     });
 
+    it('should compute the network medians over every active platform and the sector medians over the sector platforms', async () => {
+      // Given five finance platforms reporting LockBit 1 to 5 times and a
+      // healthcare platform reporting it 100 times
+      const clients = await registerPulseClients(6);
+      for (const [index, client] of clients.slice(0, 5).entries()) {
+        await client.push({
+          day: PULSE_TEST_TODAY,
+          records: [malware(LOCKBIT, index + 1)],
+        });
+      }
+      await clients[5]!.push({
+        day: PULSE_TEST_TODAY,
+        records: [malware(LOCKBIT, 100)],
+        sector: PulseSectorBucket.Healthcare,
+      });
+
+      // When
+      const benchmark = await clients[0]!.benchmark({
+        day: PULSE_TEST_TODAY,
+        period: PulsePeriod.Last_30Days,
+      });
+
+      // Then the network median of 1, 2, 3, 4, 5 and 100 is 3.5, the finance
+      // one of 1 to 5 is 3
+      expect(
+        benchmark.metrics.find(
+          (metric) =>
+            metric.object_type === MALWARE &&
+            metric.event_kind === PulseEventKind.Created
+        )
+      ).toEqual({
+        object_type: MALWARE,
+        event_kind: PulseEventKind.Created,
+        platform_count: 1,
+        sector_median: 3,
+        network_median: 3.5,
+      });
+    });
+
     it('should compare the caller with its sector on what it reported in that sector only', async () => {
       // Given a caller that reported LockBit 100 times as healthcare yesterday
       // and once as finance today, and four finance platforms twice each

@@ -23,21 +23,14 @@ import {
 } from './pulse.const';
 import { PulseDay } from './pulse.day.helper';
 import {
-  PulsePlatformTotal,
-  PulsePresence,
+  PulseBenchmarkMetrics,
+  PulsePresenceSummary,
   PulseRateLimitBucket,
 } from './pulse.types';
 
 export interface PulseRateLimitDecision {
   allowed: boolean;
   retryAfterSeconds: number;
-}
-
-export interface PulsePresenceSummary {
-  weekly: number[];
-  platformsInWindow: number;
-  sectorWeekly: number[];
-  sectorPlatformsInWindow: number;
 }
 
 export interface PulseBenchmarkSummary {
@@ -53,12 +46,6 @@ export interface PulseContributionState {
 }
 
 const ROUNDING_DECIMALS = 4;
-
-const weeklyCountsFromMasks = (masks: readonly number[]): number[] =>
-  Array.from(
-    { length: PULSE_TREND_SERIES_WEEKS },
-    (_, week) => masks.filter((mask) => (mask & (1 << week)) !== 0).length
-  );
 
 const metricKey = (objectType: PulseObjectType, eventKind: PulseEventKind) =>
   `${objectType}:${eventKind}`;
@@ -160,19 +147,16 @@ export const PulseStats = {
     return PulseTrendDirection.Stable;
   },
 
-  // A count below k is never published, nor anything derived from it: it
-  // weighs as 0 in every published figure, direction and ranking.
-  suppressBelowK: (count: number, kThreshold: number): number =>
-    count >= kThreshold ? count : 0,
-
   // Weekly counts are newest first: week 0 is the recent week, the baseline is
-  // the mean of the 3 weeks before it, each week suppressed below k.
+  // the mean of the 3 weeks before it, each week coarsened like
+  // platforms_bucket (0 below k): two series of identical published ranges
+  // always have the same direction.
   weeklyTrend: (
     weeklyNewestFirst: readonly number[],
     kThreshold: number
   ): PulseTrendDirection => {
     const weekly = weeklyNewestFirst.map((count) =>
-      PulseStats.suppressBelowK(count, kThreshold)
+      PulseStats.coarseCount(count, kThreshold)
     );
     const recent = weekly[0] ?? 0;
     const baselineWeeks = weekly.slice(1, 1 + PULSE_TREND_BASELINE_WEEKS);
@@ -202,18 +186,6 @@ export const PulseStats = {
   growth: (recent: number, baseline: number): number =>
     (recent + 1) / (baseline + 1),
 
-  median: (values: readonly number[]): number | null => {
-    if (values.length === 0) {
-      return null;
-    }
-    const sorted = [...values].sort((a, b) => a - b);
-    const middle = Math.floor(sorted.length / 2);
-    if (sorted.length % 2 === 1) {
-      return sorted[middle] ?? null;
-    }
-    return ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2;
-  },
-
   round: (value: number): number => {
     const factor = 10 ** ROUNDING_DECIMALS;
     return Math.round(value * factor) / factor;
@@ -222,83 +194,61 @@ export const PulseStats = {
   clampToGraphQLInt: (value: number): number =>
     Math.min(Math.max(Math.trunc(value), 0), PULSE_GRAPHQL_INT_MAX),
 
-  summarizePresence: (
-    presences: readonly PulsePresence[]
-  ): PulsePresenceSummary => ({
-    weekly: weeklyCountsFromMasks(presences.map((p) => p.weeks)),
-    platformsInWindow: presences.filter((p) => p.inWindow).length,
-    sectorWeekly: weeklyCountsFromMasks(presences.map((p) => p.sectorWeeks)),
-    sectorPlatformsInWindow: presences.filter((p) => p.sectorInWindow).length,
+  // A published key nobody reported over the trend series.
+  emptyPresence: (): PulsePresenceSummary => ({
+    weekly: Array.from({ length: PULSE_TREND_SERIES_WEEKS }, () => 0),
+    platformsInWindow: 0,
+    sectorWeekly: Array.from({ length: PULSE_TREND_SERIES_WEEKS }, () => 0),
+    sectorPlatformsInWindow: 0,
   }),
 
-  // Medians run over every active platform of the population, a platform
-  // without any record of a (type, kind) pair counting as 0.
+  // Every (type, kind) pair: a pair nobody reported weighs 0 for every active
+  // platform, so its median is 0; a median is published from k active
+  // platforms of its population (PulseDomain.loadBenchmarkMetrics computes it).
   summarizeBenchmark: ({
-    totals,
-    callerPlatform,
+    benchmark,
     kThreshold,
   }: {
-    totals: readonly PulsePlatformTotal[];
-    callerPlatform: number;
+    benchmark: PulseBenchmarkMetrics;
     kThreshold: number;
   }): PulseBenchmarkSummary => {
-    const networkPlatforms = new Set(totals.map((row) => row.platform));
-    const sectorPlatforms = new Set(
-      totals.filter((row) => row.inSector).map((row) => row.platform)
+    const byMetric = new Map(
+      benchmark.metrics.map((row) => [
+        metricKey(row.objectType, row.eventKind),
+        row,
+      ])
     );
-    const byMetric = new Map<
-      string,
-      { network: Map<number, number>; sector: Map<number, number> }
-    >();
-    for (const row of totals) {
-      const key = metricKey(row.objectType, row.eventKind);
-      const entry = byMetric.get(key) ?? {
-        network: new Map<number, number>(),
-        sector: new Map<number, number>(),
-      };
-      entry.network.set(row.platform, row.total);
-      entry.sector.set(row.platform, row.sectorTotal);
-      byMetric.set(key, entry);
-    }
+    const published = (median: number | null | undefined, platforms: number) =>
+      platforms >= kThreshold ? (median ?? 0) : null;
 
     const metrics = PULSE_OBJECT_TYPES.flatMap((objectType) =>
       PULSE_EVENT_KINDS.map((eventKind): PulseBenchmarkMetric => {
-        const entry = byMetric.get(metricKey(objectType, eventKind));
-        const networkValues = [...networkPlatforms].map(
-          (platform) => entry?.network.get(platform) ?? 0
-        );
-        const sectorValues = [...sectorPlatforms].map(
-          (platform) => entry?.sector.get(platform) ?? 0
-        );
-        const networkMedian =
-          networkPlatforms.size >= kThreshold
-            ? PulseStats.median(networkValues)
-            : null;
-        const sectorMedian =
-          sectorPlatforms.size >= kThreshold
-            ? PulseStats.median(sectorValues)
-            : null;
+        const row = byMetric.get(metricKey(objectType, eventKind));
         return {
           object_type: objectType,
           event_kind: eventKind,
-          platform_count: PulseStats.clampToGraphQLInt(
-            entry?.network.get(callerPlatform) ?? 0
-          ),
+          platform_count: PulseStats.clampToGraphQLInt(row?.callerTotal ?? 0),
           // Compared with the sector median: the caller's events in its
           // current sector only, the scope of every total of that median.
           sector_platform_count: PulseStats.clampToGraphQLInt(
-            entry?.sector.get(callerPlatform) ?? 0
+            row?.callerSectorTotal ?? 0
           ),
-          sector_median: sectorMedian,
-          network_median: networkMedian,
+          sector_median: published(
+            row?.sectorMedian,
+            benchmark.sectorPlatforms
+          ),
+          network_median: published(
+            row?.networkMedian,
+            benchmark.networkPlatforms
+          ),
         };
       })
     );
 
     return {
       metrics,
-      sectorPlatforms: sectorPlatforms.size,
-      networkPlatforms: networkPlatforms.size,
+      sectorPlatforms: benchmark.sectorPlatforms,
+      networkPlatforms: benchmark.networkPlatforms,
     };
   },
 

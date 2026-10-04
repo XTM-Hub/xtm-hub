@@ -7,19 +7,28 @@ import {
   PulseTrendDirection,
 } from '../../__generated__/resolvers-types';
 import { PulseStats } from './pulse.stats.helper';
-import { PulsePlatformTotal } from './pulse.types';
+import { PulseBenchmarkMetricRow, PulseBenchmarkMetrics } from './pulse.types';
 
 const K = 5;
-const CALLER = 1;
 
-const makeTotal = (
-  overrides: Partial<PulsePlatformTotal> & { platform: number }
-): PulsePlatformTotal => ({
+const makeMetricRow = (
+  overrides: Partial<PulseBenchmarkMetricRow> = {}
+): PulseBenchmarkMetricRow => ({
   objectType: PulseObjectType.Indicator,
   eventKind: PulseEventKind.Created,
-  total: 10,
-  sectorTotal: 10,
-  inSector: true,
+  callerTotal: 10,
+  callerSectorTotal: 10,
+  networkMedian: 10,
+  sectorMedian: 10,
+  ...overrides,
+});
+
+const makeBenchmark = (
+  overrides: Partial<PulseBenchmarkMetrics> = {}
+): PulseBenchmarkMetrics => ({
+  networkPlatforms: K,
+  sectorPlatforms: K,
+  metrics: [],
   ...overrides,
 });
 
@@ -158,8 +167,21 @@ describe('pulseStats', () => {
         weekly: [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         expected: PulseTrendDirection.Stable,
       },
+      {
+        // Every week in the 5-9 range: the exact counts inside it never show.
+        weekly: [5, 6, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0],
+        expected: PulseTrendDirection.Stable,
+      },
+      {
+        weekly: [9, 6, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0],
+        expected: PulseTrendDirection.Stable,
+      },
+      {
+        weekly: [10, 6, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0],
+        expected: PulseTrendDirection.Rising,
+      },
     ])(
-      'should compare the last week with the mean of the 3 weeks before, each below k as 0 ($expected)',
+      'should compare the last week with the mean of the 3 weeks before, each coarsened like platforms_bucket ($expected)',
       ({ weekly, expected }) => {
         // When
         const trend = PulseStats.weeklyTrend(weekly, K);
@@ -242,22 +264,6 @@ describe('pulseStats', () => {
     );
   });
 
-  describe('median', () => {
-    it.each([
-      { values: [], expected: null },
-      { values: [7], expected: 7 },
-      { values: [9, 1, 5], expected: 5 },
-      { values: [4, 1, 3, 2], expected: 2.5 },
-      { values: [0, 0, 0, 10, 20], expected: 0 },
-    ])('should return $expected for $values', ({ values, expected }) => {
-      // When
-      const median = PulseStats.median(values);
-
-      // Then
-      expect(median).toBe(expected);
-    });
-  });
-
   describe('clampToGraphQLInt', () => {
     it.each([
       { value: 12.7, expected: 12 },
@@ -272,29 +278,17 @@ describe('pulseStats', () => {
     });
   });
 
-  describe('summarizePresence', () => {
-    it('should count distinct platforms per week and over 30 days', () => {
-      // Given
-      const presences = [
-        { weeks: 0b1, inWindow: true, sectorWeeks: 0b1, sectorInWindow: true },
-        { weeks: 0b11, inWindow: true, sectorWeeks: 0, sectorInWindow: false },
-        {
-          weeks: 0b100000000000,
-          inWindow: false,
-          sectorWeeks: 0b100000000000,
-          sectorInWindow: false,
-        },
-      ];
-
+  describe('emptyPresence', () => {
+    it('should answer no platform over every week of the trend series', () => {
       // When
-      const summary = PulseStats.summarizePresence(presences);
+      const presence = PulseStats.emptyPresence();
 
       // Then
-      expect(summary).toEqual({
-        weekly: [2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        platformsInWindow: 2,
-        sectorWeekly: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        sectorPlatformsInWindow: 1,
+      expect(presence).toEqual({
+        weekly: Array.from({ length: 12 }, () => 0),
+        platformsInWindow: 0,
+        sectorWeekly: Array.from({ length: 12 }, () => 0),
+        sectorPlatformsInWindow: 0,
       });
     });
   });
@@ -302,12 +296,11 @@ describe('pulseStats', () => {
   describe('summarizeBenchmark', () => {
     it('should return a metric for every object type and event kind pair', () => {
       // Given
-      const totals = [makeTotal({ platform: CALLER })];
+      const benchmark = makeBenchmark({ metrics: [makeMetricRow()] });
 
       // When
       const { metrics } = PulseStats.summarizeBenchmark({
-        totals,
-        callerPlatform: CALLER,
+        benchmark,
         kThreshold: K,
       });
 
@@ -316,48 +309,66 @@ describe('pulseStats', () => {
     });
 
     it('should null every median below k active platforms', () => {
-      // Given four platforms
-      const totals = [1, 2, 3, 4].map((platform) => makeTotal({ platform }));
+      // Given four active platforms network-wide and in the sector
+      const benchmark = makeBenchmark({
+        networkPlatforms: 4,
+        sectorPlatforms: 4,
+        metrics: [makeMetricRow()],
+      });
 
       // When
-      const summary = PulseStats.summarizeBenchmark({
-        totals,
-        callerPlatform: CALLER,
+      const { metrics } = PulseStats.summarizeBenchmark({
+        benchmark,
         kThreshold: K,
       });
 
       // Then
-      expect(summary.metrics[0]).toMatchObject({
-        object_type: PulseObjectType.Indicator,
-        event_kind: PulseEventKind.Created,
-        platform_count: 10,
-        sector_median: null,
-        network_median: null,
+      expect({
+        reported: metrics[0],
+        published: metrics.filter(
+          (metric) =>
+            metric.sector_median !== null || metric.network_median !== null
+        ),
+      }).toMatchObject({
+        reported: {
+          object_type: PulseObjectType.Indicator,
+          event_kind: PulseEventKind.Created,
+          platform_count: 10,
+          sector_median: null,
+          network_median: null,
+        },
+        published: [],
       });
     });
 
-    it('should count active platforms without the pair as 0 in the medians', () => {
-      // Given five active platforms, two of them reporting sightings
-      const totals = [
-        ...[1, 2, 3, 4, 5].map((platform) => makeTotal({ platform })),
-        makeTotal({
-          platform: 1,
-          eventKind: PulseEventKind.Sighted,
-          total: 8,
-          sectorTotal: 8,
-        }),
-        makeTotal({
-          platform: 2,
-          eventKind: PulseEventKind.Sighted,
-          total: 4,
-          sectorTotal: 4,
-        }),
-      ];
+    it('should apply k to each population on its own', () => {
+      // Given seven active platforms, four of them in the caller's sector
+      const benchmark = makeBenchmark({
+        networkPlatforms: 7,
+        sectorPlatforms: 4,
+        metrics: [makeMetricRow({ networkMedian: 4, sectorMedian: 3 })],
+      });
 
       // When
       const { metrics } = PulseStats.summarizeBenchmark({
-        totals,
-        callerPlatform: CALLER,
+        benchmark,
+        kThreshold: K,
+      });
+
+      // Then
+      expect(metrics[0]).toMatchObject({
+        sector_median: null,
+        network_median: 4,
+      });
+    });
+
+    it('should publish a 0 median for a pair no active platform reported', () => {
+      // Given five active platforms that only reported created indicators
+      const benchmark = makeBenchmark({ metrics: [makeMetricRow()] });
+
+      // When
+      const { metrics } = PulseStats.summarizeBenchmark({
+        benchmark,
         kThreshold: K,
       });
 
@@ -368,27 +379,34 @@ describe('pulseStats', () => {
             metric.object_type === PulseObjectType.Indicator &&
             metric.event_kind === PulseEventKind.Sighted
         )
-      ).toMatchObject({
-        platform_count: 8,
+      ).toEqual({
+        object_type: PulseObjectType.Indicator,
+        event_kind: PulseEventKind.Sighted,
+        platform_count: 0,
+        sector_platform_count: 0,
         sector_median: 0,
         network_median: 0,
       });
     });
 
-    it('should compute the sector median over the sector platforms only', () => {
-      // Given five sector platforms and two platforms of another sector
-      const totals = [
-        ...[1, 2, 3, 4, 5].map((platform) =>
-          makeTotal({ platform, total: platform, sectorTotal: platform })
-        ),
-        makeTotal({ platform: 6, total: 100, sectorTotal: 0, inSector: false }),
-        makeTotal({ platform: 7, total: 200, sectorTotal: 0, inSector: false }),
-      ];
+    it('should keep the caller totals of both scopes and the population sizes', () => {
+      // Given a caller that reported 100 events in its former sector and 1 in its current one
+      const benchmark = makeBenchmark({
+        networkPlatforms: 7,
+        sectorPlatforms: 5,
+        metrics: [
+          makeMetricRow({
+            callerTotal: 101,
+            callerSectorTotal: 1,
+            networkMedian: 2,
+            sectorMedian: 2,
+          }),
+        ],
+      });
 
       // When
       const summary = PulseStats.summarizeBenchmark({
-        totals,
-        callerPlatform: CALLER,
+        benchmark,
         kThreshold: K,
       });
 
@@ -400,33 +418,29 @@ describe('pulseStats', () => {
       }).toMatchObject({
         sectorPlatforms: 5,
         networkPlatforms: 7,
-        metric: { platform_count: 1, sector_median: 3, network_median: 4 },
+        metric: {
+          platform_count: 101,
+          sector_platform_count: 1,
+          sector_median: 2,
+          network_median: 2,
+        },
       });
     });
 
-    it('should compare the caller with its sector on its events in that sector only', () => {
-      // Given a caller that reported 100 events in its former sector and 1 in its current one
-      const totals = [
-        makeTotal({ platform: CALLER, total: 101, sectorTotal: 1 }),
-        ...[2, 3, 4, 5].map((platform) =>
-          makeTotal({ platform, total: 2, sectorTotal: 2 })
-        ),
-      ];
+    it('should clamp the caller totals to a GraphQL Int', () => {
+      // Given
+      const benchmark = makeBenchmark({
+        metrics: [makeMetricRow({ callerTotal: 2 ** 40 })],
+      });
 
       // When
       const { metrics } = PulseStats.summarizeBenchmark({
-        totals,
-        callerPlatform: CALLER,
+        benchmark,
         kThreshold: K,
       });
 
-      // Then the network comparison keeps every sector, the sector one does not
-      expect(metrics[0]).toMatchObject({
-        platform_count: 101,
-        sector_platform_count: 1,
-        sector_median: 2,
-        network_median: 2,
-      });
+      // Then
+      expect(metrics[0]?.platform_count).toBe(2 ** 31 - 1);
     });
   });
 
