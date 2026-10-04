@@ -41,6 +41,7 @@ import {
   PULSE_RATE_LIMIT_MAX_WINDOW_SECONDS,
   PULSE_RATE_LIMIT_WINDOW_SECONDS,
   PULSE_SALT_RETENTION_DAYS,
+  PULSE_GENERATION_PAUSES_MS,
   PULSE_SCOPE_ALL,
   PULSE_SNAPSHOT_COMPUTE_ATTEMPTS,
   PULSE_TRENDING_ITEMS_PER_OBJECT_TYPE,
@@ -400,6 +401,24 @@ const recordContributions = async ({
   return { accepted: records.length, day, duplicate: false };
 };
 
+// The steps of a purge or of a retention run commit one after another, each
+// moving the data generation. A read or a computation that met one waits until
+// the generation stays the same over a pause (growing, bounded) before it reads
+// or computes again, rather than repeating the work while the steps go on.
+const waitForStableGeneration = async (): Promise<void> => {
+  let previous = await PulseDomain.loadDataGeneration();
+  for (const pause of PULSE_GENERATION_PAUSES_MS) {
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, pause);
+    });
+    const current = await PulseDomain.loadDataGeneration();
+    if (current === previous) {
+      return;
+    }
+    previous = current;
+  }
+};
+
 const computeTrendingItems = async ({
   settings,
   input,
@@ -531,9 +550,12 @@ const loadTrendingItems = async ({
         });
         // A purge or a retention run during the computation moved the
         // generation: the items may hold deleted data, they are computed
-        // again and never served.
+        // again, once the contributions stopped changing, and never served.
         if ((await PulseDomain.loadDataGeneration()) === generation) {
           return items;
+        }
+        if (attempt + 1 < PULSE_SNAPSHOT_COMPUTE_ATTEMPTS) {
+          await waitForStableGeneration();
         }
       }
       throw new Error(
@@ -633,6 +655,9 @@ const loadDigestItems = async ({
       if ((await PulseDomain.loadDataGeneration()) === generation) {
         return items;
       }
+      if (attempt + 1 < PULSE_SNAPSHOT_COMPUTE_ATTEMPTS) {
+        await waitForStableGeneration();
+      }
     }
     throw new Error(
       'Threat Pulse contributions kept changing while the digest was computed'
@@ -655,6 +680,9 @@ const readUnderOneGeneration = async <T>(
     const result = await read();
     if ((await PulseDomain.loadDataGeneration()) === generation) {
       return result;
+    }
+    if (attempt + 1 < PULSE_SNAPSHOT_COMPUTE_ATTEMPTS) {
+      await waitForStableGeneration();
     }
   }
   throw new Error(

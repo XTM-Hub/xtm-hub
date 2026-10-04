@@ -92,15 +92,15 @@ spec:
         - name: PULSE_AT_REST_KEY
           valueFrom:
             secretKeyRef:
-              name: {{ .Values.xtmhub.api.pulse.existingSecret | default "xtmhub-api-config" }}
+              name: {{ (.Values.xtmhub.api.pulse | default dict).existingSecret | default "xtmhub-api-config" }}
               key: PULSE_AT_REST_KEY
-              optional: false
+              optional: true
         - name: PULSE_PLATFORM_KEY
           valueFrom:
             secretKeyRef:
-              name: {{ .Values.xtmhub.api.pulse.existingSecret | default "xtmhub-api-config" }}
+              name: {{ (.Values.xtmhub.api.pulse | default dict).existingSecret | default "xtmhub-api-config" }}
               key: PULSE_PLATFORM_KEY
-              optional: false
+              optional: true
         - name: MINIO_ACCESS_KEY
           valueFrom:
             secretKeyRef:

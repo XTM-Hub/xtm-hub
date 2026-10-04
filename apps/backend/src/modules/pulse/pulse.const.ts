@@ -117,9 +117,15 @@ export const PULSE_BELOW_SMALLEST_BUCKET_LABEL = '<5';
 // recomputed.
 export const PULSE_PUBLICATION_POLICY_VERSION = 9;
 
-// A trending or digest computation that a purge or a retention run overlapped
-// is computed again, this many times at most before the request fails.
+// A trending or digest computation, or a read of several statements, that a
+// purge or a retention run overlapped is computed or read again, this many
+// times at most before the request fails.
 export const PULSE_SNAPSHOT_COMPUTE_ATTEMPTS = 3;
+
+// Before computing or reading again, it waits until the data generation stays
+// the same over one of these pauses: the steps of a sweep commit one after
+// another. About 6 seconds at most per wait.
+export const PULSE_GENERATION_PAUSES_MS = [50, 100, 200, 400, 800, 1600, 3200];
 
 export const PULSE_PREVALENCE_RARE_BELOW = 0.02;
 export const PULSE_PREVALENCE_UNCOMMON_BELOW = 0.1;

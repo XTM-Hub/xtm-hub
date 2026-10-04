@@ -571,6 +571,45 @@ describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
       }).toEqual({ moved: true, savedUnder: current });
     });
 
+    it('should answer a read that more than three retention batches overlapped, once they stopped', async () => {
+      // Given a digest computation in flight
+      const clients = await registerPulseClients(5);
+      await pushFromEach(clients, {
+        day: PULSE_TEST_TODAY,
+        records: [malware(LOCKBIT)],
+      });
+      const pause = pauseNextSave('saveDigestSnapshot');
+      const inFlight = clients[1]!.digest({ day: PULSE_TEST_TODAY });
+      await pause.reached;
+
+      // When a sweep commits a batch every 10 ms for 400 ms meanwhile, many
+      // more batches than the attempts of the read
+      const before = await PulseDomain.loadDataGeneration();
+      const sweep = (async () => {
+        for (let batch = 0; batch < 40; batch += 1) {
+          await PulseDomain.bumpDataGeneration();
+          await new Promise<void>((resolve) => {
+            setTimeout(resolve, 10);
+          });
+        }
+      })();
+      pause.release();
+      const [answer] = await Promise.all([inFlight, sweep]);
+
+      // Then the read waited for the sweep to stop and answered under the
+      // generation it left
+      const saved = await PulseDomain.loadDigestSnapshot(PULSE_TEST_TODAY);
+      expect({
+        answered: answer !== undefined,
+        sweptBatches: (await PulseDomain.loadDataGeneration()) - before,
+        savedUnder: saved?.stored?.generation,
+      }).toEqual({
+        answered: true,
+        sweptBatches: 40,
+        savedUnder: before + 40,
+      });
+    });
+
     it('should move the data generation with the first batch a stopped retention run deleted', async () => {
       // Given contributions past the retention period
       const clients = await registerPulseClients(5);
