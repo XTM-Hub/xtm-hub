@@ -1083,6 +1083,12 @@ export const PulseDomain = {
       'DELETE FROM "PulseDailyAggregate" WHERE day = ?::date AND platform_count <= 0',
       [day]
     );
+    // The totals of the day feed the benchmark medians and the active
+    // contributors: they leave with the ledger rows, in the same step.
+    await query(
+      'DELETE FROM "PulsePlatformDailyTotal" WHERE pulse_platform_id = ? AND day = ?::date',
+      [platformId, day]
+    );
     return row?.deleted ?? 0;
   },
 

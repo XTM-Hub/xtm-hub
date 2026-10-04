@@ -282,12 +282,19 @@ describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
       // When the purge stops after deleting its first day
       const result = await client!.purgeResult();
 
-      // Then the deletion committed with a new generation: no snapshot computed before it is served
+      // Then the deletion committed with its daily totals and a new generation: neither the benchmark medians nor a
+      // snapshot computed before it count the deleted day
       expect({
         failed: errorCodes(result).length > 0,
         contributions: await TestHelper.pulse.countRows('PulseContribution'),
+        totals: await TestHelper.pulse.countRows('PulsePlatformDailyTotal'),
         generationMoved: (await PulseDomain.loadDataGeneration()) > before,
-      }).toEqual({ failed: true, contributions: 1, generationMoved: true });
+      }).toEqual({
+        failed: true,
+        contributions: 1,
+        totals: 1,
+        generationMoved: true,
+      });
     });
 
     it('should limit purges to 5 per 24 hours', async () => {
