@@ -8,6 +8,7 @@ import {
   PlatformIdentifier,
 } from '../../../../__generated__/resolvers-types';
 import {
+  fromPaddedVersion,
   INTERNAL_HUNT_MINIMUM_VERSION,
   INTERNAL_HUNT_MINIMUM_VERSION_PADDED,
   toPaddedVersion,
@@ -209,6 +210,72 @@ describe('apply_internal_hunt_minimum_deployable_version migration', () => {
       version: '7.261003.0',
       padded: '007.261003.000',
     });
+  });
+
+  it('decodes padded versions back to the raw form they were padded from', () => {
+    for (const version of ['7.261015.0', '6.8.13', '7.261015.0-lts.2']) {
+      expect(fromPaddedVersion(toPaddedVersion(version))).toBe(version);
+    }
+    expect(fromPaddedVersion(' 007.261015.000.LTS.000 ')).toBe(
+      '7.261015.0-lts.0'
+    );
+    for (const padded of [
+      '7.261015.0',
+      '0007.261015.000',
+      '007.261015.000.LTS',
+      'latest',
+      undefined,
+    ]) {
+      expect(fromPaddedVersion(padded)).toBeUndefined();
+    }
+  });
+
+  it('decodes a minimum stored only in its padded form and keeps it at or above the floor', async () => {
+    // Given
+    const paddedAboveFloor = await createConnector({
+      [DocumentMetadataKeyCode.ImageType]: 'INTERNAL_HUNT',
+      [DocumentMetadataKeyCode.MinimumDeployableVersionPadded]:
+        '007.261015.000',
+    });
+    const paddedLtsAboveFloor = await createConnector({
+      [DocumentMetadataKeyCode.ImageType]: 'INTERNAL_HUNT',
+      [DocumentMetadataKeyCode.MinimumDeployableVersionPadded]:
+        '007.261015.000.LTS.002',
+    });
+    const paddedBelowFloor = await createConnector({
+      [DocumentMetadataKeyCode.ImageType]: 'INTERNAL_HUNT',
+      [DocumentMetadataKeyCode.MinimumDeployableVersionPadded]:
+        '007.261002.000',
+    });
+    const paddedInvalid = await createConnector({
+      [DocumentMetadataKeyCode.ImageType]: 'INTERNAL_HUNT',
+      [DocumentMetadataKeyCode.MinimumDeployableVersionPadded]: 'latest',
+    });
+    const connectors = [
+      paddedAboveFloor,
+      paddedLtsAboveFloor,
+      paddedBelowFloor,
+      paddedInvalid,
+    ];
+
+    // When
+    await up(db);
+    const afterFirstRun = await Promise.all(
+      connectors.map(loadMinimumVersions)
+    );
+    await up(db);
+
+    // Then
+    const floor = { version: '7.261003.0', padded: '007.261003.000' };
+    expect(afterFirstRun).toEqual([
+      { version: '7.261015.0', padded: '007.261015.000' },
+      { version: '7.261015.0-lts.2', padded: '007.261015.000.LTS.002' },
+      floor,
+      floor,
+    ]);
+    expect(await Promise.all(connectors.map(loadMinimumVersions))).toEqual(
+      afterFirstRun
+    );
   });
 
   it('stores legacy connector type spellings in their canonical form and applies the floor to them', async () => {

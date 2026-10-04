@@ -58,11 +58,34 @@ export const toPaddedVersion = (version) => {
   return `${major}.${datePart}.${patch}.LTS.${(match[4] ?? '0').padStart(3, '0')}`;
 };
 
+const PADDED_VERSION_REGEX =
+  /^(\d{3,})\.(\d{6})\.(\d{3,})(?:\.LTS\.(\d{3,}))?$/;
+
+/**
+ * Raw version of a padded one (`007.261015.000.LTS.002` -> `7.261015.0-lts.2`),
+ * or undefined when the value is not a version padded by toPaddedVersion.
+ */
+export const fromPaddedVersion = (padded) => {
+  const match =
+    typeof padded === 'string'
+      ? padded.trim().match(PADDED_VERSION_REGEX)
+      : null;
+  if (!match) return undefined;
+  const [major, datePart, patch] = match
+    .slice(1, 4)
+    .map((part) => String(Number(part)));
+  const core = `${major}.${datePart}.${patch}`;
+  const version =
+    match[4] === undefined ? core : `${core}-lts.${Number(match[4])}`;
+  return toPaddedVersion(version) === padded.trim() ? version : undefined;
+};
+
 /**
  * Same rule as ConnectorTypeHelper.resolveMinimumDeployableVersion: keep the
  * declared minimum when it is at or above the floor, otherwise use the floor.
  * Legacy connectors only store the raw minimum, manifest fragment connectors
- * store both forms; the padded form is backfilled to match the raw one.
+ * store both forms; the padded form is backfilled to match the raw one, and a
+ * connector that only stores the padded form gets its raw form decoded from it.
  */
 const applyHuntFloor = async (knex, huntConnectorIds) => {
   const rows = await knex('Document_Metadata')
@@ -82,13 +105,12 @@ const applyHuntFloor = async (knex, huntConnectorIds) => {
   const updates = [];
   for (const documentId of huntConnectorIds) {
     const stored = storedByDocumentId.get(documentId) ?? {};
-    const declared = stored.minimum_deployable_version?.trim() || undefined;
-    const declaredPadded = declared
-      ? toPaddedVersion(declared)
-      : stored.minimum_deployable_version_padded;
+    const declared =
+      stored.minimum_deployable_version?.trim() ||
+      fromPaddedVersion(stored.minimum_deployable_version_padded);
+    const declaredPadded = declared ? toPaddedVersion(declared) : undefined;
     const keepsDeclared =
       declaredPadded !== undefined &&
-      declaredPadded !== null &&
       declaredPadded >= INTERNAL_HUNT_MINIMUM_VERSION_PADDED;
 
     const target = keepsDeclared
