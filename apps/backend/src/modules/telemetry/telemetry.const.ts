@@ -10,6 +10,7 @@ export enum TelemetryEventService {
   INTEGRATIONS_LIBRARY = 'integrations-library',
   OPENCTI_PLAYBOOKS_LIBRARY = 'opencti-playbooks-library',
   OPENCTI_CUSTOM_VIEWS_LIBRARY = 'opencti-custom-views-library',
+  OPENCTI_HUNT_PACKS_LIBRARY = 'opencti-hunt-packs-library',
 }
 
 export enum TelemetryEventServiceType {

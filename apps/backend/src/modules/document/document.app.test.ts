@@ -34,7 +34,7 @@ import ServiceInstance, {
   ServiceInstanceId,
 } from '../../model/kanel/public/ServiceInstance';
 import { MinIOClient } from '../../thirdparty/minio/client';
-import { ErrorCode } from '../../utils/error/error.code';
+import { BadRequestErrorCode, ErrorCode } from '../../utils/error/error.code';
 import { NewsFeedApp } from '../news-feed/news-feed.app';
 import { RegistrationApp } from '../registration/registration.app';
 import { ServiceDefinitionDomain } from '../service/definition/service-definition.domain';
@@ -136,6 +136,333 @@ describe('documentApp', () => {
 
   afterAll(async () => {
     vi.useRealTimers();
+  });
+
+  describe('hunt packs', () => {
+    const huntPackContent = {
+      type: 'bundle',
+      id: 'bundle--1d4f7c2b-6a3e-4f5b-9c8d-0e1f2a3b4c5d',
+      objects: [
+        {
+          type: 'attack-pattern',
+          id: 'attack-pattern--1',
+          x_mitre_id: 'T1059.001',
+        },
+        {
+          type: 'hunt',
+          spec_version: '2.1',
+          id: 'hunt--3f9b2a64-8d1c-4e57-9a0b-6c2d1e4f5a73',
+          name: 'Encoded PowerShell',
+          technique_refs: ['attack-pattern--1'],
+          native_queries: [
+            { platform: 'splunk', language: 'spl', query: 'index=main' },
+          ],
+        },
+      ],
+    };
+    const huntPackFile = (jsonContent: Record<string, unknown>) => ({
+      ...minioFileMock,
+      fileName: 'hunt-pack.json',
+      mimeType: 'application/json',
+      jsonContent,
+    });
+
+    it('should store the summary extracted from the hunt pack and the OpenCTI version floor', async () => {
+      // Given
+      vi.spyOn(DocumentUploadsHelper, 'processUploads').mockResolvedValueOnce([
+        huntPackFile(huntPackContent),
+      ]);
+
+      // When
+      const result = await DocumentApp.createDocument({
+        input: { ...documentData, slug: `hunt-pack-${uuidv4()}` },
+        metadata: [
+          { key: DocumentMetadataKeyCode.ProductVersion, value: '6.8.0' },
+          { key: DocumentMetadataKeyCode.HuntCount, value: '999' },
+        ],
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        sourceDocument: mockUpload,
+      });
+
+      // Then
+      expect(result).toMatchObject({
+        product_version: '7.261003.0',
+        hunt_count: '1',
+        attack_techniques: '["T1059.001"]',
+        hunt_platforms: '["splunk"]',
+        service_instance_id: SERVICES.INSTANCES.HUNT_PACKS.ID,
+      });
+    });
+
+    it('should reject a file that is not a hunt pack and delete it from storage', async () => {
+      // Given
+      vi.spyOn(DocumentUploadsHelper, 'processUploads').mockResolvedValueOnce([
+        huntPackFile({ type: 'bundle', objects: [] }),
+      ]);
+      const slug = `not-a-hunt-pack-${uuidv4()}`;
+
+      // When
+      const call = DocumentApp.createDocument({
+        input: { ...documentData, slug },
+        metadata: [
+          { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+        ],
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        sourceDocument: mockUpload,
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(BadRequestErrorCode.HuntPackEmpty);
+      expect(MinIOClient.deleteFile).toHaveBeenCalledWith(
+        minioFileMock.minioName
+      );
+      expect(await TestHelper.document.load({ slug })).toBeUndefined();
+    });
+
+    it('should store no logo or image when the hunt pack is rejected', async () => {
+      // Given a rejected pack submitted with a logo and an image
+      const processUploadsSpy = vi
+        .spyOn(DocumentUploadsHelper, 'processUploads')
+        .mockResolvedValueOnce([huntPackFile({ type: 'bundle', objects: [] })]);
+
+      // When
+      const call = DocumentApp.createDocument({
+        input: { ...documentData, slug: `rejected-pack-${uuidv4()}` },
+        metadata: [
+          { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+        ],
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        sourceDocument: mockUpload,
+        logo: mockUpload,
+        images: [mockUpload],
+      });
+
+      // Then only the pack file was stored, and it was deleted
+      await expect(call).rejects.toThrow(BadRequestErrorCode.HuntPackEmpty);
+      expect(processUploadsSpy).toHaveBeenCalledTimes(1);
+      expect(MinIOClient.deleteFile).toHaveBeenCalledExactlyOnceWith(
+        minioFileMock.minioName
+      );
+    });
+
+    it('should delete every stored file when the creation fails after the uploads', async () => {
+      // Given a request whose document cannot be saved
+      let storedCount = 0;
+      vi.spyOn(DocumentUploadsHelper, 'processUploads').mockImplementation(
+        async (uploads) => {
+          if (!uploads) return [];
+          const uploadList = Array.isArray(uploads) ? uploads : [uploads];
+          return uploadList.map(() => {
+            storedCount += 1;
+            return {
+              ...huntPackFile(huntPackContent),
+              minioName: `stored-${storedCount}`,
+            };
+          });
+        }
+      );
+      vi.spyOn(DocumentDomain, 'createDocument').mockRejectedValueOnce(
+        new Error('DOCUMENT_INSERT_FAILED')
+      );
+
+      // When
+      const call = DocumentApp.createDocument({
+        input: { ...documentData, slug: `failed-insert-${uuidv4()}` },
+        metadata: [
+          { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+        ],
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        sourceDocument: mockUpload,
+        logo: mockUpload,
+        images: [mockUpload],
+      });
+
+      // Then the pack file, the image and the logo are all deleted
+      await expect(call).rejects.toThrow('DOCUMENT_INSERT_FAILED');
+      expect(
+        vi
+          .mocked(MinIOClient.deleteFile)
+          .mock.calls.map(([minioName]) => minioName)
+          .sort()
+      ).toEqual(['stored-1', 'stored-2', 'stored-3']);
+    });
+
+    it('should store no logo or image when the hunt pack file is missing', async () => {
+      // Given a request with a logo and an image but no pack file
+      const processUploadsSpy = vi
+        .spyOn(DocumentUploadsHelper, 'processUploads')
+        .mockImplementation(async (uploads) =>
+          uploads ? [minioFileMock] : []
+        );
+
+      // When
+      const call = DocumentApp.createDocument({
+        input: { ...documentData, slug: `missing-pack-${uuidv4()}` },
+        metadata: [
+          { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+        ],
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        logo: mockUpload,
+        images: [mockUpload],
+      });
+
+      // Then the request is rejected before any file is stored
+      await expect(call).rejects.toThrow(ErrorCode.DocumentFileMissing);
+      expect(processUploadsSpy).toHaveBeenCalledExactlyOnceWith(
+        undefined,
+        SERVICES.INSTANCES.HUNT_PACKS.ID,
+        expect.objectContaining({
+          json: true,
+          limit: expect.objectContaining({ maxBytes: 20 * 1024 * 1024 }),
+        })
+      );
+    });
+
+    it('should delete the previous hunt pack file once its replacement is committed', async () => {
+      // Given a hunt pack stored with a first file
+      const storePackAs = (minioName: string) =>
+        vi
+          .spyOn(DocumentUploadsHelper, 'processUploads')
+          .mockImplementation(async (uploads) =>
+            uploads ? [{ ...huntPackFile(huntPackContent), minioName }] : []
+          );
+      const metadata = [
+        { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+      ];
+      const slug = `replaced-pack-${uuidv4()}`;
+      storePackAs('previous-pack.json');
+      const huntPack = await DocumentApp.createDocument({
+        input: { ...documentData, slug },
+        metadata,
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        sourceDocument: mockUpload,
+      });
+      storePackAs('replacement-pack.json');
+
+      // When its file is replaced
+      const result = await DocumentApp.updateDocument({
+        parentDocumentId: huntPack.id,
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        metadata,
+        input: { ...documentData, slug },
+        existingImageIds: [],
+        sourceDocument: mockUpload,
+      });
+
+      // Then the document points to the new file and only the previous one is deleted
+      expect(result.minio_name).toBe('replacement-pack.json');
+      expect(MinIOClient.deleteFile).toHaveBeenCalledExactlyOnceWith(
+        'previous-pack.json'
+      );
+    });
+
+    it('should delete the file each of two concurrent replacements replaced', async () => {
+      // Given a hunt pack stored with a first file
+      const metadata = [
+        { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+      ];
+      const slug = `concurrent-pack-${uuidv4()}`;
+      const storedNames = ['original-pack.json', 'first.json', 'second.json'];
+      vi.spyOn(DocumentUploadsHelper, 'processUploads').mockImplementation(
+        async (uploads) => {
+          if (!uploads) return [];
+          const uploadList = Array.isArray(uploads) ? uploads : [uploads];
+          return uploadList.map(() => ({
+            ...huntPackFile(huntPackContent),
+            minioName: storedNames.shift()!,
+          }));
+        }
+      );
+      const huntPack = await DocumentApp.createDocument({
+        input: { ...documentData, slug },
+        metadata,
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        sourceDocument: mockUpload,
+      });
+      const replace = () =>
+        DocumentApp.updateDocument({
+          parentDocumentId: huntPack.id,
+          serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+          metadata,
+          input: { ...documentData, slug },
+          existingImageIds: [],
+          sourceDocument: mockUpload,
+        });
+
+      // When two replacements run at the same time
+      await Promise.all([replace(), replace()]);
+
+      // Then only the file both replacements left behind remains stored
+      const stored = await TestHelper.document.load({ slug });
+      const deleted = vi
+        .mocked(MinIOClient.deleteFile)
+        .mock.calls.map(([minioName]) => minioName);
+      expect(['first.json', 'second.json']).toContain(stored?.minio_name);
+      expect(deleted.sort()).toEqual(
+        ['original-pack.json', 'first.json', 'second.json']
+          .filter((name) => name !== stored?.minio_name)
+          .sort()
+      );
+    });
+
+    it('should keep the summary of the new file when an edit without file runs alongside its replacement', async () => {
+      // Given a hunt pack of one hunt, and a replacement file of two hunts
+      const metadata = [
+        { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+      ];
+      const slug = `edited-pack-${uuidv4()}`;
+      const [, firstHunt] = huntPackContent.objects;
+      const twoHuntsContent = {
+        ...huntPackContent,
+        objects: [
+          ...huntPackContent.objects,
+          {
+            ...firstHunt,
+            id: 'hunt--7d2e4b18-3c5a-4f69-8b1e-2a9c0d6f4e85',
+            name: 'Encoded PowerShell from Office',
+          },
+        ],
+      };
+      const storedFiles = [
+        { ...huntPackFile(huntPackContent), minioName: 'one-hunt.json' },
+        { ...huntPackFile(twoHuntsContent), minioName: 'two-hunts.json' },
+      ];
+      vi.spyOn(DocumentUploadsHelper, 'processUploads').mockImplementation(
+        async (uploads) => {
+          if (!uploads) return [];
+          const uploadList = Array.isArray(uploads) ? uploads : [uploads];
+          return uploadList.map(() => storedFiles.shift()!);
+        }
+      );
+      const huntPack = await DocumentApp.createDocument({
+        input: { ...documentData, slug },
+        metadata,
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        sourceDocument: mockUpload,
+      });
+      const update = (sourceDocument?: typeof mockUpload) =>
+        DocumentApp.updateDocument({
+          parentDocumentId: huntPack.id,
+          serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+          metadata,
+          input: { ...documentData, slug },
+          existingImageIds: [],
+          sourceDocument,
+        });
+
+      // When the file is replaced while another edit brings no file
+      await Promise.all([update(mockUpload), update()]);
+
+      // Then the summary describes the file the hunt pack points to
+      const stored = await TestHelper.document.load({ slug });
+      expect(stored?.minio_name).toBe('two-hunts.json');
+      expect(
+        await DocumentMetadataDomain.loadMetadataValueByKey(
+          huntPack.id,
+          DocumentMetadataKeyCode.HuntCount
+        )
+      ).toBe('2');
+    });
   });
 
   describe('createDocument', () => {

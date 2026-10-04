@@ -1,5 +1,4 @@
 import ShareableResourceSlug from '@/components/service/document/ShareableResourceSlug';
-import { SettingsContext } from '@/components/settings/EnvPortalContext';
 import testRender from '@/utils/test/test-render';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
@@ -20,17 +19,31 @@ vi.mock('../../../hooks/use-decoded-params', () => ({
 }));
 
 vi.mock('./one-click-deploy/OneClickDeploy', () => ({
-  default: () => <div>OneClickDeployComponentMock</div>,
+  default: ({
+    requiredProductVersion,
+  }: {
+    requiredProductVersion?: string | null;
+  }) => (
+    <div data-required-version={requiredProductVersion ?? ''}>
+      OneClickDeployComponentMock
+    </div>
+  ),
 }));
-
-const mockSettings = {
-  base_url_front: 'https://test.com',
-};
 
 describe('Component: ShareableResourceSlug - OneClickDeploy Logic', () => {
   const serviceInstance = {
     id: 'service-instance-1',
   } as unknown as serviceInstance_fragment$data;
+
+  const renderSlug = (documentData: documentItem_fragment$data) =>
+    testRender(
+      <ShareableResourceSlug
+        breadcrumbValue={[]}
+        documentData={documentData}
+        serviceInstance={serviceInstance}
+      />,
+      { settings: { base_url_front: 'https://test.com' } }
+    );
 
   it.each`
     shouldShowOneClickComponent | documentType                  | documentActive | integrationType
@@ -43,6 +56,8 @@ describe('Component: ShareableResourceSlug - OneClickDeploy Logic', () => {
     ${false}                    | ${'opencti_integration'}      | ${false}       | ${IntegrationType.CsvFeed}
     ${true}                     | ${'openaev_scenario'}         | ${true}        | ${false}
     ${false}                    | ${'openaev_scenario'}         | ${false}       | ${false}
+    ${true}                     | ${'opencti_hunt_pack'}        | ${true}        | ${false}
+    ${false}                    | ${'opencti_hunt_pack'}        | ${false}       | ${false}
   `(
     'should show OneClickDeploy=$shouldShowOneClickComponent when document is $documentType is $documentActive and integration type is $integrationType',
     ({
@@ -60,15 +75,7 @@ describe('Component: ShareableResourceSlug - OneClickDeploy Logic', () => {
         integration_type: integrationType,
       } as unknown as documentItem_fragment$data;
 
-      testRender(
-        <SettingsContext.Provider value={{ settings: mockSettings as never }}>
-          <ShareableResourceSlug
-            breadcrumbValue={[]}
-            documentData={testDocumentData}
-            serviceInstance={serviceInstance}
-          />
-        </SettingsContext.Provider>
-      );
+      renderSlug(testDocumentData);
 
       const oneClickDeploy = screen.queryByText('OneClickDeployComponentMock');
 
@@ -77,6 +84,35 @@ describe('Component: ShareableResourceSlug - OneClickDeploy Logic', () => {
       } else {
         expect(oneClickDeploy).not.toBeInTheDocument();
       }
+    }
+  );
+
+  it.each`
+    typename             | documentType                  | expectedVersion
+    ${'OpenCTIHuntPack'} | ${'opencti_hunt_pack'}        | ${'7.261003.0'}
+    ${'CustomDashboard'} | ${'opencti_custom_dashboard'} | ${''}
+  `(
+    'should require OpenCTI $expectedVersion to deploy a $typename',
+    ({ typename, documentType, expectedVersion }) => {
+      const testDocumentData = {
+        __typename: typename,
+        active: true,
+        description: 'description',
+        download_number: 1,
+        name: 'Test Document',
+        type: documentType,
+        product_version: '7.261003.0',
+        hunt_count: 1,
+        attack_techniques: [],
+        hunt_platforms: [],
+      } as unknown as documentItem_fragment$data;
+
+      renderSlug(testDocumentData);
+
+      expect(screen.getByText('OneClickDeployComponentMock')).toHaveAttribute(
+        'data-required-version',
+        expectedVersion
+      );
     }
   );
 });

@@ -192,6 +192,13 @@ export const documentItem = graphql`
       product_version
     }
 
+    ... on OpenCTIHuntPack {
+      product_version
+      hunt_count
+      attack_techniques
+      hunt_platforms
+    }
+
     ... on CustomView {
       product_version
       entity_types

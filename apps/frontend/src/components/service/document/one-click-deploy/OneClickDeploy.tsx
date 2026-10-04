@@ -15,7 +15,10 @@ import {
   isEeCapableContract,
   requiresEnterpriseEdition,
 } from '@/utils/platform';
-import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
+import {
+  isConnectorResource,
+  ShareableResourceType,
+} from '@/utils/shareable-resources/shareable-resources.types';
 import { AlertDialog, AlertDialogContent, SimpleTooltip } from '@filigran/ui';
 import { Button } from '@filigran/ui/servers';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
@@ -200,11 +203,18 @@ const OneClickDeploy = ({
 
   const container = isDeploymentDisabled ? (
     <SimpleTooltip
-      title={t('Service.Connectors.Incompatible', {
-        platformToBeUpdated,
-        count: incompatiblePlatformsCount,
-        version: requiredProductVersion ?? '',
-      })}>
+      title={
+        isConnectorResource(documentData)
+          ? t('Service.Connectors.Incompatible', {
+              platformToBeUpdated,
+              count: incompatiblePlatformsCount,
+              version: requiredProductVersion ?? '',
+            })
+          : t('Service.ShareableResources.Deploy.DeployIncompatibleVersion', {
+              platformTitle: platformToBeUpdated,
+              version: requiredProductVersion ?? '',
+            })
+      }>
       {buttonWithBadge}
     </SimpleTooltip>
   ) : (

@@ -59,6 +59,7 @@ const SERVICE_LINKS = [
   [ServiceDefinitionIdentifier.OpenctiCustomViews, 'CustomViews'],
   [ServiceDefinitionIdentifier.OpenctiIntegrations, 'Integrations'],
   [ServiceDefinitionIdentifier.OpenctiPlaybooks, 'Playbooks'],
+  [ServiceDefinitionIdentifier.OpenctiHuntPacks, 'HuntPacks'],
   [ServiceDefinitionIdentifier.OpenaevScenarios, 'Scenarios'],
   [ServiceDefinitionIdentifier.XtmPlatformRoadmap, 'XTMRoadmap'],
 ] as const;
@@ -317,6 +318,7 @@ export const usePrivateNavigation = (): NavigationConfig => {
         ...buildServiceLink(ServiceDefinitionIdentifier.OpenctiCustomViews),
         ...buildServiceLink(ServiceDefinitionIdentifier.OpenctiIntegrations),
         ...buildServiceLink(ServiceDefinitionIdentifier.OpenctiPlaybooks),
+        ...buildServiceLink(ServiceDefinitionIdentifier.OpenctiHuntPacks),
         {
           href: 'https://demo.opencti.io',
           label: tMenu('LiveDemo'),

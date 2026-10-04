@@ -34,6 +34,7 @@ export const isUserRestrictedToActiveDocument = async (
     [
       ServiceDefinitionIdentifier.OpenctiCustomDashboards,
       ServiceDefinitionIdentifier.OpenctiCustomViews,
+      ServiceDefinitionIdentifier.OpenctiHuntPacks,
       ServiceDefinitionIdentifier.OpenctiIntegrations,
     ].includes(serviceDef.identifier)
   );

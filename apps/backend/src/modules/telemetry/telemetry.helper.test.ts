@@ -119,6 +119,10 @@ describe('telemetryHelper', () => {
         service: ServiceDefinitionIdentifier.OpenctiCustomViews,
         expected: true,
       },
+      {
+        service: ServiceDefinitionIdentifier.OpenctiHuntPacks,
+        expected: true,
+      },
       { service: ServiceDefinitionIdentifier.Link, expected: false },
       {
         service: ServiceDefinitionIdentifier.OpenaevRegistration,
@@ -251,6 +255,10 @@ describe('telemetryHelper', () => {
       {
         service: ServiceDefinitionIdentifier.OpenctiCustomViews,
         expectedService: TelemetryEventService.OPENCTI_CUSTOM_VIEWS_LIBRARY,
+      },
+      {
+        service: ServiceDefinitionIdentifier.OpenctiHuntPacks,
+        expectedService: TelemetryEventService.OPENCTI_HUNT_PACKS_LIBRARY,
       },
     ])(
       'should map the $service service to the $expectedService event service',

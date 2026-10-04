@@ -36,6 +36,7 @@ export const platformIdentifierMappedByShareableResourceType: Record<
   [ShareableResourceType.OPENCTI_INTEGRATION]: PlatformIdentifier.Opencti,
   [ShareableResourceType.OPENAEV_SCENARIO]: PlatformIdentifier.Openaev,
   [ShareableResourceType.OPENCTI_PLAYBOOK]: PlatformIdentifier.Opencti,
+  [ShareableResourceType.OPENCTI_HUNT_PACK]: PlatformIdentifier.Opencti,
 };
 
 export const isExpired = (endDate: Date | undefined | null): boolean => {

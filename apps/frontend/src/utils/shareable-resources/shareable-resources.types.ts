@@ -71,6 +71,7 @@ export enum ShareableResourceType {
   OPENCTI_CUSTOM_DASHBOARD = 'opencti_custom_dashboard',
   OPENCTI_CUSTOM_VIEW = 'opencti_custom_view',
   OPENCTI_PLAYBOOK = 'opencti_playbook',
+  OPENCTI_HUNT_PACK = 'opencti_hunt_pack',
 }
 
 export type ServiceInfo = { link: string; description: string };
@@ -80,6 +81,7 @@ export enum ServiceSlug {
   OPEN_CTI_CUSTOM_VIEWS = 'opencti-custom-views',
   OPEN_AEV_SCENARIOS = 'openaev-scenarios',
   OPEN_CTI_PLAYBOOKS = 'opencti-playbooks',
+  OPEN_CTI_HUNT_PACKS = 'opencti-hunt-packs',
 }
 
 export const SHAREABLE_RESOURCE_TYPE_NAME_MAPPING: Record<
@@ -91,6 +93,7 @@ export const SHAREABLE_RESOURCE_TYPE_NAME_MAPPING: Record<
   [ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD]: 'Custom Dashboard OpenCTI',
   [ShareableResourceType.OPENCTI_CUSTOM_VIEW]: 'Custom View OpenCTI',
   [ShareableResourceType.OPENCTI_PLAYBOOK]: 'Playbook OpenCTI',
+  [ShareableResourceType.OPENCTI_HUNT_PACK]: 'Hunt Pack OpenCTI',
 };
 
 export const SHAREABLE_RESOURCE_PRODUCT_MAPPING: Record<
@@ -102,6 +105,7 @@ export const SHAREABLE_RESOURCE_PRODUCT_MAPPING: Record<
   [ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD]: 'OpenCTI',
   [ShareableResourceType.OPENCTI_CUSTOM_VIEW]: 'OpenCTI',
   [ShareableResourceType.OPENCTI_PLAYBOOK]: 'OpenCTI',
+  [ShareableResourceType.OPENCTI_HUNT_PACK]: 'OpenCTI',
 };
 
 export const SHAREABLE_RESOURCE_LIBRARY_MAPPING: Record<
@@ -113,6 +117,7 @@ export const SHAREABLE_RESOURCE_LIBRARY_MAPPING: Record<
   [ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD]: 'Custom Dashboards',
   [ShareableResourceType.OPENCTI_CUSTOM_VIEW]: 'Custom Views',
   [ShareableResourceType.OPENCTI_PLAYBOOK]: 'Playbooks',
+  [ShareableResourceType.OPENCTI_HUNT_PACK]: 'Hunt Packs',
 };
 
 export const SHAREABLE_RESOURCE_SERVICE_DEFINITION_IDENTIFIER_MAPPING: Record<
@@ -129,6 +134,8 @@ export const SHAREABLE_RESOURCE_SERVICE_DEFINITION_IDENTIFIER_MAPPING: Record<
     ServiceDefinitionIdentifier.OpenaevScenarios,
   [ShareableResourceType.OPENCTI_PLAYBOOK]:
     ServiceDefinitionIdentifier.OpenctiPlaybooks,
+  [ShareableResourceType.OPENCTI_HUNT_PACK]:
+    ServiceDefinitionIdentifier.OpenctiHuntPacks,
 };
 
 export const SHAREABLE_RESOURCE_SERVICE_SLUG_MAPPING: Record<
@@ -143,6 +150,7 @@ export const SHAREABLE_RESOURCE_SERVICE_SLUG_MAPPING: Record<
   [ShareableResourceType.OPENCTI_PLAYBOOK]: ServiceSlug.OPEN_CTI_PLAYBOOKS,
   [ShareableResourceType.OPENCTI_CUSTOM_VIEW]:
     ServiceSlug.OPEN_CTI_CUSTOM_VIEWS,
+  [ShareableResourceType.OPENCTI_HUNT_PACK]: ServiceSlug.OPEN_CTI_HUNT_PACKS,
 };
 export const SERVICE_SLUG_SHAREABLE_RESOURCE_MAPPING: Record<
   ServiceSlug,
@@ -156,6 +164,7 @@ export const SERVICE_SLUG_SHAREABLE_RESOURCE_MAPPING: Record<
   [ServiceSlug.OPEN_CTI_PLAYBOOKS]: ShareableResourceType.OPENCTI_PLAYBOOK,
   [ServiceSlug.OPEN_CTI_CUSTOM_VIEWS]:
     ShareableResourceType.OPENCTI_CUSTOM_VIEW,
+  [ServiceSlug.OPEN_CTI_HUNT_PACKS]: ShareableResourceType.OPENCTI_HUNT_PACK,
 };
 
 export const isIntegrationItem = <
@@ -164,6 +173,21 @@ export const isIntegrationItem = <
   resource: T
 ): resource is T & IntegrationFields => {
   return resource.type === ShareableResourceType.OPENCTI_INTEGRATION;
+};
+
+/** Fields only present on `OpenCTIHuntPack` documents, extracted from the pack file. */
+export type HuntPackFields = {
+  hunt_count: number | null;
+  attack_techniques: ReadonlyArray<string>;
+  hunt_platforms: ReadonlyArray<string>;
+};
+
+export const isHuntPackResource = <
+  T extends documentItem_fragment$data | PublicDocumentData,
+>(
+  resource: T
+): resource is T & HuntPackFields => {
+  return resource.__typename === 'OpenCTIHuntPack';
 };
 
 export const isConnectorResource = <

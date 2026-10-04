@@ -32,6 +32,7 @@ type DocumentType =
   | 'Custom View'
   | 'Scenario'
   | 'Playbook'
+  | 'Hunt Pack'
   | 'Connector';
 
 const integrationTypeMappedByDocumentType: Record<
@@ -42,6 +43,7 @@ const integrationTypeMappedByDocumentType: Record<
   'Custom View': null,
   Scenario: null,
   Playbook: null,
+  'Hunt Pack': null,
   'CSV Feed': IntegrationType.CsvFeed,
   'TAXII Feed': IntegrationType.TaxiiFeed,
   'RSS Feed': IntegrationType.RssFeed,

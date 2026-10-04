@@ -399,6 +399,7 @@ describe('usePrivateNavigation', () => {
               ServiceDefinitionIdentifier.OpenctiCustomViews,
               ServiceDefinitionIdentifier.OpenctiIntegrations,
               ServiceDefinitionIdentifier.OpenctiPlaybooks,
+              ServiceDefinitionIdentifier.OpenctiHuntPacks,
               ServiceDefinitionIdentifier.OpenaevScenarios,
               ServiceDefinitionIdentifier.XtmPlatformRoadmap,
             ],

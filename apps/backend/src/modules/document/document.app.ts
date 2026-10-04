@@ -26,6 +26,7 @@ import { ForbiddenAccess } from '../../utils/error/error.util';
 import { NewsFeedApp } from '../news-feed/news-feed.app';
 import { RegistrationApp } from '../registration/registration.app';
 import { ServiceDefinitionDomain } from '../service/definition/service-definition.domain';
+import { HuntPackApp } from '../shareable-resource/opencti/hunt-pack/hunt-pack.app';
 import {
   ConnectorTypeHelper,
   INGESTION_OWNED_CONNECTOR_METADATA_KEYS,
@@ -96,135 +97,140 @@ export const DocumentApp = {
       throw new Error(ErrorCode.ServiceDefinitionNotFound);
     }
 
-    const [sourceDocumentFile] = await DocumentUploadsHelper.processUploads(
-      sourceDocument,
-      serviceInstanceId
-    );
-    const imagesFiles = await DocumentUploadsHelper.processUploads(
-      images,
-      serviceInstanceId
-    );
-    const [logoFile] = await DocumentUploadsHelper.processUploads(
-      logo,
-      serviceInstanceId
-    );
+    const createdDocument = await DocumentUploadsHelper.withUploadsCleanup(
+      serviceInstanceId,
+      async (storeUploads) => {
+        const [sourceDocumentFile] = await storeUploads(
+          sourceDocument,
+          HuntPackApp.uploadRules(serviceDefinition.identifier)
+        );
+        const documentMetadata: DocumentMetadataResolverType[] =
+          await HuntPackApp.buildDocumentMetadata({
+            serviceDefinitionIdentifier: serviceDefinition.identifier,
+            metadata: DocumentHelper.buildCompleteMetadataFromDocumentFile({
+              sourceDocumentFile,
+              metadata,
+            }),
+            sourceDocumentFile,
+          });
 
-    const documentMetadata: DocumentMetadataResolverType[] =
-      DocumentHelper.buildCompleteMetadataFromDocumentFile({
-        sourceDocumentFile,
-        metadata,
-      });
+        if (input.entity_types != null) {
+          documentMetadata.push({
+            key: DocumentMetadataKeyCode.EntityTypes,
+            value: JSON.stringify(input.entity_types),
+          });
+        }
+        if (input.license_type != null) {
+          documentMetadata.push({
+            key: DocumentMetadataKeyCode.LicenseType,
+            value: input.license_type,
+          });
+        }
 
-    if (input.entity_types != null) {
-      documentMetadata.push({
-        key: DocumentMetadataKeyCode.EntityTypes,
-        value: JSON.stringify(input.entity_types),
-      });
-    }
-    if (input.license_type != null) {
-      documentMetadata.push({
-        key: DocumentMetadataKeyCode.LicenseType,
-        value: input.license_type,
-      });
-    }
-
-    DocumentHelper.assertMetadataIsNotMissing(
-      serviceDefinition.identifier as ManageableServiceDefinitionIdentifier,
-      documentMetadata
-    );
-
-    const documentType =
-      DocumentHelper.retrieveDocumentTypeFromServiceDefinition(
-        serviceDefinition.identifier as ManageableServiceDefinitionIdentifier
-      );
-
-    DocumentHelper.assertDocumentFileIsNotMissing({
-      hasDocument: !!sourceDocument,
-      documentType,
-      documentMetadata,
-    });
-
-    const isDocumentFileRequired = DocumentHelper.isDocumentFileRequired({
-      documentType,
-      documentMetadata,
-    });
-
-    const {
-      entity_types: _entityTypes,
-      license_type: _licenseType,
-      ...documentColumnInput
-    } = input;
-    const documentData: DocumentData<Document> = {
-      ...documentColumnInput,
-      use_cases: input.use_cases ?? undefined,
-      solution_categories: input.solution_categories ?? undefined,
-      service_instance_id: serviceInstanceId,
-      type: documentType,
-      ...(sourceDocumentFile && isDocumentFileRequired
-        ? {
-            file_name: sourceDocumentFile.fileName,
-            minio_name: sourceDocumentFile.minioName,
-            mime_type: sourceDocumentFile.mimeType,
-          }
-        : {}),
-    };
-
-    const createdDocument = await withTransaction(async () => {
-      const metadataKeys = documentMetadata.map(
-        ({ key }) => key
-      ) as DocumentMetadataKeys<Document>;
-      const document = await DocumentDomain.createDocument(
-        documentData,
-        metadataKeys
-      );
-
-      if (documentMetadata.length) {
-        await DocumentMetadataDomain.insertMetadataFromKeyValue(
-          document.id,
+        DocumentHelper.assertMetadataIsNotMissing(
+          serviceDefinition.identifier as ManageableServiceDefinitionIdentifier,
           documentMetadata
         );
 
-        for (const meta of documentMetadata) {
-          setDocumentMetadataValue(document, meta.key, meta.value);
-        }
+        const documentType =
+          DocumentHelper.retrieveDocumentTypeFromServiceDefinition(
+            serviceDefinition.identifier as ManageableServiceDefinitionIdentifier
+          );
+
+        DocumentHelper.assertDocumentFileIsNotMissing({
+          hasDocument: !!sourceDocument,
+          documentType,
+          documentMetadata,
+        });
+
+        // Stored only once the request is valid, so a rejected request leaves no
+        // logo or image behind.
+        const imagesFiles = await storeUploads(images);
+        const [logoFile] = await storeUploads(logo);
+
+        const isDocumentFileRequired = DocumentHelper.isDocumentFileRequired({
+          documentType,
+          documentMetadata,
+        });
+
+        const {
+          entity_types: _entityTypes,
+          license_type: _licenseType,
+          ...documentColumnInput
+        } = input;
+        const documentData: DocumentData<Document> = {
+          ...documentColumnInput,
+          use_cases: input.use_cases ?? undefined,
+          solution_categories: input.solution_categories ?? undefined,
+          service_instance_id: serviceInstanceId,
+          type: documentType,
+          ...(sourceDocumentFile && isDocumentFileRequired
+            ? {
+                file_name: sourceDocumentFile.fileName,
+                minio_name: sourceDocumentFile.minioName,
+                mime_type: sourceDocumentFile.mimeType,
+              }
+            : {}),
+        };
+
+        return withTransaction(async () => {
+          const metadataKeys = documentMetadata.map(
+            ({ key }) => key
+          ) as DocumentMetadataKeys<Document>;
+          const document = await DocumentDomain.createDocument(
+            documentData,
+            metadataKeys
+          );
+
+          if (documentMetadata.length) {
+            await DocumentMetadataDomain.insertMetadataFromKeyValue(
+              document.id,
+              documentMetadata
+            );
+
+            for (const meta of documentMetadata) {
+              setDocumentMetadataValue(document, meta.key, meta.value);
+            }
+          }
+
+          await DocumentChildrenDomain.createImageDocuments(
+            document.id,
+            serviceInstanceId,
+            imagesFiles,
+            DocumentImageType.Image
+          );
+
+          if (logoFile) {
+            await DocumentChildrenDomain.createImageDocuments(
+              document.id,
+              serviceInstanceId,
+              [logoFile],
+              DocumentImageType.Logo
+            );
+          }
+
+          if (documentData.use_cases?.length) {
+            await objectUseCaseDomain.insertObjectUseCase(
+              documentData.use_cases.map((id) => ({
+                object_id: toObjectUseCaseObjectId(document.id),
+                use_case_id: id,
+              }))
+            );
+          }
+
+          if (input.solution_categories?.length) {
+            await objectSolutionCategoryDomain.insertObjectSolutionCategory(
+              input.solution_categories.map((solutionCategoryId) => ({
+                object_id: toObjectSolutionCategoryObjectId(document.id),
+                solution_category_id: solutionCategoryId,
+              }))
+            );
+          }
+
+          return document;
+        });
       }
-
-      await DocumentChildrenDomain.createImageDocuments(
-        document.id,
-        serviceInstanceId,
-        imagesFiles,
-        DocumentImageType.Image
-      );
-
-      if (logoFile) {
-        await DocumentChildrenDomain.createImageDocuments(
-          document.id,
-          serviceInstanceId,
-          [logoFile],
-          DocumentImageType.Logo
-        );
-      }
-
-      if (documentData.use_cases?.length) {
-        await objectUseCaseDomain.insertObjectUseCase(
-          documentData.use_cases.map((id) => ({
-            object_id: toObjectUseCaseObjectId(document.id),
-            use_case_id: id,
-          }))
-        );
-      }
-
-      if (input.solution_categories?.length) {
-        await objectSolutionCategoryDomain.insertObjectSolutionCategory(
-          input.solution_categories.map((solutionCategoryId) => ({
-            object_id: toObjectSolutionCategoryObjectId(document.id),
-            solution_category_id: solutionCategoryId,
-          }))
-        );
-      }
-
-      return document;
-    });
+    );
 
     try {
       const createEvent =
@@ -289,195 +295,216 @@ export const DocumentApp = {
       DocumentHelper.retrieveDocumentTypeFromServiceDefinition(
         serviceDefinition.identifier as ManageableServiceDefinitionIdentifier
       );
-    const [sourceDocumentFile] = await DocumentUploadsHelper.processUploads(
-      sourceDocument,
-      serviceInstanceId
-    );
-    const imagesFiles = await DocumentUploadsHelper.processUploads(
-      images,
-      serviceInstanceId
-    );
-    const [logoFile] = await DocumentUploadsHelper.processUploads(
-      logo,
-      serviceInstanceId
-    );
-
-    let documentMetadata = DocumentHelper.buildCompleteMetadataFromDocumentFile(
-      {
-        sourceDocumentFile,
-        metadata,
-      }
-    );
-
-    const updatedDocument = await withTransaction(async () => {
-      // The stored metadata the update keeps is read under the row lock, so a
-      // concurrent catalog ingestion cannot interleave between the read and the write
-      await DocumentDomain.lockDocumentFile(parentDocumentId);
-
-      if (
-        !documentMetadata.some(
-          ({ key }) => key === DocumentMetadataKeyCode.FeedUrl
-        )
-      ) {
-        const existingFeedUrl =
-          await DocumentMetadataDomain.loadMetadataValueByKey(
-            parentDocumentId,
-            DocumentMetadataKeyCode.FeedUrl
-          );
-        if (existingFeedUrl) {
-          documentMetadata = [
-            ...documentMetadata,
-            { key: DocumentMetadataKeyCode.FeedUrl, value: existingFeedUrl },
-          ];
-        }
-      }
-
-      if (
-        documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE &&
-        documentMetadata.length > 0
-      ) {
-        const storedIngestionMetadata =
-          await DocumentMetadataDomain.loadMetadataByKeys(
-            parentDocumentId,
-            INGESTION_OWNED_CONNECTOR_METADATA_KEYS
-          );
-        documentMetadata = ConnectorTypeHelper.mergeEditedMetadata(
-          documentMetadata,
-          storedIngestionMetadata
+    const update = await DocumentUploadsHelper.withUploadsCleanup(
+      serviceInstanceId,
+      async (storeUploads) => {
+        const [sourceDocumentFile] = await storeUploads(
+          sourceDocument,
+          HuntPackApp.uploadRules(serviceDefinition.identifier)
         );
-      }
-
-      // entity_types is multi-valued: serialize it as a JSON metadata entry so it is
-      // persisted in Document_Metadata (and stripped from the Document column update below).
-      if (input.entity_types != null) {
-        documentMetadata = [
-          ...documentMetadata,
-          {
-            key: DocumentMetadataKeyCode.EntityTypes,
-            value: JSON.stringify(input.entity_types),
-          },
-        ];
-      }
-      if (input.license_type != null) {
-        documentMetadata = [
-          ...documentMetadata,
-          {
-            key: DocumentMetadataKeyCode.LicenseType,
-            value: input.license_type,
-          },
-        ];
-      }
-
-      DocumentHelper.assertMetadataIsNotMissing(
-        serviceDefinition.identifier as ManageableServiceDefinitionIdentifier,
-        documentMetadata
-      );
-
-      const user = requestContext.requireUser();
-      const uploader_organization_id = input.uploader_organization_id ?? null;
-      const uploader_id = input.uploader_id ?? user.id;
-
-      const file = DocumentHelper.isDocumentFileRequired({
-        documentType,
-        documentMetadata,
-      })
-        ? sourceDocumentFile
-        : undefined;
-
-      // entity_types and license_type are persisted as metadata (see above), not as Document columns.
-      const {
-        entity_types: _entityTypes,
-        license_type: _licenseType,
-        ...documentColumnData
-      } = input;
-      const doc = await DocumentDomain.updateDocument({
-        parentDocumentId,
-        document: {
-          data: documentColumnData,
-          file,
-          type: documentType,
-        },
-        uploader_organization_id,
-        uploader_id,
-      });
-
-      if (!doc) {
-        throw new Error(UnknownErrorCode.DocumentUpdateError);
-      }
-
-      // If use_cases is null => that mean we want to update the field to empty
-      if (input.use_cases !== undefined) {
-        await objectUseCaseDomain.deleteObjectUseCaseBy({
-          object_id: toObjectUseCaseObjectId(parentDocumentId),
+        let documentMetadata = await HuntPackApp.buildDocumentMetadata({
+          serviceDefinitionIdentifier: serviceDefinition.identifier,
+          metadata: DocumentHelper.buildCompleteMetadataFromDocumentFile({
+            sourceDocumentFile,
+            metadata,
+          }),
+          sourceDocumentFile,
+          existingDocumentId: parentDocumentId,
         });
+        const imagesFiles = await storeUploads(images);
+        const [logoFile] = await storeUploads(logo);
 
-        if (input.use_cases && input.use_cases.length > 0) {
-          await objectUseCaseDomain.insertObjectUseCase(
-            input.use_cases.map((id) => ({
+        return withTransaction(async () => {
+          // What the update keeps or replaces is read under the row lock, so
+          // a concurrent update cannot interleave between the read and the write
+          const currentMinioName =
+            await DocumentDomain.lockDocumentFile(parentDocumentId);
+          if (!sourceDocumentFile) {
+            documentMetadata = await HuntPackApp.withKeptMetadata({
+              serviceDefinitionIdentifier: serviceDefinition.identifier,
+              metadata: documentMetadata,
+              documentId: parentDocumentId,
+            });
+          }
+
+          if (
+            !documentMetadata.some(
+              ({ key }) => key === DocumentMetadataKeyCode.FeedUrl
+            )
+          ) {
+            const existingFeedUrl =
+              await DocumentMetadataDomain.loadMetadataValueByKey(
+                parentDocumentId,
+                DocumentMetadataKeyCode.FeedUrl
+              );
+            if (existingFeedUrl) {
+              documentMetadata = [
+                ...documentMetadata,
+                {
+                  key: DocumentMetadataKeyCode.FeedUrl,
+                  value: existingFeedUrl,
+                },
+              ];
+            }
+          }
+
+          if (
+            documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE &&
+            documentMetadata.length > 0
+          ) {
+            const storedIngestionMetadata =
+              await DocumentMetadataDomain.loadMetadataByKeys(
+                parentDocumentId,
+                INGESTION_OWNED_CONNECTOR_METADATA_KEYS
+              );
+            documentMetadata = ConnectorTypeHelper.mergeEditedMetadata(
+              documentMetadata,
+              storedIngestionMetadata
+            );
+          }
+
+          // entity_types is multi-valued: serialize it as a JSON metadata entry so it is
+          // persisted in Document_Metadata (and stripped from the Document column update below).
+          if (input.entity_types != null) {
+            documentMetadata = [
+              ...documentMetadata,
+              {
+                key: DocumentMetadataKeyCode.EntityTypes,
+                value: JSON.stringify(input.entity_types),
+              },
+            ];
+          }
+          if (input.license_type != null) {
+            documentMetadata = [
+              ...documentMetadata,
+              {
+                key: DocumentMetadataKeyCode.LicenseType,
+                value: input.license_type,
+              },
+            ];
+          }
+
+          DocumentHelper.assertMetadataIsNotMissing(
+            serviceDefinition.identifier as ManageableServiceDefinitionIdentifier,
+            documentMetadata
+          );
+
+          const user = requestContext.requireUser();
+          const uploader_organization_id =
+            input.uploader_organization_id ?? null;
+          const uploader_id = input.uploader_id ?? user.id;
+
+          const file = DocumentHelper.isDocumentFileRequired({
+            documentType,
+            documentMetadata,
+          })
+            ? sourceDocumentFile
+            : undefined;
+          const replacedMinioName = file ? currentMinioName : null;
+
+          // entity_types and license_type are persisted as metadata (see above), not as Document columns.
+          const {
+            entity_types: _entityTypes,
+            license_type: _licenseType,
+            ...documentColumnData
+          } = input;
+          const doc = await DocumentDomain.updateDocument({
+            parentDocumentId,
+            document: {
+              data: documentColumnData,
+              file,
+              type: documentType,
+            },
+            uploader_organization_id,
+            uploader_id,
+          });
+
+          if (!doc) {
+            throw new Error(UnknownErrorCode.DocumentUpdateError);
+          }
+
+          // If use_cases is null => that mean we want to update the field to empty
+          if (input.use_cases !== undefined) {
+            await objectUseCaseDomain.deleteObjectUseCaseBy({
               object_id: toObjectUseCaseObjectId(parentDocumentId),
-              use_case_id: id,
-            }))
-          );
-        }
-      }
+            });
 
-      if (input.solution_categories?.length) {
-        await objectSolutionCategoryDomain.deleteObjectSolutionCategoryBy({
-          object_id: toObjectSolutionCategoryObjectId(parentDocumentId),
+            if (input.use_cases && input.use_cases.length > 0) {
+              await objectUseCaseDomain.insertObjectUseCase(
+                input.use_cases.map((id) => ({
+                  object_id: toObjectUseCaseObjectId(parentDocumentId),
+                  use_case_id: id,
+                }))
+              );
+            }
+          }
+
+          if (input.solution_categories?.length) {
+            await objectSolutionCategoryDomain.deleteObjectSolutionCategoryBy({
+              object_id: toObjectSolutionCategoryObjectId(parentDocumentId),
+            });
+            await objectSolutionCategoryDomain.insertObjectSolutionCategory(
+              input.solution_categories.map((solutionCategoryId) => ({
+                object_id: toObjectSolutionCategoryObjectId(parentDocumentId),
+                solution_category_id: solutionCategoryId as SolutionCategoryId,
+              }))
+            );
+          }
+
+          if (documentMetadata.length) {
+            await DocumentMetadataDomain.deleteMetadata({
+              id: parentDocumentId,
+            });
+            await DocumentMetadataDomain.insertMetadataFromKeyValue(
+              doc.id,
+              documentMetadata
+            );
+
+            for (const meta of documentMetadata) {
+              setDocumentMetadataValue(
+                doc,
+                meta.key,
+                BOOLEAN_METADATA.includes(meta.key)
+                  ? meta.value === 'true'
+                  : meta.value
+              );
+            }
+          }
+
+          // Delete the images that are not in the existingImages array
+          const childIds = await DocumentChildrenDomain.loadChildrenIds(
+            parentDocumentId,
+            existingImageIds
+          );
+          if (childIds.length > 0) {
+            await DocumentDomain.deleteDocuments(childIds);
+          }
+
+          await DocumentChildrenDomain.createImageDocuments(
+            parentDocumentId,
+            serviceInstanceId,
+            imagesFiles,
+            DocumentImageType.Image
+          );
+
+          if (logoFile) {
+            await DocumentChildrenDomain.createImageDocuments(
+              parentDocumentId,
+              serviceInstanceId,
+              [logoFile],
+              DocumentImageType.Logo
+            );
+          }
+
+          return { doc, replacedMinioName };
         });
-        await objectSolutionCategoryDomain.insertObjectSolutionCategory(
-          input.solution_categories.map((solutionCategoryId) => ({
-            object_id: toObjectSolutionCategoryObjectId(parentDocumentId),
-            solution_category_id: solutionCategoryId as SolutionCategoryId,
-          }))
-        );
       }
-
-      if (documentMetadata.length) {
-        await DocumentMetadataDomain.deleteMetadata({ id: parentDocumentId });
-        await DocumentMetadataDomain.insertMetadataFromKeyValue(
-          doc.id,
-          documentMetadata
-        );
-
-        for (const meta of documentMetadata) {
-          setDocumentMetadataValue(
-            doc,
-            meta.key,
-            BOOLEAN_METADATA.includes(meta.key)
-              ? meta.value === 'true'
-              : meta.value
-          );
-        }
-      }
-
-      // Delete the images that are not in the existingImages array
-      const childIds = await DocumentChildrenDomain.loadChildrenIds(
-        parentDocumentId,
-        existingImageIds
-      );
-      if (childIds.length > 0) {
-        await DocumentDomain.deleteDocuments(childIds);
-      }
-
-      await DocumentChildrenDomain.createImageDocuments(
-        parentDocumentId,
-        serviceInstanceId,
-        imagesFiles,
-        DocumentImageType.Image
-      );
-
-      if (logoFile) {
-        await DocumentChildrenDomain.createImageDocuments(
-          parentDocumentId,
-          serviceInstanceId,
-          [logoFile],
-          DocumentImageType.Logo
-        );
-      }
-
-      return doc;
-    });
+    );
+    const updatedDocument = update.doc;
+    await DocumentUploadsHelper.deleteReplacedFile(
+      update.replacedMinioName,
+      updatedDocument.minio_name
+    );
 
     void NewsFeedApp.upsertResourceNewsFeed({
       documentBeforeUpdate,

@@ -74,6 +74,10 @@ export const usePublicNavigation = (
           ServiceSlug.OPEN_CTI_PLAYBOOKS,
           t('Menu.Playbooks')
         ),
+        ...buildServiceLink(
+          ServiceSlug.OPEN_CTI_HUNT_PACKS,
+          t('Menu.HuntPacks')
+        ),
         {
           href: 'https://demo.opencti.io',
           label: t('Menu.LiveDemo'),
