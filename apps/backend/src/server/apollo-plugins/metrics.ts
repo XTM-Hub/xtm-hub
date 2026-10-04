@@ -1,5 +1,6 @@
 import { ApolloServerPlugin } from '@apollo/server';
 import client, { Counter, Gauge, Histogram } from 'prom-client';
+import { isRedactedOperation, REDACTED } from './log';
 
 export const registry = client.register;
 
@@ -62,9 +63,15 @@ export const operationMetricsPlugin: ApolloServerPlugin = {
         operationName: operationNameFromParameters,
       }) {
         const { operationName: operationNameFromRequest } = request;
-        const operationName =
+        const clientOperationName =
           operationNameFromRequest ?? operationNameFromParameters;
-        if (!operationName) return;
+        if (!clientOperationName) return;
+        // Classified like the logs: the name of a Threat Pulse operation is
+        // chosen by the client and can carry a hash, so it never becomes a
+        // label (nor a new time series per name).
+        const operationName = isRedactedOperation(request.query)
+          ? REDACTED
+          : clientOperationName;
 
         for (const def of document.definitions) {
           if (def.kind === 'OperationDefinition') {
