@@ -117,7 +117,7 @@ const ChoosePlatformForm = ({
                             onClick={(e) => e.preventDefault()}>
                             {input}
                           </TooltipTrigger>
-                          <TooltipContent className="max-w-xl">
+                          <TooltipContent className="max-w-md">
                             <p>
                               {isEeBlocked
                                 ? t(
