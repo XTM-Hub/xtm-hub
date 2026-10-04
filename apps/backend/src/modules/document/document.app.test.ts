@@ -195,6 +195,56 @@ describe('documentApp', () => {
       await expect(create()).resolves.toMatchObject({ slug: 'taken-slug' });
     });
 
+    it('should refuse a taken integration slug before uploading anything', async () => {
+      // Given
+      const create = () =>
+        DocumentApp.createDocument({
+          input: { ...documentData, slug: 'slug-taken-before-upload' },
+          metadata: integrationMetadata,
+          serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+          sourceDocument: mockUpload,
+        });
+      await create();
+      vi.mocked(DocumentUploadsHelper.processUploads).mockClear();
+
+      // When
+      const call = create();
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.DocumentUniqueSlugError);
+      expect(DocumentUploadsHelper.processUploads).not.toHaveBeenCalled();
+    });
+
+    it('should remove the uploads of a creation refused under the slug lock', async () => {
+      // Given: the slug is free when the creation starts, taken once its lock is held
+      vi.spyOn(DocumentDomain, 'isSlugTaken')
+        .mockResolvedValueOnce(false)
+        .mockResolvedValueOnce(true);
+      vi.mocked(DocumentUploadsHelper.processUploads)
+        .mockResolvedValueOnce([{ ...minioFileMock, minioName: 'source' }])
+        .mockResolvedValueOnce([{ ...minioFileMock, minioName: 'image' }])
+        .mockResolvedValueOnce([{ ...minioFileMock, minioName: 'logo' }]);
+
+      // When
+      const call = DocumentApp.createDocument({
+        input: { ...documentData, slug: 'slug-taken-under-lock' },
+        metadata: integrationMetadata,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        sourceDocument: mockUpload,
+        images: [mockUpload],
+        logo: mockUpload,
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.DocumentUniqueSlugError);
+      expect(
+        vi.mocked(MinIOClient.deleteFile).mock.calls.map(([name]) => name)
+      ).toEqual(['source', 'image', 'logo']);
+      expect(
+        await TestHelper.document.loadAll({ slug: 'slug-taken-under-lock' })
+      ).toHaveLength(0);
+    });
+
     it('should create document with metadata', async () => {
       // When
       const result = await DocumentApp.createDocument({

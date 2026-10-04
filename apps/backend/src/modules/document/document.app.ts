@@ -108,6 +108,15 @@ export const DocumentApp = {
     // Rejected before the uploads, which would otherwise stay in the storage
     if (documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE) {
       IntegrationCoverageApp.assertValidCoverageInput(input);
+      if (
+        input.slug &&
+        (await DocumentDomain.isSlugTaken({
+          slug: input.slug,
+          type: documentType,
+        }))
+      ) {
+        throw new Error(ErrorCode.DocumentUniqueSlugError);
+      }
     }
 
     const [sourceDocumentFile] = await DocumentUploadsHelper.processUploads(
@@ -264,6 +273,14 @@ export const DocumentApp = {
       }
 
       return document;
+    }).catch(async (error: unknown) => {
+      // The rolled back creation leaves its uploads unreferenced
+      await DocumentUploadsHelper.removeUploads([
+        sourceDocumentFile,
+        ...imagesFiles,
+        logoFile,
+      ]);
+      throw error;
     });
 
     try {
