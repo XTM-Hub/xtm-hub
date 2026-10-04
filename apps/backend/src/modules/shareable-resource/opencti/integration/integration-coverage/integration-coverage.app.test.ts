@@ -211,13 +211,22 @@ describe('integrationCoverageApp', () => {
         await IntegrationCoverageApp.searchIntegrationsByCoverage(input);
       const withoutFacets =
         await IntegrationCoverageApp.searchIntegrationsByCoverage(input, {
-          withFacets: false,
+          facetKeys: [],
+        });
+      const sectorsOnly =
+        await IntegrationCoverageApp.searchIntegrationsByCoverage(input, {
+          facetKeys: ['sector'],
         });
 
       // Then
       expect(withoutFacets.matches).toEqual(withFacets.matches);
       expect(withFacets.facets.sector.length).toBeGreaterThan(0);
       expect(withoutFacets.facets).toEqual(EMPTY_COVERAGE_FACETS);
+      expect(sectorsOnly.matches).toEqual(withFacets.matches);
+      expect(sectorsOnly.facets).toEqual({
+        ...EMPTY_COVERAGE_FACETS,
+        sector: withFacets.facets.sector,
+      });
     });
 
     it('should only expose active integrations of the public integrations service', async () => {

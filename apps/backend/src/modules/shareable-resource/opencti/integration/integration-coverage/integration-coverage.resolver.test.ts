@@ -1,5 +1,5 @@
-import { GraphQLResolveInfo, Kind } from 'graphql';
-import { describe, expect, it, vi } from 'vitest';
+import { FieldNode, GraphQLResolveInfo, Kind } from 'graphql';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   contextSimpleUserFiligran2,
   GRAPHQL_RESOLVE_INFO,
@@ -8,11 +8,16 @@ import {
   IntegrationCoverageSearchResult,
   IntegrationType,
 } from '../../../../../__generated__/resolvers-types';
+import type { PortalContext } from '../../../../../model/portal-context';
 import {
   BadRequestErrorCode,
   UnknownErrorCode,
 } from '../../../../../utils/error/error.code';
 import { IntegrationCoverageApp } from './integration-coverage.app';
+import {
+  COVERAGE_FACETS_RATE_LIMIT,
+  IntegrationCoverageRateLimit,
+} from './integration-coverage.rate-limit';
 import resolver from './integration-coverage.resolver';
 
 const EMPTY_FACETS = {
@@ -41,7 +46,50 @@ const callIntegrationsByCoverage = (
     GRAPHQL_RESOLVE_INFO
   );
 
+const field = (name: string, selections: string[] = []): FieldNode => ({
+  kind: Kind.FIELD,
+  name: { kind: Kind.NAME, value: name },
+  ...(selections.length > 0
+    ? {
+        selectionSet: {
+          kind: Kind.SELECTION_SET,
+          selections: selections.map((selection) => field(selection)),
+        },
+      }
+    : {}),
+});
+
+/** Resolve info of a query selecting the matches and, when given, these facets. */
+const infoSelecting = (facets: string[] = []) =>
+  ({
+    fieldNodes: [
+      {
+        ...field('integrationsByCoverage'),
+        selectionSet: {
+          kind: Kind.SELECTION_SET,
+          selections: [
+            field('matches', ['id']),
+            ...(facets.length > 0 ? [field('facets', facets)] : []),
+          ],
+        },
+      },
+    ],
+    fragments: {},
+  }) as unknown as GraphQLResolveInfo;
+
+const callSelecting = (context: PortalContext, info: GraphQLResolveInfo) =>
+  resolver.Query!.integrationsByCoverage!(
+    {},
+    { input: { objectTypes: ['Malware'] } },
+    context,
+    info
+  );
+
 describe('integration-coverage.resolver', () => {
+  beforeEach(() => {
+    IntegrationCoverageRateLimit.reset();
+  });
+
   it('should delegate integrationsByCoverage to the app layer', async () => {
     // Given
     const expected: IntegrationCoverageSearchResult = {
@@ -78,7 +126,7 @@ describe('integration-coverage.resolver', () => {
     expect(result).toEqual(expected);
   });
 
-  it('should compute the facets only when the query selects them', async () => {
+  it('should compute only the facets the query selects', async () => {
     // Given
     const search = vi
       .spyOn(IntegrationCoverageApp, 'searchIntegrationsByCoverage')
@@ -87,44 +135,57 @@ describe('integration-coverage.resolver', () => {
         facets: EMPTY_FACETS,
         truncated: false,
       });
-    const infoSelecting = (field: string) =>
-      ({
-        fieldNodes: [
-          {
-            kind: Kind.FIELD,
-            name: { kind: Kind.NAME, value: 'integrationsByCoverage' },
-            selectionSet: {
-              kind: Kind.SELECTION_SET,
-              selections: [
-                { kind: Kind.FIELD, name: { kind: Kind.NAME, value: field } },
-              ],
-            },
-          },
-        ],
-        fragments: {},
-      }) as unknown as GraphQLResolveInfo;
 
     // When
-    await resolver.Query!.integrationsByCoverage!(
-      {},
-      { input: { objectTypes: ['Malware'] } },
+    await callSelecting(contextSimpleUserFiligran2, infoSelecting());
+    await callSelecting(
       contextSimpleUserFiligran2,
-      infoSelecting('matches')
-    );
-    await resolver.Query!.integrationsByCoverage!(
-      {},
-      { input: { objectTypes: ['Malware'] } },
-      contextSimpleUserFiligran2,
-      infoSelecting('facets')
+      infoSelecting(['sector', 'region', '__typename'])
     );
 
     // Then
     expect(search).toHaveBeenNthCalledWith(1, expect.anything(), {
-      withFacets: false,
+      facetKeys: [],
     });
     expect(search).toHaveBeenNthCalledWith(2, expect.anything(), {
-      withFacets: true,
+      facetKeys: ['sector', 'region'],
     });
+  });
+
+  it('should limit the searches with facets of one caller, not the others or the searches without facets', async () => {
+    // Given
+    vi.spyOn(
+      IntegrationCoverageApp,
+      'searchIntegrationsByCoverage'
+    ).mockResolvedValue({
+      matches: [],
+      facets: EMPTY_FACETS,
+      truncated: false,
+    });
+    const anonymous = (ip: string) =>
+      ({ req: { ip } }) as unknown as PortalContext;
+    const withFacets = infoSelecting(['sector']);
+    for (let i = 0; i < COVERAGE_FACETS_RATE_LIMIT.limit; i += 1) {
+      await callSelecting(anonymous('203.0.113.7'), withFacets);
+    }
+
+    // When
+    const limited = callSelecting(anonymous('203.0.113.7'), withFacets);
+
+    // Then
+    await expect(limited).rejects.toMatchObject({
+      message: BadRequestErrorCode.CoverageSearchRateLimited,
+      data: expect.objectContaining({ http_status: 400 }),
+    });
+    await expect(
+      callSelecting(anonymous('203.0.113.7'), infoSelecting())
+    ).resolves.toBeDefined();
+    await expect(
+      callSelecting(anonymous('198.51.100.20'), withFacets)
+    ).resolves.toBeDefined();
+    await expect(
+      callSelecting(contextSimpleUserFiligran2, withFacets)
+    ).resolves.toBeDefined();
   });
 
   it('should surface a validation failure as a bad request', async () => {

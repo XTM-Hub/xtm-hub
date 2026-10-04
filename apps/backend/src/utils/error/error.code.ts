@@ -75,6 +75,7 @@ export enum BadRequestErrorCode {
   XtmOneRoleRequired = 'XTM_ONE_ROLE_REQUIRED',
   InvalidIntegrationCoverage = 'INVALID_INTEGRATION_COVERAGE',
   InvalidCoverageSearchInput = 'INVALID_COVERAGE_SEARCH_INPUT',
+  CoverageSearchRateLimited = 'COVERAGE_SEARCH_RATE_LIMITED',
 }
 
 export enum UnknownErrorCode {

@@ -1,28 +1,48 @@
-import { GraphQLResolveInfo, Kind, SelectionSetNode } from 'graphql';
+import { FieldNode, GraphQLResolveInfo, Kind, SelectionSetNode } from 'graphql';
+
+type SelectionInfo = Pick<GraphQLResolveInfo, 'fieldNodes' | 'fragments'>;
 
 /**
- * Whether the resolved field selects the sub-field `name`, directly, through
- * an inline fragment or through a fragment spread.
+ * Fields of a selection set, selected directly, through an inline fragment or
+ * through a fragment spread.
  */
-export const isFieldSelected = (
-  info: Pick<GraphQLResolveInfo, 'fieldNodes' | 'fragments'>,
+const collectFields = (
+  info: SelectionInfo,
+  selectionSet: SelectionSetNode | undefined,
+  visited = new Set<string>()
+): FieldNode[] =>
+  (selectionSet?.selections ?? []).flatMap((selection) => {
+    if (selection.kind === Kind.FIELD) {
+      return [selection];
+    }
+    if (selection.kind === Kind.INLINE_FRAGMENT) {
+      return collectFields(info, selection.selectionSet, visited);
+    }
+    const fragmentName = selection.name.value;
+    if (visited.has(fragmentName)) {
+      return [];
+    }
+    visited.add(fragmentName);
+    return collectFields(
+      info,
+      info.fragments?.[fragmentName]?.selectionSet,
+      visited
+    );
+  });
+
+/**
+ * Names of the fields selected under the sub-field `name` of the resolved
+ * field, fragments included, each name once; empty when `name` is not selected.
+ */
+export const selectedSubFieldNames = (
+  info: SelectionInfo,
   name: string
-): boolean => {
-  const visited = new Set<string>();
-  const selects = (selectionSet: SelectionSetNode | undefined): boolean =>
-    (selectionSet?.selections ?? []).some((selection) => {
-      if (selection.kind === Kind.FIELD) {
-        return selection.name.value === name;
-      }
-      if (selection.kind === Kind.INLINE_FRAGMENT) {
-        return selects(selection.selectionSet);
-      }
-      const fragmentName = selection.name.value;
-      if (visited.has(fragmentName)) {
-        return false;
-      }
-      visited.add(fragmentName);
-      return selects(info.fragments?.[fragmentName]?.selectionSet);
-    });
-  return (info.fieldNodes ?? []).some((node) => selects(node.selectionSet));
-};
+): string[] => [
+  ...new Set(
+    (info.fieldNodes ?? [])
+      .flatMap((node) => collectFields(info, node.selectionSet))
+      .filter((field) => field.name.value === name)
+      .flatMap((field) => collectFields(info, field.selectionSet))
+      .map((field) => field.name.value)
+  ),
+];

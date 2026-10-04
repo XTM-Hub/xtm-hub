@@ -7,7 +7,7 @@ import {
   parse,
 } from 'graphql';
 import { describe, expect, it } from 'vitest';
-import { isFieldSelected } from './graphql-selection.util';
+import { selectedSubFieldNames } from './graphql-selection.util';
 
 const resolveInfoOf = (
   query: string
@@ -31,18 +31,21 @@ const resolveInfoOf = (
   return { fieldNodes, fragments };
 };
 
-describe('isFieldSelected', () => {
+describe('selectedSubFieldNames', () => {
   it.each`
-    description                | query                                                                                             | expected
-    ${'selected directly'}     | ${'{ search { matches { id } facets { sector { key } } } }'}                                      | ${true}
-    ${'not selected'}          | ${'{ search { matches { id } truncated } }'}                                                      | ${false}
-    ${'in an inline fragment'} | ${'{ search { ... on Result { facets { sector { key } } } } }'}                                   | ${true}
-    ${'in a fragment spread'}  | ${'{ search { ...ResultFields } } fragment ResultFields on Result { facets { region { key } } }'} | ${true}
-    ${'only nested deeper'}    | ${'{ search { matches { facets } } }'}                                                            | ${false}
+    description                       | query                                                                                                                                             | expected
+    ${'selected directly'}            | ${'{ search { matches { id } facets { sector { value } region { value } } } }'}                                                                   | ${['sector', 'region']}
+    ${'not selected'}                 | ${'{ search { matches { id } truncated } }'}                                                                                                      | ${[]}
+    ${'in an inline fragment'}        | ${'{ search { ... on Result { facets { sector { value } } } } }'}                                                                                 | ${['sector']}
+    ${'in a fragment spread'}         | ${'{ search { ...ResultFields } } fragment ResultFields on Result { facets { region { value } } }'}                                               | ${['region']}
+    ${'in fragments, each name once'} | ${'{ search { facets { sector { value } } ...More } } fragment More on Result { facets { ... on Facet { sector { count } region { value } } } }'} | ${['sector', 'region']}
+    ${'only nested deeper'}           | ${'{ search { matches { facets { sector { value } } } } }'}                                                                                       | ${[]}
   `(
-    'returns $expected when the field is $description',
+    'returns $expected when the sub-fields are $description',
     ({ query, expected }) => {
-      expect(isFieldSelected(resolveInfoOf(query), 'facets')).toBe(expected);
+      expect(selectedSubFieldNames(resolveInfoOf(query), 'facets')).toEqual(
+        expected
+      );
     }
   );
 });

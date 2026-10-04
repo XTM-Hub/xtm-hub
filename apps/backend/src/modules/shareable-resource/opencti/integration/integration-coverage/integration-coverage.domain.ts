@@ -70,12 +70,24 @@ const CANDIDATE_METADATA_KEYS: DocumentMetadataKeyCode[] = [
   ...COVERAGE_METADATA_KEYS,
 ];
 
-const FACET_METADATA_KEYS: DocumentMetadataKeyCode[] = [
-  DocumentMetadataKeyCode.IntegrationType,
-  DocumentMetadataKeyCode.LicenseType,
-  DocumentMetadataKeyCode.ManagerSupported,
-  DocumentMetadataKeyCode.Verified,
-  DocumentMetadataKeyCode.ProductVersion,
+export type CoverageFacetKey = Exclude<keyof Facet, '__typename'>;
+
+type FacetMetadataKey = readonly [CoverageFacetKey, DocumentMetadataKeyCode];
+
+// Facets read from one metadata value per document, computed together in one aggregation
+const FACET_METADATA_KEYS: readonly FacetMetadataKey[] = [
+  ['integration_type', DocumentMetadataKeyCode.IntegrationType],
+  ['license_type', DocumentMetadataKeyCode.LicenseType],
+  ['manager_supported', DocumentMetadataKeyCode.ManagerSupported],
+  ['verified', DocumentMetadataKeyCode.Verified],
+  ['product_version', DocumentMetadataKeyCode.ProductVersion],
+];
+
+// Facets read from a metadata list per document, one aggregation each
+const FACET_METADATA_LIST_KEYS: readonly FacetMetadataKey[] = [
+  ['object_type', DocumentMetadataKeyCode.CoveredObjectTypes],
+  ['sector', DocumentMetadataKeyCode.CoveredSectors],
+  ['region', DocumentMetadataKeyCode.CoveredRegions],
 ];
 
 const excludeChildDocuments = (query: Knex.QueryBuilder) =>
@@ -190,46 +202,53 @@ export const EMPTY_COVERAGE_FACETS: Facet = {
   region: [],
 };
 
-// One aggregation at a time: a public request never holds more than one pooled connection
+export const COVERAGE_FACET_KEYS = Object.keys(
+  EMPTY_COVERAGE_FACETS
+) as CoverageFacetKey[];
+
+export const isCoverageFacetKey = (key: string): key is CoverageFacetKey =>
+  (COVERAGE_FACET_KEYS as string[]).includes(key);
+
+/**
+ * The requested facets of the candidate population, the others left empty.
+ * One aggregation at a time: a public request never holds more than one pooled connection.
+ */
 const loadFacets = async (
-  documentIdsQuery: Knex.QueryBuilder
+  documentIdsQuery: Knex.QueryBuilder,
+  facetKeys: ReadonlySet<CoverageFacetKey>
 ): Promise<Facet> => {
-  const metadataBuckets = await loadMetadataFacetBucketsGrouped(
-    documentIdsQuery,
-    FACET_METADATA_KEYS
+  const facets: Facet = { ...EMPTY_COVERAGE_FACETS };
+  const metadataFacets = FACET_METADATA_KEYS.filter(([facetKey]) =>
+    facetKeys.has(facetKey)
   );
-  const useCaseBuckets = await loadUseCaseFacetBuckets(documentIdsQuery);
-  const solutionCategoryBuckets =
-    await loadSolutionCategoryFacetBuckets(documentIdsQuery);
-  const entityTypeBuckets = await loadEntityTypeFacetBuckets(documentIdsQuery);
-  const objectTypeBuckets = await loadMetadataListFacetBuckets(
-    documentIdsQuery,
-    DocumentMetadataKeyCode.CoveredObjectTypes
-  );
-  const sectorBuckets = await loadMetadataListFacetBuckets(
-    documentIdsQuery,
-    DocumentMetadataKeyCode.CoveredSectors
-  );
-  const regionBuckets = await loadMetadataListFacetBuckets(
-    documentIdsQuery,
-    DocumentMetadataKeyCode.CoveredRegions
-  );
-  return {
-    integration_type:
-      metadataBuckets[DocumentMetadataKeyCode.IntegrationType] ?? [],
-    license_type: metadataBuckets[DocumentMetadataKeyCode.LicenseType] ?? [],
-    manager_supported:
-      metadataBuckets[DocumentMetadataKeyCode.ManagerSupported] ?? [],
-    verified: metadataBuckets[DocumentMetadataKeyCode.Verified] ?? [],
-    product_version:
-      metadataBuckets[DocumentMetadataKeyCode.ProductVersion] ?? [],
-    use_case: useCaseBuckets,
-    solution_category: solutionCategoryBuckets,
-    entity_type: entityTypeBuckets,
-    object_type: objectTypeBuckets,
-    sector: sectorBuckets,
-    region: regionBuckets,
-  };
+  if (metadataFacets.length > 0) {
+    const metadataBuckets = await loadMetadataFacetBucketsGrouped(
+      documentIdsQuery,
+      metadataFacets.map(([, code]) => code)
+    );
+    for (const [facetKey, code] of metadataFacets) {
+      facets[facetKey] = metadataBuckets[code] ?? [];
+    }
+  }
+  if (facetKeys.has('use_case')) {
+    facets.use_case = await loadUseCaseFacetBuckets(documentIdsQuery);
+  }
+  if (facetKeys.has('solution_category')) {
+    facets.solution_category =
+      await loadSolutionCategoryFacetBuckets(documentIdsQuery);
+  }
+  if (facetKeys.has('entity_type')) {
+    facets.entity_type = await loadEntityTypeFacetBuckets(documentIdsQuery);
+  }
+  for (const [facetKey, code] of FACET_METADATA_LIST_KEYS) {
+    if (facetKeys.has(facetKey)) {
+      facets[facetKey] = await loadMetadataListFacetBuckets(
+        documentIdsQuery,
+        code
+      );
+    }
+  }
+  return facets;
 };
 
 export interface LinkableVocabulary {
@@ -239,12 +258,14 @@ export interface LinkableVocabulary {
 
 export const IntegrationCoverageDomain = {
   /**
-   * Ranked candidates of a coverage search and, when the caller selects
-   * them, the facets of the candidate population (seven aggregations, one after the other).
+   * Ranked candidates of a coverage search and the requested facets of the
+   * candidate population (up to seven aggregations, one after the other).
    */
   loadCandidatesAndFacets: async (
     request: CoverageSearchRequest,
-    { withFacets = true }: { withFacets?: boolean } = {}
+    {
+      facetKeys = COVERAGE_FACET_KEYS,
+    }: { facetKeys?: readonly CoverageFacetKey[] } = {}
   ): Promise<{
     candidates: CoverageCandidateRow[];
     facets: Facet;
@@ -253,9 +274,13 @@ export const IntegrationCoverageDomain = {
     const { query } = await buildCandidatesQuery(request);
 
     const rows = await loadCandidateRows(query);
-    const facets = withFacets
-      ? await loadFacets(query.clone().select('Document.id'))
-      : EMPTY_COVERAGE_FACETS;
+    const facets =
+      facetKeys.length > 0
+        ? await loadFacets(
+            query.clone().select('Document.id'),
+            new Set(facetKeys)
+          )
+        : EMPTY_COVERAGE_FACETS;
 
     const truncated = rows.length > COVERAGE_SEARCH_MAX_CANDIDATES;
     const candidates = await DocumentMetadataDomain.hydrateMetadata(

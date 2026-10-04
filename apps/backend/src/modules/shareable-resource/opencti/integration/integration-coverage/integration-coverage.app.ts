@@ -16,6 +16,7 @@ import { TelemetryEventType } from '../../../../telemetry/telemetry.types';
 import { isIntegrationType } from '../integration.model';
 import {
   CoverageCandidateRow,
+  CoverageFacetKey,
   CoverageInferenceRow,
   IntegrationCoverageDomain,
 } from './integration-coverage.domain';
@@ -168,7 +169,7 @@ const inferOutdatedCoverage = async (
 export const IntegrationCoverageApp = {
   searchIntegrationsByCoverage: async (
     input: IntegrationCoverageSearchInput,
-    { withFacets = true }: { withFacets?: boolean } = {}
+    { facetKeys }: { facetKeys?: readonly CoverageFacetKey[] } = {}
   ): Promise<IntegrationCoverageSearchResult> => {
     const request = IntegrationCoverageSearchHelper.normalizeSearchInput(input);
     const hasRequestedFacets =
@@ -176,7 +177,7 @@ export const IntegrationCoverageApp = {
 
     const { candidates, facets, truncated } =
       await IntegrationCoverageDomain.loadCandidatesAndFacets(request, {
-        withFacets,
+        facetKeys,
       });
     if (truncated) {
       logApp.warn(
