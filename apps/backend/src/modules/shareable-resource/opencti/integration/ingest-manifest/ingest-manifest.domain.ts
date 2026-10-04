@@ -103,9 +103,14 @@ export const IngestManifestDomain = {
           CONNECTOR_SLUG_LOCK_NAMESPACE,
           slug,
           async () => {
-            const current = await DocumentDomain.findLatestBySlug(slug, {
-              forUpdate: true,
-            });
+            const current = await DocumentDomain.findLatestBySlug(
+              {
+                slug,
+                type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+                serviceInstanceId: connector.service_instance_id,
+              },
+              { forUpdate: true }
+            );
             const existingConnector =
               await DocumentMetadataDomain.hydrateMetadataOne(
                 current as Connector | undefined,

@@ -116,6 +116,27 @@ describe('facet.grouping.utils', () => {
       // Then
       expect(integrationTypeGroup).toBe(licenseTypeGroup);
     });
+
+    it.each([
+      ['an integration request', 'opencti_integration', true],
+      ['a request without a document type', null, true],
+      ['a request for another document type', 'custom_dashboard', false],
+    ])(
+      'should compute the coverage facets for %s: %s',
+      (_description, documentType, expectCoverage) => {
+        // Given / When
+        const groups = groupFacetsBySignature(null, documentType);
+        const fields = groups.flatMap((group) =>
+          group.specs.map((spec) => spec.field)
+        );
+
+        // Then
+        for (const field of ['object_type', 'sector', 'region'] as const) {
+          expect(fields.includes(field)).toBe(expectCoverage);
+        }
+        expect(fields).toContain('integration_type');
+      }
+    );
   });
 
   describe('canonicalSignature', () => {

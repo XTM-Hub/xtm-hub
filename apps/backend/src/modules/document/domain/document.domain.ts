@@ -574,15 +574,30 @@ export const DocumentDomain = {
   },
 
   /**
-   * Document that `upsertOnSlug` updates for this slug: the latest one outside
-   * the decoupling tag. `forUpdate` locks its row in the caller's transaction.
+   * Document that `upsertOnSlug` updates for this slug: the latest one of this
+   * type (and service instance, when given) outside the decoupling tag.
+   * `forUpdate` locks its row in the caller's transaction.
    */
   findLatestBySlug: async (
-    slug: string,
+    {
+      slug,
+      type,
+      serviceInstanceId,
+    }: {
+      slug: string;
+      type: string;
+      serviceInstanceId?: ServiceInstanceId | null;
+    },
     { forUpdate = false }: { forUpdate?: boolean } = {}
   ): Promise<DocumentModel | undefined> => {
     const query = db<DocumentModel>('Document')
       .where('slug', '=', slug)
+      .where('type', '=', type)
+      .modify((builder) => {
+        if (serviceInstanceId) {
+          builder.where('service_instance_id', '=', serviceInstanceId);
+        }
+      })
       .modify(excludeDecouplingTag)
       .orderBy('created_at', 'desc');
     return (forUpdate ? query.forUpdate() : query).first();
@@ -607,11 +622,20 @@ export const DocumentDomain = {
       uploader_organization_id: user.selected_organization_id,
     };
 
-    const slug = (documentData as { slug?: string }).slug;
+    const { slug, type, service_instance_id } = documentData as {
+      slug?: string;
+      type?: string;
+      service_instance_id?: ServiceInstanceId | null;
+    };
 
-    const existingDocument = slug
-      ? await DocumentDomain.findLatestBySlug(slug)
-      : undefined;
+    const existingDocument =
+      slug && type
+        ? await DocumentDomain.findLatestBySlug({
+            slug,
+            type,
+            serviceInstanceId: service_instance_id,
+          })
+        : undefined;
 
     if (existingDocument) {
       const [updatedDocument] = await db<DocumentModel>('Document')

@@ -4,6 +4,7 @@ import {
   FilterKey,
   LogicalFilterInput,
 } from '../../../__generated__/resolvers-types';
+import { OPENCTI_INTEGRATION_DOCUMENT_TYPE } from '../../shareable-resource/opencti/integration/integration.model';
 
 export type FacetField =
   | 'integration_type'
@@ -27,6 +28,8 @@ export type FacetSpec = {
   filterKey: FilterKey;
   source: FacetSource;
   metadataKey?: DocumentMetadataKeyCode;
+  /** Only computed when the request targets this document type, or no type at all. */
+  documentType?: string;
 };
 
 export const FACET_SPECS: readonly FacetSpec[] = [
@@ -81,18 +84,21 @@ export const FACET_SPECS: readonly FacetSpec[] = [
     filterKey: FilterKey.ObjectType,
     source: 'metadataList',
     metadataKey: DocumentMetadataKeyCode.CoveredObjectTypes,
+    documentType: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
   },
   {
     field: 'sector',
     filterKey: FilterKey.Sector,
     source: 'metadataList',
     metadataKey: DocumentMetadataKeyCode.CoveredSectors,
+    documentType: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
   },
   {
     field: 'region',
     filterKey: FilterKey.Region,
     source: 'metadataList',
     metadataKey: DocumentMetadataKeyCode.CoveredRegions,
+    documentType: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
   },
 ] as const;
 
@@ -161,12 +167,22 @@ export type FacetGroup = {
   specs: FacetSpec[];
 };
 
+export const isFacetSpecApplicable = (
+  spec: FacetSpec,
+  documentType: string | null | undefined
+): boolean =>
+  !spec.documentType || !documentType || spec.documentType === documentType;
+
 export const groupFacetsBySignature = (
-  logicalFilters: LogicalFilterInput | null | undefined
+  logicalFilters: LogicalFilterInput | null | undefined,
+  documentType?: string | null
 ): FacetGroup[] => {
   const groups = new Map<string, FacetGroup>();
 
   for (const spec of FACET_SPECS) {
+    if (!isFacetSpecApplicable(spec, documentType)) {
+      continue;
+    }
     const strippedFilter = stripFilterKeyFromLogicalFilter(
       logicalFilters,
       spec.filterKey

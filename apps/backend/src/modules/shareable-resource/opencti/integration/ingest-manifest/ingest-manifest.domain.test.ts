@@ -299,6 +299,29 @@ describe('upsertConnectors', () => {
     });
   });
 
+  describe('slug shared with another document type', () => {
+    it('should create the connector and leave the other document untouched', async () => {
+      const baseManifest = sampleExtractedManifest[0] as ManifestInformation;
+      const slug = 'slug-shared-with-a-dashboard';
+      const dashboard = await TestHelper.document.create({
+        slug,
+        name: 'Dashboard sharing a connector slug',
+        type: 'custom_dashboard',
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+      });
+
+      const [connector] = await IngestManifestDomain.upsertConnectors([
+        { ...baseManifest, slug, name: 'Connector sharing a dashboard slug' },
+      ]);
+
+      expect(connector!.id).not.toBe(dashboard.id);
+      expect(connector!.type).toBe('opencti_integration');
+      const reloaded = await TestHelper.document.load({ id: dashboard.id });
+      expect(reloaded!.name).toBe('Dashboard sharing a connector slug');
+      expect(reloaded!.type).toBe('custom_dashboard');
+    });
+  });
+
   describe('minimum deployable version logic', () => {
     const baseManifest = sampleExtractedManifest[0] as ManifestInformation;
 

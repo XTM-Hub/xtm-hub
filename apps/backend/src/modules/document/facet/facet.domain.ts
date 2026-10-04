@@ -15,7 +15,10 @@ export const FacetDomain = {
       !user ||
       (await isUserRestrictedToActiveDocument(user, input.serviceInstanceId));
 
-    const groups = groupFacetsBySignature(input.logicalFilters);
+    const groups = groupFacetsBySignature(
+      input.logicalFilters,
+      input.documentType
+    );
     const byField = await loadFacetsInSingleQuery(
       groups,
       input,

@@ -9,7 +9,10 @@ import {
   QueryDocumentsArgs,
   QueryPublicDocumentsArgs,
 } from '../../__generated__/resolvers-types';
-import { withTransaction } from '../../context/database.context';
+import {
+  withAdvisoryLock,
+  withTransaction,
+} from '../../context/database.context';
 import { requestContext } from '../../context/request.context';
 import Document, {
   DocumentId,
@@ -29,7 +32,10 @@ import { ServiceDefinitionDomain } from '../service/definition/service-definitio
 import { IntegrationCoverageApp } from '../shareable-resource/opencti/integration/integration-coverage/integration-coverage.app';
 import { IntegrationCoverageDomain } from '../shareable-resource/opencti/integration/integration-coverage/integration-coverage.domain';
 import { IntegrationCoverageHelper } from '../shareable-resource/opencti/integration/integration-coverage/integration-coverage.helper';
-import { OPENCTI_INTEGRATION_DOCUMENT_TYPE } from '../shareable-resource/opencti/integration/integration.model';
+import {
+  CONNECTOR_SLUG_LOCK_NAMESPACE,
+  OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+} from '../shareable-resource/opencti/integration/integration.model';
 import { objectSolutionCategoryDomain } from '../solution-category/object-solution-category/object-solution-category.domain';
 import { solutionCategoryApp } from '../solution-category/solution-category.app';
 import { TelemetryApp } from '../telemetry/telemetry.app';
@@ -179,7 +185,14 @@ export const DocumentApp = {
         : {}),
     };
 
-    const createdDocument = await withTransaction(async () => {
+    // An integration is created under the slug lock of the manifest ingestion,
+    // which would otherwise resolve its coverage without this declaration.
+    const inCreationTransaction = <T>(callback: () => Promise<T>) =>
+      documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE
+        ? withAdvisoryLock(CONNECTOR_SLUG_LOCK_NAMESPACE, input.slug, callback)
+        : withTransaction(callback);
+
+    const createdDocument = await inCreationTransaction(async () => {
       const metadataKeys = documentMetadata.map(
         ({ key }) => key
       ) as DocumentMetadataKeys<Document>;
