@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { huntImportErrors, sigmaRuleErrors } from './hunt-pack.validation';
+import {
+  huntImportErrors,
+  sigmaRuleErrors,
+  wildcardMatches,
+} from './hunt-pack.validation';
 
 const VALID_SIGMA_RULE = [
   'title: Encoded PowerShell',
@@ -48,6 +52,68 @@ describe('sigmaRuleErrors', () => {
     expect(sigmaRuleErrors(`title: ${'x'.repeat(65536)}`)).toEqual([
       'the Sigma rule exceeds 65536 characters',
     ]);
+  });
+
+  it('checks a condition crafted to backtrack in linear time', () => {
+    // A wildcard identifier of 20000 `a*` segments against a search identifier of
+    // 1000 `a` and a `b`, within the length OpenCTI accepts
+    const rule = [
+      'title: Backtracking',
+      'logsource: {product: windows}',
+      'detection:',
+      `  ${'a'.repeat(1000)}b: {Image: x}`,
+      `  condition: ${'a*'.repeat(20000)}b`,
+    ].join('\n');
+    const start = performance.now();
+
+    const errors = sigmaRuleErrors(rule);
+
+    expect(performance.now() - start).toBeLessThan(2000);
+    expect(errors.join('; ')).toContain('unknown search');
+  });
+});
+
+describe('wildcardMatches', () => {
+  it.each`
+    pattern          | value                | expected
+    ${'selection_*'} | ${'selection_image'} | ${true}
+    ${'selection_*'} | ${'filter'}          | ${false}
+    ${'*_image'}     | ${'selection_image'} | ${true}
+    ${'sel*ion'}     | ${'selection'}       | ${true}
+    ${'a*b*c'}       | ${'abc'}             | ${true}
+    ${'a*b*c'}       | ${'acb'}             | ${false}
+    ${'a**b'}        | ${'ab'}              | ${true}
+    ${'ab*ba'}       | ${'aba'}             | ${false}
+    ${'*'}           | ${''}                | ${true}
+    ${'a.c'}         | ${'abc'}             | ${false}
+    ${'.*'}          | ${'ab'}              | ${false}
+    ${'filter'}      | ${'filter'}          | ${true}
+    ${'filter'}      | ${'filter_2'}        | ${false}
+  `(
+    'reads $pattern against $value as $expected',
+    ({
+      pattern,
+      value,
+      expected,
+    }: {
+      pattern: string;
+      value: string;
+      expected: boolean;
+    }) => {
+      expect(wildcardMatches(pattern, value)).toBe(expected);
+    }
+  );
+
+  it('refuses a worst-case non-matching value in linear time', () => {
+    const start = performance.now();
+
+    const matches = wildcardMatches(
+      `${'a*'.repeat(10000)}b`,
+      `${'a'.repeat(5000)}b`
+    );
+
+    expect(matches).toBe(false);
+    expect(performance.now() - start).toBeLessThan(2000);
   });
 });
 

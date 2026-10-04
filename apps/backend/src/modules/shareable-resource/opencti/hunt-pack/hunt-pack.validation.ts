@@ -67,18 +67,39 @@ const conditionIdentifiers = (condition: string): string[] => {
   );
 };
 
-const escapeRegExp = (value: string) =>
-  value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-const identifierMatches = (identifier: string, searchIdentifiers: string[]) => {
-  if (!identifier.includes('*')) {
-    return searchIdentifiers.includes(identifier);
+/**
+ * Whether `value` matches `pattern`, where `*` stands for any run of characters.
+ * Both come from the uploaded rule: the literal segments are searched once each,
+ * left to right, so the work stays linear in their lengths whatever the input.
+ */
+export const wildcardMatches = (pattern: string, value: string): boolean => {
+  const segments = pattern.split('*');
+  const first = segments[0] ?? '';
+  const last = segments[segments.length - 1] ?? '';
+  if (segments.length === 1) {
+    return pattern === value;
   }
-  const pattern = new RegExp(
-    `^${identifier.split('*').map(escapeRegExp).join('.*')}$`
-  );
-  return searchIdentifiers.some((search) => pattern.test(search));
+  if (
+    value.length < first.length + last.length ||
+    !value.startsWith(first) ||
+    !value.endsWith(last)
+  ) {
+    return false;
+  }
+  const end = value.length - last.length;
+  let position = first.length;
+  for (const segment of segments.slice(1, -1)) {
+    const index = value.indexOf(segment, position);
+    if (index === -1 || index + segment.length > end) {
+      return false;
+    }
+    position = index + segment.length;
+  }
+  return true;
 };
+
+const identifierMatches = (identifier: string, searchIdentifiers: string[]) =>
+  searchIdentifiers.some((search) => wildcardMatches(identifier, search));
 
 const parseSigmaRule = (sigmaRule: string): unknown => {
   const documents = parseAllDocuments(sigmaRule, { uniqueKeys: true });
