@@ -273,7 +273,8 @@ export const ManifestFragmentDomain = {
 
         // Inferred from the names the document linkers resolve, never from a dropped one
         const fragmentProduct = fragment.platform.trim().toLowerCase();
-        const linkableNames = await IntegrationCoverageDomain.keepLinkableNames(
+        const linkableNames = IntegrationCoverageDomain.keepLinkableNames(
+          await IntegrationCoverageDomain.loadLinkableVocabulary(),
           {
             useCases: fragment.use_cases ?? [],
             solutionCategories: fragment.solution_categories ?? [],

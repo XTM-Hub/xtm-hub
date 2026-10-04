@@ -239,6 +239,11 @@ const loadFacets = async (
   };
 };
 
+export interface LinkableVocabulary {
+  useCaseNames: ReadonlySet<string>;
+  solutionCategories: SolutionCategory[];
+}
+
 export const IntegrationCoverageDomain = {
   /**
    * Ranked candidates of a coverage search and, when the caller selects
@@ -306,30 +311,42 @@ export const IntegrationCoverageDomain = {
     return rows.map(({ name }) => name);
   },
 
+  /** The use cases and solution categories the document linkers resolve names against, loaded once per ingestion. */
+  loadLinkableVocabulary: async (): Promise<LinkableVocabulary> => {
+    const useCases: Pick<UseCase, 'name'>[] =
+      await db<UseCase>('UseCase').select('name');
+    return {
+      // The use case linker matches names case-insensitively
+      useCaseNames: new Set(useCases.map(({ name }) => name.toLowerCase())),
+      solutionCategories:
+        await solutionCategoryDomain.loadAllSolutionCategories(),
+    };
+  },
+
   /**
    * The use case and solution category names the document linkers resolve: an unknown name is dropped by the
    * upsert, so coverage is never inferred from it. Without a product, no solution category is linked.
    */
-  keepLinkableNames: async ({
-    useCases,
-    solutionCategories,
-    product = FiligranProduct.Opencti,
-  }: {
-    useCases: readonly string[];
-    solutionCategories: readonly string[];
-    product?: FiligranProduct | null;
-  }): Promise<{ use_cases: string[]; solution_categories: string[] }> => {
-    const linkableUseCases: string[] = [];
-    for (const name of useCases) {
-      if (await useCaseDomain.loadUseCaseByNameCaseInsensitive(name)) {
-        linkableUseCases.push(name);
-      }
+  keepLinkableNames: (
+    vocabulary: LinkableVocabulary,
+    {
+      useCases,
+      solutionCategories,
+      product = FiligranProduct.Opencti,
+    }: {
+      useCases: readonly string[];
+      solutionCategories: readonly string[];
+      product?: FiligranProduct | null;
     }
+  ): { use_cases: string[]; solution_categories: string[] } => {
+    const linkableUseCases = useCases.filter((name) =>
+      vocabulary.useCaseNames.has(name.toLowerCase())
+    );
     if (solutionCategories.length === 0 || !product) {
       return { use_cases: linkableUseCases, solution_categories: [] };
     }
     const index = buildSolutionCategoryIndex(
-      await solutionCategoryDomain.loadAllSolutionCategories(),
+      vocabulary.solutionCategories,
       product
     );
     const unknown = new Set(

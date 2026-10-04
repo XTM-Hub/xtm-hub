@@ -12,7 +12,10 @@ import { DocumentDomain } from '../../../../document/domain/document.domain';
 import { DocumentMetadataDomain } from '../../../../document/domain/document.metadata.domain';
 import { TelemetryApp } from '../../../../telemetry/telemetry.app';
 import { TelemetryHelper } from '../../../../telemetry/telemetry.helper';
-import { IntegrationCoverageDomain } from '../integration-coverage/integration-coverage.domain';
+import {
+  IntegrationCoverageDomain,
+  type LinkableVocabulary,
+} from '../integration-coverage/integration-coverage.domain';
 import { IntegrationCoverageHelper } from '../integration-coverage/integration-coverage.helper';
 import type { CoverageInferenceSource } from '../integration-coverage/integration-coverage.model';
 import {
@@ -32,9 +35,10 @@ import { ManifestInformation } from './ingest-manifest.model';
  */
 const loadEffectiveInferenceSource = async (
   connector: ManifestInformation,
-  existingConnector: Connector | undefined
+  existingConnector: Connector | undefined,
+  vocabulary: LinkableVocabulary
 ): Promise<CoverageInferenceSource> => {
-  const fromManifest = await IntegrationCoverageDomain.keepLinkableNames({
+  const fromManifest = IntegrationCoverageDomain.keepLinkableNames(vocabulary, {
     useCases: connector.use_cases ?? [],
     solutionCategories: connector.solution_categories ?? [],
   });
@@ -89,6 +93,8 @@ const keepCuratedFields = (
 export const IngestManifestDomain = {
   upsertConnectors: async (manifestInfo: ManifestInformation[]) => {
     const results: Array<Connector> = [];
+    // Loaded once for the whole manifest: names are resolved in memory
+    const vocabulary = await IntegrationCoverageDomain.loadLinkableVocabulary();
 
     for (const connector of manifestInfo) {
       try {
@@ -147,7 +153,8 @@ export const IngestManifestDomain = {
               existing: existingCoverage,
               inferenceSource: await loadEffectiveInferenceSource(
                 connector,
-                existingConnector
+                existingConnector,
+                vocabulary
               ),
             });
             return DocumentApp.upsertDocumentWithExternalImage<Connector>(
