@@ -31,6 +31,11 @@ The library lists every published hunt pack. Search by name, filter by use case,
 description, its hunts, its hunted platforms and its ATT&CK techniques. Download the pack file to import it manually,
 or share a link to it with partners who do not have an XTM Hub account.
 
+If the library or a hunt pack cannot be read, for example while XTM Hub cannot be reached, the page says so and offers
+**Try again**; the breadcrumb leads back to the library.
+
+![A hunt pack that cannot be read: the error message, Try again, and the breadcrumb back to the library](../assets/images/opencti-hunt-packs-details-error.png)
+
 ### Manual import to OpenCTI
 
 Download the pack file, then import it from the hunts list of your OpenCTI product (Defense > Hunts). Importing a
