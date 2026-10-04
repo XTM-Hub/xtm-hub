@@ -52,19 +52,9 @@ const HUNT_PLATFORM_PATTERN = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const isOpenCtiConnectorType = (value: string): value is OpenCtiConnectorType =>
   (OPENCTI_CONNECTOR_TYPES as readonly string[]).includes(value);
 
-// Versions accept `-lts`, `-lts.N` and `-ltsN` (utils/versioning.ts); padding needs `-lts.N`.
-const LTS_SPELLING = /^(\d+\.\d+\.\d+)-lts(?:\.?(\d+))?$/i;
-
 export const toPaddedVersion = (version: string): string | undefined => {
-  const canonical = version
-    .trim()
-    .replace(
-      LTS_SPELLING,
-      (_match, core: string, revision?: string) =>
-        `${core}-lts.${revision ?? '0'}`
-    );
   try {
-    return ManifestFragmentHelper.validateAndFormatManifestVersion(canonical);
+    return ManifestFragmentHelper.validateAndFormatMinimumVersion(version);
   } catch {
     return undefined;
   }

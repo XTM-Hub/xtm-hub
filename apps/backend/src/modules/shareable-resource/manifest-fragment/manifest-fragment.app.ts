@@ -28,7 +28,9 @@ export const ManifestFragmentApp = {
       return;
     }
     const minVersion = ManifestFragmentHelper.findMinConnectorVersion(
-      manifestFragments.map((fragment) => fragment.min_version)
+      manifestFragments.map((fragment) =>
+        ManifestFragmentHelper.canonicalizeMinimumVersion(fragment.min_version)
+      )
     );
     // min version is null only if there is no fragment to ingest
     if (!minVersion) {
@@ -47,7 +49,7 @@ export const ManifestFragmentApp = {
 
     const impactedManifests =
       await ManifestDomain.loadDistinctManifestsAboveVersion(
-        ManifestFragmentHelper.validateAndFormatManifestVersion(minVersion),
+        ManifestFragmentHelper.validateAndFormatMinimumVersion(minVersion),
         isLts,
         ManifestType.Connector
       );

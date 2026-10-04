@@ -124,7 +124,7 @@ const createConnectorDocument = async ({
         manager_supported: fragment.manager_supported,
         minimum_deployable_version: minimumDeployableVersion,
         minimum_deployable_version_padded:
-          ManifestFragmentHelper.validateAndFormatManifestVersion(
+          ManifestFragmentHelper.validateAndFormatMinimumVersion(
             minimumDeployableVersion
           ),
         license_type: licenseType,
@@ -171,7 +171,7 @@ export const ManifestFragmentDomain = {
       throw new Error(BadRequestErrorCode.IntegrationTypeNotRecognized);
     }
 
-    ManifestFragmentHelper.validateAndFormatManifestVersion(
+    ManifestFragmentHelper.validateAndFormatMinimumVersion(
       fragment.min_version
     );
     const connectorType = ConnectorTypeHelper.parse(fragment.image_type);
