@@ -165,6 +165,36 @@ describe('documentApp', () => {
       await expect(call).rejects.toThrow(ErrorCode.ServiceDefinitionNotFound);
     });
 
+    it('should refuse an integration whose slug a live integration already holds, also when both are created at once', async () => {
+      // Given
+      const create = () =>
+        DocumentApp.createDocument({
+          input: { ...documentData, slug: 'taken-slug' },
+          metadata: integrationMetadata,
+          serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+          sourceDocument: mockUpload,
+        });
+
+      // When
+      const outcomes = await Promise.allSettled([create(), create()]);
+
+      // Then
+      expect(outcomes.map(({ status }) => status).sort()).toEqual([
+        'fulfilled',
+        'rejected',
+      ]);
+      await expect(create()).rejects.toThrow(ErrorCode.DocumentUniqueSlugError);
+      const created = await TestHelper.document.loadAll({ slug: 'taken-slug' });
+      expect(created).toHaveLength(1);
+
+      // A removed integration frees its slug
+      await TestHelper.document.update(
+        { id: created[0]!.id },
+        { active: false }
+      );
+      await expect(create()).resolves.toMatchObject({ slug: 'taken-slug' });
+    });
+
     it('should create document with metadata', async () => {
       // When
       const result = await DocumentApp.createDocument({

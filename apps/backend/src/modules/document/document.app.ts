@@ -198,6 +198,18 @@ export const DocumentApp = {
         : withTransaction(callback);
 
     const createdDocument = await inCreationTransaction(async () => {
+      // Read under the slug lock: an ingestion or a creation that held it may
+      // have committed an integration of this slug in the meantime
+      if (
+        documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE &&
+        input.slug &&
+        (await DocumentDomain.isSlugTaken({
+          slug: input.slug,
+          type: documentType,
+        }))
+      ) {
+        throw new Error(ErrorCode.DocumentUniqueSlugError);
+      }
       const metadataKeys = documentMetadata.map(
         ({ key }) => key
       ) as DocumentMetadataKeys<Document>;
