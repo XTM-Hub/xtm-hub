@@ -1,15 +1,20 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../../../tests/helper/test.helper';
 import {
   TEST_ORGANIZATIONS,
   TEST_USE_CASES,
 } from '../../../../../../tests/tests.const';
+import {
+  DocumentMetadataKeyCode,
+  IntegrationType,
+} from '../../../../../__generated__/resolvers-types';
 import { requestContext } from '../../../../../context/request.context';
 import {
   SYSTEM_USER_CONTEXT,
   SYSTEM_USER_UUID,
 } from '../../../../../portal.const';
 import { minioInit } from '../../../../../server/initialize';
+import { DocumentApp } from '../../../../document/document.app';
 import { DocumentChildrenDomain } from '../../../../document/domain/document.children.domain';
 import { useCaseDomain } from '../../../../use-case/use-case.domain';
 import {
@@ -444,6 +449,113 @@ describe('upsertConnectors', () => {
         expect(result!.minimum_deployable_version).toBe(storedMinimum);
       }
     );
+
+    it('should keep the stored connector type when a refresh brings no valid container_type', async () => {
+      const manifest: ManifestInformation = {
+        ...baseManifest,
+        slug: 'hunt-type-kept',
+        name: 'Hunt Type Kept',
+        product_version: '7.261010.0',
+        manager_supported: true,
+        image_type: 'INTERNAL_HUNT',
+        minimum_deployable_version: undefined,
+      };
+      await IngestManifestDomain.upsertConnectors([manifest]);
+
+      const [result] = await IngestManifestDomain.upsertConnectors([
+        { ...manifest, image_type: undefined },
+      ]);
+
+      expect(result).toBeDefined();
+      expect(result!.image_type).toBe('INTERNAL_HUNT');
+      expect(result!.minimum_deployable_version).toBe('7.261003.0');
+    });
+
+    it('should keep a connector save committed while the refresh handled an earlier connector', async () => {
+      // Given two hunt connectors, and a refresh held right after it wrote the first one
+      const first: ManifestInformation = {
+        ...baseManifest,
+        slug: 'refresh-lock-first',
+        name: 'Refresh Lock First',
+        product_version: '7.261010.0',
+        manager_supported: true,
+        image_type: 'INTERNAL_HUNT',
+        minimum_deployable_version: undefined,
+      };
+      const second: ManifestInformation = {
+        ...first,
+        slug: 'refresh-lock-second',
+        name: 'Refresh Lock Second',
+      };
+      // Each run reads fresh contracts: upsertConnectors completes the ones it gets
+      const [, secondConnector] = await IngestManifestDomain.upsertConnectors([
+        { ...first },
+        { ...second },
+      ]);
+      const writeConnector = DocumentApp.upsertDocumentWithExternalImage;
+      let reachHold = () => {};
+      let releaseHold = () => {};
+      const holdReached = new Promise<void>((resolve) => {
+        reachHold = resolve;
+      });
+      const holdReleased = new Promise<void>((resolve) => {
+        releaseHold = resolve;
+      });
+      vi.spyOn(
+        DocumentApp,
+        'upsertDocumentWithExternalImage'
+      ).mockImplementationOnce(async (...args) => {
+        const written = await writeConnector(...args);
+        reachHold();
+        await holdReleased;
+        return written;
+      });
+      const refresh = IngestManifestDomain.upsertConnectors([
+        { ...first },
+        { ...second },
+      ]);
+      await holdReached;
+
+      // When the second connector is saved with a higher minimum meanwhile
+      await DocumentApp.updateDocument({
+        parentDocumentId: secondConnector!.id,
+        serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
+        metadata: [
+          {
+            key: DocumentMetadataKeyCode.IntegrationType,
+            value: IntegrationType.Connector,
+          },
+          { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+          { key: DocumentMetadataKeyCode.Verified, value: 'true' },
+          { key: DocumentMetadataKeyCode.ManagerSupported, value: 'true' },
+          { key: DocumentMetadataKeyCode.PlaybookSupported, value: 'false' },
+          {
+            key: DocumentMetadataKeyCode.ContainerImage,
+            value: second.container_image,
+          },
+          {
+            key: DocumentMetadataKeyCode.SourceCode,
+            value: second.source_code,
+          },
+          {
+            key: DocumentMetadataKeyCode.MinimumDeployableVersion,
+            value: '7.261020.0',
+          },
+        ],
+        input: {
+          name: second.name,
+          short_description: second.short_description,
+          active: true,
+        },
+        existingImageIds: [],
+      });
+      releaseHold();
+      const [, refreshedSecond] = await refresh;
+
+      // Then the refresh read the saved minimum instead of restoring the older one
+      expect(refreshedSecond!.image_type).toBe('INTERNAL_HUNT');
+      expect(refreshedSecond!.minimum_deployable_version).toBe('7.261020.0');
+    });
   });
 
   describe('datasheet_url, demo_url and blogpost_url preservation', () => {
