@@ -11,7 +11,7 @@ import {
 } from '../../__generated__/resolvers-types';
 import { PortalContext } from '../../model/portal-context';
 import { REDACTED_PULSE_ERROR_MESSAGE } from '../../server/apollo-plugins/log';
-import { logApp } from '../../utils/app-logger.util';
+import { appLogger } from '../../utils/app-logger.util';
 import { UnknownErrorCode } from '../../utils/error/error.code';
 import { PulseApp } from './pulse.app';
 import { PulseErrorCode, PulseErrors } from './pulse.errors';
@@ -141,8 +141,8 @@ describe('pulse resolver', () => {
     );
     vi.spyOn(PulseApp, 'pushPulse').mockRejectedValue(failure);
     const logged = vi
-      .spyOn(logApp, 'error')
-      .mockImplementation(() => undefined);
+      .spyOn(appLogger, 'log')
+      .mockImplementation(() => appLogger);
 
     // When
     const call = pulseResolver.Mutation!.pushPulse!(
@@ -171,7 +171,7 @@ describe('pulse resolver', () => {
     expect(serialized).not.toContain('pseudonym-9f8e');
     expect(serialized).not.toContain('PulseKeyContributor');
     expect(serialized).toContain(REDACTED_PULSE_ERROR_MESSAGE);
-    expect(serialized).toContain('23505');
+    expect(serialized).toContain('"code":"23505"');
   });
 
   it('should keep a code-only message so the shared error mapping still applies', () => {

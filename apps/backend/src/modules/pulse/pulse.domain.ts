@@ -825,8 +825,10 @@ export const PulseDomain = {
   // without the pair counting 0 (its sector total: its events in that sector
   // only). Computed in the database like loadBenchmarkTopItems, the zeros
   // being the first positions of the sorted totals, so a benchmark transfers
-  // one row per pair whatever the size of the network. k is applied by
-  // PulseStats.summarizeBenchmark.
+  // one row per pair whatever the size of the network. The two values around
+  // the median are found by ranking the reported totals with a window
+  // function, whose sort spills to disk past work_mem, rather than by building
+  // an array of every total. k is applied by PulseStats.summarizeBenchmark.
   loadBenchmarkMetrics: async ({
     platformId,
     fromDay,
@@ -864,35 +866,50 @@ export const PulseDomain = {
        ),
        metrics AS (
          SELECT object_type, event_kind,
-                COALESCE(array_agg(total ORDER BY total) FILTER (WHERE total > 0), '{}') AS network_totals,
-                COALESCE(array_agg(sector_total ORDER BY sector_total) FILTER (WHERE sector_total > 0), '{}') AS sector_totals,
+                (COUNT(*) FILTER (WHERE total > 0))::int AS network_reported,
+                (COUNT(*) FILTER (WHERE sector_total > 0))::int AS sector_reported,
                 COALESCE(SUM(total) FILTER (WHERE platform = ?), 0)::float8 AS caller_total,
                 COALESCE(SUM(sector_total) FILTER (WHERE platform = ?), 0)::float8 AS caller_sector_total
          FROM platform_totals
          GROUP BY object_type, event_kind
        ),
+       ranked AS (
+         SELECT object_type, event_kind, 'network' AS scope, total AS value,
+                row_number() OVER (PARTITION BY object_type, event_kind ORDER BY total) AS rank
+         FROM platform_totals
+         WHERE total > 0
+         UNION ALL
+         SELECT object_type, event_kind, 'sector', sector_total,
+                row_number() OVER (PARTITION BY object_type, event_kind ORDER BY sector_total)
+         FROM platform_totals
+         WHERE sector_total > 0
+       ),
        scoped AS (
-         SELECT m.object_type, m.event_kind, 'network' AS scope, m.network_totals AS totals,
-                GREATEST(p.network, cardinality(m.network_totals)) AS size
+         SELECT m.object_type, m.event_kind, 'network' AS scope, m.network_reported AS reported,
+                GREATEST(p.network, m.network_reported) AS size
          FROM metrics m CROSS JOIN population p
          UNION ALL
-         SELECT m.object_type, m.event_kind, 'sector', m.sector_totals,
-                GREATEST(p.sector, cardinality(m.sector_totals))
+         SELECT m.object_type, m.event_kind, 'sector', m.sector_reported,
+                GREATEST(p.sector, m.sector_reported)
          FROM metrics m CROSS JOIN population p
        ),
        positions AS (
-         SELECT object_type, event_kind, scope, totals, size,
-                size - cardinality(totals) AS zeros,
+         SELECT object_type, event_kind, scope, size,
+                size - reported AS zeros,
                 floor((size - 1) * 0.5)::int AS low,
                 ceil((size - 1) * 0.5)::int AS high,
                 (((size - 1) * 0.5) - floor((size - 1) * 0.5))::float8 AS fraction
          FROM scoped
        ),
        bounds AS (
-         SELECT object_type, event_kind, scope, size, fraction,
-                CASE WHEN low < zeros THEN 0 ELSE totals[low - zeros + 1] END AS low_value,
-                CASE WHEN high < zeros THEN 0 ELSE totals[high - zeros + 1] END AS high_value
-         FROM positions
+         SELECT s.object_type, s.event_kind, s.scope, s.size, s.fraction,
+                CASE WHEN s.low < s.zeros THEN 0 ELSE lo.value END AS low_value,
+                CASE WHEN s.high < s.zeros THEN 0 ELSE hi.value END AS high_value
+         FROM positions s
+         LEFT JOIN ranked lo ON lo.object_type = s.object_type AND lo.event_kind = s.event_kind
+           AND lo.scope = s.scope AND lo.rank = s.low - s.zeros + 1
+         LEFT JOIN ranked hi ON hi.object_type = s.object_type AND hi.event_kind = s.event_kind
+           AND hi.scope = s.scope AND hi.rank = s.high - s.zeros + 1
        ),
        medians AS (
          SELECT object_type, event_kind,
@@ -947,7 +964,8 @@ export const PulseDomain = {
   // median runs over every platform active in the sector, a platform that did
   // not report the key counting 0; k distinct reporters are still required.
   // The zeros are not materialized: they are the first positions of the
-  // sorted totals, so percentile_cont(0.5) is read from the reported ones.
+  // sorted totals, so percentile_cont(0.5) is read from the reported ones,
+  // ranked with a window function whose sort spills to disk past work_mem.
   loadBenchmarkTopItems: async ({
     platformId,
     fromDay,
@@ -990,25 +1008,35 @@ export const PulseDomain = {
          GROUP BY c.at_rest_key, c.object_type, c.pulse_platform_id
        ),
        reported AS (
-         SELECT at_rest_key, object_type, array_agg(total ORDER BY total) AS totals
+         SELECT at_rest_key, object_type, COUNT(*)::int AS reported,
+                GREATEST((SELECT platforms FROM sector_size), COUNT(*)::int) AS size
          FROM per_platform
          GROUP BY at_rest_key, object_type
          HAVING COUNT(*) >= ?
        ),
+       ranked AS (
+         SELECT p.at_rest_key, p.object_type, p.total,
+                row_number() OVER (PARTITION BY p.at_rest_key, p.object_type ORDER BY p.total) AS rank
+         FROM per_platform p
+         JOIN reported r ON r.at_rest_key = p.at_rest_key AND r.object_type = p.object_type
+       ),
        positions AS (
-         SELECT r.at_rest_key, r.object_type, r.totals,
-                GREATEST(z.platforms, cardinality(r.totals)) - cardinality(r.totals) AS zeros,
-                floor((GREATEST(z.platforms, cardinality(r.totals)) - 1) * 0.5)::int AS low,
-                ceil((GREATEST(z.platforms, cardinality(r.totals)) - 1) * 0.5)::int AS high,
-                (((GREATEST(z.platforms, cardinality(r.totals)) - 1) * 0.5)
-                  - floor((GREATEST(z.platforms, cardinality(r.totals)) - 1) * 0.5))::float8 AS fraction
-         FROM reported r CROSS JOIN sector_size z
+         SELECT at_rest_key, object_type,
+                size - reported AS zeros,
+                floor((size - 1) * 0.5)::int AS low,
+                ceil((size - 1) * 0.5)::int AS high,
+                (((size - 1) * 0.5) - floor((size - 1) * 0.5))::float8 AS fraction
+         FROM reported
        ),
        bounds AS (
-         SELECT at_rest_key, object_type, fraction,
-                CASE WHEN low < zeros THEN 0 ELSE totals[low - zeros + 1] END AS low_value,
-                CASE WHEN high < zeros THEN 0 ELSE totals[high - zeros + 1] END AS high_value
-         FROM positions
+         SELECT s.at_rest_key, s.object_type, s.fraction,
+                CASE WHEN s.low < s.zeros THEN 0 ELSE lo.total END AS low_value,
+                CASE WHEN s.high < s.zeros THEN 0 ELSE hi.total END AS high_value
+         FROM positions s
+         LEFT JOIN ranked lo ON lo.at_rest_key = s.at_rest_key AND lo.object_type = s.object_type
+           AND lo.rank = s.low - s.zeros + 1
+         LEFT JOIN ranked hi ON hi.at_rest_key = s.at_rest_key AND hi.object_type = s.object_type
+           AND hi.rank = s.high - s.zeros + 1
        ),
        stats AS (
          SELECT at_rest_key, object_type,
