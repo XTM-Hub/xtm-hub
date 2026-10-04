@@ -644,6 +644,84 @@ const loadDigestItems = async ({
   });
 };
 
+// A read of several statements answers from one data generation: when a purge
+// or a retention step commits in between, it reads again, as the digest and
+// trending computations do.
+const readUnderOneGeneration = async <T>(
+  read: () => Promise<T>
+): Promise<T> => {
+  for (
+    let attempt = 0;
+    attempt < PULSE_SNAPSHOT_COMPUTE_ATTEMPTS;
+    attempt += 1
+  ) {
+    const generation = await PulseDomain.loadDataGeneration();
+    const result = await read();
+    if ((await PulseDomain.loadDataGeneration()) === generation) {
+      return result;
+    }
+  }
+  throw new Error(
+    'Threat Pulse contributions kept changing while the answer was read'
+  );
+};
+
+// The network statistics a lookup answers for its keys. Bounded by the
+// requested day too: a lookup of yesterday never counts the platforms that
+// first contributed the key today.
+const loadLookupData = async ({
+  keys,
+  retentionStart,
+  day,
+  kThreshold,
+  sectorBucket,
+}: {
+  keys: PulseKeyRef[];
+  retentionStart: string;
+  day: string;
+  kThreshold: number;
+  sectorBucket: PulsePlatformRecord['sector_bucket'];
+}) => {
+  const networkPlatforms = await PulseDomain.countKeyPlatformsInWindow({
+    keys,
+    fromDay: retentionStart,
+    toDay: day,
+  });
+  const publishedKeys = keys.filter(
+    (key) => (networkPlatforms.get(pulseKeyId(key)) ?? 0) >= kThreshold
+  );
+  const presenceByKey = new Map<string, PulseKeyPresence[]>();
+  let seen = new Map<string, { firstSeen: string; lastSeen: string }>();
+  let activeContributors = 0;
+  if (publishedKeys.length > 0) {
+    seen = await PulseDomain.loadSeenRanges({
+      keys: publishedKeys,
+      sinceDay: retentionStart,
+      day,
+      kThreshold,
+    });
+    const presences = await PulseDomain.loadKeyPresence({
+      keys: publishedKeys,
+      day,
+      sectorBucket,
+    });
+    for (const presence of presences) {
+      const keyId = pulseKeyId(presence);
+      const keyPresences = presenceByKey.get(keyId);
+      if (keyPresences) {
+        keyPresences.push(presence);
+      } else {
+        presenceByKey.set(keyId, [presence]);
+      }
+    }
+    activeContributors = await PulseDomain.countActiveContributors({
+      fromDay: activityWindowStart(day),
+      toDay: day,
+    });
+  }
+  return { networkPlatforms, seen, presenceByKey, activeContributors };
+};
+
 // After contributions were deleted: the generation moves first, so a snapshot
 // computed from the deleted data and saved meanwhile is never served.
 const invalidateSnapshots = async (): Promise<void> => {
@@ -696,7 +774,11 @@ const purgeAllKeyContributors = async (platformId: number): Promise<void> => {
 // Day by day under the platform lock, each step keeping the aggregates equal
 // to the ledger; the last step deletes the platform record itself.
 const purgePlatform = async (pseudonym: string): Promise<number> => {
-  const platform = await PulseDomain.loadPlatformByPseudonym(pseudonym);
+  // Under the lock too: a first contribution still being written is waited
+  // for, then purged with the rest.
+  const platform = await withPlatformLock(pseudonym, () =>
+    PulseDomain.loadPlatformByPseudonym(pseudonym)
+  );
   if (!platform) {
     return 0;
   }
@@ -894,46 +976,18 @@ export const PulseApp = {
         validated.day,
         retentionMonths
       );
-      // Bounded by the requested day too: a lookup of yesterday never counts
-      // the platforms that first contributed the key today.
-      const networkPlatforms = await PulseDomain.countKeyPlatformsInWindow({
-        keys,
-        fromDay: retentionStart,
-        toDay: validated.day,
-      });
-      const publishedKeys = keys.filter(
-        (key) => (networkPlatforms.get(pulseKeyId(key)) ?? 0) >= kThreshold
-      );
-
-      const presenceByKey = new Map<string, PulseKeyPresence[]>();
-      let seen = new Map<string, { firstSeen: string; lastSeen: string }>();
-      let activeContributors = 0;
-      if (publishedKeys.length > 0) {
-        seen = await PulseDomain.loadSeenRanges({
-          keys: publishedKeys,
-          sinceDay: retentionStart,
-          day: validated.day,
-          kThreshold,
-        });
-        const presences = await PulseDomain.loadKeyPresence({
-          keys: publishedKeys,
-          day: validated.day,
-          sectorBucket: platform.sector_bucket,
-        });
-        for (const presence of presences) {
-          const keyId = pulseKeyId(presence);
-          const keyPresences = presenceByKey.get(keyId);
-          if (keyPresences) {
-            keyPresences.push(presence);
-          } else {
-            presenceByKey.set(keyId, [presence]);
-          }
-        }
-        activeContributors = await PulseDomain.countActiveContributors({
-          fromDay: activityWindowStart(validated.day),
-          toDay: validated.day,
-        });
-      }
+      // One data generation for every read of the answer: a purge or a
+      // retention step committed in between makes it read again.
+      const { networkPlatforms, seen, presenceByKey, activeContributors } =
+        await readUnderOneGeneration(() =>
+          loadLookupData({
+            keys,
+            retentionStart,
+            day: validated.day,
+            kThreshold,
+            sectorBucket: platform.sector_bucket,
+          })
+        );
 
       return validated.hashes.map((hash) => {
         const key = keyByHash.get(hash);
@@ -1010,23 +1064,28 @@ export const PulseApp = {
         -(PULSE_PERIOD_DAYS[validated.period] - 1)
       );
 
-      const totals = await PulseDomain.loadPlatformTotals({
-        fromDay,
-        toDay: validated.day,
-        sectorBucket: platform.sector_bucket,
-      });
-      const summary = PulseStats.summarizeBenchmark({
-        totals,
-        callerPlatform: platform.id,
-        kThreshold,
-      });
-      const topItems = await PulseDomain.loadBenchmarkTopItems({
-        platformId: platform.id,
-        fromDay,
-        toDay: validated.day,
-        sectorBucket: platform.sector_bucket,
-        kThreshold,
-        limit: PULSE_MAX_BENCHMARK_ITEMS,
+      // The medians and the top items come from one data generation.
+      const { summary, topItems } = await readUnderOneGeneration(async () => {
+        const totals = await PulseDomain.loadPlatformTotals({
+          fromDay,
+          toDay: validated.day,
+          sectorBucket: platform.sector_bucket,
+        });
+        return {
+          summary: PulseStats.summarizeBenchmark({
+            totals,
+            callerPlatform: platform.id,
+            kThreshold,
+          }),
+          topItems: await PulseDomain.loadBenchmarkTopItems({
+            platformId: platform.id,
+            fromDay,
+            toDay: validated.day,
+            sectorBucket: platform.sector_bucket,
+            kThreshold,
+            limit: PULSE_MAX_BENCHMARK_ITEMS,
+          }),
+        };
       });
 
       return {

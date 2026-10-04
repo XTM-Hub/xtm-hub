@@ -72,7 +72,7 @@ Every operation authenticates with the platform token of the connected product a
 | `PULSE_K_THRESHOLD` | `5` | Minimum number of distinct platforms before a statistic is published (2 to 1000; values below 5 are not recommended). |
 | `PULSE_RETENTION_MONTHS` | `13` | Retention of the contributions, in months, from 9 to 120: the 90-day trends compare the last 270 days. Below 9, the service stays disabled and the nightly retention still deletes contributions older than the configured period. |
 | `PULSE_CONTRIBUTION_WINDOW_DAYS` | `7` | A platform is an active contributor while its last contribution is at most this old. |
-| `PULSE_CONTRIBUTION_GRACE_DAYS` | `14` | A platform keeps lookups, trending lists and benchmarks for this many days after its last contribution (at least `PULSE_CONTRIBUTION_WINDOW_DAYS`). |
+| `PULSE_CONTRIBUTION_GRACE_DAYS` | `14` | A platform keeps lookups, trending lists and benchmarks for this many days after its last contribution (at least `PULSE_CONTRIBUTION_WINDOW_DAYS`, and at most 28 days per month of `PULSE_RETENTION_MONTHS`, so that the retention never deletes a platform still in its grace period). |
 | `PULSE_DIGEST_SIZE` | `5000` | Objects in the preview digest (100 to 20,000). |
 | `PULSE_TRENDING_CACHE_TTL_MINUTES` | `60` | Cache duration of the trending lists and of the preview digest. |
 | `PULSE_RATE_LIMIT_PUSH_PULSE`, `PULSE_RATE_LIMIT_PULSE_LOOKUP`, `PULSE_RATE_LIMIT_PULSE_TRENDING`, `PULSE_RATE_LIMIT_PULSE_BENCHMARK`, `PULSE_RATE_LIMIT_PULSE_SALT`, `PULSE_RATE_LIMIT_PULSE_STATUS`, `PULSE_RATE_LIMIT_PULSE_DIGEST` | `120`, `600`, `60`, `30`, `120`, `120`, `24` | Calls allowed per platform and per hour. |

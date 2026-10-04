@@ -194,6 +194,14 @@ describe('resolvePulseConfig', () => {
       }),
     },
     {
+      description:
+        'a grace period the retention would cut short (9 months, 365 days)',
+      raw: makeRawConfig({
+        retention_months: 9,
+        contribution_grace_days: 365,
+      }),
+    },
+    {
       description: 'a digest below 100 keys',
       raw: makeRawConfig({ digest_size: 99 }),
     },

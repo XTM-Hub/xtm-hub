@@ -114,9 +114,13 @@ const readRateLimit = (raw: PulseRawConfig, operation: PulseOperation) =>
   );
 
 // The grace period starts at the last contribution like the activity window,
-// so it can only extend it.
+// so it can only extend it. The retention deletes a platform whose last
+// contribution left the retention period, so the grace period fits in the
+// shortest such period (28 days a month): no platform loses its reads before
+// the date its status announces.
 const readContributionDays = (
-  raw: PulseRawConfig
+  raw: PulseRawConfig,
+  retentionMonths: number
 ): { contributionWindowDays: number; contributionGraceDays: number } => {
   const contributionWindowDays = readInteger(
     'contribution_window_days',
@@ -133,8 +137,20 @@ const readContributionDays = (
       'pulse.contribution_grace_days must be greater than or equal to pulse.contribution_window_days'
     );
   }
+  if (contributionGraceDays > retentionMonths * 28) {
+    throw new Error(
+      'pulse.contribution_grace_days must fit in pulse.retention_months (28 days a month)'
+    );
+  }
   return { contributionWindowDays, contributionGraceDays };
 };
+
+const readServiceRetentionMonths = (raw: PulseRawConfig): number =>
+  readInteger(
+    'retention_months',
+    raw.retention_months,
+    SETTINGS_RANGES.service_retention_months
+  );
 
 const readSettings = (raw: PulseRawConfig): PulseSettings => ({
   kThreshold: readInteger(
@@ -142,12 +158,8 @@ const readSettings = (raw: PulseRawConfig): PulseSettings => ({
     raw.k_threshold,
     SETTINGS_RANGES.k_threshold
   ),
-  retentionMonths: readInteger(
-    'retention_months',
-    raw.retention_months,
-    SETTINGS_RANGES.service_retention_months
-  ),
-  ...readContributionDays(raw),
+  retentionMonths: readServiceRetentionMonths(raw),
+  ...readContributionDays(raw, readServiceRetentionMonths(raw)),
   digestSize: readInteger(
     'digest_size',
     raw.digest_size,

@@ -53,6 +53,33 @@ const pauseNextSave = (method: SnapshotSave) => {
   return { reached, release: () => release() };
 };
 
+type PausableRead =
+  'upsertPlatformDailyTotals' | 'loadSeenRanges' | 'loadBenchmarkTopItems';
+
+// Holds the next call of a domain function until `release()`: what ran before
+// it is read or written, what follows is not.
+const pauseNextCall = (method: PausableRead) => {
+  let markReached = (): void => undefined;
+  let release = (): void => undefined;
+  const reached = new Promise<void>((resolve) => {
+    markReached = resolve;
+  });
+  const released = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const domain = PulseDomain as unknown as Record<
+    PausableRead,
+    (input: unknown) => Promise<unknown>
+  >;
+  const original = domain[method];
+  vi.spyOn(domain, method).mockImplementationOnce(async (input) => {
+    markReached();
+    await released;
+    return original(input);
+  });
+  return { reached, release: () => release() };
+};
+
 describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
   let clock: ReturnType<typeof usePulseClock>;
 
@@ -295,6 +322,80 @@ describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
         totals: 1,
         generationMoved: true,
       });
+    });
+
+    it('should purge a first contribution still being written when the purge starts', async () => {
+      // Given a first push paused inside its transaction, under the platform lock
+      const [client] = await registerPulseClients(1);
+      const pause = pauseNextCall('upsertPlatformDailyTotals');
+      const pushing = client!.push({
+        day: PULSE_TEST_TODAY,
+        records: [malware(LOCKBIT)],
+      });
+      await pause.reached;
+
+      // When the purge starts before that push commits
+      const purging = client!.purge();
+      await new Promise((resolve) => {
+        setTimeout(resolve, 300);
+      });
+      pause.release();
+      await pushing;
+      const result = await purging;
+
+      // Then the purge waited for the contribution and removed it
+      expect({
+        deleted: result.deleted_records,
+        contributions: await TestHelper.pulse.countRows('PulseContribution'),
+        platforms: await TestHelper.pulse.countRows('PulsePlatform'),
+      }).toEqual({ deleted: 1, contributions: 0, platforms: 0 });
+    });
+
+    it('should never answer a lookup read across a purge', async () => {
+      // Given five platforms reporting LockBit and a lookup paused once it counted them
+      const clients = await registerPulseClients(5);
+      await pushFromEach(clients, {
+        day: PULSE_TEST_TODAY,
+        records: [malware(LOCKBIT)],
+      });
+      const pause = pauseNextCall('loadSeenRanges');
+      const inFlight = clients[1]!.lookup({
+        day: PULSE_TEST_TODAY,
+        objectType: MALWARE,
+        values: [LOCKBIT],
+      });
+      await pause.reached;
+
+      // When one of them purges before the lookup reads the rest
+      await clients[0]!.purge();
+      pause.release();
+      const [result] = await inFlight;
+
+      // Then the lookup is read again after the purge: four platforms stay below k
+      expect(result?.published).toBe(false);
+    });
+
+    it('should never answer a benchmark read across a purge', async () => {
+      // Given five platforms of one sector and a benchmark paused once it read the totals
+      const clients = await registerPulseClients(5);
+      await pushFromEach(clients, {
+        day: PULSE_TEST_TODAY,
+        records: [malware(LOCKBIT)],
+      });
+      const pause = pauseNextCall('loadBenchmarkTopItems');
+      const inFlight = clients[1]!.benchmark({
+        day: PULSE_TEST_TODAY,
+        period: PulsePeriod.Last_30Days,
+      });
+      await pause.reached;
+
+      // When one of them purges before the benchmark reads its top items
+      await clients[0]!.purge();
+      pause.release();
+      const result = await inFlight;
+
+      // Then the medians come from the platforms left: four, below k
+      expect(result.sector_platforms_bucket).toBeNull();
     });
 
     it('should limit purges to 5 per 24 hours', async () => {
