@@ -91,6 +91,23 @@ export const BadRequestError: ErrorBuilder = (
   );
 };
 
+/** A caller over a rate limit: retryable (HTTP 429), logged as a warning since a flood is expected to hit it. */
+export const TooManyRequestsError: ErrorBuilder = (
+  message: string,
+  information?: ErrorInformation
+): CustomApolloError => {
+  return errorUtil(
+    ErrorType.TooManyRequests,
+    message || 'Too many requests, please try again later',
+    {
+      http_status: 429,
+      genre: ErrorCategory.BadRequest,
+    },
+    information,
+    'warn'
+  );
+};
+
 export const UnknownError: ErrorBuilder = (
   message: string,
   information?: ErrorInformation,

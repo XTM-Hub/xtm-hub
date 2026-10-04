@@ -10,8 +10,9 @@ import { describe, expect, it } from 'vitest';
 import { selectedSubFieldNames } from './graphql-selection.util';
 
 const resolveInfoOf = (
-  query: string
-): Pick<GraphQLResolveInfo, 'fieldNodes' | 'fragments'> => {
+  query: string,
+  variableValues: Record<string, unknown> = {}
+): Pick<GraphQLResolveInfo, 'fieldNodes' | 'fragments' | 'variableValues'> => {
   const document = parse(query);
   const operation = document.definitions.find(
     (definition): definition is OperationDefinitionNode =>
@@ -28,7 +29,7 @@ const resolveInfoOf = (
   const fieldNodes = (operation?.selectionSet.selections ?? []).filter(
     (selection): selection is FieldNode => selection.kind === Kind.FIELD
   );
-  return { fieldNodes, fragments };
+  return { fieldNodes, fragments, variableValues };
 };
 
 describe('selectedSubFieldNames', () => {
@@ -48,4 +49,19 @@ describe('selectedSubFieldNames', () => {
       );
     }
   );
+
+  it.each`
+    description                                    | query                                                                                                               | variables         | expected
+    ${'facets included'}                           | ${'{ search { facets @include(if: true) { sector { value } } } }'}                                                  | ${{}}             | ${['sector']}
+    ${'facets excluded'}                           | ${'{ search { facets @include(if: false) { sector { value } } } }'}                                                 | ${{}}             | ${[]}
+    ${'facets skipped'}                            | ${'{ search { facets @skip(if: true) { sector { value } } } }'}                                                     | ${{}}             | ${[]}
+    ${'facets skipped by a variable'}              | ${'query ($skip: Boolean!) { search { facets @skip(if: $skip) { sector { value } } } }'}                            | ${{ skip: true }} | ${[]}
+    ${'one facet excluded by a variable'}          | ${'query ($all: Boolean!) { search { facets { sector { value } region @include(if: $all) { value } } } }'}          | ${{ all: false }} | ${['sector']}
+    ${'a fragment spread skipped'}                 | ${'{ search { ...ResultFields @skip(if: true) } } fragment ResultFields on Result { facets { region { value } } }'} | ${{}}             | ${[]}
+    ${'an inline fragment included by a variable'} | ${'query ($all: Boolean!) { search { ... @include(if: $all) { facets { region { value } } } } }'}                   | ${{ all: true }}  | ${['region']}
+  `('returns $expected with $description', ({ query, variables, expected }) => {
+    expect(
+      selectedSubFieldNames(resolveInfoOf(query, variables), 'facets')
+    ).toEqual(expected);
+  });
 });

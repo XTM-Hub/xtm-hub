@@ -11,6 +11,7 @@ import {
 import type { PortalContext } from '../../../../../model/portal-context';
 import {
   BadRequestErrorCode,
+  TooManyRequestsErrorCode,
   UnknownErrorCode,
 } from '../../../../../utils/error/error.code';
 import { IntegrationCoverageApp } from './integration-coverage.app';
@@ -174,8 +175,8 @@ describe('integration-coverage.resolver', () => {
 
     // Then
     await expect(limited).rejects.toMatchObject({
-      message: BadRequestErrorCode.CoverageSearchRateLimited,
-      data: expect.objectContaining({ http_status: 400 }),
+      message: TooManyRequestsErrorCode.CoverageSearchRateLimited,
+      data: expect.objectContaining({ http_status: 429 }),
     });
     await expect(
       callSelecting(anonymous('203.0.113.7'), infoSelecting())

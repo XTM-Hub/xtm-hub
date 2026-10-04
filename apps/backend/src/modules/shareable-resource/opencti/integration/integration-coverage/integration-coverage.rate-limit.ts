@@ -1,6 +1,5 @@
 import { ipKeyGenerator } from 'express-rate-limit';
-import { BadRequestErrorCode } from '../../../../../utils/error/error.code';
-import { BadRequestError } from '../../../../../utils/error/error.util';
+import { TooManyRequestsErrorCode } from '../../../../../utils/error/error.code';
 
 /**
  * Coverage searches selecting facets that one caller may run per window: each
@@ -79,9 +78,8 @@ const coverageFacetsLimiter = createFixedWindowLimiter({
 export const IntegrationCoverageRateLimit = {
   assertFacetsAllowed: (caller: { userId?: string; ip?: string }): void => {
     if (!coverageFacetsLimiter.consume(coverageFacetsCallerKey(caller))) {
-      throw BadRequestError(BadRequestErrorCode.CoverageSearchRateLimited, {
-        detail: 'Too many coverage searches with facets, retry in a minute',
-      });
+      // Mapped (HTTP 429) and logged once, by the resolver
+      throw new Error(TooManyRequestsErrorCode.CoverageSearchRateLimited);
     }
   },
   reset: () => coverageFacetsLimiter.clear(),

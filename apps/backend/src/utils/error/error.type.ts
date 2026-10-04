@@ -15,6 +15,7 @@ export enum ErrorCategory {
 
 export enum ErrorType {
   BadRequest = 'BAD_REQUEST',
+  TooManyRequests = 'TOO_MANY_REQUESTS',
   ForbiddenAccess = 'FORBIDDEN_ACCESS',
   Unauthenticated = 'UNAUTHENTICATED',
   UnknownError = 'UNKNOWN_ERROR',

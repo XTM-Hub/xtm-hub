@@ -4,6 +4,7 @@ import {
   BadRequestErrorCode,
   ForbiddenErrorCode,
   NotFoundErrorCode,
+  TooManyRequestsErrorCode,
   UnknownErrorCode,
 } from './error.code';
 import { CustomApolloError } from './error.type';
@@ -13,6 +14,7 @@ import {
   ErrorBuilder,
   ForbiddenAccess,
   NotFoundError,
+  TooManyRequestsError,
   UnknownError,
 } from './error.util';
 
@@ -22,6 +24,10 @@ const forbiddenErrorSet: Set<string> = new Set(
 
 const badRequestErrorsSet: Set<string> = new Set(
   Object.values(BadRequestErrorCode)
+);
+
+const tooManyRequestsErrorSet: Set<string> = new Set(
+  Object.values(TooManyRequestsErrorCode)
 );
 
 const alreadyExistsErrorSet: Set<string> = new Set(
@@ -35,6 +41,7 @@ const notFoundErrorsSet: Set<string> = new Set(
 const errorSetMapping: Map<Set<string>, ErrorBuilder> = new Map();
 errorSetMapping.set(forbiddenErrorSet, ForbiddenAccess);
 errorSetMapping.set(badRequestErrorsSet, BadRequestError);
+errorSetMapping.set(tooManyRequestsErrorSet, TooManyRequestsError);
 errorSetMapping.set(alreadyExistsErrorSet, AlreadyExistsError);
 errorSetMapping.set(notFoundErrorsSet, NotFoundError);
 
