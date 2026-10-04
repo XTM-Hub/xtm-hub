@@ -81,7 +81,8 @@ describe('coverage filters (free text)', () => {
     ${'blank JSON values dropped'}              | ${'["Finance"," "]'}                            | ${{ Finance: [] }}
     ${'a colon kept in a legacy list value'}    | ${'Europe: Western,Asia'}                       | ${{ 'Europe: Western': [], Asia: [] }}
     ${'case and spacing duplicates once'}       | ${'["Finance","finance"," FINANCE ","Energy"]'} | ${{ Finance: [], Energy: [] }}
-    ${'legacy list duplicates once'}            | ${'Finance,finance,Retail  goods,retail goods'} | ${{ Finance: [], 'Retail  goods': [] }}
+    ${'legacy list duplicates once'}            | ${'Finance,finance,Retail  goods,retail goods'} | ${{ Finance: [], 'Retail goods': [] }}
+    ${'spacing collapsed like stored values'}   | ${'["Retail  goods"]'}                          | ${{ 'Retail goods': [] }}
   `('parses $description', ({ raw, expected }) => {
     expect(parseSelection(raw, SECTOR_PARAM)).toEqual(expected);
   });
