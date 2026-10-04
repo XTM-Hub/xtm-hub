@@ -84,6 +84,41 @@ describe('huntImportErrors', () => {
     expect(huntImportErrors({ name: 'Native query only' })).toEqual([]);
   });
 
+  it('accepts native queries in the shape OpenCTI imports', () => {
+    expect(
+      huntImportErrors({
+        ...validHunt,
+        native_queries: [
+          { platform: 'splunk', language: 'spl', query: 'index=main' },
+          JSON.stringify({
+            platform: 'microsoft-sentinel',
+            language: 'kql',
+            query: 'SecurityEvent',
+            pipeline: 'windows',
+          }),
+        ],
+      })
+    ).toEqual([]);
+  });
+
+  it.each`
+    case                          | nativeQueries                                                                                                 | error
+    ${'a missing language'}       | ${[{ platform: 'splunk', query: 'index=main' }]}                                                              | ${'a language'}
+    ${'a missing query'}          | ${[{ platform: 'splunk', language: 'spl' }]}                                                                  | ${'a query'}
+    ${'an oversized query'}       | ${[{ platform: 'splunk', language: 'spl', query: 'x'.repeat(65537) }]}                                        | ${'a query'}
+    ${'an oversized language'}    | ${[{ platform: 'splunk', language: 'x'.repeat(65), query: 'index=main' }]}                                    | ${'a language'}
+    ${'an oversized pipeline'}    | ${[{ platform: 'splunk', language: 'spl', query: 'index=main', pipeline: 'x'.repeat(257) }]}                  | ${'pipeline'}
+    ${'an unsupported platform'}  | ${[{ platform: 'Splunk', language: 'spl', query: 'index=main' }]}                                             | ${'not a hunted platform'}
+    ${'a duplicated platform'}    | ${[{ platform: 'splunk', language: 'spl', query: 'a' }, { platform: 'splunk', language: 'spl', query: 'b' }]} | ${'already has a native query'}
+    ${'an item that is no query'} | ${['not json']}                                                                                               | ${'not an object'}
+  `('refuses native queries with $case', ({ nativeQueries, error }) => {
+    expect(
+      huntImportErrors({ ...validHunt, native_queries: nativeQueries }).join(
+        '; '
+      )
+    ).toContain(error);
+  });
+
   it.each`
     case                         | change                                 | error
     ${'no name'}                 | ${{ name: '  ' }}                      | ${'no name'}

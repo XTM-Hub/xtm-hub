@@ -23,6 +23,20 @@ const CONDITION_KEYWORDS = new Set([
   'any',
 ]);
 const HUNT_TYPES = ['telemetry', 'infrastructure'];
+const HUNT_PLATFORMS = [
+  'splunk',
+  'microsoft-sentinel',
+  'elastic-security',
+  'crowdstrike-logscale',
+  'google-secops',
+  'opensearch',
+  'clickhouse',
+  's3-ocsf',
+  'internet',
+];
+const NATIVE_QUERY_MAX_LENGTH = 65536;
+const NATIVE_QUERY_LANGUAGE_MAX_LENGTH = 64;
+const NATIVE_QUERY_PIPELINE_MAX_LENGTH = 256;
 const HUNT_INTEGER_LIMITS: Record<string, number> = {
   time_window_hours: 720,
   escalation_threshold: 1000000,
@@ -155,6 +169,56 @@ export const sigmaRuleErrors = (sigmaRule: string): string[] => {
   return [...errors, ...detectionErrors(rule.detection)];
 };
 
+const trimmedText = (value: unknown) =>
+  typeof value === 'string' ? value.trim() : '';
+
+const parseNativeQuery = (item: unknown): unknown => {
+  if (typeof item !== 'string') return item;
+  try {
+    return JSON.parse(item) as unknown;
+  } catch {
+    return undefined;
+  }
+};
+
+const nativeQueryErrors = (nativeQueries: unknown): string[] => {
+  if (!isPresent(nativeQueries) || nativeQueries === '') {
+    return [];
+  }
+  const items = Array.isArray(nativeQueries) ? nativeQueries : [nativeQueries];
+  const platforms = new Set<string>();
+  const errors: string[] = [];
+  items.forEach((rawItem, index) => {
+    const item = parseNativeQuery(rawItem);
+    const label = `native query ${index + 1}`;
+    if (!isRecord(item)) {
+      errors.push(`${label} is not an object`);
+      return;
+    }
+    const platform = trimmedText(item.platform);
+    if (!HUNT_PLATFORMS.includes(platform)) {
+      errors.push(`${label}: the platform is not a hunted platform of OpenCTI`);
+      return;
+    }
+    if (platforms.has(platform)) {
+      errors.push(`${label}: ${platform} already has a native query`);
+    }
+    platforms.add(platform);
+    const language = trimmedText(item.language);
+    if (!language || language.length > NATIVE_QUERY_LANGUAGE_MAX_LENGTH) {
+      errors.push(`${label}: a language of at most 64 characters is required`);
+    }
+    const query = trimmedText(item.query);
+    if (!query || query.length > NATIVE_QUERY_MAX_LENGTH) {
+      errors.push(`${label}: a query of at most 65536 characters is required`);
+    }
+    if (trimmedText(item.pipeline).length > NATIVE_QUERY_PIPELINE_MAX_LENGTH) {
+      errors.push(`${label}: the pipeline name exceeds 256 characters`);
+    }
+  });
+  return errors;
+};
+
 /** Reasons the OpenCTI hunt import would refuse this hunt of a pack. */
 export const huntImportErrors = (hunt: Record<string, unknown>): string[] => {
   const errors: string[] = [];
@@ -174,6 +238,7 @@ export const huntImportErrors = (hunt: Record<string, unknown>): string[] => {
       errors.push(...sigmaRuleErrors(hunt.sigma_rule));
     }
   }
+  errors.push(...nativeQueryErrors(hunt.native_queries));
   if (isPresent(hunt.hunt_schedule)) {
     const scheduleError =
       typeof hunt.hunt_schedule === 'string'

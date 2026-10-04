@@ -54,7 +54,7 @@ describe('huntPackHelper.summarize', () => {
         hunt(
           'hunt--1',
           ['attack-pattern--1', 'attack-pattern--2'],
-          ['splunk', 'Microsoft-Sentinel']
+          ['splunk', 'microsoft-sentinel']
         ),
         hunt(
           'hunt--2',
@@ -73,17 +73,12 @@ describe('huntPackHelper.summarize', () => {
     });
   });
 
-  it('ignores malformed technique references and platforms', () => {
+  it('ignores malformed technique references', () => {
     const summary = HuntPackHelper.summarize(
       bundle([
         {
           ...hunt('hunt--1'),
           technique_refs: [42, null],
-          native_queries: [
-            { platform: 'splunk; drop' },
-            { platform: 7 },
-            'not-an-object',
-          ],
         },
       ])
     );
