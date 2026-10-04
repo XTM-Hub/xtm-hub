@@ -291,6 +291,20 @@ export const IntegrationCoverageDomain = {
     return { truncated, candidates, facets };
   },
 
+  /** Ids of the integrations a coverage search can return, bounded and ordered like its candidates. */
+  loadSearchableIntegrationIds: async (): Promise<string[]> => {
+    const { query } = await buildCandidatesQuery(
+      IntegrationCoverageSearchHelper.normalizeSearchInput({})
+    );
+    const rows: Array<Pick<Document, 'id'>> = await query
+      .clone()
+      .select('Document.id')
+      .orderBy('Document.name', 'asc')
+      .orderBy('Document.id', 'asc')
+      .limit(COVERAGE_SEARCH_MAX_CANDIDATES);
+    return rows.map(({ id }) => id);
+  },
+
   loadStoredCoverage: async (
     documentId: DocumentId
   ): Promise<StoredIntegrationCoverage | null> => {

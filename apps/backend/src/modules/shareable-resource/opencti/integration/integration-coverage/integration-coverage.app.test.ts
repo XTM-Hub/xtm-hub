@@ -31,6 +31,10 @@ import {
 } from './integration-coverage.domain';
 import { IntegrationCoverageHelper } from './integration-coverage.helper';
 import { StoredIntegrationCoverage } from './integration-coverage.model';
+import {
+  COVERAGE_DOWNLOAD_COUNTS_REFRESH_MS,
+  IntegrationCoveragePopularity,
+} from './integration-coverage.popularity';
 
 vi.mock('../../../../../utils/feature-flag.util', () => ({
   isFeatureEnabled: vi.fn(() => false),
@@ -126,6 +130,7 @@ describe('integrationCoverageApp', () => {
 
   beforeEach(async () => {
     await cleanDatabase();
+    IntegrationCoveragePopularity.clear();
     vi.mocked(isFeatureEnabled).mockReturnValue(false);
     vi.spyOn(TelemetryApp, 'countEventsByDocumentIds').mockResolvedValue(
       new Map()
@@ -412,6 +417,102 @@ describe('integrationCoverageApp', () => {
 
       // Then
       expect(matches.map(({ slug }) => slug)).toEqual(['alpha', 'zulu']);
+    });
+
+    it('should load the download counts of the catalog once per period, whatever the number of searches', async () => {
+      // Given
+      const popular = await createIntegration({
+        slug: 'zulu',
+        coverage: declared({ object_types: [MALWARE] }),
+      });
+      const alpha = await createIntegration({
+        slug: 'alpha',
+        coverage: declared({ object_types: [MALWARE] }),
+      });
+      const countEvents = vi
+        .spyOn(TelemetryApp, 'countEventsByDocumentIds')
+        .mockResolvedValue(new Map([[popular.id, 3]]));
+
+      // When
+      const searches = await Promise.all([
+        IntegrationCoverageApp.searchIntegrationsByCoverage({}),
+        IntegrationCoverageApp.searchIntegrationsByCoverage({
+          objectTypes: [MALWARE],
+        }),
+      ]);
+      const again = await IntegrationCoverageApp.searchIntegrationsByCoverage(
+        {}
+      );
+
+      // Then
+      expect(countEvents).toHaveBeenCalledTimes(1);
+      expect([...(countEvents.mock.calls[0]?.[1] ?? [])].sort()).toEqual(
+        [popular.id, alpha.id].sort()
+      );
+      for (const { matches } of [...searches, again]) {
+        expect(matches.map(({ slug }) => slug)).toEqual(['zulu', 'alpha']);
+      }
+    });
+
+    it('should not load the download counts again at every search after a failed load', async () => {
+      // Given
+      await createIntegration({
+        slug: 'alpha',
+        coverage: declared({ object_types: [MALWARE] }),
+      });
+      const countEvents = vi
+        .spyOn(TelemetryApp, 'countEventsByDocumentIds')
+        .mockRejectedValue(new Error('Elasticsearch is unreachable'));
+
+      // When
+      await IntegrationCoverageApp.searchIntegrationsByCoverage({});
+      await IntegrationCoverageApp.searchIntegrationsByCoverage({});
+
+      // Then
+      expect(countEvents).toHaveBeenCalledTimes(1);
+    });
+
+    it('should reload stale download counts in the background and rank with the new ones', async () => {
+      // Given
+      const alpha = await createIntegration({
+        slug: 'alpha',
+        coverage: declared({ object_types: [MALWARE] }),
+      });
+      const zulu = await createIntegration({
+        slug: 'zulu',
+        coverage: declared({ object_types: [MALWARE] }),
+      });
+      const countEvents = vi
+        .spyOn(TelemetryApp, 'countEventsByDocumentIds')
+        .mockResolvedValueOnce(new Map([[alpha.id, 5]]))
+        .mockResolvedValueOnce(new Map([[zulu.id, 9]]));
+      await IntegrationCoverageApp.searchIntegrationsByCoverage({});
+      const later = vi
+        .spyOn(Date, 'now')
+        .mockReturnValue(Date.now() + COVERAGE_DOWNLOAD_COUNTS_REFRESH_MS + 1);
+
+      try {
+        // When
+        const stale = await IntegrationCoverageApp.searchIntegrationsByCoverage(
+          {}
+        );
+        await vi.waitFor(() => expect(countEvents).toHaveBeenCalledTimes(2));
+        const fresh = await IntegrationCoverageApp.searchIntegrationsByCoverage(
+          {}
+        );
+
+        // Then
+        expect(stale.matches.map(({ slug }) => slug)).toEqual([
+          'alpha',
+          'zulu',
+        ]);
+        expect(fresh.matches.map(({ slug }) => slug)).toEqual([
+          'zulu',
+          'alpha',
+        ]);
+      } finally {
+        later.mockRestore();
+      }
     });
 
     it('should run a plain search when no facet is requested', async () => {

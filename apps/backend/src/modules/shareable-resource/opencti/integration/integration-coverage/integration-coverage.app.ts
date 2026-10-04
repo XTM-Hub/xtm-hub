@@ -11,8 +11,6 @@ import {
 import type Document from '../../../../../model/kanel/public/Document';
 import type { DocumentId } from '../../../../../model/kanel/public/Document';
 import { logApp } from '../../../../../utils/app-logger.util';
-import { TelemetryApp } from '../../../../telemetry/telemetry.app';
-import { TelemetryEventType } from '../../../../telemetry/telemetry.types';
 import { isIntegrationType } from '../integration.model';
 import {
   CoverageCandidateRow,
@@ -26,6 +24,7 @@ import {
   IntegrationCoverageDeclaration,
   StoredIntegrationCoverage,
 } from './integration-coverage.model';
+import { IntegrationCoveragePopularity } from './integration-coverage.popularity';
 import {
   CoverageSearchRequest,
   IntegrationCoverageSearchHelper,
@@ -103,34 +102,6 @@ const toScoredMatch = (
   ];
 };
 
-/** Download counts only matter to break score ties; ranking degrades gracefully without them. */
-const loadDownloadCountsForTies = async (
-  matches: Omit<RankedMatch, 'download_number'>[]
-): Promise<Map<string, number>> => {
-  const occurrencesByScore = new Map<number, number>();
-  for (const { score } of matches) {
-    occurrencesByScore.set(score, (occurrencesByScore.get(score) ?? 0) + 1);
-  }
-  const tiedIds = matches
-    .filter(({ score }) => (occurrencesByScore.get(score) ?? 0) > 1)
-    .map(({ id }) => id);
-  if (tiedIds.length === 0) {
-    return new Map();
-  }
-  try {
-    return await TelemetryApp.countEventsByDocumentIds(
-      TelemetryEventType.DOWNLOAD,
-      tiedIds
-    );
-  } catch (error) {
-    logApp.warn(
-      '[COVERAGE] Unable to load download counts, ranking ties by name',
-      { error }
-    );
-    return new Map();
-  }
-};
-
 const toInferenceSourceFields = (
   document: Pick<Document, 'name' | 'short_description' | 'description'>
 ) => ({
@@ -189,7 +160,9 @@ export const IntegrationCoverageApp = {
     const scored = candidates
       .flatMap((candidate) => toScoredMatch(request, candidate))
       .filter((match) => !hasRequestedFacets || match.score > 0);
-    const downloadCounts = await loadDownloadCountsForTies(scored);
+    // Download counts only order score ties; ranking degrades to names without them
+    const downloadCounts =
+      await IntegrationCoveragePopularity.loadDownloadCounts();
 
     const matches = scored
       .map((match): RankedMatch => ({
