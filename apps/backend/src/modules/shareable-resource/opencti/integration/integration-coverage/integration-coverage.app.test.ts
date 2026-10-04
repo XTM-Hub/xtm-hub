@@ -125,6 +125,12 @@ const cleanDatabase = async () => {
   await TestHelper.document.delete({});
 };
 
+// Searches never wait for the download counts: start their load as a search would, and let it complete
+const loadDownloadCountsInBackground = async () => {
+  await IntegrationCoveragePopularity.loadDownloadCounts();
+  await IntegrationCoveragePopularity.waitForRefresh();
+};
+
 describe('integrationCoverageApp', () => {
   const createdServiceInstanceIds: ServiceInstanceId[] = [];
 
@@ -380,6 +386,7 @@ describe('integrationCoverageApp', () => {
       vi.spyOn(TelemetryApp, 'countEventsByDocumentIds').mockResolvedValue(
         new Map([[popular.id, 12]])
       );
+      await loadDownloadCountsInBackground();
 
       // When
       const { matches } =
@@ -395,6 +402,38 @@ describe('integrationCoverageApp', () => {
       ]);
     });
 
+    it('should never wait for the download counts: a first search ranks ties by name while they load', async () => {
+      // Given
+      const zulu = await createIntegration({
+        slug: 'zulu',
+        coverage: declared({ object_types: [MALWARE] }),
+      });
+      await createIntegration({
+        slug: 'alpha',
+        coverage: declared({ object_types: [MALWARE] }),
+      });
+      let releaseCounts: (counts: Map<string, number>) => void = () => {};
+      vi.spyOn(TelemetryApp, 'countEventsByDocumentIds').mockReturnValue(
+        new Promise((resolve) => {
+          releaseCounts = resolve;
+        })
+      );
+
+      // When
+      const cold = await IntegrationCoverageApp.searchIntegrationsByCoverage({
+        objectTypes: [MALWARE],
+      });
+      releaseCounts(new Map([[zulu.id, 4]]));
+      await IntegrationCoveragePopularity.waitForRefresh();
+      const loaded = await IntegrationCoverageApp.searchIntegrationsByCoverage({
+        objectTypes: [MALWARE],
+      });
+
+      // Then
+      expect(cold.matches.map(({ slug }) => slug)).toEqual(['alpha', 'zulu']);
+      expect(loaded.matches.map(({ slug }) => slug)).toEqual(['zulu', 'alpha']);
+    });
+
     it('should rank ties by name when download counts are unavailable', async () => {
       // Given
       await createIntegration({
@@ -408,6 +447,7 @@ describe('integrationCoverageApp', () => {
       vi.spyOn(TelemetryApp, 'countEventsByDocumentIds').mockRejectedValue(
         new Error('Elasticsearch is unreachable')
       );
+      await loadDownloadCountsInBackground();
 
       // When
       const { matches } =
@@ -434,22 +474,26 @@ describe('integrationCoverageApp', () => {
         .mockResolvedValue(new Map([[popular.id, 3]]));
 
       // When
+      await Promise.all([
+        IntegrationCoverageApp.searchIntegrationsByCoverage({}),
+        IntegrationCoverageApp.searchIntegrationsByCoverage({
+          objectTypes: [MALWARE],
+        }),
+      ]);
+      await IntegrationCoveragePopularity.waitForRefresh();
       const searches = await Promise.all([
         IntegrationCoverageApp.searchIntegrationsByCoverage({}),
         IntegrationCoverageApp.searchIntegrationsByCoverage({
           objectTypes: [MALWARE],
         }),
       ]);
-      const again = await IntegrationCoverageApp.searchIntegrationsByCoverage(
-        {}
-      );
 
       // Then
       expect(countEvents).toHaveBeenCalledTimes(1);
       expect([...(countEvents.mock.calls[0]?.[1] ?? [])].sort()).toEqual(
         [popular.id, alpha.id].sort()
       );
-      for (const { matches } of [...searches, again]) {
+      for (const { matches } of searches) {
         expect(matches.map(({ slug }) => slug)).toEqual(['zulu', 'alpha']);
       }
     });
@@ -466,6 +510,7 @@ describe('integrationCoverageApp', () => {
 
       // When
       await IntegrationCoverageApp.searchIntegrationsByCoverage({});
+      await IntegrationCoveragePopularity.waitForRefresh();
       await IntegrationCoverageApp.searchIntegrationsByCoverage({});
 
       // Then
@@ -486,7 +531,7 @@ describe('integrationCoverageApp', () => {
         .spyOn(TelemetryApp, 'countEventsByDocumentIds')
         .mockResolvedValueOnce(new Map([[alpha.id, 5]]))
         .mockResolvedValueOnce(new Map([[zulu.id, 9]]));
-      await IntegrationCoverageApp.searchIntegrationsByCoverage({});
+      await loadDownloadCountsInBackground();
       const later = vi
         .spyOn(Date, 'now')
         .mockReturnValue(Date.now() + COVERAGE_DOWNLOAD_COUNTS_REFRESH_MS + 1);
@@ -496,7 +541,8 @@ describe('integrationCoverageApp', () => {
         const stale = await IntegrationCoverageApp.searchIntegrationsByCoverage(
           {}
         );
-        await vi.waitFor(() => expect(countEvents).toHaveBeenCalledTimes(2));
+        await IntegrationCoveragePopularity.waitForRefresh();
+        expect(countEvents).toHaveBeenCalledTimes(2);
         const fresh = await IntegrationCoverageApp.searchIntegrationsByCoverage(
           {}
         );
