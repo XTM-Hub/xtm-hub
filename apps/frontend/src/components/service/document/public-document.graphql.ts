@@ -32,6 +32,7 @@ export const publicDocumentListItem = graphql`
       product_version
       verified
       manager_supported
+      connector_type
     }
 
     ... on CustomView {

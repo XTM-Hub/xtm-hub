@@ -1,4 +1,5 @@
 'use client';
+import { ConnectorTypeLabel } from '@/components/service/integrations/connector-type/ConnectorTypeLabel';
 import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
@@ -9,6 +10,7 @@ import { ShareableResourceCardHeader } from '@/components/ui/shareable-resource/
 import useScrollPosition from '@/hooks/use-scroll-position';
 import { cn } from '@/lib/utils';
 import {
+  isConnectorResource,
   PublicDocumentData,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
@@ -56,6 +58,9 @@ const ShareableResourceCard = ({
     docHasMetadata(document, DocumentMetadataKeyCode.IntegrationType) &&
     !!document.integration_type &&
     FOOTER_VERSIONS_INTEGRATION_TYPES.includes(document.integration_type);
+  const connectorType = isConnectorResource(document)
+    ? document.connector_type
+    : null;
 
   return (
     <li
@@ -78,6 +83,11 @@ const ShareableResourceCard = ({
             <ShareableResourceCardDescription
               description={document.short_description}
             />
+            {connectorType && (
+              <span className="shrink-0 text-sm text-muted-foreground">
+                <ConnectorTypeLabel connectorType={connectorType} />
+              </span>
+            )}
             <BadgeOverflowCounter
               formatLabel={false}
               badges={document.use_cases as BadgeOverflow[]}

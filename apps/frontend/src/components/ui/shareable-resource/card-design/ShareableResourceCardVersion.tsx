@@ -46,6 +46,7 @@ export const ShareableResourceCardVersion = ({
             {t(`Service.Connectors.Incompatible`, {
               platformToBeUpdated,
               count: incompatiblePlatformsCount,
+              version: requiredProductVersion ?? '',
             })}
           </TooltipContent>
         </Tooltip>

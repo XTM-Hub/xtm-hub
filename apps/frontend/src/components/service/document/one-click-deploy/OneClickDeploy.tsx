@@ -203,6 +203,7 @@ const OneClickDeploy = ({
       title={t('Service.Connectors.Incompatible', {
         platformToBeUpdated,
         count: incompatiblePlatformsCount,
+        version: requiredProductVersion ?? '',
       })}>
       {buttonWithBadge}
     </SimpleTooltip>

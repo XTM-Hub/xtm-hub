@@ -353,7 +353,7 @@
       "INCREMENT_SHARE_NUMBER": "Une erreur s'est produite lors de l'incrémentation du numéro de part",
       "INTEGRATION_TYPE_NOT_MANAGEABLE": "Ce type d'intégration n'est pas gérable.",
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "Ce type d'intégration n'est pas reconnu",
-      "CONNECTOR_TYPE_NOT_RECOGNIZED": "Ce type de connecteur n'est pas reconnu",
+      "CONNECTOR_TYPE_NOT_RECOGNIZED": "Le type de connecteur de ce manifeste n'est pas reconnu. Utilisez l'un des types de connecteurs OpenCTI listés dans la documentation.",
       "INVALID_ACTION_SIZE": "Une erreur inconnue s'est produite",
       "INVALID_EMAIL": "L'email doit être dans un format valide.",
       "INVALID_IMAGE_URL": "L'URL de l'image n'est pas valide",
@@ -1149,7 +1149,7 @@
       "Search": "Rechercher un connecteur par nom...",
       "VendorContact": "Contact vendeur",
       "VisitVendor": "Visitez la page web du vendeur pour en savoir plus et rester en contact",
-      "Incompatible": "{platformToBeUpdated} {count, plural, =1 {doit} other {doivent}} être mises à jour pour déployer ce connecteur.",
+      "Incompatible": "Mettez à jour {platformToBeUpdated} vers OpenCTI {version} ou une version ultérieure pour déployer ce connecteur.",
       "UnavailableDeployments": "Ce connecteur n'est pas disponible pour le déploiement automatique."
     },
     "CreationStatus": "Statut de la création",
@@ -1497,7 +1497,7 @@
         "DeployPlatform": "Déployer dans {platformName}",
         "DeployQuestionTag": "Sur quelle plateforme {platformType} voulez-vous le déployer ?",
         "DeployResourceDescription": "Vous êtes sur le point de déployer le {resourceType} {resourceName}.",
-        "DeployIncompatibleVersion": "La ressource ne peut pas être déployée sur votre plateforme OpenCTI \"{platformTitle}\" ; car la version de la plateforme n'est plus compatible avec cette ressource. Vous devrez mettre à jour la plateforme ou utiliser une version de ressource compatible avant de continuer.",
+        "DeployIncompatibleVersion": "Mettez à jour {platformTitle} vers OpenCTI {version} ou une version ultérieure pour déployer cette ressource.",
         "EE": {
           "Tag": "EE",
           "HoverTitle": "Disponible dans l'Enterprise Edition",
