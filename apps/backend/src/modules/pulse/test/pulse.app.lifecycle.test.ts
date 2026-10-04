@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import {
@@ -225,6 +226,70 @@ describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
       }).toEqual({ during: 0, saved: [], after: 0 });
     });
 
+    it('should record nothing for a batch accepted before a purge and retried after it', async () => {
+      // Given a batch accepted, then a purge whose answer the platform never received
+      const [client] = await registerPulseClients(1);
+      const batchId = randomUUID();
+      await client!.push({
+        day: PULSE_TEST_TODAY,
+        records: [malware(LOCKBIT)],
+        batchId,
+      });
+      await client!.purge();
+
+      // When the platform sends the batch again
+      const retry = await client!.push({
+        day: PULSE_TEST_TODAY,
+        records: [malware(LOCKBIT)],
+        batchId,
+      });
+
+      // Then the purged contribution does not come back
+      expect({
+        retry,
+        contributions: await TestHelper.pulse.countRows('PulseContribution'),
+        platforms: await TestHelper.pulse.countRows('PulsePlatform'),
+      }).toEqual({
+        retry: { accepted: 0, day: PULSE_TEST_TODAY },
+        contributions: 0,
+        platforms: 0,
+      });
+    });
+
+    it('should move the data generation with the first day a stopped purge deleted', async () => {
+      // Given a platform that contributed on two days
+      const [client] = await registerPulseClients(1);
+      clock.addDays(-1);
+      await client!.push({ day: clock.today(), records: [malware(LOCKBIT)] });
+      clock.addDays(1);
+      await client!.push({
+        day: PULSE_TEST_TODAY,
+        records: [malware(LOCKBIT)],
+      });
+      const before = await PulseDomain.loadDataGeneration();
+      const purgeDay = PulseDomain.purgeContributionDay;
+      let calls = 0;
+      vi.spyOn(PulseDomain, 'purgeContributionDay').mockImplementation(
+        async (input) => {
+          calls += 1;
+          if (calls > 1) {
+            throw new Error('Purge stopped');
+          }
+          return purgeDay(input);
+        }
+      );
+
+      // When the purge stops after deleting its first day
+      const result = await client!.purgeResult();
+
+      // Then the deletion committed with a new generation: no snapshot computed before it is served
+      expect({
+        failed: errorCodes(result).length > 0,
+        contributions: await TestHelper.pulse.countRows('PulseContribution'),
+        generationMoved: (await PulseDomain.loadDataGeneration()) > before,
+      }).toEqual({ failed: true, contributions: 1, generationMoved: true });
+    });
+
     it('should limit purges to 5 per 24 hours', async () => {
       // Given
       const [client] = await registerPulseClients(1);
@@ -361,6 +426,38 @@ describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
       expect(
         await PulseDomain.loadDigestSnapshot(PULSE_TEST_TODAY)
       ).toBeUndefined();
+    });
+
+    it('should move the data generation with the first batch a stopped retention run deleted', async () => {
+      // Given contributions past the retention period
+      const clients = await registerPulseClients(5);
+      await pushFromEach(clients, {
+        day: RETENTION_DAY,
+        records: [malware(LOCKBIT)],
+      });
+      const before = await PulseDomain.loadDataGeneration();
+      const deleteRows = PulseDomain.deleteRowsBeforeDay;
+      let calls = 0;
+      vi.spyOn(PulseDomain, 'deleteRowsBeforeDay').mockImplementation(
+        async (input) => {
+          calls += 1;
+          if (calls > 1) {
+            throw new Error('Retention stopped');
+          }
+          return deleteRows(input);
+        }
+      );
+
+      // When the run stops after its first deletion batch
+      await expect(
+        PulseApp.applyRetention(new Date('2027-11-04T02:00:00.000Z'))
+      ).rejects.toThrow('Retention stopped');
+
+      // Then the deletion committed with a new generation
+      expect({
+        contributions: await TestHelper.pulse.countRows('PulseContribution'),
+        generationMoved: (await PulseDomain.loadDataGeneration()) > before,
+      }).toEqual({ contributions: 0, generationMoved: true });
     });
   });
 

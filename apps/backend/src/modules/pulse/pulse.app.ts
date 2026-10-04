@@ -15,7 +15,10 @@ import {
   PushPulseInput,
   PushPulseResult,
 } from '../../__generated__/resolvers-types';
-import { withAdvisoryLock } from '../../context/database.context';
+import {
+  withAdvisoryLock,
+  withTransaction,
+} from '../../context/database.context';
 import { logApp } from '../../utils/app-logger.util';
 import { getErrorStringProperty } from '../../utils/error/error-guard.util';
 import { PlatformConfigurationDomain } from '../registration/platform-configuration/platform-configuration.domain';
@@ -330,7 +333,7 @@ const recordContributions = async ({
   pseudonym: string;
   input: PushPulseInput;
   records: readonly PulseLedgerRecord[];
-}): Promise<{ accepted: number; duplicate: boolean }> => {
+}): Promise<{ accepted: number; day: string; duplicate: boolean }> => {
   const {
     day,
     sector_bucket: sectorBucket,
@@ -339,15 +342,12 @@ const recordContributions = async ({
   // Under the platform lock and before anything is written: a retry of a
   // batch whose response was lost gets its first result and changes nothing,
   // neither the counts nor the buckets or the last contribution day.
-  const known = await PulseDomain.loadPlatformByPseudonym(pseudonym);
-  if (known) {
-    const accepted = await PulseDomain.loadBatchReceipt({
-      platformId: known.id,
-      batchId: input.batch_id,
-    });
-    if (accepted !== undefined) {
-      return { accepted, duplicate: true };
-    }
+  const receipt = await PulseDomain.loadBatchReceipt({
+    pseudonym,
+    batchId: input.batch_id,
+  });
+  if (receipt) {
+    return { ...receipt, duplicate: true };
   }
   const platformId = await PulseDomain.upsertPlatformContribution({
     pseudonym,
@@ -356,7 +356,7 @@ const recordContributions = async ({
     day,
   });
   await PulseDomain.recordBatch({
-    platformId,
+    pseudonym,
     batchId: input.batch_id,
     day,
     accepted: records.length,
@@ -397,7 +397,7 @@ const recordContributions = async ({
     regionBucket,
     totals: aggregation.totals,
   });
-  return { accepted: records.length, duplicate: false };
+  return { accepted: records.length, day, duplicate: false };
 };
 
 const computeTrendingItems = async ({
@@ -652,11 +652,35 @@ const invalidateSnapshots = async (): Promise<void> => {
   await PulseDomain.deleteDigestSnapshots();
 };
 
+// One deletion step of a purge or of the retention, committed with a new data
+// generation: a run stopped after it never leaves a snapshot that still holds
+// what it deleted.
+const deleteStep = <T>(
+  step: () => Promise<T>,
+  changed: (result: T) => boolean
+): Promise<T> =>
+  withTransaction(async () => {
+    const result = await step();
+    if (changed(result)) {
+      await PulseDomain.bumpDataGeneration();
+    }
+    return result;
+  });
+
+const removedRows = (removed: number | null): boolean =>
+  removed !== null && removed > 0;
+
+// Runs inside the platform lock, whose transaction it joins.
 const purgeNextContributionDay = async (
   platformId: number
 ): Promise<number | null> => {
   const day = await PulseDomain.loadOldestContributionDay(platformId);
-  return day ? PulseDomain.purgeContributionDay({ platformId, day }) : null;
+  return day
+    ? deleteStep(
+        () => PulseDomain.purgeContributionDay({ platformId, day }),
+        removedRows
+      )
+    : null;
 };
 
 const purgeAllKeyContributors = async (platformId: number): Promise<void> => {
@@ -695,6 +719,8 @@ const purgePlatform = async (pseudonym: string): Promise<number> => {
     }
     await purgeAllKeyContributors(platform.id);
     await PulseDomain.deletePlatform(platform.id);
+    await PulseDomain.forgetBatchCounts(pseudonym);
+    await PulseDomain.bumpDataGeneration();
     return lateRows;
   });
   await invalidateSnapshots();
@@ -707,7 +733,7 @@ const deleteInBatches = async (
   let total = 0;
   let removed: number;
   do {
-    removed = await deleteBatch();
+    removed = await deleteStep(deleteBatch, removedRows);
     total += removed;
   } while (removed > 0);
   return total;
@@ -838,7 +864,7 @@ export const PulseApp = {
           pulseRecordsAcceptedCounter.inc({ object_type: record.t });
         }
       }
-      return { accepted: result.accepted, day: validated.day };
+      return { accepted: result.accepted, day: result.day };
     }),
 
   pulseLookup: (
@@ -1097,9 +1123,18 @@ export const PulseApp = {
         batchSize: PULSE_MAINTENANCE_BATCH_SIZE,
       })
     );
-    await PulseDomain.deleteUnpublishedKeys();
-    deleted.PulsePlatform = await PulseDomain.deleteInactivePlatforms(cutoff);
-    await PulseDomain.refreshFirstContributionDays(cutoff);
+    await deleteStep(
+      () => PulseDomain.deleteUnpublishedKeys(),
+      () => true
+    );
+    deleted.PulsePlatform = await deleteStep(
+      () => PulseDomain.deleteInactivePlatforms(cutoff),
+      removedRows
+    );
+    await deleteStep(
+      () => PulseDomain.refreshFirstContributionDays(cutoff),
+      () => true
+    );
     await invalidateSnapshots();
     for (const [table, count] of Object.entries(deleted)) {
       pulseRetentionDeletedRowsCounter.inc({ table }, count);

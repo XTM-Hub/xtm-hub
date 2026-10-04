@@ -167,7 +167,9 @@ export const PulseHelper = {
     activeContributors: number;
     kThreshold: number;
   }): PulseLookupResult => {
-    if (networkPlatforms < kThreshold || !seen) {
+    // Publication follows the platforms of the whole network: reporters spread
+    // over weeks that each stay below k leave only the seen dates out.
+    if (networkPlatforms < kThreshold) {
       return unpublishedResult(hash);
     }
     const sectorPublished = presence.sectorPlatformsInWindow >= kThreshold;
@@ -180,8 +182,8 @@ export const PulseHelper = {
         kThreshold,
       }),
       platforms_bucket: PulseStats.platformsBucket(networkPlatforms),
-      first_seen_network: seen.firstSeen,
-      last_seen_network: seen.lastSeen,
+      first_seen_network: seen?.firstSeen ?? null,
+      last_seen_network: seen?.lastSeen ?? null,
       trend: PulseStats.weeklyTrend(presence.weekly, kThreshold),
       trend_series: PulseStats.trendSeries(presence.weekly, kThreshold),
       sector_trend: sectorPublished

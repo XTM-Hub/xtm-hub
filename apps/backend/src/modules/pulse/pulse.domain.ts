@@ -83,37 +83,48 @@ export const PulseDomain = {
   // region Batches
   // The receipt of a batch, written in the transaction of its counts.
   recordBatch: async ({
-    platformId,
+    pseudonym,
     batchId,
     day,
     accepted,
   }: {
-    platformId: number;
+    pseudonym: string;
     batchId: string;
     day: string;
     accepted: number;
   }): Promise<void> => {
     await query(
-      `INSERT INTO "PulseBatch" (pulse_platform_id, batch_id, day, accepted)
-       VALUES (?, ?::uuid, ?::date, ?)
-       ON CONFLICT (pulse_platform_id, batch_id) DO NOTHING`,
-      [platformId, batchId, day, accepted]
+      `INSERT INTO "PulseBatch" (pseudonym, batch_id, day, accepted)
+       VALUES (decode(?, 'hex'), ?::uuid, ?::date, ?)
+       ON CONFLICT (pseudonym, batch_id) DO NOTHING`,
+      [pseudonym, batchId, day, accepted]
     );
   },
 
-  // How many records the batch accepted when the platform pushed it, if it did.
+  // The day and the number of records of the batch when the platform first
+  // pushed it, if it did.
   loadBatchReceipt: async ({
-    platformId,
+    pseudonym,
     batchId,
   }: {
-    platformId: number;
+    pseudonym: string;
     batchId: string;
-  }): Promise<number | undefined> => {
-    const [row] = await query<{ accepted: number }>(
-      'SELECT accepted FROM "PulseBatch" WHERE pulse_platform_id = ? AND batch_id = ?::uuid',
-      [platformId, batchId]
+  }): Promise<{ accepted: number; day: string } | undefined> => {
+    const [row] = await query<{ accepted: number; day: string }>(
+      `SELECT accepted, day::text AS day FROM "PulseBatch"
+       WHERE pseudonym = decode(?, 'hex') AND batch_id = ?::uuid`,
+      [pseudonym, batchId]
     );
-    return row?.accepted;
+    return row;
+  },
+
+  // A purge keeps the receipts, so that a batch accepted before it records
+  // nothing when retried, but not what they counted.
+  forgetBatchCounts: async (pseudonym: string): Promise<void> => {
+    await query(
+      `UPDATE "PulseBatch" SET accepted = 0 WHERE pseudonym = decode(?, 'hex')`,
+      [pseudonym]
+    );
   },
 
   deleteBatchesBefore: async (day: string): Promise<number> => {
@@ -665,8 +676,9 @@ export const PulseDomain = {
   // The `limit` keys of the network in the widest platforms ranges over the
   // activity window, k platforms at least, with their distinct platforms per
   // week over the trend baseline (newest week first). Selected and ordered by
-  // platforms range, then by key: the order never tells which of two keys of
-  // one range more platforms reported.
+  // platforms range, then by a hash of the day and the key: the order never
+  // tells which of two keys of one range more platforms reported, and the
+  // digests of two days list the keys of one range in unrelated orders.
   loadDigestCandidates: async ({
     day,
     kThreshold,
@@ -691,9 +703,10 @@ export const PulseDomain = {
        top AS (
          SELECT counted.*,
                 (SELECT COUNT(*) FROM jsonb_array_elements_text(?::jsonb) AS bucket(min)
-                 WHERE counted.in_window >= bucket.min::int)::int AS platforms_range
+                 WHERE counted.in_window >= bucket.min::int)::int AS platforms_range,
+                md5(?::text || encode(counted.at_rest_key, 'hex') || counted.object_type) AS day_order
          FROM counted
-         ORDER BY platforms_range DESC, counted.at_rest_key, counted.object_type
+         ORDER BY platforms_range DESC, day_order
          LIMIT ?
        ),
        weekly AS (
@@ -712,14 +725,15 @@ export const PulseDomain = {
               ) AS weeks
        FROM top
        LEFT JOIN weekly w ON w.at_rest_key = top.at_rest_key AND w.object_type = top.object_type
-       GROUP BY top.at_rest_key, top.object_type, top.in_window, top.platforms_range
-       ORDER BY top.platforms_range DESC, top.at_rest_key, top.object_type`,
+       GROUP BY top.at_rest_key, top.object_type, top.in_window, top.platforms_range, top.day_order
+       ORDER BY top.platforms_range DESC, top.day_order`,
       [
         day,
         PULSE_ACTIVITY_WINDOW_DAYS,
         day,
         kThreshold,
         JSON.stringify(PULSE_PLATFORMS_BUCKETS.map((bucket) => bucket.min)),
+        day,
         limit,
         day,
         PULSE_DAYS_PER_WEEK,

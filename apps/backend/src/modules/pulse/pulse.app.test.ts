@@ -507,15 +507,15 @@ describe('pulseApp platform API', PULSE_INTEGRATION_SUITE, () => {
         batchId: BATCH_ID,
       });
 
-      // Then nothing is recorded for today
+      // Then the first result is answered, with its day, and nothing is recorded for today
       expect({
-        retry: retry.accepted,
+        retry,
         platforms: await TestHelper.pulse.loadPlatformBuckets(),
         aggregates: (await TestHelper.pulse.loadDailyAggregates()).map(
           ({ day }) => day
         ),
       }).toEqual({
-        retry: 1,
+        retry: { accepted: 1, day: PULSE_TEST_YESTERDAY },
         platforms: [
           {
             sector_bucket: PulseSectorBucket.Finance,

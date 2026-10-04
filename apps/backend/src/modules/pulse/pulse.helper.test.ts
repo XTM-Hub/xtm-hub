@@ -206,8 +206,8 @@ describe('pulseHelper', () => {
     it.each([
       { description: 'below k platforms', networkPlatforms: 4, seen: SEEN },
       {
-        description: 'with no aggregate left',
-        networkPlatforms: 9,
+        description: 'below k platforms with no week at k',
+        networkPlatforms: 4,
         seen: undefined,
       },
     ])(
@@ -262,6 +262,32 @@ describe('pulseHelper', () => {
         trend_series: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5],
         sector_trend: null,
         sector_platforms_bucket: null,
+      });
+    });
+
+    it('should publish a key whose reporters are spread over weeks below k, without the seen dates', () => {
+      // Given k platforms over the retention, one per week: no week reaches k
+      const presence = makePresence({
+        weekly: [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0],
+      });
+
+      // When
+      const result = PulseHelper.buildLookupResult({
+        hash: HASH,
+        networkPlatforms: K,
+        seen: undefined,
+        presence,
+        activeContributors: 20,
+        kThreshold: K,
+      });
+
+      // Then the key is published and only the dates no week can carry stay null
+      expect(result).toMatchObject({
+        hash: HASH,
+        published: true,
+        platforms_bucket: '5-9',
+        first_seen_network: null,
+        last_seen_network: null,
       });
     });
 

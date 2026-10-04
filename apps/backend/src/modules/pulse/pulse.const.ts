@@ -115,7 +115,7 @@ export const PULSE_BELOW_SMALLEST_BUCKET_LABEL = '<5';
 // Bumped whenever the publication rules change (suppression, coarsening,
 // ordering): trending and digest snapshots computed under another version are
 // recomputed.
-export const PULSE_PUBLICATION_POLICY_VERSION = 5;
+export const PULSE_PUBLICATION_POLICY_VERSION = 6;
 
 // A trending or digest computation that a purge or a retention run overlapped
 // is computed again, this many times at most before the request fails.

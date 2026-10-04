@@ -16,6 +16,7 @@ import {
   errorCodes,
   PULSE_INTEGRATION_SUITE,
   PULSE_TEST_TODAY,
+  PULSE_TEST_YESTERDAY,
   pushFromEach,
   registerPulseClients,
   usePulseClock,
@@ -138,7 +139,7 @@ describe(
         );
       });
 
-      it('should order the keys of one platforms range by key, never by their exact count', async () => {
+      it('should order the keys of one platforms range by day and key, never by their exact count', async () => {
         // Given 'alpha' and 'beta' in the 5-9 range, reported by six and five platforms, then the other way round
         const orderOf = async (six: string, five: string) => {
           const clients = await registerPulseClients(6);
@@ -170,6 +171,32 @@ describe(
         // Then the order does not tell which key more platforms reported
         expect(alphaSix).toHaveLength(2);
         expect(betaSix).toEqual(alphaSix);
+      });
+
+      it('should list the keys of one platforms range in unrelated orders on two days', async () => {
+        // Given five platforms reporting twelve families yesterday, in both activity windows
+        const clients = await registerPulseClients(5);
+        const families = Array.from({ length: 12 }, (_, i) => `family-${i}`);
+        await pushFromEach(clients, {
+          day: PULSE_TEST_YESTERDAY,
+          records: families.map(malware),
+        });
+        const orderOn = async (day: string) => {
+          const hashes = await Promise.all(
+            families.map((family) => clients[0]!.hash(day, MALWARE, family))
+          );
+          const digest = await clients[0]!.digest({ day });
+          return digest.items.map(({ hash }) => families[hashes.indexOf(hash)]);
+        };
+
+        // When
+        const yesterday = await orderOn(PULSE_TEST_YESTERDAY);
+        const today = await orderOn(PULSE_TEST_TODAY);
+
+        // Then the same keys are listed, and their positions do not link the two days
+        expect([...yesterday].sort()).toEqual([...families].sort());
+        expect([...today].sort()).toEqual([...families].sort());
+        expect(today).not.toEqual(yesterday);
       });
 
       it('should forget a purged platform at once', async () => {
