@@ -73,6 +73,7 @@ describe('huntImportErrors', () => {
     ${'standing'}
     ${'@daily'}
     ${'0 6 1-15 JAN,JUL *'}
+    ${'0 0 ? * MON'}
   `('accepts the schedule $schedule', ({ schedule }) => {
     expect(huntImportErrors({ ...validHunt, hunt_schedule: schedule })).toEqual(
       []
@@ -84,15 +85,15 @@ describe('huntImportErrors', () => {
   });
 
   it.each`
-    case                         | change                             | error
-    ${'no name'}                 | ${{ name: '  ' }}                  | ${'no name'}
-    ${'an unknown hunt type'}    | ${{ hunt_type: 'endpoint' }}       | ${'neither telemetry nor infrastructure'}
-    ${'a Sigma rule not a text'} | ${{ sigma_rule: { title: 'T' } }}  | ${'not a text'}
-    ${'an invalid Sigma rule'}   | ${{ sigma_rule: 'title: T' }}      | ${'must have a logsource'}
-    ${'an invalid schedule'}     | ${{ hunt_schedule: 'every hour' }} | ${'cron expression'}
-    ${'a zero time window'}      | ${{ time_window_hours: 0 }}        | ${'time_window_hours'}
-    ${'a decimal threshold'}     | ${{ escalation_threshold: 1.5 }}   | ${'escalation_threshold'}
-    ${'too many results'}        | ${{ hunt_max_results: 10001 }}     | ${'hunt_max_results'}
+    case                         | change                                 | error
+    ${'no name'}                 | ${{ name: '  ' }}                      | ${'no name'}
+    ${'an unknown hunt type'}    | ${{ hunt_type: 'endpoint' }}           | ${'neither telemetry nor infrastructure'}
+    ${'a Sigma rule not a text'} | ${{ sigma_rule: { title: 'T' } }}      | ${'not a text'}
+    ${'an invalid Sigma rule'}   | ${{ sigma_rule: 'title: T' }}          | ${'must have a logsource'}
+    ${'an invalid schedule'}     | ${{ hunt_schedule: '99 99 99 99 99' }} | ${'out of range'}
+    ${'a zero time window'}      | ${{ time_window_hours: 0 }}            | ${'time_window_hours'}
+    ${'a decimal threshold'}     | ${{ escalation_threshold: 1.5 }}       | ${'escalation_threshold'}
+    ${'too many results'}        | ${{ hunt_max_results: 10001 }}         | ${'hunt_max_results'}
   `('refuses a hunt with $case', ({ change, error }) => {
     expect(huntImportErrors({ ...validHunt, ...change }).join('; ')).toContain(
       error

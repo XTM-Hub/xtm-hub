@@ -1,4 +1,5 @@
 import { parseAllDocuments } from 'yaml';
+import { huntScheduleError } from './hunt-pack.schedule';
 
 // Mirrors the checks the OpenCTI hunt import runs before creating a hunt, so
 // a published pack is never refused by OpenCTI. Limits are the OpenCTI
@@ -22,18 +23,6 @@ const CONDITION_KEYWORDS = new Set([
   'any',
 ]);
 const HUNT_TYPES = ['telemetry', 'infrastructure'];
-const HUNT_SCHEDULE_KEYWORDS = ['manual', 'standing'];
-const CRON_MACROS = [
-  '@yearly',
-  '@annually',
-  '@monthly',
-  '@weekly',
-  '@daily',
-  '@midnight',
-  '@hourly',
-];
-const CRON_FIELD =
-  /^(?:\*|[0-9a-z]+(?:-[0-9a-z]+)?)(?:\/\d+)?(?:,(?:\*|[0-9a-z]+(?:-[0-9a-z]+)?)(?:\/\d+)?)*$/i;
 const HUNT_INTEGER_LIMITS: Record<string, number> = {
   time_window_hours: 720,
   escalation_threshold: 1000000,
@@ -166,15 +155,6 @@ export const sigmaRuleErrors = (sigmaRule: string): string[] => {
   return [...errors, ...detectionErrors(rule.detection)];
 };
 
-const isValidSchedule = (schedule: string) => {
-  const value = schedule.trim().toLowerCase();
-  if (HUNT_SCHEDULE_KEYWORDS.includes(value) || CRON_MACROS.includes(value)) {
-    return true;
-  }
-  const fields = value.split(/\s+/);
-  return fields.length === 5 && fields.every((field) => CRON_FIELD.test(field));
-};
-
 /** Reasons the OpenCTI hunt import would refuse this hunt of a pack. */
 export const huntImportErrors = (hunt: Record<string, unknown>): string[] => {
   const errors: string[] = [];
@@ -194,12 +174,12 @@ export const huntImportErrors = (hunt: Record<string, unknown>): string[] => {
       errors.push(...sigmaRuleErrors(hunt.sigma_rule));
     }
   }
-  if (
-    isPresent(hunt.hunt_schedule) &&
-    (typeof hunt.hunt_schedule !== 'string' ||
-      !isValidSchedule(hunt.hunt_schedule))
-  ) {
-    errors.push('the schedule is not manual, standing or a cron expression');
+  if (isPresent(hunt.hunt_schedule)) {
+    const scheduleError =
+      typeof hunt.hunt_schedule === 'string'
+        ? huntScheduleError(hunt.hunt_schedule)
+        : 'the schedule is not a text';
+    if (scheduleError) errors.push(scheduleError);
   }
   Object.entries(HUNT_INTEGER_LIMITS).forEach(([field, max]) => {
     const value = hunt[field];

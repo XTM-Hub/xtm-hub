@@ -23,6 +23,7 @@ const MITRE_SOURCE_NAMES = [
   'mitre-pre-attack',
 ];
 const HUNT_PLATFORM_PATTERN = /^[a-z0-9][a-z0-9-]{0,63}$/;
+const ATTACK_TECHNIQUE_ID_PATTERN = /^T\d{4}(?:\.\d{3})?$/;
 
 type StixObject = Record<string, unknown>;
 
@@ -35,22 +36,27 @@ export interface HuntPackSummary {
 const isRecord = (value: unknown): value is StixObject =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
+const toAttackTechniqueId = (value: unknown) => {
+  const id = typeof value === 'string' ? value.trim().toUpperCase() : '';
+  return ATTACK_TECHNIQUE_ID_PATTERN.test(id) ? id : undefined;
+};
+
 const attackTechniqueId = (attackPattern: StixObject | undefined) => {
-  if (!attackPattern) return undefined;
-  if (typeof attackPattern.x_mitre_id === 'string') {
-    return attackPattern.x_mitre_id;
-  }
+  if (attackPattern?.type !== 'attack-pattern') return undefined;
   const references = Array.isArray(attackPattern.external_references)
     ? attackPattern.external_references
     : [];
-  const mitreReference = references.find(
-    (reference): reference is StixObject =>
-      isRecord(reference) &&
-      typeof reference.source_name === 'string' &&
-      MITRE_SOURCE_NAMES.includes(reference.source_name) &&
-      typeof reference.external_id === 'string'
-  );
-  return mitreReference?.external_id as string | undefined;
+  const mitreReferenceIds = references
+    .filter(
+      (reference): reference is StixObject =>
+        isRecord(reference) &&
+        typeof reference.source_name === 'string' &&
+        MITRE_SOURCE_NAMES.includes(reference.source_name)
+    )
+    .map((reference) => reference.external_id);
+  return [attackPattern.x_mitre_id, ...mitreReferenceIds]
+    .map(toAttackTechniqueId)
+    .find((id) => id !== undefined);
 };
 
 const sortedUnique = (values: Iterable<string>, limit: number) =>

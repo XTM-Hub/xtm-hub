@@ -95,6 +95,42 @@ describe('huntPackHelper.summarize', () => {
     });
   });
 
+  it('only counts attack patterns with a valid ATT&CK identifier as techniques', () => {
+    const summary = HuntPackHelper.summarize(
+      bundle([
+        attackPattern('attack-pattern--1', ' t1059.001 '),
+        attackPattern('attack-pattern--2', 'not-a-technique'),
+        {
+          ...attackPattern('attack-pattern--3', 'T1003'),
+          x_mitre_id: 'invalid',
+        },
+        { type: 'malware', id: 'malware--1', x_mitre_id: 'T1566' },
+        hunt('hunt--1', [
+          'attack-pattern--1',
+          'attack-pattern--2',
+          'attack-pattern--3',
+          'malware--1',
+        ]),
+      ])
+    );
+
+    expect(summary.attackTechniques).toEqual(['T1059.001']);
+  });
+
+  it('falls back to the MITRE reference when the ATT&CK identifier is invalid', () => {
+    const summary = HuntPackHelper.summarize(
+      bundle([
+        {
+          ...attackPattern('attack-pattern--1', 'T1003', true),
+          x_mitre_id: 'invalid',
+        },
+        hunt('hunt--1', ['attack-pattern--1']),
+      ])
+    );
+
+    expect(summary.attackTechniques).toEqual(['T1003']);
+  });
+
   it.each`
     case                         | content
     ${'a missing file content'}  | ${undefined}
