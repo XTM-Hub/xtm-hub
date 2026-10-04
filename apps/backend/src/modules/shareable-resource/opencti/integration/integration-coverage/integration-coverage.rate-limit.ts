@@ -11,6 +11,18 @@ export const COVERAGE_FACETS_RATE_LIMIT = {
   limit: 30,
 };
 
+/**
+ * Coverage searches selecting facets that the anonymous callers together may
+ * run per window: an anonymous caller is known by an address it can forge, so
+ * the total stays bounded however many addresses it uses.
+ */
+export const COVERAGE_FACETS_ANONYMOUS_RATE_LIMIT = {
+  windowMs: 60 * 1000,
+  limit: 600,
+};
+
+const ANONYMOUS_CALLERS_KEY = 'anonymous';
+
 // Bounds the memory of the limiter under a flood of distinct callers
 const MAX_TRACKED_CALLERS = 10_000;
 
@@ -59,8 +71,9 @@ export const createFixedWindowLimiter = ({
 };
 
 /**
- * A signed-in caller is limited per user; an anonymous caller per IP, with the
- * IPv6 grouping and the `req.ip` of the hub's other IP rate limiters.
+ * A signed-in caller is limited per user; an anonymous caller per client IP
+ * (the address the hub records for the request, behind the front-end proxy),
+ * with the IPv6 grouping of the hub's other IP rate limiters.
  */
 export const coverageFacetsCallerKey = ({
   userId,
@@ -76,6 +89,11 @@ const coverageFacetsLimiter = createFixedWindowLimiter({
   maxKeys: MAX_TRACKED_CALLERS,
 });
 
+const anonymousFacetsLimiter = createFixedWindowLimiter({
+  ...COVERAGE_FACETS_ANONYMOUS_RATE_LIMIT,
+  maxKeys: 1,
+});
+
 // One refusal warning per caller and window, as the hub's REST rate limiters log
 const refusalLogLimiter = createFixedWindowLimiter({
   windowMs: COVERAGE_FACETS_RATE_LIMIT.windowMs,
@@ -83,16 +101,33 @@ const refusalLogLimiter = createFixedWindowLimiter({
   maxKeys: MAX_TRACKED_CALLERS,
 });
 
+const refusedLimit = (caller: { userId?: string; ip?: string }) => {
+  const key = coverageFacetsCallerKey(caller);
+  if (!coverageFacetsLimiter.consume(key)) {
+    return { key, limits: COVERAGE_FACETS_RATE_LIMIT };
+  }
+  if (
+    !caller.userId &&
+    !anonymousFacetsLimiter.consume(ANONYMOUS_CALLERS_KEY)
+  ) {
+    return {
+      key: ANONYMOUS_CALLERS_KEY,
+      limits: COVERAGE_FACETS_ANONYMOUS_RATE_LIMIT,
+    };
+  }
+  return null;
+};
+
 export const IntegrationCoverageRateLimit = {
   assertFacetsAllowed: (caller: { userId?: string; ip?: string }): void => {
-    const key = coverageFacetsCallerKey(caller);
-    if (coverageFacetsLimiter.consume(key)) {
+    const refused = refusedLimit(caller);
+    if (!refused) {
       return;
     }
-    if (refusalLogLimiter.consume(key)) {
+    if (refusalLogLimiter.consume(refused.key)) {
       logApp.warn('[RATE-LIMIT] Coverage search with facets rate limited', {
-        caller: key,
-        ...COVERAGE_FACETS_RATE_LIMIT,
+        caller: refused.key,
+        ...refused.limits,
       });
     }
     // Mapped by the resolver to an HTTP 429 response, logged there at debug level only
@@ -100,6 +135,7 @@ export const IntegrationCoverageRateLimit = {
   },
   reset: () => {
     coverageFacetsLimiter.clear();
+    anonymousFacetsLimiter.clear();
     refusalLogLimiter.clear();
   },
 };

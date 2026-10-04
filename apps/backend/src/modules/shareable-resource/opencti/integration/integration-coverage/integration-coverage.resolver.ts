@@ -1,4 +1,5 @@
 import { Resolvers } from '../../../../../__generated__/resolvers-types';
+import { requestContext } from '../../../../../context/request.context';
 import { UnknownErrorCode } from '../../../../../utils/error/error.code';
 import { mapToGraphQLError } from '../../../../../utils/error/error.mapping';
 import { selectedSubFieldNames } from '../../../../../utils/graphql-selection.util';
@@ -16,9 +17,10 @@ const resolvers: Resolvers = {
           isCoverageFacetKey
         );
         if (facetKeys.length > 0) {
+          // Behind the front-end proxy, `req.ip` is the proxy for every caller: the client IP is the recorded one
           IntegrationCoverageRateLimit.assertFacetsAllowed({
             userId: context.user?.id,
-            ip: context.req?.ip,
+            ip: requestContext.get()?.ip ?? context.req?.ip,
           });
         }
         return await IntegrationCoverageApp.searchIntegrationsByCoverage(

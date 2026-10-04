@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { logApp } from '../../../../../utils/app-logger.util';
 import { TooManyRequestsErrorCode } from '../../../../../utils/error/error.code';
 import {
+  COVERAGE_FACETS_ANONYMOUS_RATE_LIMIT,
   COVERAGE_FACETS_RATE_LIMIT,
   coverageFacetsCallerKey,
   createFixedWindowLimiter,
@@ -109,6 +110,41 @@ describe('integration-coverage.rate-limit', () => {
     // Then
     expect(limiter.consume('a', 1400)).toBe(false);
     expect(limiter.consume('c', 1400)).toBe(false);
+  });
+
+  it('should bound the anonymous callers together, whatever addresses they use, and not the signed-in ones', () => {
+    // Given
+    IntegrationCoverageRateLimit.reset();
+    const warn = vi.spyOn(logApp, 'warn').mockImplementation(() => {});
+    for (let i = 0; i < COVERAGE_FACETS_ANONYMOUS_RATE_LIMIT.limit; i += 1) {
+      IntegrationCoverageRateLimit.assertFacetsAllowed({
+        ip: `10.${Math.floor(i / 250)}.${i % 250}.1`,
+      });
+    }
+
+    // When
+    const newAddress = () =>
+      IntegrationCoverageRateLimit.assertFacetsAllowed({ ip: '192.0.2.200' });
+
+    // Then
+    expect(newAddress).toThrow(
+      TooManyRequestsErrorCode.CoverageSearchRateLimited
+    );
+    expect(() =>
+      IntegrationCoverageRateLimit.assertFacetsAllowed({
+        userId: 'user-id',
+        ip: '192.0.2.200',
+      })
+    ).not.toThrow();
+    expect(warn).toHaveBeenCalledWith(
+      '[RATE-LIMIT] Coverage search with facets rate limited',
+      expect.objectContaining({
+        caller: 'anonymous',
+        limit: COVERAGE_FACETS_ANONYMOUS_RATE_LIMIT.limit,
+      })
+    );
+    IntegrationCoverageRateLimit.reset();
+    warn.mockRestore();
   });
 
   it('should key a signed-in caller by user and an anonymous one by IP', () => {

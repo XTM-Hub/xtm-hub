@@ -8,6 +8,7 @@ import {
   IntegrationCoverageSearchResult,
   IntegrationType,
 } from '../../../../../__generated__/resolvers-types';
+import { requestContext } from '../../../../../context/request.context';
 import type { PortalContext } from '../../../../../model/portal-context';
 import {
   BadRequestErrorCode,
@@ -188,6 +189,38 @@ describe('integration-coverage.resolver', () => {
     await expect(
       callSelecting(contextSimpleUserFiligran2, withFacets)
     ).resolves.toBeDefined();
+  });
+
+  it('should limit the anonymous callers by the client IP recorded for the request, not by the proxy address', async () => {
+    // Given
+    vi.spyOn(
+      IntegrationCoverageApp,
+      'searchIntegrationsByCoverage'
+    ).mockResolvedValue({
+      matches: [],
+      facets: EMPTY_FACETS,
+      truncated: false,
+    });
+    const throughProxy = {
+      req: { ip: '10.0.0.5' },
+    } as unknown as PortalContext;
+    const withFacets = infoSelecting(['sector']);
+    const callFrom = (clientIp: string) =>
+      requestContext.run({ ip: clientIp }, () =>
+        callSelecting(throughProxy, withFacets)
+      );
+    for (let i = 0; i < COVERAGE_FACETS_RATE_LIMIT.limit; i += 1) {
+      await callFrom('203.0.113.7');
+    }
+
+    // When
+    const limited = callFrom('203.0.113.7');
+
+    // Then
+    await expect(limited).rejects.toMatchObject({
+      message: TooManyRequestsErrorCode.CoverageSearchRateLimited,
+    });
+    await expect(callFrom('198.51.100.20')).resolves.toBeDefined();
   });
 
   it('should surface a validation failure as a bad request', async () => {
