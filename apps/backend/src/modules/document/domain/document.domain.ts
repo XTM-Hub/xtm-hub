@@ -256,6 +256,15 @@ export const DocumentDomain = {
       .forUpdate();
   },
 
+  /** Locks the document row until the transaction ends and returns its file. */
+  lockDocumentFile: async (id: string): Promise<string | null> => {
+    const [document] = await db<DocumentModel>('Document')
+      .where('id', '=', id)
+      .select('minio_name')
+      .forUpdate();
+    return document?.minio_name ?? null;
+  },
+
   loadDocumentsByMetadata: async (
     key: string,
     value: string,
