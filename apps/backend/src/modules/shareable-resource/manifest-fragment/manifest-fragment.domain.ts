@@ -163,33 +163,49 @@ const removeLatestTagFromExistingBatchConnectors = async ({
   }
 };
 
+/** Every check of a fragment that needs no database, so a batch can be checked before any of its fragments is written. */
+const validateManifestFragment = (fragment: ManifestFragmentInput) => {
+  if (fragment.integration_type !== ManifestType.Connector) {
+    throw new Error(BadRequestErrorCode.IntegrationTypeNotRecognized);
+  }
+
+  ManifestFragmentHelper.validateAndFormatMinimumVersion(fragment.min_version);
+  const connectorType = ConnectorTypeHelper.parse(fragment.image_type);
+  const minimumDeployableVersion =
+    ConnectorTypeHelper.resolveMinimumDeployableVersion(
+      connectorType,
+      fragment.min_version
+    ) ?? fragment.min_version;
+  ManifestFragmentHelper.validateShortDescriptionLength(
+    fragment.short_description
+  );
+  ManifestFragmentHelper.validateSolutionCategories(
+    fragment.solution_categories
+  );
+  return {
+    connectorType,
+    minimumDeployableVersion,
+    licenseType: fragment.license_type ?? undefined,
+    contact: ManifestFragmentHelper.parseContact(fragment.contact),
+    formattedVersion: ManifestFragmentHelper.validateAndFormatManifestVersion(
+      fragment.version
+    ),
+  };
+};
+
 export const ManifestFragmentDomain = {
+  validateManifestFragment,
+
   ingestManifestFragment: async (
     fragment: ManifestFragmentInput
   ): Promise<void> => {
-    if (fragment.integration_type !== ManifestType.Connector) {
-      throw new Error(BadRequestErrorCode.IntegrationTypeNotRecognized);
-    }
-
-    ManifestFragmentHelper.validateAndFormatMinimumVersion(
-      fragment.min_version
-    );
-    const connectorType = ConnectorTypeHelper.parse(fragment.image_type);
-    const minimumDeployableVersion =
-      ConnectorTypeHelper.resolveMinimumDeployableVersion(
-        connectorType,
-        fragment.min_version
-      ) ?? fragment.min_version;
-    ManifestFragmentHelper.validateShortDescriptionLength(
-      fragment.short_description
-    );
-    ManifestFragmentHelper.validateSolutionCategories(
-      fragment.solution_categories
-    );
-    const licenseType = fragment.license_type ?? undefined;
-    const contact = ManifestFragmentHelper.parseContact(fragment.contact);
-    const formattedVersion =
-      ManifestFragmentHelper.validateAndFormatManifestVersion(fragment.version);
+    const {
+      connectorType,
+      minimumDeployableVersion,
+      licenseType,
+      contact,
+      formattedVersion,
+    } = validateManifestFragment(fragment);
     const latestTag =
       ManifestFragmentHelper.getLatestTagForConnectorVersion(formattedVersion);
 

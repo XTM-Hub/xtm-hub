@@ -372,6 +372,46 @@ describe('manifestFragmentApp', () => {
       ).toBeUndefined();
     });
 
+    it.each`
+      problem                                              | change                                                                   | error
+      ${'a dot after -lts and no revision in its minimum'} | ${(f: ManifestFragmentInput) => (f.min_version = '7.261015.0-lts.')}     | ${BadRequestErrorCode.InvalidManifestVersionFormat}
+      ${'an invalid version'}                              | ${(f: ManifestFragmentInput) => (f.version = '7.261015.0-lts')}          | ${BadRequestErrorCode.InvalidManifestVersionFormat}
+      ${'a too long short description'}                    | ${(f: ManifestFragmentInput) => (f.short_description = 'a'.repeat(251))} | ${BadRequestErrorCode.ShortDescriptionTooLong}
+    `(
+      'rejects the whole batch before ingesting anything when its second fragment has $problem',
+      async ({
+        change,
+        error,
+      }: {
+        change: (fragment: ManifestFragmentInput) => void;
+        error: string;
+      }) => {
+        const first = buildManifestFragment({
+          slug: 'splunk-hunt-batch-first',
+          minVersion: '7.261015.0-lts',
+          version: '7.261015.0-lts.3',
+        });
+        first.image_type = 'INTERNAL_HUNT';
+        const second = buildManifestFragment({
+          slug: 'splunk-hunt-batch-second',
+          minVersion: '7.261015.0-lts.1',
+          version: '7.261015.0-lts.3',
+        });
+        second.image_type = 'INTERNAL_HUNT';
+        change(second);
+
+        await expect(
+          ManifestFragmentApp.ingestManifestFragments({
+            manifestFragments: [first, second],
+          })
+        ).rejects.toThrow(error);
+
+        expect(
+          await TestHelper.document.load({ slug: 'splunk-hunt-batch-first' })
+        ).toBeUndefined();
+      }
+    );
+
     it('rejects the whole batch before ingesting anything when a fragment has an unknown connector type', async () => {
       const unknownTypeFragment = buildManifestFragment({
         slug: 'misp-unknown-type-second',
