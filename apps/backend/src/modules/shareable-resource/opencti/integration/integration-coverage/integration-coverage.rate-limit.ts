@@ -25,19 +25,16 @@ export const createFixedWindowLimiter = ({
   limit,
   maxKeys,
 }: FixedWindowLimiterOptions) => {
+  // In window start order: a key starting a new window moves to the end, so the expired windows are at the front
   const windows = new Map<string, { startedAt: number; count: number }>();
 
-  const evict = (now: number) => {
+  // Constant amortized time: each window is removed once, from the front, expired or the oldest one at capacity
+  const evictFront = (now: number) => {
     for (const [key, window] of windows) {
-      if (now - window.startedAt >= windowMs) {
-        windows.delete(key);
+      if (windows.size < maxKeys && now - window.startedAt < windowMs) {
+        return;
       }
-    }
-    if (windows.size >= maxKeys) {
-      const oldestKey = windows.keys().next().value;
-      if (oldestKey !== undefined) {
-        windows.delete(oldestKey);
-      }
+      windows.delete(key);
     }
   };
 
@@ -53,9 +50,7 @@ export const createFixedWindowLimiter = ({
         return true;
       }
       windows.delete(key);
-      if (windows.size >= maxKeys) {
-        evict(now);
-      }
+      evictFront(now);
       windows.set(key, { startedAt: now, count: 1 });
       return true;
     },

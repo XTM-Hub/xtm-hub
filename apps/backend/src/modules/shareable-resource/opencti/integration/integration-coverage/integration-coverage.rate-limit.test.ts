@@ -44,6 +44,45 @@ describe('integration-coverage.rate-limit', () => {
     expect(limiter.consume('new', 1600)).toBe(false);
   });
 
+  it('should drop the oldest window at capacity when none expired', () => {
+    // Given
+    const limiter = createFixedWindowLimiter({
+      windowMs: 1000,
+      limit: 1,
+      maxKeys: 2,
+    });
+    limiter.consume('oldest', 0);
+    limiter.consume('older', 100);
+
+    // When
+    limiter.consume('new', 200);
+
+    // Then: the oldest key starts a fresh window, the others are still limited
+    expect(limiter.consume('older', 300)).toBe(false);
+    expect(limiter.consume('new', 300)).toBe(false);
+    expect(limiter.consume('oldest', 300)).toBe(true);
+  });
+
+  it('should move a key starting a new window behind the others', () => {
+    // Given
+    const limiter = createFixedWindowLimiter({
+      windowMs: 1000,
+      limit: 1,
+      maxKeys: 2,
+    });
+    limiter.consume('a', 0);
+    limiter.consume('b', 500);
+    // a starts a new window at 1200: b is now the oldest
+    limiter.consume('a', 1200);
+
+    // When
+    limiter.consume('c', 1300);
+
+    // Then
+    expect(limiter.consume('a', 1400)).toBe(false);
+    expect(limiter.consume('c', 1400)).toBe(false);
+  });
+
   it('should key a signed-in caller by user and an anonymous one by IP', () => {
     expect(
       coverageFacetsCallerKey({ userId: 'user-id', ip: '203.0.113.7' })
