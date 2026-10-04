@@ -187,6 +187,15 @@ const DocumentMetadataMappedByServiceIdentifier: Record<
     OPENCTI_HUNT_PACK_METADATA,
 };
 
+// Length of the `minio_name` column of the Document table.
+export const DOCUMENT_KEY_MAX_LENGTH = 255;
+const DOCUMENT_KEY_EXTENSION_MAX_LENGTH = 16;
+
+// PostgreSQL counts the length of a varchar in characters: cutting by code
+// point also never splits a surrogate pair.
+const takeCharacters = (value: string, count: number) =>
+  Array.from(value).slice(0, count).join('');
+
 export const DocumentHelper = {
   buildCompleteMetadataFromDocumentFile: ({
     sourceDocumentFile,
@@ -342,11 +351,17 @@ export const DocumentHelper = {
 
   getDocumentName: (documentName: string) => {
     const splitName = documentName.split('.');
-    const nameWithoutExtension = splitName[0];
-    const extensionName = splitName[1];
+    const nameWithoutExtension = splitName[0] ?? '';
+    const extensionName = takeCharacters(
+      String(splitName[1]),
+      DOCUMENT_KEY_EXTENSION_MAX_LENGTH
+    );
     // The random part keeps two uploads of the same name in the same
     // millisecond on distinct keys: a failed request deletes only its own.
-    return `${nameWithoutExtension}_${Date.now()}_${randomUUID()}.${extensionName}`;
+    const suffix = `_${Date.now()}_${randomUUID()}.${extensionName}`;
+    // The key is stored in `minio_name`: a long name is shortened, never the
+    // suffix that keeps it unique.
+    return `${takeCharacters(nameWithoutExtension, DOCUMENT_KEY_MAX_LENGTH - suffix.length)}${suffix}`;
   },
 
   normalizeDocumentName: (documentName: string = ''): string => {

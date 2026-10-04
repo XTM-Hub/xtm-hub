@@ -41,7 +41,7 @@ import {
 } from '../telemetry/telemetry.const';
 import { TelemetryEventType } from '../telemetry/telemetry.types';
 import { DocumentApp } from './document.app';
-import { DocumentHelper } from './document.helper';
+import { DOCUMENT_KEY_MAX_LENGTH, DocumentHelper } from './document.helper';
 import documentResolver from './document.resolver';
 
 describe('should call S3 to send file', () => {
@@ -135,6 +135,29 @@ describe('getFileName', () => {
     expect(DocumentHelper.getDocumentName('pack.json')).not.toEqual(
       DocumentHelper.getDocumentName('pack.json')
     );
+  });
+
+  it('should shorten a long name to fit the minio_name column and keep its unique suffix', () => {
+    const result = DocumentHelper.getDocumentName(`${'a'.repeat(300)}.json`);
+    expect(result).toHaveLength(DOCUMENT_KEY_MAX_LENGTH);
+    expect(result).toMatch(/^a+_\d{13}_[0-9a-f-]{36}\.json$/);
+  });
+
+  it('should shorten a long extension to fit the minio_name column', () => {
+    const result = DocumentHelper.getDocumentName(`pack.${'x'.repeat(300)}`);
+    expect(result.length).toBeLessThanOrEqual(DOCUMENT_KEY_MAX_LENGTH);
+    expect(result).toMatch(/^pack_\d{13}_[0-9a-f-]{36}\.x{16}$/);
+  });
+
+  it('should never split a character when it shortens a long name', () => {
+    const result = DocumentHelper.getDocumentName(
+      `${'\u{1F50E}'.repeat(300)}.json`
+    );
+    expect(Array.from(result).length).toBeLessThanOrEqual(
+      DOCUMENT_KEY_MAX_LENGTH
+    );
+    expect(() => encodeURIComponent(result)).not.toThrow();
+    expect(result).toMatch(/^(\u{1F50E})+_\d{13}_[0-9a-f-]{36}\.json$/u);
   });
 });
 
