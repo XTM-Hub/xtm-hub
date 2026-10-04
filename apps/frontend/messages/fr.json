@@ -1208,6 +1208,7 @@
       "CoveredObjectTypesLabel": "Types d'objets couverts",
       "CoveredObjectTypesPlaceholder": "Types d'objets couverts...",
       "CoverageDescription": "Laissez la couverture vide pour que le Hub la déduise du nom, des descriptions, des cas d'usage et des catégories de solution.",
+      "CoverageInferredEmptyNote": "Aucune couverture n'a pu être déduite automatiquement pour cette intégration. Déclarez-la avec les valeurs ci-dessous.",
       "CoverageInferredNote": "La couverture actuelle a été déduite automatiquement. Corrigez-la, ou confirmez-la avec « Confirmer cette couverture » ci-dessous : les valeurs enregistrées sont alors déclarées et remplacent la déduction.",
       "CoverageConfirmLabel": "Confirmer cette couverture",
       "CoverageConfirmHint": "Enregistre la couverture comme déclarée, même inchangée.",

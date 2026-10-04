@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { describe, expect, it, vi } from 'vitest';
 import {
   coverageValuesSchema,
+  hasCoverageValues,
   MAX_COVERAGE_VALUES,
   ServiceFormCoverageConfirmationField,
   ServiceFormCoverageTagsField,
@@ -104,7 +105,13 @@ vi.mock('@/components/service/form/UseCoverageObjectTypes', () => ({
   useCoverageObjectTypes: () => [{ id: 'Malware', name: 'Malware' }],
 }));
 
-const ObjectTypesForm = ({ inferred }: { inferred: boolean }) => {
+const ObjectTypesForm = ({
+  inferred,
+  inferredEmpty = false,
+}: {
+  inferred: boolean;
+  inferredEmpty?: boolean;
+}) => {
   const form = useForm<{ covered_object_types?: string[] }>({
     defaultValues: { covered_object_types: ['Malware'] },
   });
@@ -117,6 +124,7 @@ const ObjectTypesForm = ({ inferred }: { inferred: boolean }) => {
           <ServiceFormCoveredObjectTypesField
             field={field}
             inferred={inferred}
+            inferredEmpty={inferredEmpty}
           />
         )}
       />
@@ -124,12 +132,46 @@ const ObjectTypesForm = ({ inferred }: { inferred: boolean }) => {
   );
 };
 
+describe('hasCoverageValues', () => {
+  it('should tell whether an integration carries a coverage value', () => {
+    expect(hasCoverageValues({ covered_object_types: ['Malware'] })).toBe(true);
+    expect(
+      hasCoverageValues({
+        covered_object_types: [],
+        covered_regions: ['europe'],
+      })
+    ).toBe(true);
+    expect(
+      hasCoverageValues({
+        covered_object_types: [],
+        covered_sectors: [],
+        covered_regions: null,
+      })
+    ).toBe(false);
+    expect(hasCoverageValues({ name: 'No coverage fields' })).toBe(false);
+    expect(hasCoverageValues(undefined)).toBe(false);
+  });
+});
+
 describe('ServiceFormCoveredObjectTypesField', () => {
   it('should invite to edit an inferred coverage to confirm or correct it', () => {
     testRender(<ObjectTypesForm inferred />);
 
     expect(screen.getByTestId('coverage-inferred-note')).toHaveTextContent(
       'Service.Form.CoverageInferredNote'
+    );
+  });
+
+  it('should invite to declare a coverage when the inference found nothing', () => {
+    testRender(
+      <ObjectTypesForm
+        inferred
+        inferredEmpty
+      />
+    );
+
+    expect(screen.getByTestId('coverage-inferred-note')).toHaveTextContent(
+      'Service.Form.CoverageInferredEmptyNote'
     );
   });
 

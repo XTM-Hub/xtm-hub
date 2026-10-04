@@ -1,4 +1,5 @@
 import {
+  hasCoverageValues,
   ServiceFormCoverageConfirmationField,
   ServiceFormCoverageTagsField,
   ServiceFormCoveredObjectTypesField,
@@ -112,6 +113,9 @@ export const useServiceFormFields = ({
     !!document &&
     'coverage_inferred' in document &&
     document.coverage_inferred === true;
+  // The Hub infers an empty coverage again on every save: only an inference with values can be confirmed
+  const inferredCoverageEmpty =
+    coverageInferred && !hasCoverageValues(document);
   const [images, setImages] = useState<
     Array<ServiceFormMultipleImagesFieldImages>
   >(
@@ -219,6 +223,7 @@ export const useServiceFormFields = ({
             field={field}
             disabled={disabledFields.includes('covered_object_types')}
             inferred={coverageInferred}
+            inferredEmpty={inferredCoverageEmpty}
           />
         ),
       },
@@ -257,7 +262,7 @@ export const useServiceFormFields = ({
           <ServiceFormCoverageConfirmationField
             field={field}
             disabled={disabledFields.includes('coverage_confirmed')}
-            inferred={coverageInferred}
+            inferred={coverageInferred && !inferredCoverageEmpty}
           />
         ),
       },
@@ -437,6 +442,7 @@ export const useServiceFormFields = ({
       isCreation,
       document,
       coverageInferred,
+      inferredCoverageEmpty,
       integrationType,
       images,
       setImages,

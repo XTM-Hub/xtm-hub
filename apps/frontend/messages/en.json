@@ -1208,6 +1208,7 @@
       "CoveredObjectTypesLabel": "Covered object types",
       "CoveredObjectTypesPlaceholder": "Covered object types...",
       "CoverageDescription": "Leave the coverage empty to let the Hub infer it from the name, descriptions, use cases and solution categories.",
+      "CoverageInferredEmptyNote": "No coverage could be inferred automatically for this integration. Declare it with the values below.",
       "CoverageInferredNote": "The current coverage was inferred automatically. Correct it, or confirm it with \"Confirm this coverage\" below: the values you save are then declared and replace the inference.",
       "CoverageConfirmLabel": "Confirm this coverage",
       "CoverageConfirmHint": "Saves the coverage as declared, even unchanged.",

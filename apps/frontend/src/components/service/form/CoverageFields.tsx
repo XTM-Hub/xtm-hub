@@ -38,12 +38,29 @@ interface CoverageFieldProps {
 interface CoveredObjectTypesFieldProps extends CoverageFieldProps {
   // The current coverage of the edited integration was inferred by the Hub
   inferred?: boolean;
+  // The inference found no value: there is nothing to confirm, only to declare
+  inferredEmpty?: boolean;
 }
+
+const COVERAGE_VALUE_KEYS = [
+  'covered_object_types',
+  'covered_sectors',
+  'covered_regions',
+] as const;
+
+/** Whether an integration carries at least one coverage value, inferred or declared. */
+export const hasCoverageValues = (document: object | null | undefined) =>
+  !!document &&
+  COVERAGE_VALUE_KEYS.some((key) => {
+    const values = (document as Record<string, unknown>)[key];
+    return Array.isArray(values) && values.length > 0;
+  });
 
 export const ServiceFormCoveredObjectTypesField = ({
   field,
   disabled,
   inferred = false,
+  inferredEmpty = false,
 }: CoveredObjectTypesFieldProps) => {
   const t = useTranslations();
   const objectTypes = useCoverageObjectTypes();
@@ -54,7 +71,9 @@ export const ServiceFormCoveredObjectTypesField = ({
         <p
           className="text-sm txt-sub-content"
           data-testid="coverage-inferred-note">
-          {t('Service.Form.CoverageInferredNote')}
+          {inferredEmpty
+            ? t('Service.Form.CoverageInferredEmptyNote')
+            : t('Service.Form.CoverageInferredNote')}
         </p>
       )}
       <FormControl>

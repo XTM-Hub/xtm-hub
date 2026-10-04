@@ -1208,6 +1208,7 @@
       "CoveredObjectTypesLabel": "対象のオブジェクトタイプ",
       "CoveredObjectTypesPlaceholder": "対象のオブジェクトタイプ...",
       "CoverageDescription": "カバレッジを空にすると、Hub が名前、説明、ユースケース、ソリューションカテゴリから推定します。",
+      "CoverageInferredEmptyNote": "この統合のカバレッジは自動で推定できませんでした。以下の値で宣言してください。",
       "CoverageInferredNote": "現在のカバレッジは自動推定されたものです。修正するか、下の「このカバレッジを確認」で確認してください。保存した値は宣言済みとなり、推定に代わります。",
       "CoverageConfirmLabel": "このカバレッジを確認",
       "CoverageConfirmHint": "変更がなくても、カバレッジを宣言済みとして保存します。",
