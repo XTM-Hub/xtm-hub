@@ -77,6 +77,15 @@ const objectTypeKey = (value: string): string =>
 const isKnownObjectType = (value: string): boolean =>
   CANONICAL_OBJECT_TYPES.has(objectTypeKey(value));
 
+/**
+ * The complete validation of a declaration: the shared rules plus the object types, a closed OpenCTI vocabulary
+ * (served by integrationCoverageObjectTypes). Every path that accepts a declaration uses it.
+ */
+export const ValidIntegrationCoverageDeclarationSchema =
+  IntegrationCoverageDeclarationSchema.refine((declaration) =>
+    (declaration.object_types ?? []).every(isKnownObjectType)
+  );
+
 const canonicalizeValue = (family: CoverageFamily, value: string): string => {
   const collapsed = collapseSpaces(value);
   if (family === 'object_types') {
@@ -161,11 +170,9 @@ export const IntegrationCoverageHelper = {
     if (declaration == null) {
       return;
     }
-    if (!IntegrationCoverageDeclarationSchema.safeParse(declaration).success) {
-      throw new Error(BadRequestErrorCode.InvalidIntegrationCoverage);
-    }
-    // Object types are the closed OpenCTI vocabulary served by integrationCoverageObjectTypes
-    if (!(declaration.object_types ?? []).every(isKnownObjectType)) {
+    if (
+      !ValidIntegrationCoverageDeclarationSchema.safeParse(declaration).success
+    ) {
       throw new Error(BadRequestErrorCode.InvalidIntegrationCoverage);
     }
   },

@@ -12,7 +12,7 @@ import { fetchWithCacheForLocalTesting } from '../../../../../utils/fetch-with-c
 import { isValidVersion } from '../../../../../utils/versioning';
 import { Upload } from '../../../../document/document.uploads.helper';
 import { MAX_CONTACT_LENGTH } from '../../../manifest-fragment/manifest-fragment.helper';
-import { IntegrationCoverageDeclarationSchema } from '../integration-coverage/integration-coverage.helper';
+import { ValidIntegrationCoverageDeclarationSchema } from '../integration-coverage/integration-coverage.helper';
 import {
   INTEGRATION_SERVICE_INSTANCE_ID,
   OPENCTI_INTEGRATION_DOCUMENT_TYPE,
@@ -74,7 +74,7 @@ const ContractSchema = z.object({
       );
       return undefined;
     }),
-  coverage: IntegrationCoverageDeclarationSchema.nullish().catch(
+  coverage: ValidIntegrationCoverageDeclarationSchema.nullish().catch(
     ({ input }) => {
       logApp.warn('Invalid coverage in manifest contract, field ignored', {
         input,
