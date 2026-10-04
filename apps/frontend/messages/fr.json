@@ -1626,7 +1626,9 @@
         "CoveredSectors": "Secteurs couverts",
         "CoveredRegions": "Régions couvertes",
         "CoverageInferred": "Déduite automatiquement",
-        "CoverageInferredTooltip": "L'éditeur n'a pas déclaré cette couverture : le Hub l'a déduite du nom, des descriptions, des cas d'usage et des catégories de solution de l'intégration. Modifiez la couverture dans le formulaire de l'intégration pour la confirmer ou la corriger."
+        "CoverageInferredTooltip": "L'éditeur n'a pas déclaré cette couverture : le Hub l'a déduite du nom, des descriptions, des cas d'usage et des catégories de solution de l'intégration. Modifiez la couverture dans le formulaire de l'intégration pour la confirmer ou la corriger.",
+        "CoverageInferredEmpty": "Aucune couverture déduite",
+        "CoverageInferredEmptyTooltip": "L'éditeur n'a pas déclaré cette couverture, et le Hub n'a trouvé aucun type d'objet, secteur ou région dans le nom, les descriptions, les cas d'usage et les catégories de solution de l'intégration. Déclarez la couverture dans le formulaire de l'intégration."
       },
       "Download": "Télécharger",
       "FromVersion": "Depuis la version",

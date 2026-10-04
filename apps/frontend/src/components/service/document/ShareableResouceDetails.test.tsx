@@ -169,6 +169,50 @@ describe('ShareableResourceDetails', () => {
     ).toHaveLength(1);
   });
 
+  it('should say that an inference found no coverage', () => {
+    testRender(
+      <ShareableResourceDetails
+        documentData={buildDocumentData({
+          covered_object_types: [],
+          covered_sectors: [],
+          covered_regions: [],
+          coverage_inferred: true,
+        })}
+      />
+    );
+
+    expect(
+      screen.getByText(
+        'Service.ShareableResources.Details.CoverageInferredEmpty'
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('Service.ShareableResources.Details.CoverageInferred')
+    ).not.toBeInTheDocument();
+  });
+
+  it('should render nothing for a declared empty coverage', () => {
+    testRender(
+      <ShareableResourceDetails
+        documentData={buildDocumentData({
+          covered_object_types: [],
+          covered_sectors: [],
+          covered_regions: [],
+          coverage_inferred: false,
+        })}
+      />
+    );
+
+    expect(
+      screen.queryByText(
+        'Service.ShareableResources.Details.CoverageInferredEmpty'
+      )
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Service.ShareableResources.Details.CoverageInferred')
+    ).not.toBeInTheDocument();
+  });
+
   it('should fallback to Filigran when organization is undefined', () => {
     testRender(
       <ShareableResourceDetails

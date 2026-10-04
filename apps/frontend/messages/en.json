@@ -1626,7 +1626,9 @@
         "CoveredSectors": "Covered sectors",
         "CoveredRegions": "Covered regions",
         "CoverageInferred": "Inferred automatically",
-        "CoverageInferredTooltip": "The publisher did not declare this coverage: the Hub inferred it from the name, descriptions, use cases and solution categories of the integration. Edit the coverage in the integration form to confirm or correct it."
+        "CoverageInferredTooltip": "The publisher did not declare this coverage: the Hub inferred it from the name, descriptions, use cases and solution categories of the integration. Edit the coverage in the integration form to confirm or correct it.",
+        "CoverageInferredEmpty": "No coverage inferred",
+        "CoverageInferredEmptyTooltip": "The publisher did not declare this coverage, and the Hub found no object type, sector or region in the name, descriptions, use cases and solution categories of the integration. Declare the coverage in the integration form."
       },
       "Download": "Download",
       "FromVersion": "From version",

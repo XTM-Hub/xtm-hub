@@ -31,9 +31,11 @@ export const IntegrationCoverageDetails = ({
         : (coverage[item.field] ?? []),
   })).filter(({ values }) => values.length > 0);
 
-  if (items.length === 0) {
+  // A declared empty coverage says nothing; an inference that found nothing is a state the reader must see
+  if (items.length === 0 && !coverage.coverage_inferred) {
     return null;
   }
+  const inferredEmpty = items.length === 0;
 
   return (
     <>
@@ -47,10 +49,16 @@ export const IntegrationCoverageDetails = ({
       {coverage.coverage_inferred && (
         <SimpleTooltip
           title={t(
-            'Service.ShareableResources.Details.CoverageInferredTooltip'
+            inferredEmpty
+              ? 'Service.ShareableResources.Details.CoverageInferredEmptyTooltip'
+              : 'Service.ShareableResources.Details.CoverageInferredTooltip'
           )}>
           <span className="txt-sub-content underline decoration-dotted underline-offset-2 w-fit">
-            {t('Service.ShareableResources.Details.CoverageInferred')}
+            {t(
+              inferredEmpty
+                ? 'Service.ShareableResources.Details.CoverageInferredEmpty'
+                : 'Service.ShareableResources.Details.CoverageInferred'
+            )}
           </span>
         </SimpleTooltip>
       )}
