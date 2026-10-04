@@ -128,24 +128,22 @@ export const ConnectorTypeHelper = {
   },
 
   /**
-   * Metadata to store for an edited connector: the submitted entries plus the
-   * stored ingestion-owned entries the edit does not carry. The minimum
-   * deployable version keeps the floor of the connector type, and its padded
-   * form follows it, so an edit never offers a connector to a platform that
-   * cannot register it.
+   * Metadata to store for an edited connector: the submitted entries the form
+   * owns plus the stored ingestion-owned entries. Ingestion-owned entries an
+   * edit carries are ignored: they change through catalog ingestion only. The
+   * minimum deployable version keeps the floor of the stored connector type,
+   * and its padded form follows it, so an edit never offers a connector to a
+   * platform that cannot register it.
    */
   mergeEditedMetadata: (
     submitted: MetadataEntry[],
     stored: MetadataEntry[]
   ): MetadataEntry[] => {
-    const submittedKeys = new Set(submitted.map(({ key }) => key));
+    const isIngestionOwned = ({ key }: MetadataEntry) =>
+      INGESTION_OWNED_CONNECTOR_METADATA_KEYS.includes(key);
     const merged: MetadataEntry[] = [
-      ...submitted,
-      ...stored.filter(
-        ({ key }) =>
-          INGESTION_OWNED_CONNECTOR_METADATA_KEYS.includes(key) &&
-          !submittedKeys.has(key)
-      ),
+      ...submitted.filter((entry) => !isIngestionOwned(entry)),
+      ...stored.filter(isIngestionOwned),
     ];
     const valueOf = (key: DocumentMetadataKeyCode) =>
       merged.find((entry) => entry.key === key)?.value;

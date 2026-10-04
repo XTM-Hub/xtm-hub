@@ -163,7 +163,7 @@ describe('connectorTypeHelper.mergeEditedMetadata', () => {
     ]);
   });
 
-  it('lets submitted values win and never restores metadata the form owns', () => {
+  it('keeps the stored ingestion metadata over submitted values and never restores metadata the form owns', () => {
     const merged = ConnectorTypeHelper.mergeEditedMetadata(
       [entry(DocumentMetadataKeyCode.ImageType, 'STREAM')],
       [
@@ -173,8 +173,53 @@ describe('connectorTypeHelper.mergeEditedMetadata', () => {
     );
 
     expect(merged).toEqual([
-      entry(DocumentMetadataKeyCode.ImageType, 'STREAM'),
+      entry(DocumentMetadataKeyCode.ImageType, 'EXTERNAL_IMPORT'),
     ]);
+  });
+
+  it('ignores submitted ingestion metadata the connector does not store', () => {
+    const merged = ConnectorTypeHelper.mergeEditedMetadata(
+      [
+        entry(DocumentMetadataKeyCode.DatasheetUrl, 'https://example.com'),
+        entry(DocumentMetadataKeyCode.ImageType, 'INTERNAL_HUNT'),
+        entry(DocumentMetadataKeyCode.ConfigSchema, '{}'),
+      ],
+      []
+    );
+
+    expect(merged).toEqual([
+      entry(DocumentMetadataKeyCode.DatasheetUrl, 'https://example.com'),
+    ]);
+  });
+
+  it('keeps the hunt type, floor and padded minimum when an edit submits another type and a lower minimum', () => {
+    const merged = ConnectorTypeHelper.mergeEditedMetadata(
+      [
+        entry(DocumentMetadataKeyCode.ImageType, 'EXTERNAL_IMPORT'),
+        entry(DocumentMetadataKeyCode.MinimumDeployableVersion, '7.260900.0'),
+        entry(
+          DocumentMetadataKeyCode.MinimumDeployableVersionPadded,
+          '007.260900.000'
+        ),
+      ],
+      [
+        entry(DocumentMetadataKeyCode.ImageType, 'INTERNAL_HUNT'),
+        entry(
+          DocumentMetadataKeyCode.MinimumDeployableVersionPadded,
+          '007.261003.000'
+        ),
+      ]
+    );
+
+    expect(valueOf(merged, DocumentMetadataKeyCode.ImageType)).toEqual([
+      'INTERNAL_HUNT',
+    ]);
+    expect(
+      valueOf(merged, DocumentMetadataKeyCode.MinimumDeployableVersion)
+    ).toEqual([HUNT_FLOOR]);
+    expect(
+      valueOf(merged, DocumentMetadataKeyCode.MinimumDeployableVersionPadded)
+    ).toEqual(['007.261003.000']);
   });
 
   it.each`

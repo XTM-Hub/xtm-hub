@@ -860,6 +860,66 @@ describe('documentApp', () => {
         ).toBe('https://example.com/datasheet');
       });
 
+      it('keeps the hunt type and its floor when an edit submits another connector type and a lower minimum', async () => {
+        // Given
+        const ingested = await DocumentApp.createDocument({
+          input: { ...documentData, slug: `hunt-type-edit-${uuidv4()}` },
+          metadata: [
+            ...connectorFormMetadata,
+            {
+              key: DocumentMetadataKeyCode.MinimumDeployableVersion,
+              value: '7.261003.0',
+            },
+            {
+              key: DocumentMetadataKeyCode.MinimumDeployableVersionPadded,
+              value: '007.261003.000',
+            },
+            { key: DocumentMetadataKeyCode.ImageType, value: 'INTERNAL_HUNT' },
+          ],
+          serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        });
+
+        // When
+        const result = await DocumentApp.updateDocument({
+          parentDocumentId: ingested.id,
+          serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+          metadata: [
+            ...connectorFormMetadata,
+            {
+              key: DocumentMetadataKeyCode.ImageType,
+              value: 'EXTERNAL_IMPORT',
+            },
+            {
+              key: DocumentMetadataKeyCode.MinimumDeployableVersion,
+              value: '7.260900.0',
+            },
+            {
+              key: DocumentMetadataKeyCode.MinimumDeployableVersionPadded,
+              value: '007.260900.000',
+            },
+          ],
+          input: documentUpdateData,
+          existingImageIds: [],
+        });
+
+        // Then
+        expect(
+          await loadValue(result.id, DocumentMetadataKeyCode.ImageType)
+        ).toBe('INTERNAL_HUNT');
+        expect(
+          await loadValue(
+            result.id,
+            DocumentMetadataKeyCode.MinimumDeployableVersion
+          )
+        ).toBe('7.261003.0');
+        expect(
+          await loadValue(
+            result.id,
+            DocumentMetadataKeyCode.MinimumDeployableVersionPadded
+          )
+        ).toBe('007.261003.000');
+      });
+
       it('keeps the manifest fragment metadata and realigns the padded minimum version', async () => {
         // Given
         const ingested = await DocumentApp.createDocument({
