@@ -1183,12 +1183,57 @@ export const PulseDomain = {
   // endregion
 
   // region Retention
+  // One batch of expired ledger rows, their counts taken off the daily totals
+  // in the same statement: a run stopped between two batches leaves no total
+  // counting a deleted row. A total left at zero goes too.
+  deleteContributionsBeforeDay: async ({
+    day,
+    batchSize,
+  }: {
+    day: string;
+    batchSize: number;
+  }): Promise<{ contributions: number; totals: number }> => {
+    const [row] = await query<{ deleted: number }>(
+      `WITH removed AS (
+         DELETE FROM "PulseContribution"
+         WHERE ctid IN (SELECT ctid FROM "PulseContribution" WHERE day < ?::date LIMIT ?)
+         RETURNING pulse_platform_id, day, object_type, event_kind, sector_bucket, region_bucket, event_count
+       ),
+       counted AS (
+         SELECT pulse_platform_id, day, object_type, event_kind, sector_bucket, region_bucket,
+                SUM(event_count)::bigint AS removed
+         FROM removed
+         GROUP BY pulse_platform_id, day, object_type, event_kind, sector_bucket, region_bucket
+       ),
+       updated AS (
+         UPDATE "PulsePlatformDailyTotal" pt SET event_count = pt.event_count - c.removed
+         FROM counted c
+         WHERE pt.pulse_platform_id = c.pulse_platform_id AND pt.day = c.day
+           AND pt.object_type = c.object_type AND pt.event_kind = c.event_kind
+           AND pt.sector_bucket = c.sector_bucket AND pt.region_bucket = c.region_bucket
+         RETURNING 1
+       )
+       SELECT (SELECT COUNT(*) FROM removed)::int AS deleted`,
+      [day, batchSize]
+    );
+    const [emptied] = await query<{ deleted: number }>(
+      `WITH removed AS (
+         DELETE FROM "PulsePlatformDailyTotal" WHERE day < ?::date AND event_count <= 0
+         RETURNING 1
+       )
+       SELECT COUNT(*)::int AS deleted FROM removed`,
+      [day]
+    );
+    return { contributions: row?.deleted ?? 0, totals: emptied?.deleted ?? 0 };
+  },
+
+  // The totals left before the day once its ledger rows are gone.
   deleteRowsBeforeDay: async ({
     table,
     day,
     batchSize,
   }: {
-    table: 'PulseContribution' | 'PulsePlatformDailyTotal';
+    table: 'PulsePlatformDailyTotal';
     day: string;
     batchSize: number;
   }): Promise<number> => {

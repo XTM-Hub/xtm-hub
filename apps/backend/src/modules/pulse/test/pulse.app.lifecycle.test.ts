@@ -603,23 +603,24 @@ describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
       });
     });
 
-    it('should move the data generation with the first batch a stopped retention run deleted', async () => {
-      // Given contributions past the retention period
+    it('should move the data generation and the totals with the first batch a stopped retention run deleted', async () => {
+      // Given contributions past the retention period, two per platform
       const clients = await registerPulseClients(5);
       await pushFromEach(clients, {
         day: RETENTION_DAY,
-        records: [malware(LOCKBIT)],
+        records: [malware(LOCKBIT), malware('akira')],
       });
       const before = await PulseDomain.loadDataGeneration();
-      const deleteRows = PulseDomain.deleteRowsBeforeDay;
+      const deleteContributions = PulseDomain.deleteContributionsBeforeDay;
       let calls = 0;
-      vi.spyOn(PulseDomain, 'deleteRowsBeforeDay').mockImplementation(
+      vi.spyOn(PulseDomain, 'deleteContributionsBeforeDay').mockImplementation(
         async (input) => {
           calls += 1;
           if (calls > 1) {
             throw new Error('Retention stopped');
           }
-          return deleteRows(input);
+          // A first batch of a single ledger row
+          return deleteContributions({ ...input, batchSize: 1 });
         }
       );
 
@@ -628,11 +629,40 @@ describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
         PulseApp.applyRetention(new Date('2027-11-04T02:00:00.000Z'))
       ).rejects.toThrow('Retention stopped');
 
-      // Then the deletion committed with a new generation
+      // Then the deletion committed with a new generation, and the totals
+      // count exactly the ledger rows left
       expect({
         contributions: await TestHelper.pulse.countRows('PulseContribution'),
+        ledgerEvents:
+          await TestHelper.pulse.sumEventCounts('PulseContribution'),
+        totalEvents: await TestHelper.pulse.sumEventCounts(
+          'PulsePlatformDailyTotal'
+        ),
         generationMoved: (await PulseDomain.loadDataGeneration()) > before,
-      }).toEqual({ contributions: 0, generationMoved: true });
+      }).toEqual({
+        contributions: 9,
+        ledgerEvents: 9,
+        totalEvents: 9,
+        generationMoved: true,
+      });
+    });
+
+    it('should delete a daily total once retention took every ledger row it counted', async () => {
+      // Given contributions past the retention period
+      const clients = await registerPulseClients(5);
+      await pushFromEach(clients, {
+        day: RETENTION_DAY,
+        records: [malware(LOCKBIT)],
+      });
+
+      // When the retention run completes
+      await PulseApp.applyRetention(new Date('2027-11-04T02:00:00.000Z'));
+
+      // Then neither the ledger rows nor their totals remain
+      expect({
+        contributions: await TestHelper.pulse.countRows('PulseContribution'),
+        totals: await TestHelper.pulse.countRows('PulsePlatformDailyTotal'),
+      }).toEqual({ contributions: 0, totals: 0 });
     });
   });
 

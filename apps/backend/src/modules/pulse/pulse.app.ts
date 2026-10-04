@@ -1168,18 +1168,25 @@ export const PulseApp = {
       retentionMonths
     );
     const deleted: Record<string, number> = {};
-    for (const table of [
-      'PulseContribution',
-      'PulsePlatformDailyTotal',
-    ] as const) {
-      deleted[table] = await deleteInBatches(() =>
+    let emptiedTotals = 0;
+    deleted.PulseContribution = await deleteInBatches(async () => {
+      const { contributions, totals } =
+        await PulseDomain.deleteContributionsBeforeDay({
+          day: cutoff,
+          batchSize: PULSE_MAINTENANCE_BATCH_SIZE,
+        });
+      emptiedTotals += totals;
+      return contributions;
+    });
+    deleted.PulsePlatformDailyTotal =
+      emptiedTotals +
+      (await deleteInBatches(() =>
         PulseDomain.deleteRowsBeforeDay({
-          table,
+          table: 'PulsePlatformDailyTotal',
           day: cutoff,
           batchSize: PULSE_MAINTENANCE_BATCH_SIZE,
         })
-      );
-    }
+      ));
     deleted.PulseKeyContributor = await deleteInBatches(() =>
       PulseDomain.deleteKeyContributorsBefore({
         day: cutoff,

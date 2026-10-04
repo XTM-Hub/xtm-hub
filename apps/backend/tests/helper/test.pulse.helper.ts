@@ -145,6 +145,15 @@ export const TestPulseHelper = {
       return Number(row?.count ?? 0);
     },
 
+    sumEventCounts: async (
+      table: 'PulseContribution' | 'PulsePlatformDailyTotal'
+    ): Promise<number> => {
+      const [row] = await db(table).sum<[{ total: string | null }]>(
+        'event_count as total'
+      );
+      return Number(row?.total ?? 0);
+    },
+
     // Resolves once a session of this database waits for an advisory lock
     // another session holds - the observable proof that a concurrent call
     // reached a Threat Pulse lock and is blocked on it - and fails after
