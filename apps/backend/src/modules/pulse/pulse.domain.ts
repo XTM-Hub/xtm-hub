@@ -16,7 +16,6 @@ import {
   PULSE_TREND_SERIES_WEEKS,
 } from './pulse.const';
 import {
-  PulseAggregateIncrement,
   PulseBenchmarkMetrics,
   PulseBenchmarkTopItemRow,
   PulseDigestCandidate,
@@ -200,33 +199,8 @@ export const PulseDomain = {
   // endregion
 
   // region Contributions
-  loadExistingTupleKeys: async ({
-    platformId,
-    day,
-    sectorBucket,
-    regionBucket,
-    keys,
-  }: {
-    platformId: number;
-    day: string;
-    sectorBucket: PulseSectorBucket;
-    regionBucket: PulseRegionBucket;
-    keys: readonly PulseKeyRef[];
-  }): Promise<Set<string>> => {
-    const rows = await query<PulseKeyRef>(
-      `SELECT DISTINCT encode(c.at_rest_key, 'hex') AS k, c.object_type AS t
-       FROM "PulseContribution" c
-       JOIN jsonb_to_recordset(?::jsonb) AS r(k text, t text)
-         ON c.at_rest_key = decode(r.k, 'hex') AND c.object_type = r.t
-       WHERE c.pulse_platform_id = ? AND c.day = ?::date
-         AND c.sector_bucket = ? AND c.region_bucket = ?`,
-      [keyRefsJson(keys), platformId, day, sectorBucket, regionBucket]
-    );
-    return new Set(rows.map(pulseKeyId));
-  },
-
   // Every bulk statement processes rows in key order so that concurrent
-  // batches lock shared aggregate rows in the same order.
+  // batches lock shared rows in the same order.
   upsertContributions: async ({
     platformId,
     day,
@@ -249,39 +223,6 @@ export const PulseDomain = {
        ON CONFLICT (pulse_platform_id, day, at_rest_key, object_type, event_kind, sector_bucket, region_bucket)
        DO UPDATE SET event_count = c.event_count + EXCLUDED.event_count, updated_at = now()`,
       [platformId, day, sectorBucket, regionBucket, toJson(records)]
-    );
-  },
-
-  upsertDailyAggregates: async ({
-    day,
-    sectorBucket,
-    regionBucket,
-    increments,
-  }: {
-    day: string;
-    sectorBucket: PulseSectorBucket;
-    regionBucket: PulseRegionBucket;
-    increments: readonly PulseAggregateIncrement[];
-  }): Promise<void> => {
-    await query(
-      `INSERT INTO "PulseDailyAggregate" AS a
-         (at_rest_key, object_type, day, sector_bucket, region_bucket, platform_count,
-          created_count, sighted_count, detected_count, hunted_count, referenced_count)
-       SELECT decode(r.k, 'hex'), r.t, ?::date, ?, ?, r.p,
-              r.created, r.sighted, r.detected, r.hunted, r.referenced
-       FROM jsonb_to_recordset(?::jsonb) AS r(
-         k text, t text, p int, created bigint, sighted bigint, detected bigint, hunted bigint, referenced bigint)
-       ORDER BY r.k, r.t
-       ON CONFLICT (at_rest_key, object_type, day, sector_bucket, region_bucket)
-       DO UPDATE SET
-         platform_count = a.platform_count + EXCLUDED.platform_count,
-         created_count = a.created_count + EXCLUDED.created_count,
-         sighted_count = a.sighted_count + EXCLUDED.sighted_count,
-         detected_count = a.detected_count + EXCLUDED.detected_count,
-         hunted_count = a.hunted_count + EXCLUDED.hunted_count,
-         referenced_count = a.referenced_count + EXCLUDED.referenced_count,
-         updated_at = now()`,
-      [day, sectorBucket, regionBucket, toJson(increments)]
     );
   },
 
@@ -1167,9 +1108,7 @@ export const PulseDomain = {
     return row?.day ?? undefined;
   },
 
-  // Removes the platform's ledger rows of one day and takes them out of the
-  // daily aggregates in the same statement, so aggregates always match the
-  // ledger.
+  // Removes the platform's ledger rows of one day.
   purgeContributionDay: async ({
     platformId,
     day,
@@ -1181,47 +1120,10 @@ export const PulseDomain = {
       `WITH removed AS (
          DELETE FROM "PulseContribution"
          WHERE pulse_platform_id = ? AND day = ?::date
-         RETURNING at_rest_key, object_type, event_kind, sector_bucket, region_bucket, event_count
-       ),
-       per_tuple AS (
-         SELECT at_rest_key, object_type, sector_bucket, region_bucket,
-                COALESCE(SUM(event_count) FILTER (WHERE event_kind = ?), 0) AS created,
-                COALESCE(SUM(event_count) FILTER (WHERE event_kind = ?), 0) AS sighted,
-                COALESCE(SUM(event_count) FILTER (WHERE event_kind = ?), 0) AS detected,
-                COALESCE(SUM(event_count) FILTER (WHERE event_kind = ?), 0) AS hunted,
-                COALESCE(SUM(event_count) FILTER (WHERE event_kind = ?), 0) AS referenced
-         FROM removed
-         GROUP BY at_rest_key, object_type, sector_bucket, region_bucket
-       ),
-       updated AS (
-         UPDATE "PulseDailyAggregate" a SET
-           platform_count = GREATEST(a.platform_count - 1, 0),
-           created_count = GREATEST(a.created_count - t.created, 0),
-           sighted_count = GREATEST(a.sighted_count - t.sighted, 0),
-           detected_count = GREATEST(a.detected_count - t.detected, 0),
-           hunted_count = GREATEST(a.hunted_count - t.hunted, 0),
-           referenced_count = GREATEST(a.referenced_count - t.referenced, 0),
-           updated_at = now()
-         FROM per_tuple t
-         WHERE a.at_rest_key = t.at_rest_key AND a.object_type = t.object_type AND a.day = ?::date
-           AND a.sector_bucket = t.sector_bucket AND a.region_bucket = t.region_bucket
-         RETURNING a.at_rest_key
+         RETURNING 1
        )
-       SELECT (SELECT COUNT(*) FROM removed)::int AS deleted`,
-      [
-        platformId,
-        day,
-        PulseEventKind.Created,
-        PulseEventKind.Sighted,
-        PulseEventKind.Detected,
-        PulseEventKind.Hunted,
-        PulseEventKind.Referenced,
-        day,
-      ]
-    );
-    await query(
-      'DELETE FROM "PulseDailyAggregate" WHERE day = ?::date AND platform_count <= 0',
-      [day]
+       SELECT COUNT(*)::int AS deleted FROM removed`,
+      [platformId, day]
     );
     // The totals of the day feed the benchmark medians and the active
     // contributors: they leave with the ledger rows, in the same step.
@@ -1286,8 +1188,7 @@ export const PulseDomain = {
     day,
     batchSize,
   }: {
-    table:
-      'PulseContribution' | 'PulseDailyAggregate' | 'PulsePlatformDailyTotal';
+    table: 'PulseContribution' | 'PulsePlatformDailyTotal';
     day: string;
     batchSize: number;
   }): Promise<number> => {

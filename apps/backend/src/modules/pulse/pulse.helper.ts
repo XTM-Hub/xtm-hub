@@ -1,5 +1,4 @@
 import {
-  PulseEventKind,
   PulseLookupResult,
   PulseObjectType,
 } from '../../__generated__/resolvers-types';
@@ -10,7 +9,6 @@ import {
 } from './pulse.const';
 import { PulseStats } from './pulse.stats.helper';
 import {
-  PulseAggregateIncrement,
   pulseKeyId,
   PulseKeyRef,
   PulseLedgerRecord,
@@ -21,7 +19,6 @@ import {
 } from './pulse.types';
 
 export interface PulseBatchAggregation {
-  aggregates: PulseAggregateIncrement[];
   keys: PulseKeyRef[];
   totals: PulseTotalIncrement[];
 }
@@ -30,17 +27,6 @@ export interface PulseRankedTrendingCount extends PulseTrendingCount {
   baseline: number;
   growth: number;
 }
-
-const EVENT_KIND_FIELD: Record<
-  PulseEventKind,
-  'created' | 'sighted' | 'detected' | 'hunted' | 'referenced'
-> = {
-  [PulseEventKind.Created]: 'created',
-  [PulseEventKind.Sighted]: 'sighted',
-  [PulseEventKind.Detected]: 'detected',
-  [PulseEventKind.Hunted]: 'hunted',
-  [PulseEventKind.Referenced]: 'referenced',
-};
 
 const compareKeyRefs = (a: PulseKeyRef, b: PulseKeyRef): number =>
   a.k === b.k ? a.t.localeCompare(b.t) : a.k.localeCompare(b.k);
@@ -74,38 +60,20 @@ export const PulseHelper = {
       ).values(),
     ]),
 
-  // `existingTupleKeys` holds the keys this platform already reported for the
-  // same day and buckets, which must not count it twice in the aggregate.
+  // The distinct keys of a batch, in key order, and its totals per object type
+  // and activity kind.
   aggregateBatch: (
-    records: readonly PulseLedgerRecord[],
-    existingTupleKeys: ReadonlySet<string>
+    records: readonly PulseLedgerRecord[]
   ): PulseBatchAggregation => {
-    const aggregates = new Map<string, PulseAggregateIncrement>();
     const totals = new Map<string, PulseTotalIncrement>();
     for (const record of records) {
-      const keyId = pulseKeyId(record);
-      const aggregate = aggregates.get(keyId) ?? {
-        k: record.k,
-        t: record.t,
-        p: existingTupleKeys.has(keyId) ? 0 : 1,
-        created: 0,
-        sighted: 0,
-        detected: 0,
-        hunted: 0,
-        referenced: 0,
-      };
-      aggregate[EVENT_KIND_FIELD[record.e]] += record.c;
-      aggregates.set(keyId, aggregate);
-
       const totalId = `${record.t}:${record.e}`;
       const total = totals.get(totalId) ?? { t: record.t, e: record.e, c: 0 };
       total.c += record.c;
       totals.set(totalId, total);
     }
-    const sortedAggregates = [...aggregates.values()].sort(compareKeyRefs);
     return {
-      aggregates: sortedAggregates,
-      keys: sortedAggregates.map(({ k, t }) => ({ k, t })),
+      keys: PulseHelper.uniqueKeyRefs(records),
       totals: [...totals.values()].sort((a, b) =>
         a.t === b.t
           ? PULSE_EVENT_KINDS.indexOf(a.e) - PULSE_EVENT_KINDS.indexOf(b.e)

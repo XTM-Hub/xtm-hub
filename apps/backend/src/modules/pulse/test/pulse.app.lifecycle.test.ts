@@ -140,18 +140,13 @@ describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
         contributions: await TestHelper.pulse.countRows('PulseContribution'),
         platforms: await TestHelper.pulse.countRows('PulsePlatform'),
         keyPlatformCounts: await TestHelper.pulse.loadKeyPlatformCounts(),
-        aggregates: (await TestHelper.pulse.loadDailyAggregates()).map(
-          ({ day, platform_count }) => ({ day, platform_count })
-        ),
+        contributionDays: await TestHelper.pulse.loadContributionDays(),
       }).toEqual({
         result: { success: true, deleted_records: 3 },
         contributions: 8,
         platforms: 4,
         keyPlatformCounts: [4, 4],
-        aggregates: [
-          { day: PULSE_TEST_TODAY, platform_count: 4 },
-          { day: PULSE_TEST_TODAY, platform_count: 4 },
-        ],
+        contributionDays: [PULSE_TEST_TODAY],
       });
     });
 
@@ -458,14 +453,12 @@ describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
       // Then
       expect({
         contributions: await TestHelper.pulse.countRows('PulseContribution'),
-        aggregates: await TestHelper.pulse.countRows('PulseDailyAggregate'),
         totals: await TestHelper.pulse.countRows('PulsePlatformDailyTotal'),
         contributors: await TestHelper.pulse.countRows('PulseKeyContributor'),
         keys: await TestHelper.pulse.countRows('PulseKey'),
         platforms: await TestHelper.pulse.countRows('PulsePlatform'),
       }).toEqual({
         contributions: 0,
-        aggregates: 0,
         totals: 0,
         contributors: 0,
         keys: 0,

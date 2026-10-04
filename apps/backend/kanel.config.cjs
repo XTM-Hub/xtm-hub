@@ -89,11 +89,6 @@ const COLUMN_ENUM_MAP = {
     sector_bucket: 'PulseSectorBucket',
     region_bucket: 'PulseRegionBucket',
   },
-  PulseDailyAggregate: {
-    object_type: 'PulseObjectType',
-    sector_bucket: 'PulseSectorBucket',
-    region_bucket: 'PulseRegionBucket',
-  },
   PulseKey: {
     object_type: 'PulseObjectType',
   },

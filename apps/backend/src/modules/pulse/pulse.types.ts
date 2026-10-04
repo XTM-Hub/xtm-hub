@@ -19,15 +19,6 @@ export interface PulseLedgerRecord extends PulseKeyRef {
   c: number;
 }
 
-export interface PulseAggregateIncrement extends PulseKeyRef {
-  p: number;
-  created: number;
-  sighted: number;
-  detected: number;
-  hunted: number;
-  referenced: number;
-}
-
 export interface PulseTotalIncrement {
   t: PulseObjectType;
   e: PulseEventKind;

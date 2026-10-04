@@ -76,39 +76,6 @@ export async function up(knex) {
     ON "PulseContribution" ("day")
   `);
 
-  if (!(await knex.schema.hasTable('PulseDailyAggregate'))) {
-    await knex.schema.createTable('PulseDailyAggregate', (table) => {
-      table.binary('at_rest_key').notNullable();
-      table.text('object_type').notNullable();
-      table.date('day').notNullable();
-      table.text('sector_bucket').notNullable();
-      table.text('region_bucket').notNullable();
-      table.integer('platform_count').notNullable();
-      table.bigInteger('created_count').notNullable().defaultTo(0);
-      table.bigInteger('sighted_count').notNullable().defaultTo(0);
-      table.bigInteger('detected_count').notNullable().defaultTo(0);
-      table.bigInteger('hunted_count').notNullable().defaultTo(0);
-      table.bigInteger('referenced_count').notNullable().defaultTo(0);
-      table.timestamp('updated_at').notNullable().defaultTo(knex.fn.now());
-      table.primary([
-        'at_rest_key',
-        'object_type',
-        'day',
-        'sector_bucket',
-        'region_bucket',
-      ]);
-      table.check(
-        '?? >= 0',
-        ['platform_count'],
-        'pulse_daily_aggregate_platform_count_not_negative'
-      );
-    });
-  }
-  await knex.raw(`
-    CREATE INDEX IF NOT EXISTS idx_pulse_daily_aggregate_day
-    ON "PulseDailyAggregate" ("day")
-  `);
-
   if (!(await knex.schema.hasTable('PulseKey'))) {
     await knex.schema.createTable('PulseKey', (table) => {
       table.binary('at_rest_key').notNullable();
@@ -216,7 +183,6 @@ export async function down(knex) {
   await knex.schema.dropTableIfExists('PulsePlatformDailyTotal');
   await knex.schema.dropTableIfExists('PulseKeyContributor');
   await knex.schema.dropTableIfExists('PulseKey');
-  await knex.schema.dropTableIfExists('PulseDailyAggregate');
   await knex.schema.dropTableIfExists('PulseContribution');
   await knex.schema.dropTableIfExists('PulsePlatform');
   await knex.schema.dropTableIfExists('PulseSalt');

@@ -104,7 +104,6 @@ type BaseDatabaseType =
   | 'PulseSalt'
   | 'PulsePlatform'
   | 'PulseContribution'
-  | 'PulseDailyAggregate'
   | 'PulseKey'
   | 'PulseKeyContributor'
   | 'PulsePlatformDailyTotal'

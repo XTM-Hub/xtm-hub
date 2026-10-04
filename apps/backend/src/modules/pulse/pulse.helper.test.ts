@@ -51,56 +51,21 @@ const makeCount = (
 
 describe('pulseHelper', () => {
   describe('aggregateBatch', () => {
-    it('should count a platform once per key and sum the event kinds', () => {
+    it('should list each key of the batch once, in key order', () => {
       // Given
       const records = [
+        makeRecord({ k: KEY_B, c: 7 }),
         makeRecord({ c: 3 }),
         makeRecord({ e: PulseEventKind.Sighted, c: 2 }),
-        makeRecord({ k: KEY_B, c: 7 }),
       ];
 
       // When
-      const aggregation = PulseHelper.aggregateBatch(records, new Set());
+      const aggregation = PulseHelper.aggregateBatch(records);
 
       // Then
-      expect(aggregation.aggregates).toEqual([
-        {
-          k: KEY_A,
-          t: PulseObjectType.Indicator,
-          p: 1,
-          created: 3,
-          sighted: 2,
-          detected: 0,
-          hunted: 0,
-          referenced: 0,
-        },
-        {
-          k: KEY_B,
-          t: PulseObjectType.Indicator,
-          p: 1,
-          created: 7,
-          sighted: 0,
-          detected: 0,
-          hunted: 0,
-          referenced: 0,
-        },
-      ]);
-    });
-
-    it('should not count the platform again on a key it already reported that day', () => {
-      // Given
-      const records = [makeRecord(), makeRecord({ k: KEY_B })];
-
-      // When
-      const aggregation = PulseHelper.aggregateBatch(
-        records,
-        new Set([`${KEY_A}:${PulseObjectType.Indicator}`])
-      );
-
-      // Then
-      expect(aggregation.aggregates.map(({ k, p }) => ({ k, p }))).toEqual([
-        { k: KEY_A, p: 0 },
-        { k: KEY_B, p: 1 },
+      expect(aggregation.keys).toEqual([
+        { k: KEY_A, t: PulseObjectType.Indicator },
+        { k: KEY_B, t: PulseObjectType.Indicator },
       ]);
     });
 
@@ -113,7 +78,7 @@ describe('pulseHelper', () => {
       ];
 
       // When
-      const aggregation = PulseHelper.aggregateBatch(records, new Set());
+      const aggregation = PulseHelper.aggregateBatch(records);
 
       // Then
       expect(aggregation.totals).toEqual([

@@ -321,14 +321,19 @@ describe('pulseApp platform API', PULSE_INTEGRATION_SUITE, () => {
       await client.push({ day: PULSE_TEST_TODAY, records });
 
       // Then
-      expect(await TestHelper.pulse.loadDailyAggregates()).toEqual([
-        {
-          day: PULSE_TEST_TODAY,
-          platform_count: 1,
-          created_count: '4',
-          sighted_count: '0',
-        },
-      ]);
+      expect({
+        contributions: await TestHelper.pulse.loadContributions(),
+        keyPlatformCounts: await TestHelper.pulse.loadKeyPlatformCounts(),
+      }).toEqual({
+        contributions: [
+          {
+            day: PULSE_TEST_TODAY,
+            event_kind: PulseEventKind.Created,
+            event_count: '4',
+          },
+        ],
+        keyPlatformCounts: [1],
+      });
     });
 
     it('should count a retried batch once and answer it with its first result', async () => {
@@ -344,7 +349,7 @@ describe('pulseApp platform API', PULSE_INTEGRATION_SUITE, () => {
         batchId: BATCH_ID,
       });
       const before = {
-        aggregates: await TestHelper.pulse.loadDailyAggregates(),
+        ledger: await TestHelper.pulse.loadContributions(),
         contributions: await TestHelper.pulse.countRows('PulseContribution'),
       };
 
@@ -359,7 +364,7 @@ describe('pulseApp platform API', PULSE_INTEGRATION_SUITE, () => {
       expect({
         first,
         retry,
-        aggregates: await TestHelper.pulse.loadDailyAggregates(),
+        ledger: await TestHelper.pulse.loadContributions(),
         contributions: await TestHelper.pulse.countRows('PulseContribution'),
       }).toEqual({
         first: { accepted: 2, day: PULSE_TEST_TODAY },
@@ -386,7 +391,7 @@ describe('pulseApp platform API', PULSE_INTEGRATION_SUITE, () => {
       }).toEqual({ codes: [PulseErrorCode.BadUserInput], stored: 0 });
     });
 
-    it('should count every distinct platform in the daily aggregate', async () => {
+    it('should count every distinct platform on a key', async () => {
       // Given
       const first = await registerClient();
       const second = await registerClient();
@@ -511,9 +516,7 @@ describe('pulseApp platform API', PULSE_INTEGRATION_SUITE, () => {
       expect({
         retry,
         platforms: await TestHelper.pulse.loadPlatformBuckets(),
-        aggregates: (await TestHelper.pulse.loadDailyAggregates()).map(
-          ({ day }) => day
-        ),
+        contributionDays: await TestHelper.pulse.loadContributionDays(),
       }).toEqual({
         retry: { accepted: 1, day: PULSE_TEST_YESTERDAY },
         platforms: [
@@ -523,7 +526,7 @@ describe('pulseApp platform API', PULSE_INTEGRATION_SUITE, () => {
             last_contribution_day: PULSE_TEST_YESTERDAY,
           },
         ],
-        aggregates: [PULSE_TEST_YESTERDAY],
+        contributionDays: [PULSE_TEST_YESTERDAY],
       });
     });
 

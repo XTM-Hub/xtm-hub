@@ -25,7 +25,6 @@ export const PULSE_TABLES = [
   'PulsePlatformDailyTotal',
   'PulseKeyContributor',
   'PulseKey',
-  'PulseDailyAggregate',
   'PulseContribution',
   'PulseBatch',
   'PulsePlatform',
@@ -179,33 +178,17 @@ export const TestPulseHelper = {
       return rows.map((row: { day: string }) => row.day);
     },
 
-    loadDailyAggregates: async (): Promise<
-      {
-        day: string;
-        platform_count: number;
-        created_count: string;
-        sighted_count: string;
-      }[]
+    loadContributions: async (): Promise<
+      { day: string; event_kind: string; event_count: string }[]
     > => {
-      const rows = await db('PulseDailyAggregate')
-        .select(
-          dbRaw('day::text AS day'),
-          'platform_count',
-          'created_count',
-          'sighted_count'
-        )
-        .orderBy('day');
+      const rows = await db('PulseContribution')
+        .select(dbRaw('day::text AS day'), 'event_kind', 'event_count')
+        .orderBy(['day', 'object_type', 'event_kind']);
       return rows.map(
-        (row: {
-          day: string;
-          platform_count: number;
-          created_count: string;
-          sighted_count: string;
-        }) => ({
+        (row: { day: string; event_kind: string; event_count: string }) => ({
           day: row.day,
-          platform_count: row.platform_count,
-          created_count: row.created_count,
-          sighted_count: row.sighted_count,
+          event_kind: row.event_kind,
+          event_count: String(row.event_count),
         })
       );
     },

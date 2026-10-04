@@ -362,26 +362,13 @@ const recordContributions = async ({
     day,
     accepted: records.length,
   });
-  const existingTupleKeys = await PulseDomain.loadExistingTupleKeys({
-    platformId,
-    day,
-    sectorBucket,
-    regionBucket,
-    keys: PulseHelper.uniqueKeyRefs(records),
-  });
-  const aggregation = PulseHelper.aggregateBatch(records, existingTupleKeys);
+  const aggregation = PulseHelper.aggregateBatch(records);
   await PulseDomain.upsertContributions({
     platformId,
     day,
     sectorBucket,
     regionBucket,
     records,
-  });
-  await PulseDomain.upsertDailyAggregates({
-    day,
-    sectorBucket,
-    regionBucket,
-    increments: aggregation.aggregates,
   });
   const firstContributions = await PulseDomain.upsertKeyContributors({
     platformId,
@@ -1183,7 +1170,6 @@ export const PulseApp = {
     const deleted: Record<string, number> = {};
     for (const table of [
       'PulseContribution',
-      'PulseDailyAggregate',
       'PulsePlatformDailyTotal',
     ] as const) {
       deleted[table] = await deleteInBatches(() =>
