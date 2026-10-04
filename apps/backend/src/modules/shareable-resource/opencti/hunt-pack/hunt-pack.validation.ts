@@ -148,7 +148,10 @@ export const sigmaRuleErrors = (sigmaRule: string): string[] => {
   if (!asOptionalString(rule.title)) {
     errors.push('the Sigma rule must have a title');
   }
-  if (isPresent(rule.status) && !SIGMA_STATUSES.includes(String(rule.status))) {
+  if (
+    rule.status !== undefined &&
+    !SIGMA_STATUSES.includes(String(rule.status))
+  ) {
     errors.push('the Sigma rule status is not a Sigma status');
   }
   const level = asOptionalString(rule.level);
@@ -181,19 +184,26 @@ const parseNativeQuery = (item: unknown): unknown => {
   }
 };
 
-/** The native queries of a hunt as OpenCTI reads them: one or many, objects or JSON text. */
-export const parseNativeQueries = (nativeQueries: unknown): unknown[] => {
+const nativeQueryItems = (nativeQueries: unknown): unknown[] => {
   if (!isPresent(nativeQueries) || nativeQueries === '') {
     return [];
   }
-  const items = Array.isArray(nativeQueries) ? nativeQueries : [nativeQueries];
-  return items.map(parseNativeQuery);
+  return Array.isArray(nativeQueries) ? nativeQueries : [nativeQueries];
 };
 
+/** The native queries of a hunt as OpenCTI reads them: one or many, objects or JSON text. */
+export const parseNativeQueries = (nativeQueries: unknown): unknown[] =>
+  nativeQueryItems(nativeQueries).map(parseNativeQuery);
+
 const nativeQueryErrors = (nativeQueries: unknown): string[] => {
+  const items = nativeQueryItems(nativeQueries);
+  // One query per platform: a longer list is refused before any entry is parsed
+  if (items.length > HUNT_PLATFORMS.length) {
+    return [`a hunt has at most ${HUNT_PLATFORMS.length} native queries`];
+  }
   const platforms = new Set<string>();
   const errors: string[] = [];
-  parseNativeQueries(nativeQueries).forEach((item, index) => {
+  items.map(parseNativeQuery).forEach((item, index) => {
     const label = `native query ${index + 1}`;
     if (!isRecord(item)) {
       errors.push(`${label} is not an object`);

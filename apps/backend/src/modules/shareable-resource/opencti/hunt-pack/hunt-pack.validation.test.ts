@@ -32,6 +32,7 @@ describe('sigmaRuleErrors', () => {
     ${'no title'}                        | ${'logsource: {product: windows}\ndetection: {s: {a: b}, condition: s}'}                   | ${'must have a title'}
     ${'a duplicated key'}                | ${`${VALID_SIGMA_RULE}\nstatus: stable`}                                                   | ${'not valid YAML'}
     ${'an unknown status'}               | ${VALID_SIGMA_RULE.replace('status: test', 'status: final')}                               | ${'not a Sigma status'}
+    ${'a null status'}                   | ${VALID_SIGMA_RULE.replace('status: test', 'status: null')}                                | ${'not a Sigma status'}
     ${'an unknown level'}                | ${VALID_SIGMA_RULE.replace('level: high', 'level: severe')}                                | ${'not a Sigma level'}
     ${'no logsource'}                    | ${'title: T\ndetection: {s: {a: b}, condition: s}'}                                        | ${'must have a logsource'}
     ${'an empty logsource'}              | ${'title: T\nlogsource: {definition: x}\ndetection: {s: {a: b}, condition: s}'}            | ${'product, category or service'}
@@ -102,15 +103,16 @@ describe('huntImportErrors', () => {
   });
 
   it.each`
-    case                          | nativeQueries                                                                                                 | error
-    ${'a missing language'}       | ${[{ platform: 'splunk', query: 'index=main' }]}                                                              | ${'a language'}
-    ${'a missing query'}          | ${[{ platform: 'splunk', language: 'spl' }]}                                                                  | ${'a query'}
-    ${'an oversized query'}       | ${[{ platform: 'splunk', language: 'spl', query: 'x'.repeat(65537) }]}                                        | ${'a query'}
-    ${'an oversized language'}    | ${[{ platform: 'splunk', language: 'x'.repeat(65), query: 'index=main' }]}                                    | ${'a language'}
-    ${'an oversized pipeline'}    | ${[{ platform: 'splunk', language: 'spl', query: 'index=main', pipeline: 'x'.repeat(257) }]}                  | ${'pipeline'}
-    ${'an unsupported platform'}  | ${[{ platform: 'Splunk', language: 'spl', query: 'index=main' }]}                                             | ${'not a hunted platform'}
-    ${'a duplicated platform'}    | ${[{ platform: 'splunk', language: 'spl', query: 'a' }, { platform: 'splunk', language: 'spl', query: 'b' }]} | ${'already has a native query'}
-    ${'an item that is no query'} | ${['not json']}                                                                                               | ${'not an object'}
+    case                             | nativeQueries                                                                                                 | error
+    ${'a missing language'}          | ${[{ platform: 'splunk', query: 'index=main' }]}                                                              | ${'a language'}
+    ${'a missing query'}             | ${[{ platform: 'splunk', language: 'spl' }]}                                                                  | ${'a query'}
+    ${'an oversized query'}          | ${[{ platform: 'splunk', language: 'spl', query: 'x'.repeat(65537) }]}                                        | ${'a query'}
+    ${'an oversized language'}       | ${[{ platform: 'splunk', language: 'x'.repeat(65), query: 'index=main' }]}                                    | ${'a language'}
+    ${'an oversized pipeline'}       | ${[{ platform: 'splunk', language: 'spl', query: 'index=main', pipeline: 'x'.repeat(257) }]}                  | ${'pipeline'}
+    ${'an unsupported platform'}     | ${[{ platform: 'Splunk', language: 'spl', query: 'index=main' }]}                                             | ${'not a hunted platform'}
+    ${'a duplicated platform'}       | ${[{ platform: 'splunk', language: 'spl', query: 'a' }, { platform: 'splunk', language: 'spl', query: 'b' }]} | ${'already has a native query'}
+    ${'an item that is no query'}    | ${['not json']}                                                                                               | ${'not an object'}
+    ${'more queries than platforms'} | ${Array.from({ length: 10 }, () => 'not parsed')}                                                             | ${'at most 9 native queries'}
   `('refuses native queries with $case', ({ nativeQueries, error }) => {
     expect(
       huntImportErrors({ ...validHunt, native_queries: nativeQueries }).join(
