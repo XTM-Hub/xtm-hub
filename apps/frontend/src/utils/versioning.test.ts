@@ -12,8 +12,11 @@ describe('Versioning', () => {
       ${'1.0.0'}            | ${true}
       ${'7.260801.0-lts'}   | ${true}
       ${'7.260801.0-lts.1'} | ${true}
+      ${'7.260801.0-lts1'}  | ${true}
+      ${'7.260801.0-LTS.1'} | ${true}
       ${'1.0.X'}            | ${false}
       ${'7.260201-lts'}     | ${false}
+      ${'7.260801.0-lts.'}  | ${false}
     `('should return $expected for $version', ({ version, expected }) => {
       expect(isValidVersion(version)).toBe(expected);
     });
