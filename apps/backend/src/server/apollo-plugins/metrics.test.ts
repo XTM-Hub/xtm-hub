@@ -20,7 +20,7 @@ const HASH = 'a1'.repeat(16);
 // (`withQueryText: false`) carries no query text in the request.
 const resolveOperation = async (
   document: string,
-  operationName: string,
+  operationName: string | undefined,
   { withQueryText = true }: { withQueryText?: boolean } = {}
 ): Promise<void> => {
   const queryText = withQueryText ? document : undefined;
@@ -92,6 +92,20 @@ describe('operationMetricsPlugin labels', () => {
     expect((await graphqlQueryCounter.get()).values).toEqual([
       expect.objectContaining({ labels: { query: REDACTED }, value: 1 }),
     ]);
+  });
+
+  it('should count an unnamed Threat Pulse request under the redacted label', async () => {
+    // When an unnamed query and an unnamed hash-only persisted query resolve
+    await resolveOperation('{ pulseStatus { day } }', undefined);
+    await resolveOperation('{ pulseStatus { day } }', undefined, {
+      withQueryText: false,
+    });
+
+    // Then both are counted and timed, under the redacted label
+    expect((await graphqlQueryCounter.get()).values).toEqual([
+      expect.objectContaining({ labels: { query: REDACTED }, value: 2 }),
+    ]);
+    expect(await metricLabels()).toContain(REDACTED);
   });
 
   it('should keep the operation name of other operations', async () => {
