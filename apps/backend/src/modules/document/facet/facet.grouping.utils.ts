@@ -30,6 +30,8 @@ export type FacetSpec = {
   metadataKey?: DocumentMetadataKeyCode;
   /** Only computed when the request targets this document type, or no type at all. */
   documentType?: string;
+  /** Buckets keep the exact case of the values, as the filter matches them. */
+  exactCase?: boolean;
 };
 
 export const FACET_SPECS: readonly FacetSpec[] = [
@@ -78,6 +80,7 @@ export const FACET_SPECS: readonly FacetSpec[] = [
     filterKey: FilterKey.EntityType,
     source: 'metadataList',
     metadataKey: DocumentMetadataKeyCode.EntityTypes,
+    exactCase: true,
   },
   {
     field: 'object_type',

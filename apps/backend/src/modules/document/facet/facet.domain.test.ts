@@ -1081,6 +1081,30 @@ describe('facet.domain', () => {
       });
     });
 
+    it('should keep the exact case of entity types, like their filter', async () => {
+      // Given
+      for (const entityType of ['Malware', 'malware']) {
+        const document = await createCoveredDocument('entity-type-case');
+        await TestHelper.documentMetadata.create({
+          document_id: document.id,
+          key: DocumentMetadataKeyCode.EntityTypes,
+          value: JSON.stringify([entityType]),
+        });
+      }
+
+      // When
+      const facets = await FacetDomain.loadDocumentFacets({
+        serviceInstanceId: coverageServiceInstance.id,
+        documentType: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+      });
+
+      // Then - one bucket per exact value, as the entity type filter matches
+      expect(facets.entity_type).toEqual([
+        { value: 'Malware', count: 1 },
+        { value: 'malware', count: 1 },
+      ]);
+    });
+
     it('should filter case-insensitively on a coverage key while its own facet ignores the filter', async () => {
       // Given
       const logicalFilters = {

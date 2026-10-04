@@ -79,23 +79,32 @@ const buildMetadataListFacetBranch = (
     throw new Error(`Facet spec "${spec.field}" is missing a metadataKey`);
   }
 
-  return db('Document_Metadata')
+  // Same buckets as loadMetadataListFacetBuckets: exact case for the entity types, case-insensitive for coverage.
+  // The union needs the same column order in every branch: facet, value, count.
+  const query = db('Document_Metadata')
     .from('Document_Metadata as metadata')
     .joinRaw(
       'CROSS JOIN LATERAL jsonb_array_elements_text("metadata"."value"::jsonb) as entity(value)'
     )
     .select(
       dbRaw('? as facet', [spec.field]),
-      // Same case-insensitive buckets as loadMetadataListFacetBuckets
-      dbRaw('MIN("entity"."value" COLLATE "C") as value')
+      spec.exactCase
+        ? 'entity.value as value'
+        : dbRaw('MIN("entity"."value" COLLATE "C") as value')
     )
     .countDistinct({ count: 'metadata.document_id' })
     .where('metadata.key', '=', spec.metadataKey)
     .whereNotNull('metadata.value')
-    .whereIn('metadata.document_id', selectIdsFromCte(cteName))
-    .groupByRaw('LOWER("entity"."value")')
-    .orderBy('count', 'desc')
-    .orderByRaw('MIN("entity"."value" COLLATE "C") COLLATE "default" asc');
+    .whereIn('metadata.document_id', selectIdsFromCte(cteName));
+  return spec.exactCase
+    ? query
+        .groupBy('entity.value')
+        .orderBy('count', 'desc')
+        .orderBy('entity.value', 'asc')
+    : query
+        .groupByRaw('LOWER("entity"."value")')
+        .orderBy('count', 'desc')
+        .orderByRaw('MIN("entity"."value" COLLATE "C") COLLATE "default" asc');
 };
 
 const buildFacetBranch = (
