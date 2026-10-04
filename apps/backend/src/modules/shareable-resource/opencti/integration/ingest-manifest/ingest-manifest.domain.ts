@@ -1,6 +1,7 @@
 import {
   DocumentMetadataKeyCode,
   FiligranProduct,
+  IntegrationType,
 } from '../../../../../__generated__/resolvers-types';
 import { databaseContext } from '../../../../../context/database.context';
 import { logApp } from '../../../../../utils/app-logger.util';
@@ -116,6 +117,17 @@ export const IngestManifestDomain = {
                 current as Connector | undefined,
                 INTEGRATION_CONNECTOR_METADATA_KEYS as DocumentMetadataKeyCode[]
               );
+            // The upsert would rewrite a feed, a stream or a third-party integration of the same slug as a connector
+            if (
+              existingConnector?.integration_type &&
+              existingConnector.integration_type !== IntegrationType.Connector
+            ) {
+              logApp.warn(
+                `Skipping connector ${connector.name}: its slug belongs to a ${existingConnector.integration_type} integration`,
+                { slug }
+              );
+              return null;
+            }
             if (existingConnector) {
               keepCuratedFields(connector, existingConnector);
             }
@@ -146,6 +158,9 @@ export const IngestManifestDomain = {
             );
           }
         );
+        if (!doc) {
+          continue;
+        }
         const newDocIsCreated = !doc.updated_at;
         if (newDocIsCreated) {
           const createEvent = await TelemetryHelper.buildCreateEvent(doc);

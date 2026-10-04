@@ -4,6 +4,10 @@ import {
   TEST_ORGANIZATIONS,
   TEST_USE_CASES,
 } from '../../../../../../tests/tests.const';
+import {
+  DocumentMetadataKeyCode,
+  IntegrationType,
+} from '../../../../../__generated__/resolvers-types';
 import { requestContext } from '../../../../../context/request.context';
 import {
   SYSTEM_USER_CONTEXT,
@@ -319,6 +323,35 @@ describe('upsertConnectors', () => {
       const reloaded = await TestHelper.document.load({ id: dashboard.id });
       expect(reloaded!.name).toBe('Dashboard sharing a connector slug');
       expect(reloaded!.type).toBe('custom_dashboard');
+    });
+
+    it('should leave an integration of another kind with the same slug untouched', async () => {
+      const baseManifest = sampleExtractedManifest[0] as ManifestInformation;
+      const slug = 'slug-shared-with-a-csv-feed';
+      const feed = await TestHelper.document.create({
+        slug,
+        name: 'CSV feed sharing a connector slug',
+        type: 'opencti_integration',
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+      });
+      await TestHelper.documentMetadata.create({
+        document_id: feed.id,
+        key: DocumentMetadataKeyCode.IntegrationType,
+        value: IntegrationType.CsvFeed,
+      });
+
+      const result = await IngestManifestDomain.upsertConnectors([
+        { ...baseManifest, slug, name: 'Connector sharing a CSV feed slug' },
+      ]);
+
+      expect(result).toHaveLength(0);
+      const reloaded = await TestHelper.document.load({ id: feed.id });
+      expect(reloaded!.name).toBe('CSV feed sharing a connector slug');
+      const [integrationType] = await TestHelper.documentMetadata.loadAll({
+        document_id: feed.id,
+        key: DocumentMetadataKeyCode.IntegrationType,
+      });
+      expect(integrationType!.value).toBe(IntegrationType.CsvFeed);
     });
   });
 
