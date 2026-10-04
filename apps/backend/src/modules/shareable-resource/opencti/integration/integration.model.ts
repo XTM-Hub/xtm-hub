@@ -10,6 +10,9 @@ import { MetadataArray } from '../../../../utils/metadata';
 export const INTEGRATION_SERVICE_INSTANCE_ID: ServiceInstanceId =
   '0f4aad4b-bdd6-4084-8b1f-82c9c66578cc' as ServiceInstanceId;
 export const OPENCTI_INTEGRATION_DOCUMENT_TYPE = 'opencti_integration';
+// Advisory lock namespace serializing every ingestion of one connector slug,
+// keyed by the slug: it also covers a family that has no row yet to lock
+export const CONNECTOR_SLUG_LOCK_NAMESPACE = 'integration-connector-slug';
 
 export const isIntegrationType = (
   maybeIntegrationType: string

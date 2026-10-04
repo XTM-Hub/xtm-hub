@@ -475,6 +475,27 @@ describe('upsertConnectors', () => {
       });
     });
 
+    it('should infer the coverage from the solution categories the re-ingestion keeps', async () => {
+      // Given: a connector whose coverage comes from its solution category only
+      const manifest = buildCoverageManifest('coverage-kept-categories', {
+        solution_categories: ['Vulnerability & Exposure Management'],
+      });
+      await IngestManifestDomain.upsertConnectors([manifest]);
+
+      // When: the manifest no longer carries the field, so the stored categories stay linked
+      const [document] = await IngestManifestDomain.upsertConnectors([
+        { ...manifest, solution_categories: undefined },
+      ]);
+
+      // Then
+      expect(await loadCoverage(document)).toEqual({
+        object_types: ['Vulnerability'],
+        sectors: [],
+        regions: [],
+        inferred: true,
+      });
+    });
+
     it('should keep an admin declared coverage when the manifest declares none', async () => {
       // Given
       const manifest = buildCoverageManifest('coverage-admin-kept');

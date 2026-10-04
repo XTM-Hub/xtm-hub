@@ -13,15 +13,46 @@ import { TelemetryApp } from '../../../../telemetry/telemetry.app';
 import { TelemetryHelper } from '../../../../telemetry/telemetry.helper';
 import { IntegrationCoverageDomain } from '../integration-coverage/integration-coverage.domain';
 import { IntegrationCoverageHelper } from '../integration-coverage/integration-coverage.helper';
+import type { CoverageInferenceSource } from '../integration-coverage/integration-coverage.model';
 import {
   Connector,
+  CONNECTOR_SLUG_LOCK_NAMESPACE,
   INTEGRATION_CONNECTOR_METADATA_KEYS,
   OPENCTI_INTEGRATION_DOCUMENT_TYPE,
 } from '../integration.model';
 import { IngestManifestHelper } from './ingest-manifest.helper';
 import { ManifestInformation } from './ingest-manifest.model';
 
-const CONNECTOR_SLUG_LOCK_NAMESPACE = 'integration-connector-slug';
+/**
+ * The values the connector document holds after the upsert, which keeps the
+ * stored use cases when the manifest lists none and the stored solution
+ * categories when the manifest omits them: coverage is inferred from those.
+ */
+const loadEffectiveInferenceSource = async (
+  connector: ManifestInformation,
+  existingConnector: Connector
+): Promise<CoverageInferenceSource> => {
+  const useCases = connector.use_cases?.length
+    ? connector.use_cases
+    : ((
+        await IntegrationCoverageDomain.loadUseCaseNamesByDocumentIds([
+          existingConnector.id,
+        ])
+      ).get(existingConnector.id) ?? []);
+  const solutionCategories =
+    connector.solution_categories !== undefined
+      ? connector.solution_categories
+      : ((
+          await IntegrationCoverageDomain.loadSolutionCategoryNamesByDocumentIds(
+            [existingConnector.id]
+          )
+        ).get(existingConnector.id) ?? []);
+  return {
+    ...connector,
+    use_cases: useCases,
+    solution_categories: solutionCategories,
+  };
+};
 
 const keepCuratedFields = (
   connector: ManifestInformation,
@@ -91,7 +122,12 @@ export const IngestManifestDomain = {
             const coverage = IntegrationCoverageHelper.resolveCoverage({
               declared: connector.coverage,
               existing: existingCoverage,
-              inferenceSource: connector,
+              inferenceSource: existingConnector
+                ? await loadEffectiveInferenceSource(
+                    connector,
+                    existingConnector
+                  )
+                : connector,
             });
             return DocumentApp.upsertDocumentWithExternalImage<Connector>(
               OPENCTI_INTEGRATION_DOCUMENT_TYPE,

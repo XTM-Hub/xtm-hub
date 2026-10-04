@@ -1,4 +1,5 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { database } from '../../../../knexfile';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import {
   DocumentMetadataKeyCode,
@@ -17,6 +18,7 @@ import { minioInit } from '../../../server/initialize';
 import { BadRequestErrorCode } from '../../../utils/error/error.code';
 import { IntegrationCoverageDomain } from '../opencti/integration/integration-coverage/integration-coverage.domain';
 import {
+  CONNECTOR_SLUG_LOCK_NAMESPACE,
   INTEGRATION_SERVICE_INSTANCE_ID,
   OPENCTI_INTEGRATION_DOCUMENT_TYPE,
 } from '../opencti/integration/integration.model';
@@ -794,6 +796,39 @@ describe('manifestFragmentDomain', () => {
   });
 
   describe('ingestManifestFragment concurrency', () => {
+    it('waits for the ingestion lock of its slug even when the connector family has no row yet', async () => {
+      // Given: another ingestion of the same brand-new family holds the slug lock
+      const slug = 'misp-coverage-serialized';
+      const fragment = buildManifestFragment(ManifestType.Connector, {
+        slug,
+        id: 'coverage-serialized',
+      });
+      let settled = false;
+      let ingestion: Promise<void> | undefined;
+
+      // When
+      await database.transaction(async (trx) => {
+        await trx.raw(
+          'SELECT pg_advisory_xact_lock(hashtext(?), hashtext(?))',
+          [CONNECTOR_SLUG_LOCK_NAMESPACE, slug]
+        );
+        ingestion = ManifestFragmentDomain.ingestManifestFragment(
+          fragment
+        ).finally(() => {
+          settled = true;
+        });
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        // Then: it reads the family only once the lock is released
+        expect(settled).toBe(false);
+      });
+      await ingestion;
+      expect(settled).toBe(true);
+      const createdDocument = await TestHelper.document.load({ slug });
+      expect(createdDocument).toBeDefined();
+      _createdDocumentIds.push(createdDocument!.id);
+    });
+
     it('rejects one of two concurrent ingestions of the very first version of a brand-new connector', async () => {
       // Given: no existing rows to lock, so the DB unique constraint is the backstop
       const slug = 'misp-concurrent-first-insert';
