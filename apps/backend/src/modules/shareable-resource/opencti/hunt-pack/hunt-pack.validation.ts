@@ -181,15 +181,19 @@ const parseNativeQuery = (item: unknown): unknown => {
   }
 };
 
-const nativeQueryErrors = (nativeQueries: unknown): string[] => {
+/** The native queries of a hunt as OpenCTI reads them: one or many, objects or JSON text. */
+export const parseNativeQueries = (nativeQueries: unknown): unknown[] => {
   if (!isPresent(nativeQueries) || nativeQueries === '') {
     return [];
   }
   const items = Array.isArray(nativeQueries) ? nativeQueries : [nativeQueries];
+  return items.map(parseNativeQuery);
+};
+
+const nativeQueryErrors = (nativeQueries: unknown): string[] => {
   const platforms = new Set<string>();
   const errors: string[] = [];
-  items.forEach((rawItem, index) => {
-    const item = parseNativeQuery(rawItem);
+  parseNativeQueries(nativeQueries).forEach((item, index) => {
     const label = `native query ${index + 1}`;
     if (!isRecord(item)) {
       errors.push(`${label} is not an object`);

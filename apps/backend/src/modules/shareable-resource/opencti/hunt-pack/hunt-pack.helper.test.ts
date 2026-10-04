@@ -73,6 +73,29 @@ describe('huntPackHelper.summarize', () => {
     });
   });
 
+  it('lists the platforms of a single native query and of JSON-encoded native queries', () => {
+    const summary = HuntPackHelper.summarize(
+      bundle([
+        {
+          ...hunt('hunt--1'),
+          native_queries: { platform: 'splunk', language: 'spl', query: 'x' },
+        },
+        {
+          ...hunt('hunt--2'),
+          native_queries: [
+            JSON.stringify({
+              platform: 'elastic-security',
+              language: 'esql',
+              query: 'from logs-*',
+            }),
+          ],
+        },
+      ])
+    );
+
+    expect(summary.huntPlatforms).toEqual(['elastic-security', 'splunk']);
+  });
+
   it('ignores malformed technique references', () => {
     const summary = HuntPackHelper.summarize(
       bundle([

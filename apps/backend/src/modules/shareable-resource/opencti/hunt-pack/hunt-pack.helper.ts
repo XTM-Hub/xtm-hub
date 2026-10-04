@@ -12,7 +12,7 @@ import {
   HUNT_PACK_MAX_TECHNIQUES,
   HUNT_PACK_MINIMUM_PRODUCT_VERSION,
 } from './hunt-pack.model';
-import { huntImportErrors } from './hunt-pack.validation';
+import { huntImportErrors, parseNativeQueries } from './hunt-pack.validation';
 
 /** STIX types OpenCTI exports hunts as (see hunt-pack.ts in OpenCTI). */
 const HUNT_STIX_TYPES = ['hunt', 'x-opencti-hunt'];
@@ -126,10 +126,7 @@ export const HuntPackHelper = {
             : undefined;
         if (techniqueId) techniques.push(techniqueId);
       }
-      const nativeQueries = Array.isArray(hunt.native_queries)
-        ? hunt.native_queries
-        : [];
-      for (const nativeQuery of nativeQueries) {
+      for (const nativeQuery of parseNativeQueries(hunt.native_queries)) {
         const platform =
           isRecord(nativeQuery) && typeof nativeQuery.platform === 'string'
             ? nativeQuery.platform.trim().toLowerCase()
