@@ -150,7 +150,11 @@ describe(
             day: PULSE_TEST_TODAY,
             records: [malware(five)],
           });
-          const alpha = await clients[0]!.hash(PULSE_TEST_TODAY, MALWARE, 'alpha');
+          const alpha = await clients[0]!.hash(
+            PULSE_TEST_TODAY,
+            MALWARE,
+            'alpha'
+          );
           const digest = await clients[0]!.digest({ day: PULSE_TEST_TODAY });
           const order = digest.items.map(({ hash }) =>
             hash === alpha ? 'alpha' : 'beta'

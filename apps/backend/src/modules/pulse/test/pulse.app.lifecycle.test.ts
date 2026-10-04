@@ -387,7 +387,10 @@ describe('pulseApp lifecycle', PULSE_INTEGRATION_SUITE, () => {
     it('should delete the batch receipts with the salt of their day', async () => {
       // Given
       const [client] = await registerPulseClients(1);
-      await client!.push({ day: PULSE_TEST_TODAY, records: [malware(LOCKBIT)] });
+      await client!.push({
+        day: PULSE_TEST_TODAY,
+        records: [malware(LOCKBIT)],
+      });
       const pushed = await TestHelper.pulse.countRows('PulseBatch');
 
       // When

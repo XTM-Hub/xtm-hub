@@ -1,7 +1,7 @@
 import { ApolloServer } from '@apollo/server';
 import express from 'express';
-import { randomUUID } from 'node:crypto';
 import type { GraphQLFormattedError } from 'graphql';
+import { randomUUID } from 'node:crypto';
 import { vi } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import { contextSimpleUserFiligran2 } from '../../../../tests/tests.const';
