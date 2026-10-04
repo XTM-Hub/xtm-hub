@@ -30,6 +30,7 @@ xtmhub:
     # Threat Pulse keys: 64 hexadecimal characters each, different from each other, never changed once used. Left
     # empty, they are generated once and kept on upgrades by reading the chart's Secret from the cluster, which a
     # render without access to the cluster (helm template, GitOps tools) cannot do: set both keys, or existingSecret.
+    # A single key is accepted only when the chart's Secret already holds the other.
     pulse:
       atRestKey: ""
       platformKey: ""
