@@ -38,37 +38,77 @@ const canonicalizeConnectorTypes = async (knex) => {
   return huntConnectorIds;
 };
 
+// Must match MANIFEST_VERSION_PATTERN and validateAndFormatManifestVersion in manifest-fragment.helper.ts.
+const MANIFEST_VERSION_REGEX = /^(\d+)\.(\d{1,6})\.(\d+)(?:-lts\.(\d+))?$/i;
+
+export const toPaddedVersion = (version) => {
+  const match =
+    typeof version === 'string' ? version.match(MANIFEST_VERSION_REGEX) : null;
+  if (!match) return undefined;
+  const major = match[1].padStart(3, '0');
+  const datePart = match[2].padStart(6, '0');
+  const patch = match[3].padStart(3, '0');
+  if (!/-lts/i.test(version)) {
+    return `${major}.${datePart}.${patch}`;
+  }
+  return `${major}.${datePart}.${patch}.LTS.${(match[4] ?? '0').padStart(3, '0')}`;
+};
+
+/**
+ * Same rule as ConnectorTypeHelper.resolveMinimumDeployableVersion: keep the
+ * declared minimum when it is at or above the floor, otherwise use the floor.
+ * Legacy connectors only store the raw minimum, manifest fragment connectors
+ * store both forms; the padded form is backfilled to match the raw one.
+ */
 const applyHuntFloor = async (knex, huntConnectorIds) => {
-  const paddedRows = await knex('Document_Metadata')
-    .select('document_id', 'value')
+  const rows = await knex('Document_Metadata')
+    .select('document_id', 'key', 'value')
     .whereIn('document_id', huntConnectorIds)
-    .andWhere('key', 'minimum_deployable_version_padded');
-  const paddedByDocumentId = new Map(
-    paddedRows.map((row) => [row.document_id, row.value])
-  );
-  const belowFloorIds = huntConnectorIds.filter((documentId) => {
-    const padded = paddedByDocumentId.get(documentId);
-    return !padded || padded < INTERNAL_HUNT_MINIMUM_VERSION_PADDED;
-  });
-  if (belowFloorIds.length === 0) {
+    .whereIn('key', [
+      'minimum_deployable_version',
+      'minimum_deployable_version_padded',
+    ]);
+  const storedByDocumentId = new Map();
+  for (const row of rows) {
+    const stored = storedByDocumentId.get(row.document_id) ?? {};
+    stored[row.key] = row.value;
+    storedByDocumentId.set(row.document_id, stored);
+  }
+
+  const updates = [];
+  for (const documentId of huntConnectorIds) {
+    const stored = storedByDocumentId.get(documentId) ?? {};
+    const declared = stored.minimum_deployable_version?.trim() || undefined;
+    const declaredPadded = declared
+      ? toPaddedVersion(declared)
+      : stored.minimum_deployable_version_padded;
+    const keepsDeclared =
+      declaredPadded !== undefined &&
+      declaredPadded !== null &&
+      declaredPadded >= INTERNAL_HUNT_MINIMUM_VERSION_PADDED;
+
+    const target = keepsDeclared
+      ? {
+          minimum_deployable_version: declared,
+          minimum_deployable_version_padded: declaredPadded,
+        }
+      : {
+          minimum_deployable_version: INTERNAL_HUNT_MINIMUM_VERSION,
+          minimum_deployable_version_padded:
+            INTERNAL_HUNT_MINIMUM_VERSION_PADDED,
+        };
+    for (const [key, value] of Object.entries(target)) {
+      if (value !== undefined && stored[key] !== value) {
+        updates.push({ document_id: documentId, key, value });
+      }
+    }
+  }
+  if (updates.length === 0) {
     return;
   }
 
   await knex('Document_Metadata')
-    .insert(
-      belowFloorIds.flatMap((documentId) => [
-        {
-          document_id: documentId,
-          key: 'minimum_deployable_version',
-          value: INTERNAL_HUNT_MINIMUM_VERSION,
-        },
-        {
-          document_id: documentId,
-          key: 'minimum_deployable_version_padded',
-          value: INTERNAL_HUNT_MINIMUM_VERSION_PADDED,
-        },
-      ])
-    )
+    .insert(updates)
     .onConflict(['document_id', 'key'])
     .merge(['value']);
 };

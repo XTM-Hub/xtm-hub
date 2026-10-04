@@ -137,7 +137,8 @@ the **Hunted platform**. Raw events never leave the hunted platform: OpenCTI onl
 observed indicators and a hashed, truncated evidence sample. To deploy one:
 
 - your OpenCTI product must provide hunts. Internal hunt Connectors require OpenCTI 7.261003.0 or later; on an older
-  product the Connector is marked as incompatible and is not offered for deployment;
+  product, including a long-term support release based on an older version, the Connector is marked as incompatible
+  and is not offered for deployment;
 - prepare the URL of the hunted platform and an account or token limited to read-only search: the deployment form of
   OpenCTI asks for them, and XTM Composer receives the credentials encrypted.
 

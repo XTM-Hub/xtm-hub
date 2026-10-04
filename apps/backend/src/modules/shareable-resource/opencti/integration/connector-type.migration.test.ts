@@ -10,6 +10,7 @@ import {
 import {
   INTERNAL_HUNT_MINIMUM_VERSION,
   INTERNAL_HUNT_MINIMUM_VERSION_PADDED,
+  toPaddedVersion,
   up,
 } from '../../../../migrations/20261003230000_apply_internal_hunt_minimum_deployable_version.js';
 import type { DocumentId } from '../../../../model/kanel/public/Document';
@@ -122,6 +123,44 @@ describe('apply_internal_hunt_minimum_deployable_version migration', () => {
       version: '7.260811.0',
       padded: '007.260811.000',
     });
+  });
+
+  it('keeps a raw minimum above the floor and backfills its padded form', async () => {
+    // Given
+    const legacyAboveFloor = await createConnector({
+      [DocumentMetadataKeyCode.ImageType]: 'INTERNAL_HUNT',
+      [DocumentMetadataKeyCode.MinimumDeployableVersion]: '7.261015.0',
+    });
+    const legacyBelowFloor = await createConnector({
+      [DocumentMetadataKeyCode.ImageType]: 'INTERNAL_HUNT',
+      [DocumentMetadataKeyCode.MinimumDeployableVersion]: '7.260900.0',
+    });
+    const legacyInvalid = await createConnector({
+      [DocumentMetadataKeyCode.ImageType]: 'INTERNAL_HUNT',
+      [DocumentMetadataKeyCode.MinimumDeployableVersion]: 'latest',
+    });
+
+    // When
+    await up(db);
+    await up(db);
+
+    // Then
+    expect(await loadMinimumVersions(legacyAboveFloor)).toEqual({
+      version: '7.261015.0',
+      padded: '007.261015.000',
+    });
+    const floor = { version: '7.261003.0', padded: '007.261003.000' };
+    expect(await loadMinimumVersions(legacyBelowFloor)).toEqual(floor);
+    expect(await loadMinimumVersions(legacyInvalid)).toEqual(floor);
+  });
+
+  it('pads versions like the manifest fragment helper', () => {
+    for (const version of ['7.261003.0', '6.8.13', '7.260811.2-lts.4']) {
+      expect(toPaddedVersion(version)).toBe(
+        ManifestFragmentHelper.validateAndFormatManifestVersion(version)
+      );
+    }
+    expect(toPaddedVersion('latest')).toBeUndefined();
   });
 
   it('stores legacy connector type spellings in their canonical form and applies the floor to them', async () => {

@@ -38,8 +38,23 @@ export const compareVersions = (a: string, b: string) => {
     return compareLtsVersions(a, b);
   }
 
+  // Across release tracks, versions compare on their numeric core, as the
+  // catalog orders padded versions: an LTS release only ranks above the
+  // regular release it is based on, never above a later one.
+  if ((aIsSemantic || aIsLts) && (bIsSemantic || bIsLts)) {
+    const coreComparison = compareSemanticVersions(
+      toCoreVersion(a),
+      toCoreVersion(b)
+    );
+    if (coreComparison !== 0) {
+      return coreComparison;
+    }
+  }
+
   return aIsLts ? 1 : -1;
 };
+
+const toCoreVersion = (version: string) => version.split('-lts')[0]!;
 
 const compareLtsVersions = (a: string, b: string) => {
   const splittedA = a.split('.');
