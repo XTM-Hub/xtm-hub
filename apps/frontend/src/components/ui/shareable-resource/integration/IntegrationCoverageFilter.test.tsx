@@ -1,10 +1,11 @@
 import testRender from '@/utils/test/test-render';
 import { screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildCoverageOptionCounts,
   buildCoverageOptions,
   IntegrationCoverageFilter,
+  resetSeenCoverageValues,
 } from './IntegrationCoverageFilter';
 
 const setObjectTypesMock = vi.fn();
@@ -88,6 +89,10 @@ describe('buildCoverageOptions', () => {
 });
 
 describe('IntegrationCoverageFilter', () => {
+  beforeEach(() => {
+    resetSeenCoverageValues();
+  });
+
   it('renders the covered object types of the matched population', () => {
     // Given / When
     testRender(
@@ -138,6 +143,29 @@ describe('IntegrationCoverageFilter', () => {
 
     // When
     rerender(
+      <IntegrationCoverageFilter
+        family="region"
+        facetCounts={{ France: 1 }}
+      />
+    );
+
+    // Then
+    expect(screen.getByRole('checkbox', { name: /Germany/ })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: /France/ })).toBeEnabled();
+  });
+
+  it('keeps a value seen before its filter section was closed and reopened', () => {
+    // Given - the section shows Germany, then closes (the filter unmounts)
+    const { unmount } = testRender(
+      <IntegrationCoverageFilter
+        family="region"
+        facetCounts={{ France: 1, Germany: 2 }}
+      />
+    );
+    unmount();
+
+    // When - another filter removed Germany from the facets, and the section opens again
+    testRender(
       <IntegrationCoverageFilter
         family="region"
         facetCounts={{ France: 1 }}
