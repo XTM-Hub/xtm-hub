@@ -1,3 +1,4 @@
+import type { Management } from 'auth0';
 import { OrganizationId } from '../../model/kanel/public/Organization';
 import { logApp } from '../../utils/app-logger.util';
 import { auth0ClientImplementation } from './implementation';
@@ -30,8 +31,13 @@ export interface Auth0Client {
   ): Promise<void>;
   updateUserRBACInstance(
     email: string,
-    userRBACInstance: Auth0UpdateUserRBACInstance
+    userRBACInstance: Auth0UpdateUserRBACInstance,
+    prefetchedAuth0Users?: Management.UserResponseSchema[]
   ): Promise<void>;
+  // Batched lookup, keys are lowercased emails; emails without account are absent.
+  getUsersByEmails(
+    emails: string[]
+  ): Promise<Map<string, Management.UserResponseSchema[]>>;
 }
 
 const isAuth0Enabled = !(
