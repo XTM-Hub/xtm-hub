@@ -1,5 +1,6 @@
 import SsoGroupRolePortalForm from '@/components/admin/role/SsoGroupRolePortalForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Button, toast } from '@filigran/ui';
 import {
@@ -7,11 +8,10 @@ import {
   useSsoGroupRolePortalsQuery,
 } from '@graphql/generated';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 const AddSsoGroupRolePortal = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [openSheet, setOpenSheet] = useState(false);
   const queryClient = useQueryClient();
   const { mutate: addSsoGroupRolePortal } = useAddSsoGroupRolePortalMutation(

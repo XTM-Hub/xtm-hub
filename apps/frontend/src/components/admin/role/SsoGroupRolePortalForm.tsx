@@ -1,3 +1,4 @@
+import { useTranslate } from '@/hooks/use-translate';
 import {
   AutoForm,
   Button,
@@ -9,7 +10,6 @@ import {
   SheetFooter,
 } from '@filigran/ui';
 import { PortalCapability } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 import { z } from 'zod';
@@ -50,7 +50,7 @@ const SsoGroupRolePortalForm = ({
   handleSubmit: (values: SsoGroupRolePortalFormValues) => void;
   onClose: () => void;
 }) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const formSchema = useMemo(() => buildSsoGroupRolePortalFormSchema(t), [t]);
 
   return (

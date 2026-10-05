@@ -1,5 +1,6 @@
 import AddSsoGroupRolePortal from '@/components/admin/role/AddSsoGroupRolePortal';
 import SsoGroupRolePortalActions from '@/components/admin/role/SsoGroupRolePortalActions';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { i18nKey } from '@/utils/datatable';
 import { Badge, DataTable } from '@filigran/ui';
@@ -8,14 +9,13 @@ import {
   useSsoGroupRolePortalsQuery,
 } from '@graphql/generated';
 import { ColumnDef } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 
 type SsoGroupRolePortalRow =
   SsoGroupRolePortalsQuery['ssoGroupRolePortals'][number] & { id: string };
 
 const RoleList = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { data } = useSsoGroupRolePortalsQuery(portalGraphqlClient);
 
   const rows = useMemo<SsoGroupRolePortalRow[]>(

@@ -1,4 +1,5 @@
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { toast } from '@filigran/ui';
 import {
@@ -6,7 +7,6 @@ import {
   useSsoGroupRolePortalsQuery,
 } from '@graphql/generated';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 
 interface DeleteSsoGroupRolePortalProps {
   open: boolean;
@@ -21,7 +21,7 @@ const DeleteSsoGroupRolePortal = ({
   ssoGroup,
   rolePortal,
 }: DeleteSsoGroupRolePortalProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const queryClient = useQueryClient();
   const { mutate: deleteSsoGroupRolePortal, isPending } =
     useDeleteSsoGroupRolePortalMutation(portalGraphqlClient, {

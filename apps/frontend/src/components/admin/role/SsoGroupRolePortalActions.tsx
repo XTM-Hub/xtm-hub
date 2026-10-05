@@ -1,9 +1,9 @@
 import DeleteSsoGroupRolePortal from '@/components/admin/role/DeleteSsoGroupRolePortal';
 import EditSsoGroupRolePortal from '@/components/admin/role/EditSsoGroupRolePortal';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
+import { useTranslate } from '@/hooks/use-translate';
 import { MoreVertIcon } from '@filigran/icon';
 import { PortalCapability } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface SsoGroupRolePortalActionsProps {
@@ -17,7 +17,7 @@ const SsoGroupRolePortalActions = ({
   rolePortal,
   capabilities,
 }: SsoGroupRolePortalActionsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
 
