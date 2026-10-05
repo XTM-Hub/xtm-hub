@@ -26,16 +26,13 @@ export const ConnectProductButton = ({
     <>
       <Button
         priority={priority}
-        className="gap-s"
+        endIcon={<AddIcon className="h-3 w-3" />}
         onClick={() => {
           setIsOpen(true);
         }}>
-        <span>
-          {t('Header.ConnectedProducts.ConnectPlatform', {
-            platformName: 'product',
-          })}
-        </span>
-        <AddIcon className="h-3 w-3" />
+        {t('Header.ConnectedProducts.ConnectPlatform', {
+          platformName: 'product',
+        })}
       </Button>
       <ConnectProductFromHubModal
         isOpen={isOpen}

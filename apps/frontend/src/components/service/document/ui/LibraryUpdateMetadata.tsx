@@ -179,8 +179,8 @@ export const LibraryUpdateMetadata = () => {
       <>
         <Button
           priority="tertiary"
+          startIcon={<EditIcon className="h-4 w-4" />}
           onClick={() => setIsOpen(true)}>
-          <EditIcon className="h-4 w-4 mr-s " />
           {t('Utils.Edit')}
         </Button>
         <Dialog

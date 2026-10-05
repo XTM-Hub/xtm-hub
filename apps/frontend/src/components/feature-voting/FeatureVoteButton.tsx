@@ -54,8 +54,8 @@ export const FeatureVoteButton = ({
       <Button
         priority="secondary"
         className={className}
+        startIcon={<CheckCircleIcon className="size-4" />}
         disabled>
-        <CheckCircleIcon className="mr-s size-4" />
         {t('FeatureVoting.Voted')}
       </Button>
     );

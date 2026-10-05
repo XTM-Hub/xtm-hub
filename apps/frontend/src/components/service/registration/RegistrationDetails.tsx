@@ -234,7 +234,7 @@ export const RegistrationDetails = ({
 
       <div className="flex flex-col gap-m">
         {(displayAccessPlatformButtonForTrial || !isTrial) && (
-          <Button>
+          <Button asChild>
             <Link
               target="_blank"
               rel="noopener noreferrer"

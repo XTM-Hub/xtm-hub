@@ -10,7 +10,7 @@ import { XtmoneConnectionStatus } from '@/components/service/trial-instances/xtm
 import { useTranslate } from '@/hooks/use-translate';
 import { useDateFormatter } from '@/utils/date';
 import { toExternalHref } from '@/utils/external-url';
-import { Button } from '@filigran/design-system';
+import { Button, IconButton } from '@filigran/design-system';
 import { EditIcon } from '@filigran/icon';
 import { Badge, Card, CardContent, Separator } from '@filigran/ui';
 import { GradientButton } from '@filigran/ui/servers';
@@ -77,13 +77,14 @@ export const BundleProductCard = ({
           {product.service_instance?.name ?? '-'}
         </Badge>
         {canManage && (
-          <Button
+          <IconButton
             priority="tertiary"
-            className="size-6 shrink-0 rounded-lg border border-elevation-border-strong p-0 text-text-default-primary"
+            size="sm"
+            className="shrink-0 rounded-lg border border-elevation-border-strong text-text-default-primary"
             aria-label={t('XtmPlatformTrial.Products.EditName')}
-            onClick={() => setOpenEditName(true)}>
-            <EditIcon className="size-4" />
-          </Button>
+            icon={<EditIcon className="size-4" />}
+            onClick={() => setOpenEditName(true)}
+          />
         )}
       </div>
     </div>

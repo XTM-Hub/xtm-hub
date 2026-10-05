@@ -7,7 +7,7 @@ export const SlackSupportButton = () => {
   const t = useTranslate();
 
   return (
-    <Button>
+    <Button asChild>
       <Link
         href="https://community.filigran.io/"
         target="_blank"

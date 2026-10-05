@@ -126,8 +126,9 @@ export const EpicFormSheet = ({
           <></>
         ) : (
           triggerElement || (
-            <Button priority="tertiary">
-              <AddIcon className="size-4 mr-s" />
+            <Button
+              priority="tertiary"
+              startIcon={<AddIcon className="size-4" />}>
               {t('Utils.Create')}
             </Button>
           )

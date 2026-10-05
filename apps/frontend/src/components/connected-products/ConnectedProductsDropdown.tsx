@@ -34,15 +34,15 @@ export const ConnectedProductsDropdown = () => {
       <DropdownMenuTrigger asChild>
         <Button
           priority="tertiary"
-          className="flex flex-row items-center gap-xs text-primary font-medium">
-          <span>
-            {t('Header.ConnectedProducts.Count', {
-              count: connectedPlatforms.length,
-            })}
-          </span>
-          <ArrowDropDownIcon
-            className={`h-5 w-5 shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-          />
+          className="font-medium"
+          endIcon={
+            <ArrowDropDownIcon
+              className={`h-5 w-5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+            />
+          }>
+          {t('Header.ConnectedProducts.Count', {
+            count: connectedPlatforms.length,
+          })}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-80 p-0">

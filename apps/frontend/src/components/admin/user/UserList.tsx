@@ -435,7 +435,6 @@ const UserList = ({ organization }: UserListProps) => {
                 if (!canResendInvite(row.original.status)) return null;
                 return (
                   <Button
-                    size="sm"
                     disabled={isResendingInvite}
                     onClick={(event) =>
                       handleResendInvite(event, row.original)

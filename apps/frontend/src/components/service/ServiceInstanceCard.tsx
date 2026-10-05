@@ -64,6 +64,7 @@ const ServiceInstanceCard = ({
     return (
       <Button
         key={action.id}
+        asChild
         {...(action.priority ? { priority: action.priority } : {})}>
         <Link
           href={action.href}

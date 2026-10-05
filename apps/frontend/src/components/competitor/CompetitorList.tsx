@@ -30,7 +30,7 @@ import {
   mapToSortingTableValue,
   transformSortingValueToParams,
 } from '@/components/ui/handle-sorting.utils';
-import { Button } from '@filigran/design-system';
+import { Button, IconButton } from '@filigran/design-system';
 import {
   competitorListQuery,
   competitorListQuery$variables,
@@ -116,31 +116,27 @@ const CompetitorList = () => {
         enableSorting: false,
         cell: ({ row }) => (
           <div className="flex items-center justify-end gap-s">
-            <Button
+            <IconButton
               priority="tertiary"
-              size="sm"
+              aria-label={t('CompetitorListPage.Edit')}
+              icon={<EditIcon className="h-4 w-4" />}
               onClick={(e) => {
                 e.stopPropagation();
                 setEditRow(row.original);
                 setOpenEdit(true);
-              }}>
-              <EditIcon className="h-4 w-4" />
-              <span className="sr-only">{t('CompetitorListPage.Edit')}</span>
-            </Button>
+              }}
+            />
             <AlertDialogComponent
               AlertTitle={t('CompetitorListPage.DeleteDialog.Title')}
               actionButtonText={t('CompetitorListPage.Delete')}
               variantName="destructive"
               triggerElement={
-                <Button
+                <IconButton
                   variant="destructive"
                   priority="tertiary"
-                  size="sm">
-                  <DeleteIcon className="h-4 w-4" />
-                  <span className="sr-only">
-                    {t('CompetitorListPage.Delete')}
-                  </span>
-                </Button>
+                  aria-label={t('CompetitorListPage.Delete')}
+                  icon={<DeleteIcon className="h-4 w-4" />}
+                />
               }
               onClickContinue={(e) => {
                 e.stopPropagation();

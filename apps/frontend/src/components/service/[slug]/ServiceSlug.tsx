@@ -290,10 +290,8 @@ const ServiceSlug = ({
                   <>
                     <Button
                       priority="tertiary"
-                      size="sm"
-                      className="cursor-pointer"
+                      startIcon={<AddIcon className="h-4 w-4" />}
                       onClick={() => setOpenAddCapabilities(true)}>
-                      <AddIcon className="h-4 w-4 m-s" />
                       {t(
                         'Service.Management.AddSubscriptionCapabilities.Button'
                       )}
@@ -301,12 +299,10 @@ const ServiceSlug = ({
                     <Button
                       variant="destructive"
                       priority="tertiary"
-                      size="sm"
-                      className="cursor-pointer"
+                      startIcon={<DeleteIcon className="h-4 w-4" />}
                       onClick={() =>
                         setDeleteSubscriptions(selectedSubscriptions)
                       }>
-                      <DeleteIcon className="h-4 w-4 m-s" />
                       {t('Utils.Delete')}
                     </Button>
                   </>
