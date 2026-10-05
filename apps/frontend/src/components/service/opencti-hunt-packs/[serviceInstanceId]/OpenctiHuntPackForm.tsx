@@ -9,6 +9,7 @@ import {
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
+import { semanticVersionRegex, validLtsVersionRegex } from '@/utils/versioning';
 import { AutoForm } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { DocumentImageType } from '@graphql/generated';
@@ -31,15 +32,22 @@ export const huntPackDescriptionValue =
   '### Additional detail\n\n' +
   'Optional\n';
 
-const openCTIHuntPackFormSchema = z.object({
+export const openCTIHuntPackFormSchema = z.object({
   name: z.string().min(1, 'Required'),
   slug: z.string().min(1, 'Required'),
   uploader_id: z.string().optional(),
   short_description: z.string().min(1, 'Required').max(250),
   description: z.string().min(1, 'Required'),
-  product_version: z.string().regex(/^\d+\.\d+\.\d+$/, {
-    error: 'Product version must be X.Y.Z',
-  }),
+  product_version: z
+    .string()
+    .regex(semanticVersionRegex, {
+      error: 'Product version must be a valid version',
+    })
+    .or(
+      z.string().regex(validLtsVersionRegex, {
+        error: 'Product version must be a valid version',
+      })
+    ),
   uploader_organization_id: z.string().min(1, 'Required'),
   use_cases: z.array(z.string()).min(1, 'Required'),
   active: z.boolean().optional(),
