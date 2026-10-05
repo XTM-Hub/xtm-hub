@@ -130,6 +130,7 @@ export enum AlreadyExistsErrorCode {
   FreeTrialAlreadyExists = 'FREE_TRIAL_ALREADY_EXISTS',
   CompetitorDomainAlreadyExists = 'COMPETITOR_DOMAIN_ALREADY_EXISTS',
   DeploymentFeedbackAlreadyExists = 'DEPLOYMENT_FEEDBACK_ALREADY_EXISTS',
+  SSOGroupRolePortalAlreadyExists = 'SSO_GROUP_ROLE_PORTAL_ALREADY_EXISTS',
 }
 
 export enum NotFoundErrorCode {
@@ -152,6 +153,7 @@ export enum NotFoundErrorCode {
   VotableFeatureNotFound = 'VOTABLE_FEATURE_NOT_FOUND',
   VotingRoundNotFound = 'VOTING_ROUND_NOT_FOUND',
   CapabilityPortalNotFound = 'CAPABILITY_PORTAL_NOT_FOUND',
+  SSOGroupRolePortalNotFound = 'SSO_GROUP_ROLE_PORTAL_NOT_FOUND',
 }
 
 export const ErrorCode = {

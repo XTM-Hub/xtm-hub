@@ -6,8 +6,10 @@ import {
 } from '../../../tests/tests.const';
 import {
   AddSsoGroupRolePortalInput,
+  DeleteSsoGroupRolePortalInput,
   PortalCapability,
   SsoGroupRolePortal,
+  UpdateSsoGroupRolePortalInput,
 } from '../../__generated__/resolvers-types';
 import { CAPABILITY_BYPASS, ROLE_ADMIN } from '../../portal.const';
 import * as errorMapping from '../../utils/error/error.mapping';
@@ -109,6 +111,117 @@ describe('addSSOGroupRolePortal GraphQL mutation', () => {
 
     // When
     const result = rolePortalResolver.Mutation!.addSSOGroupRolePortal!(
+      {},
+      { input },
+      contextSimpleUserFiligran2,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    // Then
+    await expect(result).rejects.toBe(mappedError);
+    expect(mapToGraphQLErrorSpy).toHaveBeenCalledWith(error);
+  });
+});
+
+describe('updateSSOGroupRolePortal GraphQL mutation', () => {
+  const args = {
+    ssoGroup: 'pancake-lovers',
+    rolePortal: ROLE_ADMIN.name,
+  };
+  const input: UpdateSsoGroupRolePortalInput = {
+    ssoGroup: 'waffle-lovers',
+    rolePortal: ROLE_ADMIN.name,
+    capabilities: [PortalCapability.Bypass],
+  };
+
+  it('should delegate to RolePortalApp.updateSSOGroupRolePortal and return result', async () => {
+    // Given
+    vi.spyOn(RolePortalApp, 'updateSSOGroupRolePortal').mockResolvedValue(
+      ssoGroupRolePortal
+    );
+
+    // When
+    const result = await rolePortalResolver.Mutation!.updateSSOGroupRolePortal!(
+      {},
+      { ...args, input },
+      contextSimpleUserFiligran2,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    // Then
+    expect(RolePortalApp.updateSSOGroupRolePortal).toHaveBeenCalledWith(
+      args,
+      input
+    );
+    expect(result).toEqual(ssoGroupRolePortal);
+  });
+
+  it('should map errors with mapToGraphQLError', async () => {
+    // Given
+    const error = new Error('boom');
+    vi.spyOn(RolePortalApp, 'updateSSOGroupRolePortal').mockRejectedValue(
+      error
+    );
+    const mappedError = new GraphQLError('mapped error');
+    const mapToGraphQLErrorSpy = vi
+      .spyOn(errorMapping, 'mapToGraphQLError')
+      .mockReturnValue(mappedError);
+
+    // When
+    const result = rolePortalResolver.Mutation!.updateSSOGroupRolePortal!(
+      {},
+      { ...args, input },
+      contextSimpleUserFiligran2,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    // Then
+    await expect(result).rejects.toBe(mappedError);
+    expect(mapToGraphQLErrorSpy).toHaveBeenCalledWith(error);
+  });
+});
+
+describe('deleteSSOGroupRolePortal GraphQL mutation', () => {
+  const input: DeleteSsoGroupRolePortalInput = {
+    ssoGroup: 'pancake-lovers',
+    rolePortal: ROLE_ADMIN.name,
+  };
+
+  it('should delegate to RolePortalDomain.deleteSSOGroupRolePortal and return result', async () => {
+    // Given
+    vi.spyOn(RolePortalDomain, 'deleteSSOGroupRolePortal').mockResolvedValue(
+      ssoGroupRolePortal
+    );
+
+    // When
+    const result = await rolePortalResolver.Mutation!.deleteSSOGroupRolePortal!(
+      {},
+      { input },
+      contextSimpleUserFiligran2,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    // Then
+    expect(RolePortalDomain.deleteSSOGroupRolePortal).toHaveBeenCalledWith({
+      ssoGroup: input.ssoGroup,
+      rolePortalName: input.rolePortal,
+    });
+    expect(result).toEqual(ssoGroupRolePortal);
+  });
+
+  it('should map errors with mapToGraphQLError', async () => {
+    // Given
+    const error = new Error('boom');
+    vi.spyOn(RolePortalDomain, 'deleteSSOGroupRolePortal').mockRejectedValue(
+      error
+    );
+    const mappedError = new GraphQLError('mapped error');
+    const mapToGraphQLErrorSpy = vi
+      .spyOn(errorMapping, 'mapToGraphQLError')
+      .mockReturnValue(mappedError);
+
+    // When
+    const result = rolePortalResolver.Mutation!.deleteSSOGroupRolePortal!(
       {},
       { input },
       contextSimpleUserFiligran2,

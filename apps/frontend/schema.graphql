@@ -210,6 +210,8 @@ type Mutation {
   refreshPlatformRegistrationConnectivityStatusAllTenants(input: RefreshPlatformRegistrationConnectivityStatusAllTenantsInput!): RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse!
   autoRegisterPlatform(platform: PlatformInput @deprecated(reason: "Use input instead"), input: AutoRegisterPlatformInput): Success!
   addSSOGroupRolePortal(input: AddSSOGroupRolePortalInput!): SSOGroupRolePortal!
+  updateSSOGroupRolePortal(ssoGroup: String!, rolePortal: String!, input: UpdateSSOGroupRolePortalInput!): SSOGroupRolePortal!
+  deleteSSOGroupRolePortal(input: DeleteSSOGroupRolePortalInput!): SSOGroupRolePortal!
   addSubscriptionCapability(input: AddSubscriptionCapabilityInput!): [SubscriptionModel!]!
   addCapabilitiesToUserServices(input: UserServicesAddCapabilitiesInput!, service_instance_id: ServiceInstanceId!): [UserService]
   editSeoServiceInstance(service_instance_id: ServiceInstanceId!, language: Locale!, input: EditSeoServiceInstanceInput!): SeoServiceInstanceMetadata!
@@ -1387,6 +1389,17 @@ input AddSSOGroupRolePortalInput {
   ssoGroup: String!
   rolePortal: String!
   capabilities: [PortalCapability!]!
+}
+
+input UpdateSSOGroupRolePortalInput {
+  ssoGroup: String!
+  rolePortal: String!
+  capabilities: [PortalCapability!]!
+}
+
+input DeleteSSOGroupRolePortalInput {
+  ssoGroup: String!
+  rolePortal: String!
 }
 
 """

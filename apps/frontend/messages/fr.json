@@ -308,6 +308,8 @@
       "CANT_REQUEST_FREE_TRIAL_IN_PERSONAL_SPACE": "Vous ne pouvez pas demander d'essai gratuit dans votre espace personnel",
       "CANT_SUBSCRIBE_YOURSELF": "Vous ne pouvez pas vous donner l'accès vous-même",
       "CAPABILITY_PORTAL_NOT_FOUND": "Capacité inconnue",
+      "SSO_GROUP_ROLE_PORTAL_NOT_FOUND": "Association de groupe SSO introuvable",
+      "SSO_GROUP_ROLE_PORTAL_ALREADY_EXISTS": "Ce groupe SSO est déjà associé à ce rôle",
       "COMPETITOR_DOMAIN_ALREADY_EXISTS": "Il existe déjà un concurrent avec le même domaine",
       "DEPLOYMENT_FEEDBACK_ALREADY_EXISTS": "Des retours d'expérience sur le déploiement existent déjà",
       "COMPETITOR_NOT_FOUND": "Concurrent non trouvé",
@@ -548,6 +550,11 @@
     "Role": "Rôle",
     "Capabilities": "Capacités",
     "AddMapping": "Ajouter une association",
+    "EditMapping": "Modifier l’association",
+    "DeleteDialog": {
+      "Title": "Supprimer l’association",
+      "Text": "Voulez-vous vraiment retirer le rôle {rolePortal} du groupe SSO {ssoGroup} ?"
+    },
     "Error": {
       "SsoGroup": "Le groupe SSO est requis",
       "Role": "Le rôle est requis"

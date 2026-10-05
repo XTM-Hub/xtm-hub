@@ -308,6 +308,8 @@
       "CANT_REQUEST_FREE_TRIAL_IN_PERSONAL_SPACE": "You cannot request a free trial in your personal space",
       "CANT_SUBSCRIBE_YOURSELF": "You cannot add yourself",
       "CAPABILITY_PORTAL_NOT_FOUND": "Unknown capability",
+      "SSO_GROUP_ROLE_PORTAL_NOT_FOUND": "SSO group mapping not found",
+      "SSO_GROUP_ROLE_PORTAL_ALREADY_EXISTS": "This SSO group is already mapped to this role",
       "COMPETITOR_DOMAIN_ALREADY_EXISTS": "A competitor with the same domain already exists",
       "DEPLOYMENT_FEEDBACK_ALREADY_EXISTS": "Deployment feedback already exists",
       "COMPETITOR_NOT_FOUND": "Competitor not found",
@@ -548,6 +550,11 @@
     "Role": "Role",
     "Capabilities": "Capabilities",
     "AddMapping": "Add mapping",
+    "EditMapping": "Edit mapping",
+    "DeleteDialog": {
+      "Title": "Delete mapping",
+      "Text": "Are you sure you want to remove the role {rolePortal} from the SSO group {ssoGroup}?"
+    },
     "Error": {
       "SsoGroup": "SSO group is required",
       "Role": "Role is required"

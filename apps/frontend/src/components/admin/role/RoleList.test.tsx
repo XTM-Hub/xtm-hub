@@ -57,4 +57,33 @@ describe('RoleList', () => {
       await screen.findByRole('row', { name: /xtmhub-users.*User/ })
     ).toBeInTheDocument();
   });
+
+  it('should render a delete action on each row', async () => {
+    const mockedResponse: SsoGroupRolePortalsQuery = {
+      ssoGroupRolePortals: [
+        mockSsoGroupRolePortal({
+          ssoGroup: 'xtmhub-admins',
+          rolePortal: mockRolePortal({ id: 'role-admin', name: 'Admin' }),
+        }),
+        mockSsoGroupRolePortal({
+          ssoGroup: 'xtmhub-users',
+          rolePortal: mockRolePortal({ id: 'role-user', name: 'User' }),
+        }),
+      ],
+    };
+
+    mswServer.use(
+      mockGraphqlQuery({
+        queryName: 'SSOGroupRolePortals',
+        data: mockedResponse,
+      })
+    );
+
+    testRender(<RoleList />);
+
+    await screen.findByRole('row', { name: /xtmhub-admins/ });
+    expect(
+      screen.getAllByRole('button', { name: 'Utils.OpenMenu' })
+    ).toHaveLength(2);
+  });
 });

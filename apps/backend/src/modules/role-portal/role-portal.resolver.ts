@@ -21,6 +21,26 @@ const rolePortalResolver: Resolvers = {
         throw mapToGraphQLError(error);
       }
     },
+    updateSSOGroupRolePortal: async (_, { ssoGroup, rolePortal, input }) => {
+      try {
+        return await RolePortalApp.updateSSOGroupRolePortal(
+          { ssoGroup, rolePortal },
+          input
+        );
+      } catch (error) {
+        throw mapToGraphQLError(error);
+      }
+    },
+    deleteSSOGroupRolePortal: async (_, { input }) => {
+      try {
+        return await RolePortalDomain.deleteSSOGroupRolePortal({
+          ssoGroup: input.ssoGroup,
+          rolePortalName: input.rolePortal,
+        });
+      } catch (error) {
+        throw mapToGraphQLError(error);
+      }
+    },
   },
 };
 

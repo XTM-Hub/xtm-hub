@@ -1,0 +1,21 @@
+mutation UpdateSSOGroupRolePortal(
+  $ssoGroup: String!
+  $rolePortal: String!
+  $input: UpdateSSOGroupRolePortalInput!
+) {
+  updateSSOGroupRolePortal(
+    ssoGroup: $ssoGroup
+    rolePortal: $rolePortal
+    input: $input
+  ) {
+    ssoGroup
+    rolePortal {
+      id
+      name
+      capabilities {
+        id
+        name
+      }
+    }
+  }
+}

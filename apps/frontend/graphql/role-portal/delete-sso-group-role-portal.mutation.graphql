@@ -1,0 +1,9 @@
+mutation DeleteSSOGroupRolePortal($input: DeleteSSOGroupRolePortalInput!) {
+  deleteSSOGroupRolePortal(input: $input) {
+    ssoGroup
+    rolePortal {
+      id
+      name
+    }
+  }
+}

@@ -6,6 +6,7 @@ import { TEST_ORGANIZATIONS } from '../../../tests/tests.const';
 import { RolePortalId } from '../../model/kanel/public/RolePortal';
 import { UserId } from '../../model/kanel/public/User';
 import { CAPABILITY_BYPASS } from '../../portal.const';
+import { ErrorCode } from '../../utils/error/error.code';
 import { RolePortalDomain } from './role-portal.domain';
 
 describe('role portal domain tests', () => {
@@ -271,6 +272,68 @@ describe('role portal domain tests', () => {
           role_portal_id: existingRole.id,
         });
       }
+    });
+  });
+
+  describe('deleteSSOGroupRolePortal', () => {
+    let rolePortalId: RolePortalId;
+
+    beforeEach(async () => {
+      const rolePortal = await TestHelper.rolePortal.create({
+        name: 'PANCAKE_FLIPPER',
+      });
+      rolePortalId = rolePortal.id;
+      // eslint-disable-next-line no-restricted-syntax
+      await db('RolePortal_CapabilityPortal').insert({
+        role_portal_id: rolePortalId,
+        capability_portal_id: CAPABILITY_BYPASS.id,
+      });
+      // eslint-disable-next-line no-restricted-syntax
+      await db('SSOGroup_RolePortal').insert([
+        { SSOGroup: 'breakfast-club', RolePortal: 'PANCAKE_FLIPPER' },
+        { SSOGroup: 'brunch-club', RolePortal: 'PANCAKE_FLIPPER' },
+      ]);
+    });
+
+    afterEach(async () => {
+      // Cascades to SSOGroup_RolePortal and RolePortal_CapabilityPortal
+      await TestHelper.rolePortal.delete({ id: rolePortalId });
+    });
+
+    it('should delete only the given SSO group mapping, keep the role and return the deleted mapping', async () => {
+      // When
+      const result = await RolePortalDomain.deleteSSOGroupRolePortal({
+        ssoGroup: 'breakfast-club',
+        rolePortalName: 'PANCAKE_FLIPPER',
+      });
+
+      // Then
+      expect(result).toEqual({
+        ssoGroup: 'breakfast-club',
+        rolePortal: expect.objectContaining({
+          id: rolePortalId,
+          name: 'PANCAKE_FLIPPER',
+          capabilities: [expect.objectContaining(CAPABILITY_BYPASS)],
+        }),
+      });
+      const remaining = await RolePortalDomain.loadSSOGroupRolePortals({
+        rolePortalName: 'PANCAKE_FLIPPER',
+      });
+      expect(remaining.map(({ ssoGroup }) => ssoGroup)).toEqual([
+        'brunch-club',
+      ]);
+      expect(
+        await TestHelper.rolePortal.load({ id: rolePortalId })
+      ).toBeDefined();
+    });
+
+    it('should throw when the SSO group mapping does not exist', async () => {
+      await expect(
+        RolePortalDomain.deleteSSOGroupRolePortal({
+          ssoGroup: 'dinner-club',
+          rolePortalName: 'PANCAKE_FLIPPER',
+        })
+      ).rejects.toThrow(ErrorCode.SSOGroupRolePortalNotFound);
     });
   });
 });

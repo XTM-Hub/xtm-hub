@@ -18,7 +18,7 @@ import SSOGroupRolePortal, {
 import { UserId } from '../../model/kanel/public/User';
 import { ROLE_ADMIN } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
-import { UnknownErrorCode } from '../../utils/error/error.code';
+import { ErrorCode, UnknownErrorCode } from '../../utils/error/error.code';
 import { formatRawAggObject } from '../../utils/query-raw.util';
 
 export const RolePortalDomain = {
@@ -95,6 +95,58 @@ export const RolePortalDomain = {
       })
       .onConflict(['SSOGroup', 'RolePortal'])
       .ignore();
+  },
+
+  updateSSOGroupRolePortal: async (
+    current: { ssoGroup: string; rolePortalName: string },
+    next: { ssoGroup: string; rolePortalName: string }
+  ) => {
+    await db<SSOGroupRolePortal>('SSOGroup_RolePortal')
+      .where({
+        SSOGroup: current.ssoGroup as SSOGroupRolePortalSSOGroup,
+        RolePortal: current.rolePortalName as SSOGroupRolePortalRolePortal,
+      })
+      .update({
+        SSOGroup: next.ssoGroup as SSOGroupRolePortalSSOGroup,
+        RolePortal: next.rolePortalName as SSOGroupRolePortalRolePortal,
+      });
+  },
+
+  deleteSSOGroupRolePortal: async ({
+    ssoGroup,
+    rolePortalName,
+  }: {
+    ssoGroup: string;
+    rolePortalName: string;
+  }): Promise<SsoGroupRolePortal> => {
+    const [ssoGroupRolePortal] = await RolePortalDomain.loadSSOGroupRolePortals(
+      { ssoGroup, rolePortalName }
+    );
+    const [deleted] = await db<SSOGroupRolePortal>('SSOGroup_RolePortal')
+      .where({
+        SSOGroup: ssoGroup as SSOGroupRolePortalSSOGroup,
+        RolePortal: rolePortalName as SSOGroupRolePortalRolePortal,
+      })
+      .del()
+      .returning('*');
+    if (!deleted || !ssoGroupRolePortal) {
+      throw new Error(ErrorCode.SSOGroupRolePortalNotFound);
+    }
+    return ssoGroupRolePortal;
+  },
+
+  replaceRolePortalCapabilities: async (
+    role_portal_id: RolePortalId,
+    capabilityPortalIds: CapabilityPortalId[]
+  ) => {
+    await db<RolePortalCapabilityPortal>('RolePortal_CapabilityPortal')
+      .where({ role_portal_id })
+      .whereNotIn('capability_portal_id', capabilityPortalIds)
+      .del();
+    await RolePortalDomain.insertMissingRolePortalCapabilities(
+      role_portal_id,
+      capabilityPortalIds
+    );
   },
 
   // RolePortal_CapabilityPortal has no unique constraint on the pair, so

@@ -308,6 +308,8 @@
       "CANT_REQUEST_FREE_TRIAL_IN_PERSONAL_SPACE": "個人的なスペースで無料体験を申し込むことはできない",
       "CANT_SUBSCRIBE_YOURSELF": "自分を追加することはできません",
       "CAPABILITY_PORTAL_NOT_FOUND": "不明なケイパビリティです",
+      "SSO_GROUP_ROLE_PORTAL_NOT_FOUND": "SSOグループのマッピングが見つかりません",
+      "SSO_GROUP_ROLE_PORTAL_ALREADY_EXISTS": "このSSOグループはすでにこのロールにマッピングされています",
       "COMPETITOR_DOMAIN_ALREADY_EXISTS": "同じドメインの競合がすでに存在する",
       "DEPLOYMENT_FEEDBACK_ALREADY_EXISTS": "導入に関するフィードバックはすでに存在しています",
       "COMPETITOR_NOT_FOUND": "競合他社が見つかりません",
@@ -548,6 +550,11 @@
     "Role": "ロール",
     "Capabilities": "ケイパビリティ",
     "AddMapping": "マッピングを追加",
+    "EditMapping": "マッピングを編集",
+    "DeleteDialog": {
+      "Title": "マッピングを削除",
+      "Text": "SSOグループ {ssoGroup} からロール {rolePortal} を削除してもよろしいですか？"
+    },
     "Error": {
       "SsoGroup": "SSOグループは必須です",
       "Role": "ロールは必須です"

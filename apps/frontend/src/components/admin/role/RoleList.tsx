@@ -1,4 +1,5 @@
 import AddSsoGroupRolePortal from '@/components/admin/role/AddSsoGroupRolePortal';
+import SsoGroupRolePortalActions from '@/components/admin/role/SsoGroupRolePortalActions';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { i18nKey } from '@/utils/datatable';
 import { Badge, DataTable } from '@filigran/ui';
@@ -48,6 +49,26 @@ const RoleList = () => {
         </div>
       ),
     },
+    {
+      id: 'actions',
+      size: 100,
+      enableHiding: false,
+      enableSorting: false,
+      enableResizing: false,
+      cell: ({ row }) => (
+        <div className="flex items-center justify-end">
+          <SsoGroupRolePortalActions
+            ssoGroup={row.original.ssoGroup}
+            rolePortal={row.original.rolePortal.name}
+            capabilities={
+              row.original.rolePortal.capabilities?.flatMap((capability) =>
+                capability ? [capability.name] : []
+              ) ?? []
+            }
+          />
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -63,6 +84,7 @@ const RoleList = () => {
           enableColumnPinning: false,
           enableHiding: false,
         }}
+        tableState={{ columnPinning: { right: ['actions'] } }}
         toolbar={
           <div className="flex justify-end">
             <AddSsoGroupRolePortal />

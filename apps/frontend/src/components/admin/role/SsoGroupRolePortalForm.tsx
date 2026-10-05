@@ -42,9 +42,11 @@ export type SsoGroupRolePortalFormValues = z.infer<
 >;
 
 const SsoGroupRolePortalForm = ({
+  ssoGroupRolePortal,
   handleSubmit,
   onClose,
 }: {
+  ssoGroupRolePortal?: SsoGroupRolePortalFormValues;
   handleSubmit: (values: SsoGroupRolePortalFormValues) => void;
   onClose: () => void;
 }) => {
@@ -54,6 +56,7 @@ const SsoGroupRolePortalForm = ({
   return (
     <AutoForm
       formSchema={formSchema}
+      values={ssoGroupRolePortal}
       onSubmit={(values) => handleSubmit(values)}
       fieldConfig={{
         ssoGroup: {
