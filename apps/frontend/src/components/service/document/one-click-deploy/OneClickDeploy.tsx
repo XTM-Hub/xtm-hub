@@ -6,6 +6,7 @@ import ChoosePlatformForm from '@/components/service/document/one-click-deploy/C
 import EeBadge from '@/components/service/document/one-click-deploy/EeBadge';
 import EeLearnMoreSheet from '@/components/service/document/one-click-deploy/EeLearnMoreSheet';
 import OnePlatformDisplay from '@/components/service/document/one-click-deploy/OnePlatformDisplay';
+import { useIncompatibleVersionMessage } from '@/components/service/document/one-click-deploy/use-deploy-resource-title';
 import { useOneClickDeployTab } from '@/components/service/document/one-click-deploy/UseOneClickDeployTab';
 import { useBuildCompatibilityTranslationKey } from '@/hooks/use-build-compatibility-translation-key';
 import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
@@ -67,6 +68,8 @@ const OneClickDeploy = ({
       platforms,
       requiredProductVersion,
     });
+  const incompatibleVersionMessage =
+    useIncompatibleVersionMessage(documentData);
 
   const requiresEe =
     documentData.type === ShareableResourceType.OPENCTI_PLAYBOOK ||
@@ -210,10 +213,10 @@ const OneClickDeploy = ({
               count: incompatiblePlatformsCount,
               version: requiredProductVersion ?? '',
             })
-          : t('Service.ShareableResources.Deploy.DeployIncompatibleVersion', {
-              platformTitle: platformToBeUpdated,
-              version: requiredProductVersion ?? '',
-            })
+          : incompatibleVersionMessage(
+              platformToBeUpdated,
+              requiredProductVersion ?? ''
+            )
       }>
       {buttonWithBadge}
     </SimpleTooltip>

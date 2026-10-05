@@ -14,6 +14,7 @@ import {
 } from '@filigran/ui/clients';
 import { Button } from '@filigran/ui/servers';
 
+import { HuntPackDeployRequirement } from '@/components/service/document/hunt-pack/HuntPackDeployRequirement';
 import OneClickDeploy from '@/components/service/document/one-click-deploy/OneClickDeploy';
 import ShareableResourceDetails from '@/components/service/document/ShareableResouceDetails';
 import ShareableResourceDescription from '@/components/service/document/ShareableResourceDescription';
@@ -179,10 +180,18 @@ const ShareableResourceSlug = ({
           longDescription={documentData?.description ?? ''}
         />
         {documentData && (
-          <ShareableResourceDetails
-            documentData={documentData}
-            downloadNumber={documentDownloadNumber}
-          />
+          <div className="flex flex-col justify-start gap-s flex-1">
+            <ShareableResourceDetails
+              documentData={documentData}
+              downloadNumber={documentDownloadNumber}
+            />
+            {shouldShowOneClickDeployComponent && requiredProductVersion && (
+              <HuntPackDeployRequirement
+                documentData={documentData}
+                requiredProductVersion={requiredProductVersion}
+              />
+            )}
+          </div>
         )}
       </div>
     </>

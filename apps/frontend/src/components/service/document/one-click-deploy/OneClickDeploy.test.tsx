@@ -92,6 +92,22 @@ describe('OneClickDeploy - version floor of a hunt pack', () => {
     expect(screen.getByLabelText('Staging')).toBeEnabled();
   });
 
+  it('should explain under a product too old for the pack why it cannot be picked', async () => {
+    const { user } = renderWithPlatforms([
+      platform('production', 'Production', '7.261002.0'),
+      platform('staging', 'Staging', '7.261003.0'),
+    ]);
+
+    await user.click(deployButton()!);
+
+    expect(screen.getByLabelText('Production')).toHaveAccessibleDescription(
+      'Service.ShareableResources.Deploy.DeployHuntPackIncompatibleVersion'
+    );
+    expect(screen.getByLabelText('Staging')).not.toHaveAttribute(
+      'aria-describedby'
+    );
+  });
+
   it('should keep the shared deployment sentence for other resources', async () => {
     const customDashboard = {
       ...huntPack,

@@ -1431,6 +1431,10 @@
       "Form": {
         "SelectHuntPackFile": "Hunt pack file",
         "SelectHuntPackFileDescription": "A hunt pack exported from OpenCTI (STIX 2.1 bundle of 1 to 200 hunts). The hunt count, ATT&CK techniques and hunted platforms are read from the file."
+      },
+      "LoadError": {
+        "Library": "The hunt packs could not be loaded.",
+        "Document": "This hunt pack could not be loaded."
       }
     },
     "Description": "Description",
@@ -1524,8 +1528,9 @@
         "DeployPlatform": "Deploy in {platformName}",
         "DeployQuestionTag": "In which {platformType} platform do you want to deploy it?",
         "DeployResourceDescription": "You're about to deploy the {resourceName} {resourceType}.",
-        "DeployHuntPackDescription": "You're about to deploy the hunt pack {resourceName} to OpenCTI.",
+        "DeployHuntPackDescription": "You're about to deploy the hunt pack \"{resourceName}\" to OpenCTI.",
         "DeployIncompatibleVersion": "Update {platformTitle} to OpenCTI {version} or later to deploy this resource.",
+        "DeployHuntPackIncompatibleVersion": "Update {platformTitle} to OpenCTI {version} or later to deploy this hunt pack.",
         "EE": {
           "Tag": "EE",
           "HoverTitle": "Available in Enterprise Edition",

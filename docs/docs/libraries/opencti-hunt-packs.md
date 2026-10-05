@@ -31,10 +31,10 @@ The library lists every published hunt pack. Search by name, filter by use case,
 description, its hunts, its hunted platforms and its ATT&CK techniques. Download the pack file to import it manually,
 or share a link to it with partners who do not have an XTM Hub account.
 
-If the library or a hunt pack cannot be read, for example while XTM Hub cannot be reached, the page says so and offers
-**Try again**; the breadcrumb leads back to the library.
+If the library or a hunt pack cannot be read, for example while XTM Hub cannot be reached, the page says what could not
+be loaded and offers **Try again**; the breadcrumb leads back to the library.
 
-![A hunt pack that cannot be read: the error message, Try again, and the breadcrumb back to the library](../assets/images/opencti-hunt-packs-details-error.png)
+![A hunt pack that cannot be read: This hunt pack could not be loaded, Try again, and the breadcrumb back to the library](../assets/images/opencti-hunt-packs-details-error.png)
 
 ### Manual import to OpenCTI
 
@@ -59,13 +59,14 @@ reviewed and activated. Hunts need an internal hunt Connector for each hunted pl
 ![Details page of a hunt pack with Deploy in OpenCTI as primary action for an organization with a connected OpenCTI product that provides hunts](../assets/images/opencti-hunt-packs-details.png)
 
 When several OpenCTI products are connected, the deployment asks which one to use. A product older than the version
-the pack requires cannot be selected, and its tooltip names the version to reach.
+the pack requires cannot be selected, and the line under it names the version to reach.
 
-![Product picker of a hunt pack deployment with Staging selectable and Production disabled, with the tooltip Update Production to OpenCTI 7.261003.0 or later to deploy this resource](../assets/images/opencti-hunt-packs-deploy-platforms.png)
+![Product picker of a hunt pack deployment with Staging selectable and Production disabled, with the line Update Production to OpenCTI 7.261003.0 or later to deploy this hunt pack under it](../assets/images/opencti-hunt-packs-deploy-platforms.png)
 
-When the only connected product is older, `Deploy in OpenCTI` is disabled and its tooltip names the version to reach.
+When no connected product is recent enough, `Deploy in OpenCTI` is disabled and a warning under the basic information
+names the product to update and the version to reach.
 
-![Details page of a hunt pack with Deploy in OpenCTI disabled and the tooltip Update Production to OpenCTI 7.261003.0 or later to deploy this resource](../assets/images/opencti-hunt-packs-deploy-incompatible.png)
+![Details page of a hunt pack with Deploy in OpenCTI disabled and the warning Update Production to OpenCTI 7.261003.0 or later to deploy this hunt pack under the basic information](../assets/images/opencti-hunt-packs-deploy-incompatible.png)
 
 ## Publishing a hunt pack
 

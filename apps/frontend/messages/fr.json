@@ -1431,6 +1431,10 @@
       "Form": {
         "SelectHuntPackFile": "Fichier du pack de chasse",
         "SelectHuntPackFileDescription": "Un pack de chasse exporté d'OpenCTI (bundle STIX 2.1 de 1 à 200 chasses). Le nombre de chasses, les techniques ATT&CK et les plateformes de chasse sont lus dans le fichier."
+      },
+      "LoadError": {
+        "Library": "Les packs de chasse n'ont pas pu être chargés.",
+        "Document": "Ce pack de chasse n'a pas pu être chargé."
       }
     },
     "Description": "Description",
@@ -1524,8 +1528,9 @@
         "DeployPlatform": "Déployer dans {platformName}",
         "DeployQuestionTag": "Sur quelle plateforme {platformType} voulez-vous le déployer ?",
         "DeployResourceDescription": "Vous êtes sur le point de déployer le {resourceType} {resourceName}.",
-        "DeployHuntPackDescription": "Vous êtes sur le point de déployer le pack de chasse {resourceName} dans OpenCTI.",
+        "DeployHuntPackDescription": "Vous êtes sur le point de déployer le pack de chasse « {resourceName} » dans OpenCTI.",
         "DeployIncompatibleVersion": "Mettez à jour {platformTitle} vers OpenCTI {version} ou une version ultérieure pour déployer cette ressource.",
+        "DeployHuntPackIncompatibleVersion": "Mettez à jour {platformTitle} vers OpenCTI {version} ou une version ultérieure pour déployer ce pack de chasse.",
         "EE": {
           "Tag": "EE",
           "HoverTitle": "Disponible dans l'Enterprise Edition",

@@ -23,3 +23,20 @@ export const useDeployResourceTitle = (
       ],
   });
 };
+
+/** The sentence telling which product to update, and to which version, to deploy the resource. */
+export const useIncompatibleVersionMessage = (
+  documentData: Pick<documentItem_fragment$data, 'type'>
+) => {
+  const t = useTranslate();
+  return (platformTitle: string, version: string): string =>
+    documentData.type === ShareableResourceType.OPENCTI_HUNT_PACK
+      ? t(
+          'Service.ShareableResources.Deploy.DeployHuntPackIncompatibleVersion',
+          { platformTitle, version }
+        )
+      : t('Service.ShareableResources.Deploy.DeployIncompatibleVersion', {
+          platformTitle,
+          version,
+        });
+};

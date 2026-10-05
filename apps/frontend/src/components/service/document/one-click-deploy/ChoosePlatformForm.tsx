@@ -1,4 +1,7 @@
-import { useDeployResourceTitle } from '@/components/service/document/one-click-deploy/use-deploy-resource-title';
+import {
+  useDeployResourceTitle,
+  useIncompatibleVersionMessage,
+} from '@/components/service/document/one-click-deploy/use-deploy-resource-title';
 import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { isEeCapableContract } from '@/utils/platform';
@@ -10,12 +13,6 @@ import {
   FormMessage,
   Input,
 } from '@filigran/ui';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@filigran/ui/clients';
 import { Button } from '@filigran/ui/servers';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
@@ -46,6 +43,8 @@ const ChoosePlatformForm = ({
 }: ChoosePlatformFormProps) => {
   const t = useTranslate();
   const title = useDeployResourceTitle(documentData);
+  const incompatibleVersionMessage =
+    useIncompatibleVersionMessage(documentData);
 
   return (
     <div className="flex flex-col h-full justify-between gap-m">
@@ -76,58 +75,48 @@ const ChoosePlatformForm = ({
                     const isEeBlocked =
                       requiresEe && !isEeCapableContract(platform.contract);
                     const isDisabled = !isPlatformCompatible || isEeBlocked;
-
-                    const input = (
-                      <div className="flex items-center gap-2">
-                        <Input
-                          id={platform.id}
-                          type="radio"
-                          disabled={isDisabled}
-                          onChange={() => field.onChange(platform.url)}
-                          checked={field.value === platform.url}
-                          value={platform.url}
-                          className="h-4 w-4 accent-primary"
-                        />
-                        <FormLabel
-                          htmlFor={platform.id}
-                          className={cn(
-                            isDisabled && 'text-content-body-base'
-                          )}>
-                          {platform.title}
-                        </FormLabel>
-                      </div>
-                    );
-
-                    if (!isDisabled) {
-                      return <div key={platform.id}>{input}</div>;
-                    }
+                    const reason = isEeBlocked
+                      ? t(
+                          'Service.ShareableResources.Deploy.EE.PlatformRequiresEE',
+                          { platformTitle: platform.title }
+                        )
+                      : !isPlatformCompatible
+                        ? incompatibleVersionMessage(
+                            platform.title,
+                            requiredProductVersion ?? ''
+                          )
+                        : undefined;
+                    const reasonId = `${platform.id}-reason`;
 
                     return (
-                      <TooltipProvider key={platform.id}>
-                        <Tooltip>
-                          <TooltipTrigger
-                            className="flex"
-                            onClick={(e) => e.preventDefault()}>
-                            {input}
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-md">
-                            <p>
-                              {isEeBlocked
-                                ? t(
-                                    'Service.ShareableResources.Deploy.EE.PlatformRequiresEE',
-                                    { platformTitle: platform.title }
-                                  )
-                                : t(
-                                    'Service.ShareableResources.Deploy.DeployIncompatibleVersion',
-                                    {
-                                      platformTitle: platform.title,
-                                      version: requiredProductVersion ?? '',
-                                    }
-                                  )}
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <div key={platform.id}>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            id={platform.id}
+                            type="radio"
+                            disabled={isDisabled}
+                            aria-describedby={reason ? reasonId : undefined}
+                            onChange={() => field.onChange(platform.url)}
+                            checked={field.value === platform.url}
+                            value={platform.url}
+                            className="h-4 w-4 accent-primary"
+                          />
+                          <FormLabel
+                            htmlFor={platform.id}
+                            className={cn(
+                              isDisabled && 'text-content-body-base'
+                            )}>
+                            {platform.title}
+                          </FormLabel>
+                        </div>
+                        {reason && (
+                          <p
+                            id={reasonId}
+                            className="pl-6 text-sm text-muted-foreground">
+                            {reason}
+                          </p>
+                        )}
+                      </div>
                     );
                   })}
                 </>

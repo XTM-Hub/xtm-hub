@@ -159,6 +159,7 @@ const HuntPackServiceList = ({
     return (
       <HuntPackLoadError
         error={error}
+        description={t('Service.OpenCTIHuntPack.LoadError.Library')}
         retrying={isFetching}
         onRetry={() => refetch()}
       />

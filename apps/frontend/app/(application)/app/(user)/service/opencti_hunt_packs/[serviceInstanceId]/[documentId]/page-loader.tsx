@@ -55,6 +55,7 @@ const PageLoader = ({ documentId, serviceInstance }: PreloaderProps) => {
         {libraryBreadcrumb}
         <HuntPackLoadError
           error={error}
+          description={t('Service.OpenCTIHuntPack.LoadError.Document')}
           retrying={isFetching}
           onRetry={() => refetch()}
         />

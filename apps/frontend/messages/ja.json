@@ -1431,6 +1431,10 @@
       "Form": {
         "SelectHuntPackFile": "ハントパックファイル",
         "SelectHuntPackFileDescription": "OpenCTI からエクスポートしたハントパック（1〜200 件のハントを含む STIX 2.1 バンドル）。ハント数、ATT&CK テクニック、ハント対象プラットフォームはファイルから読み取られます。"
+      },
+      "LoadError": {
+        "Library": "ハントパックを読み込めませんでした。",
+        "Document": "このハントパックを読み込めませんでした。"
       }
     },
     "Description": "出版",
@@ -1524,8 +1528,9 @@
         "DeployPlatform": "{platformName} にデプロイしますか？",
         "DeployQuestionTag": "どの {platformType} プラットフォームに配置しますか？",
         "DeployResourceDescription": "あなたは {resourceName} {resourceType} をデプロイしようとしています。",
-        "DeployHuntPackDescription": "ハントパック {resourceName} を OpenCTI にデプロイしようとしています。",
+        "DeployHuntPackDescription": "ハントパック「{resourceName}」を OpenCTI にデプロイしようとしています。",
         "DeployIncompatibleVersion": "このリソースをデプロイするには、{platformTitle} を OpenCTI {version} 以降に更新してください。",
+        "DeployHuntPackIncompatibleVersion": "このハントパックをデプロイするには、{platformTitle} を OpenCTI {version} 以降に更新してください。",
         "EE": {
           "Tag": "EE",
           "HoverTitle": "エンタープライズ版で利用可能",

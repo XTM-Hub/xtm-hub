@@ -6,12 +6,15 @@ import { Button } from '@filigran/ui';
 
 interface HuntPackLoadErrorProps {
   error: unknown;
+  /** What could not be loaded, e.g. "The hunt packs could not be loaded." */
+  description: string;
   retrying: boolean;
   onRetry: () => void;
 }
 
 const HuntPackLoadError = ({
   error,
+  description,
   retrying,
   onRetry,
 }: HuntPackLoadErrorProps) => {
@@ -21,7 +24,10 @@ const HuntPackLoadError = ({
     <div
       role="alert"
       className="flex flex-col items-start gap-m">
-      <AppError error={error instanceof Error ? error : new Error()} />
+      <AppError
+        error={error instanceof Error ? error : new Error()}
+        description={description}
+      />
       <Button
         variant="secondary"
         disabled={retrying}

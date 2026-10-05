@@ -125,7 +125,7 @@ describe('HuntPackServiceList', () => {
     expect(screen.queryByTestId('active')).not.toBeInTheDocument();
   });
 
-  it('shows the application error with a way to try again when the hunt packs cannot be read', async () => {
+  it('says the hunt packs could not be loaded, with a way to try again', async () => {
     const refetch = vi.fn();
     mockQuery({
       data: undefined,
@@ -140,7 +140,10 @@ describe('HuntPackServiceList', () => {
 
     const alert = screen.getByRole('alert');
     expect(alert).toHaveTextContent('Error.SomethingWentWrong');
-    expect(alert).toHaveTextContent('Error.AnErrorOccured');
+    expect(alert).toHaveTextContent(
+      'Service.OpenCTIHuntPack.LoadError.Library'
+    );
+    expect(alert).not.toHaveTextContent('Error.AnErrorOccured');
     expect(screen.queryByTestId('active')).not.toBeInTheDocument();
 
     await userEvent.click(
