@@ -13299,12 +13299,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"graphql-sse@npm:2.6.1":
-  version: 2.6.1
-  resolution: "graphql-sse@npm:2.6.1"
+"graphql-sse@npm:2.6.2":
+  version: 2.6.2
+  resolution: "graphql-sse@npm:2.6.2"
   peerDependencies:
     graphql: ">=0.11 <=17"
-  checksum: 10/f2213db9c65891b65ac8344ba63ad70149521858816b83a13fa47f6ea208fd95791738b42b1eee9cd6351d74d9aebeb87fe8577185b3393fc3cae85d8034bf46
+  checksum: 10/44b1918d6a748d06af2c1b180ddda1b54ba52f279c88e78e69b5b545f9a19329a4b480b364035ede76a5c20fdce674aa1eff05f6ce6e9c631c6a4dae3ecdd6b3
   languageName: node
   linkType: hard
 
