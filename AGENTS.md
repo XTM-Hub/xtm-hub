@@ -56,6 +56,30 @@ already exist. The `typescript-eslint` version warning is non-blocking.
   get bogus `@public/*.svg` errors from the gitignored `next-env.d.ts`.
 - Baseline coding rules: the [`coding-conventions`](.claude/skills/coding-conventions/SKILL.md) skill.
 
+## Detailed instructions by area
+
+The rule files below hold the stack, commands and workflow of each area. Claude Code and Copilot load them on their
+own; any other agent does not, so **read the matching file before changing code in that area**. Plain links on
+purpose, not `@` includes: those would load every rule in every session.
+
+| You touch | Read first | Agent |
+| --- | --- | --- |
+| `apps/backend` | [`backend.md`](.claude/rules/backend.md) | `backend-code-writer` |
+| `apps/frontend` | [`frontend.md`](.claude/rules/frontend.md), [`design-system.md`](.claude/rules/design-system.md) | `frontend-code-writer` |
+| GraphQL schema, resolvers, operations | [`graphql.md`](.claude/rules/graphql.md) | |
+| Migrations and seeds | [`migrations.md`](.claude/rules/migrations.md) | `backend-code-writer` |
+| Tests | [`testing.md`](.claude/rules/testing.md) | |
+| `apps/e2e` | [`e2e.md`](.claude/rules/e2e.md) | |
+| Workflows, Docker, Helm chart | [`ci.md`](.claude/rules/ci.md) | |
+
+Agents live in `.claude/agents/`. For implementation work under `apps/backend` or `apps/frontend`, use the matching
+agent, or follow its instructions if your tool cannot delegate. Splitting a branch into commits is
+`commit-splitter`'s job.
+
+Skills in `.claude/skills/` cover the cross-cutting practice: [`change-delivery`](.claude/skills/change-delivery/SKILL.md)
+for scope and how to present a change, [`performance-security-review`](.claude/skills/performance-security-review/SKILL.md)
+to self-check new code, and [`code-review`](.claude/skills/code-review/SKILL.md) before opening a pull request.
+
 ## Commits and pull requests
 
 `type(scope?)!?: description (#issue)` — [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
