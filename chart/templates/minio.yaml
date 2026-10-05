@@ -18,6 +18,10 @@ spec:
     enableSFTP: false
   image: "{{ .Values.minio.image.repository }}:{{ .Values.minio.image.digest | default .Values.minio.image.tag }}"
   imagePullPolicy: IfNotPresent
+  {{- with .Values.minio.imagePullSecret | default (first .Values.xtmhub.imagePullSecrets) }}
+  imagePullSecret:
+    name: {{ .name }}
+  {{- end }}
   logging:
     anonymous: true
     json: true
