@@ -6,6 +6,9 @@ import RolePortal, {
   RolePortalId,
   RolePortalMutator,
 } from '../../src/model/kanel/public/RolePortal';
+import RolePortalCapabilityPortal, {
+  RolePortalCapabilityPortalMutator,
+} from '../../src/model/kanel/public/RolePortalCapabilityPortal';
 import User, { UserId, UserMutator } from '../../src/model/kanel/public/User';
 import UserOrganization, {
   UserOrganizationInitializer,
@@ -243,6 +246,15 @@ export const TestUserHelper = {
     },
     delete: async (field: RolePortalMutator) => {
       await db<RolePortal>('RolePortal').where(field).del();
+    },
+  },
+  rolePortal_CapabilityPortal: {
+    loadAll: async (
+      field: RolePortalCapabilityPortalMutator
+    ): Promise<RolePortalCapabilityPortal[]> => {
+      return db<RolePortalCapabilityPortal>(
+        'RolePortal_CapabilityPortal'
+      ).where(field);
     },
   },
 };

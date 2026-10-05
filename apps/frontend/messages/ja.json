@@ -307,6 +307,7 @@
       "CANT_REQUEST_FREE_TRIAL": "無料トライアルのリクエストはできない",
       "CANT_REQUEST_FREE_TRIAL_IN_PERSONAL_SPACE": "個人的なスペースで無料体験を申し込むことはできない",
       "CANT_SUBSCRIBE_YOURSELF": "自分を追加することはできません",
+      "CAPABILITY_PORTAL_NOT_FOUND": "不明なケイパビリティです",
       "COMPETITOR_DOMAIN_ALREADY_EXISTS": "同じドメインの競合がすでに存在する",
       "DEPLOYMENT_FEEDBACK_ALREADY_EXISTS": "導入に関するフィードバックはすでに存在しています",
       "COMPETITOR_NOT_FOUND": "競合他社が見つかりません",
@@ -365,6 +366,7 @@
       "INVALID_PLATFORM_IDENTIFIER": "プラットフォーム識別子が無効",
       "INVALID_PLATFORM_VERSION": "プラットフォームのバージョンが無効です",
       "INVALID_PRODUCTS_FOR_DEPLOYMENT_TYPE": "選択された製品はこの展開タイプには無効です",
+      "INVALID_SSO_GROUP_ROLE_PORTAL": "SSOグループまたはロールが無効です",
       "IS_PLATFORM_REGISTERED_UNKNOWN_ERROR": "製品の接続中に不明なエラーが発生しました",
       "LOAD_CAPABILITIES_ERROR": "機能の読み込み中にエラーが発生しました",
       "LIST_FACET_ERROR": "ファセットの一覧表示中に不明なエラーが発生しました",
@@ -544,7 +546,12 @@
   "RoleListPage": {
     "SsoGroup": "SSOグループ",
     "Role": "ロール",
-    "Capabilities": "ケイパビリティ"
+    "Capabilities": "ケイパビリティ",
+    "AddMapping": "マッピングを追加",
+    "Error": {
+      "SsoGroup": "SSOグループは必須です",
+      "Role": "ロールは必須です"
+    }
   },
   "SolutionCategory": {
     "Actions": {

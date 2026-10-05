@@ -307,6 +307,7 @@
       "CANT_REQUEST_FREE_TRIAL": "You cannot request a free trial",
       "CANT_REQUEST_FREE_TRIAL_IN_PERSONAL_SPACE": "You cannot request a free trial in your personal space",
       "CANT_SUBSCRIBE_YOURSELF": "You cannot add yourself",
+      "CAPABILITY_PORTAL_NOT_FOUND": "Unknown capability",
       "COMPETITOR_DOMAIN_ALREADY_EXISTS": "A competitor with the same domain already exists",
       "DEPLOYMENT_FEEDBACK_ALREADY_EXISTS": "Deployment feedback already exists",
       "COMPETITOR_NOT_FOUND": "Competitor not found",
@@ -365,6 +366,7 @@
       "INVALID_PLATFORM_IDENTIFIER": "Platform identifier is invalid",
       "INVALID_PLATFORM_VERSION": "Invalid platform version",
       "INVALID_PRODUCTS_FOR_DEPLOYMENT_TYPE": "The selected products are not valid for this deployment type",
+      "INVALID_SSO_GROUP_ROLE_PORTAL": "Invalid SSO group or role",
       "IS_PLATFORM_REGISTERED_UNKNOWN_ERROR": "An unknown error occurred during product connection",
       "LOAD_CAPABILITIES_ERROR": "An error occurred while loading capabilities",
       "LIST_FACET_ERROR": "An unknown error occurred while listing facets",
@@ -544,7 +546,12 @@
   "RoleListPage": {
     "SsoGroup": "SSO group",
     "Role": "Role",
-    "Capabilities": "Capabilities"
+    "Capabilities": "Capabilities",
+    "AddMapping": "Add mapping",
+    "Error": {
+      "SsoGroup": "SSO group is required",
+      "Role": "Role is required"
+    }
   },
   "SolutionCategory": {
     "Actions": {

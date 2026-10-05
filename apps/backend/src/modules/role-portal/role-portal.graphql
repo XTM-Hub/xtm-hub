@@ -9,6 +9,16 @@ type SSOGroupRolePortal {
     rolePortal: RolePortal!
 }
 
+input AddSSOGroupRolePortalInput {
+    ssoGroup: String!
+    rolePortal: String!
+    capabilities: [PortalCapability!]!
+}
+
 extend type Query {
-    ssoGroupRolePortals: [SSOGroupRolePortal]! @auth(portalCapa: BYPASS)
+    ssoGroupRolePortals: [SSOGroupRolePortal!]! @auth(portalCapa: BYPASS)
+}
+
+extend type Mutation {
+    addSSOGroupRolePortal(input: AddSSOGroupRolePortalInput!): SSOGroupRolePortal! @auth(portalCapa: BYPASS)
 }

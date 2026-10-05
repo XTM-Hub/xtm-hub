@@ -58,6 +58,7 @@ export enum BadRequestErrorCode {
   OrganizationDoesNotMatchSelectedOrganization = 'ORGANIZATIONS_DOES_NOT_MATCH_SELECTED_ORGANIZATION',
   DeploymentRequestHubStatusNotQueued = 'DEPLOYMENT_REQUEST_HUB_STATUS_NOT_QUEUED',
   DocumentMissingMetadata = 'DOCUMENT_MISSING_METADATA',
+  InvalidSSOGroupRolePortal = 'INVALID_SSO_GROUP_ROLE_PORTAL',
   IntegrationTypeNotRecognized = 'INTEGRATION_TYPE_NOT_RECOGNIZED',
   MissingAutoRegisterPlatformArgument = 'MISSING_AUTO_REGISTER_PLATFORM_ARGUMENT',
   DocumentFileMissing = 'DOCUMENT_FILE_MISSING',
@@ -150,6 +151,7 @@ export enum NotFoundErrorCode {
   ServiceGroupNotFound = 'SERVICE_GROUP_NOT_FOUND',
   VotableFeatureNotFound = 'VOTABLE_FEATURE_NOT_FOUND',
   VotingRoundNotFound = 'VOTING_ROUND_NOT_FOUND',
+  CapabilityPortalNotFound = 'CAPABILITY_PORTAL_NOT_FOUND',
 }
 
 export const ErrorCode = {

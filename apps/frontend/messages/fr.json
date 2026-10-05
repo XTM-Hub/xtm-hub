@@ -307,6 +307,7 @@
       "CANT_REQUEST_FREE_TRIAL": "Vous ne pouvez pas demander d'essai gratuit",
       "CANT_REQUEST_FREE_TRIAL_IN_PERSONAL_SPACE": "Vous ne pouvez pas demander d'essai gratuit dans votre espace personnel",
       "CANT_SUBSCRIBE_YOURSELF": "Vous ne pouvez pas vous donner l'accès vous-même",
+      "CAPABILITY_PORTAL_NOT_FOUND": "Capacité inconnue",
       "COMPETITOR_DOMAIN_ALREADY_EXISTS": "Il existe déjà un concurrent avec le même domaine",
       "DEPLOYMENT_FEEDBACK_ALREADY_EXISTS": "Des retours d'expérience sur le déploiement existent déjà",
       "COMPETITOR_NOT_FOUND": "Concurrent non trouvé",
@@ -365,6 +366,7 @@
       "INVALID_PLATFORM_IDENTIFIER": "L'identificateur de la platform n'est pas valide",
       "INVALID_PLATFORM_VERSION": "Version de plateforme non valide",
       "INVALID_PRODUCTS_FOR_DEPLOYMENT_TYPE": "Les produits sélectionnés ne sont pas valides pour ce type de déploiement",
+      "INVALID_SSO_GROUP_ROLE_PORTAL": "Groupe SSO ou rôle invalide",
       "IS_PLATFORM_REGISTERED_UNKNOWN_ERROR": "Une erreur inconnue s'est produite lors de la connexion avec le produit",
       "LOAD_CAPABILITIES_ERROR": "Une erreur s'est produite lors du chargement des fonctionnalités",
       "LIST_FACET_ERROR": "Une erreur s'est produite lors de l'affichage des facettes.",
@@ -544,7 +546,12 @@
   "RoleListPage": {
     "SsoGroup": "Groupe SSO",
     "Role": "Rôle",
-    "Capabilities": "Capacités"
+    "Capabilities": "Capacités",
+    "AddMapping": "Ajouter une association",
+    "Error": {
+      "SsoGroup": "Le groupe SSO est requis",
+      "Role": "Le rôle est requis"
+    }
   },
   "SolutionCategory": {
     "Actions": {

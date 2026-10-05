@@ -51,6 +51,12 @@ export type Scalars = {
   VotingRoundId: { input: VotingRoundId; output: VotingRoundId; }
 };
 
+export type AddSsoGroupRolePortalInput = {
+  capabilities: Array<PortalCapability>;
+  rolePortal: Scalars['String']['input'];
+  ssoGroup: Scalars['String']['input'];
+};
+
 export type AddServiceInput = {
   fee_type?: InputMaybe<Scalars['String']['input']>;
   organization_id?: InputMaybe<Scalars['String']['input']>;
@@ -1036,6 +1042,7 @@ export type Mutation = {
   acceptPendingUserInOrganization?: Maybe<User>;
   addCapabilitiesToUserServices?: Maybe<Array<Maybe<UserService>>>;
   addOrganization?: Maybe<Organization>;
+  addSSOGroupRolePortal: SsoGroupRolePortal;
   addServicePicture?: Maybe<ServiceInstance>;
   addSolutionCategory: SolutionCategory;
   addSubscription?: Maybe<ServiceInstance>;
@@ -1136,6 +1143,11 @@ export type MutationAddCapabilitiesToUserServicesArgs = {
 
 export type MutationAddOrganizationArgs = {
   input: OrganizationInput;
+};
+
+
+export type MutationAddSsoGroupRolePortalArgs = {
+  input: AddSsoGroupRolePortalInput;
 };
 
 
@@ -1935,7 +1947,7 @@ export type Query = {
   serviceInstances: ServiceConnection;
   settings: Settings;
   solutionCategories?: Maybe<SolutionCategoryConnection>;
-  ssoGroupRolePortals: Array<Maybe<SsoGroupRolePortal>>;
+  ssoGroupRolePortals: Array<SsoGroupRolePortal>;
   subscriptionById?: Maybe<SubscriptionModel>;
   subscriptions: SubscriptionConnection;
   updateOpenCTIManifest: Success;
@@ -3302,6 +3314,7 @@ export type ResolversInterfaceTypes<_RefType extends Record<string, unknown>> = 
 
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = ResolversObject<{
+  AddSSOGroupRolePortalInput: AddSsoGroupRolePortalInput;
   AddServiceInput: AddServiceInput;
   AddSolutionCategoryInput: AddSolutionCategoryInput;
   AddSubscriptionCapabilityInput: AddSubscriptionCapabilityInput;
@@ -3571,6 +3584,7 @@ export type ResolversTypes = ResolversObject<{
 
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = ResolversObject<{
+  AddSSOGroupRolePortalInput: AddSsoGroupRolePortalInput;
   AddServiceInput: AddServiceInput;
   AddSolutionCategoryInput: AddSolutionCategoryInput;
   AddSubscriptionCapabilityInput: AddSubscriptionCapabilityInput;
@@ -4283,6 +4297,7 @@ export type MutationResolvers<ContextType = PortalContext, ParentType extends Re
   acceptPendingUserInOrganization?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<MutationAcceptPendingUserInOrganizationArgs, 'organization_id' | 'user_id'>>;
   addCapabilitiesToUserServices?: Resolver<Maybe<Array<Maybe<ResolversTypes['UserService']>>>, ParentType, ContextType, RequireFields<MutationAddCapabilitiesToUserServicesArgs, 'input' | 'service_instance_id'>>;
   addOrganization?: Resolver<Maybe<ResolversTypes['Organization']>, ParentType, ContextType, RequireFields<MutationAddOrganizationArgs, 'input'>>;
+  addSSOGroupRolePortal?: Resolver<ResolversTypes['SSOGroupRolePortal'], ParentType, ContextType, RequireFields<MutationAddSsoGroupRolePortalArgs, 'input'>>;
   addServicePicture?: Resolver<Maybe<ResolversTypes['ServiceInstance']>, ParentType, ContextType, RequireFields<MutationAddServicePictureArgs, 'isLogo' | 'serviceInstanceId'>>;
   addSolutionCategory?: Resolver<ResolversTypes['SolutionCategory'], ParentType, ContextType, RequireFields<MutationAddSolutionCategoryArgs, 'input'>>;
   addSubscription?: Resolver<Maybe<ResolversTypes['ServiceInstance']>, ParentType, ContextType, Partial<MutationAddSubscriptionArgs>>;
@@ -4629,7 +4644,7 @@ export type QueryResolvers<ContextType = PortalContext, ParentType extends Resol
   serviceInstances?: Resolver<ResolversTypes['ServiceConnection'], ParentType, ContextType, RequireFields<QueryServiceInstancesArgs, 'first' | 'orderBy' | 'orderMode'>>;
   settings?: Resolver<ResolversTypes['Settings'], ParentType, ContextType>;
   solutionCategories?: Resolver<Maybe<ResolversTypes['SolutionCategoryConnection']>, ParentType, ContextType, RequireFields<QuerySolutionCategoriesArgs, 'first' | 'orderBy' | 'orderMode'>>;
-  ssoGroupRolePortals?: Resolver<Array<Maybe<ResolversTypes['SSOGroupRolePortal']>>, ParentType, ContextType>;
+  ssoGroupRolePortals?: Resolver<Array<ResolversTypes['SSOGroupRolePortal']>, ParentType, ContextType>;
   subscriptionById?: Resolver<Maybe<ResolversTypes['SubscriptionModel']>, ParentType, ContextType, Partial<QuerySubscriptionByIdArgs>>;
   subscriptions?: Resolver<ResolversTypes['SubscriptionConnection'], ParentType, ContextType, RequireFields<QuerySubscriptionsArgs, 'first' | 'orderBy' | 'orderMode'>>;
   updateOpenCTIManifest?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<QueryUpdateOpenCtiManifestArgs, 'tag'>>;

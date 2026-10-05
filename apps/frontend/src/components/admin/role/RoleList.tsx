@@ -1,3 +1,4 @@
+import AddSsoGroupRolePortal from '@/components/admin/role/AddSsoGroupRolePortal';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { i18nKey } from '@/utils/datatable';
 import { Badge, DataTable } from '@filigran/ui';
@@ -18,10 +19,10 @@ const RoleList = () => {
 
   const rows = useMemo<SsoGroupRolePortalRow[]>(
     () =>
-      (data?.ssoGroupRolePortals ?? []).map((ssoGroupRolePortal) => ({
+      data?.ssoGroupRolePortals.map((ssoGroupRolePortal) => ({
         ...ssoGroupRolePortal,
         id: `${ssoGroupRolePortal.ssoGroup}-${ssoGroupRolePortal.rolePortal.id}`,
-      })),
+      })) ?? [],
     [data]
   );
 
@@ -62,6 +63,11 @@ const RoleList = () => {
           enableColumnPinning: false,
           enableHiding: false,
         }}
+        toolbar={
+          <div className="flex justify-end">
+            <AddSsoGroupRolePortal />
+          </div>
+        }
       />
     </>
   );
