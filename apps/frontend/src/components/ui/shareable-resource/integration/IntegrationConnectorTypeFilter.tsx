@@ -6,7 +6,7 @@ import {
   ServiceListLocalStorageKey,
   useServiceListLocalStorage,
 } from '@/hooks/use-service-list-local-storage';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 import { useMemo } from 'react';
 
 interface IntegrationConnectorTypeFilterProps {
@@ -19,7 +19,7 @@ export const IntegrationConnectorTypeFilter = ({
   const { connectorTypes, setConnectorTypes } = useServiceListLocalStorage(
     ServiceListLocalStorageKey.OpenCTIIntegrationFeeds
   );
-  const t = useTranslations();
+  const t = useTranslate();
   const { connectorTypeLabel } = useConnectorTypeLabels();
 
   const options = useMemo(

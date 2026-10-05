@@ -106,13 +106,17 @@ export const ServiceDefinitionIdentifiersByPlatformIdentifier = new Map<
   [PlatformIdentifier.Openaev, [ServiceDefinitionIdentifier.OpenaevScenarios]],
 ]);
 
+export const MANAGEABLE_SERVICE_DEFINITION_IDENTIFIERS = [
+  ServiceDefinitionIdentifier.OpenctiIntegrations,
+  ServiceDefinitionIdentifier.OpenctiCustomDashboards,
+  ServiceDefinitionIdentifier.OpenctiCustomViews,
+  ServiceDefinitionIdentifier.OpenaevScenarios,
+  ServiceDefinitionIdentifier.OpenctiPlaybooks,
+  ServiceDefinitionIdentifier.OpenctiHuntPacks,
+] as const;
+
 export type ManageableServiceDefinitionIdentifier =
-  | ServiceDefinitionIdentifier.OpenctiIntegrations
-  | ServiceDefinitionIdentifier.OpenctiCustomDashboards
-  | ServiceDefinitionIdentifier.OpenctiCustomViews
-  | ServiceDefinitionIdentifier.OpenaevScenarios
-  | ServiceDefinitionIdentifier.OpenctiPlaybooks
-  | ServiceDefinitionIdentifier.OpenctiHuntPacks;
+  (typeof MANAGEABLE_SERVICE_DEFINITION_IDENTIFIERS)[number];
 
 export type DOCUMENT_TYPE =
   | typeof OPENCTI_INTEGRATION_DOCUMENT_TYPE

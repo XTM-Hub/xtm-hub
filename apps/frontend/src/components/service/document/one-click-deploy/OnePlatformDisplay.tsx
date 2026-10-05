@@ -1,9 +1,9 @@
 import { useDeployResourceTitle } from '@/components/service/document/one-click-deploy/use-deploy-resource-title';
+import { useTranslate } from '@/hooks/use-translate';
 import { AlertDialogTitle } from '@filigran/ui';
 import { Button } from '@filigran/ui/servers';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
-import { useTranslations } from 'next-intl';
 
 interface OnePlatformDisplayProps {
   documentData: documentItem_fragment$data;
@@ -18,7 +18,7 @@ const OnePlatformDisplay = ({
   setIsOpen,
   oneClickDeploy,
 }: OnePlatformDisplayProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const title = useDeployResourceTitle(documentData);
 
   return (

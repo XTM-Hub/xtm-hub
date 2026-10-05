@@ -15,14 +15,14 @@ import { ProfileFormPreferences } from '@/components/profile/form/Preferences';
 import { RequestTransferPersonalSpace } from '@/components/profile/form/RequestTransferPersonalSpace';
 import { ProfileFormResetPassword } from '@/components/profile/form/ResetPassword';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { fileListToUploadableMap } from '@/relay/environment/fetch-form-data';
 import { toast } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 import { useContext, useState } from 'react';
 import { useMutation } from 'react-relay';
 
 export const Profile = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { me } = useContext(PortalContext);
   const [commitResetPasswordMutation] = useMutation(MeResetPasswordMutation);
   const [commitEditMeUserMutation] = useMutation(MeEditUserMutation);

@@ -3,8 +3,8 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
 import useGranted from '@/hooks/use-granted';
 import { useAdminByPass } from '@/hooks/use-portal-capability';
+import { useTranslate } from '@/hooks/use-translate';
 import { OrganizationCapability, PortalCapability } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import * as React from 'react';
 import { useContext } from 'react';
 
@@ -38,7 +38,7 @@ const GuardCapacityComponent = ({
     isAdmin;
 
   const isPersonalSpace = currentOrganization?.personal_space ?? false;
-  const t = useTranslations();
+  const t = useTranslate();
 
   if (!authorized || (shouldNotBePersonalSpace && isPersonalSpace)) {
     if (displayError) {

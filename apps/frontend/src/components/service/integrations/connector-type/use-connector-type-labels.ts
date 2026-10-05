@@ -3,11 +3,11 @@ import {
   isConnectorType,
   isHuntPlatform,
 } from '@/components/service/integrations/connector-type/connector-type.utils';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 import { useMemo } from 'react';
 
 export const useConnectorTypeLabels = () => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return useMemo(
     () => ({

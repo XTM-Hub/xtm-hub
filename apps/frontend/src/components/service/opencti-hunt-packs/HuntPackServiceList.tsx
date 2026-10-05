@@ -14,6 +14,7 @@ import {
   useServiceListLocalStorage,
 } from '@/hooks/use-service-list-local-storage';
 import { useTablePagination } from '@/hooks/use-table-pagination';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
   SHAREABLE_RESOURCE_SERVICE_SLUG_MAPPING,
@@ -28,7 +29,6 @@ import {
   useHuntPackDocumentsQuery,
 } from '@graphql/generated';
 import { keepPreviousData } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 import { useEffect, useMemo } from 'react';
 
 const LOCAL_STORAGE_KEY = ServiceListLocalStorageKey.OpenCTIHuntPacks;
@@ -51,7 +51,7 @@ const HuntPackServiceList = ({
   search,
   onSearchChange,
 }: HuntPackServiceListProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const context = useHuntPackDocumentContext(serviceInstance);
   const {
     pageSize,

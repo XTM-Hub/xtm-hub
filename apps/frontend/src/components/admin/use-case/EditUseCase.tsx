@@ -2,6 +2,7 @@ import UseCaseForm, {
   UseCaseFormModel,
 } from '@/components/admin/use-case/UseCaseForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { removeFromQueryCache, updateInQueryCache } from '@/utils/query-cache';
 import { toast } from '@filigran/ui';
@@ -15,7 +16,6 @@ import {
 } from '@graphql/generated';
 import { useCaseListKeys } from '@graphql/use-case/use-case-list.keys';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 const EditUseCase = ({
@@ -27,7 +27,7 @@ const EditUseCase = ({
   onClose: () => void;
   useCase: UseCaseFormModel;
 }) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const queryClient = useQueryClient();
   const [openSheet, setOpenSheet] = useState<boolean>(open);
 

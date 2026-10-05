@@ -1,3 +1,4 @@
+import { useTranslate } from '@/hooks/use-translate';
 import { ENTITY_TYPES } from '@/utils/shareable-resources/entity-type';
 import {
   FormControl,
@@ -5,7 +6,6 @@ import {
   FormLabel,
   MultiSelectFormField,
 } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 
 interface ServiceFormEntityTypesFieldProps {
@@ -17,7 +17,7 @@ export const ServiceFormEntityTypesField = ({
   field,
   disabled,
 }: ServiceFormEntityTypesFieldProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <FormItem>
       <FormLabel>

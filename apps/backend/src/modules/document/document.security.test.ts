@@ -47,7 +47,7 @@ const mockServiceDefinition = (identifier: ServiceDefinitionIdentifier) => ({
 describe('document security', () => {
   describe('isUserRestrictedToActiveDocument', () => {
     beforeEach(() => {
-      vi.spyOn(access, 'isUserGranted').mockReturnValue(false);
+      vi.spyOn(access, 'isUserAdminPlatform').mockReturnValue(false);
       vi.spyOn(
         UserServiceCapabilityHelper,
         'loadCapabilities'
@@ -62,8 +62,8 @@ describe('document security', () => {
       );
     });
 
-    it('should return false when user is granted', async () => {
-      vi.spyOn(access, 'isUserGranted').mockReturnValue(true);
+    it('should return false when user is a platform admin', async () => {
+      vi.spyOn(access, 'isUserAdminPlatform').mockReturnValue(true);
       const result = await isUserRestrictedToActiveDocument(
         mockUser,
         mockServiceInstanceId
@@ -89,6 +89,56 @@ describe('document security', () => {
           mockServiceInstanceId
         );
         expect(result).toBe(true);
+      }
+    );
+
+    it.each([
+      ServiceDefinitionIdentifier.OpenctiIntegrations,
+      ServiceDefinitionIdentifier.OpenctiCustomDashboards,
+      ServiceDefinitionIdentifier.OpenctiCustomViews,
+      ServiceDefinitionIdentifier.OpenctiPlaybooks,
+      ServiceDefinitionIdentifier.OpenaevScenarios,
+    ])(
+      'should return true without Upload capability on %s',
+      async (identifier) => {
+        vi.spyOn(
+          ServiceInstanceDomain,
+          'loadServiceDefinitionByServiceInstance'
+        ).mockResolvedValue(mockServiceDefinition(identifier));
+
+        const result = await isUserRestrictedToActiveDocument(
+          mockUser,
+          mockServiceInstanceId
+        );
+
+        expect(result).toBe(true);
+      }
+    );
+
+    it.each([
+      ServiceDefinitionIdentifier.OpenctiIntegrations,
+      ServiceDefinitionIdentifier.OpenctiCustomDashboards,
+      ServiceDefinitionIdentifier.OpenctiCustomViews,
+      ServiceDefinitionIdentifier.OpenctiPlaybooks,
+      ServiceDefinitionIdentifier.OpenaevScenarios,
+    ])(
+      'should return false with Upload capability on %s',
+      async (identifier) => {
+        vi.spyOn(
+          UserServiceCapabilityHelper,
+          'loadCapabilities'
+        ).mockResolvedValue([ServiceRestriction.Upload]);
+        vi.spyOn(
+          ServiceInstanceDomain,
+          'loadServiceDefinitionByServiceInstance'
+        ).mockResolvedValue(mockServiceDefinition(identifier));
+
+        const result = await isUserRestrictedToActiveDocument(
+          mockUser,
+          mockServiceInstanceId
+        );
+
+        expect(result).toBe(false);
       }
     );
 

@@ -26,6 +26,7 @@ import { useExecuteAfterAnimation } from '@/hooks/use-execute-after-animation';
 import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
 import { useAdminByPass } from '@/hooks/use-portal-capability';
 import { useTablePagination } from '@/hooks/use-table-pagination';
+import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { DEBOUNCE_TIME } from '@/utils/constant';
@@ -51,7 +52,6 @@ import {
   useUserResendInviteMutation,
 } from '@graphql/generated';
 import { ColumnDef, Row } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 import {
   SyntheticEvent,
   useCallback,
@@ -128,7 +128,7 @@ interface UserListProps {
 
 // Component
 const UserList = ({ organization }: UserListProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const formatDate = useDateFormatter();
   const {
     pageSize,

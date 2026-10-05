@@ -25,6 +25,12 @@ enum FilterKey {
   connector_type
 }
 
+enum Locale {
+  en
+  fr
+  ja
+}
+
 enum LogicalOperator {
   AND
   OR

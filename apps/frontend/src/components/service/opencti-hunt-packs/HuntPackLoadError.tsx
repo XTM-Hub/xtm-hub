@@ -1,8 +1,8 @@
 'use client';
 
 import AppError from '@/components/AppError';
+import { useTranslate } from '@/hooks/use-translate';
 import { Button } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 
 interface HuntPackLoadErrorProps {
   error: unknown;
@@ -15,7 +15,7 @@ const HuntPackLoadError = ({
   retrying,
   onRetry,
 }: HuntPackLoadErrorProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <div

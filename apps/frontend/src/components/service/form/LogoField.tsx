@@ -1,3 +1,4 @@
+import { useTranslate } from '@/hooks/use-translate';
 import { fileToBase64 } from '@/lib/utils';
 import { docIsExistingFile, ExistingFile, NewFile } from '@/utils/documents';
 import { EntityTypeOrFiligranLogo } from '@/utils/shareable-resources/entity-type';
@@ -13,7 +14,6 @@ import { TooltipProvider } from '@filigran/ui/clients';
 import { Button } from '@filigran/ui/servers';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { DocumentSourceType } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { ChangeEvent } from 'react';
 import { ControllerRenderProps, FieldValues, useWatch } from 'react-hook-form';
 
@@ -26,7 +26,7 @@ export const ServiceFormLogoField = ({
   document,
   field,
 }: ServiceFormLogoFieldProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   const entityTypes = useWatch<{ entity_types?: string[] }, 'entity_types'>({
     name: 'entity_types',

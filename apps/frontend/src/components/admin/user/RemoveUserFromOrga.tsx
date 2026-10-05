@@ -2,10 +2,10 @@ import { getUserListContext } from '@/components/admin/user/UserListPage';
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { Button, useToast } from '@filigran/ui';
 import { RemoveUserFromOrgaMutation } from '@generated/RemoveUserFromOrgaMutation.graphql';
 import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import { useContext } from 'react';
 import { graphql, useMutation } from 'react-relay';
 
@@ -34,7 +34,7 @@ export const RemoveUserFromOrga = ({ user }: RemoveUserFromOrgaProps) => {
   const { connectionID } = getUserListContext();
   const { setOpenSheet } = useDialogContext();
   const { toast } = useToast();
-  const t = useTranslations();
+  const t = useTranslate();
   const [removeUserMutation] =
     useMutation<RemoveUserFromOrgaMutation>(removeUser);
   const onRemoveUser = (user_id: string): void => {

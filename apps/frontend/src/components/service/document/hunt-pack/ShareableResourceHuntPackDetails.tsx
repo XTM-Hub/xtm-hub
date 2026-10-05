@@ -2,9 +2,9 @@
 
 import { ShareableResourceDetailItem } from '@/components/service/document/ui/ShareableResourceDetailItem';
 import { useConnectorTypeLabels } from '@/components/service/integrations/connector-type/use-connector-type-labels';
+import { useTranslate } from '@/hooks/use-translate';
 import { HuntPackFields } from '@/utils/shareable-resources/shareable-resources.types';
 import { Button, Chip } from '@filigran/design-system';
-import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 
 /** Techniques shown before the list folds into "and N more". */
@@ -17,7 +17,7 @@ interface ShareableResourceHuntPackDetailsProps {
 export const ShareableResourceHuntPackDetails = ({
   huntPack,
 }: ShareableResourceHuntPackDetailsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { huntPlatformLabel } = useConnectorTypeLabels();
   const [showAllTechniques, setShowAllTechniques] = useState(false);
   const techniquesId = useId();

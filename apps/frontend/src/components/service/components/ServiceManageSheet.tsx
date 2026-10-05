@@ -8,9 +8,9 @@ import { ServiceFormValues } from '@/components/service/components/subscribable-
 
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import useServiceCapability from '@/hooks/use-service-capability';
+import { useTranslate } from '@/hooks/use-translate';
 import revalidatePathActions from '@/utils/actions/revalidate-path.actions';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface ServiceManageSheetProps {
@@ -26,7 +26,7 @@ export const ServiceManageSheet = ({
   open: externalOpen,
   setOpen: externalSetOpen,
 }: ServiceManageSheetProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [internalOpenSheet, setInternalOpenSheet] = useState(false);
 
   // Use external state if provided, otherwise use internal state

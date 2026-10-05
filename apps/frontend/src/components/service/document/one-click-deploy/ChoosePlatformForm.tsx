@@ -1,4 +1,5 @@
 import { useDeployResourceTitle } from '@/components/service/document/one-click-deploy/use-deploy-resource-title';
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { isEeCapableContract } from '@/utils/platform';
 import { doesVersionSatisfy } from '@/utils/versioning';
@@ -18,7 +19,6 @@ import {
 import { Button } from '@filigran/ui/servers';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
-import { useTranslations } from 'next-intl';
 import { z } from 'zod';
 
 interface ChoosePlatformFormProps {
@@ -44,7 +44,7 @@ const ChoosePlatformForm = ({
   requiredProductVersion,
   requiresEe,
 }: ChoosePlatformFormProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const title = useDeployResourceTitle(documentData);
 
   return (

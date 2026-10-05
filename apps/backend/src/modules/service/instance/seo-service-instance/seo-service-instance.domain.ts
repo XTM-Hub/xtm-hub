@@ -1,8 +1,8 @@
 import { db } from '../../../../../knexfile';
 import {
   EditSeoServiceInstanceInput,
+  Locale,
   PortalCapability,
-  SeoServiceInstanceLanguage,
   SeoServiceInstanceMetadata,
 } from '../../../../__generated__/resolvers-types';
 import { requestContext } from '../../../../context/request.context';
@@ -32,7 +32,7 @@ export const SeoServiceInstanceDomain = {
 
   upsertSeoServiceInstance: async (
     serviceInstanceId: ServiceInstanceId,
-    language: SeoServiceInstanceLanguage,
+    language: Locale,
     payload: EditSeoServiceInstanceInput
   ): Promise<SeoServiceInstanceMetadata> => {
     const [seoServiceInstance] = await db<SeoServiceInstanceMetadata>(

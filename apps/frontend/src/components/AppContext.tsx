@@ -1,10 +1,11 @@
 'use client';
 import { CookieConsent } from '@/components/cookie-consent/CookieConsent';
 import { ManagedScripts } from '@/components/cookie-consent/ManagedScripts';
+import { useTranslate } from '@/hooks/use-translate';
 import { APP_PATH } from '@/utils/path/constant';
 import { geologica, ibmPlexSans } from '@app/font';
 import { Toaster } from '@filigran/ui';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { ThemeProvider } from 'next-themes';
 import Head from 'next/head';
 import { usePathname } from 'next/navigation';
@@ -27,7 +28,7 @@ const isThemeSwitchablePath = (pathname: string) => {
 const AppContext = ({ children }: AppProps) => {
   const locale = useLocale();
   const pathname = usePathname();
-  const t = useTranslations();
+  const t = useTranslate();
   const forcedTheme = isThemeSwitchablePath(pathname) ? undefined : 'dark';
   return (
     <html

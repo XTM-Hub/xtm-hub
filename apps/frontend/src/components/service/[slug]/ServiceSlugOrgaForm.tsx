@@ -11,6 +11,7 @@ import { subscriptionInServiceCreateMutation } from '@generated/subscriptionInSe
 import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
 import { useSubscriptionDefaultValues } from './use-subscription-default-values';
 
+import { useTranslate } from '@/hooks/use-translate';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import {
   Button,
@@ -29,7 +30,6 @@ import {
 import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { subscriptionInServiceUpdateMutation } from '@generated/subscriptionInServiceUpdateMutation.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'react-relay';
@@ -59,7 +59,7 @@ export const ServiceSlugOrgaForm = ({
   subscriptionConnectionId,
 }: ServiceSlugAddOrgaFormSheetProps) => {
   const { handleCloseSheet, setIsDirty, setOpenSheet } = useDialogContext();
-  const t = useTranslations();
+  const t = useTranslate();
   const { toast } = useToast();
   const { organizationsData, refetch } = getOrganizations();
   const organizations = useUnsubscribedOrganizations(

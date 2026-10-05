@@ -5,11 +5,11 @@ import HuntPackLoadError from '@/components/service/opencti-hunt-packs/HuntPackL
 import OpenctiHuntPackSlug from '@/components/service/opencti-hunt-packs/[slug]/OpenctiHuntPackSlug';
 import { toDocumentItem } from '@/components/service/opencti-hunt-packs/hunt-pack-documents';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH } from '@/utils/path/constant';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import { useHuntPackDocumentQuery } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
 interface PreloaderProps {
   documentId: string;
@@ -17,7 +17,7 @@ interface PreloaderProps {
 }
 
 const PageLoader = ({ documentId, serviceInstance }: PreloaderProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { data, error, isPending, isError, isFetching, refetch } =
     useHuntPackDocumentQuery(portalGraphqlClient, {
       documentId,

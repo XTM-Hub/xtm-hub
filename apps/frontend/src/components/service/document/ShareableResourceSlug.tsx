@@ -4,6 +4,7 @@ import {
   BreadcrumbNav,
   BreadcrumbNavLink,
 } from '@/components/ui/BreadcrumbNav';
+import { useTranslate } from '@/hooks/use-translate';
 import { DownloadIcon } from '@filigran/icon';
 import {
   Tooltip,
@@ -12,7 +13,6 @@ import {
   TooltipTrigger,
 } from '@filigran/ui/clients';
 import { Button } from '@filigran/ui/servers';
-import { useTranslations } from 'next-intl';
 
 import OneClickDeploy from '@/components/service/document/one-click-deploy/OneClickDeploy';
 import ShareableResourceDetails from '@/components/service/document/ShareableResouceDetails';
@@ -54,7 +54,7 @@ const ShareableResourceSlug = ({
   children,
   updateActions,
 }: ShareableResourceSlugProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { serviceInstanceId } = useDecodedParams();
   const { settings } = useContext(SettingsContext);
 

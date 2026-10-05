@@ -19,6 +19,7 @@ import { ThirdPartyIntegrationForm } from '@/components/service/integrations/for
 import { OpenaevScenarioForm } from '@/components/service/openaev-scenarios/[serviceInstanceId]/OpenaevScenarioForm';
 import { OpenctiHuntPackForm } from '@/components/service/opencti-hunt-packs/[serviceInstanceId]/OpenctiHuntPackForm';
 import { OpenctiPlaybookForm } from '@/components/service/opencti-playbooks/[serviceInstanceId]/OpenctiPlaybookForm';
+import { useTranslate } from '@/hooks/use-translate';
 import { omit } from '@/lib/omit';
 import { pick } from '@/lib/pick';
 import { splitFileListToUploadableMap } from '@/relay/environment/fetch-form-data';
@@ -40,7 +41,6 @@ import {
   IntegrationType,
   LicenseType,
 } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { useMutation } from 'react-relay';
 
@@ -84,7 +84,7 @@ export function useDocumentContext({
   const [integrationType, setIntegrationType] = useState<IntegrationType>(
     IntegrationType.CsvFeed
   );
-  const t = useTranslations();
+  const t = useTranslate();
   const [createMutation] = useMutation<documentCreateMutation>(
     DocumentCreateMutation
   );

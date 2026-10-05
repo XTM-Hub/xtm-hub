@@ -1,12 +1,12 @@
+import { useTranslate } from '@/hooks/use-translate';
 import { ConnectProductOrganizationAdminsQuery } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
 interface AdministratorslistProps {
   admins?: ConnectProductOrganizationAdminsQuery;
 }
 
 export const Administratorslist = ({ admins }: AdministratorslistProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   if (!admins) {
     return null;

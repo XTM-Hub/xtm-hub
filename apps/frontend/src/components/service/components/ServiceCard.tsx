@@ -9,6 +9,7 @@ import { useDocumentContext } from '@/components/service/document/use-document-c
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import ShareableResourceCard from '@/components/ui/shareable-resource/ShareableResourceCard';
 import useServiceCapability from '@/hooks/use-service-capability';
+import { useTranslate } from '@/hooks/use-translate';
 import revalidatePathActions from '@/utils/actions/revalidate-path.actions';
 import {
   APP_PATH,
@@ -22,7 +23,6 @@ import { MoreVertIcon } from '@filigran/icon';
 import { toast } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { IntegrationType, ServiceRestriction } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -40,7 +40,7 @@ const ServiceCard = ({
   shareLinkUrl,
   connectionId,
 }: ServiceCardProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const router = useRouter();
 
   const [openSheet, setOpenSheet] = useState(false);
