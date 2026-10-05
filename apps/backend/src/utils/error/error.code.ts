@@ -74,6 +74,7 @@ export enum BadRequestErrorCode {
   SolutionCategoriesRequired = 'SOLUTION_CATEGORIES_REQUIRED',
   XtmOneRoleRequired = 'XTM_ONE_ROLE_REQUIRED',
   InvalidContentTranslationKey = 'INVALID_CONTENT_TRANSLATION_KEY',
+  UserStatusChangedConcurrently = 'USER_STATUS_CHANGED_CONCURRENTLY',
 }
 
 export enum UnknownErrorCode {
