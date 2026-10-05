@@ -12,7 +12,7 @@ type ContentTranslationValue = Pick<ContentTranslation, 'locale' | 'value'>;
 type ContentTranslationRow = ContentTranslationValue & { key: string };
 
 const toRows = (rows: readonly ContentTranslationRow[]) => {
-  const updaterId = requestContext.get()?.user?.id;
+  const updaterId = requestContext.requireUser().id;
   const updatedAt = new Date();
   return rows.map(({ key, locale, value }) => ({
     key,
@@ -37,15 +37,6 @@ export const ContentTranslationDomain = {
         }
       })
       .select('*');
-  },
-
-  upsertContentTranslation: async (
-    key: string,
-    values: readonly ContentTranslationValue[]
-  ): Promise<ContentTranslationEntry[]> => {
-    return ContentTranslationDomain.upsertContentTranslations(
-      values.map((value) => ({ key, ...value }))
-    );
   },
 
   // One statement for any number of keys, e.g. every draft being published.

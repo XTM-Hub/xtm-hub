@@ -1,10 +1,22 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
+import {
+  requestContextSimpleUserFiligran2,
+  TEST_ORGANIZATIONS,
+} from '../../../tests/tests.const';
 import { Locale } from '../../__generated__/resolvers-types';
+import { requestContext } from '../../context/request.context';
+import { UnknownErrorCode } from '../../utils/error/error.code';
 import { ContentTranslationDomain } from './content-translation.domain';
 
 describe('content-translation.domain', () => {
   const testKeyPrefix = 'ContentTranslationDomainTest';
+  const EDITOR_ID = requestContextSimpleUserFiligran2.user.id;
+  const PREVIOUS_EDITOR_ID = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID;
+
+  beforeEach(() => {
+    requestContext.set(requestContextSimpleUserFiligran2);
+  });
 
   afterEach(async () => {
     await TestHelper.contentTranslation.delete({
@@ -78,10 +90,13 @@ describe('content-translation.domain', () => {
 
   it('should insert a new content translation when the row does not exist yet', async () => {
     // When
-    const result = await ContentTranslationDomain.upsertContentTranslation(
-      `${testKeyPrefix}.title`,
-      [{ locale: Locale.En, value: 'Created value' }]
-    );
+    const result = await ContentTranslationDomain.upsertContentTranslations([
+      {
+        key: `${testKeyPrefix}.title`,
+        locale: Locale.En,
+        value: 'Created value',
+      },
+    ]);
     const savedRows = await TestHelper.contentTranslation.loadAll({
       key: `${testKeyPrefix}.title`,
     });
@@ -90,25 +105,26 @@ describe('content-translation.domain', () => {
     expect(result).toHaveLength(1);
     expect(result[0]).toMatchObject({
       key: `${testKeyPrefix}.title`,
-      locale: 'en',
+      locale: Locale.En,
       value: 'Created value',
+      updater_id: EDITOR_ID,
     });
     expect(savedRows).toHaveLength(1);
   });
 
-  it('should update the value when a content translation already exists for the key/locale pair', async () => {
+  it('should update the value and the updater when a content translation already exists for the key/locale pair', async () => {
     // Given
     await TestHelper.contentTranslation.create({
       key: `${testKeyPrefix}.title`,
       locale: Locale.En,
       value: 'Old value',
+      updater_id: PREVIOUS_EDITOR_ID,
     });
 
     // When
-    const result = await ContentTranslationDomain.upsertContentTranslation(
-      `${testKeyPrefix}.title`,
-      [{ locale: Locale.En, value: 'New value' }]
-    );
+    const result = await ContentTranslationDomain.upsertContentTranslations([
+      { key: `${testKeyPrefix}.title`, locale: Locale.En, value: 'New value' },
+    ]);
     const savedRows = await TestHelper.contentTranslation.loadAll({
       key: `${testKeyPrefix}.title`,
       locale: Locale.En,
@@ -116,28 +132,81 @@ describe('content-translation.domain', () => {
 
     // Then
     expect(result).toHaveLength(1);
-    expect(result[0]).toMatchObject({ value: 'New value' });
+    expect(result[0]).toMatchObject({
+      value: 'New value',
+      updater_id: EDITOR_ID,
+    });
     expect(savedRows).toHaveLength(1);
-    expect(savedRows[0]).toMatchObject({ value: 'New value' });
+    expect(savedRows[0]).toMatchObject({
+      value: 'New value',
+      updater_id: EDITOR_ID,
+    });
   });
 
-  it('should upsert several locales for the same key in a single call', async () => {
+  it('should upsert several keys and locales in a single call', async () => {
     // When
-    const result = await ContentTranslationDomain.upsertContentTranslation(
-      `${testKeyPrefix}.title`,
-      [
-        { locale: Locale.En, value: 'Hello' },
-        { locale: Locale.Fr, value: 'Bonjour' },
-        { locale: Locale.Ja, value: 'こんにちは' },
-      ]
-    );
-    const savedRows = await TestHelper.contentTranslation.loadAll({
-      key: `${testKeyPrefix}.title`,
-    });
+    const result = await ContentTranslationDomain.upsertContentTranslations([
+      { key: `${testKeyPrefix}.title`, locale: Locale.En, value: 'Hello' },
+      { key: `${testKeyPrefix}.title`, locale: Locale.Fr, value: 'Bonjour' },
+      {
+        key: `${testKeyPrefix}.subtitle`,
+        locale: Locale.Ja,
+        value: 'こんにちは',
+      },
+    ]);
+    const savedRows = [
+      ...(await TestHelper.contentTranslation.loadAll({
+        key: `${testKeyPrefix}.title`,
+      })),
+      ...(await TestHelper.contentTranslation.loadAll({
+        key: `${testKeyPrefix}.subtitle`,
+      })),
+    ];
 
     // Then
     expect(result).toHaveLength(3);
     expect(savedRows).toHaveLength(3);
+    expect(
+      savedRows.map(({ key, locale, value }) => ({ key, locale, value }))
+    ).toEqual(
+      expect.arrayContaining([
+        { key: `${testKeyPrefix}.title`, locale: Locale.En, value: 'Hello' },
+        { key: `${testKeyPrefix}.title`, locale: Locale.Fr, value: 'Bonjour' },
+        {
+          key: `${testKeyPrefix}.subtitle`,
+          locale: Locale.Ja,
+          value: 'こんにちは',
+        },
+      ])
+    );
+  });
+
+  it('should write nothing when there is no row to upsert', async () => {
+    // When
+    const result = await ContentTranslationDomain.upsertContentTranslations([]);
+
+    // Then
+    expect(result).toEqual([]);
+  });
+
+  it('should refuse to upsert content translations without an authenticated user', async () => {
+    // Given
+    requestContext.set({});
+
+    // When
+    const upsert = ContentTranslationDomain.upsertContentTranslations([
+      { key: `${testKeyPrefix}.title`, locale: Locale.En, value: 'Orphan' },
+    ]);
+
+    // Then
+    await expect(upsert).rejects.toThrow(
+      UnknownErrorCode.NoAsyncContextAvailableError
+    );
+    expect(
+      await TestHelper.contentTranslation.loadAll({
+        key: `${testKeyPrefix}.title`,
+      })
+    ).toEqual([]);
   });
 
   describe('drafts', () => {
@@ -167,12 +236,13 @@ describe('content-translation.domain', () => {
       expect(live?.value).toBe('Live value');
     });
 
-    it('should update the draft when one already exists for the key/locale pair', async () => {
+    it('should update the draft and its updater when one already exists for the key/locale pair', async () => {
       // Given
       await TestHelper.contentTranslationDraft.create({
         key: `${testKeyPrefix}.title`,
         locale: Locale.En,
         value: 'First draft',
+        updater_id: PREVIOUS_EDITOR_ID,
       });
 
       // When
@@ -185,7 +255,11 @@ describe('content-translation.domain', () => {
       const drafts = await TestHelper.contentTranslationDraft.loadAll({
         key: `${testKeyPrefix}.title`,
       });
-      expect(drafts.map(({ value }) => value)).toEqual(['Second draft']);
+      expect(drafts).toHaveLength(1);
+      expect(drafts[0]).toMatchObject({
+        value: 'Second draft',
+        updater_id: EDITOR_ID,
+      });
     });
 
     it('should load only the drafts of the given keys', async () => {

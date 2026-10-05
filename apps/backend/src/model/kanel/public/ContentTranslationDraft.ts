@@ -20,7 +20,7 @@ export default interface ContentTranslationDraft {
 
   updated_at: Date;
 
-  updater_id: UserId | null;
+  updater_id: UserId;
 }
 
 /** Represents the initializer for the table public.ContentTranslationDraft */
@@ -34,7 +34,7 @@ export interface ContentTranslationDraftInitializer {
   /** Default value: CURRENT_TIMESTAMP */
   updated_at?: Date;
 
-  updater_id?: UserId | null;
+  updater_id: UserId;
 }
 
 /** Represents the mutator for the table public.ContentTranslationDraft */
@@ -47,5 +47,5 @@ export interface ContentTranslationDraftMutator {
 
   updated_at?: Date;
 
-  updater_id?: UserId | null;
+  updater_id?: UserId;
 }

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   contextSimpleUserFiligran2,
   GRAPHQL_RESOLVE_INFO,
+  TEST_ORGANIZATIONS,
 } from '../../../tests/tests.const';
 import {
   ContentTranslationEntry,
@@ -19,7 +20,7 @@ describe('content-translation.resolver', () => {
         locale: Locale.En,
         value: 'Welcome',
         updated_at: new Date(),
-        updater_id: null,
+        updater_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
       },
     ];
     vi.spyOn(
@@ -52,7 +53,7 @@ describe('content-translation.resolver', () => {
         locale: Locale.En,
         value: 'Updated',
         updated_at: new Date(),
-        updater_id: null,
+        updater_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
       },
     ];
     vi.spyOn(

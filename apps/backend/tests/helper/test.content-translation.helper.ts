@@ -5,6 +5,7 @@ import ContentTranslation, {
 import ContentTranslationDraft, {
   ContentTranslationDraftKey,
 } from '../../src/model/kanel/public/ContentTranslationDraft';
+import { TEST_ORGANIZATIONS } from '../tests.const';
 
 // Fixtures use plain string keys: the branded Kanel key only guarantees a
 // value read from the table, so the helpers brand it once, here.
@@ -28,7 +29,12 @@ export const TestContentTranslationHelper = {
       const [contentTranslation] = await db<ContentTranslation>(
         'ContentTranslation'
       )
-        .insert({ value: 'Default value', ...data, key: toKey(key) })
+        .insert({
+          value: 'Default value',
+          updater_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+          ...data,
+          key: toKey(key),
+        })
         .returning('*');
       return contentTranslation!;
     },
@@ -54,7 +60,12 @@ export const TestContentTranslationHelper = {
       const [draft] = await db<ContentTranslationDraft>(
         'ContentTranslationDraft'
       )
-        .insert({ value: 'Draft value', ...data, key: toDraftKey(key) })
+        .insert({
+          value: 'Draft value',
+          updater_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+          ...data,
+          key: toDraftKey(key),
+        })
         .returning('*');
       return draft!;
     },

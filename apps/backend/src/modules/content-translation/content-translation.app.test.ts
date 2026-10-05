@@ -1,9 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import {
+  requestContextSimpleUserFiligran2,
+  TEST_ORGANIZATIONS,
+} from '../../../tests/tests.const';
+import {
   ContentTranslationEntry,
   Locale,
 } from '../../__generated__/resolvers-types';
+import { requestContext } from '../../context/request.context';
 import { ContentTranslationApp } from './content-translation.app';
 import { ContentTranslationDomain } from './content-translation.domain';
 
@@ -16,7 +21,7 @@ describe('content-translation.app', () => {
         locale: Locale.En,
         value: 'Welcome',
         updated_at: new Date(),
-        updater_id: null,
+        updater_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
       },
     ];
     vi.spyOn(
@@ -48,7 +53,7 @@ describe('content-translation.app', () => {
         locale: Locale.En,
         value: 'Updated',
         updated_at: new Date(),
-        updater_id: null,
+        updater_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
       },
     ];
     vi.spyOn(
@@ -135,6 +140,7 @@ describe('content-translation.app', () => {
 
     beforeEach(() => {
       vi.restoreAllMocks();
+      requestContext.set(requestContextSimpleUserFiligran2);
     });
 
     afterEach(async () => {
@@ -204,11 +210,13 @@ describe('content-translation.app', () => {
         key: TITLE_KEY,
         locale: Locale.En,
         value: 'Live title',
+        updater_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
       });
       await TestHelper.contentTranslationDraft.create({
         key: TITLE_KEY,
         locale: Locale.En,
         value: 'Draft title',
+        updater_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
       });
 
       // When
@@ -219,7 +227,10 @@ describe('content-translation.app', () => {
         key: TITLE_KEY,
         locale: Locale.En,
       });
-      expect(published?.value).toBe('Draft title');
+      expect(published).toMatchObject({
+        value: 'Draft title',
+        updater_id: requestContextSimpleUserFiligran2.user.id,
+      });
     });
 
     it('should leave no draft behind when publishing', async () => {
