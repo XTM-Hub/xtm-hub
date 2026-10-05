@@ -6,11 +6,8 @@ import { Locale, locales } from '@/i18n/config';
 
 export type EditableTextFormValues = Record<Locale, string>;
 
-// Only message templates ever seed the form, never the text rendered on
-// screen: a rendered value has its placeholders ({platformName}) and plural
-// branches already resolved, and saving it back would freeze them for every
-// page sharing the key. A pending draft wins over the published override,
-// which wins over the committed template.
+// Never seed the form with rendered text: saving its resolved placeholders or
+// plural branches back would freeze them for every page sharing the key.
 export const buildEditFormValues = (
   templates: EditableTranslationValue[],
   { published, drafts }: ContentKeyValues
@@ -33,8 +30,6 @@ export const pickChangedValues = (
     .filter((locale) => values[locale] !== initialValues[locale])
     .map((locale) => ({ locale, value: values[locale] }));
 
-// The committed template of every locale whose value comes from a draft or a
-// published override, shown as the original next to the edited value.
 export const getOriginalValues = (
   templates: EditableTranslationValue[],
   { published, drafts }: ContentKeyValues

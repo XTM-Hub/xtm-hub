@@ -14,8 +14,6 @@ interface EditTranslationsButtonProps {
   open: boolean;
 }
 
-// Plain useTranslations, not useTranslate: the editing UI must never mark its
-// own labels as editable.
 export const EditTranslationsButton = ({
   open,
 }: EditTranslationsButtonProps) => {

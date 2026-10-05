@@ -18,7 +18,7 @@ vi.mock('@graphql/generated', async (importOriginal) => ({
   }),
 }));
 
-// A committed message with a placeholder, read from the real messages/en.json.
+// A real committed message with a placeholder.
 const CONTENT_KEY = 'Service.Trials.PageHeader.Title';
 const EN_TEMPLATE =
   "Let's get you started with your {platformName} free trial!";

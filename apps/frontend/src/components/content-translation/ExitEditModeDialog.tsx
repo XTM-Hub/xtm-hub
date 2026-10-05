@@ -22,9 +22,6 @@ interface ExitEditModeDialogProps {
 
 const keepDrafts = async () => {};
 
-// Asks what to do with unpublished drafts before leaving edit mode (see
-// useExitEditMode). Plain useTranslations, not useTranslate: the editing UI
-// must never mark its own labels as editable.
 export const ExitEditModeDialog = ({
   open,
   onOpenChange,

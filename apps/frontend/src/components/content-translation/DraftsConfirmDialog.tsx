@@ -23,8 +23,6 @@ interface DraftsConfirmDialogProps {
   onConfirm: () => void;
 }
 
-// Local to the editing UI rather than the shared AlertDialogComponent, whose
-// labels go through useTranslate and would become editable in edit mode.
 export const DraftsConfirmDialog = ({
   open,
   onOpenChange,

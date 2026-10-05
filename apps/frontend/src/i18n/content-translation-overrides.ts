@@ -18,16 +18,12 @@ import { cache } from 'react';
 
 export const CONTENT_TRANSLATIONS_CACHE_TAG = 'content-translations';
 
-// Publishing from the edit mode banner expires the tag at once; this bounds
-// how long a publish made straight through the API, or served by another
-// instance than the one that expired the tag, can stay unseen.
+// Bounds how long a publish made through the API, or on another instance
+// than the one expiring the tag, stays unseen.
 const CONTENT_TRANSLATIONS_REVALIDATE_SECONDS = 60;
 
 // Editors bypass the Data Cache so a saved value shows up on their next
-// render; everyone else shares the cached overrides, expired on publish (see
-// publish-content-translation-drafts.actions.ts) or after the revalidate
-// window.
-// Memoized per request: the i18n config and the layouts both read it.
+// render.
 const fetchContentTranslationOverrides = cache(
   async (locale: GraphqlLocale) => {
     const isEditMode = await isContentEditModeActive();
@@ -51,21 +47,16 @@ const fetchContentTranslationOverrides = cache(
   }
 );
 
-// Published overrides then, in edit mode, drafts: later entries win, so
-// editors preview their pending changes rendered like live ones.
+// Drafts come last so they win: editors preview them like published values.
 const loadLocaleOverrides = async (locale: GraphqlLocale) => {
   const [published, drafts] = await Promise.all([
-    // An unreachable backend must never break rendering: the committed
-    // messages are a complete fallback.
+    // The committed messages are a complete fallback.
     fetchContentTranslationOverrides(locale).catch(() => []),
     loadContentTranslationDrafts(),
   ]);
   return [...published, ...drafts.filter((draft) => draft.locale === locale)];
 };
 
-// Overlays DB-backed overrides (edited in context, see
-// EditModeContentObserver) on the committed next-intl messages, for every
-// t() call, server or client.
 export const withContentTranslationOverrides = async (
   locale: string,
   messages: Messages
@@ -79,9 +70,7 @@ export const withContentTranslationOverrides = async (
   );
 };
 
-// Keys with a draft or a published override in any locale, not only the
-// rendered one, so edit mode can tell them apart from committed texts.
-// Editors only, read uncached like the drafts.
+// Any locale, not only the rendered one. Editors only, read uncached.
 export const loadOverriddenContentKeys = async (): Promise<string[]> => {
   if (!(await isContentEditModeActive())) {
     return [];

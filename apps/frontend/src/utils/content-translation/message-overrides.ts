@@ -8,9 +8,8 @@ export interface MessageOverride {
 const isMessageGroup = (value: unknown): value is Messages =>
   typeof value === 'object' && value !== null;
 
-// Walks a next-intl dot path through own properties only, so a key naming an
-// inherited property (`__proto__`, `constructor`...) or a message group
-// instead of a string message never resolves.
+// Own properties only, so a key naming an inherited property (`__proto__`,
+// `constructor`...) never resolves.
 const findMessage = (messages: Messages, key: string) => {
   let parent: Messages | null = null;
   let leaf = '';
@@ -31,8 +30,6 @@ const findMessage = (messages: Messages, key: string) => {
 export const getMessage = (messages: Messages, key: string): string | null =>
   findMessage(messages, key)?.value ?? null;
 
-// Overrides can only replace an existing string message: an unknown key, or
-// one that would turn a message into a group, is ignored rather than written.
 export const applyMessageOverrides = (
   messages: Messages,
   overrides: MessageOverride[]

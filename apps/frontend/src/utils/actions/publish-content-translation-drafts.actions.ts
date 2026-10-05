@@ -8,10 +8,8 @@ import {
 import { updateTag } from 'next/cache';
 
 /**
- * Publishes every draft and expires the cached overrides in one server-side
- * step, so a successful publish is never left behind a stale cache. The
- * mutation itself enforces the BYPASS capability. Uses `updateTag` for
- * read-your-own-writes, like revalidate-document-slugs.actions.ts.
+ * Publishes and expires the cached overrides in one server-side step, so a
+ * publish is never left behind a stale cache. The mutation enforces BYPASS.
  */
 export default async function publishContentTranslationDraftsAction() {
   const client = await getAuthenticatedGraphqlClient();

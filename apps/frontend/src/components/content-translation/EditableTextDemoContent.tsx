@@ -2,12 +2,6 @@
 
 import { useTranslate } from '@/hooks/use-translate';
 
-// Shared body used by both the public demo page
-// (app/(public)/[locale]/editable-text) and the private demo page
-// (app/(application)/app/(user)/editable-text-demo). useTranslate() marks
-// every string here for auto-detection while edit mode is on — see
-// EditModeContentObserver — so this reads exactly like a plain
-// useTranslations() call with zero manual wrapping.
 export const EditableTextDemoContent = () => {
   const t = useTranslate('EditableTextDemo');
 

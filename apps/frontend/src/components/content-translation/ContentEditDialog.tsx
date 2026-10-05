@@ -47,17 +47,12 @@ const editableTextFormSchema = z.object({
 const emptyFormValues: EditableTextFormValues = { en: '', fr: '', ja: '' };
 
 export interface ContentEditDialogProps {
-  // Fully-qualified content key, e.g. "PublicHomePage.XtmPlatform.Title".
   contentKey: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  // Called once the edited values are saved as drafts.
   onSaved: () => void;
 }
 
-// Dialog UI mounted by EditModeContentObserver for any t()-marked content
-// key (fully-qualified, decoded from an invisible marker) — one per-locale
-// tabbed form saving drafts, published later from EditionModeBanner.
 export const ContentEditDialog = ({
   contentKey,
   open,
@@ -73,7 +68,6 @@ export const ContentEditDialog = ({
     resolver: zodResolver(editableTextFormSchema),
     defaultValues: emptyFormValues,
   });
-  // Values loaded when the dialog opened, to save only what was edited.
   const [initialValues, setInitialValues] =
     useState<EditableTextFormValues>(emptyFormValues);
   const [originalValues, setOriginalValues] = useState<
@@ -84,8 +78,7 @@ export const ContentEditDialog = ({
     if (!open) {
       return;
     }
-    // Legitimate effect: fetch the per-locale DB values whenever the dialog
-    // opens for a (possibly new) content key.
+    // Legitimate effect: load the saved values when the dialog opens.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoadingValues(true);
     Promise.all(
@@ -105,8 +98,6 @@ export const ContentEditDialog = ({
         toast({ variant: 'destructive', title: tCommon('Utils.Error') });
       })
       .finally(() => setIsLoadingValues(false));
-    // Only re-run when the dialog opens for a (possibly new) content key —
-    // form/loadValuesForKey/tCommon identities aren't relevant re-run triggers.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, contentKey]);
 
@@ -117,8 +108,8 @@ export const ContentEditDialog = ({
       return;
     }
     saveDraft(contentKey, changedValues)
-      // No success toast: toasts render at the top, over EditionModeBanner,
-      // whose pending change count already confirms the save.
+      // No success toast: it would cover the edit mode banner, whose pending
+      // change count already confirms the save.
       .then(() => {
         onSaved();
         onOpenChange(false);
@@ -132,9 +123,7 @@ export const ContentEditDialog = ({
     <Dialog
       open={open}
       onOpenChange={onOpenChange}>
-      {/* z-[110]: some pages (e.g. the sticky documents-list header) use a
-          z-100 utility class, which would otherwise render above this
-          dialog since @filigran/ui's DialogContent defaults to z-50. */}
+      {/* Above the z-100 sticky headers some pages use. */}
       <DialogContent className="z-[110]">
         <DialogHeader className="gap-s">
           <DialogTitle>{tCommon('EditableText.DialogTitle')}</DialogTitle>

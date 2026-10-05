@@ -15,7 +15,6 @@ const request = vi.fn();
 describe('publishContentTranslationDraftsAction', () => {
   beforeEach(() => {
     request.mockResolvedValue({ publishContentTranslationDrafts: [] });
-    // Only the method the action calls: the full client is not needed.
     vi.mocked(getAuthenticatedGraphqlClient).mockResolvedValue({
       request,
     } as unknown as Awaited<ReturnType<typeof getAuthenticatedGraphqlClient>>);

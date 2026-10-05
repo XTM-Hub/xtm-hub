@@ -6,9 +6,7 @@ import {
 } from '@graphql/generated';
 import { cache } from 'react';
 
-// Drafts only exist for editors, and are read uncached on every render so a
-// saved draft shows up right away. Memoized per request: the i18n request
-// config and the layouts both ask.
+// Read uncached so a saved draft shows up right away.
 export const loadContentTranslationDrafts = cache(
   async (): Promise<
     ContentTranslationDraftsQuery['contentTranslationDrafts']

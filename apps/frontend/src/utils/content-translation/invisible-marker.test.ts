@@ -54,9 +54,6 @@ describe('invisible-marker', () => {
   it('strips every marker even if more than one is present in the same text', () => {
     const twice = `${appendContentKeyMarker('A', 'Key.One')}${appendContentKeyMarker('B', 'Key.Two')}`;
     const { cleanText, contentKey } = decodeContentKeyMarker(twice);
-    // Only the first marker's key is returned by design (one t() call is
-    // expected to produce one text node with one marker), but every marker
-    // must still be stripped so no invisible characters leak into the DOM.
     expect(cleanText).toBe('AB');
     expect(contentKey).toBe('Key.One');
   });

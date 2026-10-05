@@ -1,9 +1,5 @@
-// Encodes a content-translation key into an invisible, zero-width-character
-// sequence appended to a translated string: the key travels inside the
-// rendered text itself, invisible to the human eye but present in the DOM,
-// so a global observer (see EditModeContentObserver) can scan any page,
-// find which text came from which content-translation key, and make it
-// clickable — without any per-string wrapping component.
+// The content key travels inside the rendered text as invisible characters, so
+// editable texts are found in the DOM without wrapping each one.
 const BIT_0 = '\u200B'; // zero width space
 const BIT_1 = '\u200C'; // zero width non-joiner
 const MARK_START = '\u2062'; // invisible times
@@ -30,10 +26,7 @@ const MARKER_PATTERN = new RegExp(
 );
 
 export interface DecodedContentKeyMarker {
-  // The visible text, with every marker stripped out.
   cleanText: string;
-  // The content-translation key encoded in the first marker found, or null
-  // if `text` contains no marker at all.
   contentKey: string | null;
 }
 

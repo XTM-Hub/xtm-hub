@@ -34,7 +34,6 @@ const TEXT_RECT = {
   height: 20,
 };
 const POINT_INSIDE_TEXT = { clientX: 10, clientY: 10 };
-// Inside the editable element but beside its text, e.g. a button padding.
 const POINT_BESIDE_TEXT = { clientX: 300, clientY: 10 };
 
 const findBadge = () => document.querySelector('[data-content-edit-badge]');
@@ -74,9 +73,8 @@ const renderObserver = ({
     </EditModeProvider>
   );
 
-// jsdom has no layout: stub the geometry APIs the observer hit-tests with,
-// so the editable link sits under POINT_INSIDE_TEXT. The cast is needed as
-// jsdom cannot build a real DOMRectList.
+// jsdom has no layout, nor a way to build a real DOMRectList: stub the
+// geometry hit-testing relies on.
 const givenLayout = (elementAtPoint: () => Element | null) => {
   Range.prototype.getClientRects = vi.fn(
     () => [TEXT_RECT] as unknown as DOMRectList

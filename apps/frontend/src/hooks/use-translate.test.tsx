@@ -10,8 +10,8 @@ const NAMESPACE = 'PublicHomePage.XtmPlatform';
 const KEY = 'Title';
 const TRANSLATED_TITLE = 'Extend and scale your XTM Platform';
 
-// next-intl memoizes its translator; the global mock builds a new one per
-// call, so pin a single instance to mirror the real identity guarantee.
+// The global mock builds a new translator per call, unlike next-intl's
+// memoized one.
 const stableTranslator = Object.assign(() => TRANSLATED_TITLE, {
   has: () => true,
   rich: () => TRANSLATED_TITLE,

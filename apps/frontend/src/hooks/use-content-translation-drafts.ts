@@ -6,8 +6,6 @@ import { useDiscardContentTranslationDraftsMutation } from '@graphql/generated';
 import { useMutation } from '@tanstack/react-query';
 import { useCallback } from 'react';
 
-// Callers re-render the route afterwards: drafts only ever reach the page
-// through the server-side message overlay.
 export const useContentTranslationDrafts = () => {
   // A Server Action, so publishing and expiring the cache happen together.
   const publishMutation = useMutation({

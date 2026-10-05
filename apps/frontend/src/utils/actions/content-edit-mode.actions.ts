@@ -4,10 +4,8 @@ import { EDIT_MODE_COOKIE_NAME } from '@/utils/edit-mode-cookie';
 import { cookies } from 'next/headers';
 
 /**
- * Turns in-context content editing on or off for the current browser.
- * Turning it on is restricted to BYPASS users: anyone can call a Server
- * Action. The cookie is httpOnly since edit mode is always resolved on the
- * server (see isContentEditModeActive).
+ * Anyone can call a Server Action, so turning edit mode on re-checks the
+ * BYPASS capability. The cookie is httpOnly: only the server reads it.
  */
 export default async function setContentEditModeAction(isEnabled: boolean) {
   const cookieStore = await cookies();

@@ -9,8 +9,7 @@ vi.mock('@/utils/load-me-user', () => ({ loadMeUser: vi.fn() }));
 
 type MeUser = Awaited<ReturnType<typeof loadMeUser>>;
 type CookieStore = Awaited<ReturnType<typeof cookies>>;
-// loadMeUser resolves null for an anonymous visitor, which its inferred type
-// leaves out.
+// The inferred type leaves out the null an anonymous visitor resolves to.
 const ANONYMOUS = null as unknown as MeUser;
 
 const makeMeUser = (capabilities: PortalCapability[]): MeUser => ({
@@ -26,7 +25,6 @@ describe('setContentEditModeAction', () => {
   const deleteCookie = vi.fn();
 
   beforeEach(() => {
-    // Only the methods the action calls: the full cookie store is not needed.
     vi.mocked(cookies).mockResolvedValue({
       get: () => undefined,
       set: setCookie,

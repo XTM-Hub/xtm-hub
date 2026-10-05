@@ -21,10 +21,6 @@ const SOLID_BUTTON_CLASSES =
 const OUTLINE_BUTTON_CLASSES =
   'border-primary-foreground bg-transparent text-primary-foreground hover:bg-primary-foreground/10';
 
-// Mounted unconditionally in both the public and private root layouts and
-// self-hides whenever edit mode is off. Toggles the editable areas, and
-// publishes or discards the drafts edits are saved as. Uses plain useTranslations (not useTranslate) so
-// its own labels are never marked as editable.
 export const EditionModeBanner = () => {
   const t = useTranslations();
   const router = useRouter();

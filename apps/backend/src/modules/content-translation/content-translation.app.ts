@@ -39,8 +39,7 @@ export const ContentTranslationApp = {
     );
   },
 
-  // Keys were validated when saved as drafts. The publisher becomes the
-  // updater of the live rows.
+  // Keys were validated when saved as drafts.
   publishContentTranslationDrafts: (): Promise<ContentTranslationEntry[]> =>
     withTransaction(async () =>
       ContentTranslationDomain.upsertContentTranslations(

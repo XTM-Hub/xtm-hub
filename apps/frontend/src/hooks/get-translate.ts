@@ -5,10 +5,7 @@ import { getTranslations } from 'next-intl/server';
 type GetTranslateOptions =
   string | { locale: string; namespace?: string } | undefined;
 
-// Server Component counterpart to useTranslate(). EditModeContentObserver
-// scans the final DOM, so markers work whether the text came from a Server or
-// a Client Component. Never use it for metadata or JSON-LD: nothing strips
-// markers there.
+// Never use it for metadata or JSON-LD: nothing strips the markers there.
 export const getTranslate = async (options?: GetTranslateOptions) => {
   // Identical branches on purpose: each resolves a different overload.
   const t =

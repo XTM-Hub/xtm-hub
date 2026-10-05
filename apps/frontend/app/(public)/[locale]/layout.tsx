@@ -53,8 +53,8 @@ const RootLayout = async ({
     await loadContentTranslationDrafts()
   );
   const overriddenKeys = await loadOverriddenContentKeys();
-  // Public pages never load the current user, so only an editor already in
-  // edit mode (a verified BYPASS user) gets the toggle here, to turn it off.
+  // Public pages never load the current user: only an editor already in edit
+  // mode gets the toggle, to turn it off.
 
   return (
     <ReactQueryProvider>

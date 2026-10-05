@@ -50,8 +50,8 @@ vi.mock('next/navigation', async (importOriginal) => ({
   notFound: vi.fn(),
 }));
 
-// cookies() throws outside a real Next.js request scope: default to an empty
-// jar, so server-side edit mode is off in tests, like the client default.
+// cookies() throws outside a Next.js request scope: an empty jar keeps edit
+// mode off.
 vi.mock('next/headers', async (importOriginal) => ({
   ...(await importOriginal<typeof import('next/headers')>()),
   cookies: vi.fn(async () => ({ get: () => undefined })),

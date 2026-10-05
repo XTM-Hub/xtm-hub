@@ -174,9 +174,8 @@ body[data-theme='Dark'] {
   min-height: 100% !important;
 }
 
-/* In-context editing: elements flagged by EditModeContentObserver. An outline
-   never changes the layout, and follows its element when it scrolls, clips or
-   hides. */
+/* In-context editing: an outline never changes the layout and follows its
+   element when it scrolls, clips or hides. */
 [data-content-editable] {
   outline: 1px dashed color-mix(in srgb, var(--color-primary) 50%, transparent);
   outline-offset: 1px;

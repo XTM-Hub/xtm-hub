@@ -39,7 +39,6 @@ export const ContentTranslationDomain = {
       .select('*');
   },
 
-  // One statement for any number of keys, e.g. every draft being published.
   upsertContentTranslations: async (
     rows: readonly ContentTranslationRow[]
   ): Promise<ContentTranslationEntry[]> => {
@@ -76,8 +75,6 @@ export const ContentTranslationDomain = {
       .returning('*');
   },
 
-  // Deletes and returns in one statement, so a draft saved concurrently is
-  // either taken here or left untouched, never lost.
   deleteContentTranslationDrafts: (): Promise<ContentTranslationEntry[]> => {
     return db<ContentTranslationEntry>('ContentTranslationDraft')
       .del()

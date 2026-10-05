@@ -26,7 +26,6 @@ const TOGGLE_LABEL = 'EditableText.ShowEditableAreas';
 const publish = vi.mocked(publishContentTranslationDraftsAction);
 const discard = vi.fn();
 
-// Only the fields the banner reads: the full mutation result is not needed.
 const mockMutation = (mutateAsync: typeof discard) =>
   ({ mutateAsync, isPending: false }) as unknown as ReturnType<
     typeof useDiscardContentTranslationDraftsMutation

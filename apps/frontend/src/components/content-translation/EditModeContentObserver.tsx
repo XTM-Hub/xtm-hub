@@ -11,10 +11,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-// Text nodes whose parent isn't actually rendered (e.g. Next.js's inline
-// hydration <script> tags, which embed a serialized copy of the rendered
-// HTML — invisible markers included) must never be treated as editable
-// content, whether reached via the TreeWalker or the MutationObserver.
+// Hydration <script> tags embed a serialized copy of the rendered HTML,
+// markers included, which must never become editable.
 const isNonRenderedTextNode = (node: Text) => {
   const parentTag = node.parentElement?.tagName;
   return parentTag === 'SCRIPT' || parentTag === 'STYLE';
@@ -24,28 +22,13 @@ interface MarkedTextEntry {
   contentKey: string;
 }
 
-// Registry populated by scanning/observing the DOM: which live Text node
-// instances carry a decoded content key, keyed both by the node itself
-// (for O(1) lookup once a candidate node is found) and by that node's
-// parent element (to find candidate nodes under the cursor without
-// walking the whole document on every mousemove). The WeakMaps are
-// garbage-collected for free once React discards a node; `allNodes` is a
-// plain Set (needed to enumerate everything editable at once — see
-// list() below) and is pruned lazily instead, since WeakMaps can't be
-// iterated.
 class MarkedTextRegistry {
   private byNode = new WeakMap<Text, MarkedTextEntry>();
   private byParent = new WeakMap<Element, Text[]>();
   private allNodes = new Set<Text>();
 
-  // Strips the invisible marker from a text node's own data **in place**
-  // (a plain content assignment, not a node swap), then registers it.
-  // Mutating `.data`/`.textContent` on the exact Text node instance React
-  // created never disturbs the parent/child relationships React's fiber
-  // tree relies on — unlike `node.replaceWith()`, which detaches the node
-  // React still references and later crashes with
-  // "Failed to execute 'removeChild': the node ... is not a child of this
-  // node" the next time React tries to reconcile that spot.
+  // The marker is stripped from the node data in place: replacing a node
+  // React created makes its next reconciliation crash on removeChild.
   register(node: Text) {
     if (isNonRenderedTextNode(node)) {
       return;
@@ -80,10 +63,8 @@ class MarkedTextRegistry {
     return this.byParent.get(element) ?? [];
   }
 
-  // Every still-connected marked node with its content key — used to flag
-  // every editable element at once. Nodes React has since removed from the
-  // document are pruned here rather than tracked separately, since that's
-  // the only time this list actually needs to be accurate.
+  // WeakMaps can't be iterated, so the set is kept too and pruned lazily
+  // here, the only place it must be accurate.
   list(): { node: Text; contentKey: string }[] {
     const result: { node: Text; contentKey: string }[] = [];
     for (const node of this.allNodes) {
@@ -100,8 +81,7 @@ class MarkedTextRegistry {
   }
 }
 
-// Two-pass scan (collect then register) so mutating text mid-walk never
-// disturbs the TreeWalker itself.
+// Collect first: mutating text mid-walk would disturb the walker.
 const scanForMarkedTextNodes = (root: Node, registry: MarkedTextRegistry) => {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
     acceptNode: (candidate) => {
@@ -153,12 +133,8 @@ interface EditableTarget {
   contentKey: string;
 }
 
-// The editable text whose element holds viewport point (x, y): that whole
-// element box is editable, as its outline shows. Walks up from the deepest
-// element at the point, and stops at an interactive element without an
-// editable text of its own, so an icon-only button inside an editable block
-// keeps its action. Several marked texts in one element are told apart by
-// the line rect the point falls in, else the first one wins.
+// Stops at an interactive element without an editable text of its own, so an
+// icon-only button inside an editable block keeps its action.
 const findEditableTarget = (
   x: number,
   y: number,
@@ -188,10 +164,7 @@ const findEditableTarget = (
   return null;
 };
 
-// Set on the element holding an editable text and styled in globals.css:
-// the browser draws the outline with the element itself, so it scrolls,
-// clips and hides with it, and an outline never changes the layout. An
-// attribute rather than a class, which React rewrites on every render.
+// An attribute rather than a class, which React rewrites on every render.
 export const EDITABLE_ATTRIBUTE = 'data-content-editable';
 
 const flagEditableElement = (
@@ -200,7 +173,6 @@ const flagEditableElement = (
   overriddenKeys: Set<string>
 ) => {
   const element = node.parentElement;
-  // One overridden text is enough to flag an element holding several.
   if (!element || element.getAttribute(EDITABLE_ATTRIBUTE) === 'overridden') {
     return;
   }
@@ -216,17 +188,6 @@ const clearEditableElements = () => {
     .forEach((element) => element.removeAttribute(EDITABLE_ATTRIBUTE));
 };
 
-// Mounted once per root layout while edit mode is on: scans the DOM for
-// invisible content-key markers left by useTranslate() and registers each
-// marked Text node's live instance (stripping the marker from its data in
-// place, never replacing the node itself — see MarkedTextRegistry.register
-// for why that distinction matters). While the editable areas are shown
-// (toggled from EditionModeBanner), the element holding each marked text is
-// flagged for its outline, yellow when the text has a draft or a published
-// override in any locale; hovering it shows an edit badge and a click
-// anywhere on it opens its edit dialog.
-// See with-content-key-markers.ts for how markers get embedded, and
-// invisible-marker.ts for the encoding scheme.
 export const EditModeContentObserver = () => {
   const { isEditMode, showEditableAreas, overriddenKeys } = useEditMode();
   const overriddenKeySet = useMemo(
@@ -235,8 +196,6 @@ export const EditModeContentObserver = () => {
   );
   const router = useRouter();
   const [activeContentKey, setActiveContentKey] = useState<string | null>(null);
-  // Where to draw the edit badge: the top-right corner of the editable
-  // element under the pointer.
   const [badge, setBadge] = useState<{
     top: number;
     left: number;
@@ -268,11 +227,8 @@ export const EditModeContentObserver = () => {
     };
     flagAll();
 
-    // Next.js App Router client-side navigations swap page content under
-    // the same persistent root layout without remounting it, so a live
-    // observer (not just the initial scan above) is needed to catch
-    // newly-rendered marked text. It only watches text and children, so
-    // flagging elements through an attribute never triggers it again.
+    // Client-side navigations swap content without remounting the layout.
+    // Attributes are not watched, so flagging elements never re-triggers it.
     const mutationObserver = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         mutation.addedNodes.forEach((added) => {
@@ -297,8 +253,6 @@ export const EditModeContentObserver = () => {
       characterData: true,
     });
 
-    // Only a click on an editable text, while the areas are shown, is
-    // intercepted: anything else on the page keeps working as usual.
     const handleClick = (event: MouseEvent) => {
       if (!showEditableAreas) {
         return;
@@ -307,19 +261,15 @@ export const EditModeContentObserver = () => {
       if (!match) {
         return;
       }
-      // The marked text can sit inside an interactive ancestor (button,
-      // link, ...). Registering this listener on the capture phase and
-      // stopping it here — before the event reaches that ancestor's own
-      // handlers or triggers native defaults like link navigation —
-      // ensures only the edit dialog opens.
+      // Capture phase: stop the click before an interactive ancestor handles
+      // it or follows a link.
       event.preventDefault();
       event.stopPropagation();
       setBadge(null);
       setActiveContentKey(match.contentKey);
     };
 
-    // rAF-throttled: hit-testing walks the DOM, so do it at most once per
-    // frame during a fast mouse movement.
+    // rAF-throttled: hit-testing walks the DOM.
     const handlePointerMove = (event: MouseEvent) => {
       if (!showEditableAreas || badgeRafRef.current !== null) {
         return;
@@ -341,8 +291,8 @@ export const EditModeContentObserver = () => {
         });
       });
     };
-    // The badge is fixed-position: hide it rather than chase the element
-    // while the page scrolls; the next pointer move brings it back.
+    // The badge is fixed-position: hide it on scroll rather than chase the
+    // element.
     const hideBadge = () => setBadge(null);
 
     document.addEventListener('click', handleClick, true);
@@ -392,9 +342,7 @@ export const EditModeContentObserver = () => {
           setActiveContentKey(null);
         }
       }}
-      // Re-render from the server rather than writing the saved value into
-      // the DOM: the value is a message template, and only a render resolves
-      // its placeholders (and updates every other occurrence).
+      // Only a server render resolves the saved template's placeholders.
       onSaved={() => router.refresh()}
     />
   );

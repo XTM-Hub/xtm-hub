@@ -26,7 +26,6 @@ const PUBLISH_LABEL = 'EditableText.PublishAndExit';
 const publish = vi.mocked(publishContentTranslationDraftsAction);
 const discard = vi.fn();
 
-// Only the fields the dialog reads: the full mutation result is not needed.
 const mockMutation = (mutateAsync: typeof discard) =>
   ({ mutateAsync, isPending: false }) as unknown as ReturnType<
     typeof useDiscardContentTranslationDraftsMutation

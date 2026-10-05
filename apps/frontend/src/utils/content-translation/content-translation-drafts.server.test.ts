@@ -22,7 +22,6 @@ const request = vi.fn();
 describe('loadContentTranslationDrafts', () => {
   beforeEach(() => {
     request.mockResolvedValue({ contentTranslationDrafts: [DRAFT] });
-    // Only the method the loader calls: the full client is not needed.
     vi.mocked(getAuthenticatedGraphqlClient).mockResolvedValue({
       request,
     } as unknown as Awaited<ReturnType<typeof getAuthenticatedGraphqlClient>>);

@@ -28,14 +28,11 @@ const toEditableValues = (
     value,
   }));
 
-// react-query plumbing for content translations, keyed by a fully-qualified
-// content key (e.g. "PublicHomePage.XtmPlatform.Title").
 export const useContentTranslationApi = () => {
   const { mutateAsync, isPending: isSaving } =
     useSaveContentTranslationDraftMutation(portalGraphqlClient);
 
-  // Fetched imperatively when the dialog opens, not on mount, hence the
-  // generated fetcher rather than the useQuery hook.
+  // Fetched on demand, not on mount, hence the fetcher rather than the hook.
   const loadValuesForKey = useCallback(
     async (contentKey: string): Promise<ContentKeyValues> => {
       const data = await useContentTranslationForKeyQuery.fetcher(
