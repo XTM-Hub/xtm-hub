@@ -22,7 +22,13 @@ import {
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { Button } from '@filigran/design-system';
-import { AlertDialog, AlertDialogContent, SimpleTooltip } from '@filigran/ui';
+import { AlertDialog, AlertDialogContent } from '@filigran/ui';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/ui/clients';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { OneClickDeployMutation as OneClickDeployMutationType } from '@generated/OneClickDeployMutation.graphql';
 import { useCallback, useMemo, useState } from 'react';
@@ -205,21 +211,27 @@ const OneClickDeploy = ({
   );
 
   const container = isDeploymentDisabled ? (
-    <SimpleTooltip
-      title={
-        isConnectorResource(documentData)
-          ? t('Service.Connectors.Incompatible', {
-              platformToBeUpdated,
-              count: incompatiblePlatformsCount,
-              version: requiredProductVersion ?? '',
-            })
-          : incompatibleVersionMessage(
-              platformToBeUpdated,
-              requiredProductVersion ?? ''
-            )
-      }>
-      {buttonWithBadge}
-    </SimpleTooltip>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipContent>
+          {isConnectorResource(documentData)
+            ? t('Service.Connectors.Incompatible', {
+                platformToBeUpdated,
+                count: incompatiblePlatformsCount,
+                version: requiredProductVersion ?? '',
+              })
+            : incompatibleVersionMessage(
+                platformToBeUpdated,
+                requiredProductVersion ?? ''
+              )}
+        </TooltipContent>
+        <TooltipTrigger
+          className="w-fit"
+          style={{ cursor: 'unset' }}>
+          {buttonWithBadge}
+        </TooltipTrigger>
+      </Tooltip>
+    </TooltipProvider>
   ) : (
     buttonWithBadge
   );
