@@ -38,7 +38,7 @@ export const TrialGuidePage = () => {
   return (
     <>
       <BreadcrumbNav value={breadcrumbs} />
-      <p className="heading-sm bg-clip-text text-transparent bg-gradient-focus w-fit mb-xs mt-xl">
+      <p className="heading-sm bg-clip-text text-transparent bg-gradient-legacy-focus w-fit mb-xs mt-xl">
         {t('Service.TrialGuide.Eyebrow')}
       </p>
       <div className="flex items-start justify-between gap-m flex-wrap mb-xl">

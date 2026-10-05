@@ -23,7 +23,7 @@ export const RegisteredPlatformsSection = async ({
   }
 
   return (
-    <section className="w-full xl:w-3/8 bg-elevation-background-layer-1 p-l rounded-lg xl:max-h-96 xl:overflow-scroll">
+    <section className="w-full xl:w-3/8 bg-elevation-background-layer-1 p-l rounded xl:max-h-96 xl:overflow-scroll">
       <div className="flex flex-col">
         <span className="heading-xs text-filigran-brand-primary">
           {welcomeName

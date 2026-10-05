@@ -9,8 +9,9 @@ import { useEpicFilter } from '@/hooks/use-epic-filter';
 import { useEpicListContext } from '@/hooks/use-epic-list-context';
 import { useTranslate } from '@/hooks/use-translate';
 import { fileListToUploadableMap } from '@/relay/environment/fetch-form-data';
+import { Button } from '@filigran/design-system';
 import { AddIcon } from '@filigran/icon';
-import { Button, useToast } from '@filigran/ui';
+import { useToast } from '@filigran/ui';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import { useState } from 'react';
 import { useMutation } from 'react-relay';
@@ -125,8 +126,9 @@ export const EpicFormSheet = ({
           <></>
         ) : (
           triggerElement || (
-            <Button variant="tertiary">
-              <AddIcon className="size-4 mr-s" />
+            <Button
+              priority="tertiary"
+              startIcon={<AddIcon className="size-4" />}>
               {t('Utils.Create')}
             </Button>
           )

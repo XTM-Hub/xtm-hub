@@ -1,7 +1,7 @@
 import { useDeployResourceTitle } from '@/components/service/document/one-click-deploy/use-deploy-resource-title';
 import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import { AlertDialogTitle } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
 
@@ -33,7 +33,7 @@ const OnePlatformDisplay = ({
       </div>
       <div className="flex justify-end gap-s">
         <Button
-          variant="secondary"
+          priority="secondary"
           type="button"
           onClick={() => {
             setIsOpen(false);

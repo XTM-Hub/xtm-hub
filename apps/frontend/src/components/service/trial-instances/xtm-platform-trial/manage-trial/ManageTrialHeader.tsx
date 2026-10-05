@@ -4,9 +4,9 @@ import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
+import { Button, IconButton } from '@filigran/design-system';
 import { ArrowUpwardIcon, DeleteIcon } from '@filigran/icon';
 import {
-  Button,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -89,7 +89,7 @@ export const ManageTrialHeader = ({
   return (
     <header className="flex flex-col gap-l">
       <div className="flex flex-col gap-xs">
-        <p className="heading-sm w-fit bg-clip-text text-transparent bg-gradient-focus">
+        <p className="heading-sm w-fit bg-clip-text text-transparent bg-gradient-legacy-focus">
           {t('Service.Bundle.ManageTrial.Eyebrow')}
         </p>
         <h1 className="heading-2xl">{t('Service.Bundle.ManageTrial.Title')}</h1>
@@ -99,7 +99,7 @@ export const ManageTrialHeader = ({
       </div>
       <div className="flex flex-wrap items-center justify-between gap-m">
         <Button
-          variant="outline"
+          priority="secondary"
           className="gap-s border-elevation-border-default-layer-0"
           asChild>
           <Link href={backHref}>
@@ -120,14 +120,13 @@ export const ManageTrialHeader = ({
                   continueButtonDisabled={isBulkDeleting}
                   triggerElement={
                     <TooltipTrigger asChild>
-                      <Button
+                      <IconButton
                         type="button"
-                        variant="tertiary"
-                        size="icon"
+                        priority="tertiary"
                         aria-label={t('Utils.Delete')}
-                        disabled={isBulkDeleting}>
-                        <DeleteIcon className="h-4 w-4" />
-                      </Button>
+                        disabled={isBulkDeleting}
+                        icon={<DeleteIcon className="h-4 w-4" />}
+                      />
                     </TooltipTrigger>
                   }
                   onClickContinue={() => {
@@ -159,7 +158,7 @@ export const ManageTrialHeader = ({
                   style={{ cursor: 'unset' }}>
                   <div>
                     <Button
-                      variant="outline"
+                      priority="secondary"
                       disabled
                       className="border-elevation-border-default-layer-0">
                       {t('Service.Bundle.ManageTrial.GroupAction')}
@@ -173,15 +172,13 @@ export const ManageTrialHeader = ({
             </TooltipProvider>
           ) : (
             <Button
-              variant="outline"
+              priority="secondary"
               className="border-elevation-border-default-layer-0"
               onClick={() => setIsEditUsersDialogOpen(true)}>
               {t('Service.Bundle.ManageTrial.GroupAction')}
             </Button>
           )}
-          <Button
-            variant="default"
-            onClick={() => setIsAddUserDialogOpen(true)}>
+          <Button onClick={() => setIsAddUserDialogOpen(true)}>
             {t('Service.Bundle.ManageTrial.AddTrialUser')}
           </Button>
         </div>

@@ -8,8 +8,8 @@ import { ConnectorTypeLabel } from '@/components/service/integrations/connector-
 import { useConnectorTypeLabels } from '@/components/service/integrations/connector-type/use-connector-type-labels';
 import { useTranslate } from '@/hooks/use-translate';
 import { roundToNearest } from '@/lib/utils';
+import { Button } from '@filigran/design-system';
 import { LogoGitIcon, OpenInNewIcon } from '@filigran/icon';
-import { Button } from '@filigran/ui/servers';
 import { PlatformIdentifier } from '@graphql/generated';
 import Link from 'next/link';
 import * as React from 'react';
@@ -50,8 +50,8 @@ export const ShareableResourceConnectorDetails = ({
         <ShareableResourceDetailItem
           label={t('Service.Connectors.IntegrationDocumentationAndCode')}>
           <Button
-            className="p-0"
-            variant="link"
+            className="p-0 underline"
+            priority="tertiary"
             asChild>
             <Link
               href={connectorDetails.source_code}
@@ -66,8 +66,8 @@ export const ShareableResourceConnectorDetails = ({
         <ShareableResourceDetailItem
           label={t('Service.Connectors.VisitVendor')}>
           <Button
-            className="p-0 uppercase"
-            variant="link"
+            className="p-0 uppercase underline"
+            priority="tertiary"
             asChild>
             <Link
               href={connectorDetails.subscription_link}

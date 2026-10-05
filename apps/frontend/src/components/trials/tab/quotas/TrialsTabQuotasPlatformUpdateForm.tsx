@@ -4,8 +4,8 @@ import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { isEmpty } from '@/lib/utils';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   Form,
   FormControl,
   FormField,
@@ -123,7 +123,7 @@ export const TrialsTabQuotasPlatformUpdateForm = ({
           <SheetFooter className="justify-end pb-0">
             <div className="flex gap-s">
               <Button
-                variant="secondary"
+                priority="secondary"
                 type="button"
                 onClick={(e) => handleCloseSheet(e)}>
                 {t('Utils.Cancel')}

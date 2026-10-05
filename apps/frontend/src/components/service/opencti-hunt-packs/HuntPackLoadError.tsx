@@ -2,7 +2,7 @@
 
 import AppError from '@/components/AppError';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
 
 interface HuntPackLoadErrorProps {
   error: unknown;
@@ -29,7 +29,7 @@ const HuntPackLoadError = ({
         description={description}
       />
       <Button
-        variant="secondary"
+        priority="secondary"
         disabled={retrying}
         onClick={onRetry}>
         {t('Error.TryAgain')}

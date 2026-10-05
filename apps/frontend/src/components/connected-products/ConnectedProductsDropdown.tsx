@@ -4,9 +4,9 @@ import { ConnectedProductItem } from '@/components/connected-products/ConnectedP
 import { ConnectProductButton } from '@/components/connected-products/ConnectProductButton';
 import { useConnectedPlatforms } from '@/components/connected-products/useConnectedPlatforms';
 import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import { ArrowDropDownIcon } from '@filigran/icon';
 import {
-  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -33,16 +33,16 @@ export const ConnectedProductsDropdown = () => {
       onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="tertiary"
-          className="flex flex-row items-center gap-xs text-primary font-medium">
-          <span>
-            {t('Header.ConnectedProducts.Count', {
-              count: connectedPlatforms.length,
-            })}
-          </span>
-          <ArrowDropDownIcon
-            className={`h-5 w-5 shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-          />
+          priority="tertiary"
+          className="font-medium"
+          endIcon={
+            <ArrowDropDownIcon
+              className={`h-5 w-5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+            />
+          }>
+          {t('Header.ConnectedProducts.Count', {
+            count: connectedPlatforms.length,
+          })}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-80 p-0">
@@ -68,7 +68,7 @@ export const ConnectedProductsDropdown = () => {
         )}
         <div className="flex flex-col gap-s p-m">
           <ConnectProductButton
-            variant="tertiary"
+            priority="tertiary"
             onCloseDropdown={() => setOpen(false)}
           />
         </div>

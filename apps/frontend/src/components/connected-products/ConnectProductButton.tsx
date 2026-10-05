@@ -1,22 +1,22 @@
 'use client';
 
 import { AddIcon } from '@filigran/icon';
-import { Button } from '@filigran/ui';
 import { useState } from 'react';
 
 import ConnectProductFromHubModal, {
   ConnectProductOrigin,
 } from '@/components/registration/registerFromHub/ConnectProductFromHubModal';
 import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 
 interface ConnectProductButtonProps {
   onCloseDropdown?: () => void;
-  variant?: 'default' | 'secondary' | 'tertiary';
+  priority?: 'primary' | 'secondary' | 'tertiary';
 }
 
 export const ConnectProductButton = ({
   onCloseDropdown,
-  variant = 'default',
+  priority = 'primary',
 }: ConnectProductButtonProps) => {
   const t = useTranslate();
 
@@ -25,17 +25,14 @@ export const ConnectProductButton = ({
   return (
     <>
       <Button
-        variant={variant}
-        className="gap-s"
+        priority={priority}
+        endIcon={<AddIcon className="h-3 w-3" />}
         onClick={() => {
           setIsOpen(true);
         }}>
-        <span>
-          {t('Header.ConnectedProducts.ConnectPlatform', {
-            platformName: 'product',
-          })}
-        </span>
-        <AddIcon className="h-3 w-3" />
+        {t('Header.ConnectedProducts.ConnectPlatform', {
+          platformName: 'product',
+        })}
       </Button>
       <ConnectProductFromHubModal
         isOpen={isOpen}

@@ -3,9 +3,9 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { CountryCombobox } from '@/components/ui/country/Combobox';
 import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import {
   AutoForm,
-  Button,
   Card,
   CardContent,
   CardHeader,
@@ -80,7 +80,9 @@ export const ProfileFormEdit = ({ onSubmit }: ProfileFormEditProps) => {
             },
           }}>
           <div className="flex justify-end">
-            <Button aria-label={t('ProfilePage.UpdateProfile')}>
+            <Button
+              type="submit"
+              aria-label={t('ProfilePage.UpdateProfile')}>
               {t('Utils.Update')}
             </Button>
           </div>

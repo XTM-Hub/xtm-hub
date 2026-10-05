@@ -106,6 +106,8 @@
   },
   "Datatable": {
     "Asc": "Asc",
+    "ClearSelection": "Effacer la sélection",
+    "ColumnOptions": "Options de colonne",
     "Columns": "Colonnes",
     "Desc": "Desc",
     "GoFirstPage": "Aller à la première page",
@@ -815,6 +817,8 @@
   },
   "PendingUserListPage": {
     "TabTitle": "Requêtes utilisateurs ({usersCount})",
+    "Reject": "Refuser",
+    "Approve": "Accepter",
     "ActionSuccessApprove": "La demande utilisateur pour {email} a été acceptée",
     "ActionSuccessDeny": "La demande utilisateur pour {email} a été refusée",
     "WarningUserAccept": {
@@ -1163,12 +1167,14 @@
     },
     "CreationStatus": "Statut de la création",
     "Form": {
+      "AddImage": "Ajouter une image",
       "Author": "Auteur",
       "CapabilityAccessLabel": "Accès {name} : {description}",
       "ContainerImageLabel": "Image du conteneur",
       "CurrentLogo": "Logo actuel",
       "DatasheetUrlLabel": "Lien vers la fiche technique (url)",
       "BlogpostUrlLabel": "Lien vers l'article de blog (url)",
+      "DeleteImage": "Supprimer l'image",
       "DeleteSentence": "Après avoir cliqué sur ce bouton, cliquez sur VALIDER pour supprimer définitivement cette image.",
       "DemoUrlLabel": "Lien vers la démo (url)",
       "DescriptionLabel": "Description",

@@ -9,9 +9,9 @@ import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { TranslatableEnumSelectField } from '@/components/ui/TranslatableEnumSelectField';
 import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
+import { Button } from '@filigran/design-system';
 import { WarningIcon } from '@filigran/icon';
 import {
-  Button,
   Checkbox,
   Form,
   FormField,
@@ -272,7 +272,7 @@ export const XtmPlatformTrialForm = ({
                 />
                 <label
                   htmlFor="product-xtmone"
-                  className="content-base text-muted-foreground">
+                  className="content-base tracking-[0.75px] text-muted-foreground">
                   {t(`PlatformIdentifier.${PlatformIdentifier.Xtmone}`)}
                 </label>
               </div>

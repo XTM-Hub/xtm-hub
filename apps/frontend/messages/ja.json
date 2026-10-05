@@ -106,6 +106,8 @@
   },
   "Datatable": {
     "Asc": "として",
+    "ClearSelection": "選択を解除",
+    "ColumnOptions": "列のオプション",
     "Columns": "列",
     "Desc": "Des",
     "GoFirstPage": "最初のページへ",
@@ -815,6 +817,8 @@
   },
   "PendingUserListPage": {
     "TabTitle": "ユーザーリクエスト ({usersCount})",
+    "Reject": "拒否",
+    "Approve": "承認",
     "ActionSuccessApprove": "{email} のユーザー申請を承認しました",
     "ActionSuccessDeny": "{email} のユーザー申請を拒否しました",
     "WarningUserAccept": {
@@ -1163,12 +1167,14 @@
     },
     "CreationStatus": "作成ステータス",
     "Form": {
+      "AddImage": "画像を追加",
       "Author": "作成者",
       "CapabilityAccessLabel": "{name} アクセス: {description}",
       "ContainerImageLabel": "コンテナイメージ",
       "CurrentLogo": "現在のロゴ",
       "DatasheetUrlLabel": "データシート・リンク（URL）",
       "BlogpostUrlLabel": "ブログ記事リンク (url)",
+      "DeleteImage": "画像を削除",
       "DeleteSentence": "このボタンをクリックした後、VALIDATEをクリックすると、この画像が永久に削除されます。",
       "DemoUrlLabel": "デモリンク (url)",
       "DescriptionLabel": "説明",

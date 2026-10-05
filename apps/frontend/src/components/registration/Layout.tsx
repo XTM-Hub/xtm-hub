@@ -1,6 +1,6 @@
 import { RegistrationContext } from '@/components/registration/Context';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/ui/servers';
+import { Button } from '@filigran/design-system';
 import React, { useContext } from 'react';
 
 interface RegistrationLayoutProps {
@@ -22,7 +22,7 @@ export const RegistrationLayout = ({
       <div className="flex justify-end gap-s">
         {Boolean(cancel) && (
           <Button
-            variant="secondary"
+            priority="secondary"
             onClick={cancel}>
             {t(`Register.Back`, {
               platformIdentifier: displayedIdentifier,

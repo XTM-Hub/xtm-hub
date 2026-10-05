@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import {
   Card,
   CardContent,
@@ -8,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
 
 interface ProfileFormResetPasswordProps {
   onSubmit: () => void;
