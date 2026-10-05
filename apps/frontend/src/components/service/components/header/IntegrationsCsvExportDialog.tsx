@@ -320,7 +320,7 @@ export const IntegrationsCsvExportDialog = ({
         if (!value) resetAndClose();
         else setOpen(value);
       }}>
-      <DialogContent className="layer-2 max-h-[90vh] overflow-y-auto overflow-x-hidden">
+      <DialogContent className="layer-2 max-h-[90vh] grid-rows-[auto_minmax(0,1fr)] overflow-hidden">
         <DialogHeader>
           <DialogTitle>{t('Service.CsvExport.DialogTitle')}</DialogTitle>
           <DialogDescription className="sr-only">
@@ -329,6 +329,7 @@ export const IntegrationsCsvExportDialog = ({
         </DialogHeader>
 
         <AutoForm
+          className="flex h-full flex-col *:first:-mx-1 *:first:min-h-0 *:first:overflow-y-auto *:first:px-1"
           values={seededValues}
           formSchema={csvExportFormSchema}
           onSubmit={handleExport}
@@ -343,7 +344,7 @@ export const IntegrationsCsvExportDialog = ({
                   <FormLabel>{t('Service.CsvExport.ColumnsLabel')}</FormLabel>
                   <FormControl>
                     <MultiSelectFormField
-                      className="w-full min-w-0 max-w-md whitespace-nowrap"
+                      className="w-full min-w-0 max-w-md whitespace-nowrap *:min-w-0"
                       data-testid="integrations-csv-export-columns"
                       options={columnOptions}
                       defaultValue={field.value}
