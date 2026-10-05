@@ -340,11 +340,11 @@ const SelectUsersFormField = React.forwardRef<
                       }}
                       className="cursor-pointer">
                       {isSelected ? (
-                        <div className="mr-2 flex h-4 w-4 min-w-4 items-center justify-center rounded-sm border border-primary bg-primary text-primary-foreground">
+                        <div className="mr-2 flex h-4 w-4 min-w-4 items-center justify-center rounded-none border border-primary bg-primary text-primary-foreground">
                           <CheckIcon className="h-4 w-4" />
                         </div>
                       ) : (
-                        <div className="mr-2 flex h-4 w-4 min-w-4 items-center justify-center rounded-sm border border-primary opacity-50"></div>
+                        <div className="mr-2 flex h-4 w-4 min-w-4 items-center justify-center rounded-none border border-primary opacity-50"></div>
                       )}
                       <span>{String(option.label)}</span>
                     </CommandItem>

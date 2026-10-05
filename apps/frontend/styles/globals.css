@@ -26,6 +26,27 @@ body[data-theme='Dark'] {
   --color-filigran-decoration: hsl(var(--blue-500) / 0.3);
   --hover-background: var(--color-filigran-brand-primary-transparency);
 }
+
+/*
+ * Bridge until the legacy filigran-ui theme is removed (#3507). It redefines the design-system
+ * primitives (--gray-900, …) as bare HSL triplets and --radius-sm as 0, which invalidates the
+ * design-system tokens built on them. Point the tokens the design-system Button uses at the
+ * legacy equivalents, under the same selectors the legacy theme uses to switch modes.
+ */
+@theme inline {
+  --radius-sm: 0.25rem;
+}
+
+:root,
+.dark,
+body[data-theme='dark'],
+body[data-theme='Dark'] {
+  --text-negative-primary: var(--color-text-negative-primary);
+  --text-default-primary: var(--color-text-default-primary);
+  --text-default-disabled: var(--color-text-default-disabled);
+  --bg-elevation-default: hsl(var(--background));
+}
+
 @source '../src/components/filigran-ui/**/*.{ts,tsx}';
 /* Tailwind skips node_modules: scan the design-system bundle so its component classes get generated */
 @source '../../../node_modules/@filigran/design-system/dist/**/*.mjs';
