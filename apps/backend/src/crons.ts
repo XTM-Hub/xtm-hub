@@ -1,8 +1,10 @@
 import cron, { ScheduledTask } from 'node-cron';
+import portalConfig from './config';
 import { requestContext } from './context/request.context';
 import { DeploymentApp } from './modules/deployment/deployment.app';
 import { ServiceGroupApp } from './modules/deployment/group/service-group.app';
 import { NewsFeedApp } from './modules/news-feed/news-feed.app';
+import { UserAccountStatusSyncApp } from './modules/organization-management/user/user-account-status-sync/user-account-status-sync.app';
 import { UserOrganizationApp } from './modules/organization-management/user/user-organization/user-organization.app';
 import { ManifestApp } from './modules/shareable-resource/manifest/manifest.app';
 import { EpicApp } from './modules/xtm-platform-roadmap/epic.app';
@@ -85,6 +87,17 @@ const resumeStrandedManifestRebuilds = async (): Promise<void> => {
   });
 };
 
+const syncUserAccountStatus = async (): Promise<void> => {
+  logApp.info('Running syncUserAccountStatus job');
+  await requestContext.run(CRONS_USER_CONTEXT, async () => {
+    try {
+      await UserAccountStatusSyncApp.syncUserAccountStatusWithAuth0();
+    } catch (error) {
+      logApp.error('syncUserAccountStatus job failed:', { error });
+    }
+  });
+};
+
 export const initCronJobs = () => {
   logApp.info('Initializing cron jobs');
   scheduledTasks.push(cron.schedule('0 2 * * *', expireTrials));
@@ -99,6 +112,16 @@ export const initCronJobs = () => {
   scheduledTasks.push(
     cron.schedule('*/15 * * * *', resumeStrandedManifestRebuilds)
   );
+  if (portalConfig.auth0_sync.enabled) {
+    // Environments restored from production share the Auth0 tenant and keep
+    // real accounts, so the sync is enabled explicitly per environment.
+    // noOverlap: a run still in progress makes the next tick skip (per process).
+    scheduledTasks.push(
+      cron.schedule('0 * * * *', syncUserAccountStatus, { noOverlap: true })
+    );
+  } else {
+    logApp.info('Auth0 sync cron not scheduled: disabled for this environment');
+  }
 };
 
 export const stopCronJobs = () => {

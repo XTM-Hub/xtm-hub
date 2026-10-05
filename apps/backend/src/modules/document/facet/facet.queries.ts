@@ -1,3 +1,4 @@
+import { Knex } from 'knex';
 import { applyLogicalFilter, db, dbRaw } from '../../../../knexfile';
 import {
   DocumentMetadataKeyCode,
@@ -26,12 +27,17 @@ export const toFacetBuckets = (rows: FacetRow[]): FacetBucket[] =>
     count: Number(count),
   }));
 
-export const buildScopedDocumentIdsQuery = (
-  { serviceInstanceId, documentType, logicalFilters }: LoadDocumentFacetInput,
+type BaseScopeInput = Pick<
+  LoadDocumentFacetInput,
+  'serviceInstanceId' | 'documentType'
+>;
+
+const applyBaseDocumentScopeRestrictions = <T extends object>(
+  query: Knex.QueryBuilder<T>,
+  { serviceInstanceId, documentType }: BaseScopeInput,
   restrictToActive: boolean
 ) => {
-  const query = db<Document>('Document')
-    .select('Document.id')
+  query
     .tap(restrictDocumentToAccessibleServiceInstance)
     .modify((builder) => {
       if (restrictToActive) {
@@ -51,10 +57,33 @@ export const buildScopedDocumentIdsQuery = (
       this.select(dbRaw('1'))
         .from('Document_Children')
         .whereRaw('"Document_Children"."child_document_id" = "Document"."id"');
-    })
-    .groupBy('Document.id');
+    });
+  return query;
+};
+
+export const buildScopedDocumentIdsQuery = (
+  { serviceInstanceId, documentType, logicalFilters }: LoadDocumentFacetInput,
+  restrictToActive: boolean
+) => {
+  const query = db<Document>('Document').select('Document.id');
+  applyBaseDocumentScopeRestrictions(
+    query,
+    { serviceInstanceId, documentType },
+    restrictToActive
+  );
+  query.groupBy('Document.id');
 
   applyLogicalFilter('Document', query, logicalFilters ?? undefined);
+  return query;
+};
+
+export const buildFacetBaseScopeQuery = (
+  input: BaseScopeInput,
+  restrictToActive: boolean
+) => {
+  const query = db<Document>('Document').select('Document.*');
+  applyBaseDocumentScopeRestrictions(query, input, restrictToActive);
+  query.groupBy('Document.id');
   return query;
 };
 
