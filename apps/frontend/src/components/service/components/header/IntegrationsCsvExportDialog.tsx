@@ -320,7 +320,7 @@ export const IntegrationsCsvExportDialog = ({
         if (!value) resetAndClose();
         else setOpen(value);
       }}>
-      <DialogContent className="layer-2">
+      <DialogContent className="layer-2 max-h-[90vh] overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <DialogTitle>{t('Service.CsvExport.DialogTitle')}</DialogTitle>
           <DialogDescription className="sr-only">

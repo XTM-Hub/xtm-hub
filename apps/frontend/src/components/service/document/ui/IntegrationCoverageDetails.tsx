@@ -1,7 +1,12 @@
 import { ShareableResourceDetailItem } from '@/components/service/document/ui/ShareableResourceDetailItem';
 import { useCoverageObjectTypeLabel } from '@/components/service/form/UseCoverageObjectTypes';
 import { useTranslate } from '@/hooks/use-translate';
-import { SimpleTooltip } from '@filigran/ui';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/ui/clients';
 
 export interface IntegrationCoverage {
   covered_object_types?: ReadonlyArray<string> | null;
@@ -47,20 +52,28 @@ export const IntegrationCoverageDetails = ({
         </ShareableResourceDetailItem>
       ))}
       {coverage.coverage_inferred && (
-        <SimpleTooltip
-          title={t(
-            inferredEmpty
-              ? 'Service.ShareableResources.Details.CoverageInferredEmptyTooltip'
-              : 'Service.ShareableResources.Details.CoverageInferredTooltip'
-          )}>
-          <span className="txt-sub-content underline decoration-dotted underline-offset-2 w-fit">
-            {t(
-              inferredEmpty
-                ? 'Service.ShareableResources.Details.CoverageInferredEmpty'
-                : 'Service.ShareableResources.Details.CoverageInferred'
-            )}
-          </span>
-        </SimpleTooltip>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipContent>
+              {t(
+                inferredEmpty
+                  ? 'Service.ShareableResources.Details.CoverageInferredEmptyTooltip'
+                  : 'Service.ShareableResources.Details.CoverageInferredTooltip'
+              )}
+            </TooltipContent>
+            <TooltipTrigger
+              className="w-fit text-left"
+              style={{ cursor: 'unset' }}>
+              <span className="txt-sub-content underline decoration-dotted underline-offset-2">
+                {t(
+                  inferredEmpty
+                    ? 'Service.ShareableResources.Details.CoverageInferredEmpty'
+                    : 'Service.ShareableResources.Details.CoverageInferred'
+                )}
+              </span>
+            </TooltipTrigger>
+          </Tooltip>
+        </TooltipProvider>
       )}
     </>
   );
