@@ -23,7 +23,7 @@ const Calendar = ({
         month: 'space-y-4',
         caption: 'flex justify-center pt-1 relative items-center',
         caption_label: 'text-sm font-medium',
-        nav: 'space-x-1 flex items-center',
+        nav: 'gap-1 flex items-center',
         nav_button: cn(
           buttonVariants({ priority: 'secondary' }),
           'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100'
