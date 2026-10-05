@@ -78,6 +78,7 @@ export enum BadRequestErrorCode {
   XtmOneRoleRequired = 'XTM_ONE_ROLE_REQUIRED',
   InvalidContentTranslationKey = 'INVALID_CONTENT_TRANSLATION_KEY',
   UserStatusChangedConcurrently = 'USER_STATUS_CHANGED_CONCURRENTLY',
+  TooManyEmails = 'TOO_MANY_EMAILS',
 }
 
 export enum UnknownErrorCode {
