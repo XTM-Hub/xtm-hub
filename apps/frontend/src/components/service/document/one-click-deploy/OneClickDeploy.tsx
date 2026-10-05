@@ -173,7 +173,9 @@ const OneClickDeploy = ({
 
   const isDeploymentDisabled = useMemo(() => {
     return (
-      !eeBlocked && platforms.length === 1 && incompatiblePlatformsCount === 1
+      !eeBlocked &&
+      platforms.length > 0 &&
+      incompatiblePlatformsCount === platforms.length
     );
   }, [eeBlocked, platforms, incompatiblePlatformsCount]);
 

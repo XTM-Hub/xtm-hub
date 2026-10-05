@@ -61,6 +61,15 @@ describe('OneClickDeploy - version floor of a hunt pack', () => {
     expect(deployButton()).toBeDisabled();
   });
 
+  it('should disable deployment when every connected OpenCTI is older than the pack', () => {
+    renderWithPlatforms([
+      platform('production', 'Production', '7.261002.0'),
+      platform('staging', 'Staging', '7.261002.0-lts'),
+    ]);
+
+    expect(deployButton()).toBeDisabled();
+  });
+
   it('should allow deployment when the only OpenCTI meets the pack version', async () => {
     const { user } = renderWithPlatforms([
       platform('production', 'Production', '7.261003.0'),
