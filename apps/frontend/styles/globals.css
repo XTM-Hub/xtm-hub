@@ -38,6 +38,17 @@ body[data-theme='Dark'] {
   --hover-background: var(--color-filigran-brand-primary-transparency);
 }
 
+/* The design system declares the input tokens on :root only, which freezes them at layer 0:
+   re-declare them per layer so inputs follow the elevation of the surface they sit on */
+.layer-0,
+.layer-1,
+.layer-2,
+.layer-3 {
+  --bg-input-default: var(--bg-elevation-highlight);
+  --bg-input-disabled: var(--bg-elevation-disabled);
+  --bg-input-hover: var(--bg-elevation-hover);
+}
+
 @source '../src/components/filigran-ui/**/*.{ts,tsx}';
 /* Tailwind skips node_modules: scan the design-system bundle so its component classes get generated */
 @source '../../../node_modules/@filigran/design-system/dist/**/*.mjs';
