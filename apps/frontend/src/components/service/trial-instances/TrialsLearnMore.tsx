@@ -1,6 +1,7 @@
 'use client';
 
 import { TrialsStorageLimitation } from '@/components/service/trial-instances/TrialsStorageLimitation';
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import {
   AnalyticsIcon,
@@ -9,7 +10,6 @@ import {
   ArrowsOutputIcon,
 } from '@filigran/icon';
 import { PlatformIdentifier } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import React from 'react';
 
@@ -30,7 +30,7 @@ interface H2Props {
 }
 
 export const TrialsLearnMore = ({ platformIdentifier }: H2Props) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const baseTranslationKey = `Service.Trials.LearnMore.${platformIdentifier}`;
   return (
     <>

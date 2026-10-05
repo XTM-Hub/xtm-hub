@@ -1,11 +1,11 @@
 import { ServiceListDisplayMode } from '@/components/service/components/header/ServiceListHeader';
 import IntegrationAccordion from '@/components/ui/shareable-resource/IntegrationAccordion';
 import { PublicShareableDocumentList } from '@/components/ui/shareable-resource/PublicShareableDocumentList';
+import { useTranslate } from '@/hooks/use-translate';
 import { isIntegrationItem } from '@/utils/shareable-resources/shareable-resources.types';
 import { publicDocumentListItemFragment$data } from '@generated/publicDocumentListItemFragment.graphql';
 import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
 import { IntegrationType } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { Fragment, useMemo } from 'react';
 
 interface PublicShareableResourceListProps {
@@ -21,7 +21,7 @@ export const PublicShareableResourceList = ({
   baseUrl,
   displayMode,
 }: PublicShareableResourceListProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   const documentsByIntegrationType = useMemo(() => {
     return documents.reduce<

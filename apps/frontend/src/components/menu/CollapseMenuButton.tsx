@@ -1,7 +1,7 @@
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { LeftPanelCloseIcon, LeftPanelOpenIcon } from '@filigran/icon';
 import { Button } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 
 interface CollapseMenuButtonProps {
   open: boolean;
@@ -12,7 +12,7 @@ export const CollapseMenuButton = ({
   open,
   handleOpenMenu,
 }: CollapseMenuButtonProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <div className="shrink-0 pb-s">
       <Button

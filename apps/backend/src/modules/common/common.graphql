@@ -24,6 +24,12 @@ enum FilterKey {
   solution_category
 }
 
+enum Locale {
+  en
+  fr
+  ja
+}
+
 enum LogicalOperator {
   AND
   OR

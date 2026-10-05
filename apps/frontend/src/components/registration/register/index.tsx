@@ -6,6 +6,7 @@ import { RegisterOrganizationForm } from '@/components/registration/register/Org
 import { RegisterPlatform } from '@/components/registration/register/register.graphql';
 import { RegisterStateSucceeded } from '@/components/registration/register/Succeeded';
 import { RegisterStateTooManyOrganizations } from '@/components/registration/register/TooManyOrganizations';
+import { useTranslate } from '@/hooks/use-translate';
 import { toast } from '@filigran/ui/clients';
 import OrganizationListUserOrganizationsQueryGraphql, {
   organizationListUserOrganizationsQuery,
@@ -24,7 +25,6 @@ import {
   registerPlatformMutation,
 } from '@generated/registerPlatformMutation.graphql';
 import { PlatformRegistrationStatus } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import {
   ReactNode,
   useCallback,
@@ -84,7 +84,7 @@ const initialState: State = {
 };
 
 export const Register = ({ queryRef, platform }: RegisterProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { displayedIdentifier, identifier } = useContext(RegistrationContext);
   const [state, dispatch] = useReducer(reducer, initialState);
 

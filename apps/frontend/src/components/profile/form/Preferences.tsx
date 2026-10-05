@@ -2,6 +2,7 @@
 
 import { MeEditUserMutation } from '@/components/me/me.graphql';
 import { SettingsContext } from '@/components/settings/EnvPortalContext';
+import { useTranslate } from '@/hooks/use-translate';
 import { Locale, locales, publicLocales } from '@/i18n/config';
 import { setUserLocale } from '@/i18n/locale';
 import {
@@ -15,13 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@filigran/ui';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useContext } from 'react';
 import { useMutation } from 'react-relay';
 
 export const ProfileFormPreferences = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { settings } = useContext(SettingsContext);
   const isDevelopmentEnvSetting = settings?.environment === 'development';
   const locale = useLocale();

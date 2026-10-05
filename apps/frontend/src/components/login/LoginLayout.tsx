@@ -4,8 +4,8 @@ import LoginMessage from '@/components/login/LoginMessage';
 import LoginTitleForm from '@/components/login/LoginTitle';
 import { SettingsContext } from '@/components/settings/EnvPortalContext';
 import useDecodedQuery from '@/hooks/use-decoded-query';
+import { useTranslate } from '@/hooks/use-translate';
 import { useToast } from '@filigran/ui/clients';
-import { useTranslations } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
 import { useContext, useEffect } from 'react';
 
@@ -16,7 +16,7 @@ export const LoginLayout = ({}) => {
   const { error, redirect } = useDecodedQuery();
   const currentPath = usePathname();
   const { toast } = useToast();
-  const t = useTranslations();
+  const t = useTranslate();
 
   const localProvider = settings?.platform_providers?.find(
     (p) => p.provider === 'local'

@@ -11,6 +11,7 @@ import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { cn } from '@/lib/utils';
 import { APP_PATH } from '@/utils/path/constant';
 
+import { useTranslate } from '@/hooks/use-translate';
 import { MenuIcon } from '@filigran/icon';
 import {
   Avatar,
@@ -21,7 +22,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@filigran/ui/clients';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 import { OrganizationCapability } from '@graphql/generated';
@@ -40,7 +40,7 @@ const HeaderComponent = ({ displayLogo }: HeaderComponentProps) => {
   const [open, setOpen] = useState(false);
   const currentPath = usePathname();
   const router = useRouter();
-  const t = useTranslations();
+  const t = useTranslate();
   const queryClient = useQueryClient();
   const [commitLogoutMutation] = useMutation(LogoutMutation);
 

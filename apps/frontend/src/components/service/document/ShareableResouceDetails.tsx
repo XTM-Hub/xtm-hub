@@ -1,3 +1,5 @@
+'use client';
+
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
 import { ShareableResourceDetailsLink } from '@/components/service/document/ShareableResourceDetailsLink';
 import { ShareableResourceBasicInformation } from '@/components/service/document/ui/ShareableResourceBasicInformation';
@@ -8,6 +10,7 @@ import {
   ShareableResourceEntityTypes,
 } from '@/components/service/document/ui/ShareableResourceEntityTypes';
 import { UserDisplay } from '@/components/ui/UserDisplay';
+import { useTranslate } from '@/hooks/use-translate';
 import { roundToNearest } from '@/lib/utils';
 import { useDateFormatter } from '@/utils/date';
 import { platformIdentifierMappedByShareableResourceType } from '@/utils/services';
@@ -23,7 +26,6 @@ import {
 import { LogoFiligranIcon } from '@filigran/icon';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { DocumentMetadataKeyCode, IntegrationType } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
 interface ShareableResourceDetailsProps {
   documentData: documentItem_fragment$data | PublicDocumentDetailsData;
@@ -47,7 +49,7 @@ const ShareableResourceDetails = ({
   documentData,
   downloadNumber,
 }: ShareableResourceDetailsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const formatDate = useDateFormatter();
   const platformIdentifier =
     platformIdentifierMappedByShareableResourceType[

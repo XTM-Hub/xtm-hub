@@ -1,5 +1,6 @@
 import { AddSubscriptionCapabilityMutation } from '@/components/subcription/subscription.graphql';
 import { BadgeOverflow } from '@/components/ui/BadgeOverflowCounter';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   Button,
   Checkbox,
@@ -12,7 +13,6 @@ import {
 } from '@filigran/ui';
 import { subscriptionAddCapabilityMutation } from '@generated/subscriptionAddCapabilityMutation.graphql';
 import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useMutation } from 'react-relay';
 
@@ -31,7 +31,7 @@ export const ServiceSlugAddCapabilities = ({
   setOpen,
   onCompleted,
 }: ServiceSlugAddCapabilitiesProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [selectedCapabilityIds, setSelectedCapabilityIds] = useState<
     Set<string>
   >(new Set());

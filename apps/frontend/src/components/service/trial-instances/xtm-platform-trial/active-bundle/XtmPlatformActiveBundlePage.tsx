@@ -9,6 +9,7 @@ import { useXtmoneIntegrationStatus } from '@/components/service/trial-instances
 import { XtmPlatformTrialLimitations } from '@/components/service/trial-instances/xtm-platform-trial/shared/XtmPlatformTrialLimitations';
 import useGranted from '@/hooks/use-granted';
 import { useAdminByPass } from '@/hooks/use-portal-capability';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import {
@@ -17,10 +18,9 @@ import {
   PlatformIdentifier,
   useXtmPlatformBundleQuery,
 } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
 export const XtmPlatformActiveBundlePage = () => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   const isAdminByPass = useAdminByPass();
   const canAdministrateOrganization = useGranted(

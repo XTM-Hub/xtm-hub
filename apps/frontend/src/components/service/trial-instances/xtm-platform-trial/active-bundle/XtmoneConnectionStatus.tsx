@@ -2,13 +2,13 @@
 
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
 import { XtmoneStatusState } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/useXtmoneIntegrationStatus';
+import { useTranslate } from '@/hooks/use-translate';
 import { CheckCircleIcon, CircleCloseIcon } from '@filigran/icon';
 import { Skeleton } from '@filigran/ui';
 import {
   PlatformIdentifier,
   XtmoneIntegrationStatusEntryFragment,
 } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
 interface XtmoneConnectionStatusProps {
   status: XtmoneStatusState;
@@ -23,7 +23,7 @@ const StatusIcon = ({
   isLoading: boolean;
   unavailable: boolean;
 }) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   if (isLoading) {
     return <Skeleton className="size-4 rounded-full" />;
@@ -76,7 +76,7 @@ const StatusRow = ({
 export const XtmoneConnectionStatus = ({
   status,
 }: XtmoneConnectionStatusProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { data, isLoading, isError, hasUrl } = status;
   const unavailable = !hasUrl || isError || !data;
 

@@ -1,3 +1,4 @@
+import { useTranslate } from '@/hooks/use-translate';
 import {
   Button,
   Dialog,
@@ -8,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 import { ReactNode } from 'react';
 
 interface DialogInformativeProps {
@@ -34,7 +34,7 @@ export const DialogInformative = ({
   buttonText = 'Utils.Close',
   showFooter = true,
 }: DialogInformativeProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <Dialog

@@ -5,7 +5,7 @@ import {
   SERVICES,
 } from '../../../../../tests/tests.const';
 import {
-  SeoServiceInstanceLanguage,
+  Locale,
   SeoServiceInstanceMetadata,
 } from '../../../../__generated__/resolvers-types';
 import { SeoServiceInstanceApp } from './seo-service-instance.app';
@@ -18,7 +18,7 @@ describe('seo-service-instance.resolver', () => {
     const expected: SeoServiceInstanceMetadata[] = [
       {
         service_instance_id: serviceInstanceId,
-        language: SeoServiceInstanceLanguage.En,
+        language: Locale.En,
         meta_title: 'meta title',
         meta_description: 'meta description',
       },
@@ -33,7 +33,7 @@ describe('seo-service-instance.resolver', () => {
       {},
       {
         service_instance_id: serviceInstanceId,
-        language: SeoServiceInstanceLanguage.En,
+        language: Locale.En,
       },
       contextSimpleUserFiligran2,
       GRAPHQL_RESOLVE_INFO
@@ -44,7 +44,7 @@ describe('seo-service-instance.resolver', () => {
       SeoServiceInstanceApp.loadSeoServiceInstancesBy
     ).toHaveBeenCalledWith({
       service_instance_id: serviceInstanceId,
-      language: SeoServiceInstanceLanguage.En,
+      language: Locale.En,
     });
     expect(result).toEqual(expected);
   });
@@ -55,13 +55,13 @@ describe('seo-service-instance.resolver', () => {
     const expected: SeoServiceInstanceMetadata[] = [
       {
         service_instance_id: serviceInstanceId,
-        language: SeoServiceInstanceLanguage.En,
+        language: Locale.En,
         meta_title: 'meta title en',
         meta_description: 'meta description en',
       },
       {
         service_instance_id: serviceInstanceId,
-        language: SeoServiceInstanceLanguage.Ja,
+        language: Locale.Ja,
         meta_title: 'meta title ja',
         meta_description: 'meta description ja',
       },
@@ -95,7 +95,7 @@ describe('seo-service-instance.resolver', () => {
     const serviceInstanceId = SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID;
     const expected: SeoServiceInstanceMetadata = {
       service_instance_id: serviceInstanceId,
-      language: SeoServiceInstanceLanguage.Ja,
+      language: Locale.Ja,
       meta_title: 'updated',
       meta_description: 'meta description',
     };
@@ -109,7 +109,7 @@ describe('seo-service-instance.resolver', () => {
       {},
       {
         service_instance_id: serviceInstanceId,
-        language: SeoServiceInstanceLanguage.Ja,
+        language: Locale.Ja,
         input: {
           meta_title: 'updated',
           meta_description: 'meta description',
@@ -123,7 +123,7 @@ describe('seo-service-instance.resolver', () => {
     expect(SeoServiceInstanceApp.editSeoServiceInstanceBy).toHaveBeenCalledWith(
       {
         service_instance_id: serviceInstanceId,
-        language: SeoServiceInstanceLanguage.Ja,
+        language: Locale.Ja,
         input: {
           meta_title: 'updated',
           meta_description: 'meta description',

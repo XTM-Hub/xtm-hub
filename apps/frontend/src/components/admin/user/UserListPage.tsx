@@ -9,10 +9,10 @@ import UserList from '@/components/admin/user/UserList';
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { notificationPendingUserQueryFilters } from '@/components/notification/NotificationButton';
 import useAdminPath from '@/hooks/use-admin-path';
+import { useTranslate } from '@/hooks/use-translate';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@filigran/ui';
 import { userPendingList_users$key } from '@generated/userPendingList_users.graphql';
 import { userPendingListQuery } from '@generated/userPendingListQuery.graphql';
-import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { createContext, useContext, useState } from 'react';
 import { useLazyLoadQuery, useRefetchableFragment } from 'react-relay';
@@ -40,7 +40,7 @@ const UserListContext = createContext<
 >(undefined);
 
 const UserListPage = ({ organization }: UserListPageProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const isAdminPath = useAdminPath();
   const { me } = useContext(PortalContext);
 

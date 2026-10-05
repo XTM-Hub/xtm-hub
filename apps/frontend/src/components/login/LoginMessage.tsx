@@ -1,8 +1,8 @@
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 import Link from 'next/link';
 
 const LoginMessage = () => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <div className="bg-elevation-background-layer-1 border border-border-light rounded w-full p-xl text-sm text-center">

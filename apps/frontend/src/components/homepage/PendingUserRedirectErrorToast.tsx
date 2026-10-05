@@ -1,15 +1,15 @@
 'use client';
 
 import { PENDING_USER_UNAUTHORIZED_ERROR } from '@/components/homepage/pending-user-redirect-error.constants';
+import { useTranslate } from '@/hooks/use-translate';
 import { useToast } from '@filigran/ui/clients';
-import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 
 const ERROR_PARAM = 'error';
 
 export const PendingUserRedirectErrorToast = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const pathname = usePathname();
