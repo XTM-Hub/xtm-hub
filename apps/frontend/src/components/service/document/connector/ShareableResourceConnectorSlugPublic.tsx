@@ -4,6 +4,7 @@ import ShareableResourceCarousel from '@/components/service/document/ui/Shareabl
 import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
+import { getTranslate } from '@/hooks/get-translate';
 import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
 import {
   ConnectorFields,
@@ -17,7 +18,6 @@ import {
 import { MarkdownRenderer } from '@filigran/ui/clients';
 import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 
 interface ShareableResourceConnectorSlugPublicProps {
@@ -27,12 +27,12 @@ interface ShareableResourceConnectorSlugPublicProps {
   pageUrl: string;
 }
 
-const ShareableResourceConnectorSlugPublic = ({
+const ShareableResourceConnectorSlugPublic = async ({
   documentData,
   pageUrl,
   serviceInstance,
 }: ShareableResourceConnectorSlugPublicProps) => {
-  const t = useTranslations();
+  const t = await getTranslate();
   const logo = findDocumentLogo(documentData);
   const carouselImages = filterDocumentImages(documentData);
 
