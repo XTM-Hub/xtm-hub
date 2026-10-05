@@ -80,7 +80,9 @@ export const ProfileFormEdit = ({ onSubmit }: ProfileFormEditProps) => {
             },
           }}>
           <div className="flex justify-end">
-            <Button aria-label={t('ProfilePage.UpdateProfile')}>
+            <Button
+              type="submit"
+              aria-label={t('ProfilePage.UpdateProfile')}>
               {t('Utils.Update')}
             </Button>
           </div>

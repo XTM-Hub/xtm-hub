@@ -49,7 +49,7 @@ interface MultiSelectFormFieldProps<
   T extends Record<string, any> = Record<string, any>,
 >
   extends
-    React.ButtonHTMLAttributes<HTMLButtonElement>,
+    Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'color'>,
     VariantProps<typeof _multiSelectVariants> {
   asChild?: boolean;
   options: T[];

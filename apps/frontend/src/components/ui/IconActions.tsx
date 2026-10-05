@@ -31,7 +31,10 @@ interface IconActionContextProps {
   setMenuOpen: Dispatch<SetStateAction<boolean>>;
 }
 
-type IconActionsButtonProps = ButtonHTMLAttributes<HTMLButtonElement>;
+type IconActionsButtonProps = Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  'color'
+>;
 
 export const IconActionContext = createContext<IconActionContextProps>({
   setMenuOpen: () => {},

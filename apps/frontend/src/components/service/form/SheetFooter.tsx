@@ -20,7 +20,7 @@ export const ServiceFormSheetFooter = ({
           {t('Utils.Cancel')}
         </Button>
 
-        <Button>{t('Utils.Validate')}</Button>
+        <Button type="submit">{t('Utils.Validate')}</Button>
       </div>
     </SheetFooter>
   );

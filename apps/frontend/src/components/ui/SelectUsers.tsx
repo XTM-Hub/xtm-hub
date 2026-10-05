@@ -29,7 +29,10 @@ import { Button } from '@filigran/design-system';
 import { readInlineData } from 'react-relay';
 import { useDebounceCallback } from 'usehooks-ts';
 
-interface SelectUsersFormFieldProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface SelectUsersFormFieldProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'color'
+> {
   defaultValue?: string;
   onValueChange: (value: string) => void;
   disabled?: boolean;
