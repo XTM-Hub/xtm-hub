@@ -81,6 +81,9 @@ const COLUMN_ENUM_MAP = {
   ProductVersion: {
     product: 'PlatformIdentifier',
   },
+  SEO_ServiceInstance: {
+    language: 'Locale',
+  },
   User: {
     status: 'UserAccountStatus',
   },

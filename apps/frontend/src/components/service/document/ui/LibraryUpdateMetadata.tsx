@@ -17,8 +17,8 @@ import {
 } from '@filigran/ui';
 import { toast } from '@filigran/ui/clients';
 import {
+  Locale as GraphqlLocale,
   PortalCapability,
-  SeoServiceInstanceLanguage,
   useEditSeoServiceInstanceMetadataMutation,
   useServiceInstanceSeoMetadataByIdQuery,
 } from '@graphql/generated';
@@ -30,17 +30,15 @@ const SEO_METADATA_MAX_LENGTH = 155;
 const optionalSeoField = z.string().max(SEO_METADATA_MAX_LENGTH).optional();
 
 type SeoLocaleConfig = {
-  language: SeoServiceInstanceLanguage;
+  language: GraphqlLocale;
   titleField: string;
   descriptionField: string;
   label: string;
 };
 
-const SEO_LANGUAGES = Object.values(SeoServiceInstanceLanguage);
+const SEO_LANGUAGES = Object.values(GraphqlLocale);
 
-const getSeoLanguageFromLocale = (
-  locale: Locale
-): SeoServiceInstanceLanguage => {
+const getSeoLanguageFromLocale = (locale: Locale): GraphqlLocale => {
   const language = SEO_LANGUAGES.find((value) => value === locale);
   if (!language) {
     throw new Error(`Unsupported SEO locale: ${locale}`);

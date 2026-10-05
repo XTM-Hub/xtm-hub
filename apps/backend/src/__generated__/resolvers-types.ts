@@ -1335,7 +1335,7 @@ export type MutationEditOrganizationArgs = {
 
 export type MutationEditSeoServiceInstanceArgs = {
   input: EditSeoServiceInstanceInput;
-  language: SeoServiceInstanceLanguage;
+  language: Locale;
   service_instance_id: Scalars['ServiceInstanceId']['input'];
 };
 
@@ -2146,7 +2146,7 @@ export type QuerySeoServiceInstanceArgs = {
 
 
 export type QuerySeoServiceInstanceMetadataArgs = {
-  language?: InputMaybe<SeoServiceInstanceLanguage>;
+  language?: InputMaybe<Locale>;
   service_instance_id: Scalars['ServiceInstanceId']['input'];
 };
 
@@ -2424,15 +2424,9 @@ export type SeoServiceInstance = Node & {
   tags?: Maybe<Array<ServiceInstanceTag>>;
 };
 
-export enum SeoServiceInstanceLanguage {
-  En = 'en',
-  Fr = 'fr',
-  Ja = 'ja'
-}
-
 export type SeoServiceInstanceMetadata = {
   __typename?: 'SeoServiceInstanceMetadata';
-  language: SeoServiceInstanceLanguage;
+  language: Locale;
   meta_description: Scalars['String']['output'];
   meta_title: Scalars['String']['output'];
   service_instance_id: Scalars['ServiceInstanceId']['output'];
@@ -3435,7 +3429,6 @@ export type ResolversTypes = ResolversObject<{
   RssFeed: ResolverTypeWrapper<RssFeed>;
   SendTelemetryMutation: ResolverTypeWrapper<SendTelemetryMutation>;
   SeoServiceInstance: ResolverTypeWrapper<SeoServiceInstance>;
-  SeoServiceInstanceLanguage: SeoServiceInstanceLanguage;
   SeoServiceInstanceMetadata: ResolverTypeWrapper<SeoServiceInstanceMetadata>;
   ServiceCapability: ResolverTypeWrapper<ServiceCapability>;
   ServiceCapabilityId: ResolverTypeWrapper<Scalars['ServiceCapabilityId']['output']>;
@@ -4712,7 +4705,7 @@ export type SeoServiceInstanceResolvers<ContextType = PortalContext, ParentType 
 }>;
 
 export type SeoServiceInstanceMetadataResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SeoServiceInstanceMetadata'] = ResolversParentTypes['SeoServiceInstanceMetadata']> = ResolversObject<{
-  language?: Resolver<ResolversTypes['SeoServiceInstanceLanguage'], ParentType, ContextType>;
+  language?: Resolver<ResolversTypes['Locale'], ParentType, ContextType>;
   meta_description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   meta_title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   service_instance_id?: Resolver<ResolversTypes['ServiceInstanceId'], ParentType, ContextType>;

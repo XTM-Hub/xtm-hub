@@ -34,6 +34,12 @@ enum FilterKey {
   solution_category
 }
 
+enum Locale {
+  en
+  fr
+  ja
+}
+
 enum LogicalOperator {
   AND
   OR
@@ -52,12 +58,6 @@ input LogicalFilterInput {
 
 type Success {
   success: Boolean!
-}
-
-enum Locale {
-  en
-  fr
-  ja
 }
 
 type ContentTranslationEntry {
@@ -127,7 +127,7 @@ type Query {
   registeredPlatforms(input: RegisteredPlatformsInput!): [RegisteredPlatform!]!
   platformAssociatedOrganization(platformId: String!, tenantId: String): Organization
   userServiceCapabilities(service_instance_id: ServiceInstanceId!): UserServiceCapabilitiesResponse!
-  seoServiceInstanceMetadata(service_instance_id: ServiceInstanceId!, language: SeoServiceInstanceLanguage): [SeoServiceInstanceMetadata!]!
+  seoServiceInstanceMetadata(service_instance_id: ServiceInstanceId!, language: Locale): [SeoServiceInstanceMetadata!]!
   serviceInstances(first: Int!, after: ID, orderBy: ServiceInstanceOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [ServiceInstanceFilter!], includeInaccessible: Boolean): ServiceConnection!
   serviceInstanceLinksByTags(tags: [ServiceInstanceTag!]!): [SeoServiceInstance!]!
   serviceInstanceById(service_instance_id: ServiceInstanceId!): ServiceInstance
@@ -209,7 +209,7 @@ type Mutation {
   autoRegisterPlatform(platform: PlatformInput @deprecated(reason: "Use input instead"), input: AutoRegisterPlatformInput): Success!
   addSubscriptionCapability(input: AddSubscriptionCapabilityInput!): [SubscriptionModel!]!
   addCapabilitiesToUserServices(input: UserServicesAddCapabilitiesInput!, service_instance_id: ServiceInstanceId!): [UserService]
-  editSeoServiceInstance(service_instance_id: ServiceInstanceId!, language: SeoServiceInstanceLanguage!, input: EditSeoServiceInstanceInput!): SeoServiceInstanceMetadata!
+  editSeoServiceInstance(service_instance_id: ServiceInstanceId!, language: Locale!, input: EditSeoServiceInstanceInput!): SeoServiceInstanceMetadata!
   addServicePicture(serviceInstanceId: ServiceInstanceId!, document: Upload, isLogo: Boolean!): ServiceInstance
   updatePlatformServiceMetadata(input: UpdatePlatformServiceMetadataInput!): RegisteredPlatform
   ingestManifestFragments(manifestFragments: [ManifestFragmentInput!]!): Success!
@@ -1434,15 +1434,9 @@ type ServiceDefinition implements Node {
   service_capability: [ServiceCapability]
 }
 
-enum SeoServiceInstanceLanguage {
-  en
-  fr
-  ja
-}
-
 type SeoServiceInstanceMetadata {
   service_instance_id: ServiceInstanceId!
-  language: SeoServiceInstanceLanguage!
+  language: Locale!
   meta_title: String!
   meta_description: String!
 }

@@ -1342,7 +1342,7 @@ export type MutationEditOrganizationArgs = {
 
 export type MutationEditSeoServiceInstanceArgs = {
   input: EditSeoServiceInstanceInput;
-  language: SeoServiceInstanceLanguage;
+  language: Locale;
   service_instance_id: Scalars['ServiceInstanceId']['input'];
 };
 
@@ -2153,7 +2153,7 @@ export type QuerySeoServiceInstanceArgs = {
 
 
 export type QuerySeoServiceInstanceMetadataArgs = {
-  language: InputMaybe<SeoServiceInstanceLanguage>;
+  language: InputMaybe<Locale>;
   service_instance_id: Scalars['ServiceInstanceId']['input'];
 };
 
@@ -2431,15 +2431,9 @@ export type SeoServiceInstance = Node & {
   tags: Maybe<Array<ServiceInstanceTag>>;
 };
 
-export enum SeoServiceInstanceLanguage {
-  En = 'en',
-  Fr = 'fr',
-  Ja = 'ja'
-}
-
 export type SeoServiceInstanceMetadata = {
   __typename?: 'SeoServiceInstanceMetadata';
-  language: SeoServiceInstanceLanguage;
+  language: Locale;
   meta_description: Scalars['String']['output'];
   meta_title: Scalars['String']['output'];
   service_instance_id: Scalars['ServiceInstanceId']['output'];
@@ -3537,16 +3531,16 @@ export type ServiceInstanceSeoMetadataByIdQueryVariables = Exact<{
 }>;
 
 
-export type ServiceInstanceSeoMetadataByIdQuery = { __typename?: 'Query', seoServiceInstanceMetadata: Array<{ __typename?: 'SeoServiceInstanceMetadata', service_instance_id: any, language: SeoServiceInstanceLanguage, meta_title: string, meta_description: string }> };
+export type ServiceInstanceSeoMetadataByIdQuery = { __typename?: 'Query', seoServiceInstanceMetadata: Array<{ __typename?: 'SeoServiceInstanceMetadata', service_instance_id: any, language: Locale, meta_title: string, meta_description: string }> };
 
 export type EditSeoServiceInstanceMetadataMutationVariables = Exact<{
   service_instance_id: Scalars['ServiceInstanceId']['input'];
-  language: SeoServiceInstanceLanguage;
+  language: Locale;
   input: EditSeoServiceInstanceInput;
 }>;
 
 
-export type EditSeoServiceInstanceMetadataMutation = { __typename?: 'Mutation', editSeoServiceInstance: { __typename?: 'SeoServiceInstanceMetadata', service_instance_id: any, language: SeoServiceInstanceLanguage, meta_title: string, meta_description: string } };
+export type EditSeoServiceInstanceMetadataMutation = { __typename?: 'Mutation', editSeoServiceInstance: { __typename?: 'SeoServiceInstanceMetadata', service_instance_id: any, language: Locale, meta_title: string, meta_description: string } };
 
 export type ServiceUserCapabilitiesQueryVariables = Exact<{
   service_instance_id: Scalars['ServiceInstanceId']['input'];
@@ -5914,7 +5908,7 @@ useInfiniteServiceInstanceSeoMetadataByIdQuery.getRootKey = () => ['ServiceInsta
 useServiceInstanceSeoMetadataByIdQuery.fetcher = (client: GraphQLClient, variables: ServiceInstanceSeoMetadataByIdQueryVariables, headers?: RequestInit['headers']) => fetcher<ServiceInstanceSeoMetadataByIdQuery, ServiceInstanceSeoMetadataByIdQueryVariables>(client, ServiceInstanceSeoMetadataByIdDocument, variables, headers);
 
 export const EditSeoServiceInstanceMetadataDocument = `
-    mutation EditSeoServiceInstanceMetadata($service_instance_id: ServiceInstanceId!, $language: SeoServiceInstanceLanguage!, $input: EditSeoServiceInstanceInput!) {
+    mutation EditSeoServiceInstanceMetadata($service_instance_id: ServiceInstanceId!, $language: Locale!, $input: EditSeoServiceInstanceInput!) {
   editSeoServiceInstance(
     service_instance_id: $service_instance_id
     language: $language

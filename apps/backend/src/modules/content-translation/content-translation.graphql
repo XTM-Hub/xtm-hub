@@ -1,9 +1,3 @@
-enum Locale {
-  en
-  fr
-  ja
-}
-
 type ContentTranslationEntry {
   key: String!
   locale: Locale!
