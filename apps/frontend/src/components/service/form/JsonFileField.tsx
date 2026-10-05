@@ -1,7 +1,7 @@
 import FileInputWithPrevent from '@/components/ui/FileInputWithPrevent';
+import { useTranslate } from '@/hooks/use-translate';
 import { FormControl, FormItem, FormLabel, FormMessage } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 
 interface ServiceFormJsonFileFieldProps {
@@ -15,7 +15,7 @@ export const ServiceFormJsonFileField = ({
   setIsDirty,
   document,
 }: ServiceFormJsonFileFieldProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <FormItem>
       <FormLabel>

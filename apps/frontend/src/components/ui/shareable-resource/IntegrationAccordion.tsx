@@ -1,10 +1,10 @@
+import { useTranslate } from '@/hooks/use-translate';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 import React from 'react';
 
 interface IntegrationAccordionProps {
@@ -16,7 +16,7 @@ const IntegrationAccordion = ({
   integrationType,
   children,
 }: IntegrationAccordionProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <Accordion

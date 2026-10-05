@@ -120,11 +120,11 @@
   "DeploymentRequestUseCase": {
     "threat_profiling_cti": "Threat Profiling (CTI)",
     "threat_profiling_fimi": "Threat Profiling (FIMI)",
-    "threat_profiling_leo": "Threat Profiling (Law enforcement)",
+    "threat_profiling_leo": "Threat Profiling (Law Enforcement)",
     "threat_profiling_faml": "Threat Profiling (Fraud & AML)",
     "threat_hunting": "Threat Hunting",
-    "strategic_reporting": "Strategic Reporting (For Executives)",
-    "technical_reporting": "Strategic Reporting (for Analysts)'",
+    "strategic_reporting": "Strategic Reporting (for Executives)",
+    "technical_reporting": "Strategic Reporting (for Analysts)",
     "incident_response": "Coordinating Incident Response",
     "security_stack": "Integrating Security Stack",
     "detection_engineering": "Detection Engineering",
@@ -306,6 +306,7 @@
       "CANT_REQUEST_FREE_TRIAL_IN_PERSONAL_SPACE": "You cannot request a free trial in your personal space",
       "CANT_SUBSCRIBE_YOURSELF": "You cannot add yourself",
       "COMPETITOR_DOMAIN_ALREADY_EXISTS": "A competitor with the same domain already exists",
+      "DEPLOYMENT_FEEDBACK_ALREADY_EXISTS": "Deployment feedback already exists",
       "COMPETITOR_NOT_FOUND": "Competitor not found",
       "CONNECTOR_ID_ALREADY_EXISTS": "A connector with this identifier already exists",
       "CONNECTOR_VERSION_ALREADY_EXISTS": "A connector with this version already exists",
@@ -331,6 +332,7 @@
       "DEPLOYMENT_REQUEST_QUOTA_NOT_FOUND": "Deployment request quota was not found.",
       "DEPLOYMENT_REQUEST_STATUS_UPDATE_NOT_ALLOWED": "An unknown error occurred",
       "DEPLOYMENT_REQUEST_UNKNOWN_ERROR": "An unknown error occurred",
+      "DEPLOYMENT_FEEDBACK_UNKNOWN_ERROR": "An unknown error occurred while sending the feedback",
       "DOCUMENT_CREATE_ERROR": "An error occurred while creating the resource.",
       "DOCUMENT_FILE_MISSING": "Document file is missing",
       "DOCUMENT_MISSING_METADATA": "Document is missing metadata.",
@@ -352,6 +354,7 @@
       "INTEGRATION_TYPE_NOT_MANAGEABLE": "This type of integration is not manageable.",
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "This type of integration is not recognized",
       "INVALID_ACTION_SIZE": "An unknown error occurred",
+      "INVALID_CONTENT_TRANSLATION_KEY": "Invalid content key",
       "INVALID_EMAIL": "The email should be in valid format.",
       "INVALID_IMAGE_URL": "The image URL is not valid",
       "INVALID_MANIFEST_VERSION_FORMAT": "The manifest version format is invalid",
@@ -498,11 +501,11 @@
     "NotFound": "404 | This page could not be found"
   },
   "AppFooter": {
-    "AllRightsReserved": "All rights reserved",
+    "AllRightsReserved": "All rights reserved.",
     "FiligranWebsite": "Filigran website",
     "Documentation": "XTM Hub documentation",
     "PrivacyPolicy": "Privacy Policy",
-    "TermsOfServices": "Terms of Services",
+    "TermsOfService": "Terms of Service",
     "Licenses": "Licenses"
   },
   "PublicLayout": {
@@ -647,7 +650,7 @@
     }
   },
   "Metadata": {
-    "Title": "XTM Hub | Your Gateway to Cyber Threat Intelligence & Breach & Attack Simulation",
+    "Title": "XTM Hub | Your Gateway to Threat Intelligence & Exposure Validation",
     "Description": "XTM Hub is a central forum to access resources, optimize the use of Filigran’s products, and empower the community.",
     "ShortTitle": "XTM Hub | Cyber Threat Intelligence Platform",
     "ShortDescription": "XTM Hub is your gateway to Filigran's cybersecurity solutions.",
@@ -1058,7 +1061,7 @@
         "IntegrationType": "Integration type",
         "UseCase": "Use case",
         "DeploymentType": "Deployment type",
-        "VerificationStatus": "Verification status",
+        "VerificationStatus": "Status",
         "SolutionCategory": "Solution category",
         "LicenseType": "License type",
         "ShortDescription": "Short description",
@@ -1237,10 +1240,10 @@
           "Placeholder": "Solution category..."
         },
         "Verified": {
-          "Label": "Verification status",
-          "Placeholder": "Verification status...",
-          "Verified": "Verified",
-          "Unverified": "Unverified"
+          "Label": "Status",
+          "Placeholder": "Status...",
+          "Verified": "Supported by Filigran",
+          "Unverified": "Supported by Community"
         }
       },
       "Type": {
@@ -1408,7 +1411,7 @@
           "license_type": "License type",
           "product_version": "Connected products",
           "manager_supported": "Deployment type",
-          "verified": "Verification status",
+          "verified": "Status",
           "entity_type": "Entity type"
         }
       }
@@ -1605,7 +1608,7 @@
         "Title": "Important note about your trial environment's storage",
         "SaaSFeaturesLink": "Enterprise Edition SaaS features",
         "NoSLA": "<strong>The free trial environment does not include SLA.</strong> In the event of a cloud provider outage, recovery time is not guaranteed. We recommend not storing critical or irreplaceable data in your trial environment.",
-        "OpenCTIDescription": "The OpenCTI free trial provides users with a \"small\" SaaS instance, which includes all <link>Enterprise Edition SaaS features</link>, but with <strong>reduced computing power and storage (up to 40GB in intelligence data storage and 3GB in file storage).</strong> Ingesting large, premium feed with rich data sets during this trial could impact your storage quickly.",
+        "OpenCTIDescription": "The OpenCTI free trial provides users with a \"small\" SaaS instance, which includes all <link>Enterprise Edition SaaS features</link>, but with <strong>reduced computing power and storage (up to 40GB in intelligence data storage and 3GB in file storage).</strong> Ingesting large premium feeds with rich data sets during this trial could impact your storage quickly.",
         "OpenAEVDescription": "The OpenAEV free trial provides users with a \"small\" instance, which includes all <link>Enterprise Edition SaaS features</link>, but with a reduced computing power and a limited storage of <strong>16GB</strong>."
       },
       "XTMPlatform": {
@@ -1629,12 +1632,19 @@
           "Text": "Keep exploring the full XTM Platform experience before your trial ends."
         },
         "DaysLeft": "{days, plural, =1 {# day left} other {# days left}}",
+        "Feedback": {
+          "Question": "Is your XTM Platform trial experience going well so far?",
+          "Yes": "Yes, so far so good!",
+          "No": "Not really...",
+          "Submit": "Submit",
+          "Justification": "Sorry to hear that. Would you mind sharing the reason?"
+        },
         "Page": {
           "Breadcrumb": "XTM Platform Trial",
           "Overline": "XTM Platform free trial",
           "Title": "Start your 30-day free trial",
           "PitchTitle": "Explore the full XTM Platform experience",
-          "PitchDescription": "Get 30 days to explore the SaaS-based, enterprise editions of OpenCTI and OpenAEV, including XTM One's agentic orchestration capabilities. Unify your threat intelligence and validate your defenses with agentic, continuous exposure management and cyber risk reduction.",
+          "PitchDescription": "Get 30 days to explore the SaaS-based enterprise editions of OpenCTI and OpenAEV, including XTM One's agentic orchestration capabilities. Unify your threat intelligence and validate your defenses with agentic, continuous exposure management and cyber risk reduction.",
           "Products": {
             "opencti": {
               "Tagline": "Unify and prioritize your threat signals",
@@ -1646,7 +1656,7 @@
             },
             "xtmone": {
               "Tagline": "Your agentic threat management cockpit",
-              "Description": "XTM One is the agentic AI layer orchestrating assistive and agentic AI across OpenCTI and OpenAEV, moving you from threat signal to validated action at machine speed, human-in-the-loop, closing the loop on CTEM."
+              "Description": "XTM One is the AI layer that orchestrates assistive and agentic AI across OpenCTI and OpenAEV. It takes you from threat signal to validated action at machine speed, with a human in the loop, so you can close the loop on CTEM."
             }
           },
           "Limitations": {
@@ -1654,7 +1664,7 @@
             "Intro": "The XTM Platform free trial includes all Enterprise Edition SaaS features, but with limited computing power and storage:",
             "OpenCTI": "For OpenCTI: up to 40GB in intelligence data storage and 3GB in file storage.",
             "OpenAEV": "For OpenAEV: 16GB",
-            "Ingestion": "Ingesting large, premium feed with rich data sets during this trial could impact your storage quickly.",
+            "Ingestion": "Ingesting large premium feeds with rich data sets during this trial could impact your storage quickly.",
             "NoSLA": "Note that this trial does not include SLAs. In the event of a cloud provider outage, recovery time is not guaranteed. We recommend not storing critical or irreplaceable data in your trial environment."
           },
           "Form": {
@@ -1747,7 +1757,7 @@
       "Form": {
         "Region": "Region",
         "RegionPlaceholder": "Select your preferred region for hosting",
-        "AssociatedEmail": "Associated Email：",
+        "AssociatedEmail": "Associated email:",
         "JobTitle": "Job title",
         "JobTitlePlaceholder": "Select your job title",
         "ActivitySector": "Activity sector",
@@ -1758,7 +1768,7 @@
           "AcceptTerms": "Please accept the trial terms to continue",
           "UseCase": "Please select a use case"
         },
-        "TermsAgreement": "I acknowledge that I have read, understand and agree to the trial terms of <mssa>MSSA</mssa> and <aiterms>AI terms</aiterms>",
+        "TermsAgreement": "I acknowledge that I have read, understood and agree to the <mssa>MSSA</mssa> trial terms and the <aiterms>AI terms</aiterms>",
         "FormRequested": "You have requested a free trial. You will receive an email as soon as the platform is ready!"
       },
       "Display": {
@@ -2374,5 +2384,36 @@
       "default": "Default",
       "thread": "Thread"
     }
+  },
+  "EditableText": {
+    "DialogTitle": "Edit content",
+    "KeyLabel": "Key: {contentKey}",
+    "ValueLabel": "{locale} value",
+    "OriginalValue": "Original: {value}",
+    "SaveDraft": "Save draft",
+    "EditionBannerLabel": "You are in edit mode — click an outlined text to edit it.",
+    "EditionBannerHiddenAreasLabel": "You are in edit mode — show the editable areas to edit a text.",
+    "ShowEditableAreas": "Show editable areas",
+    "EditionBannerExit": "Back to live site",
+    "MenuButton": "Edit Translations",
+    "MenuButtonExit": "Exit Edition Mode",
+    "DraftHint": "Saved as a draft: visitors only see it once published from the edit mode banner.",
+    "PendingChanges": "{count, plural, one {# unpublished change} other {# unpublished changes}}",
+    "Publish": "Publish",
+    "Discard": "Discard",
+    "PublishConfirmTitle": "{count, plural, one {Publish # change?} other {Publish # changes?}}",
+    "PublishConfirmDescription": "Every visitor will see the published texts.",
+    "DiscardConfirmTitle": "{count, plural, one {Discard # change?} other {Discard # changes?}}",
+    "DiscardConfirmDescription": "The drafts will be deleted for every editor. This cannot be undone.",
+    "ExitDialogTitle": "Unpublished changes",
+    "ExitDialogDescription": "{count, plural, one {# change is not published yet.} other {# changes are not published yet.}} Visitors keep seeing the current texts until you publish.",
+    "KeepDraftsAndExit": "Keep drafts and exit",
+    "DiscardAndExit": "Discard and exit",
+    "PublishAndExit": "Publish and exit"
+  },
+  "EditableTextDemo": {
+    "Title": "Welcome to XTM Hub",
+    "Subtitle": "The unified entry point for the Filigran ecosystem.",
+    "Instructions": "Use Edit Translations in the sidebar to turn edit mode on (BYPASS-capability users only), then click the outlined title or subtitle below. Saving creates a draft to publish from the edit mode banner."
   }
 }

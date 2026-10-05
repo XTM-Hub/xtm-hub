@@ -1,11 +1,11 @@
 'use client';
 import { useTablePagination } from '@/hooks/use-table-pagination';
+import { useTranslate } from '@/hooks/use-translate';
 import { i18nKey } from '@/utils/datatable';
 import { DeleteIcon, EditIcon } from '@filigran/icon';
 import { Button, DataTable, DataTableHeadBarOptions } from '@filigran/ui';
 import { CompetitorTier } from '@graphql/generated';
 import { ColumnDef, SortingState, Updater } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
 import {
   readInlineData,
@@ -41,7 +41,7 @@ import {
 import { competitor_list_fragment$key } from '@generated/competitor_list_fragment.graphql';
 
 const CompetitorList = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [editRow, setEditRow] = useState<competitor_fragment$data | undefined>(
     undefined
   );

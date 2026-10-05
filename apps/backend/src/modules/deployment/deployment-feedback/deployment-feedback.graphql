@@ -1,0 +1,9 @@
+input GiveDeploymentFeedbackInput {
+  deploymentRequestId: DeploymentRequestId!
+  answer: HasRepliedSatisfaction!
+  justification: String
+}
+
+extend type Mutation {
+  giveDeploymentFeedback(input: GiveDeploymentFeedbackInput!): Success! @auth
+}

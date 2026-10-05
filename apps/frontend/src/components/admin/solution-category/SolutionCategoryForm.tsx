@@ -1,4 +1,5 @@
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   Button,
   Form,
@@ -13,7 +14,6 @@ import {
 } from '@filigran/ui';
 import { FiligranProduct } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -51,7 +51,7 @@ const SolutionCategoryForm = ({
   handleDelete?: () => void;
   handleSubmit: (values: z.infer<typeof solutionCategoryFormSchema>) => void;
 }) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const form = useForm<z.infer<typeof solutionCategoryFormSchema>>({
     resolver: zodResolver(solutionCategoryFormSchema),
     defaultValues: {

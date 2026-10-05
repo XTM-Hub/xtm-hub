@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { toast } from '@filigran/ui';
 import {
@@ -11,7 +12,6 @@ import {
 import { bundleUserServiceGroupsKeys } from '@graphql/service-group/service-group.keys';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import {
@@ -38,7 +38,7 @@ export const EditTrialUsersForm = ({
   onCompleted,
   onCancel,
 }: EditTrialUsersFormProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const queryClient = useQueryClient();
 
   const bundleRolePanels = useMemo(

@@ -1,3 +1,4 @@
+import { useTranslate } from '@/hooks/use-translate';
 import {
   Select,
   SelectContent,
@@ -6,7 +7,6 @@ import {
   SelectValue,
 } from '@filigran/ui';
 import { FiligranProduct } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
 const SolutionCategoryProductFilter = ({
   selectedProduct,
@@ -15,7 +15,7 @@ const SolutionCategoryProductFilter = ({
   selectedProduct?: FiligranProduct;
   onProductChange: (product?: FiligranProduct) => void;
 }) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <Select

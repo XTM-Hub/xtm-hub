@@ -1,3 +1,4 @@
+import { useTranslate } from '@/hooks/use-translate';
 import { fileToBase64 } from '@/lib/utils';
 import { docIsExistingFile, ExistingFile, NewFile } from '@/utils/documents';
 import { AddIcon, DeleteIcon, ReplayIcon } from '@filigran/icon';
@@ -17,7 +18,6 @@ import {
 import { Button } from '@filigran/ui/servers';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { DocumentSourceType } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { ChangeEvent, useRef } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 
@@ -44,7 +44,7 @@ export const ServiceFormMultipleImagesField = ({
   setImagesToDelete,
   setIsDirty,
 }: ServiceFormMultipleImagesFieldProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   return (

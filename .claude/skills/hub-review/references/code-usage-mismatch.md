@@ -18,7 +18,7 @@ adopted that no doc captures. This lens judges the codebase against the doc, not
 ## Review sequence
 
 1. List the concrete, checkable claims in the in-scope content — e.g. "use `logApp`, never `console.log`", "new
-   data fetching uses `@tanstack/react-query`", "use `@filigran/ui` first for new UI".
+   data fetching uses `@tanstack/react-query`", "use `@filigran/design-system` first for new UI".
 2. For each claim, grep the relevant app for both the documented pattern and its alternative/predecessor.
 3. Compare counts and recency to judge whether the doc still matches reality: doc matches code, doc is stale (code
    has moved on), or mid-migration (both patterns coexist and the doc's stance is unclear or unenforced).

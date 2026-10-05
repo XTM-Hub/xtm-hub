@@ -306,6 +306,7 @@
       "CANT_REQUEST_FREE_TRIAL_IN_PERSONAL_SPACE": "Vous ne pouvez pas demander d'essai gratuit dans votre espace personnel",
       "CANT_SUBSCRIBE_YOURSELF": "Vous ne pouvez pas vous donner l'accès vous-même",
       "COMPETITOR_DOMAIN_ALREADY_EXISTS": "Il existe déjà un concurrent avec le même domaine",
+      "DEPLOYMENT_FEEDBACK_ALREADY_EXISTS": "Des retours d'expérience sur le déploiement existent déjà",
       "COMPETITOR_NOT_FOUND": "Concurrent non trouvé",
       "CONNECTOR_ID_ALREADY_EXISTS": "Un connecteur avec cet identifiant existe déjà",
       "CONNECTOR_VERSION_ALREADY_EXISTS": "Un connecteur avec cette version existe déjà",
@@ -331,6 +332,7 @@
       "DEPLOYMENT_REQUEST_QUOTA_NOT_FOUND": "Le quota de la demande de déploiement n'a pas été trouvé.",
       "DEPLOYMENT_REQUEST_STATUS_UPDATE_NOT_ALLOWED": "Une erreur inconnue s'est produite",
       "DEPLOYMENT_REQUEST_UNKNOWN_ERROR": "Une erreur inconnue s'est produite",
+      "DEPLOYMENT_FEEDBACK_UNKNOWN_ERROR": "Une erreur inconnue s'est produite lors de l'envoi du commentaire.",
       "DOCUMENT_CREATE_ERROR": "Une erreur s'est produite lors de la création de la ressource.",
       "DOCUMENT_FILE_MISSING": "Fichier du document manquant",
       "DOCUMENT_MISSING_METADATA": "Il manque des métadonnées au document.",
@@ -352,6 +354,7 @@
       "INTEGRATION_TYPE_NOT_MANAGEABLE": "Ce type d'intégration n'est pas gérable.",
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "Ce type d'intégration n'est pas reconnu",
       "INVALID_ACTION_SIZE": "Une erreur inconnue s'est produite",
+      "INVALID_CONTENT_TRANSLATION_KEY": "Clé de contenu invalide",
       "INVALID_EMAIL": "L'email doit être dans un format valide.",
       "INVALID_IMAGE_URL": "L'URL de l'image n'est pas valide",
       "INVALID_MANIFEST_VERSION_FORMAT": "Le format de version du manifest n'est pas valide",
@@ -498,11 +501,11 @@
     "NotFound": "404 | Cette page est introuvable"
   },
   "AppFooter": {
-    "AllRightsReserved": "Tous droits réservés",
+    "AllRightsReserved": "Tous droits réservés.",
     "FiligranWebsite": "Site Filigran",
     "Documentation": "Documentation du Hub XTM",
     "PrivacyPolicy": "Politique de confidentialité",
-    "TermsOfServices": "Conditions d'utilisation",
+    "TermsOfService": "Conditions d'utilisation",
     "Licenses": "Licences"
   },
   "PublicLayout": {
@@ -1058,7 +1061,7 @@
         "IntegrationType": "Type d'intégration",
         "UseCase": "Cas d'usage",
         "DeploymentType": "Type de déploiement",
-        "VerificationStatus": "Statut de vérification",
+        "VerificationStatus": "Statut",
         "SolutionCategory": "Catégorie de solution",
         "LicenseType": "Type de licence",
         "ShortDescription": "Description courte",
@@ -1237,10 +1240,10 @@
           "Placeholder": "Catégorie de solution..."
         },
         "Verified": {
-          "Label": "Statut de vérification",
-          "Placeholder": "Statut de vérification...",
-          "Verified": "Vérifié",
-          "Unverified": "Non vérifié"
+          "Label": "Statut",
+          "Placeholder": "Statut...",
+          "Verified": "Supporté par Filigran",
+          "Unverified": "Supporté par la communauté"
         }
       },
       "Type": {
@@ -1408,7 +1411,7 @@
           "license_type": "Type de licence",
           "product_version": "Produits connectés",
           "manager_supported": "Type de déploiement",
-          "verified": "Statut de vérification",
+          "verified": "Statut",
           "entity_type": "Type d'entité"
         }
       }
@@ -1629,6 +1632,13 @@
           "Text": "Continuez à découvrir l'expérience complète de la XTM Platform avant la fin de votre essai."
         },
         "DaysLeft": "{days, plural, =1 {# jour restant} other {# jours restants}}",
+        "Feedback": {
+          "Question": "Votre expérience de l'essai XTM Platform se passe-t-elle bien jusqu'à présent ?",
+          "Yes": "Oui, pour l'instant, tout va bien !",
+          "No": "Pas vraiment...",
+          "Submit": "Soumettre",
+          "Justification": "Désolés de savoir ça. Pouvez-vous nous donner la raison ?"
+        },
         "Page": {
           "Breadcrumb": "XTM Platform Trial",
           "Overline": "Essai gratuit XTM Platform",
@@ -1747,7 +1757,7 @@
       "Form": {
         "Region": "Région",
         "RegionPlaceholder": "Sélectionnez la région de votre choix pour l'hébergement",
-        "AssociatedEmail": "Email associé ：",
+        "AssociatedEmail": "Email associé :",
         "JobTitle": "Titre du poste",
         "JobTitlePlaceholder": "Sélectionnez votre fonction",
         "ActivitySector": "Secteur d'activité",
@@ -2374,5 +2384,36 @@
       "default": "Par défaut",
       "thread": "Thread"
     }
+  },
+  "EditableText": {
+    "DialogTitle": "Modifier le contenu",
+    "KeyLabel": "Clé : {contentKey}",
+    "ValueLabel": "Valeur {locale}",
+    "OriginalValue": "Original : {value}",
+    "SaveDraft": "Enregistrer le brouillon",
+    "EditionBannerLabel": "Vous êtes en mode édition — cliquez sur un texte encadré pour le modifier.",
+    "EditionBannerHiddenAreasLabel": "Vous êtes en mode édition — affichez les zones modifiables pour modifier un texte.",
+    "ShowEditableAreas": "Afficher les zones modifiables",
+    "EditionBannerExit": "Retour au site en direct",
+    "MenuButton": "Modifier les traductions",
+    "MenuButtonExit": "Quitter le mode édition",
+    "DraftHint": "Enregistré en brouillon : les visiteurs ne le verront qu’une fois publié depuis le bandeau du mode édition.",
+    "PendingChanges": "{count, plural, one {# modification non publiée} other {# modifications non publiées}}",
+    "Publish": "Publier",
+    "Discard": "Abandonner",
+    "PublishConfirmTitle": "{count, plural, one {Publier # modification ?} other {Publier # modifications ?}}",
+    "PublishConfirmDescription": "Tous les visiteurs verront les textes publiés.",
+    "DiscardConfirmTitle": "{count, plural, one {Abandonner # modification ?} other {Abandonner # modifications ?}}",
+    "DiscardConfirmDescription": "Les brouillons seront supprimés pour tous les éditeurs. Cette action est irréversible.",
+    "ExitDialogTitle": "Modifications non publiées",
+    "ExitDialogDescription": "{count, plural, one {# modification n’est pas encore publiée.} other {# modifications ne sont pas encore publiées.}} Les visiteurs voient les textes actuels tant que vous ne publiez pas.",
+    "KeepDraftsAndExit": "Garder les brouillons et quitter",
+    "DiscardAndExit": "Abandonner et quitter",
+    "PublishAndExit": "Publier et quitter"
+  },
+  "EditableTextDemo": {
+    "Title": "Bienvenue sur XTM Hub",
+    "Subtitle": "Le point d'entrée unifié de l'écosystème Filigran.",
+    "Instructions": "Utilisez « Modifier les traductions » dans la barre latérale pour activer le mode édition (réservé aux utilisateurs avec la capacité BYPASS), puis cliquez sur le titre ou le sous-titre encadré ci-dessous. L’enregistrement crée un brouillon à publier depuis le bandeau du mode édition."
   }
 }

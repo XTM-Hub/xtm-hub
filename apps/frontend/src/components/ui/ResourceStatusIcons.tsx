@@ -1,10 +1,12 @@
 'use client';
 
+import { useTranslate } from '@/hooks/use-translate';
+import { cn } from '@/lib/utils';
 import {
   CampaignIcon,
+  LogoFiligranIcon,
   MotionPlayIcon,
   ThreatActorGroupIcon,
-  VerifiedIcon,
 } from '@filigran/icon';
 import {
   Tooltip,
@@ -12,7 +14,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/ui/clients';
-import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 
 export interface ResourceStatusIconsProps {
@@ -44,7 +45,7 @@ export const ResourceStatusIcons = ({
   displayUnverifiedIcon = false,
   iconClassName = ICON_CLASS,
 }: ResourceStatusIconsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   if (!active && !deployable && !displayUnverifiedIcon) {
     return null;
@@ -61,13 +62,19 @@ export const ResourceStatusIcons = ({
       {verified && (
         <StatusIcon
           label={t('Service.ShareableResources.Details.SupportedByFiligran')}
-          icon={<VerifiedIcon className={iconClassName} />}
+          icon={
+            <LogoFiligranIcon className={cn(iconClassName, 'text-primary')} />
+          }
         />
       )}
       {!verified && displayUnverifiedIcon && (
         <StatusIcon
           label={t('Service.ShareableResources.Details.SupportedByCommunity')}
-          icon={<ThreatActorGroupIcon className={iconClassName} />}
+          icon={
+            <ThreatActorGroupIcon
+              className={cn(iconClassName, 'text-icon-disabled')}
+            />
+          }
         />
       )}
       {active && (

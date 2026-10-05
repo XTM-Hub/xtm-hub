@@ -6,10 +6,12 @@ import {
 } from '../../../../../tests/tests.const';
 import {
   Connector,
+  FeatureFlag,
   IntegrationType,
   SolutionCategory,
 } from '../../../../__generated__/resolvers-types';
 import { logApp } from '../../../../utils/app-logger.util';
+import * as featureFlagUtil from '../../../../utils/feature-flag.util';
 import { Integration } from './integration.model';
 import integrationResolver from './integration.resolver';
 
@@ -121,5 +123,40 @@ describe('integration field resolvers', () => {
         expect(result).toEqual(expected);
       });
     });
+  });
+});
+
+describe('connector.product_version', () => {
+  const resolveProductVersion = (connector: Partial<Connector>) =>
+    (
+      integrationResolver.Connector!.product_version as unknown as (
+        connector: Partial<Connector>
+      ) => string | null
+    )(connector);
+
+  const connector = {
+    product_version: '6.8.4',
+    minimum_deployable_version: '6.250101.0',
+  };
+
+  it('should return the legacy product_version when decoupling is disabled', () => {
+    vi.spyOn(featureFlagUtil, 'isFeatureEnabled').mockReturnValue(false);
+
+    expect(resolveProductVersion(connector)).toBe('6.8.4');
+  });
+
+  it('should return the minimum_deployable_version when decoupling is enabled', () => {
+    const spy = vi
+      .spyOn(featureFlagUtil, 'isFeatureEnabled')
+      .mockReturnValue(true);
+
+    expect(resolveProductVersion(connector)).toBe('6.250101.0');
+    expect(spy).toHaveBeenCalledWith(FeatureFlag.DecouplingConnectors);
+  });
+
+  it('should fall back to product_version when decoupling is enabled but no minimum version exists', () => {
+    vi.spyOn(featureFlagUtil, 'isFeatureEnabled').mockReturnValue(true);
+
+    expect(resolveProductVersion({ product_version: '6.8.4' })).toBe('6.8.4');
   });
 });

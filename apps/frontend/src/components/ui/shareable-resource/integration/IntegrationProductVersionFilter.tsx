@@ -3,10 +3,10 @@ import {
   ServiceListLocalStorageKey,
   useServiceListLocalStorage,
 } from '@/hooks/use-service-list-local-storage';
+import { useTranslate } from '@/hooks/use-translate';
 import { Combobox } from '@filigran/ui/clients';
 import { PlatformIdentifier } from '@graphql/generated';
 import { Link2 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
 interface ProductVersionOption {
@@ -23,7 +23,7 @@ interface IntegrationProductVersionFilterProps {
 export const IntegrationProductVersionFilter = ({
   registeredVersions = EMPTY_VERSIONS,
 }: IntegrationProductVersionFilterProps = {}) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [search, setSearch] = useState('');
 
   const { productVersions, setProductVersions } = useServiceListLocalStorage(

@@ -73,6 +73,8 @@ export enum BadRequestErrorCode {
   InvalidUseCasesForProducts = 'INVALID_USE_CASES_FOR_PRODUCTS',
   SolutionCategoriesRequired = 'SOLUTION_CATEGORIES_REQUIRED',
   XtmOneRoleRequired = 'XTM_ONE_ROLE_REQUIRED',
+  InvalidContentTranslationKey = 'INVALID_CONTENT_TRANSLATION_KEY',
+  UserStatusChangedConcurrently = 'USER_STATUS_CHANGED_CONCURRENTLY',
 }
 
 export enum UnknownErrorCode {
@@ -111,6 +113,7 @@ export enum UnknownErrorCode {
   NoAsyncContextAvailableError = 'NO_ASYNC_CONTEXT_AVAILABLE',
   CreateDeploymentRequestError = 'CREATE_DEPLOYMENT_REQUEST_ERROR',
   DeploymentRequestUnknownError = 'DEPLOYMENT_REQUEST_UNKNOWN_ERROR',
+  DeploymentFeedbackUnknownError = 'DEPLOYMENT_FEEDBACK_UNKNOWN_ERROR',
   HubspotError = 'HUBSPOT_ERROR',
   MissingMetadataMapping = 'MISSING_METADATA_MAPPING',
   VoteForFeatureError = 'VOTE_FOR_FEATURE_ERROR',
@@ -125,6 +128,7 @@ export enum AlreadyExistsErrorCode {
   DocumentUniqueSlugError = 'DOCUMENT_UNIQUE_SLUG_ERROR',
   FreeTrialAlreadyExists = 'FREE_TRIAL_ALREADY_EXISTS',
   CompetitorDomainAlreadyExists = 'COMPETITOR_DOMAIN_ALREADY_EXISTS',
+  DeploymentFeedbackAlreadyExists = 'DEPLOYMENT_FEEDBACK_ALREADY_EXISTS',
 }
 
 export enum NotFoundErrorCode {

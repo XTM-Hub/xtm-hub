@@ -4,11 +4,11 @@ import {
   ServiceForm,
 } from '@/components/service/ServiceForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { fileListToUploadableMap } from '@/relay/environment/fetch-form-data';
 import { useToast } from '@filigran/ui';
 import { serviceAddPictureMutation } from '@generated/serviceAddPictureMutation.graphql';
 import { serviceList_fragment$data } from '@generated/serviceList_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import { useMutation } from 'react-relay';
 import { z } from 'zod';
 
@@ -19,7 +19,7 @@ interface EditServiceProps {
 }
 
 export const EditService = ({ service, open, setOpen }: EditServiceProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { toast } = useToast();
 
   const [servicePictureMutation] =

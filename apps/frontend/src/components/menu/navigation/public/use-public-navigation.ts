@@ -4,6 +4,7 @@ import {
   SectionConfig,
   SectionLink,
 } from '@/components/menu/navigation/shared/navigation.type';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   PUBLIC_CYBERSECURITY_SOLUTIONS_PATH,
   XTM_PLATFORM_ROADMAP_SLUG,
@@ -15,17 +16,18 @@ import {
   LogoXtmOneIcon,
   OpenAevIconIcon,
   OpenCtiIconIcon,
+  OpenGrcIcon,
   PapermapIcon,
   PostIcon,
   SchoolIcon,
   SlackIcon,
 } from '@filigran/icon';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 
 export const usePublicNavigation = (
   visibleServiceSlugs: string[]
 ): NavigationConfig => {
-  const t = useTranslations();
+  const t = useTranslate();
   const locale = useLocale();
   const visibleSlugs = new Set(visibleServiceSlugs);
   const xtmPlatformTrialPublicHref = `/${locale}/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/xtm-platform-trial`;
@@ -119,6 +121,20 @@ export const usePublicNavigation = (
           external: true,
         },
         { label: t('Menu.AICatalog'), badge: t('Menu.ComingSoon') },
+      ],
+    },
+    {
+      key: 'opencrq',
+      label: 'OpenCRQ',
+      icon: OpenGrcIcon,
+      pathPrefix: `/${locale}/cybersecurity-solutions/opencrq`,
+      links: [
+        {
+          href: 'https://filigran.io/products/opencrq',
+          label: t('Menu.About'),
+          external: true,
+          badge: t('Menu.ComingSoon'),
+        },
       ],
     },
   ];

@@ -4,20 +4,21 @@ import ShareableResourceCarousel from '@/components/service/document/ui/Shareabl
 import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
+import { getTranslate } from '@/hooks/get-translate';
+import { cn } from '@/lib/utils';
 import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
 import {
   ConnectorFields,
   PublicDocumentDetailsData,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import {
+  LogoFiligranIcon,
   MotionPlayIcon,
   ThreatActorGroupIcon,
-  VerifiedIcon,
 } from '@filigran/icon';
 import { MarkdownRenderer } from '@filigran/ui/clients';
 import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 
 interface ShareableResourceConnectorSlugPublicProps {
@@ -27,12 +28,12 @@ interface ShareableResourceConnectorSlugPublicProps {
   pageUrl: string;
 }
 
-const ShareableResourceConnectorSlugPublic = ({
+const ShareableResourceConnectorSlugPublic = async ({
   documentData,
   pageUrl,
   serviceInstance,
 }: ShareableResourceConnectorSlugPublicProps) => {
-  const t = useTranslations();
+  const t = await getTranslate();
   const logo = findDocumentLogo(documentData);
   const carouselImages = filterDocumentImages(documentData);
 
@@ -60,15 +61,21 @@ const ShareableResourceConnectorSlugPublic = ({
                 {t('Utils.AutomaticDeploy')}
               </div>
             )}
-            <div className="flex items-center gap-s py-xs px-l font-semibold bg-alert-success-primary text-alert-success-primary dark:bg-turquoise-900 rounded-lg">
+            <div
+              className={cn(
+                'flex items-center gap-s py-xs px-l font-semibold rounded-lg text-text-default-primary',
+                documentData.verified
+                  ? 'bg-[rgba(15,188,255,0.21)]'
+                  : 'bg-feedback-neutral-secondary-transparency'
+              )}>
               {documentData.verified ? (
                 <>
-                  <VerifiedIcon className="h-5 w-5 shrink-0 mr-xs" />
+                  <LogoFiligranIcon className="h-5 w-5 shrink-0 mr-xs text-text-default-primary" />
                   {t('Service.ShareableResources.Details.SupportedByFiligran')}
                 </>
               ) : (
                 <>
-                  <ThreatActorGroupIcon className="h-5 w-5 shrink-0 mr-xs" />
+                  <ThreatActorGroupIcon className="h-5 w-5 shrink-0 mr-xs text-feedback-neutral-primary" />
                   {t('Service.ShareableResources.Details.SupportedByCommunity')}
                 </>
               )}

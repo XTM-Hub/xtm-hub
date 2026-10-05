@@ -7,11 +7,11 @@ import EpicForm, { epicFormSchema } from '@/components/epic/EpicForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { useEpicFilter } from '@/hooks/use-epic-filter';
 import { useEpicListContext } from '@/hooks/use-epic-list-context';
+import { useTranslate } from '@/hooks/use-translate';
 import { fileListToUploadableMap } from '@/relay/environment/fetch-form-data';
 import { AddIcon } from '@filigran/icon';
 import { Button, useToast } from '@filigran/ui';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useMutation } from 'react-relay';
 import { UploadableMap } from 'relay-runtime';
@@ -30,7 +30,7 @@ export const EpicFormSheet = ({
   setOpen: externalSetOpen,
   triggerElement,
 }: EpicFormSheetProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [internalOpenSheet, setInternalOpenSheet] = useState(false);
 
   const [commitEpicMutation] = useMutation(CreateEpicMutation);

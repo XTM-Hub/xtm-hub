@@ -4,3 +4,9 @@ mutation CreateDeploymentRequest($input: CreateDeploymentRequestInput!) {
     service_instance_id
   }
 }
+
+mutation GiveDeploymentFeedback($input: GiveDeploymentFeedbackInput!) {
+  giveDeploymentFeedback(input: $input) {
+    success
+  }
+}

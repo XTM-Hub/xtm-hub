@@ -306,6 +306,7 @@
       "CANT_REQUEST_FREE_TRIAL_IN_PERSONAL_SPACE": "個人的なスペースで無料体験を申し込むことはできない",
       "CANT_SUBSCRIBE_YOURSELF": "自分を追加することはできません",
       "COMPETITOR_DOMAIN_ALREADY_EXISTS": "同じドメインの競合がすでに存在する",
+      "DEPLOYMENT_FEEDBACK_ALREADY_EXISTS": "導入に関するフィードバックはすでに存在しています",
       "COMPETITOR_NOT_FOUND": "競合他社が見つかりません",
       "CONNECTOR_ID_ALREADY_EXISTS": "この識別子を持つコネクタは既に存在します",
       "CONNECTOR_VERSION_ALREADY_EXISTS": "このバージョンのコネクタは既に存在します",
@@ -331,6 +332,7 @@
       "DEPLOYMENT_REQUEST_QUOTA_NOT_FOUND": "配備要求のクォータが見つからなかった。",
       "DEPLOYMENT_REQUEST_STATUS_UPDATE_NOT_ALLOWED": "不明なエラーが発生した",
       "DEPLOYMENT_REQUEST_UNKNOWN_ERROR": "不明なエラーが発生した",
+      "DEPLOYMENT_FEEDBACK_UNKNOWN_ERROR": "フィードバックの送信中に不明なエラーが発生しました",
       "DOCUMENT_CREATE_ERROR": "リソースの作成中にエラーが発生しました。",
       "DOCUMENT_FILE_MISSING": "ドキュメントファイルが見つからない",
       "DOCUMENT_MISSING_METADATA": "ドキュメントにメタデータがありません。",
@@ -352,6 +354,7 @@
       "INTEGRATION_TYPE_NOT_MANAGEABLE": "このタイプの統合は管理できません。",
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "このタイプの統合は認識されない",
       "INVALID_ACTION_SIZE": "不明なエラーが発生した",
+      "INVALID_CONTENT_TRANSLATION_KEY": "無効なコンテンツキーです",
       "INVALID_EMAIL": "電子メールは有効な形式でなければなりません。",
       "INVALID_IMAGE_URL": "画像のURLが不正",
       "INVALID_MANIFEST_VERSION_FORMAT": "マニフェストのバージョン形式が無効です",
@@ -502,7 +505,7 @@
     "FiligranWebsite": "Filigranウェブサイト",
     "Documentation": "XTM Hubのドキュメント",
     "PrivacyPolicy": "プライバシーポリシー",
-    "TermsOfServices": "利用規約",
+    "TermsOfService": "利用規約",
     "Licenses": "ライセンス"
   },
   "PublicLayout": {
@@ -1058,7 +1061,7 @@
         "IntegrationType": "インテグレーションタイプ",
         "UseCase": "ユースケース",
         "DeploymentType": "デプロイタイプ",
-        "VerificationStatus": "検証ステータス",
+        "VerificationStatus": "ステータス",
         "SolutionCategory": "ソリューションカテゴリ",
         "LicenseType": "ライセンスタイプ",
         "ShortDescription": "概要",
@@ -1237,10 +1240,10 @@
           "Placeholder": "ソリューションカテゴリ..."
         },
         "Verified": {
-          "Label": "検証ステータス",
-          "Placeholder": "検証状況...",
-          "Verified": "確認済み",
-          "Unverified": "未確認"
+          "Label": "ステータス",
+          "Placeholder": "ステータス...",
+          "Verified": "Filigranの提供による",
+          "Unverified": "コミュニティの提供による"
         }
       },
       "Type": {
@@ -1408,7 +1411,7 @@
           "license_type": "ライセンス種別",
           "product_version": "接続済み製品",
           "manager_supported": "配備タイプ",
-          "verified": "検証状況",
+          "verified": "ステータス",
           "entity_type": "エンティティタイプ"
         }
       }
@@ -1629,6 +1632,13 @@
           "Text": "トライアル終了前に、引き続き XTM Platform のフル体験をお楽しみください。"
         },
         "DaysLeft": "{days, plural, =1 {残り#日} other {残り#日}}",
+        "Feedback": {
+          "Question": "XTM Platform の体験は今のところ順調ですか？",
+          "Yes": "うん、今のところ順調だね！",
+          "No": "そうでもないんだけど……",
+          "Submit": "送信",
+          "Justification": "それはお気の毒ですね。その理由を教えていただけませんか？"
+        },
         "Page": {
           "Breadcrumb": "XTM Platform Trial",
           "Overline": "XTM Platform 無料トライアル",
@@ -2374,5 +2384,36 @@
       "default": "デフォルト",
       "thread": "Thread"
     }
+  },
+  "EditableText": {
+    "DialogTitle": "コンテンツを編集",
+    "KeyLabel": "キー: {contentKey}",
+    "ValueLabel": "{locale} の値",
+    "OriginalValue": "元の値: {value}",
+    "SaveDraft": "下書きを保存",
+    "EditionBannerLabel": "編集モードです。枠で囲まれたテキストをクリックすると編集できます。",
+    "EditionBannerHiddenAreasLabel": "編集モードです。テキストを編集するには、編集可能な箇所を表示してください。",
+    "ShowEditableAreas": "編集可能な箇所を表示",
+    "EditionBannerExit": "公開サイトに戻る",
+    "MenuButton": "翻訳を編集",
+    "MenuButtonExit": "編集モードを終了",
+    "DraftHint": "下書きとして保存されます。編集モードのバナーから公開するまで、訪問者には表示されません。",
+    "PendingChanges": "{count, plural, other {未公開の変更 # 件}}",
+    "Publish": "公開",
+    "Discard": "破棄",
+    "PublishConfirmTitle": "{count, plural, other {# 件の変更を公開しますか?}}",
+    "PublishConfirmDescription": "公開したテキストはすべての訪問者に表示されます。",
+    "DiscardConfirmTitle": "{count, plural, other {# 件の変更を破棄しますか?}}",
+    "DiscardConfirmDescription": "下書きはすべての編集者から削除されます。この操作は元に戻せません。",
+    "ExitDialogTitle": "未公開の変更",
+    "ExitDialogDescription": "{count, plural, other {# 件の変更がまだ公開されていません。}}公開するまで、訪問者には現在のテキストが表示されます。",
+    "KeepDraftsAndExit": "下書きを保持して終了",
+    "DiscardAndExit": "破棄して終了",
+    "PublishAndExit": "公開して終了"
+  },
+  "EditableTextDemo": {
+    "Title": "XTM Hub へようこそ",
+    "Subtitle": "Filigran エコシステムの統合エントリーポイント。",
+    "Instructions": "サイドバーの「翻訳を編集」で編集モードを有効にしてください(BYPASS 権限を持つユーザーのみ)。その後、下の枠で囲まれたタイトルまたはサブタイトルをクリックしてください。保存すると下書きが作成され、編集モードのバナーから公開できます。"
   }
 }

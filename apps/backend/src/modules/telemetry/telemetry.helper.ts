@@ -1,5 +1,6 @@
 import {
   DeploymentRequestSource,
+  HasRepliedSatisfaction,
   IntegrationType,
   Organization,
   PlatformContract,
@@ -31,6 +32,7 @@ import {
   LoginEvent,
   OneClickDeployEvent,
   RegisterPlatformEvent,
+  ReplySatisfactionEvent,
   ShareEvent,
   SubscribeEvent,
   TelemetryEventType,
@@ -380,6 +382,27 @@ export const TelemetryHelper = {
       event_type: TelemetryEventType.CREATE_ORGANIZATION,
       ...baseEvent,
       domains: organization.domains ?? [],
+    };
+  },
+  buildSatisfactionEvent: async (
+    answer: HasRepliedSatisfaction,
+    deployment_id: string,
+    justification?: string | null
+  ): Promise<ReplySatisfactionEvent> => {
+    const user = requestContext.requireUser();
+    const selectedOrga = await OrganizationDomain.loadOrganizationBy({
+      id: user.selected_organization_id,
+    });
+
+    const baseEvent = buildBaseEvent(selectedOrga, user.id);
+
+    return {
+      event_type: TelemetryEventType.REPLY_SATISFACTION,
+      ...baseEvent,
+      email: user.email,
+      answer,
+      justification,
+      deployment_id,
     };
   },
 

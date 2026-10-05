@@ -224,6 +224,20 @@ export type ConsumeProvisionedNewsFeedItemsResponse = {
   news_feed_items: Array<ProvisionedNewsFeedItem>;
 };
 
+export type ContentTranslationEntry = {
+  __typename?: 'ContentTranslationEntry';
+  key: Scalars['String']['output'];
+  locale: Locale;
+  updated_at: Scalars['Date']['output'];
+  updater_id?: Maybe<Scalars['UserId']['output']>;
+  value: Scalars['String']['output'];
+};
+
+export type ContentTranslationValueInput = {
+  locale: Locale;
+  value: Scalars['String']['input'];
+};
+
 export type CreateCompetitorInput = {
   domain: Scalars['String']['input'];
   name: Scalars['String']['input'];
@@ -753,8 +767,6 @@ export type Epic = Node & {
   timeline: Timeline;
   title: Scalars['String']['output'];
   updated_at?: Maybe<Scalars['Date']['output']>;
-  updater_id?: Maybe<Scalars['String']['output']>;
-  uploader_id: Scalars['String']['output'];
 };
 
 export type EpicConnection = {
@@ -841,6 +853,18 @@ export type GenericServiceCapability = Node & {
   id: Scalars['ID']['output'];
   name?: Maybe<Scalars['String']['output']>;
 };
+
+export type GiveDeploymentFeedbackInput = {
+  answer: HasRepliedSatisfaction;
+  deploymentRequestId: Scalars['DeploymentRequestId']['input'];
+  justification?: InputMaybe<Scalars['String']['input']>;
+};
+
+export enum HasRepliedSatisfaction {
+  Closed = 'closed',
+  No = 'no',
+  Yes = 'yes'
+}
 
 export type Integration = {
   active: Scalars['Boolean']['output'];
@@ -947,6 +971,12 @@ export type LoadDocumentFacetInput = {
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
 };
 
+export enum Locale {
+  En = 'en',
+  Fr = 'fr',
+  Ja = 'ja'
+}
+
 export type LogicalFilterInput = {
   children?: InputMaybe<Array<LogicalFilterInput>>;
   leaf?: InputMaybe<Filter>;
@@ -1043,6 +1073,7 @@ export type Mutation = {
   deleteUserServices?: Maybe<Array<Maybe<UserService>>>;
   deleteVotableFeature: VotableFeature;
   deleteVotingRound: VotingRound;
+  discardContentTranslationDrafts: Scalars['Int']['output'];
   editMeUser: User;
   editOrganization?: Maybe<Organization>;
   editSeoServiceInstance: SeoServiceInstanceMetadata;
@@ -1052,11 +1083,13 @@ export type Mutation = {
   editUserService?: Maybe<UserService>;
   frontendErrorLog?: Maybe<Scalars['Boolean']['output']>;
   generateManifest: Success;
+  giveDeploymentFeedback: Success;
   incrementShareNumberDocument: Document;
   ingestManifestFragments: Success;
   login?: Maybe<User>;
   logout: Scalars['ID']['output'];
   newProductVersion: Success;
+  publishContentTranslationDrafts: Array<ContentTranslationEntry>;
   refreshPlatformRegistrationConnectivityStatus: RefreshPlatformRegistrationConnectivityStatusResponse;
   refreshPlatformRegistrationConnectivityStatusAllTenants: RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse;
   refreshPlatformRegistrationConnectivityStatusSingleTenant: RefreshPlatformRegistrationConnectivityStatusResponse;
@@ -1068,6 +1101,7 @@ export type Mutation = {
   reorderDeploymentRequestInQueue: Success;
   requestTransferPersonalSpace: Success;
   resetPassword: Success;
+  saveContentTranslationDraft: Array<ContentTranslationEntry>;
   sendTelemetryEvent?: Maybe<SendTelemetryMutation>;
   setVotingRoundStatus: Array<VotingRound>;
   transferPersonalSpace: Success;
@@ -1318,7 +1352,7 @@ export type MutationEditOrganizationArgs = {
 
 export type MutationEditSeoServiceInstanceArgs = {
   input: EditSeoServiceInstanceInput;
-  language: SeoServiceInstanceLanguage;
+  language: Locale;
   service_instance_id: Scalars['ServiceInstanceId']['input'];
 };
 
@@ -1358,6 +1392,11 @@ export type MutationGenerateManifestArgs = {
   product: PlatformIdentifier;
   type: ManifestType;
   version: Scalars['String']['input'];
+};
+
+
+export type MutationGiveDeploymentFeedbackArgs = {
+  input: GiveDeploymentFeedbackInput;
 };
 
 
@@ -1428,6 +1467,11 @@ export type MutationReorderDeploymentRequestInQueueArgs = {
 
 export type MutationRequestTransferPersonalSpaceArgs = {
   new_email: Scalars['String']['input'];
+};
+
+
+export type MutationSaveContentTranslationDraftArgs = {
+  input: UpsertContentTranslationInput;
 };
 
 
@@ -1796,6 +1840,7 @@ export enum PlatformRegistrationStatus {
 
 export type PlatformTrialStatus = {
   __typename?: 'PlatformTrialStatus';
+  deploymentRequestId?: Maybe<Scalars['DeploymentRequestId']['output']>;
   end_date?: Maybe<Scalars['Date']['output']>;
   hub_status?: Maybe<DeploymentRequestHubStatus>;
   isBlacklisted: Scalars['Boolean']['output'];
@@ -1844,6 +1889,8 @@ export type Query = {
   bundleUserServiceGroups: Array<BundleUserServiceGroup>;
   canUnregisterPlatform: CanUnregisterResponse;
   competitors: CompetitorConnection;
+  contentTranslationDrafts: Array<ContentTranslationEntry>;
+  contentTranslations: Array<ContentTranslationEntry>;
   countEpicsPerTimeline: Array<EpicCountPerTimeline>;
   /**
    * The round currently collecting votes on a service instance, if any.
@@ -1930,6 +1977,17 @@ export type QueryCompetitorsArgs = {
   first: Scalars['Int']['input'];
   orderBy: CompetitorOrdering;
   orderMode: OrderingMode;
+};
+
+
+export type QueryContentTranslationDraftsArgs = {
+  keys?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+
+export type QueryContentTranslationsArgs = {
+  keys?: InputMaybe<Array<Scalars['String']['input']>>;
+  locale?: InputMaybe<Locale>;
 };
 
 
@@ -2117,7 +2175,7 @@ export type QuerySeoServiceInstanceArgs = {
 
 
 export type QuerySeoServiceInstanceMetadataArgs = {
-  language?: InputMaybe<SeoServiceInstanceLanguage>;
+  language?: InputMaybe<Locale>;
   service_instance_id: Scalars['ServiceInstanceId']['input'];
 };
 
@@ -2395,15 +2453,9 @@ export type SeoServiceInstance = Node & {
   tags?: Maybe<Array<ServiceInstanceTag>>;
 };
 
-export enum SeoServiceInstanceLanguage {
-  En = 'en',
-  Fr = 'fr',
-  Ja = 'ja'
-}
-
 export type SeoServiceInstanceMetadata = {
   __typename?: 'SeoServiceInstanceMetadata';
-  language: SeoServiceInstanceLanguage;
+  language: Locale;
   meta_description: Scalars['String']['output'];
   meta_title: Scalars['String']['output'];
   service_instance_id: Scalars['ServiceInstanceId']['output'];
@@ -2910,6 +2962,11 @@ export type UpdateVotingRoundInput = {
   theme?: InputMaybe<VotingRoundTheme>;
 };
 
+export type UpsertContentTranslationInput = {
+  key: Scalars['String']['input'];
+  values: Array<ContentTranslationValueInput>;
+};
+
 export type UseCase = Node & {
   __typename?: 'UseCase';
   color: Scalars['String']['output'];
@@ -2943,6 +3000,7 @@ export type User = Node & {
   disabled?: Maybe<Scalars['Boolean']['output']>;
   email: Scalars['String']['output'];
   first_name?: Maybe<Scalars['String']['output']>;
+  has_replied_satisfaction?: Maybe<HasRepliedSatisfaction>;
   id: Scalars['ID']['output'];
   invitation_date?: Maybe<Scalars['Date']['output']>;
   last_login?: Maybe<Scalars['Date']['output']>;
@@ -3266,6 +3324,8 @@ export type ResolversTypes = ResolversObject<{
   CompetitorTier: CompetitorTier;
   Connector: ResolverTypeWrapper<Connector>;
   ConsumeProvisionedNewsFeedItemsResponse: ResolverTypeWrapper<ConsumeProvisionedNewsFeedItemsResponse>;
+  ContentTranslationEntry: ResolverTypeWrapper<ContentTranslationEntry>;
+  ContentTranslationValueInput: ContentTranslationValueInput;
   CreateCompetitorInput: CreateCompetitorInput;
   CreateDeploymentRequestInput: CreateDeploymentRequestInput;
   CreateDocumentInput: CreateDocumentInput;
@@ -3323,6 +3383,8 @@ export type ResolversTypes = ResolversObject<{
   Filter: Filter;
   FilterKey: FilterKey;
   GenericServiceCapability: ResolverTypeWrapper<GenericServiceCapability>;
+  GiveDeploymentFeedbackInput: GiveDeploymentFeedbackInput;
+  HasRepliedSatisfaction: HasRepliedSatisfaction;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
   Integration: ResolverTypeWrapper<ResolversInterfaceTypes<ResolversTypes>['Integration']>;
@@ -3335,6 +3397,7 @@ export type ResolversTypes = ResolversObject<{
   LastDeployedOverview: ResolverTypeWrapper<Omit<LastDeployedOverview, 'resources'> & { resources: Array<ResolversTypes['DeployedResource']> }>;
   LicenseType: LicenseType;
   LoadDocumentFacetInput: LoadDocumentFacetInput;
+  Locale: Locale;
   LogicalFilterInput: LogicalFilterInput;
   LogicalOperator: LogicalOperator;
   ManifestFragmentInput: ManifestFragmentInput;
@@ -3401,7 +3464,6 @@ export type ResolversTypes = ResolversObject<{
   RssFeed: ResolverTypeWrapper<RssFeed>;
   SendTelemetryMutation: ResolverTypeWrapper<SendTelemetryMutation>;
   SeoServiceInstance: ResolverTypeWrapper<SeoServiceInstance>;
-  SeoServiceInstanceLanguage: SeoServiceInstanceLanguage;
   SeoServiceInstanceMetadata: ResolverTypeWrapper<SeoServiceInstanceMetadata>;
   ServiceCapability: ResolverTypeWrapper<ServiceCapability>;
   ServiceCapabilityId: ResolverTypeWrapper<Scalars['ServiceCapabilityId']['output']>;
@@ -3463,6 +3525,7 @@ export type ResolversTypes = ResolversObject<{
   UpdateVotableFeatureInput: UpdateVotableFeatureInput;
   UpdateVotingRoundInput: UpdateVotingRoundInput;
   Upload: ResolverTypeWrapper<Scalars['Upload']['output']>;
+  UpsertContentTranslationInput: UpsertContentTranslationInput;
   UseCase: ResolverTypeWrapper<UseCase>;
   UseCaseConnection: ResolverTypeWrapper<UseCaseConnection>;
   UseCaseEdge: ResolverTypeWrapper<UseCaseEdge>;
@@ -3527,6 +3590,8 @@ export type ResolversParentTypes = ResolversObject<{
   CompetitorId: Scalars['CompetitorId']['output'];
   Connector: Connector;
   ConsumeProvisionedNewsFeedItemsResponse: ConsumeProvisionedNewsFeedItemsResponse;
+  ContentTranslationEntry: ContentTranslationEntry;
+  ContentTranslationValueInput: ContentTranslationValueInput;
   CreateCompetitorInput: CreateCompetitorInput;
   CreateDeploymentRequestInput: CreateDeploymentRequestInput;
   CreateDocumentInput: CreateDocumentInput;
@@ -3564,6 +3629,7 @@ export type ResolversParentTypes = ResolversObject<{
   FacetBucket: FacetBucket;
   Filter: Filter;
   GenericServiceCapability: GenericServiceCapability;
+  GiveDeploymentFeedbackInput: GiveDeploymentFeedbackInput;
   ID: Scalars['ID']['output'];
   Int: Scalars['Int']['output'];
   Integration: ResolversInterfaceTypes<ResolversParentTypes>['Integration'];
@@ -3676,6 +3742,7 @@ export type ResolversParentTypes = ResolversObject<{
   UpdateVotableFeatureInput: UpdateVotableFeatureInput;
   UpdateVotingRoundInput: UpdateVotingRoundInput;
   Upload: Scalars['Upload']['output'];
+  UpsertContentTranslationInput: UpsertContentTranslationInput;
   UseCase: UseCase;
   UseCaseConnection: UseCaseConnection;
   UseCaseEdge: UseCaseEdge;
@@ -3821,6 +3888,15 @@ export type ConnectorResolvers<ContextType = PortalContext, ParentType extends R
 export type ConsumeProvisionedNewsFeedItemsResponseResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['ConsumeProvisionedNewsFeedItemsResponse'] = ResolversParentTypes['ConsumeProvisionedNewsFeedItemsResponse']> = ResolversObject<{
   available_news_feed_types?: Resolver<Array<ResolversTypes['NewsFeedItemType']>, ParentType, ContextType>;
   news_feed_items?: Resolver<Array<ResolversTypes['ProvisionedNewsFeedItem']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ContentTranslationEntryResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['ContentTranslationEntry'] = ResolversParentTypes['ContentTranslationEntry']> = ResolversObject<{
+  key?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  locale?: Resolver<ResolversTypes['Locale'], ParentType, ContextType>;
+  updated_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  updater_id?: Resolver<Maybe<ResolversTypes['UserId']>, ParentType, ContextType>;
+  value?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -4057,8 +4133,6 @@ export type EpicResolvers<ContextType = PortalContext, ParentType extends Resolv
   timeline?: Resolver<ResolversTypes['Timeline'], ParentType, ContextType>;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updated_at?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
-  updater_id?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  uploader_id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -4242,6 +4316,7 @@ export type MutationResolvers<ContextType = PortalContext, ParentType extends Re
   deleteUserServices?: Resolver<Maybe<Array<Maybe<ResolversTypes['UserService']>>>, ParentType, ContextType, RequireFields<MutationDeleteUserServicesArgs, 'input' | 'service_instance_id'>>;
   deleteVotableFeature?: Resolver<ResolversTypes['VotableFeature'], ParentType, ContextType, RequireFields<MutationDeleteVotableFeatureArgs, 'id'>>;
   deleteVotingRound?: Resolver<ResolversTypes['VotingRound'], ParentType, ContextType, RequireFields<MutationDeleteVotingRoundArgs, 'id'>>;
+  discardContentTranslationDrafts?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   editMeUser?: Resolver<ResolversTypes['User'], ParentType, ContextType, RequireFields<MutationEditMeUserArgs, 'input'>>;
   editOrganization?: Resolver<Maybe<ResolversTypes['Organization']>, ParentType, ContextType, RequireFields<MutationEditOrganizationArgs, 'id' | 'input'>>;
   editSeoServiceInstance?: Resolver<ResolversTypes['SeoServiceInstanceMetadata'], ParentType, ContextType, RequireFields<MutationEditSeoServiceInstanceArgs, 'input' | 'language' | 'service_instance_id'>>;
@@ -4251,11 +4326,13 @@ export type MutationResolvers<ContextType = PortalContext, ParentType extends Re
   editUserService?: Resolver<Maybe<ResolversTypes['UserService']>, ParentType, ContextType, RequireFields<MutationEditUserServiceArgs, 'input' | 'service_instance_id'>>;
   frontendErrorLog?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType, RequireFields<MutationFrontendErrorLogArgs, 'message'>>;
   generateManifest?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<MutationGenerateManifestArgs, 'product' | 'type' | 'version'>>;
+  giveDeploymentFeedback?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<MutationGiveDeploymentFeedbackArgs, 'input'>>;
   incrementShareNumberDocument?: Resolver<ResolversTypes['Document'], ParentType, ContextType, RequireFields<MutationIncrementShareNumberDocumentArgs, 'documentId'>>;
   ingestManifestFragments?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<MutationIngestManifestFragmentsArgs, 'manifestFragments'>>;
   login?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<MutationLoginArgs, 'email'>>;
   logout?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   newProductVersion?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<MutationNewProductVersionArgs, 'product' | 'version'>>;
+  publishContentTranslationDrafts?: Resolver<Array<ResolversTypes['ContentTranslationEntry']>, ParentType, ContextType>;
   refreshPlatformRegistrationConnectivityStatus?: Resolver<ResolversTypes['RefreshPlatformRegistrationConnectivityStatusResponse'], ParentType, ContextType, RequireFields<MutationRefreshPlatformRegistrationConnectivityStatusArgs, 'input'>>;
   refreshPlatformRegistrationConnectivityStatusAllTenants?: Resolver<ResolversTypes['RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse'], ParentType, ContextType, RequireFields<MutationRefreshPlatformRegistrationConnectivityStatusAllTenantsArgs, 'input'>>;
   refreshPlatformRegistrationConnectivityStatusSingleTenant?: Resolver<ResolversTypes['RefreshPlatformRegistrationConnectivityStatusResponse'], ParentType, ContextType, RequireFields<MutationRefreshPlatformRegistrationConnectivityStatusSingleTenantArgs, 'input'>>;
@@ -4267,6 +4344,7 @@ export type MutationResolvers<ContextType = PortalContext, ParentType extends Re
   reorderDeploymentRequestInQueue?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<MutationReorderDeploymentRequestInQueueArgs, 'input'>>;
   requestTransferPersonalSpace?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<MutationRequestTransferPersonalSpaceArgs, 'new_email'>>;
   resetPassword?: Resolver<ResolversTypes['Success'], ParentType, ContextType>;
+  saveContentTranslationDraft?: Resolver<Array<ResolversTypes['ContentTranslationEntry']>, ParentType, ContextType, RequireFields<MutationSaveContentTranslationDraftArgs, 'input'>>;
   sendTelemetryEvent?: Resolver<Maybe<ResolversTypes['SendTelemetryMutation']>, ParentType, ContextType>;
   setVotingRoundStatus?: Resolver<Array<ResolversTypes['VotingRound']>, ParentType, ContextType, RequireFields<MutationSetVotingRoundStatusArgs, 'id' | 'status'>>;
   transferPersonalSpace?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<MutationTransferPersonalSpaceArgs, 'requestId'>>;
@@ -4475,6 +4553,7 @@ export type PlatformProviderResolvers<ContextType = PortalContext, ParentType ex
 }>;
 
 export type PlatformTrialStatusResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['PlatformTrialStatus'] = ResolversParentTypes['PlatformTrialStatus']> = ResolversObject<{
+  deploymentRequestId?: Resolver<Maybe<ResolversTypes['DeploymentRequestId']>, ParentType, ContextType>;
   end_date?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   hub_status?: Resolver<Maybe<ResolversTypes['DeploymentRequestHubStatus']>, ParentType, ContextType>;
   isBlacklisted?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
@@ -4505,6 +4584,8 @@ export type QueryResolvers<ContextType = PortalContext, ParentType extends Resol
   bundleUserServiceGroups?: Resolver<Array<ResolversTypes['BundleUserServiceGroup']>, ParentType, ContextType, RequireFields<QueryBundleUserServiceGroupsArgs, 'serviceInstanceId'>>;
   canUnregisterPlatform?: Resolver<ResolversTypes['CanUnregisterResponse'], ParentType, ContextType, RequireFields<QueryCanUnregisterPlatformArgs, 'input'>>;
   competitors?: Resolver<ResolversTypes['CompetitorConnection'], ParentType, ContextType, RequireFields<QueryCompetitorsArgs, 'first' | 'orderBy' | 'orderMode'>>;
+  contentTranslationDrafts?: Resolver<Array<ResolversTypes['ContentTranslationEntry']>, ParentType, ContextType, Partial<QueryContentTranslationDraftsArgs>>;
+  contentTranslations?: Resolver<Array<ResolversTypes['ContentTranslationEntry']>, ParentType, ContextType, Partial<QueryContentTranslationsArgs>>;
   countEpicsPerTimeline?: Resolver<Array<ResolversTypes['EpicCountPerTimeline']>, ParentType, ContextType>;
   currentVotingRound?: Resolver<Maybe<ResolversTypes['VotingRound']>, ParentType, ContextType, RequireFields<QueryCurrentVotingRoundArgs, 'service_instance_id'>>;
   deploymentRequests?: Resolver<ResolversTypes['PlatformDeploymentRequestConnection'], ParentType, ContextType, RequireFields<QueryDeploymentRequestsArgs, 'first'>>;
@@ -4663,7 +4744,7 @@ export type SeoServiceInstanceResolvers<ContextType = PortalContext, ParentType 
 }>;
 
 export type SeoServiceInstanceMetadataResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SeoServiceInstanceMetadata'] = ResolversParentTypes['SeoServiceInstanceMetadata']> = ResolversObject<{
-  language?: Resolver<ResolversTypes['SeoServiceInstanceLanguage'], ParentType, ContextType>;
+  language?: Resolver<ResolversTypes['Locale'], ParentType, ContextType>;
   meta_description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   meta_title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   service_instance_id?: Resolver<ResolversTypes['ServiceInstanceId'], ParentType, ContextType>;
@@ -5005,6 +5086,7 @@ export type UserResolvers<ContextType = PortalContext, ParentType extends Resolv
   disabled?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   email?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   first_name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  has_replied_satisfaction?: Resolver<Maybe<ResolversTypes['HasRepliedSatisfaction']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   invitation_date?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   last_login?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
@@ -5187,6 +5269,7 @@ export type Resolvers<ContextType = PortalContext> = ResolversObject<{
   CompetitorId?: GraphQLScalarType;
   Connector?: ConnectorResolvers<ContextType>;
   ConsumeProvisionedNewsFeedItemsResponse?: ConsumeProvisionedNewsFeedItemsResponseResolvers<ContextType>;
+  ContentTranslationEntry?: ContentTranslationEntryResolvers<ContextType>;
   CsvFeed?: CsvFeedResolvers<ContextType>;
   CustomDashboard?: CustomDashboardResolvers<ContextType>;
   CustomView?: CustomViewResolvers<ContextType>;

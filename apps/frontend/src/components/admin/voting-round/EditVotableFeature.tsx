@@ -9,6 +9,7 @@ import {
   toGraphqlUploads,
 } from '@/components/admin/voting-round/votable-feature.utils';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { requestGraphqlWithUploads } from '@/lib/graphql-upload-client';
 import { toast } from '@filigran/ui';
@@ -20,7 +21,6 @@ import {
   VotableFeatureUpdateMutationVariables,
 } from '@graphql/generated';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { invalidateVotingRoundQueries } from './voting-round-query-invalidation';
 
@@ -35,7 +35,7 @@ const EditVotableFeature = ({
   feature: VotableFeatureFormModel;
   serviceInstanceId: string;
 }) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const queryClient = useQueryClient();
   const [openSheet, setOpenSheet] = useState<boolean>(open);
 

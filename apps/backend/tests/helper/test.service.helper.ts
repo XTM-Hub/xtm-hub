@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { expect } from 'vitest';
 import { db } from '../../knexfile';
 import {
-  SeoServiceInstanceLanguage,
+  Locale,
   ServiceDefinitionIdentifier,
 } from '../../src/__generated__/resolvers-types';
 import SEOServiceInstance, {
@@ -138,7 +138,7 @@ export const TestServiceHelper = {
     create: async (
       data: Partial<SEOServiceInstance> & {
         service_instance_id: ServiceInstanceId;
-        language: SeoServiceInstanceLanguage;
+        language: Locale;
       }
     ): Promise<SEOServiceInstance> => {
       const [seoServiceInstance] = await db<SEOServiceInstance>(

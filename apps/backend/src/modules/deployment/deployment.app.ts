@@ -433,6 +433,7 @@ export const DeploymentApp = {
     }
     if (organization.personal_space) {
       return {
+        deploymentRequestId: null,
         ongoingStandaloneTrials: [],
         isBlacklisted: false,
         hub_status: null,
@@ -451,6 +452,7 @@ export const DeploymentApp = {
       );
 
     return {
+      deploymentRequestId: bundle?.id ?? null,
       isBlacklisted:
         await CompetitorApp.isOrganizationBlacklisted(organization),
       hub_status: bundle?.hub_status ?? null,

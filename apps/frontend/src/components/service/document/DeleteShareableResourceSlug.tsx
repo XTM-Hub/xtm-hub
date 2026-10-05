@@ -12,6 +12,7 @@ import {
 } from '@/components/service/components/ServiceDelete';
 import { useDocumentContext } from '@/components/service/document/use-document-context';
 import useServiceCapability from '@/hooks/use-service-capability';
+import { useTranslate } from '@/hooks/use-translate';
 import revalidatePathActions from '@/utils/actions/revalidate-path.actions';
 import {
   isIntegrationItem,
@@ -19,7 +20,6 @@ import {
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { toast } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
 interface DeleteShareableResourceSlugProps {
@@ -30,7 +30,7 @@ const DeleteShareableResourceSlug = ({
   document,
 }: DeleteShareableResourceSlugProps) => {
   const router = useRouter();
-  const t = useTranslations();
+  const t = useTranslate();
 
   const serviceContext = useServiceContext();
 
