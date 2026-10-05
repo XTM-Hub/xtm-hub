@@ -9,8 +9,8 @@ import {
 import { useContentTranslationApi } from '@/hooks/use-content-translation-api';
 import { Locale, locales } from '@/i18n/config';
 import { getStaticTranslationValue } from '@/utils/content-translation/get-static-translation-value';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   Dialog,
   DialogClose,
   DialogContent,
@@ -192,7 +192,7 @@ export const ContentEditDialog = ({
               <DialogClose asChild>
                 <Button
                   type="button"
-                  variant="secondary">
+                  priority="secondary">
                   {tCommon('Utils.Cancel')}
                 </Button>
               </DialogClose>

@@ -3,6 +3,7 @@
 import { useEditMode } from '@/context/edit-mode-context';
 import { useContentEditModeToggle } from '@/hooks/use-content-edit-mode-toggle';
 import { useContentTranslationDrafts } from '@/hooks/use-content-translation-drafts';
+import { Button } from '@filigran/design-system';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -10,7 +11,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  Button,
   toast,
 } from '@filigran/ui';
 import { useTranslations } from 'next-intl';
@@ -62,13 +62,14 @@ export const ExitEditModeDialog = ({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <Button
-            variant="tertiary"
+            priority="tertiary"
             disabled={isBusy}
             onClick={() => exitAfter(keepDrafts)}>
             {t('EditableText.KeepDraftsAndExit')}
           </Button>
           <Button
-            variant="secondary-destructive"
+            variant="destructive"
+            priority="secondary"
             disabled={isBusy}
             onClick={() => exitAfter(discardDrafts)}>
             {t('EditableText.DiscardAndExit')}

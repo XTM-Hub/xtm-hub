@@ -6,8 +6,9 @@ import { useEditMode } from '@/context/edit-mode-context';
 import { useContentTranslationDrafts } from '@/hooks/use-content-translation-drafts';
 import { useExitEditMode } from '@/hooks/use-exit-edit-mode';
 import { cn } from '@/lib/utils';
+import { Button } from '@filigran/design-system';
 import { EditIcon } from '@filigran/icon';
-import { Button, toast } from '@filigran/ui';
+import { toast } from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -68,14 +69,13 @@ export const EditionModeBanner = () => {
         )}
       </span>
       <Button
-        size="sm"
-        variant="outline"
+        priority="secondary"
         aria-pressed={showEditableAreas}
         className={cn(
           showEditableAreas ? SOLID_BUTTON_CLASSES : OUTLINE_BUTTON_CLASSES
         )}
+        startIcon={<EditIcon className="h-4 w-4" />}
         onClick={() => setShowEditableAreas(!showEditableAreas)}>
-        <EditIcon className="h-4 w-4" />
         {t('EditableText.ShowEditableAreas')}
       </Button>
       {pendingChangeCount > 0 && (
@@ -84,15 +84,13 @@ export const EditionModeBanner = () => {
             {t('EditableText.PendingChanges', { count: pendingChangeCount })}
           </span>
           <Button
-            size="sm"
             disabled={isPending}
             className={SOLID_BUTTON_CLASSES}
             onClick={() => setConfirmedAction('publish')}>
             {t('EditableText.Publish')}
           </Button>
           <Button
-            size="sm"
-            variant="outline"
+            priority="secondary"
             disabled={isPending}
             className={OUTLINE_BUTTON_CLASSES}
             onClick={() => setConfirmedAction('discard')}>
@@ -101,7 +99,7 @@ export const EditionModeBanner = () => {
         </span>
       )}
       <Button
-        variant="link"
+        priority="tertiary"
         disabled={isExiting}
         className="h-auto p-0 normal-case text-sm text-primary-foreground underline underline-offset-2"
         onClick={exitEditMode}>
