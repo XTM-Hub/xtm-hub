@@ -14,6 +14,9 @@ describe('huntScheduleError', () => {
     ${'0 6 1-15 JAN,JUL *'}
     ${'0 0 29 2 *'}
     ${'0 12 * * 7'}
+    ${'45 23 * * *'}
+    ${'0 0,23 * * *'}
+    ${'45 23 * * 0,1'}
   `('accepts $schedule', ({ schedule }) => {
     expect(huntScheduleError(schedule)).toBeNull();
   });
@@ -33,6 +36,30 @@ describe('huntScheduleError', () => {
     ${'0,5 * * * *'}    | ${'more than once every 15 minutes'}
   `('refuses $schedule', ({ schedule, error }) => {
     expect(huntScheduleError(schedule)).toContain(error);
+  });
+
+  it.each`
+    case                                                    | schedule
+    ${'a Monday 23:59 followed by the 1st at 00:00'}        | ${'0,59 0,23 1 * MON'}
+    ${'the 31st at 23:55 followed by the 1st at 00:00'}     | ${'0,55 0,23 1,31 * *'}
+    ${'a Sunday 23:55 then Monday 00:00 (day 7 and day 1)'} | ${'0,55 0,23 * * 7,1'}
+  `(
+    'refuses $case: the interval is computed over the whole calendar',
+    ({ schedule }) => {
+      expect(huntScheduleError(schedule)).toContain(
+        'more than once every 15 minutes'
+      );
+    }
+  );
+
+  it('walks the whole calendar cycle in bounded time', () => {
+    // Mondays only: no two consecutive matching days, every day of the cycle is read
+    const start = performance.now();
+
+    const error = huntScheduleError('0,59 0,23 * * MON');
+
+    expect(error).toBeNull();
+    expect(performance.now() - start).toBeLessThan(2000);
   });
 
   it('accepts a schedule that lists every hour, day, month and weekday', () => {

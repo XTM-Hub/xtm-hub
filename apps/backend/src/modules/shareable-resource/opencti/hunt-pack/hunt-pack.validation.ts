@@ -51,6 +51,78 @@ const isPresent = (value: unknown) => value !== undefined && value !== null;
 const asOptionalString = (value: unknown): string | null =>
   typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
 
+const CONDITION_OPERATORS = new Set(['and', 'or']);
+const CONDITION_QUANTIFIERS = new Set(['all', 'any']);
+const QUOTED_TOKEN_MAX_LENGTH = 64;
+
+const quoted = (token: string) =>
+  `"${token.length > QUOTED_TOKEN_MAX_LENGTH ? `${token.slice(0, QUOTED_TOKEN_MAX_LENGTH)}...` : token}"`;
+
+const isIdentifierToken = (token: string | undefined): token is string =>
+  token !== undefined &&
+  token !== '(' &&
+  token !== ')' &&
+  !CONDITION_KEYWORDS.has(token.toLowerCase());
+
+const isQuantifierToken = (token: string) =>
+  /^\d+$/.test(token) || CONDITION_QUANTIFIERS.has(token.toLowerCase());
+
+/**
+ * Why a condition is not a Sigma expression, or null: search identifiers and
+ * `<1 | any | all> of <identifier pattern | them>` joined by `and` / `or`,
+ * negated by `not` and grouped by parentheses. Stricter than the OpenCTI
+ * import, which checks the identifiers only: such a condition is accepted
+ * there but no hunt connector can translate it. One pass with a depth
+ * counter, so a deeply nested condition cannot exhaust the stack.
+ */
+const conditionSyntaxError = (condition: string): string | null => {
+  const [expression = ''] = condition.split('|');
+  const tokens = expression
+    .replace(/[()]/g, ' $& ')
+    .split(/\s+/)
+    .filter((token) => token.length > 0);
+  let depth = 0;
+  let expectOperand = true;
+  for (let index = 0; index < tokens.length; index += 1) {
+    const token = tokens[index] ?? '';
+    const lower = token.toLowerCase();
+    if (!expectOperand) {
+      if (token === ')') {
+        if (depth === 0) {
+          return 'a closing parenthesis has no opening one';
+        }
+        depth -= 1;
+      } else if (CONDITION_OPERATORS.has(lower)) {
+        expectOperand = true;
+      } else {
+        return `${quoted(token)} must follow "and" or "or"`;
+      }
+    } else if (token === '(') {
+      depth += 1;
+    } else if (lower === 'not') {
+      // A negation is followed by its operand
+    } else if (
+      isQuantifierToken(token) &&
+      tokens[index + 1]?.toLowerCase() === 'of'
+    ) {
+      const target = tokens[index + 2];
+      if (target?.toLowerCase() !== 'them' && !isIdentifierToken(target)) {
+        return `"${token} of" must be followed by a search identifier pattern or "them"`;
+      }
+      index += 2;
+      expectOperand = false;
+    } else if (isIdentifierToken(token)) {
+      expectOperand = false;
+    } else {
+      return `${quoted(token)} is where a search identifier is expected`;
+    }
+  }
+  if (expectOperand) {
+    return 'it ends where a search identifier is expected';
+  }
+  return depth > 0 ? 'a parenthesis is not closed' : null;
+};
+
 const conditionIdentifiers = (condition: string): string[] => {
   // Aggregation expressions (deprecated) follow a pipe and hold no identifier
   const [expression = ''] = condition.split('|');
@@ -141,6 +213,12 @@ const detectionErrors = (detection: unknown): string[] => {
     return errors;
   }
   (conditions as string[]).forEach((item) => {
+    const syntaxError = conditionSyntaxError(item);
+    if (syntaxError) {
+      errors.push(
+        `the Sigma condition is not a valid expression: ${syntaxError}`
+      );
+    }
     conditionIdentifiers(item)
       .filter((identifier) => !identifierMatches(identifier, searchIdentifiers))
       .forEach((identifier) =>

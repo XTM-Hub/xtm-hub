@@ -48,6 +48,63 @@ describe('sigmaRuleErrors', () => {
     expect(sigmaRuleErrors(rule).join('; ')).toContain(error);
   });
 
+  const ruleWithCondition = (condition: string) =>
+    [
+      'title: Condition',
+      'logsource: {product: windows}',
+      'detection:',
+      '  selection_image: {Image: x}',
+      '  selection_flag: {CommandLine: y}',
+      '  filter: {User: SYSTEM}',
+      `  condition: '${condition}'`,
+    ].join('\n');
+
+  it.each`
+    condition
+    ${'selection_image'}
+    ${'selection_image and not filter'}
+    ${'(selection_image or selection_flag) and not filter'}
+    ${'1 of selection_* and not filter'}
+    ${'any of selection_*'}
+    ${'ALL OF them'}
+    ${'not (selection_image and (selection_flag or filter))'}
+    ${'selection_image | count() > 5'}
+  `('accepts the condition $condition', ({ condition }) => {
+    expect(sigmaRuleErrors(ruleWithCondition(condition))).toEqual([]);
+  });
+
+  it.each`
+    condition                         | error
+    ${'all of'}                       | ${'"all of" must be followed by a search identifier pattern or "them"'}
+    ${'1 of and filter'}              | ${'"1 of" must be followed'}
+    ${'selection_image and'}          | ${'it ends where a search identifier is expected'}
+    ${'and selection_image'}          | ${'"and" is where a search identifier is expected'}
+    ${'selection_image filter'}       | ${'"filter" must follow "and" or "or"'}
+    ${'not'}                          | ${'it ends where a search identifier is expected'}
+    ${'(selection_image or filter'}   | ${'a parenthesis is not closed'}
+    ${'selection_image)'}             | ${'a closing parenthesis has no opening one'}
+    ${'selection_image ()'}           | ${'"(" must follow "and" or "or"'}
+    ${'them'}                         | ${'"them" is where a search identifier is expected'}
+    ${'selection_image or or filter'} | ${'"or" is where a search identifier is expected'}
+  `(
+    'refuses the condition $condition, which no hunt connector translates',
+    ({ condition, error }) => {
+      const errors = sigmaRuleErrors(ruleWithCondition(condition)).join('; ');
+      expect(errors).toContain('the Sigma condition is not a valid expression');
+      expect(errors).toContain(error);
+    }
+  );
+
+  it('checks a deeply nested condition without recursion', () => {
+    const depth = 20000;
+    const condition = `${'('.repeat(depth)}selection_image${')'.repeat(depth)}`;
+
+    expect(sigmaRuleErrors(ruleWithCondition(condition))).toEqual([]);
+    expect(
+      sigmaRuleErrors(ruleWithCondition(`${condition})`)).join('; ')
+    ).toContain('a closing parenthesis has no opening one');
+  });
+
   it('refuses a rule longer than OpenCTI accepts', () => {
     expect(sigmaRuleErrors(`title: ${'x'.repeat(65536)}`)).toEqual([
       'the Sigma rule exceeds 65536 characters',

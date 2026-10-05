@@ -32,8 +32,9 @@ const MAX_SEARCH_DAYS = 366 * 5;
 // Listing every value of every field takes about 360 characters: a longer
 // schedule is refused before it is split.
 export const MAX_SCHEDULE_LENGTH = 512;
-const MINUTE_MS = 60 * 1000;
-const WEEK_MS = 7 * 24 * 60 * MINUTE_MS;
+// The Gregorian calendar repeats every 400 years, day of week included
+const CALENDAR_CYCLE_DAYS = 146097;
+const DAY_MINUTES = 24 * 60;
 
 interface FieldSpec {
   min: number;
@@ -201,6 +202,64 @@ const nextOccurrence = (cron: ParsedCron, after: Date): Date | null => {
   return null;
 };
 
+// Smallest number of days between two matching days over a full calendar
+// cycle, null when fewer than two days match.
+const shortestMatchingDayGap = (cron: ParsedCron): number | null => {
+  const day = new Date(Date.UTC(2000, 0, 1));
+  let previous: number | null = null;
+  let shortest: number | null = null;
+  for (let index = 0; index < CALENDAR_CYCLE_DAYS; index += 1) {
+    if (isDayMatching(cron, day)) {
+      if (previous !== null) {
+        shortest =
+          shortest === null
+            ? index - previous
+            : Math.min(shortest, index - previous);
+        if (shortest === 1) {
+          return 1;
+        }
+      }
+      previous = index;
+    }
+    day.setUTCDate(day.getUTCDate() + 1);
+  }
+  return shortest;
+};
+
+// Shortest interval in minutes between two occurrences over the whole
+// recurrence: between two times of a day, and from the last time of a
+// matching day to the first time of the next matching day. Null when the
+// schedule fires at most once.
+const shortestIntervalMinutes = (cron: ParsedCron): number | null => {
+  const times = cron.hours.flatMap((hour) =>
+    cron.minutes.map((minute) => hour * 60 + minute)
+  );
+  const first = times[0];
+  const last = times[times.length - 1];
+  if (first === undefined || last === undefined) {
+    return null;
+  }
+  let shortest = Number.POSITIVE_INFINITY;
+  for (let index = 1; index < times.length; index += 1) {
+    shortest = Math.min(
+      shortest,
+      (times[index] ?? 0) - (times[index - 1] ?? 0)
+    );
+  }
+  // Across midnight: only computed when it can be the shortest
+  const acrossMidnight = DAY_MINUTES - last + first;
+  if (acrossMidnight < shortest) {
+    const dayGap = shortestMatchingDayGap(cron);
+    if (dayGap !== null) {
+      shortest = Math.min(
+        shortest,
+        (dayGap - 1) * DAY_MINUTES + acrossMidnight
+      );
+    }
+  }
+  return Number.isFinite(shortest) ? shortest : null;
+};
+
 /** Why OpenCTI would refuse this hunt schedule, or null when it accepts it. */
 export const huntScheduleError = (schedule: string): string | null => {
   if (HUNT_SCHEDULE_KEYWORDS.includes(schedule)) {
@@ -215,24 +274,12 @@ export const huntScheduleError = (schedule: string): string | null => {
   } catch (error) {
     return `the schedule is not a valid cron expression: ${(error as Error).message}`;
   }
-  // A week of consecutive occurrences catches irregular lists such as 0,5
-  let previous = nextOccurrence(cron, new Date(Date.UTC(2024, 0, 1)));
-  if (!previous) {
+  if (!nextOccurrence(cron, new Date(Date.UTC(2024, 0, 1)))) {
     return 'the schedule never fires';
   }
-  const horizon = previous.getTime() + WEEK_MS;
-  while (previous.getTime() < horizon) {
-    const next: Date | null = nextOccurrence(cron, previous);
-    if (!next) {
-      return null;
-    }
-    if (
-      (next.getTime() - previous.getTime()) / MINUTE_MS <
-      MIN_SCHEDULE_INTERVAL_MINUTES
-    ) {
-      return `the schedule fires more than once every ${MIN_SCHEDULE_INTERVAL_MINUTES} minutes`;
-    }
-    previous = next;
+  const shortest = shortestIntervalMinutes(cron);
+  if (shortest !== null && shortest < MIN_SCHEDULE_INTERVAL_MINUTES) {
+    return `the schedule fires more than once every ${MIN_SCHEDULE_INTERVAL_MINUTES} minutes`;
   }
   return null;
 };
