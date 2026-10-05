@@ -7,9 +7,9 @@ import { SettingsContext } from '@/components/settings/EnvPortalContext';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH } from '@/utils/path/constant';
+import { Button } from '@filigran/design-system';
 import {
   AutoForm,
-  Button,
   Dialog,
   DialogContent,
   DialogFooter,
