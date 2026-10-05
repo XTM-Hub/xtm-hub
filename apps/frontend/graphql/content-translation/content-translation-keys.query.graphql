@@ -1,5 +1,0 @@
-query ContentTranslationKeys {
-  contentTranslations {
-    key
-  }
-}

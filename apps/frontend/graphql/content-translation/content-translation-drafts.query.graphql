@@ -1,7 +1,0 @@
-query ContentTranslationDrafts {
-  contentTranslationDrafts {
-    key
-    locale
-    value
-  }
-}

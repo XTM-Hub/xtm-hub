@@ -1,6 +1,0 @@
-mutation PublishContentTranslationDrafts {
-  publishContentTranslationDrafts {
-    key
-    locale
-  }
-}

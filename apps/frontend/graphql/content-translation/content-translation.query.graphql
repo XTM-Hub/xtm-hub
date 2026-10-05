@@ -4,3 +4,30 @@ query ContentTranslationsByLocale($locale: Locale) {
     value
   }
 }
+
+query ContentTranslationKeys {
+  contentTranslations {
+    key
+  }
+}
+
+query ContentTranslationForKey($keys: [String!]) {
+  contentTranslations(keys: $keys) {
+    key
+    locale
+    value
+  }
+  contentTranslationDrafts(keys: $keys) {
+    key
+    locale
+    value
+  }
+}
+
+query ContentTranslationDrafts {
+  contentTranslationDrafts {
+    key
+    locale
+    value
+  }
+}
