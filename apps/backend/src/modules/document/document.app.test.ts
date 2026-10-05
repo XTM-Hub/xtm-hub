@@ -33,6 +33,7 @@ import ServiceInstance, {
   ServiceInstanceId,
 } from '../../model/kanel/public/ServiceInstance';
 import { MinIOClient } from '../../thirdparty/minio/client';
+import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode } from '../../utils/error/error.code';
 import { NewsFeedApp } from '../news-feed/news-feed.app';
 import { RegistrationApp } from '../registration/registration.app';
@@ -56,6 +57,7 @@ import { TelemetryEventType } from '../telemetry/telemetry.types';
 import { DocumentApp } from './document.app';
 import {
   ALL_METADATA_KEYS,
+  DocumentHelper,
   DocumentTypeMappedByServiceDefinition,
   ServiceDefinitionIdentifiersByPlatformIdentifier,
 } from './document.helper';
@@ -1105,6 +1107,48 @@ describe('documentApp', () => {
       // Then
       expect(documentLoaded.download_number).toBe(5);
       expect(documentLoaded.share_number).toBe(12);
+    });
+
+    it('should log a warning when the loaded document has no slug', async () => {
+      // Given
+      const warnSpy = vi.spyOn(logApp, 'warn').mockImplementation(() => {});
+      vi.spyOn(
+        DocumentHelper,
+        'loadSeoDocumentWithCountersBySlug'
+      ).mockResolvedValue({ id: 'document-id', slug: null } as never);
+
+      // When
+      await DocumentApp.loadPublicDocumentBySlug(
+        SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+        'requested-slug'
+      );
+
+      // Then
+      expect(warnSpy).toHaveBeenCalledWith(
+        'Public document loaded by slug has no slug',
+        expect.objectContaining({
+          documentId: 'document-id',
+          requestedSlug: 'requested-slug',
+        })
+      );
+    });
+
+    it('should not log a warning when the loaded document has a slug', async () => {
+      // Given
+      const warnSpy = vi.spyOn(logApp, 'warn').mockImplementation(() => {});
+      vi.spyOn(
+        DocumentHelper,
+        'loadSeoDocumentWithCountersBySlug'
+      ).mockResolvedValue({ id: 'document-id', slug: 'slug' } as never);
+
+      // When
+      await DocumentApp.loadPublicDocumentBySlug(
+        SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+        'slug'
+      );
+
+      // Then
+      expect(warnSpy).not.toHaveBeenCalled();
     });
   });
 

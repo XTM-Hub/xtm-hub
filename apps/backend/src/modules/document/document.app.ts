@@ -660,11 +660,21 @@ export const DocumentApp = {
     const { documentType, metadataKeys } =
       getMetadataKeysAndDocumentTypeFromServiceDefinition(serviceDefinition);
 
-    return DocumentHelper.loadSeoDocumentWithCountersBySlug(
+    const document = await DocumentHelper.loadSeoDocumentWithCountersBySlug(
       documentType,
       slug,
       metadataKeys
     );
+
+    if (!document.slug) {
+      logApp.warn('Public document loaded by slug has no slug', {
+        documentId: document.id,
+        serviceInstanceId,
+        requestedSlug: slug,
+      });
+    }
+
+    return document;
   },
 
   loadPublicDocuments: async (input: QueryPublicDocumentsArgs) => {
