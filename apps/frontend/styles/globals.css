@@ -1,6 +1,7 @@
 @import 'tw-animate-css';
 @import 'tailwindcss';
 @import '@filigran/design-system/tokens/theme.css';
+@import '@filigran/design-system/styles/gradient-helpers.css';
 @import '../src/components/filigran-ui/theme.css';
 
 @reference '../src/components/filigran-ui/theme.css';
@@ -26,6 +27,8 @@ body[data-theme='Dark'] {
   --hover-background: var(--color-filigran-brand-primary-transparency);
 }
 @source '../src/components/filigran-ui/**/*.{ts,tsx}';
+/* Tailwind skips node_modules: scan the design-system bundle so its component classes get generated */
+@source '../../../node_modules/@filigran/design-system/dist/**/*.mjs';
 
 @variant dark (.dark &);
 @variant mobile (@media screen and (max-width: 40rem));
