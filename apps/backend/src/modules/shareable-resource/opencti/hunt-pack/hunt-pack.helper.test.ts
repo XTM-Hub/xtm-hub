@@ -267,6 +267,22 @@ describe('huntPackHelper.summarize', () => {
       HUNT_PACK_MAX_HUNTS
     );
   });
+
+  it('checks the schedules of the largest pack in bounded time', () => {
+    // Monthly schedules, and schedules whose times straddle midnight on days
+    // that are never consecutive: the costliest ones to check
+    const schedules = ['0 0 1 * *', '0,55 0,23 1 * *', '0,55 0,23 1,15 * *'];
+    const hunts = Array.from({ length: HUNT_PACK_MAX_HUNTS }, (_, index) => ({
+      ...hunt(index),
+      hunt_schedule: schedules[index % schedules.length],
+    }));
+    const start = performance.now();
+
+    const summary = HuntPackHelper.summarize(bundle(hunts));
+
+    expect(summary.huntCount).toBe(HUNT_PACK_MAX_HUNTS);
+    expect(performance.now() - start).toBeLessThan(500);
+  });
 });
 
 describe('huntPackHelper metadata', () => {

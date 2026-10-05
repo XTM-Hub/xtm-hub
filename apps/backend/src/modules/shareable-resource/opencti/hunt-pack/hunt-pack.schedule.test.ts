@@ -52,14 +52,73 @@ describe('huntScheduleError', () => {
     }
   );
 
-  it('walks the whole calendar cycle in bounded time', () => {
-    // Mondays only: no two consecutive matching days, every day of the cycle is read
-    const start = performance.now();
+  // Day-by-day oracle over 28 years: between 1901 and 2099 the calendar
+  // repeats every 28 years, every month starting on every weekday in common
+  // and leap years
+  const consecutiveDaysByScan = (
+    daysOfMonth: string,
+    months: string,
+    daysOfWeek: string
+  ) => {
+    const values = (field: string) =>
+      field === '*' ? null : new Set(field.split(',').map(Number));
+    const [dom, month, dow] = [daysOfMonth, months, daysOfWeek].map(values);
+    const matches = (date: Date) => {
+      if (month && !month.has(date.getUTCMonth() + 1)) return false;
+      const domMatch = !dom || dom.has(date.getUTCDate());
+      const dowMatch = !dow || dow.has(date.getUTCDay());
+      return dom && dow ? domMatch || dowMatch : domMatch && dowMatch;
+    };
+    const day = new Date(Date.UTC(2001, 0, 1));
+    let matched = false;
+    let previous = false;
+    for (let index = 0; index < 28 * 366; index += 1) {
+      const current = matches(day);
+      if (current && previous) return 'consecutive';
+      matched ||= current;
+      previous = current;
+      day.setUTCDate(day.getUTCDate() + 1);
+    }
+    return matched ? 'apart' : 'never';
+  };
 
-    const error = huntScheduleError('0,59 0,23 * * MON');
+  const DAYS_OF_MONTH = [
+    '*',
+    '1',
+    '15',
+    '29',
+    '30',
+    '31',
+    '1,31',
+    '28,29',
+    '1,30',
+    '1,28',
+  ];
+  const MONTHS = ['*', '2', '2,3', '1,12', '4,5', '12', '1'];
+  const DAYS_OF_WEEK = ['*', '1', '0,1', '1,6', '5'];
 
-    expect(error).toBeNull();
-    expect(performance.now() - start).toBeLessThan(2000);
+  it('tells consecutive matching days exactly as a day-by-day scan', () => {
+    const mismatches: string[] = [];
+    for (const daysOfMonth of DAYS_OF_MONTH) {
+      for (const months of MONTHS) {
+        for (const daysOfWeek of DAYS_OF_WEEK) {
+          // 23:55 and 00:00 are 5 minutes apart only on consecutive days
+          const schedule = `0,55 0,23 ${daysOfMonth} ${months} ${daysOfWeek}`;
+          const expected = {
+            consecutive: 'more than once every 15 minutes',
+            apart: null,
+            never: 'never fires',
+          }[consecutiveDaysByScan(daysOfMonth, months, daysOfWeek)];
+          const error = huntScheduleError(schedule);
+          const agrees =
+            expected === null ? error === null : !!error?.includes(expected);
+          if (!agrees) {
+            mismatches.push(`${schedule}: ${error} instead of ${expected}`);
+          }
+        }
+      }
+    }
+    expect(mismatches).toEqual([]);
   });
 
   it('accepts a schedule that lists every hour, day, month and weekday', () => {

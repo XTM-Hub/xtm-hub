@@ -32,9 +32,22 @@ const MAX_SEARCH_DAYS = 366 * 5;
 // Listing every value of every field takes about 360 characters: a longer
 // schedule is refused before it is split.
 export const MAX_SCHEDULE_LENGTH = 512;
-// The Gregorian calendar repeats every 400 years, day of week included
-const CALENDAR_CYCLE_DAYS = 146097;
 const DAY_MINUTES = 24 * 60;
+// Lengths of the months, February in common and leap years
+const MONTH_LENGTHS = [
+  [31],
+  [28, 29],
+  [31],
+  [30],
+  [31],
+  [30],
+  [31],
+  [31],
+  [30],
+  [31],
+  [30],
+  [31],
+];
 
 interface FieldSpec {
   min: number;
@@ -162,12 +175,17 @@ const parseCron = (expression: string): ParsedCron => {
   };
 };
 
-const isDayMatching = (cron: ParsedCron, date: Date) => {
-  if (!cron.months.has(date.getUTCMonth() + 1)) {
+const matchesDay = (
+  cron: ParsedCron,
+  month: number,
+  dayOfMonth: number,
+  dayOfWeek: number
+) => {
+  if (!cron.months.has(month)) {
     return false;
   }
-  const dayOfMonthMatch = cron.daysOfMonth.has(date.getUTCDate());
-  const dayOfWeekMatch = cron.daysOfWeek.has(date.getUTCDay());
+  const dayOfMonthMatch = cron.daysOfMonth.has(dayOfMonth);
+  const dayOfWeekMatch = cron.daysOfWeek.has(dayOfWeek);
   // When both day fields are restricted, either one matching is enough
   if (cron.dayOfMonthRestricted && cron.dayOfWeekRestricted) {
     return dayOfMonthMatch || dayOfWeekMatch;
@@ -177,6 +195,9 @@ const isDayMatching = (cron: ParsedCron, date: Date) => {
   }
   return !cron.dayOfWeekRestricted || dayOfWeekMatch;
 };
+
+const isDayMatching = (cron: ParsedCron, date: Date) =>
+  matchesDay(cron, date.getUTCMonth() + 1, date.getUTCDate(), date.getUTCDay());
 
 const nextOccurrence = (cron: ParsedCron, after: Date): Date | null => {
   const start = new Date(after.getTime());
@@ -202,62 +223,63 @@ const nextOccurrence = (cron: ParsedCron, after: Date): Date | null => {
   return null;
 };
 
-// Smallest number of days between two matching days over a full calendar
-// cycle, null when fewer than two days match.
-const shortestMatchingDayGap = (cron: ParsedCron): number | null => {
-  const day = new Date(Date.UTC(2000, 0, 1));
-  let previous: number | null = null;
-  let shortest: number | null = null;
-  for (let index = 0; index < CALENDAR_CYCLE_DAYS; index += 1) {
-    if (isDayMatching(cron, day)) {
-      if (previous !== null) {
-        shortest =
-          shortest === null
-            ? index - previous
-            : Math.min(shortest, index - previous);
-        if (shortest === 1) {
-          return 1;
+// Whether two consecutive days can both match. Over the 400-year Gregorian
+// cycle every month starts on every day of the week, February in common and
+// leap years alike, so each month, length and first weekday is tried once:
+// at most about 5,000 comparisons, whatever the schedule.
+const hasConsecutiveMatchingDays = (cron: ParsedCron): boolean => {
+  for (let month = 1; month <= 12; month += 1) {
+    if (cron.months.has(month)) {
+      const nextMonth = (month % 12) + 1;
+      for (const length of MONTH_LENGTHS[month - 1] ?? []) {
+        for (let firstWeekday = 0; firstWeekday < 7; firstWeekday += 1) {
+          const weekday = (day: number) => (firstWeekday + day - 1) % 7;
+          for (let day = 1; day < length; day += 1) {
+            if (
+              matchesDay(cron, month, day, weekday(day)) &&
+              matchesDay(cron, month, day + 1, weekday(day + 1))
+            ) {
+              return true;
+            }
+          }
+          if (
+            matchesDay(cron, month, length, weekday(length)) &&
+            matchesDay(cron, nextMonth, 1, weekday(length + 1))
+          ) {
+            return true;
+          }
         }
       }
-      previous = index;
     }
-    day.setUTCDate(day.getUTCDate() + 1);
   }
-  return shortest;
+  return false;
 };
 
-// Shortest interval in minutes between two occurrences over the whole
-// recurrence: between two times of a day, and from the last time of a
-// matching day to the first time of the next matching day. Null when the
-// schedule fires at most once.
-const shortestIntervalMinutes = (cron: ParsedCron): number | null => {
+// Whether two occurrences can be closer than the minimum interval, over the
+// whole recurrence like OpenCTI: two times of a day, or the last time of a
+// day and the first time of the next one. Matching days further apart are at
+// least a day and a minute apart, so only consecutive days matter.
+const firesMoreOftenThanTheMinimum = (cron: ParsedCron): boolean => {
   const times = cron.hours.flatMap((hour) =>
     cron.minutes.map((minute) => hour * 60 + minute)
   );
+  for (let index = 1; index < times.length; index += 1) {
+    if (
+      (times[index] ?? 0) - (times[index - 1] ?? 0) <
+      MIN_SCHEDULE_INTERVAL_MINUTES
+    ) {
+      return true;
+    }
+  }
   const first = times[0];
   const last = times[times.length - 1];
   if (first === undefined || last === undefined) {
-    return null;
+    return false;
   }
-  let shortest = Number.POSITIVE_INFINITY;
-  for (let index = 1; index < times.length; index += 1) {
-    shortest = Math.min(
-      shortest,
-      (times[index] ?? 0) - (times[index - 1] ?? 0)
-    );
-  }
-  // Across midnight: only computed when it can be the shortest
-  const acrossMidnight = DAY_MINUTES - last + first;
-  if (acrossMidnight < shortest) {
-    const dayGap = shortestMatchingDayGap(cron);
-    if (dayGap !== null) {
-      shortest = Math.min(
-        shortest,
-        (dayGap - 1) * DAY_MINUTES + acrossMidnight
-      );
-    }
-  }
-  return Number.isFinite(shortest) ? shortest : null;
+  return (
+    DAY_MINUTES - last + first < MIN_SCHEDULE_INTERVAL_MINUTES &&
+    hasConsecutiveMatchingDays(cron)
+  );
 };
 
 /** Why OpenCTI would refuse this hunt schedule, or null when it accepts it. */
@@ -277,8 +299,7 @@ export const huntScheduleError = (schedule: string): string | null => {
   if (!nextOccurrence(cron, new Date(Date.UTC(2024, 0, 1)))) {
     return 'the schedule never fires';
   }
-  const shortest = shortestIntervalMinutes(cron);
-  if (shortest !== null && shortest < MIN_SCHEDULE_INTERVAL_MINUTES) {
+  if (firesMoreOftenThanTheMinimum(cron)) {
     return `the schedule fires more than once every ${MIN_SCHEDULE_INTERVAL_MINUTES} minutes`;
   }
   return null;
