@@ -24,6 +24,9 @@
     "Description": "フィリグランのユーザーに特定の機能を追加できる",
     "Title": "利用可能な機能"
   },
+  "CSMBoard": {
+    "ComingSoon": "まもなく、何か新しいことが始まります……"
+  },
   "CountryComboBox": {
     "Placeholder": "国を選択"
   },
@@ -664,6 +667,7 @@
     "NewsFeed": "ニュースフィード",
     "VotingRound": "機能への投票",
     "ManageTrials": "トライアル管理",
+    "CSMBoard": "CSMボード",
     "Roles": "ロール"
   },
   "NewsFeedAdminPage": {
