@@ -18,6 +18,7 @@ import {
   transformSortingValueToParams,
 } from '@/components/ui/handle-sorting.utils';
 import { useTablePagination } from '@/hooks/use-table-pagination';
+import { useTranslate } from '@/hooks/use-translate';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { CheckIcon, CloseIcon } from '@filigran/icon';
@@ -39,7 +40,6 @@ import {
 import { userPendingList_users$key } from '@generated/userPendingList_users.graphql';
 import { FilterKey } from '@graphql/generated';
 import { ColumnDef } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 import {
   ReactNode,
   useCallback,
@@ -63,7 +63,7 @@ interface PendingUserListProps {
 }
 
 const PendingUserList = ({ organization }: PendingUserListProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const {
     pageSize,
     setPageSize,

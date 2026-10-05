@@ -27,6 +27,12 @@ enum FilterKey {
   region
 }
 
+enum Locale {
+  en
+  fr
+  ja
+}
+
 enum LogicalOperator {
   AND
   OR

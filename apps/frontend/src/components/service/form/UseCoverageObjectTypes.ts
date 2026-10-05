@@ -1,6 +1,6 @@
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { useIntegrationCoverageObjectTypesQuery } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { useCallback, useMemo } from 'react';
 
 /** Label of an object type without translation: "Some-New-Type" reads "Some new type". */
@@ -14,7 +14,7 @@ export const readableObjectType = (type: string) =>
 
 /** Translated label of a covered object type; its OpenCTI key stays the stored and filtered value. */
 export const useCoverageObjectTypeLabel = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   return useCallback(
     (type: string) => {
       const key = `Service.OpenctiIntegrations.ObjectType.${type}`;

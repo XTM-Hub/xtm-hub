@@ -1,4 +1,5 @@
 import { IntegrationsCsvExportDialog } from '@/components/service/components/header/IntegrationsCsvExportDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { buildSignupRedirect } from '@/utils/redirect';
 import { DownloadIcon } from '@filigran/icon';
 import {
@@ -8,7 +9,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -25,7 +25,7 @@ export const IntegrationsCsvExportButton = ({
   loginRedirectPath,
   type,
 }: IntegrationsCsvExportButtonProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const router = useRouter();
   const [open, setOpen] = useState(false);
 

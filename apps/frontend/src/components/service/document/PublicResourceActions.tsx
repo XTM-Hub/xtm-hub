@@ -2,6 +2,7 @@
 
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
+import { useTranslate } from '@/hooks/use-translate';
 import { isValueInEnum } from '@/utils/is-value-in-enum';
 import { getPlatformIdentifier } from '@/utils/platform';
 import { buildSignupRedirect } from '@/utils/redirect';
@@ -24,7 +25,6 @@ import {
   TooltipTrigger,
 } from '@filigran/ui/clients';
 import { Button } from '@filigran/ui/servers';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 interface PublicResourceActionsProps {
@@ -40,7 +40,7 @@ export const PublicResourceActions = ({
   pageUrl,
   shareTooltipText,
 }: PublicResourceActionsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   const privateResourceLink = isValueInEnum(serviceInstance.slug, ServiceSlug)
     ? getServiceInfo(

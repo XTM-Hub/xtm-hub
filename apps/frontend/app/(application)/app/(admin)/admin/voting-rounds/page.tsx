@@ -3,8 +3,8 @@
 import VotingRounds from '@/components/admin/voting-round/VotingRounds';
 import GuardCapacityComponent from '@/components/AdminGuard';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
+import { useTranslate } from '@/hooks/use-translate';
 import { PortalCapability } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
 const breadcrumbValue = [
   { label: 'MenuLinks.Settings' },
@@ -14,7 +14,7 @@ const breadcrumbValue = [
 export const dynamic = 'force-dynamic';
 
 const Page = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <GuardCapacityComponent
       portalCapabilityRestriction={[PortalCapability.Bypass]}

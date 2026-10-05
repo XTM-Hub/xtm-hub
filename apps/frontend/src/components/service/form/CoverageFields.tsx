@@ -1,4 +1,5 @@
 import { useCoverageObjectTypes } from '@/components/service/form/UseCoverageObjectTypes';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   Checkbox,
   FormControl,
@@ -9,7 +10,6 @@ import {
   TagInput,
   useFormField,
 } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 import { z } from 'zod';
@@ -96,7 +96,7 @@ const CoveredObjectTypesControl = ({
   inferred = false,
   inferredEmpty = false,
 }: CoveredObjectTypesFieldProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const objectTypes = useCoverageObjectTypes();
   const { error, formDescriptionId, formMessageId } = useFormField();
   const inferredNoteId = `${formDescriptionId}-inferred-note`;
@@ -164,7 +164,7 @@ export const ServiceFormCoverageConfirmationField = ({
   disabled,
   inferred = false,
 }: CoveredObjectTypesFieldProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   if (!inferred) {
     return null;
   }
@@ -198,7 +198,7 @@ const CoverageTagsControl = ({
   disabled,
   family,
 }: CoverageTagsFieldProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { error, formDescriptionId, formMessageId } = useFormField();
   const labelKey =
     family === 'sectors'

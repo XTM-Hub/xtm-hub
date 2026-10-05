@@ -1,7 +1,7 @@
 'use client';
 
 import { LogoutMutation } from '@/components/logout.graphql';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { GraphQLSubscriptionConfig } from 'relay-runtime';
@@ -17,7 +17,7 @@ import { useMutation, useSubscription } from 'react-relay';
 // Component
 const UserEventSubscription = () => {
   const [commitLogoutMutation] = useMutation(LogoutMutation);
-  const t = useTranslations();
+  const t = useTranslate();
 
   const router = useRouter();
 

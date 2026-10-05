@@ -1,12 +1,12 @@
 'use client';
 
 import { useConsent } from '@/components/cookie-consent/CookieConsentProvider';
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { Button } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 
 export const CookieSettingsLink = ({ className }: { className?: string }) => {
-  const t = useTranslations('CookieConsent');
+  const t = useTranslate('CookieConsent');
   const { openPreferences } = useConsent();
 
   return (

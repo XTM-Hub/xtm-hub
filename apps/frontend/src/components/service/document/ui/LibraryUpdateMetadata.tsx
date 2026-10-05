@@ -2,6 +2,7 @@
 
 import GuardCapacityComponent from '@/components/AdminGuard';
 import { useServiceContext } from '@/components/service/components/ServiceContext';
+import { useTranslate } from '@/hooks/use-translate';
 import { Locale, locales } from '@/i18n/config';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { EditIcon } from '@filigran/icon';
@@ -16,13 +17,12 @@ import {
 } from '@filigran/ui';
 import { toast } from '@filigran/ui/clients';
 import {
+  Locale as GraphqlLocale,
   PortalCapability,
-  SeoServiceInstanceLanguage,
   useEditSeoServiceInstanceMetadataMutation,
   useServiceInstanceSeoMetadataByIdQuery,
 } from '@graphql/generated';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { z } from 'zod';
 
@@ -30,17 +30,15 @@ const SEO_METADATA_MAX_LENGTH = 155;
 const optionalSeoField = z.string().max(SEO_METADATA_MAX_LENGTH).optional();
 
 type SeoLocaleConfig = {
-  language: SeoServiceInstanceLanguage;
+  language: GraphqlLocale;
   titleField: string;
   descriptionField: string;
   label: string;
 };
 
-const SEO_LANGUAGES = Object.values(SeoServiceInstanceLanguage);
+const SEO_LANGUAGES = Object.values(GraphqlLocale);
 
-const getSeoLanguageFromLocale = (
-  locale: Locale
-): SeoServiceInstanceLanguage => {
+const getSeoLanguageFromLocale = (locale: Locale): GraphqlLocale => {
   const language = SEO_LANGUAGES.find((value) => value === locale);
   if (!language) {
     throw new Error(`Unsupported SEO locale: ${locale}`);
@@ -90,7 +88,7 @@ type LibraryUpdateFieldConfig = Record<
 >;
 
 export const LibraryUpdateMetadata = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { serviceInstance } = useServiceContext();
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);

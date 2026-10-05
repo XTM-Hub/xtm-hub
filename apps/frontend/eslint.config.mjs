@@ -361,6 +361,35 @@ const eslintConfig = [
           message: "Avoid deep relative imports. Use '@/...'.",
         },
       ],
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'next-intl',
+              importNames: ['useTranslations'],
+              message:
+                "Use useTranslate from '@/hooks/use-translate' in client code, or getTranslate from '@/hooks/get-translate' in async Server Components, so texts stay editable in context.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // The editing UI must never mark its own labels as editable.
+    files: [
+      'src/hooks/use-translate.ts',
+      'src/components/content-translation/ContentEditDialog.tsx',
+      'src/components/content-translation/DraftsConfirmDialog.tsx',
+      'src/components/content-translation/EditionModeBanner.tsx',
+      'src/components/content-translation/ExitEditModeDialog.tsx',
+      'src/components/menu/EditTranslationsButton.tsx',
+      // Tests override the shared next-intl mock.
+      '**/*.test.{ts,tsx}',
+    ],
+    rules: {
+      'no-restricted-imports': 'off',
     },
   },
 

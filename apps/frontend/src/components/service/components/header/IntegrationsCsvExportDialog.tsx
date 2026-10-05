@@ -12,6 +12,7 @@ import { availableIntegrationTypes } from '@/components/service/integrations/Int
 import { buildCoverageOptions } from '@/components/ui/shareable-resource/integration/IntegrationCoverageFilter';
 import { useCoverageFacetCounts } from '@/hooks/use-coverage-facet-counts';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   AutoForm,
   Button,
@@ -34,7 +35,6 @@ import {
   IntegrationType,
   LicenseType,
 } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 import { z } from 'zod';
@@ -83,7 +83,7 @@ const IntegrationsCsvExportFilterField = ({
   placeholder,
   testId,
 }: IntegrationsCsvExportFilterFieldProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <FormItem>
       <FormLabel className="font-normal text-text-default-secondary">
@@ -113,7 +113,7 @@ export const IntegrationsCsvExportDialog = ({
   serviceInstanceId,
   type,
 }: IntegrationsCsvExportDialogProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [isExporting, setIsExporting] = useState(false);
 
   const { localStorageKey } = useServiceListLocalStorageKeyContext();

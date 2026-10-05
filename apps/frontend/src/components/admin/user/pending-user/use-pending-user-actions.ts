@@ -4,6 +4,7 @@ import {
   RemovePendingUserBulkMutation,
   RemovePendingUserMutation,
 } from '@/components/admin/user/pending-user/pending-user.graphql';
+import { useTranslate } from '@/hooks/use-translate';
 import { SelectionState } from '@filigran/ui';
 import { useToast } from '@filigran/ui/clients';
 import { PendingUserListAcceptUserBulkMutation } from '@generated/PendingUserListAcceptUserBulkMutation.graphql';
@@ -12,7 +13,6 @@ import { PendingUserListRemoveUserBulkMutation } from '@generated/PendingUserLis
 import { PendingUserListRemoveUserMutation } from '@generated/PendingUserListRemoveUserMutation.graphql';
 import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { FilterKey } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
 import { useMutation } from 'react-relay';
 
@@ -31,7 +31,7 @@ export const usePendingUserActions = ({
   onAfterSingleMutation,
   onAfterBulkMutation,
 }: UsePendingUserActionsParams) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { toast } = useToast();
 
   const [approvePendingUser] = useMutation<PendingUserListAcceptUserMutation>(

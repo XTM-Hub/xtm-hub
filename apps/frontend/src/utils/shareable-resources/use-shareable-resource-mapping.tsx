@@ -16,18 +16,18 @@ import { IntegrationSolutionCategoryFilter } from '@/components/ui/shareable-res
 import { IntegrationTypeFilter } from '@/components/ui/shareable-resource/integration/IntegrationTypeFilter';
 import { IntegrationVerifiedFilter } from '@/components/ui/shareable-resource/integration/IntegrationVerifiedFilter';
 import { ServiceListLocalStorageKey } from '@/hooks/use-service-list-local-storage';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   ServiceSlug,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 export const useShareableResourceMapping = (
   slug: ServiceSlug,
   facetCounts?: ServiceListFacetCounts
 ) => {
-  const t = useTranslations();
+  const t = useTranslate();
   // Coverage values seen while this list page is open, kept when a filter section closes
   const [seenCoverageValues] = useState(createSeenCoverageValues);
   const localStorageKeyMapping: Record<

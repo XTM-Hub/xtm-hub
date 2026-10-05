@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import {
   CampaignIcon,
@@ -13,7 +14,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/ui/clients';
-import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 
 export interface ResourceStatusIconsProps {
@@ -45,7 +45,7 @@ export const ResourceStatusIcons = ({
   displayUnverifiedIcon = false,
   iconClassName = ICON_CLASS,
 }: ResourceStatusIconsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   if (!active && !deployable && !displayUnverifiedIcon) {
     return null;

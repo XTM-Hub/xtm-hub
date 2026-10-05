@@ -12,6 +12,8 @@ import {
 import { applySearch, database } from '../../../../knexfile';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import {
+  // eslint-disable-next-line no-restricted-imports
+  requestContextAdminUser,
   requestContextSimpleUserFiligran2,
   SERVICES,
 } from '../../../../tests/tests.const';
@@ -22,11 +24,13 @@ import {
   LoadDocumentFacetInput,
   LogicalOperator,
   OrderingMode,
+  ServiceRestriction,
 } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
 import type Document from '../../../model/kanel/public/Document';
 import { OrganizationId } from '../../../model/kanel/public/Organization';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
+import { UserServiceCapabilityHelper } from '../../security-management/user-service-capability/user-service-capability.helper';
 import { objectSolutionCategoryDomain } from '../../solution-category/object-solution-category/object-solution-category.domain';
 import { solutionCategoryDomain } from '../../solution-category/solution-category.domain';
 import { objectUseCaseDomain } from '../../use-case/object-use-case/object-use-case.domain';
@@ -253,114 +257,129 @@ describe('facet.domain', () => {
   });
   describe('parity with the authenticated documents list', () => {
     afterEach(async () => {
+      vi.restoreAllMocks();
       requestContext.set(undefined);
       await TestHelper.subscription.delete({});
     });
 
-    it('should count exactly the documents the authenticated list returns for a private subscribed instance', async () => {
-      // Given — a private instance the fixture user's organization subscribes to
-      const privateServiceInstance = await TestHelper.serviceInstance.create({
-        service_definition_id: SERVICES.DEFINITIONS.OPENCTI_INTEGRATIONS.ID,
-        name: `facet-parity-private-${uuidv4()}`,
-        slug: `facet-parity-private-${uuidv4()}`,
-        public: false,
-      });
-      createdServiceInstanceIds.push(privateServiceInstance.id);
+    it.each`
+      description                           | serviceCapabilities            | expectedCount
+      ${'a user without upload capability'} | ${[]}                          | ${2}
+      ${'a user with upload capability'}    | ${[ServiceRestriction.Upload]} | ${3}
+    `(
+      'should count exactly the documents the authenticated list returns for $description on a private subscribed instance',
+      async ({
+        serviceCapabilities,
+        expectedCount,
+      }: {
+        serviceCapabilities: ServiceRestriction[];
+        expectedCount: number;
+      }) => {
+        // Given — a private instance the fixture user's organization subscribes to
+        vi.spyOn(
+          UserServiceCapabilityHelper,
+          'loadCapabilities'
+        ).mockResolvedValue(serviceCapabilities);
+        const privateServiceInstance = await TestHelper.serviceInstance.create({
+          service_definition_id: SERVICES.DEFINITIONS.OPENCTI_INTEGRATIONS.ID,
+          name: `facet-parity-private-${uuidv4()}`,
+          slug: `facet-parity-private-${uuidv4()}`,
+          public: false,
+        });
+        createdServiceInstanceIds.push(privateServiceInstance.id);
 
-      await TestHelper.subscription.create({
-        service_instance_id: privateServiceInstance.id,
-        organization_id: requestContextSimpleUserFiligran2.user
-          .selected_organization_id as OrganizationId,
-      });
+        await TestHelper.subscription.create({
+          service_instance_id: privateServiceInstance.id,
+          organization_id: requestContextSimpleUserFiligran2.user
+            .selected_organization_id as OrganizationId,
+        });
 
-      // 2 active + 1 inactive documents. Every document carries exactly ONE
-      // Verified metadata value: this is the invariant that makes
-      // sum(verified buckets) === list totalCount a valid parity check.
-      const activeVerified = await TestHelper.document.create({
-        name: `facet-parity-a-${uuidv4()}`,
-        slug: `facet-parity-a-${uuidv4()}`,
-        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-        active: true,
-        service_instance_id: privateServiceInstance.id,
-      });
-      const activeUnverified = await TestHelper.document.create({
-        name: `facet-parity-b-${uuidv4()}`,
-        slug: `facet-parity-b-${uuidv4()}`,
-        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-        active: true,
-        service_instance_id: privateServiceInstance.id,
-      });
-      const inactiveVerified = await TestHelper.document.create({
-        name: `facet-parity-c-${uuidv4()}`,
-        slug: `facet-parity-c-${uuidv4()}`,
-        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-        active: false,
-        service_instance_id: privateServiceInstance.id,
-      });
-      createdDocumentIds.push(
-        activeVerified.id,
-        activeUnverified.id,
-        inactiveVerified.id
-      );
+        // 2 active + 1 inactive documents. Every document carries exactly ONE
+        // Verified metadata value: this is the invariant that makes
+        // sum(verified buckets) === list totalCount a valid parity check.
+        const activeVerified = await TestHelper.document.create({
+          name: `facet-parity-a-${uuidv4()}`,
+          slug: `facet-parity-a-${uuidv4()}`,
+          type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+          active: true,
+          service_instance_id: privateServiceInstance.id,
+        });
+        const activeUnverified = await TestHelper.document.create({
+          name: `facet-parity-b-${uuidv4()}`,
+          slug: `facet-parity-b-${uuidv4()}`,
+          type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+          active: true,
+          service_instance_id: privateServiceInstance.id,
+        });
+        const inactiveVerified = await TestHelper.document.create({
+          name: `facet-parity-c-${uuidv4()}`,
+          slug: `facet-parity-c-${uuidv4()}`,
+          type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+          active: false,
+          service_instance_id: privateServiceInstance.id,
+        });
+        createdDocumentIds.push(
+          activeVerified.id,
+          activeUnverified.id,
+          inactiveVerified.id
+        );
 
-      await Promise.all([
-        TestHelper.documentMetadata.create({
-          document_id: activeVerified.id,
-          key: DocumentMetadataKeyCode.Verified,
-          value: VERIFIED_TRUE_VALUE,
-        }),
-        TestHelper.documentMetadata.create({
-          document_id: activeUnverified.id,
-          key: DocumentMetadataKeyCode.Verified,
-          value: VERIFIED_FALSE_VALUE,
-        }),
-        TestHelper.documentMetadata.create({
-          document_id: inactiveVerified.id,
-          key: DocumentMetadataKeyCode.Verified,
-          value: VERIFIED_TRUE_VALUE,
-        }),
-      ]);
+        await Promise.all([
+          TestHelper.documentMetadata.create({
+            document_id: activeVerified.id,
+            key: DocumentMetadataKeyCode.Verified,
+            value: VERIFIED_TRUE_VALUE,
+          }),
+          TestHelper.documentMetadata.create({
+            document_id: activeUnverified.id,
+            key: DocumentMetadataKeyCode.Verified,
+            value: VERIFIED_FALSE_VALUE,
+          }),
+          TestHelper.documentMetadata.create({
+            document_id: inactiveVerified.id,
+            key: DocumentMetadataKeyCode.Verified,
+            value: VERIFIED_TRUE_VALUE,
+          }),
+        ]);
 
-      // When — same user in context, list and facets called with the same scope
-      const { connection, facets } = await requestContext.run(
-        requestContextSimpleUserFiligran2,
-        async () => {
-          const connection = await DocumentApp.loadDocuments({
-            serviceInstanceId: privateServiceInstance.id,
-            first: 50,
-            orderBy: DocumentOrdering.CreatedAt,
-            orderMode: OrderingMode.Asc,
-          });
+        // When — same user in context, list and facets called with the same scope
+        const { connection, facets } = await requestContext.run(
+          requestContextSimpleUserFiligran2,
+          async () => {
+            const connection = await DocumentApp.loadDocuments({
+              serviceInstanceId: privateServiceInstance.id,
+              first: 50,
+              orderBy: DocumentOrdering.CreatedAt,
+              orderMode: OrderingMode.Asc,
+            });
 
-          const facets = await FacetDomain.loadDocumentFacets({
-            serviceInstanceId: privateServiceInstance.id,
-            documentType: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-            logicalFilters: null,
-          });
+            const facets = await FacetDomain.loadDocumentFacets({
+              serviceInstanceId: privateServiceInstance.id,
+              documentType: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+              logicalFilters: null,
+            });
 
-          return { connection, facets };
-        }
-      );
+            return { connection, facets };
+          }
+        );
 
-      // Then — the facet counts and the list agree on what this user can see
-      const verifiedSum = facets.verified.reduce(
-        (sum, bucket) => sum + bucket.count,
-        0
-      );
-      // isUserRestrictedToActiveDocument short-circuits on isUserGranted(user), which
-      // without a capability argument means "any authenticated user" — so authenticated
-      // users always see inactive documents unless restrictToActiveDocuments is
-      // explicitly set to true (not the case here). The parity we assert is that
-      // facets follow the list either way.
-      expect(verifiedSum).toBe(Number(connection.totalCount));
-      expect(Number(connection.totalCount)).toBe(3);
-    });
+        // Then — the facet counts and the list agree on what this user can see
+        const verifiedSum = facets.verified.reduce(
+          (sum, bucket) => sum + bucket.count,
+          0
+        );
+        expect(verifiedSum).toBe(Number(connection.totalCount));
+        expect(Number(connection.totalCount)).toBe(expectedCount);
+      }
+    );
 
-    it('should exclude inactive documents from every facet bucket for an authenticated user when restrictToActiveDocuments is true', async () => {
-      // Given — same fixture as above: an authenticated user who would
-      // otherwise see inactive documents (isUserRestrictedToActiveDocument
-      // is false for them), but the caller explicitly opts into the public,
-      // active-only scope via restrictToActiveDocuments.
+    it('should exclude inactive documents from every facet bucket for a user with upload capability when restrictToActiveDocuments is true', async () => {
+      // Given — a user who sees inactive documents by default, but the caller
+      // explicitly opts into the public, active-only scope.
+      vi.spyOn(
+        UserServiceCapabilityHelper,
+        'loadCapabilities'
+      ).mockResolvedValue([ServiceRestriction.Upload]);
       const privateServiceInstance = await TestHelper.serviceInstance.create({
         service_definition_id: SERVICES.DEFINITIONS.OPENCTI_INTEGRATIONS.ID,
         name: `facet-parity-restrict-${uuidv4()}`,
@@ -867,6 +886,7 @@ describe('facet.domain', () => {
       // separate, cached round-trip behind `applySearch` and must not be
       // conflated with the facet query itself.
       await applySearch('Document', undefined, undefined);
+      requestContext.set(requestContextAdminUser);
 
       let queryCount = 0;
       const onQuery = () => {

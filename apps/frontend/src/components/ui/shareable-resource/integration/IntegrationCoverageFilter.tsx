@@ -4,7 +4,7 @@ import {
   ServiceListLocalStorageKey,
   useServiceListLocalStorage,
 } from '@/hooks/use-service-list-local-storage';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 
 export type IntegrationCoverageFamily = 'objectType' | 'sector' | 'region';
@@ -139,7 +139,7 @@ export const IntegrationCoverageFilter = ({
   seenValues,
 }: IntegrationCoverageFilterProps) => {
   const [ownSeenValues] = useState(createSeenCoverageValues);
-  const t = useTranslations();
+  const t = useTranslate();
   const storage = useServiceListLocalStorage(
     ServiceListLocalStorageKey.OpenCTIIntegrationFeeds
   );

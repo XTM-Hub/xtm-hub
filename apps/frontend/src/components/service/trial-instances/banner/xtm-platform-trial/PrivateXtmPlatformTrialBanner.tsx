@@ -4,6 +4,7 @@ import { PortalContext } from '@/components/me/AppPortalContext';
 import { XtmPlatformTrialBanner } from '@/components/service/trial-instances/banner/xtm-platform-trial/XtmPlatformTrialBanner';
 import { deriveXtmPlatformTrialState } from '@/components/service/trial-instances/banner/xtm-platform-trial/xtm-platform-trial-banner.utils';
 import { SettingsContext } from '@/components/settings/EnvPortalContext';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH } from '@/utils/path/constant';
 import {
@@ -30,7 +31,6 @@ import {
   usePlatformTrialStatusQuery,
 } from '@graphql/generated';
 import { platformTrialKeys } from '@graphql/trial/trial.keys';
-import { useTranslations } from 'next-intl';
 import { useContext, useState } from 'react';
 import {
   ControllerRenderProps,
@@ -60,7 +60,7 @@ type FeedbackFieldProps = {
 };
 
 const AnswerFieldType = ({ field }: FeedbackFieldProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <FormItem>
       <FormControl>
@@ -88,7 +88,7 @@ const AnswerFieldType = ({ field }: FeedbackFieldProps) => {
 };
 
 const JustificationFieldType = ({ field }: FeedbackFieldProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { watch } = useFormContext();
   if (watch('answer') !== HasRepliedSatisfaction.No) return null;
   return (
@@ -112,7 +112,7 @@ export const PrivateXtmPlatformTrialBanner = () => {
   const { me } = useContext(PortalContext);
   const { settings } = useContext(SettingsContext);
   const organizationId = me?.selected_organization_id ?? '';
-  const t = useTranslations();
+  const t = useTranslate();
   const [isFeedbackDialogDismissed, setIsFeedbackDialogDismissed] =
     useState(false);
 

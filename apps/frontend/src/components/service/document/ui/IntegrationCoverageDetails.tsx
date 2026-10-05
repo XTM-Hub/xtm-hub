@@ -1,7 +1,7 @@
 import { ShareableResourceDetailItem } from '@/components/service/document/ui/ShareableResourceDetailItem';
 import { useCoverageObjectTypeLabel } from '@/components/service/form/UseCoverageObjectTypes';
+import { useTranslate } from '@/hooks/use-translate';
 import { SimpleTooltip } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 
 export interface IntegrationCoverage {
   covered_object_types?: ReadonlyArray<string> | null;
@@ -21,7 +21,7 @@ export const IntegrationCoverageDetails = ({
 }: {
   coverage: IntegrationCoverage;
 }) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const objectTypeLabel = useCoverageObjectTypeLabel();
   const items = COVERAGE_ITEMS.map((item) => ({
     ...item,
