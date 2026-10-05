@@ -416,6 +416,7 @@
       "SOLUTION_CATEGORY_NOT_FOUND": "Catégorie de solution non trouvée",
       "SUBSCRIPTION_NOT_FOUND": "L'abonnement n'a pas été trouvé",
       "TENANT_ID_MANDATORY": "L'identifiant du locataire est obligatoire",
+      "TOO_MANY_EMAILS": "Vous pouvez inviter au maximum 50 emails à la fois",
       "TRANSFER_ME_ERROR": "Une erreur s'est produite lors de la requête de transfert de personal space.",
       "UNKNOWN_ERROR": "Une erreur inconnue s'est produite",
       "UNREGISTER_PLATFORM_UNKNOWN_ERROR": "Une erreur inconnue s'est produite lors de la désinscription de la plateforme",
@@ -2047,7 +2048,14 @@
         },
         "AddUserDialog": {
           "Title": "Ajouter un utilisateur d'essai",
-          "EmailPlaceholder": "Ajouter un email"
+          "EmailPlaceholder": "Ajouter un email",
+          "ExpiredUsersReinvited": "Les utilisateurs expirés seront réinvités et recevront un nouvel email d'invitation.",
+          "InviteEmail": "Inviter {email}",
+          "NoPermissionToInvite": "Vous n'avez pas la permission d'ajouter des utilisateurs en dehors de cette liste. Si nécessaire, contactez votre administrateur",
+          "Status": {
+            "Expired": "Expiré",
+            "Invited": "Invité"
+          }
         },
         "EditUsersDialog": {
           "Title": "Modifier les utilisateurs",

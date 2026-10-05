@@ -1,4 +1,8 @@
-import { PlatformIdentifier, ServiceGroupName } from '@graphql/generated';
+import {
+  PlatformIdentifier,
+  ServiceGroupName,
+  UserAccountStatus,
+} from '@graphql/generated';
 import { z } from 'zod';
 
 export interface RolePanelConfig {
@@ -40,8 +44,41 @@ export const NO_ROLE_VALUE = 'none';
 
 export type RoleFormField = `${PlatformIdentifier}Role`;
 
+export interface TrialUserOption {
+  label: string;
+  value: string;
+  status?: UserAccountStatus | null;
+}
+
+export const NEW_EMAIL_PREFIX = 'email:';
+
+export const isNewEmailEntry = (value: string) =>
+  value.startsWith(NEW_EMAIL_PREFIX);
+
+export const toNewEmailEntry = (email: string) => `${NEW_EMAIL_PREFIX}${email}`;
+
+const fromNewEmailEntry = (entry: string) =>
+  entry.slice(NEW_EMAIL_PREFIX.length);
+
+export const isValidEmail = (value: string) =>
+  z.email().safeParse(value).success;
+
+export const splitUserSelection = (
+  entries: string[]
+): { userIds: string[]; emails: string[] } => ({
+  userIds: entries.filter((entry) => !isNewEmailEntry(entry)),
+  emails: entries.filter(isNewEmailEntry).map(fromNewEmailEntry),
+});
+
+const userSelectionEntrySchema = z
+  .string()
+  .min(1)
+  .refine(
+    (entry) => !isNewEmailEntry(entry) || isValidEmail(fromNewEmailEntry(entry))
+  );
+
 export const trialUserRolesFormSchema = z.object({
-  userIds: z.array(z.string().min(1)).min(1),
+  userIds: z.array(userSelectionEntrySchema).min(1),
   openctiRole: z.enum(ServiceGroupName).optional(),
   openaevRole: z.enum(ServiceGroupName).optional(),
   xtmoneRole: z.enum(ServiceGroupName),

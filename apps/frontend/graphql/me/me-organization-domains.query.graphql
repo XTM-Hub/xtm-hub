@@ -1,0 +1,8 @@
+query MeOrganizationDomains {
+  me {
+    organizations {
+      id
+      domains
+    }
+  }
+}
