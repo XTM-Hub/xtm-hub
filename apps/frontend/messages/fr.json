@@ -541,6 +541,11 @@
     "Name": "Nom",
     "Product": "Produit"
   },
+  "RoleListPage": {
+    "SsoGroup": "Groupe SSO",
+    "Role": "Rôle",
+    "Capabilities": "Capacités"
+  },
   "SolutionCategory": {
     "Actions": {
       "Add": "Ajouter une catégorie de solution"
@@ -633,7 +638,8 @@
     "Competitor": "Concurrent",
     "NewsFeed": "Fil d'actualité",
     "VotingRound": "Vote des fonctionnalités",
-    "ManageTrials": "Gestion des essais"
+    "ManageTrials": "Gestion des essais",
+    "Roles": "Rôles"
   },
   "NewsFeedAdminPage": {
     "Title": "Titre",

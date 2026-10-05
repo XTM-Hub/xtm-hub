@@ -5,6 +5,7 @@ import { TestHelper } from '../../../tests/helper/test.helper';
 import { TEST_ORGANIZATIONS } from '../../../tests/tests.const';
 import { RolePortalId } from '../../model/kanel/public/RolePortal';
 import { UserId } from '../../model/kanel/public/User';
+import { CAPABILITY_BYPASS } from '../../portal.const';
 import { RolePortalDomain } from './role-portal.domain';
 
 describe('role portal domain tests', () => {
@@ -57,6 +58,80 @@ describe('role portal domain tests', () => {
 
       expect(result?.roles).toEqual(['POTATO_PEELER']);
       expect(result?.roles).toHaveLength(1);
+    });
+  });
+
+  describe('loadSSOGroupRolePortals', () => {
+    let jugglerId: RolePortalId;
+    let tamerId: RolePortalId;
+
+    beforeEach(async () => {
+      // eslint-disable-next-line no-restricted-syntax
+      await db('SSOGroup_RolePortal').del();
+      const juggler = await TestHelper.rolePortal.create({
+        name: 'TOMATO_JUGGLER',
+      });
+      const tamer = await TestHelper.rolePortal.create({
+        name: 'DRAGON_TAMER',
+      });
+      jugglerId = juggler.id;
+      tamerId = tamer.id;
+
+      // eslint-disable-next-line no-restricted-syntax
+      await db('RolePortal_CapabilityPortal').insert({
+        role_portal_id: jugglerId,
+        capability_portal_id: CAPABILITY_BYPASS.id,
+      });
+      // eslint-disable-next-line no-restricted-syntax
+      await db('SSOGroup_RolePortal').insert([
+        { SSOGroup: 'jugglers-guild', RolePortal: 'TOMATO_JUGGLER' },
+        { SSOGroup: 'circus-friends', RolePortal: 'TOMATO_JUGGLER' },
+        { SSOGroup: 'dragon-keepers', RolePortal: 'DRAGON_TAMER' },
+      ]);
+    });
+
+    afterEach(async () => {
+      // eslint-disable-next-line no-restricted-syntax
+      await db('SSOGroup_RolePortal').del();
+      // eslint-disable-next-line no-restricted-syntax
+      await db('RolePortal_CapabilityPortal')
+        .whereIn('role_portal_id', [jugglerId, tamerId])
+        .del();
+      await TestHelper.rolePortal.delete({ id: jugglerId });
+      await TestHelper.rolePortal.delete({ id: tamerId });
+    });
+
+    it('should return each SSO group with its role and capabilities', async () => {
+      const result = await RolePortalDomain.loadSSOGroupRolePortals();
+
+      expect(result).toHaveLength(3);
+      expect(result).toEqual(
+        expect.arrayContaining([
+          {
+            ssoGroup: 'jugglers-guild',
+            rolePortal: expect.objectContaining({
+              id: jugglerId,
+              name: 'TOMATO_JUGGLER',
+              capabilities: [expect.objectContaining(CAPABILITY_BYPASS)],
+            }),
+          },
+          {
+            ssoGroup: 'circus-friends',
+            rolePortal: expect.objectContaining({
+              id: jugglerId,
+              capabilities: [expect.objectContaining(CAPABILITY_BYPASS)],
+            }),
+          },
+          {
+            ssoGroup: 'dragon-keepers',
+            rolePortal: expect.objectContaining({
+              id: tamerId,
+              name: 'DRAGON_TAMER',
+              capabilities: [],
+            }),
+          },
+        ])
+      );
     });
   });
 

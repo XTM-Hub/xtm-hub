@@ -1467,6 +1467,7 @@ export const mockQuery = (overrides?: Partial<Query>, _relationshipsToOmit: Set<
         serviceInstances: overrides && overrides.hasOwnProperty('serviceInstances') ? overrides.serviceInstances! : relationshipsToOmit.has('ServiceConnection') ? {} as ServiceConnection : mockServiceConnection({}, relationshipsToOmit),
         settings: overrides && overrides.hasOwnProperty('settings') ? overrides.settings! : relationshipsToOmit.has('Settings') ? {} as Settings : mockSettings({}, relationshipsToOmit),
         solutionCategories: overrides && overrides.hasOwnProperty('solutionCategories') ? overrides.solutionCategories! : relationshipsToOmit.has('SolutionCategoryConnection') ? {} as SolutionCategoryConnection : mockSolutionCategoryConnection({}, relationshipsToOmit),
+        ssoGroupRolePortals: overrides && overrides.hasOwnProperty('ssoGroupRolePortals') ? overrides.ssoGroupRolePortals! : [relationshipsToOmit.has('SsoGroupRolePortal') ? {} as SsoGroupRolePortal : mockSsoGroupRolePortal({}, relationshipsToOmit)],
         subscriptionById: overrides && overrides.hasOwnProperty('subscriptionById') ? overrides.subscriptionById! : relationshipsToOmit.has('SubscriptionModel') ? {} as SubscriptionModel : mockSubscriptionModel({}, relationshipsToOmit),
         subscriptions: overrides && overrides.hasOwnProperty('subscriptions') ? overrides.subscriptions! : relationshipsToOmit.has('SubscriptionConnection') ? {} as SubscriptionConnection : mockSubscriptionConnection({}, relationshipsToOmit),
         updateOpenCTIManifest: overrides && overrides.hasOwnProperty('updateOpenCTIManifest') ? overrides.updateOpenCTIManifest! : relationshipsToOmit.has('Success') ? {} as Success : mockSuccess({}, relationshipsToOmit),
@@ -1633,6 +1634,7 @@ export const mockRolePortal = (overrides?: Partial<RolePortal>, _relationshipsTo
     relationshipsToOmit.add('RolePortal');
     return {
         __typename: 'RolePortal',
+        capabilities: overrides && overrides.hasOwnProperty('capabilities') ? overrides.capabilities! : [relationshipsToOmit.has('Capability') ? {} as Capability : mockCapability({}, relationshipsToOmit)],
         id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : '5d18ad0e-e617-4770-923b-8c5f9553c42a',
         name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'culpo',
     };
@@ -1671,6 +1673,16 @@ export const mockRssFeed = (overrides?: Partial<RssFeed>, _relationshipsToOmit: 
         uploader: overrides && overrides.hasOwnProperty('uploader') ? overrides.uploader! : relationshipsToOmit.has('User') ? {} as User : mockUser({}, relationshipsToOmit),
         uploader_organization: overrides && overrides.hasOwnProperty('uploader_organization') ? overrides.uploader_organization! : relationshipsToOmit.has('Organization') ? {} as Organization : mockOrganization({}, relationshipsToOmit),
         use_cases: overrides && overrides.hasOwnProperty('use_cases') ? overrides.use_cases! : [relationshipsToOmit.has('UseCase') ? {} as UseCase : mockUseCase({}, relationshipsToOmit)],
+    };
+};
+
+export const mockSsoGroupRolePortal = (overrides?: Partial<SsoGroupRolePortal>, _relationshipsToOmit: Set<string> = new Set()): { __typename: 'SSOGroupRolePortal' } & SsoGroupRolePortal => {
+    const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+    relationshipsToOmit.add('SsoGroupRolePortal');
+    return {
+        __typename: 'SSOGroupRolePortal',
+        rolePortal: overrides && overrides.hasOwnProperty('rolePortal') ? overrides.rolePortal! : relationshipsToOmit.has('RolePortal') ? {} as RolePortal : mockRolePortal({}, relationshipsToOmit),
+        ssoGroup: overrides && overrides.hasOwnProperty('ssoGroup') ? overrides.ssoGroup! : 'suppono',
     };
 };
 

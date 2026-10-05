@@ -1,4 +1,14 @@
 type RolePortal implements Node {
-  id: ID!
-  name: String!
+    id: ID!
+    name: String!
+    capabilities: [Capability]
+}
+
+type SSOGroupRolePortal {
+    ssoGroup: String!
+    rolePortal: RolePortal!
+}
+
+extend type Query {
+    ssoGroupRolePortals: [SSOGroupRolePortal]! @auth(portalCapa: BYPASS)
 }

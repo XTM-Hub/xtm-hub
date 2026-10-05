@@ -1935,6 +1935,7 @@ export type Query = {
   serviceInstances: ServiceConnection;
   settings: Settings;
   solutionCategories?: Maybe<SolutionCategoryConnection>;
+  ssoGroupRolePortals: Array<Maybe<SsoGroupRolePortal>>;
   subscriptionById?: Maybe<SubscriptionModel>;
   subscriptions: SubscriptionConnection;
   updateOpenCTIManifest: Success;
@@ -2388,6 +2389,7 @@ export type ReorderDeploymentRequestInQueueInput = {
 
 export type RolePortal = Node & {
   __typename?: 'RolePortal';
+  capabilities?: Maybe<Array<Maybe<Capability>>>;
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
 };
@@ -2422,6 +2424,12 @@ export type RssFeed = Document & Integration & Node & {
   uploader?: Maybe<User>;
   uploader_organization?: Maybe<Organization>;
   use_cases?: Maybe<Array<UseCase>>;
+};
+
+export type SsoGroupRolePortal = {
+  __typename?: 'SSOGroupRolePortal';
+  rolePortal: RolePortal;
+  ssoGroup: Scalars['String']['output'];
 };
 
 export type SendTelemetryMutation = {
@@ -3456,6 +3464,7 @@ export type ResolversTypes = ResolversObject<{
   ReorderDeploymentRequestInQueueInput: ReorderDeploymentRequestInQueueInput;
   RolePortal: ResolverTypeWrapper<RolePortal>;
   RssFeed: ResolverTypeWrapper<RssFeed>;
+  SSOGroupRolePortal: ResolverTypeWrapper<SsoGroupRolePortal>;
   SendTelemetryMutation: ResolverTypeWrapper<SendTelemetryMutation>;
   SeoServiceInstance: ResolverTypeWrapper<SeoServiceInstance>;
   SeoServiceInstanceMetadata: ResolverTypeWrapper<SeoServiceInstanceMetadata>;
@@ -3684,6 +3693,7 @@ export type ResolversParentTypes = ResolversObject<{
   ReorderDeploymentRequestInQueueInput: ReorderDeploymentRequestInQueueInput;
   RolePortal: RolePortal;
   RssFeed: RssFeed;
+  SSOGroupRolePortal: SsoGroupRolePortal;
   SendTelemetryMutation: SendTelemetryMutation;
   SeoServiceInstance: SeoServiceInstance;
   SeoServiceInstanceMetadata: SeoServiceInstanceMetadata;
@@ -4619,6 +4629,7 @@ export type QueryResolvers<ContextType = PortalContext, ParentType extends Resol
   serviceInstances?: Resolver<ResolversTypes['ServiceConnection'], ParentType, ContextType, RequireFields<QueryServiceInstancesArgs, 'first' | 'orderBy' | 'orderMode'>>;
   settings?: Resolver<ResolversTypes['Settings'], ParentType, ContextType>;
   solutionCategories?: Resolver<Maybe<ResolversTypes['SolutionCategoryConnection']>, ParentType, ContextType, RequireFields<QuerySolutionCategoriesArgs, 'first' | 'orderBy' | 'orderMode'>>;
+  ssoGroupRolePortals?: Resolver<Array<Maybe<ResolversTypes['SSOGroupRolePortal']>>, ParentType, ContextType>;
   subscriptionById?: Resolver<Maybe<ResolversTypes['SubscriptionModel']>, ParentType, ContextType, Partial<QuerySubscriptionByIdArgs>>;
   subscriptions?: Resolver<ResolversTypes['SubscriptionConnection'], ParentType, ContextType, RequireFields<QuerySubscriptionsArgs, 'first' | 'orderBy' | 'orderMode'>>;
   updateOpenCTIManifest?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<QueryUpdateOpenCtiManifestArgs, 'tag'>>;
@@ -4682,6 +4693,7 @@ export type RegistrationResponseResolvers<ContextType = PortalContext, ParentTyp
 }>;
 
 export type RolePortalResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['RolePortal'] = ResolversParentTypes['RolePortal']> = ResolversObject<{
+  capabilities?: Resolver<Maybe<Array<Maybe<ResolversTypes['Capability']>>>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -4716,6 +4728,12 @@ export type RssFeedResolvers<ContextType = PortalContext, ParentType extends Res
   uploader?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   uploader_organization?: Resolver<Maybe<ResolversTypes['Organization']>, ParentType, ContextType>;
   use_cases?: Resolver<Maybe<Array<ResolversTypes['UseCase']>>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SsoGroupRolePortalResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SSOGroupRolePortal'] = ResolversParentTypes['SSOGroupRolePortal']> = ResolversObject<{
+  rolePortal?: Resolver<ResolversTypes['RolePortal'], ParentType, ContextType>;
+  ssoGroup?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -5327,6 +5345,7 @@ export type Resolvers<ContextType = PortalContext> = ResolversObject<{
   RegistrationResponse?: RegistrationResponseResolvers<ContextType>;
   RolePortal?: RolePortalResolvers<ContextType>;
   RssFeed?: RssFeedResolvers<ContextType>;
+  SSOGroupRolePortal?: SsoGroupRolePortalResolvers<ContextType>;
   SendTelemetryMutation?: SendTelemetryMutationResolvers<ContextType>;
   SeoServiceInstance?: SeoServiceInstanceResolvers<ContextType>;
   SeoServiceInstanceMetadata?: SeoServiceInstanceMetadataResolvers<ContextType>;

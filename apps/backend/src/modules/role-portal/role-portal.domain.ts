@@ -1,9 +1,14 @@
 import { db, dbRaw } from '../../../knexfile';
+import {
+  Capability,
+  SsoGroupRolePortal,
+} from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
 import RolePortal from '../../model/kanel/public/RolePortal';
 import { UserId } from '../../model/kanel/public/User';
 import { ROLE_ADMIN } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
+import { formatRawAggObject } from '../../utils/query-raw.util';
 
 export const RolePortalDomain = {
   isAdmin: () => {
@@ -43,5 +48,42 @@ export const RolePortalDomain = {
       return;
     }
     await RolePortalDomain.ensureUserHasRole(user_id, rolePortal.id);
+  },
+
+  loadSSOGroupRolePortals: async (): Promise<SsoGroupRolePortal[]> => {
+    const rows = await db<RolePortal>('RolePortal')
+      .join(
+        'SSOGroup_RolePortal',
+        'RolePortal.name',
+        'SSOGroup_RolePortal.RolePortal'
+      )
+      .leftJoin(
+        'RolePortal_CapabilityPortal as rolePortal_CapabilityPortal',
+        'RolePortal.id',
+        'rolePortal_CapabilityPortal.role_portal_id'
+      )
+      .leftJoin(
+        'CapabilityPortal as capability',
+        'capability.id',
+        'rolePortal_CapabilityPortal.capability_portal_id'
+      )
+      .groupBy('RolePortal.id', 'SSOGroup_RolePortal.SSOGroup')
+      .select<
+        (RolePortal & { ssoGroup: string; capabilities: Capability[] })[]
+      >(
+        'RolePortal.*',
+        'SSOGroup_RolePortal.SSOGroup as ssoGroup',
+        dbRaw(
+          formatRawAggObject({
+            columnName: 'capability',
+            typename: 'CapabilityPortal',
+            as: 'capabilities',
+          })
+        )
+      );
+    return rows.map(({ ssoGroup, ...rolePortal }) => ({
+      ssoGroup,
+      rolePortal,
+    }));
   },
 };

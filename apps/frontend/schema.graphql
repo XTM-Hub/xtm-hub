@@ -126,6 +126,7 @@ type Query {
   registeredPlatform(input: RegisteredPlatformInput!): RegisteredPlatform
   registeredPlatforms(input: RegisteredPlatformsInput!): [RegisteredPlatform!]!
   platformAssociatedOrganization(platformId: String!, tenantId: String): Organization
+  ssoGroupRolePortals: [SSOGroupRolePortal]!
   userServiceCapabilities(service_instance_id: ServiceInstanceId!): UserServiceCapabilitiesResponse!
   seoServiceInstanceMetadata(service_instance_id: ServiceInstanceId!, language: Locale): [SeoServiceInstanceMetadata!]!
   serviceInstances(first: Int!, after: ID, orderBy: ServiceInstanceOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [ServiceInstanceFilter!], includeInaccessible: Boolean): ServiceConnection!
@@ -1373,6 +1374,12 @@ input AutoRegisterPlatformInput {
 type RolePortal implements Node {
   id: ID!
   name: String!
+  capabilities: [Capability]
+}
+
+type SSOGroupRolePortal {
+  ssoGroup: String!
+  rolePortal: RolePortal!
 }
 
 """

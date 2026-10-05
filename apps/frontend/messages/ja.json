@@ -541,6 +541,11 @@
     "Name": "名前",
     "Product": "製品"
   },
+  "RoleListPage": {
+    "SsoGroup": "SSOグループ",
+    "Role": "ロール",
+    "Capabilities": "ケイパビリティ"
+  },
   "SolutionCategory": {
     "Actions": {
       "Add": "ソリューションカテゴリーを追加"
@@ -633,7 +638,8 @@
     "Competitor": "競技者",
     "NewsFeed": "ニュースフィード",
     "VotingRound": "機能への投票",
-    "ManageTrials": "トライアル管理"
+    "ManageTrials": "トライアル管理",
+    "Roles": "ロール"
   },
   "NewsFeedAdminPage": {
     "Title": "タイトル",

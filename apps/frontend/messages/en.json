@@ -541,6 +541,11 @@
     "Name": "Name",
     "Product": "Product"
   },
+  "RoleListPage": {
+    "SsoGroup": "SSO group",
+    "Role": "Role",
+    "Capabilities": "Capabilities"
+  },
   "SolutionCategory": {
     "Actions": {
       "Add": "Add solution category"
@@ -633,7 +638,8 @@
     "Competitor": "Competitor",
     "NewsFeed": "News Feed",
     "VotingRound": "Feature voting",
-    "ManageTrials": "Manage trials"
+    "ManageTrials": "Manage trials",
+    "Roles": "Roles"
   },
   "NewsFeedAdminPage": {
     "Title": "Title",

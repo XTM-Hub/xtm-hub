@@ -1,0 +1,13 @@
+query SSOGroupRolePortals {
+  ssoGroupRolePortals {
+    ssoGroup
+    rolePortal {
+      id
+      name
+      capabilities {
+        id
+        name
+      }
+    }
+  }
+}

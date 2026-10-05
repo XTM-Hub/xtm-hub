@@ -1942,6 +1942,7 @@ export type Query = {
   serviceInstances: ServiceConnection;
   settings: Settings;
   solutionCategories: Maybe<SolutionCategoryConnection>;
+  ssoGroupRolePortals: Array<Maybe<SsoGroupRolePortal>>;
   subscriptionById: Maybe<SubscriptionModel>;
   subscriptions: SubscriptionConnection;
   updateOpenCTIManifest: Success;
@@ -2395,6 +2396,7 @@ export type ReorderDeploymentRequestInQueueInput = {
 
 export type RolePortal = Node & {
   __typename?: 'RolePortal';
+  capabilities: Maybe<Array<Maybe<Capability>>>;
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
 };
@@ -2429,6 +2431,12 @@ export type RssFeed = Document & Integration & Node & {
   uploader: Maybe<User>;
   uploader_organization: Maybe<Organization>;
   use_cases: Maybe<Array<UseCase>>;
+};
+
+export type SsoGroupRolePortal = {
+  __typename?: 'SSOGroupRolePortal';
+  rolePortal: RolePortal;
+  ssoGroup: Scalars['String']['output'];
 };
 
 export type SendTelemetryMutation = {
@@ -3503,6 +3511,11 @@ export type ConnectProductOrganizationAdminsQueryVariables = Exact<{
 
 
 export type ConnectProductOrganizationAdminsQuery = { __typename?: 'Query', usersWithCapabilitiesInOrganization: Array<{ __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null }> };
+
+export type SsoGroupRolePortalsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type SsoGroupRolePortalsQuery = { __typename?: 'Query', ssoGroupRolePortals: Array<{ __typename?: 'SSOGroupRolePortal', ssoGroup: string, rolePortal: { __typename?: 'RolePortal', id: string, name: string, capabilities: Array<{ __typename?: 'Capability', id: string, name: PortalCapability } | null> | null } } | null> };
 
 export type AddUsersToBundleGroupsMutationVariables = Exact<{
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
@@ -5618,6 +5631,67 @@ export const useInfiniteConnectProductOrganizationAdminsQuery = <
 useInfiniteConnectProductOrganizationAdminsQuery.getKey = (variables: ConnectProductOrganizationAdminsQueryVariables) => ['ConnectProductOrganizationAdmins.infinite', variables];
 useInfiniteConnectProductOrganizationAdminsQuery.getRootKey = () => ['ConnectProductOrganizationAdmins.infinite'] as const;
 useConnectProductOrganizationAdminsQuery.fetcher = (client: GraphQLClient, variables: ConnectProductOrganizationAdminsQueryVariables, headers?: RequestInit['headers']) => fetcher<ConnectProductOrganizationAdminsQuery, ConnectProductOrganizationAdminsQueryVariables>(client, ConnectProductOrganizationAdminsDocument, variables, headers);
+
+export const SsoGroupRolePortalsDocument = `
+    query SSOGroupRolePortals {
+  ssoGroupRolePortals {
+    ssoGroup
+    rolePortal {
+      id
+      name
+      capabilities {
+        id
+        name
+      }
+    }
+  }
+}
+    `;
+
+export const useSsoGroupRolePortalsQuery = <
+      TData = SsoGroupRolePortalsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: SsoGroupRolePortalsQueryVariables,
+      options?: Omit<UseQueryOptions<SsoGroupRolePortalsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<SsoGroupRolePortalsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<SsoGroupRolePortalsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['SSOGroupRolePortals'] : ['SSOGroupRolePortals', variables],
+    queryFn: fetcher<SsoGroupRolePortalsQuery, SsoGroupRolePortalsQueryVariables>(client, SsoGroupRolePortalsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSsoGroupRolePortalsQuery.getKey = (variables?: SsoGroupRolePortalsQueryVariables) => variables === undefined ? ['SSOGroupRolePortals'] : ['SSOGroupRolePortals', variables];
+useSsoGroupRolePortalsQuery.getRootKey = () => ['SSOGroupRolePortals'] as const;
+export const useInfiniteSsoGroupRolePortalsQuery = <
+      TData = InfiniteData<SsoGroupRolePortalsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SsoGroupRolePortalsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<SsoGroupRolePortalsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<SsoGroupRolePortalsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<SsoGroupRolePortalsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['SSOGroupRolePortals.infinite'] : ['SSOGroupRolePortals.infinite', variables],
+      queryFn: (metaData) => fetcher<SsoGroupRolePortalsQuery, SsoGroupRolePortalsQueryVariables>(client, SsoGroupRolePortalsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteSsoGroupRolePortalsQuery.getKey = (variables?: SsoGroupRolePortalsQueryVariables) => variables === undefined ? ['SSOGroupRolePortals.infinite'] : ['SSOGroupRolePortals.infinite', variables];
+useInfiniteSsoGroupRolePortalsQuery.getRootKey = () => ['SSOGroupRolePortals.infinite'] as const;
+useSsoGroupRolePortalsQuery.fetcher = (client: GraphQLClient, variables?: SsoGroupRolePortalsQueryVariables, headers?: RequestInit['headers']) => fetcher<SsoGroupRolePortalsQuery, SsoGroupRolePortalsQueryVariables>(client, SsoGroupRolePortalsDocument, variables, headers);
 
 export const AddUsersToBundleGroupsDocument = `
     mutation AddUsersToBundleGroups($serviceInstanceId: ServiceInstanceId!, $input: AddUsersToBundleGroupsInput!) {
