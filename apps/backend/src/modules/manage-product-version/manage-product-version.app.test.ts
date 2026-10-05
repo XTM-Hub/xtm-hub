@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import { PlatformIdentifier } from '../../__generated__/resolvers-types';
 import { ManifestFragmentHelper } from '../shareable-resource/manifest-fragment/manifest-fragment.helper';
@@ -6,6 +6,11 @@ import { ManageProductVersionApp } from './manage-product-version.app';
 
 describe('manageProductVersionApp', () => {
   describe('registerProductVersion', () => {
+    // The migrations pre-register the OpenCTI 6.x and 7.x versions.
+    beforeEach(async () => {
+      await TestHelper.productVersion.delete({});
+    });
+
     afterEach(async () => {
       await TestHelper.productVersion.delete({});
     });
@@ -45,6 +50,11 @@ describe('manageProductVersionApp', () => {
   });
 
   describe('loadRegisteredProductVersions', () => {
+    // The migrations pre-register the OpenCTI 6.x and 7.x versions.
+    beforeEach(async () => {
+      await TestHelper.productVersion.delete({});
+    });
+
     afterEach(async () => {
       await TestHelper.productVersion.delete({});
     });

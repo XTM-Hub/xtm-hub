@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   contextSimpleUserFiligran2,
@@ -11,6 +11,11 @@ import resolvers from './manage-product-version.resolver';
 
 describe('manageProductVersionResolver', () => {
   describe('mutation.newProductVersion', () => {
+    // The migrations pre-register the OpenCTI 6.x and 7.x versions.
+    beforeEach(async () => {
+      await TestHelper.productVersion.delete({});
+    });
+
     afterEach(async () => {
       vi.restoreAllMocks();
       await TestHelper.productVersion.delete({});
@@ -63,6 +68,11 @@ describe('manageProductVersionResolver', () => {
   });
 
   describe('query.registeredProductVersions', () => {
+    // The migrations pre-register the OpenCTI 6.x and 7.x versions.
+    beforeEach(async () => {
+      await TestHelper.productVersion.delete({});
+    });
+
     afterEach(async () => {
       await TestHelper.productVersion.delete({});
     });
