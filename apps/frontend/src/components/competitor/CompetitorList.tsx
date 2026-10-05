@@ -3,7 +3,7 @@ import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
 import { i18nKey } from '@/utils/datatable';
 import { DeleteIcon, EditIcon } from '@filigran/icon';
-import { Button, DataTable, DataTableHeadBarOptions } from '@filigran/ui';
+import { DataTable, DataTableHeadBarOptions } from '@filigran/ui';
 import { CompetitorTier } from '@graphql/generated';
 import { ColumnDef, SortingState, Updater } from '@tanstack/react-table';
 import { useCallback, useMemo, useState } from 'react';
@@ -30,6 +30,7 @@ import {
   mapToSortingTableValue,
   transformSortingValueToParams,
 } from '@/components/ui/handle-sorting.utils';
+import { Button, IconButton } from '@filigran/design-system';
 import {
   competitorListQuery,
   competitorListQuery$variables,
@@ -115,30 +116,27 @@ const CompetitorList = () => {
         enableSorting: false,
         cell: ({ row }) => (
           <div className="flex items-center justify-end gap-s">
-            <Button
-              variant="tertiary"
-              size="sm"
+            <IconButton
+              priority="tertiary"
+              aria-label={t('CompetitorListPage.Edit')}
+              icon={<EditIcon className="h-4 w-4" />}
               onClick={(e) => {
                 e.stopPropagation();
                 setEditRow(row.original);
                 setOpenEdit(true);
-              }}>
-              <EditIcon className="h-4 w-4" />
-              <span className="sr-only">{t('CompetitorListPage.Edit')}</span>
-            </Button>
+              }}
+            />
             <AlertDialogComponent
               AlertTitle={t('CompetitorListPage.DeleteDialog.Title')}
               actionButtonText={t('CompetitorListPage.Delete')}
               variantName="destructive"
               triggerElement={
-                <Button
-                  variant="tertiary-destructive"
-                  size="sm">
-                  <DeleteIcon className="h-4 w-4" />
-                  <span className="sr-only">
-                    {t('CompetitorListPage.Delete')}
-                  </span>
-                </Button>
+                <IconButton
+                  variant="destructive"
+                  priority="tertiary"
+                  aria-label={t('CompetitorListPage.Delete')}
+                  icon={<DeleteIcon className="h-4 w-4" />}
+                />
               }
               onClickContinue={(e) => {
                 e.stopPropagation();

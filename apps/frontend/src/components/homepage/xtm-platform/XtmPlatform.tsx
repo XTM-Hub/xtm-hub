@@ -23,7 +23,7 @@ const XtmPlatform = async ({ welcomeName }: XtmPlatformProps = {}) => {
         </div>
       </div>
 
-      <div className="rounded-lg overflow-hidden flex items-center justify-end order-first md:order-last">
+      <div className="rounded overflow-hidden flex items-center justify-end order-first md:order-last">
         <XtmPlatformImage />
       </div>
     </section>

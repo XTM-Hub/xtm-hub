@@ -6,7 +6,8 @@ import VotingRoundForm, {
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { Button, toast } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
+import { toast } from '@filigran/ui';
 import { useVotingRoundCreateMutation } from '@graphql/generated';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';

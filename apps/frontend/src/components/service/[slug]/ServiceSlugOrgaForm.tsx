@@ -13,8 +13,8 @@ import { useSubscriptionDefaultValues } from './use-subscription-default-values'
 
 import { useTranslate } from '@/hooks/use-translate';
 import { DEBOUNCE_TIME } from '@/utils/constant';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   Checkbox,
   DatePicker,
   Form,
@@ -217,7 +217,7 @@ export const ServiceSlugOrgaForm = ({
             />
           )}
 
-          <div className="border border-primary rounded-lg p-l">
+          <div className="border border-primary rounded p-l">
             <FormLabel>{t('OrganizationInServiceAction.SelectCapa')}</FormLabel>
             <p className="txt-sub-content italic">
               {t('OrganizationInServiceAction.SelectCapaDescription')}
@@ -301,7 +301,7 @@ export const ServiceSlugOrgaForm = ({
 
           <SheetFooter className="pt-2">
             <Button
-              variant="secondary"
+              priority="secondary"
               type="button"
               onClick={(e) => handleCloseSheet(e)}>
               {t('Utils.Cancel')}

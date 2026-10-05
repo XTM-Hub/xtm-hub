@@ -5,8 +5,8 @@ import { translateServiceDefinitionIdentifier } from '@/components/registration/
 import { UpdatePlatformServiceMetadata } from '@/components/service/service.graphql';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   Form,
   FormControl,
   FormField,
@@ -140,7 +140,7 @@ export const PlatformUpdateSheet = ({
           <SheetFooter>
             <Button
               type="button"
-              variant="secondary"
+              priority="secondary"
               onClick={() => setOpen(false)}>
               {t('Utils.Cancel')}
             </Button>

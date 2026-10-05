@@ -1,6 +1,6 @@
 import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -89,7 +89,7 @@ export const ReachSalesDialogForm = ({
         </Form>
         <DialogFooter className="justify-end gap-s">
           <Button
-            variant="outline"
+            priority="secondary"
             type="button"
             onClick={() => setIsDialogOpen(false)}>
             {t('Utils.Cancel')}

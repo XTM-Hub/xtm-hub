@@ -12,7 +12,8 @@ import {
   Separator,
   toast,
 } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
+
+import { Button } from '@filigran/design-system';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useMutation } from 'react-relay';
@@ -86,7 +87,7 @@ export const RequestTransferPersonalSpace = () => {
             }}>
             <div className="mt-xl flex justify-end">
               <Button
-                variant={'destructive'}
+                variant="destructive"
                 aria-label={t('ProfilePage.PersonalSpace.TransferPersoSpace')}>
                 {t('ProfilePage.PersonalSpace.Transfer')}
               </Button>

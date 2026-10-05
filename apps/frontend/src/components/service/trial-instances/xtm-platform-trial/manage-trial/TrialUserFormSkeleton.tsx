@@ -1,8 +1,8 @@
 'use client';
 
 import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   Form,
   FormControl,
   FormField,
@@ -112,7 +112,7 @@ export const TrialUserFormSkeleton = ({
 
         <div className="flex justify-end gap-s">
           <Button
-            variant="secondary"
+            priority="secondary"
             type="button"
             onClick={onCancel}>
             {t('Utils.Cancel')}

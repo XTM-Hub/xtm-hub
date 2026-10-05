@@ -9,6 +9,7 @@ import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { cn, isEmpty } from '@/lib/utils';
+import { Button, IconButton } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
 import {
   Form,
@@ -20,7 +21,7 @@ import {
   Label,
   SheetFooter,
 } from '@filigran/ui/clients';
-import { Button, Input } from '@filigran/ui/servers';
+import { Input } from '@filigran/ui/servers';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useContext, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
@@ -187,13 +188,13 @@ export const UserAdminForm = ({ handleSubmit }: UserAdminFormProps) => {
                             onChange={formField.onChange}
                           />
                         </FormControl>
-                        <Button
+                        <IconButton
                           type="button"
-                          variant="tertiary"
-                          size="icon"
-                          onClick={() => remove(index)}>
-                          <DeleteIcon className="h-4 w-4" />
-                        </Button>
+                          priority="tertiary"
+                          aria-label={t('MenuActions.Remove')}
+                          icon={<DeleteIcon className="h-4 w-4" />}
+                          onClick={() => remove(index)}
+                        />
                       </div>
                       <FormMessage />
                     </FormItem>
@@ -206,7 +207,7 @@ export const UserAdminForm = ({ handleSubmit }: UserAdminFormProps) => {
 
         <SheetFooter className="pt-2">
           <Button
-            variant="secondary"
+            priority="secondary"
             type="button"
             onClick={(e) => handleCloseSheet(e)}>
             {t('Utils.Cancel')}

@@ -6,8 +6,8 @@ import { useEditMode } from '@/context/edit-mode-context';
 import { useContentEditModeToggle } from '@/hooks/use-content-edit-mode-toggle';
 import { useExitEditMode } from '@/hooks/use-exit-edit-mode';
 import { cn } from '@/lib/utils';
+import { Button } from '@filigran/design-system';
 import { LanguageIcon } from '@filigran/icon';
-import { Button } from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 
 interface EditTranslationsButtonProps {
@@ -33,7 +33,7 @@ export const EditTranslationsButton = ({
   return (
     <div className="shrink-0">
       <Button
-        variant="tertiary"
+        priority="tertiary"
         disabled={isPending || isExiting}
         className={cn(
           'h-9 px-m w-full justify-start rounded-none text-foreground',

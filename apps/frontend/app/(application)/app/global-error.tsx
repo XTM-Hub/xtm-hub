@@ -1,7 +1,7 @@
 'use client';
 
 import AppError from '@/components/AppError';
-import { Button } from '@filigran/ui/servers';
+import { Button } from '@filigran/design-system';
 
 interface GlobalErrorProps {
   error: Error & { digest?: string; componentStack?: string };

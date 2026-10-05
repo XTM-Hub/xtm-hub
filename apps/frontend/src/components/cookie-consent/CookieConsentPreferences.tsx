@@ -17,8 +17,8 @@ import {
 } from '@/components/cookie-consent/cookie-consent.utils';
 import { useConsent } from '@/components/cookie-consent/CookieConsentProvider';
 import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -107,9 +107,9 @@ export const CookieConsentPreferences = () => {
                     </span>
                     {services.length > 0 ? (
                       <Button
-                        variant="link"
+                        priority="tertiary"
                         onClick={() => toggleDrawer(category)}
-                        className="h-auto justify-start p-0 body-compact">
+                        className="h-auto justify-start p-0 underline body-compact">
                         {t('ManageServices', { count: services.length })}
                       </Button>
                     ) : null}

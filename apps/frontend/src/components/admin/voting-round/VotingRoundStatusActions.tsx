@@ -3,7 +3,8 @@
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { Button, toast } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
+import { toast } from '@filigran/ui';
 import {
   useVotingRoundSetStatusMutation,
   VotingRoundStatus,
@@ -56,7 +57,7 @@ export const VotingRoundStatusActions = ({
         actionButtonText={t('VotingRound.Actions.Close')}
         triggerElement={
           <Button
-            variant="secondary"
+            priority="secondary"
             disabled={isPending}>
             {t('VotingRound.Actions.Close')}
           </Button>

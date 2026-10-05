@@ -1,8 +1,8 @@
 import { AddSubscriptionCapabilityMutation } from '@/components/subcription/subscription.graphql';
 import { BadgeOverflow } from '@/components/ui/BadgeOverflowCounter';
 import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   Checkbox,
   Dialog,
   DialogContent,
@@ -126,7 +126,7 @@ export const ServiceSlugAddCapabilities = ({
 
         <DialogFooter>
           <Button
-            variant="tertiary"
+            priority="tertiary"
             onClick={() => resetAndClose()}>
             {t('Utils.Cancel')}
           </Button>
