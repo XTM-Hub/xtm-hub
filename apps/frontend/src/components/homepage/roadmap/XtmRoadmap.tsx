@@ -67,7 +67,7 @@ const XtmRoadmap = async ({
   const defaultSeeMoreHref = `/${usedLocale}/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/xtm-platform-roadmap`;
 
   return (
-    <section className="flex flex-col lg:flex-row gap-l items-center border border-elevation-border-strong rounded-lg px-xl py-4">
+    <section className="flex flex-col lg:flex-row gap-l items-center border border-elevation-border-strong rounded px-xl py-4">
       <div className="flex flex-col gap-s flex-3">
         <h2 className="heading-xl">{title}</h2>
         <p className="text-muted-foreground text-xs sm:text-sm">
@@ -87,7 +87,7 @@ const XtmRoadmap = async ({
         </div>
       </div>
 
-      <div className="hidden min-[1330px]:block relative h-24 flex-2 rounded-lg overflow-hidden">
+      <div className="hidden min-[1330px]:block relative h-24 flex-2 rounded overflow-hidden">
         <Image
           src="/xtm_roadmap_space.png"
           alt={t('ImageAlt')}

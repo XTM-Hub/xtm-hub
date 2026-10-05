@@ -654,7 +654,7 @@ const DefaultSelectionHeader = ({
         'flex justify-between items-center w-full pl-4',
         'transition-all duration-200 ease-in-out',
         selectedCount > 0
-          ? 'bg-[hsl(var(--bg-elevation-hover-layer-0)/.5)] py-3 h-12 mt-4 mb-s'
+          ? 'bg-(--bg-elevation-hover-layer-0)/50 py-3 h-12 mt-4 mb-s'
           : 'h-0 overflow-hidden'
       )}>
       <div>
@@ -905,7 +905,7 @@ const GenericDataTable = <TData extends { id: string }, TValue>(
                     key={row.id}
                     className={cn(
                       row.getCanSelect() &&
-                        'hover:bg-[hsl(var(--bg-elevation-hover-layer-0)/.5)]',
+                        'hover:bg-(--bg-elevation-hover-layer-0)/50',
                       onClickRow ? 'cursor-pointer' : '',
                       !row.getCanSelect() &&
                         'bg-text-foreground/30 cursor-auto opacity-50'

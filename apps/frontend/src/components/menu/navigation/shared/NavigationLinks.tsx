@@ -40,7 +40,7 @@ export const PublicSubLink = ({
         'flex items-center justify-between w-full h-9 pl-6 rounded-none normal-case content-body-compact text-text-default-secondary text-xs',
         highlight &&
           !isActive &&
-          'bg-clip-text text-transparent bg-gradient-focus',
+          'bg-clip-text text-transparent bg-gradient-legacy-focus',
         !href && 'cursor-default pointer-events-none',
         className
       ),
@@ -57,7 +57,7 @@ export const PublicSubLink = ({
         </span>
       </span>
       {badge && (
-        <span className="inline-flex items-center shrink-0 text-content-caption bg-clip-text text-transparent bg-gradient-focus">
+        <span className="inline-flex items-center shrink-0 text-content-caption bg-clip-text text-transparent bg-gradient-legacy-focus">
           {badge}
         </span>
       )}
@@ -73,7 +73,7 @@ export const PublicSubLink = ({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>{node}</TooltipTrigger>
-          <TooltipContent className="bg-ds-bg-4 dark:bg-ds-bg-4 rounded-lg">
+          <TooltipContent className="bg-ds-bg-4 dark:bg-ds-bg-4 rounded">
             <div className="flex flex-col gap-0.5">
               <span className="content-body-base text-text-default-primary">
                 {label}
@@ -142,7 +142,7 @@ export const NavigationLinkMenu = ({
         className="block">
         <GradientButton
           className={cn(
-            'h-9 rounded-lg text-content-button whitespace-nowrap bg-background dark:bg-none',
+            'h-9 rounded text-content-button whitespace-nowrap bg-background dark:bg-none',
             open ? 'w-full px-2' : 'w-9 px-0'
           )}
           textGradient={open}

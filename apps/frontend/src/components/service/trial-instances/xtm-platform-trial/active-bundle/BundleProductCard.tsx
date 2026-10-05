@@ -80,7 +80,7 @@ export const BundleProductCard = ({
           <IconButton
             priority="tertiary"
             size="sm"
-            className="shrink-0 rounded-lg border border-elevation-border-strong text-text-default-primary"
+            className="shrink-0 rounded border border-elevation-border-strong text-text-default-primary"
             aria-label={t('XtmPlatformTrial.Products.EditName')}
             icon={<EditIcon className="size-4" />}
             onClick={() => setOpenEditName(true)}

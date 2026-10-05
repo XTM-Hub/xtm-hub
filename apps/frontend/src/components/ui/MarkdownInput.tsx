@@ -22,14 +22,14 @@ const MarkdownInput = ({
         onChange={onChange}
         highlightEnable={false}
         style={{
-          background: 'hsl(var(--page-background))',
-          color: 'hsl(var(--text-foreground))',
+          background: 'var(--page-background)',
+          color: 'var(--text-foreground)',
         }}
         previewOptions={{
           rehypePlugins: [[rehypeSanitize]],
           style: {
             background: 'transparent',
-            color: 'hsl(var(--text-foreground))',
+            color: 'var(--text-foreground)',
           },
         }}
         textareaProps={{
@@ -37,7 +37,7 @@ const MarkdownInput = ({
           disabled,
           style: {
             background: 'transparent',
-            color: 'hsl(var(--text-foreground))',
+            color: 'var(--text-foreground)',
           },
         }}
       />

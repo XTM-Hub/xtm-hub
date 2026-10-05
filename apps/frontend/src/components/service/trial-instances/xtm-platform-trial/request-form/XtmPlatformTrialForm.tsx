@@ -272,7 +272,7 @@ export const XtmPlatformTrialForm = ({
                 />
                 <label
                   htmlFor="product-xtmone"
-                  className="content-base text-muted-foreground">
+                  className="content-base tracking-[0.75px] text-muted-foreground">
                   {t(`PlatformIdentifier.${PlatformIdentifier.Xtmone}`)}
                 </label>
               </div>

@@ -31,7 +31,7 @@ const GradientButton = React.forwardRef<HTMLButtonElement, GradientButtonProps>(
       variant = 'highlight',
       gradientFrom,
       gradientTo,
-      gradientBg = 'hsl(var(--background))',
+      gradientBg = 'var(--background)',
       textGradient = true,
       children,
       ...props

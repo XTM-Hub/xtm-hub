@@ -307,7 +307,7 @@ export const UserServiceForm = ({
           </>
         )}
 
-        <div className="border border-primary rounded-lg p-l">
+        <div className="border border-primary rounded p-l">
           <FormLabel>{t('OrganizationInServiceAction.SelectCapa')}</FormLabel>
           <p className="txt-sub-content italic">
             {t('InviteUserServiceForm.Description')}

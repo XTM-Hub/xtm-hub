@@ -11,40 +11,31 @@
 }
 
 :root {
-  --color-filigran-decoration: hsl(var(--darkblue-700) / 0.3);
+  /* The design system names its fonts literally; next/font serves them under generated names */
+  --font-sans-plex: var(--font-ibm-plex-sans);
+  --font-sans-geologica: var(--font-geologica);
+  --color-filigran-decoration: color-mix(
+    in srgb,
+    var(--darkblue-700) 30%,
+    transparent
+  );
   --hover-background: var(--color-gray-150);
-  --color-primary: hsl(var(--primary));
-  --color-foreground: hsl(var(--foreground));
-  --color-destructive: hsl(var(--destructive));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-  --color-ds-bg: hsl(var(--ds-bg-main));
+  --color-primary: var(--primary);
+  --color-foreground: var(--foreground);
+  --color-destructive: var(--destructive);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-ds-bg: var(--ds-bg-main);
 }
 
 .dark,
 body[data-theme='dark'],
 body[data-theme='Dark'] {
-  --color-filigran-decoration: hsl(var(--blue-500) / 0.3);
+  --color-filigran-decoration: color-mix(
+    in srgb,
+    var(--blue-500) 30%,
+    transparent
+  );
   --hover-background: var(--color-filigran-brand-primary-transparency);
-}
-
-/*
- * Bridge until the legacy filigran-ui theme is removed (#3507). It redefines the design-system
- * primitives (--gray-900, …) as bare HSL triplets and --radius-sm as 0, which invalidates the
- * design-system tokens built on them. Point the tokens the design-system Button uses at the
- * legacy equivalents, under the same selectors the legacy theme uses to switch modes.
- */
-@theme inline {
-  --radius-sm: 0.25rem;
-}
-
-:root,
-.dark,
-body[data-theme='dark'],
-body[data-theme='Dark'] {
-  --text-negative-primary: var(--color-text-negative-primary);
-  --text-default-primary: var(--color-text-default-primary);
-  --text-default-disabled: var(--color-text-default-disabled);
-  --bg-elevation-default: hsl(var(--background));
 }
 
 @source '../src/components/filigran-ui/**/*.{ts,tsx}';
@@ -160,7 +151,7 @@ body[data-theme='Dark'] {
   }
 
   pre {
-    @apply bg-muted my-3 overflow-x-auto rounded-md p-4;
+    @apply bg-muted my-3 overflow-x-auto rounded-xs p-4;
   }
   pre code {
     @apply bg-transparent p-0 font-mono text-sm;

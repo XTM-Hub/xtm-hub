@@ -89,7 +89,7 @@ export const ManageTrialHeader = ({
   return (
     <header className="flex flex-col gap-l">
       <div className="flex flex-col gap-xs">
-        <p className="heading-sm w-fit bg-clip-text text-transparent bg-gradient-focus">
+        <p className="heading-sm w-fit bg-clip-text text-transparent bg-gradient-legacy-focus">
           {t('Service.Bundle.ManageTrial.Eyebrow')}
         </p>
         <h1 className="heading-2xl">{t('Service.Bundle.ManageTrial.Title')}</h1>
