@@ -353,9 +353,31 @@ export const DocumentApp = {
       DocumentHelper.retrieveDocumentTypeFromServiceDefinition(
         serviceDefinition.identifier as ManageableServiceDefinitionIdentifier
       );
+    // Reactivating a removed integration takes its slug back, which an integration created since may hold
+    const reactivatedSlug =
+      documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE &&
+      input.active === true &&
+      documentBeforeUpdate.slug
+        ? documentBeforeUpdate.slug
+        : undefined;
+    const assertReactivatedSlugIsFree = async () => {
+      if (
+        reactivatedSlug &&
+        (await DocumentDomain.isSlugTaken({
+          slug: reactivatedSlug,
+          type: documentType,
+          excludeDocumentId: parentDocumentId,
+        }))
+      ) {
+        throw new Error(ErrorCode.DocumentUniqueSlugError);
+      }
+    };
     // Rejected before the uploads, which would otherwise stay in the storage
     if (documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE) {
       IntegrationCoverageApp.assertValidCoverageInput(input);
+      if (!documentBeforeUpdate.active) {
+        await assertReactivatedSlugIsFree();
+      }
     }
     const [sourceDocumentFile] = await DocumentUploadsHelper.processUploads(
       sourceDocument,
@@ -420,7 +442,26 @@ export const DocumentApp = {
       documentMetadata
     );
 
-    const updatedDocument = await withTransaction(async () => {
+    // A reactivation holds the slug lock of the creations and manifest ingestions of that slug
+    const inUpdateTransaction = <T>(callback: () => Promise<T>) =>
+      reactivatedSlug
+        ? withAdvisoryLock(
+            CONNECTOR_SLUG_LOCK_NAMESPACE,
+            reactivatedSlug,
+            callback
+          )
+        : withTransaction(callback);
+
+    const updatedDocument = await inUpdateTransaction(async () => {
+      if (reactivatedSlug) {
+        // Read under the slug lock: the integration may have been removed, and its slug taken, meanwhile
+        const currentDocument = await DocumentDomain.loadDocumentBy({
+          id: parentDocumentId,
+        });
+        if (!currentDocument?.active) {
+          await assertReactivatedSlugIsFree();
+        }
+      }
       // The metadata below is deleted then reinserted, so coverage is always re-resolved, against the stored
       // coverage and the document text read under the document lock: a declaration or a name committed
       // meanwhile (manifest ingestion, another admin) is never replaced or inferred from a stale value.
@@ -550,6 +591,14 @@ export const DocumentApp = {
       }
 
       return doc;
+    }).catch(async (error: unknown) => {
+      // Nothing references the uploads of an update that did not commit
+      await DocumentUploadsHelper.removeUploads([
+        sourceDocumentFile,
+        ...imagesFiles,
+        logoFile,
+      ]);
+      throw error;
     });
 
     void NewsFeedApp.upsertResourceNewsFeed({

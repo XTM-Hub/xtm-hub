@@ -232,6 +232,37 @@ describe('document domain', () => {
         })
       ).resolves.toBe(false);
     });
+
+    it('should leave the excluded document out, so that a reactivation only sees another holder', async () => {
+      const holder = await TestHelper.document.create({
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'held-slug',
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+        active: true,
+      });
+
+      await expect(
+        DocumentDomain.isSlugTaken({
+          slug: 'held-slug',
+          type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+          excludeDocumentId: holder.id,
+        })
+      ).resolves.toBe(false);
+
+      const otherHolder = await TestHelper.document.create({
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'held-slug',
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+        active: true,
+      });
+      await expect(
+        DocumentDomain.isSlugTaken({
+          slug: 'held-slug',
+          type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+          excludeDocumentId: otherHolder.id,
+        })
+      ).resolves.toBe(true);
+    });
   });
 
   describe(`loadParentDocumentsByServiceInstance`, () => {

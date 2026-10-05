@@ -592,20 +592,28 @@ export const DocumentDomain = {
   /**
    * Whether a live document of this type holds the slug, a decoupled
    * connector included: the decoupling tag only decides the listings.
-   * Documents without a version escape the unique constraint, so a creation
-   * checks this under the lock that serializes the slug.
+   * Documents without a version escape the unique constraint, so a creation,
+   * and an update that reactivates a document (`excludeDocumentId`), checks
+   * this under the lock that serializes the slug.
    */
   isSlugTaken: async ({
     slug,
     type,
+    excludeDocumentId,
   }: {
     slug: string;
     type: string;
+    excludeDocumentId?: DocumentId;
   }): Promise<boolean> => {
     const document = await db<DocumentModel>('Document')
       .where('slug', '=', slug)
       .where('type', '=', type)
       .where('active', '=', true)
+      .modify((query) => {
+        if (excludeDocumentId) {
+          query.whereNot('id', excludeDocumentId);
+        }
+      })
       .first('Document.id');
     return !!document;
   },
