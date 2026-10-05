@@ -4,6 +4,7 @@
 
 @../.claude/rules/backend.md
 @../.claude/rules/ci.md
+@../.claude/rules/design-system.md
 @../.claude/rules/e2e.md
 @../.claude/rules/frontend.md
 @../.claude/rules/graphql.md

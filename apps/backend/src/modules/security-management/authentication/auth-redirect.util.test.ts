@@ -8,12 +8,12 @@ vi.spyOn(logApp, 'error').mockImplementation(() => {});
 describe('resolveSafeRedirect', () => {
   describe('accepted values', () => {
     it.each`
-      path                         | expected
-      ${'/app'}                    | ${'/app'}
-      ${'/app/service/vault'}      | ${'/app/service/vault'}
-      ${'/app/manage?tab=members'} | ${'/app/manage?tab=members'}
-      ${'/'}                       | ${'/'}
-      ${'/%5cevil.test'}           | ${'/%5cevil.test'}
+      path                                   | expected
+      ${'/app'}                              | ${'/app'}
+      ${'/app/service/opencti_integrations'} | ${'/app/service/opencti_integrations'}
+      ${'/app/manage?tab=members'}           | ${'/app/manage?tab=members'}
+      ${'/'}                                 | ${'/'}
+      ${'/%5cevil.test'}                     | ${'/%5cevil.test'}
     `('should keep same-site path "$path"', ({ path, expected }) => {
       expect(resolveSafeRedirect(btoa(path))).toBe(expected);
     });

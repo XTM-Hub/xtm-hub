@@ -13,6 +13,13 @@ enum UserOrdering {
   disabled
   country
   last_login
+  invitation_date
+}
+
+enum HasRepliedSatisfaction {
+  yes
+  no
+  closed
 }
 
 type Capability implements Node {
@@ -45,6 +52,7 @@ type User implements Node {
   pending_organization_id: OrganizationId
   status: UserAccountStatus
   invitation_date: Date
+  has_replied_satisfaction: HasRepliedSatisfaction
 }
 
 type UserEdge {
@@ -67,7 +75,7 @@ type Query {
   me: User
   usersWithCapabilitiesInOrganization(
     input: UsersWithCapabilitiesInOrganizationInput!
-  ): [User!]!
+  ): [User!]! @auth
   users(
     first: Int!
     after: ID

@@ -31,7 +31,7 @@ describe('authHelper', () => {
 
     it('should return false when the UserService belongs to a different ServiceInstance', async () => {
       const sub = await TestHelper.subscription.create({
-        service_instance_id: SERVICES.INSTANCES.VAULT.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
         organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
       });
       const userService = await TestHelper.user_Service.create({

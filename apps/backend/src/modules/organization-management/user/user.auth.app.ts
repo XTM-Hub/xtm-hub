@@ -5,6 +5,7 @@ import portalConfig from '../../../config';
 import { UserLoadUserBy } from '../../../model/user';
 import { validatePassword } from '../../../security/util/user';
 import { ForbiddenAccess } from '../../../utils/error/error.util';
+import { ServiceGroupApp } from '../../deployment/group/service-group.app';
 import { UserDomain } from './user-domain/user.domain';
 
 const validPassword = (user: UserLoadUserBy, password: string): boolean => {
@@ -29,7 +30,10 @@ export const UserAuthApp = {
 
     const loggedUser = await UserDomain.loadUserBy({ email });
     if (loggedUser && password && validPassword(loggedUser, password)) {
-      req.session.user = await UserDomain.updateUserAtLogin(loggedUser);
+      const user = await UserDomain.updateUserAtLogin(loggedUser);
+      req.session.user = user;
+
+      await ServiceGroupApp.grantAccessIfWaiting(user);
 
       res.cookie('NEXT_LOCALE', loggedUser.selected_language);
 

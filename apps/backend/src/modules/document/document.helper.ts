@@ -103,18 +103,14 @@ export type ManageableServiceDefinitionIdentifier =
   | ServiceDefinitionIdentifier.OpenctiCustomDashboards
   | ServiceDefinitionIdentifier.OpenctiCustomViews
   | ServiceDefinitionIdentifier.OpenaevScenarios
-  | ServiceDefinitionIdentifier.OpenctiPlaybooks
-  | ServiceDefinitionIdentifier.Vault;
-
-export const VAULT_DOCUMENT_TYPE = 'vault';
+  | ServiceDefinitionIdentifier.OpenctiPlaybooks;
 
 export type DOCUMENT_TYPE =
   | typeof OPENCTI_INTEGRATION_DOCUMENT_TYPE
   | typeof OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE
   | typeof OPENCTI_CUSTOM_VIEW_DOCUMENT_TYPE
   | typeof OPENAEV_SCENARIO_DOCUMENT_TYPE
-  | typeof OPENCTI_PLAYBOOK_DOCUMENT_TYPE
-  | typeof VAULT_DOCUMENT_TYPE;
+  | typeof OPENCTI_PLAYBOOK_DOCUMENT_TYPE;
 
 export const DocumentTypeMappedByServiceDefinition: Record<
   ManageableServiceDefinitionIdentifier,
@@ -130,7 +126,6 @@ export const DocumentTypeMappedByServiceDefinition: Record<
     OPENAEV_SCENARIO_DOCUMENT_TYPE,
   [ServiceDefinitionIdentifier.OpenctiPlaybooks]:
     OPENCTI_PLAYBOOK_DOCUMENT_TYPE,
-  [ServiceDefinitionIdentifier.Vault]: VAULT_DOCUMENT_TYPE,
 };
 
 const DocumentMetadataMappedByServiceIdentifier: Record<
@@ -176,7 +171,6 @@ const DocumentMetadataMappedByServiceIdentifier: Record<
     OPENAEV_SCENARIO_METADATA,
   [ServiceDefinitionIdentifier.OpenctiPlaybooks]: () =>
     OPENCTI_PLAYBOOK_METADATA,
-  [ServiceDefinitionIdentifier.Vault]: () => [],
 };
 
 export const DocumentHelper = {

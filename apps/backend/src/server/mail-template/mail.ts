@@ -53,6 +53,11 @@ export interface FreeTrialBundleModel {
 export interface FreeTrialBundleActiveModel extends FreeTrialBundleModel {
   platformUrl: string;
 }
+export interface FreeTrialBundleUserAddedModel extends FreeTrialBundleModel {
+  adminEmail: string;
+  daysLeft: number;
+  platformUrl: string;
+}
 
 export interface AdminSaasBundleRequestedModel {
   organizationName: string;
@@ -135,12 +140,10 @@ export const ServiceIdentifierToMailTemplate = new Map<
   [ServiceDefinitionIdentifier.OpenctiCustomViews, 'opencti_custom_views'],
   [ServiceDefinitionIdentifier.OpenctiIntegrations, 'opencti_integrations'],
   [ServiceDefinitionIdentifier.OpenctiPlaybooks, 'opencti_playbooks'],
-  [ServiceDefinitionIdentifier.Vault, 'vault'],
 ]);
 // ATTENTION, the key should be the same as the template file
 export type MailTemplates = {
   welcome: WelcomeMailModel;
-  vault: GenericServiceMailModel;
   opencti_custom_dashboards: GenericServiceMailModel;
   opencti_custom_views: GenericServiceMailModel;
   opencti_integrations: GenericServiceMailModel;
@@ -160,6 +163,7 @@ export type MailTemplates = {
   free_trial_bundle_cancelled: FreeTrialBundleModel;
   free_trial_bundle_expired: FreeTrialBundleModel;
   free_trial_user_added: FreeTrialUserAddedModel;
+  free_trial_bundle_user_added: FreeTrialBundleUserAddedModel;
   organization_pending_user_digest: OrganizationPendingUserDigestModel;
   admin_saas_bundle_requested: AdminSaasBundleRequestedModel;
   public_roadmap_monthly_reminder: { roadmapLink: string };
@@ -169,8 +173,6 @@ export const templateSubjects: {
   [K in keyof MailTemplates]: (params: MailTemplates[K]) => string;
 } = {
   welcome: () => 'Welcome to XTM Hub – Let’s Get Started!',
-  vault: (params: GenericServiceMailModel) =>
-    `XTM Hub - You've been invited to the ${params.serviceName}`,
   opencti_custom_dashboards: (params: GenericServiceMailModel) =>
     `XTM Hub - You've been invited to the ${params.serviceName}`,
   opencti_custom_views: (params: GenericServiceMailModel) =>
@@ -218,6 +220,8 @@ export const templateSubjects: {
     `Welcome to your ${
       PlatformIdentifierToString[params.platformIdentifier]
     } free trial!`,
+  free_trial_bundle_user_added: () =>
+    `You’ve Been Added to an ${BUNDLE_PLATFORM_NAME} Trial`,
   organization_pending_user_digest: () =>
     'XTM Hub - Users Requesting to Join Your Organization',
   admin_saas_bundle_requested: (params: AdminSaasBundleRequestedModel) => {

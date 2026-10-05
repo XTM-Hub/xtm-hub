@@ -195,6 +195,9 @@ export const TestUserHelper = {
       const [user] = await db<User>('User').insert(data).returning('*');
       return user;
     },
+    update: async (field: UserMutator, data: UserMutator) => {
+      await db<User>('User').where(field).update(data);
+    },
     insert: async (fields: UserMutator = {}): Promise<User> => {
       // eslint-disable-next-line no-restricted-syntax
       const [createdUser] = await db<User>('User')

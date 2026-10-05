@@ -115,10 +115,10 @@ export const ServiceFormMultipleImagesField = ({
                 }}
                 className="min-h-[15rem] border rounded relative">
                 <div
-                  className={`absolute inset-0 bg-black flex flex-col items-center justify-center transition-all duration-800 ease-in ${
+                  className={`absolute inset-0 bg-black-1000 flex flex-col items-center justify-center transition-all duration-800 ease-in ${
                     imagesToDelete.includes(doc!.id)
-                      ? 'bg-black/90 opacity-100'
-                      : 'bg-black/0 opacity-0'
+                      ? 'bg-black-1000/90 opacity-100'
+                      : 'bg-black-1000/0 opacity-0'
                   }`}>
                   <Button
                     variant="secondary"

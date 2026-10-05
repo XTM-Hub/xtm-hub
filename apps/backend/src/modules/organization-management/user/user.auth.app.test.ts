@@ -3,6 +3,7 @@ import express from 'express';
 import { Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserLoadUserBy } from '../../../model/user';
 import * as UserSecurity from '../../../security/util/user';
+import { ServiceGroupApp } from '../../deployment/group/service-group.app';
 import { UserDomain } from './user-domain/user.domain';
 import { UserAuthApp } from './user.auth.app';
 
@@ -14,6 +15,12 @@ vi.mock('./user-domain/user.domain', () => ({
   UserDomain: {
     loadUserBy: vi.fn(),
     updateUserAtLogin: vi.fn(),
+  },
+}));
+
+vi.mock('../../deployment/group/service-group.app', () => ({
+  ServiceGroupApp: {
+    grantAccessIfWaiting: vi.fn(),
   },
 }));
 
@@ -30,6 +37,7 @@ const mockUser = {
   salt: 'somesalt',
   password: 'somehash',
   selected_language: 'en',
+  status: null,
 } as UserLoadUserBy;
 
 const SSO_ONLY_SETTINGS = [{ provider: 'oidc' }];
@@ -82,6 +90,9 @@ describe('usersAuthApp', () => {
 
         expect(result).toBe(mockUser);
         expect(mockReq.session).toMatchObject({ user: mockUser });
+        expect(
+          ServiceGroupApp.grantAccessIfWaiting
+        ).toHaveBeenCalledExactlyOnceWith(mockUser);
       });
 
       it.each`
@@ -103,6 +114,7 @@ describe('usersAuthApp', () => {
 
           expect(result).toBeUndefined();
           expect(UserDomain.updateUserAtLogin).not.toHaveBeenCalled();
+          expect(ServiceGroupApp.grantAccessIfWaiting).not.toHaveBeenCalled();
         }
       );
     });

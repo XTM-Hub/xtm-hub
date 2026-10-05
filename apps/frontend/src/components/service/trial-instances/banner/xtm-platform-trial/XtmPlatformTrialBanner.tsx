@@ -47,9 +47,8 @@ export const XtmPlatformTrialBanner = ({
         {showDaysLeft && (
           <Badge
             variant="outline"
-            className="border-black">
-            {/* eslint-disable-next-line xtm-hub-theme-rules/no-fixed-tailwind-color */}
-            <span className="text-black font-semibold">
+            className="border-black-1000">
+            <span className="text-black-1000 font-semibold">
               {t('Service.Trials.XtmPlatform.DaysLeft', { days: daysLeft })}
             </span>
           </Badge>

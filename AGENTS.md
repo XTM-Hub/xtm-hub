@@ -6,7 +6,7 @@ community engagement hub. Full-stack TypeScript monorepo on Yarn workspaces.
 | Workspace | Path | Stack | Dev port |
 | --- | --- | --- | --- |
 | `@xtm-hub/backend` | `apps/backend` | Express 5, Apollo Server, GraphQL, Knex, PostgreSQL, Elasticsearch, Silo (S3) | 4002 |
-| `@xtm-hub/frontend` | `apps/frontend` | Next.js 16 (App Router + Turbopack), React 19, `@tanstack/react-query` (mandatory for new data fetching) + Relay (existing pages, being phased out), TailwindCSS 4, `@filigran/ui` | 3002 |
+| `@xtm-hub/frontend` | `apps/frontend` | Next.js 16 (App Router + Turbopack), React 19, `@tanstack/react-query` (mandatory for new data fetching) + Relay (existing pages, being phased out), TailwindCSS 4, `@filigran/design-system` | 3002 |
 | `@xtm-hub/test_e2e` | `apps/e2e` | Playwright | — |
 
 ## Setup
@@ -48,7 +48,8 @@ already exist. The `typescript-eslint` version warning is non-blocking.
 - **Never edit generated output**: `apps/frontend/__generated__/`, `apps/frontend/schema.graphql`,
   `apps/backend/src/__generated__/`, `apps/backend/src/model/kanel/`.
 - **Never hardcode versions in documentation** — reference `.nvmrc`, `packageManager` or the `catalog` block.
-- **Use `@filigran/ui` first** for frontend UI; Tailwind or shadcn primitives only where it has no equivalent.
+- **Use `@filigran/design-system` first** for frontend UI; the legacy `@filigran/ui` copy only where it has no
+  equivalent yet. Details in [`design-system.md`](.claude/rules/design-system.md).
 - **After any GraphQL change**, run `yarn workspace @xtm-hub/backend generate:ts` **and**
   `yarn workspace @xtm-hub/frontend relay`.
 - **Before frontend `check-ts` on a fresh checkout**, run `yarn workspace @xtm-hub/frontend next typegen`, or you

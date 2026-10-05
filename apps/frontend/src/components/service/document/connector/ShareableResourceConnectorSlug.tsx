@@ -16,13 +16,14 @@ import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
+import { cn } from '@/lib/utils';
 import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
 import { getPlatformIdentifier } from '@/utils/platform';
 import {
   InfoIcon,
+  LogoFiligranIcon,
   MotionPlayIcon,
   ThreatActorGroupIcon,
-  VerifiedIcon,
 } from '@filigran/icon';
 import { SimpleTooltip } from '@filigran/ui';
 import { Button } from '@filigran/ui/servers';
@@ -83,15 +84,21 @@ const ShareableResourceConnectorSlug = ({
               </div>
             )}
 
-            <div className="flex items-center gap-s py-xs px-l font-semibold bg-green-100 text-alert-success-primary dark:bg-turquoise-900 rounded-lg">
+            <div
+              className={cn(
+                'flex items-center gap-s py-xs px-l font-semibold rounded-lg text-text-default-primary',
+                documentData.verified
+                  ? 'bg-[rgba(15,188,255,0.21)]'
+                  : 'bg-feedback-neutral-secondary-transparency'
+              )}>
               {documentData.verified ? (
                 <>
-                  <VerifiedIcon className="h-5 w-5 shrink-0 mr-xs" />
+                  <LogoFiligranIcon className="h-5 w-5 shrink-0 mr-xs text-text-default-primary" />
                   {t('Service.ShareableResources.Details.SupportedByFiligran')}
                 </>
               ) : (
                 <>
-                  <ThreatActorGroupIcon className="h-5 w-5 shrink-0 mr-xs" />
+                  <ThreatActorGroupIcon className="h-5 w-5 shrink-0 mr-xs text-feedback-neutral-primary" />
                   {t('Service.ShareableResources.Details.SupportedByCommunity')}
                 </>
               )}

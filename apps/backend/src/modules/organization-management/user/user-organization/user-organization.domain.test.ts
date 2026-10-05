@@ -284,7 +284,7 @@ describe('userOrganizationDomain', () => {
       });
       const subscription = await TestHelper.subscription.create({
         organization_id: organization.id,
-        service_instance_id: SERVICES.INSTANCES.VAULT.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
       });
       const user = await UserProvisioningDomain.createUser(
         { email: `user@${domain}` },
@@ -313,7 +313,7 @@ describe('userOrganizationDomain', () => {
     it('should link a second user to the organization without granting administrate capability', async () => {
       const subscription = await TestHelper.subscription.create({
         organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-        service_instance_id: SERVICES.INSTANCES.VAULT.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
       });
       const user = await UserProvisioningDomain.createUser(
         {
@@ -346,7 +346,7 @@ describe('userOrganizationDomain', () => {
       });
       const subscription = await TestHelper.subscription.create({
         organization_id: organization.id,
-        service_instance_id: SERVICES.INSTANCES.VAULT.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
       });
       const user = await UserProvisioningDomain.createUser(
         { email: `orphan-${uuidv4()}@unmatched-domain.io` },
@@ -368,7 +368,7 @@ describe('userOrganizationDomain', () => {
       });
       const subscription = await TestHelper.subscription.create({
         organization_id: subscriptionOrganization.id,
-        service_instance_id: SERVICES.INSTANCES.VAULT.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
       });
       const user = await UserProvisioningDomain.createUser(
         {

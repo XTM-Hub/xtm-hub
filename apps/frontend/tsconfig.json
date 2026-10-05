@@ -27,7 +27,18 @@
       "@styles/*": ["./styles/*"],
       "@public/*": ["./public/*"],
       "@app/*": ["./app/*"],
-      "@messages/*": ["./messages/*"]
+      "@messages/*": ["./messages/*"],
+      "@filigran/ui": ["./src/components/filigran-ui/index.ts"],
+      "@filigran/ui/clients": [
+        "./src/components/filigran-ui/components/clients/index.ts"
+      ],
+      "@filigran/ui/servers": [
+        "./src/components/filigran-ui/components/servers/index.ts"
+      ],
+      "@filigran/ui/auto-form": [
+        "./src/components/filigran-ui/components/auto-form/index.ts"
+      ],
+      "@filigran/ui/theme.css": ["./src/components/filigran-ui/theme.css"]
     }
   },
   "include": [

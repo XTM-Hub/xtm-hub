@@ -29,7 +29,8 @@ If you do not have the required capability, contact your organization's administ
    Australia or Singapore.
 5. Fill in your **Job title** and **Activity sector**, and select a use case for each of OpenCTI and
    OpenAEV you selected. XTM One does not require one.
-6. Read and accept the [Master Software Subscription Agreement](https://filigran.io/mssa/).
+6. Read and accept the [Master Software Subscription Agreement](https://filigran.io/mssa) and the
+   [AI terms of use](https://filigran.io/ai-terms).
 7. Click **Request XTM Platform trial**.
 
 ![Trial request form illustration](../assets/images/xtm-platform-trial-request-form.png)

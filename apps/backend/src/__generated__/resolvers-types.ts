@@ -270,9 +270,12 @@ export type CreateEpicInput = {
   active?: InputMaybe<Scalars['Boolean']['input']>;
   description: Scalars['String']['input'];
   edition_type: EditionType;
+  expected_value: Scalars['String']['input'];
   illustration_document?: InputMaybe<Scalars['Upload']['input']>;
   is_integration?: InputMaybe<Scalars['Boolean']['input']>;
+  problem_to_solve: Scalars['String']['input'];
   products: Array<FiligranProduct>;
+  proposed_solution: Scalars['String']['input'];
   short_description: Scalars['String']['input'];
   slack_link?: InputMaybe<Scalars['String']['input']>;
   timeline: Timeline;
@@ -754,15 +757,16 @@ export type Epic = Node & {
   document_id?: Maybe<Scalars['DocumentId']['output']>;
   edition_type: EditionType;
   epic_type: EpicType;
+  expected_value: Scalars['String']['output'];
   id: Scalars['ID']['output'];
+  problem_to_solve: Scalars['String']['output'];
   products: Array<FiligranProduct>;
+  proposed_solution: Scalars['String']['output'];
   short_description: Scalars['String']['output'];
   slack_link?: Maybe<Scalars['String']['output']>;
   timeline: Timeline;
   title: Scalars['String']['output'];
   updated_at?: Maybe<Scalars['Date']['output']>;
-  updater_id?: Maybe<Scalars['String']['output']>;
-  uploader_id: Scalars['String']['output'];
 };
 
 export type EpicConnection = {
@@ -849,6 +853,18 @@ export type GenericServiceCapability = Node & {
   id: Scalars['ID']['output'];
   name?: Maybe<Scalars['String']['output']>;
 };
+
+export type GiveDeploymentFeedbackInput = {
+  answer: HasRepliedSatisfaction;
+  deploymentRequestId: Scalars['DeploymentRequestId']['input'];
+  justification?: InputMaybe<Scalars['String']['input']>;
+};
+
+export enum HasRepliedSatisfaction {
+  Closed = 'closed',
+  No = 'no',
+  Yes = 'yes'
+}
 
 export type Integration = {
   active: Scalars['Boolean']['output'];
@@ -1067,6 +1083,7 @@ export type Mutation = {
   editUserService?: Maybe<UserService>;
   frontendErrorLog?: Maybe<Scalars['Boolean']['output']>;
   generateManifest: Success;
+  giveDeploymentFeedback: Success;
   incrementShareNumberDocument: Document;
   ingestManifestFragments: Success;
   login?: Maybe<User>;
@@ -1375,6 +1392,11 @@ export type MutationGenerateManifestArgs = {
   product: PlatformIdentifier;
   type: ManifestType;
   version: Scalars['String']['input'];
+};
+
+
+export type MutationGiveDeploymentFeedbackArgs = {
+  input: GiveDeploymentFeedbackInput;
 };
 
 
@@ -1818,6 +1840,7 @@ export enum PlatformRegistrationStatus {
 
 export type PlatformTrialStatus = {
   __typename?: 'PlatformTrialStatus';
+  deploymentRequestId?: Maybe<Scalars['DeploymentRequestId']['output']>;
   end_date?: Maybe<Scalars['Date']['output']>;
   hub_status?: Maybe<DeploymentRequestHubStatus>;
   isBlacklisted: Scalars['Boolean']['output'];
@@ -2466,7 +2489,6 @@ export enum ServiceDefinitionIdentifier {
   OpenctiIntegrations = 'opencti_integrations',
   OpenctiPlaybooks = 'opencti_playbooks',
   OpenctiRegistration = 'opencti_registration',
-  Vault = 'vault',
   XtmPlatformBundle = 'xtm_platform_bundle',
   XtmPlatformRoadmap = 'xtm_platform_roadmap',
   XtmoneRegistration = 'xtmone_registration'
@@ -2884,9 +2906,12 @@ export type UpdateEpicInput = {
   active?: InputMaybe<Scalars['Boolean']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   edition_type: EditionType;
+  expected_value?: InputMaybe<Scalars['String']['input']>;
   illustration_document?: InputMaybe<Scalars['Upload']['input']>;
   is_integration?: InputMaybe<Scalars['Boolean']['input']>;
+  problem_to_solve?: InputMaybe<Scalars['String']['input']>;
   products?: InputMaybe<Array<FiligranProduct>>;
+  proposed_solution?: InputMaybe<Scalars['String']['input']>;
   short_description?: InputMaybe<Scalars['String']['input']>;
   slack_link?: InputMaybe<Scalars['String']['input']>;
   timeline?: InputMaybe<Timeline>;
@@ -2969,6 +2994,7 @@ export type User = Node & {
   disabled?: Maybe<Scalars['Boolean']['output']>;
   email: Scalars['String']['output'];
   first_name?: Maybe<Scalars['String']['output']>;
+  has_replied_satisfaction?: Maybe<HasRepliedSatisfaction>;
   id: Scalars['ID']['output'];
   invitation_date?: Maybe<Scalars['Date']['output']>;
   last_login?: Maybe<Scalars['Date']['output']>;
@@ -3008,6 +3034,7 @@ export enum UserOrdering {
   Disabled = 'disabled',
   Email = 'email',
   FirstName = 'first_name',
+  InvitationDate = 'invitation_date',
   LastLogin = 'last_login',
   LastName = 'last_name'
 }
@@ -3350,6 +3377,8 @@ export type ResolversTypes = ResolversObject<{
   Filter: Filter;
   FilterKey: FilterKey;
   GenericServiceCapability: ResolverTypeWrapper<GenericServiceCapability>;
+  GiveDeploymentFeedbackInput: GiveDeploymentFeedbackInput;
+  HasRepliedSatisfaction: HasRepliedSatisfaction;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
   Integration: ResolverTypeWrapper<ResolversInterfaceTypes<ResolversTypes>['Integration']>;
@@ -3594,6 +3623,7 @@ export type ResolversParentTypes = ResolversObject<{
   FacetBucket: FacetBucket;
   Filter: Filter;
   GenericServiceCapability: GenericServiceCapability;
+  GiveDeploymentFeedbackInput: GiveDeploymentFeedbackInput;
   ID: Scalars['ID']['output'];
   Int: Scalars['Int']['output'];
   Integration: ResolversInterfaceTypes<ResolversParentTypes>['Integration'];
@@ -4087,15 +4117,16 @@ export type EpicResolvers<ContextType = PortalContext, ParentType extends Resolv
   document_id?: Resolver<Maybe<ResolversTypes['DocumentId']>, ParentType, ContextType>;
   edition_type?: Resolver<ResolversTypes['EditionType'], ParentType, ContextType>;
   epic_type?: Resolver<ResolversTypes['EpicType'], ParentType, ContextType>;
+  expected_value?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  problem_to_solve?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   products?: Resolver<Array<ResolversTypes['FiligranProduct']>, ParentType, ContextType>;
+  proposed_solution?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   short_description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   slack_link?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   timeline?: Resolver<ResolversTypes['Timeline'], ParentType, ContextType>;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updated_at?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
-  updater_id?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  uploader_id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -4289,6 +4320,7 @@ export type MutationResolvers<ContextType = PortalContext, ParentType extends Re
   editUserService?: Resolver<Maybe<ResolversTypes['UserService']>, ParentType, ContextType, RequireFields<MutationEditUserServiceArgs, 'input' | 'service_instance_id'>>;
   frontendErrorLog?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType, RequireFields<MutationFrontendErrorLogArgs, 'message'>>;
   generateManifest?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<MutationGenerateManifestArgs, 'product' | 'type' | 'version'>>;
+  giveDeploymentFeedback?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<MutationGiveDeploymentFeedbackArgs, 'input'>>;
   incrementShareNumberDocument?: Resolver<ResolversTypes['Document'], ParentType, ContextType, RequireFields<MutationIncrementShareNumberDocumentArgs, 'documentId'>>;
   ingestManifestFragments?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<MutationIngestManifestFragmentsArgs, 'manifestFragments'>>;
   login?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<MutationLoginArgs, 'email'>>;
@@ -4515,6 +4547,7 @@ export type PlatformProviderResolvers<ContextType = PortalContext, ParentType ex
 }>;
 
 export type PlatformTrialStatusResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['PlatformTrialStatus'] = ResolversParentTypes['PlatformTrialStatus']> = ResolversObject<{
+  deploymentRequestId?: Resolver<Maybe<ResolversTypes['DeploymentRequestId']>, ParentType, ContextType>;
   end_date?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   hub_status?: Resolver<Maybe<ResolversTypes['DeploymentRequestHubStatus']>, ParentType, ContextType>;
   isBlacklisted?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
@@ -5047,6 +5080,7 @@ export type UserResolvers<ContextType = PortalContext, ParentType extends Resolv
   disabled?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   email?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   first_name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  has_replied_satisfaction?: Resolver<Maybe<ResolversTypes['HasRepliedSatisfaction']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   invitation_date?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   last_login?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;

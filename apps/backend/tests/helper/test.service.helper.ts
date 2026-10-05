@@ -27,6 +27,10 @@ import ServiceInstance, {
   ServiceInstanceId,
   ServiceInstanceMutator,
 } from '../../src/model/kanel/public/ServiceInstance';
+import ServiceLink, {
+  ServiceLinkId,
+  ServiceLinkMutator,
+} from '../../src/model/kanel/public/ServiceLink';
 import SubscriptionCapability, {
   SubscriptionCapabilityId,
   SubscriptionCapabilityInitializer,
@@ -112,6 +116,22 @@ export const TestServiceHelper = {
         .where(field)
         .select('*')
         .first();
+    },
+  },
+  serviceLink: {
+    create: async (data?: Partial<ServiceLink>): Promise<ServiceLink> => {
+      const [serviceLink] = await db<ServiceLink>('Service_Link')
+        .insert({
+          id: uuidv4() as ServiceLinkId,
+          name: 'Default name serviceLink',
+          url: '/service/default',
+          ...data,
+        })
+        .returning('*');
+      return serviceLink!;
+    },
+    delete: async (field: ServiceLinkMutator) => {
+      await db<ServiceLink>('Service_Link').where(field).del();
     },
   },
   seoServiceInstance: {

@@ -49,12 +49,12 @@ export const parseConnectorSlugs = (
   return { ok: true, slugs };
 };
 
-/** Connector slugs may contain dashes, which aren't valid in JSON/env key names. */
+/** Connector slugs may contain dashes, which aren't valid in env var names. */
 export const buildConnectorFieldSlug = (slug: string): string =>
   slug.replace(/-/g, '_');
 
 export const buildConnectorJsonKey = (slug: string): string =>
-  `connector_${buildConnectorFieldSlug(slug)}_version`;
+  `connector_${slug}_version`;
 
 export const buildConnectorEnvKey = (slug: string): string =>
   `CONNECTOR_${buildConnectorFieldSlug(slug).toUpperCase()}_VERSION`;

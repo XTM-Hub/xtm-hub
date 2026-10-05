@@ -33,37 +33,42 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
-import { useContext, useState } from 'react';
+import { ReactNode, useContext, useMemo, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-export const xtmPlatformTrialFormSchema = z.object({
-  region: z.enum(REGIONS_VALUES),
-  job_title: z.enum(DeploymentRequestJobTitle),
-  activity_sector: z.enum(DeploymentRequestActivitySector),
-  products: z.array(z.enum(PlatformIdentifier)),
-  use_cases_by_product: z
-    .array(
-      z.object({
-        platform_identifier: z.enum(PlatformIdentifier),
-        use_case: z.enum(DeploymentRequestUseCase).optional(),
-      })
-    )
-    .superRefine((entries, ctx) => {
-      entries.forEach((entry, index) => {
-        if (!entry.use_case) {
-          ctx.addIssue({
-            path: [index, 'use_case'],
-            code: 'custom',
-            message: 'Please select a use case.',
-          });
-        }
-      });
+const buildXtmPlatformTrialFormSchema = (t: (key: string) => string) =>
+  z.object({
+    region: z.enum(REGIONS_VALUES),
+    job_title: z.enum(DeploymentRequestJobTitle),
+    activity_sector: z.enum(DeploymentRequestActivitySector),
+    products: z.array(z.enum(PlatformIdentifier)),
+    use_cases_by_product: z
+      .array(
+        z.object({
+          platform_identifier: z.enum(PlatformIdentifier),
+          use_case: z.enum(DeploymentRequestUseCase).optional(),
+        })
+      )
+      .superRefine((entries, ctx) => {
+        entries.forEach((entry, index) => {
+          if (!entry.use_case) {
+            ctx.addIssue({
+              path: [index, 'use_case'],
+              code: 'custom',
+              message: t('Service.Trials.Form.Error.UseCase'),
+            });
+          }
+        });
+      }),
+    acceptTerms: z.boolean().refine((value) => value === true, {
+      error: t('Service.Trials.Form.Error.AcceptTerms'),
     }),
-  acceptTerms: z.boolean().refine((value) => value === true, {
-    error: 'Please accept the MSSA to continue.',
-  }),
-});
+  });
+
+export const xtmPlatformTrialFormSchema = buildXtmPlatformTrialFormSchema(
+  (key) => key
+);
 
 const SELECTABLE_PRODUCTS = [
   PlatformIdentifier.Opencti,
@@ -88,6 +93,25 @@ export const XtmPlatformTrialForm = ({
   const selectContentClassName = cn(selectLayerClassName);
   const { me } = useContext(PortalContext);
 
+  const renderMssaLink = (chunks: ReactNode) => (
+    <Link
+      target="_blank"
+      rel="noopener noreferrer"
+      className="underline text-primary"
+      href="https://filigran.io/mssa">
+      {chunks}
+    </Link>
+  );
+  const renderAiTermsLink = (chunks: ReactNode) => (
+    <Link
+      target="_blank"
+      rel="noopener noreferrer"
+      className="underline text-primary"
+      href="https://filigran.io/ai-terms">
+      {chunks}
+    </Link>
+  );
+
   const ongoingTrialWarningParams = buildOngoingTrialWarningParams(
     ongoingStandaloneTrialProducts,
     (platformIdentifier) => t(`PlatformIdentifier.${platformIdentifier}`),
@@ -99,8 +123,10 @@ export const XtmPlatformTrialForm = ({
     typeof xtmPlatformTrialFormSchema
   > | null>(null);
 
+  const formSchema = useMemo(() => buildXtmPlatformTrialFormSchema(t), [t]);
+
   const form = useForm<z.infer<typeof xtmPlatformTrialFormSchema>>({
-    resolver: zodResolver(xtmPlatformTrialFormSchema),
+    resolver: zodResolver(formSchema),
     defaultValues: {
       products: [
         PlatformIdentifier.Opencti,
@@ -354,14 +380,10 @@ export const XtmPlatformTrialForm = ({
                   <label
                     htmlFor="acceptTerms"
                     className="txt-default cursor-pointer text-muted-foreground">
-                    {t('Service.Trials.Form.MSSAAgreement')}{' '}
-                    <Link
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline text-primary"
-                      href="https://filigran.io/mssa/">
-                      {t('Service.Trials.Form.MSSA')}
-                    </Link>{' '}
+                    {t.rich('Service.Trials.Form.TermsAgreement', {
+                      mssa: renderMssaLink,
+                      aiterms: renderAiTermsLink,
+                    })}{' '}
                     <span className="text-destructive">*</span>
                   </label>
                 </div>

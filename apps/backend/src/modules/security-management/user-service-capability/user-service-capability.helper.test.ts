@@ -16,7 +16,7 @@ describe('insertUserServiceCapability', () => {
   beforeEach(async () => {
     const subscription = await TestHelper.subscription.create({
       organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
-      service_instance_id: SERVICES.INSTANCES.VAULT.ID,
+      service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
       start_date: new Date(),
     });
     subscriptionId = subscription.id;
@@ -89,7 +89,7 @@ describe('loadCapabilitiesByKeys', () => {
   beforeEach(async () => {
     const subscription = await TestHelper.subscription.create({
       organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
-      service_instance_id: SERVICES.INSTANCES.VAULT.ID,
+      service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
       start_date: new Date(),
     });
     subscriptionId = subscription.id;
@@ -130,7 +130,7 @@ describe('loadCapabilitiesByKeys', () => {
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
       },
       {
-        serviceInstanceId: SERVICES.INSTANCES.VAULT.ID,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
         userId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID,
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
       },
@@ -142,12 +142,12 @@ describe('loadCapabilitiesByKeys', () => {
   it('should not match a key built from the cross product of the requested keys', async () => {
     const results = await UserServiceCapabilityHelper.loadCapabilitiesByKeys([
       {
-        serviceInstanceId: SERVICES.INSTANCES.VAULT.ID,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
         userId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID,
         organizationId: TEST_ORGANIZATIONS.FILIGRAN.ID,
       },
       {
-        serviceInstanceId: SERVICES.INSTANCES.VAULT.ID,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
         userId: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE.ID,
         organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
       },

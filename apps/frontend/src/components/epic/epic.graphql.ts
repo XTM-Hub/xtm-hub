@@ -5,6 +5,9 @@ export const epicFragment = graphql`
     id
     short_description
     description
+    problem_to_solve
+    proposed_solution
+    expected_value
     title
     timeline
     edition_type

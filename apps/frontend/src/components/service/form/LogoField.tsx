@@ -96,8 +96,8 @@ export const ServiceFormLogoField = ({
           disabled={logo?.source_type === DocumentSourceType.External}
           texts={{
             selectFile: t('Service.Form.UploadLogo'),
-            noFile: t('Service.Vault.FileForm.NoDocument'),
-            dropFiles: t('Service.Vault.FileForm.DropDocuments'),
+            noFile: t('Service.FileForm.NoDocument'),
+            dropFiles: t('Service.FileForm.DropDocuments'),
           }}
           allowedTypes={'image/jpeg, image/gif, image/png, image/svg'}
         />

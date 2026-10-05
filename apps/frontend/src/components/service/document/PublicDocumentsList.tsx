@@ -26,7 +26,7 @@ import publicDocumentListGraphql, {
 import { publicDocumentListItemFragment$key } from '@generated/publicDocumentListItemFragment.graphql';
 import { publicDocumentsQuery } from '@generated/publicDocumentsQuery.graphql';
 import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
-import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import {
   PreloadedQuery,
   readInlineData,
@@ -73,6 +73,8 @@ const PublicDocumentsList = ({
     productVersions,
     licenseTypes,
     solutionCategories,
+    orderBy,
+    orderMode,
   } = useServiceListLocalStorage(localStorageKey);
 
   const facetCounts = useDocumentFacetCounts({
@@ -113,13 +115,31 @@ const PublicDocumentsList = ({
     restore();
   }, [restore]);
 
-  const { pagination, onPaginationChange } = useTablePagination({
+  const { pagination, setPagination, onPaginationChange } = useTablePagination({
     pageSize,
     setPageSize,
     onPaginationChange: (nextPagination, nextCursor) => {
       refetch({ count: nextPagination.pageSize, cursor: nextCursor });
     },
   });
+
+  // Reset the page on search/filter/sort change so it stays in sync with the refetched data.
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [
+    setPagination,
+    search,
+    labels,
+    entityTypes,
+    integrationTypes,
+    deployable,
+    verified,
+    productVersions,
+    licenseTypes,
+    solutionCategories,
+    orderBy,
+    orderMode,
+  ]);
 
   const headerRef = useRef<HTMLDivElement>(null);
   useStickyHeaderOffset(headerRef);

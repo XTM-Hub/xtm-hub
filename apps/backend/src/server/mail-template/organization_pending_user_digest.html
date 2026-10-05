@@ -10,40 +10,45 @@
 <p style="margin: 24px 0 0">
   You can review and process each request directly from this email.
 </p>
-<div
-  data-layout-table="true"
-  style="width: 100%; margin-left: 0; margin-right: 0; margin-top: 16px">
-  <div data-layout-row="true">
-    <div
-      data-layout-cell="true"
+<table
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  border="0"
+  style="width: 100%; margin-top: 16px; border-collapse: collapse">
+  <tr>
+    <th
+      scope="col"
       style="
         padding: 8px 8px 8px 0;
         border-bottom: 2px solid #cbd5e1;
+        text-align: left;
         font-size: 12px;
+        font-weight: normal;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         color: #64748b;
       ">
       User
-    </div>
-    <div
-      data-layout-cell="true"
+    </th>
+    <th
+      scope="col"
       style="
         padding: 8px 0;
         border-bottom: 2px solid #cbd5e1;
         text-align: right;
         font-size: 12px;
+        font-weight: normal;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         color: #64748b;
       ">
       Action
-    </div>
-  </div>
+    </th>
+  </tr>
   {{#each users}}
-  <div data-layout-row="true">
-    <div
-      data-layout-cell="true"
+  <tr>
+    <td
       style="
         padding: 12px 8px 12px 0;
         border-bottom: 1px solid #cbd5e1;
@@ -53,9 +58,8 @@
       ">
       <strong>{{this.firstName}} {{this.lastName}}</strong><br />
       {{this.email}}
-    </div>
-    <div
-      data-layout-cell="true"
+    </td>
+    <td
       style="
         padding: 12px 0;
         border-bottom: 1px solid #cbd5e1;
@@ -95,10 +99,10 @@
         ">
         Deny
       </a>
-    </div>
-  </div>
+    </td>
+  </tr>
   {{/each}}
-</div>
+</table>
 {{/if}}
 <p style="margin: 24px 0 0">
   Alternatively, you can

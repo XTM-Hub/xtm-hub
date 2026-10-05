@@ -1,6 +1,7 @@
 import DataLoader from 'dataloader';
 import {
   ServiceDefinition,
+  ServiceInstance,
   ServiceLink,
   SubscriptionModel,
 } from '../../../__generated__/resolvers-types';
@@ -31,6 +32,10 @@ export interface ServiceInstanceDataLoaders {
   subscriptionsByServiceInstanceLoader: DataLoader<
     OrganizationServiceInstanceKey,
     SubscriptionModel[]
+  >;
+  serviceInstanceByIdLoader: DataLoader<
+    ServiceInstanceId,
+    ServiceInstance | undefined
   >;
 }
 
@@ -149,6 +154,19 @@ export const ServiceInstanceDataLoader = {
     });
   },
 
+  batchLoadServiceInstances: async (
+    ids: readonly ServiceInstanceId[]
+  ): Promise<(ServiceInstance | undefined)[]> => {
+    const rows = await ServiceInstanceDomain.loadServiceInstancesByIds([
+      ...ids,
+    ]);
+
+    const map = new Map<string, ServiceInstance>(
+      rows.map((row) => [row.id, row as unknown as ServiceInstance])
+    );
+    return ids.map((id) => map.get(id));
+  },
+
   create: (): ServiceInstanceDataLoaders => ({
     linksByServiceInstanceLoader: new DataLoader(
       ServiceInstanceDataLoader.batchLoadLinks
@@ -167,6 +185,9 @@ export const ServiceInstanceDataLoader = {
     ),
     subscriptionsByServiceInstanceLoader: new DataLoader(
       ServiceInstanceDataLoader.batchLoadSubscriptions
+    ),
+    serviceInstanceByIdLoader: new DataLoader(
+      ServiceInstanceDataLoader.batchLoadServiceInstances
     ),
   }),
 };

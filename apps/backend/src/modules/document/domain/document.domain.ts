@@ -723,6 +723,12 @@ export const DocumentDomain = {
           DocumentMetadataKeyCode.MinimumDeployableVersionPadded
         );
       })
+      .leftJoin({ dm_version: 'Document_Metadata' }, function () {
+        this.on('dm_version.document_id', '=', 'Document.id').andOnVal(
+          'dm_version.key',
+          DocumentMetadataKeyCode.VersionPadded
+        );
+      })
       .where('dm_type.key', DocumentMetadataKeyCode.IntegrationType)
       .andWhere('dm_type.value', IntegrationType.Connector)
       .whereIn('Document.slug', slugs)
@@ -732,11 +738,11 @@ export const DocumentDomain = {
       .groupBy('Document.id', 'Document.slug')
       .havingRaw(
         `(MAX("dm_min"."value") IS NULL OR MAX("dm_min"."value") <= ?)
-         AND "Document"."version" ${isLts ? 'LIKE' : 'NOT LIKE'} '%.LTS.%'`,
+         AND MAX("dm_version"."value") ${isLts ? 'LIKE' : 'NOT LIKE'} '%.LTS.%'`,
         [paddedVersion]
       )
       .orderByRaw(
-        `"Document"."slug" ASC, "Document"."version" DESC NULLS LAST`
+        `"Document"."slug" ASC, MAX("dm_version"."value") DESC NULLS LAST`
       );
 
     return DocumentMetadataDomain.hydrateMetadata(connectors, metadataKeys);

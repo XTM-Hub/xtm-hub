@@ -4,14 +4,24 @@ import {
   ServiceGroupName,
   ServiceGroup as ServiceGroupResponse,
 } from '../../../__generated__/resolvers-types';
-import DeploymentRequest from '../../../model/kanel/public/DeploymentRequest';
+import DeploymentRequest, {
+  DeploymentRequestId,
+} from '../../../model/kanel/public/DeploymentRequest';
+import Organization from '../../../model/kanel/public/Organization';
 import ServiceGroupModel, {
   ServiceGroupId,
 } from '../../../model/kanel/public/ServiceGroup';
 import ServiceGroupUser from '../../../model/kanel/public/ServiceGroupUser';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import User, { UserId } from '../../../model/kanel/public/User';
-import { sendMail } from '../../../server/mail-service';
+import {
+  buildXtmPlatformTrialLink,
+  sendMail,
+} from '../../../server/mail-service';
+import {
+  formatProductNames,
+  sortProductsForMail,
+} from '../../../server/mail-template/mail';
 import {
   Auth0UpdateUserRBACInstance,
   auth0Client,
@@ -21,11 +31,24 @@ import { ErrorCode } from '../../../utils/error/error.code';
 import { formatName } from '../../../utils/format';
 import { UserDomain } from '../../organization-management/user/user-domain/user.domain';
 import { PlatformConfigurationDomain } from '../../registration/platform-configuration/platform-configuration.domain';
+import { TelemetryApp } from '../../telemetry/telemetry.app';
+import { TelemetryHelper } from '../../telemetry/telemetry.helper';
 import { DeploymentRequestDomain } from '../deployment.domain';
 import { UpdateGroupsPayload } from './service-group.app';
-import { ServiceGroupDomain } from './service-group.domain';
+import {
+  DeploymentRequestWithServiceGroupName,
+  ServiceGroupDomain,
+} from './service-group.domain';
 
 export type UserGroups = { user_id: UserId; group_ids: ServiceGroupId[] };
+
+export type TrialAccessTelemetryContext = {
+  organization: Organization | undefined;
+  actorUserId: UserId;
+  emailByUserId: Map<UserId, string>;
+};
+
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 export const ServiceGroupHelper = {
   buildUserGroupsDiff: (
@@ -63,6 +86,15 @@ export const ServiceGroupHelper = {
     ...serviceGroup,
     name: serviceGroup.name as ServiceGroupName,
   }),
+
+  uniqueRolesByProduct: <T extends { product: PlatformIdentifier }>(
+    roles: T[]
+  ): T[] =>
+    roles.filter(
+      (roleAssignment, index) =>
+        roles.findIndex((other) => other.product === roleAssignment.product) ===
+        index
+    ),
 
   matchRolesToChildren: <T extends ServiceGroupName | null>(
     children: DeploymentRequest[],
@@ -113,6 +145,48 @@ export const ServiceGroupHelper = {
           return undefined;
         }
         return auth0Client.updateUserRBACInstance(email, rbacInstance);
+      })
+    );
+  },
+
+  sendTrialAccessTelemetry: async (
+    { organization, actorUserId, emailByUserId }: TrialAccessTelemetryContext,
+    {
+      deploymentId,
+      role,
+      userIds,
+    }: {
+      deploymentId: DeploymentRequestId;
+      role: ServiceGroupName | null;
+      userIds: UserId[];
+    }
+  ): Promise<void> => {
+    await Promise.allSettled(
+      userIds.flatMap((userId) => {
+        const email = emailByUserId.get(userId);
+        if (!email) {
+          return [];
+        }
+        return TelemetryApp.sendTelemetryEvent(
+          role
+            ? TelemetryHelper.buildTrialAccessGrantedEvent(
+                organization,
+                actorUserId,
+                {
+                  deployment_id: deploymentId,
+                  role,
+                  email,
+                }
+              )
+            : TelemetryHelper.buildTrialAccessRemovedEvent(
+                organization,
+                actorUserId,
+                {
+                  deployment_id: deploymentId,
+                  email,
+                }
+              )
+        );
       })
     );
   },
@@ -173,6 +247,105 @@ export const ServiceGroupHelper = {
     } catch (error) {
       logApp.error('Unable to send free_trial_user_added mail', { error });
     }
+  },
+
+  sendFreeTrialBundleWelcomeEmails: async ({
+    endDate,
+    products,
+    newlyAddedUsers,
+    adminEmail,
+  }: {
+    endDate: Date | null;
+    products: PlatformIdentifier[];
+    newlyAddedUsers: User[];
+    adminEmail: string;
+  }): Promise<void> => {
+    if (!endDate || products.length === 0 || newlyAddedUsers.length === 0) {
+      return;
+    }
+
+    try {
+      const platformUrl = buildXtmPlatformTrialLink();
+      const daysLeft = Math.max(
+        0,
+        Math.ceil((endDate.getTime() - Date.now()) / MS_PER_DAY)
+      );
+      const sortedProducts = sortProductsForMail(products);
+      const productNames = formatProductNames(products);
+
+      await Promise.all(
+        newlyAddedUsers.map((addedUser) =>
+          sendMail({
+            to: addedUser.email,
+            template: 'free_trial_bundle_user_added',
+            params: {
+              firstName: formatName(addedUser.first_name),
+              adminEmail,
+              productNames,
+              products: sortedProducts,
+              daysLeft,
+              platformUrl,
+            },
+          })
+        )
+      );
+    } catch (error) {
+      logApp.error('Unable to send free_trial_bundle_user_added mail', {
+        error,
+      });
+    }
+  },
+
+  sendBundleWelcomeEmailsForGrant: async (
+    deploymentRequestsWithGroupName: DeploymentRequestWithServiceGroupName[],
+    user: User
+  ): Promise<void> => {
+    const productsByBundleId = new Map<
+      DeploymentRequestId,
+      PlatformIdentifier[]
+    >();
+    deploymentRequestsWithGroupName.forEach((deploymentRequest) => {
+      if (
+        !deploymentRequest.parent_id ||
+        !deploymentRequest.platform_identifier
+      ) {
+        return;
+      }
+      const products =
+        productsByBundleId.get(deploymentRequest.parent_id) ?? [];
+      products.push(deploymentRequest.platform_identifier);
+      productsByBundleId.set(deploymentRequest.parent_id, products);
+    });
+
+    await Promise.all(
+      Array.from(productsByBundleId.entries()).map(
+        async ([bundleId, products]) => {
+          const bundleDeploymentRequest =
+            await DeploymentRequestDomain.loadDeploymentRequestBy({
+              id: bundleId,
+            });
+          if (!bundleDeploymentRequest) {
+            return;
+          }
+
+          const [requester] = await UserDomain.loadUsers([
+            bundleDeploymentRequest.user_requester_id,
+          ]);
+          // Unreachable: user_requester_id is non-nullable and a foreign key to User.
+          // This guard only narrows the `User | undefined` from the array destructuring.
+          if (!requester) {
+            return;
+          }
+
+          await ServiceGroupHelper.sendFreeTrialBundleWelcomeEmails({
+            endDate: bundleDeploymentRequest.end_date,
+            products,
+            newlyAddedUsers: [user],
+            adminEmail: requester.email,
+          });
+        }
+      )
+    );
   },
 
   updateAuth0Groups: async (

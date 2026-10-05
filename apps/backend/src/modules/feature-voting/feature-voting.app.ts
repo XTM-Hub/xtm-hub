@@ -213,16 +213,6 @@ export const featureVotingApp = {
     }));
   },
 
-  /** Backs the `features` field when a round was listed without them. */
-  loadRoundFeatures: (
-    roundId: VotingRoundId
-  ): Promise<VotableFeatureWithVote[]> =>
-    featureVotingDomain.loadVotableFeatures({
-      roundId,
-      onlyActive: false,
-      userId: requestContext.get()?.user?.id,
-    }),
-
   loadFeatureUseCases: async (id: VotableFeatureId): Promise<UseCase[]> => {
     const useCases = await featureVotingDomain.loadUseCasesByFeature([id]);
     return useCases.get(id) ?? [];

@@ -277,9 +277,12 @@ export type CreateEpicInput = {
   active: InputMaybe<Scalars['Boolean']['input']>;
   description: Scalars['String']['input'];
   edition_type: EditionType;
+  expected_value: Scalars['String']['input'];
   illustration_document: InputMaybe<Scalars['Upload']['input']>;
   is_integration: InputMaybe<Scalars['Boolean']['input']>;
+  problem_to_solve: Scalars['String']['input'];
   products: Array<FiligranProduct>;
+  proposed_solution: Scalars['String']['input'];
   short_description: Scalars['String']['input'];
   slack_link: InputMaybe<Scalars['String']['input']>;
   timeline: Timeline;
@@ -761,15 +764,16 @@ export type Epic = Node & {
   document_id: Maybe<Scalars['DocumentId']['output']>;
   edition_type: EditionType;
   epic_type: EpicType;
+  expected_value: Scalars['String']['output'];
   id: Scalars['ID']['output'];
+  problem_to_solve: Scalars['String']['output'];
   products: Array<FiligranProduct>;
+  proposed_solution: Scalars['String']['output'];
   short_description: Scalars['String']['output'];
   slack_link: Maybe<Scalars['String']['output']>;
   timeline: Timeline;
   title: Scalars['String']['output'];
   updated_at: Maybe<Scalars['Date']['output']>;
-  updater_id: Maybe<Scalars['String']['output']>;
-  uploader_id: Scalars['String']['output'];
 };
 
 export type EpicConnection = {
@@ -856,6 +860,18 @@ export type GenericServiceCapability = Node & {
   id: Scalars['ID']['output'];
   name: Maybe<Scalars['String']['output']>;
 };
+
+export type GiveDeploymentFeedbackInput = {
+  answer: HasRepliedSatisfaction;
+  deploymentRequestId: Scalars['DeploymentRequestId']['input'];
+  justification: InputMaybe<Scalars['String']['input']>;
+};
+
+export enum HasRepliedSatisfaction {
+  Closed = 'closed',
+  No = 'no',
+  Yes = 'yes'
+}
 
 export type Integration = {
   active: Scalars['Boolean']['output'];
@@ -1074,6 +1090,7 @@ export type Mutation = {
   editUserService: Maybe<UserService>;
   frontendErrorLog: Maybe<Scalars['Boolean']['output']>;
   generateManifest: Success;
+  giveDeploymentFeedback: Success;
   incrementShareNumberDocument: Document;
   ingestManifestFragments: Success;
   login: Maybe<User>;
@@ -1382,6 +1399,11 @@ export type MutationGenerateManifestArgs = {
   product: PlatformIdentifier;
   type: ManifestType;
   version: Scalars['String']['input'];
+};
+
+
+export type MutationGiveDeploymentFeedbackArgs = {
+  input: GiveDeploymentFeedbackInput;
 };
 
 
@@ -1825,6 +1847,7 @@ export enum PlatformRegistrationStatus {
 
 export type PlatformTrialStatus = {
   __typename?: 'PlatformTrialStatus';
+  deploymentRequestId: Maybe<Scalars['DeploymentRequestId']['output']>;
   end_date: Maybe<Scalars['Date']['output']>;
   hub_status: Maybe<DeploymentRequestHubStatus>;
   isBlacklisted: Scalars['Boolean']['output'];
@@ -2473,7 +2496,6 @@ export enum ServiceDefinitionIdentifier {
   OpenctiIntegrations = 'opencti_integrations',
   OpenctiPlaybooks = 'opencti_playbooks',
   OpenctiRegistration = 'opencti_registration',
-  Vault = 'vault',
   XtmPlatformBundle = 'xtm_platform_bundle',
   XtmPlatformRoadmap = 'xtm_platform_roadmap',
   XtmoneRegistration = 'xtmone_registration'
@@ -2891,9 +2913,12 @@ export type UpdateEpicInput = {
   active: InputMaybe<Scalars['Boolean']['input']>;
   description: InputMaybe<Scalars['String']['input']>;
   edition_type: EditionType;
+  expected_value: InputMaybe<Scalars['String']['input']>;
   illustration_document: InputMaybe<Scalars['Upload']['input']>;
   is_integration: InputMaybe<Scalars['Boolean']['input']>;
+  problem_to_solve: InputMaybe<Scalars['String']['input']>;
   products: InputMaybe<Array<FiligranProduct>>;
+  proposed_solution: InputMaybe<Scalars['String']['input']>;
   short_description: InputMaybe<Scalars['String']['input']>;
   slack_link: InputMaybe<Scalars['String']['input']>;
   timeline: InputMaybe<Timeline>;
@@ -2976,6 +3001,7 @@ export type User = Node & {
   disabled: Maybe<Scalars['Boolean']['output']>;
   email: Scalars['String']['output'];
   first_name: Maybe<Scalars['String']['output']>;
+  has_replied_satisfaction: Maybe<HasRepliedSatisfaction>;
   id: Scalars['ID']['output'];
   invitation_date: Maybe<Scalars['Date']['output']>;
   last_login: Maybe<Scalars['Date']['output']>;
@@ -3015,6 +3041,7 @@ export enum UserOrdering {
   Disabled = 'disabled',
   Email = 'email',
   FirstName = 'first_name',
+  InvitationDate = 'invitation_date',
   LastLogin = 'last_login',
   LastName = 'last_name'
 }
@@ -3591,12 +3618,19 @@ export type CreateDeploymentRequestMutationVariables = Exact<{
 
 export type CreateDeploymentRequestMutation = { __typename?: 'Mutation', createDeploymentRequest: { __typename?: 'DeploymentRequest', id: string, service_instance_id: any } };
 
+export type GiveDeploymentFeedbackMutationVariables = Exact<{
+  input: GiveDeploymentFeedbackInput;
+}>;
+
+
+export type GiveDeploymentFeedbackMutation = { __typename?: 'Mutation', giveDeploymentFeedback: { __typename?: 'Success', success: boolean } };
+
 export type PlatformTrialStatusQueryVariables = Exact<{
   organizationId: Scalars['OrganizationId']['input'];
 }>;
 
 
-export type PlatformTrialStatusQuery = { __typename?: 'Query', platformTrialStatus: { __typename?: 'PlatformTrialStatus', isBlacklisted: boolean, hub_status: DeploymentRequestHubStatus | null, end_date: any | null, ongoingStandaloneTrials: Array<PlatformIdentifier> } };
+export type PlatformTrialStatusQuery = { __typename?: 'Query', platformTrialStatus: { __typename?: 'PlatformTrialStatus', deploymentRequestId: any | null, isBlacklisted: boolean, hub_status: DeploymentRequestHubStatus | null, end_date: any | null, ongoingStandaloneTrials: Array<PlatformIdentifier> } };
 
 export type UseCaseAddMutationVariables = Exact<{
   input: AddUseCaseInput;
@@ -3646,6 +3680,20 @@ export type ChangeSelectedOrganizationMutationVariables = Exact<{
 
 
 export type ChangeSelectedOrganizationMutation = { __typename?: 'Mutation', changeSelectedOrganization: { __typename?: 'User', id: string, selected_organization_id: any | null, selected_org_capabilities: Array<OrganizationCapability> | null } | null };
+
+export type UserResendInviteMutationVariables = Exact<{
+  input: AddUserInput;
+}>;
+
+
+export type UserResendInviteMutation = { __typename?: 'Mutation', addUser: { __typename?: 'User', id: string } | null };
+
+export type UserAdminResendInviteMutationVariables = Exact<{
+  input: AdminAddUserInput;
+}>;
+
+
+export type UserAdminResendInviteMutation = { __typename?: 'Mutation', adminAddUser: { __typename?: 'User', id: string } | null };
 
 export type UsersQueryVariables = Exact<{
   first: Scalars['Int']['input'];
@@ -6194,9 +6242,39 @@ useCreateDeploymentRequestMutation.getKey = () => ['CreateDeploymentRequest'];
 useCreateDeploymentRequestMutation.getRootKey = () => ['CreateDeploymentRequest'] as const;
 useCreateDeploymentRequestMutation.fetcher = (client: GraphQLClient, variables: CreateDeploymentRequestMutationVariables, headers?: RequestInit['headers']) => fetcher<CreateDeploymentRequestMutation, CreateDeploymentRequestMutationVariables>(client, CreateDeploymentRequestDocument, variables, headers);
 
+export const GiveDeploymentFeedbackDocument = `
+    mutation GiveDeploymentFeedback($input: GiveDeploymentFeedbackInput!) {
+  giveDeploymentFeedback(input: $input) {
+    success
+  }
+}
+    `;
+
+export const useGiveDeploymentFeedbackMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<GiveDeploymentFeedbackMutation, TError, GiveDeploymentFeedbackMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<GiveDeploymentFeedbackMutation, TError, GiveDeploymentFeedbackMutationVariables, TContext>(
+      {
+    mutationKey: ['GiveDeploymentFeedback'],
+    mutationFn: (variables?: GiveDeploymentFeedbackMutationVariables) => fetcher<GiveDeploymentFeedbackMutation, GiveDeploymentFeedbackMutationVariables>(client, GiveDeploymentFeedbackDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useGiveDeploymentFeedbackMutation.getKey = () => ['GiveDeploymentFeedback'];
+useGiveDeploymentFeedbackMutation.getRootKey = () => ['GiveDeploymentFeedback'] as const;
+useGiveDeploymentFeedbackMutation.fetcher = (client: GraphQLClient, variables: GiveDeploymentFeedbackMutationVariables, headers?: RequestInit['headers']) => fetcher<GiveDeploymentFeedbackMutation, GiveDeploymentFeedbackMutationVariables>(client, GiveDeploymentFeedbackDocument, variables, headers);
+
 export const PlatformTrialStatusDocument = `
     query PlatformTrialStatus($organizationId: OrganizationId!) {
   platformTrialStatus(organizationId: $organizationId) {
+    deploymentRequestId
     isBlacklisted
     hub_status
     end_date
@@ -6463,6 +6541,64 @@ export const useChangeSelectedOrganizationMutation = <
 useChangeSelectedOrganizationMutation.getKey = () => ['ChangeSelectedOrganization'];
 useChangeSelectedOrganizationMutation.getRootKey = () => ['ChangeSelectedOrganization'] as const;
 useChangeSelectedOrganizationMutation.fetcher = (client: GraphQLClient, variables: ChangeSelectedOrganizationMutationVariables, headers?: RequestInit['headers']) => fetcher<ChangeSelectedOrganizationMutation, ChangeSelectedOrganizationMutationVariables>(client, ChangeSelectedOrganizationDocument, variables, headers);
+
+export const UserResendInviteDocument = `
+    mutation UserResendInvite($input: AddUserInput!) {
+  addUser(input: $input) {
+    id
+  }
+}
+    `;
+
+export const useUserResendInviteMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UserResendInviteMutation, TError, UserResendInviteMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UserResendInviteMutation, TError, UserResendInviteMutationVariables, TContext>(
+      {
+    mutationKey: ['UserResendInvite'],
+    mutationFn: (variables?: UserResendInviteMutationVariables) => fetcher<UserResendInviteMutation, UserResendInviteMutationVariables>(client, UserResendInviteDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUserResendInviteMutation.getKey = () => ['UserResendInvite'];
+useUserResendInviteMutation.getRootKey = () => ['UserResendInvite'] as const;
+useUserResendInviteMutation.fetcher = (client: GraphQLClient, variables: UserResendInviteMutationVariables, headers?: RequestInit['headers']) => fetcher<UserResendInviteMutation, UserResendInviteMutationVariables>(client, UserResendInviteDocument, variables, headers);
+
+export const UserAdminResendInviteDocument = `
+    mutation UserAdminResendInvite($input: AdminAddUserInput!) {
+  adminAddUser(input: $input) {
+    id
+  }
+}
+    `;
+
+export const useUserAdminResendInviteMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UserAdminResendInviteMutation, TError, UserAdminResendInviteMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UserAdminResendInviteMutation, TError, UserAdminResendInviteMutationVariables, TContext>(
+      {
+    mutationKey: ['UserAdminResendInvite'],
+    mutationFn: (variables?: UserAdminResendInviteMutationVariables) => fetcher<UserAdminResendInviteMutation, UserAdminResendInviteMutationVariables>(client, UserAdminResendInviteDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUserAdminResendInviteMutation.getKey = () => ['UserAdminResendInvite'];
+useUserAdminResendInviteMutation.getRootKey = () => ['UserAdminResendInvite'] as const;
+useUserAdminResendInviteMutation.fetcher = (client: GraphQLClient, variables: UserAdminResendInviteMutationVariables, headers?: RequestInit['headers']) => fetcher<UserAdminResendInviteMutation, UserAdminResendInviteMutationVariables>(client, UserAdminResendInviteDocument, variables, headers);
 
 export const UsersDocument = `
     query Users($first: Int!, $orderBy: UserOrdering!, $orderMode: OrderingMode!, $filters: [Filter!]) {

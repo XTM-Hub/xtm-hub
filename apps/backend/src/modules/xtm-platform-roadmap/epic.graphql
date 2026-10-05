@@ -20,6 +20,9 @@ type Epic implements Node {
   title: String!
   short_description: String!
   description: String!
+  problem_to_solve: String!
+  proposed_solution: String!
+  expected_value: String!
   edition_type: EditionType!
   active: Boolean!
   products: [FiligranProduct!]!
@@ -28,8 +31,6 @@ type Epic implements Node {
   epic_type: EpicType!
   document: Document
   document_id: DocumentId
-  uploader_id: String!
-  updater_id: String
   created_at: Date!
   updated_at: Date
 }
@@ -38,6 +39,9 @@ input CreateEpicInput {
   title: String!
   short_description: String!
   description: String!
+  problem_to_solve: String!
+  proposed_solution: String!
+  expected_value: String!
   edition_type: EditionType!
   active: Boolean
   products: [FiligranProduct!]!
@@ -51,6 +55,9 @@ input UpdateEpicInput {
   title: String
   short_description: String
   description: String
+  problem_to_solve: String
+  proposed_solution: String
+  expected_value: String
   edition_type: EditionType!
   active: Boolean
   products: [FiligranProduct!]

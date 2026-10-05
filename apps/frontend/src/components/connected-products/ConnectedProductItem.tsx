@@ -6,7 +6,7 @@ import {
   ServiceDefinitionIdentifierToPlatformIdentifier,
 } from '@/components/registration/PlatformIdentifierMapping';
 import { UseTranslationsProps } from '@/i18n/config';
-import { APP_PATH } from '@/utils/path/constant';
+import { APP_PATH, XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
 import { LinkIcon, TextSnippetIcon } from '@filigran/icon';
 import { Badge, Button } from '@filigran/ui';
 import { PlatformContract } from '@graphql/generated';
@@ -27,9 +27,14 @@ export const ConnectedProductItem = ({
     ? PlatformMetadataMapping[platformIdentifier]
     : undefined;
   const serviceInstanceId = platform.subscription?.service_instance?.id;
-  const detailPath = serviceInstanceId
-    ? `/${APP_PATH}/service/${platform.identifier}/${serviceInstanceId}`
-    : undefined;
+  const isBundleTrial =
+    platform.contract === PlatformContract.Trial &&
+    Boolean(platform.deployment_request?.parent_id);
+  const detailPath = isBundleTrial
+    ? XTM_PLATFORM_TRIAL_PATH
+    : serviceInstanceId
+      ? `/${APP_PATH}/service/${platform.identifier}/${serviceInstanceId}`
+      : undefined;
 
   return (
     <div className="hover:cursor-default flex min-h-12 w-full items-center gap-m px-m py-s">

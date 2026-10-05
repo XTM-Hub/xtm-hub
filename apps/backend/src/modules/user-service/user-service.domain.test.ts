@@ -70,7 +70,7 @@ const makeSubscription = (overrides?: {
 }) => ({
   id: (overrides?.id ?? uuidv4()) as SubscriptionId,
   service_instance_id:
-    overrides?.service_instance_id ?? SERVICES.INSTANCES.VAULT.ID,
+    overrides?.service_instance_id ?? SERVICES.INSTANCES.INTEGRATIONS.ID,
   organization_id: overrides?.organization_id ?? SECOND_ORG_ID,
   start_date: overrides?.start_date ?? new Date(),
   end_date: overrides?.end_date !== undefined ? overrides.end_date : undefined,
@@ -599,7 +599,7 @@ describe('userServiceDomain', () => {
     beforeEach(async () => {
       filigranSubId = await createTestSubscription({
         organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-        service_instance_id: SERVICES.INSTANCES.VAULT.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
         start_date: new Date(),
         end_date: undefined,
       });
@@ -688,7 +688,7 @@ describe('userServiceDomain', () => {
     it('should not match a user service belonging to another subscription', async () => {
       const otherSubscriptionId = await createTestSubscription({
         organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
-        service_instance_id: SERVICES.INSTANCES.VAULT.ID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
         start_date: new Date(),
         end_date: undefined,
       });

@@ -152,6 +152,7 @@ type Mutation {
   createCompetitor(input: CreateCompetitorInput!): Competitor!
   updateCompetitor(input: UpdateCompetitorInput!): Competitor!
   deleteCompetitor(id: CompetitorId!): Competitor!
+  giveDeploymentFeedback(input: GiveDeploymentFeedbackInput!): Success!
   createDeploymentRequest(input: CreateDeploymentRequestInput!): DeploymentRequest!
   updateDeploymentRequest(input: UpdateDeploymentRequestInput!): PlatformDeploymentRequest!
   reorderDeploymentRequestInQueue(input: ReorderDeploymentRequestInQueueInput!): Success!
@@ -279,6 +280,12 @@ input UpdateCompetitorInput {
   name: String
   tier: CompetitorTier
   domain: String
+}
+
+input GiveDeploymentFeedbackInput {
+  deploymentRequestId: DeploymentRequestId!
+  answer: HasRepliedSatisfaction!
+  justification: String
 }
 
 """
@@ -543,6 +550,7 @@ type XtmoneIntegrationStatus {
 }
 
 type PlatformTrialStatus {
+  deploymentRequestId: DeploymentRequestId
   isBlacklisted: Boolean!
   hub_status: DeploymentRequestHubStatus
   end_date: Date
@@ -1062,6 +1070,13 @@ enum UserOrdering {
   disabled
   country
   last_login
+  invitation_date
+}
+
+enum HasRepliedSatisfaction {
+  yes
+  no
+  closed
 }
 
 type Capability implements Node {
@@ -1094,6 +1109,7 @@ type User implements Node {
   pending_organization_id: OrganizationId
   status: UserAccountStatus
   invitation_date: Date
+  has_replied_satisfaction: HasRepliedSatisfaction
 }
 
 type UserEdge {
@@ -1411,7 +1427,6 @@ type ServiceLink implements Node {
 }
 
 enum ServiceDefinitionIdentifier {
-  vault
   link
   opencti_custom_dashboards
   opencti_custom_views
@@ -2209,6 +2224,9 @@ type Epic implements Node {
   title: String!
   short_description: String!
   description: String!
+  problem_to_solve: String!
+  proposed_solution: String!
+  expected_value: String!
   edition_type: EditionType!
   active: Boolean!
   products: [FiligranProduct!]!
@@ -2217,8 +2235,6 @@ type Epic implements Node {
   epic_type: EpicType!
   document: Document
   document_id: DocumentId
-  uploader_id: String!
-  updater_id: String
   created_at: Date!
   updated_at: Date
 }
@@ -2227,6 +2243,9 @@ input CreateEpicInput {
   title: String!
   short_description: String!
   description: String!
+  problem_to_solve: String!
+  proposed_solution: String!
+  expected_value: String!
   edition_type: EditionType!
   active: Boolean
   products: [FiligranProduct!]!
@@ -2240,6 +2259,9 @@ input UpdateEpicInput {
   title: String
   short_description: String
   description: String
+  problem_to_solve: String
+  proposed_solution: String
+  expected_value: String
   edition_type: EditionType!
   active: Boolean
   products: [FiligranProduct!]

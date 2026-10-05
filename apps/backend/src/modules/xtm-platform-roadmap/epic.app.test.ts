@@ -1,6 +1,20 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  MockInstance,
+  vi,
+} from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
-import { SERVICES, TEST_ORGANIZATIONS } from '../../../tests/tests.const';
+import {
+  // eslint-disable-next-line no-restricted-imports
+  requestContextAdminUser,
+  requestContextSimpleUserFiligran2,
+  SERVICES,
+  TEST_ORGANIZATIONS,
+} from '../../../tests/tests.const';
 import {
   EditionType,
   EpicOrdering,
@@ -8,8 +22,10 @@ import {
   FiligranProduct,
   OrderingMode,
   ServiceDefinitionIdentifier,
+  ServiceRestriction,
   Timeline,
 } from '../../__generated__/resolvers-types';
+import { requestContext } from '../../context/request.context';
 import { DocumentId } from '../../model/kanel/public/Document';
 import { EpicId } from '../../model/kanel/public/Epic';
 import { OrganizationId } from '../../model/kanel/public/Organization';
@@ -33,6 +49,7 @@ vi.mock('../../security/guard', async () => {
   };
 });
 
+import { UserServiceCapabilityHelper } from '../security-management/user-service-capability/user-service-capability.helper';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { EpicApp } from './epic.app';
 import { EpicDomain } from './epic.domain';
@@ -48,6 +65,9 @@ describe('epicApp', () => {
     title: 'Test Epic',
     short_description: 'Short desc',
     description: 'Long description for the epic',
+    problem_to_solve: 'Problem to solve',
+    proposed_solution: 'Proposed solution',
+    expected_value: 'Expected value',
     active: true,
     products: [FiligranProduct.Opencti],
     timeline: Timeline.Now,
@@ -89,6 +109,10 @@ describe('epicApp', () => {
 
       expect(dbEpic).toMatchObject({
         title: 'Test Epic',
+        description: 'Long description for the epic',
+        problem_to_solve: 'Problem to solve',
+        proposed_solution: 'Proposed solution',
+        expected_value: 'Expected value',
       });
     });
 
@@ -366,6 +390,31 @@ describe('epicApp', () => {
       expect(updatedEpic.slack_link).toBeNull();
 
       expect(dbEpic?.slack_link).toBeNull();
+    });
+    it('should update the description sections of the specified epic', async () => {
+      // Given
+      const createdEpic = await EpicApp.createEpic(basicInput, []);
+      const updateInput = {
+        description: 'Updated description',
+        problem_to_solve: 'Updated problem',
+        proposed_solution: 'Updated solution',
+        expected_value: 'Updated value',
+        edition_type: EditionType.CommunityEdition,
+      };
+
+      // When
+      const updatedEpic = await EpicApp.updateEpic(
+        createdEpic.id as EpicId,
+        updateInput,
+        []
+      );
+
+      // Check in DB
+      const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
+
+      // Then
+      expect(updatedEpic).toMatchObject(updateInput);
+      expect(dbEpic).toMatchObject(updateInput);
     });
     it('should keep the slack link when the update does not provide it', async () => {
       // Given
@@ -800,6 +849,46 @@ describe('epicApp', () => {
       expect(epicsConnection.edges[0]?.node.title).toBe('Title A');
     });
 
+    it.each`
+      field                  | searchTerm
+      ${'problem_to_solve'}  | ${'blind spo'}
+      ${'proposed_solution'} | ${'blind spo'}
+      ${'expected_value'}    | ${'blind spo'}
+    `(
+      'should return epics matching searchTerm on $field',
+      async ({ field, searchTerm }) => {
+        // Given
+        await EpicApp.createEpic(
+          {
+            ...basicInput,
+            title: 'Title A',
+            [field]: 'a blind spot in the roadmap',
+          },
+          []
+        );
+
+        await EpicApp.createEpic(
+          {
+            ...basicInput,
+            title: 'Title B',
+          },
+          []
+        );
+
+        // When
+        const epicsConnection = await EpicApp.loadEpics({
+          first: 10,
+          orderBy: EpicOrdering.Title,
+          orderMode: OrderingMode.Asc,
+          searchTerm,
+        });
+
+        // Then
+        expect(epicsConnection.edges).toHaveLength(1);
+        expect(epicsConnection.edges[0]?.node.title).toBe('Title A');
+      }
+    );
+
     it('should return empty results when searchTerm matches nothing', async () => {
       // Given
       await EpicApp.createEpic(
@@ -820,6 +909,139 @@ describe('epicApp', () => {
 
       // Then
       expect(epicsConnection.edges).toHaveLength(0);
+    });
+
+    describe('inactive epics visibility', () => {
+      const loadOpts = {
+        first: 10,
+        orderBy: EpicOrdering.Title,
+        orderMode: OrderingMode.Asc,
+      };
+      const loadTitles = async () => {
+        const epicsConnection = await EpicApp.loadEpics(loadOpts);
+        return {
+          titles: epicsConnection.edges.map((e) => e.node.title),
+          totalCount: Number(epicsConnection.totalCount),
+        };
+      };
+      const ACTIVE_ONLY = { titles: ['Active epic'], totalCount: 1 };
+      const ACTIVE_AND_DRAFT = {
+        titles: ['Active epic', 'Draft epic'],
+        totalCount: 2,
+      };
+      let loadCapabilitiesSpy: MockInstance;
+      let loadServiceInstanceSpy: MockInstance;
+
+      beforeEach(async () => {
+        loadCapabilitiesSpy = vi
+          .spyOn(UserServiceCapabilityHelper, 'loadCapabilities')
+          .mockResolvedValue([]);
+        loadServiceInstanceSpy = vi.spyOn(
+          ServiceInstanceDomain,
+          'loadServiceInstanceBy'
+        );
+        await TestHelper.epic.create({
+          title: 'Active epic',
+          active: true,
+          uploader_id: basicInput.uploader_id,
+        });
+        await TestHelper.epic.create({
+          title: 'Draft epic',
+          active: false,
+          uploader_id: basicInput.uploader_id,
+        });
+      });
+
+      afterEach(() => {
+        loadCapabilitiesSpy.mockRestore();
+        loadServiceInstanceSpy.mockRestore();
+      });
+
+      it('should return only active epics, without any lookup, when the caller is anonymous', async () => {
+        // Given
+        requestContext.set({});
+
+        // When
+        const result = await loadTitles();
+
+        // Then
+        expect(result).toEqual(ACTIVE_ONLY);
+        expect(loadServiceInstanceSpy).not.toHaveBeenCalled();
+        expect(loadCapabilitiesSpy).not.toHaveBeenCalled();
+      });
+
+      it('should return inactive epics, without any capability lookup, when the caller is a platform admin', async () => {
+        // Given
+        requestContext.set(requestContextAdminUser);
+
+        // When
+        const result = await loadTitles();
+
+        // Then
+        expect(result).toEqual(ACTIVE_AND_DRAFT);
+        expect(loadCapabilitiesSpy).not.toHaveBeenCalled();
+      });
+
+      it('should return inactive epics when the caller holds the Upsert capability on the roadmap', async () => {
+        // Given
+        loadCapabilitiesSpy.mockResolvedValue([ServiceRestriction.Upsert]);
+        const roadmap = await ServiceInstanceDomain.loadServiceInstanceBy({
+          slug: 'xtm-platform-roadmap',
+        });
+
+        // When
+        const result = await loadTitles();
+
+        // Then
+        expect(result).toEqual(ACTIVE_AND_DRAFT);
+        expect(loadCapabilitiesSpy).toHaveBeenCalledWith(
+          roadmap!.id,
+          requestContextSimpleUserFiligran2.user.id,
+          requestContextSimpleUserFiligran2.user.selected_organization_id
+        );
+      });
+
+      it.each`
+        capabilities                                              | description
+        ${[ServiceRestriction.Upload, ServiceRestriction.Delete]} | ${'holds capabilities other than Upsert'}
+        ${[]}                                                     | ${'holds no capability on the roadmap'}
+        ${undefined}                                              | ${'has no capabilities loaded'}
+      `(
+        'should return only active epics when the caller $description',
+        async ({ capabilities }) => {
+          // Given
+          loadCapabilitiesSpy.mockResolvedValue(capabilities);
+
+          // When
+          const result = await loadTitles();
+
+          // Then
+          expect(result).toEqual(ACTIVE_ONLY);
+        }
+      );
+
+      it('should return only active epics when the caller has no subscription to the roadmap', async () => {
+        // Given
+        loadCapabilitiesSpy.mockRestore();
+
+        // When
+        const result = await loadTitles();
+
+        // Then
+        expect(result).toEqual(ACTIVE_ONLY);
+      });
+
+      it('should return only active epics, without throwing, when the roadmap service instance does not exist', async () => {
+        // Given
+        loadServiceInstanceSpy.mockResolvedValueOnce(undefined);
+
+        // When
+        const result = await loadTitles();
+
+        // Then
+        expect(result).toEqual(ACTIVE_ONLY);
+        expect(loadCapabilitiesSpy).not.toHaveBeenCalled();
+      });
     });
   });
 });

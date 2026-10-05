@@ -372,6 +372,104 @@ describe('registration domain', () => {
     });
   });
 
+  describe('loadRegisteredPlatformsByServiceInstanceIds', () => {
+    const openAEVPlatformId = uuidv4();
+    const openAEVPlatformTitle = 'My OpenAEV platform';
+    const openAEVPlatformUrl = 'http://openaev.example.com';
+    const openAEVPlatformContract = PlatformContract.Ee;
+    const openAEVPlatformVersion = '1.0.0';
+    const openAEVToken = uuidv4();
+    const openAEVServiceDefinitionId =
+      SERVICES.DEFINITIONS.OPENAEV_REGISTRATION.ID;
+
+    let openCTIServiceInstanceId: ServiceInstanceId;
+    let openAEVServiceInstanceId: ServiceInstanceId;
+
+    beforeEach(async () => {
+      requestContext.set(requestContextRegistererUserSecondOrga);
+
+      openCTIServiceInstanceId = await RegistrationDomain.registerNewPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        serviceDefinitionId,
+        configuration: {
+          registerer_id:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+          platform_id: platformId,
+          platform_url: platformUrl,
+          platform_title: platformTitle,
+          platform_contract: platformContract,
+          platform_version: platformOpenCTI,
+          token,
+          last_connectivity_check: new Date(),
+        },
+        platformIdentifier: PlatformIdentifier.Opencti,
+      });
+
+      openAEVServiceInstanceId = await RegistrationDomain.registerNewPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        serviceDefinitionId: openAEVServiceDefinitionId,
+        configuration: {
+          registerer_id:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+          platform_id: openAEVPlatformId,
+          platform_url: openAEVPlatformUrl,
+          platform_title: openAEVPlatformTitle,
+          platform_contract: openAEVPlatformContract,
+          platform_version: openAEVPlatformVersion,
+          token: openAEVToken,
+          last_connectivity_check: new Date(),
+        },
+        platformIdentifier: PlatformIdentifier.Openaev,
+      });
+    });
+    afterEach(async () => {
+      await TestHelper.deploymentRequest.delete({});
+      await PlatformConfigurationDomain.deleteConfigurationBy({});
+      await ServiceInstanceDomain.deleteServiceInstanceBy({});
+    });
+
+    it('should return the registered platforms linked to the requested service instance ids', async () => {
+      const platforms =
+        await RegistrationDomain.loadRegisteredPlatformsByServiceInstanceIds([
+          openCTIServiceInstanceId,
+          openAEVServiceInstanceId,
+        ]);
+
+      expect(platforms).toHaveLength(2);
+      expect(platforms.map((platform) => platform.platform_id).sort()).toEqual(
+        [platformId, openAEVPlatformId].sort()
+      );
+    });
+
+    it('should not return platforms for service instance ids that were not requested', async () => {
+      const platforms =
+        await RegistrationDomain.loadRegisteredPlatformsByServiceInstanceIds([
+          openCTIServiceInstanceId,
+        ]);
+
+      expect(platforms).toHaveLength(1);
+      expect(platforms[0]?.platform_id).toBe(platformId);
+    });
+
+    it('should return an empty array when no service instance ids are requested', async () => {
+      const platforms =
+        await RegistrationDomain.loadRegisteredPlatformsByServiceInstanceIds(
+          []
+        );
+
+      expect(platforms).toEqual([]);
+    });
+
+    it('should return an empty array when the requested service instance id does not match a registered platform', async () => {
+      const platforms =
+        await RegistrationDomain.loadRegisteredPlatformsByServiceInstanceIds([
+          uuidv4() as ServiceInstanceId,
+        ]);
+
+      expect(platforms).toEqual([]);
+    });
+  });
+
   describe('loadAllActiveRegisteredPlatformsByPlatformIdentifier', () => {
     const openAEVServiceDefinitionId =
       SERVICES.DEFINITIONS.OPENAEV_REGISTRATION.ID;

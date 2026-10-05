@@ -532,7 +532,7 @@ export const RegistrationApp = {
   },
 };
 
-const mapDomainRegisteredPlatformToGraphQL = (
+export const mapDomainRegisteredPlatformToGraphQL = (
   platform: DomainRegisteredPlatform
 ): RegisteredPlatform => {
   const PLATFORM_TRIAL_TITLES: Partial<

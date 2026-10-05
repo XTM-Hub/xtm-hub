@@ -729,7 +729,7 @@ export const DocumentApp = {
     const NEWEST_DOCUMENTS_MAX_LIMIT = 20;
 
     // Default to all shareable service definitions so that non-shareable
-    // types (e.g. vault, service_picture) are never exposed when no platform
+    // types (e.g. service_picture) are never exposed when no platform
     // filter is provided.
     const allShareableIdentifiers = [
       ...ServiceDefinitionIdentifiersByPlatformIdentifier.values(),
