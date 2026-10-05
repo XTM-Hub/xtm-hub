@@ -43,6 +43,10 @@ import { RolePortalDomain } from '../../../role-portal/role-portal.domain';
 import { TelemetryApp } from '../../../telemetry/telemetry.app';
 import { TelemetryHelper } from '../../../telemetry/telemetry.helper';
 
+export type UserToSyncAccountStatus = User & {
+  status: UserAccountStatus.Waiting | UserAccountStatus.Invited;
+};
+
 export type LoadUserByFilter = (
   addPrefixToObject<UserMutator, 'User.'> | UserMutator
 ) & {
@@ -377,18 +381,33 @@ export const UserDomain = {
 
   updateUser: async (
     id: UserId,
-    input: UserMutator
+    input: UserMutator,
+    expected: Omit<UserMutator, 'id'> = {}
   ): Promise<User | undefined> => {
     if (isEmpty(input)) {
       return;
     }
 
     const [updatedUser] = await db<User>('User')
-      .where({ id })
+      .where({ ...expected, id })
       .update(input)
       .returning('*');
 
     return updatedUser;
+  },
+
+  loadUsersToSyncAccountStatus: async (
+    limit: number
+  ): Promise<UserToSyncAccountStatus[]> => {
+    const users = await db<User[]>('User')
+      .whereIn('status', [UserAccountStatus.Waiting, UserAccountStatus.Invited])
+      .where((builder) =>
+        builder.whereNull('disabled').orWhere('disabled', false)
+      )
+      .orderByRaw('invitation_date asc nulls last')
+      .limit(limit)
+      .select('*');
+    return users as UserToSyncAccountStatus[];
   },
 
   deleteUserBy: async (field: UserMutator): Promise<User | undefined> => {
