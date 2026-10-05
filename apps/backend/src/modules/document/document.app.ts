@@ -380,227 +380,232 @@ export const DocumentApp = {
         await assertReactivatedSlugIsFree();
       }
     }
-    const [sourceDocumentFile] = await DocumentUploadsHelper.processUploads(
-      sourceDocument,
-      serviceInstanceId
-    );
-    const imagesFiles = await DocumentUploadsHelper.processUploads(
-      images,
-      serviceInstanceId
-    );
-    const [logoFile] = await DocumentUploadsHelper.processUploads(
-      logo,
-      serviceInstanceId
-    );
 
-    let documentMetadata = DocumentHelper.buildCompleteMetadataFromDocumentFile(
-      {
-        sourceDocumentFile,
-        metadata: IntegrationCoverageHelper.withoutCoverageMetadata(metadata),
-      }
-    );
+    // Nothing references the uploads before the update commits
+    const storedUploads: Awaited<
+      ReturnType<typeof DocumentUploadsHelper.processUploads>
+    > = [];
+    const storeUploads = async (uploads: Upload[] | Upload | undefined) => {
+      const files = await DocumentUploadsHelper.processUploads(
+        uploads,
+        serviceInstanceId
+      );
+      storedUploads.push(...files);
+      return files;
+    };
+    const updateFromUploads = async () => {
+      const [sourceDocumentFile] = await storeUploads(sourceDocument);
+      const imagesFiles = await storeUploads(images);
+      const [logoFile] = await storeUploads(logo);
 
-    if (
-      !documentMetadata.some(
-        ({ key }) => key === DocumentMetadataKeyCode.FeedUrl
-      )
-    ) {
-      const existingFeedUrl =
-        await DocumentMetadataDomain.loadMetadataValueByKey(
-          parentDocumentId,
-          DocumentMetadataKeyCode.FeedUrl
-        );
-      if (existingFeedUrl) {
-        documentMetadata = [
-          ...documentMetadata,
-          { key: DocumentMetadataKeyCode.FeedUrl, value: existingFeedUrl },
-        ];
-      }
-    }
-
-    // entity_types is multi-valued: serialize it as a JSON metadata entry so it is
-    // persisted in Document_Metadata (and stripped from the Document column update below).
-    if (input.entity_types != null) {
-      documentMetadata = [
-        ...documentMetadata,
-        {
-          key: DocumentMetadataKeyCode.EntityTypes,
-          value: JSON.stringify(input.entity_types),
-        },
-      ];
-    }
-    if (input.license_type != null) {
-      documentMetadata = [
-        ...documentMetadata,
-        {
-          key: DocumentMetadataKeyCode.LicenseType,
-          value: input.license_type,
-        },
-      ];
-    }
-    DocumentHelper.assertMetadataIsNotMissing(
-      serviceDefinition.identifier as ManageableServiceDefinitionIdentifier,
-      documentMetadata
-    );
-
-    // A reactivation holds the slug lock of the creations and manifest ingestions of that slug
-    const inUpdateTransaction = <T>(callback: () => Promise<T>) =>
-      reactivatedSlug
-        ? withAdvisoryLock(
-            CONNECTOR_SLUG_LOCK_NAMESPACE,
-            reactivatedSlug,
-            callback
-          )
-        : withTransaction(callback);
-
-    const updatedDocument = await inUpdateTransaction(async () => {
-      if (reactivatedSlug) {
-        // Read under the slug lock: the integration may have been removed, and its slug taken, meanwhile
-        const currentDocument = await DocumentDomain.loadDocumentBy({
-          id: parentDocumentId,
+      let documentMetadata =
+        DocumentHelper.buildCompleteMetadataFromDocumentFile({
+          sourceDocumentFile,
+          metadata: IntegrationCoverageHelper.withoutCoverageMetadata(metadata),
         });
-        if (!currentDocument?.active) {
-          await assertReactivatedSlugIsFree();
-        }
-      }
-      // The metadata below is deleted then reinserted, so coverage is always re-resolved, against the stored
-      // coverage and the document text read under the document lock: a declaration or a name committed
-      // meanwhile (manifest ingestion, another admin) is never replaced or inferred from a stale value.
-      if (documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE) {
-        const lockedDocument =
-          await IntegrationCoverageDomain.loadInferenceTextForUpdate(
-            parentDocumentId
+
+      if (
+        !documentMetadata.some(
+          ({ key }) => key === DocumentMetadataKeyCode.FeedUrl
+        )
+      ) {
+        const existingFeedUrl =
+          await DocumentMetadataDomain.loadMetadataValueByKey(
+            parentDocumentId,
+            DocumentMetadataKeyCode.FeedUrl
           );
-        if (!lockedDocument) {
-          throw new Error(ErrorCode.DocumentNotFound);
+        if (existingFeedUrl) {
+          documentMetadata = [
+            ...documentMetadata,
+            { key: DocumentMetadataKeyCode.FeedUrl, value: existingFeedUrl },
+          ];
         }
-        const coverage = await IntegrationCoverageApp.resolveCoverageForUpdate({
-          documentId: parentDocumentId,
-          currentDocument: lockedDocument,
-          input,
-        });
+      }
+
+      // entity_types is multi-valued: serialize it as a JSON metadata entry so it is
+      // persisted in Document_Metadata (and stripped from the Document column update below).
+      if (input.entity_types != null) {
         documentMetadata = [
           ...documentMetadata,
-          ...IntegrationCoverageHelper.toMetadataEntries(coverage),
+          {
+            key: DocumentMetadataKeyCode.EntityTypes,
+            value: JSON.stringify(input.entity_types),
+          },
         ];
       }
-      const user = requestContext.requireUser();
-      const uploader_organization_id = input.uploader_organization_id ?? null;
-      const uploader_id = input.uploader_id ?? user.id;
-
-      const file = DocumentHelper.isDocumentFileRequired({
-        documentType,
-        documentMetadata,
-      })
-        ? sourceDocumentFile
-        : undefined;
-
-      // entity_types, license_type and coverage are persisted as metadata (see above), not as Document columns.
-      const {
-        entity_types: _entityTypes,
-        license_type: _licenseType,
-        covered_object_types: _coveredObjectTypes,
-        covered_sectors: _coveredSectors,
-        covered_regions: _coveredRegions,
-        coverage_confirmed: _coverageConfirmed,
-        ...documentColumnData
-      } = input;
-      const doc = await DocumentDomain.updateDocument({
-        parentDocumentId,
-        document: {
-          data: documentColumnData,
-          file,
-          type: documentType,
-        },
-        uploader_organization_id,
-        uploader_id,
-      });
-
-      if (!doc) {
-        throw new Error(UnknownErrorCode.DocumentUpdateError);
+      if (input.license_type != null) {
+        documentMetadata = [
+          ...documentMetadata,
+          {
+            key: DocumentMetadataKeyCode.LicenseType,
+            value: input.license_type,
+          },
+        ];
       }
+      DocumentHelper.assertMetadataIsNotMissing(
+        serviceDefinition.identifier as ManageableServiceDefinitionIdentifier,
+        documentMetadata
+      );
 
-      // If use_cases is null => that mean we want to update the field to empty
-      if (input.use_cases !== undefined) {
-        await objectUseCaseDomain.deleteObjectUseCaseBy({
-          object_id: toObjectUseCaseObjectId(parentDocumentId),
+      // A reactivation holds the slug lock of the creations and manifest ingestions of that slug
+      const inUpdateTransaction = <T>(callback: () => Promise<T>) =>
+        reactivatedSlug
+          ? withAdvisoryLock(
+              CONNECTOR_SLUG_LOCK_NAMESPACE,
+              reactivatedSlug,
+              callback
+            )
+          : withTransaction(callback);
+
+      return inUpdateTransaction(async () => {
+        if (reactivatedSlug) {
+          // Read under the slug lock: the integration may have been removed, and its slug taken, meanwhile
+          const currentDocument = await DocumentDomain.loadDocumentBy({
+            id: parentDocumentId,
+          });
+          if (!currentDocument?.active) {
+            await assertReactivatedSlugIsFree();
+          }
+        }
+        // The metadata below is deleted then reinserted, so coverage is always re-resolved, against the stored
+        // coverage and the document text read under the document lock: a declaration or a name committed
+        // meanwhile (manifest ingestion, another admin) is never replaced or inferred from a stale value.
+        if (documentType === OPENCTI_INTEGRATION_DOCUMENT_TYPE) {
+          const lockedDocument =
+            await IntegrationCoverageDomain.loadInferenceTextForUpdate(
+              parentDocumentId
+            );
+          if (!lockedDocument) {
+            throw new Error(ErrorCode.DocumentNotFound);
+          }
+          const coverage =
+            await IntegrationCoverageApp.resolveCoverageForUpdate({
+              documentId: parentDocumentId,
+              currentDocument: lockedDocument,
+              input,
+            });
+          documentMetadata = [
+            ...documentMetadata,
+            ...IntegrationCoverageHelper.toMetadataEntries(coverage),
+          ];
+        }
+        const user = requestContext.requireUser();
+        const uploader_organization_id = input.uploader_organization_id ?? null;
+        const uploader_id = input.uploader_id ?? user.id;
+
+        const file = DocumentHelper.isDocumentFileRequired({
+          documentType,
+          documentMetadata,
+        })
+          ? sourceDocumentFile
+          : undefined;
+
+        // entity_types, license_type and coverage are persisted as metadata (see above), not as Document columns.
+        const {
+          entity_types: _entityTypes,
+          license_type: _licenseType,
+          covered_object_types: _coveredObjectTypes,
+          covered_sectors: _coveredSectors,
+          covered_regions: _coveredRegions,
+          coverage_confirmed: _coverageConfirmed,
+          ...documentColumnData
+        } = input;
+        const doc = await DocumentDomain.updateDocument({
+          parentDocumentId,
+          document: {
+            data: documentColumnData,
+            file,
+            type: documentType,
+          },
+          uploader_organization_id,
+          uploader_id,
         });
 
-        if (input.use_cases && input.use_cases.length > 0) {
-          await objectUseCaseDomain.insertObjectUseCase(
-            input.use_cases.map((id) => ({
-              object_id: toObjectUseCaseObjectId(parentDocumentId),
-              use_case_id: id,
+        if (!doc) {
+          throw new Error(UnknownErrorCode.DocumentUpdateError);
+        }
+
+        // If use_cases is null => that mean we want to update the field to empty
+        if (input.use_cases !== undefined) {
+          await objectUseCaseDomain.deleteObjectUseCaseBy({
+            object_id: toObjectUseCaseObjectId(parentDocumentId),
+          });
+
+          if (input.use_cases && input.use_cases.length > 0) {
+            await objectUseCaseDomain.insertObjectUseCase(
+              input.use_cases.map((id) => ({
+                object_id: toObjectUseCaseObjectId(parentDocumentId),
+                use_case_id: id,
+              }))
+            );
+          }
+        }
+
+        if (input.solution_categories?.length) {
+          await objectSolutionCategoryDomain.deleteObjectSolutionCategoryBy({
+            object_id: toObjectSolutionCategoryObjectId(parentDocumentId),
+          });
+          await objectSolutionCategoryDomain.insertObjectSolutionCategory(
+            input.solution_categories.map((solutionCategoryId) => ({
+              object_id: toObjectSolutionCategoryObjectId(parentDocumentId),
+              solution_category_id: solutionCategoryId as SolutionCategoryId,
             }))
           );
         }
-      }
 
-      if (input.solution_categories?.length) {
-        await objectSolutionCategoryDomain.deleteObjectSolutionCategoryBy({
-          object_id: toObjectSolutionCategoryObjectId(parentDocumentId),
-        });
-        await objectSolutionCategoryDomain.insertObjectSolutionCategory(
-          input.solution_categories.map((solutionCategoryId) => ({
-            object_id: toObjectSolutionCategoryObjectId(parentDocumentId),
-            solution_category_id: solutionCategoryId as SolutionCategoryId,
-          }))
-        );
-      }
-
-      if (documentMetadata.length) {
-        await DocumentMetadataDomain.deleteMetadata({ id: parentDocumentId });
-        await DocumentMetadataDomain.insertMetadataFromKeyValue(
-          doc.id,
-          documentMetadata
-        );
-
-        for (const meta of documentMetadata) {
-          setDocumentMetadataValue(
-            doc,
-            meta.key,
-            BOOLEAN_METADATA.includes(meta.key)
-              ? meta.value === 'true'
-              : meta.value
+        if (documentMetadata.length) {
+          await DocumentMetadataDomain.deleteMetadata({ id: parentDocumentId });
+          await DocumentMetadataDomain.insertMetadataFromKeyValue(
+            doc.id,
+            documentMetadata
           );
+
+          for (const meta of documentMetadata) {
+            setDocumentMetadataValue(
+              doc,
+              meta.key,
+              BOOLEAN_METADATA.includes(meta.key)
+                ? meta.value === 'true'
+                : meta.value
+            );
+          }
         }
-      }
 
-      // Delete the images that are not in the existingImages array
-      const childIds = await DocumentChildrenDomain.loadChildrenIds(
-        parentDocumentId,
-        existingImageIds
-      );
-      if (childIds.length > 0) {
-        await DocumentDomain.deleteDocuments(childIds);
-      }
+        // Delete the images that are not in the existingImages array
+        const childIds = await DocumentChildrenDomain.loadChildrenIds(
+          parentDocumentId,
+          existingImageIds
+        );
+        if (childIds.length > 0) {
+          await DocumentDomain.deleteDocuments(childIds);
+        }
 
-      await DocumentChildrenDomain.createImageDocuments(
-        parentDocumentId,
-        serviceInstanceId,
-        imagesFiles,
-        DocumentImageType.Image
-      );
-
-      if (logoFile) {
         await DocumentChildrenDomain.createImageDocuments(
           parentDocumentId,
           serviceInstanceId,
-          [logoFile],
-          DocumentImageType.Logo
+          imagesFiles,
+          DocumentImageType.Image
         );
-      }
 
-      return doc;
-    }).catch(async (error: unknown) => {
-      // Nothing references the uploads of an update that did not commit
-      await DocumentUploadsHelper.removeUploads([
-        sourceDocumentFile,
-        ...imagesFiles,
-        logoFile,
-      ]);
-      throw error;
-    });
+        if (logoFile) {
+          await DocumentChildrenDomain.createImageDocuments(
+            parentDocumentId,
+            serviceInstanceId,
+            [logoFile],
+            DocumentImageType.Logo
+          );
+        }
+
+        return doc;
+      });
+    };
+    // A refused or failed update, at any step after its first upload, removes the uploads it stored
+    const updatedDocument = await updateFromUploads().catch(
+      async (error: unknown) => {
+        await DocumentUploadsHelper.removeUploads(storedUploads);
+        throw error;
+      }
+    );
 
     void NewsFeedApp.upsertResourceNewsFeed({
       documentBeforeUpdate,

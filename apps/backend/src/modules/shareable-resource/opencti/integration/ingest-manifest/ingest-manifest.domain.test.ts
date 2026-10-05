@@ -376,6 +376,47 @@ describe('upsertConnectors', () => {
     });
   });
 
+  describe('slug held by a reactivated connector', () => {
+    it('should update the live connector, never a removed one created after it', async () => {
+      // Given: A is reactivated after B, created later with the same slug, was removed
+      const baseManifest = sampleExtractedManifest[0] as ManifestInformation;
+      const slug = 'slug-of-a-reactivated-connector';
+      const live = await TestHelper.document.create({
+        slug,
+        name: 'Reactivated connector',
+        type: 'opencti_integration',
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+        active: true,
+        created_at: new Date('2026-01-01T00:00:00Z'),
+      });
+      const removed = await TestHelper.document.create({
+        slug,
+        name: 'Removed connector',
+        type: 'opencti_integration',
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+        active: false,
+        created_at: new Date('2026-02-01T00:00:00Z'),
+      });
+
+      // When
+      const [connector] = await IngestManifestDomain.upsertConnectors([
+        { ...baseManifest, slug },
+      ]);
+
+      // Then: the live connector is updated, the removed one stays removed
+      expect(connector!.id).toBe(live.id);
+      expect(await TestHelper.document.load({ id: removed.id })).toMatchObject({
+        active: false,
+        name: 'Removed connector',
+      });
+      const liveConnectors = await TestHelper.document.loadAll({
+        slug,
+        active: true,
+      });
+      expect(liveConnectors.map(({ id }) => id)).toEqual([live.id]);
+    });
+  });
+
   describe('minimum deployable version logic', () => {
     const baseManifest = sampleExtractedManifest[0] as ManifestInformation;
 

@@ -659,6 +659,34 @@ describe('documentApp', () => {
       ).toMatchObject([{ active: false }]);
     });
 
+    it('should remove the stored uploads when a later upload of the update fails', async () => {
+      // Given: the source document is stored, then the images fail to upload
+      vi.mocked(DocumentUploadsHelper.processUploads)
+        .mockResolvedValueOnce([{ ...minioFileMock, minioName: 'source' }])
+        .mockRejectedValueOnce(new Error('Storage unavailable'));
+
+      // When
+      const call = DocumentApp.updateDocument({
+        parentDocumentId: createdDocument!.id,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        metadata: integrationMetadata,
+        input: { ...documentUpdateData, name: 'renamed by a failed update' },
+        existingImageIds: [],
+        sourceDocument: mockUpload,
+        images: [mockUpload],
+        logo: mockUpload,
+      });
+
+      // Then: the stored source is removed, the document is unchanged
+      await expect(call).rejects.toThrow('Storage unavailable');
+      expect(
+        vi.mocked(MinIOClient.deleteFile).mock.calls.map(([name]) => name)
+      ).toEqual(['source']);
+      expect(
+        await TestHelper.document.load({ id: createdDocument!.id })
+      ).toMatchObject({ name: documentData.name });
+    });
+
     it('should throw DocumentNotFound when the document belongs to a different service instance', async () => {
       // When
       const call = DocumentApp.updateDocument({

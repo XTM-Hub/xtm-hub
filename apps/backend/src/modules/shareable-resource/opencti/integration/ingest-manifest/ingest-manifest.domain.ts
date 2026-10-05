@@ -116,7 +116,7 @@ export const IngestManifestDomain = {
           CONNECTOR_SLUG_LOCK_NAMESPACE,
           slug,
           async () => {
-            const current = await DocumentDomain.findLatestBySlug(
+            const current = await DocumentDomain.findCurrentBySlug(
               { slug, type: OPENCTI_INTEGRATION_DOCUMENT_TYPE },
               { forUpdate: true }
             );

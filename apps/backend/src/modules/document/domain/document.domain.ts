@@ -576,12 +576,15 @@ export const DocumentDomain = {
   },
 
   /**
-   * Document that `upsertOnSlug` updates for this slug: the latest one of this
-   * type outside the decoupling tag, whatever its service instance, since the
+   * Document that `upsertOnSlug` updates for this slug: among the documents of
+   * this type outside the decoupling tag, whatever their service instance (the
    * unique constraint `document_type_slug_version_unique` spans every service
-   * instance. `forUpdate` locks its row in the caller's transaction.
+   * instance), the live one, else the latest removed one. A removed document
+   * newer than the live one is never picked: reactivating it would leave two
+   * live documents with one slug, which the constraint allows for documents
+   * without a version. `forUpdate` locks its row in the caller's transaction.
    */
-  findLatestBySlug: async (
+  findCurrentBySlug: async (
     { slug, type }: { slug: string; type: string },
     { forUpdate = false }: { forUpdate?: boolean } = {}
   ): Promise<DocumentModel | undefined> => {
@@ -589,7 +592,10 @@ export const DocumentDomain = {
       .where('slug', '=', slug)
       .where('type', '=', type)
       .modify(excludeDecouplingTag)
-      .orderBy('created_at', 'desc');
+      .orderBy([
+        { column: 'active', order: 'desc' },
+        { column: 'created_at', order: 'desc' },
+      ]);
     return (forUpdate ? query.forUpdate() : query).first();
   },
 
@@ -645,7 +651,7 @@ export const DocumentDomain = {
 
     const existingDocument =
       slug && type
-        ? await DocumentDomain.findLatestBySlug({ slug, type })
+        ? await DocumentDomain.findCurrentBySlug({ slug, type })
         : undefined;
 
     if (existingDocument) {
