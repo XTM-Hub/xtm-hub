@@ -1,10 +1,10 @@
 'use client';
+import { useTranslate } from '@/hooks/use-translate';
 import { Button } from '@filigran/ui/servers';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 export const SlackSupportButton = () => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <Button>

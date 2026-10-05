@@ -1,9 +1,9 @@
 'use client';
+import { useTranslate } from '@/hooks/use-translate';
 import LogoXTMDark from '@public/logo_xtm_hub_dark.svg';
-import { useTranslations } from 'next-intl';
 
 const LoginTitleForm = ({}) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <>
       <LogoXTMDark />

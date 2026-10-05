@@ -78,6 +78,7 @@ import {
   TestPlatformConfigurationHelper,
 } from './test-platform-configuration.helper';
 import { TestAuth0Helper } from './test.auth0.helper';
+import { TestContentTranslationHelper } from './test.content-translation.helper';
 import { TestDeploymentHelper } from './test.deployment.helper';
 import { TestDocumentHelper } from './test.document.helper';
 import { TestNewsfeedHelper } from './test.newsfeed.helper';
@@ -104,6 +105,7 @@ export const TestHelper = {
   ...TestAuth0Helper,
   ...TestDeploymentHelper,
   ...TestNewsfeedHelper,
+  ...TestContentTranslationHelper,
   ...TestPulseHelper,
   subscription: {
     create: async (data?: Partial<Subscription>): Promise<Subscription> => {

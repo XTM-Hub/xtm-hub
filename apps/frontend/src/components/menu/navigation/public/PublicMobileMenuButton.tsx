@@ -1,6 +1,7 @@
 'use client';
 
 import PublicNavigation from '@/components/menu/navigation/public/PublicNavigation';
+import { useTranslate } from '@/hooks/use-translate';
 import { CloseIcon, MenuIcon } from '@filigran/icon';
 import {
   Sheet,
@@ -11,7 +12,6 @@ import {
   SheetTrigger,
 } from '@filigran/ui/clients';
 import Logo from '@public/logo.svg';
-import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -24,7 +24,7 @@ export const PublicMobileMenuButton = ({
 }: PublicMobileMenuButtonProps) => {
   const [open, setOpen] = useState(false);
   const currentPath = usePathname();
-  const t = useTranslations();
+  const t = useTranslate();
   // Legitimate effect: close the menu on route change.
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setOpen(false), [currentPath]);

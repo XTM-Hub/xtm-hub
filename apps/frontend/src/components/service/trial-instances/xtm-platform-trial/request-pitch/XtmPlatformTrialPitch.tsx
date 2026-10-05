@@ -1,9 +1,9 @@
 'use client';
 
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { PlatformIdentifier } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
 const BUNDLE_PRODUCTS = [
   PlatformIdentifier.Opencti,
@@ -12,7 +12,7 @@ const BUNDLE_PRODUCTS = [
 ];
 
 export const XtmPlatformTrialPitch = () => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <section className="flex flex-col gap-xl">

@@ -51,6 +51,7 @@ import {
   TAG_LATEST,
   TAG_LATEST_LTS,
 } from '../../shareable-resource/manifest-fragment/manifest-fragment.helper';
+import { DocumentListOptions } from '../document.model';
 import { isUserRestrictedToActiveDocument } from '../document.security';
 import {
   DocumentMetadataDomain,
@@ -325,6 +326,7 @@ export const DocumentDomain = {
   loadParentDocumentsByServiceInstance: async (
     type: string,
     input: Partial<QueryDocumentsArgs> &
+      DocumentListOptions &
       Pick<QueryDocumentsArgs, 'serviceInstanceId'>,
     include_metadata?: DocumentMetadataKeyCode[]
   ): Promise<DocumentConnection> => {
@@ -343,7 +345,7 @@ export const DocumentDomain = {
   },
 
   loadDocuments: async (
-    opts: Partial<QueryDocumentsArgs>,
+    opts: Partial<QueryDocumentsArgs> & DocumentListOptions,
     field: Record<string, unknown>,
     include_metadata?: DocumentMetadataKeyCode[]
   ): Promise<DocumentConnection> => {
@@ -354,14 +356,16 @@ export const DocumentDomain = {
       .tap(restrictDocumentToUserOrganization)
       .tap(restrictDocumentToAccessibleServiceInstance)
       .where(field)
-      .modify(applyDecouplingRestriction(field['Document.type'] as string));
+      .modify(applyDecouplingRestriction(field['Document.type'] as string))
+      .orderBy('Document.active', 'asc');
 
     if (
-      field['Document.service_instance_id'] &&
-      (await isUserRestrictedToActiveDocument(
-        user,
-        field['Document.service_instance_id'] as ServiceInstanceId
-      ))
+      opts.activeOnly ||
+      (field['Document.service_instance_id'] &&
+        (await isUserRestrictedToActiveDocument(
+          user,
+          field['Document.service_instance_id'] as ServiceInstanceId
+        )))
     ) {
       loadDocumentQuery.tap(restrictDocumentToActive);
     }

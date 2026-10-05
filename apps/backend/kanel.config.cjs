@@ -72,8 +72,17 @@ const COLUMN_ENUM_MAP = {
   Manifest: {
     type: 'ManifestType',
   },
+  ContentTranslation: {
+    locale: 'Locale',
+  },
+  ContentTranslationDraft: {
+    locale: 'Locale',
+  },
   ProductVersion: {
     product: 'PlatformIdentifier',
+  },
+  SEO_ServiceInstance: {
+    language: 'Locale',
   },
   User: {
     status: 'UserAccountStatus',

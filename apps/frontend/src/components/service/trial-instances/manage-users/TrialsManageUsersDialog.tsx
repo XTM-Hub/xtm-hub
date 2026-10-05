@@ -1,8 +1,8 @@
 'use client';
 import { TrialsManageUsersForm } from '@/components/service/trial-instances/manage-users/TrialsManageUsersForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { Button } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 import React, { useState } from 'react';
 
 interface TrialsManageUsersDialogProps {
@@ -18,7 +18,7 @@ export const TrialsManageUsersDialog = ({
   trigger,
   defaultOpen,
 }: TrialsManageUsersDialogProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [openSheet, setOpenSheet] = useState(defaultOpen ?? false);
 
   return (

@@ -1,7 +1,7 @@
 'use client';
 
+import { useTranslate } from '@/hooks/use-translate';
 import { PlatformIdentifier } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { ReactNode } from 'react';
 
@@ -12,7 +12,7 @@ interface TrialsStorageLimitationProps {
 export const TrialsStorageLimitation = ({
   platformIdentifier,
 }: TrialsStorageLimitationProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const isOpenCTI = platformIdentifier === PlatformIdentifier.Opencti;
 
   const renderLink = (chunks: ReactNode) => (

@@ -1,4 +1,5 @@
 import { useSolutionCategories } from '@/components/service/form/UseSolutionCategories';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   FormControl,
   FormItem,
@@ -7,7 +8,6 @@ import {
   MultiSelectFormField,
 } from '@filigran/ui';
 import type { FiligranProduct } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 
 interface ServiceFormSolutionCategoryFieldProps {
@@ -21,7 +21,7 @@ export const ServiceFormSolutionCategoryField = ({
   disabled,
   product,
 }: ServiceFormSolutionCategoryFieldProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <FormItem>

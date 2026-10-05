@@ -7,6 +7,7 @@ import { PortalContext } from '@/components/me/AppPortalContext';
 import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import useAdminPath from '@/hooks/use-admin-path';
+import { useTranslate } from '@/hooks/use-translate';
 import { isEmpty } from '@/lib/utils';
 import {
   Button,
@@ -21,7 +22,6 @@ import {
 } from '@filigran/ui';
 import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
 import { useContext } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'react-relay';
@@ -35,7 +35,7 @@ interface UserUpdateFormProps {
 export const UserUpdateForm = ({ user, callback }: UserUpdateFormProps) => {
   const { handleCloseSheet, setIsDirty } = useDialogContext();
   const { me } = useContext(PortalContext);
-  const t = useTranslations();
+  const t = useTranslate();
   const isAdminPath = useAdminPath();
 
   const userOrg = user.organization_capabilities?.find(

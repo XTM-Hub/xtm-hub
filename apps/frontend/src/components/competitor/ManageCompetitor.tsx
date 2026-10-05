@@ -8,9 +8,9 @@ import CompetitorForm, {
   competitorFormSchema,
 } from '@/components/competitor/CompetitorForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { toast } from '@filigran/ui';
 import { competitor_fragment$data } from '@generated/competitor_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import { useMutation } from 'react-relay';
 import { z } from 'zod';
 
@@ -27,7 +27,7 @@ const ManageCompetitor = ({
   open,
   setOpen,
 }: ManageCompetitorProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [createCompetitor] = useMutation(CompetitorAddMutation);
   const [editCompetitor] = useMutation(CompetitorEditMutation);
 

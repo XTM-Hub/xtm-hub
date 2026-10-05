@@ -101,6 +101,8 @@ type BaseDatabaseType =
   | 'VotableFeature'
   | 'VotableFeature_UseCase'
   | 'FeatureVote'
+  | 'ContentTranslation'
+  | 'ContentTranslationDraft'
   | 'PulseSalt'
   | 'PulsePlatform'
   | 'PulseContribution'

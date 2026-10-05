@@ -1,6 +1,7 @@
 'use client';
 
 import { FiligranProductMapping } from '@/components/epic/epic-item/FiligranProductMapping';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Skeleton } from '@filigran/ui';
 import {
@@ -9,7 +10,6 @@ import {
   VotableFeatureAdminRowFragment,
 } from '@graphql/generated';
 import { votingRoundKeys } from '@graphql/voting-round/voting-round.keys';
-import { useTranslations } from 'next-intl';
 
 const PRODUCT_ORDER: FiligranProduct[] = [
   FiligranProduct.Opencti,
@@ -24,7 +24,7 @@ interface RankedFeature {
 }
 
 export const VotingRoundResults = ({ roundId }: { roundId: string }) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const variables = { id: roundId };
   const { data, isLoading } = useVotingRoundRankingQuery(
     portalGraphqlClient,

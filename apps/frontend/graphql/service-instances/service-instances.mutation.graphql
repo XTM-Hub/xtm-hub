@@ -1,6 +1,6 @@
 mutation EditSeoServiceInstanceMetadata(
   $service_instance_id: ServiceInstanceId!
-  $language: SeoServiceInstanceLanguage!
+  $language: Locale!
   $input: EditSeoServiceInstanceInput!
 ) {
   editSeoServiceInstance(

@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/IconActions';
 import { SearchInput } from '@/components/ui/SearchInput';
 import useAdminPath from '@/hooks/use-admin-path';
+import { useTranslate } from '@/hooks/use-translate';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { APP_PATH } from '@/utils/path/constant';
@@ -32,7 +33,6 @@ import { serviceInstanceByIdQuery } from '@generated/serviceInstanceByIdQuery.gr
 import { serviceInstanceForSubscriptions_fragment$key } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
 import { ColumnDef, PaginationState } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 import React, { useMemo, useState } from 'react';
 import { PreloadedQuery, readInlineData, usePreloadedQuery } from 'react-relay';
 import { useDebounceCallback } from 'usehooks-ts';
@@ -87,7 +87,7 @@ const ServiceSlug = ({
   const [selection, setSelection] =
     useState<SelectionState>(emptySelectionState);
 
-  const t = useTranslations();
+  const t = useTranslate();
 
   const debounceHandleInput = useDebounceCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value),
