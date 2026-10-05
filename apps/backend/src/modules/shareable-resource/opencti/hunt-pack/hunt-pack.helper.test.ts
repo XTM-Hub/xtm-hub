@@ -314,14 +314,17 @@ describe('huntPackHelper metadata', () => {
   });
 
   it.each`
-    declared           | expected
-    ${'7.261010.0'}    | ${'7.261010.0'}
-    ${'7.261003.0'}    | ${'7.261003.0'}
-    ${'7.261002.0'}    | ${HUNT_PACK_MINIMUM_PRODUCT_VERSION}
-    ${'6.8.0'}         | ${HUNT_PACK_MINIMUM_PRODUCT_VERSION}
-    ${'not-a-version'} | ${HUNT_PACK_MINIMUM_PRODUCT_VERSION}
-    ${''}              | ${HUNT_PACK_MINIMUM_PRODUCT_VERSION}
-    ${undefined}       | ${HUNT_PACK_MINIMUM_PRODUCT_VERSION}
+    declared             | expected
+    ${'7.261010.0'}      | ${'7.261010.0'}
+    ${'7.261003.0'}      | ${'7.261003.0'}
+    ${'7.261010.0-lts'}  | ${'7.261010.0-lts'}
+    ${'7.261010.0-lts2'} | ${'7.261010.0-lts2'}
+    ${'7.261002.0-lts'}  | ${HUNT_PACK_MINIMUM_PRODUCT_VERSION}
+    ${'7.261002.0'}      | ${HUNT_PACK_MINIMUM_PRODUCT_VERSION}
+    ${'6.8.0'}           | ${HUNT_PACK_MINIMUM_PRODUCT_VERSION}
+    ${'not-a-version'}   | ${HUNT_PACK_MINIMUM_PRODUCT_VERSION}
+    ${''}                | ${HUNT_PACK_MINIMUM_PRODUCT_VERSION}
+    ${undefined}         | ${HUNT_PACK_MINIMUM_PRODUCT_VERSION}
   `(
     'requires OpenCTI $expected for a declared product version "$declared"',
     ({ declared, expected }) => {

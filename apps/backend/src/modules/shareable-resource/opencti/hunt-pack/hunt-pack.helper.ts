@@ -78,7 +78,7 @@ const sortedUnique = (values: Iterable<string>, limit: number) =>
 
 const toPaddedVersion = (version: string): string | undefined => {
   try {
-    return ManifestFragmentHelper.validateAndFormatManifestVersion(version);
+    return ManifestFragmentHelper.validateAndFormatMinimumVersion(version);
   } catch {
     return undefined;
   }
