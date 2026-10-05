@@ -8,8 +8,7 @@ import { Badge, Callout } from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 
-// Only used to resolve the pathname of a relative `learnMoreHref`.
-const URL_PARSING_BASE = 'http://localhost';
+const TRIAL_PAGE_SLUG = '/xtm-platform-trial';
 
 interface XtmPlatformTrialBannerProps {
   state: XtmPlatformTrialBannerState;
@@ -31,9 +30,7 @@ export const XtmPlatformTrialBanner = ({
   }
 
   // The learn more link points to the trial page: no need to show it there.
-  const isOnLearnMorePage =
-    !!learnMoreHref &&
-    pathname === new URL(learnMoreHref, URL_PARSING_BASE).pathname;
+  const isOnLearnMorePage = !!pathname?.endsWith(TRIAL_PAGE_SLUG);
   const isDismissable = state !== 'ending';
   const showDaysLeft =
     (state === 'active' || state === 'ending') && daysLeft != null;
