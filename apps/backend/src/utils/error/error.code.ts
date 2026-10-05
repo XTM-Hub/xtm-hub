@@ -73,6 +73,7 @@ export enum BadRequestErrorCode {
   InvalidUseCasesForProducts = 'INVALID_USE_CASES_FOR_PRODUCTS',
   SolutionCategoriesRequired = 'SOLUTION_CATEGORIES_REQUIRED',
   XtmOneRoleRequired = 'XTM_ONE_ROLE_REQUIRED',
+  UserStatusChangedConcurrently = 'USER_STATUS_CHANGED_CONCURRENTLY',
 }
 
 export enum UnknownErrorCode {

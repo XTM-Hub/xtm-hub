@@ -1,3 +1,4 @@
+import type { Management } from 'auth0';
 import {
   DeploymentRequestDeploymentType,
   PlatformIdentifier,
@@ -124,7 +125,8 @@ export const ServiceGroupHelper = {
       groupNames: ServiceGroupName[];
     }[],
     userIds: UserId[],
-    emailByUserId: Map<UserId, string>
+    emailByUserId: Map<UserId, string>,
+    prefetchedAuth0UsersByUserId?: Map<UserId, Management.UserResponseSchema[]>
   ): Promise<void> => {
     const rbacInstance: Auth0UpdateUserRBACInstance = {};
     childGroupAssignments.forEach(({ child, groupNames }) => {
@@ -144,7 +146,11 @@ export const ServiceGroupHelper = {
         if (!email) {
           return undefined;
         }
-        return auth0Client.updateUserRBACInstance(email, rbacInstance);
+        return auth0Client.updateUserRBACInstance(
+          email,
+          rbacInstance,
+          prefetchedAuth0UsersByUserId?.get(userId)
+        );
       })
     );
   },

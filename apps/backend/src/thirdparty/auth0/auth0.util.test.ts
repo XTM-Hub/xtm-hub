@@ -1,6 +1,15 @@
 import { Management } from 'auth0';
-import { describe, expect, it } from 'vitest';
-import { buildUserMetadataUpdate, removeEmptyGroups } from './auth0.util';
+import { describe, expect, it, vi } from 'vitest';
+import { TestHelper } from '../../../tests/helper/test.helper';
+import {
+  buildEmailsQuery,
+  buildUserMetadataUpdate,
+  getRateLimitWaitMs,
+  groupAccountsByEmail,
+  isRateLimitError,
+  removeEmptyGroups,
+  withRateLimitRetry,
+} from './auth0.util';
 import { Auth0UpdateUserRBACInstance } from './client';
 
 describe('removeEmptyGroups', () => {
@@ -131,5 +140,102 @@ describe('buildUserMetadataUpdate', () => {
         },
       },
     });
+  });
+});
+
+const toManagementError = (headers: Record<string, string>) =>
+  TestHelper.auth0.managementError(429, headers);
+
+const rateLimitError = (resetInSeconds?: number) =>
+  toManagementError(
+    resetInSeconds === undefined
+      ? {}
+      : {
+          'x-ratelimit-reset': String(
+            Math.floor(Date.now() / 1000) + resetInSeconds
+          ),
+        }
+  );
+
+describe('buildEmailsQuery', () => {
+  it('should build an OR query and escape quotes and backslashes', () => {
+    expect(buildEmailsQuery(['a@x.io', 'b"c@x.io', 'd\\e@x.io'])).toBe(
+      'email:("a@x.io" OR "b\\"c@x.io" OR "d\\\\e@x.io")'
+    );
+  });
+});
+
+describe('groupAccountsByEmail', () => {
+  it('should group accounts by lowercased email and skip accounts without email', () => {
+    const accounts = [
+      { user_id: '1', email: 'A@x.io' },
+      { user_id: '2', email: 'a@x.io' },
+      { user_id: '3', email: 'b@x.io' },
+      { user_id: '4' },
+    ] as Management.UserResponseSchema[];
+
+    const result = groupAccountsByEmail(accounts);
+
+    expect([...result.keys()]).toEqual(['a@x.io', 'b@x.io']);
+    expect(result.get('a@x.io')).toMatchObject([
+      { user_id: '1' },
+      { user_id: '2' },
+    ]);
+    expect(result.get('b@x.io')).toMatchObject([{ user_id: '3' }]);
+  });
+});
+
+describe('rate limit handling', () => {
+  it('should detect a 429 error', () => {
+    expect(isRateLimitError(rateLimitError())).toBe(true);
+    expect(isRateLimitError(new Error('boom'))).toBe(false);
+    expect(isRateLimitError(undefined)).toBe(false);
+    expect(isRateLimitError(TestHelper.auth0.managementError(500))).toBe(false);
+  });
+
+  it('should wait until x-ratelimit-reset', () => {
+    const now = 1_000_000_000_000;
+    const error = toManagementError({
+      'x-ratelimit-reset': String(now / 1000 + 5),
+    });
+
+    expect(getRateLimitWaitMs(error, now)).toBe(5000);
+  });
+
+  it('should fall back to a default wait without header', () => {
+    expect(getRateLimitWaitMs(rateLimitError())).toBe(1000);
+  });
+
+  it('should retry after a 429 and return the result', async () => {
+    const sleep = vi.fn().mockResolvedValue(undefined);
+    const call = vi
+      .fn()
+      .mockRejectedValueOnce(rateLimitError(0))
+      .mockResolvedValueOnce('ok');
+
+    const result = await withRateLimitRetry(call, sleep);
+
+    expect(result).toBe('ok');
+    expect(call).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenCalledTimes(1);
+  });
+
+  it('should rethrow the 429 once retries are exhausted', async () => {
+    const sleep = vi.fn().mockResolvedValue(undefined);
+    const call = vi.fn().mockRejectedValue(rateLimitError(0));
+
+    await expect(withRateLimitRetry(call, sleep)).rejects.toMatchObject({
+      statusCode: 429,
+    });
+    expect(call).toHaveBeenCalledTimes(4);
+  });
+
+  it('should not retry other errors', async () => {
+    const sleep = vi.fn();
+    const call = vi.fn().mockRejectedValue(new Error('boom'));
+
+    await expect(withRateLimitRetry(call, sleep)).rejects.toThrow('boom');
+    expect(call).toHaveBeenCalledTimes(1);
+    expect(sleep).not.toHaveBeenCalled();
   });
 });
