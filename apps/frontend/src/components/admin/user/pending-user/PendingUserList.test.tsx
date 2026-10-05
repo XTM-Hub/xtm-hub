@@ -99,16 +99,6 @@ vi.mock('@filigran/icon', () => ({
   CloseIcon: () => <span aria-label="reject-icon">reject</span>,
 }));
 
-vi.mock('@filigran/ui/servers', () => ({
-  Button: ({
-    children,
-    onClick,
-  }: {
-    children: ReactNode;
-    onClick?: () => void;
-  }) => <button onClick={onClick}>{children}</button>,
-}));
-
 vi.mock('usehooks-ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('usehooks-ts')>()),
   useDebounceCallback: (

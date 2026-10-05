@@ -3,7 +3,7 @@
 import { useConsent } from '@/components/cookie-consent/CookieConsentProvider';
 import { COPILOT_SCRIPT_ID } from '@/components/external/Copilot';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
 import { useEffect } from 'react';
 
 const COPILOT_HOST_SELECTOR = `div#${COPILOT_SCRIPT_ID}`;
@@ -70,13 +70,13 @@ export const CookieConsentBanner = () => {
         <div className="flex flex-col gap-2 sm:shrink-0 sm:flex-row">
           <Button onClick={acceptAll}>{t('AcceptAll')}</Button>
           <Button
-            variant="secondary"
+            priority="secondary"
             className="text-primary"
             onClick={rejectAll}>
             {t('RejectAll')}
           </Button>
           <Button
-            variant="tertiary"
+            priority="tertiary"
             className="text-primary"
             onClick={openPreferences}>
             {t('CookieSettings')}

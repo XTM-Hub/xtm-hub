@@ -1,3 +1,4 @@
+import { Button } from '@filigran/design-system';
 import { OpenInNewIcon } from '@filigran/icon';
 import {
   Tooltip,
@@ -5,7 +6,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/ui/clients';
-import { Button } from '@filigran/ui/servers';
 import Link from 'next/link';
 
 interface ShareableResourceDetailsLinkProps {
@@ -20,8 +20,8 @@ export const ShareableResourceDetailsLink = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            className="p-0"
-            variant="link"
+            className="p-0 underline"
+            priority="tertiary"
             asChild>
             <Link
               href={url}

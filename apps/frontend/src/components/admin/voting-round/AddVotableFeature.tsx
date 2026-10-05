@@ -10,7 +10,8 @@ import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDi
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { requestGraphqlWithUploads } from '@/lib/graphql-upload-client';
-import { Button, toast } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
+import { toast } from '@filigran/ui';
 import {
   VotableFeatureCreateDocument,
   VotableFeatureCreateMutation,

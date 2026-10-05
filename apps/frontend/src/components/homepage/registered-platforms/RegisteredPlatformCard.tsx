@@ -62,7 +62,7 @@ const RegisteredPlatformCard = ({ platform }: RegisteredPlatformCardProps) => {
   );
   const gradientFrom = 'var(--color-filigran-brand-primary)';
   const gradientTo = 'var(--color-filigran-tonic-primary)';
-  const gradientBg = 'hsl(var(--background))';
+  const gradientBg = 'var(--background)';
   const customStyle = {
     '--gradient-from': gradientFrom,
     '--gradient-to': gradientTo,
@@ -151,7 +151,7 @@ const RegisteredPlatformCard = ({ platform }: RegisteredPlatformCardProps) => {
     <Link
       href={platform.href}
       prefetch={false}
-      className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      className="block rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
       {cardContent}
     </Link>
   ) : (

@@ -81,7 +81,7 @@ export const XtmoneConnectionStatus = ({
   const unavailable = !hasUrl || isError || !data;
 
   return (
-    <div className="flex flex-col divide-y divide-elevation-border-subtle-layer-1 overflow-hidden rounded-lg border border-elevation-border-subtle-layer-1">
+    <div className="flex flex-col divide-y divide-elevation-border-subtle-layer-1 overflow-hidden rounded border border-elevation-border-subtle-layer-1">
       <StatusRow
         label={`${t('XtmPlatformTrial.Products.Connection', {
           productName: PlatformMetadataMapping[PlatformIdentifier.Opencti].name,

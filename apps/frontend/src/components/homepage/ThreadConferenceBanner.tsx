@@ -13,7 +13,7 @@ const ThreadConferenceBanner = async () => {
       rel="noopener noreferrer"
       aria-label={t('ThreadConference.AriaLabel')}
       className="block z-10">
-      <div className="overflow-hidden rounded-lg bg-elevation-background-layer-1 dark:bg-black-1000">
+      <div className="overflow-hidden rounded bg-elevation-background-layer-1 dark:bg-black-1000">
         <div className="flex flex-col items-start gap-m sm:flex-row sm:items-stretch">
           <div
             className="w-full self-stretch bg-[url('/thread-bg-light.png')] bg-cover bg-center bg-no-repeat px-xl py-6 sm:w-[48%] md:w-[52%] dark:bg-[url('/thread-bg.png')]"

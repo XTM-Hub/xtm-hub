@@ -2,7 +2,7 @@
 import { TrialsManageUsersForm } from '@/components/service/trial-instances/manage-users/TrialsManageUsersForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
 import React, { useState } from 'react';
 
 interface TrialsManageUsersDialogProps {
@@ -28,7 +28,7 @@ export const TrialsManageUsersDialog = ({
       open={openSheet}
       trigger={
         trigger ?? (
-          <Button variant="secondary">
+          <Button priority="secondary">
             {t('Service.Trials.ManageUsers.Title')}
           </Button>
         )

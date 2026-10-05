@@ -4,8 +4,9 @@ import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { i18nKey } from '@/utils/datatable';
+import { IconButton } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
-import { Button, DataTable, SelectionState, toast } from '@filigran/ui';
+import { DataTable, SelectionState, toast } from '@filigran/ui';
 import {
   BundleUserServiceGroupsQuery,
   PlatformIdentifier,
@@ -238,14 +239,13 @@ export const ManageTrialTable = ({
               variantName="destructive"
               continueButtonDisabled={deletingUserId === row.original.id}
               triggerElement={
-                <Button
+                <IconButton
                   type="button"
-                  variant="tertiary"
-                  size="icon"
+                  priority="tertiary"
                   aria-label={t('Utils.Delete')}
-                  disabled={deletingUserId === row.original.id}>
-                  <DeleteIcon className="h-4 w-4" />
-                </Button>
+                  disabled={deletingUserId === row.original.id}
+                  icon={<DeleteIcon className="h-4 w-4" />}
+                />
               }
               onClickContinue={() => {
                 setDeletingUserId(row.original.id);

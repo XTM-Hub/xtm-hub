@@ -6,6 +6,8 @@ export const i18nKey = (
 ): Partial<DatatableI18nKey> => ({
   'Rows per page': t('Datatable.RowsPerPage'),
   'Manage columns visibility': t('Datatable.ManageColumnsVisibility'),
+  'Column options': t('Datatable.ColumnOptions'),
+  'Clear selection': t('Datatable.ClearSelection'),
   Asc: t('Datatable.Asc'),
   Desc: t('Datatable.Desc'),
   Hide: t('Datatable.Hide'),

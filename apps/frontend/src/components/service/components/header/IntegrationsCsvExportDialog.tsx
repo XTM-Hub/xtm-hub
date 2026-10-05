@@ -10,9 +10,9 @@ import { useSolutionCategories } from '@/components/service/form/UseSolutionCate
 import { availableIntegrationTypes } from '@/components/service/integrations/Integration.utils';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
 import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import {
   AutoForm,
-  Button,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -403,7 +403,7 @@ export const IntegrationsCsvExportDialog = ({
           <DialogFooter>
             <Button
               type="button"
-              variant="tertiary"
+              priority="tertiary"
               disabled={isExporting}
               onClick={resetAndClose}>
               {t('Utils.Cancel')}

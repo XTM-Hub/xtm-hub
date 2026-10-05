@@ -1,5 +1,6 @@
 import { useTranslate } from '@/hooks/use-translate';
-import { Button, SheetFooter } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
+import { SheetFooter } from '@filigran/ui';
 
 interface ServiceFormSheetFooterProps {
   handleCloseSheet: (e: React.MouseEvent<HTMLButtonElement>) => void;
@@ -13,13 +14,13 @@ export const ServiceFormSheetFooter = ({
     <SheetFooter className="sm:justify-between pt-2">
       <div className="ml-auto flex gap-s">
         <Button
-          variant="secondary"
+          priority="secondary"
           type="button"
           onClick={(e) => handleCloseSheet(e)}>
           {t('Utils.Cancel')}
         </Button>
 
-        <Button>{t('Utils.Validate')}</Button>
+        <Button type="submit">{t('Utils.Validate')}</Button>
       </div>
     </SheetFooter>
   );

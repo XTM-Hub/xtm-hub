@@ -11,13 +11,12 @@ import {
   PublicSubLink,
 } from '@/components/menu/navigation/shared/NavigationLinks';
 import { cn } from '@/lib/utils';
+import { buttonVariants, IconButton } from '@filigran/design-system';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-  Button,
-  buttonVariants,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -104,7 +103,7 @@ export const LinkedSection = ({
     <Link
       href={section.href ?? section.pathPrefix}
       className={cn(
-        buttonVariants({ variant: 'ghost' }),
+        buttonVariants({ priority: 'tertiary' }),
         'h-9 w-full justify-start rounded-none normal-case pl-5 font-normal',
         isActive ? NAVIGATION_ACTIVE_CLASSES : NAVIGATION_HOVER_CLASSES
       )}
@@ -137,17 +136,17 @@ export const ClosedSection = ({ section }: { section: SectionConfig }) => {
         asChild
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}>
-        <Button
-          variant="tertiary"
+        <IconButton
+          priority="tertiary"
           className={cn(
             'h-9 w-full justify-start rounded-none pl-5 cursor-pointer',
             currentPath.startsWith(section.pathPrefix)
               ? 'bg-primary/10 shadow-[inset_2px_0px] shadow-primary'
               : NAVIGATION_HOVER_CLASSES
           )}
-          aria-label={section.label}>
-          <MenuItemIcon icon={Icon} />
-        </Button>
+          aria-label={section.label}
+          icon={<MenuItemIcon icon={Icon} />}
+        />
       </PopoverTrigger>
       {section.links.length > 0 && (
         <PopoverContent

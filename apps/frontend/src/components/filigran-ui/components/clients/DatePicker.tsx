@@ -2,9 +2,9 @@
 import { format } from 'date-fns';
 
 import { cn } from '@/components/filigran-ui/lib/utils';
+import { Button } from '@filigran/design-system';
 import { CalendarViewMonthIcon } from '@filigran/icon';
 import { forwardRef } from 'react';
-import { Button } from '../servers';
 import { Calendar } from './Calendar';
 import { Popover, PopoverContent, PopoverTrigger } from './Popover';
 
@@ -24,7 +24,7 @@ export const DatePicker = forwardRef<
     <Popover>
       <PopoverTrigger asChild>
         <Button
-          variant={'outline'}
+          priority="secondary"
           className={cn(
             'w-full justify-start text-left font-normal normal-case',
             !date && 'text-muted-foreground'

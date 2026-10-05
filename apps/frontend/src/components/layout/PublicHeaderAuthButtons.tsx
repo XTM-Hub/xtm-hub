@@ -3,7 +3,8 @@
 import { useTranslate } from '@/hooks/use-translate';
 import { PUBLIC_FEATURE_VOTING_PATH } from '@/utils/path/constant';
 import { buildOidcRedirect, buildSignupRedirect } from '@/utils/redirect';
-import { Button } from '@filigran/ui/servers';
+
+import { Button } from '@filigran/design-system';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -18,7 +19,7 @@ export const PublicHeaderAuthButtons = () => {
     <>
       <Button
         asChild
-        variant="secondary">
+        priority="secondary">
         <Link
           href={buildOidcRedirect(redirectTarget)}
           prefetch={false}>
