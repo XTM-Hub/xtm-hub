@@ -383,6 +383,24 @@ describe('integrationCoverageHelper', () => {
       );
     });
 
+    it('should keep inferring an empty coverage even when the admin confirms it', () => {
+      // Given
+      const existing = makeCoverage({ inferred: true });
+
+      // When
+      const coverage = IntegrationCoverageHelper.resolveAdminCoverage({
+        input: { object_types: [], sectors: [], regions: [] },
+        existing,
+        inferenceSource: MALWARE_SOURCE,
+        confirmed: true,
+      });
+
+      // Then
+      expect(coverage).toEqual(
+        makeCoverage({ object_types: [MALWARE], inferred: true })
+      );
+    });
+
     it('should declare the coverage when the admin edits inferred values', () => {
       // Given
       const existing = makeCoverage({

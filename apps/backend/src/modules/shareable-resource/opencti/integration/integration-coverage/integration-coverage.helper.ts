@@ -260,7 +260,8 @@ export const IntegrationCoverageHelper = {
    * Admin form semantics: an omitted list keeps its stored value, declared or
    * inferred, clearing every list returns to inference, and submitting the
    * inferred values unchanged keeps the coverage inferred unless `confirmed`
-   * declares it.
+   * declares it. An empty coverage is never declared, confirmed or not: a
+   * declaration without values would be replaced by inference on the next update.
    */
   resolveAdminCoverage: ({
     input,
