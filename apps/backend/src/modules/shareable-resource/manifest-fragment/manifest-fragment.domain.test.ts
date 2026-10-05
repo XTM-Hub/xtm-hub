@@ -841,58 +841,63 @@ describe('manifestFragmentDomain', () => {
   });
 
   describe('ingestManifestFragment concurrency', () => {
-    // A session waiting on the advisory lock of the slug, as the database reports it
-    const waitForWaitingSlugLock = async (slug: string): Promise<void> => {
-      for (let attempt = 0; attempt < 500; attempt += 1) {
-        const { rows } = await database.raw(
-          `SELECT count(*)::int AS count
-           FROM pg_locks
-           WHERE locktype = 'advisory'
-             AND classid = hashtext(?)::int
-             AND objid = hashtext(?)::int
-             AND granted = false`,
-          [CONNECTOR_SLUG_LOCK_NAMESPACE, slug]
-        );
-        if (rows[0].count > 0) {
-          return;
-        }
-        await new Promise((resolve) => setTimeout(resolve, 10));
-      }
-      throw new Error(`No ingestion waited on the lock of '${slug}'`);
+    // Sessions waiting on the advisory lock of the slug, as the database reports them
+    const countSlugLockWaiters = async (slug: string): Promise<number> => {
+      const { rows } = await database.raw(
+        `SELECT count(*)::int AS count
+         FROM pg_locks
+         WHERE locktype = 'advisory'
+           AND classid = hashtext(?)::int
+           AND objid = hashtext(?)::int
+           AND granted = false`,
+        [CONNECTOR_SLUG_LOCK_NAMESPACE, slug]
+      );
+      return rows[0].count;
     };
+    const SLUG_LOCK_WAIT_TIMEOUT_MS = 20_000;
 
-    it('waits for the ingestion lock of its slug even when the connector family has no row yet', async () => {
-      // Given: another ingestion of the same brand-new family holds the slug lock
-      const slug = 'misp-coverage-serialized';
-      const fragment = buildManifestFragment(ManifestType.Connector, {
-        slug,
-        id: 'coverage-serialized',
-      });
-      let settled = false;
-      let ingestion: Promise<void> | undefined;
-
-      // When
-      await database.transaction(async (trx) => {
-        await trx.raw(
-          'SELECT pg_advisory_xact_lock(hashtext(?), hashtext(?))',
-          [CONNECTOR_SLUG_LOCK_NAMESPACE, slug]
-        );
-        ingestion = ManifestFragmentDomain.ingestManifestFragment(
-          fragment
-        ).finally(() => {
-          settled = true;
+    it(
+      'waits for the ingestion lock of its slug even when the connector family has no row yet',
+      async () => {
+        // Given: another ingestion of the same brand-new family holds the slug lock
+        const slug = 'misp-coverage-serialized';
+        const fragment = buildManifestFragment(ManifestType.Connector, {
+          slug,
+          id: 'coverage-serialized',
         });
+        let settled = false;
+        let ingestion: Promise<void> | undefined;
 
-        // Then: the ingestion waits on the slug lock before reading the family
-        await waitForWaitingSlugLock(slug);
-        expect(settled).toBe(false);
-      });
-      await ingestion;
-      expect(settled).toBe(true);
-      const createdDocument = await TestHelper.document.load({ slug });
-      expect(createdDocument).toBeDefined();
-      _createdDocumentIds.push(createdDocument!.id);
-    });
+        // When
+        await database.transaction(async (trx) => {
+          await trx.raw(
+            'SELECT pg_advisory_xact_lock(hashtext(?), hashtext(?))',
+            [CONNECTOR_SLUG_LOCK_NAMESPACE, slug]
+          );
+          ingestion = ManifestFragmentDomain.ingestManifestFragment(
+            fragment
+          ).finally(() => {
+            settled = true;
+          });
+
+          // Then: the ingestion waits on the slug lock before reading the family
+          await expect
+            .poll(() => countSlugLockWaiters(slug), {
+              interval: 10,
+              timeout: SLUG_LOCK_WAIT_TIMEOUT_MS,
+              message: `an ingestion waits on the lock of '${slug}'`,
+            })
+            .toBeGreaterThan(0);
+          expect(settled).toBe(false);
+        });
+        await ingestion;
+        expect(settled).toBe(true);
+        const createdDocument = await TestHelper.document.load({ slug });
+        expect(createdDocument).toBeDefined();
+        _createdDocumentIds.push(createdDocument!.id);
+      },
+      SLUG_LOCK_WAIT_TIMEOUT_MS * 2
+    );
 
     it('rejects one of two concurrent ingestions of the very first version of a brand-new connector', async () => {
       // Given: no existing rows to lock, so the DB unique constraint is the backstop
