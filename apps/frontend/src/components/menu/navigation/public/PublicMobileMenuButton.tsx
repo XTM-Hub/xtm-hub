@@ -2,10 +2,9 @@
 
 import PublicNavigation from '@/components/menu/navigation/public/PublicNavigation';
 import { useTranslate } from '@/hooks/use-translate';
-import { CloseIcon, MenuIcon } from '@filigran/icon';
+import { MenuIcon } from '@filigran/icon';
 import {
   Sheet,
-  SheetClose,
   SheetContent,
   SheetHeader,
   SheetTitle,
@@ -43,8 +42,9 @@ export const PublicMobileMenuButton = ({
       </SheetTrigger>
       <SheetContent
         side="left"
+        closeLabel={t('Header.CloseMenu')}
         className="bg-gradient-background">
-        <SheetHeader className="flex flex-row justify-between pl-l bg-gradient-background border-elevation-border-strong">
+        <SheetHeader className="flex flex-row pl-l bg-gradient-background border-elevation-border-strong">
           <div className="flex items-center gap-s">
             <Logo
               className="h-8 w-8"
@@ -52,14 +52,6 @@ export const PublicMobileMenuButton = ({
             />
             <SheetTitle>{t('Header.BrandName')}</SheetTitle>
           </div>
-          <SheetClose>
-            <CloseIcon
-              aria-hidden={true}
-              focusable={false}
-              className="h-4 w-4 mr-xl"
-            />
-            <span className="sr-only">{t('Header.CloseMenu')}</span>
-          </SheetClose>
         </SheetHeader>
         <div
           onClick={(e) => {
