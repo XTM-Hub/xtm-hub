@@ -1,5 +1,5 @@
 import testRender from '@/utils/test/test-render';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -61,6 +61,32 @@ describe('PublicMobileMenuButton', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Header.BrandName')).toBeInTheDocument();
+    });
+  });
+
+  it('renders a single close button that closes the sheet', async () => {
+    const user = userEvent.setup();
+    testRender(<PublicMobileMenuButton visibleServiceSlugs={[]} />);
+
+    await user.click(
+      screen.getByText('Header.OpenMenu').closest('button') ??
+        screen.getByText('Header.OpenMenu')
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('public-navigation')).toBeInTheDocument();
+    });
+
+    const dialogButtons = within(screen.getByRole('dialog')).getAllByRole(
+      'button'
+    );
+    expect(dialogButtons).toHaveLength(1);
+    expect(dialogButtons[0]).toHaveAccessibleName('Header.CloseMenu');
+
+    await user.click(dialogButtons[0]);
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('public-navigation')).not.toBeInTheDocument();
     });
   });
 
