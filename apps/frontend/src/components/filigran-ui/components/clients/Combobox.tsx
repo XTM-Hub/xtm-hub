@@ -86,18 +86,16 @@ const Combobox = <T,>({
           role="combobox"
           aria-expanded={open}
           className={cn(
-            'normal-case flex w-full min-w-0 justify-between bg-input-bg-default border-none',
+            'normal-case w-full justify-between bg-input-bg-default border-none',
             className
           )}
           onClick={() => handleOpenChange(!open)}>
-          <span className="min-w-0 flex-1 truncate text-left">
-            {value ? (
-              String(value[keyLabel as keyof T])
-            ) : (
-              <span className="text-muted-foreground">{order}</span>
-            )}
-          </span>
-          <div className="ml-auto flex shrink-0 items-center gap-s">
+          {value ? (
+            String(value[keyLabel as keyof T])
+          ) : (
+            <span className="text-muted-foreground">{order}</span>
+          )}
+          <div className="flex items-center gap-s">
             {value && (
               <CloseIcon
                 className="h-2.5 w-2.5 cursor-pointer text-muted-foreground"
