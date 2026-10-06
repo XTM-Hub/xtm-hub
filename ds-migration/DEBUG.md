@@ -28,6 +28,7 @@ Read only, and in parallel where possible.
   | File | What it holds |
   | --- | --- |
   | `<key>-spec.json`, `<key>.json` | Spec and build sessions: `.structured_output` (status, summary, question), `.result` (the session's last message), `.total_cost_usd` |
+  | `<key>-spec.jsonl`, `<key>.jsonl` | The same sessions event by event: every message, tool call and tool result, subagents included. Search it rather than reading it whole |
   | `<key>-spec.stderr`, `<key>.stderr` | Crashes and timeouts |
   | `<key>-before.log` | The before screenshots taken by the script |
   | `<key>-validate.log` | The script's validation, in this order: lint, format, i18n, types, tests, `validate.mjs`, after screenshots. The last command that ran is the one that failed |

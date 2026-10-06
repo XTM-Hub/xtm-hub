@@ -300,13 +300,28 @@ Bash(yarn workspace @xtm-hub/frontend lint:*),Bash(yarn workspace @xtm-hub/front
 Bash(yarn workspace @xtm-hub/frontend check-ts:*),Bash(yarn workspace @xtm-hub/frontend test:*),\
 Bash(yarn workspace @xtm-hub/frontend i18n:check:*),Bash(node ds-migration/validate.mjs:*)"
 
-# Runs one session and prints its structured output, or nothing. <log name> <prompt> <schema> <tools>
+# One line per tool call and per message of a streamed session, so the run can be followed live.
+# Calls made by a subagent are indented. Raw lines and fromjson? keep a stray line from stopping
+# jq, which would break the pipe and kill the session.
+PROGRESS_FILTER='fromjson? | select(.type == "assistant") | (.parent_tool_use_id != null) as $sub | .message.content[]?
+  | if .type == "tool_use" and .name != "StructuredOutput" then
+      (if $sub then "    " else "  " end) + .name + " "
+        + ((.input.command // .input.file_path // .input.pattern // .input.skill // .input.description // "")
+           | tostring | gsub("\\s+"; " ") | .[0:140])
+    elif .type == "text" and ($sub | not) then "  > " + (.text | gsub("\\s+"; " ") | .[0:200])
+    else empty end'
+
+# Runs one session and prints its structured output, or nothing. Its progress goes to the
+# terminal and run.log as it happens, the whole stream to <log name>.jsonl, the result event to
+# <log name>.json. <log name> <prompt> <schema> <tools>
 claude_session() {
-  local out="$LOG_DIR/$1.json"
+  local out="$LOG_DIR/$1.json" stream="$LOG_DIR/$1.jsonl" line
   ${TIMEOUT_BIN:+"$TIMEOUT_BIN" "$ITEM_TIMEOUT"} claude -p "$2" \
-    --output-format json --json-schema "$3" --permission-mode dontAsk --allowedTools "$4" \
-    ${DS_BUDGET_USD:+--max-budget-usd "$DS_BUDGET_USD"} --no-session-persistence \
-    >"$out" 2>>"$LOG_DIR/$1.stderr" || true
+    --output-format stream-json --verbose --json-schema "$3" --permission-mode dontAsk --allowedTools "$4" \
+    ${DS_BUDGET_USD:+--max-budget-usd "$DS_BUDGET_USD"} --no-session-persistence 2>>"$LOG_DIR/$1.stderr" |
+    tee "$stream" | jq -rR --unbuffered "$PROGRESS_FILTER" 2>/dev/null |
+    while IFS= read -r line; do log "$1 $line"; done || true
+  jq -cR 'fromjson? | select(.type == "result")' "$stream" 2>/dev/null | tail -n 1 >"$out" || true
   log "$1: session cost \$$(jq -r '.total_cost_usd // "?"' "$out" 2>/dev/null || echo '?')"
   jq -c '.structured_output // empty' "$out" 2>/dev/null || true
 }

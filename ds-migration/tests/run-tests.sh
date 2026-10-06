@@ -56,9 +56,9 @@ echo "claude :: $prompt" >> "$SB/calls.log"
 if [[ "$prompt" == *"Sync fix mode"* ]]; then
   grep -rl "import { Textarea } from '@filigran/ui';" apps/frontend/src | while read -r f; do
     sed -i '' "s#import { Textarea } from '@filigran/ui';#import { Textarea } from '@filigran/design-system';#" "$f"; done
-  echo '{"structured_output":{"status":"DONE","summary":"Moved new usages.","commit_subject":"","commit_body":""}}'; exit 0
+  echo '{"type":"result","structured_output":{"status":"DONE","summary":"Moved new usages.","commit_subject":"","commit_body":""}}'; exit 0
 fi
-if [[ "$prompt" == *"Epic review mode"* ]]; then echo '{"structured_output":{"findings":"Verdict: consistent."}}'; exit 0; fi
+if [[ "$prompt" == *"Epic review mode"* ]]; then echo '{"type":"result","structured_output":{"findings":"Verdict: consistent."}}'; exit 0; fi
 key="$(sed -E 's/.*for item ([a-z0-9-]+) .*/\1/' <<<"$prompt")"; kind="$(sed -E 's/.*kind ([a-z]+)\).*/\1/' <<<"$prompt")"
 issue="${key%%-*}"; slug="${key#*-}"; mkdir -p ds-migration/specs
 if [[ "$prompt" == *"Spec mode"* ]]; then
@@ -66,19 +66,21 @@ if [[ "$prompt" == *"Spec mode"* ]]; then
   [ "$key" = 3561-textarea ] && legacy="[Textarea]"
   printf -- '---\nkey: %s\nkind: %s\nlegacy_symbols: %s\ntarget_module: %s\ntarget_symbols: []\nlegacy_files_to_delete: []\n---\n# %s\n\n## To validate\n\n- kept the current spacing\n' "$key" "$kind" "$legacy" "$module" "$slug" > "ds-migration/specs/$key.md"
   [[ " ${CLAUDE_SPEC_DIRTY:-} " == *" $key "* ]] && echo early > "apps/frontend/src/$slug.early.ts"
-  echo '{"structured_output":{"status":"DONE","summary":"Spec written."}}'; exit 0
+  echo '{"type":"result","structured_output":{"status":"DONE","summary":"Spec written."}}'; exit 0
 fi
 if [[ " ${CLAUDE_BLOCK:-} " == *" $key "* ]]; then
   echo half > "apps/frontend/src/$slug.wip.ts"
-  echo '{"structured_output":{"status":"NEEDS_HUMAN","summary":"Undecidable.","commit_subject":"","commit_body":"","question":"Which option?"}}'; exit 0
+  echo '{"type":"result","structured_output":{"status":"NEEDS_HUMAN","summary":"Undecidable.","commit_subject":"","commit_body":"","question":"Which option?"}}'; exit 0
 fi
 if [[ "$prompt" == *"CI fix"* ]]; then
   echo "// fix" >> "apps/frontend/src/$slug.ts"
-  echo "{\"structured_output\":{\"status\":\"DONE\",\"summary\":\"fixed\",\"commit_subject\":\"fix(frontend): repair $slug (#$issue)\",\"commit_body\":\"Fix.\"}}"; exit 0
+  echo "{\"type\":\"result\",\"structured_output\":{\"status\":\"DONE\",\"summary\":\"fixed\",\"commit_subject\":\"fix(frontend): repair $slug (#$issue)\",\"commit_body\":\"Fix.\"}}"; exit 0
 fi
 [ "$key" = 3561-textarea ] && sed -i '' "s#import { Textarea } from '@filigran/ui';#import { Textarea } from '@filigran/design-system';#" apps/frontend/src/Form.tsx
+echo "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"tool_use\",\"name\":\"Agent\",\"input\":{\"description\":\"Implement $key\"}}]}}"
+echo "not json"
 echo "export const v_$(echo "$slug" | tr - _) = 1;" > "apps/frontend/src/$slug.ts"
-echo "{\"structured_output\":{\"status\":\"DONE\",\"summary\":\"ok\",\"commit_subject\":\"invalid\",\"commit_body\":\"Migrate $slug.\\nCo-Authored-By: x <y@z>\"}}"
+echo "{\"type\":\"result\",\"structured_output\":{\"status\":\"DONE\",\"summary\":\"ok\",\"commit_subject\":\"invalid\",\"commit_body\":\"Migrate $slug.\\nCo-Authored-By: x <y@z>\"}}"
 EOF
   chmod +x "$bin/"*
 }
@@ -136,6 +138,7 @@ check "debug opens an interactive session on the item" 'grep -q "^claude-interac
 check "default subject used for an invalid one" 'git log --format=%s | grep -qx "feat(frontend): migrate Textarea to @filigran/design-system (#3561)"'
 check "no AI trailer in commits" '! git log --format=%B | grep -qi "co-authored-by"'
 check "screens captured between the spec and the build" '[ "$(grep -oE "Spec mode for item 3561|screenshot before ds-migration/specs/3561|Build mode for item 3561" "$SB/calls.log" | cut -d" " -f1 | paste -sd, -)" = "Spec,screenshot,Build" ]'
+check "session progress shown live in the run log" 'grep -q "3561-textarea   Agent Implement 3561-textarea" "$(git rev-parse --git-dir)/ds-migration/run.log" && [ -s "$(git rev-parse --git-dir)/ds-migration/3561-textarea.jsonl" ]'
 check "after screenshots part of the validation" 'grep -q "^screenshot after ds-migration/specs/3561-textarea.md" "$SB/calls.log"'
 check "done item announced on the PR" 'grep -qx "Component Textarea done. Issue #3561" "$SB/pr-comments.log"'
 approve epic-1-primitives; run
