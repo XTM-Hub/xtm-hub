@@ -4,9 +4,9 @@ import { portalGraphqlClient } from '@/lib/graphql-client';
 import { compareVersions } from '@/utils/versioning';
 import {
   PlatformIdentifier,
-  useRegisteredProductVersionsListQuery,
+  useIntegrationProductVersionFilterQuery,
 } from '@graphql/generated';
-import { registeredProductVersionsKeys } from '@graphql/manage-product-version/registered-product-versions.keys';
+import { integrationProductVersionFilterKeys } from '@graphql/manage-product-version/integration-product-version-filter.keys';
 import { useMemo } from 'react';
 
 const EMPTY_VERSIONS: string[] = [];
@@ -41,10 +41,10 @@ export const useRegisteredProductVersions = (
   const trimmedSearch = search.trim();
 
   const variables = { product, search: trimmedSearch || null };
-  const { data } = useRegisteredProductVersionsListQuery(
+  const { data } = useIntegrationProductVersionFilterQuery(
     portalGraphqlClient,
     variables,
-    { queryKey: registeredProductVersionsKeys.list(variables) }
+    { queryKey: integrationProductVersionFilterKeys.list(variables) }
   );
   // Already ordered by version_padded desc (newest first) and capped to 5 on the backend.
   const latestVersions = useMemo(

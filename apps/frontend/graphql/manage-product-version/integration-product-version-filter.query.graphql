@@ -1,4 +1,4 @@
-query RegisteredProductVersionsList(
+query IntegrationProductVersionFilter(
   $product: PlatformIdentifier!
   $search: String
 ) {

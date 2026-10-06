@@ -4,12 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useRegisteredProductVersions } from './use-registered-product-versions';
 
 const graphqlMocks = vi.hoisted(() => ({
-  useRegisteredProductVersionsListQuery: Object.assign(vi.fn(), {
+  useIntegrationProductVersionFilterQuery: Object.assign(vi.fn(), {
     getKey: vi.fn((variables: unknown) => [
-      'RegisteredProductVersionsList',
+      'IntegrationProductVersionFilter',
       variables,
     ]),
-    getRootKey: vi.fn(() => ['RegisteredProductVersionsList']),
+    getRootKey: vi.fn(() => ['IntegrationProductVersionFilter']),
   }),
 }));
 
@@ -18,8 +18,8 @@ vi.mock('@graphql/generated', async (importOriginal) => {
 
   return {
     ...actual,
-    useRegisteredProductVersionsListQuery:
-      graphqlMocks.useRegisteredProductVersionsListQuery,
+    useIntegrationProductVersionFilterQuery:
+      graphqlMocks.useIntegrationProductVersionFilterQuery,
   };
 });
 
@@ -28,7 +28,7 @@ vi.mock('@/lib/graphql-client', () => ({
 }));
 
 const mockLatestVersions = (versions: string[]) => {
-  graphqlMocks.useRegisteredProductVersionsListQuery.mockReturnValue({
+  graphqlMocks.useIntegrationProductVersionFilterQuery.mockReturnValue({
     data: {
       registeredProductVersions: versions.map((version) => ({ version })),
     },
