@@ -5,6 +5,13 @@ import { RolePortalDomain } from './role-portal.domain';
 
 const rolePortalResolver: Resolvers = {
   Query: {
+    rolePortals: async () => {
+      try {
+        return await RolePortalDomain.loadRolePortals();
+      } catch (error) {
+        throw mapToGraphQLError(error);
+      }
+    },
     ssoGroupRolePortals: async () => {
       try {
         return await RolePortalDomain.loadSSOGroupRolePortals();

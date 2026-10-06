@@ -25,6 +25,7 @@ input DeleteSSOGroupRolePortalInput {
 }
 
 extend type Query {
+    rolePortals: [RolePortal!]! @auth(portalCapa: BYPASS)
     ssoGroupRolePortals: [SSOGroupRolePortal!]! @auth(portalCapa: BYPASS)
 }
 

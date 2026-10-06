@@ -136,6 +136,61 @@ describe('role portal domain tests', () => {
     });
   });
 
+  describe('loadRolePortals', () => {
+    let jugglerId: RolePortalId;
+    let tamerId: RolePortalId;
+
+    beforeEach(async () => {
+      const juggler = await TestHelper.rolePortal.create({
+        name: 'TOMATO_JUGGLER',
+      });
+      const tamer = await TestHelper.rolePortal.create({
+        name: 'DRAGON_TAMER',
+      });
+      jugglerId = juggler.id;
+      tamerId = tamer.id;
+
+      await TestHelper.rolePortal_CapabilityPortal.create({
+        role_portal_id: jugglerId,
+        capability_portal_id: CAPABILITY_BYPASS.id,
+      });
+    });
+
+    afterEach(async () => {
+      await TestHelper.rolePortal_CapabilityPortal.delete({
+        role_portal_id: jugglerId,
+      });
+      await TestHelper.rolePortal.delete({ id: jugglerId });
+      await TestHelper.rolePortal.delete({ id: tamerId });
+    });
+
+    it('should return each role with its capabilities, even without SSO group', async () => {
+      const result = await RolePortalDomain.loadRolePortals();
+
+      expect(result).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: jugglerId,
+            name: 'TOMATO_JUGGLER',
+            capabilities: [expect.objectContaining(CAPABILITY_BYPASS)],
+          }),
+          expect.objectContaining({
+            id: tamerId,
+            name: 'DRAGON_TAMER',
+            capabilities: [],
+          }),
+        ])
+      );
+    });
+
+    it('should return roles sorted by name', async () => {
+      const result = await RolePortalDomain.loadRolePortals();
+
+      const names = result.map(({ name }) => name);
+      expect(names).toEqual([...names].sort());
+    });
+  });
+
   describe('assignRoleByName', () => {
     const testUserIds: string[] = [];
     const testRolePortalIds: string[] = [];

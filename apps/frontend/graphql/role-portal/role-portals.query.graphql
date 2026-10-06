@@ -1,0 +1,10 @@
+query RolePortals {
+  rolePortals {
+    id
+    name
+    capabilities {
+      id
+      name
+    }
+  }
+}

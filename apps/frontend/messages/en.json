@@ -547,6 +547,7 @@
   },
   "RoleListPage": {
     "SsoGroup": "SSO group",
+    "SsoGroups": "SSO groups",
     "Role": "Role",
     "Capabilities": "Capabilities",
     "AddMapping": "Add SSO Group",

@@ -179,6 +179,34 @@ export const RolePortalDomain = {
     );
   },
 
+  loadRolePortals: async (): Promise<
+    (RolePortal & { capabilities: Capability[] })[]
+  > => {
+    return db<RolePortal>('RolePortal')
+      .leftJoin(
+        'RolePortal_CapabilityPortal as rolePortal_CapabilityPortal',
+        'RolePortal.id',
+        'rolePortal_CapabilityPortal.role_portal_id'
+      )
+      .leftJoin(
+        'CapabilityPortal as capability',
+        'capability.id',
+        'rolePortal_CapabilityPortal.capability_portal_id'
+      )
+      .groupBy('RolePortal.id')
+      .orderBy('RolePortal.name')
+      .select<(RolePortal & { capabilities: Capability[] })[]>(
+        'RolePortal.*',
+        dbRaw(
+          formatRawAggObject({
+            columnName: 'capability',
+            typename: 'CapabilityPortal',
+            as: 'capabilities',
+          })
+        )
+      );
+  },
+
   loadSSOGroupRolePortals: async (
     filter: { ssoGroup?: string; rolePortalName?: string } = {}
   ): Promise<SsoGroupRolePortal[]> => {
@@ -201,24 +229,10 @@ export const RolePortalDomain = {
         'RolePortal.id',
         'rolePortal_CapabilityPortal.role_portal_id'
       )
-      .leftJoin(
-        'CapabilityPortal as capability',
-        'capability.id',
-        'rolePortal_CapabilityPortal.capability_portal_id'
-      )
       .groupBy('RolePortal.id', 'SSOGroup_RolePortal.SSOGroup')
-      .select<
-        (RolePortal & { ssoGroup: string; capabilities: Capability[] })[]
-      >(
+      .select<(RolePortal & { ssoGroup: string })[]>(
         'RolePortal.*',
-        'SSOGroup_RolePortal.SSOGroup as ssoGroup',
-        dbRaw(
-          formatRawAggObject({
-            columnName: 'capability',
-            typename: 'CapabilityPortal',
-            as: 'capabilities',
-          })
-        )
+        'SSOGroup_RolePortal.SSOGroup as ssoGroup'
       );
     return rows.map(({ ssoGroup, ...rolePortal }) => ({
       ssoGroup,

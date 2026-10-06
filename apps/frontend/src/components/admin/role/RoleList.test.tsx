@@ -11,7 +11,7 @@ import {
 import { screen } from '@testing-library/react';
 
 describe('RoleList', () => {
-  it('should render SSO groups with their role and capabilities', async () => {
+  it('should render SSO groups with their role in the default tab', async () => {
     const mockedResponse: SsoGroupRolePortalsQuery = {
       ssoGroupRolePortals: [
         mockSsoGroupRolePortal({
@@ -51,7 +51,13 @@ describe('RoleList', () => {
       screen.getByRole('heading', { name: 'MenuLinks.Roles' })
     ).toBeInTheDocument();
     expect(
-      await screen.findByRole('row', { name: /xtmhub-admins.*Admin.*BYPASS/ })
+      screen.getByRole('tab', { name: 'RoleListPage.SsoGroups' })
+    ).toHaveAttribute('aria-selected', 'true');
+    expect(
+      screen.getByRole('tab', { name: 'RoleListPage.Capabilities' })
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole('row', { name: /xtmhub-admins.*Admin/ })
     ).toBeInTheDocument();
     expect(
       await screen.findByRole('row', { name: /xtmhub-users.*User/ })

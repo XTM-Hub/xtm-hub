@@ -29,6 +29,53 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+describe('rolePortals GraphQL query', () => {
+  it('should delegate to RolePortalDomain.loadRolePortals and return result', async () => {
+    // Given
+    const rolePortal = {
+      ...ROLE_ADMIN,
+      capabilities: [CAPABILITY_BYPASS],
+    } as Awaited<ReturnType<typeof RolePortalDomain.loadRolePortals>>[number];
+    vi.spyOn(RolePortalDomain, 'loadRolePortals').mockResolvedValue([
+      rolePortal,
+    ]);
+
+    // When
+    const result = await rolePortalResolver.Query!.rolePortals!(
+      {},
+      {},
+      contextSimpleUserFiligran2,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    // Then
+    expect(RolePortalDomain.loadRolePortals).toHaveBeenCalledWith();
+    expect(result).toEqual([rolePortal]);
+  });
+
+  it('should map errors with mapToGraphQLError', async () => {
+    // Given
+    const error = new Error('boom');
+    vi.spyOn(RolePortalDomain, 'loadRolePortals').mockRejectedValue(error);
+    const mappedError = new GraphQLError('mapped error');
+    const mapToGraphQLErrorSpy = vi
+      .spyOn(errorMapping, 'mapToGraphQLError')
+      .mockReturnValue(mappedError);
+
+    // When
+    const result = rolePortalResolver.Query!.rolePortals!(
+      {},
+      {},
+      contextSimpleUserFiligran2,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    // Then
+    await expect(result).rejects.toBe(mappedError);
+    expect(mapToGraphQLErrorSpy).toHaveBeenCalledWith(error);
+  });
+});
+
 describe('ssoGroupRolePortals GraphQL query', () => {
   it('should delegate to RolePortalDomain.loadSSOGroupRolePortals and return result', async () => {
     // Given

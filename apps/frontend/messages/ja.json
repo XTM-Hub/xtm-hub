@@ -547,6 +547,7 @@
   },
   "RoleListPage": {
     "SsoGroup": "SSOグループ",
+    "SsoGroups": "SSOグループ",
     "Role": "ロール",
     "Capabilities": "ケイパビリティ",
     "AddMapping": "SSOグループを追加",

@@ -249,6 +249,21 @@ export const TestUserHelper = {
     },
   },
   rolePortal_CapabilityPortal: {
+    create: async (
+      data: RolePortalCapabilityPortalMutator
+    ): Promise<RolePortalCapabilityPortal | undefined> => {
+      const [rolePortalCapabilityPortal] = await db<RolePortalCapabilityPortal>(
+        'RolePortal_CapabilityPortal'
+      )
+        .insert(data)
+        .returning('*');
+      return rolePortalCapabilityPortal;
+    },
+    delete: async (field: RolePortalCapabilityPortalMutator) => {
+      await db<RolePortalCapabilityPortal>('RolePortal_CapabilityPortal')
+        .where(field)
+        .del();
+    },
     loadAll: async (
       field: RolePortalCapabilityPortalMutator
     ): Promise<RolePortalCapabilityPortal[]> => {
