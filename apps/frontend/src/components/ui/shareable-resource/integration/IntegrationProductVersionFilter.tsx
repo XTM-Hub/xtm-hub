@@ -4,7 +4,13 @@ import {
   useServiceListLocalStorage,
 } from '@/hooks/use-service-list-local-storage';
 import { useTranslate } from '@/hooks/use-translate';
-import { Combobox } from '@filigran/ui/clients';
+import {
+  Combobox,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/ui/clients';
 import { PlatformIdentifier } from '@graphql/generated';
 import { Link2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -14,17 +20,25 @@ interface ProductVersionOption {
   label: string;
 }
 
-const EMPTY_VERSIONS: string[] = [];
+const EMPTY_INSTANCES_BY_VERSION: Record<string, string[]> = {};
 
 interface IntegrationProductVersionFilterProps {
-  registeredVersions?: string[];
+  /**
+   * Names of the OpenCTI instances the organization has registered, by
+   * version (several instances can share one version). Private pages only.
+   */
+  registeredInstancesByVersion?: Record<string, string[]>;
 }
 
 export const IntegrationProductVersionFilter = ({
-  registeredVersions = EMPTY_VERSIONS,
+  registeredInstancesByVersion = EMPTY_INSTANCES_BY_VERSION,
 }: IntegrationProductVersionFilterProps = {}) => {
   const t = useTranslate();
   const [search, setSearch] = useState('');
+  const registeredVersions = useMemo(
+    () => Object.keys(registeredInstancesByVersion),
+    [registeredInstancesByVersion]
+  );
 
   const { productVersions, setProductVersions } = useServiceListLocalStorage(
     ServiceListLocalStorageKey.OpenCTIIntegrationFeeds
@@ -76,17 +90,37 @@ export const IntegrationProductVersionFilter = ({
       onValueChange={handleValueChange}
       onInputChange={setSearch}
       onOpenChange={handleOpenChange}
-      renderItemAdornment={(option) =>
-        registeredVersions.includes(option.value) && (
-          <Link2
-            role="img"
-            aria-label={t(
-              'Service.OpenctiIntegrations.Filter.ProductVersion.RegisteredTooltip'
-            )}
-            className="h-4 w-4 shrink-0 text-primary"
-          />
-        )
-      }
+      renderItemAdornment={(option) => {
+        const instances = registeredInstancesByVersion[option.value];
+        if (!instances?.length) return null;
+        const connectedProduct = (name: string) =>
+          t(
+            'Service.OpenctiIntegrations.Filter.ProductVersion.RegisteredTooltip',
+            { name }
+          );
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex shrink-0">
+                  <Link2
+                    role="img"
+                    aria-label={connectedProduct(instances.join(', '))}
+                    className="h-4 w-4 text-primary"
+                  />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                {instances.map((instance, index) => (
+                  <p key={`${instance}-${index}`}>
+                    {connectedProduct(instance)}
+                  </p>
+                ))}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      }}
     />
   );
 };

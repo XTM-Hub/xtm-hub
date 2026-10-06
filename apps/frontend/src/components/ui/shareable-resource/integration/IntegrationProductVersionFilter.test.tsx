@@ -1,5 +1,6 @@
 import testRender from '@/utils/test/test-render';
 import { screen } from '@testing-library/react';
+import { useTranslations } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { IntegrationProductVersionFilter } from './IntegrationProductVersionFilter';
 
@@ -37,7 +38,11 @@ describe('IntegrationProductVersionFilter', () => {
 
   it('renders the known OpenCTI versions as combobox options once opened', async () => {
     const { user } = testRender(
-      <IntegrationProductVersionFilter registeredVersions={['6.5.0']} />
+      <IntegrationProductVersionFilter
+        registeredInstancesByVersion={{
+          '6.5.0': ['Prod OpenCTI', 'Staging OpenCTI'],
+        }}
+      />
     );
 
     expect(screen.getByText(PLACEHOLDER)).toBeInTheDocument();
@@ -49,7 +54,11 @@ describe('IntegrationProductVersionFilter', () => {
 
   it('marks the version matching a registered platform with the verified icon', async () => {
     const { user } = testRender(
-      <IntegrationProductVersionFilter registeredVersions={['6.5.0']} />
+      <IntegrationProductVersionFilter
+        registeredInstancesByVersion={{
+          '6.5.0': ['Prod OpenCTI', 'Staging OpenCTI'],
+        }}
+      />
     );
 
     await user.click(screen.getByText(PLACEHOLDER));
@@ -59,9 +68,44 @@ describe('IntegrationProductVersionFilter', () => {
     ).toBeInTheDocument();
   });
 
-  it('forwards the registeredVersions prop to useRegisteredProductVersions', async () => {
+  it('lists every instance name running the version in a tooltip on the adornment', async () => {
+    vi.mocked(useTranslations).mockReturnValue(
+      Object.assign(
+        (key: string, values?: Record<string, string>) =>
+          values?.name ? `${key}: ${values.name}` : key,
+        { has: () => false, rich: (key: string) => key }
+      ) as unknown as ReturnType<typeof useTranslations>
+    );
+    const { user } = testRender(
+      <IntegrationProductVersionFilter
+        registeredInstancesByVersion={{
+          '6.5.0': ['Prod OpenCTI', 'Staging OpenCTI'],
+        }}
+      />
+    );
+
+    await user.click(screen.getByText(PLACEHOLDER));
+    await user.hover(
+      screen.getByRole('img', {
+        name: `${REGISTERED_TOOLTIP}: Prod OpenCTI, Staging OpenCTI`,
+      })
+    );
+
+    expect(
+      (await screen.findAllByText(`${REGISTERED_TOOLTIP}: Prod OpenCTI`)).length
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText(`${REGISTERED_TOOLTIP}: Staging OpenCTI`).length
+    ).toBeGreaterThan(0);
+  });
+
+  it('forwards the registered versions to useRegisteredProductVersions to useRegisteredProductVersions', async () => {
     testRender(
-      <IntegrationProductVersionFilter registeredVersions={['6.5.0']} />
+      <IntegrationProductVersionFilter
+        registeredInstancesByVersion={{
+          '6.5.0': ['Prod OpenCTI', 'Staging OpenCTI'],
+        }}
+      />
     );
 
     expect(useRegisteredProductVersionsMock).toHaveBeenCalledWith(
@@ -72,7 +116,11 @@ describe('IntegrationProductVersionFilter', () => {
 
   it('selects only the chosen version when an option is picked', async () => {
     const { user } = testRender(
-      <IntegrationProductVersionFilter registeredVersions={['6.5.0']} />
+      <IntegrationProductVersionFilter
+        registeredInstancesByVersion={{
+          '6.5.0': ['Prod OpenCTI', 'Staging OpenCTI'],
+        }}
+      />
     );
 
     await user.click(screen.getByText(PLACEHOLDER));

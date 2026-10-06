@@ -18,14 +18,14 @@ describe('PrivateIntegrationProductVersionFilter', () => {
     vi.clearAllMocks();
   });
 
-  it('forwards the deduped, truthy registered platform versions to IntegrationProductVersionFilter', () => {
+  it('forwards every instance name grouped by registered platform version to IntegrationProductVersionFilter', () => {
     vi.mocked(useRegisteredPlatforms).mockReturnValue({
       platforms: [
-        { version: '6.5.0' },
-        { version: '6.5.0' },
-        { version: '6.6.0' },
-        { version: undefined },
-        { version: '' },
+        { version: '6.5.0', title: 'Prod', url: 'https://prod' },
+        { version: '6.5.0', title: 'Staging', url: 'https://staging' },
+        { version: '6.6.0', title: '', url: 'https://dev' },
+        { version: undefined, title: 'No version', url: 'https://none' },
+        { version: '', title: 'Empty version', url: 'https://empty' },
       ],
     });
 
@@ -36,7 +36,12 @@ describe('PrivateIntegrationProductVersionFilter', () => {
     ).toBeInTheDocument();
     expect(integrationProductVersionFilterMock).toHaveBeenCalledOnce();
     expect(integrationProductVersionFilterMock.mock.calls[0][0]).toEqual(
-      expect.objectContaining({ registeredVersions: ['6.5.0', '6.6.0'] })
+      expect.objectContaining({
+        registeredInstancesByVersion: {
+          '6.5.0': ['Prod', 'Staging'],
+          '6.6.0': ['https://dev'],
+        },
+      })
     );
   });
 

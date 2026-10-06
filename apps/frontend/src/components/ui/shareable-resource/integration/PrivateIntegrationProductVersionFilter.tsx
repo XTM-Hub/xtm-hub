@@ -7,15 +7,19 @@ export const PrivateIntegrationProductVersionFilter = () => {
   const { platforms } = useRegisteredPlatforms(PlatformIdentifier.Opencti, {
     onlyActive: true,
   });
-  const registeredVersions = useMemo(
-    () =>
-      [...new Set(platforms.map((platform) => platform.version))].filter(
-        (version): version is string => Boolean(version)
-      ),
-    [platforms]
-  );
+  // Several instances can run the same version: keep every instance name.
+  const registeredInstancesByVersion = useMemo(() => {
+    const instancesByVersion: Record<string, string[]> = {};
+    for (const { version, title, url } of platforms) {
+      if (!version) continue;
+      (instancesByVersion[version] ??= []).push(title || url || version);
+    }
+    return instancesByVersion;
+  }, [platforms]);
 
   return (
-    <IntegrationProductVersionFilter registeredVersions={registeredVersions} />
+    <IntegrationProductVersionFilter
+      registeredInstancesByVersion={registeredInstancesByVersion}
+    />
   );
 };

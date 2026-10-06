@@ -1239,7 +1239,7 @@
         "ProductVersion": {
           "Label": "Version de compatibilité OpenCTI",
           "Placeholder": "Version OpenCTI...",
-          "RegisteredTooltip": "L'une de vos versions OpenCTI enregistrées"
+          "RegisteredTooltip": "Produit connecté : {name}"
         },
         "SolutionCategory": {
           "Label": "Catégorie de solution",
