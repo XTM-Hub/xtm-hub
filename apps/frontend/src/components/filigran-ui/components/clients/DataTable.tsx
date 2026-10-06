@@ -19,7 +19,7 @@ import {
 } from '@dnd-kit/sortable';
 import type { Arguments } from '@dnd-kit/sortable/dist/hooks/useSortable';
 import { type Transform } from '@dnd-kit/utilities';
-import { IconButton } from '@filigran/design-system';
+import { Checkbox, IconButton } from '@filigran/design-system';
 import {
   ArrowNextIcon,
   ArrowPreviousIcon,
@@ -60,7 +60,6 @@ import {
   type SetStateAction,
 } from 'react';
 import { Skeleton } from '../servers';
-import { Checkbox } from './Checkbox';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -695,7 +694,6 @@ export function createDefaultSelectionColumn<
       if (!selectionHandlers) return null;
       return (
         <Checkbox
-          className="flex bg-background"
           checked={
             selectionHandlers.isAllSelected(table)
               ? true
@@ -713,7 +711,6 @@ export function createDefaultSelectionColumn<
       if (!selectionHandlers) return null;
       return (
         <Checkbox
-          className="flex bg-background"
           checked={selectionHandlers.isRowSelected(row)}
           onClick={(e) => e.stopPropagation()}
           onCheckedChange={() => selectionHandlers.toggleRow(row)}

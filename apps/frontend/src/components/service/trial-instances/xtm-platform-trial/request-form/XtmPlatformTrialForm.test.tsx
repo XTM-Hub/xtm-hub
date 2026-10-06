@@ -4,7 +4,7 @@ import {
   xtmPlatformTrialFormSchema,
 } from '@/components/service/trial-instances/xtm-platform-trial/request-form/XtmPlatformTrialForm';
 import testRender from '@/utils/test/test-render';
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
@@ -189,6 +189,25 @@ describe('XtmPlatformTrialForm', () => {
     >;
     expect(submittedValues.acceptTerms).toBe(true);
     expect(submittedValues.region).toBe(REGIONS_VALUES[0]);
+  });
+
+  it('marks the terms checkbox invalid when submitted without accepting the terms', async () => {
+    const { user } = testRender(
+      <XtmPlatformTrialForm handleSubmit={vi.fn()} />
+    );
+
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Service.Trials.XtmPlatform.Page.Form.Submit',
+      })
+    );
+
+    await waitFor(() =>
+      expect(document.getElementById('acceptTerms')).toHaveAttribute(
+        'aria-invalid',
+        'true'
+      )
+    );
   });
 
   const fillAndSubmitForm = async (

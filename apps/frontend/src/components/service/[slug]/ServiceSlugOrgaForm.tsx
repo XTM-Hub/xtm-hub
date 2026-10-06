@@ -13,9 +13,8 @@ import { useSubscriptionDefaultValues } from './use-subscription-default-values'
 
 import { useTranslate } from '@/hooks/use-translate';
 import { DEBOUNCE_TIME } from '@/utils/constant';
-import { Button } from '@filigran/design-system';
+import { Button, Checkbox } from '@filigran/design-system';
 import {
-  Checkbox,
   DatePicker,
   Form,
   FormControl,
@@ -230,30 +229,19 @@ export const ServiceSlugOrgaForm = ({
                   control={form.control}
                   name="capability_ids"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center">
-                      <Checkbox
-                        className="mt-xs"
-                        checked={field.value.includes(id)}
-                        onCheckedChange={(checked) => {
-                          const newValue = checked
-                            ? [...field.value, id]
-                            : field.value.filter(
-                                (value: string) => value !== id
-                              );
-                          field.onChange(newValue);
-                        }}
-                        id={id}
-                      />
-
-                      <label
-                        htmlFor={id}
-                        className="txt-sub-content cursor-pointer">
-                        {t('Service.Form.CapabilityAccessLabel', {
-                          name: name ?? '',
-                          description: description ?? '',
-                        })}
-                      </label>
-                    </FormItem>
+                    <Checkbox
+                      label={t('Service.Form.CapabilityAccessLabel', {
+                        name: name ?? '',
+                        description: description ?? '',
+                      })}
+                      checked={field.value.includes(id)}
+                      onCheckedChange={(checked) => {
+                        const newValue = checked
+                          ? [...field.value, id]
+                          : field.value.filter((value: string) => value !== id);
+                        field.onChange(newValue);
+                      }}
+                    />
                   )}
                 />
               ))}

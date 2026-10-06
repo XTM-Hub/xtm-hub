@@ -13,10 +13,15 @@ import {
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button, Radio, RadioGroup, Textarea } from '@filigran/design-system';
+import {
+  Button,
+  Checkbox,
+  Radio,
+  RadioGroup,
+  Textarea,
+} from '@filigran/design-system';
 import { InfoIcon } from '@filigran/icon';
 import {
-  Checkbox,
   FileInput,
   Form,
   FormControl,
@@ -378,17 +383,11 @@ const EpicForm = ({
                   control={form.control}
                   name="is_integration"
                   render={({ field: integrationField }) => (
-                    <FormItem className="flex flex-row items-center gap-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={integrationField.value ?? false}
-                          onCheckedChange={integrationField.onChange}
-                        />
-                      </FormControl>
-                      <FormLabel className="cursor-pointer font-normal">
-                        {t('Epic.Form.Integration')}
-                      </FormLabel>
-                    </FormItem>
+                    <Checkbox
+                      label={t('Epic.Form.Integration')}
+                      checked={integrationField.value ?? false}
+                      onCheckedChange={integrationField.onChange}
+                    />
                   )}
                 />
               </div>
@@ -515,20 +514,12 @@ const EpicForm = ({
             control={form.control}
             name="active"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center gap-3 space-y-0">
-                <FormControl>
-                  <Checkbox
-                    checked={field.value ?? false}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-                <FormLabel className="cursor-pointer font-normal">
-                  {t('Epic.Form.PublishNow')}
-                  <span className="text-muted-foreground ml-xs">
-                    {t('Epic.Form.PublishNowHint')}
-                  </span>
-                </FormLabel>
-              </FormItem>
+              <Checkbox
+                label={t('Epic.Form.PublishNow')}
+                description={t('Epic.Form.PublishNowHint')}
+                checked={field.value ?? false}
+                onCheckedChange={field.onChange}
+              />
             )}
           />
           <div className="flex gap-s">

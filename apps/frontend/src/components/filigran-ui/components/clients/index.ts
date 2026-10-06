@@ -3,7 +3,6 @@ export * from './AlertDialog';
 export * from './Avatar';
 export * from './Calendar';
 export * from './Carousel';
-export * from './Checkbox';
 export * from './ColorPicker';
 export * from './Combobox';
 export * from './Command';

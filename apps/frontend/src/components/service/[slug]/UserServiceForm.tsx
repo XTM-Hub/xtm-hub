@@ -12,9 +12,8 @@ import {
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
-import { Button } from '@filigran/design-system';
+import { Button, Checkbox } from '@filigran/design-system';
 import {
-  Checkbox,
   Form,
   FormControl,
   FormField,
@@ -318,55 +317,45 @@ export const UserServiceForm = ({
               control={(form as typeof capabilitiesForm).control}
               name="capabilities"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center">
-                  <FormControl>
-                    <Checkbox
-                      {...field}
-                      disabled={isCapabilityDisabled(capability!.id)}
-                      className="mt-xs"
-                      checked={(field.value as string[]).includes(
-                        capability!.id
-                      )}
-                      onCheckedChange={(checked) => {
-                        const newValue = checked
-                          ? Array.from(
-                              new Set([...(field.value || []), capability!.id])
-                            )
-                          : (field.value || []).filter(
-                              (value) => value !== capability!.id
-                            );
-                        field.onChange(newValue);
-                      }}
-                      id={capability!.id}
-                    />
-                  </FormControl>
-
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <label
-                          htmlFor={capability!.id}
-                          aria-disabled={isCapabilityDisabled(capability!.id)}
-                          className="txt-sub-content cursor-pointer aria-disabled:cursor-not-allowed">
-                          {capability!.name === ServiceRestriction.ManageAccess
-                            ? t('Service.Form.ManageAccessCapabilityLabel')
-                            : t('Service.Form.CapabilityAccessLabel', {
-                                name: capability!.name ?? '',
-                                description: capability!.description ?? '',
-                              })}
-                          {isCapabilityDisabled(capability!.id)}
-                        </label>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>
-                          {isCapabilityDisabled(capability!.id)
-                            ? t('InviteUserServiceForm.DisabledCapability')
-                            : t('InviteUserServiceForm.GrantCapability')}
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </FormItem>
+                <TooltipProvider>
+                  <Checkbox
+                    {...field}
+                    disabled={isCapabilityDisabled(capability!.id)}
+                    checked={(field.value as string[]).includes(capability!.id)}
+                    onCheckedChange={(checked) => {
+                      const newValue = checked
+                        ? Array.from(
+                            new Set([...(field.value || []), capability!.id])
+                          )
+                        : (field.value || []).filter(
+                            (value) => value !== capability!.id
+                          );
+                      field.onChange(newValue);
+                    }}
+                    label={
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>
+                            {capability!.name ===
+                            ServiceRestriction.ManageAccess
+                              ? t('Service.Form.ManageAccessCapabilityLabel')
+                              : t('Service.Form.CapabilityAccessLabel', {
+                                  name: capability!.name ?? '',
+                                  description: capability!.description ?? '',
+                                })}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>
+                            {isCapabilityDisabled(capability!.id)
+                              ? t('InviteUserServiceForm.DisabledCapability')
+                              : t('InviteUserServiceForm.GrantCapability')}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    }
+                  />
+                </TooltipProvider>
               )}
             />
           ))}

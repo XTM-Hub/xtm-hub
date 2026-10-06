@@ -9,11 +9,11 @@ import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { TranslatableEnumSelectField } from '@/components/ui/TranslatableEnumSelectField';
 import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
-import { Button } from '@filigran/design-system';
+import { Button, Checkbox } from '@filigran/design-system';
 import { WarningIcon } from '@filigran/icon';
 import {
-  Checkbox,
   Form,
+  FormControl,
   FormField,
   FormItem,
   FormLabel,
@@ -246,36 +246,23 @@ export const XtmPlatformTrialForm = ({
 
             <div className="flex items-center gap-xl">
               {SELECTABLE_PRODUCTS.map((platformIdentifier) => (
-                <div
+                <Checkbox
                   key={platformIdentifier}
-                  className="relative flex items-center gap-s">
-                  <Checkbox
-                    id={`product-${platformIdentifier}`}
-                    checked={products.includes(platformIdentifier)}
-                    onCheckedChange={(checked) =>
-                      toggleProduct(platformIdentifier, checked === true)
-                    }
-                  />
-                  <label
-                    htmlFor={`product-${platformIdentifier}`}
-                    className="txt-default cursor-pointer">
-                    {t(`PlatformIdentifier.${platformIdentifier}`)}
-                  </label>
-                </div>
+                  id={`product-${platformIdentifier}`}
+                  label={t(`PlatformIdentifier.${platformIdentifier}`)}
+                  checked={products.includes(platformIdentifier)}
+                  onCheckedChange={(checked) =>
+                    toggleProduct(platformIdentifier, checked === true)
+                  }
+                />
               ))}
 
-              <div className="relative flex items-center gap-s">
-                <Checkbox
-                  id="product-xtmone"
-                  checked
-                  disabled
-                />
-                <label
-                  htmlFor="product-xtmone"
-                  className="content-base tracking-[0.75px] text-muted-foreground">
-                  {t(`PlatformIdentifier.${PlatformIdentifier.Xtmone}`)}
-                </label>
-              </div>
+              <Checkbox
+                id="product-xtmone"
+                label={t(`PlatformIdentifier.${PlatformIdentifier.Xtmone}`)}
+                checked
+                disabled
+              />
             </div>
           </div>
 
@@ -368,25 +355,25 @@ export const XtmPlatformTrialForm = ({
           <FormField
             control={form.control}
             name="acceptTerms"
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
               <FormItem>
-                <div className="relative flex items-start gap-l">
+                <FormControl>
                   <Checkbox
                     id="acceptTerms"
-                    className="mt-1"
+                    label={
+                      <>
+                        {t.rich('Service.Trials.Form.TermsAgreement', {
+                          mssa: renderMssaLink,
+                          aiterms: renderAiTermsLink,
+                        })}{' '}
+                        <span className="text-destructive">*</span>
+                      </>
+                    }
+                    error={Boolean(fieldState.error)}
                     checked={field.value}
                     onCheckedChange={field.onChange}
                   />
-                  <label
-                    htmlFor="acceptTerms"
-                    className="txt-default cursor-pointer text-muted-foreground">
-                    {t.rich('Service.Trials.Form.TermsAgreement', {
-                      mssa: renderMssaLink,
-                      aiterms: renderAiTermsLink,
-                    })}{' '}
-                    <span className="text-destructive">*</span>
-                  </label>
-                </div>
+                </FormControl>
                 <FormMessage className="text-destructive" />
               </FormItem>
             )}

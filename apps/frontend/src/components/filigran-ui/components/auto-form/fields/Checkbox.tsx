@@ -1,16 +1,14 @@
 import {
-  Checkbox,
   FormControl,
   FormItem,
 } from '@/components/filigran-ui/components/clients';
+import { Checkbox } from '@filigran/design-system';
 import type { ComponentProps } from 'react';
-import AutoFormLabel from '../common/Label';
 import AutoFormTooltip from '../common/Tooltip';
 import type { AutoFormInputComponentProps } from '../types';
 
 const AutoFormCheckbox = ({
   label,
-  isRequired,
   field,
   fieldConfigItem,
   fieldProps,
@@ -18,19 +16,15 @@ const AutoFormCheckbox = ({
   return (
     <div>
       <FormItem>
-        <div className="mb-3 flex items-center gap-3">
-          <FormControl>
-            <Checkbox
-              checked={field.value}
-              onCheckedChange={field.onChange}
-              {...(fieldProps as ComponentProps<typeof Checkbox>)}
-            />
-          </FormControl>
-          <AutoFormLabel
+        <FormControl>
+          <Checkbox
             label={fieldConfigItem?.label || label}
-            isRequired={isRequired}
+            wrapperClassName="mb-3"
+            checked={field.value}
+            onCheckedChange={field.onChange}
+            {...(fieldProps as ComponentProps<typeof Checkbox>)}
           />
-        </div>
+        </FormControl>
       </FormItem>
       <AutoFormTooltip fieldConfigItem={fieldConfigItem} />
     </div>

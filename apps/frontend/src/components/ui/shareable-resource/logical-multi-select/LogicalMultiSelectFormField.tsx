@@ -1,4 +1,4 @@
-import { Checkbox } from '@filigran/ui';
+import { Checkbox } from '@filigran/design-system';
 import * as React from 'react';
 import { useMemo } from 'react';
 
@@ -213,7 +213,7 @@ const LogicalMultiSelectFormField = React.forwardRef<
                   key={option.value}
                   className="flex items-center gap-s content-body-compact text-[13px] cursor-pointer">
                   <Checkbox
-                    className="shrink-0"
+                    aria-label={option.label}
                     checked={indeterminate ? 'indeterminate' : checked}
                     onCheckedChange={() => toggleParent(option.value)}
                   />
@@ -241,7 +241,7 @@ const LogicalMultiSelectFormField = React.forwardRef<
                 key={`${option.parentValue}-${option.value}`}
                 className="flex items-center gap-s pl-m content-body-compact text-[13px] cursor-pointer">
                 <Checkbox
-                  className="shrink-0"
+                  aria-label={option.label}
                   checked={isSelected}
                   onCheckedChange={() =>
                     toggleChild(option.value, option.parentValue)

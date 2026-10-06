@@ -1,9 +1,8 @@
 import { UserServicesAddCapabilitiesMutation } from '@/components/service/user_service.graphql';
 import { BadgeOverflow } from '@/components/ui/BadgeOverflowCounter';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
+import { Button, Checkbox } from '@filigran/design-system';
 import {
-  Checkbox,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -112,15 +111,12 @@ export const SubscriptionSlugAddCapabilities = ({
             </p>
           ) : (
             availableCapabilities.map((capability) => (
-              <label
+              <Checkbox
                 key={capability.id}
-                className="flex items-center gap-s cursor-pointer">
-                <Checkbox
-                  checked={selectedCapabilityIds.has(capability.id)}
-                  onCheckedChange={() => toggleCapability(capability.id)}
-                />
-                <span className="text-sm">{capability.name}</span>
-              </label>
+                label={capability.name}
+                checked={selectedCapabilityIds.has(capability.id)}
+                onCheckedChange={() => toggleCapability(capability.id)}
+              />
             ))
           )}
         </div>

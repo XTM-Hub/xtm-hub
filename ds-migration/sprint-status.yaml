@@ -44,8 +44,8 @@ development_status:
   3530-button: done
   3561-textarea: done
   3568-switch: done
-  3553-radio: review
-  3541-checkbox: backlog
+  3553-radio: done
+  3541-checkbox: review
   3556-input: backlog
   3564-tooltip: backlog
   3534-badge: backlog
