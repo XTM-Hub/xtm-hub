@@ -56,6 +56,21 @@ describe('sitemap', () => {
     ).toBe(false);
   });
 
+  it('should list French URLs with French alternates', async () => {
+    sitemapMocks.fetchSeoServiceInstancesMock.mockResolvedValue([]);
+
+    const result = await sitemap();
+
+    expect(result).toContainEqual(
+      expect.objectContaining({
+        url: `${BASE_URL}/fr`,
+        alternates: {
+          languages: expect.objectContaining({ fr: `${BASE_URL}/fr` }),
+        },
+      })
+    );
+  });
+
   it('should keep service instances that are not external links in the sitemap', async () => {
     sitemapMocks.fetchSeoServiceInstancesMock.mockResolvedValue([
       {

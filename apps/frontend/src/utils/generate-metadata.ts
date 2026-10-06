@@ -7,6 +7,7 @@ import { cache } from 'react';
 
 const LOCALE_TAG_MAP: Record<PublicLocale, string> = {
   en: 'en_US',
+  fr: 'fr_FR',
   ja: 'ja_JP',
 };
 

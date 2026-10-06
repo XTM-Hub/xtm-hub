@@ -1,14 +1,10 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   addLocalePrefixToPath,
   resolveBaseServiceInstanceLink,
   resolvePrivateServiceInstanceLink,
   resolvePublicServiceInstanceLink,
 } from './service-instance-link.util';
-
-vi.mock('@/i18n/config', () => ({
-  publicLocales: ['en', 'ja'],
-}));
 
 describe('resolveBaseServiceInstanceLink', () => {
   it.each`
@@ -53,6 +49,7 @@ describe('addLocalePrefixToPath', () => {
     ${'exact /ja path is not double-prefixed'}        | ${'/ja'}           | ${'ja'} | ${'/ja'}
     ${'/en/... path is not double-prefixed'}          | ${'/en/dashboard'} | ${'en'} | ${'/en/dashboard'}
     ${'/ja/... path is not double-prefixed'}          | ${'/ja/settings'}  | ${'ja'} | ${'/ja/settings'}
+    ${'/fr/... path is not double-prefixed'}          | ${'/fr/settings'}  | ${'fr'} | ${'/fr/settings'}
     ${'cross-locale /en path with ja locale is kept'} | ${'/en/page'}      | ${'ja'} | ${'/en/page'}
   `('$description', ({ href, locale, expectedHref }) => {
     expect(addLocalePrefixToPath({ href, locale })).toBe(expectedHref);

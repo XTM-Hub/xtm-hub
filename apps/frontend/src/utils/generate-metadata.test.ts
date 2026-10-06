@@ -23,6 +23,7 @@ describe('buildAlternates', () => {
       canonical: '/ja/cybersecurity-solutions/foo',
       languages: {
         en: '/en/cybersecurity-solutions/foo',
+        fr: '/fr/cybersecurity-solutions/foo',
         ja: '/ja/cybersecurity-solutions/foo',
         'x-default': '/en/cybersecurity-solutions/foo',
       },
@@ -87,7 +88,7 @@ describe('buildSeoPageMetadata', () => {
 
     expect(metadata.openGraph).toMatchObject({
       locale: 'ja_JP',
-      alternateLocale: ['en_US'],
+      alternateLocale: ['en_US', 'fr_FR'],
     });
   });
 });
