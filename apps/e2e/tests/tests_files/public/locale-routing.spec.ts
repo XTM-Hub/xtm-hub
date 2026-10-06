@@ -21,16 +21,12 @@ test.describe('Locale routing', () => {
       .getAttribute('href');
     expect(canonical).toMatch(/\/en\/?$/);
 
-    for (const locale of ['en', 'ja'] as const) {
+    for (const locale of ['en', 'fr', 'ja'] as const) {
       const href = await page
         .locator(`link[rel="alternate"][hreflang="${locale}"]`)
         .getAttribute('href');
       expect(href).toMatch(new RegExp(`/${locale}/?$`));
     }
-
-    await expect(
-      page.locator('link[rel="alternate"][hreflang="fr"]')
-    ).toHaveCount(0);
 
     const xDefault = await page
       .locator('link[rel="alternate"][hreflang="x-default"]')
@@ -43,7 +39,7 @@ test.describe('Locale routing', () => {
     expect(await page.locator('html').getAttribute('lang')).toBe('ja');
   });
 
-  test('logout from french preference lands on /en/ public page', async ({
+  test('logout from french preference lands on /fr/ public page', async ({
     page,
   }) => {
     const loginPage = new LoginPage(page);
@@ -53,7 +49,7 @@ test.describe('Locale routing', () => {
     await profilePage.changeLanguage('Français');
     await page.getByRole('button', { name: 'Ouvrir menu utilisateur' }).click();
     await page.getByRole('menuitem', { name: 'Déconnexion' }).click();
-    await expect(page).toHaveURL(/\/en/);
+    await expect(page).toHaveURL(/\/fr/);
   });
 
   test('language preference persists across logout/login', async ({ page }) => {
@@ -66,7 +62,7 @@ test.describe('Locale routing', () => {
 
     await page.getByRole('button', { name: 'Ouvrir menu utilisateur' }).click();
     await page.getByRole('menuitem', { name: 'Déconnexion' }).click();
-    await expect(page).toHaveURL(/\/en/);
+    await expect(page).toHaveURL(/\/fr/);
 
     await loginPage.navigateToAndLogin();
     await expect(page.locator('html')).toHaveAttribute('lang', 'fr');

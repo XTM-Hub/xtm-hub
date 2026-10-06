@@ -12,7 +12,8 @@ describe('usePublicPath', () => {
     ${true}  | ${'/ja/cybersecurity-solutions'}
     ${true}  | ${'/ja/cybersecurity-solutions/abc'}
     ${true}  | ${'/en/cybersecurity-solutions/abc/def'}
-    ${false} | ${'/fr/cybersecurity-solutions'}
+    ${true}  | ${'/fr/cybersecurity-solutions'}
+    ${false} | ${'/de/cybersecurity-solutions'}
     ${false} | ${'/cezfze/cybersecurity-solutions'}
     ${false} | ${'/random'}
     ${false} | ${'/cyber'}
