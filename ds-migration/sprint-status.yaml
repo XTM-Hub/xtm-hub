@@ -60,34 +60,34 @@ development_status:
   3544-card-title: backlog
   3539-card-content: backlog
   3538-card-footer: backlog
-  new-alert: backlog
-  new-date-picker: backlog
-  new-snackbar: backlog
+  3688-alert: backlog
+  3689-date-picker: backlog
+  3690-snackbar: backlog
 
   # Legacy components with no DS equivalent: rebuilt on DS primitives, one folder per
   # component in apps/frontend/src/components/ui/, listed as candidates in the PR report
   epic-3-candidates: backlog
-  new-label: backlog
-  new-separator: backlog
-  new-skeleton: backlog
-  new-aspect-ratio: backlog
-  new-avatar: backlog
-  new-popover: backlog
-  new-gradient-button: backlog
-  new-accordion: backlog
-  new-sheet: backlog
-  new-command: backlog
-  new-tag-input: backlog
-  new-markdown-renderer: backlog
-  new-carousel: backlog
-  new-table: backlog
-  new-data-table: backlog
-  new-form: backlog
-  new-auto-form: backlog
+  3691-label: backlog
+  3692-separator: backlog
+  3693-skeleton: backlog
+  3694-aspect-ratio: backlog
+  3695-avatar: backlog
+  3696-popover: backlog
+  3697-gradient-button: backlog
+  3698-accordion: backlog
+  3699-sheet: backlog
+  3700-command: backlog
+  3701-tag-input: backlog
+  3702-markdown-renderer: backlog
+  3703-carousel: backlog
+  3704-table: backlog
+  3705-data-table: backlog
+  3706-form: backlog
+  3707-auto-form: backlog
 
   # Remove the legacy copy, its theme and aliases, forbid @filigran/ui imports
   epic-4-cleanup: backlog
-  new-remove-filigran-ui: backlog
+  3708-remove-filigran-ui: backlog
 
   # DS components with no legacy equivalent: adopted where the app hand-rolls the same
   # pattern; anything that changes the look is listed under "To validate" instead
@@ -111,9 +111,9 @@ development_status:
 # An item starts only once every listed item, or epic, is done. Generated from the imports
 # between legacy components (a candidate waits for the primitives it is rebuilt on), then reviewed.
 dependencies:
-  new-form: [new-label]
-  new-command: [3540-dialog]
-  new-tag-input: [3534-badge, 3556-input, new-popover]
-  new-data-table: [3541-checkbox, 3558-menu, new-skeleton, new-table]
-  new-auto-form: [3541-checkbox, 3548-file-select, 3553-radio, 3556-input, 3561-textarea, 3566-select, 3568-switch, new-accordion, new-date-picker, new-form]
-  new-remove-filigran-ui: [epic-1-primitives, epic-2-composites, epic-3-candidates]
+  3706-form: [3691-label]
+  3700-command: [3540-dialog]
+  3701-tag-input: [3534-badge, 3556-input, 3696-popover]
+  3705-data-table: [3541-checkbox, 3558-menu, 3693-skeleton, 3704-table]
+  3707-auto-form: [3541-checkbox, 3548-file-select, 3553-radio, 3556-input, 3561-textarea, 3566-select, 3568-switch, 3698-accordion, 3689-date-picker, 3706-form]
+  3708-remove-filigran-ui: [epic-1-primitives, epic-2-composites, epic-3-candidates]
