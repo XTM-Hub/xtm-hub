@@ -41,7 +41,8 @@ checks() {
   esac
 }
 case "$1 $2" in
-  "issue comment"|"issue edit"|"api graphql") exit 0 ;;
+  "issue edit") [ "$3" = 3561 ] && [ "$4" = --body-file ] && cp "$5" "$SB/issue-3561.md"; exit 0 ;;
+  "issue comment"|"api graphql") exit 0 ;;
   "pr comment") if [ "$4" = --body ]; then echo "$5" >> "$SB/pr-comments.log"; else cp "$(bodyfile "$@")" "$SB/last-pr-comment.md"; fi ;;
   "pr edit") cp "$(bodyfile "$@")" "$SB/pr-body.md" ;;
   "pr create") cp "$(bodyfile "$@")" "$SB/pr-body.md"; echo "https://github.com/XTM-Hub/xtm-hub/pull/9999" ;;
@@ -58,6 +59,7 @@ EOF
 if [ "$1" != -p ]; then echo "claude-interactive :: $1" >> "$SB/calls.log"; exit 0; fi
 prompt="$2"
 echo "claude :: $prompt" >> "$SB/calls.log"
+[ "${CLAUDE_CODE_DISABLE_BACKGROUND_TASKS:-}" = 1 ] || echo "claude with background tasks allowed" >> "$SB/calls.log"
 if [[ "$prompt" == *"Sync fix mode"* ]]; then
   grep -rl "import { Textarea } from '@filigran/ui';" apps/frontend/src | while read -r f; do
     sed -i '' "s#import { Textarea } from '@filigran/ui';#import { Textarea } from '@filigran/design-system';#" "$f"; done
@@ -144,6 +146,8 @@ check "default subject used for an invalid one" 'git log --format=%s | grep -qx 
 check "no AI trailer in commits" '! git log --format=%B | grep -qi "co-authored-by"'
 check "screens captured between the spec and the build" '[ "$(grep -oE "Spec mode for item 3561|screenshot before ds-migration/specs/3561|Build mode for item 3561" "$SB/calls.log" | cut -d" " -f1 | paste -sd, -)" = "Spec,screenshot,Build" ]'
 check "session progress shown live in the run log" 'grep -q "3561-textarea   Agent Implement 3561-textarea" "$(git rev-parse --git-dir)/ds-migration/run.log" && [ -s "$(git rev-parse --git-dir)/ds-migration/3561-textarea.jsonl" ]'
+check "issue body replaced by the spec, by the script" 'head -1 "$SB/issue-3561.md" | grep -qx "Part of #3507." && grep -qx "# textarea" "$SB/issue-3561.md" && ! grep -q "^kind:" "$SB/issue-3561.md"'
+check "sessions never run subagents in the background" '! grep -q "claude with background tasks allowed" "$SB/calls.log"'
 check "after screenshots part of the validation" 'grep -q "^screenshot after ds-migration/specs/3561-textarea.md" "$SB/calls.log"'
 check "done item announced on the PR" 'grep -qx "Component Textarea done. Issue #3561" "$SB/pr-comments.log"'
 approve epic-1-primitives; run

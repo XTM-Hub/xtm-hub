@@ -291,14 +291,16 @@ ITEM_SCHEMA='{"type":"object","additionalProperties":false,"required":["status",
 REVIEW_SCHEMA='{"type":"object","additionalProperties":false,"required":["findings"],"properties":{"findings":{"type":"string"}}}'
 
 # Every part of a compound command must match a rule, hence the read-only utilities that end
-# pipes and report exit codes. Deleting is limited to the frontend, by relative or absolute path:
+# pipes and report exit codes. Subagents never read WORKFLOW.md, so the forms they reach for
+# (cd, git -C on this checkout) are allowed rather than forbidden by an instruction. Deleting is limited to the frontend, by relative or absolute path:
 # the rm rules take a glob, a `:*` prefix does not match inside a path, and `..` is refused.
 READ_TOOLS="Read,Glob,Grep,Agent,SendMessage,Skill,TodoWrite,\
 Bash(gh issue view:*),Bash(gh pr view:*),Bash(gh pr diff:*),\
 Bash(git diff:*),Bash(git status:*),Bash(git log:*),Bash(git show:*),Bash(git ls-files:*),\
-Bash(tail:*),Bash(head:*),Bash(grep:*),Bash(cat:*),Bash(ls:*),Bash(wc:*),Bash(sort:*),Bash(echo:*)"
-SPEC_TOOLS="$READ_TOOLS,Edit,Write,Bash(gh issue edit:*),Bash(node ds-migration/screenshot.mjs:*)"
-WRITE_TOOLS="$READ_TOOLS,Edit,Write,Bash(gh issue edit:*),Bash(gh issue comment:*),\
+Bash(git -C $PWD diff:*),Bash(git -C $PWD status:*),Bash(git -C $PWD log:*),Bash(git -C $PWD show:*),\
+Bash(cd:*),Bash(tail:*),Bash(head:*),Bash(grep:*),Bash(cat:*),Bash(ls:*),Bash(wc:*),Bash(sort:*),Bash(echo:*)"
+SPEC_TOOLS="$READ_TOOLS,Edit,Write,Bash(node ds-migration/screenshot.mjs:*)"
+WRITE_TOOLS="$READ_TOOLS,Edit,Write,\
 Bash(node ds-migration/screenshot.mjs:*),Bash(rm apps/frontend/*),Bash(rm $PWD/apps/frontend/*),\
 Bash(yarn workspace @xtm-hub/frontend lint:*),Bash(yarn workspace @xtm-hub/frontend format:*),\
 Bash(yarn workspace @xtm-hub/frontend check-ts:*),Bash(yarn workspace @xtm-hub/frontend test:*),\
@@ -320,7 +322,9 @@ PROGRESS_FILTER='fromjson? | select(.type == "assistant") | (.parent_tool_use_id
 # <log name>.json. <log name> <prompt> <schema> <tools>
 claude_session() {
   local out="$LOG_DIR/$1.json" stream="$LOG_DIR/$1.jsonl" line
-  ${TIMEOUT_BIN:+"$TIMEOUT_BIN" "$ITEM_TIMEOUT"} claude -p "$2" \
+  # A background subagent ends the session's turn, and headless mode then forces the structured
+  # result before the subagent reports: subagents always run in the foreground.
+  CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1 ${TIMEOUT_BIN:+"$TIMEOUT_BIN" "$ITEM_TIMEOUT"} claude -p "$2" \
     --output-format stream-json --verbose --json-schema "$3" --permission-mode dontAsk --allowedTools "$4" \
     ${DS_BUDGET_USD:+--max-budget-usd "$DS_BUDGET_USD"} 2>>"$LOG_DIR/$1.stderr" |
     tee "$stream" | jq -rR --unbuffered "$PROGRESS_FILTER" 2>/dev/null |
@@ -345,7 +349,15 @@ run_item_session() {
   echo "$result"
 }
 
-# Spec session, screenshots of the untouched code, then build session. Prints the last result.
+# The issue body becomes the spec without its frontmatter, under the epic reference.
+update_issue() {
+  local key="$1" issue="$2" body="$LOG_DIR/$1-issue.md"
+  { printf 'Part of #%s.\n\n' "$EPIC_ISSUE"; awk 'n >= 2 { print } /^---$/ { n++ }' "ds-migration/specs/$key.md"; } >"$body"
+  gh issue edit "$issue" --body-file "$body" >/dev/null
+}
+
+# Spec session, issue update, screenshots of the untouched code, then build session. Prints the
+# last result.
 work_item() {
   local key="$1" issue="$2" epic="$3" kind="$4" spec="ds-migration/specs/$1.md" result
   result="$(claude_session "$key-spec" \
@@ -357,6 +369,8 @@ work_item() {
     echo "$result"
   elif [ -n "$(dirty_outside_tooling)" ]; then
     failed "Spec mode changed files outside ds-migration/: the screenshots would not show the current rendering."
+  elif ! update_issue "$key" "$issue"; then
+    failed "The spec is written but the issue #$issue could not be updated."
   elif ! node ds-migration/screenshot.mjs "$spec" before >"$LOG_DIR/$key-before.log" 2>&1; then
     failed "The screens of the spec cannot be captured before the change: see $LOG_DIR/$key-before.log."
   else

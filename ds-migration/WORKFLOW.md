@@ -9,9 +9,10 @@ Each item takes two sessions. **Spec mode** analyses and writes the spec, code u
 then captures the screens the spec declares, in the light and dark themes, on the current code.
 **Build mode** implements the spec and compares the rendering with those captures.
 
-Run every shell command from the repository root, with paths relative to it: no `cd`, no
-`git -C`, no absolute paths. Delete a file with `rm apps/frontend/<path>`. The command allowlist
-only accepts these forms; a refused command means changing the command, not working around it.
+Run every shell command from the repository root, with paths relative to it. Delete a file with
+`rm apps/frontend/<path>`. A refused command means changing the command, not working around it:
+read files with Read and search with Grep or Glob rather than shell loops. Subagents always run in
+the foreground: you get each one's report before you continue.
 
 The script owns version control and the status file. Never run `git commit`, `git push`, `git stash`
 or `git checkout`, and never edit `ds-migration/sprint-status.yaml`. The script validates your work,
@@ -107,10 +108,9 @@ a selector to crop to. Selectors are Playwright's, role-based first: `role=butto
    usages and states, the most visible first. The `cleanup` item declares none. Run
    `node ds-migration/screenshot.mjs ds-migration/specs/<key>.md before`, open the images and fix the
    screens until each one shows the component. A component no route renders is `NEEDS_HUMAN`.
-4. **Update the issue.** Replace the issue body with `Part of #3507.`, a blank line, then the spec
-   without its frontmatter: `gh issue edit <issue> --body-file <file>`.
-5. **Return** `DONE`, or `NEEDS_HUMAN` with the `question`. Change no file outside
-   `ds-migration/specs/`: the script rejects the item otherwise.
+4. **Return** `DONE`, or `NEEDS_HUMAN` with the `question`. Change no file outside
+   `ds-migration/specs/`: the script rejects the item otherwise. The script then replaces the issue
+   body with the spec and captures the screens.
 
 ## Build mode
 
