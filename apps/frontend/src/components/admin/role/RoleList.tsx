@@ -14,24 +14,24 @@ const RoleList = () => {
   return (
     <>
       <h1>{t('MenuLinks.Roles')}</h1>
-      <Tabs defaultValue="ssoGroups">
+      <Tabs defaultValue="capabilities">
         <TabsList>
-          <TabsTrigger value="ssoGroups">
-            {t('RoleListPage.SsoGroups')}
-          </TabsTrigger>
           <TabsTrigger value="capabilities">
             {t('RoleListPage.Capabilities')}
           </TabsTrigger>
+          <TabsTrigger value="ssoGroups">
+            {t('RoleListPage.SsoGroups')}
+          </TabsTrigger>
         </TabsList>
-        <TabsContent
-          value="ssoGroups"
-          className="pt-l">
-          <SsoGroupRolePortalList />
-        </TabsContent>
         <TabsContent
           value="capabilities"
           className="pt-l">
           <RolePortalCapabilitiesList />
+        </TabsContent>
+        <TabsContent
+          value="ssoGroups"
+          className="pt-l">
+          <SsoGroupRolePortalList />
         </TabsContent>
       </Tabs>
     </>

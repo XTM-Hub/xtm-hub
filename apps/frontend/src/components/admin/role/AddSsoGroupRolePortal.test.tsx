@@ -1,18 +1,37 @@
 import AddSsoGroupRolePortal from '@/components/admin/role/AddSsoGroupRolePortal';
+import { mockGraphqlQuery } from '@/utils/test/msw/graphql-api';
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
 import {
   AddSsoGroupRolePortalMutation,
   AddSsoGroupRolePortalMutationVariables,
+  RolePortalsQuery,
 } from '@graphql/generated';
 import { mockRolePortal, mockSsoGroupRolePortal } from '@graphql/mocks';
 import { screen, waitFor } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 const GQL_OPERATION_ADD_SSO_GROUP_ROLE_PORTAL = 'AddSSOGroupRolePortal';
+const GQL_OPERATION_ROLE_PORTALS = 'RolePortals';
+
+const ROLE_PORTALS_RESPONSE: RolePortalsQuery = {
+  rolePortals: [
+    mockRolePortal({ id: 'role-admin', name: 'Admin' }),
+    mockRolePortal({ id: 'role-user', name: 'User' }),
+  ],
+};
 
 describe('AddSsoGroupRolePortal', () => {
+  beforeEach(() => {
+    mswServer.use(
+      mockGraphqlQuery({
+        queryName: GQL_OPERATION_ROLE_PORTALS,
+        data: ROLE_PORTALS_RESPONSE,
+      })
+    );
+  });
+
   it('should open the sheet with the mapping form', async () => {
     const { user } = testRender(<AddSsoGroupRolePortal />);
 
@@ -55,7 +74,8 @@ describe('AddSsoGroupRolePortal', () => {
       screen.getByLabelText(/RoleListPage.SsoGroup/),
       '  xtmhub-admins '
     );
-    await user.type(screen.getByLabelText(/RoleListPage.Role/), 'Admin');
+    await user.click(screen.getByLabelText(/RoleListPage.Role/));
+    await user.click(await screen.findByRole('option', { name: 'Admin' }));
     await user.click(screen.getByRole('button', { name: 'Utils.Validate' }));
 
     await waitFor(() => {
@@ -73,7 +93,7 @@ describe('AddSsoGroupRolePortal', () => {
     });
   });
 
-  it('should not submit when the SSO group and the role only contain spaces', async () => {
+  it('should not submit when the SSO group only contains spaces and no role is selected', async () => {
     let mutationCalled = false;
     mswServer.use(
       graphql.mutation(GQL_OPERATION_ADD_SSO_GROUP_ROLE_PORTAL, () => {
@@ -88,7 +108,6 @@ describe('AddSsoGroupRolePortal', () => {
       screen.getByRole('button', { name: 'RoleListPage.AddMapping' })
     );
     await user.type(screen.getByLabelText(/RoleListPage.SsoGroup/), '   ');
-    await user.type(screen.getByLabelText(/RoleListPage.Role/), '   ');
     await user.click(screen.getByRole('button', { name: 'Utils.Validate' }));
 
     expect(
@@ -118,7 +137,8 @@ describe('AddSsoGroupRolePortal', () => {
       screen.getByLabelText(/RoleListPage.SsoGroup/),
       'xtmhub-admins'
     );
-    await user.type(screen.getByLabelText(/RoleListPage.Role/), 'Admin');
+    await user.click(screen.getByLabelText(/RoleListPage.Role/));
+    await user.click(await screen.findByRole('option', { name: 'Admin' }));
     await user.click(screen.getByRole('button', { name: 'Utils.Validate' }));
 
     await waitFor(() => expect(mutationCalled).toBe(true));

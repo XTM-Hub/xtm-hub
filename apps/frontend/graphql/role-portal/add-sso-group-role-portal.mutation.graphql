@@ -1,9 +1,0 @@
-mutation AddSSOGroupRolePortal($input: AddSSOGroupRolePortalInput!) {
-  addSSOGroupRolePortal(input: $input) {
-    ssoGroup
-    rolePortal {
-      id
-      name
-    }
-  }
-}

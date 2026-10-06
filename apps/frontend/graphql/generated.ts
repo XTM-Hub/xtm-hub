@@ -3584,12 +3584,13 @@ export type AddRolePortalMutationVariables = Exact<{
 
 export type AddRolePortalMutation = { __typename?: 'Mutation', addRolePortal: { __typename?: 'RolePortal', id: string, name: string, capabilities: Array<{ __typename?: 'Capability', id: string, name: PortalCapability } | null> | null } };
 
-export type AddSsoGroupRolePortalMutationVariables = Exact<{
-  input: AddSsoGroupRolePortalInput;
+export type UpdateRolePortalMutationVariables = Exact<{
+  name: Scalars['String']['input'];
+  input: UpdateRolePortalInput;
 }>;
 
 
-export type AddSsoGroupRolePortalMutation = { __typename?: 'Mutation', addSSOGroupRolePortal: { __typename?: 'SSOGroupRolePortal', ssoGroup: string, rolePortal: { __typename?: 'RolePortal', id: string, name: string } } };
+export type UpdateRolePortalMutation = { __typename?: 'Mutation', updateRolePortal: { __typename?: 'RolePortal', id: string, name: string, capabilities: Array<{ __typename?: 'Capability', id: string, name: PortalCapability } | null> | null } };
 
 export type DeleteRolePortalMutationVariables = Exact<{
   name: Scalars['String']['input'];
@@ -3597,6 +3598,22 @@ export type DeleteRolePortalMutationVariables = Exact<{
 
 
 export type DeleteRolePortalMutation = { __typename?: 'Mutation', deleteRolePortal: { __typename?: 'RolePortal', id: string, name: string } };
+
+export type AddSsoGroupRolePortalMutationVariables = Exact<{
+  input: AddSsoGroupRolePortalInput;
+}>;
+
+
+export type AddSsoGroupRolePortalMutation = { __typename?: 'Mutation', addSSOGroupRolePortal: { __typename?: 'SSOGroupRolePortal', ssoGroup: string, rolePortal: { __typename?: 'RolePortal', id: string, name: string } } };
+
+export type UpdateSsoGroupRolePortalMutationVariables = Exact<{
+  ssoGroup: Scalars['String']['input'];
+  rolePortal: Scalars['String']['input'];
+  input: UpdateSsoGroupRolePortalInput;
+}>;
+
+
+export type UpdateSsoGroupRolePortalMutation = { __typename?: 'Mutation', updateSSOGroupRolePortal: { __typename?: 'SSOGroupRolePortal', ssoGroup: string, rolePortal: { __typename?: 'RolePortal', id: string, name: string } } };
 
 export type DeleteSsoGroupRolePortalMutationVariables = Exact<{
   input: DeleteSsoGroupRolePortalInput;
@@ -3614,23 +3631,6 @@ export type SsoGroupRolePortalsQueryVariables = Exact<{ [key: string]: never; }>
 
 
 export type SsoGroupRolePortalsQuery = { __typename?: 'Query', ssoGroupRolePortals: Array<{ __typename?: 'SSOGroupRolePortal', ssoGroup: string, rolePortal: { __typename?: 'RolePortal', id: string, name: string } }> };
-
-export type UpdateRolePortalMutationVariables = Exact<{
-  name: Scalars['String']['input'];
-  input: UpdateRolePortalInput;
-}>;
-
-
-export type UpdateRolePortalMutation = { __typename?: 'Mutation', updateRolePortal: { __typename?: 'RolePortal', id: string, name: string, capabilities: Array<{ __typename?: 'Capability', id: string, name: PortalCapability } | null> | null } };
-
-export type UpdateSsoGroupRolePortalMutationVariables = Exact<{
-  ssoGroup: Scalars['String']['input'];
-  rolePortal: Scalars['String']['input'];
-  input: UpdateSsoGroupRolePortalInput;
-}>;
-
-
-export type UpdateSsoGroupRolePortalMutation = { __typename?: 'Mutation', updateSSOGroupRolePortal: { __typename?: 'SSOGroupRolePortal', ssoGroup: string, rolePortal: { __typename?: 'RolePortal', id: string, name: string } } };
 
 export type AddUsersToBundleGroupsMutationVariables = Exact<{
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
@@ -5781,6 +5781,70 @@ useAddRolePortalMutation.getKey = () => ['AddRolePortal'];
 useAddRolePortalMutation.getRootKey = () => ['AddRolePortal'] as const;
 useAddRolePortalMutation.fetcher = (client: GraphQLClient, variables: AddRolePortalMutationVariables, headers?: RequestInit['headers']) => fetcher<AddRolePortalMutation, AddRolePortalMutationVariables>(client, AddRolePortalDocument, variables, headers);
 
+export const UpdateRolePortalDocument = `
+    mutation UpdateRolePortal($name: String!, $input: UpdateRolePortalInput!) {
+  updateRolePortal(name: $name, input: $input) {
+    id
+    name
+    capabilities {
+      id
+      name
+    }
+  }
+}
+    `;
+
+export const useUpdateRolePortalMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<UpdateRolePortalMutation, TError, UpdateRolePortalMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<UpdateRolePortalMutation, TError, UpdateRolePortalMutationVariables, TContext>(
+      {
+    mutationKey: ['UpdateRolePortal'],
+    mutationFn: (variables?: UpdateRolePortalMutationVariables) => fetcher<UpdateRolePortalMutation, UpdateRolePortalMutationVariables>(client, UpdateRolePortalDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useUpdateRolePortalMutation.getKey = () => ['UpdateRolePortal'];
+useUpdateRolePortalMutation.getRootKey = () => ['UpdateRolePortal'] as const;
+useUpdateRolePortalMutation.fetcher = (client: GraphQLClient, variables: UpdateRolePortalMutationVariables, headers?: RequestInit['headers']) => fetcher<UpdateRolePortalMutation, UpdateRolePortalMutationVariables>(client, UpdateRolePortalDocument, variables, headers);
+
+export const DeleteRolePortalDocument = `
+    mutation DeleteRolePortal($name: String!) {
+  deleteRolePortal(name: $name) {
+    id
+    name
+  }
+}
+    `;
+
+export const useDeleteRolePortalMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<DeleteRolePortalMutation, TError, DeleteRolePortalMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<DeleteRolePortalMutation, TError, DeleteRolePortalMutationVariables, TContext>(
+      {
+    mutationKey: ['DeleteRolePortal'],
+    mutationFn: (variables?: DeleteRolePortalMutationVariables) => fetcher<DeleteRolePortalMutation, DeleteRolePortalMutationVariables>(client, DeleteRolePortalDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useDeleteRolePortalMutation.getKey = () => ['DeleteRolePortal'];
+useDeleteRolePortalMutation.getRootKey = () => ['DeleteRolePortal'] as const;
+useDeleteRolePortalMutation.fetcher = (client: GraphQLClient, variables: DeleteRolePortalMutationVariables, headers?: RequestInit['headers']) => fetcher<DeleteRolePortalMutation, DeleteRolePortalMutationVariables>(client, DeleteRolePortalDocument, variables, headers);
+
 export const AddSsoGroupRolePortalDocument = `
     mutation AddSSOGroupRolePortal($input: AddSSOGroupRolePortalInput!) {
   addSSOGroupRolePortal(input: $input) {
@@ -5814,35 +5878,42 @@ useAddSsoGroupRolePortalMutation.getKey = () => ['AddSSOGroupRolePortal'];
 useAddSsoGroupRolePortalMutation.getRootKey = () => ['AddSSOGroupRolePortal'] as const;
 useAddSsoGroupRolePortalMutation.fetcher = (client: GraphQLClient, variables: AddSsoGroupRolePortalMutationVariables, headers?: RequestInit['headers']) => fetcher<AddSsoGroupRolePortalMutation, AddSsoGroupRolePortalMutationVariables>(client, AddSsoGroupRolePortalDocument, variables, headers);
 
-export const DeleteRolePortalDocument = `
-    mutation DeleteRolePortal($name: String!) {
-  deleteRolePortal(name: $name) {
-    id
-    name
+export const UpdateSsoGroupRolePortalDocument = `
+    mutation UpdateSSOGroupRolePortal($ssoGroup: String!, $rolePortal: String!, $input: UpdateSSOGroupRolePortalInput!) {
+  updateSSOGroupRolePortal(
+    ssoGroup: $ssoGroup
+    rolePortal: $rolePortal
+    input: $input
+  ) {
+    ssoGroup
+    rolePortal {
+      id
+      name
+    }
   }
 }
     `;
 
-export const useDeleteRolePortalMutation = <
+export const useUpdateSsoGroupRolePortalMutation = <
       TError = unknown,
       TContext = unknown
     >(
       client: GraphQLClient,
-      options?: UseMutationOptions<DeleteRolePortalMutation, TError, DeleteRolePortalMutationVariables, TContext>,
+      options?: UseMutationOptions<UpdateSsoGroupRolePortalMutation, TError, UpdateSsoGroupRolePortalMutationVariables, TContext>,
       headers?: RequestInit['headers']
     ) => {
     
-    return useMutation<DeleteRolePortalMutation, TError, DeleteRolePortalMutationVariables, TContext>(
+    return useMutation<UpdateSsoGroupRolePortalMutation, TError, UpdateSsoGroupRolePortalMutationVariables, TContext>(
       {
-    mutationKey: ['DeleteRolePortal'],
-    mutationFn: (variables?: DeleteRolePortalMutationVariables) => fetcher<DeleteRolePortalMutation, DeleteRolePortalMutationVariables>(client, DeleteRolePortalDocument, variables, headers)(),
+    mutationKey: ['UpdateSSOGroupRolePortal'],
+    mutationFn: (variables?: UpdateSsoGroupRolePortalMutationVariables) => fetcher<UpdateSsoGroupRolePortalMutation, UpdateSsoGroupRolePortalMutationVariables>(client, UpdateSsoGroupRolePortalDocument, variables, headers)(),
     ...options
   }
     )};
 
-useDeleteRolePortalMutation.getKey = () => ['DeleteRolePortal'];
-useDeleteRolePortalMutation.getRootKey = () => ['DeleteRolePortal'] as const;
-useDeleteRolePortalMutation.fetcher = (client: GraphQLClient, variables: DeleteRolePortalMutationVariables, headers?: RequestInit['headers']) => fetcher<DeleteRolePortalMutation, DeleteRolePortalMutationVariables>(client, DeleteRolePortalDocument, variables, headers);
+useUpdateSsoGroupRolePortalMutation.getKey = () => ['UpdateSSOGroupRolePortal'];
+useUpdateSsoGroupRolePortalMutation.getRootKey = () => ['UpdateSSOGroupRolePortal'] as const;
+useUpdateSsoGroupRolePortalMutation.fetcher = (client: GraphQLClient, variables: UpdateSsoGroupRolePortalMutationVariables, headers?: RequestInit['headers']) => fetcher<UpdateSsoGroupRolePortalMutation, UpdateSsoGroupRolePortalMutationVariables>(client, UpdateSsoGroupRolePortalDocument, variables, headers);
 
 export const DeleteSsoGroupRolePortalDocument = `
     mutation DeleteSSOGroupRolePortal($input: DeleteSSOGroupRolePortalInput!) {
@@ -5991,77 +6062,6 @@ export const useInfiniteSsoGroupRolePortalsQuery = <
 useInfiniteSsoGroupRolePortalsQuery.getKey = (variables?: SsoGroupRolePortalsQueryVariables) => variables === undefined ? ['SSOGroupRolePortals.infinite'] : ['SSOGroupRolePortals.infinite', variables];
 useInfiniteSsoGroupRolePortalsQuery.getRootKey = () => ['SSOGroupRolePortals.infinite'] as const;
 useSsoGroupRolePortalsQuery.fetcher = (client: GraphQLClient, variables?: SsoGroupRolePortalsQueryVariables, headers?: RequestInit['headers']) => fetcher<SsoGroupRolePortalsQuery, SsoGroupRolePortalsQueryVariables>(client, SsoGroupRolePortalsDocument, variables, headers);
-
-export const UpdateRolePortalDocument = `
-    mutation UpdateRolePortal($name: String!, $input: UpdateRolePortalInput!) {
-  updateRolePortal(name: $name, input: $input) {
-    id
-    name
-    capabilities {
-      id
-      name
-    }
-  }
-}
-    `;
-
-export const useUpdateRolePortalMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<UpdateRolePortalMutation, TError, UpdateRolePortalMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<UpdateRolePortalMutation, TError, UpdateRolePortalMutationVariables, TContext>(
-      {
-    mutationKey: ['UpdateRolePortal'],
-    mutationFn: (variables?: UpdateRolePortalMutationVariables) => fetcher<UpdateRolePortalMutation, UpdateRolePortalMutationVariables>(client, UpdateRolePortalDocument, variables, headers)(),
-    ...options
-  }
-    )};
-
-useUpdateRolePortalMutation.getKey = () => ['UpdateRolePortal'];
-useUpdateRolePortalMutation.getRootKey = () => ['UpdateRolePortal'] as const;
-useUpdateRolePortalMutation.fetcher = (client: GraphQLClient, variables: UpdateRolePortalMutationVariables, headers?: RequestInit['headers']) => fetcher<UpdateRolePortalMutation, UpdateRolePortalMutationVariables>(client, UpdateRolePortalDocument, variables, headers);
-
-export const UpdateSsoGroupRolePortalDocument = `
-    mutation UpdateSSOGroupRolePortal($ssoGroup: String!, $rolePortal: String!, $input: UpdateSSOGroupRolePortalInput!) {
-  updateSSOGroupRolePortal(
-    ssoGroup: $ssoGroup
-    rolePortal: $rolePortal
-    input: $input
-  ) {
-    ssoGroup
-    rolePortal {
-      id
-      name
-    }
-  }
-}
-    `;
-
-export const useUpdateSsoGroupRolePortalMutation = <
-      TError = unknown,
-      TContext = unknown
-    >(
-      client: GraphQLClient,
-      options?: UseMutationOptions<UpdateSsoGroupRolePortalMutation, TError, UpdateSsoGroupRolePortalMutationVariables, TContext>,
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useMutation<UpdateSsoGroupRolePortalMutation, TError, UpdateSsoGroupRolePortalMutationVariables, TContext>(
-      {
-    mutationKey: ['UpdateSSOGroupRolePortal'],
-    mutationFn: (variables?: UpdateSsoGroupRolePortalMutationVariables) => fetcher<UpdateSsoGroupRolePortalMutation, UpdateSsoGroupRolePortalMutationVariables>(client, UpdateSsoGroupRolePortalDocument, variables, headers)(),
-    ...options
-  }
-    )};
-
-useUpdateSsoGroupRolePortalMutation.getKey = () => ['UpdateSSOGroupRolePortal'];
-useUpdateSsoGroupRolePortalMutation.getRootKey = () => ['UpdateSSOGroupRolePortal'] as const;
-useUpdateSsoGroupRolePortalMutation.fetcher = (client: GraphQLClient, variables: UpdateSsoGroupRolePortalMutationVariables, headers?: RequestInit['headers']) => fetcher<UpdateSsoGroupRolePortalMutation, UpdateSsoGroupRolePortalMutationVariables>(client, UpdateSsoGroupRolePortalDocument, variables, headers);
 
 export const AddUsersToBundleGroupsDocument = `
     mutation AddUsersToBundleGroups($serviceInstanceId: ServiceInstanceId!, $input: AddUsersToBundleGroupsInput!) {

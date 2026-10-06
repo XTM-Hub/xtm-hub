@@ -1,20 +1,39 @@
 import EditSsoGroupRolePortal from '@/components/admin/role/EditSsoGroupRolePortal';
+import { mockGraphqlQuery } from '@/utils/test/msw/graphql-api';
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
 import {
+  RolePortalsQuery,
   UpdateSsoGroupRolePortalMutation,
   UpdateSsoGroupRolePortalMutationVariables,
 } from '@graphql/generated';
 import { mockRolePortal, mockSsoGroupRolePortal } from '@graphql/mocks';
 import { screen, waitFor } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const GQL_OPERATION_UPDATE_SSO_GROUP_ROLE_PORTAL = 'UpdateSSOGroupRolePortal';
+const GQL_OPERATION_ROLE_PORTALS = 'RolePortals';
 const SSO_GROUP = 'xtmhub-admins';
 const ROLE_PORTAL = 'Admin';
 
+const ROLE_PORTALS_RESPONSE: RolePortalsQuery = {
+  rolePortals: [
+    mockRolePortal({ id: 'role-admin', name: 'Admin' }),
+    mockRolePortal({ id: 'role-user', name: 'User' }),
+  ],
+};
+
 describe('EditSsoGroupRolePortal', () => {
+  beforeEach(() => {
+    mswServer.use(
+      mockGraphqlQuery({
+        queryName: GQL_OPERATION_ROLE_PORTALS,
+        data: ROLE_PORTALS_RESPONSE,
+      })
+    );
+  });
+
   it('should submit the trimmed new values for the current mapping and close the sheet', async () => {
     let capturedVariables:
       UpdateSsoGroupRolePortalMutationVariables | undefined;
@@ -48,9 +67,8 @@ describe('EditSsoGroupRolePortal', () => {
     const ssoGroupInput = screen.getByLabelText(/RoleListPage.SsoGroup/);
     await user.clear(ssoGroupInput);
     await user.type(ssoGroupInput, ' xtmhub-users ');
-    const rolePortalInput = screen.getByLabelText(/RoleListPage.Role/);
-    await user.clear(rolePortalInput);
-    await user.type(rolePortalInput, 'User');
+    await user.click(screen.getByLabelText(/RoleListPage.Role/));
+    await user.click(await screen.findByRole('option', { name: 'User' }));
     await user.click(screen.getByRole('button', { name: 'Utils.Validate' }));
 
     await waitFor(() => {
@@ -89,9 +107,13 @@ describe('EditSsoGroupRolePortal', () => {
       />
     );
 
-    const rolePortalInput = screen.getByLabelText(/RoleListPage.Role/);
-    await user.clear(rolePortalInput);
-    await user.type(rolePortalInput, 'User');
+    await waitFor(() => {
+      expect(screen.getByLabelText(/RoleListPage.Role/)).toHaveValue(
+        ROLE_PORTAL
+      );
+    });
+    await user.click(screen.getByLabelText(/RoleListPage.Role/));
+    await user.click(await screen.findByRole('option', { name: 'User' }));
     await user.click(screen.getByRole('button', { name: 'Utils.Validate' }));
 
     await waitFor(() => expect(mutationCalled).toBe(true));
