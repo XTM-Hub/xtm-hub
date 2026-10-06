@@ -27,7 +27,7 @@ Read only, and in parallel where possible.
 
   | File | What it holds |
   | --- | --- |
-  | `<key>-spec.json`, `<key>.json` | Spec and build sessions: `.structured_output` (status, summary, question), `.result` (the session's last message), `.total_cost_usd` |
+  | `<key>-spec.json`, `<key>.json` | Spec and build sessions: `.structured_output` (status, summary, question), `.result` (the session's last message), `.total_cost_usd`, `.session_id` (the human can reopen it with `claude --resume <id>`) |
   | `<key>-spec.jsonl`, `<key>.jsonl` | The same sessions event by event: every message, tool call and tool result, subagents included. Search it rather than reading it whole |
   | `<key>-spec.stderr`, `<key>.stderr` | Crashes and timeouts |
   | `<key>-before.log` | The before screenshots taken by the script |
@@ -64,6 +64,7 @@ code it points at, open the screenshots.
 | Missing dependency | The question or the code needs a component that is not migrated yet |
 | Out of scope | `validate.mjs`: `Out of scope`, `Shared file`, `Generated file` |
 | Environment | No structured output, a timeout in the stderr, the app or the backend unreachable, `preflight.log` |
+| Permissions | A tool result in the `.jsonl` says `Permission to use … has been denied`: the allowlist in `run.sh` lacks the command, or the session used a form it refuses (`cd`, `git -C`, an absolute path) |
 | CI | The item is committed and `<key>-ci.log` shows the failing job |
 
 ## 4. Report

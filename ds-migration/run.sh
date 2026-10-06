@@ -290,12 +290,16 @@ SPEC_SCHEMA='{"type":"object","additionalProperties":false,"required":["status",
 ITEM_SCHEMA='{"type":"object","additionalProperties":false,"required":["status","summary","commit_subject","commit_body"],"properties":{"status":{"type":"string","enum":["DONE","NEEDS_HUMAN","FAILED"]},"summary":{"type":"string"},"commit_subject":{"type":"string"},"commit_body":{"type":"string"},"question":{"type":"string"}}}'
 REVIEW_SCHEMA='{"type":"object","additionalProperties":false,"required":["findings"],"properties":{"findings":{"type":"string"}}}'
 
-READ_TOOLS="Read,Glob,Grep,Agent,Skill,TodoWrite,\
+# Every part of a compound command must match a rule, hence the read-only utilities that end
+# pipes and report exit codes. Deleting is limited to the frontend, by relative or absolute path:
+# the rm rules take a glob, a `:*` prefix does not match inside a path, and `..` is refused.
+READ_TOOLS="Read,Glob,Grep,Agent,SendMessage,Skill,TodoWrite,\
 Bash(gh issue view:*),Bash(gh pr view:*),Bash(gh pr diff:*),\
-Bash(git diff:*),Bash(git status:*),Bash(git log:*),Bash(git show:*),Bash(git ls-files:*)"
+Bash(git diff:*),Bash(git status:*),Bash(git log:*),Bash(git show:*),Bash(git ls-files:*),\
+Bash(tail:*),Bash(head:*),Bash(grep:*),Bash(cat:*),Bash(ls:*),Bash(wc:*),Bash(sort:*),Bash(echo:*)"
 SPEC_TOOLS="$READ_TOOLS,Edit,Write,Bash(gh issue edit:*),Bash(node ds-migration/screenshot.mjs:*)"
 WRITE_TOOLS="$READ_TOOLS,Edit,Write,Bash(gh issue edit:*),Bash(gh issue comment:*),\
-Bash(node ds-migration/screenshot.mjs:*),\
+Bash(node ds-migration/screenshot.mjs:*),Bash(rm apps/frontend/*),Bash(rm $PWD/apps/frontend/*),\
 Bash(yarn workspace @xtm-hub/frontend lint:*),Bash(yarn workspace @xtm-hub/frontend format:*),\
 Bash(yarn workspace @xtm-hub/frontend check-ts:*),Bash(yarn workspace @xtm-hub/frontend test:*),\
 Bash(yarn workspace @xtm-hub/frontend i18n:check:*),Bash(node ds-migration/validate.mjs:*)"
@@ -318,11 +322,12 @@ claude_session() {
   local out="$LOG_DIR/$1.json" stream="$LOG_DIR/$1.jsonl" line
   ${TIMEOUT_BIN:+"$TIMEOUT_BIN" "$ITEM_TIMEOUT"} claude -p "$2" \
     --output-format stream-json --verbose --json-schema "$3" --permission-mode dontAsk --allowedTools "$4" \
-    ${DS_BUDGET_USD:+--max-budget-usd "$DS_BUDGET_USD"} --no-session-persistence 2>>"$LOG_DIR/$1.stderr" |
+    ${DS_BUDGET_USD:+--max-budget-usd "$DS_BUDGET_USD"} 2>>"$LOG_DIR/$1.stderr" |
     tee "$stream" | jq -rR --unbuffered "$PROGRESS_FILTER" 2>/dev/null |
     while IFS= read -r line; do log "$1 $line"; done || true
   jq -cR 'fromjson? | select(.type == "result")' "$stream" 2>/dev/null | tail -n 1 >"$out" || true
-  log "$1: session cost \$$(jq -r '.total_cost_usd // "?"' "$out" 2>/dev/null || echo '?')"
+  # Sessions are kept: subagents can then be resumed, and a human can reopen one with --resume.
+  log "$1: session cost \$$(jq -r '.total_cost_usd // "?"' "$out" 2>/dev/null || echo '?'), resume with: claude --resume $(jq -r '.session_id // "?"' "$out" 2>/dev/null || echo '?')"
   jq -c '.structured_output // empty' "$out" 2>/dev/null || true
 }
 

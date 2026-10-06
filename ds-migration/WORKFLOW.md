@@ -9,6 +9,10 @@ Each item takes two sessions. **Spec mode** analyses and writes the spec, code u
 then captures the screens the spec declares, in the light and dark themes, on the current code.
 **Build mode** implements the spec and compares the rendering with those captures.
 
+Run every shell command from the repository root, with paths relative to it: no `cd`, no
+`git -C`, no absolute paths. Delete a file with `rm apps/frontend/<path>`. The command allowlist
+only accepts these forms; a refused command means changing the command, not working around it.
+
 The script owns version control and the status file. Never run `git commit`, `git push`, `git stash`
 or `git checkout`, and never edit `ds-migration/sprint-status.yaml`. The script validates your work,
 commits it with the message you return, pushes, and waits for the pull request's checks. It only
