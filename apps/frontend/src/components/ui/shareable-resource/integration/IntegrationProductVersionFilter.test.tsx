@@ -71,8 +71,8 @@ describe('IntegrationProductVersionFilter', () => {
   it('lists every instance name running the version in a tooltip on the adornment', async () => {
     vi.mocked(useTranslations).mockReturnValue(
       Object.assign(
-        (key: string, values?: Record<string, string>) =>
-          values?.name ? `${key}: ${values.name}` : key,
+        (key: string, values?: Record<string, string | number>) =>
+          values?.names ? `${key}: ${values.names} (${values.count})` : key,
         { has: () => false, rich: (key: string) => key }
       ) as unknown as ReturnType<typeof useTranslations>
     );
@@ -85,18 +85,12 @@ describe('IntegrationProductVersionFilter', () => {
     );
 
     await user.click(screen.getByText(PLACEHOLDER));
-    await user.hover(
-      screen.getByRole('img', {
-        name: `${REGISTERED_TOOLTIP}: Prod OpenCTI, Staging OpenCTI`,
-      })
-    );
+    const expectedLabel = `${REGISTERED_TOOLTIP}: Prod OpenCTI, Staging OpenCTI (2)`;
+    await user.hover(screen.getByRole('img', { name: expectedLabel }));
 
-    expect(
-      (await screen.findAllByText(`${REGISTERED_TOOLTIP}: Prod OpenCTI`)).length
-    ).toBeGreaterThan(0);
-    expect(
-      screen.getAllByText(`${REGISTERED_TOOLTIP}: Staging OpenCTI`).length
-    ).toBeGreaterThan(0);
+    expect((await screen.findAllByText(expectedLabel)).length).toBeGreaterThan(
+      0
+    );
   });
 
   it('forwards the registered versions to useRegisteredProductVersions to useRegisteredProductVersions', async () => {

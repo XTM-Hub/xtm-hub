@@ -93,11 +93,10 @@ export const IntegrationProductVersionFilter = ({
       renderItemAdornment={(option) => {
         const instances = registeredInstancesByVersion[option.value];
         if (!instances?.length) return null;
-        const connectedProduct = (name: string) =>
-          t(
-            'Service.OpenctiIntegrations.Filter.ProductVersion.RegisteredTooltip',
-            { name }
-          );
+        const label = t(
+          'Service.OpenctiIntegrations.Filter.ProductVersion.RegisteredTooltip',
+          { count: instances.length, names: instances.join(', ') }
+        );
         return (
           <TooltipProvider>
             <Tooltip>
@@ -105,18 +104,12 @@ export const IntegrationProductVersionFilter = ({
                 <span className="inline-flex shrink-0">
                   <Link2
                     role="img"
-                    aria-label={connectedProduct(instances.join(', '))}
+                    aria-label={label}
                     className="h-4 w-4 text-primary"
                   />
                 </span>
               </TooltipTrigger>
-              <TooltipContent>
-                {instances.map((instance, index) => (
-                  <p key={`${instance}-${index}`}>
-                    {connectedProduct(instance)}
-                  </p>
-                ))}
-              </TooltipContent>
+              <TooltipContent>{label}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         );

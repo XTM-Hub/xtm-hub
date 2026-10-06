@@ -1239,7 +1239,7 @@
         "ProductVersion": {
           "Label": "OpenCTI 互換バージョン",
           "Placeholder": "OpenCTI バージョン...",
-          "RegisteredTooltip": "接続済みプロダクト: {name}"
+          "RegisteredTooltip": "接続済みプロダクト: {names}"
         },
         "SolutionCategory": {
           "Label": "ソリューションカテゴリ",
