@@ -4,5 +4,4 @@ export * from './Breadcrumb';
 export * from './Callout';
 export * from './Card';
 export * from './GradientButton';
-export * from './Input';
 export * from './Skeleton';

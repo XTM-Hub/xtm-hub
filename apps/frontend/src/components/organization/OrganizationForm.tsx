@@ -1,7 +1,7 @@
 import { organizationFormSchema } from '@/components/organization/OrganizationForm.schema';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
+import { Button, Input } from '@filigran/design-system';
 import {
   Form,
   FormControl,
@@ -9,7 +9,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  Input,
   SheetFooter,
   Tag,
   TagInput,
@@ -88,15 +87,11 @@ export const OrganizationForm = ({
           control={form.control}
           name="name"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('OrganizationForm.Name')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('OrganizationForm.Name')}
-                  {...field}
-                />
-              </FormControl>
-            </FormItem>
+            <Input
+              label={t('OrganizationForm.Name')}
+              placeholder={t('OrganizationForm.Name')}
+              {...field}
+            />
           )}
         />
         <FormField

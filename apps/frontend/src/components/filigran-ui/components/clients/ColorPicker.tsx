@@ -1,10 +1,13 @@
 'use client';
 import { cn } from '@/components/filigran-ui/lib/utils';
 import { useTranslate } from '@/hooks/use-translate';
-import { IconButton, type IconButtonProps } from '@filigran/design-system';
+import {
+  IconButton,
+  type IconButtonProps,
+  Input,
+} from '@filigran/design-system';
 import { forwardRef, useMemo, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
-import { Input } from '../servers';
 import { Popover, PopoverContent, PopoverTrigger } from './Popover';
 
 interface ColorPickerProps {
@@ -32,6 +35,7 @@ const ColorPicker = forwardRef<
         open={open}>
         <div className="flex gap-2 items-center relative">
           <Input
+            aria-label={t('UseCaseForm.Color')}
             maxLength={7}
             onChange={(e) => {
               onChange(e?.currentTarget?.value);
@@ -46,7 +50,7 @@ const ColorPicker = forwardRef<
             <IconButton
               {...props}
               className={cn(
-                'block size-5 rounded-full absolute right-2',
+                'block size-5 rounded-full absolute top-2 right-2',
                 className
               )}
               name={name}

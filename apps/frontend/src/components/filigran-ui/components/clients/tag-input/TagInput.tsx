@@ -1,6 +1,5 @@
 'use client';
 
-import { Input } from '@/components/filigran-ui/components/servers';
 import { cn, uuid } from '@/components/filigran-ui/lib/utils';
 import { Button } from '@filigran/design-system';
 import { type VariantProps } from 'class-variance-authority';
@@ -9,6 +8,9 @@ import { Autocomplete } from './Autocomplete';
 import { tagVariants } from './Tag';
 import { TagList } from './TagList';
 import { TagPopover } from './TagPopover';
+
+const INPUT_BASE_CLASSES =
+  'flex h-9 w-full rounded bg-input-bg-default px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
 
 export enum Delimiter {
   Comma = ',',
@@ -474,7 +476,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
                     }}
                     disabled={disabled}
                   />
-                  <Input
+                  <input
                     ref={inputRef}
                     id={id}
                     type="text"
@@ -490,6 +492,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
                     onBlur={handleInputBlur}
                     {...inputProps}
                     className={cn(
+                      INPUT_BASE_CLASSES,
                       'h-5 w-fit flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0',
                       // className,
                       styleClasses?.input
@@ -532,7 +535,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
               }}>
               {!usePopoverForTags ? (
                 !inlineTags ? (
-                  <Input
+                  <input
                     ref={inputRef}
                     id={id}
                     type="text"
@@ -548,6 +551,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
                     onBlur={handleInputBlur}
                     {...inputProps}
                     className={cn(
+                      INPUT_BASE_CLASSES,
                       'h-5 w-fit flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0',
                       // className,
                       styleClasses?.input
@@ -585,7 +589,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
                       }}
                       disabled={disabled}
                     />
-                    <Input
+                    <input
                       ref={inputRef}
                       id={id}
                       type="text"
@@ -601,6 +605,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
                       onBlur={handleInputBlur}
                       {...inputProps}
                       className={cn(
+                        INPUT_BASE_CLASSES,
                         'h-5 w-fit flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0',
                         // className,
                         styleClasses?.input
@@ -634,7 +639,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
                     tagClasses: styleClasses?.tag,
                   }}
                   disabled={disabled}>
-                  <Input
+                  <input
                     ref={inputRef}
                     id={id}
                     type="text"
@@ -650,6 +655,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
                     onBlur={handleInputBlur}
                     {...inputProps}
                     className={cn(
+                      INPUT_BASE_CLASSES,
                       'h-5 w-fit flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-transparent focus-visible:ring-offset-0',
                       // className,
                       styleClasses?.input
@@ -671,7 +677,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
           <div className="w-full">
             {!usePopoverForTags ? (
               !inlineTags ? (
-                <Input
+                <input
                   ref={inputRef}
                   id={id}
                   type="text"
@@ -687,6 +693,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
                   onBlur={handleInputBlur}
                   {...inputProps}
                   className={cn(
+                    INPUT_BASE_CLASSES,
                     styleClasses?.input
                     // className
                   )}
@@ -716,7 +723,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
                   tagClasses: styleClasses?.tag,
                 }}
                 disabled={disabled}>
-                <Input
+                <input
                   ref={inputRef}
                   id={id}
                   type="text"
@@ -738,6 +745,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
                     (maxTags !== undefined && tags.length >= maxTags)
                   }
                   className={cn(
+                    INPUT_BASE_CLASSES,
                     'w-full border-0',
                     styleClasses?.input
                     // className

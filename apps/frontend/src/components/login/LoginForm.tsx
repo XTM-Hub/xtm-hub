@@ -4,16 +4,8 @@ import { LoginFormMutation } from '@/components/login/login.graphql';
 import useDecodedQuery from '@/hooks/use-decoded-query';
 import { useTranslate } from '@/hooks/use-translate';
 import { decodeSafeRedirect } from '@/utils/redirect';
-import { Button } from '@filigran/design-system';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  Input,
-  toast,
-} from '@filigran/ui';
+import { Button, Input } from '@filigran/design-system';
+import { Form, FormField, toast } from '@filigran/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -68,31 +60,23 @@ const LoginForm = () => {
             control={form.control}
             name="email"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('LoginPage.Email')}</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder={t('LoginPage.Email')}
-                    {...field}
-                  />
-                </FormControl>
-              </FormItem>
+              <Input
+                label={t('LoginPage.Email')}
+                placeholder={t('LoginPage.Email')}
+                {...field}
+              />
             )}
           />
           <FormField
             control={form.control}
             name="password"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('LoginPage.Password')}</FormLabel>
-                <FormControl>
-                  <Input
-                    type="password"
-                    placeholder={t('LoginPage.Password')}
-                    {...field}
-                  />
-                </FormControl>
-              </FormItem>
+              <Input
+                label={t('LoginPage.Password')}
+                type="password"
+                placeholder={t('LoginPage.Password')}
+                {...field}
+              />
             )}
           />
           <Button

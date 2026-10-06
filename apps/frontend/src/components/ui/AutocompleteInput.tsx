@@ -1,13 +1,7 @@
 'use client';
 import { cn } from '@/lib/utils';
-import { Input } from '@filigran/ui/servers';
-import {
-  ComponentPropsWithoutRef,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-} from 'react';
+import { Input, InputProps } from '@filigran/design-system';
+import { useEffect, useId, useRef, useState } from 'react';
 
 export interface AutocompleteOption {
   label: string;
@@ -15,8 +9,8 @@ export interface AutocompleteOption {
 }
 
 interface AutocompleteInputProps extends Omit<
-  ComponentPropsWithoutRef<'input'>,
-  'value' | 'onChange'
+  InputProps,
+  'value' | 'onChange' | 'type'
 > {
   options: AutocompleteOption[];
   value?: string;

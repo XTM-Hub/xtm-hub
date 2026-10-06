@@ -600,7 +600,7 @@ const UserList = ({ organization }: UserListProps) => {
           <div className="flex flex-col-reverse items-center justify-between gap-s sm:flex-row">
             <div className="flex w-full items-center gap-s sm:w-auto">
               <SearchInput
-                containerClass="w-full sm:w-auto"
+                className="w-full sm:w-auto"
                 placeholder={t('UserActions.SearchUser')}
                 onChange={debounceHandleInput}
               />

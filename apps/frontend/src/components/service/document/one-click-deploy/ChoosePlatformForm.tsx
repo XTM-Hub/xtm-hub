@@ -1,16 +1,9 @@
 import { useTranslate } from '@/hooks/use-translate';
-import { cn } from '@/lib/utils';
 import { isEeCapableContract } from '@/utils/platform';
 import { SHAREABLE_RESOURCE_TYPE_NAME_MAPPING } from '@/utils/shareable-resources/shareable-resources.types';
 import { doesVersionSatisfy } from '@/utils/versioning';
-import { Button } from '@filigran/design-system';
-import {
-  AutoForm,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Input,
-} from '@filigran/ui';
+import { Button, Radio, RadioGroup } from '@filigran/design-system';
+import { AutoForm, FormControl, FormItem, FormMessage } from '@filigran/ui';
 import {
   Tooltip,
   TooltipContent,
@@ -45,6 +38,10 @@ const ChoosePlatformForm = ({
   requiresEe,
 }: ChoosePlatformFormProps) => {
   const t = useTranslate();
+  const deployQuestion = t(
+    'Service.ShareableResources.Deploy.DeployQuestionTag',
+    { platformType: translatedPlatformIdentifier }
+  );
 
   return (
     <div className="flex flex-col h-full justify-between gap-m">
@@ -58,11 +55,7 @@ const ChoosePlatformForm = ({
               ],
           })}
         </h1>
-        <p>
-          {t('Service.ShareableResources.Deploy.DeployQuestionTag', {
-            platformType: translatedPlatformIdentifier,
-          })}
-        </p>
+        <p>{deployQuestion}</p>
       </div>
       <AutoForm
         formSchema={selectPlatformFormSchema}
@@ -73,68 +66,64 @@ const ChoosePlatformForm = ({
           platformUrl: {
             fieldType: ({ field }) => (
               <FormItem>
-                <>
-                  {platforms.map((platform) => {
-                    const isPlatformCompatible = doesVersionSatisfy({
-                      givenVersion: platform.version ?? '0.0.0',
-                      requiredVersion: requiredProductVersion ?? '0.0.0',
-                    });
+                <FormControl>
+                  <RadioGroup
+                    aria-label={deployQuestion}
+                    value={field.value ?? ''}
+                    onValueChange={field.onChange}>
+                    {platforms.map((platform) => {
+                      const isPlatformCompatible = doesVersionSatisfy({
+                        givenVersion: platform.version ?? '0.0.0',
+                        requiredVersion: requiredProductVersion ?? '0.0.0',
+                      });
 
-                    const isEeBlocked =
-                      requiresEe && !isEeCapableContract(platform.contract);
-                    const isDisabled = !isPlatformCompatible || isEeBlocked;
+                      const isEeBlocked =
+                        requiresEe && !isEeCapableContract(platform.contract);
+                      const isDisabled = !isPlatformCompatible || isEeBlocked;
 
-                    const input = (
-                      <div className="flex items-center gap-2">
-                        <Input
+                      const radio = (
+                        <Radio
+                          key={platform.id}
                           id={platform.id}
-                          type="radio"
-                          disabled={isDisabled}
-                          onChange={() => field.onChange(platform.url)}
-                          checked={field.value === platform.url}
                           value={platform.url}
-                          className="h-4 w-4 accent-primary"
+                          disabled={isDisabled}
+                          label={platform.title}
                         />
-                        <FormLabel
-                          htmlFor={platform.id}
-                          className={cn(
-                            isDisabled && 'text-content-body-base'
-                          )}>
-                          {platform.title}
-                        </FormLabel>
-                      </div>
-                    );
+                      );
 
-                    if (!isDisabled) {
-                      return <div key={platform.id}>{input}</div>;
-                    }
+                      if (!isDisabled) {
+                        return radio;
+                      }
 
-                    return (
-                      <TooltipProvider key={platform.id}>
-                        <Tooltip>
-                          <TooltipTrigger
-                            className="flex"
-                            onClick={(e) => e.preventDefault()}>
-                            {input}
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xl">
-                            <p>
-                              {isEeBlocked
-                                ? t(
-                                    'Service.ShareableResources.Deploy.EE.PlatformRequiresEE',
-                                    { platformTitle: platform.title }
-                                  )
-                                : t(
-                                    'Service.ShareableResources.Deploy.DeployIncompatibleVersion',
-                                    { platformTitle: platform.title }
-                                  )}
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    );
-                  })}
-                </>
+                      return (
+                        <TooltipProvider key={platform.id}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span
+                                className="flex"
+                                tabIndex={0}>
+                                {radio}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xl">
+                              <p>
+                                {isEeBlocked
+                                  ? t(
+                                      'Service.ShareableResources.Deploy.EE.PlatformRequiresEE',
+                                      { platformTitle: platform.title }
+                                    )
+                                  : t(
+                                      'Service.ShareableResources.Deploy.DeployIncompatibleVersion',
+                                      { platformTitle: platform.title }
+                                    )}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      );
+                    })}
+                  </RadioGroup>
+                </FormControl>
                 <FormMessage className="mt-2 text-sm text-destructive" />
               </FormItem>
             ),

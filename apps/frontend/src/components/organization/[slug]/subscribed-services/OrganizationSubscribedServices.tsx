@@ -237,7 +237,7 @@ const OrganizationSubscribedServicesSlug = ({
             </label>
             <SearchInput
               id="subscribed-services-search"
-              containerClass="w-full sm:w-1/3"
+              className="w-full sm:w-1/3"
               placeholder={t('Service.SearchServices')}
               onChange={onSearchChange}
             />

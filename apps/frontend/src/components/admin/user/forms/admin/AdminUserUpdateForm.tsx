@@ -9,16 +9,14 @@ import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { cn, isEmpty } from '@/lib/utils';
-import { Button, IconButton } from '@filigran/design-system';
+import { Button, IconButton, Input } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
-  Input,
   SheetFooter,
   toast,
 } from '@filigran/ui';
@@ -157,33 +155,25 @@ export const AdminUserUpdateForm = ({
         <FormField
           control={form.control}
           name="first_name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('UserForm.FirstName')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('UserForm.FirstName')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Input
+              label={t('UserForm.FirstName')}
+              placeholder={t('UserForm.FirstName')}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
         <FormField
           control={form.control}
           name="last_name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('UserForm.LastName')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('UserForm.LastName')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Input
+              label={t('UserForm.LastName')}
+              placeholder={t('UserForm.LastName')}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
         <CapabilityDescription />

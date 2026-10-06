@@ -5,18 +5,8 @@ import { translateServiceDefinitionIdentifier } from '@/components/registration/
 import { UpdatePlatformServiceMetadata } from '@/components/service/service.graphql';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Input,
-  SheetFooter,
-  useToast,
-} from '@filigran/ui';
+import { Button, Input } from '@filigran/design-system';
+import { Form, FormField, SheetFooter, useToast } from '@filigran/ui';
 import { ServiceDefinitionIdentifier } from '@generated/serviceInstance_fragment.graphql';
 import { serviceUpdatePlatformServiceMetadataMutation } from '@generated/serviceUpdatePlatformServiceMetadataMutation.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -113,29 +103,21 @@ export const PlatformUpdateSheet = ({
           <FormField
             control={form.control}
             name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('Platform.Name')}</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder={t('Platform.NamePlaceholder')}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+            render={({ field, fieldState }) => (
+              <Input
+                label={t('Platform.Name')}
+                placeholder={t('Platform.NamePlaceholder')}
+                error={fieldState.error?.message}
+                {...field}
+              />
             )}
           />
 
-          <FormItem>
-            <FormLabel>{t('Register.Details.ProductURL')}</FormLabel>
-            <FormControl>
-              <Input
-                value={platformUrl}
-                disabled
-              />
-            </FormControl>
-          </FormItem>
+          <Input
+            label={t('Register.Details.ProductURL')}
+            value={platformUrl}
+            disabled
+          />
 
           <SheetFooter>
             <Button

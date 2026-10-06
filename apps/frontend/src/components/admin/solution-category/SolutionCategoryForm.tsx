@@ -1,6 +1,6 @@
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
+import { Button, Input } from '@filigran/design-system';
 import {
   Form,
   FormControl,
@@ -8,7 +8,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  Input,
   MultiSelectFormField,
   SheetFooter,
 } from '@filigran/ui';
@@ -68,17 +67,13 @@ const SolutionCategoryForm = ({
         <FormField
           control={form.control}
           name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('SolutionCategory.Form.Name')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('SolutionCategory.Form.Name')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Input
+              label={t('SolutionCategory.Form.Name')}
+              placeholder={t('SolutionCategory.Form.Name')}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
         <FormField

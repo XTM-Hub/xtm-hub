@@ -1,6 +1,6 @@
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
+import { Button, Input } from '@filigran/design-system';
 import {
   ColorPicker,
   Form,
@@ -9,7 +9,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  Input,
   MultiSelectFormField,
   SheetFooter,
 } from '@filigran/ui';
@@ -76,15 +75,11 @@ const UseCaseForm = ({
           control={form.control}
           name="name"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('UseCaseForm.Name')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('UseCaseForm.Name')}
-                  {...field}
-                />
-              </FormControl>
-            </FormItem>
+            <Input
+              label={t('UseCaseForm.Name')}
+              placeholder={t('UseCaseForm.Name')}
+              {...field}
+            />
           )}
         />
         <FormField

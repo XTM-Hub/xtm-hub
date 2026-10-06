@@ -2,7 +2,7 @@ import { ServiceFormUseCasesField } from '@/components/service/form/UseCasesFiel
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import MarkdownInput from '@/components/ui/MarkdownInput';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button, IconButton, Switch } from '@filigran/design-system';
+import { Button, IconButton, Input, Switch } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
 import {
   FileInput,
@@ -12,7 +12,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  Input,
   Select,
   SelectContent,
   SelectItem,
@@ -118,17 +117,13 @@ const VotableFeatureForm = ({
         <FormField
           control={form.control}
           name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('VotingRound.Feature.Title')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('VotingRound.Feature.Title')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Input
+              label={t('VotingRound.Feature.Title')}
+              placeholder={t('VotingRound.Feature.Title')}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
         <FormField
@@ -167,17 +162,13 @@ const VotableFeatureForm = ({
         <FormField
           control={form.control}
           name="short_description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('VotingRound.Feature.ShortDescription')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('VotingRound.Feature.ShortDescription')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Input
+              label={t('VotingRound.Feature.ShortDescription')}
+              placeholder={t('VotingRound.Feature.ShortDescription')}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
         <FormField
@@ -255,18 +246,14 @@ const VotableFeatureForm = ({
         <FormField
           control={form.control}
           name="position"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('VotingRound.Feature.Position')}</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  min={0}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Input
+              label={t('VotingRound.Feature.Position')}
+              type="number"
+              min={0}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
         <FormField

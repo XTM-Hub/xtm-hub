@@ -627,7 +627,7 @@ const TrialsTab = ({ type, scope }: TrialsTabProps) => {
             </label>
             <SearchInput
               id="trials-search"
-              containerClass="w-full sm:w-1/3"
+              className="w-full sm:w-1/3"
               placeholder={t('TrialsDashboard.Actions.SearchTrials')}
               onChange={debounceHandleInput}
             />

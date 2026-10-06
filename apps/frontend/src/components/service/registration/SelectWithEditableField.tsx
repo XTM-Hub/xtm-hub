@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
+import { Input } from '@filigran/design-system';
 import { CheckIcon } from '@filigran/icon';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@filigran/ui';
-import { Input } from '@filigran/ui/servers';
 import { useRef, useState } from 'react';
 
 type Option = { value: string; label: string };
@@ -192,6 +192,7 @@ export const SelectWithEditableField = ({
             onChange={handleCustomChange}
             onKeyDown={handleCustomKeyDown}
             placeholder={labels.editableFieldPlaceholder}
+            aria-label={labels.editableFieldPlaceholder}
           />
         </div>
       </SelectContent>

@@ -79,7 +79,7 @@ export const ServiceListHeader = ({
 
   const searchInput = (
     <SearchInput
-      containerClass="max-sm:w-full sm:w-[20rem]"
+      className="max-sm:w-full sm:w-[20rem]"
       placeholder={t('GenericActions.Search')}
       defaultValue={search}
       onChange={debounceHandleInput(onSearchChange)}

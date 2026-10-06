@@ -1,11 +1,8 @@
 import {
-  FormControl,
   FormItem,
-  FormMessage,
+  useFormField,
 } from '@/components/filigran-ui/components/clients';
-import { Input } from '@/components/filigran-ui/components/servers';
-import type { ComponentProps } from 'react';
-import AutoFormLabel from '../common/Label';
+import { Input, type InputProps } from '@filigran/design-system';
 import AutoFormTooltip from '../common/Tooltip';
 import type { AutoFormInputComponentProps } from '../types';
 
@@ -15,25 +12,22 @@ const AutoFormNumber = ({
   fieldConfigItem,
   fieldProps,
 }: AutoFormInputComponentProps) => {
+  const { error } = useFormField();
   const { showLabel: _showLabel, ...fieldPropsWithoutShowLabel } = fieldProps;
   const showLabel = _showLabel === undefined ? true : _showLabel;
+  const text = fieldConfigItem?.label || label;
 
   return (
     <FormItem>
-      {showLabel && (
-        <AutoFormLabel
-          label={fieldConfigItem?.label || label}
-          isRequired={isRequired}
-        />
-      )}
-      <FormControl>
-        <Input
-          type="number"
-          {...(fieldPropsWithoutShowLabel as ComponentProps<typeof Input>)}
-        />
-      </FormControl>
+      <Input
+        label={showLabel ? text : undefined}
+        aria-label={showLabel ? undefined : text}
+        required={isRequired}
+        error={error?.message}
+        type="number"
+        {...(fieldPropsWithoutShowLabel as InputProps)}
+      />
       <AutoFormTooltip fieldConfigItem={fieldConfigItem} />
-      <FormMessage />
     </FormItem>
   );
 };

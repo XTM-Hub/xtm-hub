@@ -1,7 +1,7 @@
 import { RoadmapServiceInstance } from '@/components/admin/voting-round/use-roadmap-service-instances';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button, Textarea } from '@filigran/design-system';
+import { Button, Input, Textarea } from '@filigran/design-system';
 import {
   Form,
   FormControl,
@@ -9,7 +9,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  Input,
   Select,
   SelectContent,
   SelectItem,
@@ -127,17 +126,13 @@ const VotingRoundForm = ({
         <FormField
           control={form.control}
           name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('VotingRound.Form.Name')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('VotingRound.Form.Name')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Input
+              label={t('VotingRound.Form.Name')}
+              placeholder={t('VotingRound.Form.Name')}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
         <FormField

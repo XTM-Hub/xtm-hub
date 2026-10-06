@@ -4,17 +4,9 @@ import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { isEmpty } from '@/lib/utils';
-import { Button } from '@filigran/design-system';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  SheetFooter,
-} from '@filigran/ui';
+import { Button, Input } from '@filigran/design-system';
+import { Form, FormField, SheetFooter } from '@filigran/ui';
 import { toast } from '@filigran/ui/clients';
-import { Input } from '@filigran/ui/servers';
 import { trialsQuotasKeys } from '@graphql/deployment/deployment.keys';
 import {
   DeploymentRequestPlatformRegion,
@@ -99,24 +91,19 @@ export const TrialsTabQuotasPlatformUpdateForm = ({
             control={form.control}
             name="newCapacity"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  {t('TrialsDashboard.UpdateQuotasForm.NewCapacityLabel')}
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder={t(
-                      'TrialsDashboard.UpdateQuotasForm.NewCapacityLabel'
-                    )}
-                    type="number"
-                    min={0}
-                    onChange={(event) =>
-                      field.onChange(Number.parseInt(event.target.value, 10))
-                    }
-                  />
-                </FormControl>
-              </FormItem>
+              <Input
+                label={t('TrialsDashboard.UpdateQuotasForm.NewCapacityLabel')}
+                {...field}
+                value={Number.isFinite(field.value) ? String(field.value) : ''}
+                placeholder={t(
+                  'TrialsDashboard.UpdateQuotasForm.NewCapacityLabel'
+                )}
+                type="number"
+                min={0}
+                onChange={(event) =>
+                  field.onChange(Number.parseInt(event.target.value, 10))
+                }
+              />
             )}
           />
 

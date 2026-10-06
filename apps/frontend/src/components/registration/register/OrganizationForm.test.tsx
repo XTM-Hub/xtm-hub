@@ -106,11 +106,11 @@ describe('RegisterOrganizationForm', () => {
 
   it('renders professional organizations before the personal one', () => {
     renderForm(mixedOrgs);
-    const radios = screen.getAllByRole('radio') as HTMLInputElement[];
-    expect(radios.map((radio) => radio.value)).toEqual([
-      'Pro One',
-      'Pro Two',
-      'Personal',
+    const radios = screen.getAllByRole('radio');
+    expect(radios.map((radio) => radio.getAttribute('value'))).toEqual([
+      'org-pro-1',
+      'org-pro-2',
+      'org-personal',
     ]);
   });
 

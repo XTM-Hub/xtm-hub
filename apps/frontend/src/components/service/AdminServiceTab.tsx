@@ -147,7 +147,7 @@ const AdminServiceTab = ({ serviceData, refetch }: AdminServiceTabProps) => {
         toolbar={
           <div className="flex flex-col-reverse items-center justify-between gap-s sm:flex-row">
             <SearchInput
-              containerClass="w-full sm:w-1/3"
+              className="w-full sm:w-1/3"
               placeholder={t('Service.SearchServices')}
               onChange={debounceHandleInput}
             />

@@ -16,6 +16,7 @@ import { useTranslate } from '@/hooks/use-translate';
 import {
   Button,
   Checkbox,
+  Input,
   Radio,
   RadioGroup,
   Textarea,
@@ -29,7 +30,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  Input,
   MultiSelectFormField,
   Select,
   SelectContent,
@@ -165,19 +165,6 @@ const CharacterCounter = ({ value, maxChars }: CharacterLimitProps) => {
     </p>
   );
 };
-
-const FormMessageWithCharacterCount = ({
-  value,
-  maxChars,
-}: CharacterLimitProps) => (
-  <div className="flex items-start gap-s">
-    <FormMessage />
-    <CharacterCounter
-      value={value}
-      maxChars={maxChars}
-    />
-  </div>
-);
 
 const EpicTextareaField = ({
   control,
@@ -422,24 +409,21 @@ const EpicForm = ({
         <FormField
           control={form.control}
           name="title"
-          render={({ field }) => (
-            <FormItem>
-              <EpicFieldLabel
-                labelKey="Epic.Form.Title"
+          render={({ field, fieldState }) => (
+            <div className="flex flex-col gap-s">
+              <Input
+                label={t('Epic.Form.Title')}
                 required
+                {...field}
+                value={field.value ?? ''}
+                placeholder={t('Epic.Form.Placeholder.Title')}
+                error={fieldState.error?.message}
               />
-              <FormControl>
-                <Input
-                  {...field}
-                  value={field.value ?? ''}
-                  placeholder={t('Epic.Form.Placeholder.Title')}
-                />
-              </FormControl>
-              <FormMessageWithCharacterCount
+              <CharacterCounter
                 value={field.value ?? ''}
                 maxChars={TITLE_MAX_CHARS}
               />
-            </FormItem>
+            </div>
           )}
         />
 
@@ -492,20 +476,16 @@ const EpicForm = ({
         <FormField
           control={form.control}
           name="slack_link"
-          render={({ field }) => (
-            <FormItem>
-              <EpicFieldLabel labelKey="Epic.Form.SlackLink" />
-              <FormControl>
-                <AutocompleteInput
-                  options={EPIC_SLACK_LINK_OPTIONS}
-                  value={field.value}
-                  onChange={field.onChange}
-                  placeholder={t('Epic.Form.SlackLinkPlaceholder')}
-                  listLabel={t('Epic.Form.SlackLink')}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <AutocompleteInput
+              label={t('Epic.Form.SlackLink')}
+              options={EPIC_SLACK_LINK_OPTIONS}
+              value={field.value}
+              onChange={field.onChange}
+              placeholder={t('Epic.Form.SlackLinkPlaceholder')}
+              listLabel={t('Epic.Form.SlackLink')}
+              error={fieldState.error?.message}
+            />
           )}
         />
 

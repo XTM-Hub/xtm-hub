@@ -4,7 +4,7 @@ import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { isEmpty } from '@/lib/utils';
-import { Button } from '@filigran/design-system';
+import { Button, Input } from '@filigran/design-system';
 import {
   Form,
   FormControl,
@@ -12,7 +12,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  Input,
   SheetFooter,
 } from '@filigran/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -52,17 +51,13 @@ export const UserForm = ({ handleSubmit, validationSchema }: UserFormProps) => {
         <FormField
           control={form.control}
           name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('UserForm.Email')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('UserForm.Email')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Input
+              label={t('UserForm.Email')}
+              placeholder={t('UserForm.Email')}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
         <CapabilityDescription />
