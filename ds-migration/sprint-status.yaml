@@ -33,15 +33,16 @@ reference_pull_request: 3614
 # The checks main requires, as GitHub names them. run.sh waits for all of them on each push.
 required_checks: run-api-unit-tests, run-front-unit-tests, run-e2e-tests
 repository: XTM-Hub/xtm-hub
-# The project board the issues live on, and its Status for an item in development, pushed, done.
+# The project board the issues live on, and its Status for an item in development, pushed, and done
+# (Done waits for the merge of the pull request).
 github_project: XTM-Hub/1
-project_statuses: Development, Code review, Done
+project_statuses: Development, Code review, Ready to Merge
 
 development_status:
   # Primitives with a legacy equivalent in filigran-ui
   epic-1-primitives: in-progress
   3530-button: done
-  3561-textarea: review
+  3561-textarea: done
   3568-switch: backlog
   3553-radio: backlog
   3541-checkbox: backlog
