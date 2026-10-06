@@ -97,6 +97,7 @@ fi
 echo "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"tool_use\",\"name\":\"Agent\",\"input\":{\"description\":\"Implement $key\"}}]}}"
 echo "not json"
 echo "export const v_$(echo "$slug" | tr - _) = 1;" > "apps/frontend/src/$slug.ts"
+printf '\n## Deferred findings\n\n- found in review, on a bullet\n  that wraps\n' >> "ds-migration/specs/$key.md"
 echo "{\"type\":\"result\",\"structured_output\":{\"status\":\"DONE\",\"summary\":\"ok\",\"commit_subject\":\"invalid\",\"commit_body\":\"Migrate $slug.\\nCo-Authored-By: x <y@z>\"}}"
 EOF
   chmod +x "$bin/"*
@@ -159,6 +160,8 @@ check "session progress shown live in the run log" 'grep -q "3561-textarea   Age
 check "issue body replaced by the spec, by the script" 'head -1 "$SB/issue-3561.md" | grep -qx "Part of #3507." && grep -qx "# textarea" "$SB/issue-3561.md" && ! grep -q "^kind:" "$SB/issue-3561.md"'
 check "issue assigned and moved along the board" 'grep -q "^gh issue edit 3561 --add-assignee @me" "$SB/calls.log" && [ "$(grep " ITEM_3561$" "$SB/board.log" | cut -d" " -f1 | paste -sd, -)" = "OPT_DEV,OPT_REVIEW,OPT_DONE" ]'
 check "covered issues assigned and moved with their item" 'grep -q "^gh issue edit 4001 --add-assignee @me" "$SB/calls.log" && grep -qx "OPT_DONE ITEM_4002" "$SB/board.log"'
+check "issue shows the final spec, findings included" 'grep -qx "  that wraps" "$SB/issue-3561.md"'
+check "wrapped spec bullets kept whole in the PR report" 'grep -q "textarea: found in review, on a bullet that wraps$" "$SB/pr-body.md"'
 check "sessions never run subagents in the background" '! grep -q "claude with background tasks allowed" "$SB/calls.log"'
 check "after screenshots part of the validation" 'grep -q "^screenshot after ds-migration/specs/3561-textarea.md" "$SB/calls.log"'
 check "done item announced on the PR" 'grep -qx "Component Textarea done. Issue #3561" "$SB/pr-comments.log"'
@@ -196,6 +199,7 @@ new_repo c "development_status:
   3568-switch: backlog"
 GH_CHECKS="missing missing pending pending pass" APP_DOWN=1 run --once
 check "frontend started from apps/frontend, its log kept" 'grep -q "starting the frontend of this checkout" "$SB/out.log" && [ -f "$(git rev-parse --git-dir)/ds-migration/app.log" ]'
+check "done item ticked in the PR body" 'grep -q "^- \[x\] #3561 textarea: done" "$SB/pr-body.md"'
 check "item done only once the e2e aggregator passed" '[ "$(status_of 3561-textarea)" = done ] && [ "$(cat "$SB/checks-count")" -ge 5 ]'
 
 echo "D. required check fails, one CI fix, still failing: stop"

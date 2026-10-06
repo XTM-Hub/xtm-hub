@@ -402,7 +402,15 @@ spec_section() {
     [ -e "$spec" ] || continue
     key="$(basename "$spec" .md)"
     issue="$(issue_of "$key")"
-    awk -v h="## $1" '$0 == h { on = 1; next } /^## / { on = 0 } on && /^- / { sub(/^- /, ""); print }' "$spec" |
+    # A bullet wraps over indented lines: join them, or the report keeps only its first line.
+    awk -v h="## $1" '
+      function flush() { if (item != "") print item; item = "" }
+      $0 == h { on = 1; next }
+      /^## / { flush(); on = 0 }
+      on && /^- / { flush(); item = substr($0, 3); next }
+      on && /^[ \t]+[^ \t]/ && item != "" { line = $0; sub(/^[ \t]+/, "", line); item = item " " line; next }
+      on { flush() }
+      END { flush() }' "$spec" |
       while IFS= read -r line; do echo "- [ ] ${issue:+#$issue }${key#*-}: $line"; done
   done
 }
@@ -613,6 +621,8 @@ commit_result() {
   board_item "$key" "$BOARD_REVIEW"
   commit_item "$key" "$subject" "$body" || return 1
   log "$key committed: $subject"
+  # The build session adds review findings and choices to the spec: the issue shows the final one.
+  update_issue "$key" "$issue" || log "could not update the spec in #$issue"
 }
 
 mark_done() {
@@ -621,6 +631,7 @@ mark_done() {
   log "$key done$2"
   gh issue edit "$(issue_of "$key")" --remove-label "$NEEDS_LABEL" >/dev/null 2>&1 || true
   board_item "$key" "$BOARD_DONE"
+  refresh_pr_body
   pr="$(header pull_request)"
   [ "$pr" = none ] || gh pr comment "$pr" --body "Component $(name_of "$key") done. Issue #$(issue_of "$key")" >/dev/null ||
     log "could not comment on PR #$pr"
