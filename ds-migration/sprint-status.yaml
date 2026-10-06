@@ -14,6 +14,9 @@
 #   review       every item is done or blocked: run.sh posted the epic report and stopped
 #   done         set by a human after reviewing the PR; only then does the next epic start
 #
+# Only legacy components the app still imports are here. Adopting the design system components
+# the app does not use yet is phase 2, epic #3709.
+#
 # Item keys are <issue>-<slug>. A new-<slug> key has no issue yet:
 # `ds-migration/run.sh issues` creates it as a sub-issue of the epic and renames the key.
 
@@ -40,11 +43,10 @@ development_status:
   3541-checkbox: backlog
   3556-input: backlog
   3564-tooltip: backlog
-  3546-icon-button: backlog
   3534-badge: backlog
-  3542-chip: backlog
 
-  # Composites with a legacy equivalent, including the three DS 1.2.0 additions
+  # Composites with a legacy equivalent, the three DS 1.2.0 additions, and three single-use
+  # legacy components replaced in place
   epic-2-composites: backlog
   3566-select: backlog
   3545-combobox: backlog
@@ -56,13 +58,12 @@ development_status:
   3548-file-select: backlog
   3547-color-picker: backlog
   3536-card: backlog
-  3533-card-header: backlog
-  3544-card-title: backlog
-  3539-card-content: backlog
-  3538-card-footer: backlog
   3688-alert: backlog
   3689-date-picker: backlog
   3690-snackbar: backlog
+  3694-aspect-ratio: backlog
+  3700-command: backlog
+  3701-tag-input: backlog
 
   # Legacy components with no DS equivalent: rebuilt on DS primitives, one folder per
   # component in apps/frontend/src/components/ui/, listed as candidates in the PR report
@@ -70,17 +71,13 @@ development_status:
   3691-label: backlog
   3692-separator: backlog
   3693-skeleton: backlog
-  3694-aspect-ratio: backlog
   3695-avatar: backlog
   3696-popover: backlog
   3697-gradient-button: backlog
   3698-accordion: backlog
   3699-sheet: backlog
-  3700-command: backlog
-  3701-tag-input: backlog
   3702-markdown-renderer: backlog
   3703-carousel: backlog
-  3704-table: backlog
   3705-data-table: backlog
   3706-form: backlog
   3707-auto-form: backlog
@@ -89,31 +86,19 @@ development_status:
   epic-4-cleanup: backlog
   3708-remove-filigran-ui: backlog
 
-  # DS components with no legacy equivalent: adopted where the app hand-rolls the same
-  # pattern; anything that changes the look is listed under "To validate" instead
-  epic-5-adoptions: backlog
-  3560-text: backlog
-  3567-spinner: backlog
-  3550-progress-bar: backlog
-  3563-slider: backlog
-  3554-paper: backlog
-  3562-thumbnail: backlog
-  3531-button-group: backlog
-  3532-card-subtitle: backlog
-  3537-card-meta-bar: backlog
-  3549-icon: backlog
-  3543-header: backlog
-  3557-navbar: backlog
-  3555-navbar-item: backlog
-  3559-navbar-submenu: backlog
-  3552-product-switcher: backlog
 
 # An item starts only once every listed item, or epic, is done. Generated from the imports
 # between legacy components (a candidate waits for the primitives it is rebuilt on), then reviewed.
 dependencies:
   3706-form: [3691-label]
-  3700-command: [3540-dialog]
-  3701-tag-input: [3534-badge, 3556-input, 3696-popover]
-  3705-data-table: [3541-checkbox, 3558-menu, 3693-skeleton, 3704-table]
+  3700-command: [3545-combobox]
+  3701-tag-input: [3534-badge, 3545-combobox]
+  3705-data-table: [3541-checkbox, 3558-menu, 3693-skeleton]
   3707-auto-form: [3541-checkbox, 3548-file-select, 3553-radio, 3556-input, 3561-textarea, 3566-select, 3568-switch, 3698-accordion, 3689-date-picker, 3706-form]
   3708-remove-filigran-ui: [epic-1-primitives, epic-2-composites, epic-3-candidates]
+
+# Issues an item also closes: the legacy file it migrates is all they cover.
+covers:
+  3530-button: [3546]
+  3534-badge: [3542]
+  3536-card: [3533, 3544, 3539, 3538]

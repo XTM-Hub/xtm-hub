@@ -107,7 +107,10 @@ new_repo a "development_status:
 
 dependencies:
   9002-data-table: [3541-checkbox, 9001-table]
-  9003-remove-filigran-ui: [epic-1-primitives, epic-3-candidates]"
+  9003-remove-filigran-ui: [epic-1-primitives, epic-3-candidates]
+
+covers:
+  3561-textarea: [4001, 4002]"
 CLAUDE_BLOCK=3541-checkbox run
 check "checkbox blocked, epic 1 gated" '[ "$(status_of 3541-checkbox)" = blocked ] && [ "$(status_of epic-1-primitives)" = review ]'
 check "epic report posted with the automated review" 'grep -q "Verdict: consistent" "$SB/last-pr-comment.md"'
@@ -121,6 +124,7 @@ approve epic-1-primitives; run; approve epic-3-candidates; run; approve epic-4-c
 check "dependency lines intact" 'grep -q "^  9002-data-table: \[3541-checkbox, 9001-table\]" ds-migration/sprint-status.yaml'
 check "candidate and cleanup default subjects" 'git log --format=%s | grep -qx "feat(frontend): rebuild DataTable on @filigran/design-system primitives (#9002)" && git log --format=%s | grep -qx "chore(frontend): remove the legacy filigran-ui copy (#9003)"'
 ds-migration/run.sh finish >"$SB/out.log" 2>&1
+check "covered issues closed with their item" 'grep -q "^Closes #4001$" "$SB/pr-body.md" && grep -q "^Closes #4002$" "$SB/pr-body.md" && grep -q "textarea: done (also #4001, #4002)" "$SB/pr-body.md"'
 check "finish removes ds-migration and reports candidates" '[ ! -d ds-migration ] && grep -q "9002 data-table: .@/components/ui/data-table." "$SB/pr-body.md"'
 
 echo "B. merge of main brings a legacy usage of a migrated component"
