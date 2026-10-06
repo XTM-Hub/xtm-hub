@@ -6,6 +6,9 @@ import { XtmPlatformTrialBannerState } from '@/components/service/trial-instance
 import { useTranslate } from '@/hooks/use-translate';
 import { CloseIcon } from '@filigran/icon';
 import { Badge, Callout } from '@filigran/ui';
+import { usePathname } from 'next/navigation';
+
+const TRIAL_PAGE_SLUG = '/xtm-platform-trial';
 
 interface XtmPlatformTrialBannerProps {
   state: XtmPlatformTrialBannerState;
@@ -20,11 +23,14 @@ export const XtmPlatformTrialBanner = ({
 }: XtmPlatformTrialBannerProps) => {
   const t = useTranslate();
   const { dismissed, dismiss } = useXtmPlatformTrialBannerDismissed(state);
+  const pathname = usePathname();
 
   if (state === 'none' || dismissed) {
     return null;
   }
 
+  // The learn more link points to the trial page: no need to show it there.
+  const isOnLearnMorePage = !!pathname?.endsWith(TRIAL_PAGE_SLUG);
   const isDismissable = state !== 'ending';
   const showDaysLeft =
     (state === 'active' || state === 'ending') && daysLeft != null;
@@ -41,7 +47,7 @@ export const XtmPlatformTrialBanner = ({
       className={`relative rounded-none justify-center from-blue to-turquoise-300 bg-linear-to-r ${isDismissable ? 'pr-xxl' : ''}`}>
       <div className="flex items-center gap-s">
         <span>{text}</span>
-        {state === 'no-trial' && learnMoreHref && (
+        {state === 'no-trial' && learnMoreHref && !isOnLearnMorePage && (
           <LearnMoreBannerLink href={learnMoreHref} />
         )}
         {showDaysLeft && (

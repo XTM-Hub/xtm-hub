@@ -1,10 +1,12 @@
 import { XtmPlatformTrialBanner } from '@/components/service/trial-instances/banner/xtm-platform-trial/XtmPlatformTrialBanner';
 import testRender from '@/utils/test/test-render';
-import { afterEach, describe, expect, it } from 'vitest';
+import { usePathname } from 'next/navigation';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 describe('XtmPlatformTrialBanner', () => {
   afterEach(() => {
     window.localStorage.clear();
+    vi.mocked(usePathname).mockReset();
   });
 
   it('should render nothing for the "none" state', () => {
@@ -27,6 +29,29 @@ describe('XtmPlatformTrialBanner', () => {
     expect(getByText('Service.Trials.LearnMore.Link')).toBeInTheDocument();
     expect(getByRole('button', { name: 'Utils.Close' })).toBeInTheDocument();
   });
+
+  it.each`
+    page           | pathname                                            | learnMoreHref
+    ${'signed-in'} | ${'/app/service/xtm-platform-trial'}                | ${'https://hub.filigran.io/app/service/xtm-platform-trial'}
+    ${'public'}    | ${'/en/cybersecurity-solutions/xtm-platform-trial'} | ${'/en/cybersecurity-solutions/xtm-platform-trial'}
+  `(
+    'should hide the learn more link when already on the $page trial page',
+    ({ pathname, learnMoreHref }) => {
+      vi.mocked(usePathname).mockReturnValue(pathname);
+
+      const { getByText, queryByText } = testRender(
+        <XtmPlatformTrialBanner
+          state="no-trial"
+          learnMoreHref={learnMoreHref}
+        />
+      );
+
+      expect(
+        getByText('Service.Trials.XtmPlatform.NoTrial.Text')
+      ).toBeInTheDocument();
+      expect(queryByText('Service.Trials.LearnMore.Link')).toBeNull();
+    }
+  );
 
   it('should render the active copy, days-left badge and a dismiss button', () => {
     const { getByText, getByRole } = testRender(
