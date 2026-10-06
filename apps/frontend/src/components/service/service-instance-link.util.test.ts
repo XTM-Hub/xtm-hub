@@ -7,7 +7,7 @@ import {
 } from './service-instance-link.util';
 
 vi.mock('@/i18n/config', () => ({
-  publicLocales: ['en', 'ja'],
+  publicLocales: ['en', 'fr', 'ja'],
 }));
 
 describe('resolveBaseServiceInstanceLink', () => {
@@ -46,6 +46,7 @@ describe('addLocalePrefixToPath', () => {
     description                                       | href               | locale  | expectedHref
     ${'plain path gets en prefix'}                    | ${'/dashboard'}    | ${'en'} | ${'/en/dashboard'}
     ${'plain path gets ja prefix'}                    | ${'/dashboard'}    | ${'ja'} | ${'/ja/dashboard'}
+    ${'plain path gets fr prefix'}                    | ${'/dashboard'}    | ${'fr'} | ${'/fr/dashboard'}
     ${'nested path gets locale prefix'}               | ${'/a/b/c'}        | ${'ja'} | ${'/ja/a/b/c'}
     ${'root path gets locale prefix'}                 | ${'/'}             | ${'en'} | ${'/en/'}
     ${'path without leading slash is normalized'}     | ${'dashboard'}     | ${'en'} | ${'/en/dashboard'}

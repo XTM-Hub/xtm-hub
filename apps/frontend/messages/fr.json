@@ -1045,10 +1045,10 @@
     },
     "Capabilities": {
       "AccessServiceDescription": "Vous avez uniquement accès à un service",
-      "AccessServiceName": "Access service",
+      "AccessServiceName": "Accéder au service",
       "CapabilitiesTitle": "Capacités",
       "ManageAccessDescription": "Vous pouvez accéder au service et inviter des utilisateurs à ce service",
-      "ManageAccessName": "Manage access",
+      "ManageAccessName": "Gérer les accès",
       "SelectCapabilities": "Sélectionner les capacités"
     },
     "CsvExport": {
@@ -1147,7 +1147,7 @@
       "Description": "Explorer une gamme de connecteurs OpenCTI partagés par l'équipe Filigran",
       "ImproveIntegrationPrefix": "Si vous souhaitez améliorer cette intégration, veuillez consulter",
       "GithubRepositoryLink": "le lien du dépôt github ici",
-      "IntegrationDocumentationAndCode": "Integration documentation and code",
+      "IntegrationDocumentationAndCode": "Documentation et code de l'intégration",
       "LastVerifiedDate": "Dernière vérification",
       "Name": "Connecteurs OpenCTI",
       "Search": "Rechercher un connecteur par nom...",

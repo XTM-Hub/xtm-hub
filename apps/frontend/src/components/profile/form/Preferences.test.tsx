@@ -106,13 +106,11 @@ describe('ProfileFormPreferences', () => {
     });
   });
 
-  it('should display fr locale when environment is development', () => {
-    testRender(<ProfileFormPreferences />, {
-      settings: { environment: 'development' },
-    });
+  it.each(['en', 'fr', 'ja'])('should offer the %s locale', (loc) => {
+    testRender(<ProfileFormPreferences />);
 
     expect(
-      screen.getByRole('option', { name: 'LocaleSwitcher.fr' })
+      screen.getByRole('option', { name: `LocaleSwitcher.${loc}` })
     ).toBeInTheDocument();
   });
 });
