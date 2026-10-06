@@ -1,0 +1,313 @@
+import { describe, expect, it } from 'vitest';
+import {
+  PulseEventKind,
+  PulseObjectType,
+  PulsePrevalenceBucket,
+  PulseTrendDirection,
+} from '../../__generated__/resolvers-types';
+import { PulseHelper } from './pulse.helper';
+import {
+  PulseLedgerRecord,
+  PulsePresenceSummary,
+  PulseTrendingCount,
+} from './pulse.types';
+
+const K = 5;
+const HASH = '9913881f71e8c61c79d05b20cf144d42';
+const KEY_A = 'aaaa0000000000000000000000000000';
+const KEY_B = 'bbbb0000000000000000000000000000';
+const SEEN = { firstSeen: '2026-07-01', lastSeen: '2026-10-03' };
+
+const makeRecord = (
+  overrides: Partial<PulseLedgerRecord> = {}
+): PulseLedgerRecord => ({
+  k: KEY_A,
+  t: PulseObjectType.Indicator,
+  e: PulseEventKind.Created,
+  c: 1,
+  ...overrides,
+});
+
+const makePresence = (
+  overrides: Partial<PulsePresenceSummary> = {}
+): PulsePresenceSummary => ({
+  weekly: [9, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0],
+  platformsInWindow: 9,
+  sectorWeekly: Array(12).fill(0),
+  sectorPlatformsInWindow: 0,
+  ...overrides,
+});
+
+const makeCount = (
+  overrides: Partial<PulseTrendingCount> = {}
+): PulseTrendingCount => ({
+  k: KEY_A,
+  t: PulseObjectType.Malware,
+  recent: 5,
+  prev1: 5,
+  prev2: 5,
+  ...overrides,
+});
+
+describe('pulseHelper', () => {
+  describe('aggregateBatch', () => {
+    it('should list each key of the batch once, in key order', () => {
+      // Given
+      const records = [
+        makeRecord({ k: KEY_B, c: 7 }),
+        makeRecord({ c: 3 }),
+        makeRecord({ e: PulseEventKind.Sighted, c: 2 }),
+      ];
+
+      // When
+      const aggregation = PulseHelper.aggregateBatch(records);
+
+      // Then
+      expect(aggregation.keys).toEqual([
+        { k: KEY_A, t: PulseObjectType.Indicator },
+        { k: KEY_B, t: PulseObjectType.Indicator },
+      ]);
+    });
+
+    it('should sum the batch per object type and event kind', () => {
+      // Given
+      const records = [
+        makeRecord({ c: 3 }),
+        makeRecord({ k: KEY_B, c: 4 }),
+        makeRecord({ t: PulseObjectType.Malware, e: PulseEventKind.Hunted }),
+      ];
+
+      // When
+      const aggregation = PulseHelper.aggregateBatch(records);
+
+      // Then
+      expect(aggregation.totals).toEqual([
+        { t: PulseObjectType.Indicator, e: PulseEventKind.Created, c: 7 },
+        { t: PulseObjectType.Malware, e: PulseEventKind.Hunted, c: 1 },
+      ]);
+    });
+  });
+
+  describe('rankTrending', () => {
+    it('should rank by growth then recent platforms then key', () => {
+      // Given
+      const counts = [
+        makeCount({ k: 'k-stable', recent: 10, prev1: 10, prev2: 10 }),
+        makeCount({ k: 'k-rising', recent: 25, prev1: 10, prev2: 10 }),
+        makeCount({ k: 'k-rising-faster', recent: 12, prev1: 6, prev2: 0 }),
+        makeCount({ k: 'k-same-b', recent: 5, prev1: 5, prev2: 5 }),
+        makeCount({ k: 'k-same-a', recent: 7, prev1: 9, prev2: 6 }),
+      ];
+
+      // When every count is coarsened like platforms_bucket
+      const ranked = PulseHelper.rankTrending(counts, 5);
+
+      // Then
+      expect(ranked.map(({ k, growth }) => ({ k, growth }))).toEqual([
+        { k: 'k-rising-faster', growth: 11 / 3.5 },
+        { k: 'k-rising', growth: 26 / 11 },
+        { k: 'k-stable', growth: 1 },
+        { k: 'k-same-a', growth: 1 },
+        { k: 'k-same-b', growth: 1 },
+      ]);
+    });
+
+    it('should derive growth from coarse counts, so it never reveals an exact platform count', () => {
+      // Given a first-seen object reported by 5 to 9 platforms
+      const counts = [5, 6, 7, 8, 9].map((recent) =>
+        makeCount({ k: `k-${recent}`, recent, prev1: 0, prev2: 0 })
+      );
+
+      // When
+      const ranked = PulseHelper.rankTrending(counts, 5);
+
+      // Then every count of the 5-9 bucket publishes the same figures
+      expect(
+        new Set(ranked.map(({ recent, growth }) => `${recent}:${growth}`))
+      ).toEqual(new Set(['5:6']));
+      expect(ranked.map(({ k }) => k)).toEqual([
+        'k-5',
+        'k-6',
+        'k-7',
+        'k-8',
+        'k-9',
+      ]);
+    });
+
+    it('should weigh a previous period below k as 0, so growth never reveals it', () => {
+      // Given recent=5 published, prev1=2 and prev2=0 below k=5
+      const counts = [makeCount({ k: 'k-1', recent: 5, prev1: 2, prev2: 0 })];
+
+      // When
+      const [ranked] = PulseHelper.rankTrending(counts, 5);
+
+      // Then the growth is the one of an empty history: (5 + 1) / (0 + 1)
+      expect(ranked).toMatchObject({
+        prev1: 0,
+        prev2: 0,
+        baseline: 0,
+        growth: 6,
+      });
+    });
+
+    it('should keep at most 200 items per object type', () => {
+      // Given
+      const counts = [
+        ...Array.from({ length: 250 }, (_, index) =>
+          makeCount({ k: `malware-${index}`, t: PulseObjectType.Malware })
+        ),
+        makeCount({ k: 'tool-0', t: PulseObjectType.Tool }),
+      ];
+
+      // When
+      const ranked = PulseHelper.rankTrending(counts, 5);
+
+      // Then
+      expect({
+        malware: ranked.filter((i) => i.t === PulseObjectType.Malware).length,
+        tool: ranked.filter((i) => i.t === PulseObjectType.Tool).length,
+      }).toEqual({ malware: 200, tool: 1 });
+    });
+  });
+
+  describe('buildLookupResult', () => {
+    it.each([
+      { description: 'below k platforms', networkPlatforms: 4, seen: SEEN },
+      {
+        description: 'below k platforms with no week at k',
+        networkPlatforms: 4,
+        seen: undefined,
+      },
+    ])(
+      'should return every statistic as null $description',
+      ({ networkPlatforms, seen }) => {
+        // When
+        const result = PulseHelper.buildLookupResult({
+          hash: HASH,
+          networkPlatforms,
+          seen,
+          presence: makePresence(),
+          activeContributors: 20,
+          kThreshold: K,
+        });
+
+        // Then
+        expect(result).toEqual({
+          hash: HASH,
+          published: false,
+          prevalence_bucket: null,
+          platforms_bucket: null,
+          first_seen_network: null,
+          last_seen_network: null,
+          trend: null,
+          trend_series: null,
+          sector_trend: null,
+          sector_platforms_bucket: null,
+        });
+      }
+    );
+
+    it('should publish the network statistics at k platforms', () => {
+      // When
+      const result = PulseHelper.buildLookupResult({
+        hash: HASH,
+        networkPlatforms: K,
+        seen: SEEN,
+        presence: makePresence(),
+        activeContributors: 20,
+        kThreshold: K,
+      });
+
+      // Then
+      expect(result).toEqual({
+        hash: HASH,
+        published: true,
+        prevalence_bucket: PulsePrevalenceBucket.Widespread,
+        platforms_bucket: '5-9',
+        first_seen_network: SEEN.firstSeen,
+        last_seen_network: SEEN.lastSeen,
+        trend: PulseTrendDirection.Rising,
+        trend_series: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5],
+        sector_trend: null,
+        sector_platforms_bucket: null,
+      });
+    });
+
+    it('should publish a key whose reporters are spread over weeks below k, without the seen dates', () => {
+      // Given k platforms over the retention, one per week: no week reaches k
+      const presence = makePresence({
+        weekly: [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0],
+      });
+
+      // When
+      const result = PulseHelper.buildLookupResult({
+        hash: HASH,
+        networkPlatforms: K,
+        seen: undefined,
+        presence,
+        activeContributors: 20,
+        kThreshold: K,
+      });
+
+      // Then the key is published and only the dates no week can carry stay null
+      expect(result).toMatchObject({
+        hash: HASH,
+        published: true,
+        platforms_bucket: '5-9',
+        first_seen_network: null,
+        last_seen_network: null,
+      });
+    });
+
+    it('should derive no direction from weeks below k on a published key', () => {
+      // Given two recent reporters and an empty baseline, the key published over the retention
+      const presence = makePresence({
+        weekly: [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        sectorWeekly: [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        sectorPlatformsInWindow: K,
+      });
+
+      // When
+      const result = PulseHelper.buildLookupResult({
+        hash: HASH,
+        networkPlatforms: 12,
+        seen: SEEN,
+        presence,
+        activeContributors: 20,
+        kThreshold: K,
+      });
+
+      // Then the series hides the week and no direction reveals it
+      expect(result).toMatchObject({
+        trend: PulseTrendDirection.Stable,
+        sector_trend: PulseTrendDirection.Stable,
+        trend_series: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      });
+    });
+
+    it('should publish the sector trend once the sector reaches k platforms over 30 days', () => {
+      // Given
+      const presence = makePresence({
+        sectorWeekly: [1, 6, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0],
+        sectorPlatformsInWindow: K,
+      });
+
+      // When
+      const result = PulseHelper.buildLookupResult({
+        hash: HASH,
+        networkPlatforms: 12,
+        seen: SEEN,
+        presence,
+        activeContributors: 20,
+        kThreshold: K,
+      });
+
+      // Then
+      expect(result).toMatchObject({
+        platforms_bucket: '10-24',
+        sector_trend: PulseTrendDirection.Falling,
+        sector_platforms_bucket: '5-9',
+      });
+    });
+  });
+});

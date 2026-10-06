@@ -62,5 +62,65 @@
   "news_feed": {
     "cleanup_interval_value": "NEWS_FEED_CLEANUP_INTERVAL_VALUE",
     "cleanup_interval_unit": "NEWS_FEED_CLEANUP_INTERVAL_UNIT"
+  },
+  "pulse": {
+    "enabled": { "__name": "PULSE_ENABLED", "__format": "boolean" },
+    "at_rest_key": "PULSE_AT_REST_KEY",
+    "platform_key": "PULSE_PLATFORM_KEY",
+    "k_threshold": { "__name": "PULSE_K_THRESHOLD", "__format": "number" },
+    "retention_months": {
+      "__name": "PULSE_RETENTION_MONTHS",
+      "__format": "number"
+    },
+    "contribution_window_days": {
+      "__name": "PULSE_CONTRIBUTION_WINDOW_DAYS",
+      "__format": "number"
+    },
+    "contribution_grace_days": {
+      "__name": "PULSE_CONTRIBUTION_GRACE_DAYS",
+      "__format": "number"
+    },
+    "digest_size": {
+      "__name": "PULSE_DIGEST_SIZE",
+      "__format": "number"
+    },
+    "trending_cache_ttl_minutes": {
+      "__name": "PULSE_TRENDING_CACHE_TTL_MINUTES",
+      "__format": "number"
+    },
+    "rate_limits": {
+      "push_pulse": {
+        "__name": "PULSE_RATE_LIMIT_PUSH_PULSE",
+        "__format": "number"
+      },
+      "pulse_lookup": {
+        "__name": "PULSE_RATE_LIMIT_PULSE_LOOKUP",
+        "__format": "number"
+      },
+      "pulse_trending": {
+        "__name": "PULSE_RATE_LIMIT_PULSE_TRENDING",
+        "__format": "number"
+      },
+      "pulse_benchmark": {
+        "__name": "PULSE_RATE_LIMIT_PULSE_BENCHMARK",
+        "__format": "number"
+      },
+      "pulse_salt": {
+        "__name": "PULSE_RATE_LIMIT_PULSE_SALT",
+        "__format": "number"
+      },
+      "pulse_status": {
+        "__name": "PULSE_RATE_LIMIT_PULSE_STATUS",
+        "__format": "number"
+      },
+      "pulse_digest": {
+        "__name": "PULSE_RATE_LIMIT_PULSE_DIGEST",
+        "__format": "number"
+      },
+      "pulse_purge": {
+        "__name": "PULSE_RATE_LIMIT_PULSE_PURGE",
+        "__format": "number"
+      }
+    }
   }
 }

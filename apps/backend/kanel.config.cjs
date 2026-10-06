@@ -88,6 +88,31 @@ const COLUMN_ENUM_MAP = {
     status: 'UserAccountStatus',
     has_replied_satisfaction: 'HasRepliedSatisfaction',
   },
+  PulsePlatform: {
+    sector_bucket: 'PulseSectorBucket',
+    region_bucket: 'PulseRegionBucket',
+  },
+  PulseContribution: {
+    object_type: 'PulseObjectType',
+    event_kind: 'PulseEventKind',
+    sector_bucket: 'PulseSectorBucket',
+    region_bucket: 'PulseRegionBucket',
+  },
+  PulseKey: {
+    object_type: 'PulseObjectType',
+  },
+  PulseKeyContributor: {
+    object_type: 'PulseObjectType',
+  },
+  PulsePlatformDailyTotal: {
+    object_type: 'PulseObjectType',
+    event_kind: 'PulseEventKind',
+    sector_bucket: 'PulseSectorBucket',
+    region_bucket: 'PulseRegionBucket',
+  },
+  PulseTrendingSnapshot: {
+    period: 'PulsePeriod',
+  },
 };
 
 /** @type {import('kanel').Config} */

@@ -1,0 +1,266 @@
+import { createCipheriv, createHmac } from 'node:crypto';
+import { v4 as uuidv4 } from 'uuid';
+import { db, dbRaw } from '../../knexfile';
+import {
+  PlatformConfigurationStatus,
+  PulseObjectType,
+} from '../../src/__generated__/resolvers-types';
+import PlatformConfigurationModel from '../../src/model/kanel/public/PlatformConfiguration';
+import { ServiceDefinitionId } from '../../src/model/kanel/public/ServiceDefinition';
+import { ServiceInstanceId } from '../../src/model/kanel/public/ServiceInstance';
+import Subscription, {
+  SubscriptionId,
+} from '../../src/model/kanel/public/Subscription';
+import { SERVICES, TEST_ORGANIZATIONS } from '../tests.const';
+import { mockPlatformConfig } from './test-platform-configuration.helper';
+
+// Client side of the wire contract, as implemented by OpenCTI: the Hub only
+// ever receives the transport hash.
+const STABLE_KEY_HMAC_KEY = 'opencti-pulse-v1';
+
+export const PULSE_TABLES = [
+  'PulseDigestSnapshot',
+  'PulseTrendingSnapshot',
+  'PulseRateLimit',
+  'PulsePlatformDailyTotal',
+  'PulseKeyContributor',
+  'PulseKey',
+  'PulseContribution',
+  'PulseBatch',
+  'PulsePlatform',
+  'PulseSalt',
+] as const;
+
+export type PulseTable = (typeof PULSE_TABLES)[number];
+
+export interface TestPulsePlatform {
+  platformId: string;
+  token: string;
+  serviceInstanceId: ServiceInstanceId;
+}
+
+const createdServiceInstanceIds: ServiceInstanceId[] = [];
+
+export const TestPulseHelper = {
+  pulse: {
+    stableKey: (objectType: PulseObjectType, canonicalValue: string): Buffer =>
+      createHmac('sha256', STABLE_KEY_HMAC_KEY)
+        .update(`${objectType}\n${canonicalValue}`)
+        .digest()
+        .subarray(0, 16),
+
+    transportHash: (stableKey: Buffer, saltHex: string): string => {
+      const cipher = createCipheriv(
+        'aes-128-ecb',
+        Buffer.from(saltHex, 'hex'),
+        null
+      );
+      cipher.setAutoPadding(false);
+      return Buffer.concat([cipher.update(stableKey), cipher.final()]).toString(
+        'hex'
+      );
+    },
+
+    hashValue: (
+      objectType: PulseObjectType,
+      canonicalValue: string,
+      saltHex: string
+    ): string =>
+      TestPulseHelper.pulse.transportHash(
+        TestPulseHelper.pulse.stableKey(objectType, canonicalValue),
+        saltHex
+      ),
+
+    registerPlatform: async ({
+      serviceDefinitionId = SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+      status = PlatformConfigurationStatus.Active,
+    }: {
+      serviceDefinitionId?: ServiceDefinitionId;
+      status?: PlatformConfigurationStatus;
+    } = {}): Promise<TestPulsePlatform> => {
+      const serviceInstanceId = uuidv4() as ServiceInstanceId;
+      await db('ServiceInstance').insert({
+        id: serviceInstanceId,
+        name: 'Threat Pulse test platform',
+        service_definition_id: serviceDefinitionId,
+        tags: [],
+        public: false,
+      });
+      createdServiceInstanceIds.push(serviceInstanceId);
+      const [configuration] = await db<PlatformConfigurationModel>(
+        'PlatformConfiguration'
+      )
+        .insert({
+          ...mockPlatformConfig,
+          service_instance_id: serviceInstanceId,
+          platform_id: uuidv4(),
+          token: uuidv4(),
+          status,
+          tenant_id: null,
+          tenant_name: null,
+        })
+        .returning('*');
+      await db<Subscription>('Subscription').insert({
+        id: uuidv4() as SubscriptionId,
+        service_instance_id: serviceInstanceId,
+        organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+      });
+      if (!configuration) {
+        throw new Error('Test platform configuration was not created');
+      }
+      return {
+        platformId: configuration.platform_id,
+        token: configuration.token,
+        serviceInstanceId,
+      };
+    },
+
+    cleanPlatforms: async (): Promise<void> => {
+      if (createdServiceInstanceIds.length === 0) {
+        return;
+      }
+      await db('Subscription')
+        .whereIn('service_instance_id', createdServiceInstanceIds)
+        .del();
+      await db('PlatformConfiguration')
+        .whereIn('service_instance_id', createdServiceInstanceIds)
+        .del();
+      await db('ServiceInstance')
+        .whereIn('id', createdServiceInstanceIds)
+        .del();
+      createdServiceInstanceIds.length = 0;
+    },
+
+    // Salts are kept: a day's salt is immutable and cached by the service.
+    cleanTables: async (): Promise<void> => {
+      for (const table of PULSE_TABLES) {
+        if (table !== 'PulseSalt') {
+          await db(table).del();
+        }
+      }
+    },
+
+    countRows: async (table: PulseTable): Promise<number> => {
+      const [row] = await db(table).count<[{ count: string }]>('* as count');
+      return Number(row?.count ?? 0);
+    },
+
+    sumEventCounts: async (
+      table: 'PulseContribution' | 'PulsePlatformDailyTotal'
+    ): Promise<number> => {
+      const [row] = await db(table).sum<[{ total: string | null }]>(
+        'event_count as total'
+      );
+      return Number(row?.total ?? 0);
+    },
+
+    // Resolves once a session of this database waits for an advisory lock
+    // another session holds - the observable proof that a concurrent call
+    // reached a Threat Pulse lock and is blocked on it - and fails after
+    // `timeoutMs` otherwise.
+    waitForBlockedAdvisoryLock: async (timeoutMs = 10_000): Promise<void> => {
+      const deadline = Date.now() + timeoutMs;
+      while (Date.now() < deadline) {
+        const result: { rows: { waiting: number }[] } = await dbRaw(
+          `SELECT COUNT(*)::int AS waiting
+           FROM pg_locks l
+           JOIN pg_database d ON d.oid = l.database
+           WHERE l.locktype = 'advisory' AND NOT l.granted
+             AND d.datname = current_database()`
+        );
+        if ((result.rows[0]?.waiting ?? 0) > 0) {
+          return;
+        }
+        await new Promise((resolve) => {
+          setTimeout(resolve, 25);
+        });
+      }
+      throw new Error(
+        `No session waited for an advisory lock within ${timeoutMs} ms`
+      );
+    },
+
+    loadContributionDays: async (): Promise<string[]> => {
+      const rows = await db('PulseContribution')
+        .distinct(dbRaw('day::text AS day'))
+        .orderBy('day');
+      return rows.map((row: { day: string }) => row.day);
+    },
+
+    loadContributions: async (): Promise<
+      { day: string; event_kind: string; event_count: string }[]
+    > => {
+      const rows = await db('PulseContribution')
+        .select(dbRaw('day::text AS day'), 'event_kind', 'event_count')
+        .orderBy(['day', 'object_type', 'event_kind']);
+      return rows.map(
+        (row: { day: string; event_kind: string; event_count: string }) => ({
+          day: row.day,
+          event_kind: row.event_kind,
+          event_count: String(row.event_count),
+        })
+      );
+    },
+
+    loadKeyPlatformCounts: async (): Promise<number[]> => {
+      const rows = await db('PulseKey')
+        .select('platform_count')
+        .orderBy('platform_count');
+      return rows.map((row: { platform_count: number }) => row.platform_count);
+    },
+
+    loadPlatformBuckets: async (): Promise<
+      {
+        sector_bucket: string;
+        region_bucket: string;
+        last_contribution_day: string;
+      }[]
+    > => {
+      const rows = await db('PulsePlatform')
+        .select(
+          'sector_bucket',
+          'region_bucket',
+          dbRaw('last_contribution_day::text AS last_contribution_day')
+        )
+        .orderBy('id');
+      return rows.map(
+        (row: {
+          sector_bucket: string;
+          region_bucket: string;
+          last_contribution_day: string;
+        }) => ({
+          sector_bucket: row.sector_bucket,
+          region_bucket: row.region_bucket,
+          last_contribution_day: row.last_contribution_day,
+        })
+      );
+    },
+
+    loadSaltDays: async (): Promise<string[]> => {
+      const rows = await db('PulseSalt')
+        .select(dbRaw('day::text AS day'))
+        .orderBy('day');
+      return rows.map((row: { day: string }) => row.day);
+    },
+
+    // Concatenated textual dump of every Pulse table, used to prove no raw
+    // identifier or transport hash is ever stored.
+    dumpTables: async (): Promise<string> => {
+      const dumps: string[] = [];
+      for (const table of PULSE_TABLES) {
+        const rows = await db(table).select(
+          dbRaw('row_to_json(??)::text AS row', [table])
+        );
+        dumps.push(...rows.map((row: { row: string }) => row.row));
+      }
+      return dumps.join('\n');
+    },
+
+    insertSalt: async (day: string, saltHex: string): Promise<void> => {
+      await db('PulseSalt').insert({
+        day: dbRaw('?::date', [day]),
+        salt: Buffer.from(saltHex, 'hex'),
+      });
+    },
+  },
+};

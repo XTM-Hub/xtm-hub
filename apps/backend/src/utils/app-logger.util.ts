@@ -43,6 +43,8 @@ export interface AppLogsConfig {
 
 const appLogsConfig = config.get<AppLogsConfig>('app_logs');
 
+const ERROR_META_CODE = /^[A-Za-z0-9_]{1,64}$/;
+
 const buildMetaErrors = (error: Error) => {
   const errors: Error[] = [];
   if (error instanceof GraphQLError) {
@@ -60,10 +62,16 @@ const buildMetaErrors = (error: Error) => {
       errors.push(...buildMetaErrors(extensionsData.cause));
     }
   } else if (error instanceof Error) {
+    const code = (error as { code?: unknown }).code;
     const baseError = {
       name: error.name,
       message: error.message,
       stack: error.stack,
+      // A driver or system code (23505, ECONNREFUSED) diagnoses a failure
+      // whose message may be redacted; any other value is left out.
+      ...(typeof code === 'string' && ERROR_META_CODE.test(code)
+        ? { code }
+        : {}),
     };
     errors.push(baseError);
   }

@@ -113,5 +113,26 @@
   "news_feed": {
     "cleanup_interval_value": 180,
     "cleanup_interval_unit": "days"
+  },
+  "pulse": {
+    "enabled": true,
+    "at_rest_key": null,
+    "platform_key": null,
+    "k_threshold": 5,
+    "retention_months": 13,
+    "contribution_window_days": 7,
+    "contribution_grace_days": 14,
+    "digest_size": 5000,
+    "trending_cache_ttl_minutes": 60,
+    "rate_limits": {
+      "push_pulse": 120,
+      "pulse_lookup": 600,
+      "pulse_trending": 60,
+      "pulse_benchmark": 30,
+      "pulse_salt": 120,
+      "pulse_status": 120,
+      "pulse_digest": 24,
+      "pulse_purge": 5
+    }
   }
 }
