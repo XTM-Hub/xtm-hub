@@ -1,28 +1,7 @@
-import { useTranslate } from '@/hooks/use-translate';
-import {
-  AutoForm,
-  Button,
-  FormControl,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  MultiSelectFormField,
-  SheetFooter,
-} from '@filigran/ui';
-import { PortalCapability } from '@graphql/generated';
-import { useMemo } from 'react';
-import { ControllerRenderProps, FieldValues } from 'react-hook-form';
-import { z } from 'zod';
-
-const portalCapabilityValues = Object.values(PortalCapability) as [
-  PortalCapability,
-  ...PortalCapability[],
-];
-
-const portalCapabilityOptions = portalCapabilityValues.map((capability) => ({
-  id: capability,
-  label: capability,
-}));
+import {useTranslate} from '@/hooks/use-translate';
+import {AutoForm, Button, SheetFooter,} from '@filigran/ui';
+import {useMemo} from 'react';
+import {z} from 'zod';
 
 const buildSsoGroupRolePortalFormSchema = (t: (key: string) => string) =>
   z.object({
@@ -34,7 +13,6 @@ const buildSsoGroupRolePortalFormSchema = (t: (key: string) => string) =>
       .string()
       .trim()
       .min(1, { error: t('RoleListPage.Error.Role') }),
-    capabilities: z.array(z.enum(portalCapabilityValues)).default([]),
   });
 
 export type SsoGroupRolePortalFormValues = z.infer<
@@ -66,31 +44,6 @@ const SsoGroupRolePortalForm = ({
         rolePortal: {
           label: t('RoleListPage.Role'),
           inputProps: { placeholder: t('RoleListPage.Role') },
-        },
-        capabilities: {
-          fieldType: ({
-            field,
-          }: {
-            field: ControllerRenderProps<FieldValues, string>;
-          }) => (
-            <FormItem>
-              <FormLabel>{t('RoleListPage.Capabilities')}</FormLabel>
-              <FormControl>
-                <MultiSelectFormField
-                  options={portalCapabilityOptions}
-                  popoverContentClassName="bg-elevation-background-layer-3"
-                  keyValue="id"
-                  keyLabel="label"
-                  defaultValue={field.value ?? []}
-                  onValueChange={field.onChange}
-                  noResultString={t('Utils.NotFound')}
-                  placeholder={t('RoleListPage.Capabilities')}
-                  variant="inverted"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          ),
         },
       }}>
       <SheetFooter className="pt-2">

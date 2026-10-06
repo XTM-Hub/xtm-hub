@@ -4,7 +4,6 @@ export const mockAddSsoGroupRolePortalInput = (overrides?: Partial<AddSsoGroupRo
     const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
     relationshipsToOmit.add('AddSsoGroupRolePortalInput');
     return {
-        capabilities: overrides && overrides.hasOwnProperty('capabilities') ? overrides.capabilities! : [PortalCapability.Bypass],
         rolePortal: overrides && overrides.hasOwnProperty('rolePortal') ? overrides.rolePortal! : 'atrocitas',
         ssoGroup: overrides && overrides.hasOwnProperty('ssoGroup') ? overrides.ssoGroup! : 'contabesco',
     };
@@ -2269,7 +2268,6 @@ export const mockUpdateSsoGroupRolePortalInput = (overrides?: Partial<UpdateSsoG
     const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
     relationshipsToOmit.add('UpdateSsoGroupRolePortalInput');
     return {
-        capabilities: overrides && overrides.hasOwnProperty('capabilities') ? overrides.capabilities! : [PortalCapability.Bypass],
         rolePortal: overrides && overrides.hasOwnProperty('rolePortal') ? overrides.rolePortal! : 'venia',
         ssoGroup: overrides && overrides.hasOwnProperty('ssoGroup') ? overrides.ssoGroup! : 'blandior',
     };

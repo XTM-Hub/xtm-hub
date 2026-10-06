@@ -4,7 +4,6 @@ import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { toast } from '@filigran/ui';
 import {
-  PortalCapability,
   useSsoGroupRolePortalsQuery,
   useUpdateSsoGroupRolePortalMutation,
 } from '@graphql/generated';
@@ -15,7 +14,6 @@ interface EditSsoGroupRolePortalProps {
   onOpenChange: (open: boolean) => void;
   ssoGroup: string;
   rolePortal: string;
-  capabilities: PortalCapability[];
 }
 
 const EditSsoGroupRolePortal = ({
@@ -23,7 +21,6 @@ const EditSsoGroupRolePortal = ({
   onOpenChange,
   ssoGroup,
   rolePortal,
-  capabilities,
 }: EditSsoGroupRolePortalProps) => {
   const t = useTranslate();
   const queryClient = useQueryClient();
@@ -55,7 +52,7 @@ const EditSsoGroupRolePortal = ({
       setOpen={onOpenChange}
       open={open}>
       <SsoGroupRolePortalForm
-        ssoGroupRolePortal={{ ssoGroup, rolePortal, capabilities }}
+        ssoGroupRolePortal={{ ssoGroup, rolePortal }}
         onClose={() => onOpenChange(false)}
         handleSubmit={(input) =>
           updateSsoGroupRolePortal({ ssoGroup, rolePortal, input })

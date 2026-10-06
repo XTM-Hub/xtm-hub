@@ -1,5 +1,5 @@
-import type { GraphQLClient, RequestOptions } from "graphql-request";
-type GraphQLClientRequestHeaders = RequestOptions["requestHeaders"];
+import { GraphQLClient } from 'graphql-request';
+import { RequestInit } from 'graphql-request/dist/types.dom';
 import { useMutation, useQuery, useInfiniteQuery, UseMutationOptions, UseQueryOptions, UseInfiniteQueryOptions, InfiniteData } from '@tanstack/react-query';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
@@ -59,7 +59,6 @@ export type Scalars = {
 };
 
 export type AddSsoGroupRolePortalInput = {
-  capabilities: Array<PortalCapability>;
   rolePortal: Scalars['String']['input'];
   ssoGroup: Scalars['String']['input'];
 };
@@ -2970,7 +2969,6 @@ export type UpdatePlatformServiceMetadataInput = {
 };
 
 export type UpdateSsoGroupRolePortalInput = {
-  capabilities: Array<PortalCapability>;
   rolePortal: Scalars['String']['input'];
   ssoGroup: Scalars['String']['input'];
 };
@@ -3554,7 +3552,7 @@ export type AddSsoGroupRolePortalMutationVariables = Exact<{
 }>;
 
 
-export type AddSsoGroupRolePortalMutation = { __typename?: 'Mutation', addSSOGroupRolePortal: { __typename?: 'SSOGroupRolePortal', ssoGroup: string, rolePortal: { __typename?: 'RolePortal', id: string, name: string, capabilities: Array<{ __typename?: 'Capability', id: string, name: PortalCapability } | null> | null } } };
+export type AddSsoGroupRolePortalMutation = { __typename?: 'Mutation', addSSOGroupRolePortal: { __typename?: 'SSOGroupRolePortal', ssoGroup: string, rolePortal: { __typename?: 'RolePortal', id: string, name: string } } };
 
 export type DeleteSsoGroupRolePortalMutationVariables = Exact<{
   input: DeleteSsoGroupRolePortalInput;
@@ -3566,7 +3564,7 @@ export type DeleteSsoGroupRolePortalMutation = { __typename?: 'Mutation', delete
 export type SsoGroupRolePortalsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type SsoGroupRolePortalsQuery = { __typename?: 'Query', ssoGroupRolePortals: Array<{ __typename?: 'SSOGroupRolePortal', ssoGroup: string, rolePortal: { __typename?: 'RolePortal', id: string, name: string, capabilities: Array<{ __typename?: 'Capability', id: string, name: PortalCapability } | null> | null } }> };
+export type SsoGroupRolePortalsQuery = { __typename?: 'Query', ssoGroupRolePortals: Array<{ __typename?: 'SSOGroupRolePortal', ssoGroup: string, rolePortal: { __typename?: 'RolePortal', id: string, name: string } }> };
 
 export type UpdateSsoGroupRolePortalMutationVariables = Exact<{
   ssoGroup: Scalars['String']['input'];
@@ -3575,7 +3573,7 @@ export type UpdateSsoGroupRolePortalMutationVariables = Exact<{
 }>;
 
 
-export type UpdateSsoGroupRolePortalMutation = { __typename?: 'Mutation', updateSSOGroupRolePortal: { __typename?: 'SSOGroupRolePortal', ssoGroup: string, rolePortal: { __typename?: 'RolePortal', id: string, name: string, capabilities: Array<{ __typename?: 'Capability', id: string, name: PortalCapability } | null> | null } } };
+export type UpdateSsoGroupRolePortalMutation = { __typename?: 'Mutation', updateSSOGroupRolePortal: { __typename?: 'SSOGroupRolePortal', ssoGroup: string, rolePortal: { __typename?: 'RolePortal', id: string, name: string } } };
 
 export type AddUsersToBundleGroupsMutationVariables = Exact<{
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
@@ -4174,7 +4172,8 @@ export const useSaveContentTranslationDraftMutation = <
     )};
 
 useSaveContentTranslationDraftMutation.getKey = () => ['SaveContentTranslationDraft'];
-useSaveContentTranslationDraftMutation.getRootKey = () => ['SaveContentTranslationDraft'] as const;
+
+
 useSaveContentTranslationDraftMutation.fetcher = (client: GraphQLClient, variables: SaveContentTranslationDraftMutationVariables, headers?: RequestInit['headers']) => fetcher<SaveContentTranslationDraftMutation, SaveContentTranslationDraftMutationVariables>(client, SaveContentTranslationDraftDocument, variables, headers);
 
 export const PublishContentTranslationDraftsDocument = `
@@ -4204,7 +4203,8 @@ export const usePublishContentTranslationDraftsMutation = <
     )};
 
 usePublishContentTranslationDraftsMutation.getKey = () => ['PublishContentTranslationDrafts'];
-usePublishContentTranslationDraftsMutation.getRootKey = () => ['PublishContentTranslationDrafts'] as const;
+
+
 usePublishContentTranslationDraftsMutation.fetcher = (client: GraphQLClient, variables?: PublishContentTranslationDraftsMutationVariables, headers?: RequestInit['headers']) => fetcher<PublishContentTranslationDraftsMutation, PublishContentTranslationDraftsMutationVariables>(client, PublishContentTranslationDraftsDocument, variables, headers);
 
 export const DiscardContentTranslationDraftsDocument = `
@@ -4231,7 +4231,8 @@ export const useDiscardContentTranslationDraftsMutation = <
     )};
 
 useDiscardContentTranslationDraftsMutation.getKey = () => ['DiscardContentTranslationDrafts'];
-useDiscardContentTranslationDraftsMutation.getRootKey = () => ['DiscardContentTranslationDrafts'] as const;
+
+
 useDiscardContentTranslationDraftsMutation.fetcher = (client: GraphQLClient, variables?: DiscardContentTranslationDraftsMutationVariables, headers?: RequestInit['headers']) => fetcher<DiscardContentTranslationDraftsMutation, DiscardContentTranslationDraftsMutationVariables>(client, DiscardContentTranslationDraftsDocument, variables, headers);
 
 export const ContentTranslationsByLocaleDocument = `
@@ -4262,7 +4263,7 @@ export const useContentTranslationsByLocaleQuery = <
     )};
 
 useContentTranslationsByLocaleQuery.getKey = (variables?: ContentTranslationsByLocaleQueryVariables) => variables === undefined ? ['ContentTranslationsByLocale'] : ['ContentTranslationsByLocale', variables];
-useContentTranslationsByLocaleQuery.getRootKey = () => ['ContentTranslationsByLocale'] as const;
+
 export const useInfiniteContentTranslationsByLocaleQuery = <
       TData = InfiniteData<ContentTranslationsByLocaleQuery>,
       TError = unknown
@@ -4285,7 +4286,8 @@ export const useInfiniteContentTranslationsByLocaleQuery = <
     )};
 
 useInfiniteContentTranslationsByLocaleQuery.getKey = (variables?: ContentTranslationsByLocaleQueryVariables) => variables === undefined ? ['ContentTranslationsByLocale.infinite'] : ['ContentTranslationsByLocale.infinite', variables];
-useInfiniteContentTranslationsByLocaleQuery.getRootKey = () => ['ContentTranslationsByLocale.infinite'] as const;
+
+
 useContentTranslationsByLocaleQuery.fetcher = (client: GraphQLClient, variables?: ContentTranslationsByLocaleQueryVariables, headers?: RequestInit['headers']) => fetcher<ContentTranslationsByLocaleQuery, ContentTranslationsByLocaleQueryVariables>(client, ContentTranslationsByLocaleDocument, variables, headers);
 
 export const ContentTranslationKeysDocument = `
@@ -4315,7 +4317,7 @@ export const useContentTranslationKeysQuery = <
     )};
 
 useContentTranslationKeysQuery.getKey = (variables?: ContentTranslationKeysQueryVariables) => variables === undefined ? ['ContentTranslationKeys'] : ['ContentTranslationKeys', variables];
-useContentTranslationKeysQuery.getRootKey = () => ['ContentTranslationKeys'] as const;
+
 export const useInfiniteContentTranslationKeysQuery = <
       TData = InfiniteData<ContentTranslationKeysQuery>,
       TError = unknown
@@ -4338,7 +4340,8 @@ export const useInfiniteContentTranslationKeysQuery = <
     )};
 
 useInfiniteContentTranslationKeysQuery.getKey = (variables?: ContentTranslationKeysQueryVariables) => variables === undefined ? ['ContentTranslationKeys.infinite'] : ['ContentTranslationKeys.infinite', variables];
-useInfiniteContentTranslationKeysQuery.getRootKey = () => ['ContentTranslationKeys.infinite'] as const;
+
+
 useContentTranslationKeysQuery.fetcher = (client: GraphQLClient, variables?: ContentTranslationKeysQueryVariables, headers?: RequestInit['headers']) => fetcher<ContentTranslationKeysQuery, ContentTranslationKeysQueryVariables>(client, ContentTranslationKeysDocument, variables, headers);
 
 export const ContentTranslationForKeyDocument = `
@@ -4375,7 +4378,7 @@ export const useContentTranslationForKeyQuery = <
     )};
 
 useContentTranslationForKeyQuery.getKey = (variables?: ContentTranslationForKeyQueryVariables) => variables === undefined ? ['ContentTranslationForKey'] : ['ContentTranslationForKey', variables];
-useContentTranslationForKeyQuery.getRootKey = () => ['ContentTranslationForKey'] as const;
+
 export const useInfiniteContentTranslationForKeyQuery = <
       TData = InfiniteData<ContentTranslationForKeyQuery>,
       TError = unknown
@@ -4398,7 +4401,8 @@ export const useInfiniteContentTranslationForKeyQuery = <
     )};
 
 useInfiniteContentTranslationForKeyQuery.getKey = (variables?: ContentTranslationForKeyQueryVariables) => variables === undefined ? ['ContentTranslationForKey.infinite'] : ['ContentTranslationForKey.infinite', variables];
-useInfiniteContentTranslationForKeyQuery.getRootKey = () => ['ContentTranslationForKey.infinite'] as const;
+
+
 useContentTranslationForKeyQuery.fetcher = (client: GraphQLClient, variables?: ContentTranslationForKeyQueryVariables, headers?: RequestInit['headers']) => fetcher<ContentTranslationForKeyQuery, ContentTranslationForKeyQueryVariables>(client, ContentTranslationForKeyDocument, variables, headers);
 
 export const ContentTranslationDraftsDocument = `
@@ -4430,7 +4434,7 @@ export const useContentTranslationDraftsQuery = <
     )};
 
 useContentTranslationDraftsQuery.getKey = (variables?: ContentTranslationDraftsQueryVariables) => variables === undefined ? ['ContentTranslationDrafts'] : ['ContentTranslationDrafts', variables];
-useContentTranslationDraftsQuery.getRootKey = () => ['ContentTranslationDrafts'] as const;
+
 export const useInfiniteContentTranslationDraftsQuery = <
       TData = InfiniteData<ContentTranslationDraftsQuery>,
       TError = unknown
@@ -4453,7 +4457,8 @@ export const useInfiniteContentTranslationDraftsQuery = <
     )};
 
 useInfiniteContentTranslationDraftsQuery.getKey = (variables?: ContentTranslationDraftsQueryVariables) => variables === undefined ? ['ContentTranslationDrafts.infinite'] : ['ContentTranslationDrafts.infinite', variables];
-useInfiniteContentTranslationDraftsQuery.getRootKey = () => ['ContentTranslationDrafts.infinite'] as const;
+
+
 useContentTranslationDraftsQuery.fetcher = (client: GraphQLClient, variables?: ContentTranslationDraftsQueryVariables, headers?: RequestInit['headers']) => fetcher<ContentTranslationDraftsQuery, ContentTranslationDraftsQueryVariables>(client, ContentTranslationDraftsDocument, variables, headers);
 
 export const TrialsAdminCancelDeploymentRequestDocument = `
@@ -4482,7 +4487,8 @@ export const useTrialsAdminCancelDeploymentRequestMutation = <
     )};
 
 useTrialsAdminCancelDeploymentRequestMutation.getKey = () => ['TrialsAdminCancelDeploymentRequest'];
-useTrialsAdminCancelDeploymentRequestMutation.getRootKey = () => ['TrialsAdminCancelDeploymentRequest'] as const;
+
+
 useTrialsAdminCancelDeploymentRequestMutation.fetcher = (client: GraphQLClient, variables: TrialsAdminCancelDeploymentRequestMutationVariables, headers?: RequestInit['headers']) => fetcher<TrialsAdminCancelDeploymentRequestMutation, TrialsAdminCancelDeploymentRequestMutationVariables>(client, TrialsAdminCancelDeploymentRequestDocument, variables, headers);
 
 export const TrialsReorderDeploymentRequestInQueueDocument = `
@@ -4511,7 +4517,8 @@ export const useTrialsReorderDeploymentRequestInQueueMutation = <
     )};
 
 useTrialsReorderDeploymentRequestInQueueMutation.getKey = () => ['TrialsReorderDeploymentRequestInQueue'];
-useTrialsReorderDeploymentRequestInQueueMutation.getRootKey = () => ['TrialsReorderDeploymentRequestInQueue'] as const;
+
+
 useTrialsReorderDeploymentRequestInQueueMutation.fetcher = (client: GraphQLClient, variables: TrialsReorderDeploymentRequestInQueueMutationVariables, headers?: RequestInit['headers']) => fetcher<TrialsReorderDeploymentRequestInQueueMutation, TrialsReorderDeploymentRequestInQueueMutationVariables>(client, TrialsReorderDeploymentRequestInQueueDocument, variables, headers);
 
 export const TrialsUpdateDeploymentQuotaCapacityDocument = `
@@ -4540,7 +4547,8 @@ export const useTrialsUpdateDeploymentQuotaCapacityMutation = <
     )};
 
 useTrialsUpdateDeploymentQuotaCapacityMutation.getKey = () => ['TrialsUpdateDeploymentQuotaCapacity'];
-useTrialsUpdateDeploymentQuotaCapacityMutation.getRootKey = () => ['TrialsUpdateDeploymentQuotaCapacity'] as const;
+
+
 useTrialsUpdateDeploymentQuotaCapacityMutation.fetcher = (client: GraphQLClient, variables: TrialsUpdateDeploymentQuotaCapacityMutationVariables, headers?: RequestInit['headers']) => fetcher<TrialsUpdateDeploymentQuotaCapacityMutation, TrialsUpdateDeploymentQuotaCapacityMutationVariables>(client, TrialsUpdateDeploymentQuotaCapacityDocument, variables, headers);
 
 export const TrialsListDocument = `
@@ -4582,7 +4590,7 @@ export const useTrialsListQuery = <
     )};
 
 useTrialsListQuery.getKey = (variables: TrialsListQueryVariables) => ['TrialsList', variables];
-useTrialsListQuery.getRootKey = () => ['TrialsList'] as const;
+
 export const useInfiniteTrialsListQuery = <
       TData = InfiniteData<TrialsListQuery>,
       TError = unknown
@@ -4605,7 +4613,8 @@ export const useInfiniteTrialsListQuery = <
     )};
 
 useInfiniteTrialsListQuery.getKey = (variables: TrialsListQueryVariables) => ['TrialsList.infinite', variables];
-useInfiniteTrialsListQuery.getRootKey = () => ['TrialsList.infinite'] as const;
+
+
 useTrialsListQuery.fetcher = (client: GraphQLClient, variables: TrialsListQueryVariables, headers?: RequestInit['headers']) => fetcher<TrialsListQuery, TrialsListQueryVariables>(client, TrialsListDocument, variables, headers);
 
 export const TrialsQuotasDocument = `
@@ -4635,7 +4644,7 @@ export const useTrialsQuotasQuery = <
     )};
 
 useTrialsQuotasQuery.getKey = (variables?: TrialsQuotasQueryVariables) => variables === undefined ? ['TrialsQuotas'] : ['TrialsQuotas', variables];
-useTrialsQuotasQuery.getRootKey = () => ['TrialsQuotas'] as const;
+
 export const useInfiniteTrialsQuotasQuery = <
       TData = InfiniteData<TrialsQuotasQuery>,
       TError = unknown
@@ -4658,7 +4667,8 @@ export const useInfiniteTrialsQuotasQuery = <
     )};
 
 useInfiniteTrialsQuotasQuery.getKey = (variables?: TrialsQuotasQueryVariables) => variables === undefined ? ['TrialsQuotas.infinite'] : ['TrialsQuotas.infinite', variables];
-useInfiniteTrialsQuotasQuery.getRootKey = () => ['TrialsQuotas.infinite'] as const;
+
+
 useTrialsQuotasQuery.fetcher = (client: GraphQLClient, variables?: TrialsQuotasQueryVariables, headers?: RequestInit['headers']) => fetcher<TrialsQuotasQuery, TrialsQuotasQueryVariables>(client, TrialsQuotasDocument, variables, headers);
 
 export const XtmPlatformBundleDocument = `
@@ -4688,7 +4698,7 @@ export const useXtmPlatformBundleQuery = <
     )};
 
 useXtmPlatformBundleQuery.getKey = (variables?: XtmPlatformBundleQueryVariables) => variables === undefined ? ['XtmPlatformBundle'] : ['XtmPlatformBundle', variables];
-useXtmPlatformBundleQuery.getRootKey = () => ['XtmPlatformBundle'] as const;
+
 export const useInfiniteXtmPlatformBundleQuery = <
       TData = InfiniteData<XtmPlatformBundleQuery>,
       TError = unknown
@@ -4711,7 +4721,8 @@ export const useInfiniteXtmPlatformBundleQuery = <
     )};
 
 useInfiniteXtmPlatformBundleQuery.getKey = (variables?: XtmPlatformBundleQueryVariables) => variables === undefined ? ['XtmPlatformBundle.infinite'] : ['XtmPlatformBundle.infinite', variables];
-useInfiniteXtmPlatformBundleQuery.getRootKey = () => ['XtmPlatformBundle.infinite'] as const;
+
+
 useXtmPlatformBundleQuery.fetcher = (client: GraphQLClient, variables?: XtmPlatformBundleQueryVariables, headers?: RequestInit['headers']) => fetcher<XtmPlatformBundleQuery, XtmPlatformBundleQueryVariables>(client, XtmPlatformBundleDocument, variables, headers);
 
 export const XtmonePlatformIntegrationStatusDocument = `
@@ -4741,7 +4752,7 @@ export const useXtmonePlatformIntegrationStatusQuery = <
     )};
 
 useXtmonePlatformIntegrationStatusQuery.getKey = (variables: XtmonePlatformIntegrationStatusQueryVariables) => ['XtmonePlatformIntegrationStatus', variables];
-useXtmonePlatformIntegrationStatusQuery.getRootKey = () => ['XtmonePlatformIntegrationStatus'] as const;
+
 export const useInfiniteXtmonePlatformIntegrationStatusQuery = <
       TData = InfiniteData<XtmonePlatformIntegrationStatusQuery>,
       TError = unknown
@@ -4764,7 +4775,8 @@ export const useInfiniteXtmonePlatformIntegrationStatusQuery = <
     )};
 
 useInfiniteXtmonePlatformIntegrationStatusQuery.getKey = (variables: XtmonePlatformIntegrationStatusQueryVariables) => ['XtmonePlatformIntegrationStatus.infinite', variables];
-useInfiniteXtmonePlatformIntegrationStatusQuery.getRootKey = () => ['XtmonePlatformIntegrationStatus.infinite'] as const;
+
+
 useXtmonePlatformIntegrationStatusQuery.fetcher = (client: GraphQLClient, variables: XtmonePlatformIntegrationStatusQueryVariables, headers?: RequestInit['headers']) => fetcher<XtmonePlatformIntegrationStatusQuery, XtmonePlatformIntegrationStatusQueryVariables>(client, XtmonePlatformIntegrationStatusDocument, variables, headers);
 
 export const DocumentFacetsDocument = `
@@ -4821,7 +4833,7 @@ export const useDocumentFacetsQuery = <
     )};
 
 useDocumentFacetsQuery.getKey = (variables: DocumentFacetsQueryVariables) => ['DocumentFacets', variables];
-useDocumentFacetsQuery.getRootKey = () => ['DocumentFacets'] as const;
+
 export const useInfiniteDocumentFacetsQuery = <
       TData = InfiniteData<DocumentFacetsQuery>,
       TError = unknown
@@ -4844,7 +4856,8 @@ export const useInfiniteDocumentFacetsQuery = <
     )};
 
 useInfiniteDocumentFacetsQuery.getKey = (variables: DocumentFacetsQueryVariables) => ['DocumentFacets.infinite', variables];
-useInfiniteDocumentFacetsQuery.getRootKey = () => ['DocumentFacets.infinite'] as const;
+
+
 useDocumentFacetsQuery.fetcher = (client: GraphQLClient, variables: DocumentFacetsQueryVariables, headers?: RequestInit['headers']) => fetcher<DocumentFacetsQuery, DocumentFacetsQueryVariables>(client, DocumentFacetsDocument, variables, headers);
 
 export const MostDeployedDocumentsQueryDocument = `
@@ -4874,7 +4887,7 @@ export const useMostDeployedDocumentsQueryQuery = <
     )};
 
 useMostDeployedDocumentsQueryQuery.getKey = (variables: MostDeployedDocumentsQueryQueryVariables) => ['MostDeployedDocumentsQuery', variables];
-useMostDeployedDocumentsQueryQuery.getRootKey = () => ['MostDeployedDocumentsQuery'] as const;
+
 export const useInfiniteMostDeployedDocumentsQueryQuery = <
       TData = InfiniteData<MostDeployedDocumentsQueryQuery>,
       TError = unknown
@@ -4897,7 +4910,8 @@ export const useInfiniteMostDeployedDocumentsQueryQuery = <
     )};
 
 useInfiniteMostDeployedDocumentsQueryQuery.getKey = (variables: MostDeployedDocumentsQueryQueryVariables) => ['MostDeployedDocumentsQuery.infinite', variables];
-useInfiniteMostDeployedDocumentsQueryQuery.getRootKey = () => ['MostDeployedDocumentsQuery.infinite'] as const;
+
+
 useMostDeployedDocumentsQueryQuery.fetcher = (client: GraphQLClient, variables: MostDeployedDocumentsQueryQueryVariables, headers?: RequestInit['headers']) => fetcher<MostDeployedDocumentsQueryQuery, MostDeployedDocumentsQueryQueryVariables>(client, MostDeployedDocumentsQueryDocument, variables, headers);
 
 export const NewestDocumentsQueryDocument = `
@@ -4927,7 +4941,7 @@ export const useNewestDocumentsQueryQuery = <
     )};
 
 useNewestDocumentsQueryQuery.getKey = (variables: NewestDocumentsQueryQueryVariables) => ['NewestDocumentsQuery', variables];
-useNewestDocumentsQueryQuery.getRootKey = () => ['NewestDocumentsQuery'] as const;
+
 export const useInfiniteNewestDocumentsQueryQuery = <
       TData = InfiniteData<NewestDocumentsQueryQuery>,
       TError = unknown
@@ -4950,7 +4964,8 @@ export const useInfiniteNewestDocumentsQueryQuery = <
     )};
 
 useInfiniteNewestDocumentsQueryQuery.getKey = (variables: NewestDocumentsQueryQueryVariables) => ['NewestDocumentsQuery.infinite', variables];
-useInfiniteNewestDocumentsQueryQuery.getRootKey = () => ['NewestDocumentsQuery.infinite'] as const;
+
+
 useNewestDocumentsQueryQuery.fetcher = (client: GraphQLClient, variables: NewestDocumentsQueryQueryVariables, headers?: RequestInit['headers']) => fetcher<NewestDocumentsQueryQuery, NewestDocumentsQueryQueryVariables>(client, NewestDocumentsQueryDocument, variables, headers);
 
 export const LastDeployedOverviewQueryDocument = `
@@ -4992,7 +5007,7 @@ export const useLastDeployedOverviewQueryQuery = <
     )};
 
 useLastDeployedOverviewQueryQuery.getKey = (variables: LastDeployedOverviewQueryQueryVariables) => ['LastDeployedOverviewQuery', variables];
-useLastDeployedOverviewQueryQuery.getRootKey = () => ['LastDeployedOverviewQuery'] as const;
+
 export const useInfiniteLastDeployedOverviewQueryQuery = <
       TData = InfiniteData<LastDeployedOverviewQueryQuery>,
       TError = unknown
@@ -5015,7 +5030,8 @@ export const useInfiniteLastDeployedOverviewQueryQuery = <
     )};
 
 useInfiniteLastDeployedOverviewQueryQuery.getKey = (variables: LastDeployedOverviewQueryQueryVariables) => ['LastDeployedOverviewQuery.infinite', variables];
-useInfiniteLastDeployedOverviewQueryQuery.getRootKey = () => ['LastDeployedOverviewQuery.infinite'] as const;
+
+
 useLastDeployedOverviewQueryQuery.fetcher = (client: GraphQLClient, variables: LastDeployedOverviewQueryQueryVariables, headers?: RequestInit['headers']) => fetcher<LastDeployedOverviewQueryQuery, LastDeployedOverviewQueryQueryVariables>(client, LastDeployedOverviewQueryDocument, variables, headers);
 
 export const PublicDocumentsByServiceSlugQueryDocument = `
@@ -5045,7 +5061,7 @@ export const usePublicDocumentsByServiceSlugQueryQuery = <
     )};
 
 usePublicDocumentsByServiceSlugQueryQuery.getKey = (variables: PublicDocumentsByServiceSlugQueryQueryVariables) => ['PublicDocumentsByServiceSlugQuery', variables];
-usePublicDocumentsByServiceSlugQueryQuery.getRootKey = () => ['PublicDocumentsByServiceSlugQuery'] as const;
+
 export const useInfinitePublicDocumentsByServiceSlugQueryQuery = <
       TData = InfiniteData<PublicDocumentsByServiceSlugQueryQuery>,
       TError = unknown
@@ -5068,7 +5084,8 @@ export const useInfinitePublicDocumentsByServiceSlugQueryQuery = <
     )};
 
 useInfinitePublicDocumentsByServiceSlugQueryQuery.getKey = (variables: PublicDocumentsByServiceSlugQueryQueryVariables) => ['PublicDocumentsByServiceSlugQuery.infinite', variables];
-useInfinitePublicDocumentsByServiceSlugQueryQuery.getRootKey = () => ['PublicDocumentsByServiceSlugQuery.infinite'] as const;
+
+
 usePublicDocumentsByServiceSlugQueryQuery.fetcher = (client: GraphQLClient, variables: PublicDocumentsByServiceSlugQueryQueryVariables, headers?: RequestInit['headers']) => fetcher<PublicDocumentsByServiceSlugQueryQuery, PublicDocumentsByServiceSlugQueryQueryVariables>(client, PublicDocumentsByServiceSlugQueryDocument, variables, headers);
 
 export const PublicDocumentsByServiceSlugSitemapQueryDocument = `
@@ -5100,7 +5117,7 @@ export const usePublicDocumentsByServiceSlugSitemapQueryQuery = <
     )};
 
 usePublicDocumentsByServiceSlugSitemapQueryQuery.getKey = (variables: PublicDocumentsByServiceSlugSitemapQueryQueryVariables) => ['PublicDocumentsByServiceSlugSitemapQuery', variables];
-usePublicDocumentsByServiceSlugSitemapQueryQuery.getRootKey = () => ['PublicDocumentsByServiceSlugSitemapQuery'] as const;
+
 export const useInfinitePublicDocumentsByServiceSlugSitemapQueryQuery = <
       TData = InfiniteData<PublicDocumentsByServiceSlugSitemapQueryQuery>,
       TError = unknown
@@ -5123,7 +5140,8 @@ export const useInfinitePublicDocumentsByServiceSlugSitemapQueryQuery = <
     )};
 
 useInfinitePublicDocumentsByServiceSlugSitemapQueryQuery.getKey = (variables: PublicDocumentsByServiceSlugSitemapQueryQueryVariables) => ['PublicDocumentsByServiceSlugSitemapQuery.infinite', variables];
-useInfinitePublicDocumentsByServiceSlugSitemapQueryQuery.getRootKey = () => ['PublicDocumentsByServiceSlugSitemapQuery.infinite'] as const;
+
+
 usePublicDocumentsByServiceSlugSitemapQueryQuery.fetcher = (client: GraphQLClient, variables: PublicDocumentsByServiceSlugSitemapQueryQueryVariables, headers?: RequestInit['headers']) => fetcher<PublicDocumentsByServiceSlugSitemapQueryQuery, PublicDocumentsByServiceSlugSitemapQueryQueryVariables>(client, PublicDocumentsByServiceSlugSitemapQueryDocument, variables, headers);
 
 export const FeatureVoteDocument = `
@@ -5153,7 +5171,8 @@ export const useFeatureVoteMutation = <
     )};
 
 useFeatureVoteMutation.getKey = () => ['FeatureVote'];
-useFeatureVoteMutation.getRootKey = () => ['FeatureVote'] as const;
+
+
 useFeatureVoteMutation.fetcher = (client: GraphQLClient, variables: FeatureVoteMutationVariables, headers?: RequestInit['headers']) => fetcher<FeatureVoteMutation, FeatureVoteMutationVariables>(client, FeatureVoteDocument, variables, headers);
 
 export const CurrentVotingRoundDocument = `
@@ -5192,7 +5211,7 @@ export const useCurrentVotingRoundQuery = <
     )};
 
 useCurrentVotingRoundQuery.getKey = (variables: CurrentVotingRoundQueryVariables) => ['CurrentVotingRound', variables];
-useCurrentVotingRoundQuery.getRootKey = () => ['CurrentVotingRound'] as const;
+
 export const useInfiniteCurrentVotingRoundQuery = <
       TData = InfiniteData<CurrentVotingRoundQuery>,
       TError = unknown
@@ -5215,7 +5234,8 @@ export const useInfiniteCurrentVotingRoundQuery = <
     )};
 
 useInfiniteCurrentVotingRoundQuery.getKey = (variables: CurrentVotingRoundQueryVariables) => ['CurrentVotingRound.infinite', variables];
-useInfiniteCurrentVotingRoundQuery.getRootKey = () => ['CurrentVotingRound.infinite'] as const;
+
+
 useCurrentVotingRoundQuery.fetcher = (client: GraphQLClient, variables: CurrentVotingRoundQueryVariables, headers?: RequestInit['headers']) => fetcher<CurrentVotingRoundQuery, CurrentVotingRoundQueryVariables>(client, CurrentVotingRoundDocument, variables, headers);
 
 export const CurrentVotingRoundCalloutDocument = `
@@ -5248,7 +5268,7 @@ export const useCurrentVotingRoundCalloutQuery = <
     )};
 
 useCurrentVotingRoundCalloutQuery.getKey = (variables: CurrentVotingRoundCalloutQueryVariables) => ['CurrentVotingRoundCallout', variables];
-useCurrentVotingRoundCalloutQuery.getRootKey = () => ['CurrentVotingRoundCallout'] as const;
+
 export const useInfiniteCurrentVotingRoundCalloutQuery = <
       TData = InfiniteData<CurrentVotingRoundCalloutQuery>,
       TError = unknown
@@ -5271,7 +5291,8 @@ export const useInfiniteCurrentVotingRoundCalloutQuery = <
     )};
 
 useInfiniteCurrentVotingRoundCalloutQuery.getKey = (variables: CurrentVotingRoundCalloutQueryVariables) => ['CurrentVotingRoundCallout.infinite', variables];
-useInfiniteCurrentVotingRoundCalloutQuery.getRootKey = () => ['CurrentVotingRoundCallout.infinite'] as const;
+
+
 useCurrentVotingRoundCalloutQuery.fetcher = (client: GraphQLClient, variables: CurrentVotingRoundCalloutQueryVariables, headers?: RequestInit['headers']) => fetcher<CurrentVotingRoundCalloutQuery, CurrentVotingRoundCalloutQueryVariables>(client, CurrentVotingRoundCalloutDocument, variables, headers);
 
 export const MeCheckDocument = `
@@ -5301,7 +5322,7 @@ export const useMeCheckQuery = <
     )};
 
 useMeCheckQuery.getKey = (variables?: MeCheckQueryVariables) => variables === undefined ? ['meCheck'] : ['meCheck', variables];
-useMeCheckQuery.getRootKey = () => ['meCheck'] as const;
+
 export const useInfiniteMeCheckQuery = <
       TData = InfiniteData<MeCheckQuery>,
       TError = unknown
@@ -5324,7 +5345,8 @@ export const useInfiniteMeCheckQuery = <
     )};
 
 useInfiniteMeCheckQuery.getKey = (variables?: MeCheckQueryVariables) => variables === undefined ? ['meCheck.infinite'] : ['meCheck.infinite', variables];
-useInfiniteMeCheckQuery.getRootKey = () => ['meCheck.infinite'] as const;
+
+
 useMeCheckQuery.fetcher = (client: GraphQLClient, variables?: MeCheckQueryVariables, headers?: RequestInit['headers']) => fetcher<MeCheckQuery, MeCheckQueryVariables>(client, MeCheckDocument, variables, headers);
 
 export const MeFirstNameDocument = `
@@ -5354,7 +5376,7 @@ export const useMeFirstNameQuery = <
     )};
 
 useMeFirstNameQuery.getKey = (variables?: MeFirstNameQueryVariables) => variables === undefined ? ['MeFirstName'] : ['MeFirstName', variables];
-useMeFirstNameQuery.getRootKey = () => ['MeFirstName'] as const;
+
 export const useInfiniteMeFirstNameQuery = <
       TData = InfiniteData<MeFirstNameQuery>,
       TError = unknown
@@ -5377,7 +5399,8 @@ export const useInfiniteMeFirstNameQuery = <
     )};
 
 useInfiniteMeFirstNameQuery.getKey = (variables?: MeFirstNameQueryVariables) => variables === undefined ? ['MeFirstName.infinite'] : ['MeFirstName.infinite', variables];
-useInfiniteMeFirstNameQuery.getRootKey = () => ['MeFirstName.infinite'] as const;
+
+
 useMeFirstNameQuery.fetcher = (client: GraphQLClient, variables?: MeFirstNameQueryVariables, headers?: RequestInit['headers']) => fetcher<MeFirstNameQuery, MeFirstNameQueryVariables>(client, MeFirstNameDocument, variables, headers);
 
 export const OrganizationSubscribedServicesBreadcrumbDocument = `
@@ -5408,7 +5431,7 @@ export const useOrganizationSubscribedServicesBreadcrumbQuery = <
     )};
 
 useOrganizationSubscribedServicesBreadcrumbQuery.getKey = (variables: OrganizationSubscribedServicesBreadcrumbQueryVariables) => ['OrganizationSubscribedServicesBreadcrumb', variables];
-useOrganizationSubscribedServicesBreadcrumbQuery.getRootKey = () => ['OrganizationSubscribedServicesBreadcrumb'] as const;
+
 export const useInfiniteOrganizationSubscribedServicesBreadcrumbQuery = <
       TData = InfiniteData<OrganizationSubscribedServicesBreadcrumbQuery>,
       TError = unknown
@@ -5431,7 +5454,8 @@ export const useInfiniteOrganizationSubscribedServicesBreadcrumbQuery = <
     )};
 
 useInfiniteOrganizationSubscribedServicesBreadcrumbQuery.getKey = (variables: OrganizationSubscribedServicesBreadcrumbQueryVariables) => ['OrganizationSubscribedServicesBreadcrumb.infinite', variables];
-useInfiniteOrganizationSubscribedServicesBreadcrumbQuery.getRootKey = () => ['OrganizationSubscribedServicesBreadcrumb.infinite'] as const;
+
+
 useOrganizationSubscribedServicesBreadcrumbQuery.fetcher = (client: GraphQLClient, variables: OrganizationSubscribedServicesBreadcrumbQueryVariables, headers?: RequestInit['headers']) => fetcher<OrganizationSubscribedServicesBreadcrumbQuery, OrganizationSubscribedServicesBreadcrumbQueryVariables>(client, OrganizationSubscribedServicesBreadcrumbDocument, variables, headers);
 
 export const OrganizationSubscribedServicesListDocument = `
@@ -5479,7 +5503,7 @@ export const useOrganizationSubscribedServicesListQuery = <
     )};
 
 useOrganizationSubscribedServicesListQuery.getKey = (variables: OrganizationSubscribedServicesListQueryVariables) => ['OrganizationSubscribedServicesList', variables];
-useOrganizationSubscribedServicesListQuery.getRootKey = () => ['OrganizationSubscribedServicesList'] as const;
+
 export const useInfiniteOrganizationSubscribedServicesListQuery = <
       TData = InfiniteData<OrganizationSubscribedServicesListQuery>,
       TError = unknown
@@ -5502,7 +5526,8 @@ export const useInfiniteOrganizationSubscribedServicesListQuery = <
     )};
 
 useInfiniteOrganizationSubscribedServicesListQuery.getKey = (variables: OrganizationSubscribedServicesListQueryVariables) => ['OrganizationSubscribedServicesList.infinite', variables];
-useInfiniteOrganizationSubscribedServicesListQuery.getRootKey = () => ['OrganizationSubscribedServicesList.infinite'] as const;
+
+
 useOrganizationSubscribedServicesListQuery.fetcher = (client: GraphQLClient, variables: OrganizationSubscribedServicesListQueryVariables, headers?: RequestInit['headers']) => fetcher<OrganizationSubscribedServicesListQuery, OrganizationSubscribedServicesListQueryVariables>(client, OrganizationSubscribedServicesListDocument, variables, headers);
 
 export const RegisteredPlatformsListDocument = `
@@ -5549,7 +5574,7 @@ export const useRegisteredPlatformsListQuery = <
     )};
 
 useRegisteredPlatformsListQuery.getKey = (variables: RegisteredPlatformsListQueryVariables) => ['RegisteredPlatformsList', variables];
-useRegisteredPlatformsListQuery.getRootKey = () => ['RegisteredPlatformsList'] as const;
+
 export const useInfiniteRegisteredPlatformsListQuery = <
       TData = InfiniteData<RegisteredPlatformsListQuery>,
       TError = unknown
@@ -5572,7 +5597,8 @@ export const useInfiniteRegisteredPlatformsListQuery = <
     )};
 
 useInfiniteRegisteredPlatformsListQuery.getKey = (variables: RegisteredPlatformsListQueryVariables) => ['RegisteredPlatformsList.infinite', variables];
-useInfiniteRegisteredPlatformsListQuery.getRootKey = () => ['RegisteredPlatformsList.infinite'] as const;
+
+
 useRegisteredPlatformsListQuery.fetcher = (client: GraphQLClient, variables: RegisteredPlatformsListQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredPlatformsListQuery, RegisteredPlatformsListQueryVariables>(client, RegisteredPlatformsListDocument, variables, headers);
 
 export const RegisteredPlatformsDocument = `
@@ -5610,7 +5636,7 @@ export const useRegisteredPlatformsQuery = <
     )};
 
 useRegisteredPlatformsQuery.getKey = (variables: RegisteredPlatformsQueryVariables) => ['RegisteredPlatforms', variables];
-useRegisteredPlatformsQuery.getRootKey = () => ['RegisteredPlatforms'] as const;
+
 export const useInfiniteRegisteredPlatformsQuery = <
       TData = InfiniteData<RegisteredPlatformsQuery>,
       TError = unknown
@@ -5633,7 +5659,8 @@ export const useInfiniteRegisteredPlatformsQuery = <
     )};
 
 useInfiniteRegisteredPlatformsQuery.getKey = (variables: RegisteredPlatformsQueryVariables) => ['RegisteredPlatforms.infinite', variables];
-useInfiniteRegisteredPlatformsQuery.getRootKey = () => ['RegisteredPlatforms.infinite'] as const;
+
+
 useRegisteredPlatformsQuery.fetcher = (client: GraphQLClient, variables: RegisteredPlatformsQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredPlatformsQuery, RegisteredPlatformsQueryVariables>(client, RegisteredPlatformsDocument, variables, headers);
 
 export const ConnectProductOrganizationAdminsDocument = `
@@ -5666,7 +5693,7 @@ export const useConnectProductOrganizationAdminsQuery = <
     )};
 
 useConnectProductOrganizationAdminsQuery.getKey = (variables: ConnectProductOrganizationAdminsQueryVariables) => ['ConnectProductOrganizationAdmins', variables];
-useConnectProductOrganizationAdminsQuery.getRootKey = () => ['ConnectProductOrganizationAdmins'] as const;
+
 export const useInfiniteConnectProductOrganizationAdminsQuery = <
       TData = InfiniteData<ConnectProductOrganizationAdminsQuery>,
       TError = unknown
@@ -5689,7 +5716,8 @@ export const useInfiniteConnectProductOrganizationAdminsQuery = <
     )};
 
 useInfiniteConnectProductOrganizationAdminsQuery.getKey = (variables: ConnectProductOrganizationAdminsQueryVariables) => ['ConnectProductOrganizationAdmins.infinite', variables];
-useInfiniteConnectProductOrganizationAdminsQuery.getRootKey = () => ['ConnectProductOrganizationAdmins.infinite'] as const;
+
+
 useConnectProductOrganizationAdminsQuery.fetcher = (client: GraphQLClient, variables: ConnectProductOrganizationAdminsQueryVariables, headers?: RequestInit['headers']) => fetcher<ConnectProductOrganizationAdminsQuery, ConnectProductOrganizationAdminsQueryVariables>(client, ConnectProductOrganizationAdminsDocument, variables, headers);
 
 export const AddSsoGroupRolePortalDocument = `
@@ -5699,10 +5727,6 @@ export const AddSsoGroupRolePortalDocument = `
     rolePortal {
       id
       name
-      capabilities {
-        id
-        name
-      }
     }
   }
 }
@@ -5726,7 +5750,8 @@ export const useAddSsoGroupRolePortalMutation = <
     )};
 
 useAddSsoGroupRolePortalMutation.getKey = () => ['AddSSOGroupRolePortal'];
-useAddSsoGroupRolePortalMutation.getRootKey = () => ['AddSSOGroupRolePortal'] as const;
+
+
 useAddSsoGroupRolePortalMutation.fetcher = (client: GraphQLClient, variables: AddSsoGroupRolePortalMutationVariables, headers?: RequestInit['headers']) => fetcher<AddSsoGroupRolePortalMutation, AddSsoGroupRolePortalMutationVariables>(client, AddSsoGroupRolePortalDocument, variables, headers);
 
 export const DeleteSsoGroupRolePortalDocument = `
@@ -5759,7 +5784,8 @@ export const useDeleteSsoGroupRolePortalMutation = <
     )};
 
 useDeleteSsoGroupRolePortalMutation.getKey = () => ['DeleteSSOGroupRolePortal'];
-useDeleteSsoGroupRolePortalMutation.getRootKey = () => ['DeleteSSOGroupRolePortal'] as const;
+
+
 useDeleteSsoGroupRolePortalMutation.fetcher = (client: GraphQLClient, variables: DeleteSsoGroupRolePortalMutationVariables, headers?: RequestInit['headers']) => fetcher<DeleteSsoGroupRolePortalMutation, DeleteSsoGroupRolePortalMutationVariables>(client, DeleteSsoGroupRolePortalDocument, variables, headers);
 
 export const SsoGroupRolePortalsDocument = `
@@ -5769,10 +5795,6 @@ export const SsoGroupRolePortalsDocument = `
     rolePortal {
       id
       name
-      capabilities {
-        id
-        name
-      }
     }
   }
 }
@@ -5797,7 +5819,7 @@ export const useSsoGroupRolePortalsQuery = <
     )};
 
 useSsoGroupRolePortalsQuery.getKey = (variables?: SsoGroupRolePortalsQueryVariables) => variables === undefined ? ['SSOGroupRolePortals'] : ['SSOGroupRolePortals', variables];
-useSsoGroupRolePortalsQuery.getRootKey = () => ['SSOGroupRolePortals'] as const;
+
 export const useInfiniteSsoGroupRolePortalsQuery = <
       TData = InfiniteData<SsoGroupRolePortalsQuery>,
       TError = unknown
@@ -5820,7 +5842,8 @@ export const useInfiniteSsoGroupRolePortalsQuery = <
     )};
 
 useInfiniteSsoGroupRolePortalsQuery.getKey = (variables?: SsoGroupRolePortalsQueryVariables) => variables === undefined ? ['SSOGroupRolePortals.infinite'] : ['SSOGroupRolePortals.infinite', variables];
-useInfiniteSsoGroupRolePortalsQuery.getRootKey = () => ['SSOGroupRolePortals.infinite'] as const;
+
+
 useSsoGroupRolePortalsQuery.fetcher = (client: GraphQLClient, variables?: SsoGroupRolePortalsQueryVariables, headers?: RequestInit['headers']) => fetcher<SsoGroupRolePortalsQuery, SsoGroupRolePortalsQueryVariables>(client, SsoGroupRolePortalsDocument, variables, headers);
 
 export const UpdateSsoGroupRolePortalDocument = `
@@ -5834,10 +5857,6 @@ export const UpdateSsoGroupRolePortalDocument = `
     rolePortal {
       id
       name
-      capabilities {
-        id
-        name
-      }
     }
   }
 }
@@ -5861,7 +5880,8 @@ export const useUpdateSsoGroupRolePortalMutation = <
     )};
 
 useUpdateSsoGroupRolePortalMutation.getKey = () => ['UpdateSSOGroupRolePortal'];
-useUpdateSsoGroupRolePortalMutation.getRootKey = () => ['UpdateSSOGroupRolePortal'] as const;
+
+
 useUpdateSsoGroupRolePortalMutation.fetcher = (client: GraphQLClient, variables: UpdateSsoGroupRolePortalMutationVariables, headers?: RequestInit['headers']) => fetcher<UpdateSsoGroupRolePortalMutation, UpdateSsoGroupRolePortalMutationVariables>(client, UpdateSsoGroupRolePortalDocument, variables, headers);
 
 export const AddUsersToBundleGroupsDocument = `
@@ -5897,7 +5917,8 @@ export const useAddUsersToBundleGroupsMutation = <
     )};
 
 useAddUsersToBundleGroupsMutation.getKey = () => ['AddUsersToBundleGroups'];
-useAddUsersToBundleGroupsMutation.getRootKey = () => ['AddUsersToBundleGroups'] as const;
+
+
 useAddUsersToBundleGroupsMutation.fetcher = (client: GraphQLClient, variables: AddUsersToBundleGroupsMutationVariables, headers?: RequestInit['headers']) => fetcher<AddUsersToBundleGroupsMutation, AddUsersToBundleGroupsMutationVariables>(client, AddUsersToBundleGroupsDocument, variables, headers);
 
 export const RemoveUsersFromBundleGroupsDocument = `
@@ -5927,7 +5948,8 @@ export const useRemoveUsersFromBundleGroupsMutation = <
     )};
 
 useRemoveUsersFromBundleGroupsMutation.getKey = () => ['RemoveUsersFromBundleGroups'];
-useRemoveUsersFromBundleGroupsMutation.getRootKey = () => ['RemoveUsersFromBundleGroups'] as const;
+
+
 useRemoveUsersFromBundleGroupsMutation.fetcher = (client: GraphQLClient, variables: RemoveUsersFromBundleGroupsMutationVariables, headers?: RequestInit['headers']) => fetcher<RemoveUsersFromBundleGroupsMutation, RemoveUsersFromBundleGroupsMutationVariables>(client, RemoveUsersFromBundleGroupsDocument, variables, headers);
 
 export const UpdateBundleUserGroupsDocument = `
@@ -5963,7 +5985,8 @@ export const useUpdateBundleUserGroupsMutation = <
     )};
 
 useUpdateBundleUserGroupsMutation.getKey = () => ['UpdateBundleUserGroups'];
-useUpdateBundleUserGroupsMutation.getRootKey = () => ['UpdateBundleUserGroups'] as const;
+
+
 useUpdateBundleUserGroupsMutation.fetcher = (client: GraphQLClient, variables: UpdateBundleUserGroupsMutationVariables, headers?: RequestInit['headers']) => fetcher<UpdateBundleUserGroupsMutation, UpdateBundleUserGroupsMutationVariables>(client, UpdateBundleUserGroupsDocument, variables, headers);
 
 export const BundleUserServiceGroupsDocument = `
@@ -6000,7 +6023,7 @@ export const useBundleUserServiceGroupsQuery = <
     )};
 
 useBundleUserServiceGroupsQuery.getKey = (variables: BundleUserServiceGroupsQueryVariables) => ['BundleUserServiceGroups', variables];
-useBundleUserServiceGroupsQuery.getRootKey = () => ['BundleUserServiceGroups'] as const;
+
 export const useInfiniteBundleUserServiceGroupsQuery = <
       TData = InfiniteData<BundleUserServiceGroupsQuery>,
       TError = unknown
@@ -6023,7 +6046,8 @@ export const useInfiniteBundleUserServiceGroupsQuery = <
     )};
 
 useInfiniteBundleUserServiceGroupsQuery.getKey = (variables: BundleUserServiceGroupsQueryVariables) => ['BundleUserServiceGroups.infinite', variables];
-useInfiniteBundleUserServiceGroupsQuery.getRootKey = () => ['BundleUserServiceGroups.infinite'] as const;
+
+
 useBundleUserServiceGroupsQuery.fetcher = (client: GraphQLClient, variables: BundleUserServiceGroupsQueryVariables, headers?: RequestInit['headers']) => fetcher<BundleUserServiceGroupsQuery, BundleUserServiceGroupsQueryVariables>(client, BundleUserServiceGroupsDocument, variables, headers);
 
 export const BundleProductsDocument = `
@@ -6051,7 +6075,7 @@ export const useBundleProductsQuery = <
     )};
 
 useBundleProductsQuery.getKey = (variables: BundleProductsQueryVariables) => ['BundleProducts', variables];
-useBundleProductsQuery.getRootKey = () => ['BundleProducts'] as const;
+
 export const useInfiniteBundleProductsQuery = <
       TData = InfiniteData<BundleProductsQuery>,
       TError = unknown
@@ -6074,7 +6098,8 @@ export const useInfiniteBundleProductsQuery = <
     )};
 
 useInfiniteBundleProductsQuery.getKey = (variables: BundleProductsQueryVariables) => ['BundleProducts.infinite', variables];
-useInfiniteBundleProductsQuery.getRootKey = () => ['BundleProducts.infinite'] as const;
+
+
 useBundleProductsQuery.fetcher = (client: GraphQLClient, variables: BundleProductsQueryVariables, headers?: RequestInit['headers']) => fetcher<BundleProductsQuery, BundleProductsQueryVariables>(client, BundleProductsDocument, variables, headers);
 
 export const ServiceInstancesListDocument = `
@@ -6118,7 +6143,7 @@ export const useServiceInstancesListQuery = <
     )};
 
 useServiceInstancesListQuery.getKey = (variables: ServiceInstancesListQueryVariables) => ['ServiceInstancesList', variables];
-useServiceInstancesListQuery.getRootKey = () => ['ServiceInstancesList'] as const;
+
 export const useInfiniteServiceInstancesListQuery = <
       TData = InfiniteData<ServiceInstancesListQuery>,
       TError = unknown
@@ -6141,7 +6166,8 @@ export const useInfiniteServiceInstancesListQuery = <
     )};
 
 useInfiniteServiceInstancesListQuery.getKey = (variables: ServiceInstancesListQueryVariables) => ['ServiceInstancesList.infinite', variables];
-useInfiniteServiceInstancesListQuery.getRootKey = () => ['ServiceInstancesList.infinite'] as const;
+
+
 useServiceInstancesListQuery.fetcher = (client: GraphQLClient, variables: ServiceInstancesListQueryVariables, headers?: RequestInit['headers']) => fetcher<ServiceInstancesListQuery, ServiceInstancesListQueryVariables>(client, ServiceInstancesListDocument, variables, headers);
 
 export const ServiceInstanceSeoMetadataByIdDocument = `
@@ -6174,7 +6200,7 @@ export const useServiceInstanceSeoMetadataByIdQuery = <
     )};
 
 useServiceInstanceSeoMetadataByIdQuery.getKey = (variables: ServiceInstanceSeoMetadataByIdQueryVariables) => ['ServiceInstanceSeoMetadataById', variables];
-useServiceInstanceSeoMetadataByIdQuery.getRootKey = () => ['ServiceInstanceSeoMetadataById'] as const;
+
 export const useInfiniteServiceInstanceSeoMetadataByIdQuery = <
       TData = InfiniteData<ServiceInstanceSeoMetadataByIdQuery>,
       TError = unknown
@@ -6197,7 +6223,8 @@ export const useInfiniteServiceInstanceSeoMetadataByIdQuery = <
     )};
 
 useInfiniteServiceInstanceSeoMetadataByIdQuery.getKey = (variables: ServiceInstanceSeoMetadataByIdQueryVariables) => ['ServiceInstanceSeoMetadataById.infinite', variables];
-useInfiniteServiceInstanceSeoMetadataByIdQuery.getRootKey = () => ['ServiceInstanceSeoMetadataById.infinite'] as const;
+
+
 useServiceInstanceSeoMetadataByIdQuery.fetcher = (client: GraphQLClient, variables: ServiceInstanceSeoMetadataByIdQueryVariables, headers?: RequestInit['headers']) => fetcher<ServiceInstanceSeoMetadataByIdQuery, ServiceInstanceSeoMetadataByIdQueryVariables>(client, ServiceInstanceSeoMetadataByIdDocument, variables, headers);
 
 export const EditSeoServiceInstanceMetadataDocument = `
@@ -6233,7 +6260,8 @@ export const useEditSeoServiceInstanceMetadataMutation = <
     )};
 
 useEditSeoServiceInstanceMetadataMutation.getKey = () => ['EditSeoServiceInstanceMetadata'];
-useEditSeoServiceInstanceMetadataMutation.getRootKey = () => ['EditSeoServiceInstanceMetadata'] as const;
+
+
 useEditSeoServiceInstanceMetadataMutation.fetcher = (client: GraphQLClient, variables: EditSeoServiceInstanceMetadataMutationVariables, headers?: RequestInit['headers']) => fetcher<EditSeoServiceInstanceMetadataMutation, EditSeoServiceInstanceMetadataMutationVariables>(client, EditSeoServiceInstanceMetadataDocument, variables, headers);
 
 export const ServiceUserCapabilitiesDocument = `
@@ -6278,7 +6306,7 @@ export const useServiceUserCapabilitiesQuery = <
     )};
 
 useServiceUserCapabilitiesQuery.getKey = (variables: ServiceUserCapabilitiesQueryVariables) => ['ServiceUserCapabilities', variables];
-useServiceUserCapabilitiesQuery.getRootKey = () => ['ServiceUserCapabilities'] as const;
+
 export const useInfiniteServiceUserCapabilitiesQuery = <
       TData = InfiniteData<ServiceUserCapabilitiesQuery>,
       TError = unknown
@@ -6301,7 +6329,8 @@ export const useInfiniteServiceUserCapabilitiesQuery = <
     )};
 
 useInfiniteServiceUserCapabilitiesQuery.getKey = (variables: ServiceUserCapabilitiesQueryVariables) => ['ServiceUserCapabilities.infinite', variables];
-useInfiniteServiceUserCapabilitiesQuery.getRootKey = () => ['ServiceUserCapabilities.infinite'] as const;
+
+
 useServiceUserCapabilitiesQuery.fetcher = (client: GraphQLClient, variables: ServiceUserCapabilitiesQueryVariables, headers?: RequestInit['headers']) => fetcher<ServiceUserCapabilitiesQuery, ServiceUserCapabilitiesQueryVariables>(client, ServiceUserCapabilitiesDocument, variables, headers);
 
 export const SolutionCategoryAddDocument = `
@@ -6330,7 +6359,8 @@ export const useSolutionCategoryAddMutation = <
     )};
 
 useSolutionCategoryAddMutation.getKey = () => ['SolutionCategoryAdd'];
-useSolutionCategoryAddMutation.getRootKey = () => ['SolutionCategoryAdd'] as const;
+
+
 useSolutionCategoryAddMutation.fetcher = (client: GraphQLClient, variables: SolutionCategoryAddMutationVariables, headers?: RequestInit['headers']) => fetcher<SolutionCategoryAddMutation, SolutionCategoryAddMutationVariables>(client, SolutionCategoryAddDocument, variables, headers);
 
 export const SolutionCategoryEditDocument = `
@@ -6359,7 +6389,8 @@ export const useSolutionCategoryEditMutation = <
     )};
 
 useSolutionCategoryEditMutation.getKey = () => ['SolutionCategoryEdit'];
-useSolutionCategoryEditMutation.getRootKey = () => ['SolutionCategoryEdit'] as const;
+
+
 useSolutionCategoryEditMutation.fetcher = (client: GraphQLClient, variables: SolutionCategoryEditMutationVariables, headers?: RequestInit['headers']) => fetcher<SolutionCategoryEditMutation, SolutionCategoryEditMutationVariables>(client, SolutionCategoryEditDocument, variables, headers);
 
 export const SolutionCategoryDeleteDocument = `
@@ -6388,7 +6419,8 @@ export const useSolutionCategoryDeleteMutation = <
     )};
 
 useSolutionCategoryDeleteMutation.getKey = () => ['SolutionCategoryDelete'];
-useSolutionCategoryDeleteMutation.getRootKey = () => ['SolutionCategoryDelete'] as const;
+
+
 useSolutionCategoryDeleteMutation.fetcher = (client: GraphQLClient, variables: SolutionCategoryDeleteMutationVariables, headers?: RequestInit['headers']) => fetcher<SolutionCategoryDeleteMutation, SolutionCategoryDeleteMutationVariables>(client, SolutionCategoryDeleteDocument, variables, headers);
 
 export const SolutionCategoriesListDocument = `
@@ -6431,7 +6463,7 @@ export const useSolutionCategoriesListQuery = <
     )};
 
 useSolutionCategoriesListQuery.getKey = (variables: SolutionCategoriesListQueryVariables) => ['SolutionCategoriesList', variables];
-useSolutionCategoriesListQuery.getRootKey = () => ['SolutionCategoriesList'] as const;
+
 export const useInfiniteSolutionCategoriesListQuery = <
       TData = InfiniteData<SolutionCategoriesListQuery>,
       TError = unknown
@@ -6454,7 +6486,8 @@ export const useInfiniteSolutionCategoriesListQuery = <
     )};
 
 useInfiniteSolutionCategoriesListQuery.getKey = (variables: SolutionCategoriesListQueryVariables) => ['SolutionCategoriesList.infinite', variables];
-useInfiniteSolutionCategoriesListQuery.getRootKey = () => ['SolutionCategoriesList.infinite'] as const;
+
+
 useSolutionCategoriesListQuery.fetcher = (client: GraphQLClient, variables: SolutionCategoriesListQueryVariables, headers?: RequestInit['headers']) => fetcher<SolutionCategoriesListQuery, SolutionCategoriesListQueryVariables>(client, SolutionCategoriesListDocument, variables, headers);
 
 export const CreateDeploymentRequestDocument = `
@@ -6484,7 +6517,8 @@ export const useCreateDeploymentRequestMutation = <
     )};
 
 useCreateDeploymentRequestMutation.getKey = () => ['CreateDeploymentRequest'];
-useCreateDeploymentRequestMutation.getRootKey = () => ['CreateDeploymentRequest'] as const;
+
+
 useCreateDeploymentRequestMutation.fetcher = (client: GraphQLClient, variables: CreateDeploymentRequestMutationVariables, headers?: RequestInit['headers']) => fetcher<CreateDeploymentRequestMutation, CreateDeploymentRequestMutationVariables>(client, CreateDeploymentRequestDocument, variables, headers);
 
 export const GiveDeploymentFeedbackDocument = `
@@ -6513,7 +6547,8 @@ export const useGiveDeploymentFeedbackMutation = <
     )};
 
 useGiveDeploymentFeedbackMutation.getKey = () => ['GiveDeploymentFeedback'];
-useGiveDeploymentFeedbackMutation.getRootKey = () => ['GiveDeploymentFeedback'] as const;
+
+
 useGiveDeploymentFeedbackMutation.fetcher = (client: GraphQLClient, variables: GiveDeploymentFeedbackMutationVariables, headers?: RequestInit['headers']) => fetcher<GiveDeploymentFeedbackMutation, GiveDeploymentFeedbackMutationVariables>(client, GiveDeploymentFeedbackDocument, variables, headers);
 
 export const PlatformTrialStatusDocument = `
@@ -6547,7 +6582,7 @@ export const usePlatformTrialStatusQuery = <
     )};
 
 usePlatformTrialStatusQuery.getKey = (variables: PlatformTrialStatusQueryVariables) => ['PlatformTrialStatus', variables];
-usePlatformTrialStatusQuery.getRootKey = () => ['PlatformTrialStatus'] as const;
+
 export const useInfinitePlatformTrialStatusQuery = <
       TData = InfiniteData<PlatformTrialStatusQuery>,
       TError = unknown
@@ -6570,7 +6605,8 @@ export const useInfinitePlatformTrialStatusQuery = <
     )};
 
 useInfinitePlatformTrialStatusQuery.getKey = (variables: PlatformTrialStatusQueryVariables) => ['PlatformTrialStatus.infinite', variables];
-useInfinitePlatformTrialStatusQuery.getRootKey = () => ['PlatformTrialStatus.infinite'] as const;
+
+
 usePlatformTrialStatusQuery.fetcher = (client: GraphQLClient, variables: PlatformTrialStatusQueryVariables, headers?: RequestInit['headers']) => fetcher<PlatformTrialStatusQuery, PlatformTrialStatusQueryVariables>(client, PlatformTrialStatusDocument, variables, headers);
 
 export const UseCaseAddDocument = `
@@ -6599,7 +6635,8 @@ export const useUseCaseAddMutation = <
     )};
 
 useUseCaseAddMutation.getKey = () => ['UseCaseAdd'];
-useUseCaseAddMutation.getRootKey = () => ['UseCaseAdd'] as const;
+
+
 useUseCaseAddMutation.fetcher = (client: GraphQLClient, variables: UseCaseAddMutationVariables, headers?: RequestInit['headers']) => fetcher<UseCaseAddMutation, UseCaseAddMutationVariables>(client, UseCaseAddDocument, variables, headers);
 
 export const UseCaseEditDocument = `
@@ -6628,7 +6665,8 @@ export const useUseCaseEditMutation = <
     )};
 
 useUseCaseEditMutation.getKey = () => ['UseCaseEdit'];
-useUseCaseEditMutation.getRootKey = () => ['UseCaseEdit'] as const;
+
+
 useUseCaseEditMutation.fetcher = (client: GraphQLClient, variables: UseCaseEditMutationVariables, headers?: RequestInit['headers']) => fetcher<UseCaseEditMutation, UseCaseEditMutationVariables>(client, UseCaseEditDocument, variables, headers);
 
 export const UseCaseDeleteDocument = `
@@ -6657,7 +6695,8 @@ export const useUseCaseDeleteMutation = <
     )};
 
 useUseCaseDeleteMutation.getKey = () => ['UseCaseDelete'];
-useUseCaseDeleteMutation.getRootKey = () => ['UseCaseDelete'] as const;
+
+
 useUseCaseDeleteMutation.fetcher = (client: GraphQLClient, variables: UseCaseDeleteMutationVariables, headers?: RequestInit['headers']) => fetcher<UseCaseDeleteMutation, UseCaseDeleteMutationVariables>(client, UseCaseDeleteDocument, variables, headers);
 
 export const UseCasesListDocument = `
@@ -6701,7 +6740,7 @@ export const useUseCasesListQuery = <
     )};
 
 useUseCasesListQuery.getKey = (variables: UseCasesListQueryVariables) => ['UseCasesList', variables];
-useUseCasesListQuery.getRootKey = () => ['UseCasesList'] as const;
+
 export const useInfiniteUseCasesListQuery = <
       TData = InfiniteData<UseCasesListQuery>,
       TError = unknown
@@ -6724,7 +6763,8 @@ export const useInfiniteUseCasesListQuery = <
     )};
 
 useInfiniteUseCasesListQuery.getKey = (variables: UseCasesListQueryVariables) => ['UseCasesList.infinite', variables];
-useInfiniteUseCasesListQuery.getRootKey = () => ['UseCasesList.infinite'] as const;
+
+
 useUseCasesListQuery.fetcher = (client: GraphQLClient, variables: UseCasesListQueryVariables, headers?: RequestInit['headers']) => fetcher<UseCasesListQuery, UseCasesListQueryVariables>(client, UseCasesListDocument, variables, headers);
 
 export const UserDeleteDocument = `
@@ -6753,7 +6793,8 @@ export const useUserDeleteMutation = <
     )};
 
 useUserDeleteMutation.getKey = () => ['UserDelete'];
-useUserDeleteMutation.getRootKey = () => ['UserDelete'] as const;
+
+
 useUserDeleteMutation.fetcher = (client: GraphQLClient, variables: UserDeleteMutationVariables, headers?: RequestInit['headers']) => fetcher<UserDeleteMutation, UserDeleteMutationVariables>(client, UserDeleteDocument, variables, headers);
 
 export const ChangeSelectedOrganizationDocument = `
@@ -6784,7 +6825,8 @@ export const useChangeSelectedOrganizationMutation = <
     )};
 
 useChangeSelectedOrganizationMutation.getKey = () => ['ChangeSelectedOrganization'];
-useChangeSelectedOrganizationMutation.getRootKey = () => ['ChangeSelectedOrganization'] as const;
+
+
 useChangeSelectedOrganizationMutation.fetcher = (client: GraphQLClient, variables: ChangeSelectedOrganizationMutationVariables, headers?: RequestInit['headers']) => fetcher<ChangeSelectedOrganizationMutation, ChangeSelectedOrganizationMutationVariables>(client, ChangeSelectedOrganizationDocument, variables, headers);
 
 export const UserResendInviteDocument = `
@@ -6813,7 +6855,8 @@ export const useUserResendInviteMutation = <
     )};
 
 useUserResendInviteMutation.getKey = () => ['UserResendInvite'];
-useUserResendInviteMutation.getRootKey = () => ['UserResendInvite'] as const;
+
+
 useUserResendInviteMutation.fetcher = (client: GraphQLClient, variables: UserResendInviteMutationVariables, headers?: RequestInit['headers']) => fetcher<UserResendInviteMutation, UserResendInviteMutationVariables>(client, UserResendInviteDocument, variables, headers);
 
 export const UserAdminResendInviteDocument = `
@@ -6842,7 +6885,8 @@ export const useUserAdminResendInviteMutation = <
     )};
 
 useUserAdminResendInviteMutation.getKey = () => ['UserAdminResendInvite'];
-useUserAdminResendInviteMutation.getRootKey = () => ['UserAdminResendInvite'] as const;
+
+
 useUserAdminResendInviteMutation.fetcher = (client: GraphQLClient, variables: UserAdminResendInviteMutationVariables, headers?: RequestInit['headers']) => fetcher<UserAdminResendInviteMutation, UserAdminResendInviteMutationVariables>(client, UserAdminResendInviteDocument, variables, headers);
 
 export const UsersDocument = `
@@ -6882,7 +6926,7 @@ export const useUsersQuery = <
     )};
 
 useUsersQuery.getKey = (variables: UsersQueryVariables) => ['Users', variables];
-useUsersQuery.getRootKey = () => ['Users'] as const;
+
 export const useInfiniteUsersQuery = <
       TData = InfiniteData<UsersQuery>,
       TError = unknown
@@ -6905,7 +6949,8 @@ export const useInfiniteUsersQuery = <
     )};
 
 useInfiniteUsersQuery.getKey = (variables: UsersQueryVariables) => ['Users.infinite', variables];
-useInfiniteUsersQuery.getRootKey = () => ['Users.infinite'] as const;
+
+
 useUsersQuery.fetcher = (client: GraphQLClient, variables: UsersQueryVariables, headers?: RequestInit['headers']) => fetcher<UsersQuery, UsersQueryVariables>(client, UsersDocument, variables, headers);
 
 export const VotingRoundCreateDocument = `
@@ -6934,7 +6979,8 @@ export const useVotingRoundCreateMutation = <
     )};
 
 useVotingRoundCreateMutation.getKey = () => ['VotingRoundCreate'];
-useVotingRoundCreateMutation.getRootKey = () => ['VotingRoundCreate'] as const;
+
+
 useVotingRoundCreateMutation.fetcher = (client: GraphQLClient, variables: VotingRoundCreateMutationVariables, headers?: RequestInit['headers']) => fetcher<VotingRoundCreateMutation, VotingRoundCreateMutationVariables>(client, VotingRoundCreateDocument, variables, headers);
 
 export const VotingRoundUpdateDocument = `
@@ -6963,7 +7009,8 @@ export const useVotingRoundUpdateMutation = <
     )};
 
 useVotingRoundUpdateMutation.getKey = () => ['VotingRoundUpdate'];
-useVotingRoundUpdateMutation.getRootKey = () => ['VotingRoundUpdate'] as const;
+
+
 useVotingRoundUpdateMutation.fetcher = (client: GraphQLClient, variables: VotingRoundUpdateMutationVariables, headers?: RequestInit['headers']) => fetcher<VotingRoundUpdateMutation, VotingRoundUpdateMutationVariables>(client, VotingRoundUpdateDocument, variables, headers);
 
 export const VotingRoundSetStatusDocument = `
@@ -6992,7 +7039,8 @@ export const useVotingRoundSetStatusMutation = <
     )};
 
 useVotingRoundSetStatusMutation.getKey = () => ['VotingRoundSetStatus'];
-useVotingRoundSetStatusMutation.getRootKey = () => ['VotingRoundSetStatus'] as const;
+
+
 useVotingRoundSetStatusMutation.fetcher = (client: GraphQLClient, variables: VotingRoundSetStatusMutationVariables, headers?: RequestInit['headers']) => fetcher<VotingRoundSetStatusMutation, VotingRoundSetStatusMutationVariables>(client, VotingRoundSetStatusDocument, variables, headers);
 
 export const VotingRoundDeleteDocument = `
@@ -7021,7 +7069,8 @@ export const useVotingRoundDeleteMutation = <
     )};
 
 useVotingRoundDeleteMutation.getKey = () => ['VotingRoundDelete'];
-useVotingRoundDeleteMutation.getRootKey = () => ['VotingRoundDelete'] as const;
+
+
 useVotingRoundDeleteMutation.fetcher = (client: GraphQLClient, variables: VotingRoundDeleteMutationVariables, headers?: RequestInit['headers']) => fetcher<VotingRoundDeleteMutation, VotingRoundDeleteMutationVariables>(client, VotingRoundDeleteDocument, variables, headers);
 
 export const VotableFeatureCreateDocument = `
@@ -7050,7 +7099,8 @@ export const useVotableFeatureCreateMutation = <
     )};
 
 useVotableFeatureCreateMutation.getKey = () => ['VotableFeatureCreate'];
-useVotableFeatureCreateMutation.getRootKey = () => ['VotableFeatureCreate'] as const;
+
+
 useVotableFeatureCreateMutation.fetcher = (client: GraphQLClient, variables: VotableFeatureCreateMutationVariables, headers?: RequestInit['headers']) => fetcher<VotableFeatureCreateMutation, VotableFeatureCreateMutationVariables>(client, VotableFeatureCreateDocument, variables, headers);
 
 export const VotableFeatureUpdateDocument = `
@@ -7079,7 +7129,8 @@ export const useVotableFeatureUpdateMutation = <
     )};
 
 useVotableFeatureUpdateMutation.getKey = () => ['VotableFeatureUpdate'];
-useVotableFeatureUpdateMutation.getRootKey = () => ['VotableFeatureUpdate'] as const;
+
+
 useVotableFeatureUpdateMutation.fetcher = (client: GraphQLClient, variables: VotableFeatureUpdateMutationVariables, headers?: RequestInit['headers']) => fetcher<VotableFeatureUpdateMutation, VotableFeatureUpdateMutationVariables>(client, VotableFeatureUpdateDocument, variables, headers);
 
 export const VotableFeatureDeleteDocument = `
@@ -7108,7 +7159,8 @@ export const useVotableFeatureDeleteMutation = <
     )};
 
 useVotableFeatureDeleteMutation.getKey = () => ['VotableFeatureDelete'];
-useVotableFeatureDeleteMutation.getRootKey = () => ['VotableFeatureDelete'] as const;
+
+
 useVotableFeatureDeleteMutation.fetcher = (client: GraphQLClient, variables: VotableFeatureDeleteMutationVariables, headers?: RequestInit['headers']) => fetcher<VotableFeatureDeleteMutation, VotableFeatureDeleteMutationVariables>(client, VotableFeatureDeleteDocument, variables, headers);
 
 export const VotingRoundsListDocument = `
@@ -7139,7 +7191,7 @@ export const useVotingRoundsListQuery = <
     )};
 
 useVotingRoundsListQuery.getKey = (variables?: VotingRoundsListQueryVariables) => variables === undefined ? ['VotingRoundsList'] : ['VotingRoundsList', variables];
-useVotingRoundsListQuery.getRootKey = () => ['VotingRoundsList'] as const;
+
 export const useInfiniteVotingRoundsListQuery = <
       TData = InfiniteData<VotingRoundsListQuery>,
       TError = unknown
@@ -7162,7 +7214,8 @@ export const useInfiniteVotingRoundsListQuery = <
     )};
 
 useInfiniteVotingRoundsListQuery.getKey = (variables?: VotingRoundsListQueryVariables) => variables === undefined ? ['VotingRoundsList.infinite'] : ['VotingRoundsList.infinite', variables];
-useInfiniteVotingRoundsListQuery.getRootKey = () => ['VotingRoundsList.infinite'] as const;
+
+
 useVotingRoundsListQuery.fetcher = (client: GraphQLClient, variables?: VotingRoundsListQueryVariables, headers?: RequestInit['headers']) => fetcher<VotingRoundsListQuery, VotingRoundsListQueryVariables>(client, VotingRoundsListDocument, variables, headers);
 
 export const VotingRoundDetailDocument = `
@@ -7196,7 +7249,7 @@ export const useVotingRoundDetailQuery = <
     )};
 
 useVotingRoundDetailQuery.getKey = (variables: VotingRoundDetailQueryVariables) => ['VotingRoundDetail', variables];
-useVotingRoundDetailQuery.getRootKey = () => ['VotingRoundDetail'] as const;
+
 export const useInfiniteVotingRoundDetailQuery = <
       TData = InfiniteData<VotingRoundDetailQuery>,
       TError = unknown
@@ -7219,7 +7272,8 @@ export const useInfiniteVotingRoundDetailQuery = <
     )};
 
 useInfiniteVotingRoundDetailQuery.getKey = (variables: VotingRoundDetailQueryVariables) => ['VotingRoundDetail.infinite', variables];
-useInfiniteVotingRoundDetailQuery.getRootKey = () => ['VotingRoundDetail.infinite'] as const;
+
+
 useVotingRoundDetailQuery.fetcher = (client: GraphQLClient, variables: VotingRoundDetailQueryVariables, headers?: RequestInit['headers']) => fetcher<VotingRoundDetailQuery, VotingRoundDetailQueryVariables>(client, VotingRoundDetailDocument, variables, headers);
 
 export const VotingRoundRankingDocument = `
@@ -7260,7 +7314,7 @@ export const useVotingRoundRankingQuery = <
     )};
 
 useVotingRoundRankingQuery.getKey = (variables: VotingRoundRankingQueryVariables) => ['VotingRoundRanking', variables];
-useVotingRoundRankingQuery.getRootKey = () => ['VotingRoundRanking'] as const;
+
 export const useInfiniteVotingRoundRankingQuery = <
       TData = InfiniteData<VotingRoundRankingQuery>,
       TError = unknown
@@ -7283,7 +7337,8 @@ export const useInfiniteVotingRoundRankingQuery = <
     )};
 
 useInfiniteVotingRoundRankingQuery.getKey = (variables: VotingRoundRankingQueryVariables) => ['VotingRoundRanking.infinite', variables];
-useInfiniteVotingRoundRankingQuery.getRootKey = () => ['VotingRoundRanking.infinite'] as const;
+
+
 useVotingRoundRankingQuery.fetcher = (client: GraphQLClient, variables: VotingRoundRankingQueryVariables, headers?: RequestInit['headers']) => fetcher<VotingRoundRankingQuery, VotingRoundRankingQueryVariables>(client, VotingRoundRankingDocument, variables, headers);
 
 export const EpicCountPerTimelineQueryDocument = `
@@ -7314,7 +7369,7 @@ export const useEpicCountPerTimelineQueryQuery = <
     )};
 
 useEpicCountPerTimelineQueryQuery.getKey = (variables?: EpicCountPerTimelineQueryQueryVariables) => variables === undefined ? ['EpicCountPerTimelineQuery'] : ['EpicCountPerTimelineQuery', variables];
-useEpicCountPerTimelineQueryQuery.getRootKey = () => ['EpicCountPerTimelineQuery'] as const;
+
 export const useInfiniteEpicCountPerTimelineQueryQuery = <
       TData = InfiniteData<EpicCountPerTimelineQueryQuery>,
       TError = unknown
@@ -7337,5 +7392,6 @@ export const useInfiniteEpicCountPerTimelineQueryQuery = <
     )};
 
 useInfiniteEpicCountPerTimelineQueryQuery.getKey = (variables?: EpicCountPerTimelineQueryQueryVariables) => variables === undefined ? ['EpicCountPerTimelineQuery.infinite'] : ['EpicCountPerTimelineQuery.infinite', variables];
-useInfiniteEpicCountPerTimelineQueryQuery.getRootKey = () => ['EpicCountPerTimelineQuery.infinite'] as const;
+
+
 useEpicCountPerTimelineQueryQuery.fetcher = (client: GraphQLClient, variables?: EpicCountPerTimelineQueryQueryVariables, headers?: RequestInit['headers']) => fetcher<EpicCountPerTimelineQueryQuery, EpicCountPerTimelineQueryQueryVariables>(client, EpicCountPerTimelineQueryDocument, variables, headers);

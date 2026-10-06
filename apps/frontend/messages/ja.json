@@ -549,11 +549,11 @@
     "SsoGroup": "SSOグループ",
     "Role": "ロール",
     "Capabilities": "ケイパビリティ",
-    "AddMapping": "マッピングを追加",
-    "EditMapping": "マッピングを編集",
+    "AddMapping": "SSOグループを追加",
+    "EditMapping": "SSOグループを編集",
     "DeleteDialog": {
-      "Title": "マッピングを削除",
-      "Text": "SSOグループ {ssoGroup} からロール {rolePortal} を削除してもよろしいですか？"
+      "Title": "SSOグループを削除",
+      "Text": "SSOグループを削除してもよろしいですか？"
     },
     "Error": {
       "SsoGroup": "SSOグループは必須です",

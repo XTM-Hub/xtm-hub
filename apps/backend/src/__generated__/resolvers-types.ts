@@ -52,7 +52,6 @@ export type Scalars = {
 };
 
 export type AddSsoGroupRolePortalInput = {
-  capabilities: Array<PortalCapability>;
   rolePortal: Scalars['String']['input'];
   ssoGroup: Scalars['String']['input'];
 };
@@ -2963,7 +2962,6 @@ export type UpdatePlatformServiceMetadataInput = {
 };
 
 export type UpdateSsoGroupRolePortalInput = {
-  capabilities: Array<PortalCapability>;
   rolePortal: Scalars['String']['input'];
   ssoGroup: Scalars['String']['input'];
 };

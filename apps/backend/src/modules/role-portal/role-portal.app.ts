@@ -16,26 +16,14 @@ export const RolePortalApp = {
     if (!ssoGroup || !rolePortalName) {
       throw new Error(ErrorCode.InvalidSSOGroupRolePortal);
     }
-    const capabilityNames = [...new Set(input.capabilities)];
 
     return withTransaction(async () => {
-      const capabilityPortals =
-        await RolePortalDomain.loadCapabilityPortalsByNames(capabilityNames);
-      if (capabilityPortals.length !== capabilityNames.length) {
-        throw new Error(ErrorCode.CapabilityPortalNotFound);
-      }
-
       const rolePortal =
         await RolePortalDomain.upsertRolePortalByName(rolePortalName);
       await RolePortalDomain.insertSSOGroupRolePortal({
         ssoGroup,
         rolePortalName: rolePortal.name,
       });
-
-      await RolePortalDomain.insertMissingRolePortalCapabilities(
-        rolePortal.id,
-        capabilityPortals.map(({ id }) => id)
-      );
 
       const [ssoGroupRolePortal] =
         await RolePortalDomain.loadSSOGroupRolePortals({
@@ -58,7 +46,6 @@ export const RolePortalApp = {
     if (!ssoGroup || !rolePortalName) {
       throw new Error(ErrorCode.InvalidSSOGroupRolePortal);
     }
-    const capabilityNames = [...new Set(input.capabilities)];
     const isMappingChanged =
       ssoGroup !== current.ssoGroup || rolePortalName !== current.rolePortal;
 
@@ -81,12 +68,6 @@ export const RolePortalApp = {
         }
       }
 
-      const capabilityPortals =
-        await RolePortalDomain.loadCapabilityPortalsByNames(capabilityNames);
-      if (capabilityPortals.length !== capabilityNames.length) {
-        throw new Error(ErrorCode.CapabilityPortalNotFound);
-      }
-
       const rolePortal =
         await RolePortalDomain.upsertRolePortalByName(rolePortalName);
       if (isMappingChanged) {
@@ -95,11 +76,6 @@ export const RolePortalApp = {
           { ssoGroup, rolePortalName: rolePortal.name }
         );
       }
-      await RolePortalDomain.replaceRolePortalCapabilities(
-        rolePortal.id,
-        capabilityPortals.map(({ id }) => id)
-      );
-
       const [updated] = await RolePortalDomain.loadSSOGroupRolePortals({
         ssoGroup,
         rolePortalName: rolePortal.name,

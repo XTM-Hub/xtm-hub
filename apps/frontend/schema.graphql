@@ -1388,13 +1388,11 @@ type SSOGroupRolePortal {
 input AddSSOGroupRolePortalInput {
   ssoGroup: String!
   rolePortal: String!
-  capabilities: [PortalCapability!]!
 }
 
 input UpdateSSOGroupRolePortalInput {
   ssoGroup: String!
   rolePortal: String!
-  capabilities: [PortalCapability!]!
 }
 
 input DeleteSSOGroupRolePortalInput {

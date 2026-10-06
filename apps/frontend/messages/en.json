@@ -549,11 +549,11 @@
     "SsoGroup": "SSO group",
     "Role": "Role",
     "Capabilities": "Capabilities",
-    "AddMapping": "Add mapping",
-    "EditMapping": "Edit mapping",
+    "AddMapping": "Add SSO Group",
+    "EditMapping": "Edit SSO Group",
     "DeleteDialog": {
-      "Title": "Delete mapping",
-      "Text": "Are you sure you want to remove the role {rolePortal} from the SSO group {ssoGroup}?"
+      "Title": "Delete SSO Group",
+      "Text": "Are you sure you want to delete SSO Group?"
     },
     "Error": {
       "SsoGroup": "SSO group is required",

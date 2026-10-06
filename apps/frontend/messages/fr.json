@@ -549,11 +549,11 @@
     "SsoGroup": "Groupe SSO",
     "Role": "Rôle",
     "Capabilities": "Capacités",
-    "AddMapping": "Ajouter une association",
-    "EditMapping": "Modifier l’association",
+    "AddMapping": "Ajouter un groupe SSO",
+    "EditMapping": "Modifier un groupe SSO",
     "DeleteDialog": {
-      "Title": "Supprimer l’association",
-      "Text": "Voulez-vous vraiment retirer le rôle {rolePortal} du groupe SSO {ssoGroup} ?"
+      "Title": "Supprimer un groupe SSO",
+      "Text": "Voulez-vous vraiment retirer le groupe SSO {ssoGroup} ?"
     },
     "Error": {
       "SsoGroup": "Le groupe SSO est requis",

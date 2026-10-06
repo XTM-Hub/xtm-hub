@@ -3,7 +3,7 @@ import SsoGroupRolePortalActions from '@/components/admin/role/SsoGroupRolePorta
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { i18nKey } from '@/utils/datatable';
-import { Badge, DataTable } from '@filigran/ui';
+import { DataTable } from '@filigran/ui';
 import {
   SsoGroupRolePortalsQuery,
   useSsoGroupRolePortalsQuery,
@@ -39,17 +39,6 @@ const RoleList = () => {
       header: t('RoleListPage.Role'),
     },
     {
-      id: 'capabilities',
-      header: t('RoleListPage.Capabilities'),
-      cell: ({ row }) => (
-        <div className="flex flex-wrap gap-xs">
-          {row.original.rolePortal.capabilities?.map((capability) => (
-            <Badge key={capability?.id}>{capability?.name}</Badge>
-          ))}
-        </div>
-      ),
-    },
-    {
       id: 'actions',
       size: 100,
       enableHiding: false,
@@ -60,11 +49,6 @@ const RoleList = () => {
           <SsoGroupRolePortalActions
             ssoGroup={row.original.ssoGroup}
             rolePortal={row.original.rolePortal.name}
-            capabilities={
-              row.original.rolePortal.capabilities?.flatMap((capability) =>
-                capability ? [capability.name] : []
-              ) ?? []
-            }
           />
         </div>
       ),
