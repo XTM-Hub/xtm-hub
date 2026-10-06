@@ -79,7 +79,7 @@ const nextConfig = {
       },
       {
         source:
-          '/:locale(en|ja)/cybersecurity-solutions/(opencti-free-trial|openaev-free-trial)',
+          '/:locale(en|fr|ja)/cybersecurity-solutions/(opencti-free-trial|openaev-free-trial)',
         destination: '/:locale/cybersecurity-solutions/xtm-platform-trial',
         permanent: true,
       },

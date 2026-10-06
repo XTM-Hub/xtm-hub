@@ -59,7 +59,7 @@ export async function proxy(request: NextRequest, _: NextFetchEvent) {
 export const config = {
   matcher: [
     '/',
-    '/(en|ja)/:path*',
+    '/(en|fr|ja)/:path*',
     '/cybersecurity-solutions',
     '/cybersecurity-solutions/:path*',
     '/graphql-api',
