@@ -6,7 +6,7 @@
 #   in-progress  a Claude Code session is working on it
 #   review       committed and pushed, the PR's required checks are running
 #   done         required checks passed
-#   blocked      needs a human: the question is in a comment on the issue
+#   blocked      needs a human: the question is on the issue, labelled "needs more info"
 #
 # Epic status:
 #   backlog      not started

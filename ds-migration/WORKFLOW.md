@@ -45,12 +45,17 @@ Use them by name; do not restate or override them.
 The goal is to cut `filigran-ui`, without the design team. Custom components are acceptable; what
 matters is that every choice a designer should see is traced.
 
-- **Visual or design choice** (variant, spacing, colour, which DS component fits): take the option
-  closest to the current rendering, apply it, and add one line under `## To validate` in the spec.
-  Never block on it.
-- **Visual difference** between the before and after screenshots: unintended (spacing, alignment,
-  size, colour, a missing state) is a defect to fix. Inherent to the design system (its own tokens,
-  radius or typography), keep it and add one line under `## To validate` naming the screen and theme.
+**The design system is right.** Its radius, colours, typography, shadows, focus rings and inner
+spacing replace the legacy look on purpose. Never recreate the legacy look with extra classes, inline
+styles or overridden tokens on a design system component.
+
+- **Which component or variant**: pick the one whose role matches the legacy usage (main action,
+  secondary action, destructive, link, icon only), not the one that looks most like the old rendering.
+  When two fit the role equally, pick one and add a line under `## To validate`. Never block on it.
+- **Visual difference** between the before and after screenshots: a change that comes from the design
+  system's own styling is expected, keep it and trace nothing. A defect around the component is to
+  fix: broken layout (overflow, misalignment, wrapping, collapsed width), a missing element, state or
+  label, a size that no longer fits its container, cut text, or a theme where it becomes unreadable.
 - **`NEEDS_HUMAN`** only when continuing would break behaviour or data, when the design system cannot
   express a required behaviour, when the item needs a component that is not migrated yet and not
   listed as a dependency (name it in `question`), or when the change needs the backend.
@@ -93,7 +98,7 @@ a selector to crop to. Selectors are Playwright's, role-based first: `role=butto
    block), start from it and the answers on the issue.
 2. **Spec.** Write `ds-migration/specs/<key>.md` from `ds-migration/spec-template.md`. The frontmatter
    is the contract the script checks: keep it exact. Every legacy usage gets a row in the props
-   mapping, and every design choice a line under `## To validate`.
+   mapping, and every ambiguous choice of the decision rules a line under `## To validate`.
 3. **Screens.** Declare one to three screens where the component renders, covering its distinct
    usages and states, the most visible first. The `cleanup` item declares none. Run
    `node ds-migration/screenshot.mjs ds-migration/specs/<key>.md before`, open the images and fix the
@@ -113,9 +118,9 @@ The spec exists and the script has just captured its screens on the untouched co
 2. **Verify.** Run every command of the spec's Verification section. On failure, send the output to the
    same subagent to fix, at most twice. Still failing: return `FAILED` with the output.
 3. **Compare.** Run `node ds-migration/screenshot.mjs ds-migration/specs/<key>.md after`, then open
-   each before and after pair. Send every unintended difference to the implementation subagent, with
-   the screen, the theme and what changed, then verify and compare again, at most twice. Record the
-   differences you keep under `## To validate`. Still diverging: return `FAILED`.
+   each before and after pair. Send every defect (decision rules above) to the implementation
+   subagent, with the screen, the theme and what is wrong, then verify and compare again, at most
+   twice. Still defective: return `FAILED`.
 4. **Review.** Launch three context-free subagents in the same message and wait for all of them. Each
    one reads the change itself with `git diff HEAD` and `git status --porcelain` (untracked files are
    read directly), and returns findings only: location, problem, evidence, no fix.
@@ -161,8 +166,9 @@ When the invocation says `Epic review mode`, every item of the epic is done or b
 about to review the epic. Change nothing. Use the `code-review` skill on the epic's commits as one
 change (`git show <sha>` for each), against their specs. Focus on what per-item reviews cannot see:
 the same question answered differently by two components, helpers written twice, a growing file,
-call sites left on the legacy copy, and every `To validate` line that looks wrong. Return `findings`
-as Markdown: a short verdict, then one bullet per finding with its location and evidence.
+call sites left on the legacy copy, a design system component restyled to look like the legacy one,
+and every `To validate` line that looks wrong. Return `findings` as Markdown: a short verdict, then
+one bullet per finding with its location and evidence.
 
 ## Result
 

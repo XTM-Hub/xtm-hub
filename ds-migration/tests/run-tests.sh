@@ -50,6 +50,7 @@ esac
 EOF
   cat >"$bin/claude" <<'EOF'
 #!/bin/bash
+if [ "$1" != -p ]; then echo "claude-interactive :: $1" >> "$SB/calls.log"; exit 0; fi
 prompt="$2"
 echo "claude :: $prompt" >> "$SB/calls.log"
 if [[ "$prompt" == *"Sync fix mode"* ]]; then
@@ -91,7 +92,7 @@ new_repo() {
   git config gpg.program "$SB/bin/fake-gpg" && git config user.signingkey FAKE
   mkdir -p apps/frontend/src apps/frontend/app ds-migration
   printf "import { Textarea } from '@filigran/ui';\nexport const Form = () => <Textarea />;\n" >apps/frontend/src/Form.tsx
-  cp "$V/ds-migration/"{run.sh,WORKFLOW.md,spec-template.md,validate.mjs} ds-migration/ && chmod +x ds-migration/run.sh
+  cp "$V/ds-migration/"{run.sh,WORKFLOW.md,DEBUG.md,spec-template.md,validate.mjs} ds-migration/ && chmod +x ds-migration/run.sh
   # SCREENSHOT_FAIL: item keys whose after screenshots fail.
   cat >ds-migration/screenshot.mjs <<'EOF'
 import { appendFileSync } from 'node:fs';
@@ -129,6 +130,9 @@ covers:
 CLAUDE_BLOCK=3541-checkbox run
 check "checkbox blocked, epic 1 gated" '[ "$(status_of 3541-checkbox)" = blocked ] && [ "$(status_of epic-1-primitives)" = review ]'
 check "epic report posted with the automated review" 'grep -q "Verdict: consistent" "$SB/last-pr-comment.md"'
+check "blocked item signalled on its issue and the PR" 'grep -q "^gh issue edit 3541 --add-label needs more info" "$SB/calls.log" && grep -qF "**Component Checkbox needs a human.** Issue #3541" "$SB/pr-comments.log" && sed -n "/^## Needs a human/,/^## /p" "$SB/pr-body.md" | grep -q "#3541"'
+ds-migration/run.sh debug 3541-checkbox >"$SB/out.log" 2>&1
+check "debug opens an interactive session on the item" 'grep -q "^claude-interactive :: Read ds-migration/DEBUG.md fully and follow it for item 3541-checkbox (issue #3541, status blocked)" "$SB/calls.log"'
 check "default subject used for an invalid one" 'git log --format=%s | grep -qx "feat(frontend): migrate Textarea to @filigran/design-system (#3561)"'
 check "no AI trailer in commits" '! git log --format=%B | grep -qi "co-authored-by"'
 check "screens captured between the spec and the build" '[ "$(grep -oE "Spec mode for item 3561|screenshot before ds-migration/specs/3561|Build mode for item 3561" "$SB/calls.log" | cut -d" " -f1 | paste -sd, -)" = "Spec,screenshot,Build" ]'
@@ -138,6 +142,7 @@ approve epic-1-primitives; run
 check "data-table waits on checkbox" '[ "$(status_of 9002-data-table)" = backlog ] && [ "$(status_of 9001-table)" = done ] && grep -q "| #9002 data-table | backlog | 3541-checkbox" "$SB/last-pr-comment.md"'
 perl -pi -e 's/^  3541-checkbox: blocked/  3541-checkbox: backlog/' ds-migration/sprint-status.yaml; run
 check "unblocked checkbox done, epic 1 reopened for review" '[ "$(status_of 3541-checkbox)" = done ] && [ "$(status_of epic-1-primitives)" = review ]'
+check "label removed and PR body cleared once unblocked" 'grep -q "^gh issue edit 3541 --remove-label needs more info" "$SB/calls.log" && ! grep -q "^## Needs a human" "$SB/pr-body.md"'
 approve epic-1-primitives; run; approve epic-3-candidates; run; approve epic-4-cleanup; run
 check "dependency lines intact" 'grep -q "^  9002-data-table: \[3541-checkbox, 9001-table\]" ds-migration/sprint-status.yaml'
 check "candidate and cleanup default subjects" 'git log --format=%s | grep -qx "feat(frontend): rebuild DataTable on @filigran/design-system primitives (#9002)" && git log --format=%s | grep -qx "chore(frontend): remove the legacy filigran-ui copy (#9003)"'
@@ -188,6 +193,34 @@ CLAUDE_SPEC_DIRTY=3561-textarea run --once
 check "code changed in spec mode: blocked before the build" '[ "$(status_of 3561-textarea)" = blocked ] && ! grep -q "Build mode for item 3561" "$SB/calls.log" && [ -z "$(git status --porcelain -- apps)" ]'
 SCREENSHOT_FAIL=3568-switch run --once
 check "a screen that no longer renders blocks the item" '[ "$(status_of 3568-switch)" = blocked ] && ! git log --format=%s | grep -q "Switch"'
+
+echo "F. crash recovery and lock"
+new_repo f "development_status:
+  epic-1-primitives: backlog
+  3530-button: done
+  3561-textarea: backlog
+  3568-switch: backlog
+  3553-radio: backlog
+  3541-checkbox: backlog"
+perl -pi -e 's/^  3561-textarea: .*/  3561-textarea: in-progress/' ds-migration/sprint-status.yaml
+echo half > apps/frontend/src/half-done.ts
+run --once
+check "interrupted item: code put aside, item redone" '[ "$(status_of 3561-textarea)" = done ] && git stash list | grep -q "ds-migration 3561-textarea interrupted" && [ ! -e apps/frontend/src/half-done.ts ]'
+perl -pi -e 's/^  3568-switch: .*/  3568-switch: review/' ds-migration/sprint-status.yaml
+run --once
+check "item in review without its commit restarted, not marked done" '[ "$(status_of 3568-switch)" = done ] && git log --format=%s | grep -qx "feat(frontend): migrate Switch to @filigran/design-system (#3568)"'
+touch "$(git rev-parse --git-dir)/ds-migration/base-merge.pending"
+echo half > apps/frontend/src/sync-half.ts
+: >"$SB/calls.log"
+run --once
+check "radio done after the sync checks" '[ "$(status_of 3553-radio)" = done ]'
+check "interrupted sync fix: changes put aside, sync checks run again" 'git stash list | grep -q "ds-migration base merge fix interrupted" && grep -q "^yarn workspace @xtm-hub/frontend relay" "$SB/calls.log" && [ ! -e "$(git rev-parse --git-dir)/ds-migration/base-merge.pending" ]'
+mkdir -p "$(git rev-parse --git-dir)/ds-migration/run.lock" && echo $$ >"$(git rev-parse --git-dir)/ds-migration/run.lock/pid"
+run --once
+check "second run refused while one is running" 'grep -q "STOP: run.sh is already running (pid $$)" "$SB/out.log" && [ "$(status_of 3541-checkbox)" = backlog ]'
+echo 999999 >"$(git rev-parse --git-dir)/ds-migration/run.lock/pid"
+run --once
+check "lock of a dead run taken over" '[ "$(status_of 3541-checkbox)" = done ] && [ ! -d "$(git rev-parse --git-dir)/ds-migration/run.lock" ]'
 
 echo
 echo "$PASS passed, $FAIL failed"
