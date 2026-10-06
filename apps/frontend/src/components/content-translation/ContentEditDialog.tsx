@@ -9,7 +9,7 @@ import {
 import { useContentTranslationApi } from '@/hooks/use-content-translation-api';
 import { Locale, locales } from '@/i18n/config';
 import { getStaticTranslationValue } from '@/utils/content-translation/get-static-translation-value';
-import { Button } from '@filigran/design-system';
+import { Button, Textarea } from '@filigran/design-system';
 import {
   Dialog,
   DialogClose,
@@ -19,17 +19,12 @@ import {
   DialogHeader,
   DialogTitle,
   Form,
-  FormControl,
-  FormDescription,
   FormField,
-  FormItem,
-  FormLabel,
   Skeleton,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-  Textarea,
   toast,
 } from '@filigran/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -161,26 +156,20 @@ export const ContentEditDialog = ({
                       control={form.control}
                       name={locale}
                       render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            {tCommon('EditableText.ValueLabel', {
-                              locale: locale.toUpperCase(),
-                            })}
-                          </FormLabel>
-                          <FormControl>
-                            <Textarea
-                              rows={4}
-                              {...field}
-                            />
-                          </FormControl>
-                          {originalValues[locale] !== undefined && (
-                            <FormDescription>
-                              {tCommon('EditableText.OriginalValue', {
-                                value: originalValues[locale],
-                              })}
-                            </FormDescription>
-                          )}
-                        </FormItem>
+                        <Textarea
+                          label={tCommon('EditableText.ValueLabel', {
+                            locale: locale.toUpperCase(),
+                          })}
+                          rows={4}
+                          helperText={
+                            originalValues[locale] !== undefined
+                              ? tCommon('EditableText.OriginalValue', {
+                                  value: originalValues[locale],
+                                })
+                              : undefined
+                          }
+                          {...field}
+                        />
                       )}
                     />
                   )}

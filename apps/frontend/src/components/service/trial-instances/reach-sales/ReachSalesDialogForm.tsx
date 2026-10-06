@@ -1,5 +1,5 @@
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
+import { Button, Textarea } from '@filigran/design-system';
 import {
   Dialog,
   DialogContent,
@@ -7,12 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
   Form,
-  FormControl,
   FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Textarea,
 } from '@filigran/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
@@ -63,26 +58,21 @@ export const ReachSalesDialogForm = ({
         <Form {...form}>
           <form
             id="reach-sales-form"
+            noValidate
             onSubmit={form.handleSubmit(handleSubmit)}>
             <FormField
               control={form.control}
               name="message"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="content-body-compact-medium text-text-default-secondary">
-                    {t('Service.Trials.ReachOutToSalesMessageLabel')}
-                    <span>*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder={t(
-                        'Service.Trials.ReachOutToSalesMessagePlaceholder'
-                      )}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+              render={({ field, fieldState }) => (
+                <Textarea
+                  label={t('Service.Trials.ReachOutToSalesMessageLabel')}
+                  required
+                  placeholder={t(
+                    'Service.Trials.ReachOutToSalesMessagePlaceholder'
+                  )}
+                  error={fieldState.error?.message}
+                  {...field}
+                />
               )}
             />
           </form>

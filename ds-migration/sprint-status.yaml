@@ -39,9 +39,9 @@ project_statuses: Development, Code review, Done
 
 development_status:
   # Primitives with a legacy equivalent in filigran-ui
-  epic-1-primitives: backlog
+  epic-1-primitives: in-progress
   3530-button: done
-  3561-textarea: backlog
+  3561-textarea: review
   3568-switch: backlog
   3553-radio: backlog
   3541-checkbox: backlog

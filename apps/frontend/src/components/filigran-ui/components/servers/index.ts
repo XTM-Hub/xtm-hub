@@ -6,4 +6,3 @@ export * from './Card';
 export * from './GradientButton';
 export * from './Input';
 export * from './Skeleton';
-export * from './Textarea';

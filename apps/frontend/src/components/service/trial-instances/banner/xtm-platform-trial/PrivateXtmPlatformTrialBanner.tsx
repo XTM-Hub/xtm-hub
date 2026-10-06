@@ -7,7 +7,7 @@ import { SettingsContext } from '@/components/settings/EnvPortalContext';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH } from '@/utils/path/constant';
-import { Button } from '@filigran/design-system';
+import { Button, Textarea } from '@filigran/design-system';
 import {
   AutoForm,
   Dialog,
@@ -21,7 +21,6 @@ import {
   FormMessage,
   RadioGroup,
   RadioGroupItem,
-  Textarea,
 } from '@filigran/ui';
 import { toast } from '@filigran/ui/clients';
 import {
@@ -89,22 +88,15 @@ const AnswerFieldType = ({ field }: FeedbackFieldProps) => {
 
 const JustificationFieldType = ({ field }: FeedbackFieldProps) => {
   const t = useTranslate();
-  const { watch } = useFormContext();
+  const { watch, getFieldState } = useFormContext();
   if (watch('answer') !== HasRepliedSatisfaction.No) return null;
   return (
-    <FormItem>
-      <FormLabel>
-        {t('Service.Trials.XtmPlatform.Feedback.Justification')}
-      </FormLabel>
-      <FormControl>
-        <Textarea
-          {...field}
-          value={field.value ?? ''}
-          className="min-h-24 bg-elevation-background-layer-1"
-        />
-      </FormControl>
-      <FormMessage />
-    </FormItem>
+    <Textarea
+      label={t('Service.Trials.XtmPlatform.Feedback.Justification')}
+      {...field}
+      value={field.value ?? ''}
+      error={getFieldState(field.name).error?.message}
+    />
   );
 };
 

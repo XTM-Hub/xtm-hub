@@ -13,7 +13,7 @@ import {
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
+import { Button, Textarea } from '@filigran/design-system';
 import { InfoIcon } from '@filigran/icon';
 import {
   Checkbox,
@@ -35,7 +35,6 @@ import {
   SelectValue,
   Separator,
   SheetFooter,
-  Textarea,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -150,23 +149,32 @@ const EpicFieldLabel = ({
   );
 };
 
-const CharacterCount = ({
-  value,
-  maxChars,
-}: {
+type CharacterLimitProps = {
   value: string;
   maxChars: number;
-}) => {
+};
+
+const CharacterCounter = ({ value, maxChars }: CharacterLimitProps) => {
   const t = useTranslate();
   return (
-    <div className="flex items-start gap-s">
-      <FormMessage />
-      <p className="text-muted-foreground txt-sub-content ml-auto shrink-0">
-        {t('Epic.Form.CharacterCount', { count: value.length, maxChars })}
-      </p>
-    </div>
+    <p className="text-muted-foreground txt-sub-content ml-auto shrink-0">
+      {t('Epic.Form.CharacterCount', { count: value.length, maxChars })}
+    </p>
   );
 };
+
+const FormMessageWithCharacterCount = ({
+  value,
+  maxChars,
+}: CharacterLimitProps) => (
+  <div className="flex items-start gap-s">
+    <FormMessage />
+    <CharacterCounter
+      value={value}
+      maxChars={maxChars}
+    />
+  </div>
+);
 
 const EpicTextareaField = ({
   control,
@@ -188,26 +196,23 @@ const EpicTextareaField = ({
     <FormField
       control={control}
       name={name}
-      render={({ field }) => (
-        <FormItem>
-          <EpicFieldLabel
-            labelKey={labelKey}
+      render={({ field, fieldState }) => (
+        <div className="flex flex-col gap-s">
+          <Textarea
+            label={t(labelKey)}
             required={required}
+            {...field}
+            value={field.value ?? ''}
+            minRows={TEXTAREA_MIN_ROWS}
+            resize="none"
+            placeholder={t(placeholderKey)}
+            error={fieldState.error?.message}
           />
-          <FormControl>
-            <Textarea
-              {...field}
-              value={field.value ?? ''}
-              rows={TEXTAREA_MIN_ROWS}
-              className="field-sizing-content min-h-24 resize-none"
-              placeholder={t(placeholderKey)}
-            />
-          </FormControl>
-          <CharacterCount
+          <CharacterCounter
             value={field.value ?? ''}
             maxChars={maxChars}
           />
-        </FormItem>
+        </div>
       )}
     />
   );
@@ -272,6 +277,7 @@ const EpicForm = ({
     <Form {...form}>
       <form
         className="w-full space-y-l"
+        noValidate
         onSubmit={form.handleSubmit(handleSubmit)}>
         <div className="grid gap-l sm:grid-cols-2">
           <FormField
@@ -435,7 +441,7 @@ const EpicForm = ({
                   placeholder={t('Epic.Form.Placeholder.Title')}
                 />
               </FormControl>
-              <CharacterCount
+              <FormMessageWithCharacterCount
                 value={field.value ?? ''}
                 maxChars={TITLE_MAX_CHARS}
               />

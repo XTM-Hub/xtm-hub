@@ -1,19 +1,15 @@
 import EeBadge from '@/components/service/document/one-click-deploy/EeBadge';
 import { ReachSalesMutation } from '@/components/service/trial-instances/reach-sales.graphql';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
+import { Button, Textarea } from '@filigran/design-system';
 import {
   Form,
-  FormControl,
   FormField,
-  FormItem,
-  FormMessage,
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-  Textarea,
   toast,
 } from '@filigran/ui';
 import { Separator } from '@filigran/ui/clients';
@@ -165,17 +161,16 @@ const EeLearnMoreSheet = ({
                   <FormField
                     control={form.control}
                     name="message"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Textarea
-                            rows={4}
-                            placeholder={defaultMessage}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
+                    render={({ field, fieldState }) => (
+                      <Textarea
+                        aria-label={t(
+                          'Service.ShareableResources.Deploy.EELearnMore.InterestedTitle'
+                        )}
+                        rows={4}
+                        placeholder={defaultMessage}
+                        error={fieldState.error?.message}
+                        {...field}
+                      />
                     )}
                   />
                   <div className="flex justify-end">

@@ -3,7 +3,7 @@ import {
   FormItem,
   FormMessage,
 } from '@/components/filigran-ui/components/clients';
-import { Textarea } from '@/components/filigran-ui/components/servers';
+import { Textarea } from '@filigran/design-system';
 import AutoFormLabel from '../common/Label';
 import AutoFormTooltip from '../common/Tooltip';
 import type { AutoFormInputComponentProps } from '../types';
