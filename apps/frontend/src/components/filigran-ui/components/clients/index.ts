@@ -21,7 +21,6 @@ export * from './RadioGroup';
 export * from './Select';
 export * from './Separator';
 export * from './Sheet';
-export * from './Switch';
 export * from './Table';
 export * from './Tabs';
 export * from './tag-input';

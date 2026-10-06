@@ -21,13 +21,12 @@ import { useTranslate } from '@/hooks/use-translate';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { APP_PATH } from '@/utils/path/constant';
-import { Button } from '@filigran/design-system';
+import { Button, Switch } from '@filigran/design-system';
 import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
 import {
   DataTable,
   DataTableHeadBarOptions,
   SelectionState,
-  Switch,
 } from '@filigran/ui';
 import { serviceInstanceByIdQuery } from '@generated/serviceInstanceByIdQuery.graphql';
 import { serviceInstanceForSubscriptions_fragment$key } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
@@ -189,18 +188,11 @@ const ServiceSlug = ({
             onChange={debounceHandleInput}
           />
         </div>
-        <div className="flex items-center">
-          <Switch
-            checked={shouldDisplayPersonalSpaces}
-            onCheckedChange={(value) => setShouldDisplayPersonalSpaces(value)}
-            id="displayPersonalSpaces"
-          />
-          <label
-            htmlFor="displayPersonalSpaces"
-            className="ml-s">
-            {t('Service.Management.ShowPersonalSpaces')}
-          </label>
-        </div>
+        <Switch
+          label={t('Service.Management.ShowPersonalSpaces')}
+          checked={shouldDisplayPersonalSpaces}
+          onCheckedChange={(value) => setShouldDisplayPersonalSpaces(value)}
+        />
       </div>
 
       <div className="flex gap-s flex-wrap ml-auto">

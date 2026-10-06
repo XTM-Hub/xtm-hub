@@ -2,7 +2,7 @@ import {
   FormControl,
   FormItem,
 } from '@/components/filigran-ui/components/clients';
-import { Switch } from '@/components/filigran-ui/components/clients/Switch';
+import { Switch } from '@filigran/design-system';
 import type { ComponentProps } from 'react';
 import AutoFormLabel from '../common/Label';
 import AutoFormTooltip from '../common/Tooltip';

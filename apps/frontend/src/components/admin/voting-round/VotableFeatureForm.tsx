@@ -2,7 +2,7 @@ import { ServiceFormUseCasesField } from '@/components/service/form/UseCasesFiel
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import MarkdownInput from '@/components/ui/MarkdownInput';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button, IconButton } from '@filigran/design-system';
+import { Button, IconButton, Switch } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
 import {
   FileInput,
@@ -19,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
   SheetFooter,
-  Switch,
 } from '@filigran/ui';
 import { FiligranProduct } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -274,17 +273,11 @@ const VotableFeatureForm = ({
           control={form.control}
           name="active"
           render={({ field }) => (
-            <FormItem className="flex flex-col items-start gap-s space-y-0">
-              <FormLabel>{t('VotingRound.Feature.Active')}</FormLabel>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                  aria-label={t('VotingRound.Feature.Active')}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+            <Switch
+              label={t('VotingRound.Feature.Active')}
+              checked={field.value}
+              onCheckedChange={field.onChange}
+            />
           )}
         />
         <SheetFooter className={feature ? 'sm:justify-between pb-0' : 'pt-2'}>

@@ -3,7 +3,8 @@ import { FiligranProductMapping } from '@/components/epic/epic-item/FiligranProd
 import { FILIGRAN_PRODUCTS_ORDER } from '@/components/epic/filigran-products';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { useTranslate } from '@/hooks/use-translate';
-import { MultiSelectFormField, Switch } from '@filigran/ui';
+import { Switch } from '@filigran/design-system';
+import { MultiSelectFormField } from '@filigran/ui';
 import { FiligranProduct } from '@graphql/generated';
 import React, { useMemo } from 'react';
 
@@ -62,12 +63,12 @@ export const EpicFilter = ({
           variant="inverted"
         />
       </div>
-      <div className="ml-auto flex items-center gap-s">
+      <div className="ml-auto">
         <Switch
+          label={t('Epic.ShowFinished')}
           checked={showFinished}
           onCheckedChange={onShowFinishedChange}
         />
-        <span className="text-sm">{t('Epic.ShowFinished')}</span>
       </div>
     </div>
   );

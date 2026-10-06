@@ -17,7 +17,7 @@ import {
 } from '@/components/cookie-consent/cookie-consent.utils';
 import { useConsent } from '@/components/cookie-consent/CookieConsentProvider';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
+import { Button, Switch } from '@filigran/design-system';
 import {
   Dialog,
   DialogContent,
@@ -25,7 +25,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Switch,
 } from '@filigran/ui';
 import { useState } from 'react';
 
