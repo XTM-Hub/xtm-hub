@@ -79,7 +79,7 @@ In this case, you can still download the playbook JSON file and import it manual
 
 The XTM Hub facilitates seamless collaboration through its comprehensive sharing functionality.
 Users can generate universal links for any playbook, enabling cross-organization sharing with partners,
-clients, or team members without requiring recipients to maintain XTM Hub accounts.
+clients, or team members without requiring recipients to maintain Filigran accounts.
 This approach removes barriers to information sharing while maintaining the integrity and
 accessibility of automation content across different organizational boundaries.
 
