@@ -2,80 +2,25 @@ import { describe, expect, it } from 'vitest';
 import {
   compareVersions,
   doesVersionSatisfy,
-  isCalendarVersion,
   isLtsVersion,
   isValidVersion,
-  toCalendarVersion,
 } from './versioning';
 
 describe('versioning', () => {
-  describe('isCalendarVersion', () => {
+  describe('compareVersions on the OpenCTI tags', () => {
     it.each`
-      version               | expected
-      ${'6.8.4'}            | ${false}
-      ${'6.9.29'}           | ${false}
-      ${'6.250101.0'}       | ${true}
-      ${'7.260928.0'}       | ${true}
-      ${'7.260309.0-lts.7'} | ${true}
-    `('should return $expected for $version', ({ version, expected }) => {
-      expect(isCalendarVersion(version)).toBe(expected);
-    });
-  });
-
-  describe('isCalendarVersion on the real OpenCTI tags', () => {
-    it.each([
-      '2.0.0',
-      '3.3.2',
-      '4.5.5',
-      '5.12.33',
-      '6.0.0',
-      '6.8.4',
-      '6.9.0',
-      '6.9.29',
-    ])('should treat %s as a semantic version', (tag) => {
-      expect(isCalendarVersion(tag)).toBe(false);
-    });
-
-    it.each([
-      '7.260224.0',
-      '7.260306.1',
-      '7.260309.0-lts.7',
-      '7.260309.0-lts1',
-      '7.260811.0-lts.1',
-      '7.261002.0',
-    ])('should treat %s as a calendar version', (tag) => {
-      expect(isCalendarVersion(tag)).toBe(true);
-    });
-
-    it('should order the last semantic tag before the first calendar tag', () => {
-      expect(compareVersions('6.9.29', '7.260224.0')).toBeLessThan(0);
-    });
-  });
-
-  describe('toCalendarVersion', () => {
-    it.each`
-      version               | expected        | description
-      ${'6.8.4'}            | ${'6.251010.0'} | ${'semantic 6.x mapped to its release date'}
-      ${'6.8.0'}            | ${'6.250925.0'} | ${'semantic minor release'}
-      ${'6.8.99'}           | ${'6.251210.0'} | ${'unknown patch falls back to the latest known patch of the minor'}
-      ${'7.260928.0'}       | ${'7.260928.0'} | ${'calendar version unchanged'}
-      ${'7.260309.0-lts.7'} | ${'7.260309.0'} | ${'calendar version without LTS suffix'}
-      ${'6.99.0'}           | ${null}         | ${'unknown minor'}
-      ${'notaversion'}      | ${null}         | ${'invalid version'}
+      lower           | higher
+      ${'6.8.4'}      | ${'6.9.0'}
+      ${'6.9.29'}     | ${'7.260224.0'}
+      ${'6.8.4'}      | ${'7.260224.0'}
+      ${'7.260224.0'} | ${'7.261002.0'}
     `(
-      'should return $expected for "$version" ($description)',
-      ({ version, expected }: { version: string; expected: string | null }) => {
-        expect(toCalendarVersion(version)).toBe(expected);
+      'should order $lower (semver 6.x) before $higher',
+      ({ lower, higher }: { lower: string; higher: string }) => {
+        expect(compareVersions(lower, higher)).toBeLessThan(0);
+        expect(compareVersions(higher, lower)).toBeGreaterThan(0);
       }
     );
-
-    it('orders the semantic releases and the calendar requirements consistently', () => {
-      const calendar = toCalendarVersion('6.8.4')!;
-
-      expect(compareVersions('6.250101.0', calendar)).toBeLessThan(0);
-      expect(compareVersions('6.251101.0', calendar)).toBeGreaterThan(0);
-      expect(compareVersions('7.260101.0', calendar)).toBeGreaterThan(0);
-    });
   });
 
   describe('isLtsVersion', () => {

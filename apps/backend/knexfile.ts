@@ -21,13 +21,7 @@ import { INTEGRATION_METADATA_KEYS } from './src/modules/shareable-resource/open
 import { logApp } from './src/utils/app-logger.util';
 import { isFeatureEnabled } from './src/utils/feature-flag.util';
 import { extractId } from './src/utils/utils';
-import {
-  CALENDAR_VERSION_MIN_DATE_PART,
-  compareVersions,
-  isCalendarVersion,
-  isValidVersion,
-  toCalendarVersion,
-} from './src/utils/versioning';
+import { compareVersions, isValidVersion } from './src/utils/versioning';
 
 type Filters =
   | Filter[]
@@ -373,15 +367,6 @@ const createProductVersionFilter = (): FilterHandler => ({
       ? DocumentMetadataKeyCode.MinimumDeployableVersion
       : FilterKey.ProductVersion;
 
-    // OpenCTI 6.x uses semantic versions (6.8.4) and 7.x+ calendar versions
-    // (7.260928.0), while a requirement can be written in either scale.
-    // A requirement is compared with the target in its own scale, so the
-    // target is also expressed as its calendar equivalent (release date).
-    const semanticTarget = lowestVersion;
-    const calendarTarget = isCalendarVersion(lowestVersion)
-      ? lowestVersion
-      : (toCalendarVersion(lowestVersion) ?? lowestVersion);
-
     qb.whereNotExists(function () {
       this.select(dbRaw('1'))
         .from('Document_Metadata')
@@ -389,13 +374,8 @@ const createProductVersionFilter = (): FilterHandler => ({
         .andWhere('Document_Metadata.key', '=', compatibilityVersionKey)
         .whereNotNull('Document_Metadata.value')
         .andWhereRaw(
-          `string_to_array(replace("Document_Metadata"."value", '-lts', ''), '.')::int[] >
-            string_to_array(
-              CASE WHEN split_part("Document_Metadata"."value", '.', 2)::int >= ?
-                THEN ? ELSE ? END,
-              '.'
-            )::int[]`,
-          [CALENDAR_VERSION_MIN_DATE_PART, calendarTarget, semanticTarget]
+          `string_to_array(replace("Document_Metadata"."value", '-lts', ''), '.')::int[] > string_to_array(?, '.')::int[]`,
+          [lowestVersion]
         );
     });
   },
