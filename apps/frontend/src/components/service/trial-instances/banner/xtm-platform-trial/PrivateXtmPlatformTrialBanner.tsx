@@ -7,7 +7,7 @@ import { SettingsContext } from '@/components/settings/EnvPortalContext';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH } from '@/utils/path/constant';
-import { Button, Textarea } from '@filigran/design-system';
+import { Button, Radio, RadioGroup, Textarea } from '@filigran/design-system';
 import {
   AutoForm,
   Dialog,
@@ -17,10 +17,7 @@ import {
   DialogTitle,
   FormControl,
   FormItem,
-  FormLabel,
   FormMessage,
-  RadioGroup,
-  RadioGroupItem,
 } from '@filigran/ui';
 import { toast } from '@filigran/ui/clients';
 import {
@@ -64,20 +61,16 @@ const AnswerFieldType = ({ field }: FeedbackFieldProps) => {
     <FormItem>
       <FormControl>
         <RadioGroup
+          orientation="horizontal"
+          aria-label={t('Service.Trials.XtmPlatform.Feedback.Question')}
           onValueChange={field.onChange}
-          value={field.value}
-          className="flex flex-row">
+          value={field.value}>
           {FEEDBACK_ANSWERS.map(({ value, labelKey }) => (
-            <FormItem
+            <Radio
               key={value}
-              className="flex flex-row items-center">
-              <FormControl>
-                <RadioGroupItem value={value} />
-              </FormControl>
-              <FormLabel className="cursor-pointer font-normal">
-                {t(labelKey)}
-              </FormLabel>
-            </FormItem>
+              value={value}
+              label={t(labelKey)}
+            />
           ))}
         </RadioGroup>
       </FormControl>

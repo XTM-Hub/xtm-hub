@@ -17,7 +17,6 @@ export * from './Label';
 export * from './MarkdownRenderer';
 export * from './MultiSelect';
 export * from './Popover';
-export * from './RadioGroup';
 export * from './Select';
 export * from './Separator';
 export * from './Sheet';

@@ -13,7 +13,7 @@ import {
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button, Textarea } from '@filigran/design-system';
+import { Button, Radio, RadioGroup, Textarea } from '@filigran/design-system';
 import { InfoIcon } from '@filigran/icon';
 import {
   Checkbox,
@@ -26,8 +26,6 @@ import {
   FormMessage,
   Input,
   MultiSelectFormField,
-  RadioGroup,
-  RadioGroupItem,
   Select,
   SelectContent,
   SelectItem,
@@ -358,20 +356,17 @@ const EpicForm = ({
               <div className="flex flex-wrap items-center gap-l">
                 <FormControl>
                   <RadioGroup
+                    orientation="horizontal"
+                    className="flex-wrap"
+                    aria-label={t('Epic.Form.EditionType')}
                     onValueChange={field.onChange}
-                    value={field.value ?? EditionType.CommunityEdition}
-                    className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                    value={field.value ?? EditionType.CommunityEdition}>
                     {Object.values(EditionType).map((value) => (
-                      <FormItem
+                      <Radio
                         key={value}
-                        className="flex flex-row items-center gap-3 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value={value} />
-                        </FormControl>
-                        <FormLabel className="cursor-pointer font-normal">
-                          {EditionTypeMapping[value].label}
-                        </FormLabel>
-                      </FormItem>
+                        value={value}
+                        label={EditionTypeMapping[value].label}
+                      />
                     ))}
                   </RadioGroup>
                 </FormControl>

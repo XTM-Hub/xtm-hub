@@ -1,11 +1,9 @@
 import {
   FormControl,
   FormItem,
-  FormLabel,
   FormMessage,
-  RadioGroup,
-  RadioGroupItem,
 } from '@/components/filigran-ui/components/clients';
+import { Radio, RadioGroup } from '@filigran/design-system';
 import type { ComponentProps } from 'react';
 import AutoFormLabel from '../common/Label';
 import AutoFormTooltip from '../common/Tooltip';
@@ -52,21 +50,19 @@ const AutoFormRadioGroup = ({
         />
         <FormControl>
           <RadioGroup
+            orientation="horizontal"
+            className="flex-wrap"
+            aria-label={fieldConfigItem?.label || label}
             onValueChange={field.onChange}
             defaultValue={field.value}
-            className="flex flex-wrap items-center gap-x-6 gap-y-2"
             {...(fieldProps as ComponentProps<typeof RadioGroup>)}>
             {values?.map((value: string) => (
-              <FormItem
+              <Radio
                 key={value}
-                className="flex flex-row items-center gap-3 space-y-0">
-                <FormControl>
-                  <RadioGroupItem value={value} />
-                </FormControl>
-                <FormLabel className="cursor-pointer font-normal">
-                  {value}
-                </FormLabel>
-              </FormItem>
+                value={value}
+                label={value}
+                disabled={Boolean(fieldProps.disabled)}
+              />
             ))}
           </RadioGroup>
         </FormControl>
