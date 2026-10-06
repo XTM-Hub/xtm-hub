@@ -32,6 +32,18 @@ legacy_files_to_delete: [apps/frontend/src/components/filigran-ui/components/ser
 
 <!-- Call sites, wrappers in src/components/ui/, legacy files in filigran-ui/ that use the component. -->
 
+## Screens
+
+<!-- One to three screens where the component renders, the most visible first; none for cleanup.
+     Format in ds-migration/WORKFLOW.md, section Screenshots. -->
+
+```json
+[
+  { "name": "profile-form", "path": "/app/profile", "clip": "form" },
+  { "name": "edit-dialog", "path": "/app/profile", "steps": [{ "click": "role=button[name=\"Edit\"]" }], "clip": "role=dialog" }
+]
+```
+
 ## Out of scope
 
 ## Accessibility and i18n

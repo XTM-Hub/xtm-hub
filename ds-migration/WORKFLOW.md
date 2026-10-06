@@ -1,9 +1,13 @@
 # Design system migration: one item, unattended
 
 You run inside `ds-migration/run.sh`, with no human present. The invocation names ONE item of
-`ds-migration/sprint-status.yaml`: its key, issue number, epic and kind. Migrate that item and nothing
-else, then return the structured result. Never ask a question. Where a skill says to ask the user,
-apply the decision rules below instead.
+`ds-migration/sprint-status.yaml` (its key, issue number, epic and kind) and ONE mode. Work on that
+item and nothing else, then return the structured result. Never ask a question. Where a skill says
+to ask the user, apply the decision rules below instead.
+
+Each item takes two sessions. **Spec mode** analyses and writes the spec, code untouched. The script
+then captures the screens the spec declares, in the light and dark themes, on the current code.
+**Build mode** implements the spec and compares the rendering with those captures.
 
 The script owns version control and the status file. Never run `git commit`, `git push`, `git stash`
 or `git checkout`, and never edit `ds-migration/sprint-status.yaml`. The script validates your work,
@@ -20,6 +24,7 @@ Use them by name; do not restate or override them.
 | Analyse, spec | Design system consumer skill (`node_modules/@filigran/design-system/skills/consumer/design-system-usage/SKILL.md`) and the target's usage contract | How the package must be used; the shipped files win over memory |
 | Implement | `frontend-code-writer` agent | Applies `coding-conventions`, `testing-validation`, `change-delivery` and a `performance-security-review` self-check |
 | Implement, backend | `backend-code-writer` agent, with `knex-migration` or `elasticsearch-migration` | Not expected in this epic: `validate.mjs` rejects changes outside `apps/frontend/`. A spec that needs the backend is `NEEDS_HUMAN` |
+| Compare | `ds-migration/screenshot.mjs`, then Read on the images | The rendering before and after, in both themes; the CI checks no pixel |
 | Review | `code-review` | The brutally honest pass; it also checks `coding-conventions`, `testing-validation`, the path rules and the agents |
 | Review | `performance-security-review` | Devil's advocate on rendering, bundle size, unsafe HTML and future failures |
 | Review | `testing-validation` | Existing tests protected, suite kept lean, new behaviour covered |
@@ -43,6 +48,9 @@ matters is that every choice a designer should see is traced.
 - **Visual or design choice** (variant, spacing, colour, which DS component fits): take the option
   closest to the current rendering, apply it, and add one line under `## To validate` in the spec.
   Never block on it.
+- **Visual difference** between the before and after screenshots: unintended (spacing, alignment,
+  size, colour, a missing state) is a defect to fix. Inherent to the design system (its own tokens,
+  radius or typography), keep it and add one line under `## To validate` naming the screen and theme.
 - **`NEEDS_HUMAN`** only when continuing would break behaviour or data, when the design system cannot
   express a required behaviour, when the item needs a component that is not migrated yet and not
   listed as a dependency (name it in `question`), or when the change needs the backend.
@@ -64,22 +72,51 @@ matters is that every choice a designer should see is traced.
   already hand-rolls the same pattern and the swap keeps the current look. Where adopting would change
   the look, leave the code as is and list the candidate places under `## To validate`.
 
-## Steps
+## Screenshots
+
+`node ds-migration/screenshot.mjs <spec> before|after` opens this checkout's frontend, logged in as
+the development admin, and captures each screen of the spec's `## Screens` block in both themes. It
+prints, per screen and theme, the path of the before and after images: open them with Read. The
+images stay under the git directory and are never committed. A screen fails on an HTTP error, a
+page error, a redirect to the login page or a selector that matches nothing.
+
+A screen is `{"name", "path", "steps"?, "clip"?}`: `path` is the URL path with its locale when the
+route has one, `steps` a list of `{"click": selector}`, `{"hover": selector}` or
+`{"waitFor": selector}` to reach a hidden state (an open dialog, menu, tooltip or snackbar), `clip`
+a selector to crop to. Selectors are Playwright's, role-based first: `role=button[name="Save"]`.
+
+## Spec mode
 
 1. **Analyse.** Read the sources, the legacy component and every call site (Grep the imports). List
    each distinct legacy usage, the wrappers in `src/components/ui/`, the tests, the translations and
-   the accessibility attributes involved.
+   the accessibility attributes involved. When `ds-migration/specs/<key>.md` exists (a retry after a
+   block), start from it and the answers on the issue.
 2. **Spec.** Write `ds-migration/specs/<key>.md` from `ds-migration/spec-template.md`. The frontmatter
    is the contract the script checks: keep it exact. Every legacy usage gets a row in the props
    mapping, and every design choice a line under `## To validate`.
-3. **Update the issue.** Replace the issue body with `Part of #3507.`, a blank line, then the spec
+3. **Screens.** Declare one to three screens where the component renders, covering its distinct
+   usages and states, the most visible first. The `cleanup` item declares none. Run
+   `node ds-migration/screenshot.mjs ds-migration/specs/<key>.md before`, open the images and fix the
+   screens until each one shows the component. A component no route renders is `NEEDS_HUMAN`.
+4. **Update the issue.** Replace the issue body with `Part of #3507.`, a blank line, then the spec
    without its frontmatter: `gh issue edit <issue> --body-file <file>`.
-4. **Implement.** Launch ONE `frontend-code-writer` subagent with this prompt, and wait for it:
+5. **Return** `DONE`, or `NEEDS_HUMAN` with the `question`. Change no file outside
+   `ds-migration/specs/`: the script rejects the item otherwise.
+
+## Build mode
+
+The spec exists and the script has just captured its screens on the untouched code.
+
+1. **Implement.** Launch ONE `frontend-code-writer` subagent with this prompt, and wait for it:
    "Implement `ds-migration/specs/<key>.md`. It is your only source of truth: change nothing it does
    not list. Do not commit. Report what changed, the files touched and the validation you ran."
-5. **Verify.** Run every command of the spec's Verification section. On failure, send the output to the
+2. **Verify.** Run every command of the spec's Verification section. On failure, send the output to the
    same subagent to fix, at most twice. Still failing: return `FAILED` with the output.
-6. **Review.** Launch three context-free subagents in the same message and wait for all of them. Each
+3. **Compare.** Run `node ds-migration/screenshot.mjs ds-migration/specs/<key>.md after`, then open
+   each before and after pair. Send every unintended difference to the implementation subagent, with
+   the screen, the theme and what changed, then verify and compare again, at most twice. Record the
+   differences you keep under `## To validate`. Still diverging: return `FAILED`.
+4. **Review.** Launch three context-free subagents in the same message and wait for all of them. Each
    one reads the change itself with `git diff HEAD` and `git status --porcelain` (untracked files are
    read directly), and returns findings only: location, problem, evidence, no fix.
    - "Use the `code-review` skill on the uncommitted change, against `ds-migration/specs/<key>.md`.
@@ -88,20 +125,23 @@ matters is that every choice a designer should see is traced.
    - "Use the `testing-validation` skill on the uncommitted change: tests removed or weakened,
      behaviour left uncovered, translations missing in en, fr or ja."
    Verify each finding against the code yourself. Real and in scope: send it to the implementation
-   subagent to fix, then re-run step 5. Real but out of scope, or instruction drift for `hub-review`:
-   add a line under `## Deferred findings` in the spec. Not real: drop it. At most two review rounds;
-   a third means `FAILED`.
-7. **Return** the structured result. Write `commit_subject` and `commit_body` with the `commit-splitter`
+   subagent to fix, then re-run steps 2 and 3. Real but out of scope, or instruction drift for
+   `hub-review`: add a line under `## Deferred findings` in the spec. Not real: drop it. At most two
+   review rounds; a third means `FAILED`.
+5. **Return** the structured result. Write `commit_subject` and `commit_body` with the `commit-splitter`
    agent's message rules: `feat(frontend): migrate <Name> to @filigran/design-system (#<issue>)` for
    kinds `ds` and `adoption`, `feat(frontend): rebuild <Name> on @filigran/design-system primitives
    (#<issue>)` for `candidate`, `chore(frontend): remove the legacy filigran-ui copy (#<issue>)` for
    `cleanup`. The body is three to six lines on what changed and why, with no trailer.
 
+The script then validates again, the `after` screenshots included: a screen that no longer renders
+blocks the item.
+
 ## CI fix mode
 
-When the invocation says `CI fix`, the item is already committed and pushed, and the pull request's
-required checks failed. Skip steps 1 to 3: the spec exists. Read the failing log the invocation names,
-send the cause to a `frontend-code-writer` subagent with the spec, then run steps 5 and 6. Return
+When the invocation says `CI fix mode`, the item is already committed and pushed, and the pull
+request's required checks failed. The spec exists. Read the failing log the invocation names, send
+the cause to a `frontend-code-writer` subagent with the spec, then run Build mode steps 2 to 4. Return
 `DONE` with a `fix(frontend): ... (#<issue>)` subject, or `FAILED` when the cause is outside the item.
 
 ## Sync fix mode
@@ -126,6 +166,7 @@ as Markdown: a short verdict, then one bullet per finding with its location and 
 
 ## Result
 
-- `DONE`: verification and review passed. The working tree holds the change and the spec.
+- `DONE`: in Spec mode, the spec is written and its screens capture. In Build mode, verification,
+  comparison and review passed, and the working tree holds the change and the spec.
 - `NEEDS_HUMAN`: continuing is unsafe. `question` holds it, with the options. Leave the spec on disk.
 - `FAILED`: verification or review could not converge. `summary` says where it stopped.

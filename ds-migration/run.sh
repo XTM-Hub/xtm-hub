@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# Runs the items of ds-migration/sprint-status.yaml in order: one unattended Claude Code session
-# per item (ds-migration/WORKFLOW.md), a deterministic validation, one signed commit per item,
-# a push to the epic branch, then a wait on the pull request's required checks.
+# Runs the items of ds-migration/sprint-status.yaml in order. Per item (ds-migration/WORKFLOW.md):
+# an unattended Claude Code session writes the spec, the script captures the declared screens,
+# a second session implements and compares the rendering, then a deterministic validation, one
+# signed commit, a push to the epic branch, a wait on the pull request's required checks, and a
+# "done" comment on the pull request.
 # An item starts only once its dependencies are done. When every item of an epic is done or
 # blocked, the script posts the epic report and an automated epic review on the PR, then stops
 # until a human sets the epic to `done`.
@@ -13,8 +15,10 @@
 #   ds-migration/run.sh finish                            final report, remove ds-migration/
 #
 # Environment: DS_ITEM_TIMEOUT (seconds per session, default 5400), DS_CHECKS_TIMEOUT (seconds,
-# default 5400), DS_CHECKS_INTERVAL (seconds, default 30), DS_BUDGET_USD (optional cap per session).
-# Needs claude, gh (authenticated), git with commit signing, jq, perl, node and yarn.
+# default 5400), DS_CHECKS_INTERVAL (seconds, default 30), DS_BUDGET_USD (optional cap per session),
+# DS_APP_PORT (frontend of this checkout, default 3012), DS_API_URL (default http://localhost:4002).
+# Needs claude, gh (authenticated), git with commit signing, jq, perl, node, yarn, curl and lsof,
+# the backend running, and Playwright's Chromium installed.
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
@@ -25,6 +29,10 @@ CHECKS_TIMEOUT="${DS_CHECKS_TIMEOUT:-5400}"
 CHECKS_INTERVAL="${DS_CHECKS_INTERVAL:-30}"
 TIMEOUT_BIN="$(command -v timeout || command -v gtimeout || true)"
 MAX_BLOCKED_IN_A_ROW=3
+APP_PORT="${DS_APP_PORT:-3012}"
+export DS_APP_URL="http://localhost:$APP_PORT"
+API_URL="${DS_API_URL:-http://localhost:4002}"
+DEPS_CHANGED=false
 SUBJECT_RE='^(feat|fix|chore)\(frontend\): .+ \(#[0-9]+\)$'
 mkdir -p "$LOG_DIR"
 
@@ -108,17 +116,49 @@ kind_of() {
 }
 
 issue_of() { local n="${1%%-*}"; [[ $n =~ ^[0-9]+$ ]] && echo "$n" || true; }
+name_of() { perl -pe 's/(^|-)(\w)/\U$2/g' <<<"${1#*-}"; }
 
 # ---------------------------------------------------------------- preconditions and git
+
+dirty_outside_tooling() { git status --porcelain --untracked-files=all | grep -v ' ds-migration/' || true; }
 
 require_ready() {
   [ "$(git branch --show-current)" = "$BRANCH" ] || die "run from branch $BRANCH"
   [ "$(git config --get commit.gpgsign)" = "true" ] || die "commit signing is off (git config commit.gpgsign true)"
   # Leftovers under ds-migration/ are expected: the status file and the specs of blocked items.
   local dirty
-  dirty="$(git status --porcelain --untracked-files=all | grep -v ' ds-migration/' || true)"
+  dirty="$(dirty_outside_tooling)"
   [ -z "$dirty" ] || die "working tree not clean outside ds-migration/:
 $dirty"
+}
+
+# ---------------------------------------------------------------- the app for the screenshots
+
+reachable() { curl -s -o /dev/null --max-time 10 "$1"; }
+
+# Screenshots need this checkout's frontend: a dev server started elsewhere serves another
+# checkout, hence a port of its own. The backend is shared, the migration does not touch it.
+ensure_app() {
+  reachable "$API_URL" || die "the backend does not answer on $API_URL: start docker compose and yarn dev:api"
+  if ! reachable "$DS_APP_URL/login"; then
+    log "starting the frontend of this checkout on $DS_APP_URL ($LOG_DIR/app.log)"
+    (cd apps/frontend && nohup yarn next dev --turbopack -p "$APP_PORT" >"$LOG_DIR/app.log" 2>&1 &)
+    touch "$LOG_DIR/app.started"
+    local deadline=$(($(date +%s) + 300))
+    until reachable "$DS_APP_URL/login"; do
+      [ "$(date +%s)" -lt "$deadline" ] || die "the frontend did not start on $DS_APP_URL: see $LOG_DIR/app.log"
+      sleep 5
+    done
+  fi
+  node ds-migration/screenshot.mjs --preflight >"$LOG_DIR/preflight.log" 2>&1 ||
+    die "screenshots cannot run: see $LOG_DIR/preflight.log (Chromium: yarn workspace @xtm-hub/test_e2e playwright install chromium)"
+}
+
+# Stops the frontend only when this script started it.
+stop_app() {
+  [ -f "$LOG_DIR/app.started" ] || return 0
+  lsof -ti "tcp:$APP_PORT" -sTCP:LISTEN | xargs kill 2>/dev/null || true
+  rm -f "$LOG_DIR/app.started"
 }
 
 # Merges the base branch when it moved. Sets MERGED_BASE for check_base_merge.
@@ -136,6 +176,7 @@ sync_base() {
     if ! git diff --quiet ORIG_HEAD HEAD -- yarn.lock package.json apps/frontend/package.json; then
       log "dependencies changed on $BASE: yarn install"
       yarn install --immutable >"$LOG_DIR/yarn-install.log" 2>&1 || die "yarn install failed after merging $BASE: see $LOG_DIR/yarn-install.log"
+      DEPS_CHANGED=true
     fi
   fi
 }
@@ -196,13 +237,16 @@ commit_status() {
 
 # ---------------------------------------------------------------- Claude Code sessions
 
+SPEC_SCHEMA='{"type":"object","additionalProperties":false,"required":["status","summary"],"properties":{"status":{"type":"string","enum":["DONE","NEEDS_HUMAN","FAILED"]},"summary":{"type":"string"},"question":{"type":"string"}}}'
 ITEM_SCHEMA='{"type":"object","additionalProperties":false,"required":["status","summary","commit_subject","commit_body"],"properties":{"status":{"type":"string","enum":["DONE","NEEDS_HUMAN","FAILED"]},"summary":{"type":"string"},"commit_subject":{"type":"string"},"commit_body":{"type":"string"},"question":{"type":"string"}}}'
 REVIEW_SCHEMA='{"type":"object","additionalProperties":false,"required":["findings"],"properties":{"findings":{"type":"string"}}}'
 
 READ_TOOLS="Read,Glob,Grep,Agent,Skill,TodoWrite,\
 Bash(gh issue view:*),Bash(gh pr view:*),Bash(gh pr diff:*),\
 Bash(git diff:*),Bash(git status:*),Bash(git log:*),Bash(git show:*),Bash(git ls-files:*)"
+SPEC_TOOLS="$READ_TOOLS,Edit,Write,Bash(gh issue edit:*),Bash(node ds-migration/screenshot.mjs:*)"
 WRITE_TOOLS="$READ_TOOLS,Edit,Write,Bash(gh issue edit:*),Bash(gh issue comment:*),\
+Bash(node ds-migration/screenshot.mjs:*),\
 Bash(yarn workspace @xtm-hub/frontend lint:*),Bash(yarn workspace @xtm-hub/frontend format:*),\
 Bash(yarn workspace @xtm-hub/frontend check-ts:*),Bash(yarn workspace @xtm-hub/frontend test:*),\
 Bash(yarn workspace @xtm-hub/frontend i18n:check:*),Bash(node ds-migration/validate.mjs:*)"
@@ -218,15 +262,37 @@ claude_session() {
   jq -c '.structured_output // empty' "$out" 2>/dev/null || true
 }
 
+failed() { jq -nc --arg s "$1" '{status: "FAILED", summary: $s}'; }
+
 # Prints the item's structured result, or a FAILED one when the session produced none.
+# <key> <issue> <epic> <kind> <mode> [extra]
 run_item_session() {
-  local key="$1" issue="$2" epic="$3" kind="$4" extra="${5:-}" result
+  local key="$1" issue="$2" epic="$3" kind="$4" mode="$5" extra="${6:-}" result
   result="$(claude_session "$key" \
-    "Read ds-migration/WORKFLOW.md fully and follow it for item $key (issue #$issue, epic $epic, kind $kind).${extra:+ $extra}" \
+    "Read ds-migration/WORKFLOW.md fully and follow its $mode for item $key (issue #$issue, epic $epic, kind $kind).${extra:+ $extra}" \
     "$ITEM_SCHEMA" "$WRITE_TOOLS")"
-  [ -n "$result" ] || result='{"status":"FAILED","summary":"No structured output: timeout or crash. See the session log."}'
+  [ -n "$result" ] || result="$(failed "No structured output: timeout or crash. See the session log.")"
   log "$key: $(jq -r .status <<<"$result")"
   echo "$result"
+}
+
+# Spec session, screenshots of the untouched code, then build session. Prints the last result.
+work_item() {
+  local key="$1" issue="$2" epic="$3" kind="$4" spec="ds-migration/specs/$1.md" result
+  result="$(claude_session "$key-spec" \
+    "Read ds-migration/WORKFLOW.md fully and follow its Spec mode for item $key (issue #$issue, epic $epic, kind $kind)." \
+    "$SPEC_SCHEMA" "$SPEC_TOOLS")"
+  [ -n "$result" ] || result="$(failed "Spec mode produced no structured output: timeout or crash. See the session log.")"
+  log "$key spec: $(jq -r .status <<<"$result")"
+  if [ "$(jq -r .status <<<"$result")" != DONE ]; then
+    echo "$result"
+  elif [ -n "$(dirty_outside_tooling)" ]; then
+    failed "Spec mode changed files outside ds-migration/: the screenshots would not show the current rendering."
+  elif ! node ds-migration/screenshot.mjs "$spec" before >"$LOG_DIR/$key-before.log" 2>&1; then
+    failed "The screens of the spec cannot be captured before the change: see $LOG_DIR/$key-before.log."
+  else
+    run_item_session "$key" "$issue" "$epic" "$kind" "Build mode"
+  fi
 }
 
 validate_item() {
@@ -237,7 +303,8 @@ validate_item() {
     yarn workspace @xtm-hub/frontend i18n:check &&
     yarn workspace @xtm-hub/frontend check-ts &&
     yarn workspace @xtm-hub/frontend test &&
-    node ds-migration/validate.mjs "$spec"
+    node ds-migration/validate.mjs "$spec" &&
+    node ds-migration/screenshot.mjs "$spec" after
 }
 
 # ---------------------------------------------------------------- report and pull request
@@ -361,7 +428,7 @@ block_item() {
 
 default_subject() {
   local name
-  name="$(perl -pe 's/(^|-)(\w)/\U$2/g' <<<"${2#*-}")"
+  name="$(name_of "$2")"
   case "$1" in
     candidate) echo "feat(frontend): rebuild $name on @filigran/design-system primitives (#$3)" ;;
     cleanup) echo "chore(frontend): remove the legacy filigran-ui copy (#$3)" ;;
@@ -383,23 +450,30 @@ commit_result() {
   log "$key committed: $subject"
 }
 
+mark_done() {
+  local key="$1" pr
+  set_status "$key" done
+  log "$key done$2"
+  pr="$(header pull_request)"
+  [ "$pr" = none ] || gh pr comment "$pr" --body "Component $(name_of "$key") done. Issue #$(issue_of "$key")" >/dev/null ||
+    log "could not comment on PR #$pr"
+}
+
 # Waits for the checks of the pushed item; on failure, one CI fix session, then stop.
 settle_review() {
   local epic="$1" key="$2" issue kind result
   issue="$(issue_of "$key")"
   kind="$(kind_of "$epic")"
   if wait_checks; then
-    set_status "$key" done
-    log "$key done"
+    mark_done "$key" ""
     return
   fi
   log "$key: required checks failed, one CI fix attempt"
-  result="$(run_item_session "$key" "$issue" "$epic" "$kind" "CI fix: the failing log is $(failed_log "$key").")"
+  result="$(run_item_session "$key" "$issue" "$epic" "$kind" "CI fix mode" "The failing log is $(failed_log "$key").")"
   if [ "$(jq -r .status <<<"$result")" = DONE ] && commit_result "$key" "$issue" "$result" "$kind"; then
     publish
     if wait_checks; then
-      set_status "$key" done
-      log "$key done after a CI fix"
+      mark_done "$key" " after a CI fix"
       return
     fi
   fi
@@ -476,6 +550,7 @@ process() {
         ;;
       ci)
         $no_wait && return
+        ensure_app # a CI fix validates with screenshots
         publish # idempotent: pushes what is missing, opens the PR if there is none
         settle_review "$epic" "$key"
         ;;
@@ -485,10 +560,12 @@ process() {
         kind="$(kind_of "$epic")"
         sync_base
         check_base_merge "$no_wait"
+        if $DEPS_CHANGED; then stop_app; fi
+        ensure_app
         set_status "$key" in-progress
         set_status "$epic" in-progress # reopens an epic already in review or done
         log "== $key (issue #$issue, $kind)"
-        result="$(run_item_session "$key" "$issue" "$epic" "$kind")"
+        result="$(work_item "$key" "$issue" "$epic" "$kind")"
         outcome="$(jq -r .status <<<"$result")"
         if [ "$outcome" = DONE ] && commit_result "$key" "$issue" "$result" "$kind"; then
           blocked_in_a_row=0
@@ -522,6 +599,7 @@ finish() {
   git rm -r --quiet ds-migration
   git commit --quiet -m "chore(frontend): remove the design system migration tooling (#$EPIC_ISSUE)"
   git push --quiet origin "HEAD:$BRANCH"
+  stop_app
   wait_checks "$pr" || die "required checks fail after removing ds-migration/"
   log "final report posted on #$EPIC_ISSUE; mark PR #$pr ready for review"
 }

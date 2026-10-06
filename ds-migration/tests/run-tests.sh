@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Regression tests for ds-migration/run.sh, with fake claude, gh and yarn. Nothing leaves the machine.
+# Regression tests for ds-migration/run.sh, with fake claude, gh, yarn, curl and screenshots.
+# Nothing leaves the machine.
 # Usage: ds-migration/tests/run-tests.sh (macOS: the fake claude uses BSD sed).
 set -uo pipefail
 V="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -16,6 +17,7 @@ cat >/dev/null; echo "[GNUPG:] SIG_CREATED D 1 8 00 0 FAKE" >&2
 printf -- '-----BEGIN PGP SIGNATURE-----\n\nZmFrZQ==\n-----END PGP SIGNATURE-----\n'
 EOF
   printf '#!/bin/sh\necho "yarn $*" >> "$SB/calls.log"\n' >"$bin/yarn"
+  printf '#!/bin/sh\nexit 0\n' >"$bin/curl"
   cat >"$bin/gh" <<'EOF'
 #!/bin/bash
 echo "gh $*" >> "$SB/calls.log"
@@ -35,7 +37,7 @@ checks() {
 }
 case "$1 $2" in
   "issue comment"|"issue edit"|"api graphql") exit 0 ;;
-  "pr comment") cp "$(bodyfile "$@")" "$SB/last-pr-comment.md" ;;
+  "pr comment") if [ "$4" = --body ]; then echo "$5" >> "$SB/pr-comments.log"; else cp "$(bodyfile "$@")" "$SB/last-pr-comment.md"; fi ;;
   "pr edit") cp "$(bodyfile "$@")" "$SB/pr-body.md" ;;
   "pr create") cp "$(bodyfile "$@")" "$SB/pr-body.md"; echo "https://github.com/XTM-Hub/xtm-hub/pull/9999" ;;
   "issue view") echo "I_$3" ;;
@@ -58,17 +60,22 @@ fi
 if [[ "$prompt" == *"Epic review mode"* ]]; then echo '{"structured_output":{"findings":"Verdict: consistent."}}'; exit 0; fi
 key="$(sed -E 's/.*for item ([a-z0-9-]+) .*/\1/' <<<"$prompt")"; kind="$(sed -E 's/.*kind ([a-z]+)\).*/\1/' <<<"$prompt")"
 issue="${key%%-*}"; slug="${key#*-}"; mkdir -p ds-migration/specs
+if [[ "$prompt" == *"Spec mode"* ]]; then
+  legacy="[]"; module='"@filigran/design-system"'; [ "$kind" = candidate ] && module="\"@/components/ui/$slug\""
+  [ "$key" = 3561-textarea ] && legacy="[Textarea]"
+  printf -- '---\nkey: %s\nkind: %s\nlegacy_symbols: %s\ntarget_module: %s\ntarget_symbols: []\nlegacy_files_to_delete: []\n---\n# %s\n\n## To validate\n\n- kept the current spacing\n' "$key" "$kind" "$legacy" "$module" "$slug" > "ds-migration/specs/$key.md"
+  [[ " ${CLAUDE_SPEC_DIRTY:-} " == *" $key "* ]] && echo early > "apps/frontend/src/$slug.early.ts"
+  echo '{"structured_output":{"status":"DONE","summary":"Spec written."}}'; exit 0
+fi
 if [[ " ${CLAUDE_BLOCK:-} " == *" $key "* ]]; then
-  echo draft > "ds-migration/specs/$key.md"; echo half > "apps/frontend/src/$slug.wip.ts"
+  echo half > "apps/frontend/src/$slug.wip.ts"
   echo '{"structured_output":{"status":"NEEDS_HUMAN","summary":"Undecidable.","commit_subject":"","commit_body":"","question":"Which option?"}}'; exit 0
 fi
 if [[ "$prompt" == *"CI fix"* ]]; then
   echo "// fix" >> "apps/frontend/src/$slug.ts"
   echo "{\"structured_output\":{\"status\":\"DONE\",\"summary\":\"fixed\",\"commit_subject\":\"fix(frontend): repair $slug (#$issue)\",\"commit_body\":\"Fix.\"}}"; exit 0
 fi
-legacy="[]"; module='"@filigran/design-system"'; [ "$kind" = candidate ] && module="\"@/components/ui/$slug\""
-if [ "$key" = 3561-textarea ]; then legacy="[Textarea]"; sed -i '' "s#import { Textarea } from '@filigran/ui';#import { Textarea } from '@filigran/design-system';#" apps/frontend/src/Form.tsx; fi
-printf -- '---\nkey: %s\nkind: %s\nlegacy_symbols: %s\ntarget_module: %s\ntarget_symbols: []\nlegacy_files_to_delete: []\n---\n# %s\n\n## To validate\n\n- kept the current spacing\n' "$key" "$kind" "$legacy" "$module" "$slug" > "ds-migration/specs/$key.md"
+[ "$key" = 3561-textarea ] && sed -i '' "s#import { Textarea } from '@filigran/ui';#import { Textarea } from '@filigran/design-system';#" apps/frontend/src/Form.tsx
 echo "export const v_$(echo "$slug" | tr - _) = 1;" > "apps/frontend/src/$slug.ts"
 echo "{\"structured_output\":{\"status\":\"DONE\",\"summary\":\"ok\",\"commit_subject\":\"invalid\",\"commit_body\":\"Migrate $slug.\\nCo-Authored-By: x <y@z>\"}}"
 EOF
@@ -85,6 +92,14 @@ new_repo() {
   mkdir -p apps/frontend/src apps/frontend/app ds-migration
   printf "import { Textarea } from '@filigran/ui';\nexport const Form = () => <Textarea />;\n" >apps/frontend/src/Form.tsx
   cp "$V/ds-migration/"{run.sh,WORKFLOW.md,spec-template.md,validate.mjs} ds-migration/ && chmod +x ds-migration/run.sh
+  # SCREENSHOT_FAIL: item keys whose after screenshots fail.
+  cat >ds-migration/screenshot.mjs <<'EOF'
+import { appendFileSync } from 'node:fs';
+const [spec, phase] = process.argv.slice(2);
+appendFileSync(`${process.env.SB}/calls.log`, `screenshot ${phase} ${spec ?? ''}\n`);
+const failing = (process.env.SCREENSHOT_FAIL ?? '').split(' ').filter(Boolean);
+if (phase === 'after' && failing.some((key) => spec.includes(key))) process.exit(1);
+EOF
   printf 'epic_issue: 3507\nbranch: issue/3507\nbase: main\npull_request: none\nrequired_checks: run-api-unit-tests, run-front-unit-tests, run-e2e-tests\n\n%s\n' "$2" >ds-migration/sprint-status.yaml
   git add -A && git commit -qm init && git remote add origin "$SB/remote.git" && git push -q origin main && git switch -qc issue/3507
 }
@@ -116,6 +131,9 @@ check "checkbox blocked, epic 1 gated" '[ "$(status_of 3541-checkbox)" = blocked
 check "epic report posted with the automated review" 'grep -q "Verdict: consistent" "$SB/last-pr-comment.md"'
 check "default subject used for an invalid one" 'git log --format=%s | grep -qx "feat(frontend): migrate Textarea to @filigran/design-system (#3561)"'
 check "no AI trailer in commits" '! git log --format=%B | grep -qi "co-authored-by"'
+check "screens captured between the spec and the build" '[ "$(grep -oE "Spec mode for item 3561|screenshot before ds-migration/specs/3561|Build mode for item 3561" "$SB/calls.log" | cut -d" " -f1 | paste -sd, -)" = "Spec,screenshot,Build" ]'
+check "after screenshots part of the validation" 'grep -q "^screenshot after ds-migration/specs/3561-textarea.md" "$SB/calls.log"'
+check "done item announced on the PR" 'grep -qx "Component Textarea done. Issue #3561" "$SB/pr-comments.log"'
 approve epic-1-primitives; run
 check "data-table waits on checkbox" '[ "$(status_of 9002-data-table)" = backlog ] && [ "$(status_of 9001-table)" = done ] && grep -q "| #9002 data-table | backlog | 3541-checkbox" "$SB/last-pr-comment.md"'
 perl -pi -e 's/^  3541-checkbox: blocked/  3541-checkbox: backlog/' ds-migration/sprint-status.yaml; run
@@ -158,6 +176,18 @@ new_repo d "development_status:
   3568-switch: backlog"
 GH_CHECKS="fail" run --once
 check "CI fix attempted, item blocked, script stopped" '[ "$(status_of 3561-textarea)" = blocked ] && grep -q "STOP: 3561-textarea: required checks still failing" "$SB/out.log" && git log --format=%s -1 | grep -q "^fix(frontend): repair textarea (#3561)"'
+
+echo "E. spec mode touches the code, then an after screenshot fails"
+new_repo e "development_status:
+  epic-1-primitives: backlog
+  3530-button: done
+  3561-textarea: backlog
+  3568-switch: backlog
+  3553-radio: backlog"
+CLAUDE_SPEC_DIRTY=3561-textarea run --once
+check "code changed in spec mode: blocked before the build" '[ "$(status_of 3561-textarea)" = blocked ] && ! grep -q "Build mode for item 3561" "$SB/calls.log" && [ -z "$(git status --porcelain -- apps)" ]'
+SCREENSHOT_FAIL=3568-switch run --once
+check "a screen that no longer renders blocks the item" '[ "$(status_of 3568-switch)" = blocked ] && ! git log --format=%s | grep -q "Switch"'
 
 echo
 echo "$PASS passed, $FAIL failed"
