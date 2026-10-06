@@ -106,10 +106,8 @@ describe('ProfileFormPreferences', () => {
     });
   });
 
-  it('should display fr locale when environment is development', () => {
-    testRender(<ProfileFormPreferences />, {
-      settings: { environment: 'development' },
-    });
+  it('should display fr locale outside development environment', () => {
+    testRender(<ProfileFormPreferences />);
 
     expect(
       screen.getByRole('option', { name: 'LocaleSwitcher.fr' })
