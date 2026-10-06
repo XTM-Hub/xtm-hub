@@ -16,8 +16,13 @@ make_stubs() {
 cat >/dev/null; echo "[GNUPG:] SIG_CREATED D 1 8 00 0 FAKE" >&2
 printf -- '-----BEGIN PGP SIGNATURE-----\n\nZmFrZQ==\n-----END PGP SIGNATURE-----\n'
 EOF
-  printf '#!/bin/sh\necho "yarn $*" >> "$SB/calls.log"\n' >"$bin/yarn"
-  printf '#!/bin/sh\nexit 0\n' >"$bin/curl"
+  printf '#!/bin/sh\necho "yarn $*" >> "$SB/calls.log"\ncase "$*" in *"next dev"*) touch "$SB/app-up" ;; esac\n' >"$bin/yarn"
+  # APP_DOWN: the frontend answers only once the fake yarn has started it.
+  cat >"$bin/curl" <<'EOF'
+#!/bin/sh
+case "$*" in *3012*) [ -z "${APP_DOWN:-}" ] || [ -f "$SB/app-up" ] || exit 7 ;; esac
+exit 0
+EOF
   cat >"$bin/gh" <<'EOF'
 #!/bin/bash
 echo "gh $*" >> "$SB/calls.log"
@@ -173,7 +178,8 @@ new_repo c "development_status:
   3530-button: done
   3561-textarea: backlog
   3568-switch: backlog"
-GH_CHECKS="missing missing pending pending pass" run --once
+GH_CHECKS="missing missing pending pending pass" APP_DOWN=1 run --once
+check "frontend started from apps/frontend, its log kept" 'grep -q "starting the frontend of this checkout" "$SB/out.log" && [ -f "$(git rev-parse --git-dir)/ds-migration/app.log" ]'
 check "item done only once the e2e aggregator passed" '[ "$(status_of 3561-textarea)" = done ] && [ "$(cat "$SB/checks-count")" -ge 5 ]'
 
 echo "D. required check fails, one CI fix, still failing: stop"

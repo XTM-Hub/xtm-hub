@@ -24,7 +24,7 @@ set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 STATUS_FILE=ds-migration/sprint-status.yaml
-LOG_DIR="$(git rev-parse --git-dir)/ds-migration"
+LOG_DIR="$(git rev-parse --absolute-git-dir)/ds-migration" # absolute: the app starts from apps/frontend
 ITEM_TIMEOUT="${DS_ITEM_TIMEOUT:-5400}"
 CHECKS_TIMEOUT="${DS_CHECKS_TIMEOUT:-5400}"
 CHECKS_INTERVAL="${DS_CHECKS_INTERVAL:-30}"
