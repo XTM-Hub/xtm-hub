@@ -10,9 +10,10 @@ import {
   UserServiceEditMutation,
 } from '@/components/service/user_service.graphql';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   Checkbox,
   Form,
   FormControl,
@@ -34,7 +35,6 @@ import { userServiceCreateMutation } from '@generated/userServiceCreateMutation.
 import { userServiceEditMutation } from '@generated/userServiceEditMutation.graphql';
 import { userServices_fragment$data } from '@generated/userServices_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { readInlineData, useMutation } from 'react-relay';
 import { useDebounceCallback } from 'usehooks-ts';
@@ -61,7 +61,7 @@ export const UserServiceForm = ({
     UserServiceCreateMutation
   );
   const { toast } = useToast();
-  const t = useTranslations();
+  const t = useTranslate();
   const isUserCreation = !userService?.id;
 
   const organizationId = subscription.subscriptionById?.organization?.id;
@@ -307,7 +307,7 @@ export const UserServiceForm = ({
           </>
         )}
 
-        <div className="border border-primary rounded-lg p-l">
+        <div className="border border-primary rounded p-l">
           <FormLabel>{t('OrganizationInServiceAction.SelectCapa')}</FormLabel>
           <p className="txt-sub-content italic">
             {t('InviteUserServiceForm.Description')}
@@ -374,7 +374,7 @@ export const UserServiceForm = ({
 
         <SheetFooter className="pt-2">
           <Button
-            variant="secondary"
+            priority="secondary"
             type="button"
             onClick={(e) => handleCloseSheet(e)}>
             {t('Utils.Cancel')}

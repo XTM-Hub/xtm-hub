@@ -175,7 +175,7 @@ export const SelectWithEditableField = ({
         ))}
 
         <div
-          className="relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-input-hover"
+          className="relative flex w-full cursor-pointer select-none items-center rounded-none py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-input-hover"
           onClick={handleOtherClick}>
           {isOtherMode && (
             <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">

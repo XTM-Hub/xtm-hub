@@ -1,7 +1,7 @@
 import { mapRegisteredPlatformsToHomepageCards } from '@/components/homepage/Homepage.utils';
 import RegisteredPlatformCard from '@/components/homepage/registered-platforms/RegisteredPlatformCard';
+import { getTranslate } from '@/hooks/get-translate';
 import { RegisteredPlatformsQuery } from '@graphql/generated';
-import { getTranslations } from 'next-intl/server';
 
 interface RegisteredPlatformsSectionProps {
   welcomeName?: string;
@@ -12,7 +12,7 @@ export const RegisteredPlatformsSection = async ({
   welcomeName,
   registeredPlatformsData,
 }: RegisteredPlatformsSectionProps) => {
-  const t = await getTranslations();
+  const t = await getTranslate();
   const homepageRegisteredPlatformCards = mapRegisteredPlatformsToHomepageCards(
     registeredPlatformsData.registeredPlatforms
   );
@@ -23,7 +23,7 @@ export const RegisteredPlatformsSection = async ({
   }
 
   return (
-    <section className="w-full xl:w-3/8 bg-elevation-background-layer-1 p-l rounded-lg xl:max-h-96 xl:overflow-scroll">
+    <section className="w-full xl:w-3/8 bg-elevation-background-layer-1 p-l rounded xl:max-h-96 xl:overflow-scroll">
       <div className="flex flex-col">
         <span className="heading-xs text-filigran-brand-primary">
           {welcomeName

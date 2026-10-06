@@ -1,10 +1,11 @@
 import { trialsRegionKey } from '@/components/trials/trials.const';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { isEmpty } from '@/lib/utils';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   Form,
   FormControl,
   FormField,
@@ -22,7 +23,6 @@ import {
 } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -41,7 +41,7 @@ export const TrialsTabQuotasPlatformUpdateForm = ({
   quota,
   callback,
 }: TrialsTabQuotasPlatformUpdateFormProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { handleCloseSheet, setIsDirty } = useDialogContext();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -123,7 +123,7 @@ export const TrialsTabQuotasPlatformUpdateForm = ({
           <SheetFooter className="justify-end pb-0">
             <div className="flex gap-s">
               <Button
-                variant="secondary"
+                priority="secondary"
                 type="button"
                 onClick={(e) => handleCloseSheet(e)}>
                 {t('Utils.Cancel')}

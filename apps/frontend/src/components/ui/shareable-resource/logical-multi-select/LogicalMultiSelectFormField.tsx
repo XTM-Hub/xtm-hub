@@ -197,7 +197,7 @@ const LogicalMultiSelectFormField = React.forwardRef<
       <div
         ref={ref}
         {...props}
-        className="flex flex-col gap-s rounded-md border-0 p-0">
+        className="flex flex-col gap-s rounded-xs border-0 p-0">
         <span className="sr-only">{optionLabel}</span>
         {flatOptions.length === 0 ? (
           <span className="text-sm text-text-default-secondary">

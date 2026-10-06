@@ -4,6 +4,7 @@ import {
   BreadcrumbNav,
   BreadcrumbNavLink,
 } from '@/components/ui/BreadcrumbNav';
+import { useTranslate } from '@/hooks/use-translate';
 import { DownloadIcon } from '@filigran/icon';
 import {
   Tooltip,
@@ -11,8 +12,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/ui/clients';
-import { Button } from '@filigran/ui/servers';
-import { useTranslations } from 'next-intl';
 
 import OneClickDeploy from '@/components/service/document/one-click-deploy/OneClickDeploy';
 import ShareableResourceDetails from '@/components/service/document/ShareableResouceDetails';
@@ -32,6 +31,7 @@ import {
   isResourceDeployable,
   isResourceDownloadable,
 } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
+import { Button, IconButton } from '@filigran/design-system';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import Image from 'next/image';
@@ -53,7 +53,7 @@ const ShareableResourceSlug = ({
   children,
   updateActions,
 }: ShareableResourceSlugProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { serviceInstanceId } = useDecodedParams();
   const { settings } = useContext(SettingsContext);
 
@@ -114,16 +114,18 @@ const ShareableResourceSlug = ({
                         delayDuration={50}
                         disableHoverableContent={true}>
                         <TooltipTrigger asChild>
-                          <Button
-                            variant="tertiary"
-                            size="icon"
+                          <IconButton
+                            priority="tertiary"
                             onClick={() => {
                               incrementDownloadNumber();
                               window.location.href = `/document/get/${serviceInstanceId}/${documentData?.id}?attach=1`;
                             }}
-                            className="z-[2] text-primary">
-                            <DownloadIcon className="h-4 w-4" />
-                          </Button>
+                            className="z-[2] text-primary"
+                            aria-label={t(
+                              'Service.ShareableResources.Download'
+                            )}
+                            icon={<DownloadIcon className="h-4 w-4" />}
+                          />
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>{t('Service.ShareableResources.Download')}</p>

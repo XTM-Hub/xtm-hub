@@ -1,5 +1,7 @@
+import { useTranslate } from '@/hooks/use-translate';
 import { fileToBase64 } from '@/lib/utils';
 import { docIsExistingFile, ExistingFile, NewFile } from '@/utils/documents';
+import { IconButton } from '@filigran/design-system';
 import { AddIcon, DeleteIcon, ReplayIcon } from '@filigran/icon';
 import {
   FileInput,
@@ -14,10 +16,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/ui/clients';
-import { Button } from '@filigran/ui/servers';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { DocumentSourceType } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { ChangeEvent, useRef } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 
@@ -44,7 +44,7 @@ export const ServiceFormMultipleImagesField = ({
   setImagesToDelete,
   setIsDirty,
 }: ServiceFormMultipleImagesFieldProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   return (
@@ -52,15 +52,15 @@ export const ServiceFormMultipleImagesField = ({
       <FormItem>
         <FormLabel className="flex items-center h-6">
           {t('Service.Form.ImageLabel')}
-          <Button
-            size="icon"
-            variant="link"
+          <IconButton
+            priority="tertiary"
+            aria-label={t('Service.Form.AddImage')}
+            icon={<AddIcon className="size-3" />}
             onClick={(e) => {
               e.preventDefault();
               inputRef.current!.click();
-            }}>
-            <AddIcon className="size-3" />
-          </Button>
+            }}
+          />
         </FormLabel>
         <FormControl>
           <FileInput
@@ -120,25 +120,23 @@ export const ServiceFormMultipleImagesField = ({
                       ? 'bg-black-1000/90 opacity-100'
                       : 'bg-black-1000/0 opacity-0'
                   }`}>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="absolute right-2 top-2"
-                    type="button"
-                    onClick={() => {
-                      setImagesToDelete(
-                        imagesToDelete.filter((id) => id !== doc!.id)
-                      );
-                    }}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <ReplayIcon className="size-4" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {t('Service.Form.Restore')}
-                      </TooltipContent>
-                    </Tooltip>
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <IconButton
+                        priority="secondary"
+                        className="absolute right-2 top-2"
+                        type="button"
+                        aria-label={t('Service.Form.Restore')}
+                        icon={<ReplayIcon className="size-4" />}
+                        onClick={() => {
+                          setImagesToDelete(
+                            imagesToDelete.filter((id) => id !== doc!.id)
+                          );
+                        }}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>{t('Service.Form.Restore')}</TooltipContent>
+                  </Tooltip>
                   <DeleteIcon
                     focusable={false}
                     className="size-6 text-muted-foreground"
@@ -151,25 +149,28 @@ export const ServiceFormMultipleImagesField = ({
                       {(doc as ExistingFile)?.file_name ??
                         (doc as NewFile)?.name}
                     </div>
-                    <Button
-                      disabled={doc.source_type === DocumentSourceType.External}
-                      variant="secondary-destructive"
-                      size="icon"
-                      type="button"
-                      className="ml-auto m-s"
-                      onClick={() => {
-                        setImagesToDelete([...imagesToDelete, doc!.id]);
-                        setIsDirty(true);
-                      }}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <DeleteIcon className="size-4" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {t('Service.Form.DeleteSentence')}
-                        </TooltipContent>
-                      </Tooltip>
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <IconButton
+                          disabled={
+                            doc.source_type === DocumentSourceType.External
+                          }
+                          variant="destructive"
+                          priority="secondary"
+                          type="button"
+                          className="ml-auto m-s"
+                          aria-label={t('Service.Form.DeleteImage')}
+                          icon={<DeleteIcon className="size-4" />}
+                          onClick={() => {
+                            setImagesToDelete([...imagesToDelete, doc!.id]);
+                            setIsDirty(true);
+                          }}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {t('Service.Form.DeleteSentence')}
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 )}
               </div>

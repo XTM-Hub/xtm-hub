@@ -1,7 +1,8 @@
 import { UserServicesAddCapabilitiesMutation } from '@/components/service/user_service.graphql';
 import { BadgeOverflow } from '@/components/ui/BadgeOverflowCounter';
+import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   Checkbox,
   Dialog,
   DialogContent,
@@ -12,7 +13,6 @@ import {
 } from '@filigran/ui';
 import { userServices_fragment$data } from '@generated/userServices_fragment.graphql';
 import { userServicesAddCapabilitiesMutation } from '@generated/userServicesAddCapabilitiesMutation.graphql';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useMutation } from 'react-relay';
 
@@ -33,7 +33,7 @@ export const SubscriptionSlugAddCapabilities = ({
   serviceInstanceId,
   onCompleted,
 }: SubscriptionSlugAddCapabilitiesProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [selectedCapabilityIds, setSelectedCapabilityIds] = useState<
     Set<string>
   >(new Set());
@@ -127,7 +127,7 @@ export const SubscriptionSlugAddCapabilities = ({
 
         <DialogFooter>
           <Button
-            variant="tertiary"
+            priority="tertiary"
             onClick={() => resetAndClose()}>
             {t('Utils.Cancel')}
           </Button>

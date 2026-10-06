@@ -1,6 +1,7 @@
 'use client';
 import { updateShareNumber } from '@/components/ui/share-link/ShareLinkActions';
 import usePublicPath from '@/hooks/use-public-path';
+import { useTranslate } from '@/hooks/use-translate';
 import { ShareIcon } from '@filigran/icon';
 import {
   toast,
@@ -9,8 +10,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/ui/clients';
-import { Button } from '@filigran/ui/servers';
-import { useTranslations } from 'next-intl';
+
+import { IconButton } from '@filigran/design-system';
 import { graphql, useMutation } from 'react-relay';
 import { useCopyToClipboard } from 'usehooks-ts';
 
@@ -79,7 +80,7 @@ export const ShareLinkCommonButton = ({
   onClickAction,
   tooltipText,
 }: ShareLinkCommonProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [_, copy] = useCopyToClipboard();
 
   const handleCopy = (e: React.MouseEvent) => {
@@ -104,13 +105,17 @@ export const ShareLinkCommonButton = ({
         delayDuration={50}
         disableHoverableContent={true}>
         <TooltipTrigger asChild>
-          <Button
-            variant="tertiary"
-            size="icon"
+          <IconButton
+            priority="tertiary"
             onClick={handleCopy}
-            className="z-[2] text-primary">
-            <ShareIcon className="h-4 w-4" />
-          </Button>
+            className="z-[2] text-primary"
+            aria-label={
+              tooltipText
+                ? t(tooltipText)
+                : t('Service.ShareableResources.Share')
+            }
+            icon={<ShareIcon className="h-4 w-4" />}
+          />
         </TooltipTrigger>
         <TooltipContent>
           <p>

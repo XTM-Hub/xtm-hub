@@ -1,5 +1,5 @@
 import { RegistrationLayout } from '@/components/registration/Layout';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 
 interface RegisterStateSucceededProps {
   displayedIdentifier: string;
@@ -8,7 +8,7 @@ interface RegisterStateSucceededProps {
 export const RegisterStateSucceeded = ({
   displayedIdentifier,
 }: RegisterStateSucceededProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <RegistrationLayout>
       <h1>

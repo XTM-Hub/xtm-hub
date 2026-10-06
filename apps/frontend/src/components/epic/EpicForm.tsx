@@ -12,9 +12,10 @@ import {
 } from '@/components/epic/filigran-products';
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import { InfoIcon } from '@filigran/icon';
 import {
-  Button,
   Checkbox,
   FileInput,
   Form,
@@ -48,7 +49,6 @@ import {
   Timeline,
 } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { Control, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
@@ -126,7 +126,7 @@ const EpicFieldLabel = ({
   required?: boolean;
   infoKey?: string;
 }) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <FormLabel className="flex items-center gap-xs">
       {t(labelKey)}
@@ -157,7 +157,7 @@ const CharacterCount = ({
   value: string;
   maxChars: number;
 }) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <div className="flex items-start gap-s">
       <FormMessage />
@@ -183,7 +183,7 @@ const EpicTextareaField = ({
   maxChars: number;
   required?: boolean;
 }) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <FormField
       control={control}
@@ -220,7 +220,7 @@ const EpicForm = ({
   epic?: epic_fragment$data;
   handleSubmit: (values: EpicFormValues) => void;
 }) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { handleCloseSheet } = useDialogContext();
   const formSchema = useMemo(() => buildEpicFormSchema(t), [t]);
 
@@ -532,7 +532,7 @@ const EpicForm = ({
           />
           <div className="flex gap-s">
             <Button
-              variant="secondary"
+              priority="secondary"
               type="button"
               onClick={handleCloseSheet}>
               {t('Utils.Cancel')}

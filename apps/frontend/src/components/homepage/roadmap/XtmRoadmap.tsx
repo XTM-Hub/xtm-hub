@@ -4,11 +4,12 @@ import {
 } from '@/components/epic/epic-item/TimelineMapping';
 import type { HomepageRoadmapTitleProduct } from '@/components/homepage/Homepage.utils';
 import { CountBadge } from '@/components/ui/CountBadge';
+import { getTranslate } from '@/hooks/get-translate';
 import { PublicLocale } from '@/i18n/config';
 import { serverGraphqlFetch } from '@/lib/server-graphql-fetch';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '@/utils/constant';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
-import { Button } from '@filigran/ui/servers';
+import { Button } from '@filigran/design-system';
 import {
   EpicCountPerTimelineQueryDocument,
   EpicCountPerTimelineQueryQuery,
@@ -35,7 +36,7 @@ const XtmRoadmap = async ({
   titleProduct = 'default',
   paramsLocale,
 }: XtmRoadmapProps) => {
-  const t = await getTranslations('PublicHomePage.XtmRoadmap');
+  const t = await getTranslate('PublicHomePage.XtmRoadmap');
   const tPlatformIdentifier = await getTranslations('PlatformIdentifier');
   const usedLocale = paramsLocale ?? (await getLocale());
 
@@ -66,7 +67,7 @@ const XtmRoadmap = async ({
   const defaultSeeMoreHref = `/${usedLocale}/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/xtm-platform-roadmap`;
 
   return (
-    <section className="flex flex-col lg:flex-row gap-l items-center border border-elevation-border-strong rounded-lg px-xl py-4">
+    <section className="flex flex-col lg:flex-row gap-l items-center border border-elevation-border-strong rounded px-xl py-4">
       <div className="flex flex-col gap-s flex-3">
         <h2 className="heading-xl">{title}</h2>
         <p className="text-muted-foreground text-xs sm:text-sm">
@@ -75,7 +76,7 @@ const XtmRoadmap = async ({
         <div>
           <Button
             asChild
-            variant="secondary"
+            priority="secondary"
             className="border-elevation-border-strong">
             <Link
               href={seeMoreHref ?? defaultSeeMoreHref}
@@ -86,7 +87,7 @@ const XtmRoadmap = async ({
         </div>
       </div>
 
-      <div className="hidden min-[1330px]:block relative h-24 flex-2 rounded-lg overflow-hidden">
+      <div className="hidden min-[1330px]:block relative h-24 flex-2 rounded overflow-hidden">
         <Image
           src="/xtm_roadmap_space.png"
           alt={t('ImageAlt')}

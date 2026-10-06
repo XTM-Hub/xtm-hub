@@ -2,7 +2,7 @@
 import GuardCapacityComponent from '@/components/AdminGuard';
 import SolutionCategories from '@/components/admin/solution-category/SolutionCategories';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 
 const breadcrumbValue = [
   {
@@ -16,7 +16,7 @@ const breadcrumbValue = [
 export const dynamic = 'force-dynamic';
 
 const Page = () => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <GuardCapacityComponent displayError>

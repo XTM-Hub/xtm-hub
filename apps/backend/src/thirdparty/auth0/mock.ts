@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
+import type { Management } from 'auth0';
 import { OrganizationId } from '../../model/kanel/public/Organization';
 import {
   Auth0Client,
@@ -32,8 +33,15 @@ export const auth0ClientMock: Auth0Client = {
 
   updateUserRBACInstance(
     email: string,
-    userRBACInstance: Auth0UpdateUserRBACInstance
+    userRBACInstance: Auth0UpdateUserRBACInstance,
+    prefetchedAuth0Users?: Management.UserResponseSchema[]
   ): Promise<void> {
     return Promise.resolve();
+  },
+
+  getUsersByEmails(
+    emails: string[]
+  ): Promise<Map<string, Management.UserResponseSchema[]>> {
+    return Promise.resolve(new Map());
   },
 };

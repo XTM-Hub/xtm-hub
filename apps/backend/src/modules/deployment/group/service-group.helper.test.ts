@@ -295,7 +295,8 @@ describe('serviceGroupHelper', () => {
         TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.EMAIL,
         {
           [openctiPlatformId]: { groups: [ServiceGroupName.Admin] },
-        }
+        },
+        undefined
       );
     });
 

@@ -41,6 +41,7 @@ import {
   ManageableServiceDefinitionIdentifier,
   ServiceDefinitionIdentifiersByPlatformIdentifier,
 } from './document.helper';
+import { DocumentListOptions } from './document.model';
 import { DocumentUploadsHelper, Upload } from './document.uploads.helper';
 import { DocumentChildrenDomain } from './domain/document.children.domain';
 import { DocumentData, DocumentDomain } from './domain/document.domain';
@@ -583,6 +584,7 @@ export const DocumentApp = {
   // is optional in the input type so exports aren't row-capped like the paginated GraphQL API.
   loadDocuments: async (
     input: Partial<QueryDocumentsArgs> &
+      DocumentListOptions &
       Pick<QueryDocumentsArgs, 'serviceInstanceId'>,
     metadataKeysOverride?: DocumentMetadataKeyCode[]
   ) => {

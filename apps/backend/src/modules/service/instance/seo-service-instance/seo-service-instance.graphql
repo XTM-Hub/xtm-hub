@@ -1,12 +1,6 @@
-enum SeoServiceInstanceLanguage {
-  en
-  fr
-  ja
-}
-
 type SeoServiceInstanceMetadata {
   service_instance_id: ServiceInstanceId!
-  language: SeoServiceInstanceLanguage!
+  language: Locale!
   meta_title: String!
   meta_description: String!
 }
@@ -19,14 +13,14 @@ input EditSeoServiceInstanceInput {
 type Query {
   seoServiceInstanceMetadata(
     service_instance_id: ServiceInstanceId!
-    language: SeoServiceInstanceLanguage
+    language: Locale
   ): [SeoServiceInstanceMetadata!]!
 }
 
 type Mutation {
   editSeoServiceInstance(
     service_instance_id: ServiceInstanceId!
-    language: SeoServiceInstanceLanguage!
+    language: Locale!
     input: EditSeoServiceInstanceInput!
   ): SeoServiceInstanceMetadata!
     @auth(portalCapa: [BYPASS, MODIFY_SERVICE_METADATA])

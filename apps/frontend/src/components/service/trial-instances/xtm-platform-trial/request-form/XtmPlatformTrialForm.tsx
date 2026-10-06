@@ -7,10 +7,11 @@ import {
 import { buildOngoingTrialWarningParams } from '@/components/service/trial-instances/xtm-platform-trial/request-form/xtm-platform-trial-form.utils';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { TranslatableEnumSelectField } from '@/components/ui/TranslatableEnumSelectField';
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
+import { Button } from '@filigran/design-system';
 import { WarningIcon } from '@filigran/icon';
 import {
-  Button,
   Checkbox,
   Form,
   FormField,
@@ -30,7 +31,7 @@ import {
   PlatformIdentifier,
 } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { ReactNode, useContext, useMemo, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
@@ -85,7 +86,7 @@ export const XtmPlatformTrialForm = ({
   hasOngoingStandaloneTrials = false,
   ongoingStandaloneTrialProducts = [],
 }: XtmPlatformTrialFormProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const locale = useLocale();
   const selectLayerClassName = 'layer-2';
   const selectTriggerClassName = cn(selectLayerClassName);
@@ -271,7 +272,7 @@ export const XtmPlatformTrialForm = ({
                 />
                 <label
                   htmlFor="product-xtmone"
-                  className="content-base text-muted-foreground">
+                  className="content-base tracking-[0.75px] text-muted-foreground">
                   {t(`PlatformIdentifier.${PlatformIdentifier.Xtmone}`)}
                 </label>
               </div>

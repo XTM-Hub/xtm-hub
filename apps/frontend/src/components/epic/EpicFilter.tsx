@@ -2,9 +2,9 @@
 import { FiligranProductMapping } from '@/components/epic/epic-item/FiligranProductMapping';
 import { FILIGRAN_PRODUCTS_ORDER } from '@/components/epic/filigran-products';
 import { SearchInput } from '@/components/ui/SearchInput';
+import { useTranslate } from '@/hooks/use-translate';
 import { MultiSelectFormField, Switch } from '@filigran/ui';
 import { FiligranProduct } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import React, { useMemo } from 'react';
 
 export type EpicFilterType = FiligranProduct[];
@@ -26,7 +26,7 @@ export const EpicFilter = ({
   onShowFinishedChange,
   debounceHandleInput,
 }: EpicFilterProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   const options = useMemo(
     () =>

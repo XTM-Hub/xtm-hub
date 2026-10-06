@@ -9,9 +9,10 @@ import { useServiceListLocalStorageKeyContext } from '@/components/service/compo
 import { useSolutionCategories } from '@/components/service/form/UseSolutionCategories';
 import { availableIntegrationTypes } from '@/components/service/integrations/Integration.utils';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
+import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import {
   AutoForm,
-  Button,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -31,7 +32,6 @@ import {
   IntegrationType,
   LicenseType,
 } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 import { z } from 'zod';
@@ -77,7 +77,7 @@ const IntegrationsCsvExportFilterField = ({
   placeholder,
   testId,
 }: IntegrationsCsvExportFilterFieldProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <FormItem>
       <FormLabel className="font-normal text-text-default-secondary">
@@ -107,7 +107,7 @@ export const IntegrationsCsvExportDialog = ({
   serviceInstanceId,
   type,
 }: IntegrationsCsvExportDialogProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [isExporting, setIsExporting] = useState(false);
 
   const { localStorageKey } = useServiceListLocalStorageKeyContext();
@@ -403,7 +403,7 @@ export const IntegrationsCsvExportDialog = ({
           <DialogFooter>
             <Button
               type="button"
-              variant="tertiary"
+              priority="tertiary"
               disabled={isExporting}
               onClick={resetAndClose}>
               {t('Utils.Cancel')}

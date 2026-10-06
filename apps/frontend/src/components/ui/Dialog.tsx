@@ -1,5 +1,6 @@
+import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   Dialog,
   DialogClose,
   DialogContent,
@@ -8,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 import { ReactNode } from 'react';
 
 interface DialogInformativeProps {
@@ -34,7 +34,8 @@ export const DialogInformative = ({
   buttonText = 'Utils.Close',
   showFooter = true,
 }: DialogInformativeProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
+  const priority = variant === 'default' ? 'primary' : 'secondary';
 
   return (
     <Dialog
@@ -60,7 +61,7 @@ export const DialogInformative = ({
               <Button
                 className="mt-2 hover:cursor-pointer"
                 type="button"
-                variant={variant}
+                priority={priority}
                 onClick={onButtonClick ?? onClose}>
                 {t(buttonText)}
               </Button>

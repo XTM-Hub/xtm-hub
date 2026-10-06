@@ -1,7 +1,7 @@
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
+import { Button } from '@filigran/design-system';
 import { LeftPanelCloseIcon, LeftPanelOpenIcon } from '@filigran/icon';
-import { Button } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 
 interface CollapseMenuButtonProps {
   open: boolean;
@@ -12,11 +12,11 @@ export const CollapseMenuButton = ({
   open,
   handleOpenMenu,
 }: CollapseMenuButtonProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <div className="shrink-0 pb-s">
       <Button
-        variant="tertiary"
+        priority="tertiary"
         aria-label={t('App.CollapseSidebar')}
         className="h-9 px-m w-full justify-start rounded-none text-foreground"
         onClick={handleOpenMenu}>

@@ -2,7 +2,7 @@
 import { PlatformIdentifier } from '@graphql/generated';
 
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 import React from 'react';
 
 interface TrialsHeaderProps {
@@ -14,7 +14,7 @@ export const TrialsHeader = ({
   actions,
   platformIdentifier = PlatformIdentifier.Opencti,
 }: TrialsHeaderProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const platformName = PlatformMetadataMapping[platformIdentifier].name;
 
   return (

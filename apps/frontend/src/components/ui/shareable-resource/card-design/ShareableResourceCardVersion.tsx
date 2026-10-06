@@ -1,5 +1,6 @@
 import { useBuildCompatibilityTranslationKey } from '@/hooks/use-build-compatibility-translation-key';
 import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
+import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { CheckIndeterminateIcon } from '@filigran/icon';
 import {
@@ -9,7 +10,6 @@ import {
   TooltipTrigger,
 } from '@filigran/ui/clients';
 import { PlatformIdentifier } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
 interface ShareableResourceCardVersionProps {
   requiredProductVersion?: string | null;
@@ -22,7 +22,7 @@ export const ShareableResourceCardVersion = ({
   product_version,
   className,
 }: ShareableResourceCardVersionProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { platforms } = useRegisteredPlatforms(PlatformIdentifier.Opencti, {
     onlyActive: true,
   });

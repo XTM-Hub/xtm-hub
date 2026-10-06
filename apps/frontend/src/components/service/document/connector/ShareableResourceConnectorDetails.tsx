@@ -1,12 +1,14 @@
+'use client';
+
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
 import { ShareableResourceDetailsLink } from '@/components/service/document/ShareableResourceDetailsLink';
 import { ShareableResourceBasicInformation } from '@/components/service/document/ui/ShareableResourceBasicInformation';
 import { ShareableResourceDetailItem } from '@/components/service/document/ui/ShareableResourceDetailItem';
+import { useTranslate } from '@/hooks/use-translate';
 import { roundToNearest } from '@/lib/utils';
+import { Button } from '@filigran/design-system';
 import { LogoGitIcon, OpenInNewIcon } from '@filigran/icon';
-import { Button } from '@filigran/ui/servers';
 import { PlatformIdentifier } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import * as React from 'react';
 
@@ -34,7 +36,7 @@ export const ShareableResourceConnectorDetails = ({
   connectorDetails,
   compatibilityItem,
 }: ShareableResourceConnectorDetailsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const platformName = PlatformMetadataMapping[PlatformIdentifier.Opencti].name;
 
   return (
@@ -43,8 +45,8 @@ export const ShareableResourceConnectorDetails = ({
         <ShareableResourceDetailItem
           label={t('Service.Connectors.IntegrationDocumentationAndCode')}>
           <Button
-            className="p-0"
-            variant="link"
+            className="p-0 underline"
+            priority="tertiary"
             asChild>
             <Link
               href={connectorDetails.source_code}
@@ -59,8 +61,8 @@ export const ShareableResourceConnectorDetails = ({
         <ShareableResourceDetailItem
           label={t('Service.Connectors.VisitVendor')}>
           <Button
-            className="p-0 uppercase"
-            variant="link"
+            className="p-0 uppercase underline"
+            priority="tertiary"
             asChild>
             <Link
               href={connectorDetails.subscription_link}

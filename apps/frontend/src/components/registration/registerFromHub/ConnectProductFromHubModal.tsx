@@ -7,12 +7,12 @@ import ConnectFromHubForm, {
 } from '@/components/registration/registerFromHub/ConnectFromHubForm';
 import { DialogInformative } from '@/components/ui/Dialog';
 import useGranted from '@/hooks/use-granted';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
   OrganizationCapability,
   useConnectProductOrganizationAdminsQuery,
 } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { z } from 'zod';
 
 import { useRouter } from 'next/navigation';
@@ -44,7 +44,7 @@ const ConnectProductFromHubModal = ({
   onOpenChange,
   origin,
 }: ConnectProductProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { me } = useContext(PortalContext);
   const router = useRouter();
   const organizationId = me?.selected_organization_id ?? '';

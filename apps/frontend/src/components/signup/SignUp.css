@@ -54,7 +54,7 @@
   font-size: 0.625rem;
   line-height: 1rem;
   font-weight: 400;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 #hubspot-form .calendar {
@@ -262,7 +262,7 @@
   width: 100%;
   padding: 10px 10px 10px 14px;
   border-radius: 6px;
-  border: 1px solid hsl(var(--muted-foreground));
+  border: 1px solid var(--muted-foreground);
   background-color: var(--color-foreground);
   font-family: var(--typo-text);
 }
@@ -275,7 +275,7 @@
 #hubspot-form form input::-webkit-file-upload-button {
   background-color: transparent;
   padding: 10px 10px 10px 14px;
-  border: 1px solid hsl(var(--muted-foreground));
+  border: 1px solid var(--muted-foreground);
   border-radius: 6px;
 }
 
@@ -283,7 +283,7 @@
   width: 100%;
   padding: 10px 10px 10px 14px;
   border-radius: 6px;
-  border: 1px solid hsl(var(--muted-foreground));
+  border: 1px solid var(--muted-foreground);
   background-color: var(--color-foreground);
   font-family: var(--typo-text);
   cursor: pointer;
@@ -298,7 +298,7 @@
   width: 100%;
   padding: 10px 10px 10px 14px;
   border-radius: 6px;
-  border: 1px solid hsl(var(--muted-foreground));
+  border: 1px solid var(--muted-foreground);
   background-color: var(--color-foreground);
   font-family: var(--typo-text);
 }
@@ -329,7 +329,7 @@
   font-weight: 400;
   font-size: 0.75rem;
   line-height: 1.25rem;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 #hubspot-form form .field.hs-fieldtype-checkbox,
@@ -428,7 +428,7 @@
   label
   input.hs-input
   + span {
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   font-size: 16px;
 }
 
@@ -465,7 +465,7 @@
   display: block;
   width: 15px;
   height: 15px;
-  border: 2px solid hsl(var(--muted-foreground));
+  border: 2px solid var(--muted-foreground);
   border-radius: 2px;
   position: absolute;
   top: calc(50% - 7.5px);
@@ -703,7 +703,7 @@
   padding: 0 4px;
   transform: none;
   font-size: 10px;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
   background-color: var(--color-grayblue-700);
 }
 
@@ -733,7 +733,7 @@
   .field:not(.hs-fieldtype-booleancheckbox)
   .input
   select::placeholder {
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 #hubspot-form
@@ -889,7 +889,7 @@
   .form-control:not(:has(.form-submit))
   .form-input
   select::placeholder {
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 #hubspot-form
@@ -992,7 +992,7 @@
 #hubspot-form form .form-content p,
 #hubspot-form form .field.hs-fieldtype-booleancheckbox ul li label span,
 #hubspot-form form .field.hs-fieldtype-checkbox ul.inputs-list li {
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 /* Align "You can withdraw..." text left */
@@ -1004,7 +1004,7 @@
 #hubspot-form form .field.hs-fieldtype-booleancheckbox ~ .hs-richtext p {
   padding-left: 0;
   margin-top: 2px;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 
 /* Privacy Policy link in blue */

@@ -24,6 +24,7 @@ import {
   ServiceInstanceCreationStatus,
   UserAccountStatus,
 } from '../../../__generated__/resolvers-types';
+import { databaseContext } from '../../../context/database.context';
 import { requestContext } from '../../../context/request.context';
 import { DeploymentRequestId } from '../../../model/kanel/public/DeploymentRequest';
 import { ServiceGroupId } from '../../../model/kanel/public/ServiceGroup';
@@ -32,6 +33,8 @@ import User, { UserId } from '../../../model/kanel/public/User';
 import type { UserLoadUserBy } from '../../../model/user';
 import * as mailService from '../../../server/mail-service';
 import { auth0ClientMock } from '../../../thirdparty/auth0/mock';
+import { PgBossProducer } from '../../../thirdparty/pgboss/producer';
+import { logApp } from '../../../utils/app-logger.util';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { formatName } from '../../../utils/format';
 
@@ -921,10 +924,14 @@ describe('serviceGroupApp', () => {
 
       // Then
       expect(auth0Spy).toHaveBeenCalledTimes(1);
-      expect(auth0Spy).toHaveBeenCalledWith(targetUser.EMAIL, {
-        [openctiChild.platform_id as string]: { groups: ['Admin'] },
-        [xtmoneChild.platform_id as string]: { groups: ['User'] },
-      });
+      expect(auth0Spy).toHaveBeenCalledWith(
+        targetUser.EMAIL,
+        {
+          [openctiChild.platform_id as string]: { groups: ['Admin'] },
+          [xtmoneChild.platform_id as string]: { groups: ['User'] },
+        },
+        undefined
+      );
 
       expect(sendMailSpy).toHaveBeenCalledTimes(1);
       expect(sendMailSpy).toHaveBeenCalledWith({
@@ -1181,10 +1188,14 @@ describe('serviceGroupApp', () => {
       expect(xtmoneMembers).toEqual([]);
 
       expect(auth0Spy).toHaveBeenCalledTimes(1);
-      expect(auth0Spy).toHaveBeenCalledWith(targetUser.EMAIL, {
-        [openctiChild.platform_id as string]: { groups: [] },
-        [xtmoneChild.platform_id as string]: { groups: [] },
-      });
+      expect(auth0Spy).toHaveBeenCalledWith(
+        targetUser.EMAIL,
+        {
+          [openctiChild.platform_id as string]: { groups: [] },
+          [xtmoneChild.platform_id as string]: { groups: [] },
+        },
+        undefined
+      );
     });
 
     it('should support removing several users at once and leave other members untouched', async () => {
@@ -1564,10 +1575,14 @@ describe('serviceGroupApp', () => {
 
       // Then
       expect(auth0Spy).toHaveBeenCalledTimes(1);
-      expect(auth0Spy).toHaveBeenCalledWith(targetUser.EMAIL, {
-        [openctiChild.platform_id as string]: { groups: [] },
-        [xtmoneChild.platform_id as string]: { groups: ['Admin'] },
-      });
+      expect(auth0Spy).toHaveBeenCalledWith(
+        targetUser.EMAIL,
+        {
+          [openctiChild.platform_id as string]: { groups: [] },
+          [xtmoneChild.platform_id as string]: { groups: ['Admin'] },
+        },
+        undefined
+      );
     });
 
     it('should send trial_access_removed when a product role is revoked and trial_access_granted when it changes', async () => {
@@ -1704,7 +1719,7 @@ describe('serviceGroupApp', () => {
     });
   });
 
-  describe('grantUserAccess', () => {
+  describe('grantUserAccessAndSetStatus welcome emails', () => {
     const createdBundleIds: DeploymentRequestId[] = [];
 
     afterEach(async () => {
@@ -1724,7 +1739,7 @@ describe('serviceGroupApp', () => {
       );
 
       // When
-      await ServiceGroupApp.grantUserAccess(user);
+      await ServiceGroupApp.grantUserAccessAndSetStatus(user, null, null);
 
       // Then
       expect(auth0Spy).not.toHaveBeenCalled();
@@ -1783,7 +1798,7 @@ describe('serviceGroupApp', () => {
       const user = await loadUser(TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID);
 
       // When
-      await ServiceGroupApp.grantUserAccess(user);
+      await ServiceGroupApp.grantUserAccessAndSetStatus(user, null, null);
 
       // Then
       expect(auth0Spy).toHaveBeenCalledTimes(1);
@@ -1792,7 +1807,8 @@ describe('serviceGroupApp', () => {
         {
           [openctiPlatformId]: { groups: ['Admin'] },
           [xtmonePlatformId]: { groups: ['User'] },
-        }
+        },
+        undefined
       );
       expect(sendMailSpy).toHaveBeenCalledTimes(1);
       expect(sendMailSpy).toHaveBeenCalledWith(
@@ -1807,6 +1823,55 @@ describe('serviceGroupApp', () => {
             ]),
           }),
         })
+      );
+    });
+
+    it('should forward prefetched Auth0 users to the RBAC update', async () => {
+      // Given
+      const platformId = uuidv4();
+      const { bundle, children } =
+        await TestHelper.deploymentRequest.createBundle({
+          bundle: { end_date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000) },
+          children: [
+            {
+              platform_identifier: PlatformIdentifier.Opencti,
+              hub_status: DeploymentRequestHubStatus.Active,
+              platform_id: platformId,
+            },
+          ],
+        });
+      createdBundleIds.push(bundle.id);
+      const [openctiChild] = children;
+      const groupId = uuidv4() as ServiceGroupId;
+      await TestHelper.serviceGroup.create({
+        id: groupId,
+        name: 'Admin',
+        service_instance_id: openctiChild!.service_instance_id,
+      });
+      await TestHelper.serviceGroupUser.create({
+        user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
+        group_id: groupId,
+      });
+      const auth0Spy = vi
+        .spyOn(auth0ClientMock, 'updateUserRBACInstance')
+        .mockResolvedValue(undefined);
+      vi.spyOn(mailService, 'sendMail').mockResolvedValue(undefined);
+      const prefetched = [{ user_id: 'auth0|1', email: 'a@x.io' }];
+      const user = await loadUser(TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID);
+
+      // When
+      await ServiceGroupApp.grantUserAccessAndSetStatus(
+        user,
+        null,
+        null,
+        prefetched
+      );
+
+      // Then
+      expect(auth0Spy).toHaveBeenCalledWith(
+        TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.EMAIL,
+        { [platformId]: { groups: ['Admin'] } },
+        prefetched
       );
     });
 
@@ -1845,11 +1910,230 @@ describe('serviceGroupApp', () => {
       const user = await loadUser(TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID);
 
       // When
-      const call = ServiceGroupApp.grantUserAccess(user);
+      const call = ServiceGroupApp.grantUserAccessAndSetStatus(
+        user,
+        null,
+        null
+      );
 
       // Then
       await expect(call).rejects.toThrow('auth0 is down');
       expect(sendMailSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('grantUserAccessAndSetStatus', () => {
+    const createdBundleIds: DeploymentRequestId[] = [];
+    const targetUserId = TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID;
+
+    const loadStatus = async () =>
+      (await TestHelper.user.load({ id: targetUserId })).status;
+
+    afterEach(async () => {
+      vi.restoreAllMocks();
+      for (const bundleId of createdBundleIds) {
+        await TestHelper.deploymentRequest.deleteBundle(bundleId);
+      }
+      createdBundleIds.length = 0;
+      await TestHelper.user.update({ id: targetUserId }, { status: null });
+    });
+
+    describe('for a waiting user who has a group', () => {
+      beforeEach(async () => {
+        await TestHelper.user.update(
+          { id: targetUserId },
+          {
+            status: UserAccountStatus.Waiting,
+          }
+        );
+        const { bundle, children } =
+          await TestHelper.deploymentRequest.createBundle({
+            bundle: {
+              end_date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+            },
+            children: [
+              {
+                platform_identifier: PlatformIdentifier.Opencti,
+                hub_status: DeploymentRequestHubStatus.Active,
+                platform_id: uuidv4(),
+              },
+            ],
+          });
+        createdBundleIds.push(bundle.id);
+        const groupId = uuidv4() as ServiceGroupId;
+        await TestHelper.serviceGroup.create({
+          id: groupId,
+          name: 'Admin',
+          service_instance_id: children[0]!.service_instance_id,
+        });
+        await TestHelper.serviceGroupUser.create({
+          user_id: targetUserId,
+          group_id: groupId,
+        });
+      });
+
+      it('should send the welcome email and update the status in the same transaction', async () => {
+        // Given
+        vi.spyOn(auth0ClientMock, 'updateUserRBACInstance').mockResolvedValue(
+          undefined
+        );
+        const inTransactionAtEnqueue: boolean[] = [];
+        const sendSpy = vi
+          .spyOn(PgBossProducer, 'send')
+          .mockImplementation(async () => {
+            inTransactionAtEnqueue.push(databaseContext.isInTransaction());
+            return 'job-id';
+          });
+
+        const user = await loadUser(targetUserId);
+
+        // When
+        await ServiceGroupApp.grantUserAccessAndSetStatus(
+          user,
+          UserAccountStatus.Invited,
+          UserAccountStatus.Waiting
+        );
+
+        // Then
+        expect(sendSpy).toHaveBeenCalledTimes(1);
+        expect(inTransactionAtEnqueue).toEqual([true]);
+        expect(await loadStatus()).toBe(UserAccountStatus.Invited);
+      });
+
+      it('should not enqueue the welcome email when the status update fails', async () => {
+        // Given
+        vi.spyOn(auth0ClientMock, 'updateUserRBACInstance').mockResolvedValue(
+          undefined
+        );
+        const sendSpy = vi
+          .spyOn(PgBossProducer, 'send')
+          .mockResolvedValue('job-id');
+        vi.spyOn(UserDomain, 'updateUser').mockRejectedValue(
+          new Error('status write failed')
+        );
+        const user = await loadUser(targetUserId);
+
+        // When
+        const result = ServiceGroupApp.grantUserAccessAndSetStatus(
+          user,
+          null,
+          UserAccountStatus.Waiting
+        );
+
+        // Then
+        await expect(result).rejects.toThrow('status write failed');
+        expect(sendSpy).not.toHaveBeenCalled();
+        vi.restoreAllMocks();
+        expect(await loadStatus()).toBe(UserAccountStatus.Waiting);
+      });
+
+      it('should not touch the status nor send mail when the Auth0 sync fails', async () => {
+        // Given
+        vi.spyOn(auth0ClientMock, 'updateUserRBACInstance').mockRejectedValue(
+          new Error('auth0 is down')
+        );
+        const sendSpy = vi
+          .spyOn(PgBossProducer, 'send')
+          .mockResolvedValue('job-id');
+        const updateSpy = vi.spyOn(UserDomain, 'updateUser');
+
+        const user = await loadUser(targetUserId);
+
+        // When
+        const result = ServiceGroupApp.grantUserAccessAndSetStatus(
+          user,
+          null,
+          UserAccountStatus.Waiting
+        );
+
+        // Then
+        await expect(result).rejects.toThrow('auth0 is down');
+        expect(sendSpy).not.toHaveBeenCalled();
+        expect(updateSpy).not.toHaveBeenCalled();
+        expect(await loadStatus()).toBe(UserAccountStatus.Waiting);
+      });
+
+      it('should update the status when it matches the expected one', async () => {
+        // Given
+        vi.spyOn(auth0ClientMock, 'updateUserRBACInstance').mockResolvedValue(
+          undefined
+        );
+        const sendSpy = vi
+          .spyOn(PgBossProducer, 'send')
+          .mockResolvedValue('job-id');
+
+        const user = await loadUser(targetUserId);
+
+        // When
+        await ServiceGroupApp.grantUserAccessAndSetStatus(
+          user,
+          null,
+          UserAccountStatus.Waiting
+        );
+
+        // Then
+        expect(sendSpy).toHaveBeenCalledTimes(1);
+        expect(await loadStatus()).toBeNull();
+      });
+
+      it('should throw and enqueue no mail when the status differs from the expected one', async () => {
+        // Given
+        await TestHelper.user.update(
+          { id: targetUserId },
+          {
+            status: UserAccountStatus.Invited,
+          }
+        );
+        vi.spyOn(auth0ClientMock, 'updateUserRBACInstance').mockResolvedValue(
+          undefined
+        );
+        const sendSpy = vi
+          .spyOn(PgBossProducer, 'send')
+          .mockResolvedValue('job-id');
+        const user = await loadUser(targetUserId);
+
+        // When
+        const result = ServiceGroupApp.grantUserAccessAndSetStatus(
+          user,
+          null,
+          UserAccountStatus.Waiting
+        );
+
+        // Then
+        await expect(result).rejects.toThrow(
+          ErrorCode.UserStatusChangedConcurrently
+        );
+        expect(sendSpy).not.toHaveBeenCalled();
+        expect(await loadStatus()).toBe(UserAccountStatus.Invited);
+      });
+    });
+
+    it('should only update the status when the user has no group to grant', async () => {
+      // Given
+      await TestHelper.user.update(
+        { id: targetUserId },
+        {
+          status: UserAccountStatus.Waiting,
+        }
+      );
+      const auth0Spy = vi.spyOn(auth0ClientMock, 'updateUserRBACInstance');
+      const sendSpy = vi
+        .spyOn(PgBossProducer, 'send')
+        .mockResolvedValue('job-id');
+
+      const user = await loadUser(targetUserId);
+
+      // When
+      await ServiceGroupApp.grantUserAccessAndSetStatus(
+        user,
+        UserAccountStatus.Invited,
+        UserAccountStatus.Waiting
+      );
+
+      // Then
+      expect(auth0Spy).not.toHaveBeenCalled();
+      expect(sendSpy).not.toHaveBeenCalled();
+      expect(await loadStatus()).toBe(UserAccountStatus.Invited);
     });
   });
 
@@ -1989,6 +2273,40 @@ describe('serviceGroupApp', () => {
         'User.id': TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
       });
       expect(reloadedUser?.status).toBe(UserAccountStatus.Waiting);
+    });
+
+    it('should log and not throw when the status changed concurrently', async () => {
+      // Given
+      await UserDomain.updateUser(
+        TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
+        {
+          status: UserAccountStatus.Invited,
+        }
+      );
+      const infoSpy = vi.spyOn(logApp, 'info');
+      const errorSpy = vi.spyOn(logApp, 'error');
+      const user = {
+        id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
+        status: UserAccountStatus.Waiting,
+      } as UserLoadUserBy;
+
+      // When
+      await ServiceGroupApp.grantAccessIfWaiting(user);
+
+      // Then
+      expect(infoSpy).toHaveBeenCalledWith(
+        'User status changed concurrently, login grant skipped',
+        { userId: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID }
+      );
+      expect(errorSpy).not.toHaveBeenCalledWith(
+        'Unable to grant service group access at login',
+        expect.anything()
+      );
+      expect(user.status).toBe(UserAccountStatus.Waiting);
+      const reloadedUser = await UserDomain.loadUserBy({
+        'User.id': TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
+      });
+      expect(reloadedUser?.status).toBe(UserAccountStatus.Invited);
     });
   });
 });

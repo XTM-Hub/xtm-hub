@@ -1,9 +1,10 @@
 'use client';
 
 import { formatTier } from '@/components/competitor/competitor.utils';
+import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import {
   AutoForm,
-  Button,
   FormControl,
   FormItem,
   FormLabel,
@@ -17,7 +18,6 @@ import {
 } from '@filigran/ui';
 import { competitor_fragment$data } from '@generated/competitor_fragment.graphql';
 import { CompetitorTier } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { z } from 'zod';
 
 export const TIER_VALUES = Object.values(CompetitorTier);
@@ -47,7 +47,7 @@ const CompetitorForm = ({
   handleSubmit: (values: z.infer<typeof competitorFormSchema>) => void;
   onClose: () => void;
 }) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const isCreation = competitor === undefined;
   return (
     <AutoForm
@@ -105,7 +105,7 @@ const CompetitorForm = ({
       <SheetFooter className={'sm:justify-end pb-0'}>
         <div className="flex gap-s">
           <Button
-            variant="secondary"
+            priority="secondary"
             type="button"
             onClick={onClose}>
             {t('Utils.Cancel')}

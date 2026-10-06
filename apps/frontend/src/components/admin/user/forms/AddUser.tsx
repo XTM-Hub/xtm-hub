@@ -3,15 +3,16 @@ import { UserForm } from '@/components/admin/user/forms/UserForm';
 import { userFormSchema } from '@/components/admin/user/forms/user-form.schema';
 import { UserListCreateMutation } from '@/components/admin/user/user.graphql';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
-import { Button, useToast } from '@filigran/ui';
+import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
+import { useToast } from '@filigran/ui';
 import { userListCreateMutation } from '@generated/userListCreateMutation.graphql';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useMutation } from 'react-relay';
 import { z } from 'zod';
 
 export const AddUser = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [openSheet, setOpenSheet] = useState(false);
 
   const { toast } = useToast();

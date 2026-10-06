@@ -1,9 +1,9 @@
 'use client';
 
+import { useTranslate } from '@/hooks/use-translate';
 import FiligranLogo from '@public/filigran_logo.svg';
 import FiligranLogoDark from '@public/filigran_logo_dark.svg';
 import SchemeXtmHub from '@public/scheme_xtm_hub_account_creation.svg';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
@@ -13,7 +13,7 @@ const HUBSPOT_FORM_ID = '10b2ca41-4734-46d8-96dd-ac410a10a937';
 const HUBSPOT_REGION = 'eu1';
 
 const SignUp = ({ showLocalLogin = false }: { showLocalLogin?: boolean }) => {
-  const t = useTranslations('SignUpPage');
+  const t = useTranslate('SignUpPage');
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect');
   const oidcHref = redirect
@@ -80,7 +80,7 @@ const SignUp = ({ showLocalLogin = false }: { showLocalLogin?: boolean }) => {
           <FiligranLogoDark className="h-8.25 w-33" />
         </div>
         {/* Body */}
-        <div className="md:flex-1 md:min-h-0 md:overflow-y-auto pr-6 scrollbar-thin [scrollbar-color:transparent_transparent] hover:[scrollbar-color:hsl(var(--muted-foreground)/0.4)_transparent] transition-[scrollbar-color] duration-300">
+        <div className="md:flex-1 md:min-h-0 md:overflow-y-auto pr-6 scrollbar-thin [scrollbar-color:transparent_transparent] hover:[scrollbar-color:color-mix(in_srgb,var(--muted-foreground)_40%,transparent)_transparent] transition-[scrollbar-color] duration-300">
           <div className="mx-auto w-full max-w-125 flex flex-col justify-start min-h-full py-6">
             <h1 className="shrink-0 mt-auto text-3xl leading-9 font-medium text-foreground">
               {t('Title1')}
