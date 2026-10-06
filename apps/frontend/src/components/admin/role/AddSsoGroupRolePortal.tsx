@@ -47,7 +47,6 @@ const AddSsoGroupRolePortal = () => {
       open={openSheet}
       trigger={<Button>{t('RoleListPage.AddMapping')}</Button>}>
       <SsoGroupRolePortalForm
-        onClose={() => setOpenSheet(false)}
         handleSubmit={(input) => addSsoGroupRolePortal({ input })}
       />
     </SheetWithPreventingDialog>

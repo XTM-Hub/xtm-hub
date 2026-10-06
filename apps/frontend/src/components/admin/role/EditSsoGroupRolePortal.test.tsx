@@ -126,4 +126,45 @@ describe('EditSsoGroupRolePortal', () => {
     ).toBeInTheDocument();
     expect(mutationCalled).toBe(false);
   });
+
+  it('should close the sheet on cancel when nothing was edited', async () => {
+    const onOpenChange = vi.fn();
+
+    const { user } = testRender(
+      <EditSsoGroupRolePortal
+        open
+        onOpenChange={onOpenChange}
+        ssoGroup={SSO_GROUP}
+        rolePortal={ROLE_PORTAL}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Utils.Cancel' }));
+
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(
+      screen.queryByText('DialogActions.PreventSheetTitle')
+    ).not.toBeInTheDocument();
+  });
+
+  it('should ask for confirmation on cancel when the mapping was edited', async () => {
+    const onOpenChange = vi.fn();
+
+    const { user } = testRender(
+      <EditSsoGroupRolePortal
+        open
+        onOpenChange={onOpenChange}
+        ssoGroup={SSO_GROUP}
+        rolePortal={ROLE_PORTAL}
+      />
+    );
+
+    await user.type(screen.getByLabelText(/RoleListPage.SsoGroup/), 's');
+    await user.click(screen.getByRole('button', { name: 'Utils.Cancel' }));
+
+    expect(
+      await screen.findByText('DialogActions.PreventSheetTitle')
+    ).toBeInTheDocument();
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+  });
 });

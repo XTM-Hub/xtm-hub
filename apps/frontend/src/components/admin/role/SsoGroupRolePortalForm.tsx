@@ -1,6 +1,6 @@
+import RoleSheetFormFooter from '@/components/admin/role/RoleSheetFormFooter';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
-import { AutoForm, SheetFooter } from '@filigran/ui';
+import { AutoForm } from '@filigran/ui';
 import { useMemo } from 'react';
 import { z } from 'zod';
 
@@ -23,11 +23,9 @@ export type SsoGroupRolePortalFormValues = z.infer<
 const SsoGroupRolePortalForm = ({
   ssoGroupRolePortal,
   handleSubmit,
-  onClose,
 }: {
   ssoGroupRolePortal?: SsoGroupRolePortalFormValues;
   handleSubmit: (values: SsoGroupRolePortalFormValues) => void;
-  onClose: () => void;
 }) => {
   const t = useTranslate();
   const formSchema = useMemo(() => buildSsoGroupRolePortalFormSchema(t), [t]);
@@ -47,16 +45,7 @@ const SsoGroupRolePortalForm = ({
           inputProps: { placeholder: t('RoleListPage.Role') },
         },
       }}>
-      <SheetFooter className="pt-2">
-        <div className="flex gap-s">
-          <Button
-            type="button"
-            onClick={onClose}>
-            {t('Utils.Cancel')}
-          </Button>
-          <Button type="submit">{t('Utils.Validate')}</Button>
-        </div>
-      </SheetFooter>
+      {({ isDirty }) => <RoleSheetFormFooter isDirty={isDirty} />}
     </AutoForm>
   );
 };

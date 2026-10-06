@@ -111,7 +111,7 @@ describe('role portal domain tests', () => {
       await TestHelper.rolePortal.delete({ id: tamerId });
     });
 
-    it('should return each SSO group with its role', async () => {
+    it('should return each SSO group with its role and the role capabilities', async () => {
       const result = await RolePortalDomain.loadSSOGroupRolePortals();
 
       expect(result).toHaveLength(3);
@@ -122,12 +122,14 @@ describe('role portal domain tests', () => {
             rolePortal: expect.objectContaining({
               id: jugglerId,
               name: 'TOMATO_JUGGLER',
+              capabilities: [expect.objectContaining(CAPABILITY_BYPASS)],
             }),
           },
           {
             ssoGroup: 'circus-friends',
             rolePortal: expect.objectContaining({
               id: jugglerId,
+              capabilities: [expect.objectContaining(CAPABILITY_BYPASS)],
             }),
           },
           {
@@ -135,6 +137,7 @@ describe('role portal domain tests', () => {
             rolePortal: expect.objectContaining({
               id: tamerId,
               name: 'DRAGON_TAMER',
+              capabilities: [],
             }),
           },
         ])

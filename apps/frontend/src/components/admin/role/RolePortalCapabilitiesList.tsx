@@ -11,7 +11,7 @@ type RolePortalRow = RolePortalsQuery['rolePortals'][number];
 
 const RolePortalCapabilitiesList = () => {
   const t = useTranslate();
-  const { data } = useRolePortalsQuery(portalGraphqlClient);
+  const { data, isError } = useRolePortalsQuery(portalGraphqlClient);
 
   const columns: ColumnDef<RolePortalRow>[] = [
     {
@@ -52,23 +52,28 @@ const RolePortalCapabilitiesList = () => {
   ];
 
   return (
-    <DataTable
-      columns={columns}
-      data={data?.rolePortals ?? []}
-      i18nKey={i18nKey(t)}
-      tableOptions={{
-        enableSorting: false,
-        enableColumnResizing: false,
-        enableColumnPinning: false,
-        enableHiding: false,
-      }}
-      tableState={{ columnPinning: { right: ['actions'] } }}
-      toolbar={
-        <div className="flex justify-end">
-          <AddRolePortal />
-        </div>
-      }
-    />
+    <>
+      {isError && (
+        <div className="mb-s text-sm text-destructive">{t('Utils.Error')}</div>
+      )}
+      <DataTable
+        columns={columns}
+        data={data?.rolePortals ?? []}
+        i18nKey={i18nKey(t)}
+        tableOptions={{
+          enableSorting: false,
+          enableColumnResizing: false,
+          enableColumnPinning: false,
+          enableHiding: false,
+        }}
+        tableState={{ columnPinning: { right: ['actions'] } }}
+        toolbar={
+          <div className="flex justify-end">
+            <AddRolePortal />
+          </div>
+        }
+      />
+    </>
   );
 };
 

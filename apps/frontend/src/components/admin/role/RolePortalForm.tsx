@@ -1,5 +1,5 @@
+import RoleSheetFormFooter from '@/components/admin/role/RoleSheetFormFooter';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
 import {
   AutoForm,
   FormControl,
@@ -7,7 +7,6 @@ import {
   FormLabel,
   FormMessage,
   MultiSelectFormField,
-  SheetFooter,
 } from '@filigran/ui';
 import { PortalCapability } from '@graphql/generated';
 import { useMemo } from 'react';
@@ -40,11 +39,9 @@ export type RolePortalFormValues = z.infer<
 const RolePortalForm = ({
   rolePortal,
   handleSubmit,
-  onClose,
 }: {
   rolePortal?: RolePortalFormValues;
   handleSubmit: (values: RolePortalFormValues) => void;
-  onClose: () => void;
 }) => {
   const t = useTranslate();
   const formSchema = useMemo(() => buildRolePortalFormSchema(t), [t]);
@@ -85,16 +82,7 @@ const RolePortalForm = ({
           ),
         },
       }}>
-      <SheetFooter className="pt-2">
-        <div className="flex gap-s">
-          <Button
-            type="button"
-            onClick={onClose}>
-            {t('Utils.Cancel')}
-          </Button>
-          <Button type="submit">{t('Utils.Validate')}</Button>
-        </div>
-      </SheetFooter>
+      {({ isDirty }) => <RoleSheetFormFooter isDirty={isDirty} />}
     </AutoForm>
   );
 };

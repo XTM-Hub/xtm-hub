@@ -63,7 +63,6 @@ const EditRolePortal = ({
       open={open}>
       <RolePortalForm
         rolePortal={{ name: rolePortal, capabilities }}
-        onClose={() => onOpenChange(false)}
         handleSubmit={(input) => updateRolePortal({ name: rolePortal, input })}
       />
     </SheetWithPreventingDialog>

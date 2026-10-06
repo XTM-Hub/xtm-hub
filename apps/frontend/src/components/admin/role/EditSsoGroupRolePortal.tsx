@@ -53,7 +53,6 @@ const EditSsoGroupRolePortal = ({
       open={open}>
       <SsoGroupRolePortalForm
         ssoGroupRolePortal={{ ssoGroup, rolePortal }}
-        onClose={() => onOpenChange(false)}
         handleSubmit={(input) =>
           updateSsoGroupRolePortal({ ssoGroup, rolePortal, input })
         }

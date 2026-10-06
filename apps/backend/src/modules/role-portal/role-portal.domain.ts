@@ -257,9 +257,29 @@ export const RolePortalDomain = {
           queryBuilder.where('RolePortal.name', filter.rolePortalName);
         }
       })
-      .select<(RolePortal & { ssoGroup: string })[]>(
+      .leftJoin(
+        'RolePortal_CapabilityPortal as rolePortal_CapabilityPortal',
+        'RolePortal.id',
+        'rolePortal_CapabilityPortal.role_portal_id'
+      )
+      .leftJoin(
+        'CapabilityPortal as capability',
+        'capability.id',
+        'rolePortal_CapabilityPortal.capability_portal_id'
+      )
+      .groupBy('RolePortal.id', 'SSOGroup_RolePortal.SSOGroup')
+      .select<
+        (RolePortal & { ssoGroup: string; capabilities: Capability[] })[]
+      >(
         'RolePortal.*',
-        'SSOGroup_RolePortal.SSOGroup as ssoGroup'
+        'SSOGroup_RolePortal.SSOGroup as ssoGroup',
+        dbRaw(
+          formatRawAggObject({
+            columnName: 'capability',
+            typename: 'CapabilityPortal',
+            as: 'capabilities',
+          })
+        )
       );
     return rows.map(({ ssoGroup, ...rolePortal }) => ({
       ssoGroup,

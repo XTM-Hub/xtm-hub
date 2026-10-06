@@ -23,10 +23,14 @@ const RoleList = () => {
             {t('RoleListPage.Capabilities')}
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="ssoGroups">
+        <TabsContent
+          value="ssoGroups"
+          className="pt-l">
           <SsoGroupRolePortalList />
         </TabsContent>
-        <TabsContent value="capabilities">
+        <TabsContent
+          value="capabilities"
+          className="pt-l">
           <RolePortalCapabilitiesList />
         </TabsContent>
       </Tabs>

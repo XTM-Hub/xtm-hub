@@ -16,7 +16,7 @@ type SsoGroupRolePortalRow =
 
 const SsoGroupRolePortalList = () => {
   const t = useTranslate();
-  const { data } = useSsoGroupRolePortalsQuery(portalGraphqlClient);
+  const { data, isError } = useSsoGroupRolePortalsQuery(portalGraphqlClient);
 
   const rows = useMemo<SsoGroupRolePortalRow[]>(
     () =>
@@ -56,23 +56,28 @@ const SsoGroupRolePortalList = () => {
   ];
 
   return (
-    <DataTable
-      columns={columns}
-      data={rows}
-      i18nKey={i18nKey(t)}
-      tableOptions={{
-        enableSorting: false,
-        enableColumnResizing: false,
-        enableColumnPinning: false,
-        enableHiding: false,
-      }}
-      tableState={{ columnPinning: { right: ['actions'] } }}
-      toolbar={
-        <div className="flex justify-end">
-          <AddSsoGroupRolePortal />
-        </div>
-      }
-    />
+    <>
+      {isError && (
+        <div className="mb-s text-sm text-destructive">{t('Utils.Error')}</div>
+      )}
+      <DataTable
+        columns={columns}
+        data={rows}
+        i18nKey={i18nKey(t)}
+        tableOptions={{
+          enableSorting: false,
+          enableColumnResizing: false,
+          enableColumnPinning: false,
+          enableHiding: false,
+        }}
+        tableState={{ columnPinning: { right: ['actions'] } }}
+        toolbar={
+          <div className="flex justify-end">
+            <AddSsoGroupRolePortal />
+          </div>
+        }
+      />
+    </>
   );
 };
 

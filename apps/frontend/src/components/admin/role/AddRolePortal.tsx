@@ -46,10 +46,7 @@ const AddRolePortal = () => {
       setOpen={setOpenSheet}
       open={openSheet}
       trigger={<Button>{t('RoleListPage.AddRole')}</Button>}>
-      <RolePortalForm
-        onClose={() => setOpenSheet(false)}
-        handleSubmit={(input) => addRolePortal({ input })}
-      />
+      <RolePortalForm handleSubmit={(input) => addRolePortal({ input })} />
     </SheetWithPreventingDialog>
   );
 };

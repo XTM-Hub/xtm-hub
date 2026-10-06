@@ -89,4 +89,45 @@ describe('EditRolePortal', () => {
     await waitFor(() => expect(mutationCalled).toBe(true));
     expect(onOpenChange).not.toHaveBeenCalledWith(false);
   });
+
+  it('should close the sheet on cancel when nothing was edited', async () => {
+    const onOpenChange = vi.fn();
+
+    const { user } = testRender(
+      <EditRolePortal
+        open
+        onOpenChange={onOpenChange}
+        rolePortal={ROLE_PORTAL}
+        capabilities={[PortalCapability.Bypass]}
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Utils.Cancel' }));
+
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(
+      screen.queryByText('DialogActions.PreventSheetTitle')
+    ).not.toBeInTheDocument();
+  });
+
+  it('should ask for confirmation on cancel when the role was edited', async () => {
+    const onOpenChange = vi.fn();
+
+    const { user } = testRender(
+      <EditRolePortal
+        open
+        onOpenChange={onOpenChange}
+        rolePortal={ROLE_PORTAL}
+        capabilities={[PortalCapability.Bypass]}
+      />
+    );
+
+    await user.type(screen.getByLabelText(/RoleListPage.Role/), 's');
+    await user.click(screen.getByRole('button', { name: 'Utils.Cancel' }));
+
+    expect(
+      await screen.findByText('DialogActions.PreventSheetTitle')
+    ).toBeInTheDocument();
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
+  });
 });
