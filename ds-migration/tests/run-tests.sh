@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+# Regression tests for ds-migration/run.sh, with fake claude, gh and yarn. Nothing leaves the machine.
+# Usage: ds-migration/tests/run-tests.sh (macOS: the fake claude uses BSD sed).
+set -uo pipefail
+V="$(cd "$(dirname "$0")/../.." && pwd)"
+ROOT="${TMPDIR:-/tmp}/ds-migration-tests"
+PASS=0 FAIL=0
+check() { if (set +o pipefail; eval "$2"); then echo "  ok   $1"; PASS=$((PASS + 1)); else echo "  FAIL $1"; FAIL=$((FAIL + 1)); fi; }
+
+make_stubs() {
+  local bin="$1/bin"
+  mkdir -p "$bin"
+  cat >"$bin/fake-gpg" <<'EOF'
+#!/bin/sh
+cat >/dev/null; echo "[GNUPG:] SIG_CREATED D 1 8 00 0 FAKE" >&2
+printf -- '-----BEGIN PGP SIGNATURE-----\n\nZmFrZQ==\n-----END PGP SIGNATURE-----\n'
+EOF
+  printf '#!/bin/sh\necho "yarn $*" >> "$SB/calls.log"\n' >"$bin/yarn"
+  cat >"$bin/gh" <<'EOF'
+#!/bin/bash
+echo "gh $*" >> "$SB/calls.log"
+bodyfile() { while [ $# -gt 0 ]; do [ "$1" = --body-file ] && { echo "$2"; return; }; shift; done; }
+# GH_CHECKS: space-separated stages consumed one per `pr checks` call (last one repeats):
+#   missing (e2e aggregator not listed yet), pending, pass, fail
+checks() {
+  local stages=(${GH_CHECKS:-pass}) n
+  n=$(cat "$SB/checks-count" 2>/dev/null || echo 0); echo $((n + 1)) > "$SB/checks-count"
+  [ "$n" -lt "${#stages[@]}" ] || n=$((${#stages[@]} - 1))
+  case "${stages[$n]}" in
+    missing) echo '[{"name":"run-api-unit-tests","bucket":"pass"},{"name":"run-front-unit-tests","bucket":"pass"}]' ;;
+    pending) echo '[{"name":"run-api-unit-tests","bucket":"pass"},{"name":"run-front-unit-tests","bucket":"pass"},{"name":"run-e2e-tests","bucket":"pending"}]' ;;
+    pass) echo '[{"name":"run-api-unit-tests","bucket":"pass"},{"name":"run-front-unit-tests","bucket":"pass"},{"name":"run-e2e-tests","bucket":"pass"},{"name":"lint","bucket":"skipping"}]' ;;
+    fail) echo '[{"name":"run-api-unit-tests","bucket":"pass"},{"name":"run-front-unit-tests","bucket":"fail"},{"name":"run-e2e-tests","bucket":"pass"}]' ;;
+  esac
+}
+case "$1 $2" in
+  "issue comment"|"issue edit"|"api graphql") exit 0 ;;
+  "pr comment") cp "$(bodyfile "$@")" "$SB/last-pr-comment.md" ;;
+  "pr edit") cp "$(bodyfile "$@")" "$SB/pr-body.md" ;;
+  "pr create") cp "$(bodyfile "$@")" "$SB/pr-body.md"; echo "https://github.com/XTM-Hub/xtm-hub/pull/9999" ;;
+  "issue view") echo "I_$3" ;;
+  "pr view") git rev-parse HEAD ;;
+  "pr checks") checks ;;
+  "run list") echo 123 ;;
+  "run view") echo "fake failing log" ;;
+  *) echo "unexpected gh $*" >&2; exit 1 ;;
+esac
+EOF
+  cat >"$bin/claude" <<'EOF'
+#!/bin/bash
+prompt="$2"
+echo "claude :: $prompt" >> "$SB/calls.log"
+if [[ "$prompt" == *"Sync fix mode"* ]]; then
+  grep -rl "import { Textarea } from '@filigran/ui';" apps/frontend/src | while read -r f; do
+    sed -i '' "s#import { Textarea } from '@filigran/ui';#import { Textarea } from '@filigran/design-system';#" "$f"; done
+  echo '{"structured_output":{"status":"DONE","summary":"Moved new usages.","commit_subject":"","commit_body":""}}'; exit 0
+fi
+if [[ "$prompt" == *"Epic review mode"* ]]; then echo '{"structured_output":{"findings":"Verdict: consistent."}}'; exit 0; fi
+key="$(sed -E 's/.*for item ([a-z0-9-]+) .*/\1/' <<<"$prompt")"; kind="$(sed -E 's/.*kind ([a-z]+)\).*/\1/' <<<"$prompt")"
+issue="${key%%-*}"; slug="${key#*-}"; mkdir -p ds-migration/specs
+if [[ " ${CLAUDE_BLOCK:-} " == *" $key "* ]]; then
+  echo draft > "ds-migration/specs/$key.md"; echo half > "apps/frontend/src/$slug.wip.ts"
+  echo '{"structured_output":{"status":"NEEDS_HUMAN","summary":"Undecidable.","commit_subject":"","commit_body":"","question":"Which option?"}}'; exit 0
+fi
+if [[ "$prompt" == *"CI fix"* ]]; then
+  echo "// fix" >> "apps/frontend/src/$slug.ts"
+  echo "{\"structured_output\":{\"status\":\"DONE\",\"summary\":\"fixed\",\"commit_subject\":\"fix(frontend): repair $slug (#$issue)\",\"commit_body\":\"Fix.\"}}"; exit 0
+fi
+legacy="[]"; module='"@filigran/design-system"'; [ "$kind" = candidate ] && module="\"@/components/ui/$slug\""
+if [ "$key" = 3561-textarea ]; then legacy="[Textarea]"; sed -i '' "s#import { Textarea } from '@filigran/ui';#import { Textarea } from '@filigran/design-system';#" apps/frontend/src/Form.tsx; fi
+printf -- '---\nkey: %s\nkind: %s\nlegacy_symbols: %s\ntarget_module: %s\ntarget_symbols: []\nlegacy_files_to_delete: []\n---\n# %s\n\n## To validate\n\n- kept the current spacing\n' "$key" "$kind" "$legacy" "$module" "$slug" > "ds-migration/specs/$key.md"
+echo "export const v_$(echo "$slug" | tr - _) = 1;" > "apps/frontend/src/$slug.ts"
+echo "{\"structured_output\":{\"status\":\"DONE\",\"summary\":\"ok\",\"commit_subject\":\"invalid\",\"commit_body\":\"Migrate $slug.\\nCo-Authored-By: x <y@z>\"}}"
+EOF
+  chmod +x "$bin/"*
+}
+
+# new_repo <name> <status yaml body>
+new_repo() {
+  SB="$ROOT/$1"; rm -rf "$SB"; mkdir -p "$SB/repo"; git init -q --bare "$SB/remote.git"; make_stubs "$SB"
+  export SB PATH="$SB/bin:$ORIG_PATH" DS_CHECKS_INTERVAL=0
+  cd "$SB/repo" || exit 1
+  git init -q -b main && git config user.name Test && git config user.email t@t && git config commit.gpgsign true
+  git config gpg.program "$SB/bin/fake-gpg" && git config user.signingkey FAKE
+  mkdir -p apps/frontend/src apps/frontend/app ds-migration
+  printf "import { Textarea } from '@filigran/ui';\nexport const Form = () => <Textarea />;\n" >apps/frontend/src/Form.tsx
+  cp "$V/ds-migration/"{run.sh,WORKFLOW.md,spec-template.md,validate.mjs} ds-migration/ && chmod +x ds-migration/run.sh
+  printf 'epic_issue: 3507\nbranch: issue/3507\nbase: main\npull_request: none\nrequired_checks: run-api-unit-tests, run-front-unit-tests, run-e2e-tests\n\n%s\n' "$2" >ds-migration/sprint-status.yaml
+  git add -A && git commit -qm init && git remote add origin "$SB/remote.git" && git push -q origin main && git switch -qc issue/3507
+}
+status_of() { awk -v k="  $1:" 'index($0, k) == 1 { print $2; exit }' ds-migration/sprint-status.yaml; }
+approve() { perl -pi -e "s/^  $1: .*/  $1: done/" ds-migration/sprint-status.yaml; }
+run() { ds-migration/run.sh "$@" >"$SB/out.log" 2>&1; }
+ORIG_PATH="$PATH"
+
+echo "A. dependencies, epic gates, unblock, cleanup, finish"
+new_repo a "development_status:
+  epic-1-primitives: backlog
+  3530-button: done
+  3561-textarea: backlog
+  3541-checkbox: backlog
+  epic-3-candidates: backlog
+  9001-table: backlog
+  9002-data-table: backlog
+  epic-4-cleanup: backlog
+  9003-remove-filigran-ui: backlog
+
+dependencies:
+  9002-data-table: [3541-checkbox, 9001-table]
+  9003-remove-filigran-ui: [epic-1-primitives, epic-3-candidates]"
+CLAUDE_BLOCK=3541-checkbox run
+check "checkbox blocked, epic 1 gated" '[ "$(status_of 3541-checkbox)" = blocked ] && [ "$(status_of epic-1-primitives)" = review ]'
+check "epic report posted with the automated review" 'grep -q "Verdict: consistent" "$SB/last-pr-comment.md"'
+check "default subject used for an invalid one" 'git log --format=%s | grep -qx "feat(frontend): migrate Textarea to @filigran/design-system (#3561)"'
+check "no AI trailer in commits" '! git log --format=%B | grep -qi "co-authored-by"'
+approve epic-1-primitives; run
+check "data-table waits on checkbox" '[ "$(status_of 9002-data-table)" = backlog ] && [ "$(status_of 9001-table)" = done ] && grep -q "| #9002 data-table | backlog | 3541-checkbox" "$SB/last-pr-comment.md"'
+perl -pi -e 's/^  3541-checkbox: blocked/  3541-checkbox: backlog/' ds-migration/sprint-status.yaml; run
+check "unblocked checkbox done, epic 1 reopened for review" '[ "$(status_of 3541-checkbox)" = done ] && [ "$(status_of epic-1-primitives)" = review ]'
+approve epic-1-primitives; run; approve epic-3-candidates; run; approve epic-4-cleanup; run
+check "dependency lines intact" 'grep -q "^  9002-data-table: \[3541-checkbox, 9001-table\]" ds-migration/sprint-status.yaml'
+check "candidate and cleanup default subjects" 'git log --format=%s | grep -qx "feat(frontend): rebuild DataTable on @filigran/design-system primitives (#9002)" && git log --format=%s | grep -qx "chore(frontend): remove the legacy filigran-ui copy (#9003)"'
+ds-migration/run.sh finish >"$SB/out.log" 2>&1
+check "finish removes ds-migration and reports candidates" '[ ! -d ds-migration ] && grep -q "9002 data-table: .@/components/ui/data-table." "$SB/pr-body.md"'
+
+echo "B. merge of main brings a legacy usage of a migrated component"
+new_repo b "development_status:
+  epic-1-primitives: backlog
+  3530-button: done
+  3561-textarea: backlog
+  3568-switch: backlog
+  3553-radio: backlog"
+run --once
+git clone -q "$SB/remote.git" "$SB/other"
+(cd "$SB/other" && printf "import { Textarea } from '@filigran/ui';\nexport const N = () => <Textarea />;\n" >apps/frontend/src/New.tsx && git add -A && git -c commit.gpgsign=false commit -qm "feat: new on main" && git push -q origin main)
+run --once
+check "sync fix committed before the next item" 'git log --format=%s -3 | sed -n 2p | grep -q "^fix(frontend): move code from main"'
+check "new usage moved to the design system" 'grep -q "@filigran/design-system" apps/frontend/src/New.tsx'
+
+echo "C. required check not listed yet, then pending, then pass"
+new_repo c "development_status:
+  epic-1-primitives: backlog
+  3530-button: done
+  3561-textarea: backlog
+  3568-switch: backlog"
+GH_CHECKS="missing missing pending pending pass" run --once
+check "item done only once the e2e aggregator passed" '[ "$(status_of 3561-textarea)" = done ] && [ "$(cat "$SB/checks-count")" -ge 5 ]'
+
+echo "D. required check fails, one CI fix, still failing: stop"
+new_repo d "development_status:
+  epic-1-primitives: backlog
+  3530-button: done
+  3561-textarea: backlog
+  3568-switch: backlog"
+GH_CHECKS="fail" run --once
+check "CI fix attempted, item blocked, script stopped" '[ "$(status_of 3561-textarea)" = blocked ] && grep -q "STOP: 3561-textarea: required checks still failing" "$SB/out.log" && git log --format=%s -1 | grep -q "^fix(frontend): repair textarea (#3561)"'
+
+echo
+echo "$PASS passed, $FAIL failed"
+[ "$FAIL" = 0 ]
