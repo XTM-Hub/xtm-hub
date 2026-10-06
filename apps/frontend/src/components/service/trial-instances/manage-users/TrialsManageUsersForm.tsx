@@ -3,8 +3,8 @@ import { UserFragment } from '@/components/admin/user/UserList';
 import { serviceGroupFragment } from '@/components/service/service-group.graphql';
 import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   Form,
   FormField,
   FormItem,
@@ -161,7 +161,7 @@ export const TrialsManageUsersForm = ({
         <SheetFooter>
           <div className="flex gap-s">
             <Button
-              variant="secondary"
+              priority="secondary"
               type="button"
               onClick={onCancel}>
               {t('Utils.Cancel')}

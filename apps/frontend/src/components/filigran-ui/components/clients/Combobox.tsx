@@ -1,9 +1,9 @@
 'use client';
 
 import { cn } from '@/components/filigran-ui/lib/utils';
+import { Button } from '@filigran/design-system';
 import { ArrowDropDownIcon, CheckIcon, CloseIcon } from '@filigran/icon';
 import * as React from 'react';
-import { Button } from '../servers';
 import {
   Command,
   CommandEmpty,
@@ -73,7 +73,7 @@ const Combobox = <T,>({
       onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant="outline"
+          priority="secondary"
           role="combobox"
           aria-expanded={open}
           className={cn(

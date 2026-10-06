@@ -9,13 +9,13 @@ import { UserFragment } from '@/components/admin/user/UserList';
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { useTranslate } from '@/hooks/use-translate';
 import { APP_PATH } from '@/utils/path/constant';
+import { Button } from '@filigran/design-system';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
   Separator,
 } from '@filigran/ui/clients';
-import { Button } from '@filigran/ui/servers';
 import {
   UserList_fragment$data,
   UserList_fragment$key,
@@ -130,7 +130,7 @@ const PendingUserNotifications = ({
       onOpenChange={setOpenPopover}>
       <PopoverTrigger asChild>
         <Button
-          variant="tertiary"
+          priority="tertiary"
           className="text-primary w-9 px-0 relative">
           <NotificationsIcon className="h-4 w-4" />
           {nbUsers > 0 && (

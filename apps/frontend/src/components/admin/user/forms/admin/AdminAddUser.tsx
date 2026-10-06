@@ -3,7 +3,8 @@ import { UserAdminForm } from '@/components/admin/user/forms/admin/UserAdminForm
 import { userAdminFormSchema } from '@/components/admin/user/forms/user-form.schema';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button, useToast } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
+import { useToast } from '@filigran/ui';
 import { AdminAddUserMutation as AdminAddUserMutationType } from '@generated/AdminAddUserMutation.graphql';
 import { useState } from 'react';
 import { graphql, useMutation } from 'react-relay';

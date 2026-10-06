@@ -21,6 +21,7 @@ import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
+import { IconButton } from '@filigran/design-system';
 import { CheckIcon, CloseIcon } from '@filigran/icon';
 import {
   DataTable,
@@ -28,7 +29,6 @@ import {
   SelectionState,
   useRowSelection,
 } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
 import {
   UserList_fragment$data,
   UserList_fragment$key,
@@ -203,20 +203,21 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
         cell: ({ row }) => {
           return (
             <div className="flex items-center justify-end gap-1">
-              <Button
-                variant="tertiary-destructive"
-                size="icon"
+              <IconButton
+                variant="destructive"
+                priority="tertiary"
                 className="border"
-                onClick={() => openRejectDialog(row.original)}>
-                <CloseIcon className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="tertiary"
-                size="icon"
+                aria-label={t('PendingUserListPage.Reject')}
+                icon={<CloseIcon className="h-4 w-4" />}
+                onClick={() => openRejectDialog(row.original)}
+              />
+              <IconButton
+                priority="tertiary"
                 className="border"
-                onClick={() => openApproveDialog(row.original)}>
-                <CheckIcon className="h-4 w-4" />
-              </Button>
+                aria-label={t('PendingUserListPage.Approve')}
+                icon={<CheckIcon className="h-4 w-4" />}
+                onClick={() => openApproveDialog(row.original)}
+              />
             </div>
           );
         },
@@ -305,12 +306,13 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
                     'PendingUserListPage.WarningUsersRejection.Confirm'
                   )}
                   triggerElement={
-                    <Button
-                      variant="tertiary-destructive"
-                      size="icon"
-                      className="border">
-                      <CloseIcon className="h-4 w-4" />
-                    </Button>
+                    <IconButton
+                      variant="destructive"
+                      priority="tertiary"
+                      className="border"
+                      aria-label={t('PendingUserListPage.Reject')}
+                      icon={<CloseIcon className="h-4 w-4" />}
+                    />
                   }
                   onClickContinue={() => handleBulkReject(selectionState)}>
                   {t('PendingUserListPage.WarningUsersRejection.Description')}
@@ -321,12 +323,12 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
                     'PendingUserListPage.WarningUsersAccept.Confirm'
                   )}
                   triggerElement={
-                    <Button
-                      variant="tertiary"
-                      size="icon"
-                      className="border">
-                      <CheckIcon className="h-4 w-4" />
-                    </Button>
+                    <IconButton
+                      priority="tertiary"
+                      className="border"
+                      aria-label={t('PendingUserListPage.Approve')}
+                      icon={<CheckIcon className="h-4 w-4" />}
+                    />
                   }
                   onClickContinue={() => handleBulkApprove(selectionState)}>
                   {t.rich(

@@ -13,9 +13,9 @@ import {
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import { InfoIcon } from '@filigran/icon';
 import {
-  Button,
   Checkbox,
   FileInput,
   Form,
@@ -532,7 +532,7 @@ const EpicForm = ({
           />
           <div className="flex gap-s">
             <Button
-              variant="secondary"
+              priority="secondary"
               type="button"
               onClick={handleCloseSheet}>
               {t('Utils.Cancel')}

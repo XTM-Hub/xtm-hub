@@ -12,8 +12,8 @@ import {
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   Checkbox,
   Form,
   FormControl,
@@ -307,7 +307,7 @@ export const UserServiceForm = ({
           </>
         )}
 
-        <div className="border border-primary rounded-lg p-l">
+        <div className="border border-primary rounded p-l">
           <FormLabel>{t('OrganizationInServiceAction.SelectCapa')}</FormLabel>
           <p className="txt-sub-content italic">
             {t('InviteUserServiceForm.Description')}
@@ -374,7 +374,7 @@ export const UserServiceForm = ({
 
         <SheetFooter className="pt-2">
           <Button
-            variant="secondary"
+            priority="secondary"
             type="button"
             onClick={(e) => handleCloseSheet(e)}>
             {t('Utils.Cancel')}

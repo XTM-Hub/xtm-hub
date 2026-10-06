@@ -4,8 +4,8 @@ import { LoginFormMutation } from '@/components/login/login.graphql';
 import useDecodedQuery from '@/hooks/use-decoded-query';
 import { useTranslate } from '@/hooks/use-translate';
 import { decodeSafeRedirect } from '@/utils/redirect';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   Form,
   FormControl,
   FormField,

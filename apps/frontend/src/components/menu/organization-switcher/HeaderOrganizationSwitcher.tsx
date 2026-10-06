@@ -4,8 +4,9 @@ import { PortalContext } from '@/components/me/AppPortalContext';
 import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { APP_PATH } from '@/utils/path/constant';
+import { Button } from '@filigran/design-system';
 import { ArrowDropDownIcon } from '@filigran/icon';
-import { Button, Popover, PopoverContent, PopoverTrigger } from '@filigran/ui';
+import { Popover, PopoverContent, PopoverTrigger } from '@filigran/ui';
 import { OrganizationSwitcherMutation as OrganizationSwitcherMutationType } from '@generated/OrganizationSwitcherMutation.graphql';
 import { useContext, useId, useMemo, useState } from 'react';
 import { graphql, useMutation } from 'react-relay';
@@ -94,7 +95,7 @@ const HeaderOrganizationSwitcher = ({
         onOpenChange={setOpenPopover}>
         <PopoverTrigger asChild>
           <Button
-            variant="secondary"
+            priority="secondary"
             role="combobox"
             aria-label={t('OrganizationSwitcher.SelectOrganization')}
             aria-controls={listboxId}
@@ -128,7 +129,7 @@ const HeaderOrganizationSwitcher = ({
                 <li key={organization.value}>
                   <Button
                     type="button"
-                    variant="tertiary"
+                    priority="tertiary"
                     role="option"
                     aria-selected={isSelected}
                     onClick={() => handleOnValueChange(organization)}

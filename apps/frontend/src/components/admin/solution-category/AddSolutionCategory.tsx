@@ -5,7 +5,8 @@ import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDi
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { prependToQueryCache } from '@/utils/query-cache';
-import { Button, toast } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
+import { toast } from '@filigran/ui';
 import {
   SolutionCategoriesListQuery,
   SolutionCategoryAddMutation,

@@ -140,11 +140,12 @@ describe('PublicShareableDocumentList', () => {
       />
     );
     const firstRow = screen.getByText(FirstDocumentName).closest('tr');
-    const shareIcon = within(firstRow!).getByRole('img');
-    const shareActionButton = shareIcon.closest('button');
+    const shareActionButton = within(firstRow!).getByRole('button', {
+      name: 'Service.ShareableResources.Share',
+    });
 
     // When
-    await user.click(shareActionButton!);
+    await user.click(shareActionButton);
 
     // Then
     expect(mocks.push).not.toHaveBeenCalled();

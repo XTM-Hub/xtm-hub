@@ -1,5 +1,6 @@
 'use client';
 
+import { buttonVariants } from '@filigran/design-system';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,7 +10,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  buttonVariants,
 } from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 

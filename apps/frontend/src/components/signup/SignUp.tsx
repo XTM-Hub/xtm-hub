@@ -80,7 +80,7 @@ const SignUp = ({ showLocalLogin = false }: { showLocalLogin?: boolean }) => {
           <FiligranLogoDark className="h-8.25 w-33" />
         </div>
         {/* Body */}
-        <div className="md:flex-1 md:min-h-0 md:overflow-y-auto pr-6 scrollbar-thin [scrollbar-color:transparent_transparent] hover:[scrollbar-color:hsl(var(--muted-foreground)/0.4)_transparent] transition-[scrollbar-color] duration-300">
+        <div className="md:flex-1 md:min-h-0 md:overflow-y-auto pr-6 scrollbar-thin [scrollbar-color:transparent_transparent] hover:[scrollbar-color:color-mix(in_srgb,var(--muted-foreground)_40%,transparent)_transparent] transition-[scrollbar-color] duration-300">
           <div className="mx-auto w-full max-w-125 flex flex-col justify-start min-h-full py-6">
             <h1 className="shrink-0 mt-auto text-3xl leading-9 font-medium text-foreground">
               {t('Title1')}
