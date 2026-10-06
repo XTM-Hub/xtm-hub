@@ -1,5 +1,6 @@
+import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -14,7 +15,6 @@ import {
   Textarea,
 } from '@filigran/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -33,7 +33,7 @@ export const ReachSalesDialogForm = ({
   setIsDialogOpen,
   onSubmit,
 }: ReachSalesDialogFormProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   const form = useForm<z.infer<typeof reachSalesSchema>>({
     resolver: zodResolver(reachSalesSchema),
@@ -89,7 +89,7 @@ export const ReachSalesDialogForm = ({
         </Form>
         <DialogFooter className="justify-end gap-s">
           <Button
-            variant="outline"
+            priority="secondary"
             type="button"
             onClick={() => setIsDialogOpen(false)}>
             {t('Utils.Cancel')}

@@ -1,6 +1,7 @@
 @import 'tw-animate-css';
 @import 'tailwindcss';
 @import '@filigran/design-system/tokens/theme.css';
+@import '@filigran/design-system/styles/gradient-helpers.css';
 @import '../src/components/filigran-ui/theme.css';
 
 @reference '../src/components/filigran-ui/theme.css';
@@ -10,22 +11,47 @@
 }
 
 :root {
-  --color-filigran-decoration: hsl(var(--darkblue-700) / 0.3);
+  /* The design system names its fonts literally; next/font serves them under generated names */
+  --font-sans-plex: var(--font-ibm-plex-sans);
+  --font-sans-geologica: var(--font-geologica);
+  --color-filigran-decoration: color-mix(
+    in srgb,
+    var(--darkblue-700) 30%,
+    transparent
+  );
   --hover-background: var(--color-gray-150);
-  --color-primary: hsl(var(--primary));
-  --color-foreground: hsl(var(--foreground));
-  --color-destructive: hsl(var(--destructive));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-  --color-ds-bg: hsl(var(--ds-bg-main));
+  --color-primary: var(--primary);
+  --color-foreground: var(--foreground);
+  --color-destructive: var(--destructive);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-ds-bg: var(--ds-bg-main);
 }
 
 .dark,
 body[data-theme='dark'],
 body[data-theme='Dark'] {
-  --color-filigran-decoration: hsl(var(--blue-500) / 0.3);
+  --color-filigran-decoration: color-mix(
+    in srgb,
+    var(--blue-500) 30%,
+    transparent
+  );
   --hover-background: var(--color-filigran-brand-primary-transparency);
 }
+
+/* The design system declares the input tokens on :root only, which freezes them at layer 0:
+   re-declare them per layer so inputs follow the elevation of the surface they sit on */
+.layer-0,
+.layer-1,
+.layer-2,
+.layer-3 {
+  --bg-input-default: var(--bg-elevation-highlight);
+  --bg-input-disabled: var(--bg-elevation-disabled);
+  --bg-input-hover: var(--bg-elevation-hover);
+}
+
 @source '../src/components/filigran-ui/**/*.{ts,tsx}';
+/* Tailwind skips node_modules: scan the design-system bundle so its component classes get generated */
+@source '../../../node_modules/@filigran/design-system/dist/**/*.mjs';
 
 @variant dark (.dark &);
 @variant mobile (@media screen and (max-width: 40rem));
@@ -136,7 +162,7 @@ body[data-theme='Dark'] {
   }
 
   pre {
-    @apply bg-muted my-3 overflow-x-auto rounded-md p-4;
+    @apply bg-muted my-3 overflow-x-auto rounded-xs p-4;
   }
   pre code {
     @apply bg-transparent p-0 font-mono text-sm;
@@ -172,4 +198,26 @@ body[data-theme='Dark'] {
 /* Allow fullsize textArea in MD editor (https://github.com/uiwjs/react-md-editor/issues/625) */
 .w-md-editor-text {
   min-height: 100% !important;
+}
+
+/* In-context editing: an outline never changes the layout and follows its
+   element when it scrolls, clips or hides. */
+[data-content-editable] {
+  outline: 1px dashed color-mix(in srgb, var(--color-primary) 50%, transparent);
+  outline-offset: 1px;
+  cursor: pointer;
+}
+
+[data-content-editable]:hover {
+  outline-style: solid;
+  outline-color: var(--color-primary);
+}
+
+[data-content-editable='overridden'],
+[data-content-editable='overridden']:hover {
+  outline-color: var(--color-yellow-400);
+}
+
+[data-content-edit-badge='overridden'] svg {
+  color: var(--color-yellow-400);
 }

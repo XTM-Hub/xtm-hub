@@ -4,6 +4,7 @@ import ShareableResourceCarousel from '@/components/service/document/ui/Shareabl
 import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
+import { getTranslate } from '@/hooks/get-translate';
 import { cn } from '@/lib/utils';
 import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
 import {
@@ -18,7 +19,6 @@ import {
 import { MarkdownRenderer } from '@filigran/ui/clients';
 import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 
 interface ShareableResourceConnectorSlugPublicProps {
@@ -28,12 +28,12 @@ interface ShareableResourceConnectorSlugPublicProps {
   pageUrl: string;
 }
 
-const ShareableResourceConnectorSlugPublic = ({
+const ShareableResourceConnectorSlugPublic = async ({
   documentData,
   pageUrl,
   serviceInstance,
 }: ShareableResourceConnectorSlugPublicProps) => {
-  const t = useTranslations();
+  const t = await getTranslate();
   const logo = findDocumentLogo(documentData);
   const carouselImages = filterDocumentImages(documentData);
 
@@ -56,14 +56,14 @@ const ShareableResourceConnectorSlugPublic = ({
           <div className="flex items-center gap-s flex-wrap">
             <h1 className="whitespace-nowrap">{documentData.name}</h1>
             {documentData.manager_supported && (
-              <div className="flex items-center gap-s py-xs px-l font-semibold bg-green-100 text-alert-success-primary dark:bg-turquoise-900 rounded-lg">
+              <div className="flex items-center gap-s py-xs px-l font-semibold bg-green-100 text-alert-success-primary dark:bg-turquoise-900 rounded">
                 <MotionPlayIcon className="h-5 w-5 shrink-0 mr-xs" />
                 {t('Utils.AutomaticDeploy')}
               </div>
             )}
             <div
               className={cn(
-                'flex items-center gap-s py-xs px-l font-semibold rounded-lg text-text-default-primary',
+                'flex items-center gap-s py-xs px-l font-semibold rounded text-text-default-primary',
                 documentData.verified
                   ? 'bg-[rgba(15,188,255,0.21)]'
                   : 'bg-feedback-neutral-secondary-transparency'

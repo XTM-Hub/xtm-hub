@@ -1,9 +1,9 @@
+import { useTranslate } from '@/hooks/use-translate';
 import { SHAREABLE_RESOURCE_TYPE_NAME_MAPPING } from '@/utils/shareable-resources/shareable-resources.types';
+import { Button } from '@filigran/design-system';
 import { AlertDialogTitle } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
-import { useTranslations } from 'next-intl';
 
 interface OnePlatformDisplayProps {
   documentData: documentItem_fragment$data;
@@ -18,7 +18,7 @@ const OnePlatformDisplay = ({
   setIsOpen,
   oneClickDeploy,
 }: OnePlatformDisplayProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <>
@@ -40,7 +40,7 @@ const OnePlatformDisplay = ({
       </div>
       <div className="flex justify-end gap-s">
         <Button
-          variant="secondary"
+          priority="secondary"
           type="button"
           onClick={() => {
             setIsOpen(false);

@@ -1,4 +1,6 @@
-import Page from '@app/(application)/app/(user)/service/xtm-platform-trial/page';
+import Page, {
+  generateMetadata,
+} from '@app/(application)/app/(user)/service/xtm-platform-trial/page';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -14,6 +16,10 @@ vi.mock(
     ),
   })
 );
+
+vi.mock('next-intl/server', () => ({
+  getTranslations: async () => (key: string) => key,
+}));
 
 const mockUseXtmPlatformTrialPanelView = vi.fn();
 vi.mock(
@@ -144,5 +150,13 @@ describe('private xtm-platform-trial page', () => {
     expect(
       screen.queryByText('Service.Trials.XtmPlatform.Page.Breadcrumb')
     ).not.toBeInTheDocument();
+  });
+
+  it('uses the same browser tab title as the public trial page', async () => {
+    const metadata = await generateMetadata();
+
+    expect(metadata.title).toBe(
+      'Service.Trials.XtmPlatform.Page.Title | XTM Hub'
+    );
   });
 });

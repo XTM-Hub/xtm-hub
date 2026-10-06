@@ -1,7 +1,7 @@
 import { MeTransferPersonalSpaceMutation } from '@/components/me/me.graphql';
+import { useTranslate } from '@/hooks/use-translate';
 import { FiligranLoader } from '@filigran/icon';
 import { toast } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useMutation } from 'react-relay';
@@ -15,7 +15,7 @@ export const TransferPersonalSpace = ({
 }: TransferPersonalSpaceProps) => {
   const router = useRouter();
 
-  const t = useTranslations();
+  const t = useTranslate();
   const [commitTransferPersonalSpaceMutation] = useMutation(
     MeTransferPersonalSpaceMutation
   );

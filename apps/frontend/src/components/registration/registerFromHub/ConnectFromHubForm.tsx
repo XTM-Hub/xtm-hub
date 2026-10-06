@@ -1,7 +1,8 @@
 'use client';
 
-import { AutoForm, Button } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
+import { AutoForm } from '@filigran/ui';
 import { z } from 'zod';
 
 export enum CONNECTABLE_PRODUCTS {
@@ -18,7 +19,7 @@ interface ConnectFromHubFormProps {
 }
 
 const ConnectFromHubForm = ({ onSubmit }: ConnectFromHubFormProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   return (
     <AutoForm

@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import {
   Card,
   CardContent,
@@ -7,8 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
-import { useTranslations } from 'next-intl';
 
 interface ProfileFormResetPasswordProps {
   onSubmit: () => void;
@@ -17,7 +17,7 @@ interface ProfileFormResetPasswordProps {
 export const ProfileFormResetPassword = ({
   onSubmit,
 }: ProfileFormResetPasswordProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   return (
     <Card>
       <CardHeader>

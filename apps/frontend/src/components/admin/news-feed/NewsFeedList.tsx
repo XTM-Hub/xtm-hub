@@ -9,6 +9,7 @@ import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import BadgeOverflowCounter from '@/components/ui/BadgeOverflowCounter';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { useTablePagination } from '@/hooks/use-table-pagination';
+import { useTranslate } from '@/hooks/use-translate';
 import { i18nKey } from '@/utils/datatable';
 import { useDateFormatter } from '@/utils/date';
 import { localizedCardName } from '@/utils/services';
@@ -26,7 +27,6 @@ import { newsFeedList_fragment$key } from '@generated/newsFeedList_fragment.grap
 import { newsFeedListQuery } from '@generated/newsFeedListQuery.graphql';
 import { NewsFeedItemMetadataKey } from '@graphql/generated';
 import { ColumnDef } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import {
@@ -50,7 +50,7 @@ const NEWS_FEED_TYPE_TO_SERVICE_SLUG: Record<NewsFeedItemType, ServiceSlug> = {
 };
 
 const NewsFeedList = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const formatDate = useDateFormatter();
   const router = useRouter();
   const [deleteTarget, setDeleteTarget] = useState<

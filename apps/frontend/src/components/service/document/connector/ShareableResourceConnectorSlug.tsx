@@ -4,7 +4,7 @@ import {
   BreadcrumbNav,
   BreadcrumbNavLink,
 } from '@/components/ui/BreadcrumbNav';
-import { useTranslations } from 'next-intl';
+import { useTranslate } from '@/hooks/use-translate';
 
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
 import { ServiceManageSheet } from '@/components/service/components/ServiceManageSheet';
@@ -19,6 +19,7 @@ import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
 import { cn } from '@/lib/utils';
 import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
 import { getPlatformIdentifier } from '@/utils/platform';
+import { Button } from '@filigran/design-system';
 import {
   InfoIcon,
   LogoFiligranIcon,
@@ -26,7 +27,6 @@ import {
   ThreatActorGroupIcon,
 } from '@filigran/icon';
 import { SimpleTooltip } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import Image from 'next/image';
@@ -47,7 +47,7 @@ const ShareableResourceConnectorSlug = ({
   shareUrl,
   serviceInstance,
 }: ShareableResourceConnectorSlugProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const platformIdentifier = getPlatformIdentifier(documentData.type);
   const canClickOnDeployButton = documentData.manager_supported;
 
@@ -78,7 +78,7 @@ const ShareableResourceConnectorSlug = ({
           <div className="flex items-center gap-s flex-wrap">
             <h1 className="whitespace-nowrap">{documentData.name}</h1>
             {documentData.manager_supported && (
-              <div className="flex items-center gap-s py-xs px-l font-semibold bg-green-100 text-alert-success-primary dark:bg-turquoise-900 rounded-lg">
+              <div className="flex items-center gap-s py-xs px-l font-semibold bg-green-100 text-alert-success-primary dark:bg-turquoise-900 rounded">
                 <MotionPlayIcon className="h-5 w-5 shrink-0 mr-xs" />
                 {t('Utils.AutomaticDeploy')}
               </div>
@@ -86,7 +86,7 @@ const ShareableResourceConnectorSlug = ({
 
             <div
               className={cn(
-                'flex items-center gap-s py-xs px-l font-semibold rounded-lg text-text-default-primary',
+                'flex items-center gap-s py-xs px-l font-semibold rounded text-text-default-primary',
                 documentData.verified
                   ? 'bg-[rgba(15,188,255,0.21)]'
                   : 'bg-feedback-neutral-secondary-transparency'

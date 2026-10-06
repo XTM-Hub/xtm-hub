@@ -7,11 +7,11 @@ import {
   servicesListFragment,
 } from '@/components/service/service.graphql';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
+import { useTranslate } from '@/hooks/use-translate';
 import { serviceList_fragment$data } from '@generated/serviceList_fragment.graphql';
 import { serviceQuery } from '@generated/serviceQuery.graphql';
 import { servicesList_services$key } from '@generated/servicesList_services.graphql';
 import { ServiceInstanceFilterKey } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { useLazyLoadQuery, useRefetchableFragment } from 'react-relay';
 
 const breadcrumbValue = [
@@ -24,7 +24,7 @@ const breadcrumbValue = [
 ];
 
 const Page = () => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   const queryData = useLazyLoadQuery<serviceQuery>(ServiceListQuery, {
     count: 50,

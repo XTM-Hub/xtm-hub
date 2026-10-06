@@ -2,9 +2,10 @@
 
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { CountryCombobox } from '@/components/ui/country/Combobox';
+import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import {
   AutoForm,
-  Button,
   Card,
   CardContent,
   CardHeader,
@@ -14,7 +15,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 import { useContext } from 'react';
 import { z } from 'zod';
 
@@ -34,7 +34,7 @@ interface ProfileFormEditProps {
 }
 
 export const ProfileFormEdit = ({ onSubmit }: ProfileFormEditProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { me } = useContext(PortalContext);
 
   return (
@@ -80,7 +80,9 @@ export const ProfileFormEdit = ({ onSubmit }: ProfileFormEditProps) => {
             },
           }}>
           <div className="flex justify-end">
-            <Button aria-label={t('ProfilePage.UpdateProfile')}>
+            <Button
+              type="submit"
+              aria-label={t('ProfilePage.UpdateProfile')}>
               {t('Utils.Update')}
             </Button>
           </div>

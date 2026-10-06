@@ -1,5 +1,6 @@
 import { useUserListLocalstorage } from '@/components/admin/user/user-list-localstorage';
 import { UserFragment } from '@/components/admin/user/UserList';
+import { useTranslate } from '@/hooks/use-translate';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { CheckIcon, CloseIcon, KeyboardArrowDownIcon } from '@filigran/icon';
 import {
@@ -19,16 +20,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/ui/clients';
-import { Badge, Button } from '@filigran/ui/servers';
+import { Badge } from '@filigran/ui/servers';
 import { UserList_fragment$key } from '@generated/UserList_fragment.graphql';
-import { useTranslations } from 'next-intl';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 
 import { useUsersList } from '@/hooks/use-users-list';
+import { Button } from '@filigran/design-system';
 import { readInlineData } from 'react-relay';
 import { useDebounceCallback } from 'usehooks-ts';
 
-interface SelectUsersFormFieldProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface SelectUsersFormFieldProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'color'
+> {
   defaultValue?: string;
   onValueChange: (value: string) => void;
   disabled?: boolean;
@@ -38,7 +42,7 @@ const SelectUsersFormField = React.forwardRef<
   HTMLButtonElement,
   SelectUsersFormFieldProps
 >(({ defaultValue, onValueChange, disabled, ...props }, ref) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   const [selectedValues, setSelectedValues] = useState<string[]>([
     defaultValue ?? '',
@@ -336,11 +340,11 @@ const SelectUsersFormField = React.forwardRef<
                       }}
                       className="cursor-pointer">
                       {isSelected ? (
-                        <div className="mr-2 flex h-4 w-4 min-w-4 items-center justify-center rounded-sm border border-primary bg-primary text-primary-foreground">
+                        <div className="mr-2 flex h-4 w-4 min-w-4 items-center justify-center rounded-none border border-primary bg-primary text-primary-foreground">
                           <CheckIcon className="h-4 w-4" />
                         </div>
                       ) : (
-                        <div className="mr-2 flex h-4 w-4 min-w-4 items-center justify-center rounded-sm border border-primary opacity-50"></div>
+                        <div className="mr-2 flex h-4 w-4 min-w-4 items-center justify-center rounded-none border border-primary opacity-50"></div>
                       )}
                       <span>{String(option.label)}</span>
                     </CommandItem>

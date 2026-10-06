@@ -1,7 +1,8 @@
 import { TrialGuideResourceCardContent } from '@/components/service/trial-guide/TrialGuide.content';
+import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import { OpenInNewIcon } from '@filigran/icon';
-import { Button, Card, CardContent } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
+import { Card, CardContent } from '@filigran/ui';
 import Link from 'next/link';
 
 interface ResourceCardProps {
@@ -9,7 +10,7 @@ interface ResourceCardProps {
 }
 
 export const TrialGuideResourceCard = ({ resourceCard }: ResourceCardProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { Icon, titleKey, descriptionKey, url } = resourceCard;
 
   return (
@@ -24,7 +25,7 @@ export const TrialGuideResourceCard = ({ resourceCard }: ResourceCardProps) => {
           <div>
             <Button
               asChild
-              variant="tertiary">
+              priority="tertiary">
               <Link
                 href={url}
                 target="_blank"

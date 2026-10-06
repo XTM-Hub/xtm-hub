@@ -1,9 +1,9 @@
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
   OrganizationCapability,
   useConnectProductOrganizationAdminsQuery,
 } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
 const MAX_DISPLAYED_ADMINISTRATORS = 5;
 
@@ -14,7 +14,7 @@ interface TrialOrganizationAdminContactsProps {
 export const TrialOrganizationAdminContacts = ({
   organizationId,
 }: TrialOrganizationAdminContactsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   const { data } = useConnectProductOrganizationAdminsQuery(
     portalGraphqlClient,

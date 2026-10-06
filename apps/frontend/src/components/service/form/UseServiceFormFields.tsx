@@ -10,6 +10,7 @@ import { ServiceFormUploaderIdField } from '@/components/service/form/UploaderId
 import { ServiceFormUploaderOrganizationIdField } from '@/components/service/form/UploaderOrganizationIdField';
 import { ServiceFormUseCasesField } from '@/components/service/form/UseCasesField';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
 import { filterDocumentImages } from '@/utils/documents';
 import { FormItem } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
@@ -18,7 +19,6 @@ import {
   FiligranProduct,
   IntegrationType,
 } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 
@@ -110,7 +110,7 @@ export const useServiceFormFields = ({
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
   const { setIsDirty } = useDialogContext();
   const integrationType = integrationTypeMappedByDocumentType[documentType];
-  const t = useTranslations();
+  const t = useTranslate();
 
   return useMemo(
     () => ({

@@ -20,6 +20,7 @@ import {
   LogicalFilterInput,
   LogicalOperator,
   OrderingMode,
+  ServiceRestriction,
 } from '../../../__generated__/resolvers-types';
 import type { DocumentMetadataKey } from '../../../model/kanel/public/DocumentMetadata';
 import {
@@ -43,6 +44,8 @@ import {
 
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import {
+  // eslint-disable-next-line no-restricted-imports
+  requestContextAdminUser,
   requestContextRegistererUserSecondOrga,
   SERVICES,
   TEST_ORGANIZATIONS,
@@ -60,8 +63,10 @@ import {
   SYSTEM_USER_UUID,
 } from '../../../portal.const';
 import { isFeatureEnabled } from '../../../utils/feature-flag.util';
+import { UserServiceCapabilityHelper } from '../../security-management/user-service-capability/user-service-capability.helper';
 import { objectSolutionCategoryDomain } from '../../solution-category/object-solution-category/object-solution-category.domain';
 import { solutionCategoryDomain } from '../../solution-category/solution-category.domain';
+import { DocumentListOptions } from '../document.model';
 import { DocumentUploadsHelper } from '../document.uploads.helper';
 import { DocumentDomain } from './document.domain';
 
@@ -179,6 +184,139 @@ describe('document domain', () => {
         uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
       });
     });
+  });
+
+  describe('loadParentDocumentsByServiceInstance with draft documents', () => {
+    const PAGE_SIZE = 2;
+    const DRAFT_NAME = 'm-draft';
+    const ACTIVE_NAMES = ['a-active', 'b-active', 'y-active', 'z-active'];
+
+    beforeEach(async () => {
+      await TestHelper.document.delete({
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+      });
+
+      for (const name of [...ACTIVE_NAMES, DRAFT_NAME]) {
+        await TestHelper.document.createWholeDocument({
+          name,
+          slug: name,
+          active: name !== DRAFT_NAME,
+        });
+      }
+      requestContext.set(requestContextAdminUser);
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+      requestContext.set(undefined);
+    });
+
+    const loadPage = (pageIndex: number, orderMode: OrderingMode) =>
+      DocumentDomain.loadParentDocumentsByServiceInstance(
+        OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        {
+          orderBy: DocumentOrdering.Name,
+          orderMode,
+          first: PAGE_SIZE,
+          after: pageIndex > 0 ? btoa(String(PAGE_SIZE * pageIndex)) : null,
+          serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
+        },
+        INTEGRATION_METADATA_KEYS
+      );
+
+    const namesOf = (connection: DocumentConnection) =>
+      connection.edges.map(({ node }) => node.name);
+
+    const loadAll = (options: DocumentListOptions = {}) =>
+      DocumentDomain.loadParentDocumentsByServiceInstance(
+        OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        {
+          orderBy: DocumentOrdering.Name,
+          orderMode: OrderingMode.Asc,
+          first: 10,
+          serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
+          ...options,
+        },
+        INTEGRATION_METADATA_KEYS
+      );
+
+    it.each`
+      orderMode            | expectedNames
+      ${OrderingMode.Asc}  | ${['m-draft', 'a-active', 'b-active', 'y-active', 'z-active']}
+      ${OrderingMode.Desc} | ${['m-draft', 'z-active', 'y-active', 'b-active', 'a-active']}
+    `(
+      'should put the draft first, then follow the requested $orderMode order',
+      async ({
+        orderMode,
+        expectedNames,
+      }: {
+        orderMode: OrderingMode;
+        expectedNames: string[];
+      }) => {
+        const firstPage = await loadPage(0, orderMode);
+
+        expect(namesOf(firstPage)).toEqual(expectedNames.slice(0, PAGE_SIZE));
+      }
+    );
+
+    it('should page through every document exactly once with the draft first', async () => {
+      const pages = await Promise.all(
+        [0, 1, 2].map((pageIndex) => loadPage(pageIndex, OrderingMode.Asc))
+      );
+
+      expect(pages.flatMap(namesOf)).toEqual([DRAFT_NAME, ...ACTIVE_NAMES]);
+      pages.forEach((page) => expect(Number(page.totalCount)).toBe(5));
+    });
+
+    it.each`
+      description                          | options                 | expectedNames                                                  | expectedTotal
+      ${'drops the draft when activeOnly'} | ${{ activeOnly: true }} | ${['a-active', 'b-active', 'y-active', 'z-active']}            | ${4}
+      ${'keeps the draft otherwise'}       | ${{}}                   | ${['m-draft', 'a-active', 'b-active', 'y-active', 'z-active']} | ${5}
+    `(
+      'should $description',
+      async ({
+        options,
+        expectedNames,
+        expectedTotal,
+      }: {
+        options: DocumentListOptions;
+        expectedNames: string[];
+        expectedTotal: number;
+      }) => {
+        const connection = await loadAll(options);
+
+        expect(namesOf(connection)).toEqual(expectedNames);
+        expect(Number(connection.totalCount)).toBe(expectedTotal);
+      }
+    );
+
+    it.each`
+      description                                               | serviceCapabilities            | expectedNames                                                  | expectedTotal
+      ${'hide the draft from a user without upload capability'} | ${[]}                          | ${['a-active', 'b-active', 'y-active', 'z-active']}            | ${4}
+      ${'return the draft to a user with upload capability'}    | ${[ServiceRestriction.Upload]} | ${['m-draft', 'a-active', 'b-active', 'y-active', 'z-active']} | ${5}
+    `(
+      'should $description',
+      async ({
+        serviceCapabilities,
+        expectedNames,
+        expectedTotal,
+      }: {
+        serviceCapabilities: ServiceRestriction[];
+        expectedNames: string[];
+        expectedTotal: number;
+      }) => {
+        requestContext.set(undefined);
+        vi.spyOn(
+          UserServiceCapabilityHelper,
+          'loadCapabilities'
+        ).mockResolvedValue(serviceCapabilities);
+
+        const connection = await loadAll();
+
+        expect(namesOf(connection)).toEqual(expectedNames);
+        expect(Number(connection.totalCount)).toBe(expectedTotal);
+      }
+    );
   });
 
   describe(`loadParentDocumentsByServiceInstance`, () => {

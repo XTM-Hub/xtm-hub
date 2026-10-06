@@ -1,17 +1,17 @@
 'use client';
 
 import { PortalContext } from '@/components/me/AppPortalContext';
+import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import { EditIcon } from '@filigran/icon';
 import {
   Avatar,
-  Button,
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
 } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 import React, { useContext, useRef, useState } from 'react';
 
 interface ProfileFormPictureProps {
@@ -19,7 +19,7 @@ interface ProfileFormPictureProps {
 }
 
 export const ProfileFormPicture = ({ onSubmit }: ProfileFormPictureProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { me } = useContext(PortalContext);
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -70,13 +70,12 @@ export const ProfileFormPicture = ({ onSubmit }: ProfileFormPictureProps) => {
       </CardContent>
       <CardFooter className="flex justify-between">
         <Button
-          variant="tertiary"
+          priority="tertiary"
           aria-label={t('Utils.Edit')}
-          size="sm"
-          className="ml-s gap-s"
+          className="ml-s"
+          startIcon={<EditIcon className="h-4 w-4" />}
           onClick={() => inputRef.current?.click()}>
-          <EditIcon className="h-4 w-4" />
-          <span>{t('Utils.Edit')}</span>
+          {t('Utils.Edit')}
         </Button>
         <Button
           aria-label={t('ProfilePage.UpdatePicture')}

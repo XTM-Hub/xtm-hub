@@ -26,11 +26,13 @@ import {
   useUserHasPortalCapability,
 } from '@/hooks/use-portal-capability';
 import { useTablePagination } from '@/hooks/use-table-pagination';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { daysUntil, useDateFormatter } from '@/utils/date';
 import { xtmPlatformTrialManageUsersFromDashboardPath } from '@/utils/path/constant';
+import { IconButton } from '@filigran/design-system';
 import {
   ArrowShapeUpIcon,
   ArrowShapeUpStackIcon,
@@ -39,7 +41,6 @@ import {
   GroupIcon,
 } from '@filigran/icon';
 import {
-  Button,
   DataTable,
   DataTableHeadBarOptions,
   toast,
@@ -63,7 +64,6 @@ import {
 } from '@graphql/generated';
 import { useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { ReactNode, useMemo, useState } from 'react';
 import { useDebounceCallback } from 'usehooks-ts';
@@ -161,7 +161,7 @@ interface TrialsRowActionsProps {
 }
 
 const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const queryClient = useQueryClient();
   const isAdminByPass = useAdminByPass();
   const userHasModifyTrialCapa = useUserHasPortalCapability([
@@ -232,17 +232,17 @@ const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
           AlertTitle={t('Service.Trials.Cancellation.Confirmation.Title')}
           actionButtonText={t('MenuActions.Delete')}
           triggerElement={
-            <Button
-              variant="tertiary-destructive"
-              size="icon"
+            <IconButton
+              variant="destructive"
+              priority="tertiary"
               className="border m-1"
               aria-label={t(
                 isBundle
                   ? 'TrialsDashboard.Actions.CancelBundle'
                   : 'TrialsDashboard.Actions.CancelTrial'
-              )}>
-              <CloseIcon className="h-4 w-4" />
-            </Button>
+              )}
+              icon={<CloseIcon className="h-4 w-4" />}
+            />
           }
           onClickContinue={() =>
             cancelRequest({ deploymentRequestId: request.id })
@@ -260,11 +260,11 @@ const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant="tertiary"
-                  size="icon"
+                <IconButton
+                  priority="tertiary"
                   className="border m-1"
                   aria-label={t('TrialsDashboard.Actions.MoveToTop')}
+                  icon={<ArrowShapeUpStackIcon className="h-4 w-4" />}
                   onClick={() =>
                     reorderRequest({
                       input: {
@@ -272,9 +272,8 @@ const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
                         direction: ReorderDeploymentRequestInQueueDirection.Top,
                       },
                     })
-                  }>
-                  <ArrowShapeUpStackIcon className="h-4 w-4" />
-                </Button>
+                  }
+                />
               </TooltipTrigger>
               <TooltipContent>
                 {t('TrialsDashboard.Actions.MoveToTop')}
@@ -284,11 +283,11 @@ const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant="tertiary"
-                  size="icon"
+                <IconButton
+                  priority="tertiary"
                   className="border m-1"
                   aria-label={t('TrialsDashboard.Actions.MoveUp')}
+                  icon={<ArrowShapeUpIcon className="h-4 w-4" />}
                   onClick={() =>
                     reorderRequest({
                       input: {
@@ -296,9 +295,8 @@ const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
                         direction: ReorderDeploymentRequestInQueueDirection.Up,
                       },
                     })
-                  }>
-                  <ArrowShapeUpIcon className="h-4 w-4" />
-                </Button>
+                  }
+                />
               </TooltipTrigger>
               <TooltipContent>
                 {t('TrialsDashboard.Actions.MoveUp')}
@@ -312,31 +310,29 @@ const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
           <Tooltip>
             <TooltipTrigger asChild>
               {isBundle ? (
-                <Button
+                <IconButton
                   asChild
-                  variant="tertiary"
-                  size="icon"
+                  priority="tertiary"
                   className="border m-1"
-                  aria-label={t('Service.Trials.ManageUsers.Title')}>
+                  aria-label={t('Service.Trials.ManageUsers.Title')}
+                  icon={<GroupIcon className="h-4 w-4" />}>
                   <Link
                     href={xtmPlatformTrialManageUsersFromDashboardPath(
                       request.service_instance_id
-                    )}>
-                    <GroupIcon className="h-4 w-4" />
-                  </Link>
-                </Button>
+                    )}
+                  />
+                </IconButton>
               ) : (
                 <TrialsManageUsersDialog
                   serviceInstanceId={request.service_instance_id}
                   organizationId={request.organization_requester_id}
                   trigger={
-                    <Button
-                      variant="tertiary"
-                      size="icon"
+                    <IconButton
+                      priority="tertiary"
                       className="border m-1"
-                      aria-label={t('Service.Trials.ManageUsers.Title')}>
-                      <GroupIcon className="h-4 w-4" />
-                    </Button>
+                      aria-label={t('Service.Trials.ManageUsers.Title')}
+                      icon={<GroupIcon className="h-4 w-4" />}
+                    />
                   }
                 />
               )}
@@ -518,7 +514,7 @@ interface TrialsTabProps {
 }
 
 const TrialsTab = ({ type, scope }: TrialsTabProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const formatDate = useDateFormatter();
   const isAdminByPass = useAdminByPass();
   const userHasModifyTrialCapa = useUserHasPortalCapability([

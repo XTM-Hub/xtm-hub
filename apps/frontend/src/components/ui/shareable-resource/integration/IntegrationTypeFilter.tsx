@@ -5,8 +5,8 @@ import {
   ServiceListLocalStorageKey,
   useServiceListLocalStorage,
 } from '@/hooks/use-service-list-local-storage';
+import { useTranslate } from '@/hooks/use-translate';
 import { IntegrationType } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 
 interface IntegrationTypeFilterProps {
@@ -20,7 +20,7 @@ export const IntegrationTypeFilter = ({
     ServiceListLocalStorageKey.OpenCTIIntegrationFeeds
   );
 
-  const t = useTranslations();
+  const t = useTranslate();
 
   const options = useMemo(() => {
     const allOptions = Object.values(IntegrationType).map((feedType) => ({

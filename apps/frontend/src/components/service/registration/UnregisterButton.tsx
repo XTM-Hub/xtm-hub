@@ -5,8 +5,9 @@ import {
 } from '@/components/registration/PlatformIdentifierMapping';
 import { UnregisterPlatform } from '@/components/registration/register/register.graphql';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import { toast } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
 import { registeredPlatformByServiceInstanceId_fragment$data } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
 import { registerUnregisterPlatformMutation } from '@generated/registerUnregisterPlatformMutation.graphql';
 import {
@@ -15,7 +16,6 @@ import {
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
 } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useMutation } from 'react-relay';
 
@@ -24,7 +24,7 @@ interface UnregisterButtonProps {
 }
 
 export const UnregisterButton = ({ platform }: UnregisterButtonProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const router = useRouter();
 
   const isTrial = platform.contract === PlatformContract.Trial;

@@ -3,10 +3,11 @@
 import { invalidatePrivateNavigationQueries } from '@/components/menu/navigation/private/private-navigation-query-invalidation';
 import { SelectWithEditableField } from '@/components/service/registration/SelectWithEditableField';
 import { CancelDeploymentRequestMutation } from '@/components/service/trial-instances/trial-instances.graphql';
+import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import { WarningIcon } from '@filigran/icon';
 import {
   AutoForm,
-  Button,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -21,7 +22,6 @@ import {
 import { trialInstancesCancelDeploymentRequestMutation } from '@generated/trialInstancesCancelDeploymentRequestMutation.graphql';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { useMutation } from 'react-relay';
 import { z } from 'zod';
@@ -52,7 +52,7 @@ export const BundleCancelSheet = ({
   open,
   setOpen,
 }: BundleCancelSheetProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const bundleCancelSchema = useMemo(
     () =>
       buildBundleCancelSchema(
@@ -172,7 +172,7 @@ export const BundleCancelSheet = ({
           </div>
           <DialogFooter className="justify-end gap-s">
             <Button
-              variant="outline"
+              priority="secondary"
               type="button"
               onClick={() => setOpen(false)}>
               {t('Utils.Cancel')}

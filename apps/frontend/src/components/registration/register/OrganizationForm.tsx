@@ -1,4 +1,6 @@
 import { RegistrationContext } from '@/components/registration/Context';
+import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import { AutoForm } from '@filigran/ui';
 import {
   FormControl,
@@ -6,9 +8,8 @@ import {
   FormLabel,
   FormMessage,
 } from '@filigran/ui/clients';
-import { Button, Input } from '@filigran/ui/servers';
+import { Input } from '@filigran/ui/servers';
 import { organizationListUserOrganizationsQuery$data } from '@generated/organizationListUserOrganizationsQuery.graphql';
-import { useTranslations } from 'next-intl';
 import { useContext } from 'react';
 import { z } from 'zod';
 
@@ -34,7 +35,7 @@ export const RegisterOrganizationForm = ({
     (a, b) => Number(a.personal_space) - Number(b.personal_space)
   );
   const { displayedIdentifier } = useContext(RegistrationContext);
-  const t = useTranslations();
+  const t = useTranslate();
 
   const defaultOrganization = organizations[0];
 
@@ -124,7 +125,7 @@ export const RegisterOrganizationForm = ({
           }}>
           <div className="flex justify-end gap-s">
             <Button
-              variant="secondary"
+              priority="secondary"
               type="button"
               onClick={() => {
                 cancel();

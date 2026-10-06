@@ -17,9 +17,11 @@ import {
 } from '@/components/ui/IconActions';
 import { SearchInput } from '@/components/ui/SearchInput';
 import useAdminPath from '@/hooks/use-admin-path';
+import { useTranslate } from '@/hooks/use-translate';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { APP_PATH } from '@/utils/path/constant';
+import { Button } from '@filigran/design-system';
 import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
 import {
   DataTable,
@@ -27,12 +29,10 @@ import {
   SelectionState,
   Switch,
 } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
 import { serviceInstanceByIdQuery } from '@generated/serviceInstanceByIdQuery.graphql';
 import { serviceInstanceForSubscriptions_fragment$key } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
 import { ColumnDef, PaginationState } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 import React, { useMemo, useState } from 'react';
 import { PreloadedQuery, readInlineData, usePreloadedQuery } from 'react-relay';
 import { useDebounceCallback } from 'usehooks-ts';
@@ -87,7 +87,7 @@ const ServiceSlug = ({
   const [selection, setSelection] =
     useState<SelectionState>(emptySelectionState);
 
-  const t = useTranslations();
+  const t = useTranslate();
 
   const debounceHandleInput = useDebounceCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value),
@@ -289,23 +289,20 @@ const ServiceSlug = ({
                 actions: () => (
                   <>
                     <Button
-                      variant="tertiary"
-                      size="sm"
-                      className="cursor-pointer"
+                      priority="tertiary"
+                      startIcon={<AddIcon className="h-4 w-4" />}
                       onClick={() => setOpenAddCapabilities(true)}>
-                      <AddIcon className="h-4 w-4 m-s" />
                       {t(
                         'Service.Management.AddSubscriptionCapabilities.Button'
                       )}
                     </Button>
                     <Button
-                      variant="tertiary-destructive"
-                      size="sm"
-                      className="cursor-pointer"
+                      variant="destructive"
+                      priority="tertiary"
+                      startIcon={<DeleteIcon className="h-4 w-4" />}
                       onClick={() =>
                         setDeleteSubscriptions(selectedSubscriptions)
                       }>
-                      <DeleteIcon className="h-4 w-4 m-s" />
                       {t('Utils.Delete')}
                     </Button>
                   </>

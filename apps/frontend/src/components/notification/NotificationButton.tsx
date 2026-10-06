@@ -7,14 +7,15 @@ import {
 } from '@/components/admin/user/user.graphql';
 import { UserFragment } from '@/components/admin/user/UserList';
 import { PortalContext } from '@/components/me/AppPortalContext';
+import { useTranslate } from '@/hooks/use-translate';
 import { APP_PATH } from '@/utils/path/constant';
+import { Button } from '@filigran/design-system';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
   Separator,
 } from '@filigran/ui/clients';
-import { Button } from '@filigran/ui/servers';
 import {
   UserList_fragment$data,
   UserList_fragment$key,
@@ -28,7 +29,6 @@ import {
   userPendingListSubscription,
   userPendingListSubscription$data,
 } from '@generated/userPendingListSubscription.graphql';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useContext, useMemo, useState } from 'react';
 import {
@@ -69,7 +69,7 @@ interface PendingUserNotificationsProps {
 const PendingUserNotifications = ({
   organizationId,
 }: PendingUserNotificationsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [openPopover, setOpenPopover] = useState(false);
 
   const queryData = useLazyLoadQuery<userPendingListQuery>(
@@ -130,7 +130,7 @@ const PendingUserNotifications = ({
       onOpenChange={setOpenPopover}>
       <PopoverTrigger asChild>
         <Button
-          variant="tertiary"
+          priority="tertiary"
           className="text-primary w-9 px-0 relative">
           <NotificationsIcon className="h-4 w-4" />
           {nbUsers > 0 && (

@@ -11,9 +11,10 @@ import { subscriptionInServiceCreateMutation } from '@generated/subscriptionInSe
 import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
 import { useSubscriptionDefaultValues } from './use-subscription-default-values';
 
+import { useTranslate } from '@/hooks/use-translate';
 import { DEBOUNCE_TIME } from '@/utils/constant';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   Checkbox,
   DatePicker,
   Form,
@@ -29,7 +30,6 @@ import {
 import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { subscriptionInServiceUpdateMutation } from '@generated/subscriptionInServiceUpdateMutation.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'react-relay';
@@ -59,7 +59,7 @@ export const ServiceSlugOrgaForm = ({
   subscriptionConnectionId,
 }: ServiceSlugAddOrgaFormSheetProps) => {
   const { handleCloseSheet, setIsDirty, setOpenSheet } = useDialogContext();
-  const t = useTranslations();
+  const t = useTranslate();
   const { toast } = useToast();
   const { organizationsData, refetch } = getOrganizations();
   const organizations = useUnsubscribedOrganizations(
@@ -217,7 +217,7 @@ export const ServiceSlugOrgaForm = ({
             />
           )}
 
-          <div className="border border-primary rounded-lg p-l">
+          <div className="border border-primary rounded p-l">
             <FormLabel>{t('OrganizationInServiceAction.SelectCapa')}</FormLabel>
             <p className="txt-sub-content italic">
               {t('OrganizationInServiceAction.SelectCapaDescription')}
@@ -301,7 +301,7 @@ export const ServiceSlugOrgaForm = ({
 
           <SheetFooter className="pt-2">
             <Button
-              variant="secondary"
+              priority="secondary"
               type="button"
               onClick={(e) => handleCloseSheet(e)}>
               {t('Utils.Cancel')}

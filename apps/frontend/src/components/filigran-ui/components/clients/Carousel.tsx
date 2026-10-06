@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/components/filigran-ui/lib/utils';
+import { Button, IconButton } from '@filigran/design-system';
 import { KeyboardArrowLeftIcon, KeyboardArrowRightIcon } from '@filigran/icon';
 import { type EmblaCarouselType } from 'embla-carousel';
 import useEmblaCarousel, {
@@ -18,7 +19,6 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { Button } from '../servers';
 
 type CarouselApi = UseEmblaCarouselType[1];
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>;
@@ -310,25 +310,20 @@ CarouselItem.displayName = 'CarouselItem';
 
 const CarouselPrevious = forwardRef<
   HTMLButtonElement,
-  ComponentProps<typeof Button> & { label?: string }
+  Omit<ComponentProps<typeof IconButton>, 'icon' | 'aria-label'> & {
+    label?: string;
+  }
 >(
   (
-    {
-      className,
-      variant = 'outline',
-      size = 'icon',
-      label = 'Previous slide',
-      ...props
-    },
+    { className, priority = 'secondary', label = 'Previous slide', ...props },
     ref
   ) => {
     const { orientation, scrollPrev, canScrollPrev } = useCarousel();
 
     return (
-      <Button
+      <IconButton
         ref={ref}
-        variant={variant}
-        size={size}
+        priority={priority}
         className={cn(
           ' h-8 w-8 rounded-full border-gray-100',
           orientation === 'horizontal'
@@ -338,10 +333,12 @@ const CarouselPrevious = forwardRef<
         )}
         disabled={!canScrollPrev}
         onClick={scrollPrev}
-        {...props}>
-        <KeyboardArrowLeftIcon className="size-3 text-[var(--color-gray-100)]" />
-        <span className="sr-only">{label}</span>
-      </Button>
+        aria-label={label}
+        icon={
+          <KeyboardArrowLeftIcon className="size-3 text-[var(--color-gray-100)]" />
+        }
+        {...props}
+      />
     );
   }
 );
@@ -350,25 +347,20 @@ CarouselPrevious.displayName = 'CarouselPrevious';
 
 const CarouselNext = forwardRef<
   HTMLButtonElement,
-  ComponentProps<typeof Button> & { label?: string }
+  Omit<ComponentProps<typeof IconButton>, 'icon' | 'aria-label'> & {
+    label?: string;
+  }
 >(
   (
-    {
-      className,
-      variant = 'outline',
-      size = 'icon',
-      label = 'Next slide',
-      ...props
-    },
+    { className, priority = 'secondary', label = 'Next slide', ...props },
     ref
   ) => {
     const { orientation, scrollNext, canScrollNext } = useCarousel();
 
     return (
-      <Button
+      <IconButton
         ref={ref}
-        variant={variant}
-        size={size}
+        priority={priority}
         className={cn(
           'h-8 w-8 rounded-full border-gray-100',
           orientation === 'horizontal'
@@ -378,10 +370,12 @@ const CarouselNext = forwardRef<
         )}
         disabled={!canScrollNext}
         onClick={scrollNext}
-        {...props}>
-        <KeyboardArrowRightIcon className="size-3 text-[var(--color-gray-100)]" />
-        <span className="sr-only">{label}</span>
-      </Button>
+        aria-label={label}
+        icon={
+          <KeyboardArrowRightIcon className="size-3 text-[var(--color-gray-100)]" />
+        }
+        {...props}
+      />
     );
   }
 );

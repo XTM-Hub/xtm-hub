@@ -1,8 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   FileInput,
   FileInputDropZone,
   Form,
@@ -13,7 +14,6 @@ import {
   FormMessage,
   SheetFooter,
 } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -27,7 +27,7 @@ interface ServiceFormProps {
 }
 
 export const ServiceForm = ({ handleSubmit }: ServiceFormProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { handleCloseSheet } = useDialogContext();
   const form = useForm<z.infer<typeof newPicturesSchema>>({
     resolver: zodResolver(newPicturesSchema),
@@ -103,7 +103,7 @@ export const ServiceForm = ({ handleSubmit }: ServiceFormProps) => {
 
           <SheetFooter className="pt-2">
             <Button
-              variant="secondary"
+              priority="secondary"
               type="button"
               onClick={(e) => handleCloseSheet(e)}>
               {t('Utils.Cancel')}

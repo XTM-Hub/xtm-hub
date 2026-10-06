@@ -1,5 +1,5 @@
-import { Button } from '@/components/filigran-ui/components/servers';
 import { cn } from '@/components/filigran-ui/lib/utils';
+import { IconButton } from '@filigran/design-system';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '../Popover';
 import {
@@ -12,6 +12,8 @@ type TagPopoverInputElement = React.ReactElement<{
   onFocus?: React.FocusEventHandler<HTMLInputElement | HTMLTextAreaElement>;
   onBlur?: React.FocusEventHandler<HTMLInputElement | HTMLTextAreaElement>;
   ref?: React.Ref<HTMLInputElement | HTMLTextAreaElement>;
+  placeholder?: string;
+  'aria-label'?: string;
 }>;
 
 type TagPopoverProps = {
@@ -146,30 +148,36 @@ export const TagPopover = ({
           ref: inputRef,
         })}
         <PopoverTrigger asChild>
-          <Button
+          <IconButton
             ref={triggerRef}
-            variant="ghost"
-            size="icon"
+            priority="tertiary"
             role="combobox"
             className={cn(
               `hover:bg-transparent`,
               classStyleProps?.popoverClasses?.popoverTrigger
             )}
-            onClick={() => setIsPopoverOpen(!isPopoverOpen)}>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className={`h-4 w-4 shrink-0 opacity-50 ${isPopoverOpen ? 'rotate-180' : 'rotate-0'}`}>
-              <path d="m6 9 6 6 6-6"></path>
-            </svg>
-          </Button>
+            aria-label={
+              (children as TagPopoverInputElement).props['aria-label'] ??
+              (children as TagPopoverInputElement).props.placeholder ??
+              heading
+            }
+            icon={
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={`h-4 w-4 shrink-0 opacity-50 ${isPopoverOpen ? 'rotate-180' : 'rotate-0'}`}>
+                <path d="m6 9 6 6 6-6"></path>
+              </svg>
+            }
+            onClick={() => setIsPopoverOpen(!isPopoverOpen)}
+          />
         </PopoverTrigger>
       </div>
       <PopoverContent

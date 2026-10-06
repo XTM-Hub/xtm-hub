@@ -10,9 +10,9 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { cn } from '@/components/filigran-ui/lib/utils';
+import { Button } from '@filigran/design-system';
 import { useEffect } from 'react';
 import { Form } from '../clients';
-import { Button } from '../servers';
 import AutoFormObject from './fields/Object';
 import type { Dependency, FieldConfig, IntlTranslateFunction } from './types';
 import {

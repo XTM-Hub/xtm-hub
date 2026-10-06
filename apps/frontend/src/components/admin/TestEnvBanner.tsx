@@ -1,13 +1,13 @@
 'use client';
 
 import { SettingsContext } from '@/components/settings/EnvPortalContext';
+import { useTranslate } from '@/hooks/use-translate';
 import { Callout } from '@filigran/ui';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useContext } from 'react';
 
 export const TestEnvBanner = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const { settings } = useContext(SettingsContext);
 
   return (

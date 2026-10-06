@@ -7,10 +7,12 @@ import {
 import { PlatformUpdateSheet } from '@/components/service/components/PlatformUpdateSheet';
 import { XtmoneStatusState } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/useXtmoneIntegrationStatus';
 import { XtmoneConnectionStatus } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/XtmoneConnectionStatus';
+import { useTranslate } from '@/hooks/use-translate';
 import { useDateFormatter } from '@/utils/date';
 import { toExternalHref } from '@/utils/external-url';
+import { Button, IconButton } from '@filigran/design-system';
 import { EditIcon } from '@filigran/icon';
-import { Badge, Button, Card, CardContent, Separator } from '@filigran/ui';
+import { Badge, Card, CardContent, Separator } from '@filigran/ui';
 import { GradientButton } from '@filigran/ui/servers';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import {
@@ -19,7 +21,6 @@ import {
   XtmPlatformBundleProductFragment,
 } from '@graphql/generated';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -35,7 +36,7 @@ export const BundleProductCard = ({
   xtmoneStatus,
   canManage,
 }: BundleProductCardProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const formatDate = useDateFormatter();
   const queryClient = useQueryClient();
   const [openEditName, setOpenEditName] = useState(false);
@@ -76,13 +77,14 @@ export const BundleProductCard = ({
           {product.service_instance?.name ?? '-'}
         </Badge>
         {canManage && (
-          <Button
-            variant="ghost"
-            className="size-6 shrink-0 rounded-lg border border-elevation-border-strong p-0 text-text-default-primary"
+          <IconButton
+            priority="tertiary"
+            size="sm"
+            className="shrink-0 rounded border border-elevation-border-strong text-text-default-primary"
             aria-label={t('XtmPlatformTrial.Products.EditName')}
-            onClick={() => setOpenEditName(true)}>
-            <EditIcon className="size-4" />
-          </Button>
+            icon={<EditIcon className="size-4" />}
+            onClick={() => setOpenEditName(true)}
+          />
         )}
       </div>
     </div>

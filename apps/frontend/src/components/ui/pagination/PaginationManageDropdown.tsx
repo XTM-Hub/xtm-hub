@@ -1,3 +1,4 @@
+import { useTranslate } from '@/hooks/use-translate';
 import { TableTuneIcon } from '@filigran/icon';
 import {
   DropdownMenu,
@@ -10,8 +11,8 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@filigran/ui';
-import { Button } from '@filigran/ui/servers';
-import { useTranslations } from 'next-intl';
+
+import { IconButton } from '@filigran/design-system';
 import { useMemo } from 'react';
 
 interface PaginationManageDropdownProps {
@@ -23,7 +24,7 @@ export const PaginationManageDropdown = ({
   onSetPageSize,
   pageSize,
 }: PaginationManageDropdownProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const dropdownItems = useMemo(() => {
     return [50, 100, 200, 300, 500].map((size) => (
       <DropdownMenuRadioItem
@@ -37,13 +38,12 @@ export const PaginationManageDropdown = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="tertiary"
-          size="icon"
+        <IconButton
+          priority="tertiary"
           className="h-9 w-9 rounded-none"
-          aria-label={t('GenericActions.Paginate.Manage')}>
-          <TableTuneIcon className="h-[1.125rem] w-[1.125rem]" />
-        </Button>
+          aria-label={t('GenericActions.Paginate.Manage')}
+          icon={<TableTuneIcon className="h-[1.125rem] w-[1.125rem]" />}
+        />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuSub>

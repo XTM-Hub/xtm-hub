@@ -1,5 +1,5 @@
 'use client';
-import { Button, toast } from '@filigran/ui';
+import { toast } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { ServiceRestriction } from '@graphql/generated';
 
@@ -8,9 +8,10 @@ import { ServiceFormValues } from '@/components/service/components/subscribable-
 
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import useServiceCapability from '@/hooks/use-service-capability';
+import { useTranslate } from '@/hooks/use-translate';
 import revalidatePathActions from '@/utils/actions/revalidate-path.actions';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
-import { useTranslations } from 'next-intl';
+import { Button } from '@filigran/design-system';
 import { useState } from 'react';
 
 interface ServiceManageSheetProps {
@@ -26,7 +27,7 @@ export const ServiceManageSheet = ({
   open: externalOpen,
   setOpen: externalSetOpen,
 }: ServiceManageSheetProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [internalOpenSheet, setInternalOpenSheet] = useState(false);
 
   // Use external state if provided, otherwise use internal state
@@ -92,7 +93,7 @@ export const ServiceManageSheet = ({
             setOpen={setOpenSheet}
             trigger={
               variant === 'button' ? (
-                <Button variant="secondary">{t('Utils.Update')}</Button>
+                <Button priority="secondary">{t('Utils.Update')}</Button>
               ) : undefined
             }
             title={t(`${translationKey}.UpdateService`, {

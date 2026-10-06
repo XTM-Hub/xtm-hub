@@ -2,9 +2,10 @@ import { getUserListContext } from '@/components/admin/user/UserListPage';
 import { UserAdminForm } from '@/components/admin/user/forms/admin/UserAdminForm';
 import { userAdminFormSchema } from '@/components/admin/user/forms/user-form.schema';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
-import { Button, useToast } from '@filigran/ui';
+import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
+import { useToast } from '@filigran/ui';
 import { AdminAddUserMutation as AdminAddUserMutationType } from '@generated/AdminAddUserMutation.graphql';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { graphql, useMutation } from 'react-relay';
 import { z } from 'zod';
@@ -22,7 +23,7 @@ export const AdminAddUserMutation = graphql`
 `;
 
 export const AdminAddUser = () => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [openSheet, setOpenSheet] = useState(false);
 
   const { toast } = useToast();

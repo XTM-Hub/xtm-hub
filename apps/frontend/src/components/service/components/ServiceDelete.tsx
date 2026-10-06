@@ -1,9 +1,9 @@
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { IconActionsItem } from '@/components/ui/IconActions';
+import { useTranslate } from '@/hooks/use-translate';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { Button } from '@filigran/ui';
+import { Button } from '@filigran/design-system';
 import { IntegrationType } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 
 interface ServiceDeleteProps {
   userCanDelete?: boolean;
@@ -34,7 +34,7 @@ export const ServiceDelete = ({
   integrationType,
   type = 'button',
 }: ServiceDeleteProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const translationKey =
     INTEGRATION_TRANSLATION_KEY_MAP[integrationType] ?? 'CsvFeed';
 
@@ -55,7 +55,9 @@ export const ServiceDelete = ({
               {t('Utils.Delete')}
             </IconActionsItem>
           ) : (
-            <Button variant={'secondary-destructive'}>
+            <Button
+              variant="destructive"
+              priority="secondary">
               {t('Utils.Delete')}
             </Button>
           )

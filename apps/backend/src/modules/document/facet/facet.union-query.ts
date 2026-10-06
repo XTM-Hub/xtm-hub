@@ -1,19 +1,24 @@
 import { Knex } from 'knex';
-import { applySearch, database, db, dbRaw } from '../../../../knexfile';
+import {
+  applyLogicalFilter,
+  applySearch,
+  database,
+  db,
+  dbRaw,
+} from '../../../../knexfile';
 import {
   DocumentMetadataKeyCode,
   FacetBucket,
   LoadDocumentFacetInput,
 } from '../../../__generated__/resolvers-types';
 import { databaseContext } from '../../../context/database.context';
-import type Document from '../../../model/kanel/public/Document';
 import {
   FACET_SPECS,
   FacetField,
   FacetGroup,
   FacetSpec,
 } from './facet.grouping.utils';
-import { buildScopedDocumentIdsQuery, FacetRow } from './facet.queries';
+import { buildFacetBaseScopeQuery, FacetRow } from './facet.queries';
 
 type FacetUnionRow = FacetRow & { facet: FacetField };
 
@@ -31,7 +36,7 @@ const buildMetadataFacetBranch = (
   return db('Document_Metadata')
     .from('Document_Metadata as metadata')
     .select(dbRaw('? as facet', [spec.field]), 'metadata.value as value')
-    .countDistinct({ count: 'metadata.document_id' })
+    .count({ count: 'metadata.document_id' })
     .where('metadata.key', '=', spec.metadataKey)
     .whereNotNull('metadata.value')
     .whereIn('metadata.document_id', selectIdsFromCte(cteName))
@@ -50,7 +55,7 @@ const buildUseCaseFacetBranch = (
       dbRaw('? as facet', [spec.field]),
       dbRaw('"objectUseCase"."use_case_id"::text as value')
     )
-    .countDistinct({ count: 'objectUseCase.object_id' })
+    .count({ count: 'objectUseCase.object_id' })
     .whereIn('objectUseCase.object_id', selectIdsFromCte(cteName))
     .groupBy('objectUseCase.use_case_id')
     .orderBy('count', 'desc')
@@ -66,7 +71,7 @@ const buildSolutionCategoryFacetBranch = (
       dbRaw('? as facet', [spec.field]),
       dbRaw('"objectSolutionCategory"."solution_category_id"::text as value')
     )
-    .countDistinct({ count: 'objectSolutionCategory.object_id' })
+    .count({ count: 'objectSolutionCategory.object_id' })
     .whereIn('objectSolutionCategory.object_id', selectIdsFromCte(cteName))
     .groupBy('objectSolutionCategory.solution_category_id')
     .orderBy('count', 'desc')
@@ -139,21 +144,26 @@ export const loadFacetsInSingleQuery = async (
   input: LoadDocumentFacetInput,
   restrictToActive: boolean
 ): Promise<Record<FacetField, FacetBucket[]>> => {
-  const ctes: Array<{ name: string; query: Knex.QueryBuilder<Document> }> = [];
+  const ctes: Array<{ name: string; query: Knex.QueryBuilder }> = [];
   const branches: Knex.QueryBuilder[] = [];
+
+  const baseScopeCteName = 'facet_base_scope';
+  const baseScopeQuery = buildFacetBaseScopeQuery(input, restrictToActive);
+  await applySearch(
+    'Document',
+    baseScopeQuery,
+    input.searchTerm ?? undefined,
+    true
+  );
+  ctes.push({ name: baseScopeCteName, query: baseScopeQuery });
 
   for (const [index, group] of groups.entries()) {
     const cteName = `facet_scope_${index}`;
-    const scopedQuery = buildScopedDocumentIdsQuery(
-      { ...input, logicalFilters: group.strippedFilter },
-      restrictToActive
-    );
-    await applySearch(
-      'Document',
-      scopedQuery,
-      input.searchTerm ?? undefined,
-      true
-    );
+    const scopedQuery = createUnionQueryBase()
+      .select('Document.id')
+      .from({ Document: baseScopeCteName })
+      .groupBy('Document.id');
+    applyLogicalFilter('Document', scopedQuery, group.strippedFilter);
     ctes.push({ name: cteName, query: scopedQuery });
 
     for (const spec of group.specs) {

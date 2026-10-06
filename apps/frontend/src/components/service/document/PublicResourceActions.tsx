@@ -2,6 +2,7 @@
 
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
+import { useTranslate } from '@/hooks/use-translate';
 import { isValueInEnum } from '@/utils/is-value-in-enum';
 import { getPlatformIdentifier } from '@/utils/platform';
 import { buildSignupRedirect } from '@/utils/redirect';
@@ -23,8 +24,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/ui/clients';
-import { Button } from '@filigran/ui/servers';
-import { useTranslations } from 'next-intl';
+
+import { Button, IconButton } from '@filigran/design-system';
 import Link from 'next/link';
 
 interface PublicResourceActionsProps {
@@ -40,7 +41,7 @@ export const PublicResourceActions = ({
   pageUrl,
   shareTooltipText,
 }: PublicResourceActionsProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
 
   const privateResourceLink = isValueInEnum(serviceInstance.slug, ServiceSlug)
     ? getServiceInfo(
@@ -72,17 +73,14 @@ export const PublicResourceActions = ({
               delayDuration={50}
               disableHoverableContent={true}>
               <TooltipTrigger asChild>
-                <Button
+                <IconButton
                   asChild
-                  variant="tertiary"
-                  size="icon"
-                  className="z-[2] text-primary">
-                  <Link
-                    href={signupHref}
-                    aria-label={t('Service.ShareableResources.Download')}>
-                    <DownloadIcon className="h-4 w-4" />
-                  </Link>
-                </Button>
+                  priority="tertiary"
+                  className="z-[2] text-primary"
+                  aria-label={t('Service.ShareableResources.Download')}
+                  icon={<DownloadIcon className="h-4 w-4" />}>
+                  <Link href={signupHref} />
+                </IconButton>
               </TooltipTrigger>
               <TooltipContent>
                 <p>{t('Service.ShareableResources.Download')}</p>

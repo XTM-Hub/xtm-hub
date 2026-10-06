@@ -6,10 +6,10 @@ import {
 import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
+import { useTranslate } from '@/hooks/use-translate';
 import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
 import {
   Badge,
-  Button,
   DataTable,
   DataTableHeadBarOptions,
   SelectionState,
@@ -21,7 +21,6 @@ import {
 } from '@generated/userServices_fragment.graphql';
 import { OrganizationCapability, ServiceRestriction } from '@graphql/generated';
 import { ColumnDef, PaginationState } from '@tanstack/react-table';
-import { useTranslations } from 'next-intl';
 
 import { useCallback, useContext, useMemo, useState } from 'react';
 
@@ -45,6 +44,7 @@ import ServiceSlugHeader from '@/components/service/[slug]/ServiceSlugHeader';
 import { SubscriptionSlugAddCapabilities } from '@/components/subcription/[slug]/SubscriptionSlugAddCapabilities';
 import { useAdminByPass } from '@/hooks/use-portal-capability';
 import { APP_PATH } from '@/utils/path/constant';
+import { Button } from '@filigran/design-system';
 import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import { subscriptionByIdQuery } from '@generated/subscriptionByIdQuery.graphql';
@@ -67,7 +67,7 @@ const SubscriptionSlug = ({
   queryRefSubscription,
   serviceInstance,
 }: SubscriptionSlugProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const [editUserService, setEditUserService] = useState<
     userServices_fragment$data | undefined
   >(undefined);
@@ -333,23 +333,20 @@ const SubscriptionSlug = ({
                   actions: () => (
                     <>
                       <Button
-                        variant="tertiary"
-                        size="sm"
-                        className="cursor-pointer"
+                        priority="tertiary"
+                        startIcon={<AddIcon className="h-4 w-4" />}
                         onClick={() => setOpenAddCapabilities(true)}>
-                        <AddIcon className="h-4 w-4 m-s" />
                         {t(
                           'Service.Management.AddUserServiceCapabilities.Button'
                         )}
                       </Button>
                       <Button
-                        variant="tertiary-destructive"
-                        size="sm"
-                        className="cursor-pointer"
+                        variant="destructive"
+                        priority="tertiary"
+                        startIcon={<DeleteIcon className="h-4 w-4" />}
                         onClick={() =>
                           setDeleteUserServices(selectedUserServices)
                         }>
-                        <DeleteIcon className="h-4 w-4 m-s" />
                         {t('Utils.Delete')}
                       </Button>
                     </>

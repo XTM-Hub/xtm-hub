@@ -1,7 +1,8 @@
 'use client';
 
+import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
 import {
-  Button,
   Form,
   FormControl,
   FormField,
@@ -10,7 +11,6 @@ import {
 } from '@filigran/ui';
 import { FormLabel, MultiSelectFormField } from '@filigran/ui/clients';
 import { PlatformIdentifier } from '@graphql/generated';
-import { useTranslations } from 'next-intl';
 import { UseFormReturn, useFormState, useWatch } from 'react-hook-form';
 import {
   RoleFormField,
@@ -51,7 +51,7 @@ export const TrialUserFormSkeleton = ({
   onCancel,
   isPending,
 }: TrialUserFormSkeletonProps) => {
-  const t = useTranslations();
+  const t = useTranslate();
   const userIds = useWatch({ control: form.control, name: 'userIds' });
   const formState = useFormState({ control: form.control });
 
@@ -112,7 +112,7 @@ export const TrialUserFormSkeleton = ({
 
         <div className="flex justify-end gap-s">
           <Button
-            variant="secondary"
+            priority="secondary"
             type="button"
             onClick={onCancel}>
             {t('Utils.Cancel')}
