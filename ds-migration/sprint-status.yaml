@@ -32,6 +32,10 @@ design_system: "@filigran/design-system@1.2.0"
 reference_pull_request: 3614
 # The checks main requires, as GitHub names them. run.sh waits for all of them on each push.
 required_checks: run-api-unit-tests, run-front-unit-tests, run-e2e-tests
+repository: XTM-Hub/xtm-hub
+# The project board the issues live on, and its Status for an item in development, pushed, done.
+github_project: XTM-Hub/1
+project_statuses: Development, Code review, Done
 
 development_status:
   # Primitives with a legacy equivalent in filigran-ui

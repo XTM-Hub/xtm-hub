@@ -40,9 +40,19 @@ checks() {
     fail) echo '[{"name":"run-api-unit-tests","bucket":"pass"},{"name":"run-front-unit-tests","bucket":"fail"},{"name":"run-e2e-tests","bucket":"pass"}]' ;;
   esac
 }
+# A fake project board: one item per issue, ITEM_<issue>; moves are logged to board.log.
+argval() { local k="$1"; shift; while [ $# -gt 0 ]; do case "$2" in "$k="*) echo "${2#*=}"; return ;; esac; shift; done; }
+board() {
+  case "$*" in
+    *updateProjectV2ItemFieldValue*) echo "$(argval o "$@") $(argval i "$@")" >> "$SB/board.log" ;;
+    *projectV2\(number*) printf '{"data":{"organization":{"projectV2":{"id":"P1","field":{"id":"F1","options":[{"id":"OPT_DEV","name":"Development"},{"id":"OPT_REVIEW","name":"Code review"},{"id":"OPT_DONE","name":"Done"}]}}},"repository":{"issue":{"id":"I_%s","projectItems":{"nodes":[{"id":"ITEM_%s","project":{"id":"P1"}}]}}}}}\n' "$(argval issue "$@")" "$(argval issue "$@")" ;;
+  esac
+  exit 0
+}
 case "$1 $2" in
   "issue edit") [ "$3" = 3561 ] && [ "$4" = --body-file ] && cp "$5" "$SB/issue-3561.md"; exit 0 ;;
-  "issue comment"|"api graphql") exit 0 ;;
+  "api graphql") board "$@" ;;
+  "issue comment") exit 0 ;;
   "pr comment") if [ "$4" = --body ]; then echo "$5" >> "$SB/pr-comments.log"; else cp "$(bodyfile "$@")" "$SB/last-pr-comment.md"; fi ;;
   "pr edit") cp "$(bodyfile "$@")" "$SB/pr-body.md" ;;
   "pr create") cp "$(bodyfile "$@")" "$SB/pr-body.md"; echo "https://github.com/XTM-Hub/xtm-hub/pull/9999" ;;
@@ -110,7 +120,7 @@ appendFileSync(`${process.env.SB}/calls.log`, `screenshot ${phase} ${spec ?? ''}
 const failing = (process.env.SCREENSHOT_FAIL ?? '').split(' ').filter(Boolean);
 if (phase === 'after' && failing.some((key) => spec.includes(key))) process.exit(1);
 EOF
-  printf 'epic_issue: 3507\nbranch: issue/3507\nbase: main\npull_request: none\nrequired_checks: run-api-unit-tests, run-front-unit-tests, run-e2e-tests\n\n%s\n' "$2" >ds-migration/sprint-status.yaml
+  printf 'epic_issue: 3507\nbranch: issue/3507\nbase: main\npull_request: none\nrequired_checks: run-api-unit-tests, run-front-unit-tests, run-e2e-tests\nrepository: XTM-Hub/xtm-hub\ngithub_project: XTM-Hub/1\nproject_statuses: Development, Code review, Done\n\n%s\n' "$2" >ds-migration/sprint-status.yaml
   git add -A && git commit -qm init && git remote add origin "$SB/remote.git" && git push -q origin main && git switch -qc issue/3507
 }
 status_of() { awk -v k="  $1:" 'index($0, k) == 1 { print $2; exit }' ds-migration/sprint-status.yaml; }
@@ -147,6 +157,8 @@ check "no AI trailer in commits" '! git log --format=%B | grep -qi "co-authored-
 check "screens captured between the spec and the build" '[ "$(grep -oE "Spec mode for item 3561|screenshot before ds-migration/specs/3561|Build mode for item 3561" "$SB/calls.log" | cut -d" " -f1 | paste -sd, -)" = "Spec,screenshot,Build" ]'
 check "session progress shown live in the run log" 'grep -q "3561-textarea   Agent Implement 3561-textarea" "$(git rev-parse --git-dir)/ds-migration/run.log" && [ -s "$(git rev-parse --git-dir)/ds-migration/3561-textarea.jsonl" ]'
 check "issue body replaced by the spec, by the script" 'head -1 "$SB/issue-3561.md" | grep -qx "Part of #3507." && grep -qx "# textarea" "$SB/issue-3561.md" && ! grep -q "^kind:" "$SB/issue-3561.md"'
+check "issue assigned and moved along the board" 'grep -q "^gh issue edit 3561 --add-assignee @me" "$SB/calls.log" && [ "$(grep " ITEM_3561$" "$SB/board.log" | cut -d" " -f1 | paste -sd, -)" = "OPT_DEV,OPT_REVIEW,OPT_DONE" ]'
+check "covered issues assigned and moved with their item" 'grep -q "^gh issue edit 4001 --add-assignee @me" "$SB/calls.log" && grep -qx "OPT_DONE ITEM_4002" "$SB/board.log"'
 check "sessions never run subagents in the background" '! grep -q "claude with background tasks allowed" "$SB/calls.log"'
 check "after screenshots part of the validation" 'grep -q "^screenshot after ds-migration/specs/3561-textarea.md" "$SB/calls.log"'
 check "done item announced on the PR" 'grep -qx "Component Textarea done. Issue #3561" "$SB/pr-comments.log"'

@@ -54,6 +54,9 @@ BRANCH="$(header branch)"
 BASE="$(header base)"
 EPIC_ISSUE="$(header epic_issue)"
 REQUIRED_CHECKS="$(header required_checks | tr -d ' ')"
+BOARD="$(header github_project)"   # <org>/<project number>; empty: no board updates
+REPOSITORY="$(header repository)"  # <owner>/<name>
+IFS=, read -r BOARD_DEVELOPMENT BOARD_REVIEW BOARD_DONE <<<"$(header project_statuses | sed 's/, */,/g')"
 [ -n "$REQUIRED_CHECKS" ] || die "required_checks is missing from $STATUS_FILE"
 
 # One line per item, in file order: "<epic> <key> <status>".
@@ -515,6 +518,53 @@ failed_log() {
   echo "$file"
 }
 
+# ---------------------------------------------------------------- project board
+
+# Moves an issue to a Status of the project board, adding it to the board when it is missing.
+# Never stops the run: the board is a view, the status file is the truth. <issue> <status name>
+board_status() {
+  local issue="$1" status="$2" data project field option item
+  [ -n "$BOARD" ] && [ -n "$status" ] || return 0
+  data="$(gh api graphql -f query='query($org: String!, $number: Int!, $owner: String!, $repo: String!, $issue: Int!) {
+      organization(login: $org) { projectV2(number: $number) { id
+        field(name: "Status") { ... on ProjectV2SingleSelectField { id options { id name } } } } }
+      repository(owner: $owner, name: $repo) { issue(number: $issue) { id
+        projectItems(first: 20) { nodes { id project { id } } } } } }' \
+    -f org="${BOARD%/*}" -F number="${BOARD#*/}" -f owner="${REPOSITORY%/*}" -f repo="${REPOSITORY#*/}" \
+    -F issue="$issue" 2>/dev/null || true)"
+  project="$(jq -r '.data.organization.projectV2.id // empty' <<<"$data" 2>/dev/null || true)"
+  field="$(jq -r '.data.organization.projectV2.field.id // empty' <<<"$data" 2>/dev/null || true)"
+  option="$(jq -r --arg s "$status" '.data.organization.projectV2.field.options[]? | select(.name == $s) | .id' <<<"$data" 2>/dev/null || true)"
+  item="$(jq -r --arg p "$project" '.data.repository.issue.projectItems.nodes[]? | select(.project.id == $p) | .id' <<<"$data" 2>/dev/null || true)"
+  if [ -n "$project" ] && [ -z "$item" ]; then
+    item="$(gh api graphql -f query='mutation($p: ID!, $c: ID!) { addProjectV2ItemById(input: {projectId: $p, contentId: $c}) { item { id } } }' \
+      -f p="$project" -f c="$(jq -r '.data.repository.issue.id // empty' <<<"$data")" --jq .data.addProjectV2ItemById.item.id 2>/dev/null || true)"
+  fi
+  if [ -z "$project" ] || [ -z "$field" ] || [ -z "$option" ] || [ -z "$item" ]; then
+    log "board: could not move #$issue to $status"
+    return 0
+  fi
+  gh api graphql -f query='mutation($p: ID!, $i: ID!, $f: ID!, $o: String!) {
+      updateProjectV2ItemFieldValue(input: {projectId: $p, itemId: $i, fieldId: $f, value: {singleSelectOptionId: $o}}) { projectV2Item { id } } }' \
+    -f p="$project" -f i="$item" -f f="$field" -f o="$option" >/dev/null 2>&1 || log "board: could not move #$issue to $status"
+}
+
+# The item's issue and the issues it covers move together. <key> <status name>
+board_item() {
+  local covered
+  board_status "$(issue_of "$1")" "$2"
+  for covered in $(covers_of "$1" | tr ',' ' '); do board_status "$covered" "$2"; done
+}
+
+# The person running the script takes the item's issues and moves them to development.
+start_tracking() {
+  local key="$1" issue
+  for issue in "$(issue_of "$key")" $(covers_of "$key" | tr ',' ' '); do
+    gh issue edit "$issue" --add-assignee @me >/dev/null 2>&1 || log "could not assign #$issue"
+  done
+  board_item "$key" "$BOARD_DEVELOPMENT"
+}
+
 # ---------------------------------------------------------------- one item
 
 # Labels the item's issue and tells the PR, so the team sees it without watching the run.
@@ -560,6 +610,7 @@ commit_result() {
   fi
   body="$(jq -r .commit_body <<<"$result" | grep -viE '^(co-authored-by|signed-off-by):' || true)"
   set_status "$key" review || return 1
+  board_item "$key" "$BOARD_REVIEW"
   commit_item "$key" "$subject" "$body" || return 1
   log "$key committed: $subject"
 }
@@ -569,6 +620,7 @@ mark_done() {
   set_status "$key" done
   log "$key done$2"
   gh issue edit "$(issue_of "$key")" --remove-label "$NEEDS_LABEL" >/dev/null 2>&1 || true
+  board_item "$key" "$BOARD_DONE"
   pr="$(header pull_request)"
   [ "$pr" = none ] || gh pr comment "$pr" --body "Component $(name_of "$key") done. Issue #$(issue_of "$key")" >/dev/null ||
     log "could not comment on PR #$pr"
@@ -685,6 +737,7 @@ process() {
         if $DEPS_CHANGED; then stop_app; fi
         ensure_app
         gh issue edit "$issue" --remove-label "$NEEDS_LABEL" >/dev/null 2>&1 || true
+        start_tracking "$key"
         set_status "$key" in-progress
         set_status "$epic" in-progress # reopens an epic already in review or done
         log "== $key (issue #$issue, $kind)"
