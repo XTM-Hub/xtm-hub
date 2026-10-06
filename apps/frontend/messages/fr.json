@@ -310,6 +310,9 @@
       "CAPABILITY_PORTAL_NOT_FOUND": "Capacité inconnue",
       "SSO_GROUP_ROLE_PORTAL_NOT_FOUND": "Association de groupe SSO introuvable",
       "SSO_GROUP_ROLE_PORTAL_ALREADY_EXISTS": "Ce groupe SSO est déjà associé à ce rôle",
+      "ROLE_PORTAL_NOT_FOUND": "Rôle introuvable",
+      "ROLE_PORTAL_ALREADY_EXISTS": "Ce rôle existe déjà",
+      "ROLE_PORTAL_PROTECTED": "Ce rôle est utilisé par la plateforme : il ne peut être ni renommé ni supprimé, et ADMIN doit garder BYPASS",
       "COMPETITOR_DOMAIN_ALREADY_EXISTS": "Il existe déjà un concurrent avec le même domaine",
       "DEPLOYMENT_FEEDBACK_ALREADY_EXISTS": "Des retours d'expérience sur le déploiement existent déjà",
       "COMPETITOR_NOT_FOUND": "Concurrent non trouvé",
@@ -369,6 +372,7 @@
       "INVALID_PLATFORM_VERSION": "Version de plateforme non valide",
       "INVALID_PRODUCTS_FOR_DEPLOYMENT_TYPE": "Les produits sélectionnés ne sont pas valides pour ce type de déploiement",
       "INVALID_SSO_GROUP_ROLE_PORTAL": "Groupe SSO ou rôle invalide",
+      "INVALID_ROLE_PORTAL": "Rôle invalide",
       "IS_PLATFORM_REGISTERED_UNKNOWN_ERROR": "Une erreur inconnue s'est produite lors de la connexion avec le produit",
       "LOAD_CAPABILITIES_ERROR": "Une erreur s'est produite lors du chargement des fonctionnalités",
       "LIST_FACET_ERROR": "Une erreur s'est produite lors de l'affichage des facettes.",
@@ -554,7 +558,13 @@
     "EditMapping": "Modifier un groupe SSO",
     "DeleteDialog": {
       "Title": "Supprimer un groupe SSO",
-      "Text": "Voulez-vous vraiment retirer le groupe SSO {ssoGroup} ?"
+      "Text": "Voulez-vous vraiment retirer le groupe SSO ?"
+    },
+    "AddRole": "Ajouter un rôle",
+    "EditRole": "Modifier le rôle",
+    "DeleteRoleDialog": {
+      "Title": "Supprimer le rôle",
+      "Text": "Voulez-vous vraiment supprimer le rôle {rolePortal} ? Ses associations aux groupes SSO et ses attributions aux utilisateurs seront aussi supprimées."
     },
     "Error": {
       "SsoGroup": "Le groupe SSO est requis",

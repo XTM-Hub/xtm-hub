@@ -9,6 +9,11 @@ import RolePortal, {
 import RolePortalCapabilityPortal, {
   RolePortalCapabilityPortalMutator,
 } from '../../src/model/kanel/public/RolePortalCapabilityPortal';
+import SSOGroupRolePortal, {
+  SSOGroupRolePortalMutator,
+  SSOGroupRolePortalRolePortal,
+  SSOGroupRolePortalSSOGroup,
+} from '../../src/model/kanel/public/SSOGroupRolePortal';
 import User, { UserId, UserMutator } from '../../src/model/kanel/public/User';
 import UserOrganization, {
   UserOrganizationInitializer,
@@ -235,7 +240,7 @@ export const TestUserHelper = {
       const [userRolePortal] = await db<RolePortal>('RolePortal')
         .insert({
           id: rolePortalId,
-          name: `test-admin-${rolePortalId}`,
+          name: `TEST-ADMIN-${rolePortalId}`.toUpperCase(),
           ...data,
         })
         .returning('*');
@@ -246,6 +251,27 @@ export const TestUserHelper = {
     },
     delete: async (field: RolePortalMutator) => {
       await db<RolePortal>('RolePortal').where(field).del();
+    },
+  },
+  ssoGroup_RolePortal: {
+    create: async (data: {
+      SSOGroup: string;
+      RolePortal: string;
+    }): Promise<SSOGroupRolePortal | undefined> => {
+      const [ssoGroupRolePortal] = await db<SSOGroupRolePortal>(
+        'SSOGroup_RolePortal'
+      )
+        .insert({
+          SSOGroup: data.SSOGroup as SSOGroupRolePortalSSOGroup,
+          RolePortal: data.RolePortal as SSOGroupRolePortalRolePortal,
+        })
+        .returning('*');
+      return ssoGroupRolePortal;
+    },
+    delete: async (field: { SSOGroup?: string; RolePortal?: string }) => {
+      await db<SSOGroupRolePortal>('SSOGroup_RolePortal')
+        .where(field as SSOGroupRolePortalMutator)
+        .del();
     },
   },
   rolePortal_CapabilityPortal: {

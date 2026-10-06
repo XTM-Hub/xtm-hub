@@ -310,6 +310,9 @@
       "CAPABILITY_PORTAL_NOT_FOUND": "Unknown capability",
       "SSO_GROUP_ROLE_PORTAL_NOT_FOUND": "SSO group mapping not found",
       "SSO_GROUP_ROLE_PORTAL_ALREADY_EXISTS": "This SSO group is already mapped to this role",
+      "ROLE_PORTAL_NOT_FOUND": "Role not found",
+      "ROLE_PORTAL_ALREADY_EXISTS": "This role already exists",
+      "ROLE_PORTAL_PROTECTED": "This role is used by the platform: it cannot be renamed or deleted, and ADMIN must keep BYPASS",
       "COMPETITOR_DOMAIN_ALREADY_EXISTS": "A competitor with the same domain already exists",
       "DEPLOYMENT_FEEDBACK_ALREADY_EXISTS": "Deployment feedback already exists",
       "COMPETITOR_NOT_FOUND": "Competitor not found",
@@ -369,6 +372,7 @@
       "INVALID_PLATFORM_VERSION": "Invalid platform version",
       "INVALID_PRODUCTS_FOR_DEPLOYMENT_TYPE": "The selected products are not valid for this deployment type",
       "INVALID_SSO_GROUP_ROLE_PORTAL": "Invalid SSO group or role",
+      "INVALID_ROLE_PORTAL": "Invalid role",
       "IS_PLATFORM_REGISTERED_UNKNOWN_ERROR": "An unknown error occurred during product connection",
       "LOAD_CAPABILITIES_ERROR": "An error occurred while loading capabilities",
       "LIST_FACET_ERROR": "An unknown error occurred while listing facets",
@@ -555,6 +559,12 @@
     "DeleteDialog": {
       "Title": "Delete SSO Group",
       "Text": "Are you sure you want to delete SSO Group?"
+    },
+    "AddRole": "Add role",
+    "EditRole": "Edit role",
+    "DeleteRoleDialog": {
+      "Title": "Delete role",
+      "Text": "Are you sure you want to delete the role {rolePortal}? Its SSO group mappings and user assignments will be removed too."
     },
     "Error": {
       "SsoGroup": "SSO group is required",

@@ -1,7 +1,8 @@
-import {useTranslate} from '@/hooks/use-translate';
-import {AutoForm, Button, SheetFooter,} from '@filigran/ui';
-import {useMemo} from 'react';
-import {z} from 'zod';
+import { useTranslate } from '@/hooks/use-translate';
+import { Button } from '@filigran/design-system';
+import { AutoForm, SheetFooter } from '@filigran/ui';
+import { useMemo } from 'react';
+import { z } from 'zod';
 
 const buildSsoGroupRolePortalFormSchema = (t: (key: string) => string) =>
   z.object({
@@ -49,7 +50,6 @@ const SsoGroupRolePortalForm = ({
       <SheetFooter className="pt-2">
         <div className="flex gap-s">
           <Button
-            variant="secondary"
             type="button"
             onClick={onClose}>
             {t('Utils.Cancel')}

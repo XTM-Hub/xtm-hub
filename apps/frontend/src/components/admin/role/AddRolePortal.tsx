@@ -1,28 +1,28 @@
-import SsoGroupRolePortalForm from '@/components/admin/role/SsoGroupRolePortalForm';
+import RolePortalForm from '@/components/admin/role/RolePortalForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
+import { Button } from '@filigran/design-system';
 import { toast } from '@filigran/ui';
 
-import { Button } from '@filigran/design-system';
 import {
-  useAddSsoGroupRolePortalMutation,
-  useSsoGroupRolePortalsQuery,
+  useAddRolePortalMutation,
+  useRolePortalsQuery,
 } from '@graphql/generated';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
-const AddSsoGroupRolePortal = () => {
+const AddRolePortal = () => {
   const t = useTranslate();
   const [openSheet, setOpenSheet] = useState(false);
   const queryClient = useQueryClient();
-  const { mutate: addSsoGroupRolePortal } = useAddSsoGroupRolePortalMutation(
+  const { mutate: addRolePortal } = useAddRolePortalMutation(
     portalGraphqlClient,
     {
       onSuccess: async () => {
         setOpenSheet(false);
         await queryClient.invalidateQueries({
-          queryKey: useSsoGroupRolePortalsQuery.getKey(),
+          queryKey: useRolePortalsQuery.getKey(),
         });
         toast({
           title: t('Utils.Success'),
@@ -42,16 +42,16 @@ const AddSsoGroupRolePortal = () => {
 
   return (
     <SheetWithPreventingDialog
-      title={t('RoleListPage.AddMapping')}
+      title={t('RoleListPage.AddRole')}
       setOpen={setOpenSheet}
       open={openSheet}
-      trigger={<Button>{t('RoleListPage.AddMapping')}</Button>}>
-      <SsoGroupRolePortalForm
+      trigger={<Button>{t('RoleListPage.AddRole')}</Button>}>
+      <RolePortalForm
         onClose={() => setOpenSheet(false)}
-        handleSubmit={(input) => addSsoGroupRolePortal({ input })}
+        handleSubmit={(input) => addRolePortal({ input })}
       />
     </SheetWithPreventingDialog>
   );
 };
 
-export default AddSsoGroupRolePortal;
+export default AddRolePortal;

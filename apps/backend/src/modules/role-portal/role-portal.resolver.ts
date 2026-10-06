@@ -48,6 +48,27 @@ const rolePortalResolver: Resolvers = {
         throw mapToGraphQLError(error);
       }
     },
+    addRolePortal: async (_, { input }) => {
+      try {
+        return await RolePortalApp.addRolePortal(input);
+      } catch (error) {
+        throw mapToGraphQLError(error);
+      }
+    },
+    updateRolePortal: async (_, { name, input }) => {
+      try {
+        return await RolePortalApp.updateRolePortal(name, input);
+      } catch (error) {
+        throw mapToGraphQLError(error);
+      }
+    },
+    deleteRolePortal: async (_, { name }) => {
+      try {
+        return await RolePortalApp.deleteRolePortal(name);
+      } catch (error) {
+        throw mapToGraphQLError(error);
+      }
+    },
   },
 };
 

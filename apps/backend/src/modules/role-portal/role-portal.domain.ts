@@ -61,7 +61,14 @@ export const RolePortalDomain = {
     await RolePortalDomain.ensureUserHasRole(user_id, rolePortal.id);
   },
 
+  // Matches an existing role regardless of case, so "admin" reuses "ADMIN".
   upsertRolePortalByName: async (name: string): Promise<RolePortal> => {
+    const existing = await db<RolePortal>('RolePortal')
+      .whereRaw('LOWER(name) = LOWER(?)', [name])
+      .first();
+    if (existing) {
+      return existing;
+    }
     const [rolePortal] = await db<RolePortal>('RolePortal')
       .insert({ id: uuidv4() as RolePortalId, name })
       .onConflict('name')
@@ -71,6 +78,27 @@ export const RolePortalDomain = {
       throw new Error(UnknownErrorCode.UnknownError);
     }
     return rolePortal;
+  },
+
+  insertRolePortal: async (name: string): Promise<RolePortal> => {
+    const [rolePortal] = await db<RolePortal>('RolePortal')
+      .insert({ id: uuidv4() as RolePortalId, name })
+      .returning('*');
+    if (!rolePortal) {
+      throw new Error(UnknownErrorCode.UnknownError);
+    }
+    return rolePortal;
+  },
+
+  // SSOGroup_RolePortal references the role by name with ON UPDATE CASCADE,
+  // so its SSO group mappings follow the rename.
+  updateRolePortalName: async (id: RolePortalId, name: string) => {
+    await db<RolePortal>('RolePortal').where({ id }).update({ name });
+  },
+
+  // Cascades to the role's capabilities, SSO group mappings and user grants.
+  deleteRolePortal: async (id: RolePortalId) => {
+    await db<RolePortal>('RolePortal').where({ id }).del();
   },
 
   loadCapabilityPortalsByNames: (
@@ -179,10 +207,15 @@ export const RolePortalDomain = {
     );
   },
 
-  loadRolePortals: async (): Promise<
-    (RolePortal & { capabilities: Capability[] })[]
-  > => {
+  loadRolePortals: async (
+    filter: { name?: string } = {}
+  ): Promise<(RolePortal & { capabilities: Capability[] })[]> => {
     return db<RolePortal>('RolePortal')
+      .modify((queryBuilder) => {
+        if (filter.name) {
+          queryBuilder.where('RolePortal.name', filter.name);
+        }
+      })
       .leftJoin(
         'RolePortal_CapabilityPortal as rolePortal_CapabilityPortal',
         'RolePortal.id',
@@ -224,12 +257,6 @@ export const RolePortalDomain = {
           queryBuilder.where('RolePortal.name', filter.rolePortalName);
         }
       })
-      .leftJoin(
-        'RolePortal_CapabilityPortal as rolePortal_CapabilityPortal',
-        'RolePortal.id',
-        'rolePortal_CapabilityPortal.role_portal_id'
-      )
-      .groupBy('RolePortal.id', 'SSOGroup_RolePortal.SSOGroup')
       .select<(RolePortal & { ssoGroup: string })[]>(
         'RolePortal.*',
         'SSOGroup_RolePortal.SSOGroup as ssoGroup'

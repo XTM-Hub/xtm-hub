@@ -4,7 +4,6 @@ import testRender from '@/utils/test/test-render';
 import {
   AddSsoGroupRolePortalMutation,
   AddSsoGroupRolePortalMutationVariables,
-  PortalCapability,
 } from '@graphql/generated';
 import { mockRolePortal, mockSsoGroupRolePortal } from '@graphql/mocks';
 import { screen, waitFor } from '@testing-library/react';
@@ -28,7 +27,7 @@ describe('AddSsoGroupRolePortal', () => {
     expect(screen.getByLabelText(/RoleListPage.Role/)).toBeInTheDocument();
   });
 
-  it('should submit trimmed values with the selected capabilities and close the sheet', async () => {
+  it('should submit trimmed values and close the sheet', async () => {
     let capturedVariables: AddSsoGroupRolePortalMutationVariables | undefined;
     const response: AddSsoGroupRolePortalMutation = {
       addSSOGroupRolePortal: mockSsoGroupRolePortal({
@@ -57,9 +56,6 @@ describe('AddSsoGroupRolePortal', () => {
       '  xtmhub-admins '
     );
     await user.type(screen.getByLabelText(/RoleListPage.Role/), 'Admin');
-    await user.click(screen.getByLabelText(/RoleListPage.Capabilities/));
-    await user.click(await screen.findByText(PortalCapability.Bypass));
-    await user.keyboard('{Escape}');
     await user.click(screen.getByRole('button', { name: 'Utils.Validate' }));
 
     await waitFor(() => {
@@ -67,7 +63,6 @@ describe('AddSsoGroupRolePortal', () => {
         input: {
           ssoGroup: 'xtmhub-admins',
           rolePortal: 'Admin',
-          capabilities: [PortalCapability.Bypass],
         },
       });
     });

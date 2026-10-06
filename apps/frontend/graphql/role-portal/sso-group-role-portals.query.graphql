@@ -1,9 +1,9 @@
 query SSOGroupRolePortals {
-    ssoGroupRolePortals {
-        ssoGroup
-        rolePortal {
-            id
-            name
-        }
+  ssoGroupRolePortals {
+    ssoGroup
+    rolePortal {
+      id
+      name
     }
+  }
 }

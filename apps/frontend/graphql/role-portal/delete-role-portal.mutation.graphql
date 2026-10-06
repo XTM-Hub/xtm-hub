@@ -1,0 +1,6 @@
+mutation DeleteRolePortal($name: String!) {
+  deleteRolePortal(name: $name) {
+    id
+    name
+  }
+}

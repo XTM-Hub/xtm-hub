@@ -1,3 +1,5 @@
+import AddRolePortal from '@/components/admin/role/AddRolePortal';
+import RolePortalActions from '@/components/admin/role/RolePortalActions';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { i18nKey } from '@/utils/datatable';
@@ -28,6 +30,25 @@ const RolePortalCapabilitiesList = () => {
         </div>
       ),
     },
+    {
+      id: 'actions',
+      size: 100,
+      enableHiding: false,
+      enableSorting: false,
+      enableResizing: false,
+      cell: ({ row }) => (
+        <div className="flex items-center justify-end">
+          <RolePortalActions
+            rolePortal={row.original.name}
+            capabilities={
+              row.original.capabilities?.flatMap((capability) =>
+                capability ? [capability.name] : []
+              ) ?? []
+            }
+          />
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -41,6 +62,12 @@ const RolePortalCapabilitiesList = () => {
         enableColumnPinning: false,
         enableHiding: false,
       }}
+      tableState={{ columnPinning: { right: ['actions'] } }}
+      toolbar={
+        <div className="flex justify-end">
+          <AddRolePortal />
+        </div>
+      }
     />
   );
 };

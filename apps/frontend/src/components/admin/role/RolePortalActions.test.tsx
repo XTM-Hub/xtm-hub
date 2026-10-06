@@ -1,17 +1,17 @@
-import SsoGroupRolePortalActions from '@/components/admin/role/SsoGroupRolePortalActions';
+import RolePortalActions from '@/components/admin/role/RolePortalActions';
 import testRender from '@/utils/test/test-render';
+import { PortalCapability } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-const SSO_GROUP = 'xtmhub-admins';
-const ROLE_PORTAL = 'Admin';
+const ROLE_PORTAL = 'Auditor';
 
-describe('SsoGroupRolePortalActions', () => {
-  it('should open the edit sheet prefilled with the row values', async () => {
+describe('RolePortalActions', () => {
+  it('should open the edit sheet prefilled with the role and its capabilities', async () => {
     const { user } = testRender(
-      <SsoGroupRolePortalActions
-        ssoGroup={SSO_GROUP}
+      <RolePortalActions
         rolePortal={ROLE_PORTAL}
+        capabilities={[PortalCapability.Bypass]}
       />
     );
 
@@ -21,19 +21,17 @@ describe('SsoGroupRolePortalActions', () => {
     );
 
     expect(
-      await screen.findByRole('heading', { name: 'RoleListPage.EditMapping' })
+      await screen.findByRole('heading', { name: 'RoleListPage.EditRole' })
     ).toBeInTheDocument();
-    expect(screen.getByLabelText(/RoleListPage.SsoGroup/)).toHaveValue(
-      SSO_GROUP
-    );
     expect(screen.getByLabelText(/RoleListPage.Role/)).toHaveValue(ROLE_PORTAL);
+    expect(screen.getByText(PortalCapability.Bypass)).toBeInTheDocument();
   });
 
   it('should open the delete confirmation dialog', async () => {
     const { user } = testRender(
-      <SsoGroupRolePortalActions
-        ssoGroup={SSO_GROUP}
+      <RolePortalActions
         rolePortal={ROLE_PORTAL}
+        capabilities={[PortalCapability.Bypass]}
       />
     );
 
@@ -44,7 +42,7 @@ describe('SsoGroupRolePortalActions', () => {
 
     expect(
       await screen.findByRole('alertdialog', {
-        name: 'RoleListPage.DeleteDialog.Title',
+        name: 'RoleListPage.DeleteRoleDialog.Title',
       })
     ).toBeInTheDocument();
   });

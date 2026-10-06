@@ -280,3 +280,59 @@ describe('deleteSSOGroupRolePortal GraphQL mutation', () => {
     expect(mapToGraphQLErrorSpy).toHaveBeenCalledWith(error);
   });
 });
+
+describe.each`
+  mutation              | appMethod             | args                                                                                                    | expectedCall
+  ${'addRolePortal'}    | ${'addRolePortal'}    | ${{ input: { name: ROLE_ADMIN.name, capabilities: [PortalCapability.Bypass] } }}                        | ${[{ name: ROLE_ADMIN.name, capabilities: [PortalCapability.Bypass] }]}
+  ${'updateRolePortal'} | ${'updateRolePortal'} | ${{ name: ROLE_ADMIN.name, input: { name: ROLE_ADMIN.name, capabilities: [PortalCapability.Bypass] } }} | ${[ROLE_ADMIN.name, { name: ROLE_ADMIN.name, capabilities: [PortalCapability.Bypass] }]}
+  ${'deleteRolePortal'} | ${'deleteRolePortal'} | ${{ name: ROLE_ADMIN.name }}                                                                            | ${[ROLE_ADMIN.name]}
+`(
+  '$mutation GraphQL mutation',
+  ({ mutation, appMethod, args, expectedCall }) => {
+    const rolePortal = {
+      ...ROLE_ADMIN,
+      capabilities: [CAPABILITY_BYPASS],
+    };
+
+    it(`should delegate to RolePortalApp.${appMethod} and return result`, async () => {
+      // Given
+      vi.spyOn(RolePortalApp, appMethod).mockResolvedValue(rolePortal);
+
+      // When
+      const result = await rolePortalResolver.Mutation![mutation]!(
+        {},
+        args,
+        contextSimpleUserFiligran2,
+        GRAPHQL_RESOLVE_INFO
+      );
+
+      // Then
+      expect(RolePortalApp[appMethod as 'addRolePortal']).toHaveBeenCalledWith(
+        ...expectedCall
+      );
+      expect(result).toEqual(rolePortal);
+    });
+
+    it('should map errors with mapToGraphQLError', async () => {
+      // Given
+      const error = new Error('boom');
+      vi.spyOn(RolePortalApp, appMethod).mockRejectedValue(error);
+      const mappedError = new GraphQLError('mapped error');
+      const mapToGraphQLErrorSpy = vi
+        .spyOn(errorMapping, 'mapToGraphQLError')
+        .mockReturnValue(mappedError);
+
+      // When
+      const result = rolePortalResolver.Mutation![mutation]!(
+        {},
+        args,
+        contextSimpleUserFiligran2,
+        GRAPHQL_RESOLVE_INFO
+      );
+
+      // Then
+      await expect(result).rejects.toBe(mappedError);
+      expect(mapToGraphQLErrorSpy).toHaveBeenCalledWith(error);
+    });
+  }
+);

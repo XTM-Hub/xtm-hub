@@ -1,6 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { db } from '../../../knexfile';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import { TEST_ORGANIZATIONS } from '../../../tests/tests.const';
 import { RolePortalId } from '../../model/kanel/public/RolePortal';
@@ -12,8 +11,7 @@ import { RolePortalDomain } from './role-portal.domain';
 describe('role portal domain tests', () => {
   describe('loadRolePortalsBySSOGroups', () => {
     beforeEach(async () => {
-      // eslint-disable-next-line no-restricted-syntax
-      await db('SSOGroup_RolePortal').del();
+      await TestHelper.ssoGroup_RolePortal.delete({});
       await TestHelper.rolePortal.delete({});
       await TestHelper.rolePortal.create({
         name: 'POTATO_PEELER',
@@ -25,16 +23,22 @@ describe('role portal domain tests', () => {
         name: 'BANANA_INSPECTOR',
       });
 
-      // eslint-disable-next-line no-restricted-syntax
-      await db('SSOGroup_RolePortal').insert([
-        { SSOGroup: 'purple-elephants-club', RolePortal: 'POTATO_PEELER' },
-        { SSOGroup: 'flying-pizza-society', RolePortal: 'POTATO_PEELER' },
-        { SSOGroup: 'moonlight-dancers', RolePortal: 'UNICORN_RIDER' },
-        {
-          SSOGroup: 'coffee-addicts-anonymous',
-          RolePortal: 'BANANA_INSPECTOR',
-        },
-      ]);
+      await TestHelper.ssoGroup_RolePortal.create({
+        SSOGroup: 'purple-elephants-club',
+        RolePortal: 'POTATO_PEELER',
+      });
+      await TestHelper.ssoGroup_RolePortal.create({
+        SSOGroup: 'flying-pizza-society',
+        RolePortal: 'POTATO_PEELER',
+      });
+      await TestHelper.ssoGroup_RolePortal.create({
+        SSOGroup: 'moonlight-dancers',
+        RolePortal: 'UNICORN_RIDER',
+      });
+      await TestHelper.ssoGroup_RolePortal.create({
+        SSOGroup: 'coffee-addicts-anonymous',
+        RolePortal: 'BANANA_INSPECTOR',
+      });
     });
 
     it('should return null when user has no SSO group', async () => {
@@ -67,8 +71,7 @@ describe('role portal domain tests', () => {
     let tamerId: RolePortalId;
 
     beforeEach(async () => {
-      // eslint-disable-next-line no-restricted-syntax
-      await db('SSOGroup_RolePortal').del();
+      await TestHelper.ssoGroup_RolePortal.delete({});
       const juggler = await TestHelper.rolePortal.create({
         name: 'TOMATO_JUGGLER',
       });
@@ -78,31 +81,37 @@ describe('role portal domain tests', () => {
       jugglerId = juggler.id;
       tamerId = tamer.id;
 
-      // eslint-disable-next-line no-restricted-syntax
-      await db('RolePortal_CapabilityPortal').insert({
+      await TestHelper.rolePortal_CapabilityPortal.create({
         role_portal_id: jugglerId,
         capability_portal_id: CAPABILITY_BYPASS.id,
       });
-      // eslint-disable-next-line no-restricted-syntax
-      await db('SSOGroup_RolePortal').insert([
-        { SSOGroup: 'jugglers-guild', RolePortal: 'TOMATO_JUGGLER' },
-        { SSOGroup: 'circus-friends', RolePortal: 'TOMATO_JUGGLER' },
-        { SSOGroup: 'dragon-keepers', RolePortal: 'DRAGON_TAMER' },
-      ]);
+      await TestHelper.ssoGroup_RolePortal.create({
+        SSOGroup: 'jugglers-guild',
+        RolePortal: 'TOMATO_JUGGLER',
+      });
+      await TestHelper.ssoGroup_RolePortal.create({
+        SSOGroup: 'circus-friends',
+        RolePortal: 'TOMATO_JUGGLER',
+      });
+      await TestHelper.ssoGroup_RolePortal.create({
+        SSOGroup: 'dragon-keepers',
+        RolePortal: 'DRAGON_TAMER',
+      });
     });
 
     afterEach(async () => {
-      // eslint-disable-next-line no-restricted-syntax
-      await db('SSOGroup_RolePortal').del();
-      // eslint-disable-next-line no-restricted-syntax
-      await db('RolePortal_CapabilityPortal')
-        .whereIn('role_portal_id', [jugglerId, tamerId])
-        .del();
+      await TestHelper.ssoGroup_RolePortal.delete({});
+      await TestHelper.rolePortal_CapabilityPortal.delete({
+        role_portal_id: jugglerId,
+      });
+      await TestHelper.rolePortal_CapabilityPortal.delete({
+        role_portal_id: tamerId,
+      });
       await TestHelper.rolePortal.delete({ id: jugglerId });
       await TestHelper.rolePortal.delete({ id: tamerId });
     });
 
-    it('should return each SSO group with its role and capabilities', async () => {
+    it('should return each SSO group with its role', async () => {
       const result = await RolePortalDomain.loadSSOGroupRolePortals();
 
       expect(result).toHaveLength(3);
@@ -113,14 +122,12 @@ describe('role portal domain tests', () => {
             rolePortal: expect.objectContaining({
               id: jugglerId,
               name: 'TOMATO_JUGGLER',
-              capabilities: [expect.objectContaining(CAPABILITY_BYPASS)],
             }),
           },
           {
             ssoGroup: 'circus-friends',
             rolePortal: expect.objectContaining({
               id: jugglerId,
-              capabilities: [expect.objectContaining(CAPABILITY_BYPASS)],
             }),
           },
           {
@@ -128,7 +135,6 @@ describe('role portal domain tests', () => {
             rolePortal: expect.objectContaining({
               id: tamerId,
               name: 'DRAGON_TAMER',
-              capabilities: [],
             }),
           },
         ])
@@ -234,7 +240,7 @@ describe('role portal domain tests', () => {
     it('should add role to user when role exists and user does not have it', async () => {
       // Given
       const rolePortalId = uuidv4() as RolePortalId;
-      const roleName = `test-admin-${rolePortalId}`;
+      const roleName = `TEST-ADMIN-${rolePortalId}`.toUpperCase();
 
       testRolePortalIds.push(rolePortalId);
 
@@ -261,23 +267,18 @@ describe('role portal domain tests', () => {
     it('should not duplicate role if user already has it', async () => {
       // Given
       const rolePortalId = uuidv4() as RolePortalId;
+      const roleName = `TEST-EDITOR-${rolePortalId}`.toUpperCase();
 
       testRolePortalIds.push(rolePortalId);
 
       await TestHelper.rolePortal.create({
         id: rolePortalId,
-        name: `test-editor-${rolePortalId}`,
+        name: roleName,
       });
 
       // When
-      await RolePortalDomain.assignRoleByName(
-        user_id,
-        `test-editor-${rolePortalId}`
-      );
-      await RolePortalDomain.assignRoleByName(
-        user_id,
-        `test-editor-${rolePortalId}`
-      );
+      await RolePortalDomain.assignRoleByName(user_id, roleName);
+      await RolePortalDomain.assignRoleByName(user_id, roleName);
 
       // Then
       const userRoles = await TestHelper.user_RolePortal.loadAll({
@@ -338,20 +339,18 @@ describe('role portal domain tests', () => {
         name: 'PANCAKE_FLIPPER',
       });
       rolePortalId = rolePortal.id;
-      // eslint-disable-next-line no-restricted-syntax
-      await db('RolePortal_CapabilityPortal').insert({
-        role_portal_id: rolePortalId,
-        capability_portal_id: CAPABILITY_BYPASS.id,
+      await TestHelper.ssoGroup_RolePortal.create({
+        SSOGroup: 'breakfast-club',
+        RolePortal: 'PANCAKE_FLIPPER',
       });
-      // eslint-disable-next-line no-restricted-syntax
-      await db('SSOGroup_RolePortal').insert([
-        { SSOGroup: 'breakfast-club', RolePortal: 'PANCAKE_FLIPPER' },
-        { SSOGroup: 'brunch-club', RolePortal: 'PANCAKE_FLIPPER' },
-      ]);
+      await TestHelper.ssoGroup_RolePortal.create({
+        SSOGroup: 'brunch-club',
+        RolePortal: 'PANCAKE_FLIPPER',
+      });
     });
 
     afterEach(async () => {
-      // Cascades to SSOGroup_RolePortal and RolePortal_CapabilityPortal
+      // Cascades to SSOGroup_RolePortal
       await TestHelper.rolePortal.delete({ id: rolePortalId });
     });
 
@@ -368,7 +367,6 @@ describe('role portal domain tests', () => {
         rolePortal: expect.objectContaining({
           id: rolePortalId,
           name: 'PANCAKE_FLIPPER',
-          capabilities: [expect.objectContaining(CAPABILITY_BYPASS)],
         }),
       });
       const remaining = await RolePortalDomain.loadSSOGroupRolePortals({

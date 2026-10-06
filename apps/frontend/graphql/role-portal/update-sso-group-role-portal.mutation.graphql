@@ -1,17 +1,17 @@
 mutation UpdateSSOGroupRolePortal(
-    $ssoGroup: String!
-    $rolePortal: String!
-    $input: UpdateSSOGroupRolePortalInput!
+  $ssoGroup: String!
+  $rolePortal: String!
+  $input: UpdateSSOGroupRolePortalInput!
 ) {
-    updateSSOGroupRolePortal(
-        ssoGroup: $ssoGroup
-        rolePortal: $rolePortal
-        input: $input
-    ) {
-        ssoGroup
-        rolePortal {
-            id
-            name
-        }
+  updateSSOGroupRolePortal(
+    ssoGroup: $ssoGroup
+    rolePortal: $rolePortal
+    input: $input
+  ) {
+    ssoGroup
+    rolePortal {
+      id
+      name
     }
+  }
 }

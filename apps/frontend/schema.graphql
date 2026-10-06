@@ -213,6 +213,9 @@ type Mutation {
   addSSOGroupRolePortal(input: AddSSOGroupRolePortalInput!): SSOGroupRolePortal!
   updateSSOGroupRolePortal(ssoGroup: String!, rolePortal: String!, input: UpdateSSOGroupRolePortalInput!): SSOGroupRolePortal!
   deleteSSOGroupRolePortal(input: DeleteSSOGroupRolePortalInput!): SSOGroupRolePortal!
+  addRolePortal(input: AddRolePortalInput!): RolePortal!
+  updateRolePortal(name: String!, input: UpdateRolePortalInput!): RolePortal!
+  deleteRolePortal(name: String!): RolePortal!
   addSubscriptionCapability(input: AddSubscriptionCapabilityInput!): [SubscriptionModel!]!
   addCapabilitiesToUserServices(input: UserServicesAddCapabilitiesInput!, service_instance_id: ServiceInstanceId!): [UserService]
   editSeoServiceInstance(service_instance_id: ServiceInstanceId!, language: Locale!, input: EditSeoServiceInstanceInput!): SeoServiceInstanceMetadata!
@@ -1394,6 +1397,16 @@ input AddSSOGroupRolePortalInput {
 input UpdateSSOGroupRolePortalInput {
   ssoGroup: String!
   rolePortal: String!
+}
+
+input AddRolePortalInput {
+  name: String!
+  capabilities: [PortalCapability!]!
+}
+
+input UpdateRolePortalInput {
+  name: String!
+  capabilities: [PortalCapability!]!
 }
 
 input DeleteSSOGroupRolePortalInput {

@@ -2,7 +2,6 @@ import EditSsoGroupRolePortal from '@/components/admin/role/EditSsoGroupRolePort
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
 import {
-  PortalCapability,
   UpdateSsoGroupRolePortalMutation,
   UpdateSsoGroupRolePortalMutationVariables,
 } from '@graphql/generated';
@@ -16,7 +15,7 @@ const SSO_GROUP = 'xtmhub-admins';
 const ROLE_PORTAL = 'Admin';
 
 describe('EditSsoGroupRolePortal', () => {
-  it('should submit the trimmed new values and capabilities for the current mapping and close the sheet', async () => {
+  it('should submit the trimmed new values for the current mapping and close the sheet', async () => {
     let capturedVariables:
       UpdateSsoGroupRolePortalMutationVariables | undefined;
     const response: UpdateSsoGroupRolePortalMutation = {
@@ -43,7 +42,6 @@ describe('EditSsoGroupRolePortal', () => {
         onOpenChange={onOpenChange}
         ssoGroup={SSO_GROUP}
         rolePortal={ROLE_PORTAL}
-        capabilities={[PortalCapability.Bypass]}
       />
     );
 
@@ -53,9 +51,6 @@ describe('EditSsoGroupRolePortal', () => {
     const rolePortalInput = screen.getByLabelText(/RoleListPage.Role/);
     await user.clear(rolePortalInput);
     await user.type(rolePortalInput, 'User');
-    await user.click(screen.getByLabelText(/RoleListPage.Capabilities/));
-    await user.click(await screen.findByText(PortalCapability.ReadTrials));
-    await user.keyboard('{Escape}');
     await user.click(screen.getByRole('button', { name: 'Utils.Validate' }));
 
     await waitFor(() => {
@@ -65,7 +60,6 @@ describe('EditSsoGroupRolePortal', () => {
         input: {
           ssoGroup: 'xtmhub-users',
           rolePortal: 'User',
-          capabilities: [PortalCapability.Bypass, PortalCapability.ReadTrials],
         },
       });
     });
@@ -92,7 +86,6 @@ describe('EditSsoGroupRolePortal', () => {
         onOpenChange={onOpenChange}
         ssoGroup={SSO_GROUP}
         rolePortal={ROLE_PORTAL}
-        capabilities={[PortalCapability.Bypass]}
       />
     );
 
@@ -120,7 +113,6 @@ describe('EditSsoGroupRolePortal', () => {
         onOpenChange={vi.fn()}
         ssoGroup={SSO_GROUP}
         rolePortal={ROLE_PORTAL}
-        capabilities={[PortalCapability.Bypass]}
       />
     );
 

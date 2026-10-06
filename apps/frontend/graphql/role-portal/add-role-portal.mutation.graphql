@@ -1,0 +1,10 @@
+mutation AddRolePortal($input: AddRolePortalInput!) {
+  addRolePortal(input: $input) {
+    id
+    name
+    capabilities {
+      id
+      name
+    }
+  }
+}
