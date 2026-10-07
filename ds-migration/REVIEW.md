@@ -28,6 +28,11 @@ Read only, in parallel where possible.
 - `ds-migration/sprint-status.yaml`: the epic's items and their status, the next epic.
 - The gate comment on the pull request: the last comment titled `## <epic> is ready for review`
   (`gh pr view <pr> --comments`). It lists the items, the commits and the automated review findings.
+- The review comment, titled `## <epic> review`, posted right after it: the session replaces it with
+  the decisions at the end. Note its id:
+  `gh api repos/<repository>/issues/<pr>/comments --paginate --jq '.[] | select(.body | startswith("## <epic> review")) | .id'`,
+  where `<repository>` is the `repository` header of the status file. If there is none, create it at
+  step 5.
 - The commits of the epic: `git log --format='%h %s' origin/main..HEAD`, those whose subject ends
   with the issue of one of its items, fixes included.
 - The spec of each item, `ds-migration/specs/<key>.md`: `## Decisions`, `## To validate`,
@@ -67,14 +72,26 @@ One finding at a time, one commit per finding.
 1. Implement it, through a `frontend-code-writer` subagent for anything beyond a few lines, with the
    finding, the decision and the files. Shared helpers go where the codebase keeps them.
 2. Record the decision where the next sessions read it: under `## Decisions` in the spec of the item
-   the finding belongs to, and in every other spec of the epic it changes. Remove or rewrite the
-   `To validate` line it settles. A deferred finding goes under `## Deferred findings`.
+   the finding belongs to, and in every other spec of the epic it changes. Remove the `To validate`
+   line it settles.
 3. Verify: `yarn workspace @xtm-hub/frontend lint`, `format:check`, `i18n:check`, `check-ts` and the
    tests of the folders touched; `yarn workspace @xtm-hub/test_e2e lint` and `format:check` if a
    locator changed. Never run the e2e suite: its hooks drop the database schema.
 4. Commit, signed, with no trailer: `fix(frontend): <what changed> (#<issue of the item>)`, body
    saying why, following the `commit-splitter` agent's message rules. Stage only that finding's files
    and the specs it updated.
+
+Then settle the rest in the specs, so that the pull request body shows it:
+
+- A `To validate` line the human accepts as it is: prefix it with `[x] `
+  (`- [x] The counter sits on its own row…`). The pull request body shows it ticked.
+- A deferred finding: a bullet under `## Deferred findings` of its item's spec. The pull request body
+  groups them by issue. If the human wants it scheduled, open a follow-up issue,
+  `gh issue create --title "<type>(frontend): <what>" --body "Part of #3507. Deferred from #<issue>: <finding>."`,
+  and end the bullet with its reference.
+- A rejected finding: nothing in the specs, its reason goes into the review comment.
+
+Commit these spec changes on their own: `docs(frontend): record the <epic> review decisions (#3507)`.
 
 When every approved finding is in:
 
@@ -94,8 +111,13 @@ With the human's go:
    into its issue, pushes, waits for the pull request's required checks (around 25 minutes) and puts
    the board back in order. If the checks fail, read the failing job, fix it with the human, commit,
    and run it again.
-3. Post one comment on the pull request, `## <epic> review`: what was fixed (with the commits), what
-   was deferred, what was rejected and why, and the `To validate` lines accepted as they are.
+3. Replace the review comment with the decisions, keeping its title `## <epic> review`:
+   `gh api -X PATCH repos/<repository>/issues/comments/<id> -F body=@<file>` (or
+   `gh pr comment <pr> --body-file <file>` if there was none). Write who reviewed and when, then one
+   table, `| # | Finding | Decision | Commit, issue or reason |`, one row per finding: fixed (the
+   commit), deferred (the follow-up issue, if any), rejected (the reason). End with the number of
+   `To validate` lines accepted as they are. `run.sh publish` has already rewritten the pull request
+   body: the validated lines are ticked, the deferred findings are grouped by issue.
 
 ## 6. Hand back
 

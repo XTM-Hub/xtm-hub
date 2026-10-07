@@ -428,23 +428,30 @@ validate_item() {
 
 # ---------------------------------------------------------------- report and pull request
 
-# Bullet lines of one `## <heading>` section in every spec, prefixed with the item.
+# One `## <heading>` section of every spec, grouped by issue in the status file's order. A bullet
+# that starts with [x] was validated in an epic review and stays ticked.
 spec_section() {
-  local spec key issue
-  for spec in ds-migration/specs/*.md; do
-    [ -e "$spec" ] || continue
-    key="$(basename "$spec" .md)"
+  local key issue bullets
+  for key in $(items | awk '{ print $2 }'); do
+    [ -f "ds-migration/specs/$key.md" ] || continue
     issue="$(issue_of "$key")"
     # A bullet wraps over indented lines: join them, or the report keeps only its first line.
-    awk -v h="## $1" '
+    bullets="$(awk -v h="## $1" '
       function flush() { if (item != "") print item; item = "" }
       $0 == h { on = 1; next }
       /^## / { flush(); on = 0 }
       on && /^- / { flush(); item = substr($0, 3); next }
       on && /^[ \t]+[^ \t]/ && item != "" { line = $0; sub(/^[ \t]+/, "", line); item = item " " line; next }
       on { flush() }
-      END { flush() }' "$spec" |
-      while IFS= read -r line; do echo "- [ ] ${issue:+#$issue }${key#*-}: $line"; done
+      END { flush() }' "ds-migration/specs/$key.md")"
+    [ -n "$bullets" ] || continue
+    printf '\n### %s%s\n\n' "${issue:+#$issue }" "$(name_of "$key")"
+    while IFS= read -r line; do
+      case "$line" in
+        "[x] "*) echo "- [x] ${line#\[x\] }" ;;
+        *) echo "- [ ] $line" ;;
+      esac
+    done <<<"$bullets"
   done
 }
 
@@ -482,8 +489,9 @@ pr_body() {
   done
   printf '\n## Design system candidates\n\nRebuilt here on design system primitives, to be proposed upstream once this PR is merged.\n\n'
   candidates
-  printf '\n## To validate\n\nChoices made without the design team, and review findings left out of scope.\n\n'
+  printf '\n## To validate\n\nChoices made without the design team. Ticked: validated in an epic review.\n'
   spec_section "To validate"
+  printf '\n## Deferred findings\n\nReal review findings left out of their item, to schedule later.\n'
   spec_section "Deferred findings"
   echo
   items | while read -r _ key status; do
@@ -755,6 +763,10 @@ epic_report() {
   printf '\n### Automated epic review\n\n'
 }
 
+review_placeholder() {
+  printf '## %s review\n\nWaiting for a reviewer. On branch `%s`, run `ds-migration/run.sh review`: it goes through the findings of the report above with you, and replaces this comment with the decisions taken.\n' "$1" "$BRANCH"
+}
+
 # The epic turns to review only once its report is posted: a crash before re-runs the gate.
 epic_gate() {
   local epic="$1" no_wait="$2" report="$LOG_DIR/$1-report.md" review shas
@@ -767,7 +779,11 @@ epic_gate() {
   [ -n "$review" ] || review='{"findings":"The automated review produced no output."}'
   jq -r .findings <<<"$review" >>"$report"
   printf '\n---\nTo finish this review, run `ds-migration/run.sh review` on the branch: it walks through these findings with you, fixes what you approve, records the decisions and validates the epic. Then run `ds-migration/run.sh` again for the next epic.\n' >>"$report"
-  [ "$(header pull_request)" = none ] || gh pr comment "$(header pull_request)" --body-file "$report" >/dev/null
+  if [ "$(header pull_request)" != none ]; then
+    gh pr comment "$(header pull_request)" --body-file "$report" >/dev/null
+    # The review session replaces this comment with the decisions taken.
+    gh pr comment "$(header pull_request)" --body "$(review_placeholder "$epic")" >/dev/null
+  fi
   set_status "$epic" review
   commit_status
   $no_wait || publish

@@ -82,7 +82,7 @@ issue="${key%%-*}"; slug="${key#*-}"; mkdir -p ds-migration/specs
 if [[ "$prompt" == *"Spec mode"* ]]; then
   legacy="[]"; module='"@filigran/design-system"'; [ "$kind" = candidate ] && module="\"@/components/ui/$slug\""
   [ "$key" = 3561-textarea ] && legacy="[Textarea]"
-  printf -- '---\nkey: %s\nkind: %s\nlegacy_symbols: %s\ntarget_module: %s\ntarget_symbols: []\nlegacy_files_to_delete: []\n---\n# %s\n\n## To validate\n\n- kept the current spacing\n' "$key" "$kind" "$legacy" "$module" "$slug" > "ds-migration/specs/$key.md"
+  printf -- '---\nkey: %s\nkind: %s\nlegacy_symbols: %s\ntarget_module: %s\ntarget_symbols: []\nlegacy_files_to_delete: []\n---\n# %s\n\n## To validate\n\n- kept the current spacing\n- [x] chosen in an epic review\n' "$key" "$kind" "$legacy" "$module" "$slug" > "ds-migration/specs/$key.md"
   [[ " ${CLAUDE_SPEC_DIRTY:-} " == *" $key "* ]] && echo early > "apps/frontend/src/$slug.early.ts"
   echo '{"type":"result","structured_output":{"status":"DONE","summary":"Spec written."}}'; exit 0
 fi
@@ -169,6 +169,7 @@ run
 check "checkbox blocked, epic 1 gated" '[ "$(status_of 3541-checkbox)" = blocked ] && [ "$(status_of epic-1-primitives)" = review ]'
 check "epic report posted with the automated review" 'grep -q "Verdict: consistent" "$SB/last-pr-comment.md" && grep -q "ds-migration/run.sh review" "$SB/last-pr-comment.md"'
 ds-migration/run.sh review >"$SB/out.log" 2>&1
+check "a review comment waits for the reviewer" 'grep -q "^## epic-1-primitives review" "$SB/pr-comments.log"'
 check "review opens an interactive session on the epic waiting for review" 'grep -q "^claude-interactive :: Read ds-migration/REVIEW.md fully and follow it for epic-1-primitives (status review)" "$SB/calls.log"'
 check "blocked item signalled on its issue and the PR" 'grep -q "^gh issue edit 3541 --add-label needs more info" "$SB/calls.log" && grep -qF "**Component Checkbox needs a human.** Issue #3541" "$SB/pr-comments.log" && sed -n "/^## Needs a human/,/^## /p" "$SB/pr-body.md" | grep -q "#3541"'
 ds-migration/run.sh debug 3541-checkbox >"$SB/out.log" 2>&1
@@ -182,7 +183,8 @@ check "issue assigned and moved along the board" 'grep -q "^gh issue edit 3561 -
 check "done items put back after the board automation" '[ "$(grep -c "^OPT_DONE ITEM_3530$" "$SB/board.log")" -ge 1 ] && [ "$(grep " ITEM_3561$" "$SB/board.log" | tail -1 | cut -d" " -f1)" = OPT_DONE ]'
 check "covered issues assigned and moved with their item" 'grep -q "^gh issue edit 4001 --add-assignee @me" "$SB/calls.log" && grep -qx "OPT_DONE ITEM_4002" "$SB/board.log"'
 check "issue shows the final spec, findings included" 'grep -qx "  that wraps" "$SB/issue-3561.md"'
-check "wrapped spec bullets kept whole in the PR report" 'grep -q "textarea: found in review, on a bullet that wraps$" "$SB/pr-body.md"'
+check "wrapped spec bullets kept whole in the PR report" 'grep -qx -- "- \[ \] found in review, on a bullet that wraps" "$SB/pr-body.md"'
+check "PR report grouped by issue, validated lines ticked" 'grep -qx "### #3561 Textarea" "$SB/pr-body.md" && grep -qx -- "- \[x\] chosen in an epic review" "$SB/pr-body.md" && grep -qx -- "- \[ \] kept the current spacing" "$SB/pr-body.md"'
 check "sessions never run subagents in the background" '! grep -q "claude with background tasks allowed" "$SB/calls.log"'
 check "validation steps logged as they run" 'grep -q "3561-textarea: validating, check-ts" "$(git rev-parse --git-dir)/ds-migration/run.log" && grep -q "3561-textarea: validating, after screenshots" "$(git rev-parse --git-dir)/ds-migration/run.log"'
 check "after screenshots part of the validation" 'grep -q "^screenshot after ds-migration/specs/3561-textarea.md" "$SB/calls.log"'
