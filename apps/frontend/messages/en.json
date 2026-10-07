@@ -1188,6 +1188,8 @@
       "Search": "Search a connector with name...",
       "VendorContact": "Vendor Contact",
       "VisitVendor": "Visit the vendor's page to learn more and get in touch",
+      "CompatibleWith": "This connector version is compatible with {compatiblePlatforms}.",
+      "PartiallyCompatible": "This connector version is compatible with {compatiblePlatforms}, but {incompatiblePlatforms} {count, plural, =1 {needs} other {need}} to be updated.",
       "Incompatible": "{platformToBeUpdated} {count, plural, =1 {needs} other {need}} to be updated to deploy this connector.",
       "UnavailableDeployments": "This connector is not available for automatic deployment."
     },

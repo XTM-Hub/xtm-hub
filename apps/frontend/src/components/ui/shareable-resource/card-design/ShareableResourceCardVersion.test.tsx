@@ -1,26 +1,15 @@
-import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
 import testRender from '@/utils/test/test-render';
 import { screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ShareableResourceCardVersion } from './ShareableResourceCardVersion';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  ShareableResourceCardVersion,
+  VersionBadgeStatus,
+} from './ShareableResourceCardVersion';
 
-const PLATFORM_TITLE = 'OpenCTI';
-const PLATFORM_VERSION = '6.7';
-const PRODUCT_VERSION = '6.8';
-const VERSION_CLASS = 'version-class';
-const INCOMPATIBLE_ICON_TEST_ID = 'incompatible-icon';
-
-const compatibilityHookMock = vi.fn();
-
-vi.mock('@/hooks/use-build-compatibility-translation-key', () => ({
-  useBuildCompatibilityTranslationKey: (...args: unknown[]) =>
-    compatibilityHookMock(...args),
-}));
-
-vi.mock('@filigran/icon', () => ({
-  CheckIndeterminateIcon: () => <svg data-testid={INCOMPATIBLE_ICON_TEST_ID} />,
-}));
+const CONNECTOR_VERSION = '6.8.13';
+const PREFIXED_VERSION = `V.${CONNECTOR_VERSION}`;
+const TOOLTIP = 'Compatible with OpenCTI 1';
 
 vi.mock('@filigran/ui/clients', () => ({
   TooltipProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
@@ -31,51 +20,81 @@ vi.mock('@filigran/ui/clients', () => ({
   ),
 }));
 
+vi.mock('@filigran/design-system', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@filigran/design-system')>()),
+  Icon: ({ name }: { name: string }) => <svg data-testid={`icon-${name}`} />,
+}));
+
+// Chip wraps its label in an inner span, so the chip itself is its parent.
+const getChip = () => screen.getByText(PREFIXED_VERSION).parentElement;
+
 describe('ShareableResourceCardVersion', () => {
-  beforeEach(() => {
-    vi.mocked(useRegisteredPlatforms).mockReturnValue({
-      platforms: [{ title: PLATFORM_TITLE, version: PLATFORM_VERSION }],
-    });
+  it('renders nothing without a version', () => {
+    const { container } = testRender(
+      <ShareableResourceCardVersion version={null} />
+    );
+
+    expect(container).toBeEmptyDOMElement();
   });
 
-  it('renders incompatibility tooltip when some platforms are incompatible', () => {
-    compatibilityHookMock.mockReturnValue({
-      platformToBeUpdated: PLATFORM_TITLE,
-      incompatiblePlatformsCount: 2,
-    });
+  it('prefixes the version number', () => {
+    testRender(<ShareableResourceCardVersion version={CONNECTOR_VERSION} />);
 
+    expect(screen.getByText(PREFIXED_VERSION)).toBeInTheDocument();
+  });
+
+  it.each`
+    description  | status       | expectedBackground                                 | expectedIcon
+    ${'success'} | ${'success'} | ${'bg-feedback-success-secondary-transparency-30'} | ${'circle-check'}
+    ${'warning'} | ${'warning'} | ${'bg-feedback-warning-secondary-transparency-30'} | ${'circle-alert'}
+    ${'error'}   | ${'error'}   | ${'bg-feedback-error-secondary-transparency-30'}   | ${'circle-x'}
+  `(
+    'tints the chip and picks its icon for the $description status',
+    ({
+      status,
+      expectedBackground,
+      expectedIcon,
+    }: {
+      status: VersionBadgeStatus;
+      expectedBackground: string;
+      expectedIcon: string;
+    }) => {
+      testRender(
+        <ShareableResourceCardVersion
+          version={CONNECTOR_VERSION}
+          status={status}
+          tooltip={TOOLTIP}
+        />
+      );
+
+      expect(getChip()).toHaveClass(expectedBackground);
+      expect(screen.getByTestId(`icon-${expectedIcon}`)).toBeInTheDocument();
+    }
+  );
+
+  it('shows the tooltip and makes the chip focusable when one is given', () => {
     testRender(
       <ShareableResourceCardVersion
-        product_version={PRODUCT_VERSION}
-        requiredProductVersion={PRODUCT_VERSION}
-        className={VERSION_CLASS}
+        version={CONNECTOR_VERSION}
+        status="success"
+        tooltip={TOOLTIP}
       />
     );
 
-    expect(screen.getByText(PRODUCT_VERSION)).toBeInTheDocument();
-    expect(screen.getByTestId(INCOMPATIBLE_ICON_TEST_ID)).toBeInTheDocument();
-    expect(
-      screen.getByText('Service.Connectors.Incompatible')
-    ).toBeInTheDocument();
+    expect(screen.getByText(TOOLTIP)).toBeInTheDocument();
+    expect(getChip()).toHaveAttribute('tabindex', '0');
   });
 
-  it('renders plain version when there is no incompatibility', () => {
-    compatibilityHookMock.mockReturnValue({
-      platformToBeUpdated: '',
-      incompatiblePlatformsCount: 0,
-    });
-
-    testRender(
-      <ShareableResourceCardVersion
-        product_version={PRODUCT_VERSION}
-        requiredProductVersion={PRODUCT_VERSION}
-        className={VERSION_CLASS}
-      />
+  it('renders a blue chip without icon, tooltip nor tab stop by default', () => {
+    const { container } = testRender(
+      <ShareableResourceCardVersion version={CONNECTOR_VERSION} />
     );
 
-    expect(screen.getByText(PRODUCT_VERSION)).toHaveClass(VERSION_CLASS);
-    expect(
-      screen.queryByTestId(INCOMPATIBLE_ICON_TEST_ID)
-    ).not.toBeInTheDocument();
+    const chip = getChip();
+
+    expect(container.querySelector('svg')).toBeNull();
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+    expect(chip).not.toHaveAttribute('tabindex');
+    expect(chip).toHaveClass('bg-feedback-info-secondary-transparency-30');
   });
 });
