@@ -17,28 +17,24 @@ export const ShareableResourceCardImage = ({
   const logo = findDocumentLogo(document);
 
   return (
-    <>
-      <div className=" items-center self-stretch flex">
-        {logo ? (
-          <Image
-            src={`/document/images/${serviceInstanceId}/${logo.id}`}
-            alt={`${document.name} logo`}
-            width={96}
-            height={96}
-            style={{ minHeight: '96px' }}
-            loading="lazy"
-            className="rounded object-contain"
-          />
-        ) : (
-          <div className="w-24 p-m flex items-center justify-center">
-            <EntityTypeOrFiligranLogo
-              entityTypes={getEntityTypes({
-                entity_types: getDocumentEntityTypes(document),
-              })}
-            />
-          </div>
-        )}
-      </div>
-    </>
+    <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-elevation-highlight">
+      {logo ? (
+        <Image
+          src={`/document/images/${serviceInstanceId}/${logo.id}`}
+          alt={`${document.name} logo`}
+          width={48}
+          height={48}
+          loading="lazy"
+          className="size-full object-contain"
+        />
+      ) : (
+        <EntityTypeOrFiligranLogo
+          className="size-8"
+          entityTypes={getEntityTypes({
+            entity_types: getDocumentEntityTypes(document),
+          })}
+        />
+      )}
+    </div>
   );
 };

@@ -223,9 +223,9 @@ describe('ServiceList', () => {
     );
 
     expect(
-      screen.getByText(
-        `Service.OpenctiIntegrations.Type.${IntegrationType.Connector}`
-      )
+      screen.getByRole('button', {
+        name: `Service.OpenctiIntegrations.Type.${IntegrationType.Connector}`,
+      })
     ).toBeInTheDocument();
     expect(screen.getByText('Dashboard document')).toBeInTheDocument();
 

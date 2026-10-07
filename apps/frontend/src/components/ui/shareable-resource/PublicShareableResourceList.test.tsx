@@ -59,9 +59,9 @@ describe('PublicShareableResourceList', () => {
     );
 
     expect(
-      screen.getByText(
-        `Service.OpenctiIntegrations.Type.${IntegrationType.Connector}`
-      )
+      screen.getByRole('button', {
+        name: `Service.OpenctiIntegrations.Type.${IntegrationType.Connector}`,
+      })
     ).toBeInTheDocument();
     expect(screen.getByText('My Dashboard')).toBeInTheDocument();
 
