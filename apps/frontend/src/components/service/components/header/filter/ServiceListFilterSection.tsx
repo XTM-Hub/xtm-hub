@@ -23,6 +23,21 @@ export const ServiceListFilterSection = ({
     );
 
     return visibleFilters.map(([filterKey, filter], index) => {
+      if (filter.noAccordion) {
+        return (
+          <div
+            key={filterKey}
+            className="w-full border-b border-border p-s last:border-b-0">
+            {filter.title && (
+              <div className="content-body-compact-medium pb-xs">
+                {filter.title}
+              </div>
+            )}
+            {filter.node}
+          </div>
+        );
+      }
+
       return (
         <Accordion
           key={filterKey}

@@ -26,10 +26,12 @@ interface ComboboxProps<T> {
   emptyCommand: string;
   onValueChange: (value: T | undefined) => void;
   onInputChange?: (value: string) => void;
+  onOpenChange?: (open: boolean) => void;
   value?: T;
   className?: string;
   keyValue?: keyof T | 'value';
   keyLabel?: keyof T | 'label';
+  renderItemAdornment?: (item: T) => React.ReactNode;
 }
 
 const Combobox = <T,>({
@@ -39,12 +41,19 @@ const Combobox = <T,>({
   emptyCommand,
   onValueChange,
   onInputChange,
+  onOpenChange,
   value,
   className,
   keyLabel = 'label',
   keyValue = 'value',
+  renderItemAdornment,
 }: ComboboxProps<T>) => {
   const [open, setOpen] = React.useState(false);
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    onOpenChange?.(nextOpen);
+  };
 
   const handleSelect = (selectedValue: string) => {
     const selectedItem =
@@ -52,7 +61,7 @@ const Combobox = <T,>({
         (item) => String(item[keyValue as keyof typeof item]) === selectedValue
       ) || undefined;
 
-    setOpen(false);
+    handleOpenChange(false);
     onValueChange(selectedItem);
   };
 
@@ -70,7 +79,7 @@ const Combobox = <T,>({
   return (
     <Popover
       open={open}
-      onOpenChange={setOpen}>
+      onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           priority="secondary"
@@ -80,7 +89,7 @@ const Combobox = <T,>({
             'normal-case w-full justify-between bg-input-bg-default border-none',
             className
           )}
-          onClick={() => setOpen(!open)}>
+          onClick={() => handleOpenChange(!open)}>
           {value ? (
             String(value[keyLabel as keyof T])
           ) : (
@@ -109,19 +118,23 @@ const Combobox = <T,>({
                   value={String(data[keyValue as keyof T])}
                   onSelect={() =>
                     handleSelect(String(data[keyValue as keyof T]))
-                  }>
-                  <CheckIcon
-                    className={cn(
-                      'mr-2 h-4 w-4',
-                      (value as ComboboxItem)?.value ===
-                        data[keyValue as keyof T]
-                        ? 'opacity-100'
-                        : 'opacity-0'
-                    )}
-                  />
-                  <span className="mx-3 text-sm text-foreground">
-                    {String(data[keyLabel as keyof T])}
+                  }
+                  className="justify-between">
+                  <span className="flex items-center">
+                    <CheckIcon
+                      className={cn(
+                        'mr-2 h-4 w-4',
+                        (value as ComboboxItem)?.value ===
+                          data[keyValue as keyof T]
+                          ? 'opacity-100'
+                          : 'opacity-0'
+                      )}
+                    />
+                    <span className="mx-3 text-sm text-foreground">
+                      {String(data[keyLabel as keyof T])}
+                    </span>
                   </span>
+                  {renderItemAdornment?.(data)}
                 </CommandItem>
               ))}
             </CommandGroup>

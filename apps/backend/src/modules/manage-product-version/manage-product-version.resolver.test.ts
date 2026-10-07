@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   contextSimpleUserFiligran2,
@@ -11,6 +11,11 @@ import resolvers from './manage-product-version.resolver';
 
 describe('manageProductVersionResolver', () => {
   describe('mutation.newProductVersion', () => {
+    // The migrations pre-register the OpenCTI 6.x and 7.x versions.
+    beforeEach(async () => {
+      await TestHelper.productVersion.delete({});
+    });
+
     afterEach(async () => {
       vi.restoreAllMocks();
       await TestHelper.productVersion.delete({});
@@ -63,6 +68,11 @@ describe('manageProductVersionResolver', () => {
   });
 
   describe('query.registeredProductVersions', () => {
+    // The migrations pre-register the OpenCTI 6.x and 7.x versions.
+    beforeEach(async () => {
+      await TestHelper.productVersion.delete({});
+    });
+
     afterEach(async () => {
       await TestHelper.productVersion.delete({});
     });
@@ -90,6 +100,32 @@ describe('manageProductVersionResolver', () => {
 
       expect(result).toHaveLength(1);
       expect((result as { version: string }[])[0]!.version).toBe('6.4.0');
+    });
+
+    it('should forward the search term to only return matching versions', async () => {
+      await TestHelper.productVersion.create({
+        product: PlatformIdentifier.Opencti,
+        version: '6.4.0',
+        version_padded:
+          ManifestFragmentHelper.validateAndFormatManifestVersion('6.4.0'),
+      });
+      await TestHelper.productVersion.create({
+        product: PlatformIdentifier.Opencti,
+        version: '7.0.0',
+        version_padded:
+          ManifestFragmentHelper.validateAndFormatManifestVersion('7.0.0'),
+      });
+
+      const result = await resolvers.Query!.registeredProductVersions!(
+        {},
+        { product: PlatformIdentifier.Opencti, search: '7.0' },
+        contextSimpleUserFiligran2,
+        GRAPHQL_RESOLVE_INFO
+      );
+
+      expect(
+        (result as { version: string }[]).map((row) => row.version)
+      ).toEqual(['7.0.0']);
     });
   });
 });

@@ -1,0 +1,8 @@
+query IntegrationProductVersionFilter(
+  $product: PlatformIdentifier!
+  $search: String
+) {
+  registeredProductVersions(product: $product, search: $search) {
+    version
+  }
+}

@@ -1932,6 +1932,11 @@ export type Query = {
   publicDocumentsByServiceSlug: Array<Document>;
   registeredPlatform: Maybe<RegisteredPlatform>;
   registeredPlatforms: Array<RegisteredPlatform>;
+  /**
+   * Returns at most the 5 latest registered versions for the given product,
+   * most recent first. When `search` is provided, only versions whose string
+   * contains it (case-insensitive) are considered.
+   */
   registeredProductVersions: Array<RegisteredProductVersion>;
   seoServiceInstance: SeoServiceInstance;
   seoServiceInstanceMetadata: Array<SeoServiceInstanceMetadata>;
@@ -2167,6 +2172,7 @@ export type QueryRegisteredPlatformsArgs = {
 
 export type QueryRegisteredProductVersionsArgs = {
   product: PlatformIdentifier;
+  search: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -3451,6 +3457,14 @@ export type CurrentVotingRoundCalloutQueryVariables = Exact<{
 
 
 export type CurrentVotingRoundCalloutQuery = { __typename?: 'Query', currentVotingRound: { __typename?: 'VotingRound', id: string, name: string, description: string | null, theme: VotingRoundTheme } | null };
+
+export type IntegrationProductVersionFilterQueryVariables = Exact<{
+  product: PlatformIdentifier;
+  search: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type IntegrationProductVersionFilterQuery = { __typename?: 'Query', registeredProductVersions: Array<{ __typename?: 'RegisteredProductVersion', version: string }> };
 
 export type MeCheckQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -5200,6 +5214,59 @@ export const useInfiniteCurrentVotingRoundCalloutQuery = <
 useInfiniteCurrentVotingRoundCalloutQuery.getKey = (variables: CurrentVotingRoundCalloutQueryVariables) => ['CurrentVotingRoundCallout.infinite', variables];
 useInfiniteCurrentVotingRoundCalloutQuery.getRootKey = () => ['CurrentVotingRoundCallout.infinite'] as const;
 useCurrentVotingRoundCalloutQuery.fetcher = (client: GraphQLClient, variables: CurrentVotingRoundCalloutQueryVariables, headers?: RequestInit['headers']) => fetcher<CurrentVotingRoundCalloutQuery, CurrentVotingRoundCalloutQueryVariables>(client, CurrentVotingRoundCalloutDocument, variables, headers);
+
+export const IntegrationProductVersionFilterDocument = `
+    query IntegrationProductVersionFilter($product: PlatformIdentifier!, $search: String) {
+  registeredProductVersions(product: $product, search: $search) {
+    version
+  }
+}
+    `;
+
+export const useIntegrationProductVersionFilterQuery = <
+      TData = IntegrationProductVersionFilterQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: IntegrationProductVersionFilterQueryVariables,
+      options?: Omit<UseQueryOptions<IntegrationProductVersionFilterQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<IntegrationProductVersionFilterQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<IntegrationProductVersionFilterQuery, TError, TData>(
+      {
+    queryKey: ['IntegrationProductVersionFilter', variables],
+    queryFn: fetcher<IntegrationProductVersionFilterQuery, IntegrationProductVersionFilterQueryVariables>(client, IntegrationProductVersionFilterDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useIntegrationProductVersionFilterQuery.getKey = (variables: IntegrationProductVersionFilterQueryVariables) => ['IntegrationProductVersionFilter', variables];
+useIntegrationProductVersionFilterQuery.getRootKey = () => ['IntegrationProductVersionFilter'] as const;
+export const useInfiniteIntegrationProductVersionFilterQuery = <
+      TData = InfiniteData<IntegrationProductVersionFilterQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: IntegrationProductVersionFilterQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<IntegrationProductVersionFilterQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<IntegrationProductVersionFilterQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<IntegrationProductVersionFilterQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['IntegrationProductVersionFilter.infinite', variables],
+      queryFn: (metaData) => fetcher<IntegrationProductVersionFilterQuery, IntegrationProductVersionFilterQueryVariables>(client, IntegrationProductVersionFilterDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteIntegrationProductVersionFilterQuery.getKey = (variables: IntegrationProductVersionFilterQueryVariables) => ['IntegrationProductVersionFilter.infinite', variables];
+useInfiniteIntegrationProductVersionFilterQuery.getRootKey = () => ['IntegrationProductVersionFilter.infinite'] as const;
+useIntegrationProductVersionFilterQuery.fetcher = (client: GraphQLClient, variables: IntegrationProductVersionFilterQueryVariables, headers?: RequestInit['headers']) => fetcher<IntegrationProductVersionFilterQuery, IntegrationProductVersionFilterQueryVariables>(client, IntegrationProductVersionFilterDocument, variables, headers);
 
 export const MeCheckDocument = `
     query meCheck {

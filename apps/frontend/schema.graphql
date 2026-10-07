@@ -111,7 +111,13 @@ type Query {
   votingRounds(service_instance_id: ServiceInstanceId): [VotingRound!]!
   votingRound(id: VotingRoundId!): VotingRound
   votingRoundResults(id: VotingRoundId!): VotingRoundResults!
-  registeredProductVersions(product: PlatformIdentifier!): [RegisteredProductVersion!]!
+
+  """
+  Returns at most the 5 latest registered versions for the given product,
+  most recent first. When `search` is provided, only versions whose string
+  contains it (case-insensitive) are considered.
+  """
+  registeredProductVersions(product: PlatformIdentifier!, search: String): [RegisteredProductVersion!]!
   newsFeedItems(first: Int!, after: ID): NewsFeedItemConnection!
   organization(id: ID!): Organization
   organizations(first: Int = 50, after: ID, orderBy: OrganizationOrdering!, orderMode: OrderingMode!, searchTerm: String): OrganizationConnection!
