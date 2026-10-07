@@ -36,8 +36,9 @@ export type VotableFeatureWithCount = VotableFeature & {
  * The order the products are presented in across the product, which is neither
  * alphabetical nor the declaration order of the enum. Sorting on the column
  * itself would put OpenAEV before OpenCTI and scatter a round's features.
+ * Keep in sync with VOTING_PRODUCTS in the frontend feature-voting.const.ts.
  */
-const PRODUCT_DISPLAY_ORDER: FiligranProduct[] = [
+export const VOTING_PRODUCTS: readonly FiligranProduct[] = [
   FiligranProduct.Opencti,
   FiligranProduct.Openaev,
   FiligranProduct.Xtmone,
@@ -57,7 +58,7 @@ const selectVotableFeaturesWithVote = (
   userId?: UserId
 ): Knex.QueryBuilder<VotableFeature, VotableFeatureWithVote[]> =>
   query
-    .orderByRaw(PRODUCT_THEN_POSITION_SQL, [PRODUCT_DISPLAY_ORDER])
+    .orderByRaw(PRODUCT_THEN_POSITION_SQL, [[...VOTING_PRODUCTS]])
     .select<VotableFeatureWithVote[]>(
       'VotableFeature.*',
       userId ? dbRaw(HAS_MY_VOTE_SQL, [userId]) : dbRaw('false as has_my_vote')
@@ -376,7 +377,7 @@ export const featureVotingDomain = {
       .select('VotableFeature.*')
       .count({ vote_count: 'FeatureVote.user_id' })
       .orderByRaw(`vote_count desc, ${PRODUCT_THEN_POSITION_SQL}`, [
-        PRODUCT_DISPLAY_ORDER,
+        [...VOTING_PRODUCTS],
       ])) as unknown as (VotableFeature & { vote_count: string | number })[];
 
     return rows.map((row) => ({

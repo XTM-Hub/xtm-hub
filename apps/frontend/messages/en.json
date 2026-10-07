@@ -437,6 +437,7 @@
       "VOTING_ROUND_MUTATION_ERROR": "An error occurred while saving the voting round",
       "OPEN_VOTING_ROUND_WITHOUT_ACTIVE_FEATURE": "This round has no active feature and cannot be opened",
       "VOTABLE_FEATURE_PRODUCT_LOCKED": "This feature already collected votes, its product can no longer be changed",
+      "VOTABLE_FEATURE_PRODUCT_NOT_VOTABLE": "This product is not open to voting",
       "COPY_FEATURES_FROM_ANOTHER_ROADMAP": "Features can only be copied from a round of the same roadmap",
       "VOTABLE_FEATURE_MUTATION_ERROR": "An error occurred while saving the feature"
     },
