@@ -1,12 +1,12 @@
 'use client';
 import { cn } from '@/lib/utils';
-import { Button } from '@filigran/design-system';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@filigran/ui';
+  Button,
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuTrigger,
+} from '@filigran/design-system';
 import Link from 'next/link';
 import {
   type ButtonHTMLAttributes,
@@ -18,7 +18,7 @@ import {
   useState,
 } from 'react';
 
-export { DropdownMenuItem as IconActionsItem } from '@filigran/ui/clients';
+export { MenuItem as IconActionsItem } from '@filigran/design-system';
 
 interface IconActionsProps {
   children: ReactNode;
@@ -48,10 +48,10 @@ export const IconActions = ({
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <DropdownMenu
+    <Menu
       open={menuOpen}
       onOpenChange={setMenuOpen}>
-      <DropdownMenuTrigger asChild>
+      <MenuTrigger asChild>
         <div className="flex items-center gap-s cursor-pointer">
           {label}
           <Button
@@ -60,15 +60,13 @@ export const IconActions = ({
             {icon}
           </Button>
         </div>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        className="w-[160px] z-[1500]">
+      </MenuTrigger>
+      <MenuContent align="end">
         <IconActionContext.Provider value={{ setMenuOpen }}>
           {children}
         </IconActionContext.Provider>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </MenuContent>
+    </Menu>
   );
 };
 
@@ -97,12 +95,12 @@ export const IconActionsLink = ({
   ...props
 }: IconActionsLinkProps) => {
   return (
-    <DropdownMenuItem asChild>
+    <MenuItem asChild>
       <Link
         {...props}
         className={className}>
         {children}
       </Link>
-    </DropdownMenuItem>
+    </MenuItem>
   );
 };

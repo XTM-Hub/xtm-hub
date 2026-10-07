@@ -4,15 +4,15 @@ import { ConnectedProductItem } from '@/components/connected-products/ConnectedP
 import { ConnectProductButton } from '@/components/connected-products/ConnectProductButton';
 import { useConnectedPlatforms } from '@/components/connected-products/useConnectedPlatforms';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
-import { ArrowDropDownIcon } from '@filigran/icon';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@filigran/ui';
+  Button,
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuSeparator,
+  MenuTrigger,
+} from '@filigran/design-system';
+import { ArrowDropDownIcon } from '@filigran/icon';
 import { PlatformIdentifier } from '@graphql/generated';
 import { useState } from 'react';
 
@@ -28,10 +28,10 @@ export const ConnectedProductsDropdown = () => {
   const [open, setOpen] = useState(false);
 
   return (
-    <DropdownMenu
+    <Menu
       open={open}
       onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
+      <MenuTrigger asChild>
         <Button
           priority="tertiary"
           className="font-medium"
@@ -44,26 +44,24 @@ export const ConnectedProductsDropdown = () => {
             count: connectedPlatforms.length,
           })}
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80 p-0">
+      </MenuTrigger>
+      <MenuContent>
         {connectedPlatforms.length > 0 && (
           <>
             <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden">
               {connectedPlatforms.map((platform, index) => (
                 <div key={platform.id}>
-                  <DropdownMenuItem className="p-0">
+                  <MenuItem>
                     <ConnectedProductItem
                       platform={platform}
                       t={t}
                     />
-                  </DropdownMenuItem>
-                  {index < connectedPlatforms.length - 1 && (
-                    <DropdownMenuSeparator className="bg-foreground/20" />
-                  )}
+                  </MenuItem>
+                  {index < connectedPlatforms.length - 1 && <MenuSeparator />}
                 </div>
               ))}
             </div>
-            <DropdownMenuSeparator className="bg-foreground/20" />
+            <MenuSeparator />
           </>
         )}
         <div className="flex flex-col gap-s p-m">
@@ -72,7 +70,7 @@ export const ConnectedProductsDropdown = () => {
             onCloseDropdown={() => setOpen(false)}
           />
         </div>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </MenuContent>
+    </Menu>
   );
 };

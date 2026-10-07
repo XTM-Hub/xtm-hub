@@ -19,7 +19,18 @@ import {
 } from '@dnd-kit/sortable';
 import type { Arguments } from '@dnd-kit/sortable/dist/hooks/useSortable';
 import { type Transform } from '@dnd-kit/utilities';
-import { Checkbox, IconButton } from '@filigran/design-system';
+import {
+  Checkbox,
+  IconButton,
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuSeparator,
+  MenuSub,
+  MenuSubContent,
+  MenuSubTrigger,
+  MenuTrigger,
+} from '@filigran/design-system';
 import {
   ArrowNextIcon,
   ArrowPreviousIcon,
@@ -60,20 +71,6 @@ import {
   type SetStateAction,
 } from 'react';
 import { Skeleton } from '../servers';
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuPortal,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from './DropdownMenu';
 import {
   Table,
   TableBody,
@@ -174,8 +171,8 @@ const DataTableSelectColumnVisibility = () => {
   }, [table, onResetTable]);
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <Menu>
+      <MenuTrigger asChild>
         <IconButton
           priority="tertiary"
           className="h-9 w-9 rounded-none shrink-0"
@@ -184,56 +181,44 @@ const DataTableSelectColumnVisibility = () => {
             <TableTuneIcon className="h-[1.125rem] w-[1.125rem] text-primary" />
           }
         />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => onClickResetTable()}>
+      </MenuTrigger>
+      <MenuContent align="end">
+        <MenuItem onClick={() => onClickResetTable()}>
           {t_i18n('Reset table')}
-        </DropdownMenuItem>
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>{t_i18n('Columns')}</DropdownMenuSubTrigger>
-          <DropdownMenuPortal>
-            <DropdownMenuSubContent>
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }>
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                ))}
-            </DropdownMenuSubContent>
-          </DropdownMenuPortal>
-        </DropdownMenuSub>
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            {t_i18n('Rows per page')}
-          </DropdownMenuSubTrigger>
-          <DropdownMenuPortal>
-            <DropdownMenuSubContent>
-              <DropdownMenuRadioGroup
-                value={String(table.getState().pagination.pageSize)}
-                onValueChange={(pageSize) =>
-                  table.setPageSize(Number(pageSize))
-                }>
-                {[50, 100, 200, 300, 500].map((pageSize) => (
-                  <DropdownMenuRadioItem
-                    value={String(pageSize)}
-                    key={pageSize}>
-                    {pageSize}
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuSubContent>
-          </DropdownMenuPortal>
-        </DropdownMenuSub>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </MenuItem>
+        <MenuSub>
+          <MenuSubTrigger>{t_i18n('Columns')}</MenuSubTrigger>
+          <MenuSubContent>
+            {table
+              .getAllColumns()
+              .filter((column) => column.getCanHide())
+              .map((column) => (
+                <MenuItem
+                  key={column.id}
+                  selected={column.getIsVisible()}
+                  onSelect={() =>
+                    column.toggleVisibility(!column.getIsVisible())
+                  }>
+                  <span className="capitalize">{column.id}</span>
+                </MenuItem>
+              ))}
+          </MenuSubContent>
+        </MenuSub>
+        <MenuSub>
+          <MenuSubTrigger>{t_i18n('Rows per page')}</MenuSubTrigger>
+          <MenuSubContent>
+            {[50, 100, 200, 300, 500].map((size) => (
+              <MenuItem
+                key={size}
+                selected={size === table.getState().pagination.pageSize}
+                onSelect={() => table.setPageSize(size)}>
+                {size}
+              </MenuItem>
+            ))}
+          </MenuSubContent>
+        </MenuSub>
+      </MenuContent>
+    </Menu>
   );
 };
 
@@ -267,41 +252,44 @@ const DataTableOptionsHeader = <TData, TValue>({
   }
   return (
     <div className={className}>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
+      <Menu>
+        <MenuTrigger asChild>
           <IconButton
             priority="tertiary"
             className="w-6 text-muted-foreground"
             aria-label={t_i18n('Column options')}
             icon={<MoreVertIcon className="size-4" />}
           />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
+        </MenuTrigger>
+        <MenuContent align="start">
           {column.getCanSort() && (
             <>
-              <DropdownMenuItem onClick={() => column.toggleSorting(false)}>
-                <KeyboardArrowUpIcon className="mr-2 size-3 text-text-secondary" />
+              <MenuItem
+                onClick={() => column.toggleSorting(false)}
+                startIcon={<KeyboardArrowUpIcon className="size-4" />}>
                 {t_i18n('Asc')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => column.toggleSorting(true)}>
-                <KeyboardArrowDownIcon className="mr-2 size-3 text-text-secondary" />
+              </MenuItem>
+              <MenuItem
+                onClick={() => column.toggleSorting(true)}
+                startIcon={<KeyboardArrowDownIcon className="size-4" />}>
                 {t_i18n('Desc')}
-              </DropdownMenuItem>
+              </MenuItem>
             </>
           )}
           {(menuItems || (column.getCanHide() && column.getCanSort())) && (
-            <DropdownMenuSeparator />
+            <MenuSeparator />
           )}
 
           {column.getCanHide() && (
-            <DropdownMenuItem onClick={() => column.toggleVisibility(false)}>
-              <VisibilityOffIcon className="mr-2 h-4 w-4 text-text-secondary" />
+            <MenuItem
+              onClick={() => column.toggleVisibility(false)}
+              startIcon={<VisibilityOffIcon className="size-4" />}>
               {t_i18n('Hide')}
-            </DropdownMenuItem>
+            </MenuItem>
           )}
           {menuItems}
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </MenuContent>
+      </Menu>
     </div>
   );
 };

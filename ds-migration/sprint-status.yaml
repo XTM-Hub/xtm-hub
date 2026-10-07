@@ -54,8 +54,8 @@ development_status:
   # legacy components replaced in place
   epic-2-composites: in-progress
   3566-select: done
-  3545-combobox: review
-  3558-menu: backlog
+  3545-combobox: done
+  3558-menu: review
   3565-tabs: backlog
   3540-dialog: backlog
   3535-breadcrumbs: backlog

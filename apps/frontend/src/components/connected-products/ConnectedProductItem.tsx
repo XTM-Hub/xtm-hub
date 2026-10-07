@@ -37,7 +37,7 @@ export const ConnectedProductItem = ({
       : undefined;
 
   return (
-    <div className="hover:cursor-default flex min-h-12 w-full items-center gap-m px-m py-s">
+    <div className="hover:cursor-default flex min-h-12 w-full items-center gap-m">
       <div className="flex min-w-0 flex-1 items-center gap-s">
         {platformMeta?.Icon && (
           <platformMeta.Icon className="h-6 w-6 shrink-0" />

@@ -8,7 +8,6 @@ export * from './Command';
 export * from './DataTable';
 export * from './DatePicker';
 export * from './Dialog';
-export * from './DropdownMenu';
 export * from './FileInput';
 export * from './Form';
 export * from './Label';
