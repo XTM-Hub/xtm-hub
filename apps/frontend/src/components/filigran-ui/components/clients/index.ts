@@ -6,7 +6,6 @@ export * from './ColorPicker';
 export * from './Command';
 export * from './DataTable';
 export * from './DatePicker';
-export * from './FileInput';
 export * from './Form';
 export * from './Label';
 export * from './MarkdownRenderer';

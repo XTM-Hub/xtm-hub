@@ -1208,7 +1208,6 @@
       "DescriptionLabel": "説明",
       "DescriptionPlaceholder": "これは {documentType} を説明するための段落です。",
       "DescriptionUpdateJSONFile": "あなたは新しいjsonファイルをアップロードしようとしています。前のjsonファイルは削除されます。続行しますか？",
-      "DropDocuments": "ここにドキュメントをドロップしてください。",
       "ExistingJSONFile": "既存のJSONファイル {file_name}",
       "GithubUrlLabel": "Githubリンク (url)",
       "Illustration": "イラスト",
@@ -1222,7 +1221,6 @@
       "MinimumDeployableVersionPlaceholder": "1.0.0",
       "NameLabel": "名前",
       "NamePlaceholder": "{documentType} 名前",
-      "NoImage": "画像なし",
       "PlaybookSupportedLabel": "対応プレイブック",
       "ProductVersionLabel": "{platform} 互換バージョン",
       "ProductVersionPlaceholder": "1.0.0",
@@ -1240,7 +1238,6 @@
       "SolutionCategoriesPlaceholder": "解答カテゴリを追加",
       "SubscriptionLinkLabel": "購読リンク (url)",
       "UpdateJSONFile": "JSONファイルの更新",
-      "UploadImage": "新しい画像のアップロード",
       "UploadLogo": "新しいロゴのアップロード",
       "UrlPlaceholder": "http://www.example.com",
       "UseCasesLabel": "使用例",
@@ -2000,7 +1997,6 @@
       }
     },
     "FileForm": {
-      "DropDocuments": "ここにドキュメントをドロップする",
       "NoDocument": "選択した文書がありません。",
       "SelectDocument": "ドキュメントを選択"
     },

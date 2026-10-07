@@ -143,8 +143,7 @@ export const CustomViewForm = ({
               label: t('Service.Form.SelectJSONFile'),
               fieldType: 'file',
               inputProps: {
-                allowedTypes: 'application/json',
-                multiple: 'multiple',
+                accept: 'application/json',
               },
             }
           : {

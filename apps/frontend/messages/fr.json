@@ -1208,7 +1208,6 @@
       "DescriptionLabel": "Description",
       "DescriptionPlaceholder": "Il s'agit d'un paragraphe décrivant le {documentType}.",
       "DescriptionUpdateJSONFile": "Vous êtes sur le point de télécharger un nouveau fichier json. Le fichier json précédent sera supprimé. Voulez-vous continuer ?",
-      "DropDocuments": "Déposer les documents ici",
       "ExistingJSONFile": "Fichier JSON existant : {file_name}",
       "GithubUrlLabel": "URL Github",
       "Illustration": "Illustration",
@@ -1222,7 +1221,6 @@
       "MinimumDeployableVersionPlaceholder": "1.0.0",
       "NameLabel": "Nom",
       "NamePlaceholder": "nom {documentType}",
-      "NoImage": "Pas d'image sélectionnée",
       "PlaybookSupportedLabel": "Playbook pris en charge",
       "ProductVersionLabel": "Version de compatibilité de {platform}",
       "ProductVersionPlaceholder": "1.0.0",
@@ -1240,7 +1238,6 @@
       "SolutionCategoriesPlaceholder": "Ajouter des catégories de solutions",
       "SubscriptionLinkLabel": "Lien d'abonnement (url)",
       "UpdateJSONFile": "Mise à jour du fichier JSON",
-      "UploadImage": "Télécharger une ou plusieurs nouvelle(s) image(s)",
       "UploadLogo": "Télécharger un nouveau logo",
       "UrlPlaceholder": "http://www.example.com",
       "UseCasesLabel": "Cas d'utilisation",
@@ -2000,7 +1997,6 @@
       }
     },
     "FileForm": {
-      "DropDocuments": "Lâchez les documents ici",
       "NoDocument": "Pas de document sélectionné",
       "SelectDocument": "Sélectionnez un document"
     },

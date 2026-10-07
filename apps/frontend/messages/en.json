@@ -1208,7 +1208,6 @@
       "DescriptionLabel": "Description",
       "DescriptionPlaceholder": "This is a paragraph to describe the {documentType}.",
       "DescriptionUpdateJSONFile": "You're about to upload a new json file. The previous json file will be deleted. Do you want to continue?",
-      "DropDocuments": "Drop documents here",
       "ExistingJSONFile": "Existing JSON file: {file_name}",
       "GithubUrlLabel": "Github link (url)",
       "Illustration": "Illustration",
@@ -1222,7 +1221,6 @@
       "MinimumDeployableVersionPlaceholder": "1.0.0",
       "NameLabel": "Name",
       "NamePlaceholder": "{documentType} name",
-      "NoImage": "No image selected",
       "PlaybookSupportedLabel": "Playbook supported",
       "ProductVersionLabel": "{platform} compatibility version",
       "ProductVersionPlaceholder": "1.0.0",
@@ -1240,7 +1238,6 @@
       "SolutionCategoriesPlaceholder": "Add solution categories",
       "SubscriptionLinkLabel": "Subscription link (url)",
       "UpdateJSONFile": "Update JSON file",
-      "UploadImage": "Upload new image(s)",
       "UploadLogo": "Upload new logo",
       "UrlPlaceholder": "http://www.example.com",
       "UseCasesLabel": "Use cases",
@@ -2000,7 +1997,6 @@
       }
     },
     "FileForm": {
-      "DropDocuments": "Drop documents here",
       "NoDocument": "No document selected",
       "SelectDocument": "Select document"
     },

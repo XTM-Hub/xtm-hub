@@ -3,8 +3,10 @@ import { ServiceFormUseCasesField } from '@/components/service/form/UseCasesFiel
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import MarkdownInput from '@/components/ui/MarkdownInput';
 import { useTranslate } from '@/hooks/use-translate';
+import { fromFileSelectValue, toFileSelectValue } from '@/utils/documents';
 import {
   Button,
+  FileSelect,
   IconButton,
   Input,
   Select,
@@ -18,7 +20,6 @@ import {
 } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
 import {
-  FileInput,
   Form,
   FormControl,
   FormField,
@@ -235,14 +236,17 @@ const VotableFeatureForm = ({
                 </div>
               )}
               <FormControl>
-                <FileInput
-                  {...field}
-                  texts={{
-                    selectFile: t('Service.FileForm.SelectDocument'),
-                    noFile: t('Service.FileForm.NoDocument'),
-                    dropFiles: t('Service.FileForm.DropDocuments'),
-                  }}
-                  allowedTypes={'image/jpeg, image/gif, image/png, image/svg'}
+                <FileSelect
+                  aria-label={t('VotingRound.Feature.Illustration')}
+                  triggerLabel={t('Service.FileForm.SelectDocument')}
+                  placeholder={t('Service.FileForm.NoDocument')}
+                  accept="image/jpeg, image/gif, image/png, image/svg+xml"
+                  name={field.name}
+                  ref={field.ref}
+                  value={toFileSelectValue(field.value)}
+                  onValueChange={(next) =>
+                    field.onChange(fromFileSelectValue(next))
+                  }
                 />
               </FormControl>
               <FormMessage />

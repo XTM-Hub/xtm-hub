@@ -1,7 +1,7 @@
 import VotableFeatureForm from '@/components/admin/voting-round/VotableFeatureForm';
 import testRender from '@/utils/test/test-render';
 import { FiligranProduct } from '@graphql/generated';
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 
 vi.mock('@/components/admin/use-case/use-use-cases', () => ({
   useUseCases: () => [
@@ -69,6 +69,38 @@ describe('VotableFeatureForm', () => {
           name: 'VotingRound.Feature.RemoveIllustration',
         })
       ).not.toBeInTheDocument();
+    });
+
+    it('should submit the uploaded illustration', async () => {
+      // Given
+      const handleSubmit = vi.fn();
+      const file = new File(['image'], 'illustration.png', {
+        type: 'image/png',
+      });
+      const { user } = testRender(
+        <VotableFeatureForm
+          feature={buildFeature()}
+          serviceInstanceId="instance-1"
+          onClose={vi.fn()}
+          handleDelete={vi.fn()}
+          handleSubmit={handleSubmit}
+        />
+      );
+
+      // When
+      await user.upload(
+        screen.getByLabelText('VotingRound.Feature.Illustration', {
+          selector: 'input',
+        }),
+        file
+      );
+      await user.click(screen.getByRole('button', { name: 'Utils.Validate' }));
+
+      // Then
+      await waitFor(() => expect(handleSubmit).toHaveBeenCalledTimes(1));
+      const [{ illustration_document }] = handleSubmit.mock.calls[0];
+      expect(illustration_document).toHaveLength(1);
+      expect(illustration_document[0]).toBe(file);
     });
 
     it('should not show the remove button when there is no illustration', () => {

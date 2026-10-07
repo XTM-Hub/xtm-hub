@@ -147,8 +147,7 @@ export const OpenaevScenarioForm = ({
               label: t('Service.OpenAEVScenario.Form.OpenAEVScenarioFile'),
               fieldType: 'file',
               inputProps: {
-                accept: 'application/zip',
-                multiple: 'multiple',
+                accept: 'application/zip, .zip',
               },
             }
           : {
