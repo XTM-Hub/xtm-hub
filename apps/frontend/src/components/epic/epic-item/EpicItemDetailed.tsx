@@ -42,16 +42,19 @@ export const EpicItemDetailed = ({ epic }: EpicItemDetailedProps) => {
         ))}
       </div>
       <Separator />
-      <div className="markdown-content flex flex-row">
-        <EpicItemFooter epic={epic} />
-        <p className="flex flex-wrap items-center gap-1">
-          <Link
-            href={slackLink}
-            target="_blank"
-            rel="noopener noreferrer">
-            <span className="whitespace-nowrap">{t('Epic.JoinCommunity')}</span>
-          </Link>
-        </p>
+      <div className="markdown-content">
+        <EpicItemFooter epic={epic}>
+          <p className="flex min-h-9 flex-wrap items-center gap-1">
+            <Link
+              href={slackLink}
+              target="_blank"
+              rel="noopener noreferrer">
+              <span className="whitespace-nowrap">
+                {t('Epic.JoinCommunity')}
+              </span>
+            </Link>
+          </p>
+        </EpicItemFooter>
       </div>
     </div>
   );

@@ -41,7 +41,7 @@ export const EpicAdminMenu = ({
     <>
       <div
         data-no-open-detail
-        className="flex items-center justify-end mt-auto"
+        className="ml-auto flex h-9 shrink-0 items-center justify-end"
         onClick={(e) => {
           e.stopPropagation();
           e.preventDefault();

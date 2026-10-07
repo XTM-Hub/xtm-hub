@@ -26,13 +26,14 @@ export const EpicItemCard = ({
       footer={
         <>
           <Separator />
-          <div className="mt-m flex flex-row">
-            <EpicItemFooter epic={epic} />
-            <EpicAdminMenu
-              epic={epic}
-              userCanDelete={userCanDelete}
-              userCanUpdate={userCanUpdate}
-            />
+          <div className="mt-m">
+            <EpicItemFooter epic={epic}>
+              <EpicAdminMenu
+                epic={epic}
+                userCanDelete={userCanDelete}
+                userCanUpdate={userCanUpdate}
+              />
+            </EpicItemFooter>
           </div>
         </>
       }
