@@ -1585,12 +1585,6 @@
         "expertise": "Nous n'avons pas les analystes/expertises internes pour utiliser l'outil efficacement"
       },
       "DaysRemaining": "{days, plural, =1 {# Jour restant} other {# Jours restants}}",
-      "Header": {
-        "ActiveTrial": "Essai actif",
-        "ActiveTrialCount": "{count} {count, plural, one {essai actif} other {essais actifs}}",
-        "DaysRemaining": "jour restant",
-        "OpenInNewTab": "Ouvrir {title} dans un nouvel onglet"
-      },
       "LearnMore": {
         "Link": "En savoir plus",
         "openaev": {

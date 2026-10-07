@@ -1585,12 +1585,6 @@
         "expertise": "We lack the internal analysts/expertise to utilize the tool effectively"
       },
       "DaysRemaining": "{days, plural, =1 {# Day remaining} other {# Days remaining}}",
-      "Header": {
-        "ActiveTrial": "Active trial",
-        "ActiveTrialCount": "{count} active trial{count, plural, one {} other {s}}",
-        "DaysRemaining": "remaining day",
-        "OpenInNewTab": "Open {title} in new tab"
-      },
       "LearnMore": {
         "Link": "Learn more",
         "openaev": {

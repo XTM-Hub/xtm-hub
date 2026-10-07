@@ -1585,12 +1585,6 @@
         "expertise": "ツールを効果的に利用するためのアナリストや専門家が社内にいない"
       },
       "DaysRemaining": "{days, plural, =1 {# 日残り} other {# 日残り}}",
-      "Header": {
-        "ActiveTrial": "アクティブトライアル",
-        "ActiveTrialCount": "{count} 件のアクティブトライアル{count, plural, one {} other {s}}",
-        "DaysRemaining": "残りの日",
-        "OpenInNewTab": "{title} を新しいタブで開く"
-      },
       "LearnMore": {
         "Link": "もっと詳しく",
         "openaev": {
