@@ -73,7 +73,7 @@
       "StartedOn": "Démarré le",
       "License": "Licence",
       "Remaining": "Restant",
-      "DaysRemaining": "{days} jours",
+      "DaysRemaining": "{days, plural, =1 {# jour} other {# jours}}",
       "TrialRequester": "Demandeur de l'essai",
       "Title": "Détails de l'essai XTM Product :"
     },
@@ -129,7 +129,7 @@
     "threat_profiling_faml": "Profilage des menaces (Fraude & LCB)",
     "threat_hunting": "Chasse aux menaces",
     "strategic_reporting": "Reporting stratégique (Pour les dirigeants)",
-    "technical_reporting": "Reporting stratégique (Pour les analystes)",
+    "technical_reporting": "Reporting technique (Pour les analystes)",
     "incident_response": "Coordination de la réponse aux incidents",
     "security_stack": "Intégration de la pile de sécurité",
     "detection_engineering": "Ingénierie de détection",
@@ -2417,7 +2417,7 @@
     },
     "Results": {
       "Title": "Résultats",
-      "TotalVoters": "{count} votants",
+      "TotalVoters": "{count, plural, =1 {# votant} other {# votants}}",
       "Empty": "Aucun vote pour ce round.",
       "InactiveFeature": "Désactivée"
     },
