@@ -1,7 +1,12 @@
 'use client';
 
 import { useTranslate } from '@/hooks/use-translate';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@filigran/ui';
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogTitle,
+} from '@filigran/design-system';
 import { PlatformIdentifier } from '@graphql/generated';
 import { ReactNode } from 'react';
 import { AddTrialUserForm } from './AddTrialUserForm';
@@ -50,15 +55,13 @@ export const TrialUserDialog = (props: TrialUserDialogProps) => {
     <Dialog
       open={open}
       onOpenChange={setOpen}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>
-            {mode === 'add'
-              ? t('Service.Bundle.ManageTrial.AddUserDialog.Title')
-              : t('Service.Bundle.ManageTrial.EditUsersDialog.Title')}
-          </DialogTitle>
-        </DialogHeader>
-        {form}
+      <DialogContent size="lg">
+        <DialogTitle>
+          {mode === 'add'
+            ? t('Service.Bundle.ManageTrial.AddUserDialog.Title')
+            : t('Service.Bundle.ManageTrial.EditUsersDialog.Title')}
+        </DialogTitle>
+        <DialogBody>{form}</DialogBody>
       </DialogContent>
     </Dialog>
   );

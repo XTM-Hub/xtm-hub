@@ -1,15 +1,16 @@
 import { UserServicesAddCapabilitiesMutation } from '@/components/service/user_service.graphql';
 import { BadgeOverflow } from '@/components/ui/BadgeOverflowCounter';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button, Checkbox } from '@filigran/design-system';
 import {
+  Button,
+  Checkbox,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
-  DialogHeader,
   DialogTitle,
-  toast,
-} from '@filigran/ui';
+} from '@filigran/design-system';
+import { toast } from '@filigran/ui';
 import { userServices_fragment$data } from '@generated/userServices_fragment.graphql';
 import { userServicesAddCapabilitiesMutation } from '@generated/userServicesAddCapabilitiesMutation.graphql';
 import { useState } from 'react';
@@ -92,34 +93,34 @@ export const SubscriptionSlugAddCapabilities = ({
         else setOpen(value);
       }}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {t('Service.Management.AddUserServiceCapabilities.Title')}
-          </DialogTitle>
-        </DialogHeader>
+        <DialogTitle>
+          {t('Service.Management.AddUserServiceCapabilities.Title')}
+        </DialogTitle>
 
-        <p className="text-sm text-muted-foreground">
-          {t('Service.Management.AddUserServiceCapabilities.Description', {
-            count: selectedUserServices.length,
-          })}
-        </p>
+        <DialogBody>
+          <p className="text-sm text-muted-foreground">
+            {t('Service.Management.AddUserServiceCapabilities.Description', {
+              count: selectedUserServices.length,
+            })}
+          </p>
 
-        <div className="flex flex-col gap-s py-m">
-          {availableCapabilities.length === 0 ? (
-            <p className="text-sm text-muted-foreground italic">
-              {t('Service.Management.NoAvailableCapabilities')}
-            </p>
-          ) : (
-            availableCapabilities.map((capability) => (
-              <Checkbox
-                key={capability.id}
-                label={capability.name}
-                checked={selectedCapabilityIds.has(capability.id)}
-                onCheckedChange={() => toggleCapability(capability.id)}
-              />
-            ))
-          )}
-        </div>
+          <div className="flex flex-col gap-s py-m">
+            {availableCapabilities.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic">
+                {t('Service.Management.NoAvailableCapabilities')}
+              </p>
+            ) : (
+              availableCapabilities.map((capability) => (
+                <Checkbox
+                  key={capability.id}
+                  label={capability.name}
+                  checked={selectedCapabilityIds.has(capability.id)}
+                  onCheckedChange={() => toggleCapability(capability.id)}
+                />
+              ))
+            )}
+          </div>
+        </DialogBody>
 
         <DialogFooter>
           <Button

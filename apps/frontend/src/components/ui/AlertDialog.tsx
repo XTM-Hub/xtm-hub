@@ -1,17 +1,15 @@
 import { useTranslate } from '@/hooks/use-translate';
-import { cn } from '@/lib/utils';
-import { buttonVariants } from '@filigran/design-system';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@filigran/ui';
+  Button,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+  DialogTrigger,
+} from '@filigran/design-system';
 import React, { ReactNode } from 'react';
 
 interface AlertDialogProps {
@@ -67,32 +65,36 @@ export const AlertDialogComponent = ({
   const t = useTranslate();
 
   return (
-    <AlertDialog
+    <Dialog
       open={isOpen}
       onOpenChange={onOpenChange}>
       {triggerElement && (
-        <AlertDialogTrigger asChild>{triggerElement}</AlertDialogTrigger>
+        <DialogTrigger asChild>{triggerElement}</DialogTrigger>
       )}
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{AlertTitle}</AlertDialogTitle>
-          <AlertDialogDescription className={cn(!description && 'sr-only')}>
-            {description}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        {children}
-        <AlertDialogFooter>
+      <DialogContent
+        role="alertdialog"
+        onInteractOutside={(e) => e.preventDefault()}
+        hideCloseButton={displayCancelButton}
+        {...(!description && { 'aria-describedby': undefined })}>
+        <DialogTitle>{AlertTitle}</DialogTitle>
+        {description && <DialogDescription>{description}</DialogDescription>}
+        <DialogBody>{children}</DialogBody>
+        <DialogFooter>
           {displayCancelButton && (
-            <AlertDialogCancel>{t('Utils.Cancel')}</AlertDialogCancel>
+            <DialogClose asChild>
+              <Button priority="secondary">{t('Utils.Cancel')}</Button>
+            </DialogClose>
           )}
-          <AlertDialogAction
-            onClick={onClickContinue}
-            disabled={continueButtonDisabled}
-            className={buttonVariants({ variant: variantName })}>
-            {actionButtonText}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+          <DialogClose asChild>
+            <Button
+              variant={variantName}
+              onClick={onClickContinue}
+              disabled={continueButtonDisabled}>
+              {actionButtonText}
+            </Button>
+          </DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };

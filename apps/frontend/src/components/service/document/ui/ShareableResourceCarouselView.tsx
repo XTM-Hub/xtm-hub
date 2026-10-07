@@ -1,10 +1,10 @@
 'use client';
-import { Carousel, CarouselItem, DialogContent } from '@filigran/ui/clients';
+import { Carousel, CarouselItem } from '@filigran/ui/clients';
 import { useState } from 'react';
 
 import { cn } from '@/lib/utils';
 import { PublicDocumentData } from '@/utils/shareable-resources/shareable-resources.types';
-import { Dialog } from '@filigran/ui';
+import { Dialog, DialogContent } from '@filigran/design-system';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
@@ -53,8 +53,9 @@ const ShareableResourceCarousel = ({
           <Dialog
             open={open}
             onOpenChange={setOpen}>
-            <DialogContent className="max-h-[calc(100dvh)] h-screen w-screen max-w-[calc(100dvw)] ">
+            <DialogContent size="lg">
               <Carousel
+                className="h-[80vh]"
                 opts={{
                   startIndex: pictureIndex,
                 }}>

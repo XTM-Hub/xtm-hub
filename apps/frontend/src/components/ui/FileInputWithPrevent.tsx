@@ -1,17 +1,16 @@
 'use client';
 
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
 import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@filigran/ui';
+  Button,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+  DialogTrigger,
+} from '@filigran/design-system';
 import { useRef, useState } from 'react';
 
 const FileInputWithPrevent = ({
@@ -49,31 +48,32 @@ const FileInputWithPrevent = ({
 
   return (
     <>
-      <AlertDialog
+      <Dialog
         open={isOpen}
         onOpenChange={setIsOpen}>
-        <AlertDialogTrigger asChild>
+        <DialogTrigger asChild>
           <Button type="button">{texts?.selectFile}</Button>
-        </AlertDialogTrigger>
+        </DialogTrigger>
 
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{texts?.dialogTitle}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {texts?.dialogDescription}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+        <DialogContent
+          role="alertdialog"
+          onInteractOutside={(e) => e.preventDefault()}
+          hideCloseButton>
+          <DialogTitle>{texts?.dialogTitle}</DialogTitle>
+          <DialogDescription>{texts?.dialogDescription}</DialogDescription>
 
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('Utils.Cancel')}</AlertDialogCancel>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button priority="secondary">{t('Utils.Cancel')}</Button>
+            </DialogClose>
             <Button
               type="button"
               onClick={openFileDialog}>
               {t('Utils.Continue')}
             </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <input
         ref={inputRef}

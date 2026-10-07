@@ -18,8 +18,7 @@ import {
   requiresEnterpriseEdition,
 } from '@/utils/platform';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { Button } from '@filigran/design-system';
-import { AlertDialog, AlertDialogContent } from '@filigran/ui';
+import { Button, Dialog, DialogContent } from '@filigran/design-system';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { OneClickDeployMutation as OneClickDeployMutationType } from '@generated/OneClickDeployMutation.graphql';
 import { useCallback, useMemo, useState } from 'react';
@@ -214,13 +213,17 @@ const OneClickDeploy = ({
   return (
     <>
       {container}
-      <AlertDialog
+      <Dialog
         open={isOpen}
         onOpenChange={setIsOpen}>
-        <AlertDialogContent className="max-w-3xl w-full">
+        <DialogContent
+          size="lg"
+          role="alertdialog"
+          onInteractOutside={(e) => e.preventDefault()}
+          hideCloseButton>
           {alertContent}
-        </AlertDialogContent>
-      </AlertDialog>
+        </DialogContent>
+      </Dialog>
       <EeLearnMoreSheet
         open={isEeSheetOpen}
         setOpen={setIsEeSheetOpen}

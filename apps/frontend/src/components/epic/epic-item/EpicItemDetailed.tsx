@@ -26,8 +26,8 @@ export const EpicItemDetailed = ({ epic }: EpicItemDetailedProps) => {
   ].filter(({ source }) => source);
 
   return (
-    <div className="p-l bg-elevation-background-layer-1 flex h-full min-h-0 flex-1 flex-col">
-      <h2>{epic.title}</h2>
+    <div className="flex h-full min-h-0 flex-1 flex-col">
+      <h2 className="pr-8">{epic.title}</h2>
       <p className="text-muted-foreground text-sm">{epic.short_description}</p>
       <Separator className="my-s" />
       <div className="markdown-content min-h-0 flex-1 overflow-y-auto">

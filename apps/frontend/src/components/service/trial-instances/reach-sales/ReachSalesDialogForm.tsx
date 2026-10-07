@@ -1,14 +1,14 @@
 import { useTranslate } from '@/hooks/use-translate';
-import { Button, Textarea } from '@filigran/design-system';
 import {
+  Button,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
-  DialogHeader,
   DialogTitle,
-  Form,
-  FormField,
-} from '@filigran/ui';
+  Textarea,
+} from '@filigran/design-system';
+import { Form, FormField } from '@filigran/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
@@ -52,32 +52,32 @@ export const ReachSalesDialogForm = ({
       open={isDialogOpen}
       onOpenChange={setIsDialogOpen}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('Service.Trials.ReachOutToSales')}</DialogTitle>
-        </DialogHeader>
-        <Form {...form}>
-          <form
-            id="reach-sales-form"
-            noValidate
-            onSubmit={form.handleSubmit(handleSubmit)}>
-            <FormField
-              control={form.control}
-              name="message"
-              render={({ field, fieldState }) => (
-                <Textarea
-                  label={t('Service.Trials.ReachOutToSalesMessageLabel')}
-                  required
-                  placeholder={t(
-                    'Service.Trials.ReachOutToSalesMessagePlaceholder'
-                  )}
-                  error={fieldState.error?.message}
-                  {...field}
-                />
-              )}
-            />
-          </form>
-        </Form>
-        <DialogFooter className="justify-end gap-s">
+        <DialogTitle>{t('Service.Trials.ReachOutToSales')}</DialogTitle>
+        <DialogBody>
+          <Form {...form}>
+            <form
+              id="reach-sales-form"
+              noValidate
+              onSubmit={form.handleSubmit(handleSubmit)}>
+              <FormField
+                control={form.control}
+                name="message"
+                render={({ field, fieldState }) => (
+                  <Textarea
+                    label={t('Service.Trials.ReachOutToSalesMessageLabel')}
+                    required
+                    placeholder={t(
+                      'Service.Trials.ReachOutToSalesMessagePlaceholder'
+                    )}
+                    error={fieldState.error?.message}
+                    {...field}
+                  />
+                )}
+              />
+            </form>
+          </Form>
+        </DialogBody>
+        <DialogFooter>
           <Button
             priority="secondary"
             type="button"

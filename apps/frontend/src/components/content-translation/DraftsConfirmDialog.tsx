@@ -1,16 +1,14 @@
 'use client';
 
-import { buttonVariants } from '@filigran/design-system';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@filigran/ui';
+  Button,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+} from '@filigran/design-system';
 import { useTranslations } from 'next-intl';
 
 interface DraftsConfirmDialogProps {
@@ -35,25 +33,29 @@ export const DraftsConfirmDialog = ({
   const t = useTranslations();
 
   return (
-    <AlertDialog
+    <Dialog
       open={open}
       onOpenChange={onOpenChange}>
-      <AlertDialogContent className="z-[110]">
-        <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription>{description}</AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{t('Utils.Cancel')}</AlertDialogCancel>
-          <AlertDialogAction
-            className={buttonVariants({
-              variant: isDestructive ? 'destructive' : 'default',
-            })}
-            onClick={onConfirm}>
-            {confirmLabel}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      <DialogContent
+        role="alertdialog"
+        onInteractOutside={(e) => e.preventDefault()}
+        hideCloseButton
+        className="z-[110]">
+        <DialogTitle>{title}</DialogTitle>
+        <DialogDescription>{description}</DialogDescription>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button priority="secondary">{t('Utils.Cancel')}</Button>
+          </DialogClose>
+          <DialogClose asChild>
+            <Button
+              variant={isDestructive ? 'destructive' : 'default'}
+              onClick={onConfirm}>
+              {confirmLabel}
+            </Button>
+          </DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };

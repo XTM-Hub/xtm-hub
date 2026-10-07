@@ -7,18 +7,18 @@ import { SettingsContext } from '@/components/settings/EnvPortalContext';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH } from '@/utils/path/constant';
-import { Button, Radio, RadioGroup, Textarea } from '@filigran/design-system';
 import {
-  AutoForm,
+  Button,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
-  DialogHeader,
   DialogTitle,
-  FormControl,
-  FormItem,
-  FormMessage,
-} from '@filigran/ui';
+  Radio,
+  RadioGroup,
+  Textarea,
+} from '@filigran/design-system';
+import { AutoForm, FormControl, FormItem, FormMessage } from '@filigran/ui';
 import { toast } from '@filigran/ui/clients';
 import {
   HasRepliedSatisfaction,
@@ -183,29 +183,29 @@ export const PrivateXtmPlatformTrialBanner = () => {
           }
         }}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {t('Service.Trials.XtmPlatform.Feedback.Question')}
-            </DialogTitle>
-          </DialogHeader>
+          <DialogTitle>
+            {t('Service.Trials.XtmPlatform.Feedback.Question')}
+          </DialogTitle>
 
-          <AutoForm
-            formSchema={feedbackFormSchema}
-            onSubmit={handleSubmitFeedback}
-            fieldConfig={{
-              answer: { fieldType: AnswerFieldType },
-              justification: { fieldType: JustificationFieldType },
-            }}>
-            {({ isValid }) => (
-              <DialogFooter>
-                <Button
-                  type="submit"
-                  disabled={!isValid}>
-                  {t('Service.Trials.XtmPlatform.Feedback.Submit')}
-                </Button>
-              </DialogFooter>
-            )}
-          </AutoForm>
+          <DialogBody>
+            <AutoForm
+              formSchema={feedbackFormSchema}
+              onSubmit={handleSubmitFeedback}
+              fieldConfig={{
+                answer: { fieldType: AnswerFieldType },
+                justification: { fieldType: JustificationFieldType },
+              }}>
+              {({ isValid }) => (
+                <DialogFooter>
+                  <Button
+                    type="submit"
+                    disabled={!isValid}>
+                    {t('Service.Trials.XtmPlatform.Feedback.Submit')}
+                  </Button>
+                </DialogFooter>
+              )}
+            </AutoForm>
+          </DialogBody>
         </DialogContent>
       </Dialog>
     </>

@@ -11,25 +11,20 @@ import { Locale, locales } from '@/i18n/config';
 import { getStaticTranslationValue } from '@/utils/content-translation/get-static-translation-value';
 import {
   Button,
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
   Textarea,
 } from '@filigran/design-system';
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Form,
-  FormField,
-  Skeleton,
-  toast,
-} from '@filigran/ui';
+import { Form, FormField, Skeleton, toast } from '@filigran/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -123,79 +118,79 @@ export const ContentEditDialog = ({
       onOpenChange={onOpenChange}>
       {/* Above the z-100 sticky headers some pages use. */}
       <DialogContent className="z-[110]">
-        <DialogHeader className="gap-s">
-          <DialogTitle>{tCommon('EditableText.DialogTitle')}</DialogTitle>
-          <DialogDescription>
-            {tCommon('EditableText.KeyLabel', { contentKey })}
-          </DialogDescription>
+        <DialogTitle>{tCommon('EditableText.DialogTitle')}</DialogTitle>
+        <DialogDescription>
+          {tCommon('EditableText.KeyLabel', { contentKey })}
+        </DialogDescription>
+
+        <DialogBody>
           <p className="text-muted-foreground text-sm">
             {tCommon('EditableText.DraftHint')}
           </p>
-        </DialogHeader>
-
-        <Form {...form}>
-          <form
-            className="flex flex-col gap-s"
-            onSubmit={form.handleSubmit(handleSubmit)}>
-            <Tabs defaultValue={currentLocale}>
-              <TabsList>
+          <Form {...form}>
+            <form
+              className="flex flex-col gap-s"
+              onSubmit={form.handleSubmit(handleSubmit)}>
+              <Tabs defaultValue={currentLocale}>
+                <TabsList>
+                  {locales.map((locale) => (
+                    <TabsTrigger
+                      key={locale}
+                      value={locale}>
+                      {locale.toUpperCase()}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
                 {locales.map((locale) => (
-                  <TabsTrigger
+                  <TabsContent
                     key={locale}
-                    value={locale}>
-                    {locale.toUpperCase()}
-                  </TabsTrigger>
+                    value={locale}
+                    className="flex flex-col gap-s pt-l">
+                    {isLoadingValues ? (
+                      <Skeleton className="h-24 w-full" />
+                    ) : (
+                      <FormField
+                        control={form.control}
+                        name={locale}
+                        render={({ field }) => (
+                          <Textarea
+                            label={tCommon('EditableText.ValueLabel', {
+                              locale: locale.toUpperCase(),
+                            })}
+                            rows={4}
+                            helperText={
+                              originalValues[locale] !== undefined
+                                ? tCommon('EditableText.OriginalValue', {
+                                    value: originalValues[locale],
+                                  })
+                                : undefined
+                            }
+                            {...field}
+                          />
+                        )}
+                      />
+                    )}
+                  </TabsContent>
                 ))}
-              </TabsList>
-              {locales.map((locale) => (
-                <TabsContent
-                  key={locale}
-                  value={locale}
-                  className="flex flex-col gap-s pt-l">
-                  {isLoadingValues ? (
-                    <Skeleton className="h-24 w-full" />
-                  ) : (
-                    <FormField
-                      control={form.control}
-                      name={locale}
-                      render={({ field }) => (
-                        <Textarea
-                          label={tCommon('EditableText.ValueLabel', {
-                            locale: locale.toUpperCase(),
-                          })}
-                          rows={4}
-                          helperText={
-                            originalValues[locale] !== undefined
-                              ? tCommon('EditableText.OriginalValue', {
-                                  value: originalValues[locale],
-                                })
-                              : undefined
-                          }
-                          {...field}
-                        />
-                      )}
-                    />
-                  )}
-                </TabsContent>
-              ))}
-            </Tabs>
+              </Tabs>
 
-            <DialogFooter className="justify-end">
-              <DialogClose asChild>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button
+                    type="button"
+                    priority="secondary">
+                    {tCommon('Utils.Cancel')}
+                  </Button>
+                </DialogClose>
                 <Button
-                  type="button"
-                  priority="secondary">
-                  {tCommon('Utils.Cancel')}
+                  type="submit"
+                  disabled={isSaving || isLoadingValues}>
+                  {tCommon('EditableText.SaveDraft')}
                 </Button>
-              </DialogClose>
-              <Button
-                type="submit"
-                disabled={isSaving || isLoadingValues}>
-                {tCommon('EditableText.SaveDraft')}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogBody>
       </DialogContent>
     </Dialog>
   );

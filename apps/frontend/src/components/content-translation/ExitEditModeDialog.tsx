@@ -3,16 +3,15 @@
 import { useEditMode } from '@/context/edit-mode-context';
 import { useContentEditModeToggle } from '@/hooks/use-content-edit-mode-toggle';
 import { useContentTranslationDrafts } from '@/hooks/use-content-translation-drafts';
-import { Button } from '@filigran/design-system';
 import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  toast,
-} from '@filigran/ui';
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+} from '@filigran/design-system';
+import { toast } from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 
 interface ExitEditModeDialogProps {
@@ -46,21 +45,20 @@ export const ExitEditModeDialog = ({
   const isBusy = isPending || isExiting;
 
   return (
-    <AlertDialog
+    <Dialog
       open={open}
       onOpenChange={onOpenChange}>
-      <AlertDialogContent className="z-[110]">
-        <AlertDialogHeader>
-          <AlertDialogTitle>
-            {t('EditableText.ExitDialogTitle')}
-          </AlertDialogTitle>
-          <AlertDialogDescription>
-            {t('EditableText.ExitDialogDescription', {
-              count: pendingChangeCount,
-            })}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
+      <DialogContent
+        role="alertdialog"
+        onInteractOutside={(e) => e.preventDefault()}
+        className="z-[110]">
+        <DialogTitle>{t('EditableText.ExitDialogTitle')}</DialogTitle>
+        <DialogDescription>
+          {t('EditableText.ExitDialogDescription', {
+            count: pendingChangeCount,
+          })}
+        </DialogDescription>
+        <DialogFooter>
           <Button
             priority="tertiary"
             disabled={isBusy}
@@ -79,8 +77,8 @@ export const ExitEditModeDialog = ({
             onClick={() => exitAfter(publishDrafts)}>
             {t('EditableText.PublishAndExit')}
           </Button>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
