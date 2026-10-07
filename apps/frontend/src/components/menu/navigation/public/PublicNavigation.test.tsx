@@ -14,6 +14,8 @@ const ALL_SERVICE_SLUGS = [
   'xtm-platform-roadmap',
 ];
 
+const XTM_ONE_LIVE_DEMO_URL = 'https://demo.xtmone.io/login';
+
 const renderPublicNavigation = (
   open = true,
   visibleServiceSlugs = ALL_SERVICE_SLUGS
@@ -114,6 +116,24 @@ describe('PublicNavigation — open={true}', () => {
     );
     expect(aboutLink).toHaveAttribute('target', '_blank');
     expect(within(aboutLink).getByText('Menu.ComingSoon')).toBeInTheDocument();
+  });
+
+  it('should show an external Live Demo link to the XTM One public demo when the XTM One section is expanded', async () => {
+    // Given
+    const user = userEvent.setup();
+    renderPublicNavigation();
+
+    // When
+    await expandSection(user, 'XTM One');
+
+    // Then
+    const xtmOneSection = screen.getByRole('region', { name: 'XTM One' });
+    const liveDemoLink = within(xtmOneSection).getByRole('link', {
+      name: /Menu\.LiveDemo/,
+    });
+    expect(liveDemoLink).toHaveAttribute('href', XTM_ONE_LIVE_DEMO_URL);
+    expect(liveDemoLink).toHaveAttribute('target', '_blank');
+    expect(liveDemoLink).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
   it('external sub-links have target="_blank" and rel="noopener noreferrer"', async () => {
