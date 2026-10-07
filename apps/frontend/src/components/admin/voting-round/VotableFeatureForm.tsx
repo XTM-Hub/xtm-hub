@@ -1,3 +1,4 @@
+import { VOTING_PRODUCTS } from '@/components/feature-voting/feature-voting.const';
 import { ServiceFormUseCasesField } from '@/components/service/form/UseCasesField';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import MarkdownInput from '@/components/ui/MarkdownInput';
@@ -27,11 +28,6 @@ import { useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
-const productValues = Object.values(FiligranProduct) as [
-  FiligranProduct,
-  ...FiligranProduct[],
-];
-
 export interface VotableFeatureFormModel {
   id: string;
   title: string;
@@ -54,7 +50,7 @@ const buildVotableFeatureFormSchema = (t: (key: string) => string) =>
     description: z
       .string()
       .min(2, { error: t('VotingRound.Feature.Error.Description') }),
-    product: z.enum(productValues),
+    product: z.enum(VOTING_PRODUCTS),
     use_case_ids: z.array(z.string()),
     illustration_document: z.custom<FileList>().optional(),
     remove_illustration: z.boolean(),
@@ -151,7 +147,7 @@ const VotableFeatureForm = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {productValues.map((product) => (
+                    {VOTING_PRODUCTS.map((product) => (
                       <SelectItem
                         key={product}
                         value={product}>

@@ -4,6 +4,7 @@ import {
   LogoXtmOneIcon,
   OpenAevIconIcon,
   OpenCtiIconIcon,
+  OpenGrcIcon,
 } from '@filigran/icon';
 import { FiligranProduct } from '@graphql/generated';
 import { describe, expect, it } from 'vitest';
@@ -21,6 +22,7 @@ describe('FiligranProductMapping', () => {
     ${FiligranProduct.Openaev} | ${'OpenAEV'} | ${OpenAevIconIcon}
     ${FiligranProduct.Xtmhub}  | ${'XTM Hub'} | ${LogoFiligranIcon}
     ${FiligranProduct.Xtmone}  | ${'XTM One'} | ${LogoXtmOneIcon}
+    ${FiligranProduct.Opencrq} | ${'OpenCRQ'} | ${OpenGrcIcon}
   `(
     'maps $product with expected name and logo',
     ({

@@ -12,12 +12,13 @@ describe('filigranProducts', () => {
     );
   });
 
-  it('orders every Filigran product from XTM Hub to XTM One', () => {
+  it('orders every Filigran product from XTM Hub to OpenCRQ', () => {
     expect(FILIGRAN_PRODUCTS_ORDER).toEqual([
       FiligranProduct.Xtmhub,
       FiligranProduct.Opencti,
       FiligranProduct.Openaev,
       FiligranProduct.Xtmone,
+      FiligranProduct.Opencrq,
     ]);
   });
 

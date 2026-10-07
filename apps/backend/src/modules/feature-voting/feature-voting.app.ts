@@ -19,6 +19,7 @@ import VotingRound, {
   VotingRoundId,
 } from '../../model/kanel/public/VotingRound';
 import {
+  BadRequestErrorCode,
   ForbiddenErrorCode,
   NotFoundErrorCode,
   UnknownErrorCode,
@@ -33,6 +34,7 @@ import { ServiceInstanceDomain } from '../service/instance/service-instance.doma
 import {
   featureVotingDomain,
   VotableFeatureWithVote,
+  VOTING_PRODUCTS,
 } from './feature-voting.domain';
 
 export type VotingRoundWithFeatures = VotingRound & {
@@ -74,6 +76,12 @@ export interface VotingRoundResults {
   total_voters: number;
   results: { feature: VotableFeatureWithVote; vote_count: number }[];
 }
+
+const assertVotableProduct = (product: FiligranProduct) => {
+  if (!VOTING_PRODUCTS.includes(product)) {
+    throw new Error(BadRequestErrorCode.VotableFeatureProductNotVotable);
+  }
+};
 
 const requireRound = async (id: VotingRoundId): Promise<VotingRound> => {
   const round = await featureVotingDomain.loadVotingRoundBy({ id });
@@ -397,6 +405,8 @@ export const featureVotingApp = {
     input: CreateVotableFeatureInput,
     uploads: Upload[] = []
   ): Promise<VotableFeatureWithVote> => {
+    // Before the illustration upload, which nothing rolls back.
+    assertVotableProduct(input.product);
     const round = await requireRound(input.voting_round_id);
     if (round.status === VotingRoundStatus.Closed) {
       throw new Error(ForbiddenErrorCode.VotingRoundClosed);
@@ -430,6 +440,10 @@ export const featureVotingApp = {
     input: UpdateVotableFeatureInput,
     uploads: Upload[] = []
   ): Promise<VotableFeatureWithVote> => {
+    // Before the illustration upload, which nothing rolls back.
+    if (input.product) {
+      assertVotableProduct(input.product);
+    }
     const existing = await featureVotingDomain.loadVotableFeatureBy({ id });
     if (!existing) {
       throw new Error(NotFoundErrorCode.VotableFeatureNotFound);

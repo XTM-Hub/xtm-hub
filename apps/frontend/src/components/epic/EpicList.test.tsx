@@ -227,6 +227,43 @@ describe('EpicList', () => {
     expect(screen.getByText(NOW_EPIC_TITLE)).toBeInTheDocument();
   });
 
+  it('should remove every epic sharing a title when product filter changes to exclude them', () => {
+    // Given
+    const duplicatedTitle = 'Duplicated epic';
+    const epics = [
+      makeEpic({
+        id: 'opencti-epic-1',
+        title: duplicatedTitle,
+        products: [FiligranProduct.Opencti],
+      }),
+      makeEpic({
+        id: 'opencti-epic-2',
+        title: duplicatedTitle,
+        products: [FiligranProduct.Opencti],
+      }),
+      makeEpic({
+        id: 'openaev-epic',
+        title: NEXT_EPIC_TITLE,
+        products: [FiligranProduct.Openaev],
+      }),
+    ];
+    const { rerender, props } = renderEpicList({ epics });
+
+    // When
+    rerender(
+      <EpicListContext.Provider value={{ connectionID: CONNECTION_ID }}>
+        <EpicList
+          {...props}
+          selectedProducts={[FiligranProduct.Openaev]}
+        />
+      </EpicListContext.Provider>
+    );
+
+    // Then
+    expect(screen.queryByText(duplicatedTitle)).not.toBeInTheDocument();
+    expect(screen.getByText(NEXT_EPIC_TITLE)).toBeInTheDocument();
+  });
+
   it('should show finished timeline when user enables finished epics display', async () => {
     // Given
     const epics = [

@@ -30,6 +30,7 @@ import VotingRound, {
   VotingRoundId,
 } from '../../model/kanel/public/VotingRound';
 import {
+  BadRequestErrorCode,
   ForbiddenErrorCode,
   NotFoundErrorCode,
 } from '../../utils/error/error.code';
@@ -665,6 +666,29 @@ describe('featureVotingApp', () => {
       await TestHelper.useCase.delete({ id: useCase.id });
     });
 
+    it('should refuse to add a feature when its product is not open to voting', async () => {
+      // Given
+      const round = await createRound();
+
+      // When
+      const creation = featureVotingApp.createVotableFeature({
+        voting_round_id: round.id,
+        title: 'New feature',
+        short_description: 'Short',
+        description: 'Long',
+        product: FiligranProduct.Opencrq,
+      });
+
+      // Then
+      await expect(creation).rejects.toThrow(
+        BadRequestErrorCode.VotableFeatureProductNotVotable
+      );
+      const features = await TestHelper.votableFeature.loadAll({
+        voting_round_id: round.id,
+      });
+      expect(features).toHaveLength(0);
+    });
+
     it('should refuse to add a feature to a round that does not exist', async () => {
       await expect(
         featureVotingApp.createVotableFeature({
@@ -820,6 +844,33 @@ describe('featureVotingApp', () => {
         id: feature.id,
       });
       expect(stored?.product).toBe(FiligranProduct.Opencti);
+    });
+
+    it('should refuse to move a feature to a product that is not open to voting', async () => {
+      // Given
+      const round = await createRound();
+      const feature = await createFeature(round.id, {
+        title: 'Original',
+        product: FiligranProduct.Opencti,
+      });
+
+      // When
+      const update = featureVotingApp.updateVotableFeature(feature.id, {
+        title: 'Renamed',
+        product: FiligranProduct.Opencrq,
+      });
+
+      // Then
+      await expect(update).rejects.toThrow(
+        BadRequestErrorCode.VotableFeatureProductNotVotable
+      );
+      const [stored] = await TestHelper.votableFeature.loadAll({
+        id: feature.id,
+      });
+      expect(stored).toMatchObject({
+        title: 'Original',
+        product: FiligranProduct.Opencti,
+      });
     });
 
     it('should still allow editing a voted feature as long as its product is unchanged', async () => {
