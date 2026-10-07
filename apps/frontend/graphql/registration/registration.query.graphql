@@ -11,14 +11,3 @@ query RegisteredPlatforms($input: RegisteredPlatformsInput!) {
     }
   }
 }
-
-query ConnectProductOrganizationAdmins(
-  $input: UsersWithCapabilitiesInOrganizationInput!
-) {
-  usersWithCapabilitiesInOrganization(input: $input) {
-    id
-    email
-    first_name
-    last_name
-  }
-}

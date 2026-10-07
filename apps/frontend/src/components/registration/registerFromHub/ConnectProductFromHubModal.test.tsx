@@ -6,10 +6,10 @@ import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CONNECTABLE_PRODUCTS } from './ConnectFromHubForm';
 
-const { mockUseGranted, mockUseConnectProductOrganizationAdminsQuery } =
+const { mockUseGranted, mockUseUsersWithCapabilitiesInOrganizationQuery } =
   vi.hoisted(() => ({
     mockUseGranted: vi.fn(),
-    mockUseConnectProductOrganizationAdminsQuery: vi.fn(),
+    mockUseUsersWithCapabilitiesInOrganizationQuery: vi.fn(),
   }));
 
 vi.mock('@/hooks/use-granted', () => ({
@@ -18,8 +18,8 @@ vi.mock('@/hooks/use-granted', () => ({
 
 vi.mock('@graphql/generated', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@graphql/generated')>()),
-  useConnectProductOrganizationAdminsQuery:
-    mockUseConnectProductOrganizationAdminsQuery,
+  useUsersWithCapabilitiesInOrganizationQuery:
+    mockUseUsersWithCapabilitiesInOrganizationQuery,
 }));
 
 describe('ConnectProductFromHubModal', () => {
@@ -28,8 +28,8 @@ describe('ConnectProductFromHubModal', () => {
   beforeEach(() => {
     onOpenChange.mockReset();
     mockUseGranted.mockReset();
-    mockUseConnectProductOrganizationAdminsQuery.mockReset();
-    mockUseConnectProductOrganizationAdminsQuery.mockReturnValue({
+    mockUseUsersWithCapabilitiesInOrganizationQuery.mockReset();
+    mockUseUsersWithCapabilitiesInOrganizationQuery.mockReturnValue({
       data: {
         usersWithCapabilitiesInOrganization: [
           { email: 'admin1@example.com' },
@@ -60,7 +60,9 @@ describe('ConnectProductFromHubModal', () => {
     ).not.toBeInTheDocument();
     expect(screen.getByText('admin1@example.com')).toBeInTheDocument();
     expect(screen.getByText('admin2@example.com')).toBeInTheDocument();
-    expect(mockUseConnectProductOrganizationAdminsQuery).toHaveBeenCalledWith(
+    expect(
+      mockUseUsersWithCapabilitiesInOrganizationQuery
+    ).toHaveBeenCalledWith(
       expect.anything(),
       expect.anything(),
       expect.objectContaining({ enabled: true })
@@ -144,7 +146,9 @@ describe('ConnectProductFromHubModal', () => {
       />
     );
 
-    expect(mockUseConnectProductOrganizationAdminsQuery).toHaveBeenCalledWith(
+    expect(
+      mockUseUsersWithCapabilitiesInOrganizationQuery
+    ).toHaveBeenCalledWith(
       expect.anything(),
       expect.anything(),
       expect.objectContaining({ enabled: false })

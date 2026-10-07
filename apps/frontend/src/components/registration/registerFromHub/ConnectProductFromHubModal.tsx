@@ -11,7 +11,7 @@ import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
   OrganizationCapability,
-  useConnectProductOrganizationAdminsQuery,
+  useUsersWithCapabilitiesInOrganizationQuery,
 } from '@graphql/generated';
 import { z } from 'zod';
 
@@ -51,7 +51,7 @@ const ConnectProductFromHubModal = ({
   const canManageOrganization =
     useGranted(OrganizationCapability.AdministrateOrganization) ||
     useGranted(OrganizationCapability.ManagePlatformRegistration);
-  const { data } = useConnectProductOrganizationAdminsQuery(
+  const { data } = useUsersWithCapabilitiesInOrganizationQuery(
     portalGraphqlClient,
     {
       input: {
