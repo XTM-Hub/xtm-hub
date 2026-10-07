@@ -22,6 +22,29 @@ const buildFeature = () => ({
 });
 
 describe('VotableFeatureForm', () => {
+  describe('product field', () => {
+    it('should only offer the votable products when picking the product of a feature', async () => {
+      // Given
+      const { user } = testRender(
+        <VotableFeatureForm
+          serviceInstanceId="instance-1"
+          onClose={vi.fn()}
+          handleSubmit={vi.fn()}
+        />
+      );
+
+      // When
+      await user.click(
+        screen.getByRole('combobox', { name: 'VotingRound.Feature.Product' })
+      );
+
+      // Then
+      expect(
+        screen.getAllByRole('option').map((option) => option.textContent)
+      ).toEqual(['OPENCTI', 'OPENAEV', 'XTMONE', 'XTMHUB']);
+    });
+  });
+
   describe('illustration field', () => {
     it('should preview the current illustration and hide it once removed', async () => {
       const { user } = testRender(
