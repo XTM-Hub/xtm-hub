@@ -17,7 +17,7 @@ import { useCopyToClipboard } from 'usehooks-ts';
 
 export interface ShareLinkButtonProps {
   url: string;
-  documentId: string;
+  documentId?: string;
   tooltipText?: string;
 }
 
@@ -45,13 +45,14 @@ export const ShareLinkClientButton = (props: ShareLinkButtonProps) => {
   return (
     <ShareLinkCommonButton
       {...props}
-      onClickAction={() =>
+      onClickAction={() => {
+        if (!documentId) return;
         commitMutation({
           variables: {
             documentId,
           },
-        })
-      }
+        });
+      }}
     />
   );
 };
@@ -62,6 +63,7 @@ export const ShareLinkServerAction = (props: ShareLinkButtonProps) => {
     <ShareLinkCommonButton
       {...props}
       onClickAction={() => {
+        if (!documentId) return;
         updateShareNumber({
           variables: {
             documentId,

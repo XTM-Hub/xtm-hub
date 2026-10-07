@@ -112,6 +112,7 @@ test.describe('XTM Platform Roadmap', () => {
       await expect(
         page.getByRole('button').filter({ hasText: 'OpenCTI (1)' })
       ).toBeVisible();
+      await expect(page.getByText(/^integration$/)).toBeVisible();
       await expect(page.getByText(/^EE$/)).not.toBeVisible();
       await expect(page.getByText(/^CE$/)).not.toBeVisible();
       await expect(page.getByText(/^Partial EE$/)).not.toBeVisible();

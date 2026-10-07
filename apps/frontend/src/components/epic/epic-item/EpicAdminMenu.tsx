@@ -53,10 +53,7 @@ export const EpicAdminMenu = ({
             {t('Epic.Timeline.draft')}
           </Badge>
         )}
-        <ShareLinkButton
-          url={shareableUrl}
-          documentId={epic.document_id}
-        />
+        <ShareLinkButton url={shareableUrl} />
         {(userCanDelete || userCanUpdate) && (
           <IconActions
             icon={

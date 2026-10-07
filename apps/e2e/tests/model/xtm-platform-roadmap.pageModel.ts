@@ -1,9 +1,5 @@
 import { expect, Locator, Page } from '@playwright/test';
 
-const TEST_IMAGE_FILE = {
-  path: './tests/tests_files/assets/test.png',
-  name: 'test.png',
-};
 export default class XTMPlatformRoadmapPage {
   constructor(private page: Page) {}
 
@@ -148,7 +144,6 @@ export default class XTMPlatformRoadmapPage {
     }
     if (integration) {
       await form.getByRole('checkbox', { name: 'Is an integration' }).click();
-      await this.uploadImageDocument(TEST_IMAGE_FILE.path);
     }
     await form.getByRole('button', { name: 'Create epic' }).click();
     await this.waitForFormToClose();
@@ -250,10 +245,6 @@ export default class XTMPlatformRoadmapPage {
         await form.getByRole('textbox', { name }).fill(value);
       }
     }
-  }
-
-  async uploadImageDocument(filePath: string) {
-    await this.page.locator('input[type="file"]').setInputFiles(filePath);
   }
 
   async navigateToService() {

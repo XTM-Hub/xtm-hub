@@ -11,13 +11,9 @@ import Link from 'next/link';
 
 interface EpicItemDetailedProps {
   epic: epic_fragment$data;
-  serviceInstanceId: string;
 }
 
-export const EpicItemDetailed = ({
-  epic,
-  serviceInstanceId,
-}: EpicItemDetailedProps) => {
+export const EpicItemDetailed = ({ epic }: EpicItemDetailedProps) => {
   const t = useTranslate();
   const slackLink =
     epic.slack_link && EPIC_SLACK_LINK_REGEX.test(epic.slack_link)
@@ -47,10 +43,7 @@ export const EpicItemDetailed = ({
       </div>
       <Separator />
       <div className="markdown-content flex flex-row">
-        <EpicItemFooter
-          epic={epic}
-          serviceInstanceId={serviceInstanceId}
-        />
+        <EpicItemFooter epic={epic} />
         <p className="flex flex-wrap items-center gap-1">
           <Link
             href={slackLink}

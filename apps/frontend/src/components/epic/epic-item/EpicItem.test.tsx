@@ -29,7 +29,6 @@ describe('EpicItem', () => {
 
   const defaultProps = {
     epic,
-    serviceInstanceId: 'service-instance-1',
     userCanDelete: false,
     userCanUpdate: false,
   };

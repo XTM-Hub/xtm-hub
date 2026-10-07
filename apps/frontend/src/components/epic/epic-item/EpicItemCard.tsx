@@ -7,14 +7,12 @@ import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 
 interface EpicItemCardProps {
   epic: epic_fragment$data;
-  serviceInstanceId: string;
   userCanDelete: boolean;
   userCanUpdate: boolean;
 }
 
 export const EpicItemCard = ({
   epic,
-  serviceInstanceId,
   userCanDelete,
   userCanUpdate,
 }: EpicItemCardProps) => {
@@ -29,10 +27,7 @@ export const EpicItemCard = ({
         <>
           <Separator />
           <div className="mt-m flex flex-row">
-            <EpicItemFooter
-              epic={epic}
-              serviceInstanceId={serviceInstanceId}
-            />
+            <EpicItemFooter epic={epic} />
             <EpicAdminMenu
               epic={epic}
               userCanDelete={userCanDelete}
