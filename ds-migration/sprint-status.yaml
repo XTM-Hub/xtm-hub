@@ -57,8 +57,8 @@ development_status:
   3545-combobox: done
   3558-menu: done
   3565-tabs: done
-  3540-dialog: review
-  3535-breadcrumbs: backlog
+  3540-dialog: done
+  3535-breadcrumbs: review
   3551-search-field: backlog
   3548-file-select: backlog
   3547-color-picker: backlog

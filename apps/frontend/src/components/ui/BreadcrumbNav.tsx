@@ -1,16 +1,7 @@
 'use client';
 import { useTranslate } from '@/hooks/use-translate';
-import { cn } from '@/lib/utils';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@filigran/ui';
+import { Breadcrumbs, BreadcrumbsItem } from '@filigran/design-system';
 import Link from 'next/link';
-import { Fragment } from 'react';
 
 interface BreadcrumbProps {
   value: BreadcrumbNavLink[];
@@ -34,44 +25,20 @@ export const BreadcrumbNav = ({ value }: BreadcrumbProps) => {
     }
     return t(label);
   };
+  const items: BreadcrumbsItem[] = value.map((link, index) => {
+    const label = renderLabel(link);
+    // A last entry with an href is not marked current: a current item is
+    // never a link and would drop its destination.
+    if (link.href) {
+      return { label, href: link.href };
+    }
+    return index === value.length - 1 ? { label, current: true } : { label };
+  });
   return (
-    <Breadcrumb className="pb-s sm:pb-l">
-      <BreadcrumbList className="pl-0">
-        {value.map((link, index) => {
-          const { href } = link;
-          const lastIndex = value.length - 1 === index;
-          const firstIndex = 0 === index;
-          return (
-            <Fragment key={index}>
-              {!firstIndex && (
-                <BreadcrumbSeparator
-                  className={cn(lastIndex && 'text-text-default-primary')}
-                />
-              )}
-              {href ? (
-                <>
-                  <BreadcrumbItem>
-                    <BreadcrumbLink asChild>
-                      <Link
-                        className="hover:underline text-text-default-disabled"
-                        href={href}>
-                        {renderLabel(link)}
-                      </Link>
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                </>
-              ) : (
-                <BreadcrumbItem>
-                  <BreadcrumbPage
-                    className={cn(!lastIndex && 'text-text-default-primary')}>
-                    {renderLabel(link)}
-                  </BreadcrumbPage>
-                </BreadcrumbItem>
-              )}
-            </Fragment>
-          );
-        })}
-      </BreadcrumbList>
-    </Breadcrumb>
+    <Breadcrumbs
+      items={items}
+      linkComponent={Link}
+      className="pb-s sm:pb-l"
+    />
   );
 };
