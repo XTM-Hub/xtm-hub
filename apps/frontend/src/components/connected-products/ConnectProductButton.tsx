@@ -30,9 +30,7 @@ export const ConnectProductButton = ({
         onClick={() => {
           setIsOpen(true);
         }}>
-        {t('Header.ConnectedProducts.ConnectPlatform', {
-          platformName: 'product',
-        })}
+        {t('Header.ConnectedProducts.ConnectProduct')}
       </Button>
       <ConnectProductFromHubModal
         isOpen={isOpen}

@@ -466,7 +466,7 @@
       "GoToPlatform": "Go to {title}",
       "Details": "Details",
       "Documentation": "Documentation",
-      "ConnectPlatform": "Connect {platformName}",
+      "ConnectProduct": "Connect product",
       "Trial": "Trial",
       "EE": "EE"
     }
@@ -487,8 +487,7 @@
     "RegisteredPlatformsCard": {
       "RegisteredOn": "on",
       "Contract": "Contract",
-      "Remaining": "remaining",
-      "DaysRemaining": "{days, plural, =1 {# day} other {# days}}"
+      "DaysRemaining": "<badge>{days, plural, =1 {# day} other {# days}}</badge> remaining"
     }
   },
   "PublicHomePage": {

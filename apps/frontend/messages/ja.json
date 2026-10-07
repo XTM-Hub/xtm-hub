@@ -466,7 +466,7 @@
       "GoToPlatform": "{title} に移動",
       "Details": "詳細",
       "Documentation": "ドキュメント",
-      "ConnectPlatform": "{platformName} を接続",
+      "ConnectProduct": "製品を接続",
       "Trial": "トライアル",
       "EE": "EE"
     }
@@ -487,8 +487,7 @@
     "RegisteredPlatformsCard": {
       "RegisteredOn": "on",
       "Contract": "契約",
-      "Remaining": "残り",
-      "DaysRemaining": "{days, plural, =1 {#日} other {#日}}"
+      "DaysRemaining": "残り<badge>{days, plural, =1 {#日} other {#日}}</badge>"
     }
   },
   "PublicHomePage": {
