@@ -186,13 +186,7 @@ const OrganizationList = () => {
           data={organizationDataTable}
           toolbar={
             <div className="flex flex-col-reverse items-center justify-between gap-s sm:flex-row">
-              <label
-                htmlFor="organization-email"
-                className="sr-only">
-                {t('OrganizationActions.SearchOrganizationWithEmail')}
-              </label>
               <SearchInput
-                id="organization-email"
                 className="w-full sm:w-1/3"
                 placeholder={t(
                   'OrganizationActions.SearchOrganizationWithEmail'

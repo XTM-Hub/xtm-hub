@@ -230,13 +230,7 @@ const OrganizationSubscribedServicesSlug = ({
         }}
         toolbar={
           <div className="flex flex-col-reverse items-center justify-between gap-s sm:flex-row">
-            <label
-              htmlFor="subscribed-services-search"
-              className="sr-only">
-              {t('Service.SearchServices')}
-            </label>
             <SearchInput
-              id="subscribed-services-search"
               className="w-full sm:w-1/3"
               placeholder={t('Service.SearchServices')}
               onChange={onSearchChange}

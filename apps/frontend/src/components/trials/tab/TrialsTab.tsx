@@ -618,13 +618,7 @@ const TrialsTab = ({ type, scope }: TrialsTabProps) => {
       toolbar={
         <div>
           <div className="flex flex-col-reverse items-center justify-between gap-s sm:flex-row">
-            <label
-              htmlFor="trials-search"
-              className="sr-only">
-              {t('TrialsDashboard.Actions.SearchTrials')}
-            </label>
             <SearchInput
-              id="trials-search"
               className="w-full sm:w-1/3"
               placeholder={t('TrialsDashboard.Actions.SearchTrials')}
               onChange={debounceHandleInput}

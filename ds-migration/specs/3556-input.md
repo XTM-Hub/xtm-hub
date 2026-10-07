@@ -143,6 +143,9 @@ the raw `fieldState.error?.message` that `FormMessage` showed. Every placeholder
   (integrated `label`, `description`, group `aria-label`, `FormControl` around the group).
 - **A hand-written `*` inside or next to a design system field takes `text-input-required`**, the design system's
   marker colour: the registration organization radios' title keeps its own `*`, since the group has no title slot.
+- **`SearchInput` is named by its own `aria-label`**, its placeholder: `aria-label` wins over a `<label for>`, so the
+  `sr-only` labels that repeated the placeholder (`OrganizationList`, `OrganizationSubscribedServices`, `TrialsTab`)
+  go with their `id`s, which nothing else read.
 - **`TagInput` keeps a native `<input>`**: its entry sits borderless inside its own field; the design system field
   cannot render that without restyling, and 3701 replaces the whole component.
 - **`EpicForm` title keeps the external counter** with no `maxLength`: the design system one would cap typing at 160
