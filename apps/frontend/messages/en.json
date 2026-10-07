@@ -70,7 +70,7 @@
       "StartedOn": "Started on",
       "License": "License",
       "Remaining": "Remaining",
-      "DaysRemaining": "{days} days",
+      "DaysRemaining": "{days, plural, =1 {# day} other {# days}}",
       "TrialRequester": "Trial requester",
       "Title": "XTM Product Trial details:"
     },
@@ -126,7 +126,7 @@
     "threat_profiling_faml": "Threat Profiling (Fraud & AML)",
     "threat_hunting": "Threat Hunting",
     "strategic_reporting": "Strategic Reporting (for Executives)",
-    "technical_reporting": "Strategic Reporting (for Analysts)",
+    "technical_reporting": "Technical Reporting (for Analysts)",
     "incident_response": "Coordinating Incident Response",
     "security_stack": "Integrating Security Stack",
     "detection_engineering": "Detection Engineering",
@@ -319,7 +319,7 @@
       "CONNECTOR_ID_ALREADY_EXISTS": "A connector with this identifier already exists",
       "CONNECTOR_VERSION_ALREADY_EXISTS": "A connector with this version already exists",
       "CONTACT_TOO_LONG": "The contact is too long",
-      "CREATE_DEPLOYMENT_REQUEST_ERROR": "Error occured while creating a deployment request",
+      "CREATE_DEPLOYMENT_REQUEST_ERROR": "Error occurred while creating a deployment request",
       "DELETE_DOCUMENT_ERROR": "Error while deleting document",
       "DELETE_EPIC_ERROR": "An error occurred while deleting the epic.",
       "DELETE_ORGANIZATION_BLOCKED_BY_CONNECTED_PRODUCT": "This organization cannot be deleted because it has a connected product.",
@@ -357,7 +357,7 @@
       "EPIC_UPDATE_ERROR": "An error occurred while updating the epic.",
       "FREE_TRIAL_ALREADY_EXISTS": "A free trial already exists for your organization",
       "GRANT_CAPABILITIES_ON_ORGANIZATION_FIRST": "You must grant capabilities on organization first",
-      "HUBSPOT_ERROR": "An error occured while contacting us",
+      "HUBSPOT_ERROR": "An error occurred while contacting us",
       "INCREMENT_SHARE_NUMBER": "Error occurred while incrementing share number",
       "INTEGRATION_TYPE_NOT_MANAGEABLE": "This type of integration is not manageable.",
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "This type of integration is not recognized",
@@ -528,7 +528,7 @@
     "Overview": "Overview"
   },
   "InviteUserServiceForm": {
-    "Description": "Additional capability: By default, your user invited to a service will have access the service. If you want to grant additional capability, select the capability/ies you want to grant to your user.",
+    "Description": "Additional capability: By default, your user invited to a service will have access to the service. If you want to grant additional capability, select the capability/ies you want to grant to your user.",
     "DisabledCapability": "if you want to give capabilities to your users on this service, first grant the activation on the organization level",
     "Email": "Email",
     "GrantCapability": "Grant capability",
@@ -765,7 +765,7 @@
   "OrganizationSwitcher": {
     "PersonalSpace": "Personal space",
     "SelectOrganization": "Select an organization",
-    "SelectedOrganization": "SelectedOrganization",
+    "SelectedOrganization": "Selected organization",
     "Workspace": "Workspace:"
   },
   "TrialsDashboard": {
@@ -857,12 +857,12 @@
     "WarningUsersRejection": {
       "Confirm": "Confirm",
       "Description": "Selected users will be refused from your organization. This action can’t be undone. Are you sure ?",
-      "Title": "Refuse this users from your organization?"
+      "Title": "Refuse these users from your organization?"
     },
     "WarningUsersAccept": {
       "Confirm": "Confirm",
       "Description": "Selected users will be added to your organization without any permissions by default. You can manage their access & permissions anytime from the <strong>Users</strong> tab on the left menu.",
-      "Title": "Add this users to your organization?"
+      "Title": "Add these users to your organization?"
     },
     "AlreadyProcessed": {
       "Title": "Request already processed",
@@ -900,10 +900,10 @@
     "UpdatePicture": "Update picture",
     "UpdateProfile": "Update profile",
     "PersonalSpace": {
-      "SuccessTransfer": "Personal space successfully transfered",
+      "SuccessTransfer": "Personal space successfully transferred",
       "SuccessRequest": "Personal space transfer request successfully sent",
       "TitleDangerZone": "Transfer of personal space",
-      "TransferPersoSpaceExplanation": "You can request a personal space transfer for all of your subscriptions (the other account must already exists).",
+      "TransferPersoSpaceExplanation": "You can request a personal space transfer for all of your subscriptions (the other account must already exist).",
       "EmailPlaceholder": "email.i.want.to.transfer.to@email.com",
       "TransferPersoSpace": "Transfer personal space",
       "Transfer": "Transfer",
@@ -964,7 +964,7 @@
     "Error": {
       "Capability": {
         "AdminListTitle": "The administrators of your organization are the following:",
-        "Description": "If you want to proceed with the registration of your {platformIdentifier} platform in XTM Hub, you need to contact an admininistrator from your organization on XTM Hub who has the appropriate permissions to proceed.",
+        "Description": "If you want to proceed with the registration of your {platformIdentifier} platform in XTM Hub, you need to contact an administrator from your organization on XTM Hub who has the appropriate permissions to proceed.",
         "Title": "You do not have the necessary {capability} access on the XTM Hub"
       }
     },
@@ -993,7 +993,7 @@
       "Error": {
         "Capability": {
           "AdminListTitle": "The administrators of your organization are the following:",
-          "Description": "If you want to proceed with the registration of your OpenCTI platform in XTM Hub, you need to contact an admininistrator from your organization on XTM Hub who has the appropriate permissions to proceed.",
+          "Description": "If you want to proceed with the registration of your OpenCTI platform in XTM Hub, you need to contact an administrator from your organization on XTM Hub who has the appropriate permissions to proceed.",
           "Title": "You do not have the necessary {capability} access on the XTM Hub"
         }
       },
@@ -1594,7 +1594,7 @@
           "WhatCanYouDo": {
             "Title": "What can you do with your OpenAEV trial?",
             "FirstParagraph": "Get 30 days to explore all OpenAEV functionalities to simulate attacks, evaluate your defenses, and  improve your security posture. This includes all OpenAEV SaaS-based Enterprise Edition features, including the use of your existing EDR agents, automated scenario generation, and AI-powered remediation guidance.",
-            "SecondParagraph": "Whether you want to want to simulate attack sequences, perform realistic tabletop exercises, validate your security posture, or report on your cyber resilience to leadership, you can test all OpenAEV capabilities for your specific needs.",
+            "SecondParagraph": "Whether you want to simulate attack sequences, perform realistic tabletop exercises, validate your security posture, or report on your cyber resilience to leadership, you can test all OpenAEV capabilities for your specific needs.",
             "Link": "Discover all OpenAEV Enterprise Edition features"
           },
           "Blocks": {
@@ -1708,8 +1708,8 @@
             "ProductsTitle": "Products included in this trial",
             "ProductsWarning": "Choose your trial bundle carefully.",
             "ProductsWarningDescription": "Once your trial starts, products cannot be added or changed, and no additional trials can be requested for the same organization.",
-            "OngoingTrialWarning": "You have {count, plural, one {an ongoing {products} trial} other {ongoing {products} trials}}. Requesting a XTM platform trial will cancel {count, plural, one {your current trial} other {all your current trials}} and data will not be transferred.",
-            "OngoingTrialDescription": "When you chose a new trial bundle, products cannot be changed, and no additional trials can be requested for the same organization.",
+            "OngoingTrialWarning": "You have {count, plural, one {an ongoing {products} trial} other {ongoing {products} trials}}. Requesting an XTM Platform trial will cancel {count, plural, one {your current trial} other {all your current trials}} and data will not be transferred.",
+            "OngoingTrialDescription": "When you choose a new trial bundle, products cannot be changed, and no additional trials can be requested for the same organization.",
             "UseCaseFor": "{product} use case",
             "Submit": "Request XTM Platform trial"
           },
@@ -1773,13 +1773,13 @@
       "ReachOutToSalesDefaultMessage": "Type your message to request help",
       "Cancellation": {
         "Toast": {
-          "NoNewTrialPossible": "Thank you, your OpenCTI free trial was cancelled successfully. Please note that new openCTI trials can’t be requested.",
+          "NoNewTrialPossible": "Thank you, your OpenCTI free trial was cancelled successfully. Please note that new OpenCTI trials can’t be requested.",
           "NewTrialPossible": "Thank you, your OpenCTI free trial was cancelled successfully.",
           "Admin": "The OpenCTI free trial was cancelled successfully."
         },
         "ConfirmationForm": {
           "Title": "Cancel your OpenCTI free trial",
-          "NoNewTrialPossible": "Please note that new openCTI trials can’t be requested after this action.",
+          "NoNewTrialPossible": "Please note that new OpenCTI trials can’t be requested after this action.",
           "CancellationReason": "Cancellation reason",
           "CancellationReasonPlaceholder": "Select a reason",
           "CancellationReasonOther": "Other",
@@ -1845,7 +1845,7 @@
           },
           "Academy": {
             "Title": "Academy: OpenCTI 101-301",
-            "Description": "Practical courses to how to get started with OpenCTI"
+            "Description": "Practical courses on how to get started with OpenCTI"
           },
           "Community": {
             "Title": "OpenCTI Community",
@@ -1907,7 +1907,7 @@
           },
           "Academy": {
             "Title": "Academy: OpenAEV 101",
-            "Description": "Free, practical courses to how to get started with OpenAEV"
+            "Description": "Free, practical courses on how to get started with OpenAEV"
           },
           "Community": {
             "Title": "OpenAEV Community",
@@ -2077,7 +2077,7 @@
             },
             "Manager": {
               "Label": "Manager",
-              "Description": "A role with full capabilities to manage and run any type of scenario. Manager can modify any element in the product but do not have access to product settings, administration, or configuration options."
+              "Description": "A role with full capabilities to manage and run any type of scenario. Managers can modify any element in the product but do not have access to product settings, administration, or configuration options."
             },
             "Observer": {
               "Label": "Observer",
@@ -2157,7 +2157,7 @@
     "Error": {
       "Capability": {
         "AdminListTitle": "The administrators of your organization are the following:",
-        "Description": "If you want to proceed with the disconnection of your {platformIdentifier} product in XTM Hub, you need to contact an admininistrator from your organization on XTM Hub who has the appropriate permissions to proceed.",
+        "Description": "If you want to proceed with the disconnection of your {platformIdentifier} product in XTM Hub, you need to contact an administrator from your organization on XTM Hub who has the appropriate permissions to proceed.",
         "Title": "You do not have the necessary {capability} access on the XTM Hub."
       },
       "NotInOrganization": {
@@ -2180,7 +2180,7 @@
       "Error": {
         "Capability": {
           "AdminListTitle": "The administrators of your organization are the following:",
-          "Description": "If you want to proceed with the disconnection of your OpenCTI product in XTM Hub, you need to contact an admininistrator from your organization on XTM Hub who has the appropriate permissions to proceed.",
+          "Description": "If you want to proceed with the disconnection of your OpenCTI product in XTM Hub, you need to contact an administrator from your organization on XTM Hub who has the appropriate permissions to proceed.",
           "Title": "You do not have the necessary {capability} access on the XTM Hub."
         },
         "NotInOrganization": {
@@ -2233,8 +2233,8 @@
     "Country": "Country",
     "Email": "Email",
     "Error": {
-      "FirstName": "First_name is required",
-      "LastName": "Last_name is required"
+      "FirstName": "First name is required",
+      "LastName": "Last name is required"
     },
     "FirstName": "First name",
     "LastName": "Last name",
@@ -2413,7 +2413,7 @@
     },
     "Results": {
       "Title": "Results",
-      "TotalVoters": "{count} voters",
+      "TotalVoters": "{count, plural, =1 {# voter} other {# voters}}",
       "Empty": "No vote yet for this round.",
       "InactiveFeature": "Deactivated"
     },

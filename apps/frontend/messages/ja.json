@@ -126,7 +126,7 @@
     "threat_profiling_faml": "脅威のプロファイリング(詐欺とAML)",
     "threat_hunting": "脅威のハンティング",
     "strategic_reporting": "戦略的レポーティング（経営幹部向け）",
-    "technical_reporting": "戦略的レポーティング（アナリスト向け）",
+    "technical_reporting": "技術的レポーティング（アナリスト向け）",
     "incident_response": "インシデント対応の調整",
     "security_stack": "セキュリティ・スタックの統合",
     "detection_engineering": "検知エンジニアリング",
