@@ -313,7 +313,7 @@ const UserList = ({ organization }: UserListProps) => {
                   <div className="flex gap-xs">
                     <Chip
                       label={t(disabled ? 'Badge.Disabled' : 'Badge.Enabled')}
-                      severity={disabled ? 'critical' : 'low'}
+                      severity={disabled ? 'critical' : 'neutral'}
                     />
                   </div>
                 );

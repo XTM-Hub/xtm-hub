@@ -132,10 +132,14 @@ classes stay (`shrink-0`, `min-w-0`, `max-w-full`, `ml-s`, `mr-s`, `w-full`, `in
 - **`Chip`, not the design system `Badge`**: the `Badge` contract (RULE-01) says a standalone token that carries its own
   meaning is a `Chip`, and the `Chip` contract's migration table maps the legacy `Badge` to it. No legacy usage marks
   an anchor with a count; the `+N` overflow counters sit in a row of chips and read as one more token.
-- **Severity follows the role, not the legacy colour**: tags, products, names, capabilities and contracts are
-  `neutral` (RULE-02: severity only mirrors a real status). Statuses keep a severity: failure or end `critical`,
-  pending or draft `medium`, active or enabled `low`. `medium` (the alert family) matches the `TrialsProducts`
-  pending colour already in place.
+- **Severity translates the legacy colour, one to one**: tags, products, names, capabilities and contracts are
+  `neutral` (RULE-02: severity only mirrors a real status). A status keeps the meaning its legacy badge had:
+  `destructive` or error `critical`, `warning` or alert `medium`, success `low`, and every other variant
+  (`default`, `secondary`, `outline`, no colour) `neutral`. So a disabled user, an expired invitation and a deleted
+  news are `critical`; a pending invitation, a draft epic and a pending, provisioning or queued product `medium`; an
+  active product and a trial's remaining days above the thresholds `low`; an enabled user, every voting round
+  status, a cancelled, expired or failed product and a service `creation_status` `neutral`. The same word can take
+  two colours ("Expired" invitation `critical`, "Expired" product `neutral`) when the legacy gave it two.
 - **EE markers use `severity="ee"`**, the contract's EE family, instead of the hand-written gradients.
 - **The calendar badge is not a token**: it holds no text, and `Chip` requires a label, so the icon stays without a
   fill.
@@ -150,7 +154,6 @@ classes stay (`shrink-0`, `min-w-0`, `max-w-full`, `ml-s`, `mr-s`, `w-full`, `in
 - Use-case tags on the homepage cards, last deployed resources and feature votes, platform and instance names, and
   the trial contract labels turn from the info-blue fill to `neutral`. Alternative: `severity="info"`.
 - Pending invitation and draft epic turn from orange to the amber `medium`; the alternative is `high` (orange).
-  Voting rounds gain colours: Draft `medium`, Open `low`, Closed `neutral`. Alternative: all `neutral`.
 - The EE markers (registered platform, connected product, epic edition) become the solid tonic EE chip instead of a
   gradient outline, a tonic fill or a teal outline. Alternative: none without restyling.
 - The trial banner's days-left chip loses its black outline and black text on the blue gradient; it takes the neutral
@@ -161,10 +164,6 @@ classes stay (`shrink-0`, `min-w-0`, `max-w-full`, `ml-s`, `mr-s`, `w-full`, `in
 - In `SelectUsers` the remove cross sits next to the chip instead of inside it. Alternative: drop it, since the field
   holds one user and has a clear-all control.
 - Long labels truncate at 250px with a tooltip instead of wrapping or overflowing (domains, capabilities).
-- The bundle page's remaining-days chip stays `low` whatever the count, while the homepage platform card turns
-  `medium` at 22 days and `critical` at 8. Alternative: reuse the card's thresholds on the bundle page.
-- The organisation's subscribed services show `creation_status` (Disabled, Pending, Created, Ready) as `neutral`, while
-  the user list colours its statuses. Alternative: `critical`, `medium`, `low`, `low`.
 
 ## Deferred findings
 
