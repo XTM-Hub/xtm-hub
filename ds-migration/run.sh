@@ -157,7 +157,9 @@ running_pid() {
   if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then echo "$pid"; fi
 }
 
-item_committed() { git log --format=%s "origin/$BASE..HEAD" | grep -qE "\(#$(issue_of "$1")\)$"; }
+# grep reads the whole log: with -q it would stop at the first match, git log would die of
+# SIGPIPE on a long history, and pipefail would turn the match into a failure.
+item_committed() { git log --format=%s "origin/$BASE..HEAD" | grep -E "\(#$(issue_of "$1")\)$" >/dev/null; }
 
 # After a crash or a kill: puts aside the code left by the item that was running, and restarts
 # an item marked review whose commit never happened. The spec and the status file stay.
@@ -197,8 +199,14 @@ ensure_app() {
       sleep 5
     done
   fi
-  node ds-migration/screenshot.mjs --preflight >"$LOG_DIR/preflight.log" 2>&1 ||
-    die "screenshots cannot run: see $LOG_DIR/preflight.log (Chromium: yarn workspace @xtm-hub/test_e2e playwright install chromium)"
+  # A frontend or backend idle for hours can miss the first login: three tries before stopping.
+  local try
+  for try in 1 2 3; do
+    node ds-migration/screenshot.mjs --preflight >"$LOG_DIR/preflight.log" 2>&1 && return 0
+    log "screenshot preflight failed (try $try of 3)"
+    [ "$try" = 3 ] || sleep "${DS_PREFLIGHT_PAUSE:-20}"
+  done
+  die "screenshots cannot run: see $LOG_DIR/preflight.log (Chromium: yarn workspace @xtm-hub/test_e2e playwright install chromium)"
 }
 
 # Stops the frontend only when this script started it.

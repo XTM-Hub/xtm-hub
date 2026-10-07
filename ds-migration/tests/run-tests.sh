@@ -117,9 +117,16 @@ new_repo() {
   cp "$V/ds-migration/"{run.sh,WORKFLOW.md,DEBUG.md,spec-template.md,validate.mjs} ds-migration/ && chmod +x ds-migration/run.sh
   # SCREENSHOT_FAIL: item keys whose after screenshots fail.
   cat >ds-migration/screenshot.mjs <<'EOF'
-import { appendFileSync } from 'node:fs';
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 const [spec, phase] = process.argv.slice(2);
 appendFileSync(`${process.env.SB}/calls.log`, `screenshot ${phase} ${spec ?? ''}\n`);
+// PREFLIGHT_FAILS: how many preflights fail before one passes.
+if (spec === '--preflight') {
+  const marker = `${process.env.SB}/preflights`;
+  const done = existsSync(marker) ? Number(readFileSync(marker, 'utf8')) : 0;
+  writeFileSync(marker, String(done + 1));
+  process.exit(done < Number(process.env.PREFLIGHT_FAILS ?? 0) ? 1 : 0);
+}
 const failing = (process.env.SCREENSHOT_FAIL ?? '').split(' ').filter(Boolean);
 if (phase === 'after' && failing.some((key) => spec.includes(key))) process.exit(1);
 EOF
@@ -236,6 +243,21 @@ CLAUDE_E2E=3561-textarea run --once
 check "e2e locator change accepted and linted" '[ "$(status_of 3561-textarea)" = done ] && git show --stat HEAD | grep -q "apps/e2e/tests/model/textarea.pageModel.ts" && grep -q "^yarn workspace @xtm-hub/test_e2e lint" "$SB/calls.log"'
 CLAUDE_E2E_SEEDS=3568-switch run --once
 check "e2e seeds copied from the backend stay out of scope" '[ "$(status_of 3568-switch)" = blocked ] && grep -q "Out of scope: apps/e2e/seeds/switch.sql" "$(git rev-parse --git-dir)/ds-migration/3568-switch-validate.log"'
+
+echo "H. an item in review whose commit sits on a long history"
+new_repo h "development_status:
+  epic-1-primitives: backlog
+  3530-button: done
+  3561-textarea: backlog
+  3568-switch: backlog"
+run --once
+for i in $(seq 1 400); do git -c commit.gpgsign=false commit -q --allow-empty -m "chore: filler $i $(printf 'x%.0s' $(seq 1 200))"; done
+echo "export const s = 1;" > apps/frontend/src/switch.ts && git add -A && git -c commit.gpgsign=false commit -q -m "feat(frontend): migrate Switch to @filigran/design-system (#3568)"
+perl -pi -e 's/^  3568-switch: .*/  3568-switch: review/' ds-migration/sprint-status.yaml
+: >"$SB/preflights"; rm -f "$SB/preflights"
+PREFLIGHT_FAILS=1 DS_PREFLIGHT_PAUSE=0 run --once
+check "committed item resumes its checks instead of restarting" '[ "$(status_of 3568-switch)" = done ] && ! grep -q "interrupted before its commit" "$SB/out.log"'
+check "a failed preflight is retried" 'grep -q "screenshot preflight failed (try 1 of 3)" "$SB/out.log" && [ "$(cat "$SB/preflights")" -ge 2 ]'
 
 echo "F. crash recovery and lock"
 new_repo f "development_status:
