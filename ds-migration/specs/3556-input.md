@@ -15,7 +15,8 @@ legacy_files_to_delete: [apps/frontend/src/components/filigran-ui/components/ser
 
 Every single-line field moves to the design system `Input`, which owns its label, required marker and error message.
 The two legacy `Input type="radio"` lists move to the design system `RadioGroup` + `Radio`, the component of their role.
-Values, validation, submission, placeholders and accessible names stay the same for users.
+Values, validation, submission, placeholders and accessible names stay the same for users, except the required ` *`
+suffix of names on the design system `Input`.
 
 ## Props mapping
 
@@ -61,6 +62,8 @@ the raw `fieldState.error?.message` that `FormMessage` showed. Every placeholder
 - `apps/frontend/src/components/filigran-ui/components/clients/ColorPicker.tsx`, `clients/tag-input/TagInput.tsx`
 - `apps/frontend/src/components/filigran-ui/components/servers/index.ts` (drop the `Input` export)
 - `apps/frontend/src/components/filigran-ui/components/servers/Input.tsx` (delete)
+- `apps/e2e/tests/model/integration.pageModel.ts`, `apps/e2e/tests/tests_files/custom-dashboards.spec.ts`: the
+  required `*` left the accessible name of the AutoForm fields they locate
 - Tests of the touched folders, only where a query no longer matches; `register/OrganizationForm.test.tsx` asserts
   the radio order on `getAttribute('value')` (`org-pro-1`, `org-pro-2`, `org-personal`) instead of the names
 
@@ -105,10 +108,13 @@ the raw `fieldState.error?.message` that `FormMessage` showed. Every placeholder
 
 ## Accessibility and i18n
 
-- Names kept through the design system `<label for>` (`getByLabelText` in the touched tests, e2e `getByLabel`);
-  every placeholder kept (e2e `email`, `password`, `First name`, `Last name`, `Name`, `Email`, `Search...`,
-  `Add a domain`). `SearchInput` and `SelectWithEditableField` gain an `aria-label` equal to the text the browser
-  already used. `error` sets `aria-invalid` and `aria-describedby`; `required` sets `aria-required`.
+- Names kept through the design system `<label for>`, except the required ` *` suffix (`getByLabelText` in the
+  touched tests, e2e `getByLabel`); every placeholder kept (e2e `email`, `password`, `First name`, `Last name`,
+  `Name`, `Email`, `Search...`, `Add a domain`). `SearchInput` and `SelectWithEditableField` gain an `aria-label`
+  equal to the text the browser already used. `error` sets `aria-invalid` and `aria-describedby`; `required` sets `aria-required`.
+- The design system `Input` renders the required `*` `aria-hidden`, outside the `<label>`, so the required fields it
+  renders, AutoForm string and number fields included, lose their ` *` name suffix (`'Name *'` becomes `'Name'`) and
+  the e2e locators follow. AutoForm fields still on `AutoFormLabel` keep it.
 - Registration radios keep their exact names (e2e `'Filigran (Organizational workspace) - Recommended'`); the
   description moves to `aria-describedby`. Both radio groups gain a name from existing keys. Radix arrow keys replace
   the native ones.
@@ -121,6 +127,8 @@ the raw `fieldState.error?.message` that `FormMessage` showed. Every placeholder
 - `yarn workspace @xtm-hub/frontend check-ts`
 - `yarn workspace @xtm-hub/frontend test src/components/login src/components/organization src/components/admin src/components/trials src/components/registration src/components/service src/components/epic src/components/ui src/components/profile src/components/filigran-ui`
 - `yarn workspace @xtm-hub/frontend i18n:check`
+- `yarn workspace @xtm-hub/test_e2e lint`
+- `yarn workspace @xtm-hub/test_e2e format:check`
 - `node ds-migration/validate.mjs ds-migration/specs/3556-input.md`
 
 ## Decisions

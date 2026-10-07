@@ -73,13 +73,13 @@ test.describe('Custom dashboards', () => {
     await test.step('Update only texts', async () => {
       test_step++;
       await page
-        .getByRole('textbox', { name: 'Name *' })
+        .getByRole('textbox', { name: 'Name', exact: true })
         .fill(`${UPDATED_DASHBOARD_TEST.name} // ${test_step}`);
       await page
-        .getByRole('textbox', { name: 'Short Description *' })
+        .getByRole('textbox', { name: 'Short Description' })
         .fill(UPDATED_DASHBOARD_TEST.shortDescription);
       await page
-        .getByRole('textbox', { name: 'OpenCTI compatibility version *' })
+        .getByRole('textbox', { name: 'OpenCTI compatibility version' })
         .fill(UPDATED_DASHBOARD_TEST.version);
       await page
         .getByRole('textbox', { name: 'This is a paragraph to' })
@@ -100,7 +100,7 @@ test.describe('Custom dashboards', () => {
       test_step++;
       await openUpdateDrawer();
       await page
-        .getByRole('textbox', { name: 'Name *' })
+        .getByRole('textbox', { name: 'Name', exact: true })
         .fill(`${UPDATED_DASHBOARD_TEST.name} // ${test_step}`);
       await dashboardPage.uploadImageDocument(TEST_2_IMAGE_FILE.path);
       await page.getByRole('button', { name: 'Validate' }).click();
@@ -116,7 +116,7 @@ test.describe('Custom dashboards', () => {
       test_step++;
       await openUpdateDrawer();
       await page
-        .getByRole('textbox', { name: 'Name *' })
+        .getByRole('textbox', { name: 'Name', exact: true })
         .fill(`${UPDATED_DASHBOARD_TEST.name} // ${test_step}`);
       await page.getByTestId('images-grid').getByRole('button').nth(1).click();
 
@@ -135,7 +135,7 @@ test.describe('Custom dashboards', () => {
       test_step++;
       await openUpdateDrawer();
       await page
-        .getByRole('textbox', { name: 'Name *' })
+        .getByRole('textbox', { name: 'Name', exact: true })
         .fill(`${UPDATED_DASHBOARD_TEST.name} // ${test_step}`);
       await page.getByTestId('images-grid').getByRole('button').nth(1).click();
 
@@ -154,7 +154,7 @@ test.describe('Custom dashboards', () => {
       test_step++;
       await openUpdateDrawer();
       await page
-        .getByRole('textbox', { name: 'Name *' })
+        .getByRole('textbox', { name: 'Name', exact: true })
         .fill(`${UPDATED_DASHBOARD_TEST.name} // ${test_step}`);
       await page.getByTestId('images-grid').getByRole('button').nth(1).click();
 
@@ -173,7 +173,7 @@ test.describe('Custom dashboards', () => {
       test_step++;
       await openUpdateDrawer();
       await page
-        .getByRole('textbox', { name: 'Name *' })
+        .getByRole('textbox', { name: 'Name', exact: true })
         .fill(`${UPDATED_DASHBOARD_TEST.name} // ${test_step}`);
 
       await page
