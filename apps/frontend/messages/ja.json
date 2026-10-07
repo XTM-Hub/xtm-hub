@@ -129,7 +129,7 @@
     "threat_profiling_faml": "脅威のプロファイリング(詐欺とAML)",
     "threat_hunting": "脅威のハンティング",
     "strategic_reporting": "戦略的レポーティング（経営幹部向け）",
-    "technical_reporting": "戦略的レポーティング（アナリスト向け）",
+    "technical_reporting": "技術的レポーティング（アナリスト向け）",
     "incident_response": "インシデント対応の調整",
     "security_stack": "セキュリティ・スタックの統合",
     "detection_engineering": "検知エンジニアリング",
@@ -437,6 +437,7 @@
       "VOTING_ROUND_MUTATION_ERROR": "投票ラウンドの保存中にエラーが発生しました",
       "OPEN_VOTING_ROUND_WITHOUT_ACTIVE_FEATURE": "このラウンドには有効な機能がないため、開始できません",
       "VOTABLE_FEATURE_PRODUCT_LOCKED": "この機能には既に投票があるため、製品を変更できません",
+      "VOTABLE_FEATURE_PRODUCT_NOT_VOTABLE": "この製品は投票の対象ではありません",
       "COPY_FEATURES_FROM_ANOTHER_ROADMAP": "機能は同じロードマップのラウンドからのみコピーできます",
       "VOTABLE_FEATURE_MUTATION_ERROR": "機能の保存中にエラーが発生しました"
     },

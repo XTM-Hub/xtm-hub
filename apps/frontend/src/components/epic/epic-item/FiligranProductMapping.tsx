@@ -3,6 +3,7 @@ import {
   LogoXtmOneIcon,
   OpenAevIconIcon,
   OpenCtiIconIcon,
+  OpenGrcIcon,
 } from '@filigran/icon';
 import { FiligranProduct } from '@graphql/generated';
 import { ReactNode } from 'react';
@@ -31,5 +32,10 @@ export const FiligranProductMapping: Record<
   [FiligranProduct.Xtmone]: {
     name: 'XTM One',
     logo: <LogoXtmOneIcon className="w-5 h-5" />,
+  },
+  // OpenGRC is OpenCRQ's former name: its icon is still exported as OpenGrcIcon.
+  [FiligranProduct.Opencrq]: {
+    name: 'OpenCRQ',
+    logo: <OpenGrcIcon className="w-5 h-5" />,
   },
 };

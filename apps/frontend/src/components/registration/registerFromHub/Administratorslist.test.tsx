@@ -1,12 +1,12 @@
 import { Administratorslist } from '@/components/registration/registerFromHub/Administratorslist';
 import testRender from '@/utils/test/test-render';
-import { ConnectProductOrganizationAdminsQuery } from '@graphql/generated';
+import { UsersWithCapabilitiesInOrganizationQuery } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 describe('Administratorslist', () => {
   it('renders administrators label and all administrator emails', () => {
-    const admins: ConnectProductOrganizationAdminsQuery = {
+    const admins: UsersWithCapabilitiesInOrganizationQuery = {
       usersWithCapabilitiesInOrganization: [
         {
           id: 'admin-1',
@@ -33,7 +33,7 @@ describe('Administratorslist', () => {
   });
 
   it('renders only administrators label when there are no administrators', () => {
-    const admins: ConnectProductOrganizationAdminsQuery = {
+    const admins: UsersWithCapabilitiesInOrganizationQuery = {
       usersWithCapabilitiesInOrganization: [],
     };
 
@@ -46,11 +46,7 @@ describe('Administratorslist', () => {
   });
 
   it('renders nothing when admins is not provided', () => {
-    const { container } = testRender(
-      <Administratorslist
-        admins={undefined as unknown as ConnectProductOrganizationAdminsQuery}
-      />
-    );
+    const { container } = testRender(<Administratorslist />);
 
     expect(container).toBeEmptyDOMElement();
   });

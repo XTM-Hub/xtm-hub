@@ -73,7 +73,7 @@
       "StartedOn": "Démarré le",
       "License": "Licence",
       "Remaining": "Restant",
-      "DaysRemaining": "{days} jours",
+      "DaysRemaining": "{days, plural, =1 {# jour} other {# jours}}",
       "TrialRequester": "Demandeur de l'essai",
       "Title": "Détails de l'essai XTM Product :"
     },
@@ -129,7 +129,7 @@
     "threat_profiling_faml": "Profilage des menaces (Fraude & LCB)",
     "threat_hunting": "Chasse aux menaces",
     "strategic_reporting": "Reporting stratégique (Pour les dirigeants)",
-    "technical_reporting": "Reporting stratégique (Pour les analystes)",
+    "technical_reporting": "Reporting technique (Pour les analystes)",
     "incident_response": "Coordination de la réponse aux incidents",
     "security_stack": "Intégration de la pile de sécurité",
     "detection_engineering": "Ingénierie de détection",
@@ -437,6 +437,7 @@
       "VOTING_ROUND_MUTATION_ERROR": "Une erreur est survenue lors de l'enregistrement du round",
       "OPEN_VOTING_ROUND_WITHOUT_ACTIVE_FEATURE": "Ce round n'a aucune fonctionnalité active et ne peut pas être ouvert",
       "VOTABLE_FEATURE_PRODUCT_LOCKED": "Cette fonctionnalité a déjà des votes, son produit ne peut plus être modifié",
+      "VOTABLE_FEATURE_PRODUCT_NOT_VOTABLE": "Ce produit n'est pas ouvert au vote",
       "COPY_FEATURES_FROM_ANOTHER_ROADMAP": "Les fonctionnalités ne peuvent être copiées que depuis un round de la même roadmap",
       "VOTABLE_FEATURE_MUTATION_ERROR": "Une erreur est survenue lors de l'enregistrement de la fonctionnalité"
     },
@@ -2417,7 +2418,7 @@
     },
     "Results": {
       "Title": "Résultats",
-      "TotalVoters": "{count} votants",
+      "TotalVoters": "{count, plural, =1 {# votant} other {# votants}}",
       "Empty": "Aucun vote pour ce round.",
       "InactiveFeature": "Désactivée"
     },
