@@ -115,7 +115,7 @@ new_repo() {
   git config gpg.program "$SB/bin/fake-gpg" && git config user.signingkey FAKE
   mkdir -p apps/frontend/src apps/frontend/app ds-migration
   printf "import { Textarea } from '@filigran/ui';\nexport const Form = () => <Textarea />;\n" >apps/frontend/src/Form.tsx
-  cp "$V/ds-migration/"{run.sh,WORKFLOW.md,DEBUG.md,spec-template.md,validate.mjs} ds-migration/ && chmod +x ds-migration/run.sh
+  cp "$V/ds-migration/"{run.sh,WORKFLOW.md,DEBUG.md,REVIEW.md,spec-template.md,validate.mjs} ds-migration/ && chmod +x ds-migration/run.sh
   # SCREENSHOT_FAIL: item keys whose after screenshots fail.
   cat >ds-migration/screenshot.mjs <<'EOF'
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -167,7 +167,9 @@ CLAUDE_BLOCK=3541-checkbox run
 check "a blocked item stops the run" 'grep -q "STOP: 3541-checkbox blocked" "$SB/out.log" && [ "$(status_of epic-1-primitives)" = in-progress ]'
 run
 check "checkbox blocked, epic 1 gated" '[ "$(status_of 3541-checkbox)" = blocked ] && [ "$(status_of epic-1-primitives)" = review ]'
-check "epic report posted with the automated review" 'grep -q "Verdict: consistent" "$SB/last-pr-comment.md"'
+check "epic report posted with the automated review" 'grep -q "Verdict: consistent" "$SB/last-pr-comment.md" && grep -q "ds-migration/run.sh review" "$SB/last-pr-comment.md"'
+ds-migration/run.sh review >"$SB/out.log" 2>&1
+check "review opens an interactive session on the epic waiting for review" 'grep -q "^claude-interactive :: Read ds-migration/REVIEW.md fully and follow it for epic-1-primitives (status review)" "$SB/calls.log"'
 check "blocked item signalled on its issue and the PR" 'grep -q "^gh issue edit 3541 --add-label needs more info" "$SB/calls.log" && grep -qF "**Component Checkbox needs a human.** Issue #3541" "$SB/pr-comments.log" && sed -n "/^## Needs a human/,/^## /p" "$SB/pr-body.md" | grep -q "#3541"'
 ds-migration/run.sh debug 3541-checkbox >"$SB/out.log" 2>&1
 check "debug opens an interactive session on the item" 'grep -q "^claude-interactive :: Read ds-migration/DEBUG.md fully and follow it for item 3541-checkbox (issue #3541, status blocked)" "$SB/calls.log"'
@@ -219,6 +221,9 @@ new_repo c "development_status:
   3568-switch: backlog"
 GH_CHECKS="missing missing pending pending pass" APP_DOWN=1 run --once
 check "frontend started from apps/frontend, its log kept" 'grep -q "starting the frontend of this checkout" "$SB/out.log" && [ -f "$(git rev-parse --git-dir)/ds-migration/app.log" ]'
+: >"$SB/calls.log"
+ds-migration/run.sh publish >"$SB/out.log" 2>&1
+check "publish refreshes the issues, pushes and waits for the checks" 'grep -q "^gh issue edit 3561 --body-file" "$SB/calls.log" && grep -q "^gh pr checks" "$SB/calls.log" && grep -q "published: the required checks of PR #9999 pass" "$SB/out.log"'
 check "done item ticked in the PR body" 'grep -q "^- \[x\] #3561 textarea: done" "$SB/pr-body.md"'
 check "item done only once the e2e aggregator passed" '[ "$(status_of 3561-textarea)" = done ] && [ "$(cat "$SB/checks-count")" -ge 5 ]'
 

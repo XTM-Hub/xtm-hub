@@ -14,6 +14,8 @@
 #   ds-migration/run.sh status                            count the items per status
 #   ds-migration/run.sh finish                            final report, remove ds-migration/
 #   ds-migration/run.sh debug <key>                       interactive session on a blocked item
+#   ds-migration/run.sh review [<epic>]                   interactive session to finish an epic review
+#   ds-migration/run.sh publish                           after a change by hand: issues, push, checks
 #
 # Environment: DS_ITEM_TIMEOUT (seconds per session, default 5400), DS_CHECKS_TIMEOUT (seconds,
 # default 5400), DS_CHECKS_INTERVAL (seconds, default 30), DS_BUDGET_USD (optional cap per session),
@@ -764,7 +766,7 @@ epic_gate() {
     "$REVIEW_SCHEMA" "$READ_TOOLS")"
   [ -n "$review" ] || review='{"findings":"The automated review produced no output."}'
   jq -r .findings <<<"$review" >>"$report"
-  printf '\n---\nSet `%s: done` in `ds-migration/sprint-status.yaml` once this epic is validated, then run `ds-migration/run.sh` again.\n' "$epic" >>"$report"
+  printf '\n---\nTo finish this review, run `ds-migration/run.sh review` on the branch: it walks through these findings with you, fixes what you approve, records the decisions and validates the epic. Then run `ds-migration/run.sh` again for the next epic.\n' >>"$report"
   [ "$(header pull_request)" = none ] || gh pr comment "$(header pull_request)" --body-file "$report" >/dev/null
   set_status "$epic" review
   commit_status
@@ -864,6 +866,38 @@ finish() {
   log "final report posted on #$EPIC_ISSUE; mark PR #$pr ready for review"
 }
 
+# Interactive Claude session that finishes an epic review with a human: ds-migration/REVIEW.md.
+review_epic() {
+  local epic="${1:-}" pid
+  if [ -z "$epic" ]; then
+    epic="$(awk '/^development_status:/ { on = 1; next } /^[^ #]/ { on = 0 }
+      on && /^  epic-[a-z0-9-]+: review/ { sub(/:$/, "", $1); print $1; exit }' "$STATUS_FILE")"
+  fi
+  [ -n "$epic" ] || die "no epic waits for review: name one, ds-migration/run.sh review <epic>"
+  [ -n "$(status_of "$epic")" ] || die "unknown epic $epic"
+  pid="$(running_pid)"
+  [ -z "$pid" ] || die "run.sh is running (pid $pid): let it stop before the review"
+  exec claude "Read ds-migration/REVIEW.md fully and follow it for $epic (status $(status_of "$epic")). The pull request is #$(header pull_request), the run logs are in $LOG_DIR."
+}
+
+# After changes made by hand on the branch: the issues get their specs again, the branch is pushed
+# and checked, and the board settles.
+publish_by_hand() {
+  local key issue
+  acquire_lock
+  require_ready
+  for key in $(items | awk '$3 == "done" { print $2 }'); do
+    issue="$(issue_of "$key")"
+    if [ -n "$issue" ] && [ -f "ds-migration/specs/$key.md" ]; then
+      update_issue "$key" "$issue" || log "could not update the spec in #$issue"
+    fi
+  done
+  publish
+  wait_checks || die "required checks fail: fix the branch, then run 'ds-migration/run.sh publish' again"
+  board_settle
+  log "published: the required checks of PR #$(header pull_request) pass"
+}
+
 # Interactive Claude session, the human at the keyboard: ds-migration/DEBUG.md.
 debug_item() {
   local key="${1:-}" pid
@@ -920,6 +954,8 @@ case "${1:-}" in
   status) items | awk '{ print $3 }' | sort | uniq -c ;;
   finish) finish ;;
   debug) debug_item "${2:-}" ;;
+  review) review_epic "${2:-}" ;;
+  publish) publish_by_hand ;;
   *)
     once=false no_wait=false dry_run=false
     for arg in "$@"; do
