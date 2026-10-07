@@ -109,7 +109,7 @@ EOF
 # new_repo <name> <status yaml body>
 new_repo() {
   SB="$ROOT/$1"; rm -rf "$SB"; mkdir -p "$SB/repo"; git init -q --bare "$SB/remote.git"; make_stubs "$SB"
-  export SB PATH="$SB/bin:$ORIG_PATH" DS_CHECKS_INTERVAL=0
+  export SB PATH="$SB/bin:$ORIG_PATH" DS_CHECKS_INTERVAL=0 DS_BOARD_SETTLE=0
   cd "$SB/repo" || exit 1
   git init -q -b main && git config user.name Test && git config user.email t@t && git config commit.gpgsign true
   git config gpg.program "$SB/bin/fake-gpg" && git config user.signingkey FAKE
@@ -176,7 +176,8 @@ check "no AI trailer in commits" '! git log --format=%B | grep -qi "co-authored-
 check "screens captured between the spec and the build" '[ "$(grep -oE "Spec mode for item 3561|screenshot before ds-migration/specs/3561|Build mode for item 3561" "$SB/calls.log" | cut -d" " -f1 | paste -sd, -)" = "Spec,screenshot,Build" ]'
 check "session progress shown live in the run log" 'grep -q "3561-textarea   Agent Implement 3561-textarea" "$(git rev-parse --git-dir)/ds-migration/run.log" && [ -s "$(git rev-parse --git-dir)/ds-migration/3561-textarea.jsonl" ]'
 check "issue body replaced by the spec, by the script" 'head -1 "$SB/issue-3561.md" | grep -qx "Part of #3507." && grep -qx "# textarea" "$SB/issue-3561.md" && ! grep -q "^kind:" "$SB/issue-3561.md"'
-check "issue assigned and moved along the board" 'grep -q "^gh issue edit 3561 --add-assignee @me" "$SB/calls.log" && [ "$(grep " ITEM_3561$" "$SB/board.log" | cut -d" " -f1 | paste -sd, -)" = "OPT_DEV,OPT_REVIEW,OPT_DONE" ]'
+check "issue assigned and moved along the board" 'grep -q "^gh issue edit 3561 --add-assignee @me" "$SB/calls.log" && [ "$(grep " ITEM_3561$" "$SB/board.log" | cut -d" " -f1 | head -3 | paste -sd, -)" = "OPT_DEV,OPT_REVIEW,OPT_DONE" ]'
+check "done items put back after the board automation" '[ "$(grep -c "^OPT_DONE ITEM_3530$" "$SB/board.log")" -ge 1 ] && [ "$(grep " ITEM_3561$" "$SB/board.log" | tail -1 | cut -d" " -f1)" = OPT_DONE ]'
 check "covered issues assigned and moved with their item" 'grep -q "^gh issue edit 4001 --add-assignee @me" "$SB/calls.log" && grep -qx "OPT_DONE ITEM_4002" "$SB/board.log"'
 check "issue shows the final spec, findings included" 'grep -qx "  that wraps" "$SB/issue-3561.md"'
 check "wrapped spec bullets kept whole in the PR report" 'grep -q "textarea: found in review, on a bullet that wraps$" "$SB/pr-body.md"'

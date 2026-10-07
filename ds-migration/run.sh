@@ -602,6 +602,16 @@ board_item() {
   for covered in $(covers_of "$1" | tr ',' ' '); do board_status "$covered" "$2"; done
 }
 
+# The board's own automation moves every issue the pull request closes back to Development a few
+# seconds after each change to the pull request. Once it has fired, the done items go back to the
+# done status.
+board_settle() {
+  local key
+  [ -n "$BOARD" ] || return 0
+  sleep "${DS_BOARD_SETTLE:-60}"
+  for key in $(items | awk '$3 == "done" { print $2 }'); do board_item "$key" "$BOARD_DONE"; done
+}
+
 # The person running the script takes the item's issues and moves them to development.
 start_tracking() {
   local key="$1" issue
@@ -689,11 +699,11 @@ mark_done() {
   set_status "$key" done
   log "$key done$2"
   gh issue edit "$(issue_of "$key")" --remove-label "$NEEDS_LABEL" >/dev/null 2>&1 || true
-  board_item "$key" "$BOARD_DONE"
   refresh_pr_body
   pr="$(header pull_request)"
   [ "$pr" = none ] || gh pr comment "$pr" --body "Component $(name_of "$key") done. Issue #$(issue_of "$key")" >/dev/null ||
     log "could not comment on PR #$pr"
+  board_settle
 }
 
 # Waits for the checks of the pushed item; on failure, one CI fix session, then stop.
@@ -759,6 +769,7 @@ epic_gate() {
   set_status "$epic" review
   commit_status
   $no_wait || publish
+  board_settle
   log "$epic is ready for review: report posted on the PR ($report)"
 }
 
@@ -849,6 +860,7 @@ finish() {
   git push --quiet origin "HEAD:$BRANCH"
   stop_app
   wait_checks "$pr" || die "required checks fail after removing ds-migration/"
+  board_settle
   log "final report posted on #$EPIC_ISSUE; mark PR #$pr ready for review"
 }
 
