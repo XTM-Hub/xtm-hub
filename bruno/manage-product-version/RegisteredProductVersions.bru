@@ -11,8 +11,8 @@ post {
 }
 
 body:graphql {
-  query RegisteredProductVersions($product: PlatformIdentifier) {
-    registeredProductVersions(product: $product) {
+  query RegisteredProductVersions($product: PlatformIdentifier!, $search: String) {
+    registeredProductVersions(product: $product, search: $search) {
       product
       version
       created_at
@@ -22,7 +22,8 @@ body:graphql {
 
 body:graphql:vars {
   {
-    "product": "opencti"
+    "product": "opencti",
+    "search": null
   }
 }
 
@@ -35,5 +36,8 @@ docs {
   Public query, no auth required.
 
   Fill variables:
-  product: PlatformIdentifier enum value (e.g. opencti, openaev). Omit to list every registered product version.
+  product: PlatformIdentifier enum value (e.g. opencti, openaev). Required.
+  search: optional case-insensitive substring match on the version string (e.g. "6.4").
+
+  Returns at most the 5 latest matching versions, most recent first.
 }

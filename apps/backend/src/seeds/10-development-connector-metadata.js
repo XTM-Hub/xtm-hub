@@ -19,12 +19,12 @@ export async function seed(knex) {
       {
         document_id: '47c8692b-a790-49bc-a6cc-e62e7f44cf9c',
         key: 'minimum_deployable_version',
-        value: '6.250101.0',
+        value: '6.5.0',
       },
       {
         document_id: '47c8692b-a790-49bc-a6cc-e62e7f44cf9c',
         key: 'minimum_deployable_version_padded',
-        value: '006.250101.000',
+        value: '006.000005.000',
       },
       {
         document_id: '47c8692b-a790-49bc-a6cc-e62e7f44cf9c',
@@ -82,12 +82,12 @@ export async function seed(knex) {
       {
         document_id: '71e2ae8d-e32a-494f-9c62-2da5f91199ba',
         key: 'minimum_deployable_version',
-        value: '6.250301.0',
+        value: '6.6.0',
       },
       {
         document_id: '71e2ae8d-e32a-494f-9c62-2da5f91199ba',
         key: 'minimum_deployable_version_padded',
-        value: '006.250301.000',
+        value: '006.000006.000',
       },
       {
         document_id: '71e2ae8d-e32a-494f-9c62-2da5f91199ba',
@@ -208,12 +208,12 @@ export async function seed(knex) {
       {
         document_id: '32e2a2f9-123b-475b-b90d-b0a5b79bf4fd',
         key: 'minimum_deployable_version',
-        value: '7.260301.0',
+        value: '7.260305.0',
       },
       {
         document_id: '32e2a2f9-123b-475b-b90d-b0a5b79bf4fd',
         key: 'minimum_deployable_version_padded',
-        value: '007.260301.000',
+        value: '007.260305.000',
       },
       {
         document_id: '32e2a2f9-123b-475b-b90d-b0a5b79bf4fd',
@@ -271,12 +271,12 @@ export async function seed(knex) {
       {
         document_id: '6fb6ef73-6b56-45dd-a77a-59ba6d59f716',
         key: 'minimum_deployable_version',
-        value: '5.240101.0',
+        value: '6.0.0',
       },
       {
         document_id: '6fb6ef73-6b56-45dd-a77a-59ba6d59f716',
         key: 'minimum_deployable_version_padded',
-        value: '005.240101.000',
+        value: '006.000000.000',
       },
       {
         document_id: '6fb6ef73-6b56-45dd-a77a-59ba6d59f716',
@@ -334,12 +334,12 @@ export async function seed(knex) {
       {
         document_id: 'bbfbca6c-4105-4526-9300-8d802bd5d1b2',
         key: 'minimum_deployable_version',
-        value: '6.260507.0',
+        value: '6.9.0',
       },
       {
         document_id: 'bbfbca6c-4105-4526-9300-8d802bd5d1b2',
         key: 'minimum_deployable_version_padded',
-        value: '006.260507.000',
+        value: '006.000009.000',
       },
       {
         document_id: 'bbfbca6c-4105-4526-9300-8d802bd5d1b2',
@@ -397,12 +397,12 @@ export async function seed(knex) {
       {
         document_id: '552a193e-ef20-4059-8afc-2665f9922866',
         key: 'minimum_deployable_version',
-        value: '7.260501.0',
+        value: '7.260506.0',
       },
       {
         document_id: '552a193e-ef20-4059-8afc-2665f9922866',
         key: 'minimum_deployable_version_padded',
-        value: '007.260501.000',
+        value: '007.260506.000',
       },
       {
         document_id: '552a193e-ef20-4059-8afc-2665f9922866',
@@ -460,12 +460,12 @@ export async function seed(knex) {
       {
         document_id: 'c23741ba-2fad-4339-aec9-7ee43b2697da',
         key: 'minimum_deployable_version',
-        value: '8.260901.0',
+        value: '7.260910.0',
       },
       {
         document_id: 'c23741ba-2fad-4339-aec9-7ee43b2697da',
         key: 'minimum_deployable_version_padded',
-        value: '008.260901.000',
+        value: '007.260910.000',
       },
       {
         document_id: 'c23741ba-2fad-4339-aec9-7ee43b2697da',
@@ -523,12 +523,12 @@ export async function seed(knex) {
       {
         document_id: '6013f281-ef46-46b2-b369-08c71edfb893',
         key: 'minimum_deployable_version',
-        value: '7.260101.0',
+        value: '7.260224.0',
       },
       {
         document_id: '6013f281-ef46-46b2-b369-08c71edfb893',
         key: 'minimum_deployable_version_padded',
-        value: '007.260101.000',
+        value: '007.260224.000',
       },
       {
         document_id: '6013f281-ef46-46b2-b369-08c71edfb893',
@@ -586,12 +586,12 @@ export async function seed(knex) {
       {
         document_id: '515540e6-1dbb-46db-8eb5-c4c716a76b34',
         key: 'minimum_deployable_version',
-        value: '8.260801.0',
+        value: '7.260811.0',
       },
       {
         document_id: '515540e6-1dbb-46db-8eb5-c4c716a76b34',
         key: 'minimum_deployable_version_padded',
-        value: '008.260801.000',
+        value: '007.260811.000',
       },
       {
         document_id: '515540e6-1dbb-46db-8eb5-c4c716a76b34',
@@ -712,12 +712,12 @@ export async function seed(knex) {
       {
         document_id: 'a3e14a04-b876-48f6-a9a7-3998f4f2609b',
         key: 'minimum_deployable_version',
-        value: '7.260201.0',
+        value: '6.9.29',
       },
       {
         document_id: 'a3e14a04-b876-48f6-a9a7-3998f4f2609b',
         key: 'minimum_deployable_version_padded',
-        value: '007.260201.000',
+        value: '006.000009.029',
       },
       {
         document_id: 'a3e14a04-b876-48f6-a9a7-3998f4f2609b',
@@ -775,12 +775,12 @@ export async function seed(knex) {
       {
         document_id: '0fcfbcf1-11f9-49dc-9900-fd825ec65e02',
         key: 'minimum_deployable_version',
-        value: '8.261101.0',
+        value: '7.261002.0',
       },
       {
         document_id: '0fcfbcf1-11f9-49dc-9900-fd825ec65e02',
         key: 'minimum_deployable_version_padded',
-        value: '008.261101.000',
+        value: '007.261002.000',
       },
       {
         document_id: '0fcfbcf1-11f9-49dc-9900-fd825ec65e02',
@@ -838,12 +838,12 @@ export async function seed(knex) {
       {
         document_id: '4dff1096-65b8-4740-a576-14069a070678',
         key: 'minimum_deployable_version',
-        value: '5.240501.0',
+        value: '6.2.0',
       },
       {
         document_id: '4dff1096-65b8-4740-a576-14069a070678',
         key: 'minimum_deployable_version_padded',
-        value: '005.240501.000',
+        value: '006.000002.000',
       },
       {
         document_id: '4dff1096-65b8-4740-a576-14069a070678',
@@ -901,12 +901,12 @@ export async function seed(knex) {
       {
         document_id: 'abdf5d97-5991-41a3-80f8-2803e1c8fb92',
         key: 'minimum_deployable_version',
-        value: '6.240901.0',
+        value: '6.4.0',
       },
       {
         document_id: 'abdf5d97-5991-41a3-80f8-2803e1c8fb92',
         key: 'minimum_deployable_version_padded',
-        value: '006.240901.000',
+        value: '006.000004.000',
       },
       {
         document_id: 'abdf5d97-5991-41a3-80f8-2803e1c8fb92',
@@ -964,12 +964,12 @@ export async function seed(knex) {
       {
         document_id: 'f42432ae-8cbf-4964-b423-fa7e3420295b',
         key: 'minimum_deployable_version',
-        value: '6.250801.0',
+        value: '6.7.0',
       },
       {
         document_id: 'f42432ae-8cbf-4964-b423-fa7e3420295b',
         key: 'minimum_deployable_version_padded',
-        value: '006.250801.000',
+        value: '006.000007.000',
       },
       {
         document_id: 'f42432ae-8cbf-4964-b423-fa7e3420295b',
@@ -1027,12 +1027,12 @@ export async function seed(knex) {
       {
         document_id: 'e9048b69-28bf-4b52-a896-267e9515b8a3',
         key: 'minimum_deployable_version',
-        value: '8.261201.0',
+        value: '7.260928.0',
       },
       {
         document_id: 'e9048b69-28bf-4b52-a896-267e9515b8a3',
         key: 'minimum_deployable_version_padded',
-        value: '008.261201.000',
+        value: '007.260928.000',
       },
       {
         document_id: 'e9048b69-28bf-4b52-a896-267e9515b8a3',
@@ -1090,12 +1090,12 @@ export async function seed(knex) {
       {
         document_id: 'a287eccc-c37a-417a-a098-fb2edee7e1ce',
         key: 'minimum_deployable_version',
-        value: '6.251101.0',
+        value: '6.8.4',
       },
       {
         document_id: 'a287eccc-c37a-417a-a098-fb2edee7e1ce',
         key: 'minimum_deployable_version_padded',
-        value: '006.251101.000',
+        value: '006.000008.004',
       },
       {
         document_id: 'a287eccc-c37a-417a-a098-fb2edee7e1ce',
@@ -1153,12 +1153,12 @@ export async function seed(knex) {
       {
         document_id: '1da99d65-80f9-4d38-b46b-998216449e63',
         key: 'minimum_deployable_version',
-        value: '7.260601.0',
+        value: '7.260604.0',
       },
       {
         document_id: '1da99d65-80f9-4d38-b46b-998216449e63',
         key: 'minimum_deployable_version_padded',
-        value: '007.260601.000',
+        value: '007.260604.000',
       },
       {
         document_id: '1da99d65-80f9-4d38-b46b-998216449e63',
@@ -1216,12 +1216,12 @@ export async function seed(knex) {
       {
         document_id: 'f1490a53-8aa6-4b64-97f0-24e388e15245',
         key: 'minimum_deployable_version',
-        value: '7.260801.0',
+        value: '7.260803.0',
       },
       {
         document_id: 'f1490a53-8aa6-4b64-97f0-24e388e15245',
         key: 'minimum_deployable_version_padded',
-        value: '007.260801.000',
+        value: '007.260803.000',
       },
       {
         document_id: 'f1490a53-8aa6-4b64-97f0-24e388e15245',
@@ -1279,12 +1279,12 @@ export async function seed(knex) {
       {
         document_id: 'fa24b9de-6b0d-4728-b145-26fd6462b0f5',
         key: 'minimum_deployable_version',
-        value: '6.250601.0',
+        value: '6.8.0',
       },
       {
         document_id: 'fa24b9de-6b0d-4728-b145-26fd6462b0f5',
         key: 'minimum_deployable_version_padded',
-        value: '006.250601.000',
+        value: '006.000008.000',
       },
       {
         document_id: 'fa24b9de-6b0d-4728-b145-26fd6462b0f5',

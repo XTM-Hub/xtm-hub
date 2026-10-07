@@ -1236,6 +1236,11 @@
           "Free": "無料",
           "Commercial": "商用"
         },
+        "ProductVersion": {
+          "Label": "OpenCTI 互換バージョン",
+          "Placeholder": "OpenCTI バージョン...",
+          "RegisteredTooltip": "{count, plural, one {コネクテッド製品} other {コネクテッド製品}}: {names}"
+        },
         "SolutionCategory": {
           "Label": "ソリューションカテゴリ",
           "Placeholder": "ソリューションカテゴリ..."

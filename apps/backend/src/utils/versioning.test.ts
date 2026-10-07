@@ -7,6 +7,22 @@ import {
 } from './versioning';
 
 describe('versioning', () => {
+  describe('compareVersions on the OpenCTI tags', () => {
+    it.each`
+      lower           | higher
+      ${'6.8.4'}      | ${'6.9.0'}
+      ${'6.9.29'}     | ${'7.260224.0'}
+      ${'6.8.4'}      | ${'7.260224.0'}
+      ${'7.260224.0'} | ${'7.261002.0'}
+    `(
+      'should order $lower (semver 6.x) before $higher',
+      ({ lower, higher }: { lower: string; higher: string }) => {
+        expect(compareVersions(lower, higher)).toBeLessThan(0);
+        expect(compareVersions(higher, lower)).toBeGreaterThan(0);
+      }
+    );
+  });
+
   describe('isLtsVersion', () => {
     it.each`
       version               | expected | description

@@ -1236,6 +1236,11 @@
           "Free": "Free",
           "Commercial": "Commercial"
         },
+        "ProductVersion": {
+          "Label": "OpenCTI compatibility version",
+          "Placeholder": "OpenCTI version...",
+          "RegisteredTooltip": "{count, plural, one {Connected product} other {Connected products}}: {names}"
+        },
         "SolutionCategory": {
           "Label": "Solution category",
           "Placeholder": "Solution category..."
