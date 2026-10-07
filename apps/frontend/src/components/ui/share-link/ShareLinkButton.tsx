@@ -11,7 +11,7 @@ import {
   TooltipTrigger,
 } from '@filigran/ui/clients';
 
-import { IconButton } from '@filigran/design-system';
+import { IconButton, IconButtonProps } from '@filigran/design-system';
 import { graphql, useMutation } from 'react-relay';
 import { useCopyToClipboard } from 'usehooks-ts';
 
@@ -19,6 +19,7 @@ export interface ShareLinkButtonProps {
   url: string;
   documentId: string;
   tooltipText?: string;
+  size?: IconButtonProps['size'];
 }
 
 export const shareLinkMutation = graphql`
@@ -79,6 +80,7 @@ export const ShareLinkCommonButton = ({
   url,
   onClickAction,
   tooltipText,
+  size,
 }: ShareLinkCommonProps) => {
   const t = useTranslate();
   const [_, copy] = useCopyToClipboard();
@@ -107,6 +109,7 @@ export const ShareLinkCommonButton = ({
         <TooltipTrigger asChild>
           <IconButton
             priority="tertiary"
+            size={size}
             onClick={handleCopy}
             className="z-[2] text-primary"
             aria-label={

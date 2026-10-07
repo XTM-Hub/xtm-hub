@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils';
 import {
   AccountBalanceOutlinedIcon,
   AccountMultipleOutlineIcon,
@@ -160,6 +161,7 @@ export const EntityTypeIcon = ({
 
 interface EntityTypeOrFiligranLogoProps {
   entityTypes?: readonly string[] | null;
+  className?: string;
 }
 
 /**
@@ -168,14 +170,15 @@ interface EntityTypeOrFiligranLogoProps {
  */
 export const EntityTypeOrFiligranLogo = ({
   entityTypes,
+  className = 'size-22',
 }: EntityTypeOrFiligranLogoProps) => {
   const first = entityTypes?.[0];
   return first ? (
     <EntityTypeIcon
       entityType={first}
-      className="size-22 shrink-0"
+      className={cn('shrink-0', className)}
     />
   ) : (
-    <LogoFiligranIcon className="size-22" />
+    <LogoFiligranIcon className={className} />
   );
 };
