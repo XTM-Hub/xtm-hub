@@ -366,7 +366,7 @@ export const XtmPlatformTrialForm = ({
                           mssa: renderMssaLink,
                           aiterms: renderAiTermsLink,
                         })}{' '}
-                        <span className="text-destructive">*</span>
+                        <span className="text-input-required">*</span>
                       </>
                     }
                     error={Boolean(fieldState.error)}

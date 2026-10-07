@@ -147,8 +147,9 @@ rest and is already `shrink-0`.
   recolours, so the box sits in `FormControl` for `aria-invalid` and the `aria-describedby` link to `FormMessage`; the
   Slot lets the box's own `id="acceptTerms"` win over the generated one.
 - **No `required` on `acceptTerms`**: inside a `<form>`, Radix adds a hidden native `required` input, so the
-  browser would block the submit before zod shows `FormMessage`. The visible `*` stays in the label content, matching
-  the form's other hand-written markers.
+  browser would block the submit before zod shows `FormMessage`. The visible `*` stays in the label content, in the
+  design system's `text-input-required` colour (the marker of its `Input` and `Textarea`), not the legacy
+  `text-destructive`.
 - **`DataTable` cell keeps `onClick={(e) => e.stopPropagation()}`**: the contract's "never stop propagation" targets
   presentational boxes inside a clickable row; this box is interactive and the row's `onClickRow` opens the item, so
   removing it would both toggle and open.
@@ -169,7 +170,8 @@ rest and is already `shrink-0`.
 - `EpicForm` "Publish now": the hint moves from inline after the label to a `description` line under it.
   Alternative: keep it inline inside `label`.
 - Trial terms: the box is centred on the multi-line text instead of top-aligned, the label and box turn to the error
-  tone on a failed submit, and the `*` keeps its legacy `text-destructive` class. Alternative: no `error`, as before.
+  tone on a failed submit, and the `*` takes the design system `text-input-required` colour. Alternative: no `error`,
+  as before.
 - `XtmPlatformTrialForm` XTM One and `XtmPlatformTrialStatusPanel`: the disabled labels use the design system
   disabled colour instead of `text-muted-foreground` / `text-text-default-disabled`.
 - `LogicalMultiSelectFormField` keeps its own row typography (`content-body-compact text-[13px]`) next to the design

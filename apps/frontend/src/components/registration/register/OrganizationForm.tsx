@@ -61,7 +61,7 @@ export const RegisterOrganizationForm = ({
                 <div className="flex flex-col gap-m">
                   <p className="text-sm font-medium leading-none">
                     {t(`Register.OrganizationForm.Description`)}
-                    <span className="text-destructive"> *</span>
+                    <span className="text-input-required"> *</span>
                   </p>
                   <FormItem>
                     <FormControl>
