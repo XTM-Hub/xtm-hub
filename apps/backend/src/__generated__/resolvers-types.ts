@@ -155,6 +155,11 @@ export type Capability = Node & {
   name: PortalCapability;
 };
 
+export enum CommercialModel {
+  Other = 'OTHER',
+  Saas = 'SAAS'
+}
+
 export type Competitor = Node & {
   __typename?: 'Competitor';
   domain: Scalars['String']['output'];
@@ -3387,6 +3392,7 @@ export type ResolversTypes = ResolversObject<{
   CanUnregisterPlatformInput: CanUnregisterPlatformInput;
   CanUnregisterResponse: ResolverTypeWrapper<CanUnregisterResponse>;
   Capability: ResolverTypeWrapper<Capability>;
+  CommercialModel: CommercialModel;
   Competitor: ResolverTypeWrapper<Competitor>;
   CompetitorConnection: ResolverTypeWrapper<CompetitorConnection>;
   CompetitorEdge: ResolverTypeWrapper<CompetitorEdge>;

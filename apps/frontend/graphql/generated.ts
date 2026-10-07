@@ -162,6 +162,11 @@ export type Capability = Node & {
   name: PortalCapability;
 };
 
+export enum CommercialModel {
+  Other = 'OTHER',
+  Saas = 'SAAS'
+}
+
 export type Competitor = Node & {
   __typename?: 'Competitor';
   domain: Scalars['String']['output'];

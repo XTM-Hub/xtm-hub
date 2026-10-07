@@ -2,6 +2,7 @@ import { Knex } from 'knex';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../../../knexfile';
 import {
+  CommercialModel,
   DeploymentRequestDeploymentType,
   DeploymentRequestHubStatus,
   OrganizationCapability,
@@ -40,6 +41,7 @@ export type PlatformConfigurationInput = {
   platform_contract: PlatformContract;
   last_connectivity_check: Date;
   token: string;
+  commercial_model?: CommercialModel;
 };
 
 export interface DomainRegisteredPlatform extends PlatformConfigurationModel {

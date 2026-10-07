@@ -1217,6 +1217,11 @@ enum PlatformConfigurationStatus {
   inactive
 }
 
+enum CommercialModel {
+  SAAS
+  OTHER
+}
+
 input OpenCTIPlatformRegistrationStatusInput {
   platformId: String!
   token: String!

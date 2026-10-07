@@ -14,5 +14,8 @@
   "auth0_sync": {
     "enabled": true
   },
-  "base_url_front": "https://hub.filigran.io"
+  "base_url_front": "https://hub.filigran.io",
+  "saas_manager": {
+    "url": "https://saasmanager.filigran.io"
+  }
 }

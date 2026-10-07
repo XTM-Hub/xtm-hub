@@ -1,4 +1,9 @@
 enum PlatformConfigurationStatus {
-  active
-  inactive
+    active
+    inactive
+}
+
+enum CommercialModel {
+    SAAS
+    OTHER
 }

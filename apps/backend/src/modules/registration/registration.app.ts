@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   AutoRegisterPlatformInput,
   CanUnregisterPlatformInput,
+  CommercialModel,
   DeploymentRequestHubStatus,
   IsPlatformRegisteredInput,
   IsPlatformRegisteredResponse,
@@ -30,6 +31,7 @@ import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { UserId } from '../../model/kanel/public/User';
 import { securityGuard } from '../../security/guard';
 import { sendMail } from '../../server/mail-service';
+import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
 import { logApp } from '../../utils/app-logger.util';
 import {
   BadRequestErrorCode,
@@ -203,6 +205,21 @@ export const RegistrationApp = {
       throw new Error(ErrorCode.InvalidPlatformConfiguration);
     }
 
+    const response = await SaasManagerClient.callInstanceApi({
+      platform_id: configuration.platform_id,
+    });
+    const responseBody = response.ok
+      ? ((await response.json()) as { commercial_model?: string })
+      : null;
+
+    const configurationWithCommercialModel = {
+      ...configuration,
+      commercial_model:
+        responseBody?.commercial_model === 'PROD'
+          ? CommercialModel.Saas
+          : CommercialModel.Other,
+    };
+
     const platformConfiguration =
       await PlatformConfigurationDomain.loadConfigurationByPlatform(
         platform.id,
@@ -221,13 +238,13 @@ export const RegistrationApp = {
         await RegistrationDomain.refreshExistingPlatform({
           serviceInstanceId: platformConfiguration.service_instance_id,
           targetOrganizationId: organizationId as OrganizationId,
-          configuration,
+          configuration: configurationWithCommercialModel,
         });
       } else {
         await RegistrationDomain.registerNewPlatform({
           serviceDefinitionId: serviceDefinition.id,
           organizationId: organizationId as OrganizationId,
-          configuration,
+          configuration: configurationWithCommercialModel,
           platformIdentifier: identifier,
         });
       }
