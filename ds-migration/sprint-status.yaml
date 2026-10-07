@@ -40,7 +40,7 @@ project_statuses: Development, Code review, Ready to Merge
 
 development_status:
   # Primitives with a legacy equivalent in filigran-ui
-  epic-1-primitives: review
+  epic-1-primitives: done
   3530-button: done
   3561-textarea: done
   3568-switch: done
