@@ -125,13 +125,12 @@ export const EpicList = ({
         <div key={epic.id}>
           <EpicItem
             epic={epic}
-            serviceInstanceId={serviceInstance.id}
             userCanUpdate={userCanUpdate}
             userCanDelete={userCanDelete}
           />
         </div>
       )),
-    [serviceInstance.id, userCanUpdate, userCanDelete]
+    [userCanUpdate, userCanDelete]
   );
 
   const handleInputChange = (inputValue: string) => {

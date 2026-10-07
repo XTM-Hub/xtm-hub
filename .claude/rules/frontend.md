@@ -19,8 +19,8 @@ Run from `apps/frontend` (or `yarn workspace @xtm-hub/frontend <script>`).
 
 | Command | What it does |
 | --- | --- |
-| `yarn relay` | `relay-compiler` — **required after any GraphQL change** |
-| `yarn codegen` | `graphql-codegen --config codegen.ts` |
+| `yarn relay` | `relay-compiler` — **required after a schema change or a Relay `graphql` template edit** |
+| `yarn codegen` | `graphql-codegen --config codegen.ts` — **required after a schema change or a `graphql/**/*.graphql` operation edit**; rewrites the tracked `graphql/generated.ts` and `graphql/mocks.ts` |
 | `yarn next typegen` | Generates `next-env.d.ts` and route types — **required before `check-ts`** |
 | `yarn check-ts` | `tsc --noEmit` |
 | `yarn lint` | `eslint .` |
@@ -31,9 +31,11 @@ Run from `apps/frontend` (or `yarn workspace @xtm-hub/frontend <script>`).
 | `yarn i18n:check` | Locale parity against `messages/en.json` |
 | `yarn generate:component` | Scaffolds a component |
 
-`yarn dev` runs `relay-compiler`, `codegen:watch` and `next dev` concurrently, so artifacts stay fresh while you work.
-Outside `dev`, run `yarn relay` yourself after touching any `graphql` tagged template — stale artifacts surface as
-confusing type errors in `__generated__/`.
+`yarn dev` runs `relay-compiler` once at start, `codegen:watch` and `next dev` concurrently: the codegen output stays
+fresh while you work, the Relay artifacts do not. Run `yarn relay` yourself after touching any `graphql` tagged
+template, and `yarn codegen` outside `dev` — stale artifacts surface as confusing type errors in `__generated__/` or
+`graphql/generated.ts`. Both read `schema.graphql`, which the backend rewrites on API start, so restart the API first
+after a schema change (see [`graphql.md`](graphql.md)).
 
 **`next-env.d.ts` is gitignored and generated.** It is what declares `@public/*.svg` and the route types, so on a
 fresh checkout `yarn check-ts` reports around twenty bogus `Cannot find module '@public/….svg'` errors. Run
@@ -54,11 +56,11 @@ src/relay/                          Client + server environments, SSR provider (
 src/lib/graphql-client.ts           portalGraphqlClient — graphql-request client for react-query
 src/i18n/                           next-intl config, locale, request scope
 src/lib/  src/utils/                Helpers, server actions, middleware helpers, query-cache
-graphql/                            *.query.graphql / *.mutation.graphql + generated.ts (react-query, new work)
+graphql/                            *.query.graphql / *.mutation.graphql + generated.ts, mocks.ts (react-query, new work)
 __generated__/                      Relay output — generated, never edit
 messages/                           One JSON file per locale (`en` is the source — see `yarn i18n:check`)
 proxy.ts                            Next.js 16 proxy convention (was middleware.ts); i18n + auth/document/GraphQL proxying
-schema.graphql                      Written by the backend, read by Relay
+schema.graphql                      Written by the backend on API start, read by Relay and graphql-codegen
 ```
 
 ## Path aliases

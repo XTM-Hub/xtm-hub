@@ -15,7 +15,6 @@ export const epicFragment = graphql`
     slack_link
     active
     epic_type
-    document_id
     created_at
     updated_at
   }
@@ -55,12 +54,8 @@ export const EpicListQuery = graphql`
 `;
 
 export const CreateEpicMutation = graphql`
-  mutation epicCreateMutation(
-    $input: CreateEpicInput!
-    $document: [Upload!]
-    $connections: [ID!]!
-  ) {
-    createEpic(input: $input, document: $document)
+  mutation epicCreateMutation($input: CreateEpicInput!, $connections: [ID!]!) {
+    createEpic(input: $input)
       @prependNode(connections: $connections, edgeTypeName: "EpicEdge") {
       ...epic_fragment
     }
@@ -68,12 +63,8 @@ export const CreateEpicMutation = graphql`
 `;
 
 export const UpdateEpicMutation = graphql`
-  mutation epicUpdateMutation(
-    $id: ID!
-    $input: UpdateEpicInput!
-    $document: [Upload!]
-  ) {
-    updateEpic(id: $id, input: $input, document: $document) {
+  mutation epicUpdateMutation($id: ID!, $input: UpdateEpicInput!) {
+    updateEpic(id: $id, input: $input) {
       ...epic_fragment
     }
   }

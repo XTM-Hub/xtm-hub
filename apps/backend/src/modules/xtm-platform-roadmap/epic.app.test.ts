@@ -12,7 +12,6 @@ import {
   // eslint-disable-next-line no-restricted-imports
   requestContextAdminUser,
   requestContextSimpleUserFiligran2,
-  SERVICES,
   TEST_ORGANIZATIONS,
 } from '../../../tests/tests.const';
 import {
@@ -21,18 +20,11 @@ import {
   EpicType,
   FiligranProduct,
   OrderingMode,
-  ServiceDefinitionIdentifier,
   ServiceRestriction,
   Timeline,
 } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
-import { DocumentId } from '../../model/kanel/public/Document';
 import { EpicId } from '../../model/kanel/public/Epic';
-import { OrganizationId } from '../../model/kanel/public/Organization';
-import { MinIOClient } from '../../thirdparty/minio/client';
-import { DocumentApp } from '../document/document.app';
-import { DocumentUploadsHelper } from '../document/document.uploads.helper';
-import { DocumentDomain } from '../document/domain/document.domain';
 
 const guardMock = vi.hoisted(() => ({
   assertUserHasCapaOnService: vi.fn().mockResolvedValue(undefined),
@@ -52,15 +44,8 @@ vi.mock('../../security/guard', async () => {
 import { UserServiceCapabilityHelper } from '../security-management/user-service-capability/user-service-capability.helper';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { EpicApp } from './epic.app';
-import { EpicDomain } from './epic.domain';
 
 describe('epicApp', () => {
-  const minioFileMock = {
-    minioName: 'epic-image.png',
-    mimeType: 'image/png',
-    fileName: 'epic-image.png',
-  };
-
   const basicInput = {
     title: 'Test Epic',
     short_description: 'Short desc',
@@ -77,22 +62,17 @@ describe('epicApp', () => {
 
   beforeEach(async () => {
     guardMock.assertUserHasCapaOnService.mockResolvedValue(undefined);
-
-    vi.spyOn(DocumentUploadsHelper, 'processUploads').mockResolvedValue([
-      minioFileMock,
-    ]);
   });
 
   afterEach(async () => {
-    // Clean up the Document and Epic tables before each test
+    // Clean up the Epic table after each test
     await TestHelper.epic.delete({});
-    await TestHelper.document.delete({ file_name: 'epic-image.png' });
   });
 
   describe('createEpic', () => {
     it('should createEpic with correct data and return the created epic', async () => {
       // When
-      const createdEpic = await EpicApp.createEpic(basicInput, []);
+      const createdEpic = await EpicApp.createEpic(basicInput);
 
       // Check in DB
       const dbEpic = await TestHelper.epic.load({
@@ -116,56 +96,6 @@ describe('epicApp', () => {
       });
     });
 
-    it('should create an image document when upload is provided', async () => {
-      // Given
-      vi.spyOn(
-        ServiceInstanceDomain,
-        'loadSubscribedServiceInstancesByIdentifier'
-      ).mockResolvedValue([
-        {
-          service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-          organization_id: 'test-org-id',
-          is_personal_space: false,
-          configurations: [],
-        },
-      ] as never);
-
-      const input = {
-        ...basicInput,
-        title: 'Epic with Image',
-      };
-
-      const uploads = [
-        {
-          file: {} as never,
-          promise: Promise.resolve({} as never),
-        },
-      ];
-
-      // When
-      const createdEpic = await EpicApp.createEpic(input, uploads);
-
-      // Verify document was created in DB
-      const dbDocument = await TestHelper.document.load({
-        id: createdEpic!.document_id as DocumentId,
-      });
-
-      // Then
-      expect(createdEpic).toMatchObject({
-        id: expect.anything(),
-        document_id: expect.anything(),
-      });
-      expect(dbDocument).toMatchObject({
-        file_name: 'epic-image.png',
-        minio_name: 'epic-image.png',
-        mime_type: 'image/png',
-        type: 'image',
-        description: 'Epic illustration',
-        active: true,
-        source_type: 'internal',
-      });
-    });
-
     it('should create an integration epic when is_integration is true', async () => {
       // Given
       const input = {
@@ -175,7 +105,7 @@ describe('epicApp', () => {
       };
 
       // When
-      const createdEpic = await EpicApp.createEpic(input, []);
+      const createdEpic = await EpicApp.createEpic(input);
 
       // Check in DB
       const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
@@ -197,7 +127,7 @@ describe('epicApp', () => {
       };
 
       // When
-      const createdEpic = await EpicApp.createEpic(input, []);
+      const createdEpic = await EpicApp.createEpic(input);
 
       // Check in DB
       const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
@@ -225,7 +155,7 @@ describe('epicApp', () => {
       };
 
       // When
-      const createdEpic = await EpicApp.createEpic(input, []);
+      const createdEpic = await EpicApp.createEpic(input);
 
       // Check in DB
       const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
@@ -241,7 +171,7 @@ describe('epicApp', () => {
       const input = { ...basicInput, title: 'No Slack Link Epic' };
 
       // When
-      const createdEpic = await EpicApp.createEpic(input, []);
+      const createdEpic = await EpicApp.createEpic(input);
 
       // Check in DB
       const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
@@ -261,7 +191,7 @@ describe('epicApp', () => {
       };
 
       // When
-      const createdEpic = await EpicApp.createEpic(input, []);
+      const createdEpic = await EpicApp.createEpic(input);
 
       // Check in DB
       const dbEpic = await TestHelper.epic.load({ id: createdEpic.id });
@@ -276,7 +206,7 @@ describe('epicApp', () => {
   describe('updateEpic', () => {
     it('should update the specified epic with the provided data and return the updated epic', async () => {
       // Given
-      const createdEpic = await EpicApp.createEpic(basicInput, []);
+      const createdEpic = await EpicApp.createEpic(basicInput);
       const updateInput = {
         title: 'Updated Title',
         short_description: 'Updated short description',
@@ -287,8 +217,7 @@ describe('epicApp', () => {
       // When
       const updatedEpic = await EpicApp.updateEpic(
         createdEpic.id as EpicId,
-        updateInput,
-        []
+        updateInput
       );
 
       // Check in DB
@@ -309,7 +238,7 @@ describe('epicApp', () => {
     });
     it('should replace the products of the specified epic', async () => {
       // Given
-      const createdEpic = await EpicApp.createEpic(basicInput, []);
+      const createdEpic = await EpicApp.createEpic(basicInput);
       const updateInput = {
         products: [FiligranProduct.Openaev, FiligranProduct.Xtmhub],
         edition_type: EditionType.CommunityEdition,
@@ -318,8 +247,7 @@ describe('epicApp', () => {
       // When
       const updatedEpic = await EpicApp.updateEpic(
         createdEpic.id as EpicId,
-        updateInput,
-        []
+        updateInput
       );
 
       // Check in DB
@@ -338,7 +266,7 @@ describe('epicApp', () => {
     });
     it('should update the slack link of the specified epic', async () => {
       // Given
-      const createdEpic = await EpicApp.createEpic(basicInput, []);
+      const createdEpic = await EpicApp.createEpic(basicInput);
       const slackLink =
         'https://filigran-community.slack.com/archives/C0BMANSB4CW';
       const updateInput = {
@@ -349,8 +277,7 @@ describe('epicApp', () => {
       // When
       const updatedEpic = await EpicApp.updateEpic(
         createdEpic.id as EpicId,
-        updateInput,
-        []
+        updateInput
       );
 
       // Check in DB
@@ -363,14 +290,10 @@ describe('epicApp', () => {
     });
     it('should clear the slack link of the specified epic', async () => {
       // Given
-      const createdEpic = await EpicApp.createEpic(
-        {
-          ...basicInput,
-          slack_link:
-            'https://filigran-community.slack.com/archives/C0BMANSB4CW',
-        },
-        []
-      );
+      const createdEpic = await EpicApp.createEpic({
+        ...basicInput,
+        slack_link: 'https://filigran-community.slack.com/archives/C0BMANSB4CW',
+      });
       const updateInput = {
         slack_link: '',
         edition_type: EditionType.CommunityEdition,
@@ -379,8 +302,7 @@ describe('epicApp', () => {
       // When
       const updatedEpic = await EpicApp.updateEpic(
         createdEpic.id as EpicId,
-        updateInput,
-        []
+        updateInput
       );
 
       // Check in DB
@@ -393,7 +315,7 @@ describe('epicApp', () => {
     });
     it('should update the description sections of the specified epic', async () => {
       // Given
-      const createdEpic = await EpicApp.createEpic(basicInput, []);
+      const createdEpic = await EpicApp.createEpic(basicInput);
       const updateInput = {
         description: 'Updated description',
         problem_to_solve: 'Updated problem',
@@ -405,8 +327,7 @@ describe('epicApp', () => {
       // When
       const updatedEpic = await EpicApp.updateEpic(
         createdEpic.id as EpicId,
-        updateInput,
-        []
+        updateInput
       );
 
       // Check in DB
@@ -420,10 +341,10 @@ describe('epicApp', () => {
       // Given
       const slackLink =
         'https://filigran-community.slack.com/archives/C0BMANSB4CW';
-      const createdEpic = await EpicApp.createEpic(
-        { ...basicInput, slack_link: slackLink },
-        []
-      );
+      const createdEpic = await EpicApp.createEpic({
+        ...basicInput,
+        slack_link: slackLink,
+      });
       const updateInput = {
         edition_type: EditionType.CommunityEdition,
       };
@@ -431,8 +352,7 @@ describe('epicApp', () => {
       // When
       const updatedEpic = await EpicApp.updateEpic(
         createdEpic.id as EpicId,
-        updateInput,
-        []
+        updateInput
       );
 
       // Check in DB
@@ -443,66 +363,12 @@ describe('epicApp', () => {
 
       expect(dbEpic?.slack_link).toBe(slackLink);
     });
-    it('should update the specified epic with uploads and create a document', async () => {
-      // Given
-      vi.spyOn(
-        ServiceInstanceDomain,
-        'loadSubscribedServiceInstancesByIdentifier'
-      ).mockResolvedValue([
-        {
-          service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
-          organization_id: 'test-org-id',
-          is_personal_space: false,
-          configurations: [],
-        },
-      ] as never);
-
-      const createdEpic = await EpicApp.createEpic(basicInput, []);
-
-      expect(createdEpic.document_id).toBeNull();
-
-      const updateInput = {
-        title: 'Updated Title with Image',
-        short_description: 'Updated short description',
-        active: true,
-        edition_type: EditionType.CommunityEdition,
-      };
-
-      const uploads = [
-        {
-          file: {} as never,
-          promise: Promise.resolve({} as never),
-        },
-      ];
-
-      // When
-      const updatedEpic = await EpicApp.updateEpic(
-        createdEpic.id,
-        updateInput,
-        uploads
-      );
-
-      // Check in DB
-      const dbDocument = await TestHelper.document.load({
-        id: updatedEpic?.document_id as DocumentId,
-      });
-
-      // Then
-      expect(updatedEpic).toMatchObject({
-        title: 'Updated Title with Image',
-        document_id: expect.anything(),
-      });
-
-      expect(dbDocument).toMatchObject({
-        file_name: 'epic-image.png',
-      });
-    });
   });
 
   describe('deleteEpic', () => {
     it('should delete the specified epic and return the deleted epic', async () => {
       // Given
-      const createdEpic = await EpicApp.createEpic(basicInput, []);
+      const createdEpic = await EpicApp.createEpic(basicInput);
 
       expect(createdEpic.id).toBeDefined();
 
@@ -513,47 +379,6 @@ describe('epicApp', () => {
       expect(deletedEpic).toMatchObject({
         id: createdEpic.id,
       });
-    });
-    it('should delete, when integration, the document and the minioFile as well', async () => {
-      // Given
-      const mockDeleteFileInMinio = vi
-        .spyOn(MinIOClient, 'deleteFile')
-        .mockResolvedValueOnce();
-
-      const document = await DocumentApp.createDocumentWithChildrenAndMetadata(
-        {
-          id: 'bc348e84-3635-46de-9b56-38db09c35f4d' as DocumentId,
-          uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
-          description: 'description',
-          minio_name: 'minioName',
-          file_name: 'filename',
-          uploader_organization_id:
-            'ba091095-418f-4b4f-b150-6c9295e232c4' as OrganizationId,
-          service_instance_id: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
-          type: ServiceDefinitionIdentifier.OpenctiCustomDashboards,
-        },
-        []
-      );
-      const createdEpic = await EpicDomain.createEpic({
-        ...basicInput,
-        document_id: document.id,
-      });
-
-      // When
-      const deletedEpic = await EpicApp.deleteEpic(createdEpic?.id as EpicId);
-
-      // Check in DB
-      const documentFromDB = await DocumentDomain.loadDocumentBy({
-        file_name: 'filename',
-      });
-
-      // Then
-      expect(deletedEpic).toMatchObject({
-        id: createdEpic?.id,
-      });
-      expect(mockDeleteFileInMinio).toHaveBeenCalledTimes(1);
-
-      expect(documentFromDB).toBeUndefined();
     });
   });
 
@@ -568,22 +393,26 @@ describe('epicApp', () => {
 
     it('should return counts grouped by timeline, excluding finished', async () => {
       // Given
-      await EpicApp.createEpic(
-        { ...basicInput, title: 'Now Epic 1', timeline: Timeline.Now },
-        []
-      );
-      await EpicApp.createEpic(
-        { ...basicInput, title: 'Now Epic 2', timeline: Timeline.Now },
-        []
-      );
-      await EpicApp.createEpic(
-        { ...basicInput, title: 'Next Epic', timeline: Timeline.Next },
-        []
-      );
-      await EpicApp.createEpic(
-        { ...basicInput, title: 'Finished Epic', timeline: Timeline.Finished },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Now Epic 1',
+        timeline: Timeline.Now,
+      });
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Now Epic 2',
+        timeline: Timeline.Now,
+      });
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Next Epic',
+        timeline: Timeline.Next,
+      });
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Finished Epic',
+        timeline: Timeline.Finished,
+      });
 
       // When
       const result = await EpicApp.countEpicsPerTimeline();
@@ -602,14 +431,16 @@ describe('epicApp', () => {
 
     it('should not include finished epics even when they exist', async () => {
       // Given
-      await EpicApp.createEpic(
-        { ...basicInput, title: 'Finished 1', timeline: Timeline.Finished },
-        []
-      );
-      await EpicApp.createEpic(
-        { ...basicInput, title: 'Finished 2', timeline: Timeline.Finished },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Finished 1',
+        timeline: Timeline.Finished,
+      });
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Finished 2',
+        timeline: Timeline.Finished,
+      });
 
       // When
       const result = await EpicApp.countEpicsPerTimeline();
@@ -620,14 +451,11 @@ describe('epicApp', () => {
 
     it('should return correct counts when only under_consideration epics exist', async () => {
       // Given
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'UC Epic',
-          timeline: Timeline.UnderConsideration,
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'UC Epic',
+        timeline: Timeline.UnderConsideration,
+      });
 
       // When
       const result = await EpicApp.countEpicsPerTimeline();
@@ -642,19 +470,17 @@ describe('epicApp', () => {
 
     it('should not count inactive epics', async () => {
       // Given
-      await EpicApp.createEpic(
-        { ...basicInput, title: 'Active Now Epic', timeline: Timeline.Now },
-        []
-      );
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'Inactive Now Epic',
-          timeline: Timeline.Now,
-          active: false,
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Active Now Epic',
+        timeline: Timeline.Now,
+      });
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Inactive Now Epic',
+        timeline: Timeline.Now,
+        active: false,
+      });
 
       // When
       const result = await EpicApp.countEpicsPerTimeline();
@@ -668,21 +494,15 @@ describe('epicApp', () => {
   describe('loadEpics', () => {
     it('should return epics with pagination information using first and orderBy parameters', async () => {
       // Given
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'Epic 1',
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Epic 1',
+      });
 
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'Epic 2',
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Epic 2',
+      });
 
       // When
       const epicsConnection = await EpicApp.loadEpics({
@@ -724,21 +544,15 @@ describe('epicApp', () => {
 
     it('should return epics ordered in descending order when orderMode is Desc', async () => {
       // Given
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'Epic A',
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Epic A',
+      });
 
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'Epic B',
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Epic B',
+      });
 
       // When
       const epicsConnection = await EpicApp.loadEpics({
@@ -755,21 +569,15 @@ describe('epicApp', () => {
 
     it('should return only epics matching searchTerm on title', async () => {
       // Given
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'Dashboard feature',
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Dashboard feature',
+      });
 
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'Connector improvement',
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Connector improvement',
+      });
 
       // When
       const epicsConnection = await EpicApp.loadEpics({
@@ -786,23 +594,17 @@ describe('epicApp', () => {
 
     it('should return epics matching searchTerm on epic short_description', async () => {
       // Given
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'Some title',
-          short_description: 'Hello there',
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Some title',
+        short_description: 'Hello there',
+      });
 
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'Other title',
-          short_description: 'Hi team',
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Other title',
+        short_description: 'Hi team',
+      });
 
       // When
       const epicsConnection = await EpicApp.loadEpics({
@@ -819,22 +621,16 @@ describe('epicApp', () => {
 
     it('should return epics matching searchTerm on description', async () => {
       // Given
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'Title A',
-          description: 'threat intelligence',
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Title A',
+        description: 'threat intelligence',
+      });
 
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'Title B',
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Title B',
+      });
 
       // When
       const epicsConnection = await EpicApp.loadEpics({
@@ -858,22 +654,16 @@ describe('epicApp', () => {
       'should return epics matching searchTerm on $field',
       async ({ field, searchTerm }) => {
         // Given
-        await EpicApp.createEpic(
-          {
-            ...basicInput,
-            title: 'Title A',
-            [field]: 'a blind spot in the roadmap',
-          },
-          []
-        );
+        await EpicApp.createEpic({
+          ...basicInput,
+          title: 'Title A',
+          [field]: 'a blind spot in the roadmap',
+        });
 
-        await EpicApp.createEpic(
-          {
-            ...basicInput,
-            title: 'Title B',
-          },
-          []
-        );
+        await EpicApp.createEpic({
+          ...basicInput,
+          title: 'Title B',
+        });
 
         // When
         const epicsConnection = await EpicApp.loadEpics({
@@ -891,13 +681,10 @@ describe('epicApp', () => {
 
     it('should return empty results when searchTerm matches nothing', async () => {
       // Given
-      await EpicApp.createEpic(
-        {
-          ...basicInput,
-          title: 'Some epic',
-        },
-        []
-      );
+      await EpicApp.createEpic({
+        ...basicInput,
+        title: 'Some epic',
+      });
 
       // When
       const epicsConnection = await EpicApp.loadEpics({

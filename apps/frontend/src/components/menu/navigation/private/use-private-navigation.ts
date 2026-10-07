@@ -367,6 +367,11 @@ export const usePrivateNavigation = (): NavigationConfig => {
       pathPrefix: `/${locale}/cybersecurity-solutions/xtm-one`,
       links: [
         {
+          href: 'https://demo.xtmone.io/login',
+          label: tMenu('LiveDemo'),
+          external: true,
+        },
+        {
           href: 'https://filigran.io/platform/xtm-one/',
           label: tMenu('About'),
           external: true,

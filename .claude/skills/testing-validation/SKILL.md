@@ -69,6 +69,7 @@ integration testing) build on top of these.
 Run focused checks scoped to the changed files after every change.
 
 - Backend (`apps/backend`): `yarn check-ts`, `yarn lint`, `yarn test`.
-- Frontend (`apps/frontend`): `yarn relay` (required before build and after any GraphQL schema change), then
-  `yarn check-ts`, `yarn lint`, `yarn test`.
+- Frontend (`apps/frontend`): `yarn relay` (the Relay artifacts are gitignored, so it is needed before `check-ts` and
+  the tests on a fresh checkout and after a schema or Relay template change) and `yarn codegen` (after a schema change
+  or a `graphql/**/*.graphql` edit), then `yarn check-ts`, `yarn lint`, `yarn test`.
 - Report exactly what was executed and its outcome. Never claim a check passed without running it.

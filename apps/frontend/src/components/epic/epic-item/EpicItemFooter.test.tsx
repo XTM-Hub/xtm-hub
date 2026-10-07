@@ -13,12 +13,10 @@ describe('EpicItemFooter', () => {
     epic_type: EpicType.Other,
     edition_type: EditionType.CommunityEdition,
     products: [FiligranProduct.Opencti],
-    document_id: null,
   } as epic_fragment$data;
 
   const defaultProps = {
     epic,
-    serviceInstanceId: 'service-instance-1',
   };
 
   it('renders product information', () => {
@@ -119,54 +117,34 @@ describe('EpicItemFooter', () => {
     }
   );
 
-  it.each([
-    {
-      epicType: EpicType.Integration,
-      documentId: 'document-image-1',
-      shouldRenderIntegration: true,
-    },
-    {
-      epicType: EpicType.Integration,
-      documentId: null,
-      shouldRenderIntegration: false,
-    },
-    {
-      epicType: EpicType.Other,
-      documentId: 'document-image-1',
-      shouldRenderIntegration: false,
-    },
-  ])(
-    'renders integration block according to type and document id (epicType=$epicType, documentId=$documentId)',
-    ({ epicType, documentId, shouldRenderIntegration }) => {
+  it.each`
+    epicType                | shouldRenderIntegration
+    ${EpicType.Integration} | ${true}
+    ${EpicType.Other}       | ${false}
+  `(
+    'should render the integration badge only when the epic type is integration (epicType=$epicType)',
+    ({ epicType, shouldRenderIntegration }) => {
       // Given
       const environment = createMockEnvironment();
 
       // When
-      const { queryByText } = testRender(
+      const { queryByText, container } = testRender(
         <EpicItemFooter
           {...defaultProps}
-          epic={{ ...epic, epic_type: epicType, document_id: documentId }}
+          epic={{ ...epic, epic_type: epicType }}
         />,
         {
           relayConfig: environment,
         }
       );
 
-      const integrationBadge = queryByText('integration');
-
       // Then
       if (shouldRenderIntegration) {
-        expect(integrationBadge).toBeInTheDocument();
-        expect(
-          screen.getByRole('img', { name: 'Roadmap epic logo' })
-        ).toHaveAttribute(
-          'src',
-          '/document/images/service-instance-1/document-image-1'
-        );
-        return;
+        expect(queryByText('integration')).toBeInTheDocument();
+      } else {
+        expect(queryByText('integration')).not.toBeInTheDocument();
       }
-
-      expect(integrationBadge).toBeNull();
+      expect(container.querySelector('img')).toBeNull();
     }
   );
 });

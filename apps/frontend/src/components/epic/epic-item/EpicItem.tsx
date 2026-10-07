@@ -7,14 +7,12 @@ import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 
 interface EpicItemProps {
   epic: epic_fragment$data;
-  serviceInstanceId: string;
   userCanUpdate: boolean;
   userCanDelete: boolean;
 }
 
 export const EpicItem = ({
   epic,
-  serviceInstanceId,
   userCanUpdate,
   userCanDelete,
 }: EpicItemProps) => {
@@ -24,7 +22,6 @@ export const EpicItem = ({
     <li className="h-full">
       <EpicItemCard
         epic={epic}
-        serviceInstanceId={serviceInstanceId}
         userCanDelete={userCanDelete}
         userCanUpdate={userCanUpdate}
       />
@@ -32,10 +29,7 @@ export const EpicItem = ({
         open={isOpen}
         onOpenChange={(open) => !open && close()}>
         <DialogContent className="p-0 w-full max-w-5xl h-[80vh] max-h-[90vh] flex flex-col overflow-hidden">
-          <EpicItemDetailed
-            epic={epic}
-            serviceInstanceId={serviceInstanceId}
-          />
+          <EpicItemDetailed epic={epic} />
         </DialogContent>
       </Dialog>
     </li>

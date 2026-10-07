@@ -34,7 +34,6 @@ import {
 } from '@filigran/design-system';
 import { InfoIcon } from '@filigran/icon';
 import {
-  FileInput,
   Form,
   FormControl,
   FormField,
@@ -54,7 +53,7 @@ import {
 } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo } from 'react';
-import { Control, useForm, useWatch } from 'react-hook-form';
+import { Control, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 const TITLE_MAX_CHARS = 160;
@@ -78,7 +77,6 @@ const buildEpicFormSchema = (t: (key: string) => string) =>
     timeline: z.enum(TIMELINE_VALUES),
     edition_type: z.enum(EditionType),
     is_integration: z.boolean().optional(),
-    illustration_document: z.custom<FileList>().optional(),
     title: z.string().min(2, t('EpicForm.Error.Title')).max(TITLE_MAX_CHARS),
     short_description: z
       .string()
@@ -238,7 +236,6 @@ const EpicForm = ({
       timeline: (epic?.timeline as Timeline) ?? Timeline.Now,
       active: epic?.active ?? false,
       is_integration: epic?.epic_type === EpicType.Integration,
-      illustration_document: undefined,
     }),
     [
       epic?.title,
@@ -259,10 +256,6 @@ const EpicForm = ({
   const form = useForm<EpicFormValues>({
     resolver: zodResolver(formSchema),
     values,
-  });
-  const isIntegration = useWatch({
-    control: form.control,
-    name: 'is_integration',
   });
 
   return (
@@ -383,30 +376,6 @@ const EpicForm = ({
             </FormItem>
           )}
         />
-
-        {isIntegration && (
-          <FormField
-            control={form.control}
-            name="illustration_document"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('Service.Form.Illustration')}</FormLabel>
-                <FormControl>
-                  <FileInput
-                    {...field}
-                    texts={{
-                      selectFile: t('Service.FileForm.SelectDocument'),
-                      noFile: t('Service.FileForm.NoDocument'),
-                      dropFiles: t('Service.FileForm.DropDocuments'),
-                    }}
-                    allowedTypes={'image/jpeg, image/gif, image/png, image/svg'}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
 
         <FormField
           control={form.control}

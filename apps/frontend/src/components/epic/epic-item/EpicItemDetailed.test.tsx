@@ -24,7 +24,6 @@ describe('EpicItemDetailed', () => {
       problem_to_solve: 'the **problem**',
       proposed_solution: 'the solution',
       expected_value: 'the value',
-      document_id: null,
       active: true,
       timeline: 'now',
       ...overrides,
@@ -32,7 +31,6 @@ describe('EpicItemDetailed', () => {
 
   const defaultProps = {
     epic: epic(null),
-    serviceInstanceId: 'service-instance-1',
   };
 
   beforeEach(() => {

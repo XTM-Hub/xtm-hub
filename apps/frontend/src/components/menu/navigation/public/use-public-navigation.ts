@@ -116,6 +116,11 @@ export const usePublicNavigation = (
       pathPrefix: `/${locale}/cybersecurity-solutions/xtm-one`,
       links: [
         {
+          href: 'https://demo.xtmone.io/login',
+          label: t('Menu.LiveDemo'),
+          external: true,
+        },
+        {
           href: 'https://filigran.io/platform/xtm-one/',
           label: t('Menu.About'),
           external: true,
