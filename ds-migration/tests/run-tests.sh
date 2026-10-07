@@ -57,7 +57,19 @@ case "$1 $2" in
   "pr edit") cp "$(bodyfile "$@")" "$SB/pr-body.md" ;;
   "pr create") cp "$(bodyfile "$@")" "$SB/pr-body.md"; echo "https://github.com/XTM-Hub/xtm-hub/pull/9999" ;;
   "issue view") echo "I_$3" ;;
-  "pr view") git rev-parse HEAD ;;
+  "pr view")
+    case "$*" in
+      # PR_CONFLICT_ONCE: the PR conflicts once, while main gets a commit the branch lacks.
+      *mergeable*)
+        if [ -f "$SB/pr-conflict" ]; then
+          rm "$SB/pr-conflict"
+          (cd "$SB/other" && git pull -q && echo "export const late = 1;" > apps/frontend/src/late.ts && git add -A && git -c commit.gpgsign=false commit -qm "feat: late on main" && git push -q origin main)
+          echo CONFLICTING
+        else
+          echo MERGEABLE
+        fi ;;
+      *) git rev-parse HEAD ;;
+    esac ;;
   "pr checks") checks ;;
   "run list") echo 123 ;;
   "run view") echo "fake failing log" ;;
@@ -75,6 +87,10 @@ if [[ "$prompt" == *"Sync fix mode"* ]]; then
   grep -rl "import { Textarea } from '@filigran/ui';" apps/frontend/src | while read -r f; do
     sed -i '' "s#import { Textarea } from '@filigran/ui';#import { Textarea } from '@filigran/design-system';#" "$f"; done
   echo '{"type":"result","structured_output":{"status":"DONE","summary":"Moved new usages.","commit_subject":"","commit_body":""}}'; exit 0
+fi
+if [[ "$prompt" == *"Merge conflict mode"* ]]; then
+  for f in $(git diff --name-only --diff-filter=U); do git show ":2:$f" > "$f"; done
+  echo '{"type":"result","structured_output":{"status":"DONE","summary":"Kept the migration and the change from main.","commit_subject":"","commit_body":""}}'; exit 0
 fi
 if [[ "$prompt" == *"Epic review mode"* ]]; then echo '{"type":"result","structured_output":{"findings":"Verdict: consistent."}}'; exit 0; fi
 key="$(sed -E 's/.*for item ([a-z0-9-]+) .*/\1/' <<<"$prompt")"; kind="$(sed -E 's/.*kind ([a-z]+)\).*/\1/' <<<"$prompt")"
@@ -298,6 +314,22 @@ runner=$!
 for _ in $(seq 1 50); do [ -e "$SB/claude-started" ] && break; sleep 0.2; done
 kill -TERM -- "-$runner"; wait "$runner"
 check "interrupted run stops and frees its lock" 'grep -q "interrupted: run ds-migration/run.sh again to resume" "$SB/out.log" && [ ! -d "$(git rev-parse --git-dir)/ds-migration/run.lock" ] && ! grep -q "Build mode" "$SB/calls.log"'
+
+echo "K. conflicts with main"
+new_repo k "development_status:
+  epic-1-primitives: backlog
+  3530-button: done
+  3561-textarea: backlog
+  3568-switch: backlog
+  3553-radio: backlog"
+run --once
+git clone -q "$SB/remote.git" "$SB/other"
+(cd "$SB/other" && printf "import { Textarea } from '@filigran/ui/legacy';\nexport const Form = () => <Textarea />;\n" >apps/frontend/src/Form.tsx && git add -A && git -c commit.gpgsign=false commit -qm "feat: change Form on main" && git push -q origin main)
+run --once
+check "a conflict with main at the start of an item is resolved by a session" '[ "$(status_of 3568-switch)" = done ] && grep -q "merge conflicts with main resolved" "$SB/out.log" && ! grep -q "^<<<<<<<" apps/frontend/src/Form.tsx && git log --merges --format=%s -1 | grep -q "origin/main"'
+touch "$SB/pr-conflict"
+run --once
+check "a PR that conflicts while waiting for checks merges main instead of waiting" '[ "$(status_of 3553-radio)" = done ] && grep -q "conflicted with main, which no check runs on: main merged" "$SB/out.log" && [ -f apps/frontend/src/late.ts ]'
 
 echo "F. crash recovery and lock"
 new_repo f "development_status:

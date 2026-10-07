@@ -178,6 +178,18 @@ test that fails or leaks an unhandled error because of this change is in scope, 
 spec does not list: add it to Files in scope. Return `DONE` with the commit subject and body of
 Build mode, or `FAILED` when the cause is outside the item.
 
+## Merge conflict mode
+
+When the invocation says `Merge conflict mode`, the script is merging the base branch into the
+migration branch and git stopped on conflicts in the files it names. Resolve each conflict so that
+both sides survive: the base branch's change (a feature, a fix, a removal) applied on top of the
+design system migration. Never bring back a legacy import or the legacy look: when the base branch's
+change uses a component this branch already migrated, write it with the design system component,
+following the props mapping of that component's spec in `ds-migration/specs/`. Remove every conflict
+marker. Change no other file, and run no git command: the script stages and commits the merge. Run
+`yarn workspace @xtm-hub/frontend check-ts` and `lint`, then return `DONE` with what each side
+brought in `summary`, or `FAILED` when the two changes cannot be reconciled without a human.
+
 ## Sync fix mode
 
 When the invocation says `Sync fix mode`, the script has just merged the base branch, and the checks

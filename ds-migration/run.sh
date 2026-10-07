@@ -235,7 +235,7 @@ sync_base() {
   fi
   if ! git merge-base --is-ancestor "origin/$BASE" HEAD; then
     log "merging origin/$BASE"
-    git merge --quiet --no-edit "origin/$BASE" || { git merge --abort; die "merging $BASE conflicts: resolve by hand"; }
+    merge_base || die "merging $BASE conflicts and the merge conflict session could not resolve it: see $LOG_DIR/base-merge-conflict.json, then merge by hand"
     MERGED_BASE=true
     touch "$BASE_MERGE_PENDING"
     if ! git diff --quiet ORIG_HEAD HEAD -- yarn.lock package.json apps/frontend/package.json; then
@@ -244,6 +244,32 @@ sync_base() {
       DEPS_CHANGED=true
     fi
   fi
+}
+
+# Merges the base branch. A conflict in frontend or e2e files gets one Claude session; anything
+# else, or markers left behind, aborts the merge. Returns 1 when the merge is aborted.
+merge_base() {
+  local conflicted file result
+  git merge --quiet --no-edit "origin/$BASE" >/dev/null 2>&1 && return 0
+  conflicted="$(git diff --name-only --diff-filter=U)"
+  if [ -z "$conflicted" ]; then git merge --abort; return 1; fi
+  for file in $conflicted; do
+    case "$file" in
+      apps/frontend/* | apps/e2e/tests/*) ;;
+      *) log "merging $BASE conflicts in $file, outside what a session may resolve"; git merge --abort; return 1 ;;
+    esac
+  done
+  log "merging $BASE conflicts in $(echo $conflicted): one merge conflict session"
+  result="$(claude_session base-merge-conflict \
+    "Read ds-migration/WORKFLOW.md fully and follow its Merge conflict mode. The conflicted files: $(echo $conflicted)." \
+    "$ITEM_SCHEMA" "$WRITE_TOOLS")"
+  if [ "$(jq -r '.status // empty' <<<"$result" 2>/dev/null)" != DONE ] || grep -lE '^(<<<<<<<|>>>>>>>)( |$)' $conflicted >/dev/null 2>&1; then
+    log "the merge conflict session did not resolve it"
+    git merge --abort
+    return 1
+  fi
+  git add -- $conflicted && git commit --quiet --no-edit || { git merge --abort; return 1; }
+  log "merge conflicts with $BASE resolved: $(jq -r .summary <<<"$result" | head -1)"
 }
 
 # The checks that must still pass on the branch after a merge of the base branch. <spec paths>
@@ -544,6 +570,19 @@ wait_checks() {
   started=$(date +%s)
   next_note=$((started + 300))
   while :; do
+    # GitHub runs no check on a pull request that conflicts with its base: merge it instead of
+    # waiting for checks that never come.
+    if [ "$(gh pr view "$pr" --json mergeable --jq .mergeable 2>/dev/null || true)" = CONFLICTING ]; then
+      sync_base
+      if $MERGED_BASE; then
+        log "PR #$pr conflicted with $BASE, which no check runs on: $BASE merged"
+        check_base_merge false
+        publish
+        head="$(git rev-parse HEAD)"
+        continue
+      fi
+      # Nothing new to merge: GitHub has not recomputed the conflict since the last push yet.
+    fi
     pr_head="$(gh pr view "$pr" --json headRefOid --jq .headRefOid 2>/dev/null || true)"
     state=pending
     if [ "$pr_head" = "$head" ]; then
@@ -560,7 +599,7 @@ wait_checks() {
     esac
     [ "$(date +%s)" -lt "$deadline" ] || die "required checks of PR #$pr still not done after $((CHECKS_TIMEOUT / 60)) minutes"
     if [ "$(date +%s)" -ge "$next_note" ]; then
-      log "still waiting for the checks of PR #$pr: $state after $((($(date +%s) - started) / 60)) minutes"
+      log "still waiting for the checks of PR #$pr: ${state:-no check reported yet} after $((($(date +%s) - started) / 60)) minutes"
       next_note=$((next_note + 300))
     fi
     sleep "$CHECKS_INTERVAL"
