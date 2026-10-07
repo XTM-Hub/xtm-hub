@@ -54,6 +54,11 @@ matters is that every choice a designer should see is traced.
 spacing replace the legacy look on purpose. Never recreate the legacy look with extra classes, inline
 styles or overridden tokens on a design system component.
 
+**The swap, and nothing more.** A `ds` item replaces the component and keeps what each call site does.
+It does not move the code around it closer to the design system: a slot, a shared pattern or an
+accessibility improvement the legacy did not have goes under `## Deferred findings` for a later epic.
+The legacy components next to it stay as they are until their own item.
+
 - **Which component or variant**: pick the one whose role matches the legacy usage (main action,
   secondary action, destructive, link, icon only), not the one that looks most like the old rendering.
   When two fit the role equally, pick one and add a line under `## To validate`. Never block on it.

@@ -18,7 +18,10 @@ paths:
 - A component the design system lacks is rebuilt in its own folder, `src/components/ui/<kebab-name>/`, with the
   package's layout (`<Name>.tsx`, `<Name>.meta.ts`, `<Name>.test.tsx`, `index.ts`), on design system primitives
   and tokens only, so it can be proposed upstream as is. Its pull request flags it as a design system candidate.
-- A visual choice made without the design team takes the option closest to the current rendering and is traced for
-  later validation in the pull request, never guessed silently.
+- A migration swaps the legacy component for its design system counterpart and keeps the design system's own look:
+  visual differences with the surrounding legacy are expected, never hidden by restyling. A choice made without the
+  design team between two options that fit equally is traced for later validation in the pull request, never guessed
+  silently. The migration changes nothing else: the code around it and the legacy components next to it stay as they
+  are until their own item.
 - While the legacy copy exists, leave its theme (`filigran-ui/theme.css`) and the `@filigran/ui` aliases alone:
   they go away with the copy.
