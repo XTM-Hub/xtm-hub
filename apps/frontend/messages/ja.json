@@ -1439,10 +1439,11 @@
       "Tab": {
         "Name": "名前",
         "Description": "説明",
-        "UseCases": "ユースケース",
-        "Actions": "アクション",
-        "Author": "作成者",
-        "MinimumDeployableVersion": "デプロイ可能な最小バージョン"
+        "UseCase": "ユースケース",
+        "Action": "アクション",
+        "Feature": "機能",
+        "Type": "タイプ",
+        "Compatibility": "ご利用の製品との互換性"
       },
       "Filter": {
         "Add": "フィルターの追加",

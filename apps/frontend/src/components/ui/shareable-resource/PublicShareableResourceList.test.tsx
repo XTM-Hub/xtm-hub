@@ -31,7 +31,7 @@ describe('PublicShareableResourceList', () => {
     expect(screen.getByText('Utils.DocumentNotFound')).toBeInTheDocument();
   });
 
-  it('groups integrations by integration_type and renders document names with correct links', () => {
+  it('should render every resource in a single list with its public link when they have different types', () => {
     const documents = [
       {
         id: 'doc-1',
@@ -58,14 +58,9 @@ describe('PublicShareableResourceList', () => {
       />
     );
 
-    expect(
-      screen.getByRole('button', {
-        name: `Service.OpenctiIntegrations.Type.${IntegrationType.Connector}`,
-      })
-    ).toBeInTheDocument();
-    expect(screen.getByText('My Dashboard')).toBeInTheDocument();
-
-    expect(screen.getByText('My Connector')).toBeInTheDocument();
+    expect(screen.getByText('My Connector').closest('ul')).toBe(
+      screen.getByText('My Dashboard').closest('ul')
+    );
 
     const links = screen.getAllByRole('link');
     const connectorLink = links.find((l) =>

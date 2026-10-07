@@ -1,4 +1,5 @@
 import { useTranslate } from '@/hooks/use-translate';
+import { cn } from '@/lib/utils';
 import {
   isIntegrationItem,
   PublicDocumentData,
@@ -9,6 +10,7 @@ import { documentItem_fragment$data } from '@generated/documentItem_fragment.gra
 
 interface ShareableResourceTypeChipProps {
   document: documentItem_fragment$data | PublicDocumentData;
+  className?: string;
 }
 
 const RESOURCE_TYPE_LABEL_KEYS: Partial<Record<ShareableResourceType, string>> =
@@ -30,6 +32,7 @@ const getTypeLabelKey = (
 
 export const ShareableResourceTypeChip = ({
   document,
+  className,
 }: ShareableResourceTypeChipProps) => {
   const t = useTranslate();
   const typeLabelKey = getTypeLabelKey(document);
@@ -38,11 +41,14 @@ export const ShareableResourceTypeChip = ({
     return null;
   }
 
+  const label = t(typeLabelKey);
+
   return (
     <Chip
-      label={t(typeLabelKey)}
+      label={label}
+      title={label}
       severity="info"
-      className="shrink-0"
+      className={cn('shrink-0', className)}
     />
   );
 };

@@ -1,78 +1,129 @@
 'use client';
 
-import { UserDisplay } from '@/components/ui/UserDisplay';
+import {
+  DocumentNameCell,
+  DocumentShortDescriptionCell,
+} from '@/components/service/components/DocumentListCells';
+import BadgeOverflowCounter, {
+  BadgeOverflow,
+} from '@/components/ui/BadgeOverflowCounter';
+import { ConnectorCompatibilityChip } from '@/components/ui/shareable-resource/ConnectorCompatibilityChip';
+import { ShareableResourceTypeChip } from '@/components/ui/shareable-resource/ShareableResourceTypeChip';
+import { ShareableResourceCardSupportIcons } from '@/components/ui/shareable-resource/card-design/ShareableResourceCardSupportIcons';
 import { UseTranslationsProps } from '@/i18n/config';
-import { PublicDocumentData } from '@/utils/shareable-resources/shareable-resources.types';
-import { docHasMetadata } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { DocumentMetadataKeyCode, IntegrationType } from '@graphql/generated';
+import { publicDocumentListItemFragment$data } from '@generated/publicDocumentListItemFragment.graphql';
+import { IntegrationType } from '@graphql/generated';
 import { ColumnDef } from '@tanstack/react-table';
+import { ReactNode } from 'react';
 
-type DocumentListMetadataData = {
-  integration_type?: string | null | undefined;
-  product_version?: string | null | undefined;
-  uploader:
-    | documentItem_fragment$data['uploader']
-    | PublicDocumentData['uploader']
-    | null
-    | undefined;
-};
+export const DOCUMENT_LIST_TABLE_CLASS_NAME =
+  '[&_th]:bg-transparent [&_th]:content-compact-bold';
 
-export const buildProductVersionColumn = <T extends DocumentListMetadataData>(
-  t: UseTranslationsProps
-): ColumnDef<T> => ({
-  accessorKey: 'minimum_deployable_version',
-  id: 'minimum_deployable_version',
-  header: t('Service.List.Tab.MinimumDeployableVersion'),
-  cell: ({ row }) => {
-    const document = row.original;
-    return (
-      <span className="text-sm">
-        {docHasMetadata(document, DocumentMetadataKeyCode.ProductVersion)
-          ? document.product_version
-          : null}
-      </span>
-    );
-  },
-});
+type DocumentListItem =
+  documentItem_fragment$data | publicDocumentListItemFragment$data;
 
-export const buildAuthorColumn = <T extends DocumentListMetadataData>(
-  t: UseTranslationsProps
-): ColumnDef<T> => ({
-  accessorKey: 'author_column',
-  id: 'author_column',
-  header: t('Service.List.Tab.Author'),
-  cell: ({ row }) => (
-    <UserDisplay
-      displayPicture={false}
-      uploader={row.original.uploader}
-    />
-  ),
-});
+const isConnector = (document: DocumentListItem) =>
+  document.integration_type === IntegrationType.Connector;
 
-export const buildMetadataColumns = <
-  T extends DocumentListMetadataData,
->(params: {
-  columns: ColumnDef<T>[];
+export const buildDocumentListColumns = <T extends DocumentListItem>(params: {
   documents: T[];
   t: UseTranslationsProps;
-}) => {
-  const { columns, documents, t } = params;
-  const nextColumns = [...columns];
-  const integrationType = documents[0]?.integration_type;
-  const hasProductVersionColumn = documents.some(
-    (document) =>
-      docHasMetadata(document, DocumentMetadataKeyCode.ProductVersion) &&
-      !!document.product_version
+  publicPath?: boolean;
+  renderActions: (document: T) => ReactNode;
+}): ColumnDef<T>[] => {
+  const { documents, t, publicPath = false, renderActions } = params;
+  const hasConnectors = documents.some(isConnector);
+
+  const columns: ColumnDef<T>[] = [
+    {
+      accessorKey: 'name',
+      id: 'name',
+      size: 140,
+      header: t('Service.List.Tab.Name'),
+      cell: ({ row }) => <DocumentNameCell document={row.original} />,
+    },
+  ];
+
+  if (hasConnectors) {
+    columns.push({
+      id: 'feature',
+      size: 70,
+      header: t('Service.List.Tab.Feature'),
+      cell: ({ row }) =>
+        isConnector(row.original) ? (
+          <ShareableResourceCardSupportIcons document={row.original} />
+        ) : null,
+    });
+  }
+
+  columns.push(
+    {
+      accessorKey: 'short_description',
+      id: 'short_description',
+      size: 140,
+      header: t('Service.List.Tab.Description'),
+      cell: ({ row }) => (
+        <DocumentShortDescriptionCell document={row.original} />
+      ),
+    },
+    {
+      id: 'type',
+      size: 130,
+      header: t('Service.List.Tab.Type'),
+      cell: ({ row }) => (
+        <ShareableResourceTypeChip
+          document={row.original}
+          className="max-w-full"
+        />
+      ),
+    },
+    {
+      accessorKey: 'use_cases',
+      id: 'use_cases',
+      size: 140,
+      header: t('Service.List.Tab.UseCase'),
+      cell: ({ row }) => (
+        <BadgeOverflowCounter
+          variant="chip"
+          formatLabel={false}
+          badges={(row.original.use_cases ?? []) as BadgeOverflow[]}
+          className="z-2 shrink-0"
+        />
+      ),
+    }
   );
 
-  if (integrationType !== IntegrationType.Connector) {
-    nextColumns.push(buildAuthorColumn<T>(t));
+  if (hasConnectors) {
+    columns.push({
+      id: 'compatibility',
+      size: 130,
+      header: () => (
+        <span
+          className="block max-w-32 truncate"
+          title={t('Service.List.Tab.Compatibility')}>
+          {t('Service.List.Tab.Compatibility')}
+        </span>
+      ),
+      cell: ({ row }) =>
+        isConnector(row.original) ? (
+          <ConnectorCompatibilityChip
+            document={row.original}
+            publicPath={publicPath}
+          />
+        ) : null,
+    });
   }
 
-  if (hasProductVersionColumn) {
-    nextColumns.push(buildProductVersionColumn<T>(t));
-  }
+  columns.push({
+    accessorKey: 'action',
+    id: 'action',
+    size: 80,
+    enableHiding: false,
+    enableSorting: false,
+    header: t('Service.List.Tab.Action'),
+    cell: ({ row }) => renderActions(row.original),
+  });
 
-  return nextColumns;
+  return columns;
 };

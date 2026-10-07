@@ -1439,10 +1439,11 @@
       "Tab": {
         "Name": "Nom",
         "Description": "Description",
-        "UseCases": "Cas d'utilisation",
-        "Actions": "Actions",
-        "Author": "Auteur",
-        "MinimumDeployableVersion": "Version minimale déployable"
+        "UseCase": "Cas d'utilisation",
+        "Action": "Action",
+        "Feature": "Fonctionnalité",
+        "Type": "Type",
+        "Compatibility": "Compatibilité avec votre produit"
       },
       "Filter": {
         "Add": "Ajouter un filtre",
