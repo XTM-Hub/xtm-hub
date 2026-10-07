@@ -5,7 +5,7 @@ export class CybersecuritySolutionsPage {
   constructor(private page: Page) {}
 
   async clickOnSignIn() {
-    await this.page.getByRole('link', { name: /login/i }).click();
+    await this.page.getByRole('link', { name: /log in/i }).click();
   }
 
   async clickOnSignUp() {
