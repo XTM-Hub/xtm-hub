@@ -10,9 +10,9 @@ import { XtmoneConnectionStatus } from '@/components/service/trial-instances/xtm
 import { useTranslate } from '@/hooks/use-translate';
 import { useDateFormatter } from '@/utils/date';
 import { toExternalHref } from '@/utils/external-url';
-import { Button, IconButton } from '@filigran/design-system';
+import { Button, Chip, IconButton } from '@filigran/design-system';
 import { EditIcon } from '@filigran/icon';
-import { Badge, Card, CardContent, Separator } from '@filigran/ui';
+import { Card, CardContent, Separator } from '@filigran/ui';
 import { GradientButton } from '@filigran/ui/servers';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import {
@@ -73,9 +73,10 @@ export const BundleProductCard = ({
         {t('XtmPlatformTrial.Products.ProductName')}:
       </span>
       <div className="flex items-center gap-xs min-w-0">
-        <Badge className="h-6 border-none bg-feedback-info-secondary-transparency text-content-body-base text-text-default-primary truncate">
-          {product.service_instance?.name ?? '-'}
-        </Badge>
+        <Chip
+          className="min-w-0"
+          label={product.service_instance?.name ?? '-'}
+        />
         {canManage && (
           <IconButton
             priority="tertiary"

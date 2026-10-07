@@ -5,8 +5,8 @@ import { BundleCancelSheet } from '@/components/service/trial-instances/xtm-plat
 import { useTranslate } from '@/hooks/use-translate';
 import { daysUntil, useDateFormatter } from '@/utils/date';
 import { xtmPlatformTrialManageUsersPath } from '@/utils/path/constant';
-import { Button } from '@filigran/design-system';
-import { Badge, Card, CardContent } from '@filigran/ui';
+import { Button, Chip } from '@filigran/design-system';
+import { Card, CardContent } from '@filigran/ui';
 import {
   PlatformContract,
   XtmPlatformBundleDetailsFragment,
@@ -59,17 +59,18 @@ export const BundleInfoCard = ({ bundle, canManage }: BundleInfoCardProps) => {
             {formatDate(bundle.start_date ?? undefined, 'DATE_FULL') ?? '-'}
           </InfoRow>
           <InfoRow label={t('XtmPlatformTrial.BundleInfo.License')}>
-            <Badge className="bg-elevation-surface-highlight-layer-2 border-none">
-              {t(CONTRACT_LABEL_BY_CONTRACT[PlatformContract.Trial])}
-            </Badge>
+            <Chip
+              label={t(CONTRACT_LABEL_BY_CONTRACT[PlatformContract.Trial])}
+            />
           </InfoRow>
           <InfoRow label={t('XtmPlatformTrial.BundleInfo.Remaining')}>
             {remainingDays !== null ? (
-              <Badge className="border-none bg-feedback-success-secondary-transparency text-content-body-base text-text-default-primary truncate">
-                {t('XtmPlatformTrial.BundleInfo.DaysRemaining', {
+              <Chip
+                label={t('XtmPlatformTrial.BundleInfo.DaysRemaining', {
                   days: remainingDays,
                 })}
-              </Badge>
+                severity="low"
+              />
             ) : (
               '-'
             )}

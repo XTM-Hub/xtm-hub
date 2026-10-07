@@ -14,9 +14,9 @@ import { i18nKey } from '@/utils/datatable';
 import { useDateFormatter } from '@/utils/date';
 import { localizedCardName } from '@/utils/services';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
+import { Chip } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
 import { DataTable, toast } from '@filigran/ui';
-import { Badge } from '@filigran/ui/servers';
 import { newsFeedDeleteMutation } from '@generated/newsFeedDeleteMutation.graphql';
 import {
   newsFeedItem_fragment$data,
@@ -165,9 +165,10 @@ const NewsFeedList = () => {
         header: t('NewsFeedAdminPage.IsDeleted'),
         cell: ({ row }) =>
           row.original.is_deleted ? (
-            <Badge variant="destructive">
-              {t('NewsFeedAdminPage.IsDeletedYes')}
-            </Badge>
+            <Chip
+              label={t('NewsFeedAdminPage.IsDeletedYes')}
+              severity="critical"
+            />
           ) : null,
       },
       {

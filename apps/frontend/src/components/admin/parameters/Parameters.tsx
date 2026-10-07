@@ -1,12 +1,6 @@
 import { useTranslate } from '@/hooks/use-translate';
-import {
-  Badge,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Label,
-} from '@filigran/ui';
+import { Chip } from '@filigran/design-system';
+import { Card, CardContent, CardHeader, CardTitle, Label } from '@filigran/ui';
 
 export const Parameters = () => {
   const t = useTranslate();
@@ -23,7 +17,7 @@ export const Parameters = () => {
             <div className="flex items-center justify-between border-b py-2">
               <Label>{t('Parameters.Version')}</Label>
               <div>
-                <Badge>{appVersion}</Badge>
+                <Chip label={appVersion} />
               </div>
             </div>
           </div>

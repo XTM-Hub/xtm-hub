@@ -32,14 +32,9 @@ import { portalGraphqlClient } from '@/lib/graphql-client';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { useDateFormatter } from '@/utils/date';
-import { Button } from '@filigran/design-system';
+import { Button, Chip } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
-import {
-  Badge,
-  DataTable,
-  DataTableHeadBarOptions,
-  useToast,
-} from '@filigran/ui';
+import { DataTable, DataTableHeadBarOptions, useToast } from '@filigran/ui';
 import {
   UserList_fragment$data,
   UserList_fragment$key,
@@ -287,7 +282,12 @@ const UserList = ({ organization }: UserListProps) => {
                   <div className="flex gap-xs">
                     {row.original.organization_capabilities?.map(
                       ({ id, organization: { name, personal_space } }) =>
-                        !personal_space ? <Badge key={id}>{name}</Badge> : null
+                        !personal_space ? (
+                          <Chip
+                            key={id}
+                            label={name}
+                          />
+                        ) : null
                     )}
                   </div>
                 );
@@ -311,9 +311,10 @@ const UserList = ({ organization }: UserListProps) => {
               }) => {
                 return (
                   <div className="flex gap-xs">
-                    <Badge variant={disabled ? 'destructive' : 'secondary'}>
-                      {t(disabled ? 'Badge.Disabled' : 'Badge.Enabled')}
-                    </Badge>
+                    <Chip
+                      label={t(disabled ? 'Badge.Disabled' : 'Badge.Enabled')}
+                      severity={disabled ? 'critical' : 'low'}
+                    />
                   </div>
                 );
               },
@@ -384,16 +385,18 @@ const UserList = ({ organization }: UserListProps) => {
                   status === UserAccountStatus.Invited
                 ) {
                   return (
-                    <Badge variant="warning">
-                      {t('UserListPage.InvitationPending')}
-                    </Badge>
+                    <Chip
+                      label={t('UserListPage.InvitationPending')}
+                      severity="medium"
+                    />
                   );
                 }
                 if (status === UserAccountStatus.Expired) {
                   return (
-                    <Badge variant="destructive">
-                      {t('UserListPage.InvitationExpired')}
-                    </Badge>
+                    <Chip
+                      label={t('UserListPage.InvitationExpired')}
+                      severity="critical"
+                    />
                   );
                 }
                 return null;

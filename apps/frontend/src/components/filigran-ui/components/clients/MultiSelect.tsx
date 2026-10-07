@@ -1,6 +1,7 @@
 import { cn } from '@/components/filigran-ui/lib/utils';
 import {
   Button,
+  Chip,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -23,7 +24,6 @@ import {
   PopoverTrigger,
   Separator,
 } from '../clients';
-import { Badge } from '../servers';
 
 const _multiSelectVariants = cva('', {
   variants: {
@@ -205,12 +205,14 @@ const MultiSelectFormField = React.forwardRef<
           const option = options.find((opt) => String(opt[keyValue]) === value);
           const optionLabel = option ? String(option[keyLabel]) : value;
           return (
-            <Badge key={value}>
-              {optionLabel}
+            <span
+              key={value}
+              className="inline-flex items-center gap-xs">
+              <Chip label={optionLabel} />
               <span
                 role="button"
                 tabIndex={0}
-                className="ml-s flex items-center justify-center"
+                className="flex items-center justify-center"
                 onClick={(event) => {
                   event.stopPropagation();
                   toggleOption(value);
@@ -225,7 +227,7 @@ const MultiSelectFormField = React.forwardRef<
                 aria-label={`Remove ${optionLabel}`}>
                 <CloseIcon className="h-3 w-3 cursor-pointer" />
               </span>
-            </Badge>
+            </span>
           );
         }),
       [options, keyLabel, keyValue, toggleOption]
@@ -282,7 +284,7 @@ const MultiSelectFormField = React.forwardRef<
                           <div
                             onClick={(e) => e.stopPropagation()}
                             className="inline-flex">
-                            <Badge>+{hiddenCount}...</Badge>
+                            <Chip label={`+${hiddenCount}...`} />
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>

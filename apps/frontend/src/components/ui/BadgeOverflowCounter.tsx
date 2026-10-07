@@ -2,18 +2,17 @@
 import { cn } from '@/lib/utils';
 import { formatName } from '@/utils/format/name';
 import {
+  Chip,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import { Badge } from '@filigran/ui/servers';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface BadgeOverflowCounterProps {
   badges: Readonly<BadgeOverflow[]>;
   className?: string;
-  badgeClassName?: string;
   formatLabel?: boolean;
 }
 
@@ -26,7 +25,6 @@ export interface BadgeOverflow {
 const BadgeOverflowCounter = ({
   badges = [],
   className,
-  badgeClassName,
   formatLabel = true,
 }: BadgeOverflowCounterProps) => {
   const [visibleTags, setVisibleTags] = useState<number>(badges?.length ?? 0);
@@ -107,61 +105,50 @@ const BadgeOverflowCounter = ({
         className
       )}>
       {firstBadge && (
-        <Badge
-          className={cn('min-w-0 max-w-full', badgeClassName)}
+        <Chip
+          className="min-w-0 max-w-full"
           key={firstBadge.id}
+          label={getBadgeLabel(firstBadge.name)}
           color={firstBadge.color}
-          title={firstBadge.name}>
-          <span className="truncate block">
-            {getBadgeLabel(firstBadge.name)}
-          </span>
-        </Badge>
+        />
       )}
 
       {badges.slice(1, visibleTags).map(({ id, name, color }, index) => (
-        <Badge
-          className={cn(
-            'whitespace-nowrap aria-hidden:invisible aria-hidden:absolute',
-            badgeClassName
-          )}
+        <Chip
+          className="aria-hidden:invisible aria-hidden:absolute"
           aria-hidden={index >= visibleTags}
           key={id}
-          color={color}>
-          {getBadgeLabel(name)}
-        </Badge>
+          label={getBadgeLabel(name)}
+          color={color}
+        />
       ))}
 
       {badges.slice(visibleTags).map(({ id, name, color }) => (
-        <Badge
-          className={cn('whitespace-nowrap invisible absolute', badgeClassName)}
+        <Chip
+          className="invisible absolute"
           aria-hidden={true}
           key={id}
-          color={color}>
-          {getBadgeLabel(name)}
-        </Badge>
+          label={getBadgeLabel(name)}
+          color={color}
+        />
       ))}
 
       {hiddenCount > 0 && (
         <TooltipProvider delayDuration={0}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge
-                className={cn(
-                  'whitespace-nowrap cursor-pointer shrink-0',
-                  badgeClassName
-                )}>
-                +{hiddenCount}
-              </Badge>
+              <span className="inline-flex shrink-0">
+                <Chip label={`+${hiddenCount}`} />
+              </span>
             </TooltipTrigger>
             <TooltipContent>
               <div className="flex flex-wrap gap-s max-w-sm">
                 {badges.slice(visibleTags).map(({ id, name, color }) => (
-                  <Badge
+                  <Chip
                     key={id}
+                    label={getBadgeLabel(name)}
                     color={color}
-                    className={badgeClassName}>
-                    {getBadgeLabel(name)}
-                  </Badge>
+                  />
                 ))}
               </div>
             </TooltipContent>

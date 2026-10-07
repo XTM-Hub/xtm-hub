@@ -4,8 +4,9 @@ import { LearnMoreBannerLink } from '@/components/service/trial-instances/banner
 import { useXtmPlatformTrialBannerDismissed } from '@/components/service/trial-instances/banner/xtm-platform-trial/useXtmPlatformTrialBannerDismissed';
 import { XtmPlatformTrialBannerState } from '@/components/service/trial-instances/banner/xtm-platform-trial/xtm-platform-trial-banner.utils';
 import { useTranslate } from '@/hooks/use-translate';
+import { Chip } from '@filigran/design-system';
 import { CloseIcon } from '@filigran/icon';
-import { Badge, Callout } from '@filigran/ui';
+import { Callout } from '@filigran/ui';
 import { usePathname } from 'next/navigation';
 
 const TRIAL_PAGE_SLUG = '/xtm-platform-trial';
@@ -51,13 +52,14 @@ export const XtmPlatformTrialBanner = ({
           <LearnMoreBannerLink href={learnMoreHref} />
         )}
         {showDaysLeft && (
-          <Badge
-            variant="outline"
-            className="border-black-1000">
-            <span className="text-black-1000 font-semibold">
-              {t('Service.Trials.XtmPlatform.DaysLeft', { days: daysLeft })}
-            </span>
-          </Badge>
+          // The gradient behind is light in both themes, so use the light tokens.
+          <span className="light">
+            <Chip
+              label={t('Service.Trials.XtmPlatform.DaysLeft', {
+                days: daysLeft,
+              })}
+            />
+          </span>
         )}
       </div>
       {isDismissable && (

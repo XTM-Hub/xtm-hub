@@ -1,7 +1,7 @@
 import { EditionTypeMapping } from '@/components/epic/epic-item/EditionTypeMapping';
 import { FiligranProductMapping } from '@/components/epic/epic-item/FiligranProductMapping';
 import { sortFiligranProducts } from '@/components/epic/filigran-products';
-import { Badge } from '@filigran/ui/servers';
+import { Chip } from '@filigran/design-system';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import { EditionType, EpicType } from '@graphql/generated';
 import Image from 'next/image';
@@ -30,11 +30,11 @@ export const EpicItemFooter = ({
             </div>
           ))}
           {epic.edition_type !== EditionType.CommunityEdition && (
-            <Badge
-              variant="secondary"
-              className="ml-s font-semibold">
-              {EditionTypeMapping[epic.edition_type].label}
-            </Badge>
+            <Chip
+              label={EditionTypeMapping[epic.edition_type].label}
+              severity="ee"
+              className="ml-s"
+            />
           )}
         </div>
         {epic.document_id && epic.epic_type === EpicType.Integration && (

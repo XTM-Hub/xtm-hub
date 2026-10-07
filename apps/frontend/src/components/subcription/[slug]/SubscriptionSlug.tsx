@@ -7,9 +7,9 @@ import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
 import { useTranslate } from '@/hooks/use-translate';
+import { Chip } from '@filigran/design-system';
 import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
 import {
-  Badge,
   DataTable,
   DataTableHeadBarOptions,
   SelectionState,
@@ -225,9 +225,7 @@ const SubscriptionSlug = ({
             capabilities[0]?.generic_service_capability?.name ===
               ServiceRestriction.Access
           ) {
-            return (
-              <Badge className="capitalize">{ServiceRestriction.Access}</Badge>
-            );
+            return <Chip label={ServiceRestriction.Access} />;
           }
           const capabilityNames = capabilities
             .map((capability) => {

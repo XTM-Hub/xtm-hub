@@ -3,7 +3,7 @@ import {
   EntityTypeIcon,
   getEntityTypeLabel,
 } from '@/utils/shareable-resources/entity-type';
-import { Badge } from '@filigran/ui/servers';
+import { Chip } from '@filigran/design-system';
 
 interface DocumentWithEntityTypes {
   entity_types?: readonly string[] | null;
@@ -34,16 +34,16 @@ export const ShareableResourceEntityTypes = ({
   return (
     <div className={cn('flex flex-wrap gap-s', className)}>
       {entityTypes.map((entityType) => (
-        <Badge
+        <Chip
           key={entityType}
-          variant="outline"
-          className="flex items-center gap-xs">
-          <EntityTypeIcon
-            entityType={entityType}
-            className="size-4 shrink-0"
-          />
-          <span>{getEntityTypeLabel(entityType)}</span>
-        </Badge>
+          label={getEntityTypeLabel(entityType)}
+          startIcon={
+            <EntityTypeIcon
+              entityType={entityType}
+              className="size-4"
+            />
+          }
+        />
       ))}
     </div>
   );

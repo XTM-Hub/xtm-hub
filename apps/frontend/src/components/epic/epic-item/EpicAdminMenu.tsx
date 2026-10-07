@@ -4,8 +4,8 @@ import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
 import { useEpicListContext } from '@/hooks/use-epic-list-context';
 import { useTranslate } from '@/hooks/use-translate';
+import { Chip } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
-import { Badge } from '@filigran/ui/servers';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import { useState } from 'react';
 
@@ -47,11 +47,11 @@ export const EpicAdminMenu = ({
           e.preventDefault();
         }}>
         {!epic.active && (
-          <Badge
-            variant="warning"
-            className="font-semibold mr-s">
-            {t('Epic.Timeline.draft')}
-          </Badge>
+          <Chip
+            label={t('Epic.Timeline.draft')}
+            severity="medium"
+            className="mr-s"
+          />
         )}
         <ShareLinkButton
           url={shareableUrl}

@@ -4,8 +4,8 @@ import { useExecuteAfterAnimation } from '@/hooks/use-execute-after-animation';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { i18nKey } from '@/utils/datatable';
+import { Chip } from '@filigran/design-system';
 import {
-  Badge,
   DataTable,
   Select,
   SelectContent,
@@ -59,11 +59,10 @@ const UseCases = () => {
       header: t('UseCaseListPage.Name'),
       cell: ({ row }) => {
         return (
-          <Badge
-            variant="outline"
-            color={row.original.color}>
-            {row.original.name}
-          </Badge>
+          <Chip
+            label={row.original.name}
+            color={row.original.color}
+          />
         );
       },
     },
@@ -75,11 +74,10 @@ const UseCases = () => {
         return (
           <div className="flex flex-wrap gap-xs">
             {row.original.product.map((product) => (
-              <Badge
+              <Chip
                 key={product}
-                variant="outline">
-                {product.toUpperCase()}
-              </Badge>
+                label={product.toUpperCase()}
+              />
             ))}
           </div>
         );

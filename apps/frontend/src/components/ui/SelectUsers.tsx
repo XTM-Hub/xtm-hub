@@ -16,13 +16,13 @@ import {
   PopoverTrigger,
   Separator,
 } from '@filigran/ui/clients';
-import { Badge } from '@filigran/ui/servers';
 import { UserList_fragment$key } from '@generated/UserList_fragment.graphql';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 
 import { useUsersList } from '@/hooks/use-users-list';
 import {
   Button,
+  Chip,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -189,10 +189,12 @@ const SelectUsersFormField = React.forwardRef<
       values.map((value) => {
         const option = users.find((opt) => String(opt.value) === value);
         return (
-          <Badge key={value}>
-            {option ? String(option.label) : value}
+          <span
+            key={value}
+            className="inline-flex items-center gap-xs">
+            <Chip label={option ? String(option.label) : value} />
             <span
-              className="ml-s flex items-center justify-center"
+              className="flex items-center justify-center"
               onClick={(event) => {
                 event.stopPropagation();
                 toggleOption(value);
@@ -200,7 +202,7 @@ const SelectUsersFormField = React.forwardRef<
               aria-label={`Remove ${option ? String(option.label) : value}`}>
               <CloseIcon className="h-3 w-3 cursor-pointer" />
             </span>
-          </Badge>
+          </span>
         );
       }),
     [users, toggleOption]
@@ -255,7 +257,7 @@ const SelectUsersFormField = React.forwardRef<
                         <div
                           onClick={(e) => e.stopPropagation()}
                           className="inline-flex">
-                          <Badge>+{hiddenCount}...</Badge>
+                          <Chip label={`+${hiddenCount}...`} />
                         </div>
                       </TooltipTrigger>
                       <TooltipContent>

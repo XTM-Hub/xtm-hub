@@ -1,14 +1,11 @@
 import { useTranslate } from '@/hooks/use-translate';
-import { Badge } from '@filigran/ui';
+import { Chip, type ChipSeverity } from '@filigran/design-system';
 import { VotingRoundStatus } from '@graphql/generated';
 
-const BADGE_VARIANT: Record<
-  VotingRoundStatus,
-  'outline' | 'default' | 'secondary'
-> = {
-  [VotingRoundStatus.Draft]: 'outline',
-  [VotingRoundStatus.Open]: 'default',
-  [VotingRoundStatus.Closed]: 'secondary',
+const BADGE_VARIANT: Record<VotingRoundStatus, ChipSeverity> = {
+  [VotingRoundStatus.Draft]: 'medium',
+  [VotingRoundStatus.Open]: 'low',
+  [VotingRoundStatus.Closed]: 'neutral',
 };
 
 export const VotingRoundStatusBadge = ({
@@ -18,8 +15,9 @@ export const VotingRoundStatusBadge = ({
 }) => {
   const t = useTranslate();
   return (
-    <Badge variant={BADGE_VARIANT[status]}>
-      {t(`VotingRound.Status.${status}`)}
-    </Badge>
+    <Chip
+      label={t(`VotingRound.Status.${status}`)}
+      severity={BADGE_VARIANT[status]}
+    />
   );
 };

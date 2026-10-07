@@ -17,8 +17,9 @@ import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
+import { Chip } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
-import { Badge, DataTable, DataTableHeadBarOptions } from '@filigran/ui';
+import { DataTable, DataTableHeadBarOptions } from '@filigran/ui';
 import { OrganizationsPaginationQuery$variables } from '@generated/OrganizationsPaginationQuery.graphql';
 import { organizationItem_fragment$data } from '@generated/organizationItem_fragment.graphql';
 import { ColumnDef } from '@tanstack/react-table';
@@ -54,11 +55,10 @@ const OrganizationList = () => {
           return (
             <div className="flex space-x-s">
               {row.original.domains?.map((domain) => (
-                <Badge
-                  className="truncate"
-                  key={domain}>
-                  {domain}
-                </Badge>
+                <Chip
+                  key={domain}
+                  label={domain}
+                />
               ))}
             </div>
           );

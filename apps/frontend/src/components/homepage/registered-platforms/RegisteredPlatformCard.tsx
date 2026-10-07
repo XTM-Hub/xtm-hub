@@ -9,15 +9,16 @@ import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { useDateFormatter } from '@/utils/date';
 import {
+  Chip,
+  type ChipSeverity,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import { Badge, Card, CardContent } from '@filigran/ui';
+import { Card, CardContent } from '@filigran/ui';
 import { PlatformContract } from '@graphql/generated';
 import Link from 'next/link';
-import React from 'react';
 
 type RegisteredPlatformCardProps = {
   platform: HomepageRegisteredPlatformCardViewModel;
@@ -26,22 +27,22 @@ type RegisteredPlatformCardProps = {
 const TRIAL_DAYS_ERROR_THRESHOLD = 8;
 const TRIAL_DAYS_WARNING_THRESHOLD = 22;
 
-const resolveTrialDaysBadgeClassName = (
+const resolveTrialDaysSeverity = (
   remainingTrialDays: number | undefined
-): string => {
+): ChipSeverity => {
   if (remainingTrialDays === undefined) {
-    return 'bg-feedback-success-secondary-transparency';
+    return 'low';
   }
 
   if (remainingTrialDays <= TRIAL_DAYS_ERROR_THRESHOLD) {
-    return 'bg-feedback-error-secondary-transparency';
+    return 'critical';
   }
 
   if (remainingTrialDays <= TRIAL_DAYS_WARNING_THRESHOLD) {
-    return 'bg-feedback-alert-secondary-transparency';
+    return 'medium';
   }
 
-  return 'bg-feedback-success-secondary-transparency';
+  return 'low';
 };
 
 const RegisteredPlatformCard = ({ platform }: RegisteredPlatformCardProps) => {
@@ -55,17 +56,9 @@ const RegisteredPlatformCard = ({ platform }: RegisteredPlatformCardProps) => {
     ? formatDate(platform.registrationDate, 'DATE_MEDIUM')
     : '-';
 
-  const remainingTrialDaysBadgeClassName = resolveTrialDaysBadgeClassName(
+  const remainingTrialDaysSeverity = resolveTrialDaysSeverity(
     platform.remainingTrialDays
   );
-  const gradientFrom = 'var(--color-filigran-brand-primary)';
-  const gradientTo = 'var(--color-filigran-tonic-primary)';
-  const gradientBg = 'var(--background)';
-  const customStyle = {
-    '--gradient-from': gradientFrom,
-    '--gradient-to': gradientTo,
-    '--gradient-bg': gradientBg,
-  } as React.CSSProperties;
 
   const { Icon } = PlatformMetadataMapping[platform.platformIdentifier];
   const contractLabel = CONTRACT_LABEL_BY_CONTRACT[platform.contract];
@@ -79,16 +72,11 @@ const RegisteredPlatformCard = ({ platform }: RegisteredPlatformCardProps) => {
       <CardContent className="p-s flex flex-col gap-m">
         <div className="flex gap-s items-center justify-between">
           <div className="flex gap-s items-center min-w-0 flex-1">
-            <Badge className="border-none font-medium bg-feedback-info-secondary-transparency shrink-0">
-              <div className="flex gap-s">
-                <span>
-                  <Icon className="w-4 h-4" />
-                </span>
-                <span className="text-content-body-compact-medium">
-                  {PlatformMetadataMapping[platform.platformIdentifier].name}
-                </span>
-              </div>
-            </Badge>
+            <Chip
+              className="shrink-0"
+              label={PlatformMetadataMapping[platform.platformIdentifier].name}
+              startIcon={<Icon className="size-4" />}
+            />
 
             <TooltipProvider delayDuration={0}>
               <Tooltip>
@@ -109,35 +97,22 @@ const RegisteredPlatformCard = ({ platform }: RegisteredPlatformCardProps) => {
           </p>
         </div>
         <div className="text-content-body-compact-medium flex gap-l items-center">
-          {platform.contract === PlatformContract.Ee ? (
-            <Badge
-              className={cn(
-                'border-2 border-transparent',
-                '[background:linear-gradient(var(--gradient-bg),var(--gradient-bg))_padding-box,linear-gradient(99.95deg,var(--gradient-from)_0%,var(--gradient-to)_100%)_border-box]'
-              )}
-              style={customStyle}>
-              <span className="bg-linear-to-r from-(--gradient-from) to-(--gradient-to) bg-clip-text text-transparent">
-                {t(contractLabel)}
-              </span>
-            </Badge>
-          ) : (
-            <Badge className="bg-elevation-surface-highlight-layer-1 border-none">
-              {t(contractLabel)}
-            </Badge>
-          )}
+          <Chip
+            label={t(contractLabel)}
+            severity={
+              platform.contract === PlatformContract.Ee ? 'ee' : 'neutral'
+            }
+          />
           {platform.contract === PlatformContract.Trial &&
             platform.remainingTrialDays !== undefined && (
               <div className="flex gap-s items-center text-content-body-compact text-text-default-secondary">
                 <p>{tRegisteredPlatformsCard('Remaining')}</p>
-                <Badge
-                  className={cn(
-                    'border-none text-content-body-compact-medium text-text-default-primary',
-                    remainingTrialDaysBadgeClassName
-                  )}>
-                  {tRegisteredPlatformsCard('DaysRemaining', {
+                <Chip
+                  label={tRegisteredPlatformsCard('DaysRemaining', {
                     days: platform.remainingTrialDays,
                   })}
-                </Badge>
+                  severity={remainingTrialDaysSeverity}
+                />
               </div>
             )}
         </div>

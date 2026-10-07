@@ -1,5 +1,4 @@
 export * from './AspectRatio';
-export * from './Badge';
 export * from './Breadcrumb';
 export * from './Callout';
 export * from './Card';

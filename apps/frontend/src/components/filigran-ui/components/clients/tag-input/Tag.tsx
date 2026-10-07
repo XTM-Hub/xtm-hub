@@ -1,12 +1,10 @@
-import { CloseIcon } from '@filigran/icon';
-import React from 'react';
+import { Chip } from '@filigran/design-system';
 import {
   type TagInputProps,
   type TagInputStyleClassesProps,
   type Tag as TagType,
 } from './TagInput';
 
-import { Badge } from '@/components/filigran-ui/components/servers';
 import { cn } from '@/components/filigran-ui/lib/utils';
 import { cva } from 'class-variance-authority';
 
@@ -36,44 +34,22 @@ export type TagProps = {
 export const Tag = ({
   tagObj,
   direction,
-  draggable,
   onTagClick,
   onRemoveTag,
-  variant,
   isActiveTag,
-  tagClasses,
   disabled,
 }: TagProps) => {
   return (
-    <Badge
+    <Chip
       key={tagObj.id}
-      className={cn(
-        tagVariants({
-          variant,
-        }),
-        {
-          'w-full justify-between': direction === 'column',
-          'cursor-pointer': draggable && !disabled,
-          'ring-2 ring-ring ring-offset-2 ring-offset-background': isActiveTag,
-          'cursor-not-allowed opacity-50': disabled,
-        },
-        tagClasses?.body
-      )}
-      onClick={() => !disabled && onTagClick?.(tagObj)}>
-      {tagObj.text}
-      <CloseIcon
-        className={cn(
-          'ml-s h-3 w-3 cursor-pointer',
-          disabled && 'cursor-not-allowed',
-          tagClasses?.closeButton
-        )}
-        onClick={(e: React.MouseEvent) => {
-          e.stopPropagation(); // Prevent event from bubbling up to the tag span
-          if (!disabled) {
-            onRemoveTag(tagObj.id);
-          }
-        }}
-      />
-    </Badge>
+      label={tagObj.text}
+      className={cn({
+        'w-full justify-between': direction === 'column',
+        'ring-2 ring-focus ring-offset-1 ring-offset-focus': isActiveTag,
+      })}
+      onClick={onTagClick && !disabled ? () => onTagClick(tagObj) : undefined}
+      onDelete={() => onRemoveTag(tagObj.id)}
+      disabled={disabled}
+    />
   );
 };

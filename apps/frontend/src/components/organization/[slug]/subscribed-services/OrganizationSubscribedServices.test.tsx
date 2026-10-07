@@ -39,7 +39,6 @@ vi.mock('usehooks-ts', async (importOriginal) => {
 });
 
 vi.mock('@filigran/ui', () => ({
-  Badge: ({ children }: { children: ReactNode }) => <span>{children}</span>,
   DataTableHeadBarOptions: () => <div>DataTableHeadBarOptions</div>,
   DataTable: ({
     data,

@@ -45,9 +45,31 @@ describe('TrialsProducts', () => {
     testRender(<TrialsProducts products={products} />);
 
     // Then
-    expect(badgeOf('OPENCTI')).toHaveClass('text-feedback-success-primary');
-    expect(badgeOf('OPENAEV')).toHaveClass('text-feedback-alert-primary');
-    expect(badgeOf('XTMONE')).toHaveClass('text-feedback-neutral-primary');
+    expect(badgeOf('OPENCTI')).toHaveClass(
+      'bg-feedback-success-secondary-transparency-30'
+    );
+    expect(badgeOf('OPENAEV')).toHaveClass(
+      'bg-feedback-alert-secondary-transparency-30'
+    );
+    expect(badgeOf('XTMONE')).toHaveClass(
+      'bg-feedback-neutral-secondary-transparency-30'
+    );
+  });
+
+  it('should render the product chips as non-interactive labels, not buttons', () => {
+    // Given
+    const products = [
+      makeProduct(
+        PlatformIdentifier.Opencti,
+        DeploymentRequestHubStatus.Active
+      ),
+    ];
+
+    // When
+    testRender(<TrialsProducts products={products} />);
+
+    // Then
+    expect(screen.queryAllByRole('button')).toHaveLength(0);
   });
 
   it('should fall back to a dash when the bundle holds no product', () => {

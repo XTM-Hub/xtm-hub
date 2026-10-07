@@ -3,7 +3,8 @@ import RolePortalActions from '@/components/admin/role/RolePortalActions';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { i18nKey } from '@/utils/datatable';
-import { Badge, DataTable } from '@filigran/ui';
+import { Chip } from '@filigran/design-system';
+import { DataTable } from '@filigran/ui';
 import { RolePortalsQuery, useRolePortalsQuery } from '@graphql/generated';
 import { ColumnDef } from '@tanstack/react-table';
 
@@ -24,9 +25,14 @@ const RolePortalCapabilitiesList = () => {
       header: t('RoleListPage.Capabilities'),
       cell: ({ row }) => (
         <div className="flex flex-wrap gap-xs">
-          {row.original.capabilities?.map((capability) => (
-            <Badge key={capability?.id}>{capability?.name}</Badge>
-          ))}
+          {row.original.capabilities?.map((capability) =>
+            capability ? (
+              <Chip
+                key={capability.id}
+                label={capability.name}
+              />
+            ) : null
+          )}
         </div>
       ),
     },

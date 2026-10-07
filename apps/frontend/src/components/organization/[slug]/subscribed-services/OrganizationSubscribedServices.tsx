@@ -11,7 +11,8 @@ import { portalGraphqlClient } from '@/lib/graphql-client';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { useDateFormatter } from '@/utils/date';
-import { Badge, DataTable, DataTableHeadBarOptions } from '@filigran/ui';
+import { Chip } from '@filigran/design-system';
+import { DataTable, DataTableHeadBarOptions } from '@filigran/ui';
 import {
   OrderingMode,
   OrganizationSubscribedServiceRowFragment,
@@ -63,9 +64,9 @@ const OrganizationSubscribedServicesSlug = ({
           const identifier =
             row.original.service_instance?.service_definition?.identifier;
           return identifier ? (
-            <Badge variant="outline">
-              {t(`Service.ServiceDefinitionIdentifier.${identifier}`)}
-            </Badge>
+            <Chip
+              label={t(`Service.ServiceDefinitionIdentifier.${identifier}`)}
+            />
           ) : (
             '—'
           );
@@ -78,7 +79,7 @@ const OrganizationSubscribedServicesSlug = ({
         enableSorting: false,
         cell: ({ row }) => {
           const status = row.original.service_instance?.creation_status;
-          return status ? <Badge>{status}</Badge> : '—';
+          return status ? <Chip label={status} /> : '—';
         },
       },
       {
@@ -102,11 +103,10 @@ const OrganizationSubscribedServicesSlug = ({
           return tags?.length ? (
             <div className="flex gap-xs">
               {tags.map((tag) => (
-                <Badge
+                <Chip
                   key={tag}
-                  variant="outline">
-                  {tag}
-                </Badge>
+                  label={tag}
+                />
               ))}
             </div>
           ) : (

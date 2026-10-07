@@ -1,7 +1,7 @@
 import { useOrganizationCapabilities } from '@/hooks/use-organization-capabilities';
 import { useTranslate } from '@/hooks/use-translate';
+import { Chip } from '@filigran/design-system';
 import {
-  Badge,
   Card,
   CardContent,
   CardDescription,
@@ -29,7 +29,7 @@ export const CapabilityDescription = () => {
             className="flex items-center"
             key={capability}>
             <span className="min-w-56">
-              <Badge>{capability.replaceAll('_', ' ')}</Badge>
+              <Chip label={capability.replaceAll('_', ' ')} />
             </span>
             <span>{t(buildTranslationKey(capability))}</span>
           </li>

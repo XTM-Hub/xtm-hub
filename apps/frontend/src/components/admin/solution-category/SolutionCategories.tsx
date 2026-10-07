@@ -13,7 +13,8 @@ import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { i18nKey } from '@/utils/datatable';
 import { formatName } from '@/utils/format/name';
-import { Badge, DataTable, DataTableHeadBarOptions } from '@filigran/ui';
+import { Chip } from '@filigran/design-system';
+import { DataTable, DataTableHeadBarOptions } from '@filigran/ui';
 import {
   FiligranProduct,
   OrderingMode,
@@ -82,11 +83,10 @@ const SolutionCategories = () => {
       cell: ({ row }) => (
         <div className="flex flex-wrap gap-xs">
           {row.original.product.map((product) => (
-            <Badge
+            <Chip
               key={product}
-              variant="outline">
-              {product.toUpperCase()}
-            </Badge>
+              label={product.toUpperCase()}
+            />
           ))}
         </div>
       ),

@@ -10,7 +10,8 @@ import { useExecuteAfterAnimation } from '@/hooks/use-execute-after-animation';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { i18nKey } from '@/utils/datatable';
-import { Badge, DataTable, Skeleton } from '@filigran/ui';
+import { Chip } from '@filigran/design-system';
+import { DataTable, Skeleton } from '@filigran/ui';
 import {
   useVotingRoundDetailQuery,
   VotableFeatureAdminRowFragment,
@@ -50,9 +51,7 @@ export const VotingRoundDetail = ({ roundId }: { roundId: string }) => {
       accessorKey: 'product',
       id: 'product',
       header: t('VotingRound.Feature.Product'),
-      cell: ({ row }) => (
-        <Badge variant="outline">{row.original.product.toUpperCase()}</Badge>
-      ),
+      cell: ({ row }) => <Chip label={row.original.product.toUpperCase()} />,
     },
     {
       accessorKey: 'title',
@@ -67,11 +66,10 @@ export const VotingRoundDetail = ({ roundId }: { roundId: string }) => {
       cell: ({ row }) => (
         <div className="flex flex-wrap gap-xs">
           {row.original.use_cases.map((useCase) => (
-            <Badge
+            <Chip
               key={useCase.id}
-              variant="outline">
-              {useCase.name}
-            </Badge>
+              label={useCase.name}
+            />
           ))}
         </div>
       ),

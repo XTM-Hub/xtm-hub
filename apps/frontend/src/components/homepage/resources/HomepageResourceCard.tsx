@@ -6,18 +6,15 @@ import BadgeOverflowCounter, {
 } from '@/components/ui/BadgeOverflowCounter';
 import { ResourceStatusIcons } from '@/components/ui/ResourceStatusIcons';
 import {
+  Chip,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
 import { LogoFiligranIcon } from '@filigran/icon';
-import { Badge } from '@filigran/ui/servers';
 import Image from 'next/image';
 import Link from 'next/link';
-
-const BADGE_CLASS =
-  'border-0 content-body-compact-medium bg-feedback-info-secondary-transparency';
 
 export interface HomepageResourceCardProps {
   name: string;
@@ -105,7 +102,6 @@ const HomepageResourceCard = ({
                 <BadgeOverflowCounter
                   formatLabel={false}
                   badges={useCases}
-                  badgeClassName={BADGE_CLASS}
                 />
               )}
             </div>
@@ -116,11 +112,10 @@ const HomepageResourceCard = ({
       </Link>
       <div className="flex items-center gap-s flex-wrap pl-m pb-m">
         {footerTags.map((tag) => (
-          <Badge
+          <Chip
             key={tag}
-            className={BADGE_CLASS}>
-            {tag}
-          </Badge>
+            label={tag}
+          />
         ))}
       </div>
     </div>
