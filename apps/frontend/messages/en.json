@@ -24,6 +24,9 @@
     "Description": "You can add specific capabilities to Filigran users",
     "Title": "Available capabilities"
   },
+  "CSMBoard": {
+    "ComingSoon": "Something new is coming very soon..."
+  },
   "CountryComboBox": {
     "Placeholder": "Choose a country"
   },
@@ -663,8 +666,9 @@
     "Competitor": "Competitor",
     "NewsFeed": "News Feed",
     "VotingRound": "Feature voting",
+    "Roles": "Roles",
     "ManageTrials": "Manage trials",
-    "Roles": "Roles"
+    "CSMBoard": "CSM board"
   },
   "NewsFeedAdminPage": {
     "Title": "Title",
