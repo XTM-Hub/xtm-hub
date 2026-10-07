@@ -12,7 +12,14 @@ import {
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
-import { Button, Checkbox } from '@filigran/design-system';
+import {
+  Button,
+  Checkbox,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/design-system';
 import {
   Form,
   FormControl,
@@ -21,10 +28,6 @@ import {
   FormLabel,
   FormMessage,
   SheetFooter,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
   useToast,
 } from '@filigran/ui';
 import { MultiSelectFormField } from '@filigran/ui/clients';

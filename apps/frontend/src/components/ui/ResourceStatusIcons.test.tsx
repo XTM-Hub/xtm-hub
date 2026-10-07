@@ -4,7 +4,8 @@ import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { ResourceStatusIcons } from './ResourceStatusIcons';
 
-vi.mock('@filigran/ui/clients', () => ({
+vi.mock('@filigran/design-system', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@filigran/design-system')>()),
   Tooltip: ({ children }: { children: ReactNode }) => <>{children}</>,
   TooltipContent: ({ children }: { children: ReactNode }) => (
     <div role="tooltip">{children}</div>

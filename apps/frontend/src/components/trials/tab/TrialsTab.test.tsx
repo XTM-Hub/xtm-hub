@@ -8,7 +8,6 @@ import {
 import testRender from '@/utils/test/test-render';
 import { PlatformIdentifier } from '@graphql/generated';
 import { ColumnDef } from '@tanstack/react-table';
-import { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const renderedColumns: string[] = [];
@@ -23,10 +22,6 @@ vi.mock('@filigran/ui', () => ({
     return <div>DataTable</div>;
   },
   DataTableHeadBarOptions: () => <div>HeadBarOptions</div>,
-  Tooltip: ({ children }: { children: ReactNode }) => <>{children}</>,
-  TooltipProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
-  TooltipTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
-  TooltipContent: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 const cancelSpy = vi.fn();
 const reorderSpy = vi.fn();

@@ -4,15 +4,16 @@ import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
-import { Button, IconButton } from '@filigran/design-system';
-import { ArrowUpwardIcon, DeleteIcon } from '@filigran/icon';
 import {
+  Button,
+  IconButton,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-  toast,
-} from '@filigran/ui';
+} from '@filigran/design-system';
+import { ArrowUpwardIcon, DeleteIcon } from '@filigran/icon';
+import { toast } from '@filigran/ui';
 import {
   BundleUserServiceGroupsQuery,
   PlatformIdentifier,
@@ -143,7 +144,7 @@ export const ManageTrialHeader = ({
                         : visible,
                   })}
                 </AlertDialogComponent>
-                <TooltipContent className="bg-elevation-border-subtle-layer-0 dark:bg-elevation-border-subtle-layer-0 text-text-default-primary">
+                <TooltipContent>
                   {t('Service.Bundle.ManageTrial.BulkDeleteTooltip')}
                 </TooltipContent>
               </Tooltip>
@@ -165,7 +166,7 @@ export const ManageTrialHeader = ({
                     </Button>
                   </div>
                 </TooltipTrigger>
-                <TooltipContent className="bg-elevation-border-subtle-layer-0 dark:bg-elevation-border-subtle-layer-0 text-text-default-primary">
+                <TooltipContent>
                   {t('Service.Bundle.ManageTrial.GroupActionDisabledTooltip')}
                 </TooltipContent>
               </Tooltip>

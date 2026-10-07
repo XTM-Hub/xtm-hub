@@ -1,14 +1,14 @@
 import { IntegrationsCsvExportDialog } from '@/components/service/components/header/IntegrationsCsvExportDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { buildSignupRedirect } from '@/utils/redirect';
-import { IconButton } from '@filigran/design-system';
-import { DownloadIcon } from '@filigran/icon';
 import {
+  IconButton,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui';
+} from '@filigran/design-system';
+import { DownloadIcon } from '@filigran/icon';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 

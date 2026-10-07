@@ -2,13 +2,13 @@ import { useBuildCompatibilityTranslationKey } from '@/hooks/use-build-compatibi
 import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
 import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
-import { CheckIndeterminateIcon } from '@filigran/icon';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui/clients';
+} from '@filigran/design-system';
+import { CheckIndeterminateIcon } from '@filigran/icon';
 import { PlatformIdentifier } from '@graphql/generated';
 
 interface ShareableResourceCardVersionProps {

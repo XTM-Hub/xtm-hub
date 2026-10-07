@@ -5,12 +5,12 @@ import {
 } from '@/hooks/use-service-list-local-storage';
 import { useTranslate } from '@/hooks/use-translate';
 import {
-  Combobox,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui/clients';
+} from '@filigran/design-system';
+import { Combobox } from '@filigran/ui/clients';
 import { PlatformIdentifier } from '@graphql/generated';
 import { Link2 } from 'lucide-react';
 import { useMemo, useState } from 'react';

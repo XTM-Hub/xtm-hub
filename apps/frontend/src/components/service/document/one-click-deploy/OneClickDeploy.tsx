@@ -17,8 +17,14 @@ import {
   requiresEnterpriseEdition,
 } from '@/utils/platform';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { Button } from '@filigran/design-system';
-import { AlertDialog, AlertDialogContent, SimpleTooltip } from '@filigran/ui';
+import {
+  Button,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/design-system';
+import { AlertDialog, AlertDialogContent } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { OneClickDeployMutation as OneClickDeployMutationType } from '@generated/OneClickDeployMutation.graphql';
 import { useCallback, useMemo, useState } from 'react';
@@ -199,13 +205,23 @@ const OneClickDeploy = ({
   );
 
   const container = isDeploymentDisabled ? (
-    <SimpleTooltip
-      title={t('Service.Connectors.Incompatible', {
-        platformToBeUpdated,
-        count: incompatiblePlatformsCount,
-      })}>
-      {buttonWithBadge}
-    </SimpleTooltip>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            tabIndex={0}
+            className="inline-flex">
+            {buttonWithBadge}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>
+          {t('Service.Connectors.Incompatible', {
+            platformToBeUpdated,
+            count: incompatiblePlatformsCount,
+          })}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   ) : (
     buttonWithBadge
   );

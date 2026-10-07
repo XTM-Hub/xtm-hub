@@ -5,7 +5,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui';
+} from '@filigran/design-system';
 
 const EE_GRADIENT =
   'bg-[linear-gradient(90deg,#0FBCFF_-3.68%,#00F1BD_106.62%)]';
@@ -48,8 +48,7 @@ const EeBadge = ({ onClick }: EeBadgeProps) => {
         <TooltipContent
           align="end"
           alignOffset={-9}
-          sideOffset={9}
-          className={cn(EE_GRADIENT)}>
+          sideOffset={9}>
           <div className="flex flex-col">
             <span className="font-medium">
               {t('Service.ShareableResources.Deploy.EE.HoverTitle')}

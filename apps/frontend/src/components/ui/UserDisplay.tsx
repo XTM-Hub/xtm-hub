@@ -5,12 +5,12 @@ import { cn } from '@/lib/utils';
 import { formatPersonNames } from '@/utils/format/name';
 import { PublicDocumentData } from '@/utils/shareable-resources/shareable-resources.types';
 import {
-  Avatar,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui/clients';
+} from '@filigran/design-system';
+import { Avatar } from '@filigran/ui/clients';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 
 interface UserDisplayProps {

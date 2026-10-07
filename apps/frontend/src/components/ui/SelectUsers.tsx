@@ -15,17 +15,19 @@ import {
   PopoverContent,
   PopoverTrigger,
   Separator,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
 } from '@filigran/ui/clients';
 import { Badge } from '@filigran/ui/servers';
 import { UserList_fragment$key } from '@generated/UserList_fragment.graphql';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 
 import { useUsersList } from '@/hooks/use-users-list';
-import { Button } from '@filigran/design-system';
+import {
+  Button,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/design-system';
 import { readInlineData } from 'react-relay';
 import { useDebounceCallback } from 'usehooks-ts';
 

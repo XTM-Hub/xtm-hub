@@ -9,14 +9,12 @@ import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { useDateFormatter } from '@/utils/date';
 import {
-  Badge,
-  Card,
-  CardContent,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui';
+} from '@filigran/design-system';
+import { Badge, Card, CardContent } from '@filigran/ui';
 import { PlatformContract } from '@graphql/generated';
 import Link from 'next/link';
 import React from 'react';

@@ -7,7 +7,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui';
+} from '@filigran/design-system';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { publicDocumentListItemFragment$data } from '@generated/publicDocumentListItemFragment.graphql';
 import { DocumentMetadataKeyCode, IntegrationType } from '@graphql/generated';
@@ -65,7 +65,7 @@ export const DocumentShortDescriptionCell = ({
         <TooltipTrigger className="block w-full truncate text-left">
           {shortDescription}
         </TooltipTrigger>
-        <TooltipContent className="max-w-lg">
+        <TooltipContent>
           <p>{shortDescription}</p>
         </TooltipContent>
       </Tooltip>

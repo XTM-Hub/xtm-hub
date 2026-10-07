@@ -19,14 +19,19 @@ import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
 import { cn } from '@/lib/utils';
 import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
 import { getPlatformIdentifier } from '@/utils/platform';
-import { Button } from '@filigran/design-system';
+import {
+  Button,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/design-system';
 import {
   InfoIcon,
   LogoFiligranIcon,
   MotionPlayIcon,
   ThreatActorGroupIcon,
 } from '@filigran/icon';
-import { SimpleTooltip } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import Image from 'next/image';
@@ -121,16 +126,29 @@ const ShareableResourceConnectorSlug = ({
                   }
                 />
               ) : (
-                <SimpleTooltip
-                  title={t('Service.Connectors.UnavailableDeployments')}>
-                  <Button disabled={true}>
-                    {t('Service.ShareableResources.Deploy.DeployPlatform', {
-                      platformName:
-                        PlatformMetadataMapping[platformIdentifier].name ??
-                        'OpenCTI',
-                    })}
-                  </Button>
-                </SimpleTooltip>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span
+                        tabIndex={0}
+                        className="inline-flex">
+                        <Button disabled={true}>
+                          {t(
+                            'Service.ShareableResources.Deploy.DeployPlatform',
+                            {
+                              platformName:
+                                PlatformMetadataMapping[platformIdentifier]
+                                  .name ?? 'OpenCTI',
+                            }
+                          )}
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {t('Service.Connectors.UnavailableDeployments')}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
           </div>

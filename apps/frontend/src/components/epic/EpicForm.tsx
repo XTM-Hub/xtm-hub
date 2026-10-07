@@ -20,6 +20,10 @@ import {
   Radio,
   RadioGroup,
   Textarea,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from '@filigran/design-system';
 import { InfoIcon } from '@filigran/icon';
 import {
@@ -38,10 +42,6 @@ import {
   SelectValue,
   Separator,
   SheetFooter,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
 } from '@filigran/ui';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import {

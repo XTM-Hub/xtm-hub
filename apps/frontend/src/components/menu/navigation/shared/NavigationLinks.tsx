@@ -7,14 +7,14 @@ import {
   SectionSubLink,
 } from '@/components/menu/navigation/shared/navigation.type';
 import { cn } from '@/lib/utils';
-import { buttonVariants } from '@filigran/design-system';
-import { OpenInNewIcon } from '@filigran/icon';
 import {
+  buttonVariants,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui';
+} from '@filigran/design-system';
+import { OpenInNewIcon } from '@filigran/icon';
 import { GradientButton } from '@filigran/ui/servers';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -73,14 +73,10 @@ export const PublicSubLink = ({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>{node}</TooltipTrigger>
-          <TooltipContent className="bg-ds-bg-4 dark:bg-ds-bg-4 rounded">
+          <TooltipContent>
             <div className="flex flex-col gap-0.5">
-              <span className="content-body-base text-text-default-primary">
-                {label}
-              </span>
-              <span className="content-body-base text-muted-foreground">
-                {tooltip}
-              </span>
+              <span>{label}</span>
+              <span className="text-default-secondary">{tooltip}</span>
             </div>
           </TooltipContent>
         </Tooltip>

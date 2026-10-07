@@ -3,17 +3,17 @@
 import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/design-system';
+import {
   CampaignIcon,
   LogoFiligranIcon,
   MotionPlayIcon,
   ThreatActorGroupIcon,
 } from '@filigran/icon';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@filigran/ui/clients';
 import type { ReactNode } from 'react';
 
 export interface ResourceStatusIconsProps {

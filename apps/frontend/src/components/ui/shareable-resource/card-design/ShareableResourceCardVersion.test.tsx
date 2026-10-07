@@ -22,7 +22,8 @@ vi.mock('@filigran/icon', () => ({
   CheckIndeterminateIcon: () => <svg data-testid={INCOMPATIBLE_ICON_TEST_ID} />,
 }));
 
-vi.mock('@filigran/ui/clients', () => ({
+vi.mock('@filigran/design-system', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@filigran/design-system')>()),
   TooltipProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
   Tooltip: ({ children }: { children: ReactNode }) => <>{children}</>,
   TooltipTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,

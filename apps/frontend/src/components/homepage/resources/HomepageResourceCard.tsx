@@ -5,13 +5,13 @@ import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
 import { ResourceStatusIcons } from '@/components/ui/ResourceStatusIcons';
-import { LogoFiligranIcon } from '@filigran/icon';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui/clients';
+} from '@filigran/design-system';
+import { LogoFiligranIcon } from '@filigran/icon';
 import { Badge } from '@filigran/ui/servers';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -53,9 +53,7 @@ const HomepageResourceCard = ({
             {shortDescription}
           </p>
         </TooltipTrigger>
-        <TooltipContent className="max-w-sm whitespace-normal">
-          {shortDescription}
-        </TooltipContent>
+        <TooltipContent>{shortDescription}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   ) : null;
@@ -99,9 +97,7 @@ const HomepageResourceCard = ({
                     {name}
                   </h3>
                 </TooltipTrigger>
-                <TooltipContent className="whitespace-nowrap">
-                  {name}
-                </TooltipContent>
+                <TooltipContent>{name}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
             <div className="h-8 max-sm:hidden">

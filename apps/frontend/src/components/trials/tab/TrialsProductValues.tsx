@@ -5,7 +5,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui';
+} from '@filigran/design-system';
 import { TrialsProductFragment } from '@graphql/generated';
 
 interface TrialsProductValuesProps {
@@ -52,7 +52,7 @@ export const TrialsProductValues = ({
                   )}
                 </span>
               </TooltipTrigger>
-              <TooltipContent className="max-w-md">{value}</TooltipContent>
+              <TooltipContent>{value}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         );

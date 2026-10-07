@@ -3,15 +3,15 @@ import { updateShareNumber } from '@/components/ui/share-link/ShareLinkActions';
 import usePublicPath from '@/hooks/use-public-path';
 import { useTranslate } from '@/hooks/use-translate';
 import { ShareIcon } from '@filigran/icon';
+import { toast } from '@filigran/ui/clients';
+
 import {
-  toast,
+  IconButton,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui/clients';
-
-import { IconButton } from '@filigran/design-system';
+} from '@filigran/design-system';
 import { graphql, useMutation } from 'react-relay';
 import { useCopyToClipboard } from 'usehooks-ts';
 

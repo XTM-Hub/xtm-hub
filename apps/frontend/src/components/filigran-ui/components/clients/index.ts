@@ -24,5 +24,4 @@ export * from './Tabs';
 export * from './tag-input';
 export * from './Toast';
 export * from './Toaster';
-export * from './Tooltip';
 export * from './use-toast';

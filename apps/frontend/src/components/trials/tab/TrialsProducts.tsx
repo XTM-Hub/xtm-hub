@@ -5,7 +5,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui';
+} from '@filigran/design-system';
 import { Badge } from '@filigran/ui/servers';
 import {
   DeploymentRequestHubStatus,

@@ -12,13 +12,13 @@ import {
   SHAREABLE_RESOURCE_SERVICE_SLUG_MAPPING,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
-import { CalendarMonthIcon } from '@filigran/icon';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui';
+} from '@filigran/design-system';
+import { CalendarMonthIcon } from '@filigran/icon';
 import { Badge } from '@filigran/ui/servers';
 import Link from 'next/link';
 

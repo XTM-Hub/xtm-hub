@@ -1,7 +1,13 @@
 import { useTranslate } from '@/hooks/use-translate';
 import { fileToBase64 } from '@/lib/utils';
 import { docIsExistingFile, ExistingFile, NewFile } from '@/utils/documents';
-import { IconButton } from '@filigran/design-system';
+import {
+  IconButton,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/design-system';
 import { AddIcon, DeleteIcon, ReplayIcon } from '@filigran/icon';
 import {
   FileInput,
@@ -10,12 +16,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@filigran/ui';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@filigran/ui/clients';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { DocumentSourceType } from '@graphql/generated';
 import { ChangeEvent, useRef } from 'react';

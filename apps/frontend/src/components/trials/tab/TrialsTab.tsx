@@ -32,7 +32,13 @@ import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { daysUntil, useDateFormatter } from '@/utils/date';
 import { xtmPlatformTrialManageUsersFromDashboardPath } from '@/utils/path/constant';
-import { IconButton } from '@filigran/design-system';
+import {
+  IconButton,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/design-system';
 import {
   ArrowShapeUpIcon,
   ArrowShapeUpStackIcon,
@@ -40,15 +46,7 @@ import {
   CloseIcon,
   GroupIcon,
 } from '@filigran/icon';
-import {
-  DataTable,
-  DataTableHeadBarOptions,
-  toast,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@filigran/ui';
+import { DataTable, DataTableHeadBarOptions, toast } from '@filigran/ui';
 import { trialsKeys } from '@graphql/deployment/deployment.keys';
 import {
   DeploymentRequestHubStatus,
@@ -484,7 +482,7 @@ const buildTrialsColumns = (
                   <TooltipTrigger asChild>
                     <span className="truncate">{reason}</span>
                   </TooltipTrigger>
-                  <TooltipContent className="max-w-md">{reason}</TooltipContent>
+                  <TooltipContent>{reason}</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             );
