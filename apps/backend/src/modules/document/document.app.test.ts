@@ -165,6 +165,136 @@ describe('documentApp', () => {
       await expect(call).rejects.toThrow(ErrorCode.ServiceDefinitionNotFound);
     });
 
+    it('should refuse an integration whose slug a live integration already holds, also when both are created at once', async () => {
+      // Given
+      const create = () =>
+        DocumentApp.createDocument({
+          input: { ...documentData, slug: 'taken-slug' },
+          metadata: integrationMetadata,
+          serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+          sourceDocument: mockUpload,
+        });
+
+      // When
+      const outcomes = await Promise.allSettled([create(), create()]);
+
+      // Then
+      expect(outcomes.map(({ status }) => status).sort()).toEqual([
+        'fulfilled',
+        'rejected',
+      ]);
+      await expect(create()).rejects.toThrow(ErrorCode.DocumentUniqueSlugError);
+      const created = await TestHelper.document.loadAll({ slug: 'taken-slug' });
+      expect(created).toHaveLength(1);
+
+      // A removed integration frees its slug
+      await TestHelper.document.update(
+        { id: created[0]!.id },
+        { active: false }
+      );
+      await expect(create()).resolves.toMatchObject({ slug: 'taken-slug' });
+    });
+
+    it('should refuse a taken integration slug before uploading anything', async () => {
+      // Given
+      const create = () =>
+        DocumentApp.createDocument({
+          input: { ...documentData, slug: 'slug-taken-before-upload' },
+          metadata: integrationMetadata,
+          serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+          sourceDocument: mockUpload,
+        });
+      await create();
+      vi.mocked(DocumentUploadsHelper.processUploads).mockClear();
+
+      // When
+      const call = create();
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.DocumentUniqueSlugError);
+      expect(DocumentUploadsHelper.processUploads).not.toHaveBeenCalled();
+    });
+
+    it('should remove the stored uploads when a later upload of the creation fails', async () => {
+      // Given: the source document is stored, then the images fail to upload
+      vi.mocked(DocumentUploadsHelper.processUploads)
+        .mockResolvedValueOnce([{ ...minioFileMock, minioName: 'source' }])
+        .mockRejectedValueOnce(new Error('Storage unavailable'));
+
+      // When
+      const call = DocumentApp.createDocument({
+        input: { ...documentData, slug: 'slug-with-failed-upload' },
+        metadata: integrationMetadata,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        sourceDocument: mockUpload,
+        images: [mockUpload],
+        logo: mockUpload,
+      });
+
+      // Then
+      await expect(call).rejects.toThrow('Storage unavailable');
+      expect(
+        vi.mocked(MinIOClient.deleteFile).mock.calls.map(([name]) => name)
+      ).toEqual(['source']);
+      expect(
+        await TestHelper.document.loadAll({ slug: 'slug-with-failed-upload' })
+      ).toHaveLength(0);
+    });
+
+    it('should remove the uploads of a creation refused after uploading, before its transaction', async () => {
+      // Given
+      vi.mocked(DocumentUploadsHelper.processUploads)
+        .mockResolvedValueOnce([{ ...minioFileMock, minioName: 'source' }])
+        .mockResolvedValueOnce([{ ...minioFileMock, minioName: 'image' }])
+        .mockResolvedValueOnce([{ ...minioFileMock, minioName: 'logo' }]);
+
+      // When: the metadata of the service are missing
+      const call = DocumentApp.createDocument({
+        input: documentData,
+        metadata: [],
+        serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+        sourceDocument: mockUpload,
+        images: [mockUpload],
+        logo: mockUpload,
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.DocumentMissingMetadata);
+      expect(
+        vi.mocked(MinIOClient.deleteFile).mock.calls.map(([name]) => name)
+      ).toEqual(['source', 'image', 'logo']);
+    });
+
+    it('should remove the uploads of a creation refused under the slug lock', async () => {
+      // Given: the slug is free when the creation starts, taken once its lock is held
+      vi.spyOn(DocumentDomain, 'isSlugTaken')
+        .mockResolvedValueOnce(false)
+        .mockResolvedValueOnce(true);
+      vi.mocked(DocumentUploadsHelper.processUploads)
+        .mockResolvedValueOnce([{ ...minioFileMock, minioName: 'source' }])
+        .mockResolvedValueOnce([{ ...minioFileMock, minioName: 'image' }])
+        .mockResolvedValueOnce([{ ...minioFileMock, minioName: 'logo' }]);
+
+      // When
+      const call = DocumentApp.createDocument({
+        input: { ...documentData, slug: 'slug-taken-under-lock' },
+        metadata: integrationMetadata,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        sourceDocument: mockUpload,
+        images: [mockUpload],
+        logo: mockUpload,
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.DocumentUniqueSlugError);
+      expect(
+        vi.mocked(MinIOClient.deleteFile).mock.calls.map(([name]) => name)
+      ).toEqual(['source', 'image', 'logo']);
+      expect(
+        await TestHelper.document.loadAll({ slug: 'slug-taken-under-lock' })
+      ).toHaveLength(0);
+    });
+
     it('should create document with metadata', async () => {
       // When
       const result = await DocumentApp.createDocument({
@@ -446,6 +576,115 @@ describe('documentApp', () => {
 
       // Then
       await expect(call).rejects.toThrow(ErrorCode.DocumentNotFound);
+    });
+
+    it('should refuse to reactivate an integration whose slug an integration created since holds', async () => {
+      // Given: the integration is removed, then a replacement takes its slug
+      await TestHelper.document.update(
+        { id: createdDocument!.id },
+        { active: false }
+      );
+      const replacement = await DocumentApp.createDocument({
+        input: documentData,
+        metadata: integrationMetadata,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+      });
+      vi.mocked(DocumentUploadsHelper.processUploads).mockClear();
+      const reactivate = () =>
+        DocumentApp.updateDocument({
+          parentDocumentId: createdDocument!.id,
+          serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+          metadata: integrationMetadata,
+          input: documentUpdateData,
+          existingImageIds: [],
+          sourceDocument: mockUpload,
+        });
+
+      // When
+      const call = reactivate();
+
+      // Then: refused before anything is uploaded, the replacement stays the only live integration
+      await expect(call).rejects.toThrow(ErrorCode.DocumentUniqueSlugError);
+      expect(DocumentUploadsHelper.processUploads).not.toHaveBeenCalled();
+      const liveIntegrations = await TestHelper.document.loadAll({
+        slug: documentData.slug,
+        active: true,
+      });
+      expect(liveIntegrations.map(({ id }) => id)).toEqual([replacement.id]);
+
+      // Once the replacement is removed, the integration comes back
+      await TestHelper.document.update(
+        { id: replacement.id },
+        { active: false }
+      );
+      await expect(reactivate()).resolves.toMatchObject({
+        id: createdDocument!.id,
+        active: true,
+      });
+    });
+
+    it('should remove the uploads of a reactivation refused under the slug lock', async () => {
+      // Given: the slug is free when the reactivation starts, taken once its lock is held
+      await TestHelper.document.update(
+        { id: createdDocument!.id },
+        { active: false }
+      );
+      vi.spyOn(DocumentDomain, 'isSlugTaken')
+        .mockResolvedValueOnce(false)
+        .mockResolvedValueOnce(true);
+      vi.mocked(DocumentUploadsHelper.processUploads)
+        .mockResolvedValueOnce([{ ...minioFileMock, minioName: 'source' }])
+        .mockResolvedValueOnce([{ ...minioFileMock, minioName: 'image' }])
+        .mockResolvedValueOnce([{ ...minioFileMock, minioName: 'logo' }]);
+
+      // When
+      const call = DocumentApp.updateDocument({
+        parentDocumentId: createdDocument!.id,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        metadata: integrationMetadata,
+        input: documentUpdateData,
+        existingImageIds: [],
+        sourceDocument: mockUpload,
+        images: [mockUpload],
+        logo: mockUpload,
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.DocumentUniqueSlugError);
+      expect(
+        vi.mocked(MinIOClient.deleteFile).mock.calls.map(([name]) => name)
+      ).toEqual(['source', 'image', 'logo']);
+      expect(
+        await TestHelper.document.loadAll({ id: createdDocument!.id })
+      ).toMatchObject([{ active: false }]);
+    });
+
+    it('should remove the stored uploads when a later upload of the update fails', async () => {
+      // Given: the source document is stored, then the images fail to upload
+      vi.mocked(DocumentUploadsHelper.processUploads)
+        .mockResolvedValueOnce([{ ...minioFileMock, minioName: 'source' }])
+        .mockRejectedValueOnce(new Error('Storage unavailable'));
+
+      // When
+      const call = DocumentApp.updateDocument({
+        parentDocumentId: createdDocument!.id,
+        serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        metadata: integrationMetadata,
+        input: { ...documentUpdateData, name: 'renamed by a failed update' },
+        existingImageIds: [],
+        sourceDocument: mockUpload,
+        images: [mockUpload],
+        logo: mockUpload,
+      });
+
+      // Then: the stored source is removed, the document is unchanged
+      await expect(call).rejects.toThrow('Storage unavailable');
+      expect(
+        vi.mocked(MinIOClient.deleteFile).mock.calls.map(([name]) => name)
+      ).toEqual(['source']);
+      expect(
+        await TestHelper.document.load({ id: createdDocument!.id })
+      ).toMatchObject({ name: documentData.name });
     });
 
     it('should throw DocumentNotFound when the document belongs to a different service instance', async () => {

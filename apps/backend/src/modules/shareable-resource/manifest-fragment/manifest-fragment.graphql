@@ -22,6 +22,7 @@ input ManifestFragmentInput {
   license_type: LicenseType
   contact: String
   solution_categories: [String!]!
+  coverage: IntegrationCoverageInput
 }
 
 type Mutation {

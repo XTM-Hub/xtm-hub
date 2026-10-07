@@ -53,7 +53,25 @@ describe('facet.grouping.utils', () => {
           filterOn(FilterKey.Label, ['use-case-1']),
           filterOn(FilterKey.EntityType, ['Malware']),
         ]),
-        8,
+        // + 1 group shared by the unfiltered coverage facets
+        9,
+      ],
+      [
+        'all 11 facet keys filtered',
+        andOf([
+          filterOn(FilterKey.IntegrationType, ['connector']),
+          filterOn(FilterKey.LicenseType, ['free']),
+          filterOn(FilterKey.ManagerSupported, ['true']),
+          filterOn(FilterKey.Verified, ['true']),
+          filterOn(FilterKey.ProductVersion, ['1.0.0']),
+          filterOn(FilterKey.SolutionCategory, ['edr']),
+          filterOn(FilterKey.Label, ['use-case-1']),
+          filterOn(FilterKey.EntityType, ['Malware']),
+          filterOn(FilterKey.ObjectType, ['Indicator']),
+          filterOn(FilterKey.Sector, ['Finance']),
+          filterOn(FilterKey.Region, ['Europe']),
+        ]),
+        11,
       ],
     ])(
       'should produce %i signature group(s) for %s',
@@ -68,7 +86,7 @@ describe('facet.grouping.utils', () => {
       }
     );
 
-    it('should place every FACET_SPEC in exactly one group covering all 8 fields', () => {
+    it('should place every FACET_SPEC in exactly one group covering every facet field', () => {
       // Given / When
       const groups = groupFacetsBySignature(null);
 
@@ -98,6 +116,27 @@ describe('facet.grouping.utils', () => {
       // Then
       expect(integrationTypeGroup).toBe(licenseTypeGroup);
     });
+
+    it.each([
+      ['an integration request', 'opencti_integration', true],
+      ['a request without a document type', null, true],
+      ['a request for another document type', 'custom_dashboard', false],
+    ])(
+      'should compute the coverage facets for %s: %s',
+      (_description, documentType, expectCoverage) => {
+        // Given / When
+        const groups = groupFacetsBySignature(null, documentType);
+        const fields = groups.flatMap((group) =>
+          group.specs.map((spec) => spec.field)
+        );
+
+        // Then
+        for (const field of ['object_type', 'sector', 'region'] as const) {
+          expect(fields.includes(field)).toBe(expectCoverage);
+        }
+        expect(fields).toContain('integration_type');
+      }
+    );
   });
 
   describe('canonicalSignature', () => {

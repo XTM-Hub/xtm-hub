@@ -7,7 +7,6 @@ import {
   dbRaw,
 } from '../../../../knexfile';
 import {
-  DocumentMetadataKeyCode,
   FacetBucket,
   LoadDocumentFacetInput,
 } from '../../../__generated__/resolvers-types';
@@ -77,23 +76,41 @@ const buildSolutionCategoryFacetBranch = (
     .orderBy('count', 'desc')
     .orderBy('objectSolutionCategory.solution_category_id', 'asc');
 
-const buildEntityTypeFacetBranch = (
+const buildMetadataListFacetBranch = (
   spec: FacetSpec,
   cteName: string
-): Knex.QueryBuilder =>
-  db('Document_Metadata')
+): Knex.QueryBuilder => {
+  if (!spec.metadataKey) {
+    throw new Error(`Facet spec "${spec.field}" is missing a metadataKey`);
+  }
+
+  // Same buckets as loadMetadataListFacetBuckets: exact case for the entity types, case-insensitive for coverage.
+  // The union needs the same column order in every branch: facet, value, count.
+  const query = db('Document_Metadata')
     .from('Document_Metadata as metadata')
     .joinRaw(
       'CROSS JOIN LATERAL jsonb_array_elements_text("metadata"."value"::jsonb) as entity(value)'
     )
-    .select(dbRaw('? as facet', [spec.field]), 'entity.value as value')
+    .select(
+      dbRaw('? as facet', [spec.field]),
+      spec.exactCase
+        ? 'entity.value as value'
+        : dbRaw('MIN("entity"."value" COLLATE "C") as value')
+    )
     .countDistinct({ count: 'metadata.document_id' })
-    .where('metadata.key', '=', DocumentMetadataKeyCode.EntityTypes)
+    .where('metadata.key', '=', spec.metadataKey)
     .whereNotNull('metadata.value')
-    .whereIn('metadata.document_id', selectIdsFromCte(cteName))
-    .groupBy('entity.value')
-    .orderBy('count', 'desc')
-    .orderBy('entity.value', 'asc');
+    .whereIn('metadata.document_id', selectIdsFromCte(cteName));
+  return spec.exactCase
+    ? query
+        .groupBy('entity.value')
+        .orderBy('count', 'desc')
+        .orderBy('entity.value', 'asc')
+    : query
+        .groupByRaw('LOWER("entity"."value")')
+        .orderBy('count', 'desc')
+        .orderByRaw('MIN("entity"."value" COLLATE "C") COLLATE "default" asc');
+};
 
 const buildFacetBranch = (
   spec: FacetSpec,
@@ -106,8 +123,8 @@ const buildFacetBranch = (
       return buildUseCaseFacetBranch(spec, cteName);
     case 'solutionCategory':
       return buildSolutionCategoryFacetBranch(spec, cteName);
-    case 'entityType':
-      return buildEntityTypeFacetBranch(spec, cteName);
+    case 'metadataList':
+      return buildMetadataListFacetBranch(spec, cteName);
     default:
       throw new Error(`Unhandled facet source: ${String(spec.source)}`);
   }

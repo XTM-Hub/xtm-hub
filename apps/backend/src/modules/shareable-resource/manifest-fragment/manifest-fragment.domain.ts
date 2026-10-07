@@ -8,7 +8,7 @@ import {
   ManifestType,
   type ManifestFragmentInput,
 } from '../../../__generated__/resolvers-types';
-import { withTransaction } from '../../../context/database.context';
+import { withAdvisoryLock } from '../../../context/database.context';
 import Document from '../../../model/kanel/public/Document';
 import { ObjectSolutionCategoryObjectId } from '../../../model/kanel/public/ObjectSolutionCategory';
 import { logApp } from '../../../utils/app-logger.util';
@@ -21,7 +21,14 @@ import { DocumentDomain } from '../../document/domain/document.domain';
 import { solutionCategoryApp } from '../../solution-category/solution-category.app';
 import { isFiligranProduct } from '../../solution-category/solution-category.utils';
 import { IngestManifestHelper } from '../opencti/integration/ingest-manifest/ingest-manifest.helper';
+import { IntegrationCoverageDomain } from '../opencti/integration/integration-coverage/integration-coverage.domain';
+import { IntegrationCoverageHelper } from '../opencti/integration/integration-coverage/integration-coverage.helper';
 import {
+  COVERAGE_METADATA_KEYS,
+  type StoredIntegrationCoverage,
+} from '../opencti/integration/integration-coverage/integration-coverage.model';
+import {
+  CONNECTOR_SLUG_LOCK_NAMESPACE,
   INTEGRATION_CONNECTOR_V2_METADATA_KEYS,
   INTEGRATION_SERVICE_INSTANCE_ID,
   OPENCTI_INTEGRATION_DOCUMENT_TYPE,
@@ -34,6 +41,10 @@ type ConnectorWithMetadata = Document & {
   datasheet_url?: string;
   blogpost_url?: string;
   demo_url?: string;
+  covered_object_types?: string;
+  covered_sectors?: string;
+  covered_regions?: string;
+  coverage_inferred?: string;
 };
 
 const toObjectSolutionCategoryObjectId = (
@@ -80,6 +91,7 @@ const createConnectorDocument = async ({
   metadataFromExisting,
   licenseType,
   contact,
+  coverage,
 }: {
   fragment: ManifestFragmentInput;
   formattedVersion: string;
@@ -90,6 +102,7 @@ const createConnectorDocument = async ({
   >;
   licenseType?: LicenseType;
   contact?: string;
+  coverage: StoredIntegrationCoverage;
 }): Promise<ConnectorV2> => {
   const createdConnector =
     await DocumentApp.createDocumentWithChildrenAndMetadata<ConnectorV2>(
@@ -126,6 +139,7 @@ const createConnectorDocument = async ({
         demo_url: metadataFromExisting?.demo_url,
         additional_properties: JSON.stringify(fragment.additional_properties),
         config_schema: JSON.stringify(fragment.config_schema),
+        ...IntegrationCoverageHelper.toDocumentFields(coverage),
       },
       INTEGRATION_CONNECTOR_V2_METADATA_KEYS
     );
@@ -172,6 +186,7 @@ export const ManifestFragmentDomain = {
     ManifestFragmentHelper.validateSolutionCategories(
       fragment.solution_categories
     );
+    IntegrationCoverageHelper.assertValidDeclaration(fragment.coverage);
     const licenseType = fragment.license_type ?? undefined;
     const contact = ManifestFragmentHelper.parseContact(fragment.contact);
     const formattedVersion =
@@ -179,134 +194,164 @@ export const ManifestFragmentDomain = {
     const latestTag =
       ManifestFragmentHelper.getLatestTagForConnectorVersion(formattedVersion);
 
-    await withTransaction(async () => {
-      // Serializes concurrent ingestions for the same connector slug.
+    // Serializes concurrent ingestions for the same connector slug, including
+    // the first ones of a family that has no row yet to lock: a version
+    // without a coverage declaration always sees a concurrent declaration.
+    await withAdvisoryLock(
+      CONNECTOR_SLUG_LOCK_NAMESPACE,
+      fragment.slug,
+      async () => {
+        // The family spans every service instance, like the slug lock and the
+        // unique constraint on type, slug and version
+        await DocumentDomain.lockDocumentsBySlugAndType({
+          slug: fragment.slug,
+          type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        });
 
-      await DocumentDomain.lockDocumentsBySlugTypeAndServiceInstance({
-        slug: fragment.slug,
-        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-        serviceInstanceId: INTEGRATION_SERVICE_INSTANCE_ID,
-      });
+        // Re-read the whole family after the lock statement so this transaction
+        // uses a fresh snapshot that includes connectors inserted by prior
+        // concurrent transactions.
+        const existingBatchConnectorRows: Pick<Document, 'id'>[] =
+          await db<Document>('Document')
+            .where({
+              slug: fragment.slug,
+              type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+            })
+            .select('id');
 
-      // Re-read the whole family after the lock statement so this transaction
-      // uses a fresh snapshot that includes connectors inserted by prior
-      // concurrent transactions.
-      const existingBatchConnectorRows: Pick<Document, 'id'>[] =
-        await db<Document>('Document')
-          .where({
-            slug: fragment.slug,
-            type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-            service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
-          })
-          .select('id');
-
-      const existingBatchConnectorIds = existingBatchConnectorRows.map(
-        (connector) => connector.id
-      );
-
-      const existingConnectorsWithSameId =
-        await DocumentDomain.loadDocumentsByMetadata(
-          DocumentMetadataKeyCode.ManifestFragmentId,
-          fragment.id,
-          [],
-          {
-            type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
-            service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
-          }
+        const existingBatchConnectorIds = existingBatchConnectorRows.map(
+          (connector) => connector.id
         );
 
-      const conflictingConnector = existingConnectorsWithSameId.find(
-        (connector) => connector.slug !== fragment.slug
-      );
-
-      if (conflictingConnector) {
-        throw new Error(BadRequestErrorCode.ConnectorIdAlreadyExists);
-      }
-
-      const existingBatchConnectors =
-        (await DocumentDomain.loadDocumentsWithMetadataByIds(
-          existingBatchConnectorIds,
-          [
-            DocumentMetadataKeyCode.VersionPadded,
-            DocumentMetadataKeyCode.DatasheetUrl,
-            DocumentMetadataKeyCode.BlogpostUrl,
-            DocumentMetadataKeyCode.DemoUrl,
-          ]
-        )) as ConnectorWithMetadata[];
-
-      const hasSameVersion = existingBatchConnectors.some(
-        (connector) => connector.version === fragment.version
-      );
-      if (hasSameVersion) {
-        throw new Error(BadRequestErrorCode.ConnectorVersionAlreadyExists);
-      }
-
-      const currentLatestConnector = existingBatchConnectors.find((connector) =>
-        (connector.tags ?? []).includes(latestTag)
-      );
-
-      const metadataFromExisting =
-        ManifestFragmentHelper.getConnectorMetadataFromExisting({
-          currentLatestConnector,
-          existingBatchConnectors,
-        });
-
-      const shouldPromoteAsLatest =
-        !currentLatestConnector ||
-        ManifestFragmentHelper.isStrictlyGreaterConnectorVersion({
-          candidate: formattedVersion,
-          current: currentLatestConnector.version_padded ?? '',
-        });
-
-      if (existingBatchConnectors.length > 0 && shouldPromoteAsLatest) {
-        await removeLatestTagFromExistingBatchConnectors({
-          connectors: existingBatchConnectors,
-          latestTag,
-        });
-      }
-
-      const newDocumentTags = ManifestFragmentHelper.getConnectorDocumentTags(
-        shouldPromoteAsLatest,
-        latestTag
-      );
-
-      try {
-        const connector = await createConnectorDocument({
-          fragment,
-          formattedVersion,
-          tags: newDocumentTags,
-          metadataFromExisting,
-          licenseType,
-          contact,
-        });
-
-        const platform = fragment.platform.trim().toLowerCase();
-        if (isFiligranProduct(platform)) {
-          await solutionCategoryApp.linkSolutionCategoriesByNameToObject({
-            objectId: toObjectSolutionCategoryObjectId(connector.id),
-            names: fragment.solution_categories,
-            product: platform,
-          });
-        } else {
-          logApp.warn(
-            'Unknown platform for solution-category linking, skipping',
-            { platform }
+        const existingConnectorsWithSameId =
+          await DocumentDomain.loadDocumentsByMetadata(
+            DocumentMetadataKeyCode.ManifestFragmentId,
+            fragment.id,
+            [],
+            { type: OPENCTI_INTEGRATION_DOCUMENT_TYPE }
           );
+
+        const conflictingConnector = existingConnectorsWithSameId.find(
+          (connector) => connector.slug !== fragment.slug
+        );
+
+        if (conflictingConnector) {
+          throw new Error(BadRequestErrorCode.ConnectorIdAlreadyExists);
         }
-      } catch (error) {
-        // Backstop for brand-new connectors: no existing rows for the lock above.
-        if (
-          isUniqueConstraintViolation(
-            error,
-            'document_type_slug_version_unique'
-          )
-        ) {
-          throw new Error(BadRequestErrorCode.ConnectorVersionAlreadyExists, {
-            cause: error,
+
+        const existingBatchConnectors =
+          (await DocumentDomain.loadDocumentsWithMetadataByIds(
+            existingBatchConnectorIds,
+            [
+              DocumentMetadataKeyCode.VersionPadded,
+              DocumentMetadataKeyCode.DatasheetUrl,
+              DocumentMetadataKeyCode.BlogpostUrl,
+              DocumentMetadataKeyCode.DemoUrl,
+              ...COVERAGE_METADATA_KEYS,
+            ]
+          )) as ConnectorWithMetadata[];
+
+        const hasSameVersion = existingBatchConnectors.some(
+          (connector) => connector.version === fragment.version
+        );
+        if (hasSameVersion) {
+          throw new Error(BadRequestErrorCode.ConnectorVersionAlreadyExists);
+        }
+
+        const currentLatestConnector = existingBatchConnectors.find(
+          (connector) => (connector.tags ?? []).includes(latestTag)
+        );
+
+        const metadataFromExisting =
+          ManifestFragmentHelper.getConnectorMetadataFromExisting({
+            currentLatestConnector,
+            existingBatchConnectors,
+          });
+
+        // Inferred from the names the document linkers resolve, never from a dropped one
+        const fragmentProduct = fragment.platform.trim().toLowerCase();
+        const linkableNames = IntegrationCoverageDomain.keepLinkableNames(
+          await IntegrationCoverageDomain.loadLinkableVocabulary(),
+          {
+            useCases: fragment.use_cases ?? [],
+            solutionCategories: fragment.solution_categories ?? [],
+            product: isFiligranProduct(fragmentProduct)
+              ? fragmentProduct
+              : null,
+          }
+        );
+        const coverage = IntegrationCoverageHelper.resolveCoverage({
+          declared: fragment.coverage,
+          existing: ManifestFragmentHelper.getDeclaredCoverageFromExisting({
+            currentLatestConnector,
+            existingBatchConnectors,
+          }),
+          inferenceSource: {
+            name: fragment.title,
+            short_description: fragment.short_description,
+            description: fragment.description,
+            ...linkableNames,
+          },
+        });
+
+        const shouldPromoteAsLatest =
+          !currentLatestConnector ||
+          ManifestFragmentHelper.isStrictlyGreaterConnectorVersion({
+            candidate: formattedVersion,
+            current: currentLatestConnector.version_padded ?? '',
+          });
+
+        if (existingBatchConnectors.length > 0 && shouldPromoteAsLatest) {
+          await removeLatestTagFromExistingBatchConnectors({
+            connectors: existingBatchConnectors,
+            latestTag,
           });
         }
-        throw error;
+
+        const newDocumentTags = ManifestFragmentHelper.getConnectorDocumentTags(
+          shouldPromoteAsLatest,
+          latestTag
+        );
+
+        try {
+          const connector = await createConnectorDocument({
+            fragment,
+            formattedVersion,
+            tags: newDocumentTags,
+            metadataFromExisting,
+            licenseType,
+            contact,
+            coverage,
+          });
+
+          const platform = fragment.platform.trim().toLowerCase();
+          if (isFiligranProduct(platform)) {
+            await solutionCategoryApp.linkSolutionCategoriesByNameToObject({
+              objectId: toObjectSolutionCategoryObjectId(connector.id),
+              names: fragment.solution_categories,
+              product: platform,
+            });
+          } else {
+            logApp.warn(
+              'Unknown platform for solution-category linking, skipping',
+              { platform }
+            );
+          }
+        } catch (error) {
+          // Backstop for brand-new connectors: no existing rows for the lock above.
+          if (
+            isUniqueConstraintViolation(
+              error,
+              'document_type_slug_version_unique'
+            )
+          ) {
+            throw new Error(BadRequestErrorCode.ConnectorVersionAlreadyExists, {
+              cause: error,
+            });
+          }
+          throw error;
+        }
       }
-    });
+    );
   },
 };

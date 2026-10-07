@@ -1,4 +1,8 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
+import {
+  coverageConfirmedSchema,
+  coverageValuesSchema,
+} from '@/components/service/form/CoverageFields';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
@@ -49,6 +53,10 @@ const connectorSchema = z.object({
   use_cases: z.array(z.string()).optional(),
   solution_categories: z.array(z.string()).min(1, 'Required'),
   license_type: z.enum(['Free', 'Commercial']).optional(),
+  covered_object_types: coverageValuesSchema,
+  covered_sectors: coverageValuesSchema,
+  covered_regions: coverageValuesSchema,
+  coverage_confirmed: coverageConfirmedSchema,
   active: z.boolean().optional(),
   verified: z.boolean().optional(),
   manager_supported: z.boolean().optional(),
@@ -102,6 +110,10 @@ export const ConnectorForm = ({
           (label) => label.id
         ),
         license_type: document?.license_type ?? undefined,
+        covered_object_types: [...(document?.covered_object_types ?? [])],
+        covered_sectors: [...(document?.covered_sectors ?? [])],
+        covered_regions: [...(document?.covered_regions ?? [])],
+        coverage_confirmed: false,
         uploader_id: document?.uploader?.id ?? me!.id,
         uploader_organization_id: document?.uploader_organization?.id ?? '',
         integration_type: IntegrationType.Connector,
@@ -118,6 +130,10 @@ export const ConnectorForm = ({
     use_cases,
     solution_categories,
     license_type,
+    covered_object_types,
+    covered_sectors,
+    covered_regions,
+    coverage_confirmed,
     uploader_id,
     uploader_organization_id,
     integration_type,
@@ -177,6 +193,10 @@ export const ConnectorForm = ({
           description,
           use_cases,
           solution_categories,
+          covered_object_types,
+          covered_sectors,
+          covered_regions,
+          coverage_confirmed,
           license_type: {
             ...license_type,
             fieldType: 'radio',

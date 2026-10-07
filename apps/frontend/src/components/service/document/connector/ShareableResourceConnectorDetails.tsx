@@ -2,6 +2,10 @@
 
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
 import { ShareableResourceDetailsLink } from '@/components/service/document/ShareableResourceDetailsLink';
+import {
+  IntegrationCoverage,
+  IntegrationCoverageDetails,
+} from '@/components/service/document/ui/IntegrationCoverageDetails';
 import { ShareableResourceBasicInformation } from '@/components/service/document/ui/ShareableResourceBasicInformation';
 import { ShareableResourceDetailItem } from '@/components/service/document/ui/ShareableResourceDetailItem';
 import { useTranslate } from '@/hooks/use-translate';
@@ -13,7 +17,7 @@ import Link from 'next/link';
 import * as React from 'react';
 
 export interface ShareableResourceConnectorDetailsProps {
-  connectorDetails: {
+  connectorDetails: IntegrationCoverage & {
     name: string;
     source_code?: string | null;
     subscription_link?: string | null;
@@ -86,6 +90,7 @@ export const ShareableResourceConnectorDetails = ({
           </div>
         </ShareableResourceDetailItem>
       )}
+      <IntegrationCoverageDetails coverage={connectorDetails} />
       <ShareableResourceDetailItem
         label={t('Service.ShareableResources.Details.ProductVersion', {
           platform: platformName,

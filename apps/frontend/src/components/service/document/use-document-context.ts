@@ -10,6 +10,7 @@ import {
   DocumentDeleteMutation,
   DocumentUpdateMutation,
 } from '@/components/service/document/document.graphql';
+import { unchangedCoverageKeys } from '@/components/service/form/CoverageFields';
 import { ConnectorForm } from '@/components/service/integrations/forms/ConnectorForm';
 import { CsvFeedForm } from '@/components/service/integrations/forms/CsvFeedForm';
 import { RssFeedForm } from '@/components/service/integrations/forms/RssFeedForm';
@@ -47,8 +48,13 @@ type DocumentFormValues = ServiceFormValues & {
   entity_types?: string[] | null;
   license_type?: LicenseType | null;
   solution_categories?: string[] | null;
+  covered_object_types?: string[] | null;
+  covered_sectors?: string[] | null;
+  covered_regions?: string[] | null;
+  coverage_confirmed?: boolean | null;
 };
 
+// Typed document input fields; every other form value is stored as document metadata
 const documentBaseKeys: Array<keyof DocumentFormValues> = [
   'name',
   'slug',
@@ -60,6 +66,10 @@ const documentBaseKeys: Array<keyof DocumentFormValues> = [
   'solution_categories',
   'license_type',
   'entity_types',
+  'covered_object_types',
+  'covered_sectors',
+  'covered_regions',
+  'coverage_confirmed',
   'active',
 ];
 
@@ -194,7 +204,7 @@ export function useDocumentContext({
         ...pick(values as DocumentFormValues, documentBaseKeys),
         uploader_id: values?.uploader_id ?? '',
       },
-      ['slug']
+      ['slug', ...unchangedCoverageKeys(values, resource)]
     );
 
     const metadata = omit(values as DocumentFormValues, [

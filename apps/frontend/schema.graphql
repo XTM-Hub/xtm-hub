@@ -32,6 +32,9 @@ enum FilterKey {
   entity_type
   license_type
   solution_category
+  object_type
+  sector
+  region
 }
 
 enum Locale {
@@ -135,6 +138,8 @@ type Query {
   seoServiceInstance(slug: String!): SeoServiceInstance!
   settings: Settings!
   updateOpenCTIManifest(tag: String!): Success!
+  integrationsByCoverage(input: IntegrationCoverageSearchInput!): IntegrationCoverageSearchResult!
+  integrationCoverageObjectTypes: [String!]!
   solutionCategories(first: Int!, after: ID, orderBy: SolutionCategoryOrdering!, orderMode: OrderingMode!, searchTerm: String, product: FiligranProduct): SolutionCategoryConnection
   subscriptionById(subscription_id: SubscriptionId): SubscriptionModel
   subscriptions(first: Int!, after: ID, orderBy: SubscriptionOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [SubscriptionFilter!]): SubscriptionConnection!
@@ -693,6 +698,10 @@ enum DocumentMetadataKeyCode {
   solution_categories
   license_type
   contact
+  covered_object_types
+  covered_sectors
+  covered_regions
+  coverage_inferred
 }
 
 type ShareableResource {
@@ -787,6 +796,15 @@ input CreateDocumentInput {
   solution_categories: [SolutionCategoryId!]!
   license_type: LicenseType
   entity_types: [String!]
+  covered_object_types: [String!]
+  covered_sectors: [String!]
+  covered_regions: [String!]
+
+  """
+  Saves the submitted coverage as declared even when it equals the inferred one.
+  Without effect on creation, which has no inferred coverage yet.
+  """
+  coverage_confirmed: Boolean
   uploader_id: UserId!
 }
 
@@ -799,6 +817,14 @@ input UpdateDocumentInput {
   solution_categories: [SolutionCategoryId!]
   license_type: LicenseType
   entity_types: [String!]
+  covered_object_types: [String!]
+  covered_sectors: [String!]
+  covered_regions: [String!]
+
+  """
+  Saves the submitted coverage as declared even when it equals the inferred one.
+  """
+  coverage_confirmed: Boolean
   uploader_organization_id: OrganizationId
   uploader_id: UserId
 }
@@ -838,6 +864,9 @@ type Facet {
   solution_category: [FacetBucket!]!
   use_case: [FacetBucket!]!
   entity_type: [FacetBucket!]!
+  object_type: [FacetBucket!]!
+  sector: [FacetBucket!]!
+  region: [FacetBucket!]!
 }
 
 input LoadDocumentFacetInput {
@@ -1614,6 +1643,7 @@ input ManifestFragmentInput {
   license_type: LicenseType
   contact: String
   solution_categories: [String!]!
+  coverage: IntegrationCoverageInput
 }
 
 enum ManifestType {
@@ -1693,6 +1723,46 @@ type CustomView implements Document & Node {
   entity_types: [String!]
 }
 
+input IntegrationCoverageInput {
+  object_types: [String!]
+  sectors: [String!]
+  regions: [String!]
+}
+
+input IntegrationCoverageSearchInput {
+  objectTypes: [String!]
+  sectors: [String!]
+  regions: [String!]
+  integrationTypes: [IntegrationType!]
+  searchTerm: String
+  first: Int
+}
+
+type IntegrationCoverageMatch {
+  id: ID!
+  slug: String!
+  name: String!
+  short_description: String
+  integration_type: IntegrationType!
+  license_type: LicenseType
+  verified: Boolean
+  manager_supported: Boolean
+  object_types: [String!]!
+  sectors: [String!]!
+  regions: [String!]!
+  coverage_inferred: Boolean!
+  matched_object_types: [String!]!
+  matched_sectors: [String!]!
+  matched_regions: [String!]!
+  score: Float!
+}
+
+type IntegrationCoverageSearchResult {
+  matches: [IntegrationCoverageMatch!]!
+  facets: Facet!
+  truncated: Boolean!
+}
+
 enum IntegrationType {
   csv_feed
   connector
@@ -1730,6 +1800,10 @@ interface Integration implements Node & Document {
   blogpost_url: String
   demo_url: String
   license_type: LicenseType
+  covered_object_types: [String!]!
+  covered_sectors: [String!]!
+  covered_regions: [String!]!
+  coverage_inferred: Boolean!
 }
 
 type IntegrationHack implements Node & Document & Integration {
@@ -1760,6 +1834,10 @@ type IntegrationHack implements Node & Document & Integration {
   blogpost_url: String
   demo_url: String
   license_type: LicenseType
+  covered_object_types: [String!]!
+  covered_sectors: [String!]!
+  covered_regions: [String!]!
+  coverage_inferred: Boolean!
 }
 
 type CsvFeed implements Node & Document & Integration {
@@ -1791,6 +1869,10 @@ type CsvFeed implements Node & Document & Integration {
   blogpost_url: String
   demo_url: String
   license_type: LicenseType
+  covered_object_types: [String!]!
+  covered_sectors: [String!]!
+  covered_regions: [String!]!
+  coverage_inferred: Boolean!
 }
 
 type Connector implements Node & Document & Integration {
@@ -1830,6 +1912,10 @@ type Connector implements Node & Document & Integration {
   minimum_deployable_version: String
   license_type: LicenseType
   contact: String
+  covered_object_types: [String!]!
+  covered_sectors: [String!]!
+  covered_regions: [String!]!
+  coverage_inferred: Boolean!
 }
 
 type TaxiiFeed implements Node & Document & Integration {
@@ -1861,6 +1947,10 @@ type TaxiiFeed implements Node & Document & Integration {
   blogpost_url: String
   demo_url: String
   license_type: LicenseType
+  covered_object_types: [String!]!
+  covered_sectors: [String!]!
+  covered_regions: [String!]!
+  coverage_inferred: Boolean!
 }
 
 type RssFeed implements Node & Document & Integration {
@@ -1892,6 +1982,10 @@ type RssFeed implements Node & Document & Integration {
   blogpost_url: String
   demo_url: String
   license_type: LicenseType
+  covered_object_types: [String!]!
+  covered_sectors: [String!]!
+  covered_regions: [String!]!
+  coverage_inferred: Boolean!
 }
 
 type Stream implements Node & Document & Integration {
@@ -1923,6 +2017,10 @@ type Stream implements Node & Document & Integration {
   blogpost_url: String
   demo_url: String
   license_type: LicenseType
+  covered_object_types: [String!]!
+  covered_sectors: [String!]!
+  covered_regions: [String!]!
+  coverage_inferred: Boolean!
 }
 
 type ThirdPartyIntegration implements Node & Document & Integration {
@@ -1956,6 +2054,10 @@ type ThirdPartyIntegration implements Node & Document & Integration {
   blogpost_url: String
   demo_url: String
   license_type: LicenseType
+  covered_object_types: [String!]!
+  covered_sectors: [String!]!
+  covered_regions: [String!]!
+  coverage_inferred: Boolean!
 }
 
 type OpenCTIPlaybook implements Document & Node {

@@ -2,6 +2,7 @@
 
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
 import { ShareableResourceDetailsLink } from '@/components/service/document/ShareableResourceDetailsLink';
+import { IntegrationCoverageDetails } from '@/components/service/document/ui/IntegrationCoverageDetails';
 import { ShareableResourceBasicInformation } from '@/components/service/document/ui/ShareableResourceBasicInformation';
 import { ShareableResourceDetailItem } from '@/components/service/document/ui/ShareableResourceDetailItem';
 import { ShareableResourceDetailMetadataItem } from '@/components/service/document/ui/ShareableResourceDetailMetadataItem';
@@ -134,6 +135,7 @@ const ShareableResourceDetails = ({
               </div>
             </ShareableResourceDetailItem>
           )}
+          <IntegrationCoverageDetails coverage={documentData} />
         </>
       )}
       <ShareableResourceDetailMetadataItem

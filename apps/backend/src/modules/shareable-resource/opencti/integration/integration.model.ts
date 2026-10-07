@@ -10,6 +10,9 @@ import { MetadataArray } from '../../../../utils/metadata';
 export const INTEGRATION_SERVICE_INSTANCE_ID: ServiceInstanceId =
   '0f4aad4b-bdd6-4084-8b1f-82c9c66578cc' as ServiceInstanceId;
 export const OPENCTI_INTEGRATION_DOCUMENT_TYPE = 'opencti_integration';
+// Advisory lock namespace serializing every ingestion of one connector slug,
+// keyed by the slug: it also covers a family that has no row yet to lock
+export const CONNECTOR_SLUG_LOCK_NAMESPACE = 'integration-connector-slug';
 
 export const isIntegrationType = (
   maybeIntegrationType: string
@@ -33,6 +36,11 @@ export type Integration = Document & {
   demo_url?: string;
   license_type?: LicenseType;
   contact?: string;
+  // JSON string arrays, plus 'true' | 'false' (see integration-coverage.helper.ts)
+  covered_object_types?: string;
+  covered_sectors?: string;
+  covered_regions?: string;
+  coverage_inferred?: string;
 };
 export type CsvFeed = Integration & {
   feed_url: string;
@@ -102,6 +110,21 @@ export type ConnectorV2Metadata = MetadataArray<
   keyof Omit<ConnectorV2, keyof Document>
 >;
 
+type IntegrationCoverageMetadataKey =
+  | DocumentMetadataKeyCode.CoveredObjectTypes
+  | DocumentMetadataKeyCode.CoveredSectors
+  | DocumentMetadataKeyCode.CoveredRegions
+  | DocumentMetadataKeyCode.CoverageInferred;
+
+// Coverage is resolved server-side (manifest, admin form or inference), never mandatory.
+const INTEGRATION_COVERAGE_METADATA: MetadataArray<IntegrationCoverageMetadataKey> =
+  [
+    { key: DocumentMetadataKeyCode.CoveredObjectTypes, optional: true },
+    { key: DocumentMetadataKeyCode.CoveredSectors, optional: true },
+    { key: DocumentMetadataKeyCode.CoveredRegions, optional: true },
+    { key: DocumentMetadataKeyCode.CoverageInferred, optional: true },
+  ];
+
 export const INTEGRATION_CSV_FEED_METADATA: CsvFeedMetadata = [
   { key: DocumentMetadataKeyCode.FeedUrl },
   { key: DocumentMetadataKeyCode.IntegrationType },
@@ -109,6 +132,7 @@ export const INTEGRATION_CSV_FEED_METADATA: CsvFeedMetadata = [
   { key: DocumentMetadataKeyCode.BlogpostUrl, optional: true },
   { key: DocumentMetadataKeyCode.DemoUrl, optional: true },
   { key: DocumentMetadataKeyCode.LicenseType, optional: true },
+  ...INTEGRATION_COVERAGE_METADATA,
 ];
 export const INTEGRATION_CSV_FEED_METADATA_KEYS =
   INTEGRATION_CSV_FEED_METADATA.map(({ key }) => key);
@@ -120,6 +144,7 @@ export const INTEGRATION_TAXII_FEED_METADATA: TaxiiFeedMetadata = [
   { key: DocumentMetadataKeyCode.BlogpostUrl, optional: true },
   { key: DocumentMetadataKeyCode.DemoUrl, optional: true },
   { key: DocumentMetadataKeyCode.LicenseType, optional: true },
+  ...INTEGRATION_COVERAGE_METADATA,
 ];
 export const INTEGRATION_TAXII_FEED_METADATA_KEYS =
   INTEGRATION_TAXII_FEED_METADATA.map(({ key }) => key);
@@ -131,6 +156,7 @@ export const INTEGRATION_RSS_FEED_METADATA: RssFeedMetadata = [
   { key: DocumentMetadataKeyCode.BlogpostUrl, optional: true },
   { key: DocumentMetadataKeyCode.DemoUrl, optional: true },
   { key: DocumentMetadataKeyCode.LicenseType, optional: true },
+  ...INTEGRATION_COVERAGE_METADATA,
 ];
 
 export const INTEGRATION_RSS_FEED_METADATA_KEYS =
@@ -143,6 +169,7 @@ export const INTEGRATION_STREAM_METADATA: StreamFeedMetadata = [
   { key: DocumentMetadataKeyCode.BlogpostUrl, optional: true },
   { key: DocumentMetadataKeyCode.DemoUrl, optional: true },
   { key: DocumentMetadataKeyCode.LicenseType, optional: true },
+  ...INTEGRATION_COVERAGE_METADATA,
 ];
 export const INTEGRATION_STREAM_METADATA_KEYS = INTEGRATION_STREAM_METADATA.map(
   ({ key }) => key
@@ -157,6 +184,7 @@ export const INTEGRATION_THIRD_PARTY_INTEGRATION_METADATA: ThirdPartyIntegration
     { key: DocumentMetadataKeyCode.BlogpostUrl, optional: true },
     { key: DocumentMetadataKeyCode.DemoUrl, optional: true },
     { key: DocumentMetadataKeyCode.LicenseType, optional: true },
+    ...INTEGRATION_COVERAGE_METADATA,
   ];
 export const INTEGRATION_THIRD_PARTY_INTEGRATION_METADATA_KEYS =
   INTEGRATION_THIRD_PARTY_INTEGRATION_METADATA.map(({ key }) => key);
@@ -176,6 +204,7 @@ export const INTEGRATION_CONNECTOR_METADATA: ConnectorMetadata = [
   { key: DocumentMetadataKeyCode.DemoUrl, optional: true },
   { key: DocumentMetadataKeyCode.LicenseType, optional: true },
   { key: DocumentMetadataKeyCode.Contact, optional: true },
+  ...INTEGRATION_COVERAGE_METADATA,
 ];
 
 export const INTEGRATION_CONNECTOR_V2_METADATA: ConnectorV2Metadata = [
@@ -201,6 +230,7 @@ export const INTEGRATION_CONNECTOR_V2_METADATA: ConnectorV2Metadata = [
   { key: DocumentMetadataKeyCode.VersionPadded },
   { key: DocumentMetadataKeyCode.LicenseType, optional: true },
   { key: DocumentMetadataKeyCode.Contact, optional: true },
+  ...INTEGRATION_COVERAGE_METADATA,
 ];
 export const INTEGRATION_CONNECTOR_METADATA_KEYS =
   INTEGRATION_CONNECTOR_METADATA.map(({ key }) => key);

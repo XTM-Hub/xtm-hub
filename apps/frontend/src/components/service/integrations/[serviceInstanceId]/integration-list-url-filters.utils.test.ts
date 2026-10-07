@@ -7,8 +7,11 @@ import {
   emptyFilters,
   INTEGRATION_TYPE_PARAM,
   LABEL_PARAM,
+  OBJECT_TYPE_PARAM,
   parseAllFiltersFromWindowSearch,
   parseSelection,
+  REGION_PARAM,
+  SECTOR_PARAM,
   serializeSelection,
   VERIFIED_PARAM,
 } from './integration-list-url-filters.utils';
@@ -48,6 +51,58 @@ describe('parseSelection (simple filter)', () => {
   });
 });
 
+describe('coverage filters (free text)', () => {
+  it('round-trips values holding commas and colons', () => {
+    const filters = {
+      ...emptyFilters(),
+      [SECTOR_PARAM]: { 'Retail, consumer goods': [], Finance: [] },
+      [REGION_PARAM]: { 'Europe: Western': [] },
+      [OBJECT_TYPE_PARAM]: { Malware: [] },
+    };
+    const params = new URLSearchParams(buildAllFiltersSearchParams(filters));
+    expect(params.get(SECTOR_PARAM)).toBe(
+      '["Finance","Retail, consumer goods"]'
+    );
+    expect(parseSelection(params.get(SECTOR_PARAM), SECTOR_PARAM)).toEqual(
+      filters[SECTOR_PARAM]
+    );
+    expect(parseSelection(params.get(REGION_PARAM), REGION_PARAM)).toEqual(
+      filters[REGION_PARAM]
+    );
+    expect(
+      parseSelection(params.get(OBJECT_TYPE_PARAM), OBJECT_TYPE_PARAM)
+    ).toEqual(filters[OBJECT_TYPE_PARAM]);
+  });
+
+  it.each`
+    description                                 | raw                                             | expected
+    ${'comma-separated links of earlier pages'} | ${'Finance,Energy'}                             | ${{ Finance: [], Energy: [] }}
+    ${'malformed JSON read as a legacy list'}   | ${'[Finance'}                                   | ${{ '[Finance': [] }}
+    ${'blank JSON values dropped'}              | ${'["Finance"," "]'}                            | ${{ Finance: [] }}
+    ${'a colon kept in a legacy list value'}    | ${'Europe: Western,Asia'}                       | ${{ 'Europe: Western': [], Asia: [] }}
+    ${'case and spacing duplicates once'}       | ${'["Finance","finance"," FINANCE ","Energy"]'} | ${{ Finance: [], Energy: [] }}
+    ${'legacy list duplicates once'}            | ${'Finance,finance,Retail  goods,retail goods'} | ${{ Finance: [], 'Retail goods': [] }}
+    ${'spacing collapsed like stored values'}   | ${'["Retail  goods"]'}                          | ${{ 'Retail goods': [] }}
+  `('parses $description', ({ raw, expected }) => {
+    expect(parseSelection(raw, SECTOR_PARAM)).toEqual(expected);
+  });
+
+  it('keeps a colon in every free-text coverage param of a legacy link', () => {
+    expect(parseSelection('Europe: Western', REGION_PARAM)).toEqual({
+      'Europe: Western': [],
+    });
+    expect(parseSelection('Threat-Actor:Group', OBJECT_TYPE_PARAM)).toEqual({
+      'Threat-Actor:Group': [],
+    });
+  });
+
+  it('keeps the compact format for the other params', () => {
+    expect(serializeSelection({ id2: [], id1: [] }, LABEL_PARAM)).toBe(
+      'id1,id2'
+    );
+  });
+});
+
 describe('buildAllFiltersSearchParams', () => {
   it('returns empty string for empty filters', () => {
     expect(buildAllFiltersSearchParams(emptyFilters())).toBe('');
@@ -74,7 +129,7 @@ describe('buildAllFiltersSearchParams', () => {
 
 describe('allFiltersKey', () => {
   it('is empty for empty filters', () => {
-    expect(allFiltersKey(emptyFilters())).toBe('||||||||||||');
+    expect(allFiltersKey(emptyFilters())).toBe('||||||||||||||||||');
   });
 
   it('differs when any filter changes', () => {

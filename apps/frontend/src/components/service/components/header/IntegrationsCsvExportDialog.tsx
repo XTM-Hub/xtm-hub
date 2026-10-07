@@ -6,8 +6,11 @@ import {
   toIntegrationCsvColumnLabelKey,
 } from '@/components/service/components/header/integrations-csv-export.utils';
 import { useServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
+import { useCoverageObjectTypeLabel } from '@/components/service/form/UseCoverageObjectTypes';
 import { useSolutionCategories } from '@/components/service/form/UseSolutionCategories';
 import { availableIntegrationTypes } from '@/components/service/integrations/Integration.utils';
+import { buildCoverageOptions } from '@/components/ui/shareable-resource/integration/IntegrationCoverageFilter';
+import { useCoverageFacetCounts } from '@/hooks/use-coverage-facet-counts';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button } from '@filigran/design-system';
@@ -59,6 +62,9 @@ const csvExportFormSchema = z.object({
   solution_category: z.array(z.string()).optional(),
   verified: z.array(z.string()).optional(),
   manager_supported: z.array(z.string()).optional(),
+  object_type: z.array(z.string()).optional(),
+  sector: z.array(z.string()).optional(),
+  region: z.array(z.string()).optional(),
 });
 type CsvExportFormValues = z.infer<typeof csvExportFormSchema>;
 
@@ -118,6 +124,9 @@ export const IntegrationsCsvExportDialog = ({
     verified,
     deployable,
     labels,
+    objectTypes,
+    sectors,
+    regions,
   } = useServiceListLocalStorage(localStorageKey);
 
   const [seededValues, setSeededValues] = useState<CsvExportFormValues>(() => ({
@@ -128,6 +137,9 @@ export const IntegrationsCsvExportDialog = ({
     solution_category: [],
     verified: [],
     manager_supported: [],
+    object_type: [],
+    sector: [],
+    region: [],
   }));
   const [wasOpen, setWasOpen] = useState(false);
   if (open && !wasOpen) {
@@ -140,10 +152,40 @@ export const IntegrationsCsvExportDialog = ({
       solution_category: Object.keys(storedSolutionCategories),
       verified: Object.keys(verified),
       manager_supported: Object.keys(deployable),
+      object_type: Object.keys(objectTypes),
+      sector: Object.keys(sectors),
+      region: Object.keys(regions),
     });
   } else if (!open && wasOpen) {
     setWasOpen(false);
   }
+
+  // Coverage values are open lists: the catalog's values plus the list's current selection
+  const coverageFacetCounts = useCoverageFacetCounts({
+    serviceInstanceId,
+    documentType: type,
+    enabled: open,
+  });
+  const objectTypeLabel = useCoverageObjectTypeLabel();
+  const coverageOptions = useMemo(
+    () => ({
+      objectType: buildCoverageOptions(
+        coverageFacetCounts?.objectType,
+        seededValues.object_type ?? [],
+        [],
+        objectTypeLabel
+      ),
+      sector: buildCoverageOptions(
+        coverageFacetCounts?.sector,
+        seededValues.sector ?? []
+      ),
+      region: buildCoverageOptions(
+        coverageFacetCounts?.region,
+        seededValues.region ?? []
+      ),
+    }),
+    [coverageFacetCounts, seededValues, objectTypeLabel]
+  );
 
   const columnOptions = useMemo(
     () =>
@@ -249,6 +291,9 @@ export const IntegrationsCsvExportDialog = ({
         solutionCategories: values.solution_category,
         verified: values.verified,
         deployable: values.manager_supported,
+        objectTypes: values.object_type,
+        sectors: values.sector,
+        regions: values.region,
       };
       await downloadIntegrationsCsv(
         serviceInstanceId,
@@ -275,7 +320,7 @@ export const IntegrationsCsvExportDialog = ({
         if (!value) resetAndClose();
         else setOpen(value);
       }}>
-      <DialogContent className="layer-2">
+      <DialogContent className="layer-2 max-h-[90vh] grid-rows-[auto_minmax(0,1fr)] overflow-hidden">
         <DialogHeader>
           <DialogTitle>{t('Service.CsvExport.DialogTitle')}</DialogTitle>
           <DialogDescription className="sr-only">
@@ -284,6 +329,7 @@ export const IntegrationsCsvExportDialog = ({
         </DialogHeader>
 
         <AutoForm
+          className="flex h-full flex-col *:first:-mx-1 *:first:min-h-0 *:first:overflow-y-auto *:first:px-1"
           values={seededValues}
           formSchema={csvExportFormSchema}
           onSubmit={handleExport}
@@ -298,7 +344,7 @@ export const IntegrationsCsvExportDialog = ({
                   <FormLabel>{t('Service.CsvExport.ColumnsLabel')}</FormLabel>
                   <FormControl>
                     <MultiSelectFormField
-                      className="w-full min-w-0 max-w-md whitespace-nowrap"
+                      className="w-full min-w-0 max-w-md whitespace-nowrap *:min-w-0"
                       data-testid="integrations-csv-export-columns"
                       options={columnOptions}
                       defaultValue={field.value}
@@ -396,6 +442,47 @@ export const IntegrationsCsvExportDialog = ({
                     'Service.OpenctiIntegrations.Filter.ManagerSupported.Placeholder'
                   )}
                   testId="integrations-csv-export-filter-deployable"
+                />
+              ),
+            },
+            object_type: {
+              fieldType: ({ field }) => (
+                <IntegrationsCsvExportFilterField
+                  field={field}
+                  options={coverageOptions.objectType}
+                  label={t(
+                    'Service.OpenctiIntegrations.Filter.ObjectType.Label'
+                  )}
+                  placeholder={t(
+                    'Service.OpenctiIntegrations.Filter.ObjectType.Placeholder'
+                  )}
+                  testId="integrations-csv-export-filter-object-type"
+                />
+              ),
+            },
+            sector: {
+              fieldType: ({ field }) => (
+                <IntegrationsCsvExportFilterField
+                  field={field}
+                  options={coverageOptions.sector}
+                  label={t('Service.OpenctiIntegrations.Filter.Sector.Label')}
+                  placeholder={t(
+                    'Service.OpenctiIntegrations.Filter.Sector.Placeholder'
+                  )}
+                  testId="integrations-csv-export-filter-sector"
+                />
+              ),
+            },
+            region: {
+              fieldType: ({ field }) => (
+                <IntegrationsCsvExportFilterField
+                  field={field}
+                  options={coverageOptions.region}
+                  label={t('Service.OpenctiIntegrations.Filter.Region.Label')}
+                  placeholder={t(
+                    'Service.OpenctiIntegrations.Filter.Region.Placeholder'
+                  )}
+                  testId="integrations-csv-export-filter-region"
                 />
               ),
             },

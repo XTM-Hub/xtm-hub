@@ -1,0 +1,24 @@
+meta {
+  name: integrationCoverageObjectTypes
+  type: graphql
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/graphql-api
+  body: graphql
+}
+
+headers {
+  cookie: {{cookie}}
+}
+
+body:graphql {
+  query integrationCoverageObjectTypes {
+    integrationCoverageObjectTypes
+  }
+}
+
+docs {
+  This request lists the OpenCTI entity and observable types accepted as covered object types of an integration
+}

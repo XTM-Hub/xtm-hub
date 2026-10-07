@@ -155,22 +155,50 @@ export const loadSolutionCategoryFacetBuckets = async (
   return toFacetBuckets(rows);
 };
 
-export const loadEntityTypeFacetBuckets = async (
-  documentIdsQuery: DocumentIdsQuery
+/**
+ * One bucket per element of a JSON array metadata value. Coverage filters match case-insensitively, so values that
+ * differ only by case form one bucket, shown with a stable spelling: the smallest in byte order, whatever the
+ * database collation. The entity type filter matches the exact value: its buckets keep the exact case.
+ */
+export const loadMetadataListFacetBuckets = async (
+  documentIdsQuery: DocumentIdsQuery,
+  metadataKey: DocumentMetadataKeyCode,
+  { exactCase = false }: { exactCase?: boolean } = {}
 ) => {
-  const rows = (await db('Document_Metadata')
+  const query = db('Document_Metadata')
     .from('Document_Metadata as metadata')
     .joinRaw(
       'CROSS JOIN LATERAL jsonb_array_elements_text("metadata"."value"::jsonb) as entity(value)'
     )
-    .select('entity.value as value')
+    .select(
+      exactCase
+        ? 'entity.value as value'
+        : dbRaw('MIN("entity"."value" COLLATE "C") as value')
+    )
     .countDistinct({ count: 'metadata.document_id' })
-    .where('metadata.key', '=', DocumentMetadataKeyCode.EntityTypes)
+    .where('metadata.key', '=', metadataKey)
     .whereNotNull('metadata.value')
-    .whereIn('metadata.document_id', documentIdsQuery.clone())
-    .groupBy('entity.value')
-    .orderBy('count', 'desc')
-    .orderBy('entity.value', 'asc')) as FacetRow[];
+    .whereIn('metadata.document_id', documentIdsQuery.clone());
+  const rows = (await (exactCase
+    ? query
+        .groupBy('entity.value')
+        .orderBy('count', 'desc')
+        .orderBy('entity.value', 'asc')
+    : query
+        .groupByRaw('LOWER("entity"."value")')
+        .orderBy('count', 'desc')
+        .orderByRaw(
+          'MIN("entity"."value" COLLATE "C") COLLATE "default" asc'
+        ))) as FacetRow[];
 
   return toFacetBuckets(rows);
 };
+
+export const loadEntityTypeFacetBuckets = async (
+  documentIdsQuery: DocumentIdsQuery
+) =>
+  loadMetadataListFacetBuckets(
+    documentIdsQuery,
+    DocumentMetadataKeyCode.EntityTypes,
+    { exactCase: true }
+  );

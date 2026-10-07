@@ -52,6 +52,48 @@ You can filter feeds by:
 - Integration Feed type (CSV Feed, Connector, etc.)
 - Product compatibility (with connected OpenCTI products)
 - Deployment mode (automatic or manual)
+- Coverage: covered object types, sectors and regions
+
+### Coverage
+
+Each Integration describes what it covers: the OpenCTI object types it produces (Indicator, Malware, Vulnerability...),
+the sectors (Finance, Energy...) and the regions or countries (Europe, France...) its data is about.
+The coverage is shown on the Integration details page and can be used as a filter in the library.
+
+![Coverage filters of the Integrations library](../assets/images/integration-coverage-filter.png)
+
+The Object type, Sector and Region filters list the values of the Integrations matching the other filters, with
+their number of Integrations. Values selected earlier stay listed even when the other filters leave them without
+an Integration.
+
+- **Declared coverage** comes from the connector manifest (optional `coverage` block with `object_types`,
+  `sectors` and `regions`) or is set by a Hub administrator on the Integration. It is never changed automatically.
+  Object types are OpenCTI entity types (every entity and observable type, for example `Indicator`, `IPv4-Addr` or
+  `Autonomous-System`); sectors and regions are free values of up to 128 characters.
+- **Inferred coverage** is derived from the Integration name, descriptions, use cases and solution categories
+  when nothing is declared, and is flagged as inferred. It is refreshed automatically when the Integration changes.
+
+![Inferred coverage on the Integration details page](../assets/images/integration-coverage-details.png)
+
+On the details page, an inferred coverage is marked "Inferred automatically"; its tooltip explains where it comes
+from. When the inference found no object type, sector or region, the details page says "No coverage inferred", and
+its tooltip invites to declare the coverage in the Integration form:
+
+![An inference that found no coverage on the Integration details page](../assets/images/integration-coverage-details-none.png)
+
+In the Integration form, a Hub administrator sees when the current coverage was inferred: changing the
+coverage, or checking "Confirm this coverage" to keep it as it is, declares it and replaces the inference. Saving the
+form without either keeps the coverage inferred, and leaving the fields empty lets the Hub infer it. When the
+inference found nothing, there is nothing to confirm: the checkbox is not offered, and only values typed in the
+fields declare a coverage.
+
+![Coverage fields of the Integration form](../assets/images/integration-coverage-form.png)
+
+OpenCTI uses the coverage to recommend Integrations for its collection gaps: Source Intelligence finds the
+Priority Intelligence Requirement (PIR) criteria with too little recent knowledge and queries the library for the
+Integrations covering their object types, sectors and regions. Declared coverage ranks above inferred coverage, and
+an Integration covering `Global` matches every region. A recommended Connector can then be deployed with the
+One-Click Deployment described below.
 
 ### Sharing and Collaborating
 

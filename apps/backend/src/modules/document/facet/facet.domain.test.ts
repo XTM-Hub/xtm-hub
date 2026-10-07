@@ -1,6 +1,14 @@
 import { Knex } from 'knex';
 import { v4 as uuidv4 } from 'uuid';
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import { applySearch, database } from '../../../../knexfile';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import {
@@ -29,6 +37,7 @@ import { objectUseCaseDomain } from '../../use-case/object-use-case/object-use-c
 import { useCaseDomain } from '../../use-case/use-case.domain';
 import { DocumentApp } from '../document.app';
 import { isUserRestrictedToActiveDocument } from '../document.security';
+import { DocumentDomain } from '../domain/document.domain';
 import { FacetDomain } from './facet.domain';
 import {
   groupFacetsBySignature,
@@ -38,6 +47,7 @@ import {
   buildScopedDocumentIdsQuery,
   loadEntityTypeFacetBuckets,
   loadMetadataFacetBucketsGrouped,
+  loadMetadataListFacetBuckets,
   loadSolutionCategoryFacetBuckets,
   loadUseCaseFacetBuckets,
 } from './facet.queries';
@@ -488,6 +498,9 @@ describe('facet.domain', () => {
         solutionCategory,
         useCase,
         entityType,
+        objectType,
+        sector,
+        region,
       ] = await Promise.all([
         buildNaiveScopedQuery(
           input,
@@ -544,6 +557,30 @@ describe('facet.domain', () => {
           FilterKey.EntityType,
           restrictToActive
         ).then(({ scoped }) => loadEntityTypeFacetBuckets(scoped)),
+        buildNaiveScopedQuery(
+          input,
+          FilterKey.ObjectType,
+          restrictToActive
+        ).then(({ scoped }) =>
+          loadMetadataListFacetBuckets(
+            scoped,
+            DocumentMetadataKeyCode.CoveredObjectTypes
+          )
+        ),
+        buildNaiveScopedQuery(input, FilterKey.Sector, restrictToActive).then(
+          ({ scoped }) =>
+            loadMetadataListFacetBuckets(
+              scoped,
+              DocumentMetadataKeyCode.CoveredSectors
+            )
+        ),
+        buildNaiveScopedQuery(input, FilterKey.Region, restrictToActive).then(
+          ({ scoped }) =>
+            loadMetadataListFacetBuckets(
+              scoped,
+              DocumentMetadataKeyCode.CoveredRegions
+            )
+        ),
       ]);
 
       return {
@@ -555,6 +592,9 @@ describe('facet.domain', () => {
         solution_category: solutionCategory,
         use_case: useCase,
         entity_type: entityType,
+        object_type: objectType,
+        sector,
+        region,
       };
     };
 
@@ -918,6 +958,226 @@ describe('facet.domain', () => {
       // ...while every other facet, scoped by the unmatched filter, is empty.
       expect(result.license_type).toEqual([]);
       expect(result.use_case).toEqual([]);
+    });
+  });
+
+  describe('coverage facets', () => {
+    const COVERAGE_MALWARE = 'Malware';
+    const COVERAGE_INDICATOR = 'Indicator';
+    const COVERAGE_FINANCE = 'Finance';
+    const COVERAGE_ENERGY = 'Energy';
+    const COVERAGE_EUROPE = 'Europe';
+    const COVERAGE_GLOBAL = 'Global';
+
+    let coverageServiceInstance: { id: ServiceInstanceId; slug: string };
+
+    const createCoveredDocument = async (
+      slugPrefix: string,
+      coverage?: {
+        objectTypes: string[];
+        sectors: string[];
+        regions: string[];
+      }
+    ) => {
+      const document = await TestHelper.document.create({
+        name: `${slugPrefix}-${uuidv4()}`,
+        slug: `${slugPrefix}-${uuidv4()}`,
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        active: true,
+        service_instance_id: coverageServiceInstance.id,
+      });
+      createdDocumentIds.push(document.id);
+      if (coverage) {
+        await Promise.all([
+          TestHelper.documentMetadata.create({
+            document_id: document.id,
+            key: DocumentMetadataKeyCode.CoveredObjectTypes,
+            value: JSON.stringify(coverage.objectTypes),
+          }),
+          TestHelper.documentMetadata.create({
+            document_id: document.id,
+            key: DocumentMetadataKeyCode.CoveredSectors,
+            value: JSON.stringify(coverage.sectors),
+          }),
+          TestHelper.documentMetadata.create({
+            document_id: document.id,
+            key: DocumentMetadataKeyCode.CoveredRegions,
+            value: JSON.stringify(coverage.regions),
+          }),
+        ]);
+      }
+      return document;
+    };
+
+    beforeEach(async () => {
+      const slug = `facet-coverage-${uuidv4()}`;
+      const serviceInstance = await TestHelper.serviceInstance.create({
+        service_definition_id: SERVICES.DEFINITIONS.OPENCTI_INTEGRATIONS.ID,
+        name: slug,
+        slug,
+        public: true,
+      });
+      createdServiceInstanceIds.push(serviceInstance.id);
+      coverageServiceInstance = { id: serviceInstance.id, slug };
+
+      await createCoveredDocument('coverage-finance', {
+        objectTypes: [COVERAGE_MALWARE, COVERAGE_INDICATOR],
+        sectors: [COVERAGE_FINANCE],
+        regions: [COVERAGE_EUROPE],
+      });
+      await createCoveredDocument('coverage-energy', {
+        objectTypes: [COVERAGE_MALWARE],
+        sectors: [COVERAGE_ENERGY],
+        regions: [COVERAGE_GLOBAL],
+      });
+      await createCoveredDocument('coverage-none');
+    });
+
+    it('should count one bucket per covered object type, sector and region', async () => {
+      // Given / When
+      const result = await FacetDomain.loadDocumentFacets({
+        serviceInstanceId: coverageServiceInstance.id,
+        documentType: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+      });
+
+      // Then
+      expect({
+        object_type: result.object_type,
+        sector: result.sector,
+        region: result.region,
+      }).toEqual({
+        object_type: [
+          { value: COVERAGE_MALWARE, count: 2 },
+          { value: COVERAGE_INDICATOR, count: 1 },
+        ],
+        sector: [
+          { value: COVERAGE_ENERGY, count: 1 },
+          { value: COVERAGE_FINANCE, count: 1 },
+        ],
+        region: [
+          { value: COVERAGE_EUROPE, count: 1 },
+          { value: COVERAGE_GLOBAL, count: 1 },
+        ],
+      });
+    });
+
+    it('should count values differing only by case in one bucket, like the case-insensitive filter', async () => {
+      // Given
+      await createCoveredDocument('coverage-space-upper', {
+        objectTypes: [],
+        sectors: ['Space Industry'],
+        regions: ['Antarctica'],
+      });
+      await createCoveredDocument('coverage-space-lower', {
+        objectTypes: [],
+        sectors: ['space industry'],
+        regions: ['Antarctica'],
+      });
+
+      // When
+      const facets = await FacetDomain.loadDocumentFacets({
+        serviceInstanceId: coverageServiceInstance.id,
+        documentType: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+      });
+      const filtered = await FacetDomain.loadDocumentFacets({
+        serviceInstanceId: coverageServiceInstance.id,
+        documentType: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        logicalFilters: {
+          leaf: { key: FilterKey.Sector, value: ['space industry'] },
+        },
+      });
+
+      // Then - the bucket counts the two documents the filter on either spelling returns
+      expect({
+        sector: facets.sector,
+        filteredRegion: filtered.region,
+      }).toEqual({
+        sector: [
+          { value: 'Space Industry', count: 2 },
+          { value: COVERAGE_ENERGY, count: 1 },
+          { value: COVERAGE_FINANCE, count: 1 },
+        ],
+        filteredRegion: [{ value: 'Antarctica', count: 2 }],
+      });
+    });
+
+    it('should keep the exact case of entity types, like their filter', async () => {
+      // Given
+      for (const entityType of ['Malware', 'malware']) {
+        const document = await createCoveredDocument('entity-type-case');
+        await TestHelper.documentMetadata.create({
+          document_id: document.id,
+          key: DocumentMetadataKeyCode.EntityTypes,
+          value: JSON.stringify([entityType]),
+        });
+      }
+
+      // When
+      const facets = await FacetDomain.loadDocumentFacets({
+        serviceInstanceId: coverageServiceInstance.id,
+        documentType: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+      });
+
+      // Then - one bucket per exact value, as the entity type filter matches
+      expect(facets.entity_type).toEqual([
+        { value: 'Malware', count: 1 },
+        { value: 'malware', count: 1 },
+      ]);
+    });
+
+    it('should filter case-insensitively on a coverage key while its own facet ignores the filter', async () => {
+      // Given
+      const logicalFilters = {
+        leaf: { key: FilterKey.Sector, value: ['finance'] },
+      };
+
+      // When
+      const result = await FacetDomain.loadDocumentFacets({
+        serviceInstanceId: coverageServiceInstance.id,
+        documentType: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        logicalFilters,
+      });
+
+      // Then
+      expect({
+        object_type: result.object_type,
+        sector: result.sector,
+        region: result.region,
+      }).toEqual({
+        object_type: [
+          { value: COVERAGE_INDICATOR, count: 1 },
+          { value: COVERAGE_MALWARE, count: 1 },
+        ],
+        sector: [
+          { value: COVERAGE_ENERGY, count: 1 },
+          { value: COVERAGE_FINANCE, count: 1 },
+        ],
+        region: [{ value: COVERAGE_EUROPE, count: 1 }],
+      });
+    });
+
+    it('should apply the coverage logical filters to the public document list', async () => {
+      // Given
+      const logicalFilters = {
+        operator: LogicalOperator.And,
+        children: [
+          { leaf: { key: FilterKey.ObjectType, value: ['MALWARE'] } },
+          { leaf: { key: FilterKey.Region, value: ['global'] } },
+        ],
+      };
+
+      // When
+      const connection =
+        await DocumentDomain.loadPaginatedSeoDocumentsByServiceSlug(
+          OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+          coverageServiceInstance.slug,
+          { first: 10, logicalFilters }
+        );
+
+      // Then
+      expect(
+        connection.edges.map(({ node }) => node.slug?.split('-')[1])
+      ).toEqual(['energy']);
     });
   });
 });

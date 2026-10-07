@@ -32,11 +32,16 @@ export interface IntegrationCsvExportFilters {
   solutionCategories?: string[];
   verified?: string[];
   deployable?: string[];
+  objectTypes?: string[];
+  sectors?: string[];
+  regions?: string[];
 }
 
+// Coverage values are free text that may contain commas: they are sent as repeated parameters, never joined.
 const EXPORT_FILTER_QUERY_PARAMS: Array<{
   field: keyof IntegrationCsvExportFilters;
   queryParam: string;
+  repeated?: boolean;
 }> = [
   { field: 'integrationTypes', queryParam: FilterKey.IntegrationType },
   { field: 'licenseTypes', queryParam: FilterKey.LicenseType },
@@ -44,6 +49,9 @@ const EXPORT_FILTER_QUERY_PARAMS: Array<{
   { field: 'solutionCategories', queryParam: FilterKey.SolutionCategory },
   { field: 'verified', queryParam: FilterKey.Verified },
   { field: 'useCases', queryParam: 'use_case' },
+  { field: 'objectTypes', queryParam: FilterKey.ObjectType, repeated: true },
+  { field: 'sectors', queryParam: FilterKey.Sector, repeated: true },
+  { field: 'regions', queryParam: FilterKey.Region, repeated: true },
 ];
 
 export const buildIntegrationsCsvExportUrl = (
@@ -55,9 +63,14 @@ export const buildIntegrationsCsvExportUrl = (
   if (columns.length > 0) {
     params.set('columns', columns.join(','));
   }
-  EXPORT_FILTER_QUERY_PARAMS.forEach(({ field, queryParam }) => {
+  EXPORT_FILTER_QUERY_PARAMS.forEach(({ field, queryParam, repeated }) => {
     const values = filters[field];
-    if (values && values.length > 0) {
+    if (!values || values.length === 0) {
+      return;
+    }
+    if (repeated) {
+      values.forEach((value) => params.append(queryParam, value));
+    } else {
       params.set(queryParam, values.join(','));
     }
   });

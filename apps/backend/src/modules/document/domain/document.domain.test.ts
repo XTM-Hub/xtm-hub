@@ -186,6 +186,144 @@ describe('document domain', () => {
     });
   });
 
+  describe('findCurrentBySlug', () => {
+    it('should find the document of a type and slug in any service instance, as the unique constraint does', async () => {
+      const elsewhere = await TestHelper.document.create({
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'shared-slug',
+        service_instance_id: null,
+      });
+      await TestHelper.document.create({
+        type: OPENCTI_CUSTOM_VIEW_DOCUMENT_TYPE,
+        slug: 'shared-slug',
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+      });
+
+      const found = await DocumentDomain.findCurrentBySlug({
+        slug: 'shared-slug',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+      });
+
+      expect(found?.id).toEqual(elsewhere.id);
+    });
+
+    it('should prefer the live document of a slug over a removed one created after it', async () => {
+      // Given: A is reactivated after B, created later, was removed
+      const live = await TestHelper.document.create({
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'reactivated-slug',
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+        active: true,
+        created_at: new Date('2026-01-01T00:00:00Z'),
+      });
+      await TestHelper.document.create({
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'reactivated-slug',
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+        active: false,
+        created_at: new Date('2026-02-01T00:00:00Z'),
+      });
+
+      // When
+      const found = await DocumentDomain.findCurrentBySlug({
+        slug: 'reactivated-slug',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+      });
+
+      // Then
+      expect(found?.id).toEqual(live.id);
+    });
+
+    it('should fall back to the latest removed document when no document of the slug is live', async () => {
+      // Given
+      await TestHelper.document.create({
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'removed-only-slug',
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+        active: false,
+        created_at: new Date('2026-01-01T00:00:00Z'),
+      });
+      const latest = await TestHelper.document.create({
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'removed-only-slug',
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+        active: false,
+        created_at: new Date('2026-02-01T00:00:00Z'),
+      });
+
+      // When
+      const found = await DocumentDomain.findCurrentBySlug({
+        slug: 'removed-only-slug',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+      });
+
+      // Then
+      expect(found?.id).toEqual(latest.id);
+    });
+  });
+
+  describe('isSlugTaken', () => {
+    it('should count a live decoupled connector as holding its slug, never a removed document', async () => {
+      await TestHelper.document.create({
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'decoupled-slug',
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+        active: true,
+        tags: [TAG_DECOUPLING],
+      });
+      await TestHelper.document.create({
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'removed-slug',
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+        active: false,
+      });
+
+      await expect(
+        DocumentDomain.isSlugTaken({
+          slug: 'decoupled-slug',
+          type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        })
+      ).resolves.toBe(true);
+      await expect(
+        DocumentDomain.isSlugTaken({
+          slug: 'removed-slug',
+          type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        })
+      ).resolves.toBe(false);
+    });
+
+    it('should leave the excluded document out, so that a reactivation only sees another holder', async () => {
+      const holder = await TestHelper.document.create({
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'held-slug',
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+        active: true,
+      });
+
+      await expect(
+        DocumentDomain.isSlugTaken({
+          slug: 'held-slug',
+          type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+          excludeDocumentId: holder.id,
+        })
+      ).resolves.toBe(false);
+
+      const otherHolder = await TestHelper.document.create({
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        slug: 'held-slug',
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+        active: true,
+      });
+      await expect(
+        DocumentDomain.isSlugTaken({
+          slug: 'held-slug',
+          type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+          excludeDocumentId: otherHolder.id,
+        })
+      ).resolves.toBe(true);
+    });
+  });
+
   describe('loadParentDocumentsByServiceInstance with draft documents', () => {
     const PAGE_SIZE = 2;
     const DRAFT_NAME = 'm-draft';

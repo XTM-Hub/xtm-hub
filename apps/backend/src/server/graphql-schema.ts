@@ -29,6 +29,7 @@ import openAEVScenariosResolver from '../modules/shareable-resource/openaev/scen
 import customDashboardsResolver from '../modules/shareable-resource/opencti/custom-dashboard/custom-dashboard.resolver';
 import customViewsResolver from '../modules/shareable-resource/opencti/custom-view/custom-view.resolver';
 import ingestManifestResolver from '../modules/shareable-resource/opencti/integration/ingest-manifest/ingest-manifest.resolver';
+import integrationCoverageResolver from '../modules/shareable-resource/opencti/integration/integration-coverage/integration-coverage.resolver';
 import integrationsResolver from '../modules/shareable-resource/opencti/integration/integration.resolver';
 import openCTIPlaybooksResolver from '../modules/shareable-resource/opencti/playbook/playbook.resolver';
 import solutionCategoryResolver from '../modules/solution-category/solution-category.resolver';
@@ -77,6 +78,7 @@ const resolvers = mergeResolvers([
   deploymentResolver,
   ingestManifestResolver,
   integrationsResolver,
+  integrationCoverageResolver,
   serviceGroupResolver,
   competitorResolver,
   xtmPlatformRoadmapResolver,

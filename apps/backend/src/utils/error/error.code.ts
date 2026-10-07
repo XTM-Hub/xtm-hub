@@ -75,6 +75,12 @@ export enum BadRequestErrorCode {
   XtmOneRoleRequired = 'XTM_ONE_ROLE_REQUIRED',
   InvalidContentTranslationKey = 'INVALID_CONTENT_TRANSLATION_KEY',
   UserStatusChangedConcurrently = 'USER_STATUS_CHANGED_CONCURRENTLY',
+  InvalidIntegrationCoverage = 'INVALID_INTEGRATION_COVERAGE',
+  InvalidCoverageSearchInput = 'INVALID_COVERAGE_SEARCH_INPUT',
+}
+
+export enum TooManyRequestsErrorCode {
+  CoverageSearchRateLimited = 'COVERAGE_SEARCH_RATE_LIMITED',
 }
 
 export enum UnknownErrorCode {
@@ -120,6 +126,7 @@ export enum UnknownErrorCode {
   VotingRoundMutationError = 'VOTING_ROUND_MUTATION_ERROR',
   VotableFeatureMutationError = 'VOTABLE_FEATURE_MUTATION_ERROR',
   ListFacetError = 'LIST_FACET_ERROR',
+  IntegrationCoverageSearchError = 'INTEGRATION_COVERAGE_SEARCH_ERROR',
 }
 
 export enum AlreadyExistsErrorCode {
@@ -155,6 +162,7 @@ export enum NotFoundErrorCode {
 export const ErrorCode = {
   ...ForbiddenErrorCode,
   ...BadRequestErrorCode,
+  ...TooManyRequestsErrorCode,
   ...AlreadyExistsErrorCode,
   ...NotFoundErrorCode,
 };

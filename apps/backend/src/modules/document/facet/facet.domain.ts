@@ -15,7 +15,10 @@ export const FacetDomain = {
       !user ||
       (await isUserRestrictedToActiveDocument(user, input.serviceInstanceId));
 
-    const groups = groupFacetsBySignature(input.logicalFilters);
+    const groups = groupFacetsBySignature(
+      input.logicalFilters,
+      input.documentType
+    );
     const byField = await loadFacetsInSingleQuery(
       groups,
       input,
@@ -31,6 +34,9 @@ export const FacetDomain = {
       solution_category: byField.solution_category ?? [],
       use_case: byField.use_case ?? [],
       entity_type: byField.entity_type ?? [],
+      object_type: byField.object_type ?? [],
+      sector: byField.sector ?? [],
+      region: byField.region ?? [],
     };
   },
 };

@@ -238,21 +238,19 @@ export const DocumentDomain = {
     return DocumentMetadataDomain.hydrateMetadata(documents, include_metadata);
   },
 
-  lockDocumentsBySlugTypeAndServiceInstance: async ({
+  /**
+   * Locks every document of this type and slug, in every service instance:
+   * the scope of the unique constraint `document_type_slug_version_unique`.
+   */
+  lockDocumentsBySlugAndType: async ({
     slug,
     type,
-    serviceInstanceId,
   }: {
     slug: string;
     type: string;
-    serviceInstanceId: ServiceInstanceId;
   }): Promise<Pick<DocumentModel, 'id'>[]> => {
     return db<DocumentModel>('Document')
-      .where({
-        slug,
-        type,
-        service_instance_id: serviceInstanceId,
-      })
+      .where({ slug, type })
       .select('id')
       .forUpdate();
   },
@@ -577,6 +575,59 @@ export const DocumentDomain = {
     return updatedDocument;
   },
 
+  /**
+   * Document that `upsertOnSlug` updates for this slug: among the documents of
+   * this type outside the decoupling tag, whatever their service instance (the
+   * unique constraint `document_type_slug_version_unique` spans every service
+   * instance), the live one, else the latest removed one. A removed document
+   * newer than the live one is never picked: reactivating it would leave two
+   * live documents with one slug, which the constraint allows for documents
+   * without a version. `forUpdate` locks its row in the caller's transaction.
+   */
+  findCurrentBySlug: async (
+    { slug, type }: { slug: string; type: string },
+    { forUpdate = false }: { forUpdate?: boolean } = {}
+  ): Promise<DocumentModel | undefined> => {
+    const query = db<DocumentModel>('Document')
+      .where('slug', '=', slug)
+      .where('type', '=', type)
+      .modify(excludeDecouplingTag)
+      .orderBy([
+        { column: 'active', order: 'desc' },
+        { column: 'created_at', order: 'desc' },
+      ]);
+    return (forUpdate ? query.forUpdate() : query).first();
+  },
+
+  /**
+   * Whether a live document of this type holds the slug, a decoupled
+   * connector included: the decoupling tag only decides the listings.
+   * Documents without a version escape the unique constraint, so a creation,
+   * and an update that reactivates a document (`excludeDocumentId`), checks
+   * this under the lock that serializes the slug.
+   */
+  isSlugTaken: async ({
+    slug,
+    type,
+    excludeDocumentId,
+  }: {
+    slug: string;
+    type: string;
+    excludeDocumentId?: DocumentId;
+  }): Promise<boolean> => {
+    const document = await db<DocumentModel>('Document')
+      .where('slug', '=', slug)
+      .where('type', '=', type)
+      .where('active', '=', true)
+      .modify((query) => {
+        if (excludeDocumentId) {
+          query.whereNot('id', excludeDocumentId);
+        }
+      })
+      .first('Document.id');
+    return !!document;
+  },
+
   upsertOnSlug: async <
     T extends DocumentModel,
     TUseCase extends string = UseCaseValue,
@@ -596,15 +647,12 @@ export const DocumentDomain = {
       uploader_organization_id: user.selected_organization_id,
     };
 
-    const slug = (documentData as { slug?: string }).slug;
+    const { slug, type } = documentData as { slug?: string; type?: string };
 
-    const existingDocument = slug
-      ? await db<DocumentModel>('Document')
-          .where('slug', '=', slug)
-          .modify(excludeDecouplingTag)
-          .orderBy('created_at', 'desc')
-          .first()
-      : undefined;
+    const existingDocument =
+      slug && type
+        ? await DocumentDomain.findCurrentBySlug({ slug, type })
+        : undefined;
 
     if (existingDocument) {
       const [updatedDocument] = await db<DocumentModel>('Document')

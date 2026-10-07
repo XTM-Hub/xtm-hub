@@ -12,6 +12,9 @@ type Facet {
   solution_category: [FacetBucket!]!
   use_case: [FacetBucket!]!
   entity_type: [FacetBucket!]!
+  object_type: [FacetBucket!]!
+  sector: [FacetBucket!]!
+  region: [FacetBucket!]!
 }
 
 input LoadDocumentFacetInput {

@@ -23,6 +23,9 @@ describe('facet.app', () => {
       solution_category: [],
       use_case: [],
       entity_type: [],
+      object_type: [],
+      sector: [],
+      region: [],
     };
     vi.spyOn(FacetDomain, 'loadDocumentFacets').mockResolvedValue(
       expectedFacets
@@ -53,6 +56,9 @@ describe('facet.app', () => {
       solution_category: [],
       use_case: [],
       entity_type: [],
+      object_type: [],
+      sector: [],
+      region: [],
     };
     vi.spyOn(FacetDomain, 'loadDocumentFacets').mockResolvedValue(
       expectedFacets
@@ -83,6 +89,9 @@ describe('facet.app', () => {
       solution_category: [],
       use_case: [],
       entity_type: [],
+      object_type: [],
+      sector: [],
+      region: [],
     });
 
     // When

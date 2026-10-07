@@ -1,4 +1,4 @@
-import { AddServiceInput, AddSolutionCategoryInput, AddSubscriptionCapabilityInput, AddUseCaseInput, AddUserInput, AddUsersToBundleGroupsInput, AdminAddUserInput, AdminEditUserInput, AutoRegisterPlatformInput, BulkPendingUserFromOrganizationInput, BundleUserRoleAssignmentInput, BundleUserServiceGroup, CanUnregisterPlatformInput, CanUnregisterResponse, Capability, Competitor, CompetitorConnection, CompetitorEdge, Connector, ConsumeProvisionedNewsFeedItemsResponse, ContentTranslationEntry, ContentTranslationValueInput, CreateCompetitorInput, CreateDeploymentRequestInput, CreateDocumentInput, CreateEpicInput, CreateSubscriptionsInput, CreateVotableFeatureInput, CreateVotingRoundInput, CsvFeed, CustomDashboard, CustomView, DefaultDocument, DeployedResource, DeploymentAvailability, DeploymentRequest, DeploymentRequestConnection, DeploymentRequestEdge, DeploymentRequestFilter, Document, DocumentConnection, DocumentEdge, DocumentMetadata, EditMeUserInput, EditSeoServiceInstanceInput, EditSolutionCategoryInput, EditUseCaseInput, EditUserCapabilitiesInput, Epic, EpicConnection, EpicCountPerTimeline, EpicEdge, Facet, FacetBucket, Filter, GenericServiceCapability, GiveDeploymentFeedbackInput, Integration, IntegrationHack, IsPlatformRegisteredInput, IsPlatformRegisteredOrganization, IsPlatformRegisteredResponse, LastDeployedOverview, LoadDocumentFacetInput, LogicalFilterInput, ManifestFragmentInput, MeUserSubscription, MergeEvent, Mutation, NewsFeedItem, NewsFeedItemConnection, NewsFeedItemEdge, NewsFeedItemMetadata, Node, OneClickDeployInput, OpenAevScenario, OpenCtiPlatformRegistrationStatusInput, OpenCtiPlatformRegistrationStatusResponse, OpenCtiPlaybook, Organization, OrganizationCapabilities, OrganizationCapabilitiesInput, OrganizationConnection, OrganizationEdge, OrganizationInput, OrganizationRef, PageInfo, PlatformDeploymentRequest, PlatformDeploymentRequestConnection, PlatformDeploymentRequestEdge, PlatformInput, PlatformProvider, PlatformTrialStatus, ProductUseCaseInput, ProvisionedNewsFeedItem, PublicDocumentSlugInfo, Query, RefreshPlatformRegistrationConnectivityStatusAllTenantsInput, RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse, RefreshPlatformRegistrationConnectivityStatusInput, RefreshPlatformRegistrationConnectivityStatusResponse, RefreshPlatformRegistrationConnectivityStatusSingleTenantInput, RefreshUserPlatformTokenResponse, RegisterPlatformInput, RegisteredPlatform, RegisteredPlatformInput, RegisteredPlatformsInput, RegisteredProductVersion, RegistrationResponse, ReorderDeploymentRequestInQueueInput, RolePortal, RssFeed, SendTelemetryMutation, SeoServiceInstance, SeoServiceInstanceMetadata, ServiceCapability, ServiceConnection, ServiceDefinition, ServiceGroup, ServiceInstance, ServiceInstanceEdge, ServiceInstanceFilter, ServiceInstanceSubscription, ServiceLink, Settings, ShareableResource, SolutionCategory, SolutionCategoryConnection, SolutionCategoryEdge, Stream, SubscribedServiceInstanceConfiguration, Subscription, SubscriptionCapability, SubscriptionConnection, SubscriptionEdge, SubscriptionFilter, SubscriptionModel, Success, TaxiiFeed, TelemetryResponse, TenantDetails, TenantStatus, ThirdPartyIntegration, UnregisterPlatformInput, UpdateBundleUserGroupsInput, UpdateBundleUserGroupsRoleInput, UpdateCompetitorInput, UpdateDeploymentQuotaCapacityInput, UpdateDeploymentRequestInput, UpdateDocumentInput, UpdateEpicInput, UpdatePlatformServiceMetadataInput, UpdateServiceGroupsInput, UpdateServiceGroupsInputGroup, UpdateSubscriptionInput, UpdateVotableFeatureInput, UpdateVotingRoundInput, UpsertContentTranslationInput, UseCase, UseCaseConnection, UseCaseEdge, User, UserConnection, UserEdge, UserPendingSubscription, UserPlatformGroup, UserService, UserServiceAddInput, UserServiceAddYourselfInput, UserServiceCapabilitiesResponse, UserServiceCapability, UserServiceConnection, UserServiceDeleted, UserServiceEdge, UserServiceEditInput, UserServicesAddCapabilitiesInput, UserServicesDeleteInput, UserSubscription, UsersWithCapabilitiesInOrganizationInput, VotableFeature, VotableFeatureResult, VotingRound, VotingRoundResults, XtmoneIntegrationStatus, XtmoneIntegrationStatusEntry, CompetitorOrdering, CompetitorTier, DeploymentRequestActivitySector, DeploymentRequestDeploymentType, DeploymentRequestFilterKey, DeploymentRequestHubStatus, DeploymentRequestJobTitle, DeploymentRequestOrdering, DeploymentRequestPlatformRegion, DeploymentRequestPlatformState, DeploymentRequestSource, DeploymentRequestUseCase, DocumentImageType, DocumentMetadataKeyCode, DocumentOrdering, DocumentSourceType, EditionType, EpicOrdering, EpicType, FeatureFlag, FiligranProduct, FilterKey, HasRepliedSatisfaction, IntegrationType, LicenseType, Locale, LogicalOperator, ManifestType, NewsFeedItemMetadataKey, NewsFeedItemType, OrderingMode, OrganizationCapability, OrganizationOrdering, PlatformConfigurationStatus, PlatformContract, PlatformIdentifier, PlatformRegistrationConnectivityStatus, PlatformRegistrationStatus, PortalCapability, ReorderDeploymentRequestInQueueDirection, ServiceDefinitionIdentifier, ServiceGroupName, ServiceInstanceCreationStatus, ServiceInstanceFilterKey, ServiceInstanceOrdering, ServiceInstanceTag, ServiceRestriction, SolutionCategoryOrdering, SubscriptionFilterKey, SubscriptionOrdering, Timeline, UseCaseOrdering, UserAccountStatus, UserOrdering, UserServiceOrdering, VotingRoundStatus, VotingRoundTheme } from './generated';
+import { AddServiceInput, AddSolutionCategoryInput, AddSubscriptionCapabilityInput, AddUseCaseInput, AddUserInput, AddUsersToBundleGroupsInput, AdminAddUserInput, AdminEditUserInput, AutoRegisterPlatformInput, BulkPendingUserFromOrganizationInput, BundleUserRoleAssignmentInput, BundleUserServiceGroup, CanUnregisterPlatformInput, CanUnregisterResponse, Capability, Competitor, CompetitorConnection, CompetitorEdge, Connector, ConsumeProvisionedNewsFeedItemsResponse, ContentTranslationEntry, ContentTranslationValueInput, CreateCompetitorInput, CreateDeploymentRequestInput, CreateDocumentInput, CreateEpicInput, CreateSubscriptionsInput, CreateVotableFeatureInput, CreateVotingRoundInput, CsvFeed, CustomDashboard, CustomView, DefaultDocument, DeployedResource, DeploymentAvailability, DeploymentRequest, DeploymentRequestConnection, DeploymentRequestEdge, DeploymentRequestFilter, Document, DocumentConnection, DocumentEdge, DocumentMetadata, EditMeUserInput, EditSeoServiceInstanceInput, EditSolutionCategoryInput, EditUseCaseInput, EditUserCapabilitiesInput, Epic, EpicConnection, EpicCountPerTimeline, EpicEdge, Facet, FacetBucket, Filter, GenericServiceCapability, GiveDeploymentFeedbackInput, Integration, IntegrationCoverageInput, IntegrationCoverageMatch, IntegrationCoverageSearchInput, IntegrationCoverageSearchResult, IntegrationHack, IsPlatformRegisteredInput, IsPlatformRegisteredOrganization, IsPlatformRegisteredResponse, LastDeployedOverview, LoadDocumentFacetInput, LogicalFilterInput, ManifestFragmentInput, MeUserSubscription, MergeEvent, Mutation, NewsFeedItem, NewsFeedItemConnection, NewsFeedItemEdge, NewsFeedItemMetadata, Node, OneClickDeployInput, OpenAevScenario, OpenCtiPlatformRegistrationStatusInput, OpenCtiPlatformRegistrationStatusResponse, OpenCtiPlaybook, Organization, OrganizationCapabilities, OrganizationCapabilitiesInput, OrganizationConnection, OrganizationEdge, OrganizationInput, OrganizationRef, PageInfo, PlatformDeploymentRequest, PlatformDeploymentRequestConnection, PlatformDeploymentRequestEdge, PlatformInput, PlatformProvider, PlatformTrialStatus, ProductUseCaseInput, ProvisionedNewsFeedItem, PublicDocumentSlugInfo, Query, RefreshPlatformRegistrationConnectivityStatusAllTenantsInput, RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse, RefreshPlatformRegistrationConnectivityStatusInput, RefreshPlatformRegistrationConnectivityStatusResponse, RefreshPlatformRegistrationConnectivityStatusSingleTenantInput, RefreshUserPlatformTokenResponse, RegisterPlatformInput, RegisteredPlatform, RegisteredPlatformInput, RegisteredPlatformsInput, RegisteredProductVersion, RegistrationResponse, ReorderDeploymentRequestInQueueInput, RolePortal, RssFeed, SendTelemetryMutation, SeoServiceInstance, SeoServiceInstanceMetadata, ServiceCapability, ServiceConnection, ServiceDefinition, ServiceGroup, ServiceInstance, ServiceInstanceEdge, ServiceInstanceFilter, ServiceInstanceSubscription, ServiceLink, Settings, ShareableResource, SolutionCategory, SolutionCategoryConnection, SolutionCategoryEdge, Stream, SubscribedServiceInstanceConfiguration, Subscription, SubscriptionCapability, SubscriptionConnection, SubscriptionEdge, SubscriptionFilter, SubscriptionModel, Success, TaxiiFeed, TelemetryResponse, TenantDetails, TenantStatus, ThirdPartyIntegration, UnregisterPlatformInput, UpdateBundleUserGroupsInput, UpdateBundleUserGroupsRoleInput, UpdateCompetitorInput, UpdateDeploymentQuotaCapacityInput, UpdateDeploymentRequestInput, UpdateDocumentInput, UpdateEpicInput, UpdatePlatformServiceMetadataInput, UpdateServiceGroupsInput, UpdateServiceGroupsInputGroup, UpdateSubscriptionInput, UpdateVotableFeatureInput, UpdateVotingRoundInput, UpsertContentTranslationInput, UseCase, UseCaseConnection, UseCaseEdge, User, UserConnection, UserEdge, UserPendingSubscription, UserPlatformGroup, UserService, UserServiceAddInput, UserServiceAddYourselfInput, UserServiceCapabilitiesResponse, UserServiceCapability, UserServiceConnection, UserServiceDeleted, UserServiceEdge, UserServiceEditInput, UserServicesAddCapabilitiesInput, UserServicesDeleteInput, UserSubscription, UsersWithCapabilitiesInOrganizationInput, VotableFeature, VotableFeatureResult, VotingRound, VotingRoundResults, XtmoneIntegrationStatus, XtmoneIntegrationStatusEntry, CompetitorOrdering, CompetitorTier, DeploymentRequestActivitySector, DeploymentRequestDeploymentType, DeploymentRequestFilterKey, DeploymentRequestHubStatus, DeploymentRequestJobTitle, DeploymentRequestOrdering, DeploymentRequestPlatformRegion, DeploymentRequestPlatformState, DeploymentRequestSource, DeploymentRequestUseCase, DocumentImageType, DocumentMetadataKeyCode, DocumentOrdering, DocumentSourceType, EditionType, EpicOrdering, EpicType, FeatureFlag, FiligranProduct, FilterKey, HasRepliedSatisfaction, IntegrationType, LicenseType, Locale, LogicalOperator, ManifestType, NewsFeedItemMetadataKey, NewsFeedItemType, OrderingMode, OrganizationCapability, OrganizationOrdering, PlatformConfigurationStatus, PlatformContract, PlatformIdentifier, PlatformRegistrationConnectivityStatus, PlatformRegistrationStatus, PortalCapability, ReorderDeploymentRequestInQueueDirection, ServiceDefinitionIdentifier, ServiceGroupName, ServiceInstanceCreationStatus, ServiceInstanceFilterKey, ServiceInstanceOrdering, ServiceInstanceTag, ServiceRestriction, SolutionCategoryOrdering, SubscriptionFilterKey, SubscriptionOrdering, Timeline, UseCaseOrdering, UserAccountStatus, UserOrdering, UserServiceOrdering, VotingRoundStatus, VotingRoundTheme } from './generated';
 
 export const mockAddServiceInput = (overrides?: Partial<AddServiceInput>, _relationshipsToOmit: Set<string> = new Set()): AddServiceInput => {
     const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
@@ -197,6 +197,10 @@ export const mockConnector = (overrides?: Partial<Connector>, _relationshipsToOm
         children_documents: overrides && overrides.hasOwnProperty('children_documents') ? overrides.children_documents! : [relationshipsToOmit.has('ShareableResource') ? {} as ShareableResource : mockShareableResource({}, relationshipsToOmit)],
         contact: overrides && overrides.hasOwnProperty('contact') ? overrides.contact! : 'cubo',
         container_image: overrides && overrides.hasOwnProperty('container_image') ? overrides.container_image! : 'sollers',
+        coverage_inferred: overrides && overrides.hasOwnProperty('coverage_inferred') ? overrides.coverage_inferred! : false,
+        covered_object_types: overrides && overrides.hasOwnProperty('covered_object_types') ? overrides.covered_object_types! : ['stultus'],
+        covered_regions: overrides && overrides.hasOwnProperty('covered_regions') ? overrides.covered_regions! : ['verumtamen'],
+        covered_sectors: overrides && overrides.hasOwnProperty('covered_sectors') ? overrides.covered_sectors! : ['supplanto'],
         created_at: overrides && overrides.hasOwnProperty('created_at') ? overrides.created_at! : '2021-06-06T02:21:37.850Z',
         datasheet_url: overrides && overrides.hasOwnProperty('datasheet_url') ? overrides.datasheet_url! : 'adfectus',
         demo_url: overrides && overrides.hasOwnProperty('demo_url') ? overrides.demo_url! : 'vitium',
@@ -291,6 +295,10 @@ export const mockCreateDocumentInput = (overrides?: Partial<CreateDocumentInput>
     relationshipsToOmit.add('CreateDocumentInput');
     return {
         active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : false,
+        coverage_confirmed: overrides && overrides.hasOwnProperty('coverage_confirmed') ? overrides.coverage_confirmed! : true,
+        covered_object_types: overrides && overrides.hasOwnProperty('covered_object_types') ? overrides.covered_object_types! : ['comitatus'],
+        covered_regions: overrides && overrides.hasOwnProperty('covered_regions') ? overrides.covered_regions! : ['cauda'],
+        covered_sectors: overrides && overrides.hasOwnProperty('covered_sectors') ? overrides.covered_sectors! : ['victus'],
         description: overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'spes',
         entity_types: overrides && overrides.hasOwnProperty('entity_types') ? overrides.entity_types! : ['vorax'],
         license_type: overrides && overrides.hasOwnProperty('license_type') ? overrides.license_type! : LicenseType.Commercial,
@@ -370,6 +378,10 @@ export const mockCsvFeed = (overrides?: Partial<CsvFeed>, _relationshipsToOmit: 
         active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : false,
         blogpost_url: overrides && overrides.hasOwnProperty('blogpost_url') ? overrides.blogpost_url! : 'accusantium',
         children_documents: overrides && overrides.hasOwnProperty('children_documents') ? overrides.children_documents! : [relationshipsToOmit.has('ShareableResource') ? {} as ShareableResource : mockShareableResource({}, relationshipsToOmit)],
+        coverage_inferred: overrides && overrides.hasOwnProperty('coverage_inferred') ? overrides.coverage_inferred! : true,
+        covered_object_types: overrides && overrides.hasOwnProperty('covered_object_types') ? overrides.covered_object_types! : ['cupio'],
+        covered_regions: overrides && overrides.hasOwnProperty('covered_regions') ? overrides.covered_regions! : ['subito'],
+        covered_sectors: overrides && overrides.hasOwnProperty('covered_sectors') ? overrides.covered_sectors! : ['temeritas'],
         created_at: overrides && overrides.hasOwnProperty('created_at') ? overrides.created_at! : '2021-03-09T23:44:00.946Z',
         datasheet_url: overrides && overrides.hasOwnProperty('datasheet_url') ? overrides.datasheet_url! : 'altus',
         demo_url: overrides && overrides.hasOwnProperty('demo_url') ? overrides.demo_url! : 'beatus',
@@ -743,7 +755,10 @@ export const mockFacet = (overrides?: Partial<Facet>, _relationshipsToOmit: Set<
         integration_type: overrides && overrides.hasOwnProperty('integration_type') ? overrides.integration_type! : [relationshipsToOmit.has('FacetBucket') ? {} as FacetBucket : mockFacetBucket({}, relationshipsToOmit)],
         license_type: overrides && overrides.hasOwnProperty('license_type') ? overrides.license_type! : [relationshipsToOmit.has('FacetBucket') ? {} as FacetBucket : mockFacetBucket({}, relationshipsToOmit)],
         manager_supported: overrides && overrides.hasOwnProperty('manager_supported') ? overrides.manager_supported! : [relationshipsToOmit.has('FacetBucket') ? {} as FacetBucket : mockFacetBucket({}, relationshipsToOmit)],
+        object_type: overrides && overrides.hasOwnProperty('object_type') ? overrides.object_type! : [relationshipsToOmit.has('FacetBucket') ? {} as FacetBucket : mockFacetBucket({}, relationshipsToOmit)],
         product_version: overrides && overrides.hasOwnProperty('product_version') ? overrides.product_version! : [relationshipsToOmit.has('FacetBucket') ? {} as FacetBucket : mockFacetBucket({}, relationshipsToOmit)],
+        region: overrides && overrides.hasOwnProperty('region') ? overrides.region! : [relationshipsToOmit.has('FacetBucket') ? {} as FacetBucket : mockFacetBucket({}, relationshipsToOmit)],
+        sector: overrides && overrides.hasOwnProperty('sector') ? overrides.sector! : [relationshipsToOmit.has('FacetBucket') ? {} as FacetBucket : mockFacetBucket({}, relationshipsToOmit)],
         solution_category: overrides && overrides.hasOwnProperty('solution_category') ? overrides.solution_category! : [relationshipsToOmit.has('FacetBucket') ? {} as FacetBucket : mockFacetBucket({}, relationshipsToOmit)],
         use_case: overrides && overrides.hasOwnProperty('use_case') ? overrides.use_case! : [relationshipsToOmit.has('FacetBucket') ? {} as FacetBucket : mockFacetBucket({}, relationshipsToOmit)],
         verified: overrides && overrides.hasOwnProperty('verified') ? overrides.verified! : [relationshipsToOmit.has('FacetBucket') ? {} as FacetBucket : mockFacetBucket({}, relationshipsToOmit)],
@@ -797,6 +812,10 @@ export const mockIntegration = (overrides?: Partial<Integration>, _relationships
         active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : false,
         blogpost_url: overrides && overrides.hasOwnProperty('blogpost_url') ? overrides.blogpost_url! : 'deleniti',
         children_documents: overrides && overrides.hasOwnProperty('children_documents') ? overrides.children_documents! : [relationshipsToOmit.has('ShareableResource') ? {} as ShareableResource : mockShareableResource({}, relationshipsToOmit)],
+        coverage_inferred: overrides && overrides.hasOwnProperty('coverage_inferred') ? overrides.coverage_inferred! : false,
+        covered_object_types: overrides && overrides.hasOwnProperty('covered_object_types') ? overrides.covered_object_types! : ['tandem'],
+        covered_regions: overrides && overrides.hasOwnProperty('covered_regions') ? overrides.covered_regions! : ['vespillo'],
+        covered_sectors: overrides && overrides.hasOwnProperty('covered_sectors') ? overrides.covered_sectors! : ['appositus'],
         created_at: overrides && overrides.hasOwnProperty('created_at') ? overrides.created_at! : '2021-07-21T07:00:48.060Z',
         datasheet_url: overrides && overrides.hasOwnProperty('datasheet_url') ? overrides.datasheet_url! : 'capio',
         demo_url: overrides && overrides.hasOwnProperty('demo_url') ? overrides.demo_url! : 'inventore',
@@ -824,6 +843,64 @@ export const mockIntegration = (overrides?: Partial<Integration>, _relationships
     };
 };
 
+export const mockIntegrationCoverageInput = (overrides?: Partial<IntegrationCoverageInput>, _relationshipsToOmit: Set<string> = new Set()): IntegrationCoverageInput => {
+    const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+    relationshipsToOmit.add('IntegrationCoverageInput');
+    return {
+        object_types: overrides && overrides.hasOwnProperty('object_types') ? overrides.object_types! : ['adfectus'],
+        regions: overrides && overrides.hasOwnProperty('regions') ? overrides.regions! : ['adaugeo'],
+        sectors: overrides && overrides.hasOwnProperty('sectors') ? overrides.sectors! : ['articulus'],
+    };
+};
+
+export const mockIntegrationCoverageMatch = (overrides?: Partial<IntegrationCoverageMatch>, _relationshipsToOmit: Set<string> = new Set()): { __typename: 'IntegrationCoverageMatch' } & IntegrationCoverageMatch => {
+    const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+    relationshipsToOmit.add('IntegrationCoverageMatch');
+    return {
+        __typename: 'IntegrationCoverageMatch',
+        coverage_inferred: overrides && overrides.hasOwnProperty('coverage_inferred') ? overrides.coverage_inferred! : false,
+        id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : '79ab49ad-9634-4755-b98d-0aa5c24f1792',
+        integration_type: overrides && overrides.hasOwnProperty('integration_type') ? overrides.integration_type! : IntegrationType.Connector,
+        license_type: overrides && overrides.hasOwnProperty('license_type') ? overrides.license_type! : LicenseType.Commercial,
+        manager_supported: overrides && overrides.hasOwnProperty('manager_supported') ? overrides.manager_supported! : false,
+        matched_object_types: overrides && overrides.hasOwnProperty('matched_object_types') ? overrides.matched_object_types! : ['inflammatio'],
+        matched_regions: overrides && overrides.hasOwnProperty('matched_regions') ? overrides.matched_regions! : ['cattus'],
+        matched_sectors: overrides && overrides.hasOwnProperty('matched_sectors') ? overrides.matched_sectors! : ['canonicus'],
+        name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'utor',
+        object_types: overrides && overrides.hasOwnProperty('object_types') ? overrides.object_types! : ['allatus'],
+        regions: overrides && overrides.hasOwnProperty('regions') ? overrides.regions! : ['turpis'],
+        score: overrides && overrides.hasOwnProperty('score') ? overrides.score! : 4.6,
+        sectors: overrides && overrides.hasOwnProperty('sectors') ? overrides.sectors! : ['verus'],
+        short_description: overrides && overrides.hasOwnProperty('short_description') ? overrides.short_description! : 'necessitatibus',
+        slug: overrides && overrides.hasOwnProperty('slug') ? overrides.slug! : 'aliquid',
+        verified: overrides && overrides.hasOwnProperty('verified') ? overrides.verified! : true,
+    };
+};
+
+export const mockIntegrationCoverageSearchInput = (overrides?: Partial<IntegrationCoverageSearchInput>, _relationshipsToOmit: Set<string> = new Set()): IntegrationCoverageSearchInput => {
+    const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+    relationshipsToOmit.add('IntegrationCoverageSearchInput');
+    return {
+        first: overrides && overrides.hasOwnProperty('first') ? overrides.first! : 6793,
+        integrationTypes: overrides && overrides.hasOwnProperty('integrationTypes') ? overrides.integrationTypes! : [IntegrationType.Connector],
+        objectTypes: overrides && overrides.hasOwnProperty('objectTypes') ? overrides.objectTypes! : ['iste'],
+        regions: overrides && overrides.hasOwnProperty('regions') ? overrides.regions! : ['deduco'],
+        searchTerm: overrides && overrides.hasOwnProperty('searchTerm') ? overrides.searchTerm! : 'itaque',
+        sectors: overrides && overrides.hasOwnProperty('sectors') ? overrides.sectors! : ['consequuntur'],
+    };
+};
+
+export const mockIntegrationCoverageSearchResult = (overrides?: Partial<IntegrationCoverageSearchResult>, _relationshipsToOmit: Set<string> = new Set()): { __typename: 'IntegrationCoverageSearchResult' } & IntegrationCoverageSearchResult => {
+    const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+    relationshipsToOmit.add('IntegrationCoverageSearchResult');
+    return {
+        __typename: 'IntegrationCoverageSearchResult',
+        facets: overrides && overrides.hasOwnProperty('facets') ? overrides.facets! : relationshipsToOmit.has('Facet') ? {} as Facet : mockFacet({}, relationshipsToOmit),
+        matches: overrides && overrides.hasOwnProperty('matches') ? overrides.matches! : [relationshipsToOmit.has('IntegrationCoverageMatch') ? {} as IntegrationCoverageMatch : mockIntegrationCoverageMatch({}, relationshipsToOmit)],
+        truncated: overrides && overrides.hasOwnProperty('truncated') ? overrides.truncated! : true,
+    };
+};
+
 export const mockIntegrationHack = (overrides?: Partial<IntegrationHack>, _relationshipsToOmit: Set<string> = new Set()): { __typename: 'IntegrationHack' } & IntegrationHack => {
     const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
     relationshipsToOmit.add('IntegrationHack');
@@ -832,6 +909,10 @@ export const mockIntegrationHack = (overrides?: Partial<IntegrationHack>, _relat
         active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : false,
         blogpost_url: overrides && overrides.hasOwnProperty('blogpost_url') ? overrides.blogpost_url! : 'dedecor',
         children_documents: overrides && overrides.hasOwnProperty('children_documents') ? overrides.children_documents! : [relationshipsToOmit.has('ShareableResource') ? {} as ShareableResource : mockShareableResource({}, relationshipsToOmit)],
+        coverage_inferred: overrides && overrides.hasOwnProperty('coverage_inferred') ? overrides.coverage_inferred! : false,
+        covered_object_types: overrides && overrides.hasOwnProperty('covered_object_types') ? overrides.covered_object_types! : ['succurro'],
+        covered_regions: overrides && overrides.hasOwnProperty('covered_regions') ? overrides.covered_regions! : ['aureus'],
+        covered_sectors: overrides && overrides.hasOwnProperty('covered_sectors') ? overrides.covered_sectors! : ['rerum'],
         created_at: overrides && overrides.hasOwnProperty('created_at') ? overrides.created_at! : '2021-08-03T14:38:06.226Z',
         datasheet_url: overrides && overrides.hasOwnProperty('datasheet_url') ? overrides.datasheet_url! : 'pecus',
         demo_url: overrides && overrides.hasOwnProperty('demo_url') ? overrides.demo_url! : 'depulso',
@@ -926,6 +1007,7 @@ export const mockManifestFragmentInput = (overrides?: Partial<ManifestFragmentIn
         additional_properties: overrides && overrides.hasOwnProperty('additional_properties') ? overrides.additional_properties! : 'cicuta',
         config_schema: overrides && overrides.hasOwnProperty('config_schema') ? overrides.config_schema! : 'cupressus',
         contact: overrides && overrides.hasOwnProperty('contact') ? overrides.contact! : 'arma',
+        coverage: overrides && overrides.hasOwnProperty('coverage') ? overrides.coverage! : relationshipsToOmit.has('IntegrationCoverageInput') ? {} as IntegrationCoverageInput : mockIntegrationCoverageInput({}, relationshipsToOmit),
         description: overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'studio',
         id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'coruscus',
         image_name: overrides && overrides.hasOwnProperty('image_name') ? overrides.image_name! : 'reiciendis',
@@ -1438,6 +1520,8 @@ export const mockQuery = (overrides?: Partial<Query>, _relationshipsToOmit: Set<
         documentFacets: overrides && overrides.hasOwnProperty('documentFacets') ? overrides.documentFacets! : relationshipsToOmit.has('Facet') ? {} as Facet : mockFacet({}, relationshipsToOmit),
         documents: overrides && overrides.hasOwnProperty('documents') ? overrides.documents! : relationshipsToOmit.has('DocumentConnection') ? {} as DocumentConnection : mockDocumentConnection({}, relationshipsToOmit),
         epics: overrides && overrides.hasOwnProperty('epics') ? overrides.epics! : relationshipsToOmit.has('EpicConnection') ? {} as EpicConnection : mockEpicConnection({}, relationshipsToOmit),
+        integrationCoverageObjectTypes: overrides && overrides.hasOwnProperty('integrationCoverageObjectTypes') ? overrides.integrationCoverageObjectTypes! : ['veniam'],
+        integrationsByCoverage: overrides && overrides.hasOwnProperty('integrationsByCoverage') ? overrides.integrationsByCoverage! : relationshipsToOmit.has('IntegrationCoverageSearchResult') ? {} as IntegrationCoverageSearchResult : mockIntegrationCoverageSearchResult({}, relationshipsToOmit),
         isPlatformRegistered: overrides && overrides.hasOwnProperty('isPlatformRegistered') ? overrides.isPlatformRegistered! : relationshipsToOmit.has('IsPlatformRegisteredResponse') ? {} as IsPlatformRegisteredResponse : mockIsPlatformRegisteredResponse({}, relationshipsToOmit),
         lastDeployedOverview: overrides && overrides.hasOwnProperty('lastDeployedOverview') ? overrides.lastDeployedOverview! : relationshipsToOmit.has('LastDeployedOverview') ? {} as LastDeployedOverview : mockLastDeployedOverview({}, relationshipsToOmit),
         me: overrides && overrides.hasOwnProperty('me') ? overrides.me! : relationshipsToOmit.has('User') ? {} as User : mockUser({}, relationshipsToOmit),
@@ -1646,6 +1730,10 @@ export const mockRssFeed = (overrides?: Partial<RssFeed>, _relationshipsToOmit: 
         active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : false,
         blogpost_url: overrides && overrides.hasOwnProperty('blogpost_url') ? overrides.blogpost_url! : 'atavus',
         children_documents: overrides && overrides.hasOwnProperty('children_documents') ? overrides.children_documents! : [relationshipsToOmit.has('ShareableResource') ? {} as ShareableResource : mockShareableResource({}, relationshipsToOmit)],
+        coverage_inferred: overrides && overrides.hasOwnProperty('coverage_inferred') ? overrides.coverage_inferred! : false,
+        covered_object_types: overrides && overrides.hasOwnProperty('covered_object_types') ? overrides.covered_object_types! : ['adduco'],
+        covered_regions: overrides && overrides.hasOwnProperty('covered_regions') ? overrides.covered_regions! : ['tunc'],
+        covered_sectors: overrides && overrides.hasOwnProperty('covered_sectors') ? overrides.covered_sectors! : ['cunctatio'],
         created_at: overrides && overrides.hasOwnProperty('created_at') ? overrides.created_at! : '2021-08-14T14:48:23.932Z',
         datasheet_url: overrides && overrides.hasOwnProperty('datasheet_url') ? overrides.datasheet_url! : 'pectus',
         demo_url: overrides && overrides.hasOwnProperty('demo_url') ? overrides.demo_url! : 'solvo',
@@ -1896,6 +1984,10 @@ export const mockStream = (overrides?: Partial<Stream>, _relationshipsToOmit: Se
         active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : false,
         blogpost_url: overrides && overrides.hasOwnProperty('blogpost_url') ? overrides.blogpost_url! : 'ocer',
         children_documents: overrides && overrides.hasOwnProperty('children_documents') ? overrides.children_documents! : [relationshipsToOmit.has('ShareableResource') ? {} as ShareableResource : mockShareableResource({}, relationshipsToOmit)],
+        coverage_inferred: overrides && overrides.hasOwnProperty('coverage_inferred') ? overrides.coverage_inferred! : false,
+        covered_object_types: overrides && overrides.hasOwnProperty('covered_object_types') ? overrides.covered_object_types! : ['tener'],
+        covered_regions: overrides && overrides.hasOwnProperty('covered_regions') ? overrides.covered_regions! : ['creo'],
+        covered_sectors: overrides && overrides.hasOwnProperty('covered_sectors') ? overrides.covered_sectors! : ['conservo'],
         created_at: overrides && overrides.hasOwnProperty('created_at') ? overrides.created_at! : '2021-06-20T00:56:06.636Z',
         datasheet_url: overrides && overrides.hasOwnProperty('datasheet_url') ? overrides.datasheet_url! : 'demum',
         demo_url: overrides && overrides.hasOwnProperty('demo_url') ? overrides.demo_url! : 'sol',
@@ -2025,6 +2117,10 @@ export const mockTaxiiFeed = (overrides?: Partial<TaxiiFeed>, _relationshipsToOm
         active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : true,
         blogpost_url: overrides && overrides.hasOwnProperty('blogpost_url') ? overrides.blogpost_url! : 'advoco',
         children_documents: overrides && overrides.hasOwnProperty('children_documents') ? overrides.children_documents! : [relationshipsToOmit.has('ShareableResource') ? {} as ShareableResource : mockShareableResource({}, relationshipsToOmit)],
+        coverage_inferred: overrides && overrides.hasOwnProperty('coverage_inferred') ? overrides.coverage_inferred! : true,
+        covered_object_types: overrides && overrides.hasOwnProperty('covered_object_types') ? overrides.covered_object_types! : ['damno'],
+        covered_regions: overrides && overrides.hasOwnProperty('covered_regions') ? overrides.covered_regions! : ['traho'],
+        covered_sectors: overrides && overrides.hasOwnProperty('covered_sectors') ? overrides.covered_sectors! : ['textus'],
         created_at: overrides && overrides.hasOwnProperty('created_at') ? overrides.created_at! : '2021-11-08T19:45:38.037Z',
         datasheet_url: overrides && overrides.hasOwnProperty('datasheet_url') ? overrides.datasheet_url! : 'ustilo',
         demo_url: overrides && overrides.hasOwnProperty('demo_url') ? overrides.demo_url! : 'nostrum',
@@ -2092,6 +2188,10 @@ export const mockThirdPartyIntegration = (overrides?: Partial<ThirdPartyIntegrat
         active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : false,
         blogpost_url: overrides && overrides.hasOwnProperty('blogpost_url') ? overrides.blogpost_url! : 'damnatio',
         children_documents: overrides && overrides.hasOwnProperty('children_documents') ? overrides.children_documents! : [relationshipsToOmit.has('ShareableResource') ? {} as ShareableResource : mockShareableResource({}, relationshipsToOmit)],
+        coverage_inferred: overrides && overrides.hasOwnProperty('coverage_inferred') ? overrides.coverage_inferred! : false,
+        covered_object_types: overrides && overrides.hasOwnProperty('covered_object_types') ? overrides.covered_object_types! : ['adfero'],
+        covered_regions: overrides && overrides.hasOwnProperty('covered_regions') ? overrides.covered_regions! : ['conor'],
+        covered_sectors: overrides && overrides.hasOwnProperty('covered_sectors') ? overrides.covered_sectors! : ['amplus'],
         created_at: overrides && overrides.hasOwnProperty('created_at') ? overrides.created_at! : '2021-02-21T08:27:31.113Z',
         datasheet_url: overrides && overrides.hasOwnProperty('datasheet_url') ? overrides.datasheet_url! : 'qui',
         demo_url: overrides && overrides.hasOwnProperty('demo_url') ? overrides.demo_url! : 'sono',
@@ -2190,6 +2290,10 @@ export const mockUpdateDocumentInput = (overrides?: Partial<UpdateDocumentInput>
     relationshipsToOmit.add('UpdateDocumentInput');
     return {
         active: overrides && overrides.hasOwnProperty('active') ? overrides.active! : true,
+        coverage_confirmed: overrides && overrides.hasOwnProperty('coverage_confirmed') ? overrides.coverage_confirmed! : false,
+        covered_object_types: overrides && overrides.hasOwnProperty('covered_object_types') ? overrides.covered_object_types! : ['vigilo'],
+        covered_regions: overrides && overrides.hasOwnProperty('covered_regions') ? overrides.covered_regions! : ['cernuus'],
+        covered_sectors: overrides && overrides.hasOwnProperty('covered_sectors') ? overrides.covered_sectors! : ['truculenter'],
         description: overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'porro',
         entity_types: overrides && overrides.hasOwnProperty('entity_types') ? overrides.entity_types! : ['annus'],
         license_type: overrides && overrides.hasOwnProperty('license_type') ? overrides.license_type! : LicenseType.Commercial,

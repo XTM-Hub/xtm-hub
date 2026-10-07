@@ -21,6 +21,9 @@ export interface UseDocumentFacetCountsParams {
   productVersions: LogicalMultiSelectSelection;
   licenseTypes: LogicalMultiSelectSelection;
   solutionCategories: LogicalMultiSelectSelection;
+  objectTypes: LogicalMultiSelectSelection;
+  sectors: LogicalMultiSelectSelection;
+  regions: LogicalMultiSelectSelection;
 }
 
 export const useDocumentFacetCounts = ({
@@ -37,6 +40,9 @@ export const useDocumentFacetCounts = ({
   productVersions,
   licenseTypes,
   solutionCategories,
+  objectTypes,
+  sectors,
+  regions,
 }: UseDocumentFacetCountsParams) => {
   const logicalFilters = useLogicalFiltersFromStorage(
     serviceInstanceSlug === ServiceSlug.OPEN_CTI_INTEGRATIONS
@@ -49,6 +55,9 @@ export const useDocumentFacetCounts = ({
           productVersions,
           licenseTypes,
           solutionCategories,
+          objectTypes,
+          sectors,
+          regions,
         }
       : {
           serviceInstanceSlug: serviceInstanceSlug as

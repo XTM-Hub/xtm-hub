@@ -48,6 +48,20 @@ describe('integrations-csv-export.utils', () => {
       );
     });
 
+    it('repeats each coverage value as its own query param, commas included', () => {
+      // When
+      const url = buildIntegrationsCsvExportUrl('service-1', [], {
+        objectTypes: ['Malware', 'Indicator'],
+        sectors: ['Retail, consumer goods'],
+        regions: ['Europe'],
+      });
+
+      // Then
+      expect(url).toBe(
+        '/document/csv-export/service-1?object_type=Malware&object_type=Indicator&sector=Retail%2C+consumer+goods&region=Europe'
+      );
+    });
+
     it('omits filters that are empty or not provided', () => {
       // When
       const url = buildIntegrationsCsvExportUrl('service-1', ['use_case'], {

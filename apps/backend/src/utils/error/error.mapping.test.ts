@@ -19,6 +19,19 @@ describe('error mapping', () => {
       expect(builtError.message).toBe(ErrorCode.InvalidPlatformConfiguration);
     });
 
+    it('should return a retryable too many requests error for a rate limit code', () => {
+      const error = new Error(ErrorCode.CoverageSearchRateLimited);
+
+      const builtError = mapToGraphQLError(error);
+
+      expect(isInstance(builtError)).toBeTruthy();
+      expect(builtError.data.http_status).toBe(429);
+      expect(builtError.data.genre).toBe(ErrorCategory.BadRequest);
+      expect(builtError.message).toBe(ErrorCode.CoverageSearchRateLimited);
+      expect(builtError.extensions?.http?.status).toBe(429);
+      expect(builtError._logLevel).toBe('debug');
+    });
+
     it('should return unknown error when error is unknown', () => {
       const error = new Error('Hello');
 

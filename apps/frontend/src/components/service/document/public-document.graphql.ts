@@ -86,6 +86,10 @@ export const publicDocumentBySlugItem = graphql`
         name
       }
       license_type
+      covered_object_types
+      covered_sectors
+      covered_regions
+      coverage_inferred
     }
 
     ... on CustomDashboard {

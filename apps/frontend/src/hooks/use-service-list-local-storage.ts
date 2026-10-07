@@ -96,6 +96,33 @@ export const useServiceListLocalStorage = (
       }
     );
 
+  const [objectTypes, setObjectTypes, removeObjectTypes] =
+    useLocalStorage<LogicalMultiSelectSelection>(
+      `objectType${pagePrefix}${serviceName}List`,
+      {},
+      {
+        deserializer: deserializeLogicalMultiSelectSelection,
+      }
+    );
+
+  const [sectors, setSectors, removeSectors] =
+    useLocalStorage<LogicalMultiSelectSelection>(
+      `sector${pagePrefix}${serviceName}List`,
+      {},
+      {
+        deserializer: deserializeLogicalMultiSelectSelection,
+      }
+    );
+
+  const [regions, setRegions, removeRegions] =
+    useLocalStorage<LogicalMultiSelectSelection>(
+      `region${pagePrefix}${serviceName}List`,
+      {},
+      {
+        deserializer: deserializeLogicalMultiSelectSelection,
+      }
+    );
+
   const [deployable, setDeployable, removeDeployable] =
     useLocalStorage<LogicalMultiSelectSelection>(
       `deployable${pagePrefix}${serviceName}List`,
@@ -150,6 +177,9 @@ export const useServiceListLocalStorage = (
     removeLicenseTypes();
     removeSolutionCategories();
     removeEntityTypes();
+    removeObjectTypes();
+    removeSectors();
+    removeRegions();
     removeDeployable();
     removeVerified();
     removeOrderBy();
@@ -164,6 +194,9 @@ export const useServiceListLocalStorage = (
     removeLicenseTypes,
     removeSolutionCategories,
     removeEntityTypes,
+    removeObjectTypes,
+    removeSectors,
+    removeRegions,
     removeDeployable,
     removeVerified,
     removeOrderBy,
@@ -196,6 +229,15 @@ export const useServiceListLocalStorage = (
     entityTypes,
     setEntityTypes,
     removeEntityTypes,
+    objectTypes,
+    setObjectTypes,
+    removeObjectTypes,
+    sectors,
+    setSectors,
+    removeSectors,
+    regions,
+    setRegions,
+    removeRegions,
     deployable,
     setDeployable,
     removeDeployable,

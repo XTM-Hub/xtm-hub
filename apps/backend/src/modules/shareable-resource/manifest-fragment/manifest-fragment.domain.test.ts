@@ -1,4 +1,5 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { database } from '../../../../knexfile';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import {
   DocumentMetadataKeyCode,
@@ -15,7 +16,9 @@ import { ObjectSolutionCategoryObjectId } from '../../../model/kanel/public/Obje
 import { SYSTEM_USER_CONTEXT } from '../../../portal.const';
 import { minioInit } from '../../../server/initialize';
 import { BadRequestErrorCode } from '../../../utils/error/error.code';
+import { IntegrationCoverageDomain } from '../opencti/integration/integration-coverage/integration-coverage.domain';
 import {
+  CONNECTOR_SLUG_LOCK_NAMESPACE,
   INTEGRATION_SERVICE_INSTANCE_ID,
   OPENCTI_INTEGRATION_DOCUMENT_TYPE,
 } from '../opencti/integration/integration.model';
@@ -595,6 +598,51 @@ describe('manifestFragmentDomain', () => {
       expect(newDocument!.tags).not.toContain('latest-lts');
     });
 
+    it('treats a connector of the same slug in another service instance as part of the family, like the unique constraint', async () => {
+      // Given
+      const elsewhere = await TestHelper.document.create({
+        slug: 'misp-family-elsewhere',
+        type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+        service_instance_id: null,
+        source_type: DocumentSourceType.External,
+        version: '7.260308.0',
+        tags: ['decoupling', 'latest'],
+      });
+      _createdDocumentIds.push(elsewhere.id);
+      await TestHelper.documentMetadata.create({
+        document_id: elsewhere.id,
+        key: DocumentMetadataKeyCode.VersionPadded as DocumentMetadataKey,
+        value: '007.260308.000',
+      });
+
+      // When: a newer version, then the same version again
+      await ManifestFragmentDomain.ingestManifestFragment(
+        buildManifestFragment(ManifestType.Connector, {
+          slug: 'misp-family-elsewhere',
+          version: '7.260309.0',
+        })
+      );
+      await expect(
+        ManifestFragmentDomain.ingestManifestFragment(
+          buildManifestFragment(ManifestType.Connector, {
+            slug: 'misp-family-elsewhere',
+            version: '7.260308.0',
+          })
+        )
+      ).rejects.toThrow(BadRequestErrorCode.ConnectorVersionAlreadyExists);
+
+      // Then: one family with one latest version
+      const demoted = await TestHelper.document.load({ id: elsewhere.id });
+      expect(demoted!.tags).not.toContain('latest');
+      const promoted = await TestHelper.document.load({
+        slug: 'misp-family-elsewhere',
+        version: '7.260309.0',
+      });
+      expect(promoted).toBeDefined();
+      _createdDocumentIds.push(promoted!.id);
+      expect(promoted!.tags).toContain('latest');
+    });
+
     it('promotes latest tag to the newer version when the same slug is ingested twice', async () => {
       // Given
       const slug = 'misp-same-slug-newer-version';
@@ -691,7 +739,166 @@ describe('manifestFragmentDomain', () => {
     });
   });
 
+  describe('ingestManifestFragment coverage', () => {
+    const loadIngestedCoverage = async (slug: string, version: string) => {
+      const document = await TestHelper.document.load({ slug, version });
+      _createdDocumentIds.push(document!.id);
+      return IntegrationCoverageDomain.loadStoredCoverage(document!.id);
+    };
+
+    it('stores the coverage declared by the fragment', async () => {
+      // Given
+      const slug = 'misp-coverage-declared';
+      const fragment = {
+        ...buildManifestFragment(ManifestType.Connector, {
+          slug,
+          id: 'coverage-declared',
+        }),
+        coverage: { object_types: ['indicator'], sectors: ['Finance'] },
+      };
+
+      // When
+      await ManifestFragmentDomain.ingestManifestFragment(fragment);
+
+      // Then
+      expect(await loadIngestedCoverage(slug, fragment.version)).toEqual({
+        object_types: ['Indicator'],
+        sectors: ['Finance'],
+        regions: [],
+        inferred: false,
+      });
+    });
+
+    it('infers the coverage when the fragment declares none', async () => {
+      // Given
+      const slug = 'misp-coverage-inferred';
+      const fragment = buildManifestFragment(ManifestType.Connector, {
+        slug,
+        id: 'coverage-inferred',
+      });
+
+      // When
+      await ManifestFragmentDomain.ingestManifestFragment(fragment);
+
+      // Then
+      expect(await loadIngestedCoverage(slug, fragment.version)).toEqual({
+        object_types: ['Indicator'],
+        sectors: [],
+        regions: [],
+        inferred: true,
+      });
+    });
+
+    it('carries the declared coverage of the previous version over to a new version', async () => {
+      // Given
+      const slug = 'misp-coverage-carried';
+      const firstFragment = {
+        ...buildManifestFragment(ManifestType.Connector, {
+          slug,
+          id: 'coverage-carried',
+          version: '7.260308.0',
+        }),
+        coverage: { regions: ['Global'] },
+      };
+      const secondFragment = buildManifestFragment(ManifestType.Connector, {
+        slug,
+        id: 'coverage-carried',
+        version: '7.260309.0',
+      });
+      await ManifestFragmentDomain.ingestManifestFragment(firstFragment);
+      await loadIngestedCoverage(slug, firstFragment.version);
+
+      // When
+      await ManifestFragmentDomain.ingestManifestFragment(secondFragment);
+
+      // Then
+      expect(await loadIngestedCoverage(slug, secondFragment.version)).toEqual({
+        object_types: [],
+        sectors: [],
+        regions: ['Global'],
+        inferred: false,
+      });
+    });
+
+    it('throws when the declared coverage exceeds the bounds', async () => {
+      // Given
+      const fragment = {
+        ...buildManifestFragment(ManifestType.Connector, {
+          slug: 'misp-coverage-invalid',
+          id: 'coverage-invalid',
+        }),
+        coverage: { object_types: ['x'.repeat(129)] },
+      };
+
+      // When
+      const call = ManifestFragmentDomain.ingestManifestFragment(fragment);
+
+      // Then
+      await expect(call).rejects.toThrow(
+        BadRequestErrorCode.InvalidIntegrationCoverage
+      );
+    });
+  });
+
   describe('ingestManifestFragment concurrency', () => {
+    // Sessions waiting on the advisory lock of the slug, as the database reports them
+    const countSlugLockWaiters = async (slug: string): Promise<number> => {
+      const { rows } = await database.raw(
+        `SELECT count(*)::int AS count
+         FROM pg_locks
+         WHERE locktype = 'advisory'
+           AND classid = hashtext(?)::int
+           AND objid = hashtext(?)::int
+           AND granted = false`,
+        [CONNECTOR_SLUG_LOCK_NAMESPACE, slug]
+      );
+      return rows[0].count;
+    };
+    const SLUG_LOCK_WAIT_TIMEOUT_MS = 20_000;
+
+    it(
+      'waits for the ingestion lock of its slug even when the connector family has no row yet',
+      async () => {
+        // Given: another ingestion of the same brand-new family holds the slug lock
+        const slug = 'misp-coverage-serialized';
+        const fragment = buildManifestFragment(ManifestType.Connector, {
+          slug,
+          id: 'coverage-serialized',
+        });
+        let settled = false;
+        let ingestion: Promise<void> | undefined;
+
+        // When
+        await database.transaction(async (trx) => {
+          await trx.raw(
+            'SELECT pg_advisory_xact_lock(hashtext(?), hashtext(?))',
+            [CONNECTOR_SLUG_LOCK_NAMESPACE, slug]
+          );
+          ingestion = ManifestFragmentDomain.ingestManifestFragment(
+            fragment
+          ).finally(() => {
+            settled = true;
+          });
+
+          // Then: the ingestion waits on the slug lock before reading the family
+          await expect
+            .poll(() => countSlugLockWaiters(slug), {
+              interval: 10,
+              timeout: SLUG_LOCK_WAIT_TIMEOUT_MS,
+              message: `an ingestion waits on the lock of '${slug}'`,
+            })
+            .toBeGreaterThan(0);
+          expect(settled).toBe(false);
+        });
+        await ingestion;
+        expect(settled).toBe(true);
+        const createdDocument = await TestHelper.document.load({ slug });
+        expect(createdDocument).toBeDefined();
+        _createdDocumentIds.push(createdDocument!.id);
+      },
+      SLUG_LOCK_WAIT_TIMEOUT_MS * 2
+    );
+
     it('rejects one of two concurrent ingestions of the very first version of a brand-new connector', async () => {
       // Given: no existing rows to lock, so the DB unique constraint is the backstop
       const slug = 'misp-concurrent-first-insert';

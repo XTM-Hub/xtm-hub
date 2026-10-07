@@ -43,6 +43,10 @@ enum DocumentMetadataKeyCode {
   solution_categories
   license_type
   contact
+  covered_object_types
+  covered_sectors
+  covered_regions
+  coverage_inferred
 }
 
 type ShareableResource {
@@ -137,6 +141,14 @@ input CreateDocumentInput {
   solution_categories: [SolutionCategoryId!]!
   license_type: LicenseType
   entity_types: [String!]
+  covered_object_types: [String!]
+  covered_sectors: [String!]
+  covered_regions: [String!]
+  """
+  Saves the submitted coverage as declared even when it equals the inferred one.
+  Without effect on creation, which has no inferred coverage yet.
+  """
+  coverage_confirmed: Boolean
   uploader_id: UserId!
 }
 
@@ -149,6 +161,11 @@ input UpdateDocumentInput {
   solution_categories: [SolutionCategoryId!]
   license_type: LicenseType
   entity_types: [String!]
+  covered_object_types: [String!]
+  covered_sectors: [String!]
+  covered_regions: [String!]
+  "Saves the submitted coverage as declared even when it equals the inferred one."
+  coverage_confirmed: Boolean
   uploader_organization_id: OrganizationId
   uploader_id: UserId
 }

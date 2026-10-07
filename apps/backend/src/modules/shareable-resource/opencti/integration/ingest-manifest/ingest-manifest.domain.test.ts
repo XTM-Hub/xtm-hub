@@ -4,6 +4,10 @@ import {
   TEST_ORGANIZATIONS,
   TEST_USE_CASES,
 } from '../../../../../../tests/tests.const';
+import {
+  DocumentMetadataKeyCode,
+  IntegrationType,
+} from '../../../../../__generated__/resolvers-types';
 import { requestContext } from '../../../../../context/request.context';
 import {
   SYSTEM_USER_CONTEXT,
@@ -12,6 +16,7 @@ import {
 import { minioInit } from '../../../../../server/initialize';
 import { DocumentChildrenDomain } from '../../../../document/domain/document.children.domain';
 import { useCaseDomain } from '../../../../use-case/use-case.domain';
+import { IntegrationCoverageDomain } from '../integration-coverage/integration-coverage.domain';
 import {
   Connector,
   INTEGRATION_SERVICE_INSTANCE_ID,
@@ -296,6 +301,120 @@ describe('upsertConnectors', () => {
       });
       expect(links).toHaveLength(0);
     });
+
+    it('should not infer coverage from a use case it cannot link', async () => {
+      const baseManifest = sampleExtractedManifest[0] as ManifestInformation;
+      const [doc] = await IngestManifestDomain.upsertConnectors([
+        {
+          ...baseManifest,
+          slug: 'unknown-ransomware-use-case',
+          name: 'Neutral connector',
+          short_description: 'Neutral',
+          description: 'Neutral',
+          use_cases: ['Ransomware Nonexistent XYZ'],
+          solution_categories: ['Ransomware Nonexistent Category XYZ'],
+          coverage: undefined,
+        },
+      ]);
+
+      const coverage = await IntegrationCoverageDomain.loadStoredCoverage(
+        doc!.id
+      );
+      expect(coverage?.object_types ?? []).not.toContain('Malware');
+    });
+  });
+
+  describe('slug shared with another document type', () => {
+    it('should create the connector and leave the other document untouched', async () => {
+      const baseManifest = sampleExtractedManifest[0] as ManifestInformation;
+      const slug = 'slug-shared-with-a-dashboard';
+      const dashboard = await TestHelper.document.create({
+        slug,
+        name: 'Dashboard sharing a connector slug',
+        type: 'custom_dashboard',
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+      });
+
+      const [connector] = await IngestManifestDomain.upsertConnectors([
+        { ...baseManifest, slug, name: 'Connector sharing a dashboard slug' },
+      ]);
+
+      expect(connector!.id).not.toBe(dashboard.id);
+      expect(connector!.type).toBe('opencti_integration');
+      const reloaded = await TestHelper.document.load({ id: dashboard.id });
+      expect(reloaded!.name).toBe('Dashboard sharing a connector slug');
+      expect(reloaded!.type).toBe('custom_dashboard');
+    });
+
+    it('should leave an integration of another kind with the same slug untouched', async () => {
+      const baseManifest = sampleExtractedManifest[0] as ManifestInformation;
+      const slug = 'slug-shared-with-a-csv-feed';
+      const feed = await TestHelper.document.create({
+        slug,
+        name: 'CSV feed sharing a connector slug',
+        type: 'opencti_integration',
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+      });
+      await TestHelper.documentMetadata.create({
+        document_id: feed.id,
+        key: DocumentMetadataKeyCode.IntegrationType,
+        value: IntegrationType.CsvFeed,
+      });
+
+      const result = await IngestManifestDomain.upsertConnectors([
+        { ...baseManifest, slug, name: 'Connector sharing a CSV feed slug' },
+      ]);
+
+      expect(result).toHaveLength(0);
+      const reloaded = await TestHelper.document.load({ id: feed.id });
+      expect(reloaded!.name).toBe('CSV feed sharing a connector slug');
+      const [integrationType] = await TestHelper.documentMetadata.loadAll({
+        document_id: feed.id,
+        key: DocumentMetadataKeyCode.IntegrationType,
+      });
+      expect(integrationType!.value).toBe(IntegrationType.CsvFeed);
+    });
+  });
+
+  describe('slug held by a reactivated connector', () => {
+    it('should update the live connector, never a removed one created after it', async () => {
+      // Given: A is reactivated after B, created later with the same slug, was removed
+      const baseManifest = sampleExtractedManifest[0] as ManifestInformation;
+      const slug = 'slug-of-a-reactivated-connector';
+      const live = await TestHelper.document.create({
+        slug,
+        name: 'Reactivated connector',
+        type: 'opencti_integration',
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+        active: true,
+        created_at: new Date('2026-01-01T00:00:00Z'),
+      });
+      const removed = await TestHelper.document.create({
+        slug,
+        name: 'Removed connector',
+        type: 'opencti_integration',
+        service_instance_id: INTEGRATION_SERVICE_INSTANCE_ID,
+        active: false,
+        created_at: new Date('2026-02-01T00:00:00Z'),
+      });
+
+      // When
+      const [connector] = await IngestManifestDomain.upsertConnectors([
+        { ...baseManifest, slug },
+      ]);
+
+      // Then: the live connector is updated, the removed one stays removed
+      expect(connector!.id).toBe(live.id);
+      expect(await TestHelper.document.load({ id: removed.id })).toMatchObject({
+        active: false,
+        name: 'Removed connector',
+      });
+      const liveConnectors = await TestHelper.document.loadAll({
+        slug,
+        active: true,
+      });
+      expect(liveConnectors.map(({ id }) => id)).toEqual([live.id]);
+    });
   });
 
   describe('minimum deployable version logic', () => {
@@ -410,6 +529,180 @@ describe('upsertConnectors', () => {
       expect(secondResult!.datasheet_url).toBe(initialDatasheetUrl);
       expect(secondResult!.demo_url).toBe(initialDemoUrl);
       expect(secondResult!.blogpost_url).toBe(initialBlogpostUrl);
+    });
+  });
+
+  describe('coverage', () => {
+    const baseManifest = sampleExtractedManifest[0] as ManifestInformation;
+    const FINANCE = 'Finance';
+
+    const buildCoverageManifest = (
+      slug: string,
+      overrides: Partial<ManifestInformation> = {}
+    ): ManifestInformation => ({
+      ...baseManifest,
+      slug,
+      name: 'Coverage connector',
+      description: 'Generic description',
+      short_description: 'Generic',
+      use_cases: [],
+      solution_categories: [],
+      ...overrides,
+    });
+
+    const loadCoverage = async (document: Connector | undefined) =>
+      IntegrationCoverageDomain.loadStoredCoverage(document!.id);
+
+    it('should store the coverage declared by the manifest', async () => {
+      // Given
+      const manifest = buildCoverageManifest('coverage-declared', {
+        coverage: { object_types: ['malware'], regions: ['Europe'] },
+      });
+
+      // When
+      const [document] = await IngestManifestDomain.upsertConnectors([
+        manifest,
+      ]);
+
+      // Then
+      expect(await loadCoverage(document)).toEqual({
+        object_types: ['Malware'],
+        sectors: [],
+        regions: ['Europe'],
+        inferred: false,
+      });
+    });
+
+    it('should infer the coverage when the manifest declares none', async () => {
+      // Given
+      const manifest = buildCoverageManifest('coverage-inferred', {
+        name: 'Ransomware tracker',
+      });
+
+      // When
+      const [document] = await IngestManifestDomain.upsertConnectors([
+        manifest,
+      ]);
+
+      // Then
+      expect(await loadCoverage(document)).toEqual({
+        object_types: ['Malware', 'Intrusion-Set'],
+        sectors: [],
+        regions: [],
+        inferred: true,
+      });
+    });
+
+    it('should infer the coverage from the solution categories the re-ingestion keeps', async () => {
+      // Given: a connector whose coverage comes from its solution category only
+      const manifest = buildCoverageManifest('coverage-kept-categories', {
+        solution_categories: ['Vulnerability & Exposure Management'],
+      });
+      await IngestManifestDomain.upsertConnectors([manifest]);
+
+      // When: the manifest no longer carries the field, so the stored categories stay linked
+      const [document] = await IngestManifestDomain.upsertConnectors([
+        { ...manifest, solution_categories: undefined },
+      ]);
+
+      // Then
+      expect(await loadCoverage(document)).toEqual({
+        object_types: ['Vulnerability'],
+        sectors: [],
+        regions: [],
+        inferred: true,
+      });
+    });
+
+    it('should keep an admin declared coverage when the manifest declares none', async () => {
+      // Given
+      const manifest = buildCoverageManifest('coverage-admin-kept');
+      const [created] = await IngestManifestDomain.upsertConnectors([manifest]);
+      await IntegrationCoverageDomain.upsertCoverageMetadata([
+        {
+          documentId: created!.id,
+          coverage: {
+            object_types: [],
+            sectors: [FINANCE],
+            regions: [],
+            inferred: false,
+          },
+        },
+      ]);
+
+      // When
+      const [updated] = await IngestManifestDomain.upsertConnectors([
+        { ...manifest, name: 'Ransomware tracker' },
+      ]);
+
+      // Then
+      expect(await loadCoverage(updated)).toEqual({
+        object_types: [],
+        sectors: [FINANCE],
+        regions: [],
+        inferred: false,
+      });
+    });
+
+    it('should keep the coverage of a connector created by a concurrent ingestion', async () => {
+      // Given - two ingestions of a new connector run at the same time, only one declares a coverage
+      const manifest = buildCoverageManifest('coverage-concurrent-creation', {
+        name: 'Ransomware tracker',
+      });
+
+      // When
+      const [[declaring], [undeclaring]] = await Promise.all([
+        IngestManifestDomain.upsertConnectors([
+          { ...manifest, coverage: { sectors: [FINANCE] } },
+        ]),
+        IngestManifestDomain.upsertConnectors([manifest]),
+      ]);
+
+      // Then - one connector, and the declaration wins whatever the order
+      expect(undeclaring!.id).toEqual(declaring!.id);
+      expect(await loadCoverage(declaring)).toEqual({
+        object_types: [],
+        sectors: [FINANCE],
+        regions: [],
+        inferred: false,
+      });
+    });
+
+    it('should keep the curated links of the connector it updates', async () => {
+      // Given
+      const manifest = buildCoverageManifest('coverage-curated-links');
+      await IngestManifestDomain.upsertConnectors([
+        { ...manifest, datasheet_url: 'https://example.com/datasheet' },
+      ]);
+
+      // When
+      const [updated] = await IngestManifestDomain.upsertConnectors([
+        { ...manifest, datasheet_url: undefined },
+      ]);
+
+      // Then
+      expect(updated!.datasheet_url).toEqual('https://example.com/datasheet');
+    });
+
+    it('should let a coverage declared by the manifest replace the stored one', async () => {
+      // Given
+      const manifest = buildCoverageManifest('coverage-manifest-wins', {
+        coverage: { sectors: [FINANCE] },
+      });
+      await IngestManifestDomain.upsertConnectors([manifest]);
+
+      // When
+      const [updated] = await IngestManifestDomain.upsertConnectors([
+        { ...manifest, coverage: { regions: ['Global'] } },
+      ]);
+
+      // Then
+      expect(await loadCoverage(updated)).toEqual({
+        object_types: [],
+        sectors: [],
+        regions: ['Global'],
+        inferred: false,
+      });
     });
   });
 });
