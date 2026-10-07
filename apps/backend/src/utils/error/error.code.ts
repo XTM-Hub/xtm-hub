@@ -41,6 +41,7 @@ export enum ForbiddenErrorCode {
   VotableFeatureProductLocked = 'VOTABLE_FEATURE_PRODUCT_LOCKED',
   CopyFeaturesFromAnotherRoadmap = 'COPY_FEATURES_FROM_ANOTHER_ROADMAP',
   OpenVotingRoundWithoutActiveFeature = 'OPEN_VOTING_ROUND_WITHOUT_ACTIVE_FEATURE',
+  RolePortalProtected = 'ROLE_PORTAL_PROTECTED',
 }
 
 export enum BadRequestErrorCode {
@@ -58,6 +59,8 @@ export enum BadRequestErrorCode {
   OrganizationDoesNotMatchSelectedOrganization = 'ORGANIZATIONS_DOES_NOT_MATCH_SELECTED_ORGANIZATION',
   DeploymentRequestHubStatusNotQueued = 'DEPLOYMENT_REQUEST_HUB_STATUS_NOT_QUEUED',
   DocumentMissingMetadata = 'DOCUMENT_MISSING_METADATA',
+  InvalidSSOGroupRolePortal = 'INVALID_SSO_GROUP_ROLE_PORTAL',
+  InvalidRolePortal = 'INVALID_ROLE_PORTAL',
   IntegrationTypeNotRecognized = 'INTEGRATION_TYPE_NOT_RECOGNIZED',
   MissingAutoRegisterPlatformArgument = 'MISSING_AUTO_REGISTER_PLATFORM_ARGUMENT',
   DocumentFileMissing = 'DOCUMENT_FILE_MISSING',
@@ -129,6 +132,8 @@ export enum AlreadyExistsErrorCode {
   FreeTrialAlreadyExists = 'FREE_TRIAL_ALREADY_EXISTS',
   CompetitorDomainAlreadyExists = 'COMPETITOR_DOMAIN_ALREADY_EXISTS',
   DeploymentFeedbackAlreadyExists = 'DEPLOYMENT_FEEDBACK_ALREADY_EXISTS',
+  SSOGroupRolePortalAlreadyExists = 'SSO_GROUP_ROLE_PORTAL_ALREADY_EXISTS',
+  RolePortalAlreadyExists = 'ROLE_PORTAL_ALREADY_EXISTS',
 }
 
 export enum NotFoundErrorCode {
@@ -150,6 +155,9 @@ export enum NotFoundErrorCode {
   ServiceGroupNotFound = 'SERVICE_GROUP_NOT_FOUND',
   VotableFeatureNotFound = 'VOTABLE_FEATURE_NOT_FOUND',
   VotingRoundNotFound = 'VOTING_ROUND_NOT_FOUND',
+  CapabilityPortalNotFound = 'CAPABILITY_PORTAL_NOT_FOUND',
+  SSOGroupRolePortalNotFound = 'SSO_GROUP_ROLE_PORTAL_NOT_FOUND',
+  RolePortalNotFound = 'ROLE_PORTAL_NOT_FOUND',
 }
 
 export const ErrorCode = {

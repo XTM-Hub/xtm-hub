@@ -61,9 +61,11 @@ body[data-theme='Dark'] {
     font-size: 100%;
     @apply bg-background;
   }
+
   * {
     @apply border-border;
   }
+
   body {
     font-family: var(--font-ibm-plex-sans), system-ui, sans-serif;
     font-size: var(--text-content-body-base);
@@ -84,6 +86,7 @@ body[data-theme='Dark'] {
   h1 {
     @apply txt-title;
   }
+
   h2 {
     @apply txt-subtitle;
   }
@@ -103,6 +106,7 @@ body[data-theme='Dark'] {
   ul {
     list-style-type: disc;
   }
+
   ol {
     list-style-type: decimal;
   }
@@ -115,12 +119,15 @@ body[data-theme='Dark'] {
   h1 {
     @apply border-border mt-6 mb-4 border-b pb-2 text-2xl font-semibold;
   }
+
   h2 {
     @apply border-border mt-5 mb-3 border-b pb-2 text-xl font-semibold;
   }
+
   h3 {
     @apply mt-4 mb-2 text-lg font-semibold;
   }
+
   h4,
   h5,
   h6 {
@@ -139,15 +146,19 @@ body[data-theme='Dark'] {
   ol {
     @apply my-3 pl-8;
   }
+
   ul {
     @apply list-disc;
   }
+
   ol {
     @apply list-decimal;
   }
+
   li {
     @apply my-1;
   }
+
   li > ul,
   li > ol {
     @apply my-1;
@@ -164,6 +175,7 @@ body[data-theme='Dark'] {
   pre {
     @apply bg-muted my-3 overflow-x-auto rounded-xs p-4;
   }
+
   pre code {
     @apply bg-transparent p-0 font-mono text-sm;
   }
@@ -175,10 +187,12 @@ body[data-theme='Dark'] {
   table {
     @apply my-3 w-full border-collapse;
   }
+
   th,
   td {
     @apply border-border border px-3 py-2 text-left;
   }
+
   th {
     @apply bg-muted font-semibold;
   }
@@ -190,6 +204,7 @@ body[data-theme='Dark'] {
   strong {
     @apply font-semibold;
   }
+
   em {
     @apply italic;
   }
