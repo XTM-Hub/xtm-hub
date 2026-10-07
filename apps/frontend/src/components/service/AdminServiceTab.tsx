@@ -10,7 +10,6 @@ import {
   IconActionsItem,
   IconActionsLink,
 } from '@/components/ui/IconActions';
-import { SearchInput } from '@/components/ui/SearchInput';
 import { useTranslate } from '@/hooks/use-translate';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
@@ -23,6 +22,7 @@ import {
   ComboboxField,
   ComboboxInput,
   ComboboxTrigger,
+  SearchField,
 } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
 import { DataTable } from '@filigran/ui';
@@ -157,10 +157,15 @@ const AdminServiceTab = ({ serviceData, refetch }: AdminServiceTabProps) => {
         data={serviceData}
         toolbar={
           <div className="flex flex-col-reverse items-center justify-between gap-s sm:flex-row">
-            <SearchInput
+            <SearchField
               className="w-full sm:w-1/3"
+              aria-label={t('Service.SearchServices')}
               placeholder={t('Service.SearchServices')}
               onChange={debounceHandleInput}
+              onClear={() => {
+                debounceHandleInput.cancel();
+                handleInputChange('');
+              }}
             />
             <Combobox<{ value: string; label: string }>
               labelPosition="none"

@@ -15,13 +15,12 @@ import {
   IconActionsItem,
   IconActionsLink,
 } from '@/components/ui/IconActions';
-import { SearchInput } from '@/components/ui/SearchInput';
 import useAdminPath from '@/hooks/use-admin-path';
 import { useTranslate } from '@/hooks/use-translate';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { APP_PATH } from '@/utils/path/constant';
-import { Button, Switch } from '@filigran/design-system';
+import { Button, SearchField, Switch } from '@filigran/design-system';
 import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
 import {
   DataTable,
@@ -182,10 +181,16 @@ const ServiceSlug = ({
     <div className="flex justify-between flex-wrap gap-s pt-s">
       <div className="flex items-center gap-m ml-l">
         <div className="flex-1 max-w-sm">
-          <SearchInput
+          <SearchField
             id="SearchTerm"
+            fullWidth
+            aria-label={t('Service.Management.SearchOrganization')}
             placeholder={t('Service.Management.SearchOrganization')}
             onChange={debounceHandleInput}
+            onClear={() => {
+              debounceHandleInput.cancel();
+              setSearchTerm('');
+            }}
           />
         </div>
         <Switch

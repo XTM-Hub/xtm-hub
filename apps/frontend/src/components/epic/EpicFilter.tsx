@@ -1,9 +1,8 @@
 'use client';
 import { FiligranProductMapping } from '@/components/epic/epic-item/FiligranProductMapping';
 import { FILIGRAN_PRODUCTS_ORDER } from '@/components/epic/filigran-products';
-import { SearchInput } from '@/components/ui/SearchInput';
 import { useTranslate } from '@/hooks/use-translate';
-import { Switch } from '@filigran/design-system';
+import { SearchField, Switch } from '@filigran/design-system';
 import { MultiSelectFormField } from '@filigran/ui';
 import { FiligranProduct } from '@graphql/generated';
 import React, { useMemo } from 'react';
@@ -17,6 +16,7 @@ interface EpicFilterProps {
   showFinished: boolean;
   onShowFinishedChange: (show: boolean) => void;
   debounceHandleInput?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSearchClear?: () => void;
 }
 
 export const EpicFilter = ({
@@ -26,6 +26,7 @@ export const EpicFilter = ({
   showFinished,
   onShowFinishedChange,
   debounceHandleInput,
+  onSearchClear,
 }: EpicFilterProps) => {
   const t = useTranslate();
 
@@ -41,9 +42,12 @@ export const EpicFilter = ({
   return (
     <div className="mx-s grid grid-cols-1 sm:grid-cols-3 gap-l items-center">
       <div className="max-w-full sm:max-w-[100%]">
-        <SearchInput
+        <SearchField
+          fullWidth
+          aria-label={t('GenericActions.Search')}
           placeholder={t('GenericActions.Search')}
           onChange={debounceHandleInput}
+          onClear={onSearchClear}
         />
       </div>
 

@@ -7,7 +7,6 @@ import { EditOrganization } from '@/components/organization/EditOrganization';
 import { getOrganizations } from '@/components/organization/Organization.service';
 import { useOrganizationListLocalstorage } from '@/components/organization/organization-list-localstorage';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
-import { SearchInput } from '@/components/ui/SearchInput';
 import {
   handleSortingChange,
   mapToSortingTableValue,
@@ -17,7 +16,7 @@ import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
-import { Chip } from '@filigran/design-system';
+import { Chip, SearchField } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
 import { DataTable, DataTableHeadBarOptions } from '@filigran/ui';
 import { OrganizationsPaginationQuery$variables } from '@generated/OrganizationsPaginationQuery.graphql';
@@ -186,12 +185,19 @@ const OrganizationList = () => {
           data={organizationDataTable}
           toolbar={
             <div className="flex flex-col-reverse items-center justify-between gap-s sm:flex-row">
-              <SearchInput
+              <SearchField
                 className="w-full sm:w-1/3"
+                aria-label={t(
+                  'OrganizationActions.SearchOrganizationWithEmail'
+                )}
                 placeholder={t(
                   'OrganizationActions.SearchOrganizationWithEmail'
                 )}
                 onChange={debounceHandleInput}
+                onClear={() => {
+                  debounceHandleInput.cancel();
+                  handleInputChange('');
+                }}
               />
               <div className="flex w-full items-center justify-between gap-s sm:w-auto">
                 <DataTableHeadBarOptions />

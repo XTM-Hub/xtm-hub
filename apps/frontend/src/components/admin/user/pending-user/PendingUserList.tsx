@@ -11,7 +11,6 @@ import {
 } from '@/components/admin/user/user.graphql';
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
-import { SearchInput } from '@/components/ui/SearchInput';
 import {
   handleSortingChange,
   mapToSortingTableValue,
@@ -21,7 +20,7 @@ import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
-import { IconButton } from '@filigran/design-system';
+import { IconButton, SearchField } from '@filigran/design-system';
 import { CheckIcon, CloseIcon } from '@filigran/icon';
 import {
   DataTable,
@@ -354,10 +353,15 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
         }}
         toolbar={
           <div className="flex flex-col-reverse items-center justify-between gap-s sm:flex-row">
-            <SearchInput
+            <SearchField
               className="w-full sm:w-1/3"
+              aria-label={t('UserActions.SearchUser')}
               placeholder={t('UserActions.SearchUser')}
               onChange={debounceHandleInput}
+              onClear={() => {
+                debounceHandleInput.cancel();
+                if (filter.search) handleInputChange('');
+              }}
             />
             <div className="flex w-full items-center justify-between gap-s sm:w-auto">
               <DataTableHeadBarOptions />

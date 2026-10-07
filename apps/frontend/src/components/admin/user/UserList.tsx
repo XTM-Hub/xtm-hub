@@ -20,7 +20,6 @@ import {
   transformSortingValueToParams,
 } from '@/components/ui/handle-sorting.utils';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
-import { SearchInput } from '@/components/ui/SearchInput';
 import useAdminPath from '@/hooks/use-admin-path';
 import { useExecuteAfterAnimation } from '@/hooks/use-execute-after-animation';
 import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
@@ -32,7 +31,7 @@ import { portalGraphqlClient } from '@/lib/graphql-client';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { useDateFormatter } from '@/utils/date';
-import { Button, Chip } from '@filigran/design-system';
+import { Button, Chip, SearchField } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
 import { DataTable, DataTableHeadBarOptions, useToast } from '@filigran/ui';
 import {
@@ -602,10 +601,15 @@ const UserList = ({ organization }: UserListProps) => {
         toolbar={
           <div className="flex flex-col-reverse items-center justify-between gap-s sm:flex-row">
             <div className="flex w-full items-center gap-s sm:w-auto">
-              <SearchInput
-                className="w-full sm:w-auto"
+              <SearchField
+                className="w-full sm:w-55"
+                aria-label={t('UserActions.SearchUser')}
                 placeholder={t('UserActions.SearchUser')}
                 onChange={debounceHandleInput}
+                onClear={() => {
+                  debounceHandleInput.cancel();
+                  if (filter.search) handleInputChange('');
+                }}
               />
               {isAdminPath && (
                 <UserOrganizationFilter

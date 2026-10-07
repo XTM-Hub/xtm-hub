@@ -20,7 +20,6 @@ import {
   handleSortingChange,
   mapToSortingTableValue,
 } from '@/components/ui/handle-sorting.utils';
-import { SearchInput } from '@/components/ui/SearchInput';
 import {
   useAdminByPass,
   useUserHasPortalCapability,
@@ -34,6 +33,7 @@ import { daysUntil, useDateFormatter } from '@/utils/date';
 import { xtmPlatformTrialManageUsersFromDashboardPath } from '@/utils/path/constant';
 import {
   IconButton,
+  SearchField,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -618,10 +618,15 @@ const TrialsTab = ({ type, scope }: TrialsTabProps) => {
       toolbar={
         <div>
           <div className="flex flex-col-reverse items-center justify-between gap-s sm:flex-row">
-            <SearchInput
+            <SearchField
               className="w-full sm:w-1/3"
+              aria-label={t('TrialsDashboard.Actions.SearchTrials')}
               placeholder={t('TrialsDashboard.Actions.SearchTrials')}
               onChange={debounceHandleInput}
+              onClear={() => {
+                debounceHandleInput.cancel();
+                setSearchTerm(null);
+              }}
             />
             <div className="flex w-full items-center justify-between gap-s sm:w-auto">
               <DataTableHeadBarOptions />

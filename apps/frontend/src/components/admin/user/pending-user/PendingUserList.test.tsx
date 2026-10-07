@@ -103,7 +103,10 @@ vi.mock('usehooks-ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('usehooks-ts')>()),
   useDebounceCallback: (
     callback: (event: { target: { value: string } }) => void
-  ) => callback,
+  ) =>
+    Object.assign((event: { target: { value: string } }) => callback(event), {
+      cancel: vi.fn(),
+    }),
 }));
 
 vi.mock('@filigran/ui', () => ({
@@ -156,21 +159,6 @@ vi.mock('@filigran/ui', () => ({
   }),
 }));
 
-vi.mock('@/components/ui/SearchInput', () => ({
-  SearchInput: ({
-    placeholder,
-    onChange,
-  }: {
-    placeholder: string;
-    onChange: (event: { target: { value: string } }) => void;
-  }) => (
-    <input
-      placeholder={placeholder}
-      onChange={onChange}
-    />
-  ),
-}));
-
 const pendingUsers = [
   {
     id: 'pending-1',
@@ -216,6 +204,20 @@ describe('PendingUserList', () => {
     expect(mocks.refetch).toHaveBeenCalledWith(
       expect.objectContaining({ count: 20 })
     );
+  });
+
+  it('should not refetch pending users when pressing Escape in the empty search field', async () => {
+    // Given
+    const { user } = testRender(<PendingUserList organization="org-1" />);
+
+    // When
+    await user.type(
+      screen.getByPlaceholderText('UserActions.SearchUser'),
+      '{Escape}'
+    );
+
+    // Then
+    expect(mocks.refetch).not.toHaveBeenCalled();
   });
 
   it('renders pending users and opens confirm dialog when action buttons are clicked', async () => {

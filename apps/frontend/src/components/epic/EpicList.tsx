@@ -173,6 +173,10 @@ export const EpicList = ({
         showFinished={showFinished}
         onShowFinishedChange={setShowFinished}
         debounceHandleInput={debounceHandleInput}
+        onSearchClear={() => {
+          debounceHandleInput.cancel();
+          handleInputChange('');
+        }}
       />
       {sections.map((timeline) => {
         if (

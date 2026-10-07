@@ -58,8 +58,8 @@ development_status:
   3558-menu: done
   3565-tabs: done
   3540-dialog: done
-  3535-breadcrumbs: review
-  3551-search-field: backlog
+  3535-breadcrumbs: done
+  3551-search-field: review
   3548-file-select: backlog
   3547-color-picker: backlog
   3536-card: backlog

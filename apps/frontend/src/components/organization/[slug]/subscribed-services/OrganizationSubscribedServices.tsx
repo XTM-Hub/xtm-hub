@@ -1,6 +1,5 @@
 'use client';
 
-import { SearchInput } from '@/components/ui/SearchInput';
 import {
   handleSortingChange,
   mapToSortingTableValue,
@@ -11,7 +10,7 @@ import { portalGraphqlClient } from '@/lib/graphql-client';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { useDateFormatter } from '@/utils/date';
-import { Chip } from '@filigran/design-system';
+import { Chip, SearchField } from '@filigran/design-system';
 import { DataTable, DataTableHeadBarOptions } from '@filigran/ui';
 import {
   OrderingMode,
@@ -186,14 +185,16 @@ const OrganizationSubscribedServicesSlug = ({
     });
   };
 
+  const applySearch = (value: string) => {
+    setSearchTerm(value);
+    setPagination((prevPagination) => ({
+      ...prevPagination,
+      pageIndex: 0,
+    }));
+  };
+
   const onSearchChange = useDebounceCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      setSearchTerm(event.target.value);
-      setPagination((prevPagination) => ({
-        ...prevPagination,
-        pageIndex: 0,
-      }));
-    },
+    (event: ChangeEvent<HTMLInputElement>) => applySearch(event.target.value),
     DEBOUNCE_TIME
   );
 
@@ -230,10 +231,15 @@ const OrganizationSubscribedServicesSlug = ({
         }}
         toolbar={
           <div className="flex flex-col-reverse items-center justify-between gap-s sm:flex-row">
-            <SearchInput
+            <SearchField
               className="w-full sm:w-1/3"
+              aria-label={t('Service.SearchServices')}
               placeholder={t('Service.SearchServices')}
               onChange={onSearchChange}
+              onClear={() => {
+                onSearchChange.cancel();
+                if (searchTerm) applySearch('');
+              }}
             />
             <div className="flex w-full items-center justify-between gap-s sm:w-auto">
               <DataTableHeadBarOptions />
