@@ -6,7 +6,8 @@ import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
 import { useAdminByPass } from '@/hooks/use-portal-capability';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { Callout, toast } from '@filigran/ui';
+import { CheckIndeterminateIcon } from '@filigran/icon';
+import { toast } from '@filigran/ui';
 import {
   FeatureFlag,
   OrganizationCapability,
@@ -19,7 +20,7 @@ import { bundleUserServiceGroupsKeys } from '@graphql/service-group/service-grou
 import { usersKeys } from '@graphql/user/users.keys';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { useContext, useMemo } from 'react';
+import { ReactNode, useContext, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import {
   getBundleRolePanels,
@@ -30,6 +31,13 @@ import {
 } from './manage-trial.const';
 import { TrialUserFormSkeleton } from './TrialUserFormSkeleton';
 import { useTrialUserOptions } from './use-trial-user-options';
+
+const PickerWarning = ({ children }: { children: ReactNode }) => (
+  <div className="border border-solid border-orange rounded text-feedback-warning-primary flex items-center gap-xs p-s text-sm">
+    <CheckIndeterminateIcon className="shrink-0 h-4 w-4 mr-xs" />
+    {children}
+  </div>
+);
 
 interface AddTrialUserFormProps {
   serviceInstanceId: string;
@@ -155,18 +163,18 @@ export const AddTrialUserForm = ({
       pickerNotice={
         <>
           {isTrialInviteEnabled && !canManageUsers && (
-            <Callout variant="warning">
+            <PickerWarning>
               {t(
                 'Service.Bundle.ManageTrial.AddUserDialog.NoPermissionToInvite'
               )}
-            </Callout>
+            </PickerWarning>
           )}
           {hasSelectedExpiredUsers && (
-            <Callout variant="warning">
+            <PickerWarning>
               {t(
                 'Service.Bundle.ManageTrial.AddUserDialog.ExpiredUsersReinvited'
               )}
-            </Callout>
+            </PickerWarning>
           )}
         </>
       }

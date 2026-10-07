@@ -1148,7 +1148,7 @@ describe('serviceGroupApp', () => {
       }
     );
 
-    describe('with emails', () => {
+    describe('with emails input', () => {
       const xtmoneUserRoles = [
         { product: PlatformIdentifier.Xtmone, role: ServiceGroupName.User },
       ];
@@ -1162,33 +1162,6 @@ describe('serviceGroupApp', () => {
 
       afterEach(() => {
         vi.mocked(isFeatureEnabled).mockReturnValue(false);
-      });
-
-      it('should ignore the emails and only add the selected users when the TRIAL_INVITE feature flag is disabled', async () => {
-        // Given
-        vi.mocked(isFeatureEnabled).mockReturnValue(false);
-        const { bundle, groups } = await createBundleWithGroups();
-        vi.spyOn(mailService, 'sendMail').mockResolvedValue(undefined);
-        const email = `new-${uuidv4()}@filigran.io`;
-
-        // When
-        await ServiceGroupApp.addUsersToBundleGroups(
-          bundle.service_instance_id,
-          {
-            userIds: [TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID],
-            emails: [email],
-            roles: xtmoneUserRoles,
-          }
-        );
-
-        // Then
-        const members = await TestHelper.serviceGroupUser.load({
-          group_id: groups.xtmoneUserGroupId,
-        });
-        expect(members?.map(({ user_id }) => user_id)).toEqual([
-          TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
-        ]);
-        expect(await TestHelper.user.loadAll({ email })).toEqual([]);
       });
 
       const addNewEmailAlongWithSelectedUser = async () => {
@@ -1217,6 +1190,33 @@ describe('serviceGroupApp', () => {
 
         return { groups, email, auth0Spy, sendMailSpy, hubspotInviteSpy };
       };
+
+      it('should ignore the emails input and only add the selected users when the TRIAL_INVITE feature flag is disabled', async () => {
+        // Given
+        vi.mocked(isFeatureEnabled).mockReturnValue(false);
+        const { bundle, groups } = await createBundleWithGroups();
+        vi.spyOn(mailService, 'sendMail').mockResolvedValue(undefined);
+        const email = `new-${uuidv4()}@filigran.io`;
+
+        // When
+        await ServiceGroupApp.addUsersToBundleGroups(
+          bundle.service_instance_id,
+          {
+            userIds: [TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID],
+            emails: [email],
+            roles: xtmoneUserRoles,
+          }
+        );
+
+        // Then
+        const members = await TestHelper.serviceGroupUser.load({
+          group_id: groups.xtmoneUserGroupId,
+        });
+        expect(members?.map(({ user_id }) => user_id)).toEqual([
+          TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
+        ]);
+        expect(await TestHelper.user.loadAll({ email })).toEqual([]);
+      });
 
       it('should add a single waiting user to the bundle organization and invite them through HubSpot when a new email is given', async () => {
         // Given / When

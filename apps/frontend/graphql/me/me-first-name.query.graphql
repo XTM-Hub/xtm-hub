@@ -1,5 +1,0 @@
-query MeFirstName {
-  me {
-    first_name
-  }
-}

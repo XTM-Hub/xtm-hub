@@ -1,3 +1,15 @@
+query meCheck {
+  me {
+    id
+  }
+}
+
+query MeFirstName {
+  me {
+    first_name
+  }
+}
+
 query MeOrganizationDomains {
   me {
     organizations {
