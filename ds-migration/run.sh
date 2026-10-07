@@ -307,7 +307,9 @@ WRITE_TOOLS="$READ_TOOLS,Edit,Write,\
 Bash(node ds-migration/screenshot.mjs:*),Bash(rm apps/frontend/*),Bash(rm $PWD/apps/frontend/*),\
 Bash(yarn workspace @xtm-hub/frontend lint:*),Bash(yarn workspace @xtm-hub/frontend format:*),\
 Bash(yarn workspace @xtm-hub/frontend check-ts:*),Bash(yarn workspace @xtm-hub/frontend test:*),\
-Bash(yarn workspace @xtm-hub/frontend i18n:check:*),Bash(node ds-migration/validate.mjs:*)"
+Bash(yarn workspace @xtm-hub/frontend i18n:check:*),\
+Bash(yarn workspace @xtm-hub/test_e2e lint:*),Bash(yarn workspace @xtm-hub/test_e2e format:check:*),\
+Bash(yarn workspace @xtm-hub/test_e2e prettier:format:*),Bash(node ds-migration/validate.mjs:*)"
 
 # One line per tool call and per message of a streamed session, so the run can be followed live.
 # Calls made by a subagent are indented. Raw lines and fromjson? keep a stray line from stopping
@@ -381,6 +383,13 @@ work_item() {
   fi
 }
 
+# Lint and format of the e2e workspace, when the item changed its locators. The suite itself only
+# runs in CI: its hooks drop the database schema.
+e2e_checks() {
+  [ -n "$(git status --porcelain -- apps/e2e)" ] || return 0
+  yarn workspace @xtm-hub/test_e2e lint && yarn workspace @xtm-hub/test_e2e format:check
+}
+
 validate_item() {
   local spec="ds-migration/specs/$1.md"
   [ -f "$spec" ] || { echo "Missing spec $spec"; return 1; }
@@ -389,6 +398,7 @@ validate_item() {
     yarn workspace @xtm-hub/frontend i18n:check &&
     yarn workspace @xtm-hub/frontend check-ts &&
     yarn workspace @xtm-hub/frontend test &&
+    e2e_checks &&
     node ds-migration/validate.mjs "$spec" &&
     node ds-migration/screenshot.mjs "$spec" after
 }

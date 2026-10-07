@@ -115,6 +115,9 @@ if (args[0] === '--imports-only') {
     'apps/frontend/src/components/filigran-ui/theme.css',
   ];
   const GENERATED = ['apps/frontend/schema.graphql', 'apps/frontend/graphql/generated.ts'];
+  // e2e locators follow the accessible names a migration changes; the e2e migrations and seeds
+  // outside tests/ are copies of the backend's.
+  const IN_SCOPE = ['apps/frontend/', 'apps/e2e/tests/', 'ds-migration/specs/'];
   // The status file belongs to run.sh, not to the item.
   const RUNNER_FILES = ['ds-migration/sprint-status.yaml'];
   const workingTree = git('status', '--porcelain', '--no-renames', '--untracked-files=all')
@@ -125,7 +128,7 @@ if (args[0] === '--imports-only') {
   const changed = [...new Set([...committed, ...workingTree])].filter((p) => p && !RUNNER_FILES.includes(p));
   if (!changed.length) errors.push('No change to validate');
   for (const path of changed) {
-    if (!path.startsWith('apps/frontend/') && !path.startsWith('ds-migration/specs/')) {
+    if (!IN_SCOPE.some((prefix) => path.startsWith(prefix)) || path.startsWith('apps/e2e/tests/__screenshots__/')) {
       errors.push(`Out of scope: ${path}`);
     } else if (GENERATED.includes(path)) {
       errors.push(`Generated file changed: ${path}`);

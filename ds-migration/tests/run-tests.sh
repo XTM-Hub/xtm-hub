@@ -97,6 +97,8 @@ fi
 echo "{\"type\":\"assistant\",\"message\":{\"content\":[{\"type\":\"tool_use\",\"name\":\"Agent\",\"input\":{\"description\":\"Implement $key\"}}]}}"
 echo "not json"
 echo "export const v_$(echo "$slug" | tr - _) = 1;" > "apps/frontend/src/$slug.ts"
+if [[ " ${CLAUDE_E2E:-} " == *" $key "* ]]; then mkdir -p apps/e2e/tests/model && echo "// $slug locator" > "apps/e2e/tests/model/$slug.pageModel.ts"; fi
+if [[ " ${CLAUDE_E2E_SEEDS:-} " == *" $key "* ]]; then mkdir -p apps/e2e/seeds && echo "-- $slug" > "apps/e2e/seeds/$slug.sql"; fi
 printf '\n## Deferred findings\n\n- found in review, on a bullet\n  that wraps\n' >> "ds-migration/specs/$key.md"
 echo "{\"type\":\"result\",\"structured_output\":{\"status\":\"DONE\",\"summary\":\"ok\",\"commit_subject\":\"invalid\",\"commit_body\":\"Migrate $slug.\\nCo-Authored-By: x <y@z>\"}}"
 EOF
@@ -222,6 +224,18 @@ CLAUDE_SPEC_DIRTY=3561-textarea run --once
 check "code changed in spec mode: blocked before the build" '[ "$(status_of 3561-textarea)" = blocked ] && ! grep -q "Build mode for item 3561" "$SB/calls.log" && [ -z "$(git status --porcelain -- apps)" ]'
 SCREENSHOT_FAIL=3568-switch run --once
 check "a screen that no longer renders blocks the item" '[ "$(status_of 3568-switch)" = blocked ] && ! git log --format=%s | grep -q "Switch"'
+
+echo "G. e2e locators follow the accessible names a migration changes"
+new_repo g "development_status:
+  epic-1-primitives: backlog
+  3530-button: done
+  3561-textarea: backlog
+  3568-switch: backlog
+  3553-radio: backlog"
+CLAUDE_E2E=3561-textarea run --once
+check "e2e locator change accepted and linted" '[ "$(status_of 3561-textarea)" = done ] && git show --stat HEAD | grep -q "apps/e2e/tests/model/textarea.pageModel.ts" && grep -q "^yarn workspace @xtm-hub/test_e2e lint" "$SB/calls.log"'
+CLAUDE_E2E_SEEDS=3568-switch run --once
+check "e2e seeds copied from the backend stay out of scope" '[ "$(status_of 3568-switch)" = blocked ] && grep -q "Out of scope: apps/e2e/seeds/switch.sql" "$(git rev-parse --git-dir)/ds-migration/3568-switch-validate.log"'
 
 echo "F. crash recovery and lock"
 new_repo f "development_status:

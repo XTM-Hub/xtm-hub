@@ -30,7 +30,8 @@ legacy_files_to_delete: [apps/frontend/src/components/filigran-ui/components/ser
 
 ## Files in scope
 
-<!-- Call sites, wrappers in src/components/ui/, legacy files in filigran-ui/ that use the component. -->
+<!-- Call sites, wrappers in src/components/ui/, legacy files in filigran-ui/ that use the component,
+     and the e2e locators under apps/e2e/tests/ whose accessible name or role the change alters. -->
 
 ## Screens
 
@@ -57,6 +58,7 @@ legacy_files_to_delete: [apps/frontend/src/components/filigran-ui/components/ser
 - `yarn workspace @xtm-hub/frontend check-ts`
 - `yarn workspace @xtm-hub/frontend test <changed folders>`
 - `yarn workspace @xtm-hub/frontend i18n:check`
+- `yarn workspace @xtm-hub/test_e2e lint` and `format:check`, when e2e locators change (never the e2e suite)
 - `node ds-migration/validate.mjs ds-migration/specs/<key>.md`
 
 ## Decisions

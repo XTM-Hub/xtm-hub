@@ -25,7 +25,7 @@ Use them by name; do not restate or override them.
 
 | Step | Skill or agent | Why |
 | --- | --- | --- |
-| Analyse, spec | `change-delivery`, `.claude/rules/frontend.md`, `.claude/rules/graphql.md`, `.claude/rules/testing.md` | Scope posture and the frontend stack, UI, i18n and data-layer rules |
+| Analyse, spec | `change-delivery`, `.claude/rules/frontend.md`, `.claude/rules/graphql.md`, `.claude/rules/testing.md`, `.claude/rules/e2e.md` | Scope posture and the frontend stack, UI, i18n, data-layer and e2e rules |
 | Analyse, spec | Design system consumer skill (`node_modules/@filigran/design-system/skills/consumer/design-system-usage/SKILL.md`) and the target's usage contract | How the package must be used; the shipped files win over memory |
 | Implement | `frontend-code-writer` agent | Applies `coding-conventions`, `testing-validation`, `change-delivery` and a `performance-security-review` self-check |
 | Implement, backend | `backend-code-writer` agent, with `knex-migration` or `elasticsearch-migration` | Not expected in this epic: `validate.mjs` rejects changes outside `apps/frontend/`. A spec that needs the backend is `NEEDS_HUMAN` |
@@ -99,7 +99,9 @@ a selector to crop to. Selectors are Playwright's, role-based first: `role=butto
 
 1. **Analyse.** Read the sources, the legacy component and every call site (Grep the imports). List
    each distinct legacy usage, the wrappers in `src/components/ui/`, the tests, the translations and
-   the accessibility attributes involved. When `ds-migration/specs/<key>.md` exists (a retry after a
+   the accessibility attributes involved. List the e2e locators that find those elements by role,
+   label, placeholder or text (Grep `apps/e2e/tests/`): a design system component can change an
+   accessible name, for example a required label whose `*` moves out of the label. When `ds-migration/specs/<key>.md` exists (a retry after a
    block), start from it and the answers on the issue.
 2. **Spec.** Write `ds-migration/specs/<key>.md` from `ds-migration/spec-template.md`. The frontmatter
    is the contract the script checks: keep it exact. Every legacy usage gets a row in the props
@@ -119,6 +121,11 @@ The spec exists and the script has just captured its screens on the untouched co
 1. **Implement.** Launch ONE `frontend-code-writer` subagent with this prompt, and wait for it:
    "Implement `ds-migration/specs/<key>.md`. It is your only source of truth: change nothing it does
    not list. Do not commit. Report what changed, the files touched and the validation you ran."
+   When the change alters an accessible name or role that an e2e locator uses, the spec lists that
+   locator and the subagent updates it in `apps/e2e/tests/`, in the page object model when there is
+   one, following `.claude/rules/e2e.md`. The component keeps the design system's name: never bend
+   it back to the old one. Never run the e2e suite: its hooks drop the database schema, and CI runs
+   it. `yarn workspace @xtm-hub/test_e2e lint` and `format:check` check the edited locators.
 2. **Verify.** Run every command of the spec's Verification section. On failure, send the output to the
    same subagent to fix, at most twice. Still failing: return `FAILED` with the output.
 3. **Compare.** Run `node ds-migration/screenshot.mjs ds-migration/specs/<key>.md after`, then open
@@ -150,8 +157,10 @@ blocks the item.
 
 When the invocation says `CI fix mode`, the item is already committed and pushed, and the pull
 request's required checks failed. The spec exists. Read the failing log the invocation names, send
-the cause to a `frontend-code-writer` subagent with the spec, then run Build mode steps 2 to 4. Return
-`DONE` with a `fix(frontend): ... (#<issue>)` subject, or `FAILED` when the cause is outside the item.
+the cause to a `frontend-code-writer` subagent with the spec, then run Build mode steps 2 to 4. An e2e
+locator that still expects an accessible name this item changed is in scope: fix the locator in
+`apps/e2e/tests/` and add it to the spec's Files in scope. Return `DONE` with a
+`fix(frontend): ... (#<issue>)` subject, or `FAILED` when the cause is outside the item.
 
 ## Sync fix mode
 
