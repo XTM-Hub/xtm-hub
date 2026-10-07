@@ -15,7 +15,6 @@ import {
   DialogHeader,
   DialogTitle,
   FormItem,
-  FormLabel,
   FormMessage,
   toast,
 } from '@filigran/ui';
@@ -133,12 +132,6 @@ export const BundleCancelSheet = ({
               ),
               fieldType: ({ field }) => (
                 <FormItem>
-                  <FormLabel className="content-body-compact-medium text-text-default-secondary">
-                    {t(
-                      'Service.Trials.Cancellation.ConfirmationForm.CancellationReason'
-                    )}
-                    <span>*</span>
-                  </FormLabel>
                   <SelectWithEditableField
                     value={field.value}
                     onChange={(value) => {
@@ -146,7 +139,11 @@ export const BundleCancelSheet = ({
                       setSelectedCancellationReason(value);
                     }}
                     options={cancellationReasons}
+                    required
                     labels={{
+                      label: t(
+                        'Service.Trials.Cancellation.ConfirmationForm.CancellationReason'
+                      ),
                       placeholder: t(
                         'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonPlaceholder'
                       ),

@@ -9,7 +9,7 @@ import testRender from '@/utils/test/test-render';
 import { Form } from '@filigran/ui';
 import { PlatformIdentifier, ServiceGroupName } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { useForm } from 'react-hook-form';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -30,10 +30,8 @@ const xtmoneTitle = 'Service.Bundle.ManageTrial.Roles.xtmone.Title';
 const noAccessLabel = 'Service.Bundle.ManageTrial.Roles.NoAccess';
 const mixedRolesText = 'Service.Bundle.ManageTrial.EditUsersDialog.MixedRoles';
 
-const getRoleCombobox = (title: string) => {
-  const label = screen.getByText(title, { selector: 'label' });
-  return within(label.parentElement as HTMLElement).getByRole('combobox');
-};
+const getRoleCombobox = (title: string) =>
+  screen.getByRole('combobox', { name: title });
 
 interface WrapperProps {
   mixedRoleDefaults?: Partial<Record<PlatformIdentifier, MixedRoleDefault>>;

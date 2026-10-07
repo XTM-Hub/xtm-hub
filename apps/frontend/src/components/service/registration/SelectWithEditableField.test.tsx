@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { SelectWithEditableField } from './SelectWithEditableField';
 
+const FIELD_LABEL = 'Cancellation reason';
 const PLACEHOLDER_TEXT = 'Select a reason';
 const OTHER_LABEL = 'Other';
 const OTHER_INPUT_PLACEHOLDER = 'Type your reason';
@@ -13,10 +14,11 @@ const COMPLEXITY_VALUE = 'complexity';
 const COMPLEXITY_LABEL = 'Configuration is too complex to complete';
 const OTHER_WITH_TEXT_VALUE = `${OTHER_VALUE_PREFIX} custom text`;
 
-vi.mock('@filigran/ui', async () => {
+vi.mock('@filigran/design-system', async () => {
   const React = await import('react');
-  const actual =
-    await vi.importActual<typeof import('@filigran/ui')>('@filigran/ui');
+  const actual = await vi.importActual<
+    typeof import('@filigran/design-system')
+  >('@filigran/design-system');
 
   const SelectContext = React.createContext<{
     onValueChange: (value: string) => void;
@@ -54,6 +56,14 @@ vi.mock('@filigran/ui', async () => {
     SelectTrigger: ({ children }: { children: ReactNode }) => (
       <div data-testid="select-trigger">{children}</div>
     ),
+    // The real SelectValue needs the Radix Select root, which this mock replaces.
+    SelectValue: ({
+      placeholder,
+      children,
+    }: {
+      placeholder: string;
+      children: ReactNode;
+    }) => <>{children || placeholder}</>,
     SelectContent: ({ children }: { children: ReactNode }) => {
       const context = React.useContext(SelectContext);
       if (!context?.open) {
@@ -98,16 +108,26 @@ const ControlledHarness = ({
       onChange={setValue}
       options={options}
       labels={{
+        label: FIELD_LABEL,
         placeholder: PLACEHOLDER_TEXT,
         editableFieldLabel: OTHER_LABEL,
         editableFieldPlaceholder: OTHER_INPUT_PLACEHOLDER,
       }}
       editableFieldValue={OTHER_LABEL}
+      required
     />
   );
 };
 
 describe('SelectWithEditableField', () => {
+  it('should render the label with the required marker when the field is required', () => {
+    // Given / When
+    testRender(<ControlledHarness initialValue={undefined} />);
+
+    // Then
+    expect(screen.getByText(FIELD_LABEL)).toHaveTextContent(`${FIELD_LABEL}*`);
+  });
+
   it('should display selected option label when controlled value matches an option', () => {
     // Given
     testRender(<ControlledHarness initialValue={COMPLEXITY_VALUE} />);

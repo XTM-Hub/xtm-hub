@@ -1,7 +1,13 @@
 import { cn } from '@/lib/utils';
-import { Input } from '@filigran/design-system';
-import { CheckIcon } from '@filigran/icon';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@filigran/ui';
+import {
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@filigran/design-system';
 import { useRef, useState } from 'react';
 
 type Option = { value: string; label: string };
@@ -11,11 +17,13 @@ interface SelectWithEditableFieldProps {
   onChange: (value: string) => void;
   options: Option[];
   labels: {
+    label: string;
     placeholder: string;
     editableFieldLabel: string;
     editableFieldPlaceholder: string;
   };
   editableFieldValue: string;
+  required?: boolean;
   layerClassName?: string;
 }
 
@@ -55,6 +63,7 @@ export const SelectWithEditableField = ({
   options,
   labels,
   editableFieldValue,
+  required = false,
   layerClassName = 'layer-2',
 }: SelectWithEditableFieldProps) => {
   const isControlled = value !== undefined;
@@ -149,53 +158,55 @@ export const SelectWithEditableField = ({
     : selectedOption?.label;
 
   return (
-    <Select
-      value={currentSelectValue}
-      onValueChange={handleSelectChange}
-      open={open}
-      onOpenChange={(nextOpen) => {
-        setOpen(nextOpen);
-        if (nextOpen && isControlled) {
-          setCustomValue(controlledState.customValue);
-        }
-      }}>
-      <SelectTrigger className={cn(layerClassName)}>
-        <span className={triggerText ? '' : 'text-muted-foreground'}>
-          {triggerText || labels.placeholder}
-        </span>
-      </SelectTrigger>
+    <div>
+      <Select
+        value={currentSelectValue}
+        onValueChange={handleSelectChange}
+        open={open}
+        onOpenChange={(nextOpen) => {
+          setOpen(nextOpen);
+          if (nextOpen && isControlled) {
+            setCustomValue(controlledState.customValue);
+          }
+        }}>
+        <SelectLabel required={required}>{labels.label}</SelectLabel>
+        <SelectTrigger className={cn('w-full', layerClassName)}>
+          <SelectValue placeholder={labels.placeholder}>
+            {triggerText}
+          </SelectValue>
+        </SelectTrigger>
 
-      <SelectContent className={cn(layerClassName)}>
-        {options.map((option) => (
-          <SelectItem
-            key={option.value}
-            value={option.value}>
-            {option.label}
-          </SelectItem>
-        ))}
+        <SelectContent className={cn(layerClassName)}>
+          {options.map((option) => (
+            <SelectItem
+              key={option.value}
+              value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
 
-        <div
-          className="relative flex w-full cursor-pointer select-none items-center rounded-none py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-input-hover"
-          onClick={handleOtherClick}>
-          {isOtherMode && (
-            <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-              <CheckIcon className="h-4 w-4" />
-            </span>
-          )}
-          {labels.editableFieldLabel}
-        </div>
+          <div
+            className={cn(
+              'relative flex min-h-8 w-full cursor-pointer select-none items-center border-l-2 border-transparent pl-4 pr-2 outline-none hover:bg-input-hover hover:border-input-hover',
+              'font-content-compact text-content-compact leading-content-compact tracking-content-compact text-input-placeholder',
+              isOtherMode && 'bg-input-hover border-input-focus'
+            )}
+            onClick={handleOtherClick}>
+            {labels.editableFieldLabel}
+          </div>
 
-        <div className="px-2 pb-2 pl-8">
-          <Input
-            ref={inputRef}
-            value={currentCustomValue}
-            onChange={handleCustomChange}
-            onKeyDown={handleCustomKeyDown}
-            placeholder={labels.editableFieldPlaceholder}
-            aria-label={labels.editableFieldPlaceholder}
-          />
-        </div>
-      </SelectContent>
-    </Select>
+          <div className="border-l-2 border-transparent pb-2 pl-4 pr-2">
+            <Input
+              ref={inputRef}
+              value={currentCustomValue}
+              onChange={handleCustomChange}
+              onKeyDown={handleCustomKeyDown}
+              placeholder={labels.editableFieldPlaceholder}
+              aria-label={labels.editableFieldPlaceholder}
+            />
+          </div>
+        </SelectContent>
+      </Select>
+    </div>
   );
 };

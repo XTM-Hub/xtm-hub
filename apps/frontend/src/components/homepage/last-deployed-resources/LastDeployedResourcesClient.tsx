@@ -11,7 +11,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@filigran/ui';
+} from '@filigran/design-system';
 import { Separator } from '@filigran/ui/clients';
 import { useLastDeployedOverviewQueryQuery } from '@graphql/generated';
 import { Fragment, useState } from 'react';
@@ -45,7 +45,9 @@ const LastDeployedResourcesClient = ({
         <Select
           value={selectedServiceInstanceId}
           onValueChange={setSelectedServiceInstanceId}>
-          <SelectTrigger className="w-56">
+          <SelectTrigger
+            aria-label={t('ProductPlaceholder')}
+            className="w-56">
             <SelectValue placeholder={t('ProductPlaceholder')} />
           </SelectTrigger>
           <SelectContent>

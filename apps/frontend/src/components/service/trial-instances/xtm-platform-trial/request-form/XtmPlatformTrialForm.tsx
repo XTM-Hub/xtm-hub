@@ -9,20 +9,24 @@ import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { TranslatableEnumSelectField } from '@/components/ui/TranslatableEnumSelectField';
 import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
-import { Button, Checkbox } from '@filigran/design-system';
+import {
+  Button,
+  Checkbox,
+  Select,
+  SelectContent,
+  SelectHelperText,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@filigran/design-system';
 import { WarningIcon } from '@filigran/icon';
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from '@filigran/ui';
 import {
   DeploymentRequestActivitySector,
@@ -89,8 +93,6 @@ export const XtmPlatformTrialForm = ({
   const t = useTranslate();
   const locale = useLocale();
   const selectLayerClassName = 'layer-2';
-  const selectTriggerClassName = cn(selectLayerClassName);
-  const selectContentClassName = cn(selectLayerClassName);
   const { me } = useContext(PortalContext);
 
   const renderMssaLink = (chunks: ReactNode) => (
@@ -269,21 +271,21 @@ export const XtmPlatformTrialForm = ({
           <FormField
             control={form.control}
             name="region"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  {t('Service.Trials.Form.Region')}{' '}
-                  <span className="text-destructive">*</span>
-                </FormLabel>
+            render={({ field, fieldState }) => (
+              <div>
                 <Select
                   value={field.value}
-                  onValueChange={field.onChange}>
-                  <SelectTrigger className={selectTriggerClassName}>
+                  onValueChange={field.onChange}
+                  error={Boolean(fieldState.error)}>
+                  <SelectLabel required>
+                    {t('Service.Trials.Form.Region')}
+                  </SelectLabel>
+                  <SelectTrigger className={cn('w-full', selectLayerClassName)}>
                     <SelectValue
                       placeholder={t('Service.Trials.Form.RegionPlaceholder')}
                     />
                   </SelectTrigger>
-                  <SelectContent className={selectContentClassName}>
+                  <SelectContent className={selectLayerClassName}>
                     {REGIONS.map((region) => (
                       <SelectItem
                         key={region.value}
@@ -292,22 +294,27 @@ export const XtmPlatformTrialForm = ({
                       </SelectItem>
                     ))}
                   </SelectContent>
+                  {fieldState.error && (
+                    <SelectHelperText>
+                      {fieldState.error.message}
+                    </SelectHelperText>
+                  )}
                 </Select>
-                <FormMessage className="text-destructive" />
-              </FormItem>
+              </div>
             )}
           />
 
           <FormField
             control={form.control}
             name="job_title"
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
               <TranslatableEnumSelectField
                 field={field}
                 label={t('Service.Trials.Form.JobTitle')}
                 placeholder={t('Service.Trials.Form.JobTitlePlaceholder')}
                 values={Object.values(DeploymentRequestJobTitle)}
                 translationNamespace="DeploymentRequestJobTitle"
+                error={fieldState.error?.message}
                 selectClassName={selectLayerClassName}
               />
             )}
@@ -316,13 +323,14 @@ export const XtmPlatformTrialForm = ({
           <FormField
             control={form.control}
             name="activity_sector"
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
               <TranslatableEnumSelectField
                 field={field}
                 label={t('Service.Trials.Form.ActivitySector')}
                 placeholder={t('Service.Trials.Form.ActivitySectorPlaceholder')}
                 values={Object.values(DeploymentRequestActivitySector)}
                 translationNamespace="DeploymentRequestActivitySector"
+                error={fieldState.error?.message}
                 selectClassName={selectLayerClassName}
               />
             )}
@@ -333,7 +341,7 @@ export const XtmPlatformTrialForm = ({
               key={entry.id}
               control={form.control}
               name={`use_cases_by_product.${index}.use_case`}
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <TranslatableEnumSelectField
                   field={field}
                   label={t('Service.Trials.XtmPlatform.Page.Form.UseCaseFor', {
@@ -346,6 +354,7 @@ export const XtmPlatformTrialForm = ({
                     USE_CASES_BY_PLATFORM_IDENTIFIER[entry.platform_identifier]
                   }
                   translationNamespace="DeploymentRequestUseCase"
+                  error={fieldState.error?.message}
                   selectClassName={selectLayerClassName}
                 />
               )}

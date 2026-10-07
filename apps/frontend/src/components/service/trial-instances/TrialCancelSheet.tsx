@@ -8,13 +8,7 @@ import { useTranslate } from '@/hooks/use-translate';
 import { XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
 import { Button } from '@filigran/design-system';
 import { CheckIndeterminateIcon } from '@filigran/icon';
-import {
-  AutoForm,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  toast,
-} from '@filigran/ui';
+import { AutoForm, FormItem, FormMessage, toast } from '@filigran/ui';
 import { trialInstancesCancelDeploymentRequestMutation } from '@generated/trialInstancesCancelDeploymentRequestMutation.graphql';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -127,17 +121,15 @@ export const TrialCancelSheet = ({
             ),
             fieldType: ({ field }) => (
               <FormItem>
-                <FormLabel>
-                  {t(
-                    'Service.Trials.Cancellation.ConfirmationForm.CancellationReason'
-                  )}
-                  <span className="text-sm text-destructive">*</span>
-                </FormLabel>
                 <SelectWithEditableField
                   value={field.value}
                   onChange={field.onChange}
                   options={cancellationReasons}
+                  required
                   labels={{
+                    label: t(
+                      'Service.Trials.Cancellation.ConfirmationForm.CancellationReason'
+                    ),
                     placeholder: t(
                       'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonPlaceholder'
                     ),

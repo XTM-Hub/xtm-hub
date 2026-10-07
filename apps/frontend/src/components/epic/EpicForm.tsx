@@ -19,6 +19,13 @@ import {
   Input,
   Radio,
   RadioGroup,
+  Select,
+  SelectContent,
+  SelectHelperText,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
   Textarea,
   Tooltip,
   TooltipContent,
@@ -35,11 +42,6 @@ import {
   FormLabel,
   FormMessage,
   MultiSelectFormField,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Separator,
   SheetFooter,
 } from '@filigran/ui';
@@ -302,22 +304,18 @@ const EpicForm = ({
           <FormField
             control={form.control}
             name="timeline"
-            render={({ field }) => (
-              <FormItem>
-                <EpicFieldLabel
-                  labelKey="Epic.Form.Timeline"
-                  required
-                />
+            render={({ field, fieldState }) => (
+              <div>
                 <Select
                   onValueChange={field.onChange}
-                  value={field.value ?? Timeline.Now}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={t('Epic.Form.TimelineOption.now')}
-                      />
-                    </SelectTrigger>
-                  </FormControl>
+                  value={field.value ?? Timeline.Now}
+                  error={Boolean(fieldState.error)}>
+                  <SelectLabel required>{t('Epic.Form.Timeline')}</SelectLabel>
+                  <SelectTrigger className="w-full">
+                    <SelectValue
+                      placeholder={t('Epic.Form.TimelineOption.now')}
+                    />
+                  </SelectTrigger>
                   <SelectContent>
                     {TIMELINE_VALUES.map((timeline) => (
                       <SelectItem
@@ -329,9 +327,13 @@ const EpicForm = ({
                       </SelectItem>
                     ))}
                   </SelectContent>
+                  {fieldState.error && (
+                    <SelectHelperText>
+                      {fieldState.error.message}
+                    </SelectHelperText>
+                  )}
                 </Select>
-                <FormMessage />
-              </FormItem>
+              </div>
             )}
           />
         </div>

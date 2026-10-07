@@ -6,16 +6,13 @@ import { useTranslate } from '@/hooks/use-translate';
 import { Locale, locales, publicLocales } from '@/i18n/config';
 import { setUserLocale } from '@/i18n/locale';
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@filigran/ui';
+} from '@filigran/design-system';
+import { Card, CardContent, CardHeader, CardTitle } from '@filigran/ui';
 import { useLocale } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useContext } from 'react';
@@ -52,7 +49,9 @@ export const ProfileFormPreferences = () => {
           <Select
             value={currentTheme}
             onValueChange={setTheme}>
-            <SelectTrigger aria-label={t('ThemeToggle.SetTheme')}>
+            <SelectTrigger
+              aria-label={t('ThemeToggle.SetTheme')}
+              className="w-full">
               <SelectValue placeholder={t('ThemeToggle.SetTheme')} />
             </SelectTrigger>
             <SelectContent>
@@ -72,7 +71,9 @@ export const ProfileFormPreferences = () => {
           <Select
             value={locale}
             onValueChange={onLocaleChange}>
-            <SelectTrigger aria-label={t('LocaleSwitcher.Label')}>
+            <SelectTrigger
+              aria-label={t('LocaleSwitcher.Label')}
+              className="w-full">
               <SelectValue placeholder={t('LocaleSwitcher.Label')} />
             </SelectTrigger>
             <SelectContent>

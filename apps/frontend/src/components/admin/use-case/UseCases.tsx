@@ -4,15 +4,15 @@ import { useExecuteAfterAnimation } from '@/hooks/use-execute-after-animation';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { i18nKey } from '@/utils/datatable';
-import { Chip } from '@filigran/design-system';
 import {
-  DataTable,
+  Chip,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@filigran/ui';
+} from '@filigran/design-system';
+import { DataTable } from '@filigran/ui';
 import {
   FiligranProduct,
   OrderingMode,
@@ -125,7 +125,9 @@ const UseCases = () => {
                     value === 'all' ? undefined : (value as FiligranProduct)
                   )
                 }>
-                <SelectTrigger className="w-45">
+                <SelectTrigger
+                  aria-label={t('UseCaseListPage.Product')}
+                  className="w-45">
                   <SelectValue placeholder={t('UseCaseListPage.Product')} />
                 </SelectTrigger>
                 <SelectContent>

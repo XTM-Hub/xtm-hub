@@ -3,7 +3,19 @@ import { ServiceFormUseCasesField } from '@/components/service/form/UseCasesFiel
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import MarkdownInput from '@/components/ui/MarkdownInput';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button, IconButton, Input, Switch } from '@filigran/design-system';
+import {
+  Button,
+  IconButton,
+  Input,
+  Select,
+  SelectContent,
+  SelectHelperText,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+  Switch,
+} from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
 import {
   FileInput,
@@ -13,11 +25,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   SheetFooter,
 } from '@filigran/ui';
 import { FiligranProduct } from '@graphql/generated';
@@ -125,34 +132,37 @@ const VotableFeatureForm = ({
         <FormField
           control={form.control}
           name="product"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('VotingRound.Feature.Product')}</FormLabel>
-              <FormControl>
-                <Select
-                  value={field.value}
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    // Use cases are scoped per product, so the previous
-                    // selection no longer applies.
-                    form.setValue('use_case_ids', [], { shouldDirty: true });
-                  }}>
-                  <SelectTrigger aria-label={t('VotingRound.Feature.Product')}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {VOTING_PRODUCTS.map((product) => (
-                      <SelectItem
-                        key={product}
-                        value={product}>
-                        {product.toUpperCase()}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <div>
+              <Select
+                value={field.value}
+                onValueChange={(value) => {
+                  field.onChange(value);
+                  // Use cases are scoped per product, so the previous
+                  // selection no longer applies.
+                  form.setValue('use_case_ids', [], { shouldDirty: true });
+                }}
+                error={Boolean(fieldState.error)}>
+                <SelectLabel>{t('VotingRound.Feature.Product')}</SelectLabel>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {VOTING_PRODUCTS.map((product) => (
+                    <SelectItem
+                      key={product}
+                      value={product}>
+                      {product.toUpperCase()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+                {fieldState.error && (
+                  <SelectHelperText>
+                    {fieldState.error.message}
+                  </SelectHelperText>
+                )}
+              </Select>
+            </div>
           )}
         />
         <FormField

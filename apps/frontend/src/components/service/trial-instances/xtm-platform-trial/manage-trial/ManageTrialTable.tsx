@@ -197,12 +197,14 @@ export const ManageTrialTable = ({
           const accessorKey: RoleFormField = `${platform}Role`;
           const isOptional = platform !== PlatformIdentifier.Xtmone;
           const namespace = `Service.Bundle.ManageTrial.Roles.${platform}`;
+          const title = t(`${namespace}.Title`, { count: 1 });
           return {
             accessorKey,
             id: `${platform}_role`,
-            header: t(`${namespace}.Title`, { count: 1 }),
+            header: title,
             cell: ({ row }) => (
               <RoleSelect
+                aria-label={title}
                 value={row.original[accessorKey]}
                 onValueChange={(value) => {
                   if (value === row.original[accessorKey]) {
@@ -217,7 +219,7 @@ export const ManageTrialTable = ({
                   pendingRoleUpdate?.userId === row.original.id &&
                   pendingRoleUpdate?.platform === platform
                 }
-                triggerClassName="h-auto w-[200px] gap-xs border-0 shadow-none focus:ring-0 focus:ring-offset-0 layer-0 bg-input-default hover:bg-input-hover"
+                triggerClassName="w-[200px] layer-0"
               />
             ),
           };

@@ -141,13 +141,13 @@ describe('ManageTrialHeader', () => {
     );
 
     expect(
-      await screen.findByText('Service.Bundle.ManageTrial.Roles.xtmone.Title', {
-        selector: 'label',
+      await screen.findByRole('combobox', {
+        name: 'Service.Bundle.ManageTrial.Roles.xtmone.Title',
       })
     ).toBeInTheDocument();
     expect(
-      screen.queryByText('Service.Bundle.ManageTrial.Roles.opencti.Title', {
-        selector: 'label',
+      screen.queryByRole('combobox', {
+        name: 'Service.Bundle.ManageTrial.Roles.opencti.Title',
       })
     ).not.toBeInTheDocument();
   });

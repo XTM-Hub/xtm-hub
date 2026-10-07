@@ -1,21 +1,19 @@
 import { RoadmapServiceInstance } from '@/components/admin/voting-round/use-roadmap-service-instances';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button, Input, Textarea } from '@filigran/design-system';
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+  Button,
+  Input,
   Select,
   SelectContent,
+  SelectHelperText,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
-  SheetFooter,
-} from '@filigran/ui';
+  Textarea,
+} from '@filigran/design-system';
+import { Form, FormField, SheetFooter } from '@filigran/ui';
 import { VotingRoundTheme } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -92,34 +90,38 @@ const VotingRoundForm = ({
           <FormField
             control={form.control}
             name="service_instance_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('VotingRound.Form.ServiceInstance')}</FormLabel>
-                <FormControl>
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}>
-                    <SelectTrigger
-                      aria-label={t('VotingRound.Form.ServiceInstance')}>
-                      <SelectValue
-                        placeholder={t(
-                          'VotingRound.Form.ServiceInstancePlaceholder'
-                        )}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {serviceInstances.map((serviceInstance) => (
-                        <SelectItem
-                          key={serviceInstance.id}
-                          value={serviceInstance.id}>
-                          {serviceInstance.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+            render={({ field, fieldState }) => (
+              <div>
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  error={Boolean(fieldState.error)}>
+                  <SelectLabel>
+                    {t('VotingRound.Form.ServiceInstance')}
+                  </SelectLabel>
+                  <SelectTrigger className="w-full">
+                    <SelectValue
+                      placeholder={t(
+                        'VotingRound.Form.ServiceInstancePlaceholder'
+                      )}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {serviceInstances.map((serviceInstance) => (
+                      <SelectItem
+                        key={serviceInstance.id}
+                        value={serviceInstance.id}>
+                        {serviceInstance.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                  {fieldState.error && (
+                    <SelectHelperText>
+                      {fieldState.error.message}
+                    </SelectHelperText>
+                  )}
+                </Select>
+              </div>
             )}
           />
         )}
@@ -150,66 +152,73 @@ const VotingRoundForm = ({
         <FormField
           control={form.control}
           name="theme"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('VotingRound.Form.Theme')}</FormLabel>
-              <FormControl>
-                <Select
-                  value={field.value}
-                  onValueChange={field.onChange}>
-                  <SelectTrigger aria-label={t('VotingRound.Form.Theme')}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {THEME_VALUES.map((themeValue) => (
-                      <SelectItem
-                        key={themeValue}
-                        value={themeValue}>
-                        {t(`VotingRound.Theme.${themeValue}`)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <div>
+              <Select
+                value={field.value}
+                onValueChange={field.onChange}
+                error={Boolean(fieldState.error)}>
+                <SelectLabel>{t('VotingRound.Form.Theme')}</SelectLabel>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {THEME_VALUES.map((themeValue) => (
+                    <SelectItem
+                      key={themeValue}
+                      value={themeValue}>
+                      {t(`VotingRound.Theme.${themeValue}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+                {fieldState.error && (
+                  <SelectHelperText>
+                    {fieldState.error.message}
+                  </SelectHelperText>
+                )}
+              </Select>
+            </div>
           )}
         />
         {!votingRound && copySources.length > 0 && (
           <FormField
             control={form.control}
             name="copy_features_from_round_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('VotingRound.Form.CopyFeaturesFrom')}</FormLabel>
-                <FormControl>
-                  <Select
-                    value={field.value ?? NO_COPY}
-                    onValueChange={(value) =>
-                      field.onChange(value === NO_COPY ? undefined : value)
-                    }>
-                    <SelectTrigger
-                      aria-label={t('VotingRound.Form.CopyFeaturesFrom')}>
-                      <SelectValue
-                        placeholder={t('VotingRound.Form.CopyFeaturesNone')}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={NO_COPY}>
-                        {t('VotingRound.Form.CopyFeaturesNone')}
+            render={({ field, fieldState }) => (
+              <div>
+                <Select
+                  value={field.value ?? NO_COPY}
+                  onValueChange={(value) =>
+                    field.onChange(value === NO_COPY ? undefined : value)
+                  }
+                  error={Boolean(fieldState.error)}>
+                  <SelectLabel>
+                    {t('VotingRound.Form.CopyFeaturesFrom')}
+                  </SelectLabel>
+                  <SelectTrigger className="w-full">
+                    <SelectValue
+                      placeholder={t('VotingRound.Form.CopyFeaturesNone')}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_COPY}>
+                      {t('VotingRound.Form.CopyFeaturesNone')}
+                    </SelectItem>
+                    {copySources.map((source) => (
+                      <SelectItem
+                        key={source.id}
+                        value={source.id}>
+                        {source.name}
                       </SelectItem>
-                      {copySources.map((source) => (
-                        <SelectItem
-                          key={source.id}
-                          value={source.id}>
-                          {source.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+                    ))}
+                  </SelectContent>
+                  {fieldState.error && (
+                    <SelectHelperText>
+                      {fieldState.error.message}
+                    </SelectHelperText>
+                  )}
+                </Select>
+              </div>
             )}
           />
         )}

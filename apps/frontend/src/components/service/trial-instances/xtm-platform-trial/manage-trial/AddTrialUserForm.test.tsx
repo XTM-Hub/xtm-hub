@@ -15,7 +15,7 @@ import {
   mockUserConnection,
   mockUserEdge,
 } from '@graphql/mocks';
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -70,13 +70,8 @@ const openEmailDropdown = async (user: { click: (el: Element) => unknown }) => {
   );
 };
 
-// Role selects are not directly labelled (the FormLabel's `for` does not
-// resolve to the Select's underlying button), so we scope the query to the
-// FormItem containing the label text to find its associated combobox.
-const getRoleCombobox = (title: string) => {
-  const label = screen.getByText(title, { selector: 'label' });
-  return within(label.parentElement as HTMLElement).getByRole('combobox');
-};
+const getRoleCombobox = (title: string) =>
+  screen.getByRole('combobox', { name: title });
 
 describe('AddTrialUserForm', () => {
   beforeEach(() => {

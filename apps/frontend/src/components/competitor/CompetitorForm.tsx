@@ -2,20 +2,16 @@
 
 import { formatTier } from '@/components/competitor/competitor.utils';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
 import {
-  AutoForm,
-  FormControl,
-  FormItem,
-  FormLabel,
-  FormMessage,
+  Button,
   Select,
   SelectContent,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
-  SheetFooter,
-} from '@filigran/ui';
+} from '@filigran/design-system';
+import { AutoForm, FormItem, FormMessage, SheetFooter } from '@filigran/ui';
 import { competitor_fragment$data } from '@generated/competitor_fragment.graphql';
 import { CompetitorTier } from '@graphql/generated';
 import { z } from 'zod';
@@ -74,16 +70,13 @@ const CompetitorForm = ({
         tier: {
           fieldType: ({ field }) => (
             <FormItem>
-              <FormLabel>
-                {t('CompetitorForm.Tier')}
-                <span className="text-sm text-destructive"> *</span>
-              </FormLabel>
-              <FormControl>
+              <div>
                 <Select
                   onValueChange={field.onChange}
                   value={field.value}
                   defaultValue={competitor?.tier ?? CompetitorTier.Tier1}>
-                  <SelectTrigger>
+                  <SelectLabel required>{t('CompetitorForm.Tier')}</SelectLabel>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder={t('CompetitorForm.Tier')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -96,7 +89,7 @@ const CompetitorForm = ({
                     ))}
                   </SelectContent>
                 </Select>
-              </FormControl>
+              </div>
               <FormMessage />
             </FormItem>
           ),

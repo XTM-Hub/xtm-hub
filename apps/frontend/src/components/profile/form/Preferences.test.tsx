@@ -25,9 +25,10 @@ vi.mock('react-relay', () => ({
   useMutation: () => [mocks.commitEditMeUserMutation],
 }));
 
-vi.mock('@filigran/ui', async () => {
-  const actual =
-    await vi.importActual<typeof import('@filigran/ui')>('@filigran/ui');
+vi.mock('@filigran/design-system', async () => {
+  const actual = await vi.importActual<
+    typeof import('@filigran/design-system')
+  >('@filigran/design-system');
 
   return {
     ...actual,

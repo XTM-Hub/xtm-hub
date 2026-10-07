@@ -1,14 +1,14 @@
 import { useTranslate } from '@/hooks/use-translate';
+import { cn } from '@/lib/utils';
 import {
-  FormItem,
-  FormLabel,
-  FormMessage,
   Select,
   SelectContent,
+  SelectHelperText,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
-} from '@filigran/ui';
+} from '@filigran/design-system';
 import { ControllerRenderProps, FieldPath, FieldValues } from 'react-hook-form';
 
 interface TranslatableEnumSelectFieldProps<
@@ -19,7 +19,7 @@ interface TranslatableEnumSelectFieldProps<
   placeholder: string;
   values: string[];
   translationNamespace: string;
-  className?: string;
+  error?: string;
   selectClassName?: string;
 }
 
@@ -29,19 +29,18 @@ export const TranslatableEnumSelectField = <T extends FieldValues>({
   placeholder,
   values,
   translationNamespace,
-  className = 'text-sm text-destructive',
+  error,
   selectClassName,
 }: TranslatableEnumSelectFieldProps<T>) => {
   const t = useTranslate();
   return (
-    <FormItem>
-      <FormLabel>
-        {label} <span className={className}>*</span>
-      </FormLabel>
+    <div>
       <Select
         value={field.value}
-        onValueChange={field.onChange}>
-        <SelectTrigger className={selectClassName}>
+        onValueChange={field.onChange}
+        error={Boolean(error)}>
+        <SelectLabel required>{label}</SelectLabel>
+        <SelectTrigger className={cn('w-full', selectClassName)}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent className={selectClassName}>
@@ -53,8 +52,8 @@ export const TranslatableEnumSelectField = <T extends FieldValues>({
             </SelectItem>
           ))}
         </SelectContent>
+        {error && <SelectHelperText>{error}</SelectHelperText>}
       </Select>
-      <FormMessage className={className} />
-    </FormItem>
+    </div>
   );
 };
