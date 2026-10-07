@@ -1,6 +1,7 @@
 'use client';
 
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
+import { DisabledActionTooltip } from '@/components/ui/DisabledActionTooltip';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
 import { useTranslate } from '@/hooks/use-translate';
 import { isValueInEnum } from '@/utils/is-value-in-enum';
@@ -101,20 +102,10 @@ export const PublicResourceActions = ({
             <Link href={signupHref}>{deployLabel}</Link>
           </Button>
         ) : (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span
-                  tabIndex={0}
-                  className="inline-flex">
-                  <Button disabled={true}>{deployLabel}</Button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                {t('Service.Connectors.UnavailableDeployments')}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <DisabledActionTooltip
+            reason={t('Service.Connectors.UnavailableDeployments')}>
+            <Button disabled={true}>{deployLabel}</Button>
+          </DisabledActionTooltip>
         ))}
     </div>
   );

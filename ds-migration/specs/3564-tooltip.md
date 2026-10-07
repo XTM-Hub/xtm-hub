@@ -139,9 +139,12 @@ recoloured the legacy bubble goes. Content markup inside the bubble (`<p>`, span
   title would overflow that cap.
 - **Default side follows the design system (`top`)**: the legacy `TooltipContent` forced `side="bottom"` as a default.
   Only `EpicList`, which passes `side="bottom" align="start"` explicitly, keeps bottom.
-- **`SimpleTooltip` is inlined, not rebuilt**: the usage contract documents only the compound; three call sites with
-  the same disabled-action pattern do not justify a wrapper. The legacy trigger's `w-full` and `cursor: unset` go:
-  in the `flex` action rows the `inline-flex` span sizes to the button.
+- **`SimpleTooltip` becomes `DisabledActionTooltip`** (`src/components/ui/DisabledActionTooltip.tsx`): the design
+  system compound around a focusable `span tabIndex={0} className="inline-flex"` trigger, since a disabled button
+  gets no focus or hover. Its three call sites (`PublicResourceActions`, `OneClickDeploy`,
+  `ShareableResourceConnectorSlug`) and `ManageTrialHeader`'s disabled group action, whose `<div>` trigger keyboard
+  users could not reach, use it; a new disabled action with a reason uses it too. The legacy trigger's `w-full` and
+  `cursor: unset` go: in the `flex` action rows the `inline-flex` span sizes to the button.
 - **`EeBadge` loses the gradient bubble**: a hardcoded hex gradient on a design system surface breaks the tokens-only
   invariant; the badge itself, outside the design system, keeps it.
 - **`NavigationLinks`' tooltip content** keeps its two lines but drops the `content-body-base` override (the bubble's

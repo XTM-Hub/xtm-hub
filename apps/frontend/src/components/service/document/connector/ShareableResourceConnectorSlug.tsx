@@ -15,17 +15,12 @@ import ShareableResourceCarousel from '@/components/service/document/ui/Shareabl
 import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
+import { DisabledActionTooltip } from '@/components/ui/DisabledActionTooltip';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
 import { cn } from '@/lib/utils';
 import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
 import { getPlatformIdentifier } from '@/utils/platform';
-import {
-  Button,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@filigran/design-system';
+import { Button } from '@filigran/design-system';
 import {
   InfoIcon,
   LogoFiligranIcon,
@@ -126,29 +121,16 @@ const ShareableResourceConnectorSlug = ({
                   }
                 />
               ) : (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span
-                        tabIndex={0}
-                        className="inline-flex">
-                        <Button disabled={true}>
-                          {t(
-                            'Service.ShareableResources.Deploy.DeployPlatform',
-                            {
-                              platformName:
-                                PlatformMetadataMapping[platformIdentifier]
-                                  .name ?? 'OpenCTI',
-                            }
-                          )}
-                        </Button>
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {t('Service.Connectors.UnavailableDeployments')}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <DisabledActionTooltip
+                  reason={t('Service.Connectors.UnavailableDeployments')}>
+                  <Button disabled={true}>
+                    {t('Service.ShareableResources.Deploy.DeployPlatform', {
+                      platformName:
+                        PlatformMetadataMapping[platformIdentifier].name ??
+                        'OpenCTI',
+                    })}
+                  </Button>
+                </DisabledActionTooltip>
               )}
             </div>
           </div>

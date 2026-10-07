@@ -1,6 +1,7 @@
 'use client';
 
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { DisabledActionTooltip } from '@/components/ui/DisabledActionTooltip';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
@@ -151,26 +152,17 @@ export const ManageTrialHeader = ({
             </TooltipProvider>
           )}
           {selectedUsers.length === 0 ? (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger
-                  asChild
-                  className="w-fit"
-                  style={{ cursor: 'unset' }}>
-                  <div>
-                    <Button
-                      priority="secondary"
-                      disabled
-                      className="border-elevation-border-default-layer-0">
-                      {t('Service.Bundle.ManageTrial.GroupAction')}
-                    </Button>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {t('Service.Bundle.ManageTrial.GroupActionDisabledTooltip')}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <DisabledActionTooltip
+              reason={t(
+                'Service.Bundle.ManageTrial.GroupActionDisabledTooltip'
+              )}>
+              <Button
+                priority="secondary"
+                disabled
+                className="border-elevation-border-default-layer-0">
+                {t('Service.Bundle.ManageTrial.GroupAction')}
+              </Button>
+            </DisabledActionTooltip>
           ) : (
             <Button
               priority="secondary"

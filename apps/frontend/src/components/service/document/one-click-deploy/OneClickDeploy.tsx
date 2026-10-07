@@ -7,6 +7,7 @@ import EeBadge from '@/components/service/document/one-click-deploy/EeBadge';
 import EeLearnMoreSheet from '@/components/service/document/one-click-deploy/EeLearnMoreSheet';
 import OnePlatformDisplay from '@/components/service/document/one-click-deploy/OnePlatformDisplay';
 import { useOneClickDeployTab } from '@/components/service/document/one-click-deploy/UseOneClickDeployTab';
+import { DisabledActionTooltip } from '@/components/ui/DisabledActionTooltip';
 import { useBuildCompatibilityTranslationKey } from '@/hooks/use-build-compatibility-translation-key';
 import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
 import { useTranslate } from '@/hooks/use-translate';
@@ -17,13 +18,7 @@ import {
   requiresEnterpriseEdition,
 } from '@/utils/platform';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import {
-  Button,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@filigran/design-system';
+import { Button } from '@filigran/design-system';
 import { AlertDialog, AlertDialogContent } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { OneClickDeployMutation as OneClickDeployMutationType } from '@generated/OneClickDeployMutation.graphql';
@@ -205,23 +200,13 @@ const OneClickDeploy = ({
   );
 
   const container = isDeploymentDisabled ? (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span
-            tabIndex={0}
-            className="inline-flex">
-            {buttonWithBadge}
-          </span>
-        </TooltipTrigger>
-        <TooltipContent>
-          {t('Service.Connectors.Incompatible', {
-            platformToBeUpdated,
-            count: incompatiblePlatformsCount,
-          })}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <DisabledActionTooltip
+      reason={t('Service.Connectors.Incompatible', {
+        platformToBeUpdated,
+        count: incompatiblePlatformsCount,
+      })}>
+      {buttonWithBadge}
+    </DisabledActionTooltip>
   ) : (
     buttonWithBadge
   );
