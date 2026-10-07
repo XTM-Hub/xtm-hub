@@ -1434,6 +1434,7 @@
     "List": {
       "ViewTab": "タブ表示を選択",
       "ViewList": "リスト表示を選択",
+      "Filters": "フィルター",
       "Tab": {
         "Name": "名前",
         "Description": "説明",

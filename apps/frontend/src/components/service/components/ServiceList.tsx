@@ -100,6 +100,7 @@ const ServiceList = ({
           actions={<ServiceListHeaderButtons />}
           paginationControls={paginationControls}
           onDisplayModeChange={setDisplayMode}
+          filters={additionalFilters}
         />
       </div>
       <div className="flex flex-row">

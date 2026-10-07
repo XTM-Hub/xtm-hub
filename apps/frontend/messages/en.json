@@ -1434,6 +1434,7 @@
     "List": {
       "ViewTab": "Select tab view",
       "ViewList": "Select list view",
+      "Filters": "Filters",
       "Tab": {
         "Name": "Name",
         "Description": "Description",

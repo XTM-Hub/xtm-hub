@@ -1,3 +1,4 @@
+import { FilterSheet } from '@/components/service/components/header/filter/FilterSheet';
 import { useServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { SortControls } from '@/components/ui/SortControls';
@@ -43,6 +44,7 @@ interface ServiceListHeaderProps {
   actions?: React.ReactNode;
   className?: string;
   onDisplayModeChange?: (mode: ServiceListDisplayMode) => void;
+  filters?: ServiceListFilterMap;
 }
 
 export const ServiceListHeader = ({
@@ -52,6 +54,7 @@ export const ServiceListHeader = ({
   actions,
   className,
   onDisplayModeChange,
+  filters,
 }: ServiceListHeaderProps) => {
   const t = useTranslate();
 
@@ -160,6 +163,7 @@ export const ServiceListHeader = ({
                 />
               </button>
             </div>
+            {filters && <FilterSheet filters={filters} />}
           </div>
         </div>
 
