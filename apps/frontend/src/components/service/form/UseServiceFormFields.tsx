@@ -252,8 +252,7 @@ export const useServiceFormFields = ({
         inputProps: {
           placeholder: t('Service.Form.SlugPlaceholder'),
           readOnly: !isCreation,
-          disabled: disabledFields.includes('slug'),
-          className: !isCreation ? 'opacity-50 cursor-not-allowed' : '',
+          disabled: !isCreation || disabledFields.includes('slug'),
         },
       },
       name: {

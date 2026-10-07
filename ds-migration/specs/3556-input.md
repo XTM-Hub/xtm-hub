@@ -145,6 +145,10 @@ the raw `fieldState.error?.message` that `FormMessage` showed. Every placeholder
   cannot render that without restyling, and 3701 replaces the whole component.
 - **`EpicForm` title keeps the external counter** with no `maxLength`: the design system one would cap typing at 160
   and replace the translated `Epic.Form.CharacterCount`; zod stays the validator.
+- **A field the user cannot edit is `disabled`**: the design system `Input` gives `readOnly` no styling, so the
+  service slug in edition (`UseServiceFormFields`) takes `disabled` next to `readOnly` instead of the legacy
+  `opacity-50 cursor-not-allowed` on its wrapper. The value stays in the form: AutoForm sets `disabled` on the input,
+  not on the controller.
 - No screen for the two radio lists: they need a platform registration callback or registered platforms, which the
   development seed has not. `register/OrganizationForm.test.tsx` and the e2e `registration.spec.ts` cover them.
 
@@ -163,7 +167,6 @@ the raw `fieldState.error?.message` that `FormMessage` showed. Every placeholder
   the same `N/155` counter. Alternative: drop `maxLength` and let zod alone cap them.
 - One-click deploy: a disabled platform's tooltip trigger is a focusable `span` (`tabIndex={0}`), an extra tab stop
   inside the radio group, so keyboard users still reach the reason it is disabled.
-- The service slug field's read-only `opacity-50` now dims its label too (it lands on the wrapper).
 - `RegisterOrganizationForm` platform name drops its `bg-grayblue-700 border-none` override.
 - `TagInput`'s inner entry stays native with the legacy classes until 3701.
 

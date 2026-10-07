@@ -20,12 +20,12 @@ const existingDocument = {
 describe('useServiceFormFields', () => {
   describe('slug field', () => {
     it.each`
-      scenario      | document            | expectedReadOnly | expectedClassName
-      ${'creation'} | ${undefined}        | ${false}         | ${''}
-      ${'edition'}  | ${existingDocument} | ${true}          | ${'opacity-50 cursor-not-allowed'}
+      scenario      | document            | expectedReadOnly | expectedDisabled
+      ${'creation'} | ${undefined}        | ${false}         | ${false}
+      ${'edition'}  | ${existingDocument} | ${true}          | ${true}
     `(
       'should have readOnly=$expectedReadOnly in $scenario mode',
-      ({ document, expectedReadOnly, expectedClassName }) => {
+      ({ document, expectedReadOnly, expectedDisabled }) => {
         const { result } = renderHook(() =>
           useServiceFormFields({
             documentType: 'Custom Dashboard',
@@ -35,9 +35,7 @@ describe('useServiceFormFields', () => {
         );
 
         expect(result.current.slug.inputProps.readOnly).toBe(expectedReadOnly);
-        expect(result.current.slug.inputProps.className).toBe(
-          expectedClassName
-        );
+        expect(result.current.slug.inputProps.disabled).toBe(expectedDisabled);
       }
     );
 
@@ -77,7 +75,6 @@ describe('useServiceFormFields', () => {
           useServiceFormFields({
             documentType: 'Custom Dashboard',
             platform: 'OpenCTI',
-            document: existingDocument,
             disabledFields,
           })
         );
