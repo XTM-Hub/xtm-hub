@@ -40,7 +40,9 @@ BASE_MERGE_PENDING="$LOG_DIR/base-merge.pending"
 SUBJECT_RE='^(feat|fix|chore)\(frontend\): .+ \(#[0-9]+\)$'
 mkdir -p "$LOG_DIR"
 
-log() { printf '%s %s\n' "$(date '+%H:%M:%S')" "$*" | tee -a "$LOG_DIR/run.log" >&2; }
+# Progress always reaches the terminal, even from steps whose output goes to a log file.
+exec 3>&2
+log() { printf '%s %s\n' "$(date '+%H:%M:%S')" "$*" | tee -a "$LOG_DIR/run.log" >&3; }
 die() { log "STOP: $*"; exit 1; }
 header() { sed -n "s/^$1: *//p" "$STATUS_FILE" | tr -d '"'; }
 set_header() { NAME="$1" VALUE="$2" perl -pi -e 's/^(\Q$ENV{NAME}\E:) .*/$1 $ENV{VALUE}/' "$STATUS_FILE"; }
@@ -399,16 +401,18 @@ e2e_checks() {
 }
 
 validate_item() {
-  local spec="ds-migration/specs/$1.md"
+  local spec="ds-migration/specs/$1.md" step
   [ -f "$spec" ] || { echo "Missing spec $spec"; return 1; }
-  yarn workspace @xtm-hub/frontend lint &&
-    yarn workspace @xtm-hub/frontend format:check &&
-    yarn workspace @xtm-hub/frontend i18n:check &&
-    yarn workspace @xtm-hub/frontend check-ts &&
-    yarn workspace @xtm-hub/frontend test &&
-    e2e_checks &&
-    node ds-migration/validate.mjs "$spec" &&
-    node ds-migration/screenshot.mjs "$spec" after
+  for step in lint format:check i18n:check check-ts test; do
+    log "$1: validating, $step"
+    yarn workspace @xtm-hub/frontend "$step" || return 1
+  done
+  log "$1: validating, e2e lint and format if the locators changed"
+  e2e_checks || return 1
+  log "$1: validating, validate.mjs"
+  node ds-migration/validate.mjs "$spec" || return 1
+  log "$1: validating, after screenshots"
+  node ds-migration/screenshot.mjs "$spec" after
 }
 
 # ---------------------------------------------------------------- report and pull request
@@ -517,6 +521,9 @@ wait_checks() {
   head="$(git rev-parse HEAD)"
   deadline=$(($(date +%s) + CHECKS_TIMEOUT))
   log "waiting for the required checks of PR #$pr ($REQUIRED_CHECKS)"
+  local started next_note
+  started=$(date +%s)
+  next_note=$((started + 300))
   while :; do
     pr_head="$(gh pr view "$pr" --json headRefOid --jq .headRefOid 2>/dev/null || true)"
     state=pending
@@ -533,6 +540,10 @@ wait_checks() {
       fail) return 1 ;;
     esac
     [ "$(date +%s)" -lt "$deadline" ] || die "required checks of PR #$pr still not done after $((CHECKS_TIMEOUT / 60)) minutes"
+    if [ "$(date +%s)" -ge "$next_note" ]; then
+      log "still waiting for the checks of PR #$pr: $state after $((($(date +%s) - started) / 60)) minutes"
+      next_note=$((next_note + 300))
+    fi
     sleep "$CHECKS_INTERVAL"
   done
 }

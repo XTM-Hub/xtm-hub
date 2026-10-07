@@ -172,6 +172,7 @@ check "covered issues assigned and moved with their item" 'grep -q "^gh issue ed
 check "issue shows the final spec, findings included" 'grep -qx "  that wraps" "$SB/issue-3561.md"'
 check "wrapped spec bullets kept whole in the PR report" 'grep -q "textarea: found in review, on a bullet that wraps$" "$SB/pr-body.md"'
 check "sessions never run subagents in the background" '! grep -q "claude with background tasks allowed" "$SB/calls.log"'
+check "validation steps logged as they run" 'grep -q "3561-textarea: validating, check-ts" "$(git rev-parse --git-dir)/ds-migration/run.log" && grep -q "3561-textarea: validating, after screenshots" "$(git rev-parse --git-dir)/ds-migration/run.log"'
 check "after screenshots part of the validation" 'grep -q "^screenshot after ds-migration/specs/3561-textarea.md" "$SB/calls.log"'
 check "done item announced on the PR" 'grep -qx "Component Textarea done. Issue #3561" "$SB/pr-comments.log"'
 approve epic-1-primitives; run
@@ -240,6 +241,7 @@ new_repo g "development_status:
   3568-switch: backlog
   3553-radio: backlog"
 CLAUDE_E2E=3561-textarea run --once
+check "validation steps reach the terminal" 'grep -q "3561-textarea: validating, after screenshots" "$SB/out.log"'
 check "e2e locator change accepted and linted" '[ "$(status_of 3561-textarea)" = done ] && git show --stat HEAD | grep -q "apps/e2e/tests/model/textarea.pageModel.ts" && grep -q "^yarn workspace @xtm-hub/test_e2e lint" "$SB/calls.log"'
 CLAUDE_E2E_SEEDS=3568-switch run --once
 check "e2e seeds copied from the backend stay out of scope" '[ "$(status_of 3568-switch)" = blocked ] && grep -q "Out of scope: apps/e2e/seeds/switch.sql" "$(git rev-parse --git-dir)/ds-migration/3568-switch-validate.log"'
