@@ -117,6 +117,11 @@ export const usePrivateNavigation = (): NavigationConfig => {
       label: tMenuLinks('Security'),
     },
     {
+      href: `/${APP_PATH}/admin/roles`,
+      label: tMenuLinks('Roles'),
+      restriction: [PortalCapability.Bypass],
+    },
+    {
       href: `/${APP_PATH}/admin/use-case`,
       label: tMenuLinks('UseCase'),
     },

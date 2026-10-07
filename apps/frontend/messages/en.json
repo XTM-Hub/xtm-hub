@@ -307,6 +307,12 @@
       "CANT_REQUEST_FREE_TRIAL": "You cannot request a free trial",
       "CANT_REQUEST_FREE_TRIAL_IN_PERSONAL_SPACE": "You cannot request a free trial in your personal space",
       "CANT_SUBSCRIBE_YOURSELF": "You cannot add yourself",
+      "CAPABILITY_PORTAL_NOT_FOUND": "Unknown capability",
+      "SSO_GROUP_ROLE_PORTAL_NOT_FOUND": "SSO group mapping not found",
+      "SSO_GROUP_ROLE_PORTAL_ALREADY_EXISTS": "This SSO group is already mapped to this role",
+      "ROLE_PORTAL_NOT_FOUND": "Role not found",
+      "ROLE_PORTAL_ALREADY_EXISTS": "This role already exists",
+      "ROLE_PORTAL_PROTECTED": "This role is used by the platform: it cannot be renamed or deleted, and ADMIN must keep BYPASS",
       "COMPETITOR_DOMAIN_ALREADY_EXISTS": "A competitor with the same domain already exists",
       "DEPLOYMENT_FEEDBACK_ALREADY_EXISTS": "Deployment feedback already exists",
       "COMPETITOR_NOT_FOUND": "Competitor not found",
@@ -365,6 +371,8 @@
       "INVALID_PLATFORM_IDENTIFIER": "Platform identifier is invalid",
       "INVALID_PLATFORM_VERSION": "Invalid platform version",
       "INVALID_PRODUCTS_FOR_DEPLOYMENT_TYPE": "The selected products are not valid for this deployment type",
+      "INVALID_SSO_GROUP_ROLE_PORTAL": "Invalid SSO group or role",
+      "INVALID_ROLE_PORTAL": "Invalid role",
       "IS_PLATFORM_REGISTERED_UNKNOWN_ERROR": "An unknown error occurred during product connection",
       "LOAD_CAPABILITIES_ERROR": "An error occurred while loading capabilities",
       "LIST_FACET_ERROR": "An unknown error occurred while listing facets",
@@ -541,6 +549,28 @@
     "Name": "Name",
     "Product": "Product"
   },
+  "RoleListPage": {
+    "SsoGroup": "SSO group",
+    "SsoGroups": "SSO groups",
+    "Role": "Role",
+    "Capabilities": "Capabilities",
+    "AddMapping": "Add SSO Group",
+    "EditMapping": "Edit SSO Group",
+    "DeleteDialog": {
+      "Title": "Delete SSO Group",
+      "Text": "Are you sure you want to delete SSO Group?"
+    },
+    "AddRole": "Add role",
+    "EditRole": "Edit role",
+    "DeleteRoleDialog": {
+      "Title": "Delete role",
+      "Text": "Are you sure you want to delete the role {rolePortal}? Its SSO group mappings and user assignments will be removed too."
+    },
+    "Error": {
+      "SsoGroup": "SSO group is required",
+      "Role": "Role is required"
+    }
+  },
   "SolutionCategory": {
     "Actions": {
       "Add": "Add solution category"
@@ -633,7 +663,8 @@
     "Competitor": "Competitor",
     "NewsFeed": "News Feed",
     "VotingRound": "Feature voting",
-    "ManageTrials": "Manage trials"
+    "ManageTrials": "Manage trials",
+    "Roles": "Roles"
   },
   "NewsFeedAdminPage": {
     "Title": "Title",

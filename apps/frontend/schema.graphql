@@ -132,6 +132,8 @@ type Query {
   registeredPlatform(input: RegisteredPlatformInput!): RegisteredPlatform
   registeredPlatforms(input: RegisteredPlatformsInput!): [RegisteredPlatform!]!
   platformAssociatedOrganization(platformId: String!, tenantId: String): Organization
+  rolePortals: [RolePortal!]!
+  ssoGroupRolePortals: [SSOGroupRolePortal!]!
   userServiceCapabilities(service_instance_id: ServiceInstanceId!): UserServiceCapabilitiesResponse!
   seoServiceInstanceMetadata(service_instance_id: ServiceInstanceId!, language: Locale): [SeoServiceInstanceMetadata!]!
   serviceInstances(first: Int!, after: ID, orderBy: ServiceInstanceOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [ServiceInstanceFilter!], includeInaccessible: Boolean): ServiceConnection!
@@ -214,6 +216,12 @@ type Mutation {
   refreshPlatformRegistrationConnectivityStatusSingleTenant(input: RefreshPlatformRegistrationConnectivityStatusSingleTenantInput!): RefreshPlatformRegistrationConnectivityStatusResponse!
   refreshPlatformRegistrationConnectivityStatusAllTenants(input: RefreshPlatformRegistrationConnectivityStatusAllTenantsInput!): RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse!
   autoRegisterPlatform(platform: PlatformInput @deprecated(reason: "Use input instead"), input: AutoRegisterPlatformInput): Success!
+  addSSOGroupRolePortal(input: AddSSOGroupRolePortalInput!): SSOGroupRolePortal!
+  updateSSOGroupRolePortal(ssoGroup: String!, rolePortal: String!, input: UpdateSSOGroupRolePortalInput!): SSOGroupRolePortal!
+  deleteSSOGroupRolePortal(input: DeleteSSOGroupRolePortalInput!): SSOGroupRolePortal!
+  addRolePortal(input: AddRolePortalInput!): RolePortal!
+  updateRolePortal(name: String!, input: UpdateRolePortalInput!): RolePortal!
+  deleteRolePortal(name: String!): RolePortal!
   addSubscriptionCapability(input: AddSubscriptionCapabilityInput!): [SubscriptionModel!]!
   addCapabilitiesToUserServices(input: UserServicesAddCapabilitiesInput!, service_instance_id: ServiceInstanceId!): [UserService]
   editSeoServiceInstance(service_instance_id: ServiceInstanceId!, language: Locale!, input: EditSeoServiceInstanceInput!): SeoServiceInstanceMetadata!
@@ -1379,6 +1387,37 @@ input AutoRegisterPlatformInput {
 type RolePortal implements Node {
   id: ID!
   name: String!
+  capabilities: [Capability]
+}
+
+type SSOGroupRolePortal {
+  ssoGroup: String!
+  rolePortal: RolePortal!
+}
+
+input AddSSOGroupRolePortalInput {
+  ssoGroup: String!
+  rolePortal: String!
+}
+
+input UpdateSSOGroupRolePortalInput {
+  ssoGroup: String!
+  rolePortal: String!
+}
+
+input AddRolePortalInput {
+  name: String!
+  capabilities: [PortalCapability!]!
+}
+
+input UpdateRolePortalInput {
+  name: String!
+  capabilities: [PortalCapability!]!
+}
+
+input DeleteSSOGroupRolePortalInput {
+  ssoGroup: String!
+  rolePortal: String!
 }
 
 """

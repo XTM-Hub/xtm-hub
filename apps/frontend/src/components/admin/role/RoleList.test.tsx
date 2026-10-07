@@ -1,0 +1,123 @@
+import RoleList from '@/components/admin/role/RoleList';
+import { mockGraphqlQuery } from '@/utils/test/msw/graphql-api';
+import { mswServer } from '@/utils/test/msw/server';
+import testRender from '@/utils/test/test-render';
+import {
+  PortalCapability,
+  RolePortalsQuery,
+  SsoGroupRolePortalsQuery,
+} from '@graphql/generated';
+import {
+  mockCapability,
+  mockRolePortal,
+  mockSsoGroupRolePortal,
+} from '@graphql/mocks';
+import { screen } from '@testing-library/react';
+
+const ROLE_PORTALS_RESPONSE: RolePortalsQuery = {
+  rolePortals: [
+    mockRolePortal({ id: 'role-admin', name: 'Admin' }),
+    mockRolePortal({ id: 'role-user', name: 'User' }),
+  ],
+};
+
+describe('RoleList', () => {
+  beforeEach(() => {
+    mswServer.use(
+      mockGraphqlQuery({
+        queryName: 'RolePortals',
+        data: ROLE_PORTALS_RESPONSE,
+      })
+    );
+  });
+
+  it('should render SSO groups with their role in the SSO groups tab', async () => {
+    const mockedResponse: SsoGroupRolePortalsQuery = {
+      ssoGroupRolePortals: [
+        mockSsoGroupRolePortal({
+          ssoGroup: 'xtmhub-admins',
+          rolePortal: mockRolePortal({
+            id: 'role-admin',
+            name: 'Admin',
+            capabilities: [
+              mockCapability({
+                id: 'capability-bypass',
+                name: PortalCapability.Bypass,
+              }),
+            ],
+          }),
+        }),
+        mockSsoGroupRolePortal({
+          ssoGroup: 'xtmhub-users',
+          rolePortal: mockRolePortal({
+            id: 'role-user',
+            name: 'User',
+            capabilities: [],
+          }),
+        }),
+      ],
+    };
+
+    mswServer.use(
+      mockGraphqlQuery({
+        queryName: 'SSOGroupRolePortals',
+        data: mockedResponse,
+      })
+    );
+
+    const { user } = testRender(<RoleList />);
+
+    expect(
+      screen.getByRole('heading', { name: 'MenuLinks.Roles' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('tab', { name: 'RoleListPage.SsoGroups' })
+    ).toHaveAttribute('aria-selected', 'false');
+    expect(
+      screen.getByRole('tab', { name: 'RoleListPage.Capabilities' })
+    ).toHaveAttribute('aria-selected', 'true');
+
+    await user.click(
+      screen.getByRole('tab', { name: 'RoleListPage.SsoGroups' })
+    );
+
+    expect(
+      await screen.findByRole('row', { name: /xtmhub-admins.*Admin/ })
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole('row', { name: /xtmhub-users.*User/ })
+    ).toBeInTheDocument();
+  });
+
+  it('should render a delete action on each row', async () => {
+    const mockedResponse: SsoGroupRolePortalsQuery = {
+      ssoGroupRolePortals: [
+        mockSsoGroupRolePortal({
+          ssoGroup: 'xtmhub-admins',
+          rolePortal: mockRolePortal({ id: 'role-admin', name: 'Admin' }),
+        }),
+        mockSsoGroupRolePortal({
+          ssoGroup: 'xtmhub-users',
+          rolePortal: mockRolePortal({ id: 'role-user', name: 'User' }),
+        }),
+      ],
+    };
+
+    mswServer.use(
+      mockGraphqlQuery({
+        queryName: 'SSOGroupRolePortals',
+        data: mockedResponse,
+      })
+    );
+
+    const { user } = testRender(<RoleList />);
+    await user.click(
+      screen.getByRole('tab', { name: 'RoleListPage.SsoGroups' })
+    );
+
+    await screen.findByRole('row', { name: /xtmhub-admins/ });
+    expect(
+      screen.getAllByRole('button', { name: 'Utils.OpenMenu' })
+    ).toHaveLength(2);
+  });
+});

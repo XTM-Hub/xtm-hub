@@ -51,6 +51,16 @@ export type Scalars = {
   VotingRoundId: { input: VotingRoundId; output: VotingRoundId; }
 };
 
+export type AddRolePortalInput = {
+  capabilities: Array<PortalCapability>;
+  name: Scalars['String']['input'];
+};
+
+export type AddSsoGroupRolePortalInput = {
+  rolePortal: Scalars['String']['input'];
+  ssoGroup: Scalars['String']['input'];
+};
+
 export type AddServiceInput = {
   fee_type?: InputMaybe<Scalars['String']['input']>;
   organization_id?: InputMaybe<Scalars['String']['input']>;
@@ -418,6 +428,11 @@ export type DefaultDocument = Document & Node & {
   uploader?: Maybe<User>;
   uploader_organization?: Maybe<Organization>;
   use_cases?: Maybe<Array<UseCase>>;
+};
+
+export type DeleteSsoGroupRolePortalInput = {
+  rolePortal: Scalars['String']['input'];
+  ssoGroup: Scalars['String']['input'];
 };
 
 export type DeployedResource = {
@@ -1036,6 +1051,8 @@ export type Mutation = {
   acceptPendingUserInOrganization?: Maybe<User>;
   addCapabilitiesToUserServices?: Maybe<Array<Maybe<UserService>>>;
   addOrganization?: Maybe<Organization>;
+  addRolePortal: RolePortal;
+  addSSOGroupRolePortal: SsoGroupRolePortal;
   addServicePicture?: Maybe<ServiceInstance>;
   addSolutionCategory: SolutionCategory;
   addSubscription?: Maybe<ServiceInstance>;
@@ -1066,6 +1083,8 @@ export type Mutation = {
   deleteEpic?: Maybe<Epic>;
   deleteNewsFeedItem: Scalars['Boolean']['output'];
   deleteOrganization?: Maybe<Organization>;
+  deleteRolePortal: RolePortal;
+  deleteSSOGroupRolePortal: SsoGroupRolePortal;
   deleteSolutionCategory: SolutionCategory;
   deleteSubscriptions: Array<SubscriptionModel>;
   deleteUseCase: UseCase;
@@ -1113,6 +1132,8 @@ export type Mutation = {
   updateDocument: Document;
   updateEpic: Epic;
   updatePlatformServiceMetadata?: Maybe<RegisteredPlatform>;
+  updateRolePortal: RolePortal;
+  updateSSOGroupRolePortal: SsoGroupRolePortal;
   updateServiceGroups: Array<ServiceGroup>;
   updateSubscription?: Maybe<SubscriptionModel>;
   updateVotableFeature: VotableFeature;
@@ -1136,6 +1157,16 @@ export type MutationAddCapabilitiesToUserServicesArgs = {
 
 export type MutationAddOrganizationArgs = {
   input: OrganizationInput;
+};
+
+
+export type MutationAddRolePortalArgs = {
+  input: AddRolePortalInput;
+};
+
+
+export type MutationAddSsoGroupRolePortalArgs = {
+  input: AddSsoGroupRolePortalInput;
 };
 
 
@@ -1300,6 +1331,16 @@ export type MutationDeleteNewsFeedItemArgs = {
 
 export type MutationDeleteOrganizationArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteRolePortalArgs = {
+  name: Scalars['String']['input'];
+};
+
+
+export type MutationDeleteSsoGroupRolePortalArgs = {
+  input: DeleteSsoGroupRolePortalInput;
 };
 
 
@@ -1533,6 +1574,19 @@ export type MutationUpdateEpicArgs = {
 
 export type MutationUpdatePlatformServiceMetadataArgs = {
   input: UpdatePlatformServiceMetadataInput;
+};
+
+
+export type MutationUpdateRolePortalArgs = {
+  input: UpdateRolePortalInput;
+  name: Scalars['String']['input'];
+};
+
+
+export type MutationUpdateSsoGroupRolePortalArgs = {
+  input: UpdateSsoGroupRolePortalInput;
+  rolePortal: Scalars['String']['input'];
+  ssoGroup: Scalars['String']['input'];
 };
 
 
@@ -1931,6 +1985,7 @@ export type Query = {
    * contains it (case-insensitive) are considered.
    */
   registeredProductVersions: Array<RegisteredProductVersion>;
+  rolePortals: Array<RolePortal>;
   seoServiceInstance: SeoServiceInstance;
   seoServiceInstanceMetadata: Array<SeoServiceInstanceMetadata>;
   seoServiceInstances: Array<SeoServiceInstance>;
@@ -1940,6 +1995,7 @@ export type Query = {
   serviceInstances: ServiceConnection;
   settings: Settings;
   solutionCategories?: Maybe<SolutionCategoryConnection>;
+  ssoGroupRolePortals: Array<SsoGroupRolePortal>;
   subscriptionById?: Maybe<SubscriptionModel>;
   subscriptions: SubscriptionConnection;
   updateOpenCTIManifest: Success;
@@ -2394,6 +2450,7 @@ export type ReorderDeploymentRequestInQueueInput = {
 
 export type RolePortal = Node & {
   __typename?: 'RolePortal';
+  capabilities?: Maybe<Array<Maybe<Capability>>>;
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
 };
@@ -2428,6 +2485,12 @@ export type RssFeed = Document & Integration & Node & {
   uploader?: Maybe<User>;
   uploader_organization?: Maybe<Organization>;
   use_cases?: Maybe<Array<UseCase>>;
+};
+
+export type SsoGroupRolePortal = {
+  __typename?: 'SSOGroupRolePortal';
+  rolePortal: RolePortal;
+  ssoGroup: Scalars['String']['output'];
 };
 
 export type SendTelemetryMutation = {
@@ -2929,6 +2992,16 @@ export type UpdatePlatformServiceMetadataInput = {
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
 };
 
+export type UpdateRolePortalInput = {
+  capabilities: Array<PortalCapability>;
+  name: Scalars['String']['input'];
+};
+
+export type UpdateSsoGroupRolePortalInput = {
+  rolePortal: Scalars['String']['input'];
+  ssoGroup: Scalars['String']['input'];
+};
+
 export type UpdateServiceGroupsInput = {
   groups: Array<UpdateServiceGroupsInputGroup>;
 };
@@ -3300,6 +3373,8 @@ export type ResolversInterfaceTypes<_RefType extends Record<string, unknown>> = 
 
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = ResolversObject<{
+  AddRolePortalInput: AddRolePortalInput;
+  AddSSOGroupRolePortalInput: AddSsoGroupRolePortalInput;
   AddServiceInput: AddServiceInput;
   AddSolutionCategoryInput: AddSolutionCategoryInput;
   AddSubscriptionCapabilityInput: AddSubscriptionCapabilityInput;
@@ -3338,6 +3413,7 @@ export type ResolversTypes = ResolversObject<{
   CustomView: ResolverTypeWrapper<CustomView>;
   Date: ResolverTypeWrapper<Scalars['Date']['output']>;
   DefaultDocument: ResolverTypeWrapper<DefaultDocument>;
+  DeleteSSOGroupRolePortalInput: DeleteSsoGroupRolePortalInput;
   DeployedResource: ResolverTypeWrapper<Omit<DeployedResource, 'document'> & { document: ResolversTypes['Document'] }>;
   DeploymentAvailability: ResolverTypeWrapper<DeploymentAvailability>;
   DeploymentRequest: ResolverTypeWrapper<DeploymentRequest>;
@@ -3462,6 +3538,7 @@ export type ResolversTypes = ResolversObject<{
   ReorderDeploymentRequestInQueueInput: ReorderDeploymentRequestInQueueInput;
   RolePortal: ResolverTypeWrapper<RolePortal>;
   RssFeed: ResolverTypeWrapper<RssFeed>;
+  SSOGroupRolePortal: ResolverTypeWrapper<SsoGroupRolePortal>;
   SendTelemetryMutation: ResolverTypeWrapper<SendTelemetryMutation>;
   SeoServiceInstance: ResolverTypeWrapper<SeoServiceInstance>;
   SeoServiceInstanceMetadata: ResolverTypeWrapper<SeoServiceInstanceMetadata>;
@@ -3519,6 +3596,8 @@ export type ResolversTypes = ResolversObject<{
   UpdateDocumentInput: UpdateDocumentInput;
   UpdateEpicInput: UpdateEpicInput;
   UpdatePlatformServiceMetadataInput: UpdatePlatformServiceMetadataInput;
+  UpdateRolePortalInput: UpdateRolePortalInput;
+  UpdateSSOGroupRolePortalInput: UpdateSsoGroupRolePortalInput;
   UpdateServiceGroupsInput: UpdateServiceGroupsInput;
   UpdateServiceGroupsInputGroup: UpdateServiceGroupsInputGroup;
   UpdateSubscriptionInput: UpdateSubscriptionInput;
@@ -3568,6 +3647,8 @@ export type ResolversTypes = ResolversObject<{
 
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = ResolversObject<{
+  AddRolePortalInput: AddRolePortalInput;
+  AddSSOGroupRolePortalInput: AddSsoGroupRolePortalInput;
   AddServiceInput: AddServiceInput;
   AddSolutionCategoryInput: AddSolutionCategoryInput;
   AddSubscriptionCapabilityInput: AddSubscriptionCapabilityInput;
@@ -3604,6 +3685,7 @@ export type ResolversParentTypes = ResolversObject<{
   CustomView: CustomView;
   Date: Scalars['Date']['output'];
   DefaultDocument: DefaultDocument;
+  DeleteSSOGroupRolePortalInput: DeleteSsoGroupRolePortalInput;
   DeployedResource: Omit<DeployedResource, 'document'> & { document: ResolversParentTypes['Document'] };
   DeploymentAvailability: DeploymentAvailability;
   DeploymentRequest: DeploymentRequest;
@@ -3690,6 +3772,7 @@ export type ResolversParentTypes = ResolversObject<{
   ReorderDeploymentRequestInQueueInput: ReorderDeploymentRequestInQueueInput;
   RolePortal: RolePortal;
   RssFeed: RssFeed;
+  SSOGroupRolePortal: SsoGroupRolePortal;
   SendTelemetryMutation: SendTelemetryMutation;
   SeoServiceInstance: SeoServiceInstance;
   SeoServiceInstanceMetadata: SeoServiceInstanceMetadata;
@@ -3736,6 +3819,8 @@ export type ResolversParentTypes = ResolversObject<{
   UpdateDocumentInput: UpdateDocumentInput;
   UpdateEpicInput: UpdateEpicInput;
   UpdatePlatformServiceMetadataInput: UpdatePlatformServiceMetadataInput;
+  UpdateRolePortalInput: UpdateRolePortalInput;
+  UpdateSSOGroupRolePortalInput: UpdateSsoGroupRolePortalInput;
   UpdateServiceGroupsInput: UpdateServiceGroupsInput;
   UpdateServiceGroupsInputGroup: UpdateServiceGroupsInputGroup;
   UpdateSubscriptionInput: UpdateSubscriptionInput;
@@ -4279,6 +4364,8 @@ export type MutationResolvers<ContextType = PortalContext, ParentType extends Re
   acceptPendingUserInOrganization?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<MutationAcceptPendingUserInOrganizationArgs, 'organization_id' | 'user_id'>>;
   addCapabilitiesToUserServices?: Resolver<Maybe<Array<Maybe<ResolversTypes['UserService']>>>, ParentType, ContextType, RequireFields<MutationAddCapabilitiesToUserServicesArgs, 'input' | 'service_instance_id'>>;
   addOrganization?: Resolver<Maybe<ResolversTypes['Organization']>, ParentType, ContextType, RequireFields<MutationAddOrganizationArgs, 'input'>>;
+  addRolePortal?: Resolver<ResolversTypes['RolePortal'], ParentType, ContextType, RequireFields<MutationAddRolePortalArgs, 'input'>>;
+  addSSOGroupRolePortal?: Resolver<ResolversTypes['SSOGroupRolePortal'], ParentType, ContextType, RequireFields<MutationAddSsoGroupRolePortalArgs, 'input'>>;
   addServicePicture?: Resolver<Maybe<ResolversTypes['ServiceInstance']>, ParentType, ContextType, RequireFields<MutationAddServicePictureArgs, 'isLogo' | 'serviceInstanceId'>>;
   addSolutionCategory?: Resolver<ResolversTypes['SolutionCategory'], ParentType, ContextType, RequireFields<MutationAddSolutionCategoryArgs, 'input'>>;
   addSubscription?: Resolver<Maybe<ResolversTypes['ServiceInstance']>, ParentType, ContextType, Partial<MutationAddSubscriptionArgs>>;
@@ -4309,6 +4396,8 @@ export type MutationResolvers<ContextType = PortalContext, ParentType extends Re
   deleteEpic?: Resolver<Maybe<ResolversTypes['Epic']>, ParentType, ContextType, RequireFields<MutationDeleteEpicArgs, 'id'>>;
   deleteNewsFeedItem?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteNewsFeedItemArgs, 'id'>>;
   deleteOrganization?: Resolver<Maybe<ResolversTypes['Organization']>, ParentType, ContextType, RequireFields<MutationDeleteOrganizationArgs, 'id'>>;
+  deleteRolePortal?: Resolver<ResolversTypes['RolePortal'], ParentType, ContextType, RequireFields<MutationDeleteRolePortalArgs, 'name'>>;
+  deleteSSOGroupRolePortal?: Resolver<ResolversTypes['SSOGroupRolePortal'], ParentType, ContextType, RequireFields<MutationDeleteSsoGroupRolePortalArgs, 'input'>>;
   deleteSolutionCategory?: Resolver<ResolversTypes['SolutionCategory'], ParentType, ContextType, RequireFields<MutationDeleteSolutionCategoryArgs, 'id'>>;
   deleteSubscriptions?: Resolver<Array<ResolversTypes['SubscriptionModel']>, ParentType, ContextType, RequireFields<MutationDeleteSubscriptionsArgs, 'subscription_ids'>>;
   deleteUseCase?: Resolver<ResolversTypes['UseCase'], ParentType, ContextType, RequireFields<MutationDeleteUseCaseArgs, 'id'>>;
@@ -4356,6 +4445,8 @@ export type MutationResolvers<ContextType = PortalContext, ParentType extends Re
   updateDocument?: Resolver<ResolversTypes['Document'], ParentType, ContextType, RequireFields<MutationUpdateDocumentArgs, 'documentId' | 'input' | 'metadata' | 'serviceInstanceId'>>;
   updateEpic?: Resolver<ResolversTypes['Epic'], ParentType, ContextType, RequireFields<MutationUpdateEpicArgs, 'id' | 'input'>>;
   updatePlatformServiceMetadata?: Resolver<Maybe<ResolversTypes['RegisteredPlatform']>, ParentType, ContextType, RequireFields<MutationUpdatePlatformServiceMetadataArgs, 'input'>>;
+  updateRolePortal?: Resolver<ResolversTypes['RolePortal'], ParentType, ContextType, RequireFields<MutationUpdateRolePortalArgs, 'input' | 'name'>>;
+  updateSSOGroupRolePortal?: Resolver<ResolversTypes['SSOGroupRolePortal'], ParentType, ContextType, RequireFields<MutationUpdateSsoGroupRolePortalArgs, 'input' | 'rolePortal' | 'ssoGroup'>>;
   updateServiceGroups?: Resolver<Array<ResolversTypes['ServiceGroup']>, ParentType, ContextType, RequireFields<MutationUpdateServiceGroupsArgs, 'input'>>;
   updateSubscription?: Resolver<Maybe<ResolversTypes['SubscriptionModel']>, ParentType, ContextType, RequireFields<MutationUpdateSubscriptionArgs, 'input' | 'subscription_id'>>;
   updateVotableFeature?: Resolver<ResolversTypes['VotableFeature'], ParentType, ContextType, RequireFields<MutationUpdateVotableFeatureArgs, 'id' | 'input'>>;
@@ -4616,6 +4707,7 @@ export type QueryResolvers<ContextType = PortalContext, ParentType extends Resol
   registeredPlatform?: Resolver<Maybe<ResolversTypes['RegisteredPlatform']>, ParentType, ContextType, RequireFields<QueryRegisteredPlatformArgs, 'input'>>;
   registeredPlatforms?: Resolver<Array<ResolversTypes['RegisteredPlatform']>, ParentType, ContextType, RequireFields<QueryRegisteredPlatformsArgs, 'input'>>;
   registeredProductVersions?: Resolver<Array<ResolversTypes['RegisteredProductVersion']>, ParentType, ContextType, RequireFields<QueryRegisteredProductVersionsArgs, 'product'>>;
+  rolePortals?: Resolver<Array<ResolversTypes['RolePortal']>, ParentType, ContextType>;
   seoServiceInstance?: Resolver<ResolversTypes['SeoServiceInstance'], ParentType, ContextType, RequireFields<QuerySeoServiceInstanceArgs, 'slug'>>;
   seoServiceInstanceMetadata?: Resolver<Array<ResolversTypes['SeoServiceInstanceMetadata']>, ParentType, ContextType, RequireFields<QuerySeoServiceInstanceMetadataArgs, 'service_instance_id'>>;
   seoServiceInstances?: Resolver<Array<ResolversTypes['SeoServiceInstance']>, ParentType, ContextType>;
@@ -4625,6 +4717,7 @@ export type QueryResolvers<ContextType = PortalContext, ParentType extends Resol
   serviceInstances?: Resolver<ResolversTypes['ServiceConnection'], ParentType, ContextType, RequireFields<QueryServiceInstancesArgs, 'first' | 'orderBy' | 'orderMode'>>;
   settings?: Resolver<ResolversTypes['Settings'], ParentType, ContextType>;
   solutionCategories?: Resolver<Maybe<ResolversTypes['SolutionCategoryConnection']>, ParentType, ContextType, RequireFields<QuerySolutionCategoriesArgs, 'first' | 'orderBy' | 'orderMode'>>;
+  ssoGroupRolePortals?: Resolver<Array<ResolversTypes['SSOGroupRolePortal']>, ParentType, ContextType>;
   subscriptionById?: Resolver<Maybe<ResolversTypes['SubscriptionModel']>, ParentType, ContextType, Partial<QuerySubscriptionByIdArgs>>;
   subscriptions?: Resolver<ResolversTypes['SubscriptionConnection'], ParentType, ContextType, RequireFields<QuerySubscriptionsArgs, 'first' | 'orderBy' | 'orderMode'>>;
   updateOpenCTIManifest?: Resolver<ResolversTypes['Success'], ParentType, ContextType, RequireFields<QueryUpdateOpenCtiManifestArgs, 'tag'>>;
@@ -4688,6 +4781,7 @@ export type RegistrationResponseResolvers<ContextType = PortalContext, ParentTyp
 }>;
 
 export type RolePortalResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['RolePortal'] = ResolversParentTypes['RolePortal']> = ResolversObject<{
+  capabilities?: Resolver<Maybe<Array<Maybe<ResolversTypes['Capability']>>>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -4722,6 +4816,12 @@ export type RssFeedResolvers<ContextType = PortalContext, ParentType extends Res
   uploader?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   uploader_organization?: Resolver<Maybe<ResolversTypes['Organization']>, ParentType, ContextType>;
   use_cases?: Resolver<Maybe<Array<ResolversTypes['UseCase']>>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SsoGroupRolePortalResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SSOGroupRolePortal'] = ResolversParentTypes['SSOGroupRolePortal']> = ResolversObject<{
+  rolePortal?: Resolver<ResolversTypes['RolePortal'], ParentType, ContextType>;
+  ssoGroup?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -5333,6 +5433,7 @@ export type Resolvers<ContextType = PortalContext> = ResolversObject<{
   RegistrationResponse?: RegistrationResponseResolvers<ContextType>;
   RolePortal?: RolePortalResolvers<ContextType>;
   RssFeed?: RssFeedResolvers<ContextType>;
+  SSOGroupRolePortal?: SsoGroupRolePortalResolvers<ContextType>;
   SendTelemetryMutation?: SendTelemetryMutationResolvers<ContextType>;
   SeoServiceInstance?: SeoServiceInstanceResolvers<ContextType>;
   SeoServiceInstanceMetadata?: SeoServiceInstanceMetadataResolvers<ContextType>;
