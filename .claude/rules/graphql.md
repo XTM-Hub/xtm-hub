@@ -20,6 +20,8 @@ flowchart LR
     D --> E["apps/frontend/schema.graphql"]
     E --> F["yarn relay<br/>(relay-compiler)"]
     F --> G["apps/frontend/__generated__/"]
+    E --> H["yarn codegen<br/>(graphql-codegen)"]
+    H --> I["apps/frontend/graphql/generated.ts<br/>apps/frontend/graphql/mocks.ts"]
 ```
 
 ## Rules
@@ -29,8 +31,14 @@ flowchart LR
   `src/__generated__/resolvers-types.ts` matches.
 - `apps/frontend/schema.graphql` is **generated**. It is refreshed when the API starts outside
   production/staging/development. Do not hand-edit it.
-- After the schema moves, run `yarn workspace @xtm-hub/frontend relay`. Skipping this is the most common source of bogus
-  frontend type errors.
+- After the schema moves, restart the API so `apps/frontend/schema.graphql` is rewritten (`generate:ts` does not write
+  it), then run the two frontend generators. They read that file, so running them before the restart uses a stale schema:
+  - `yarn workspace @xtm-hub/frontend relay` compiles the `graphql` tagged templates of the Relay pages into
+    `apps/frontend/__generated__/` (gitignored). Run it after a schema change or a Relay template edit. Skipping it is the
+    most common source of bogus frontend type errors.
+  - `yarn workspace @xtm-hub/frontend codegen` regenerates `apps/frontend/graphql/generated.ts` and
+    `apps/frontend/graphql/mocks.ts` from the schema and the `apps/frontend/graphql/**/*.graphql` operations. Run it after
+    a schema change or after editing one of those operation files. Both outputs are **tracked**: commit them with the change.
 - Resolvers are merged in `apps/backend/src/server/graphql-schema.ts`. A new module's resolver has to be registered
   there or its fields silently do not exist.
 - Adding, renaming, or reshaping an operation? Update the matching `.bru` request under `bruno/` too — see
@@ -57,7 +65,8 @@ resolver.
 - Frontend operations live in `apps/frontend/graphql/<domain>/<name>.query.graphql` (or `.mutation.graphql`).
 - `yarn workspace @xtm-hub/frontend codegen` (`graphql-codegen`, `typescript-react-query` plugin) refreshes
   `apps/frontend/graphql/generated.ts` (aliased `@graphql/*`), which exports a typed `use<Name>Query` /
-  `use<Name>Mutation` hook plus its query key per operation.
+  `use<Name>Mutation` hook plus its query key per operation, and `apps/frontend/graphql/mocks.ts` (mock data builders
+  for tests).
 - Call the hook with `portalGraphqlClient` from `apps/frontend/src/lib/graphql-client.ts` (a `graphql-request`
   client) as the first argument; manage cache invalidation with `@tanstack/react-query`'s `useQueryClient()`.
 

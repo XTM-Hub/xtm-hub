@@ -288,7 +288,6 @@ export type CreateEpicInput = {
   description: Scalars['String']['input'];
   edition_type: EditionType;
   expected_value: Scalars['String']['input'];
-  illustration_document: InputMaybe<Scalars['Upload']['input']>;
   is_integration: InputMaybe<Scalars['Boolean']['input']>;
   problem_to_solve: Scalars['String']['input'];
   products: Array<FiligranProduct>;
@@ -775,8 +774,6 @@ export type Epic = Node & {
   active: Scalars['Boolean']['output'];
   created_at: Scalars['Date']['output'];
   description: Scalars['String']['output'];
-  document: Maybe<Document>;
-  document_id: Maybe<Scalars['DocumentId']['output']>;
   edition_type: EditionType;
   epic_type: EpicType;
   expected_value: Scalars['String']['output'];
@@ -1294,7 +1291,6 @@ export type MutationCreateDocumentArgs = {
 
 
 export type MutationCreateEpicArgs = {
-  document: InputMaybe<Array<Scalars['Upload']['input']>>;
   input: CreateEpicInput;
 };
 
@@ -1574,7 +1570,6 @@ export type MutationUpdateDocumentArgs = {
 
 
 export type MutationUpdateEpicArgs = {
-  document: InputMaybe<Array<Scalars['Upload']['input']>>;
   id: Scalars['ID']['input'];
   input: UpdateEpicInput;
 };
@@ -2985,7 +2980,6 @@ export type UpdateEpicInput = {
   description: InputMaybe<Scalars['String']['input']>;
   edition_type: EditionType;
   expected_value: InputMaybe<Scalars['String']['input']>;
-  illustration_document: InputMaybe<Scalars['Upload']['input']>;
   is_integration: InputMaybe<Scalars['Boolean']['input']>;
   problem_to_solve: InputMaybe<Scalars['String']['input']>;
   products: InputMaybe<Array<FiligranProduct>>;

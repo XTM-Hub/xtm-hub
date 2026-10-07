@@ -1,7 +1,5 @@
-import DataLoader from 'dataloader';
 import { v4 as uuidv4 } from 'uuid';
 import { describe, expect, it, vi } from 'vitest';
-import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   contextSimpleUserFiligran2,
   GRAPHQL_RESOLVE_INFO,
@@ -18,154 +16,11 @@ import {
   Timeline,
   UpdateEpicInput,
 } from '../../__generated__/resolvers-types';
-import { DocumentId } from '../../model/kanel/public/Document';
 import Epic, { EpicId } from '../../model/kanel/public/Epic';
 import { BadRequestErrorCode } from '../../utils/error/error.code';
 import { ErrorType } from '../../utils/error/error.type';
-import { Document as DocumentWithUseCases } from '../document/document.helper';
 import { EpicApp } from './epic.app';
 import epicResolver from './epic.resolver';
-
-describe('epic.document', () => {
-  it('should load document through the document DataLoader by document_id', async () => {
-    // Given
-    const documentId = uuidv4() as DocumentId;
-    const epicParent = {
-      id: uuidv4() as EpicId,
-      document_id: documentId,
-    } as unknown as Epic;
-    const expectedDocument = TestHelper.document.build({
-      id: documentId,
-      file_name: 'image.png',
-    });
-    const loadSpy = vi
-      .spyOn(
-        contextSimpleUserFiligran2.dataLoaders.document.documentByIdLoader,
-        'load'
-      )
-      .mockResolvedValue({ ...expectedDocument, use_cases: [] });
-
-    // When
-    const result = await epicResolver.Epic!.document!(
-      epicParent,
-      {},
-      contextSimpleUserFiligran2,
-      GRAPHQL_RESOLVE_INFO
-    );
-
-    // Then
-    expect(loadSpy).toHaveBeenCalledWith(documentId);
-    expect(result).toMatchObject({ id: documentId, file_name: 'image.png' });
-  });
-
-  it('should return null when document_id is not set', async () => {
-    // Given
-    const epicParent = {
-      id: uuidv4() as EpicId,
-      document_id: null,
-    } as unknown as Epic;
-    const loadSpy = vi.spyOn(
-      contextSimpleUserFiligran2.dataLoaders.document.documentByIdLoader,
-      'load'
-    );
-
-    // When
-    const result = await epicResolver.Epic!.document!(
-      epicParent,
-      {},
-      contextSimpleUserFiligran2,
-      GRAPHQL_RESOLVE_INFO
-    );
-
-    // Then
-    expect(result).toBeNull();
-    expect(loadSpy).not.toHaveBeenCalled();
-  });
-
-  it('should return null when the DataLoader resolves null', async () => {
-    // Given
-    const documentId = uuidv4() as DocumentId;
-    const epicParent = {
-      id: uuidv4() as EpicId,
-      document_id: documentId,
-    } as unknown as Epic;
-    vi.spyOn(
-      contextSimpleUserFiligran2.dataLoaders.document.documentByIdLoader,
-      'load'
-    ).mockResolvedValue(null);
-
-    // When
-    const result = await epicResolver.Epic!.document!(
-      epicParent,
-      {},
-      contextSimpleUserFiligran2,
-      GRAPHQL_RESOLVE_INFO
-    );
-
-    // Then
-    expect(result).toBeNull();
-  });
-
-  it('should batch document loads across multiple epics into a single underlying call', async () => {
-    // Given
-    const documentIdA = uuidv4() as DocumentId;
-    const documentIdB = uuidv4() as DocumentId;
-    const epicA = {
-      id: uuidv4() as EpicId,
-      document_id: documentIdA,
-    } as unknown as Epic;
-    const epicB = {
-      id: uuidv4() as EpicId,
-      document_id: documentIdB,
-    } as unknown as Epic;
-    const documentA: DocumentWithUseCases = TestHelper.document.build({
-      id: documentIdA,
-      file_name: 'a.png',
-    });
-    const documentB: DocumentWithUseCases = {
-      ...documentA,
-      id: documentIdB,
-      file_name: 'b.png',
-    };
-    const batchLoadFn = vi.fn(
-      async (
-        keys: readonly string[]
-      ): Promise<(DocumentWithUseCases | null)[]> =>
-        keys.map((key) => (key === documentIdA ? documentA : documentB))
-    );
-    const originalLoader =
-      contextSimpleUserFiligran2.dataLoaders.document.documentByIdLoader;
-    contextSimpleUserFiligran2.dataLoaders.document.documentByIdLoader =
-      new DataLoader(batchLoadFn);
-
-    try {
-      // When
-      const [resultA, resultB] = await Promise.all([
-        epicResolver.Epic!.document!(
-          epicA,
-          {},
-          contextSimpleUserFiligran2,
-          GRAPHQL_RESOLVE_INFO
-        ),
-        epicResolver.Epic!.document!(
-          epicB,
-          {},
-          contextSimpleUserFiligran2,
-          GRAPHQL_RESOLVE_INFO
-        ),
-      ]);
-
-      // Then
-      expect(batchLoadFn).toHaveBeenCalledTimes(1);
-      expect(batchLoadFn).toHaveBeenCalledWith([documentIdA, documentIdB]);
-      expect(resultA).toMatchObject({ id: documentIdA, file_name: 'a.png' });
-      expect(resultB).toMatchObject({ id: documentIdB, file_name: 'b.png' });
-    } finally {
-      contextSimpleUserFiligran2.dataLoaders.document.documentByIdLoader =
-        originalLoader;
-    }
-  });
-});
 
 describe('epics GraphQL query', () => {
   it('should delegate to EpicApp.loadEpics and return result', async () => {
@@ -190,7 +45,6 @@ describe('epics GraphQL query', () => {
       timeline: Timeline.Now,
       epic_type: EpicType.Other,
       uploader_id: 'uploader-1',
-      document_id: null,
       created_at: new Date('2026-01-01'),
       updated_at: null,
       updater_id: null,
@@ -239,7 +93,6 @@ describe('create epic GraphQL mutation', () => {
       products: [FiligranProduct.Opencti],
       timeline: Timeline.Now,
     };
-    const uploads: never[] = [];
     const expected = {
       id: uuidv4() as EpicId,
       title: 'My Epic',
@@ -250,13 +103,13 @@ describe('create epic GraphQL mutation', () => {
     // When
     const result = await epicResolver.Mutation!.createEpic!(
       {},
-      { input, document: uploads },
+      { input },
       contextSimpleUserFiligran2,
       GRAPHQL_RESOLVE_INFO
     );
 
     // Then
-    expect(EpicApp.createEpic).toHaveBeenCalledWith(input, uploads);
+    expect(EpicApp.createEpic).toHaveBeenCalledWith(input);
     expect(result).toMatchObject({ title: 'My Epic' });
   });
 
@@ -279,7 +132,7 @@ describe('create epic GraphQL mutation', () => {
     // When
     const call = epicResolver.Mutation!.createEpic!(
       {},
-      { input, document: [] },
+      { input },
       contextSimpleUserFiligran2,
       GRAPHQL_RESOLVE_INFO
     );
@@ -297,20 +150,19 @@ describe('update epic GraphQL mutation', () => {
       title: 'Updated Epic',
       short_description: 'Updated',
     };
-    const uploads: never[] = [];
     const expected = { id, title: 'Updated Epic' } as Epic;
     vi.spyOn(EpicApp, 'updateEpic').mockResolvedValue(expected);
 
     // When
     const result = await epicResolver.Mutation!.updateEpic!(
       {},
-      { id, input, document: uploads },
+      { id, input },
       contextSimpleUserFiligran2,
       GRAPHQL_RESOLVE_INFO
     );
 
     // Then
-    expect(EpicApp.updateEpic).toHaveBeenCalledWith(id, input, uploads);
+    expect(EpicApp.updateEpic).toHaveBeenCalledWith(id, input);
     expect(result).toMatchObject({ title: 'Updated Epic' });
   });
 
@@ -327,7 +179,6 @@ describe('update epic GraphQL mutation', () => {
       {
         id,
         input: { title: 'Updated', short_description: 'Updated' },
-        document: [],
       },
       contextSimpleUserFiligran2,
       GRAPHQL_RESOLVE_INFO
