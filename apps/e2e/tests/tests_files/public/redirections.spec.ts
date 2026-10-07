@@ -43,7 +43,7 @@ test.describe('Public redirections', () => {
 
     await test.step('should navigate user to login page from sign up page', async () => {
       await page.goto('/sign-up');
-      await page.getByRole('link', { name: /login with local/i }).click();
+      await page.getByRole('link', { name: /log in with local/i }).click();
       await loginPage.assertCurrentPage();
     });
 

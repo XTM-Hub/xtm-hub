@@ -24,6 +24,9 @@
     "Description": "You can add specific capabilities to Filigran users",
     "Title": "Available capabilities"
   },
+  "CSMBoard": {
+    "ComingSoon": "Something new is coming very soon..."
+  },
   "CountryComboBox": {
     "Placeholder": "Choose a country"
   },
@@ -287,7 +290,7 @@
   "Error": {
     "AnErrorOccured": "An error occurred",
     "Login": {
-      "LoginError": "You are not allowed to login"
+      "LoginError": "You are not allowed to log in"
     },
     "Server": {
       "ACCEPT_USER_IN_PENDING_ORGA_ERROR": "Error occurred while accepting users",
@@ -425,7 +428,7 @@
       "XTM_ONE_ROLE_REQUIRED": "An XTM One role is required",
       "VOTABLE_FEATURE_NOT_FOUND": "This feature is no longer open for voting",
       "VOTE_FOR_FEATURE_ERROR": "An error occurred while recording your vote",
-      "YOU_CAN_NOT_LOGIN": "You can not login",
+      "YOU_CAN_NOT_LOGIN": "You cannot log in",
       "VOTING_ROUND_NOT_OPEN": "This voting round is not open",
       "VOTING_ROUND_CLOSED": "This voting round is closed",
       "VOTING_ROUND_NOT_FOUND": "Voting round not found",
@@ -519,9 +522,9 @@
     "Licenses": "Licenses"
   },
   "PublicLayout": {
-    "SignIn": "Sign In",
-    "Login": "Login",
-    "SignUp": "Sign Up"
+    "SignIn": "Sign in",
+    "Login": "Log in",
+    "SignUp": "Sign up"
   },
   "PublicResourcePage": {
     "Download": "Download",
@@ -600,8 +603,8 @@
   "LoginPage": {
     "DontHaveAccount": "Don't have a Filigran account?",
     "Email": "Email",
-    "Login": "Login",
-    "Logout": "Logout",
+    "Login": "Log in",
+    "Logout": "Log out",
     "Password": "Password",
     "SignIn": "Sign in",
     "SignUp": "Sign up",
@@ -613,7 +616,7 @@
     "Subtitle": "XTM Hub, Filigran Academy and Live Demo.",
     "AlreadyHaveAccount": "Already have an account?",
     "LogIn": "Log in",
-    "LoginWithLocal": "Login with local",
+    "LoginWithLocal": "Log in with local",
     "MadeBy": "Made by",
     "WelcomeTitle": "Welcome to XTM Hub",
     "WelcomeSubtitle": "Extend and scale your XTM Platform"
@@ -663,8 +666,9 @@
     "Competitor": "Competitor",
     "NewsFeed": "News Feed",
     "VotingRound": "Feature voting",
+    "Roles": "Roles",
     "ManageTrials": "Manage trials",
-    "Roles": "Roles"
+    "CSMBoard": "CSM board"
   },
   "NewsFeedAdminPage": {
     "Title": "Title",

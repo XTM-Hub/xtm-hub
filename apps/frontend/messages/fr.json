@@ -24,6 +24,9 @@
     "Description": "Vous pouvez ajouter des fonctionnalités spécifiques aux utilisateurs de Filigran",
     "Title": "Capacités disponibles"
   },
+  "CSMBoard": {
+    "ComingSoon": "Une nouveauté va bientôt voir le jour..."
+  },
   "CountryComboBox": {
     "Placeholder": "Choisir un pays"
   },
@@ -664,6 +667,7 @@
     "NewsFeed": "Fil d'actualité",
     "VotingRound": "Vote des fonctionnalités",
     "ManageTrials": "Gestion des essais",
+    "CSMBoard": "Tableau de bord CSM",
     "Roles": "Rôles"
   },
   "NewsFeedAdminPage": {

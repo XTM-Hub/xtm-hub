@@ -157,6 +157,11 @@ export const usePrivateNavigation = (): NavigationConfig => {
       restriction: [PortalCapability.ReadTrials],
     },
     {
+      href: `/${APP_PATH}/admin/csm-board`,
+      label: tMenuLinks('CSMBoard'),
+      restriction: [PortalCapability.ReadSaasMetrics],
+    },
+    {
       href: `/${APP_PATH}/admin/competitors`,
       label: tMenuLinks('Competitor'),
       restriction: [PortalCapability.ModifyCompetitors],
