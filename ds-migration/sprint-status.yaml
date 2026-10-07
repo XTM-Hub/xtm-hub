@@ -40,7 +40,7 @@ project_statuses: Development, Code review, Ready to Merge
 
 development_status:
   # Primitives with a legacy equivalent in filigran-ui
-  epic-1-primitives: in-progress
+  epic-1-primitives: review
   3530-button: done
   3561-textarea: done
   3568-switch: done
@@ -48,7 +48,7 @@ development_status:
   3541-checkbox: done
   3556-input: done
   3564-tooltip: done
-  3534-badge: review
+  3534-badge: done
 
   # Composites with a legacy equivalent, the three DS 1.2.0 additions, and three single-use
   # legacy components replaced in place
