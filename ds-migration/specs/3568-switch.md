@@ -117,6 +117,9 @@ apart from the control, the existing `aria-label` stays and `label` is omitted.
   `FormLabel` and `aria-label` side by side would also keep the name declared twice.
 - The installed `Switch` spreads the caller's props on the Radix `Root` and applies `id` to it, so `AutoFormSwitch`
   keeps working under the legacy `FormControl` (id, `aria-describedby`, `aria-invalid` all land on the button).
+- **An AutoForm adapter only changes its import**, plus what keeps it from breaking: moving an adapter onto the
+  design system's integrated label, required marker and error is item 3707 (epic 3). `Input`, `Number` and
+  `Checkbox` already went further and stay as they are; the other adapters follow this rule.
 
 ## To validate
 

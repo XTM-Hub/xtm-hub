@@ -108,6 +108,9 @@ title (RULE-08).
   although the usage contract still lists it as deferred, and the shipped types win. `flex-wrap` stays where the
   legacy group wrapped (`EpicForm`, `AutoFormRadioGroup`): it is layout, so the row breaks instead of overflowing a
   narrow sheet, not a look.
+- **An AutoForm adapter only changes its import**, plus what keeps it from breaking: moving an adapter onto the
+  design system's integrated label, required marker and error is item 3707 (epic 3). `Input`, `Number` and
+  `Checkbox` already went further and stay as they are; the other adapters follow this rule.
 - **`AutoFormRadioGroup` passes `disabled` to each `Radio`**: the group's `disabled` (from `inputProps`) already
   disables the circles through Radix, but the design system label switches to its disabled colour and cursor only
   from the item's own prop.

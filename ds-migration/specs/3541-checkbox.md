@@ -155,6 +155,9 @@ rest and is already `shrink-0`.
   removing it would both toggle and open.
 - **`UserServiceForm`'s tooltip moves inside the label**: it was triggered by the label text, and the design system
   owns that `<label>` now; a `<span>` trigger keeps hover on the text, clicking still toggles through the native label.
+- **An AutoForm adapter only changes its import**, plus what keeps it from breaking: moving an adapter onto the
+  design system's integrated label, required marker and error is item 3707 (epic 3). `Input`, `Number` and
+  `Checkbox` already went further and stay as they are; the other adapters follow this rule.
 - **`AutoFormCheckbox` takes the integrated label**, as the Radio spec did for `AutoFormRadioGroup` (a live AutoForm
   field): `FormControl` still links `id`, `aria-describedby` and `aria-invalid` onto the box. `isRequired` is no
   longer rendered: no AutoForm boolean is required today (every one is `.optional()`).
@@ -191,3 +194,5 @@ rest and is already `shrink-0`.
   block submit with no visible `*`. Same as the legacy box; latent while every AutoForm boolean is `.optional()`.
 - `UserServiceForm`: the disabled-capability tooltip opens on hover of the label text only, with no
   `aria-describedby` on the box, so keyboard and screen reader users never get the reason. Unchanged from the legacy.
+  The design system `Checkbox` `description` slot, or one line above the list, would fix it; an improvement for
+  epic 3, not a migration change.

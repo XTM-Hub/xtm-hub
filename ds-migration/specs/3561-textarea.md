@@ -100,6 +100,9 @@ takes the same raw `fieldState.error?.message` that `FormMessage` showed.
   the legacy `FormControl` loses `aria-invalid` on a failing field; it warns in development without `label`,
   `aria-label` or `aria-labelledby`; `className` lands on its wrapper, not on the `<textarea>`. The other field
   migrations of this epic (`Input`, `Select`, …) follow the same rule.
+- **An AutoForm adapter only changes its import**, plus what keeps it from breaking: moving an adapter onto the
+  design system's integrated label, required marker and error is item 3707 (epic 3). `Input`, `Number` and
+  `Checkbox` already went further and stay as they are; the other adapters follow this rule.
 - `minRows` replaces `rows` plus `field-sizing-content` in `EpicForm`: it is the design system's autosize API, and
   the contract makes `rows` and `minRows` mutually exclusive.
 - `noValidate` is added only to the two forms that pass `required`, so an empty field still shows the zod message
@@ -123,6 +126,9 @@ takes the same raw `fieldState.error?.message` that `FormMessage` showed.
 
 ## Deferred findings
 
+- Field errors are read three ways: `fieldState.error?.message` in render props, `getFieldState(field.name)` in
+  `PrivateXtmPlatformTrialBanner`'s justification (without `formState`, so it relies on the parent re-rendering), and
+  `useFormField().error` in the AutoForm adapters. One convention comes with the Form item (3706).
 - Upstream, design system `Textarea` autosize (`useAutosize` in `dist/components/textarea/Textarea.mjs`): the height is
   measured only when `value`, `minRows` or `maxRows` change, with `overflowY: hidden` when there is no `maxRows`. In
   `EpicForm` (`minRows`, `resize="none"`), a width change after mount (window resize, late web font) can leave the

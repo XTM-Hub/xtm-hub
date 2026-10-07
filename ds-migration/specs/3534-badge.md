@@ -167,6 +167,9 @@ classes stay (`shrink-0`, `min-w-0`, `max-w-full`, `ml-s`, `mr-s`, `w-full`, `in
 
 ## Deferred findings
 
+- The bundle page's remaining-days chip is `low` whatever the count, while the homepage platform card turns `medium`
+  at 22 days and `critical` at 8. Pre-existing (the legacy badges did the same), so the migration keeps it: #3730
+  shares the thresholds.
 - `tag-input/Tag.tsx`: `TagProps` still declares `variant`, `tagClasses` and `draggable`, which `Tag` no longer reads,
   so `TagInput`'s `variant` and `styleClasses.tag` do nothing. Remove them with the tag input migration (3701).
 - `tag-input/Tag.tsx`: the chip's delete button is named by the design system's English default `Remove {text}`; the

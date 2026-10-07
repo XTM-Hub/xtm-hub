@@ -154,6 +154,9 @@ the raw `fieldState.error?.message` that `FormMessage` showed. Every placeholder
   service slug in edition (`UseServiceFormFields`) takes `disabled` next to `readOnly` instead of the legacy
   `opacity-50 cursor-not-allowed` on its wrapper. The value stays in the form: AutoForm sets `disabled` on the input,
   not on the controller.
+- **An AutoForm adapter only changes its import**, plus what keeps it from breaking: moving an adapter onto the
+  design system's integrated label, required marker and error is item 3707 (epic 3). `Input`, `Number` and
+  `Checkbox` already went further and stay as they are; the other adapters follow this rule.
 - No screen for the two radio lists: they need a platform registration callback or registered platforms, which the
   development seed has not. `register/OrganizationForm.test.tsx` and the e2e `registration.spec.ts` cover them.
 
@@ -170,13 +173,19 @@ the raw `fieldState.error?.message` that `FormMessage` showed. Every placeholder
 - `ColorPicker`'s hex field shows the design system `N/7` counter (contract RULE-09). Alternative: drop `maxLength`.
 - The library SEO title and description fields (`LibraryUpdateMetadata`, AutoForm with `inputProps.maxLength`) show
   the same `N/155` counter. Alternative: drop `maxLength` and let zod alone cap them.
-- One-click deploy: a disabled platform's tooltip trigger is a focusable `span` (`tabIndex={0}`), an extra tab stop
-  inside the radio group, so keyboard users still reach the reason it is disabled.
 - `RegisterOrganizationForm` platform name drops its `bg-grayblue-700 border-none` override.
 - `TagInput`'s inner entry stays native with the legacy classes until 3701.
 
 ## Deferred findings
 
+- One-click deploy (`ChoosePlatformForm`): a disabled platform's reason sits in a tooltip on a focusable `span`, an
+  extra tab stop inside the radio group, as the legacy `TooltipTrigger` button around the radio was. The design system
+  `Radio` `description` slot (wired to `aria-describedby`) would show it to every user without a tooltip; an
+  improvement for epic 3, not a migration change.
+- `EpicForm`: the title field repeats `EpicTextareaField` with `Input` instead of `Textarea`, and `CharacterCounter`
+  keeps legacy tokens (`text-muted-foreground txt-sub-content`). The design system `Textarea` has no counter, so the
+  form keeps its own; to settle with the Form item (3706). The design system `N/max` counters of `ColorPicker` and
+  `LibraryUpdateMetadata` are accepted as the design system's rule (RULE-09).
 - AutoForm: the `*` and native `required` follow `fieldProps.required`, not `isRequired`, so a field required only by
   a dependency shows no `*` (the legacy `AutoFormLabel` showed one). To settle with item 3707.
 - `ColorPicker`: the hex field and the swatch button share the name `UseCaseForm.Color`. To settle with 3547.
