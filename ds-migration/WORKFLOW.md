@@ -162,6 +162,17 @@ locator that still expects an accessible name this item changed is in scope: fix
 `apps/e2e/tests/` and add it to the spec's Files in scope. Return `DONE` with a
 `fix(frontend): ... (#<issue>)` subject, or `FAILED` when the cause is outside the item.
 
+## Validation fix mode
+
+When the invocation says `Validation fix mode`, Build mode returned `DONE` but the script's own
+validation failed: it runs the whole frontend suite, the e2e lint and the after screenshots, where
+the session ran only the tests it touched. The change is still uncommitted. Read the failing log the
+invocation names, find which step failed and why, send the cause to a `frontend-code-writer`
+subagent with the spec, then run Build mode steps 2 to 4 and run the failing step again yourself. A
+test that fails or leaks an unhandled error because of this change is in scope, even in a file the
+spec does not list: add it to Files in scope. Return `DONE` with the commit subject and body of
+Build mode, or `FAILED` when the cause is outside the item.
+
 ## Sync fix mode
 
 When the invocation says `Sync fix mode`, the script has just merged the base branch, and the checks

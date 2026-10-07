@@ -29,7 +29,6 @@ ITEM_TIMEOUT="${DS_ITEM_TIMEOUT:-5400}"
 CHECKS_TIMEOUT="${DS_CHECKS_TIMEOUT:-5400}"
 CHECKS_INTERVAL="${DS_CHECKS_INTERVAL:-30}"
 TIMEOUT_BIN="$(command -v timeout || command -v gtimeout || true)"
-MAX_BLOCKED_IN_A_ROW=3
 APP_PORT="${DS_APP_PORT:-3012}"
 export DS_APP_URL="http://localhost:$APP_PORT"
 API_URL="${DS_API_URL:-http://localhost:4002}"
@@ -43,6 +42,12 @@ mkdir -p "$LOG_DIR"
 # Progress always reaches the terminal, even from steps whose output goes to a log file.
 exec 3>&2
 log() { printf '%s %s\n' "$(date '+%H:%M:%S')" "$*" | tee -a "$LOG_DIR/run.log" >&3; }
+# Ctrl-C reaches the running session (see --foreground below); the script then stops instead of
+# moving on. Every state it leaves is one a new run resumes from.
+trap 'log "interrupted: run ds-migration/run.sh again to resume"; exit 130' INT TERM
+# Sessions run in $(...) subshells, where bash resets traps, and claude exits cleanly on Ctrl-C:
+# without its own trap, a subshell would go on to its next step. Each one calls this first.
+stop_on_signal() { trap 'exit 130' INT TERM; }
 die() { log "STOP: $*"; exit 1; }
 header() { sed -n "s/^$1: *//p" "$STATUS_FILE" | tr -d '"'; }
 set_header() { NAME="$1" VALUE="$2" perl -pi -e 's/^(\Q$ENV{NAME}\E:) .*/$1 $ENV{VALUE}/' "$STATUS_FILE"; }
@@ -336,10 +341,12 @@ PROGRESS_FILTER='fromjson? | select(.type == "assistant") | (.parent_tool_use_id
 # terminal and run.log as it happens, the whole stream to <log name>.jsonl, the result event to
 # <log name>.json. <log name> <prompt> <schema> <tools>
 claude_session() {
+  stop_on_signal
   local out="$LOG_DIR/$1.json" stream="$LOG_DIR/$1.jsonl" line
   # A background subagent ends the session's turn, and headless mode then forces the structured
   # result before the subagent reports: subagents always run in the foreground.
-  CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1 ${TIMEOUT_BIN:+"$TIMEOUT_BIN" "$ITEM_TIMEOUT"} claude -p "$2" \
+  # --foreground keeps the session in the terminal's process group, so that Ctrl-C reaches it.
+  CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1 ${TIMEOUT_BIN:+"$TIMEOUT_BIN" --foreground "$ITEM_TIMEOUT"} claude -p "$2" \
     --output-format stream-json --verbose --json-schema "$3" --permission-mode dontAsk --allowedTools "$4" \
     ${DS_BUDGET_USD:+--max-budget-usd "$DS_BUDGET_USD"} 2>>"$LOG_DIR/$1.stderr" |
     tee "$stream" | jq -rR --unbuffered "$PROGRESS_FILTER" 2>/dev/null |
@@ -355,6 +362,7 @@ failed() { jq -nc --arg s "$1" '{status: "FAILED", summary: $s}'; }
 # Prints the item's structured result, or a FAILED one when the session produced none.
 # <key> <issue> <epic> <kind> <mode> [extra]
 run_item_session() {
+  stop_on_signal
   local key="$1" issue="$2" epic="$3" kind="$4" mode="$5" extra="${6:-}" result
   result="$(claude_session "$key" \
     "Read ds-migration/WORKFLOW.md fully and follow its $mode for item $key (issue #$issue, epic $epic, kind $kind).${extra:+ $extra}" \
@@ -374,6 +382,7 @@ update_issue() {
 # Spec session, issue update, screenshots of the untouched code, then build session. Prints the
 # last result.
 work_item() {
+  stop_on_signal
   local key="$1" issue="$2" epic="$3" kind="$4" spec="ds-migration/specs/$1.md" result
   result="$(claude_session "$key-spec" \
     "Read ds-migration/WORKFLOW.md fully and follow its Spec mode for item $key (issue #$issue, epic $epic, kind $kind)." \
@@ -638,9 +647,30 @@ default_subject() {
 }
 
 # Commits a DONE result after the deterministic validation. Returns 1 if it does not pass.
+# The script's validation runs the whole frontend suite, where a session runs only the tests it
+# touched: a failure gets one fix session with the log. Prints the result to commit, or a FAILED
+# one. <key> <issue> <epic> <kind> <result>
+validate_with_fix() {
+  stop_on_signal
+  local key="$1" issue="$2" epic="$3" kind="$4" result="$5" log="$LOG_DIR/$1-validate.log"
+  if validate_item "$key" >"$log" 2>&1; then
+    echo "$result"
+    return
+  fi
+  log "$key: validation failed, one validation fix session ($log)"
+  cp "$log" "$LOG_DIR/$key-validate-before-fix.log"
+  result="$(run_item_session "$key" "$issue" "$epic" "$kind" "Validation fix mode" \
+    "The failing validation log is $LOG_DIR/$key-validate-before-fix.log.")"
+  if [ "$(jq -r .status <<<"$result")" = DONE ] && validate_item "$key" >"$log" 2>&1; then
+    echo "$result"
+  else
+    failed "Validation still fails after one fix session: see $log."
+  fi
+}
+
+# Commits a validated result. Returns 1 when nothing could be committed.
 commit_result() {
   local key="$1" issue="$2" result="$3" kind="$4" subject body
-  validate_item "$key" >"$LOG_DIR/$key-validate.log" 2>&1 || return 1
   subject="$(jq -r .commit_subject <<<"$result")"
   if ! [[ $subject =~ $SUBJECT_RE ]] || [[ $subject != *"(#$issue)" ]]; then
     subject="$(default_subject "$kind" "$key" "$issue")"
@@ -677,6 +707,7 @@ settle_review() {
   fi
   log "$key: required checks failed, one CI fix attempt"
   result="$(run_item_session "$key" "$issue" "$epic" "$kind" "CI fix mode" "The failing log is $(failed_log "$key").")"
+  if [ "$(jq -r .status <<<"$result")" = DONE ]; then result="$(validate_with_fix "$key" "$issue" "$epic" "$kind" "$result")"; fi
   if [ "$(jq -r .status <<<"$result")" = DONE ] && commit_result "$key" "$issue" "$result" "$kind"; then
     publish
     if wait_checks; then
@@ -734,7 +765,7 @@ epic_gate() {
 # ---------------------------------------------------------------- main loop
 
 process() {
-  local once="$1" no_wait="$2" dry_run="$3" blocked_in_a_row=0
+  local once="$1" no_wait="$2" dry_run="$3"
   if ! $dry_run; then
     acquire_lock
     recover_interrupted
@@ -782,18 +813,18 @@ process() {
         set_status "$epic" in-progress # reopens an epic already in review or done
         log "== $key (issue #$issue, $kind)"
         result="$(work_item "$key" "$issue" "$epic" "$kind")"
+        if [ "$(jq -r .status <<<"$result")" = DONE ]; then result="$(validate_with_fix "$key" "$issue" "$epic" "$kind" "$result")"; fi
         outcome="$(jq -r .status <<<"$result")"
         if [ "$outcome" = DONE ] && commit_result "$key" "$issue" "$result" "$kind"; then
-          blocked_in_a_row=0
           if ! $no_wait; then
             publish
             settle_review "$epic" "$key"
           fi
         else
-          [ "$outcome" = DONE ] && outcome="validation failed, see $LOG_DIR/$key-validate.log"
+          [ "$outcome" = DONE ] && outcome="commit failed, see $LOG_DIR/run.log"
           block_item "$key" "$issue" "$result" "$outcome"
-          blocked_in_a_row=$((blocked_in_a_row + 1))
-          [ "$blocked_in_a_row" -lt "$MAX_BLOCKED_IN_A_ROW" ] || die "$MAX_BLOCKED_IN_A_ROW items blocked in a row"
+          # A blocked item stops the run: someone looks at it before anything else moves.
+          die "$key blocked ($outcome): investigate with 'ds-migration/run.sh debug $key', then set it back to backlog and run again"
         fi
         ;;
       *) die "cannot plan the next step: $action" ;;

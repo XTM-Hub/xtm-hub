@@ -67,6 +67,7 @@ EOF
   cat >"$bin/claude" <<'EOF'
 #!/bin/bash
 if [ "$1" != -p ]; then echo "claude-interactive :: $1" >> "$SB/calls.log"; exit 0; fi
+if [ -n "${CLAUDE_SLEEP:-}" ]; then touch "$SB/claude-started"; sleep "$CLAUDE_SLEEP"; fi
 prompt="$2"
 echo "claude :: $prompt" >> "$SB/calls.log"
 [ "${CLAUDE_CODE_DISABLE_BACKGROUND_TASKS:-}" = 1 ] || echo "claude with background tasks allowed" >> "$SB/calls.log"
@@ -129,6 +130,12 @@ if (spec === '--preflight') {
 }
 const failing = (process.env.SCREENSHOT_FAIL ?? '').split(' ').filter(Boolean);
 if (phase === 'after' && failing.some((key) => spec.includes(key))) process.exit(1);
+// AFTER_FAIL_ONCE: item keys whose first after screenshots fail, then pass.
+const once = (process.env.AFTER_FAIL_ONCE ?? '').split(' ').filter(Boolean).find((key) => spec?.includes(key));
+if (phase === 'after' && once && !existsSync(`${process.env.SB}/failed-once-${once}`)) {
+  writeFileSync(`${process.env.SB}/failed-once-${once}`, '');
+  process.exit(1);
+}
 EOF
   printf 'epic_issue: 3507\nbranch: issue/3507\nbase: main\npull_request: none\nrequired_checks: run-api-unit-tests, run-front-unit-tests, run-e2e-tests\nrepository: XTM-Hub/xtm-hub\ngithub_project: XTM-Hub/1\nproject_statuses: Development, Code review, Done\n\n%s\n' "$2" >ds-migration/sprint-status.yaml
   git add -A && git commit -qm init && git remote add origin "$SB/remote.git" && git push -q origin main && git switch -qc issue/3507
@@ -157,6 +164,8 @@ dependencies:
 covers:
   3561-textarea: [4001, 4002]"
 CLAUDE_BLOCK=3541-checkbox run
+check "a blocked item stops the run" 'grep -q "STOP: 3541-checkbox blocked" "$SB/out.log" && [ "$(status_of epic-1-primitives)" = in-progress ]'
+run
 check "checkbox blocked, epic 1 gated" '[ "$(status_of 3541-checkbox)" = blocked ] && [ "$(status_of epic-1-primitives)" = review ]'
 check "epic report posted with the automated review" 'grep -q "Verdict: consistent" "$SB/last-pr-comment.md"'
 check "blocked item signalled on its issue and the PR" 'grep -q "^gh issue edit 3541 --add-label needs more info" "$SB/calls.log" && grep -qF "**Component Checkbox needs a human.** Issue #3541" "$SB/pr-comments.log" && sed -n "/^## Needs a human/,/^## /p" "$SB/pr-body.md" | grep -q "#3541"'
@@ -260,6 +269,27 @@ perl -pi -e 's/^  3568-switch: .*/  3568-switch: review/' ds-migration/sprint-st
 PREFLIGHT_FAILS=1 DS_PREFLIGHT_PAUSE=0 run --once
 check "committed item resumes its checks instead of restarting" '[ "$(status_of 3568-switch)" = done ] && ! grep -q "interrupted before its commit" "$SB/out.log"'
 check "a failed preflight is retried" 'grep -q "screenshot preflight failed (try 1 of 3)" "$SB/out.log" && [ "$(cat "$SB/preflights")" -ge 2 ]'
+
+echo "I. a validation failure gets one fix session"
+new_repo i "development_status:
+  epic-1-primitives: backlog
+  3530-button: done
+  3561-textarea: backlog
+  3568-switch: backlog"
+AFTER_FAIL_ONCE=3561-textarea run --once
+check "validation fixed by a validation fix session, then committed" '[ "$(status_of 3561-textarea)" = done ] && grep -q "Validation fix mode for item 3561-textarea" "$SB/calls.log" && grep -q "3561-textarea: validation failed, one validation fix session" "$SB/out.log"'
+
+echo "J. a signal stops the run during a session"
+new_repo j "development_status:
+  epic-1-primitives: backlog
+  3530-button: done
+  3561-textarea: backlog"
+# Its own process group, signalled as a whole, as Ctrl-C does from a terminal.
+CLAUDE_SLEEP=3 perl -e 'setpgrp(0, 0); exec @ARGV' ds-migration/run.sh --once >"$SB/out.log" 2>&1 &
+runner=$!
+for _ in $(seq 1 50); do [ -e "$SB/claude-started" ] && break; sleep 0.2; done
+kill -TERM -- "-$runner"; wait "$runner"
+check "interrupted run stops and frees its lock" 'grep -q "interrupted: run ds-migration/run.sh again to resume" "$SB/out.log" && [ ! -d "$(git rev-parse --git-dir)/ds-migration/run.lock" ] && ! grep -q "Build mode" "$SB/calls.log"'
 
 echo "F. crash recovery and lock"
 new_repo f "development_status:
