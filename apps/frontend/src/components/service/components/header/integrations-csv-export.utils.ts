@@ -27,6 +27,7 @@ export const INTEGRATION_CSV_EXPORT_COLUMNS: IntegrationCsvExportColumn[] = [
 
 export interface IntegrationCsvExportFilters {
   integrationTypes?: string[];
+  connectorTypes?: string[];
   useCases?: string[];
   licenseTypes?: string[];
   solutionCategories?: string[];
@@ -39,6 +40,7 @@ const EXPORT_FILTER_QUERY_PARAMS: Array<{
   queryParam: string;
 }> = [
   { field: 'integrationTypes', queryParam: FilterKey.IntegrationType },
+  { field: 'connectorTypes', queryParam: FilterKey.ConnectorType },
   { field: 'licenseTypes', queryParam: FilterKey.LicenseType },
   { field: 'deployable', queryParam: FilterKey.ManagerSupported },
   { field: 'solutionCategories', queryParam: FilterKey.SolutionCategory },

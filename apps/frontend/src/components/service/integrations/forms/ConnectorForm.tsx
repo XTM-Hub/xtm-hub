@@ -14,7 +14,7 @@ import { DocumentImageType, IntegrationType } from '@graphql/generated';
 import { useContext, useMemo } from 'react';
 import { z } from 'zod';
 
-const connectorSchema = z.object({
+export const connectorSchema = z.object({
   name: z.string().min(1, 'Required'),
   slug: z.string().min(1, 'Required'),
   uploader_id: z.string().optional(),

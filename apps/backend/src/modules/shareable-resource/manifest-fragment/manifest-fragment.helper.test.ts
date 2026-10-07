@@ -32,6 +32,43 @@ describe('validateAndFormatManifestVersion', () => {
       ManifestFragmentHelper.validateAndFormatManifestVersion(input)
     ).toThrow(BadRequestErrorCode.InvalidManifestVersionFormat);
   });
+
+  it.each`
+    input
+    ${'7.261015.0-lts'}
+    ${'7.261015.0-lts2'}
+  `('keeps refusing the minimum-only spelling "$input"', ({ input }) => {
+    expect(() =>
+      ManifestFragmentHelper.validateAndFormatManifestVersion(input)
+    ).toThrow(BadRequestErrorCode.InvalidManifestVersionFormat);
+  });
+});
+
+describe('validateAndFormatMinimumVersion', () => {
+  it.each`
+    input                 | expected
+    ${'7.261015.0'}       | ${'007.261015.000'}
+    ${'7.261015.0-lts'}   | ${'007.261015.000.LTS.000'}
+    ${'7.261015.0-lts2'}  | ${'007.261015.000.LTS.002'}
+    ${'7.261015.0-lts.2'} | ${'007.261015.000.LTS.002'}
+    ${'7.261015.0-LTS2'}  | ${'007.261015.000.LTS.002'}
+    ${' 7.261015.0-lts '} | ${'007.261015.000.LTS.000'}
+  `('formats "$input" as "$expected"', ({ input, expected }) => {
+    expect(ManifestFragmentHelper.validateAndFormatMinimumVersion(input)).toBe(
+      expected
+    );
+  });
+
+  it.each`
+    input
+    ${'7.261015.0-lts.'}
+    ${'7.261015.0-ltsx'}
+    ${'not-a-version'}
+  `('throws when the minimum version is invalid: "$input"', ({ input }) => {
+    expect(() =>
+      ManifestFragmentHelper.validateAndFormatMinimumVersion(input)
+    ).toThrow(BadRequestErrorCode.InvalidManifestVersionFormat);
+  });
 });
 
 describe('validateShortDescriptionLength', () => {

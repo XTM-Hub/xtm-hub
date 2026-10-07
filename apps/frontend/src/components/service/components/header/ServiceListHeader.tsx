@@ -14,6 +14,7 @@ export enum ServiceListFilterKey {
   Label = 'label',
   EntityType = 'entity_type',
   IntegrationType = 'integration_type',
+  ConnectorType = 'connector_type',
   SolutionCategory = 'solution_category',
   LicenseType = 'license_type',
   ProductVersion = 'product_version',

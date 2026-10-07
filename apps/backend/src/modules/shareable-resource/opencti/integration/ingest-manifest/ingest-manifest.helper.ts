@@ -12,6 +12,7 @@ import { fetchWithCacheForLocalTesting } from '../../../../../utils/fetch-with-c
 import { isValidVersion } from '../../../../../utils/versioning';
 import { Upload } from '../../../../document/document.uploads.helper';
 import { MAX_CONTACT_LENGTH } from '../../../manifest-fragment/manifest-fragment.helper';
+import { ConnectorTypeHelper } from '../connector-type.helper';
 import {
   INTEGRATION_SERVICE_INSTANCE_ID,
   OPENCTI_INTEGRATION_DOCUMENT_TYPE,
@@ -38,6 +39,22 @@ const ContractSchema = z.object({
   use_cases: z.array(z.string()), // At least one use case
   verified: z.boolean(),
   container_image: z.string().min(1),
+  container_type: z
+    .string()
+    .nullish()
+    .refine(
+      (value) => !value || ConnectorTypeHelper.normalize(value) !== undefined
+    )
+    .transform((value) => ConnectorTypeHelper.normalize(value))
+    .catch(({ input }) => {
+      logApp.warn(
+        'Invalid container_type in manifest contract, field ignored',
+        {
+          input,
+        }
+      );
+      return undefined;
+    }),
   source_code: z.string().url(),
   subscription_link: z.string().url().or(z.literal('')).nullish(),
   manager_supported: z.boolean(),
@@ -162,6 +179,7 @@ export const IngestManifestHelper = {
           source_type: DocumentSourceType.External,
           /* Document metadata properties */
           container_image: validContract.container_image,
+          image_type: validContract.container_type,
           product_version: manifestData.version,
           verified: validContract.verified,
           integration_type: IntegrationType.Connector,

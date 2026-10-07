@@ -14,6 +14,7 @@ export enum ServiceListLocalStorageKey {
   OpenCTIIntegrationFeeds = 'OpenCTIIntegrationFeeds',
   OpenAEVScenarios = 'OpenAEVScenarios',
   OpenCTIPlaybooks = 'OpenCTIPlaybooks',
+  OpenCTIHuntPacks = 'OpenCTIHuntPacks',
 }
 
 const deserializeLogicalMultiSelectSelection = (
@@ -87,6 +88,15 @@ export const useServiceListLocalStorage = (
       }
     );
 
+  const [connectorTypes, setConnectorTypes, removeConnectorTypes] =
+    useLocalStorage<LogicalMultiSelectSelection>(
+      `connectorType${pagePrefix}${serviceName}List`,
+      {},
+      {
+        deserializer: deserializeLogicalMultiSelectSelection,
+      }
+    );
+
   const [entityTypes, setEntityTypes, removeEntityTypes] =
     useLocalStorage<LogicalMultiSelectSelection>(
       `entityType${pagePrefix}${serviceName}List`,
@@ -149,6 +159,7 @@ export const useServiceListLocalStorage = (
     removeProductVersions();
     removeLicenseTypes();
     removeSolutionCategories();
+    removeConnectorTypes();
     removeEntityTypes();
     removeDeployable();
     removeVerified();
@@ -163,6 +174,7 @@ export const useServiceListLocalStorage = (
     removeProductVersions,
     removeLicenseTypes,
     removeSolutionCategories,
+    removeConnectorTypes,
     removeEntityTypes,
     removeDeployable,
     removeVerified,
@@ -193,6 +205,9 @@ export const useServiceListLocalStorage = (
     solutionCategories,
     setSolutionCategories,
     removeSolutionCategories,
+    connectorTypes,
+    setConnectorTypes,
+    removeConnectorTypes,
     entityTypes,
     setEntityTypes,
     removeEntityTypes,

@@ -12,6 +12,7 @@ type SimpleFiltersParams = {
     | ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS
     | ServiceSlug.OPEN_AEV_SCENARIOS
     | ServiceSlug.OPEN_CTI_PLAYBOOKS
+    | ServiceSlug.OPEN_CTI_HUNT_PACKS
     | ServiceSlug.OPEN_CTI_CUSTOM_VIEWS;
   labels: LogicalMultiSelectSelection;
   entityTypes?: LogicalMultiSelectSelection;
@@ -26,6 +27,7 @@ type IntegrationFiltersParams = {
   productVersions: LogicalMultiSelectSelection;
   licenseTypes?: LogicalMultiSelectSelection;
   solutionCategories?: LogicalMultiSelectSelection;
+  connectorTypes?: LogicalMultiSelectSelection;
 };
 
 export type LogicalFiltersParams =
@@ -45,6 +47,8 @@ export const useLogicalFiltersFromStorage = (params: LogicalFiltersParams) => {
     'licenseTypes' in params ? params.licenseTypes : undefined;
   const solutionCategories =
     'solutionCategories' in params ? params.solutionCategories : undefined;
+  const connectorTypes =
+    'connectorTypes' in params ? params.connectorTypes : undefined;
 
   return useMemo(() => {
     if (serviceInstanceSlug === ServiceSlug.OPEN_CTI_INTEGRATIONS) {
@@ -88,6 +92,12 @@ export const useLogicalFiltersFromStorage = (params: LogicalFiltersParams) => {
               value: Object.keys(licenseTypes ?? {}),
             },
           },
+          {
+            leaf: {
+              key: FilterKey.ConnectorType,
+              value: Object.keys(connectorTypes ?? {}),
+            },
+          },
         ],
       };
     }
@@ -119,5 +129,6 @@ export const useLogicalFiltersFromStorage = (params: LogicalFiltersParams) => {
     productVersions,
     licenseTypes,
     solutionCategories,
+    connectorTypes,
   ]);
 };

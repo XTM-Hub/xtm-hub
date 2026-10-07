@@ -45,6 +45,7 @@ export const ShareableResourceConnectorPrivateDetails = ({
           message={t(`Service.Connectors.Incompatible`, {
             count: incompatiblePlatformsCount,
             platformToBeUpdated,
+            version: connectorDetails.minimum_deployable_version ?? '',
           })}
         />
       ) : null}

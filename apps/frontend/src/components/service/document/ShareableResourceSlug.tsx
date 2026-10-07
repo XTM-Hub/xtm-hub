@@ -13,6 +13,7 @@ import {
   TooltipTrigger,
 } from '@filigran/ui/clients';
 
+import { HuntPackDeployRequirement } from '@/components/service/document/hunt-pack/HuntPackDeployRequirement';
 import OneClickDeploy from '@/components/service/document/one-click-deploy/OneClickDeploy';
 import ShareableResourceDetails from '@/components/service/document/ShareableResouceDetails';
 import ShareableResourceDescription from '@/components/service/document/ShareableResourceDescription';
@@ -27,6 +28,7 @@ import useDecodedParams from '@/hooks/use-decoded-params';
 import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
 import { EntityTypeOrFiligranLogo } from '@/utils/shareable-resources/entity-type';
+import { isHuntPackResource } from '@/utils/shareable-resources/shareable-resources.types';
 import {
   isResourceDeployable,
   isResourceDownloadable,
@@ -67,6 +69,10 @@ const ShareableResourceSlug = ({
     () => isResourceDeployable(documentData),
     [documentData]
   );
+
+  const requiredProductVersion = isHuntPackResource(documentData)
+    ? documentData.product_version
+    : undefined;
 
   const carouselImages = useMemo(() => {
     return filterDocumentImages(documentData);
@@ -150,7 +156,10 @@ const ShareableResourceSlug = ({
                 </>
               )}
               {shouldShowOneClickDeployComponent && (
-                <OneClickDeploy documentData={documentData} />
+                <OneClickDeploy
+                  documentData={documentData}
+                  requiredProductVersion={requiredProductVersion}
+                />
               )}
             </div>
           </div>
@@ -173,10 +182,18 @@ const ShareableResourceSlug = ({
           longDescription={documentData?.description ?? ''}
         />
         {documentData && (
-          <ShareableResourceDetails
-            documentData={documentData}
-            downloadNumber={documentDownloadNumber}
-          />
+          <div className="flex flex-col justify-start gap-s flex-1">
+            <ShareableResourceDetails
+              documentData={documentData}
+              downloadNumber={documentDownloadNumber}
+            />
+            {shouldShowOneClickDeployComponent && requiredProductVersion && (
+              <HuntPackDeployRequirement
+                documentData={documentData}
+                requiredProductVersion={requiredProductVersion}
+              />
+            )}
+          </div>
         )}
       </div>
     </>

@@ -201,6 +201,22 @@ describe('parseRequestedFilters', () => {
     });
   });
 
+  it('maps the connector_type param to the connector type filter', () => {
+    expect(
+      parseRequestedFilters({ connector_type: 'INTERNAL_HUNT,STREAM' })
+    ).toEqual({
+      operator: LogicalOperator.And,
+      children: [
+        {
+          leaf: {
+            key: FilterKey.ConnectorType,
+            value: ['INTERNAL_HUNT', 'STREAM'],
+          },
+        },
+      ],
+    });
+  });
+
   it('accepts an array value for a filter param', () => {
     expect(
       parseRequestedFilters({ license_type: ['Free', 'Commercial'] })

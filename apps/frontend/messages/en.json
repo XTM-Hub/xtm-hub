@@ -355,6 +355,12 @@
       "INCREMENT_SHARE_NUMBER": "Error occurred while incrementing share number",
       "INTEGRATION_TYPE_NOT_MANAGEABLE": "This type of integration is not manageable.",
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "This type of integration is not recognized",
+      "HUNT_PACK_INVALID_BUNDLE": "This file is not a hunt pack: export a STIX 2.1 bundle of hunts from OpenCTI and upload it again.",
+      "HUNT_PACK_EMPTY": "This hunt pack contains no hunt: export at least one hunt from OpenCTI.",
+      "HUNT_PACK_TOO_LARGE": "This hunt pack contains more than 200 hunts: split it into several packs.",
+      "HUNT_PACK_INVALID_HUNT": "OpenCTI would refuse a hunt of this pack: check that every hunt has a name, a valid Sigma rule, native queries for platforms OpenCTI supports (one per platform, each with a language and a query), a valid schedule and limits within the OpenCTI defaults.",
+      "HUNT_PACK_FILE_TOO_LARGE": "This hunt pack is larger than 20 MB, the most an OpenCTI import accepts: split it into several packs.",
+      "CONNECTOR_TYPE_NOT_RECOGNIZED": "The connector type of this manifest is not recognized. Use one of the OpenCTI connector types listed in the documentation.",
       "INVALID_ACTION_SIZE": "An unknown error occurred",
       "INVALID_CONTENT_TRANSLATION_KEY": "Invalid content key",
       "INVALID_EMAIL": "The email should be in valid format.",
@@ -430,6 +436,7 @@
       "VOTABLE_FEATURE_MUTATION_ERROR": "An error occurred while saving the feature"
     },
     "SomethingWentWrong": "Something went wrong",
+    "TryAgain": "Try again",
     "YouAreNotAuthorized": "You are not authorized to get this page."
   },
   "GenericActions": {
@@ -602,6 +609,7 @@
     "CustomViews": "Custom Views",
     "Integrations": "Integrations",
     "Playbooks": "Playbooks",
+    "HuntPacks": "Hunt Packs",
     "LiveDemo": "Live Demo",
     "Documentation": "Documentation",
     "Scenarios": "Scenarios",
@@ -1038,6 +1046,7 @@
       "opencti_custom_views": "OpenCTI Custom Views",
       "opencti_integrations": "OpenCTI Integrations",
       "opencti_playbooks": "OpenCTI Playbooks",
+      "opencti_hunt_packs": "OpenCTI Hunt Packs",
       "opencti_registration": "OpenCTI Registration",
       "xtm_platform_bundle": "XTM Platform Trial",
       "xtm_platform_roadmap": "XTM Platform Roadmap",
@@ -1153,7 +1162,7 @@
       "Search": "Search a connector with name...",
       "VendorContact": "Vendor Contact",
       "VisitVendor": "Visit the vendor's page to learn more and get in touch",
-      "Incompatible": "{platformToBeUpdated} {count, plural, =1 {needs} other {need}} to be updated to deploy this connector.",
+      "Incompatible": "Update {platformToBeUpdated} to OpenCTI {version} or later to deploy this connector.",
       "UnavailableDeployments": "This connector is not available for automatic deployment."
     },
     "CreationStatus": "Creation status",
@@ -1224,6 +1233,10 @@
           "Label": "Integration type",
           "Placeholder": "Integration type..."
         },
+        "ConnectorType": {
+          "Label": "Connector type",
+          "Placeholder": "Connector type..."
+        },
         "ManagerSupported": {
           "Label": "Deployment type",
           "Placeholder": "Deployment type...",
@@ -1254,6 +1267,26 @@
         "taxii_feed": "TAXII Feeds",
         "stream": "OpenCTI Streams",
         "third_party_integration": "Third party integrations"
+      },
+      "ConnectorType": {
+        "EXTERNAL_IMPORT": "External import",
+        "INTERNAL_ENRICHMENT": "Internal enrichment",
+        "INTERNAL_IMPORT_FILE": "Internal import file",
+        "INTERNAL_EXPORT_FILE": "Internal export file",
+        "INTERNAL_ANALYSIS": "Internal analysis",
+        "INTERNAL_HUNT": "Internal hunt",
+        "STREAM": "Stream"
+      },
+      "HuntPlatform": {
+        "splunk": "Splunk",
+        "microsoft-sentinel": "Microsoft Sentinel",
+        "elastic-security": "Elastic Security",
+        "crowdstrike-logscale": "CrowdStrike Falcon LogScale",
+        "google-secops": "Google Security Operations",
+        "opensearch": "OpenSearch",
+        "clickhouse": "ClickHouse",
+        "s3-ocsf": "OCSF data lake on Amazon S3",
+        "internet": "Internet scanning services"
       }
     },
     "CsvFeed": {
@@ -1388,6 +1421,28 @@
       "NonActive": "Draft",
       "Active": "Published"
     },
+    "OpenCTIHuntPack": {
+      "Actions": {
+        "Added": "The hunt pack {name} has been added successfully",
+        "Deleted": "The hunt pack {name} has been deleted successfully",
+        "Updated": "The hunt pack {name} has been modified successfully",
+        "Share": "Share Hunt Pack"
+      },
+      "AddService": "Add new hunt pack",
+      "UpdateService": "Update the hunt pack {name}",
+      "DeleteService": "Delete the hunt pack {name}",
+      "SureDeleteService": "Are you sure you want to delete the hunt pack {name}?",
+      "NonActive": "Draft",
+      "Active": "Published",
+      "Form": {
+        "SelectHuntPackFile": "Hunt pack file",
+        "SelectHuntPackFileDescription": "A hunt pack exported from OpenCTI (STIX 2.1 bundle of 1 to 200 hunts). The hunt count, ATT&CK techniques and hunted platforms are read from the file."
+      },
+      "LoadError": {
+        "Library": "The hunt packs could not be loaded.",
+        "Document": "This hunt pack could not be loaded."
+      }
+    },
     "Description": "Description",
     "GoTo": "Go to service page",
     "GoToAdminLabel": "Manage",
@@ -1479,7 +1534,9 @@
         "DeployPlatform": "Deploy in {platformName}",
         "DeployQuestionTag": "In which {platformType} platform do you want to deploy it?",
         "DeployResourceDescription": "You're about to deploy the {resourceName} {resourceType}.",
-        "DeployIncompatibleVersion": "The resource can't be deployed to your OpenCTI platform \"{platformTitle}\" because the platform version is no longer compatible with this resource. You’ll need to update the platform or use a compatible resource version before proceeding.",
+        "DeployHuntPackDescription": "You're about to deploy the hunt pack \"{resourceName}\" to OpenCTI.",
+        "DeployIncompatibleVersion": "Update {platformTitle} to OpenCTI {version} or later to deploy this resource.",
+        "DeployHuntPackIncompatibleVersion": "Update {platformTitle} to OpenCTI {version} or later to deploy this hunt pack.",
         "EE": {
           "Tag": "EE",
           "HoverTitle": "Available in Enterprise Edition",
@@ -1513,6 +1570,14 @@
         "Shares": "Shares",
         "ContributorContact": "Contributor contact",
         "IntegrationType": "Type",
+        "ConnectorType": "Connector type",
+        "HuntedPlatform": "Hunted platform",
+        "Hunts": "Hunts",
+        "HuntCount": "{count, plural, one {# hunt} other {# hunts}}",
+        "AttackTechniques": "ATT&CK techniques",
+        "HuntedPlatforms": "Hunted platforms",
+        "MoreItems": "and {count} more",
+        "ShowFewerItems": "Show fewer",
         "IntegrationSolutionCategory": "Solution category",
         "IntegrationLicenseType": "License type",
         "GithubURL": "Github URL",

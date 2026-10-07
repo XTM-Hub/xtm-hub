@@ -6,6 +6,7 @@ import ChoosePlatformForm from '@/components/service/document/one-click-deploy/C
 import EeBadge from '@/components/service/document/one-click-deploy/EeBadge';
 import EeLearnMoreSheet from '@/components/service/document/one-click-deploy/EeLearnMoreSheet';
 import OnePlatformDisplay from '@/components/service/document/one-click-deploy/OnePlatformDisplay';
+import { useIncompatibleVersionMessage } from '@/components/service/document/one-click-deploy/use-deploy-resource-title';
 import { useOneClickDeployTab } from '@/components/service/document/one-click-deploy/UseOneClickDeployTab';
 import { useBuildCompatibilityTranslationKey } from '@/hooks/use-build-compatibility-translation-key';
 import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
@@ -16,9 +17,18 @@ import {
   isEeCapableContract,
   requiresEnterpriseEdition,
 } from '@/utils/platform';
-import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
+import {
+  isConnectorResource,
+  ShareableResourceType,
+} from '@/utils/shareable-resources/shareable-resources.types';
 import { Button } from '@filigran/design-system';
-import { AlertDialog, AlertDialogContent, SimpleTooltip } from '@filigran/ui';
+import { AlertDialog, AlertDialogContent } from '@filigran/ui';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/ui/clients';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { OneClickDeployMutation as OneClickDeployMutationType } from '@generated/OneClickDeployMutation.graphql';
 import { useCallback, useMemo, useState } from 'react';
@@ -64,6 +74,8 @@ const OneClickDeploy = ({
       platforms,
       requiredProductVersion,
     });
+  const incompatibleVersionMessage =
+    useIncompatibleVersionMessage(documentData);
 
   const requiresEe =
     documentData.type === ShareableResourceType.OPENCTI_PLAYBOOK ||
@@ -161,7 +173,9 @@ const OneClickDeploy = ({
 
   const isDeploymentDisabled = useMemo(() => {
     return (
-      !eeBlocked && platforms.length === 1 && incompatiblePlatformsCount === 1
+      !eeBlocked &&
+      platforms.length > 0 &&
+      incompatiblePlatformsCount === platforms.length
     );
   }, [eeBlocked, platforms, incompatiblePlatformsCount]);
 
@@ -199,13 +213,27 @@ const OneClickDeploy = ({
   );
 
   const container = isDeploymentDisabled ? (
-    <SimpleTooltip
-      title={t('Service.Connectors.Incompatible', {
-        platformToBeUpdated,
-        count: incompatiblePlatformsCount,
-      })}>
-      {buttonWithBadge}
-    </SimpleTooltip>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipContent>
+          {isConnectorResource(documentData)
+            ? t('Service.Connectors.Incompatible', {
+                platformToBeUpdated,
+                count: incompatiblePlatformsCount,
+                version: requiredProductVersion ?? '',
+              })
+            : incompatibleVersionMessage(
+                platformToBeUpdated,
+                requiredProductVersion ?? ''
+              )}
+        </TooltipContent>
+        <TooltipTrigger
+          className="w-fit"
+          style={{ cursor: 'unset' }}>
+          {buttonWithBadge}
+        </TooltipTrigger>
+      </Tooltip>
+    </TooltipProvider>
   ) : (
     buttonWithBadge
   );

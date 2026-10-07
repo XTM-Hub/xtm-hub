@@ -25,6 +25,7 @@ const INTEGRATION_TRANSLATION_KEY_MAP: Partial<Record<CardTypeEnum, string>> = {
   [ShareableResourceType.OPENAEV_SCENARIO]: 'OpenAEVScenario',
   [ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD]: 'OpenctiCustomDashboards',
   [ShareableResourceType.OPENCTI_CUSTOM_VIEW]: 'OpenctiCustomViews',
+  [ShareableResourceType.OPENCTI_HUNT_PACK]: 'OpenCTIHuntPack',
 };
 
 export const ServiceDelete = ({

@@ -32,6 +32,7 @@ export const publicDocumentListItem = graphql`
       product_version
       verified
       manager_supported
+      connector_type
     }
 
     ... on CustomView {
@@ -124,10 +125,19 @@ export const publicDocumentBySlugItem = graphql`
       playbook_supported
       minimum_deployable_version
       contact
+      connector_type
+      hunt_platform
     }
 
     ... on OpenAEVScenario {
       product_version
+    }
+
+    ... on OpenCTIHuntPack {
+      product_version
+      hunt_count
+      attack_techniques
+      hunt_platforms
     }
 
     ... on CustomView {

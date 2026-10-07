@@ -1,6 +1,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import {
+  DocumentMetadataKeyCode,
   ManifestType,
   PlatformIdentifier,
   PortalCapability,
@@ -11,6 +12,8 @@ import { requestContext } from '../../../context/request.context';
 import type { DocumentId } from '../../../model/kanel/public/Document';
 import { SYSTEM_USER_CONTEXT } from '../../../portal.const';
 import { minioInit } from '../../../server/initialize';
+import { BadRequestErrorCode } from '../../../utils/error/error.code';
+import { DocumentMetadataDomain } from '../../document/domain/document.metadata.domain';
 import { ManifestRebuildQueueStatus } from '../manifest/manifest.consts';
 import { ManifestHelper } from '../manifest/manifest.helper';
 import { ManifestFragmentApp } from './manifest-fragment.app';
@@ -295,6 +298,140 @@ describe('manifestFragmentApp', () => {
         slug: 'misp-mixed-lts',
       });
       expect(createdDocument).toBeUndefined();
+    });
+
+    it.each`
+      minVersion            | slug                        | expectedPadded
+      ${'7.261015.0-lts'}   | ${'splunk-hunt-lts-bare'}   | ${'007.261015.000.LTS.000'}
+      ${'7.261015.0-lts2'}  | ${'splunk-hunt-lts-inline'} | ${'007.261015.000.LTS.002'}
+      ${'7.261015.0-LTS.2'} | ${'splunk-hunt-lts-upper'}  | ${'007.261015.000.LTS.002'}
+    `(
+      'ingests an INTERNAL_HUNT fragment whose minimum version is spelled $minVersion',
+      async ({
+        minVersion,
+        slug,
+        expectedPadded,
+      }: {
+        minVersion: string;
+        slug: string;
+        expectedPadded: string;
+      }) => {
+        await TestHelper.manifest.create({
+          product: PlatformIdentifier.Opencti,
+          version: '7.261015.0-lts.2',
+          version_padded: '007.261015.000.LTS.002',
+        });
+        const fragment = buildManifestFragment({
+          slug,
+          minVersion,
+          version: '7.261015.0-lts.3',
+        });
+        fragment.image_type = 'INTERNAL_HUNT';
+
+        await ManifestFragmentApp.ingestManifestFragments({
+          manifestFragments: [fragment],
+        });
+
+        const createdDocument = await TestHelper.document.load({ slug });
+        createdDocumentIds.push(createdDocument!.id);
+        expect(
+          await DocumentMetadataDomain.loadMetadataValueByKey(
+            createdDocument!.id,
+            DocumentMetadataKeyCode.MinimumDeployableVersion
+          )
+        ).toBe(minVersion);
+        expect(
+          await DocumentMetadataDomain.loadMetadataValueByKey(
+            createdDocument!.id,
+            DocumentMetadataKeyCode.MinimumDeployableVersionPadded
+          )
+        ).toBe(expectedPadded);
+        const queuedRows = await TestHelper.manifestRebuildQueue.loadAll({});
+        expect(queuedRows.map((row) => row.version)).toEqual([
+          '7.261015.0-lts.2',
+        ]);
+      }
+    );
+
+    it('rejects an INTERNAL_HUNT fragment whose minimum version has a dot after -lts and no revision', async () => {
+      const fragment = buildManifestFragment({
+        slug: 'splunk-hunt-lts-dot',
+        minVersion: '7.261015.0-lts.',
+        version: '7.261015.0-lts.3',
+      });
+      fragment.image_type = 'INTERNAL_HUNT';
+
+      await expect(
+        ManifestFragmentApp.ingestManifestFragments({
+          manifestFragments: [fragment],
+        })
+      ).rejects.toThrow(BadRequestErrorCode.InvalidManifestVersionFormat);
+
+      expect(
+        await TestHelper.document.load({ slug: 'splunk-hunt-lts-dot' })
+      ).toBeUndefined();
+    });
+
+    it.each`
+      problem                                              | change                                                                   | error
+      ${'a dot after -lts and no revision in its minimum'} | ${(f: ManifestFragmentInput) => (f.min_version = '7.261015.0-lts.')}     | ${BadRequestErrorCode.InvalidManifestVersionFormat}
+      ${'an invalid version'}                              | ${(f: ManifestFragmentInput) => (f.version = '7.261015.0-lts')}          | ${BadRequestErrorCode.InvalidManifestVersionFormat}
+      ${'a too long short description'}                    | ${(f: ManifestFragmentInput) => (f.short_description = 'a'.repeat(251))} | ${BadRequestErrorCode.ShortDescriptionTooLong}
+    `(
+      'rejects the whole batch before ingesting anything when its second fragment has $problem',
+      async ({
+        change,
+        error,
+      }: {
+        change: (fragment: ManifestFragmentInput) => void;
+        error: string;
+      }) => {
+        const first = buildManifestFragment({
+          slug: 'splunk-hunt-batch-first',
+          minVersion: '7.261015.0-lts',
+          version: '7.261015.0-lts.3',
+        });
+        first.image_type = 'INTERNAL_HUNT';
+        const second = buildManifestFragment({
+          slug: 'splunk-hunt-batch-second',
+          minVersion: '7.261015.0-lts.1',
+          version: '7.261015.0-lts.3',
+        });
+        second.image_type = 'INTERNAL_HUNT';
+        change(second);
+
+        await expect(
+          ManifestFragmentApp.ingestManifestFragments({
+            manifestFragments: [first, second],
+          })
+        ).rejects.toThrow(error);
+
+        expect(
+          await TestHelper.document.load({ slug: 'splunk-hunt-batch-first' })
+        ).toBeUndefined();
+      }
+    );
+
+    it('rejects the whole batch before ingesting anything when a fragment has an unknown connector type', async () => {
+      const unknownTypeFragment = buildManifestFragment({
+        slug: 'misp-unknown-type-second',
+      });
+      unknownTypeFragment.image_type = 'INTERNAL_HUNTS';
+      const args: MutationIngestManifestFragmentsArgs = {
+        manifestFragments: [
+          buildManifestFragment({ slug: 'misp-unknown-type-first' }),
+          unknownTypeFragment,
+        ],
+      };
+
+      await expect(
+        ManifestFragmentApp.ingestManifestFragments(args)
+      ).rejects.toThrow(BadRequestErrorCode.ConnectorTypeNotRecognized);
+
+      const firstDocument = await TestHelper.document.load({
+        slug: 'misp-unknown-type-first',
+      });
+      expect(firstDocument).toBeUndefined();
     });
   });
 

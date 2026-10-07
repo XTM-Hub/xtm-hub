@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import {
   DocumentMetadataKeyCode,
   IntegrationType,
@@ -7,7 +8,11 @@ import {
 import { withTransaction } from '../../../context/database.context';
 import type { DocumentId } from '../../../model/kanel/public/Document';
 import { logApp } from '../../../utils/app-logger.util';
-import { BadRequestErrorCode } from '../../../utils/error/error.code';
+import { getErrorMessage } from '../../../utils/error/error-guard.util';
+import {
+  BadRequestErrorCode,
+  UnknownErrorCode,
+} from '../../../utils/error/error.code';
 import { BadRequestError } from '../../../utils/error/error.util';
 import { isLtsVersion } from '../../../utils/versioning';
 import { DocumentDomain } from '../../document/domain/document.domain';
@@ -31,7 +36,8 @@ import { ManifestOutput } from './manifest.types';
 const saveManifestToDatabase = async (
   key: ManifestKey,
   documentIds: DocumentId[],
-  manifestName: string
+  manifestName: string,
+  claimId?: string
 ): Promise<void> => {
   await withTransaction(async () => {
     const savedManifest = await ManifestDomain.insertManifest({
@@ -49,8 +55,16 @@ const saveManifestToDatabase = async (
       documentIds
     );
 
-    const deletedCount = await ManifestDomain.deleteFromRebuildQueue(key);
+    const deletedCount = await ManifestDomain.deleteFromRebuildQueue(
+      key,
+      claimId
+    );
     if (deletedCount === 0) {
+      if (claimId) {
+        // The claim expired and another job handled the request: publishing
+        // this build would serve contracts older than the replacement's.
+        throw new Error(UnknownErrorCode.ManifestRebuildClaimLost);
+      }
       logApp.error('No processing queue entry found to delete', { key });
     }
   });
@@ -124,6 +138,24 @@ const fetchConnectors = async (
   return [...compatible, ...fallbacks];
 };
 
+const recoverExpiredClaims = async (): Promise<void> => {
+  const recovered = await ManifestDomain.recoverStuckProcessingEntries();
+  if (recovered.length > 0) {
+    logApp.error(
+      'Manifest queue recovery: resetting stuck processing entries',
+      {
+        count: recovered.length,
+        entries: recovered.map((row) => ({
+          product: row.product,
+          version: row.version,
+          type: row.type,
+          created_at: row.created_at,
+        })),
+      }
+    );
+  }
+};
+
 export const ManifestApp = {
   requestManifestGeneration: async ({
     product,
@@ -152,43 +184,94 @@ export const ManifestApp = {
     await ManifestHelper.enqueueImmediateRebuild(key);
   },
 
-  processManifestQueue: async (manifest?: ManifestKey) => {
-    const recovered = await ManifestDomain.recoverStuckProcessingEntries();
-    if (recovered.length > 0) {
-      logApp.error(
-        'Manifest queue recovery: resetting stuck processing entries',
-        {
-          count: recovered.length,
-          entries: recovered.map((row) => ({
-            product: row.product,
-            version: row.version,
-            type: row.type,
-            created_at: row.created_at,
-          })),
-        }
-      );
+  /**
+   * Rebuild requests are only processed when a job is sent for their key.
+   * Requests queued without a job (by a database migration, by a failed
+   * enqueue or by a process stopped during a rebuild, whose expired claim is
+   * released first) are sent again: all of them when the workers start, and
+   * periodically those pending since before `createdBefore`. Each key is
+   * attempted on its own, and a key that fails stays pending for the next
+   * attempt.
+   */
+  resumePendingRebuilds: async ({
+    createdBefore,
+  }: { createdBefore?: Date } = {}): Promise<{
+    resumed: number;
+    failed: number;
+  }> => {
+    await recoverExpiredClaims();
+    const keys = await ManifestDomain.loadPendingRebuildKeys(createdBefore);
+    let resumed = 0;
+    const failedKeys: ManifestKey[] = [];
+    for (const key of keys) {
+      try {
+        await ManifestHelper.enqueueImmediateRebuild(key);
+        resumed += 1;
+      } catch (error) {
+        failedKeys.push(key);
+        logApp.error('Unable to resume a pending manifest rebuild', {
+          error,
+          key,
+        });
+      }
     }
+    if (keys.length > 0) {
+      logApp.info('Pending manifest rebuilds resumed', {
+        resumed,
+        failed: failedKeys.length,
+        failedKeys,
+      });
+    }
+    return { resumed, failed: failedKeys.length };
+  },
+
+  processManifestQueue: async (manifest?: ManifestKey) => {
+    await recoverExpiredClaims();
 
     logApp.info('Processing manifest queue');
-    const rows =
-      await ManifestDomain.loadPendingManifestsForProcessing(manifest);
-    logApp.info('Manifests locked for processing', { count: rows.length });
+    const claimId = randomUUID();
+    const rows = await ManifestDomain.loadPendingManifestsForProcessing(
+      manifest,
+      claimId
+    );
+    logApp.info('Manifests locked for processing', {
+      count: rows.length,
+      claimId,
+    });
 
     for (const row of rows) {
+      const key: ManifestKey = {
+        platformIdentifier: row.product,
+        version: row.version,
+        type: row.type,
+      };
       try {
-        await ManifestApp.generateManifest({
-          platformIdentifier: row.product,
-          version: row.version,
-          type: row.type,
-        });
+        const manifest = await ManifestApp.generateManifest(key, claimId);
+        if (!manifest) {
+          // Nothing to publish for this key: the request is done.
+          await ManifestDomain.deleteFromRebuildQueue(key, claimId);
+        }
       } catch (error) {
         logApp.error('Unable to process manifest', { error, manifest: row });
+        try {
+          // Pending again, the request is resumed by the next sweep.
+          await ManifestDomain.returnToPending(key, claimId);
+        } catch (requeueError) {
+          logApp.error(
+            'Unable to return a failed manifest rebuild to pending',
+            {
+              error: requeueError,
+              manifest: row,
+            }
+          );
+        }
       }
     }
   },
 
   generateManifest: async (
-    key: ManifestKey
+    key: ManifestKey,
+    claimId?: string
   ): Promise<ManifestOutput | null> => {
     if (key.type != ManifestType.Connector) {
       logApp.error('UnsupportedManifestType', { type: key.type });
@@ -239,18 +322,63 @@ export const ManifestApp = {
       solutionCategoriesByConnectorId
     );
 
-    const minioFileName = ManifestHelper.buildManifestFileNameWithPath(
+    const minioFileName = ManifestHelper.buildManifestObjectKey(
       key.platformIdentifier,
       key.version,
-      now
+      manifest.manifest_version
     );
     await ManifestHelper.uploadManifest(manifest, minioFileName);
 
-    await saveManifestToDatabase(
-      key,
-      connectors.map((c) => c.id),
-      manifest.manifest_version
-    );
+    try {
+      await saveManifestToDatabase(
+        key,
+        connectors.map((c) => c.id),
+        manifest.manifest_version,
+        claimId
+      );
+    } catch (error) {
+      // A save that reports an error may still be committed (the connection can
+      // drop after COMMIT): the file is deleted only once the manifest is known
+      // not to be saved, and kept when that cannot be read.
+      const saved = await ManifestDomain.getManifestByName(
+        key.platformIdentifier,
+        key.version,
+        key.type,
+        manifest.manifest_version
+      ).then(
+        (savedManifest) => savedManifest !== undefined,
+        (readError: unknown) => {
+          logApp.error(
+            '[MANIFEST] Unable to read whether a manifest is saved',
+            {
+              minioFileName,
+              error: getErrorMessage(readError),
+            }
+          );
+          return undefined;
+        }
+      );
+      if (saved) {
+        logApp.warn('[MANIFEST] Manifest saved although its save failed', {
+          minioFileName,
+          error: getErrorMessage(error),
+        });
+        return manifest;
+      }
+      if (saved === false) {
+        await ManifestHelper.deleteManifest(minioFileName).catch(
+          (deleteError: unknown) =>
+            logApp.error(
+              '[MANIFEST] Failed to delete an unpublished manifest',
+              {
+                minioFileName,
+                error: getErrorMessage(deleteError),
+              }
+            )
+        );
+      }
+      throw error;
+    }
 
     logApp.info('Manifest uploaded to MinIO', { minioFileName });
     return manifest;

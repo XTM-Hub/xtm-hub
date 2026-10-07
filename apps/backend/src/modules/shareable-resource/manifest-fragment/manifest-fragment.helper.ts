@@ -3,6 +3,8 @@ import { compareVersions, isLtsVersion } from '../../../utils/versioning';
 
 export const MANIFEST_VERSION_PATTERN = String.raw`(\d+)\.(\d{1,6})\.(\d+)(?:-lts\.(\d+))?`;
 const manifestVersionRegex = new RegExp(`^${MANIFEST_VERSION_PATTERN}$`, 'i');
+// Minimum versions also accept `-lts` and `-ltsN` (utils/versioning.ts), in any case.
+const MINIMUM_LTS_SPELLING = /^(\d+\.\d+\.\d+)-lts(?:\.?(\d+))?$/i;
 
 export const TAG_LATEST = 'latest';
 export const TAG_LATEST_LTS = 'latest-lts';
@@ -35,6 +37,21 @@ export const ManifestFragmentHelper = {
     const ltsPatch = (match[4] ?? '0').padStart(3, '0');
     return `${major}.${datePart}.${patch}.LTS.${ltsPatch}`;
   },
+
+  /** A minimum version in its manifest spelling: `-lts` reads as `-lts.0`, `-ltsN` as `-lts.N`. */
+  canonicalizeMinimumVersion: (version: string): string =>
+    version
+      .trim()
+      .replace(
+        MINIMUM_LTS_SPELLING,
+        (_match, core: string, revision?: string) =>
+          `${core}-lts.${revision ?? '0'}`
+      ),
+
+  validateAndFormatMinimumVersion: (version: string): string =>
+    ManifestFragmentHelper.validateAndFormatManifestVersion(
+      ManifestFragmentHelper.canonicalizeMinimumVersion(version)
+    ),
 
   validateShortDescriptionLength: (shortDescription: string): void => {
     if (shortDescription.length > MAX_SHORT_DESCRIPTION_LENGTH) {

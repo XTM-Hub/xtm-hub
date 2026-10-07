@@ -133,6 +133,18 @@ export const TestDocumentHelper = {
     delete: async (field: DocumentMutator) => {
       await db<Document>('Document').where(field).del();
     },
+    createMany: async (data: DocumentMutator[]) => {
+      await db<Document>('Document').insert(
+        data.map((item) => ({
+          id: uuidv4() as DocumentId,
+          type: 'image',
+          ...item,
+        }))
+      );
+    },
+    deleteByIds: async (ids: DocumentId[]) => {
+      await db<Document>('Document').whereIn('id', ids).del();
+    },
     update: async (
       fieldWhere: DocumentMutator,
       fieldUpdate: DocumentMutator
@@ -190,6 +202,21 @@ export const TestDocumentHelper = {
     },
     delete: async (field: DocumentMetadataMutator) => {
       await db<DocumentMetadata>('Document_Metadata').where(field).del();
+    },
+    createMany: async (data: DocumentMetadataMutator[]) => {
+      await db<DocumentMetadata>('Document_Metadata').insert(data);
+    },
+    loadAllByDocumentIds: async (
+      documentIds: DocumentId[]
+    ): Promise<DocumentMetadata[]> => {
+      return db<DocumentMetadata[]>('Document_Metadata')
+        .whereIn('document_id', documentIds)
+        .select('*');
+    },
+    deleteByDocumentIds: async (documentIds: DocumentId[]) => {
+      await db<DocumentMetadata>('Document_Metadata')
+        .whereIn('document_id', documentIds)
+        .del();
     },
   },
 };

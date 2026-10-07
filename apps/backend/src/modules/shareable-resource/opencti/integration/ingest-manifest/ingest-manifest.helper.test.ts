@@ -60,6 +60,7 @@ describe('ingest manifest helper', () => {
           use_cases: ['automation', 'integration'],
           verified: true,
           container_image: 'docker.io/example/image:latest',
+          image_type: 'INTERNAL_ENRICHMENT',
           source_code: 'https://github.com/example/repo',
           subscription_link: 'https://example.com/subscribe',
           type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
@@ -85,6 +86,7 @@ describe('ingest manifest helper', () => {
           use_cases: ['monitoring'],
           verified: false,
           container_image: 'docker.io/example/image2:latest',
+          image_type: 'EXTERNAL_IMPORT',
           source_code: 'https://github.com/example/repo2',
           subscription_link: 'https://example.com/subscribe2',
           type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
@@ -172,6 +174,39 @@ describe('ingest manifest helper', () => {
           if (warns) {
             expect(warnSpy).toHaveBeenCalledWith(
               'Invalid license_type in manifest contract, field ignored',
+              { input }
+            );
+          } else {
+            expect(warnSpy).not.toHaveBeenCalled();
+          }
+        }
+      );
+    });
+
+    describe('with container_type values', () => {
+      it.each`
+        input               | expected           | warns    | description
+        ${'INTERNAL_HUNT'}  | ${'INTERNAL_HUNT'} | ${false} | ${'the hunt connector type'}
+        ${'stream'}         | ${'STREAM'}        | ${false} | ${'a lowercase connector type'}
+        ${'internal-hunt'}  | ${'INTERNAL_HUNT'} | ${false} | ${'a kebab-case connector type'}
+        ${null}             | ${undefined}       | ${false} | ${'explicit null from manifest'}
+        ${undefined}        | ${undefined}       | ${false} | ${'field absent'}
+        ${'INTERNAL_HUNTS'} | ${undefined}       | ${true}  | ${'an unknown connector type'}
+        ${42}               | ${undefined}       | ${true}  | ${'a non-string value'}
+      `(
+        'should map $description to $expected',
+        ({ input, expected, warns }) => {
+          const result = IngestManifestHelper.extractManifestInformation(
+            buildManifest({ container_type: input })
+          );
+
+          expect(result.validContracts).toHaveLength(1);
+          expect(result.errors).toHaveLength(0);
+          expect(result.validContracts[0]?.image_type).toBe(expected);
+
+          if (warns) {
+            expect(warnSpy).toHaveBeenCalledWith(
+              'Invalid container_type in manifest contract, field ignored',
               { input }
             );
           } else {

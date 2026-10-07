@@ -32,6 +32,7 @@ enum FilterKey {
   entity_type
   license_type
   solution_category
+  connector_type
 }
 
 enum Locale {
@@ -693,6 +694,9 @@ enum DocumentMetadataKeyCode {
   solution_categories
   license_type
   contact
+  hunt_count
+  attack_techniques
+  hunt_platforms
 }
 
 type ShareableResource {
@@ -838,6 +842,7 @@ type Facet {
   solution_category: [FacetBucket!]!
   use_case: [FacetBucket!]!
   entity_type: [FacetBucket!]!
+  connector_type: [FacetBucket!]!
 }
 
 input LoadDocumentFacetInput {
@@ -1432,6 +1437,7 @@ enum ServiceDefinitionIdentifier {
   opencti_custom_views
   opencti_integrations
   opencti_playbooks
+  opencti_hunt_packs
   openaev_scenarios
   opencti_registration
   openaev_registration
@@ -1693,6 +1699,33 @@ type CustomView implements Document & Node {
   entity_types: [String!]
 }
 
+type OpenCTIHuntPack implements Document & Node {
+  id: ID!
+  type: String!
+  uploader: User
+  uploader_organization: Organization
+  name: String!
+  short_description: String
+  description: String
+  file_name: String!
+  active: Boolean!
+  created_at: Date!
+  updated_at: Date
+  updater_id: String
+  download_number: Int
+  share_number: Int
+  slug: String!
+  use_cases: [UseCase!]
+  service_instance_id: ServiceInstanceId
+  service_instance: ServiceInstance
+  subscription: SubscriptionModel
+  children_documents: [ShareableResource!]
+  product_version: String
+  hunt_count: Int
+  attack_techniques: [String!]!
+  hunt_platforms: [String!]!
+}
+
 enum IntegrationType {
   csv_feed
   connector
@@ -1830,6 +1863,8 @@ type Connector implements Node & Document & Integration {
   minimum_deployable_version: String
   license_type: LicenseType
   contact: String
+  connector_type: String
+  hunt_platform: String
 }
 
 type TaxiiFeed implements Node & Document & Integration {

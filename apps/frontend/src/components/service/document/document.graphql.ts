@@ -180,6 +180,8 @@ export const documentItem = graphql`
       playbook_supported
       minimum_deployable_version
       contact
+      connector_type
+      hunt_platform
     }
 
     ... on OpenAEVScenario {
@@ -188,6 +190,13 @@ export const documentItem = graphql`
 
     ... on OpenCTIPlaybook {
       product_version
+    }
+
+    ... on OpenCTIHuntPack {
+      product_version
+      hunt_count
+      attack_techniques
+      hunt_platforms
     }
 
     ... on CustomView {

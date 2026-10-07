@@ -4,6 +4,8 @@ import { PlatformMetadataMapping } from '@/components/registration/PlatformIdent
 import { ShareableResourceDetailsLink } from '@/components/service/document/ShareableResourceDetailsLink';
 import { ShareableResourceBasicInformation } from '@/components/service/document/ui/ShareableResourceBasicInformation';
 import { ShareableResourceDetailItem } from '@/components/service/document/ui/ShareableResourceDetailItem';
+import { ConnectorTypeLabel } from '@/components/service/integrations/connector-type/ConnectorTypeLabel';
+import { useConnectorTypeLabels } from '@/components/service/integrations/connector-type/use-connector-type-labels';
 import { useTranslate } from '@/hooks/use-translate';
 import { roundToNearest } from '@/lib/utils';
 import { Button } from '@filigran/design-system';
@@ -26,6 +28,8 @@ export interface ShareableResourceConnectorDetailsProps {
     demo_url?: string | null;
     minimum_deployable_version?: string | null;
     contact?: string | null;
+    connector_type?: string | null;
+    hunt_platform?: string | null;
   };
   compatibilityItem?: React.ReactNode;
 }
@@ -37,6 +41,7 @@ export const ShareableResourceConnectorDetails = ({
   compatibilityItem,
 }: ShareableResourceConnectorDetailsProps) => {
   const t = useTranslate();
+  const { huntPlatformLabel } = useConnectorTypeLabels();
   const platformName = PlatformMetadataMapping[PlatformIdentifier.Opencti].name;
 
   return (
@@ -86,12 +91,26 @@ export const ShareableResourceConnectorDetails = ({
           </div>
         </ShareableResourceDetailItem>
       )}
-      <ShareableResourceDetailItem
-        label={t('Service.ShareableResources.Details.ProductVersion', {
-          platform: platformName,
-        })}>
-        <span>{connectorDetails?.product_version}</span>
-      </ShareableResourceDetailItem>
+      {connectorDetails.connector_type && (
+        <ShareableResourceDetailItem
+          label={t('Service.ShareableResources.Details.ConnectorType')}>
+          <ConnectorTypeLabel connectorType={connectorDetails.connector_type} />
+        </ShareableResourceDetailItem>
+      )}
+      {connectorDetails.hunt_platform && (
+        <ShareableResourceDetailItem
+          label={t('Service.ShareableResources.Details.HuntedPlatform')}>
+          <span>{huntPlatformLabel(connectorDetails.hunt_platform)}</span>
+        </ShareableResourceDetailItem>
+      )}
+      {!!connectorDetails.product_version && (
+        <ShareableResourceDetailItem
+          label={t('Service.ShareableResources.Details.ProductVersion', {
+            platform: platformName,
+          })}>
+          <span>{connectorDetails.product_version}</span>
+        </ShareableResourceDetailItem>
+      )}
       {!!connectorDetails?.minimum_deployable_version && (
         <ShareableResourceDetailItem
           label={t(

@@ -11,15 +11,20 @@ import {
 
 describe('isValidManifestName', () => {
   it.each`
-    name                                                  | expected | description
-    ${'connector-manifest-7.260604.0-260526113805'}       | ${true}  | ${'standard valid name'}
-    ${'connector-manifest-7.260309.0-lts.5-260526113805'} | ${true}  | ${'valid lowercase LTS variant'}
-    ${'connector-manifest-7.260604.0-2605'}               | ${false} | ${'datetime too short'}
-    ${'collector-manifest-7.260604.0-260526113805'}       | ${false} | ${'wrong prefix'}
-    ${'../../secret'}                                     | ${false} | ${'path traversal attempt'}
-    ${''}                                                 | ${false} | ${'empty string'}
-    ${'connector-manifest-abc-260526113805'}              | ${false} | ${'non-numeric version'}
-    ${'connector-manifest-7.2-260526113805'}              | ${false} | ${'missing patch segment'}
+    name                                                           | expected | description
+    ${'connector-manifest-7.260604.0-260526113805'}                | ${true}  | ${'standard valid name'}
+    ${'connector-manifest-7.260309.0-lts.5-260526113805'}          | ${true}  | ${'valid lowercase LTS variant'}
+    ${'connector-manifest-7.260604.0-260526113805-0a1b2c3d'}       | ${true}  | ${'name with a build id'}
+    ${'connector-manifest-7.260309.0-lts.5-260526113805-0a1b2c3d'} | ${true}  | ${'LTS name with a build id'}
+    ${'connector-manifest-7.260604.0-260526113805-0a1b2c'}         | ${false} | ${'build id too short'}
+    ${'connector-manifest-7.260604.0-260526113805-0a1b2c3z'}       | ${false} | ${'build id not hexadecimal'}
+    ${'connector-manifest-7.260604.0-260526113805-'}               | ${false} | ${'empty build id'}
+    ${'connector-manifest-7.260604.0-2605'}                        | ${false} | ${'datetime too short'}
+    ${'collector-manifest-7.260604.0-260526113805'}                | ${false} | ${'wrong prefix'}
+    ${'../../secret'}                                              | ${false} | ${'path traversal attempt'}
+    ${''}                                                          | ${false} | ${'empty string'}
+    ${'connector-manifest-abc-260526113805'}                       | ${false} | ${'non-numeric version'}
+    ${'connector-manifest-7.2-260526113805'}                       | ${false} | ${'missing patch segment'}
   `('returns $expected ($description)', ({ name, expected }) => {
     expect(isValidManifestName(name)).toBe(expected);
   });

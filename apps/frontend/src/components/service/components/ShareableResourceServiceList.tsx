@@ -95,6 +95,7 @@ const ShareableResourceServiceList = ({
     productVersions,
     licenseTypes,
     solutionCategories,
+    connectorTypes,
     orderBy,
     orderMode,
   } = useServiceListLocalStorage(localStorageKey);
@@ -124,6 +125,7 @@ const ShareableResourceServiceList = ({
     productVersions,
     licenseTypes,
     solutionCategories,
+    connectorTypes,
     orderBy,
     orderMode,
   ]);
@@ -144,6 +146,7 @@ const ShareableResourceServiceList = ({
     productVersions,
     licenseTypes,
     solutionCategories,
+    connectorTypes,
   });
 
   const { filters } = useShareableResourceMapping(

@@ -6,6 +6,7 @@ import {
   ServiceListFilterKey,
   ServiceListFilterMap,
 } from '@/components/service/components/header/ServiceListHeader';
+import { IntegrationConnectorTypeFilter } from '@/components/ui/shareable-resource/integration/IntegrationConnectorTypeFilter';
 import { IntegrationDeployableFilter } from '@/components/ui/shareable-resource/integration/IntegrationDeployableFilter';
 import { IntegrationLicenseTypeFilter } from '@/components/ui/shareable-resource/integration/IntegrationLicenseTypeFilter';
 import { IntegrationSolutionCategoryFilter } from '@/components/ui/shareable-resource/integration/IntegrationSolutionCategoryFilter';
@@ -37,6 +38,8 @@ export const useShareableResourceMapping = (
       ServiceListLocalStorageKey.OpenAEVScenarios,
     [ServiceSlug.OPEN_CTI_PLAYBOOKS]:
       ServiceListLocalStorageKey.OpenCTIPlaybooks,
+    [ServiceSlug.OPEN_CTI_HUNT_PACKS]:
+      ServiceListLocalStorageKey.OpenCTIHuntPacks,
   };
   const localStorageKey = localStorageKeyMapping[slug];
   const typeFeed: Record<ServiceSlug, ShareableResourceType> = {
@@ -48,6 +51,7 @@ export const useShareableResourceMapping = (
       ShareableResourceType.OPENCTI_CUSTOM_VIEW,
     [ServiceSlug.OPEN_AEV_SCENARIOS]: ShareableResourceType.OPENAEV_SCENARIO,
     [ServiceSlug.OPEN_CTI_PLAYBOOKS]: ShareableResourceType.OPENCTI_PLAYBOOK,
+    [ServiceSlug.OPEN_CTI_HUNT_PACKS]: ShareableResourceType.OPENCTI_HUNT_PACK,
   };
   const labelFilter = {
     title: t('GenericActions.FilterUseCasesLabel'),
@@ -71,6 +75,14 @@ export const useShareableResourceMapping = (
         title: t('Service.OpenctiIntegrations.Filter.Type.Label'),
         node: (
           <IntegrationTypeFilter facetCounts={facetCounts?.integrationType} />
+        ),
+      },
+      [ServiceListFilterKey.ConnectorType]: {
+        title: t('Service.OpenctiIntegrations.Filter.ConnectorType.Label'),
+        node: (
+          <IntegrationConnectorTypeFilter
+            facetCounts={facetCounts?.connectorType}
+          />
         ),
       },
       [ServiceListFilterKey.ManagerSupported]: {
@@ -114,6 +126,9 @@ export const useShareableResourceMapping = (
       [ServiceListFilterKey.Label]: labelFilter,
     },
     [ServiceSlug.OPEN_CTI_PLAYBOOKS]: {
+      [ServiceListFilterKey.Label]: labelFilter,
+    },
+    [ServiceSlug.OPEN_CTI_HUNT_PACKS]: {
       [ServiceListFilterKey.Label]: labelFilter,
     },
   };

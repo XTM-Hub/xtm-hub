@@ -13,7 +13,8 @@ export type FacetField =
   | 'product_version'
   | 'solution_category'
   | 'use_case'
-  | 'entity_type';
+  | 'entity_type'
+  | 'connector_type';
 
 export type FacetSource =
   'metadata' | 'useCase' | 'solutionCategory' | 'entityType';
@@ -70,6 +71,12 @@ export const FACET_SPECS: readonly FacetSpec[] = [
     field: 'entity_type',
     filterKey: FilterKey.EntityType,
     source: 'entityType',
+  },
+  {
+    field: 'connector_type',
+    filterKey: FilterKey.ConnectorType,
+    source: 'metadata',
+    metadataKey: DocumentMetadataKeyCode.ImageType,
   },
 ] as const;
 

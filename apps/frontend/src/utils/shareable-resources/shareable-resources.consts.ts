@@ -41,6 +41,11 @@ export const serviceConfigMap: Record<ServiceSlug, ServiceConfig> = {
     description:
       '. Discover more playbooks like this in our OpenCTI Playbook Library, available for download on the XTM Hub.',
   },
+  [ServiceSlug.OPEN_CTI_HUNT_PACKS]: {
+    redirectPath: 'opencti_hunt_packs',
+    description:
+      '. Discover more hunt packs like this in our OpenCTI Hunt Packs Library, available for download on the XTM Hub.',
+  },
 };
 
 export const localeMap: Record<ServiceSlug, string> = {
@@ -49,4 +54,5 @@ export const localeMap: Record<ServiceSlug, string> = {
   [ServiceSlug.OPEN_CTI_CUSTOM_VIEWS]: 'OpenctiCustomViews',
   [ServiceSlug.OPEN_AEV_SCENARIOS]: 'OpenAEVScenario',
   [ServiceSlug.OPEN_CTI_PLAYBOOKS]: 'OpenCTIPlaybook',
+  [ServiceSlug.OPEN_CTI_HUNT_PACKS]: 'OpenCTIHuntPack',
 };

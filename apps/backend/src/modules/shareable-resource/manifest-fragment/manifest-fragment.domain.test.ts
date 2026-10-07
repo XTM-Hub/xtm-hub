@@ -691,6 +691,112 @@ describe('manifestFragmentDomain', () => {
     });
   });
 
+  describe('ingestManifestFragment connector type', () => {
+    const loadMetadataByKey = async (documentId: DocumentId) => {
+      const metadataRows = await TestHelper.documentMetadata.loadAll({
+        document_id: documentId,
+      });
+      return new Map(
+        metadataRows.map((metadata) => [metadata.key as string, metadata.value])
+      );
+    };
+
+    it('raises the minimum deployable version of a hunt connector to the first OpenCTI version with hunts', async () => {
+      // Given a hunt connector declaring a platform version without hunts
+      const slug = 'splunk-hunt-below-floor';
+      const fragment = buildManifestFragment(ManifestType.Connector, {
+        slug,
+        version: '7.261010.0',
+      });
+      fragment.image_type = 'INTERNAL_HUNT';
+      fragment.min_version = '7.261002.0';
+
+      // When
+      await ManifestFragmentDomain.ingestManifestFragment(fragment);
+
+      // Then
+      const createdDocument = await TestHelper.document.load({ slug });
+      _createdDocumentIds.push(createdDocument!.id);
+      const metadataByKey = await loadMetadataByKey(createdDocument!.id);
+      expect(metadataByKey.get(DocumentMetadataKeyCode.ImageType)).toBe(
+        'INTERNAL_HUNT'
+      );
+      expect(
+        metadataByKey.get(DocumentMetadataKeyCode.MinimumDeployableVersion)
+      ).toBe('7.261003.0');
+      expect(
+        metadataByKey.get(
+          DocumentMetadataKeyCode.MinimumDeployableVersionPadded
+        )
+      ).toBe('007.261003.000');
+    });
+
+    it('keeps the declared minimum version of a hunt connector when it is above the floor', async () => {
+      // Given
+      const slug = 'splunk-hunt-above-floor';
+      const fragment = buildManifestFragment(ManifestType.Connector, {
+        slug,
+        version: '7.261020.0',
+      });
+      fragment.image_type = 'INTERNAL_HUNT';
+      fragment.min_version = '7.261015.0';
+
+      // When
+      await ManifestFragmentDomain.ingestManifestFragment(fragment);
+
+      // Then
+      const createdDocument = await TestHelper.document.load({ slug });
+      _createdDocumentIds.push(createdDocument!.id);
+      const metadataByKey = await loadMetadataByKey(createdDocument!.id);
+      expect(
+        metadataByKey.get(DocumentMetadataKeyCode.MinimumDeployableVersion)
+      ).toBe('7.261015.0');
+      expect(
+        metadataByKey.get(
+          DocumentMetadataKeyCode.MinimumDeployableVersionPadded
+        )
+      ).toBe('007.261015.000');
+    });
+
+    it('stores the canonical connector type', async () => {
+      // Given
+      const slug = 'misp-lowercase-connector-type';
+      const fragment = buildManifestFragment(ManifestType.Connector, { slug });
+      fragment.image_type = ' internal-enrichment ';
+
+      // When
+      await ManifestFragmentDomain.ingestManifestFragment(fragment);
+
+      // Then
+      const createdDocument = await TestHelper.document.load({ slug });
+      _createdDocumentIds.push(createdDocument!.id);
+      const metadataByKey = await loadMetadataByKey(createdDocument!.id);
+      expect(metadataByKey.get(DocumentMetadataKeyCode.ImageType)).toBe(
+        'INTERNAL_ENRICHMENT'
+      );
+      expect(
+        metadataByKey.get(DocumentMetadataKeyCode.MinimumDeployableVersion)
+      ).toBe(fragment.min_version);
+    });
+
+    it('rejects an unknown connector type', async () => {
+      // Given
+      const slug = 'misp-unknown-connector-type';
+      const fragment = buildManifestFragment(ManifestType.Connector, { slug });
+      fragment.image_type = 'INTERNAL_HUNTS';
+
+      // When
+      const call = ManifestFragmentDomain.ingestManifestFragment(fragment);
+
+      // Then
+      await expect(call).rejects.toThrow(
+        BadRequestErrorCode.ConnectorTypeNotRecognized
+      );
+      const createdDocument = await TestHelper.document.load({ slug });
+      expect(createdDocument).toBeUndefined();
+    });
+  });
+
   describe('ingestManifestFragment concurrency', () => {
     it('rejects one of two concurrent ingestions of the very first version of a brand-new connector', async () => {
       // Given: no existing rows to lock, so the DB unique constraint is the backstop

@@ -12,6 +12,7 @@ describe('useLogicalFiltersFromStorage', () => {
   const trueValue = 'true';
   const solutionCategoryValue = 'ti_ops';
   const licenseTypeValue = 'oss';
+  const connectorTypeValue = 'INTERNAL_HUNT';
 
   it('should return all integration leaves when service slug is OpenCTI integrations', () => {
     // Given
@@ -24,6 +25,7 @@ describe('useLogicalFiltersFromStorage', () => {
       productVersions: { [productVersionValue]: [] },
       solutionCategories: { [solutionCategoryValue]: [] },
       licenseTypes: { [licenseTypeValue]: [] },
+      connectorTypes: { [connectorTypeValue]: [] },
     };
 
     // When
@@ -75,6 +77,12 @@ describe('useLogicalFiltersFromStorage', () => {
             value: [licenseTypeValue],
           },
         },
+        {
+          leaf: {
+            key: FilterKey.ConnectorType,
+            value: [connectorTypeValue],
+          },
+        },
       ],
     });
   });
@@ -103,6 +111,12 @@ describe('useLogicalFiltersFromStorage', () => {
     expect(result.current.children).toContainEqual({
       leaf: {
         key: FilterKey.LicenseType,
+        value: [],
+      },
+    });
+    expect(result.current.children).toContainEqual({
+      leaf: {
+        key: FilterKey.ConnectorType,
         value: [],
       },
     });

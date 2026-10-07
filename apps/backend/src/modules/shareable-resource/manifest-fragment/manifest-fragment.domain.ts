@@ -20,6 +20,10 @@ import { DocumentChildrenDomain } from '../../document/domain/document.children.
 import { DocumentDomain } from '../../document/domain/document.domain';
 import { solutionCategoryApp } from '../../solution-category/solution-category.app';
 import { isFiligranProduct } from '../../solution-category/solution-category.utils';
+import {
+  ConnectorTypeHelper,
+  type OpenCtiConnectorType,
+} from '../opencti/integration/connector-type.helper';
 import { IngestManifestHelper } from '../opencti/integration/ingest-manifest/ingest-manifest.helper';
 import {
   INTEGRATION_CONNECTOR_V2_METADATA_KEYS,
@@ -80,6 +84,8 @@ const createConnectorDocument = async ({
   metadataFromExisting,
   licenseType,
   contact,
+  connectorType,
+  minimumDeployableVersion,
 }: {
   fragment: ManifestFragmentInput;
   formattedVersion: string;
@@ -90,6 +96,8 @@ const createConnectorDocument = async ({
   >;
   licenseType?: LicenseType;
   contact?: string;
+  connectorType: OpenCtiConnectorType;
+  minimumDeployableVersion: string;
 }): Promise<ConnectorV2> => {
   const createdConnector =
     await DocumentApp.createDocumentWithChildrenAndMetadata<ConnectorV2>(
@@ -108,16 +116,16 @@ const createConnectorDocument = async ({
         manifest_fragment_id: fragment.id,
         last_verified_date: fragment.last_verified_date,
         image_name: fragment.image_name,
-        image_type: fragment.image_type,
+        image_type: connectorType,
         integration_type: IntegrationType.Connector,
         verified: fragment.verified ?? false,
         source_code: fragment.source_code,
         subscription_link: fragment.subscription_link,
         manager_supported: fragment.manager_supported,
-        minimum_deployable_version: fragment.min_version,
+        minimum_deployable_version: minimumDeployableVersion,
         minimum_deployable_version_padded:
-          ManifestFragmentHelper.validateAndFormatManifestVersion(
-            fragment.min_version
+          ManifestFragmentHelper.validateAndFormatMinimumVersion(
+            minimumDeployableVersion
           ),
         license_type: licenseType,
         contact,
@@ -155,27 +163,49 @@ const removeLatestTagFromExistingBatchConnectors = async ({
   }
 };
 
+/** Every check of a fragment that needs no database, so a batch can be checked before any of its fragments is written. */
+const validateManifestFragment = (fragment: ManifestFragmentInput) => {
+  if (fragment.integration_type !== ManifestType.Connector) {
+    throw new Error(BadRequestErrorCode.IntegrationTypeNotRecognized);
+  }
+
+  ManifestFragmentHelper.validateAndFormatMinimumVersion(fragment.min_version);
+  const connectorType = ConnectorTypeHelper.parse(fragment.image_type);
+  const minimumDeployableVersion =
+    ConnectorTypeHelper.resolveMinimumDeployableVersion(
+      connectorType,
+      fragment.min_version
+    ) ?? fragment.min_version;
+  ManifestFragmentHelper.validateShortDescriptionLength(
+    fragment.short_description
+  );
+  ManifestFragmentHelper.validateSolutionCategories(
+    fragment.solution_categories
+  );
+  return {
+    connectorType,
+    minimumDeployableVersion,
+    licenseType: fragment.license_type ?? undefined,
+    contact: ManifestFragmentHelper.parseContact(fragment.contact),
+    formattedVersion: ManifestFragmentHelper.validateAndFormatManifestVersion(
+      fragment.version
+    ),
+  };
+};
+
 export const ManifestFragmentDomain = {
+  validateManifestFragment,
+
   ingestManifestFragment: async (
     fragment: ManifestFragmentInput
   ): Promise<void> => {
-    if (fragment.integration_type !== ManifestType.Connector) {
-      throw new Error(BadRequestErrorCode.IntegrationTypeNotRecognized);
-    }
-
-    ManifestFragmentHelper.validateAndFormatManifestVersion(
-      fragment.min_version
-    );
-    ManifestFragmentHelper.validateShortDescriptionLength(
-      fragment.short_description
-    );
-    ManifestFragmentHelper.validateSolutionCategories(
-      fragment.solution_categories
-    );
-    const licenseType = fragment.license_type ?? undefined;
-    const contact = ManifestFragmentHelper.parseContact(fragment.contact);
-    const formattedVersion =
-      ManifestFragmentHelper.validateAndFormatManifestVersion(fragment.version);
+    const {
+      connectorType,
+      minimumDeployableVersion,
+      licenseType,
+      contact,
+      formattedVersion,
+    } = validateManifestFragment(fragment);
     const latestTag =
       ManifestFragmentHelper.getLatestTagForConnectorVersion(formattedVersion);
 
@@ -278,6 +308,8 @@ export const ManifestFragmentDomain = {
           metadataFromExisting,
           licenseType,
           contact,
+          connectorType,
+          minimumDeployableVersion,
         });
 
         const platform = fragment.platform.trim().toLowerCase();

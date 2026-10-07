@@ -18,6 +18,7 @@ import { ServiceInstanceDomain } from '../service/instance/service-instance.doma
 import { OPENAEV_SCENARIO_DOCUMENT_TYPE } from '../shareable-resource/openaev/scenario/scenario.model';
 import { OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE } from '../shareable-resource/opencti/custom-dashboard/custom-dashboard.model';
 import { OPENCTI_CUSTOM_VIEW_DOCUMENT_TYPE } from '../shareable-resource/opencti/custom-view/custom-view.model';
+import { OPENCTI_HUNT_PACK_DOCUMENT_TYPE } from '../shareable-resource/opencti/hunt-pack/hunt-pack.model';
 import { OPENCTI_INTEGRATION_DOCUMENT_TYPE } from '../shareable-resource/opencti/integration/integration.model';
 import { OPENCTI_PLAYBOOK_DOCUMENT_TYPE } from '../shareable-resource/opencti/playbook/playbook.model';
 import { TelemetryApp } from '../telemetry/telemetry.app';
@@ -140,6 +141,7 @@ const resolvers: Resolvers = {
         [OPENCTI_CUSTOM_VIEW_DOCUMENT_TYPE]: 'CustomView',
         [OPENAEV_SCENARIO_DOCUMENT_TYPE]: 'OpenAEVScenario',
         [OPENCTI_PLAYBOOK_DOCUMENT_TYPE]: 'OpenCTIPlaybook',
+        [OPENCTI_HUNT_PACK_DOCUMENT_TYPE]: 'OpenCTIHuntPack',
       } as const;
       const INTEGRATION_MAPPINGS = {
         [IntegrationType.Connector]: 'Connector',

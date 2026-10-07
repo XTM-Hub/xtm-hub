@@ -355,6 +355,12 @@
       "INCREMENT_SHARE_NUMBER": "共有番号の増加中にエラーが発生しました",
       "INTEGRATION_TYPE_NOT_MANAGEABLE": "このタイプの統合は管理できません。",
       "INTEGRATION_TYPE_NOT_RECOGNIZED": "このタイプの統合は認識されない",
+      "HUNT_PACK_INVALID_BUNDLE": "このファイルはハントパックではありません。OpenCTI からハントの STIX 2.1 バンドルをエクスポートして、もう一度アップロードしてください。",
+      "HUNT_PACK_EMPTY": "このハントパックにはハントが含まれていません。OpenCTI から少なくとも 1 件のハントをエクスポートしてください。",
+      "HUNT_PACK_TOO_LARGE": "このハントパックには 200 件を超えるハントが含まれています。複数のパックに分割してください。",
+      "HUNT_PACK_INVALID_HUNT": "OpenCTI はこのパックのハントを拒否します。各ハントに名前、有効な Sigma ルール、OpenCTI が対応するプラットフォーム向けのネイティブクエリ (プラットフォームごとに 1 つ、言語とクエリを含む)、有効なスケジュール、OpenCTI の既定値の範囲内の制限があることを確認してください。",
+      "HUNT_PACK_FILE_TOO_LARGE": "このハントパックは OpenCTI のインポートが受け付ける上限の 20 MB を超えています。複数のパックに分割してください。",
+      "CONNECTOR_TYPE_NOT_RECOGNIZED": "このマニフェストのコネクタタイプは認識されません。ドキュメントに記載されている OpenCTI のコネクタタイプのいずれかを使用してください。",
       "INVALID_ACTION_SIZE": "不明なエラーが発生した",
       "INVALID_CONTENT_TRANSLATION_KEY": "無効なコンテンツキーです",
       "INVALID_EMAIL": "電子メールは有効な形式でなければなりません。",
@@ -430,6 +436,7 @@
       "VOTABLE_FEATURE_MUTATION_ERROR": "機能の保存中にエラーが発生しました"
     },
     "SomethingWentWrong": "何かが間違っている",
+    "TryAgain": "再試行",
     "YouAreNotAuthorized": "このページを表示する権限がありません。"
   },
   "GenericActions": {
@@ -602,6 +609,7 @@
     "CustomViews": "カスタムビュー",
     "Integrations": "連携機能",
     "Playbooks": "プレイブック",
+    "HuntPacks": "ハントパック",
     "LiveDemo": "ライブデモ",
     "Documentation": "ドキュメント",
     "Scenarios": "ユースケース",
@@ -1038,6 +1046,7 @@
       "opencti_custom_views": "OpenCTI カスタムビュー",
       "opencti_integrations": "OpenCTI 統合",
       "opencti_playbooks": "OpenCTIプレイブック",
+      "opencti_hunt_packs": "OpenCTIハントパック",
       "opencti_registration": "OpenCTI 登録",
       "xtm_platform_bundle": "XTMプラットフォームトライアル",
       "xtm_platform_roadmap": "XTM Platform ロードマップ",
@@ -1153,7 +1162,7 @@
       "Search": "名前でコネクタを検索...",
       "VendorContact": "ベンダー連絡先",
       "VisitVendor": "ベンダーのページで詳細を確認し、連絡を取ってください。",
-      "Incompatible": "{platformToBeUpdated} {count, plural, =1 {needs} other {need}} to be updated to deploy this connector.",
+      "Incompatible": "このコネクタをデプロイするには、{platformToBeUpdated} を OpenCTI {version} 以降に更新してください。",
       "UnavailableDeployments": "このコネクタは自動デプロイでは使用できません。"
     },
     "CreationStatus": "作成ステータス",
@@ -1224,6 +1233,10 @@
           "Label": "統合タイプ",
           "Placeholder": "統合タイプ..."
         },
+        "ConnectorType": {
+          "Label": "コネクタタイプ",
+          "Placeholder": "コネクタタイプ..."
+        },
         "ManagerSupported": {
           "Label": "配備タイプ",
           "Placeholder": "デプロイメントタイプ...",
@@ -1254,6 +1267,26 @@
         "taxii_feed": "TAXIIフィード",
         "stream": "OpenCTI ストリーム",
         "third_party_integration": "サードパーティとの統合"
+      },
+      "ConnectorType": {
+        "EXTERNAL_IMPORT": "外部輸入",
+        "INTERNAL_ENRICHMENT": "内部強化",
+        "INTERNAL_IMPORT_FILE": "内部インポートファイル",
+        "INTERNAL_EXPORT_FILE": "内部エクスポートファイル",
+        "INTERNAL_ANALYSIS": "内部分析",
+        "INTERNAL_HUNT": "内部ハント",
+        "STREAM": "ストリーム"
+      },
+      "HuntPlatform": {
+        "splunk": "Splunk",
+        "microsoft-sentinel": "Microsoft Sentinel",
+        "elastic-security": "Elastic Security",
+        "crowdstrike-logscale": "CrowdStrike Falcon LogScale",
+        "google-secops": "Google Security Operations",
+        "opensearch": "OpenSearch",
+        "clickhouse": "ClickHouse",
+        "s3-ocsf": "Amazon S3 上の OCSF データレイク",
+        "internet": "インターネットスキャンサービス"
       }
     },
     "CsvFeed": {
@@ -1388,6 +1421,28 @@
       "NonActive": "草案",
       "Active": "公開"
     },
+    "OpenCTIHuntPack": {
+      "Actions": {
+        "Added": "ハントパック {name} は正常に追加されました。",
+        "Deleted": "ハントパック {name} は正常に削除されました。",
+        "Updated": "ハントパック {name} は正常に変更されました。",
+        "Share": "ハントパックを共有する"
+      },
+      "AddService": "新しいハントパックを追加する",
+      "UpdateService": "ハントパックを更新する {name}",
+      "DeleteService": "ハントパックを削除する {name}",
+      "SureDeleteService": "本当にハントパック {name} を削除しますか？",
+      "NonActive": "草案",
+      "Active": "公開",
+      "Form": {
+        "SelectHuntPackFile": "ハントパックファイル",
+        "SelectHuntPackFileDescription": "OpenCTI からエクスポートしたハントパック（1〜200 件のハントを含む STIX 2.1 バンドル）。ハント数、ATT&CK テクニック、ハント対象プラットフォームはファイルから読み取られます。"
+      },
+      "LoadError": {
+        "Library": "ハントパックを読み込めませんでした。",
+        "Document": "このハントパックを読み込めませんでした。"
+      }
+    },
     "Description": "出版",
     "GoTo": "サービスページへ",
     "GoToAdminLabel": "管理する",
@@ -1479,7 +1534,9 @@
         "DeployPlatform": "{platformName} にデプロイしますか？",
         "DeployQuestionTag": "どの {platformType} プラットフォームに配置しますか？",
         "DeployResourceDescription": "あなたは {resourceName} {resourceType} をデプロイしようとしています。",
-        "DeployIncompatibleVersion": "このリソースは OpenCTI プラットフォームにデプロイできません \"{platformTitle}\" なぜならプラットフォームのバージョンはもうこのリソースと互換性がないからです。先に進む前に、プラットフォームをアップデートするか、互換性のあるリソースのバージョンを使う必要があります。",
+        "DeployHuntPackDescription": "ハントパック「{resourceName}」を OpenCTI にデプロイしようとしています。",
+        "DeployIncompatibleVersion": "このリソースをデプロイするには、{platformTitle} を OpenCTI {version} 以降に更新してください。",
+        "DeployHuntPackIncompatibleVersion": "このハントパックをデプロイするには、{platformTitle} を OpenCTI {version} 以降に更新してください。",
         "EE": {
           "Tag": "EE",
           "HoverTitle": "エンタープライズ版で利用可能",
@@ -1513,6 +1570,14 @@
         "Shares": "シェア",
         "ContributorContact": "貢献者の連絡先",
         "IntegrationType": "タイプ",
+        "ConnectorType": "コネクタタイプ",
+        "HuntedPlatform": "ハント対象プラットフォーム",
+        "Hunts": "ハント",
+        "HuntCount": "{count, plural, other {# 件のハント}}",
+        "AttackTechniques": "ATT&CK テクニック",
+        "HuntedPlatforms": "ハント対象プラットフォーム",
+        "MoreItems": "ほか {count} 件",
+        "ShowFewerItems": "表示を減らす",
         "IntegrationSolutionCategory": "解答カテゴリ",
         "IntegrationLicenseType": "ライセンスの種類",
         "GithubURL": "Github URL",

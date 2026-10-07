@@ -59,6 +59,8 @@ type DocumentMetadataValueType = {
   subscription_link: string | null;
   minimum_deployable_version: string | null;
   contact: string | null;
+  connector_type: string | null;
+  hunt_platform: string | null;
   entity_types: readonly string[] | null;
 };
 
@@ -103,6 +105,7 @@ const DEPLOYABLE_RESOURCE_TYPES: string[] = [
   ShareableResourceType.OPENCTI_CUSTOM_VIEW,
   ShareableResourceType.OPENAEV_SCENARIO,
   ShareableResourceType.OPENCTI_PLAYBOOK,
+  ShareableResourceType.OPENCTI_HUNT_PACK,
 ];
 
 export const isResourceDeployable = (

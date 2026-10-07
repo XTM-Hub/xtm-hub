@@ -183,6 +183,7 @@ export type Connector = Document & Integration & Node & {
   active: Scalars['Boolean']['output'];
   blogpost_url?: Maybe<Scalars['String']['output']>;
   children_documents?: Maybe<Array<ShareableResource>>;
+  connector_type?: Maybe<Scalars['String']['output']>;
   contact?: Maybe<Scalars['String']['output']>;
   container_image?: Maybe<Scalars['String']['output']>;
   created_at: Scalars['Date']['output'];
@@ -191,6 +192,7 @@ export type Connector = Document & Integration & Node & {
   description?: Maybe<Scalars['String']['output']>;
   download_number?: Maybe<Scalars['Int']['output']>;
   file_name?: Maybe<Scalars['String']['output']>;
+  hunt_platform?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   integration_type: IntegrationType;
   license_type?: Maybe<LicenseType>;
@@ -673,6 +675,7 @@ export type DocumentMetadata = {
 
 export enum DocumentMetadataKeyCode {
   AdditionalProperties = 'additional_properties',
+  AttackTechniques = 'attack_techniques',
   BlogpostUrl = 'blogpost_url',
   ConfigSchema = 'config_schema',
   Contact = 'contact',
@@ -682,6 +685,8 @@ export enum DocumentMetadataKeyCode {
   EntityTypes = 'entity_types',
   FeedUrl = 'feed_url',
   GithubUrl = 'github_url',
+  HuntCount = 'hunt_count',
+  HuntPlatforms = 'hunt_platforms',
   ImageName = 'image_name',
   ImageType = 'image_type',
   IntegrationType = 'integration_type',
@@ -799,6 +804,7 @@ export enum EpicType {
 
 export type Facet = {
   __typename?: 'Facet';
+  connector_type: Array<FacetBucket>;
   entity_type: Array<FacetBucket>;
   integration_type: Array<FacetBucket>;
   license_type: Array<FacetBucket>;
@@ -834,6 +840,7 @@ export type Filter = {
 };
 
 export enum FilterKey {
+  ConnectorType = 'connector_type',
   EntityType = 'entity_type',
   FeedUrl = 'feed_url',
   IntegrationType = 'integration_type',
@@ -1631,6 +1638,34 @@ export type OpenAevScenario = Document & Node & {
   description?: Maybe<Scalars['String']['output']>;
   download_number?: Maybe<Scalars['Int']['output']>;
   file_name: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  name: Scalars['String']['output'];
+  product_version?: Maybe<Scalars['String']['output']>;
+  service_instance?: Maybe<ServiceInstance>;
+  service_instance_id?: Maybe<Scalars['ServiceInstanceId']['output']>;
+  share_number?: Maybe<Scalars['Int']['output']>;
+  short_description?: Maybe<Scalars['String']['output']>;
+  slug: Scalars['String']['output'];
+  subscription?: Maybe<SubscriptionModel>;
+  type: Scalars['String']['output'];
+  updated_at?: Maybe<Scalars['Date']['output']>;
+  updater_id?: Maybe<Scalars['String']['output']>;
+  uploader?: Maybe<User>;
+  uploader_organization?: Maybe<Organization>;
+  use_cases?: Maybe<Array<UseCase>>;
+};
+
+export type OpenCtiHuntPack = Document & Node & {
+  __typename?: 'OpenCTIHuntPack';
+  active: Scalars['Boolean']['output'];
+  attack_techniques: Array<Scalars['String']['output']>;
+  children_documents?: Maybe<Array<ShareableResource>>;
+  created_at: Scalars['Date']['output'];
+  description?: Maybe<Scalars['String']['output']>;
+  download_number?: Maybe<Scalars['Int']['output']>;
+  file_name: Scalars['String']['output'];
+  hunt_count?: Maybe<Scalars['Int']['output']>;
+  hunt_platforms: Array<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
   product_version?: Maybe<Scalars['String']['output']>;
@@ -2486,6 +2521,7 @@ export enum ServiceDefinitionIdentifier {
   OpenaevScenarios = 'openaev_scenarios',
   OpenctiCustomDashboards = 'opencti_custom_dashboards',
   OpenctiCustomViews = 'opencti_custom_views',
+  OpenctiHuntPacks = 'opencti_hunt_packs',
   OpenctiIntegrations = 'opencti_integrations',
   OpenctiPlaybooks = 'opencti_playbooks',
   OpenctiRegistration = 'opencti_registration',
@@ -3287,9 +3323,9 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
 
 /** Mapping of interface types */
 export type ResolversInterfaceTypes<_RefType extends Record<string, unknown>> = ResolversObject<{
-  Document: ( Connector ) | ( CsvFeed ) | ( CustomDashboard ) | ( CustomView ) | ( DefaultDocument ) | ( IntegrationHack ) | ( OpenAevScenario ) | ( OpenCtiPlaybook ) | ( RssFeed ) | ( Stream ) | ( TaxiiFeed ) | ( ThirdPartyIntegration );
+  Document: ( Connector ) | ( CsvFeed ) | ( CustomDashboard ) | ( CustomView ) | ( DefaultDocument ) | ( IntegrationHack ) | ( OpenAevScenario ) | ( OpenCtiHuntPack ) | ( OpenCtiPlaybook ) | ( RssFeed ) | ( Stream ) | ( TaxiiFeed ) | ( ThirdPartyIntegration );
   Integration: ( Connector ) | ( CsvFeed ) | ( IntegrationHack ) | ( RssFeed ) | ( Stream ) | ( TaxiiFeed ) | ( ThirdPartyIntegration );
-  Node: ( Capability ) | ( Competitor ) | ( Connector ) | ( CsvFeed ) | ( CustomDashboard ) | ( CustomView ) | ( DefaultDocument ) | ( DeploymentRequest ) | ( Omit<Epic, 'document'> & { document?: Maybe<_RefType['Document']> } ) | ( GenericServiceCapability ) | ( IntegrationHack ) | ( IsPlatformRegisteredOrganization ) | ( MergeEvent ) | ( NewsFeedItem ) | ( OpenAevScenario ) | ( OpenCtiPlaybook ) | ( Organization ) | ( OrganizationCapabilities ) | ( OrganizationRef ) | ( ProvisionedNewsFeedItem ) | ( RegisteredPlatform ) | ( RolePortal ) | ( RssFeed ) | ( SeoServiceInstance ) | ( ServiceCapability ) | ( ServiceDefinition ) | ( ServiceGroup ) | ( ServiceInstance ) | ( ServiceLink ) | ( SolutionCategory ) | ( Stream ) | ( SubscriptionCapability ) | ( SubscriptionModel ) | ( TaxiiFeed ) | ( ThirdPartyIntegration ) | ( UseCase ) | ( User ) | ( UserService ) | ( UserServiceCapability ) | ( UserServiceDeleted ) | ( VotableFeatureModel ) | ( VotingRoundModel );
+  Node: ( Capability ) | ( Competitor ) | ( Connector ) | ( CsvFeed ) | ( CustomDashboard ) | ( CustomView ) | ( DefaultDocument ) | ( DeploymentRequest ) | ( Omit<Epic, 'document'> & { document?: Maybe<_RefType['Document']> } ) | ( GenericServiceCapability ) | ( IntegrationHack ) | ( IsPlatformRegisteredOrganization ) | ( MergeEvent ) | ( NewsFeedItem ) | ( OpenAevScenario ) | ( OpenCtiHuntPack ) | ( OpenCtiPlaybook ) | ( Organization ) | ( OrganizationCapabilities ) | ( OrganizationRef ) | ( ProvisionedNewsFeedItem ) | ( RegisteredPlatform ) | ( RolePortal ) | ( RssFeed ) | ( SeoServiceInstance ) | ( ServiceCapability ) | ( ServiceDefinition ) | ( ServiceGroup ) | ( ServiceInstance ) | ( ServiceLink ) | ( SolutionCategory ) | ( Stream ) | ( SubscriptionCapability ) | ( SubscriptionModel ) | ( TaxiiFeed ) | ( ThirdPartyIntegration ) | ( UseCase ) | ( User ) | ( UserService ) | ( UserServiceCapability ) | ( UserServiceDeleted ) | ( VotableFeatureModel ) | ( VotingRoundModel );
 }>;
 
 /** Mapping between all available schema types and the resolvers types */
@@ -3409,6 +3445,7 @@ export type ResolversTypes = ResolversObject<{
   Node: ResolverTypeWrapper<ResolversInterfaceTypes<ResolversTypes>['Node']>;
   OneClickDeployInput: OneClickDeployInput;
   OpenAEVScenario: ResolverTypeWrapper<OpenAevScenario>;
+  OpenCTIHuntPack: ResolverTypeWrapper<OpenCtiHuntPack>;
   OpenCTIPlatformRegistrationStatusInput: OpenCtiPlatformRegistrationStatusInput;
   OpenCTIPlatformRegistrationStatusResponse: ResolverTypeWrapper<OpenCtiPlatformRegistrationStatusResponse>;
   OpenCTIPlaybook: ResolverTypeWrapper<OpenCtiPlaybook>;
@@ -3647,6 +3684,7 @@ export type ResolversParentTypes = ResolversObject<{
   Node: ResolversInterfaceTypes<ResolversParentTypes>['Node'];
   OneClickDeployInput: OneClickDeployInput;
   OpenAEVScenario: OpenAevScenario;
+  OpenCTIHuntPack: OpenCtiHuntPack;
   OpenCTIPlatformRegistrationStatusInput: OpenCtiPlatformRegistrationStatusInput;
   OpenCTIPlatformRegistrationStatusResponse: OpenCtiPlatformRegistrationStatusResponse;
   OpenCTIPlaybook: OpenCtiPlaybook;
@@ -3843,6 +3881,7 @@ export type ConnectorResolvers<ContextType = PortalContext, ParentType extends R
   active?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   blogpost_url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
+  connector_type?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   contact?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   container_image?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
@@ -3851,6 +3890,7 @@ export type ConnectorResolvers<ContextType = PortalContext, ParentType extends R
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   download_number?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   file_name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  hunt_platform?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   integration_type?: Resolver<ResolversTypes['IntegrationType'], ParentType, ContextType>;
   license_type?: Resolver<Maybe<ResolversTypes['LicenseType']>, ParentType, ContextType>;
@@ -4069,7 +4109,7 @@ export interface DeploymentRequestIdScalarConfig extends GraphQLScalarTypeConfig
 }
 
 export type DocumentResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['Document'] = ResolversParentTypes['Document']> = ResolversObject<{
-  __resolveType: TypeResolveFn<'Connector' | 'CsvFeed' | 'CustomDashboard' | 'CustomView' | 'DefaultDocument' | 'IntegrationHack' | 'OpenAEVScenario' | 'OpenCTIPlaybook' | 'RssFeed' | 'Stream' | 'TaxiiFeed' | 'ThirdPartyIntegration', ParentType, ContextType>;
+  __resolveType: TypeResolveFn<'Connector' | 'CsvFeed' | 'CustomDashboard' | 'CustomView' | 'DefaultDocument' | 'IntegrationHack' | 'OpenAEVScenario' | 'OpenCTIHuntPack' | 'OpenCTIPlaybook' | 'RssFeed' | 'Stream' | 'TaxiiFeed' | 'ThirdPartyIntegration', ParentType, ContextType>;
   active?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
   created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
@@ -4150,6 +4190,7 @@ export type EpicEdgeResolvers<ContextType = PortalContext, ParentType extends Re
 }>;
 
 export type FacetResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['Facet'] = ResolversParentTypes['Facet']> = ResolversObject<{
+  connector_type?: Resolver<Array<ResolversTypes['FacetBucket']>, ParentType, ContextType>;
   entity_type?: Resolver<Array<ResolversTypes['FacetBucket']>, ParentType, ContextType>;
   integration_type?: Resolver<Array<ResolversTypes['FacetBucket']>, ParentType, ContextType>;
   license_type?: Resolver<Array<ResolversTypes['FacetBucket']>, ParentType, ContextType>;
@@ -4393,7 +4434,7 @@ export type NewsFeedItemMetadataResolvers<ContextType = PortalContext, ParentTyp
 }>;
 
 export type NodeResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['Node'] = ResolversParentTypes['Node']> = ResolversObject<{
-  __resolveType: TypeResolveFn<'Capability' | 'Competitor' | 'Connector' | 'CsvFeed' | 'CustomDashboard' | 'CustomView' | 'DefaultDocument' | 'DeploymentRequest' | 'Epic' | 'GenericServiceCapability' | 'IntegrationHack' | 'IsPlatformRegisteredOrganization' | 'MergeEvent' | 'NewsFeedItem' | 'OpenAEVScenario' | 'OpenCTIPlaybook' | 'Organization' | 'OrganizationCapabilities' | 'OrganizationRef' | 'ProvisionedNewsFeedItem' | 'RegisteredPlatform' | 'RolePortal' | 'RssFeed' | 'SeoServiceInstance' | 'ServiceCapability' | 'ServiceDefinition' | 'ServiceGroup' | 'ServiceInstance' | 'ServiceLink' | 'SolutionCategory' | 'Stream' | 'SubscriptionCapability' | 'SubscriptionModel' | 'TaxiiFeed' | 'ThirdPartyIntegration' | 'UseCase' | 'User' | 'UserService' | 'UserServiceCapability' | 'UserServiceDeleted' | 'VotableFeature' | 'VotingRound', ParentType, ContextType>;
+  __resolveType: TypeResolveFn<'Capability' | 'Competitor' | 'Connector' | 'CsvFeed' | 'CustomDashboard' | 'CustomView' | 'DefaultDocument' | 'DeploymentRequest' | 'Epic' | 'GenericServiceCapability' | 'IntegrationHack' | 'IsPlatformRegisteredOrganization' | 'MergeEvent' | 'NewsFeedItem' | 'OpenAEVScenario' | 'OpenCTIHuntPack' | 'OpenCTIPlaybook' | 'Organization' | 'OrganizationCapabilities' | 'OrganizationRef' | 'ProvisionedNewsFeedItem' | 'RegisteredPlatform' | 'RolePortal' | 'RssFeed' | 'SeoServiceInstance' | 'ServiceCapability' | 'ServiceDefinition' | 'ServiceGroup' | 'ServiceInstance' | 'ServiceLink' | 'SolutionCategory' | 'Stream' | 'SubscriptionCapability' | 'SubscriptionModel' | 'TaxiiFeed' | 'ThirdPartyIntegration' | 'UseCase' | 'User' | 'UserService' | 'UserServiceCapability' | 'UserServiceDeleted' | 'VotableFeature' | 'VotingRound', ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
 }>;
 
@@ -4404,6 +4445,34 @@ export type OpenAevScenarioResolvers<ContextType = PortalContext, ParentType ext
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   download_number?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   file_name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  product_version?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  service_instance?: Resolver<Maybe<ResolversTypes['ServiceInstance']>, ParentType, ContextType>;
+  service_instance_id?: Resolver<Maybe<ResolversTypes['ServiceInstanceId']>, ParentType, ContextType>;
+  share_number?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  short_description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  slug?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  subscription?: Resolver<Maybe<ResolversTypes['SubscriptionModel']>, ParentType, ContextType>;
+  type?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  updated_at?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  updater_id?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  uploader?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
+  uploader_organization?: Resolver<Maybe<ResolversTypes['Organization']>, ParentType, ContextType>;
+  use_cases?: Resolver<Maybe<Array<ResolversTypes['UseCase']>>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type OpenCtiHuntPackResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['OpenCTIHuntPack'] = ResolversParentTypes['OpenCTIHuntPack']> = ResolversObject<{
+  active?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  attack_techniques?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
+  children_documents?: Resolver<Maybe<Array<ResolversTypes['ShareableResource']>>, ParentType, ContextType>;
+  created_at?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  download_number?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  file_name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  hunt_count?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  hunt_platforms?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   product_version?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -5302,6 +5371,7 @@ export type Resolvers<ContextType = PortalContext> = ResolversObject<{
   NewsFeedItemMetadata?: NewsFeedItemMetadataResolvers<ContextType>;
   Node?: NodeResolvers<ContextType>;
   OpenAEVScenario?: OpenAevScenarioResolvers<ContextType>;
+  OpenCTIHuntPack?: OpenCtiHuntPackResolvers<ContextType>;
   OpenCTIPlatformRegistrationStatusResponse?: OpenCtiPlatformRegistrationStatusResponseResolvers<ContextType>;
   OpenCTIPlaybook?: OpenCtiPlaybookResolvers<ContextType>;
   Organization?: OrganizationResolvers<ContextType>;

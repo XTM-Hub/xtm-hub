@@ -90,6 +90,23 @@ export const DocumentMetadataDomain = {
     return metadata?.value ?? null;
   },
 
+  loadMetadataByKeys: async (
+    id: DocumentId,
+    keys: readonly DocumentMetadataKeyCode[]
+  ): Promise<DocumentMetadataResolverType[]> => {
+    if (keys.length === 0) {
+      return [];
+    }
+    const rows: Pick<DocumentMetadata, 'key' | 'value'>[] =
+      await db<DocumentMetadata>('Document_Metadata')
+        .where('document_id', id)
+        .whereIn('key', keys)
+        .select('key', 'value');
+    return rows.flatMap(({ key, value }) =>
+      value === null ? [] : [{ key: key as DocumentMetadataKeyCode, value }]
+    );
+  },
+
   loadProductVersion: async (id: DocumentId): Promise<string | null> => {
     const metadata: DocumentMetadata = await db<DocumentMetadata>(
       'Document_Metadata'

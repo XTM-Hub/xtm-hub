@@ -281,29 +281,27 @@ describe('manifestHelper', () => {
     });
   });
 
-  describe('buildManifestFileName', () => {
+  describe('buildManifestObjectKey', () => {
     it.each`
-      product      | version         | expected
-      ${'opencti'} | ${'7.260604.0'} | ${'opencti/7.260604.0/connector/manifest/connector-manifest-7.260604.0-260701120000.json'}
-      ${'opencti'} | ${'6.5.1'}      | ${'opencti/6.5.1/connector/manifest/connector-manifest-6.5.1-260701120000.json'}
-      ${'openaev'} | ${'7.260604.0'} | ${'openaev/7.260604.0/connector/manifest/connector-manifest-7.260604.0-260701120000.json'}
+      product      | version         | name                                                     | expected
+      ${'opencti'} | ${'7.260604.0'} | ${'connector-manifest-7.260604.0-260701120000-0a1b2c3d'} | ${'opencti/7.260604.0/connector/manifest/connector-manifest-7.260604.0-260701120000-0a1b2c3d.json'}
+      ${'opencti'} | ${'6.5.1'}      | ${'connector-manifest-6.5.1-260701120000'}               | ${'opencti/6.5.1/connector/manifest/connector-manifest-6.5.1-260701120000.json'}
+      ${'openaev'} | ${'7.260604.0'} | ${'connector-manifest-7.260604.0-260701120000-0a1b2c3d'} | ${'openaev/7.260604.0/connector/manifest/connector-manifest-7.260604.0-260701120000-0a1b2c3d.json'}
     `(
-      'builds "$expected" for product "$product" and version "$version"',
+      'builds "$expected" for product "$product" and manifest "$name"',
       ({
         product,
         version,
+        name,
         expected,
       }: {
         product: string;
         version: string;
+        name: string;
         expected: string;
       }) => {
         expect(
-          ManifestHelper.buildManifestFileNameWithPath(
-            product,
-            version,
-            FIXED_DATE
-          )
+          ManifestHelper.buildManifestObjectKey(product, version, name)
         ).toBe(expected);
       }
     );
@@ -342,9 +340,26 @@ describe('manifestHelper', () => {
           FIXED_DATE,
           new Map()
         );
-        expect(output.manifest_version).toBe(
-          'connector-manifest-7.260604.0-260701120000'
+        expect(output.manifest_version).toMatch(
+          /^connector-manifest-7\.260604\.0-260701120000-[0-9a-f]{8}$/
         );
+      });
+
+      it('gives two builds of the same second different manifest versions', () => {
+        const first = ManifestHelper.buildConnectorManifestOutput(
+          '7.260604.0',
+          [],
+          FIXED_DATE,
+          new Map()
+        );
+        const second = ManifestHelper.buildConnectorManifestOutput(
+          '7.260604.0',
+          [],
+          FIXED_DATE,
+          new Map()
+        );
+
+        expect(first.manifest_version).not.toBe(second.manifest_version);
       });
 
       it('returns an empty contracts array when no connectors are provided', () => {

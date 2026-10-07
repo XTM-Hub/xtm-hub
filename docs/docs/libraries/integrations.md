@@ -50,6 +50,7 @@ You can filter feeds by:
 
 - Use case
 - Integration Feed type (CSV Feed, Connector, etc.)
+- Connector type (External import, Internal enrichment, Internal hunt, etc., see [Connector types](#connector-types))
 - Product compatibility (with connected OpenCTI products)
 - Deployment mode (automatic or manual)
 
@@ -114,6 +115,46 @@ The Connector card and Connector details page also indicate whether the Connecto
 ![Connector details automatic deploy](../assets/images/connector-details-automatic-deploy.png)
 
 Some Connectors also display a **Verified** badge. This badge means the Connector is **Verified & SaaS ready**: it has been reviewed and validated by Filigran, ensuring it meets quality and compatibility standards for SaaS environments.
+
+### Connector types
+
+Connector cards and the Connector details page show the type of each Connector, and the **Connector type** filter of
+the library lists the Connectors of the selected types, with their count. The CSV export of the library can be
+restricted to the same types. The types are those of OpenCTI:
+
+| Connector type | What the Connector does |
+|---|---|
+| External import | Imports knowledge from an external source on its own schedule. |
+| Internal enrichment | Enriches the entities OpenCTI sends to it, manually or automatically. |
+| Internal import file | Turns files uploaded to OpenCTI into knowledge. |
+| Internal export file | Exports OpenCTI knowledge to a file format. |
+| Internal analysis | Analyzes the content of files and entities in OpenCTI. |
+| Internal hunt | Executes OpenCTI hunts on one hunted platform and reports sightings, observed indicators and a redacted evidence sample. |
+| Stream | Pushes OpenCTI knowledge to another platform in real time. |
+
+![OpenCTI integrations library filtered on the Internal hunt connector type, with the count of Connectors of each type and the type on each card](../assets/images/integrations-connector-type-filter.png)
+
+![CSV export dialog of the integrations library with the Connector type filter set to Internal hunt](../assets/images/integrations-csv-export-connector-type.png)
+
+**Internal hunt** Connectors run the hunts of OpenCTI (a Sigma rule or a native query over a time window) on a
+Security Platform or data lake, such as Splunk, Microsoft Sentinel or Elastic Security. Their details page also shows
+the **Hunted platform**. The Connector fetches the matching raw events from the hunted platform API and processes
+them; raw events never leave the Connector. OpenCTI only receives hit counts, sightings, observed indicators and a
+hashed, truncated evidence sample.
+
+![Details page of the Splunk Hunt Connector showing its Internal hunt connector type, Splunk as hunted platform and OpenCTI 7.261003.0 as minimum deployable version](../assets/images/integrations-hunt-connector-details.png)
+
+To deploy one:
+
+- your OpenCTI product must provide hunts. Internal hunt Connectors require OpenCTI 7.261003.0 or later; on an older
+  product, including a long-term support release based on an older version, the Connector is marked as incompatible
+  and is not offered for deployment;
+- prepare the URL of the hunted platform and an account or token limited to read-only search: the deployment form of
+  OpenCTI asks for them, and XTM Composer receives the credentials encrypted.
+
+When a connected product is too old, the details page names the version to reach and the deploy button stays disabled:
+
+![Details page of the Splunk Hunt Connector for an organization whose only OpenCTI product runs 7.261002.0, asking to update it to OpenCTI 7.261003.0 or later](../assets/images/integrations-hunt-connector-incompatible-platform.png)
 
 ## Technical Requirements and Best Practices
 

@@ -1,5 +1,5 @@
+import { useDeployResourceTitle } from '@/components/service/document/one-click-deploy/use-deploy-resource-title';
 import { useTranslate } from '@/hooks/use-translate';
-import { SHAREABLE_RESOURCE_TYPE_NAME_MAPPING } from '@/utils/shareable-resources/shareable-resources.types';
 import { Button } from '@filigran/design-system';
 import { AlertDialogTitle } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
@@ -19,19 +19,12 @@ const OnePlatformDisplay = ({
   oneClickDeploy,
 }: OnePlatformDisplayProps) => {
   const t = useTranslate();
+  const title = useDeployResourceTitle(documentData);
 
   return (
     <>
       <div className="space-y-m">
-        <AlertDialogTitle>
-          {t('Service.ShareableResources.Deploy.DeployResourceDescription', {
-            resourceName: documentData.name ?? '',
-            resourceType:
-              SHAREABLE_RESOURCE_TYPE_NAME_MAPPING[
-                documentData.type as keyof typeof SHAREABLE_RESOURCE_TYPE_NAME_MAPPING
-              ],
-          })}
-        </AlertDialogTitle>
+        <AlertDialogTitle>{title}</AlertDialogTitle>
         <p>
           {t('Service.ShareableResources.Deploy.DeployDescriptionOnePlatform', {
             platformName: platforms[0]?.title ?? 'OpenCTI',

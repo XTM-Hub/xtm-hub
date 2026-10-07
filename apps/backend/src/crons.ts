@@ -6,6 +6,7 @@ import { ServiceGroupApp } from './modules/deployment/group/service-group.app';
 import { NewsFeedApp } from './modules/news-feed/news-feed.app';
 import { UserAccountStatusSyncApp } from './modules/organization-management/user/user-account-status-sync/user-account-status-sync.app';
 import { UserOrganizationApp } from './modules/organization-management/user/user-organization/user-organization.app';
+import { ManifestApp } from './modules/shareable-resource/manifest/manifest.app';
 import { EpicApp } from './modules/xtm-platform-roadmap/epic.app';
 import { CRONS_USER_CONTEXT } from './portal.const';
 import { logApp } from './utils/app-logger.util';
@@ -67,6 +68,25 @@ const cleanExpiredNewsFeedItems = async (): Promise<void> => {
   });
 };
 
+// Well beyond the debounce of manifest rebuilds (MANIFEST_REBUILD_DEBOUNCE_SECONDS):
+// a request still pending after this delay has no job left to process it.
+const STRANDED_MANIFEST_REBUILD_DELAY_MS = 60 * 60 * 1000;
+
+const resumeStrandedManifestRebuilds = async (): Promise<void> => {
+  logApp.info('Running resumeStrandedManifestRebuilds job');
+  await requestContext.run(CRONS_USER_CONTEXT, async () => {
+    try {
+      await ManifestApp.resumePendingRebuilds({
+        createdBefore: new Date(
+          Date.now() - STRANDED_MANIFEST_REBUILD_DELAY_MS
+        ),
+      });
+    } catch (error) {
+      logApp.error('resumeStrandedManifestRebuilds job failed:', { error });
+    }
+  });
+};
+
 const syncUserAccountStatus = async (): Promise<void> => {
   logApp.info('Running syncUserAccountStatus job');
   await requestContext.run(CRONS_USER_CONTEXT, async () => {
@@ -89,6 +109,9 @@ export const initCronJobs = () => {
   );
   scheduledTasks.push(cron.schedule('0 3 * * *', cleanExpiredTrialGroups));
   scheduledTasks.push(cron.schedule('0 4 * * *', cleanExpiredNewsFeedItems));
+  scheduledTasks.push(
+    cron.schedule('*/15 * * * *', resumeStrandedManifestRebuilds)
+  );
   if (portalConfig.auth0_sync.enabled) {
     // Environments restored from production share the Auth0 tenant and keep
     // real accounts, so the sync is enabled explicitly per environment.

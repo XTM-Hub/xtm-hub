@@ -42,7 +42,7 @@ describe('facet.grouping.utils', () => {
         3,
       ],
       [
-        'all 8 facet keys filtered',
+        'all 9 facet keys filtered',
         andOf([
           filterOn(FilterKey.IntegrationType, ['connector']),
           filterOn(FilterKey.LicenseType, ['free']),
@@ -52,8 +52,9 @@ describe('facet.grouping.utils', () => {
           filterOn(FilterKey.SolutionCategory, ['edr']),
           filterOn(FilterKey.Label, ['use-case-1']),
           filterOn(FilterKey.EntityType, ['Malware']),
+          filterOn(FilterKey.ConnectorType, ['INTERNAL_HUNT']),
         ]),
-        8,
+        9,
       ],
     ])(
       'should produce %i signature group(s) for %s',
@@ -68,7 +69,7 @@ describe('facet.grouping.utils', () => {
       }
     );
 
-    it('should place every FACET_SPEC in exactly one group covering all 8 fields', () => {
+    it('should place every FACET_SPEC in exactly one group covering all 9 fields', () => {
       // Given / When
       const groups = groupFacetsBySignature(null);
 

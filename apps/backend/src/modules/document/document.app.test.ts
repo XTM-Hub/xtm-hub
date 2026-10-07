@@ -9,6 +9,7 @@ import {
   it,
   vi,
 } from 'vitest';
+import { database } from '../../../knexfile';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   requestContextSimpleUserFiligran2,
@@ -33,7 +34,7 @@ import ServiceInstance, {
   ServiceInstanceId,
 } from '../../model/kanel/public/ServiceInstance';
 import { MinIOClient } from '../../thirdparty/minio/client';
-import { ErrorCode } from '../../utils/error/error.code';
+import { BadRequestErrorCode, ErrorCode } from '../../utils/error/error.code';
 import { NewsFeedApp } from '../news-feed/news-feed.app';
 import { RegistrationApp } from '../registration/registration.app';
 import { ServiceDefinitionDomain } from '../service/definition/service-definition.domain';
@@ -42,6 +43,9 @@ import {
   CUSTOM_DASHBOARD_METADATA_KEYS,
   OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
 } from '../shareable-resource/opencti/custom-dashboard/custom-dashboard.model';
+import { IngestManifestDomain } from '../shareable-resource/opencti/integration/ingest-manifest/ingest-manifest.domain';
+import { ManifestInformation } from '../shareable-resource/opencti/integration/ingest-manifest/ingest-manifest.model';
+import sampleExtractedManifest from '../shareable-resource/opencti/integration/ingest-manifest/test/sample-extracted-manifest.json';
 import {
   OPENCTI_INTEGRATION_DOCUMENT_TYPE,
   ThirdPartyIntegration,
@@ -132,6 +136,493 @@ describe('documentApp', () => {
 
   afterAll(async () => {
     vi.useRealTimers();
+  });
+
+  describe('hunt packs', () => {
+    const huntPackContent = {
+      type: 'bundle',
+      id: 'bundle--1d4f7c2b-6a3e-4f5b-9c8d-0e1f2a3b4c5d',
+      objects: [
+        {
+          type: 'attack-pattern',
+          id: 'attack-pattern--1',
+          x_mitre_id: 'T1059.001',
+        },
+        {
+          type: 'hunt',
+          spec_version: '2.1',
+          id: 'hunt--3f9b2a64-8d1c-4e57-9a0b-6c2d1e4f5a73',
+          name: 'Encoded PowerShell',
+          technique_refs: ['attack-pattern--1'],
+          native_queries: [
+            { platform: 'splunk', language: 'spl', query: 'index=main' },
+          ],
+        },
+      ],
+    };
+    const huntPackFile = (jsonContent: Record<string, unknown>) => ({
+      ...minioFileMock,
+      fileName: 'hunt-pack.json',
+      mimeType: 'application/json',
+      jsonContent,
+    });
+
+    it('should store the summary extracted from the hunt pack and the OpenCTI version floor', async () => {
+      // Given
+      vi.spyOn(DocumentUploadsHelper, 'processUploads').mockResolvedValueOnce([
+        huntPackFile(huntPackContent),
+      ]);
+
+      // When
+      const result = await DocumentApp.createDocument({
+        input: { ...documentData, slug: `hunt-pack-${uuidv4()}` },
+        metadata: [
+          { key: DocumentMetadataKeyCode.ProductVersion, value: '6.8.0' },
+          { key: DocumentMetadataKeyCode.HuntCount, value: '999' },
+        ],
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        sourceDocument: mockUpload,
+      });
+
+      // Then
+      expect(result).toMatchObject({
+        product_version: '7.261003.0',
+        hunt_count: '1',
+        attack_techniques: '["T1059.001"]',
+        hunt_platforms: '["splunk"]',
+        service_instance_id: SERVICES.INSTANCES.HUNT_PACKS.ID,
+      });
+    });
+
+    it('should reject a file that is not a hunt pack and delete it from storage', async () => {
+      // Given
+      vi.spyOn(DocumentUploadsHelper, 'processUploads').mockResolvedValueOnce([
+        huntPackFile({ type: 'bundle', objects: [] }),
+      ]);
+      const slug = `not-a-hunt-pack-${uuidv4()}`;
+
+      // When
+      const call = DocumentApp.createDocument({
+        input: { ...documentData, slug },
+        metadata: [
+          { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+        ],
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        sourceDocument: mockUpload,
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(BadRequestErrorCode.HuntPackEmpty);
+      expect(MinIOClient.deleteFile).toHaveBeenCalledWith(
+        minioFileMock.minioName
+      );
+      expect(await TestHelper.document.load({ slug })).toBeUndefined();
+    });
+
+    it('should store no logo or image when the hunt pack is rejected', async () => {
+      // Given a rejected pack submitted with a logo and an image
+      const processUploadsSpy = vi
+        .spyOn(DocumentUploadsHelper, 'processUploads')
+        .mockResolvedValueOnce([huntPackFile({ type: 'bundle', objects: [] })]);
+
+      // When
+      const call = DocumentApp.createDocument({
+        input: { ...documentData, slug: `rejected-pack-${uuidv4()}` },
+        metadata: [
+          { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+        ],
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        sourceDocument: mockUpload,
+        logo: mockUpload,
+        images: [mockUpload],
+      });
+
+      // Then only the pack file was stored, and it was deleted
+      await expect(call).rejects.toThrow(BadRequestErrorCode.HuntPackEmpty);
+      expect(processUploadsSpy).toHaveBeenCalledTimes(1);
+      expect(MinIOClient.deleteFile).toHaveBeenCalledExactlyOnceWith(
+        minioFileMock.minioName
+      );
+    });
+
+    it('should delete every stored file when the creation fails after the uploads', async () => {
+      // Given a request whose document cannot be saved
+      let storedCount = 0;
+      vi.spyOn(DocumentUploadsHelper, 'processUploads').mockImplementation(
+        async (uploads) => {
+          if (!uploads) return [];
+          const uploadList = Array.isArray(uploads) ? uploads : [uploads];
+          return uploadList.map(() => {
+            storedCount += 1;
+            return {
+              ...huntPackFile(huntPackContent),
+              minioName: `stored-${storedCount}`,
+            };
+          });
+        }
+      );
+      vi.spyOn(DocumentDomain, 'createDocument').mockRejectedValueOnce(
+        new Error('DOCUMENT_INSERT_FAILED')
+      );
+
+      // When
+      const call = DocumentApp.createDocument({
+        input: { ...documentData, slug: `failed-insert-${uuidv4()}` },
+        metadata: [
+          { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+        ],
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        sourceDocument: mockUpload,
+        logo: mockUpload,
+        images: [mockUpload],
+      });
+
+      // Then the pack file, the image and the logo are all deleted
+      await expect(call).rejects.toThrow('DOCUMENT_INSERT_FAILED');
+      expect(
+        vi
+          .mocked(MinIOClient.deleteFile)
+          .mock.calls.map(([minioName]) => minioName)
+          .sort()
+      ).toEqual(['stored-1', 'stored-2', 'stored-3']);
+    });
+
+    describe('when a failed transaction may have been committed', () => {
+      const storeNumberedFiles = () => {
+        let storedCount = 0;
+        vi.spyOn(DocumentUploadsHelper, 'processUploads').mockImplementation(
+          async (uploads) => {
+            if (!uploads) return [];
+            const uploadList = Array.isArray(uploads) ? uploads : [uploads];
+            return uploadList.map(() => {
+              storedCount += 1;
+              return {
+                ...huntPackFile(huntPackContent),
+                minioName: `stored-${storedCount}`,
+              };
+            });
+          }
+        );
+      };
+      const createHuntPack = (slug: string) =>
+        DocumentApp.createDocument({
+          input: { ...documentData, slug },
+          metadata: [
+            {
+              key: DocumentMetadataKeyCode.ProductVersion,
+              value: '7.261010.0',
+            },
+          ],
+          serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+          sourceDocument: mockUpload,
+          logo: mockUpload,
+          images: [mockUpload],
+        });
+
+      it('should keep the files of a creation whose documents refer to them', async () => {
+        // Given a creation that reports an error once its rows are committed
+        storeNumberedFiles();
+        vi.spyOn(DocumentDomain, 'createDocument').mockRejectedValueOnce(
+          new Error('Connection terminated unexpectedly')
+        );
+        const lookup = vi
+          .spyOn(DocumentDomain, 'loadReferencedMinioNames')
+          .mockResolvedValueOnce(['stored-1', 'stored-2', 'stored-3']);
+
+        // When
+        const call = createHuntPack(`ambiguous-create-${uuidv4()}`);
+
+        // Then no file a saved document refers to is deleted
+        await expect(call).rejects.toThrow(
+          'Connection terminated unexpectedly'
+        );
+        expect(lookup).toHaveBeenCalledExactlyOnceWith([
+          'stored-1',
+          'stored-2',
+          'stored-3',
+        ]);
+        expect(MinIOClient.deleteFile).not.toHaveBeenCalled();
+      });
+
+      it('should keep every file of a failed creation when it cannot read whether it was saved', async () => {
+        // Given a failed creation, and a database that cannot be read afterwards
+        storeNumberedFiles();
+        vi.spyOn(DocumentDomain, 'createDocument').mockRejectedValueOnce(
+          new Error('Connection terminated unexpectedly')
+        );
+        vi.spyOn(
+          DocumentDomain,
+          'loadReferencedMinioNames'
+        ).mockRejectedValueOnce(new Error('Connection refused'));
+
+        // When
+        const call = createHuntPack(`unreadable-create-${uuidv4()}`);
+
+        // Then the original error is reported and every file is kept
+        await expect(call).rejects.toThrow(
+          'Connection terminated unexpectedly'
+        );
+        expect(MinIOClient.deleteFile).not.toHaveBeenCalled();
+      });
+
+      it('should keep the replacement file of an update whose document refers to it', async () => {
+        // Given a hunt pack, and an update of its file that reports an error
+        // once its rows are committed
+        const metadata = [
+          {
+            key: DocumentMetadataKeyCode.ProductVersion,
+            value: '7.261010.0',
+          },
+        ];
+        const slug = `ambiguous-update-${uuidv4()}`;
+        vi.spyOn(DocumentUploadsHelper, 'processUploads').mockImplementation(
+          async (uploads) =>
+            uploads
+              ? [
+                  {
+                    ...huntPackFile(huntPackContent),
+                    minioName: 'previous-pack.json',
+                  },
+                ]
+              : []
+        );
+        const huntPack = await DocumentApp.createDocument({
+          input: { ...documentData, slug },
+          metadata,
+          serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+          sourceDocument: mockUpload,
+        });
+        vi.spyOn(DocumentUploadsHelper, 'processUploads').mockImplementation(
+          async (uploads) =>
+            uploads
+              ? [
+                  {
+                    ...huntPackFile(huntPackContent),
+                    minioName: 'replacement-pack.json',
+                  },
+                ]
+              : []
+        );
+        vi.spyOn(DocumentDomain, 'updateDocument').mockRejectedValueOnce(
+          new Error('Connection terminated unexpectedly')
+        );
+        vi.spyOn(
+          DocumentDomain,
+          'loadReferencedMinioNames'
+        ).mockResolvedValueOnce(['replacement-pack.json']);
+
+        // When
+        const call = DocumentApp.updateDocument({
+          parentDocumentId: huntPack.id,
+          serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+          metadata,
+          input: { ...documentData, slug },
+          existingImageIds: [],
+          sourceDocument: mockUpload,
+        });
+
+        // Then neither the replacement nor the replaced file is deleted
+        await expect(call).rejects.toThrow(
+          'Connection terminated unexpectedly'
+        );
+        expect(MinIOClient.deleteFile).not.toHaveBeenCalled();
+      });
+
+      it('should read which stored files a document or a document image refers to', async () => {
+        // Given a document that refers to one stored file
+        const document = await TestHelper.document.create({
+          name: 'referenced-file',
+          slug: `referenced-file-${uuidv4()}`,
+          minio_name: `referenced-${uuidv4()}`,
+        });
+
+        // When
+        const referenced = await DocumentDomain.loadReferencedMinioNames([
+          document.minio_name!,
+          `unreferenced-${uuidv4()}`,
+        ]);
+
+        // Then
+        expect(referenced).toEqual([document.minio_name]);
+      });
+    });
+
+    it('should store no logo or image when the hunt pack file is missing', async () => {
+      // Given a request with a logo and an image but no pack file
+      const processUploadsSpy = vi
+        .spyOn(DocumentUploadsHelper, 'processUploads')
+        .mockImplementation(async (uploads) =>
+          uploads ? [minioFileMock] : []
+        );
+
+      // When
+      const call = DocumentApp.createDocument({
+        input: { ...documentData, slug: `missing-pack-${uuidv4()}` },
+        metadata: [
+          { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+        ],
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        logo: mockUpload,
+        images: [mockUpload],
+      });
+
+      // Then the request is rejected before any file is stored
+      await expect(call).rejects.toThrow(ErrorCode.DocumentFileMissing);
+      expect(processUploadsSpy).toHaveBeenCalledExactlyOnceWith(
+        undefined,
+        SERVICES.INSTANCES.HUNT_PACKS.ID,
+        expect.objectContaining({
+          json: true,
+          limit: expect.objectContaining({ maxBytes: 20 * 1024 * 1024 }),
+        })
+      );
+    });
+
+    it('should delete the previous hunt pack file once its replacement is committed', async () => {
+      // Given a hunt pack stored with a first file
+      const storePackAs = (minioName: string) =>
+        vi
+          .spyOn(DocumentUploadsHelper, 'processUploads')
+          .mockImplementation(async (uploads) =>
+            uploads ? [{ ...huntPackFile(huntPackContent), minioName }] : []
+          );
+      const metadata = [
+        { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+      ];
+      const slug = `replaced-pack-${uuidv4()}`;
+      storePackAs('previous-pack.json');
+      const huntPack = await DocumentApp.createDocument({
+        input: { ...documentData, slug },
+        metadata,
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        sourceDocument: mockUpload,
+      });
+      storePackAs('replacement-pack.json');
+
+      // When its file is replaced
+      const result = await DocumentApp.updateDocument({
+        parentDocumentId: huntPack.id,
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        metadata,
+        input: { ...documentData, slug },
+        existingImageIds: [],
+        sourceDocument: mockUpload,
+      });
+
+      // Then the document points to the new file and only the previous one is deleted
+      expect(result.minio_name).toBe('replacement-pack.json');
+      expect(MinIOClient.deleteFile).toHaveBeenCalledExactlyOnceWith(
+        'previous-pack.json'
+      );
+    });
+
+    it('should delete the file each of two concurrent replacements replaced', async () => {
+      // Given a hunt pack stored with a first file
+      const metadata = [
+        { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+      ];
+      const slug = `concurrent-pack-${uuidv4()}`;
+      const storedNames = ['original-pack.json', 'first.json', 'second.json'];
+      vi.spyOn(DocumentUploadsHelper, 'processUploads').mockImplementation(
+        async (uploads) => {
+          if (!uploads) return [];
+          const uploadList = Array.isArray(uploads) ? uploads : [uploads];
+          return uploadList.map(() => ({
+            ...huntPackFile(huntPackContent),
+            minioName: storedNames.shift()!,
+          }));
+        }
+      );
+      const huntPack = await DocumentApp.createDocument({
+        input: { ...documentData, slug },
+        metadata,
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        sourceDocument: mockUpload,
+      });
+      const replace = () =>
+        DocumentApp.updateDocument({
+          parentDocumentId: huntPack.id,
+          serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+          metadata,
+          input: { ...documentData, slug },
+          existingImageIds: [],
+          sourceDocument: mockUpload,
+        });
+
+      // When two replacements run at the same time
+      await Promise.all([replace(), replace()]);
+
+      // Then only the file both replacements left behind remains stored
+      const stored = await TestHelper.document.load({ slug });
+      const deleted = vi
+        .mocked(MinIOClient.deleteFile)
+        .mock.calls.map(([minioName]) => minioName);
+      expect(['first.json', 'second.json']).toContain(stored?.minio_name);
+      expect(deleted.sort()).toEqual(
+        ['original-pack.json', 'first.json', 'second.json']
+          .filter((name) => name !== stored?.minio_name)
+          .sort()
+      );
+    });
+
+    it('should keep the summary of the new file when an edit without file runs alongside its replacement', async () => {
+      // Given a hunt pack of one hunt, and a replacement file of two hunts
+      const metadata = [
+        { key: DocumentMetadataKeyCode.ProductVersion, value: '7.261010.0' },
+      ];
+      const slug = `edited-pack-${uuidv4()}`;
+      const [, firstHunt] = huntPackContent.objects;
+      const twoHuntsContent = {
+        ...huntPackContent,
+        objects: [
+          ...huntPackContent.objects,
+          {
+            ...firstHunt,
+            id: 'hunt--7d2e4b18-3c5a-4f69-8b1e-2a9c0d6f4e85',
+            name: 'Encoded PowerShell from Office',
+          },
+        ],
+      };
+      const storedFiles = [
+        { ...huntPackFile(huntPackContent), minioName: 'one-hunt.json' },
+        { ...huntPackFile(twoHuntsContent), minioName: 'two-hunts.json' },
+      ];
+      vi.spyOn(DocumentUploadsHelper, 'processUploads').mockImplementation(
+        async (uploads) => {
+          if (!uploads) return [];
+          const uploadList = Array.isArray(uploads) ? uploads : [uploads];
+          return uploadList.map(() => storedFiles.shift()!);
+        }
+      );
+      const huntPack = await DocumentApp.createDocument({
+        input: { ...documentData, slug },
+        metadata,
+        serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+        sourceDocument: mockUpload,
+      });
+      const update = (sourceDocument?: typeof mockUpload) =>
+        DocumentApp.updateDocument({
+          parentDocumentId: huntPack.id,
+          serviceInstanceId: SERVICES.INSTANCES.HUNT_PACKS.ID,
+          metadata,
+          input: { ...documentData, slug },
+          existingImageIds: [],
+          sourceDocument,
+        });
+
+      // When the file is replaced while another edit brings no file
+      await Promise.all([update(mockUpload), update()]);
+
+      // Then the summary describes the file the hunt pack points to
+      const stored = await TestHelper.document.load({ slug });
+      expect(stored?.minio_name).toBe('two-hunts.json');
+      expect(
+        await DocumentMetadataDomain.loadMetadataValueByKey(
+          huntPack.id,
+          DocumentMetadataKeyCode.HuntCount
+        )
+      ).toBe('2');
+    });
   });
 
   describe('createDocument', () => {
@@ -784,6 +1275,300 @@ describe('documentApp', () => {
         manager_supported: true,
         playbook_supported: false,
         product_version: '2.0.0',
+      });
+    });
+
+    describe('connector metadata written by catalog ingestion', () => {
+      const connectorFormMetadata = [
+        {
+          key: DocumentMetadataKeyCode.IntegrationType,
+          value: IntegrationType.Connector,
+        },
+        { key: DocumentMetadataKeyCode.ProductVersion, value: '1.0.0' },
+        { key: DocumentMetadataKeyCode.Verified, value: 'true' },
+        { key: DocumentMetadataKeyCode.ManagerSupported, value: 'true' },
+        { key: DocumentMetadataKeyCode.PlaybookSupported, value: 'false' },
+        {
+          key: DocumentMetadataKeyCode.ContainerImage,
+          value: 'opencti/connector-splunk-hunt',
+        },
+        { key: DocumentMetadataKeyCode.SourceCode, value: 'source_code_value' },
+      ];
+
+      const loadValue = (documentId: Document['id'], key: string) =>
+        DocumentMetadataDomain.loadMetadataValueByKey(documentId, key);
+
+      it('keeps the connector type and the hunt floor when the connector form is saved', async () => {
+        // Given
+        const ingested = await DocumentApp.createDocument({
+          input: { ...documentData, slug: `hunt-edit-${uuidv4()}` },
+          metadata: [
+            ...connectorFormMetadata,
+            {
+              key: DocumentMetadataKeyCode.MinimumDeployableVersion,
+              value: '7.261003.0',
+            },
+            { key: DocumentMetadataKeyCode.ImageType, value: 'INTERNAL_HUNT' },
+          ],
+          serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        });
+
+        // When
+        const result = await DocumentApp.updateDocument({
+          parentDocumentId: ingested.id,
+          serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+          metadata: [
+            ...connectorFormMetadata,
+            {
+              key: DocumentMetadataKeyCode.MinimumDeployableVersion,
+              value: '7.260900.0',
+            },
+            {
+              key: DocumentMetadataKeyCode.DatasheetUrl,
+              value: 'https://example.com/datasheet',
+            },
+          ],
+          input: documentUpdateData,
+          existingImageIds: [],
+        });
+
+        // Then
+        expect(
+          await loadValue(result.id, DocumentMetadataKeyCode.ImageType)
+        ).toBe('INTERNAL_HUNT');
+        expect(
+          await loadValue(
+            result.id,
+            DocumentMetadataKeyCode.MinimumDeployableVersion
+          )
+        ).toBe('7.261003.0');
+        expect(
+          await loadValue(result.id, DocumentMetadataKeyCode.DatasheetUrl)
+        ).toBe('https://example.com/datasheet');
+      });
+
+      it('keeps the hunt type and its floor when an edit submits another connector type and a lower minimum', async () => {
+        // Given
+        const ingested = await DocumentApp.createDocument({
+          input: { ...documentData, slug: `hunt-type-edit-${uuidv4()}` },
+          metadata: [
+            ...connectorFormMetadata,
+            {
+              key: DocumentMetadataKeyCode.MinimumDeployableVersion,
+              value: '7.261003.0',
+            },
+            {
+              key: DocumentMetadataKeyCode.MinimumDeployableVersionPadded,
+              value: '007.261003.000',
+            },
+            { key: DocumentMetadataKeyCode.ImageType, value: 'INTERNAL_HUNT' },
+          ],
+          serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        });
+
+        // When
+        const result = await DocumentApp.updateDocument({
+          parentDocumentId: ingested.id,
+          serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+          metadata: [
+            ...connectorFormMetadata,
+            {
+              key: DocumentMetadataKeyCode.ImageType,
+              value: 'EXTERNAL_IMPORT',
+            },
+            {
+              key: DocumentMetadataKeyCode.MinimumDeployableVersion,
+              value: '7.260900.0',
+            },
+            {
+              key: DocumentMetadataKeyCode.MinimumDeployableVersionPadded,
+              value: '007.260900.000',
+            },
+          ],
+          input: documentUpdateData,
+          existingImageIds: [],
+        });
+
+        // Then
+        expect(
+          await loadValue(result.id, DocumentMetadataKeyCode.ImageType)
+        ).toBe('INTERNAL_HUNT');
+        expect(
+          await loadValue(
+            result.id,
+            DocumentMetadataKeyCode.MinimumDeployableVersion
+          )
+        ).toBe('7.261003.0');
+        expect(
+          await loadValue(
+            result.id,
+            DocumentMetadataKeyCode.MinimumDeployableVersionPadded
+          )
+        ).toBe('007.261003.000');
+      });
+
+      it('keeps the manifest fragment metadata and realigns the padded minimum version', async () => {
+        // Given
+        const ingested = await DocumentApp.createDocument({
+          input: { ...documentData, slug: `fragment-edit-${uuidv4()}` },
+          metadata: [
+            ...connectorFormMetadata,
+            {
+              key: DocumentMetadataKeyCode.MinimumDeployableVersion,
+              value: '6.8.0',
+            },
+            {
+              key: DocumentMetadataKeyCode.MinimumDeployableVersionPadded,
+              value: '006.000008.000',
+            },
+            {
+              key: DocumentMetadataKeyCode.ImageType,
+              value: 'EXTERNAL_IMPORT',
+            },
+            {
+              key: DocumentMetadataKeyCode.ConfigSchema,
+              value: '{"properties":{}}',
+            },
+            {
+              key: DocumentMetadataKeyCode.ManifestFragmentId,
+              value: 'fragment-id',
+            },
+          ],
+          serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        });
+
+        // When
+        const result = await DocumentApp.updateDocument({
+          parentDocumentId: ingested.id,
+          serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+          metadata: [
+            ...connectorFormMetadata,
+            {
+              key: DocumentMetadataKeyCode.MinimumDeployableVersion,
+              value: '6.9.0',
+            },
+          ],
+          input: documentUpdateData,
+          existingImageIds: [],
+        });
+
+        // Then
+        expect(
+          await loadValue(result.id, DocumentMetadataKeyCode.ImageType)
+        ).toBe('EXTERNAL_IMPORT');
+        expect(
+          await loadValue(result.id, DocumentMetadataKeyCode.ConfigSchema)
+        ).toBe('{"properties":{}}');
+        expect(
+          await loadValue(result.id, DocumentMetadataKeyCode.ManifestFragmentId)
+        ).toBe('fragment-id');
+        expect(
+          await loadValue(
+            result.id,
+            DocumentMetadataKeyCode.MinimumDeployableVersion
+          )
+        ).toBe('6.9.0');
+        expect(
+          await loadValue(
+            result.id,
+            DocumentMetadataKeyCode.MinimumDeployableVersionPadded
+          )
+        ).toBe('006.000009.000');
+      });
+
+      it('keeps the connector type of an ingestion that runs while the connector form is saved', async () => {
+        // Given an external import connector, and a connector form save held
+        // right before its write
+        const slug = `interleaved-edit-${uuidv4()}`;
+        const ingested = await DocumentApp.createDocument({
+          input: { ...documentData, slug },
+          metadata: [
+            ...connectorFormMetadata,
+            {
+              key: DocumentMetadataKeyCode.MinimumDeployableVersion,
+              value: '7.260900.0',
+            },
+            {
+              key: DocumentMetadataKeyCode.ImageType,
+              value: 'EXTERNAL_IMPORT',
+            },
+          ],
+          serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+        });
+        const writeDocument = DocumentDomain.updateDocument;
+        let reachWrite = () => {};
+        let releaseWrite = () => {};
+        const writeReached = new Promise<void>((resolve) => {
+          reachWrite = resolve;
+        });
+        const writeReleased = new Promise<void>((resolve) => {
+          releaseWrite = resolve;
+        });
+        vi.spyOn(DocumentDomain, 'updateDocument').mockImplementationOnce(
+          async (...args) => {
+            reachWrite();
+            await writeReleased;
+            return writeDocument(...args);
+          }
+        );
+        const save = DocumentApp.updateDocument({
+          parentDocumentId: ingested.id,
+          serviceInstanceId: SERVICES.INSTANCES.INTEGRATIONS.ID,
+          metadata: [
+            ...connectorFormMetadata,
+            {
+              key: DocumentMetadataKeyCode.MinimumDeployableVersion,
+              value: '7.260900.0',
+            },
+          ],
+          input: documentUpdateData,
+          existingImageIds: [],
+        });
+        await writeReached;
+
+        // When the catalog ingestion turns it into a hunt connector meanwhile
+        const ingestion = IngestManifestDomain.upsertConnectors([
+          {
+            ...(sampleExtractedManifest[0] as ManifestInformation),
+            slug,
+            image_type: 'INTERNAL_HUNT',
+            manager_supported: true,
+            minimum_deployable_version: undefined,
+            use_cases: [],
+            solution_categories: [],
+          },
+        ]);
+        let ingestionSettled = false;
+        const settle = () => {
+          ingestionSettled = true;
+        };
+        ingestion.then(settle, settle);
+        const countAwaitedLocks = async (): Promise<number> => {
+          const { rows } = await database.raw(
+            'SELECT count(*)::int AS count FROM pg_locks WHERE NOT granted'
+          );
+          return rows[0].count;
+        };
+        // Polled without timers: an earlier test of this file installs fake timers
+        const ingestionFinishedOrWaitsForLock = async () => {
+          while (!ingestionSettled) {
+            if ((await countAwaitedLocks()) > 0) return;
+          }
+        };
+        await ingestionFinishedOrWaitsForLock();
+        releaseWrite();
+        await Promise.all([save, ingestion]);
+
+        // Then the save did not restore the type and minimum it read before
+        expect(
+          await loadValue(ingested.id, DocumentMetadataKeyCode.ImageType)
+        ).toBe('INTERNAL_HUNT');
+        expect(
+          await loadValue(
+            ingested.id,
+            DocumentMetadataKeyCode.MinimumDeployableVersion
+          )
+        ).toBe('7.261003.0');
       });
     });
 

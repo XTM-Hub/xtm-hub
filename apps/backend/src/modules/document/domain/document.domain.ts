@@ -257,6 +257,26 @@ export const DocumentDomain = {
       .forUpdate();
   },
 
+  /** Locks the document row until the transaction ends and returns its file. */
+  lockDocumentFile: async (id: string): Promise<string | null> => {
+    const [document] = await db<DocumentModel>('Document')
+      .where('id', '=', id)
+      .select('minio_name')
+      .forUpdate();
+    return document?.minio_name ?? null;
+  },
+
+  /** The stored files, among `minioNames`, that a document or a document image refers to. */
+  loadReferencedMinioNames: async (minioNames: string[]): Promise<string[]> => {
+    if (minioNames.length === 0) {
+      return [];
+    }
+    const documents = await db<DocumentModel>('Document')
+      .whereIn('minio_name', minioNames)
+      .distinct('minio_name');
+    return documents.map(({ minio_name }) => minio_name as string);
+  },
+
   loadDocumentsByMetadata: async (
     key: string,
     value: string,

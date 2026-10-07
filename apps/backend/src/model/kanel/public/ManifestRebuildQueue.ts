@@ -20,6 +20,10 @@ export default interface ManifestRebuildQueue {
   status: ManifestRebuildQueueStatus;
 
   created_at: Date;
+
+  claimed_at: Date | null;
+
+  claim_id: string | null;
 }
 
 /** Represents the initializer for the table public.ManifestRebuildQueue */
@@ -37,6 +41,10 @@ export interface ManifestRebuildQueueInitializer {
 
   /** Default value: CURRENT_TIMESTAMP */
   created_at?: Date;
+
+  claimed_at?: Date | null;
+
+  claim_id?: string | null;
 }
 
 /** Represents the mutator for the table public.ManifestRebuildQueue */
@@ -52,4 +60,8 @@ export interface ManifestRebuildQueueMutator {
   status?: ManifestRebuildQueueStatus;
 
   created_at?: Date;
+
+  claimed_at?: Date | null;
+
+  claim_id?: string | null;
 }

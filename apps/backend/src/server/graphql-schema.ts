@@ -28,6 +28,7 @@ import manifestResolver from '../modules/shareable-resource/manifest/manifest.re
 import openAEVScenariosResolver from '../modules/shareable-resource/openaev/scenario/scenario.resolver';
 import customDashboardsResolver from '../modules/shareable-resource/opencti/custom-dashboard/custom-dashboard.resolver';
 import customViewsResolver from '../modules/shareable-resource/opencti/custom-view/custom-view.resolver';
+import openCTIHuntPacksResolver from '../modules/shareable-resource/opencti/hunt-pack/hunt-pack.resolver';
 import ingestManifestResolver from '../modules/shareable-resource/opencti/integration/ingest-manifest/ingest-manifest.resolver';
 import integrationsResolver from '../modules/shareable-resource/opencti/integration/integration.resolver';
 import openCTIPlaybooksResolver from '../modules/shareable-resource/opencti/playbook/playbook.resolver';
@@ -72,6 +73,7 @@ const resolvers = mergeResolvers([
   customViewsResolver,
   openAEVScenariosResolver,
   openCTIPlaybooksResolver,
+  openCTIHuntPacksResolver,
   registrationResolver,
   telemetryResolver,
   deploymentResolver,

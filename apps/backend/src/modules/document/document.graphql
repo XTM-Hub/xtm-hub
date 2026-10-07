@@ -43,6 +43,9 @@ enum DocumentMetadataKeyCode {
   solution_categories
   license_type
   contact
+  hunt_count
+  attack_techniques
+  hunt_platforms
 }
 
 type ShareableResource {

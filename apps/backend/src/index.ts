@@ -248,7 +248,11 @@ app.use(function (req, res, next) {
 });
 const httpServer = createServer(app);
 const schema = createSchema();
-app.use(graphqlUploadExpress());
+// The parser runs before the operation is known, so it bounds the files of every
+// library at the request body size of the ingress (chart/templates/ingress.yaml);
+// a library with a lower limit (hunt packs) also enforces it while reading the file.
+const GRAPHQL_UPLOAD_MAX_FILE_BYTES = 256 * 1024 * 1024;
+app.use(graphqlUploadExpress({ maxFileSize: GRAPHQL_UPLOAD_MAX_FILE_BYTES }));
 
 if (
   !['production', 'staging', 'development'].includes(process.env.NODE_ENV ?? '')
