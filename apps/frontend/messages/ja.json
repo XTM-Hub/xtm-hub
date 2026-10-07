@@ -1193,6 +1193,7 @@
       "UnavailableDeployments": "このコネクタは自動デプロイでは使用できません。"
     },
     "CreationStatus": "作成ステータス",
+    "FilterByService": "サービスで絞り込む",
     "Form": {
       "AddImage": "画像を追加",
       "Author": "作成者",

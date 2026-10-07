@@ -15,8 +15,17 @@ import { useTranslate } from '@/hooks/use-translate';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { APP_PATH } from '@/utils/path/constant';
+import {
+  Combobox,
+  ComboboxClear,
+  ComboboxContent,
+  ComboboxControls,
+  ComboboxField,
+  ComboboxInput,
+  ComboboxTrigger,
+} from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
-import { Combobox, DataTable } from '@filigran/ui';
+import { DataTable } from '@filigran/ui';
 import { serviceList_fragment$data } from '@generated/serviceList_fragment.graphql';
 import { serviceQuery } from '@generated/serviceQuery.graphql';
 import { servicesList_services$key } from '@generated/servicesList_services.graphql';
@@ -138,6 +147,8 @@ const AdminServiceTab = ({ serviceData, refetch }: AdminServiceTabProps) => {
     DEBOUNCE_TIME
   );
 
+  const label = t('Service.FilterByService');
+
   return (
     <>
       <DataTable
@@ -151,14 +162,32 @@ const AdminServiceTab = ({ serviceData, refetch }: AdminServiceTabProps) => {
               placeholder={t('Service.SearchServices')}
               onChange={debounceHandleInput}
             />
-            <Combobox
-              dataTab={getServiceDefinitionData}
-              order={'Filter by service'}
-              placeholder={'Choose a value'}
-              emptyCommand={'Not found'}
-              onValueChange={handleIdentifierChange}
-              value={selectedValue}
-            />
+            <Combobox<{ value: string; label: string }>
+              labelPosition="none"
+              options={getServiceDefinitionData}
+              value={selectedValue ?? null}
+              onValueChange={(next) =>
+                handleIdentifierChange(
+                  (next as { value: string; label: string } | null) ?? undefined
+                )
+              }
+              getOptionLabel={(option) => option.label}
+              isOptionEqualToValue={(a, b) => a.value === b.value}>
+              <ComboboxField>
+                <ComboboxInput
+                  aria-label={label}
+                  placeholder={label}
+                />
+                <ComboboxControls>
+                  <ComboboxClear />
+                  <ComboboxTrigger />
+                </ComboboxControls>
+              </ComboboxField>
+              <ComboboxContent
+                emptyMessage={t('Utils.NotFound')}
+                listAriaLabel={label}
+              />
+            </Combobox>
           </div>
         }
         tableOptions={{

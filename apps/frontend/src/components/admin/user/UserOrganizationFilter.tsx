@@ -1,6 +1,15 @@
 import { getOrganizations } from '@/components/organization/Organization.service';
 import { useTranslate } from '@/hooks/use-translate';
-import { Combobox } from '@filigran/ui/clients';
+import {
+  Combobox,
+  ComboboxClear,
+  ComboboxContent,
+  ComboboxControls,
+  ComboboxField,
+  ComboboxInput,
+  ComboboxTrigger,
+} from '@filigran/design-system';
+import { useState } from 'react';
 
 interface OrganizationFilterOption {
   id: string;
@@ -33,9 +42,22 @@ export const UserOrganizationFilter = ({
       .filter(({ personal_space }) => !personal_space),
   ];
 
-  const selectedOrganization = organizations.find(
+  const fetchedSelection = organizations.find(
     ({ id }) => id !== '' && id === value
   );
+  // A search can return a list without the selected organization; dropping it
+  // then would wipe the text being typed and the clear control with it.
+  const [lastSelection, setLastSelection] = useState(fetchedSelection);
+  if (
+    fetchedSelection &&
+    (fetchedSelection.id !== lastSelection?.id ||
+      fetchedSelection.name !== lastSelection.name)
+  ) {
+    setLastSelection(fetchedSelection);
+  }
+  const selectedOrganization =
+    fetchedSelection ??
+    (lastSelection?.id === value ? lastSelection : undefined);
 
   const handleOnValueChange = (
     organization: OrganizationFilterOption | undefined
@@ -44,18 +66,38 @@ export const UserOrganizationFilter = ({
     onChange(organization?.id || undefined);
   };
 
+  const label = t('UserActions.Organization');
+
   return (
-    <Combobox
+    <Combobox<OrganizationFilterOption>
       className="w-[200px]"
-      dataTab={organizations}
-      order={t('UserActions.Organization')}
-      placeholder={t('UserActions.Organization')}
-      emptyCommand={t('Utils.NotFound')}
-      value={selectedOrganization}
-      onValueChange={handleOnValueChange}
-      keyValue={'name'}
-      keyLabel={'name'}
-      onInputChange={(searchTerm) => refetch({ searchTerm })}
-    />
+      labelPosition="none"
+      options={organizations}
+      value={selectedOrganization ?? null}
+      onValueChange={(next) =>
+        handleOnValueChange(
+          (next as OrganizationFilterOption | null) ?? undefined
+        )
+      }
+      onInputChange={(searchTerm, { cause }) => {
+        if (cause === 'type') refetch({ searchTerm });
+      }}
+      getOptionLabel={(organization) => organization.name}
+      isOptionEqualToValue={(a, b) => a.id === b.id}>
+      <ComboboxField>
+        <ComboboxInput
+          aria-label={label}
+          placeholder={label}
+        />
+        <ComboboxControls>
+          <ComboboxClear />
+          <ComboboxTrigger />
+        </ComboboxControls>
+      </ComboboxField>
+      <ComboboxContent
+        emptyMessage={t('Utils.NotFound')}
+        listAriaLabel={label}
+      />
+    </Combobox>
   );
 };

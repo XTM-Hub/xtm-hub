@@ -10,9 +10,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  FormControl,
   FormItem,
-  FormLabel,
   FormMessage,
 } from '@filigran/ui';
 import { useContext } from 'react';
@@ -67,13 +65,11 @@ export const ProfileFormEdit = ({ onSubmit }: ProfileFormEditProps) => {
             country: {
               fieldType: ({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('UserForm.Country')}</FormLabel>
-                  <FormControl>
-                    <CountryCombobox
-                      value={field.value && { name: field.value }}
-                      onValueChange={(value) => field.onChange(value?.name)}
-                    />
-                  </FormControl>
+                  <CountryCombobox
+                    label={t('UserForm.Country')}
+                    value={field.value ? { name: field.value } : undefined}
+                    onValueChange={(value) => field.onChange(value?.name)}
+                  />
                   <FormMessage />
                 </FormItem>
               ),

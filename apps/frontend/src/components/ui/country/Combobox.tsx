@@ -1,14 +1,29 @@
 import countryData from '@/components/ui/country/data.json';
 import { useTranslate } from '@/hooks/use-translate';
-import { Combobox } from '@filigran/ui';
+import {
+  Combobox,
+  ComboboxClear,
+  ComboboxContent,
+  ComboboxControls,
+  ComboboxField,
+  ComboboxInput,
+  ComboboxLabel,
+  ComboboxTrigger,
+} from '@filigran/design-system';
 import { useMemo } from 'react';
 
+interface CountryOption {
+  name: string;
+}
+
 interface CountryComboboxProps {
-  value?: { name: string } | undefined;
-  onValueChange: (value: { name: string } | undefined) => void;
+  label: string;
+  value?: CountryOption | undefined;
+  onValueChange: (value: CountryOption | undefined) => void;
 }
 
 export const CountryCombobox = ({
+  label,
   value,
   onValueChange,
 }: CountryComboboxProps) => {
@@ -19,16 +34,26 @@ export const CountryCombobox = ({
   }, [countries]);
 
   return (
-    <Combobox
-      dataTab={dataTab}
-      placeholder={t('CountryComboBox.Placeholder')}
-      order={t('CountryComboBox.Placeholder')}
-      onValueChange={onValueChange}
-      onInputChange={() => {}}
-      emptyCommand={t('Utils.NotFound')}
-      keyValue={'name'}
-      keyLabel={'name'}
-      value={value}
-    />
+    <Combobox<CountryOption>
+      options={dataTab}
+      value={value ?? null}
+      onValueChange={(next) =>
+        onValueChange((next as CountryOption | null) ?? undefined)
+      }
+      getOptionLabel={(country) => country.name}
+      isOptionEqualToValue={(a, b) => a.name === b.name}>
+      <ComboboxLabel>{label}</ComboboxLabel>
+      <ComboboxField>
+        <ComboboxInput placeholder={t('CountryComboBox.Placeholder')} />
+        <ComboboxControls>
+          <ComboboxClear />
+          <ComboboxTrigger />
+        </ComboboxControls>
+      </ComboboxField>
+      <ComboboxContent
+        emptyMessage={t('Utils.NotFound')}
+        listAriaLabel={label}
+      />
+    </Combobox>
   );
 };

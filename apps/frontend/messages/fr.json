@@ -1193,6 +1193,7 @@
       "UnavailableDeployments": "Ce connecteur n'est pas disponible pour le déploiement automatique."
     },
     "CreationStatus": "Statut de la création",
+    "FilterByService": "Filtrer par service",
     "Form": {
       "AddImage": "Ajouter une image",
       "Author": "Auteur",
