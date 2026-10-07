@@ -9,7 +9,14 @@ import {
 import { useContentTranslationApi } from '@/hooks/use-content-translation-api';
 import { Locale, locales } from '@/i18n/config';
 import { getStaticTranslationValue } from '@/utils/content-translation/get-static-translation-value';
-import { Button, Textarea } from '@filigran/design-system';
+import {
+  Button,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Textarea,
+} from '@filigran/design-system';
 import {
   Dialog,
   DialogClose,
@@ -21,10 +28,6 @@ import {
   Form,
   FormField,
   Skeleton,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
   toast,
 } from '@filigran/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -148,7 +151,7 @@ export const ContentEditDialog = ({
                 <TabsContent
                   key={locale}
                   value={locale}
-                  className="flex flex-col gap-s">
+                  className="flex flex-col gap-s pt-l">
                   {isLoadingValues ? (
                     <Skeleton className="h-24 w-full" />
                   ) : (

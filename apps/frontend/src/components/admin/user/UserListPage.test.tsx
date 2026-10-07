@@ -37,7 +37,8 @@ vi.mock('@/components/admin/user/forms/admin/AdminAddUser', () => ({
   AdminAddUser: () => <div>AdminAddUser</div>,
 }));
 
-vi.mock('@filigran/ui', () => ({
+vi.mock('@filigran/design-system', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@filigran/design-system')>()),
   Tabs: ({
     defaultValue,
     children,

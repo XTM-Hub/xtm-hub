@@ -55,8 +55,8 @@ development_status:
   epic-2-composites: in-progress
   3566-select: done
   3545-combobox: done
-  3558-menu: review
-  3565-tabs: backlog
+  3558-menu: done
+  3565-tabs: review
   3540-dialog: backlog
   3535-breadcrumbs: backlog
   3551-search-field: backlog

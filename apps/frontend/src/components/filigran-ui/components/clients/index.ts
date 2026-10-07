@@ -17,7 +17,6 @@ export * from './Popover';
 export * from './Separator';
 export * from './Sheet';
 export * from './Table';
-export * from './Tabs';
 export * from './tag-input';
 export * from './Toast';
 export * from './Toaster';
