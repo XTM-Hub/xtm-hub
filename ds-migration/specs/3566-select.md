@@ -143,7 +143,11 @@ Rules shared by every row, from the Textarea and Input specs:
 - **`SelectValue` with children** replaces `SelectWithEditableField`'s hand-rolled placeholder: Radix shows
   `placeholder` while the value is empty and the children otherwise, exactly the legacy condition, with the design
   system placeholder colour instead of `text-muted-foreground`.
-- **The "Other" row stays a plain row**, not a `SelectItem`: picking it must keep the list open and focus the input.
+- **"Other" is a `SelectItem`, first in the list, its input below the field** (epic review): the hand-built row copied
+  the design system item's internals, read as a placeholder, and with the five cancellation reasons it started below
+  the five visible rows, behind a hidden scrollbar. Picking it closes the list and focuses a design system `Input`
+  under the select; the typed text is written on every keystroke (the legacy wrote it on Enter only), as
+  `Other: <text>`, the stored format unchanged.
 - **`RoleSelect` table width** keeps its `w-[200px]`; the other overrides of that cell go.
 - **`TranslatableEnumSelectField` loses `className`**: no caller passes it, and its only target, the hand-written
   asterisk, is now the design system's.
@@ -163,9 +167,6 @@ Rules shared by every row, from the Textarea and Input specs:
 - `LastDeployedResourcesClient` keeps an icon in each item, which the contract lists as outside the design (item
   icons). Alternative: drop the icons. Its trigger is named by the "Select a product" placeholder key. Alternative: a
   new `Product` key in en, fr and ja.
-- `SelectWithEditableField`'s "Other" row mimics the design system item. Both cancel sheets pass five reasons, which
-  fill the five-row list, so the "Other" row and its input always start below the fold and need a scroll. Alternative:
-  propose an editable option upstream, or put "Other" first.
 - `RoleSelect` in the manage-trials table drops its borderless, ringless trigger for the design system one. In the
   edit-users panel, `content-body-compact-medium text-text-default-secondary` on the label goes.
 - `CompetitorForm`, `UploaderOrganizationIdField` and the two cancel sheets keep the legacy `FormMessage` under a

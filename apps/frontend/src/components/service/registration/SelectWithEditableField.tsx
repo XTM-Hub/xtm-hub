@@ -57,6 +57,11 @@ const parseValueToLocalState = (
   return { selectedValue: OTHER_VALUE, customValue: value };
 };
 
+const formatOtherValue = (editableFieldValue: string, customValue: string) => {
+  const trimmed = customValue.trim();
+  return trimmed ? `${editableFieldValue}: ${trimmed}` : editableFieldValue;
+};
+
 export const SelectWithEditableField = ({
   value,
   onChange,
@@ -67,146 +72,102 @@ export const SelectWithEditableField = ({
   layerClassName = 'layer-2',
 }: SelectWithEditableFieldProps) => {
   const isControlled = value !== undefined;
-  const initialValueState = parseValueToLocalState(
-    value,
-    options,
-    editableFieldValue
-  );
-  const [selectedValue, setSelectedValue] = useState<string>(
-    initialValueState.selectedValue
-  );
-  const [customValue, setCustomValue] = useState(initialValueState.customValue);
-  const [open, setOpen] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const committedValueRef = useRef<string>('');
+  const [uncontrolledValue, setUncontrolledValue] = useState('');
+  const currentValue = isControlled ? value : uncontrolledValue;
+  const { selectedValue, customValue: committedCustomValue } =
+    parseValueToLocalState(currentValue, options, editableFieldValue);
+  const [draftCustomValue, setDraftCustomValue] =
+    useState(committedCustomValue);
+  const otherInputRef = useRef<HTMLInputElement>(null);
+  const focusOtherInputOnCloseRef = useRef(false);
 
-  const handleSelectChange = (v: string) => {
-    if (!v && committedValueRef.current) {
+  const isOtherSelected = selectedValue === OTHER_VALUE;
+  // The written value is trimmed, so the draft keeps the spaces being typed
+  // until the value changes from outside (a form reset, for instance).
+  const customValue =
+    draftCustomValue.trim() === committedCustomValue
+      ? draftCustomValue
+      : committedCustomValue;
+  const selectedLabel = isOtherSelected
+    ? labels.editableFieldLabel
+    : options.find((option) => option.value === selectedValue)?.label;
+
+  const commitValue = (nextValue: string) => {
+    if (!isControlled) {
+      setUncontrolledValue(nextValue);
+    }
+    onChange(nextValue);
+  };
+
+  const handleSelectChange = (nextSelectedValue: string) => {
+    if (nextSelectedValue !== OTHER_VALUE) {
+      commitValue(nextSelectedValue);
       return;
     }
 
-    if (!isControlled) {
-      setSelectedValue(v);
-    }
-    setCustomValue('');
-
-    if (v === OTHER_VALUE) {
-      committedValueRef.current = editableFieldValue;
-      onChange(editableFieldValue);
-    } else {
-      committedValueRef.current = '';
-      onChange(v);
-    }
-
-    setOpen(false);
-  };
-
-  const handleOtherClick = () => {
-    if (!isControlled) {
-      setSelectedValue(OTHER_VALUE);
-    }
-    committedValueRef.current = editableFieldValue;
-    onChange(editableFieldValue);
-    setCustomValue('');
-
-    setTimeout(() => inputRef.current?.focus(), 0);
-  };
-
-  const handleCustomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCustomValue(e.target.value);
-  };
-
-  const handleCustomKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-
-    if (e.key === 'Enter') {
-      e.preventDefault();
-
-      const trimmed = customValue.trim();
-      const valueToCommit = trimmed
-        ? `${editableFieldValue}: ${trimmed}`
-        : editableFieldValue;
-
-      committedValueRef.current = valueToCommit;
-      if (!isControlled) {
-        setSelectedValue(OTHER_VALUE);
-      }
-      setCustomValue(trimmed);
-      onChange(valueToCommit);
-      setOpen(false);
+    focusOtherInputOnCloseRef.current = true;
+    if (!isOtherSelected) {
+      setDraftCustomValue('');
+      commitValue(editableFieldValue);
     }
   };
 
-  const controlledState = parseValueToLocalState(
-    value,
-    options,
-    editableFieldValue
-  );
-  const currentSelectValue = isControlled
-    ? controlledState.selectedValue
-    : selectedValue;
-  const selectedOption = options.find((o) => o.value === currentSelectValue);
-  const isOtherMode = currentSelectValue === OTHER_VALUE;
-  const currentCustomValue = isControlled
-    ? open
-      ? customValue
-      : controlledState.customValue
-    : customValue;
+  const handleCloseAutoFocus = (event: Event) => {
+    if (!focusOtherInputOnCloseRef.current) {
+      return;
+    }
+    focusOtherInputOnCloseRef.current = false;
+    // Radix would otherwise send focus back to the trigger.
+    event.preventDefault();
+    otherInputRef.current?.focus();
+  };
 
-  const triggerText = isOtherMode
-    ? currentCustomValue || labels.editableFieldLabel
-    : selectedOption?.label;
+  const handleCustomChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setDraftCustomValue(event.target.value);
+    commitValue(formatOtherValue(editableFieldValue, event.target.value));
+  };
 
   return (
-    <div>
-      <Select
-        value={currentSelectValue}
-        onValueChange={handleSelectChange}
-        open={open}
-        onOpenChange={(nextOpen) => {
-          setOpen(nextOpen);
-          if (nextOpen && isControlled) {
-            setCustomValue(controlledState.customValue);
-          }
-        }}>
-        <SelectLabel required={required}>{labels.label}</SelectLabel>
-        <SelectTrigger className={cn('w-full', layerClassName)}>
-          <SelectValue placeholder={labels.placeholder}>
-            {triggerText}
-          </SelectValue>
-        </SelectTrigger>
+    <div className="flex flex-col gap-s">
+      <div>
+        <Select
+          value={selectedValue}
+          onValueChange={handleSelectChange}>
+          <SelectLabel required={required}>{labels.label}</SelectLabel>
+          <SelectTrigger className={cn('w-full', layerClassName)}>
+            <SelectValue placeholder={labels.placeholder}>
+              {selectedLabel}
+            </SelectValue>
+          </SelectTrigger>
 
-        <SelectContent className={cn(layerClassName)}>
-          {options.map((option) => (
-            <SelectItem
-              key={option.value}
-              value={option.value}>
-              {option.label}
+          <SelectContent
+            className={cn(layerClassName)}
+            onCloseAutoFocus={handleCloseAutoFocus}>
+            {/* First, so the list's five visible rows always show it. */}
+            <SelectItem value={OTHER_VALUE}>
+              {labels.editableFieldLabel}
             </SelectItem>
-          ))}
+            {options.map((option) => (
+              <SelectItem
+                key={option.value}
+                value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
-          <div
-            className={cn(
-              'relative flex min-h-8 w-full cursor-pointer select-none items-center border-l-2 border-transparent pl-4 pr-2 outline-none hover:bg-input-hover hover:border-input-hover',
-              'font-content-compact text-content-compact leading-content-compact tracking-content-compact text-input-placeholder',
-              isOtherMode && 'bg-input-hover border-input-focus'
-            )}
-            onClick={handleOtherClick}>
-            {labels.editableFieldLabel}
-          </div>
-
-          <div className="border-l-2 border-transparent pb-2 pl-4 pr-2">
-            <Input
-              ref={inputRef}
-              value={currentCustomValue}
-              onChange={handleCustomChange}
-              onKeyDown={handleCustomKeyDown}
-              placeholder={labels.editableFieldPlaceholder}
-              aria-label={labels.editableFieldPlaceholder}
-            />
-          </div>
-        </SelectContent>
-      </Select>
+      {isOtherSelected && (
+        <Input
+          ref={otherInputRef}
+          className={layerClassName}
+          value={customValue}
+          onChange={handleCustomChange}
+          placeholder={labels.editableFieldPlaceholder}
+          aria-label={labels.editableFieldPlaceholder}
+        />
+      )}
     </div>
   );
 };
