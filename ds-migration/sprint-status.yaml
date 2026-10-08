@@ -52,7 +52,7 @@ development_status:
 
   # Composites with a legacy equivalent, the three DS 1.2.0 additions, and three single-use
   # legacy components replaced in place
-  epic-2-composites: in-progress
+  epic-2-composites: review
   3566-select: done
   3545-combobox: done
   3558-menu: done
@@ -68,7 +68,7 @@ development_status:
   3690-snackbar: done
   3694-aspect-ratio: done
   3700-command: done
-  3701-tag-input: review
+  3701-tag-input: done
 
   # Legacy components with no DS equivalent: rebuilt on DS primitives, one folder per
   # component in apps/frontend/src/components/ui/, listed as candidates in the PR report
