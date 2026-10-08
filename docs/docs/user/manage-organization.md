@@ -19,7 +19,7 @@ As an Organization Administrator, you can manage users, their access rights, and
 
 ### Invitation Status
 
-Invited users who have not created their account yet show an **Invitation status**:
+Invited users who have not created their Filigran account yet show an **Invitation status**:
 
 - **Pending**: the invitation has been sent and the user has not set their password yet.
 - **Expired**: the user did not activate their account within 5 days. Click **Re-send Invite** to send a new invitation.
