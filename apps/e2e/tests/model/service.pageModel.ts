@@ -13,6 +13,13 @@ export default class ServicePage {
     return this.page.locator('body > [role="dialog"]').last();
   }
 
+  // A replaced snackbar stays in the DOM while it animates out.
+  getOpenSnackbar() {
+    return this.page
+      .getByRole('region', { name: 'Notifications (F8)', exact: true })
+      .locator('li[data-state="open"]');
+  }
+
   async navigateToServiceListAdmin() {
     await this.page
       .getByRole('button', { name: 'Settings', exact: true })

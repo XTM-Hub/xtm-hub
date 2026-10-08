@@ -63,9 +63,13 @@ Title and description values move unchanged, `<>{t(…)}</>` fragments included.
   payload without variant gains `severity: 'success'`. No assertion is dropped or loosened.
 - `apps/frontend/src/components/filigran-ui/components/clients/index.ts` (drop the three exports)
 - `Toast.tsx`, `Toaster.tsx`, `use-toast.ts` in `filigran-ui/components/clients/` (delete)
-- No e2e locator: `service-pictures.spec.ts`, `profile.spec.ts` and `user.spec.ts` find the messages by text, which
-  stays. `apps/e2e/tests/screenshot.css` hides `body > div[role='region'][aria-label='Notifications (F8)']`: the
-  design system viewport is portalled to `body` with Radix's same default label, so it still matches.
+- `apps/e2e/tests/tests_files/service-pictures.spec.ts`, `apps/e2e/tests/model/service.pageModel.ts`: the spec raises
+  two messages back to back (two mutations in `EditService`). The closing one stays in the DOM during its exit
+  animation, before the open one. So both its assertions are scoped to the open snackbar: `data-state="open"` in the
+  `Notifications (F8)` region, through `ServicePage.getOpenSnackbar()`.
+- `profile.spec.ts` and `user.spec.ts` raise one message and keep their locators. `apps/e2e/tests/screenshot.css`
+  hides `body > div[role='region'][aria-label='Notifications (F8)']`: the design system viewport is portalled to
+  `body` with Radix's same default label, so it still matches.
 
 ## Screens
 
@@ -166,3 +170,11 @@ Title and description values move unchanged, `<>{t(…)}</>` fragments included.
 - Move the `motion.css` import from `AppSnackbars.tsx` to `globals.css` with the theme cleanup (3708).
 - Upstream: the design system consumer skill lists only `gradient-helpers.css` as the sidecar for Tailwind hosts and
   omits `styles/motion.css`, which `Snackbar` needs to animate.
+- The "new message goes first" decision has no effect on screen: Radix portals each toast into the viewport's `<ol>`
+  in mount order, whatever the store order, so the new card mounts below the closing one and moves up once it is gone.
+  The comment in `snackbar-store.ts` says otherwise.
+- `ServicePage.getOpenSnackbar()` finds the region by role, so it resolves only once a modal sheet closes (Radix
+  `hideOthers` puts `aria-hidden` on the viewport). An error raised from a sheet that stays open shows up as "not
+  found" rather than as its text. It is also app-wide and belongs in `tests/model/common.ts` once a second spec needs it.
+- `service-pictures.spec.ts` checks only the message left open: a failure of the first of the two uploads, followed by
+  a success, still passes (as with the legacy toast).
