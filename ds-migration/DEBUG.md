@@ -75,18 +75,21 @@ Short, in this order:
 2. **Why**: the cause, with the evidence: file and line, log excerpt, screenshot.
 3. **What to do**: the options, the recommended one first, each with what it costs.
    - **Decide, then let the agent redo it.** Write the decision on the issue or under `## Decisions`
-     in the spec, put the code back aside, set the item to `backlog`, run `ds-migration/run.sh --once`.
+     in the spec, and put the code back aside if you applied it. Then `ds-migration/run.sh resume <key>`
+     retries the item from the code it put aside, or `ds-migration/run.sh` retries it afresh (from its
+     build when its spec is done).
    - **Finish it by hand** here, then commit it the way the script does (section 5). The script pushes
      it and waits for the checks on its next run.
-   - **Leave it blocked.** Only its dependents wait, and the epic report lists it.
-   - **Fix the environment** (stack, Chromium, port), then set the item to `backlog` and run again.
+   - **Leave it blocked.** A question with no answer on its issue is left aside by the next runs, and
+     only its dependents wait; any other failure is retried by every run until it passes.
+   - **Fix the environment** (stack, Chromium, port, network), then run again.
 
 Then wait for the human's choice.
 
 ## 5. Act on the choice
 
-- **Put the code back aside**:
-  `git stash push --include-untracked -m "ds-migration <key> debug" -- . ':(exclude)ds-migration'`.
+- **Put the code back aside**, under the name `run.sh resume` looks for:
+  `git stash push --include-untracked -m "ds-migration <key>" -- . ':(exclude)ds-migration'`.
 - **Finish by hand**: once every command of the spec's Verification section passes, set the item to
   `review` in the status file, stage everything outside `ds-migration/` plus the spec and the status
   file, and commit with the subject of `ds-migration/WORKFLOW.md` (Build mode, step 5), no trailer.

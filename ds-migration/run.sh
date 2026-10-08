@@ -15,6 +15,7 @@
 #   ds-migration/run.sh finish                            final report, remove ds-migration/
 #   ds-migration/run.sh debug <key>                       interactive session on a blocked item
 #   ds-migration/run.sh review [<epic>]                   interactive session to finish an epic review
+#   ds-migration/run.sh resume [<key>] [--once]           retry an item from the code it had put aside
 #   ds-migration/run.sh publish                           after a change by hand: issues, push, checks
 #
 # Environment: DS_ITEM_TIMEOUT (seconds per session, default 5400), DS_CHECKS_TIMEOUT (seconds,
@@ -87,12 +88,13 @@ deps_of() {
 
 # Decides the next action. Prints "<action> <epic> <key>":
 #   ci   an item already pushed, waiting for its checks
-#   run  the first item whose dependencies are done, in an approved epic or the current one
+#   run  the first item whose dependencies are done, in an approved epic or the current one; a
+#        blocked item is retried, unless it waits for an answer (the keys given as $1, comma-separated)
 #   gate every item of the current epic is done, blocked or waiting: report, review, stop
 #   hold the current epic waits for a human to set it to done
 #   end  every epic is done
 plan_next() {
-  awk '
+  awk -v waiting=",${1:-}," '
     function ready(key,   n, list, i) {
       n = split(deps[key], list, ",")
       for (i = 1; i <= n; i++) if (list[i] != "" && status[list[i]] != "done") return 0
@@ -115,7 +117,8 @@ plan_next() {
       for (i = 1; i <= ni; i++) {
         k = items[i]; ep = epic_of[k]
         if (status[ep] != "done" && ep != current) continue
-        if ((status[k] == "backlog" || status[k] == "in-progress") && ready(k)) { print "run", ep, k; exit }
+        if (status[k] == "blocked" && index(waiting, "," k ",")) continue
+        if ((status[k] == "backlog" || status[k] == "in-progress" || status[k] == "blocked") && ready(k)) { print "run", ep, k; exit }
       }
       if (current == "") print "end - -"
       else print (status[current] == "review" ? "hold" : "gate"), current, "-"
@@ -477,7 +480,7 @@ work_item() {
   local spec_done="$LOG_DIR/$1.spec-done"
   if [ -f "$spec_done" ] && [ -f "$spec" ]; then
     log "$key: spec written and screens captured by an earlier run, resuming at the build"
-    run_item_session "$key" "$issue" "$epic" "$kind" "Build mode"
+    run_item_session "$key" "$issue" "$epic" "$kind" "Build mode" "$(restore_put_aside "$key")"
     return
   fi
   result="$(claude_session "$key-spec" \
@@ -495,8 +498,27 @@ work_item() {
     failed "The screens of the spec cannot be captured before the change: see $LOG_DIR/$key-before.log."
   else
     touch "$spec_done"
-    run_item_session "$key" "$issue" "$epic" "$kind" "Build mode"
+    run_item_session "$key" "$issue" "$epic" "$kind" "Build mode" "$(restore_put_aside "$key")"
   fi
+}
+
+# The latest stash an item's block or interruption put aside, as stash@{n}.
+put_aside_of() {
+  git stash list --format='%gd %gs' | grep -E ": ds-migration $1( interrupted)?$" | head -n 1 | cut -d' ' -f1
+}
+
+# When `run.sh resume` asked for it, brings back the code the item put aside, just before its build:
+# the spec and the before screenshots need the untouched code. Prints the hint for the session.
+restore_put_aside() {
+  local key="$1" ref
+  [ -f "$LOG_DIR/$key.resume" ] || return 0
+  rm -f "$LOG_DIR/$key.resume"
+  ref="$(put_aside_of "$key")"
+  [ -n "$ref" ] || return 0
+  # Its output would end up in the hint this function prints.
+  git stash pop --quiet "$ref" >/dev/null 2>&1 || die "$key: the code put aside ($ref) does not apply cleanly: apply it by hand"
+  log "$key: code put aside by the earlier attempt brought back ($ref)"
+  echo "The working tree already holds the changes of an earlier attempt at this item, put aside when it stopped. Check them against the spec, keep what is right, and finish the item from there."
 }
 
 # Lint and format of the e2e workspace, when the item changed its locators. The suite itself only
@@ -571,7 +593,7 @@ pr_body() {
   local blocked key
   blocked="$(items | awk '$3 == "blocked" { print $2 }')"
   if [ -n "$blocked" ]; then
-    printf '\n## Needs a human\n\nThe question or the failure is on the issue. Investigate with `ds-migration/run.sh debug <key>`, then set the item back to `backlog`.\n\n'
+    printf '\n## Needs a human\n\nThe question or the failure is on the issue. Investigate with `ds-migration/run.sh debug <key>`; a question needs an answer on the issue. Running `ds-migration/run.sh` again retries the item.\n\n'
     for key in $blocked; do echo "- [ ] #$(issue_of "$key") \`$key\`"; done
   fi
   items | while read -r epic key status; do
@@ -741,6 +763,35 @@ start_tracking() {
 
 # ---------------------------------------------------------------- one item
 
+# Records why an item blocked and when, for the next run to decide whether to retry it.
+mark_blocked() { printf '%s %s\n' "$2" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$LOG_DIR/$1.blocked"; }
+
+retry_hint() {
+  if [ "$1" = NEEDS_HUMAN ]; then
+    echo "To retry, answer here or edit \`ds-migration/specs/$2.md\`, then run \`ds-migration/run.sh\` again: it retries the item once it has an answer."
+  else
+    echo "Running \`ds-migration/run.sh\` again retries the item."
+  fi
+}
+
+# Blocked items that wait for a human: a question with no comment on its issue since the block,
+# and no change to its spec. Prints their keys, comma-separated.
+waiting_items() {
+  local key reason since issue answers out=""
+  for key in $(items | awk '$3 == "blocked" { print $2 }'); do
+    [ -f "$LOG_DIR/$key.blocked" ] || continue
+    read -r reason since <"$LOG_DIR/$key.blocked"
+    [ "$reason" = NEEDS_HUMAN ] || continue
+    [ "ds-migration/specs/$key.md" -nt "$LOG_DIR/$key.blocked" ] && continue
+    issue="$(issue_of "$key")"
+    answers="$(gh api "repos/$REPOSITORY/issues/$issue/comments" --paginate --jq "[.[] | select(.created_at > \"$since\")
+      | select(.body | startswith(\"**Design system migration blocked**\") | not)] | length" 2>/dev/null || echo 0)"
+    [ "${answers:-0}" -gt 0 ] && continue
+    out="$out${out:+,}$key"
+  done
+  echo "$out"
+}
+
 # Labels the item's issue and tells the PR, so the team sees it without watching the run.
 # <key> <issue> <details>
 signal_blocked() {
@@ -757,10 +808,12 @@ block_item() {
   local key="$1" issue="$2" result="$3" reason="$4" details
   git stash push --include-untracked --quiet -m "ds-migration $key" -- . ':(exclude)ds-migration' || true
   set_status "$key" blocked
-  rm -f "$LOG_DIR/$key.spec-done" # an answer on the issue may change the spec
+  # A question needs its answer in the spec; any other failure resumes at the build.
+  if [ "$reason" = NEEDS_HUMAN ]; then rm -f "$LOG_DIR/$key.spec-done"; fi
   details="$(printf '%s: %s\n\n%s' "$reason" "$(jq -r .summary <<<"$result")" "$(jq -r '.question // empty' <<<"$result")")"
-  gh issue comment "$issue" --body "$(printf '**Design system migration blocked**\n\n%s\n\nRun log: `%s`. Code changes, if any, are in `git stash list` as "ds-migration %s". To investigate with the context loaded: `ds-migration/run.sh debug %s`. To retry, answer here or edit `ds-migration/specs/%s.md`, then set the item back to `backlog`.' \
-    "$details" "$LOG_DIR/$key.json" "$key" "$key" "$key")" >/dev/null
+  gh issue comment "$issue" --body "$(printf '**Design system migration blocked**\n\n%s\n\nRun log: `%s`. Code changes, if any, are in `git stash list` as "ds-migration %s". To investigate with the context loaded: `ds-migration/run.sh debug %s`. %s' \
+    "$details" "$LOG_DIR/$key.json" "$key" "$key" "$(retry_hint "$reason" "$key")")" >/dev/null
+  mark_blocked "$key" "$reason"
   signal_blocked "$key" "$issue" "$details"
   log "$key blocked: $reason"
 }
@@ -846,9 +899,10 @@ settle_review() {
     fi
   fi
   set_status "$key" blocked
-  gh issue comment "$issue" --body "**Design system migration blocked**: the pull request's required checks fail after one fix attempt. Logs: \`$LOG_DIR/$key-ci.log\`. To investigate with the context loaded: \`ds-migration/run.sh debug $key\`." >/dev/null
+  gh issue comment "$issue" --body "**Design system migration blocked**: the pull request's required checks fail after one fix attempt. Logs: \`$LOG_DIR/$key-ci.log\`. To investigate with the context loaded: \`ds-migration/run.sh debug $key\`. $(retry_hint CI "$key")" >/dev/null
+  mark_blocked "$key" CI
   signal_blocked "$key" "$issue" "The required checks fail after one CI fix attempt: the script stopped."
-  die "$key: required checks still failing, fix the branch by hand"
+  die "$key: required checks still failing after a fix attempt: investigate with 'ds-migration/run.sh debug $key', or run again for one more attempt"
 }
 
 # ---------------------------------------------------------------- epic gate
@@ -912,8 +966,11 @@ process() {
   while :; do
     require_ready
     local action epic key issue kind result outcome
-    read -r action epic key <<<"$(plan_next)"
+    local waiting
+    waiting="$(waiting_items)"
+    read -r action epic key <<<"$(plan_next "$waiting")"
     if $dry_run; then
+      [ -z "$waiting" ] || echo "waiting for an answer: $waiting"
       echo "next: $action $epic $key"
       return
     fi
@@ -925,7 +982,7 @@ process() {
         ;;
       hold)
         commit_status
-        log "$epic waits for review: set '$epic: done' in $STATUS_FILE once validated, then rerun"
+        log "$epic waits for review: run 'ds-migration/run.sh review', then run the script again"
         return
         ;;
       gate)
@@ -939,6 +996,15 @@ process() {
         settle_review "$epic" "$key"
         ;;
       run)
+        if [ "$(status_of "$key")" = blocked ]; then
+          log "$key was blocked: retrying it"
+          rm -f "$LOG_DIR/$key.blocked"
+          # Its commit is on the branch when only its checks failed: back to waiting for them.
+          if item_committed "$key"; then
+            set_status "$key" review
+            continue
+          fi
+        fi
         issue="$(issue_of "$key")"
         [ -n "$issue" ] || die "$key has no issue yet: run 'ds-migration/run.sh issues' first"
         kind="$(kind_of "$epic")"
@@ -963,7 +1029,7 @@ process() {
           [ "$outcome" = DONE ] && outcome="commit failed, see $LOG_DIR/run.log"
           block_item "$key" "$issue" "$result" "$outcome"
           # A blocked item stops the run: someone looks at it before anything else moves.
-          die "$key blocked ($outcome): investigate with 'ds-migration/run.sh debug $key', then set it back to backlog and run again"
+          die "$key blocked ($outcome): investigate with 'ds-migration/run.sh debug $key'; $(retry_hint "$outcome" "$key" | sed 's/`//g')"
         fi
         ;;
       *) die "cannot plan the next step: $action" ;;
@@ -990,6 +1056,31 @@ finish() {
   wait_checks "$pr" || die "required checks fail after removing ds-migration/"
   board_settle
   log "final report posted on #$EPIC_ISSUE; mark PR #$pr ready for review"
+}
+
+# Retries an item from the code it put aside when it blocked or stopped, then runs as usual. The
+# item is retried even when it waits for an answer: the person running this decided.
+resume_item() {
+  local key="${1:-}" ref
+  if [ -z "$key" ] || [[ $key == --* ]]; then
+    key="$(items | awk '$3 == "blocked" || $3 == "in-progress" { print $2; exit }')"
+  else
+    shift
+  fi
+  [ -n "$key" ] && [ -n "$(status_of "$key")" ] || die "nothing to resume: no item is blocked or in progress"
+  case "$(status_of "$key")" in
+    blocked | in-progress) ;;
+    *) die "$key is $(status_of "$key"), nothing to resume" ;;
+  esac
+  ref="$(put_aside_of "$key")"
+  if [ -n "$ref" ]; then
+    log "$key: resuming from the code it put aside ($ref: $(git stash show --include-untracked --name-only "$ref" | wc -l | tr -d ' ') files)"
+    touch "$LOG_DIR/$key.resume"
+  else
+    log "$key: no code put aside, retrying it"
+  fi
+  rm -f "$LOG_DIR/$key.blocked"
+  main_run "$@"
 }
 
 # Interactive Claude session that finishes an epic review with a human: ds-migration/REVIEW.md.
@@ -1075,6 +1166,19 @@ create_issues() {
   done <<<"$pending"
 }
 
+main_run() {
+  local once=false no_wait=false dry_run=false arg
+  for arg in "$@"; do
+    case "$arg" in
+      --once) once=true ;;
+      --no-wait) no_wait=true ;;
+      --dry-run) dry_run=true ;;
+      *) die "unknown option $arg" ;;
+    esac
+  done
+  process "$once" "$no_wait" "$dry_run"
+}
+
 case "${1:-}" in
   issues) create_issues "${2:-}" ;;
   status) items | awk '{ print $3 }' | sort | uniq -c ;;
@@ -1082,16 +1186,6 @@ case "${1:-}" in
   debug) debug_item "${2:-}" ;;
   review) review_epic "${2:-}" ;;
   publish) publish_by_hand ;;
-  *)
-    once=false no_wait=false dry_run=false
-    for arg in "$@"; do
-      case "$arg" in
-        --once) once=true ;;
-        --no-wait) no_wait=true ;;
-        --dry-run) dry_run=true ;;
-        *) die "unknown option $arg" ;;
-      esac
-    done
-    process "$once" "$no_wait" "$dry_run"
-    ;;
+  resume) shift; resume_item "$@" ;;
+  *) main_run "$@" ;;
 esac

@@ -59,6 +59,8 @@ board() {
 case "$1 $2" in
   "issue edit") [ "$3" = 3561 ] && [ "$4" = --body-file ] && cp "$5" "$SB/issue-3561.md"; exit 0 ;;
   "api graphql") board "$@" ;;
+  # $SB/answered-<issue>: someone answered on that issue after the block.
+  "api repos/XTM-Hub/xtm-hub/issues/"*) n="${2#repos/XTM-Hub/xtm-hub/issues/}"; n="${n%%/*}"; [ -f "$SB/answered-$n" ] && echo 1 || echo 0 ;;
   "issue comment") exit 0 ;;
   "pr comment") if [ "$4" = --body ]; then echo "$5" >> "$SB/pr-comments.log"; else cp "$(bodyfile "$@")" "$SB/last-pr-comment.md"; fi ;;
   "pr edit") cp "$(bodyfile "$@")" "$SB/pr-body.md" ;;
@@ -225,7 +227,9 @@ check "after screenshots part of the validation" 'grep -q "^screenshot after ds-
 check "done item announced on the PR" 'grep -qx "Component Textarea done. Issue #3561" "$SB/pr-comments.log"'
 approve epic-1-primitives; run
 check "data-table waits on checkbox" '[ "$(status_of 9002-data-table)" = backlog ] && [ "$(status_of 9001-table)" = done ] && grep -q "| #9002 data-table | backlog | 3541-checkbox" "$SB/last-pr-comment.md"'
-perl -pi -e 's/^  3541-checkbox: blocked/  3541-checkbox: backlog/' ds-migration/sprint-status.yaml; run
+ds-migration/run.sh --dry-run >"$SB/out.log" 2>&1
+check "an unanswered question is left aside" 'grep -q "waiting for an answer: 3541-checkbox" "$SB/out.log"'
+touch "$SB/answered-3541"; run
 check "unblocked checkbox done, epic 1 reopened for review" '[ "$(status_of 3541-checkbox)" = done ] && [ "$(status_of epic-1-primitives)" = review ]'
 check "label removed and PR body cleared once unblocked" 'grep -q "^gh issue edit 3541 --remove-label needs more info" "$SB/calls.log" && ! grep -q "^## Needs a human" "$SB/pr-body.md"'
 approve epic-1-primitives; run; approve epic-3-candidates; run; approve epic-4-cleanup; run
@@ -271,6 +275,9 @@ new_repo d "development_status:
   3568-switch: backlog"
 GH_CHECKS="fail" run --once
 check "CI fix attempted, item blocked, script stopped" '[ "$(status_of 3561-textarea)" = blocked ] && grep -q "STOP: 3561-textarea: required checks still failing" "$SB/out.log" && git log --format=%s -1 | grep -q "^fix(frontend): repair textarea (#3561)"'
+: >"$SB/checks-count"
+GH_CHECKS=pass run --once
+check "a rerun retries an item blocked by its checks, as review" '[ "$(status_of 3561-textarea)" = done ] && grep -q "3561-textarea was blocked: retrying it" "$SB/out.log"'
 
 echo "E. spec mode touches the code, then an after screenshot fails"
 new_repo e "development_status:
@@ -281,8 +288,12 @@ new_repo e "development_status:
   3553-radio: backlog"
 CLAUDE_SPEC_DIRTY=3561-textarea run --once
 check "code changed in spec mode: blocked before the build" '[ "$(status_of 3561-textarea)" = blocked ] && ! grep -q "Build mode for item 3561" "$SB/calls.log" && [ -z "$(git status --porcelain -- apps)" ]'
+run --once
+check "a rerun retries a failed item first" '[ "$(status_of 3561-textarea)" = done ] && grep -q "3561-textarea was blocked: retrying it" "$SB/out.log"'
 SCREENSHOT_FAIL=3568-switch run --once
 check "a screen that no longer renders blocks the item" '[ "$(status_of 3568-switch)" = blocked ] && ! git log --format=%s | grep -q "Switch"'
+run --once
+check "a rerun resumes a failed item at the build when its spec is done" '[ "$(status_of 3568-switch)" = done ] && grep -q "3568-switch: spec written and screens captured by an earlier run, resuming at the build" "$SB/out.log"'
 
 echo "G. e2e locators follow the accessible names a migration changes"
 new_repo g "development_status:
@@ -371,6 +382,19 @@ new_repo m "development_status:
 echo 3 > "$SB/net-down"
 DS_NETWORK_INTERVAL=0 run --once
 check "gh waits for the network, then the run goes on" '[ "$(status_of 3561-textarea)" = done ] && grep -q "network down: waiting for api.anthropic.com and api.github.com" "$SB/out.log" && [ ! -f "$SB/net-down" ]'
+
+echo "N. resume from the code an item put aside"
+new_repo n "development_status:
+  epic-1-primitives: backlog
+  3530-button: done
+  3561-textarea: backlog
+  3568-switch: backlog"
+CLAUDE_BLOCK=3561-textarea run --once
+check "the blocked item put its code aside" 'git stash list | grep -q ": ds-migration 3561-textarea$" && [ ! -e apps/frontend/src/textarea.wip.ts ]'
+: >"$SB/calls.log"
+ds-migration/run.sh resume --once >"$SB/out.log" 2>&1
+check "resume brings the code back before the build and finishes the item" '[ "$(status_of 3561-textarea)" = done ] && grep -q "Build mode for item 3561-textarea.*earlier attempt" "$SB/calls.log" && git show --stat HEAD | grep -q "textarea.wip.ts" && ! git stash list | grep -q "ds-migration 3561-textarea"'
+check "resume retries a question nobody answered, since a human asked for it" 'grep -q "3561-textarea: resuming from the code it put aside" "$SB/out.log"'
 
 echo "F. crash recovery and lock"
 new_repo f "development_status:

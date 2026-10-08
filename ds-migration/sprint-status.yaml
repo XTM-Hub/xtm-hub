@@ -60,9 +60,9 @@ development_status:
   3540-dialog: done
   3535-breadcrumbs: done
   3551-search-field: done
-  3548-file-select: review
-  3547-color-picker: backlog
-  3536-card: backlog
+  3548-file-select: done
+  3547-color-picker: in-progress
+  3536-card: in-progress
   3688-alert: backlog
   3689-date-picker: backlog
   3690-snackbar: backlog
