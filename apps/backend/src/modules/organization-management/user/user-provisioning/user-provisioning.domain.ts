@@ -158,13 +158,16 @@ export const UserProvisioningDomain = {
     }
 
     const user = await withTransaction(async () => {
-      const createdUser = await UserProvisioningDomain.createUser({
-        ...data,
-        ...(isInviteFlagEnabled && {
-          status: UserAccountStatus.Waiting,
-          invitation_date: new Date(),
-        }),
-      });
+      const createdUser = await UserProvisioningDomain.createUser(
+        {
+          ...data,
+          ...(isInviteFlagEnabled && {
+            status: UserAccountStatus.Waiting,
+            invitation_date: new Date(),
+          }),
+        },
+        { sendWelcomeEmail: !isInviteFlagEnabled }
+      );
 
       if (isInviteFlagEnabled) {
         await notifyHubspotInvite(createdUser);
