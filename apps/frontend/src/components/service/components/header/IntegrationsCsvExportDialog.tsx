@@ -12,7 +12,7 @@ import { AppCombobox } from '@/components/ui/AppCombobox';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
 import { useTranslate } from '@/hooks/use-translate';
-import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import {
   Button,
   Dialog,

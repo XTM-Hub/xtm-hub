@@ -139,6 +139,10 @@ dropped, single vs `multiple`, `null` → `undefined`), in `VotableFeatureForm.t
   `.slice(0, 1)`). Re-picking after a wrong file would silently upload the wrong one. Single mode replaces on pick and
   takes the one file that is uploaded.
 - **Control names translated** (epic review, see 3545).
+- **The design system adapters live in `src/utils/design-system/`** (epic review): one file per component,
+  `combobox.ts` (`toComboboxOptionIds`), `date-picker.ts` (`toDatePickerValue`, `fromDatePickerChange`,
+  `getDatePickerLabels`) and `file-select.ts` (`toFileSelectValue`, `fromFileSelectValue`, `getFileSelectLabels`),
+  each with its test, so the AutoForm and Form items reuse them.
 
 ## To validate
 

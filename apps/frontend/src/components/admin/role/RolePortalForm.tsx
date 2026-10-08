@@ -1,7 +1,7 @@
 import RoleSheetFormFooter from '@/components/admin/role/RoleSheetFormFooter';
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useTranslate } from '@/hooks/use-translate';
-import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import { AutoForm, useFormField } from '@filigran/ui';
 import { PortalCapability } from '@graphql/generated';
 import { useMemo } from 'react';

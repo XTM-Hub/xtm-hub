@@ -1,9 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { getFileSelectLabels } from '@/components/ui/file-select-field.utils';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
-import { fromFileSelectValue, toFileSelectValue } from '@/utils/documents';
+import {
+  fromFileSelectValue,
+  getFileSelectLabels,
+  toFileSelectValue,
+} from '@/utils/design-system/file-select';
 import { Button, FileSelect } from '@filigran/design-system';
 import { Form, FormField, SheetFooter } from '@filigran/ui';
 import { useForm } from 'react-hook-form';

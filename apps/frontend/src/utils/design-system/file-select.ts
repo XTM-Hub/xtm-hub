@@ -1,5 +1,24 @@
 import type { useTranslate } from '@/hooks/use-translate';
+import { isFile } from '@/utils/documents';
 import type { FileRejection, FileSelectProps } from '@filigran/design-system';
+
+export const toFileSelectValue = (
+  formValue: unknown,
+  multiple = false
+): File | File[] | null => {
+  const files =
+    typeof formValue === 'object' && formValue !== null && 'length' in formValue
+      ? Array.from(formValue as ArrayLike<unknown>).filter(isFile)
+      : [];
+  return multiple ? files : (files[0] ?? null);
+};
+
+export const fromFileSelectValue = (
+  next: File | File[] | null
+): File[] | undefined => {
+  const files = next === null ? [] : ([] as File[]).concat(next);
+  return files.length > 0 ? files : undefined;
+};
 
 type FileSelectLabels = Pick<
   FileSelectProps,

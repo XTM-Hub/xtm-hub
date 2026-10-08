@@ -2,12 +2,12 @@ import {
   FormItem,
   useFormField,
 } from '@/components/filigran-ui/components/clients';
+import { useTranslate } from '@/hooks/use-translate';
 import {
   fromDatePickerChange,
   getDatePickerLabels,
   toDatePickerValue,
-} from '@/components/ui/date-picker-field.utils';
-import { useTranslate } from '@/hooks/use-translate';
+} from '@/utils/design-system/date-picker';
 import { DatePicker } from '@filigran/design-system';
 import { useLocale } from 'next-intl';
 import AutoFormTooltip from '../common/Tooltip';

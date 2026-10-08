@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { toComboboxOptionIds } from './combobox-option-ids';
+import { toComboboxOptionIds } from './combobox';
 
 interface Option {
   id: string;

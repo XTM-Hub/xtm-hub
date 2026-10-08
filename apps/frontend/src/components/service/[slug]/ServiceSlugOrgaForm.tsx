@@ -7,21 +7,21 @@ import {
   UpdateSubscriptionInServiceMutation,
 } from '@/components/subcription/subscription.graphql';
 import { AppCombobox } from '@/components/ui/AppCombobox';
+import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import {
   fromDatePickerChange,
   getDatePickerLabels,
   toDatePickerValue,
-} from '@/components/ui/date-picker-field.utils';
-import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
-import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+} from '@/utils/design-system/date-picker';
 import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
 import { subscriptionInServiceCreateMutation } from '@generated/subscriptionInServiceCreateMutation.graphql';
 import { useSubscriptionDefaultValues } from './use-subscription-default-values';
 
 import { useKeepSelectedOptions } from '@/hooks/use-keep-selected-options';
 import { useTranslate } from '@/hooks/use-translate';
-import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
 import { DEBOUNCE_TIME } from '@/utils/constant';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import { Button, Checkbox, DatePicker } from '@filigran/design-system';
 import { Form, FormField, FormLabel, SheetFooter } from '@filigran/ui';
 import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';

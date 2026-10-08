@@ -15,7 +15,7 @@ import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useKeepSelectedOptions } from '@/hooks/use-keep-selected-options';
 import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
-import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import {
   Button,
   Checkbox,

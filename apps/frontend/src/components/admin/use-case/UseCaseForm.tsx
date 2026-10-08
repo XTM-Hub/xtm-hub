@@ -1,7 +1,7 @@
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useTranslate } from '@/hooks/use-translate';
-import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import { Button, ColorPicker, Input } from '@filigran/design-system';
 import { Form, FormField, SheetFooter } from '@filigran/ui';
 import { FiligranProduct } from '@graphql/generated';

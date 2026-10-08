@@ -2,7 +2,7 @@
 
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useTranslate } from '@/hooks/use-translate';
-import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import { Button } from '@filigran/design-system';
 import { Form, FormField } from '@filigran/ui';
 import { PlatformIdentifier } from '@graphql/generated';

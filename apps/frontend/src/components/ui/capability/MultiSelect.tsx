@@ -1,7 +1,7 @@
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useOrganizationCapabilities } from '@/hooks/use-organization-capabilities';
 import { useTranslate } from '@/hooks/use-translate';
-import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import { useMemo } from 'react';
 
 interface CapabilityMultiSelectProps {

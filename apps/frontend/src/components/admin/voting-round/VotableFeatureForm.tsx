@@ -1,11 +1,14 @@
 import { VOTING_PRODUCTS } from '@/components/feature-voting/feature-voting.const';
 import { ServiceFormUseCasesField } from '@/components/service/form/UseCasesField';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { getFileSelectLabels } from '@/components/ui/file-select-field.utils';
 import MarkdownInput from '@/components/ui/MarkdownInput';
 import { SelectField } from '@/components/ui/SelectField';
 import { useTranslate } from '@/hooks/use-translate';
-import { fromFileSelectValue, toFileSelectValue } from '@/utils/documents';
+import {
+  fromFileSelectValue,
+  getFileSelectLabels,
+  toFileSelectValue,
+} from '@/utils/design-system/file-select';
 import {
   Button,
   FileSelect,

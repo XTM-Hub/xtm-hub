@@ -1,9 +1,9 @@
+import type { useTranslate } from '@/hooks/use-translate';
 import {
   fromDatePickerChange,
   getDatePickerLabels,
   toDatePickerValue,
-} from '@/components/ui/date-picker-field.utils';
-import type { useTranslate } from '@/hooks/use-translate';
+} from '@/utils/design-system/date-picker';
 import { describe, expect, it } from 'vitest';
 
 const VALID_DATE = new Date('2026-10-08T00:00:00.000Z');

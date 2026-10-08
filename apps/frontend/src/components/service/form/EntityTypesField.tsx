@@ -1,6 +1,6 @@
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useTranslate } from '@/hooks/use-translate';
-import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import { ENTITY_TYPES } from '@/utils/shareable-resources/entity-type';
 import { useFormField } from '@filigran/ui';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';

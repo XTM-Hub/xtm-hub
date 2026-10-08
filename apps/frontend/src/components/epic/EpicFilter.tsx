@@ -3,7 +3,7 @@ import { FiligranProductMapping } from '@/components/epic/epic-item/FiligranProd
 import { FILIGRAN_PRODUCTS_ORDER } from '@/components/epic/filigran-products';
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useTranslate } from '@/hooks/use-translate';
-import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import { SearchField, Switch } from '@filigran/design-system';
 import { FiligranProduct } from '@graphql/generated';
 import React, { useMemo } from 'react';

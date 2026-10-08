@@ -2,9 +2,12 @@ import {
   FormItem,
   useFormField,
 } from '@/components/filigran-ui/components/clients';
-import { getFileSelectLabels } from '@/components/ui/file-select-field.utils';
 import { useTranslate } from '@/hooks/use-translate';
-import { fromFileSelectValue, toFileSelectValue } from '@/utils/documents';
+import {
+  fromFileSelectValue,
+  getFileSelectLabels,
+  toFileSelectValue,
+} from '@/utils/design-system/file-select';
 import { FileSelect, type FileSelectProps } from '@filigran/design-system';
 import AutoFormTooltip from '../common/Tooltip';
 import type { AutoFormInputComponentProps } from '../types';

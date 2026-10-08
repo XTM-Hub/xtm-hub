@@ -1,12 +1,14 @@
-import { getFileSelectLabels } from '@/components/ui/file-select-field.utils';
 import { useTranslate } from '@/hooks/use-translate';
 import { fileToBase64 } from '@/lib/utils';
+import {
+  getFileSelectLabels,
+  toFileSelectValue,
+} from '@/utils/design-system/file-select';
 import {
   docIsExistingFile,
   ExistingFile,
   isFile,
   NewFile,
-  toFileSelectValue,
 } from '@/utils/documents';
 import { EntityTypeOrFiligranLogo } from '@/utils/shareable-resources/entity-type';
 import { FileSelect, IconButton } from '@filigran/design-system';

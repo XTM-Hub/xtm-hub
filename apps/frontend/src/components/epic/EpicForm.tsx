@@ -15,7 +15,7 @@ import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 import { SelectField } from '@/components/ui/SelectField';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
-import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import {
   Button,
   Checkbox,
