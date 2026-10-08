@@ -222,6 +222,20 @@ export const TestUserHelper = {
 
       return createdUser!;
     },
+    insertInOrganization: async (
+      organizationId: OrganizationId,
+      fields: UserMutator = {}
+    ) => {
+      const user = await TestUserHelper.user.insert({
+        email: `user-${uuidv4()}@filigran.io`,
+        ...fields,
+      });
+      const userOrganization = await TestUserHelper.user_Organization.create({
+        user_id: user.id,
+        organization_id: organizationId,
+      });
+      return { user, userOrganization: userOrganization! };
+    },
     insertWithPendingOrganization: async (
       fields: UserMutator,
       organizationId: OrganizationId

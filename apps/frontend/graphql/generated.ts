@@ -100,6 +100,7 @@ export type AddUserInput = {
 };
 
 export type AddUsersToBundleGroupsInput = {
+  emails: InputMaybe<Array<Scalars['String']['input']>>;
   roles: Array<BundleUserRoleAssignmentInput>;
   userIds: Array<Scalars['UserId']['input']>;
 };
@@ -3545,6 +3546,11 @@ export type MeFirstNameQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type MeFirstNameQuery = { __typename?: 'Query', me: { __typename?: 'User', first_name: string | null } | null };
 
+export type MeOrganizationDomainsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MeOrganizationDomainsQuery = { __typename?: 'Query', me: { __typename?: 'User', organizations: Array<{ __typename?: 'Organization', id: string, domains: Array<string> | null }> | null } | null };
+
 export type OrganizationSubscribedServicesBreadcrumbQueryVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
@@ -3838,10 +3844,11 @@ export type UsersQueryVariables = Exact<{
   orderBy: UserOrdering;
   orderMode: OrderingMode;
   filters: InputMaybe<Array<Filter> | Filter>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
 }>;
 
 
-export type UsersQuery = { __typename?: 'Query', users: { __typename?: 'UserConnection', edges: Array<{ __typename?: 'UserEdge', node: { __typename?: 'User', id: string, email: string } }> } };
+export type UsersQuery = { __typename?: 'Query', users: { __typename?: 'UserConnection', edges: Array<{ __typename?: 'UserEdge', node: { __typename?: 'User', id: string, email: string, status: UserAccountStatus | null } }> } };
 
 export type VotingRoundCreateMutationVariables = Exact<{
   input: CreateVotingRoundInput;
@@ -5498,6 +5505,62 @@ useInfiniteMeFirstNameQuery.getKey = (variables?: MeFirstNameQueryVariables) => 
 useInfiniteMeFirstNameQuery.getRootKey = () => ['MeFirstName.infinite'] as const;
 useMeFirstNameQuery.fetcher = (client: GraphQLClient, variables?: MeFirstNameQueryVariables, headers?: RequestInit['headers']) => fetcher<MeFirstNameQuery, MeFirstNameQueryVariables>(client, MeFirstNameDocument, variables, headers);
 
+export const MeOrganizationDomainsDocument = `
+    query MeOrganizationDomains {
+  me {
+    organizations {
+      id
+      domains
+    }
+  }
+}
+    `;
+
+export const useMeOrganizationDomainsQuery = <
+      TData = MeOrganizationDomainsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: MeOrganizationDomainsQueryVariables,
+      options?: Omit<UseQueryOptions<MeOrganizationDomainsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<MeOrganizationDomainsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<MeOrganizationDomainsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['MeOrganizationDomains'] : ['MeOrganizationDomains', variables],
+    queryFn: fetcher<MeOrganizationDomainsQuery, MeOrganizationDomainsQueryVariables>(client, MeOrganizationDomainsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useMeOrganizationDomainsQuery.getKey = (variables?: MeOrganizationDomainsQueryVariables) => variables === undefined ? ['MeOrganizationDomains'] : ['MeOrganizationDomains', variables];
+useMeOrganizationDomainsQuery.getRootKey = () => ['MeOrganizationDomains'] as const;
+export const useInfiniteMeOrganizationDomainsQuery = <
+      TData = InfiniteData<MeOrganizationDomainsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: MeOrganizationDomainsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<MeOrganizationDomainsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<MeOrganizationDomainsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<MeOrganizationDomainsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['MeOrganizationDomains.infinite'] : ['MeOrganizationDomains.infinite', variables],
+      queryFn: (metaData) => fetcher<MeOrganizationDomainsQuery, MeOrganizationDomainsQueryVariables>(client, MeOrganizationDomainsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteMeOrganizationDomainsQuery.getKey = (variables?: MeOrganizationDomainsQueryVariables) => variables === undefined ? ['MeOrganizationDomains.infinite'] : ['MeOrganizationDomains.infinite', variables];
+useInfiniteMeOrganizationDomainsQuery.getRootKey = () => ['MeOrganizationDomains.infinite'] as const;
+useMeOrganizationDomainsQuery.fetcher = (client: GraphQLClient, variables?: MeOrganizationDomainsQueryVariables, headers?: RequestInit['headers']) => fetcher<MeOrganizationDomainsQuery, MeOrganizationDomainsQueryVariables>(client, MeOrganizationDomainsDocument, variables, headers);
+
 export const OrganizationSubscribedServicesBreadcrumbDocument = `
     query OrganizationSubscribedServicesBreadcrumb($id: ID!) {
   organization(id: $id) {
@@ -7108,17 +7171,19 @@ useInfiniteUsersWithCapabilitiesInOrganizationQuery.getRootKey = () => ['UsersWi
 useUsersWithCapabilitiesInOrganizationQuery.fetcher = (client: GraphQLClient, variables: UsersWithCapabilitiesInOrganizationQueryVariables, headers?: RequestInit['headers']) => fetcher<UsersWithCapabilitiesInOrganizationQuery, UsersWithCapabilitiesInOrganizationQueryVariables>(client, UsersWithCapabilitiesInOrganizationDocument, variables, headers);
 
 export const UsersDocument = `
-    query Users($first: Int!, $orderBy: UserOrdering!, $orderMode: OrderingMode!, $filters: [Filter!]) {
+    query Users($first: Int!, $orderBy: UserOrdering!, $orderMode: OrderingMode!, $filters: [Filter!], $searchTerm: String) {
   users(
     first: $first
     orderBy: $orderBy
     orderMode: $orderMode
     filters: $filters
+    searchTerm: $searchTerm
   ) {
     edges {
       node {
         id
         email
+        status
       }
     }
   }

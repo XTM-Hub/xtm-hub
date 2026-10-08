@@ -416,6 +416,7 @@
       "SOLUTION_CATEGORY_NOT_FOUND": "Solution category not found",
       "SUBSCRIPTION_NOT_FOUND": "Subscription was not found",
       "TENANT_ID_MANDATORY": "Tenant id is mandatory",
+      "TOO_MANY_EMAILS": "You can invite at most 50 emails at once",
       "TRANSFER_ME_ERROR": "Error while requesting personal space transfer.",
       "UNKNOWN_ERROR": "An unknown error occurred",
       "UNREGISTER_PLATFORM_UNKNOWN_ERROR": "An unknown error occurred during platform unregistration",
@@ -2048,7 +2049,14 @@
         },
         "AddUserDialog": {
           "Title": "Add trial user",
-          "EmailPlaceholder": "Add email"
+          "EmailPlaceholder": "Add email",
+          "ExpiredUsersReinvited": "Expired users will be invited again and receive a new invitation email.",
+          "InviteEmail": "Invite {email}",
+          "NoPermissionToInvite": "You do not have permission to add users outside this list. If needed, contact your admin",
+          "Status": {
+            "Expired": "Expired",
+            "Invited": "Invited"
+          }
         },
         "EditUsersDialog": {
           "Title": "Edit users",

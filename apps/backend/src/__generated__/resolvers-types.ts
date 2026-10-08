@@ -93,6 +93,7 @@ export type AddUserInput = {
 };
 
 export type AddUsersToBundleGroupsInput = {
+  emails?: InputMaybe<Array<Scalars['String']['input']>>;
   roles: Array<BundleUserRoleAssignmentInput>;
   userIds: Array<Scalars['UserId']['input']>;
 };

@@ -1,5 +1,0 @@
-query meCheck {
-  me {
-    id
-  }
-}

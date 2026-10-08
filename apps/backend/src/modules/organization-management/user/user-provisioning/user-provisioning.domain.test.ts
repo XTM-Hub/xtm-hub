@@ -406,4 +406,25 @@ describe('userProvisioningDomain', () => {
       );
     });
   });
+
+  describe('reinviteExpiredUser', () => {
+    it('should return the current user without notifying Hubspot when the status is no longer expired', async () => {
+      const hubspotSpy = vi
+        .spyOn(Hubspot, 'hubspotInviteUserHook')
+        .mockResolvedValue();
+      const expiredUser = await TestHelper.user.insert({
+        email: `reinvite-${uuidv4()}@filigran.io`,
+        status: UserAccountStatus.Expired,
+        invitation_date: new Date('2020-01-01'),
+      });
+      await TestHelper.user.update({ id: expiredUser.id }, { status: null });
+
+      const user =
+        await UserProvisioningDomain.reinviteExpiredUser(expiredUser);
+
+      expect(user.status).toBeNull();
+      expect(user.invitation_date).toEqual(expiredUser.invitation_date);
+      expect(hubspotSpy).not.toHaveBeenCalled();
+    });
+  });
 });
