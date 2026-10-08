@@ -7,6 +7,7 @@ import {
   ComboboxContent,
   ComboboxControls,
   ComboboxField,
+  ComboboxHelperText,
   ComboboxInput,
   ComboboxInputProps,
   ComboboxLabel,
@@ -42,6 +43,8 @@ type AppComboboxBaseProps<T> = Omit<
   label: string;
   labelPosition?: ComboboxLabelPosition;
   required?: boolean;
+  /** Puts the field in error and shows the message below it. */
+  error?: string;
   placeholder?: string;
   onBlur?: ComboboxInputProps['onBlur'];
   emptyMessage?: ReactNode;
@@ -56,6 +59,7 @@ export const AppCombobox = <T,>({
   label,
   labelPosition = 'top',
   required,
+  error,
   placeholder,
   onBlur,
   emptyMessage,
@@ -74,6 +78,7 @@ export const AppCombobox = <T,>({
       {...comboboxProps}
       multiple={multiple}
       labelPosition={labelPosition}
+      error={Boolean(error)}
       value={value}
       // The design system hands back the shape `multiple` selects.
       onValueChange={onValueChange as ComboboxProps<T>['onValueChange']}>
@@ -84,6 +89,8 @@ export const AppCombobox = <T,>({
         {multiple && <ComboboxChips />}
         <ComboboxInput
           aria-label={hasVisibleLabel ? undefined : label}
+          // The input links the helper text but never marks itself invalid.
+          aria-invalid={error ? true : undefined}
           placeholder={placeholder}
           onBlur={onBlur}
         />
@@ -92,6 +99,7 @@ export const AppCombobox = <T,>({
           <ComboboxTrigger />
         </ComboboxControls>
       </ComboboxField>
+      {error && <ComboboxHelperText>{error}</ComboboxHelperText>}
       <ComboboxContent
         className={contentClassName}
         emptyMessage={emptyMessage ?? t('Utils.NotFound')}

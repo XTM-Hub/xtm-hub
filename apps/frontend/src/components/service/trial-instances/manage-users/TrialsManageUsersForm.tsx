@@ -7,7 +7,7 @@ import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
 import { Button } from '@filigran/design-system';
-import { Form, FormField, FormItem, SheetFooter } from '@filigran/ui';
+import { Form, FormField, SheetFooter } from '@filigran/ui';
 import { serviceGroup_fragment$key } from '@generated/serviceGroup_fragment.graphql';
 import ServiceGroupsByServiceInstanceIdQueryGraphql, {
   serviceGroupsByServiceInstanceIdQuery,
@@ -137,19 +137,18 @@ export const TrialsManageUsersForm = ({
       <FormField
         key={group.name}
         control={form.control}
-        render={({ field: { value, onChange } }) => {
+        render={({ field: { value, onChange }, fieldState }) => {
           return (
-            <FormItem>
-              <AppCombobox
-                multiple
-                label={group.name}
-                placeholder={t('Service.Trials.ManageUsers.Email')}
-                options={optionIds.ids}
-                value={value ?? []}
-                onValueChange={onChange}
-                getOptionLabel={optionIds.getOptionLabel}
-              />
-            </FormItem>
+            <AppCombobox
+              multiple
+              label={group.name}
+              placeholder={t('Service.Trials.ManageUsers.Email')}
+              error={fieldState.error?.message}
+              options={optionIds.ids}
+              value={value ?? []}
+              onValueChange={onChange}
+              getOptionLabel={optionIds.getOptionLabel}
+            />
           );
         }}
         name={`groups.${index}.userIds`}

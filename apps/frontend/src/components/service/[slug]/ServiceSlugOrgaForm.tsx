@@ -21,14 +21,7 @@ import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { Button, Checkbox, DatePicker } from '@filigran/design-system';
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  SheetFooter,
-} from '@filigran/ui';
+import { Form, FormField, FormLabel, SheetFooter } from '@filigran/ui';
 import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { subscriptionInServiceUpdateMutation } from '@generated/subscriptionInServiceUpdateMutation.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -202,26 +195,24 @@ export const ServiceSlugOrgaForm = ({
             <FormField
               control={form.control}
               name="organization_id"
-              render={({ field }) => (
-                <FormItem>
-                  <AppCombobox
-                    multiple
-                    label={t('OrganizationInServiceAction.Organization')}
-                    placeholder={t(
-                      'OrganizationInServiceAction.SelectOrganization'
-                    )}
-                    options={organizationOptionIds.ids}
-                    value={field.value ?? []}
-                    onValueChange={field.onChange}
-                    onInputChange={(text, meta) => {
-                      if (meta.cause !== 'select')
-                        handleOrganizationsInputChange(text);
-                    }}
-                    filterOptions={(options) => options}
-                    getOptionLabel={organizationOptionIds.getOptionLabel}
-                  />
-                  <FormMessage />
-                </FormItem>
+              render={({ field, fieldState }) => (
+                <AppCombobox
+                  multiple
+                  label={t('OrganizationInServiceAction.Organization')}
+                  placeholder={t(
+                    'OrganizationInServiceAction.SelectOrganization'
+                  )}
+                  error={fieldState.error?.message}
+                  options={organizationOptionIds.ids}
+                  value={field.value ?? []}
+                  onValueChange={field.onChange}
+                  onInputChange={(text, meta) => {
+                    if (meta.cause !== 'select')
+                      handleOrganizationsInputChange(text);
+                  }}
+                  filterOptions={(options) => options}
+                  getOptionLabel={organizationOptionIds.getOptionLabel}
+                />
               )}
             />
           )}

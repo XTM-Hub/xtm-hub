@@ -35,7 +35,6 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
   Separator,
   SheetFooter,
 } from '@filigran/ui';
@@ -268,22 +267,20 @@ const EpicForm = ({
           <FormField
             control={form.control}
             name="products"
-            render={({ field }) => (
-              <FormItem>
-                <AppCombobox
-                  multiple
-                  label={t('Epic.Form.FiligranProduct')}
-                  required
-                  placeholder={t('Epic.Form.FiligranProduct')}
-                  options={FILIGRAN_PRODUCT_OPTION_IDS.ids}
-                  value={field.value ?? []}
-                  onValueChange={(products) =>
-                    field.onChange(sortFiligranProducts(products))
-                  }
-                  getOptionLabel={FILIGRAN_PRODUCT_OPTION_IDS.getOptionLabel}
-                />
-                <FormMessage />
-              </FormItem>
+            render={({ field, fieldState }) => (
+              <AppCombobox
+                multiple
+                label={t('Epic.Form.FiligranProduct')}
+                required
+                placeholder={t('Epic.Form.FiligranProduct')}
+                error={fieldState.error?.message}
+                options={FILIGRAN_PRODUCT_OPTION_IDS.ids}
+                value={field.value ?? []}
+                onValueChange={(products) =>
+                  field.onChange(sortFiligranProducts(products))
+                }
+                getOptionLabel={FILIGRAN_PRODUCT_OPTION_IDS.getOptionLabel}
+              />
             )}
           />
           <FormField

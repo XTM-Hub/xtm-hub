@@ -2,7 +2,7 @@ import RoleSheetFormFooter from '@/components/admin/role/RoleSheetFormFooter';
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
-import { AutoForm, FormItem, FormMessage } from '@filigran/ui';
+import { AutoForm, useFormField } from '@filigran/ui';
 import { PortalCapability } from '@graphql/generated';
 import { useMemo } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
@@ -32,6 +32,28 @@ export type RolePortalFormValues = z.infer<
   ReturnType<typeof buildRolePortalFormSchema>
 >;
 
+const CapabilitiesField = ({
+  field,
+}: {
+  field: ControllerRenderProps<FieldValues, string>;
+}) => {
+  const t = useTranslate();
+  const { error } = useFormField();
+
+  return (
+    <AppCombobox
+      multiple
+      label={t('RoleListPage.Capabilities')}
+      placeholder={t('RoleListPage.Capabilities')}
+      error={error?.message}
+      options={portalCapabilityOptionIds.ids}
+      value={field.value ?? []}
+      onValueChange={field.onChange}
+      getOptionLabel={portalCapabilityOptionIds.getOptionLabel}
+    />
+  );
+};
+
 const RolePortalForm = ({
   rolePortal,
   handleSubmit,
@@ -53,24 +75,7 @@ const RolePortalForm = ({
           inputProps: { placeholder: t('RoleListPage.Role') },
         },
         capabilities: {
-          fieldType: ({
-            field,
-          }: {
-            field: ControllerRenderProps<FieldValues, string>;
-          }) => (
-            <FormItem>
-              <AppCombobox
-                multiple
-                label={t('RoleListPage.Capabilities')}
-                placeholder={t('RoleListPage.Capabilities')}
-                options={portalCapabilityOptionIds.ids}
-                value={field.value ?? []}
-                onValueChange={field.onChange}
-                getOptionLabel={portalCapabilityOptionIds.getOptionLabel}
-              />
-              <FormMessage />
-            </FormItem>
-          ),
+          fieldType: CapabilitiesField,
         },
       }}>
       {({ isDirty }) => <RoleSheetFormFooter isDirty={isDirty} />}

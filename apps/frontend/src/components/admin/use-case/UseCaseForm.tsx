@@ -3,13 +3,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
 import { Button, ColorPicker, Input } from '@filigran/design-system';
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormMessage,
-  SheetFooter,
-} from '@filigran/ui';
+import { Form, FormField, SheetFooter } from '@filigran/ui';
 import { FiligranProduct } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -84,19 +78,17 @@ const UseCaseForm = ({
         <FormField
           control={form.control}
           name="product"
-          render={({ field }) => (
-            <FormItem>
-              <AppCombobox
-                multiple
-                label={t('UseCaseForm.Product')}
-                placeholder={t('UseCaseForm.Product')}
-                options={productTagOptionIds.ids}
-                value={field.value ?? []}
-                onValueChange={field.onChange}
-                getOptionLabel={productTagOptionIds.getOptionLabel}
-              />
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <AppCombobox
+              multiple
+              label={t('UseCaseForm.Product')}
+              placeholder={t('UseCaseForm.Product')}
+              error={fieldState.error?.message}
+              options={productTagOptionIds.ids}
+              value={field.value ?? []}
+              onValueChange={field.onChange}
+              getOptionLabel={productTagOptionIds.getOptionLabel}
+            />
           )}
         />
         <FormField

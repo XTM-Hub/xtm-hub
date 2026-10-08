@@ -141,6 +141,12 @@ Rules shared by every row, from `SsoGroupRolePortalForm` (the app's existing des
   `onValueChange` is typed by `multiple` (`T | null` or `T[]`), so callers cast nothing. Every composed site uses it;
   the chips-only domains field of 3701 stays inline (no list, no controls). The design system already exports a
   `ComboboxField` part, hence the `App` prefix, as `AppSnackbars`.
+- **The combobox owns its error** (epic review, one rule with Select, Input, Textarea, FileSelect and DatePicker):
+  `AppCombobox` takes `error`, sets the root's error state and `aria-invalid` on the input, and renders the message in
+  `ComboboxHelperText`, linked by `aria-describedby`. The legacy `FormItem` / `FormMessage` / `FormControl` around
+  every combobox go; AutoForm `fieldType` fields read the error with `useFormField()`. On screen: red field border and
+  the design system helper text under the field; the label no longer turns red. `EntityTypesField`,
+  `UseCasesField` and `TrialsManageUsersForm`, which had no `FormMessage`, now show their error.
 
 ## To validate
 
@@ -171,3 +177,5 @@ Rules shared by every row, from `SsoGroupRolePortalForm` (the app's existing des
   open panel dismisses it and the click reopens it; the chevron cannot close the panel. To raise upstream.
 - `UserOrganizationFilter` resolves its value from the first 50 organizations of the server search: a selection
   outside them shows the placeholder and no clear control, as the legacy showed its placeholder.
+- Design system: `ComboboxHelperText` registers its id on mount and never unregisters it, so once an error clears the
+  input keeps an `aria-describedby` to a missing id. Harmless for assistive technology; to raise upstream.

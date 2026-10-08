@@ -1,7 +1,7 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
 import SelectUsersFormField from '@/components/ui/SelectUsers';
 import { useTranslate } from '@/hooks/use-translate';
-import { FormItem } from '@filigran/ui';
+import { useFormField } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useContext } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
@@ -19,15 +19,16 @@ export const ServiceFormUploaderIdField = ({
 }: ServiceFormUploaderIdFieldProps) => {
   const t = useTranslate();
   const { me } = useContext(PortalContext);
+  const { error } = useFormField();
+
   return (
-    <FormItem>
-      <SelectUsersFormField
-        label={t('Service.Form.Author')}
-        defaultValue={document?.uploader?.email ?? me!.email}
-        value={field.value}
-        onValueChange={field.onChange}
-        disabled={disabled}
-      />
-    </FormItem>
+    <SelectUsersFormField
+      label={t('Service.Form.Author')}
+      defaultValue={document?.uploader?.email ?? me!.email}
+      value={field.value}
+      onValueChange={field.onChange}
+      disabled={disabled}
+      error={error?.message}
+    />
   );
 };

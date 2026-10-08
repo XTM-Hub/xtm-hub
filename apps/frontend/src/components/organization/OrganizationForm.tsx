@@ -6,17 +6,12 @@ import {
   Combobox,
   ComboboxChips,
   ComboboxField,
+  ComboboxHelperText,
   ComboboxInput,
   ComboboxLabel,
   Input,
 } from '@filigran/design-system';
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormMessage,
-  SheetFooter,
-} from '@filigran/ui';
+import { Form, FormField, SheetFooter } from '@filigran/ui';
 import { organizationItem_fragment$data } from '@generated/organizationItem_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { KeyboardEvent, useState } from 'react';
@@ -115,33 +110,37 @@ export const OrganizationForm = ({
         <FormField
           control={form.control}
           name="domains"
-          render={({ field }) => (
-            <FormItem className="flex flex-col items-start">
-              <Combobox<string>
-                multiple
-                options={[]}
-                value={field.value}
-                onValueChange={(next) =>
-                  setValue('domains', next as string[], { shouldDirty: true })
-                }
-                open={false}
-                allowCustomValue
-                createValueFromInput={(input) => input}
-                inputValue={domainInput}
-                onInputChange={setDomainInput}>
-                <ComboboxLabel>{t('OrganizationForm.Domains')}</ComboboxLabel>
-                <ComboboxField>
-                  <ComboboxChips />
-                  <ComboboxInput
-                    ref={field.ref}
-                    onBlur={field.onBlur}
-                    placeholder={t('OrganizationForm.DomainsPlaceholder')}
-                    onKeyDown={handleDomainKeyDown}
-                  />
-                </ComboboxField>
-              </Combobox>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Combobox<string>
+              multiple
+              options={[]}
+              value={field.value}
+              onValueChange={(next) =>
+                setValue('domains', next as string[], { shouldDirty: true })
+              }
+              open={false}
+              allowCustomValue
+              createValueFromInput={(input) => input}
+              inputValue={domainInput}
+              onInputChange={setDomainInput}
+              error={Boolean(fieldState.error?.message)}>
+              <ComboboxLabel>{t('OrganizationForm.Domains')}</ComboboxLabel>
+              <ComboboxField>
+                <ComboboxChips />
+                <ComboboxInput
+                  ref={field.ref}
+                  onBlur={field.onBlur}
+                  placeholder={t('OrganizationForm.DomainsPlaceholder')}
+                  onKeyDown={handleDomainKeyDown}
+                  aria-invalid={fieldState.error?.message ? true : undefined}
+                />
+              </ComboboxField>
+              {fieldState.error?.message && (
+                <ComboboxHelperText>
+                  {fieldState.error.message}
+                </ComboboxHelperText>
+              )}
+            </Combobox>
           )}
         />
 

@@ -20,6 +20,7 @@ interface SelectUsersFormFieldProps {
   value?: string;
   onValueChange: (value: string) => void;
   disabled?: boolean;
+  error?: string;
 }
 
 const SelectUsersFormField = ({
@@ -28,6 +29,7 @@ const SelectUsersFormField = ({
   value,
   onValueChange,
   disabled,
+  error,
 }: SelectUsersFormFieldProps) => {
   const t = useTranslate();
   // Keeps the email of a picked user that a later search drops from the options
@@ -82,6 +84,7 @@ const SelectUsersFormField = ({
     <AppCombobox<UserOption>
       label={label}
       placeholder={t('InviteUserServiceForm.Email')}
+      error={error}
       options={users}
       value={selectedUser}
       onValueChange={(user) => {

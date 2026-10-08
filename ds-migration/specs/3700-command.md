@@ -172,6 +172,8 @@ Rules shared by every `MultiSelectFormField` row:
   a clear resets the search with the selection.
 - **Default substring filter** where the legacy filtered client side (RULE-05); identity where it did not.
 - **The multi-selects use `AppCombobox`** (epic review, see 3545): the composition and the `as string[]` casts go.
+- **The multi-selects own their error** (epic review, see 3545): `error` on `AppCombobox`, no `FormItem` /
+  `FormMessage` / `FormControl`.
 
 ## To validate
 
@@ -186,8 +188,6 @@ Rules shared by every `MultiSelectFormField` row:
 
 ## Deferred findings
 
-- `FormControl` no longer reaches any field, so `aria-invalid` and the `aria-describedby` link to `FormMessage` are
-  lost where the legacy button received them (same as 3545 and the AutoForm note of 3566). With item 3706.
 - The chip row ("Selected values"), clear ("Clear") and chevron ("Toggle options") keep the design system's English
   names; already deferred by 3545.
 - `TrialsManageUsersForm` builds `userIds` with `options.find(...)?.value`, which can hold `undefined`; pre-existing.

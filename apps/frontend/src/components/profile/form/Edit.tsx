@@ -10,8 +10,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@filigran/design-system';
-import { AutoForm, FormItem, FormMessage } from '@filigran/ui';
+import { AutoForm, useFormField } from '@filigran/ui';
 import { useContext } from 'react';
+import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 import { z } from 'zod';
 
 const formSchema = z.object({
@@ -28,6 +29,24 @@ export type ProfileFormEditSchema = z.infer<typeof formSchema>;
 interface ProfileFormEditProps {
   onSubmit: (values: ProfileFormEditSchema) => void;
 }
+
+const CountryField = ({
+  field,
+}: {
+  field: ControllerRenderProps<FieldValues, string>;
+}) => {
+  const t = useTranslate();
+  const { error } = useFormField();
+
+  return (
+    <CountryCombobox
+      label={t('UserForm.Country')}
+      value={field.value ? { name: field.value } : undefined}
+      onValueChange={(value) => field.onChange(value?.name)}
+      error={error?.message}
+    />
+  );
+};
 
 export const ProfileFormEdit = ({ onSubmit }: ProfileFormEditProps) => {
   const t = useTranslate();
@@ -61,16 +80,7 @@ export const ProfileFormEdit = ({ onSubmit }: ProfileFormEditProps) => {
               },
             },
             country: {
-              fieldType: ({ field }) => (
-                <FormItem>
-                  <CountryCombobox
-                    label={t('UserForm.Country')}
-                    value={field.value ? { name: field.value } : undefined}
-                    onValueChange={(value) => field.onChange(value?.name)}
-                  />
-                  <FormMessage />
-                </FormItem>
-              ),
+              fieldType: CountryField,
             },
           }}>
           <div className="flex justify-end">

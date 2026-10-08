@@ -11,12 +11,14 @@ interface CountryComboboxProps {
   label: string;
   value?: CountryOption | undefined;
   onValueChange: (value: CountryOption | undefined) => void;
+  error?: string;
 }
 
 export const CountryCombobox = ({
   label,
   value,
   onValueChange,
+  error,
 }: CountryComboboxProps) => {
   const t = useTranslate();
   const { countries } = countryData;
@@ -28,6 +30,7 @@ export const CountryCombobox = ({
     <AppCombobox<CountryOption>
       label={label}
       placeholder={t('CountryComboBox.Placeholder')}
+      error={error}
       options={dataTab}
       value={value ?? null}
       onValueChange={(next) => onValueChange(next ?? undefined)}

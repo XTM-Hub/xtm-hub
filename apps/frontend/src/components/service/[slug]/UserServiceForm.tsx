@@ -23,14 +23,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  SheetFooter,
-} from '@filigran/ui';
+import { Form, FormField, FormLabel, SheetFooter } from '@filigran/ui';
 import { subscriptionByIdQuery$data } from '@generated/subscriptionByIdQuery.graphql';
 import { UserList_fragment$key } from '@generated/UserList_fragment.graphql';
 import { userServiceCreateMutation } from '@generated/userServiceCreateMutation.graphql';
@@ -290,23 +283,21 @@ export const UserServiceForm = ({
             <FormField
               control={extendedForm.control}
               name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <AppCombobox
-                    multiple
-                    label={t('InviteUserServiceForm.Email')}
-                    placeholder={t('Service.Management.Email')}
-                    options={usersOptionIds.ids}
-                    value={field.value ?? []}
-                    onValueChange={field.onChange}
-                    onInputChange={(text, meta) => {
-                      if (meta.cause !== 'select') handleUsersInputChange(text);
-                    }}
-                    filterOptions={(options) => options}
-                    getOptionLabel={usersOptionIds.getOptionLabel}
-                  />
-                  <FormMessage />
-                </FormItem>
+              render={({ field, fieldState }) => (
+                <AppCombobox
+                  multiple
+                  label={t('InviteUserServiceForm.Email')}
+                  placeholder={t('Service.Management.Email')}
+                  error={fieldState.error?.message}
+                  options={usersOptionIds.ids}
+                  value={field.value ?? []}
+                  onValueChange={field.onChange}
+                  onInputChange={(text, meta) => {
+                    if (meta.cause !== 'select') handleUsersInputChange(text);
+                  }}
+                  filterOptions={(options) => options}
+                  getOptionLabel={usersOptionIds.getOptionLabel}
+                />
               )}
             />
           </>

@@ -2,7 +2,7 @@ import { useUseCases } from '@/components/admin/use-case/use-use-cases';
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
-import { FormItem } from '@filigran/ui';
+import { useFormField } from '@filigran/ui';
 import type { FiligranProduct } from '@graphql/generated';
 import { useMemo } from 'react';
 import { ControllerRenderProps, FieldPath, FieldValues } from 'react-hook-form';
@@ -27,6 +27,7 @@ export const ServiceFormUseCasesField = <
   required,
 }: ServiceFormUseCasesFieldProps<TFieldValues, TName>) => {
   const t = useTranslate();
+  const { error } = useFormField();
   const useCases = useUseCases({ product });
   const useCaseOptionIds = useMemo(
     () =>
@@ -39,18 +40,17 @@ export const ServiceFormUseCasesField = <
   );
 
   return (
-    <FormItem>
-      <AppCombobox
-        multiple
-        label={t('Service.Form.UseCasesLabel')}
-        required={required}
-        placeholder={t('Service.Form.UseCasesPlaceholder')}
-        disabled={disabled}
-        options={useCaseOptionIds.ids}
-        value={field.value ?? []}
-        onValueChange={field.onChange}
-        getOptionLabel={useCaseOptionIds.getOptionLabel}
-      />
-    </FormItem>
+    <AppCombobox
+      multiple
+      label={t('Service.Form.UseCasesLabel')}
+      required={required}
+      placeholder={t('Service.Form.UseCasesPlaceholder')}
+      error={error?.message}
+      disabled={disabled}
+      options={useCaseOptionIds.ids}
+      value={field.value ?? []}
+      onValueChange={field.onChange}
+      getOptionLabel={useCaseOptionIds.getOptionLabel}
+    />
   );
 };

@@ -12,13 +12,7 @@ import { useTranslate } from '@/hooks/use-translate';
 import { cn, isEmpty } from '@/lib/utils';
 import { Button, IconButton, Input } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormMessage,
-  SheetFooter,
-} from '@filigran/ui';
+import { Form, FormField, SheetFooter } from '@filigran/ui';
 import { Label } from '@filigran/ui/clients';
 import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -199,31 +193,29 @@ export const AdminUserUpdateForm = ({
                 control={form.control}
                 key={`organization_capabilities.${index}.capabilities`}
                 name={`organization_capabilities.${index}.capabilities`}
-                render={({ field: formField }) => {
+                render={({ field: formField, fieldState }) => {
                   return (
-                    <FormItem>
-                      <div className="grid gap-m items-center grid-cols-[1fr_4fr_3rem]">
-                        <Label>
-                          {
-                            userOrganization.find(
-                              ({ id }) => id === field.organization_id
-                            )?.name
-                          }
-                        </Label>
-                        <CapabilityMultiSelect
-                          value={formField.value}
-                          onChange={formField.onChange}
-                        />
-                        <IconButton
-                          type="button"
-                          priority="tertiary"
-                          aria-label={t('MenuActions.Remove')}
-                          icon={<DeleteIcon className="h-4 w-4" />}
-                          onClick={() => remove(index)}
-                        />
-                      </div>
-                      <FormMessage />
-                    </FormItem>
+                    <div className="grid gap-m items-center grid-cols-[1fr_4fr_3rem]">
+                      <Label>
+                        {
+                          userOrganization.find(
+                            ({ id }) => id === field.organization_id
+                          )?.name
+                        }
+                      </Label>
+                      <CapabilityMultiSelect
+                        value={formField.value}
+                        onChange={formField.onChange}
+                        error={fieldState.error?.message}
+                      />
+                      <IconButton
+                        type="button"
+                        priority="tertiary"
+                        aria-label={t('MenuActions.Remove')}
+                        icon={<DeleteIcon className="h-4 w-4" />}
+                        onClick={() => remove(index)}
+                      />
+                    </div>
                   );
                 }}
               />

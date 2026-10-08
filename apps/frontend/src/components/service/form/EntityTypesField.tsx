@@ -2,7 +2,7 @@ import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
 import { ENTITY_TYPES } from '@/utils/shareable-resources/entity-type';
-import { FormItem } from '@filigran/ui';
+import { useFormField } from '@filigran/ui';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 
 const ENTITY_TYPE_OPTION_IDS = toComboboxOptionIds(
@@ -21,19 +21,20 @@ export const ServiceFormEntityTypesField = ({
   disabled,
 }: ServiceFormEntityTypesFieldProps) => {
   const t = useTranslate();
+  const { error } = useFormField();
+
   return (
-    <FormItem>
-      <AppCombobox
-        multiple
-        label={t('Service.Form.EntityTypesLabel')}
-        required
-        placeholder={t('Service.Form.EntityTypesPlaceholder')}
-        disabled={disabled}
-        options={ENTITY_TYPE_OPTION_IDS.ids}
-        value={field.value ?? []}
-        onValueChange={field.onChange}
-        getOptionLabel={ENTITY_TYPE_OPTION_IDS.getOptionLabel}
-      />
-    </FormItem>
+    <AppCombobox
+      multiple
+      label={t('Service.Form.EntityTypesLabel')}
+      required
+      placeholder={t('Service.Form.EntityTypesPlaceholder')}
+      error={error?.message}
+      disabled={disabled}
+      options={ENTITY_TYPE_OPTION_IDS.ids}
+      value={field.value ?? []}
+      onValueChange={field.onChange}
+      getOptionLabel={ENTITY_TYPE_OPTION_IDS.getOptionLabel}
+    />
   );
 };

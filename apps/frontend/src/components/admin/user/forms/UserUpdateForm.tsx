@@ -11,13 +11,7 @@ import useAdminPath from '@/hooks/use-admin-path';
 import { useTranslate } from '@/hooks/use-translate';
 import { isEmpty } from '@/lib/utils';
 import { Button } from '@filigran/design-system';
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormMessage,
-  SheetFooter,
-} from '@filigran/ui';
+import { Form, FormField, SheetFooter } from '@filigran/ui';
 import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useContext } from 'react';
@@ -96,15 +90,13 @@ export const UserUpdateForm = ({ user, callback }: UserUpdateFormProps) => {
         <FormField
           control={form.control}
           name="capabilities"
-          render={({ field }) => (
-            <FormItem>
-              <CapabilityMultiSelect
-                label={t('UserForm.OrganizationCapabilities')}
-                value={field.value}
-                onChange={field.onChange}
-              />
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <CapabilityMultiSelect
+              label={t('UserForm.OrganizationCapabilities')}
+              value={field.value}
+              onChange={field.onChange}
+              error={fieldState.error?.message}
+            />
           )}
         />
 

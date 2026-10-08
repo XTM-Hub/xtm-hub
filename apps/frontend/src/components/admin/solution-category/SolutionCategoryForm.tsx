@@ -3,13 +3,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
 import { Button, Input } from '@filigran/design-system';
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormMessage,
-  SheetFooter,
-} from '@filigran/ui';
+import { Form, FormField, SheetFooter } from '@filigran/ui';
 import { FiligranProduct } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -79,19 +73,17 @@ const SolutionCategoryForm = ({
         <FormField
           control={form.control}
           name="product"
-          render={({ field }) => (
-            <FormItem>
-              <AppCombobox
-                multiple
-                label={t('SolutionCategory.Form.Product')}
-                placeholder={t('SolutionCategory.Form.Product')}
-                options={productOptionIds.ids}
-                value={field.value ?? []}
-                onValueChange={field.onChange}
-                getOptionLabel={productOptionIds.getOptionLabel}
-              />
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <AppCombobox
+              multiple
+              label={t('SolutionCategory.Form.Product')}
+              placeholder={t('SolutionCategory.Form.Product')}
+              error={fieldState.error?.message}
+              options={productOptionIds.ids}
+              value={field.value ?? []}
+              onValueChange={field.onChange}
+              getOptionLabel={productOptionIds.getOptionLabel}
+            />
           )}
         />
         <SheetFooter

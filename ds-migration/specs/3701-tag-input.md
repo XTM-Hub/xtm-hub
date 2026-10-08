@@ -101,8 +101,9 @@ invalid or already listed, remove a domain from its chip or with Backspace. Then
   pick or create resets it.
 - **`options={[]}`**: no suggestions exist; with the domains as options, a duplicate would match an option and the
   engine would drop the Enter silently instead of letting the validation explain it.
-- **Same field composition as 3700**: `ComboboxLabel` replaces `FormLabel`, `FormControl` goes, `FormItem` and
-  `FormMessage` stay, no `error` on the root; the label is not `required` since the legacy showed no `*`.
+- **The field owns its error** (epic review, the 3545 rule): `ComboboxLabel` replaces `FormLabel`, the root takes
+  `error`, the input `aria-invalid`, and `ComboboxHelperText` replaces `FormMessage`; the label is not `required` since
+  the legacy showed no `*`.
 - **Enter on an empty field still shows the invalid-domain message and does not submit**, as the legacy did: changing
   that is a behaviour change, not the swap.
 - **The domains field stays out of `AppCombobox`** (epic review, see 3545): chips only, with no list and no controls,
@@ -112,8 +113,6 @@ invalid or already listed, remove a domain from its chip or with Backspace. Then
 
 - The domains field takes the design system look: chips inside a 36px field that wraps and grows, no clear-all control
   and no chevron. Alternative: add `ComboboxClear`, which the legacy did not have.
-- A rejected domain shows `FormMessage` under the field but no longer turns the label red (the 3700 choice). Alternative:
-  `error={Boolean(fieldState.error)}` on the root, which paints the field border instead.
 - Backspace in the empty input now removes the last domain (the design system's chip row), where the legacy removed one
   only after the arrow keys had selected it; the removal stays unsaved until Validate. Alternative: block that
   Backspace in `handleDomainKeyDown`, which bends the design system's keyboard model.
@@ -124,8 +123,6 @@ invalid or already listed, remove a domain from its chip or with Backspace. Then
   a dedicated message needs a new key in three locales. Pre-existing copy.
 - The chip row and remove controls keep the design system's English names ("Selected values", "Remove {domain}"),
   already deferred by 3534, 3545 and 3700.
-- `FormControl` no longer reaches the field, so no `aria-invalid` or `aria-describedby` to `FormMessage`; the legacy
-  input had neither. With item 3706, as in 3700.
 - Enter during an IME composition (`ja`) runs the validation on the partial text, as the legacy did.
 - The chips-only `ComboboxInput` still announces `aria-autocomplete="list"` though no list can open; the contract
   forwards the attribute, so the field could override it. Design system default, left as shipped.

@@ -2,7 +2,7 @@ import RoleSheetFormFooter from '@/components/admin/role/RoleSheetFormFooter';
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { AutoForm, FormItem, FormMessage } from '@filigran/ui';
+import { AutoForm, useFormField } from '@filigran/ui';
 import { RolePortalsQuery, useRolePortalsQuery } from '@graphql/generated';
 import { useMemo } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
@@ -28,6 +28,42 @@ export type SsoGroupRolePortalFormValues = z.infer<
   ReturnType<typeof buildSsoGroupRolePortalFormSchema>
 >;
 
+const RolePortalField = ({
+  field,
+}: {
+  field: ControllerRenderProps<FieldValues, string>;
+}) => {
+  const t = useTranslate();
+  const { error } = useFormField();
+  const { data, isLoading } = useRolePortalsQuery(
+    portalGraphqlClient,
+    undefined,
+    { staleTime: ROLE_PORTALS_STALE_TIME }
+  );
+  const rolePortalOptions = data?.rolePortals ?? [];
+
+  return (
+    <AppCombobox<RolePortalOption>
+      label={t('RoleListPage.Role')}
+      required
+      placeholder={t('RoleListPage.Role')}
+      error={error?.message}
+      onBlur={field.onBlur}
+      options={rolePortalOptions}
+      value={
+        rolePortalOptions.find(
+          (rolePortal) => rolePortal.name === field.value
+        ) ?? null
+      }
+      onValueChange={(rolePortal) => field.onChange(rolePortal?.name ?? '')}
+      getOptionLabel={(rolePortal) => rolePortal.name}
+      isOptionEqualToValue={(a, b) => a.id === b.id}
+      loading={isLoading}
+      clearable
+    />
+  );
+};
+
 const SsoGroupRolePortalForm = ({
   ssoGroupRolePortal,
   handleSubmit,
@@ -37,12 +73,6 @@ const SsoGroupRolePortalForm = ({
 }) => {
   const t = useTranslate();
   const formSchema = useMemo(() => buildSsoGroupRolePortalFormSchema(t), [t]);
-  const { data, isLoading } = useRolePortalsQuery(
-    portalGraphqlClient,
-    undefined,
-    { staleTime: ROLE_PORTALS_STALE_TIME }
-  );
-  const rolePortalOptions = data?.rolePortals ?? [];
 
   return (
     <AutoForm
@@ -55,34 +85,7 @@ const SsoGroupRolePortalForm = ({
           inputProps: { placeholder: t('RoleListPage.SsoGroup') },
         },
         rolePortal: {
-          fieldType: ({
-            field,
-          }: {
-            field: ControllerRenderProps<FieldValues, string>;
-          }) => (
-            <FormItem>
-              <AppCombobox<RolePortalOption>
-                label={t('RoleListPage.Role')}
-                required
-                placeholder={t('RoleListPage.Role')}
-                onBlur={field.onBlur}
-                options={rolePortalOptions}
-                value={
-                  rolePortalOptions.find(
-                    (rolePortal) => rolePortal.name === field.value
-                  ) ?? null
-                }
-                onValueChange={(rolePortal) =>
-                  field.onChange(rolePortal?.name ?? '')
-                }
-                getOptionLabel={(rolePortal) => rolePortal.name}
-                isOptionEqualToValue={(a, b) => a.id === b.id}
-                loading={isLoading}
-                clearable
-              />
-              <FormMessage />
-            </FormItem>
-          ),
+          fieldType: RolePortalField,
         },
       }}>
       {({ isDirty }) => <RoleSheetFormFooter isDirty={isDirty} />}

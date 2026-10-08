@@ -4,7 +4,7 @@ import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
 import { Button } from '@filigran/design-system';
-import { Form, FormField, FormItem, FormMessage } from '@filigran/ui';
+import { Form, FormField } from '@filigran/ui';
 import { PlatformIdentifier } from '@graphql/generated';
 import { ReactNode, useMemo } from 'react';
 import { UseFormReturn, useFormState, useWatch } from 'react-hook-form';
@@ -77,14 +77,15 @@ export const TrialUserFormSkeleton = ({
         <FormField
           control={form.control}
           name="userIds"
-          render={({ field }) => (
-            <FormItem>
+          render={({ field, fieldState }) => (
+            <div className="flex flex-col gap-s">
               <div className="layer-2">
                 <AppCombobox
                   multiple
                   label={pickerLabel || pickerPlaceholder}
                   labelPosition={pickerLabel ? 'top' : 'none'}
                   placeholder={pickerPlaceholder}
+                  error={fieldState.error?.message}
                   contentClassName="layer-2"
                   options={usersOptionIds.ids}
                   value={field.value ?? []}
@@ -105,9 +106,8 @@ export const TrialUserFormSkeleton = ({
                   getOptionLabel={usersOptionIds.getOptionLabel}
                 />
               </div>
-              <FormMessage />
               {pickerNotice}
-            </FormItem>
+            </div>
           )}
         />
 

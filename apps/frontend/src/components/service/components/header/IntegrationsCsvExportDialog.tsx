@@ -22,7 +22,7 @@ import {
   DialogFooter,
   DialogTitle,
 } from '@filigran/design-system';
-import { AutoForm, FormItem, FormMessage, Label } from '@filigran/ui';
+import { AutoForm, Label, useFormField } from '@filigran/ui';
 import {
   FiligranProduct,
   IntegrationType,
@@ -73,6 +73,7 @@ const IntegrationsCsvExportFilterField = ({
   placeholder,
   testId,
 }: IntegrationsCsvExportFilterFieldProps) => {
+  const { error } = useFormField();
   const optionIds = useMemo(
     () =>
       toComboboxOptionIds(
@@ -83,19 +84,18 @@ const IntegrationsCsvExportFilterField = ({
     [options]
   );
   return (
-    <FormItem>
-      <AppCombobox
-        multiple
-        className="min-w-0 max-w-md"
-        label={label}
-        placeholder={placeholder}
-        data-testid={testId}
-        options={optionIds.ids}
-        value={field.value ?? []}
-        onValueChange={field.onChange}
-        getOptionLabel={optionIds.getOptionLabel}
-      />
-    </FormItem>
+    <AppCombobox
+      multiple
+      className="min-w-0 max-w-md"
+      label={label}
+      placeholder={placeholder}
+      error={error?.message}
+      data-testid={testId}
+      options={optionIds.ids}
+      value={field.value ?? []}
+      onValueChange={field.onChange}
+      getOptionLabel={optionIds.getOptionLabel}
+    />
   );
 };
 
@@ -143,16 +143,14 @@ export const IntegrationsCsvExportDialog = ({
     setWasOpen(false);
   }
 
-  const columnOptionIds = useMemo(
+  const columnOptions = useMemo(
     () =>
-      toComboboxOptionIds(
-        INTEGRATION_CSV_EXPORT_COLUMNS,
-        (column) => column.key,
-        (column) =>
-          t(
-            `Service.CsvExport.Columns.${toIntegrationCsvColumnLabelKey(column.key)}`
-          )
-      ),
+      INTEGRATION_CSV_EXPORT_COLUMNS.map((column) => ({
+        value: column.key,
+        label: t(
+          `Service.CsvExport.Columns.${toIntegrationCsvColumnLabelKey(column.key)}`
+        ),
+      })),
     [t]
   );
 
@@ -298,20 +296,13 @@ export const IntegrationsCsvExportDialog = ({
                 }: {
                   field: ControllerRenderProps<FieldValues, string>;
                 }) => (
-                  <FormItem>
-                    <AppCombobox
-                      multiple
-                      className="min-w-0 max-w-md"
-                      label={t('Service.CsvExport.ColumnsLabel')}
-                      placeholder={t('Service.CsvExport.ColumnsPlaceholder')}
-                      data-testid="integrations-csv-export-columns"
-                      options={columnOptionIds.ids}
-                      value={field.value ?? []}
-                      onValueChange={field.onChange}
-                      getOptionLabel={columnOptionIds.getOptionLabel}
-                    />
-                    <FormMessage />
-                  </FormItem>
+                  <IntegrationsCsvExportFilterField
+                    field={field}
+                    options={columnOptions}
+                    label={t('Service.CsvExport.ColumnsLabel')}
+                    placeholder={t('Service.CsvExport.ColumnsPlaceholder')}
+                    testId="integrations-csv-export-columns"
+                  />
                 ),
               },
               integration_type: {

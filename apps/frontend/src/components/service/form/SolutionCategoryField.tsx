@@ -2,7 +2,7 @@ import { useSolutionCategories } from '@/components/service/form/UseSolutionCate
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
-import { FormItem, FormMessage } from '@filigran/ui';
+import { useFormField } from '@filigran/ui';
 import type { FiligranProduct } from '@graphql/generated';
 import { useMemo } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
@@ -19,6 +19,7 @@ export const ServiceFormSolutionCategoryField = ({
   product,
 }: ServiceFormSolutionCategoryFieldProps) => {
   const t = useTranslate();
+  const { error } = useFormField();
   const solutionCategories = useSolutionCategories(product);
   const solutionCategoryOptionIds = useMemo(
     () =>
@@ -31,18 +32,16 @@ export const ServiceFormSolutionCategoryField = ({
   );
 
   return (
-    <FormItem>
-      <AppCombobox
-        multiple
-        label={t('Service.Form.SolutionCategoriesLabel')}
-        placeholder={t('Service.Form.SolutionCategoriesPlaceholder')}
-        disabled={disabled}
-        options={solutionCategoryOptionIds.ids}
-        value={field.value ?? []}
-        onValueChange={field.onChange}
-        getOptionLabel={solutionCategoryOptionIds.getOptionLabel}
-      />
-      <FormMessage />
-    </FormItem>
+    <AppCombobox
+      multiple
+      label={t('Service.Form.SolutionCategoriesLabel')}
+      placeholder={t('Service.Form.SolutionCategoriesPlaceholder')}
+      error={error?.message}
+      disabled={disabled}
+      options={solutionCategoryOptionIds.ids}
+      value={field.value ?? []}
+      onValueChange={field.onChange}
+      getOptionLabel={solutionCategoryOptionIds.getOptionLabel}
+    />
   );
 };

@@ -5,6 +5,7 @@ import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 const LABEL = 'Country';
 const PLACEHOLDER = 'Pick a country';
+const ERROR_MESSAGE = 'Country is required';
 
 interface CountryOption {
   id: string;
@@ -170,5 +171,42 @@ describe('AppCombobox', () => {
 
     // Then
     expect(onValueChange).toHaveBeenCalledWith(null, expect.anything());
+  });
+
+  it('should describe the field with the error message and mark it invalid when an error is given', () => {
+    // Given / When
+    testRender(
+      <AppCombobox
+        label={LABEL}
+        error={ERROR_MESSAGE}
+        options={OPTIONS}
+        value={null}
+        onValueChange={vi.fn()}
+        getOptionLabel={getOptionLabel}
+      />
+    );
+
+    // Then
+    const field = screen.getByRole('combobox', { name: LABEL });
+    expect(field).toHaveAccessibleDescription(ERROR_MESSAGE);
+    expect(field).toBeInvalid();
+  });
+
+  it('should show no helper text and keep the field valid when no error is given', () => {
+    // Given / When
+    testRender(
+      <AppCombobox
+        label={LABEL}
+        options={OPTIONS}
+        value={null}
+        onValueChange={vi.fn()}
+        getOptionLabel={getOptionLabel}
+      />
+    );
+
+    // Then
+    const field = screen.getByRole('combobox', { name: LABEL });
+    expect(field).not.toHaveAttribute('aria-describedby');
+    expect(field).toBeValid();
   });
 });
