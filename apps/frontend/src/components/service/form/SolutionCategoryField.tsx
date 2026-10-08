@@ -1,17 +1,7 @@
 import { useSolutionCategories } from '@/components/service/form/UseSolutionCategories';
+import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
-import {
-  Combobox,
-  ComboboxChips,
-  ComboboxClear,
-  ComboboxContent,
-  ComboboxControls,
-  ComboboxField,
-  ComboboxInput,
-  ComboboxLabel,
-  ComboboxTrigger,
-} from '@filigran/design-system';
 import { FormItem, FormMessage } from '@filigran/ui';
 import type { FiligranProduct } from '@graphql/generated';
 import { useMemo } from 'react';
@@ -42,31 +32,16 @@ export const ServiceFormSolutionCategoryField = ({
 
   return (
     <FormItem>
-      <Combobox<string>
+      <AppCombobox
         multiple
+        label={t('Service.Form.SolutionCategoriesLabel')}
+        placeholder={t('Service.Form.SolutionCategoriesPlaceholder')}
         disabled={disabled}
         options={solutionCategoryOptionIds.ids}
         value={field.value ?? []}
-        onValueChange={(next) => field.onChange(next as string[])}
-        getOptionLabel={solutionCategoryOptionIds.getOptionLabel}>
-        <ComboboxLabel>
-          {t('Service.Form.SolutionCategoriesLabel')}
-        </ComboboxLabel>
-        <ComboboxField>
-          <ComboboxChips />
-          <ComboboxInput
-            placeholder={t('Service.Form.SolutionCategoriesPlaceholder')}
-          />
-          <ComboboxControls>
-            <ComboboxClear />
-            <ComboboxTrigger />
-          </ComboboxControls>
-        </ComboboxField>
-        <ComboboxContent
-          emptyMessage={t('Utils.NotFound')}
-          listAriaLabel={t('Service.Form.SolutionCategoriesLabel')}
-        />
-      </Combobox>
+        onValueChange={field.onChange}
+        getOptionLabel={solutionCategoryOptionIds.getOptionLabel}
+      />
       <FormMessage />
     </FormItem>
   );

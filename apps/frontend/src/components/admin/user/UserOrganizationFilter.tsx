@@ -1,14 +1,6 @@
 import { getOrganizations } from '@/components/organization/Organization.service';
+import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useTranslate } from '@/hooks/use-translate';
-import {
-  Combobox,
-  ComboboxClear,
-  ComboboxContent,
-  ComboboxControls,
-  ComboboxField,
-  ComboboxInput,
-  ComboboxTrigger,
-} from '@filigran/design-system';
 import { useState } from 'react';
 
 interface OrganizationFilterOption {
@@ -69,35 +61,19 @@ export const UserOrganizationFilter = ({
   const label = t('UserActions.Organization');
 
   return (
-    <Combobox<OrganizationFilterOption>
+    <AppCombobox<OrganizationFilterOption>
       className="w-[200px]"
+      label={label}
       labelPosition="none"
+      placeholder={label}
       options={organizations}
       value={selectedOrganization ?? null}
-      onValueChange={(next) =>
-        handleOnValueChange(
-          (next as OrganizationFilterOption | null) ?? undefined
-        )
-      }
+      onValueChange={(next) => handleOnValueChange(next ?? undefined)}
       onInputChange={(searchTerm, { cause }) => {
         if (cause === 'type') refetch({ searchTerm });
       }}
       getOptionLabel={(organization) => organization.name}
-      isOptionEqualToValue={(a, b) => a.id === b.id}>
-      <ComboboxField>
-        <ComboboxInput
-          aria-label={label}
-          placeholder={label}
-        />
-        <ComboboxControls>
-          <ComboboxClear />
-          <ComboboxTrigger />
-        </ComboboxControls>
-      </ComboboxField>
-      <ComboboxContent
-        emptyMessage={t('Utils.NotFound')}
-        listAriaLabel={label}
-      />
-    </Combobox>
+      isOptionEqualToValue={(a, b) => a.id === b.id}
+    />
   );
 };

@@ -1,4 +1,5 @@
 'use client';
+import { AppCombobox } from '@/components/ui/AppCombobox';
 import {
   ServiceDefinitionIdentifier,
   ServiceInstanceFilterKey,
@@ -14,16 +15,7 @@ import { useTranslate } from '@/hooks/use-translate';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { APP_PATH } from '@/utils/path/constant';
-import {
-  Combobox,
-  ComboboxClear,
-  ComboboxContent,
-  ComboboxControls,
-  ComboboxField,
-  ComboboxInput,
-  ComboboxTrigger,
-  SearchField,
-} from '@filigran/design-system';
+import { SearchField } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
 import { DataTable } from '@filigran/ui';
 import { serviceList_fragment$data } from '@generated/serviceList_fragment.graphql';
@@ -167,32 +159,18 @@ const AdminServiceTab = ({ serviceData, refetch }: AdminServiceTabProps) => {
                 handleInputChange('');
               }}
             />
-            <Combobox<{ value: string; label: string }>
+            <AppCombobox<{ value: string; label: string }>
+              label={label}
               labelPosition="none"
+              placeholder={label}
               options={getServiceDefinitionData}
               value={selectedValue ?? null}
               onValueChange={(next) =>
-                handleIdentifierChange(
-                  (next as { value: string; label: string } | null) ?? undefined
-                )
+                handleIdentifierChange(next ?? undefined)
               }
               getOptionLabel={(option) => option.label}
-              isOptionEqualToValue={(a, b) => a.value === b.value}>
-              <ComboboxField>
-                <ComboboxInput
-                  aria-label={label}
-                  placeholder={label}
-                />
-                <ComboboxControls>
-                  <ComboboxClear />
-                  <ComboboxTrigger />
-                </ComboboxControls>
-              </ComboboxField>
-              <ComboboxContent
-                emptyMessage={t('Utils.NotFound')}
-                listAriaLabel={label}
-              />
-            </Combobox>
+              isOptionEqualToValue={(a, b) => a.value === b.value}
+            />
           </div>
         }
         tableOptions={{

@@ -1,17 +1,7 @@
 import RoleSheetFormFooter from '@/components/admin/role/RoleSheetFormFooter';
+import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
-import {
-  Combobox,
-  ComboboxChips,
-  ComboboxClear,
-  ComboboxContent,
-  ComboboxControls,
-  ComboboxField,
-  ComboboxInput,
-  ComboboxLabel,
-  ComboboxTrigger,
-} from '@filigran/design-system';
 import { AutoForm, FormItem, FormMessage } from '@filigran/ui';
 import { PortalCapability } from '@graphql/generated';
 import { useMemo } from 'react';
@@ -69,26 +59,15 @@ const RolePortalForm = ({
             field: ControllerRenderProps<FieldValues, string>;
           }) => (
             <FormItem>
-              <Combobox<string>
+              <AppCombobox
                 multiple
+                label={t('RoleListPage.Capabilities')}
+                placeholder={t('RoleListPage.Capabilities')}
                 options={portalCapabilityOptionIds.ids}
                 value={field.value ?? []}
-                onValueChange={(next) => field.onChange(next as string[])}
-                getOptionLabel={portalCapabilityOptionIds.getOptionLabel}>
-                <ComboboxLabel>{t('RoleListPage.Capabilities')}</ComboboxLabel>
-                <ComboboxField>
-                  <ComboboxChips />
-                  <ComboboxInput placeholder={t('RoleListPage.Capabilities')} />
-                  <ComboboxControls>
-                    <ComboboxClear />
-                    <ComboboxTrigger />
-                  </ComboboxControls>
-                </ComboboxField>
-                <ComboboxContent
-                  emptyMessage={t('Utils.NotFound')}
-                  listAriaLabel={t('RoleListPage.Capabilities')}
-                />
-              </Combobox>
+                onValueChange={field.onChange}
+                getOptionLabel={portalCapabilityOptionIds.getOptionLabel}
+              />
               <FormMessage />
             </FormItem>
           ),

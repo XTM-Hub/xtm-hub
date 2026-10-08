@@ -1,20 +1,10 @@
 'use client';
 import { FiligranProductMapping } from '@/components/epic/epic-item/FiligranProductMapping';
 import { FILIGRAN_PRODUCTS_ORDER } from '@/components/epic/filigran-products';
+import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
-import {
-  Combobox,
-  ComboboxChips,
-  ComboboxClear,
-  ComboboxContent,
-  ComboboxControls,
-  ComboboxField,
-  ComboboxInput,
-  ComboboxTrigger,
-  SearchField,
-  Switch,
-} from '@filigran/design-system';
+import { SearchField, Switch } from '@filigran/design-system';
 import { FiligranProduct } from '@graphql/generated';
 import React, { useMemo } from 'react';
 
@@ -65,31 +55,18 @@ export const EpicFilter = ({
       </div>
 
       <div className="max-w-full sm:max-w-[100%]">
-        <Combobox<string>
+        <AppCombobox
           multiple
+          label={t('Epic.FilterByProduct')}
           labelPosition="none"
+          placeholder={t('Epic.FilterByProduct')}
           options={optionIds.ids}
           value={selectedFilter ?? []}
-          onValueChange={(value) =>
-            onSelectedFilterChange(value as EpicFilterType)
+          onValueChange={(next) =>
+            onSelectedFilterChange(next as EpicFilterType)
           }
-          getOptionLabel={optionIds.getOptionLabel}>
-          <ComboboxField>
-            <ComboboxChips />
-            <ComboboxInput
-              aria-label={t('Epic.FilterByProduct')}
-              placeholder={t('Epic.FilterByProduct')}
-            />
-            <ComboboxControls>
-              <ComboboxClear />
-              <ComboboxTrigger />
-            </ComboboxControls>
-          </ComboboxField>
-          <ComboboxContent
-            emptyMessage={t('Utils.NotFound')}
-            listAriaLabel={t('Epic.FilterByProduct')}
-          />
-        </Combobox>
+          getOptionLabel={optionIds.getOptionLabel}
+        />
       </div>
       <div className="ml-auto">
         <Switch

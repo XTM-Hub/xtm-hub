@@ -6,6 +6,7 @@ import {
   AddSubscriptionInServiceMutation,
   UpdateSubscriptionInServiceMutation,
 } from '@/components/subcription/subscription.graphql';
+import { AppCombobox } from '@/components/ui/AppCombobox';
 import {
   fromDatePickerChange,
   toDatePickerValue,
@@ -19,20 +20,7 @@ import { useSubscriptionDefaultValues } from './use-subscription-default-values'
 import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
 import { DEBOUNCE_TIME } from '@/utils/constant';
-import {
-  Button,
-  Checkbox,
-  Combobox,
-  ComboboxChips,
-  ComboboxClear,
-  ComboboxContent,
-  ComboboxControls,
-  ComboboxField,
-  ComboboxInput,
-  ComboboxLabel,
-  ComboboxTrigger,
-  DatePicker,
-} from '@filigran/design-system';
+import { Button, Checkbox, DatePicker } from '@filigran/design-system';
 import {
   Form,
   FormField,
@@ -216,39 +204,22 @@ export const ServiceSlugOrgaForm = ({
               name="organization_id"
               render={({ field }) => (
                 <FormItem>
-                  <Combobox<string>
+                  <AppCombobox
                     multiple
+                    label={t('OrganizationInServiceAction.Organization')}
+                    placeholder={t(
+                      'OrganizationInServiceAction.SelectOrganization'
+                    )}
                     options={organizationOptionIds.ids}
                     value={field.value ?? []}
-                    onValueChange={(next) => field.onChange(next as string[])}
+                    onValueChange={field.onChange}
                     onInputChange={(text, meta) => {
                       if (meta.cause !== 'select')
                         handleOrganizationsInputChange(text);
                     }}
                     filterOptions={(options) => options}
-                    getOptionLabel={organizationOptionIds.getOptionLabel}>
-                    <ComboboxLabel>
-                      {t('OrganizationInServiceAction.Organization')}
-                    </ComboboxLabel>
-                    <ComboboxField>
-                      <ComboboxChips />
-                      <ComboboxInput
-                        placeholder={t(
-                          'OrganizationInServiceAction.SelectOrganization'
-                        )}
-                      />
-                      <ComboboxControls>
-                        <ComboboxClear />
-                        <ComboboxTrigger />
-                      </ComboboxControls>
-                    </ComboboxField>
-                    <ComboboxContent
-                      emptyMessage={t('Utils.NotFound')}
-                      listAriaLabel={t(
-                        'OrganizationInServiceAction.Organization'
-                      )}
-                    />
-                  </Combobox>
+                    getOptionLabel={organizationOptionIds.getOptionLabel}
+                  />
                   <FormMessage />
                 </FormItem>
               )}

@@ -1,13 +1,6 @@
 import { getOrganizations } from '@/components/organization/Organization.service';
+import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useTranslate } from '@/hooks/use-translate';
-import {
-  Combobox,
-  ComboboxContent,
-  ComboboxControls,
-  ComboboxField,
-  ComboboxInput,
-  ComboboxTrigger,
-} from '@filigran/design-system';
 import { useState } from 'react';
 
 export interface UserOrganizationFormProps {
@@ -58,16 +51,15 @@ export const AutocompleteOrganization = ({
   const label = t('UserForm.AddOrganization');
 
   return (
-    <Combobox<UserOrganizationFormProps>
+    <AppCombobox<UserOrganizationFormProps>
       className="w-[180px]"
+      label={label}
       labelPosition="none"
+      placeholder={label}
+      onBlur={handleBlur}
       options={filteredOrganization}
       value={null}
-      onValueChange={(next) =>
-        handleOnValueChange(
-          (next as UserOrganizationFormProps | null) ?? undefined
-        )
-      }
+      onValueChange={(next) => handleOnValueChange(next ?? undefined)}
       inputValue={inputValue}
       onInputChange={(next, { cause }) => {
         // The field never holds a value: a pick or a reset empties it, so it
@@ -80,21 +72,7 @@ export const AutocompleteOrganization = ({
         refetch({ searchTerm: next });
       }}
       getOptionLabel={(organization) => organization.name}
-      isOptionEqualToValue={(a, b) => a.id === b.id}>
-      <ComboboxField>
-        <ComboboxInput
-          aria-label={label}
-          placeholder={label}
-          onBlur={handleBlur}
-        />
-        <ComboboxControls>
-          <ComboboxTrigger />
-        </ComboboxControls>
-      </ComboboxField>
-      <ComboboxContent
-        emptyMessage={t('Utils.NotFound')}
-        listAriaLabel={label}
-      />
-    </Combobox>
+      isOptionEqualToValue={(a, b) => a.id === b.id}
+    />
   );
 };

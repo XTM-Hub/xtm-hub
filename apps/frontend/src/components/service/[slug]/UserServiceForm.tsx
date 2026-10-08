@@ -1,4 +1,5 @@
 import { UserFragment } from '@/components/admin/user/UserList';
+import { AppCombobox } from '@/components/ui/AppCombobox';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { ServiceRestriction } from '@graphql/generated';
 import { useContext, useEffect, useMemo } from 'react';
@@ -17,15 +18,6 @@ import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
 import {
   Button,
   Checkbox,
-  Combobox,
-  ComboboxChips,
-  ComboboxClear,
-  ComboboxContent,
-  ComboboxControls,
-  ComboboxField,
-  ComboboxInput,
-  ComboboxLabel,
-  ComboboxTrigger,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -300,34 +292,19 @@ export const UserServiceForm = ({
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <Combobox<string>
+                  <AppCombobox
                     multiple
+                    label={t('InviteUserServiceForm.Email')}
+                    placeholder={t('Service.Management.Email')}
                     options={usersOptionIds.ids}
                     value={field.value ?? []}
-                    onValueChange={(next) => field.onChange(next as string[])}
+                    onValueChange={field.onChange}
                     onInputChange={(text, meta) => {
                       if (meta.cause !== 'select') handleUsersInputChange(text);
                     }}
                     filterOptions={(options) => options}
-                    getOptionLabel={usersOptionIds.getOptionLabel}>
-                    <ComboboxLabel>
-                      {t('InviteUserServiceForm.Email')}
-                    </ComboboxLabel>
-                    <ComboboxField>
-                      <ComboboxChips />
-                      <ComboboxInput
-                        placeholder={t('Service.Management.Email')}
-                      />
-                      <ComboboxControls>
-                        <ComboboxClear />
-                        <ComboboxTrigger />
-                      </ComboboxControls>
-                    </ComboboxField>
-                    <ComboboxContent
-                      emptyMessage={t('Utils.NotFound')}
-                      listAriaLabel={t('InviteUserServiceForm.Email')}
-                    />
-                  </Combobox>
+                    getOptionLabel={usersOptionIds.getOptionLabel}
+                  />
                   <FormMessage />
                 </FormItem>
               )}

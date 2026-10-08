@@ -1,17 +1,7 @@
+import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useOrganizationCapabilities } from '@/hooks/use-organization-capabilities';
 import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
-import {
-  Combobox,
-  ComboboxChips,
-  ComboboxClear,
-  ComboboxContent,
-  ComboboxControls,
-  ComboboxField,
-  ComboboxInput,
-  ComboboxLabel,
-  ComboboxTrigger,
-} from '@filigran/design-system';
 import { useMemo } from 'react';
 
 interface CapabilityMultiSelectProps {
@@ -41,29 +31,15 @@ export const CapabilityMultiSelect = ({
   const placeholder = t('UserForm.OrganizationsCapabilitiesPlaceholder');
 
   return (
-    <Combobox<string>
+    <AppCombobox
       multiple
+      label={label || placeholder}
       labelPosition={label ? 'top' : 'none'}
+      placeholder={placeholder}
       options={optionIds.ids}
       value={value ?? []}
-      onValueChange={(next) => onChange(next as string[])}
-      getOptionLabel={optionIds.getOptionLabel}>
-      {label && <ComboboxLabel>{label}</ComboboxLabel>}
-      <ComboboxField>
-        <ComboboxChips />
-        <ComboboxInput
-          aria-label={label ? undefined : placeholder}
-          placeholder={placeholder}
-        />
-        <ComboboxControls>
-          <ComboboxClear />
-          <ComboboxTrigger />
-        </ComboboxControls>
-      </ComboboxField>
-      <ComboboxContent
-        emptyMessage={t('Utils.NotFound')}
-        listAriaLabel={label || placeholder}
-      />
-    </Combobox>
+      onValueChange={onChange}
+      getOptionLabel={optionIds.getOptionLabel}
+    />
   );
 };

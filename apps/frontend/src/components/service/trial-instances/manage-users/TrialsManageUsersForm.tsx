@@ -1,22 +1,12 @@
 import { useUserListLocalstorage } from '@/components/admin/user/user-list-localstorage';
 import { UserFragment } from '@/components/admin/user/UserList';
 import { serviceGroupFragment } from '@/components/service/service-group.graphql';
+import { AppCombobox } from '@/components/ui/AppCombobox';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
-import {
-  Button,
-  Combobox,
-  ComboboxChips,
-  ComboboxClear,
-  ComboboxContent,
-  ComboboxControls,
-  ComboboxField,
-  ComboboxInput,
-  ComboboxLabel,
-  ComboboxTrigger,
-} from '@filigran/design-system';
+import { Button } from '@filigran/design-system';
 import { Form, FormField, FormItem, SheetFooter } from '@filigran/ui';
 import { serviceGroup_fragment$key } from '@generated/serviceGroup_fragment.graphql';
 import ServiceGroupsByServiceInstanceIdQueryGraphql, {
@@ -150,28 +140,15 @@ export const TrialsManageUsersForm = ({
         render={({ field: { value, onChange } }) => {
           return (
             <FormItem>
-              <Combobox<string>
+              <AppCombobox
                 multiple
+                label={group.name}
+                placeholder={t('Service.Trials.ManageUsers.Email')}
                 options={optionIds.ids}
                 value={value ?? []}
-                onValueChange={(next) => onChange(next as string[])}
-                getOptionLabel={optionIds.getOptionLabel}>
-                <ComboboxLabel>{group.name}</ComboboxLabel>
-                <ComboboxField>
-                  <ComboboxChips />
-                  <ComboboxInput
-                    placeholder={t('Service.Trials.ManageUsers.Email')}
-                  />
-                  <ComboboxControls>
-                    <ComboboxClear />
-                    <ComboboxTrigger />
-                  </ComboboxControls>
-                </ComboboxField>
-                <ComboboxContent
-                  emptyMessage={t('Utils.NotFound')}
-                  listAriaLabel={group.name}
-                />
-              </Combobox>
+                onValueChange={onChange}
+                getOptionLabel={optionIds.getOptionLabel}
+              />
             </FormItem>
           );
         }}

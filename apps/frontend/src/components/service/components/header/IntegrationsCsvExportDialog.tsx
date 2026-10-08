@@ -8,21 +8,13 @@ import {
 import { useServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
 import { useSolutionCategories } from '@/components/service/form/UseSolutionCategories';
 import { availableIntegrationTypes } from '@/components/service/integrations/Integration.utils';
+import { AppCombobox } from '@/components/ui/AppCombobox';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
 import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
 import {
   Button,
-  Combobox,
-  ComboboxChips,
-  ComboboxClear,
-  ComboboxContent,
-  ComboboxControls,
-  ComboboxField,
-  ComboboxInput,
-  ComboboxLabel,
-  ComboboxTrigger,
   Dialog,
   DialogBody,
   DialogContent,
@@ -81,7 +73,6 @@ const IntegrationsCsvExportFilterField = ({
   placeholder,
   testId,
 }: IntegrationsCsvExportFilterFieldProps) => {
-  const t = useTranslate();
   const optionIds = useMemo(
     () =>
       toComboboxOptionIds(
@@ -93,27 +84,17 @@ const IntegrationsCsvExportFilterField = ({
   );
   return (
     <FormItem>
-      <Combobox<string>
+      <AppCombobox
         multiple
         className="min-w-0 max-w-md"
+        label={label}
+        placeholder={placeholder}
+        data-testid={testId}
         options={optionIds.ids}
         value={field.value ?? []}
-        onValueChange={(next) => field.onChange(next as string[])}
-        getOptionLabel={optionIds.getOptionLabel}>
-        <ComboboxLabel>{label}</ComboboxLabel>
-        <ComboboxField data-testid={testId}>
-          <ComboboxChips />
-          <ComboboxInput placeholder={placeholder} />
-          <ComboboxControls>
-            <ComboboxClear />
-            <ComboboxTrigger />
-          </ComboboxControls>
-        </ComboboxField>
-        <ComboboxContent
-          emptyMessage={t('Utils.NotFound')}
-          listAriaLabel={label}
-        />
-      </Combobox>
+        onValueChange={field.onChange}
+        getOptionLabel={optionIds.getOptionLabel}
+      />
     </FormItem>
   );
 };
@@ -318,33 +299,17 @@ export const IntegrationsCsvExportDialog = ({
                   field: ControllerRenderProps<FieldValues, string>;
                 }) => (
                   <FormItem>
-                    <Combobox<string>
+                    <AppCombobox
                       multiple
                       className="min-w-0 max-w-md"
+                      label={t('Service.CsvExport.ColumnsLabel')}
+                      placeholder={t('Service.CsvExport.ColumnsPlaceholder')}
+                      data-testid="integrations-csv-export-columns"
                       options={columnOptionIds.ids}
                       value={field.value ?? []}
-                      onValueChange={(next) => field.onChange(next as string[])}
-                      getOptionLabel={columnOptionIds.getOptionLabel}>
-                      <ComboboxLabel>
-                        {t('Service.CsvExport.ColumnsLabel')}
-                      </ComboboxLabel>
-                      <ComboboxField data-testid="integrations-csv-export-columns">
-                        <ComboboxChips />
-                        <ComboboxInput
-                          placeholder={t(
-                            'Service.CsvExport.ColumnsPlaceholder'
-                          )}
-                        />
-                        <ComboboxControls>
-                          <ComboboxClear />
-                          <ComboboxTrigger />
-                        </ComboboxControls>
-                      </ComboboxField>
-                      <ComboboxContent
-                        emptyMessage={t('Utils.NotFound')}
-                        listAriaLabel={t('Service.CsvExport.ColumnsLabel')}
-                      />
-                    </Combobox>
+                      onValueChange={field.onChange}
+                      getOptionLabel={columnOptionIds.getOptionLabel}
+                    />
                     <FormMessage />
                   </FormItem>
                 ),

@@ -171,6 +171,7 @@ Rules shared by every `MultiSelectFormField` row:
   after a pick. The results of the last search stay listed after a pick, so several can be picked from one search, and
   a clear resets the search with the selection.
 - **Default substring filter** where the legacy filtered client side (RULE-05); identity where it did not.
+- **The multi-selects use `AppCombobox`** (epic review, see 3545): the composition and the `as string[]` casts go.
 
 ## To validate
 
@@ -194,8 +195,6 @@ Rules shared by every `MultiSelectFormField` row:
   `UserServiceForm`), as the legacy badges did; `use-trial-user-options.ts` keeps selected options and could be shared.
 - `required` sits on `ComboboxLabel` only, so the inputs carry no `aria-required` (the root `Combobox required` sets
   it). The legacy buttons had none either; same choice as 3545 (`SsoGroupRolePortalForm`).
-- The design system types `onValueChange` as `T | T[] | null`, so every site casts `next` (`as string[]`), as the 3545
-  sites do; an overload on `multiple` upstream would remove the casts.
 - `ComboboxChips` keys each chip by its label: two selected options with the same label (solution category names are
   not unique) collide. Upstream fix: key by index or `isOptionEqualToValue`.
 - No unit test covers `CapabilityMultiSelect`, `ServiceSlugOrgaForm`, `UserServiceForm`, `TrialsManageUsersForm`,

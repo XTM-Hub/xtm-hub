@@ -10,6 +10,7 @@ import {
   FILIGRAN_PRODUCTS_ORDER,
   sortFiligranProducts,
 } from '@/components/epic/filigran-products';
+import { AppCombobox } from '@/components/ui/AppCombobox';
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
@@ -17,15 +18,6 @@ import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
 import {
   Button,
   Checkbox,
-  Combobox,
-  ComboboxChips,
-  ComboboxClear,
-  ComboboxContent,
-  ComboboxControls,
-  ComboboxField,
-  ComboboxInput,
-  ComboboxLabel,
-  ComboboxTrigger,
   Input,
   Radio,
   RadioGroup,
@@ -284,32 +276,18 @@ const EpicForm = ({
             name="products"
             render={({ field }) => (
               <FormItem>
-                <Combobox<string>
+                <AppCombobox
                   multiple
+                  label={t('Epic.Form.FiligranProduct')}
+                  required
+                  placeholder={t('Epic.Form.FiligranProduct')}
                   options={FILIGRAN_PRODUCT_OPTION_IDS.ids}
                   value={field.value ?? []}
                   onValueChange={(products) =>
-                    field.onChange(sortFiligranProducts(products as string[]))
+                    field.onChange(sortFiligranProducts(products))
                   }
-                  getOptionLabel={FILIGRAN_PRODUCT_OPTION_IDS.getOptionLabel}>
-                  <ComboboxLabel required>
-                    {t('Epic.Form.FiligranProduct')}
-                  </ComboboxLabel>
-                  <ComboboxField>
-                    <ComboboxChips />
-                    <ComboboxInput
-                      placeholder={t('Epic.Form.FiligranProduct')}
-                    />
-                    <ComboboxControls>
-                      <ComboboxClear />
-                      <ComboboxTrigger />
-                    </ComboboxControls>
-                  </ComboboxField>
-                  <ComboboxContent
-                    emptyMessage={t('Utils.NotFound')}
-                    listAriaLabel={t('Epic.Form.FiligranProduct')}
-                  />
-                </Combobox>
+                  getOptionLabel={FILIGRAN_PRODUCT_OPTION_IDS.getOptionLabel}
+                />
                 <FormMessage />
               </FormItem>
             )}

@@ -1,16 +1,7 @@
 import RoleSheetFormFooter from '@/components/admin/role/RoleSheetFormFooter';
+import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import {
-  Combobox,
-  ComboboxClear,
-  ComboboxContent,
-  ComboboxControls,
-  ComboboxField,
-  ComboboxInput,
-  ComboboxLabel,
-  ComboboxTrigger,
-} from '@filigran/design-system';
 import { AutoForm, FormItem, FormMessage } from '@filigran/ui';
 import { RolePortalsQuery, useRolePortalsQuery } from '@graphql/generated';
 import { useMemo } from 'react';
@@ -70,7 +61,11 @@ const SsoGroupRolePortalForm = ({
             field: ControllerRenderProps<FieldValues, string>;
           }) => (
             <FormItem>
-              <Combobox<RolePortalOption>
+              <AppCombobox<RolePortalOption>
+                label={t('RoleListPage.Role')}
+                required
+                placeholder={t('RoleListPage.Role')}
+                onBlur={field.onBlur}
                 options={rolePortalOptions}
                 value={
                   rolePortalOptions.find(
@@ -78,30 +73,13 @@ const SsoGroupRolePortalForm = ({
                   ) ?? null
                 }
                 onValueChange={(rolePortal) =>
-                  field.onChange(
-                    (rolePortal as RolePortalOption | null)?.name ?? ''
-                  )
+                  field.onChange(rolePortal?.name ?? '')
                 }
                 getOptionLabel={(rolePortal) => rolePortal.name}
                 isOptionEqualToValue={(a, b) => a.id === b.id}
                 loading={isLoading}
-                clearable>
-                <ComboboxLabel required>{t('RoleListPage.Role')}</ComboboxLabel>
-                <ComboboxField>
-                  <ComboboxInput
-                    placeholder={t('RoleListPage.Role')}
-                    onBlur={field.onBlur}
-                  />
-                  <ComboboxControls>
-                    <ComboboxClear />
-                    <ComboboxTrigger />
-                  </ComboboxControls>
-                </ComboboxField>
-                <ComboboxContent
-                  emptyMessage={t('Utils.NotFound')}
-                  listAriaLabel={t('RoleListPage.Role')}
-                />
-              </Combobox>
+                clearable
+              />
               <FormMessage />
             </FormItem>
           ),

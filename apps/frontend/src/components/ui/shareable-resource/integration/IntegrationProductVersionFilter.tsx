@@ -1,3 +1,4 @@
+import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useRegisteredProductVersions } from '@/hooks/use-registered-product-versions';
 import {
   ServiceListLocalStorageKey,
@@ -5,13 +6,6 @@ import {
 } from '@/hooks/use-service-list-local-storage';
 import { useTranslate } from '@/hooks/use-translate';
 import {
-  Combobox,
-  ComboboxClear,
-  ComboboxContent,
-  ComboboxControls,
-  ComboboxField,
-  ComboboxInput,
-  ComboboxTrigger,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -107,13 +101,15 @@ export const IntegrationProductVersionFilter = ({
   const label = t('Service.OpenctiIntegrations.Filter.ProductVersion.Label');
 
   return (
-    <Combobox<ProductVersionOption>
+    <AppCombobox<ProductVersionOption>
+      label={label}
       labelPosition="none"
+      placeholder={placeholder}
+      // The field drops typed text on blur, not when the list closes.
+      onBlur={() => setSearch('')}
       options={options}
       value={value}
-      onValueChange={(next) =>
-        handleValueChange((next as ProductVersionOption | null) ?? undefined)
-      }
+      onValueChange={(next) => handleValueChange(next ?? undefined)}
       onInputChange={(next, { cause }) => {
         if (cause === 'type') setSearch(next);
       }}
@@ -124,23 +120,7 @@ export const IntegrationProductVersionFilter = ({
           <span className="truncate">{option.label}</span>
           {renderItemAdornment(option)}
         </span>
-      )}>
-      <ComboboxField>
-        <ComboboxInput
-          aria-label={label}
-          placeholder={placeholder}
-          // The field drops typed text on blur, not when the list closes.
-          onBlur={() => setSearch('')}
-        />
-        <ComboboxControls>
-          <ComboboxClear />
-          <ComboboxTrigger />
-        </ComboboxControls>
-      </ComboboxField>
-      <ComboboxContent
-        emptyMessage={t('Utils.NotFound')}
-        listAriaLabel={label}
-      />
-    </Combobox>
+      )}
+    />
   );
 };

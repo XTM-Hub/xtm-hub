@@ -1,19 +1,9 @@
 'use client';
 
+import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
-import {
-  Button,
-  Combobox,
-  ComboboxChips,
-  ComboboxClear,
-  ComboboxContent,
-  ComboboxControls,
-  ComboboxField,
-  ComboboxInput,
-  ComboboxLabel,
-  ComboboxTrigger,
-} from '@filigran/design-system';
+import { Button } from '@filigran/design-system';
 import { Form, FormField, FormItem, FormMessage } from '@filigran/ui';
 import { PlatformIdentifier } from '@graphql/generated';
 import { ReactNode, useMemo } from 'react';
@@ -90,13 +80,15 @@ export const TrialUserFormSkeleton = ({
           render={({ field }) => (
             <FormItem>
               <div className="layer-2">
-                <Combobox<string>
+                <AppCombobox
                   multiple
+                  label={pickerLabel || pickerPlaceholder}
                   labelPosition={pickerLabel ? 'top' : 'none'}
+                  placeholder={pickerPlaceholder}
+                  contentClassName="layer-2"
                   options={usersOptionIds.ids}
                   value={field.value ?? []}
-                  onValueChange={(next) => {
-                    const values = next as string[];
+                  onValueChange={(values) => {
                     field.onChange(values);
                     onUsersChange?.(values);
                   }}
@@ -110,25 +102,8 @@ export const TrialUserFormSkeleton = ({
                   filterOptions={
                     onUsersInputChange ? (options) => options : undefined
                   }
-                  getOptionLabel={usersOptionIds.getOptionLabel}>
-                  {pickerLabel && <ComboboxLabel>{pickerLabel}</ComboboxLabel>}
-                  <ComboboxField>
-                    <ComboboxChips />
-                    <ComboboxInput
-                      aria-label={pickerLabel ? undefined : pickerPlaceholder}
-                      placeholder={pickerPlaceholder}
-                    />
-                    <ComboboxControls>
-                      <ComboboxClear />
-                      <ComboboxTrigger />
-                    </ComboboxControls>
-                  </ComboboxField>
-                  <ComboboxContent
-                    className="layer-2"
-                    emptyMessage={t('Utils.NotFound')}
-                    listAriaLabel={pickerLabel || pickerPlaceholder}
-                  />
-                </Combobox>
+                  getOptionLabel={usersOptionIds.getOptionLabel}
+                />
               </div>
               <FormMessage />
               {pickerNotice}

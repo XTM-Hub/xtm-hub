@@ -105,6 +105,8 @@ invalid or already listed, remove a domain from its chip or with Backspace. Then
   `FormMessage` stay, no `error` on the root; the label is not `required` since the legacy showed no `*`.
 - **Enter on an empty field still shows the invalid-domain message and does not submit**, as the legacy did: changing
   that is a behaviour change, not the swap.
+- **The domains field stays out of `AppCombobox`** (epic review, see 3545): chips only, with no list and no controls,
+  it would only bloat the wrapper.
 
 ## To validate
 

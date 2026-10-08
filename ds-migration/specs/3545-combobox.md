@@ -135,6 +135,12 @@ Rules shared by every row, from `SsoGroupRolePortalForm` (the app's existing des
   names its filters (`UseCaseListPage.Product`).
 - **Filtering follows the label**: `AdminServiceTab`'s legacy filter matched the identifier (`cmdk` `value`), so
   typing a translated service name now finds it.
+- **`AppCombobox` composes the field once** (epic review): `src/components/ui/AppCombobox.tsx` renders label, field
+  (chips in `multiple` mode), input, clear and trigger, and the content with `Utils.NotFound` and the label as list
+  name. `label` is required, so every field has a name; `labelPosition="none"` makes it the input's `aria-label`.
+  `onValueChange` is typed by `multiple` (`T | null` or `T[]`), so callers cast nothing. Every composed site uses it;
+  the chips-only domains field of 3701 stays inline (no list, no controls). The design system already exports a
+  `ComboboxField` part, hence the `App` prefix, as `AppSnackbars`.
 
 ## To validate
 

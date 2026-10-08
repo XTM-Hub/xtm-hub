@@ -1,19 +1,8 @@
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
-import {
-  Button,
-  Combobox,
-  ComboboxChips,
-  ComboboxClear,
-  ComboboxContent,
-  ComboboxControls,
-  ComboboxField,
-  ComboboxInput,
-  ComboboxLabel,
-  ComboboxTrigger,
-  Input,
-} from '@filigran/design-system';
+import { Button, Input } from '@filigran/design-system';
 import {
   Form,
   FormField,
@@ -92,30 +81,15 @@ const SolutionCategoryForm = ({
           name="product"
           render={({ field }) => (
             <FormItem>
-              <Combobox<string>
+              <AppCombobox
                 multiple
+                label={t('SolutionCategory.Form.Product')}
+                placeholder={t('SolutionCategory.Form.Product')}
                 options={productOptionIds.ids}
                 value={field.value ?? []}
-                onValueChange={(next) => field.onChange(next as string[])}
-                getOptionLabel={productOptionIds.getOptionLabel}>
-                <ComboboxLabel>
-                  {t('SolutionCategory.Form.Product')}
-                </ComboboxLabel>
-                <ComboboxField>
-                  <ComboboxChips />
-                  <ComboboxInput
-                    placeholder={t('SolutionCategory.Form.Product')}
-                  />
-                  <ComboboxControls>
-                    <ComboboxClear />
-                    <ComboboxTrigger />
-                  </ComboboxControls>
-                </ComboboxField>
-                <ComboboxContent
-                  emptyMessage={t('Utils.NotFound')}
-                  listAriaLabel={t('SolutionCategory.Form.Product')}
-                />
-              </Combobox>
+                onValueChange={field.onChange}
+                getOptionLabel={productOptionIds.getOptionLabel}
+              />
               <FormMessage />
             </FormItem>
           )}

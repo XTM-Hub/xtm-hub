@@ -1,20 +1,8 @@
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
-import {
-  Button,
-  ColorPicker,
-  Combobox,
-  ComboboxChips,
-  ComboboxClear,
-  ComboboxContent,
-  ComboboxControls,
-  ComboboxField,
-  ComboboxInput,
-  ComboboxLabel,
-  ComboboxTrigger,
-  Input,
-} from '@filigran/design-system';
+import { Button, ColorPicker, Input } from '@filigran/design-system';
 import {
   Form,
   FormField,
@@ -98,26 +86,15 @@ const UseCaseForm = ({
           name="product"
           render={({ field }) => (
             <FormItem>
-              <Combobox<string>
+              <AppCombobox
                 multiple
+                label={t('UseCaseForm.Product')}
+                placeholder={t('UseCaseForm.Product')}
                 options={productTagOptionIds.ids}
                 value={field.value ?? []}
-                onValueChange={(next) => field.onChange(next as string[])}
-                getOptionLabel={productTagOptionIds.getOptionLabel}>
-                <ComboboxLabel>{t('UseCaseForm.Product')}</ComboboxLabel>
-                <ComboboxField>
-                  <ComboboxChips />
-                  <ComboboxInput placeholder={t('UseCaseForm.Product')} />
-                  <ComboboxControls>
-                    <ComboboxClear />
-                    <ComboboxTrigger />
-                  </ComboboxControls>
-                </ComboboxField>
-                <ComboboxContent
-                  emptyMessage={t('Utils.NotFound')}
-                  listAriaLabel={t('UseCaseForm.Product')}
-                />
-              </Combobox>
+                onValueChange={field.onChange}
+                getOptionLabel={productTagOptionIds.getOptionLabel}
+              />
               <FormMessage />
             </FormItem>
           )}

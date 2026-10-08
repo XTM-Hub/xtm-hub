@@ -1,18 +1,9 @@
 import { useUserListLocalstorage } from '@/components/admin/user/user-list-localstorage';
 import { UserFragment } from '@/components/admin/user/UserList';
+import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
 import { DEBOUNCE_TIME } from '@/utils/constant';
-import {
-  Combobox,
-  ComboboxClear,
-  ComboboxContent,
-  ComboboxControls,
-  ComboboxField,
-  ComboboxInput,
-  ComboboxLabel,
-  ComboboxTrigger,
-} from '@filigran/design-system';
 import { UserList_fragment$key } from '@generated/UserList_fragment.graphql';
 import { useMemo, useState } from 'react';
 import { readInlineData } from 'react-relay';
@@ -88,11 +79,12 @@ const SelectUsersFormField = ({
   }, DEBOUNCE_TIME);
 
   return (
-    <Combobox<UserOption>
+    <AppCombobox<UserOption>
+      label={label}
+      placeholder={t('InviteUserServiceForm.Email')}
       options={users}
       value={selectedUser}
-      onValueChange={(next) => {
-        const user = next as UserOption | null;
+      onValueChange={(user) => {
         setPickedUser(user);
         onValueChange(user?.value ?? '');
       }}
@@ -102,20 +94,8 @@ const SelectUsersFormField = ({
       getOptionLabel={(user) => user.label}
       isOptionEqualToValue={(a, b) => a.value === b.value}
       filterOptions={(options) => options}
-      disabled={disabled}>
-      <ComboboxLabel>{label}</ComboboxLabel>
-      <ComboboxField>
-        <ComboboxInput placeholder={t('InviteUserServiceForm.Email')} />
-        <ComboboxControls>
-          <ComboboxClear />
-          <ComboboxTrigger />
-        </ComboboxControls>
-      </ComboboxField>
-      <ComboboxContent
-        emptyMessage={t('Utils.NotFound')}
-        listAriaLabel={label}
-      />
-    </Combobox>
+      disabled={disabled}
+    />
   );
 };
 
