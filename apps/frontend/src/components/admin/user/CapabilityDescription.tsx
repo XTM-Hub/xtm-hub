@@ -4,7 +4,6 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardSubtitle,
   CardTitle,
   Chip,
 } from '@filigran/design-system';
@@ -41,9 +40,11 @@ export const CapabilityDescription = () => {
     <Card>
       <CardHeader>
         <CardTitle as="h3">{t('CapabilityDescription.Title')}</CardTitle>
-        <CardSubtitle>{t('CapabilityDescription.Description')}</CardSubtitle>
       </CardHeader>
-      <CardContent clamp={0}>
+      <CardContent
+        clamp={0}
+        className="flex flex-col gap-s">
+        <p>{t('CapabilityDescription.Description')}</p>
         <ul className="flex flex-col space-y-s gap-xs text-xs">
           {capabilityList}
         </ul>
