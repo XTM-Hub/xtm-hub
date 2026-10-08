@@ -4,9 +4,10 @@ import { formatTier } from '@/components/competitor/competitor.utils';
 import { SelectField } from '@/components/ui/SelectField';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button } from '@filigran/design-system';
-import { AutoForm, FormItem, FormMessage, SheetFooter } from '@filigran/ui';
+import { AutoForm, SheetFooter, useFormField } from '@filigran/ui';
 import { competitor_fragment$data } from '@generated/competitor_fragment.graphql';
 import { CompetitorTier } from '@graphql/generated';
+import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 import { z } from 'zod';
 
 export const TIER_VALUES = Object.values(CompetitorTier);
@@ -26,6 +27,30 @@ export const competitorFormSchema = z.object({
     ),
   tier: z.enum(TIER_VALUES),
 });
+
+const TierField = ({
+  field,
+  defaultTier,
+}: {
+  field: ControllerRenderProps<FieldValues, string>;
+  defaultTier: string;
+}) => {
+  const t = useTranslate();
+  const { error } = useFormField();
+
+  return (
+    <SelectField
+      label={t('CompetitorForm.Tier')}
+      required
+      placeholder={t('CompetitorForm.Tier')}
+      options={TIERS}
+      value={field.value}
+      defaultValue={defaultTier}
+      onValueChange={field.onChange}
+      error={error?.message}
+    />
+  );
+};
 
 const CompetitorForm = ({
   competitor,
@@ -62,18 +87,10 @@ const CompetitorForm = ({
         },
         tier: {
           fieldType: ({ field }) => (
-            <FormItem>
-              <SelectField
-                label={t('CompetitorForm.Tier')}
-                required
-                placeholder={t('CompetitorForm.Tier')}
-                options={TIERS}
-                value={field.value}
-                defaultValue={competitor?.tier ?? CompetitorTier.Tier1}
-                onValueChange={field.onChange}
-              />
-              <FormMessage />
-            </FormItem>
+            <TierField
+              field={field}
+              defaultTier={competitor?.tier ?? CompetitorTier.Tier1}
+            />
           ),
         },
       }}>

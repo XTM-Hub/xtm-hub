@@ -3,6 +3,7 @@ import {
   Input,
   Select,
   SelectContent,
+  SelectHelperText,
   SelectItem,
   SelectLabel,
   SelectTrigger,
@@ -24,6 +25,8 @@ interface SelectWithEditableFieldProps {
   };
   editableFieldValue: string;
   required?: boolean;
+  /** Puts the field in error and shows the message below it. */
+  error?: string;
   layerClassName?: string;
 }
 
@@ -69,6 +72,7 @@ export const SelectWithEditableField = ({
   labels,
   editableFieldValue,
   required = false,
+  error,
   layerClassName = 'layer-2',
 }: SelectWithEditableFieldProps) => {
   const isControlled = value !== undefined;
@@ -132,7 +136,8 @@ export const SelectWithEditableField = ({
       <div>
         <Select
           value={selectedValue}
-          onValueChange={handleSelectChange}>
+          onValueChange={handleSelectChange}
+          error={Boolean(error)}>
           <SelectLabel required={required}>{labels.label}</SelectLabel>
           <SelectTrigger className={cn('w-full', layerClassName)}>
             <SelectValue placeholder={labels.placeholder}>
@@ -155,6 +160,7 @@ export const SelectWithEditableField = ({
               </SelectItem>
             ))}
           </SelectContent>
+          {error && <SelectHelperText>{error}</SelectHelperText>}
         </Select>
       </div>
 

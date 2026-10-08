@@ -3,12 +3,13 @@ import { useTranslate } from '@/hooks/use-translate';
 import {
   Select,
   SelectContent,
+  SelectHelperText,
   SelectItem,
   SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@filigran/design-system';
-import { FormControl, FormItem, FormMessage } from '@filigran/ui';
+import { useFormField } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useContext } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
@@ -28,43 +29,40 @@ export const ServiceFormUploaderOrganizationIdField = ({
 }: ServiceFormUploaderOrganizationIdFieldProps) => {
   const t = useTranslate();
   const { me } = useContext(PortalContext);
+  const { error } = useFormField();
+
   return (
-    <FormItem hidden={isCreation}>
-      <div>
-        <Select
-          disabled={disabled}
-          onValueChange={field.onChange}
-          defaultValue={
-            (isCreation
-              ? me?.selected_organization_id
-              : document?.uploader_organization?.id) ?? ''
-          }>
-          <SelectLabel>
-            {t('OrganizationInServiceAction.Organization')}
-          </SelectLabel>
-          <FormControl>
-            <SelectTrigger className="w-full">
-              <SelectValue
-                placeholder={t(
-                  'OrganizationInServiceAction.SelectOrganization'
-                )}
-              />
-            </SelectTrigger>
-          </FormControl>
-          <SelectContent>
-            {me?.organizations.map((node) => {
-              return (
-                <SelectItem
-                  key={node?.id}
-                  value={node?.id}>
-                  {node?.name}
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
-      </div>
-      <FormMessage />
-    </FormItem>
+    <div hidden={isCreation}>
+      <Select
+        disabled={disabled}
+        onValueChange={field.onChange}
+        defaultValue={
+          (isCreation
+            ? me?.selected_organization_id
+            : document?.uploader_organization?.id) ?? ''
+        }
+        error={Boolean(error)}>
+        <SelectLabel>
+          {t('OrganizationInServiceAction.Organization')}
+        </SelectLabel>
+        <SelectTrigger className="w-full">
+          <SelectValue
+            placeholder={t('OrganizationInServiceAction.SelectOrganization')}
+          />
+        </SelectTrigger>
+        <SelectContent>
+          {me?.organizations.map((node) => {
+            return (
+              <SelectItem
+                key={node?.id}
+                value={node?.id}>
+                {node?.name}
+              </SelectItem>
+            );
+          })}
+        </SelectContent>
+        {error && <SelectHelperText>{error.message}</SelectHelperText>}
+      </Select>
+    </div>
   );
 };

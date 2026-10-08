@@ -1,7 +1,6 @@
 import {
-  FormControl,
   FormItem,
-  FormMessage,
+  useFormField,
 } from '@/components/filigran-ui/components/clients';
 import {
   fromDatePickerChange,
@@ -9,7 +8,6 @@ import {
 } from '@/components/ui/date-picker-field.utils';
 import { DatePicker } from '@filigran/design-system';
 import { useLocale } from 'next-intl';
-import AutoFormLabel from '../common/Label';
 import AutoFormTooltip from '../common/Tooltip';
 import type { AutoFormInputComponentProps } from '../types';
 
@@ -20,26 +18,21 @@ const AutoFormDate = ({
   fieldConfigItem,
 }: AutoFormInputComponentProps) => {
   const locale = useLocale();
+  const { error } = useFormField();
 
   return (
     <FormItem>
-      <AutoFormLabel
+      <DatePicker
         label={fieldConfigItem?.label || label}
-        isRequired={isRequired}
+        required={isRequired}
+        error={error?.message}
+        locale={locale}
+        value={toDatePickerValue(field.value)}
+        onChange={(date, context) =>
+          field.onChange(fromDatePickerChange(date, context))
+        }
       />
-      <FormControl>
-        <DatePicker
-          aria-label={fieldConfigItem?.label || label}
-          locale={locale}
-          value={toDatePickerValue(field.value)}
-          onChange={(date, context) =>
-            field.onChange(fromDatePickerChange(date, context))
-          }
-        />
-      </FormControl>
       <AutoFormTooltip fieldConfigItem={fieldConfigItem} />
-
-      <FormMessage />
     </FormItem>
   );
 };

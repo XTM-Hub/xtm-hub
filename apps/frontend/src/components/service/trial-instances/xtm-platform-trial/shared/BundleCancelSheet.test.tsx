@@ -24,20 +24,33 @@ vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
   showSnackbar: showSnackbarMock,
 }));
 
-vi.mock('@/components/service/registration/SelectWithEditableField', () => ({
-  SelectWithEditableField: ({
-    onChange,
-  }: {
-    onChange: (value: string) => void;
-  }) => (
-    <button
-      type="button"
-      data-testid="select-reason"
-      onClick={() => onChange(selectedReason)}>
-      select-reason
-    </button>
-  ),
-}));
+const reasonFieldMounts = vi.hoisted(() => ({ count: 0 }));
+
+vi.mock(
+  '@/components/service/registration/SelectWithEditableField',
+  async () => {
+    const { useEffect } = await import('react');
+    return {
+      SelectWithEditableField: ({
+        onChange,
+      }: {
+        onChange: (value: string) => void;
+      }) => {
+        useEffect(() => {
+          reasonFieldMounts.count += 1;
+        }, []);
+        return (
+          <button
+            type="button"
+            data-testid="select-reason"
+            onClick={() => onChange(selectedReason)}>
+            select-reason
+          </button>
+        );
+      },
+    };
+  }
+);
 
 vi.mock('@tanstack/react-query', async (importOriginal) => ({
   ...(await importOriginal()),
@@ -119,6 +132,24 @@ describe('BundleCancelSheet', () => {
     expect(
       screen.getByRole('button', { name: 'Utils.Confirm' })
     ).not.toBeDisabled();
+  });
+
+  it('should keep the reason field mounted when the reason changes', () => {
+    // Given
+    testRender(
+      <BundleCancelSheet
+        deploymentRequestId={bundleDeploymentRequestId}
+        open={true}
+        setOpen={vi.fn()}
+      />
+    );
+    const mountsBeforeChange = reasonFieldMounts.count;
+
+    // When
+    fireEvent.click(screen.getByTestId('select-reason'));
+
+    // Then
+    expect(reasonFieldMounts.count).toBe(mountsBeforeChange);
   });
 
   it('should submit the selected cancellation reason when the form is confirmed', async () => {

@@ -27,8 +27,9 @@ Rules shared by every row, from the Textarea and Input specs:
   closes the root. A trigger `aria-label` that repeated the label goes (the label names it).
 - **The root renders no element**, so its label, trigger and helper sit in a plain `<div>`, or they would take the
   parent's `gap-*` / `space-y-*` apart.
-- **AutoForm `fieldType` callbacks get no field state**: there `FormItem` and `FormMessage` stay, `FormLabel` becomes
-  `SelectLabel`, and `FormControl` stays only where it wrapped the trigger.
+- **AutoForm `fieldType` callbacks** were first thought to get no field state, so `FormItem` and `FormMessage` stayed
+  there. The epic review corrected it: a `fieldType` renders as a component inside `FormField`, so `useFormField()`
+  gives its error (see Decisions).
 - **Width**: the design system trigger is `w-fit`. Where the legacy one filled its container (its default `w-full`,
   no width given), the trigger takes `className="w-full"`; explicit widths stay as they are.
 - **Unnamed triggers get `aria-label`** from an existing key (contract RULE-01; it also silences the design system's
@@ -160,6 +161,14 @@ Rules shared by every row, from the Textarea and Input specs:
   `TranslatableEnumSelectField` is built on it, and the ten sites of that shape use it. Selects with no visible label,
   a fixed width or their own trigger (`SortControls`, `RoleSelect`, `UploaderOrganizationIdField`,
   `SelectWithEditableField`, the list filters) stay composed.
+- **AutoForm fields read their error with `useFormField()`** (epic review): the premise that a `fieldType` callback gets
+  no field state was false, it renders as a component inside `FormField`. `AutoFormEnum`, `AutoFormDate` and
+  `AutoFormTextarea` give the design system field its `label`, `required` and `error`, as `AutoFormInput` does; the
+  `fieldType`s of `CompetitorForm`, `UploaderOrganizationIdField` and both cancel sheets are module-level components
+  passing `error` to `SelectField`, the select or `SelectWithEditableField` (which gains `error`). The legacy
+  `FormItem` / `FormMessage` / `FormControl` go around them. `BundleCancelSheet` keeps its `fieldType` stable, since
+  the "Other" text now reports every keystroke and a new `fieldType` would remount the field. Left as they are: the
+  design system `RadioGroup` and `Checkbox` (no label or message slot) and the `FileSelect` fields under a preview.
 
 ## To validate
 
@@ -174,19 +183,16 @@ Rules shared by every row, from the Textarea and Input specs:
   new `Product` key in en, fr and ja.
 - `RoleSelect` in the manage-trials table drops its borderless, ringless trigger for the design system one. In the
   edit-users panel, `content-body-compact-medium text-text-default-secondary` on the label goes.
-- `CompetitorForm`, `UploaderOrganizationIdField` and the two cancel sheets keep the legacy `FormMessage` under a
-  design system label, because AutoForm `fieldType` gets no field state. Alternative: wait for 3707.
 
 ## Deferred findings
 
 - Upstream: the design system `SelectTrigger` does not set `aria-invalid` from the root's `error`, unlike `Input` and
   `Textarea`. A design system request.
-- AutoForm `fieldType` callbacks receive `field` but not `fieldState`, which forces the legacy `FormMessage` beside the
-  design system label. To settle with item 3707.
 - Upstream: the design system viewport's `scrollbar-thin-input` utility sits in `@layer utilities`, and Radix injects
   an unlayered `[data-radix-select-viewport]{scrollbar-width:none}` rule that wins, so a list longer than five rows
   shows no scrollbar and no scroll buttons (trial form job title, activity sector). A design system request.
-- `AutoFormEnum`'s `FormControl` wraps the root, which renders no element, so its `id`, `aria-describedby` and
-  `aria-invalid` reach no node (the legacy Radix root was the same). To settle with item 3707.
 - `ManageTrialTable` names every role trigger of a column with the column title; a name with the row's user would tell
   them apart. An accessibility improvement for a later epic.
+- The cancellation reason schema reports zod's "Invalid input: expected string, received undefined" for an untouched
+  reason instead of `CancellationReasonRequired`; the design system helper text now shows it, as the legacy
+  `FormMessage` did. A `z.string({ error })` in both cancel sheets would fix it.

@@ -107,6 +107,8 @@ takes the same raw `fieldState.error?.message` that `FormMessage` showed.
   the contract makes `rows` and `minRows` mutually exclusive.
 - `noValidate` is added only to the two forms that pass `required`, so an empty field still shows the zod message
   instead of the browser's bubble.
+- **`AutoFormTextarea` reads its error with `useFormField()`** (epic review, see 3566): the textarea takes `label`,
+  `required` and `error`, as `AutoFormInput`.
 
 ## To validate
 
@@ -134,10 +136,6 @@ takes the same raw `fieldState.error?.message` that `FormMessage` showed.
   `EpicForm` (`minRows`, `resize="none"`), a width change after mount (window resize, late web font) can leave the
   last lines hidden with no scrollbar until the user types. Legacy `field-sizing-content` re-measured on its own. To
   propose upstream: re-measure on a `ResizeObserver`.
-- `AutoFormTextarea` (`filigran-ui/components/auto-form/fields/Textarea.tsx`): with only the import switched, the
-  design system `Textarea` overrides the `aria-invalid` the legacy `FormControl` passes, and warns in development
-  for lack of `label` or `aria-label`. No app schema uses the `textarea` field type today; to settle with the
-  `AutoForm` migration (item 3707).
 - No unit test covers the `Textarea` error wiring of `EpicForm`, `ReachSalesDialogForm` and `EeLearnMoreSheet`
   (error text, `aria-invalid`, `aria-required`, `noValidate`): `EpicForm` is stubbed wherever it is mounted and the
   other two have no test file. Worth a dedicated test pass on these forms.

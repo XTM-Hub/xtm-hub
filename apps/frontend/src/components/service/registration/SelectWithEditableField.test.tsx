@@ -15,6 +15,7 @@ const COMPLEXITY_LABEL = 'Configuration is too complex to complete';
 const EXPERTISE_VALUE = 'expertise';
 const EXPERTISE_LABEL = 'We lack internal expertise';
 const OTHER_WITH_TEXT_VALUE = `${OTHER_VALUE_PREFIX} custom text`;
+const ERROR_MESSAGE = 'Pick a cancellation reason';
 
 vi.mock('@filigran/design-system', async () => {
   const React = await import('react');
@@ -35,10 +36,12 @@ vi.mock('@filigran/design-system', async () => {
     Select: ({
       value,
       onValueChange,
+      error,
       children,
     }: {
       value: string;
       onValueChange: (value: string) => void;
+      error?: boolean;
       children: ReactNode;
     }) => {
       const [open, setOpen] = React.useState(false);
@@ -46,7 +49,8 @@ vi.mock('@filigran/design-system', async () => {
       return (
         <div
           data-testid="select-root"
-          data-value={value}>
+          data-value={value}
+          data-error={error}>
           <button
             ref={toggleRef}
             type="button"
@@ -136,9 +140,11 @@ const options = [
 const ControlledHarness = ({
   initialValue,
   onChangeSpy,
+  error,
 }: {
   initialValue: string | undefined;
   onChangeSpy?: (value: string) => void;
+  error?: string;
 }) => {
   const [value, setValue] = useState<string | undefined>(initialValue);
 
@@ -158,6 +164,7 @@ const ControlledHarness = ({
       }}
       editableFieldValue={OTHER_LABEL}
       required
+      error={error}
     />
   );
 };
@@ -180,6 +187,35 @@ describe('SelectWithEditableField', () => {
 
     // Then
     expect(screen.getByText(FIELD_LABEL)).toHaveTextContent(`${FIELD_LABEL}*`);
+  });
+
+  it('should put the field in error and show the message when an error is given', () => {
+    // Given / When
+    testRender(
+      <ControlledHarness
+        initialValue={undefined}
+        error={ERROR_MESSAGE}
+      />
+    );
+
+    // Then
+    expect(screen.getByTestId('select-root')).toHaveAttribute(
+      'data-error',
+      'true'
+    );
+    expect(screen.getByText(ERROR_MESSAGE)).toBeInTheDocument();
+  });
+
+  it('should show no error when no error is given', () => {
+    // Given / When
+    testRender(<ControlledHarness initialValue={undefined} />);
+
+    // Then
+    expect(screen.getByTestId('select-root')).toHaveAttribute(
+      'data-error',
+      'false'
+    );
+    expect(screen.queryByText(ERROR_MESSAGE)).not.toBeInTheDocument();
   });
 
   it('should display selected option label when controlled value matches an option', () => {

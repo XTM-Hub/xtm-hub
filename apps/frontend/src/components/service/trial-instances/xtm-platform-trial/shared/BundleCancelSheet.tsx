@@ -15,11 +15,12 @@ import {
   DialogTitle,
 } from '@filigran/design-system';
 import { WarningIcon } from '@filigran/icon';
-import { AutoForm, FormItem, FormMessage } from '@filigran/ui';
+import { AutoForm, useFormField } from '@filigran/ui';
 import { trialInstancesCancelDeploymentRequestMutation } from '@generated/trialInstancesCancelDeploymentRequestMutation.graphql';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import { useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 import { useMutation } from 'react-relay';
 import { z } from 'zod';
 
@@ -37,6 +38,49 @@ const REASONS = [
   'legal-security',
   'expertise',
 ];
+
+const CancellationReasonField = ({
+  field,
+  onReasonChange,
+}: {
+  field: ControllerRenderProps<FieldValues, string>;
+  onReasonChange: (reason: string) => void;
+}) => {
+  const t = useTranslate();
+  const { error } = useFormField();
+  const cancellationReasons = REASONS.map((reason) => ({
+    value: reason,
+    label: t(`Service.Trials.CancellationReason.${reason}`),
+  }));
+
+  return (
+    <SelectWithEditableField
+      value={field.value}
+      onChange={(value) => {
+        field.onChange(value);
+        onReasonChange(value);
+      }}
+      options={cancellationReasons}
+      required
+      error={error?.message}
+      labels={{
+        label: t(
+          'Service.Trials.Cancellation.ConfirmationForm.CancellationReason'
+        ),
+        placeholder: t(
+          'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonPlaceholder'
+        ),
+        editableFieldLabel: t(
+          'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonOther'
+        ),
+        editableFieldPlaceholder: t(
+          'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonOtherPlaceholder'
+        ),
+      }}
+      editableFieldValue="Other"
+    />
+  );
+};
 
 interface BundleCancelSheetProps {
   deploymentRequestId: string;
@@ -60,12 +104,19 @@ export const BundleCancelSheet = ({
     [t]
   );
   const queryClient = useQueryClient();
-  const cancellationReasons = REASONS.map((reason) => ({
-    value: reason,
-    label: t(`Service.Trials.CancellationReason.${reason}`),
-  }));
   const [selectedCancellationReason, setSelectedCancellationReason] =
     useState('');
+  // A new fieldType on each render would remount the field and drop the focus
+  // and the draft of the "Other" text, which reports every keystroke here.
+  const cancellationReasonFieldType = useCallback(
+    ({ field }: { field: ControllerRenderProps<FieldValues, string> }) => (
+      <CancellationReasonField
+        field={field}
+        onReasonChange={setSelectedCancellationReason}
+      />
+    ),
+    []
+  );
 
   const [cancelDeploymentRequestMutation] =
     useMutation<trialInstancesCancelDeploymentRequestMutation>(
@@ -127,35 +178,7 @@ export const BundleCancelSheet = ({
                 label: t(
                   'Service.Trials.Cancellation.ConfirmationForm.CancellationReason'
                 ),
-                fieldType: ({ field }) => (
-                  <FormItem>
-                    <SelectWithEditableField
-                      value={field.value}
-                      onChange={(value) => {
-                        field.onChange(value);
-                        setSelectedCancellationReason(value);
-                      }}
-                      options={cancellationReasons}
-                      required
-                      labels={{
-                        label: t(
-                          'Service.Trials.Cancellation.ConfirmationForm.CancellationReason'
-                        ),
-                        placeholder: t(
-                          'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonPlaceholder'
-                        ),
-                        editableFieldLabel: t(
-                          'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonOther'
-                        ),
-                        editableFieldPlaceholder: t(
-                          'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonOtherPlaceholder'
-                        ),
-                      }}
-                      editableFieldValue="Other"
-                    />
-                    <FormMessage className="text-sm text-destructive" />
-                  </FormItem>
-                ),
+                fieldType: cancellationReasonFieldType,
               },
             }}>
             <div className="mt-l flex items-center gap-xs rounded border border-solid border-red p-s">

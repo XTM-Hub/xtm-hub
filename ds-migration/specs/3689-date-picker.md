@@ -123,6 +123,8 @@ Rules shared by every row:
   language preference and from the dates shown by `useDateFormatter`.
 - **An AutoForm adapter only changes its import**, plus what keeps it from breaking (Input and Select specs): a name
   (`aria-label`, as `AutoFormEnum`), the controlled `value` and the shared change mapping.
+- **`AutoFormDate` reads its error with `useFormField()`** (epic review, see 3566): the picker takes `label`,
+  `required` and `error`, as `AutoFormInput`.
 
 ## To validate
 
@@ -150,9 +152,6 @@ Rules shared by every row:
 - Typed text accepts any year from 100 (`10/08/202` saves year 202) and the `en` pattern is month first
   (`08/10/2026` is 10 August); neither field sets a `minDate`. A lower bound or an end-after-start check is form logic
   for a later item.
-- `AutoFormDate` gets no `error`, so the picker overrides the `aria-invalid` that `FormControl` injects and paints no
-  error state; `FormMessage` still shows the message. Latent: no AutoForm schema has a date field today. Moving it to
-  `label` and `error` from `useFormField()`, as `AutoFormInput` does, belongs with the AutoForm item.
 - `PrivateNavigation.test.tsx` intermittently leaks `ReferenceError: window is not defined`: the 100 ms
   `useDebounceValue` of the closed-menu popover (`NavigationSections.tsx`) can fire after jsdom teardown when the
   file's last hover test ends. The full suite failed on it once and passed on rerun with the same tree. The fix
