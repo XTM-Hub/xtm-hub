@@ -191,6 +191,7 @@ type Query {
     after: ID
     orderBy: RegisteredPlatformOrdering!
     orderMode: OrderingMode!
+    searchTerm: String
   ): RegisteredPlatformConnection!
     @auth(portalCapa: [BYPASS, READ_SAAS_METRICS])
   platformAssociatedOrganization(

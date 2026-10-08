@@ -29,7 +29,9 @@
     "Products": "Products",
     "Link": "Saas metrics",
     "Version": "Version",
-    "ViewMetrics": "View metrics"
+    "ViewMetrics": "View metrics",
+    "SearchOrganization": "Search organization",
+    "ClearSearch": "Clear search"
   },
   "CountryComboBox": {
     "Placeholder": "Choose a country"

@@ -228,9 +228,10 @@ export const RegistrationDomain = {
       .select(RegisteredPlatformsSelectColumns);
   },
 
-  loadSaasPlatforms: async (
-    opts: QuerySaasPlatformsArgs
-  ): Promise<RegisteredPlatformConnection> => {
+  loadSaasPlatforms: async ({
+    searchTerm,
+    ...pagination
+  }: QuerySaasPlatformsArgs): Promise<RegisteredPlatformConnection> => {
     const query = getRegisteredPlatformsBaseQuery()
       .queryContext({ __typename: 'RegisteredPlatform' })
       .where(
@@ -252,7 +253,10 @@ export const RegistrationDomain = {
       )
       .select(SaasPlatformsSelectColumns);
 
-    if (opts.orderBy === RegisteredPlatformOrdering.OrganizationName) {
+    if (
+      searchTerm ||
+      pagination.orderBy === RegisteredPlatformOrdering.OrganizationName
+    ) {
       query
         .leftJoin(
           getPlatformOwnerSubscriptionsQuery()
@@ -271,9 +275,13 @@ export const RegistrationDomain = {
         .select('Organization.name as organization_name');
     }
 
+    if (searchTerm) {
+      query.whereILike('Organization.name', `%${searchTerm}%`);
+    }
+
     return paginate<ServiceInstance, RegisteredPlatformConnection>(
       'ServiceInstance',
-      opts,
+      pagination,
       undefined,
       query
     );

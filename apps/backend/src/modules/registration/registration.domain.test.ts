@@ -1143,6 +1143,53 @@ describe('registration domain', () => {
       }
     );
 
+    it.each([
+      {
+        description: 'case-insensitively on part of the name',
+        searchTerm: 'orga',
+        expected: [saasPlatformA, saasPlatformB],
+      },
+      {
+        description: 'only on the owner organization',
+        searchTerm: 'second',
+        expected: [saasPlatformB],
+      },
+      {
+        description: 'with no match',
+        searchTerm: 'unknown',
+        expected: [],
+      },
+    ])(
+      'should filter on the owner organization name $description',
+      async ({ searchTerm, expected }) => {
+        // When
+        const connection = await RegistrationDomain.loadSaasPlatforms({
+          ...defaultArgs,
+          orderBy: RegisteredPlatformOrdering.OrganizationName,
+          searchTerm,
+        });
+
+        // Then
+        expect(connection.totalCount).toBe(String(expected.length));
+        expect(connection.edges.map(({ node }) => node.id)).toEqual(
+          expected.map(({ serviceInstanceId }) => serviceInstanceId)
+        );
+      }
+    );
+
+    it('should filter on the owner organization name when ordering by another column', async () => {
+      // When
+      const connection = await RegistrationDomain.loadSaasPlatforms({
+        ...defaultArgs,
+        searchTerm: 'filigran',
+      });
+
+      // Then
+      expect(connection.edges.map(({ node }) => node.id)).toEqual([
+        saasPlatformC.serviceInstanceId,
+      ]);
+    });
+
     it.each(excludedPlatforms)(
       'should exclude $description',
       async ({ serviceInstanceId }) => {

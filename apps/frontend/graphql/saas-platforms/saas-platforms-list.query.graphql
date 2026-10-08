@@ -3,12 +3,14 @@ query SaasPlatformsList(
   $after: ID
   $orderBy: RegisteredPlatformOrdering!
   $orderMode: OrderingMode!
+  $searchTerm: String
 ) {
   saasPlatforms(
     first: $first
     after: $after
     orderBy: $orderBy
     orderMode: $orderMode
+    searchTerm: $searchTerm
   ) {
     totalCount
     pageInfo {

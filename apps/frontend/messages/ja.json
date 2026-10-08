@@ -29,7 +29,9 @@
     "Products": "製品",
     "Link": "SaaS指標",
     "Version": "バージョン",
-    "ViewMetrics": "メトリクスを見る"
+    "ViewMetrics": "メトリクスを見る",
+    "SearchOrganization": "組織検索",
+    "ClearSearch": "検索をクリア"
   },
   "CountryComboBox": {
     "Placeholder": "国を選択"

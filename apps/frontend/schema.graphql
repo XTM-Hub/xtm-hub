@@ -132,7 +132,7 @@ type Query {
   canUnregisterPlatform(input: CanUnregisterPlatformInput!): CanUnregisterResponse!
   registeredPlatform(input: RegisteredPlatformInput!): RegisteredPlatform
   registeredPlatforms(input: RegisteredPlatformsInput!): [RegisteredPlatform!]!
-  saasPlatforms(first: Int!, after: ID, orderBy: RegisteredPlatformOrdering!, orderMode: OrderingMode!): RegisteredPlatformConnection!
+  saasPlatforms(first: Int!, after: ID, orderBy: RegisteredPlatformOrdering!, orderMode: OrderingMode!, searchTerm: String): RegisteredPlatformConnection!
   platformAssociatedOrganization(platformId: String!, tenantId: String): Organization
   rolePortals: [RolePortal!]!
   ssoGroupRolePortals: [SSOGroupRolePortal!]!

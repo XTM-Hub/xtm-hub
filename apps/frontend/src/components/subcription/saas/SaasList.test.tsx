@@ -7,14 +7,16 @@ import {
   RegisteredPlatformOrdering,
   ServiceDefinitionIdentifier,
 } from '@graphql/generated';
-import { ColumnDef } from '@tanstack/react-table';
-import { act, screen } from '@testing-library/react';
-import { ReactNode } from 'react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
+
+const ORGANIZATION_NAME = 'Filigran';
+const ADMINISTRATOR_EMAILS = ['admin@filigran.io', 'other.admin@filigran.io'];
+const SERVICE_INSTANCE_ID = 'service-instance-id';
+const PLATFORM_VERSION = '6.9.0';
+const SEARCH_TERM = 'filigran';
 
 const mocks = vi.hoisted(() => ({
   useSaasPlatformsListQuery: vi.fn(),
-  onSortingChange: undefined as ((updater: unknown) => void) | undefined,
-  columns: [] as ColumnDef<{ id: string }>[],
 }));
 
 vi.mock('@graphql/generated', async (importOriginal) => {
@@ -28,40 +30,6 @@ vi.mock('@graphql/generated', async (importOriginal) => {
   };
 });
 
-vi.mock('@filigran/ui', () => ({
-  Badge: ({ children }: { children: ReactNode }) => <span>{children}</span>,
-  DataTable: ({
-    columns,
-    data,
-    tableOptions,
-  }: {
-    columns: ColumnDef<{ id: string }>[];
-    data: { id: string }[];
-    tableOptions: { onSortingChange: (updater: unknown) => void };
-  }) => {
-    mocks.onSortingChange = tableOptions.onSortingChange;
-    mocks.columns = columns;
-    return (
-      <div>
-        {data.map((row) => (
-          <div key={row.id}>
-            {columns.map((column) => (
-              <div key={column.id}>
-                {typeof column.cell === 'function'
-                  ? (column.cell({
-                      row: { original: row },
-                    } as never) as ReactNode)
-                  : null}
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
-    );
-  },
-  DataTableHeadBarOptions: () => <div>DataTableHeadBarOptions</div>,
-}));
-
 const renderWithCapabilities = (capabilities: PortalCapability[]) =>
   testRender(<SaasList />, {
     me: { capabilities: capabilities.map((name) => ({ name })) },
@@ -69,6 +37,9 @@ const renderWithCapabilities = (capabilities: PortalCapability[]) =>
 
 const isQueryEnabled = () =>
   mocks.useSaasPlatformsListQuery.mock.lastCall?.[2]?.enabled;
+
+const lastQueryVariables = () =>
+  mocks.useSaasPlatformsListQuery.mock.lastCall?.[1];
 
 const buildSaasPlatform = (
   overrides: Partial<{
@@ -81,11 +52,15 @@ const buildSaasPlatform = (
   }> = {}
 ) => ({
   id: 'platform-id',
-  service_instance_id: 'service-instance-id',
+  service_instance_id: SERVICE_INSTANCE_ID,
   identifier: ServiceDefinitionIdentifier.OpenctiRegistration,
   title: 'SaaS OpenCTI platform',
-  version: '6.9.0',
-  organization: { id: 'organization-id', name: 'Filigran' },
+  version: PLATFORM_VERSION,
+  organization: { id: 'organization-id', name: ORGANIZATION_NAME },
+  organization_administrators: ADMINISTRATOR_EMAILS.map((email) => ({
+    id: email,
+    email,
+  })),
   ...overrides,
 });
 
@@ -150,11 +125,12 @@ describe('SaasList', () => {
     renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
 
     // Then the stored settings are used as query variables
-    expect(mocks.useSaasPlatformsListQuery.mock.lastCall?.[1]).toEqual({
+    expect(lastQueryVariables()).toEqual({
       first: 100,
       after: toCursor(100, 0),
       orderBy: RegisteredPlatformOrdering.PlatformTitle,
       orderMode: OrderingMode.Desc,
+      searchTerm: null,
     });
   });
 
@@ -166,56 +142,90 @@ describe('SaasList', () => {
     renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
 
     // Then its row shows the organization, the product, the logo before the link and the version
-    expect(screen.getByText('Filigran')).toBeInTheDocument();
+    expect(screen.getByText(ORGANIZATION_NAME)).toBeInTheDocument();
+
     expect(screen.getByText('OpenCTI')).toBeInTheDocument();
     const link = screen.getByRole('link', {
       name: 'CSMBoard.ViewMetrics',
     });
     expect(link).toHaveAttribute(
       'href',
-      '/app/service/opencti_registration/service-instance-id'
+      `/app/service/opencti_registration/${SERVICE_INSTANCE_ID}`
     );
     expect(link.previousElementSibling?.tagName.toLowerCase()).toBe('svg');
-    expect(screen.getByText('6.9.0')).toBeInTheDocument();
+    expect(screen.getByText(PLATFORM_VERSION)).toBeInTheDocument();
   });
 
-  it('should fetch saas platforms ordered by organization name and store the ordering when the user sorts by organization', () => {
-    // Given the list rendered with its default ordering
+  it('should fetch saas platforms ordered by organization name and store the ordering when the user sorts the organization column', () => {
+    // Given the list ordered by organization name ascending by default, starting with a platform without organization
+    mockSaasPlatforms([buildSaasPlatform({ organization: null })]);
     renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
 
-    // When the user sorts the organization column in descending order
-    act(() => {
-      mocks.onSortingChange?.([
-        { id: RegisteredPlatformOrdering.OrganizationName, desc: true },
-      ]);
-    });
+    // When the user clicks the organization column header
+    fireEvent.click(screen.getByText('CSMBoard.Organization'));
 
-    // Then the saas platforms are fetched in that order and the ordering is stored
-    expect(mocks.useSaasPlatformsListQuery.mock.lastCall?.[1]).toMatchObject({
+    // Then the saas platforms are fetched in descending order and the ordering is stored
+    expect(lastQueryVariables()).toMatchObject({
       orderBy: RegisteredPlatformOrdering.OrganizationName,
       orderMode: OrderingMode.Desc,
     });
-    expect(localStorage.getItem('orderBySaasList')).toBe(
-      JSON.stringify(RegisteredPlatformOrdering.OrganizationName)
-    );
     expect(localStorage.getItem('orderModeSaasList')).toBe(
       JSON.stringify(OrderingMode.Desc)
     );
   });
 
-  it('should only let the user sort the organization column', () => {
+  it.each([
+    ['CSMBoard.Products'],
+    ['CSMBoard.Link'],
+    ['CSMBoard.Version'],
+  ])(
+    'should keep the ordering when the user clicks the %s column header',
+    (header) => {
+      // Given the list ordered by organization name ascending by default
+      renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+      // When the user clicks a column header that cannot be sorted
+      fireEvent.click(screen.getByText(header));
+
+      // Then the saas platforms are still fetched in the default order
+      expect(lastQueryVariables()).toMatchObject({
+        orderBy: RegisteredPlatformOrdering.OrganizationName,
+        orderMode: OrderingMode.Asc,
+      });
+    }
+  );
+
+  it('should fetch saas platforms filtered on the organization the user searches for', async () => {
     // Given the list of saas platforms
-    // When it is rendered
     renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
 
-    // Then only the organization column has an accessor, which react-table requires to sort it
-    const sortableColumnIds = mocks.columns
-      .filter(
-        (column) => 'accessorFn' in column && column.enableSorting !== false
-      )
-      .map((column) => column.id);
-    expect(sortableColumnIds).toEqual([
-      RegisteredPlatformOrdering.OrganizationName,
-    ]);
+    // When the user searches for an organization
+    fireEvent.change(screen.getByLabelText('CSMBoard.SearchOrganization'), {
+      target: { value: `  ${SEARCH_TERM}  ` },
+    });
+
+    // Then the saas platforms are fetched filtered on the trimmed search term
+    await waitFor(() =>
+      expect(lastQueryVariables()).toMatchObject({ searchTerm: SEARCH_TERM })
+    );
+  });
+
+  it('should fetch every saas platform again when the user clears the search', async () => {
+    // Given a list filtered on an organization
+    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+    fireEvent.change(screen.getByLabelText('CSMBoard.SearchOrganization'), {
+      target: { value: SEARCH_TERM },
+    });
+    await waitFor(() =>
+      expect(lastQueryVariables()).toMatchObject({ searchTerm: SEARCH_TERM })
+    );
+
+    // When the user clears the search
+    fireEvent.click(
+      screen.getByRole('button', { name: 'CSMBoard.ClearSearch' })
+    );
+
+    // Then the saas platforms are fetched without search term
+    expect(lastQueryVariables()).toMatchObject({ searchTerm: null });
   });
 });

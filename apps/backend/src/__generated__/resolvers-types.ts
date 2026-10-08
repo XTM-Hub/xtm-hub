@@ -2233,6 +2233,7 @@ export type QuerySaasPlatformsArgs = {
   first: Scalars['Int']['input'];
   orderBy: RegisteredPlatformOrdering;
   orderMode: OrderingMode;
+  searchTerm?: InputMaybe<Scalars['String']['input']>;
 };
 
 

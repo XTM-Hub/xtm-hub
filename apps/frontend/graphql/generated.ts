@@ -2240,6 +2240,7 @@ export type QuerySaasPlatformsArgs = {
   first: Scalars['Int']['input'];
   orderBy: RegisteredPlatformOrdering;
   orderMode: OrderingMode;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -3675,6 +3676,7 @@ export type SaasPlatformsListQueryVariables = Exact<{
   after: InputMaybe<Scalars['ID']['input']>;
   orderBy: RegisteredPlatformOrdering;
   orderMode: OrderingMode;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
 }>;
 
 
@@ -6116,12 +6118,13 @@ useInfiniteSsoGroupRolePortalsQuery.getRootKey = () => ['SSOGroupRolePortals.inf
 useSsoGroupRolePortalsQuery.fetcher = (client: GraphQLClient, variables?: SsoGroupRolePortalsQueryVariables, headers?: RequestInit['headers']) => fetcher<SsoGroupRolePortalsQuery, SsoGroupRolePortalsQueryVariables>(client, SsoGroupRolePortalsDocument, variables, headers);
 
 export const SaasPlatformsListDocument = `
-    query SaasPlatformsList($first: Int!, $after: ID, $orderBy: RegisteredPlatformOrdering!, $orderMode: OrderingMode!) {
+    query SaasPlatformsList($first: Int!, $after: ID, $orderBy: RegisteredPlatformOrdering!, $orderMode: OrderingMode!, $searchTerm: String) {
   saasPlatforms(
     first: $first
     after: $after
     orderBy: $orderBy
     orderMode: $orderMode
+    searchTerm: $searchTerm
   ) {
     totalCount
     pageInfo {
