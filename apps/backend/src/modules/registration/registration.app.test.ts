@@ -22,6 +22,7 @@ import {
   TEST_ORGANIZATIONS,
 } from '../../../tests/tests.const';
 import {
+  CommercialModel,
   DeploymentRequestActivitySector,
   DeploymentRequestDeploymentType,
   DeploymentRequestHubStatus,
@@ -41,6 +42,7 @@ import {
   ServiceDefinitionIdentifier,
   ServiceInstanceCreationStatus,
 } from '../../__generated__/resolvers-types';
+import portalConfig from '../../config';
 import { requestContext } from '../../context/request.context';
 import DeploymentRequest, {
   DeploymentRequestId,
@@ -49,6 +51,7 @@ import ServiceInstance, {
   ServiceInstanceId,
 } from '../../model/kanel/public/ServiceInstance';
 import { SubscriptionId } from '../../model/kanel/public/Subscription';
+import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 
 import {
@@ -430,6 +433,73 @@ describe('registration app', () => {
       });
 
       expect(token).toBeDefined();
+    });
+
+    describe('commercial model', () => {
+      const registerNewPlatform = async () => {
+        const newPlatform = { ...platform, id: uuidv4() };
+        await RegistrationApp.registerPlatform({
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          platform: newPlatform,
+          identifier: PlatformIdentifier.Opencti,
+        });
+        return PlatformConfigurationDomain.loadConfigurationByPlatform(
+          newPlatform.id
+        );
+      };
+
+      beforeEach(() => {
+        requestContext.set(requestContextRegistererUserSecondOrga);
+      });
+
+      it('should not call the SaaS Manager when it is disabled', async () => {
+        // Given
+        const callSpy = vi.spyOn(SaasManagerClient, 'callInstanceApi');
+
+        // When
+        const configuration = await registerNewPlatform();
+
+        // Then
+        expect(callSpy).not.toHaveBeenCalled();
+        expect(configuration?.commercial_model).toBe(CommercialModel.Other);
+      });
+
+      describe('when the SaaS Manager is enabled', () => {
+        beforeEach(() => {
+          portalConfig.saas_manager.enabled = true;
+        });
+
+        afterEach(() => {
+          portalConfig.saas_manager.enabled = false;
+        });
+
+        it('should register the platform with the SaaS commercial model when the SaaS Manager returns PROD', async () => {
+          // Given
+          vi.spyOn(SaasManagerClient, 'callInstanceApi').mockResolvedValue({
+            ok: true,
+            json: async () => ({ commercial_model: 'PROD' }),
+          } as Response);
+
+          // When
+          const configuration = await registerNewPlatform();
+
+          // Then
+          expect(configuration?.commercial_model).toBe(CommercialModel.Saas);
+        });
+
+        it('should register the platform with the other commercial model when the SaaS Manager call fails', async () => {
+          // Given
+          vi.spyOn(SaasManagerClient, 'callInstanceApi').mockRejectedValue(
+            new Error('fetch failed')
+          );
+
+          // When
+          const configuration = await registerNewPlatform();
+
+          // Then
+          expect(configuration?.commercial_model).toBe(CommercialModel.Other);
+        });
+      });
     });
 
     it.each`

@@ -23,6 +23,7 @@ import {
   ServiceInstanceCreationStatus,
   UnregisterPlatformInput,
 } from '../../__generated__/resolvers-types';
+import portalConfig from '../../config';
 import { withTransaction } from '../../context/database.context';
 import { requestContext } from '../../context/request.context';
 import DeploymentRequest from '../../model/kanel/public/DeploymentRequest';
@@ -60,6 +61,30 @@ import {
   RegistrationDomain,
 } from './registration.domain';
 import { RegistrationHelper } from './registration.helper';
+
+const loadCommercialModel = async (
+  platformId: string
+): Promise<CommercialModel> => {
+  if (!portalConfig.saas_manager.enabled) {
+    return CommercialModel.Other;
+  }
+  try {
+    const response = await SaasManagerClient.callInstanceApi({
+      platform_id: platformId,
+    });
+    const responseBody = response.ok
+      ? ((await response.json()) as { commercial_model?: string })
+      : null;
+    return responseBody?.commercial_model === 'PROD'
+      ? CommercialModel.Saas
+      : CommercialModel.Other;
+  } catch (error) {
+    logApp.warn('Unable to load the commercial model from the SaaS Manager', {
+      error,
+    });
+    return CommercialModel.Other;
+  }
+};
 
 const buildPlatformConfiguration = (
   platform: PlatformInput,
@@ -212,19 +237,9 @@ export const RegistrationApp = {
       throw new Error(ErrorCode.InvalidPlatformConfiguration);
     }
 
-    const response = await SaasManagerClient.callInstanceApi({
-      platform_id: configuration.platform_id,
-    });
-    const responseBody = response.ok
-      ? ((await response.json()) as { commercial_model?: string })
-      : null;
-
     const configurationWithCommercialModel = {
       ...configuration,
-      commercial_model:
-        responseBody?.commercial_model === 'PROD'
-          ? CommercialModel.Saas
-          : CommercialModel.Other,
+      commercial_model: await loadCommercialModel(configuration.platform_id),
     };
 
     const platformConfiguration =
