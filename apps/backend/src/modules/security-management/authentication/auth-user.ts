@@ -66,7 +66,7 @@ export const authenticateUser = async (
   const updatedUser = await UserDomain.updateUserAtLogin(logged);
   req.session.user = updatedUser;
 
-  await ServiceGroupApp.grantAccessIfWaiting(updatedUser);
+  await ServiceGroupApp.grantAccessAtLogin(updatedUser);
 
   req.session.save();
   res.cookie('NEXT_LOCALE', logged.selected_language);

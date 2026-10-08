@@ -502,12 +502,7 @@ export const UserDomain = {
     await hubspotLoginHook(user.id);
 
     const organizations = user.organizations.filter((o) => !o.personal_space);
-    const shouldClearStatusNow =
-      user.status !== null && user.status !== UserAccountStatus.Waiting;
-    const fields: UserMutator = {
-      last_login: new Date(),
-      ...(shouldClearStatusNow && { status: null }),
-    };
+    const fields: UserMutator = { last_login: new Date() };
     if (organizations.length === 1) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       fields.selected_organization_id = organizations[0]!.id;

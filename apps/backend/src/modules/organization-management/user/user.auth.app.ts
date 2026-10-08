@@ -33,7 +33,7 @@ export const UserAuthApp = {
       const user = await UserDomain.updateUserAtLogin(loggedUser);
       req.session.user = user;
 
-      await ServiceGroupApp.grantAccessIfWaiting(user);
+      await ServiceGroupApp.grantAccessAtLogin(user);
 
       res.cookie('NEXT_LOCALE', loggedUser.selected_language);
 

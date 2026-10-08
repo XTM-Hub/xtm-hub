@@ -54,6 +54,7 @@ interface GrantTask {
   user: User;
   accounts: Auth0Accounts;
   newStatus: UserAccountStatus | null;
+  syncAuth0: boolean;
 }
 
 const STALE_AFTER_DAYS = 5;
@@ -67,7 +68,7 @@ const loadOptions = (): Auth0SyncOptions => ({
 });
 
 type SyncTarget = {
-  grant: boolean;
+  syncAuth0: boolean;
   newStatus: UserAccountStatus | null | undefined;
 };
 
@@ -79,7 +80,7 @@ export const decideAuth0Sync = (
   const isWaiting = status === UserAccountStatus.Waiting;
   if (accounts.length === 0) {
     return {
-      grant: false,
+      syncAuth0: false,
       newStatus: isWaiting ? undefined : UserAccountStatus.Expired,
     };
   }
@@ -87,12 +88,12 @@ export const decideAuth0Sync = (
   const hasResetPassword = accounts.some(
     (account) => !!account.last_password_reset
   );
-  if (hasResetPassword) {
-    return { grant: isWaiting, newStatus: null };
-  }
   // Invited: access was already granted when it became invited.
+  if (hasResetPassword) {
+    return { syncAuth0: isWaiting, newStatus: null };
+  }
   return {
-    grant: isWaiting,
+    syncAuth0: isWaiting,
     newStatus: isWaiting ? UserAccountStatus.Invited : undefined,
   };
 };
@@ -240,9 +241,9 @@ const decideAll = async (
     const { status } = user;
     const accounts = accountsByEmail.get(user.email.toLowerCase()) ?? [];
     try {
-      const { grant, newStatus } = decideAuth0Sync(status, accounts);
-      if (grant) {
-        grantTasks.push({ user, accounts, newStatus: newStatus ?? null });
+      const { syncAuth0, newStatus } = decideAuth0Sync(status, accounts);
+      if (newStatus !== undefined && newStatus !== UserAccountStatus.Expired) {
+        grantTasks.push({ user, accounts, newStatus, syncAuth0 });
         continue;
       }
       if (
@@ -265,8 +266,8 @@ const grantAll = async (context: RunContext, grantTasks: GrantTask[]) => {
   await mapWithConcurrency(
     grantTasks,
     context.options.concurrency,
-    async ({ user, accounts, newStatus }) => {
-      if (isDeadlineReached(context) || context.rateLimited) {
+    async ({ user, accounts, newStatus, syncAuth0 }) => {
+      if (isDeadlineReached(context) || (context.rateLimited && syncAuth0)) {
         context.counters.skipped += 1;
         return;
       }
@@ -276,7 +277,7 @@ const grantAll = async (context: RunContext, grantTasks: GrantTask[]) => {
           user,
           newStatus,
           fromStatus,
-          accounts
+          { syncAuth0, prefetchedAuth0Users: accounts }
         );
         user.status = newStatus;
         logApp.info('Auth0 sync: access granted', { userId: user.id });
