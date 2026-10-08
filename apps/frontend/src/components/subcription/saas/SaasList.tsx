@@ -18,7 +18,13 @@ import { portalGraphqlClient } from '@/lib/graphql-client';
 import { cn } from '@/lib/utils';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
-import { SearchField } from '@filigran/design-system';
+import {
+  SearchField,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/design-system';
 import { Badge, DataTable, DataTableHeadBarOptions } from '@filigran/ui';
 import {
   OrderingMode,
@@ -92,6 +98,35 @@ export const SaasList = () => {
       cell: ({ row }) => (
         <span className="truncate">{row.original.organization?.name}</span>
       ),
+    },
+    {
+      id: 'administrators',
+      header: t('CSMBoard.Administrators'),
+      enableSorting: false,
+      cell: ({ row }) => {
+        const emails = row.original.organization?.administrator_emails ?? [];
+        if (emails.length <= 1) {
+          return <span className="truncate">{emails[0]}</span>;
+        }
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  className="truncate"
+                  tabIndex={0}>
+                  {emails.join(', ')}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                {emails.map((email) => (
+                  <div key={email}>{email}</div>
+                ))}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      },
     },
     {
       id: 'product',

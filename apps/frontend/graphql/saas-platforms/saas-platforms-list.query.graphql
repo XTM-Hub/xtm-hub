@@ -34,6 +34,7 @@ query SaasPlatformsList(
         organization {
           id
           name
+          administrator_emails
         }
       }
     }

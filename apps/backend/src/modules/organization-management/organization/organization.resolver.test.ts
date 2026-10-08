@@ -8,19 +8,23 @@ import {
 import {
   OrderingMode,
   Organization,
+  OrganizationCapability,
   OrganizationConnection,
   OrganizationEdge,
   OrganizationInput,
   OrganizationOrdering,
+  OrganizationResolvers,
   PageInfo,
 } from '../../../__generated__/resolvers-types';
 import { OrganizationId } from '../../../model/kanel/public/Organization';
+import User from '../../../model/kanel/public/User';
 import {
   AlreadyExistsErrorCode,
   BadRequestErrorCode,
   ForbiddenErrorCode,
 } from '../../../utils/error/error.code';
 import { ErrorType } from '../../../utils/error/error.type';
+import { UserDomain } from '../user/user-domain/user.domain';
 import { OrganizationApp } from './organization.app';
 import { OrganizationDomain } from './organization.domain';
 import organizationsResolver from './organization.resolver';
@@ -278,5 +282,35 @@ describe('delete organization GraphQL mutation', () => {
     await expect(call).rejects.toMatchObject({
       name: ErrorType.StillReference,
     });
+  });
+});
+
+describe('organization administrator_emails field resolver', () => {
+  it('should return the emails of the organization administrators', async () => {
+    // Given
+    const id = TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID;
+    const email = TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.EMAIL;
+    vi.spyOn(
+      UserDomain,
+      'loadUsersByCapabilitiesInOrganization'
+    ).mockResolvedValue([{ email } as User]);
+
+    // When
+    const result = await (
+      organizationsResolver.Organization as OrganizationResolvers
+    ).administrator_emails!(
+      { id, name: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME } as Organization,
+      {},
+      contextSimpleUserFiligran2,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    // Then
+    expect(
+      UserDomain.loadUsersByCapabilitiesInOrganization
+    ).toHaveBeenCalledWith(id, [
+      OrganizationCapability.AdministrateOrganization,
+    ]);
+    expect(result).toEqual([email]);
   });
 });

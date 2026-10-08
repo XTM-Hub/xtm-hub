@@ -1745,6 +1745,7 @@ export enum OrderingMode {
 
 export type Organization = Node & {
   __typename?: 'Organization';
+  administrator_emails?: Maybe<Array<Scalars['String']['output']>>;
   capabilityUser?: Maybe<Array<Maybe<Capability>>>;
   domains?: Maybe<Array<Scalars['String']['output']>>;
   id: Scalars['ID']['output'];
@@ -4586,6 +4587,7 @@ export type OpenCtiPlaybookResolvers<ContextType = PortalContext, ParentType ext
 }>;
 
 export type OrganizationResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['Organization'] = ResolversParentTypes['Organization']> = ResolversObject<{
+  administrator_emails?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
   capabilityUser?: Resolver<Maybe<Array<Maybe<ResolversTypes['Capability']>>>, ParentType, ContextType>;
   domains?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;

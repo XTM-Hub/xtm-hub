@@ -1752,6 +1752,7 @@ export enum OrderingMode {
 
 export type Organization = Node & {
   __typename?: 'Organization';
+  administrator_emails: Maybe<Array<Scalars['String']['output']>>;
   capabilityUser: Maybe<Array<Maybe<Capability>>>;
   domains: Maybe<Array<Scalars['String']['output']>>;
   id: Scalars['ID']['output'];
@@ -3680,7 +3681,7 @@ export type SaasPlatformsListQueryVariables = Exact<{
 }>;
 
 
-export type SaasPlatformsListQuery = { __typename?: 'Query', saasPlatforms: { __typename?: 'RegisteredPlatformConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor: string | null }, edges: Array<{ __typename?: 'RegisteredPlatformEdge', node: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, platform_id: string, tenant_id: string | null, tenant_name: string | null, url: string, title: string, version: string | null, contract: PlatformContract, status: PlatformConfigurationStatus | null, last_connectivity_check: any | null, identifier: ServiceDefinitionIdentifier, organization: { __typename?: 'Organization', id: string, name: string } | null } }> } };
+export type SaasPlatformsListQuery = { __typename?: 'Query', saasPlatforms: { __typename?: 'RegisteredPlatformConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor: string | null }, edges: Array<{ __typename?: 'RegisteredPlatformEdge', node: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, platform_id: string, tenant_id: string | null, tenant_name: string | null, url: string, title: string, version: string | null, contract: PlatformContract, status: PlatformConfigurationStatus | null, last_connectivity_check: any | null, identifier: ServiceDefinitionIdentifier, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } }> } };
 
 export type AddUsersToBundleGroupsMutationVariables = Exact<{
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
@@ -6148,6 +6149,7 @@ export const SaasPlatformsListDocument = `
         organization {
           id
           name
+          administrator_emails
         }
       }
     }

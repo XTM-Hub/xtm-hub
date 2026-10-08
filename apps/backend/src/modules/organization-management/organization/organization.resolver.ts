@@ -1,15 +1,28 @@
-import { Resolvers } from '../../../__generated__/resolvers-types';
+import {
+  OrganizationCapability,
+  Resolvers,
+} from '../../../__generated__/resolvers-types';
 import { OrganizationId } from '../../../model/kanel/public/Organization';
 import { getErrorMessage } from '../../../utils/error/error-guard.util';
 import { UnknownErrorCode } from '../../../utils/error/error.code';
 import { mapToGraphQLError } from '../../../utils/error/error.mapping';
 import { StillReferencedError } from '../../../utils/error/error.util';
 import { createRelayIdScalar } from '../../../utils/scalar.util';
+import { UserDomain } from '../user/user-domain/user.domain';
 import { OrganizationApp } from './organization.app';
 import { OrganizationDomain } from './organization.domain';
 
 const resolvers: Resolvers = {
   OrganizationId: createRelayIdScalar<OrganizationId>('Organization'),
+  Organization: {
+    administrator_emails: async ({ id }) => {
+      const administrators =
+        await UserDomain.loadUsersByCapabilitiesInOrganization(id, [
+          OrganizationCapability.AdministrateOrganization,
+        ]);
+      return administrators.map(({ email }) => email);
+    },
+  },
   Query: {
     organization: async (_, { id }) =>
       OrganizationDomain.loadOrganizationBy({ id: id as OrganizationId }),

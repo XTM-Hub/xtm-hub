@@ -1242,6 +1242,7 @@ export const mockOrganization = (overrides?: Partial<Organization>, _relationshi
     relationshipsToOmit.add('Organization');
     return {
         __typename: 'Organization',
+        administrator_emails: overrides && overrides.hasOwnProperty('administrator_emails') ? overrides.administrator_emails! : ['centum'],
         capabilityUser: overrides && overrides.hasOwnProperty('capabilityUser') ? overrides.capabilityUser! : [relationshipsToOmit.has('Capability') ? {} as Capability : mockCapability({}, relationshipsToOmit)],
         domains: overrides && overrides.hasOwnProperty('domains') ? overrides.domains! : ['commodo'],
         id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : '5f8a43ce-bfc3-411d-b6d9-e3b4c562c170',

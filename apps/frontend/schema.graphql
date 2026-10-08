@@ -1052,6 +1052,7 @@ type Organization implements Node {
   domains: [String!]
   personal_space: Boolean!
   capabilityUser: [Capability]
+  administrator_emails: [String!]
 }
 
 type OrganizationEdge {

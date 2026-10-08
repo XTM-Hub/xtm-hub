@@ -7,7 +7,7 @@ import {
   RegisteredPlatformOrdering,
   ServiceDefinitionIdentifier,
 } from '@graphql/generated';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 
 const ORGANIZATION_NAME = 'Filigran';
 const ADMINISTRATOR_EMAILS = ['admin@filigran.io', 'other.admin@filigran.io'];
@@ -48,7 +48,11 @@ const buildSaasPlatform = (
     identifier: ServiceDefinitionIdentifier;
     title: string;
     version: string | null;
-    organization: { id: string; name: string } | null;
+    organization: {
+      id: string;
+      name: string;
+      administrator_emails: string[] | null;
+    } | null;
   }> = {}
 ) => ({
   id: 'platform-id',
@@ -56,11 +60,11 @@ const buildSaasPlatform = (
   identifier: ServiceDefinitionIdentifier.OpenctiRegistration,
   title: 'SaaS OpenCTI platform',
   version: PLATFORM_VERSION,
-  organization: { id: 'organization-id', name: ORGANIZATION_NAME },
-  organization_administrators: ADMINISTRATOR_EMAILS.map((email) => ({
-    id: email,
-    email,
-  })),
+  organization: {
+    id: 'organization-id',
+    name: ORGANIZATION_NAME,
+    administrator_emails: ADMINISTRATOR_EMAILS,
+  },
   ...overrides,
 });
 
@@ -74,6 +78,18 @@ const mockSaasPlatforms = (nodes: ReturnType<typeof buildSaasPlatform>[]) =>
     },
     isLoading: false,
   });
+
+const getAdministratorsCell = () => {
+  const administratorsColumnIndex = screen
+    .getAllByRole('columnheader')
+    .findIndex((header) =>
+      within(header).queryByText('CSMBoard.Administrators')
+    );
+  const [firstRow] = screen
+    .getAllByRole('row')
+    .filter((row) => within(row).queryAllByRole('cell').length > 0);
+  return within(firstRow).getAllByRole('cell')[administratorsColumnIndex];
+};
 
 describe('SaasList', () => {
   beforeEach(() => {
@@ -156,6 +172,82 @@ describe('SaasList', () => {
     expect(screen.getByText(PLATFORM_VERSION)).toBeInTheDocument();
   });
 
+  it('should display the emails of the organization administrators of a saas platform', () => {
+    // Given a saas platform whose organization has several administrators
+    mockSaasPlatforms([buildSaasPlatform()]);
+
+    // When the list is rendered
+    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+    // Then the administrators cell shows every administrator email
+    expect(getAdministratorsCell()).toHaveTextContent(
+      ADMINISTRATOR_EMAILS.join(', ')
+    );
+  });
+
+  it('should list every administrator email in a tooltip when the organization has several administrators', async () => {
+    // Given a saas platform whose organization has several administrators
+    mockSaasPlatforms([buildSaasPlatform()]);
+    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+    // When the user focuses the administrators cell
+    fireEvent.focus(
+      within(getAdministratorsCell()).getByText(ADMINISTRATOR_EMAILS.join(', '))
+    );
+
+    // Then a tooltip lists each administrator email
+    const tooltip = await screen.findByRole('tooltip');
+    for (const email of ADMINISTRATOR_EMAILS) {
+      expect(within(tooltip).getByText(email)).toBeInTheDocument();
+    }
+  });
+
+  it('should display the email without a tooltip when the organization has a single administrator', () => {
+    // Given a saas platform whose organization has a single administrator
+    const [email] = ADMINISTRATOR_EMAILS;
+    mockSaasPlatforms([
+      buildSaasPlatform({
+        organization: {
+          id: 'organization-id',
+          name: ORGANIZATION_NAME,
+          administrator_emails: [email],
+        },
+      }),
+    ]);
+    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+    // When the user focuses the administrators cell
+    fireEvent.focus(within(getAdministratorsCell()).getByText(email));
+
+    // Then the email is shown and no tooltip opens
+    expect(getAdministratorsCell()).toHaveTextContent(email);
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    [
+      'its organization has no administrator',
+      {
+        id: 'organization-id',
+        name: ORGANIZATION_NAME,
+        administrator_emails: [],
+      },
+    ],
+    ['it has no organization', null],
+  ])(
+    'should display no administrator for a saas platform when %s',
+    (_, organization) => {
+      // Given a saas platform without any organization administrator
+      mockSaasPlatforms([buildSaasPlatform({ organization })]);
+
+      // When the list is rendered
+      renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+      // Then the administrators cell of its row is empty
+      expect(getAdministratorsCell().textContent).toBe('');
+    }
+  );
+
   it('should fetch saas platforms ordered by organization name and store the ordering when the user sorts the organization column', () => {
     // Given the list ordered by organization name ascending by default, starting with a platform without organization
     mockSaasPlatforms([buildSaasPlatform({ organization: null })]);
@@ -175,6 +267,7 @@ describe('SaasList', () => {
   });
 
   it.each([
+    ['CSMBoard.Administrators'],
     ['CSMBoard.Products'],
     ['CSMBoard.Link'],
     ['CSMBoard.Version'],

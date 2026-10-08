@@ -26,6 +26,7 @@
   },
   "CSMBoard": {
     "Organization": "Organisation",
+    "Administrators": "Administrateurs",
     "Products": "Produits",
     "Link": "Métriques Saas",
     "Version": "Version",

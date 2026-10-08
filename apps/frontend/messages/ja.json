@@ -26,6 +26,7 @@
   },
   "CSMBoard": {
     "Organization": "組織",
+    "Administrators": "管理者",
     "Products": "製品",
     "Link": "SaaS指標",
     "Version": "バージョン",
