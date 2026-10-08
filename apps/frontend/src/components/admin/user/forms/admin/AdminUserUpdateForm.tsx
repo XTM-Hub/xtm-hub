@@ -4,8 +4,8 @@ import {
 } from '@/components/admin/user/AutocompleteOrganization';
 import { CapabilityDescription } from '@/components/admin/user/CapabilityDescription';
 import { userEditAdminFormSchema } from '@/components/admin/user/forms/user-form.schema';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
@@ -239,22 +239,22 @@ export const AdminUserUpdateForm = ({
               {t('UserActions.Enable')}
             </Button>
           ) : (
-            <AlertDialogComponent
-              AlertTitle={t('MenuActions.Disable')}
-              actionButtonText={t('MenuActions.Disable')}
-              variantName={'destructive'}
-              triggerElement={
+            <ConfirmDialog
+              title={t('MenuActions.Disable')}
+              confirmLabel={t('MenuActions.Disable')}
+              destructive
+              trigger={
                 <Button
                   variant="destructive"
                   priority="secondary">
                   {t('UserActions.Disable')}
                 </Button>
               }
-              onClickContinue={() => disableUser({ disabled: true })}>
+              onConfirm={() => disableUser({ disabled: true })}>
               {t('DisableUserDialog.TextDisableThisUser', {
                 email: user.email,
               })}
-            </AlertDialogComponent>
+            </ConfirmDialog>
           )}
           <div className="flex gap-s">
             <Button

@@ -1,7 +1,7 @@
 'use client';
 
-import { DraftsConfirmDialog } from '@/components/content-translation/DraftsConfirmDialog';
 import { ExitEditModeDialog } from '@/components/content-translation/ExitEditModeDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useEditMode } from '@/context/edit-mode-context';
 import { useContentTranslationDrafts } from '@/hooks/use-content-translation-drafts';
@@ -106,7 +106,7 @@ export const EditionModeBanner = () => {
         {t('EditableText.EditionBannerExit')}
       </Button>
 
-      <DraftsConfirmDialog
+      <ConfirmDialog
         open={confirmedAction === 'publish'}
         onOpenChange={closeConfirmation}
         title={t('EditableText.PublishConfirmTitle', {
@@ -114,9 +114,11 @@ export const EditionModeBanner = () => {
         })}
         description={t('EditableText.PublishConfirmDescription')}
         confirmLabel={t('EditableText.Publish')}
+        cancelLabel={t('Utils.Cancel')}
         onConfirm={() => settleDrafts(publishDrafts)}
+        className="z-[110]"
       />
-      <DraftsConfirmDialog
+      <ConfirmDialog
         open={confirmedAction === 'discard'}
         onOpenChange={closeConfirmation}
         title={t('EditableText.DiscardConfirmTitle', {
@@ -124,8 +126,10 @@ export const EditionModeBanner = () => {
         })}
         description={t('EditableText.DiscardConfirmDescription')}
         confirmLabel={t('EditableText.Discard')}
-        isDestructive
+        cancelLabel={t('Utils.Cancel')}
+        destructive
         onConfirm={() => settleDrafts(discardDrafts)}
+        className="z-[110]"
       />
       <ExitEditModeDialog {...exitDialogProps} />
     </div>

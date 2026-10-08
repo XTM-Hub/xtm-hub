@@ -7,27 +7,27 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import testRender from '@/utils/test/test-render';
 import { PendingUserConfirmDialog } from './PendingUserConfirmDialog';
 
-vi.mock('@/components/ui/AlertDialog', () => ({
-  AlertDialogComponent: ({
-    isOpen,
+vi.mock('@/components/ui/ConfirmDialog', () => ({
+  ConfirmDialog: ({
+    open,
     onOpenChange,
-    AlertTitle,
-    actionButtonText,
-    onClickContinue,
+    title,
+    confirmLabel,
+    onConfirm,
     children,
   }: {
-    isOpen?: boolean;
-    onOpenChange?: (isOpen: boolean) => void;
-    AlertTitle: string;
-    actionButtonText: string;
-    onClickContinue?: () => void;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+    title: string;
+    confirmLabel: string;
+    onConfirm?: () => void;
     children: ReactNode;
   }) =>
-    isOpen ? (
+    open ? (
       <div role="alertdialog">
-        <h2>{AlertTitle}</h2>
+        <h2>{title}</h2>
         <div>{children}</div>
-        <button onClick={onClickContinue}>{actionButtonText}</button>
+        <button onClick={onConfirm}>{confirmLabel}</button>
         <button onClick={() => onOpenChange?.(false)}>Close</button>
       </div>
     ) : null,

@@ -4,7 +4,7 @@ import {
   ServiceDefinitionIdentifierToPlatformIdentifier,
 } from '@/components/registration/PlatformIdentifierMapping';
 import { UnregisterPlatform } from '@/components/registration/register/register.graphql';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button } from '@filigran/design-system';
@@ -80,14 +80,14 @@ export const UnregisterButton = ({ platform }: UnregisterButtonProps) => {
           OrganizationCapability.AdministrateOrganization,
           OrganizationCapability.ManagePlatformRegistration,
         ]}>
-        <AlertDialogComponent
-          variantName={'destructive'}
-          AlertTitle={t('Unregister.Confirm.Description')}
-          onClickContinue={unregisterPlatform}
-          triggerElement={
+        <ConfirmDialog
+          destructive
+          title={t('Unregister.Confirm.Description')}
+          onConfirm={unregisterPlatform}
+          trigger={
             <Button variant="destructive">{t('Unregister.Unregister')}</Button>
           }
-          actionButtonText={t('Utils.Continue')}>
+          confirmLabel={t('Utils.Continue')}>
           <p>
             {t('Unregister.Description', {
               platformName: platform.title,
@@ -99,7 +99,7 @@ export const UnregisterButton = ({ platform }: UnregisterButtonProps) => {
                 ].name,
             })}
           </p>
-        </AlertDialogComponent>
+        </ConfirmDialog>
       </GuardCapacityComponent>
     )
   );

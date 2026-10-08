@@ -1,6 +1,6 @@
 import { getUserListContext } from '@/components/admin/user/UserListPage';
 import { PortalContext } from '@/components/me/AppPortalContext';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
@@ -71,15 +71,15 @@ export const RemoveUserFromOrga = ({ user }: RemoveUserFromOrgaProps) => {
   );
 
   return (
-    <AlertDialogComponent
-      AlertTitle={t('UserActions.RemoveUser')}
-      actionButtonText={t('MenuActions.Remove')}
-      variantName={'destructive'}
-      triggerElement={trigger}
-      onClickContinue={() => onRemoveUser(user.id)}>
+    <ConfirmDialog
+      title={t('UserActions.RemoveUser')}
+      confirmLabel={t('MenuActions.Remove')}
+      destructive
+      trigger={trigger}
+      onConfirm={() => onRemoveUser(user.id)}>
       {t('RemoveUserOrgDialog.TextRemoveThisUser', {
         email: user.email,
       })}
-    </AlertDialogComponent>
+    </ConfirmDialog>
   );
 };

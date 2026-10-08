@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { GraphQLSubscriptionConfig } from 'relay-runtime';
 
 import { userMeSubscription } from '@/components/admin/user/user.graphql';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
   userMeSubscription$data,
   userMeSubscription as userMeSubscriptionType,
@@ -49,15 +49,15 @@ const UserEventSubscription = () => {
     };
   useSubscription(subscriptionConfig);
   return (
-    <AlertDialogComponent
-      isOpen={isOpen}
+    <ConfirmDialog
+      open={isOpen}
       onOpenChange={setIsOpen}
-      AlertTitle={t('UpdateUserDialog.TextUpdatedUserTitle')}
-      onClickContinue={() => {}}
-      displayCancelButton={false}
-      actionButtonText={t('Utils.Continue')}>
+      title={t('UpdateUserDialog.TextUpdatedUserTitle')}
+      onConfirm={() => {}}
+      hideCancelButton
+      confirmLabel={t('Utils.Continue')}>
       <p>{t('UpdateUserDialog.TextUpdatedUser')}</p>
-    </AlertDialogComponent>
+    </ConfirmDialog>
   );
 };
 

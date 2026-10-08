@@ -1,4 +1,4 @@
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useTranslate } from '@/hooks/use-translate';
 
 interface PendingUserAlreadyProcessedDialogProps {
@@ -13,16 +13,16 @@ export const PendingUserAlreadyProcessedDialog = ({
   const t = useTranslate();
 
   return (
-    <AlertDialogComponent
-      isOpen={isOpen}
+    <ConfirmDialog
+      open={isOpen}
       onOpenChange={onOpenChange}
-      displayCancelButton={false}
-      AlertTitle={t('PendingUserListPage.AlreadyProcessed.Title')}
-      actionButtonText={t('PendingUserListPage.AlreadyProcessed.Confirm')}
-      onClickContinue={() => onOpenChange(false)}>
+      hideCancelButton
+      title={t('PendingUserListPage.AlreadyProcessed.Title')}
+      confirmLabel={t('PendingUserListPage.AlreadyProcessed.Confirm')}
+      onConfirm={() => onOpenChange(false)}>
       <div className="flex items-center gap-2">
         <span>{t('PendingUserListPage.AlreadyProcessed.Description')}</span>
       </div>
-    </AlertDialogComponent>
+    </ConfirmDialog>
   );
 };

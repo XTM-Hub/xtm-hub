@@ -1,5 +1,5 @@
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { AppCombobox } from '@/components/ui/AppCombobox';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
 import { Button, ColorPicker, Input } from '@filigran/design-system';
@@ -115,22 +115,22 @@ const UseCaseForm = ({
 
         <SheetFooter className={useCase ? 'sm:justify-between pb-0' : 'pt-2'}>
           {useCase && (
-            <AlertDialogComponent
-              AlertTitle={t('MenuActions.Delete')}
-              actionButtonText={t('MenuActions.Delete')}
-              variantName={'destructive'}
-              triggerElement={
+            <ConfirmDialog
+              title={t('MenuActions.Delete')}
+              confirmLabel={t('MenuActions.Delete')}
+              destructive
+              trigger={
                 <Button
                   variant="destructive"
                   priority="secondary">
                   {t('MenuActions.Delete')}
                 </Button>
               }
-              onClickContinue={() => handleDelete!()}>
+              onConfirm={() => handleDelete!()}>
               {t('DeleteUseCaseDialog.TextDeleteUseCase', {
                 name: useCase.name,
               })}
-            </AlertDialogComponent>
+            </ConfirmDialog>
           )}
           <div className="flex gap-s">
             <Button

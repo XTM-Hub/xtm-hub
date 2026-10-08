@@ -62,31 +62,31 @@ vi.mock('react-relay', async (importOriginal) => ({
   useSubscription: (config: unknown) => mocks.useSubscription(config),
 }));
 
-vi.mock('@/components/ui/AlertDialog', () => ({
-  AlertDialogComponent: ({
-    isOpen,
+vi.mock('@/components/ui/ConfirmDialog', () => ({
+  ConfirmDialog: ({
+    open,
     onOpenChange,
-    AlertTitle,
-    actionButtonText,
-    onClickContinue,
+    title,
+    confirmLabel,
+    onConfirm,
     children,
-    triggerElement,
+    trigger,
   }: {
-    isOpen?: boolean;
-    onOpenChange?: (isOpen: boolean) => void;
-    AlertTitle: string;
-    actionButtonText: string;
-    onClickContinue?: () => void;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+    title: string;
+    confirmLabel: string;
+    onConfirm?: () => void;
     children: ReactNode;
-    triggerElement?: ReactNode;
+    trigger?: ReactNode;
   }) => (
     <div>
-      {triggerElement}
-      {isOpen ? (
+      {trigger}
+      {open ? (
         <div role="alertdialog">
-          <h2>{AlertTitle}</h2>
+          <h2>{title}</h2>
           <div>{children}</div>
-          <button onClick={onClickContinue}>{actionButtonText}</button>
+          <button onClick={onConfirm}>{confirmLabel}</button>
           <button onClick={() => onOpenChange?.(false)}>Close dialog</button>
         </div>
       ) : null}

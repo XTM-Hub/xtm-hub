@@ -10,7 +10,7 @@ import {
   UserPendingListSubscription,
 } from '@/components/admin/user/user.graphql';
 import { PortalContext } from '@/components/me/AppPortalContext';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
   handleSortingChange,
   mapToSortingTableValue,
@@ -296,14 +296,12 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
           selectionHeader: {
             actions: ({ selectionState }) => (
               <>
-                <AlertDialogComponent
-                  AlertTitle={t(
-                    'PendingUserListPage.WarningUsersRejection.Title'
-                  )}
-                  actionButtonText={t(
+                <ConfirmDialog
+                  title={t('PendingUserListPage.WarningUsersRejection.Title')}
+                  confirmLabel={t(
                     'PendingUserListPage.WarningUsersRejection.Confirm'
                   )}
-                  triggerElement={
+                  trigger={
                     <IconButton
                       variant="destructive"
                       priority="tertiary"
@@ -312,15 +310,15 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
                       icon={<CloseIcon className="h-4 w-4" />}
                     />
                   }
-                  onClickContinue={() => handleBulkReject(selectionState)}>
+                  onConfirm={() => handleBulkReject(selectionState)}>
                   {t('PendingUserListPage.WarningUsersRejection.Description')}
-                </AlertDialogComponent>
-                <AlertDialogComponent
-                  AlertTitle={t('PendingUserListPage.WarningUsersAccept.Title')}
-                  actionButtonText={t(
+                </ConfirmDialog>
+                <ConfirmDialog
+                  title={t('PendingUserListPage.WarningUsersAccept.Title')}
+                  confirmLabel={t(
                     'PendingUserListPage.WarningUsersAccept.Confirm'
                   )}
-                  triggerElement={
+                  trigger={
                     <IconButton
                       priority="tertiary"
                       className="border"
@@ -328,14 +326,14 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
                       icon={<CheckIcon className="h-4 w-4" />}
                     />
                   }
-                  onClickContinue={() => handleBulkApprove(selectionState)}>
+                  onConfirm={() => handleBulkApprove(selectionState)}>
                   {t.rich(
                     'PendingUserListPage.WarningUsersAccept.Description',
                     {
                       strong: renderStrong,
                     }
                   )}
-                </AlertDialogComponent>
+                </ConfirmDialog>
               </>
             ),
           },

@@ -1,5 +1,5 @@
 import { organizationDeletion } from '@/components/organization/organization.graphql';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { organizationDeletionMutation } from '@generated/organizationDeletionMutation.graphql';
@@ -42,16 +42,16 @@ export const DeleteOrganization = ({
     });
   };
   return (
-    <AlertDialogComponent
-      actionButtonText={t('Utils.Delete')}
-      variantName={'destructive'}
-      AlertTitle={t('OrganizationForm.DeleteOrganization')}
-      isOpen={open}
+    <ConfirmDialog
+      confirmLabel={t('Utils.Delete')}
+      destructive
+      title={t('OrganizationForm.DeleteOrganization')}
+      open={open}
       onOpenChange={setOpen}
-      onClickContinue={() => onDeletedOrganization(organization.id)}>
+      onConfirm={() => onDeletedOrganization(organization.id)}>
       {t('OrganizationForm.SureDeleteOrganization', {
         organizationName: organization.name,
       })}
-    </AlertDialogComponent>
+    </ConfirmDialog>
   );
 };

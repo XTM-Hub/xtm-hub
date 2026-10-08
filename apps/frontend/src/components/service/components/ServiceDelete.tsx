@@ -1,4 +1,4 @@
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { IconActionsItem } from '@/components/ui/IconActions';
 import { useTranslate } from '@/hooks/use-translate';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
@@ -40,13 +40,13 @@ export const ServiceDelete = ({
 
   return (
     userCanDelete && (
-      <AlertDialogComponent
-        actionButtonText={t('Utils.Delete')}
-        variantName={'destructive'}
-        AlertTitle={t(`Service.${translationKey}.DeleteService`, {
+      <ConfirmDialog
+        confirmLabel={t('Utils.Delete')}
+        destructive
+        title={t(`Service.${translationKey}.DeleteService`, {
           name: serviceName,
         })}
-        triggerElement={
+        trigger={
           type === 'menuitem' ? (
             <IconActionsItem
               onSelect={(e) => {
@@ -62,13 +62,13 @@ export const ServiceDelete = ({
             </Button>
           )
         }
-        onClickContinue={() => {
+        onConfirm={() => {
           onDelete?.();
         }}>
         {t(`Service.${translationKey}.SureDeleteService`, {
           name: serviceName,
         })}
-      </AlertDialogComponent>
+      </ConfirmDialog>
     )
   );
 };

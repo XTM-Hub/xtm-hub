@@ -1,7 +1,7 @@
 'use client';
 
 import { MeRequestTransferPersonalSpaceMutation } from '@/components/me/me.graphql';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import {
@@ -94,15 +94,15 @@ export const RequestTransferPersonalSpace = () => {
           </AutoForm>
         </CardContent>
       </Card>
-      <AlertDialogComponent
-        isOpen={isDialogOpen}
-        AlertTitle={t('DialogActions.ContinueTitle')}
-        actionButtonText={t('MenuActions.Continue')}
-        variantName={'destructive'}
+      <ConfirmDialog
+        open={isDialogOpen}
+        title={t('DialogActions.ContinueTitle')}
+        confirmLabel={t('MenuActions.Continue')}
+        destructive
         onOpenChange={setIsDialogOpen}
-        onClickContinue={confirmEdition}>
+        onConfirm={confirmEdition}>
         {t('ProfilePage.PersonalSpace.TransferConfirmSentence')}
-      </AlertDialogComponent>
+      </ConfirmDialog>
     </>
   );
 };

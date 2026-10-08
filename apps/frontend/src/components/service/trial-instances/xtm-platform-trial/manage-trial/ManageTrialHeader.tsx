@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { DisabledActionTooltip } from '@/components/ui/DisabledActionTooltip';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
@@ -113,14 +113,12 @@ export const ManageTrialHeader = ({
           {selectedUsers.length > 0 && (
             <TooltipProvider>
               <Tooltip>
-                <AlertDialogComponent
-                  AlertTitle={t(
-                    'Service.Bundle.ManageTrial.BulkDeleteDialog.Title'
-                  )}
-                  actionButtonText={t('Utils.Delete')}
-                  variantName="destructive"
-                  continueButtonDisabled={isBulkDeleting}
-                  triggerElement={
+                <ConfirmDialog
+                  title={t('Service.Bundle.ManageTrial.BulkDeleteDialog.Title')}
+                  confirmLabel={t('Utils.Delete')}
+                  destructive
+                  confirmDisabled={isBulkDeleting}
+                  trigger={
                     <TooltipTrigger asChild>
                       <IconButton
                         type="button"
@@ -131,7 +129,7 @@ export const ManageTrialHeader = ({
                       />
                     </TooltipTrigger>
                   }
-                  onClickContinue={() => {
+                  onConfirm={() => {
                     setIsBulkDeleting(true);
                     removeUsersFromBundleGroups({
                       serviceInstanceId,
@@ -144,7 +142,7 @@ export const ManageTrialHeader = ({
                         ? `${visible} ${t('Service.Bundle.ManageTrial.BulkDeleteDialog.MoreEmails', { count: hiddenCount })}`
                         : visible,
                   })}
-                </AlertDialogComponent>
+                </ConfirmDialog>
                 <TooltipContent>
                   {t('Service.Bundle.ManageTrial.BulkDeleteTooltip')}
                 </TooltipContent>

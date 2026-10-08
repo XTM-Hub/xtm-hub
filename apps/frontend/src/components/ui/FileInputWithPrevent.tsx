@@ -1,17 +1,9 @@
 'use client';
 
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useTranslate } from '@/hooks/use-translate';
-import {
-  Button,
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogTitle,
-  DialogTrigger,
-} from '@filigran/design-system';
-import { useRef, useState } from 'react';
+import { Button } from '@filigran/design-system';
+import { MouseEvent, useRef, useState } from 'react';
 
 const FileInputWithPrevent = ({
   texts,
@@ -42,38 +34,23 @@ const FileInputWithPrevent = ({
     }
   };
 
-  const openFileDialog = () => {
+  const openFileDialog = (e: MouseEvent<HTMLButtonElement>) => {
+    // Closes on file pick instead, so a dismissed picker keeps the confirmation up.
+    e.preventDefault();
     inputRef.current?.click();
   };
 
   return (
     <>
-      <Dialog
+      <ConfirmDialog
         open={isOpen}
-        onOpenChange={setIsOpen}>
-        <DialogTrigger asChild>
-          <Button type="button">{texts?.selectFile}</Button>
-        </DialogTrigger>
-
-        <DialogContent
-          role="alertdialog"
-          onInteractOutside={(e) => e.preventDefault()}
-          hideCloseButton>
-          <DialogTitle>{texts?.dialogTitle}</DialogTitle>
-          <DialogDescription>{texts?.dialogDescription}</DialogDescription>
-
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button priority="secondary">{t('Utils.Cancel')}</Button>
-            </DialogClose>
-            <Button
-              type="button"
-              onClick={openFileDialog}>
-              {t('Utils.Continue')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        onOpenChange={setIsOpen}
+        trigger={<Button type="button">{texts?.selectFile}</Button>}
+        title={texts?.dialogTitle ?? ''}
+        description={texts?.dialogDescription}
+        confirmLabel={t('Utils.Continue')}
+        onConfirm={openFileDialog}
+      />
 
       <input
         ref={inputRef}

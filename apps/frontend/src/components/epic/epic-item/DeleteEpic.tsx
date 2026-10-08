@@ -1,5 +1,5 @@
 import { DeleteEpicMutation } from '@/components/epic/epic.graphql';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
@@ -42,14 +42,14 @@ export const DeleteEpic = ({
     });
   };
   return (
-    <AlertDialogComponent
-      actionButtonText={t('Utils.Delete')}
-      variantName={'destructive'}
-      AlertTitle={t('Epic.EpicActions.DeleteEpic', { epicName: epic.title })}
-      isOpen={open}
+    <ConfirmDialog
+      confirmLabel={t('Utils.Delete')}
+      destructive
+      title={t('Epic.EpicActions.DeleteEpic', { epicName: epic.title })}
+      open={open}
       onOpenChange={setOpen}
-      onClickContinue={() => onDeletedEpic(epic.id)}>
+      onConfirm={() => onDeletedEpic(epic.id)}>
       {t('Epic.EpicActions.SureDeleteEpic', { epicName: epic.title })}
-    </AlertDialogComponent>
+    </ConfirmDialog>
   );
 };

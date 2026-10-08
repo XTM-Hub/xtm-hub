@@ -1,6 +1,6 @@
 import { VOTING_PRODUCTS } from '@/components/feature-voting/feature-voting.const';
 import { ServiceFormUseCasesField } from '@/components/service/form/UseCasesField';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import MarkdownInput from '@/components/ui/MarkdownInput';
 import { SelectField } from '@/components/ui/SelectField';
 import { useTranslate } from '@/hooks/use-translate';
@@ -258,20 +258,20 @@ const VotableFeatureForm = ({
         />
         <SheetFooter className={feature ? 'sm:justify-between pb-0' : 'pt-2'}>
           {feature && (
-            <AlertDialogComponent
-              AlertTitle={t('MenuActions.Delete')}
-              actionButtonText={t('MenuActions.Delete')}
-              variantName="destructive"
-              triggerElement={
+            <ConfirmDialog
+              title={t('MenuActions.Delete')}
+              confirmLabel={t('MenuActions.Delete')}
+              destructive
+              trigger={
                 <Button
                   variant="destructive"
                   priority="secondary">
                   {t('MenuActions.Delete')}
                 </Button>
               }
-              onClickContinue={() => handleDelete!()}>
+              onConfirm={() => handleDelete!()}>
               {t('VotingRound.Dialog.DeleteFeature', { title: feature.title })}
-            </AlertDialogComponent>
+            </ConfirmDialog>
           )}
           <div className="flex gap-s">
             <Button

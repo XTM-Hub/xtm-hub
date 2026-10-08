@@ -14,7 +14,7 @@ import { ProfileFormPicture } from '@/components/profile/form/Picture';
 import { ProfileFormPreferences } from '@/components/profile/form/Preferences';
 import { RequestTransferPersonalSpace } from '@/components/profile/form/RequestTransferPersonalSpace';
 import { ProfileFormResetPassword } from '@/components/profile/form/ResetPassword';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { fileListToUploadableMap } from '@/relay/environment/fetch-form-data';
@@ -122,14 +122,14 @@ export const Profile = () => {
         <ProfileFormResetPassword onSubmit={handleResetPassword} />
         <RequestTransferPersonalSpace />
       </section>
-      <AlertDialogComponent
-        isOpen={isDialogOpen}
-        AlertTitle={t('DialogActions.ContinueTitle')}
-        actionButtonText={t('MenuActions.Continue')}
+      <ConfirmDialog
+        open={isDialogOpen}
+        title={t('DialogActions.ContinueTitle')}
+        confirmLabel={t('MenuActions.Continue')}
         onOpenChange={setIsDialogOpen}
-        onClickContinue={confirmEdition}>
+        onConfirm={confirmEdition}>
         {t('ProfilePage.PlatformsEditionDialog.ConfirmSentence')}
-      </AlertDialogComponent>
+      </ConfirmDialog>
     </>
   );
 };

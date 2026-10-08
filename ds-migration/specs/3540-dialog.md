@@ -146,6 +146,11 @@ Rules shared by every row:
   `type`, and the design system `Button` defaults to `type="button"`, so the multi-platform deploy never ran. Continue
   is `type="submit"` and the dialog closes from `onSubmit`, as `OnePlatformDisplay` does, so the form is still mounted
   when it submits and an empty choice keeps the dialog open on its message.
+- **`ConfirmDialog` is the one confirmation** (epic review): `src/components/ui/ConfirmDialog.tsx` holds the former
+  `AlertDialog` composition (`role="alertdialog"`, outside clicks ignored, Cancel in `DialogClose` or, with
+  `hideCancelButton`, the corner close icon, a confirm button that closes unless its handler prevents it).
+  `AlertDialogComponent` and `DraftsConfirmDialog` go, their thirty-odd callers and `FileInputWithPrevent` use it.
+  `ExitEditModeDialog` (three async actions, no Cancel) and the one-click deploy dialog (its own form) stay composed.
 
 ## To validate
 
@@ -178,8 +183,6 @@ Rules shared by every row:
 - `ShareableResourceCarouselView`: the `fill` images have no `sizes`, so Next.js still picks a full-viewport source
   for a 960px panel.
 - `FileInputWithPrevent` has no unit test for its confirmation.
-- The former `AlertDialog` composition (`role`, `onInteractOutside`, `hideCloseButton`, `DialogClose` Cancel) is
-  written inline in five files: a shared confirm wrapper is a later refactor.
 - `ExitEditModeDialog`: the corner close icon stays active while an exit is running, and the running exit still leaves
   edit mode after it closes, as Escape already did.
 - Design system: the missing-title `console.warn` only walks `children` props, so it fires for titles rendered by a

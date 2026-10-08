@@ -1,5 +1,5 @@
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { AppCombobox } from '@/components/ui/AppCombobox';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
 import { Button, Input } from '@filigran/design-system';
@@ -97,22 +97,22 @@ const SolutionCategoryForm = ({
         <SheetFooter
           className={solutionCategory ? 'sm:justify-between pb-0' : 'pt-2'}>
           {solutionCategory && (
-            <AlertDialogComponent
-              AlertTitle={t('MenuActions.Delete')}
-              actionButtonText={t('MenuActions.Delete')}
-              variantName="destructive"
-              triggerElement={
+            <ConfirmDialog
+              title={t('MenuActions.Delete')}
+              confirmLabel={t('MenuActions.Delete')}
+              destructive
+              trigger={
                 <Button
                   variant="destructive"
                   priority="secondary">
                   {t('MenuActions.Delete')}
                 </Button>
               }
-              onClickContinue={() => handleDelete!()}>
+              onConfirm={() => handleDelete!()}>
               {t('SolutionCategory.Dialog.Text', {
                 name: solutionCategory.name,
               })}
-            </AlertDialogComponent>
+            </ConfirmDialog>
           )}
           <div className="flex gap-s">
             <Button

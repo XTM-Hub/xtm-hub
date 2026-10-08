@@ -5,7 +5,7 @@ import {
   USE_CASES_BY_PLATFORM_IDENTIFIER,
 } from '@/components/service/trial-instances/form-constants';
 import { buildOngoingTrialWarningParams } from '@/components/service/trial-instances/xtm-platform-trial/request-form/xtm-platform-trial-form.utils';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { SelectField } from '@/components/ui/SelectField';
 import { TranslatableEnumSelectField } from '@/components/ui/TranslatableEnumSelectField';
 import { useTranslate } from '@/hooks/use-translate';
@@ -373,13 +373,13 @@ export const XtmPlatformTrialForm = ({
         </form>
       </Form>
 
-      <AlertDialogComponent
-        AlertTitle=""
-        isOpen={isConfirmOpen}
+      <ConfirmDialog
+        title=""
+        open={isConfirmOpen}
         onOpenChange={setIsConfirmOpen}
-        actionButtonText={t('Utils.Confirm')}
-        variantName="destructive"
-        onClickContinue={onConfirmOngoingTrial}>
+        confirmLabel={t('Utils.Confirm')}
+        destructive
+        onConfirm={onConfirmOngoingTrial}>
         <div className="flex items-start gap-xs rounded border border-solid border-red p-s">
           <WarningIcon className="size-4 mt-1 shrink-0 text-destructive" />
           <div className="flex flex-col gap-xs">
@@ -396,7 +396,7 @@ export const XtmPlatformTrialForm = ({
             </span>
           </div>
         </div>
-      </AlertDialogComponent>
+      </ConfirmDialog>
     </div>
   );
 };

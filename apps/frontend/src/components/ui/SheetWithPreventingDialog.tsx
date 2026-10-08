@@ -1,4 +1,4 @@
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import {
   Sheet,
@@ -85,14 +85,14 @@ export const SheetWithPreventingDialog = ({
           </DialogContext.Provider>
         </SheetContent>
       </Sheet>
-      <AlertDialogComponent
-        AlertTitle={t('DialogActions.PreventSheetTitle')}
-        actionButtonText={t('MenuActions.Continue')}
-        isOpen={openDialog}
+      <ConfirmDialog
+        title={t('DialogActions.PreventSheetTitle')}
+        confirmLabel={t('MenuActions.Continue')}
+        open={openDialog}
         onOpenChange={setOpenDialog}
-        onClickContinue={() => setOpen(false)}>
+        onConfirm={() => setOpen(false)}>
         {t('DialogActions.PreventSheetSentence')}
-      </AlertDialogComponent>
+      </ConfirmDialog>
     </>
   );
 };

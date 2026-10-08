@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
@@ -235,14 +235,12 @@ export const ManageTrialTable = ({
         size: 48,
         cell: ({ row }) => (
           <div className="flex items-center justify-end">
-            <AlertDialogComponent
-              AlertTitle={t(
-                'Service.Bundle.ManageTrial.Table.DeleteDialog.Title'
-              )}
-              actionButtonText={t('Utils.Delete')}
-              variantName="destructive"
-              continueButtonDisabled={deletingUserId === row.original.id}
-              triggerElement={
+            <ConfirmDialog
+              title={t('Service.Bundle.ManageTrial.Table.DeleteDialog.Title')}
+              confirmLabel={t('Utils.Delete')}
+              destructive
+              confirmDisabled={deletingUserId === row.original.id}
+              trigger={
                 <IconButton
                   type="button"
                   priority="tertiary"
@@ -251,7 +249,7 @@ export const ManageTrialTable = ({
                   icon={<DeleteIcon className="h-4 w-4" />}
                 />
               }
-              onClickContinue={() => {
+              onConfirm={() => {
                 setDeletingUserId(row.original.id);
                 removeUsersFromBundleGroups({
                   serviceInstanceId,
@@ -261,7 +259,7 @@ export const ManageTrialTable = ({
               {t('Service.Bundle.ManageTrial.Table.DeleteDialog.Text', {
                 email: row.original.email,
               })}
-            </AlertDialogComponent>
+            </ConfirmDialog>
           </div>
         ),
       },

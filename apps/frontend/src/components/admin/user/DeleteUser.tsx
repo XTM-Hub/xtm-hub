@@ -1,5 +1,5 @@
 import { getDeletionBlockedReasonKey } from '@/components/admin/user/delete-user.utils';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { DialogInformative } from '@/components/ui/Dialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
@@ -70,14 +70,14 @@ export const DeleteUser = ({
       {null}
     </DialogInformative>
   ) : (
-    <AlertDialogComponent
-      actionButtonText={t('Utils.Delete')}
-      variantName={'destructive'}
-      AlertTitle={t('UserActions.DeleteUser')}
-      isOpen={open}
+    <ConfirmDialog
+      confirmLabel={t('Utils.Delete')}
+      destructive
+      title={t('UserActions.DeleteUser')}
+      open={open}
       onOpenChange={setOpen}
-      onClickContinue={onDeleteUser}>
+      onConfirm={onDeleteUser}>
       {t('UserActions.SureDeleteUser', { email: user.email })}
-    </AlertDialogComponent>
+    </ConfirmDialog>
   );
 };

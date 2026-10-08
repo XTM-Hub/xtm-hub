@@ -1,5 +1,5 @@
 import { RoadmapServiceInstance } from '@/components/admin/voting-round/use-roadmap-service-instances';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { SelectField } from '@/components/ui/SelectField';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button, Input, Textarea } from '@filigran/design-system';
@@ -165,20 +165,20 @@ const VotingRoundForm = ({
         <SheetFooter
           className={votingRound ? 'sm:justify-between pb-0' : 'pt-2'}>
           {votingRound && (
-            <AlertDialogComponent
-              AlertTitle={t('MenuActions.Delete')}
-              actionButtonText={t('MenuActions.Delete')}
-              variantName="destructive"
-              triggerElement={
+            <ConfirmDialog
+              title={t('MenuActions.Delete')}
+              confirmLabel={t('MenuActions.Delete')}
+              destructive
+              trigger={
                 <Button
                   variant="destructive"
                   priority="secondary">
                   {t('MenuActions.Delete')}
                 </Button>
               }
-              onClickContinue={() => handleDelete!()}>
+              onConfirm={() => handleDelete!()}>
               {t('VotingRound.Dialog.DeleteRound', { name: votingRound.name })}
-            </AlertDialogComponent>
+            </ConfirmDialog>
           )}
           <div className="flex gap-s">
             <Button

@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
@@ -52,33 +52,33 @@ export const VotingRoundStatusActions = ({
 
   if (status === VotingRoundStatus.Open) {
     return (
-      <AlertDialogComponent
-        AlertTitle={t('VotingRound.Actions.Close')}
-        actionButtonText={t('VotingRound.Actions.Close')}
-        triggerElement={
+      <ConfirmDialog
+        title={t('VotingRound.Actions.Close')}
+        confirmLabel={t('VotingRound.Actions.Close')}
+        trigger={
           <Button
             priority="secondary"
             disabled={isPending}>
             {t('VotingRound.Actions.Close')}
           </Button>
         }
-        onClickContinue={() => changeStatus(VotingRoundStatus.Closed)}>
+        onConfirm={() => changeStatus(VotingRoundStatus.Closed)}>
         {t('VotingRound.Dialog.CloseRound', { name: roundName })}
-      </AlertDialogComponent>
+      </ConfirmDialog>
     );
   }
 
   return (
-    <AlertDialogComponent
-      AlertTitle={t('VotingRound.Actions.Open')}
-      actionButtonText={t('VotingRound.Actions.Open')}
-      triggerElement={
+    <ConfirmDialog
+      title={t('VotingRound.Actions.Open')}
+      confirmLabel={t('VotingRound.Actions.Open')}
+      trigger={
         <Button disabled={isPending || !hasFeatures}>
           {t('VotingRound.Actions.Open')}
         </Button>
       }
-      onClickContinue={() => changeStatus(VotingRoundStatus.Open)}>
+      onConfirm={() => changeStatus(VotingRoundStatus.Open)}>
       {t('VotingRound.Dialog.OpenRound', { name: roundName })}
-    </AlertDialogComponent>
+    </ConfirmDialog>
   );
 };

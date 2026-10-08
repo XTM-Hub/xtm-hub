@@ -15,7 +15,7 @@ import {
   TrialsScope,
   TrialsTabType,
 } from '@/components/trials/trials.const';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
   handleSortingChange,
   mapToSortingTableValue,
@@ -228,10 +228,10 @@ const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
   return (
     <>
       {isCancellable && (
-        <AlertDialogComponent
-          AlertTitle={t('Service.Trials.Cancellation.Confirmation.Title')}
-          actionButtonText={t('MenuActions.Delete')}
-          triggerElement={
+        <ConfirmDialog
+          title={t('Service.Trials.Cancellation.Confirmation.Title')}
+          confirmLabel={t('MenuActions.Delete')}
+          trigger={
             <IconButton
               variant="destructive"
               priority="tertiary"
@@ -244,16 +244,14 @@ const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
               icon={<CloseIcon className="h-4 w-4" />}
             />
           }
-          onClickContinue={() =>
-            cancelRequest({ deploymentRequestId: request.id })
-          }>
+          onConfirm={() => cancelRequest({ deploymentRequestId: request.id })}>
           {t(
             isBundle
               ? 'TrialsDashboard.Cancellation.Confirmation'
               : 'Service.Trials.Cancellation.Confirmation.Admin',
             { organizationName: request.organization_name ?? '' }
           )}
-        </AlertDialogComponent>
+        </ConfirmDialog>
       )}
       {isReorderable && (
         <>

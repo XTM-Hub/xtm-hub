@@ -5,8 +5,8 @@ import {
   newsFeedListFragment,
   NewsFeedListQuery,
 } from '@/components/admin/news-feed/news-feed.graphql';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import BadgeOverflowCounter from '@/components/ui/BadgeOverflowCounter';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTablePagination } from '@/hooks/use-table-pagination';
@@ -222,18 +222,18 @@ const NewsFeedList = () => {
         }}
       />
       {deleteTarget && (
-        <AlertDialogComponent
-          isOpen={!!deleteTarget}
+        <ConfirmDialog
+          open={!!deleteTarget}
           onOpenChange={(open) => !open && setDeleteTarget(undefined)}
-          AlertTitle={t('NewsFeedAdminPage.DeleteDialog.Title')}
-          actionButtonText={t('NewsFeedAdminPage.DeleteDialog.Confirm')}
-          variantName="destructive"
-          onClickContinue={() => handleDelete(deleteTarget)}
-          continueButtonDisabled={isDeleteInFlight}>
+          title={t('NewsFeedAdminPage.DeleteDialog.Title')}
+          confirmLabel={t('NewsFeedAdminPage.DeleteDialog.Confirm')}
+          destructive
+          onConfirm={() => handleDelete(deleteTarget)}
+          confirmDisabled={isDeleteInFlight}>
           {t('NewsFeedAdminPage.DeleteDialog.Text', {
             title: deleteTarget.title,
           })}
-        </AlertDialogComponent>
+        </ConfirmDialog>
       )}
     </>
   );

@@ -1,4 +1,4 @@
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
@@ -54,16 +54,16 @@ const DeleteRolePortal = ({
   );
 
   return (
-    <AlertDialogComponent
-      isOpen={open}
+    <ConfirmDialog
+      open={open}
       onOpenChange={onOpenChange}
-      AlertTitle={t('RoleListPage.DeleteRoleDialog.Title')}
-      actionButtonText={t('Utils.Delete')}
-      variantName="destructive"
-      onClickContinue={() => deleteRolePortal({ name: rolePortal })}
-      continueButtonDisabled={isPending}>
+      title={t('RoleListPage.DeleteRoleDialog.Title')}
+      confirmLabel={t('Utils.Delete')}
+      destructive
+      onConfirm={() => deleteRolePortal({ name: rolePortal })}
+      confirmDisabled={isPending}>
       {t('RoleListPage.DeleteRoleDialog.Text', { rolePortal })}
-    </AlertDialogComponent>
+    </ConfirmDialog>
   );
 };
 

@@ -24,7 +24,7 @@ import {
 import ManageCompetitor from '@/components/competitor/ManageCompetitor';
 import { useCompetitorListLocalstorage } from '@/components/competitor/competitor-localstorage';
 import { formatTier } from '@/components/competitor/competitor.utils';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
   handleSortingChange,
   mapToSortingTableValue,
@@ -126,11 +126,11 @@ const CompetitorList = () => {
                 setOpenEdit(true);
               }}
             />
-            <AlertDialogComponent
-              AlertTitle={t('CompetitorListPage.DeleteDialog.Title')}
-              actionButtonText={t('CompetitorListPage.Delete')}
-              variantName="destructive"
-              triggerElement={
+            <ConfirmDialog
+              title={t('CompetitorListPage.DeleteDialog.Title')}
+              confirmLabel={t('CompetitorListPage.Delete')}
+              destructive
+              trigger={
                 <IconButton
                   variant="destructive"
                   priority="tertiary"
@@ -138,7 +138,7 @@ const CompetitorList = () => {
                   icon={<DeleteIcon className="h-4 w-4" />}
                 />
               }
-              onClickContinue={(e) => {
+              onConfirm={(e) => {
                 e.stopPropagation();
                 deleteCompetitor({
                   variables: {
@@ -150,7 +150,7 @@ const CompetitorList = () => {
               {t('CompetitorListPage.DeleteDialog.Text', {
                 name: row.original.name,
               })}
-            </AlertDialogComponent>
+            </ConfirmDialog>
           </div>
         ),
       },

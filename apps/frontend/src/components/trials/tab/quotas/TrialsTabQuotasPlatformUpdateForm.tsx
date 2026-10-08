@@ -1,5 +1,5 @@
 import { trialsRegionKey } from '@/components/trials/trials.const';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
@@ -116,22 +116,22 @@ export const TrialsTabQuotasPlatformUpdateForm = ({
                 onClick={(e) => handleCloseSheet(e)}>
                 {t('Utils.Cancel')}
               </Button>
-              <AlertDialogComponent
-                AlertTitle={t(
+              <ConfirmDialog
+                title={t(
                   'TrialsDashboard.UpdateQuotasForm.AlertDialog.ConfirmTitle',
                   {
                     region: translatedRegion,
                   }
                 )}
-                actionButtonText={t('Utils.Validate')}
-                triggerElement={
+                confirmLabel={t('Utils.Validate')}
+                trigger={
                   <Button
                     disabled={!form.formState.isValid}
                     type="submit">
                     {t('Utils.Validate')}
                   </Button>
                 }
-                onClickContinue={() => updateQuota()}>
+                onConfirm={() => updateQuota()}>
                 <p>
                   {t(
                     'TrialsDashboard.UpdateQuotasForm.AlertDialog.ConfirmDescription',
@@ -146,7 +146,7 @@ export const TrialsTabQuotasPlatformUpdateForm = ({
                     'TrialsDashboard.UpdateQuotasForm.AlertDialog.ConfirmSentence'
                   )}
                 </p>
-              </AlertDialogComponent>
+              </ConfirmDialog>
             </div>
           </SheetFooter>
         </form>

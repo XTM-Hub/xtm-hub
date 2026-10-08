@@ -1,5 +1,5 @@
 import { PendingUserDialogState } from '@/components/admin/user/pending-user/pending-user-list.types';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { ReactNode } from 'react';
 
@@ -27,12 +27,12 @@ export const PendingUserConfirmDialog = ({
       : 'PendingUserListPage.WarningUserRejection';
 
   return (
-    <AlertDialogComponent
-      isOpen={!!pendingUserDialog}
+    <ConfirmDialog
+      open={!!pendingUserDialog}
       onOpenChange={onOpenChange}
-      AlertTitle={t(`${i18nKey}.Title`)}
-      actionButtonText={t(`${i18nKey}.Confirm`)}
-      onClickContinue={onConfirm}>
+      title={t(`${i18nKey}.Title`)}
+      confirmLabel={t(`${i18nKey}.Confirm`)}
+      onConfirm={onConfirm}>
       <div className="flex items-center gap-2">
         <span>
           {t.rich(`${i18nKey}.Description`, {
@@ -41,6 +41,6 @@ export const PendingUserConfirmDialog = ({
           })}
         </span>
       </div>
-    </AlertDialogComponent>
+    </ConfirmDialog>
   );
 };
