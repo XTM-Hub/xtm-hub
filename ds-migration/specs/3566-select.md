@@ -149,6 +149,8 @@ Rules shared by every row, from the Textarea and Input specs:
   asterisk, is now the design system's.
 - **An AutoForm adapter only changes its import**, plus what keeps it from breaking: `AutoFormEnum` takes the design
   system root, a full-width trigger and a name.
+- **`Preferences` names its selects with `SelectLabel`** (epic review), like every other labelled select: the visible
+  `Theme` and `Language` labels become the triggers' names, replacing the `<span>` and the duplicated `aria-label`.
 
 ## To validate
 

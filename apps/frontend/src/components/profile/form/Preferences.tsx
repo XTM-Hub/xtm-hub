@@ -13,6 +13,7 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@filigran/design-system';
@@ -45,16 +46,12 @@ export const ProfileFormPreferences = () => {
       <CardContent
         clamp={0}
         className="grid gap-l">
-        <div className="grid gap-s">
-          <span className="txt-default">
-            {t('ProfilePage.Preferences.Theme')}
-          </span>
+        <div>
           <Select
             value={currentTheme}
             onValueChange={setTheme}>
-            <SelectTrigger
-              aria-label={t('ThemeToggle.SetTheme')}
-              className="w-full">
+            <SelectLabel>{t('ProfilePage.Preferences.Theme')}</SelectLabel>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder={t('ThemeToggle.SetTheme')} />
             </SelectTrigger>
             <SelectContent>
@@ -67,16 +64,12 @@ export const ProfileFormPreferences = () => {
           </Select>
         </div>
 
-        <div className="grid gap-s">
-          <span className="txt-default">
-            {t('ProfilePage.Preferences.Language')}
-          </span>
+        <div>
           <Select
             value={locale}
             onValueChange={onLocaleChange}>
-            <SelectTrigger
-              aria-label={t('LocaleSwitcher.Label')}
-              className="w-full">
+            <SelectLabel>{t('ProfilePage.Preferences.Language')}</SelectLabel>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder={t('LocaleSwitcher.Label')} />
             </SelectTrigger>
             <SelectContent>
