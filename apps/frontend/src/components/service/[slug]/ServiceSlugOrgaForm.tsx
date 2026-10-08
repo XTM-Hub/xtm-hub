@@ -6,16 +6,19 @@ import {
   AddSubscriptionInServiceMutation,
   UpdateSubscriptionInServiceMutation,
 } from '@/components/subcription/subscription.graphql';
+import {
+  fromDatePickerChange,
+  toDatePickerValue,
+} from '@/components/ui/date-picker-field.utils';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
-import { subscriptionInServiceCreateMutation } from '@generated/subscriptionInServiceCreateMutation.graphql';
 import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
+import { subscriptionInServiceCreateMutation } from '@generated/subscriptionInServiceCreateMutation.graphql';
 import { useSubscriptionDefaultValues } from './use-subscription-default-values';
 
 import { useTranslate } from '@/hooks/use-translate';
 import { DEBOUNCE_TIME } from '@/utils/constant';
-import { Button, Checkbox } from '@filigran/design-system';
+import { Button, Checkbox, DatePicker } from '@filigran/design-system';
 import {
-  DatePicker,
   Form,
   FormControl,
   FormField,
@@ -29,6 +32,7 @@ import {
 import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { subscriptionInServiceUpdateMutation } from '@generated/subscriptionInServiceUpdateMutation.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useLocale } from 'next-intl';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'react-relay';
@@ -59,6 +63,7 @@ export const ServiceSlugOrgaForm = ({
 }: ServiceSlugAddOrgaFormSheetProps) => {
   const { handleCloseSheet, setIsDirty, setOpenSheet } = useDialogContext();
   const t = useTranslate();
+  const locale = useLocale();
   const { toast } = useToast();
   const { organizationsData, refetch } = getOrganizations();
   const organizations = useUnsubscribedOrganizations(
@@ -250,40 +255,33 @@ export const ServiceSlugOrgaForm = ({
           <FormField
             control={form.control}
             name="start_date"
-            render={({ field }) => (
-              <>
-                <FormItem>
-                  <FormLabel>
-                    {t('OrganizationInServiceAction.StartDate')}
-                  </FormLabel>
-                  <DatePicker
-                    popoverContentClassName="bg-elevation-background-layer-3"
-                    date={field.value}
-                    setDate={field.onChange}
-                  />
-                  <FormMessage />
-                </FormItem>
-              </>
+            render={({ field, fieldState }) => (
+              <DatePicker
+                label={t('OrganizationInServiceAction.StartDate')}
+                locale={locale}
+                value={toDatePickerValue(field.value)}
+                onChange={(date, context) =>
+                  field.onChange(fromDatePickerChange(date, context))
+                }
+                error={fieldState.error?.message}
+              />
             )}
           />
 
           <FormField
             control={form.control}
             name="end_date"
-            render={({ field }) => (
-              <>
-                <FormItem>
-                  <FormLabel>
-                    {t('OrganizationInServiceAction.EndDate')}
-                  </FormLabel>
-                  <DatePicker
-                    popoverContentClassName="bg-elevation-background-layer-3"
-                    date={field.value}
-                    setDate={field.onChange}
-                  />
-                  <FormMessage />
-                </FormItem>
-              </>
+            render={({ field, fieldState }) => (
+              <DatePicker
+                label={t('OrganizationInServiceAction.EndDate')}
+                locale={locale}
+                value={toDatePickerValue(field.value)}
+                onChange={(date, context) =>
+                  field.onChange(fromDatePickerChange(date, context))
+                }
+                error={fieldState.error?.message}
+                clearable
+              />
             )}
           />
 
