@@ -2,6 +2,7 @@
 
 import { MeEditUserMutation } from '@/components/me/me.graphql';
 import { SettingsContext } from '@/components/settings/EnvPortalContext';
+import { SelectField } from '@/components/ui/SelectField';
 import { useTranslate } from '@/hooks/use-translate';
 import { Locale, locales, publicLocales } from '@/i18n/config';
 import { setUserLocale } from '@/i18n/locale';
@@ -10,12 +11,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
 } from '@filigran/design-system';
 import { useLocale } from 'next-intl';
 import { useTheme } from 'next-themes';
@@ -46,43 +41,28 @@ export const ProfileFormPreferences = () => {
       <CardContent
         clamp={0}
         className="grid gap-l">
-        <div>
-          <Select
-            value={currentTheme}
-            onValueChange={setTheme}>
-            <SelectLabel>{t('ProfilePage.Preferences.Theme')}</SelectLabel>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder={t('ThemeToggle.SetTheme')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="light">{t('ThemeToggle.Light')}</SelectItem>
-              <SelectItem value="dark">{t('ThemeToggle.Dark')}</SelectItem>
-              <SelectItem value="system">
-                {t('ThemeToggle.Automatic')}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <SelectField
+          label={t('ProfilePage.Preferences.Theme')}
+          placeholder={t('ThemeToggle.SetTheme')}
+          options={[
+            { value: 'light', label: t('ThemeToggle.Light') },
+            { value: 'dark', label: t('ThemeToggle.Dark') },
+            { value: 'system', label: t('ThemeToggle.Automatic') },
+          ]}
+          value={currentTheme}
+          onValueChange={setTheme}
+        />
 
-        <div>
-          <Select
-            value={locale}
-            onValueChange={onLocaleChange}>
-            <SelectLabel>{t('ProfilePage.Preferences.Language')}</SelectLabel>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder={t('LocaleSwitcher.Label')} />
-            </SelectTrigger>
-            <SelectContent>
-              {availableLocales.map((loc) => (
-                <SelectItem
-                  key={loc}
-                  value={loc}>
-                  {t(`LocaleSwitcher.${loc}`)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <SelectField
+          label={t('ProfilePage.Preferences.Language')}
+          placeholder={t('LocaleSwitcher.Label')}
+          options={availableLocales.map((loc) => ({
+            value: loc,
+            label: t(`LocaleSwitcher.${loc}`),
+          }))}
+          value={locale}
+          onValueChange={onLocaleChange}
+        />
       </CardContent>
     </Card>
   );

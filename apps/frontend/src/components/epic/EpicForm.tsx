@@ -12,6 +12,7 @@ import {
 } from '@/components/epic/filigran-products';
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
+import { SelectField } from '@/components/ui/SelectField';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
@@ -21,13 +22,6 @@ import {
   Input,
   Radio,
   RadioGroup,
-  Select,
-  SelectContent,
-  SelectHelperText,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
   Textarea,
   Tooltip,
   TooltipContent,
@@ -296,35 +290,20 @@ const EpicForm = ({
             control={form.control}
             name="timeline"
             render={({ field, fieldState }) => (
-              <div>
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value ?? Timeline.Now}
-                  error={Boolean(fieldState.error)}>
-                  <SelectLabel required>{t('Epic.Form.Timeline')}</SelectLabel>
-                  <SelectTrigger className="w-full">
-                    <SelectValue
-                      placeholder={t('Epic.Form.TimelineOption.now')}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TIMELINE_VALUES.map((timeline) => (
-                      <SelectItem
-                        key={timeline}
-                        value={timeline}>
-                        {t(
-                          `Epic.Form.TimelineOption.${timeline.toLowerCase()}`
-                        )}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                  {fieldState.error && (
-                    <SelectHelperText>
-                      {fieldState.error.message}
-                    </SelectHelperText>
-                  )}
-                </Select>
-              </div>
+              <SelectField
+                label={t('Epic.Form.Timeline')}
+                required
+                placeholder={t('Epic.Form.TimelineOption.now')}
+                options={TIMELINE_VALUES.map((timeline) => ({
+                  value: timeline,
+                  label: t(
+                    `Epic.Form.TimelineOption.${timeline.toLowerCase()}`
+                  ),
+                }))}
+                value={field.value ?? Timeline.Now}
+                onValueChange={field.onChange}
+                error={fieldState.error?.message}
+              />
             )}
           />
         </div>

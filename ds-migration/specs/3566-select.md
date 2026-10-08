@@ -155,6 +155,11 @@ Rules shared by every row, from the Textarea and Input specs:
   system root, a full-width trigger and a name.
 - **`Preferences` names its selects with `SelectLabel`** (epic review), like every other labelled select: the visible
   `Theme` and `Language` labels become the triggers' names, replacing the `<span>` and the duplicated `aria-label`.
+- **`SelectField` composes a labelled select once** (epic review): `src/components/ui/SelectField.tsx` renders the root,
+  `SelectLabel` (`required`), the full-width trigger, the items from `options`, and `SelectHelperText` with `error`.
+  `TranslatableEnumSelectField` is built on it, and the ten sites of that shape use it. Selects with no visible label,
+  a fixed width or their own trigger (`SortControls`, `RoleSelect`, `UploaderOrganizationIdField`,
+  `SelectWithEditableField`, the list filters) stay composed.
 
 ## To validate
 

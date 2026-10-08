@@ -6,20 +6,10 @@ import {
 } from '@/components/service/trial-instances/form-constants';
 import { buildOngoingTrialWarningParams } from '@/components/service/trial-instances/xtm-platform-trial/request-form/xtm-platform-trial-form.utils';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { SelectField } from '@/components/ui/SelectField';
 import { TranslatableEnumSelectField } from '@/components/ui/TranslatableEnumSelectField';
 import { useTranslate } from '@/hooks/use-translate';
-import { cn } from '@/lib/utils';
-import {
-  Button,
-  Checkbox,
-  Select,
-  SelectContent,
-  SelectHelperText,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from '@filigran/design-system';
+import { Button, Checkbox } from '@filigran/design-system';
 import { WarningIcon } from '@filigran/icon';
 import {
   Form,
@@ -272,35 +262,20 @@ export const XtmPlatformTrialForm = ({
             control={form.control}
             name="region"
             render={({ field, fieldState }) => (
-              <div>
-                <Select
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  error={Boolean(fieldState.error)}>
-                  <SelectLabel required>
-                    {t('Service.Trials.Form.Region')}
-                  </SelectLabel>
-                  <SelectTrigger className={cn('w-full', selectLayerClassName)}>
-                    <SelectValue
-                      placeholder={t('Service.Trials.Form.RegionPlaceholder')}
-                    />
-                  </SelectTrigger>
-                  <SelectContent className={selectLayerClassName}>
-                    {REGIONS.map((region) => (
-                      <SelectItem
-                        key={region.value}
-                        value={region.value}>
-                        {t(`Region.${region.label}`)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                  {fieldState.error && (
-                    <SelectHelperText>
-                      {fieldState.error.message}
-                    </SelectHelperText>
-                  )}
-                </Select>
-              </div>
+              <SelectField
+                label={t('Service.Trials.Form.Region')}
+                required
+                placeholder={t('Service.Trials.Form.RegionPlaceholder')}
+                options={REGIONS.map((region) => ({
+                  value: region.value,
+                  label: t(`Region.${region.label}`),
+                }))}
+                value={field.value}
+                onValueChange={field.onChange}
+                error={fieldState.error?.message}
+                triggerClassName={selectLayerClassName}
+                contentClassName={selectLayerClassName}
+              />
             )}
           />
 

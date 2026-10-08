@@ -1,16 +1,9 @@
 'use client';
 
 import { formatTier } from '@/components/competitor/competitor.utils';
+import { SelectField } from '@/components/ui/SelectField';
 import { useTranslate } from '@/hooks/use-translate';
-import {
-  Button,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from '@filigran/design-system';
+import { Button } from '@filigran/design-system';
 import { AutoForm, FormItem, FormMessage, SheetFooter } from '@filigran/ui';
 import { competitor_fragment$data } from '@generated/competitor_fragment.graphql';
 import { CompetitorTier } from '@graphql/generated';
@@ -70,26 +63,15 @@ const CompetitorForm = ({
         tier: {
           fieldType: ({ field }) => (
             <FormItem>
-              <div>
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value}
-                  defaultValue={competitor?.tier ?? CompetitorTier.Tier1}>
-                  <SelectLabel required>{t('CompetitorForm.Tier')}</SelectLabel>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder={t('CompetitorForm.Tier')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TIERS.map((tier) => (
-                      <SelectItem
-                        key={tier.value}
-                        value={tier.value}>
-                        {tier.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <SelectField
+                label={t('CompetitorForm.Tier')}
+                required
+                placeholder={t('CompetitorForm.Tier')}
+                options={TIERS}
+                value={field.value}
+                defaultValue={competitor?.tier ?? CompetitorTier.Tier1}
+                onValueChange={field.onChange}
+              />
               <FormMessage />
             </FormItem>
           ),
