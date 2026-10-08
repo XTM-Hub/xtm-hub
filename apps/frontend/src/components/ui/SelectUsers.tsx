@@ -1,11 +1,12 @@
 import { useUserListLocalstorage } from '@/components/admin/user/user-list-localstorage';
 import { UserFragment } from '@/components/admin/user/UserList';
 import { AppCombobox } from '@/components/ui/AppCombobox';
+import { useKeepSelectedOptions } from '@/hooks/use-keep-selected-options';
 import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { UserList_fragment$key } from '@generated/UserList_fragment.graphql';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { readInlineData } from 'react-relay';
 import { useDebounceCallback } from 'usehooks-ts';
 
@@ -14,9 +15,12 @@ interface UserOption {
   label: string;
 }
 
+const getUserId = ({ value }: UserOption) => value;
+
 interface SelectUsersFormFieldProps {
   label: string;
-  defaultValue?: string;
+  /** The user behind the initial value, labelled before any search returns it. */
+  defaultUser?: UserOption;
   value?: string;
   onValueChange: (value: string) => void;
   disabled?: boolean;
@@ -25,15 +29,13 @@ interface SelectUsersFormFieldProps {
 
 const SelectUsersFormField = ({
   label,
-  defaultValue,
+  defaultUser,
   value,
   onValueChange,
   disabled,
   error,
 }: SelectUsersFormFieldProps) => {
   const t = useTranslate();
-  // Keeps the email of a picked user that a later search drops from the options
-  const [pickedUser, setPickedUser] = useState<UserOption | null>(null);
 
   const { orderMode, orderBy } = useUserListLocalstorage();
   const { data, refetch } = useUsersList({
@@ -60,16 +62,29 @@ const SelectUsersFormField = ({
     [data?.users?.edges]
   );
 
+  const defaultUserId = defaultUser?.value;
+  const defaultUserLabel = defaultUser?.label;
+  const initialUsers = useMemo(
+    () =>
+      defaultUserId && defaultUserLabel
+        ? [{ value: defaultUserId, label: defaultUserLabel }]
+        : undefined,
+    [defaultUserId, defaultUserLabel]
+  );
+  const keptUsers = useKeepSelectedOptions({
+    options: users,
+    value,
+    getId: getUserId,
+    initialOptions: initialUsers,
+  });
+
   // The form can set its value after mount, so the selection follows `value`
   const selectedUser = useMemo<UserOption | null>(() => {
     if (!value) return null;
-    const label =
-      (pickedUser?.value === value ? pickedUser.label : undefined) ??
-      users.find((user) => user.value === value)?.label ??
-      defaultValue ??
-      value;
-    return { value, label };
-  }, [value, pickedUser, users, defaultValue]);
+    return (
+      keptUsers.find((user) => user.value === value) ?? { value, label: value }
+    );
+  }, [value, keptUsers]);
 
   const handleSearch = useDebounceCallback((searchTerm: string) => {
     refetch({
@@ -85,12 +100,9 @@ const SelectUsersFormField = ({
       label={label}
       placeholder={t('InviteUserServiceForm.Email')}
       error={error}
-      options={users}
+      options={keptUsers}
       value={selectedUser}
-      onValueChange={(user) => {
-        setPickedUser(user);
-        onValueChange(user?.value ?? '');
-      }}
+      onValueChange={(user) => onValueChange(user?.value ?? '')}
       onInputChange={(text, meta) => {
         if (meta.cause === 'type') handleSearch(text);
       }}

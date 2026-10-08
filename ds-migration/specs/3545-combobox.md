@@ -154,6 +154,12 @@ Rules shared by every row, from `SsoGroupRolePortalForm` (the app's existing des
   its names, the file trigger and empty texts and the rejection message; `BreadcrumbNav` names its landmark. Names with
   no prop stay English, one upstream request: the combobox chip remove, the dialog corner close, the button loading
   text, the tabs scroll arrows and the colour picker panel.
+- **`useKeepSelectedOptions` keeps a selection's label** (epic review, replacing three strategies):
+  `src/hooks/use-keep-selected-options.ts` returns the server results followed by every selected option they lack,
+  found among the options earlier searches returned or the initial ones, with no setState during render.
+  `UserOrganizationFilter`, `SelectUsers` (`defaultUser` instead of a bare `defaultValue` label), the server-search
+  multi-selects of 3700 and `use-trial-user-options` use it. A selection outside the current results keeps its label
+  and shows as a row of the list; the raw id is the last resort only when no label was ever seen.
 
 ## To validate
 
@@ -180,7 +186,5 @@ Rules shared by every row, from `SsoGroupRolePortalForm` (the app's existing des
   list reopens narrowed to the last term until the next keystroke (legacy behaviour too).
 - Design system: the panel has an anchor but no Radix trigger, so a pointerdown on the field or the chevron of an
   open panel dismisses it and the click reopens it; the chevron cannot close the panel. To raise upstream.
-- `UserOrganizationFilter` resolves its value from the first 50 organizations of the server search: a selection
-  outside them shows the placeholder and no clear control, as the legacy showed its placeholder.
 - Design system: `ComboboxHelperText` registers its id on mount and never unregisters it, so once an error clears the
   input keeps an `aria-describedby` to a missing id. Harmless for assistive technology; to raise upstream.

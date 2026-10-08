@@ -18,6 +18,7 @@ import { subscription_fragment$data } from '@generated/subscription_fragment.gra
 import { subscriptionInServiceCreateMutation } from '@generated/subscriptionInServiceCreateMutation.graphql';
 import { useSubscriptionDefaultValues } from './use-subscription-default-values';
 
+import { useKeepSelectedOptions } from '@/hooks/use-keep-selected-options';
 import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
 import { DEBOUNCE_TIME } from '@/utils/constant';
@@ -28,7 +29,7 @@ import { subscriptionInServiceUpdateMutation } from '@generated/subscriptionInSe
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocale } from 'next-intl';
 import { useEffect, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { useMutation } from 'react-relay';
 import { useDebounceCallback } from 'usehooks-ts';
 import { z } from 'zod';
@@ -49,6 +50,8 @@ const formSchema = z.object({
   end_date: z.coerce.date<Date>().optional(),
 });
 
+const getOrganizationId = ({ id }: { id: string }) => id;
+
 export const ServiceSlugOrgaForm = ({
   serviceInstance,
   subscriptions,
@@ -65,15 +68,6 @@ export const ServiceSlugOrgaForm = ({
     organizationsData,
     subscriptions,
     subscriptionToEdit
-  );
-  const organizationOptionIds = useMemo(
-    () =>
-      toComboboxOptionIds(
-        organizations,
-        (organization) => organization.id,
-        (organization) => organization.name
-      ),
-    [organizations]
   );
 
   const [commitSubscriptionCreateMutation] =
@@ -96,6 +90,25 @@ export const ServiceSlugOrgaForm = ({
     form.reset(defaultValues);
   }, [defaultValues, form]);
 
+  const selectedOrganizationIds = useWatch({
+    control: form.control,
+    name: 'organization_id',
+  });
+  const keptOrganizations = useKeepSelectedOptions({
+    options: organizations,
+    value: selectedOrganizationIds,
+    getId: getOrganizationId,
+  });
+  const organizationOptionIds = useMemo(
+    () =>
+      toComboboxOptionIds(
+        keptOrganizations,
+        getOrganizationId,
+        (organization) => organization.name
+      ),
+    [keptOrganizations]
+  );
+
   useEffect(() => {
     setIsDirty(form.formState.isDirty);
   }, [form.formState.isDirty, setIsDirty]);
@@ -105,9 +118,7 @@ export const ServiceSlugOrgaForm = ({
       inputValue.organization_id
         .map(
           (organizationId) =>
-            organizationsData.organizations.edges.find(
-              ({ node }) => node.id === organizationId
-            )?.node.name
+            keptOrganizations.find(({ id }) => id === organizationId)?.name
         )
         .filter((name): name is string => Boolean(name))
         .join(', ') ||

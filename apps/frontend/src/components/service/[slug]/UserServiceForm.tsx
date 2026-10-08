@@ -12,6 +12,7 @@ import {
 } from '@/components/service/user_service.graphql';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useKeepSelectedOptions } from '@/hooks/use-keep-selected-options';
 import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
@@ -30,7 +31,7 @@ import { userServiceCreateMutation } from '@generated/userServiceCreateMutation.
 import { userServiceEditMutation } from '@generated/userServiceEditMutation.graphql';
 import { userServices_fragment$data } from '@generated/userServices_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { readInlineData, useMutation } from 'react-relay';
 import { useDebounceCallback } from 'usehooks-ts';
 import { z } from 'zod';
@@ -40,6 +41,8 @@ interface UserServiceFormProps {
   userService?: userServices_fragment$data;
   subscription: subscriptionByIdQuery$data;
 }
+
+const getUserOptionValue = ({ value }: { value: string }) => value;
 
 export const UserServiceForm = ({
   connectionId,
@@ -241,8 +244,8 @@ export const UserServiceForm = ({
     });
   }, DEBOUNCE_TIME);
 
-  const usersOptionIds = useMemo(() => {
-    const usersOptions =
+  const usersOptions = useMemo(
+    () =>
       data?.users?.edges
         ?.filter((edge) => {
           const user = readInlineData<UserList_fragment$key>(
@@ -260,13 +263,27 @@ export const UserServiceForm = ({
             label: user.email,
             value: user.email,
           };
-        }) ?? [];
-    return toComboboxOptionIds(
-      usersOptions,
-      (option) => option.value,
-      (option) => option.label
-    );
-  }, [data?.users?.edges, me?.id]);
+        }) ?? [],
+    [data?.users?.edges, me?.id]
+  );
+  const selectedEmails = useWatch({
+    control: extendedForm.control,
+    name: 'email',
+  });
+  const keptUsersOptions = useKeepSelectedOptions({
+    options: usersOptions,
+    value: selectedEmails,
+    getId: getUserOptionValue,
+  });
+  const usersOptionIds = useMemo(
+    () =>
+      toComboboxOptionIds(
+        keptUsersOptions,
+        getUserOptionValue,
+        (option) => option.label
+      ),
+    [keptUsersOptions]
+  );
 
   return (
     <Form {...(form as typeof extendedForm)}>

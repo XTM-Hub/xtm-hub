@@ -3,8 +3,8 @@ export interface ComboboxOptionIds {
   getOptionLabel: (id: string) => string;
 }
 
-// A selected id can be missing from the options (a server search narrowed
-// them), so its label falls back to the id itself.
+// A selected id without an option is labelled by the id itself: the last
+// resort when no label for it was ever known.
 export const toComboboxOptionIds = <T>(
   options: readonly T[],
   getId: (option: T) => string,

@@ -24,7 +24,10 @@ export const ServiceFormUploaderIdField = ({
   return (
     <SelectUsersFormField
       label={t('Service.Form.Author')}
-      defaultValue={document?.uploader?.email ?? me!.email}
+      defaultUser={{
+        value: document?.uploader?.id ?? me!.id,
+        label: document?.uploader?.email ?? me!.email,
+      }}
       value={field.value}
       onValueChange={field.onChange}
       disabled={disabled}

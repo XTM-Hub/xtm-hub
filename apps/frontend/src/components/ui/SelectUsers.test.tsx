@@ -8,6 +8,10 @@ const AUTHOR_ID = 'user-1';
 const AUTHOR_EMAIL = 'author@filigran.io';
 const UNLOADED_AUTHOR_ID = 'user-2';
 const DEFAULT_AUTHOR_EMAIL = 'default-author@filigran.io';
+const DEFAULT_AUTHOR = {
+  value: UNLOADED_AUTHOR_ID,
+  label: DEFAULT_AUTHOR_EMAIL,
+};
 const SEARCH_TERM = 'author';
 
 const mocks = vi.hoisted(() => ({
@@ -44,7 +48,7 @@ describe('SelectUsersFormField', () => {
     const { rerender } = testRender(
       <SelectUsersFormField
         label={LABEL}
-        defaultValue={DEFAULT_AUTHOR_EMAIL}
+        defaultUser={DEFAULT_AUTHOR}
         onValueChange={vi.fn()}
       />
     );
@@ -55,7 +59,7 @@ describe('SelectUsersFormField', () => {
     rerender(
       <SelectUsersFormField
         label={LABEL}
-        defaultValue={DEFAULT_AUTHOR_EMAIL}
+        defaultUser={DEFAULT_AUTHOR}
         value={UNLOADED_AUTHOR_ID}
         onValueChange={vi.fn()}
       />

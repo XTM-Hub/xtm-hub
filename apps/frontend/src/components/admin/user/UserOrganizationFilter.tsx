@@ -1,13 +1,16 @@
 import { getOrganizations } from '@/components/organization/Organization.service';
 import { AppCombobox } from '@/components/ui/AppCombobox';
+import { useKeepSelectedOptions } from '@/hooks/use-keep-selected-options';
 import { useTranslate } from '@/hooks/use-translate';
-import { useState } from 'react';
+import { useMemo } from 'react';
 
 interface OrganizationFilterOption {
   id: string;
   name: string;
   personal_space: boolean;
 }
+
+const getOrganizationId = ({ id }: OrganizationFilterOption) => id;
 
 interface UserOrganizationFilterProps {
   value?: string;
@@ -21,35 +24,27 @@ export const UserOrganizationFilter = ({
   const t = useTranslate();
   const { organizationsData, refetch } = getOrganizations();
 
-  const ALL_ORGANIZATIONS: OrganizationFilterOption = {
-    id: '',
-    name: t('UserActions.AllOrganizations'),
-    personal_space: false,
-  };
-
-  const organizations: OrganizationFilterOption[] = [
-    ALL_ORGANIZATIONS,
-    ...organizationsData.organizations.edges
-      .map(({ node }) => node)
-      .filter(({ personal_space }) => !personal_space),
-  ];
-
-  const fetchedSelection = organizations.find(
-    ({ id }) => id !== '' && id === value
+  const organizations = useMemo<OrganizationFilterOption[]>(
+    () => [
+      {
+        id: '',
+        name: t('UserActions.AllOrganizations'),
+        personal_space: false,
+      },
+      ...organizationsData.organizations.edges
+        .map(({ node }) => node)
+        .filter(({ personal_space }) => !personal_space),
+    ],
+    [organizationsData, t]
   );
-  // A search can return a list without the selected organization; dropping it
-  // then would wipe the text being typed and the clear control with it.
-  const [lastSelection, setLastSelection] = useState(fetchedSelection);
-  if (
-    fetchedSelection &&
-    (fetchedSelection.id !== lastSelection?.id ||
-      fetchedSelection.name !== lastSelection.name)
-  ) {
-    setLastSelection(fetchedSelection);
-  }
-  const selectedOrganization =
-    fetchedSelection ??
-    (lastSelection?.id === value ? lastSelection : undefined);
+  const keptOrganizations = useKeepSelectedOptions({
+    options: organizations,
+    value,
+    getId: getOrganizationId,
+  });
+  const selectedOrganization = value
+    ? keptOrganizations.find(({ id }) => id === value)
+    : undefined;
 
   const handleOnValueChange = (
     organization: OrganizationFilterOption | undefined
@@ -66,7 +61,7 @@ export const UserOrganizationFilter = ({
       label={label}
       labelPosition="none"
       placeholder={label}
-      options={organizations}
+      options={keptOrganizations}
       value={selectedOrganization ?? null}
       onValueChange={(next) => handleOnValueChange(next ?? undefined)}
       onInputChange={(searchTerm, { cause }) => {

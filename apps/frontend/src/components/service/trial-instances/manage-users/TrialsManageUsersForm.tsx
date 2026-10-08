@@ -3,6 +3,7 @@ import { UserFragment } from '@/components/admin/user/UserList';
 import { serviceGroupFragment } from '@/components/service/service-group.graphql';
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useKeepSelectedOptions } from '@/hooks/use-keep-selected-options';
 import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
 import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
@@ -16,7 +17,7 @@ import ServiceGroupsUpdateMutationGraphql from '@generated/serviceGroupsUpdateMu
 import { UserList_fragment$key } from '@generated/UserList_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { readInlineData, useLazyLoadQuery, useMutation } from 'react-relay';
 import { z } from 'zod';
 
@@ -36,6 +37,8 @@ interface TrialsManageUsersFormProps {
   organizationId?: string;
   serviceInstanceId: string;
 }
+
+const getUserOptionValue = ({ value }: { value: string }) => value;
 
 export const TrialsManageUsersForm = ({
   onCancel,
@@ -97,15 +100,6 @@ export const TrialsManageUsersForm = ({
       };
     });
   }, [availableUsers.users.edges]);
-  const optionIds = useMemo(
-    () =>
-      toComboboxOptionIds(
-        options,
-        (option) => option.value,
-        (option) => option.label
-      ),
-    [options]
-  );
 
   const groups = useMemo(() => {
     return data.serviceGroups.map((group) => {
@@ -114,24 +108,53 @@ export const TrialsManageUsersForm = ({
         group
       );
 
-      const userIds = (users ?? []).map(
-        ({ email }) => options.find(({ label }) => label === email)?.value
-      );
-
       return {
         id,
         name,
-        userIds,
+        users: users ?? [],
       };
     });
-  }, [data.serviceGroups, options]);
+  }, [data.serviceGroups]);
+  const groupUserOptions = useMemo(
+    () =>
+      groups.flatMap(({ users }) =>
+        users.map(({ id, email }) => ({ label: email, value: id }))
+      ),
+    [groups]
+  );
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      groups,
+      groups: groups.map(({ id, name, users }) => ({
+        id,
+        name,
+        userIds: users.map((user) => user.id),
+      })),
     },
   });
+
+  const watchedGroups = useWatch({ control: form.control, name: 'groups' });
+  const selectedUserIds = useMemo(
+    () => watchedGroups.flatMap(({ userIds }) => userIds),
+    [watchedGroups]
+  );
+  const keptOptions = useKeepSelectedOptions({
+    options,
+    value: selectedUserIds,
+    getId: getUserOptionValue,
+    initialOptions: groupUserOptions,
+  });
+  const optionIds = useMemo(
+    () =>
+      toComboboxOptionIds(
+        keptOptions,
+        getUserOptionValue,
+        (option) => option.label
+      ),
+    [keptOptions]
+  );
+
   const groupFields = useMemo(() => {
     return groups.map((group, index) => (
       <FormField

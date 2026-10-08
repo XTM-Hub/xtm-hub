@@ -175,6 +175,8 @@ Rules shared by every `MultiSelectFormField` row:
 - **The multi-selects own their error** (epic review, see 3545): `error` on `AppCombobox`, no `FormItem` /
   `FormMessage` / `FormControl`.
 - **Control names translated** (epic review, see 3545).
+- **Server-search multi-selects keep their selected labels** (epic review, see 3545): `useKeepSelectedOptions` before
+  `toComboboxOptionIds`; `TrialsManageUsersForm` seeds each group's users as initial options and default ids.
 
 ## To validate
 
@@ -189,9 +191,6 @@ Rules shared by every `MultiSelectFormField` row:
 
 ## Deferred findings
 
-- `TrialsManageUsersForm` builds `userIds` with `options.find(...)?.value`, which can hold `undefined`; pre-existing.
-- Selected ids outside the current server results show the raw id as chip label (`ServiceSlugOrgaForm`,
-  `UserServiceForm`), as the legacy badges did; `use-trial-user-options.ts` keeps selected options and could be shared.
 - `required` sits on `ComboboxLabel` only, so the inputs carry no `aria-required` (the root `Combobox required` sets
   it). The legacy buttons had none either; same choice as 3545 (`SsoGroupRolePortalForm`).
 - `ComboboxChips` keys each chip by its label: two selected options with the same label (solution category names are
