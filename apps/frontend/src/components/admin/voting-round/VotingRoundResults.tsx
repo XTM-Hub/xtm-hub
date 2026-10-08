@@ -1,22 +1,15 @@
 'use client';
 
 import { FiligranProductMapping } from '@/components/epic/epic-item/FiligranProductMapping';
+import { VOTING_PRODUCTS } from '@/components/feature-voting/feature-voting.const';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Skeleton } from '@filigran/ui';
 import {
-  FiligranProduct,
   useVotingRoundRankingQuery,
   VotableFeatureAdminRowFragment,
 } from '@graphql/generated';
 import { votingRoundKeys } from '@graphql/voting-round/voting-round.keys';
-
-const PRODUCT_ORDER: FiligranProduct[] = [
-  FiligranProduct.Opencti,
-  FiligranProduct.Openaev,
-  FiligranProduct.Xtmone,
-  FiligranProduct.Xtmhub,
-];
 
 interface RankedFeature {
   feature: VotableFeatureAdminRowFragment;
@@ -43,7 +36,7 @@ export const VotingRoundResults = ({ roundId }: { roundId: string }) => {
 
   // The ranking is global, but a user votes once per product: only a
   // per-product ranking is meaningful.
-  const sections = PRODUCT_ORDER.map((product) => ({
+  const sections = VOTING_PRODUCTS.map((product) => ({
     product,
     ranked: (results.results as RankedFeature[]).filter(
       ({ feature }) => feature.product === product

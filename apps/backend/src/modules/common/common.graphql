@@ -7,6 +7,7 @@ enum FiligranProduct {
   openaev
   xtmone
   xtmhub
+  opencrq
 }
 
 enum FilterKey {

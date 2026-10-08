@@ -1,8 +1,8 @@
 import { useTranslate } from '@/hooks/use-translate';
-import { ConnectProductOrganizationAdminsQuery } from '@graphql/generated';
+import { UsersWithCapabilitiesInOrganizationQuery } from '@graphql/generated';
 
 interface AdministratorslistProps {
-  admins?: ConnectProductOrganizationAdminsQuery;
+  admins?: UsersWithCapabilitiesInOrganizationQuery;
 }
 
 export const Administratorslist = ({ admins }: AdministratorslistProps) => {

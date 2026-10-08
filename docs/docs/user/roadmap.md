@@ -5,6 +5,7 @@ Product managers share the public roadmap of each product on this page. The road
 - OpenAEV
 - XTM One
 - XTM Hub
+- OpenCRQ
 
 This feature is directly available on the homepage. You can also access the public roadmap from the Filigran public website: [https://hub.filigran.io/cybersecurity-solutions/public-roadmap/](https://hub.filigran.io/cybersecurity-solutions/public-roadmap/).
 

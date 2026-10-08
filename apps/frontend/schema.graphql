@@ -17,6 +17,7 @@ enum FiligranProduct {
   openaev
   xtmone
   xtmhub
+  opencrq
 }
 
 enum FilterKey {
@@ -243,8 +244,8 @@ type Mutation {
   addUserService(input: UserServiceAddInput!, service_instance_id: ServiceInstanceId!): [UserService]
   editUserService(input: UserServiceEditInput!, service_instance_id: ServiceInstanceId!): UserService
   deleteUserServices(input: UserServicesDeleteInput!, service_instance_id: ServiceInstanceId!): [UserService]
-  createEpic(input: CreateEpicInput!, document: [Upload!]): Epic!
-  updateEpic(id: ID!, input: UpdateEpicInput!, document: [Upload!]): Epic!
+  createEpic(input: CreateEpicInput!): Epic!
+  updateEpic(id: ID!, input: UpdateEpicInput!): Epic!
   deleteEpic(id: ID!): Epic
 }
 
@@ -2279,8 +2280,6 @@ type Epic implements Node {
   slack_link: String
   timeline: Timeline!
   epic_type: EpicType!
-  document: Document
-  document_id: DocumentId
   created_at: Date!
   updated_at: Date
 }
@@ -2298,7 +2297,6 @@ input CreateEpicInput {
   slack_link: String
   timeline: Timeline!
   is_integration: Boolean
-  illustration_document: Upload
 }
 
 input UpdateEpicInput {
@@ -2314,7 +2312,6 @@ input UpdateEpicInput {
   slack_link: String
   timeline: Timeline
   is_integration: Boolean
-  illustration_document: Upload
 }
 
 type EpicCountPerTimeline {
