@@ -8,6 +8,7 @@ import {
 import { useServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
 import { useSolutionCategories } from '@/components/service/form/UseSolutionCategories';
 import { availableIntegrationTypes } from '@/components/service/integrations/Integration.utils';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
 import { useTranslate } from '@/hooks/use-translate';
 import {
@@ -27,7 +28,6 @@ import {
   FormMessage,
   Label,
   MultiSelectFormField,
-  toast,
 } from '@filigran/ui';
 import {
   FiligranProduct,
@@ -257,11 +257,14 @@ export const IntegrationsCsvExportDialog = ({
         toCanonicalOrder(values.columns),
         filters
       );
-      toast({ title: t('Service.CsvExport.SuccessToast') });
+      showSnackbar({
+        severity: 'success',
+        title: t('Service.CsvExport.SuccessToast'),
+      });
       resetAndClose();
     } catch {
-      toast({
-        variant: 'destructive',
+      showSnackbar({
+        severity: 'error',
         title: t('Utils.Error'),
         description: <>{t('Service.CsvExport.ErrorToast')}</>,
       });

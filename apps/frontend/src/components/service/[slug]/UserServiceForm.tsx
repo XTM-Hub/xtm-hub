@@ -10,6 +10,7 @@ import {
   UserServiceEditMutation,
 } from '@/components/service/user_service.graphql';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
 import {
@@ -28,7 +29,6 @@ import {
   FormLabel,
   FormMessage,
   SheetFooter,
-  useToast,
 } from '@filigran/ui';
 import { MultiSelectFormField } from '@filigran/ui/clients';
 import { subscriptionByIdQuery$data } from '@generated/subscriptionByIdQuery.graphql';
@@ -62,7 +62,6 @@ export const UserServiceForm = ({
   const [commitUserServiceMutation] = useMutation<userServiceCreateMutation>(
     UserServiceCreateMutation
   );
-  const { toast } = useToast();
   const t = useTranslate();
   const isUserCreation = !userService?.id;
 
@@ -161,7 +160,8 @@ export const UserServiceForm = ({
           subscription.subscriptionById!.service_instance!.id,
       },
       onCompleted() {
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('ServiceActions.UserCapabilitiesModified', {
             email: userService!.user!.email,
@@ -170,8 +170,8 @@ export const UserServiceForm = ({
         setOpenSheet(false);
       },
       onError(error) {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });
@@ -197,7 +197,8 @@ export const UserServiceForm = ({
         service_instance_id: subscription.subscriptionById.service_instance.id,
       },
       onCompleted() {
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('ServiceActions.UserServiceAdded', {
             email: values.email.join(', '),
@@ -208,8 +209,8 @@ export const UserServiceForm = ({
       },
 
       onError(error) {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: <>{t(`Error.Server.${error.message}`)}</>,
         });

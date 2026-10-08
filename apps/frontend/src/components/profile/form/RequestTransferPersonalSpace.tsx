@@ -2,6 +2,7 @@
 
 import { MeRequestTransferPersonalSpaceMutation } from '@/components/me/me.graphql';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import {
   Button,
@@ -10,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@filigran/design-system';
-import { AutoForm, Separator, toast } from '@filigran/ui';
+import { AutoForm, Separator } from '@filigran/ui';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useMutation } from 'react-relay';
@@ -43,14 +44,15 @@ export const RequestTransferPersonalSpace = () => {
         new_email: pendingValues?.new_email,
       },
       onError(error) {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });
       },
       onCompleted() {
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('ProfilePage.PersonalSpace.SuccessRequest'),
         });

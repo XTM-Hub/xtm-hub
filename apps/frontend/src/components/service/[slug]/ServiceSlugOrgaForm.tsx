@@ -11,6 +11,7 @@ import {
   toDatePickerValue,
 } from '@/components/ui/date-picker-field.utils';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
 import { subscriptionInServiceCreateMutation } from '@generated/subscriptionInServiceCreateMutation.graphql';
 import { useSubscriptionDefaultValues } from './use-subscription-default-values';
@@ -27,7 +28,6 @@ import {
   FormMessage,
   MultiSelectFormField,
   SheetFooter,
-  useToast,
 } from '@filigran/ui';
 import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { subscriptionInServiceUpdateMutation } from '@generated/subscriptionInServiceUpdateMutation.graphql';
@@ -64,7 +64,6 @@ export const ServiceSlugOrgaForm = ({
   const { handleCloseSheet, setIsDirty, setOpenSheet } = useDialogContext();
   const t = useTranslate();
   const locale = useLocale();
-  const { toast } = useToast();
   const { organizationsData, refetch } = getOrganizations();
   const organizations = useUnsubscribedOrganizations(
     organizationsData,
@@ -128,7 +127,8 @@ export const ServiceSlugOrgaForm = ({
           },
         },
         onCompleted: (_response) => {
-          toast({
+          showSnackbar({
+            severity: 'success',
             title: t('Utils.Success'),
             description: t('ServiceActions.OrganizationAdded', {
               name: selectedOrganizationName,
@@ -138,8 +138,8 @@ export const ServiceSlugOrgaForm = ({
           setOpenSheet(false);
         },
         onError: (error: Error) => {
-          toast({
-            variant: 'destructive',
+          showSnackbar({
+            severity: 'error',
             title: t('Utils.Error'),
             description: <>{t(`Error.Server.${error.message}`)}</>,
           });
@@ -154,7 +154,8 @@ export const ServiceSlugOrgaForm = ({
         connections: [subscriptionConnectionId],
       },
       onCompleted: (_response) => {
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('ServiceActions.OrganizationAdded', {
             name: selectedOrganizationName,
@@ -164,8 +165,8 @@ export const ServiceSlugOrgaForm = ({
         setOpenSheet(false);
       },
       onError: (error: Error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: <>{t(`Error.Server.${error.message}`)}</>,
         });

@@ -1,7 +1,7 @@
 import { SubscriptionDeleteMutation } from '@/components/subcription/subscription.graphql';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
-import { useToast } from '@filigran/ui';
 import { subscriptionDeleteMutation } from '@generated/subscriptionDeleteMutation.graphql';
 import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
 import { FunctionComponent } from 'react';
@@ -22,7 +22,6 @@ export const ServiceSlugDeleteSubscription: FunctionComponent<
     SubscriptionDeleteMutation
   );
 
-  const { toast } = useToast();
   const t = useTranslate();
 
   const onDeleteSubscription = () => {
@@ -38,7 +37,8 @@ export const ServiceSlugDeleteSubscription: FunctionComponent<
           .map((sub) => sub.organization.name)
           .join(', ');
 
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('ServiceActions.OrganizationDeleted', {
             name:
@@ -49,8 +49,8 @@ export const ServiceSlugDeleteSubscription: FunctionComponent<
         });
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: <>{t(`Error.Server.${error.message}`)}</>,
         });

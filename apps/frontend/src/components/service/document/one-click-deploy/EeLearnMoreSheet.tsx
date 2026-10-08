@@ -1,5 +1,6 @@
 import EeBadge from '@/components/service/document/one-click-deploy/EeBadge';
 import { ReachSalesMutation } from '@/components/service/trial-instances/reach-sales.graphql';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button, Textarea } from '@filigran/design-system';
 import {
@@ -10,7 +11,6 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-  toast,
 } from '@filigran/ui';
 import { Separator } from '@filigran/ui/clients';
 import { reachSalesMutation as ReachSalesMutationType } from '@generated/reachSalesMutation.graphql';
@@ -74,14 +74,15 @@ const EeLearnMoreSheet = ({
         platformIdentifier,
       },
       onError(error) {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });
       },
       onCompleted() {
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Service.Trials.ReachOutToSalesSuccessTitle'),
           description: t('Service.Trials.ReachOutToSalesSuccessMessage'),
         });

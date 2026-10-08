@@ -13,11 +13,10 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const toastMock = vi.hoisted(() => vi.fn());
+const showSnackbarMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@filigran/ui', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@filigran/ui')>()),
-  toast: toastMock,
+vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
+  showSnackbar: showSnackbarMock,
 }));
 
 const GQL_OPERATION_REMOVE_USERS_FROM_BUNDLE_GROUPS =
@@ -52,7 +51,7 @@ const openBulkDeleteDialog = async (user: {
 
 describe('ManageTrialHeader', () => {
   beforeEach(() => {
-    toastMock.mockReset();
+    showSnackbarMock.mockReset();
   });
 
   it('links the back button to the XTM Platform Trial page by default', () => {
@@ -305,7 +304,10 @@ describe('ManageTrialHeader', () => {
         userIds: ['user-1', 'user-2'],
       });
     });
-    expect(toastMock).toHaveBeenCalledWith({ title: 'Utils.Success' });
+    expect(showSnackbarMock).toHaveBeenCalledWith({
+      severity: 'success',
+      title: 'Utils.Success',
+    });
     expect(onUsersRemoved).toHaveBeenCalledTimes(1);
   });
 
@@ -333,9 +335,9 @@ describe('ManageTrialHeader', () => {
     );
 
     await waitFor(() => {
-      expect(toastMock).toHaveBeenCalledWith(
+      expect(showSnackbarMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          variant: 'destructive',
+          severity: 'error',
           title: 'Utils.Error',
         })
       );

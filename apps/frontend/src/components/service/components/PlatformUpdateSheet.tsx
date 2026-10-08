@@ -4,9 +4,10 @@ import { invalidatePrivateNavigationQueries } from '@/components/menu/navigation
 import { translateServiceDefinitionIdentifier } from '@/components/registration/PlatformIdentifierMapping';
 import { UpdatePlatformServiceMetadata } from '@/components/service/service.graphql';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button, Input } from '@filigran/design-system';
-import { Form, FormField, SheetFooter, useToast } from '@filigran/ui';
+import { Form, FormField, SheetFooter } from '@filigran/ui';
 import { ServiceDefinitionIdentifier } from '@generated/serviceInstance_fragment.graphql';
 import { serviceUpdatePlatformServiceMetadataMutation } from '@generated/serviceUpdatePlatformServiceMetadataMutation.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -39,7 +40,6 @@ export const PlatformUpdateSheet = ({
   onUpdated,
 }: PlatformUpdateSheetProps) => {
   const t = useTranslate();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const [updatePlatformMetadata] =
@@ -66,7 +66,8 @@ export const PlatformUpdateSheet = ({
         setOpen(false);
         invalidatePrivateNavigationQueries(queryClient);
         onUpdated?.();
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('Platform.Updated', {
             platformName: values.name,
@@ -77,8 +78,8 @@ export const PlatformUpdateSheet = ({
         });
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });

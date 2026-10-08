@@ -8,6 +8,7 @@ import { ServiceManageSheet } from '@/components/service/components/ServiceManag
 import { useDocumentContext } from '@/components/service/document/use-document-context';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import ShareableResourceCard from '@/components/ui/shareable-resource/ShareableResourceCard';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useServiceCapability from '@/hooks/use-service-capability';
 import { useTranslate } from '@/hooks/use-translate';
 import revalidatePathActions from '@/utils/actions/revalidate-path.actions';
@@ -20,7 +21,6 @@ import {
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { MoreVertIcon } from '@filigran/icon';
-import { toast } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { IntegrationType, ServiceRestriction } from '@graphql/generated';
 import { useRouter } from 'next/navigation';
@@ -82,7 +82,8 @@ const ServiceCard = ({
         `/${APP_PATH}/service/${serviceInstance.service_definition!.identifier}/${serviceInstance.id}`
       );
     });
-    toast({
+    showSnackbar({
+      severity: 'success',
       title: t('Utils.Success'),
       description: t(`${translationKey}.Actions.Deleted`, {
         name: document?.name ?? '',

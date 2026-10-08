@@ -2,13 +2,13 @@
 
 import { DraftsConfirmDialog } from '@/components/content-translation/DraftsConfirmDialog';
 import { ExitEditModeDialog } from '@/components/content-translation/ExitEditModeDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useEditMode } from '@/context/edit-mode-context';
 import { useContentTranslationDrafts } from '@/hooks/use-content-translation-drafts';
 import { useExitEditMode } from '@/hooks/use-exit-edit-mode';
 import { cn } from '@/lib/utils';
 import { Button } from '@filigran/design-system';
 import { EditIcon } from '@filigran/icon';
-import { toast } from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -49,7 +49,7 @@ export const EditionModeBanner = () => {
     action()
       .then(() => router.refresh())
       .catch(() => {
-        toast({ variant: 'destructive', title: t('Utils.Error') });
+        showSnackbar({ severity: 'error', title: t('Utils.Error') });
       });
   };
 

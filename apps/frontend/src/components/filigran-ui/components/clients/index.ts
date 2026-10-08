@@ -12,6 +12,3 @@ export * from './Separator';
 export * from './Sheet';
 export * from './Table';
 export * from './tag-input';
-export * from './Toast';
-export * from './Toaster';
-export * from './use-toast';

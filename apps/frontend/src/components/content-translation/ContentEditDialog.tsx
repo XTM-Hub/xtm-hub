@@ -6,6 +6,7 @@ import {
   getOriginalValues,
   pickChangedValues,
 } from '@/components/content-translation/content-edit-dialog.utils';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useContentTranslationApi } from '@/hooks/use-content-translation-api';
 import { Locale, locales } from '@/i18n/config';
 import { getStaticTranslationValue } from '@/utils/content-translation/get-static-translation-value';
@@ -24,7 +25,7 @@ import {
   TabsTrigger,
   Textarea,
 } from '@filigran/design-system';
-import { Form, FormField, Skeleton, toast } from '@filigran/ui';
+import { Form, FormField, Skeleton } from '@filigran/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -88,7 +89,7 @@ export const ContentEditDialog = ({
         form.reset(loadedValues);
       })
       .catch(() => {
-        toast({ variant: 'destructive', title: tCommon('Utils.Error') });
+        showSnackbar({ severity: 'error', title: tCommon('Utils.Error') });
       })
       .finally(() => setIsLoadingValues(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -108,7 +109,7 @@ export const ContentEditDialog = ({
         onOpenChange(false);
       })
       .catch(() => {
-        toast({ variant: 'destructive', title: tCommon('Utils.Error') });
+        showSnackbar({ severity: 'error', title: tCommon('Utils.Error') });
       });
   };
 

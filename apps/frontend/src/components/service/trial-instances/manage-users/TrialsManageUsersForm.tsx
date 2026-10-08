@@ -1,6 +1,7 @@
 import { useUserListLocalstorage } from '@/components/admin/user/user-list-localstorage';
 import { UserFragment } from '@/components/admin/user/UserList';
 import { serviceGroupFragment } from '@/components/service/service-group.graphql';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
 import { Button } from '@filigran/design-system';
@@ -10,7 +11,6 @@ import {
   FormItem,
   FormLabel,
   SheetFooter,
-  toast,
 } from '@filigran/ui';
 import { MultiSelectFormField } from '@filigran/ui/clients';
 import { serviceGroup_fragment$key } from '@generated/serviceGroup_fragment.graphql';
@@ -74,15 +74,16 @@ export const TrialsManageUsersForm = ({
         },
       },
       onError(error) {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });
       },
       onCompleted() {
         onCompleted();
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
         });
       },

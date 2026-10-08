@@ -1,12 +1,13 @@
 'use client';
 
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { i18nKey } from '@/utils/datatable';
 import { IconButton } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
-import { DataTable, SelectionState, toast } from '@filigran/ui';
+import { DataTable, SelectionState } from '@filigran/ui';
 import {
   BundleUserServiceGroupsQuery,
   PlatformIdentifier,
@@ -95,14 +96,14 @@ export const ManageTrialTable = ({
               ),
             }
         );
-        toast({ title: t('Utils.Success') });
+        showSnackbar({ severity: 'success', title: t('Utils.Success') });
         setDeletingUserId(undefined);
       },
       onError: (error: unknown) => {
         const errorMessage =
           error instanceof Error ? error.message : 'UnknownError';
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: <>{t(`Error.Server.${errorMessage}`)}</>,
         });
@@ -124,7 +125,8 @@ export const ManageTrialTable = ({
           (entry) => entry.user.id === userId
         )?.user.email;
         if (email && platform) {
-          toast({
+          showSnackbar({
+            severity: 'success',
             title: t('Service.Bundle.ManageTrial.Table.RoleUpdated', {
               email,
               role: t(`Service.Bundle.ManageTrial.Roles.${platform}.Title`, {
@@ -138,8 +140,8 @@ export const ManageTrialTable = ({
       onError: (error: unknown) => {
         const errorMessage =
           error instanceof Error ? error.message : 'UnknownError';
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: <>{t(`Error.Server.${errorMessage}`)}</>,
         });

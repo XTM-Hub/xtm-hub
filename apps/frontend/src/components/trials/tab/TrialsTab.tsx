@@ -20,6 +20,7 @@ import {
   handleSortingChange,
   mapToSortingTableValue,
 } from '@/components/ui/handle-sorting.utils';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import {
   useAdminByPass,
   useUserHasPortalCapability,
@@ -46,7 +47,7 @@ import {
   CloseIcon,
   GroupIcon,
 } from '@filigran/icon';
-import { DataTable, DataTableHeadBarOptions, toast } from '@filigran/ui';
+import { DataTable, DataTableHeadBarOptions } from '@filigran/ui';
 import { trialsKeys } from '@graphql/deployment/deployment.keys';
 import {
   DeploymentRequestHubStatus,
@@ -175,8 +176,8 @@ const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
   const onError = (error: unknown) => {
     const errorMessage =
       error instanceof Error ? error.message : 'UnknownError';
-    toast({
-      variant: 'destructive',
+    showSnackbar({
+      severity: 'error',
       title: t('Utils.Error'),
       description: <>{t(`Error.Server.${errorMessage}`)}</>,
     });
@@ -186,7 +187,8 @@ const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
     useTrialsAdminCancelDeploymentRequestMutation(portalGraphqlClient, {
       onSuccess: async () => {
         await invalidateTrials();
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t(
             isBundle
@@ -202,7 +204,8 @@ const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
     useTrialsReorderDeploymentRequestInQueueMutation(portalGraphqlClient, {
       onSuccess: async () => {
         await invalidateTrials();
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t(
             isBundle

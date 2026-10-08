@@ -1,7 +1,7 @@
 import { DeleteEpicMutation } from '@/components/epic/epic.graphql';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
-import { useToast } from '@filigran/ui';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import { epicDeleteMutation } from '@generated/epicDeleteMutation.graphql';
 import { useMutation } from 'react-relay';
@@ -22,19 +22,19 @@ export const DeleteEpic = ({
   const [deleteEpicMutation] =
     useMutation<epicDeleteMutation>(DeleteEpicMutation);
   const t = useTranslate();
-  const { toast } = useToast();
   const onDeletedEpic = (deletedEpicId: string) => {
     deleteEpicMutation({
       variables: { id: deletedEpicId, connections: [connectionId] },
       onCompleted: () => {
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('Epic.EpicActions.EpicDeleted'),
         });
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: <>{t(`Error.Server.${error.message}`)}</>,
         });

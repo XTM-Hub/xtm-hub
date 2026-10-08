@@ -3,6 +3,7 @@
 import { invalidatePrivateNavigationQueries } from '@/components/menu/navigation/private/private-navigation-query-invalidation';
 import { SelectWithEditableField } from '@/components/service/registration/SelectWithEditableField';
 import { CancelDeploymentRequestMutation } from '@/components/service/trial-instances/trial-instances.graphql';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import {
   Button,
@@ -14,7 +15,7 @@ import {
   DialogTitle,
 } from '@filigran/design-system';
 import { WarningIcon } from '@filigran/icon';
-import { AutoForm, FormItem, FormMessage, toast } from '@filigran/ui';
+import { AutoForm, FormItem, FormMessage } from '@filigran/ui';
 import { trialInstancesCancelDeploymentRequestMutation } from '@generated/trialInstancesCancelDeploymentRequestMutation.graphql';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import { useQueryClient } from '@tanstack/react-query';
@@ -78,7 +79,8 @@ export const BundleCancelSheet = ({
         cancellationReason: values.cancellation_reason,
       },
       onCompleted: () => {
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t(
             'Service.Trials.Cancellation.Toast.NoNewTrialPossible'
@@ -91,8 +93,8 @@ export const BundleCancelSheet = ({
         setOpen(false);
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });

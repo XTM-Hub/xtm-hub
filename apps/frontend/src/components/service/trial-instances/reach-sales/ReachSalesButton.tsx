@@ -2,9 +2,9 @@
 import { ReachSalesMutation } from '@/components/service/trial-instances/reach-sales.graphql';
 import { ReachSalesDialogForm } from '@/components/service/trial-instances/reach-sales/ReachSalesDialogForm';
 import { DialogInformative } from '@/components/ui/Dialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button } from '@filigran/design-system';
-import { toast } from '@filigran/ui';
 import { GradientButton } from '@filigran/ui/servers';
 import {
   DeploymentRequestDeploymentType,
@@ -42,8 +42,8 @@ export const ReachSalesButton = ({
         deploymentRequestType,
       },
       onError(error) {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });

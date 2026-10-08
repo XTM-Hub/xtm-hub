@@ -1,5 +1,6 @@
 import { UserServicesAddCapabilitiesMutation } from '@/components/service/user_service.graphql';
 import { BadgeOverflow } from '@/components/ui/BadgeOverflowCounter';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import {
   Button,
@@ -10,7 +11,6 @@ import {
   DialogFooter,
   DialogTitle,
 } from '@filigran/design-system';
-import { toast } from '@filigran/ui';
 import { userServices_fragment$data } from '@generated/userServices_fragment.graphql';
 import { userServicesAddCapabilitiesMutation } from '@generated/userServicesAddCapabilitiesMutation.graphql';
 import { useState } from 'react';
@@ -76,8 +76,8 @@ export const SubscriptionSlugAddCapabilities = ({
         onCompleted?.();
       },
       onError: (error: Error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: <>{t(`Error.Server.${error.message}`)}</>,
         });

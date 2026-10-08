@@ -5,9 +5,9 @@ import {
 } from '@/components/registration/PlatformIdentifierMapping';
 import { UnregisterPlatform } from '@/components/registration/register/register.graphql';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button } from '@filigran/design-system';
-import { toast } from '@filigran/ui';
 import { registeredPlatformByServiceInstanceId_fragment$data } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
 import { registerUnregisterPlatformMutation } from '@generated/registerUnregisterPlatformMutation.graphql';
 import {
@@ -38,8 +38,8 @@ export const UnregisterButton = ({ platform }: UnregisterButtonProps) => {
         platform.identifier as ServiceDefinitionIdentifier
       ];
     if (!identifier || !platform.platform_id) {
-      toast({
-        variant: 'destructive',
+      showSnackbar({
+        severity: 'error',
         title: t('Utils.Error'),
         description: t(`Unregister.Failed.Description`),
       });
@@ -55,7 +55,8 @@ export const UnregisterButton = ({ platform }: UnregisterButtonProps) => {
       },
       onCompleted: () => {
         router.push('/app');
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('Unregister.Succeeded.Title', {
             platformIdentifier: platform.title,
@@ -63,8 +64,8 @@ export const UnregisterButton = ({ platform }: UnregisterButtonProps) => {
         });
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });

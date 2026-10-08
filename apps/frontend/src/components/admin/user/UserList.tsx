@@ -20,6 +20,7 @@ import {
   transformSortingValueToParams,
 } from '@/components/ui/handle-sorting.utils';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useAdminPath from '@/hooks/use-admin-path';
 import { useExecuteAfterAnimation } from '@/hooks/use-execute-after-animation';
 import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
@@ -33,7 +34,7 @@ import { i18nKey } from '@/utils/datatable';
 import { useDateFormatter } from '@/utils/date';
 import { Button, Chip, SearchField } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
-import { DataTable, DataTableHeadBarOptions, useToast } from '@filigran/ui';
+import { DataTable, DataTableHeadBarOptions } from '@filigran/ui';
 import {
   UserList_fragment$data,
   UserList_fragment$key,
@@ -147,7 +148,6 @@ const UserList = ({ organization }: UserListProps) => {
   const isTrialInviteEnabled = useIsFeatureEnabled(FeatureFlag.TrialInvite);
   const hasResendButtonColumn = !isAdminPath && isTrialInviteEnabled;
   const { me } = useContext(PortalContext);
-  const { toast } = useToast();
   const [userEdit, setUserEdit] = useState<UserList_fragment$data | undefined>(
     undefined
   );
@@ -173,7 +173,8 @@ const UserList = ({ organization }: UserListProps) => {
 
   const resendInviteMutationOptions = {
     onSuccess: () => {
-      toast({
+      showSnackbar({
+        severity: 'success',
         title: t('Utils.Success'),
         description: t('UserListPage.ResendInviteSuccess'),
       });
@@ -182,8 +183,8 @@ const UserList = ({ organization }: UserListProps) => {
     onError: (error: unknown) => {
       const errorMessage =
         error instanceof Error ? error.message : 'UnknownError';
-      toast({
-        variant: 'destructive',
+      showSnackbar({
+        severity: 'error',
         title: t('Utils.Error'),
         description: t(`Error.Server.${errorMessage}`),
       });

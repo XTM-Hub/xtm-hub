@@ -1,5 +1,4 @@
 'use client';
-import { toast } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { ServiceRestriction } from '@graphql/generated';
 
@@ -7,6 +6,7 @@ import { useServiceContext } from '@/components/service/components/ServiceContex
 import { ServiceFormValues } from '@/components/service/components/subscribable-services.types';
 
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useServiceCapability from '@/hooks/use-service-capability';
 import { useTranslate } from '@/hooks/use-translate';
 import revalidatePathActions from '@/utils/actions/revalidate-path.actions';
@@ -57,7 +57,8 @@ export const ServiceManageSheet = ({
       `/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${serviceInstance.slug}`,
     ]);
     setOpenSheet(false);
-    toast({
+    showSnackbar({
+      severity: 'success',
       title: t('Utils.Success'),
       description: t('ServiceActions.DocumentUpdated', {
         file_name: serviceName,
@@ -65,8 +66,8 @@ export const ServiceManageSheet = ({
     });
   }
   function onError(error: Error) {
-    toast({
-      variant: 'destructive',
+    showSnackbar({
+      severity: 'error',
       title: t('Utils.Error'),
       description: t(`Error.Server.${error.message}`),
     });
@@ -75,7 +76,8 @@ export const ServiceManageSheet = ({
   function onCreateSuccess(serviceName: string) {
     setOpenSheet(false);
 
-    toast({
+    showSnackbar({
+      severity: 'success',
       title: t('Utils.Success'),
       description: t(`${translationKey}.Actions.Added`, {
         name: serviceName,

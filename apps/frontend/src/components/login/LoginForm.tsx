@@ -1,11 +1,12 @@
 'use client';
 
 import { LoginFormMutation } from '@/components/login/login.graphql';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useDecodedQuery from '@/hooks/use-decoded-query';
 import { useTranslate } from '@/hooks/use-translate';
 import { decodeSafeRedirect } from '@/utils/redirect';
 import { Button, Input } from '@filigran/design-system';
-import { Form, FormField, toast } from '@filigran/ui';
+import { Form, FormField } from '@filigran/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -34,8 +35,8 @@ const LoginForm = () => {
     commitLoginFormMutation({
       variables,
       onError() {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Login.LoginError`),
         });

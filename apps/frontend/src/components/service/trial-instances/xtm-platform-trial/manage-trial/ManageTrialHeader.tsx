@@ -2,6 +2,7 @@
 
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { DisabledActionTooltip } from '@/components/ui/DisabledActionTooltip';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
@@ -14,7 +15,6 @@ import {
   TooltipTrigger,
 } from '@filigran/design-system';
 import { ArrowUpwardIcon, DeleteIcon } from '@filigran/icon';
-import { toast } from '@filigran/ui';
 import {
   BundleUserServiceGroupsQuery,
   PlatformIdentifier,
@@ -68,15 +68,15 @@ export const ManageTrialHeader = ({
               ),
             }
         );
-        toast({ title: t('Utils.Success') });
+        showSnackbar({ severity: 'success', title: t('Utils.Success') });
         setIsBulkDeleting(false);
         onUsersRemoved();
       },
       onError: (error: unknown) => {
         const errorMessage =
           error instanceof Error ? error.message : 'UnknownError';
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: <>{t(`Error.Server.${errorMessage}`)}</>,
         });

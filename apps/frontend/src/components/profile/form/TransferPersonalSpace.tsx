@@ -1,7 +1,7 @@
 import { MeTransferPersonalSpaceMutation } from '@/components/me/me.graphql';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { FiligranLoader } from '@filigran/icon';
-import { toast } from '@filigran/ui';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useMutation } from 'react-relay';
@@ -26,14 +26,15 @@ export const TransferPersonalSpace = ({
           requestId,
         },
         onError(error) {
-          toast({
-            variant: 'destructive',
+          showSnackbar({
+            severity: 'error',
             title: t('Utils.Error'),
             description: t(`Error.Server.${error.message}`),
           });
         },
         onCompleted() {
-          toast({
+          showSnackbar({
+            severity: 'success',
             title: t('ProfilePage.PersonalSpace.SuccessTransfer'),
           });
 

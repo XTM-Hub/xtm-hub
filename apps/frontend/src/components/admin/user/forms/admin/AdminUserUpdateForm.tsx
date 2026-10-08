@@ -7,6 +7,7 @@ import { userEditAdminFormSchema } from '@/components/admin/user/forms/user-form
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { cn, isEmpty } from '@/lib/utils';
 import { Button, IconButton, Input } from '@filigran/design-system';
@@ -18,7 +19,6 @@ import {
   FormItem,
   FormMessage,
   SheetFooter,
-  toast,
 } from '@filigran/ui';
 import { Label } from '@filigran/ui/clients';
 import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
@@ -104,15 +104,16 @@ export const AdminUserUpdateForm = ({
         id: user.id,
       },
       onCompleted: () => {
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('UserActions.UserUpdated', { email: user.email }),
         });
         callback();
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });
@@ -128,15 +129,16 @@ export const AdminUserUpdateForm = ({
         id: user.id,
       },
       onCompleted: () => {
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('UserActions.UserUpdated', { email: user.email }),
         });
         callback();
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });

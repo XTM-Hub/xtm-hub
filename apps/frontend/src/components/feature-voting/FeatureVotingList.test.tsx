@@ -19,11 +19,10 @@ const GQL_OPERATION_FEATURE_VOTE = 'FeatureVote';
 
 const ROADMAP_HREF = '/app/service/xtm_platform_roadmap/instance-1';
 
-const { toastMock } = vi.hoisted(() => ({ toastMock: vi.fn() }));
+const { showSnackbarMock } = vi.hoisted(() => ({ showSnackbarMock: vi.fn() }));
 
-vi.mock('@filigran/ui', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@filigran/ui')>()),
-  toast: toastMock,
+vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
+  showSnackbar: showSnackbarMock,
 }));
 
 const openctiFeature = mockVotableFeature({
@@ -225,8 +224,11 @@ describe('FeatureVotingList', () => {
 
       // Then
       await vi.waitFor(() =>
-        expect(toastMock).toHaveBeenCalledWith(
-          expect.objectContaining({ title: 'FeatureVoting.VoteRecordedTitle' })
+        expect(showSnackbarMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            severity: 'success',
+            title: 'FeatureVoting.VoteRecordedTitle',
+          })
         )
       );
       expect(replace).toHaveBeenCalledWith('/en/feature-voting', {
@@ -261,7 +263,7 @@ describe('FeatureVotingList', () => {
           scroll: false,
         })
       );
-      expect(toastMock).not.toHaveBeenCalled();
+      expect(showSnackbarMock).not.toHaveBeenCalled();
     });
 
     it('should cast a new vote when redirected again with a different feature id while mounted', async () => {
@@ -281,15 +283,18 @@ describe('FeatureVotingList', () => {
 
       // Then
       await vi.waitFor(() =>
-        expect(toastMock).toHaveBeenCalledWith(
-          expect.objectContaining({ title: 'FeatureVoting.VoteRecordedTitle' })
+        expect(showSnackbarMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            severity: 'success',
+            title: 'FeatureVoting.VoteRecordedTitle',
+          })
         )
       );
-      expect(toastMock).toHaveBeenCalledTimes(1);
+      expect(showSnackbarMock).toHaveBeenCalledTimes(1);
 
       // When a client-side navigation lands on the same mounted component
       // with a new feature id to vote for.
-      toastMock.mockClear();
+      showSnackbarMock.mockClear();
       mockSearchParams('feature-openaev');
       mockVoteSuccess('feature-openaev');
       rerender(
@@ -301,11 +306,14 @@ describe('FeatureVotingList', () => {
 
       // Then
       await vi.waitFor(() =>
-        expect(toastMock).toHaveBeenCalledWith(
-          expect.objectContaining({ title: 'FeatureVoting.VoteRecordedTitle' })
+        expect(showSnackbarMock).toHaveBeenCalledWith(
+          expect.objectContaining({
+            severity: 'success',
+            title: 'FeatureVoting.VoteRecordedTitle',
+          })
         )
       );
-      expect(toastMock).toHaveBeenCalledTimes(1);
+      expect(showSnackbarMock).toHaveBeenCalledTimes(1);
     });
 
     it('should not vote for an anonymous visitor', async () => {
@@ -327,7 +335,7 @@ describe('FeatureVotingList', () => {
       expect(
         (await screen.findAllByText('AI-powered report triage')).length
       ).toBeGreaterThan(0);
-      expect(toastMock).not.toHaveBeenCalled();
+      expect(showSnackbarMock).not.toHaveBeenCalled();
       expect(replace).not.toHaveBeenCalled();
     });
   });

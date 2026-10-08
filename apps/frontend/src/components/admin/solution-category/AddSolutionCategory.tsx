@@ -2,11 +2,11 @@ import SolutionCategoryForm, {
   solutionCategoryFormSchema,
 } from '@/components/admin/solution-category/SolutionCategoryForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { prependToQueryCache } from '@/utils/query-cache';
 import { Button } from '@filigran/design-system';
-import { toast } from '@filigran/ui';
 import {
   SolutionCategoriesListQuery,
   SolutionCategoryAddMutation,
@@ -36,15 +36,16 @@ const AddSolutionCategory = () => {
             })
           );
         }
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
         });
       },
       onError: (error: unknown) => {
         const errorMessage =
           error instanceof Error ? error.message : 'UnknownError';
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: <>{t(`Error.Server.${errorMessage}`)}</>,
         });

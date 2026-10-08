@@ -28,11 +28,10 @@ import { screen, waitFor } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const toastMock = vi.hoisted(() => vi.fn());
+const showSnackbarMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@filigran/ui', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@filigran/ui')>()),
-  toast: toastMock,
+vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
+  showSnackbar: showSnackbarMock,
 }));
 
 const GQL_OPERATION_BUNDLE_USER_SERVICE_GROUPS = 'BundleUserServiceGroups';
@@ -85,7 +84,7 @@ const getRoleCombobox = (title: string) =>
 
 describe('AddTrialUserForm', () => {
   beforeEach(() => {
-    toastMock.mockReset();
+    showSnackbarMock.mockReset();
   });
 
   it('renders the email field', async () => {
@@ -237,8 +236,8 @@ describe('AddTrialUserForm', () => {
     await user.click(screen.getByRole('button', { name: 'Utils.Confirm' }));
 
     await waitFor(() => {
-      expect(toastMock).toHaveBeenCalledWith({
-        variant: 'destructive',
+      expect(showSnackbarMock).toHaveBeenCalledWith({
+        severity: 'error',
         title: 'Utils.Error',
         description: <>{'Error.Server.UNKNOWN_ERROR'}</>,
       });
@@ -336,7 +335,7 @@ const renderForm = (
 
 describe('AddTrialUserForm with the TRIAL_INVITE feature flag', () => {
   beforeEach(() => {
-    toastMock.mockReset();
+    showSnackbarMock.mockReset();
     vi.mocked(useIsFeatureEnabled).mockReturnValue(true);
   });
 
@@ -463,8 +462,8 @@ describe('AddTrialUserForm with the TRIAL_INVITE feature flag', () => {
     await user.click(screen.getByRole('button', { name: 'Utils.Confirm' }));
 
     await waitFor(() => {
-      expect(toastMock).toHaveBeenCalledWith({
-        variant: 'destructive',
+      expect(showSnackbarMock).toHaveBeenCalledWith({
+        severity: 'error',
         title: 'Utils.Error',
         description: <>{'Error.Server.USER_DISABLED'}</>,
       });

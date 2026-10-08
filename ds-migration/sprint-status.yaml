@@ -64,8 +64,8 @@ development_status:
   3547-color-picker: done
   3536-card: done
   3688-alert: done
-  3689-date-picker: review
-  3690-snackbar: backlog
+  3689-date-picker: done
+  3690-snackbar: review
   3694-aspect-ratio: backlog
   3700-command: backlog
   3701-tag-input: backlog

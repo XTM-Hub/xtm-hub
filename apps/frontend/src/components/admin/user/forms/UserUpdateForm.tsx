@@ -6,6 +6,7 @@ import { getUserListContext } from '@/components/admin/user/UserListPage';
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useAdminPath from '@/hooks/use-admin-path';
 import { useTranslate } from '@/hooks/use-translate';
 import { isEmpty } from '@/lib/utils';
@@ -18,7 +19,6 @@ import {
   FormLabel,
   FormMessage,
   SheetFooter,
-  toast,
 } from '@filigran/ui';
 import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -69,15 +69,16 @@ export const UserUpdateForm = ({ user, callback }: UserUpdateFormProps) => {
         userListConnections: [connectionID ?? ''],
       },
       onCompleted: () => {
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('UserActions.UserUpdated', { email: user.email }),
         });
         callback();
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });

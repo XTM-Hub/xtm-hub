@@ -4,6 +4,7 @@ import { PortalContext } from '@/components/me/AppPortalContext';
 import { XtmPlatformTrialBanner } from '@/components/service/trial-instances/banner/xtm-platform-trial/XtmPlatformTrialBanner';
 import { deriveXtmPlatformTrialState } from '@/components/service/trial-instances/banner/xtm-platform-trial/xtm-platform-trial-banner.utils';
 import { SettingsContext } from '@/components/settings/EnvPortalContext';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH } from '@/utils/path/constant';
@@ -19,7 +20,6 @@ import {
   Textarea,
 } from '@filigran/design-system';
 import { AutoForm, FormControl, FormItem, FormMessage } from '@filigran/ui';
-import { toast } from '@filigran/ui/clients';
 import {
   HasRepliedSatisfaction,
   PlatformTrialStatusQueryVariables,
@@ -116,8 +116,8 @@ export const PrivateXtmPlatformTrialBanner = () => {
     portalGraphqlClient,
     {
       onError: () => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
         });
       },

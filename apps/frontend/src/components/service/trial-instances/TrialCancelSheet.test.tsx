@@ -1,5 +1,5 @@
+import * as SnackbarStore from '@/components/ui/snackbar/snackbar-store';
 import testRender from '@/utils/test/test-render';
-import * as FiligranUI from '@filigran/ui';
 import { registeredPlatformsKeys } from '@graphql/registered-platforms/registered-platforms.keys';
 import { serviceInstancesKeys } from '@graphql/service-instances/service-instances.keys';
 import { platformTrialKeys } from '@graphql/trial/trial.keys';
@@ -74,7 +74,7 @@ describe('TrialCancelSheet', () => {
     testState.invalidateQueries.mockReset();
     testState.lastCancelDeploymentRequestVariables = null;
     testState.mutationMode = 'success';
-    vi.spyOn(FiligranUI, 'toast').mockImplementation(() => undefined);
+    vi.spyOn(SnackbarStore, 'showSnackbar').mockImplementation(() => undefined);
   });
 
   it('should render and submit cancellation reason', async () => {
@@ -179,8 +179,8 @@ describe('TrialCancelSheet', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Utils.Continue' }));
 
     await waitFor(() => {
-      expect(FiligranUI.toast).toHaveBeenCalledWith({
-        variant: 'destructive',
+      expect(SnackbarStore.showSnackbar).toHaveBeenCalledWith({
+        severity: 'error',
         title: 'Utils.Error',
         description: 'Error.Server.Some error',
       });

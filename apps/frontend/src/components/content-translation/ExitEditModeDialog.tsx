@@ -1,5 +1,6 @@
 'use client';
 
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useEditMode } from '@/context/edit-mode-context';
 import { useContentEditModeToggle } from '@/hooks/use-content-edit-mode-toggle';
 import { useContentTranslationDrafts } from '@/hooks/use-content-translation-drafts';
@@ -11,7 +12,6 @@ import {
   DialogFooter,
   DialogTitle,
 } from '@filigran/design-system';
-import { toast } from '@filigran/ui';
 import { useTranslations } from 'next-intl';
 
 interface ExitEditModeDialogProps {
@@ -38,7 +38,7 @@ export const ExitEditModeDialog = ({
         setEditMode(false);
       })
       .catch(() => {
-        toast({ variant: 'destructive', title: t('Utils.Error') });
+        showSnackbar({ severity: 'error', title: t('Utils.Error') });
       });
   };
 

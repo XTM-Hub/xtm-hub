@@ -1,12 +1,12 @@
 import { trialsRegionKey } from '@/components/trials/trials.const';
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { isEmpty } from '@/lib/utils';
 import { Button, Input } from '@filigran/design-system';
 import { Form, FormField, SheetFooter } from '@filigran/ui';
-import { toast } from '@filigran/ui/clients';
 import { trialsQuotasKeys } from '@graphql/deployment/deployment.keys';
 import {
   DeploymentRequestPlatformRegion,
@@ -52,7 +52,8 @@ export const TrialsTabQuotasPlatformUpdateForm = ({
         await queryClient.invalidateQueries({
           queryKey: trialsQuotasKeys.all(),
         });
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('TrialsDashboard.UpdateQuotasForm.QuotasUpdated'),
         });
@@ -61,8 +62,8 @@ export const TrialsTabQuotasPlatformUpdateForm = ({
       onError: (error: unknown) => {
         const errorMessage =
           error instanceof Error ? error.message : 'UnknownError';
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${errorMessage}`),
         });

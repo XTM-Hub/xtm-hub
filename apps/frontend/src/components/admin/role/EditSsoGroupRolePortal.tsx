@@ -1,8 +1,8 @@
 import SsoGroupRolePortalForm from '@/components/admin/role/SsoGroupRolePortalForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { toast } from '@filigran/ui';
 import {
   useSsoGroupRolePortalsQuery,
   useUpdateSsoGroupRolePortalMutation,
@@ -31,15 +31,16 @@ const EditSsoGroupRolePortal = ({
         await queryClient.invalidateQueries({
           queryKey: useSsoGroupRolePortalsQuery.getKey(),
         });
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
         });
       },
       onError: (error: unknown) => {
         const errorMessage =
           error instanceof Error ? error.message : 'UnknownError';
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: <>{t(`Error.Server.${errorMessage}`)}</>,
         });

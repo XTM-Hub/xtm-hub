@@ -1,13 +1,13 @@
 'use client';
 
 import { PortalContext } from '@/components/me/AppPortalContext';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useGranted from '@/hooks/use-granted';
 import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
 import { useAdminByPass } from '@/hooks/use-portal-capability';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { CheckIndeterminateIcon } from '@filigran/icon';
-import { toast } from '@filigran/ui';
 import {
   FeatureFlag,
   OrganizationCapability,
@@ -122,14 +122,14 @@ export const AddTrialUserForm = ({
         if (input.emails?.length) {
           queryClient.invalidateQueries({ queryKey: usersKeys.all() });
         }
-        toast({ title: t('Utils.Success') });
+        showSnackbar({ severity: 'success', title: t('Utils.Success') });
         onCompleted();
       },
       onError: (error: unknown) => {
         const errorMessage =
           error instanceof Error ? error.message : 'UnknownError';
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: <>{t(`Error.Server.${errorMessage}`)}</>,
         });

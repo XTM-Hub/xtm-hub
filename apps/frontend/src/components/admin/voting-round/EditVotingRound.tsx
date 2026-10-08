@@ -3,9 +3,9 @@ import VotingRoundForm, {
   votingRoundFormSchema,
 } from '@/components/admin/voting-round/VotingRoundForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { toast } from '@filigran/ui';
 import {
   useVotingRoundDeleteMutation,
   useVotingRoundUpdateMutation,
@@ -31,8 +31,8 @@ const EditVotingRound = ({
   const handleError = (error: unknown) => {
     const errorMessage =
       error instanceof Error ? error.message : 'UnknownError';
-    toast({
-      variant: 'destructive',
+    showSnackbar({
+      severity: 'error',
       title: t('Utils.Error'),
       description: <>{t(`Error.Server.${errorMessage}`)}</>,
     });
@@ -52,7 +52,7 @@ const EditVotingRound = ({
     portalGraphqlClient,
     {
       onSuccess: () => {
-        toast({ title: t('Utils.Success') });
+        showSnackbar({ severity: 'success', title: t('Utils.Success') });
         invalidateVotingRoundQueries(queryClient);
         handleOpenSheet(false);
       },
@@ -64,7 +64,7 @@ const EditVotingRound = ({
     portalGraphqlClient,
     {
       onSuccess: () => {
-        toast({ title: t('Utils.Success') });
+        showSnackbar({ severity: 'success', title: t('Utils.Success') });
         invalidateVotingRoundQueries(queryClient);
         handleOpenSheet(false);
       },

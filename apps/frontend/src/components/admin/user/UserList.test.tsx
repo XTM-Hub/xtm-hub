@@ -43,7 +43,11 @@ const mocks = vi.hoisted(() => ({
   isAdminResendInvitePending: false,
   // Lets each test decide how the server answers a resend (no answer by default)
   settleResendInvite: vi.fn<(options: ResendInviteMutationOptions) => void>(),
-  toast: vi.fn(),
+  showSnackbar: vi.fn(),
+}));
+
+vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
+  showSnackbar: mocks.showSnackbar,
 }));
 
 vi.mock('react-relay', async (importOriginal) => {
@@ -162,7 +166,6 @@ vi.mock('@filigran/ui', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@filigran/ui')>();
   return {
     ...actual,
-    useToast: () => ({ toast: mocks.toast }),
     DataTableHeadBarOptions: () => <div>DataTableHeadBarOptions</div>,
     DataTable: ({
       columns,
@@ -257,7 +260,7 @@ describe('UserList', () => {
     mocks.adminResendInvite.mockReset();
     mocks.isAdminResendInvitePending = false;
     mocks.settleResendInvite.mockReset();
-    mocks.toast.mockReset();
+    mocks.showSnackbar.mockReset();
     vi.mocked(useIsFeatureEnabled).mockReturnValue(false);
   });
 
@@ -576,7 +579,8 @@ describe('UserList', () => {
           );
 
           // Then success is shown
-          expect(mocks.toast).toHaveBeenCalledExactlyOnceWith({
+          expect(mocks.showSnackbar).toHaveBeenCalledExactlyOnceWith({
+            severity: 'success',
             title: 'Utils.Success',
             description: 'UserListPage.ResendInviteSuccess',
           });
@@ -595,8 +599,8 @@ describe('UserList', () => {
           );
 
           // Then the matching error is shown
-          expect(mocks.toast).toHaveBeenCalledExactlyOnceWith({
-            variant: 'destructive',
+          expect(mocks.showSnackbar).toHaveBeenCalledExactlyOnceWith({
+            severity: 'error',
             title: 'Utils.Error',
             description: `Error.Server.${SERVER_ERROR_CODE}`,
           });

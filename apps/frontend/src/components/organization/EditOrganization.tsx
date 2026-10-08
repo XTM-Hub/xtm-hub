@@ -2,8 +2,8 @@ import { OrganizationEditMutation } from '@/components/organization/organization
 import { OrganizationForm } from '@/components/organization/OrganizationForm';
 import { organizationFormSchema } from '@/components/organization/OrganizationForm.schema';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
-import { useToast } from '@filigran/ui';
 import { organizationEditMutation } from '@generated/organizationEditMutation.graphql';
 import { organizationItem_fragment$data } from '@generated/organizationItem_fragment.graphql';
 import { useMutation } from 'react-relay';
@@ -21,7 +21,6 @@ export const EditOrganization = ({
   setOpen,
 }: EditOrganizationProps) => {
   const t = useTranslate();
-  const { toast } = useToast();
   const [commitOrganizationEditionMutation] =
     useMutation<organizationEditMutation>(OrganizationEditMutation);
 
@@ -36,7 +35,8 @@ export const EditOrganization = ({
 
       onCompleted: () => {
         setOpen(false);
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('OrganizationActions.OrganizationUpdated', {
             name: values.name,
@@ -44,8 +44,8 @@ export const EditOrganization = ({
         });
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });

@@ -2,6 +2,7 @@
 
 import GuardCapacityComponent from '@/components/AdminGuard';
 import { useServiceContext } from '@/components/service/components/ServiceContext';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { Locale, locales } from '@/i18n/config';
 import { portalGraphqlClient } from '@/lib/graphql-client';
@@ -15,7 +16,6 @@ import {
 } from '@filigran/design-system';
 import { EditIcon } from '@filigran/icon';
 import { AutoForm } from '@filigran/ui';
-import { toast } from '@filigran/ui/clients';
 import {
   Locale as GraphqlLocale,
   PortalCapability,
@@ -159,14 +159,15 @@ export const LibraryUpdateMetadata = () => {
         queryKey:
           useServiceInstanceSeoMetadataByIdQuery.getKey(seoMetadataVariables),
       });
-      toast({
+      showSnackbar({
+        severity: 'success',
         title: t('Utils.Success'),
       });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'UNKNOWN_ERROR';
-      toast({
-        variant: 'destructive',
+      showSnackbar({
+        severity: 'error',
         title: t('Utils.Error'),
         description: t(`Error.Server.${errorMessage}`),
       });

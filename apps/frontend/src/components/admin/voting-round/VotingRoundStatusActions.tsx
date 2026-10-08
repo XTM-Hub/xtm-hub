@@ -1,10 +1,10 @@
 'use client';
 
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Button } from '@filigran/design-system';
-import { toast } from '@filigran/ui';
 import {
   useVotingRoundSetStatusMutation,
   VotingRoundStatus,
@@ -32,14 +32,14 @@ export const VotingRoundStatusActions = ({
     portalGraphqlClient,
     {
       onSuccess: () => {
-        toast({ title: t('Utils.Success') });
+        showSnackbar({ severity: 'success', title: t('Utils.Success') });
         invalidateVotingRoundQueries(queryClient);
       },
       onError: (error: unknown) => {
         const errorMessage =
           error instanceof Error ? error.message : 'UnknownError';
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: <>{t(`Error.Server.${errorMessage}`)}</>,
         });

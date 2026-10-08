@@ -18,11 +18,10 @@ const testState = vi.hoisted(() => ({
   mutationMode: 'success' as 'success' | 'error',
 }));
 
-const toastMock = vi.hoisted(() => vi.fn());
+const showSnackbarMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@filigran/ui', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@filigran/ui')>()),
-  toast: toastMock,
+vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
+  showSnackbar: showSnackbarMock,
 }));
 
 vi.mock('@/components/service/registration/SelectWithEditableField', () => ({
@@ -71,7 +70,7 @@ describe('BundleCancelSheet', () => {
     testState.invalidateQueries.mockReset();
     testState.lastCancelDeploymentRequestVariables = null;
     testState.mutationMode = 'success';
-    toastMock.mockReset();
+    showSnackbarMock.mockReset();
   });
 
   it('should render the cancellation popup content when opened', () => {
@@ -179,8 +178,8 @@ describe('BundleCancelSheet', () => {
 
     // Then
     await waitFor(() => {
-      expect(toastMock).toHaveBeenCalledWith({
-        variant: 'destructive',
+      expect(showSnackbarMock).toHaveBeenCalledWith({
+        severity: 'error',
         title: 'Utils.Error',
         description: 'Error.Server.Some error',
       });

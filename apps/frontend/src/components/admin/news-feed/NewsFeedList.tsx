@@ -8,6 +8,7 @@ import {
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import BadgeOverflowCounter from '@/components/ui/BadgeOverflowCounter';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
 import { i18nKey } from '@/utils/datatable';
@@ -16,7 +17,7 @@ import { localizedCardName } from '@/utils/services';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
 import { Chip } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
-import { DataTable, toast } from '@filigran/ui';
+import { DataTable } from '@filigran/ui';
 import { newsFeedDeleteMutation } from '@generated/newsFeedDeleteMutation.graphql';
 import {
   newsFeedItem_fragment$data,
@@ -103,15 +104,16 @@ const NewsFeedList = () => {
     deleteNewsFeedItem({
       variables: { id: item.id },
       onCompleted: () => {
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('NewsFeedAdminPage.DeleteSuccess', { title: item.title }),
         });
         setDeleteTarget(undefined);
         handleRefetchData();
       },
       onError: () => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('NewsFeedAdminPage.DeleteError'),
         });
         setDeleteTarget(undefined);
