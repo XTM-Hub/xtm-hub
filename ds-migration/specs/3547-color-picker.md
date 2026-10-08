@@ -35,7 +35,11 @@ around the field go and their role moves to `label`. No `error` is added (no `Fo
   - the colour field is found with `getByRole('textbox', { name: 'UseCaseForm.Color' })`: the design system shows the
     hex lowercase (`#ffffff`), so `getByDisplayValue('#FFFFFF')` no longer matches;
   - `123456` leaves the rejected dataset: the design system resolves a hex typed without `#` and hands the form
-    `#123456`. A new case asserts that typing `123456` submits `color: '#123456'`.
+    `#123456`. A new dataset asserts the hex each lenient input submits (`123456`, `#abc`, `#ABCDEF`, `#abcd`);
+  - an emptied field joins the rejected dataset: the design system hands the form `''` where the legacy kept `#FFFFFF`
+    on screen.
+- `apps/frontend/src/components/admin/use-case/AddUseCase.test.tsx`: the same `getByDisplayValue('#FFFFFF')` lookup,
+  twice, moves to `getByRole('textbox', { name: 'UseCaseForm.Color' })`.
 - `apps/frontend/src/components/filigran-ui/components/clients/index.ts` (drop the `ColorPicker` export)
 - `apps/frontend/src/components/filigran-ui/components/clients/ColorPicker.tsx` (delete)
 - No e2e locator: nothing under `apps/e2e/tests/` reaches the use case form's colour field.
@@ -110,7 +114,8 @@ around the field go and their role moves to `label`. No `error` is added (no `Fo
 - Preset swatches stay off (the legacy panel had none). Alternative: `showSwatches` with the Filigran palette.
 - The four formats stay offered. Alternative: `formats={['hex']}`, which hides the selector.
 - A hex typed without `#`, or in 3 or 4 digits, is now accepted and stored as a full lowercase `#RRGGBB`.
-  Alternative: none without wrapping the component.
+  Alternative: none without wrapping the component. The input keeps showing what was typed (`123`, `#abcd`) while the
+  form holds the resolved hex, and the fourth digit of `#abcd` (alpha) is dropped without a warning.
 - An emptied field shows the `Color` placeholder where the legacy showed `#FFFFFF` while holding an empty value.
   Alternative: the design system default "Select color", untranslated.
 

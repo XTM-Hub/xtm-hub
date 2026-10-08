@@ -1,8 +1,7 @@
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button, Input } from '@filigran/design-system';
+import { Button, ColorPicker, Input } from '@filigran/design-system';
 import {
-  ColorPicker,
   Form,
   FormControl,
   FormField,
@@ -110,13 +109,13 @@ const UseCaseForm = ({
           control={form.control}
           name="color"
           render={({ field: { value, onChange } }) => (
-            <FormItem>
-              <FormLabel>{t('UseCaseForm.Color')}</FormLabel>
-              <ColorPicker
-                value={value ?? ''}
-                onChange={onChange}
-              />
-            </FormItem>
+            <ColorPicker
+              label={t('UseCaseForm.Color')}
+              placeholder={t('UseCaseForm.Color')}
+              maxLength={7}
+              value={value ?? ''}
+              onValueChange={onChange}
+            />
           )}
         />
 

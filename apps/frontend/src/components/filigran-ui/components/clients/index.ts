@@ -2,7 +2,6 @@ export * from './Accordion';
 export * from './Avatar';
 export * from './Calendar';
 export * from './Carousel';
-export * from './ColorPicker';
 export * from './Command';
 export * from './DataTable';
 export * from './DatePicker';
