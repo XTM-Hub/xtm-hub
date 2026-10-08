@@ -3,6 +3,7 @@ import {
   User as GraphqlUser,
   OrganizationCapability,
   RolePortal,
+  UserAccountStatus,
 } from '../../../__generated__/resolvers-types';
 import { withTransaction } from '../../../context/database.context';
 import { OrganizationId } from '../../../model/kanel/public/Organization';
@@ -125,6 +126,10 @@ export const UserHelper = {
       OrganizationCapability.AdministrateOrganization
     );
   },
+
+  hasAuth0Account: ({ status }: Pick<User, 'status'>): boolean =>
+    status !== UserAccountStatus.Waiting &&
+    status !== UserAccountStatus.Expired,
 
   preventAdministratorRemovalOfOneOrganization: async (
     userId: UserId,

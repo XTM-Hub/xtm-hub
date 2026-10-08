@@ -416,6 +416,7 @@
       "SOLUTION_CATEGORY_NOT_FOUND": "ソリューションカテゴリが見つかりません",
       "SUBSCRIPTION_NOT_FOUND": "購読が見つからない",
       "TENANT_ID_MANDATORY": "テナントIDは必須です",
+      "TOO_MANY_EMAILS": "一度に招待できるメールアドレスは最大50件です",
       "TRANSFER_ME_ERROR": "個人スペースの転送要求中にエラーが発生しました。",
       "UNKNOWN_ERROR": "不明なエラーが発生",
       "UNREGISTER_PLATFORM_UNKNOWN_ERROR": "プラットフォーム登録解除中に不明なエラーが発生した",
@@ -2045,7 +2046,14 @@
         },
         "AddUserDialog": {
           "Title": "トライアルユーザーを追加",
-          "EmailPlaceholder": "メールアドレスを追加"
+          "EmailPlaceholder": "メールアドレスを追加",
+          "ExpiredUsersReinvited": "期限切れのユーザーは再招待され、新しい招待メールが送信されます。",
+          "InviteEmail": "{email} を招待",
+          "NoPermissionToInvite": "このリストにないユーザーを追加する権限がありません。必要に応じて管理者にお問い合わせください",
+          "Status": {
+            "Expired": "期限切れ",
+            "Invited": "招待済み"
+          }
         },
         "EditUsersDialog": {
           "Title": "ユーザーを編集",

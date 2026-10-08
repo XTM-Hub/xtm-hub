@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import { TEST_ORGANIZATIONS } from '../../../../tests/tests.const';
+import { UserAccountStatus } from '../../../__generated__/resolvers-types';
 import * as pub from '../../../pub';
 import { UserHelper } from './user.helper';
 
@@ -48,5 +49,19 @@ describe('userHelper', () => {
 
       expect(dispatchSpy).not.toHaveBeenCalled();
     });
+  });
+
+  describe('hasAuth0Account', () => {
+    it.each([
+      { status: null, expected: true },
+      { status: UserAccountStatus.Invited, expected: true },
+      { status: UserAccountStatus.Waiting, expected: false },
+      { status: UserAccountStatus.Expired, expected: false },
+    ])(
+      'should return $expected when the user status is $status',
+      ({ status, expected }) => {
+        expect(UserHelper.hasAuth0Account({ status })).toBe(expected);
+      }
+    );
   });
 });
