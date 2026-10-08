@@ -81,6 +81,7 @@ case "$1 $2" in
     esac ;;
   "pr checks") checks ;;
   "run list") echo 123 ;;
+  "run rerun") exit 0 ;;
   "run view") echo "fake failing log" ;;
   *) echo "unexpected gh $*" >&2; exit 1 ;;
 esac
@@ -125,6 +126,10 @@ fi
 if [[ " ${CLAUDE_BLOCK:-} " == *" $key "* ]]; then
   echo half > "apps/frontend/src/$slug.wip.ts"
   echo '{"type":"result","structured_output":{"status":"NEEDS_HUMAN","summary":"Undecidable.","commit_subject":"","commit_body":"","question":"Which option?"}}'; exit 0
+fi
+# CLAUDE_CI_FLAKY: the CI fix session of these items finds the failure is not theirs.
+if [[ "$prompt" == *"CI fix"* ]] && [[ " ${CLAUDE_CI_FLAKY:-} " == *" $key "* ]]; then
+  echo '{"type":"result","structured_output":{"status":"FLAKY","summary":"run-e2e-tests-shards (2): a profile test passed on retry.","commit_subject":"","commit_body":""}}'; exit 0
 fi
 if [[ "$prompt" == *"CI fix"* ]]; then
   echo "// fix" >> "apps/frontend/src/$slug.ts"
@@ -395,6 +400,20 @@ check "the blocked item put its code aside" 'git stash list | grep -q ": ds-migr
 ds-migration/run.sh resume --once >"$SB/out.log" 2>&1
 check "resume brings the code back before the build and finishes the item" '[ "$(status_of 3561-textarea)" = done ] && grep -q "Build mode for item 3561-textarea.*earlier attempt" "$SB/calls.log" && git show --stat HEAD | grep -q "textarea.wip.ts" && ! git stash list | grep -q "ds-migration 3561-textarea"'
 check "resume retries a question nobody answered, since a human asked for it" 'grep -q "3561-textarea: resuming from the code it put aside" "$SB/out.log"'
+
+echo "O. a flaky check is rerun instead of fixed"
+new_repo o "development_status:
+  epic-1-primitives: backlog
+  3530-button: done
+  3561-textarea: backlog
+  3568-switch: backlog"
+GH_CHECKS="fail pass" CLAUDE_CI_FLAKY=3561-textarea run --once
+check "flaky failure: failed jobs rerun, item done without a fix commit" '[ "$(status_of 3561-textarea)" = done ] && grep -q "^gh run rerun 123 --failed" "$SB/calls.log" && ! git log --format=%s | grep -q "^fix(frontend)"'
+check "the log says why the jobs were rerun" 'grep -q "failure is not this item'"'"'s, failed jobs rerun: run-e2e-tests-shards (2)" "$SB/out.log"'
+check "the done comment says which checks were flaky" 'grep -q "Flaky checks rerun: run-e2e-tests-shards (2)" "$SB/pr-comments.log"'
+: >"$SB/checks-count"
+GH_CHECKS="fail" CLAUDE_CI_FLAKY=3568-switch run --once
+check "still failing after the rerun: blocked, script stopped" '[ "$(status_of 3568-switch)" = blocked ] && grep -q "fail again after the rerun" "$SB/out.log" && grep -q "STOP: 3568-switch" "$SB/out.log"'
 
 echo "F. crash recovery and lock"
 new_repo f "development_status:

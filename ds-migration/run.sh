@@ -337,6 +337,8 @@ commit_status() {
 
 SPEC_SCHEMA='{"type":"object","additionalProperties":false,"required":["status","summary"],"properties":{"status":{"type":"string","enum":["DONE","NEEDS_HUMAN","FAILED"]},"summary":{"type":"string"},"question":{"type":"string"}}}'
 ITEM_SCHEMA='{"type":"object","additionalProperties":false,"required":["status","summary","commit_subject","commit_body"],"properties":{"status":{"type":"string","enum":["DONE","NEEDS_HUMAN","FAILED"]},"summary":{"type":"string"},"commit_subject":{"type":"string"},"commit_body":{"type":"string"},"question":{"type":"string"}}}'
+# A CI fix session may also find the failure is not the item's: flaky test, runner, reporter.
+CI_SCHEMA="${ITEM_SCHEMA/\"FAILED\"]/\"FAILED\",\"FLAKY\"]}"
 REVIEW_SCHEMA='{"type":"object","additionalProperties":false,"required":["findings"],"properties":{"findings":{"type":"string"}}}'
 
 # Every part of a compound command must match a rule, hence the read-only utilities that end
@@ -454,10 +456,11 @@ failed() { jq -nc --arg s "$1" '{status: "FAILED", summary: $s}'; }
 # <key> <issue> <epic> <kind> <mode> [extra]
 run_item_session() {
   stop_on_signal
-  local key="$1" issue="$2" epic="$3" kind="$4" mode="$5" extra="${6:-}" result
+  local key="$1" issue="$2" epic="$3" kind="$4" mode="$5" extra="${6:-}" result schema="$ITEM_SCHEMA"
+  [ "$mode" != "CI fix mode" ] || schema="$CI_SCHEMA"
   result="$(claude_session "$key" \
     "Read ds-migration/WORKFLOW.md fully and follow its $mode for item $key (issue #$issue, epic $epic, kind $kind).${extra:+ $extra}" \
-    "$ITEM_SCHEMA" "$WRITE_TOOLS")"
+    "$schema" "$WRITE_TOOLS")"
   [ -n "$result" ] || result="$(failed "No structured output: timeout or crash. See the session log.")"
   log "$key: $(jq -r .status <<<"$result")"
   echo "$result"
@@ -697,11 +700,30 @@ wait_checks() {
   done
 }
 
+# The CI run of the current HEAD.
+ci_run_id() {
+  gh run list --branch "$BRANCH" --workflow dockerbuild-ci.yml --commit "$(git rev-parse HEAD)" --limit 1 \
+    --json databaseId --jq '.[0].databaseId' 2>/dev/null || true
+}
+
 failed_log() {
   local run_id file="$LOG_DIR/$1-ci.log"
-  run_id="$(gh run list --branch "$BRANCH" --workflow dockerbuild-ci.yml --limit 1 --json databaseId --jq '.[0].databaseId' || true)"
+  run_id="$(ci_run_id)"
   gh run view "$run_id" --log-failed 2>/dev/null | tail -n 400 >"$file" || true
   echo "$file"
+}
+
+# Reruns the failed jobs of the HEAD's CI run, and their dependents.
+rerun_failed_jobs() {
+  local run_id deadline
+  run_id="$(ci_run_id)"
+  [ -n "$run_id" ] && gh run rerun "$run_id" --failed >/dev/null 2>&1 || return 1
+  # The checks show the failed attempt until GitHub queues the new one.
+  deadline=$(($(date +%s) + 300))
+  while [ "$(gh run view "$run_id" --json status --jq .status 2>/dev/null || true)" = completed ] &&
+    [ "$(date +%s)" -lt "$deadline" ]; do
+    sleep "$CHECKS_INTERVAL"
+  done
 }
 
 # ---------------------------------------------------------------- project board
@@ -867,6 +889,7 @@ commit_result() {
   update_issue "$key" "$issue" || log "could not update the spec in #$issue"
 }
 
+# <key> <log suffix> [note for the pull request comment]
 mark_done() {
   local key="$1" pr
   set_status "$key" done
@@ -874,14 +897,17 @@ mark_done() {
   gh issue edit "$(issue_of "$key")" --remove-label "$NEEDS_LABEL" >/dev/null 2>&1 || true
   refresh_pr_body
   pr="$(header pull_request)"
-  [ "$pr" = none ] || gh pr comment "$pr" --body "Component $(name_of "$key") done. Issue #$(issue_of "$key")" >/dev/null ||
+  [ "$pr" = none ] || gh pr comment "$pr" --body "Component $(name_of "$key") done. Issue #$(issue_of "$key")${3:+
+
+$3}" >/dev/null ||
     log "could not comment on PR #$pr"
   board_settle
 }
 
-# Waits for the checks of the pushed item; on failure, one CI fix session, then stop.
+# Waits for the checks of the pushed item; on failure, one CI fix session, then stop. When the
+# session finds the failure is not the item's, the failed jobs are rerun once instead.
 settle_review() {
-  local epic="$1" key="$2" issue kind result
+  local epic="$1" key="$2" issue kind result why
   issue="$(issue_of "$key")"
   kind="$(kind_of "$epic")"
   if wait_checks; then
@@ -890,7 +916,21 @@ settle_review() {
   fi
   log "$key: required checks failed, one CI fix attempt"
   result="$(run_item_session "$key" "$issue" "$epic" "$kind" "CI fix mode" "The failing log is $(failed_log "$key").")"
-  if [ "$(jq -r .status <<<"$result")" = DONE ]; then result="$(validate_with_fix "$key" "$issue" "$epic" "$kind" "$result")"; fi
+  if [ "$(jq -r .status <<<"$result")" = FLAKY ]; then
+    why="$(jq -r .summary <<<"$result" | head -n 1)"
+    if [ -n "$(dirty_outside_tooling)" ]; then
+      log "$key: the CI fix session found the failure flaky but changed files: not rerunning"
+    elif rerun_failed_jobs; then
+      log "$key: the failure is not this item's, failed jobs rerun: $why"
+      if wait_checks; then
+        mark_done "$key" " after a rerun of flaky checks" "Flaky checks rerun: $why"
+        return
+      fi
+      log "$key: the required checks fail again after the rerun"
+    else
+      log "$key: could not rerun the failed jobs of $(git rev-parse --short HEAD)"
+    fi
+  elif [ "$(jq -r .status <<<"$result")" = DONE ]; then result="$(validate_with_fix "$key" "$issue" "$epic" "$kind" "$result")"; fi
   if [ "$(jq -r .status <<<"$result")" = DONE ] && commit_result "$key" "$issue" "$result" "$kind"; then
     publish
     if wait_checks; then

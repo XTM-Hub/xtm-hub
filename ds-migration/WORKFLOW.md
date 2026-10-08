@@ -167,6 +167,13 @@ locator that still expects an accessible name this item changed is in scope: fix
 `apps/e2e/tests/` and add it to the spec's Files in scope. Return `DONE` with a
 `fix(frontend): ... (#<issue>)` subject, or `FAILED` when the cause is outside the item.
 
+Before fixing anything, check whether the item can have caused the failure at all. Return `FLAKY`,
+changing no file, when the log shows it cannot: a test Playwright reports as `flaky` (it passed on a
+retry), a timeout on a page none of the item's files render, a failure of the runner, the network,
+a Docker pull or a reporter, while every test passed. The summary's first line names the failing job
+and the cause in one sentence: the script reruns the failed jobs once and quotes it on the pull
+request.
+
 ## Validation fix mode
 
 When the invocation says `Validation fix mode`, Build mode returned `DONE` but the script's own

@@ -65,7 +65,7 @@ code it points at, open the screenshots.
 | Out of scope | `validate.mjs`: `Out of scope`, `Shared file`, `Generated file` |
 | Environment | No structured output, a timeout in the stderr, the app or the backend unreachable, `preflight.log` |
 | Permissions | A tool result in the `.jsonl` says `Permission to use … has been denied`: the allowlist in `run.sh` lacks the command, or the session used a form it refuses (`cd`, `git -C`, an absolute path) |
-| CI | The item is committed and `<key>-ci.log` shows the failing job |
+| CI | The item is committed and `<key>-ci.log` shows the failing job. When the CI fix session returned `FLAKY`, the script already reran the failed jobs once and they failed again: a second flake, or a real failure the session misread |
 
 ## 4. Report
 
