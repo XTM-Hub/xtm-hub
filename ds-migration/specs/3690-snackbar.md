@@ -144,8 +144,9 @@ Title and description values move unchanged, `<>{t(…)}</>` fragments included.
   `fds-snackbar-motion` ship only there and in `dist/index.css`, which the app does not load (it composes
   `tokens/theme.css` itself). Without them Radix unmounts the card at once and the swipe does not track the finger.
   `globals.css` is a shared file only the cleanup item touches, so the component loads it; move it there in 3708.
-- **The new message goes first** in the store: the viewport is top-anchored, so the raised message takes the top slot
-  while the previous one slides out below it, instead of jumping up once it is gone.
+- **The store order sets no slot** (epic review): Radix portals each card into the viewport's `<ol>` in mount order,
+  so the new card mounts below the closing one and moves up once it is gone, whatever the store order. The comment in
+  `snackbar-store.ts` says only what the store does.
 
 ## To validate
 
@@ -170,9 +171,6 @@ Title and description values move unchanged, `<>{t(…)}</>` fragments included.
 - Move the `motion.css` import from `AppSnackbars.tsx` to `globals.css` with the theme cleanup (3708).
 - Upstream: the design system consumer skill lists only `gradient-helpers.css` as the sidecar for Tailwind hosts and
   omits `styles/motion.css`, which `Snackbar` needs to animate.
-- The "new message goes first" decision has no effect on screen: Radix portals each toast into the viewport's `<ol>`
-  in mount order, whatever the store order, so the new card mounts below the closing one and moves up once it is gone.
-  The comment in `snackbar-store.ts` says otherwise.
 - `ServicePage.getOpenSnackbar()` finds the region by role, so it resolves only once a modal sheet closes (Radix
   `hideOthers` puts `aria-hidden` on the viewport). An error raised from a sheet that stays open shows up as "not
   found" rather than as its text. It is also app-wide and belongs in `tests/model/common.ts` once a second spec needs it.

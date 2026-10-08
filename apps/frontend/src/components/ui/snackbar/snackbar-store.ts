@@ -24,9 +24,9 @@ const setSnackbars = (next: StoredSnackbar[]) => {
   listeners.forEach((listener) => listener());
 };
 
-// One message at a time: the open ones are closed so they slide out below the
-// new one, which takes the top slot, and the ones already gone are dropped here
-// rather than when they close, which would cut their exit animation.
+// One message at a time: the open ones are closed so they slide out, and the
+// ones already gone are dropped here rather than when they close, which would
+// cut their exit animation.
 export const showSnackbar = (message: SnackbarMessage) => {
   lastId += 1;
   setSnackbars([
