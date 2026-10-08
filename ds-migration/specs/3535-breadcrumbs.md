@@ -114,14 +114,14 @@ reads `href`). The `Fragment` loop, `cn`, the separators and every colour or hov
 
 ## To validate
 
-- Breadcrumbs take the design system look: 14px regular secondary text, links permanently underlined (the legacy
+- [x] Breadcrumbs take the design system look: 14px regular secondary text, links permanently underlined (the legacy
   showed grey text underlined on hover only), current entry bold primary, every `/` separator primary. Alternative:
   none without restyling.
-- Unlinked ancestors (`Settings` on every admin page) turn from bold primary, indistinguishable from the current
+- [x] Unlinked ancestors (`Settings` on every admin page) turn from bold primary, indistinguishable from the current
   page, to regular secondary text. Alternative: none without restyling.
-- Long paths truncate on one line with an ellipsis and a native `title` tooltip, the ancestors shrinking first and the
+- [x] Long paths truncate on one line with an ellipsis and a native `title` tooltip, the ancestors shrinking first and the
   current entry capped at 32rem, where the legacy wrapped onto several lines. Alternative: none without restyling.
-- `PrivateHomepage` (`Home` on `/app`) and `admin/voting-rounds/[id]` (last entry `Voting rounds`) keep a link as
+- [x] `PrivateHomepage` (`Home` on `/app`) and `admin/voting-rounds/[id]` (last entry `Voting rounds`) keep a link as
   their last entry and so have no current entry. Alternative: mark it `current` and drop the link.
 
 ## Deferred findings

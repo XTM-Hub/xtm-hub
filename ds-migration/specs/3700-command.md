@@ -29,7 +29,7 @@ Rules shared by every `MultiSelectFormField` row:
   their default names, as in 3545.
 - **Options are the ids**: forms hold `string[]` of ids, and a server search can drop a selected id from the options,
   so `T` is the id string. A new pure helper `toComboboxOptionIds(options, getId, getLabel)` in
-  `apps/frontend/src/utils/combobox-option-ids.ts` returns `{ ids, getOptionLabel }`; `getOptionLabel` falls back to
+  `apps/frontend/src/utils/combobox-option-ids.ts` (now `src/utils/design-system/combobox.ts`) returns `{ ids, getOptionLabel }`; `getOptionLabel` falls back to
   the id, as the legacy badge did. `keyValue` / `keyLabel` (default `value` / `label`) become `getId` / `getLabel`;
   callers wrap the call in `useMemo` on the options.
 - **Legacy props**: `defaultValue` and `value` → `value={field.value ?? []}`; `onValueChange` keeps its handler, `next`
@@ -60,7 +60,7 @@ Rules shared by every `MultiSelectFormField` row:
 
 ## Files in scope
 
-- `apps/frontend/src/utils/combobox-option-ids.ts` and `.test.ts` (new)
+- `apps/frontend/src/utils/combobox-option-ids.ts` and `.test.ts` (new; now `src/utils/design-system/combobox.ts`)
 - `apps/frontend/src/components/epic/EpicForm.tsx`, `EpicFilter.tsx`
 - `apps/frontend/src/components/admin/role/RolePortalForm.tsx`, `admin/use-case/UseCaseForm.tsx`,
   `admin/solution-category/SolutionCategoryForm.tsx`
@@ -180,13 +180,13 @@ Rules shared by every `MultiSelectFormField` row:
 
 ## To validate
 
-- Every multi-select takes the design system look: chips in the field that wrap and grow it instead of `+N...`, a
+- [x] Every multi-select takes the design system look: chips in the field that wrap and grow it instead of `+N...`, a
   checkbox per row, the panel staying open on a pick, no Clear / Close rows.
-- `SelectUsers` shows the author as text in the field instead of a chip, and picking the selected row keeps it
+- [x] `SelectUsers` shows the author as text in the field instead of a chip, and picking the selected row keeps it
   instead of clearing it (the clear control does that). Alternative: `multiple` capped at one value.
-- The CSV export filter labels lose `font-normal text-text-default-secondary`. Alternative: keep them through a class
+- [x] The CSV export filter labels lose `font-normal text-text-default-secondary`. Alternative: keep them through a class
   on `ComboboxLabel`.
-- `CapabilityMultiSelect` in the admin forms is named by "Additional capabilities", the same for every organization
+- [x] `CapabilityMultiSelect` in the admin forms is named by "Additional capabilities", the same for every organization
   row. Alternative: name each by its organization.
 
 ## Deferred findings
@@ -204,4 +204,4 @@ Rules shared by every `MultiSelectFormField` row:
 - Escape that no open popover handles (a text field, `AutocompleteInput`) closes a `SheetWithPreventingDialog` and
   drops the unsaved form: it guards a click outside but not Escape. Pre-existing for every sheet built on it; the e2e
   slack link step pressed Escape there and passed with the legacy picker, likely because a legacy layer took that
-  Escape (not confirmed). The step now closes the suggestions with a click on the sheet title. With item 3699.
+  Escape (not confirmed). The step now closes the suggestions with a click on the sheet title. With item 3699, tracked on #3699.

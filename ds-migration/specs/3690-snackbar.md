@@ -149,10 +149,10 @@ Title and description values move unchanged, `<>{t(…)}</>` fragments included.
 
 ## To validate
 
-- Placement moves from top-centre to the design system's top-right, where right-hand sheets open: a message raised from
+- [x] Placement moves from top-centre to the design system's top-right, where right-hand sheets open: a message raised from
   a sheet sits over its header. Alternative: a top-centre `className` on the viewport.
-- One message at a time is kept from the legacy; the design system stacks them. Alternative: let them stack.
-- `ShareLinkButton`'s copy failure becomes red (`error`); the legacy showed it with the success styling. The branch only
+- [x] One message at a time is kept from the legacy; the design system stacks them. Alternative: let them stack.
+- [x] `ShareLinkButton`'s copy failure becomes red (`error`); the legacy showed it with the success styling. The branch only
   runs when the copy throws (see Deferred findings).
 
 ## Deferred findings

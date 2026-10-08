@@ -111,9 +111,9 @@ invalid or already listed, remove a domain from its chip or with Backspace. Then
 
 ## To validate
 
-- The domains field takes the design system look: chips inside a 36px field that wraps and grows, no clear-all control
+- [x] The domains field takes the design system look: chips inside a 36px field that wraps and grows, no clear-all control
   and no chevron. Alternative: add `ComboboxClear`, which the legacy did not have.
-- Backspace in the empty input now removes the last domain (the design system's chip row), where the legacy removed one
+- [x] Backspace in the empty input now removes the last domain (the design system's chip row), where the legacy removed one
   only after the arrow keys had selected it; the removal stays unsaved until Validate. Alternative: block that
   Backspace in `handleDomainKeyDown`, which bends the design system's keyboard model.
 

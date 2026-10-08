@@ -141,9 +141,9 @@ Shared by every row:
 
 ## To validate
 
-- Every search box takes the `SearchField` look (focus colour on the icon, outlined disabled state) and gains a clear
+- [x] Every search box takes the `SearchField` look (focus colour on the icon, outlined disabled state) and gains a clear
   cross while it holds text, plus `Escape` to clear. Alternative: none, the cross is built in.
-- The admin user search takes the design system default 220px from `sm` instead of its content width (about 190px), so
+- [x] The admin user search takes the design system default 220px from `sm` instead of its content width (about 190px), so
   the clear cross no longer shifts the organization filter. Alternative: another fixed width.
 
 ## Deferred findings

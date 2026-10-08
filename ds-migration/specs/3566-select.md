@@ -172,16 +172,16 @@ Rules shared by every row, from the Textarea and Input specs:
 
 ## To validate
 
-- Every select takes the design system look: 36px outlined trigger with a chevron, no check mark (the selected item
+- [x] Every select takes the design system look: 36px outlined trigger with a chevron, no check mark (the selected item
   shows a left border), list capped at five rows with no visible scrollbar (see Deferred findings), label typography,
   required colour.
   Neighbouring legacy fields keep `FormLabel` / `FormMessage` until their item.
-- `SortControls` hugs its content instead of stretching across the row (contract: width is the consumer's, and the
+- [x] `SortControls` hugs its content instead of stretching across the row (contract: width is the consumer's, and the
   flex row has no track width). Alternative: a `flex-1` track around it.
-- `LastDeployedResourcesClient` keeps an icon in each item, which the contract lists as outside the design (item
+- [x] `LastDeployedResourcesClient` keeps an icon in each item, which the contract lists as outside the design (item
   icons). Alternative: drop the icons. Its trigger is named by the "Select a product" placeholder key. Alternative: a
   new `Product` key in en, fr and ja.
-- `RoleSelect` in the manage-trials table drops its borderless, ringless trigger for the design system one. In the
+- [x] `RoleSelect` in the manage-trials table drops its borderless, ringless trigger for the design system one. In the
   edit-users panel, `content-body-compact-medium text-text-default-secondary` on the label goes.
 
 ## Deferred findings

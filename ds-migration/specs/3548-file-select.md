@@ -113,7 +113,7 @@ index, `Array.from`), as `transformToFileList` already stores arrays under `z.cu
 - `yarn workspace @xtm-hub/frontend i18n:check`
 - `node ds-migration/validate.mjs ds-migration/specs/3548-file-select.md`
 
-New tests: `toFileSelectValue` / `fromFileSelectValue` in `documents.test.ts` (`FileList`-like input, `ExistingFile`
+New tests: `toFileSelectValue` / `fromFileSelectValue` in `documents.test.ts` (now `src/utils/design-system/file-select.test.ts`) (`FileList`-like input, `ExistingFile`
 dropped, single vs `multiple`, `null` → `undefined`), in `VotableFeatureForm.test.tsx` an uploaded image reaching
 `handleSubmit` as `illustration_document: [file]`, and in `LogoField.test.tsx` a picked image written as one `NewFile`
 (preview, `source_type` `INTERNAL`) and the clear control writing `[]`.
@@ -146,16 +146,16 @@ dropped, single vs `multiple`, `null` → `undefined`), in `VotableFeatureForm.t
 
 ## To validate
 
-- Every file field takes the design system look (36px field, `Select document` small primary trigger, paperclip,
+- [x] Every file field takes the design system look (36px field, `Select document` small primary trigger, paperclip,
   clear cross), next to legacy labels where the field has a preview above it.
-- `ServiceForm` loses drag and drop. Alternative: a dropzone candidate in epic 3.
-- `LogoField` now shows the picked file name in the field, under the preview card that already shows it, and a clear
+- [x] `ServiceForm` loses drag and drop. Alternative: a dropzone candidate in epic 3.
+- [x] `LogoField` now shows the picked file name in the field, under the preview card that already shows it, and a clear
   cross. The legacy hid the name; `FileSelect` cannot. With a stored logo or the default Filigran logo, the field
   reads `No document selected` under the preview.
-- The four AutoForm document fields take one file instead of several: the one that is uploaded.
-- On an existing voting round feature, picking only a new illustration now enables Validate: the legacy wrote the file
+- [x] The four AutoForm document fields take one file instead of several: the one that is uploaded.
+- [x] On an existing voting round feature, picking only a new illustration now enables Validate: the legacy wrote the file
   without marking the form dirty, `field.onChange` does.
-- `MultipleImagesField` no longer shows `Format not accepted` for a file outside `image/jpeg, image/png` picked through
+- [x] `MultipleImagesField` no longer shows `Format not accepted` for a file outside `image/jpeg, image/png` picked through
   "All files"; the legacy showed it but added the image anyway, as both still do.
 
 ## Deferred findings

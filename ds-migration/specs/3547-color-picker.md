@@ -108,15 +108,15 @@ around the field go and their role moves to `label`. No `error` is added (no `Fo
 
 ## To validate
 
-- The field takes the design system look: a 36px monospace hex input with a square swatch and a palette icon button,
+- [x] The field takes the design system look: a 36px monospace hex input with a square swatch and a palette icon button,
   instead of a round coloured button. The panel is the design system one: area, hue slider, format selector, value
   inputs, and an eyedropper in Chromium, instead of the `react-colorful` square and hue bar.
-- Preset swatches stay off (the legacy panel had none). Alternative: `showSwatches` with the Filigran palette.
-- The four formats stay offered. Alternative: `formats={['hex']}`, which hides the selector.
-- A hex typed without `#`, or in 3 or 4 digits, is now accepted and stored as a full lowercase `#RRGGBB`.
+- [x] Preset swatches stay off (the legacy panel had none). Alternative: `showSwatches` with the Filigran palette.
+- [x] The four formats stay offered. Alternative: `formats={['hex']}`, which hides the selector.
+- [x] A hex typed without `#`, or in 3 or 4 digits, is now accepted and stored as a full lowercase `#RRGGBB`.
   Alternative: none without wrapping the component. The input keeps showing what was typed (`123`, `#abcd`) while the
   form holds the resolved hex, and the fourth digit of `#abcd` (alpha) is dropped without a warning.
-- An emptied field shows the `Color` placeholder where the legacy showed `#FFFFFF` while holding an empty value.
+- [x] An emptied field shows the `Color` placeholder where the legacy showed `#FFFFFF` while holding an empty value.
   Alternative: the design system default "Select color", untranslated.
 
 ## Deferred findings

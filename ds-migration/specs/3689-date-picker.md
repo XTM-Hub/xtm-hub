@@ -25,7 +25,7 @@ Rules shared by every row:
 - **The field owns its label and error**, as for `Input`, `Textarea` and `Select`: around a date field of a
   react-hook-form `FormField`, `FormItem`, `FormLabel` and `FormMessage` go, and the empty fragment with them; the
   label moves to `label`, the `FormMessage` text to `error={fieldState.error?.message}`.
-- **The value goes through two pure helpers**, in a new `apps/frontend/src/components/ui/date-picker-field.utils.ts`
+- **The value goes through two pure helpers**, in a new `apps/frontend/src/components/ui/date-picker-field.utils.ts` (now `src/utils/design-system/date-picker.ts`)
   with its test: `toDatePickerValue(value)` gives the field value when it is a valid `Date`, else `null` (contract
   RULE-02: `undefined` would make the picker uncontrolled, and an Invalid Date is never passed);
   `fromDatePickerChange(date, context)` gives `new Date(Number.NaN)` when `context.validationError === 'invalidDate'`,
@@ -45,7 +45,7 @@ Rules shared by every row:
 
 - `apps/frontend/src/components/service/[slug]/ServiceSlugOrgaForm.tsx`
 - `apps/frontend/src/components/filigran-ui/components/auto-form/fields/Date.tsx`
-- `apps/frontend/src/components/ui/date-picker-field.utils.ts` and `date-picker-field.utils.test.ts` (new): `it.each`
+- `apps/frontend/src/components/ui/date-picker-field.utils.ts` (now `src/utils/design-system/date-picker.ts`) and `date-picker-field.utils.test.ts` (new): `it.each`
   over a valid date, `undefined`, an Invalid Date; a pick, a clear, `invalidDate`, a bound error (`minDate`) keeping
   the date; `null` and an ISO string also give `null`
 - `apps/frontend/src/components/filigran-ui/components/clients/index.ts` (drop the `Calendar` and `DatePicker` exports)
@@ -129,12 +129,12 @@ Rules shared by every row:
 
 ## To validate
 
-- The date becomes an editable field in the Input shell: the locale's numeric pattern (day, month and year order
+- [x] The date becomes an editable field in the Input shell: the locale's numeric pattern (day, month and year order
   per language) instead of the English `Oct 8, 2026`, the pattern as placeholder instead of `Pick a date`, the calendar icon at the end
   instead of the start, and the design system panel (month and year selects, today and selected-day borders, no
   outside days). Alternative: none without restyling.
-- The end date gains a clear button; the start date has none. On the edit sheet it does not remove a stored end
-  date (see Deferred findings). Alternative: `clearable` on both, or neither.
+- [x] The end date gains a clear button; the start date has none. On the edit sheet it does not remove a stored end
+  date (see Deferred findings, #3746). Alternative: `clearable` on both, or neither.
 
 ## Deferred findings
 
@@ -146,7 +146,7 @@ Rules shared by every row:
   errors means a validation mode for the whole form, or a translated invalid-date message.
 - Editing a subscription and clearing its end date keeps the stored one while the toast says success: the form sends
   `end_date: undefined` and `subscription.app.ts` only writes a defined end date. The legacy calendar had the same gap
-  through deselecting the day; the clear button makes it visible. The fix needs `null` sent and accepted by the backend.
+  through deselecting the day; the clear button makes it visible. The fix needs `null` sent and accepted by the backend (#3746).
 - Typed text accepts any year from 100 (`10/08/202` saves year 202) and the `en` pattern is month first
   (`08/10/2026` is 10 August); neither field sets a `minDate`. A lower bound or an end-after-start check is form logic
   for a later item.

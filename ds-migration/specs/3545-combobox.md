@@ -163,13 +163,13 @@ Rules shared by every row, from `SsoGroupRolePortalForm` (the app's existing des
 
 ## To validate
 
-- Every combobox takes the design system look: editable 36px field with chevron and clear icon buttons, no check
+- [x] Every combobox takes the design system look: editable 36px field with chevron and clear icon buttons, no check
   mark (the selected row shows a left border), a panel at least as wide as the field and capped at 328px.
-- `UserOrganizationFilter` keeps the "All organizations" row beside the new clear control, which does the same.
+- [x] `UserOrganizationFilter` keeps the "All organizations" row beside the new clear control, which does the same.
   Alternative: drop the sentinel row.
-- `IntegrationProductVersionFilter` keeps an icon at the end of registered version rows, through `renderOption`.
+- [x] `IntegrationProductVersionFilter` keeps an icon at the end of registered version rows, through `renderOption`.
   Alternative: a second line of text (`isOptionTwoLine`).
-- `AutocompleteOrganization` keeps its fixed 180px and its unassociated legacy label. Alternative: a
+- [x] `AutocompleteOrganization` keeps its fixed 180px and its unassociated legacy label. Alternative: a
   `ComboboxLabel` with `labelPosition="left"` (see Deferred findings).
 
 ## Deferred findings

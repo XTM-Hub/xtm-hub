@@ -115,7 +115,9 @@ Its code comment goes with it.
   traced once 3690 landed): Alert RULE-05, "if it can be dismissed, it is a Snackbar". In the `no-trial` and `active`
   states it is a `Snackbar` with `duration={Infinity}`, the design system close control (`Utils.Close`) and
   `onOpenChange` as the single dismiss path (close, swipe, Escape, the action), kept mounted with `open={!dismissed}`.
-  It floats top-right instead of pushing the page, and its card slides in after hydration. The learn-more link is its
+  It floats top-right instead of pushing the page, and its card slides in after hydration. Until it is
+  dismissed it covers the top-right of the header (connected products, user menu), of the public pages (sign-in
+  buttons), of an open sheet and of a modal overlay: accepted by the reviewer, since one click dismisses it. The learn-more link is its
   `action` (`Button asChild priority="secondary" size="sm"`, without the gradient restyle), so following it also
   dismisses the invitation; the days-left chip is its `description`. `AppSnackbars` now wraps the app so the banner
   sits under its provider.
@@ -124,14 +126,14 @@ Its code comment goes with it.
 
 ## To validate
 
-- The trial banner loses its blue-to-turquoise brand gradient for the `info` surface. Alternative: none without
+- [x] The trial banner loses its blue-to-turquoise brand gradient for the `info` surface. Alternative: none without
   restyling the `Alert`; a promotional banner surface would be a design system request.
-- `TestEnvBanner` goes from red to the `warning` severity, the same as `AdminBanner`, so the two stacked banners on an
+- [x] `TestEnvBanner` goes from red to the `warning` severity, the same as `AdminBanner`, so the two stacked banners on an
   admin page of a non-production environment look alike and differ by text only. Alternative: `error`, which keeps
   the red cue but states a failure that is not one.
-- The admin and environment messages lose their uppercase and centring: left-aligned `title-xs` after the glyph.
+- [x] The admin and environment messages lose their uppercase and centring: left-aligned `title-xs` after the glyph.
   Alternative: none without restyling.
-- The banners go from flush, square, edge-to-edge strips to `Alert`'s rounded surface with an 8px inset, stacked with
+- [x] The banners go from flush, square, edge-to-edge strips to `Alert`'s rounded surface with an 8px inset, stacked with
   no gap between them. Alternative: a gap or an inset in `AppShell`'s banner area (layout around the component).
 
 ## Deferred findings

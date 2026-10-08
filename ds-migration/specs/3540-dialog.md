@@ -141,7 +141,6 @@ Rules shared by every row:
 - **Two screens**: the delete confirmation covers the former `AlertDialog` path, cookie preferences the former
   `Dialog` path (title, description, body, footer, corner icon). The form dialogs sit behind a service instance id
   or, on public pages, behind a signed-out session in the capture.
-
 - **`ChoosePlatformForm` submits from Continue** (epic review): the `Button` migration left Continue without a
   `type`, and the design system `Button` defaults to `type="button"`, so the multi-platform deploy never ran. Continue
   is `type="submit"` and the dialog closes from `onSubmit`, as `OnePlatformDisplay` does, so the form is still mounted
@@ -154,19 +153,19 @@ Rules shared by every row:
 
 ## To validate
 
-- Panels widen from 512 to 640px (`md`), and the 768px ones to 960px (`lg`); confirmations included. Alternative:
+- [x] Panels widen from 512 to 640px (`md`), and the 768px ones to 960px (`lg`); confirmations included. Alternative:
   `sm` (420px) for confirmations, as the contract's delete example, and `md` for the 768px forms.
-- Former alert dialogs keep ignoring backdrop clicks, against the design system default (backdrop closes).
+- [x] Former alert dialogs keep ignoring backdrop clicks, against the design system default (backdrop closes).
   Alternative: the default.
-- The resource image viewer goes from full screen to a 960px panel with an 80vh carousel. Alternative: a full-screen
+- [x] The resource image viewer goes from full screen to a 960px panel with an 80vh carousel. Alternative: a full-screen
   viewer, which the design system excludes (a candidate component).
-- Epic and feature detail dialogs lose their fixed 80vh height and size to their content, up to the viewport.
-- Title and description are 24px apart (the panel gap) instead of 6–8px. Alternative: none without restyling.
-- Former alert dialogs without a Cancel (`ExitEditModeDialog`, `AlertDialogComponent` with
-  `displayCancelButton={false}` in `UserEventSubscription` and `PendingUserAlreadyProcessedDialog`) gain the corner
+- [x] Epic and feature detail dialogs lose their fixed 80vh height and size to their content, up to the viewport.
+- [x] Title and description are 24px apart (the panel gap) instead of 6–8px. Alternative: none without restyling.
+- [x] Former alert dialogs without a Cancel (`ExitEditModeDialog`, `ConfirmDialog` with
+  `hideCancelButton` in `UserEventSubscription` and `PendingUserAlreadyProcessedDialog`) gain the corner
   close icon the legacy `AlertDialog` never had. Alternative: `hideCloseButton` everywhere they were alert dialogs,
   against the contract rule.
-- Where the footer sits inside a `<form>`, it moves into `DialogBody` and scrolls with long forms (SEO metadata, CSV
+- [x] Where the footer sits inside a `<form>`, it moves into `DialogBody` and scrolls with long forms (SEO metadata, CSV
   export) instead of staying fixed. Alternative: a `<form id>` in the body and `type="submit" form=<id>` buttons in a
   fixed `DialogFooter`, as `ReachSalesDialogForm` does.
 
