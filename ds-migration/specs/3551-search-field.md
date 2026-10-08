@@ -137,6 +137,7 @@ Shared by every row:
   `onChange` and `onClear` every `SearchField` passes. Its debounce is stable across renders, so a clear always
   cancels the pending call, and a clear applies `''` only when a term is applied (by the page or by the hook itself),
   so Escape in an empty box sends nothing. The nine sites use it; `utils/debounce.ts`, a second copy, goes.
+- **Control names translated** (epic review, see 3545).
 
 ## To validate
 
@@ -144,8 +145,6 @@ Shared by every row:
   cross while it holds text, plus `Escape` to clear. Alternative: none, the cross is built in.
 - The admin user search takes the design system default 220px from `sm` instead of its content width (about 190px), so
   the clear cross no longer shifts the organization filter. Alternative: another fixed width.
-- The clear cross keeps the English default name `Clear search` in every locale, like the `Combobox` controls.
-  Alternative: `clearLabel` with a new key in en, fr and ja, to do in one pass with the `Combobox` names.
 
 ## Deferred findings
 

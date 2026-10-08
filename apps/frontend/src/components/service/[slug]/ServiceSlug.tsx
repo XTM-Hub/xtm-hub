@@ -185,6 +185,7 @@ const ServiceSlug = ({
             fullWidth
             aria-label={t('Service.Management.SearchOrganization')}
             placeholder={t('Service.Management.SearchOrganization')}
+            clearLabel={t('DesignSystem.SearchField.Clear')}
             onChange={searchHandlers.onChange}
             onClear={searchHandlers.onClear}
           />

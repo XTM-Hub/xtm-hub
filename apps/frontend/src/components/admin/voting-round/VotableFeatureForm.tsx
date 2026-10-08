@@ -1,6 +1,7 @@
 import { VOTING_PRODUCTS } from '@/components/feature-voting/feature-voting.const';
 import { ServiceFormUseCasesField } from '@/components/service/form/UseCasesField';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { getFileSelectLabels } from '@/components/ui/file-select-field.utils';
 import MarkdownInput from '@/components/ui/MarkdownInput';
 import { SelectField } from '@/components/ui/SelectField';
 import { useTranslate } from '@/hooks/use-translate';
@@ -216,6 +217,7 @@ const VotableFeatureForm = ({
               )}
               <FormControl>
                 <FileSelect
+                  {...getFileSelectLabels(t)}
                   aria-label={t('VotingRound.Feature.Illustration')}
                   triggerLabel={t('Service.FileForm.SelectDocument')}
                   placeholder={t('Service.FileForm.NoDocument')}

@@ -88,6 +88,7 @@ export const ServiceListHeader = ({
       className="max-sm:w-full sm:w-[20rem]"
       aria-label={t('GenericActions.Search')}
       placeholder={t('GenericActions.Search')}
+      clearLabel={t('DesignSystem.SearchField.Clear')}
       defaultValue={search}
       onChange={searchHandlers.onChange}
       onClear={searchHandlers.onClear}

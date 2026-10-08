@@ -605,6 +605,7 @@ const UserList = ({ organization }: UserListProps) => {
                 className="w-full sm:w-55"
                 aria-label={t('UserActions.SearchUser')}
                 placeholder={t('UserActions.SearchUser')}
+                clearLabel={t('DesignSystem.SearchField.Clear')}
                 onChange={searchHandlers.onChange}
                 onClear={searchHandlers.onClear}
               />

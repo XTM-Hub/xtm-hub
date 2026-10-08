@@ -82,7 +82,9 @@ describe('ServiceFormLogoField', () => {
     );
 
     // When
-    await user.click(screen.getByRole('button', { name: /Remove all files/ }));
+    await user.click(
+      screen.getByRole('button', { name: /DesignSystem\.FileSelect\.Clear/ })
+    );
     await user.click(screen.getByRole('button', { name: SUBMIT_LABEL }));
 
     // Then

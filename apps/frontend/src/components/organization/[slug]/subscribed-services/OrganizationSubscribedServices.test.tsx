@@ -270,7 +270,9 @@ describe('OrganizationSubscribedServices', () => {
     });
 
     // When
-    fireEvent.click(screen.getByRole('button', { name: 'Clear search' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'DesignSystem.SearchField.Clear' })
+    );
 
     // Then
     await waitFor(() => {

@@ -73,7 +73,9 @@ describe('ServiceFormSolutionCategoryField', () => {
 
     testRender(<TestForm defaultValue={['cat-1', 'cat-2']} />);
 
-    const chips = screen.getByRole('list', { name: 'Selected values' });
+    const chips = screen.getByRole('list', {
+      name: 'DesignSystem.Combobox.SelectedValues',
+    });
     expect(within(chips).getByText('Endpoint Security')).toBeInTheDocument();
     expect(within(chips).getByText('Threat Intelligence')).toBeInTheDocument();
   });

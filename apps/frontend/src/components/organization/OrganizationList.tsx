@@ -189,6 +189,7 @@ const OrganizationList = () => {
                 placeholder={t(
                   'OrganizationActions.SearchOrganizationWithEmail'
                 )}
+                clearLabel={t('DesignSystem.SearchField.Clear')}
                 onChange={searchHandlers.onChange}
                 onClear={searchHandlers.onClear}
               />

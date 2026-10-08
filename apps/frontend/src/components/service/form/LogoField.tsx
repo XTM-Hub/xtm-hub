@@ -1,3 +1,4 @@
+import { getFileSelectLabels } from '@/components/ui/file-select-field.utils';
 import { useTranslate } from '@/hooks/use-translate';
 import { fileToBase64 } from '@/lib/utils';
 import {
@@ -73,6 +74,7 @@ export const ServiceFormLogoField = ({
 
       <FormControl>
         <FileSelect
+          {...getFileSelectLabels(t)}
           aria-label={t('Service.Form.LogoLabel')}
           triggerLabel={t('Service.Form.UploadLogo')}
           placeholder={t('Service.FileForm.NoDocument')}

@@ -91,6 +91,54 @@ describe('AppCombobox', () => {
     ).toEqual([FRANCE.name, JAPAN.name]);
   });
 
+  it('should name the chips list and the clear and toggle controls with their translation', () => {
+    // Given / When
+    testRender(
+      <AppCombobox
+        multiple
+        label={LABEL}
+        options={OPTIONS}
+        value={[FRANCE]}
+        onValueChange={vi.fn()}
+        getOptionLabel={getOptionLabel}
+        isOptionEqualToValue={isOptionEqualToValue}
+      />
+    );
+
+    // Then
+    expect(
+      screen.getByRole('list', { name: 'DesignSystem.Combobox.SelectedValues' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Utils.Clear' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: 'DesignSystem.Combobox.ToggleOptions',
+      })
+    ).toBeInTheDocument();
+  });
+
+  it('should show the translated loading message while the options load', async () => {
+    // Given
+    const { user } = testRender(
+      <AppCombobox
+        label={LABEL}
+        options={[]}
+        loading
+        value={null}
+        onValueChange={vi.fn()}
+        getOptionLabel={getOptionLabel}
+      />
+    );
+
+    // When
+    await user.click(screen.getByRole('combobox', { name: LABEL }));
+
+    // Then
+    expect(await screen.findByText('Utils.Loading')).toBeInTheDocument();
+  });
+
   it('should show the not found message when no option matches the typed text', async () => {
     // Given
     const { user } = testRender(
@@ -167,7 +215,7 @@ describe('AppCombobox', () => {
     );
 
     // When
-    await user.click(screen.getByRole('button', { name: 'Clear' }));
+    await user.click(screen.getByRole('button', { name: 'Utils.Clear' }));
 
     // Then
     expect(onValueChange).toHaveBeenCalledWith(null, expect.anything());

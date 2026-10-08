@@ -2321,6 +2321,42 @@
     "And": "and",
     "Or": "or"
   },
+  "DesignSystem": {
+    "Breadcrumbs": {
+      "Label": "Breadcrumb"
+    },
+    "Combobox": {
+      "SelectedValues": "Selected values",
+      "ToggleOptions": "Toggle options"
+    },
+    "DatePicker": {
+      "Calendar": "Calendar",
+      "FieldCalendar": "{label} calendar",
+      "Clear": "Clear date",
+      "Confirm": "OK",
+      "Hours": "Hours",
+      "Minutes": "Minutes",
+      "Month": "Month",
+      "NextMonth": "Next month",
+      "OpenCalendar": "Open calendar",
+      "Period": "AM/PM",
+      "PreviousMonth": "Previous month",
+      "Seconds": "Seconds",
+      "Year": "Year"
+    },
+    "FileSelect": {
+      "Clear": "Remove all files",
+      "FileRejected": "{fileName} was not added ({reason, select, accept {unsupported format} other {over the size limit}}).",
+      "FilesRejected": "{count} files were not added (unsupported format or over the size limit).",
+      "Loading": "Loading",
+      "Placeholder": "No file selected.",
+      "RemoveFile": "Remove {fileName}",
+      "Trigger": "Select your file"
+    },
+    "SearchField": {
+      "Clear": "Clear search"
+    }
+  },
   "Platform": {
     "Update": "Update",
     "UpdateMetadata": "Update Platform Metadata",

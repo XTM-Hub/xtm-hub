@@ -2321,6 +2321,42 @@
     "And": "et",
     "Or": "ou"
   },
+  "DesignSystem": {
+    "Breadcrumbs": {
+      "Label": "Fil d'Ariane"
+    },
+    "Combobox": {
+      "SelectedValues": "Valeurs sélectionnées",
+      "ToggleOptions": "Afficher ou masquer les options"
+    },
+    "DatePicker": {
+      "Calendar": "Calendrier",
+      "FieldCalendar": "{label} (calendrier)",
+      "Clear": "Effacer la date",
+      "Confirm": "Valider",
+      "Hours": "Heures",
+      "Minutes": "Minutes",
+      "Month": "Mois",
+      "NextMonth": "Mois suivant",
+      "OpenCalendar": "Ouvrir le calendrier",
+      "Period": "Période",
+      "PreviousMonth": "Mois précédent",
+      "Seconds": "Secondes",
+      "Year": "Année"
+    },
+    "FileSelect": {
+      "Clear": "Supprimer tous les fichiers",
+      "FileRejected": "{fileName} n'a pas été ajouté ({reason, select, accept {format non pris en charge} other {taille maximale dépassée}}).",
+      "FilesRejected": "{count} fichiers n'ont pas été ajoutés (format non pris en charge ou taille maximale dépassée).",
+      "Loading": "Chargement",
+      "Placeholder": "Aucun fichier sélectionné.",
+      "RemoveFile": "Supprimer {fileName}",
+      "Trigger": "Sélectionnez votre fichier"
+    },
+    "SearchField": {
+      "Clear": "Effacer la recherche"
+    }
+  },
   "Platform": {
     "Update": "Mettre à jour",
     "UpdateMetadata": "Mettre à jour les métadonnées de la plateforme",

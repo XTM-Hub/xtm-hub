@@ -121,8 +121,8 @@ invalid or already listed, remove a domain from its chip or with Backspace. Then
 
 - `OrganizationForm.Error.DuplicateName` says "An organization with this name already exists" for a duplicate domain;
   a dedicated message needs a new key in three locales. Pre-existing copy.
-- The chip row and remove controls keep the design system's English names ("Selected values", "Remove {domain}"),
-  already deferred by 3534, 3545 and 3700.
+- Each chip's remove control keeps the design system's English `Remove {domain}`: `ComboboxChips` gives no way to
+  pass the chip's `deleteLabel`. Part of the upstream request for names with no prop.
 - Enter during an IME composition (`ja`) runs the validation on the partial text, as the legacy did.
 - The chips-only `ComboboxInput` still announces `aria-autocomplete="list"` though no list can open; the contract
   forwards the attribute, so the field could override it. Design system default, left as shipped.

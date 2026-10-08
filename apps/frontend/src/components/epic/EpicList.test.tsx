@@ -314,7 +314,9 @@ describe('EpicList', () => {
     mockCancelDebounce.mockClear();
 
     // When
-    await user.click(screen.getByRole('button', { name: 'Clear search' }));
+    await user.click(
+      screen.getByRole('button', { name: 'DesignSystem.SearchField.Clear' })
+    );
 
     // Then
     expect(mockCancelDebounce).toHaveBeenCalledOnce();

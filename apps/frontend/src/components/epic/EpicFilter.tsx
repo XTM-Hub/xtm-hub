@@ -49,6 +49,7 @@ export const EpicFilter = ({
           fullWidth
           aria-label={t('GenericActions.Search')}
           placeholder={t('GenericActions.Search')}
+          clearLabel={t('DesignSystem.SearchField.Clear')}
           onChange={debounceHandleInput}
           onClear={onSearchClear}
         />

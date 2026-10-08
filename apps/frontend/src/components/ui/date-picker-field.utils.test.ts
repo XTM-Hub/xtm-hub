@@ -1,7 +1,9 @@
 import {
   fromDatePickerChange,
+  getDatePickerLabels,
   toDatePickerValue,
 } from '@/components/ui/date-picker-field.utils';
+import type { useTranslate } from '@/hooks/use-translate';
 import { describe, expect, it } from 'vitest';
 
 const VALID_DATE = new Date('2026-10-08T00:00:00.000Z');
@@ -62,5 +64,43 @@ describe('fromDatePickerChange', () => {
 
     // Then
     expect(result?.getTime()).toBeNaN();
+  });
+});
+
+describe('getDatePickerLabels', () => {
+  const t = ((key: string, values?: { label?: string }) =>
+    values?.label ? `${key}:${values.label}` : key) as unknown as ReturnType<
+    typeof useTranslate
+  >;
+
+  it('should name every control of the field with its translation', () => {
+    // Given / When
+    const result = getDatePickerLabels(t);
+
+    // Then
+    expect(result).toEqual({
+      openCalendarLabel: 'DesignSystem.DatePicker.OpenCalendar',
+      clearLabel: 'DesignSystem.DatePicker.Clear',
+      calendarLabel: 'DesignSystem.DatePicker.Calendar',
+      previousMonthLabel: 'DesignSystem.DatePicker.PreviousMonth',
+      nextMonthLabel: 'DesignSystem.DatePicker.NextMonth',
+      monthSelectLabel: 'DesignSystem.DatePicker.Month',
+      yearSelectLabel: 'DesignSystem.DatePicker.Year',
+      hoursLabel: 'DesignSystem.DatePicker.Hours',
+      minutesLabel: 'DesignSystem.DatePicker.Minutes',
+      secondsLabel: 'DesignSystem.DatePicker.Seconds',
+      periodLabel: 'DesignSystem.DatePicker.Period',
+      confirmLabel: 'DesignSystem.DatePicker.Confirm',
+    });
+  });
+
+  it('should name the calendar after the field when the field has a label', () => {
+    // Given / When
+    const result = getDatePickerLabels(t, 'Start date');
+
+    // Then
+    expect(result.calendarLabel).toBe(
+      'DesignSystem.DatePicker.FieldCalendar:Start date'
+    );
   });
 });

@@ -354,6 +354,7 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
               className="w-full sm:w-1/3"
               aria-label={t('UserActions.SearchUser')}
               placeholder={t('UserActions.SearchUser')}
+              clearLabel={t('DesignSystem.SearchField.Clear')}
               onChange={searchHandlers.onChange}
               onClear={searchHandlers.onClear}
             />

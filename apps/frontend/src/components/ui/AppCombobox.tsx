@@ -86,7 +86,11 @@ export const AppCombobox = <T,>({
         <ComboboxLabel required={required}>{label}</ComboboxLabel>
       )}
       <ComboboxField data-testid={testId}>
-        {multiple && <ComboboxChips />}
+        {multiple && (
+          <ComboboxChips
+            aria-label={t('DesignSystem.Combobox.SelectedValues')}
+          />
+        )}
         <ComboboxInput
           aria-label={hasVisibleLabel ? undefined : label}
           // The input links the helper text but never marks itself invalid.
@@ -95,14 +99,17 @@ export const AppCombobox = <T,>({
           onBlur={onBlur}
         />
         <ComboboxControls>
-          <ComboboxClear />
-          <ComboboxTrigger />
+          <ComboboxClear aria-label={t('Utils.Clear')} />
+          <ComboboxTrigger
+            aria-label={t('DesignSystem.Combobox.ToggleOptions')}
+          />
         </ComboboxControls>
       </ComboboxField>
       {error && <ComboboxHelperText>{error}</ComboboxHelperText>}
       <ComboboxContent
         className={contentClassName}
         emptyMessage={emptyMessage ?? t('Utils.NotFound')}
+        loadingMessage={t('Utils.Loading')}
         listAriaLabel={label}
       />
     </Combobox>

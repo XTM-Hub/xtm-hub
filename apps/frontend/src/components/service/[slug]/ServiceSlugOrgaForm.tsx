@@ -9,6 +9,7 @@ import {
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import {
   fromDatePickerChange,
+  getDatePickerLabels,
   toDatePickerValue,
 } from '@/components/ui/date-picker-field.utils';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
@@ -57,6 +58,8 @@ export const ServiceSlugOrgaForm = ({
   const { handleCloseSheet, setIsDirty, setOpenSheet } = useDialogContext();
   const t = useTranslate();
   const locale = useLocale();
+  const startDateLabel = t('OrganizationInServiceAction.StartDate');
+  const endDateLabel = t('OrganizationInServiceAction.EndDate');
   const { organizationsData, refetch } = getOrganizations();
   const organizations = useUnsubscribedOrganizations(
     organizationsData,
@@ -253,7 +256,8 @@ export const ServiceSlugOrgaForm = ({
             name="start_date"
             render={({ field, fieldState }) => (
               <DatePicker
-                label={t('OrganizationInServiceAction.StartDate')}
+                {...getDatePickerLabels(t, startDateLabel)}
+                label={startDateLabel}
                 locale={locale}
                 value={toDatePickerValue(field.value)}
                 onChange={(date, context) =>
@@ -269,7 +273,8 @@ export const ServiceSlugOrgaForm = ({
             name="end_date"
             render={({ field, fieldState }) => (
               <DatePicker
-                label={t('OrganizationInServiceAction.EndDate')}
+                {...getDatePickerLabels(t, endDateLabel)}
+                label={endDateLabel}
                 locale={locale}
                 value={toDatePickerValue(field.value)}
                 onChange={(date, context) =>

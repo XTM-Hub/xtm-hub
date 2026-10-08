@@ -121,7 +121,7 @@ describe('SelectUsersFormField', () => {
     );
 
     // When
-    await user.click(screen.getByRole('button', { name: 'Clear' }));
+    await user.click(screen.getByRole('button', { name: 'Utils.Clear' }));
 
     // Then
     expect(onValueChange).toHaveBeenCalledWith('');

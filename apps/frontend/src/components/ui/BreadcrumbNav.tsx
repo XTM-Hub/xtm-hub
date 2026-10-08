@@ -38,6 +38,7 @@ export const BreadcrumbNav = ({ value }: BreadcrumbProps) => {
     <Breadcrumbs
       items={items}
       linkComponent={Link}
+      label={t('DesignSystem.Breadcrumbs.Label')}
       className="pb-s sm:pb-l"
     />
   );

@@ -110,6 +110,7 @@ reads `href`). The `Fragment` loop, `cn`, the separators and every colour or hov
   entry with `href` (`PrivateHomepage`'s lone `Home`, `admin/voting-rounds/[id]`'s `Voting rounds`) stays a link, as
   the call site asks; setting `current` would silently drop its destination (contract: a current item is never a link).
 - **Spacing on the component**: `pb-s sm:pb-l` moves from the legacy `nav` to `Breadcrumbs`' `className` (RULE-02).
+- **Control names translated** (epic review, see 3545).
 
 ## To validate
 
@@ -125,8 +126,6 @@ reads `href`). The `Fragment` loop, `cn`, the separators and every colour or hov
 
 ## Deferred findings
 
-- The landmark's accessible name is English (`Breadcrumb`, legacy `breadcrumb`); the contract asks a localised host
-  to translate it through `label`. Add a key in en, fr and ja when the breadcrumb is next touched.
 - `SubscriptionSlug.tsx:102` passes `t('Service.Management.ManageUsers')` without `original: true`, so
   `BreadcrumbNav` runs `t()` on an already translated string. Pre-existing, unchanged by this item.
 - `admin/voting-rounds/[id]` has no entry for the round itself: its last entry is a link to the list. A content fix for

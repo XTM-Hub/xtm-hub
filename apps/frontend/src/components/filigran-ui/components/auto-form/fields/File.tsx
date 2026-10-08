@@ -2,6 +2,8 @@ import {
   FormItem,
   useFormField,
 } from '@/components/filigran-ui/components/clients';
+import { getFileSelectLabels } from '@/components/ui/file-select-field.utils';
+import { useTranslate } from '@/hooks/use-translate';
 import { fromFileSelectValue, toFileSelectValue } from '@/utils/documents';
 import { FileSelect, type FileSelectProps } from '@filigran/design-system';
 import AutoFormTooltip from '../common/Tooltip';
@@ -13,6 +15,7 @@ const AutoFormFile = ({
   fieldConfigItem,
   fieldProps,
 }: AutoFormInputComponentProps) => {
+  const t = useTranslate();
   const { error } = useFormField();
   const {
     showLabel: _showLabel,
@@ -28,6 +31,7 @@ const AutoFormFile = ({
   return (
     <FormItem>
       <FileSelect
+        {...getFileSelectLabels(t)}
         label={showLabel ? text : undefined}
         aria-label={showLabel ? undefined : text}
         required={isRequired}

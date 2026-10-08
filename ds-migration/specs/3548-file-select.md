@@ -138,6 +138,7 @@ dropped, single vs `multiple`, `null` → `undefined`), in `VotableFeatureForm.t
   later pick, where the legacy replaced the value, and only the first file is uploaded (`use-document-context.ts`
   `.slice(0, 1)`). Re-picking after a wrong file would silently upload the wrong one. Single mode replaces on pick and
   takes the one file that is uploaded.
+- **Control names translated** (epic review, see 3545).
 
 ## To validate
 
@@ -147,10 +148,7 @@ dropped, single vs `multiple`, `null` → `undefined`), in `VotableFeatureForm.t
 - `LogoField` now shows the picked file name in the field, under the preview card that already shows it, and a clear
   cross. The legacy hid the name; `FileSelect` cannot. With a stored logo or the default Filigran logo, the field
   reads `No document selected` under the preview.
-- AutoForm file fields show the design system defaults `Select your file` / `No file selected.` (legacy English
-  `Select a file` / `No file selected`). Alternative: translated texts through `inputProps`.
 - The four AutoForm document fields take one file instead of several: the one that is uploaded.
-- A rejected format is now named by the design system's English message in the field.
 - On an existing voting round feature, picking only a new illustration now enables Validate: the legacy wrote the file
   without marking the form dirty, `field.onChange` does.
 - `MultipleImagesField` no longer shows `Format not accepted` for a file outside `image/jpeg, image/png` picked through
@@ -166,7 +164,5 @@ dropped, single vs `multiple`, `null` → `undefined`), in `VotableFeatureForm.t
 - `MultipleImagesField`, as the legacy: images picked together can get the same timestamp `id` (shared React key,
   deleting one deletes both), and the input value is never reset, so re-picking the same file fires nothing.
 - No call site sets `FileSelect`'s `maxSize`; picked images are read whole into base64 previews.
-- The clear and chip delete names and the rejection message are English in every locale, like the other design
-  system controls (Combobox, SearchField); to localise in one pass (`clearLabel`, `removeFileLabel`, `rejectionMessage`).
 - `FileInputWithPrevent` and `profile/form/Picture.tsx` hand-roll a file picker; `FileSelect` adoption candidates
   (epic 5).

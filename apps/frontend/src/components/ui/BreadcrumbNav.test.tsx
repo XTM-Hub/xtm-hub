@@ -33,6 +33,19 @@ describe('BreadcrumbNav', () => {
     );
   });
 
+  it('should name the breadcrumb landmark with its translation', () => {
+    // Given
+    const value = HOME_THEN_PAGE;
+
+    // When
+    testRender(<BreadcrumbNav value={value} />);
+
+    // Then
+    expect(
+      screen.getByRole('navigation', { name: 'DesignSystem.Breadcrumbs.Label' })
+    ).toBeInTheDocument();
+  });
+
   it('should mark the last entry as the current page when it has no href', () => {
     // Given
     const value = HOME_THEN_PAGE;

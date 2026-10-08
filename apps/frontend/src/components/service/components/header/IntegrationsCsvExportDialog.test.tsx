@@ -193,7 +193,7 @@ describe('IntegrationsCsvExportDialog', () => {
 
     // When
     await user.click(
-      within(columnsField).getByRole('button', { name: 'Clear' })
+      within(columnsField).getByRole('button', { name: 'Utils.Clear' })
     );
     fireEvent.click(
       screen.getByRole('button', { name: 'Service.CsvExport.ExportButton' })
@@ -201,7 +201,9 @@ describe('IntegrationsCsvExportDialog', () => {
 
     // Then
     expect(
-      within(columnsField).queryByRole('list', { name: 'Selected values' })
+      within(columnsField).queryByRole('list', {
+        name: 'DesignSystem.Combobox.SelectedValues',
+      })
     ).not.toBeInTheDocument();
     await waitFor(() => {
       expect(downloadIntegrationsCsvMock).not.toHaveBeenCalled();

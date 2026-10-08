@@ -31,7 +31,9 @@ const getDomainsInput = () =>
   screen.getByRole('combobox', { name: 'OrganizationForm.Domains' });
 
 const getDomainChips = () =>
-  within(screen.getByRole('list', { name: 'Selected values' }))
+  within(
+    screen.getByRole('list', { name: 'DesignSystem.Combobox.SelectedValues' })
+  )
     .getAllByRole('listitem')
     .map((chip) => chip.textContent);
 

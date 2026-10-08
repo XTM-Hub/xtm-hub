@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 
+import { getFileSelectLabels } from '@/components/ui/file-select-field.utils';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { fromFileSelectValue, toFileSelectValue } from '@/utils/documents';
@@ -46,6 +47,7 @@ export const ServiceForm = ({ handleSubmit }: ServiceFormProps) => {
             name="illustration_document"
             render={({ field, fieldState }) => (
               <FileSelect
+                {...getFileSelectLabels(t)}
                 label={t('ServiceForm.Illustration')}
                 triggerLabel={t('Service.FileForm.SelectDocument')}
                 placeholder={t('Service.FileForm.NoDocument')}
@@ -65,6 +67,7 @@ export const ServiceForm = ({ handleSubmit }: ServiceFormProps) => {
             name="logo_document"
             render={({ field, fieldState }) => (
               <FileSelect
+                {...getFileSelectLabels(t)}
                 label={t('ServiceForm.Logo')}
                 triggerLabel={t('Service.FileForm.SelectDocument')}
                 placeholder={t('Service.FileForm.NoDocument')}

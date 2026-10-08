@@ -147,6 +147,13 @@ Rules shared by every row, from `SsoGroupRolePortalForm` (the app's existing des
   every combobox go; AutoForm `fieldType` fields read the error with `useFormField()`. On screen: red field border and
   the design system helper text under the field; the label no longer turns red. `EntityTypesField`,
   `UseCasesField` and `TrialsManageUsersForm`, which had no `FormMessage`, now show their error.
+- **The design system control names are translated** (epic review): every name with a prop goes through next-intl, in a
+  `DesignSystem` namespace in en, fr and ja, plus `Utils.Clear` and `Utils.Loading`. `AppCombobox` names its clear,
+  toggle and chips list and its loading message once; `SearchField` gets `clearLabel` at every site;
+  `getDatePickerLabels` and `getFileSelectLabels` (beside the date and file adapters) give every picker and file field
+  its names, the file trigger and empty texts and the rejection message; `BreadcrumbNav` names its landmark. Names with
+  no prop stay English, one upstream request: the combobox chip remove, the dialog corner close, the button loading
+  text, the tabs scroll arrows and the colour picker panel.
 
 ## To validate
 
@@ -161,8 +168,6 @@ Rules shared by every row, from `SsoGroupRolePortalForm` (the app's existing des
 
 ## Deferred findings
 
-- The clear and chevron controls keep the design system's English names ("Clear", "Toggle options") here and in
-  `SsoGroupRolePortalForm`; `Utils.Clear` exists, the toggle has no key. To localise in one pass.
 - `AutocompleteOrganization` sits beside a legacy `<Label>` that names nothing; a `ComboboxLabel` would name the
   field. With the `Label` item (3691).
 - Picking "All organizations" while no organization is filtered is a no-op, and its label stays in the field until

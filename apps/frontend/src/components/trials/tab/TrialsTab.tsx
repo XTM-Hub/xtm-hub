@@ -622,6 +622,7 @@ const TrialsTab = ({ type, scope }: TrialsTabProps) => {
               className="w-full sm:w-1/3"
               aria-label={t('TrialsDashboard.Actions.SearchTrials')}
               placeholder={t('TrialsDashboard.Actions.SearchTrials')}
+              clearLabel={t('DesignSystem.SearchField.Clear')}
               onChange={searchHandlers.onChange}
               onClear={searchHandlers.onClear}
             />

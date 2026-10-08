@@ -174,6 +174,7 @@ Rules shared by every `MultiSelectFormField` row:
 - **The multi-selects use `AppCombobox`** (epic review, see 3545): the composition and the `as string[]` casts go.
 - **The multi-selects own their error** (epic review, see 3545): `error` on `AppCombobox`, no `FormItem` /
   `FormMessage` / `FormControl`.
+- **Control names translated** (epic review, see 3545).
 
 ## To validate
 
@@ -188,8 +189,6 @@ Rules shared by every `MultiSelectFormField` row:
 
 ## Deferred findings
 
-- The chip row ("Selected values"), clear ("Clear") and chevron ("Toggle options") keep the design system's English
-  names; already deferred by 3545.
 - `TrialsManageUsersForm` builds `userIds` with `options.find(...)?.value`, which can hold `undefined`; pre-existing.
 - Selected ids outside the current server results show the raw id as chip label (`ServiceSlugOrgaForm`,
   `UserServiceForm`), as the legacy badges did; `use-trial-user-options.ts` keeps selected options and could be shared.

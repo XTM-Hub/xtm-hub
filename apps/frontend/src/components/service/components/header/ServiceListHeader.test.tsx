@@ -105,7 +105,9 @@ describe('ServiceListHeader', () => {
     testState.cancelDebouncedSearch.mockClear();
 
     // When
-    await user.click(screen.getByRole('button', { name: 'Clear search' }));
+    await user.click(
+      screen.getByRole('button', { name: 'DesignSystem.SearchField.Clear' })
+    );
 
     // Then
     expect(testState.cancelDebouncedSearch).toHaveBeenCalledOnce();

@@ -234,6 +234,7 @@ const OrganizationSubscribedServicesSlug = ({
               className="w-full sm:w-1/3"
               aria-label={t('Service.SearchServices')}
               placeholder={t('Service.SearchServices')}
+              clearLabel={t('DesignSystem.SearchField.Clear')}
               onChange={searchHandlers.onChange}
               onClear={searchHandlers.onClear}
             />

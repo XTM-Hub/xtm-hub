@@ -125,6 +125,7 @@ Rules shared by every row:
   (`aria-label`, as `AutoFormEnum`), the controlled `value` and the shared change mapping.
 - **`AutoFormDate` reads its error with `useFormField()`** (epic review, see 3566): the picker takes `label`,
   `required` and `error`, as `AutoFormInput`.
+- **Control names translated** (epic review, see 3545).
 
 ## To validate
 
@@ -134,9 +135,6 @@ Rules shared by every row:
   outside days). Alternative: none without restyling.
 - The end date gains a clear button; the start date has none. On the edit sheet it does not remove a stored end
   date (see Deferred findings). Alternative: `clearable` on both, or neither.
-- The picker's button and panel names stay in English in every locale while month names follow the locale.
-  Alternative: new keys in en, fr and ja for `openCalendarLabel`, `clearLabel`, `previousMonthLabel`,
-  `nextMonthLabel`, `monthSelectLabel` and `yearSelectLabel`, in one pass with the `Combobox` and `SearchField` names.
 
 ## Deferred findings
 

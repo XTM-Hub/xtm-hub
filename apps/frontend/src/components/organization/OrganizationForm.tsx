@@ -126,7 +126,9 @@ export const OrganizationForm = ({
               error={Boolean(fieldState.error?.message)}>
               <ComboboxLabel>{t('OrganizationForm.Domains')}</ComboboxLabel>
               <ComboboxField>
-                <ComboboxChips />
+                <ComboboxChips
+                  aria-label={t('DesignSystem.Combobox.SelectedValues')}
+                />
                 <ComboboxInput
                   ref={field.ref}
                   onBlur={field.onBlur}
