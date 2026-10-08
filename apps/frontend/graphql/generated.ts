@@ -2425,6 +2425,7 @@ export type RegisteredPlatform = Node & {
   myGroups: Maybe<Array<ServiceGroup>>;
   organization: Maybe<Organization>;
   platform_id: Scalars['String']['output'];
+  service_instance_id: Scalars['ServiceInstanceId']['output'];
   status: Maybe<PlatformConfigurationStatus>;
   subscription: Maybe<SubscriptionModel>;
   tenant_id: Maybe<Scalars['String']['output']>;
@@ -2453,6 +2454,7 @@ export type RegisteredPlatformInput = {
 
 export enum RegisteredPlatformOrdering {
   LastConnectivityCheck = 'last_connectivity_check',
+  OrganizationName = 'organization_name',
   PlatformTitle = 'platform_title'
 }
 
@@ -3676,7 +3678,7 @@ export type SaasPlatformsListQueryVariables = Exact<{
 }>;
 
 
-export type SaasPlatformsListQuery = { __typename?: 'Query', saasPlatforms: { __typename?: 'RegisteredPlatformConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor: string | null }, edges: Array<{ __typename?: 'RegisteredPlatformEdge', node: { __typename?: 'RegisteredPlatform', id: string, platform_id: string, tenant_id: string | null, tenant_name: string | null, url: string, title: string, version: string | null, contract: PlatformContract, status: PlatformConfigurationStatus | null, last_connectivity_check: any | null, identifier: ServiceDefinitionIdentifier, organization: { __typename?: 'Organization', id: string, name: string } | null } }> } };
+export type SaasPlatformsListQuery = { __typename?: 'Query', saasPlatforms: { __typename?: 'RegisteredPlatformConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor: string | null }, edges: Array<{ __typename?: 'RegisteredPlatformEdge', node: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, platform_id: string, tenant_id: string | null, tenant_name: string | null, url: string, title: string, version: string | null, contract: PlatformContract, status: PlatformConfigurationStatus | null, last_connectivity_check: any | null, identifier: ServiceDefinitionIdentifier, organization: { __typename?: 'Organization', id: string, name: string } | null } }> } };
 
 export type AddUsersToBundleGroupsMutationVariables = Exact<{
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
@@ -6129,6 +6131,7 @@ export const SaasPlatformsListDocument = `
     edges {
       node {
         id
+        service_instance_id
         platform_id
         tenant_id
         tenant_name

@@ -6,6 +6,7 @@ enum PlatformContract {
 
 type RegisteredPlatform implements Node {
   id: ID!
+  service_instance_id: ServiceInstanceId!
   url: String!
   title: String!
   contract: PlatformContract!
@@ -37,6 +38,7 @@ type RegisteredPlatformConnection {
 enum RegisteredPlatformOrdering {
   platform_title
   last_connectivity_check
+  organization_name
 }
 
 input PlatformInput {

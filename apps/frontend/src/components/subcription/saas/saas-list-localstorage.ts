@@ -10,7 +10,7 @@ export const useSaasListLocalstorage = () => {
   const [orderBy, setOrderBy, removeOrderBy] =
     useLocalStorage<RegisteredPlatformOrdering>(
       'orderBySaasList',
-      RegisteredPlatformOrdering.PlatformTitle
+      RegisteredPlatformOrdering.OrganizationName
     );
   const [pageSize, setPageSize, removePageSize] = useLocalStorage(
     'countSaasList',
@@ -19,7 +19,7 @@ export const useSaasListLocalstorage = () => {
 
   useEffect(() => {
     if (!isValueInEnum(orderBy, RegisteredPlatformOrdering)) {
-      setOrderBy(RegisteredPlatformOrdering.PlatformTitle);
+      setOrderBy(RegisteredPlatformOrdering.OrganizationName);
     }
   }, [orderBy, setOrderBy]);
 

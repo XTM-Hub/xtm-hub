@@ -891,13 +891,14 @@ describe('registration domain', () => {
       lastConnectivityCheck: new Date('2026-10-02T10:00:00.000Z'),
     };
     // The caller (default request context) selects FILIGRAN: A and B are only
-    // subscribed by other organizations, A by two of them.
+    // subscribed by other organizations, A by two of them. Subscriptions start
+    // in the listed order, so the first organization owns the platform.
     const includedPlatforms = [
       {
         ...saasPlatformA,
         organizationIds: [
-          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
           otherOrganizationId,
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         ],
       },
       {
@@ -955,7 +956,10 @@ describe('registration domain', () => {
     };
 
     beforeEach(async () => {
-      await TestHelper.organization.create({ id: otherOrganizationId });
+      await TestHelper.organization.create({
+        id: otherOrganizationId,
+        name: 'Other organization',
+      });
 
       for (const platform of includedPlatforms) {
         await TestHelper.serviceInstance.create({
@@ -976,10 +980,14 @@ describe('registration domain', () => {
           last_connectivity_check: platform.lastConnectivityCheck,
           commercial_model: CommercialModel.Saas,
         });
-        for (const organizationId of platform.organizationIds) {
+        for (const [
+          index,
+          organizationId,
+        ] of platform.organizationIds.entries()) {
           await TestHelper.subscription.create({
             organization_id: organizationId,
             service_instance_id: platform.serviceInstanceId,
+            start_date: new Date(Date.UTC(2026, 0, index + 1)),
           });
         }
       }
@@ -1038,6 +1046,7 @@ describe('registration domain', () => {
       expect(connection.edges[0]?.node).toMatchObject({
         __typename: 'RegisteredPlatform',
         id: saasPlatformA.serviceInstanceId,
+        service_instance_id: saasPlatformA.serviceInstanceId,
         identifier: ServiceDefinitionIdentifier.OpenctiRegistration,
         illustration_document_id: null,
         platform_id: saasPlatformA.platformId,
@@ -1106,6 +1115,16 @@ describe('registration domain', () => {
         orderBy: RegisteredPlatformOrdering.LastConnectivityCheck,
         orderMode: OrderingMode.Desc,
         expected: [saasPlatformA, saasPlatformC, saasPlatformB],
+      },
+      {
+        orderBy: RegisteredPlatformOrdering.OrganizationName,
+        orderMode: OrderingMode.Asc,
+        expected: [saasPlatformC, saasPlatformA, saasPlatformB],
+      },
+      {
+        orderBy: RegisteredPlatformOrdering.OrganizationName,
+        orderMode: OrderingMode.Desc,
+        expected: [saasPlatformB, saasPlatformA, saasPlatformC],
       },
     ])(
       'should order by $orderBy $orderMode',

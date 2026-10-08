@@ -25,7 +25,11 @@
     "Title": "利用可能な機能"
   },
   "CSMBoard": {
-    "ComingSoon": "まもなく、何か新しいことが始まります……"
+    "Organization": "組織",
+    "Products": "製品",
+    "Link": "SaaS指標",
+    "Version": "バージョン",
+    "ViewMetrics": "メトリクスを見る"
   },
   "CountryComboBox": {
     "Placeholder": "国を選択"
@@ -667,9 +671,9 @@
     "Competitor": "競技者",
     "NewsFeed": "ニュースフィード",
     "VotingRound": "機能への投票",
+    "Roles": "ロール",
     "ManageTrials": "トライアル管理",
-    "CSMBoard": "CSMボード",
-    "Roles": "ロール"
+    "CSMBoard": "CSMボード"
   },
   "NewsFeedAdminPage": {
     "Title": "タイトル",

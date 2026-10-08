@@ -1,27 +1,65 @@
 'use client';
 
 import { useSaasListLocalstorage } from '@/components/subcription/saas/saas-list-localstorage';
-import { useUserHasPortalCapability } from '@/hooks/use-portal-capability';
-import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
+  getSaasPlatformMetadata,
+  getSaasPlatformProductName,
+  getSaasPlatformServicePath,
+} from '@/components/subcription/saas/saas-list.utils';
+import {
+  handleSortingChange,
+  mapToSortingTableValue,
+  OrderingMode as SortingOrderingMode,
+} from '@/components/ui/handle-sorting.utils';
+import { useUserHasPortalCapability } from '@/hooks/use-portal-capability';
+import { useTablePagination } from '@/hooks/use-table-pagination';
+import { useTranslate } from '@/hooks/use-translate';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { cn } from '@/lib/utils';
+import { i18nKey } from '@/utils/datatable';
+import { Badge, DataTable, DataTableHeadBarOptions } from '@filigran/ui';
+import {
+  OrderingMode,
   PortalCapability,
+  RegisteredPlatformOrdering,
+  type SaasPlatformsListQuery,
   type SaasPlatformsListQueryVariables,
   useSaasPlatformsListQuery,
 } from '@graphql/generated';
 import { saasPlatformsKeys } from '@graphql/saas-platforms/saas-platforms.keys';
-import { useEffect, useMemo } from 'react';
+import { ColumnDef } from '@tanstack/react-table';
+import Link from 'next/link';
+import { useMemo } from 'react';
+
+type SaasPlatform =
+  SaasPlatformsListQuery['saasPlatforms']['edges'][number]['node'];
 
 export const SaasList = () => {
+  const t = useTranslate();
   const canReadSaasMetrics = useUserHasPortalCapability([
     PortalCapability.Bypass,
     PortalCapability.ReadSaasMetrics,
   ]);
 
-  const { pageSize, orderBy, orderMode } = useSaasListLocalstorage();
+  const {
+    pageSize,
+    setPageSize,
+    orderBy,
+    setOrderBy,
+    orderMode,
+    setOrderMode,
+    resetAll,
+    removeOrder,
+  } = useSaasListLocalstorage();
+  const { pagination, setPagination, cursor, onPaginationChange } =
+    useTablePagination({
+      pageSize,
+      setPageSize,
+    });
 
   const variables = useMemo<SaasPlatformsListQueryVariables>(
-    () => ({ first: pageSize, after: null, orderBy, orderMode }),
-    [pageSize, orderBy, orderMode]
+    () => ({ first: pagination.pageSize, after: cursor, orderBy, orderMode }),
+    [pagination.pageSize, cursor, orderBy, orderMode]
   );
 
   const { data, isLoading } = useSaasPlatformsListQuery(
@@ -37,7 +75,6 @@ export const SaasList = () => {
     {
       id: RegisteredPlatformOrdering.OrganizationName,
       accessorFn: (platform) => platform.organization?.name,
-      sortDescFirst: false,
       header: t('CSMBoard.Organization'),
       cell: ({ row }) => (
         <span className="truncate">{row.original.organization?.name}</span>
@@ -93,28 +130,6 @@ export const SaasList = () => {
     [data]
   );
 
-  const resetToFirstPage = () =>
-    setPagination((previousPagination) => ({
-      ...previousPagination,
-      pageIndex: 0,
-    }));
-
-  const updateSearchTerm = (nextSearchTerm: string) => {
-    setSearchTerm(nextSearchTerm.trim() || null);
-    resetToFirstPage();
-  };
-
-  const onSearchChange = useDebounceCallback(
-    (event: ChangeEvent<HTMLInputElement>) =>
-      updateSearchTerm(event.target.value),
-    DEBOUNCE_TIME
-  );
-
-  const onSearchClear = () => {
-    onSearchChange.cancel();
-    updateSearchTerm('');
-  };
-
   const onSortingChange = (updater: unknown) => {
     handleSortingChange<RegisteredPlatformOrdering>({
       updater,
@@ -124,16 +139,37 @@ export const SaasList = () => {
       setOrderMode: (nextOrderMode) =>
         setOrderMode(nextOrderMode as OrderingMode),
       removeOrder,
-      handleRefetchData: resetToFirstPage,
+      handleRefetchData: () =>
+        setPagination((previousPagination) => ({
+          ...previousPagination,
+          pageIndex: 0,
+        })),
     });
   };
 
-  useEffect(() => {
-    if (data) {
-      // eslint-disable-next-line no-console
-      console.log('saasPlatforms', data.saasPlatforms);
-    }
-  }, [data]);
-
-  return null;
+  return (
+    <DataTable
+      columns={columns}
+      data={saasPlatforms}
+      isLoading={isLoading}
+      i18nKey={i18nKey(t)}
+      onResetTable={resetAll}
+      tableOptions={{
+        onSortingChange,
+        onPaginationChange,
+        manualSorting: true,
+        manualPagination: true,
+        rowCount: data?.saasPlatforms.totalCount ?? 0,
+      }}
+      tableState={{
+        sorting: mapToSortingTableValue(orderBy, orderMode),
+        pagination,
+      }}
+      toolbar={
+        <div className="flex justify-end">
+          <DataTableHeadBarOptions />
+        </div>
+      }
+    />
+  );
 };

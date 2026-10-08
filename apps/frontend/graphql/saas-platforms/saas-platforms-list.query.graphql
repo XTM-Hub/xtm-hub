@@ -18,6 +18,7 @@ query SaasPlatformsList(
     edges {
       node {
         id
+        service_instance_id
         platform_id
         tenant_id
         tenant_name

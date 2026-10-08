@@ -2418,6 +2418,7 @@ export type RegisteredPlatform = Node & {
   myGroups?: Maybe<Array<ServiceGroup>>;
   organization?: Maybe<Organization>;
   platform_id: Scalars['String']['output'];
+  service_instance_id: Scalars['ServiceInstanceId']['output'];
   status?: Maybe<PlatformConfigurationStatus>;
   subscription?: Maybe<SubscriptionModel>;
   tenant_id?: Maybe<Scalars['String']['output']>;
@@ -2446,6 +2447,7 @@ export type RegisteredPlatformInput = {
 
 export enum RegisteredPlatformOrdering {
   LastConnectivityCheck = 'last_connectivity_check',
+  OrganizationName = 'organization_name',
   PlatformTitle = 'platform_title'
 }
 
@@ -4793,6 +4795,7 @@ export type RegisteredPlatformResolvers<ContextType = PortalContext, ParentType 
   myGroups?: Resolver<Maybe<Array<ResolversTypes['ServiceGroup']>>, ParentType, ContextType>;
   organization?: Resolver<Maybe<ResolversTypes['Organization']>, ParentType, ContextType>;
   platform_id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  service_instance_id?: Resolver<ResolversTypes['ServiceInstanceId'], ParentType, ContextType>;
   status?: Resolver<Maybe<ResolversTypes['PlatformConfigurationStatus']>, ParentType, ContextType>;
   subscription?: Resolver<Maybe<ResolversTypes['SubscriptionModel']>, ParentType, ContextType>;
   tenant_id?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;

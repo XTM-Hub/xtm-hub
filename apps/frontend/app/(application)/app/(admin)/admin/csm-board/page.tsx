@@ -23,7 +23,6 @@ const Page = () => {
       displayError>
       <BreadcrumbNav value={breadcrumbValue} />
       <h1>{t('MenuLinks.CSMBoard')}</h1>
-      <div>{t('CSMBoard.ComingSoon')}</div>
       <SaasList />
     </GuardCapacityComponent>
   );

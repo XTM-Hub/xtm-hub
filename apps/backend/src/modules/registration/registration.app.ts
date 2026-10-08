@@ -573,6 +573,7 @@ export const mapDomainRegisteredPlatformToGraphQL = (
   return {
     __typename: 'RegisteredPlatform',
     id: platform.id,
+    service_instance_id: platform.id as ServiceInstanceId,
     platform_id: platform.platform_id ?? platform.id,
     last_connectivity_check: platform?.last_connectivity_check ?? null,
     status: platform.status ?? null,

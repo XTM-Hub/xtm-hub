@@ -25,7 +25,11 @@
     "Title": "Available capabilities"
   },
   "CSMBoard": {
-    "ComingSoon": "Something new is coming very soon..."
+    "Organization": "Organization",
+    "Products": "Products",
+    "Link": "Saas metrics",
+    "Version": "Version",
+    "ViewMetrics": "View metrics"
   },
   "CountryComboBox": {
     "Placeholder": "Choose a country"

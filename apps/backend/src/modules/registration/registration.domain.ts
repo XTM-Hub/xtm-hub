@@ -11,6 +11,7 @@ import {
   PlatformIdentifier,
   QuerySaasPlatformsArgs,
   RegisteredPlatformConnection,
+  RegisteredPlatformOrdering,
   ServiceDefinitionIdentifier,
   ServiceInstanceCreationStatus,
 } from '../../__generated__/resolvers-types';
@@ -63,6 +64,7 @@ const RegisteredPlatformsSelectColumns = [
 
 const SaasPlatformsSelectColumns = [
   'ServiceInstance.id as id',
+  'ServiceInstance.id as service_instance_id',
   'ServiceDefinition.identifier as identifier',
   'ServiceInstance.illustration_document_id as illustration_document_id',
   'PlatformConfiguration.platform_id as platform_id',
@@ -192,15 +194,9 @@ export const RegistrationDomain = {
     if (serviceInstanceIds.length === 0) {
       return [];
     }
-    return db<Subscription>('Subscription')
-      .distinctOn('service_instance_id')
+    return getPlatformOwnerSubscriptionsQuery()
       .select<Subscription[]>('*')
-      .whereIn('service_instance_id', [...serviceInstanceIds])
-      .orderBy([
-        { column: 'service_instance_id' },
-        { column: 'start_date', order: 'asc', nulls: 'last' },
-        { column: 'id', order: 'asc' },
-      ]);
+      .whereIn('service_instance_id', [...serviceInstanceIds]);
   },
 
   loadAllActiveRegisteredPlatformsByPlatformIdentifier: async (
@@ -255,6 +251,25 @@ export const RegistrationDomain = {
         CommercialModel.Saas
       )
       .select(SaasPlatformsSelectColumns);
+
+    if (opts.orderBy === RegisteredPlatformOrdering.OrganizationName) {
+      query
+        .leftJoin(
+          getPlatformOwnerSubscriptionsQuery()
+            .select('service_instance_id', 'organization_id')
+            .as('OwnerSubscription'),
+          'OwnerSubscription.service_instance_id',
+          '=',
+          'ServiceInstance.id'
+        )
+        .leftJoin(
+          'Organization',
+          'Organization.id',
+          '=',
+          'OwnerSubscription.organization_id'
+        )
+        .select('Organization.name as organization_name');
+    }
 
     return paginate<ServiceInstance, RegisteredPlatformConnection>(
       'ServiceInstance',
@@ -334,6 +349,16 @@ export const RegistrationDomain = {
       });
   },
 };
+
+// The owner of a platform is the organization of its oldest subscription.
+const getPlatformOwnerSubscriptionsQuery = () =>
+  db<Subscription>('Subscription')
+    .distinctOn('service_instance_id')
+    .orderBy([
+      { column: 'service_instance_id' },
+      { column: 'start_date', order: 'asc', nulls: 'last' },
+      { column: 'id', order: 'asc' },
+    ]);
 
 const getRegisteredPlatformsBaseQuery = () =>
   db<ServiceInstance>('ServiceInstance')

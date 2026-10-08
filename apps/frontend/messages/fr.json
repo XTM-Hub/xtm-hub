@@ -25,7 +25,11 @@
     "Title": "Capacités disponibles"
   },
   "CSMBoard": {
-    "ComingSoon": "Une nouveauté va bientôt voir le jour..."
+    "Organization": "Organisation",
+    "Products": "Produits",
+    "Link": "Métriques Saas",
+    "Version": "Version",
+    "ViewMetrics": "Voir les métriques"
   },
   "CountryComboBox": {
     "Placeholder": "Choisir un pays"
@@ -667,9 +671,9 @@
     "Competitor": "Concurrent",
     "NewsFeed": "Fil d'actualité",
     "VotingRound": "Vote des fonctionnalités",
+    "Roles": "Rôles",
     "ManageTrials": "Gestion des essais",
-    "CSMBoard": "Tableau de bord CSM",
-    "Roles": "Rôles"
+    "CSMBoard": "Tableau de bord CSM"
   },
   "NewsFeedAdminPage": {
     "Title": "Titre",
