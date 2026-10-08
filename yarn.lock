@@ -12225,9 +12225,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint@npm:10.11.0":
-  version: 10.11.0
-  resolution: "eslint@npm:10.11.0"
+"eslint@npm:10.12.0":
+  version: 10.12.0
+  resolution: "eslint@npm:10.12.0"
   dependencies:
     "@eslint-community/eslint-utils": "npm:^4.8.0"
     "@eslint-community/regexpp": "npm:^4.12.2"
@@ -12266,7 +12266,7 @@ __metadata:
       optional: true
   bin:
     eslint: bin/eslint.js
-  checksum: 10/b4de8711cae009d6978e3760d400d5b2cba4117625764d9b1b77969c61f4db7dfa7bfb2754c0a22b3d9f35960a3e4f03bd579104d2c25894490bf3cf7b448cac
+  checksum: 10/1cff87e4db79d4c9b6bd0af4c2aa483d88936a16f70e73af192a2aeee5ec597ad1de5d42ba1242336c27b25be6f0e503e4ea41ca036ab134eb5f4b4c24af15b9
   languageName: node
   linkType: hard
 
@@ -13129,10 +13129,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"globals@npm:17.12.0":
-  version: 17.12.0
-  resolution: "globals@npm:17.12.0"
-  checksum: 10/833291560517dbb510c6d12359ba87eb8b8f282e9775b0474c6e19e0bea043b61f6b52732d4b1bb275888d1813564e40653e0d5faccef3083dc603cfbf0a3271
+"globals@npm:17.13.0":
+  version: 17.13.0
+  resolution: "globals@npm:17.13.0"
+  checksum: 10/f723714cfb07bcf3163d44661d63b2a6076d93fd2f3724622b22084c62bcbbdb3ea3c601ec39635f1430d5cdf60bbf6fd7e458f12b5381ed422ed355c699537b
   languageName: node
   linkType: hard
 
@@ -16575,9 +16575,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"monocart-reporter@npm:2.13.1":
-  version: 2.13.1
-  resolution: "monocart-reporter@npm:2.13.1"
+"monocart-reporter@npm:2.14.0":
+  version: 2.14.0
+  resolution: "monocart-reporter@npm:2.14.0"
   dependencies:
     console-grid: "npm:^2.2.4"
     eight-colors: "npm:^1.3.3"
@@ -16588,7 +16588,7 @@ __metadata:
     monocart-locator: "npm:^1.0.3"
   bin:
     monocart: lib/cli.js
-  checksum: 10/0a55bf4dff4fd91ea44c973f27803ee3a1508bef0d7d05bae393ac22acf800c8f98a6d88fd0498c4aa66a8f41345548b636d9d830a69a9176fa256a37695be71
+  checksum: 10/51fa4890f73ed84df21d4dcc0771adca60ec469e46e552a923791c7b786b1f8e8f09b8ee846fcbb65207b9aa1240904873edbc37252c51dbb46a9c8bfef813ee
   languageName: node
   linkType: hard
 
