@@ -8,7 +8,6 @@ import {
 import {
   OrderingMode,
   Organization,
-  OrganizationCapability,
   OrganizationConnection,
   OrganizationEdge,
   OrganizationInput,
@@ -17,15 +16,14 @@ import {
   PageInfo,
 } from '../../../__generated__/resolvers-types';
 import { OrganizationId } from '../../../model/kanel/public/Organization';
-import User from '../../../model/kanel/public/User';
 import {
   AlreadyExistsErrorCode,
   BadRequestErrorCode,
   ForbiddenErrorCode,
 } from '../../../utils/error/error.code';
 import { ErrorType } from '../../../utils/error/error.type';
-import { UserDomain } from '../user/user-domain/user.domain';
 import { OrganizationApp } from './organization.app';
+import { OrganizationDataLoaders } from './organization.dataloader';
 import { OrganizationDomain } from './organization.domain';
 import organizationsResolver from './organization.resolver';
 
@@ -286,14 +284,20 @@ describe('delete organization GraphQL mutation', () => {
 });
 
 describe('organization administrator_emails field resolver', () => {
-  it('should return the emails of the organization administrators', async () => {
+  it('should load the administrator emails through the request-scoped dataloader', async () => {
     // Given
     const id = TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID;
     const email = TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.EMAIL;
-    vi.spyOn(
-      UserDomain,
-      'loadUsersByCapabilitiesInOrganization'
-    ).mockResolvedValue([{ email } as User]);
+    const load = vi.fn().mockResolvedValue([email]);
+    const context = {
+      ...contextSimpleUserFiligran2,
+      dataLoaders: {
+        ...contextSimpleUserFiligran2.dataLoaders,
+        organization: {
+          administratorEmailsByOrganizationIdLoader: { load },
+        } as unknown as OrganizationDataLoaders,
+      },
+    };
 
     // When
     const result = await (
@@ -301,16 +305,12 @@ describe('organization administrator_emails field resolver', () => {
     ).administrator_emails!(
       { id, name: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME } as Organization,
       {},
-      contextSimpleUserFiligran2,
+      context,
       GRAPHQL_RESOLVE_INFO
     );
 
     // Then
-    expect(
-      UserDomain.loadUsersByCapabilitiesInOrganization
-    ).toHaveBeenCalledWith(id, [
-      OrganizationCapability.AdministrateOrganization,
-    ]);
+    expect(load).toHaveBeenCalledWith(id);
     expect(result).toEqual([email]);
   });
 });

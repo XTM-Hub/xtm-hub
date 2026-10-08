@@ -78,7 +78,7 @@ export const SaasList = () => {
     [pagination.pageSize, cursor, orderBy, orderMode, searchTerm]
   );
 
-  const { data, isLoading } = useSaasPlatformsListQuery(
+  const { data, isLoading, isError } = useSaasPlatformsListQuery(
     portalGraphqlClient,
     variables,
     {
@@ -214,45 +214,50 @@ export const SaasList = () => {
   };
 
   return (
-    <DataTable
-      columns={columns}
-      data={saasPlatforms}
-      isLoading={isLoading}
-      i18nKey={i18nKey(t)}
-      onResetTable={resetAll}
-      tableOptions={{
-        onSortingChange,
-        onPaginationChange,
-        manualSorting: true,
-        manualPagination: true,
-        rowCount: data?.saasPlatforms.totalCount ?? 0,
-      }}
-      tableState={{
-        sorting: mapToSortingTableValue(orderBy, orderMode),
-        pagination,
-      }}
-      toolbar={
-        <div className="flex flex-col-reverse items-center justify-between gap-s sm:flex-row">
-          <label
-            htmlFor="saas-platforms-search"
-            className="sr-only">
-            {t('CSMBoard.SearchOrganization')}
-          </label>
-          <div className="w-full sm:w-1/3">
-            <SearchField
-              id="saas-platforms-search"
-              fullWidth
-              placeholder={t('CSMBoard.SearchOrganization')}
-              clearLabel={t('CSMBoard.ClearSearch')}
-              onChange={onSearchChange}
-              onClear={onSearchClear}
-            />
+    <>
+      {isError && (
+        <div className="mb-s text-sm text-destructive">{t('Utils.Error')}</div>
+      )}
+      <DataTable
+        columns={columns}
+        data={saasPlatforms}
+        isLoading={isLoading}
+        i18nKey={i18nKey(t)}
+        onResetTable={resetAll}
+        tableOptions={{
+          onSortingChange,
+          onPaginationChange,
+          manualSorting: true,
+          manualPagination: true,
+          rowCount: data?.saasPlatforms.totalCount ?? 0,
+        }}
+        tableState={{
+          sorting: mapToSortingTableValue(orderBy, orderMode),
+          pagination,
+        }}
+        toolbar={
+          <div className="flex flex-col-reverse items-center justify-between gap-s sm:flex-row">
+            <label
+              htmlFor="saas-platforms-search"
+              className="sr-only">
+              {t('CSMBoard.SearchOrganization')}
+            </label>
+            <div className="w-full sm:w-1/3">
+              <SearchField
+                id="saas-platforms-search"
+                fullWidth
+                placeholder={t('CSMBoard.SearchOrganization')}
+                clearLabel={t('CSMBoard.ClearSearch')}
+                onChange={onSearchChange}
+                onClear={onSearchClear}
+              />
+            </div>
+            <div className="flex w-full items-center justify-end gap-s sm:w-auto">
+              <DataTableHeadBarOptions />
+            </div>
           </div>
-          <div className="flex w-full items-center justify-end gap-s sm:w-auto">
-            <DataTableHeadBarOptions />
-          </div>
-        </div>
-      }
-    />
+        }
+      />
+    </>
   );
 };

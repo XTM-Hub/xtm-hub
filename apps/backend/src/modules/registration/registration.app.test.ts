@@ -499,6 +499,69 @@ describe('registration app', () => {
           // Then
           expect(configuration?.commercial_model).toBe(CommercialModel.Other);
         });
+
+        describe('when an existing SaaS platform is registered again', () => {
+          const registerPlatformTwice = async (
+            secondResponse: () => Promise<Response>
+          ) => {
+            const existingPlatform = { ...platform, id: uuidv4() };
+            const register = () =>
+              RegistrationApp.registerPlatform({
+                organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+                platform: existingPlatform,
+                identifier: PlatformIdentifier.Opencti,
+              });
+            vi.spyOn(SaasManagerClient, 'callInstanceApi')
+              .mockResolvedValueOnce({
+                ok: true,
+                status: 200,
+                json: async () => ({ commercial_model: 'PROD' }),
+              } as Response)
+              .mockImplementationOnce(secondResponse);
+            await register();
+            await register();
+            return PlatformConfigurationDomain.loadConfigurationByPlatform(
+              existingPlatform.id
+            );
+          };
+
+          it.each`
+            case                       | secondResponse
+            ${'the call fails'}        | ${() => Promise.reject(new Error('fetch failed'))}
+            ${'it returns 401'}        | ${async () => ({ ok: false, status: 401 }) as Response}
+            ${'it returns 500'}        | ${async () => ({ ok: false, status: 500 }) as Response}
+            ${'the body is malformed'} | ${async () => ({ ok: true, status: 200, json: async () => Promise.reject(new SyntaxError('Unexpected token')) }) as Response}
+            ${'the model is missing'}  | ${async () => ({ ok: true, status: 200, json: async () => ({}) }) as Response}
+          `(
+            'should keep the SaaS commercial model when $case',
+            async ({ secondResponse }) => {
+              // When
+              const configuration = await registerPlatformTwice(secondResponse);
+
+              // Then
+              expect(configuration?.commercial_model).toBe(
+                CommercialModel.Saas
+              );
+            }
+          );
+
+          it.each`
+            case                               | secondResponse
+            ${'it returns a non PROD model'}   | ${async () => ({ ok: true, status: 200, json: async () => ({ commercial_model: 'TRIAL' }) }) as Response}
+            ${'it does not know the platform'} | ${async () => ({ ok: false, status: 404 }) as Response}
+          `(
+            'should switch to the other commercial model when $case',
+            async ({ secondResponse }) => {
+              // When
+              const configuration = await registerPlatformTwice(secondResponse);
+
+              // Then
+              expect(configuration?.commercial_model).toBe(
+                CommercialModel.Other
+              );
+            }
+          );
+        });
       });
     });
 

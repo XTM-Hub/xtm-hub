@@ -62,27 +62,46 @@ import {
 } from './registration.domain';
 import { RegistrationHelper } from './registration.helper';
 
+/**
+ * Returns undefined when the SaaS Manager cannot classify the platform, so the
+ * stored commercial model is kept instead of being overwritten with OTHER.
+ */
 const loadCommercialModel = async (
   platformId: string
-): Promise<CommercialModel> => {
+): Promise<CommercialModel | undefined> => {
   if (!portalConfig.saas_manager.enabled) {
-    return CommercialModel.Other;
+    return undefined;
   }
   try {
     const response = await SaasManagerClient.callInstanceApi({
       platform_id: platformId,
     });
-    const responseBody = response.ok
-      ? ((await response.json()) as { commercial_model?: string })
-      : null;
-    return responseBody?.commercial_model === 'PROD'
+    if (response.status === 404) {
+      return CommercialModel.Other;
+    }
+    if (!response.ok) {
+      logApp.warn('Unable to load the commercial model from the SaaS Manager', {
+        status: response.status,
+      });
+      return undefined;
+    }
+    const responseBody = (await response.json()) as {
+      commercial_model?: unknown;
+    } | null;
+    if (typeof responseBody?.commercial_model !== 'string') {
+      logApp.warn('The SaaS Manager returned no commercial model', {
+        platformId,
+      });
+      return undefined;
+    }
+    return responseBody.commercial_model === 'PROD'
       ? CommercialModel.Saas
       : CommercialModel.Other;
   } catch (error) {
     logApp.warn('Unable to load the commercial model from the SaaS Manager', {
       error,
     });
-    return CommercialModel.Other;
+    return undefined;
   }
 };
 
@@ -237,9 +256,12 @@ export const RegistrationApp = {
       throw new Error(ErrorCode.InvalidPlatformConfiguration);
     }
 
+    const commercialModel = await loadCommercialModel(
+      configuration.platform_id
+    );
     const configurationWithCommercialModel = {
       ...configuration,
-      commercial_model: await loadCommercialModel(configuration.platform_id),
+      ...(commercialModel ? { commercial_model: commercialModel } : {}),
     };
 
     const platformConfiguration =
