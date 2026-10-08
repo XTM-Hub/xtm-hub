@@ -272,6 +272,7 @@ describe('userProvisioningDomain', () => {
 
     it('should create a new user with existed=false when the email does not exist yet', async () => {
       const sendMailSpy = vi.spyOn(MailService, 'sendMail').mockResolvedValue();
+      vi.spyOn(FeatureFlagUtil, 'isFeatureEnabled').mockReturnValue(false);
       const email = `find-or-create-${uuidv4()}@filigran.io`;
 
       const { user, existed } = await UserProvisioningDomain.findOrCreateUser({
@@ -292,7 +293,7 @@ describe('userProvisioningDomain', () => {
     });
 
     it('should not set an invitation status or notify Hubspot when the TRIAL_INVITE feature flag is disabled', async () => {
-      vi.spyOn(MailService, 'sendMail').mockResolvedValue();
+      const sendMailSpy = vi.spyOn(MailService, 'sendMail').mockResolvedValue();
       vi.spyOn(FeatureFlagUtil, 'isFeatureEnabled').mockReturnValue(false);
       const hubspotSpy = vi
         .spyOn(Hubspot, 'hubspotInviteUserHook')
@@ -309,10 +310,13 @@ describe('userProvisioningDomain', () => {
       expect(user.status).toBeNull();
       expect(user.invitation_date).toBeNull();
       expect(hubspotSpy).not.toHaveBeenCalled();
+      expect(sendMailSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ to: email, template: 'welcome' })
+      );
     });
 
-    it('should set the user status to waiting, set the invitation date and notify Hubspot when the TRIAL_INVITE feature flag is enabled', async () => {
-      vi.spyOn(MailService, 'sendMail').mockResolvedValue();
+    it('should set the user status to waiting, set the invitation date, notify Hubspot and not send the welcome email when the TRIAL_INVITE feature flag is enabled', async () => {
+      const sendMailSpy = vi.spyOn(MailService, 'sendMail').mockResolvedValue();
       vi.spyOn(FeatureFlagUtil, 'isFeatureEnabled').mockReturnValue(true);
       const hubspotSpy = vi
         .spyOn(Hubspot, 'hubspotInviteUserHook')
@@ -331,6 +335,9 @@ describe('userProvisioningDomain', () => {
       expect(user.invitation_date).toBeInstanceOf(Date);
       expect(hubspotSpy).toHaveBeenCalledWith(
         expect.objectContaining({ id: user.id, email })
+      );
+      expect(sendMailSpy).not.toHaveBeenCalledWith(
+        expect.objectContaining({ template: 'welcome' })
       );
     });
 
