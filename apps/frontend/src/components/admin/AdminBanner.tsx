@@ -2,7 +2,7 @@
 
 import useAdminPath from '@/hooks/use-admin-path';
 import { useTranslate } from '@/hooks/use-translate';
-import { Callout } from '@filigran/ui';
+import { Alert } from '@filigran/design-system';
 
 export const AdminBanner = () => {
   const t = useTranslate();
@@ -10,11 +10,10 @@ export const AdminBanner = () => {
 
   return (
     isAdminPath && (
-      <Callout
-        variant="warning"
-        className="rounded-none justify-center uppercase">
-        {t('AdminBanner')}
-      </Callout>
+      <Alert
+        severity="warning"
+        title={t('AdminBanner')}
+      />
     )
   );
 };

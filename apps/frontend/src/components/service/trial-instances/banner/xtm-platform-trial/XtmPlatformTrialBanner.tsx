@@ -4,9 +4,8 @@ import { LearnMoreBannerLink } from '@/components/service/trial-instances/banner
 import { useXtmPlatformTrialBannerDismissed } from '@/components/service/trial-instances/banner/xtm-platform-trial/useXtmPlatformTrialBannerDismissed';
 import { XtmPlatformTrialBannerState } from '@/components/service/trial-instances/banner/xtm-platform-trial/xtm-platform-trial-banner.utils';
 import { useTranslate } from '@/hooks/use-translate';
-import { Chip } from '@filigran/design-system';
+import { Alert, Chip } from '@filigran/design-system';
 import { CloseIcon } from '@filigran/icon';
-import { Callout } from '@filigran/ui';
 import { usePathname } from 'next/navigation';
 
 const TRIAL_PAGE_SLUG = '/xtm-platform-trial';
@@ -44,33 +43,32 @@ export const XtmPlatformTrialBanner = ({
         : t('Service.Trials.XtmPlatform.Ending.Text');
 
   return (
-    <Callout
-      className={`relative rounded-none justify-center from-blue to-turquoise-300 bg-linear-to-r ${isDismissable ? 'pr-xxl' : ''}`}>
-      <div className="flex items-center gap-s">
-        <span>{text}</span>
-        {state === 'no-trial' && learnMoreHref && !isOnLearnMorePage && (
-          <LearnMoreBannerLink href={learnMoreHref} />
-        )}
-        {showDaysLeft && (
-          // The gradient behind is light in both themes, so use the light tokens.
-          <span className="light">
+    <Alert
+      severity="info"
+      title={text}
+      action={
+        <>
+          {state === 'no-trial' && learnMoreHref && !isOnLearnMorePage && (
+            <LearnMoreBannerLink href={learnMoreHref} />
+          )}
+          {showDaysLeft && (
             <Chip
               label={t('Service.Trials.XtmPlatform.DaysLeft', {
                 days: daysLeft,
               })}
             />
-          </span>
-        )}
-      </div>
-      {isDismissable && (
-        <button
-          type="button"
-          aria-label={t('Utils.Close')}
-          onClick={dismiss}
-          className="absolute inset-y-0 right-l flex items-center">
-          <CloseIcon className="h-3 w-3" />
-        </button>
-      )}
-    </Callout>
+          )}
+          {isDismissable && (
+            <button
+              type="button"
+              aria-label={t('Utils.Close')}
+              onClick={dismiss}
+              className="flex items-center">
+              <CloseIcon className="h-3 w-3" />
+            </button>
+          )}
+        </>
+      }
+    />
   );
 };
