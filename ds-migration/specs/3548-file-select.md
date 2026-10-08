@@ -35,9 +35,9 @@ index, `Array.from`), as `transformToFileList` already stores arrays under `z.cu
 | `<FileInput {...field} isFileNameHidden onChangeCapture={async: NewFile[] with preview, id, source_type → field.onChange} disabled texts={{ UploadLogo, NoDocument }} allowedTypes="…image/svg" />` under a `FormLabel` that heads the preview | Wrappers kept as above; `<FileSelect aria-label={t('Service.Form.LogoLabel')} triggerLabel={t('Service.Form.UploadLogo')} placeholder={t('Service.FileForm.NoDocument')} accept="image/jpeg, image/gif, image/png, image/svg+xml" disabled={same} name ref value={toFileSelectValue(field.value)} onValueChange={async (next) => …} />`: the former `onChangeCapture` body builds the same `NewFile` from `next`, then `field.onChange([newFile])`; `null` (clear) → `field.onChange([])`, as the card's delete button | 1 (`service/form/LogoField`) |
 | `<FileInput multiple hidden name="images" onChangeCapture texts allowedTypes="image/jpeg, image/png" ref value />`, opened by the label's `IconButton` | Inside the kept `FormControl`: `<input type="file" className="hidden" multiple name="images" accept="image/jpeg, image/png" ref={same callback} onChange={async (e) => …} />`; `onChange` returns early on an empty selection (a cancelled picker), as the legacy did, else runs the former `onChangeCapture` body, then `field.onChange(Array.from(files))`, the value the legacy `setValue` wrote | 1 (`service/form/MultipleImagesField`) |
 | `AutoFormFile`: `FormItem` > `AutoFormLabel` > `FormControl` > `<FileInput {...fieldProps} />` + tooltip + `FormMessage` | `FormItem` kept + `<FileSelect label={showLabel ? text : undefined} aria-label={showLabel ? undefined : text} required={isRequired} error={useFormField().error?.message} {...rest} multiple={Boolean(multiple)} value={toFileSelectValue(value, Boolean(multiple))} onValueChange={(next) => onChange(fromFileSelectValue(next))} />` + tooltip, as `AutoFormInput`; `rest` is `fieldProps` minus `showLabel`, `required`, `value`, `onChange`, `multiple`; default design system texts | 1 (legacy, every AutoForm `fieldType: 'file'`) |
-| AutoForm `inputProps: { allowedTypes: 'application/json', multiple: 'multiple' }` | `inputProps: { accept: 'application/json' }` | 3 (`CustomDashboardForm`, `CustomViewForm`, `OpenctiPlaybookForm`) |
+| AutoForm `inputProps: { allowedTypes: 'application/json', multiple: 'multiple' }` | `inputProps: { accept: JSON_FILE_ACCEPT }` (`application/json, .json`) | 3 (`CustomDashboardForm`, `CustomViewForm`, `OpenctiPlaybookForm`) |
 | AutoForm `inputProps: { accept: 'application/zip', multiple: 'multiple' }` | `inputProps: { accept: 'application/zip, .zip' }` | 1 (`OpenaevScenarioForm`) |
-| AutoForm `inputProps: { accept: 'application/json' }` | Unchanged | 4 (`StreamForm`, `RssFeedForm`, `TaxiiFeedForm`, `CsvFeedForm`) |
+| AutoForm `inputProps: { accept: 'application/json' }` | `inputProps: { accept: JSON_FILE_ACCEPT }` | 4 (`StreamForm`, `RssFeedForm`, `TaxiiFeedForm`, `CsvFeedForm`) |
 
 ## Files in scope
 
@@ -53,8 +53,9 @@ index, `Array.from`), as `transformToFileList` already stores arrays under `z.cu
 - `apps/frontend/src/components/filigran-ui/components/clients/FileInput.tsx` (delete)
 - `apps/frontend/messages/{en,fr,ja}.json`: remove `Service.FileForm.DropDocuments`, `Service.Form.DropDocuments`,
   `Service.Form.UploadImage` and `Service.Form.NoImage`, whose last users go (Grep `apps/frontend` first)
-- No e2e change: the `input[type="file"]` locators (`nth(0)`, `nth(1)`, `[accept="application/json"]`,
-  `[accept="image/jpeg, image/png"]`) still match one input each, and `setInputFiles` works on `FileSelect`'s
+- E2e: the `[accept="application/json"]` locators of `dashboard.pageModel.ts` and `integration.pageModel.ts` become
+  `[accept*="application/json"]` (epic review); the others (`nth(0)`, `nth(1)`, `[accept="image/jpeg, image/png"]`)
+  still match one input each, and `setInputFiles` works on `FileSelect`'s
   visually hidden input
 
 ## Screens
@@ -127,8 +128,8 @@ dropped, single vs `multiple`, `null` → `undefined`), in `VotableFeatureForm.t
   required document), except `LogoField`, which writes `[]` like its delete button.
 - **`accept` is checked in JavaScript now** (`matchesAccept`: exact MIME, `type/*` or `.ext`). `image/svg`, never a
   MIME, would reject every SVG the legacy extension check let through: it becomes `image/svg+xml`. The zip field had no
-  JavaScript check and Windows reports `application/x-zip-compressed`: `.zip` is added. JSON keeps its exact `accept`,
-  which the e2e locators read. As a side effect `.jpg` images, which the legacy substring check rejected, are accepted.
+  JavaScript check and Windows reports `application/x-zip-compressed`: `.zip` is added. JSON takes `.json` too (epic
+  review): a file the OS reports with an empty type was rejected, where the legacy accepted it. As a side effect `.jpg` images, which the legacy substring check rejected, are accepted.
 - **`MultipleImagesField` gets a native input**: its picker is invisible behind the label's `+` button and the images
   grid is the selection; a visible `FileSelect` would duplicate both. `FileInputWithPrevent` already does the same.
 - **Drag and drop goes** with `FileInputDropZone`: out of the `FileSelect` contract, and broken today (both overlays
@@ -150,8 +151,6 @@ dropped, single vs `multiple`, `null` → `undefined`), in `VotableFeatureForm.t
   `Select a file` / `No file selected`). Alternative: translated texts through `inputProps`.
 - The four AutoForm document fields take one file instead of several: the one that is uploaded.
 - A rejected format is now named by the design system's English message in the field.
-- The seven JSON fields now reject a file whose browser type is not exactly `application/json` (an OS without the
-  mapping reports `""`). Alternative: add `.json`, and move the e2e `[accept="application/json"]` locators with it.
 - On an existing voting round feature, picking only a new illustration now enables Validate: the legacy wrote the file
   without marking the form dirty, `field.onChange` does.
 - `MultipleImagesField` no longer shows `Format not accepted` for a file outside `image/jpeg, image/png` picked through

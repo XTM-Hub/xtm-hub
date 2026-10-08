@@ -30,7 +30,7 @@ export default class IntegrationPage {
   }
   async uploadJsonDocument(filePath: string) {
     const fileInput = this.page.locator(
-      'input[type="file"][accept="application/json"]'
+      'input[type="file"][accept*="application/json"]'
     );
     await fileInput.setInputFiles(filePath);
   }

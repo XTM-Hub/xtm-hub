@@ -24,6 +24,9 @@ export const optionalFileListCheck = (file: unknown) =>
 
 export const isFile = (file: unknown): file is File => file instanceof File;
 
+// `.json` lets through a JSON file the browser reports with an empty MIME type
+export const JSON_FILE_ACCEPT = 'application/json, .json';
+
 export const toFileSelectValue = (
   formValue: unknown,
   multiple = false

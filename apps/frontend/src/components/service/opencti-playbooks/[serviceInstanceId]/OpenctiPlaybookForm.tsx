@@ -6,6 +6,7 @@ import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import {
   fileListCheck,
+  JSON_FILE_ACCEPT,
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
@@ -154,7 +155,7 @@ export const OpenctiPlaybookForm = ({
               label: t('Service.Form.SelectJSONFile'),
               fieldType: 'file',
               inputProps: {
-                accept: 'application/json',
+                accept: JSON_FILE_ACCEPT,
               },
             }
           : {
