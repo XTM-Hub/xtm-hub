@@ -105,7 +105,7 @@
     "cleanup_interval_minutes": 60
   },
   "auth0_sync": {
-    "enabled": false,
+    "enabled": true,
     "max_users_per_run": 500,
     "concurrency": 3,
     "deadline_minutes": 30
