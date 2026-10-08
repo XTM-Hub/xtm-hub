@@ -1,13 +1,20 @@
 import { useSolutionCategories } from '@/components/service/form/UseSolutionCategories';
 import { useTranslate } from '@/hooks/use-translate';
+import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
 import {
-  FormControl,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  MultiSelectFormField,
-} from '@filigran/ui';
+  Combobox,
+  ComboboxChips,
+  ComboboxClear,
+  ComboboxContent,
+  ComboboxControls,
+  ComboboxField,
+  ComboboxInput,
+  ComboboxLabel,
+  ComboboxTrigger,
+} from '@filigran/design-system';
+import { FormItem, FormMessage } from '@filigran/ui';
 import type { FiligranProduct } from '@graphql/generated';
+import { useMemo } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 
 interface ServiceFormSolutionCategoryFieldProps {
@@ -22,25 +29,44 @@ export const ServiceFormSolutionCategoryField = ({
   product,
 }: ServiceFormSolutionCategoryFieldProps) => {
   const t = useTranslate();
+  const solutionCategories = useSolutionCategories(product);
+  const solutionCategoryOptionIds = useMemo(
+    () =>
+      toComboboxOptionIds(
+        solutionCategories,
+        (solutionCategory) => solutionCategory.id,
+        (solutionCategory) => solutionCategory.name
+      ),
+    [solutionCategories]
+  );
 
   return (
     <FormItem>
-      <FormLabel>{t('Service.Form.SolutionCategoriesLabel')}</FormLabel>
-      <FormControl>
-        <MultiSelectFormField
-          disabled={disabled}
-          noResultString={t('Utils.NotFound')}
-          options={useSolutionCategories(product)}
-          keyValue="id"
-          keyLabel="name"
-          defaultValue={field.value}
-          value={field.value}
-          onValueChange={field.onChange}
-          popoverContentClassName="bg-elevation-background-layer-3"
-          placeholder={t('Service.Form.SolutionCategoriesPlaceholder')}
-          variant="inverted"
+      <Combobox<string>
+        multiple
+        disabled={disabled}
+        options={solutionCategoryOptionIds.ids}
+        value={field.value ?? []}
+        onValueChange={(next) => field.onChange(next as string[])}
+        getOptionLabel={solutionCategoryOptionIds.getOptionLabel}>
+        <ComboboxLabel>
+          {t('Service.Form.SolutionCategoriesLabel')}
+        </ComboboxLabel>
+        <ComboboxField>
+          <ComboboxChips />
+          <ComboboxInput
+            placeholder={t('Service.Form.SolutionCategoriesPlaceholder')}
+          />
+          <ComboboxControls>
+            <ComboboxClear />
+            <ComboboxTrigger />
+          </ComboboxControls>
+        </ComboboxField>
+        <ComboboxContent
+          emptyMessage={t('Utils.NotFound')}
+          listAriaLabel={t('Service.Form.SolutionCategoriesLabel')}
         />
-      </FormControl>
+      </Combobox>
       <FormMessage />
     </FormItem>
   );

@@ -11,8 +11,18 @@ import { availableIntegrationTypes } from '@/components/service/integrations/Int
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
 import { useTranslate } from '@/hooks/use-translate';
+import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
 import {
   Button,
+  Combobox,
+  ComboboxChips,
+  ComboboxClear,
+  ComboboxContent,
+  ComboboxControls,
+  ComboboxField,
+  ComboboxInput,
+  ComboboxLabel,
+  ComboboxTrigger,
   Dialog,
   DialogBody,
   DialogContent,
@@ -20,15 +30,7 @@ import {
   DialogFooter,
   DialogTitle,
 } from '@filigran/design-system';
-import {
-  AutoForm,
-  FormControl,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Label,
-  MultiSelectFormField,
-} from '@filigran/ui';
+import { AutoForm, FormItem, FormMessage, Label } from '@filigran/ui';
 import {
   FiligranProduct,
   IntegrationType,
@@ -80,25 +82,38 @@ const IntegrationsCsvExportFilterField = ({
   testId,
 }: IntegrationsCsvExportFilterFieldProps) => {
   const t = useTranslate();
+  const optionIds = useMemo(
+    () =>
+      toComboboxOptionIds(
+        options,
+        (option) => option.value,
+        (option) => option.label
+      ),
+    [options]
+  );
   return (
     <FormItem>
-      <FormLabel className="font-normal text-text-default-secondary">
-        {label}
-      </FormLabel>
-      <FormControl>
-        <MultiSelectFormField
-          className="w-full min-w-0 max-w-md whitespace-nowrap"
-          data-testid={testId}
-          options={options}
-          defaultValue={field.value}
-          value={field.value}
-          onValueChange={field.onChange}
-          noResultString={t('Utils.NotFound')}
-          placeholder={placeholder}
-          popoverContentClassName="bg-elevation-background-layer-3"
-          variant="inverted"
+      <Combobox<string>
+        multiple
+        className="min-w-0 max-w-md"
+        options={optionIds.ids}
+        value={field.value ?? []}
+        onValueChange={(next) => field.onChange(next as string[])}
+        getOptionLabel={optionIds.getOptionLabel}>
+        <ComboboxLabel>{label}</ComboboxLabel>
+        <ComboboxField data-testid={testId}>
+          <ComboboxChips />
+          <ComboboxInput placeholder={placeholder} />
+          <ComboboxControls>
+            <ComboboxClear />
+            <ComboboxTrigger />
+          </ComboboxControls>
+        </ComboboxField>
+        <ComboboxContent
+          emptyMessage={t('Utils.NotFound')}
+          listAriaLabel={label}
         />
-      </FormControl>
+      </Combobox>
     </FormItem>
   );
 };
@@ -147,14 +162,16 @@ export const IntegrationsCsvExportDialog = ({
     setWasOpen(false);
   }
 
-  const columnOptions = useMemo(
+  const columnOptionIds = useMemo(
     () =>
-      INTEGRATION_CSV_EXPORT_COLUMNS.map((column) => ({
-        value: column.key,
-        label: t(
-          `Service.CsvExport.Columns.${toIntegrationCsvColumnLabelKey(column.key)}`
-        ),
-      })),
+      toComboboxOptionIds(
+        INTEGRATION_CSV_EXPORT_COLUMNS,
+        (column) => column.key,
+        (column) =>
+          t(
+            `Service.CsvExport.Columns.${toIntegrationCsvColumnLabelKey(column.key)}`
+          )
+      ),
     [t]
   );
 
@@ -233,8 +250,10 @@ export const IntegrationsCsvExportDialog = ({
     [solutionCategories]
   );
 
-  const useCaseOptions = useUseCases({ documentType: type }).map(
-    ({ name, id }) => ({ label: name, value: id })
+  const useCases = useUseCases({ documentType: type });
+  const useCaseOptions = useMemo(
+    () => useCases.map(({ name, id }) => ({ label: name, value: id })),
+    [useCases]
   );
 
   const resetAndClose = () => {
@@ -299,21 +318,33 @@ export const IntegrationsCsvExportDialog = ({
                   field: ControllerRenderProps<FieldValues, string>;
                 }) => (
                   <FormItem>
-                    <FormLabel>{t('Service.CsvExport.ColumnsLabel')}</FormLabel>
-                    <FormControl>
-                      <MultiSelectFormField
-                        className="w-full min-w-0 max-w-md whitespace-nowrap"
-                        data-testid="integrations-csv-export-columns"
-                        options={columnOptions}
-                        defaultValue={field.value}
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        noResultString={t('Utils.NotFound')}
-                        placeholder={t('Service.CsvExport.ColumnsPlaceholder')}
-                        popoverContentClassName="bg-elevation-background-layer-3"
-                        variant="inverted"
+                    <Combobox<string>
+                      multiple
+                      className="min-w-0 max-w-md"
+                      options={columnOptionIds.ids}
+                      value={field.value ?? []}
+                      onValueChange={(next) => field.onChange(next as string[])}
+                      getOptionLabel={columnOptionIds.getOptionLabel}>
+                      <ComboboxLabel>
+                        {t('Service.CsvExport.ColumnsLabel')}
+                      </ComboboxLabel>
+                      <ComboboxField data-testid="integrations-csv-export-columns">
+                        <ComboboxChips />
+                        <ComboboxInput
+                          placeholder={t(
+                            'Service.CsvExport.ColumnsPlaceholder'
+                          )}
+                        />
+                        <ComboboxControls>
+                          <ComboboxClear />
+                          <ComboboxTrigger />
+                        </ComboboxControls>
+                      </ComboboxField>
+                      <ComboboxContent
+                        emptyMessage={t('Utils.NotFound')}
+                        listAriaLabel={t('Service.CsvExport.ColumnsLabel')}
                       />
-                    </FormControl>
+                    </Combobox>
                     <FormMessage />
                   </FormItem>
                 ),

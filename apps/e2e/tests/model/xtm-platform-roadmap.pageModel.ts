@@ -23,9 +23,19 @@ export default class XTMPlatformRoadmapPage {
     await this.waitForFormToClose();
   }
 
+  // Scoped to the field: the Slack link and search fields have their own Clear
+  private getProductsField(container: Locator, name: string) {
+    const input = this.page.getByRole('combobox', { name, exact: true });
+    const root = container
+      .locator('[data-combobox-root]')
+      .filter({ has: input });
+    return { root, input: root.getByRole('combobox', { name, exact: true }) };
+  }
+
   private async selectProducts(form: Locator, products: string[]) {
-    await form.getByLabel('Clear all selections').click();
-    await form.locator('button').filter({ hasText: 'Product' }).click();
+    const field = this.getProductsField(form, 'Product');
+    await field.root.getByRole('button', { name: 'Clear' }).click();
+    await field.input.click();
     for (const product of products) {
       const option = this.page.getByRole('option', {
         name: product,
@@ -37,16 +47,22 @@ export default class XTMPlatformRoadmapPage {
     await this.page.keyboard.press('Escape');
   }
 
+  getSelectedProductFilter(label: string) {
+    return this.getProductsField(this.page.locator('main'), 'Filter by product')
+      .root.getByRole('listitem')
+      .filter({ hasText: label });
+  }
+
   async filterByProducts(products: string[]) {
-    const list = this.page.locator('main');
-    const clearAll = list.getByLabel('Clear all selections');
+    const field = this.getProductsField(
+      this.page.locator('main'),
+      'Filter by product'
+    );
+    const clearAll = field.root.getByRole('button', { name: 'Clear' });
     if (await clearAll.isVisible()) {
       await clearAll.click();
     }
-    await list
-      .locator('button')
-      .filter({ hasText: 'Filter by product' })
-      .click();
+    await field.input.click();
     for (const product of products) {
       const option = this.page.getByRole('option', { name: product });
       await expect(option).toBeVisible();

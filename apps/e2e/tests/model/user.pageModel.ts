@@ -36,7 +36,7 @@ export default class UserPage {
     await this.page.getByRole('combobox').click();
     await this.page.getByRole('option', { name: userOrganizationName }).click();
     await this.page
-      .getByRole('button', { name: 'Additional capabilities' })
+      .getByRole('combobox', { name: 'Additional capabilities' })
       .click();
     await this.page.getByRole('option', { name: 'MANAGE ACCESS' }).click();
 

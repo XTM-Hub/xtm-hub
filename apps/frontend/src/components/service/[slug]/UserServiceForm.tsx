@@ -13,9 +13,19 @@ import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
+import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
 import {
   Button,
   Checkbox,
+  Combobox,
+  ComboboxChips,
+  ComboboxClear,
+  ComboboxContent,
+  ComboboxControls,
+  ComboboxField,
+  ComboboxInput,
+  ComboboxLabel,
+  ComboboxTrigger,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -23,14 +33,12 @@ import {
 } from '@filigran/design-system';
 import {
   Form,
-  FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
   SheetFooter,
 } from '@filigran/ui';
-import { MultiSelectFormField } from '@filigran/ui/clients';
 import { subscriptionByIdQuery$data } from '@generated/subscriptionByIdQuery.graphql';
 import { UserList_fragment$key } from '@generated/UserList_fragment.graphql';
 import { userServiceCreateMutation } from '@generated/userServiceCreateMutation.graphql';
@@ -248,8 +256,8 @@ export const UserServiceForm = ({
     });
   }, DEBOUNCE_TIME);
 
-  const usersOptions = useMemo(() => {
-    return (
+  const usersOptionIds = useMemo(() => {
+    const usersOptions =
       data?.users?.edges
         ?.filter((edge) => {
           const user = readInlineData<UserList_fragment$key>(
@@ -267,7 +275,11 @@ export const UserServiceForm = ({
             label: user.email,
             value: user.email,
           };
-        }) ?? []
+        }) ?? [];
+    return toComboboxOptionIds(
+      usersOptions,
+      (option) => option.value,
+      (option) => option.label
     );
   }, [data?.users?.edges, me?.id]);
 
@@ -288,21 +300,34 @@ export const UserServiceForm = ({
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('InviteUserServiceForm.Email')}</FormLabel>
-                  <FormControl>
-                    <MultiSelectFormField
-                      popoverContentClassName="bg-elevation-background-layer-3"
-                      shouldFilter={false}
-                      options={usersOptions}
-                      defaultValue={field.value}
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      onInputChange={handleUsersInputChange}
-                      noResultString={t('Utils.NotFound')}
-                      placeholder={t('Service.Management.Email')}
-                      variant="inverted"
+                  <Combobox<string>
+                    multiple
+                    options={usersOptionIds.ids}
+                    value={field.value ?? []}
+                    onValueChange={(next) => field.onChange(next as string[])}
+                    onInputChange={(text, meta) => {
+                      if (meta.cause !== 'select') handleUsersInputChange(text);
+                    }}
+                    filterOptions={(options) => options}
+                    getOptionLabel={usersOptionIds.getOptionLabel}>
+                    <ComboboxLabel>
+                      {t('InviteUserServiceForm.Email')}
+                    </ComboboxLabel>
+                    <ComboboxField>
+                      <ComboboxChips />
+                      <ComboboxInput
+                        placeholder={t('Service.Management.Email')}
+                      />
+                      <ComboboxControls>
+                        <ComboboxClear />
+                        <ComboboxTrigger />
+                      </ComboboxControls>
+                    </ComboboxField>
+                    <ComboboxContent
+                      emptyMessage={t('Utils.NotFound')}
+                      listAriaLabel={t('InviteUserServiceForm.Email')}
                     />
-                  </FormControl>
+                  </Combobox>
                   <FormMessage />
                 </FormItem>
               )}

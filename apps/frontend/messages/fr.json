@@ -2126,9 +2126,6 @@
   "ServiceName": {
     "custom_dashboards": "Tableau de bord personnalisé"
   },
-  "SelectUsers": {
-    "ClearAllSelections": "Effacer toutes les sélections"
-  },
   "Sort Asc": "Tri Asc",
   "Sort Desc": "Sort Desc",
   "SortControls": {

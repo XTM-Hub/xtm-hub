@@ -1,14 +1,24 @@
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button, Input } from '@filigran/design-system';
+import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
+import {
+  Button,
+  Combobox,
+  ComboboxChips,
+  ComboboxClear,
+  ComboboxContent,
+  ComboboxControls,
+  ComboboxField,
+  ComboboxInput,
+  ComboboxLabel,
+  ComboboxTrigger,
+  Input,
+} from '@filigran/design-system';
 import {
   Form,
-  FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
-  MultiSelectFormField,
   SheetFooter,
 } from '@filigran/ui';
 import { FiligranProduct } from '@graphql/generated';
@@ -21,10 +31,11 @@ const productValues = Object.values(FiligranProduct) as [
   ...FiligranProduct[],
 ];
 
-const productOptions = productValues.map((product) => ({
-  id: product,
-  label: product.toUpperCase(),
-}));
+const productOptionIds = toComboboxOptionIds(
+  productValues,
+  (product) => product,
+  (product) => product.toUpperCase()
+);
 
 export interface SolutionCategoryFormModel {
   id: string;
@@ -81,21 +92,30 @@ const SolutionCategoryForm = ({
           name="product"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('SolutionCategory.Form.Product')}</FormLabel>
-              <FormControl>
-                <MultiSelectFormField
-                  options={productOptions}
-                  popoverContentClassName="bg-elevation-background-layer-3"
-                  keyValue="id"
-                  keyLabel="label"
-                  defaultValue={field.value}
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  noResultString={t('Utils.NotFound')}
-                  placeholder={t('SolutionCategory.Form.Product')}
-                  variant="inverted"
+              <Combobox<string>
+                multiple
+                options={productOptionIds.ids}
+                value={field.value ?? []}
+                onValueChange={(next) => field.onChange(next as string[])}
+                getOptionLabel={productOptionIds.getOptionLabel}>
+                <ComboboxLabel>
+                  {t('SolutionCategory.Form.Product')}
+                </ComboboxLabel>
+                <ComboboxField>
+                  <ComboboxChips />
+                  <ComboboxInput
+                    placeholder={t('SolutionCategory.Form.Product')}
+                  />
+                  <ComboboxControls>
+                    <ComboboxClear />
+                    <ComboboxTrigger />
+                  </ComboboxControls>
+                </ComboboxField>
+                <ComboboxContent
+                  emptyMessage={t('Utils.NotFound')}
+                  listAriaLabel={t('SolutionCategory.Form.Product')}
                 />
-              </FormControl>
+              </Combobox>
               <FormMessage />
             </FormItem>
           )}

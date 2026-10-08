@@ -2126,9 +2126,6 @@
   "ServiceName": {
     "custom_dashboards": "カスタムダッシュボード"
   },
-  "SelectUsers": {
-    "ClearAllSelections": "すべての選択をクリア"
-  },
   "Sort Asc": "ソート",
   "Sort Desc": "降順ソート",
   "SortControls": {

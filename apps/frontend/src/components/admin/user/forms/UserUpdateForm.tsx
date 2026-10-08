@@ -13,10 +13,8 @@ import { isEmpty } from '@/lib/utils';
 import { Button } from '@filigran/design-system';
 import {
   Form,
-  FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
   SheetFooter,
 } from '@filigran/ui';
@@ -100,13 +98,11 @@ export const UserUpdateForm = ({ user, callback }: UserUpdateFormProps) => {
           name="capabilities"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('UserForm.OrganizationCapabilities')}</FormLabel>
-              <FormControl>
-                <CapabilityMultiSelect
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-              </FormControl>
+              <CapabilityMultiSelect
+                label={t('UserForm.OrganizationCapabilities')}
+                value={field.value}
+                onChange={field.onChange}
+              />
               <FormMessage />
             </FormItem>
           )}

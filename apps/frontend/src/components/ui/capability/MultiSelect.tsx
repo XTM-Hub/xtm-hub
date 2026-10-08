@@ -1,36 +1,69 @@
 import { useOrganizationCapabilities } from '@/hooks/use-organization-capabilities';
 import { useTranslate } from '@/hooks/use-translate';
-import { MultiSelectFormField } from '@filigran/ui/clients';
+import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
+import {
+  Combobox,
+  ComboboxChips,
+  ComboboxClear,
+  ComboboxContent,
+  ComboboxControls,
+  ComboboxField,
+  ComboboxInput,
+  ComboboxLabel,
+  ComboboxTrigger,
+} from '@filigran/design-system';
 import { useMemo } from 'react';
 
 interface CapabilityMultiSelectProps {
+  label?: string;
   value: string[];
-  onChange: () => void;
+  onChange: (value: string[]) => void;
 }
 
 export const CapabilityMultiSelect = ({
+  label,
   value,
   onChange,
 }: CapabilityMultiSelectProps) => {
   const t = useTranslate();
   const organizationCapabilities = useOrganizationCapabilities();
 
-  const options = useMemo(() => {
-    return organizationCapabilities.map((capability) => ({
-      label: capability.replaceAll('_', ' '),
-      value: capability,
-    }));
-  }, [organizationCapabilities]);
+  const optionIds = useMemo(
+    () =>
+      toComboboxOptionIds(
+        organizationCapabilities,
+        (capability) => capability,
+        (capability) => capability.replaceAll('_', ' ')
+      ),
+    [organizationCapabilities]
+  );
+
+  const placeholder = t('UserForm.OrganizationsCapabilitiesPlaceholder');
 
   return (
-    <MultiSelectFormField
-      noResultString={t('Utils.NotFound')}
-      popoverContentClassName="bg-elevation-background-layer-3"
-      options={options}
-      defaultValue={value}
-      onValueChange={onChange}
-      placeholder={t('UserForm.OrganizationsCapabilitiesPlaceholder')}
-      variant="inverted"
-    />
+    <Combobox<string>
+      multiple
+      labelPosition={label ? 'top' : 'none'}
+      options={optionIds.ids}
+      value={value ?? []}
+      onValueChange={(next) => onChange(next as string[])}
+      getOptionLabel={optionIds.getOptionLabel}>
+      {label && <ComboboxLabel>{label}</ComboboxLabel>}
+      <ComboboxField>
+        <ComboboxChips />
+        <ComboboxInput
+          aria-label={label ? undefined : placeholder}
+          placeholder={placeholder}
+        />
+        <ComboboxControls>
+          <ComboboxClear />
+          <ComboboxTrigger />
+        </ComboboxControls>
+      </ComboboxField>
+      <ComboboxContent
+        emptyMessage={t('Utils.NotFound')}
+        listAriaLabel={label || placeholder}
+      />
+    </Combobox>
   );
 };

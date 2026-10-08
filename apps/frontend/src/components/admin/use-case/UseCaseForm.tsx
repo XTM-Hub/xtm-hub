@@ -1,14 +1,25 @@
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button, ColorPicker, Input } from '@filigran/design-system';
+import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
+import {
+  Button,
+  ColorPicker,
+  Combobox,
+  ComboboxChips,
+  ComboboxClear,
+  ComboboxContent,
+  ComboboxControls,
+  ComboboxField,
+  ComboboxInput,
+  ComboboxLabel,
+  ComboboxTrigger,
+  Input,
+} from '@filigran/design-system';
 import {
   Form,
-  FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
-  MultiSelectFormField,
   SheetFooter,
 } from '@filigran/ui';
 import { FiligranProduct } from '@graphql/generated';
@@ -28,10 +39,11 @@ const productTagValues = Object.values(FiligranProduct) as [
   ...FiligranProduct[],
 ];
 
-const productTagOptions = productTagValues.map((productTag) => ({
-  id: productTag,
-  label: productTag.toUpperCase(),
-}));
+const productTagOptionIds = toComboboxOptionIds(
+  productTagValues,
+  (productTag) => productTag,
+  (productTag) => productTag.toUpperCase()
+);
 
 export const useCaseFormSchema = z.object({
   name: z.string().min(2, {
@@ -86,21 +98,26 @@ const UseCaseForm = ({
           name="product"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('UseCaseForm.Product')}</FormLabel>
-              <FormControl>
-                <MultiSelectFormField
-                  options={productTagOptions}
-                  popoverContentClassName="bg-elevation-background-layer-3"
-                  keyValue="id"
-                  keyLabel="label"
-                  defaultValue={field.value}
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  noResultString={t('Utils.NotFound')}
-                  placeholder={t('UseCaseForm.Product')}
-                  variant="inverted"
+              <Combobox<string>
+                multiple
+                options={productTagOptionIds.ids}
+                value={field.value ?? []}
+                onValueChange={(next) => field.onChange(next as string[])}
+                getOptionLabel={productTagOptionIds.getOptionLabel}>
+                <ComboboxLabel>{t('UseCaseForm.Product')}</ComboboxLabel>
+                <ComboboxField>
+                  <ComboboxChips />
+                  <ComboboxInput placeholder={t('UseCaseForm.Product')} />
+                  <ComboboxControls>
+                    <ComboboxClear />
+                    <ComboboxTrigger />
+                  </ComboboxControls>
+                </ComboboxField>
+                <ComboboxContent
+                  emptyMessage={t('Utils.NotFound')}
+                  listAriaLabel={t('UseCaseForm.Product')}
                 />
-              </FormControl>
+              </Combobox>
               <FormMessage />
             </FormItem>
           )}

@@ -22,12 +22,14 @@ export async function clickRowAction(
 }
 
 export async function selectUseCase(page: Page, name = 'Global') {
-  await page.getByText('Add use cases').click();
+  await page.getByRole('combobox', { name: 'Use cases', exact: true }).click();
   await page.getByRole('option', { name, exact: true }).click();
   await page.keyboard.press('Escape');
 }
 export async function selectSolutionCategories(page: Page) {
-  await page.getByText('Add solution categories').click();
+  await page
+    .getByRole('combobox', { name: 'Solution categories', exact: true })
+    .click();
   await page.getByRole('option', { name: 'Solutioncategory' }).click();
   await page.getByRole('option', { name: 'Other' }).click();
   await page.keyboard.press('Escape');

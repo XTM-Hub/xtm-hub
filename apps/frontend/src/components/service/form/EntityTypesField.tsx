@@ -1,12 +1,25 @@
 import { useTranslate } from '@/hooks/use-translate';
+import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
 import { ENTITY_TYPES } from '@/utils/shareable-resources/entity-type';
 import {
-  FormControl,
-  FormItem,
-  FormLabel,
-  MultiSelectFormField,
-} from '@filigran/ui';
+  Combobox,
+  ComboboxChips,
+  ComboboxClear,
+  ComboboxContent,
+  ComboboxControls,
+  ComboboxField,
+  ComboboxInput,
+  ComboboxLabel,
+  ComboboxTrigger,
+} from '@filigran/design-system';
+import { FormItem } from '@filigran/ui';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
+
+const ENTITY_TYPE_OPTION_IDS = toComboboxOptionIds(
+  ENTITY_TYPES,
+  (entityType) => entityType.id,
+  (entityType) => entityType.name
+);
 
 interface ServiceFormEntityTypesFieldProps {
   field: ControllerRenderProps<FieldValues, string>;
@@ -20,25 +33,31 @@ export const ServiceFormEntityTypesField = ({
   const t = useTranslate();
   return (
     <FormItem>
-      <FormLabel>
-        {t('Service.Form.EntityTypesLabel')}
-        <span className="text-sm text-destructive"> *</span>
-      </FormLabel>
-      <FormControl>
-        <MultiSelectFormField
-          disabled={disabled}
-          noResultString={t('Utils.NotFound')}
-          options={ENTITY_TYPES}
-          keyValue="id"
-          keyLabel="name"
-          defaultValue={field.value}
-          value={field.value}
-          onValueChange={field.onChange}
-          popoverContentClassName="bg-elevation-background-layer-3"
-          placeholder={t('Service.Form.EntityTypesPlaceholder')}
-          variant="inverted"
+      <Combobox<string>
+        multiple
+        disabled={disabled}
+        options={ENTITY_TYPE_OPTION_IDS.ids}
+        value={field.value ?? []}
+        onValueChange={(next) => field.onChange(next as string[])}
+        getOptionLabel={ENTITY_TYPE_OPTION_IDS.getOptionLabel}>
+        <ComboboxLabel required>
+          {t('Service.Form.EntityTypesLabel')}
+        </ComboboxLabel>
+        <ComboboxField>
+          <ComboboxChips />
+          <ComboboxInput
+            placeholder={t('Service.Form.EntityTypesPlaceholder')}
+          />
+          <ComboboxControls>
+            <ComboboxClear />
+            <ComboboxTrigger />
+          </ComboboxControls>
+        </ComboboxField>
+        <ComboboxContent
+          emptyMessage={t('Utils.NotFound')}
+          listAriaLabel={t('Service.Form.EntityTypesLabel')}
         />
-      </FormControl>
+      </Combobox>
     </FormItem>
   );
 };

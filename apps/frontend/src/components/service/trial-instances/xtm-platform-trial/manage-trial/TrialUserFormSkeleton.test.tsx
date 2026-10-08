@@ -26,6 +26,7 @@ interface WrapperProps {
   defaultUserIds?: string[];
   pickerNotice?: ReactNode;
   onUsersChange?: (values: string[]) => void;
+  onUsersInputChange?: (value: string) => void;
 }
 
 const Wrapper = ({
@@ -37,6 +38,7 @@ const Wrapper = ({
   defaultUserIds = [],
   pickerNotice,
   onUsersChange,
+  onUsersInputChange,
 }: WrapperProps) => {
   const form = useForm<TrialUserRolesFormValues>({
     resolver: zodResolver(trialUserRolesFormSchema),
@@ -55,6 +57,7 @@ const Wrapper = ({
       pickerPlaceholder="Pick a user"
       pickerNotice={pickerNotice}
       onUsersChange={onUsersChange}
+      onUsersInputChange={onUsersInputChange}
       products={products}
       bundleRolePanels={bundleRolePanels}
       mixedRoleDefaults={mixedRoleDefaults}
@@ -65,7 +68,7 @@ const Wrapper = ({
 };
 
 const openUserPicker = async (user: { click: (el: Element) => unknown }) => {
-  await user.click(screen.getByText('Pick a user'));
+  await user.click(screen.getByRole('combobox', { name: 'Pick a user' }));
 };
 
 describe('TrialUserFormSkeleton', () => {
@@ -78,7 +81,7 @@ describe('TrialUserFormSkeleton', () => {
       />
     );
 
-    expect(screen.getByText('Users')).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Users' })).toBeInTheDocument();
   });
 
   it('does not render a user picker label when none is provided', () => {
@@ -202,6 +205,25 @@ describe('TrialUserFormSkeleton', () => {
     await user.click(await screen.findByText('user1@filigran.io'));
 
     expect(onUsersChange).toHaveBeenCalledWith(['user-1']);
+  });
+
+  it('should not reset the user search when a user is picked', async () => {
+    // Given
+    const onUsersInputChange = vi.fn();
+    const { user } = testRender(
+      <Wrapper
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+        onUsersInputChange={onUsersInputChange}
+      />
+    );
+
+    // When
+    await openUserPicker(user);
+    await user.click(await screen.findByText('user1@filigran.io'));
+
+    // Then
+    expect(onUsersInputChange).not.toHaveBeenCalledWith('');
   });
 
   it('calls onCancel when Cancel is clicked', async () => {

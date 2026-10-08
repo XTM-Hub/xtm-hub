@@ -13,7 +13,6 @@ import { Button, IconButton, Input } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
 import {
   Form,
-  FormControl,
   FormField,
   FormItem,
   FormMessage,
@@ -164,12 +163,10 @@ export const UserAdminForm = ({ handleSubmit }: UserAdminFormProps) => {
                             )?.name
                           }
                         </Label>
-                        <FormControl>
-                          <CapabilityMultiSelect
-                            value={formField.value}
-                            onChange={formField.onChange}
-                          />
-                        </FormControl>
+                        <CapabilityMultiSelect
+                          value={formField.value}
+                          onChange={formField.onChange}
+                        />
                         <IconButton
                           type="button"
                           priority="tertiary"

@@ -66,8 +66,8 @@ development_status:
   3688-alert: done
   3689-date-picker: done
   3690-snackbar: done
-  3694-aspect-ratio: review
-  3700-command: backlog
+  3694-aspect-ratio: done
+  3700-command: review
   3701-tag-input: backlog
 
   # Legacy components with no DS equivalent: rebuilt on DS primitives, one folder per

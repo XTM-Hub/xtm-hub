@@ -64,9 +64,12 @@ test.describe('Service Management', () => {
 
     await test.step('Add user that is not in organization', async () => {
       await page.getByRole('button', { name: 'Invite user' }).click();
-      await page.getByRole('button', { name: 'Email' }).click();
-      await page.getByPlaceholder('Search...').click();
-      await page.getByPlaceholder('Search...').fill('user15');
+      const emailField = page.getByRole('combobox', {
+        name: 'Email',
+        exact: true,
+      });
+      await emailField.click();
+      await emailField.fill('user15');
       await expect(page.getByText('user15')).not.toBeVisible();
       await page.getByRole('button', { name: 'Cancel' }).click();
     });

@@ -2126,9 +2126,6 @@
   "ServiceName": {
     "custom_dashboards": "Custom Dashboard"
   },
-  "SelectUsers": {
-    "ClearAllSelections": "Clear all selections"
-  },
   "Sort Asc": "Sort Asc",
   "Sort Desc": "Sort Desc",
   "SortControls": {

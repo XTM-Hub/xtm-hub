@@ -71,12 +71,17 @@ const setupQueryMocks = () => {
   );
 };
 
+const EMAIL_PLACEHOLDER =
+  'Service.Bundle.ManageTrial.AddUserDialog.EmailPlaceholder';
+
+const getEmailCombobox = () =>
+  screen.getByRole('combobox', { name: EMAIL_PLACEHOLDER });
+
+const findEmailCombobox = () =>
+  screen.findByRole('combobox', { name: EMAIL_PLACEHOLDER });
+
 const openEmailDropdown = async (user: { click: (el: Element) => unknown }) => {
-  await user.click(
-    screen.getByText(
-      'Service.Bundle.ManageTrial.AddUserDialog.EmailPlaceholder'
-    )
-  );
+  await user.click(getEmailCombobox());
 };
 
 const getRoleCombobox = (title: string) =>
@@ -99,11 +104,7 @@ describe('AddTrialUserForm', () => {
       />
     );
 
-    expect(
-      await screen.findByText(
-        'Service.Bundle.ManageTrial.AddUserDialog.EmailPlaceholder'
-      )
-    ).toBeInTheDocument();
+    expect(await findEmailCombobox()).toBeInTheDocument();
   });
 
   it('excludes users who already have access to this trial from the email dropdown', async () => {
@@ -134,9 +135,7 @@ describe('AddTrialUserForm', () => {
       />
     );
 
-    await screen.findByText(
-      'Service.Bundle.ManageTrial.AddUserDialog.EmailPlaceholder'
-    );
+    await findEmailCombobox();
 
     await openEmailDropdown(user);
 
@@ -173,9 +172,7 @@ describe('AddTrialUserForm', () => {
       />
     );
 
-    await screen.findByText(
-      'Service.Bundle.ManageTrial.AddUserDialog.EmailPlaceholder'
-    );
+    await findEmailCombobox();
 
     await openEmailDropdown(user);
     await user.click(await screen.findByText('user1@filigran.io'));
@@ -227,9 +224,7 @@ describe('AddTrialUserForm', () => {
       />
     );
 
-    await screen.findByText(
-      'Service.Bundle.ManageTrial.AddUserDialog.EmailPlaceholder'
-    );
+    await findEmailCombobox();
 
     await openEmailDropdown(user);
     await user.click(await screen.findByText('user1@filigran.io'));
@@ -245,8 +240,6 @@ describe('AddTrialUserForm', () => {
     expect(onCompleted).not.toHaveBeenCalled();
   });
 });
-
-const SEARCH_PLACEHOLDER = 'Search...';
 
 const organizationUsers: User[] = [
   mockUser({ id: 'user-1', email: 'active@filigran.io', status: null }),
@@ -363,10 +356,7 @@ describe('AddTrialUserForm with the TRIAL_INVITE feature flag', () => {
     const { user } = renderForm();
 
     await openEmailDropdown(user);
-    await user.type(
-      screen.getByPlaceholderText(SEARCH_PLACEHOLDER),
-      'new@filigran.io'
-    );
+    await user.type(getEmailCombobox(), 'new@filigran.io');
 
     expect(
       await screen.findByText(
@@ -386,7 +376,7 @@ describe('AddTrialUserForm with the TRIAL_INVITE feature flag', () => {
 
     await openEmailDropdown(user);
     await screen.findByText(/waiting@filigran.io/);
-    await user.type(screen.getByPlaceholderText(SEARCH_PLACEHOLDER), typed);
+    await user.type(getEmailCombobox(), typed);
 
     await waitFor(() => {
       expect(searchedTerms).toContain(typed);
@@ -415,10 +405,7 @@ describe('AddTrialUserForm with the TRIAL_INVITE feature flag', () => {
 
     await openEmailDropdown(user);
     await user.click(await screen.findByText('active@filigran.io'));
-    await user.type(
-      screen.getByPlaceholderText(SEARCH_PLACEHOLDER),
-      'new@filigran.io'
-    );
+    await user.type(getEmailCombobox(), 'new@filigran.io');
     await user.click(
       await screen.findByText(
         'Service.Bundle.ManageTrial.AddUserDialog.InviteEmail'
@@ -450,10 +437,7 @@ describe('AddTrialUserForm with the TRIAL_INVITE feature flag', () => {
     const { user } = renderForm(userManagerMe, onCompleted);
 
     await openEmailDropdown(user);
-    await user.type(
-      screen.getByPlaceholderText(SEARCH_PLACEHOLDER),
-      'new@filigran.io'
-    );
+    await user.type(getEmailCombobox(), 'new@filigran.io');
     await user.click(
       await screen.findByText(
         'Service.Bundle.ManageTrial.AddUserDialog.InviteEmail'
@@ -479,10 +463,7 @@ describe('AddTrialUserForm with the TRIAL_INVITE feature flag', () => {
     });
 
     await openEmailDropdown(user);
-    await user.type(
-      screen.getByPlaceholderText(SEARCH_PLACEHOLDER),
-      OUTSIDE_EMAIL
-    );
+    await user.type(getEmailCombobox(), OUTSIDE_EMAIL);
 
     expect(
       await screen.findByText(
@@ -503,10 +484,7 @@ describe('AddTrialUserForm with the TRIAL_INVITE feature flag', () => {
 
     await openEmailDropdown(user);
     await screen.findByText('active@filigran.io');
-    await user.type(
-      screen.getByPlaceholderText(SEARCH_PLACEHOLDER),
-      'new@filigran.io'
-    );
+    await user.type(getEmailCombobox(), 'new@filigran.io');
 
     await waitFor(() => {
       expect(searchedTerms).toContain('new@filigran.io');
@@ -553,9 +531,7 @@ describe('AddTrialUserForm with the TRIAL_INVITE feature flag', () => {
     setupSearchableQueryMocks();
     renderForm();
 
-    await screen.findByText(
-      'Service.Bundle.ManageTrial.AddUserDialog.EmailPlaceholder'
-    );
+    await findEmailCombobox();
 
     expect(
       screen.queryByText(
@@ -582,10 +558,7 @@ describe('AddTrialUserForm without the TRIAL_INVITE feature flag', () => {
       )
     ).not.toBeInTheDocument();
 
-    await user.type(
-      screen.getByPlaceholderText(SEARCH_PLACEHOLDER),
-      'new@filigran.io'
-    );
+    await user.type(getEmailCombobox(), 'new@filigran.io');
 
     expect(
       screen.queryByText('Service.Bundle.ManageTrial.AddUserDialog.InviteEmail')

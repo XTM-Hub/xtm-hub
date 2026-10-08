@@ -3,7 +3,7 @@ import { useSolutionCategories } from '@/components/service/form/UseSolutionCate
 import testRender from '@/utils/test/test-render';
 import { Form, FormField } from '@filigran/ui';
 import { FiligranProduct } from '@graphql/generated';
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { useForm } from 'react-hook-form';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -56,10 +56,13 @@ describe('ServiceFormSolutionCategoryField', () => {
     testRender(<TestForm defaultValue={undefined} />);
 
     expect(
-      screen.getByRole('button', {
+      screen.getByRole('combobox', {
         name: 'Service.Form.SolutionCategoriesLabel',
       })
-    ).toHaveTextContent('Service.Form.SolutionCategoriesPlaceholder');
+    ).toHaveAttribute(
+      'placeholder',
+      'Service.Form.SolutionCategoriesPlaceholder'
+    );
   });
 
   it('should display selected categories from field value', () => {
@@ -70,16 +73,9 @@ describe('ServiceFormSolutionCategoryField', () => {
 
     testRender(<TestForm defaultValue={['cat-1', 'cat-2']} />);
 
-    expect(
-      screen.getByRole('button', {
-        name: 'Service.Form.SolutionCategoriesLabel',
-      })
-    ).toHaveTextContent('Endpoint Security');
-    expect(
-      screen.getByRole('button', {
-        name: 'Service.Form.SolutionCategoriesLabel',
-      })
-    ).toHaveTextContent('Threat Intelligence');
+    const chips = screen.getByRole('list', { name: 'Selected values' });
+    expect(within(chips).getByText('Endpoint Security')).toBeInTheDocument();
+    expect(within(chips).getByText('Threat Intelligence')).toBeInTheDocument();
   });
 
   it('should pass product to useSolutionCategories', () => {

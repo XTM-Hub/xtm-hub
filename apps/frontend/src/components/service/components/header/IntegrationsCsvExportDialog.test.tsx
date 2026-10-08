@@ -189,14 +189,20 @@ describe('IntegrationsCsvExportDialog', () => {
       />
     );
 
+    const columnsField = screen.getByTestId('integrations-csv-export-columns');
+
     // When
-    const listbox = await openColumnsCombobox(user);
-    await user.click(within(listbox).getByText('Clear'));
+    await user.click(
+      within(columnsField).getByRole('button', { name: 'Clear' })
+    );
     fireEvent.click(
       screen.getByRole('button', { name: 'Service.CsvExport.ExportButton' })
     );
 
     // Then
+    expect(
+      within(columnsField).queryByRole('list', { name: 'Selected values' })
+    ).not.toBeInTheDocument();
     await waitFor(() => {
       expect(downloadIntegrationsCsvMock).not.toHaveBeenCalled();
     });

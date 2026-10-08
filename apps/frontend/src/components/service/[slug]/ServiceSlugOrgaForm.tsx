@@ -17,23 +17,35 @@ import { subscriptionInServiceCreateMutation } from '@generated/subscriptionInSe
 import { useSubscriptionDefaultValues } from './use-subscription-default-values';
 
 import { useTranslate } from '@/hooks/use-translate';
+import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
 import { DEBOUNCE_TIME } from '@/utils/constant';
-import { Button, Checkbox, DatePicker } from '@filigran/design-system';
+import {
+  Button,
+  Checkbox,
+  Combobox,
+  ComboboxChips,
+  ComboboxClear,
+  ComboboxContent,
+  ComboboxControls,
+  ComboboxField,
+  ComboboxInput,
+  ComboboxLabel,
+  ComboboxTrigger,
+  DatePicker,
+} from '@filigran/design-system';
 import {
   Form,
-  FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-  MultiSelectFormField,
   SheetFooter,
 } from '@filigran/ui';
 import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { subscriptionInServiceUpdateMutation } from '@generated/subscriptionInServiceUpdateMutation.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocale } from 'next-intl';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'react-relay';
 import { useDebounceCallback } from 'usehooks-ts';
@@ -69,6 +81,15 @@ export const ServiceSlugOrgaForm = ({
     organizationsData,
     subscriptions,
     subscriptionToEdit
+  );
+  const organizationOptionIds = useMemo(
+    () =>
+      toComboboxOptionIds(
+        organizations,
+        (organization) => organization.id,
+        (organization) => organization.name
+      ),
+    [organizations]
   );
 
   const [commitSubscriptionCreateMutation] =
@@ -195,27 +216,39 @@ export const ServiceSlugOrgaForm = ({
               name="organization_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>
-                    {t('OrganizationInServiceAction.Organization')}
-                  </FormLabel>
-                  <FormControl>
-                    <MultiSelectFormField
-                      popoverContentClassName="bg-elevation-background-layer-3"
-                      shouldFilter={false}
-                      options={organizations}
-                      keyValue="id"
-                      keyLabel="name"
-                      value={field.value}
-                      defaultValue={field.value}
-                      onValueChange={field.onChange}
-                      onInputChange={handleOrganizationsInputChange}
-                      noResultString={t('Utils.NotFound')}
-                      placeholder={t(
-                        'OrganizationInServiceAction.SelectOrganization'
+                  <Combobox<string>
+                    multiple
+                    options={organizationOptionIds.ids}
+                    value={field.value ?? []}
+                    onValueChange={(next) => field.onChange(next as string[])}
+                    onInputChange={(text, meta) => {
+                      if (meta.cause !== 'select')
+                        handleOrganizationsInputChange(text);
+                    }}
+                    filterOptions={(options) => options}
+                    getOptionLabel={organizationOptionIds.getOptionLabel}>
+                    <ComboboxLabel>
+                      {t('OrganizationInServiceAction.Organization')}
+                    </ComboboxLabel>
+                    <ComboboxField>
+                      <ComboboxChips />
+                      <ComboboxInput
+                        placeholder={t(
+                          'OrganizationInServiceAction.SelectOrganization'
+                        )}
+                      />
+                      <ComboboxControls>
+                        <ComboboxClear />
+                        <ComboboxTrigger />
+                      </ComboboxControls>
+                    </ComboboxField>
+                    <ComboboxContent
+                      emptyMessage={t('Utils.NotFound')}
+                      listAriaLabel={t(
+                        'OrganizationInServiceAction.Organization'
                       )}
-                      variant="inverted"
                     />
-                  </FormControl>
+                  </Combobox>
                   <FormMessage />
                 </FormItem>
               )}

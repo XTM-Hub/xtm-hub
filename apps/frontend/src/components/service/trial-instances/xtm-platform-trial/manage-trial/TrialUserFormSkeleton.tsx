@@ -1,17 +1,22 @@
 'use client';
 
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
+import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-} from '@filigran/ui';
-import { FormLabel, MultiSelectFormField } from '@filigran/ui/clients';
+  Button,
+  Combobox,
+  ComboboxChips,
+  ComboboxClear,
+  ComboboxContent,
+  ComboboxControls,
+  ComboboxField,
+  ComboboxInput,
+  ComboboxLabel,
+  ComboboxTrigger,
+} from '@filigran/design-system';
+import { Form, FormField, FormItem, FormMessage } from '@filigran/ui';
 import { PlatformIdentifier } from '@graphql/generated';
-import { ReactNode } from 'react';
+import { ReactNode, useMemo } from 'react';
 import { UseFormReturn, useFormState, useWatch } from 'react-hook-form';
 import {
   RoleFormField,
@@ -58,6 +63,15 @@ export const TrialUserFormSkeleton = ({
   const t = useTranslate();
   const userIds = useWatch({ control: form.control, name: 'userIds' });
   const formState = useFormState({ control: form.control });
+  const usersOptionIds = useMemo(
+    () =>
+      toComboboxOptionIds(
+        usersOptions,
+        (option) => option.value,
+        (option) => option.label
+      ),
+    [usersOptions]
+  );
 
   const hasUnresolvedMixedRole = bundleRolePanels.some(({ platform }) => {
     if (!mixedRoleDefaults?.[platform]?.isMixed) return false;
@@ -75,34 +89,47 @@ export const TrialUserFormSkeleton = ({
           name="userIds"
           render={({ field }) => (
             <FormItem>
-              {pickerLabel && (
-                <FormLabel className="content-body-compact-medium text-text-default-secondary">
-                  {pickerLabel}
-                </FormLabel>
-              )}
-              <FormControl>
-                <div className="layer-2">
-                  <MultiSelectFormField
-                    options={usersOptions}
-                    defaultValue={field.value}
-                    value={field.value}
-                    onValueChange={(values) => {
-                      field.onChange(values);
-                      onUsersChange?.(values);
-                    }}
-                    onInputChange={onUsersInputChange}
-                    shouldFilter={!onUsersInputChange}
-                    noResultString={t('Utils.NotFound')}
-                    placeholder={pickerPlaceholder}
-                    variant="inverted"
-                    placeholderClassName="content-body-base"
-                    className={'bg-input-default hover:bg-input-hover'}
-                    popoverContentClassName="layer-2 bg-input-default hover:bg-input-hover content-body-compact
-                    [&_[cmdk-item]]:content-body-compact   [&_[cmdk-input]]:content-body-compact
-    [&_[cmdk-input]]:placeholder:content-body-compact  "
+              <div className="layer-2">
+                <Combobox<string>
+                  multiple
+                  labelPosition={pickerLabel ? 'top' : 'none'}
+                  options={usersOptionIds.ids}
+                  value={field.value ?? []}
+                  onValueChange={(next) => {
+                    const values = next as string[];
+                    field.onChange(values);
+                    onUsersChange?.(values);
+                  }}
+                  onInputChange={
+                    onUsersInputChange
+                      ? (text, meta) => {
+                          if (meta.cause !== 'select') onUsersInputChange(text);
+                        }
+                      : undefined
+                  }
+                  filterOptions={
+                    onUsersInputChange ? (options) => options : undefined
+                  }
+                  getOptionLabel={usersOptionIds.getOptionLabel}>
+                  {pickerLabel && <ComboboxLabel>{pickerLabel}</ComboboxLabel>}
+                  <ComboboxField>
+                    <ComboboxChips />
+                    <ComboboxInput
+                      aria-label={pickerLabel ? undefined : pickerPlaceholder}
+                      placeholder={pickerPlaceholder}
+                    />
+                    <ComboboxControls>
+                      <ComboboxClear />
+                      <ComboboxTrigger />
+                    </ComboboxControls>
+                  </ComboboxField>
+                  <ComboboxContent
+                    className="layer-2"
+                    emptyMessage={t('Utils.NotFound')}
+                    listAriaLabel={pickerLabel || pickerPlaceholder}
                   />
-                </div>
-              </FormControl>
+                </Combobox>
+              </div>
               <FormMessage />
               {pickerNotice}
             </FormItem>

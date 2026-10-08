@@ -7,10 +7,8 @@ import { isEmpty } from '@/lib/utils';
 import { Button, Input } from '@filigran/design-system';
 import {
   Form,
-  FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
   SheetFooter,
 } from '@filigran/ui';
@@ -66,13 +64,11 @@ export const UserForm = ({ handleSubmit, validationSchema }: UserFormProps) => {
           name="capabilities"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t('UserForm.OrganizationCapabilities')}</FormLabel>
-              <FormControl>
-                <CapabilityMultiSelect
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-              </FormControl>
+              <CapabilityMultiSelect
+                label={t('UserForm.OrganizationCapabilities')}
+                value={field.value}
+                onChange={field.onChange}
+              />
               <FormMessage />
             </FormItem>
           )}

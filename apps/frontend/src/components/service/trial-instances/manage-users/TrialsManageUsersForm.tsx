@@ -4,15 +4,20 @@ import { serviceGroupFragment } from '@/components/service/service-group.graphql
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
-import { Button } from '@filigran/design-system';
+import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
 import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  SheetFooter,
-} from '@filigran/ui';
-import { MultiSelectFormField } from '@filigran/ui/clients';
+  Button,
+  Combobox,
+  ComboboxChips,
+  ComboboxClear,
+  ComboboxContent,
+  ComboboxControls,
+  ComboboxField,
+  ComboboxInput,
+  ComboboxLabel,
+  ComboboxTrigger,
+} from '@filigran/design-system';
+import { Form, FormField, FormItem, SheetFooter } from '@filigran/ui';
 import { serviceGroup_fragment$key } from '@generated/serviceGroup_fragment.graphql';
 import ServiceGroupsByServiceInstanceIdQueryGraphql, {
   serviceGroupsByServiceInstanceIdQuery,
@@ -102,6 +107,15 @@ export const TrialsManageUsersForm = ({
       };
     });
   }, [availableUsers.users.edges]);
+  const optionIds = useMemo(
+    () =>
+      toComboboxOptionIds(
+        options,
+        (option) => option.value,
+        (option) => option.label
+      ),
+    [options]
+  );
 
   const groups = useMemo(() => {
     return data.serviceGroups.map((group) => {
@@ -136,22 +150,35 @@ export const TrialsManageUsersForm = ({
         render={({ field: { value, onChange } }) => {
           return (
             <FormItem>
-              <FormLabel>{group.name}</FormLabel>
-              <MultiSelectFormField
-                options={options}
-                defaultValue={value}
-                placeholder={t('Service.Trials.ManageUsers.Email')}
-                noResultString={t('Utils.NotFound')}
-                onValueChange={onChange}
-                variant="inverted"
-              />
+              <Combobox<string>
+                multiple
+                options={optionIds.ids}
+                value={value ?? []}
+                onValueChange={(next) => onChange(next as string[])}
+                getOptionLabel={optionIds.getOptionLabel}>
+                <ComboboxLabel>{group.name}</ComboboxLabel>
+                <ComboboxField>
+                  <ComboboxChips />
+                  <ComboboxInput
+                    placeholder={t('Service.Trials.ManageUsers.Email')}
+                  />
+                  <ComboboxControls>
+                    <ComboboxClear />
+                    <ComboboxTrigger />
+                  </ComboboxControls>
+                </ComboboxField>
+                <ComboboxContent
+                  emptyMessage={t('Utils.NotFound')}
+                  listAriaLabel={group.name}
+                />
+              </Combobox>
             </FormItem>
           );
         }}
         name={`groups.${index}.userIds`}
       />
     ));
-  }, [groups, form.control, t, options]);
+  }, [groups, form.control, t, optionIds]);
 
   return (
     <Form {...form}>

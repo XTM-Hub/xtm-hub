@@ -1,13 +1,18 @@
 import RoleSheetFormFooter from '@/components/admin/role/RoleSheetFormFooter';
 import { useTranslate } from '@/hooks/use-translate';
+import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
 import {
-  AutoForm,
-  FormControl,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  MultiSelectFormField,
-} from '@filigran/ui';
+  Combobox,
+  ComboboxChips,
+  ComboboxClear,
+  ComboboxContent,
+  ComboboxControls,
+  ComboboxField,
+  ComboboxInput,
+  ComboboxLabel,
+  ComboboxTrigger,
+} from '@filigran/design-system';
+import { AutoForm, FormItem, FormMessage } from '@filigran/ui';
 import { PortalCapability } from '@graphql/generated';
 import { useMemo } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
@@ -18,10 +23,11 @@ const portalCapabilityValues = Object.values(PortalCapability) as [
   ...PortalCapability[],
 ];
 
-const portalCapabilityOptions = portalCapabilityValues.map((capability) => ({
-  id: capability,
-  label: capability,
-}));
+const portalCapabilityOptionIds = toComboboxOptionIds(
+  portalCapabilityValues,
+  (capability) => capability,
+  (capability) => capability
+);
 
 const buildRolePortalFormSchema = (t: (key: string) => string) =>
   z.object({
@@ -63,20 +69,26 @@ const RolePortalForm = ({
             field: ControllerRenderProps<FieldValues, string>;
           }) => (
             <FormItem>
-              <FormLabel>{t('RoleListPage.Capabilities')}</FormLabel>
-              <FormControl>
-                <MultiSelectFormField
-                  options={portalCapabilityOptions}
-                  popoverContentClassName="bg-elevation-background-layer-3"
-                  keyValue="id"
-                  keyLabel="label"
-                  defaultValue={field.value ?? []}
-                  onValueChange={field.onChange}
-                  noResultString={t('Utils.NotFound')}
-                  placeholder={t('RoleListPage.Capabilities')}
-                  variant="inverted"
+              <Combobox<string>
+                multiple
+                options={portalCapabilityOptionIds.ids}
+                value={field.value ?? []}
+                onValueChange={(next) => field.onChange(next as string[])}
+                getOptionLabel={portalCapabilityOptionIds.getOptionLabel}>
+                <ComboboxLabel>{t('RoleListPage.Capabilities')}</ComboboxLabel>
+                <ComboboxField>
+                  <ComboboxChips />
+                  <ComboboxInput placeholder={t('RoleListPage.Capabilities')} />
+                  <ComboboxControls>
+                    <ComboboxClear />
+                    <ComboboxTrigger />
+                  </ComboboxControls>
+                </ComboboxField>
+                <ComboboxContent
+                  emptyMessage={t('Utils.NotFound')}
+                  listAriaLabel={t('RoleListPage.Capabilities')}
                 />
-              </FormControl>
+              </Combobox>
               <FormMessage />
             </FormItem>
           ),

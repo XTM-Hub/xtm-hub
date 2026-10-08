@@ -13,9 +13,19 @@ import {
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
+import { toComboboxOptionIds } from '@/utils/combobox-option-ids';
 import {
   Button,
   Checkbox,
+  Combobox,
+  ComboboxChips,
+  ComboboxClear,
+  ComboboxContent,
+  ComboboxControls,
+  ComboboxField,
+  ComboboxInput,
+  ComboboxLabel,
+  ComboboxTrigger,
   Input,
   Radio,
   RadioGroup,
@@ -40,7 +50,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  MultiSelectFormField,
   Separator,
   SheetFooter,
 } from '@filigran/ui';
@@ -67,6 +76,11 @@ export const FILIGRAN_PRODUCTS_OPTIONS = FILIGRAN_PRODUCTS_ORDER.map(
     id: product,
     label: FiligranProductMapping[product].name,
   })
+);
+const FILIGRAN_PRODUCT_OPTION_IDS = toComboboxOptionIds(
+  FILIGRAN_PRODUCTS_OPTIONS,
+  (option) => option.id,
+  (option) => option.label
 );
 
 const buildEpicFormSchema = (t: (key: string) => string) =>
@@ -270,26 +284,32 @@ const EpicForm = ({
             name="products"
             render={({ field }) => (
               <FormItem>
-                <EpicFieldLabel
-                  labelKey="Epic.Form.FiligranProduct"
-                  required
-                />
-                <FormControl>
-                  <MultiSelectFormField
-                    options={FILIGRAN_PRODUCTS_OPTIONS}
-                    popoverContentClassName="bg-elevation-background-layer-3"
-                    keyValue="id"
-                    keyLabel="label"
-                    defaultValue={field.value}
-                    value={field.value}
-                    onValueChange={(products) =>
-                      field.onChange(sortFiligranProducts(products))
-                    }
-                    noResultString={t('Utils.NotFound')}
-                    placeholder={t('Epic.Form.FiligranProduct')}
-                    variant="inverted"
+                <Combobox<string>
+                  multiple
+                  options={FILIGRAN_PRODUCT_OPTION_IDS.ids}
+                  value={field.value ?? []}
+                  onValueChange={(products) =>
+                    field.onChange(sortFiligranProducts(products as string[]))
+                  }
+                  getOptionLabel={FILIGRAN_PRODUCT_OPTION_IDS.getOptionLabel}>
+                  <ComboboxLabel required>
+                    {t('Epic.Form.FiligranProduct')}
+                  </ComboboxLabel>
+                  <ComboboxField>
+                    <ComboboxChips />
+                    <ComboboxInput
+                      placeholder={t('Epic.Form.FiligranProduct')}
+                    />
+                    <ComboboxControls>
+                      <ComboboxClear />
+                      <ComboboxTrigger />
+                    </ComboboxControls>
+                  </ComboboxField>
+                  <ComboboxContent
+                    emptyMessage={t('Utils.NotFound')}
+                    listAriaLabel={t('Epic.Form.FiligranProduct')}
                   />
-                </FormControl>
+                </Combobox>
                 <FormMessage />
               </FormItem>
             )}
