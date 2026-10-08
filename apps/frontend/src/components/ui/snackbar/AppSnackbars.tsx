@@ -35,9 +35,8 @@ export const AppSnackbars = () => {
           closeLabel={t('Utils.Close')}
         />
       ))}
-      {/* The legacy theme turns `w-100` into 4px, and the overlays painted
-          after this portal sit at the same z-50. */}
-      <SnackbarViewport className="z-[100] w-[calc(var(--spacing)*100)]" />
+      {/* The overlays painted after this portal sit at the same z-50. */}
+      <SnackbarViewport className="z-[100]" />
     </SnackbarProvider>
   );
 };

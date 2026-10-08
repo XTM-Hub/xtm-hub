@@ -133,9 +133,8 @@ Title and description values move unchanged, `<>{t(…)}</>` fragments included.
   legacy default, becomes `error`.
 - **`destructive` → `error`**: every one of the 78 is a failure (`Utils.Error` or an `Error.*` key).
 - **One message at a time is kept**, closing the previous one so it slides out (RULE-05) instead of vanishing.
-- **`w-[calc(var(--spacing)*100)]` on the viewport** restores the design system's own 400px: the legacy `theme.css`
-  declares `--spacing-100: 0.25rem`, so the viewport's `w-100` resolves to 4px and the cards collapse (same collision
-  as `min-w-50` in 3558). Remove it with the theme in 3708.
+- **No width on the viewport** (epic review): the legacy `theme.css` no longer declares the numeric spacing steps
+  (3558), so the design system's own `w-100` gives the 400px it intends.
 - **`z-[100]` on the viewport**: the viewport is portalled to `body` at mount, before any `Sheet` or `Dialog`, all at
   `z-50` (`--fds-z-overlay` is undefined in the app), so a later overlay paints over it: the error raised by a failed
   sheet submission would land under the right-hand sheet. 100 is the legacy viewport's layer. Placement and layering

@@ -11,7 +11,7 @@ interface FilterSidebarProps {
  * disabled, so the sidebar never scales with the viewport and the sibling
  * content column absorbs every width change on its own. The width is an
  * arbitrary value on purpose — `basis-250` would resolve against the
- * spacing scale (`--spacing-100: 0.25rem`), not to pixels.
+ * spacing scale (`--spacing: 0.25rem`), not to pixels.
  * `self-start` opts out of the flex parent's default stretch so `sticky`
  * has room to operate. Both the top offset and the max height track the
  * real geometry via CSS variables published by useStickyHeaderOffset:
