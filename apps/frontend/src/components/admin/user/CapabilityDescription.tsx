@@ -1,13 +1,13 @@
 import { useOrganizationCapabilities } from '@/hooks/use-organization-capabilities';
 import { useTranslate } from '@/hooks/use-translate';
-import { Chip } from '@filigran/design-system';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
+  CardSubtitle,
   CardTitle,
-} from '@filigran/ui/servers';
+  Chip,
+} from '@filigran/design-system';
 import { useMemo } from 'react';
 
 export const CapabilityDescription = () => {
@@ -40,18 +40,14 @@ export const CapabilityDescription = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="heading-lg">
-          {t('CapabilityDescription.Title')}
-        </CardTitle>
-        <CardDescription>
-          {t('CapabilityDescription.Description')}
-        </CardDescription>
-        <CardContent className="p-0">
-          <ul className="flex flex-col space-y-s gap-xs text-xs">
-            {capabilityList}
-          </ul>
-        </CardContent>
+        <CardTitle as="h3">{t('CapabilityDescription.Title')}</CardTitle>
+        <CardSubtitle>{t('CapabilityDescription.Description')}</CardSubtitle>
       </CardHeader>
+      <CardContent clamp={0}>
+        <ul className="flex flex-col space-y-s gap-xs text-xs">
+          {capabilityList}
+        </ul>
+      </CardContent>
     </Card>
   );
 };

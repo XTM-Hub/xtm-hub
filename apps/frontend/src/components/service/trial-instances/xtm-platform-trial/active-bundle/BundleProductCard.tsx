@@ -10,9 +10,15 @@ import { XtmoneConnectionStatus } from '@/components/service/trial-instances/xtm
 import { useTranslate } from '@/hooks/use-translate';
 import { useDateFormatter } from '@/utils/date';
 import { toExternalHref } from '@/utils/external-url';
-import { Button, Chip, IconButton } from '@filigran/design-system';
+import {
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  IconButton,
+} from '@filigran/design-system';
 import { EditIcon } from '@filigran/icon';
-import { Card, CardContent, Separator } from '@filigran/ui';
+import { Separator } from '@filigran/ui';
 import { GradientButton } from '@filigran/ui/servers';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import {
@@ -92,8 +98,12 @@ export const BundleProductCard = ({
   );
 
   return (
-    <Card className="h-full bg-elevation-background-layer-1">
-      <CardContent className="p-4 flex flex-col gap-m h-full">
+    <Card
+      padding={16}
+      className="h-full">
+      <CardContent
+        clamp={0}
+        className="flex flex-col gap-m h-full">
         <div className="flex gap-s items-center min-w-0">
           <Image
             src={darkTextLogo}

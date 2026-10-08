@@ -4,16 +4,13 @@ import { MeRequestTransferPersonalSpaceMutation } from '@/components/me/me.graph
 import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import {
-  AutoForm,
+  Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  Separator,
-  toast,
-} from '@filigran/ui';
-
-import { Button } from '@filigran/design-system';
+} from '@filigran/design-system';
+import { AutoForm, Separator, toast } from '@filigran/ui';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useMutation } from 'react-relay';
@@ -67,11 +64,11 @@ export const RequestTransferPersonalSpace = () => {
       <h2 className="text-destructive">{t('Utils.DangerZone')}</h2>
       <Card className="border-2 border-red">
         <CardHeader>
-          <CardTitle className="heading-lg">
+          <CardTitle as="h3">
             {t('ProfilePage.PersonalSpace.TitleDangerZone')}
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent clamp={0}>
           {t('ProfilePage.PersonalSpace.TransferPersoSpaceExplanation')}
           <AutoForm
             className="mt-xl"

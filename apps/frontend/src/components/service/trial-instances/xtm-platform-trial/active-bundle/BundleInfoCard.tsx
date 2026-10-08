@@ -5,8 +5,7 @@ import { BundleCancelSheet } from '@/components/service/trial-instances/xtm-plat
 import { useTranslate } from '@/hooks/use-translate';
 import { daysUntil, useDateFormatter } from '@/utils/date';
 import { xtmPlatformTrialManageUsersPath } from '@/utils/path/constant';
-import { Button, Chip } from '@filigran/design-system';
-import { Card, CardContent } from '@filigran/ui';
+import { Button, Card, CardContent, Chip } from '@filigran/design-system';
 import {
   PlatformContract,
   XtmPlatformBundleDetailsFragment,
@@ -44,8 +43,13 @@ export const BundleInfoCard = ({ bundle, canManage }: BundleInfoCardProps) => {
     : null;
 
   return (
-    <Card className="h-full bg-elevation-background-layer-2">
-      <CardContent className="p-4 flex flex-col gap-m h-full">
+    <Card
+      elevation={2}
+      padding={16}
+      className="h-full">
+      <CardContent
+        clamp={0}
+        className="flex flex-col gap-m h-full">
         <div className="flex items-center gap-xs min-w-0">
           <span className="text-content-body-large-medium truncate">
             {t('XtmPlatformTrial.BundleInfo.Title')}

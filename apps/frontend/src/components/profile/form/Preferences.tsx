@@ -6,13 +6,16 @@ import { useTranslate } from '@/hooks/use-translate';
 import { Locale, locales, publicLocales } from '@/i18n/config';
 import { setUserLocale } from '@/i18n/locale';
 import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@filigran/design-system';
-import { Card, CardContent, CardHeader, CardTitle } from '@filigran/ui';
 import { useLocale } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useContext } from 'react';
@@ -37,11 +40,11 @@ export const ProfileFormPreferences = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="heading-lg">
-          {t('ProfilePage.Preferences.Title')}
-        </CardTitle>
+        <CardTitle as="h3">{t('ProfilePage.Preferences.Title')}</CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-l">
+      <CardContent
+        clamp={0}
+        className="grid gap-l">
         <div className="grid gap-s">
           <span className="txt-default">
             {t('ProfilePage.Preferences.Theme')}

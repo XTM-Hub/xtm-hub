@@ -3,16 +3,14 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { CountryCombobox } from '@/components/ui/country/Combobox';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
 import {
-  AutoForm,
+  Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  FormItem,
-  FormMessage,
-} from '@filigran/ui';
+} from '@filigran/design-system';
+import { AutoForm, FormItem, FormMessage } from '@filigran/ui';
 import { useContext } from 'react';
 import { z } from 'zod';
 
@@ -38,9 +36,9 @@ export const ProfileFormEdit = ({ onSubmit }: ProfileFormEditProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="heading-lg">{t('ProfilePage.Title')}</CardTitle>
+        <CardTitle as="h3">{t('ProfilePage.Title')}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent clamp={0}>
         <AutoForm
           onSubmit={(values) => onSubmit(values)}
           formSchema={formSchema}
