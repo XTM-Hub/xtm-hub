@@ -21,6 +21,7 @@ import {
   mapToSortingTableValue,
 } from '@/components/ui/handle-sorting.utils';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import {
   useAdminByPass,
   useUserHasPortalCapability,
@@ -28,7 +29,6 @@ import {
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { daysUntil, useDateFormatter } from '@/utils/date';
 import { xtmPlatformTrialManageUsersFromDashboardPath } from '@/utils/path/constant';
@@ -65,7 +65,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import Link from 'next/link';
 import { ReactNode, useMemo, useState } from 'react';
-import { useDebounceCallback } from 'usehooks-ts';
 
 type TrialsColumn = ColumnDef<TrialsRowFragment>;
 type TrialsCellProps = { row: { original: TrialsRowFragment } };
@@ -609,10 +608,10 @@ const TrialsTab = ({ type, scope }: TrialsTabProps) => {
     });
   };
 
-  const debounceHandleInput = useDebounceCallback(
-    (event) => setSearchTerm(event.target.value || null),
-    DEBOUNCE_TIME
-  );
+  const searchHandlers = useDebouncedSearch({
+    apply: (term) => setSearchTerm(term || null),
+    appliedTerm: searchTerm,
+  });
 
   return (
     <DataTable
@@ -625,11 +624,8 @@ const TrialsTab = ({ type, scope }: TrialsTabProps) => {
               className="w-full sm:w-1/3"
               aria-label={t('TrialsDashboard.Actions.SearchTrials')}
               placeholder={t('TrialsDashboard.Actions.SearchTrials')}
-              onChange={debounceHandleInput}
-              onClear={() => {
-                debounceHandleInput.cancel();
-                setSearchTerm(null);
-              }}
+              onChange={searchHandlers.onChange}
+              onClear={searchHandlers.onClear}
             />
             <div className="flex w-full items-center justify-between gap-s sm:w-auto">
               <DataTableHeadBarOptions />

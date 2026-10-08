@@ -12,9 +12,9 @@ import {
   mapToSortingTableValue,
   transformSortingValueToParams,
 } from '@/components/ui/handle-sorting.utils';
+import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
-import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { Chip, SearchField } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
@@ -24,7 +24,6 @@ import { organizationItem_fragment$data } from '@generated/organizationItem_frag
 import { ColumnDef } from '@tanstack/react-table';
 import { usePathname, useRouter } from 'next/navigation';
 import { Suspense, useMemo, useState } from 'react';
-import { useDebounceCallback } from 'usehooks-ts';
 const OrganizationList = () => {
   const t = useTranslate();
   const router = useRouter();
@@ -164,10 +163,7 @@ const OrganizationList = () => {
     handleRefetchData({ searchTerm: inputValue });
   };
 
-  const debounceHandleInput = useDebounceCallback(
-    (e) => handleInputChange(e.target.value),
-    DEBOUNCE_TIME
-  );
+  const searchHandlers = useDebouncedSearch({ apply: handleInputChange });
 
   return (
     <>
@@ -193,11 +189,8 @@ const OrganizationList = () => {
                 placeholder={t(
                   'OrganizationActions.SearchOrganizationWithEmail'
                 )}
-                onChange={debounceHandleInput}
-                onClear={() => {
-                  debounceHandleInput.cancel();
-                  handleInputChange('');
-                }}
+                onChange={searchHandlers.onChange}
+                onClear={searchHandlers.onClear}
               />
               <div className="flex w-full items-center justify-between gap-s sm:w-auto">
                 <DataTableHeadBarOptions />

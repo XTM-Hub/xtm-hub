@@ -1,9 +1,9 @@
 import { useServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
 import { SortControls } from '@/components/ui/SortControls';
+import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
 import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
-import { debounceHandleInput } from '@/utils/debounce';
 import { SearchField } from '@filigran/design-system';
 import { CalendarViewMonthIcon, ListViewIcon } from '@filigran/icon';
 import { Separator } from '@filigran/ui/clients';
@@ -78,7 +78,10 @@ export const ServiceListHeader = ({
     label: t(`DocumentOrdering.${value}`),
   }));
 
-  const debouncedSearchChange = debounceHandleInput(onSearchChange);
+  const searchHandlers = useDebouncedSearch({
+    apply: onSearchChange,
+    appliedTerm: search,
+  });
 
   const searchInput = (
     <SearchField
@@ -86,11 +89,8 @@ export const ServiceListHeader = ({
       aria-label={t('GenericActions.Search')}
       placeholder={t('GenericActions.Search')}
       defaultValue={search}
-      onChange={debouncedSearchChange}
-      onClear={() => {
-        debouncedSearchChange.cancel();
-        onSearchChange('');
-      }}
+      onChange={searchHandlers.onChange}
+      onClear={searchHandlers.onClear}
     />
   );
 

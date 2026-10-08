@@ -4,10 +4,10 @@ import {
   handleSortingChange,
   mapToSortingTableValue,
 } from '@/components/ui/handle-sorting.utils';
+import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { useDateFormatter } from '@/utils/date';
 import { Chip, SearchField } from '@filigran/design-system';
@@ -20,8 +20,7 @@ import {
 } from '@graphql/generated';
 import { organizationSubscribedServicesKeys } from '@graphql/organization-subscribed-services/organization-subscribed-services.keys';
 import { ColumnDef } from '@tanstack/react-table';
-import { ChangeEvent, useMemo, useState } from 'react';
-import { useDebounceCallback } from 'usehooks-ts';
+import { useMemo, useState } from 'react';
 import {
   normalizeSubscribedServicesPageSize,
   useOrganizationSubscribedServicesLocalstorage,
@@ -193,10 +192,10 @@ const OrganizationSubscribedServicesSlug = ({
     }));
   };
 
-  const onSearchChange = useDebounceCallback(
-    (event: ChangeEvent<HTMLInputElement>) => applySearch(event.target.value),
-    DEBOUNCE_TIME
-  );
+  const searchHandlers = useDebouncedSearch({
+    apply: applySearch,
+    appliedTerm: searchTerm,
+  });
 
   return (
     <>
@@ -235,11 +234,8 @@ const OrganizationSubscribedServicesSlug = ({
               className="w-full sm:w-1/3"
               aria-label={t('Service.SearchServices')}
               placeholder={t('Service.SearchServices')}
-              onChange={onSearchChange}
-              onClear={() => {
-                onSearchChange.cancel();
-                if (searchTerm) applySearch('');
-              }}
+              onChange={searchHandlers.onChange}
+              onClear={searchHandlers.onClear}
             />
             <div className="flex w-full items-center justify-between gap-s sm:w-auto">
               <DataTableHeadBarOptions />

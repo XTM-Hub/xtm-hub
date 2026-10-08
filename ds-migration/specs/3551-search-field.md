@@ -133,6 +133,10 @@ Shared by every row:
   management fields that filled their box.
 - **`legacy_symbols: [SearchInput]`** is informational: the symbol never came from `@filigran/ui`; the deleted file is
   what `validate.mjs` checks.
+- **`useDebouncedSearch` owns the search wiring** (epic review): `src/hooks/use-debounced-search.ts` returns the
+  `onChange` and `onClear` every `SearchField` passes. Its debounce is stable across renders, so a clear always
+  cancels the pending call, and a clear applies `''` only when a term is applied (by the page or by the hook itself),
+  so Escape in an empty box sends nothing. The nine sites use it; `utils/debounce.ts`, a second copy, goes.
 
 ## To validate
 
@@ -145,10 +149,3 @@ Shared by every row:
 
 ## Deferred findings
 
-- `SearchField` (design system): `Escape` calls `onClear` even when the field is already empty. Upstream could skip the
-  clear when there is nothing to clear. Until then `OrganizationList`, `AdminServiceTab` and `EpicList`, which hold no
-  applied term, run one redundant empty-term Relay refetch on `Escape` in an empty box.
-- Every debounced search handler is an inline callback, so `useDebounceCallback` rebuilds its debounce on each render
-  and `.cancel()` misses a call pending on an earlier build. That late call reads the live, now empty, input value, so
-  the final state is right and only the request repeats. Stable callbacks (`useCallback`) would close it, across all
-  the lists.

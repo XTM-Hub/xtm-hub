@@ -16,8 +16,8 @@ import {
   IconActionsLink,
 } from '@/components/ui/IconActions';
 import useAdminPath from '@/hooks/use-admin-path';
+import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useTranslate } from '@/hooks/use-translate';
-import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { APP_PATH } from '@/utils/path/constant';
 import { Button, SearchField, Switch } from '@filigran/design-system';
@@ -31,9 +31,8 @@ import { serviceInstanceByIdQuery } from '@generated/serviceInstanceByIdQuery.gr
 import { serviceInstanceForSubscriptions_fragment$key } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
 import { ColumnDef, PaginationState } from '@tanstack/react-table';
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { PreloadedQuery, readInlineData, usePreloadedQuery } from 'react-relay';
-import { useDebounceCallback } from 'usehooks-ts';
 import { ServiceSlugAddCapabilities } from './ServiceSlugAddCapabilities';
 import { ServiceSlugDeleteSubscription } from './ServiceSlugDeleteSubscription';
 import { ServiceSlugSubscription } from './ServiceSlugSubscription';
@@ -87,10 +86,10 @@ const ServiceSlug = ({
 
   const t = useTranslate();
 
-  const debounceHandleInput = useDebounceCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value),
-    DEBOUNCE_TIME
-  );
+  const searchHandlers = useDebouncedSearch({
+    apply: setSearchTerm,
+    appliedTerm: searchTerm,
+  });
 
   const [pagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -186,11 +185,8 @@ const ServiceSlug = ({
             fullWidth
             aria-label={t('Service.Management.SearchOrganization')}
             placeholder={t('Service.Management.SearchOrganization')}
-            onChange={debounceHandleInput}
-            onClear={() => {
-              debounceHandleInput.cancel();
-              setSearchTerm('');
-            }}
+            onChange={searchHandlers.onChange}
+            onClear={searchHandlers.onClear}
           />
         </div>
         <Switch

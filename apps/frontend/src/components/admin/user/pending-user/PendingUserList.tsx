@@ -16,9 +16,9 @@ import {
   mapToSortingTableValue,
   transformSortingValueToParams,
 } from '@/components/ui/handle-sorting.utils';
+import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
-import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { IconButton, SearchField } from '@filigran/design-system';
 import { CheckIcon, CloseIcon } from '@filigran/icon';
@@ -53,7 +53,6 @@ import {
   useRefetchableFragment,
   useSubscription,
 } from 'react-relay';
-import { useDebounceCallback } from 'usehooks-ts';
 
 const renderStrong = (chunks: ReactNode) => <strong>{chunks}</strong>;
 
@@ -277,10 +276,10 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
     });
   };
 
-  const debounceHandleInput = useDebounceCallback(
-    (event) => handleInputChange(event.target.value),
-    DEBOUNCE_TIME
-  );
+  const searchHandlers = useDebouncedSearch({
+    apply: handleInputChange,
+    appliedTerm: filter.search,
+  });
 
   return (
     <>
@@ -357,11 +356,8 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
               className="w-full sm:w-1/3"
               aria-label={t('UserActions.SearchUser')}
               placeholder={t('UserActions.SearchUser')}
-              onChange={debounceHandleInput}
-              onClear={() => {
-                debounceHandleInput.cancel();
-                if (filter.search) handleInputChange('');
-              }}
+              onChange={searchHandlers.onChange}
+              onClear={searchHandlers.onClear}
             />
             <div className="flex w-full items-center justify-between gap-s sm:w-auto">
               <DataTableHeadBarOptions />

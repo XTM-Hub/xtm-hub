@@ -11,8 +11,8 @@ import {
   IconActionsItem,
   IconActionsLink,
 } from '@/components/ui/IconActions';
+import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useTranslate } from '@/hooks/use-translate';
-import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { APP_PATH } from '@/utils/path/constant';
 import { SearchField } from '@filigran/design-system';
@@ -24,7 +24,6 @@ import { servicesList_services$key } from '@generated/servicesList_services.grap
 import { ColumnDef, getSortedRowModel } from '@tanstack/react-table';
 import { useState } from 'react';
 import { RefetchFnDynamic } from 'react-relay';
-import { useDebounceCallback } from 'usehooks-ts';
 
 interface AdminServiceTabProps {
   serviceData: serviceList_fragment$data[];
@@ -134,10 +133,7 @@ const AdminServiceTab = ({ serviceData, refetch }: AdminServiceTabProps) => {
     });
   };
 
-  const debounceHandleInput = useDebounceCallback(
-    (e) => handleInputChange(e.target.value),
-    DEBOUNCE_TIME
-  );
+  const searchHandlers = useDebouncedSearch({ apply: handleInputChange });
 
   const label = t('Service.FilterByService');
 
@@ -153,11 +149,8 @@ const AdminServiceTab = ({ serviceData, refetch }: AdminServiceTabProps) => {
               className="w-full sm:w-1/3"
               aria-label={t('Service.SearchServices')}
               placeholder={t('Service.SearchServices')}
-              onChange={debounceHandleInput}
-              onClear={() => {
-                debounceHandleInput.cancel();
-                handleInputChange('');
-              }}
+              onChange={searchHandlers.onChange}
+              onClear={searchHandlers.onClear}
             />
             <AppCombobox<{ value: string; label: string }>
               label={label}

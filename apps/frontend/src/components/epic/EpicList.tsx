@@ -10,13 +10,13 @@ import {
 import { FeatureVotingCallout } from '@/components/feature-voting/FeatureVotingCallout';
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { CountBadge } from '@/components/ui/CountBadge';
+import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useAdminByPass } from '@/hooks/use-portal-capability';
 import useServiceCapability, {
   useServiceCapabilityWithSubscriptionId,
 } from '@/hooks/use-service-capability';
 import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
-import { DEBOUNCE_TIME } from '@/utils/constant';
 import { APP_PATH } from '@/utils/path/constant';
 import {
   Button,
@@ -36,7 +36,6 @@ import {
 } from '@graphql/generated';
 import Link from 'next/link';
 import { useCallback, useContext, useMemo, useState } from 'react';
-import { useDebounceCallback } from 'usehooks-ts';
 
 interface EpicListProps {
   epics: epic_fragment$data[];
@@ -133,14 +132,7 @@ export const EpicList = ({
     [userCanUpdate, userCanDelete]
   );
 
-  const handleInputChange = (inputValue: string) => {
-    onSearch(inputValue);
-  };
-
-  const debounceHandleInput = useDebounceCallback(
-    (e) => handleInputChange(e.target.value),
-    DEBOUNCE_TIME
-  );
+  const searchHandlers = useDebouncedSearch({ apply: onSearch });
 
   return (
     <>
@@ -172,11 +164,8 @@ export const EpicList = ({
         countsByProduct={countsByProduct}
         showFinished={showFinished}
         onShowFinishedChange={setShowFinished}
-        debounceHandleInput={debounceHandleInput}
-        onSearchClear={() => {
-          debounceHandleInput.cancel();
-          handleInputChange('');
-        }}
+        debounceHandleInput={searchHandlers.onChange}
+        onSearchClear={searchHandlers.onClear}
       />
       {sections.map((timeline) => {
         if (

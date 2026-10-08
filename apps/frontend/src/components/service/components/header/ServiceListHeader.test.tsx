@@ -18,12 +18,12 @@ const testState = vi.hoisted(() => ({
   cancelDebouncedSearch: vi.fn(),
 }));
 
-vi.mock('@/utils/debounce', () => ({
-  debounceHandleInput: (callback: (value: string) => void) =>
-    Object.assign(
-      (event: { target: { value: string } }) => callback(event.target.value),
-      { cancel: testState.cancelDebouncedSearch }
-    ),
+vi.mock('usehooks-ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('usehooks-ts')>()),
+  useDebounceCallback: (callback: (value: string) => void) =>
+    Object.assign((value: string) => callback(value), {
+      cancel: testState.cancelDebouncedSearch,
+    }),
 }));
 
 vi.mock('@/hooks/use-service-list-local-storage', async (importOriginal) => ({

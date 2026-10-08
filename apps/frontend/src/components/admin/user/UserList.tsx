@@ -22,6 +22,7 @@ import {
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useAdminPath from '@/hooks/use-admin-path';
+import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useExecuteAfterAnimation } from '@/hooks/use-execute-after-animation';
 import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
 import { useAdminByPass } from '@/hooks/use-portal-capability';
@@ -29,7 +30,6 @@ import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import { useDateFormatter } from '@/utils/date';
 import { Button, Chip, SearchField } from '@filigran/design-system';
@@ -56,7 +56,6 @@ import {
   useState,
 } from 'react';
 import { graphql, readInlineData, useSubscription } from 'react-relay';
-import { useDebounceCallback } from 'usehooks-ts';
 
 // Configuration or Preloader Query
 export const UserListQuery = graphql`
@@ -576,10 +575,10 @@ const UserList = ({ organization }: UserListProps) => {
     });
   };
 
-  const debounceHandleInput = useDebounceCallback(
-    (e) => handleInputChange(e.target.value),
-    DEBOUNCE_TIME
-  );
+  const searchHandlers = useDebouncedSearch({
+    apply: handleInputChange,
+    appliedTerm: filter.search,
+  });
 
   return (
     <>
@@ -606,11 +605,8 @@ const UserList = ({ organization }: UserListProps) => {
                 className="w-full sm:w-55"
                 aria-label={t('UserActions.SearchUser')}
                 placeholder={t('UserActions.SearchUser')}
-                onChange={debounceHandleInput}
-                onClear={() => {
-                  debounceHandleInput.cancel();
-                  if (filter.search) handleInputChange('');
-                }}
+                onChange={searchHandlers.onChange}
+                onClear={searchHandlers.onClear}
               />
               {isAdminPath && (
                 <UserOrganizationFilter
