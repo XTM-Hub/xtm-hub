@@ -323,7 +323,9 @@ describe('hubspot', () => {
       });
     });
 
-    it('should send the invited user email and name', async () => {
+    it('should send the invited user email and name, and the inviter email', async () => {
+      requestContext.set(requestContextAdminSecondOrga);
+
       await hubspotInviteUserHook({
         email: 'invited@filigran.io',
         first_name: 'Jane',
@@ -338,6 +340,7 @@ describe('hubspot', () => {
             email: 'invited@filigran.io',
             first_name: 'Jane',
             last_name: 'Doe',
+            inviter_email: contextAdminSecondOrga.user.email,
           }),
         })
       );
