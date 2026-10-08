@@ -99,8 +99,7 @@ export const TrialGuidePage = () => {
                   />
                 }
                 className={cn(
-                  isXtmOne &&
-                    'data-[state=active]:text-[var(--color-filigran-ia-main)]'
+                  isXtmOne && 'data-[state=active]:text-filigran-ia-primary'
                 )}>
                 {name}
               </TabsTrigger>
