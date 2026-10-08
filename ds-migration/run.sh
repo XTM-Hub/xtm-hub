@@ -370,19 +370,79 @@ PROGRESS_FILTER='fromjson? | select(.type == "assistant") | (.parent_tool_use_id
 # <log name>.json. <log name> <prompt> <schema> <tools>
 claude_session() {
   stop_on_signal
-  local out="$LOG_DIR/$1.json" stream="$LOG_DIR/$1.jsonl" line
+  local name="$1" prompt="$2" out="$LOG_DIR/$1.json" stream="$LOG_DIR/$1.jsonl" session="" attempt=1
+  : >"$stream"
+  while :; do
+    run_claude "$name" "$prompt" "$3" "$4" "$session"
+    jq -cR 'fromjson? | select(.type == "result")' "$stream" 2>/dev/null | tail -n 1 >"$out" || true
+    # Sessions are kept: subagents can then be resumed, and a human can reopen one with --resume.
+    log "$name: session cost \$$(jq -r '.total_cost_usd // "?"' "$out" 2>/dev/null || echo '?'), resume with: claude --resume $(jq -r '.session_id // "?"' "$out" 2>/dev/null || echo '?')"
+    session_lost_api "$name" || break
+    if [ "$attempt" -ge 4 ] || ! wait_for_network; then
+      # Blocking the item would hide a network outage as a failure: leave it to the next run.
+      log "$name: the API stayed out of reach, stopping; run ds-migration/run.sh again once the network is back"
+      kill -TERM $$
+      exit 130
+    fi
+    session="$(jq -r '.session_id // empty' "$out" 2>/dev/null || true)"
+    [ -n "$session" ] || session="$(jq -rR 'fromjson? | .session_id // empty' "$stream" 2>/dev/null | head -n 1)"
+    prompt="The connection to the API dropped while you were working. Continue the task from where you stopped, then return the structured result."
+    attempt=$((attempt + 1))
+    log "$name: the API was out of reach, resuming the session (attempt $attempt of 4)"
+  done
+  jq -c '.structured_output // empty' "$out" 2>/dev/null || true
+}
+
+# One run of claude, appended to the stream; with a session id, resumes that session.
+# <log name> <prompt> <schema> <tools> [session id]
+run_claude() {
+  local line
   # A background subagent ends the session's turn, and headless mode then forces the structured
   # result before the subagent reports: subagents always run in the foreground.
   # --foreground keeps the session in the terminal's process group, so that Ctrl-C reaches it.
   CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1 ${TIMEOUT_BIN:+"$TIMEOUT_BIN" --foreground "$ITEM_TIMEOUT"} claude -p "$2" \
-    --output-format stream-json --verbose --json-schema "$3" --permission-mode dontAsk --allowedTools "$4" \
-    ${DS_BUDGET_USD:+--max-budget-usd "$DS_BUDGET_USD"} 2>>"$LOG_DIR/$1.stderr" |
-    tee "$stream" | jq -rR --unbuffered "$PROGRESS_FILTER" 2>/dev/null |
+    ${5:+--resume "$5"} --output-format stream-json --verbose --json-schema "$3" --permission-mode dontAsk \
+    --allowedTools "$4" ${DS_BUDGET_USD:+--max-budget-usd "$DS_BUDGET_USD"} 2>>"$LOG_DIR/$1.stderr" |
+    tee -a "$LOG_DIR/$1.jsonl" | jq -rR --unbuffered "$PROGRESS_FILTER" 2>/dev/null |
     while IFS= read -r line; do log "$1 $line"; done || true
-  jq -cR 'fromjson? | select(.type == "result")' "$stream" 2>/dev/null | tail -n 1 >"$out" || true
-  # Sessions are kept: subagents can then be resumed, and a human can reopen one with --resume.
-  log "$1: session cost \$$(jq -r '.total_cost_usd // "?"' "$out" 2>/dev/null || echo '?'), resume with: claude --resume $(jq -r '.session_id // "?"' "$out" 2>/dev/null || echo '?')"
-  jq -c '.structured_output // empty' "$out" 2>/dev/null || true
+}
+
+# The session ended because the API or the network was out of reach, not because of its work.
+API_LOST_RE='API Error|ENOTFOUND|ECONNRESET|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN|socket hang up|Connection error|Overloaded|overloaded_error'
+session_lost_api() {
+  local out="$LOG_DIR/$1.json"
+  if [ -s "$out" ]; then
+    jq -e --arg re "$API_LOST_RE" '.is_error == true and ((.result // "") | test($re))' "$out" >/dev/null 2>&1
+  else
+    tail -n 20 "$LOG_DIR/$1.stderr" 2>/dev/null | grep -Eq "$API_LOST_RE"
+  fi
+}
+
+network_up() {
+  curl -s -o /dev/null --max-time 10 https://api.anthropic.com && curl -s -o /dev/null --max-time 10 https://api.github.com
+}
+
+# Waits until the API and GitHub answer again, up to DS_NETWORK_TIMEOUT seconds (3 hours).
+wait_for_network() {
+  local deadline=$(($(date +%s) + ${DS_NETWORK_TIMEOUT:-10800})) next_note=0
+  until network_up; do
+    [ "$(date +%s)" -lt "$deadline" ] || return 1
+    if [ "$(date +%s)" -ge "$next_note" ]; then
+      log "network down: waiting for api.anthropic.com and api.github.com"
+      next_note=$(($(date +%s) + 600))
+    fi
+    sleep "${DS_NETWORK_INTERVAL:-30}"
+  done
+}
+
+# gh fails while the network is down: once it is back, the call is made again. A failure with the
+# network up is the call's own and is returned as it is.
+gh() {
+  local code=0
+  command gh "$@" || code=$?
+  [ "$code" != 0 ] || return 0
+  if network_up || ! wait_for_network; then return "$code"; fi
+  command gh "$@"
 }
 
 failed() { jq -nc --arg s "$1" '{status: "FAILED", summary: $s}'; }
@@ -412,6 +472,14 @@ update_issue() {
 work_item() {
   stop_on_signal
   local key="$1" issue="$2" epic="$3" kind="$4" spec="ds-migration/specs/$1.md" result
+  # Written once the spec, the issue and the before screenshots are done: a run that stopped later
+  # resumes at the build.
+  local spec_done="$LOG_DIR/$1.spec-done"
+  if [ -f "$spec_done" ] && [ -f "$spec" ]; then
+    log "$key: spec written and screens captured by an earlier run, resuming at the build"
+    run_item_session "$key" "$issue" "$epic" "$kind" "Build mode"
+    return
+  fi
   result="$(claude_session "$key-spec" \
     "Read ds-migration/WORKFLOW.md fully and follow its Spec mode for item $key (issue #$issue, epic $epic, kind $kind)." \
     "$SPEC_SCHEMA" "$SPEC_TOOLS")"
@@ -426,6 +494,7 @@ work_item() {
   elif ! node ds-migration/screenshot.mjs "$spec" before >"$LOG_DIR/$key-before.log" 2>&1; then
     failed "The screens of the spec cannot be captured before the change: see $LOG_DIR/$key-before.log."
   else
+    touch "$spec_done"
     run_item_session "$key" "$issue" "$epic" "$kind" "Build mode"
   fi
 }
@@ -688,6 +757,7 @@ block_item() {
   local key="$1" issue="$2" result="$3" reason="$4" details
   git stash push --include-untracked --quiet -m "ds-migration $key" -- . ':(exclude)ds-migration' || true
   set_status "$key" blocked
+  rm -f "$LOG_DIR/$key.spec-done" # an answer on the issue may change the spec
   details="$(printf '%s: %s\n\n%s' "$reason" "$(jq -r .summary <<<"$result")" "$(jq -r '.question // empty' <<<"$result")")"
   gh issue comment "$issue" --body "$(printf '**Design system migration blocked**\n\n%s\n\nRun log: `%s`. Code changes, if any, are in `git stash list` as "ds-migration %s". To investigate with the context loaded: `ds-migration/run.sh debug %s`. To retry, answer here or edit `ds-migration/specs/%s.md`, then set the item back to `backlog`.' \
     "$details" "$LOG_DIR/$key.json" "$key" "$key" "$key")" >/dev/null
@@ -739,6 +809,7 @@ commit_result() {
   board_item "$key" "$BOARD_REVIEW"
   commit_item "$key" "$subject" "$body" || return 1
   log "$key committed: $subject"
+  rm -f "$LOG_DIR/$key.spec-done"
   # The build session adds review findings and choices to the spec: the issue shows the final one.
   update_issue "$key" "$issue" || log "could not update the spec in #$issue"
 }

@@ -21,11 +21,18 @@ EOF
   cat >"$bin/curl" <<'EOF'
 #!/bin/sh
 case "$*" in *3012*) [ -z "${APP_DOWN:-}" ] || [ -f "$SB/app-up" ] || exit 7 ;; esac
+# $SB/net-down: the internet is out for the next few checks, then comes back.
+case "$*" in *api.github.com*|*api.anthropic.com*)
+  if [ -f "$SB/net-down" ]; then
+    n=$(cat "$SB/net-down"); [ "${n:-0}" -le 1 ] && rm "$SB/net-down" || echo $((n - 1)) > "$SB/net-down"; exit 6
+  fi ;;
+esac
 exit 0
 EOF
   cat >"$bin/gh" <<'EOF'
 #!/bin/bash
 echo "gh $*" >> "$SB/calls.log"
+[ ! -f "$SB/net-down" ] || { echo "error connecting to api.github.com" >&2; exit 1; }
 bodyfile() { while [ $# -gt 0 ]; do [ "$1" = --body-file ] && { echo "$2"; return; }; shift; done; }
 # GH_CHECKS: space-separated stages consumed one per `pr checks` call (last one repeats):
 #   missing (e2e aggregator not listed yet), pending, pass, fail
@@ -94,7 +101,18 @@ if [[ "$prompt" == *"Merge conflict mode"* ]]; then
 fi
 if [[ "$prompt" == *"Epic review mode"* ]]; then echo '{"type":"result","structured_output":{"findings":"Verdict: consistent."}}'; exit 0; fi
 key="$(sed -E 's/.*for item ([a-z0-9-]+) .*/\1/' <<<"$prompt")"; kind="$(sed -E 's/.*kind ([a-z]+)\).*/\1/' <<<"$prompt")"
+# A resumed session continues the last build: its prompt names no item.
+resume=""; prev=""; for a in "$@"; do [ "$prev" = --resume ] && resume="$a"; prev="$a"; done
+if [ -n "$resume" ]; then echo "claude-resume :: $resume" >> "$SB/calls.log"; key="$(cat "$SB/last-build-key")"; fi
 issue="${key%%-*}"; slug="${key#*-}"; mkdir -p ds-migration/specs
+# CLAUDE_API_DOWN_ONCE / CLAUDE_API_DOWN: the build of these items loses the API once / every time.
+if [[ "$prompt" != *"Spec mode"* ]]; then
+  echo "$key" > "$SB/last-build-key"
+  if [[ " ${CLAUDE_API_DOWN:-} " == *" $key "* ]] || { [[ " ${CLAUDE_API_DOWN_ONCE:-} " == *" $key "* ]] && [ ! -e "$SB/api-down-$key" ]; }; then
+    touch "$SB/api-down-$key"
+    echo "{\"type\":\"result\",\"is_error\":true,\"result\":\"API Error: Can't reach the API server (ENOTFOUND)\",\"session_id\":\"S-$key\",\"total_cost_usd\":0}"; exit 0
+  fi
+fi
 if [[ "$prompt" == *"Spec mode"* ]]; then
   legacy="[]"; module='"@filigran/design-system"'; [ "$kind" = candidate ] && module="\"@/components/ui/$slug\""
   [ "$key" = 3561-textarea ] && legacy="[Textarea]"
@@ -330,6 +348,29 @@ check "a conflict with main at the start of an item is resolved by a session" '[
 touch "$SB/pr-conflict"
 run --once
 check "a PR that conflicts while waiting for checks merges main instead of waiting" '[ "$(status_of 3553-radio)" = done ] && grep -q "conflicted with main, which no check runs on: main merged" "$SB/out.log" && [ -f apps/frontend/src/late.ts ]'
+
+echo "L. the API or the network drops"
+new_repo l "development_status:
+  epic-1-primitives: backlog
+  3530-button: done
+  3561-textarea: backlog
+  3568-switch: backlog"
+CLAUDE_API_DOWN_ONCE=3561-textarea run --once
+check "a session that lost the API resumes and the item goes on" '[ "$(status_of 3561-textarea)" = done ] && grep -q "^claude-resume :: S-3561-textarea" "$SB/calls.log" && grep -q "resuming the session (attempt 2 of 4)" "$SB/out.log"'
+CLAUDE_API_DOWN=3568-switch run --once
+check "an API that stays out of reach stops the run without blocking the item" '[ "$(status_of 3568-switch)" = in-progress ] && grep -q "the API stayed out of reach, stopping" "$SB/out.log" && ! grep -q "blocked" "$SB/out.log"'
+: >"$SB/calls.log"
+run --once
+check "the next run resumes at the build, the spec already done" '[ "$(status_of 3568-switch)" = done ] && grep -q "resuming at the build" "$SB/out.log" && ! grep -q "Spec mode for item 3568-switch" "$SB/calls.log"'
+
+echo "M. gh during a network outage"
+new_repo m "development_status:
+  epic-1-primitives: backlog
+  3530-button: done
+  3561-textarea: backlog"
+echo 3 > "$SB/net-down"
+DS_NETWORK_INTERVAL=0 run --once
+check "gh waits for the network, then the run goes on" '[ "$(status_of 3561-textarea)" = done ] && grep -q "network down: waiting for api.anthropic.com and api.github.com" "$SB/out.log" && [ ! -f "$SB/net-down" ]'
 
 echo "F. crash recovery and lock"
 new_repo f "development_status:
