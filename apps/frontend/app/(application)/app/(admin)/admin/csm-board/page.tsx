@@ -1,5 +1,6 @@
 'use client';
 import GuardCapacityComponent from '@/components/AdminGuard';
+import { SaasList } from '@/components/subcription/saas/SaasList';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
 import { useTranslate } from '@/hooks/use-translate';
 import { PortalCapability } from '@graphql/generated';
@@ -23,6 +24,7 @@ const Page = () => {
       <BreadcrumbNav value={breadcrumbValue} />
       <h1>{t('MenuLinks.CSMBoard')}</h1>
       <div>{t('CSMBoard.ComingSoon')}</div>
+      <SaasList />
     </GuardCapacityComponent>
   );
 };

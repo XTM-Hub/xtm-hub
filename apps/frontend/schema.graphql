@@ -132,6 +132,7 @@ type Query {
   canUnregisterPlatform(input: CanUnregisterPlatformInput!): CanUnregisterResponse!
   registeredPlatform(input: RegisteredPlatformInput!): RegisteredPlatform
   registeredPlatforms(input: RegisteredPlatformsInput!): [RegisteredPlatform!]!
+  saasPlatforms(first: Int!, after: ID, orderBy: RegisteredPlatformOrdering!, orderMode: OrderingMode!): RegisteredPlatformConnection!
   platformAssociatedOrganization(platformId: String!, tenantId: String): Organization
   rolePortals: [RolePortal!]!
   ssoGroupRolePortals: [SSOGroupRolePortal!]!
@@ -1253,6 +1254,23 @@ type RegisteredPlatform implements Node {
   status: PlatformConfigurationStatus
   subscription: SubscriptionModel
   myGroups: [ServiceGroup!]
+  organization: Organization
+}
+
+type RegisteredPlatformEdge {
+  cursor: String!
+  node: RegisteredPlatform!
+}
+
+type RegisteredPlatformConnection {
+  totalCount: Int!
+  edges: [RegisteredPlatformEdge!]!
+  pageInfo: PageInfo!
+}
+
+enum RegisteredPlatformOrdering {
+  platform_title
+  last_connectivity_check
 }
 
 input PlatformInput {

@@ -29,12 +29,15 @@ import {
   DeploymentRequestPlatformRegion,
   DeploymentRequestPlatformState,
   DeploymentRequestUseCase,
+  OrderingMode,
   PlatformConfigurationStatus,
   PlatformContract,
   PlatformIdentifier,
   PlatformInput,
   PlatformRegistrationConnectivityStatus,
   PlatformRegistrationStatus,
+  RegisteredPlatformConnection,
+  RegisteredPlatformOrdering,
   ServiceDefinitionIdentifier,
   ServiceInstanceCreationStatus,
 } from '../../__generated__/resolvers-types';
@@ -1614,6 +1617,47 @@ describe('registration app', () => {
         service_instance_id: deploymentRequest.service_instance_id,
         status: PlatformConfigurationStatus.Active,
       });
+    });
+  });
+
+  describe('loadSaasPlatforms', () => {
+    it('should return the connection paginated by the domain', async () => {
+      // Given
+      const args = {
+        first: 10,
+        after: btoa('10'),
+        orderBy: RegisteredPlatformOrdering.LastConnectivityCheck,
+        orderMode: OrderingMode.Desc,
+      };
+      const connection = {
+        totalCount: 11,
+        edges: [
+          {
+            cursor: btoa('11'),
+            node: {
+              __typename: 'RegisteredPlatform',
+              id: uuidv4(),
+              title: 'SaaS OpenCTI platform',
+            },
+          },
+        ],
+        pageInfo: {
+          startCursor: btoa('11'),
+          endCursor: btoa('11'),
+          hasNextPage: false,
+          hasPreviousPage: false,
+        },
+      } as unknown as RegisteredPlatformConnection;
+      vi.spyOn(RegistrationDomain, 'loadSaasPlatforms').mockResolvedValue(
+        connection
+      );
+
+      // When
+      const result = await RegistrationApp.loadSaasPlatforms(args);
+
+      // Then
+      expect(RegistrationDomain.loadSaasPlatforms).toHaveBeenCalledWith(args);
+      expect(result).toEqual(connection);
     });
   });
 });

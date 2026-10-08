@@ -36,6 +36,20 @@ const resolvers: Resolvers = {
       DeploymentRequestDomain.loadFullDeploymentRequest({
         service_instance_id: id as ServiceInstanceId,
       }),
+    organization: async ({ id }, _, context) => {
+      const organizationId =
+        await context.dataLoaders.registration.ownerOrganizationIdByServiceInstanceLoader.load(
+          id as ServiceInstanceId
+        );
+      if (!organizationId) {
+        return null;
+      }
+      const organization =
+        await context.dataLoaders.subscription.organizationBySubscriptionOrganizationIdLoader.load(
+          organizationId
+        );
+      return organization ?? null;
+    },
   },
   Query: {
     isPlatformRegistered: async (_, { input }) => {
@@ -74,6 +88,7 @@ const resolvers: Resolvers = {
       RegistrationApp.loadRegisteredPlatform(input.service_instance_id),
     registeredPlatforms: async (_, { input }) =>
       RegistrationApp.loadRegisteredPlatforms(input),
+    saasPlatforms: async (_, args) => RegistrationApp.loadSaasPlatforms(args),
     /**
      * @deprecated Use `refreshPlatformRegistrationConnectivityStatus` instead.
      * This function is no longer used in the OpenCTI platform due to refactoring and the addition of a version value in the new endpoint.

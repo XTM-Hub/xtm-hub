@@ -1,6 +1,6 @@
 import { Knex } from 'knex';
 import { v4 as uuidv4 } from 'uuid';
-import { db } from '../../../knexfile';
+import { db, paginate } from '../../../knexfile';
 import {
   CommercialModel,
   DeploymentRequestDeploymentType,
@@ -9,6 +9,8 @@ import {
   PlatformConfigurationStatus,
   PlatformContract,
   PlatformIdentifier,
+  QuerySaasPlatformsArgs,
+  RegisteredPlatformConnection,
   ServiceDefinitionIdentifier,
   ServiceInstanceCreationStatus,
 } from '../../__generated__/resolvers-types';
@@ -20,7 +22,9 @@ import { ServiceDefinitionId } from '../../model/kanel/public/ServiceDefinition'
 import ServiceInstance, {
   ServiceInstanceId,
 } from '../../model/kanel/public/ServiceInstance';
-import { SubscriptionId } from '../../model/kanel/public/Subscription';
+import Subscription, {
+  SubscriptionId,
+} from '../../model/kanel/public/Subscription';
 import { UserId } from '../../model/kanel/public/User';
 import { securityGuard } from '../../security/guard';
 import { ErrorCode } from '../../utils/error/error.code';
@@ -55,6 +59,21 @@ const RegisteredPlatformsSelectColumns = [
   'ServiceInstance.id as id',
   'ServiceInstance.illustration_document_id as illustration_document_id',
   'PlatformConfiguration.*',
+] as const;
+
+const SaasPlatformsSelectColumns = [
+  'ServiceInstance.id as id',
+  'ServiceDefinition.identifier as identifier',
+  'ServiceInstance.illustration_document_id as illustration_document_id',
+  'PlatformConfiguration.platform_id as platform_id',
+  'PlatformConfiguration.tenant_id as tenant_id',
+  'PlatformConfiguration.tenant_name as tenant_name',
+  'PlatformConfiguration.platform_title as title',
+  'PlatformConfiguration.platform_url as url',
+  'PlatformConfiguration.platform_contract as contract',
+  'PlatformConfiguration.platform_version as version',
+  'PlatformConfiguration.status as status',
+  'PlatformConfiguration.last_connectivity_check as last_connectivity_check',
 ] as const;
 
 export const RegistrationDomain = {
@@ -167,6 +186,23 @@ export const RegistrationDomain = {
     ]);
   },
 
+  loadPlatformOwnerSubscriptionsByServiceInstanceIds: async (
+    serviceInstanceIds: readonly ServiceInstanceId[]
+  ): Promise<Subscription[]> => {
+    if (serviceInstanceIds.length === 0) {
+      return [];
+    }
+    return db<Subscription>('Subscription')
+      .distinctOn('service_instance_id')
+      .select<Subscription[]>('*')
+      .whereIn('service_instance_id', [...serviceInstanceIds])
+      .orderBy([
+        { column: 'service_instance_id' },
+        { column: 'start_date', order: 'asc', nulls: 'last' },
+        { column: 'id', order: 'asc' },
+      ]);
+  },
+
   loadAllActiveRegisteredPlatformsByPlatformIdentifier: async (
     platformIdentifier: PlatformIdentifier
   ): Promise<DomainRegisteredPlatform[]> => {
@@ -194,6 +230,38 @@ export const RegistrationDomain = {
         PlatformConfigurationStatus.Active
       )
       .select(RegisteredPlatformsSelectColumns);
+  },
+
+  loadSaasPlatforms: async (
+    opts: QuerySaasPlatformsArgs
+  ): Promise<RegisteredPlatformConnection> => {
+    const query = getRegisteredPlatformsBaseQuery()
+      .queryContext({ __typename: 'RegisteredPlatform' })
+      .where(
+        'ServiceDefinition.identifier',
+        '=',
+        serviceDefinitionIdentifierMappedByPlatformIdentifier[
+          PlatformIdentifier.Opencti
+        ]
+      )
+      .where(
+        'PlatformConfiguration.status',
+        '=',
+        PlatformConfigurationStatus.Active
+      )
+      .where(
+        'PlatformConfiguration.commercial_model',
+        '=',
+        CommercialModel.Saas
+      )
+      .select(SaasPlatformsSelectColumns);
+
+    return paginate<ServiceInstance, RegisteredPlatformConnection>(
+      'ServiceInstance',
+      opts,
+      undefined,
+      query
+    );
   },
 
   loadRegisteredPlatforms: async (
@@ -267,13 +335,8 @@ export const RegistrationDomain = {
   },
 };
 
-const getRegisteredPlatformsDataQuery = (): Knex.QueryBuilder<
-  ServiceInstance,
-  DomainRegisteredPlatform[]
-> => {
-  const user = requestContext.requireUser();
-  const userSelectedOrganization = user.selected_organization_id;
-  return db<ServiceInstance>('ServiceInstance')
+const getRegisteredPlatformsBaseQuery = () =>
+  db<ServiceInstance>('ServiceInstance')
     .leftJoin(
       'PlatformConfiguration',
       'PlatformConfiguration.service_instance_id',
@@ -286,6 +349,15 @@ const getRegisteredPlatformsDataQuery = (): Knex.QueryBuilder<
       '=',
       'ServiceInstance.service_definition_id'
     )
+    .where('ServiceInstance.creation_status', '!=', 'DISABLED');
+
+const getRegisteredPlatformsDataQuery = (): Knex.QueryBuilder<
+  ServiceInstance,
+  DomainRegisteredPlatform[]
+> => {
+  const user = requestContext.requireUser();
+  const userSelectedOrganization = user.selected_organization_id;
+  return getRegisteredPlatformsBaseQuery()
     .leftJoin(
       'Subscription',
       'Subscription.service_instance_id',
