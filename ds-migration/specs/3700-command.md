@@ -88,7 +88,8 @@ Rules shared by every `MultiSelectFormField` row:
   - `model/xtm-platform-roadmap.pageModel.ts`: `Clear all selections` → the `Clear` button of that field (scope it
     to the field's `[data-combobox-root]`: the Slack link and search fields have their own `Clear`); `button` with text
     `Product` / `Filter by product` → `combobox` by exact name; a `getSelectedProductFilter(label)` helper finds the
-    selected product chip, which is no longer inside a button.
+    selected product chip, which is no longer inside a button. `fillSlackLink` closes the typed link's suggestions
+    with a click on the sheet title instead of Escape, which dismissed the sheet (CI fix).
   - `tests_files/xtm-platform-roadmap.spec.ts` (the five `button` `OpenCTI (n)` assertions use that helper).
   - `model/user.pageModel.ts`: `button` `Additional capabilities` → `combobox`.
   - `model/common.ts`: `getByText('Add use cases' | 'Add solution categories')` → `combobox` `Use cases` /
@@ -203,3 +204,7 @@ Rules shared by every `MultiSelectFormField` row:
 - Enter in a `ComboboxInput` with no highlighted row submits the surrounding form (the engine only prevents it on a
   highlighted row), where the legacy trigger button opened the panel. Standard text-field behaviour, same as the 3545
   fields; an upstream option to swallow Enter in a combobox would restore the old guard.
+- Escape that no open popover handles (a text field, `AutocompleteInput`) closes a `SheetWithPreventingDialog` and
+  drops the unsaved form: it guards a click outside but not Escape. Pre-existing for every sheet built on it; the e2e
+  slack link step pressed Escape there and passed with the legacy picker, likely because a legacy layer took that
+  Escape (not confirmed). The step now closes the suggestions with a click on the sheet title. With item 3699.
