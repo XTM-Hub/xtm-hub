@@ -62,6 +62,7 @@ const ChoosePlatformForm = ({
       <AutoForm
         formSchema={selectPlatformFormSchema}
         onSubmit={({ platformUrl }) => {
+          setIsOpen(false);
           oneClickDeploy(platformUrl);
         }}
         fieldConfig={{
@@ -141,12 +142,7 @@ const ChoosePlatformForm = ({
             {t('Utils.Cancel')}
           </Button>
 
-          <Button
-            onClick={() => {
-              setIsOpen(false);
-            }}>
-            {t('Utils.Continue')}
-          </Button>
+          <Button type="submit">{t('Utils.Continue')}</Button>
         </div>
       </AutoForm>
     </div>

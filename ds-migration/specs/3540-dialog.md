@@ -142,6 +142,11 @@ Rules shared by every row:
   `Dialog` path (title, description, body, footer, corner icon). The form dialogs sit behind a service instance id
   or, on public pages, behind a signed-out session in the capture.
 
+- **`ChoosePlatformForm` submits from Continue** (epic review): the `Button` migration left Continue without a
+  `type`, and the design system `Button` defaults to `type="button"`, so the multi-platform deploy never ran. Continue
+  is `type="submit"` and the dialog closes from `onSubmit`, as `OnePlatformDisplay` does, so the form is still mounted
+  when it submits and an empty choice keeps the dialog open on its message.
+
 ## To validate
 
 - Panels widen from 512 to 640px (`md`), and the 768px ones to 960px (`lg`); confirmations included. Alternative:
@@ -172,9 +177,6 @@ Rules shared by every row:
   tabbable element, which is still Cancel in text-only confirmations, but a form field in `ChoosePlatformForm`.
 - `ShareableResourceCarouselView`: the `fill` images have no `sizes`, so Next.js still picks a full-viewport source
   for a 960px panel.
-- `ChoosePlatformForm` (from the `Button` migration, not this item): the Continue `Button` has no `type`, and the
-  design system `Button` defaults to `type="button"`, so the multi-platform deploy form never submits. To fix
-  separately, urgently.
 - `FileInputWithPrevent` has no unit test for its confirmation.
 - The former `AlertDialog` composition (`role`, `onInteractOutside`, `hideCloseButton`, `DialogClose` Cancel) is
   written inline in five files: a shared confirm wrapper is a later refactor.
