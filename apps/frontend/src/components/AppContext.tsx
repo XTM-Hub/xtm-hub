@@ -55,8 +55,7 @@ const AppContext = ({ children }: AppProps) => {
           forcedTheme={forcedTheme}
           enableSystem
           disableTransitionOnChange>
-          {children}
-          <AppSnackbars />
+          <AppSnackbars>{children}</AppSnackbars>
           <ManagedScripts />
           <CookieConsent />
         </ThemeProvider>

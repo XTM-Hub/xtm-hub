@@ -108,20 +108,22 @@ Its code comment goes with it.
 - **`Alert`, not `Snackbar`, for all three**: they stay in the page flow until a condition changes or the user
   dismisses them for good (localStorage); `Snackbar` is transient, floats in a portal and auto-retires (Snackbar
   RULE-09: "If it stays on the page, it is an Alert"). Its provider is also item 3690, not a dependency here.
-- **The trial banner's close button goes in `action`**: the dismissal is required behaviour (per-state localStorage,
-  covered by tests) and `action` is the only trailing slot. It contradicts Alert RULE-05, so it is traced below.
 - **`TestEnvBanner` is `warning`, not `error`**: being on a non-production environment is a condition to heed, not a
   failure (contract RULE-03: never pick a severity for its colour). The legacy `destructive` was a colour choice.
 - **The trial banner is `info`**: an invitation, no condition to heed; `ia` is the AI mark only.
-- **Link and chip of the trial banner go in `action`, the `Go to production` link stays in `title`**: the legacy
-  trial banner set its link and chip apart from the text, as controls next to the close button; the environment link
-  is part of the sentence.
+- **The dismissible trial invitation is a persistent `Snackbar`** (epic review, settling the alternative this item
+  traced once 3690 landed): Alert RULE-05, "if it can be dismissed, it is a Snackbar". In the `no-trial` and `active`
+  states it is a `Snackbar` with `duration={Infinity}`, the design system close control (`Utils.Close`) and
+  `onOpenChange` as the single dismiss path (close, swipe, Escape, the action), kept mounted with `open={!dismissed}`.
+  It floats top-right instead of pushing the page, and its card slides in after hydration. The learn-more link is its
+  `action` (`Button asChild priority="secondary" size="sm"`, without the gradient restyle), so following it also
+  dismisses the invitation; the days-left chip is its `description`. `AppSnackbars` now wraps the app so the banner
+  sits under its provider.
+- **The `ending` state stays an `Alert` with no close control** (epic review): it cannot be dismissed, and Snackbar
+  RULE-09 says a message that stays on the page is an Alert. The days-left chip stays in its `action`.
 
 ## To validate
 
-- The trial banner keeps a close button in `Alert`'s `action` slot, which the contract reserves for a secondary
-  action (RULE-05: a dismissible message is a `Snackbar`). Alternatives: drop the dismissal (behaviour change), or a
-  persistent `Snackbar` (`duration={Infinity}`) once 3690 lands, which floats over the page instead of pushing it.
 - The trial banner loses its blue-to-turquoise brand gradient for the `info` surface. Alternative: none without
   restyling the `Alert`; a promotional banner surface would be a design system request.
 - `TestEnvBanner` goes from red to the `warning` severity, the same as `AdminBanner`, so the two stacked banners on an
@@ -134,16 +136,11 @@ Its code comment goes with it.
 
 ## Deferred findings
 
-- The trial banner's close control is a raw `<button>` with no focus ring of its own; it should be a design system
-  `IconButton` (`aria-label` kept). Out of its absolute positioning, its hit area shrinks from the banner height to
-  the 12px glyph, under the 24px target of WCAG 2.5.8; the `IconButton` restores it.
 - `AdminBanner` and `TestEnvBanner` are persistent `warning` alerts, so `role="alert"`, and both can mount after
   hydration (client navigation into the admin area, the login page once its settings load): a screen reader may
   interrupt with them. The contract allows a `role="status"` override, a design decision for a later epic.
 - `AdminBanner` and `TestEnvBanner` have no unit test: their show/hide conditions and the production link are
   uncovered.
-- `LearnMoreBannerLink` restyles `buttonVariants` with `text-inherit border-current hover:bg-current/10` for the old
-  gradient; on the `Alert` it should be a plain `Button priority="secondary" size="sm"` link (contract `action` rule).
 - `EditionModeBanner` hand-rolls a primary-coloured banner with restyled `Button`s next to these: an `Alert` adoption
   candidate for phase 2 (#3709).
 - `TestEnvBanner` hardcodes `https://hub.filigran.io/`; the production URL is configuration.

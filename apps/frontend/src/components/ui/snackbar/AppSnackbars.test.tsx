@@ -12,6 +12,7 @@ const DESCRIPTION = 'Your changes are saved.';
 const FIRST_TITLE = 'First message';
 const SECOND_TITLE = 'Second message';
 const CLOSE_LABEL = 'Utils.Close';
+const PAGE_TEXT = 'Page content';
 
 let showSnackbar: SnackbarStoreModule['showSnackbar'];
 let AppSnackbars: AppSnackbarsModule['AppSnackbars'];
@@ -26,9 +27,21 @@ describe('AppSnackbars', () => {
     ({ AppSnackbars } = await import('@/components/ui/snackbar/AppSnackbars'));
   });
 
+  it('should render the page it wraps', () => {
+    // Given / When
+    testRender(
+      <AppSnackbars>
+        <p>{PAGE_TEXT}</p>
+      </AppSnackbars>
+    );
+
+    // Then
+    expect(screen.getByText(PAGE_TEXT)).toBeInTheDocument();
+  });
+
   it('should show the title and description when a message is raised', async () => {
     // Given
-    testRender(<AppSnackbars />);
+    testRender(<AppSnackbars>{null}</AppSnackbars>);
 
     // When
     act(() => {
@@ -46,7 +59,7 @@ describe('AppSnackbars', () => {
 
   it('should close the open message when another one is raised', async () => {
     // Given
-    testRender(<AppSnackbars />);
+    testRender(<AppSnackbars>{null}</AppSnackbars>);
     act(() => {
       showSnackbar({ severity: 'error', title: FIRST_TITLE });
     });
@@ -66,7 +79,7 @@ describe('AppSnackbars', () => {
 
   it('should dismiss the message when its translated close control is clicked', async () => {
     // Given
-    const { user } = testRender(<AppSnackbars />);
+    const { user } = testRender(<AppSnackbars>{null}</AppSnackbars>);
     act(() => {
       showSnackbar({ severity: 'success', title: TITLE });
     });
