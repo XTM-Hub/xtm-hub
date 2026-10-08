@@ -9,4 +9,3 @@ export * from './Popover';
 export * from './Separator';
 export * from './Sheet';
 export * from './Table';
-export * from './tag-input';

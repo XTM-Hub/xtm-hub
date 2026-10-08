@@ -67,8 +67,8 @@ development_status:
   3689-date-picker: done
   3690-snackbar: done
   3694-aspect-ratio: done
-  3700-command: review
-  3701-tag-input: backlog
+  3700-command: done
+  3701-tag-input: review
 
   # Legacy components with no DS equivalent: rebuilt on DS primitives, one folder per
   # component in apps/frontend/src/components/ui/, listed as candidates in the PR report

@@ -1,21 +1,25 @@
 import { organizationFormSchema } from '@/components/organization/OrganizationForm.schema';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button, Input } from '@filigran/design-system';
+import {
+  Button,
+  Combobox,
+  ComboboxChips,
+  ComboboxField,
+  ComboboxInput,
+  ComboboxLabel,
+  Input,
+} from '@filigran/design-system';
 import {
   Form,
-  FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
   SheetFooter,
-  Tag,
-  TagInput,
 } from '@filigran/ui';
 import { organizationItem_fragment$data } from '@generated/organizationItem_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { KeyboardEvent, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -48,12 +52,7 @@ export const OrganizationForm = ({
   };
 
   const { setValue, setError, clearErrors } = form;
-  const [tags, setTags] = useState<Tag[]>(
-    (organization?.domains ?? []).map(
-      (domain) => ({ id: domain, text: domain }) as Tag
-    )
-  );
-  const [activeTagIndex, setActiveTagIndex] = useState<number | null>(null);
+  const [domainInput, setDomainInput] = useState('');
 
   const validTagDomain = (tag: string) => {
     // Exemple of valid domain : example.com, sub.example.com, my-site.co.uk
@@ -78,6 +77,25 @@ export const OrganizationForm = ({
     return true;
   };
 
+  const handleDomainKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Enter' && event.key !== ',') {
+      return;
+    }
+    const text = domainInput.trim();
+    if (!validTagDomain(text)) {
+      // Keeps the typed text and stops Enter from submitting the form.
+      event.preventDefault();
+      return;
+    }
+    if (event.key === ',') {
+      event.preventDefault();
+      setValue('domains', [...form.getValues('domains'), text], {
+        shouldDirty: true,
+      });
+      setDomainInput('');
+    }
+  };
+
   return (
     <Form {...form}>
       <form
@@ -99,29 +117,29 @@ export const OrganizationForm = ({
           name="domains"
           render={({ field }) => (
             <FormItem className="flex flex-col items-start">
-              <FormLabel className="text-left">
-                {t('OrganizationForm.Domains')}
-              </FormLabel>
-              <FormControl>
-                <TagInput
-                  {...field}
-                  placeholder={t('OrganizationForm.DomainsPlaceholder')}
-                  tags={tags}
-                  validateTag={validTagDomain}
-                  className="sm:min-w-[450px]"
-                  activeTagIndex={activeTagIndex}
-                  setActiveTagIndex={setActiveTagIndex}
-                  setTags={(newTags) => {
-                    const newTagsText: string[] = (newTags as Tag[]).map(
-                      (tag) => tag.text
-                    );
-                    setTags(newTags);
-                    setValue('domains', newTagsText, {
-                      shouldDirty: true,
-                    });
-                  }}
-                />
-              </FormControl>
+              <Combobox<string>
+                multiple
+                options={[]}
+                value={field.value}
+                onValueChange={(next) =>
+                  setValue('domains', next as string[], { shouldDirty: true })
+                }
+                open={false}
+                allowCustomValue
+                createValueFromInput={(input) => input}
+                inputValue={domainInput}
+                onInputChange={setDomainInput}>
+                <ComboboxLabel>{t('OrganizationForm.Domains')}</ComboboxLabel>
+                <ComboboxField>
+                  <ComboboxChips />
+                  <ComboboxInput
+                    ref={field.ref}
+                    onBlur={field.onBlur}
+                    placeholder={t('OrganizationForm.DomainsPlaceholder')}
+                    onKeyDown={handleDomainKeyDown}
+                  />
+                </ComboboxField>
+              </Combobox>
               <FormMessage />
             </FormItem>
           )}
