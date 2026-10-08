@@ -972,7 +972,10 @@
       "Status": "Statut",
       "PrivatePlatform": "Plateforme privée",
       "LastConnectionCheck": "Dernier contrôle de connexion",
-      "Access": "Accès"
+      "Access": "Accès",
+      "PlatformInformation": "Informations sur la plateforme",
+      "RegistrationTitle": "Enregistrement - XTM Hub",
+      "SubscriptionTitle": "Abonnement - SaaS Manager"
     },
     "Error": {
       "Capability": {

@@ -1,6 +1,6 @@
+import { RegisteredPlatformOverview } from '@/components/service/registration/RegisteredPlatformOverview';
 import { RegistrationLearnMore } from '@/components/service/registration/RegistrationLearnMore';
-import { ServiceInstanceTag } from '@graphql/generated';
-import ClientSection from './client-section';
+import { PlatformIdentifier, ServiceInstanceTag } from '@graphql/generated';
 
 export interface ServiceOpenCTIRegistrationPageProps {
   params: Promise<{ serviceInstanceId: string }>;
@@ -8,7 +8,10 @@ export interface ServiceOpenCTIRegistrationPageProps {
 const Page = ({ params }: ServiceOpenCTIRegistrationPageProps) => {
   return (
     <>
-      <ClientSection params={params} />
+      <RegisteredPlatformOverview
+        params={params}
+        platformIdentifier={PlatformIdentifier.Opencti}
+      />
       <RegistrationLearnMore serviceInstanceTag={ServiceInstanceTag.OpenCti} />
     </>
   );
