@@ -1180,7 +1180,11 @@ collect_feedback() {
       --jq '.[] | {kind: "inline", id, author: .user.login, bot: (.user.type == "Bot"), created_at, url: .html_url, path, line: (.line // .original_line), in_reply_to: .in_reply_to_id, body, body_html}'
   } | jq -s --arg me "$me" '[.[]
       | select((.bot and (.author | test("copilot"; "i") | not)) | not)
-      | select((.author == $me and (.body | test("^(Component .* done\\.|## epic-|## Team feedback|\\*\\*Component .* needs a human|\\*\\*Design system migration blocked)"))) | not)]' \
+      | select((.author == $me and (
+          (.body | test("^(Component .* done\\.|## epic-|\\*\\*Component .* needs a human|\\*\\*Design system migration blocked)"))
+          or (.body | contains("<!-- ds-migration feedback -->"))
+          or (.body | test("^> [^\\n]*\\n\\n(@[^ ]+ )?\\(\\[(comment|review)\\]\\("))
+          or .in_reply_to != null)) | not)]' \
     >"$dir/raw.json"
   # body_html carries signed image URLs, which also work on a private repository.
   : >"$dir/media.tsv"

@@ -15,7 +15,7 @@ posting anything on GitHub. Never run the main loop (`ds-migration/run.sh` witho
 `ds-migration/WORKFLOW.md` still rules the code: its Decision rules apply to every fix.
 
 When the invocation says the run is active, **triage only**: change no file outside
-`ds-migration/feedback.md`, commit nothing, push nothing. The script is committing on this branch.
+`ds-migration/team-feedback.md`, commit nothing, push nothing. The script is committing on this branch.
 Record the approved fixes as `fix pending`; a later session, with the run stopped, makes them.
 
 ## 0. Orient the human
@@ -32,7 +32,7 @@ Read only, in parallel where possible.
 - The comments file: one entry per comment, with `kind` (`comment`, `review`, `inline`), `id`,
   `author`, `url`, `body`, `images` and `videos` (local paths), and `path` and `line` for an inline
   comment.
-- The ledger, `ds-migration/feedback.md`, when it exists: the comments already settled, one row
+- The ledger, `ds-migration/team-feedback.md`, when it exists: the comments already settled, one row
   each. Skip them, except a `fix pending` row (to fix now, unless triage only) and a comment someone
   answered since (a reply in its thread, or a later comment quoting it).
 - `ds-migration/sprint-status.yaml`: the items, their issue and status.
@@ -110,7 +110,7 @@ A security issue goes to `XTM-Hub/xtm-hub-private`, never to this repository.
 
 ## 6. Record the decisions
 
-`ds-migration/feedback.md` holds one row per settled comment, so that the next session skips it.
+`ds-migration/team-feedback.md` holds one row per settled comment, so that the next session skips it.
 Create it when missing:
 
 ```markdown
@@ -131,17 +131,27 @@ With the human's go:
 1. Outside triage only, when something was committed: run `ds-migration/run.sh publish` in the
    background and follow it. It pushes, waits for the required checks and refreshes the issues. If
    the checks fail, read the failing job, fix it with the human and run it again.
-2. Post or update the summary comment, titled `## Team feedback`. Find it with
-   `gh api repos/<repository>/issues/<pr>/comments --paginate --jq '.[] | select(.body | startswith("## Team feedback")) | .id'`,
-   where `<repository>` is the `repository` header of the status file. Replace it with
-   `gh api -X PATCH repos/<repository>/issues/comments/<id> -F body=@<file>`, or create it with
-   `gh pr comment <pr> --body-file <file>`. One table, one row per finding: the comments it covers
-   (author links), the decision, and the commit, issue or reason. The script never lists this comment
-   as feedback.
+2. Answer every settled comment on its own, so that its author sees the answer next to the remark.
+   A pull request comment cannot be threaded: post a new one with
+   `gh pr comment <pr> --body-file <file>`, in this shape:
+
+   ```markdown
+   > <first line of the comment>
+
+   @<author> ([comment](<comment url>))
+
+   <the answer: the commit and what changed, the issue, or the reason>
+
+   <!-- ds-migration feedback -->
+   ```
+
+   For a review, link `([review](<url>))` without the author. Answer an inline comment in its
+   thread instead: `gh api -X POST repos/<repository>/pulls/<pr>/comments/<id>/replies -F body=@<file>`,
+   where `<repository>` is the `repository` header of the status file. Keep the last line: the
+   script never lists a comment that carries it as feedback.
 3. React on every settled comment: `+1` when fixed, `eyes` otherwise.
    `gh api -X POST repos/<repository>/issues/comments/<id>/reactions -f content=+1`, or
-   `pulls/comments/<id>/reactions` for an inline comment. Answer an inline comment in its thread:
-   `gh api -X POST repos/<repository>/pulls/<pr>/comments/<id>/replies -f body=<answer>`.
+   `pulls/comments/<id>/reactions` for an inline comment.
 
 ## 8. Hand back
 

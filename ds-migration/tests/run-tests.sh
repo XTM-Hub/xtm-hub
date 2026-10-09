@@ -440,14 +440,16 @@ cat >"$SB/fb-comments.json" <<JSON
 [{"id": 11, "user": {"login": "hervyt", "type": "User"}, "created_at": "2026-10-09T09:00:00Z", "html_url": "u11", "body": "Weird background", "body_html": "$img"},
  {"id": 12, "user": {"login": "jbanety", "type": "User"}, "created_at": "2026-10-09T09:01:00Z", "html_url": "u12", "body": "Component Card done. Issue #3536", "body_html": ""},
  {"id": 13, "user": {"login": "github-actions[bot]", "type": "Bot"}, "created_at": "2026-10-09T09:02:00Z", "html_url": "u13", "body": "Coverage", "body_html": ""},
- {"id": 14, "user": {"login": "jbanety", "type": "User"}, "created_at": "2026-10-09T09:03:00Z", "html_url": "u14", "body": "Same in the sheet", "body_html": ""}]
+ {"id": 14, "user": {"login": "jbanety", "type": "User"}, "created_at": "2026-10-09T09:03:00Z", "html_url": "u14", "body": "Same in the sheet", "body_html": ""},
+ {"id": 15, "user": {"login": "jbanety", "type": "User"}, "created_at": "2026-10-09T09:06:00Z", "html_url": "u15", "body": "> Weird background\\n\\n@hervyt ([comment](u11))\\n\\nFixed.", "body_html": ""},
+ {"id": 16, "user": {"login": "jbanety", "type": "User"}, "created_at": "2026-10-09T09:07:00Z", "html_url": "u16", "body": "Answered.\\n\\n<!-- ds-migration feedback -->", "body_html": ""}]
 JSON
-echo '[{"id": 21, "user": {"login": "Copilot", "type": "Bot"}, "created_at": "2026-10-09T09:04:00Z", "html_url": "u21", "path": "a.ts", "line": 3, "in_reply_to_id": null, "body": "Contradicted rule", "body_html": ""}]' >"$SB/fb-inline.json"
+echo '[{"id": 21, "user": {"login": "Copilot", "type": "Bot"}, "created_at": "2026-10-09T09:04:00Z", "html_url": "u21", "path": "a.ts", "line": 3, "in_reply_to_id": null, "body": "Contradicted rule", "body_html": ""}, {"id": 22, "user": {"login": "jbanety", "type": "User"}, "created_at": "2026-10-09T09:08:00Z", "html_url": "u22", "path": "a.ts", "line": 3, "in_reply_to_id": 21, "body": "Reworded.", "body_html": ""}]' >"$SB/fb-inline.json"
 echo '[{"id": 31, "user": {"login": "jpkha", "type": "User"}, "submitted_at": "2026-10-09T09:05:00Z", "html_url": "u31", "body": "", "body_html": ""}]' >"$SB/fb-reviews.json"
 : >"$SB/calls.log"
 ds-migration/run.sh feedback >"$SB/out.log" 2>&1
 list="$(git rev-parse --absolute-git-dir)/ds-migration/feedback/comments.json"
-check "feedback keeps the team's comments and Copilot, not the script's own or other bots" '[ "$(jq -r "[.[].id] | join(\" \")" "$list")" = "11 14 21" ]'
+check "feedback keeps the team's comments and Copilot, not the script's messages, the answers or other bots" '[ "$(jq -r "[.[].id] | join(\" \")" "$list")" = "11 14 21" ]'
 check "feedback downloads each image once and lists it on its comment" '[ "$(jq -r ".[0].images | length" "$list")" = 1 ] && file --mime-type -b "$(jq -r ".[0].images[0]" "$list")" | grep -q image/png'
 check "feedback opens the skill with the list" 'grep -q "claude-interactive :: Read ds-migration/FEEDBACK.md fully and follow it. The pull request is #9999, its comments are in $list" "$SB/calls.log" && ! grep -q "triage only" "$SB/calls.log"'
 mkdir -p "$(git rev-parse --git-dir)/ds-migration/run.lock" && echo $$ >"$(git rev-parse --git-dir)/ds-migration/run.lock/pid"
