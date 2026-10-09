@@ -19,13 +19,14 @@ import { cn } from '@/lib/utils';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { i18nKey } from '@/utils/datatable';
 import {
+  Chip,
   SearchField,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import { Badge, DataTable, DataTableHeadBarOptions } from '@filigran/ui';
+import { DataTable, DataTableHeadBarOptions } from '@filigran/ui';
 import {
   OrderingMode,
   PortalCapability,
@@ -133,7 +134,7 @@ export const SaasList = () => {
       header: t('CSMBoard.Products'),
       enableSorting: false,
       cell: ({ row }) => (
-        <Badge>{getSaasPlatformProductName(row.original.identifier)}</Badge>
+        <Chip label={getSaasPlatformProductName(row.original.identifier)} />
       ),
     },
     {
