@@ -1,7 +1,7 @@
 enum PlatformContract {
-  CE
-  EE
-  trial
+    CE
+    EE
+    trial
 }
 
 type RegisteredPlatform implements Node {
@@ -40,149 +40,161 @@ enum RegisteredPlatformOrdering {
 }
 
 input PlatformInput {
-  id: ID!
-  url: String!
-  title: String!
-  contract: PlatformContract!
-  version: String
-  tenantId: String
-  tenantName: String
+    id: ID!
+    url: String!
+    title: String!
+    contract: PlatformContract!
+    version: String
+    tenantId: String
+    tenantName: String
 }
 
 enum PlatformIdentifier {
-  opencti
-  openaev
-  xtmone
+    opencti
+    openaev
+    xtmone
 }
 
 input RegisterPlatformInput {
-  organizationId: ID!
-  platform: PlatformInput!
-  identifier: PlatformIdentifier!
+    organizationId: ID!
+    platform: PlatformInput!
+    identifier: PlatformIdentifier!
 }
 
 input CanUnregisterPlatformInput {
-  platformId: String!
-  tenantId: String
+    platformId: String!
+    tenantId: String
 }
 
 type RegistrationResponse {
-  token: String!
+    token: String!
 }
 
 enum PlatformRegistrationStatus {
-  registered
-  unregistered
-  never_registered
+    registered
+    unregistered
+    never_registered
 }
 
 input IsPlatformRegisteredInput {
-  platformId: String!
-  tenantId: String
+    platformId: String!
+    tenantId: String
 }
 
 type IsPlatformRegisteredOrganization implements Node {
-  id: ID!
+    id: ID!
 }
 
 type IsPlatformRegisteredResponse {
-  status: PlatformRegistrationStatus!
-  platformTitle: String
-  organization: IsPlatformRegisteredOrganization
+    status: PlatformRegistrationStatus!
+    platformTitle: String
+    organization: IsPlatformRegisteredOrganization
 }
 
 type CanUnregisterResponse {
-  isPlatformRegistered: Boolean!
-  isAllowed: Boolean
-  isInOrganization: Boolean
-  organizationId: OrganizationId
+    isPlatformRegistered: Boolean!
+    isAllowed: Boolean
+    isInOrganization: Boolean
+    organizationId: OrganizationId
 }
 
 input UnregisterPlatformInput {
-  platformId: String!
-  identifier: PlatformIdentifier!
-  tenantId: String
+    platformId: String!
+    identifier: PlatformIdentifier!
+    tenantId: String
 }
 
 enum PlatformRegistrationConnectivityStatus {
-  active
-  inactive
-  not_found
+    active
+    inactive
+    not_found
 }
 
 input RefreshPlatformRegistrationConnectivityStatusInput {
-  platformId: String!
-  token: String!
-  platformVersion: String!
-  platformIdentifier: PlatformIdentifier
+    platformId: String!
+    token: String!
+    platformVersion: String!
+    platformIdentifier: PlatformIdentifier
 }
 
 input RefreshPlatformRegistrationConnectivityStatusSingleTenantInput {
-  platformId: String!
-  token: String!
-  platformVersion: String!
-  url: String!
-  tenantId: String!
-  tenantName: String!
-  platformIdentifier: PlatformIdentifier!
+    platformId: String!
+    token: String!
+    platformVersion: String!
+    url: String!
+    tenantId: String!
+    tenantName: String!
+    platformIdentifier: PlatformIdentifier!
 }
 
 input TenantDetails {
-  tenantId: String!
-  tenantName: String!
-  token: String!
-  url: String!
+    tenantId: String!
+    tenantName: String!
+    token: String!
+    url: String!
 }
 
 input RefreshPlatformRegistrationConnectivityStatusAllTenantsInput {
-  platformId: String!
-  platformVersion: String!
-  platformIdentifier: PlatformIdentifier!
-  tenants: [TenantDetails!]!
+    platformId: String!
+    platformVersion: String!
+    platformIdentifier: PlatformIdentifier!
+    tenants: [TenantDetails!]!
 }
 
 type RefreshPlatformRegistrationConnectivityStatusResponse {
-  status: PlatformRegistrationConnectivityStatus!
+    status: PlatformRegistrationConnectivityStatus!
 }
 
 type TenantStatus {
-  tenantId: String!
-  status: PlatformRegistrationConnectivityStatus!
+    tenantId: String!
+    status: PlatformRegistrationConnectivityStatus!
 }
 
 type RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse {
-  statuses: [TenantStatus!]!
+    statuses: [TenantStatus!]!
 }
 
 type RefreshUserPlatformTokenResponse {
-  token: String!
+    token: String!
 }
 
 input RegisteredPlatformsInput {
-  identifier: PlatformIdentifier
-  onlyActive: Boolean
-  onlyTrial: Boolean
-  hasDeployedResources: Boolean
+    identifier: PlatformIdentifier
+    onlyActive: Boolean
+    onlyTrial: Boolean
+    hasDeployedResources: Boolean
 }
 
 input RegisteredPlatformInput {
-  service_instance_id: ServiceInstanceId!
+    service_instance_id: ServiceInstanceId!
+}
+
+type SaasPlatformMetadata {
+    hostname: String!
+    subscribedPlan: String!
+    startDate: Date!
+    endDate: Date!
+    regionalArea: String!
+    platformVersion: String!
 }
 
 input AutoRegisterPlatformInput {
-  platform: PlatformInput!
-  existing_users_count: Int
+    platform: PlatformInput!
+    existing_users_count: Int
 }
 
 type Query {
-  isPlatformRegistered(
-    input: IsPlatformRegisteredInput!
-  ): IsPlatformRegisteredResponse! @auth
-  canUnregisterPlatform(
-    input: CanUnregisterPlatformInput!
-  ): CanUnregisterResponse! @auth
-  registeredPlatform(input: RegisteredPlatformInput!): RegisteredPlatform @auth
-  registeredPlatforms(input: RegisteredPlatformsInput!): [RegisteredPlatform!]!
+    isPlatformRegistered(
+        input: IsPlatformRegisteredInput!
+    ): IsPlatformRegisteredResponse! @auth
+    canUnregisterPlatform(
+        input: CanUnregisterPlatformInput!
+    ): CanUnregisterResponse! @auth
+    registeredPlatform(input: RegisteredPlatformInput!): RegisteredPlatform @auth
+    registeredSaasPlatformMetadata(
+        platformId: String!
+    ): SaasPlatformMetadata @auth
+    registeredPlatforms(input: RegisteredPlatformsInput!): [RegisteredPlatform!]!
     @auth
   saasPlatforms(
     first: Int!
@@ -199,24 +211,24 @@ type Query {
 }
 
 type Mutation {
-  registerPlatform(input: RegisterPlatformInput!): RegistrationResponse! @auth
-  unregisterPlatform(input: UnregisterPlatformInput!): Success! @auth
-  refreshUserPlatformToken: RefreshUserPlatformTokenResponse! @auth
-  # Warning ! Used by OpenCTI
-  refreshPlatformRegistrationConnectivityStatus(
-    input: RefreshPlatformRegistrationConnectivityStatusInput!
-  ): RefreshPlatformRegistrationConnectivityStatusResponse!
-  # Warning ! Used by OpenAEV
-  refreshPlatformRegistrationConnectivityStatusSingleTenant(
-    input: RefreshPlatformRegistrationConnectivityStatusSingleTenantInput!
-  ): RefreshPlatformRegistrationConnectivityStatusResponse!
-  # Warning ! Used by OpenAEV
-  refreshPlatformRegistrationConnectivityStatusAllTenants(
-    input: RefreshPlatformRegistrationConnectivityStatusAllTenantsInput!
-  ): RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse!
-  # Warning ! Used by OpenCTI and OpenAEV (trials)
-  autoRegisterPlatform(
-    platform: PlatformInput @deprecated(reason: "Use input instead")
-    input: AutoRegisterPlatformInput
-  ): Success! @platform_token
+    registerPlatform(input: RegisterPlatformInput!): RegistrationResponse! @auth
+    unregisterPlatform(input: UnregisterPlatformInput!): Success! @auth
+    refreshUserPlatformToken: RefreshUserPlatformTokenResponse! @auth
+    # Warning ! Used by OpenCTI
+    refreshPlatformRegistrationConnectivityStatus(
+        input: RefreshPlatformRegistrationConnectivityStatusInput!
+    ): RefreshPlatformRegistrationConnectivityStatusResponse!
+    # Warning ! Used by OpenAEV
+    refreshPlatformRegistrationConnectivityStatusSingleTenant(
+        input: RefreshPlatformRegistrationConnectivityStatusSingleTenantInput!
+    ): RefreshPlatformRegistrationConnectivityStatusResponse!
+    # Warning ! Used by OpenAEV
+    refreshPlatformRegistrationConnectivityStatusAllTenants(
+        input: RefreshPlatformRegistrationConnectivityStatusAllTenantsInput!
+    ): RefreshPlatformRegistrationConnectivityStatusAllTenantsResponse!
+    # Warning ! Used by OpenCTI and OpenAEV (trials)
+    autoRegisterPlatform(
+        platform: PlatformInput @deprecated(reason: "Use input instead")
+        input: AutoRegisterPlatformInput
+    ): Success! @platform_token
 }

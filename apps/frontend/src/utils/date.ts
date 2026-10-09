@@ -43,6 +43,29 @@ export const daysUntil = (targetDate: Date) => {
   return Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
 };
 
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+export const computePeriodProgress = (
+  startDate: Date | string,
+  endDate: Date | string,
+  now: Date = new Date()
+) => {
+  const start = new Date(startDate).getTime();
+  const end = new Date(endDate).getTime();
+
+  const totalDays = Math.max(Math.ceil((end - start) / MS_PER_DAY), 0);
+  const daysLeft = Math.min(
+    Math.max(Math.ceil((end - now.getTime()) / MS_PER_DAY), 0),
+    totalDays
+  );
+  const elapsedPercent =
+    totalDays === 0
+      ? 100
+      : Math.round(((totalDays - daysLeft) / totalDays) * 100);
+
+  return { totalDays, daysLeft, elapsedPercent };
+};
+
 export const useDateFormatter = () => {
   const format = useFormatter();
   const timeZone = useMemo(

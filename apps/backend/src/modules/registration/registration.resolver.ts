@@ -76,6 +76,8 @@ const resolvers: Resolvers = {
     },
     registeredPlatform: async (_, { input }) =>
       RegistrationApp.loadRegisteredPlatform(input.service_instance_id),
+    registeredSaasPlatformMetadata: async (_, { platformId }) =>
+      RegistrationApp.loadRegisteredSaasPlatformMetadata(platformId),
     registeredPlatforms: async (_, { input }) =>
       RegistrationApp.loadRegisteredPlatforms(input),
     saasPlatforms: async (_, args) => RegistrationApp.loadSaasPlatforms(args),

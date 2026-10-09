@@ -19,6 +19,7 @@ import {
   RegisteredPlatformConnection,
   RegisteredPlatformsInput,
   RegisterPlatformInput,
+  SaasPlatformMetadata,
   ServiceDefinitionIdentifier,
   ServiceInstanceCreationStatus,
   UnregisterPlatformInput,
@@ -202,6 +203,20 @@ export const RegistrationApp = {
       await RegistrationDomain.loadRegisteredPlatform(serviceInstanceId);
 
     return platform ? mapDomainRegisteredPlatformToGraphQL(platform) : null;
+  },
+
+  loadRegisteredSaasPlatformMetadata: async (
+    platformId: string
+  ): Promise<SaasPlatformMetadata> => {
+    // Call platform here
+    return {
+      hostname: 'acme.opencti.filigran.io',
+      subscribedPlan: 'Enterprise Edition',
+      startDate: '2026-09-15 08:04:14.431000 +00:00',
+      endDate: '2026-10-24 08:04:14.431000 +00:00',
+      regionalArea: 'EU-West',
+      platformVersion: '1.2002.2',
+    };
   },
 
   loadRegisteredPlatforms: async (

@@ -1,6 +1,7 @@
 'use client';
 
 import { RegistrationDetails } from '@/components/service/registration/RegistrationDetails';
+import { RegistrationMetadata } from '@/components/service/registration/RegistrationMetadata';
 import { useTranslate } from '@/hooks/use-translate';
 import { Separator } from '@filigran/ui';
 import { registeredPlatformByServiceInstanceId_fragment$key } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
@@ -25,7 +26,7 @@ export const PlatformInformation = ({
         </div>
         <div>
           <h3>{t('Register.Details.SubscriptionTitle')}</h3>
-          <RegistrationDetails registeredPlatform={registeredPlatform} />
+          <RegistrationMetadata registeredPlatform={registeredPlatform} />
         </div>
       </div>
     </div>

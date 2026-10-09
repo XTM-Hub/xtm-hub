@@ -977,6 +977,16 @@
       "RegistrationTitle": "Registration - XTM Hub",
       "SubscriptionTitle": "Subscription - SaaS Manager"
     },
+    "Metrics": {
+      "Metadata": {
+        "Hostname": "Host name",
+        "SubscribedPlan": "Subscribed plan",
+        "Contract": "Contract",
+        "RegionalArea": "Regional area",
+        "PlatformVersion": "Platform version",
+        "DaysLeft": "{days, plural, =1 {# day left} other {# days left}}"
+      }
+    },
     "Error": {
       "Capability": {
         "AdminListTitle": "The administrators of your organization are the following:",

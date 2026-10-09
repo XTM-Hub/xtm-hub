@@ -11,3 +11,14 @@ query RegisteredPlatforms($input: RegisteredPlatformsInput!) {
     }
   }
 }
+
+query RegisteredSaasPlatformMetadata($platformId: String!) {
+  registeredSaasPlatformMetadata(platformId: $platformId) {
+    hostname
+    subscribedPlan
+    startDate
+    endDate
+    regionalArea
+    platformVersion
+  }
+}

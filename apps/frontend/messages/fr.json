@@ -1069,6 +1069,16 @@
       "Description1": "Votre produit {platformIdentifier} {platformTitle} sera reconnecté sous la même organisation en raison de restrictions de capacité.",
       "Description2": "Si vous souhaitez demander un changement, veuillez contacter l'administrateur de votre organisation.",
       "Title": "Avis de reconnexion du produit"
+    },
+    "Metrics": {
+      "Metadata": {
+        "Hostname": "Nom d'hôte",
+        "SubscribedPlan": "Offre souscrite",
+        "Contract": "Contrat",
+        "RegionalArea": "Zone régionale",
+        "PlatformVersion": "Version de la plateforme",
+        "DaysLeft": "{days, plural, =1 {# jour restant} other {# jours restants}}"
+      }
     }
   },
   "RemoveUserOrgDialog": {
