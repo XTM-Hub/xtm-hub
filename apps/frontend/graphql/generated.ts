@@ -1970,7 +1970,6 @@ export type Query = {
   mostDeployedDocuments: Array<Document>;
   newestDocuments: Array<Document>;
   newsFeedItems: NewsFeedItemConnection;
-  node: Maybe<Node>;
   /** @deprecated Use `refreshPlatformRegistrationConnectivityStatus` instead. This field is no longer used in the OpenCTI platform due to refactoring and the addition of a version value in the endpoint. */
   openCTIPlatformRegistrationStatus: OpenCtiPlatformRegistrationStatusResponse;
   organization: Maybe<Organization>;
@@ -2138,11 +2137,6 @@ export type QueryNewestDocumentsArgs = {
 export type QueryNewsFeedItemsArgs = {
   after: InputMaybe<Scalars['ID']['input']>;
   first: Scalars['Int']['input'];
-};
-
-
-export type QueryNodeArgs = {
-  id: Scalars['ID']['input'];
 };
 
 
