@@ -7,11 +7,15 @@ import {
 } from '@/components/admin/user/user.graphql';
 import { UserFragment } from '@/components/admin/user/UserList';
 import { PortalContext } from '@/components/me/AppPortalContext';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { useTranslate } from '@/hooks/use-translate';
 import { APP_PATH } from '@/utils/path/constant';
 import { Button } from '@filigran/design-system';
-import { Popover, PopoverContent, PopoverTrigger } from '@filigran/ui/clients';
 import {
   UserList_fragment$data,
   UserList_fragment$key,
@@ -136,7 +140,8 @@ const PendingUserNotifications = ({
       </PopoverTrigger>
       <PopoverContent
         align="end"
-        className="w-120 px-0 pt-4 pb-0">
+        padding={0}
+        className="w-120 pt-4">
         <span className="px-4">
           {t('Notifications.Title', {
             count: nbUsers,

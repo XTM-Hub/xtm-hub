@@ -10,6 +10,11 @@ import {
   MenuItemIcon,
   PublicSubLink,
 } from '@/components/menu/navigation/shared/NavigationLinks';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { buttonVariants, IconButton } from '@filigran/design-system';
 import {
@@ -17,9 +22,6 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
 } from '@filigran/ui';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -153,12 +155,11 @@ export const ClosedSection = ({ section }: { section: SectionConfig }) => {
           sideOffset={0}
           side="right"
           align="start"
-          asChild
+          padding={8}
+          className="w-72"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}>
-          <div className="w-50 p-s">
-            <SectionLinksList links={section.links} />
-          </div>
+          <SectionLinksList links={section.links} />
         </PopoverContent>
       )}
     </Popover>
