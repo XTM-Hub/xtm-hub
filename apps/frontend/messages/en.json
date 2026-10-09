@@ -1726,7 +1726,7 @@
           "NotAdmin": {
             "Title": "You need the “Manage platform registration” capability to start a trial.",
             "Description": "Ask an administrator of your organization to grant it.",
-            "AdminListTitle": "{count, plural, =1 {Person who can request a trial} other {People who can request a trial}}"
+            "AdminListTitle": "{count, plural, =1 {Member who has this capability} other {Members who have this capability}}"
           },
           "PersonalSpace": {
             "Title": "Trials are not available in a personal space"
