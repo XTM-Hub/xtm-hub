@@ -216,6 +216,47 @@ describe('users admin app', () => {
     });
   });
 
+  describe('editUserCapabilities', () => {
+    it('should reject the user when they have no pending request in the selected organization', async () => {
+      requestContext.set(requestContextAdminSecondOrga);
+
+      const call = UserAdminApp.editUserCapabilities({
+        userId: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE.ID,
+        input: {
+          capabilities: [OrganizationCapability.AdministrateOrganization],
+        },
+      });
+
+      await expect(call).rejects.toThrow(ErrorCode.PendingUserNotFound);
+      expect(
+        await UserOrganizationDomain.loadUserOrganization({
+          user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE.ID,
+          organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        })
+      ).toHaveLength(0);
+    });
+
+    it('should reject the user when the selected organization is the caller personal space', async () => {
+      requestContext.set({
+        user: {
+          ...requestContextSimpleUserSecondOrga.user,
+          selected_organization_id:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE
+              .PERSONAL_SPACE_ID,
+        },
+      });
+
+      const call = UserAdminApp.editUserCapabilities({
+        userId: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE.ID,
+        input: {
+          capabilities: [OrganizationCapability.AdministrateOrganization],
+        },
+      });
+
+      await expect(call).rejects.toThrow(ErrorCode.CantAddUserToPersonalSpace);
+    });
+  });
+
   describe('addUser', () => {
     const createdEmails: string[] = [];
 
