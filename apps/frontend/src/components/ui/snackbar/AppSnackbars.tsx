@@ -43,8 +43,9 @@ export const AppSnackbars = ({ children }: AppSnackbarsProps) => {
           closeLabel={t('Utils.Close')}
         />
       ))}
-      {/* The overlays painted after this portal sit at the same z-50. */}
-      <SnackbarViewport className="z-[100]" />
+      {/* The overlays painted after this portal sit at the same z-50. Placed
+          below the sticky header so messages never cover its buttons. */}
+      <SnackbarViewport className="top-22 z-[100]" />
     </SnackbarProvider>
   );
 };
