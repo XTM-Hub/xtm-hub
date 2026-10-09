@@ -21,7 +21,9 @@ paths:
 - A migration swaps the legacy component for its design system counterpart and keeps the design system's own look:
   visual differences with the surrounding legacy are expected, never hidden by restyling. A choice made without the
   design team between two options that fit equally is traced for later validation in the pull request, never guessed
-  silently. The migration changes nothing else: the code around it and the legacy components next to it stay as they
-  are until their own item.
+  silently. Beyond what the design system component's API imposes (a single-file field, a dialog's sizing or
+  keyboard handling), the migration changes nothing else: the code around it and the legacy components next to it
+  stay as they are until their own item.
 - While the legacy copy exists, leave its theme (`filigran-ui/theme.css`) and the `@filigran/ui` aliases alone:
-  they go away with the copy.
+  they go away with the copy. The exception is a theme entry that generates a utility with the name of a design
+  system one and overrides it: that entry goes.
