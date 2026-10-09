@@ -19,7 +19,6 @@ import {
   IconButton,
 } from '@filigran/design-system';
 import { EditIcon } from '@filigran/icon';
-import { GradientButton } from '@filigran/ui/servers';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import {
   PlatformConfigurationStatus,
@@ -181,12 +180,12 @@ export const BundleProductCard = ({
                 href={accessHref}
                 target="_blank"
                 rel="noopener noreferrer">
-                <GradientButton
+                <Button
                   variant="ia"
-                  className="bg-background dark:bg-none"
+                  priority="secondary"
                   tabIndex={-1}>
                   {accessLabel}
-                </GradientButton>
+                </Button>
               </Link>
             ) : (
               <Button disabled>{accessLabel}</Button>

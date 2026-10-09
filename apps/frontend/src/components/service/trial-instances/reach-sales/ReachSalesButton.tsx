@@ -5,7 +5,6 @@ import { DialogInformative } from '@/components/ui/Dialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button } from '@filigran/design-system';
-import { GradientButton } from '@filigran/ui/servers';
 import {
   DeploymentRequestDeploymentType,
   PlatformIdentifier,
@@ -58,12 +57,13 @@ export const ReachSalesButton = ({
   const reachSalesButton = useMemo(() => {
     if ('gradient' === variant) {
       return (
-        <GradientButton
-          className="bg-background dark:bg-none"
+        <Button
+          variant="highlight"
+          priority="secondary"
           onClick={() => setIsConfirmationDialogOpen(true)}
           disabled={isInFlight}>
           {t('Service.Trials.ReachOutToSales')}
-        </GradientButton>
+        </Button>
       );
     }
 

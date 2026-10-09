@@ -8,6 +8,7 @@ import {
 } from '@/components/menu/navigation/shared/navigation.type';
 import { cn } from '@/lib/utils';
 import {
+  Button,
   buttonVariants,
   Tooltip,
   TooltipContent,
@@ -15,7 +16,6 @@ import {
   TooltipTrigger,
 } from '@filigran/design-system';
 import { OpenInNewIcon } from '@filigran/icon';
-import { GradientButton } from '@filigran/ui/servers';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ElementType, ReactNode } from 'react';
@@ -136,13 +136,11 @@ export const NavigationLinkMenu = ({
         target={external ? '_blank' : undefined}
         rel={external ? 'noopener noreferrer' : undefined}
         className="block">
-        <GradientButton
-          className={cn(
-            'h-9 rounded text-content-button whitespace-nowrap bg-background dark:bg-none',
-            open ? 'w-full px-2' : 'w-9 px-0'
-          )}
-          textGradient={open}
-          tabIndex={-1}>
+        <Button
+          variant="highlight"
+          priority="secondary"
+          tabIndex={-1}
+          className={open ? 'w-full px-2' : 'w-9 px-0'}>
           {open ? (
             text
           ) : (
@@ -152,7 +150,7 @@ export const NavigationLinkMenu = ({
               className="h-4 w-4 text-filigran-brand-primary"
             />
           )}
-        </GradientButton>
+        </Button>
       </Link>
     );
   }
