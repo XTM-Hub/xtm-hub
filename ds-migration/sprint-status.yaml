@@ -52,7 +52,7 @@ development_status:
 
   # Composites with a legacy equivalent, the three DS 1.2.0 additions, and three single-use
   # legacy components replaced in place
-  epic-2-composites: review
+  epic-2-composites: done
   3566-select: done
   3545-combobox: done
   3558-menu: done
