@@ -49,6 +49,9 @@ const VERIFIED_TRUE_VALUE = 'true';
 const VERIFIED_FALSE_VALUE = 'false';
 const ENTITY_TYPE_MALWARE = 'Malware';
 const ENTITY_TYPE_THREAT_ACTOR = 'Threat-Actor';
+const MULTI_WORD_DOCUMENT_NAME = 'Google Safe Browsing';
+const OTHER_MULTI_WORD_DOCUMENT_NAME = 'Google Cloud Storage';
+const MULTI_WORD_SEARCH_TERM = 'safe browsing';
 
 vi.mock('../../../utils/feature-flag.util', () => ({
   isFeatureEnabled: vi.fn(() => false),
@@ -245,6 +248,55 @@ describe('facet.domain', () => {
       { value: ENTITY_TYPE_MALWARE, count: 1 },
     ]);
   });
+
+  it('should count only the matching documents when searching a term with spaces', async () => {
+    // Given
+    const serviceInstance = await TestHelper.serviceInstance.create({
+      name: `facet-service-instance-${uuidv4()}`,
+      public: true,
+    });
+    createdServiceInstanceIds.push(serviceInstance.id);
+
+    const matchingDocument = await TestHelper.document.create({
+      name: MULTI_WORD_DOCUMENT_NAME,
+      slug: `facet-multi-word-${uuidv4()}`,
+      type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+      active: true,
+      service_instance_id: serviceInstance.id,
+    });
+    const otherDocument = await TestHelper.document.create({
+      name: OTHER_MULTI_WORD_DOCUMENT_NAME,
+      slug: `facet-other-multi-word-${uuidv4()}`,
+      type: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+      active: true,
+      service_instance_id: serviceInstance.id,
+    });
+    await Promise.all([
+      TestHelper.documentMetadata.create({
+        document_id: matchingDocument.id,
+        key: DocumentMetadataKeyCode.IntegrationType,
+        value: INTEGRATION_CONNECTOR_VALUE,
+      }),
+      TestHelper.documentMetadata.create({
+        document_id: otherDocument.id,
+        key: DocumentMetadataKeyCode.IntegrationType,
+        value: INTEGRATION_CSV_FEED_VALUE,
+      }),
+    ]);
+
+    // When
+    const result = await FacetDomain.loadDocumentFacets({
+      serviceInstanceId: serviceInstance.id,
+      documentType: OPENCTI_INTEGRATION_DOCUMENT_TYPE,
+      searchTerm: MULTI_WORD_SEARCH_TERM,
+    });
+
+    // Then
+    expect(result.integration_type).toEqual([
+      { value: INTEGRATION_CONNECTOR_VALUE, count: 1 },
+    ]);
+  });
+
   describe('parity with the authenticated documents list', () => {
     afterEach(async () => {
       vi.restoreAllMocks();
@@ -466,12 +518,7 @@ describe('facet.domain', () => {
         },
         restrictToActive
       );
-      await applySearch(
-        'Document',
-        scoped,
-        input.searchTerm ?? undefined,
-        true
-      );
+      await applySearch('Document', scoped, input.searchTerm ?? undefined);
       return { scoped };
     };
 

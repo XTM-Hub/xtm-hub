@@ -386,7 +386,7 @@ export const DocumentDomain = {
     const connection = await paginate<Document, DocumentConnection>(
       'Document',
       opts,
-      { normalizeSearchTerm: true },
+      undefined,
       loadDocumentQuery
     );
 

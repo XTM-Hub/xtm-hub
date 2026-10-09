@@ -1737,6 +1737,61 @@ describe('document domain', () => {
     );
   });
 
+  describe('search by document name', () => {
+    const MULTI_WORD_DOCUMENT_NAME = 'Google Safe Browsing';
+    const OTHER_MULTI_WORD_DOCUMENT_NAME = 'Google Cloud Storage';
+    let document: Document;
+
+    beforeEach(async () => {
+      document = await TestHelper.document.create({
+        slug: 'google-safe-browsing-search',
+        name: MULTI_WORD_DOCUMENT_NAME,
+        active: true,
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+      });
+      await TestHelper.document.create({
+        slug: 'google-cloud-storage-search',
+        name: OTHER_MULTI_WORD_DOCUMENT_NAME,
+        active: true,
+        uploader_id: ADMIN_UUID,
+        uploader_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+      });
+    });
+
+    it.each`
+      description                    | searchTerm                  | getExpectedIds
+      ${'full name with spaces'}     | ${MULTI_WORD_DOCUMENT_NAME} | ${() => [document.id]}
+      ${'partial name with spaces'}  | ${'safe browsing'}          | ${() => [document.id]}
+      ${'no name match with spaces'} | ${'safe storage'}           | ${() => []}
+    `(
+      'should return only the matching documents when searching "$searchTerm" ($description)',
+      async ({
+        searchTerm,
+        getExpectedIds,
+      }: {
+        searchTerm: string;
+        getExpectedIds: () => string[];
+      }) => {
+        // Given
+        const input = {
+          searchTerm,
+          first: 100,
+          orderBy: DocumentOrdering.CreatedAt,
+          orderMode: OrderingMode.Desc,
+        };
+
+        // When
+        const result = await DocumentDomain.loadDocuments(input, {});
+
+        // Then
+        expect(result.edges.map((e) => e.node.id)).toStrictEqual(
+          getExpectedIds()
+        );
+      }
+    );
+  });
+
   describe('loadBestCompatibleConnectorsBySlugs', () => {
     // Mirrors the real ingestion path (manifest-fragment.domain.ts): `Document.version`
     // stores the raw manifest version (e.g. `7.260309.0-lts.1`), while the zero-padded,
