@@ -25,9 +25,9 @@ export const CapabilityDescription = () => {
       .map((capability) => {
         return (
           <li
-            className="flex items-center"
+            className="col-span-2 grid grid-cols-subgrid items-center"
             key={capability}>
-            <span className="min-w-56">
+            <span>
               <Chip label={capability.replaceAll('_', ' ')} />
             </span>
             <span>{t(buildTranslationKey(capability))}</span>
@@ -45,7 +45,7 @@ export const CapabilityDescription = () => {
         clamp={0}
         className="flex flex-col gap-s">
         <p>{t('CapabilityDescription.Description')}</p>
-        <ul className="flex flex-col space-y-s gap-xs text-xs">
+        <ul className="grid grid-cols-[auto_1fr] gap-x-s gap-y-m text-xs">
           {capabilityList}
         </ul>
       </CardContent>
