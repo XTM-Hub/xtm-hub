@@ -191,7 +191,7 @@ describe('ServiceList', () => {
     expect(screen.queryByText('Draft document')).toBeNull();
   });
 
-  it('groups known integration types in accordion and keeps unknown types as plain lists', () => {
+  it('should render every active resource in a single list when they have different types', () => {
     const active = [
       {
         id: 'active-1',
@@ -222,14 +222,9 @@ describe('ServiceList', () => {
       />
     );
 
-    expect(
-      screen.getByText(
-        `Service.OpenctiIntegrations.Type.${IntegrationType.Connector}`
-      )
-    ).toBeInTheDocument();
-    expect(screen.getByText('Dashboard document')).toBeInTheDocument();
-
-    expect(screen.getByText('Connector document')).toBeInTheDocument();
+    expect(screen.getByText('Connector document').closest('ul')).toBe(
+      screen.getByText('Dashboard document').closest('ul')
+    );
   });
 
   it('forwards display mode changes to local storage setter via header actions', async () => {

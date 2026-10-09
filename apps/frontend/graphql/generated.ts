@@ -3577,7 +3577,7 @@ export type RegisteredPlatformsListQueryVariables = Exact<{
 }>;
 
 
-export type RegisteredPlatformsListQuery = { __typename?: 'Query', registeredPlatforms: Array<{ __typename?: 'RegisteredPlatform', id: string, platform_id: string, title: string, url: string, contract: PlatformContract, identifier: ServiceDefinitionIdentifier, deployment_request: { __typename?: 'DeploymentRequest', type: DeploymentRequestDeploymentType, parent_id: any | null } | null, subscription: { __typename?: 'SubscriptionModel', end_date: any | null, start_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string, name: string } } | null }> };
+export type RegisteredPlatformsListQuery = { __typename?: 'Query', registeredPlatforms: Array<{ __typename?: 'RegisteredPlatform', id: string, platform_id: string, title: string, url: string, contract: PlatformContract, version: string | null, identifier: ServiceDefinitionIdentifier, deployment_request: { __typename?: 'DeploymentRequest', type: DeploymentRequestDeploymentType, parent_id: any | null } | null, subscription: { __typename?: 'SubscriptionModel', end_date: any | null, start_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string, name: string } } | null }> };
 
 export type RegisteredPlatformsQueryVariables = Exact<{
   input: RegisteredPlatformsInput;
@@ -5694,6 +5694,7 @@ export const RegisteredPlatformsListDocument = `
     title
     url
     contract
+    version
     identifier
     deployment_request {
       type

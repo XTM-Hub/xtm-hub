@@ -5,6 +5,7 @@ query RegisteredPlatformsList($input: RegisteredPlatformsInput!) {
     title
     url
     contract
+    version
     identifier
     deployment_request {
       type

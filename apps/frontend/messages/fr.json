@@ -1190,6 +1190,8 @@
       "Search": "Rechercher un connecteur par nom...",
       "VendorContact": "Contact vendeur",
       "VisitVendor": "Visitez la page web du vendeur pour en savoir plus et rester en contact",
+      "CompatibleWith": "Cette version du connecteur est compatible avec {compatiblePlatforms}.",
+      "PartiallyCompatible": "Cette version du connecteur est compatible avec {compatiblePlatforms}, mais {incompatiblePlatforms} {count, plural, =1 {doit être mise à jour} other {doivent être mises à jour}}.",
       "Incompatible": "{platformToBeUpdated} {count, plural, =1 {doit} other {doivent}} être mises à jour pour déployer ce connecteur.",
       "UnavailableDeployments": "Ce connecteur n'est pas disponible pour le déploiement automatique."
     },
@@ -1439,10 +1441,11 @@
       "Tab": {
         "Name": "Nom",
         "Description": "Description",
-        "UseCases": "Cas d'utilisation",
-        "Actions": "Actions",
-        "Author": "Auteur",
-        "MinimumDeployableVersion": "Version minimale déployable"
+        "UseCase": "Cas d'utilisation",
+        "Action": "Action",
+        "Feature": "Fonctionnalité",
+        "Type": "Type",
+        "Compatibility": "Compatibilité avec votre produit"
       },
       "Filter": {
         "Add": "Ajouter un filtre",
