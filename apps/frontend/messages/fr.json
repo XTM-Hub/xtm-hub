@@ -1310,29 +1310,29 @@
       "Actions": {
         "Added": "{name} a été ajouté",
         "Deleted": "{name} a été supprimé",
-        "Share": "Partager le CSV Feed",
+        "Share": "Partager le flux CSV",
         "Updated": "{name} a été modifié"
       },
       "Active": "Publié",
-      "AddService": "Ajouter un CSV Feed",
-      "DeleteService": "Supprimer le CSV Feed {name}",
+      "AddService": "Ajouter un flux CSV",
+      "DeleteService": "Supprimer le flux CSV {name}",
       "NonActive": "Brouillon",
-      "SureDeleteService": "Etes-vous sûr de vouloir supprimer le CSV Feed {name} ?",
-      "UpdateService": "Editer le CSV Feed {name}"
+      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le flux CSV {name} ?",
+      "UpdateService": "Editer le flux CSV {name}"
     },
     "RssFeed": {
       "Actions": {
         "Added": "{name} a été ajouté",
         "Deleted": "{name} a été supprimé",
-        "Share": "Partager le RSS Feed",
+        "Share": "Partager le flux RSS",
         "Updated": "{name} a été modifié"
       },
       "Active": "Publié",
-      "AddService": "Ajouter un RSS Feed",
-      "DeleteService": "Supprimer le RSS Feed {name}",
+      "AddService": "Ajouter un flux RSS",
+      "DeleteService": "Supprimer le flux RSS {name}",
       "NonActive": "Brouillon",
-      "SureDeleteService": "Etes-vous sûr de vouloir supprimer le RSS Feed {name} ?",
-      "UpdateService": "Editer le RSS Feed {name}"
+      "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le flux RSS {name} ?",
+      "UpdateService": "Editer le flux RSS {name}"
     },
     "TaxiiFeed": {
       "Actions": {
@@ -1868,7 +1868,7 @@
         "ChecklistItems": {
           "ActivateFeeds": {
             "Title": "Activez 1 à 2 flux supplémentaires",
-            "Description": "Accédez à <strong>Intégrations</strong> dans le menu de gauche. Plusieurs connecteurs ont déjà été déployés. Cliquez sur l’onglet <strong>Disponibles</strong>. Vous constaterez qu’il existe encore de nombreux autres connecteurs pouvant être déployés en un clic. Dans le menu de gauche, faites défiler jusqu’en bas et sélectionnez <strong>Gratuit</strong> dans le type de licence. Déployez-en quelques-uns qui ne sont pas encore activés. Cliquez sur <strong>Voir plus</strong> pour voir toutes les intégrations de la bibliothèque OpenCTI (y compris celles sans option de déploiement en un clic)."
+            "Description": "Accédez à <strong>Intégrations</strong> dans le menu de gauche. Plusieurs connecteurs ont déjà été déployés. Cliquez sur l’onglet <strong>Disponible</strong>. Vous constaterez qu’il existe encore de nombreux autres connecteurs pouvant être déployés en un clic. Dans le menu de gauche, faites défiler jusqu’en bas et sélectionnez <strong>Gratuit</strong> dans le type de licence. Déployez-en quelques-uns qui ne sont pas encore activés. Cliquez sur <strong>Parcourir plus</strong> pour voir toutes les intégrations de la bibliothèque OpenCTI (y compris celles sans option de déploiement en un clic)."
           },
           "ConfigurePir": {
             "Title": "Configurer les exigences de renseignement prioritaires (PIR)",
@@ -1876,11 +1876,11 @@
           },
           "FollowGraph": {
             "Title": "Ouvrir un rapport et explorer le graphe interactif",
-            "Description": "Accédez à <strong>Analyses → Rapports</strong>. Cliquez sur un rapport puis accédez à l’onglet <strong>Connaissances</strong>. Dans la barre d’outils à droite, assurez-vous que la <strong>vue graphique</strong> est sélectionnée. Zoomez. Cliquez maintenant sur les objets du graphe. Les détails de l’objet s’afficheront dans la colonne de droite. Pour voir les relations d’un objet en particulier, déplacez-le sur le côté. Cliquez sur <strong>vue chronologique</strong> pour voir comment les données ont évolué dans le temps. Pour la correspondance MITRE ATT&CK, cliquez sur <strong>vue matrice des tactiques</strong>."
+            "Description": "Accédez à <strong>Analyses → Rapports</strong>. Cliquez sur un rapport puis accédez à l’onglet <strong>Connaissance</strong>. Dans la barre d’outils à droite, assurez-vous que la <strong>Vue graphe</strong> est sélectionnée. Zoomez. Cliquez maintenant sur les objets du graphe. Les détails de l’objet s’afficheront dans la colonne de droite. Pour voir les relations d’un objet en particulier, déplacez-le sur le côté. Cliquez sur <strong>Vue Chronologique</strong> pour voir comment les données ont évolué dans le temps. Pour la correspondance MITRE ATT&CK, cliquez sur <strong>Vue matrice de tactiques</strong>."
           },
           "CreateCase": {
-            "Title": "Créer un dossier à partir d’un indicateur détecté",
-            "Description": "Accédez à <strong>Dossiers → Réponse aux incidents → Créer une réponse aux incidents</strong>, créez un dossier à l’aide d’un modèle intégré, puis joignez l’indicateur ou le rapport sur lequel vous avez travaillé précédemment. À partir de là, attribuez une priorité et un niveau de gravité, désignez un responsable et ajoutez des tâches associées pour suivre les étapes de correction. Remarquez que le dossier reste lié aux entités sous-jacentes ; ainsi, toute nouvelle information corrélée apparaîtra automatiquement dans son contexte."
+            "Title": "Créer un case à partir d’un indicateur détecté",
+            "Description": "Accédez à <strong>Cases → Réponses aux incidents → Créer une réponse à incident</strong>, créez un case à l’aide d’un modèle intégré, puis joignez l’indicateur ou le rapport sur lequel vous avez travaillé précédemment. À partir de là, attribuez une priorité et un niveau de gravité, désignez un responsable et ajoutez des tâches associées pour suivre les étapes de correction. Remarquez que le case reste lié aux entités sous-jacentes ; ainsi, toute nouvelle information corrélée apparaîtra automatiquement dans son contexte."
           },
           "CreateFintelReport": {
             "Title": "Créer un rapport FINTEL",
@@ -1888,19 +1888,19 @@
           },
           "BuildDashboardWidget": {
             "Title": "Créer un widget de tableau de bord personnalisé",
-            "Description": "Sous <strong>Tableaux de bord → Tableaux de bord personnalisés</strong>, cliquez sur <strong>Créer un tableau de bord</strong> et ajoutez un widget (par exemple, « Indicateurs par type » ou « Rapports dans le temps »). Vous pouvez également sélectionner un tableau de bord prédéfini en cliquant sur <strong>Importer depuis Hub</strong>."
+            "Description": "Sous <strong>Tableaux de bord → Tableaux de bord personnalisés</strong>, cliquez sur <strong>Créer un tableau de bord</strong> et ajoutez un widget (par exemple, « Indicateurs par type » ou « Rapports dans le temps »). Vous pouvez également sélectionner un tableau de bord prédéfini en cliquant sur <strong>Importer depuis le Hub</strong>."
           },
           "ConnectSecurityStack": {
             "Title": "Connectez-vous à votre pile de sécurité",
-            "Description": "Accédez à <strong>Intégrations</strong>. Cliquez sur <strong>Voir plus</strong>. Sélectionnez certains des outils que vous utilisez déjà (SIEM, EDR, pare-feu, TIP ou SOAR) pour les connecter à OpenCTI. Une fois la connexion établie, surveillez le tableau de bord du connecteur pour vérifier que les données circulent, puis assurez-vous que les nouveaux indicateurs transmis apparaissent dans votre outil en aval."
+            "Description": "Accédez à <strong>Intégrations</strong>. Cliquez sur <strong>Parcourir plus</strong>. Sélectionnez certains des outils que vous utilisez déjà (SIEM, EDR, pare-feu, TIP ou SOAR) pour les connecter à OpenCTI. Une fois la connexion établie, surveillez le tableau de bord du connecteur pour vérifier que les données circulent, puis assurez-vous que les nouveaux indicateurs transmis apparaissent dans votre outil en aval."
           },
           "CreateNoCodePlaybook": {
             "Title": "Créer un playbook sans code",
-            "Description": "Accédez à <strong>Données → Traitement</strong>. Cliquez sur <strong>Créer un playbook</strong>. Utilisez le générateur visuel par glisser-déposer pour enchaîner des déclencheurs, des filtres et des actions, telles que l’enrichissement automatique de nouveaux indicateurs, la promotion de rapports hautement fiables vers un dossier, ou l’envoi direct des observables correspondantes vers un connecteur. Vous pouvez également sélectionner un playbook prédéfini en cliquant sur <strong>Importer depuis le Hub</strong>."
+            "Description": "Accédez à <strong>Données → Traitement</strong>. Cliquez sur <strong>Créer un playbook</strong>. Utilisez le générateur visuel par glisser-déposer pour enchaîner des déclencheurs, des filtres et des actions, telles que l’enrichissement automatique de nouveaux indicateurs, la promotion de rapports hautement fiables vers un case, ou l’envoi direct des observables correspondantes vers un connecteur. Vous pouvez également sélectionner un playbook prédéfini en cliquant sur <strong>Importer depuis le Hub</strong>."
           },
           "CheckSecurityCoverage": {
             "Title": "Vérifiez votre couverture de sécurité avec OpenAEV",
-            "Description": "Associez votre instance OpenAEV sous <strong>Paramètres → Intégrations</strong>, puis dans OpenAEV, accédez à <strong>Scénarios → Créer</strong> et créez un scénario à partir des techniques ATT&CK de l’acteur malveillant que vous avez étudié dans OpenCTI. Ajoutez chaque TTP en tant qu’injection, en attribuant des ressources cibles, puis cliquez sur <strong>Lancer</strong> pour exécuter la simulation de manière contrôlée."
+            "Description": "Associez votre instance OpenAEV sous <strong>Paramètres → Intégrations</strong>, puis dans OpenAEV, accédez à <strong>Scénarios → Créer</strong> et créez un scénario à partir des techniques ATT&CK de l’acteur malveillant que vous avez étudié dans OpenCTI. Ajoutez chaque TTP en tant que stimuli, en attribuant des ressources cibles, puis cliquez sur <strong>Lancer</strong> pour exécuter la simulation de manière contrôlée."
           },
           "EnableAgent": {
             "Title": "Activer un agent dans XTM One",
@@ -1930,15 +1930,15 @@
         "ChecklistItems": {
           "InstallStarterPack": {
             "Title": "Installer le pack de démarrage OpenAEV",
-            "Description": "Vous avez besoin de contenu pour vous lancer ? OpenAEV est fourni avec un pack de démarrage contenant du contenu prêt à l'emploi qui vous permettra d'exécuter votre première simulation dès l'installation. Ce pack comprend notamment des scénarios prédéfinis, des tableaux de bord, des injecteurs, des collecteurs et des terminaux sans agent. Le pack de démarrage est disponible sur le XTM Hub. Importez-le depuis <strong>Paramètres > XTM Hub</strong> après avoir enregistré votre plateforme."
+            "Description": "Vous avez besoin de contenu pour vous lancer ? OpenAEV est fourni avec un pack de démarrage contenant du contenu prêt à l'emploi qui vous permettra d'exécuter votre première simulation dès l'installation. Ce pack comprend notamment des scénarios prédéfinis, des tableaux de bord, des injecteurs, des collecteurs et des points de terminaison sans agent. Le pack de démarrage est disponible sur le XTM Hub. Importez-le depuis <strong>Paramètres > XTM Hub</strong> après avoir enregistré votre plateforme."
           },
           "RunAtomicTest": {
-            "Title": "Lancer un test « Atomic »",
-            "Description": "Rendez-vous dans l’Arsenal, choisissez une technique et sélectionnez un terminal sur lequel l’exécuter. Installez d’abord l’agent OpenAEV, ou utilisez le mode sans agent s’il est pris en charge. Lancez le test et vérifiez le terminal ou attendez le rapport pour voir ce qui a été exécuté et ce qui a été détecté."
+            "Title": "Lancer un test atomique",
+            "Description": "Rendez-vous dans l’Arsenal, choisissez une technique et sélectionnez un point de terminaison sur lequel l’exécuter. Installez d’abord l’agent OpenAEV, ou utilisez le mode sans agent s’il est pris en charge. Lancez le test et vérifiez le point de terminaison ou attendez le rapport pour voir ce qui a été exécuté et ce qui a été détecté."
           },
           "LaunchTimeBasedScenario": {
             "Title": "Lancer un scénario chronologique en s’appuyant sur l’assistant IA de scénarios",
-            "Description": "Créez un scénario et ajoutez-y des injections dans l’ordre dans lequel vous souhaitez qu’elles se déclenchent, selon un calendrier défini avec une heure de début et, si nécessaire, une fréquence de répétition. Exploitez l’IA pour automatiser la création d’injections en fonction des cibles et des techniques MITRE ATT&CK que vous avez sélectionnées."
+            "Description": "Créez un scénario et ajoutez-y des stimuli dans l’ordre dans lequel vous souhaitez qu’ils se déclenchent, selon un calendrier défini avec une heure de début et, si nécessaire, une fréquence de répétition. Exploitez l’IA pour automatiser la création de stimuli en fonction des cibles et des techniques MITRE ATT&CK que vous avez sélectionnées."
           },
           "RunAttackChainingScenario": {
             "Title": "Exécuter un scénario de chaîne d’attaques",
@@ -1946,15 +1946,15 @@
           },
           "DriveTabletopExercise": {
             "Title": "Animer un exercice sur table avec un exercice de phishing",
-            "Description": "Créez un scénario d’exercice sur table avec des injections basées sur la communication ou la prise de décision plutôt que sur des aspects techniques (par exemple, « avertir le service juridique »), désignez les participants et menez l’exercice sous forme de session animée en direct, en enregistrant la manière dont l’équipe réagit. Profitez-en pour inclure des injections de phishing, que vous pouvez générer directement avec l’IA."
+            "Description": "Créez un scénario d’exercice sur table avec des stimuli basés sur la communication ou la prise de décision plutôt que sur des aspects techniques (par exemple, « avertir le service juridique »), désignez les participants et menez l’exercice sous forme de session animée en direct, en enregistrant la manière dont l’équipe réagit. Profitez-en pour inclure des stimuli de phishing, que vous pouvez générer directement avec l’IA."
           },
           "EvaluateSecurityPosture": {
             "Title": "Évaluer votre posture de sécurité",
-            "Description": "Commencez par l’écran d’accueil Exposure Commander Center (qui regroupe vos indicateurs clés en un coup d’œil), puis explorez des domaines de sécurité et des tableaux de bord spécifiques. Prenez le temps d’examiner les résultats des injections, les attentes et les constats."
+            "Description": "Commencez par l’écran d’accueil Exposure Commander Center (qui regroupe vos indicateurs clés en un coup d’œil), puis explorez des domaines de sécurité et des tableaux de bord spécifiques. Prenez le temps d’examiner les résultats des stimuli, les objectifs et les constatations."
           },
           "GenerateDetectionRemediationRules": {
             "Title": "Générer automatiquement des règles de détection et de remédiation",
-            "Description": "Générez des règles de détection à partir d’une injection technique exécutée grâce à la remédiation assistée par IA. Elles sont directement accessibles depuis l’onglet remédiation des résultats d’une injection."
+            "Description": "Générez des règles de détection à partir d’un stimuli technique exécuté grâce à la remédiation assistée par IA. Elles sont directement accessibles depuis l’onglet remédiation des résultats d’un stimuli."
           },
           "ConnectOpenctiSecurityCoverage": {
             "Title": "Se connecter à OpenCTI pour enrichir la couverture de sécurité",
