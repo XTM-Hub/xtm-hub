@@ -55,6 +55,7 @@ const COLUMN_ENUM_MAP = {
   PlatformConfiguration: {
     platform_contract: 'PlatformContract',
     status: 'PlatformConfigurationStatus',
+    commercial_model: 'CommercialModel',
   },
   NewsFeedItem: {
     type: 'NewsFeedItemType',

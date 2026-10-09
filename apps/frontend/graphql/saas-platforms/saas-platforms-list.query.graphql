@@ -1,0 +1,42 @@
+query SaasPlatformsList(
+  $first: Int!
+  $after: ID
+  $orderBy: RegisteredPlatformOrdering!
+  $orderMode: OrderingMode!
+  $searchTerm: String
+) {
+  saasPlatforms(
+    first: $first
+    after: $after
+    orderBy: $orderBy
+    orderMode: $orderMode
+    searchTerm: $searchTerm
+  ) {
+    totalCount
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    edges {
+      node {
+        id
+        service_instance_id
+        platform_id
+        tenant_id
+        tenant_name
+        url
+        title
+        version
+        contract
+        status
+        last_connectivity_check
+        identifier
+        organization {
+          id
+          name
+          administrator_emails
+        }
+      }
+    }
+  }
+}

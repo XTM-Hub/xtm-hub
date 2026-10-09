@@ -98,6 +98,11 @@
   "hubspot_use_queue_processing": true,
   "mail_use_queue_processing": true,
   "hubspot_webhook_url": "changeMe",
+  "saas_manager": {
+    "enabled": false,
+    "url": "https://saasmanager.staging.filigran.io",
+    "token": "ChangeMe"
+  },
   "system_token_hash": "eb511fd584085eeab986f2c588f8a8e9b765b469361bde9caa75040162171055b2b330969b56d0b11e50801eabf61fa8d4f66db8df39333dea4663dd027faca4",
   "system_token_salt": "7e0da0e4c903f610403cca8dc21de19d",
   "session_store": {

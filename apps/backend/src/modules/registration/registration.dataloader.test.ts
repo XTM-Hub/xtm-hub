@@ -11,6 +11,7 @@ import {
   PlatformIdentifier,
 } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
+import { OrganizationId } from '../../model/kanel/public/Organization';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { PlatformConfigurationDomain } from './platform-configuration/platform-configuration.domain';
@@ -107,6 +108,84 @@ describe('batchLoadRegisteredPlatforms', () => {
     const result = await RegistrationDataLoader.batchLoadRegisteredPlatforms(
       []
     );
+
+    // Then
+    expect(result).toEqual([]);
+  });
+});
+
+describe('batchLoadOwnerOrganizations', () => {
+  const otherOrganizationId = uuidv4() as OrganizationId;
+  const multiSubscribedServiceInstanceId = uuidv4() as ServiceInstanceId;
+  const undatedSubscriptionServiceInstanceId = uuidv4() as ServiceInstanceId;
+  const unsubscribedServiceInstanceId = uuidv4() as ServiceInstanceId;
+  const createdServiceInstanceIds = [
+    multiSubscribedServiceInstanceId,
+    undatedSubscriptionServiceInstanceId,
+    unsubscribedServiceInstanceId,
+  ];
+
+  beforeEach(async () => {
+    await TestHelper.organization.create({ id: otherOrganizationId });
+    for (const id of createdServiceInstanceIds) {
+      await TestHelper.serviceInstance.create({
+        id,
+        service_definition_id: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+      });
+    }
+
+    // Inserted first but started last: the owner subscription.
+    await TestHelper.subscription.create({
+      organization_id: otherOrganizationId,
+      service_instance_id: multiSubscribedServiceInstanceId,
+      start_date: new Date('2026-10-02T10:00:00.000Z'),
+    });
+    await TestHelper.subscription.create({
+      organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+      service_instance_id: multiSubscribedServiceInstanceId,
+      start_date: new Date('2026-01-01T10:00:00.000Z'),
+    });
+
+    await TestHelper.subscription.create({
+      organization_id: otherOrganizationId,
+      service_instance_id: undatedSubscriptionServiceInstanceId,
+      start_date: null,
+    });
+    await TestHelper.subscription.create({
+      organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+      service_instance_id: undatedSubscriptionServiceInstanceId,
+      start_date: new Date('2026-10-02T10:00:00.000Z'),
+    });
+  });
+
+  afterEach(async () => {
+    for (const id of createdServiceInstanceIds) {
+      await TestHelper.subscription.delete({ service_instance_id: id });
+      await TestHelper.serviceInstance.delete({ id });
+    }
+    await TestHelper.organization.delete({ id: otherOrganizationId });
+  });
+
+  it('should return the organization of the latest started subscription, in the requested order', async () => {
+    // When
+    const result = await RegistrationDataLoader.batchLoadOwnerOrganizations([
+      unsubscribedServiceInstanceId,
+      undatedSubscriptionServiceInstanceId,
+      multiSubscribedServiceInstanceId,
+    ]);
+
+    // Then
+    expect(result).toEqual([
+      null,
+      expect.objectContaining({ id: TEST_ORGANIZATIONS.FILIGRAN.ID }),
+      expect.objectContaining({ id: otherOrganizationId }),
+    ]);
+    expect(result[1]).not.toHaveProperty('service_instance_id');
+  });
+
+  it('should return an empty array when no ids are requested', async () => {
+    // When
+    const result = await RegistrationDataLoader.batchLoadOwnerOrganizations([]);
 
     // Then
     expect(result).toEqual([]);

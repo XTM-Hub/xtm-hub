@@ -156,6 +156,7 @@ describe('service Instance app', () => {
       // Then
       expect(result).toMatchObject({
         id: serviceInstance.id,
+        service_instance_id: serviceInstance.id,
         title: 'Updated Platform Name',
         url: 'https://test.com',
       });
