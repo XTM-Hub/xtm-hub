@@ -112,18 +112,18 @@ takes the same raw `fieldState.error?.message` that `FormMessage` showed.
 
 ## To validate
 
-- Within `EpicForm` and `VotingRoundForm`, textarea labels and errors use the design system typography while the
+- [x] Within `EpicForm` and `VotingRoundForm`, textarea labels and errors use the design system typography while the
   neighbouring legacy fields keep `FormLabel` and `FormMessage` until their own migration. Alternative: keep the
   legacy label and message around a bare `Textarea`, at the cost of `aria-invalid`.
-- `EpicForm`'s character counter sits on its own row under the design system error, which has no counter slot by
+- [x] `EpicForm`'s character counter sits on its own row under the design system error, which has no counter slot by
   design. Alternative: propose a counter upstream.
-- `EpicForm` textareas grow with their content from 4 rows (`minRows`), resize handle off as before. Alternative:
+- [x] `EpicForm` textareas grow with their content from 4 rows (`minRows`), resize handle off as before. Alternative:
   a fixed `rows={4}`.
-- The trial feedback justification loses its `bg-elevation-background-layer-1` and `min-h-24` overrides and
+- [x] The trial feedback justification loses its `bg-elevation-background-layer-1` and `min-h-24` overrides and
   renders the design system background at its default 3 rows. Alternative: `rows={4}`.
-- `ReachSalesDialogForm` drops its custom label classes and hand-written `*` for the design system label and
+- [x] `ReachSalesDialogForm` drops its custom label classes and hand-written `*` for the design system label and
   required marker.
-- `EeLearnMoreSheet` names its textarea with an `aria-label` reusing the heading above it. Alternative:
+- [x] `EeLearnMoreSheet` names its textarea with an `aria-label` reusing the heading above it. Alternative:
   `aria-labelledby` on that heading.
 
 ## Deferred findings

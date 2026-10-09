@@ -123,13 +123,13 @@ apart from the control, the existing `aria-label` stays and `label` is omitted.
 
 ## To validate
 
-- `VotableFeatureForm`: the "Active" text moves from above the switch (legacy `FormLabel`) to its right, in the
+- [x] `VotableFeatureForm`: the "Active" text moves from above the switch (legacy `FormLabel`) to its right, in the
   design system label typography, while the neighbouring fields keep `FormLabel` until their own migration.
   Alternative: keep `FormLabel` above a label-less `Switch` with `aria-label`.
-- `EpicFilter` and `ServiceSlug`: the text next to the switch takes the design system label typography and colour
+- [x] `EpicFilter` and `ServiceSlug`: the text next to the switch takes the design system label typography and colour
   (`content-compact-medium`, `text-input-placeholder`) instead of `text-sm` / the inherited body text, and the gap
   becomes the design system's. Alternative: keep the sibling text and name the switch with `aria-labelledby`.
-- `CookieConsentPreferences`: disabled switches of required categories render at the design system's 40% opacity
+- [x] `CookieConsentPreferences`: disabled switches of required categories render at the design system's 40% opacity
   instead of the legacy 50%, and keep their `aria-label` with no visible integrated label.
 
 ## Deferred findings

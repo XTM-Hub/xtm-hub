@@ -162,19 +162,20 @@ the raw `fieldState.error?.message` that `FormMessage` showed. Every placeholder
 
 ## To validate
 
-- Every field takes the design system look (36px, `bg-input-default`, its label typography and error colour) while
+- [x] Every field takes the design system look (36px, `bg-input-default`, its label typography and error colour) while
   neighbouring legacy fields keep `FormLabel` / `FormMessage` until their item. Alternative: none without restyling.
-- `LoginForm`, `organization/OrganizationForm`, `UseCaseForm` and `TrialsTabQuotasPlatformUpdateForm` show no error
+- [x] `LoginForm`, `organization/OrganizationForm`, `UseCaseForm` and `TrialsTabQuotasPlatformUpdateForm` show no error
   and, on a failed submit, lose the red label and `aria-invalid` they had. Alternative: pass `error`, exposing raw
   zod messages.
-- Number fields keep the browser spinner. Alternative: `isTypeNumber` with the drawn stepper and two new keys.
-- Registration and one-click deploy radios become the 16px design system radio, the description goes under the label
+- [x] Number fields keep the browser spinner. Alternative: `isTypeNumber` with the drawn stepper and two new keys.
+- [x] Registration and one-click deploy radios become the 16px design system radio, the description goes under the label
   instead of a muted indented paragraph, disabled platforms use the design system disabled colour.
-- `ColorPicker`'s hex field shows the design system `N/7` counter (contract RULE-09). Alternative: drop `maxLength`.
-- The library SEO title and description fields (`LibraryUpdateMetadata`, AutoForm with `inputProps.maxLength`) show
+- [x] `ColorPicker`'s hex field shows the design system `N/7` counter (contract RULE-09). Alternative: drop
+  `maxLength`. Superseded by 3547: the design system `ColorPicker` draws no counter.
+- [x] The library SEO title and description fields (`LibraryUpdateMetadata`, AutoForm with `inputProps.maxLength`) show
   the same `N/155` counter. Alternative: drop `maxLength` and let zod alone cap them.
-- `RegisterOrganizationForm` platform name drops its `bg-grayblue-700 border-none` override.
-- `TagInput`'s inner entry stays native with the legacy classes until 3701.
+- [x] `RegisterOrganizationForm` platform name drops its `bg-grayblue-700 border-none` override.
+- [x] `TagInput`'s inner entry stays native with the legacy classes until 3701. Done in 3701.
 
 ## Deferred findings
 

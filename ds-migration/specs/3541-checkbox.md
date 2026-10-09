@@ -165,19 +165,19 @@ rest and is already `shrink-0`.
 
 ## To validate
 
-- Every box shrinks from 18px with the legacy border to the design system's 16px, transparent at rest, with its own
+- [x] Every box shrinks from 18px with the legacy border to the design system's 16px, transparent at rest, with its own
   checked glyph, hover halo and disabled colours (no 50% opacity); `DataTable` loses its `bg-background` fill.
-- Labels take the design system typography and colour (`content-base`, `text-input-placeholder`) instead of
+- [x] Labels take the design system typography and colour (`content-base`, `text-input-placeholder`) instead of
   `text-sm`, `txt-default`, `txt-sub-content`, `FormLabel` or `text-muted-foreground`, and the box-to-text gap
   becomes the design system's 8px everywhere (it was 12px in `EpicForm` and AutoForm, 16px for the trial terms).
-- `EpicForm` "Publish now": the hint moves from inline after the label to a `description` line under it.
+- [x] `EpicForm` "Publish now": the hint moves from inline after the label to a `description` line under it.
   Alternative: keep it inline inside `label`.
-- Trial terms: the box is centred on the multi-line text instead of top-aligned, the label and box turn to the error
+- [x] Trial terms: the box is centred on the multi-line text instead of top-aligned, the label and box turn to the error
   tone on a failed submit, and the `*` takes the design system `text-input-required` colour. Alternative: no `error`,
   as before.
-- `XtmPlatformTrialForm` XTM One and `XtmPlatformTrialStatusPanel`: the disabled labels use the design system
+- [x] `XtmPlatformTrialForm` XTM One and `XtmPlatformTrialStatusPanel`: the disabled labels use the design system
   disabled colour instead of `text-muted-foreground` / `text-text-default-disabled`.
-- `LogicalMultiSelectFormField` keeps its own row typography (`content-body-compact text-[13px]`) next to the design
+- [x] `LogicalMultiSelectFormField` keeps its own row typography (`content-body-compact text-[13px]`) next to the design
   system box. Alternative: the integrated label, losing truncation and the right-aligned count.
 
 ## Deferred findings

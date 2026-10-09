@@ -149,21 +149,22 @@ classes stay (`shrink-0`, `min-w-0`, `max-w-full`, `ml-s`, `mr-s`, `w-full`, `in
 
 ## To validate
 
-- Every label takes the design system chip (filled, no border, 14px regular text, 4px radius) instead of the legacy
+- [x] Every label takes the design system chip (filled, no border, 14px regular text, 4px radius) instead of the legacy
   outlined badge tinted with `currentColor`, in both themes. Alternative: none without restyling.
-- Use-case tags on the homepage cards, last deployed resources and feature votes, platform and instance names, and
+- [x] Use-case tags on the homepage cards, last deployed resources and feature votes, platform and instance names, and
   the trial contract labels turn from the info-blue fill to `neutral`. Alternative: `severity="info"`.
-- Pending invitation and draft epic turn from orange to the amber `medium`; the alternative is `high` (orange).
-- The EE markers (registered platform, connected product, epic edition) become the solid tonic EE chip instead of a
+- [x] Pending invitation and draft epic turn from orange to the amber `medium`; the alternative is `high` (orange).
+- [x] The EE markers (registered platform, connected product, epic edition) become the solid tonic EE chip instead of a
   gradient outline, a tonic fill or a teal outline. Alternative: none without restyling.
-- The trial banner's days-left chip loses its black outline and black text on the blue gradient; it takes the neutral
+- [x] The trial banner's days-left chip loses its black outline and black text on the blue gradient; it takes the neutral
   chip, scoped to the light theme because the gradient stays light in dark mode. Alternative: plain banner text
-  without a chip.
-- The last deployed resources' calendar icon loses its brand-tinted square. Alternative: a neutral `Chip` holding the
+  without a chip. Superseded by 3688: the gradient is gone, the chip is a plain neutral chip.
+- [x] The last deployed resources' calendar icon loses its brand-tinted square. Alternative: a neutral `Chip` holding the
   date as its label, which changes the sentence.
-- In `SelectUsers` the remove cross sits next to the chip instead of inside it. Alternative: drop it, since the field
-  holds one user and has a clear-all control.
-- Long labels truncate at 250px with a tooltip instead of wrapping or overflowing (domains, capabilities).
+- [x] In `SelectUsers` the remove cross sits next to the chip instead of inside it. Alternative: drop it, since the field
+  holds one user and has a clear-all control. Superseded by 3700: `SelectUsers` is a single combobox showing the
+  author as text.
+- [x] Long labels truncate at 250px with a tooltip instead of wrapping or overflowing (domains, capabilities).
 
 ## Deferred findings
 

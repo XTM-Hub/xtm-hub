@@ -157,15 +157,15 @@ recoloured the legacy bubble goes. Content markup inside the bubble (`<p>`, span
 
 ## To validate
 
-- Every tooltip takes the design system bubble (`bg-tooltip`, `text-default-primary`, compact typography, 8px offset,
+- [x] Every tooltip takes the design system bubble (`bg-tooltip`, `text-default-primary`, compact typography, 8px offset,
   fade only) instead of the dark legacy one, in both themes. Alternative: none without restyling.
-- Tooltips open above their trigger by default instead of below. Alternative: pass `side="bottom"` at each call site.
-- Long tooltips (cancellation reason, trial product values, card descriptions, one-click deploy platform reasons,
+- [x] Tooltips open above their trigger by default instead of below. Alternative: pass `side="bottom"` at each call site.
+- [x] Long tooltips (cancellation reason, trial product values, card descriptions, one-click deploy platform reasons,
   description cells) wrap at 300px instead of 448 to 576px. Alternative: none without restyling.
-- `EeBadge`'s "Enterprise Edition" tooltip loses its cyan-to-green gradient. Alternative: keep `EE_GRADIENT` on
+- [x] `EeBadge`'s "Enterprise Edition" tooltip loses its cyan-to-green gradient. Alternative: keep `EE_GRADIENT` on
   `TooltipContent`, against the tokens-only rule.
-- `ManageTrialHeader` and `NavigationLinks` tooltips lose their custom background. Alternative: keep the overrides.
-- The list view description cell trigger shows the design system `cursor-pointer` instead of the default cursor.
+- [x] `ManageTrialHeader` and `NavigationLinks` tooltips lose their custom background. Alternative: keep the overrides.
+- [x] The list view description cell trigger shows the design system `cursor-pointer` instead of the default cursor.
   Alternative: render it as a `span tabIndex={0}` under `asChild`.
 
 ## Deferred findings

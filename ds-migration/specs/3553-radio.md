@@ -121,13 +121,13 @@ title (RULE-08).
 
 ## To validate
 
-- Option labels take the design system typography and colour (`content-base`, `text-input-placeholder`) and the
+- [x] Option labels take the design system typography and colour (`content-base`, `text-input-placeholder`) and the
   option gap becomes 16px instead of 24px (`EpicForm`, `AutoFormRadioGroup`) or none (trial dialog). Alternative:
   none without restyling the component.
-- `EpicForm`: the edition type group keeps the legacy `FormLabel` title with its info tooltip above it, while the
+- [x] `EpicForm`: the edition type group keeps the legacy `FormLabel` title with its info tooltip above it, while the
   options use the design system label. Alternative: name the group with `aria-labelledby` on an `id` added to the
   title, once the legacy `Form` is migrated (item 3706).
-- The circle shrinks from 20px with a 2px border to the design system's 16px with a 1px border and no rest fill
+- [x] The circle shrinks from 20px with a 2px border to the design system's 16px with a 1px border and no rest fill
   (RULE-05).
 
 ## Deferred findings
