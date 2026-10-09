@@ -36,6 +36,23 @@ const test = testBase.extend({
         },
       ]);
 
+      // The trial invitation floats over the header's top-right controls
+      // until it is dismissed, so every test starts with it dismissed.
+      await page.context().addInitScript(() => {
+        try {
+          globalThis.localStorage.setItem(
+            'xtmPlatformTrialBannerDismissed_noTrial',
+            'true'
+          );
+          globalThis.localStorage.setItem(
+            'xtmPlatformTrialBannerDismissed_active',
+            'true'
+          );
+        } catch {
+          // about:blank and opaque origins have no localStorage.
+        }
+      });
+
       await use('autoTestFixture');
 
       if (activateCoverage) {

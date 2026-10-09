@@ -117,7 +117,8 @@ Its code comment goes with it.
   `onOpenChange` as the single dismiss path (close, swipe, Escape, the action), kept mounted with `open={!dismissed}`.
   It floats top-right instead of pushing the page, and its card slides in after hydration. Until it is
   dismissed it covers the top-right of the header (connected products, user menu), of the public pages (sign-in
-  buttons), of an open sheet and of a modal overlay: accepted by the reviewer, since one click dismisses it. The learn-more link is its
+  buttons), of an open sheet and of a modal overlay: accepted by the reviewer, since one click dismisses it. The e2e base fixture
+  starts every test with it dismissed (both localStorage keys), as it does for the cookie consent. The learn-more link is its
   `action` (`Button asChild priority="secondary" size="sm"`, without the gradient restyle), so following it also
   dismisses the invitation; the days-left chip is its `description`. `AppSnackbars` now wraps the app so the banner
   sits under its provider.
