@@ -85,6 +85,10 @@ Knex 3 as a query builder — **not** an ORM. `db()` from `knexfile.ts` is the p
 `DatabaseType` (table name), supports `paginate()`, and reads `databaseContext` (AsyncLocalStorage) so it joins the
 ambient transaction implicitly. Do not open your own connection.
 
+A check followed by a write can race with another request, and a transaction alone does not prevent it. For anything
+that must happen once, stay unique, keep at least one of something, respect a limit or quota, or update a counter, and
+before adding a lock, read [`.claude/skills/postgres-concurrency/SKILL.md`](../skills/postgres-concurrency/SKILL.md).
+
 `knexconfig.ts` holds the base connection; `knexfile.ts` layers on migrations, seeds, security and pagination.
 
 ### Free-text search

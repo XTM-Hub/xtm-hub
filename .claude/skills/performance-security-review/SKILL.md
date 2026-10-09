@@ -47,6 +47,8 @@ early.
 - Avoid vague advice; each finding must be testable and verifiable.
 - Prefer worst-case analysis when trade-offs are unclear.
 - Include one realistic failure scenario for each High/Critical finding.
+- For race conditions, size the finding to the risk, not to the worst case: apply
+  `.claude/skills/postgres-concurrency/SKILL.md`, where doing nothing, with the outcome documented, is a valid option.
 
 ## Output Format
 For every finding, provide:
