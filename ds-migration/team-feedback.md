@@ -32,3 +32,6 @@
 | [6078666599](https://github.com/XTM-Hub/xtm-hub/pull/3715#issuecomment-6078666599) | jpkha | Focus ring should wrap the whole card | fixed | 99d599995, #3764 |
 | [6078723289](https://github.com/XTM-Hub/xtm-hub/pull/3715#issuecomment-6078723289) | carinelebas | Trial product tags faint in dark mode | answered | Design system severity fill; feedback for the design system |
 | [6078881268](https://github.com/XTM-Hub/xtm-hub/pull/3715#issuecomment-6078881268) | carinelebas | Field titles differ in document forms | later item | #3706 |
+| [6082441783](https://github.com/XTM-Hub/xtm-hub/pull/3715#issuecomment-6082441783) | fimow | Navbar not the design system one (hover, chevrons, scrollbar shift) | later item | #3557 |
+| [6082704153](https://github.com/XTM-Hub/xtm-hub/pull/3715#issuecomment-6082704153) | fimow | Top banners use Alert, not the Figma Banner | answered | Design system 1.2.0 has no Banner; Alert stays until the library ships it |
+| [6083210687](https://github.com/XTM-Hub/xtm-hub/pull/3715#issuecomment-6083210687) | fimow | Filter by service full width, toolbar widths inconsistent | follow-up | #3768 (same on main) |
