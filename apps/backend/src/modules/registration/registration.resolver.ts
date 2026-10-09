@@ -36,20 +36,10 @@ const resolvers: Resolvers = {
       DeploymentRequestDomain.loadFullDeploymentRequest({
         service_instance_id: id as ServiceInstanceId,
       }),
-    organization: async ({ id }, _, context) => {
-      const organizationId =
-        await context.dataLoaders.registration.ownerOrganizationIdByServiceInstanceLoader.load(
-          id as ServiceInstanceId
-        );
-      if (!organizationId) {
-        return null;
-      }
-      const organization =
-        await context.dataLoaders.subscription.organizationBySubscriptionOrganizationIdLoader.load(
-          organizationId
-        );
-      return organization ?? null;
-    },
+    organization: ({ id }, _, context) =>
+      context.dataLoaders.registration.ownerOrganizationByServiceInstanceLoader.load(
+        id as ServiceInstanceId
+      ),
   },
   Query: {
     isPlatformRegistered: async (_, { input }) => {

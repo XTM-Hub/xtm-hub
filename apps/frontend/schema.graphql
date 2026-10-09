@@ -1271,8 +1271,6 @@ type RegisteredPlatformConnection {
 }
 
 enum RegisteredPlatformOrdering {
-  platform_title
-  last_connectivity_check
   organization_name
 }
 

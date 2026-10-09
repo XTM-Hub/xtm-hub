@@ -114,7 +114,7 @@ describe('batchLoadRegisteredPlatforms', () => {
   });
 });
 
-describe('batchLoadOwnerOrganizationIds', () => {
+describe('batchLoadOwnerOrganizations', () => {
   const otherOrganizationId = uuidv4() as OrganizationId;
   const multiSubscribedServiceInstanceId = uuidv4() as ServiceInstanceId;
   const undatedSubscriptionServiceInstanceId = uuidv4() as ServiceInstanceId;
@@ -134,12 +134,12 @@ describe('batchLoadOwnerOrganizationIds', () => {
       });
     }
 
+    // Inserted first but started last: the owner subscription.
     await TestHelper.subscription.create({
       organization_id: otherOrganizationId,
       service_instance_id: multiSubscribedServiceInstanceId,
       start_date: new Date('2026-10-02T10:00:00.000Z'),
     });
-    // Inserted last but started first: the registration subscription.
     await TestHelper.subscription.create({
       organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
       service_instance_id: multiSubscribedServiceInstanceId,
@@ -166,9 +166,9 @@ describe('batchLoadOwnerOrganizationIds', () => {
     await TestHelper.organization.delete({ id: otherOrganizationId });
   });
 
-  it('should return the organization of the earliest started subscription, in the requested order', async () => {
+  it('should return the organization of the latest started subscription, in the requested order', async () => {
     // When
-    const result = await RegistrationDataLoader.batchLoadOwnerOrganizationIds([
+    const result = await RegistrationDataLoader.batchLoadOwnerOrganizations([
       unsubscribedServiceInstanceId,
       undatedSubscriptionServiceInstanceId,
       multiSubscribedServiceInstanceId,
@@ -177,16 +177,15 @@ describe('batchLoadOwnerOrganizationIds', () => {
     // Then
     expect(result).toEqual([
       null,
-      TEST_ORGANIZATIONS.FILIGRAN.ID,
-      TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+      expect.objectContaining({ id: TEST_ORGANIZATIONS.FILIGRAN.ID }),
+      expect.objectContaining({ id: otherOrganizationId }),
     ]);
+    expect(result[1]).not.toHaveProperty('service_instance_id');
   });
 
   it('should return an empty array when no ids are requested', async () => {
     // When
-    const result = await RegistrationDataLoader.batchLoadOwnerOrganizationIds(
-      []
-    );
+    const result = await RegistrationDataLoader.batchLoadOwnerOrganizations([]);
 
     // Then
     expect(result).toEqual([]);

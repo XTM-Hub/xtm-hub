@@ -83,9 +83,8 @@ const portalConfig: PortalConfig = {
       config.get<boolean>('enabled_emails.public_roadmap_monthly_reminder') ??
       false,
   },
-  // Never call the external SaaS Manager from backend or E2E tests.
   saas_manager: {
-    enabled: !(process.env.VITEST_MODE || process.env.NODE_ENV === 'test'),
+    enabled: config.get<boolean>('saas_manager.enabled') ?? false,
   },
   auth0_sync: {
     enabled: config.get<boolean>('auth0_sync.enabled') ?? false,

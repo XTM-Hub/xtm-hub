@@ -17,7 +17,9 @@ import {
 } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
 import { DocumentId } from '../../model/kanel/public/Document';
-import { OrganizationId } from '../../model/kanel/public/Organization';
+import Organization, {
+  OrganizationId,
+} from '../../model/kanel/public/Organization';
 import PlatformConfigurationModel from '../../model/kanel/public/PlatformConfiguration';
 import { ServiceDefinitionId } from '../../model/kanel/public/ServiceDefinition';
 import ServiceInstance, {
@@ -53,6 +55,10 @@ export interface DomainRegisteredPlatform extends PlatformConfigurationModel {
   identifier: ServiceDefinitionIdentifier;
   illustration_document_id: DocumentId | null;
   id: string;
+}
+
+export interface PlatformOwnerOrganization extends Organization {
+  service_instance_id: ServiceInstanceId;
 }
 
 const RegisteredPlatformsSelectColumns = [
@@ -188,15 +194,26 @@ export const RegistrationDomain = {
     ]);
   },
 
-  loadPlatformOwnerSubscriptionsByServiceInstanceIds: async (
+  loadPlatformOwnerOrganizationsByServiceInstanceIds: async (
     serviceInstanceIds: readonly ServiceInstanceId[]
-  ): Promise<Subscription[]> => {
+  ): Promise<PlatformOwnerOrganization[]> => {
     if (serviceInstanceIds.length === 0) {
       return [];
     }
-    return getPlatformOwnerSubscriptionsQuery()
-      .select<Subscription[]>('*')
-      .whereIn('service_instance_id', [...serviceInstanceIds]);
+    return db<Organization>('Organization')
+      .join(
+        getPlatformOwnerSubscriptionsQuery()
+          .select('service_instance_id', 'organization_id')
+          .whereIn('service_instance_id', [...serviceInstanceIds])
+          .as('OwnerSubscription'),
+        'OwnerSubscription.organization_id',
+        '=',
+        'Organization.id'
+      )
+      .select<PlatformOwnerOrganization[]>(
+        'Organization.*',
+        'OwnerSubscription.service_instance_id'
+      );
   },
 
   loadAllActiveRegisteredPlatformsByPlatformIdentifier: async (
@@ -358,13 +375,13 @@ export const RegistrationDomain = {
   },
 };
 
-// The owner of a platform is the organization of its oldest subscription.
+// The owner of a platform is the organization of its newest subscription.
 const getPlatformOwnerSubscriptionsQuery = () =>
   db<Subscription>('Subscription')
     .distinctOn('service_instance_id')
     .orderBy([
       { column: 'service_instance_id' },
-      { column: 'start_date', order: 'asc', nulls: 'last' },
+      { column: 'start_date', order: 'desc', nulls: 'last' },
       { column: 'id', order: 'asc' },
     ]);
 
@@ -403,7 +420,6 @@ const getRegisteredPlatformsDataQuery = (): Knex.QueryBuilder<
       '=',
       'ServiceInstance.id'
     )
-    .where('ServiceInstance.creation_status', '!=', 'DISABLED')
     .where('Subscription.organization_id', '=', userSelectedOrganization)
     .select(RegisteredPlatformsSelectColumns);
 };

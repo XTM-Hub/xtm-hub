@@ -99,6 +99,7 @@
   "mail_use_queue_processing": true,
   "hubspot_webhook_url": "changeMe",
   "saas_manager": {
+    "enabled": false,
     "url": "https://saasmanager.staging.filigran.io",
     "token": "ChangeMe"
   },

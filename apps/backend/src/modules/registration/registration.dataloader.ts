@@ -1,6 +1,8 @@
 import DataLoader from 'dataloader';
-import { RegisteredPlatform } from '../../__generated__/resolvers-types';
-import { OrganizationId } from '../../model/kanel/public/Organization';
+import {
+  Organization,
+  RegisteredPlatform,
+} from '../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { mapDomainRegisteredPlatformToGraphQL } from './registration.app';
 import { RegistrationDomain } from './registration.domain';
@@ -10,9 +12,9 @@ export interface RegistrationDataLoaders {
     ServiceInstanceId,
     RegisteredPlatform | null
   >;
-  ownerOrganizationIdByServiceInstanceLoader: DataLoader<
+  ownerOrganizationByServiceInstanceLoader: DataLoader<
     ServiceInstanceId,
-    OrganizationId | null
+    Organization | null
   >;
 }
 
@@ -34,18 +36,18 @@ export const RegistrationDataLoader = {
     return serviceInstanceIds.map((id) => map.get(id) ?? null);
   },
 
-  batchLoadOwnerOrganizationIds: async (
+  batchLoadOwnerOrganizations: async (
     serviceInstanceIds: readonly ServiceInstanceId[]
-  ): Promise<(OrganizationId | null)[]> => {
-    const subscriptions =
-      await RegistrationDomain.loadPlatformOwnerSubscriptionsByServiceInstanceIds(
+  ): Promise<(Organization | null)[]> => {
+    const rows =
+      await RegistrationDomain.loadPlatformOwnerOrganizationsByServiceInstanceIds(
         serviceInstanceIds
       );
 
-    const map = new Map<string, OrganizationId>(
-      subscriptions.map((subscription) => [
-        subscription.service_instance_id,
-        subscription.organization_id,
+    const map = new Map<string, Organization>(
+      rows.map(({ service_instance_id, ...organization }) => [
+        service_instance_id,
+        organization as unknown as Organization,
       ])
     );
     return serviceInstanceIds.map((id) => map.get(id) ?? null);
@@ -55,8 +57,8 @@ export const RegistrationDataLoader = {
     registeredPlatformByServiceInstanceLoader: new DataLoader(
       RegistrationDataLoader.batchLoadRegisteredPlatforms
     ),
-    ownerOrganizationIdByServiceInstanceLoader: new DataLoader(
-      RegistrationDataLoader.batchLoadOwnerOrganizationIds
+    ownerOrganizationByServiceInstanceLoader: new DataLoader(
+      RegistrationDataLoader.batchLoadOwnerOrganizations
     ),
   }),
 };

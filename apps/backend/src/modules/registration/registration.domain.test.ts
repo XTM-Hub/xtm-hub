@@ -892,13 +892,13 @@ describe('registration domain', () => {
     };
     // The caller (default request context) selects FILIGRAN: A and B are only
     // subscribed by other organizations, A by two of them. Subscriptions start
-    // in the listed order, so the first organization owns the platform.
+    // in the listed order, so the last organization owns the platform.
     const includedPlatforms = [
       {
         ...saasPlatformA,
         organizationIds: [
-          otherOrganizationId,
           TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          otherOrganizationId,
         ],
       },
       {

@@ -2448,9 +2448,7 @@ export type RegisteredPlatformInput = {
 };
 
 export enum RegisteredPlatformOrdering {
-  LastConnectivityCheck = 'last_connectivity_check',
-  OrganizationName = 'organization_name',
-  PlatformTitle = 'platform_title'
+  OrganizationName = 'organization_name'
 }
 
 export type RegisteredPlatformsInput = {
