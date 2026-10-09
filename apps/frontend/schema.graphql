@@ -152,7 +152,6 @@ type Query {
   userServiceFromSubscription(first: Int!, after: ID, orderBy: UserServiceOrdering!, orderMode: OrderingMode!, subscription_id: SubscriptionId!): UserServiceConnection
   epics(first: Int!, after: ID, orderBy: EpicOrdering!, orderMode: OrderingMode!, searchTerm: String): EpicConnection
   countEpicsPerTimeline: [EpicCountPerTimeline!]!
-  node(id: ID!): Node
 }
 
 type Mutation {

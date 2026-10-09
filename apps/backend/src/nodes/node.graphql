@@ -65,6 +65,6 @@ type MergeEvent implements Node {
   target: ID!
 }
 
-type Query {
-  node(id: ID!): Node @auth
-}
+# Root type extended by every module. There is deliberately no Relay `node(id:)`
+# field: a generic lookup by global id bypasses each type's own access checks.
+type Query
