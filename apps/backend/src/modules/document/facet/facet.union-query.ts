@@ -149,12 +149,7 @@ export const loadFacetsInSingleQuery = async (
 
   const baseScopeCteName = 'facet_base_scope';
   const baseScopeQuery = buildFacetBaseScopeQuery(input, restrictToActive);
-  await applySearch(
-    'Document',
-    baseScopeQuery,
-    input.searchTerm ?? undefined,
-    true
-  );
+  await applySearch('Document', baseScopeQuery, input.searchTerm ?? undefined);
   ctes.push({ name: baseScopeCteName, query: baseScopeQuery });
 
   for (const [index, group] of groups.entries()) {

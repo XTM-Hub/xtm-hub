@@ -10,6 +10,12 @@ import { OrganizationDomain } from './organization.domain';
 
 const resolvers: Resolvers = {
   OrganizationId: createRelayIdScalar<OrganizationId>('Organization'),
+  Organization: {
+    administrator_emails: async ({ id }, _, context) =>
+      context.dataLoaders.organization.administratorEmailsByOrganizationIdLoader.load(
+        id as OrganizationId
+      ),
+  },
   Query: {
     organization: async (_, { id }) =>
       OrganizationDomain.loadOrganizationBy({ id: id as OrganizationId }),

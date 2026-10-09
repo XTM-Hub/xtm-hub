@@ -129,6 +129,7 @@ export const hubspotInviteUserHook = async (
     email: user.email,
     first_name: user.first_name,
     last_name: user.last_name,
+    inviter_email: requestContext.requireUser().email,
   }));
 
 export const hubspotReachOutSalesHook = async ({

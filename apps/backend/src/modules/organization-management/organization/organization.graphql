@@ -14,6 +14,7 @@ type Organization implements Node {
   domains: [String!]
   personal_space: Boolean!
   capabilityUser: [Capability]
+  administrator_emails: [String!] @auth(portalCapa: [BYPASS, READ_SAAS_METRICS])
 }
 
 type OrganizationEdge {

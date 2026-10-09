@@ -132,6 +132,7 @@ type Query {
   canUnregisterPlatform(input: CanUnregisterPlatformInput!): CanUnregisterResponse!
   registeredPlatform(input: RegisteredPlatformInput!): RegisteredPlatform
   registeredPlatforms(input: RegisteredPlatformsInput!): [RegisteredPlatform!]!
+  saasPlatforms(first: Int!, after: ID, orderBy: RegisteredPlatformOrdering!, orderMode: OrderingMode!, searchTerm: String): RegisteredPlatformConnection!
   platformAssociatedOrganization(platformId: String!, tenantId: String): Organization
   rolePortals: [RolePortal!]!
   ssoGroupRolePortals: [SSOGroupRolePortal!]!
@@ -1052,6 +1053,7 @@ type Organization implements Node {
   domains: [String!]
   personal_space: Boolean!
   capabilityUser: [Capability]
+  administrator_emails: [String!]
 }
 
 type OrganizationEdge {
@@ -1218,6 +1220,11 @@ enum PlatformConfigurationStatus {
   inactive
 }
 
+enum CommercialModel {
+  SAAS
+  OTHER
+}
+
 input OpenCTIPlatformRegistrationStatusInput {
   platformId: String!
   token: String!
@@ -1235,6 +1242,7 @@ enum PlatformContract {
 
 type RegisteredPlatform implements Node {
   id: ID!
+  service_instance_id: ServiceInstanceId!
   url: String!
   title: String!
   contract: PlatformContract!
@@ -1249,6 +1257,22 @@ type RegisteredPlatform implements Node {
   status: PlatformConfigurationStatus
   subscription: SubscriptionModel
   myGroups: [ServiceGroup!]
+  organization: Organization
+}
+
+type RegisteredPlatformEdge {
+  cursor: String!
+  node: RegisteredPlatform!
+}
+
+type RegisteredPlatformConnection {
+  totalCount: Int!
+  edges: [RegisteredPlatformEdge!]!
+  pageInfo: PageInfo!
+}
+
+enum RegisteredPlatformOrdering {
+  organization_name
 }
 
 input PlatformInput {

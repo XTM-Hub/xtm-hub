@@ -19,6 +19,7 @@ export interface HubspotInviteUserPayload {
   email: string;
   first_name: string | null;
   last_name: string | null;
+  inviter_email: string;
 }
 
 export interface HubspotPayloadMap {

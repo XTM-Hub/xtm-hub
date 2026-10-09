@@ -4,6 +4,7 @@ import { HUBSPOT_QUEUES } from './hubspot.jobs';
 import { MAIL_QUEUES } from './mail.jobs';
 import { MANIFEST_QUEUES } from './manifest.jobs';
 import { PgBossMetrics } from './pgboss.metrics';
+import { REGISTRATION_QUEUES } from './registration.jobs';
 import { TELEMETRY_QUEUES } from './telemetry.jobs';
 
 /**
@@ -15,6 +16,7 @@ const DEAD_LETTER_QUEUES = [
   TELEMETRY_QUEUES.DEAD_LETTER,
   MAIL_QUEUES.DEAD_LETTER,
   MANIFEST_QUEUES.DEAD_LETTER,
+  REGISTRATION_QUEUES.DEAD_LETTER,
 ] as const;
 
 function handleDeadLetterJobs(jobs: JobWithMetadata<unknown>[]): Promise<void> {

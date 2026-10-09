@@ -1,5 +1,8 @@
 import DataLoader from 'dataloader';
-import { RegisteredPlatform } from '../../__generated__/resolvers-types';
+import {
+  Organization,
+  RegisteredPlatform,
+} from '../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { mapDomainRegisteredPlatformToGraphQL } from './registration.app';
 import { RegistrationDomain } from './registration.domain';
@@ -8,6 +11,10 @@ export interface RegistrationDataLoaders {
   registeredPlatformByServiceInstanceLoader: DataLoader<
     ServiceInstanceId,
     RegisteredPlatform | null
+  >;
+  ownerOrganizationByServiceInstanceLoader: DataLoader<
+    ServiceInstanceId,
+    Organization | null
   >;
 }
 
@@ -29,9 +36,29 @@ export const RegistrationDataLoader = {
     return serviceInstanceIds.map((id) => map.get(id) ?? null);
   },
 
+  batchLoadOwnerOrganizations: async (
+    serviceInstanceIds: readonly ServiceInstanceId[]
+  ): Promise<(Organization | null)[]> => {
+    const rows =
+      await RegistrationDomain.loadPlatformOwnerOrganizationsByServiceInstanceIds(
+        serviceInstanceIds
+      );
+
+    const map = new Map<string, Organization>(
+      rows.map(({ service_instance_id, ...organization }) => [
+        service_instance_id,
+        organization as unknown as Organization,
+      ])
+    );
+    return serviceInstanceIds.map((id) => map.get(id) ?? null);
+  },
+
   create: (): RegistrationDataLoaders => ({
     registeredPlatformByServiceInstanceLoader: new DataLoader(
       RegistrationDataLoader.batchLoadRegisteredPlatforms
+    ),
+    ownerOrganizationByServiceInstanceLoader: new DataLoader(
+      RegistrationDataLoader.batchLoadOwnerOrganizations
     ),
   }),
 };

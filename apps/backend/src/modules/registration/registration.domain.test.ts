@@ -9,12 +9,15 @@ import {
   TEST_ORGANIZATIONS,
 } from '../../../tests/tests.const';
 import {
+  CommercialModel,
   DeploymentRequestDeploymentType,
   DeploymentRequestHubStatus,
   DeploymentRequestPlatformRegion,
+  OrderingMode,
   PlatformConfigurationStatus,
   PlatformContract,
   PlatformIdentifier,
+  RegisteredPlatformOrdering,
   ServiceDefinitionIdentifier,
   ServiceInstanceCreationStatus,
 } from '../../__generated__/resolvers-types';
@@ -862,5 +865,309 @@ describe('registration domain', () => {
       expect(platformIds).toContain(platformId);
       expect(platformIds).not.toContain(openAEVplatformId);
     });
+  });
+
+  describe('loadSaasPlatforms', () => {
+    const otherOrganizationId = uuidv4() as OrganizationId;
+    const saasPlatformA = {
+      serviceInstanceId: uuidv4() as ServiceInstanceId,
+      platformId: uuidv4(),
+      tenantId: uuidv4(),
+      title: 'SaaS platform A',
+      lastConnectivityCheck: new Date('2026-10-03T10:00:00.000Z'),
+    };
+    const saasPlatformB = {
+      serviceInstanceId: uuidv4() as ServiceInstanceId,
+      platformId: uuidv4(),
+      tenantId: uuidv4(),
+      title: 'SaaS platform B',
+      lastConnectivityCheck: new Date('2026-10-01T10:00:00.000Z'),
+    };
+    const saasPlatformC = {
+      serviceInstanceId: uuidv4() as ServiceInstanceId,
+      platformId: uuidv4(),
+      tenantId: uuidv4(),
+      title: 'SaaS platform C',
+      lastConnectivityCheck: new Date('2026-10-02T10:00:00.000Z'),
+    };
+    // The caller (default request context) selects FILIGRAN: A and B are only
+    // subscribed by other organizations, A by two of them. Subscriptions start
+    // in the listed order, so the last organization owns the platform.
+    const includedPlatforms = [
+      {
+        ...saasPlatformA,
+        organizationIds: [
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          otherOrganizationId,
+        ],
+      },
+      {
+        ...saasPlatformB,
+        organizationIds: [TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID],
+      },
+      {
+        ...saasPlatformC,
+        organizationIds: [TEST_ORGANIZATIONS.FILIGRAN.ID],
+      },
+    ];
+
+    const excludedPlatforms = [
+      {
+        description: 'a non-SaaS OpenCTI platform',
+        serviceInstanceId: uuidv4() as ServiceInstanceId,
+        serviceDefinitionId: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+        creationStatus: ServiceInstanceCreationStatus.Ready,
+        status: PlatformConfigurationStatus.Active,
+        commercialModel: CommercialModel.Other,
+      },
+      {
+        description: 'a SaaS platform of another service definition',
+        serviceInstanceId: uuidv4() as ServiceInstanceId,
+        serviceDefinitionId: SERVICES.DEFINITIONS.OPENAEV_REGISTRATION.ID,
+        creationStatus: ServiceInstanceCreationStatus.Ready,
+        status: PlatformConfigurationStatus.Active,
+        commercialModel: CommercialModel.Saas,
+      },
+      {
+        description: 'a SaaS OpenCTI platform with a disabled service instance',
+        serviceInstanceId: uuidv4() as ServiceInstanceId,
+        serviceDefinitionId: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+        creationStatus: ServiceInstanceCreationStatus.Disabled,
+        status: PlatformConfigurationStatus.Active,
+        commercialModel: CommercialModel.Saas,
+      },
+      {
+        description: 'an inactive SaaS OpenCTI platform',
+        serviceInstanceId: uuidv4() as ServiceInstanceId,
+        serviceDefinitionId: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+        creationStatus: ServiceInstanceCreationStatus.Ready,
+        status: PlatformConfigurationStatus.Inactive,
+        commercialModel: CommercialModel.Saas,
+      },
+    ];
+    const createdServiceInstanceIds = [
+      ...includedPlatforms.map(({ serviceInstanceId }) => serviceInstanceId),
+      ...excludedPlatforms.map(({ serviceInstanceId }) => serviceInstanceId),
+    ];
+    const defaultArgs = {
+      first: 10,
+      orderBy: RegisteredPlatformOrdering.OrganizationName,
+      orderMode: OrderingMode.Asc,
+    };
+
+    beforeEach(async () => {
+      await TestHelper.organization.create({
+        id: otherOrganizationId,
+        name: 'Other organization',
+      });
+
+      for (const platform of includedPlatforms) {
+        await TestHelper.serviceInstance.create({
+          id: platform.serviceInstanceId,
+          service_definition_id: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+          creation_status: ServiceInstanceCreationStatus.Ready,
+        });
+        await TestHelper.platformConfiguration.create({
+          service_instance_id: platform.serviceInstanceId,
+          platform_id: platform.platformId,
+          tenant_id: platform.tenantId,
+          tenant_name: `${platform.title} tenant`,
+          platform_url: 'https://saas.opencti.example.com',
+          platform_title: platform.title,
+          platform_version: '6.8.0',
+          platform_contract: PlatformContract.Ee,
+          status: PlatformConfigurationStatus.Active,
+          last_connectivity_check: platform.lastConnectivityCheck,
+          commercial_model: CommercialModel.Saas,
+        });
+        for (const [
+          index,
+          organizationId,
+        ] of platform.organizationIds.entries()) {
+          await TestHelper.subscription.create({
+            organization_id: organizationId,
+            service_instance_id: platform.serviceInstanceId,
+            start_date: new Date(Date.UTC(2026, 0, index + 1)),
+          });
+        }
+      }
+
+      for (const platform of excludedPlatforms) {
+        await TestHelper.serviceInstance.create({
+          id: platform.serviceInstanceId,
+          service_definition_id: platform.serviceDefinitionId,
+          creation_status: platform.creationStatus,
+        });
+        await TestHelper.platformConfiguration.create({
+          service_instance_id: platform.serviceInstanceId,
+          status: platform.status,
+          commercial_model: platform.commercialModel,
+        });
+        await TestHelper.subscription.create({
+          organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+          service_instance_id: platform.serviceInstanceId,
+        });
+      }
+    });
+
+    afterEach(async () => {
+      for (const serviceInstanceId of createdServiceInstanceIds) {
+        await TestHelper.subscription.delete({
+          service_instance_id: serviceInstanceId,
+        });
+        await TestHelper.platformConfiguration.delete({
+          service_instance_id: serviceInstanceId,
+        });
+        await TestHelper.serviceInstance.delete({ id: serviceInstanceId });
+      }
+      await TestHelper.organization.delete({ id: otherOrganizationId });
+    });
+
+    it('should return every SaaS OpenCTI platform once, whatever its organization, as a connection', async () => {
+      // When
+      const connection =
+        await RegistrationDomain.loadSaasPlatforms(defaultArgs);
+
+      // Then
+      expect(connection).toMatchObject({
+        totalCount: '3',
+        pageInfo: {
+          startCursor: btoa('1'),
+          endCursor: btoa('3'),
+          hasNextPage: false,
+        },
+        edges: [
+          { cursor: btoa('1'), node: { id: saasPlatformC.serviceInstanceId } },
+          { cursor: btoa('2'), node: { id: saasPlatformA.serviceInstanceId } },
+          { cursor: btoa('3'), node: { id: saasPlatformB.serviceInstanceId } },
+        ],
+      });
+      expect(connection.edges).toHaveLength(3);
+      expect(connection.edges[1]?.node).toMatchObject({
+        __typename: 'RegisteredPlatform',
+        id: saasPlatformA.serviceInstanceId,
+        service_instance_id: saasPlatformA.serviceInstanceId,
+        identifier: ServiceDefinitionIdentifier.OpenctiRegistration,
+        illustration_document_id: null,
+        platform_id: saasPlatformA.platformId,
+        tenant_id: saasPlatformA.tenantId,
+        tenant_name: 'SaaS platform A tenant',
+        title: 'SaaS platform A',
+        url: 'https://saas.opencti.example.com',
+        contract: PlatformContract.Ee,
+        version: '6.8.0',
+        status: PlatformConfigurationStatus.Active,
+        last_connectivity_check: saasPlatformA.lastConnectivityCheck,
+      });
+      connection.edges.forEach(({ node }) => {
+        expect(node).not.toHaveProperty('token');
+        expect(node).not.toHaveProperty('registerer_id');
+      });
+    });
+
+    it('should limit the page with first and return the next page with the after cursor', async () => {
+      // When
+      const firstPage = await RegistrationDomain.loadSaasPlatforms({
+        ...defaultArgs,
+        first: 2,
+      });
+      const secondPage = await RegistrationDomain.loadSaasPlatforms({
+        ...defaultArgs,
+        first: 2,
+        after: firstPage.pageInfo.endCursor,
+      });
+
+      // Then
+      expect(firstPage).toMatchObject({
+        totalCount: '3',
+        pageInfo: { endCursor: btoa('2'), hasNextPage: true },
+      });
+      expect(firstPage.edges.map(({ node }) => node.id)).toEqual([
+        saasPlatformC.serviceInstanceId,
+        saasPlatformA.serviceInstanceId,
+      ]);
+      expect(secondPage).toMatchObject({
+        totalCount: '3',
+        pageInfo: { endCursor: btoa('3'), hasNextPage: false },
+      });
+      expect(secondPage.edges.map(({ node }) => node.id)).toEqual([
+        saasPlatformB.serviceInstanceId,
+      ]);
+    });
+
+    it.each([
+      {
+        orderBy: RegisteredPlatformOrdering.OrganizationName,
+        orderMode: OrderingMode.Asc,
+        expected: [saasPlatformC, saasPlatformA, saasPlatformB],
+      },
+      {
+        orderBy: RegisteredPlatformOrdering.OrganizationName,
+        orderMode: OrderingMode.Desc,
+        expected: [saasPlatformB, saasPlatformA, saasPlatformC],
+      },
+    ])(
+      'should order by $orderBy $orderMode',
+      async ({ orderBy, orderMode, expected }) => {
+        // When
+        const connection = await RegistrationDomain.loadSaasPlatforms({
+          ...defaultArgs,
+          orderBy,
+          orderMode,
+        });
+
+        // Then
+        expect(connection.edges.map(({ node }) => node.id)).toEqual(
+          expected.map(({ serviceInstanceId }) => serviceInstanceId)
+        );
+      }
+    );
+
+    it.each([
+      {
+        description: 'case-insensitively on part of the name',
+        searchTerm: 'orga',
+        expected: [saasPlatformA, saasPlatformB],
+      },
+      {
+        description: 'only on the owner organization',
+        searchTerm: 'second',
+        expected: [saasPlatformB],
+      },
+      {
+        description: 'with no match',
+        searchTerm: 'unknown',
+        expected: [],
+      },
+    ])(
+      'should filter on the owner organization name $description',
+      async ({ searchTerm, expected }) => {
+        // When
+        const connection = await RegistrationDomain.loadSaasPlatforms({
+          ...defaultArgs,
+          searchTerm,
+        });
+
+        // Then
+        expect(connection.totalCount).toBe(String(expected.length));
+        expect(connection.edges.map(({ node }) => node.id)).toEqual(
+          expected.map(({ serviceInstanceId }) => serviceInstanceId)
+        );
+      }
+    );
+
+    it.each(excludedPlatforms)(
+      'should exclude $description',
+      async ({ serviceInstanceId }) => {
+        // When
+        const connection =
+          await RegistrationDomain.loadSaasPlatforms(defaultArgs);
+
+        // Then
+        const serviceInstanceIds = connection.edges.map(({ node }) => node.id);
+        expect(serviceInstanceIds).toContain(saasPlatformA.serviceInstanceId);
+        expect(serviceInstanceIds).not.toContain(serviceInstanceId);
+      }
+    );
   });
 });

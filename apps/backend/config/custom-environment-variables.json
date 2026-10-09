@@ -50,6 +50,9 @@
   "telemetry_tags": "TELEMETRY_TAGS",
   "hubspot_use_queue_processing": "HUBSPOT_USE_QUEUE_PROCESSING",
   "hubspot_webhook_url": "HUBSPOT_WEBHOOK_URL",
+  "saas_manager": {
+    "token": "SAAS_MANAGER_TOKEN"
+  },
   "system_token_hash": "SYSTEM_TOKEN_HASH",
   "system_token_salt": "SYSTEM_TOKEN_SALT",
   "session": {
