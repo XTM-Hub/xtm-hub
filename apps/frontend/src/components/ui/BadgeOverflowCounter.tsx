@@ -118,7 +118,7 @@ const BadgeOverflowCounter = ({
     <Chip
       key={key}
       label={label}
-      color={variant === 'badge' ? color : undefined}
+      color={color}
       severity={variant === 'chip' && counter ? 'info' : 'neutral'}
       {...props}
     />
