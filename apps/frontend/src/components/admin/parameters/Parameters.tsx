@@ -1,3 +1,4 @@
+import { Label } from '@/components/ui/label';
 import { useTranslate } from '@/hooks/use-translate';
 import {
   Card,
@@ -6,7 +7,6 @@ import {
   CardTitle,
   Chip,
 } from '@filigran/design-system';
-import { Label } from '@filigran/ui';
 
 export const Parameters = () => {
   const t = useTranslate();

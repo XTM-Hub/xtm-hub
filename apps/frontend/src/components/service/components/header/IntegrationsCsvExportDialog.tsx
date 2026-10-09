@@ -9,6 +9,7 @@ import { useServiceListLocalStorageKeyContext } from '@/components/service/compo
 import { useSolutionCategories } from '@/components/service/form/UseSolutionCategories';
 import { availableIntegrationTypes } from '@/components/service/integrations/Integration.utils';
 import { AppCombobox } from '@/components/ui/AppCombobox';
+import { Label } from '@/components/ui/label';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
 import { useTranslate } from '@/hooks/use-translate';
@@ -22,7 +23,7 @@ import {
   DialogFooter,
   DialogTitle,
 } from '@filigran/design-system';
-import { AutoForm, Label, useFormField } from '@filigran/ui';
+import { AutoForm, useFormField } from '@filigran/ui';
 import {
   FiligranProduct,
   IntegrationType,

@@ -3,7 +3,6 @@ export * from './Avatar';
 export * from './Carousel';
 export * from './DataTable';
 export * from './Form';
-export * from './Label';
 export * from './MarkdownRenderer';
 export * from './Popover';
 export * from './Separator';

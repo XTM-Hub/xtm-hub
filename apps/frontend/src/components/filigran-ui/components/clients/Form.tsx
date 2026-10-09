@@ -1,6 +1,6 @@
 'use client';
 import { cn } from '@/components/filigran-ui/lib/utils';
-import * as LabelPrimitive from '@radix-ui/react-label';
+import { Label, type LabelProps } from '@/components/ui/label';
 import { Slot } from '@radix-ui/react-slot';
 import * as React from 'react';
 import {
@@ -11,7 +11,6 @@ import {
   FormProvider,
   useFormContext,
 } from 'react-hook-form';
-import { Label } from './index';
 
 const Form = FormProvider;
 
@@ -88,21 +87,22 @@ const FormItem = React.forwardRef<
 });
 FormItem.displayName = 'FormItem';
 
-const FormLabel = React.forwardRef<
-  React.ElementRef<typeof LabelPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
->(({ className, ...props }, ref) => {
-  const { error, formItemId } = useFormField();
+type FormLabelProps = Omit<LabelProps, 'error'>;
 
-  return (
-    <Label
-      ref={ref}
-      className={cn(error && 'text-destructive', className)}
-      htmlFor={formItemId}
-      {...props}
-    />
-  );
-});
+const FormLabel = React.forwardRef<HTMLLabelElement, FormLabelProps>(
+  (props, ref) => {
+    const { error, formItemId } = useFormField();
+
+    return (
+      <Label
+        ref={ref}
+        htmlFor={formItemId}
+        error={Boolean(error)}
+        {...props}
+      />
+    );
+  }
+);
 FormLabel.displayName = 'FormLabel';
 
 const FormControl = React.forwardRef<
