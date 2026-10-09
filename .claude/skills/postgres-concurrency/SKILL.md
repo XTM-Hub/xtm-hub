@@ -26,7 +26,9 @@ assumption and the question at the top of the plan.
   error, a log line, a report).
 - Flag clearly when the race could grant access that should not exist, lose or corrupt data, or cause damage nobody can
   detect. That tilts toward protecting, but the call is still the user's.
-- A risk negligible by construction (a collision on a 48-bit random value): one line, no question.
+- A risk negligible given the row count (a random value whose space dwarfs the number of rows that will ever exist: 48
+  bits is fine for thousands of rows, not for millions): one line, no question. A unique constraint still turns a rare
+  collision into an error.
 - If the user proposes a lock or another fix, check it against the rest of this skill and say once, briefly, what you
   see (paths it misses, runtime cost, a lighter alternative). Then do what the user decides.
 
@@ -36,13 +38,15 @@ Pick what fits, not what is listed first.
 
 - **Nothing, documented** (section 1).
 - **Database constraint** (unique, foreign key, `CHECK`): callers cannot forget it. Turn a unique violation into a
-  domain error with `isUniqueConstraintViolation` (`utils/error/error-guard.util.ts`).
-- **One atomic statement**: `INSERT … ON CONFLICT` (see `role-portal.domain.ts`), or `UPDATE`/`DELETE … WHERE …
-  RETURNING` where 0 rows means "already handled". Check what the loser gets: `.ignore()` drops its data, `.merge()`
-  overwrites the winner's.
+  domain error with `isUniqueConstraintViolation` (`apps/backend/src/utils/error/error-guard.util.ts`).
+- **One atomic statement**: `INSERT … ON CONFLICT` (see
+  `apps/backend/src/modules/role-portal/role-portal.domain.ts`), or `UPDATE`/`DELETE … WHERE … RETURNING` where 0 rows
+  means "already handled". Check what the loser gets: `.ignore()` drops its data, `.merge()` overwrites the
+  winner's.
 - **One shared function** holding the check and the write, so every path goes through it.
 - **A lock**, for rules a constraint or single statement cannot express ("at least one X remains"): `forUpdate()` on the
-  row (see `deployment.quota.domain.ts`), or one canonical `withAdvisoryLock` (see `deployment.app.ts`).
+  row (see `apps/backend/src/modules/deployment/quota/deployment.quota.domain.ts`), or one canonical
+  `withAdvisoryLock` (see `apps/backend/src/modules/deployment/deployment.app.ts`).
 
 `SERIALIZABLE` and optimistic version columns have no established pattern here: propose them, do not slip them in.
 
