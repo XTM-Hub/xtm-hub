@@ -1724,8 +1724,8 @@
             "Description": "Créez un compte Filigran ou connectez-vous à un compte existant."
           },
           "NotAdmin": {
-            "Title": "Pour demander un essai, vous avez besoin de la capacité « Manage platform registration ».",
-            "Description": "Demandez à l'une de ces personnes de faire la demande d'essai pour vous, ou de vous donner cette capacité.",
+            "Title": "Vous avez besoin de la capacité « Manage platform registration » pour démarrer un essai.",
+            "Description": "Demandez à un administrateur de votre organisation de vous l'attribuer.",
             "AdminListTitle": "{count, plural, =1 {Personne pouvant demander un essai} other {Personnes pouvant demander un essai}}"
           },
           "PersonalSpace": {

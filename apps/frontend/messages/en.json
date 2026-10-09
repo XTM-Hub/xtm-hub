@@ -1724,8 +1724,8 @@
             "Description": "Please create a Filigran account or log in to an existing one."
           },
           "NotAdmin": {
-            "Title": "To request a trial, you need the “Manage platform registration” capability.",
-            "Description": "Ask one of these people to request the trial for you, or to give you this capability.",
+            "Title": "You need the “Manage platform registration” capability to start a trial.",
+            "Description": "Ask an administrator of your organization to grant it.",
             "AdminListTitle": "{count, plural, =1 {Person who can request a trial} other {People who can request a trial}}"
           },
           "PersonalSpace": {

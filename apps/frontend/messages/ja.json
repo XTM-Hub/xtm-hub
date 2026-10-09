@@ -1724,8 +1724,8 @@
             "Description": "Filigran アカウントを作成するか、既存のアカウントでログインしてください。"
           },
           "NotAdmin": {
-            "Title": "トライアルを申請するには「Manage platform registration」権限が必要です。",
-            "Description": "以下のいずれかの担当者にトライアルの申請を依頼するか、この権限の付与を依頼してください。",
+            "Title": "トライアルを開始するには「Manage platform registration」権限が必要です。",
+            "Description": "組織の管理者にこの権限の付与を依頼してください。",
             "AdminListTitle": "{count, plural, =1 {トライアルを申請できるユーザー} other {トライアルを申請できるユーザー}}"
           },
           "PersonalSpace": {
