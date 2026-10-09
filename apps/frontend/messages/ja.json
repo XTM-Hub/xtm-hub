@@ -16,9 +16,9 @@
   },
   "CapabilityDescription": {
     "Capabilities": {
-      "ADMINISTRATE_ORGANIZATION": "組織内のすべての能力アクションを許可する",
+      "ADMINISTRATE_ORGANIZATION": "組織内のすべての権限を付与する",
       "MANAGE_ACCESS": "この組織に他のユーザーを招待できる",
-      "MANAGE_PLATFORM_REGISTRATION": "製品の接続と切断を行う機能",
+      "MANAGE_PLATFORM_REGISTRATION": "製品の接続と切断、およびトライアルの開始・キャンセル・管理を行う機能",
       "MANAGE_SUBSCRIPTION": "組織を管理し、サービスに登録する機能"
     },
     "Description": "フィリグランのユーザーに特定の機能を追加できる",
@@ -1727,9 +1727,9 @@
             "Description": "Filigran アカウントを作成するか、既存のアカウントでログインしてください。"
           },
           "NotAdmin": {
-            "Title": "トライアルを申請するには組織の管理者である必要があります。",
-            "Description": "所属企業の組織管理者にお問い合わせください",
-            "AdminListTitle": "{count, plural, =1 {管理者} other {管理者}}"
+            "Title": "トライアルを開始するには「Manage platform registration」権限が必要です。",
+            "Description": "組織の管理者にこの権限の付与を依頼してください。",
+            "AdminListTitle": "{count, plural, =1 {この権限を持つメンバー} other {この権限を持つメンバー}}"
           },
           "PersonalSpace": {
             "Title": "個人スペースではトライアルをご利用いただけません"
