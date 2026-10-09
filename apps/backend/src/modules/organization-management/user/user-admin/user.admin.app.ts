@@ -179,17 +179,36 @@ export const UserAdminApp = {
         organization_id: organizationId,
       });
 
-    return userOrganization
-      ? await UserHelper.updateUserOrgCapabilitiesAndDispatch({
-          user_id: userId,
-          organization_id: organizationId,
-          orgCapabilities: input.capabilities,
-        })
-      : await UserHelper.acceptPendingUserWithCapabilities({
-          user_id: userId,
-          organization_id: organizationId,
-          orgCapabilities: input.capabilities,
-        });
+    if (userOrganization) {
+      return UserHelper.updateUserOrgCapabilitiesAndDispatch({
+        user_id: userId,
+        organization_id: organizationId,
+        orgCapabilities: input.capabilities,
+      });
+    }
+
+    const organization = await OrganizationDomain.loadOrganizationBy({
+      id: organizationId,
+    });
+    if (organization?.personal_space) {
+      throw new Error(ErrorCode.CantAddUserToPersonalSpace);
+    }
+
+    // No lock on purpose: accepting a request that another administrator declines at the same time is unlikely to happen and acceptable
+    const [pendingUser] =
+      await UserOrganizationPendingDomain.loadUserOrganizationPending({
+        user_id: userId,
+        organization_id: organizationId,
+      });
+    if (!pendingUser) {
+      throw new Error(ErrorCode.PendingUserNotFound);
+    }
+
+    return UserHelper.acceptPendingUserWithCapabilities({
+      user_id: userId,
+      organization_id: organizationId,
+      orgCapabilities: input.capabilities,
+    });
   },
 
   bulkAcceptPendingUserInOrganization: async (

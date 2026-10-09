@@ -10,11 +10,13 @@ import Organization, {
 } from '../../../../model/kanel/public/Organization';
 import { UserId } from '../../../../model/kanel/public/User';
 import { UserLoadUserBy } from '../../../../model/user';
+import { dispatch } from '../../../../pub';
 import { securityGuard } from '../../../../security/guard';
 import {
   buildPendingUserActionLink,
   sendMail,
 } from '../../../../server/mail-service';
+import { updateUserSession } from '../../../../session-store-manager';
 import { logApp } from '../../../../utils/app-logger.util';
 import { ErrorCode } from '../../../../utils/error/error.code';
 import { formatName } from '../../../../utils/format';
@@ -177,16 +179,44 @@ export const UserOrganizationApp = {
       throw new Error(ErrorCode.CantRemoveYourselfFromOrgaError);
     }
 
+    await securityGuard.assertUserCapabilities(
+      [
+        OrganizationCapability.AdministrateOrganization,
+        OrganizationCapability.ManageAccess,
+      ],
+      organizationId
+    );
+
+    const organization = await OrganizationDomain.loadOrganizationBy({
+      id: organizationId,
+    });
+    if (organization?.personal_space) {
+      throw new Error(ErrorCode.CantRemoveUserFromPersonalSpace);
+    }
+
+    // No lock on purpose: two simultaneous removals of the last administrators are unlikely enough to accept the race
+    await UserHelper.preventAdministratorRemovalOfOneOrganization(
+      userId,
+      organizationId
+    );
     await UserOrganizationDomain.removeUserFromOrganization(
       userId,
       organizationId
     );
+
     const updatedUser = await UserDomain.loadUserBy({
       'User.id': userId,
     });
     if (!updatedUser) {
       throw new Error(ErrorCode.UserNotFound);
     }
+    await updateUserSession(updatedUser);
+    await dispatch(
+      'MeUser',
+      'edit',
+      UserHelper.mapUserToGraphqlUser(updatedUser),
+      'User'
+    );
     return updatedUser;
   },
 
