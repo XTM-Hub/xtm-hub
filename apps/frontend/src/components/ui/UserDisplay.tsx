@@ -1,5 +1,6 @@
 'use client';
 
+import { Avatar } from '@/components/ui/avatar';
 import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { formatPersonNames } from '@/utils/format/name';
@@ -10,7 +11,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import { Avatar } from '@filigran/ui/clients';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 
 interface UserDisplayProps {
@@ -54,7 +54,7 @@ export const UserDisplay = ({
   return (
     <>
       {displayPicture && (
-        <div className={cn('shrink-0 [&_img]:object-cover', pictureClassName)}>
+        <div className={cn('shrink-0', pictureClassName)}>
           <Avatar src={uploader?.picture ?? ''} />
         </div>
       )}

@@ -1,6 +1,7 @@
 'use client';
 
 import { PortalContext } from '@/components/me/AppPortalContext';
+import { Avatar } from '@/components/ui/avatar';
 import { useTranslate } from '@/hooks/use-translate';
 import {
   Button,
@@ -11,7 +12,6 @@ import {
   CardTitle,
 } from '@filigran/design-system';
 import { EditIcon } from '@filigran/icon';
-import { Avatar } from '@filigran/ui';
 import React, { useContext, useRef, useState } from 'react';
 
 interface ProfileFormPictureProps {
@@ -63,7 +63,7 @@ export const ProfileFormPicture = ({ onSubmit }: ProfileFormPictureProps) => {
           onChange={handleFileChange}
         />
         <div
-          className="size-24 cursor-pointer [&_img]:object-cover"
+          className="size-24 cursor-pointer"
           onClick={() => inputRef.current?.click()}>
           <Avatar src={preview || me?.picture || undefined} />
         </div>

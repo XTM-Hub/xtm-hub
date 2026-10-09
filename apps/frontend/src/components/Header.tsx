@@ -8,6 +8,7 @@ import HeaderOrganizationSwitcher from '@/components/menu/organization-switcher/
 import { NotificationButton } from '@/components/notification/NotificationButton';
 import { DisplayLogo } from '@/components/ui/DisplayLogo';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
+import { Avatar } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { APP_PATH } from '@/utils/path/constant';
@@ -15,7 +16,6 @@ import { APP_PATH } from '@/utils/path/constant';
 import { useTranslate } from '@/hooks/use-translate';
 import { MenuIcon } from '@filigran/icon';
 import {
-  Avatar,
   Sheet,
   SheetContent,
   SheetHeader,
@@ -95,7 +95,7 @@ const HeaderComponent = ({ displayLogo }: HeaderComponentProps) => {
           <IconActions
             aria-label={t('MenuUser.ToggleUser')}
             icon={
-              <div className="my-auto [&_img]:object-cover size-6 text-primary [&_span]:bg-transparent">
+              <div className="my-auto size-6">
                 <Avatar src={me?.picture || undefined} />
               </div>
             }>

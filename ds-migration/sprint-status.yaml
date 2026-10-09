@@ -82,8 +82,8 @@ development_status:
   epic-3-candidates: in-progress
   3691-label: done
   3692-separator: done
-  3693-skeleton: review
-  3695-avatar: backlog
+  3693-skeleton: done
+  3695-avatar: review
   3696-popover: backlog
   3697-gradient-button: backlog
   3698-accordion: backlog
