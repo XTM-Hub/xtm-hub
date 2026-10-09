@@ -10,6 +10,8 @@ import { requestContext } from '../../../context/request.context';
 import { DeploymentRequestId } from '../../../model/kanel/public/DeploymentRequest';
 import { OrganizationId } from '../../../model/kanel/public/Organization';
 import { UserId } from '../../../model/kanel/public/User';
+import * as pub from '../../../pub';
+import * as sessionStoreManager from '../../../session-store-manager';
 import {
   AlreadyExistsErrorCode,
   ErrorCode,
@@ -40,6 +42,8 @@ describe('deploymentFeedbackApp', () => {
   describe('giveDeploymentFeedback', () => {
     beforeEach(() => {
       vi.spyOn(TelemetryApp, 'sendTelemetryEvent').mockResolvedValue();
+      vi.spyOn(sessionStoreManager, 'updateUserSession').mockResolvedValue();
+      vi.spyOn(pub, 'dispatch').mockResolvedValue();
     });
 
     afterEach(async () => {
@@ -102,6 +106,88 @@ describe('deploymentFeedbackApp', () => {
         // Then
         const user = await TestHelper.user.load({ id: CURRENT_USER.ID });
         expect(user.has_replied_satisfaction).toBe(answer);
+      }
+    );
+
+    it.each([HasRepliedSatisfaction.Yes, HasRepliedSatisfaction.No])(
+      'should refresh the user session and dispatch the user with the %s answer',
+      async (answer) => {
+        // Given
+        await createDeploymentRequest(
+          TEST_ORGANIZATIONS.FILIGRAN.ID,
+          CURRENT_USER.ID
+        );
+
+        // When
+        await DeploymentFeedbackApp.giveDeploymentFeedback({
+          deploymentRequestId: DEPLOYMENT_REQUEST_ID,
+          answer,
+        });
+
+        // Then
+        expect(sessionStoreManager.updateUserSession).toHaveBeenCalledOnce();
+        expect(
+          vi.mocked(sessionStoreManager.updateUserSession).mock.calls[0]![0]
+        ).toMatchObject({
+          id: CURRENT_USER.ID,
+          email: CURRENT_USER.EMAIL,
+          selected_organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+          has_replied_satisfaction: answer,
+        });
+        expect(pub.dispatch).toHaveBeenCalledExactlyOnceWith(
+          'User',
+          'edit',
+          expect.objectContaining({
+            id: CURRENT_USER.ID,
+            has_replied_satisfaction: answer,
+          })
+        );
+      }
+    );
+
+    it.each([
+      HasRepliedSatisfaction.Yes,
+      HasRepliedSatisfaction.No,
+      HasRepliedSatisfaction.Closed,
+    ])(
+      'should throw DeploymentFeedbackAlreadyExists when the database holds a %s answer but the session user does not',
+      async (storedAnswer) => {
+        // Given
+        await createDeploymentRequest(
+          TEST_ORGANIZATIONS.FILIGRAN.ID,
+          CURRENT_USER.ID
+        );
+        await TestHelper.user.update(
+          { id: CURRENT_USER.ID },
+          { has_replied_satisfaction: storedAnswer }
+        );
+        requestContext.update({
+          user: {
+            ...contextSimpleUserFiligran2.user,
+            has_replied_satisfaction: null,
+          },
+        });
+
+        // When
+        const call = DeploymentFeedbackApp.giveDeploymentFeedback({
+          deploymentRequestId: DEPLOYMENT_REQUEST_ID,
+          answer: HasRepliedSatisfaction.Yes,
+          justification: JUSTIFICATION,
+        });
+
+        // Then
+        await expect(call).rejects.toThrow(
+          AlreadyExistsErrorCode.DeploymentFeedbackAlreadyExists
+        );
+        const user = await TestHelper.user.load({ id: CURRENT_USER.ID });
+        expect(user).toMatchObject({ has_replied_satisfaction: storedAnswer });
+        expect(TelemetryApp.sendTelemetryEvent).not.toHaveBeenCalled();
+        expect(
+          vi.mocked(sessionStoreManager.updateUserSession).mock.calls[0]![0]
+        ).toMatchObject({
+          id: CURRENT_USER.ID,
+          has_replied_satisfaction: storedAnswer,
+        });
       }
     );
 
