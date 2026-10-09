@@ -1,8 +1,8 @@
 import { FiligranProductMapping } from '@/components/epic/epic-item/FiligranProductMapping';
 import { FeatureVoteButton } from '@/components/feature-voting/FeatureVoteButton';
 import MarkdownRendererWithTheme from '@/components/ui/MarkdownRendererWithTheme';
+import { Separator } from '@/components/ui/separator';
 import { Chip, DialogDescription, DialogTitle } from '@filigran/design-system';
-import { Separator } from '@filigran/ui/clients';
 import { VotableFeaturePublicFragment } from '@graphql/generated';
 import Image from 'next/image';
 

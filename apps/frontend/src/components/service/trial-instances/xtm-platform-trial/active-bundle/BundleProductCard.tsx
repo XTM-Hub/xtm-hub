@@ -7,6 +7,7 @@ import {
 import { PlatformUpdateSheet } from '@/components/service/components/PlatformUpdateSheet';
 import { XtmoneStatusState } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/useXtmoneIntegrationStatus';
 import { XtmoneConnectionStatus } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/XtmoneConnectionStatus';
+import { Separator } from '@/components/ui/separator';
 import { useTranslate } from '@/hooks/use-translate';
 import { useDateFormatter } from '@/utils/date';
 import { toExternalHref } from '@/utils/external-url';
@@ -18,7 +19,6 @@ import {
   IconButton,
 } from '@filigran/design-system';
 import { EditIcon } from '@filigran/icon';
-import { Separator } from '@filigran/ui';
 import { GradientButton } from '@filigran/ui/servers';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import {

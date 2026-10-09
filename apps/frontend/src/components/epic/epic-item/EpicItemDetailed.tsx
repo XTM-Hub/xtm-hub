@@ -4,8 +4,8 @@ import {
   EPIC_SLACK_LINK_REGEX,
 } from '@/components/epic/epic-slack-links';
 import MarkdownRendererWithTheme from '@/components/ui/MarkdownRendererWithTheme';
+import { Separator } from '@/components/ui/separator';
 import { useTranslate } from '@/hooks/use-translate';
-import { Separator } from '@filigran/ui/clients';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import Link from 'next/link';
 

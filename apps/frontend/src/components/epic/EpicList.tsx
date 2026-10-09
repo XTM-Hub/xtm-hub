@@ -25,7 +25,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import { Separator } from '@filigran/ui/clients';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
@@ -189,9 +188,12 @@ export const EpicList = ({
                 bgFadedClass={timelineMetadata.bgFadedClass}
                 textClass={timelineMetadata.textClass}
               />
-              <Separator
-                orientation="vertical"
-                className={cn(`mt-s flex-1 w-px`, timelineMetadata.barClass)}
+              <div
+                aria-hidden="true"
+                className={cn(
+                  'mt-s h-full w-px flex-1',
+                  timelineMetadata.barClass
+                )}
               />
             </div>
             <div className="flex-1 mt-l">

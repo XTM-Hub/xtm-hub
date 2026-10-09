@@ -5,6 +5,5 @@ export * from './DataTable';
 export * from './Form';
 export * from './MarkdownRenderer';
 export * from './Popover';
-export * from './Separator';
 export * from './Sheet';
 export * from './Table';

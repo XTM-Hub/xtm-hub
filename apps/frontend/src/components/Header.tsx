@@ -8,6 +8,7 @@ import HeaderOrganizationSwitcher from '@/components/menu/organization-switcher/
 import { NotificationButton } from '@/components/notification/NotificationButton';
 import { DisplayLogo } from '@/components/ui/DisplayLogo';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
+import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { APP_PATH } from '@/utils/path/constant';
 
@@ -15,7 +16,6 @@ import { useTranslate } from '@/hooks/use-translate';
 import { MenuIcon } from '@filigran/icon';
 import {
   Avatar,
-  Separator,
   Sheet,
   SheetContent,
   SheetHeader,

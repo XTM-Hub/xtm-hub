@@ -80,8 +80,8 @@ development_status:
   # Legacy components with no DS equivalent: rebuilt on DS primitives, one folder per
   # component in apps/frontend/src/components/ui/, listed as candidates in the PR report
   epic-3-candidates: in-progress
-  3691-label: review
-  3692-separator: backlog
+  3691-label: done
+  3692-separator: review
   3693-skeleton: backlog
   3695-avatar: backlog
   3696-popover: backlog

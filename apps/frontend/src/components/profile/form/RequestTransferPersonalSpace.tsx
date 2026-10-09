@@ -2,6 +2,7 @@
 
 import { MeRequestTransferPersonalSpaceMutation } from '@/components/me/me.graphql';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Separator } from '@/components/ui/separator';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import {
@@ -11,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@filigran/design-system';
-import { AutoForm, Separator } from '@filigran/ui';
+import { AutoForm } from '@filigran/ui';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useMutation } from 'react-relay';

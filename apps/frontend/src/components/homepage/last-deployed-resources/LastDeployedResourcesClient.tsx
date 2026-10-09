@@ -3,6 +3,7 @@
 import LastDeployedResourceRow from '@/components/homepage/last-deployed-resources/LastDeployedResourceRow';
 import { LastDeployedPlatform } from '@/components/homepage/last-deployed-resources/LastDeployedResourcesSection';
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
+import { Separator } from '@/components/ui/separator';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
@@ -12,7 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@filigran/design-system';
-import { Separator } from '@filigran/ui/clients';
 import { useLastDeployedOverviewQueryQuery } from '@graphql/generated';
 import { Fragment, useState } from 'react';
 
@@ -78,7 +78,7 @@ const LastDeployedResourcesClient = ({
               <li
                 aria-hidden="true"
                 className="col-span-full shrink-0">
-                <Separator className="bg-elevation-border-subtle" />
+                <Separator />
               </li>
             )}
             <li className="grid grid-cols-subgrid col-span-full items-center">

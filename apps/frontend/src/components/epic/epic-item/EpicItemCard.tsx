@@ -1,8 +1,8 @@
 import { EpicAdminMenu } from '@/components/epic/epic-item/EpicAdminMenu';
 import { EpicItemFooter } from '@/components/epic/epic-item/EpicItemFooter';
 import { DetailCard } from '@/components/ui/DetailCard';
+import { Separator } from '@/components/ui/separator';
 import { useDetailParam } from '@/hooks/use-detail-param';
-import { Separator } from '@filigran/ui/clients';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 
 interface EpicItemCardProps {

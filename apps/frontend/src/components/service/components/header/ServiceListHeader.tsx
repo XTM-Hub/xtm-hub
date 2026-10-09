@@ -1,4 +1,5 @@
 import { useServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
+import { Separator } from '@/components/ui/separator';
 import { SortControls } from '@/components/ui/SortControls';
 import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
@@ -6,7 +7,6 @@ import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { SearchField } from '@filigran/design-system';
 import { CalendarViewMonthIcon, ListViewIcon } from '@filigran/icon';
-import { Separator } from '@filigran/ui/clients';
 import { DocumentOrdering } from '@graphql/generated';
 import React from 'react';
 
@@ -148,7 +148,7 @@ export const ServiceListHeader = ({
               </button>
               <Separator
                 orientation="vertical"
-                className="h-5 w-px bg-border"
+                className="h-5"
               />
               <button
                 type="button"
