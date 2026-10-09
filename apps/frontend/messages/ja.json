@@ -1726,7 +1726,7 @@
           "NotAdmin": {
             "Title": "トライアルを開始するには「Manage platform registration」権限が必要です。",
             "Description": "組織の管理者にこの権限の付与を依頼してください。",
-            "AdminListTitle": "{count, plural, =1 {トライアルを申請できるユーザー} other {トライアルを申請できるユーザー}}"
+            "AdminListTitle": "{count, plural, =1 {この権限を持つメンバー} other {この権限を持つメンバー}}"
           },
           "PersonalSpace": {
             "Title": "個人スペースではトライアルをご利用いただけません"

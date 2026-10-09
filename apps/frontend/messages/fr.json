@@ -1726,7 +1726,7 @@
           "NotAdmin": {
             "Title": "Vous avez besoin de la capacité « Manage platform registration » pour démarrer un essai.",
             "Description": "Demandez à un administrateur de votre organisation de vous l'attribuer.",
-            "AdminListTitle": "{count, plural, =1 {Personne pouvant demander un essai} other {Personnes pouvant demander un essai}}"
+            "AdminListTitle": "{count, plural, =1 {Membre disposant de cette capacité} other {Membres disposant de cette capacité}}"
           },
           "PersonalSpace": {
             "Title": "Les essais ne sont pas disponibles dans un espace personnel"
