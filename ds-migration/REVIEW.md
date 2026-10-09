@@ -38,7 +38,8 @@ Read only, in parallel where possible.
 - The spec of each item, `ds-migration/specs/<key>.md`: `## Decisions`, `## To validate`,
   `## Deferred findings`.
 - Comments on the epic's issues and on the pull request since the gate: a reviewer may already have
-  answered something.
+  answered something. The team's visual feedback, screenshots included, has its own session:
+  `ds-migration/run.sh feedback` (`ds-migration/FEEDBACK.md`). Leave those comments to it.
 
 ## 2. Check each finding
 

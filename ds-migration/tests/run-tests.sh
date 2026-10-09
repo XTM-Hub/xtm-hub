@@ -20,6 +20,11 @@ EOF
   # APP_DOWN: the frontend answers only once the fake yarn has started it.
   cat >"$bin/curl" <<'EOF'
 #!/bin/sh
+# A comment image: a 1x1 PNG written where -o points.
+case "$*" in *user-attachments*)
+  while [ $# -gt 0 ]; do [ "$1" = -o ] && printf '%s' iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg== | base64 -d > "$2"; shift; done
+  exit 0 ;;
+esac
 case "$*" in *3012*) [ -z "${APP_DOWN:-}" ] || [ -f "$SB/app-up" ] || exit 7 ;; esac
 # $SB/net-down: the internet is out for the next few checks, then comes back.
 case "$*" in *api.github.com*|*api.anthropic.com*)
@@ -56,7 +61,17 @@ board() {
   esac
   exit 0
 }
+# $SB/fb-<comments|reviews|inline>.json: the raw API answer for the pull request's feedback.
+feedback() {
+  local expr="" kind=comments a prev=""
+  for a in "$@"; do [ "$prev" = --jq ] && expr="$a"; prev="$a"; done
+  case "$*" in *pulls/*/reviews*) kind=reviews ;; *pulls/*/comments*) kind=inline ;; esac
+  jq -c "$expr" "$SB/fb-$kind.json" 2>/dev/null || true
+  exit 0
+}
 case "$1 $2" in
+  "api user") echo jbanety; exit 0 ;;
+  "api -H") feedback "$@" ;;
   "issue edit") [ "$3" = 3561 ] && [ "$4" = --body-file ] && cp "$5" "$SB/issue-3561.md"; exit 0 ;;
   "api graphql") board "$@" ;;
   # $SB/answered-<issue>: someone answered on that issue after the block.
@@ -156,7 +171,7 @@ new_repo() {
   git config gpg.program "$SB/bin/fake-gpg" && git config user.signingkey FAKE
   mkdir -p apps/frontend/src apps/frontend/app ds-migration
   printf "import { Textarea } from '@filigran/ui';\nexport const Form = () => <Textarea />;\n" >apps/frontend/src/Form.tsx
-  cp "$V/ds-migration/"{run.sh,WORKFLOW.md,DEBUG.md,REVIEW.md,spec-template.md,validate.mjs} ds-migration/ && chmod +x ds-migration/run.sh
+  cp "$V/ds-migration/"{run.sh,WORKFLOW.md,DEBUG.md,REVIEW.md,FEEDBACK.md,spec-template.md,validate.mjs} ds-migration/ && chmod +x ds-migration/run.sh
   # SCREENSHOT_FAIL: item keys whose after screenshots fail.
   cat >ds-migration/screenshot.mjs <<'EOF'
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -414,6 +429,31 @@ check "the done comment says which checks were flaky" 'grep -q "Flaky checks rer
 : >"$SB/checks-count"
 GH_CHECKS="fail" CLAUDE_CI_FLAKY=3568-switch run --once
 check "still failing after the rerun: blocked, script stopped" '[ "$(status_of 3568-switch)" = blocked ] && grep -q "fail again after the rerun" "$SB/out.log" && grep -q "STOP: 3568-switch" "$SB/out.log"'
+
+echo "P. team feedback, images included"
+new_repo p "development_status:
+  epic-1-primitives: backlog
+  3530-button: done"
+perl -pi -e 's/^pull_request: .*/pull_request: 9999/' ds-migration/sprint-status.yaml
+img='<p>Weird <a href=\"https://github.com/user-attachments/assets/869bda55-cd75-412a-a585-def4965ab5cf\"><img src=\"https://github.com/user-attachments/assets/869bda55-cd75-412a-a585-def4965ab5cf\"></a></p>'
+cat >"$SB/fb-comments.json" <<JSON
+[{"id": 11, "user": {"login": "hervyt", "type": "User"}, "created_at": "2026-10-09T09:00:00Z", "html_url": "u11", "body": "Weird background", "body_html": "$img"},
+ {"id": 12, "user": {"login": "jbanety", "type": "User"}, "created_at": "2026-10-09T09:01:00Z", "html_url": "u12", "body": "Component Card done. Issue #3536", "body_html": ""},
+ {"id": 13, "user": {"login": "github-actions[bot]", "type": "Bot"}, "created_at": "2026-10-09T09:02:00Z", "html_url": "u13", "body": "Coverage", "body_html": ""},
+ {"id": 14, "user": {"login": "jbanety", "type": "User"}, "created_at": "2026-10-09T09:03:00Z", "html_url": "u14", "body": "Same in the sheet", "body_html": ""}]
+JSON
+echo '[{"id": 21, "user": {"login": "Copilot", "type": "Bot"}, "created_at": "2026-10-09T09:04:00Z", "html_url": "u21", "path": "a.ts", "line": 3, "in_reply_to_id": null, "body": "Contradicted rule", "body_html": ""}]' >"$SB/fb-inline.json"
+echo '[{"id": 31, "user": {"login": "jpkha", "type": "User"}, "submitted_at": "2026-10-09T09:05:00Z", "html_url": "u31", "body": "", "body_html": ""}]' >"$SB/fb-reviews.json"
+: >"$SB/calls.log"
+ds-migration/run.sh feedback >"$SB/out.log" 2>&1
+list="$(git rev-parse --absolute-git-dir)/ds-migration/feedback/comments.json"
+check "feedback keeps the team's comments and Copilot, not the script's own or other bots" '[ "$(jq -r "[.[].id] | join(\" \")" "$list")" = "11 14 21" ]'
+check "feedback downloads each image once and lists it on its comment" '[ "$(jq -r ".[0].images | length" "$list")" = 1 ] && file --mime-type -b "$(jq -r ".[0].images[0]" "$list")" | grep -q image/png'
+check "feedback opens the skill with the list" 'grep -q "claude-interactive :: Read ds-migration/FEEDBACK.md fully and follow it. The pull request is #9999, its comments are in $list" "$SB/calls.log" && ! grep -q "triage only" "$SB/calls.log"'
+mkdir -p "$(git rev-parse --git-dir)/ds-migration/run.lock" && echo $$ >"$(git rev-parse --git-dir)/ds-migration/run.lock/pid"
+ds-migration/run.sh feedback >"$SB/out.log" 2>&1
+check "feedback during a run is triage only" 'grep -q "run.sh is running (pid $$): triage only" "$SB/calls.log"'
+rm -rf "$(git rev-parse --git-dir)/ds-migration/run.lock"
 
 echo "F. crash recovery and lock"
 new_repo f "development_status:

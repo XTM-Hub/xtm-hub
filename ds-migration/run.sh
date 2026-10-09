@@ -17,6 +17,7 @@
 #   ds-migration/run.sh review [<epic>]                   interactive session to finish an epic review
 #   ds-migration/run.sh resume [<key>] [--once]           retry an item from the code it had put aside
 #   ds-migration/run.sh publish                           after a change by hand: issues, push, checks
+#   ds-migration/run.sh feedback                          interactive session on the team's PR comments
 #
 # Environment: DS_ITEM_TIMEOUT (seconds per session, default 5400), DS_CHECKS_TIMEOUT (seconds,
 # default 5400), DS_CHECKS_INTERVAL (seconds, default 30), DS_BUDGET_USD (optional cap per session),
@@ -1164,6 +1165,68 @@ debug_item() {
   exec claude "Read ds-migration/DEBUG.md fully and follow it for item $key (issue #$(issue_of "$key"), status $(status_of "$key")). The run logs are in $LOG_DIR."
 }
 
+# Comments on the pull request that the script did not write, their images downloaded, for
+# ds-migration/FEEDBACK.md. Prints the path of the list.
+collect_feedback() {
+  local pr="$1" dir="$LOG_DIR/feedback" me c id url asset file type
+  mkdir -p "$dir"
+  me="$(gh api user --jq .login)"
+  {
+    gh api -H "Accept: application/vnd.github.full+json" --paginate "repos/$REPOSITORY/issues/$pr/comments" \
+      --jq '.[] | {kind: "comment", id, author: .user.login, bot: (.user.type == "Bot"), created_at, url: .html_url, body, body_html}'
+    gh api -H "Accept: application/vnd.github.full+json" --paginate "repos/$REPOSITORY/pulls/$pr/reviews" \
+      --jq '.[] | select(.body != "") | {kind: "review", id, author: .user.login, bot: (.user.type == "Bot"), created_at: .submitted_at, url: .html_url, body, body_html}'
+    gh api -H "Accept: application/vnd.github.full+json" --paginate "repos/$REPOSITORY/pulls/$pr/comments" \
+      --jq '.[] | {kind: "inline", id, author: .user.login, bot: (.user.type == "Bot"), created_at, url: .html_url, path, line: (.line // .original_line), in_reply_to: .in_reply_to_id, body, body_html}'
+  } | jq -s --arg me "$me" '[.[]
+      | select((.bot and (.author | test("copilot"; "i") | not)) | not)
+      | select((.author == $me and (.body | test("^(Component .* done\\.|## epic-|## Team feedback|\\*\\*Component .* needs a human|\\*\\*Design system migration blocked)"))) | not)]' \
+    >"$dir/raw.json"
+  # body_html carries signed image URLs, which also work on a private repository.
+  : >"$dir/media.tsv"
+  jq -c '.[] | {id, html: .body_html}' "$dir/raw.json" | while IFS= read -r c; do
+    id="$(jq -r .id <<<"$c")"
+    jq -r .html <<<"$c" |
+      grep -oE '(src|href)="https://(private-user-images\.githubusercontent\.com|github\.com/user-attachments)/[^"]+"' |
+      sed -E 's/^(src|href)="//; s/"$//; s/&amp;/\&/g' | while IFS= read -r url; do
+        asset="$(grep -oE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' <<<"$url" | head -n 1)"
+        [ -n "$asset" ] || continue
+        grep "	$asset$" "$dir/media.tsv" >/dev/null && continue
+        file="$(ls "$dir/$asset".* 2>/dev/null | head -n 1 || true)"
+        if [ -z "$file" ]; then
+          curl -sSfL --max-time 60 -o "$dir/$asset.download" "$url" 2>/dev/null || { rm -f "$dir/$asset.download"; continue; }
+          type="$(file --mime-type -b "$dir/$asset.download")"
+          case "$type" in
+            video/quicktime) file="$dir/$asset.mov"; mv "$dir/$asset.download" "$file" ;;
+            image/* | video/*) file="$dir/$asset.${type#*/}"; mv "$dir/$asset.download" "$file" ;;
+            *) rm -f "$dir/$asset.download"; continue ;;
+          esac
+        fi
+        printf '%s\t%s\t%s\n' "$id" "$file" "$asset" >>"$dir/media.tsv"
+      done
+  done
+  jq --rawfile media "$dir/media.tsv" '
+    ($media | split("\n") | map(select(. != "") | split("\t"))) as $rows
+    | map(.id as $id | del(.body_html, .bot)
+      | .images = [$rows[] | select(.[0] == ($id | tostring) and (.[1] | test("\\.(png|jpeg|gif|webp)$"))) | .[1]]
+      | .videos = [$rows[] | select(.[0] == ($id | tostring) and (.[1] | test("\\.(png|jpeg|gif|webp)$") | not)) | .[1]])
+    | sort_by(.created_at)' "$dir/raw.json" >"$dir/comments.json"
+  echo "$dir/comments.json"
+}
+
+# Interactive Claude session on the team's comments: ds-migration/FEEDBACK.md.
+review_feedback() {
+  local pr pid list mode
+  pr="$(header pull_request)"
+  [ "$pr" != none ] || die "no pull request yet"
+  list="$(collect_feedback "$pr")"
+  log "$(jq length "$list") comments on PR #$pr, $(jq '[.[].images[]] | length' "$list") images, in $list"
+  pid="$(running_pid)"
+  mode=""
+  [ -z "$pid" ] || mode=" run.sh is running (pid $pid): triage only, change no code and commit nothing."
+  exec claude "Read ds-migration/FEEDBACK.md fully and follow it. The pull request is #$pr, its comments are in $list, the run logs are in $LOG_DIR.$mode"
+}
+
 # ---------------------------------------------------------------- issues and status
 
 create_issues() {
@@ -1227,5 +1290,6 @@ case "${1:-}" in
   review) review_epic "${2:-}" ;;
   publish) publish_by_hand ;;
   resume) shift; resume_item "$@" ;;
+  feedback) review_feedback ;;
   *) main_run "$@" ;;
 esac
