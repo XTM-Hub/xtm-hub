@@ -2,9 +2,9 @@
 
 import { FiligranProductMapping } from '@/components/epic/epic-item/FiligranProductMapping';
 import { VOTING_PRODUCTS } from '@/components/feature-voting/feature-voting.const';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { Skeleton } from '@filigran/ui';
 import {
   useVotingRoundRankingQuery,
   VotableFeatureAdminRowFragment,

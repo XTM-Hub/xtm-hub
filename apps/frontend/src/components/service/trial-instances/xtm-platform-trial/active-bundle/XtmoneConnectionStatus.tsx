@@ -2,9 +2,9 @@
 
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
 import { XtmoneStatusState } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/useXtmoneIntegrationStatus';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslate } from '@/hooks/use-translate';
 import { CheckCircleIcon, CircleCloseIcon } from '@filigran/icon';
-import { Skeleton } from '@filigran/ui';
 import {
   PlatformIdentifier,
   XtmoneIntegrationStatusEntryFragment,

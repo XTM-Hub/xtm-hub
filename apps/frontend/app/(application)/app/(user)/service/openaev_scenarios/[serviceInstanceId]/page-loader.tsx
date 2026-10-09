@@ -1,6 +1,7 @@
 'use client';
 
 import ShareableResourceServiceList from '@/components/service/components/ShareableResourceServiceList';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useLogicalFiltersFromStorage } from '@/hooks/use-logical-filters-from-storage';
 import {
   ServiceListLocalStorageKey,
@@ -11,7 +12,6 @@ import {
   ServiceSlug,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
-import { Skeleton } from '@filigran/ui';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 
 interface PageLoaderProps {

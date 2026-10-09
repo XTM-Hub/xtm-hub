@@ -1,5 +1,6 @@
 'use client';
 import { cn, fixedForwardRef } from '@/components/filigran-ui/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   DndContext,
   KeyboardSensor,
@@ -70,7 +71,6 @@ import {
   type Ref,
   type SetStateAction,
 } from 'react';
-import { Skeleton } from '../servers';
 import {
   Table,
   TableBody,

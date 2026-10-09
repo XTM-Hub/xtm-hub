@@ -1,6 +1,7 @@
 'use client';
 import { PublicDocumentListQuery } from '@/components/service/document/public-document.graphql';
 import PublicDocumentsList from '@/components/service/document/PublicDocumentsList';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   LogicalFiltersParams,
   useLogicalFiltersFromStorage,
@@ -8,7 +9,6 @@ import {
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
 import { useShareableResourceMapping } from '@/utils/shareable-resources/use-shareable-resource-mapping';
-import { Skeleton } from '@filigran/ui';
 import { publicDocumentsQuery } from '@generated/publicDocumentsQuery.graphql';
 import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
 import { useEffect } from 'react';

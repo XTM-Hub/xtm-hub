@@ -1,7 +1,7 @@
 'use client';
 import { EpicListQuery } from '@/components/epic/epic.graphql';
 import PublicEpicList from '@/components/epic/PublicEpicList';
-import { Skeleton } from '@filigran/ui';
+import { Skeleton } from '@/components/ui/skeleton';
 import { epicsQuery } from '@generated/epicsQuery.graphql';
 import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
 import { useEffect } from 'react';

@@ -6,12 +6,13 @@ import { VotableFeatureFormModel } from '@/components/admin/voting-round/Votable
 import { VotingRoundResults } from '@/components/admin/voting-round/VotingRoundResults';
 import { VotingRoundStatusActions } from '@/components/admin/voting-round/VotingRoundStatusActions';
 import { VotingRoundStatusBadge } from '@/components/admin/voting-round/VotingRoundStatusBadge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useExecuteAfterAnimation } from '@/hooks/use-execute-after-animation';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { i18nKey } from '@/utils/datatable';
 import { Chip } from '@filigran/design-system';
-import { DataTable, Skeleton } from '@filigran/ui';
+import { DataTable } from '@filigran/ui';
 import {
   useVotingRoundDetailQuery,
   VotableFeatureAdminRowFragment,
