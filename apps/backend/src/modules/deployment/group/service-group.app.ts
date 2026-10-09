@@ -243,8 +243,10 @@ export const ServiceGroupApp = {
       products: grantedAssignments.flatMap(({ child }) =>
         child.platform_identifier ? [child.platform_identifier] : []
       ),
-      newlyAddedUsers: usersWithAuth0Account.filter((addedUser) =>
-        insertedUserIds.has(addedUser.id)
+      newlyAddedUsers: users.filter(
+        (addedUser) =>
+          UserHelper.hasValidatedAccount(addedUser) &&
+          insertedUserIds.has(addedUser.id)
       ),
       adminEmail: user.email,
     });
@@ -525,13 +527,20 @@ export const ServiceGroupApp = {
     user: User,
     newStatus: UserAccountStatus | null,
     expectedStatus: UserAccountStatus | null,
-    prefetchedAuth0Users?: Management.UserResponseSchema[]
+    {
+      syncAuth0,
+      prefetchedAuth0Users,
+    }: {
+      syncAuth0: boolean;
+      prefetchedAuth0Users?: Management.UserResponseSchema[];
+    }
   ): Promise<void> => {
     const deploymentRequestsWithGroupName =
       await ServiceGroupDomain.loadUserDeploymentRequestsWithGroupName(user.id);
 
     // Nothing to grant (e.g. every bundle has expired): not a failure.
-    if (deploymentRequestsWithGroupName.length > 0) {
+    const hasAccessToGrant = deploymentRequestsWithGroupName.length > 0;
+    if (syncAuth0 && hasAccessToGrant) {
       await ServiceGroupHelper.syncAuth0GroupsForChildren(
         deploymentRequestsWithGroupName.map((deploymentRequest) => ({
           child: deploymentRequest,
@@ -552,15 +561,17 @@ export const ServiceGroupApp = {
       if (!updatedUser) {
         throw new Error(ErrorCode.UserStatusChangedConcurrently);
       }
-      await ServiceGroupHelper.sendBundleWelcomeEmailsForGrant(
-        deploymentRequestsWithGroupName,
-        user
-      );
+      if (newStatus === null) {
+        await ServiceGroupHelper.sendBundleWelcomeEmailsForGrant(
+          deploymentRequestsWithGroupName,
+          user
+        );
+      }
     });
   },
 
-  grantAccessIfWaiting: async (user: UserLoadUserBy): Promise<void> => {
-    if (user.status !== UserAccountStatus.Waiting) {
+  grantAccessAtLogin: async (user: UserLoadUserBy): Promise<void> => {
+    if (UserHelper.hasValidatedAccount(user)) {
       return;
     }
 
@@ -568,7 +579,9 @@ export const ServiceGroupApp = {
       await ServiceGroupApp.grantUserAccessAndSetStatus(
         user,
         null,
-        UserAccountStatus.Waiting
+        user.status,
+        // An invited user was already synced
+        { syncAuth0: user.status !== UserAccountStatus.Invited }
       );
       user.status = null;
     } catch (error) {

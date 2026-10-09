@@ -1270,6 +1270,52 @@ describe('serviceGroupApp', () => {
         ]);
       });
 
+      it('should sync Auth0 for an invited user added to the trial but send the welcome email only to validated users', async () => {
+        // Given
+        const { user: invitedMember } =
+          await TestHelper.user.insertInOrganization(
+            TEST_ORGANIZATIONS.FILIGRAN.ID,
+            { status: UserAccountStatus.Invited }
+          );
+        const { bundle } = await createBundleWithGroups({
+          endDate: inTenDays(),
+        });
+        const auth0Spy = vi
+          .spyOn(auth0ClientMock, 'updateUserRBACInstance')
+          .mockResolvedValue(undefined);
+        const sendMailSpy = vi
+          .spyOn(mailService, 'sendMail')
+          .mockResolvedValue(undefined);
+
+        // When
+        await ServiceGroupApp.addUsersToBundleGroups(
+          bundle.service_instance_id,
+          {
+            userIds: [
+              invitedMember.id,
+              TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
+            ],
+            roles: xtmoneUserRoles,
+          }
+        );
+
+        // Then
+        expect(auth0Spy.mock.calls.map(([email]) => email)).toEqual(
+          expect.arrayContaining([
+            invitedMember.email,
+            TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.EMAIL,
+          ])
+        );
+        const trialMailRecipients = sendMailSpy.mock.calls.flatMap(([mail]) =>
+          mail.template === FREE_TRIAL_BUNDLE_USER_ADDED_TEMPLATE
+            ? [mail.to]
+            : []
+        );
+        expect(trialMailRecipients).toEqual([
+          TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.EMAIL,
+        ]);
+      });
+
       it('should sync Auth0 and send the welcome email at first login when the user was invited from the trial', async () => {
         // Given
         const { bundle, children } =
@@ -1310,7 +1356,7 @@ describe('serviceGroupApp', () => {
         });
 
         // When
-        await ServiceGroupApp.grantAccessIfWaiting(invitedUser!);
+        await ServiceGroupApp.grantAccessAtLogin(invitedUser!);
 
         // Then
         expect(auth0Spy).toHaveBeenCalledWith(
@@ -2438,7 +2484,9 @@ describe('serviceGroupApp', () => {
       );
 
       // When
-      await ServiceGroupApp.grantUserAccessAndSetStatus(user, null, null);
+      await ServiceGroupApp.grantUserAccessAndSetStatus(user, null, null, {
+        syncAuth0: true,
+      });
 
       // Then
       expect(auth0Spy).not.toHaveBeenCalled();
@@ -2497,7 +2545,9 @@ describe('serviceGroupApp', () => {
       const user = await loadUser(TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID);
 
       // When
-      await ServiceGroupApp.grantUserAccessAndSetStatus(user, null, null);
+      await ServiceGroupApp.grantUserAccessAndSetStatus(user, null, null, {
+        syncAuth0: true,
+      });
 
       // Then
       expect(auth0Spy).toHaveBeenCalledTimes(1);
@@ -2559,12 +2609,10 @@ describe('serviceGroupApp', () => {
       const user = await loadUser(TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID);
 
       // When
-      await ServiceGroupApp.grantUserAccessAndSetStatus(
-        user,
-        null,
-        null,
-        prefetched
-      );
+      await ServiceGroupApp.grantUserAccessAndSetStatus(user, null, null, {
+        syncAuth0: true,
+        prefetchedAuth0Users: prefetched,
+      });
 
       // Then
       expect(auth0Spy).toHaveBeenCalledWith(
@@ -2612,7 +2660,8 @@ describe('serviceGroupApp', () => {
       const call = ServiceGroupApp.grantUserAccessAndSetStatus(
         user,
         null,
-        null
+        null,
+        { syncAuth0: true }
       );
 
       // Then
@@ -2689,14 +2738,144 @@ describe('serviceGroupApp', () => {
         // When
         await ServiceGroupApp.grantUserAccessAndSetStatus(
           user,
-          UserAccountStatus.Invited,
-          UserAccountStatus.Waiting
+          null,
+          UserAccountStatus.Waiting,
+          { syncAuth0: true }
         );
 
         // Then
         expect(sendSpy).toHaveBeenCalledTimes(1);
         expect(inTransactionAtEnqueue).toEqual([true]);
+        expect(await loadStatus()).toBeNull();
+      });
+
+      it('should sync Auth0 but send no welcome email when a waiting user becomes invited', async () => {
+        // Given
+        const auth0Spy = vi
+          .spyOn(auth0ClientMock, 'updateUserRBACInstance')
+          .mockResolvedValue(undefined);
+        const sendSpy = vi
+          .spyOn(PgBossProducer, 'send')
+          .mockResolvedValue('job-id');
+        const user = await loadUser(targetUserId);
+
+        // When
+        await ServiceGroupApp.grantUserAccessAndSetStatus(
+          user,
+          UserAccountStatus.Invited,
+          UserAccountStatus.Waiting,
+          { syncAuth0: true }
+        );
+
+        // Then
+        expect(auth0Spy).toHaveBeenCalledTimes(1);
+        expect(sendSpy).not.toHaveBeenCalled();
         expect(await loadStatus()).toBe(UserAccountStatus.Invited);
+      });
+
+      it('should sync Auth0 and send one welcome email when a waiting user becomes validated', async () => {
+        // Given
+        const auth0Spy = vi
+          .spyOn(auth0ClientMock, 'updateUserRBACInstance')
+          .mockResolvedValue(undefined);
+        const sendSpy = vi
+          .spyOn(PgBossProducer, 'send')
+          .mockResolvedValue('job-id');
+        const user = await loadUser(targetUserId);
+
+        // When
+        await ServiceGroupApp.grantUserAccessAndSetStatus(
+          user,
+          null,
+          UserAccountStatus.Waiting,
+          { syncAuth0: true }
+        );
+
+        // Then
+        expect(auth0Spy).toHaveBeenCalledTimes(1);
+        expect(sendSpy).toHaveBeenCalledTimes(1);
+        expect(await loadStatus()).toBeNull();
+      });
+
+      it('should send one welcome email and no Auth0 sync when an invited user becomes validated', async () => {
+        // Given
+        await TestHelper.user.update(
+          { id: targetUserId },
+          { status: UserAccountStatus.Invited }
+        );
+        const auth0Spy = vi.spyOn(auth0ClientMock, 'updateUserRBACInstance');
+        const sendSpy = vi
+          .spyOn(PgBossProducer, 'send')
+          .mockResolvedValue('job-id');
+        const user = await loadUser(targetUserId);
+
+        // When
+        await ServiceGroupApp.grantUserAccessAndSetStatus(
+          user,
+          null,
+          UserAccountStatus.Invited,
+          { syncAuth0: false }
+        );
+
+        // Then
+        expect(auth0Spy).not.toHaveBeenCalled();
+        expect(sendSpy).toHaveBeenCalledTimes(1);
+        expect(await loadStatus()).toBeNull();
+      });
+
+      it('should send exactly one welcome email from waiting to invited to validated', async () => {
+        // Given
+        vi.spyOn(auth0ClientMock, 'updateUserRBACInstance').mockResolvedValue(
+          undefined
+        );
+        const sendSpy = vi
+          .spyOn(PgBossProducer, 'send')
+          .mockResolvedValue('job-id');
+
+        // When
+        await ServiceGroupApp.grantUserAccessAndSetStatus(
+          await loadUser(targetUserId),
+          UserAccountStatus.Invited,
+          UserAccountStatus.Waiting,
+          { syncAuth0: true }
+        );
+        await ServiceGroupApp.grantUserAccessAndSetStatus(
+          await loadUser(targetUserId),
+          null,
+          UserAccountStatus.Invited,
+          { syncAuth0: false }
+        );
+
+        // Then
+        expect(sendSpy).toHaveBeenCalledTimes(1);
+        expect(await loadStatus()).toBeNull();
+      });
+
+      it('should send no welcome email when an invited user is validated concurrently', async () => {
+        // Given
+        await TestHelper.user.update(
+          { id: targetUserId },
+          { status: UserAccountStatus.Invited }
+        );
+        const user = await loadUser(targetUserId);
+        await TestHelper.user.update({ id: targetUserId }, { status: null });
+        const sendSpy = vi
+          .spyOn(PgBossProducer, 'send')
+          .mockResolvedValue('job-id');
+
+        // When
+        const result = ServiceGroupApp.grantUserAccessAndSetStatus(
+          user,
+          null,
+          UserAccountStatus.Invited,
+          { syncAuth0: false }
+        );
+
+        // Then
+        await expect(result).rejects.toThrow(
+          ErrorCode.UserStatusChangedConcurrently
+        );
+        expect(sendSpy).not.toHaveBeenCalled();
       });
 
       it('should not enqueue the welcome email when the status update fails', async () => {
@@ -2716,7 +2895,8 @@ describe('serviceGroupApp', () => {
         const result = ServiceGroupApp.grantUserAccessAndSetStatus(
           user,
           null,
-          UserAccountStatus.Waiting
+          UserAccountStatus.Waiting,
+          { syncAuth0: true }
         );
 
         // Then
@@ -2742,7 +2922,8 @@ describe('serviceGroupApp', () => {
         const result = ServiceGroupApp.grantUserAccessAndSetStatus(
           user,
           null,
-          UserAccountStatus.Waiting
+          UserAccountStatus.Waiting,
+          { syncAuth0: true }
         );
 
         // Then
@@ -2767,7 +2948,8 @@ describe('serviceGroupApp', () => {
         await ServiceGroupApp.grantUserAccessAndSetStatus(
           user,
           null,
-          UserAccountStatus.Waiting
+          UserAccountStatus.Waiting,
+          { syncAuth0: true }
         );
 
         // Then
@@ -2795,7 +2977,8 @@ describe('serviceGroupApp', () => {
         const result = ServiceGroupApp.grantUserAccessAndSetStatus(
           user,
           null,
-          UserAccountStatus.Waiting
+          UserAccountStatus.Waiting,
+          { syncAuth0: true }
         );
 
         // Then
@@ -2826,7 +3009,8 @@ describe('serviceGroupApp', () => {
       await ServiceGroupApp.grantUserAccessAndSetStatus(
         user,
         UserAccountStatus.Invited,
-        UserAccountStatus.Waiting
+        UserAccountStatus.Waiting,
+        { syncAuth0: true }
       );
 
       // Then
@@ -2836,7 +3020,7 @@ describe('serviceGroupApp', () => {
     });
   });
 
-  describe('grantAccessIfWaiting', () => {
+  describe('grantAccessAtLogin', () => {
     const createdBundleIds: DeploymentRequestId[] = [];
 
     afterEach(async () => {
@@ -2853,7 +3037,7 @@ describe('serviceGroupApp', () => {
       );
     });
 
-    it('should do nothing when the user status is not waiting', async () => {
+    it('should do nothing when the user is already validated', async () => {
       // Given
       const auth0Spy = vi.spyOn(auth0ClientMock, 'updateUserRBACInstance');
       const user = {
@@ -2862,7 +3046,7 @@ describe('serviceGroupApp', () => {
       } as UserLoadUserBy;
 
       // When
-      await ServiceGroupApp.grantAccessIfWaiting(user);
+      await ServiceGroupApp.grantAccessAtLogin(user);
 
       // Then
       expect(auth0Spy).not.toHaveBeenCalled();
@@ -2910,7 +3094,7 @@ describe('serviceGroupApp', () => {
       })) as UserLoadUserBy;
 
       // When
-      await ServiceGroupApp.grantAccessIfWaiting(user);
+      await ServiceGroupApp.grantAccessAtLogin(user);
 
       // Then
       expect(user.status).toBeNull();
@@ -2963,7 +3147,7 @@ describe('serviceGroupApp', () => {
       })) as UserLoadUserBy;
 
       // When
-      await ServiceGroupApp.grantAccessIfWaiting(user);
+      await ServiceGroupApp.grantAccessAtLogin(user);
 
       // Then
       expect(sendMailSpy).not.toHaveBeenCalled();
@@ -2990,7 +3174,7 @@ describe('serviceGroupApp', () => {
       } as UserLoadUserBy;
 
       // When
-      await ServiceGroupApp.grantAccessIfWaiting(user);
+      await ServiceGroupApp.grantAccessAtLogin(user);
 
       // Then
       expect(infoSpy).toHaveBeenCalledWith(
@@ -3006,6 +3190,115 @@ describe('serviceGroupApp', () => {
         'User.id': TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
       });
       expect(reloadedUser?.status).toBe(UserAccountStatus.Invited);
+    });
+
+    describe('when the user has access to an active trial', () => {
+      const targetUserId = TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID;
+
+      const trialMailCount = (sendMailSpy: MockInstance) =>
+        sendMailSpy.mock.calls.filter(
+          ([mail]) => mail.template === FREE_TRIAL_BUNDLE_USER_ADDED_TEMPLATE
+        ).length;
+
+      const createTrialMemberWithStatus = async (status: UserAccountStatus) => {
+        const { bundle, children } =
+          await TestHelper.deploymentRequest.createBundle({
+            bundle: {
+              end_date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+            },
+            children: [
+              {
+                platform_identifier: PlatformIdentifier.Opencti,
+                hub_status: DeploymentRequestHubStatus.Active,
+                platform_id: uuidv4(),
+              },
+            ],
+          });
+        createdBundleIds.push(bundle.id);
+        const groupId = uuidv4() as ServiceGroupId;
+        await TestHelper.serviceGroup.create({
+          id: groupId,
+          name: 'Admin',
+          service_instance_id: children[0]!.service_instance_id,
+        });
+        await TestHelper.serviceGroupUser.create({
+          user_id: targetUserId,
+          group_id: groupId,
+        });
+        await TestHelper.user.update({ id: targetUserId }, { status });
+        return (await UserDomain.loadUserBy({
+          'User.id': targetUserId,
+        })) as UserLoadUserBy;
+      };
+
+      it('should validate an invited user and send one welcome email without syncing Auth0', async () => {
+        // Given
+        const user = await createTrialMemberWithStatus(
+          UserAccountStatus.Invited
+        );
+        const auth0Spy = vi.spyOn(auth0ClientMock, 'updateUserRBACInstance');
+        const sendMailSpy = vi
+          .spyOn(mailService, 'sendMail')
+          .mockResolvedValue(undefined);
+
+        // When
+        await ServiceGroupApp.grantAccessAtLogin(user);
+
+        // Then
+        expect(auth0Spy).not.toHaveBeenCalled();
+        expect(trialMailCount(sendMailSpy)).toBe(1);
+        expect(user.status).toBeNull();
+        expect(
+          (await TestHelper.user.load({ id: targetUserId })).status
+        ).toBeNull();
+      });
+
+      it('should sync Auth0, send one welcome email and validate an expired user who logs in', async () => {
+        // Given
+        const user = await createTrialMemberWithStatus(
+          UserAccountStatus.Expired
+        );
+        const auth0Spy = vi
+          .spyOn(auth0ClientMock, 'updateUserRBACInstance')
+          .mockResolvedValue(undefined);
+        const sendMailSpy = vi
+          .spyOn(mailService, 'sendMail')
+          .mockResolvedValue(undefined);
+
+        // When
+        await ServiceGroupApp.grantAccessAtLogin(user);
+
+        // Then
+        expect(auth0Spy).toHaveBeenCalledTimes(1);
+        expect(trialMailCount(sendMailSpy)).toBe(1);
+        expect(user.status).toBeNull();
+        expect(
+          (await TestHelper.user.load({ id: targetUserId })).status
+        ).toBeNull();
+      });
+
+      it('should send no welcome email and not block the login when the status changed concurrently', async () => {
+        // Given
+        const user = await createTrialMemberWithStatus(
+          UserAccountStatus.Invited
+        );
+        await TestHelper.user.update({ id: targetUserId }, { status: null });
+        const sendMailSpy = vi
+          .spyOn(mailService, 'sendMail')
+          .mockResolvedValue(undefined);
+        const errorSpy = vi.spyOn(logApp, 'error');
+
+        // When
+        await ServiceGroupApp.grantAccessAtLogin(user);
+
+        // Then
+        expect(trialMailCount(sendMailSpy)).toBe(0);
+        expect(errorSpy).not.toHaveBeenCalledWith(
+          'Unable to grant service group access at login',
+          expect.anything()
+        );
+        expect(user.status).toBe(UserAccountStatus.Invited);
+      });
     });
   });
 });

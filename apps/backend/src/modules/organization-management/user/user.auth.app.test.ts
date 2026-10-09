@@ -20,7 +20,7 @@ vi.mock('./user-domain/user.domain', () => ({
 
 vi.mock('../../deployment/group/service-group.app', () => ({
   ServiceGroupApp: {
-    grantAccessIfWaiting: vi.fn(),
+    grantAccessAtLogin: vi.fn(),
   },
 }));
 
@@ -91,7 +91,7 @@ describe('usersAuthApp', () => {
         expect(result).toBe(mockUser);
         expect(mockReq.session).toMatchObject({ user: mockUser });
         expect(
-          ServiceGroupApp.grantAccessIfWaiting
+          ServiceGroupApp.grantAccessAtLogin
         ).toHaveBeenCalledExactlyOnceWith(mockUser);
       });
 
@@ -114,7 +114,7 @@ describe('usersAuthApp', () => {
 
           expect(result).toBeUndefined();
           expect(UserDomain.updateUserAtLogin).not.toHaveBeenCalled();
-          expect(ServiceGroupApp.grantAccessIfWaiting).not.toHaveBeenCalled();
+          expect(ServiceGroupApp.grantAccessAtLogin).not.toHaveBeenCalled();
         }
       );
     });

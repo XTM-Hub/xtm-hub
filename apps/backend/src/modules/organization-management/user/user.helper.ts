@@ -131,6 +131,9 @@ export const UserHelper = {
     status !== UserAccountStatus.Waiting &&
     status !== UserAccountStatus.Expired,
 
+  hasValidatedAccount: ({ status }: Pick<User, 'status'>): boolean =>
+    status === null,
+
   preventAdministratorRemovalOfOneOrganization: async (
     userId: UserId,
     organizationId: OrganizationId,
