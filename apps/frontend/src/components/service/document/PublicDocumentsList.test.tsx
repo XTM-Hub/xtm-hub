@@ -23,6 +23,7 @@ const INTEGRATION_TYPE_VALUE = 'connector';
 const FACET_COUNT = 4;
 const LARGE_TOTAL_COUNT = 144;
 const FILTERED_TOTAL_COUNT = 4;
+const FILTERS_BUTTON_LABEL = 'Service.List.Filters';
 const EMPTY_FACETS = {
   documentFacets: {
     integration_type: [],
@@ -334,6 +335,22 @@ describe('PublicDocumentsList', () => {
     expect(testState.setDisplayMode).toHaveBeenCalledWith(
       ServiceListDisplayMode.Tab
     );
+  });
+
+  it('should open the filters sheet when the filters button is clicked', async () => {
+    // Given
+    mockEmptyFacetQuery();
+    const { user } = testRender(buildElement());
+
+    // When
+    await user.click(
+      screen.getByRole('button', { name: FILTERS_BUTTON_LABEL })
+    );
+
+    // Then
+    expect(
+      screen.getByRole('dialog', { name: FILTERS_BUTTON_LABEL })
+    ).toBeInTheDocument();
   });
 
   it('should refetch with an encoded cursor when pagination moves to the next page', async () => {

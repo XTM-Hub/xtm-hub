@@ -7,6 +7,7 @@ interface FilterSidebarProps {
 
 /**
  * Sticky filter column shared by the public and private document lists.
+ * Hidden below `sm`, where the list header's FilterSheet takes over.
  * A fixed 250px flex column: `basis-[250px]` with growth and shrink both
  * disabled, so the sidebar never scales with the viewport and the sibling
  * content column absorbs every width change on its own. The width is an
@@ -23,7 +24,7 @@ interface FilterSidebarProps {
  * paint before the observer publishes.
  */
 export const FilterSidebar = ({ filters }: FilterSidebarProps) => (
-  <div className="shrink-0 grow-0 basis-[250px] self-start sticky top-[var(--list-header-height,64px)] max-h-[calc(var(--list-scroll-height,100dvh)-var(--list-header-height,64px))] overflow-y-auto rounded p-m bg-elevation-background-layer-1">
+  <div className="shrink-0 grow-0 basis-[250px] self-start sticky top-[var(--list-header-height,64px)] max-h-[calc(var(--list-scroll-height,100dvh)-var(--list-header-height,64px))] overflow-y-auto rounded p-m bg-elevation-background-layer-1 max-sm:hidden">
     <ServiceListFilterSection filters={filters} />
   </div>
 );

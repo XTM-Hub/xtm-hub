@@ -11,6 +11,8 @@ import {
 import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const FILTERS_BUTTON_LABEL = 'Service.List.Filters';
+
 const testState = vi.hoisted(() => ({
   useServiceContext: vi.fn(),
   useServiceCapability: vi.fn(),
@@ -250,5 +252,28 @@ describe('ServiceList', () => {
     expect(testState.setDisplayMode).toHaveBeenCalledWith(
       ServiceListDisplayMode.Tab
     );
+  });
+
+  it('should open the filters sheet when the filters button is clicked', async () => {
+    // Given
+    const { user } = testRender(
+      <ServiceList
+        active={[]}
+        draft={[]}
+        search=""
+        onSearchChange={vi.fn()}
+        additionalFilters={{}}
+      />
+    );
+
+    // When
+    await user.click(
+      screen.getByRole('button', { name: FILTERS_BUTTON_LABEL })
+    );
+
+    // Then
+    expect(
+      screen.getByRole('dialog', { name: FILTERS_BUTTON_LABEL })
+    ).toBeInTheDocument();
   });
 });

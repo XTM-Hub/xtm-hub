@@ -10,6 +10,8 @@ import { screen } from '@testing-library/react';
 import { ComponentProps } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
+const FILTERS_BUTTON_LABEL = 'Service.List.Filters';
+
 const testState = vi.hoisted(() => ({
   useServiceListLocalStorage: vi.fn(),
   setOrderBy: vi.fn(),
@@ -145,5 +147,20 @@ describe('ServiceListHeader', () => {
     );
 
     expect(testState.setOrderMode).toHaveBeenCalledWith(OrderingMode.Desc);
+  });
+
+  it('should not render the filters button when no filters are given', () => {
+    // Given
+    testState.useServiceListLocalStorage.mockReturnValue(
+      buildLocalStorageState()
+    );
+
+    // When
+    renderHeader();
+
+    // Then
+    expect(
+      screen.queryByRole('button', { name: FILTERS_BUTTON_LABEL })
+    ).not.toBeInTheDocument();
   });
 });

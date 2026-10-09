@@ -157,6 +157,7 @@ const PublicDocumentsList = ({
           onSearchChange={setSearch}
           className="mb-3"
           onDisplayModeChange={setDisplayMode}
+          filters={filters}
           actions={
             isIntegrationsService ? (
               <IntegrationsCsvExportButton

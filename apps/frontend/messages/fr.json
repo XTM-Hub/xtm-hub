@@ -1436,6 +1436,7 @@
     "List": {
       "ViewTab": "Sélectionner l'affichage par onglets",
       "ViewList": "Sélectionner l'affichage sous forme de liste",
+      "Filters": "Filtres",
       "Tab": {
         "Name": "Nom",
         "Description": "Description",
