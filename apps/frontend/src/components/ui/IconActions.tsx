@@ -2,6 +2,8 @@
 import { cn } from '@/lib/utils';
 import {
   Button,
+  IconButton,
+  type IconButtonProps,
   Menu,
   MenuContent,
   MenuItem,
@@ -23,7 +25,8 @@ export { MenuItem as IconActionsItem } from '@filigran/design-system';
 interface IconActionsProps {
   children: ReactNode;
   icon: ReactNode;
-  label?: ReactNode;
+  'aria-label': string;
+  size?: IconButtonProps['size'];
   className?: string;
 }
 
@@ -41,8 +44,9 @@ export const IconActionContext = createContext<IconActionContextProps>({
 });
 export const IconActions = ({
   children,
-  label,
   icon,
+  'aria-label': ariaLabel,
+  size,
   className,
 }: IconActionsProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -52,14 +56,13 @@ export const IconActions = ({
       open={menuOpen}
       onOpenChange={setMenuOpen}>
       <MenuTrigger asChild>
-        <div className="flex items-center gap-s cursor-pointer">
-          {label}
-          <Button
-            priority="tertiary"
-            className={cn('h-8 w-8 p-0 data-[state=open]:bg-hover', className)}>
-            {icon}
-          </Button>
-        </div>
+        <IconButton
+          priority="tertiary"
+          size={size}
+          className={className}
+          aria-label={ariaLabel}
+          icon={icon}
+        />
       </MenuTrigger>
       <MenuContent align="end">
         <IconActionContext.Provider value={{ setMenuOpen }}>

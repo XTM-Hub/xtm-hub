@@ -21,12 +21,8 @@ const SsoGroupRolePortalActions = ({
   return (
     <>
       <IconActions
-        icon={
-          <>
-            <MoreVertIcon className="h-4 w-4 text-primary" />
-            <span className="sr-only">{t('Utils.OpenMenu')}</span>
-          </>
-        }>
+        aria-label={t('Utils.OpenMenu')}
+        icon={<MoreVertIcon className="h-4 w-4 text-primary" />}>
         <IconActionsItem onClick={() => setOpenEdit(true)}>
           {t('Utils.Update')}
         </IconActionsItem>

@@ -101,13 +101,10 @@ const ServiceCard = ({
         <>
           {(userCanDelete || userCanUpdate) && (
             <IconActions
-              className="z-[2] h-6 w-6"
-              icon={
-                <>
-                  <MoreVertIcon className="h-4 w-4 text-primary" />
-                  <span className="sr-only">{t('Utils.OpenMenu')}</span>
-                </>
-              }>
+              size="sm"
+              className="z-[2]"
+              aria-label={t('Utils.OpenMenu')}
+              icon={<MoreVertIcon className="h-4 w-4 text-primary" />}>
               {userCanUpdate && (
                 <IconActionsItem onClick={() => onClickOnUpdate()}>
                   {t('MenuActions.Update')}

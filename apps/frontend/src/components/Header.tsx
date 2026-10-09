@@ -93,14 +93,11 @@ const HeaderComponent = ({ displayLogo }: HeaderComponentProps) => {
         {canManageUser && <NotificationButton />}
         <div className="mobile:hidden flex items-center">
           <IconActions
-            className="rounded-full"
+            aria-label={t('MenuUser.ToggleUser')}
             icon={
-              <>
-                <div className="my-auto [&_img]:object-cover size-6 text-primary [&_span]:bg-transparent">
-                  <Avatar src={me?.picture || undefined} />
-                </div>
-                <span className="sr-only">{t('MenuUser.ToggleUser')}</span>
-              </>
+              <div className="my-auto [&_img]:object-cover size-6 text-primary [&_span]:bg-transparent">
+                <Avatar src={me?.picture || undefined} />
+              </div>
             }>
             <IconActionsItem asChild>
               <Link href={`/${APP_PATH}/profile`}>{t('MenuUser.Profile')}</Link>

@@ -71,15 +71,13 @@ const AdminServiceTab = ({ serviceData, refetch }: AdminServiceTabProps) => {
           <>
             <div className="flex items-center justify-end">
               <IconActions
+                aria-label={t('Utils.OpenMenu')}
                 icon={
-                  <>
-                    <MoreVertIcon
-                      aria-hidden={true}
-                      focusable={false}
-                      className="h-4 w-4 text-primary"
-                    />
-                    <span className="sr-only">{t('Utils.OpenMenu')}</span>
-                  </>
+                  <MoreVertIcon
+                    aria-hidden={true}
+                    focusable={false}
+                    className="h-4 w-4 text-primary"
+                  />
                 }>
                 {row.original.service_definition?.identifier !==
                   ServiceDefinitionIdentifier.Link && (
