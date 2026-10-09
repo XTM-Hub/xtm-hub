@@ -11,7 +11,7 @@ import { authenticateUser, isSessionUserActive } from './auth-user';
 
 vi.mock('../../deployment/group/service-group.app', () => ({
   ServiceGroupApp: {
-    grantAccessIfWaiting: vi.fn(),
+    grantAccessAtLogin: vi.fn(),
   },
 }));
 
@@ -118,9 +118,7 @@ describe('authenticateUser', () => {
     await authenticateUser(req, buildResponse(), asUserInfo(email));
 
     expect(req.session.user?.id).toBe(testUser.user.id);
-    expect(
-      ServiceGroupApp.grantAccessIfWaiting
-    ).toHaveBeenCalledExactlyOnceWith(
+    expect(ServiceGroupApp.grantAccessAtLogin).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({
         id: testUser.user.id,
         status: UserAccountStatus.Waiting,
@@ -139,6 +137,6 @@ describe('authenticateUser', () => {
     ).rejects.toThrow();
 
     expect(req.session.user).toBeUndefined();
-    expect(ServiceGroupApp.grantAccessIfWaiting).not.toHaveBeenCalled();
+    expect(ServiceGroupApp.grantAccessAtLogin).not.toHaveBeenCalled();
   });
 });

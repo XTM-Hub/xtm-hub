@@ -2,7 +2,13 @@ import type { Management } from 'auth0';
 import { v4 as uuidv4 } from 'uuid';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../../tests/helper/test.helper';
-import { UserAccountStatus } from '../../../../__generated__/resolvers-types';
+import {
+  DeploymentRequestHubStatus,
+  PlatformIdentifier,
+  UserAccountStatus,
+} from '../../../../__generated__/resolvers-types';
+import { DeploymentRequestId } from '../../../../model/kanel/public/DeploymentRequest';
+import { ServiceGroupId } from '../../../../model/kanel/public/ServiceGroup';
 import User, { UserId } from '../../../../model/kanel/public/User';
 import * as mailService from '../../../../server/mail-service';
 import { auth0ClientMock } from '../../../../thirdparty/auth0/mock';
@@ -21,6 +27,7 @@ import {
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 // Older than any user another test may leave behind, so that they come first in the run.
 const ANCIENT_DAYS = 40000;
+const FREE_TRIAL_BUNDLE_USER_ADDED_TEMPLATE = 'free_trial_bundle_user_added';
 const rateLimitError = () => TestHelper.auth0.managementError(429);
 const OPTIONS = {
   maxUsersPerRun: 500,
@@ -30,6 +37,7 @@ const OPTIONS = {
 
 describe('userAccountStatusSyncApp.syncUserAccountStatusWithAuth0', () => {
   const createdUserIds: UserId[] = [];
+  const createdBundleIds: DeploymentRequestId[] = [];
   // Auth0 accounts by lowercased email, read by the mocked client.
   let auth0Accounts: Map<string, Management.UserResponseSchema[]>;
 
@@ -45,6 +53,39 @@ describe('userAccountStatusSyncApp.syncUserAccountStatusWithAuth0', () => {
     createdUserIds.push(user.id);
     return user;
   };
+
+  const addTrialMembership = async (user: User) => {
+    const { bundle, children } =
+      await TestHelper.deploymentRequest.createBundle({
+        bundle: { end_date: new Date(Date.now() + 10 * MS_PER_DAY) },
+        children: [
+          {
+            platform_identifier: PlatformIdentifier.Opencti,
+            hub_status: DeploymentRequestHubStatus.Active,
+            platform_id: uuidv4(),
+          },
+        ],
+      });
+    createdBundleIds.push(bundle.id);
+    const groupId = uuidv4() as ServiceGroupId;
+    await TestHelper.serviceGroup.create({
+      id: groupId,
+      name: 'Admin',
+      service_instance_id: children[0]!.service_instance_id,
+    });
+    await TestHelper.serviceGroupUser.create({
+      user_id: user.id,
+      group_id: groupId,
+    });
+  };
+
+  const trialMailRecipients = (sendMailSpy: { mock: { calls: unknown[][] } }) =>
+    (sendMailSpy.mock.calls as [{ template: string; to: string }][])
+      .map(([mail]) => mail)
+      .filter(
+        ({ template }) => template === FREE_TRIAL_BUNDLE_USER_ADDED_TEMPLATE
+      )
+      .map(({ to }) => to);
 
   const account = (
     user: User,
@@ -110,10 +151,14 @@ describe('userAccountStatusSyncApp.syncUserAccountStatusWithAuth0', () => {
   afterEach(async () => {
     vi.restoreAllMocks();
     try {
+      for (const bundleId of createdBundleIds) {
+        await TestHelper.deploymentRequest.deleteBundle(bundleId);
+      }
       for (const id of createdUserIds) {
         await TestHelper.user.delete({ id });
       }
     } finally {
+      createdBundleIds.length = 0;
       createdUserIds.length = 0;
     }
   });
@@ -160,7 +205,7 @@ describe('userAccountStatusSyncApp.syncUserAccountStatusWithAuth0', () => {
       expect.objectContaining({ id: user.id }),
       null,
       UserAccountStatus.Waiting,
-      accounts
+      { syncAuth0: true, prefetchedAuth0Users: accounts }
     );
     expect(await statusOf(user)).toBeNull();
     expect(logApp.info).toHaveBeenCalledWith('Auth0 sync: access granted', {
@@ -226,16 +271,25 @@ describe('userAccountStatusSyncApp.syncUserAccountStatusWithAuth0', () => {
     expect(requestedEmails()).toContain(user.email);
   });
 
-  it('should clear the status of an invited user who reset his password without granting access again', async () => {
+  it('should grant access with a null status to an invited user who reset his password', async () => {
     // Given
     const user = await createUser(UserAccountStatus.Invited);
-    setAccounts(user, [account(user, '2026-01-01T00:00:00.000Z')]);
+    const accounts = [account(user, '2026-01-01T00:00:00.000Z')];
+    setAccounts(user, accounts);
 
     // When
     await UserAccountStatusSyncApp.syncUserAccountStatusWithAuth0(OPTIONS);
 
     // Then
-    expect(ServiceGroupApp.grantUserAccessAndSetStatus).not.toHaveBeenCalled();
+    expect(ServiceGroupApp.grantUserAccessAndSetStatus).toHaveBeenCalledTimes(
+      1
+    );
+    expect(ServiceGroupApp.grantUserAccessAndSetStatus).toHaveBeenCalledWith(
+      expect.objectContaining({ id: user.id }),
+      null,
+      UserAccountStatus.Invited,
+      { syncAuth0: false, prefetchedAuth0Users: accounts }
+    );
     expect(await statusOf(user)).toBeNull();
     expect(logApp.info).toHaveBeenCalledWith(
       'Auth0 sync: user status changed from invited to null',
@@ -296,7 +350,7 @@ describe('userAccountStatusSyncApp.syncUserAccountStatusWithAuth0', () => {
       expect.objectContaining({ id: user.id }),
       null,
       UserAccountStatus.Waiting,
-      accounts
+      { syncAuth0: true, prefetchedAuth0Users: accounts }
     );
     expect(await statusOf(user)).toBeNull();
   });
@@ -490,7 +544,6 @@ describe('userAccountStatusSyncApp.syncUserAccountStatusWithAuth0', () => {
   it('should skip a database-only transition when the status changed concurrently', async () => {
     // Given
     const user = await createUser(UserAccountStatus.Invited);
-    setAccounts(user, [account(user, '2026-01-01T00:00:00.000Z')]);
     vi.spyOn(auth0ClientMock, 'getUsersByEmails').mockImplementation(
       async () => {
         await TestHelper.user.update(
@@ -499,12 +552,7 @@ describe('userAccountStatusSyncApp.syncUserAccountStatusWithAuth0', () => {
             status: UserAccountStatus.Waiting,
           }
         );
-        return new Map([
-          [
-            user.email.toLowerCase(),
-            auth0Accounts.get(user.email.toLowerCase())!,
-          ],
-        ]);
+        return new Map();
       }
     );
 
@@ -522,6 +570,94 @@ describe('userAccountStatusSyncApp.syncUserAccountStatusWithAuth0', () => {
       expect.stringContaining('user status changed from'),
       expect.objectContaining({ userId: user.id })
     );
+  });
+
+  it('should validate an invited user who reset his password with one welcome email and no Auth0 sync', async () => {
+    // Given
+    const user = await createUser(UserAccountStatus.Invited);
+    await addTrialMembership(user);
+    setAccounts(user, [account(user, '2026-01-01T00:00:00.000Z')]);
+    vi.mocked(ServiceGroupApp.grantUserAccessAndSetStatus).mockRestore();
+    const updateRbacSpy = vi.spyOn(auth0ClientMock, 'updateUserRBACInstance');
+    const sendMailSpy = vi
+      .spyOn(mailService, 'sendMail')
+      .mockResolvedValue(undefined);
+
+    // When
+    await UserAccountStatusSyncApp.syncUserAccountStatusWithAuth0(OPTIONS);
+
+    // Then
+    expect(await statusOf(user)).toBeNull();
+    expect(trialMailRecipients(sendMailSpy)).toEqual([user.email]);
+    expect(updateRbacSpy).not.toHaveBeenCalled();
+  });
+
+  it('should still grant an invited user but skip a waiting user when the rate limit hits the second chunk', async () => {
+    // Given
+    const invited = await createUser(UserAccountStatus.Invited, ANCIENT_DAYS);
+    const waiting = await createUser(UserAccountStatus.Waiting, ANCIENT_DAYS);
+    const resetAccounts = [invited, waiting].map((user) => {
+      const accounts = [account(user, '2026-01-01T00:00:00.000Z')];
+      setAccounts(user, accounts);
+      return [user.email.toLowerCase(), accounts] as const;
+    });
+    for (let i = 0; i < 48; i++) {
+      await createUser(UserAccountStatus.Waiting, ANCIENT_DAYS - 1);
+    }
+    await createUser(UserAccountStatus.Waiting, ANCIENT_DAYS - 2);
+    vi.spyOn(auth0ClientMock, 'getUsersByEmails')
+      .mockImplementationOnce(async () => new Map(resetAccounts))
+      .mockRejectedValueOnce(rateLimitError());
+
+    // When
+    await UserAccountStatusSyncApp.syncUserAccountStatusWithAuth0(OPTIONS);
+
+    // Then
+    expect(ServiceGroupApp.grantUserAccessAndSetStatus).toHaveBeenCalledTimes(
+      1
+    );
+    expect(ServiceGroupApp.grantUserAccessAndSetStatus).toHaveBeenCalledWith(
+      expect.objectContaining({ id: invited.id }),
+      null,
+      UserAccountStatus.Invited,
+      { syncAuth0: false, prefetchedAuth0Users: expect.anything() }
+    );
+    expect(await statusOf(invited)).toBeNull();
+    expect(await statusOf(waiting)).toBe(UserAccountStatus.Waiting);
+  });
+
+  it('should skip an invited user validated meanwhile, without email', async () => {
+    // Given
+    const user = await createUser(UserAccountStatus.Invited);
+    await addTrialMembership(user);
+    setAccounts(user, [account(user, '2026-01-01T00:00:00.000Z')]);
+    vi.mocked(ServiceGroupApp.grantUserAccessAndSetStatus).mockRestore();
+    const sendMailSpy = vi.spyOn(mailService, 'sendMail');
+    const sendJobSpy = vi.spyOn(PgBossProducer, 'send');
+    vi.spyOn(auth0ClientMock, 'getUsersByEmails').mockImplementation(
+      async () => {
+        await TestHelper.user.update({ id: user.id }, { status: null });
+        return new Map([
+          [
+            user.email.toLowerCase(),
+            auth0Accounts.get(user.email.toLowerCase())!,
+          ],
+        ]);
+      }
+    );
+
+    // When
+    await UserAccountStatusSyncApp.syncUserAccountStatusWithAuth0(OPTIONS);
+
+    // Then
+    expect(await statusOf(user)).toBeNull();
+    expect(logApp.info).toHaveBeenCalledWith(
+      'Auth0 sync: user status changed concurrently, skipped',
+      { userId: user.id }
+    );
+    expect(errorLogsAbout([user])).toEqual([]);
+    expect(sendMailSpy).not.toHaveBeenCalled();
+    expect(sendJobSpy).not.toHaveBeenCalled();
   });
 
   it('should skip a grant when the status changed concurrently, without email', async () => {
@@ -665,32 +801,32 @@ describe('decideAuth0Sync', () => {
     {
       status: UserAccountStatus.Invited,
       accounts: [],
-      expected: { grant: false, newStatus: UserAccountStatus.Expired },
+      expected: { syncAuth0: false, newStatus: UserAccountStatus.Expired },
     },
     {
       status: UserAccountStatus.Waiting,
       accounts: [],
-      expected: { grant: false, newStatus: undefined },
+      expected: { syncAuth0: false, newStatus: undefined },
     },
     {
       status: UserAccountStatus.Waiting,
       accounts: withReset,
-      expected: { grant: true, newStatus: null },
+      expected: { syncAuth0: true, newStatus: null },
     },
     {
       status: UserAccountStatus.Invited,
       accounts: withReset,
-      expected: { grant: false, newStatus: null },
+      expected: { syncAuth0: false, newStatus: null },
     },
     {
       status: UserAccountStatus.Waiting,
       accounts: noReset,
-      expected: { grant: true, newStatus: UserAccountStatus.Invited },
+      expected: { syncAuth0: true, newStatus: UserAccountStatus.Invited },
     },
     {
       status: UserAccountStatus.Invited,
       accounts: noReset,
-      expected: { grant: false, newStatus: undefined },
+      expected: { syncAuth0: false, newStatus: undefined },
     },
   ])(
     'should return $expected for a $status user with $accounts.length accounts',
