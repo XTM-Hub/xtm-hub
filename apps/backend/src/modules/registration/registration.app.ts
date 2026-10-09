@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   AutoRegisterPlatformInput,
   CanUnregisterPlatformInput,
+  CommercialModel,
   DeploymentRequestHubStatus,
   IsPlatformRegisteredInput,
   IsPlatformRegisteredResponse,
@@ -12,14 +13,17 @@ import {
   PlatformInput,
   PlatformRegistrationConnectivityStatus,
   PlatformRegistrationStatus,
+  QuerySaasPlatformsArgs,
   RefreshUserPlatformTokenResponse,
   RegisteredPlatform,
+  RegisteredPlatformConnection,
   RegisteredPlatformsInput,
   RegisterPlatformInput,
   ServiceDefinitionIdentifier,
   ServiceInstanceCreationStatus,
   UnregisterPlatformInput,
 } from '../../__generated__/resolvers-types';
+import portalConfig from '../../config';
 import { withTransaction } from '../../context/database.context';
 import { requestContext } from '../../context/request.context';
 import DeploymentRequest from '../../model/kanel/public/DeploymentRequest';
@@ -30,6 +34,12 @@ import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { UserId } from '../../model/kanel/public/User';
 import { securityGuard } from '../../security/guard';
 import { sendMail } from '../../server/mail-service';
+import { PgBossProducer } from '../../thirdparty/pgboss/producer';
+import {
+  type CommercialModelJobData,
+  REGISTRATION_QUEUES,
+} from '../../thirdparty/pgboss/registration.jobs';
+import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
 import { logApp } from '../../utils/app-logger.util';
 import {
   BadRequestErrorCode,
@@ -56,6 +66,67 @@ import {
   RegistrationDomain,
 } from './registration.domain';
 import { RegistrationHelper } from './registration.helper';
+
+/**
+ * Returns undefined when the SaaS Manager cannot classify the platform, so the
+ * stored commercial model is kept instead of being overwritten with OTHER.
+ */
+const loadCommercialModel = async (
+  platformId: string
+): Promise<CommercialModel | undefined> => {
+  if (!portalConfig.saas_manager.enabled) {
+    return undefined;
+  }
+  try {
+    const response = await SaasManagerClient.callInstanceApi({
+      platform_id: platformId,
+    });
+    if (response.status === 404) {
+      return CommercialModel.Other;
+    }
+    if (!response.ok) {
+      logApp.warn('Unable to load the commercial model from the SaaS Manager', {
+        status: response.status,
+      });
+      return undefined;
+    }
+    const responseBody = (await response.json()) as {
+      commercial_model?: unknown;
+    } | null;
+    if (typeof responseBody?.commercial_model !== 'string') {
+      logApp.warn('The SaaS Manager returned no commercial model', {
+        platformId,
+      });
+      return undefined;
+    }
+    return responseBody.commercial_model === 'PROD'
+      ? CommercialModel.Saas
+      : CommercialModel.Other;
+  } catch (error) {
+    logApp.warn('Unable to load the commercial model from the SaaS Manager', {
+      error,
+    });
+    return undefined;
+  }
+};
+
+// The registration does not wait for the SaaS Manager: the platform keeps its
+// stored commercial model until the job updates it.
+const enqueueCommercialModelRefresh = async (
+  data: CommercialModelJobData
+): Promise<void> => {
+  if (!portalConfig.saas_manager.enabled) {
+    return;
+  }
+  try {
+    await PgBossProducer.send(REGISTRATION_QUEUES.COMMERCIAL_MODEL, data);
+  } catch (error) {
+    logApp.error('Failed to enqueue the commercial model refresh', {
+      ...data,
+      error,
+    });
+  }
+};
 
 const buildPlatformConfiguration = (
   platform: PlatformInput,
@@ -146,6 +217,11 @@ export const RegistrationApp = {
     return platforms.map(mapDomainRegisteredPlatformToGraphQL);
   },
 
+  loadSaasPlatforms: async (
+    opts: QuerySaasPlatformsArgs
+  ): Promise<RegisteredPlatformConnection> =>
+    RegistrationDomain.loadSaasPlatforms(opts),
+
   /**
    * @deprecated This function is only used by openCTIPlatformRegistrationStatus, which is deprecated.
    * Be careful when using it.
@@ -164,6 +240,19 @@ export const RegistrationApp = {
           ? PlatformRegistrationConnectivityStatus.Active
           : PlatformRegistrationConnectivityStatus.Inactive,
     };
+  },
+
+  refreshCommercialModel: async ({
+    serviceInstanceId,
+    platformId,
+  }: CommercialModelJobData): Promise<void> => {
+    const commercialModel = await loadCommercialModel(platformId);
+    if (!commercialModel) {
+      return;
+    }
+    await PlatformConfigurationDomain.updateConfiguration(serviceInstanceId, {
+      commercial_model: commercialModel,
+    });
   },
 
   registerPlatform: async ({
@@ -216,21 +305,26 @@ export const RegistrationApp = {
       throw new Error(BadRequestErrorCode.TenantIdMandatory);
     }
 
-    await withTransaction(async () => {
+    const serviceInstanceId = await withTransaction(async () => {
       if (platformConfiguration) {
         await RegistrationDomain.refreshExistingPlatform({
           serviceInstanceId: platformConfiguration.service_instance_id,
           targetOrganizationId: organizationId as OrganizationId,
           configuration,
         });
-      } else {
-        await RegistrationDomain.registerNewPlatform({
-          serviceDefinitionId: serviceDefinition.id,
-          organizationId: organizationId as OrganizationId,
-          configuration,
-          platformIdentifier: identifier,
-        });
+        return platformConfiguration.service_instance_id;
       }
+      return RegistrationDomain.registerNewPlatform({
+        serviceDefinitionId: serviceDefinition.id,
+        organizationId: organizationId as OrganizationId,
+        configuration,
+        platformIdentifier: identifier,
+      });
+    });
+
+    await enqueueCommercialModelRefresh({
+      serviceInstanceId,
+      platformId: configuration.platform_id,
     });
 
     const users = await UserDomain.loadUsersByCapabilitiesInOrganization(
@@ -549,6 +643,7 @@ export const mapDomainRegisteredPlatformToGraphQL = (
   return {
     __typename: 'RegisteredPlatform',
     id: platform.id,
+    service_instance_id: platform.id as ServiceInstanceId,
     platform_id: platform.platform_id ?? platform.id,
     last_connectivity_check: platform?.last_connectivity_check ?? null,
     status: platform.status ?? null,

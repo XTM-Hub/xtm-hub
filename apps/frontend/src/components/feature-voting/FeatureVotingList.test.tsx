@@ -118,6 +118,36 @@ describe('FeatureVotingList', () => {
     );
   });
 
+  it('should not render a feature when its product cannot be put to a vote', async () => {
+    // Given
+    mockRound(
+      mockVotingRound({
+        id: 'round-1',
+        description: 'Tell us what matters to you',
+        features: [
+          openctiFeature,
+          mockVotableFeature({
+            id: 'feature-opencrq',
+            title: 'Risk quantification dashboard',
+            product: FiligranProduct.Opencrq,
+            has_my_vote: false,
+          }),
+        ],
+      })
+    );
+
+    // When
+    renderList();
+
+    // Then
+    expect(
+      await screen.findByText('AI-powered report triage')
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('Risk quantification dashboard')
+    ).not.toBeInTheDocument();
+  });
+
   // The page is reachable even between two rounds, it must stay readable.
   it('should explain that no round is collecting votes when there is none', async () => {
     // Given

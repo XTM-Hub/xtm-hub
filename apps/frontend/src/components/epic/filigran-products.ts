@@ -5,6 +5,7 @@ export const FILIGRAN_PRODUCTS_ORDER: FiligranProduct[] = [
   FiligranProduct.Opencti,
   FiligranProduct.Openaev,
   FiligranProduct.Xtmone,
+  FiligranProduct.Opencrq,
 ];
 
 const productRank = (product: string): number => {

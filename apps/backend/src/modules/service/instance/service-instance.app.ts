@@ -146,6 +146,7 @@ export const ServiceInstanceApp = {
     return {
       __typename: 'RegisteredPlatform',
       id: updatedServiceInstance.id,
+      service_instance_id: updatedServiceInstance.id,
       platform_id: config.platform_id,
       title: config.platform_title,
       url: config.platform_url,

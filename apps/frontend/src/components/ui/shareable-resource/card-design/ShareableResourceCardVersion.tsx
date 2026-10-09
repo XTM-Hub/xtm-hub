@@ -1,56 +1,83 @@
-import { useBuildCompatibilityTranslationKey } from '@/hooks/use-build-compatibility-translation-key';
-import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
-import { useTranslate } from '@/hooks/use-translate';
-import { cn } from '@/lib/utils';
-import { CheckIndeterminateIcon } from '@filigran/icon';
+import {
+  Chip,
+  ChipSeverity,
+  Icon,
+  IconName,
+  Text,
+} from '@filigran/design-system';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/ui/clients';
-import { PlatformIdentifier } from '@graphql/generated';
+
+export type VersionBadgeStatus = 'neutral' | 'success' | 'warning' | 'error';
 
 interface ShareableResourceCardVersionProps {
-  requiredProductVersion?: string | null;
-  product_version?: string | null;
-  className?: string;
+  version?: string | null;
+  status?: VersionBadgeStatus;
+  tooltip?: string;
 }
 
-export const ShareableResourceCardVersion = ({
-  requiredProductVersion,
-  product_version,
-  className,
-}: ShareableResourceCardVersionProps) => {
-  const t = useTranslate();
-  const { platforms } = useRegisteredPlatforms(PlatformIdentifier.Opencti, {
-    onlyActive: true,
-  });
-  const { platformToBeUpdated, incompatiblePlatformsCount } =
-    useBuildCompatibilityTranslationKey({
-      platforms,
-      requiredProductVersion,
-    });
+interface StatusStyle {
+  severity: ChipSeverity;
+  icon: IconName | null;
+}
 
-  if (incompatiblePlatformsCount > 0) {
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className={cn('flex items-center gap-s', className)}>
-              {product_version}
-              <CheckIndeterminateIcon className="h-4 w-4" />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>
-            {t(`Service.Connectors.Incompatible`, {
-              platformToBeUpdated,
-              count: incompatiblePlatformsCount,
-            })}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
+const STATUS: Record<VersionBadgeStatus, StatusStyle> = {
+  neutral: { severity: 'info', icon: null },
+  success: { severity: 'low', icon: 'circle-check' },
+  warning: { severity: 'high', icon: 'circle-alert' },
+  error: { severity: 'critical', icon: 'circle-x' },
+};
+
+export const ShareableResourceCardVersion = ({
+  version,
+  status = 'neutral',
+  tooltip,
+}: ShareableResourceCardVersionProps) => {
+  if (!version) {
+    return null;
   }
-  return <span className={className}>{product_version}</span>;
+
+  const { severity, icon } = STATUS[status];
+
+  const chip = (
+    <Chip
+      // Only a chip carrying a tooltip is focusable, so keyboard users can
+      // reach the detail without adding an empty tab stop.
+      tabIndex={tooltip ? 0 : undefined}
+      label={`V.${version}`}
+      severity={severity}
+      startIcon={
+        icon ? (
+          <Icon
+            name={icon}
+            size={16}
+          />
+        ) : undefined
+      }
+      className="min-w-0"
+    />
+  );
+
+  if (!tooltip) {
+    return chip;
+  }
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>{chip}</TooltipTrigger>
+        <TooltipContent>
+          <Text
+            variant="content-compact"
+            className="text-default-primary">
+            {tooltip}
+          </Text>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 };

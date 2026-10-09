@@ -3,6 +3,7 @@ import {
   User as GraphqlUser,
   OrganizationCapability,
   RolePortal,
+  UserAccountStatus,
 } from '../../../__generated__/resolvers-types';
 import { withTransaction } from '../../../context/database.context';
 import { OrganizationId } from '../../../model/kanel/public/Organization';
@@ -125,6 +126,10 @@ export const UserHelper = {
       OrganizationCapability.AdministrateOrganization
     );
   },
+
+  hasAuth0Account: ({ status }: Pick<User, 'status'>): boolean =>
+    status !== UserAccountStatus.Waiting &&
+    status !== UserAccountStatus.Expired,
 
   preventAdministratorRemovalOfOneOrganization: async (
     userId: UserId,
@@ -273,8 +278,13 @@ export const UserHelper = {
   },
 
   updateAndDispatchUser: async (userId: UserId) => {
-    const user = await UserDomain.loadUserDetails({ 'User.id': userId });
-    updateUserSession(user);
+    // Same shape as the login snapshot (loadUserDetails lacks the selected
+    // organization capabilities, which the @auth directive reads from the session)
+    const user = await UserDomain.loadUserBy({ 'User.id': userId });
+    if (!user) {
+      throw NotFoundError(NotFoundErrorCode.UserNotFound);
+    }
+    await updateUserSession(user);
     const mappedUser = UserHelper.mapUserToGraphqlUser(user);
     await dispatch('User', 'edit', mappedUser);
     return mappedUser;

@@ -1,57 +1,45 @@
 import testRender from '@/utils/test/test-render';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import { IntegrationType } from '@graphql/generated';
 import { screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ShareableResourceCardFooterVersion } from './ShareableResourceCardFooterVersions';
 
-const PRODUCT_VERSION = '6.8.3';
+const PRODUCT_VERSION = '6.5.0';
+const EXTRA_CONTENT = 'extra';
+
+vi.mock('@/hooks/use-connector-compatibility', () => ({
+  useConnectorCompatibility: () => ({
+    status: 'unknown',
+    compatiblePlatforms: '',
+    incompatiblePlatforms: '',
+    incompatibleCount: 0,
+  }),
+}));
 
 describe('ShareableResourceCardFooterVersion', () => {
-  const document = {
-    id: 'doc-1',
-    product_version: PRODUCT_VERSION,
-    manager_supported: true,
-  };
-
-  it('renders plain text product version for public path', () => {
-    testRender(
-      <ShareableResourceCardFooterVersion
-        document={document as documentItem_fragment$data}
-        publicPath
-        shareLinkUrl="https://share"
-      />
-    );
-
-    expect(screen.getByText(PRODUCT_VERSION)).toBeInTheDocument();
-  });
-
-  it('renders plain text when manager_supported is false', () => {
+  it('should render the version, the share button and the extra content when rendering a connector', () => {
+    // Given / When
     testRender(
       <ShareableResourceCardFooterVersion
         document={
           {
-            ...document,
-            manager_supported: false,
+            id: 'doc-1',
+            active: true,
+            product_version: PRODUCT_VERSION,
+            integration_type: IntegrationType.Connector,
           } as documentItem_fragment$data
         }
         shareLinkUrl="https://share"
+        extraContent={<span>{EXTRA_CONTENT}</span>}
       />
     );
 
-    expect(screen.getByText(PRODUCT_VERSION)).toBeInTheDocument();
-  });
-
-  it('renders version with share button when manager_supported is true', () => {
-    testRender(
-      <ShareableResourceCardFooterVersion
-        document={document as documentItem_fragment$data}
-        shareLinkUrl="https://share"
-        extraContent={<span>extra</span>}
-      />
-    );
-
-    expect(screen.getByText(PRODUCT_VERSION)).toBeInTheDocument();
-    expect(screen.getByText('extra')).toBeInTheDocument();
-    expect(screen.getByRole('button')).toBeInTheDocument();
+    // Then
+    expect(screen.getByText(`V.${PRODUCT_VERSION}`)).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Service.ShareableResources.Share' })
+    ).toBeInTheDocument();
+    expect(screen.getByText(EXTRA_CONTENT)).toBeInTheDocument();
   });
 });

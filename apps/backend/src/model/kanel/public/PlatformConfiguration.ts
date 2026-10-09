@@ -3,7 +3,7 @@
 
 import type { ServiceInstanceId } from './ServiceInstance';
 import type { UserId } from './User';
-import type { PlatformContract, PlatformConfigurationStatus } from '../../../__generated__/resolvers-types';
+import type { PlatformContract, PlatformConfigurationStatus, CommercialModel } from '../../../__generated__/resolvers-types';
 
 /** Represents the table public.PlatformConfiguration */
 export default interface PlatformConfiguration {
@@ -30,6 +30,8 @@ export default interface PlatformConfiguration {
   token: string;
 
   status: PlatformConfigurationStatus;
+
+  commercial_model: CommercialModel;
 }
 
 /** Represents the initializer for the table public.PlatformConfiguration */
@@ -57,6 +59,8 @@ export interface PlatformConfigurationInitializer {
   token: string;
 
   status?: PlatformConfigurationStatus;
+
+  commercial_model?: CommercialModel;
 }
 
 /** Represents the mutator for the table public.PlatformConfiguration */
@@ -84,4 +88,6 @@ export interface PlatformConfigurationMutator {
   token?: string;
 
   status?: PlatformConfigurationStatus;
+
+  commercial_model?: CommercialModel;
 }

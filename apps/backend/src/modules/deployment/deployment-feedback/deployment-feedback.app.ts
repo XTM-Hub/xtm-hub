@@ -3,10 +3,12 @@ import {
   Success,
 } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
+
 import {
   AlreadyExistsErrorCode,
   ErrorCode,
 } from '../../../utils/error/error.code';
+import { UserHelper } from '../../organization-management/user/user.helper';
 import { TelemetryApp } from '../../telemetry/telemetry.app';
 import { TelemetryHelper } from '../../telemetry/telemetry.helper';
 import { DeploymentRequestDomain } from '../deployment.domain';
@@ -30,7 +32,18 @@ export const DeploymentFeedbackApp = {
     ) {
       throw new Error(ErrorCode.UserIsNotInOrganization);
     }
-    await DeploymentFeedbackDomain.giveDeploymentFeedback(input.answer);
+    const isFeedbackStored =
+      await DeploymentFeedbackDomain.giveDeploymentFeedback(
+        user.id,
+        input.answer
+      );
+    // The session holds a snapshot of the user taken at login: resync it with
+    // the database so `me.has_replied_satisfaction` stops reopening the popup.
+    await UserHelper.updateAndDispatchUser(user.id);
+    if (!isFeedbackStored) {
+      throw new Error(AlreadyExistsErrorCode.DeploymentFeedbackAlreadyExists);
+    }
+
     const replySatisfactionEvent = await TelemetryHelper.buildSatisfactionEvent(
       input.answer,
       input.deploymentRequestId,

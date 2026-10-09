@@ -3,7 +3,6 @@
 
 import type { UserId } from './User';
 import type { FiligranProduct, Timeline, EpicType, EditionType } from '../../../__generated__/resolvers-types';
-import type { DocumentId } from './Document';
 
 /** Identifier type for public.Epic */
 export type EpicId = string & { __brand: 'public.Epic' };
@@ -27,8 +26,6 @@ export default interface Epic {
   timeline: Timeline;
 
   epic_type: EpicType;
-
-  document_id: DocumentId | null;
 
   created_at: Date;
 
@@ -68,8 +65,6 @@ export interface EpicInitializer {
   timeline?: Timeline;
 
   epic_type?: EpicType;
-
-  document_id?: DocumentId | null;
 
   /** Default value: CURRENT_TIMESTAMP */
   created_at?: Date;
@@ -111,8 +106,6 @@ export interface EpicMutator {
   timeline?: Timeline;
 
   epic_type?: EpicType;
-
-  document_id?: DocumentId | null;
 
   created_at?: Date;
 

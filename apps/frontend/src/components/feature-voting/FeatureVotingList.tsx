@@ -1,6 +1,7 @@
 'use client';
 
 import { FiligranProductMapping } from '@/components/epic/epic-item/FiligranProductMapping';
+import { VOTING_PRODUCTS } from '@/components/feature-voting/feature-voting.const';
 import { FeatureVotingItem } from '@/components/feature-voting/FeatureVotingItem';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
 import { useFeatureVote } from '@/hooks/use-feature-vote';
@@ -9,7 +10,6 @@ import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Skeleton } from '@filigran/ui';
 import { featureVotingKeys } from '@graphql/feature-voting/feature-voting.keys';
 import {
-  FiligranProduct,
   useCurrentVotingRoundQuery,
   VotableFeaturePublicFragment,
 } from '@graphql/generated';
@@ -17,13 +17,6 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef } from 'react';
 
 const VOTE_FEATURE_ID_PARAM = 'voteFeatureId';
-
-const PRODUCT_ORDER: FiligranProduct[] = [
-  FiligranProduct.Opencti,
-  FiligranProduct.Openaev,
-  FiligranProduct.Xtmone,
-  FiligranProduct.Xtmhub,
-];
 
 interface FeatureVotingListProps {
   serviceInstanceId: string;
@@ -86,7 +79,7 @@ export const FeatureVotingList = ({
 
   const sections = useMemo(() => {
     const features: VotableFeaturePublicFragment[] = round?.features ?? [];
-    return PRODUCT_ORDER.map((product) => ({
+    return VOTING_PRODUCTS.map((product) => ({
       product,
       features: features.filter((feature) => feature.product === product),
     })).filter((section) => section.features.length > 0);

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { extractDomain, isValidEmail } from './verify-email.util';
+import {
+  extractDomain,
+  isValidEmail,
+  normalizeEmails,
+} from './verify-email.util';
 
 describe('verify-email.util', () => {
   describe('extractDomain', () => {
@@ -39,6 +43,24 @@ describe('verify-email.util', () => {
       ${'user @domain.com'} | ${false}
     `('should validate "$email" as invalid', ({ email, expected }) => {
       expect(isValidEmail(email)).toBe(expected);
+    });
+  });
+
+  describe('normalizeEmails', () => {
+    it.each([
+      { emails: [], expected: [] },
+      { emails: [' user@example.com '], expected: ['user@example.com'] },
+      {
+        emails: ['user@example.com', ' user@example.com '],
+        expected: ['user@example.com'],
+      },
+      { emails: ['', '   ', 'a@example.com'], expected: ['a@example.com'] },
+      {
+        emails: ['a@example.com', 'b@example.com'],
+        expected: ['a@example.com', 'b@example.com'],
+      },
+    ])('should return $expected when given $emails', ({ emails, expected }) => {
+      expect(normalizeEmails(emails)).toEqual(expected);
     });
   });
 });

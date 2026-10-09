@@ -61,7 +61,6 @@ describe('EpicItemCard', () => {
     testRender(
       <EpicItemCard
         epic={epic}
-        serviceInstanceId={'service-instance-1'}
         userCanDelete={false}
         userCanUpdate={false}
       />,
@@ -82,7 +81,6 @@ describe('EpicItemCard', () => {
     const { user } = testRender(
       <EpicItemCard
         epic={epic}
-        serviceInstanceId={'service-instance-1'}
         userCanDelete={false}
         userCanUpdate={false}
       />,
@@ -106,7 +104,6 @@ describe('EpicItemCard', () => {
     const { user } = testRender(
       <EpicItemCard
         epic={epic}
-        serviceInstanceId={'service-instance-1'}
         userCanDelete={true}
         userCanUpdate={true}
       />,

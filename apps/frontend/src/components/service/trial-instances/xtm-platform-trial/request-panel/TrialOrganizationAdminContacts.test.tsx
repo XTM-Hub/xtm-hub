@@ -1,14 +1,14 @@
 import { TrialOrganizationAdminContacts } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/TrialOrganizationAdminContacts';
 import testRender from '@/utils/test/test-render';
 import {
-  ConnectProductOrganizationAdminsQuery,
   OrganizationCapability,
+  UsersWithCapabilitiesInOrganizationQuery,
 } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const graphqlMocks = vi.hoisted(() => ({
-  useConnectProductOrganizationAdminsQuery: vi.fn(),
+  useUsersWithCapabilitiesInOrganizationQuery: vi.fn(),
 }));
 
 vi.mock('@graphql/generated', async (importOriginal) => {
@@ -16,8 +16,8 @@ vi.mock('@graphql/generated', async (importOriginal) => {
 
   return {
     ...actual,
-    useConnectProductOrganizationAdminsQuery:
-      graphqlMocks.useConnectProductOrganizationAdminsQuery,
+    useUsersWithCapabilitiesInOrganizationQuery:
+      graphqlMocks.useUsersWithCapabilitiesInOrganizationQuery,
   };
 });
 
@@ -35,7 +35,7 @@ describe('TrialOrganizationAdminContacts', () => {
   });
 
   it('queries both capabilities that allow requesting a trial', () => {
-    graphqlMocks.useConnectProductOrganizationAdminsQuery.mockReturnValue({
+    graphqlMocks.useUsersWithCapabilitiesInOrganizationQuery.mockReturnValue({
       data: undefined,
     });
 
@@ -44,7 +44,7 @@ describe('TrialOrganizationAdminContacts', () => {
     );
 
     const [, variables, options] =
-      graphqlMocks.useConnectProductOrganizationAdminsQuery.mock.calls[0];
+      graphqlMocks.useUsersWithCapabilitiesInOrganizationQuery.mock.calls[0];
     expect(variables).toEqual({
       input: {
         organizationId: ORGANIZATION_ID,
@@ -58,7 +58,7 @@ describe('TrialOrganizationAdminContacts', () => {
   });
 
   it('renders the email of every administrator', () => {
-    graphqlMocks.useConnectProductOrganizationAdminsQuery.mockReturnValue({
+    graphqlMocks.useUsersWithCapabilitiesInOrganizationQuery.mockReturnValue({
       data: {
         usersWithCapabilitiesInOrganization: [
           { id: 'user-1', email: 'alice@acme.com' },
@@ -79,7 +79,7 @@ describe('TrialOrganizationAdminContacts', () => {
   });
 
   it('displays at most five administrators', () => {
-    graphqlMocks.useConnectProductOrganizationAdminsQuery.mockReturnValue({
+    graphqlMocks.useUsersWithCapabilitiesInOrganizationQuery.mockReturnValue({
       data: {
         usersWithCapabilitiesInOrganization: Array.from(
           { length: 8 },
@@ -100,14 +100,14 @@ describe('TrialOrganizationAdminContacts', () => {
     expect(screen.getAllByText(/@acme\.com$/)).toHaveLength(5);
   });
 
-  it.each<[string, ConnectProductOrganizationAdminsQuery | undefined]>([
+  it.each<[string, UsersWithCapabilitiesInOrganizationQuery | undefined]>([
     ['the query has not resolved yet', undefined],
     [
       'the organization has no administrator',
       { usersWithCapabilitiesInOrganization: [] },
     ],
   ])('renders nothing when %s', (_label, data) => {
-    graphqlMocks.useConnectProductOrganizationAdminsQuery.mockReturnValue({
+    graphqlMocks.useUsersWithCapabilitiesInOrganizationQuery.mockReturnValue({
       data,
     });
 

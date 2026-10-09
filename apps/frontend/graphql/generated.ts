@@ -100,6 +100,7 @@ export type AddUserInput = {
 };
 
 export type AddUsersToBundleGroupsInput = {
+  emails: InputMaybe<Array<Scalars['String']['input']>>;
   roles: Array<BundleUserRoleAssignmentInput>;
   userIds: Array<Scalars['UserId']['input']>;
 };
@@ -161,6 +162,11 @@ export type Capability = Node & {
   id: Scalars['ID']['output'];
   name: PortalCapability;
 };
+
+export enum CommercialModel {
+  Other = 'OTHER',
+  Saas = 'SAAS'
+}
 
 export type Competitor = Node & {
   __typename?: 'Competitor';
@@ -288,7 +294,6 @@ export type CreateEpicInput = {
   description: Scalars['String']['input'];
   edition_type: EditionType;
   expected_value: Scalars['String']['input'];
-  illustration_document: InputMaybe<Scalars['Upload']['input']>;
   is_integration: InputMaybe<Scalars['Boolean']['input']>;
   problem_to_solve: Scalars['String']['input'];
   products: Array<FiligranProduct>;
@@ -775,8 +780,6 @@ export type Epic = Node & {
   active: Scalars['Boolean']['output'];
   created_at: Scalars['Date']['output'];
   description: Scalars['String']['output'];
-  document: Maybe<Document>;
-  document_id: Maybe<Scalars['DocumentId']['output']>;
   edition_type: EditionType;
   epic_type: EpicType;
   expected_value: Scalars['String']['output'];
@@ -845,6 +848,7 @@ export enum FeatureFlag {
 
 export enum FiligranProduct {
   Openaev = 'openaev',
+  Opencrq = 'opencrq',
   Opencti = 'opencti',
   Xtmhub = 'xtmhub',
   Xtmone = 'xtmone'
@@ -1293,7 +1297,6 @@ export type MutationCreateDocumentArgs = {
 
 
 export type MutationCreateEpicArgs = {
-  document: InputMaybe<Array<Scalars['Upload']['input']>>;
   input: CreateEpicInput;
 };
 
@@ -1573,7 +1576,6 @@ export type MutationUpdateDocumentArgs = {
 
 
 export type MutationUpdateEpicArgs = {
-  document: InputMaybe<Array<Scalars['Upload']['input']>>;
   id: Scalars['ID']['input'];
   input: UpdateEpicInput;
 };
@@ -1751,6 +1753,7 @@ export enum OrderingMode {
 
 export type Organization = Node & {
   __typename?: 'Organization';
+  administrator_emails: Maybe<Array<Scalars['String']['output']>>;
   capabilityUser: Maybe<Array<Maybe<Capability>>>;
   domains: Maybe<Array<Scalars['String']['output']>>;
   id: Scalars['ID']['output'];
@@ -1994,6 +1997,7 @@ export type Query = {
    */
   registeredProductVersions: Array<RegisteredProductVersion>;
   rolePortals: Array<RolePortal>;
+  saasPlatforms: RegisteredPlatformConnection;
   seoServiceInstance: SeoServiceInstance;
   seoServiceInstanceMetadata: Array<SeoServiceInstanceMetadata>;
   seoServiceInstances: Array<SeoServiceInstance>;
@@ -2233,6 +2237,15 @@ export type QueryRegisteredProductVersionsArgs = {
 };
 
 
+export type QuerySaasPlatformsArgs = {
+  after: InputMaybe<Scalars['ID']['input']>;
+  first: Scalars['Int']['input'];
+  orderBy: RegisteredPlatformOrdering;
+  orderMode: OrderingMode;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+};
+
+
 export type QuerySeoServiceInstanceArgs = {
   slug: Scalars['String']['input'];
 };
@@ -2413,7 +2426,9 @@ export type RegisteredPlatform = Node & {
   illustration_document_id: Maybe<Scalars['DocumentId']['output']>;
   last_connectivity_check: Maybe<Scalars['Date']['output']>;
   myGroups: Maybe<Array<ServiceGroup>>;
+  organization: Maybe<Organization>;
   platform_id: Scalars['String']['output'];
+  service_instance_id: Scalars['ServiceInstanceId']['output'];
   status: Maybe<PlatformConfigurationStatus>;
   subscription: Maybe<SubscriptionModel>;
   tenant_id: Maybe<Scalars['String']['output']>;
@@ -2423,9 +2438,26 @@ export type RegisteredPlatform = Node & {
   version: Maybe<Scalars['String']['output']>;
 };
 
+export type RegisteredPlatformConnection = {
+  __typename?: 'RegisteredPlatformConnection';
+  edges: Array<RegisteredPlatformEdge>;
+  pageInfo: PageInfo;
+  totalCount: Scalars['Int']['output'];
+};
+
+export type RegisteredPlatformEdge = {
+  __typename?: 'RegisteredPlatformEdge';
+  cursor: Scalars['String']['output'];
+  node: RegisteredPlatform;
+};
+
 export type RegisteredPlatformInput = {
   service_instance_id: Scalars['ServiceInstanceId']['input'];
 };
+
+export enum RegisteredPlatformOrdering {
+  OrganizationName = 'organization_name'
+}
 
 export type RegisteredPlatformsInput = {
   hasDeployedResources: InputMaybe<Scalars['Boolean']['input']>;
@@ -2984,7 +3016,6 @@ export type UpdateEpicInput = {
   description: InputMaybe<Scalars['String']['input']>;
   edition_type: EditionType;
   expected_value: InputMaybe<Scalars['String']['input']>;
-  illustration_document: InputMaybe<Scalars['Upload']['input']>;
   is_integration: InputMaybe<Scalars['Boolean']['input']>;
   problem_to_solve: InputMaybe<Scalars['String']['input']>;
   products: InputMaybe<Array<FiligranProduct>>;
@@ -3550,6 +3581,11 @@ export type MeFirstNameQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type MeFirstNameQuery = { __typename?: 'Query', me: { __typename?: 'User', first_name: string | null } | null };
 
+export type MeOrganizationDomainsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MeOrganizationDomainsQuery = { __typename?: 'Query', me: { __typename?: 'User', organizations: Array<{ __typename?: 'Organization', id: string, domains: Array<string> | null }> | null } | null };
+
 export type OrganizationSubscribedServicesBreadcrumbQueryVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
@@ -3576,7 +3612,7 @@ export type RegisteredPlatformsListQueryVariables = Exact<{
 }>;
 
 
-export type RegisteredPlatformsListQuery = { __typename?: 'Query', registeredPlatforms: Array<{ __typename?: 'RegisteredPlatform', id: string, platform_id: string, title: string, url: string, contract: PlatformContract, identifier: ServiceDefinitionIdentifier, deployment_request: { __typename?: 'DeploymentRequest', type: DeploymentRequestDeploymentType, parent_id: any | null } | null, subscription: { __typename?: 'SubscriptionModel', end_date: any | null, start_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string, name: string } } | null }> };
+export type RegisteredPlatformsListQuery = { __typename?: 'Query', registeredPlatforms: Array<{ __typename?: 'RegisteredPlatform', id: string, platform_id: string, title: string, url: string, contract: PlatformContract, version: string | null, identifier: ServiceDefinitionIdentifier, deployment_request: { __typename?: 'DeploymentRequest', type: DeploymentRequestDeploymentType, parent_id: any | null } | null, subscription: { __typename?: 'SubscriptionModel', end_date: any | null, start_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string, name: string } } | null }> };
 
 export type RegisteredPlatformsQueryVariables = Exact<{
   input: RegisteredPlatformsInput;
@@ -3584,13 +3620,6 @@ export type RegisteredPlatformsQueryVariables = Exact<{
 
 
 export type RegisteredPlatformsQuery = { __typename?: 'Query', registeredPlatforms: Array<{ __typename?: 'RegisteredPlatform', id: string, identifier: ServiceDefinitionIdentifier, title: string, contract: PlatformContract, subscription: { __typename?: 'SubscriptionModel', start_date: any | null, end_date: any | null, service_instance_id: any } | null }> };
-
-export type ConnectProductOrganizationAdminsQueryVariables = Exact<{
-  input: UsersWithCapabilitiesInOrganizationInput;
-}>;
-
-
-export type ConnectProductOrganizationAdminsQuery = { __typename?: 'Query', usersWithCapabilitiesInOrganization: Array<{ __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null }> };
 
 export type AddRolePortalMutationVariables = Exact<{
   input: AddRolePortalInput;
@@ -3646,6 +3675,17 @@ export type SsoGroupRolePortalsQueryVariables = Exact<{ [key: string]: never; }>
 
 
 export type SsoGroupRolePortalsQuery = { __typename?: 'Query', ssoGroupRolePortals: Array<{ __typename?: 'SSOGroupRolePortal', ssoGroup: string, rolePortal: { __typename?: 'RolePortal', id: string, name: string } }> };
+
+export type SaasPlatformsListQueryVariables = Exact<{
+  first: Scalars['Int']['input'];
+  after: InputMaybe<Scalars['ID']['input']>;
+  orderBy: RegisteredPlatformOrdering;
+  orderMode: OrderingMode;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type SaasPlatformsListQuery = { __typename?: 'Query', saasPlatforms: { __typename?: 'RegisteredPlatformConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor: string | null }, edges: Array<{ __typename?: 'RegisteredPlatformEdge', node: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, platform_id: string, tenant_id: string | null, tenant_name: string | null, url: string, title: string, version: string | null, contract: PlatformContract, status: PlatformConfigurationStatus | null, last_connectivity_check: any | null, identifier: ServiceDefinitionIdentifier, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } }> } };
 
 export type AddUsersToBundleGroupsMutationVariables = Exact<{
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
@@ -3838,15 +3878,23 @@ export type UserAdminResendInviteMutationVariables = Exact<{
 
 export type UserAdminResendInviteMutation = { __typename?: 'Mutation', adminAddUser: { __typename?: 'User', id: string } | null };
 
+export type UsersWithCapabilitiesInOrganizationQueryVariables = Exact<{
+  input: UsersWithCapabilitiesInOrganizationInput;
+}>;
+
+
+export type UsersWithCapabilitiesInOrganizationQuery = { __typename?: 'Query', usersWithCapabilitiesInOrganization: Array<{ __typename?: 'User', id: string, email: string, first_name: string | null, last_name: string | null }> };
+
 export type UsersQueryVariables = Exact<{
   first: Scalars['Int']['input'];
   orderBy: UserOrdering;
   orderMode: OrderingMode;
   filters: InputMaybe<Array<Filter> | Filter>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
 }>;
 
 
-export type UsersQuery = { __typename?: 'Query', users: { __typename?: 'UserConnection', edges: Array<{ __typename?: 'UserEdge', node: { __typename?: 'User', id: string, email: string } }> } };
+export type UsersQuery = { __typename?: 'Query', users: { __typename?: 'UserConnection', edges: Array<{ __typename?: 'UserEdge', node: { __typename?: 'User', id: string, email: string, status: UserAccountStatus | null } }> } };
 
 export type VotingRoundCreateMutationVariables = Exact<{
   input: CreateVotingRoundInput;
@@ -5503,6 +5551,62 @@ useInfiniteMeFirstNameQuery.getKey = (variables?: MeFirstNameQueryVariables) => 
 useInfiniteMeFirstNameQuery.getRootKey = () => ['MeFirstName.infinite'] as const;
 useMeFirstNameQuery.fetcher = (client: GraphQLClient, variables?: MeFirstNameQueryVariables, headers?: RequestInit['headers']) => fetcher<MeFirstNameQuery, MeFirstNameQueryVariables>(client, MeFirstNameDocument, variables, headers);
 
+export const MeOrganizationDomainsDocument = `
+    query MeOrganizationDomains {
+  me {
+    organizations {
+      id
+      domains
+    }
+  }
+}
+    `;
+
+export const useMeOrganizationDomainsQuery = <
+      TData = MeOrganizationDomainsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: MeOrganizationDomainsQueryVariables,
+      options?: Omit<UseQueryOptions<MeOrganizationDomainsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<MeOrganizationDomainsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<MeOrganizationDomainsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['MeOrganizationDomains'] : ['MeOrganizationDomains', variables],
+    queryFn: fetcher<MeOrganizationDomainsQuery, MeOrganizationDomainsQueryVariables>(client, MeOrganizationDomainsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useMeOrganizationDomainsQuery.getKey = (variables?: MeOrganizationDomainsQueryVariables) => variables === undefined ? ['MeOrganizationDomains'] : ['MeOrganizationDomains', variables];
+useMeOrganizationDomainsQuery.getRootKey = () => ['MeOrganizationDomains'] as const;
+export const useInfiniteMeOrganizationDomainsQuery = <
+      TData = InfiniteData<MeOrganizationDomainsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: MeOrganizationDomainsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<MeOrganizationDomainsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<MeOrganizationDomainsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<MeOrganizationDomainsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['MeOrganizationDomains.infinite'] : ['MeOrganizationDomains.infinite', variables],
+      queryFn: (metaData) => fetcher<MeOrganizationDomainsQuery, MeOrganizationDomainsQueryVariables>(client, MeOrganizationDomainsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteMeOrganizationDomainsQuery.getKey = (variables?: MeOrganizationDomainsQueryVariables) => variables === undefined ? ['MeOrganizationDomains.infinite'] : ['MeOrganizationDomains.infinite', variables];
+useInfiniteMeOrganizationDomainsQuery.getRootKey = () => ['MeOrganizationDomains.infinite'] as const;
+useMeOrganizationDomainsQuery.fetcher = (client: GraphQLClient, variables?: MeOrganizationDomainsQueryVariables, headers?: RequestInit['headers']) => fetcher<MeOrganizationDomainsQuery, MeOrganizationDomainsQueryVariables>(client, MeOrganizationDomainsDocument, variables, headers);
+
 export const OrganizationSubscribedServicesBreadcrumbDocument = `
     query OrganizationSubscribedServicesBreadcrumb($id: ID!) {
   organization(id: $id) {
@@ -5636,6 +5740,7 @@ export const RegisteredPlatformsListDocument = `
     title
     url
     contract
+    version
     identifier
     deployment_request {
       type
@@ -5758,62 +5863,6 @@ export const useInfiniteRegisteredPlatformsQuery = <
 useInfiniteRegisteredPlatformsQuery.getKey = (variables: RegisteredPlatformsQueryVariables) => ['RegisteredPlatforms.infinite', variables];
 useInfiniteRegisteredPlatformsQuery.getRootKey = () => ['RegisteredPlatforms.infinite'] as const;
 useRegisteredPlatformsQuery.fetcher = (client: GraphQLClient, variables: RegisteredPlatformsQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredPlatformsQuery, RegisteredPlatformsQueryVariables>(client, RegisteredPlatformsDocument, variables, headers);
-
-export const ConnectProductOrganizationAdminsDocument = `
-    query ConnectProductOrganizationAdmins($input: UsersWithCapabilitiesInOrganizationInput!) {
-  usersWithCapabilitiesInOrganization(input: $input) {
-    id
-    email
-    first_name
-    last_name
-  }
-}
-    `;
-
-export const useConnectProductOrganizationAdminsQuery = <
-      TData = ConnectProductOrganizationAdminsQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: ConnectProductOrganizationAdminsQueryVariables,
-      options?: Omit<UseQueryOptions<ConnectProductOrganizationAdminsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<ConnectProductOrganizationAdminsQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<ConnectProductOrganizationAdminsQuery, TError, TData>(
-      {
-    queryKey: ['ConnectProductOrganizationAdmins', variables],
-    queryFn: fetcher<ConnectProductOrganizationAdminsQuery, ConnectProductOrganizationAdminsQueryVariables>(client, ConnectProductOrganizationAdminsDocument, variables, headers),
-    ...options
-  }
-    )};
-
-useConnectProductOrganizationAdminsQuery.getKey = (variables: ConnectProductOrganizationAdminsQueryVariables) => ['ConnectProductOrganizationAdmins', variables];
-useConnectProductOrganizationAdminsQuery.getRootKey = () => ['ConnectProductOrganizationAdmins'] as const;
-export const useInfiniteConnectProductOrganizationAdminsQuery = <
-      TData = InfiniteData<ConnectProductOrganizationAdminsQuery>,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: ConnectProductOrganizationAdminsQueryVariables,
-      options: Omit<UseInfiniteQueryOptions<ConnectProductOrganizationAdminsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<ConnectProductOrganizationAdminsQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useInfiniteQuery<ConnectProductOrganizationAdminsQuery, TError, TData>(
-      (() => {
-    const { queryKey: optionsQueryKey, ...restOptions } = options;
-    return {
-      queryKey: optionsQueryKey ?? ['ConnectProductOrganizationAdmins.infinite', variables],
-      queryFn: (metaData) => fetcher<ConnectProductOrganizationAdminsQuery, ConnectProductOrganizationAdminsQueryVariables>(client, ConnectProductOrganizationAdminsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
-      ...restOptions
-    }
-  })()
-    )};
-
-useInfiniteConnectProductOrganizationAdminsQuery.getKey = (variables: ConnectProductOrganizationAdminsQueryVariables) => ['ConnectProductOrganizationAdmins.infinite', variables];
-useInfiniteConnectProductOrganizationAdminsQuery.getRootKey = () => ['ConnectProductOrganizationAdmins.infinite'] as const;
-useConnectProductOrganizationAdminsQuery.fetcher = (client: GraphQLClient, variables: ConnectProductOrganizationAdminsQueryVariables, headers?: RequestInit['headers']) => fetcher<ConnectProductOrganizationAdminsQuery, ConnectProductOrganizationAdminsQueryVariables>(client, ConnectProductOrganizationAdminsDocument, variables, headers);
 
 export const AddRolePortalDocument = `
     mutation AddRolePortal($input: AddRolePortalInput!) {
@@ -6130,6 +6179,90 @@ export const useInfiniteSsoGroupRolePortalsQuery = <
 useInfiniteSsoGroupRolePortalsQuery.getKey = (variables?: SsoGroupRolePortalsQueryVariables) => variables === undefined ? ['SSOGroupRolePortals.infinite'] : ['SSOGroupRolePortals.infinite', variables];
 useInfiniteSsoGroupRolePortalsQuery.getRootKey = () => ['SSOGroupRolePortals.infinite'] as const;
 useSsoGroupRolePortalsQuery.fetcher = (client: GraphQLClient, variables?: SsoGroupRolePortalsQueryVariables, headers?: RequestInit['headers']) => fetcher<SsoGroupRolePortalsQuery, SsoGroupRolePortalsQueryVariables>(client, SsoGroupRolePortalsDocument, variables, headers);
+
+export const SaasPlatformsListDocument = `
+    query SaasPlatformsList($first: Int!, $after: ID, $orderBy: RegisteredPlatformOrdering!, $orderMode: OrderingMode!, $searchTerm: String) {
+  saasPlatforms(
+    first: $first
+    after: $after
+    orderBy: $orderBy
+    orderMode: $orderMode
+    searchTerm: $searchTerm
+  ) {
+    totalCount
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    edges {
+      node {
+        id
+        service_instance_id
+        platform_id
+        tenant_id
+        tenant_name
+        url
+        title
+        version
+        contract
+        status
+        last_connectivity_check
+        identifier
+        organization {
+          id
+          name
+          administrator_emails
+        }
+      }
+    }
+  }
+}
+    `;
+
+export const useSaasPlatformsListQuery = <
+      TData = SaasPlatformsListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SaasPlatformsListQueryVariables,
+      options?: Omit<UseQueryOptions<SaasPlatformsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<SaasPlatformsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<SaasPlatformsListQuery, TError, TData>(
+      {
+    queryKey: ['SaasPlatformsList', variables],
+    queryFn: fetcher<SaasPlatformsListQuery, SaasPlatformsListQueryVariables>(client, SaasPlatformsListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSaasPlatformsListQuery.getKey = (variables: SaasPlatformsListQueryVariables) => ['SaasPlatformsList', variables];
+useSaasPlatformsListQuery.getRootKey = () => ['SaasPlatformsList'] as const;
+export const useInfiniteSaasPlatformsListQuery = <
+      TData = InfiniteData<SaasPlatformsListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SaasPlatformsListQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<SaasPlatformsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<SaasPlatformsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<SaasPlatformsListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['SaasPlatformsList.infinite', variables],
+      queryFn: (metaData) => fetcher<SaasPlatformsListQuery, SaasPlatformsListQueryVariables>(client, SaasPlatformsListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteSaasPlatformsListQuery.getKey = (variables: SaasPlatformsListQueryVariables) => ['SaasPlatformsList.infinite', variables];
+useInfiniteSaasPlatformsListQuery.getRootKey = () => ['SaasPlatformsList.infinite'] as const;
+useSaasPlatformsListQuery.fetcher = (client: GraphQLClient, variables: SaasPlatformsListQueryVariables, headers?: RequestInit['headers']) => fetcher<SaasPlatformsListQuery, SaasPlatformsListQueryVariables>(client, SaasPlatformsListDocument, variables, headers);
 
 export const AddUsersToBundleGroupsDocument = `
     mutation AddUsersToBundleGroups($serviceInstanceId: ServiceInstanceId!, $input: AddUsersToBundleGroupsInput!) {
@@ -7112,18 +7245,76 @@ useUserAdminResendInviteMutation.getKey = () => ['UserAdminResendInvite'];
 useUserAdminResendInviteMutation.getRootKey = () => ['UserAdminResendInvite'] as const;
 useUserAdminResendInviteMutation.fetcher = (client: GraphQLClient, variables: UserAdminResendInviteMutationVariables, headers?: RequestInit['headers']) => fetcher<UserAdminResendInviteMutation, UserAdminResendInviteMutationVariables>(client, UserAdminResendInviteDocument, variables, headers);
 
+export const UsersWithCapabilitiesInOrganizationDocument = `
+    query UsersWithCapabilitiesInOrganization($input: UsersWithCapabilitiesInOrganizationInput!) {
+  usersWithCapabilitiesInOrganization(input: $input) {
+    id
+    email
+    first_name
+    last_name
+  }
+}
+    `;
+
+export const useUsersWithCapabilitiesInOrganizationQuery = <
+      TData = UsersWithCapabilitiesInOrganizationQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: UsersWithCapabilitiesInOrganizationQueryVariables,
+      options?: Omit<UseQueryOptions<UsersWithCapabilitiesInOrganizationQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<UsersWithCapabilitiesInOrganizationQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<UsersWithCapabilitiesInOrganizationQuery, TError, TData>(
+      {
+    queryKey: ['UsersWithCapabilitiesInOrganization', variables],
+    queryFn: fetcher<UsersWithCapabilitiesInOrganizationQuery, UsersWithCapabilitiesInOrganizationQueryVariables>(client, UsersWithCapabilitiesInOrganizationDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useUsersWithCapabilitiesInOrganizationQuery.getKey = (variables: UsersWithCapabilitiesInOrganizationQueryVariables) => ['UsersWithCapabilitiesInOrganization', variables];
+useUsersWithCapabilitiesInOrganizationQuery.getRootKey = () => ['UsersWithCapabilitiesInOrganization'] as const;
+export const useInfiniteUsersWithCapabilitiesInOrganizationQuery = <
+      TData = InfiniteData<UsersWithCapabilitiesInOrganizationQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: UsersWithCapabilitiesInOrganizationQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<UsersWithCapabilitiesInOrganizationQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<UsersWithCapabilitiesInOrganizationQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<UsersWithCapabilitiesInOrganizationQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['UsersWithCapabilitiesInOrganization.infinite', variables],
+      queryFn: (metaData) => fetcher<UsersWithCapabilitiesInOrganizationQuery, UsersWithCapabilitiesInOrganizationQueryVariables>(client, UsersWithCapabilitiesInOrganizationDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteUsersWithCapabilitiesInOrganizationQuery.getKey = (variables: UsersWithCapabilitiesInOrganizationQueryVariables) => ['UsersWithCapabilitiesInOrganization.infinite', variables];
+useInfiniteUsersWithCapabilitiesInOrganizationQuery.getRootKey = () => ['UsersWithCapabilitiesInOrganization.infinite'] as const;
+useUsersWithCapabilitiesInOrganizationQuery.fetcher = (client: GraphQLClient, variables: UsersWithCapabilitiesInOrganizationQueryVariables, headers?: RequestInit['headers']) => fetcher<UsersWithCapabilitiesInOrganizationQuery, UsersWithCapabilitiesInOrganizationQueryVariables>(client, UsersWithCapabilitiesInOrganizationDocument, variables, headers);
+
 export const UsersDocument = `
-    query Users($first: Int!, $orderBy: UserOrdering!, $orderMode: OrderingMode!, $filters: [Filter!]) {
+    query Users($first: Int!, $orderBy: UserOrdering!, $orderMode: OrderingMode!, $filters: [Filter!], $searchTerm: String) {
   users(
     first: $first
     orderBy: $orderBy
     orderMode: $orderMode
     filters: $filters
+    searchTerm: $searchTerm
   ) {
     edges {
       node {
         id
         email
+        status
       }
     }
   }

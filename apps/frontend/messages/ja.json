@@ -25,7 +25,14 @@
     "Title": "利用可能な機能"
   },
   "CSMBoard": {
-    "ComingSoon": "まもなく、何か新しいことが始まります……"
+    "Organization": "組織",
+    "Administrators": "管理者",
+    "Products": "製品",
+    "Link": "SaaS指標",
+    "Version": "バージョン",
+    "ViewMetrics": "メトリクスを見る",
+    "SearchOrganization": "組織検索",
+    "ClearSearch": "検索をクリア"
   },
   "CountryComboBox": {
     "Placeholder": "国を選択"
@@ -416,6 +423,7 @@
       "SOLUTION_CATEGORY_NOT_FOUND": "ソリューションカテゴリが見つかりません",
       "SUBSCRIPTION_NOT_FOUND": "購読が見つからない",
       "TENANT_ID_MANDATORY": "テナントIDは必須です",
+      "TOO_MANY_EMAILS": "一度に招待できるメールアドレスは最大50件です",
       "TRANSFER_ME_ERROR": "個人スペースの転送要求中にエラーが発生しました。",
       "UNKNOWN_ERROR": "不明なエラーが発生",
       "UNREGISTER_PLATFORM_UNKNOWN_ERROR": "プラットフォーム登録解除中に不明なエラーが発生した",
@@ -437,6 +445,7 @@
       "VOTING_ROUND_MUTATION_ERROR": "投票ラウンドの保存中にエラーが発生しました",
       "OPEN_VOTING_ROUND_WITHOUT_ACTIVE_FEATURE": "このラウンドには有効な機能がないため、開始できません",
       "VOTABLE_FEATURE_PRODUCT_LOCKED": "この機能には既に投票があるため、製品を変更できません",
+      "VOTABLE_FEATURE_PRODUCT_NOT_VOTABLE": "この製品は投票の対象ではありません",
       "COPY_FEATURES_FROM_ANOTHER_ROADMAP": "機能は同じロードマップのラウンドからのみコピーできます",
       "VOTABLE_FEATURE_MUTATION_ERROR": "機能の保存中にエラーが発生しました"
     },
@@ -665,9 +674,9 @@
     "Competitor": "競技者",
     "NewsFeed": "ニュースフィード",
     "VotingRound": "機能への投票",
+    "Roles": "ロール",
     "ManageTrials": "トライアル管理",
-    "CSMBoard": "CSMボード",
-    "Roles": "ロール"
+    "CSMBoard": "CSMボード"
   },
   "NewsFeedAdminPage": {
     "Title": "タイトル",
@@ -1187,7 +1196,9 @@
       "Search": "名前でコネクタを検索...",
       "VendorContact": "ベンダー連絡先",
       "VisitVendor": "ベンダーのページで詳細を確認し、連絡を取ってください。",
-      "Incompatible": "{platformToBeUpdated} {count, plural, =1 {needs} other {need}} to be updated to deploy this connector.",
+      "CompatibleWith": "このコネクタのバージョンは{compatiblePlatforms}と互換性があります。",
+      "PartiallyCompatible": "このコネクタのバージョンは{compatiblePlatforms}と互換性がありますが、{incompatiblePlatforms}{count, plural, =1 {を更新する必要があります} other {をすべて更新する必要があります}}。",
+      "Incompatible": "このコネクタをデプロイするには、{platformToBeUpdated}{count, plural, =1 {を更新する必要があります} other {をすべて更新する必要があります}}。",
       "UnavailableDeployments": "このコネクタは自動デプロイでは使用できません。"
     },
     "CreationStatus": "作成ステータス",
@@ -1436,10 +1447,11 @@
       "Tab": {
         "Name": "名前",
         "Description": "説明",
-        "UseCases": "ユースケース",
-        "Actions": "アクション",
-        "Author": "作成者",
-        "MinimumDeployableVersion": "デプロイ可能な最小バージョン"
+        "UseCase": "ユースケース",
+        "Action": "アクション",
+        "Feature": "機能",
+        "Type": "タイプ",
+        "Compatibility": "ご利用の製品との互換性"
       },
       "Filter": {
         "Add": "フィルターの追加",
@@ -2040,7 +2052,14 @@
         },
         "AddUserDialog": {
           "Title": "トライアルユーザーを追加",
-          "EmailPlaceholder": "メールアドレスを追加"
+          "EmailPlaceholder": "メールアドレスを追加",
+          "ExpiredUsersReinvited": "期限切れのユーザーは再招待され、新しい招待メールが送信されます。",
+          "InviteEmail": "{email} を招待",
+          "NoPermissionToInvite": "このリストにないユーザーを追加する権限がありません。必要に応じて管理者にお問い合わせください",
+          "Status": {
+            "Expired": "期限切れ",
+            "Invited": "招待済み"
+          }
         },
         "EditUsersDialog": {
           "Title": "ユーザーを編集",

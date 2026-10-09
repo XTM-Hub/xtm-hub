@@ -122,17 +122,15 @@ export const EpicList = ({
   const renderEpicItems = useCallback(
     (epicsList: typeof epics) =>
       epicsList.map((epic) => (
-        <div key={epic.title}>
+        <div key={epic.id}>
           <EpicItem
-            key={epic.id}
             epic={epic}
-            serviceInstanceId={serviceInstance.id}
             userCanUpdate={userCanUpdate}
             userCanDelete={userCanDelete}
           />
         </div>
       )),
-    [serviceInstance.id, userCanUpdate, userCanDelete]
+    [userCanUpdate, userCanDelete]
   );
 
   const handleInputChange = (inputValue: string) => {

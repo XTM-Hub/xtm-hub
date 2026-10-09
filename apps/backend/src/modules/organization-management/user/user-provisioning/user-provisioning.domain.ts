@@ -50,12 +50,21 @@ const notifyHubspotInvite = async (user: User): Promise<void> => {
 
 const reinviteExpiredUser = async (user: User): Promise<User> =>
   withTransaction(async () => {
-    const reinvitedUser = await UserDomain.updateUser(user.id, {
-      status: UserAccountStatus.Waiting,
-      invitation_date: new Date(),
-    });
+    const reinvitedUser = await UserDomain.updateUser(
+      user.id,
+      {
+        status: UserAccountStatus.Waiting,
+        invitation_date: new Date(),
+      },
+      { status: UserAccountStatus.Expired }
+    );
     if (!reinvitedUser) {
-      throw UnknownError(UnknownErrorCode.EditUserError);
+      // The status changed meanwhile (e.g. at login): nothing to re-invite
+      const [currentUser] = await UserDomain.loadUser({ id: user.id });
+      if (!currentUser) {
+        throw UnknownError(UnknownErrorCode.EditUserError);
+      }
+      return currentUser;
     }
 
     await notifyHubspotInvite(reinvitedUser);
@@ -64,6 +73,8 @@ const reinviteExpiredUser = async (user: User): Promise<User> =>
   });
 
 export const UserProvisioningDomain = {
+  reinviteExpiredUser,
+
   createUser: async (
     data: UserProfile & {
       password?: string | null;
@@ -147,13 +158,16 @@ export const UserProvisioningDomain = {
     }
 
     const user = await withTransaction(async () => {
-      const createdUser = await UserProvisioningDomain.createUser({
-        ...data,
-        ...(isInviteFlagEnabled && {
-          status: UserAccountStatus.Waiting,
-          invitation_date: new Date(),
-        }),
-      });
+      const createdUser = await UserProvisioningDomain.createUser(
+        {
+          ...data,
+          ...(isInviteFlagEnabled && {
+            status: UserAccountStatus.Waiting,
+            invitation_date: new Date(),
+          }),
+        },
+        { sendWelcomeEmail: !isInviteFlagEnabled }
+      );
 
       if (isInviteFlagEnabled) {
         await notifyHubspotInvite(createdUser);

@@ -17,6 +17,7 @@ enum FiligranProduct {
   openaev
   xtmone
   xtmhub
+  opencrq
 }
 
 enum FilterKey {
@@ -131,6 +132,7 @@ type Query {
   canUnregisterPlatform(input: CanUnregisterPlatformInput!): CanUnregisterResponse!
   registeredPlatform(input: RegisteredPlatformInput!): RegisteredPlatform
   registeredPlatforms(input: RegisteredPlatformsInput!): [RegisteredPlatform!]!
+  saasPlatforms(first: Int!, after: ID, orderBy: RegisteredPlatformOrdering!, orderMode: OrderingMode!, searchTerm: String): RegisteredPlatformConnection!
   platformAssociatedOrganization(platformId: String!, tenantId: String): Organization
   rolePortals: [RolePortal!]!
   ssoGroupRolePortals: [SSOGroupRolePortal!]!
@@ -243,8 +245,8 @@ type Mutation {
   addUserService(input: UserServiceAddInput!, service_instance_id: ServiceInstanceId!): [UserService]
   editUserService(input: UserServiceEditInput!, service_instance_id: ServiceInstanceId!): UserService
   deleteUserServices(input: UserServicesDeleteInput!, service_instance_id: ServiceInstanceId!): [UserService]
-  createEpic(input: CreateEpicInput!, document: [Upload!]): Epic!
-  updateEpic(id: ID!, input: UpdateEpicInput!, document: [Upload!]): Epic!
+  createEpic(input: CreateEpicInput!): Epic!
+  updateEpic(id: ID!, input: UpdateEpicInput!): Epic!
   deleteEpic(id: ID!): Epic
 }
 
@@ -646,6 +648,7 @@ input BundleUserRoleAssignmentInput {
 
 input AddUsersToBundleGroupsInput {
   userIds: [UserId!]!
+  emails: [String!]
   roles: [BundleUserRoleAssignmentInput!]!
 }
 
@@ -1050,6 +1053,7 @@ type Organization implements Node {
   domains: [String!]
   personal_space: Boolean!
   capabilityUser: [Capability]
+  administrator_emails: [String!]
 }
 
 type OrganizationEdge {
@@ -1216,6 +1220,11 @@ enum PlatformConfigurationStatus {
   inactive
 }
 
+enum CommercialModel {
+  SAAS
+  OTHER
+}
+
 input OpenCTIPlatformRegistrationStatusInput {
   platformId: String!
   token: String!
@@ -1233,6 +1242,7 @@ enum PlatformContract {
 
 type RegisteredPlatform implements Node {
   id: ID!
+  service_instance_id: ServiceInstanceId!
   url: String!
   title: String!
   contract: PlatformContract!
@@ -1247,6 +1257,22 @@ type RegisteredPlatform implements Node {
   status: PlatformConfigurationStatus
   subscription: SubscriptionModel
   myGroups: [ServiceGroup!]
+  organization: Organization
+}
+
+type RegisteredPlatformEdge {
+  cursor: String!
+  node: RegisteredPlatform!
+}
+
+type RegisteredPlatformConnection {
+  totalCount: Int!
+  edges: [RegisteredPlatformEdge!]!
+  pageInfo: PageInfo!
+}
+
+enum RegisteredPlatformOrdering {
+  organization_name
 }
 
 input PlatformInput {
@@ -2278,8 +2304,6 @@ type Epic implements Node {
   slack_link: String
   timeline: Timeline!
   epic_type: EpicType!
-  document: Document
-  document_id: DocumentId
   created_at: Date!
   updated_at: Date
 }
@@ -2297,7 +2321,6 @@ input CreateEpicInput {
   slack_link: String
   timeline: Timeline!
   is_integration: Boolean
-  illustration_document: Upload
 }
 
 input UpdateEpicInput {
@@ -2313,7 +2336,6 @@ input UpdateEpicInput {
   slack_link: String
   timeline: Timeline
   is_integration: Boolean
-  illustration_document: Upload
 }
 
 type EpicCountPerTimeline {

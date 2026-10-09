@@ -4,6 +4,7 @@ import type { DeploymentRequestDataLoaders } from '../modules/deployment/deploym
 import type { DocumentDataLoaders } from '../modules/document/document.dataloader';
 import type { FeatureVotingDataLoaders } from '../modules/feature-voting/feature-voting.dataloader';
 import type { NewsFeedDataLoaders } from '../modules/news-feed/news-feed.dataloader';
+import type { OrganizationDataLoaders } from '../modules/organization-management/organization/organization.dataloader';
 import type { RegistrationDataLoaders } from '../modules/registration/registration.dataloader';
 import type { ServiceInstanceDataLoaders } from '../modules/service/instance/service-instance.dataloader';
 import type { SubscriptionDataLoaders } from '../modules/subscription/subscription.dataloader';
@@ -14,6 +15,7 @@ export type PortalDataLoaders = {
   document: DocumentDataLoaders;
   featureVoting: FeatureVotingDataLoaders;
   newsFeed: NewsFeedDataLoaders;
+  organization: OrganizationDataLoaders;
   registration: RegistrationDataLoaders;
   serviceInstance: ServiceInstanceDataLoaders;
   subscription: SubscriptionDataLoaders;

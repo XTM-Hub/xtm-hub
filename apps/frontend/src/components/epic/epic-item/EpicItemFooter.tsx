@@ -4,26 +4,21 @@ import { sortFiligranProducts } from '@/components/epic/filigran-products';
 import { Badge } from '@filigran/ui/servers';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import { EditionType, EpicType } from '@graphql/generated';
-import Image from 'next/image';
+import { ReactNode } from 'react';
 
 interface EpicItemFooterProps {
   epic: epic_fragment$data;
-  serviceInstanceId: string;
-  shiftEpicType?: boolean;
+  children?: ReactNode;
 }
-export const EpicItemFooter = ({
-  epic,
-  serviceInstanceId,
-  shiftEpicType = false,
-}: EpicItemFooterProps) => {
+export const EpicItemFooter = ({ epic, children }: EpicItemFooterProps) => {
   return (
     <>
-      <div className="flex w-full items-center justify-between">
-        <div className="flex flex-wrap items-center gap-s">
+      <div className="flex flex-wrap items-start gap-x-s gap-y-xs">
+        <div className="flex flex-wrap items-center gap-x-s gap-y-xs">
           {sortFiligranProducts(epic.products).map((product) => (
             <div
               key={product}
-              className="flex items-center gap-xs">
+              className="flex h-9 items-center gap-xs whitespace-nowrap">
               <p className="bold">{FiligranProductMapping[product].logo}</p>
 
               <p className="bold">{FiligranProductMapping[product].name}</p>
@@ -32,27 +27,21 @@ export const EpicItemFooter = ({
           {epic.edition_type !== EditionType.CommunityEdition && (
             <Badge
               variant="secondary"
-              className="ml-s font-semibold">
+              className="font-semibold">
               {EditionTypeMapping[epic.edition_type].label}
             </Badge>
           )}
         </div>
-        {epic.document_id && epic.epic_type === EpicType.Integration && (
-          <div
-            className={`flex items-center mr-s gap-xs ${shiftEpicType ? 'pr-xxl' : ''}`}>
-            <Image
-              src={`/document/images/${serviceInstanceId}/${epic.document_id}`}
-              alt={`${epic.title} logo`}
-              width={32}
-              height={32}
-              loading="lazy"
-              className="h-8 w-auto rounded object-contain"
-            />
-            <div className="bold h-8 flex items-center capitalize txt-sub-content rounded bg-elevation-background-layer-0 text-negative-primary p-s">
-              {epic.epic_type.toLowerCase()}
+        <div className="flex flex-1 items-center gap-s">
+          {epic.epic_type === EpicType.Integration && (
+            <div className="flex h-9 shrink-0 items-center">
+              <div className="bold h-8 flex items-center capitalize txt-sub-content rounded bg-elevation-background-layer-0 text-text-default-primary p-s">
+                {epic.epic_type.toLowerCase()}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+          {children}
+        </div>
       </div>
     </>
   );

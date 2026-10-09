@@ -1,9 +1,4 @@
-import IntegrationAccordion from '@/components/ui/shareable-resource/IntegrationAccordion';
-import {
-  IntegrationType,
-  PortalCapability,
-  ServiceRestriction,
-} from '@graphql/generated';
+import { PortalCapability, ServiceRestriction } from '@graphql/generated';
 
 import DocumentList from '@/components/service/components/DocumentList';
 import { FilterSidebar } from '@/components/service/components/header/filter/FilterSidebar';
@@ -25,7 +20,7 @@ import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-stora
 import { useStickyHeaderOffset } from '@/hooks/use-sticky-header-offset';
 import { useTranslate } from '@/hooks/use-translate';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { Fragment, useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 
 export interface ServiceListProps {
   active: documentItem_fragment$data[];
@@ -66,20 +61,6 @@ const ServiceList = ({
     restore();
   }, [restore]);
 
-  const activeByIntegrationType = active.reduce<
-    Record<string, documentItem_fragment$data[]>
-  >((acc, resource) => {
-    const type = resource.integration_type
-      ? resource.integration_type
-      : resource.type;
-
-    if (!acc[type]) {
-      acc[type] = [];
-    }
-
-    acc[type].push(resource);
-    return acc;
-  }, {});
   const heroSectionProps = getHeroSectionLibraryProps(serviceInstance, t);
 
   const headerRef = useRef<HTMLDivElement>(null);
@@ -122,28 +103,12 @@ const ServiceList = ({
               )}
             </>
           )}
-          {Object.entries(activeByIntegrationType).map(
-            ([integrationType, documents]) => (
-              <Fragment key={integrationType}>
-                {Object.values(IntegrationType).includes(
-                  integrationType as IntegrationType
-                ) ? (
-                  <IntegrationAccordion integrationType={integrationType}>
-                    <DocumentList
-                      documents={documents}
-                      displayMode={selectedDisplayMode}
-                      connectionId={connectionId}
-                    />
-                  </IntegrationAccordion>
-                ) : (
-                  <DocumentList
-                    displayMode={selectedDisplayMode}
-                    documents={documents}
-                    connectionId={connectionId}
-                  />
-                )}
-              </Fragment>
-            )
+          {active.length > 0 && (
+            <DocumentList
+              documents={active}
+              displayMode={selectedDisplayMode}
+              connectionId={connectionId}
+            />
           )}
         </div>
       </div>

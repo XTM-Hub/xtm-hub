@@ -25,7 +25,14 @@
     "Title": "Capacités disponibles"
   },
   "CSMBoard": {
-    "ComingSoon": "Une nouveauté va bientôt voir le jour..."
+    "Organization": "Organisation",
+    "Administrators": "Administrateurs",
+    "Products": "Produits",
+    "Link": "Métriques SaaS",
+    "Version": "Version",
+    "ViewMetrics": "Voir les métriques",
+    "SearchOrganization": "Rechercher une organisation",
+    "ClearSearch": "Effacer la recherche"
   },
   "CountryComboBox": {
     "Placeholder": "Choisir un pays"
@@ -416,6 +423,7 @@
       "SOLUTION_CATEGORY_NOT_FOUND": "Catégorie de solution non trouvée",
       "SUBSCRIPTION_NOT_FOUND": "L'abonnement n'a pas été trouvé",
       "TENANT_ID_MANDATORY": "L'identifiant du locataire est obligatoire",
+      "TOO_MANY_EMAILS": "Vous pouvez inviter au maximum 50 emails à la fois",
       "TRANSFER_ME_ERROR": "Une erreur s'est produite lors de la demande de transfert de l'espace personnel.",
       "UNKNOWN_ERROR": "Une erreur inconnue s'est produite",
       "UNREGISTER_PLATFORM_UNKNOWN_ERROR": "Une erreur inconnue s'est produite lors de la désinscription de la plateforme",
@@ -437,6 +445,7 @@
       "VOTING_ROUND_MUTATION_ERROR": "Une erreur est survenue lors de l'enregistrement du round",
       "OPEN_VOTING_ROUND_WITHOUT_ACTIVE_FEATURE": "Ce round n'a aucune fonctionnalité active et ne peut pas être ouvert",
       "VOTABLE_FEATURE_PRODUCT_LOCKED": "Cette fonctionnalité a déjà des votes, son produit ne peut plus être modifié",
+      "VOTABLE_FEATURE_PRODUCT_NOT_VOTABLE": "Ce produit n'est pas ouvert au vote",
       "COPY_FEATURES_FROM_ANOTHER_ROADMAP": "Les fonctionnalités ne peuvent être copiées que depuis un round de la même roadmap",
       "VOTABLE_FEATURE_MUTATION_ERROR": "Une erreur est survenue lors de l'enregistrement de la fonctionnalité"
     },
@@ -665,9 +674,9 @@
     "Competitor": "Concurrent",
     "NewsFeed": "Fil d'actualité",
     "VotingRound": "Vote des fonctionnalités",
+    "Roles": "Rôles",
     "ManageTrials": "Gestion des essais",
-    "CSMBoard": "Tableau de bord CSM",
-    "Roles": "Rôles"
+    "CSMBoard": "Tableau de bord CSM"
   },
   "NewsFeedAdminPage": {
     "Title": "Titre",
@@ -1187,6 +1196,8 @@
       "Search": "Rechercher un connecteur par nom...",
       "VendorContact": "Contact du fournisseur",
       "VisitVendor": "Consultez la page du fournisseur pour en savoir plus et le contacter",
+      "CompatibleWith": "Cette version du connecteur est compatible avec {compatiblePlatforms}.",
+      "PartiallyCompatible": "Cette version du connecteur est compatible avec {compatiblePlatforms}, mais {incompatiblePlatforms} {count, plural, =1 {doit être mis à jour} other {doivent être mis à jour}}.",
       "Incompatible": "{platformToBeUpdated} {count, plural, =1 {doit} other {doivent}} être mis à jour pour déployer ce connecteur.",
       "UnavailableDeployments": "Ce connecteur n'est pas disponible pour le déploiement automatique."
     },
@@ -1436,10 +1447,11 @@
       "Tab": {
         "Name": "Nom",
         "Description": "Description",
-        "UseCases": "Cas d'utilisation",
-        "Actions": "Actions",
-        "Author": "Auteur",
-        "MinimumDeployableVersion": "Version minimale déployable"
+        "UseCase": "Cas d'utilisation",
+        "Action": "Action",
+        "Feature": "Fonctionnalité",
+        "Type": "Type",
+        "Compatibility": "Compatibilité avec votre produit"
       },
       "Filter": {
         "Add": "Ajouter un filtre",
@@ -2040,7 +2052,14 @@
         },
         "AddUserDialog": {
           "Title": "Ajouter un utilisateur d'essai",
-          "EmailPlaceholder": "Ajouter un email"
+          "EmailPlaceholder": "Ajouter un email",
+          "ExpiredUsersReinvited": "Les utilisateurs expirés seront réinvités et recevront un nouvel email d'invitation.",
+          "InviteEmail": "Inviter {email}",
+          "NoPermissionToInvite": "Vous n'avez pas la permission d'ajouter des utilisateurs en dehors de cette liste. Si nécessaire, contactez votre administrateur",
+          "Status": {
+            "Expired": "Expiré",
+            "Invited": "Invité"
+          }
         },
         "EditUsersDialog": {
           "Title": "Modifier les utilisateurs",

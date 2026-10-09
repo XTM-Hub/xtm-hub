@@ -23,6 +23,9 @@ interface PortalConfig {
     pending_user_digest: boolean;
     public_roadmap_monthly_reminder: boolean;
   };
+  saas_manager: {
+    enabled: boolean;
+  };
   auth0_sync: {
     enabled: boolean;
     max_users_per_run: number;
@@ -79,6 +82,9 @@ const portalConfig: PortalConfig = {
     public_roadmap_monthly_reminder:
       config.get<boolean>('enabled_emails.public_roadmap_monthly_reminder') ??
       false,
+  },
+  saas_manager: {
+    enabled: config.get<boolean>('saas_manager.enabled') ?? false,
   },
   auth0_sync: {
     enabled: config.get<boolean>('auth0_sync.enabled') ?? false,

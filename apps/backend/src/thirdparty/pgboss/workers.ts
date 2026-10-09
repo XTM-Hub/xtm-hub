@@ -5,6 +5,7 @@ import { HubspotWorkers } from './hubspot.workers';
 import { MailWorkers } from './mail.workers';
 import { ManifestWorkers } from './manifest.workers';
 import { PgBossMetrics } from './pgboss.metrics';
+import { RegistrationWorkers } from './registration.workers';
 import { TelemetryWorkers } from './telemetry.workers';
 
 export function createBatchHandler<T extends object>(
@@ -47,6 +48,7 @@ export const PgBossWorkers = {
     await TelemetryWorkers.start(boss);
     await MailWorkers.start(boss);
     await ManifestWorkers.start(boss);
+    await RegistrationWorkers.start(boss);
     await DeadLetterWorkers.start(boss);
     logApp.info('[PgBoss] All workers started');
   },
