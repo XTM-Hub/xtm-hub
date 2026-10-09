@@ -1318,7 +1318,7 @@
       "DeleteService": "Supprimer le flux CSV {name}",
       "NonActive": "Brouillon",
       "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le flux CSV {name} ?",
-      "UpdateService": "Editer le flux CSV {name}"
+      "UpdateService": "Modifier le flux CSV {name}"
     },
     "RssFeed": {
       "Actions": {
@@ -1332,7 +1332,7 @@
       "DeleteService": "Supprimer le flux RSS {name}",
       "NonActive": "Brouillon",
       "SureDeleteService": "Êtes-vous sûr de vouloir supprimer le flux RSS {name} ?",
-      "UpdateService": "Editer le flux RSS {name}"
+      "UpdateService": "Modifier le flux RSS {name}"
     },
     "TaxiiFeed": {
       "Actions": {
