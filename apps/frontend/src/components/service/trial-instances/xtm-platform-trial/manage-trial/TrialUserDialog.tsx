@@ -61,7 +61,7 @@ export const TrialUserDialog = (props: TrialUserDialogProps) => {
             ? t('Service.Bundle.ManageTrial.AddUserDialog.Title')
             : t('Service.Bundle.ManageTrial.EditUsersDialog.Title')}
         </DialogTitle>
-        <DialogBody>{form}</DialogBody>
+        <DialogBody className="overflow-x-hidden">{form}</DialogBody>
       </DialogContent>
     </Dialog>
   );
