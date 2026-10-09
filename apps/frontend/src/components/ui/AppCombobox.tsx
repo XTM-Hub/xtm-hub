@@ -95,7 +95,8 @@ export const AppCombobox = <T,>({
           aria-label={hasVisibleLabel ? undefined : label}
           // The input links the helper text but never marks itself invalid.
           aria-invalid={error ? true : undefined}
-          placeholder={placeholder}
+          // The placeholder names the field, which the chips already do once picked.
+          placeholder={multiple && value.length > 0 ? undefined : placeholder}
           onBlur={onBlur}
         />
         <ComboboxControls>
