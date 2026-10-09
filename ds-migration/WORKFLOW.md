@@ -66,6 +66,9 @@ The legacy components next to it stay as they are until their own item.
   system's own styling is expected, keep it and trace nothing. A defect around the component is to
   fix: broken layout (overflow, misalignment, wrapping, collapsed width), a missing element, state or
   label, a size that no longer fits its container, cut text, or a theme where it becomes unreadable.
+- **Portalled panels**: a combobox, select or menu panel opened from a surface above layer 0 (a sheet
+  is `layer-2`) takes that surface's `layer-N` class through its content class prop
+  (`contentClassName`, or `className` on the `*Content` part): the portal resolves layer 0 otherwise.
 - **`NEEDS_HUMAN`** only when continuing would break behaviour or data, when the design system cannot
   express a required behaviour, when the item needs a component that is not migrated yet and not
   listed as a dependency (name it in `question`), or when the change needs the backend.

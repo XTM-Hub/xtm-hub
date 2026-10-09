@@ -83,6 +83,7 @@ const SolutionCategoryForm = ({
               value={field.value ?? []}
               onValueChange={field.onChange}
               getOptionLabel={productOptionIds.getOptionLabel}
+              contentClassName="layer-2"
             />
           )}
         />

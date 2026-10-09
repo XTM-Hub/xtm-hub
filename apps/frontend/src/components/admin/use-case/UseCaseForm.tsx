@@ -88,6 +88,7 @@ const UseCaseForm = ({
               value={field.value ?? []}
               onValueChange={field.onChange}
               getOptionLabel={productTagOptionIds.getOptionLabel}
+              contentClassName="layer-2"
             />
           )}
         />

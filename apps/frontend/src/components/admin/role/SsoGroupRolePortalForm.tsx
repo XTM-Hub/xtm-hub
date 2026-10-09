@@ -60,6 +60,7 @@ const RolePortalField = ({
       isOptionEqualToValue={(a, b) => a.id === b.id}
       loading={isLoading}
       clearable
+      contentClassName="layer-2"
     />
   );
 };

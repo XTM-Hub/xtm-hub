@@ -73,6 +73,7 @@ export const AutocompleteOrganization = ({
       }}
       getOptionLabel={(organization) => organization.name}
       isOptionEqualToValue={(a, b) => a.id === b.id}
+      contentClassName="layer-2"
     />
   );
 };

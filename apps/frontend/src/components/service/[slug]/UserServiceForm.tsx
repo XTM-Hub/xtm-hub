@@ -314,6 +314,7 @@ export const UserServiceForm = ({
                   }}
                   filterOptions={(options) => options}
                   getOptionLabel={usersOptionIds.getOptionLabel}
+                  contentClassName="layer-2"
                 />
               )}
             />

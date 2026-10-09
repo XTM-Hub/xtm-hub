@@ -91,6 +91,7 @@ const VotingRoundForm = ({
                 value={field.value}
                 onValueChange={field.onChange}
                 error={fieldState.error?.message}
+                contentClassName="layer-2"
               />
             )}
           />
@@ -132,6 +133,7 @@ const VotingRoundForm = ({
               value={field.value}
               onValueChange={field.onChange}
               error={fieldState.error?.message}
+              contentClassName="layer-2"
             />
           )}
         />
@@ -158,6 +160,7 @@ const VotingRoundForm = ({
                   field.onChange(value === NO_COPY ? undefined : value)
                 }
                 error={fieldState.error?.message}
+                contentClassName="layer-2"
               />
             )}
           />

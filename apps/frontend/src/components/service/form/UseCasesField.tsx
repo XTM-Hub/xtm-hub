@@ -51,6 +51,7 @@ export const ServiceFormUseCasesField = <
       value={field.value ?? []}
       onValueChange={field.onChange}
       getOptionLabel={useCaseOptionIds.getOptionLabel}
+      contentClassName="layer-2"
     />
   );
 };

@@ -48,6 +48,7 @@ const TierField = ({
       defaultValue={defaultTier}
       onValueChange={field.onChange}
       error={error?.message}
+      contentClassName="layer-2"
     />
   );
 };
