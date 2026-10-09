@@ -17,6 +17,13 @@ As an Organization Administrator, you can manage users, their access rights, and
 
 ![Users page illustration](../assets/images/users-page.png)
 
+### Invitation Status
+
+Invited users who have not created their Filigran account yet show an **Invitation status**:
+
+- **Pending**: the invitation has been sent and the user has not set their password yet.
+- **Expired**: the user did not activate their account within 5 days. Click **Re-send Invite** to send a new invitation.
+
 ## Manage User Capabilities
 
 Administrators can update capabilities for any team member. They cannot update their own capabilities.
