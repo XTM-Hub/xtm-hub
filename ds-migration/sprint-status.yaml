@@ -69,6 +69,13 @@ development_status:
   3694-aspect-ratio: done
   3700-command: done
   3701-tag-input: done
+  # Follow-ups from the team's review of the pull request, fixed in it
+  3759-use-case-chip-colour: done
+  3760-empty-filter-message: done
+  3761-homepage-scrollbar-frame: done
+  3762-capability-alignment: done
+  3763-card-title-clamp: done
+  3764-card-focus-ring: done
 
   # Legacy components with no DS equivalent: rebuilt on DS primitives, one folder per
   # component in apps/frontend/src/components/ui/, listed as candidates in the PR report
