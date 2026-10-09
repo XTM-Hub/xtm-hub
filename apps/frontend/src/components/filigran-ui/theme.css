@@ -333,7 +333,6 @@
     --semantic-elevation-border-strong-layer-3
   );
   --color-elevation-border-disabled: var(--semantic-elevation-border-disabled);
-  --color-elevation-disabled: var(--semantic-elevation-disabled);
   --color-text-default-primary: var(--semantic-text-default-primary);
   --color-text-default-secondary: var(--semantic-text-default-secondary);
   --color-text-default-disabled: var(--semantic-text-default-disabled);
@@ -396,9 +395,6 @@
   --color-input-bg-default: var(--bg-input-default);
   --color-input-bg-disabled: var(--bg-input-disabled);
   --color-input-bg-hover: var(--bg-input-hover);
-  --color-input-default: var(--bg-input-default);
-  --color-input-disabled: var(--bg-input-disabled);
-  --color-input-hover: var(--bg-input-hover);
 
   --color-elevation-bg: var(--color-elevation-background-layer-0);
   --color-elevation-border-subtle: var(--color-elevation-border-subtle-layer-0);
@@ -1464,7 +1460,6 @@
     --semantic-elevation-border-strong-layer-3
   );
   --color-elevation-border-disabled: var(--semantic-elevation-border-disabled);
-  --color-elevation-disabled: var(--semantic-elevation-disabled);
   --color-text-default-primary: var(--semantic-text-default-primary);
   --color-text-default-secondary: var(--semantic-text-default-secondary);
   --color-text-default-disabled: var(--semantic-text-default-disabled);
@@ -1879,7 +1874,6 @@ body[data-theme='Dark'] {
     --semantic-elevation-border-strong-layer-3
   );
   --color-elevation-border-disabled: var(--semantic-elevation-border-disabled);
-  --color-elevation-disabled: var(--semantic-elevation-disabled);
   --color-text-default-primary: var(--semantic-text-default-primary);
   --color-text-default-secondary: var(--semantic-text-default-secondary);
   --color-text-default-disabled: var(--semantic-text-default-disabled);
