@@ -16,9 +16,9 @@
   },
   "CapabilityDescription": {
     "Capabilities": {
-      "ADMINISTRATE_ORGANIZATION": "Allow every capabilities actions within an organization",
+      "ADMINISTRATE_ORGANIZATION": "Grants every capability within the organization",
       "MANAGE_ACCESS": "Ability to invite other users to this organization",
-      "MANAGE_PLATFORM_REGISTRATION": "Ability to connect and disconnect products",
+      "MANAGE_PLATFORM_REGISTRATION": "Ability to connect and disconnect products, and to start, cancel and manage trials",
       "MANAGE_SUBSCRIPTION": "Ability to manage and subscribe the organization to services"
     },
     "Description": "You can add specific capabilities to Filigran users",
@@ -1724,9 +1724,9 @@
             "Description": "Please create a Filigran account or log in to an existing one."
           },
           "NotAdmin": {
-            "Title": "To request a trial you must be an organization admin.",
-            "Description": "Please contact the organization’s admin in your company",
-            "AdminListTitle": "{count, plural, =1 {Administrator} other {Administrators}}"
+            "Title": "To request a trial, you need the “Manage platform registration” capability.",
+            "Description": "Ask one of these people to request the trial for you, or to give you this capability.",
+            "AdminListTitle": "{count, plural, =1 {Person who can request a trial} other {People who can request a trial}}"
           },
           "PersonalSpace": {
             "Title": "Trials are not available in a personal space"

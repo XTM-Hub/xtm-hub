@@ -16,9 +16,9 @@
   },
   "CapabilityDescription": {
     "Capabilities": {
-      "ADMINISTRATE_ORGANIZATION": "Possibilités de toutes les capacités au sein d'une organisation",
+      "ADMINISTRATE_ORGANIZATION": "Donne toutes les capacités au sein de l'organisation",
       "MANAGE_ACCESS": "Possibilité d'inviter d'autres utilisateurs dans cette organisation",
-      "MANAGE_PLATFORM_REGISTRATION": "Possibilité de connecter et de déconnecter les produits",
+      "MANAGE_PLATFORM_REGISTRATION": "Possibilité de connecter et de déconnecter les produits, ainsi que de démarrer, annuler et gérer les essais",
       "MANAGE_SUBSCRIPTION": "Possibilité de gérer et d'abonner l'organisation à des services"
     },
     "Description": "Vous pouvez ajouter des fonctionnalités spécifiques aux utilisateurs de Filigran",
@@ -1724,9 +1724,9 @@
             "Description": "Créez un compte Filigran ou connectez-vous à un compte existant."
           },
           "NotAdmin": {
-            "Title": "Vous devez être administrateur de l'organisation pour demander un essai.",
-            "Description": "Contactez l'administrateur de l'organisation dans votre entreprise",
-            "AdminListTitle": "{count, plural, =1 {Administrateur} other {Administrateurs}}"
+            "Title": "Pour demander un essai, vous avez besoin de la capacité « Manage platform registration ».",
+            "Description": "Demandez à l'une de ces personnes de faire la demande d'essai pour vous, ou de vous donner cette capacité.",
+            "AdminListTitle": "{count, plural, =1 {Personne pouvant demander un essai} other {Personnes pouvant demander un essai}}"
           },
           "PersonalSpace": {
             "Title": "Les essais ne sont pas disponibles dans un espace personnel"
