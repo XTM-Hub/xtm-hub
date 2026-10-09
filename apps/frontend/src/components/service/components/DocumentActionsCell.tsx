@@ -90,10 +90,11 @@ export const DocumentActionsCell = ({ document }: DocumentActionsCellProps) => {
       <ShareLinkButton
         documentId={document.id}
         url={`${settings!.base_url_front}/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${serviceInstance.slug}/${document.slug}`}
+        size="sm"
       />
       {(userCanDelete || userCanUpdate) && (
         <IconActions
-          className="z-[2]"
+          className="z-[2] h-6 w-6"
           icon={
             <>
               <MoreVertIcon className="h-4 w-4 text-primary" />

@@ -4,7 +4,7 @@ import { IntegrationType } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { ShareableResourceCardIcon } from './ShareableResourceCardIcon';
+import { ShareableResourceCardSupportIcons } from './ShareableResourceCardSupportIcons';
 
 vi.mock('@filigran/design-system', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@filigran/design-system')>()),
@@ -16,7 +16,7 @@ vi.mock('@filigran/design-system', async (importOriginal) => ({
   TooltipTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
 
-describe('ShareableResourceCardIcon', () => {
+describe('ShareableResourceCardSupportIcons', () => {
   const baseDocument = {
     active: true,
     manager_supported: false,
@@ -25,26 +25,22 @@ describe('ShareableResourceCardIcon', () => {
   };
 
   it.each`
-    description                             | shouldDisplayBothIcons | documentOverrides                                                              | expectedIconCount | expectedLabel
-    ${'connector with deployable+verified'} | ${true}                | ${{ manager_supported: true, verified: true }}                                 | ${2}              | ${'Service.ShareableResources.Details.SupportedByFiligran'}
-    ${'connector not verified'}             | ${true}                | ${{ manager_supported: false, verified: false }}                               | ${1}              | ${'Service.ShareableResources.Details.SupportedByCommunity'}
-    ${'non-connector active'}               | ${false}               | ${{ integration_type: IntegrationType.ThirdPartyIntegration, verified: true }} | ${1}              | ${'Badge.Published'}
+    description                             | documentOverrides                                | expectedIconCount | expectedLabel
+    ${'connector with deployable+verified'} | ${{ manager_supported: true, verified: true }}   | ${2}              | ${'Service.ShareableResources.Details.SupportedByFiligran'}
+    ${'connector not verified'}             | ${{ manager_supported: false, verified: false }} | ${1}              | ${'Service.ShareableResources.Details.SupportedByCommunity'}
   `(
     'renders expected icons for $description',
     ({
-      shouldDisplayBothIcons,
       documentOverrides,
       expectedIconCount,
       expectedLabel,
     }: {
-      shouldDisplayBothIcons: boolean;
       documentOverrides: Partial<documentItem_fragment$data>;
       expectedIconCount: number;
       expectedLabel: string;
     }) => {
       const { container } = testRender(
-        <ShareableResourceCardIcon
-          shouldDisplayBothIcons={shouldDisplayBothIcons}
+        <ShareableResourceCardSupportIcons
           document={
             {
               ...baseDocument,
@@ -56,6 +52,7 @@ describe('ShareableResourceCardIcon', () => {
 
       expect(container.querySelectorAll('svg')).toHaveLength(expectedIconCount);
       expect(screen.getByText(expectedLabel)).toBeInTheDocument();
+      expect(screen.queryByText('Badge.Published')).not.toBeInTheDocument();
     }
   );
 });

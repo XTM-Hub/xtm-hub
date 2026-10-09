@@ -14,6 +14,7 @@ interface BadgeOverflowCounterProps {
   badges: Readonly<BadgeOverflow[]>;
   className?: string;
   formatLabel?: boolean;
+  variant?: 'badge' | 'chip';
 }
 
 export interface BadgeOverflow {
@@ -22,10 +23,20 @@ export interface BadgeOverflow {
   color?: string;
 }
 
+interface OverflowChipOptions {
+  key: string;
+  label: string;
+  color?: string;
+  counter?: boolean;
+  className?: string;
+  'aria-hidden'?: boolean;
+}
+
 const BadgeOverflowCounter = ({
   badges = [],
   className,
   formatLabel = true,
+  variant = 'badge',
 }: BadgeOverflowCounterProps) => {
   const [visibleTags, setVisibleTags] = useState<number>(badges?.length ?? 0);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
@@ -97,6 +108,22 @@ const BadgeOverflowCounter = ({
   const getBadgeLabel = (name: string) =>
     formatLabel ? formatName(name) : name;
 
+  const renderChip = ({
+    key,
+    label,
+    color,
+    counter = false,
+    ...props
+  }: OverflowChipOptions) => (
+    <Chip
+      key={key}
+      label={label}
+      color={variant === 'badge' ? color : undefined}
+      severity={variant === 'chip' && counter ? 'info' : 'neutral'}
+      {...props}
+    />
+  );
+
   return (
     <div
       ref={containerRef}
@@ -104,52 +131,53 @@ const BadgeOverflowCounter = ({
         'flex gap-s overflow-hidden flex-1 items-center',
         className
       )}>
-      {firstBadge && (
-        <Chip
-          className="min-w-0 max-w-full"
-          key={firstBadge.id}
-          label={getBadgeLabel(firstBadge.name)}
-          color={firstBadge.color}
-        />
+      {firstBadge &&
+        renderChip({
+          key: firstBadge.id,
+          label: getBadgeLabel(firstBadge.name),
+          color: firstBadge.color,
+          className: 'min-w-0 max-w-full',
+        })}
+
+      {badges.slice(1, visibleTags).map(({ id, name, color }, index) =>
+        renderChip({
+          key: id,
+          label: getBadgeLabel(name),
+          color,
+          'aria-hidden': index >= visibleTags,
+          className: 'aria-hidden:invisible aria-hidden:absolute',
+        })
       )}
 
-      {badges.slice(1, visibleTags).map(({ id, name, color }, index) => (
-        <Chip
-          className="aria-hidden:invisible aria-hidden:absolute"
-          aria-hidden={index >= visibleTags}
-          key={id}
-          label={getBadgeLabel(name)}
-          color={color}
-        />
-      ))}
-
-      {badges.slice(visibleTags).map(({ id, name, color }) => (
-        <Chip
-          className="invisible absolute"
-          aria-hidden={true}
-          key={id}
-          label={getBadgeLabel(name)}
-          color={color}
-        />
-      ))}
+      {badges.slice(visibleTags).map(({ id, name, color }) =>
+        renderChip({
+          key: id,
+          label: getBadgeLabel(name),
+          color,
+          'aria-hidden': true,
+          className: 'invisible absolute',
+        })
+      )}
 
       {hiddenCount > 0 && (
         <TooltipProvider delayDuration={0}>
           <Tooltip>
             <TooltipTrigger asChild>
               <span className="inline-flex shrink-0">
-                <Chip label={`+${hiddenCount}`} />
+                {renderChip({
+                  key: 'overflow-counter',
+                  label: `+${hiddenCount}`,
+                  counter: true,
+                })}
               </span>
             </TooltipTrigger>
             <TooltipContent>
               <div className="flex flex-wrap gap-s max-w-sm">
-                {badges.slice(visibleTags).map(({ id, name, color }) => (
-                  <Chip
-                    key={id}
-                    label={getBadgeLabel(name)}
-                    color={color}
-                  />
-                ))}
+                {badges
+                  .slice(visibleTags)
+                  .map(({ id, name, color }) =>
+                    renderChip({ key: id, label: getBadgeLabel(name), color })
+                  )}
               </div>
             </TooltipContent>
           </Tooltip>

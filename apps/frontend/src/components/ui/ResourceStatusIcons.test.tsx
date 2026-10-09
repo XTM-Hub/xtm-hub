@@ -157,4 +157,20 @@ describe('ResourceStatusIcons', () => {
       expect(icon).not.toHaveClass('text-alert-success-primary');
     });
   });
+
+  describe('the Filigran icon', () => {
+    it('uses the brand colour and is scaled to match the other icons', () => {
+      const { container } = testRender(
+        <ResourceStatusIcons
+          verified
+          displayUnverifiedIcon
+        />
+      );
+
+      expect(container.querySelector('svg')).toHaveClass(
+        'text-icon-highlight',
+        'scale-90'
+      );
+    });
+  });
 });

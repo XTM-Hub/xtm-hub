@@ -2,10 +2,9 @@
 
 import { DocumentActionsCell } from '@/components/service/components/DocumentActionsCell';
 import {
-  DocumentNameCell,
-  DocumentShortDescriptionCell,
-} from '@/components/service/components/DocumentListCells';
-import { buildMetadataColumns } from '@/components/service/components/DocumentListColumns';
+  buildDocumentListColumns,
+  DOCUMENT_LIST_TABLE_CLASS_NAME,
+} from '@/components/service/components/DocumentListColumns';
 import { ServiceListDisplayMode } from '@/components/service/components/header/ServiceListHeader';
 import ServiceCard from '@/components/service/components/ServiceCard';
 import { useServiceContext } from '@/components/service/components/ServiceContext';
@@ -17,13 +16,9 @@ import {
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useContext, useMemo } from 'react';
 
-import BadgeOverflowCounter, {
-  BadgeOverflow,
-} from '@/components/ui/BadgeOverflowCounter';
 import useScrollPosition from '@/hooks/use-scroll-position';
 import { useTranslate } from '@/hooks/use-translate';
 import { DataTable } from '@filigran/ui';
-import { ColumnDef } from '@tanstack/react-table';
 import { useRouter } from 'next/navigation';
 
 interface DocumentListProps {
@@ -42,58 +37,16 @@ const DocumentList = ({
   const t = useTranslate();
   const router = useRouter();
   const { save } = useScrollPosition();
-  const columns: ColumnDef<documentItem_fragment$data>[] = useMemo(
-    () => [
-      {
-        accessorKey: 'name',
-        id: 'name',
-        header: t('Service.List.Tab.Name'),
-        cell: ({ row }) => <DocumentNameCell document={row.original} />,
-      },
-      {
-        accessorKey: 'short_description',
-        id: 'short_description',
-        header: t('Service.List.Tab.Description'),
-        cell: ({ row }) => (
-          <DocumentShortDescriptionCell document={row.original} />
-        ),
-      },
-      {
-        accessorKey: 'use_cases',
-        id: 'use_cases',
-        header: t('Service.List.Tab.UseCases'),
-        cell: ({ row }) => {
-          const document = row.original;
-
-          return (
-            <BadgeOverflowCounter
-              formatLabel={false}
-              badges={document.use_cases as BadgeOverflow[]}
-              className="z-2 shrink-0"
-            />
-          );
-        },
-      },
-      {
-        accessorKey: 'action',
-        id: 'action',
-        enableHiding: false,
-        enableSorting: false,
-        header: t('Service.List.Tab.Actions'),
-        cell: ({ row }) => <DocumentActionsCell document={row.original} />,
-      },
-    ],
-    [t]
-  );
-
   const tableColumns = useMemo(
     () =>
-      buildMetadataColumns({
-        columns,
+      buildDocumentListColumns({
         documents,
         t,
+        renderActions: (document) => (
+          <DocumentActionsCell document={document} />
+        ),
       }),
-    [columns, documents, t]
+    [documents, t]
   );
 
   return (
@@ -114,17 +67,19 @@ const DocumentList = ({
           ))}
         </ul>
       ) : (
-        <DataTable
-          columns={tableColumns}
-          data={documents}
-          toolbar={<></>}
-          onClickRow={(row) => {
-            save();
-            router.push(
-              `/${APP_PATH}/service/${serviceInstance.service_definition?.identifier}/${serviceInstance.id}/${row.original.id}`
-            );
-          }}
-        />
+        <div className={DOCUMENT_LIST_TABLE_CLASS_NAME}>
+          <DataTable
+            columns={tableColumns}
+            data={documents}
+            toolbar={<></>}
+            onClickRow={(row) => {
+              save();
+              router.push(
+                `/${APP_PATH}/service/${serviceInstance.service_definition?.identifier}/${serviceInstance.id}/${row.original.id}`
+              );
+            }}
+          />
+        </div>
       )}
     </>
   );

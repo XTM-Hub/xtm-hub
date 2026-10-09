@@ -101,7 +101,7 @@ const ServiceCard = ({
         <>
           {(userCanDelete || userCanUpdate) && (
             <IconActions
-              className="z-[2]"
+              className="z-[2] h-6 w-6"
               icon={
                 <>
                   <MoreVertIcon className="h-4 w-4 text-primary" />

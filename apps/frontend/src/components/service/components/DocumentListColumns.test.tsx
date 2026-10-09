@@ -1,146 +1,114 @@
 import testRender from '@/utils/test/test-render';
-import { DocumentMetadataKeyCode, IntegrationType } from '@graphql/generated';
-import { CellContext, ColumnDef } from '@tanstack/react-table';
+import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import { IntegrationType } from '@graphql/generated';
+import { CellContext } from '@tanstack/react-table';
 import { describe, expect, it } from 'vitest';
-import {
-  buildAuthorColumn,
-  buildMetadataColumns,
-  buildProductVersionColumn,
-} from './DocumentListColumns';
-
-type TestDocument = {
-  integration_type?: string | null;
-  product_version?: string | null;
-  uploader: {
-    first_name?: string | null;
-    last_name?: string | null;
-    email?: string | null;
-  } | null;
-};
+import { buildDocumentListColumns } from './DocumentListColumns';
 
 const t = (key: string) => key;
-const buildCellContext = (
-  document: TestDocument
-): CellContext<TestDocument, unknown> =>
-  ({ row: { original: document } }) as CellContext<TestDocument, unknown>;
+const CONNECTOR = {
+  active: true,
+  integration_type: IntegrationType.Connector,
+  manager_supported: true,
+  product_version: '6.8.0',
+} as unknown as documentItem_fragment$data;
+const CSV_FEED = {
+  integration_type: IntegrationType.CsvFeed,
+  product_version: '6.1.0',
+} as unknown as documentItem_fragment$data;
 
-describe('buildMetadataColumns', () => {
-  const baseColumns = [{ id: 'name' }] as ColumnDef<TestDocument>[];
+const renderCell = (columnId: string, document: documentItem_fragment$data) => {
+  const cell = buildDocumentListColumns({
+    documents: [CONNECTOR, CSV_FEED],
+    t,
+    renderActions: () => null,
+  }).find((column) => column.id === columnId)?.cell;
+  if (typeof cell !== 'function') {
+    throw new Error(`column ${columnId} has no cell`);
+  }
+  return testRender(
+    <>
+      {cell({ row: { original: document } } as CellContext<
+        documentItem_fragment$data,
+        unknown
+      >)}
+    </>
+  );
+};
 
-  it('adds author column for non-connector documents', () => {
-    const columns = buildMetadataColumns({
-      columns: baseColumns,
-      documents: [
-        {
-          integration_type: IntegrationType.CsvFeed,
-          uploader: null,
-        },
+describe('buildDocumentListColumns', () => {
+  it.each([
+    {
+      context: 'the list holds connectors',
+      documents: [CONNECTOR],
+      expectedColumnIds: [
+        'name',
+        'feature',
+        'short_description',
+        'type',
+        'use_cases',
+        'compatibility',
+        'action',
       ],
-      t,
-    });
-
-    expect(columns.map((column) => column.id)).toEqual([
-      'name',
-      'author_column',
-    ]);
-  });
-
-  it('does not add author column for connector documents', () => {
-    const columns = buildMetadataColumns({
-      columns: baseColumns,
-      documents: [
-        {
-          integration_type: IntegrationType.Connector,
-          uploader: null,
-        },
+    },
+    {
+      context: 'the list holds no connector',
+      documents: [CSV_FEED],
+      expectedColumnIds: [
+        'name',
+        'short_description',
+        'type',
+        'use_cases',
+        'action',
       ],
-      t,
-    });
-
-    expect(columns.map((column) => column.id)).toEqual(['name']);
-  });
-
-  it('adds product version column when product version metadata exists', () => {
-    const columns = buildMetadataColumns({
-      columns: baseColumns,
-      documents: [
-        {
-          integration_type: IntegrationType.CsvFeed,
-          uploader: null,
-          [DocumentMetadataKeyCode.ProductVersion]: true,
-          product_version: '6.1.0',
-        } as TestDocument & Record<DocumentMetadataKeyCode, boolean>,
+    },
+    {
+      context: 'a connector follows other resources',
+      documents: [CSV_FEED, CONNECTOR],
+      expectedColumnIds: [
+        'name',
+        'feature',
+        'short_description',
+        'type',
+        'use_cases',
+        'compatibility',
+        'action',
       ],
-      t,
-    });
+    },
+  ])(
+    'should build the matching columns when $context',
+    ({ documents, expectedColumnIds }) => {
+      // Given / When
+      const columns = buildDocumentListColumns({
+        documents,
+        t,
+        renderActions: () => null,
+      });
 
-    expect(columns.map((column) => column.id)).toEqual([
-      'name',
-      'author_column',
-      'minimum_deployable_version',
-    ]);
-  });
-});
-
-describe('buildProductVersionColumn', () => {
-  it('renders the product version value when metadata exists', () => {
-    const column = buildProductVersionColumn<TestDocument>(t);
-    const document = {
-      product_version: '5.0.1',
-      uploader: null,
-    } as TestDocument;
-
-    const cell = column.cell;
-    if (!cell) {
-      throw new Error('column cell is not defined');
+      // Then
+      expect(columns.map((column) => column.id)).toEqual(expectedColumnIds);
     }
+  );
 
-    const { getByText } = testRender(<>{cell(buildCellContext(document))}</>);
+  it.each(['feature', 'compatibility'])(
+    'should fill the %s cell when the row is a connector',
+    (columnId) => {
+      // Given / When
+      const { container } = renderCell(columnId, CONNECTOR);
 
-    expect(getByText('5.0.1')).toBeInTheDocument();
-  });
-
-  it('renders empty value when product version metadata does not exist', () => {
-    // Given
-    const column = buildProductVersionColumn<TestDocument>(t);
-    const document = {
-      uploader: null,
-    } as TestDocument;
-
-    const cell = column.cell;
-    if (!cell) {
-      throw new Error('column cell is not defined');
+      // Then
+      expect(container).not.toBeEmptyDOMElement();
     }
+  );
 
-    // When
-    const { container, queryByText } = testRender(
-      <>{cell(buildCellContext(document))}</>
-    );
+  it.each(['feature', 'compatibility'])(
+    'should leave the %s cell empty when the row is not a connector',
+    (columnId) => {
+      // Given / When
+      const { container } = renderCell(columnId, CSV_FEED);
 
-    // Then
-    expect(queryByText('5.0.1')).toBeNull();
-    expect(container.textContent).toBe('');
-  });
-});
-
-describe('buildAuthorColumn', () => {
-  it('renders uploader identity via UserDisplay', () => {
-    const column = buildAuthorColumn<TestDocument>(t);
-    const document = {
-      uploader: {
-        first_name: 'alice',
-        last_name: 'doe',
-        email: 'alice.doe@example.com',
-      },
-    } as TestDocument;
-
-    const cell = column.cell;
-    if (!cell) {
-      throw new Error('column cell is not defined');
+      // Then
+      expect(container).toBeEmptyDOMElement();
     }
-
-    const { getByText } = testRender(<>{cell(buildCellContext(document))}</>);
-
-    expect(getByText('Alice Doe')).toBeInTheDocument();
-  });
+  );
 });
