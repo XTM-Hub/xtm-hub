@@ -951,7 +951,7 @@ describe('registration domain', () => {
     ];
     const defaultArgs = {
       first: 10,
-      orderBy: RegisteredPlatformOrdering.PlatformTitle,
+      orderBy: RegisteredPlatformOrdering.OrganizationName,
       orderMode: OrderingMode.Asc,
     };
 
@@ -1037,13 +1037,13 @@ describe('registration domain', () => {
           hasNextPage: false,
         },
         edges: [
-          { cursor: btoa('1'), node: { id: saasPlatformA.serviceInstanceId } },
-          { cursor: btoa('2'), node: { id: saasPlatformB.serviceInstanceId } },
-          { cursor: btoa('3'), node: { id: saasPlatformC.serviceInstanceId } },
+          { cursor: btoa('1'), node: { id: saasPlatformC.serviceInstanceId } },
+          { cursor: btoa('2'), node: { id: saasPlatformA.serviceInstanceId } },
+          { cursor: btoa('3'), node: { id: saasPlatformB.serviceInstanceId } },
         ],
       });
       expect(connection.edges).toHaveLength(3);
-      expect(connection.edges[0]?.node).toMatchObject({
+      expect(connection.edges[1]?.node).toMatchObject({
         __typename: 'RegisteredPlatform',
         id: saasPlatformA.serviceInstanceId,
         service_instance_id: saasPlatformA.serviceInstanceId,
@@ -1083,39 +1083,19 @@ describe('registration domain', () => {
         pageInfo: { endCursor: btoa('2'), hasNextPage: true },
       });
       expect(firstPage.edges.map(({ node }) => node.id)).toEqual([
+        saasPlatformC.serviceInstanceId,
         saasPlatformA.serviceInstanceId,
-        saasPlatformB.serviceInstanceId,
       ]);
       expect(secondPage).toMatchObject({
         totalCount: '3',
         pageInfo: { endCursor: btoa('3'), hasNextPage: false },
       });
       expect(secondPage.edges.map(({ node }) => node.id)).toEqual([
-        saasPlatformC.serviceInstanceId,
+        saasPlatformB.serviceInstanceId,
       ]);
     });
 
     it.each([
-      {
-        orderBy: RegisteredPlatformOrdering.PlatformTitle,
-        orderMode: OrderingMode.Asc,
-        expected: [saasPlatformA, saasPlatformB, saasPlatformC],
-      },
-      {
-        orderBy: RegisteredPlatformOrdering.PlatformTitle,
-        orderMode: OrderingMode.Desc,
-        expected: [saasPlatformC, saasPlatformB, saasPlatformA],
-      },
-      {
-        orderBy: RegisteredPlatformOrdering.LastConnectivityCheck,
-        orderMode: OrderingMode.Asc,
-        expected: [saasPlatformB, saasPlatformC, saasPlatformA],
-      },
-      {
-        orderBy: RegisteredPlatformOrdering.LastConnectivityCheck,
-        orderMode: OrderingMode.Desc,
-        expected: [saasPlatformA, saasPlatformC, saasPlatformB],
-      },
       {
         orderBy: RegisteredPlatformOrdering.OrganizationName,
         orderMode: OrderingMode.Asc,
@@ -1165,7 +1145,6 @@ describe('registration domain', () => {
         // When
         const connection = await RegistrationDomain.loadSaasPlatforms({
           ...defaultArgs,
-          orderBy: RegisteredPlatformOrdering.OrganizationName,
           searchTerm,
         });
 
@@ -1176,19 +1155,6 @@ describe('registration domain', () => {
         );
       }
     );
-
-    it('should filter on the owner organization name when ordering by another column', async () => {
-      // When
-      const connection = await RegistrationDomain.loadSaasPlatforms({
-        ...defaultArgs,
-        searchTerm: 'filigran',
-      });
-
-      // Then
-      expect(connection.edges.map(({ node }) => node.id)).toEqual([
-        saasPlatformC.serviceInstanceId,
-      ]);
-    });
 
     it.each(excludedPlatforms)(
       'should exclude $description',

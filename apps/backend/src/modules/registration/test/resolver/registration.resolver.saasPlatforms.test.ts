@@ -19,7 +19,7 @@ describe('query.saasPlatforms', () => {
     const args: QuerySaasPlatformsArgs = {
       first: 10,
       after: btoa('10'),
-      orderBy: RegisteredPlatformOrdering.LastConnectivityCheck,
+      orderBy: RegisteredPlatformOrdering.OrganizationName,
       orderMode: OrderingMode.Desc,
     };
     const connection = {

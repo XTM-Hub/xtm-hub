@@ -130,7 +130,7 @@ describe('SaasList', () => {
     localStorage.setItem('countSaasList', '100');
     localStorage.setItem(
       'orderBySaasList',
-      JSON.stringify(RegisteredPlatformOrdering.PlatformTitle)
+      JSON.stringify(RegisteredPlatformOrdering.OrganizationName)
     );
     localStorage.setItem(
       'orderModeSaasList',
@@ -144,7 +144,7 @@ describe('SaasList', () => {
     expect(lastQueryVariables()).toEqual({
       first: 100,
       after: toCursor(100, 0),
-      orderBy: RegisteredPlatformOrdering.PlatformTitle,
+      orderBy: RegisteredPlatformOrdering.OrganizationName,
       orderMode: OrderingMode.Desc,
       searchTerm: null,
     });

@@ -34,6 +34,11 @@ import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { UserId } from '../../model/kanel/public/User';
 import { securityGuard } from '../../security/guard';
 import { sendMail } from '../../server/mail-service';
+import { PgBossProducer } from '../../thirdparty/pgboss/producer';
+import {
+  type CommercialModelJobData,
+  REGISTRATION_QUEUES,
+} from '../../thirdparty/pgboss/registration.jobs';
 import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
 import { logApp } from '../../utils/app-logger.util';
 import {
@@ -102,6 +107,24 @@ const loadCommercialModel = async (
       error,
     });
     return undefined;
+  }
+};
+
+// The registration does not wait for the SaaS Manager: the platform keeps its
+// stored commercial model until the job updates it.
+const enqueueCommercialModelRefresh = async (
+  data: CommercialModelJobData
+): Promise<void> => {
+  if (!portalConfig.saas_manager.enabled) {
+    return;
+  }
+  try {
+    await PgBossProducer.send(REGISTRATION_QUEUES.COMMERCIAL_MODEL, data);
+  } catch (error) {
+    logApp.error('Failed to enqueue the commercial model refresh', {
+      ...data,
+      error,
+    });
   }
 };
 
@@ -219,6 +242,19 @@ export const RegistrationApp = {
     };
   },
 
+  refreshCommercialModel: async ({
+    serviceInstanceId,
+    platformId,
+  }: CommercialModelJobData): Promise<void> => {
+    const commercialModel = await loadCommercialModel(platformId);
+    if (!commercialModel) {
+      return;
+    }
+    await PlatformConfigurationDomain.updateConfiguration(serviceInstanceId, {
+      commercial_model: commercialModel,
+    });
+  },
+
   registerPlatform: async ({
     organizationId,
     platform,
@@ -256,14 +292,6 @@ export const RegistrationApp = {
       throw new Error(ErrorCode.InvalidPlatformConfiguration);
     }
 
-    const commercialModel = await loadCommercialModel(
-      configuration.platform_id
-    );
-    const configurationWithCommercialModel = {
-      ...configuration,
-      ...(commercialModel ? { commercial_model: commercialModel } : {}),
-    };
-
     const platformConfiguration =
       await PlatformConfigurationDomain.loadConfigurationByPlatform(
         platform.id,
@@ -277,21 +305,26 @@ export const RegistrationApp = {
       throw new Error(BadRequestErrorCode.TenantIdMandatory);
     }
 
-    await withTransaction(async () => {
+    const serviceInstanceId = await withTransaction(async () => {
       if (platformConfiguration) {
         await RegistrationDomain.refreshExistingPlatform({
           serviceInstanceId: platformConfiguration.service_instance_id,
           targetOrganizationId: organizationId as OrganizationId,
-          configuration: configurationWithCommercialModel,
+          configuration,
         });
-      } else {
-        await RegistrationDomain.registerNewPlatform({
-          serviceDefinitionId: serviceDefinition.id,
-          organizationId: organizationId as OrganizationId,
-          configuration: configurationWithCommercialModel,
-          platformIdentifier: identifier,
-        });
+        return platformConfiguration.service_instance_id;
       }
+      return RegistrationDomain.registerNewPlatform({
+        serviceDefinitionId: serviceDefinition.id,
+        organizationId: organizationId as OrganizationId,
+        configuration,
+        platformIdentifier: identifier,
+      });
+    });
+
+    await enqueueCommercialModelRefresh({
+      serviceInstanceId,
+      platformId: configuration.platform_id,
     });
 
     const users = await UserDomain.loadUsersByCapabilitiesInOrganization(
