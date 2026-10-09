@@ -19,10 +19,6 @@ vi.mock('@filigran/design-system', async (importOriginal) => ({
   TooltipContent: ({ children }: { children: ReactNode }) => (
     <div role="tooltip">{children}</div>
   ),
-}));
-
-vi.mock('@filigran/design-system', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@filigran/design-system')>()),
   Icon: ({ name }: { name: string }) => <svg data-testid={`icon-${name}`} />,
 }));
 
