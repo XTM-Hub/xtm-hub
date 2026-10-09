@@ -52,7 +52,9 @@ export const DialogInformative = ({
             {description}
           </DialogDescription>
         )}
-        {children && <DialogBody>{children}</DialogBody>}
+        {children && (
+          <DialogBody className="flex flex-col gap-4">{children}</DialogBody>
+        )}
         {showFooter && (
           <DialogFooter>
             <DialogClose asChild>
