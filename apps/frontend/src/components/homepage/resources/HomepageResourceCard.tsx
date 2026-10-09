@@ -56,7 +56,7 @@ const HomepageResourceCard = ({
   ) : null;
 
   return (
-    <div className="overflow-hidden flex flex-col relative rounded bg-elevation-background-layer-1 hover:bg-hover">
+    <div className="overflow-hidden flex flex-col relative rounded bg-elevation-background-layer-1 hover:bg-hover has-[>a:focus-visible]:ring-2 has-[>a:focus-visible]:ring-ring">
       <div className="absolute top-m right-m flex gap-xs z-10">
         <ResourceStatusIcons
           active={active}
@@ -65,7 +65,7 @@ const HomepageResourceCard = ({
         />
       </div>
       <Link
-        className="flex flex-col flex-1 min-h-0 overflow-hidden p-m gap-s"
+        className="flex flex-col flex-1 min-h-0 overflow-hidden p-m gap-s focus-visible:outline-none"
         prefetch={false}
         href={url}>
         <div
