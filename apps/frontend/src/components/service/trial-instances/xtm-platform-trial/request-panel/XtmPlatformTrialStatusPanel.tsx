@@ -94,7 +94,7 @@ export const XtmPlatformTrialStatusPanel = ({
         </div>
       </div>
 
-      <div className="flex flex-col items-center justify-center gap-xl rounded border border-elevation-border-subtle-layer-3 px-xl py-1600 text-center">
+      <div className="flex flex-col items-center justify-center gap-xl rounded border border-elevation-border-subtle-layer-3 px-xl py-16 text-center">
         <div className="flex flex-col gap-xs">
           <p className="heading-xs">
             {t(`Service.Trials.XtmPlatform.Page.Status.${state}.Title`)}
