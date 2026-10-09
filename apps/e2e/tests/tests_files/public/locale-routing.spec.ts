@@ -56,7 +56,9 @@ test.describe('Locale routing', () => {
     await loginPage.navigateToAndLogin();
     await profilePage.navigateTo();
     await profilePage.changeLanguage('Français');
-    await page.getByRole('button', { name: 'Ouvrir menu utilisateur' }).click();
+    await page
+      .getByRole('button', { name: 'Ouvrir le menu utilisateur' })
+      .click();
     await page.getByRole('menuitem', { name: 'Déconnexion' }).click();
     await expect(page).toHaveURL(/\/fr/);
   });
@@ -69,7 +71,9 @@ test.describe('Locale routing', () => {
     await profilePage.navigateTo();
     await profilePage.changeLanguage('Français');
 
-    await page.getByRole('button', { name: 'Ouvrir menu utilisateur' }).click();
+    await page
+      .getByRole('button', { name: 'Ouvrir le menu utilisateur' })
+      .click();
     await page.getByRole('menuitem', { name: 'Déconnexion' }).click();
     await expect(page).toHaveURL(/\/fr/);
     await page.context().clearCookies({ name: 'NEXT_LOCALE' });
@@ -77,7 +81,7 @@ test.describe('Locale routing', () => {
     await loginPage.navigateToAndLogin();
     await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
     await expect(
-      page.getByRole('button', { name: 'Ouvrir menu utilisateur' })
+      page.getByRole('button', { name: 'Ouvrir le menu utilisateur' })
     ).toBeVisible();
   });
 });

@@ -130,16 +130,18 @@ const RegisteredPlatformCard = ({ platform }: RegisteredPlatformCardProps) => {
           {platform.contract === PlatformContract.Trial &&
             platform.remainingTrialDays !== undefined && (
               <div className="flex gap-s items-center text-content-body-compact text-text-default-secondary">
-                <p>{tRegisteredPlatformsCard('Remaining')}</p>
-                <Badge
-                  className={cn(
-                    'border-none text-content-body-compact-medium text-text-default-primary',
-                    remainingTrialDaysBadgeClassName
-                  )}>
-                  {tRegisteredPlatformsCard('DaysRemaining', {
-                    days: platform.remainingTrialDays,
-                  })}
-                </Badge>
+                {tRegisteredPlatformsCard.rich('DaysRemaining', {
+                  days: platform.remainingTrialDays,
+                  badge: (chunks) => (
+                    <Badge
+                      className={cn(
+                        'border-none text-content-body-compact-medium text-text-default-primary',
+                        remainingTrialDaysBadgeClassName
+                      )}>
+                      {chunks}
+                    </Badge>
+                  ),
+                })}
               </div>
             )}
         </div>
