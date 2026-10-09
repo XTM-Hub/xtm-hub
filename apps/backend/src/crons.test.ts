@@ -164,7 +164,7 @@ describe('crons', () => {
     initCronJobs();
 
     expect(cron.schedule).toHaveBeenCalledWith(
-      '*/10 * * * *',
+      '0 * * * *',
       expect.any(Function),
       { noOverlap: true }
     );

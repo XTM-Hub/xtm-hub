@@ -94,7 +94,7 @@ export const initCronJobs = () => {
     // real accounts, so the sync is enabled explicitly per environment.
     // noOverlap: a run still in progress makes the next tick skip (per process).
     scheduledTasks.push(
-      cron.schedule('*/10 * * * *', syncUserAccountStatus, { noOverlap: true })
+      cron.schedule('0 * * * *', syncUserAccountStatus, { noOverlap: true })
     );
   } else {
     logApp.info('Auth0 sync cron not scheduled: disabled for this environment');
