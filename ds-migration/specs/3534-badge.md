@@ -137,8 +137,10 @@ classes stay (`shrink-0`, `min-w-0`, `max-w-full`, `ml-s`, `mr-s`, `w-full`, `in
   `destructive` or error `critical`, `warning` or alert `medium`, success `low`, and every other variant
   (`default`, `secondary`, `outline`, no colour) `neutral`. So a disabled user, an expired invitation and a deleted
   news are `critical`; a pending invitation, a draft epic and a pending, provisioning or queued product `medium`; an
-  active product and a trial's remaining days above the thresholds `low`; an enabled user, every voting round
-  status, a cancelled, expired or failed product and a service `creation_status` `neutral`. The same word can take
+  active product, an enabled user and a trial's remaining days above the thresholds `low`; every voting round
+  status, a cancelled, expired or failed product and a service `creation_status` `neutral`. The enabled user is the
+  exception to `secondary`: the legacy theme painted that variant turquoise, so users saw a coloured "Enabled" next to
+  the red "Disabled", and the team asked to keep it green (PR #3715 feedback). The same word can take
   two colours ("Expired" invitation `critical`, "Expired" product `neutral`) when the legacy gave it two.
 - **EE markers use `severity="ee"`**, the contract's EE family, instead of the hand-written gradients.
 - **The calendar badge is not a token**: it holds no text, and `Chip` requires a label, so the icon stays without a
