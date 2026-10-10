@@ -1,10 +1,10 @@
+import { FormField } from '@/components/filigran-ui/components/clients';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-  FormField,
-} from '@/components/filigran-ui/components/clients';
+} from '@/components/ui/accordion';
 import { useForm, useFormContext } from 'react-hook-form';
 import * as z from 'zod';
 import { DEFAULT_ZOD_HANDLERS, INPUT_COMPONENTS } from '../config';

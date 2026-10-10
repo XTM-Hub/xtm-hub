@@ -1,14 +1,14 @@
 'use client';
 
-import { useTranslate } from '@/hooks/use-translate';
-import { cn } from '@/lib/utils';
-import { InfoIcon } from '@filigran/icon';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@filigran/ui';
+} from '@/components/ui/accordion';
+import { useTranslate } from '@/hooks/use-translate';
+import { cn } from '@/lib/utils';
+import { InfoIcon } from '@filigran/icon';
 import { PlatformIdentifier } from '@graphql/generated';
 import { getBundleRolePanels } from './manage-trial.const';
 
@@ -42,7 +42,7 @@ export const ManageTrialRoleDescriptions = ({
             )}>
             <AccordionTrigger
               className={cn(
-                'py-s pr-0 hover:no-underline cursor-pointer data-[state=open]:border-b-0',
+                'py-s pr-0 cursor-pointer data-[state=open]:border-b-0',
                 !stacked && 'border-b border-elevation-border-default-layer-0'
               )}>
               <span className="flex items-center gap-xs text-header-heading-xs">

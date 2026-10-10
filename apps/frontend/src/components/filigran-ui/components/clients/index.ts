@@ -1,4 +1,3 @@
-export * from './Accordion';
 export * from './Carousel';
 export * from './DataTable';
 export * from './Form';
