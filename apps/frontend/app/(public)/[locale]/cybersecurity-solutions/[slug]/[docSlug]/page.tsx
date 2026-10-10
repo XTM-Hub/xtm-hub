@@ -6,6 +6,7 @@ import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
+import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import type { PublicLocale } from '@/i18n/config';
 import { RelayProvider } from '@/relay/relay-provider';
 import { serverFetchGraphQL } from '@/relay/server-portal-api-fetch';
@@ -26,7 +27,6 @@ import {
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { fetchSingleDocument } from '@/utils/shareable-resources/utils/shareable-resources.server.utils';
 import { LogoFiligranIcon } from '@filigran/icon';
-import { MarkdownRenderer } from '@filigran/ui/clients';
 import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
 import SeoServiceInstanceQuery, {
   seoServiceInstanceQuery,
@@ -311,8 +311,7 @@ const Page = async ({
             <h2 className="p-l">{document?.short_description}</h2>
             <MarkdownRenderer
               source={document?.description ?? ''}
-              colorMode="dark"
-              className="p-l !bg-elevation-background-layer-1 markdown-content"
+              className="p-l"
             />
           </section>
         </div>

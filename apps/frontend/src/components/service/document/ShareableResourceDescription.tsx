@@ -1,4 +1,4 @@
-import MarkdownRendererWithTheme from '@/components/ui/MarkdownRendererWithTheme';
+import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import { useTranslate } from '@/hooks/use-translate';
 
 // Component interface
@@ -21,9 +21,9 @@ const ShareableResourceDescription = ({
       </h2>
       <section className="rounded bg-elevation-background-layer-1 overflow-x-auto">
         <h3 className="p-l">{shortDescription}</h3>
-        <MarkdownRendererWithTheme
+        <MarkdownRenderer
           source={longDescription}
-          className="p-l !bg-elevation-background-layer-1 markdown-content"
+          className="p-l"
         />
       </section>
     </div>

@@ -1,6 +1,6 @@
 import { FiligranProductMapping } from '@/components/epic/epic-item/FiligranProductMapping';
 import { FeatureVoteButton } from '@/components/feature-voting/FeatureVoteButton';
-import MarkdownRendererWithTheme from '@/components/ui/MarkdownRendererWithTheme';
+import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import { Separator } from '@/components/ui/separator';
 import { Chip, DialogDescription, DialogTitle } from '@filigran/design-system';
 import { VotableFeaturePublicFragment } from '@graphql/generated';
@@ -18,7 +18,7 @@ export const FeatureVoteDetail = ({
   isAuthenticated,
 }: FeatureVoteDetailProps) => {
   return (
-    <div className="markdown-content flex h-full min-h-0 flex-1 flex-col gap-m">
+    <div className="flex h-full min-h-0 flex-1 flex-col gap-m">
       <DialogTitle>{feature.title}</DialogTitle>
       <DialogDescription className="sr-only">
         {feature.short_description}
@@ -34,7 +34,7 @@ export const FeatureVoteDetail = ({
             />
           </div>
         )}
-        <MarkdownRendererWithTheme source={feature.description} />
+        <MarkdownRenderer source={feature.description} />
       </div>
       <Separator />
       <div className="flex flex-wrap items-center justify-between gap-m">

@@ -3,7 +3,7 @@ import {
   DEFAULT_EPIC_SLACK_LINK,
   EPIC_SLACK_LINK_REGEX,
 } from '@/components/epic/epic-slack-links';
-import MarkdownRendererWithTheme from '@/components/ui/MarkdownRendererWithTheme';
+import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import { Separator } from '@/components/ui/separator';
 import { useTranslate } from '@/hooks/use-translate';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
@@ -30,14 +30,12 @@ export const EpicItemDetailed = ({ epic }: EpicItemDetailedProps) => {
       <h2 className="pr-8">{epic.title}</h2>
       <p className="text-muted-foreground text-sm">{epic.short_description}</p>
       <Separator className="my-s" />
-      <div className="markdown-content min-h-0 flex-1 overflow-y-auto">
-        {epic.description && (
-          <MarkdownRendererWithTheme source={epic.description} />
-        )}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {epic.description && <MarkdownRenderer source={epic.description} />}
         {sections.map(({ labelKey, source }) => (
           <section key={labelKey}>
-            <h3>{t(labelKey)}</h3>
-            <MarkdownRendererWithTheme source={source} />
+            <h3 className="mt-4 mb-2 text-lg font-semibold">{t(labelKey)}</h3>
+            <MarkdownRenderer source={source} />
           </section>
         ))}
       </div>
