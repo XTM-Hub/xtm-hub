@@ -120,6 +120,18 @@ The 19 `SheetFooter` files, under `apps/frontend/src/components/`: `epic/EpicFor
 - `apps/e2e/tests/model/xtm-platform-roadmap.pageModel.ts`: `fillSlackLink` presses Escape again after typing the
   link, instead of clicking the sheet title, and drops the comment about it (the issue's request; commit 9d2f3df80
   made the click).
+- CI fix, the 300ms deferred clear of an edited row (`useExecuteAfterAnimation`) waited for the legacy exit
+  animation, whose overlay blocked the table meanwhile; without it, a row clicked within 300ms stayed closed (same
+  row, same `key`) or opened and was then unmounted by the timer (e2e `user.spec.ts` "Disable user"). Under
+  `apps/frontend/src/components/admin/`: `user/UserList.tsx` (regression test in `UserList.test.tsx`),
+  `voting-round/VotingRounds.tsx`, `voting-round/VotingRoundDetail.tsx`, `solution-category/SolutionCategories.tsx`,
+  `use-case/UseCases.tsx` clear the row directly; `user/forms/UserUpdate.tsx`, `voting-round/EditVotingRound.tsx`,
+  `voting-round/EditVotableFeature.tsx`, `solution-category/EditSolutionCategory.tsx`, `use-case/EditUseCase.tsx`
+  track the open state in a ref and call their close callback once, outside the `setOpenSheet` updater, now that it
+  sets the parent's state synchronously (a clean sheet's Escape closes twice in one event, and a save that completes
+  after its sheet closed must not clear the next one); `EditUseCase.test.tsx`, `EditSolutionCategory.test.tsx` and
+  `EditVotableFeature.test.tsx` cover the single close on Escape, `EditUseCase.test.tsx` the late save too. `hooks/use-execute-after-animation.tsx`, its test and `ANIMATION_TIME` in
+  `utils/constant.ts` are deleted.
 
 The existing tests stay as they are and must pass: `PublicMobileMenuButton.test.tsx` (one `button` in the `dialog`,
 named `Header.CloseMenu`), `EditRolePortal.test.tsx`, `EditSsoGroupRolePortal.test.tsx`, `AddRolePortal.test.tsx`,
@@ -243,3 +255,11 @@ under 640px and the "learn more" panel behind a deployable resource: none is cap
   described by an empty paragraph.
 - `AutocompleteInput` sets `aria-expanded="true"` while no option matches and no list shows.
 - The private mobile menu's logout entry is a `div` with `onClick`, unreachable by keyboard.
+- On a clean form sheet, Escape or an outside press closes it twice: `alertDialogSheetClose` calls `setOpen(false)`,
+  then Radix's own dismiss calls `onOpenChange(false)`. Each caller has to dedupe it; the wrapper could prevent only
+  when dirty and leave closing to Radix.
+- `TrialsTabQuotasPlatformUpdate.tsx` still calls `onCloseSheet` inside its `setOpenSheet` updater, which sets its
+  parent's state: it never went through the 300ms deferral, so this item leaves it as it was.
+- The five `Edit*` sheets repeat the same open-state ref and `handleOpenSheet`, as they repeated the updater before:
+  one shared hook would hold the rule once. `EditVotingRound` and `EditUser` have no test file of their own for it, and
+  the four other lists have no reopen test like `UserList`'s.

@@ -7,7 +7,6 @@ import { VotingRoundResults } from '@/components/admin/voting-round/VotingRoundR
 import { VotingRoundStatusActions } from '@/components/admin/voting-round/VotingRoundStatusActions';
 import { VotingRoundStatusBadge } from '@/components/admin/voting-round/VotingRoundStatusBadge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useExecuteAfterAnimation } from '@/hooks/use-execute-after-animation';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { i18nKey } from '@/utils/datatable';
@@ -153,9 +152,7 @@ export const VotingRoundDetail = ({ roundId }: { roundId: string }) => {
           feature={featureToEdit}
           serviceInstanceId={round.service_instance_id}
           open={!!featureToEdit}
-          onClose={() =>
-            useExecuteAfterAnimation(() => setFeatureToEdit(undefined))
-          }
+          onClose={() => setFeatureToEdit(undefined)}
         />
       )}
     </div>

@@ -4,15 +4,17 @@ import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
 import testRender from '@/utils/test/test-render';
 import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { UserOrdering } from '@graphql/generated';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 type CapturedColumn = {
   id?: string;
   enableSorting?: boolean;
   cell?: (args: { row: { original: Record<string, unknown> } }) => ReactNode;
 };
+
+type CapturedOnClickRow = (row: { original: UserList_fragment$data }) => void;
 
 type ResendInviteMutationOptions = {
   onSuccess: () => void;
@@ -28,6 +30,7 @@ const INVITATION_DATE = '2024-03-15T12:00:00.000Z';
 const FORMATTED_INVITATION_DATE = 'March 15, 2024';
 const SERVER_ERROR_CODE = 'ADDING_USER_ERROR';
 const RESEND_INVITE_LABEL = 'UserListPage.ResendInvite';
+const EDIT_SHEET_TITLE = 'UserActions.UpdateUser';
 
 const mocks = vi.hoisted(() => ({
   isAdminPath: true,
@@ -37,6 +40,7 @@ const mocks = vi.hoisted(() => ({
   refetch: vi.fn(),
   setConnectionId: vi.fn(),
   capturedColumns: [] as Array<CapturedColumn>,
+  capturedOnClickRow: undefined as CapturedOnClickRow | undefined,
   resendInvite: vi.fn(),
   isResendInvitePending: false,
   adminResendInvite: vi.fn(),
@@ -170,11 +174,14 @@ vi.mock('@filigran/ui', async (importOriginal) => {
     DataTable: ({
       columns,
       toolbar,
+      onClickRow,
     }: {
       columns: Array<CapturedColumn>;
       toolbar?: ReactNode;
+      onClickRow?: CapturedOnClickRow;
     }) => {
       mocks.capturedColumns = columns;
+      mocks.capturedOnClickRow = onClickRow;
       return (
         <div>
           <div>DataTable</div>
@@ -184,6 +191,10 @@ vi.mock('@filigran/ui', async (importOriginal) => {
     },
   };
 });
+
+vi.mock('@/components/admin/user/forms/admin/AdminUserUpdateForm', () => ({
+  AdminUserUpdateForm: () => <div>AdminUserUpdateForm</div>,
+}));
 
 const renderUserList = () =>
   testRender(
@@ -255,6 +266,7 @@ describe('UserList', () => {
     mocks.refetch.mockReset();
     mocks.setConnectionId.mockReset();
     mocks.capturedColumns = [];
+    mocks.capturedOnClickRow = undefined;
     mocks.resendInvite.mockReset();
     mocks.isResendInvitePending = false;
     mocks.adminResendInvite.mockReset();
@@ -371,6 +383,55 @@ describe('UserList', () => {
     expect(
       mocks.capturedColumns.some((column) => column.id === 'invitation_date')
     ).toBe(false);
+  });
+
+  describe('edit sheet', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const firstUser = makeUserNode();
+    const secondUser = makeUserNode({
+      id: 'user-2',
+      email: 'user-2@test.io',
+    });
+
+    const clickRow = (node: UserList_fragment$data) => {
+      const onClickRow = mocks.capturedOnClickRow;
+      if (!onClickRow) {
+        throw new Error('DataTable was not given an onClickRow handler');
+      }
+      act(() => onClickRow({ original: node }));
+    };
+
+    it.each([
+      ['the same user', firstUser],
+      ['another user', secondUser],
+    ])(
+      'should open the edit sheet when %s is clicked right after the sheet closed',
+      (_row, nextUser) => {
+        // Given the edit sheet of a user, just closed
+        mocks.totalCount = 2;
+        mocks.edges = [{ node: firstUser }, { node: secondUser }];
+        renderUserList();
+        clickRow(firstUser);
+        const sheet = screen.getByRole('dialog', { name: EDIT_SHEET_TITLE });
+        fireEvent.click(within(sheet).getByRole('button', { name: 'Close' }));
+
+        // When a row is clicked at once, and every pending timer runs
+        clickRow(nextUser);
+        act(() => vi.runAllTimers());
+
+        // Then the edit sheet is open
+        expect(
+          screen.getByRole('dialog', { name: EDIT_SHEET_TITLE })
+        ).toBeInTheDocument();
+      }
+    );
   });
 
   describe('when TRIAL_INVITE is enabled', () => {

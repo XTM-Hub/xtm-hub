@@ -7,7 +7,6 @@ import {
   mapToSortingTableValue,
   OrderingMode as SortingOrderingMode,
 } from '@/components/ui/handle-sorting.utils';
-import { useExecuteAfterAnimation } from '@/hooks/use-execute-after-animation';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
@@ -182,9 +181,7 @@ const SolutionCategories = () => {
         <EditSolutionCategory
           solutionCategory={solutionCategoryEdit}
           open={!!solutionCategoryEdit}
-          onClose={() =>
-            useExecuteAfterAnimation(() => setSolutionCategoryEdit(undefined))
-          }
+          onClose={() => setSolutionCategoryEdit(undefined)}
         />
       )}
     </>

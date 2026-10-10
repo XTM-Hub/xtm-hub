@@ -23,7 +23,6 @@ import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useAdminPath from '@/hooks/use-admin-path';
 import { useDebouncedSearch } from '@/hooks/use-debounced-search';
-import { useExecuteAfterAnimation } from '@/hooks/use-execute-after-animation';
 import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
 import { useAdminByPass } from '@/hooks/use-portal-capability';
 import { useTablePagination } from '@/hooks/use-table-pagination';
@@ -637,9 +636,7 @@ const UserList = ({ organization }: UserListProps) => {
           user={userEdit}
           key={userEdit?.id}
           defaultStateOpen={!!userEdit}
-          onCloseSheet={() =>
-            useExecuteAfterAnimation(() => setUserEdit(undefined))
-          }
+          onCloseSheet={() => setUserEdit(undefined)}
         />
       )}
       {userToDelete && (

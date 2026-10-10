@@ -1,6 +1,5 @@
 import AddUseCase from '@/components/admin/use-case/AddUseCase';
 import EditUseCase from '@/components/admin/use-case/EditUseCase';
-import { useExecuteAfterAnimation } from '@/hooks/use-execute-after-animation';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { i18nKey } from '@/utils/datatable';
@@ -152,9 +151,7 @@ const UseCases = () => {
         <EditUseCase
           useCase={useCaseEdit}
           open={!!useCaseEdit}
-          onClose={() =>
-            useExecuteAfterAnimation(() => setUseCaseEdit(undefined))
-          }
+          onClose={() => setUseCaseEdit(undefined)}
         />
       )}
     </>

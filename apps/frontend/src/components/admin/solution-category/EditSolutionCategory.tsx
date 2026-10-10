@@ -16,7 +16,7 @@ import {
 } from '@graphql/generated';
 import { solutionCategoryListKeys } from '@graphql/solution-category/solution-category-list.keys';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { z } from 'zod';
 
 const EditSolutionCategory = ({
@@ -31,6 +31,8 @@ const EditSolutionCategory = ({
   const t = useTranslate();
   const queryClient = useQueryClient();
   const [openSheet, setOpenSheet] = useState<boolean>(open);
+  // Shared by every closure, so a repeated or late close notifies once.
+  const openSheetRef = useRef(openSheet);
 
   const handleError = (error: unknown) => {
     const errorMessage =
@@ -82,13 +84,11 @@ const EditSolutionCategory = ({
   );
 
   const handleOpenSheet = (openValue: boolean) => {
-    setOpenSheet((previousState) => {
-      const sheetIsClosing = previousState !== openValue && !openValue;
-      if (sheetIsClosing) {
-        onClose();
-      }
-      return openValue;
-    });
+    if (openSheetRef.current && !openValue) {
+      onClose();
+    }
+    openSheetRef.current = openValue;
+    setOpenSheet(openValue);
   };
 
   const onUpdate = (input: z.infer<typeof solutionCategoryFormSchema>) => {

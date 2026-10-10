@@ -5,7 +5,6 @@ import EditVotingRound from '@/components/admin/voting-round/EditVotingRound';
 import { useRoadmapServiceInstances } from '@/components/admin/voting-round/use-roadmap-service-instances';
 import { VotingRoundStatusBadge } from '@/components/admin/voting-round/VotingRoundStatusBadge';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
-import { useExecuteAfterAnimation } from '@/hooks/use-execute-after-animation';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { i18nKey } from '@/utils/datatable';
@@ -123,9 +122,7 @@ const VotingRounds = () => {
         <EditVotingRound
           votingRound={roundToEdit}
           open={!!roundToEdit}
-          onClose={() =>
-            useExecuteAfterAnimation(() => setRoundToEdit(undefined))
-          }
+          onClose={() => setRoundToEdit(undefined)}
         />
       )}
     </>

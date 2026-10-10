@@ -52,6 +52,17 @@ describe('EditVotableFeature', () => {
     );
   });
 
+  it('should notify the parent once when Escape closes a clean sheet', async () => {
+    // Given
+    const { user, onClose } = renderEdit();
+
+    // When
+    await user.keyboard('{Escape}');
+
+    // Then
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it('should close the sheet and notify the parent once the update succeeds', async () => {
     const response: VotableFeatureUpdateMutation = {
       updateVotableFeature: mockVotableFeature({ id: 'feature-1' }),

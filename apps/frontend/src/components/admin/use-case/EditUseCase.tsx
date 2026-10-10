@@ -16,7 +16,7 @@ import {
 } from '@graphql/generated';
 import { useCaseListKeys } from '@graphql/use-case/use-case-list.keys';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 const EditUseCase = ({
   open,
@@ -30,6 +30,8 @@ const EditUseCase = ({
   const t = useTranslate();
   const queryClient = useQueryClient();
   const [openSheet, setOpenSheet] = useState<boolean>(open);
+  // Shared by every closure, so a repeated or late close notifies once.
+  const openSheetRef = useRef(openSheet);
 
   const { mutate: editUseCase } = useUseCaseEditMutation(portalGraphqlClient, {
     onSuccess: (data: UseCaseEditMutation) => {
@@ -81,13 +83,11 @@ const EditUseCase = ({
   );
 
   const handleOpenSheet = (open: boolean) => {
-    setOpenSheet((prevState) => {
-      const sheetIsClosing = prevState !== open && !open;
-      if (sheetIsClosing && onClose) {
-        onClose();
-      }
-      return open;
-    });
+    if (openSheetRef.current && !open) {
+      onClose();
+    }
+    openSheetRef.current = open;
+    setOpenSheet(open);
   };
 
   const onDeleteUseCase = () => {
