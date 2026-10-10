@@ -1,5 +1,5 @@
-import { FormLabel } from '@/components/filigran-ui/components/clients';
 import { cn } from '@/components/filigran-ui/lib/utils';
+import { FormLabel } from '@/components/ui/form';
 
 const AutoFormLabel = ({
   label,

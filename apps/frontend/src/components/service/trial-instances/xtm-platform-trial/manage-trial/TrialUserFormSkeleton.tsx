@@ -1,10 +1,10 @@
 'use client';
 
 import { AppCombobox } from '@/components/ui/AppCombobox';
+import { Form, FormField } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import { Button } from '@filigran/design-system';
-import { Form, FormField } from '@filigran/ui';
 import { PlatformIdentifier } from '@graphql/generated';
 import { ReactNode, useMemo } from 'react';
 import { UseFormReturn, useFormState, useWatch } from 'react-hook-form';

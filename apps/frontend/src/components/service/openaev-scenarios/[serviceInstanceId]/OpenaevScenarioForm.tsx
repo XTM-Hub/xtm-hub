@@ -2,6 +2,12 @@ import { PortalContext } from '@/components/me/AppPortalContext';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import FileInputWithPrevent from '@/components/ui/FileInputWithPrevent';
+import {
+  FormControl,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import {
@@ -9,13 +15,7 @@ import {
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
-import {
-  AutoForm,
-  FormControl,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@filigran/ui';
+import { AutoForm } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { DocumentImageType } from '@graphql/generated';
 import { useContext, useMemo } from 'react';

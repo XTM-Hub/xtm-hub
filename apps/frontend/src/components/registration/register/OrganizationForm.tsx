@@ -1,8 +1,8 @@
 import { RegistrationContext } from '@/components/registration/Context';
+import { FormControl, FormItem, FormMessage } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button, Radio, RadioGroup } from '@filigran/design-system';
 import { AutoForm } from '@filigran/ui';
-import { FormControl, FormItem, FormMessage } from '@filigran/ui/clients';
 import { organizationListUserOrganizationsQuery$data } from '@generated/organizationListUserOrganizationsQuery.graphql';
 import { useContext } from 'react';
 import { z } from 'zod';

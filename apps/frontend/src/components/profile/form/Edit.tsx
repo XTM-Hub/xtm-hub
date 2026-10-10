@@ -2,6 +2,7 @@
 
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { CountryCombobox } from '@/components/ui/country/Combobox';
+import { useFormField } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
 import {
   Button,
@@ -10,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@filigran/design-system';
-import { AutoForm, useFormField } from '@filigran/ui';
+import { AutoForm } from '@filigran/ui';
 import { useContext } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 import { z } from 'zod';

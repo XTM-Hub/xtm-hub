@@ -6,6 +6,7 @@ import { CapabilityDescription } from '@/components/admin/user/CapabilityDescrip
 import { userAdminFormSchema } from '@/components/admin/user/forms/user-form.schema';
 import { SettingsContext } from '@/components/settings/EnvPortalContext';
 import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
+import { Form, FormField } from '@/components/ui/form';
 import { Label } from '@/components/ui/label';
 import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
@@ -13,7 +14,6 @@ import { useTranslate } from '@/hooks/use-translate';
 import { cn, isEmpty } from '@/lib/utils';
 import { Button, IconButton, Input } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
-import { Form, FormField } from '@filigran/ui/clients';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useContext, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';

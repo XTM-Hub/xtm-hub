@@ -1,3 +1,4 @@
+import { FormControl, FormItem, FormMessage } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
 import { isEeCapableContract } from '@/utils/platform';
 import { SHAREABLE_RESOURCE_TYPE_NAME_MAPPING } from '@/utils/shareable-resources/shareable-resources.types';
@@ -11,7 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import { AutoForm, FormControl, FormItem, FormMessage } from '@filigran/ui';
+import { AutoForm } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
 import { z } from 'zod';
@@ -127,7 +128,7 @@ const ChoosePlatformForm = ({
                     })}
                   </RadioGroup>
                 </FormControl>
-                <FormMessage className="mt-2 text-sm text-destructive" />
+                <FormMessage className="mt-2" />
               </FormItem>
             ),
           },

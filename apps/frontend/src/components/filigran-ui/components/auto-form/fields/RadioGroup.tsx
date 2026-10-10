@@ -1,8 +1,4 @@
-import {
-  FormControl,
-  FormItem,
-  FormMessage,
-} from '@/components/filigran-ui/components/clients';
+import { FormControl, FormItem, FormMessage } from '@/components/ui/form';
 import { Radio, RadioGroup } from '@filigran/design-system';
 import type { ComponentProps } from 'react';
 import AutoFormLabel from '../common/Label';

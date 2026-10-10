@@ -5,8 +5,8 @@ import {
 } from '@/components/service/trial-instances/xtm-platform-trial/manage-trial/manage-trial.const';
 import { MixedRoleDefault } from '@/components/service/trial-instances/xtm-platform-trial/manage-trial/manage-trial.utils';
 import { TrialUserRolePanelFields } from '@/components/service/trial-instances/xtm-platform-trial/manage-trial/TrialUserRolePanelFields';
+import { Form } from '@/components/ui/form';
 import testRender from '@/utils/test/test-render';
-import { Form } from '@filigran/ui';
 import { PlatformIdentifier, ServiceGroupName } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { screen, waitFor } from '@testing-library/react';

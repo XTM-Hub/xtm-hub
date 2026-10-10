@@ -1,6 +1,14 @@
 import { VOTING_PRODUCTS } from '@/components/feature-voting/feature-voting.const';
 import { ServiceFormUseCasesField } from '@/components/service/form/UseCasesField';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import MarkdownInput from '@/components/ui/MarkdownInput';
 import { SelectField } from '@/components/ui/SelectField';
 import { SheetFooter } from '@/components/ui/sheet';
@@ -18,14 +26,6 @@ import {
   Switch,
 } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@filigran/ui';
 import { FiligranProduct } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo } from 'react';

@@ -6,6 +6,7 @@ import {
   getOriginalValues,
   pickChangedValues,
 } from '@/components/content-translation/content-edit-dialog.utils';
+import { Form, FormField } from '@/components/ui/form';
 import { Skeleton } from '@/components/ui/skeleton';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useContentTranslationApi } from '@/hooks/use-content-translation-api';
@@ -26,7 +27,6 @@ import {
   TabsTrigger,
   Textarea,
 } from '@filigran/design-system';
-import { Form, FormField } from '@filigran/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';

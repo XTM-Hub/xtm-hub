@@ -1,5 +1,6 @@
 import EeBadge from '@/components/service/document/one-click-deploy/EeBadge';
 import { ReachSalesMutation } from '@/components/service/trial-instances/reach-sales.graphql';
+import { Form, FormField } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
 import {
   Sheet,
@@ -11,7 +12,6 @@ import {
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button, Textarea } from '@filigran/design-system';
-import { Form, FormField } from '@filigran/ui';
 import { reachSalesMutation as ReachSalesMutationType } from '@generated/reachSalesMutation.graphql';
 import { PlatformIdentifier } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';

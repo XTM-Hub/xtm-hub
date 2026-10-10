@@ -1,7 +1,7 @@
 import { ServiceFormSolutionCategoryField } from '@/components/service/form/SolutionCategoryField';
 import { useSolutionCategories } from '@/components/service/form/UseSolutionCategories';
+import { Form, FormField } from '@/components/ui/form';
 import testRender from '@/utils/test/test-render';
-import { Form, FormField } from '@filigran/ui';
 import { FiligranProduct } from '@graphql/generated';
 import { screen, within } from '@testing-library/react';
 import { useForm } from 'react-hook-form';

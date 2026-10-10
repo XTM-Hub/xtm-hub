@@ -1,5 +1,6 @@
 import { trialsRegionKey } from '@/components/trials/trials.const';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Form, FormField } from '@/components/ui/form';
 import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
@@ -7,7 +8,6 @@ import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { isEmpty } from '@/lib/utils';
 import { Button, Input } from '@filigran/design-system';
-import { Form, FormField } from '@filigran/ui';
 import { trialsQuotasKeys } from '@graphql/deployment/deployment.keys';
 import {
   DeploymentRequestPlatformRegion,

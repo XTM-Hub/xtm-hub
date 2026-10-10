@@ -1,7 +1,4 @@
-import {
-  FormControl,
-  FormItem,
-} from '@/components/filigran-ui/components/clients';
+import { FormControl, FormItem } from '@/components/ui/form';
 import { Switch } from '@filigran/design-system';
 import type { ComponentProps } from 'react';
 import AutoFormLabel from '../common/Label';

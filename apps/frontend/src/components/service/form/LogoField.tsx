@@ -1,3 +1,9 @@
+import {
+  FormControl,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
 import { fileToBase64 } from '@/lib/utils';
 import {
@@ -13,7 +19,6 @@ import {
 import { EntityTypeOrFiligranLogo } from '@/utils/shareable-resources/entity-type';
 import { FileSelect, IconButton } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
-import { FormControl, FormItem, FormLabel, FormMessage } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { DocumentSourceType } from '@graphql/generated';
 import { ControllerRenderProps, FieldValues, useWatch } from 'react-hook-form';

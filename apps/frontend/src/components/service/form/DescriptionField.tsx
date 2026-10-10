@@ -1,6 +1,11 @@
+import {
+  FormControl,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import MarkdownInput from '@/components/ui/MarkdownInput';
 import { useTranslate } from '@/hooks/use-translate';
-import { FormControl, FormItem, FormLabel, FormMessage } from '@filigran/ui';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 
 interface ServiceFormDescriptionFieldProps {
@@ -19,9 +24,8 @@ export const ServiceFormDescriptionField = ({
   const t = useTranslate();
   return (
     <FormItem>
-      <FormLabel>
+      <FormLabel required={required}>
         {t('Service.Form.DescriptionLabel')}
-        {required ? <span className="text-sm text-destructive"> *</span> : null}
       </FormLabel>
       <FormControl>
         <MarkdownInput

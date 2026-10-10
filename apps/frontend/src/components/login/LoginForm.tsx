@@ -1,12 +1,12 @@
 'use client';
 
 import { LoginFormMutation } from '@/components/login/login.graphql';
+import { Form, FormField } from '@/components/ui/form';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useDecodedQuery from '@/hooks/use-decoded-query';
 import { useTranslate } from '@/hooks/use-translate';
 import { decodeSafeRedirect } from '@/utils/redirect';
 import { Button, Input } from '@filigran/design-system';
-import { Form, FormField } from '@filigran/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';

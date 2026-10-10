@@ -4,10 +4,11 @@ import * as React from 'react';
 export interface LabelProps extends React.ComponentPropsWithoutRef<'label'> {
   children: React.ReactNode;
   error?: boolean;
+  required?: boolean;
 }
 
 const Label = React.forwardRef<HTMLLabelElement, LabelProps>(
-  ({ children, className, error = false, ...props }, ref) => (
+  ({ children, className, error = false, required = false, ...props }, ref) => (
     <Text
       ref={ref}
       as="label"
@@ -18,6 +19,15 @@ const Label = React.forwardRef<HTMLLabelElement, LabelProps>(
         .join(' ')}
       {...props}>
       {children}
+      {required ? (
+        <Text
+          as="span"
+          variant="content-base"
+          aria-hidden="true"
+          className={`ms-1 ${error ? 'text-input-error' : 'text-input-required'}`}>
+          *
+        </Text>
+      ) : null}
     </Text>
   )
 );

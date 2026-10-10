@@ -90,8 +90,8 @@ development_status:
   3699-sheet: done
   3702-markdown-renderer: done
   3703-carousel: done
-  3705-data-table: review
-  3706-form: backlog
+  3705-data-table: done
+  3706-form: review
   3707-auto-form: backlog
 
   # Remove the legacy copy, its theme and aliases, forbid @filigran/ui imports

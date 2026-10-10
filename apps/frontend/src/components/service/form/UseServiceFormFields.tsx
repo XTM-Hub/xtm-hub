@@ -9,10 +9,10 @@ import { ServiceFormSolutionCategoryField } from '@/components/service/form/Solu
 import { ServiceFormUploaderIdField } from '@/components/service/form/UploaderIdField';
 import { ServiceFormUploaderOrganizationIdField } from '@/components/service/form/UploaderOrganizationIdField';
 import { ServiceFormUseCasesField } from '@/components/service/form/UseCasesField';
+import { FormItem } from '@/components/ui/form';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { filterDocumentImages } from '@/utils/documents';
-import { FormItem } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import {
   DocumentMetadataKeyCode,

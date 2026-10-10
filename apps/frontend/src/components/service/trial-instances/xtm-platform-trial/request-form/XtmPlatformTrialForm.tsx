@@ -6,18 +6,18 @@ import {
 } from '@/components/service/trial-instances/form-constants';
 import { buildOngoingTrialWarningParams } from '@/components/service/trial-instances/xtm-platform-trial/request-form/xtm-platform-trial-form.utils';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { SelectField } from '@/components/ui/SelectField';
-import { TranslatableEnumSelectField } from '@/components/ui/TranslatableEnumSelectField';
-import { useTranslate } from '@/hooks/use-translate';
-import { Button, Checkbox } from '@filigran/design-system';
-import { WarningIcon } from '@filigran/icon';
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from '@filigran/ui';
+} from '@/components/ui/form';
+import { SelectField } from '@/components/ui/SelectField';
+import { TranslatableEnumSelectField } from '@/components/ui/TranslatableEnumSelectField';
+import { useTranslate } from '@/hooks/use-translate';
+import { Button, Checkbox } from '@filigran/design-system';
+import { WarningIcon } from '@filigran/icon';
 import {
   DeploymentRequestActivitySector,
   DeploymentRequestJobTitle,
@@ -358,7 +358,7 @@ export const XtmPlatformTrialForm = ({
                     onCheckedChange={field.onChange}
                   />
                 </FormControl>
-                <FormMessage className="text-destructive" />
+                <FormMessage />
               </FormItem>
             )}
           />

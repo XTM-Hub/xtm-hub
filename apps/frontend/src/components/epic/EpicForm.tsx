@@ -12,6 +12,13 @@ import {
 } from '@/components/epic/filigran-products';
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+} from '@/components/ui/form';
 import { SelectField } from '@/components/ui/SelectField';
 import { Separator } from '@/components/ui/separator';
 import { SheetFooter } from '@/components/ui/sheet';
@@ -31,13 +38,6 @@ import {
   TooltipTrigger,
 } from '@filigran/design-system';
 import { InfoIcon } from '@filigran/icon';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from '@filigran/ui';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import {
   EditionType,
@@ -129,9 +129,10 @@ const EpicFieldLabel = ({
 }) => {
   const t = useTranslate();
   return (
-    <FormLabel className="flex items-center gap-xs">
+    <FormLabel
+      required={required}
+      className="flex items-center gap-xs">
       {t(labelKey)}
-      {required && <span className="text-sm text-destructive">*</span>}
       {infoKey && (
         <TooltipProvider>
           <Tooltip>

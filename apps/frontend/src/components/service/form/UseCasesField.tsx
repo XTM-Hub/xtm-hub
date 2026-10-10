@@ -1,8 +1,8 @@
 import { useUseCases } from '@/components/admin/use-case/use-use-cases';
 import { AppCombobox } from '@/components/ui/AppCombobox';
+import { useFormField } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/design-system/combobox';
-import { useFormField } from '@filigran/ui';
 import type { FiligranProduct } from '@graphql/generated';
 import { useMemo } from 'react';
 import { ControllerRenderProps, FieldPath, FieldValues } from 'react-hook-form';

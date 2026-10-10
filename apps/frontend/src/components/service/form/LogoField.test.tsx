@@ -1,6 +1,6 @@
 import { ServiceFormLogoField } from '@/components/service/form/LogoField';
+import { Form, FormField } from '@/components/ui/form';
 import testRender from '@/utils/test/test-render';
-import { Form, FormField } from '@filigran/ui';
 import { DocumentSourceType } from '@graphql/generated';
 import { screen, waitFor } from '@testing-library/react';
 import { useForm } from 'react-hook-form';

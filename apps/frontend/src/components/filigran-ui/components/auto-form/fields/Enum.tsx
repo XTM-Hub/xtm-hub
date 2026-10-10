@@ -1,8 +1,5 @@
-import {
-  FormItem,
-  useFormField,
-} from '@/components/filigran-ui/components/clients';
 import { cn } from '@/components/filigran-ui/lib/utils';
+import { FormItem, useFormField } from '@/components/ui/form';
 import {
   Select,
   SelectContent,

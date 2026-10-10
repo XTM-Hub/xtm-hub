@@ -1,4 +1,5 @@
 import { organizationFormSchema } from '@/components/organization/OrganizationForm.schema';
+import { Form, FormField } from '@/components/ui/form';
 import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
@@ -12,7 +13,6 @@ import {
   ComboboxLabel,
   Input,
 } from '@filigran/design-system';
-import { Form, FormField } from '@filigran/ui';
 import { organizationItem_fragment$data } from '@generated/organizationItem_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { KeyboardEvent, useState } from 'react';

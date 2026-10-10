@@ -1,3 +1,4 @@
+import { Form, FormField } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
 import {
   Button,
@@ -8,7 +9,6 @@ import {
   DialogTitle,
   Textarea,
 } from '@filigran/design-system';
-import { Form, FormField } from '@filigran/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';

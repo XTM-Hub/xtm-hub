@@ -1,7 +1,4 @@
-import {
-  FormItem,
-  useFormField,
-} from '@/components/filigran-ui/components/clients';
+import { FormItem, useFormField } from '@/components/ui/form';
 import { Input, type InputProps } from '@filigran/design-system';
 import AutoFormTooltip from '../common/Tooltip';
 import type { AutoFormInputComponentProps } from '../types';

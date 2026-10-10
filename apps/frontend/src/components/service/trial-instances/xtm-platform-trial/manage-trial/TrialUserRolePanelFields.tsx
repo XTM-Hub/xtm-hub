@@ -1,7 +1,7 @@
 'use client';
 
+import { FormField, FormItem } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
-import { FormField, FormItem } from '@filigran/ui';
 import { PlatformIdentifier } from '@graphql/generated';
 import { Control } from 'react-hook-form';
 import {
@@ -53,7 +53,7 @@ export const TrialUserRolePanelFields = ({
                 value = untouchedRoleDefault ?? noAccessFallback;
               }
               return (
-                <FormItem className="gap-m md:flex-1">
+                <FormItem className="gap-3 md:flex-1">
                   <RoleSelect
                     label={title}
                     value={value ?? ''}
