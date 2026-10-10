@@ -2,20 +2,20 @@
 
 import GuardCapacityComponent from '@/components/AdminGuard';
 import { useServiceContext } from '@/components/service/components/ServiceContext';
+import { AutoForm } from '@/components/ui/auto-form';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { Locale, locales } from '@/i18n/config';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { Button } from '@filigran/design-system';
-import { EditIcon } from '@filigran/icon';
 import {
-  AutoForm,
+  Button,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
-  DialogHeader,
   DialogTitle,
-} from '@filigran/ui';
-import { toast } from '@filigran/ui/clients';
+} from '@filigran/design-system';
+import { EditIcon } from '@filigran/icon';
 import {
   Locale as GraphqlLocale,
   PortalCapability,
@@ -159,14 +159,15 @@ export const LibraryUpdateMetadata = () => {
         queryKey:
           useServiceInstanceSeoMetadataByIdQuery.getKey(seoMetadataVariables),
       });
-      toast({
+      showSnackbar({
+        severity: 'success',
         title: t('Utils.Success'),
       });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'UNKNOWN_ERROR';
-      toast({
-        variant: 'destructive',
+      showSnackbar({
+        severity: 'error',
         title: t('Utils.Error'),
         description: t(`Error.Server.${errorMessage}`),
       });
@@ -186,26 +187,26 @@ export const LibraryUpdateMetadata = () => {
         <Dialog
           open={isOpen}
           onOpenChange={setIsOpen}>
-          <DialogContent className="max-w-3xl">
-            <DialogHeader className="mb-s">
-              <DialogTitle>{t('Metadata.SeoMetadata')}</DialogTitle>
-            </DialogHeader>
-            <AutoForm
-              className="space-y-m"
-              formSchema={libraryUpdateSchema}
-              values={existingSeoMetadataByLocale}
-              fieldConfig={libraryUpdateFieldConfig}
-              onSubmit={handleSubmit}>
-              <DialogFooter className="pt-s">
-                <Button
-                  priority="secondary"
-                  type="button"
-                  onClick={() => setIsOpen(false)}>
-                  {t('Utils.Cancel')}
-                </Button>
-                <Button type="submit">{t('Utils.Validate')}</Button>
-              </DialogFooter>
-            </AutoForm>
+          <DialogContent size="lg">
+            <DialogTitle>{t('Metadata.SeoMetadata')}</DialogTitle>
+            <DialogBody>
+              <AutoForm
+                className="space-y-m"
+                formSchema={libraryUpdateSchema}
+                values={existingSeoMetadataByLocale}
+                fieldConfig={libraryUpdateFieldConfig}
+                onSubmit={handleSubmit}>
+                <DialogFooter>
+                  <Button
+                    priority="secondary"
+                    type="button"
+                    onClick={() => setIsOpen(false)}>
+                    {t('Utils.Cancel')}
+                  </Button>
+                  <Button type="submit">{t('Utils.Validate')}</Button>
+                </DialogFooter>
+              </AutoForm>
+            </DialogBody>
           </DialogContent>
         </Dialog>
       </>

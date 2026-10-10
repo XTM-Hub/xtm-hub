@@ -5,12 +5,12 @@ import {
 } from '@/components/epic/epic.graphql';
 import EpicForm, { epicFormSchema } from '@/components/epic/EpicForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useEpicFilter } from '@/hooks/use-epic-filter';
 import { useEpicListContext } from '@/hooks/use-epic-list-context';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button } from '@filigran/design-system';
 import { AddIcon } from '@filigran/icon';
-import { useToast } from '@filigran/ui';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import { useState } from 'react';
 import { useMutation } from 'react-relay';
@@ -34,7 +34,6 @@ export const EpicFormSheet = ({
 
   const [commitEpicMutation] = useMutation(CreateEpicMutation);
   const [updateEpicMutation] = useMutation(UpdateEpicMutation);
-  const { toast } = useToast();
   const { connectionID } = useEpicListContext();
   const { setSelectedProducts } = useEpicFilter();
   const openSheet =
@@ -51,14 +50,15 @@ export const EpicFormSheet = ({
       onCompleted: () => {
         setOpenSheet(false);
         setSelectedProducts(inputValues.products);
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('Utils.Success'),
         });
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });
@@ -73,14 +73,15 @@ export const EpicFormSheet = ({
       },
       onCompleted: () => {
         setOpenSheet(false);
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('Utils.Success'),
         });
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });

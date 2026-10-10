@@ -1,4 +1,5 @@
 import { UserFragment } from '@/components/admin/user/UserList';
+import { AppCombobox } from '@/components/ui/AppCombobox';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { ServiceRestriction } from '@graphql/generated';
 import { useContext, useEffect, useMemo } from 'react';
@@ -9,33 +10,29 @@ import {
   UserServiceCreateMutation,
   UserServiceEditMutation,
 } from '@/components/service/user_service.graphql';
+import { Form, FormField, FormLabel } from '@/components/ui/form';
+import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useKeepSelectedOptions } from '@/hooks/use-keep-selected-options';
 import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
-import { Button } from '@filigran/design-system';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import {
+  Button,
   Checkbox,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  SheetFooter,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-  useToast,
-} from '@filigran/ui';
-import { MultiSelectFormField } from '@filigran/ui/clients';
+} from '@filigran/design-system';
 import { subscriptionByIdQuery$data } from '@generated/subscriptionByIdQuery.graphql';
 import { UserList_fragment$key } from '@generated/UserList_fragment.graphql';
 import { userServiceCreateMutation } from '@generated/userServiceCreateMutation.graphql';
 import { userServiceEditMutation } from '@generated/userServiceEditMutation.graphql';
 import { userServices_fragment$data } from '@generated/userServices_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { readInlineData, useMutation } from 'react-relay';
 import { useDebounceCallback } from 'usehooks-ts';
 import { z } from 'zod';
@@ -45,6 +42,8 @@ interface UserServiceFormProps {
   userService?: userServices_fragment$data;
   subscription: subscriptionByIdQuery$data;
 }
+
+const getUserOptionValue = ({ value }: { value: string }) => value;
 
 export const UserServiceForm = ({
   connectionId,
@@ -60,7 +59,6 @@ export const UserServiceForm = ({
   const [commitUserServiceMutation] = useMutation<userServiceCreateMutation>(
     UserServiceCreateMutation
   );
-  const { toast } = useToast();
   const t = useTranslate();
   const isUserCreation = !userService?.id;
 
@@ -159,7 +157,8 @@ export const UserServiceForm = ({
           subscription.subscriptionById!.service_instance!.id,
       },
       onCompleted() {
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('ServiceActions.UserCapabilitiesModified', {
             email: userService!.user!.email,
@@ -168,8 +167,8 @@ export const UserServiceForm = ({
         setOpenSheet(false);
       },
       onError(error) {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });
@@ -195,7 +194,8 @@ export const UserServiceForm = ({
         service_instance_id: subscription.subscriptionById.service_instance.id,
       },
       onCompleted() {
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('ServiceActions.UserServiceAdded', {
             email: values.email.join(', '),
@@ -206,8 +206,8 @@ export const UserServiceForm = ({
       },
 
       onError(error) {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: <>{t(`Error.Server.${error.message}`)}</>,
         });
@@ -245,8 +245,8 @@ export const UserServiceForm = ({
     });
   }, DEBOUNCE_TIME);
 
-  const usersOptions = useMemo(() => {
-    return (
+  const usersOptions = useMemo(
+    () =>
       data?.users?.edges
         ?.filter((edge) => {
           const user = readInlineData<UserList_fragment$key>(
@@ -264,9 +264,27 @@ export const UserServiceForm = ({
             label: user.email,
             value: user.email,
           };
-        }) ?? []
-    );
-  }, [data?.users?.edges, me?.id]);
+        }) ?? [],
+    [data?.users?.edges, me?.id]
+  );
+  const selectedEmails = useWatch({
+    control: extendedForm.control,
+    name: 'email',
+  });
+  const keptUsersOptions = useKeepSelectedOptions({
+    options: usersOptions,
+    value: selectedEmails,
+    getId: getUserOptionValue,
+  });
+  const usersOptionIds = useMemo(
+    () =>
+      toComboboxOptionIds(
+        keptUsersOptions,
+        getUserOptionValue,
+        (option) => option.label
+      ),
+    [keptUsersOptions]
+  );
 
   return (
     <Form {...(form as typeof extendedForm)}>
@@ -283,25 +301,22 @@ export const UserServiceForm = ({
             <FormField
               control={extendedForm.control}
               name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('InviteUserServiceForm.Email')}</FormLabel>
-                  <FormControl>
-                    <MultiSelectFormField
-                      popoverContentClassName="bg-elevation-background-layer-3"
-                      shouldFilter={false}
-                      options={usersOptions}
-                      defaultValue={field.value}
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      onInputChange={handleUsersInputChange}
-                      noResultString={t('Utils.NotFound')}
-                      placeholder={t('Service.Management.Email')}
-                      variant="inverted"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+              render={({ field, fieldState }) => (
+                <AppCombobox
+                  multiple
+                  label={t('InviteUserServiceForm.Email')}
+                  placeholder={t('Service.Management.Email')}
+                  error={fieldState.error?.message}
+                  options={usersOptionIds.ids}
+                  value={field.value ?? []}
+                  onValueChange={field.onChange}
+                  onInputChange={(text, meta) => {
+                    if (meta.cause !== 'select') handleUsersInputChange(text);
+                  }}
+                  filterOptions={(options) => options}
+                  getOptionLabel={usersOptionIds.getOptionLabel}
+                  contentClassName="layer-2"
+                />
               )}
             />
           </>
@@ -318,55 +333,45 @@ export const UserServiceForm = ({
               control={(form as typeof capabilitiesForm).control}
               name="capabilities"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center">
-                  <FormControl>
-                    <Checkbox
-                      {...field}
-                      disabled={isCapabilityDisabled(capability!.id)}
-                      className="mt-xs"
-                      checked={(field.value as string[]).includes(
-                        capability!.id
-                      )}
-                      onCheckedChange={(checked) => {
-                        const newValue = checked
-                          ? Array.from(
-                              new Set([...(field.value || []), capability!.id])
-                            )
-                          : (field.value || []).filter(
-                              (value) => value !== capability!.id
-                            );
-                        field.onChange(newValue);
-                      }}
-                      id={capability!.id}
-                    />
-                  </FormControl>
-
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <label
-                          htmlFor={capability!.id}
-                          aria-disabled={isCapabilityDisabled(capability!.id)}
-                          className="txt-sub-content cursor-pointer aria-disabled:cursor-not-allowed">
-                          {capability!.name === ServiceRestriction.ManageAccess
-                            ? t('Service.Form.ManageAccessCapabilityLabel')
-                            : t('Service.Form.CapabilityAccessLabel', {
-                                name: capability!.name ?? '',
-                                description: capability!.description ?? '',
-                              })}
-                          {isCapabilityDisabled(capability!.id)}
-                        </label>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>
-                          {isCapabilityDisabled(capability!.id)
-                            ? t('InviteUserServiceForm.DisabledCapability')
-                            : t('InviteUserServiceForm.GrantCapability')}
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </FormItem>
+                <TooltipProvider>
+                  <Checkbox
+                    {...field}
+                    disabled={isCapabilityDisabled(capability!.id)}
+                    checked={(field.value as string[]).includes(capability!.id)}
+                    onCheckedChange={(checked) => {
+                      const newValue = checked
+                        ? Array.from(
+                            new Set([...(field.value || []), capability!.id])
+                          )
+                        : (field.value || []).filter(
+                            (value) => value !== capability!.id
+                          );
+                      field.onChange(newValue);
+                    }}
+                    label={
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>
+                            {capability!.name ===
+                            ServiceRestriction.ManageAccess
+                              ? t('Service.Form.ManageAccessCapabilityLabel')
+                              : t('Service.Form.CapabilityAccessLabel', {
+                                  name: capability!.name ?? '',
+                                  description: capability!.description ?? '',
+                                })}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>
+                            {isCapabilityDisabled(capability!.id)
+                              ? t('InviteUserServiceForm.DisabledCapability')
+                              : t('InviteUserServiceForm.GrantCapability')}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    }
+                  />
+                </TooltipProvider>
               )}
             />
           ))}

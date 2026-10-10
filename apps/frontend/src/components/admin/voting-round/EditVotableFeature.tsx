@@ -9,10 +9,10 @@ import {
   toGraphqlUploads,
 } from '@/components/admin/voting-round/votable-feature.utils';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { requestGraphqlWithUploads } from '@/lib/graphql-upload-client';
-import { toast } from '@filigran/ui';
 import {
   useVotableFeatureDeleteMutation,
   useVotableFeatureUpdateMutation,
@@ -21,7 +21,7 @@ import {
   VotableFeatureUpdateMutationVariables,
 } from '@graphql/generated';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { invalidateVotingRoundQueries } from './voting-round-query-invalidation';
 
 const EditVotableFeature = ({
@@ -38,29 +38,29 @@ const EditVotableFeature = ({
   const t = useTranslate();
   const queryClient = useQueryClient();
   const [openSheet, setOpenSheet] = useState<boolean>(open);
+  // Shared by every closure, so a repeated or late close notifies once.
+  const openSheetRef = useRef(openSheet);
 
   const handleError = (error: unknown) => {
     const errorMessage =
       error instanceof Error ? error.message : 'UnknownError';
-    toast({
-      variant: 'destructive',
+    showSnackbar({
+      severity: 'error',
       title: t('Utils.Error'),
       description: <>{t(`Error.Server.${errorMessage}`)}</>,
     });
   };
 
   const handleOpenSheet = (openValue: boolean) => {
-    setOpenSheet((previousState) => {
-      const sheetIsClosing = previousState !== openValue && !openValue;
-      if (sheetIsClosing) {
-        onClose();
-      }
-      return openValue;
-    });
+    if (openSheetRef.current && !openValue) {
+      onClose();
+    }
+    openSheetRef.current = openValue;
+    setOpenSheet(openValue);
   };
 
   const handleSuccess = () => {
-    toast({ title: t('Utils.Success') });
+    showSnackbar({ severity: 'success', title: t('Utils.Success') });
     invalidateVotingRoundQueries(queryClient);
     handleOpenSheet(false);
   };

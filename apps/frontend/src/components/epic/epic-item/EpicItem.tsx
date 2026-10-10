@@ -2,7 +2,7 @@
 import { EpicItemCard } from '@/components/epic/epic-item/EpicItemCard';
 import { EpicItemDetailed } from '@/components/epic/epic-item/EpicItemDetailed';
 import { useDetailParam } from '@/hooks/use-detail-param';
-import { Dialog, DialogContent } from '@filigran/ui';
+import { Dialog, DialogContent } from '@filigran/design-system';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 
 interface EpicItemProps {
@@ -28,7 +28,7 @@ export const EpicItem = ({
       <Dialog
         open={isOpen}
         onOpenChange={(open) => !open && close()}>
-        <DialogContent className="p-0 w-full max-w-5xl h-[80vh] max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogContent size="lg">
           <EpicItemDetailed epic={epic} />
         </DialogContent>
       </Dialog>

@@ -11,31 +11,28 @@ import {
   BreadcrumbNavLink,
 } from '@/components/ui/BreadcrumbNav';
 import {
+  DataTable,
+  DataTableHeadBarOptions,
+  SelectionState,
+} from '@/components/ui/data-table';
+import {
   IconActions,
   IconActionsItem,
   IconActionsLink,
 } from '@/components/ui/IconActions';
-import { SearchInput } from '@/components/ui/SearchInput';
 import useAdminPath from '@/hooks/use-admin-path';
+import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useTranslate } from '@/hooks/use-translate';
-import { DEBOUNCE_TIME } from '@/utils/constant';
-import { i18nKey } from '@/utils/datatable';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { APP_PATH } from '@/utils/path/constant';
-import { Button } from '@filigran/design-system';
+import { Button, SearchField, Switch } from '@filigran/design-system';
 import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
-import {
-  DataTable,
-  DataTableHeadBarOptions,
-  SelectionState,
-  Switch,
-} from '@filigran/ui';
 import { serviceInstanceByIdQuery } from '@generated/serviceInstanceByIdQuery.graphql';
 import { serviceInstanceForSubscriptions_fragment$key } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
 import { ColumnDef, PaginationState } from '@tanstack/react-table';
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { PreloadedQuery, readInlineData, usePreloadedQuery } from 'react-relay';
-import { useDebounceCallback } from 'usehooks-ts';
 import { ServiceSlugAddCapabilities } from './ServiceSlugAddCapabilities';
 import { ServiceSlugDeleteSubscription } from './ServiceSlugDeleteSubscription';
 import { ServiceSlugSubscription } from './ServiceSlugSubscription';
@@ -89,10 +86,10 @@ const ServiceSlug = ({
 
   const t = useTranslate();
 
-  const debounceHandleInput = useDebounceCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value),
-    DEBOUNCE_TIME
-  );
+  const searchHandlers = useDebouncedSearch({
+    apply: setSearchTerm,
+    appliedTerm: searchTerm,
+  });
 
   const [pagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -151,12 +148,8 @@ const ServiceSlug = ({
         return (
           <div className="flex items-center justify-end">
             <IconActions
-              icon={
-                <>
-                  <MoreVertIcon className="h-4 w-4 text-primary" />
-                  <span className="sr-only">{t('Utils.OpenMenu')}</span>
-                </>
-              }>
+              aria-label={t('Utils.OpenMenu')}
+              icon={<MoreVertIcon className="h-4 w-4 text-primary" />}>
               <IconActionsLink
                 href={`/${APP_PATH}/admin/service/${row.id}/subscription`}>
                 {t('Service.Management.ManageUsers')}
@@ -183,24 +176,21 @@ const ServiceSlug = ({
     <div className="flex justify-between flex-wrap gap-s pt-s">
       <div className="flex items-center gap-m ml-l">
         <div className="flex-1 max-w-sm">
-          <SearchInput
+          <SearchField
             id="SearchTerm"
+            fullWidth
+            aria-label={t('Service.Management.SearchOrganization')}
             placeholder={t('Service.Management.SearchOrganization')}
-            onChange={debounceHandleInput}
+            clearLabel={t('DesignSystem.SearchField.Clear')}
+            onChange={searchHandlers.onChange}
+            onClear={searchHandlers.onClear}
           />
         </div>
-        <div className="flex items-center">
-          <Switch
-            checked={shouldDisplayPersonalSpaces}
-            onCheckedChange={(value) => setShouldDisplayPersonalSpaces(value)}
-            id="displayPersonalSpaces"
-          />
-          <label
-            htmlFor="displayPersonalSpaces"
-            className="ml-s">
-            {t('Service.Management.ShowPersonalSpaces')}
-          </label>
-        </div>
+        <Switch
+          label={t('Service.Management.ShowPersonalSpaces')}
+          checked={shouldDisplayPersonalSpaces}
+          onCheckedChange={(value) => setShouldDisplayPersonalSpaces(value)}
+        />
       </div>
 
       <div className="flex gap-s flex-wrap ml-auto">
@@ -276,7 +266,7 @@ const ServiceSlug = ({
           <h2 className="">{t('Service.Management.Description') + ':'}</h2>
 
           <DataTable
-            i18nKey={i18nKey(t)}
+            {...getDataTableLabels(t)}
             columns={columns}
             data={filteredAndSortedData}
             toolbar={toolbar}

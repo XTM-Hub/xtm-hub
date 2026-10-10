@@ -1,5 +1,5 @@
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import testRender from '@/utils/test/test-render';
-import { toast } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { IntegrationType } from '@graphql/generated';
 import { screen, waitFor, within } from '@testing-library/react';
@@ -61,9 +61,8 @@ vi.mock('@/components/service/components/ServiceManageSheet', () => ({
   ServiceManageSheet: () => null,
 }));
 
-vi.mock('@filigran/ui', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@filigran/ui')>()),
-  toast: vi.fn(),
+vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
+  showSnackbar: vi.fn(),
 }));
 
 describe('DocumentList', () => {
@@ -162,7 +161,7 @@ describe('DocumentList', () => {
       `/app/service/${ServiceIdentifier}/${ServiceInstanceId}/${FirstDocumentId}`
     );
     expect(
-      screen.queryByLabelText('Manage columns visibility')
+      screen.queryByLabelText('DesignSystem.DataTable.ManageColumns')
     ).not.toBeInTheDocument();
   });
 
@@ -229,7 +228,8 @@ describe('DocumentList', () => {
     expect(mocks.revalidatePathActions).toHaveBeenCalledWith([
       `/cybersecurity-solutions/${ServiceSlug}`,
     ]);
-    expect(toast).toHaveBeenCalledWith({
+    expect(showSnackbar).toHaveBeenCalledWith({
+      severity: 'success',
       title: 'Utils.Success',
       description: `${TranslationKey}.Actions.Deleted`,
     });

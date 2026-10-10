@@ -3,12 +3,13 @@ import {
   DOCUMENT_LIST_TABLE_CLASS_NAME,
 } from '@/components/service/components/DocumentListColumns';
 import { ServiceListDisplayMode } from '@/components/service/components/header/ServiceListHeader';
+import { DataTable } from '@/components/ui/data-table';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
 import ShareableResourceCard from '@/components/ui/shareable-resource/ShareableResourceCard';
 import useScrollPosition from '@/hooks/use-scroll-position';
 import { useTranslate } from '@/hooks/use-translate';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
-import { DataTable } from '@filigran/ui';
 import { publicDocumentListItemFragment$data } from '@generated/publicDocumentListItemFragment.graphql';
 import { seoServiceInstanceFragment$data } from '@generated/seoServiceInstanceFragment.graphql';
 import { useLocale } from 'next-intl';
@@ -73,6 +74,7 @@ export const PublicShareableDocumentList = ({
       ) : (
         <div className={DOCUMENT_LIST_TABLE_CLASS_NAME}>
           <DataTable
+            {...getDataTableLabels(t)}
             columns={tableColumns}
             data={documents}
             toolbar={<></>}

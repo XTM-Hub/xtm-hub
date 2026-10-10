@@ -8,8 +8,8 @@ import {
 import { UnregisterConfirm } from '@/components/registration/unregister/Confirm';
 import { UnregisterMissingCapability } from '@/components/registration/unregister/MissingCapability';
 import { UnregisterPlatformNotRegistered } from '@/components/registration/unregister/PlatformNotRegistered';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
-import { toast } from '@filigran/ui/clients';
 import { registerCanUnregisterPlatformFragment$key } from '@generated/registerCanUnregisterPlatformFragment.graphql';
 import RegisterCanUnregisterPlatformQueryGraphql, {
   registerCanUnregisterPlatformQuery,
@@ -77,8 +77,8 @@ export const Unregister = ({
       },
       onError: (error) => {
         setStatus('failed');
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });

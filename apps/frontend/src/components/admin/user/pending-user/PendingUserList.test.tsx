@@ -62,31 +62,31 @@ vi.mock('react-relay', async (importOriginal) => ({
   useSubscription: (config: unknown) => mocks.useSubscription(config),
 }));
 
-vi.mock('@/components/ui/AlertDialog', () => ({
-  AlertDialogComponent: ({
-    isOpen,
+vi.mock('@/components/ui/ConfirmDialog', () => ({
+  ConfirmDialog: ({
+    open,
     onOpenChange,
-    AlertTitle,
-    actionButtonText,
-    onClickContinue,
+    title,
+    confirmLabel,
+    onConfirm,
     children,
-    triggerElement,
+    trigger,
   }: {
-    isOpen?: boolean;
-    onOpenChange?: (isOpen: boolean) => void;
-    AlertTitle: string;
-    actionButtonText: string;
-    onClickContinue?: () => void;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+    title: string;
+    confirmLabel: string;
+    onConfirm?: () => void;
     children: ReactNode;
-    triggerElement?: ReactNode;
+    trigger?: ReactNode;
   }) => (
     <div>
-      {triggerElement}
-      {isOpen ? (
+      {trigger}
+      {open ? (
         <div role="alertdialog">
-          <h2>{AlertTitle}</h2>
+          <h2>{title}</h2>
           <div>{children}</div>
-          <button onClick={onClickContinue}>{actionButtonText}</button>
+          <button onClick={onConfirm}>{confirmLabel}</button>
           <button onClick={() => onOpenChange?.(false)}>Close dialog</button>
         </div>
       ) : null}
@@ -103,10 +103,13 @@ vi.mock('usehooks-ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('usehooks-ts')>()),
   useDebounceCallback: (
     callback: (event: { target: { value: string } }) => void
-  ) => callback,
+  ) =>
+    Object.assign((event: { target: { value: string } }) => callback(event), {
+      cancel: vi.fn(),
+    }),
 }));
 
-vi.mock('@filigran/ui', () => ({
+vi.mock('@/components/ui/data-table', () => ({
   DataTable: ({
     columns,
     data,
@@ -156,21 +159,6 @@ vi.mock('@filigran/ui', () => ({
   }),
 }));
 
-vi.mock('@/components/ui/SearchInput', () => ({
-  SearchInput: ({
-    placeholder,
-    onChange,
-  }: {
-    placeholder: string;
-    onChange: (event: { target: { value: string } }) => void;
-  }) => (
-    <input
-      placeholder={placeholder}
-      onChange={onChange}
-    />
-  ),
-}));
-
 const pendingUsers = [
   {
     id: 'pending-1',
@@ -216,6 +204,20 @@ describe('PendingUserList', () => {
     expect(mocks.refetch).toHaveBeenCalledWith(
       expect.objectContaining({ count: 20 })
     );
+  });
+
+  it('should not refetch pending users when pressing Escape in the empty search field', async () => {
+    // Given
+    const { user } = testRender(<PendingUserList organization="org-1" />);
+
+    // When
+    await user.type(
+      screen.getByPlaceholderText('UserActions.SearchUser'),
+      '{Escape}'
+    );
+
+    // Then
+    expect(mocks.refetch).not.toHaveBeenCalled();
   });
 
   it('renders pending users and opens confirm dialog when action buttons are clicked', async () => {

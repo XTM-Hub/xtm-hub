@@ -1,4 +1,5 @@
 import { RefreshUserPlatformTokenMutation } from '@/components/registration/register/register.graphql';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useExternalTab from '@/hooks/use-external-tab';
 import { useTranslate } from '@/hooks/use-translate';
 import { OPENCTI_INTEGRATION_URL_CONFIGS } from '@/utils/shareable-resources/shareable-resources.consts';
@@ -7,7 +8,6 @@ import {
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { docHasMetadata } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
-import { toast } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import {
   registerRefreshUserPlatformTokenMutation,
@@ -90,8 +90,8 @@ export const useOneClickDeployTab = ({
         variables: {},
         onCompleted,
         onError: (error) => {
-          toast({
-            variant: 'destructive',
+          showSnackbar({
+            severity: 'error',
             title: t('Utils.Error'),
             description: <>{t(`Error.Server.${error.message}`)}</>,
           });

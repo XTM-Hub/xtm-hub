@@ -3,7 +3,7 @@ import BadgeOverflowCounter, {
 } from '@/components/ui/BadgeOverflowCounter';
 import { useTranslate } from '@/hooks/use-translate';
 import { formatName } from '@/utils/format/name';
-import { Badge } from '@filigran/ui';
+import { Chip } from '@filigran/design-system';
 import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { useMemo } from 'react';
 
@@ -62,9 +62,10 @@ const ServiceSlugHeader = ({ serviceInstance }: ServiceSlugHeaderProps) => {
             {availableCapabilities.length > 0 ? (
               <div className="flex flex-wrap gap-xs">
                 {availableCapabilities.map((capability) => (
-                  <Badge key={capability.id}>
-                    {formatName(capability.name)}
-                  </Badge>
+                  <Chip
+                    key={capability.id}
+                    label={formatName(capability.name)}
+                  />
                 ))}
               </div>
             ) : (

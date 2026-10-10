@@ -81,7 +81,7 @@ describe('UserDisplay', () => {
 
   it('should render the avatar container when displayPicture is true', () => {
     // Given
-    testRender(
+    const { container } = testRender(
       <UserDisplay
         uploader={uploaderWithPicture}
         displayPicture
@@ -89,12 +89,12 @@ describe('UserDisplay', () => {
     );
 
     // Then
-    expect(screen.getByRole('img', { hidden: true })).toBeInTheDocument();
+    expect(container.querySelector('svg')).toBeInTheDocument();
   });
 
   it('should not render the avatar container when displayPicture is false', () => {
     // Given
-    testRender(
+    const { container } = testRender(
       <UserDisplay
         uploader={uploaderWithPicture}
         displayPicture={false}
@@ -102,6 +102,6 @@ describe('UserDisplay', () => {
     );
 
     // Then
-    expect(screen.queryByRole('img', { hidden: true })).not.toBeInTheDocument();
+    expect(container.querySelector('svg')).not.toBeInTheDocument();
   });
 });

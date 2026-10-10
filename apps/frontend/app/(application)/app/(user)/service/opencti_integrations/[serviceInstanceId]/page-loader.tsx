@@ -3,10 +3,10 @@
 import IntegrationsList from '@/components/service/integrations/[serviceInstanceId]/IntegrationsList';
 import { useIntegrationListStorage } from '@/components/service/integrations/[serviceInstanceId]/use-integration-list-storage';
 import { useIntegrationListUrlFilters } from '@/components/service/integrations/[serviceInstanceId]/use-integration-list-url-filters';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useLogicalFiltersFromStorage } from '@/hooks/use-logical-filters-from-storage';
 import { useShareableResourceQueryLoader } from '@/hooks/use-shareable-resource-query-loader';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
-import { Skeleton } from '@filigran/ui';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 
 interface PageLoaderProps {

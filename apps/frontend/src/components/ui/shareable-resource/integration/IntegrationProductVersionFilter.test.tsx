@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { IntegrationProductVersionFilter } from './IntegrationProductVersionFilter';
 
+const LABEL = 'Service.OpenctiIntegrations.Filter.ProductVersion.Label';
 const PLACEHOLDER =
   'Service.OpenctiIntegrations.Filter.ProductVersion.Placeholder';
 const REGISTERED_TOOLTIP =
@@ -45,8 +46,11 @@ describe('IntegrationProductVersionFilter', () => {
       />
     );
 
-    expect(screen.getByText(PLACEHOLDER)).toBeInTheDocument();
-    await user.click(screen.getByText(PLACEHOLDER));
+    expect(screen.getByRole('combobox', { name: LABEL })).toHaveAttribute(
+      'placeholder',
+      PLACEHOLDER
+    );
+    await user.click(screen.getByRole('combobox', { name: LABEL }));
 
     expect(screen.getByText('6.6.0')).toBeInTheDocument();
     expect(screen.getByText('6.5.0')).toBeInTheDocument();
@@ -61,7 +65,7 @@ describe('IntegrationProductVersionFilter', () => {
       />
     );
 
-    await user.click(screen.getByText(PLACEHOLDER));
+    await user.click(screen.getByRole('combobox', { name: LABEL }));
 
     expect(
       screen.getByRole('img', { name: REGISTERED_TOOLTIP })
@@ -84,7 +88,7 @@ describe('IntegrationProductVersionFilter', () => {
       />
     );
 
-    await user.click(screen.getByText(PLACEHOLDER));
+    await user.click(screen.getByRole('combobox', { name: LABEL }));
     const expectedLabel = `${REGISTERED_TOOLTIP}: Prod OpenCTI, Staging OpenCTI (2)`;
     await user.hover(screen.getByRole('img', { name: expectedLabel }));
 
@@ -117,16 +121,35 @@ describe('IntegrationProductVersionFilter', () => {
       />
     );
 
-    await user.click(screen.getByText(PLACEHOLDER));
+    await user.click(screen.getByRole('combobox', { name: LABEL }));
     await user.click(screen.getByText('6.6.0'));
 
     expect(setProductVersionsMock).toHaveBeenCalledWith({ '6.6.0': [] });
   });
 
+  it('should search the typed text and never the picked label when typing then picking a version', async () => {
+    // Given
+    const { user } = testRender(<IntegrationProductVersionFilter />);
+
+    // When
+    await user.type(screen.getByRole('combobox', { name: LABEL }), '6.6');
+    await user.click(screen.getByRole('option', { name: '6.6.0' }));
+
+    // Then
+    expect(useRegisteredProductVersionsMock).toHaveBeenCalledWith(
+      'opencti',
+      expect.objectContaining({ search: '6.6' })
+    );
+    expect(useRegisteredProductVersionsMock).not.toHaveBeenCalledWith(
+      'opencti',
+      expect.objectContaining({ search: '6.6.0' })
+    );
+  });
+
   it('renders no registered adornment and forwards no registeredVersions when used standalone on public pages', async () => {
     const { user } = testRender(<IntegrationProductVersionFilter />);
 
-    await user.click(screen.getByText(PLACEHOLDER));
+    await user.click(screen.getByRole('combobox', { name: LABEL }));
 
     expect(
       screen.queryByRole('img', { name: REGISTERED_TOOLTIP })

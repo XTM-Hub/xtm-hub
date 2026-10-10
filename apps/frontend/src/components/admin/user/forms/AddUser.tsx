@@ -3,9 +3,9 @@ import { UserForm } from '@/components/admin/user/forms/UserForm';
 import { userFormSchema } from '@/components/admin/user/forms/user-form.schema';
 import { UserListCreateMutation } from '@/components/admin/user/user.graphql';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button } from '@filigran/design-system';
-import { useToast } from '@filigran/ui';
 import { userListCreateMutation } from '@generated/userListCreateMutation.graphql';
 import { useState } from 'react';
 import { useMutation } from 'react-relay';
@@ -15,7 +15,6 @@ export const AddUser = () => {
   const t = useTranslate();
   const [openSheet, setOpenSheet] = useState(false);
 
-  const { toast } = useToast();
   const [commitUserMutation] = useMutation<userListCreateMutation>(
     UserListCreateMutation
   );
@@ -31,14 +30,15 @@ export const AddUser = () => {
       },
       onCompleted: () => {
         setOpenSheet(false);
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('UserActions.UserCreated', { email: values.email }),
         });
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });

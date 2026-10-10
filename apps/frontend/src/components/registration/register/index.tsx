@@ -6,8 +6,8 @@ import { RegisterOrganizationForm } from '@/components/registration/register/Org
 import { RegisterPlatform } from '@/components/registration/register/register.graphql';
 import { RegisterStateSucceeded } from '@/components/registration/register/Succeeded';
 import { RegisterStateTooManyOrganizations } from '@/components/registration/register/TooManyOrganizations';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
-import { toast } from '@filigran/ui/clients';
 import OrganizationListUserOrganizationsQueryGraphql, {
   organizationListUserOrganizationsQuery,
 } from '@generated/organizationListUserOrganizationsQuery.graphql';
@@ -146,8 +146,8 @@ export const Register = ({ queryRef, platform }: RegisterProps) => {
             dispatch({ type: 'SET_STATUS', payload: 'missed-capability' });
           } else {
             dispatch({ type: 'SET_STATUS', payload: 'failed' });
-            toast({
-              variant: 'destructive',
+            showSnackbar({
+              severity: 'error',
               title: t('Utils.Error'),
               description: t(`Error.Server.${error.message}`),
             });

@@ -1,12 +1,10 @@
 import { useUseCases } from '@/components/admin/use-case/use-use-cases';
+import { AppCombobox } from '@/components/ui/AppCombobox';
+import { useFormField } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
-import {
-  FormControl,
-  FormItem,
-  FormLabel,
-  MultiSelectFormField,
-} from '@filigran/ui';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import type { FiligranProduct } from '@graphql/generated';
+import { useMemo } from 'react';
 import { ControllerRenderProps, FieldPath, FieldValues } from 'react-hook-form';
 
 interface ServiceFormUseCasesFieldProps<
@@ -29,27 +27,31 @@ export const ServiceFormUseCasesField = <
   required,
 }: ServiceFormUseCasesFieldProps<TFieldValues, TName>) => {
   const t = useTranslate();
+  const { error } = useFormField();
+  const useCases = useUseCases({ product });
+  const useCaseOptionIds = useMemo(
+    () =>
+      toComboboxOptionIds(
+        useCases,
+        (useCase) => useCase.id,
+        (useCase) => useCase.name
+      ),
+    [useCases]
+  );
+
   return (
-    <FormItem>
-      <FormLabel>
-        {t('Service.Form.UseCasesLabel')}
-        {required ? <span className="text-sm text-destructive"> *</span> : null}
-      </FormLabel>
-      <FormControl>
-        <MultiSelectFormField
-          disabled={disabled}
-          noResultString={t('Utils.NotFound')}
-          options={useUseCases({ product })}
-          keyValue="id"
-          keyLabel="name"
-          defaultValue={field.value}
-          value={field.value}
-          onValueChange={field.onChange}
-          popoverContentClassName="bg-elevation-background-layer-3"
-          placeholder={t('Service.Form.UseCasesPlaceholder')}
-          variant="inverted"
-        />
-      </FormControl>
-    </FormItem>
+    <AppCombobox
+      multiple
+      label={t('Service.Form.UseCasesLabel')}
+      required={required}
+      placeholder={t('Service.Form.UseCasesPlaceholder')}
+      error={error?.message}
+      disabled={disabled}
+      options={useCaseOptionIds.ids}
+      value={field.value ?? []}
+      onValueChange={field.onChange}
+      getOptionLabel={useCaseOptionIds.getOptionLabel}
+      contentClassName="layer-2"
+    />
   );
 };

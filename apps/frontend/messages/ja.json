@@ -114,21 +114,6 @@
       "SeeMore": "詳細を見る"
     }
   },
-  "Datatable": {
-    "Asc": "として",
-    "ClearSelection": "選択を解除",
-    "ColumnOptions": "列のオプション",
-    "Columns": "列",
-    "Desc": "Des",
-    "GoFirstPage": "最初のページへ",
-    "GoLastPage": "最後のページへ",
-    "GoNextPage": "次のページへ",
-    "GoPreviousPage": "前のページへ",
-    "Hide": "隠す",
-    "ManageColumnsVisibility": "列の表示管理",
-    "ResetTable": "表のリセット",
-    "RowsPerPage": "ページあたりの行数"
-  },
   "DeploymentRequestUseCase": {
     "threat_profiling_cti": "脅威プロファイリング（CTI）",
     "threat_profiling_fimi": "脅威プロファイリング（FIMI）",
@@ -1203,6 +1188,7 @@
       "UnavailableDeployments": "このコネクタは自動デプロイでは使用できません。"
     },
     "CreationStatus": "作成ステータス",
+    "FilterByService": "サービスで絞り込む",
     "Form": {
       "AddImage": "画像を追加",
       "Author": "作成者",
@@ -1217,7 +1203,6 @@
       "DescriptionLabel": "説明",
       "DescriptionPlaceholder": "これは {documentType} を説明するための段落です。",
       "DescriptionUpdateJSONFile": "あなたは新しいjsonファイルをアップロードしようとしています。前のjsonファイルは削除されます。続行しますか？",
-      "DropDocuments": "ここにドキュメントをドロップしてください。",
       "ExistingJSONFile": "既存のJSONファイル {file_name}",
       "GithubUrlLabel": "Githubリンク (url)",
       "Illustration": "イラスト",
@@ -1231,7 +1216,6 @@
       "MinimumDeployableVersionPlaceholder": "1.0.0",
       "NameLabel": "名前",
       "NamePlaceholder": "{documentType} 名前",
-      "NoImage": "画像なし",
       "PlaybookSupportedLabel": "対応プレイブック",
       "ProductVersionLabel": "{platform} 互換バージョン",
       "ProductVersionPlaceholder": "1.0.0",
@@ -1249,7 +1233,6 @@
       "SolutionCategoriesPlaceholder": "解答カテゴリを追加",
       "SubscriptionLinkLabel": "購読リンク (url)",
       "UpdateJSONFile": "JSONファイルの更新",
-      "UploadImage": "新しい画像のアップロード",
       "UploadLogo": "新しいロゴのアップロード",
       "UrlPlaceholder": "http://www.example.com",
       "UseCasesLabel": "使用例",
@@ -2010,7 +1993,6 @@
       }
     },
     "FileForm": {
-      "DropDocuments": "ここにドキュメントをドロップする",
       "NoDocument": "選択した文書がありません。",
       "SelectDocument": "ドキュメントを選択"
     },
@@ -2138,9 +2120,6 @@
   },
   "ServiceName": {
     "custom_dashboards": "カスタムダッシュボード"
-  },
-  "SelectUsers": {
-    "ClearAllSelections": "すべての選択をクリア"
   },
   "Sort Asc": "ソート",
   "Sort Desc": "降順ソート",
@@ -2336,6 +2315,63 @@
     "AutomaticDeploy": "自動配備",
     "And": "そして",
     "Or": "または"
+  },
+  "DesignSystem": {
+    "Breadcrumbs": {
+      "Label": "パンくずリスト"
+    },
+    "Carousel": {
+      "GoToSlide": "スライド {slide} へ移動",
+      "Next": "次のスライド",
+      "Previous": "前のスライド"
+    },
+    "Combobox": {
+      "SelectedValues": "選択された値",
+      "ToggleOptions": "選択肢の表示を切り替え"
+    },
+    "DataTable": {
+      "ClearSelection": "選択を解除",
+      "ColumnOptions": "列のオプション",
+      "Columns": "列",
+      "HideColumn": "隠す",
+      "ManageColumns": "列の表示管理",
+      "NextPage": "次のページへ",
+      "PreviousPage": "前のページへ",
+      "ResetTable": "表のリセット",
+      "RowsPerPage": "ページあたりの行数",
+      "SelectAll": "すべて選択",
+      "SelectedCount": "{count} 件選択",
+      "SelectRow": "行を選択",
+      "SortAscending": "昇順",
+      "SortDescending": "降順"
+    },
+    "DatePicker": {
+      "Calendar": "カレンダー",
+      "FieldCalendar": "{label}のカレンダー",
+      "Clear": "日付をクリア",
+      "Confirm": "確定",
+      "Hours": "時",
+      "Minutes": "分",
+      "Month": "月",
+      "NextMonth": "次の月",
+      "OpenCalendar": "カレンダーを開く",
+      "Period": "午前/午後",
+      "PreviousMonth": "前の月",
+      "Seconds": "秒",
+      "Year": "年"
+    },
+    "FileSelect": {
+      "Clear": "すべてのファイルを削除",
+      "FileRejected": "{fileName}は追加されませんでした（{reason, select, accept {サポートされていない形式} other {サイズ上限超過}}）。",
+      "FilesRejected": "{count}件のファイルは追加されませんでした（サポートされていない形式またはサイズ上限超過）。",
+      "Loading": "読み込み中",
+      "Placeholder": "ファイルが選択されていません。",
+      "RemoveFile": "{fileName}を削除",
+      "Trigger": "ファイルを選択"
+    },
+    "SearchField": {
+      "Clear": "検索をクリア"
+    }
   },
   "Platform": {
     "Update": "更新する",

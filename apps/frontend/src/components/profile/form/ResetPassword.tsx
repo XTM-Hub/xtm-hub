@@ -1,14 +1,14 @@
 'use client';
 
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
 import {
+  Button,
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@filigran/ui';
+} from '@filigran/design-system';
 
 interface ProfileFormResetPasswordProps {
   onSubmit: () => void;
@@ -21,10 +21,12 @@ export const ProfileFormResetPassword = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="heading-lg">{t('UserForm.Password')}</CardTitle>
+        <CardTitle as="h3">{t('UserForm.Password')}</CardTitle>
       </CardHeader>
-      <CardContent>{t('UserForm.ResetPassword.Sentence')}</CardContent>
-      <CardFooter className="flex justify-end">
+      <CardContent clamp={0}>
+        {t('UserForm.ResetPassword.Sentence')}
+      </CardContent>
+      <CardFooter className="justify-end">
         <Button
           aria-label={t('UserForm.ResetPassword.Action')}
           onClick={onSubmit}>

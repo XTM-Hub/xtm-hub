@@ -4,9 +4,10 @@ import { FiligranProduct } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { ReactNode } from 'react';
 
-vi.mock('@filigran/ui', async () => {
-  const actual =
-    await vi.importActual<typeof import('@filigran/ui')>('@filigran/ui');
+vi.mock('@filigran/design-system', async () => {
+  const actual = await vi.importActual<
+    typeof import('@filigran/design-system')
+  >('@filigran/design-system');
 
   return {
     ...actual,

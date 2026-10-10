@@ -6,32 +6,31 @@ import {
   AddSubscriptionInServiceMutation,
   UpdateSubscriptionInServiceMutation,
 } from '@/components/subcription/subscription.graphql';
+import { AppCombobox } from '@/components/ui/AppCombobox';
+import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
-import { subscriptionInServiceCreateMutation } from '@generated/subscriptionInServiceCreateMutation.graphql';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import {
+  fromDatePickerChange,
+  getDatePickerLabels,
+  toDatePickerValue,
+} from '@/utils/design-system/date-picker';
 import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
+import { subscriptionInServiceCreateMutation } from '@generated/subscriptionInServiceCreateMutation.graphql';
 import { useSubscriptionDefaultValues } from './use-subscription-default-values';
 
+import { Form, FormField, FormLabel } from '@/components/ui/form';
+import { useKeepSelectedOptions } from '@/hooks/use-keep-selected-options';
 import { useTranslate } from '@/hooks/use-translate';
 import { DEBOUNCE_TIME } from '@/utils/constant';
-import { Button } from '@filigran/design-system';
-import {
-  Checkbox,
-  DatePicker,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  MultiSelectFormField,
-  SheetFooter,
-  useToast,
-} from '@filigran/ui';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
+import { Button, Checkbox, DatePicker } from '@filigran/design-system';
 import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { subscriptionInServiceUpdateMutation } from '@generated/subscriptionInServiceUpdateMutation.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useLocale } from 'next-intl';
+import { useEffect, useMemo } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { useMutation } from 'react-relay';
 import { useDebounceCallback } from 'usehooks-ts';
 import { z } from 'zod';
@@ -52,6 +51,8 @@ const formSchema = z.object({
   end_date: z.coerce.date<Date>().optional(),
 });
 
+const getOrganizationId = ({ id }: { id: string }) => id;
+
 export const ServiceSlugOrgaForm = ({
   serviceInstance,
   subscriptions,
@@ -60,7 +61,9 @@ export const ServiceSlugOrgaForm = ({
 }: ServiceSlugAddOrgaFormSheetProps) => {
   const { handleCloseSheet, setIsDirty, setOpenSheet } = useDialogContext();
   const t = useTranslate();
-  const { toast } = useToast();
+  const locale = useLocale();
+  const startDateLabel = t('OrganizationInServiceAction.StartDate');
+  const endDateLabel = t('OrganizationInServiceAction.EndDate');
   const { organizationsData, refetch } = getOrganizations();
   const organizations = useUnsubscribedOrganizations(
     organizationsData,
@@ -88,6 +91,25 @@ export const ServiceSlugOrgaForm = ({
     form.reset(defaultValues);
   }, [defaultValues, form]);
 
+  const selectedOrganizationIds = useWatch({
+    control: form.control,
+    name: 'organization_id',
+  });
+  const keptOrganizations = useKeepSelectedOptions({
+    options: organizations,
+    value: selectedOrganizationIds,
+    getId: getOrganizationId,
+  });
+  const organizationOptionIds = useMemo(
+    () =>
+      toComboboxOptionIds(
+        keptOrganizations,
+        getOrganizationId,
+        (organization) => organization.name
+      ),
+    [keptOrganizations]
+  );
+
   useEffect(() => {
     setIsDirty(form.formState.isDirty);
   }, [form.formState.isDirty, setIsDirty]);
@@ -97,9 +119,7 @@ export const ServiceSlugOrgaForm = ({
       inputValue.organization_id
         .map(
           (organizationId) =>
-            organizationsData.organizations.edges.find(
-              ({ node }) => node.id === organizationId
-            )?.node.name
+            keptOrganizations.find(({ id }) => id === organizationId)?.name
         )
         .filter((name): name is string => Boolean(name))
         .join(', ') ||
@@ -124,7 +144,8 @@ export const ServiceSlugOrgaForm = ({
           },
         },
         onCompleted: (_response) => {
-          toast({
+          showSnackbar({
+            severity: 'success',
             title: t('Utils.Success'),
             description: t('ServiceActions.OrganizationAdded', {
               name: selectedOrganizationName,
@@ -134,8 +155,8 @@ export const ServiceSlugOrgaForm = ({
           setOpenSheet(false);
         },
         onError: (error: Error) => {
-          toast({
-            variant: 'destructive',
+          showSnackbar({
+            severity: 'error',
             title: t('Utils.Error'),
             description: <>{t(`Error.Server.${error.message}`)}</>,
           });
@@ -150,7 +171,8 @@ export const ServiceSlugOrgaForm = ({
         connections: [subscriptionConnectionId],
       },
       onCompleted: (_response) => {
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('ServiceActions.OrganizationAdded', {
             name: selectedOrganizationName,
@@ -160,8 +182,8 @@ export const ServiceSlugOrgaForm = ({
         setOpenSheet(false);
       },
       onError: (error: Error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: <>{t(`Error.Server.${error.message}`)}</>,
         });
@@ -188,31 +210,25 @@ export const ServiceSlugOrgaForm = ({
             <FormField
               control={form.control}
               name="organization_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {t('OrganizationInServiceAction.Organization')}
-                  </FormLabel>
-                  <FormControl>
-                    <MultiSelectFormField
-                      popoverContentClassName="bg-elevation-background-layer-3"
-                      shouldFilter={false}
-                      options={organizations}
-                      keyValue="id"
-                      keyLabel="name"
-                      value={field.value}
-                      defaultValue={field.value}
-                      onValueChange={field.onChange}
-                      onInputChange={handleOrganizationsInputChange}
-                      noResultString={t('Utils.NotFound')}
-                      placeholder={t(
-                        'OrganizationInServiceAction.SelectOrganization'
-                      )}
-                      variant="inverted"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+              render={({ field, fieldState }) => (
+                <AppCombobox
+                  multiple
+                  label={t('OrganizationInServiceAction.Organization')}
+                  placeholder={t(
+                    'OrganizationInServiceAction.SelectOrganization'
+                  )}
+                  error={fieldState.error?.message}
+                  options={organizationOptionIds.ids}
+                  value={field.value ?? []}
+                  onValueChange={field.onChange}
+                  onInputChange={(text, meta) => {
+                    if (meta.cause !== 'select')
+                      handleOrganizationsInputChange(text);
+                  }}
+                  filterOptions={(options) => options}
+                  getOptionLabel={organizationOptionIds.getOptionLabel}
+                  contentClassName="layer-2"
+                />
               )}
             />
           )}
@@ -230,30 +246,19 @@ export const ServiceSlugOrgaForm = ({
                   control={form.control}
                   name="capability_ids"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center">
-                      <Checkbox
-                        className="mt-xs"
-                        checked={field.value.includes(id)}
-                        onCheckedChange={(checked) => {
-                          const newValue = checked
-                            ? [...field.value, id]
-                            : field.value.filter(
-                                (value: string) => value !== id
-                              );
-                          field.onChange(newValue);
-                        }}
-                        id={id}
-                      />
-
-                      <label
-                        htmlFor={id}
-                        className="txt-sub-content cursor-pointer">
-                        {t('Service.Form.CapabilityAccessLabel', {
-                          name: name ?? '',
-                          description: description ?? '',
-                        })}
-                      </label>
-                    </FormItem>
+                    <Checkbox
+                      label={t('Service.Form.CapabilityAccessLabel', {
+                        name: name ?? '',
+                        description: description ?? '',
+                      })}
+                      checked={field.value.includes(id)}
+                      onCheckedChange={(checked) => {
+                        const newValue = checked
+                          ? [...field.value, id]
+                          : field.value.filter((value: string) => value !== id);
+                        field.onChange(newValue);
+                      }}
+                    />
                   )}
                 />
               ))}
@@ -262,40 +267,35 @@ export const ServiceSlugOrgaForm = ({
           <FormField
             control={form.control}
             name="start_date"
-            render={({ field }) => (
-              <>
-                <FormItem>
-                  <FormLabel>
-                    {t('OrganizationInServiceAction.StartDate')}
-                  </FormLabel>
-                  <DatePicker
-                    popoverContentClassName="bg-elevation-background-layer-3"
-                    date={field.value}
-                    setDate={field.onChange}
-                  />
-                  <FormMessage />
-                </FormItem>
-              </>
+            render={({ field, fieldState }) => (
+              <DatePicker
+                {...getDatePickerLabels(t, startDateLabel)}
+                label={startDateLabel}
+                locale={locale}
+                value={toDatePickerValue(field.value)}
+                onChange={(date, context) =>
+                  field.onChange(fromDatePickerChange(date, context))
+                }
+                error={fieldState.error?.message}
+              />
             )}
           />
 
           <FormField
             control={form.control}
             name="end_date"
-            render={({ field }) => (
-              <>
-                <FormItem>
-                  <FormLabel>
-                    {t('OrganizationInServiceAction.EndDate')}
-                  </FormLabel>
-                  <DatePicker
-                    popoverContentClassName="bg-elevation-background-layer-3"
-                    date={field.value}
-                    setDate={field.onChange}
-                  />
-                  <FormMessage />
-                </FormItem>
-              </>
+            render={({ field, fieldState }) => (
+              <DatePicker
+                {...getDatePickerLabels(t, endDateLabel)}
+                label={endDateLabel}
+                locale={locale}
+                value={toDatePickerValue(field.value)}
+                onChange={(date, context) =>
+                  field.onChange(fromDatePickerChange(date, context))
+                }
+                error={fieldState.error?.message}
+                clearable
+              />
             )}
           />
 

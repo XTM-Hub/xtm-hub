@@ -1,6 +1,6 @@
+import { SheetFooter } from '@/components/ui/sheet';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button } from '@filigran/design-system';
-import { SheetFooter } from '@filigran/ui';
 
 interface ServiceFormSheetFooterProps {
   handleCloseSheet: (e: React.MouseEvent<HTMLButtonElement>) => void;

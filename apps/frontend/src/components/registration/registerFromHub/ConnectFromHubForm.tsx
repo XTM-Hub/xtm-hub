@@ -1,8 +1,8 @@
 'use client';
 
+import { AutoForm } from '@/components/ui/auto-form';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button } from '@filigran/design-system';
-import { AutoForm } from '@filigran/ui';
 import { z } from 'zod';
 
 export enum CONNECTABLE_PRODUCTS {

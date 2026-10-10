@@ -8,11 +8,10 @@ import { mockUser } from '@graphql/mocks';
 import { screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const toastMock = vi.hoisted(() => vi.fn());
+const showSnackbarMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@filigran/ui', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@filigran/ui')>()),
-  useToast: () => ({ toast: toastMock }),
+vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
+  showSnackbar: showSnackbarMock,
 }));
 
 const GQL_OPERATION_USER_DELETE = 'UserDelete';
@@ -38,7 +37,7 @@ const clickDelete = async (userEvent: { click: (el: Element) => unknown }) => {
 
 describe('DeleteUser', () => {
   beforeEach(() => {
-    toastMock.mockReset();
+    showSnackbarMock.mockReset();
   });
 
   it('should display the confirmation dialog', () => {
@@ -67,7 +66,8 @@ describe('DeleteUser', () => {
     await clickDelete(userEvent);
 
     await waitFor(() => {
-      expect(toastMock).toHaveBeenCalledWith({
+      expect(showSnackbarMock).toHaveBeenCalledWith({
+        severity: 'success',
         title: 'Utils.Success',
         description: 'UserActions.UserDeleted',
       });
@@ -103,7 +103,7 @@ describe('DeleteUser', () => {
       expect(
         screen.queryByText('UserActions.DeleteUser')
       ).not.toBeInTheDocument();
-      expect(toastMock).not.toHaveBeenCalled();
+      expect(showSnackbarMock).not.toHaveBeenCalled();
     }
   );
 
@@ -121,8 +121,8 @@ describe('DeleteUser', () => {
     await clickDelete(userEvent);
 
     await waitFor(() => {
-      expect(toastMock).toHaveBeenCalledWith({
-        variant: 'destructive',
+      expect(showSnackbarMock).toHaveBeenCalledWith({
+        severity: 'error',
         title: 'Utils.Error',
         description: 'Error.Server.DELETE_USER_ERROR',
       });

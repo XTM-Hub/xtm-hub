@@ -1,15 +1,15 @@
 'use client';
 
 import PublicNavigation from '@/components/menu/navigation/public/PublicNavigation';
-import { useTranslate } from '@/hooks/use-translate';
-import { MenuIcon } from '@filigran/icon';
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '@filigran/ui/clients';
+} from '@/components/ui/sheet';
+import { useTranslate } from '@/hooks/use-translate';
+import { MenuIcon } from '@filigran/icon';
 import Logo from '@public/logo.svg';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';

@@ -18,6 +18,7 @@ import { TaxiiFeedForm } from '@/components/service/integrations/forms/TaxiiFeed
 import { ThirdPartyIntegrationForm } from '@/components/service/integrations/forms/ThirdPartyIntegrationForm';
 import { OpenaevScenarioForm } from '@/components/service/openaev-scenarios/[serviceInstanceId]/OpenaevScenarioForm';
 import { OpenctiPlaybookForm } from '@/components/service/opencti-playbooks/[serviceInstanceId]/OpenctiPlaybookForm';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { omit } from '@/lib/omit';
 import { pick } from '@/lib/pick';
@@ -29,7 +30,6 @@ import {
   splitExistingAndNewImages,
 } from '@/utils/documents';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { toast } from '@filigran/ui';
 import { documentCreateMutation } from '@generated/documentCreateMutation.graphql';
 import { documentDeleteMutation } from '@generated/documentDeleteMutation.graphql';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
@@ -136,8 +136,8 @@ export function useDocumentContext({
 
       onCompleted: (response) => {
         if (!response.createDocument) {
-          toast({
-            variant: 'destructive',
+          showSnackbar({
+            severity: 'error',
             title: t('Utils.Error'),
             description: t('Error.AnErrorOccured'),
           });

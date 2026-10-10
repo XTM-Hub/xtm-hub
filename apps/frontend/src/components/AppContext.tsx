@@ -1,10 +1,10 @@
 'use client';
 import { CookieConsent } from '@/components/cookie-consent/CookieConsent';
 import { ManagedScripts } from '@/components/cookie-consent/ManagedScripts';
+import { AppSnackbars } from '@/components/ui/snackbar/AppSnackbars';
 import { useTranslate } from '@/hooks/use-translate';
 import { APP_PATH } from '@/utils/path/constant';
 import { geologica, ibmPlexSans } from '@app/font';
-import { Toaster } from '@filigran/ui';
 import { useLocale } from 'next-intl';
 import { ThemeProvider } from 'next-themes';
 import Head from 'next/head';
@@ -55,8 +55,7 @@ const AppContext = ({ children }: AppProps) => {
           forcedTheme={forcedTheme}
           enableSystem
           disableTransitionOnChange>
-          {children}
-          <Toaster />
+          <AppSnackbars>{children}</AppSnackbars>
           <ManagedScripts />
           <CookieConsent />
         </ThemeProvider>

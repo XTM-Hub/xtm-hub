@@ -23,17 +23,20 @@ test.describe('Service Management', () => {
     await servicePage.navigateToServiceListAdmin();
   });
 
-  test('should be able to add pictures to a service', async ({ page }) => {
+  test('should be able to add pictures to a service', async () => {
     await test.step('Add picture to a service', async () => {
       await servicePage.addPictureService(
         PICTURE_1_FILE.path,
         PICTURE_2_FILE.path
       );
+      const snackbar = servicePage.getOpenSnackbar();
       await expect(
-        page.getByText('Pictures updated for service: Filigran Academy').first()
+        snackbar.getByText('Pictures updated for service: Filigran Academy')
       ).toBeVisible();
 
-      await expect(page.getByText('Success', { exact: true })).toBeVisible();
+      await expect(
+        snackbar.getByText('Success', { exact: true })
+      ).toBeVisible();
     });
   });
 });

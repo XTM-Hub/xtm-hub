@@ -1,23 +1,15 @@
 'use client';
 
 import { formatTier } from '@/components/competitor/competitor.utils';
+import { AutoForm } from '@/components/ui/auto-form';
+import { useFormField } from '@/components/ui/form';
+import { SelectField } from '@/components/ui/SelectField';
+import { SheetFooter } from '@/components/ui/sheet';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button } from '@filigran/design-system';
-import {
-  AutoForm,
-  FormControl,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  SheetFooter,
-} from '@filigran/ui';
 import { competitor_fragment$data } from '@generated/competitor_fragment.graphql';
 import { CompetitorTier } from '@graphql/generated';
+import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 import { z } from 'zod';
 
 export const TIER_VALUES = Object.values(CompetitorTier);
@@ -37,6 +29,31 @@ export const competitorFormSchema = z.object({
     ),
   tier: z.enum(TIER_VALUES),
 });
+
+const TierField = ({
+  field,
+  defaultTier,
+}: {
+  field: ControllerRenderProps<FieldValues, string>;
+  defaultTier: string;
+}) => {
+  const t = useTranslate();
+  const { error } = useFormField();
+
+  return (
+    <SelectField
+      label={t('CompetitorForm.Tier')}
+      required
+      placeholder={t('CompetitorForm.Tier')}
+      options={TIERS}
+      value={field.value}
+      defaultValue={defaultTier}
+      onValueChange={field.onChange}
+      error={error?.message}
+      contentClassName="layer-2"
+    />
+  );
+};
 
 const CompetitorForm = ({
   competitor,
@@ -73,32 +90,10 @@ const CompetitorForm = ({
         },
         tier: {
           fieldType: ({ field }) => (
-            <FormItem>
-              <FormLabel>
-                {t('CompetitorForm.Tier')}
-                <span className="text-sm text-destructive"> *</span>
-              </FormLabel>
-              <FormControl>
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value}
-                  defaultValue={competitor?.tier ?? CompetitorTier.Tier1}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('CompetitorForm.Tier')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TIERS.map((tier) => (
-                      <SelectItem
-                        key={tier.value}
-                        value={tier.value}>
-                        {tier.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+            <TierField
+              field={field}
+              defaultTier={competitor?.tier ?? CompetitorTier.Tier1}
+            />
           ),
         },
       }}>

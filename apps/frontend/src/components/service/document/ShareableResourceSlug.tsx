@@ -6,12 +6,6 @@ import {
 } from '@/components/ui/BreadcrumbNav';
 import { useTranslate } from '@/hooks/use-translate';
 import { DownloadIcon } from '@filigran/icon';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@filigran/ui/clients';
 
 import OneClickDeploy from '@/components/service/document/one-click-deploy/OneClickDeploy';
 import ShareableResourceDetails from '@/components/service/document/ShareableResouceDetails';
@@ -31,7 +25,14 @@ import {
   isResourceDeployable,
   isResourceDownloadable,
 } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
-import { Button, IconButton } from '@filigran/design-system';
+import {
+  Button,
+  IconButton,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/design-system';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import Image from 'next/image';

@@ -1,14 +1,10 @@
 import { FiligranProductMapping } from '@/components/epic/epic-item/FiligranProductMapping';
 import { FeatureVoteButton } from '@/components/feature-voting/FeatureVoteButton';
-import MarkdownRendererWithTheme from '@/components/ui/MarkdownRendererWithTheme';
-import { DialogDescription, DialogTitle } from '@filigran/ui';
-import { Separator } from '@filigran/ui/clients';
-import { Badge } from '@filigran/ui/servers';
+import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
+import { Separator } from '@/components/ui/separator';
+import { Chip, DialogDescription, DialogTitle } from '@filigran/design-system';
 import { VotableFeaturePublicFragment } from '@graphql/generated';
 import Image from 'next/image';
-
-const BADGE_CLASS =
-  'border-0 content-body-compact-medium bg-feedback-info-secondary-transparency';
 
 interface FeatureVoteDetailProps {
   feature: VotableFeaturePublicFragment;
@@ -22,7 +18,7 @@ export const FeatureVoteDetail = ({
   isAuthenticated,
 }: FeatureVoteDetailProps) => {
   return (
-    <div className="p-l bg-elevation-background-layer-1 markdown-content flex h-full min-h-0 flex-1 flex-col gap-m">
+    <div className="flex h-full min-h-0 flex-1 flex-col gap-m">
       <DialogTitle>{feature.title}</DialogTitle>
       <DialogDescription className="sr-only">
         {feature.short_description}
@@ -38,7 +34,7 @@ export const FeatureVoteDetail = ({
             />
           </div>
         )}
-        <MarkdownRendererWithTheme source={feature.description} />
+        <MarkdownRenderer source={feature.description} />
       </div>
       <Separator />
       <div className="flex flex-wrap items-center justify-between gap-m">
@@ -50,11 +46,10 @@ export const FeatureVoteDetail = ({
           {feature.use_cases.length > 0 && (
             <div className="flex flex-wrap items-center gap-s">
               {feature.use_cases.map((useCase) => (
-                <Badge
+                <Chip
                   key={useCase.id}
-                  className={BADGE_CLASS}>
-                  {useCase.name}
-                </Badge>
+                  label={useCase.name}
+                />
               ))}
             </div>
           )}

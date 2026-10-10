@@ -5,10 +5,10 @@ import { ManageTrialHeader } from '@/components/service/trial-instances/xtm-plat
 import { ManageTrialRoleDescriptions } from '@/components/service/trial-instances/xtm-platform-trial/manage-trial/ManageTrialRoleDescriptions';
 import { ManageTrialTable } from '@/components/service/trial-instances/xtm-platform-trial/manage-trial/ManageTrialTable';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
+import { SelectionState } from '@/components/ui/data-table';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { ADMIN_MANAGE_TRIALS_PATH, APP_PATH } from '@/utils/path/constant';
-import { SelectionState } from '@filigran/ui';
 import {
   useBundleProductsQuery,
   useBundleUserServiceGroupsQuery,

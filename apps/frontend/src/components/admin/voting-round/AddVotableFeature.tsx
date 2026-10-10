@@ -7,11 +7,11 @@ import {
   toGraphqlUploads,
 } from '@/components/admin/voting-round/votable-feature.utils';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { requestGraphqlWithUploads } from '@/lib/graphql-upload-client';
 import { Button } from '@filigran/design-system';
-import { toast } from '@filigran/ui';
 import {
   VotableFeatureCreateDocument,
   VotableFeatureCreateMutation,
@@ -36,14 +36,14 @@ const AddVotableFeature = ({
   const onSuccess = () => {
     setOpenSheet(false);
     invalidateVotingRoundQueries(queryClient);
-    toast({ title: t('Utils.Success') });
+    showSnackbar({ severity: 'success', title: t('Utils.Success') });
   };
 
   const onError = (error: unknown) => {
     const errorMessage =
       error instanceof Error ? error.message : 'UnknownError';
-    toast({
-      variant: 'destructive',
+    showSnackbar({
+      severity: 'error',
       title: t('Utils.Error'),
       description: <>{t(`Error.Server.${errorMessage}`)}</>,
     });

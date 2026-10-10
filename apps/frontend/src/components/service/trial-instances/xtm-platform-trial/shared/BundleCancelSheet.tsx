@@ -3,26 +3,25 @@
 import { invalidatePrivateNavigationQueries } from '@/components/menu/navigation/private/private-navigation-query-invalidation';
 import { SelectWithEditableField } from '@/components/service/registration/SelectWithEditableField';
 import { CancelDeploymentRequestMutation } from '@/components/service/trial-instances/trial-instances.graphql';
+import { AutoForm } from '@/components/ui/auto-form';
+import { useFormField } from '@/components/ui/form';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
-import { WarningIcon } from '@filigran/icon';
 import {
-  AutoForm,
+  Button,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
-  DialogHeader,
   DialogTitle,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  toast,
-} from '@filigran/ui';
+} from '@filigran/design-system';
+import { WarningIcon } from '@filigran/icon';
 import { trialInstancesCancelDeploymentRequestMutation } from '@generated/trialInstancesCancelDeploymentRequestMutation.graphql';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import { useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 import { useMutation } from 'react-relay';
 import { z } from 'zod';
 
@@ -40,6 +39,49 @@ const REASONS = [
   'legal-security',
   'expertise',
 ];
+
+const CancellationReasonField = ({
+  field,
+  onReasonChange,
+}: {
+  field: ControllerRenderProps<FieldValues, string>;
+  onReasonChange: (reason: string) => void;
+}) => {
+  const t = useTranslate();
+  const { error } = useFormField();
+  const cancellationReasons = REASONS.map((reason) => ({
+    value: reason,
+    label: t(`Service.Trials.CancellationReason.${reason}`),
+  }));
+
+  return (
+    <SelectWithEditableField
+      value={field.value}
+      onChange={(value) => {
+        field.onChange(value);
+        onReasonChange(value);
+      }}
+      options={cancellationReasons}
+      required
+      error={error?.message}
+      labels={{
+        label: t(
+          'Service.Trials.Cancellation.ConfirmationForm.CancellationReason'
+        ),
+        placeholder: t(
+          'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonPlaceholder'
+        ),
+        editableFieldLabel: t(
+          'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonOther'
+        ),
+        editableFieldPlaceholder: t(
+          'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonOtherPlaceholder'
+        ),
+      }}
+      editableFieldValue="Other"
+    />
+  );
+};
 
 interface BundleCancelSheetProps {
   deploymentRequestId: string;
@@ -63,12 +105,19 @@ export const BundleCancelSheet = ({
     [t]
   );
   const queryClient = useQueryClient();
-  const cancellationReasons = REASONS.map((reason) => ({
-    value: reason,
-    label: t(`Service.Trials.CancellationReason.${reason}`),
-  }));
   const [selectedCancellationReason, setSelectedCancellationReason] =
     useState('');
+  // A new fieldType on each render would remount the field and drop the focus
+  // and the draft of the "Other" text, which reports every keystroke here.
+  const cancellationReasonFieldType = useCallback(
+    ({ field }: { field: ControllerRenderProps<FieldValues, string> }) => (
+      <CancellationReasonField
+        field={field}
+        onReasonChange={setSelectedCancellationReason}
+      />
+    ),
+    []
+  );
 
   const [cancelDeploymentRequestMutation] =
     useMutation<trialInstancesCancelDeploymentRequestMutation>(
@@ -82,7 +131,8 @@ export const BundleCancelSheet = ({
         cancellationReason: values.cancellation_reason,
       },
       onCompleted: () => {
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t(
             'Service.Trials.Cancellation.Toast.NoNewTrialPossible'
@@ -95,8 +145,8 @@ export const BundleCancelSheet = ({
         setOpen(false);
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });
@@ -115,76 +165,45 @@ export const BundleCancelSheet = ({
     <Dialog
       open={open}
       onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-[32rem]">
-        <DialogHeader className="gap-s">
-          <DialogTitle>{t('XtmPlatformTrial.CancelDialog.Title')}</DialogTitle>
-          <DialogDescription>
-            {t('XtmPlatformTrial.CancelDialog.Description')}
-          </DialogDescription>
-        </DialogHeader>
-        <AutoForm
-          className="mt-s"
-          formSchema={bundleCancelSchema}
-          onSubmit={onSubmit}
-          fieldConfig={{
-            cancellation_reason: {
-              label: t(
-                'Service.Trials.Cancellation.ConfirmationForm.CancellationReason'
-              ),
-              fieldType: ({ field }) => (
-                <FormItem>
-                  <FormLabel className="content-body-compact-medium text-text-default-secondary">
-                    {t(
-                      'Service.Trials.Cancellation.ConfirmationForm.CancellationReason'
-                    )}
-                    <span>*</span>
-                  </FormLabel>
-                  <SelectWithEditableField
-                    value={field.value}
-                    onChange={(value) => {
-                      field.onChange(value);
-                      setSelectedCancellationReason(value);
-                    }}
-                    options={cancellationReasons}
-                    labels={{
-                      placeholder: t(
-                        'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonPlaceholder'
-                      ),
-                      editableFieldLabel: t(
-                        'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonOther'
-                      ),
-                      editableFieldPlaceholder: t(
-                        'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonOtherPlaceholder'
-                      ),
-                    }}
-                    editableFieldValue="Other"
-                  />
-                  <FormMessage className="text-sm text-destructive" />
-                </FormItem>
-              ),
-            },
-          }}>
-          <div className="mt-l flex items-center gap-xs rounded border border-solid border-red p-s">
-            <WarningIcon className="size-4 shrink-0 text-destructive" />
-            <div className="content-body-compact text-text-default-primary">
-              <span>{t('XtmPlatformTrial.CancelDialog.Warning')}</span>
+      <DialogContent>
+        <DialogTitle>{t('XtmPlatformTrial.CancelDialog.Title')}</DialogTitle>
+        <DialogDescription>
+          {t('XtmPlatformTrial.CancelDialog.Description')}
+        </DialogDescription>
+        <DialogBody>
+          <AutoForm
+            formSchema={bundleCancelSchema}
+            onSubmit={onSubmit}
+            fieldConfig={{
+              cancellation_reason: {
+                label: t(
+                  'Service.Trials.Cancellation.ConfirmationForm.CancellationReason'
+                ),
+                fieldType: cancellationReasonFieldType,
+              },
+            }}>
+            <div className="mt-l flex items-center gap-xs rounded border border-solid border-red p-s">
+              <WarningIcon className="size-4 shrink-0 text-destructive" />
+              <div className="content-body-compact text-text-default-primary">
+                <span>{t('XtmPlatformTrial.CancelDialog.Warning')}</span>
+              </div>
             </div>
-          </div>
-          <DialogFooter className="justify-end gap-s">
-            <Button
-              priority="secondary"
-              type="button"
-              onClick={() => setOpen(false)}>
-              {t('Utils.Cancel')}
-            </Button>
-            <Button
-              variant="destructive"
-              disabled={!selectedCancellationReason.trim()}
-              type="submit">
-              {t('Utils.Confirm')}
-            </Button>
-          </DialogFooter>
-        </AutoForm>
+            <DialogFooter>
+              <Button
+                priority="secondary"
+                type="button"
+                onClick={() => setOpen(false)}>
+                {t('Utils.Cancel')}
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={!selectedCancellationReason.trim()}
+                type="submit">
+                {t('Utils.Confirm')}
+              </Button>
+            </DialogFooter>
+          </AutoForm>
+        </DialogBody>
       </DialogContent>
     </Dialog>
   );

@@ -1,19 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 
+import { Form, FormField } from '@/components/ui/form';
+import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
 import {
-  FileInput,
-  FileInputDropZone,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  SheetFooter,
-} from '@filigran/ui';
+  fromFileSelectValue,
+  getFileSelectLabels,
+  toFileSelectValue,
+} from '@/utils/design-system/file-select';
+import { Button, FileSelect } from '@filigran/design-system';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -45,7 +41,7 @@ export const ServiceForm = ({ handleSubmit }: ServiceFormProps) => {
   };
 
   return (
-    <FileInputDropZone className="absolute inset-0 p-xl pt-[5rem]">
+    <div className="absolute inset-0 p-xl pt-[5rem]">
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -53,52 +49,42 @@ export const ServiceForm = ({ handleSubmit }: ServiceFormProps) => {
           <FormField
             control={form.control}
             name="illustration_document"
-            render={({ field }) => {
-              return (
-                <FormItem>
-                  <FormLabel>{t('ServiceForm.Illustration')}</FormLabel>
-                  <FormControl>
-                    <FileInput
-                      {...field}
-                      texts={{
-                        selectFile: t('Service.FileForm.SelectDocument'),
-                        noFile: t('Service.FileForm.NoDocument'),
-                        dropFiles: t('Service.FileForm.DropDocuments'),
-                      }}
-                      allowedTypes={
-                        'image/jpeg, image/gif, image/png, image/svg'
-                      }
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              );
-            }}
+            render={({ field, fieldState }) => (
+              <FileSelect
+                {...getFileSelectLabels(t)}
+                label={t('ServiceForm.Illustration')}
+                triggerLabel={t('Service.FileForm.SelectDocument')}
+                placeholder={t('Service.FileForm.NoDocument')}
+                accept="image/jpeg, image/gif, image/png, image/svg+xml"
+                name={field.name}
+                ref={field.ref}
+                value={toFileSelectValue(field.value)}
+                onValueChange={(next) =>
+                  field.onChange(fromFileSelectValue(next))
+                }
+                error={fieldState.error?.message}
+              />
+            )}
           />
           <FormField
             control={form.control}
             name="logo_document"
-            render={({ field }) => {
-              return (
-                <FormItem>
-                  <FormLabel>{t('ServiceForm.Logo')}</FormLabel>
-                  <FormControl>
-                    <FileInput
-                      {...field}
-                      texts={{
-                        selectFile: t('Service.FileForm.SelectDocument'),
-                        noFile: t('Service.FileForm.NoDocument'),
-                        dropFiles: t('Service.FileForm.DropDocuments'),
-                      }}
-                      allowedTypes={
-                        'image/jpeg, image/gif, image/png, image/svg'
-                      }
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              );
-            }}
+            render={({ field, fieldState }) => (
+              <FileSelect
+                {...getFileSelectLabels(t)}
+                label={t('ServiceForm.Logo')}
+                triggerLabel={t('Service.FileForm.SelectDocument')}
+                placeholder={t('Service.FileForm.NoDocument')}
+                accept="image/jpeg, image/gif, image/png, image/svg+xml"
+                name={field.name}
+                ref={field.ref}
+                value={toFileSelectValue(field.value)}
+                onValueChange={(next) =>
+                  field.onChange(fromFileSelectValue(next))
+                }
+                error={fieldState.error?.message}
+              />
+            )}
           />
 
           <SheetFooter className="pt-2">
@@ -112,6 +98,6 @@ export const ServiceForm = ({ handleSubmit }: ServiceFormProps) => {
           </SheetFooter>
         </form>
       </Form>
-    </FileInputDropZone>
+    </div>
   );
 };

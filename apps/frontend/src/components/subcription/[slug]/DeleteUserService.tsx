@@ -1,5 +1,5 @@
 import { UserServiceDeleteMutation } from '@/components/service/user_service.graphql';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { userServiceDeleteMutation } from '@generated/userServiceDeleteMutation.graphql';
 import { userServices_fragment$data } from '@generated/userServices_fragment.graphql';
@@ -50,14 +50,14 @@ export const DeleteUserService = ({
   }
 
   return (
-    <AlertDialogComponent
+    <ConfirmDialog
       key={`delete-${userServices.map((userService) => userService.id).join('-')}`}
-      AlertTitle={t('Service.Management.RemoveAccess')}
-      actionButtonText={t('Service.Management.RemoveAccess')}
-      variantName={'destructive'}
-      isOpen={isOpen}
+      title={t('Service.Management.RemoveAccess')}
+      confirmLabel={t('Service.Management.RemoveAccess')}
+      destructive
+      open={isOpen}
       onOpenChange={onOpenChange}
-      onClickContinue={handleConfirmDelete}>
+      onConfirm={handleConfirmDelete}>
       {userServices.length > 1
         ? t('Service.Management.AreYouSureRemoveUsersAccess', {
             count: userServices.length,
@@ -66,6 +66,6 @@ export const DeleteUserService = ({
             firstname: userServices[0]?.user?.first_name ?? '',
             lastname: userServices[0]?.user?.last_name ?? '',
           })}
-    </AlertDialogComponent>
+    </ConfirmDialog>
   );
 };

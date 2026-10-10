@@ -18,27 +18,39 @@ const testState = vi.hoisted(() => ({
   mutationMode: 'success' as 'success' | 'error',
 }));
 
-const toastMock = vi.hoisted(() => vi.fn());
+const showSnackbarMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@filigran/ui', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@filigran/ui')>()),
-  toast: toastMock,
+vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
+  showSnackbar: showSnackbarMock,
 }));
 
-vi.mock('@/components/service/registration/SelectWithEditableField', () => ({
-  SelectWithEditableField: ({
-    onChange,
-  }: {
-    onChange: (value: string) => void;
-  }) => (
-    <button
-      type="button"
-      data-testid="select-reason"
-      onClick={() => onChange(selectedReason)}>
-      select-reason
-    </button>
-  ),
-}));
+const reasonFieldMounts = vi.hoisted(() => ({ count: 0 }));
+
+vi.mock(
+  '@/components/service/registration/SelectWithEditableField',
+  async () => {
+    const { useEffect } = await import('react');
+    return {
+      SelectWithEditableField: ({
+        onChange,
+      }: {
+        onChange: (value: string) => void;
+      }) => {
+        useEffect(() => {
+          reasonFieldMounts.count += 1;
+        }, []);
+        return (
+          <button
+            type="button"
+            data-testid="select-reason"
+            onClick={() => onChange(selectedReason)}>
+            select-reason
+          </button>
+        );
+      },
+    };
+  }
+);
 
 vi.mock('@tanstack/react-query', async (importOriginal) => ({
   ...(await importOriginal()),
@@ -71,7 +83,7 @@ describe('BundleCancelSheet', () => {
     testState.invalidateQueries.mockReset();
     testState.lastCancelDeploymentRequestVariables = null;
     testState.mutationMode = 'success';
-    toastMock.mockReset();
+    showSnackbarMock.mockReset();
   });
 
   it('should render the cancellation popup content when opened', () => {
@@ -120,6 +132,24 @@ describe('BundleCancelSheet', () => {
     expect(
       screen.getByRole('button', { name: 'Utils.Confirm' })
     ).not.toBeDisabled();
+  });
+
+  it('should keep the reason field mounted when the reason changes', () => {
+    // Given
+    testRender(
+      <BundleCancelSheet
+        deploymentRequestId={bundleDeploymentRequestId}
+        open={true}
+        setOpen={vi.fn()}
+      />
+    );
+    const mountsBeforeChange = reasonFieldMounts.count;
+
+    // When
+    fireEvent.click(screen.getByTestId('select-reason'));
+
+    // Then
+    expect(reasonFieldMounts.count).toBe(mountsBeforeChange);
   });
 
   it('should submit the selected cancellation reason when the form is confirmed', async () => {
@@ -179,8 +209,8 @@ describe('BundleCancelSheet', () => {
 
     // Then
     await waitFor(() => {
-      expect(toastMock).toHaveBeenCalledWith({
-        variant: 'destructive',
+      expect(showSnackbarMock).toHaveBeenCalledWith({
+        severity: 'error',
         title: 'Utils.Error',
         description: 'Error.Server.Some error',
       });

@@ -1,17 +1,17 @@
 'use client';
 
 import { PortalContext } from '@/components/me/AppPortalContext';
+import { Avatar } from '@/components/ui/avatar';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
-import { EditIcon } from '@filigran/icon';
 import {
-  Avatar,
+  Button,
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@filigran/ui';
+} from '@filigran/design-system';
+import { EditIcon } from '@filigran/icon';
 import React, { useContext, useRef, useState } from 'react';
 
 interface ProfileFormPictureProps {
@@ -52,9 +52,9 @@ export const ProfileFormPicture = ({ onSubmit }: ProfileFormPictureProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="heading-lg">{t('ProfilePage.Picture')}</CardTitle>
+        <CardTitle as="h3">{t('ProfilePage.Picture')}</CardTitle>
       </CardHeader>
-      <CardContent className="pb-0">
+      <CardContent clamp={0}>
         <input
           ref={inputRef}
           type="file"
@@ -63,12 +63,12 @@ export const ProfileFormPicture = ({ onSubmit }: ProfileFormPictureProps) => {
           onChange={handleFileChange}
         />
         <div
-          className="size-24 cursor-pointer [&_img]:object-cover"
+          className="size-24 cursor-pointer"
           onClick={() => inputRef.current?.click()}>
           <Avatar src={preview || me?.picture || undefined} />
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between">
+      <CardFooter>
         <Button
           priority="tertiary"
           aria-label={t('Utils.Edit')}

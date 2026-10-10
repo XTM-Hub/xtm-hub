@@ -8,25 +8,23 @@ import {
 import { useServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
 import { useSolutionCategories } from '@/components/service/form/UseSolutionCategories';
 import { availableIntegrationTypes } from '@/components/service/integrations/Integration.utils';
+import { AppCombobox } from '@/components/ui/AppCombobox';
+import { AutoForm } from '@/components/ui/auto-form';
+import { useFormField } from '@/components/ui/form';
+import { Label } from '@/components/ui/label';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import {
-  AutoForm,
+  Button,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
-  DialogHeader,
   DialogTitle,
-  FormControl,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Label,
-  MultiSelectFormField,
-  toast,
-} from '@filigran/ui';
+} from '@filigran/design-system';
 import {
   FiligranProduct,
   IntegrationType,
@@ -77,27 +75,29 @@ const IntegrationsCsvExportFilterField = ({
   placeholder,
   testId,
 }: IntegrationsCsvExportFilterFieldProps) => {
-  const t = useTranslate();
+  const { error } = useFormField();
+  const optionIds = useMemo(
+    () =>
+      toComboboxOptionIds(
+        options,
+        (option) => option.value,
+        (option) => option.label
+      ),
+    [options]
+  );
   return (
-    <FormItem>
-      <FormLabel className="font-normal text-text-default-secondary">
-        {label}
-      </FormLabel>
-      <FormControl>
-        <MultiSelectFormField
-          className="w-full min-w-0 max-w-md whitespace-nowrap"
-          data-testid={testId}
-          options={options}
-          defaultValue={field.value}
-          value={field.value}
-          onValueChange={field.onChange}
-          noResultString={t('Utils.NotFound')}
-          placeholder={placeholder}
-          popoverContentClassName="bg-elevation-background-layer-3"
-          variant="inverted"
-        />
-      </FormControl>
-    </FormItem>
+    <AppCombobox
+      multiple
+      className="min-w-0 max-w-md"
+      label={label}
+      placeholder={placeholder}
+      error={error?.message}
+      data-testid={testId}
+      options={optionIds.ids}
+      value={field.value ?? []}
+      onValueChange={field.onChange}
+      getOptionLabel={optionIds.getOptionLabel}
+    />
   );
 };
 
@@ -231,8 +231,10 @@ export const IntegrationsCsvExportDialog = ({
     [solutionCategories]
   );
 
-  const useCaseOptions = useUseCases({ documentType: type }).map(
-    ({ name, id }) => ({ label: name, value: id })
+  const useCases = useUseCases({ documentType: type });
+  const useCaseOptions = useMemo(
+    () => useCases.map(({ name, id }) => ({ label: name, value: id })),
+    [useCases]
   );
 
   const resetAndClose = () => {
@@ -255,11 +257,14 @@ export const IntegrationsCsvExportDialog = ({
         toCanonicalOrder(values.columns),
         filters
       );
-      toast({ title: t('Service.CsvExport.SuccessToast') });
+      showSnackbar({
+        severity: 'success',
+        title: t('Service.CsvExport.SuccessToast'),
+      });
       resetAndClose();
     } catch {
-      toast({
-        variant: 'destructive',
+      showSnackbar({
+        severity: 'error',
         title: t('Utils.Error'),
         description: <>{t('Service.CsvExport.ErrorToast')}</>,
       });
@@ -275,146 +280,137 @@ export const IntegrationsCsvExportDialog = ({
         if (!value) resetAndClose();
         else setOpen(value);
       }}>
-      <DialogContent className="layer-2">
-        <DialogHeader>
-          <DialogTitle>{t('Service.CsvExport.DialogTitle')}</DialogTitle>
-          <DialogDescription className="sr-only">
-            {t('Service.CsvExport.DialogDescription')}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent>
+        <DialogTitle>{t('Service.CsvExport.DialogTitle')}</DialogTitle>
+        <DialogDescription className="sr-only">
+          {t('Service.CsvExport.DialogDescription')}
+        </DialogDescription>
 
-        <AutoForm
-          values={seededValues}
-          formSchema={csvExportFormSchema}
-          onSubmit={handleExport}
-          fieldConfig={{
-            columns: {
-              fieldType: ({
-                field,
-              }: {
-                field: ControllerRenderProps<FieldValues, string>;
-              }) => (
-                <FormItem>
-                  <FormLabel>{t('Service.CsvExport.ColumnsLabel')}</FormLabel>
-                  <FormControl>
-                    <MultiSelectFormField
-                      className="w-full min-w-0 max-w-md whitespace-nowrap"
-                      data-testid="integrations-csv-export-columns"
-                      options={columnOptions}
-                      defaultValue={field.value}
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      noResultString={t('Utils.NotFound')}
-                      placeholder={t('Service.CsvExport.ColumnsPlaceholder')}
-                      popoverContentClassName="bg-elevation-background-layer-3"
-                      variant="inverted"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              ),
-            },
-            integration_type: {
-              fieldType: ({ field }) => (
-                <>
-                  <Label>{t('Service.CsvExport.FiltersLabel')}</Label>
+        <DialogBody>
+          <AutoForm
+            values={seededValues}
+            formSchema={csvExportFormSchema}
+            onSubmit={handleExport}
+            fieldConfig={{
+              columns: {
+                fieldType: ({
+                  field,
+                }: {
+                  field: ControllerRenderProps<FieldValues, string>;
+                }) => (
                   <IntegrationsCsvExportFilterField
                     field={field}
-                    options={integrationTypeOptions}
-                    label={t('Service.OpenctiIntegrations.Filter.Type.Label')}
-                    placeholder={t(
-                      'Service.OpenctiIntegrations.Filter.Type.Placeholder'
-                    )}
-                    testId="integrations-csv-export-filter-integration-type"
+                    options={columnOptions}
+                    label={t('Service.CsvExport.ColumnsLabel')}
+                    placeholder={t('Service.CsvExport.ColumnsPlaceholder')}
+                    testId="integrations-csv-export-columns"
                   />
-                </>
-              ),
-            },
-            use_case: {
-              fieldType: ({ field }) => (
-                <IntegrationsCsvExportFilterField
-                  field={field}
-                  options={useCaseOptions}
-                  label={t('GenericActions.FilterUseCasesLabel')}
-                  placeholder={t('GenericActions.FilterUseCases')}
-                  testId="integrations-csv-export-filter-use-case"
-                />
-              ),
-            },
-            license_type: {
-              fieldType: ({ field }) => (
-                <IntegrationsCsvExportFilterField
-                  field={field}
-                  options={licenseTypeOptions}
-                  label={t(
-                    'Service.OpenctiIntegrations.Filter.LicenseType.Label'
-                  )}
-                  placeholder={t(
-                    'Service.OpenctiIntegrations.Filter.LicenseType.Placeholder'
-                  )}
-                  testId="integrations-csv-export-filter-license-type"
-                />
-              ),
-            },
-            solution_category: {
-              fieldType: ({ field }) => (
-                <IntegrationsCsvExportFilterField
-                  field={field}
-                  options={solutionCategoryOptions}
-                  label={t(
-                    'Service.OpenctiIntegrations.Filter.SolutionCategory.Label'
-                  )}
-                  placeholder={t(
-                    'Service.OpenctiIntegrations.Filter.SolutionCategory.Placeholder'
-                  )}
-                  testId="integrations-csv-export-filter-solution-category"
-                />
-              ),
-            },
-            verified: {
-              fieldType: ({ field }) => (
-                <IntegrationsCsvExportFilterField
-                  field={field}
-                  options={verifiedOptions}
-                  label={t('Service.OpenctiIntegrations.Filter.Verified.Label')}
-                  placeholder={t(
-                    'Service.OpenctiIntegrations.Filter.Verified.Placeholder'
-                  )}
-                  testId="integrations-csv-export-filter-verified"
-                />
-              ),
-            },
-            manager_supported: {
-              fieldType: ({ field }) => (
-                <IntegrationsCsvExportFilterField
-                  field={field}
-                  options={deployableOptions}
-                  label={t(
-                    'Service.OpenctiIntegrations.Filter.ManagerSupported.Label'
-                  )}
-                  placeholder={t(
-                    'Service.OpenctiIntegrations.Filter.ManagerSupported.Placeholder'
-                  )}
-                  testId="integrations-csv-export-filter-deployable"
-                />
-              ),
-            },
-          }}>
-          <DialogFooter>
-            <Button
-              type="button"
-              priority="tertiary"
-              disabled={isExporting}
-              onClick={resetAndClose}>
-              {t('Utils.Cancel')}
-            </Button>
-            <Button
-              type="submit"
-              disabled={isExporting}>
-              {t('Service.CsvExport.ExportButton')}
-            </Button>
-          </DialogFooter>
-        </AutoForm>
+                ),
+              },
+              integration_type: {
+                fieldType: ({ field }) => (
+                  <>
+                    <Label>{t('Service.CsvExport.FiltersLabel')}</Label>
+                    <IntegrationsCsvExportFilterField
+                      field={field}
+                      options={integrationTypeOptions}
+                      label={t('Service.OpenctiIntegrations.Filter.Type.Label')}
+                      placeholder={t(
+                        'Service.OpenctiIntegrations.Filter.Type.Placeholder'
+                      )}
+                      testId="integrations-csv-export-filter-integration-type"
+                    />
+                  </>
+                ),
+              },
+              use_case: {
+                fieldType: ({ field }) => (
+                  <IntegrationsCsvExportFilterField
+                    field={field}
+                    options={useCaseOptions}
+                    label={t('GenericActions.FilterUseCasesLabel')}
+                    placeholder={t('GenericActions.FilterUseCases')}
+                    testId="integrations-csv-export-filter-use-case"
+                  />
+                ),
+              },
+              license_type: {
+                fieldType: ({ field }) => (
+                  <IntegrationsCsvExportFilterField
+                    field={field}
+                    options={licenseTypeOptions}
+                    label={t(
+                      'Service.OpenctiIntegrations.Filter.LicenseType.Label'
+                    )}
+                    placeholder={t(
+                      'Service.OpenctiIntegrations.Filter.LicenseType.Placeholder'
+                    )}
+                    testId="integrations-csv-export-filter-license-type"
+                  />
+                ),
+              },
+              solution_category: {
+                fieldType: ({ field }) => (
+                  <IntegrationsCsvExportFilterField
+                    field={field}
+                    options={solutionCategoryOptions}
+                    label={t(
+                      'Service.OpenctiIntegrations.Filter.SolutionCategory.Label'
+                    )}
+                    placeholder={t(
+                      'Service.OpenctiIntegrations.Filter.SolutionCategory.Placeholder'
+                    )}
+                    testId="integrations-csv-export-filter-solution-category"
+                  />
+                ),
+              },
+              verified: {
+                fieldType: ({ field }) => (
+                  <IntegrationsCsvExportFilterField
+                    field={field}
+                    options={verifiedOptions}
+                    label={t(
+                      'Service.OpenctiIntegrations.Filter.Verified.Label'
+                    )}
+                    placeholder={t(
+                      'Service.OpenctiIntegrations.Filter.Verified.Placeholder'
+                    )}
+                    testId="integrations-csv-export-filter-verified"
+                  />
+                ),
+              },
+              manager_supported: {
+                fieldType: ({ field }) => (
+                  <IntegrationsCsvExportFilterField
+                    field={field}
+                    options={deployableOptions}
+                    label={t(
+                      'Service.OpenctiIntegrations.Filter.ManagerSupported.Label'
+                    )}
+                    placeholder={t(
+                      'Service.OpenctiIntegrations.Filter.ManagerSupported.Placeholder'
+                    )}
+                    testId="integrations-csv-export-filter-deployable"
+                  />
+                ),
+              },
+            }}>
+            <DialogFooter>
+              <Button
+                type="button"
+                priority="tertiary"
+                disabled={isExporting}
+                onClick={resetAndClose}>
+                {t('Utils.Cancel')}
+              </Button>
+              <Button
+                type="submit"
+                disabled={isExporting}>
+                {t('Service.CsvExport.ExportButton')}
+              </Button>
+            </DialogFooter>
+          </AutoForm>
+        </DialogBody>
       </DialogContent>
     </Dialog>
   );

@@ -1,9 +1,9 @@
 import { getDeletionBlockedReasonKey } from '@/components/admin/user/delete-user.utils';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { DialogInformative } from '@/components/ui/Dialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { useToast } from '@filigran/ui';
 import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { useUserDeleteMutation } from '@graphql/generated';
 import React, { useState } from 'react';
@@ -22,13 +22,13 @@ export const DeleteUser = ({
   setOpen,
 }: DeleteUserProps) => {
   const t = useTranslate();
-  const { toast } = useToast();
   const [blockedReasonKey, setBlockedReasonKey] = useState<string | null>(null);
   const { mutate: deleteUserMutation } = useUserDeleteMutation(
     portalGraphqlClient,
     {
       onSuccess: () => {
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('UserActions.UserDeleted', { email: user.email }),
         });
@@ -43,8 +43,8 @@ export const DeleteUser = ({
           setBlockedReasonKey(reasonKey);
           return;
         }
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${errorMessage}`),
         });
@@ -70,14 +70,14 @@ export const DeleteUser = ({
       {null}
     </DialogInformative>
   ) : (
-    <AlertDialogComponent
-      actionButtonText={t('Utils.Delete')}
-      variantName={'destructive'}
-      AlertTitle={t('UserActions.DeleteUser')}
-      isOpen={open}
+    <ConfirmDialog
+      confirmLabel={t('Utils.Delete')}
+      destructive
+      title={t('UserActions.DeleteUser')}
+      open={open}
       onOpenChange={setOpen}
-      onClickContinue={onDeleteUser}>
+      onConfirm={onDeleteUser}>
       {t('UserActions.SureDeleteUser', { email: user.email })}
-    </AlertDialogComponent>
+    </ConfirmDialog>
   );
 };

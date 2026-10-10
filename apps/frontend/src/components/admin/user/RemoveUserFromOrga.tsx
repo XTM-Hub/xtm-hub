@@ -1,10 +1,10 @@
 import { getUserListContext } from '@/components/admin/user/UserListPage';
 import { PortalContext } from '@/components/me/AppPortalContext';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button } from '@filigran/design-system';
-import { useToast } from '@filigran/ui';
 import { RemoveUserFromOrgaMutation } from '@generated/RemoveUserFromOrgaMutation.graphql';
 import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { useContext } from 'react';
@@ -34,7 +34,6 @@ export const RemoveUserFromOrga = ({ user }: RemoveUserFromOrgaProps) => {
   const { me } = useContext(PortalContext);
   const { connectionID } = getUserListContext();
   const { setOpenSheet } = useDialogContext();
-  const { toast } = useToast();
   const t = useTranslate();
   const [removeUserMutation] =
     useMutation<RemoveUserFromOrgaMutation>(removeUser);
@@ -47,14 +46,15 @@ export const RemoveUserFromOrga = ({ user }: RemoveUserFromOrgaProps) => {
       },
       onCompleted: () => {
         setOpenSheet(false);
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('UserActions.UserRemoved', { email: user.email }),
         });
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });
@@ -71,15 +71,15 @@ export const RemoveUserFromOrga = ({ user }: RemoveUserFromOrgaProps) => {
   );
 
   return (
-    <AlertDialogComponent
-      AlertTitle={t('UserActions.RemoveUser')}
-      actionButtonText={t('MenuActions.Remove')}
-      variantName={'destructive'}
-      triggerElement={trigger}
-      onClickContinue={() => onRemoveUser(user.id)}>
+    <ConfirmDialog
+      title={t('UserActions.RemoveUser')}
+      confirmLabel={t('MenuActions.Remove')}
+      destructive
+      trigger={trigger}
+      onConfirm={() => onRemoveUser(user.id)}>
       {t('RemoveUserOrgDialog.TextRemoveThisUser', {
         email: user.email,
       })}
-    </AlertDialogComponent>
+    </ConfirmDialog>
   );
 };

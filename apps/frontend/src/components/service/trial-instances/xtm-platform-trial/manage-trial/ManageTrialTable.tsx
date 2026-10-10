@@ -1,12 +1,13 @@
 'use client';
 
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { DataTable, SelectionState } from '@/components/ui/data-table';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { i18nKey } from '@/utils/datatable';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { IconButton } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
-import { DataTable, SelectionState, toast } from '@filigran/ui';
 import {
   BundleUserServiceGroupsQuery,
   PlatformIdentifier,
@@ -95,14 +96,14 @@ export const ManageTrialTable = ({
               ),
             }
         );
-        toast({ title: t('Utils.Success') });
+        showSnackbar({ severity: 'success', title: t('Utils.Success') });
         setDeletingUserId(undefined);
       },
       onError: (error: unknown) => {
         const errorMessage =
           error instanceof Error ? error.message : 'UnknownError';
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: <>{t(`Error.Server.${errorMessage}`)}</>,
         });
@@ -124,7 +125,8 @@ export const ManageTrialTable = ({
           (entry) => entry.user.id === userId
         )?.user.email;
         if (email && platform) {
-          toast({
+          showSnackbar({
+            severity: 'success',
             title: t('Service.Bundle.ManageTrial.Table.RoleUpdated', {
               email,
               role: t(`Service.Bundle.ManageTrial.Roles.${platform}.Title`, {
@@ -138,8 +140,8 @@ export const ManageTrialTable = ({
       onError: (error: unknown) => {
         const errorMessage =
           error instanceof Error ? error.message : 'UnknownError';
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: <>{t(`Error.Server.${errorMessage}`)}</>,
         });
@@ -197,12 +199,14 @@ export const ManageTrialTable = ({
           const accessorKey: RoleFormField = `${platform}Role`;
           const isOptional = platform !== PlatformIdentifier.Xtmone;
           const namespace = `Service.Bundle.ManageTrial.Roles.${platform}`;
+          const title = t(`${namespace}.Title`, { count: 1 });
           return {
             accessorKey,
             id: `${platform}_role`,
-            header: t(`${namespace}.Title`, { count: 1 }),
+            header: title,
             cell: ({ row }) => (
               <RoleSelect
+                aria-label={title}
                 value={row.original[accessorKey]}
                 onValueChange={(value) => {
                   if (value === row.original[accessorKey]) {
@@ -217,7 +221,7 @@ export const ManageTrialTable = ({
                   pendingRoleUpdate?.userId === row.original.id &&
                   pendingRoleUpdate?.platform === platform
                 }
-                triggerClassName="h-auto w-[200px] gap-xs border-0 shadow-none focus:ring-0 focus:ring-offset-0 layer-0 bg-input-default hover:bg-input-hover"
+                triggerClassName="w-[200px] layer-0"
               />
             ),
           };
@@ -231,14 +235,12 @@ export const ManageTrialTable = ({
         size: 48,
         cell: ({ row }) => (
           <div className="flex items-center justify-end">
-            <AlertDialogComponent
-              AlertTitle={t(
-                'Service.Bundle.ManageTrial.Table.DeleteDialog.Title'
-              )}
-              actionButtonText={t('Utils.Delete')}
-              variantName="destructive"
-              continueButtonDisabled={deletingUserId === row.original.id}
-              triggerElement={
+            <ConfirmDialog
+              title={t('Service.Bundle.ManageTrial.Table.DeleteDialog.Title')}
+              confirmLabel={t('Utils.Delete')}
+              destructive
+              confirmDisabled={deletingUserId === row.original.id}
+              trigger={
                 <IconButton
                   type="button"
                   priority="tertiary"
@@ -247,7 +249,7 @@ export const ManageTrialTable = ({
                   icon={<DeleteIcon className="h-4 w-4" />}
                 />
               }
-              onClickContinue={() => {
+              onConfirm={() => {
                 setDeletingUserId(row.original.id);
                 removeUsersFromBundleGroups({
                   serviceInstanceId,
@@ -257,7 +259,7 @@ export const ManageTrialTable = ({
               {t('Service.Bundle.ManageTrial.Table.DeleteDialog.Text', {
                 email: row.original.email,
               })}
-            </AlertDialogComponent>
+            </ConfirmDialog>
           </div>
         ),
       },
@@ -286,7 +288,7 @@ export const ManageTrialTable = ({
         columns={columns}
         data={rows}
         isLoading={isLoading}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         toolbar={<></>}
         tableState={{ columnPinning: { right: ['actions'] } }}
         selectionOptions={{

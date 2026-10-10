@@ -1,14 +1,14 @@
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
 import {
+  Button,
   Dialog,
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
-  DialogHeader,
   DialogTitle,
-} from '@filigran/ui';
+} from '@filigran/design-system';
 import { ReactNode } from 'react';
 
 interface DialogInformativeProps {
@@ -46,17 +46,17 @@ export const DialogInformative = ({
         }
       }}>
       <DialogContent>
-        <DialogHeader className={'gap-s'}>
-          <DialogTitle>{title}</DialogTitle>
-          {description && (
-            <DialogDescription className="whitespace-pre-line">
-              {description}
-            </DialogDescription>
-          )}
-        </DialogHeader>
-        {children}
+        <DialogTitle>{title}</DialogTitle>
+        {description && (
+          <DialogDescription className="whitespace-pre-line">
+            {description}
+          </DialogDescription>
+        )}
+        {children && (
+          <DialogBody className="flex flex-col gap-4">{children}</DialogBody>
+        )}
         {showFooter && (
-          <DialogFooter className="justify-end">
+          <DialogFooter>
             <DialogClose asChild>
               <Button
                 className="mt-2 hover:cursor-pointer"

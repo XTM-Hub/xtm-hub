@@ -7,15 +7,15 @@ import {
   SectionSubLink,
 } from '@/components/menu/navigation/shared/navigation.type';
 import { cn } from '@/lib/utils';
-import { buttonVariants } from '@filigran/design-system';
-import { OpenInNewIcon } from '@filigran/icon';
 import {
+  Button,
+  buttonVariants,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui';
-import { GradientButton } from '@filigran/ui/servers';
+} from '@filigran/design-system';
+import { OpenInNewIcon } from '@filigran/icon';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ElementType, ReactNode } from 'react';
@@ -73,14 +73,10 @@ export const PublicSubLink = ({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>{node}</TooltipTrigger>
-          <TooltipContent className="bg-ds-bg-4 dark:bg-ds-bg-4 rounded">
+          <TooltipContent>
             <div className="flex flex-col gap-0.5">
-              <span className="content-body-base text-text-default-primary">
-                {label}
-              </span>
-              <span className="content-body-base text-muted-foreground">
-                {tooltip}
-              </span>
+              <span>{label}</span>
+              <span className="text-default-secondary">{tooltip}</span>
             </div>
           </TooltipContent>
         </Tooltip>
@@ -140,13 +136,11 @@ export const NavigationLinkMenu = ({
         target={external ? '_blank' : undefined}
         rel={external ? 'noopener noreferrer' : undefined}
         className="block">
-        <GradientButton
-          className={cn(
-            'h-9 rounded text-content-button whitespace-nowrap bg-background dark:bg-none',
-            open ? 'w-full px-2' : 'w-9 px-0'
-          )}
-          textGradient={open}
-          tabIndex={-1}>
+        <Button
+          variant="highlight"
+          priority="secondary"
+          tabIndex={-1}
+          className={open ? 'w-full px-2' : 'w-9 px-0'}>
           {open ? (
             text
           ) : (
@@ -156,7 +150,7 @@ export const NavigationLinkMenu = ({
               className="h-4 w-4 text-filigran-brand-primary"
             />
           )}
-        </GradientButton>
+        </Button>
       </Link>
     );
   }

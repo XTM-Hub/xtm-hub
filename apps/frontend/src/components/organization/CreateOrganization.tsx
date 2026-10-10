@@ -2,9 +2,9 @@ import { CreateOrganizationMutation } from '@/components/organization/organizati
 import { OrganizationForm } from '@/components/organization/OrganizationForm';
 import { organizationFormSchema } from '@/components/organization/OrganizationForm.schema';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button } from '@filigran/design-system';
-import { useToast } from '@filigran/ui';
 import { organizationCreateMutation } from '@generated/organizationCreateMutation.graphql';
 import { useState } from 'react';
 import { useMutation } from 'react-relay';
@@ -18,7 +18,6 @@ export const CreateOrganization = ({
   connectionId,
 }: CreateOrganizationProps) => {
   const t = useTranslate();
-  const { toast } = useToast();
   const [commitOrganizationCreationMutation] =
     useMutation<organizationCreateMutation>(CreateOrganizationMutation);
   const [openSheet, setOpenSheet] = useState(false);
@@ -35,7 +34,8 @@ export const CreateOrganization = ({
           return;
         }
         setOpenSheet(false);
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('OrganizationActions.OrganizationCreated', {
             name: values.name,
@@ -49,8 +49,8 @@ export const CreateOrganization = ({
                 name: values.name,
               })
             : t(`Error.Server.${error.message}`);
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: <>{message}</>,
         });

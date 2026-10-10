@@ -1,18 +1,17 @@
 import AddUseCase from '@/components/admin/use-case/AddUseCase';
 import EditUseCase from '@/components/admin/use-case/EditUseCase';
-import { useExecuteAfterAnimation } from '@/hooks/use-execute-after-animation';
+import { DataTable } from '@/components/ui/data-table';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { i18nKey } from '@/utils/datatable';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import {
-  Badge,
-  DataTable,
+  Chip,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@filigran/ui';
+} from '@filigran/design-system';
 import {
   FiligranProduct,
   OrderingMode,
@@ -59,11 +58,10 @@ const UseCases = () => {
       header: t('UseCaseListPage.Name'),
       cell: ({ row }) => {
         return (
-          <Badge
-            variant="outline"
-            color={row.original.color}>
-            {row.original.name}
-          </Badge>
+          <Chip
+            label={row.original.name}
+            color={row.original.color}
+          />
         );
       },
     },
@@ -75,11 +73,10 @@ const UseCases = () => {
         return (
           <div className="flex flex-wrap gap-xs">
             {row.original.product.map((product) => (
-              <Badge
+              <Chip
                 key={product}
-                variant="outline">
-                {product.toUpperCase()}
-              </Badge>
+                label={product.toUpperCase()}
+              />
             ))}
           </div>
         );
@@ -108,7 +105,7 @@ const UseCases = () => {
       <DataTable
         columns={columns}
         data={useCasesData}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         tableOptions={{
           enableSorting: false,
           enableColumnResizing: false,
@@ -127,7 +124,9 @@ const UseCases = () => {
                     value === 'all' ? undefined : (value as FiligranProduct)
                   )
                 }>
-                <SelectTrigger className="w-45">
+                <SelectTrigger
+                  aria-label={t('UseCaseListPage.Product')}
+                  className="w-45">
                   <SelectValue placeholder={t('UseCaseListPage.Product')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -152,9 +151,7 @@ const UseCases = () => {
         <EditUseCase
           useCase={useCaseEdit}
           open={!!useCaseEdit}
-          onClose={() =>
-            useExecuteAfterAnimation(() => setUseCaseEdit(undefined))
-          }
+          onClose={() => setUseCaseEdit(undefined)}
         />
       )}
     </>

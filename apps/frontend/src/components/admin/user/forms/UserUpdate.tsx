@@ -4,7 +4,7 @@ import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDi
 import useAdminPath from '@/hooks/use-admin-path';
 import { useTranslate } from '@/hooks/use-translate';
 import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
-import { ReactNode, useState } from 'react';
+import { ReactNode, useRef, useState } from 'react';
 
 interface EditUserProps {
   user: UserList_fragment$data;
@@ -21,16 +21,16 @@ export const EditUser = ({
 }: EditUserProps) => {
   const isAdminPath = useAdminPath();
   const [openSheet, setOpenSheet] = useState(defaultStateOpen ?? false);
+  // Shared by every closure, so a repeated or late close notifies once.
+  const openSheetRef = useRef(openSheet);
   const t = useTranslate();
 
   const handleOpenSheet = (open: boolean) => {
-    setOpenSheet((prevState) => {
-      const sheetIsClosing = prevState !== open && !open;
-      if (sheetIsClosing && onCloseSheet) {
-        onCloseSheet();
-      }
-      return open;
-    });
+    if (openSheetRef.current && !open) {
+      onCloseSheet?.();
+    }
+    openSheetRef.current = open;
+    setOpenSheet(open);
   };
 
   return (

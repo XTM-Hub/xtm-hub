@@ -1,10 +1,10 @@
 'use client';
 
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Button } from '@filigran/design-system';
-import { toast } from '@filigran/ui';
 import {
   useVotingRoundSetStatusMutation,
   VotingRoundStatus,
@@ -32,14 +32,14 @@ export const VotingRoundStatusActions = ({
     portalGraphqlClient,
     {
       onSuccess: () => {
-        toast({ title: t('Utils.Success') });
+        showSnackbar({ severity: 'success', title: t('Utils.Success') });
         invalidateVotingRoundQueries(queryClient);
       },
       onError: (error: unknown) => {
         const errorMessage =
           error instanceof Error ? error.message : 'UnknownError';
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: <>{t(`Error.Server.${errorMessage}`)}</>,
         });
@@ -52,33 +52,33 @@ export const VotingRoundStatusActions = ({
 
   if (status === VotingRoundStatus.Open) {
     return (
-      <AlertDialogComponent
-        AlertTitle={t('VotingRound.Actions.Close')}
-        actionButtonText={t('VotingRound.Actions.Close')}
-        triggerElement={
+      <ConfirmDialog
+        title={t('VotingRound.Actions.Close')}
+        confirmLabel={t('VotingRound.Actions.Close')}
+        trigger={
           <Button
             priority="secondary"
             disabled={isPending}>
             {t('VotingRound.Actions.Close')}
           </Button>
         }
-        onClickContinue={() => changeStatus(VotingRoundStatus.Closed)}>
+        onConfirm={() => changeStatus(VotingRoundStatus.Closed)}>
         {t('VotingRound.Dialog.CloseRound', { name: roundName })}
-      </AlertDialogComponent>
+      </ConfirmDialog>
     );
   }
 
   return (
-    <AlertDialogComponent
-      AlertTitle={t('VotingRound.Actions.Open')}
-      actionButtonText={t('VotingRound.Actions.Open')}
-      triggerElement={
+    <ConfirmDialog
+      title={t('VotingRound.Actions.Open')}
+      confirmLabel={t('VotingRound.Actions.Open')}
+      trigger={
         <Button disabled={isPending || !hasFeatures}>
           {t('VotingRound.Actions.Open')}
         </Button>
       }
-      onClickContinue={() => changeStatus(VotingRoundStatus.Open)}>
+      onConfirm={() => changeStatus(VotingRoundStatus.Open)}>
       {t('VotingRound.Dialog.OpenRound', { name: roundName })}
-    </AlertDialogComponent>
+    </ConfirmDialog>
   );
 };

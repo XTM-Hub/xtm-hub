@@ -5,7 +5,6 @@ import useScrollPosition from '@/hooks/use-scroll-position';
 import { cn } from '@/lib/utils';
 import { Button } from '@filigran/design-system';
 import { ArrowOutwardIcon, LogoFiligranIcon } from '@filigran/icon';
-import { AspectRatio } from '@filigran/ui/servers';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ReactNode, useCallback, useEffect } from 'react';
@@ -116,10 +115,9 @@ const ServiceInstanceCard = ({
               </span>
             )}
           </div>
-          <AspectRatio
-            ratio={16 / 9}
+          <div
             className={cn(
-              'rounded-t',
+              'relative w-full min-h-0 aspect-video rounded-t',
               serviceInstance.fullBackgroundImage
                 ? 'overflow-visible'
                 : 'overflow-hidden'
@@ -156,7 +154,7 @@ const ServiceInstanceCard = ({
                   alt={`Illustration of ${serviceInstance.name}`}
                 />
               ))}
-          </AspectRatio>
+          </div>
         </div>
         <div className="min-h-40 flex flex-col p-l gap-l flex-1 bg-elevation-background-layer-1 group-hover:bg-hover">
           <div className="flex items-start min-h-12 w-full text-ellipsis overflow-hidden">

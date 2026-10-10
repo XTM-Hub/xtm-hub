@@ -6,22 +6,14 @@ import { CapabilityDescription } from '@/components/admin/user/CapabilityDescrip
 import { userAdminFormSchema } from '@/components/admin/user/forms/user-form.schema';
 import { SettingsContext } from '@/components/settings/EnvPortalContext';
 import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
+import { Form, FormField } from '@/components/ui/form';
+import { Label } from '@/components/ui/label';
+import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { cn, isEmpty } from '@/lib/utils';
-import { Button, IconButton } from '@filigran/design-system';
+import { Button, IconButton, Input } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Label,
-  SheetFooter,
-} from '@filigran/ui/clients';
-import { Input } from '@filigran/ui/servers';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useContext, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
@@ -83,67 +75,51 @@ export const UserAdminForm = ({ handleSubmit }: UserAdminFormProps) => {
         <FormField
           control={form.control}
           name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('UserForm.Email')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('UserForm.Email')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Input
+              label={t('UserForm.Email')}
+              placeholder={t('UserForm.Email')}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
         <FormField
           control={form.control}
           name="first_name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('UserForm.FirstName')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('UserForm.FirstName')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Input
+              label={t('UserForm.FirstName')}
+              placeholder={t('UserForm.FirstName')}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
         <FormField
           control={form.control}
           name="last_name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('UserForm.LastName')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('UserForm.LastName')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Input
+              label={t('UserForm.LastName')}
+              placeholder={t('UserForm.LastName')}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
         {isDevelopmentEnvSetting && (
           <FormField
             control={form.control}
             name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('UserForm.Password')}</FormLabel>
-                <FormControl>
-                  <Input
-                    type="password"
-                    placeholder={t('UserForm.Password')}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+            render={({ field, fieldState }) => (
+              <Input
+                label={t('UserForm.Password')}
+                type="password"
+                placeholder={t('UserForm.Password')}
+                error={fieldState.error?.message}
+                {...field}
+              />
             )}
           />
         )}
@@ -171,33 +147,29 @@ export const UserAdminForm = ({ handleSubmit }: UserAdminFormProps) => {
                 control={form.control}
                 key={`organization_capabilities.${index}.capabilities`}
                 name={`organization_capabilities.${index}.capabilities`}
-                render={({ field: formField }) => {
+                render={({ field: formField, fieldState }) => {
                   return (
-                    <FormItem>
-                      <div className="grid gap-m items-center grid-cols-[1fr_4fr_3rem]">
-                        <Label>
-                          {
-                            userOrganization.find(
-                              ({ id }) => id === field.organization_id
-                            )?.name
-                          }
-                        </Label>
-                        <FormControl>
-                          <CapabilityMultiSelect
-                            value={formField.value}
-                            onChange={formField.onChange}
-                          />
-                        </FormControl>
-                        <IconButton
-                          type="button"
-                          priority="tertiary"
-                          aria-label={t('MenuActions.Remove')}
-                          icon={<DeleteIcon className="h-4 w-4" />}
-                          onClick={() => remove(index)}
-                        />
-                      </div>
-                      <FormMessage />
-                    </FormItem>
+                    <div className="grid gap-m items-center grid-cols-[1fr_4fr_3rem]">
+                      <Label>
+                        {
+                          userOrganization.find(
+                            ({ id }) => id === field.organization_id
+                          )?.name
+                        }
+                      </Label>
+                      <CapabilityMultiSelect
+                        value={formField.value}
+                        onChange={formField.onChange}
+                        error={fieldState.error?.message}
+                      />
+                      <IconButton
+                        type="button"
+                        priority="tertiary"
+                        aria-label={t('MenuActions.Remove')}
+                        icon={<DeleteIcon className="h-4 w-4" />}
+                        onClick={() => remove(index)}
+                      />
+                    </div>
                   );
                 }}
               />

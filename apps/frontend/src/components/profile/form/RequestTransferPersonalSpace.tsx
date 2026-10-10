@@ -1,19 +1,18 @@
 'use client';
 
 import { MeRequestTransferPersonalSpaceMutation } from '@/components/me/me.graphql';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { AutoForm } from '@/components/ui/auto-form';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Separator } from '@/components/ui/separator';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import {
-  AutoForm,
+  Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  Separator,
-  toast,
-} from '@filigran/ui';
-
-import { Button } from '@filigran/design-system';
+} from '@filigran/design-system';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useMutation } from 'react-relay';
@@ -46,14 +45,15 @@ export const RequestTransferPersonalSpace = () => {
         new_email: pendingValues?.new_email,
       },
       onError(error) {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });
       },
       onCompleted() {
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('ProfilePage.PersonalSpace.SuccessRequest'),
         });
@@ -65,13 +65,13 @@ export const RequestTransferPersonalSpace = () => {
     <>
       <Separator className="my-s" />
       <h2 className="text-destructive">{t('Utils.DangerZone')}</h2>
-      <Card className="border-2 border-red">
+      <Card>
         <CardHeader>
-          <CardTitle className="heading-lg">
+          <CardTitle as="h3">
             {t('ProfilePage.PersonalSpace.TitleDangerZone')}
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent clamp={0}>
           {t('ProfilePage.PersonalSpace.TransferPersoSpaceExplanation')}
           <AutoForm
             className="mt-xl"
@@ -95,15 +95,15 @@ export const RequestTransferPersonalSpace = () => {
           </AutoForm>
         </CardContent>
       </Card>
-      <AlertDialogComponent
-        isOpen={isDialogOpen}
-        AlertTitle={t('DialogActions.ContinueTitle')}
-        actionButtonText={t('MenuActions.Continue')}
-        variantName={'destructive'}
+      <ConfirmDialog
+        open={isDialogOpen}
+        title={t('DialogActions.ContinueTitle')}
+        confirmLabel={t('MenuActions.Continue')}
+        destructive
         onOpenChange={setIsDialogOpen}
-        onClickContinue={confirmEdition}>
+        onConfirm={confirmEdition}>
         {t('ProfilePage.PersonalSpace.TransferConfirmSentence')}
-      </AlertDialogComponent>
+      </ConfirmDialog>
     </>
   );
 };

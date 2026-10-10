@@ -1,21 +1,20 @@
-import { useTranslate } from '@/hooks/use-translate';
-import { fileToBase64 } from '@/lib/utils';
-import { docIsExistingFile, ExistingFile, NewFile } from '@/utils/documents';
-import { IconButton } from '@filigran/design-system';
-import { AddIcon, DeleteIcon, ReplayIcon } from '@filigran/icon';
 import {
-  FileInput,
   FormControl,
   FormItem,
   FormLabel,
   FormMessage,
-} from '@filigran/ui';
+} from '@/components/ui/form';
+import { useTranslate } from '@/hooks/use-translate';
+import { fileToBase64 } from '@/lib/utils';
+import { docIsExistingFile, ExistingFile, NewFile } from '@/utils/documents';
 import {
+  IconButton,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui/clients';
+} from '@filigran/design-system';
+import { AddIcon, DeleteIcon, ReplayIcon } from '@filigran/icon';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { DocumentSourceType } from '@graphql/generated';
 import { ChangeEvent, useRef } from 'react';
@@ -36,7 +35,7 @@ interface ServiceFormMultipleImagesFieldProps {
 }
 
 export const ServiceFormMultipleImagesField = ({
-  field: { ref, value },
+  field: { ref, onChange },
   document,
   images,
   setImages,
@@ -63,37 +62,34 @@ export const ServiceFormMultipleImagesField = ({
           />
         </FormLabel>
         <FormControl>
-          <FileInput
+          <input
+            type="file"
+            className="hidden"
             multiple
-            hidden
             name="images"
-            onChangeCapture={async (e: ChangeEvent<HTMLInputElement>) => {
-              const localImages = [...images];
-              if (e.target?.files) {
-                for (const image of Array.from(e.target.files)) {
-                  const extendedImage = image as NewFile & {
-                    source_type: DocumentSourceType;
-                  };
-                  extendedImage.preview = await fileToBase64(image as File);
-                  extendedImage.id = new Date().getTime().toString();
-                  extendedImage.source_type = DocumentSourceType.Internal;
-                  localImages.push(extendedImage);
-                }
-              }
-              setImages(localImages);
-              return false;
-            }}
-            texts={{
-              selectFile: t('Service.Form.UploadImage'),
-              noFile: t('Service.Form.NoImage'),
-              dropFiles: t('Service.Form.DropDocuments'),
-            }}
-            allowedTypes={'image/jpeg, image/png'}
+            accept="image/jpeg, image/png"
             ref={(e: HTMLInputElement) => {
               ref(e);
               inputRef.current = e;
             }}
-            value={value ? [value] : []}
+            onChange={async (e: ChangeEvent<HTMLInputElement>) => {
+              const files = Array.from(e.target.files ?? []);
+              if (files.length === 0) {
+                return;
+              }
+              const localImages = [...images];
+              for (const image of files) {
+                const extendedImage = image as NewFile & {
+                  source_type: DocumentSourceType;
+                };
+                extendedImage.preview = await fileToBase64(image);
+                extendedImage.id = new Date().getTime().toString();
+                extendedImage.source_type = DocumentSourceType.Internal;
+                localImages.push(extendedImage);
+              }
+              setImages(localImages);
+              onChange(files);
+            }}
           />
         </FormControl>
         <FormMessage />

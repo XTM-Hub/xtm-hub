@@ -4,13 +4,11 @@ import {
   Icon,
   IconName,
   Text,
-} from '@filigran/design-system';
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui/clients';
+} from '@filigran/design-system';
 
 export type VersionBadgeStatus = 'neutral' | 'success' | 'warning' | 'error';
 

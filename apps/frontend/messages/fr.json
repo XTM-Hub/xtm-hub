@@ -114,21 +114,6 @@
       "SeeMore": "Voir plus"
     }
   },
-  "Datatable": {
-    "Asc": "Asc",
-    "ClearSelection": "Effacer la sélection",
-    "ColumnOptions": "Options de colonne",
-    "Columns": "Colonnes",
-    "Desc": "Desc",
-    "GoFirstPage": "Aller à la première page",
-    "GoLastPage": "Aller à la dernière page",
-    "GoNextPage": "Aller à la page suivante",
-    "GoPreviousPage": "Aller à la page précédente",
-    "Hide": "Cacher",
-    "ManageColumnsVisibility": "Gérer la visibilité des colonnes",
-    "ResetTable": "Réinitialiser",
-    "RowsPerPage": "Lignes par page"
-  },
   "DeploymentRequestUseCase": {
     "threat_profiling_cti": "Profilage des menaces (CTI)",
     "threat_profiling_fimi": "Profilage des menaces (FIMI)",
@@ -1203,6 +1188,7 @@
       "UnavailableDeployments": "Ce connecteur n'est pas disponible pour le déploiement automatique."
     },
     "CreationStatus": "Statut de la création",
+    "FilterByService": "Filtrer par service",
     "Form": {
       "AddImage": "Ajouter une image",
       "Author": "Auteur",
@@ -1217,7 +1203,6 @@
       "DescriptionLabel": "Description",
       "DescriptionPlaceholder": "Il s'agit d'un paragraphe décrivant le {documentType}.",
       "DescriptionUpdateJSONFile": "Vous êtes sur le point de télécharger un nouveau fichier json. Le fichier json précédent sera supprimé. Voulez-vous continuer ?",
-      "DropDocuments": "Déposer les documents ici",
       "ExistingJSONFile": "Fichier JSON existant : {file_name}",
       "GithubUrlLabel": "URL Github",
       "Illustration": "Illustration",
@@ -1231,7 +1216,6 @@
       "MinimumDeployableVersionPlaceholder": "1.0.0",
       "NameLabel": "Nom",
       "NamePlaceholder": "nom {documentType}",
-      "NoImage": "Pas d'image sélectionnée",
       "PlaybookSupportedLabel": "Playbook pris en charge",
       "ProductVersionLabel": "Version de compatibilité de {platform}",
       "ProductVersionPlaceholder": "1.0.0",
@@ -1249,7 +1233,6 @@
       "SolutionCategoriesPlaceholder": "Ajouter des catégories de solutions",
       "SubscriptionLinkLabel": "Lien d'abonnement (url)",
       "UpdateJSONFile": "Mise à jour du fichier JSON",
-      "UploadImage": "Télécharger une ou plusieurs nouvelle(s) image(s)",
       "UploadLogo": "Télécharger un nouveau logo",
       "UrlPlaceholder": "http://www.example.com",
       "UseCasesLabel": "Cas d'utilisation",
@@ -2010,7 +1993,6 @@
       }
     },
     "FileForm": {
-      "DropDocuments": "Lâchez les documents ici",
       "NoDocument": "Pas de document sélectionné",
       "SelectDocument": "Sélectionnez un document"
     },
@@ -2138,9 +2120,6 @@
   },
   "ServiceName": {
     "custom_dashboards": "Tableau de bord personnalisé"
-  },
-  "SelectUsers": {
-    "ClearAllSelections": "Effacer toutes les sélections"
   },
   "Sort Asc": "Tri Asc",
   "Sort Desc": "Sort Desc",
@@ -2336,6 +2315,63 @@
     "AutomaticDeploy": "Déploiement automatique",
     "And": "et",
     "Or": "ou"
+  },
+  "DesignSystem": {
+    "Breadcrumbs": {
+      "Label": "Fil d'Ariane"
+    },
+    "Carousel": {
+      "GoToSlide": "Aller à la diapositive {slide}",
+      "Next": "Diapositive suivante",
+      "Previous": "Diapositive précédente"
+    },
+    "Combobox": {
+      "SelectedValues": "Valeurs sélectionnées",
+      "ToggleOptions": "Afficher ou masquer les options"
+    },
+    "DataTable": {
+      "ClearSelection": "Effacer la sélection",
+      "ColumnOptions": "Options de colonne",
+      "Columns": "Colonnes",
+      "HideColumn": "Cacher",
+      "ManageColumns": "Gérer la visibilité des colonnes",
+      "NextPage": "Aller à la page suivante",
+      "PreviousPage": "Aller à la page précédente",
+      "ResetTable": "Réinitialiser",
+      "RowsPerPage": "Lignes par page",
+      "SelectAll": "Tout sélectionner",
+      "SelectedCount": "{count} sélectionné(s)",
+      "SelectRow": "Sélectionner la ligne",
+      "SortAscending": "Asc",
+      "SortDescending": "Desc"
+    },
+    "DatePicker": {
+      "Calendar": "Calendrier",
+      "FieldCalendar": "{label} (calendrier)",
+      "Clear": "Effacer la date",
+      "Confirm": "Valider",
+      "Hours": "Heures",
+      "Minutes": "Minutes",
+      "Month": "Mois",
+      "NextMonth": "Mois suivant",
+      "OpenCalendar": "Ouvrir le calendrier",
+      "Period": "Période",
+      "PreviousMonth": "Mois précédent",
+      "Seconds": "Secondes",
+      "Year": "Année"
+    },
+    "FileSelect": {
+      "Clear": "Supprimer tous les fichiers",
+      "FileRejected": "{fileName} n'a pas été ajouté ({reason, select, accept {format non pris en charge} other {taille maximale dépassée}}).",
+      "FilesRejected": "{count} fichiers n'ont pas été ajoutés (format non pris en charge ou taille maximale dépassée).",
+      "Loading": "Chargement",
+      "Placeholder": "Aucun fichier sélectionné.",
+      "RemoveFile": "Supprimer {fileName}",
+      "Trigger": "Sélectionnez votre fichier"
+    },
+    "SearchField": {
+      "Clear": "Effacer la recherche"
+    }
   },
   "Platform": {
     "Update": "Mettre à jour",

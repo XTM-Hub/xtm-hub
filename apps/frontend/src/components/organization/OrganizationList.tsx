@@ -7,24 +7,23 @@ import { EditOrganization } from '@/components/organization/EditOrganization';
 import { getOrganizations } from '@/components/organization/Organization.service';
 import { useOrganizationListLocalstorage } from '@/components/organization/organization-list-localstorage';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
-import { SearchInput } from '@/components/ui/SearchInput';
+import { DataTable, DataTableHeadBarOptions } from '@/components/ui/data-table';
 import {
   handleSortingChange,
   mapToSortingTableValue,
   transformSortingValueToParams,
 } from '@/components/ui/handle-sorting.utils';
+import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
-import { DEBOUNCE_TIME } from '@/utils/constant';
-import { i18nKey } from '@/utils/datatable';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
+import { Chip, SearchField } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
-import { Badge, DataTable, DataTableHeadBarOptions } from '@filigran/ui';
 import { OrganizationsPaginationQuery$variables } from '@generated/OrganizationsPaginationQuery.graphql';
 import { organizationItem_fragment$data } from '@generated/organizationItem_fragment.graphql';
 import { ColumnDef } from '@tanstack/react-table';
 import { usePathname, useRouter } from 'next/navigation';
 import { Suspense, useMemo, useState } from 'react';
-import { useDebounceCallback } from 'usehooks-ts';
 const OrganizationList = () => {
   const t = useTranslate();
   const router = useRouter();
@@ -54,11 +53,10 @@ const OrganizationList = () => {
           return (
             <div className="flex space-x-s">
               {row.original.domains?.map((domain) => (
-                <Badge
-                  className="truncate"
-                  key={domain}>
-                  {domain}
-                </Badge>
+                <Chip
+                  key={domain}
+                  label={domain}
+                />
               ))}
             </div>
           );
@@ -73,12 +71,8 @@ const OrganizationList = () => {
         cell: ({ row }) => (
           <div className="flex items-center justify-end">
             <IconActions
-              icon={
-                <>
-                  <MoreVertIcon className="h-4 w-4 text-primary" />
-                  <span className="sr-only">{t('Utils.OpenMenu')}</span>
-                </>
-              }>
+              aria-label={t('Utils.OpenMenu')}
+              icon={<MoreVertIcon className="h-4 w-4 text-primary" />}>
               <IconActionsItem
                 onClick={() => {
                   router.push(
@@ -165,17 +159,14 @@ const OrganizationList = () => {
     handleRefetchData({ searchTerm: inputValue });
   };
 
-  const debounceHandleInput = useDebounceCallback(
-    (e) => handleInputChange(e.target.value),
-    DEBOUNCE_TIME
-  );
+  const searchHandlers = useDebouncedSearch({ apply: handleInputChange });
 
   return (
     <>
       <Suspense
         fallback={
           <DataTable
-            i18nKey={i18nKey(t)}
+            {...getDataTableLabels(t)}
             data={[]}
             columns={columns}
             isLoading={true}
@@ -186,18 +177,17 @@ const OrganizationList = () => {
           data={organizationDataTable}
           toolbar={
             <div className="flex flex-col-reverse items-center justify-between gap-s sm:flex-row">
-              <label
-                htmlFor="organization-email"
-                className="sr-only">
-                {t('OrganizationActions.SearchOrganizationWithEmail')}
-              </label>
-              <SearchInput
-                id="organization-email"
-                containerClass="w-full sm:w-1/3"
+              <SearchField
+                className="w-full sm:w-1/3"
+                aria-label={t(
+                  'OrganizationActions.SearchOrganizationWithEmail'
+                )}
                 placeholder={t(
                   'OrganizationActions.SearchOrganizationWithEmail'
                 )}
-                onChange={debounceHandleInput}
+                clearLabel={t('DesignSystem.SearchField.Clear')}
+                onChange={searchHandlers.onChange}
+                onClear={searchHandlers.onClear}
               />
               <div className="flex w-full items-center justify-between gap-s sm:w-auto">
                 <DataTableHeadBarOptions />
@@ -217,7 +207,7 @@ const OrganizationList = () => {
             onColumnVisibilityChange: setColumnVisibility,
             rowCount: organizationsData.organizations.totalCount,
           }}
-          i18nKey={i18nKey(t)}
+          {...getDataTableLabels(t)}
           tableState={{
             sorting: mapToSortingTableValue(orderBy, orderMode),
             pagination,

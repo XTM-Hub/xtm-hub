@@ -1,13 +1,12 @@
 import { useOrganizationCapabilities } from '@/hooks/use-organization-capabilities';
 import { useTranslate } from '@/hooks/use-translate';
 import {
-  Badge,
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
-} from '@filigran/ui/servers';
+  Chip,
+} from '@filigran/design-system';
 import { useMemo } from 'react';
 
 export const CapabilityDescription = () => {
@@ -26,10 +25,10 @@ export const CapabilityDescription = () => {
       .map((capability) => {
         return (
           <li
-            className="flex items-center"
+            className="col-span-2 grid grid-cols-subgrid items-center"
             key={capability}>
-            <span className="min-w-56">
-              <Badge>{capability.replaceAll('_', ' ')}</Badge>
+            <span>
+              <Chip label={capability.replaceAll('_', ' ')} />
             </span>
             <span>{t(buildTranslationKey(capability))}</span>
           </li>
@@ -40,18 +39,16 @@ export const CapabilityDescription = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="heading-lg">
-          {t('CapabilityDescription.Title')}
-        </CardTitle>
-        <CardDescription>
-          {t('CapabilityDescription.Description')}
-        </CardDescription>
-        <CardContent className="p-0">
-          <ul className="flex flex-col space-y-s gap-xs text-xs">
-            {capabilityList}
-          </ul>
-        </CardContent>
+        <CardTitle as="h3">{t('CapabilityDescription.Title')}</CardTitle>
       </CardHeader>
+      <CardContent
+        clamp={0}
+        className="flex flex-col gap-s">
+        <p>{t('CapabilityDescription.Description')}</p>
+        <ul className="grid grid-cols-[auto_1fr] gap-x-s gap-y-m text-xs">
+          {capabilityList}
+        </ul>
+      </CardContent>
     </Card>
   );
 };

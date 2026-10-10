@@ -49,7 +49,9 @@ describe('AddUseCase', () => {
       screen.getByRole('button', { name: 'UseCaseActions.AddUseCase' })
     );
 
-    const colorInput = screen.getByDisplayValue('#FFFFFF');
+    const colorInput = screen.getByRole('textbox', {
+      name: 'UseCaseForm.Color',
+    });
     await user.type(
       screen.getByLabelText(/UseCaseForm.Name/i),
       'Threat Hunting'
@@ -78,7 +80,9 @@ describe('AddUseCase', () => {
       screen.getByRole('button', { name: 'UseCaseActions.AddUseCase' })
     );
 
-    const colorInput = screen.getByDisplayValue('#FFFFFF');
+    const colorInput = screen.getByRole('textbox', {
+      name: 'UseCaseForm.Color',
+    });
     await user.type(
       screen.getByLabelText(/UseCaseForm.Name/i),
       'Threat Hunting'

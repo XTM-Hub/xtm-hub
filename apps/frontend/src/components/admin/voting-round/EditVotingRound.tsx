@@ -3,15 +3,15 @@ import VotingRoundForm, {
   votingRoundFormSchema,
 } from '@/components/admin/voting-round/VotingRoundForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { toast } from '@filigran/ui';
 import {
   useVotingRoundDeleteMutation,
   useVotingRoundUpdateMutation,
 } from '@graphql/generated';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { z } from 'zod';
 import { invalidateVotingRoundQueries } from './voting-round-query-invalidation';
 
@@ -27,32 +27,32 @@ const EditVotingRound = ({
   const t = useTranslate();
   const queryClient = useQueryClient();
   const [openSheet, setOpenSheet] = useState<boolean>(open);
+  // Shared by every closure, so a repeated or late close notifies once.
+  const openSheetRef = useRef(openSheet);
 
   const handleError = (error: unknown) => {
     const errorMessage =
       error instanceof Error ? error.message : 'UnknownError';
-    toast({
-      variant: 'destructive',
+    showSnackbar({
+      severity: 'error',
       title: t('Utils.Error'),
       description: <>{t(`Error.Server.${errorMessage}`)}</>,
     });
   };
 
   const handleOpenSheet = (openValue: boolean) => {
-    setOpenSheet((previousState) => {
-      const sheetIsClosing = previousState !== openValue && !openValue;
-      if (sheetIsClosing) {
-        onClose();
-      }
-      return openValue;
-    });
+    if (openSheetRef.current && !openValue) {
+      onClose();
+    }
+    openSheetRef.current = openValue;
+    setOpenSheet(openValue);
   };
 
   const { mutate: updateVotingRound } = useVotingRoundUpdateMutation(
     portalGraphqlClient,
     {
       onSuccess: () => {
-        toast({ title: t('Utils.Success') });
+        showSnackbar({ severity: 'success', title: t('Utils.Success') });
         invalidateVotingRoundQueries(queryClient);
         handleOpenSheet(false);
       },
@@ -64,7 +64,7 @@ const EditVotingRound = ({
     portalGraphqlClient,
     {
       onSuccess: () => {
-        toast({ title: t('Utils.Success') });
+        showSnackbar({ severity: 'success', title: t('Utils.Success') });
         invalidateVotingRoundQueries(queryClient);
         handleOpenSheet(false);
       },

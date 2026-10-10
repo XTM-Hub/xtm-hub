@@ -107,11 +107,10 @@ vi.mock('@/hooks/use-scroll-position', () => ({
   default: testState.useScrollPosition,
 }));
 
-vi.mock('@/utils/debounce', () => ({
-  debounceHandleInput:
-    (callback: (value: string) => void) =>
-    (event: { target: { value: string } }) =>
-      callback(event.target.value),
+vi.mock('usehooks-ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('usehooks-ts')>()),
+  useDebounceCallback: (callback: (value: string) => void) =>
+    Object.assign((value: string) => callback(value), { cancel: () => {} }),
 }));
 
 vi.mock('react-relay', async (importOriginal) => {

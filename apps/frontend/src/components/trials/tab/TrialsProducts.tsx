@@ -1,30 +1,28 @@
 'use client';
 import { useTranslate } from '@/hooks/use-translate';
 import {
+  Chip,
+  type ChipSeverity,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui';
-import { Badge } from '@filigran/ui/servers';
+} from '@filigran/design-system';
 import {
   DeploymentRequestHubStatus,
   TrialsProductFragment,
 } from '@graphql/generated';
 
-const SUCCESS_CLASS_NAME = 'text-feedback-success-primary';
-const RUNNING_CLASS_NAME = 'text-feedback-alert-primary';
-const INACTIVE_CLASS_NAME = 'text-feedback-neutral-primary';
-
-const CLASS_NAME_BY_HUB_STATUS: Record<DeploymentRequestHubStatus, string> = {
-  [DeploymentRequestHubStatus.Active]: SUCCESS_CLASS_NAME,
-  [DeploymentRequestHubStatus.Pending]: RUNNING_CLASS_NAME,
-  [DeploymentRequestHubStatus.Provisioning]: RUNNING_CLASS_NAME,
-  [DeploymentRequestHubStatus.Queued]: RUNNING_CLASS_NAME,
-  [DeploymentRequestHubStatus.Cancelled]: INACTIVE_CLASS_NAME,
-  [DeploymentRequestHubStatus.Expired]: INACTIVE_CLASS_NAME,
-  [DeploymentRequestHubStatus.Failed]: INACTIVE_CLASS_NAME,
-};
+const SEVERITY_BY_HUB_STATUS: Record<DeploymentRequestHubStatus, ChipSeverity> =
+  {
+    [DeploymentRequestHubStatus.Active]: 'low',
+    [DeploymentRequestHubStatus.Pending]: 'medium',
+    [DeploymentRequestHubStatus.Provisioning]: 'medium',
+    [DeploymentRequestHubStatus.Queued]: 'medium',
+    [DeploymentRequestHubStatus.Cancelled]: 'neutral',
+    [DeploymentRequestHubStatus.Expired]: 'neutral',
+    [DeploymentRequestHubStatus.Failed]: 'neutral',
+  };
 
 interface TrialsProductsProps {
   products: readonly TrialsProductFragment[];
@@ -45,9 +43,12 @@ export const TrialsProducts = ({ products }: TrialsProductsProps) => {
           delayDuration={200}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge className={CLASS_NAME_BY_HUB_STATUS[product.hub_status]}>
-                {product.platform_identifier?.toUpperCase()}
-              </Badge>
+              <span className="inline-flex">
+                <Chip
+                  label={product.platform_identifier?.toUpperCase() ?? ''}
+                  severity={SEVERITY_BY_HUB_STATUS[product.hub_status]}
+                />
+              </span>
             </TooltipTrigger>
             <TooltipContent>
               {t(`TrialsDashboard.ProductStatus.${product.hub_status}`)}

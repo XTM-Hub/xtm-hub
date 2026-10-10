@@ -8,7 +8,8 @@ import {
   BottomLink,
   SectionConfig,
 } from '@/components/menu/navigation/shared/navigation.type';
-import { Accordion, Separator } from '@filigran/ui';
+import { Accordion } from '@/components/ui/accordion';
+import { Separator } from '@/components/ui/separator';
 
 interface SharedNavigationProps {
   open: boolean;

@@ -6,14 +6,15 @@ import {
 import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
-import { useTranslate } from '@/hooks/use-translate';
-import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
 import {
-  Badge,
   DataTable,
   DataTableHeadBarOptions,
   SelectionState,
-} from '@filigran/ui';
+} from '@/components/ui/data-table';
+import { useTranslate } from '@/hooks/use-translate';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
+import { Chip } from '@filigran/design-system';
+import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
 import { userServiceFromSubscription$key } from '@generated/userServiceFromSubscription.graphql';
 import {
   userServices_fragment$data,
@@ -225,9 +226,7 @@ const SubscriptionSlug = ({
             capabilities[0]?.generic_service_capability?.name ===
               ServiceRestriction.Access
           ) {
-            return (
-              <Badge className="capitalize">{ServiceRestriction.Access}</Badge>
-            );
+            return <Chip label={ServiceRestriction.Access} />;
           }
           const capabilityNames = capabilities
             .map((capability) => {
@@ -257,12 +256,8 @@ const SubscriptionSlug = ({
             <div className="flex items-center justify-end">
               {canManageUserServices && (
                 <IconActions
-                  icon={
-                    <>
-                      <MoreVertIcon className="h-4 w-4 text-primary" />
-                      <span className="sr-only">{t('Utils.OpenMenu')}</span>
-                    </>
-                  }>
+                  aria-label={t('Utils.OpenMenu')}
+                  icon={<MoreVertIcon className="h-4 w-4 text-primary" />}>
                   <IconActionsItem
                     onClick={() => setEditUserService(row.original)}>
                     {t('Utils.Update')}
@@ -319,6 +314,7 @@ const SubscriptionSlug = ({
       )}
 
       <DataTable
+        {...getDataTableLabels(t)}
         toolbar={toolbar}
         columns={columns}
         data={userData}

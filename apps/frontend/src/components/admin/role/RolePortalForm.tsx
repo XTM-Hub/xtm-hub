@@ -1,13 +1,9 @@
 import RoleSheetFormFooter from '@/components/admin/role/RoleSheetFormFooter';
+import { AppCombobox } from '@/components/ui/AppCombobox';
+import { AutoForm } from '@/components/ui/auto-form';
+import { useFormField } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
-import {
-  AutoForm,
-  FormControl,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  MultiSelectFormField,
-} from '@filigran/ui';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import { PortalCapability } from '@graphql/generated';
 import { useMemo } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
@@ -18,10 +14,11 @@ const portalCapabilityValues = Object.values(PortalCapability) as [
   ...PortalCapability[],
 ];
 
-const portalCapabilityOptions = portalCapabilityValues.map((capability) => ({
-  id: capability,
-  label: capability,
-}));
+const portalCapabilityOptionIds = toComboboxOptionIds(
+  portalCapabilityValues,
+  (capability) => capability,
+  (capability) => capability
+);
 
 const buildRolePortalFormSchema = (t: (key: string) => string) =>
   z.object({
@@ -35,6 +32,29 @@ const buildRolePortalFormSchema = (t: (key: string) => string) =>
 export type RolePortalFormValues = z.infer<
   ReturnType<typeof buildRolePortalFormSchema>
 >;
+
+const CapabilitiesField = ({
+  field,
+}: {
+  field: ControllerRenderProps<FieldValues, string>;
+}) => {
+  const t = useTranslate();
+  const { error } = useFormField();
+
+  return (
+    <AppCombobox
+      multiple
+      label={t('RoleListPage.Capabilities')}
+      placeholder={t('RoleListPage.Capabilities')}
+      error={error?.message}
+      options={portalCapabilityOptionIds.ids}
+      value={field.value ?? []}
+      onValueChange={field.onChange}
+      getOptionLabel={portalCapabilityOptionIds.getOptionLabel}
+      contentClassName="layer-2"
+    />
+  );
+};
 
 const RolePortalForm = ({
   rolePortal,
@@ -57,29 +77,7 @@ const RolePortalForm = ({
           inputProps: { placeholder: t('RoleListPage.Role') },
         },
         capabilities: {
-          fieldType: ({
-            field,
-          }: {
-            field: ControllerRenderProps<FieldValues, string>;
-          }) => (
-            <FormItem>
-              <FormLabel>{t('RoleListPage.Capabilities')}</FormLabel>
-              <FormControl>
-                <MultiSelectFormField
-                  options={portalCapabilityOptions}
-                  popoverContentClassName="bg-elevation-background-layer-3"
-                  keyValue="id"
-                  keyLabel="label"
-                  defaultValue={field.value ?? []}
-                  onValueChange={field.onChange}
-                  noResultString={t('Utils.NotFound')}
-                  placeholder={t('RoleListPage.Capabilities')}
-                  variant="inverted"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          ),
+          fieldType: CapabilitiesField,
         },
       }}>
       {({ isDirty }) => <RoleSheetFormFooter isDirty={isDirty} />}

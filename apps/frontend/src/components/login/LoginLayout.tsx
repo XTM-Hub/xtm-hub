@@ -3,9 +3,9 @@ import LoginForm from '@/components/login/LoginForm';
 import LoginMessage from '@/components/login/LoginMessage';
 import LoginTitleForm from '@/components/login/LoginTitle';
 import { SettingsContext } from '@/components/settings/EnvPortalContext';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useDecodedQuery from '@/hooks/use-decoded-query';
 import { useTranslate } from '@/hooks/use-translate';
-import { useToast } from '@filigran/ui/clients';
 import { usePathname, useRouter } from 'next/navigation';
 import { useContext, useEffect } from 'react';
 
@@ -15,7 +15,6 @@ export const LoginLayout = ({}) => {
 
   const { error, redirect } = useDecodedQuery();
   const currentPath = usePathname();
-  const { toast } = useToast();
   const t = useTranslate();
 
   const localProvider = settings?.platform_providers?.find(
@@ -31,13 +30,13 @@ export const LoginLayout = ({}) => {
 
   useEffect(() => {
     if (error) {
-      toast({
-        variant: 'destructive',
+      showSnackbar({
+        severity: 'error',
         title: t('UnexpectedErrorDialog.Title'),
         description: t('UnexpectedErrorDialog.Description'),
       });
     }
-  }, [currentPath, error, t, toast]);
+  }, [currentPath, error, t]);
 
   if (!localProvider) {
     return null;

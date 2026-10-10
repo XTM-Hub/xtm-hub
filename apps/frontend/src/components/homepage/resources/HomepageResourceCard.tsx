@@ -5,19 +5,16 @@ import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
 import { ResourceStatusIcons } from '@/components/ui/ResourceStatusIcons';
-import { LogoFiligranIcon } from '@filigran/icon';
 import {
+  Chip,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui/clients';
-import { Badge } from '@filigran/ui/servers';
+} from '@filigran/design-system';
+import { LogoFiligranIcon } from '@filigran/icon';
 import Image from 'next/image';
 import Link from 'next/link';
-
-const BADGE_CLASS =
-  'border-0 content-body-compact-medium bg-feedback-info-secondary-transparency';
 
 export interface HomepageResourceCardProps {
   name: string;
@@ -53,15 +50,13 @@ const HomepageResourceCard = ({
             {shortDescription}
           </p>
         </TooltipTrigger>
-        <TooltipContent className="max-w-sm whitespace-normal">
-          {shortDescription}
-        </TooltipContent>
+        <TooltipContent>{shortDescription}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   ) : null;
 
   return (
-    <div className="overflow-hidden flex flex-col relative rounded bg-elevation-background-layer-1 hover:bg-hover">
+    <div className="overflow-hidden flex flex-col relative rounded bg-elevation-background-layer-1 hover:bg-hover has-[>a:focus-visible]:ring-2 has-[>a:focus-visible]:ring-ring">
       <div className="absolute top-m right-m flex gap-xs z-10">
         <ResourceStatusIcons
           active={active}
@@ -70,7 +65,7 @@ const HomepageResourceCard = ({
         />
       </div>
       <Link
-        className="flex flex-col flex-1 min-h-0 overflow-hidden p-m gap-s"
+        className="flex flex-col flex-1 min-h-0 overflow-hidden p-m gap-s focus-visible:outline-none"
         prefetch={false}
         href={url}>
         <div
@@ -99,9 +94,7 @@ const HomepageResourceCard = ({
                     {name}
                   </h3>
                 </TooltipTrigger>
-                <TooltipContent className="whitespace-nowrap">
-                  {name}
-                </TooltipContent>
+                <TooltipContent>{name}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
             <div className="h-8 max-sm:hidden">
@@ -109,7 +102,6 @@ const HomepageResourceCard = ({
                 <BadgeOverflowCounter
                   formatLabel={false}
                   badges={useCases}
-                  badgeClassName={BADGE_CLASS}
                 />
               )}
             </div>
@@ -120,11 +112,10 @@ const HomepageResourceCard = ({
       </Link>
       <div className="flex items-center gap-s flex-wrap pl-m pb-m">
         {footerTags.map((tag) => (
-          <Badge
+          <Chip
             key={tag}
-            className={BADGE_CLASS}>
-            {tag}
-          </Badge>
+            label={tag}
+          />
         ))}
       </div>
     </div>

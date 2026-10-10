@@ -1,8 +1,8 @@
 import { RegistrationContext } from '@/components/registration/Context';
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
 import { Register } from '@/components/registration/register';
+import * as SnackbarStore from '@/components/ui/snackbar/snackbar-store';
 import testRender from '@/utils/test/test-render';
-import * as FiligranUI from '@filigran/ui/clients';
 import { organizationListUserOrganizationsQuery$data } from '@generated/organizationListUserOrganizationsQuery.graphql';
 import { registerIsPlatformRegisteredFragment$data } from '@generated/registerIsPlatformRegisteredFragment.graphql';
 import { registerIsPlatformRegisteredQuery } from '@generated/registerIsPlatformRegisteredQuery.graphql';
@@ -133,7 +133,7 @@ describe('Register', () => {
     testState.token = 'a-token';
     testState.errorMessage = 'SOME_ERROR';
     testState.lastRegisterVariables = null;
-    vi.spyOn(FiligranUI, 'toast').mockImplementation(() => undefined);
+    vi.spyOn(SnackbarStore, 'showSnackbar').mockImplementation(() => undefined);
   });
 
   it('renders the organization form when the platform was never registered', () => {
@@ -278,8 +278,8 @@ describe('Register', () => {
     await user.click(screen.getByRole('button', { name: 'mock-confirm' }));
 
     await waitFor(() => {
-      expect(FiligranUI.toast).toHaveBeenCalledWith({
-        variant: 'destructive',
+      expect(SnackbarStore.showSnackbar).toHaveBeenCalledWith({
+        severity: 'error',
         title: 'Utils.Error',
         description: 'Error.Server.SOME_ERROR',
       });

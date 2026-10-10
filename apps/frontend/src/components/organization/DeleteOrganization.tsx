@@ -1,7 +1,7 @@
 import { organizationDeletion } from '@/components/organization/organization.graphql';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
-import { useToast } from '@filigran/ui';
 import { organizationDeletionMutation } from '@generated/organizationDeletionMutation.graphql';
 import { organizationItem_fragment$data } from '@generated/organizationItem_fragment.graphql';
 import { useMutation } from 'react-relay';
@@ -22,19 +22,19 @@ export const DeleteOrganization = ({
   const [deleteOrganizationMutation] =
     useMutation<organizationDeletionMutation>(organizationDeletion);
   const t = useTranslate();
-  const { toast } = useToast();
   const onDeletedOrganization = (deletedOrganizationId: string) => {
     deleteOrganizationMutation({
       variables: { id: deletedOrganizationId, connections: [connectionId] },
       onCompleted: () => {
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('OrganizationActions.OrganizationDeleted'),
         });
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: <>{t(`Error.Server.${error.message}`)}</>,
         });
@@ -42,16 +42,16 @@ export const DeleteOrganization = ({
     });
   };
   return (
-    <AlertDialogComponent
-      actionButtonText={t('Utils.Delete')}
-      variantName={'destructive'}
-      AlertTitle={t('OrganizationForm.DeleteOrganization')}
-      isOpen={open}
+    <ConfirmDialog
+      confirmLabel={t('Utils.Delete')}
+      destructive
+      title={t('OrganizationForm.DeleteOrganization')}
+      open={open}
       onOpenChange={setOpen}
-      onClickContinue={() => onDeletedOrganization(organization.id)}>
+      onConfirm={() => onDeletedOrganization(organization.id)}>
       {t('OrganizationForm.SureDeleteOrganization', {
         organizationName: organization.name,
       })}
-    </AlertDialogComponent>
+    </ConfirmDialog>
   );
 };

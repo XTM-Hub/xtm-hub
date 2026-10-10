@@ -7,15 +7,15 @@ import {
 } from '@/components/admin/user/user.graphql';
 import { UserFragment } from '@/components/admin/user/UserList';
 import { PortalContext } from '@/components/me/AppPortalContext';
-import { useTranslate } from '@/hooks/use-translate';
-import { APP_PATH } from '@/utils/path/constant';
-import { Button } from '@filigran/design-system';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-  Separator,
-} from '@filigran/ui/clients';
+} from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
+import { useTranslate } from '@/hooks/use-translate';
+import { APP_PATH } from '@/utils/path/constant';
+import { Button } from '@filigran/design-system';
 import {
   UserList_fragment$data,
   UserList_fragment$key,
@@ -140,7 +140,8 @@ const PendingUserNotifications = ({
       </PopoverTrigger>
       <PopoverContent
         align="end"
-        className="w-120 px-0 pt-4 pb-0">
+        padding={0}
+        className="w-120 pt-4">
         <span className="px-4">
           {t('Notifications.Title', {
             count: nbUsers,
@@ -149,7 +150,7 @@ const PendingUserNotifications = ({
         <div className="max-h-[300px] overflow-auto mt-4">
           {users.map((user) => (
             <div key={user.id}>
-              <Separator className="" />
+              <Separator />
               <Link
                 href={`/${APP_PATH}/manage/user?pendingUsers`}
                 onClick={() => setOpenPopover(false)}

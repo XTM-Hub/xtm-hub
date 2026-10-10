@@ -1,16 +1,15 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
+import { useFormField } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
 import {
-  FormControl,
-  FormItem,
-  FormLabel,
-  FormMessage,
   Select,
   SelectContent,
+  SelectHelperText,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
-} from '@filigran/ui';
+} from '@filigran/design-system';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useContext } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
@@ -30,9 +29,10 @@ export const ServiceFormUploaderOrganizationIdField = ({
 }: ServiceFormUploaderOrganizationIdFieldProps) => {
   const t = useTranslate();
   const { me } = useContext(PortalContext);
+  const { error } = useFormField();
+
   return (
-    <FormItem hidden={isCreation}>
-      <FormLabel>{t('OrganizationInServiceAction.Organization')}</FormLabel>
+    <div hidden={isCreation}>
       <Select
         disabled={disabled}
         onValueChange={field.onChange}
@@ -40,15 +40,17 @@ export const ServiceFormUploaderOrganizationIdField = ({
           (isCreation
             ? me?.selected_organization_id
             : document?.uploader_organization?.id) ?? ''
-        }>
-        <FormControl>
-          <SelectTrigger>
-            <SelectValue
-              placeholder={t('OrganizationInServiceAction.SelectOrganization')}
-            />
-          </SelectTrigger>
-        </FormControl>
-        <SelectContent>
+        }
+        error={Boolean(error)}>
+        <SelectLabel>
+          {t('OrganizationInServiceAction.Organization')}
+        </SelectLabel>
+        <SelectTrigger className="w-full">
+          <SelectValue
+            placeholder={t('OrganizationInServiceAction.SelectOrganization')}
+          />
+        </SelectTrigger>
+        <SelectContent className="layer-2">
           {me?.organizations.map((node) => {
             return (
               <SelectItem
@@ -59,8 +61,8 @@ export const ServiceFormUploaderOrganizationIdField = ({
             );
           })}
         </SelectContent>
+        {error && <SelectHelperText>{error.message}</SelectHelperText>}
       </Select>
-      <FormMessage />
-    </FormItem>
+    </div>
   );
 };

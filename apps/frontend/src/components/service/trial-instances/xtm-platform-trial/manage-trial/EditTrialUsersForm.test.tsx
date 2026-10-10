@@ -17,11 +17,10 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const toastMock = vi.hoisted(() => vi.fn());
+const showSnackbarMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@filigran/ui', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@filigran/ui')>()),
-  toast: toastMock,
+vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
+  showSnackbar: showSnackbarMock,
 }));
 
 const GQL_OPERATION_BUNDLE_USER_SERVICE_GROUPS = 'BundleUserServiceGroups';
@@ -72,17 +71,22 @@ const setupQueryMocks = () => {
   );
 };
 
-// Role selects are not directly labelled (the FormLabel's `for` does not
-// resolve to the Select's underlying button), so we scope the query to the
-// FormItem containing the label text to find its associated combobox.
-const getRoleCombobox = (title: string) => {
-  const label = screen.getByText(title, { selector: 'label' });
-  return within(label.parentElement as HTMLElement).getByRole('combobox');
+const getRoleCombobox = (title: string) =>
+  screen.getByRole('combobox', { name: title });
+
+// The helper text has no link to its select, so scope it to the platform's
+// panel or another panel's text would match.
+const getRoleFormItem = (title: string) => {
+  const formItem = getRoleCombobox(title).closest<HTMLElement>('.md\\:flex-1');
+  if (!formItem) {
+    throw new Error(`No role panel found for ${title}`);
+  }
+  return formItem;
 };
 
 describe('EditTrialUsersForm', () => {
   beforeEach(() => {
-    toastMock.mockReset();
+    showSnackbarMock.mockReset();
   });
 
   it("preselects a single user's current roles without showing the mixed-roles helper text", async () => {
@@ -143,14 +147,10 @@ describe('EditTrialUsersForm', () => {
       );
     });
 
-    const openctiLabel = screen.getByText(
-      'Service.Bundle.ManageTrial.Roles.opencti.Title',
-      { selector: 'label' }
-    );
     expect(
-      within(openctiLabel.parentElement as HTMLElement).getByText(
-        'Service.Bundle.ManageTrial.EditUsersDialog.MixedRoles'
-      )
+      within(
+        getRoleFormItem('Service.Bundle.ManageTrial.Roles.opencti.Title')
+      ).getByText('Service.Bundle.ManageTrial.EditUsersDialog.MixedRoles')
     ).toBeInTheDocument();
   });
 
@@ -176,14 +176,10 @@ describe('EditTrialUsersForm', () => {
       );
     });
 
-    const xtmoneLabel = screen.getByText(
-      'Service.Bundle.ManageTrial.Roles.xtmone.Title',
-      { selector: 'label' }
-    );
     expect(
-      within(xtmoneLabel.parentElement as HTMLElement).getByText(
-        'Service.Bundle.ManageTrial.EditUsersDialog.MixedRoles'
-      )
+      within(
+        getRoleFormItem('Service.Bundle.ManageTrial.Roles.xtmone.Title')
+      ).getByText('Service.Bundle.ManageTrial.EditUsersDialog.MixedRoles')
     ).toBeInTheDocument();
   });
 
@@ -252,14 +248,10 @@ describe('EditTrialUsersForm', () => {
       );
     });
 
-    const xtmoneLabel = screen.getByText(
-      'Service.Bundle.ManageTrial.Roles.xtmone.Title',
-      { selector: 'label' }
-    );
     expect(
-      within(xtmoneLabel.parentElement as HTMLElement).queryByText(
-        'Service.Bundle.ManageTrial.EditUsersDialog.MixedRoles'
-      )
+      within(
+        getRoleFormItem('Service.Bundle.ManageTrial.Roles.xtmone.Title')
+      ).queryByText('Service.Bundle.ManageTrial.EditUsersDialog.MixedRoles')
     ).not.toBeInTheDocument();
   });
 
@@ -349,8 +341,8 @@ describe('EditTrialUsersForm', () => {
     await user.click(screen.getByRole('button', { name: 'Utils.Confirm' }));
 
     await waitFor(() => {
-      expect(toastMock).toHaveBeenCalledWith({
-        variant: 'destructive',
+      expect(showSnackbarMock).toHaveBeenCalledWith({
+        severity: 'error',
         title: 'Utils.Error',
         description: <>{'Error.Server.UNKNOWN_ERROR'}</>,
       });

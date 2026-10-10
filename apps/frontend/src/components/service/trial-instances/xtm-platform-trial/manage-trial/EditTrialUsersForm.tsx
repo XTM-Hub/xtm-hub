@@ -1,8 +1,8 @@
 'use client';
 
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { toast } from '@filigran/ui';
 import {
   PlatformIdentifier,
   ServiceGroupName,
@@ -98,14 +98,14 @@ export const EditTrialUsersForm = ({
           bundleUserServiceGroupsKeys.list(bundleUserServiceGroupsVariables),
           { bundleUserServiceGroups: data.updateBundleUserGroups }
         );
-        toast({ title: t('Utils.Success') });
+        showSnackbar({ severity: 'success', title: t('Utils.Success') });
         onCompleted();
       },
       onError: (error: unknown) => {
         const errorMessage =
           error instanceof Error ? error.message : 'UnknownError';
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: <>{t(`Error.Server.${errorMessage}`)}</>,
         });

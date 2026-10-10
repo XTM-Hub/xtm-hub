@@ -11,6 +11,7 @@ import {
   ServiceDelete,
 } from '@/components/service/components/ServiceDelete';
 import { useDocumentContext } from '@/components/service/document/use-document-context';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useServiceCapability from '@/hooks/use-service-capability';
 import { useTranslate } from '@/hooks/use-translate';
 import revalidatePathActions from '@/utils/actions/revalidate-path.actions';
@@ -18,7 +19,6 @@ import {
   isIntegrationItem,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
-import { toast } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useRouter } from 'next/navigation';
 
@@ -52,7 +52,8 @@ const DeleteShareableResourceSlug = ({
         `/${APP_PATH}/service/${serviceContext.serviceInstance.service_definition!.identifier}/${serviceContext.serviceInstance.id}`
       );
     });
-    toast({
+    showSnackbar({
+      severity: 'success',
       title: t('Utils.Success'),
       description: t(`${serviceContext.translationKey}.Actions.Deleted`, {
         name: document.name ?? '',

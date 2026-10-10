@@ -22,12 +22,14 @@ export async function clickRowAction(
 }
 
 export async function selectUseCase(page: Page, name = 'Global') {
-  await page.getByText('Add use cases').click();
+  await page.getByRole('combobox', { name: 'Use cases', exact: true }).click();
   await page.getByRole('option', { name, exact: true }).click();
   await page.keyboard.press('Escape');
 }
 export async function selectSolutionCategories(page: Page) {
-  await page.getByText('Add solution categories').click();
+  await page
+    .getByRole('combobox', { name: 'Solution categories', exact: true })
+    .click();
   await page.getByRole('option', { name: 'Solutioncategory' }).click();
   await page.getByRole('option', { name: 'Other' }).click();
   await page.keyboard.press('Escape');
@@ -35,16 +37,10 @@ export async function selectSolutionCategories(page: Page) {
 
 export async function waitForDrawerToOpen(page: Page) {
   await page.locator('body > [role="dialog"]').waitFor({ state: 'visible' });
-  await page
-    .locator('body > div.fixed.inset-0.z-50')
-    .waitFor({ state: 'visible' });
 }
 
 export async function waitForDrawerToClose(page: Page) {
   await page.locator('body > [role="dialog"]').waitFor({ state: 'hidden' });
-  await page
-    .locator('body > div.fixed.inset-0.z-50')
-    .waitFor({ state: 'hidden' });
 }
 
 export async function waitForReactIdle(page: Page, timeout = 5000) {

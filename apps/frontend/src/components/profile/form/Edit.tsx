@@ -1,21 +1,19 @@
 'use client';
 
 import { PortalContext } from '@/components/me/AppPortalContext';
+import { AutoForm } from '@/components/ui/auto-form';
 import { CountryCombobox } from '@/components/ui/country/Combobox';
+import { useFormField } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
 import {
-  AutoForm,
+  Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  FormControl,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@filigran/ui';
+} from '@filigran/design-system';
 import { useContext } from 'react';
+import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 import { z } from 'zod';
 
 const formSchema = z.object({
@@ -33,6 +31,24 @@ interface ProfileFormEditProps {
   onSubmit: (values: ProfileFormEditSchema) => void;
 }
 
+const CountryField = ({
+  field,
+}: {
+  field: ControllerRenderProps<FieldValues, string>;
+}) => {
+  const t = useTranslate();
+  const { error } = useFormField();
+
+  return (
+    <CountryCombobox
+      label={t('UserForm.Country')}
+      value={field.value ? { name: field.value } : undefined}
+      onValueChange={(value) => field.onChange(value?.name)}
+      error={error?.message}
+    />
+  );
+};
+
 export const ProfileFormEdit = ({ onSubmit }: ProfileFormEditProps) => {
   const t = useTranslate();
   const { me } = useContext(PortalContext);
@@ -40,9 +56,9 @@ export const ProfileFormEdit = ({ onSubmit }: ProfileFormEditProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="heading-lg">{t('ProfilePage.Title')}</CardTitle>
+        <CardTitle as="h3">{t('ProfilePage.Title')}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent clamp={0}>
         <AutoForm
           onSubmit={(values) => onSubmit(values)}
           formSchema={formSchema}
@@ -65,18 +81,7 @@ export const ProfileFormEdit = ({ onSubmit }: ProfileFormEditProps) => {
               },
             },
             country: {
-              fieldType: ({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('UserForm.Country')}</FormLabel>
-                  <FormControl>
-                    <CountryCombobox
-                      value={field.value && { name: field.value }}
-                      onValueChange={(value) => field.onChange(value?.name)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              ),
+              fieldType: CountryField,
             },
           }}>
           <div className="flex justify-end">

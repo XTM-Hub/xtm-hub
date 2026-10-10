@@ -1,13 +1,14 @@
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@filigran/ui';
+  Button,
+  Menu,
+  MenuContent,
+  MenuGroup,
+  MenuItem,
+  MenuLabel,
+  MenuSeparator,
+  MenuTrigger,
+} from '@filigran/design-system';
 import { IntegrationType } from '@graphql/generated';
 
 interface ServiceListIntegrationDropdownProps {
@@ -19,41 +20,43 @@ export const ServiceListIntegrationDropdown = ({
 }: ServiceListIntegrationDropdownProps) => {
   const t = useTranslate();
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <Menu>
+      <MenuTrigger asChild>
         <Button>{t('Service.OpenctiIntegrations.AddService')}</Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        <DropdownMenuLabel>
-          {t('Service.OpenctiIntegrations.IntegrationType')}
-        </DropdownMenuLabel>
+      </MenuTrigger>
+      <MenuContent>
+        <MenuGroup>
+          <MenuLabel>
+            {t('Service.OpenctiIntegrations.IntegrationType')}
+          </MenuLabel>
 
-        <DropdownMenuSeparator />
+          <MenuSeparator />
 
-        <DropdownMenuItem
-          onClick={() => onIntegrationTypeSelect(IntegrationType.CsvFeed)}>
-          {t(`Service.OpenctiIntegrations.Type.csv_feed`)}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => onIntegrationTypeSelect(IntegrationType.TaxiiFeed)}>
-          {t(`Service.OpenctiIntegrations.Type.taxii_feed`)}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => onIntegrationTypeSelect(IntegrationType.Stream)}>
-          {t(`Service.OpenctiIntegrations.Type.stream`)}
-        </DropdownMenuItem>
+          <MenuItem
+            onClick={() => onIntegrationTypeSelect(IntegrationType.CsvFeed)}>
+            {t(`Service.OpenctiIntegrations.Type.csv_feed`)}
+          </MenuItem>
+          <MenuItem
+            onClick={() => onIntegrationTypeSelect(IntegrationType.TaxiiFeed)}>
+            {t(`Service.OpenctiIntegrations.Type.taxii_feed`)}
+          </MenuItem>
+          <MenuItem
+            onClick={() => onIntegrationTypeSelect(IntegrationType.Stream)}>
+            {t(`Service.OpenctiIntegrations.Type.stream`)}
+          </MenuItem>
 
-        <DropdownMenuItem
-          onClick={() =>
-            onIntegrationTypeSelect(IntegrationType.ThirdPartyIntegration)
-          }>
-          {t(`Service.OpenctiIntegrations.Type.third_party_integration`)}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => onIntegrationTypeSelect(IntegrationType.RssFeed)}>
-          {t(`Service.OpenctiIntegrations.Type.rss_feed`)}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <MenuItem
+            onClick={() =>
+              onIntegrationTypeSelect(IntegrationType.ThirdPartyIntegration)
+            }>
+            {t(`Service.OpenctiIntegrations.Type.third_party_integration`)}
+          </MenuItem>
+          <MenuItem
+            onClick={() => onIntegrationTypeSelect(IntegrationType.RssFeed)}>
+            {t(`Service.OpenctiIntegrations.Type.rss_feed`)}
+          </MenuItem>
+        </MenuGroup>
+      </MenuContent>
+    </Menu>
   );
 };

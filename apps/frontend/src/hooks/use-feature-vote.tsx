@@ -1,6 +1,6 @@
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { toast } from '@filigran/ui';
 import { featureVotingKeys } from '@graphql/feature-voting/feature-voting.keys';
 import { useFeatureVoteMutation } from '@graphql/generated';
 import { useQueryClient } from '@tanstack/react-query';
@@ -21,7 +21,8 @@ export const useFeatureVote = () => {
       queryClient.invalidateQueries({
         queryKey: featureVotingKeys.currentAll(),
       });
-      toast({
+      showSnackbar({
+        severity: 'success',
         title: t('FeatureVoting.VoteRecordedTitle'),
         description: t('FeatureVoting.VoteRecordedDescription'),
       });
@@ -29,8 +30,8 @@ export const useFeatureVote = () => {
     onError: (error: unknown) => {
       const errorMessage =
         error instanceof Error ? error.message : 'UnknownError';
-      toast({
-        variant: 'destructive',
+      showSnackbar({
+        severity: 'error',
         title: t('Utils.Error'),
         description: <>{t(`Error.Server.${errorMessage}`)}</>,
       });

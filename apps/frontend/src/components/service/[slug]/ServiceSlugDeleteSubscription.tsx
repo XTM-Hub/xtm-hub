@@ -1,7 +1,7 @@
 import { SubscriptionDeleteMutation } from '@/components/subcription/subscription.graphql';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
-import { useToast } from '@filigran/ui';
 import { subscriptionDeleteMutation } from '@generated/subscriptionDeleteMutation.graphql';
 import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
 import { FunctionComponent } from 'react';
@@ -22,7 +22,6 @@ export const ServiceSlugDeleteSubscription: FunctionComponent<
     SubscriptionDeleteMutation
   );
 
-  const { toast } = useToast();
   const t = useTranslate();
 
   const onDeleteSubscription = () => {
@@ -38,7 +37,8 @@ export const ServiceSlugDeleteSubscription: FunctionComponent<
           .map((sub) => sub.organization.name)
           .join(', ');
 
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('ServiceActions.OrganizationDeleted', {
             name:
@@ -49,8 +49,8 @@ export const ServiceSlugDeleteSubscription: FunctionComponent<
         });
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: <>{t(`Error.Server.${error.message}`)}</>,
         });
@@ -59,14 +59,14 @@ export const ServiceSlugDeleteSubscription: FunctionComponent<
   };
 
   return (
-    <AlertDialogComponent
+    <ConfirmDialog
       key={`remove-${subscriptions.map((subscription) => subscription.id).join('-')}`}
-      AlertTitle={t('Service.Management.RemoveAccess')}
-      actionButtonText={t('Service.Management.RemoveAccess')}
-      variantName={'destructive'}
-      isOpen={open}
+      title={t('Service.Management.RemoveAccess')}
+      confirmLabel={t('Service.Management.RemoveAccess')}
+      destructive
+      open={open}
       onOpenChange={setOpen}
-      onClickContinue={onDeleteSubscription}>
+      onConfirm={onDeleteSubscription}>
       {subscriptions && subscriptions.length > 1
         ? t('Service.Management.AreYouSureRemoveOrganizationsAccess', {
             count: subscriptions.length,
@@ -74,6 +74,6 @@ export const ServiceSlugDeleteSubscription: FunctionComponent<
         : t('Service.Management.AreYouSureRemoveOrganizationAccess', {
             organizationName: subscriptions[0]!.organization.name,
           })}
-    </AlertDialogComponent>
+    </ConfirmDialog>
   );
 };

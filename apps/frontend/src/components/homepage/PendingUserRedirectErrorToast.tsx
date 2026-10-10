@@ -1,8 +1,8 @@
 'use client';
 
 import { PENDING_USER_UNAUTHORIZED_ERROR } from '@/components/homepage/pending-user-redirect-error.constants';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
-import { useToast } from '@filigran/ui/clients';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -10,7 +10,6 @@ const ERROR_PARAM = 'error';
 
 export const PendingUserRedirectErrorToast = () => {
   const t = useTranslate();
-  const { toast } = useToast();
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
@@ -22,8 +21,8 @@ export const PendingUserRedirectErrorToast = () => {
       return;
     }
 
-    toast({
-      variant: 'destructive',
+    showSnackbar({
+      severity: 'error',
       title: t('PendingUserRedirect.Unauthorized.Title'),
       description: t('PendingUserRedirect.Unauthorized.Description'),
     });
@@ -32,7 +31,7 @@ export const PendingUserRedirectErrorToast = () => {
     nextSearchParams.delete(ERROR_PARAM);
     const nextSearch = nextSearchParams.toString();
     router.replace(nextSearch ? `${pathname}?${nextSearch}` : pathname);
-  }, [error, pathname, router, searchParams, t, toast]);
+  }, [error, pathname, router, searchParams, t]);
 
   return null;
 };

@@ -13,7 +13,7 @@ let renderedColumns: ColumnDef<TrialsQuotaFragment>[] = [];
 let renderedData: TrialsQuotaFragment[] = [];
 let clickRow: (row: Row<TrialsQuotaFragment>) => void = () => undefined;
 
-vi.mock('@filigran/ui', () => ({
+vi.mock('@/components/ui/data-table', () => ({
   DataTable: ({
     columns,
     data,

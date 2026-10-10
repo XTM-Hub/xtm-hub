@@ -5,18 +5,19 @@ import {
   newsFeedListFragment,
   NewsFeedListQuery,
 } from '@/components/admin/news-feed/news-feed.graphql';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import BadgeOverflowCounter from '@/components/ui/BadgeOverflowCounter';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { DataTable } from '@/components/ui/data-table';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
-import { i18nKey } from '@/utils/datatable';
 import { useDateFormatter } from '@/utils/date';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { localizedCardName } from '@/utils/services';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
+import { Chip } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
-import { DataTable, toast } from '@filigran/ui';
-import { Badge } from '@filigran/ui/servers';
 import { newsFeedDeleteMutation } from '@generated/newsFeedDeleteMutation.graphql';
 import {
   newsFeedItem_fragment$data,
@@ -103,15 +104,16 @@ const NewsFeedList = () => {
     deleteNewsFeedItem({
       variables: { id: item.id },
       onCompleted: () => {
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('NewsFeedAdminPage.DeleteSuccess', { title: item.title }),
         });
         setDeleteTarget(undefined);
         handleRefetchData();
       },
       onError: () => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('NewsFeedAdminPage.DeleteError'),
         });
         setDeleteTarget(undefined);
@@ -165,9 +167,10 @@ const NewsFeedList = () => {
         header: t('NewsFeedAdminPage.IsDeleted'),
         cell: ({ row }) =>
           row.original.is_deleted ? (
-            <Badge variant="destructive">
-              {t('NewsFeedAdminPage.IsDeletedYes')}
-            </Badge>
+            <Chip
+              label={t('NewsFeedAdminPage.IsDeletedYes')}
+              severity="critical"
+            />
           ) : null,
       },
       {
@@ -182,12 +185,8 @@ const NewsFeedList = () => {
               className="flex items-center justify-end"
               onClick={(e) => e.stopPropagation()}>
               <IconActions
-                icon={
-                  <>
-                    <MoreVertIcon className="h-4 w-4 text-primary" />
-                    <span className="sr-only">{t('Utils.OpenMenu')}</span>
-                  </>
-                }>
+                aria-label={t('Utils.OpenMenu')}
+                icon={<MoreVertIcon className="h-4 w-4 text-primary" />}>
                 <IconActionsItem onClick={() => setDeleteTarget(row.original)}>
                   {t('NewsFeedAdminPage.Delete')}
                 </IconActionsItem>
@@ -204,7 +203,7 @@ const NewsFeedList = () => {
       <DataTable
         columns={columns}
         data={newsFeedData}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         tableOptions={{
           onPaginationChange,
           manualPagination: true,
@@ -219,18 +218,18 @@ const NewsFeedList = () => {
         }}
       />
       {deleteTarget && (
-        <AlertDialogComponent
-          isOpen={!!deleteTarget}
+        <ConfirmDialog
+          open={!!deleteTarget}
           onOpenChange={(open) => !open && setDeleteTarget(undefined)}
-          AlertTitle={t('NewsFeedAdminPage.DeleteDialog.Title')}
-          actionButtonText={t('NewsFeedAdminPage.DeleteDialog.Confirm')}
-          variantName="destructive"
-          onClickContinue={() => handleDelete(deleteTarget)}
-          continueButtonDisabled={isDeleteInFlight}>
+          title={t('NewsFeedAdminPage.DeleteDialog.Title')}
+          confirmLabel={t('NewsFeedAdminPage.DeleteDialog.Confirm')}
+          destructive
+          onConfirm={() => handleDelete(deleteTarget)}
+          confirmDisabled={isDeleteInFlight}>
           {t('NewsFeedAdminPage.DeleteDialog.Text', {
             title: deleteTarget.title,
           })}
-        </AlertDialogComponent>
+        </ConfirmDialog>
       )}
     </>
   );

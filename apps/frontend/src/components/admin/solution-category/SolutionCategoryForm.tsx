@@ -1,17 +1,10 @@
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { AppCombobox } from '@/components/ui/AppCombobox';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Form, FormField } from '@/components/ui/form';
+import { SheetFooter } from '@/components/ui/sheet';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Input,
-  MultiSelectFormField,
-  SheetFooter,
-} from '@filigran/ui';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
+import { Button, Input } from '@filigran/design-system';
 import { FiligranProduct } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -22,10 +15,11 @@ const productValues = Object.values(FiligranProduct) as [
   ...FiligranProduct[],
 ];
 
-const productOptions = productValues.map((product) => ({
-  id: product,
-  label: product.toUpperCase(),
-}));
+const productOptionIds = toComboboxOptionIds(
+  productValues,
+  (product) => product,
+  (product) => product.toUpperCase()
+);
 
 export interface SolutionCategoryFormModel {
   id: string;
@@ -68,62 +62,51 @@ const SolutionCategoryForm = ({
         <FormField
           control={form.control}
           name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('SolutionCategory.Form.Name')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('SolutionCategory.Form.Name')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Input
+              label={t('SolutionCategory.Form.Name')}
+              placeholder={t('SolutionCategory.Form.Name')}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
         <FormField
           control={form.control}
           name="product"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('SolutionCategory.Form.Product')}</FormLabel>
-              <FormControl>
-                <MultiSelectFormField
-                  options={productOptions}
-                  popoverContentClassName="bg-elevation-background-layer-3"
-                  keyValue="id"
-                  keyLabel="label"
-                  defaultValue={field.value}
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  noResultString={t('Utils.NotFound')}
-                  placeholder={t('SolutionCategory.Form.Product')}
-                  variant="inverted"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <AppCombobox
+              multiple
+              label={t('SolutionCategory.Form.Product')}
+              placeholder={t('SolutionCategory.Form.Product')}
+              error={fieldState.error?.message}
+              options={productOptionIds.ids}
+              value={field.value ?? []}
+              onValueChange={field.onChange}
+              getOptionLabel={productOptionIds.getOptionLabel}
+              contentClassName="layer-2"
+            />
           )}
         />
         <SheetFooter
           className={solutionCategory ? 'sm:justify-between pb-0' : 'pt-2'}>
           {solutionCategory && (
-            <AlertDialogComponent
-              AlertTitle={t('MenuActions.Delete')}
-              actionButtonText={t('MenuActions.Delete')}
-              variantName="destructive"
-              triggerElement={
+            <ConfirmDialog
+              title={t('MenuActions.Delete')}
+              confirmLabel={t('MenuActions.Delete')}
+              destructive
+              trigger={
                 <Button
                   variant="destructive"
                   priority="secondary">
                   {t('MenuActions.Delete')}
                 </Button>
               }
-              onClickContinue={() => handleDelete!()}>
+              onConfirm={() => handleDelete!()}>
               {t('SolutionCategory.Dialog.Text', {
                 name: solutionCategory.name,
               })}
-            </AlertDialogComponent>
+            </ConfirmDialog>
           )}
           <div className="flex gap-s">
             <Button

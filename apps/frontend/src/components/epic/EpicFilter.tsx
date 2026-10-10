@@ -1,9 +1,10 @@
 'use client';
 import { FiligranProductMapping } from '@/components/epic/epic-item/FiligranProductMapping';
 import { FILIGRAN_PRODUCTS_ORDER } from '@/components/epic/filigran-products';
-import { SearchInput } from '@/components/ui/SearchInput';
+import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useTranslate } from '@/hooks/use-translate';
-import { MultiSelectFormField, Switch } from '@filigran/ui';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
+import { SearchField, Switch } from '@filigran/design-system';
 import { FiligranProduct } from '@graphql/generated';
 import React, { useMemo } from 'react';
 
@@ -16,6 +17,7 @@ interface EpicFilterProps {
   showFinished: boolean;
   onShowFinishedChange: (show: boolean) => void;
   debounceHandleInput?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSearchClear?: () => void;
 }
 
 export const EpicFilter = ({
@@ -25,49 +27,54 @@ export const EpicFilter = ({
   showFinished,
   onShowFinishedChange,
   debounceHandleInput,
+  onSearchClear,
 }: EpicFilterProps) => {
   const t = useTranslate();
 
-  const options = useMemo(
+  const optionIds = useMemo(
     () =>
-      FILIGRAN_PRODUCTS_ORDER.map((product) => ({
-        id: product,
-        label: `${FiligranProductMapping[product].name} (${countsByProduct[product] ?? 0})`,
-      })),
+      toComboboxOptionIds(
+        FILIGRAN_PRODUCTS_ORDER,
+        (product) => product,
+        (product) =>
+          `${FiligranProductMapping[product].name} (${countsByProduct[product] ?? 0})`
+      ),
     [countsByProduct]
   );
 
   return (
     <div className="mx-s grid grid-cols-1 sm:grid-cols-3 gap-l items-center">
       <div className="max-w-full sm:max-w-[100%]">
-        <SearchInput
+        <SearchField
+          fullWidth
+          aria-label={t('GenericActions.Search')}
           placeholder={t('GenericActions.Search')}
+          clearLabel={t('DesignSystem.SearchField.Clear')}
           onChange={debounceHandleInput}
+          onClear={onSearchClear}
         />
       </div>
 
       <div className="max-w-full sm:max-w-[100%]">
-        <MultiSelectFormField
-          options={options}
-          popoverContentClassName="bg-elevation-background-layer-3"
-          keyValue="id"
-          keyLabel="label"
-          defaultValue={selectedFilter}
-          value={selectedFilter}
-          onValueChange={(value) =>
-            onSelectedFilterChange(value as EpicFilterType)
-          }
-          noResultString={t('Utils.NotFound')}
+        <AppCombobox
+          multiple
+          label={t('Epic.FilterByProduct')}
+          labelPosition="none"
           placeholder={t('Epic.FilterByProduct')}
-          variant="inverted"
+          options={optionIds.ids}
+          value={selectedFilter ?? []}
+          onValueChange={(next) =>
+            onSelectedFilterChange(next as EpicFilterType)
+          }
+          getOptionLabel={optionIds.getOptionLabel}
         />
       </div>
-      <div className="ml-auto flex items-center gap-s">
+      <div className="ml-auto">
         <Switch
+          label={t('Epic.ShowFinished')}
           checked={showFinished}
           onCheckedChange={onShowFinishedChange}
         />
-        <span className="text-sm">{t('Epic.ShowFinished')}</span>
       </div>
     </div>
   );

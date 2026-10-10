@@ -4,25 +4,17 @@ import {
 } from '@/components/admin/user/AutocompleteOrganization';
 import { CapabilityDescription } from '@/components/admin/user/CapabilityDescription';
 import { userEditAdminFormSchema } from '@/components/admin/user/forms/user-form.schema';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
 import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Form, FormField } from '@/components/ui/form';
+import { Label } from '@/components/ui/label';
+import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { cn, isEmpty } from '@/lib/utils';
-import { Button, IconButton } from '@filigran/design-system';
+import { Button, IconButton, Input } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Input,
-  SheetFooter,
-  toast,
-} from '@filigran/ui';
-import { Label } from '@filigran/ui/clients';
 import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
@@ -106,15 +98,16 @@ export const AdminUserUpdateForm = ({
         id: user.id,
       },
       onCompleted: () => {
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('UserActions.UserUpdated', { email: user.email }),
         });
         callback();
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });
@@ -130,15 +123,16 @@ export const AdminUserUpdateForm = ({
         id: user.id,
       },
       onCompleted: () => {
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('UserActions.UserUpdated', { email: user.email }),
         });
         callback();
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });
@@ -157,33 +151,25 @@ export const AdminUserUpdateForm = ({
         <FormField
           control={form.control}
           name="first_name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('UserForm.FirstName')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('UserForm.FirstName')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Input
+              label={t('UserForm.FirstName')}
+              placeholder={t('UserForm.FirstName')}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
         <FormField
           control={form.control}
           name="last_name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('UserForm.LastName')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('UserForm.LastName')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Input
+              label={t('UserForm.LastName')}
+              placeholder={t('UserForm.LastName')}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
         <CapabilityDescription />
@@ -208,33 +194,29 @@ export const AdminUserUpdateForm = ({
                 control={form.control}
                 key={`organization_capabilities.${index}.capabilities`}
                 name={`organization_capabilities.${index}.capabilities`}
-                render={({ field: formField }) => {
+                render={({ field: formField, fieldState }) => {
                   return (
-                    <FormItem>
-                      <div className="grid gap-m items-center grid-cols-[1fr_4fr_3rem]">
-                        <Label>
-                          {
-                            userOrganization.find(
-                              ({ id }) => id === field.organization_id
-                            )?.name
-                          }
-                        </Label>
-                        <FormControl>
-                          <CapabilityMultiSelect
-                            value={formField.value}
-                            onChange={formField.onChange}
-                          />
-                        </FormControl>
-                        <IconButton
-                          type="button"
-                          priority="tertiary"
-                          aria-label={t('MenuActions.Remove')}
-                          icon={<DeleteIcon className="h-4 w-4" />}
-                          onClick={() => remove(index)}
-                        />
-                      </div>
-                      <FormMessage />
-                    </FormItem>
+                    <div className="grid gap-m items-center grid-cols-[1fr_4fr_3rem]">
+                      <Label>
+                        {
+                          userOrganization.find(
+                            ({ id }) => id === field.organization_id
+                          )?.name
+                        }
+                      </Label>
+                      <CapabilityMultiSelect
+                        value={formField.value}
+                        onChange={formField.onChange}
+                        error={fieldState.error?.message}
+                      />
+                      <IconButton
+                        type="button"
+                        priority="tertiary"
+                        aria-label={t('MenuActions.Remove')}
+                        icon={<DeleteIcon className="h-4 w-4" />}
+                        onClick={() => remove(index)}
+                      />
+                    </div>
                   );
                 }}
               />
@@ -250,22 +232,22 @@ export const AdminUserUpdateForm = ({
               {t('UserActions.Enable')}
             </Button>
           ) : (
-            <AlertDialogComponent
-              AlertTitle={t('MenuActions.Disable')}
-              actionButtonText={t('MenuActions.Disable')}
-              variantName={'destructive'}
-              triggerElement={
+            <ConfirmDialog
+              title={t('MenuActions.Disable')}
+              confirmLabel={t('MenuActions.Disable')}
+              destructive
+              trigger={
                 <Button
                   variant="destructive"
                   priority="secondary">
                   {t('UserActions.Disable')}
                 </Button>
               }
-              onClickContinue={() => disableUser({ disabled: true })}>
+              onConfirm={() => disableUser({ disabled: true })}>
               {t('DisableUserDialog.TextDisableThisUser', {
                 email: user.email,
               })}
-            </AlertDialogComponent>
+            </ConfirmDialog>
           )}
           <div className="flex gap-s">
             <Button

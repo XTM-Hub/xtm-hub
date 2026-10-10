@@ -23,7 +23,8 @@ export const ShareableResourceCardHeader = ({
           <Text
             as="h2"
             variant="title-sm"
-            className="min-w-0 break-words">
+            title={document.name ?? undefined}
+            className="min-w-0 break-words line-clamp-2">
             {document.name}
           </Text>
         </div>

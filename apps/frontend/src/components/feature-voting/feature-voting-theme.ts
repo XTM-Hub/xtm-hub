@@ -1,10 +1,9 @@
 import { CSSProperties } from 'react';
 
 /**
- * Visual identities a voting round can be published with. The palette and the
- * button gradient below are taken from the Thread conference site
- * (thread.filigran.io): near-black canvas, lime to blue call to action, and a
- * mosaic of dim coloured pixels.
+ * Visual identities a voting round can be published with. The palette below is
+ * taken from the Thread conference site (thread.filigran.io): near-black
+ * canvas and a mosaic of dim coloured pixels.
  */
 export type FeatureVotingThemeName = 'default' | 'thread';
 
@@ -136,10 +135,6 @@ export interface FeatureVotingTheme {
   containerStyle?: CSSProperties;
   titleClassName: string;
   descriptionClassName: string;
-  /** Passed through to GradientButton, which turns them into CSS variables. */
-  gradientFrom?: string;
-  gradientTo?: string;
-  gradientBg?: string;
 }
 
 const DEFAULT_THEME: FeatureVotingTheme = {
@@ -160,9 +155,6 @@ const THREAD_THEME: FeatureVotingTheme = {
   },
   titleClassName: 'font-semibold text-white',
   descriptionClassName: 'text-sm text-white/70',
-  gradientFrom: THREAD_LIME,
-  gradientTo: THREAD_BLUE,
-  gradientBg: THREAD_BACKGROUND,
 };
 
 const THEMES: Record<FeatureVotingThemeName, FeatureVotingTheme> = {

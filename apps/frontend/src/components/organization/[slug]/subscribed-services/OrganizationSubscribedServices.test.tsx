@@ -12,6 +12,8 @@ import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
+const PAGE_SIZE = 50;
+
 const graphqlMocks = vi.hoisted(() => ({
   useOrganizationSubscribedServicesListQuery: Object.assign(vi.fn(), {
     getKey: vi.fn((_variables: unknown) => [
@@ -34,21 +36,28 @@ vi.mock('usehooks-ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('usehooks-ts')>();
   return {
     ...actual,
-    useDebounceCallback: (callback: (event: unknown) => void) => callback,
+    useDebounceCallback: (callback: (event: unknown) => void) =>
+      Object.assign((event: unknown) => callback(event), { cancel: vi.fn() }),
   };
 });
 
-vi.mock('@filigran/ui', () => ({
-  Badge: ({ children }: { children: ReactNode }) => <span>{children}</span>,
+vi.mock('@/components/ui/data-table', () => ({
   DataTableHeadBarOptions: () => <div>DataTableHeadBarOptions</div>,
   DataTable: ({
     data,
     isLoading,
     toolbar,
+    tableOptions,
   }: {
     data: Array<{ id: string; service_instance: { name: string } }>;
     isLoading?: boolean;
     toolbar?: ReactNode;
+    tableOptions?: {
+      onPaginationChange?: (pagination: {
+        pageIndex: number;
+        pageSize: number;
+      }) => void;
+    };
   }) => (
     <div>
       {isLoading ? <div>loading</div> : null}
@@ -56,6 +65,15 @@ vi.mock('@filigran/ui', () => ({
         <div key={row.id}>{row.service_instance.name}</div>
       ))}
       {toolbar}
+      <button
+        onClick={() =>
+          tableOptions?.onPaginationChange?.({
+            pageIndex: 1,
+            pageSize: PAGE_SIZE,
+          })
+        }>
+        Next page
+      </button>
     </div>
   ),
 }));
@@ -64,7 +82,7 @@ vi.mock(
   '@/components/organization/[slug]/subscribed-services/organization-subscribed-services-localstorage',
   () => ({
     useOrganizationSubscribedServicesLocalstorage: () => ({
-      pageSize: 50,
+      pageSize: PAGE_SIZE,
       setPageSize: vi.fn(),
       orderMode: OrderingMode.Asc,
       setOrderMode: vi.fn(),
@@ -235,5 +253,65 @@ describe('OrganizationSubscribedServices', () => {
         searchTerm: 'opencti',
       });
     });
+  });
+
+  it('should remove the search term from backend query variables when clearing a typed search', async () => {
+    // Given
+    graphqlMocks.useOrganizationSubscribedServicesListQuery.mockReturnValue({
+      data: baseQueryResponse,
+      isError: false,
+      isLoading: false,
+    });
+    testRender(
+      <OrganizationSubscribedServices organizationId="organization-1" />
+    );
+    fireEvent.change(screen.getByPlaceholderText('Service.SearchServices'), {
+      target: { value: 'opencti' },
+    });
+
+    // When
+    fireEvent.click(
+      screen.getByRole('button', { name: 'DesignSystem.SearchField.Clear' })
+    );
+
+    // Then
+    await waitFor(() => {
+      const lastCall =
+        graphqlMocks.useOrganizationSubscribedServicesListQuery.mock.calls.at(
+          -1
+        );
+      expect(lastCall?.[1]).toMatchObject({
+        searchTerm: null,
+      });
+    });
+  });
+
+  it('should keep backend query variables when pressing Escape in an empty search field', () => {
+    // Given
+    graphqlMocks.useOrganizationSubscribedServicesListQuery.mockReturnValue({
+      data: baseQueryResponse,
+      isError: false,
+      isLoading: false,
+    });
+    testRender(
+      <OrganizationSubscribedServices organizationId="organization-1" />
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
+    const variablesBeforeEscape =
+      graphqlMocks.useOrganizationSubscribedServicesListQuery.mock.calls.at(
+        -1
+      )?.[1];
+
+    // When
+    fireEvent.keyDown(screen.getByPlaceholderText('Service.SearchServices'), {
+      key: 'Escape',
+    });
+
+    // Then
+    expect(
+      graphqlMocks.useOrganizationSubscribedServicesListQuery.mock.calls.at(
+        -1
+      )?.[1]
+    ).toEqual(variablesBeforeEscape);
   });
 });

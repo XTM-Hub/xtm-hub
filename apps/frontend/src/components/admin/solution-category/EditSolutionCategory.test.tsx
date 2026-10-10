@@ -38,6 +38,24 @@ describe('EditSolutionCategory', () => {
     expect(screen.getByDisplayValue('threat hunting')).toBeInTheDocument();
   });
 
+  it('should call onClose once when Escape closes a clean sheet', async () => {
+    // Given
+    const onClose = vi.fn();
+    const { user } = testRender(
+      <EditSolutionCategory
+        open={true}
+        onClose={onClose}
+        solutionCategory={solutionCategory}
+      />
+    );
+
+    // When
+    await user.keyboard('{Escape}');
+
+    // Then
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it('should submit SolutionCategoryEdit mutation, close sheet and call onClose', async () => {
     const onClose = vi.fn();
     const editSolutionCategoryResponse: SolutionCategoryEditMutation = {

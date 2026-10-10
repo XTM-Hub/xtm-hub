@@ -10,6 +10,7 @@ import { useDocumentContext } from '@/components/service/document/use-document-c
 import { SettingsContext } from '@/components/settings/EnvPortalContext';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useServiceCapability from '@/hooks/use-service-capability';
 import revalidatePathActions from '@/utils/actions/revalidate-path.actions';
 import {
@@ -26,7 +27,6 @@ import {
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { MoreVertIcon } from '@filigran/icon';
-import { toast } from '@filigran/ui';
 import { useRouter } from 'next/navigation';
 
 interface DocumentActionsCellProps {
@@ -73,7 +73,8 @@ export const DocumentActionsCell = ({ document }: DocumentActionsCellProps) => {
       router.push(
         `/${APP_PATH}/service/${serviceInstance.service_definition!.identifier}/${serviceInstance.id}`
       );
-      toast({
+      showSnackbar({
+        severity: 'success',
         title: t('Utils.Success'),
         description: t(`${translationKey}.Actions.Deleted`, {
           name: document.name ?? '',
@@ -93,13 +94,10 @@ export const DocumentActionsCell = ({ document }: DocumentActionsCellProps) => {
       />
       {(userCanDelete || userCanUpdate) && (
         <IconActions
-          className="z-[2] h-6 w-6"
-          icon={
-            <>
-              <MoreVertIcon className="h-4 w-4 text-primary" />
-              <span className="sr-only">{t('Utils.OpenMenu')}</span>
-            </>
-          }>
+          size="sm"
+          className="z-[2]"
+          aria-label={t('Utils.OpenMenu')}
+          icon={<MoreVertIcon className="h-4 w-4 text-primary" />}>
           {userCanUpdate && (
             <IconActionsItem onClick={() => onClickOnUpdate()}>
               {t('MenuActions.Update')}

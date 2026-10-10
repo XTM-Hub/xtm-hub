@@ -1,20 +1,13 @@
 import { trialsRegionKey } from '@/components/trials/trials.const';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Form, FormField } from '@/components/ui/form';
+import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { isEmpty } from '@/lib/utils';
-import { Button } from '@filigran/design-system';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  SheetFooter,
-} from '@filigran/ui';
-import { toast } from '@filigran/ui/clients';
-import { Input } from '@filigran/ui/servers';
+import { Button, Input } from '@filigran/design-system';
 import { trialsQuotasKeys } from '@graphql/deployment/deployment.keys';
 import {
   DeploymentRequestPlatformRegion,
@@ -60,7 +53,8 @@ export const TrialsTabQuotasPlatformUpdateForm = ({
         await queryClient.invalidateQueries({
           queryKey: trialsQuotasKeys.all(),
         });
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('TrialsDashboard.UpdateQuotasForm.QuotasUpdated'),
         });
@@ -69,8 +63,8 @@ export const TrialsTabQuotasPlatformUpdateForm = ({
       onError: (error: unknown) => {
         const errorMessage =
           error instanceof Error ? error.message : 'UnknownError';
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${errorMessage}`),
         });
@@ -99,24 +93,19 @@ export const TrialsTabQuotasPlatformUpdateForm = ({
             control={form.control}
             name="newCapacity"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  {t('TrialsDashboard.UpdateQuotasForm.NewCapacityLabel')}
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder={t(
-                      'TrialsDashboard.UpdateQuotasForm.NewCapacityLabel'
-                    )}
-                    type="number"
-                    min={0}
-                    onChange={(event) =>
-                      field.onChange(Number.parseInt(event.target.value, 10))
-                    }
-                  />
-                </FormControl>
-              </FormItem>
+              <Input
+                label={t('TrialsDashboard.UpdateQuotasForm.NewCapacityLabel')}
+                {...field}
+                value={Number.isFinite(field.value) ? String(field.value) : ''}
+                placeholder={t(
+                  'TrialsDashboard.UpdateQuotasForm.NewCapacityLabel'
+                )}
+                type="number"
+                min={0}
+                onChange={(event) =>
+                  field.onChange(Number.parseInt(event.target.value, 10))
+                }
+              />
             )}
           />
 
@@ -128,22 +117,22 @@ export const TrialsTabQuotasPlatformUpdateForm = ({
                 onClick={(e) => handleCloseSheet(e)}>
                 {t('Utils.Cancel')}
               </Button>
-              <AlertDialogComponent
-                AlertTitle={t(
+              <ConfirmDialog
+                title={t(
                   'TrialsDashboard.UpdateQuotasForm.AlertDialog.ConfirmTitle',
                   {
                     region: translatedRegion,
                   }
                 )}
-                actionButtonText={t('Utils.Validate')}
-                triggerElement={
+                confirmLabel={t('Utils.Validate')}
+                trigger={
                   <Button
                     disabled={!form.formState.isValid}
                     type="submit">
                     {t('Utils.Validate')}
                   </Button>
                 }
-                onClickContinue={() => updateQuota()}>
+                onConfirm={() => updateQuota()}>
                 <p>
                   {t(
                     'TrialsDashboard.UpdateQuotasForm.AlertDialog.ConfirmDescription',
@@ -158,7 +147,7 @@ export const TrialsTabQuotasPlatformUpdateForm = ({
                     'TrialsDashboard.UpdateQuotasForm.AlertDialog.ConfirmSentence'
                   )}
                 </p>
-              </AlertDialogComponent>
+              </ConfirmDialog>
             </div>
           </SheetFooter>
         </form>

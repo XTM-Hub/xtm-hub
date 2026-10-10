@@ -4,8 +4,7 @@ import {
   RemovePendingUserBulkMutation,
   RemovePendingUserMutation,
 } from '@/components/admin/user/pending-user/pending-user.graphql';
-import { SelectionState } from '@filigran/ui';
-import { useToast } from '@filigran/ui/clients';
+import { SelectionState } from '@/components/ui/data-table';
 import { PendingUserListAcceptUserMutation$data } from '@generated/PendingUserListAcceptUserMutation.graphql';
 import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { FilterKey } from '@graphql/generated';
@@ -17,16 +16,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePendingUserActions } from './use-pending-user-actions';
 
 const mocks = vi.hoisted(() => ({
-  toast: vi.fn(),
+  showSnackbar: vi.fn(),
   approveCommit: vi.fn(),
   rejectCommit: vi.fn(),
   bulkApproveCommit: vi.fn(),
   bulkRejectCommit: vi.fn(),
 }));
 
-vi.mock('@filigran/ui/clients', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@filigran/ui/clients')>()),
-  useToast: vi.fn(),
+vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
+  showSnackbar: mocks.showSnackbar,
 }));
 
 vi.mock('react-relay', async (importOriginal) => ({
@@ -64,9 +62,6 @@ describe('usePendingUserActions', () => {
     vi.mocked(useTranslations).mockReturnValue((key, values) =>
       values?.email ? `${key}:${values.email}` : key
     );
-    vi.mocked(useToast).mockReturnValue({
-      toast: mocks.toast,
-    } as never);
     vi.mocked(useMutation).mockImplementation(((mutation: unknown) => {
       switch (mutation) {
         case AcceptPendingUserMutation:
@@ -117,7 +112,8 @@ describe('usePendingUserActions', () => {
       } as unknown as PendingUserListAcceptUserMutation$data);
     });
 
-    expect(mocks.toast).toHaveBeenCalledWith({
+    expect(mocks.showSnackbar).toHaveBeenCalledWith({
+      severity: 'success',
       title: 'Utils.Success',
       description: `PendingUserListPage.ActionSuccessApprove:${pendingUser.email}`,
     });
@@ -141,7 +137,7 @@ describe('usePendingUserActions', () => {
       } as PendingUserListAcceptUserMutation$data);
     });
 
-    expect(mocks.toast).not.toHaveBeenCalledWith(
+    expect(mocks.showSnackbar).not.toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Utils.Success',
       })
@@ -166,7 +162,8 @@ describe('usePendingUserActions', () => {
       config.onCompleted({});
     });
 
-    expect(mocks.toast).toHaveBeenCalledWith({
+    expect(mocks.showSnackbar).toHaveBeenCalledWith({
+      severity: 'success',
       title: 'Utils.Success',
       description: `PendingUserListPage.ActionSuccessDeny:${pendingUser.email}`,
     });
@@ -175,8 +172,8 @@ describe('usePendingUserActions', () => {
       config.onError(new Error('Boom'));
     });
 
-    expect(mocks.toast).toHaveBeenCalledWith({
-      variant: 'destructive',
+    expect(mocks.showSnackbar).toHaveBeenCalledWith({
+      severity: 'error',
       title: 'Utils.Error',
       description: 'Error.Server.Boom',
     });
@@ -195,8 +192,8 @@ describe('usePendingUserActions', () => {
       config.onError(new Error(''));
     });
 
-    expect(mocks.toast).toHaveBeenCalledWith({
-      variant: 'destructive',
+    expect(mocks.showSnackbar).toHaveBeenCalledWith({
+      severity: 'error',
       title: 'Utils.Error',
       description: 'Error.Server.UnknownError',
     });

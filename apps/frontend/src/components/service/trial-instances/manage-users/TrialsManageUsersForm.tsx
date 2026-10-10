@@ -1,18 +1,15 @@
 import { useUserListLocalstorage } from '@/components/admin/user/user-list-localstorage';
 import { UserFragment } from '@/components/admin/user/UserList';
 import { serviceGroupFragment } from '@/components/service/service-group.graphql';
+import { AppCombobox } from '@/components/ui/AppCombobox';
+import { Form, FormField } from '@/components/ui/form';
+import { SheetFooter } from '@/components/ui/sheet';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useKeepSelectedOptions } from '@/hooks/use-keep-selected-options';
 import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import { Button } from '@filigran/design-system';
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  SheetFooter,
-  toast,
-} from '@filigran/ui';
-import { MultiSelectFormField } from '@filigran/ui/clients';
 import { serviceGroup_fragment$key } from '@generated/serviceGroup_fragment.graphql';
 import ServiceGroupsByServiceInstanceIdQueryGraphql, {
   serviceGroupsByServiceInstanceIdQuery,
@@ -21,7 +18,7 @@ import ServiceGroupsUpdateMutationGraphql from '@generated/serviceGroupsUpdateMu
 import { UserList_fragment$key } from '@generated/UserList_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { readInlineData, useLazyLoadQuery, useMutation } from 'react-relay';
 import { z } from 'zod';
 
@@ -41,6 +38,8 @@ interface TrialsManageUsersFormProps {
   organizationId?: string;
   serviceInstanceId: string;
 }
+
+const getUserOptionValue = ({ value }: { value: string }) => value;
 
 export const TrialsManageUsersForm = ({
   onCancel,
@@ -74,15 +73,16 @@ export const TrialsManageUsersForm = ({
         },
       },
       onError(error) {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });
       },
       onCompleted() {
         onCompleted();
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
         });
       },
@@ -109,48 +109,77 @@ export const TrialsManageUsersForm = ({
         group
       );
 
-      const userIds = (users ?? []).map(
-        ({ email }) => options.find(({ label }) => label === email)?.value
-      );
-
       return {
         id,
         name,
-        userIds,
+        users: users ?? [],
       };
     });
-  }, [data.serviceGroups, options]);
+  }, [data.serviceGroups]);
+  const groupUserOptions = useMemo(
+    () =>
+      groups.flatMap(({ users }) =>
+        users.map(({ id, email }) => ({ label: email, value: id }))
+      ),
+    [groups]
+  );
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      groups,
+      groups: groups.map(({ id, name, users }) => ({
+        id,
+        name,
+        userIds: users.map((user) => user.id),
+      })),
     },
   });
+
+  const watchedGroups = useWatch({ control: form.control, name: 'groups' });
+  const selectedUserIds = useMemo(
+    () => watchedGroups.flatMap(({ userIds }) => userIds),
+    [watchedGroups]
+  );
+  const keptOptions = useKeepSelectedOptions({
+    options,
+    value: selectedUserIds,
+    getId: getUserOptionValue,
+    initialOptions: groupUserOptions,
+  });
+  const optionIds = useMemo(
+    () =>
+      toComboboxOptionIds(
+        keptOptions,
+        getUserOptionValue,
+        (option) => option.label
+      ),
+    [keptOptions]
+  );
+
   const groupFields = useMemo(() => {
     return groups.map((group, index) => (
       <FormField
         key={group.name}
         control={form.control}
-        render={({ field: { value, onChange } }) => {
+        render={({ field: { value, onChange }, fieldState }) => {
           return (
-            <FormItem>
-              <FormLabel>{group.name}</FormLabel>
-              <MultiSelectFormField
-                options={options}
-                defaultValue={value}
-                placeholder={t('Service.Trials.ManageUsers.Email')}
-                noResultString={t('Utils.NotFound')}
-                onValueChange={onChange}
-                variant="inverted"
-              />
-            </FormItem>
+            <AppCombobox
+              multiple
+              label={group.name}
+              placeholder={t('Service.Trials.ManageUsers.Email')}
+              error={fieldState.error?.message}
+              options={optionIds.ids}
+              value={value ?? []}
+              onValueChange={onChange}
+              getOptionLabel={optionIds.getOptionLabel}
+              contentClassName="layer-2"
+            />
           );
         }}
         name={`groups.${index}.userIds`}
       />
     ));
-  }, [groups, form.control, t, options]);
+  }, [groups, form.control, t, optionIds]);
 
   return (
     <Form {...form}>

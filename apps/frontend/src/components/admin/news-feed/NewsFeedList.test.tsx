@@ -59,27 +59,27 @@ vi.mock('@/components/ui/IconActions', () => ({
   }) => <button onClick={onClick}>{children}</button>,
 }));
 
-vi.mock('@/components/ui/AlertDialog', () => ({
-  AlertDialogComponent: ({
-    isOpen,
+vi.mock('@/components/ui/ConfirmDialog', () => ({
+  ConfirmDialog: ({
+    open,
     onOpenChange,
-    AlertTitle,
-    actionButtonText,
-    onClickContinue,
+    title,
+    confirmLabel,
+    onConfirm,
     children,
   }: {
-    isOpen: boolean;
+    open: boolean;
     onOpenChange: (open: boolean) => void;
-    AlertTitle: string;
-    actionButtonText: string;
-    onClickContinue: () => void;
+    title: string;
+    confirmLabel: string;
+    onConfirm: () => void;
     children: ReactNode;
   }) =>
-    isOpen ? (
+    open ? (
       <div role="alertdialog">
-        <h2>{AlertTitle}</h2>
+        <h2>{title}</h2>
         <div>{children}</div>
-        <button onClick={onClickContinue}>{actionButtonText}</button>
+        <button onClick={onConfirm}>{confirmLabel}</button>
         <button onClick={() => onOpenChange(false)}>Cancel</button>
       </div>
     ) : null,
@@ -250,7 +250,7 @@ describe('NewsFeedList', () => {
     const { user } = testRender(<NewsFeedList />);
 
     await user.click(
-      screen.getByRole('button', { name: 'Datatable.GoNextPage' })
+      screen.getByRole('button', { name: 'DesignSystem.DataTable.NextPage' })
     );
 
     await waitFor(() => {

@@ -4,14 +4,13 @@ import AddVotingRound from '@/components/admin/voting-round/AddVotingRound';
 import EditVotingRound from '@/components/admin/voting-round/EditVotingRound';
 import { useRoadmapServiceInstances } from '@/components/admin/voting-round/use-roadmap-service-instances';
 import { VotingRoundStatusBadge } from '@/components/admin/voting-round/VotingRoundStatusBadge';
+import { DataTable, DataTableHeadBarOptions } from '@/components/ui/data-table';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
-import { useExecuteAfterAnimation } from '@/hooks/use-execute-after-animation';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { i18nKey } from '@/utils/datatable';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { APP_PATH } from '@/utils/path/constant';
 import { MoreVertIcon } from '@filigran/icon';
-import { DataTable, DataTableHeadBarOptions } from '@filigran/ui';
 import {
   useVotingRoundsListQuery,
   VotingRoundRowFragment,
@@ -86,12 +85,8 @@ const VotingRounds = () => {
           className="flex items-center justify-end"
           onClick={(event) => event.stopPropagation()}>
           <IconActions
-            icon={
-              <>
-                <MoreVertIcon className="h-4 w-4 text-primary" />
-                <span className="sr-only">{t('Utils.OpenMenu')}</span>
-              </>
-            }>
+            aria-label={t('Utils.OpenMenu')}
+            icon={<MoreVertIcon className="h-4 w-4 text-primary" />}>
             <IconActionsItem onClick={() => setRoundToEdit(row.original)}>
               {t('VotingRound.Actions.Edit')}
             </IconActionsItem>
@@ -112,7 +107,7 @@ const VotingRounds = () => {
         columns={columns}
         data={rounds}
         isLoading={isLoading}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         tableState={{ columnPinning: { right: ['actions'] } }}
         onClickRow={({ original }) =>
           router.push(`/${APP_PATH}/admin/voting-rounds/${original.id}`)
@@ -127,9 +122,7 @@ const VotingRounds = () => {
         <EditVotingRound
           votingRound={roundToEdit}
           open={!!roundToEdit}
-          onClose={() =>
-            useExecuteAfterAnimation(() => setRoundToEdit(undefined))
-          }
+          onClose={() => setRoundToEdit(undefined)}
         />
       )}
     </>

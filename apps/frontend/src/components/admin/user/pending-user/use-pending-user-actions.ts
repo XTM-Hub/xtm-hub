@@ -4,9 +4,9 @@ import {
   RemovePendingUserBulkMutation,
   RemovePendingUserMutation,
 } from '@/components/admin/user/pending-user/pending-user.graphql';
+import { SelectionState } from '@/components/ui/data-table';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
-import { SelectionState } from '@filigran/ui';
-import { useToast } from '@filigran/ui/clients';
 import { PendingUserListAcceptUserBulkMutation } from '@generated/PendingUserListAcceptUserBulkMutation.graphql';
 import { PendingUserListAcceptUserMutation } from '@generated/PendingUserListAcceptUserMutation.graphql';
 import { PendingUserListRemoveUserBulkMutation } from '@generated/PendingUserListRemoveUserBulkMutation.graphql';
@@ -32,7 +32,6 @@ export const usePendingUserActions = ({
   onAfterBulkMutation,
 }: UsePendingUserActionsParams) => {
   const t = useTranslate();
-  const { toast } = useToast();
 
   const [approvePendingUser] = useMutation<PendingUserListAcceptUserMutation>(
     AcceptPendingUserMutation
@@ -51,13 +50,13 @@ export const usePendingUserActions = ({
 
   const onMutationError = useCallback(
     (error: Error) => {
-      toast({
-        variant: 'destructive',
+      showSnackbar({
+        severity: 'error',
         title: t('Utils.Error'),
         description: t(`Error.Server.${error.message || 'UnknownError'}`),
       });
     },
-    [t, toast]
+    [t]
   );
 
   const approveUser = useCallback(
@@ -72,7 +71,8 @@ export const usePendingUserActions = ({
             return;
           }
 
-          toast({
+          showSnackbar({
+            severity: 'success',
             title: t('Utils.Success'),
             description: t('PendingUserListPage.ActionSuccessApprove', {
               email: user.email,
@@ -89,7 +89,6 @@ export const usePendingUserActions = ({
       onMutationError,
       selectedOrganizationId,
       t,
-      toast,
     ]
   );
 
@@ -101,7 +100,8 @@ export const usePendingUserActions = ({
           organization_id: selectedOrganizationId,
         },
         onCompleted: () => {
-          toast({
+          showSnackbar({
+            severity: 'success',
             title: t('Utils.Success'),
             description: t('PendingUserListPage.ActionSuccessDeny', {
               email: user.email,
@@ -118,7 +118,6 @@ export const usePendingUserActions = ({
       rejectPendingUser,
       selectedOrganizationId,
       t,
-      toast,
     ]
   );
 

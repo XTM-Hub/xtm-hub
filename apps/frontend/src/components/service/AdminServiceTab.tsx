@@ -1,29 +1,29 @@
 'use client';
+import { AppCombobox } from '@/components/ui/AppCombobox';
 import {
   ServiceDefinitionIdentifier,
   ServiceInstanceFilterKey,
 } from '@graphql/generated';
 
 import { EditService } from '@/components/service/EditService';
+import { DataTable } from '@/components/ui/data-table';
 import {
   IconActions,
   IconActionsItem,
   IconActionsLink,
 } from '@/components/ui/IconActions';
-import { SearchInput } from '@/components/ui/SearchInput';
+import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useTranslate } from '@/hooks/use-translate';
-import { DEBOUNCE_TIME } from '@/utils/constant';
-import { i18nKey } from '@/utils/datatable';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { APP_PATH } from '@/utils/path/constant';
+import { SearchField } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
-import { Combobox, DataTable } from '@filigran/ui';
 import { serviceList_fragment$data } from '@generated/serviceList_fragment.graphql';
 import { serviceQuery } from '@generated/serviceQuery.graphql';
 import { servicesList_services$key } from '@generated/servicesList_services.graphql';
 import { ColumnDef, getSortedRowModel } from '@tanstack/react-table';
 import { useState } from 'react';
 import { RefetchFnDynamic } from 'react-relay';
-import { useDebounceCallback } from 'usehooks-ts';
 
 interface AdminServiceTabProps {
   serviceData: serviceList_fragment$data[];
@@ -71,15 +71,13 @@ const AdminServiceTab = ({ serviceData, refetch }: AdminServiceTabProps) => {
           <>
             <div className="flex items-center justify-end">
               <IconActions
+                aria-label={t('Utils.OpenMenu')}
                 icon={
-                  <>
-                    <MoreVertIcon
-                      aria-hidden={true}
-                      focusable={false}
-                      className="h-4 w-4 text-primary"
-                    />
-                    <span className="sr-only">{t('Utils.OpenMenu')}</span>
-                  </>
+                  <MoreVertIcon
+                    aria-hidden={true}
+                    focusable={false}
+                    className="h-4 w-4 text-primary"
+                  />
                 }>
                 {row.original.service_definition?.identifier !==
                   ServiceDefinitionIdentifier.Link && (
@@ -133,31 +131,37 @@ const AdminServiceTab = ({ serviceData, refetch }: AdminServiceTabProps) => {
     });
   };
 
-  const debounceHandleInput = useDebounceCallback(
-    (e) => handleInputChange(e.target.value),
-    DEBOUNCE_TIME
-  );
+  const searchHandlers = useDebouncedSearch({ apply: handleInputChange });
+
+  const label = t('Service.FilterByService');
 
   return (
     <>
       <DataTable
         columns={columns}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         data={serviceData}
         toolbar={
           <div className="flex flex-col-reverse items-center justify-between gap-s sm:flex-row">
-            <SearchInput
-              containerClass="w-full sm:w-1/3"
+            <SearchField
+              className="w-full sm:w-1/3"
+              aria-label={t('Service.SearchServices')}
               placeholder={t('Service.SearchServices')}
-              onChange={debounceHandleInput}
+              clearLabel={t('DesignSystem.SearchField.Clear')}
+              onChange={searchHandlers.onChange}
+              onClear={searchHandlers.onClear}
             />
-            <Combobox
-              dataTab={getServiceDefinitionData}
-              order={'Filter by service'}
-              placeholder={'Choose a value'}
-              emptyCommand={'Not found'}
-              onValueChange={handleIdentifierChange}
-              value={selectedValue}
+            <AppCombobox<{ value: string; label: string }>
+              label={label}
+              labelPosition="none"
+              placeholder={label}
+              options={getServiceDefinitionData}
+              value={selectedValue ?? null}
+              onValueChange={(next) =>
+                handleIdentifierChange(next ?? undefined)
+              }
+              getOptionLabel={(option) => option.label}
+              isOptionEqualToValue={(a, b) => a.value === b.value}
             />
           </div>
         }

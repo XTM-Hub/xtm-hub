@@ -3,9 +3,9 @@ import {
   INTEGRATION_CSV_EXPORT_COLUMNS,
   toIntegrationCsvColumnLabelKey,
 } from '@/components/service/components/header/integrations-csv-export.utils';
+import * as SnackbarStore from '@/components/ui/snackbar/snackbar-store';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import testRender from '@/utils/test/test-render';
-import * as FiligranUI from '@filigran/ui';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -78,7 +78,7 @@ const openColumnsCombobox = async (
 describe('IntegrationsCsvExportDialog', () => {
   beforeEach(() => {
     downloadIntegrationsCsvMock.mockReset();
-    vi.spyOn(FiligranUI, 'toast').mockImplementation(() => undefined);
+    vi.spyOn(SnackbarStore, 'showSnackbar').mockImplementation(() => undefined);
     storageMock.integrationTypes = {};
     storageMock.licenseTypes = {};
     storageMock.solutionCategories = {};
@@ -137,7 +137,8 @@ describe('IntegrationsCsvExportDialog', () => {
         EMPTY_FILTERS
       );
     });
-    expect(FiligranUI.toast).toHaveBeenCalledWith({
+    expect(SnackbarStore.showSnackbar).toHaveBeenCalledWith({
+      severity: 'success',
       title: 'Service.CsvExport.SuccessToast',
     });
     expect(setOpen).toHaveBeenCalledWith(false);
@@ -188,14 +189,22 @@ describe('IntegrationsCsvExportDialog', () => {
       />
     );
 
+    const columnsField = screen.getByTestId('integrations-csv-export-columns');
+
     // When
-    const listbox = await openColumnsCombobox(user);
-    await user.click(within(listbox).getByText('Clear'));
+    await user.click(
+      within(columnsField).getByRole('button', { name: 'Utils.Clear' })
+    );
     fireEvent.click(
       screen.getByRole('button', { name: 'Service.CsvExport.ExportButton' })
     );
 
     // Then
+    expect(
+      within(columnsField).queryByRole('list', {
+        name: 'DesignSystem.Combobox.SelectedValues',
+      })
+    ).not.toBeInTheDocument();
     await waitFor(() => {
       expect(downloadIntegrationsCsvMock).not.toHaveBeenCalled();
     });
@@ -221,8 +230,8 @@ describe('IntegrationsCsvExportDialog', () => {
 
     // Then
     await waitFor(() => {
-      expect(FiligranUI.toast).toHaveBeenCalledWith({
-        variant: 'destructive',
+      expect(SnackbarStore.showSnackbar).toHaveBeenCalledWith({
+        severity: 'error',
         title: 'Utils.Error',
         description: <>Service.CsvExport.ErrorToast</>,
       });

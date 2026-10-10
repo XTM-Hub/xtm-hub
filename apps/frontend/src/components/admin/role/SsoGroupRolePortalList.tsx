@@ -1,9 +1,9 @@
 import AddSsoGroupRolePortal from '@/components/admin/role/AddSsoGroupRolePortal';
 import SsoGroupRolePortalActions from '@/components/admin/role/SsoGroupRolePortalActions';
+import { DataTable } from '@/components/ui/data-table';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { i18nKey } from '@/utils/datatable';
-import { DataTable } from '@filigran/ui';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import {
   SsoGroupRolePortalsQuery,
   useSsoGroupRolePortalsQuery,
@@ -63,7 +63,7 @@ const SsoGroupRolePortalList = () => {
       <DataTable
         columns={columns}
         data={rows}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         tableOptions={{
           enableSorting: false,
           enableColumnResizing: false,

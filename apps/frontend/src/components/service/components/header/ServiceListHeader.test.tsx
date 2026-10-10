@@ -15,13 +15,15 @@ const testState = vi.hoisted(() => ({
   setOrderBy: vi.fn(),
   setOrderMode: vi.fn(),
   setDisplayMode: vi.fn(),
+  cancelDebouncedSearch: vi.fn(),
 }));
 
-vi.mock('@/utils/debounce', () => ({
-  debounceHandleInput:
-    (callback: (value: string) => void) =>
-    (event: { target: { value: string } }) =>
-      callback(event.target.value),
+vi.mock('usehooks-ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('usehooks-ts')>()),
+  useDebounceCallback: (callback: (value: string) => void) =>
+    Object.assign((value: string) => callback(value), {
+      cancel: testState.cancelDebouncedSearch,
+    }),
 }));
 
 vi.mock('@/hooks/use-service-list-local-storage', async (importOriginal) => ({
@@ -87,6 +89,29 @@ describe('ServiceListHeader', () => {
     );
 
     expect(onSearchChange).toHaveBeenLastCalledWith('opencti');
+  });
+
+  it('should call onSearchChange with an empty value when clearing the search', async () => {
+    // Given
+    testState.useServiceListLocalStorage.mockReturnValue(
+      buildLocalStorageState()
+    );
+    const onSearchChange = vi.fn();
+    const { user } = renderHeader({ onSearchChange });
+    await user.type(
+      screen.getByPlaceholderText('GenericActions.Search'),
+      'opencti'
+    );
+    testState.cancelDebouncedSearch.mockClear();
+
+    // When
+    await user.click(
+      screen.getByRole('button', { name: 'DesignSystem.SearchField.Clear' })
+    );
+
+    // Then
+    expect(testState.cancelDebouncedSearch).toHaveBeenCalledOnce();
+    expect(onSearchChange).toHaveBeenLastCalledWith('');
   });
 
   it.each`

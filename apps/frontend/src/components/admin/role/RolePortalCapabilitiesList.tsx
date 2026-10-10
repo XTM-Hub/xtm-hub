@@ -1,9 +1,10 @@
 import AddRolePortal from '@/components/admin/role/AddRolePortal';
 import RolePortalActions from '@/components/admin/role/RolePortalActions';
+import { DataTable } from '@/components/ui/data-table';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { i18nKey } from '@/utils/datatable';
-import { Badge, DataTable } from '@filigran/ui';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
+import { Chip } from '@filigran/design-system';
 import { RolePortalsQuery, useRolePortalsQuery } from '@graphql/generated';
 import { ColumnDef } from '@tanstack/react-table';
 
@@ -24,9 +25,14 @@ const RolePortalCapabilitiesList = () => {
       header: t('RoleListPage.Capabilities'),
       cell: ({ row }) => (
         <div className="flex flex-wrap gap-xs">
-          {row.original.capabilities?.map((capability) => (
-            <Badge key={capability?.id}>{capability?.name}</Badge>
-          ))}
+          {row.original.capabilities?.map((capability) =>
+            capability ? (
+              <Chip
+                key={capability.id}
+                label={capability.name}
+              />
+            ) : null
+          )}
         </div>
       ),
     },
@@ -59,7 +65,7 @@ const RolePortalCapabilitiesList = () => {
       <DataTable
         columns={columns}
         data={data?.rolePortals ?? []}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         tableOptions={{
           enableSorting: false,
           enableColumnResizing: false,

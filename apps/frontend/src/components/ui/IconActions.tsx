@@ -1,12 +1,14 @@
 'use client';
 import { cn } from '@/lib/utils';
-import { Button } from '@filigran/design-system';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@filigran/ui';
+  Button,
+  IconButton,
+  type IconButtonProps,
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuTrigger,
+} from '@filigran/design-system';
 import Link from 'next/link';
 import {
   type ButtonHTMLAttributes,
@@ -18,12 +20,13 @@ import {
   useState,
 } from 'react';
 
-export { DropdownMenuItem as IconActionsItem } from '@filigran/ui/clients';
+export { MenuItem as IconActionsItem } from '@filigran/design-system';
 
 interface IconActionsProps {
   children: ReactNode;
   icon: ReactNode;
-  label?: ReactNode;
+  'aria-label': string;
+  size?: IconButtonProps['size'];
   className?: string;
 }
 
@@ -41,34 +44,32 @@ export const IconActionContext = createContext<IconActionContextProps>({
 });
 export const IconActions = ({
   children,
-  label,
   icon,
+  'aria-label': ariaLabel,
+  size,
   className,
 }: IconActionsProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <DropdownMenu
+    <Menu
       open={menuOpen}
       onOpenChange={setMenuOpen}>
-      <DropdownMenuTrigger asChild>
-        <div className="flex items-center gap-s cursor-pointer">
-          {label}
-          <Button
-            priority="tertiary"
-            className={cn('h-8 w-8 p-0 data-[state=open]:bg-hover', className)}>
-            {icon}
-          </Button>
-        </div>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        className="w-[160px] z-[1500]">
+      <MenuTrigger asChild>
+        <IconButton
+          priority="tertiary"
+          size={size}
+          className={className}
+          aria-label={ariaLabel}
+          icon={icon}
+        />
+      </MenuTrigger>
+      <MenuContent align="end">
         <IconActionContext.Provider value={{ setMenuOpen }}>
           {children}
         </IconActionContext.Provider>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </MenuContent>
+    </Menu>
   );
 };
 
@@ -97,12 +98,12 @@ export const IconActionsLink = ({
   ...props
 }: IconActionsLinkProps) => {
   return (
-    <DropdownMenuItem asChild>
+    <MenuItem asChild>
       <Link
         {...props}
         className={className}>
         {children}
       </Link>
-    </DropdownMenuItem>
+    </MenuItem>
   );
 };

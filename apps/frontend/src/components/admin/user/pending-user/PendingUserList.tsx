@@ -10,25 +10,24 @@ import {
   UserPendingListSubscription,
 } from '@/components/admin/user/user.graphql';
 import { PortalContext } from '@/components/me/AppPortalContext';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
-import { SearchInput } from '@/components/ui/SearchInput';
-import {
-  handleSortingChange,
-  mapToSortingTableValue,
-  transformSortingValueToParams,
-} from '@/components/ui/handle-sorting.utils';
-import { useTablePagination } from '@/hooks/use-table-pagination';
-import { useTranslate } from '@/hooks/use-translate';
-import { DEBOUNCE_TIME } from '@/utils/constant';
-import { i18nKey } from '@/utils/datatable';
-import { IconButton } from '@filigran/design-system';
-import { CheckIcon, CloseIcon } from '@filigran/icon';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
   DataTable,
   DataTableHeadBarOptions,
   SelectionState,
   useRowSelection,
-} from '@filigran/ui';
+} from '@/components/ui/data-table';
+import {
+  handleSortingChange,
+  mapToSortingTableValue,
+  transformSortingValueToParams,
+} from '@/components/ui/handle-sorting.utils';
+import { useDebouncedSearch } from '@/hooks/use-debounced-search';
+import { useTablePagination } from '@/hooks/use-table-pagination';
+import { useTranslate } from '@/hooks/use-translate';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
+import { IconButton, SearchField } from '@filigran/design-system';
+import { CheckIcon, CloseIcon } from '@filigran/icon';
 import {
   UserList_fragment$data,
   UserList_fragment$key,
@@ -54,7 +53,6 @@ import {
   useRefetchableFragment,
   useSubscription,
 } from 'react-relay';
-import { useDebounceCallback } from 'usehooks-ts';
 
 const renderStrong = (chunks: ReactNode) => <strong>{chunks}</strong>;
 
@@ -278,17 +276,17 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
     });
   };
 
-  const debounceHandleInput = useDebounceCallback(
-    (event) => handleInputChange(event.target.value),
-    DEBOUNCE_TIME
-  );
+  const searchHandlers = useDebouncedSearch({
+    apply: handleInputChange,
+    appliedTerm: filter.search,
+  });
 
   return (
     <>
       <DataTable
         columns={columns}
         data={userData}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         onResetTable={resetAll}
         selectionOptions={{
           selectionState: {
@@ -298,14 +296,12 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
           selectionHeader: {
             actions: ({ selectionState }) => (
               <>
-                <AlertDialogComponent
-                  AlertTitle={t(
-                    'PendingUserListPage.WarningUsersRejection.Title'
-                  )}
-                  actionButtonText={t(
+                <ConfirmDialog
+                  title={t('PendingUserListPage.WarningUsersRejection.Title')}
+                  confirmLabel={t(
                     'PendingUserListPage.WarningUsersRejection.Confirm'
                   )}
-                  triggerElement={
+                  trigger={
                     <IconButton
                       variant="destructive"
                       priority="tertiary"
@@ -314,15 +310,15 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
                       icon={<CloseIcon className="h-4 w-4" />}
                     />
                   }
-                  onClickContinue={() => handleBulkReject(selectionState)}>
+                  onConfirm={() => handleBulkReject(selectionState)}>
                   {t('PendingUserListPage.WarningUsersRejection.Description')}
-                </AlertDialogComponent>
-                <AlertDialogComponent
-                  AlertTitle={t('PendingUserListPage.WarningUsersAccept.Title')}
-                  actionButtonText={t(
+                </ConfirmDialog>
+                <ConfirmDialog
+                  title={t('PendingUserListPage.WarningUsersAccept.Title')}
+                  confirmLabel={t(
                     'PendingUserListPage.WarningUsersAccept.Confirm'
                   )}
-                  triggerElement={
+                  trigger={
                     <IconButton
                       priority="tertiary"
                       className="border"
@@ -330,14 +326,14 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
                       icon={<CheckIcon className="h-4 w-4" />}
                     />
                   }
-                  onClickContinue={() => handleBulkApprove(selectionState)}>
+                  onConfirm={() => handleBulkApprove(selectionState)}>
                   {t.rich(
                     'PendingUserListPage.WarningUsersAccept.Description',
                     {
                       strong: renderStrong,
                     }
                   )}
-                </AlertDialogComponent>
+                </ConfirmDialog>
               </>
             ),
           },
@@ -354,10 +350,13 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
         }}
         toolbar={
           <div className="flex flex-col-reverse items-center justify-between gap-s sm:flex-row">
-            <SearchInput
-              containerClass="w-full sm:w-1/3"
+            <SearchField
+              className="w-full sm:w-1/3"
+              aria-label={t('UserActions.SearchUser')}
               placeholder={t('UserActions.SearchUser')}
-              onChange={debounceHandleInput}
+              clearLabel={t('DesignSystem.SearchField.Clear')}
+              onChange={searchHandlers.onChange}
+              onClear={searchHandlers.onClear}
             />
             <div className="flex w-full items-center justify-between gap-s sm:w-auto">
               <DataTableHeadBarOptions />

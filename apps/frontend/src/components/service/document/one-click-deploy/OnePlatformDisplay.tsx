@@ -1,7 +1,6 @@
 import { useTranslate } from '@/hooks/use-translate';
 import { SHAREABLE_RESOURCE_TYPE_NAME_MAPPING } from '@/utils/shareable-resources/shareable-resources.types';
-import { Button } from '@filigran/design-system';
-import { AlertDialogTitle } from '@filigran/ui';
+import { Button, DialogTitle } from '@filigran/design-system';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useRegisteredPlatformsFragment$data } from '@generated/useRegisteredPlatformsFragment.graphql';
 
@@ -23,7 +22,7 @@ const OnePlatformDisplay = ({
   return (
     <>
       <div className="space-y-m">
-        <AlertDialogTitle>
+        <DialogTitle>
           {t('Service.ShareableResources.Deploy.DeployResourceDescription', {
             resourceName: documentData.name ?? '',
             resourceType:
@@ -31,7 +30,7 @@ const OnePlatformDisplay = ({
                 documentData.type as keyof typeof SHAREABLE_RESOURCE_TYPE_NAME_MAPPING
               ],
           })}
-        </AlertDialogTitle>
+        </DialogTitle>
         <p>
           {t('Service.ShareableResources.Deploy.DeployDescriptionOnePlatform', {
             platformName: platforms[0]?.title ?? 'OpenCTI',

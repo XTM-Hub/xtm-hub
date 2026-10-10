@@ -30,7 +30,7 @@ export default class IntegrationPage {
   }
   async uploadJsonDocument(filePath: string) {
     const fileInput = this.page.locator(
-      'input[type="file"][accept="application/json"]'
+      'input[type="file"][accept*="application/json"]'
     );
     await fileInput.setInputFiles(filePath);
   }
@@ -55,9 +55,11 @@ export default class IntegrationPage {
       .getByRole('button', { name: 'Add new Integration' })
       .click();
     await this.page.getByRole('menuitem', { name: 'TAXII Feeds' }).click();
-    await this.page.getByRole('textbox', { name: 'Name *' }).fill(name);
     await this.page
-      .getByRole('textbox', { name: 'Short Description *' })
+      .getByRole('textbox', { name: 'Name', exact: true })
+      .fill(name);
+    await this.page
+      .getByRole('textbox', { name: 'Short Description' })
       .fill(shortDescription);
     await this.page
       .getByRole('textbox', { name: 'This is a paragraph to' })
@@ -85,9 +87,11 @@ export default class IntegrationPage {
       .getByRole('button', { name: 'Add new Integration' })
       .click();
     await this.page.getByRole('menuitem', { name: 'RSS Feeds' }).click();
-    await this.page.getByRole('textbox', { name: 'Name *' }).fill(name);
     await this.page
-      .getByRole('textbox', { name: 'Short Description *' })
+      .getByRole('textbox', { name: 'Name', exact: true })
+      .fill(name);
+    await this.page
+      .getByRole('textbox', { name: 'Short Description' })
       .fill(shortDescription);
     await this.page
       .getByRole('textbox', { name: 'This is a paragraph to' })
@@ -113,9 +117,11 @@ export default class IntegrationPage {
       .getByRole('button', { name: 'Add new Integration' })
       .click();
     await this.page.getByRole('menuitem', { name: 'OpenCTI Streams' }).click();
-    await this.page.getByRole('textbox', { name: 'Name *' }).fill(name);
     await this.page
-      .getByRole('textbox', { name: 'Short Description *' })
+      .getByRole('textbox', { name: 'Name', exact: true })
+      .fill(name);
+    await this.page
+      .getByRole('textbox', { name: 'Short Description' })
       .fill(shortDescription);
     await this.page
       .getByRole('textbox', { name: 'This is a paragraph to' })
@@ -143,9 +149,11 @@ export default class IntegrationPage {
       .getByRole('button', { name: 'Add new Integration' })
       .click();
     await this.page.getByRole('menuitem', { name: 'CSV Feeds' }).click();
-    await this.page.getByRole('textbox', { name: 'Name *' }).fill(name);
     await this.page
-      .getByRole('textbox', { name: 'Short Description *' })
+      .getByRole('textbox', { name: 'Name', exact: true })
+      .fill(name);
+    await this.page
+      .getByRole('textbox', { name: 'Short Description' })
       .fill(shortDescription);
     await this.page
       .getByRole('textbox', { name: 'This is a paragraph to' })
@@ -176,9 +184,11 @@ export default class IntegrationPage {
     await this.page
       .getByRole('menuitem', { name: 'Third party integration' })
       .click();
-    await this.page.getByRole('textbox', { name: 'Name *' }).fill(name);
     await this.page
-      .getByRole('textbox', { name: 'Short Description *' })
+      .getByRole('textbox', { name: 'Name', exact: true })
+      .fill(name);
+    await this.page
+      .getByRole('textbox', { name: 'Short Description' })
       .fill(shortDescription);
     await this.page
       .getByRole('textbox', { name: 'This is a paragraph to' })

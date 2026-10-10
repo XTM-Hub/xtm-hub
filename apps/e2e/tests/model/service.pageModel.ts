@@ -13,6 +13,13 @@ export default class ServicePage {
     return this.page.locator('body > [role="dialog"]').last();
   }
 
+  // A replaced snackbar stays in the DOM while it animates out.
+  getOpenSnackbar() {
+    return this.page
+      .getByRole('region', { name: 'Notifications (F8)', exact: true })
+      .locator('li[data-state="open"]');
+  }
+
   async navigateToServiceListAdmin() {
     await this.page
       .getByRole('button', { name: 'Settings', exact: true })
@@ -39,9 +46,11 @@ export default class ServicePage {
     const drawer = this.page.locator('body > [role="dialog"]').last();
     await expect(drawer).toBeVisible();
 
-    await drawer.getByRole('button', { name: 'Organization' }).click();
+    await drawer
+      .getByRole('combobox', { name: 'Organization', exact: true })
+      .click();
     const organizationOption = this.page
-      .getByRole('listbox', { name: /Suggestions/i })
+      .getByRole('listbox', { name: 'Organization', exact: true })
       .getByRole('option', { name: organizationName, exact: true });
     await expect(organizationOption).toBeVisible();
     await organizationOption.click();
@@ -60,9 +69,11 @@ export default class ServicePage {
     const drawer = this.page.locator('body > [role="dialog"]').last();
     await expect(drawer).toBeVisible();
 
-    await drawer.getByRole('button', { name: 'Organization' }).click();
+    await drawer
+      .getByRole('combobox', { name: 'Organization', exact: true })
+      .click();
     const organizationOption = this.page
-      .getByRole('listbox', { name: /Suggestions/i })
+      .getByRole('listbox', { name: 'Organization', exact: true })
       .getByRole('option', { name: organizationName, exact: true });
     await expect(organizationOption).toBeVisible();
     await organizationOption.click();
@@ -78,12 +89,16 @@ export default class ServicePage {
 
   async addUserIntoService(userEmail: string) {
     await this.page.getByRole('button', { name: 'Invite user' }).click();
-    await this.page.getByRole('button', { name: 'Email' }).click();
-    await this.page.getByPlaceholder('Search...').click();
-    await this.page.getByPlaceholder('Search...').fill(userEmail);
-    await this.page.getByText(userEmail).click();
-    await this.page.getByRole('button', { name: 'Email' }).click();
-    await this.page.getByRole('dialog').nth(1).press('Enter');
+    const emailField = this.page.getByRole('combobox', {
+      name: 'Email',
+      exact: true,
+    });
+    await emailField.click();
+    await emailField.fill(userEmail);
+    await this.page
+      .getByRole('option', { name: userEmail, exact: true })
+      .click();
+    await this.page.keyboard.press('Escape');
     await this.page.getByLabel('Manage access').click();
     await this.page.getByRole('button', { name: 'Validate' }).click();
     await waitForDrawerToClose(this.page);
@@ -94,12 +109,16 @@ export default class ServicePage {
     capability: string
   ) {
     await this.page.getByRole('button', { name: 'Invite user' }).click();
-    await this.page.getByRole('button', { name: 'Email' }).click();
-    await this.page.getByPlaceholder('Search...').click();
-    await this.page.getByPlaceholder('Search...').fill('use');
-    await this.page.getByText(userEmail).click();
-    await this.page.getByRole('button', { name: 'Email' }).click();
-    await this.page.getByRole('dialog').nth(1).press('Enter');
+    const emailField = this.page.getByRole('combobox', {
+      name: 'Email',
+      exact: true,
+    });
+    await emailField.click();
+    await emailField.fill('use');
+    await this.page
+      .getByRole('option', { name: userEmail, exact: true })
+      .click();
+    await this.page.keyboard.press('Escape');
     await this.page.getByLabel(capability).click();
     await this.page.getByRole('button', { name: 'Validate' }).click();
     await waitForDrawerToClose(this.page);

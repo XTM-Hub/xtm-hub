@@ -1,45 +1,16 @@
 import { TranslatableEnumSelectField } from '@/components/ui/TranslatableEnumSelectField';
-import { Form } from '@filigran/ui';
+import { Form } from '@/components/ui/form';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@filigran/ui', async () => {
-  const actual =
-    await vi.importActual<typeof import('@filigran/ui')>('@filigran/ui');
-
-  return {
-    ...actual,
-    Select: ({
-      value,
-      onValueChange,
-      children,
-    }: {
-      value: string;
-      onValueChange: (nextValue: string) => void;
-      children: ReactNode;
-    }) => (
-      <select
-        aria-label="Category"
-        value={value}
-        onChange={(event) => onValueChange(event.target.value)}>
-        {children}
-      </select>
-    ),
-    SelectContent: ({ children }: { children: ReactNode }) => children,
-    SelectItem: ({
-      value,
-      children,
-    }: {
-      value: string;
-      children: ReactNode;
-    }) => <option value={value}>{children}</option>,
-    SelectTrigger: ({ children }: { children: ReactNode }) => children,
-    SelectValue: () => null,
-  };
-});
+const LABEL = 'Category';
+const PLACEHOLDER = 'Pick one';
+const NAMESPACE = 'MyNamespace';
+const FIRST_VALUE = 'first_value';
+const SECOND_VALUE = 'second_value';
+const ERROR_MESSAGE = 'Category is required';
 
 interface FormValues {
   category: string;
@@ -47,8 +18,10 @@ interface FormValues {
 
 const FakeForm = ({
   onChange = vi.fn(),
+  error,
 }: {
   onChange?: (value: string) => void;
+  error?: string;
 }) => {
   const form = useForm<FormValues>({ defaultValues: { category: '' } });
   const field = form.register('category');
@@ -64,60 +37,71 @@ const FakeForm = ({
             onChange(value);
           },
         }}
-        label="Category"
-        placeholder="Pick one"
-        values={['first_value', 'second_value']}
-        translationNamespace="MyNamespace"
+        label={LABEL}
+        placeholder={PLACEHOLDER}
+        values={[FIRST_VALUE, SECOND_VALUE]}
+        translationNamespace={NAMESPACE}
+        error={error}
       />
     </Form>
   );
 };
 
 describe('TranslatableEnumSelectField', () => {
-  it('renders the label, asterisk and every translated value as an option', () => {
+  it('should name the combobox with its required label when rendered', () => {
+    // Given / When
     render(<FakeForm />);
 
-    expect(screen.getByText('Category')).toBeInTheDocument();
-    expect(screen.getByText('*')).toBeInTheDocument();
-    expect(
-      screen.getByRole('option', { name: 'MyNamespace.first_value' })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('option', { name: 'MyNamespace.second_value' })
-    ).toBeInTheDocument();
+    // Then
+    expect(screen.getByRole('combobox', { name: LABEL })).toBeInTheDocument();
+    expect(screen.getByText(LABEL)).toHaveTextContent(`${LABEL}*`);
   });
 
-  const CustomClassNameHarness = () => {
-    const form = useForm<FormValues>({ defaultValues: { category: '' } });
-    const field = form.register('category');
+  it('should list every translated value as an option when the select is opened', async () => {
+    // Given
+    const user = userEvent.setup();
+    render(<FakeForm />);
 
-    return (
-      <Form {...form}>
-        <TranslatableEnumSelectField
-          field={{ ...field, value: '', onChange: vi.fn() }}
-          label="Category"
-          placeholder="Pick one"
-          values={['first_value']}
-          translationNamespace="MyNamespace"
-          className="custom-class"
-        />
-      </Form>
-    );
-  };
+    // When
+    await user.click(screen.getByRole('combobox', { name: LABEL }));
 
-  it('renders with a custom asterisk className', () => {
-    render(<CustomClassNameHarness />);
-
-    expect(screen.getByText('*')).toHaveClass('custom-class');
+    // Then
+    expect(
+      screen.getAllByRole('option').map((option) => option.textContent)
+    ).toEqual([`${NAMESPACE}.${FIRST_VALUE}`, `${NAMESPACE}.${SECOND_VALUE}`]);
   });
 
-  it('selects a value and forwards it to field.onChange', async () => {
+  it('should describe the combobox with the error message when an error is given', () => {
+    // Given / When
+    render(<FakeForm error={ERROR_MESSAGE} />);
+
+    // Then
+    expect(
+      screen.getByRole('combobox', { name: LABEL })
+    ).toHaveAccessibleDescription(ERROR_MESSAGE);
+  });
+
+  it('should show no helper text when no error is given', () => {
+    // Given / When
+    render(<FakeForm />);
+
+    // Then
+    expect(screen.queryByText(ERROR_MESSAGE)).not.toBeInTheDocument();
+  });
+
+  it('should forward the picked value to field.onChange when an option is selected', async () => {
+    // Given
     const onChange = vi.fn();
     const user = userEvent.setup();
     render(<FakeForm onChange={onChange} />);
 
-    await user.selectOptions(screen.getByRole('combobox'), 'second_value');
+    // When
+    await user.click(screen.getByRole('combobox', { name: LABEL }));
+    await user.click(
+      screen.getByRole('option', { name: `${NAMESPACE}.${SECOND_VALUE}` })
+    );
 
-    expect(onChange).toHaveBeenCalledWith('second_value');
+    // Then
+    expect(onChange).toHaveBeenCalledWith(SECOND_VALUE);
   });
 });

@@ -4,26 +4,23 @@ import { PortalContext } from '@/components/me/AppPortalContext';
 import { XtmPlatformTrialBanner } from '@/components/service/trial-instances/banner/xtm-platform-trial/XtmPlatformTrialBanner';
 import { deriveXtmPlatformTrialState } from '@/components/service/trial-instances/banner/xtm-platform-trial/xtm-platform-trial-banner.utils';
 import { SettingsContext } from '@/components/settings/EnvPortalContext';
+import { AutoForm } from '@/components/ui/auto-form';
+import { FormControl, FormItem, FormMessage } from '@/components/ui/form';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH } from '@/utils/path/constant';
-import { Button } from '@filigran/design-system';
 import {
-  AutoForm,
+  Button,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
-  DialogHeader,
   DialogTitle,
-  FormControl,
-  FormItem,
-  FormLabel,
-  FormMessage,
+  Radio,
   RadioGroup,
-  RadioGroupItem,
   Textarea,
-} from '@filigran/ui';
-import { toast } from '@filigran/ui/clients';
+} from '@filigran/design-system';
 import {
   HasRepliedSatisfaction,
   PlatformTrialStatusQueryVariables,
@@ -65,20 +62,16 @@ const AnswerFieldType = ({ field }: FeedbackFieldProps) => {
     <FormItem>
       <FormControl>
         <RadioGroup
+          orientation="horizontal"
+          aria-label={t('Service.Trials.XtmPlatform.Feedback.Question')}
           onValueChange={field.onChange}
-          value={field.value}
-          className="flex flex-row">
+          value={field.value}>
           {FEEDBACK_ANSWERS.map(({ value, labelKey }) => (
-            <FormItem
+            <Radio
               key={value}
-              className="flex flex-row items-center">
-              <FormControl>
-                <RadioGroupItem value={value} />
-              </FormControl>
-              <FormLabel className="cursor-pointer font-normal">
-                {t(labelKey)}
-              </FormLabel>
-            </FormItem>
+              value={value}
+              label={t(labelKey)}
+            />
           ))}
         </RadioGroup>
       </FormControl>
@@ -89,22 +82,15 @@ const AnswerFieldType = ({ field }: FeedbackFieldProps) => {
 
 const JustificationFieldType = ({ field }: FeedbackFieldProps) => {
   const t = useTranslate();
-  const { watch } = useFormContext();
+  const { watch, getFieldState } = useFormContext();
   if (watch('answer') !== HasRepliedSatisfaction.No) return null;
   return (
-    <FormItem>
-      <FormLabel>
-        {t('Service.Trials.XtmPlatform.Feedback.Justification')}
-      </FormLabel>
-      <FormControl>
-        <Textarea
-          {...field}
-          value={field.value ?? ''}
-          className="min-h-24 bg-elevation-background-layer-1"
-        />
-      </FormControl>
-      <FormMessage />
-    </FormItem>
+    <Textarea
+      label={t('Service.Trials.XtmPlatform.Feedback.Justification')}
+      {...field}
+      value={field.value ?? ''}
+      error={getFieldState(field.name).error?.message}
+    />
   );
 };
 
@@ -131,8 +117,8 @@ export const PrivateXtmPlatformTrialBanner = () => {
     portalGraphqlClient,
     {
       onError: () => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
         });
       },
@@ -198,29 +184,29 @@ export const PrivateXtmPlatformTrialBanner = () => {
           }
         }}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {t('Service.Trials.XtmPlatform.Feedback.Question')}
-            </DialogTitle>
-          </DialogHeader>
+          <DialogTitle>
+            {t('Service.Trials.XtmPlatform.Feedback.Question')}
+          </DialogTitle>
 
-          <AutoForm
-            formSchema={feedbackFormSchema}
-            onSubmit={handleSubmitFeedback}
-            fieldConfig={{
-              answer: { fieldType: AnswerFieldType },
-              justification: { fieldType: JustificationFieldType },
-            }}>
-            {({ isValid }) => (
-              <DialogFooter>
-                <Button
-                  type="submit"
-                  disabled={!isValid}>
-                  {t('Service.Trials.XtmPlatform.Feedback.Submit')}
-                </Button>
-              </DialogFooter>
-            )}
-          </AutoForm>
+          <DialogBody>
+            <AutoForm
+              formSchema={feedbackFormSchema}
+              onSubmit={handleSubmitFeedback}
+              fieldConfig={{
+                answer: { fieldType: AnswerFieldType },
+                justification: { fieldType: JustificationFieldType },
+              }}>
+              {({ isValid }) => (
+                <DialogFooter>
+                  <Button
+                    type="submit"
+                    disabled={!isValid}>
+                    {t('Service.Trials.XtmPlatform.Feedback.Submit')}
+                  </Button>
+                </DialogFooter>
+              )}
+            </AutoForm>
+          </DialogBody>
         </DialogContent>
       </Dialog>
     </>

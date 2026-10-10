@@ -7,13 +7,18 @@ import {
 import { PlatformUpdateSheet } from '@/components/service/components/PlatformUpdateSheet';
 import { XtmoneStatusState } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/useXtmoneIntegrationStatus';
 import { XtmoneConnectionStatus } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/XtmoneConnectionStatus';
+import { Separator } from '@/components/ui/separator';
 import { useTranslate } from '@/hooks/use-translate';
 import { useDateFormatter } from '@/utils/date';
 import { toExternalHref } from '@/utils/external-url';
-import { Button, IconButton } from '@filigran/design-system';
+import {
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  IconButton,
+} from '@filigran/design-system';
 import { EditIcon } from '@filigran/icon';
-import { Badge, Card, CardContent, Separator } from '@filigran/ui';
-import { GradientButton } from '@filigran/ui/servers';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import {
   PlatformConfigurationStatus,
@@ -73,9 +78,10 @@ export const BundleProductCard = ({
         {t('XtmPlatformTrial.Products.ProductName')}:
       </span>
       <div className="flex items-center gap-xs min-w-0">
-        <Badge className="h-6 border-none bg-feedback-info-secondary-transparency text-content-body-base text-text-default-primary truncate">
-          {product.service_instance?.name ?? '-'}
-        </Badge>
+        <Chip
+          className="min-w-0"
+          label={product.service_instance?.name ?? '-'}
+        />
         {canManage && (
           <IconButton
             priority="tertiary"
@@ -91,8 +97,12 @@ export const BundleProductCard = ({
   );
 
   return (
-    <Card className="h-full bg-elevation-background-layer-1">
-      <CardContent className="p-4 flex flex-col gap-m h-full">
+    <Card
+      padding={16}
+      className="h-full">
+      <CardContent
+        clamp={0}
+        className="flex flex-col gap-m h-full">
         <div className="flex gap-s items-center min-w-0">
           <Image
             src={darkTextLogo}
@@ -170,12 +180,12 @@ export const BundleProductCard = ({
                 href={accessHref}
                 target="_blank"
                 rel="noopener noreferrer">
-                <GradientButton
+                <Button
                   variant="ia"
-                  className="bg-background dark:bg-none"
+                  priority="secondary"
                   tabIndex={-1}>
                   {accessLabel}
-                </GradientButton>
+                </Button>
               </Link>
             ) : (
               <Button disabled>{accessLabel}</Button>

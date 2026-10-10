@@ -15,12 +15,14 @@ import {
   TrialsScope,
   TrialsTabType,
 } from '@/components/trials/trials.const';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { DataTable, DataTableHeadBarOptions } from '@/components/ui/data-table';
 import {
   handleSortingChange,
   mapToSortingTableValue,
 } from '@/components/ui/handle-sorting.utils';
-import { SearchInput } from '@/components/ui/SearchInput';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import {
   useAdminByPass,
   useUserHasPortalCapability,
@@ -28,11 +30,17 @@ import {
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { DEBOUNCE_TIME } from '@/utils/constant';
-import { i18nKey } from '@/utils/datatable';
 import { daysUntil, useDateFormatter } from '@/utils/date';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { xtmPlatformTrialManageUsersFromDashboardPath } from '@/utils/path/constant';
-import { IconButton } from '@filigran/design-system';
+import {
+  IconButton,
+  SearchField,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/design-system';
 import {
   ArrowShapeUpIcon,
   ArrowShapeUpStackIcon,
@@ -40,15 +48,6 @@ import {
   CloseIcon,
   GroupIcon,
 } from '@filigran/icon';
-import {
-  DataTable,
-  DataTableHeadBarOptions,
-  toast,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@filigran/ui';
 import { trialsKeys } from '@graphql/deployment/deployment.keys';
 import {
   DeploymentRequestHubStatus,
@@ -66,7 +65,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import Link from 'next/link';
 import { ReactNode, useMemo, useState } from 'react';
-import { useDebounceCallback } from 'usehooks-ts';
 
 type TrialsColumn = ColumnDef<TrialsRowFragment>;
 type TrialsCellProps = { row: { original: TrialsRowFragment } };
@@ -177,8 +175,8 @@ const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
   const onError = (error: unknown) => {
     const errorMessage =
       error instanceof Error ? error.message : 'UnknownError';
-    toast({
-      variant: 'destructive',
+    showSnackbar({
+      severity: 'error',
       title: t('Utils.Error'),
       description: <>{t(`Error.Server.${errorMessage}`)}</>,
     });
@@ -188,7 +186,8 @@ const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
     useTrialsAdminCancelDeploymentRequestMutation(portalGraphqlClient, {
       onSuccess: async () => {
         await invalidateTrials();
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t(
             isBundle
@@ -204,7 +203,8 @@ const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
     useTrialsReorderDeploymentRequestInQueueMutation(portalGraphqlClient, {
       onSuccess: async () => {
         await invalidateTrials();
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t(
             isBundle
@@ -228,10 +228,10 @@ const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
   return (
     <>
       {isCancellable && (
-        <AlertDialogComponent
-          AlertTitle={t('Service.Trials.Cancellation.Confirmation.Title')}
-          actionButtonText={t('MenuActions.Delete')}
-          triggerElement={
+        <ConfirmDialog
+          title={t('Service.Trials.Cancellation.Confirmation.Title')}
+          confirmLabel={t('MenuActions.Delete')}
+          trigger={
             <IconButton
               variant="destructive"
               priority="tertiary"
@@ -244,16 +244,14 @@ const TrialsRowActions = ({ request, type, scope }: TrialsRowActionsProps) => {
               icon={<CloseIcon className="h-4 w-4" />}
             />
           }
-          onClickContinue={() =>
-            cancelRequest({ deploymentRequestId: request.id })
-          }>
+          onConfirm={() => cancelRequest({ deploymentRequestId: request.id })}>
           {t(
             isBundle
               ? 'TrialsDashboard.Cancellation.Confirmation'
               : 'Service.Trials.Cancellation.Confirmation.Admin',
             { organizationName: request.organization_name ?? '' }
           )}
-        </AlertDialogComponent>
+        </ConfirmDialog>
       )}
       {isReorderable && (
         <>
@@ -484,7 +482,7 @@ const buildTrialsColumns = (
                   <TooltipTrigger asChild>
                     <span className="truncate">{reason}</span>
                   </TooltipTrigger>
-                  <TooltipContent className="max-w-md">{reason}</TooltipContent>
+                  <TooltipContent>{reason}</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             );
@@ -608,10 +606,10 @@ const TrialsTab = ({ type, scope }: TrialsTabProps) => {
     });
   };
 
-  const debounceHandleInput = useDebounceCallback(
-    (event) => setSearchTerm(event.target.value || null),
-    DEBOUNCE_TIME
-  );
+  const searchHandlers = useDebouncedSearch({
+    apply: (term) => setSearchTerm(term || null),
+    appliedTerm: searchTerm,
+  });
 
   return (
     <DataTable
@@ -620,16 +618,13 @@ const TrialsTab = ({ type, scope }: TrialsTabProps) => {
       toolbar={
         <div>
           <div className="flex flex-col-reverse items-center justify-between gap-s sm:flex-row">
-            <label
-              htmlFor="trials-search"
-              className="sr-only">
-              {t('TrialsDashboard.Actions.SearchTrials')}
-            </label>
-            <SearchInput
-              id="trials-search"
-              containerClass="w-full sm:w-1/3"
+            <SearchField
+              className="w-full sm:w-1/3"
+              aria-label={t('TrialsDashboard.Actions.SearchTrials')}
               placeholder={t('TrialsDashboard.Actions.SearchTrials')}
-              onChange={debounceHandleInput}
+              clearLabel={t('DesignSystem.SearchField.Clear')}
+              onChange={searchHandlers.onChange}
+              onClear={searchHandlers.onClear}
             />
             <div className="flex w-full items-center justify-between gap-s sm:w-auto">
               <DataTableHeadBarOptions />
@@ -651,7 +646,7 @@ const TrialsTab = ({ type, scope }: TrialsTabProps) => {
         onColumnOrderChange: setColumnOrder,
         onColumnVisibilityChange: setColumnVisibility,
       }}
-      i18nKey={i18nKey(t)}
+      {...getDataTableLabels(t)}
       tableState={{
         sorting: mapToSortingTableValue(orderBy, orderMode),
         pagination,

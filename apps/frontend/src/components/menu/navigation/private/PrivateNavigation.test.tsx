@@ -180,7 +180,7 @@ describe('PrivateNavigation component — open={true}', () => {
     expect(screen.getByText('Slack')).toBeInTheDocument();
 
     expect(
-      container.querySelectorAll('div.bg-elevation-border-strong')
+      container.querySelectorAll('div[data-orientation="horizontal"]')
     ).toHaveLength(1);
   });
 
@@ -207,7 +207,7 @@ describe('PrivateNavigation component — open={true}', () => {
     ).toBeTruthy();
     expect(usersLink).toHaveAttribute('href', `/${APP_PATH}/manage/user`);
     expect(
-      container.querySelectorAll('div.bg-elevation-border-strong')
+      container.querySelectorAll('div[data-orientation="horizontal"]')
     ).toHaveLength(2);
 
     await expandSection(user, 'Settings');

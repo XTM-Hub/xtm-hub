@@ -1,11 +1,11 @@
-import { Button } from '@filigran/design-system';
-import { OpenInNewIcon } from '@filigran/icon';
 import {
+  Button,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui/clients';
+} from '@filigran/design-system';
+import { OpenInNewIcon } from '@filigran/icon';
 import Link from 'next/link';
 
 interface ShareableResourceDetailsLinkProps {

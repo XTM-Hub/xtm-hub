@@ -1,7 +1,7 @@
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { toast } from '@filigran/ui';
 import {
   useDeleteSsoGroupRolePortalMutation,
   useSsoGroupRolePortalsQuery,
@@ -30,15 +30,16 @@ const DeleteSsoGroupRolePortal = ({
         await queryClient.invalidateQueries({
           queryKey: useSsoGroupRolePortalsQuery.getKey(),
         });
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
         });
       },
       onError: (error: unknown) => {
         const errorMessage =
           error instanceof Error ? error.message : 'UnknownError';
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: <>{t(`Error.Server.${errorMessage}`)}</>,
         });
@@ -46,18 +47,18 @@ const DeleteSsoGroupRolePortal = ({
     });
 
   return (
-    <AlertDialogComponent
-      isOpen={open}
+    <ConfirmDialog
+      open={open}
       onOpenChange={onOpenChange}
-      AlertTitle={t('RoleListPage.DeleteDialog.Title')}
-      actionButtonText={t('Utils.Delete')}
-      variantName="destructive"
-      onClickContinue={() =>
+      title={t('RoleListPage.DeleteDialog.Title')}
+      confirmLabel={t('Utils.Delete')}
+      destructive
+      onConfirm={() =>
         deleteSsoGroupRolePortal({ input: { ssoGroup, rolePortal } })
       }
-      continueButtonDisabled={isPending}>
+      confirmDisabled={isPending}>
       {t('RoleListPage.DeleteDialog.Text', { ssoGroup, rolePortal })}
-    </AlertDialogComponent>
+    </ConfirmDialog>
   );
 };
 

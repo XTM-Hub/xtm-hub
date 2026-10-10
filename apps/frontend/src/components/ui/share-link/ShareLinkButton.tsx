@@ -1,17 +1,18 @@
 'use client';
 import { updateShareNumber } from '@/components/ui/share-link/ShareLinkActions';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import usePublicPath from '@/hooks/use-public-path';
 import { useTranslate } from '@/hooks/use-translate';
 import { ShareIcon } from '@filigran/icon';
+
 import {
-  toast,
+  IconButton,
+  IconButtonProps,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui/clients';
-
-import { IconButton, IconButtonProps } from '@filigran/design-system';
+} from '@filigran/design-system';
 import { graphql, useMutation } from 'react-relay';
 import { useCopyToClipboard } from 'usehooks-ts';
 
@@ -92,12 +93,14 @@ export const ShareLinkCommonButton = ({
     copy(url)
       .then(() => {
         onClickAction();
-        toast({
-          description: t('Service.ShareableResources.Copied'),
+        showSnackbar({
+          severity: 'success',
+          title: t('Service.ShareableResources.Copied'),
         });
       })
       .catch((error) => {
-        toast({
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.FailedToCopy'),
           description: error.message,
         });

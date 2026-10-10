@@ -9,12 +9,11 @@ import {
 } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const toastMock = vi.hoisted(() => vi.fn());
+const showSnackbarMock = vi.hoisted(() => vi.fn());
 const replaceMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@filigran/ui/clients', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@filigran/ui/clients')>()),
-  useToast: () => ({ toast: toastMock }),
+vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
+  showSnackbar: showSnackbarMock,
 }));
 
 const renderToast = (search: string) => {
@@ -36,8 +35,8 @@ describe('PendingUserRedirectErrorToast', () => {
   it('shows a destructive toast and strips the error param when unauthorized', () => {
     renderToast('error=pending_user_unauthorized');
 
-    expect(toastMock).toHaveBeenCalledWith({
-      variant: 'destructive',
+    expect(showSnackbarMock).toHaveBeenCalledWith({
+      severity: 'error',
       title: 'PendingUserRedirect.Unauthorized.Title',
       description: 'PendingUserRedirect.Unauthorized.Description',
     });
@@ -59,7 +58,7 @@ describe('PendingUserRedirectErrorToast', () => {
     ({ search }: { search: string }) => {
       renderToast(search);
 
-      expect(toastMock).not.toHaveBeenCalled();
+      expect(showSnackbarMock).not.toHaveBeenCalled();
       expect(replaceMock).not.toHaveBeenCalled();
     }
   );

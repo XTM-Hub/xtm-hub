@@ -1,26 +1,23 @@
 'use client';
 
 import { useTranslate } from '@/hooks/use-translate';
-import { cn } from '@/lib/utils';
-
-import { buttonVariants } from '@filigran/design-system';
+import { Button } from '@filigran/design-system';
 import Link from 'next/link';
+import { ComponentProps } from 'react';
 
-interface LearnMoreBannerLinkProps {
-  href: string;
-}
+// The rest props carry what a Snackbar action slot merges onto its child: the
+// click that dismisses the message, and the ref.
+type LearnMoreBannerLinkProps = Omit<ComponentProps<typeof Link>, 'children'>;
 
-export const LearnMoreBannerLink = ({ href }: LearnMoreBannerLinkProps) => {
+export const LearnMoreBannerLink = (props: LearnMoreBannerLinkProps) => {
   const t = useTranslate();
 
   return (
-    <Link
-      href={href}
-      className={cn(
-        buttonVariants({ priority: 'secondary' }),
-        'ml-s mr-s text-[12px] px-2 py-0.5 min-h-0 h-auto text-inherit border-current hover:bg-current/10 focus-visible:ring-current/70'
-      )}>
-      {t('Service.Trials.LearnMore.Link')}
-    </Link>
+    <Button
+      asChild
+      priority="secondary"
+      size="sm">
+      <Link {...props}>{t('Service.Trials.LearnMore.Link')}</Link>
+    </Button>
   );
 };

@@ -11,17 +11,14 @@ const CONNECTOR_VERSION = '6.8.13';
 const PREFIXED_VERSION = `V.${CONNECTOR_VERSION}`;
 const TOOLTIP = 'Compatible with OpenCTI 1';
 
-vi.mock('@filigran/ui/clients', () => ({
+vi.mock('@filigran/design-system', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@filigran/design-system')>()),
   TooltipProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
   Tooltip: ({ children }: { children: ReactNode }) => <>{children}</>,
   TooltipTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
   TooltipContent: ({ children }: { children: ReactNode }) => (
     <div role="tooltip">{children}</div>
   ),
-}));
-
-vi.mock('@filigran/design-system', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@filigran/design-system')>()),
   Icon: ({ name }: { name: string }) => <svg data-testid={`icon-${name}`} />,
 }));
 

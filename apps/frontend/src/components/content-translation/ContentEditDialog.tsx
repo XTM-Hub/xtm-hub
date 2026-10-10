@@ -6,32 +6,27 @@ import {
   getOriginalValues,
   pickChangedValues,
 } from '@/components/content-translation/content-edit-dialog.utils';
+import { Form, FormField } from '@/components/ui/form';
+import { Skeleton } from '@/components/ui/skeleton';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useContentTranslationApi } from '@/hooks/use-content-translation-api';
 import { Locale, locales } from '@/i18n/config';
 import { getStaticTranslationValue } from '@/utils/content-translation/get-static-translation-value';
-import { Button } from '@filigran/design-system';
 import {
+  Button,
   Dialog,
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
-  DialogHeader,
   DialogTitle,
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  Skeleton,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
   Textarea,
-  toast,
-} from '@filigran/ui';
+} from '@filigran/design-system';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -95,7 +90,7 @@ export const ContentEditDialog = ({
         form.reset(loadedValues);
       })
       .catch(() => {
-        toast({ variant: 'destructive', title: tCommon('Utils.Error') });
+        showSnackbar({ severity: 'error', title: tCommon('Utils.Error') });
       })
       .finally(() => setIsLoadingValues(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -115,7 +110,7 @@ export const ContentEditDialog = ({
         onOpenChange(false);
       })
       .catch(() => {
-        toast({ variant: 'destructive', title: tCommon('Utils.Error') });
+        showSnackbar({ severity: 'error', title: tCommon('Utils.Error') });
       });
   };
 
@@ -125,85 +120,79 @@ export const ContentEditDialog = ({
       onOpenChange={onOpenChange}>
       {/* Above the z-100 sticky headers some pages use. */}
       <DialogContent className="z-[110]">
-        <DialogHeader className="gap-s">
-          <DialogTitle>{tCommon('EditableText.DialogTitle')}</DialogTitle>
-          <DialogDescription>
-            {tCommon('EditableText.KeyLabel', { contentKey })}
-          </DialogDescription>
+        <DialogTitle>{tCommon('EditableText.DialogTitle')}</DialogTitle>
+        <DialogDescription>
+          {tCommon('EditableText.KeyLabel', { contentKey })}
+        </DialogDescription>
+
+        <DialogBody>
           <p className="text-muted-foreground text-sm">
             {tCommon('EditableText.DraftHint')}
           </p>
-        </DialogHeader>
-
-        <Form {...form}>
-          <form
-            className="flex flex-col gap-s"
-            onSubmit={form.handleSubmit(handleSubmit)}>
-            <Tabs defaultValue={currentLocale}>
-              <TabsList>
+          <Form {...form}>
+            <form
+              className="flex flex-col gap-s"
+              onSubmit={form.handleSubmit(handleSubmit)}>
+              <Tabs defaultValue={currentLocale}>
+                <TabsList>
+                  {locales.map((locale) => (
+                    <TabsTrigger
+                      key={locale}
+                      value={locale}>
+                      {locale.toUpperCase()}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
                 {locales.map((locale) => (
-                  <TabsTrigger
+                  <TabsContent
                     key={locale}
-                    value={locale}>
-                    {locale.toUpperCase()}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              {locales.map((locale) => (
-                <TabsContent
-                  key={locale}
-                  value={locale}
-                  className="flex flex-col gap-s">
-                  {isLoadingValues ? (
-                    <Skeleton className="h-24 w-full" />
-                  ) : (
-                    <FormField
-                      control={form.control}
-                      name={locale}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            {tCommon('EditableText.ValueLabel', {
+                    value={locale}
+                    className="flex flex-col gap-s pt-l">
+                    {isLoadingValues ? (
+                      <Skeleton className="h-24 w-full" />
+                    ) : (
+                      <FormField
+                        control={form.control}
+                        name={locale}
+                        render={({ field }) => (
+                          <Textarea
+                            label={tCommon('EditableText.ValueLabel', {
                               locale: locale.toUpperCase(),
                             })}
-                          </FormLabel>
-                          <FormControl>
-                            <Textarea
-                              rows={4}
-                              {...field}
-                            />
-                          </FormControl>
-                          {originalValues[locale] !== undefined && (
-                            <FormDescription>
-                              {tCommon('EditableText.OriginalValue', {
-                                value: originalValues[locale],
-                              })}
-                            </FormDescription>
-                          )}
-                        </FormItem>
-                      )}
-                    />
-                  )}
-                </TabsContent>
-              ))}
-            </Tabs>
+                            rows={4}
+                            helperText={
+                              originalValues[locale] !== undefined
+                                ? tCommon('EditableText.OriginalValue', {
+                                    value: originalValues[locale],
+                                  })
+                                : undefined
+                            }
+                            {...field}
+                          />
+                        )}
+                      />
+                    )}
+                  </TabsContent>
+                ))}
+              </Tabs>
 
-            <DialogFooter className="justify-end">
-              <DialogClose asChild>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button
+                    type="button"
+                    priority="secondary">
+                    {tCommon('Utils.Cancel')}
+                  </Button>
+                </DialogClose>
                 <Button
-                  type="button"
-                  priority="secondary">
-                  {tCommon('Utils.Cancel')}
+                  type="submit"
+                  disabled={isSaving || isLoadingValues}>
+                  {tCommon('EditableText.SaveDraft')}
                 </Button>
-              </DialogClose>
-              <Button
-                type="submit"
-                disabled={isSaving || isLoadingValues}>
-                {tCommon('EditableText.SaveDraft')}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogBody>
       </DialogContent>
     </Dialog>
   );

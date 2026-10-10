@@ -4,10 +4,10 @@ import {
   ServiceDefinitionIdentifierToPlatformIdentifier,
 } from '@/components/registration/PlatformIdentifierMapping';
 import { UnregisterPlatform } from '@/components/registration/register/register.graphql';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button } from '@filigran/design-system';
-import { toast } from '@filigran/ui';
 import { registeredPlatformByServiceInstanceId_fragment$data } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
 import { registerUnregisterPlatformMutation } from '@generated/registerUnregisterPlatformMutation.graphql';
 import {
@@ -38,8 +38,8 @@ export const UnregisterButton = ({ platform }: UnregisterButtonProps) => {
         platform.identifier as ServiceDefinitionIdentifier
       ];
     if (!identifier || !platform.platform_id) {
-      toast({
-        variant: 'destructive',
+      showSnackbar({
+        severity: 'error',
         title: t('Utils.Error'),
         description: t(`Unregister.Failed.Description`),
       });
@@ -55,7 +55,8 @@ export const UnregisterButton = ({ platform }: UnregisterButtonProps) => {
       },
       onCompleted: () => {
         router.push('/app');
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('Unregister.Succeeded.Title', {
             platformIdentifier: platform.title,
@@ -63,8 +64,8 @@ export const UnregisterButton = ({ platform }: UnregisterButtonProps) => {
         });
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });
@@ -79,14 +80,14 @@ export const UnregisterButton = ({ platform }: UnregisterButtonProps) => {
           OrganizationCapability.AdministrateOrganization,
           OrganizationCapability.ManagePlatformRegistration,
         ]}>
-        <AlertDialogComponent
-          variantName={'destructive'}
-          AlertTitle={t('Unregister.Confirm.Description')}
-          onClickContinue={unregisterPlatform}
-          triggerElement={
+        <ConfirmDialog
+          destructive
+          title={t('Unregister.Confirm.Description')}
+          onConfirm={unregisterPlatform}
+          trigger={
             <Button variant="destructive">{t('Unregister.Unregister')}</Button>
           }
-          actionButtonText={t('Utils.Continue')}>
+          confirmLabel={t('Utils.Continue')}>
           <p>
             {t('Unregister.Description', {
               platformName: platform.title,
@@ -98,7 +99,7 @@ export const UnregisterButton = ({ platform }: UnregisterButtonProps) => {
                 ].name,
             })}
           </p>
-        </AlertDialogComponent>
+        </ConfirmDialog>
       </GuardCapacityComponent>
     )
   );

@@ -4,7 +4,7 @@ import { XtmPlatformTrialRequestStepper } from '@/components/service/trial-insta
 import { XtmPlatformTrialStatusPanelState } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/xtm-platform-trial-panel.utils';
 import { useTranslate } from '@/hooks/use-translate';
 import { useDateFormatter } from '@/utils/date';
-import { Checkbox } from '@filigran/ui';
+import { Checkbox } from '@filigran/design-system';
 import { PlatformIdentifier } from '@graphql/generated';
 import { ReactNode } from 'react';
 
@@ -83,26 +83,18 @@ export const XtmPlatformTrialStatusPanel = ({
         </h3>
         <div className="flex items-center gap-xl">
           {products.map((product) => (
-            <div
+            <Checkbox
               key={product}
-              className="relative flex items-center gap-s text-text-default-disabled">
-              <Checkbox
-                id={`status-product-${product}`}
-                className="text-text-default-primary"
-                checked
-                disabled
-              />
-              <label
-                htmlFor={`status-product-${product}`}
-                className="content-body-base">
-                {t(`PlatformIdentifier.${product}`)}
-              </label>
-            </div>
+              id={`status-product-${product}`}
+              label={t(`PlatformIdentifier.${product}`)}
+              checked
+              disabled
+            />
           ))}
         </div>
       </div>
 
-      <div className="flex flex-col items-center justify-center gap-xl rounded border border-elevation-border-subtle-layer-3 px-xl py-1600 text-center">
+      <div className="flex flex-col items-center justify-center gap-xl rounded border border-elevation-border-subtle-layer-3 px-xl py-16 text-center">
         <div className="flex flex-col gap-xs">
           <p className="heading-xs">
             {t(`Service.Trials.XtmPlatform.Page.Status.${state}.Title`)}

@@ -1,8 +1,7 @@
 import { TrialGuideResourceCardContent } from '@/components/service/trial-guide/TrialGuide.content';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
+import { Button, Card, CardContent } from '@filigran/design-system';
 import { OpenInNewIcon } from '@filigran/icon';
-import { Card, CardContent } from '@filigran/ui';
 import Link from 'next/link';
 
 interface ResourceCardProps {
@@ -14,8 +13,12 @@ export const TrialGuideResourceCard = ({ resourceCard }: ResourceCardProps) => {
   const { Icon, titleKey, descriptionKey, url } = resourceCard;
 
   return (
-    <Card className="bg-elevation-background-layer-2 p-m border-1 border-elevation-border-subtle-layer-2">
-      <CardContent className="p-0 flex flex-col gap-s h-full">
+    <Card
+      elevation={2}
+      padding={8}>
+      <CardContent
+        clamp={0}
+        className="flex flex-col gap-s h-full">
         <div className="flex gap-s items-center">
           <Icon className="size-6 shrink-0" />
           <p className="heading-xs">{t(titleKey)}</p>

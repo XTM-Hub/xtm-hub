@@ -4,7 +4,6 @@ import { LastDeployedOverview } from '@/components/homepage/last-deployed-resour
 import BadgeOverflowCounter from '@/components/ui/BadgeOverflowCounter';
 import { UserDisplay } from '@/components/ui/UserDisplay';
 import { useTranslate } from '@/hooks/use-translate';
-import { cn } from '@/lib/utils';
 import { useDateFormatter } from '@/utils/date';
 import { ResourceTypeIcon } from '@/utils/shareable-resources/resource-type-icon';
 import {
@@ -12,17 +11,14 @@ import {
   SHAREABLE_RESOURCE_SERVICE_SLUG_MAPPING,
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
-import { CalendarMonthIcon } from '@filigran/icon';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui';
-import { Badge } from '@filigran/ui/servers';
+} from '@filigran/design-system';
+import { CalendarMonthIcon } from '@filigran/icon';
 import Link from 'next/link';
-
-const BADGE_CLASS = 'border-0 bg-primary/20 p-l';
 
 type DeployedResource = LastDeployedOverview['resources'][number];
 
@@ -73,16 +69,13 @@ const LastDeployedResourceRow = ({
               <BadgeOverflowCounter
                 formatLabel={false}
                 badges={document.use_cases}
-                badgeClassName={BADGE_CLASS}
               />
             </div>
           )}
         </div>
       </div>
       <div className="shrink-0 md:max-w-56 lg:max-w-72 xl:max-w-80 2xl:max-w-96 flex items-center gap-s overflow-hidden whitespace-nowrap text-text-default-secondary txt-small rounded group-focus-visible:outline-none group-focus-visible:ring-2 group-focus-visible:ring-ring">
-        <Badge className={cn('shrink-0', BADGE_CLASS)}>
-          <CalendarMonthIcon className="size-4" />
-        </Badge>
+        <CalendarMonthIcon className="size-4 shrink-0" />
         <span className="shrink-0">{t('On')}</span>
         <span className="shrink-0 content-body-base text-text-default-primary">
           {deployedAt}

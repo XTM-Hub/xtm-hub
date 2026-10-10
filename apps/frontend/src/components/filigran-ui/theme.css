@@ -333,7 +333,6 @@
     --semantic-elevation-border-strong-layer-3
   );
   --color-elevation-border-disabled: var(--semantic-elevation-border-disabled);
-  --color-elevation-disabled: var(--semantic-elevation-disabled);
   --color-text-default-primary: var(--semantic-text-default-primary);
   --color-text-default-secondary: var(--semantic-text-default-secondary);
   --color-text-default-disabled: var(--semantic-text-default-disabled);
@@ -396,9 +395,6 @@
   --color-input-bg-default: var(--bg-input-default);
   --color-input-bg-disabled: var(--bg-input-disabled);
   --color-input-bg-hover: var(--bg-input-hover);
-  --color-input-default: var(--bg-input-default);
-  --color-input-disabled: var(--bg-input-disabled);
-  --color-input-hover: var(--bg-input-hover);
 
   --color-elevation-bg: var(--color-elevation-background-layer-0);
   --color-elevation-border-subtle: var(--color-elevation-border-subtle-layer-0);
@@ -414,27 +410,6 @@
   --color-elevation-surface-highlight: var(
     --color-elevation-surface-highlight-layer-0
   );
-
-  --spacing-0: 0rem;
-  --spacing-50: 0.125rem;
-  --spacing-100: 0.25rem;
-  --spacing-200: 0.5rem;
-  --spacing-300: 0.75rem;
-  --spacing-400: 1rem;
-  --spacing-500: 1.25rem;
-  --spacing-600: 1.5rem;
-  --spacing-700: 1.75rem;
-  --spacing-800: 2rem;
-  --spacing-900: 2.25rem;
-  --spacing-1000: 2.5rem;
-  --spacing-1100: 2.75rem;
-  --spacing-1200: 3rem;
-  --spacing-1300: 3.25rem;
-  --spacing-1400: 3.5rem;
-  --spacing-1500: 3.75rem;
-  --spacing-1600: 4rem;
-  --spacing-1700: 4.25rem;
-  --spacing-1800: 4.5rem;
 
   --radius-xs: 0.125rem;
 
@@ -1485,7 +1460,6 @@
     --semantic-elevation-border-strong-layer-3
   );
   --color-elevation-border-disabled: var(--semantic-elevation-border-disabled);
-  --color-elevation-disabled: var(--semantic-elevation-disabled);
   --color-text-default-primary: var(--semantic-text-default-primary);
   --color-text-default-secondary: var(--semantic-text-default-secondary);
   --color-text-default-disabled: var(--semantic-text-default-disabled);
@@ -1900,7 +1874,6 @@ body[data-theme='Dark'] {
     --semantic-elevation-border-strong-layer-3
   );
   --color-elevation-border-disabled: var(--semantic-elevation-border-disabled);
-  --color-elevation-disabled: var(--semantic-elevation-disabled);
   --color-text-default-primary: var(--semantic-text-default-primary);
   --color-text-default-secondary: var(--semantic-text-default-secondary);
   --color-text-default-disabled: var(--semantic-text-default-disabled);

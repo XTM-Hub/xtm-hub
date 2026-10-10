@@ -7,6 +7,7 @@ import EeBadge from '@/components/service/document/one-click-deploy/EeBadge';
 import EeLearnMoreSheet from '@/components/service/document/one-click-deploy/EeLearnMoreSheet';
 import OnePlatformDisplay from '@/components/service/document/one-click-deploy/OnePlatformDisplay';
 import { useOneClickDeployTab } from '@/components/service/document/one-click-deploy/UseOneClickDeployTab';
+import { DisabledActionTooltip } from '@/components/ui/DisabledActionTooltip';
 import { useBuildCompatibilityTranslationKey } from '@/hooks/use-build-compatibility-translation-key';
 import { useRegisteredPlatforms } from '@/hooks/use-registered-platforms';
 import { useTranslate } from '@/hooks/use-translate';
@@ -17,8 +18,7 @@ import {
   requiresEnterpriseEdition,
 } from '@/utils/platform';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { Button } from '@filigran/design-system';
-import { AlertDialog, AlertDialogContent, SimpleTooltip } from '@filigran/ui';
+import { Button, Dialog, DialogContent } from '@filigran/design-system';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { OneClickDeployMutation as OneClickDeployMutationType } from '@generated/OneClickDeployMutation.graphql';
 import { useCallback, useMemo, useState } from 'react';
@@ -199,13 +199,13 @@ const OneClickDeploy = ({
   );
 
   const container = isDeploymentDisabled ? (
-    <SimpleTooltip
-      title={t('Service.Connectors.Incompatible', {
+    <DisabledActionTooltip
+      reason={t('Service.Connectors.Incompatible', {
         platformToBeUpdated,
         count: incompatiblePlatformsCount,
       })}>
       {buttonWithBadge}
-    </SimpleTooltip>
+    </DisabledActionTooltip>
   ) : (
     buttonWithBadge
   );
@@ -213,13 +213,17 @@ const OneClickDeploy = ({
   return (
     <>
       {container}
-      <AlertDialog
+      <Dialog
         open={isOpen}
         onOpenChange={setIsOpen}>
-        <AlertDialogContent className="max-w-3xl w-full">
+        <DialogContent
+          size="lg"
+          role="alertdialog"
+          onInteractOutside={(e) => e.preventDefault()}
+          hideCloseButton>
           {alertContent}
-        </AlertDialogContent>
-      </AlertDialog>
+        </DialogContent>
+      </Dialog>
       <EeLearnMoreSheet
         open={isEeSheetOpen}
         setOpen={setIsEeSheetOpen}

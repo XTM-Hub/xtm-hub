@@ -1,7 +1,7 @@
 'use client';
 
+import { FormField, FormItem } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
-import { FormControl, FormField, FormItem, FormLabel } from '@filigran/ui';
 import { PlatformIdentifier } from '@graphql/generated';
 import { Control } from 'react-hook-form';
 import {
@@ -53,26 +53,22 @@ export const TrialUserRolePanelFields = ({
                 value = untouchedRoleDefault ?? noAccessFallback;
               }
               return (
-                <FormItem className="gap-m md:flex-1">
-                  <FormLabel className="content-body-compact-medium text-text-default-secondary">
-                    {title}
-                  </FormLabel>
-                  <FormControl>
-                    <RoleSelect
-                      value={value ?? ''}
-                      onValueChange={(value) => {
-                        field.onChange(
-                          value === NO_ROLE_VALUE ? undefined : value
-                        );
-                        field.onBlur(); // mark field as touched (Radix doesn't fire blur on select)
-                      }}
-                      roles={roles}
-                      namespace={namespace}
-                      isOptional={isOptional}
-                      placeholder={isUntouchedAndMixed ? title : undefined}
-                      triggerClassName="layer-2 bg-input-default hover:bg-input-hover"
-                    />
-                  </FormControl>
+                <FormItem className="gap-3 md:flex-1">
+                  <RoleSelect
+                    label={title}
+                    value={value ?? ''}
+                    onValueChange={(value) => {
+                      field.onChange(
+                        value === NO_ROLE_VALUE ? undefined : value
+                      );
+                      field.onBlur(); // mark field as touched (Radix doesn't fire blur on select)
+                    }}
+                    roles={roles}
+                    namespace={namespace}
+                    isOptional={isOptional}
+                    placeholder={isUntouchedAndMixed ? title : undefined}
+                    triggerClassName="w-full layer-2"
+                  />
                   {isUntouchedAndMixed && (
                     <p className="text-content-body-compact text-text-default-secondary">
                       {t(

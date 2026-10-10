@@ -7,7 +7,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@filigran/ui';
+} from '@/components/ui/accordion';
 import { useMemo } from 'react';
 
 interface ServiceListFilterSectionProps {

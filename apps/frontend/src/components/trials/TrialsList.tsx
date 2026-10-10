@@ -3,7 +3,12 @@ import { TrialsTabQuotasPlatform } from '@/components/trials/tab/quotas/TrialsTa
 import TrialsTab from '@/components/trials/tab/TrialsTab';
 import { TrialsScope, TrialsTabType } from '@/components/trials/trials.const';
 import { useTranslate } from '@/hooks/use-translate';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@filigran/ui';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@filigran/design-system';
 
 const TAB_TITLES: Record<TrialsTabType, string> = {
   [TrialsTabType.Cancelled]: 'TrialsDashboard.TabTitle.Cancelled',
@@ -40,7 +45,8 @@ const TrialsList = ({ scope }: TrialsListProps) => {
       {Object.values(TrialsTabType).map((type) => (
         <TabsContent
           key={type}
-          value={type}>
+          value={type}
+          className="pt-l">
           <TrialsTab
             type={type}
             scope={scope}
@@ -48,7 +54,9 @@ const TrialsList = ({ scope }: TrialsListProps) => {
         </TabsContent>
       ))}
       {scope.kind === 'bundle' && (
-        <TabsContent value={QUOTAS_TAB}>
+        <TabsContent
+          value={QUOTAS_TAB}
+          className="pt-l">
           <TrialsTabQuotasPlatform />
         </TabsContent>
       )}

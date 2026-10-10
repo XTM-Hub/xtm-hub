@@ -1,16 +1,24 @@
+import { AppCombobox } from '@/components/ui/AppCombobox';
 import countryData from '@/components/ui/country/data.json';
 import { useTranslate } from '@/hooks/use-translate';
-import { Combobox } from '@filigran/ui';
 import { useMemo } from 'react';
 
+interface CountryOption {
+  name: string;
+}
+
 interface CountryComboboxProps {
-  value?: { name: string } | undefined;
-  onValueChange: (value: { name: string } | undefined) => void;
+  label: string;
+  value?: CountryOption | undefined;
+  onValueChange: (value: CountryOption | undefined) => void;
+  error?: string;
 }
 
 export const CountryCombobox = ({
+  label,
   value,
   onValueChange,
+  error,
 }: CountryComboboxProps) => {
   const t = useTranslate();
   const { countries } = countryData;
@@ -19,16 +27,15 @@ export const CountryCombobox = ({
   }, [countries]);
 
   return (
-    <Combobox
-      dataTab={dataTab}
+    <AppCombobox<CountryOption>
+      label={label}
       placeholder={t('CountryComboBox.Placeholder')}
-      order={t('CountryComboBox.Placeholder')}
-      onValueChange={onValueChange}
-      onInputChange={() => {}}
-      emptyCommand={t('Utils.NotFound')}
-      keyValue={'name'}
-      keyLabel={'name'}
-      value={value}
+      error={error}
+      options={dataTab}
+      value={value ?? null}
+      onValueChange={(next) => onValueChange(next ?? undefined)}
+      getOptionLabel={(country) => country.name}
+      isOptionEqualToValue={(a, b) => a.name === b.name}
     />
   );
 };

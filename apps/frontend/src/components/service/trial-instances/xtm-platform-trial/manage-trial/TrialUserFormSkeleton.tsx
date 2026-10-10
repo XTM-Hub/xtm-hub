@@ -1,17 +1,12 @@
 'use client';
 
+import { AppCombobox } from '@/components/ui/AppCombobox';
+import { Form, FormField } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import { Button } from '@filigran/design-system';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-} from '@filigran/ui';
-import { FormLabel, MultiSelectFormField } from '@filigran/ui/clients';
 import { PlatformIdentifier } from '@graphql/generated';
-import { ReactNode } from 'react';
+import { ReactNode, useMemo } from 'react';
 import { UseFormReturn, useFormState, useWatch } from 'react-hook-form';
 import {
   RoleFormField,
@@ -58,6 +53,15 @@ export const TrialUserFormSkeleton = ({
   const t = useTranslate();
   const userIds = useWatch({ control: form.control, name: 'userIds' });
   const formState = useFormState({ control: form.control });
+  const usersOptionIds = useMemo(
+    () =>
+      toComboboxOptionIds(
+        usersOptions,
+        (option) => option.value,
+        (option) => option.label
+      ),
+    [usersOptions]
+  );
 
   const hasUnresolvedMixedRole = bundleRolePanels.some(({ platform }) => {
     if (!mixedRoleDefaults?.[platform]?.isMixed) return false;
@@ -73,39 +77,37 @@ export const TrialUserFormSkeleton = ({
         <FormField
           control={form.control}
           name="userIds"
-          render={({ field }) => (
-            <FormItem>
-              {pickerLabel && (
-                <FormLabel className="content-body-compact-medium text-text-default-secondary">
-                  {pickerLabel}
-                </FormLabel>
-              )}
-              <FormControl>
-                <div className="layer-2">
-                  <MultiSelectFormField
-                    options={usersOptions}
-                    defaultValue={field.value}
-                    value={field.value}
-                    onValueChange={(values) => {
-                      field.onChange(values);
-                      onUsersChange?.(values);
-                    }}
-                    onInputChange={onUsersInputChange}
-                    shouldFilter={!onUsersInputChange}
-                    noResultString={t('Utils.NotFound')}
-                    placeholder={pickerPlaceholder}
-                    variant="inverted"
-                    placeholderClassName="content-body-base"
-                    className={'bg-input-default hover:bg-input-hover'}
-                    popoverContentClassName="layer-2 bg-input-default hover:bg-input-hover content-body-compact
-                    [&_[cmdk-item]]:content-body-compact   [&_[cmdk-input]]:content-body-compact
-    [&_[cmdk-input]]:placeholder:content-body-compact  "
-                  />
-                </div>
-              </FormControl>
-              <FormMessage />
+          render={({ field, fieldState }) => (
+            <div className="flex flex-col gap-s">
+              <div className="layer-2">
+                <AppCombobox
+                  multiple
+                  label={pickerLabel || pickerPlaceholder}
+                  labelPosition={pickerLabel ? 'top' : 'none'}
+                  placeholder={pickerPlaceholder}
+                  error={fieldState.error?.message}
+                  contentClassName="layer-2"
+                  options={usersOptionIds.ids}
+                  value={field.value ?? []}
+                  onValueChange={(values) => {
+                    field.onChange(values);
+                    onUsersChange?.(values);
+                  }}
+                  onInputChange={
+                    onUsersInputChange
+                      ? (text, meta) => {
+                          if (meta.cause !== 'select') onUsersInputChange(text);
+                        }
+                      : undefined
+                  }
+                  filterOptions={
+                    onUsersInputChange ? (options) => options : undefined
+                  }
+                  getOptionLabel={usersOptionIds.getOptionLabel}
+                />
+              </div>
               {pickerNotice}
-            </FormItem>
+            </div>
           )}
         />
 

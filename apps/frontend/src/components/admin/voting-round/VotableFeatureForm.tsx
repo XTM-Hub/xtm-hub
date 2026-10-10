@@ -1,27 +1,31 @@
 import { VOTING_PRODUCTS } from '@/components/feature-voting/feature-voting.const';
 import { ServiceFormUseCasesField } from '@/components/service/form/UseCasesField';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
-import MarkdownInput from '@/components/ui/MarkdownInput';
-import { useTranslate } from '@/hooks/use-translate';
-import { Button, IconButton } from '@filigran/design-system';
-import { DeleteIcon } from '@filigran/icon';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
-  FileInput,
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
+} from '@/components/ui/form';
+import MarkdownInput from '@/components/ui/MarkdownInput';
+import { SelectField } from '@/components/ui/SelectField';
+import { SheetFooter } from '@/components/ui/sheet';
+import { useTranslate } from '@/hooks/use-translate';
+import {
+  fromFileSelectValue,
+  getFileSelectLabels,
+  toFileSelectValue,
+} from '@/utils/design-system/file-select';
+import {
+  Button,
+  FileSelect,
+  IconButton,
   Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  SheetFooter,
   Switch,
-} from '@filigran/ui';
+} from '@filigran/design-system';
+import { DeleteIcon } from '@filigran/icon';
 import { FiligranProduct } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo } from 'react';
@@ -115,66 +119,47 @@ const VotableFeatureForm = ({
         <FormField
           control={form.control}
           name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('VotingRound.Feature.Title')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('VotingRound.Feature.Title')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Input
+              label={t('VotingRound.Feature.Title')}
+              placeholder={t('VotingRound.Feature.Title')}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
         <FormField
           control={form.control}
           name="product"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('VotingRound.Feature.Product')}</FormLabel>
-              <FormControl>
-                <Select
-                  value={field.value}
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    // Use cases are scoped per product, so the previous
-                    // selection no longer applies.
-                    form.setValue('use_case_ids', [], { shouldDirty: true });
-                  }}>
-                  <SelectTrigger aria-label={t('VotingRound.Feature.Product')}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {VOTING_PRODUCTS.map((product) => (
-                      <SelectItem
-                        key={product}
-                        value={product}>
-                        {product.toUpperCase()}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <SelectField
+              label={t('VotingRound.Feature.Product')}
+              options={VOTING_PRODUCTS.map((product) => ({
+                value: product,
+                label: product.toUpperCase(),
+              }))}
+              value={field.value}
+              onValueChange={(value) => {
+                field.onChange(value);
+                // Use cases are scoped per product, so the previous
+                // selection no longer applies.
+                form.setValue('use_case_ids', [], { shouldDirty: true });
+              }}
+              error={fieldState.error?.message}
+              contentClassName="layer-2"
+            />
           )}
         />
         <FormField
           control={form.control}
           name="short_description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('VotingRound.Feature.ShortDescription')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('VotingRound.Feature.ShortDescription')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Input
+              label={t('VotingRound.Feature.ShortDescription')}
+              placeholder={t('VotingRound.Feature.ShortDescription')}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
         <FormField
@@ -235,14 +220,18 @@ const VotableFeatureForm = ({
                 </div>
               )}
               <FormControl>
-                <FileInput
-                  {...field}
-                  texts={{
-                    selectFile: t('Service.FileForm.SelectDocument'),
-                    noFile: t('Service.FileForm.NoDocument'),
-                    dropFiles: t('Service.FileForm.DropDocuments'),
-                  }}
-                  allowedTypes={'image/jpeg, image/gif, image/png, image/svg'}
+                <FileSelect
+                  {...getFileSelectLabels(t)}
+                  aria-label={t('VotingRound.Feature.Illustration')}
+                  triggerLabel={t('Service.FileForm.SelectDocument')}
+                  placeholder={t('Service.FileForm.NoDocument')}
+                  accept="image/jpeg, image/gif, image/png, image/svg+xml"
+                  name={field.name}
+                  ref={field.ref}
+                  value={toFileSelectValue(field.value)}
+                  onValueChange={(next) =>
+                    field.onChange(fromFileSelectValue(next))
+                  }
                 />
               </FormControl>
               <FormMessage />
@@ -252,53 +241,43 @@ const VotableFeatureForm = ({
         <FormField
           control={form.control}
           name="position"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('VotingRound.Feature.Position')}</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  min={0}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Input
+              label={t('VotingRound.Feature.Position')}
+              type="number"
+              min={0}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
         <FormField
           control={form.control}
           name="active"
           render={({ field }) => (
-            <FormItem className="flex flex-col items-start gap-s space-y-0">
-              <FormLabel>{t('VotingRound.Feature.Active')}</FormLabel>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                  aria-label={t('VotingRound.Feature.Active')}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+            <Switch
+              label={t('VotingRound.Feature.Active')}
+              checked={field.value}
+              onCheckedChange={field.onChange}
+            />
           )}
         />
         <SheetFooter className={feature ? 'sm:justify-between pb-0' : 'pt-2'}>
           {feature && (
-            <AlertDialogComponent
-              AlertTitle={t('MenuActions.Delete')}
-              actionButtonText={t('MenuActions.Delete')}
-              variantName="destructive"
-              triggerElement={
+            <ConfirmDialog
+              title={t('MenuActions.Delete')}
+              confirmLabel={t('MenuActions.Delete')}
+              destructive
+              trigger={
                 <Button
                   variant="destructive"
                   priority="secondary">
                   {t('MenuActions.Delete')}
                 </Button>
               }
-              onClickContinue={() => handleDelete!()}>
+              onConfirm={() => handleDelete!()}>
               {t('VotingRound.Dialog.DeleteFeature', { title: feature.title })}
-            </AlertDialogComponent>
+            </ConfirmDialog>
           )}
           <div className="flex gap-s">
             <Button

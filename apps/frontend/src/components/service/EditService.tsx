@@ -4,9 +4,9 @@ import {
   ServiceForm,
 } from '@/components/service/ServiceForm';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { fileListToUploadableMap } from '@/relay/environment/fetch-form-data';
-import { useToast } from '@filigran/ui';
 import { serviceAddPictureMutation } from '@generated/serviceAddPictureMutation.graphql';
 import { serviceList_fragment$data } from '@generated/serviceList_fragment.graphql';
 import { useMutation } from 'react-relay';
@@ -20,7 +20,6 @@ interface EditServiceProps {
 
 export const EditService = ({ service, open, setOpen }: EditServiceProps) => {
   const t = useTranslate();
-  const { toast } = useToast();
 
   const [servicePictureMutation] =
     useMutation<serviceAddPictureMutation>(ServiceAddPicture);
@@ -38,7 +37,8 @@ export const EditService = ({ service, open, setOpen }: EditServiceProps) => {
       uploadables: fileListToUploadableMap(document),
       onCompleted: (response) => {
         setOpen(false);
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('ServiceForm.PictureUpdated', {
             serviceName: response.addServicePicture!.name,
@@ -46,8 +46,8 @@ export const EditService = ({ service, open, setOpen }: EditServiceProps) => {
         });
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });

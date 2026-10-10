@@ -7,9 +7,8 @@ import {
 } from '@/components/registration/PlatformIdentifierMapping';
 import { UseTranslationsProps } from '@/i18n/config';
 import { APP_PATH, XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
-import { IconButton } from '@filigran/design-system';
+import { Chip, IconButton } from '@filigran/design-system';
 import { LinkIcon, TextSnippetIcon } from '@filigran/icon';
-import { Badge } from '@filigran/ui';
 import { PlatformContract } from '@graphql/generated';
 import Link from 'next/link';
 
@@ -38,7 +37,7 @@ export const ConnectedProductItem = ({
       : undefined;
 
   return (
-    <div className="hover:cursor-default flex min-h-12 w-full items-center gap-m px-m py-s">
+    <div className="hover:cursor-default flex min-h-12 w-full items-center gap-m">
       <div className="flex min-w-0 flex-1 items-center gap-s">
         {platformMeta?.Icon && (
           <platformMeta.Icon className="h-6 w-6 shrink-0" />
@@ -48,16 +47,13 @@ export const ConnectedProductItem = ({
         </span>
       </div>
       {platform.contract === PlatformContract.Trial && (
-        <Badge className="border-none bg-feedback-info-secondary-transparency content-body-compact-medium">
-          {t('Header.ConnectedProducts.Trial')}
-        </Badge>
+        <Chip label={t('Header.ConnectedProducts.Trial')} />
       )}
       {platform.contract === PlatformContract.Ee && (
-        <Badge className="border-none bg-filigran-tonic-primary content-body-compact-medium">
-          <span className="text-text-negative-primary">
-            {t('Header.ConnectedProducts.EE')}
-          </span>
-        </Badge>
+        <Chip
+          label={t('Header.ConnectedProducts.EE')}
+          severity="ee"
+        />
       )}
       <div className="flex w-16 items-center justify-end gap-xs">
         {detailPath && (

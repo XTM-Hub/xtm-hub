@@ -62,7 +62,7 @@ test.describe('XTM Platform Roadmap', () => {
       });
 
       await expect(
-        page.getByRole('button').filter({ hasText: 'OpenCTI (1)' })
+        xtmPlatformRoadmapPage.getSelectedProductFilter('OpenCTI (1)')
       ).toBeVisible();
 
       await expect(page.getByText(/^Title$/)).toBeVisible();
@@ -86,7 +86,7 @@ test.describe('XTM Platform Roadmap', () => {
         draft: false,
       });
       await expect(
-        page.getByRole('button').filter({ hasText: 'OpenCTI (1)' })
+        xtmPlatformRoadmapPage.getSelectedProductFilter('OpenCTI (1)')
       ).toBeVisible();
       await expect(page.getByText('TitleModified')).toBeVisible();
 
@@ -99,7 +99,7 @@ test.describe('XTM Platform Roadmap', () => {
     await test.step('Delete an epic', async () => {
       await xtmPlatformRoadmapPage.deleteEpic();
       await expect(
-        page.getByRole('button').filter({ hasText: 'OpenCTI (0)' })
+        xtmPlatformRoadmapPage.getSelectedProductFilter('OpenCTI (0)')
       ).toBeVisible();
     });
     await test.step('Create an epic integration', async () => {
@@ -110,7 +110,7 @@ test.describe('XTM Platform Roadmap', () => {
         integration: true,
       });
       await expect(
-        page.getByRole('button').filter({ hasText: 'OpenCTI (1)' })
+        xtmPlatformRoadmapPage.getSelectedProductFilter('OpenCTI (1)')
       ).toBeVisible();
       await expect(page.getByText(/^integration$/)).toBeVisible();
       await expect(page.getByText(/^EE$/)).not.toBeVisible();
@@ -125,7 +125,7 @@ test.describe('XTM Platform Roadmap', () => {
         draft: true,
       });
       await expect(
-        page.getByRole('button').filter({ hasText: 'OpenCTI (2)' })
+        xtmPlatformRoadmapPage.getSelectedProductFilter('OpenCTI (2)')
       ).toBeVisible();
     });
     await test.step('Create an epic on several products', async () => {

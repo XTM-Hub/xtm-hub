@@ -10,36 +10,34 @@ import {
   FILIGRAN_PRODUCTS_ORDER,
   sortFiligranProducts,
 } from '@/components/epic/filigran-products';
+import { AppCombobox } from '@/components/ui/AppCombobox';
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
-import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
-import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
-import { InfoIcon } from '@filigran/icon';
 import {
-  Checkbox,
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
+} from '@/components/ui/form';
+import { SelectField } from '@/components/ui/SelectField';
+import { Separator } from '@/components/ui/separator';
+import { SheetFooter } from '@/components/ui/sheet';
+import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
+import { useTranslate } from '@/hooks/use-translate';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
+import {
+  Button,
+  Checkbox,
   Input,
-  MultiSelectFormField,
+  Radio,
   RadioGroup,
-  RadioGroupItem,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Separator,
-  SheetFooter,
   Textarea,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@filigran/ui';
+} from '@filigran/design-system';
+import { InfoIcon } from '@filigran/icon';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import {
   EditionType,
@@ -63,6 +61,11 @@ export const FILIGRAN_PRODUCTS_OPTIONS = FILIGRAN_PRODUCTS_ORDER.map(
     id: product,
     label: FiligranProductMapping[product].name,
   })
+);
+const FILIGRAN_PRODUCT_OPTION_IDS = toComboboxOptionIds(
+  FILIGRAN_PRODUCTS_OPTIONS,
+  (option) => option.id,
+  (option) => option.label
 );
 
 const buildEpicFormSchema = (t: (key: string) => string) =>
@@ -126,9 +129,10 @@ const EpicFieldLabel = ({
 }) => {
   const t = useTranslate();
   return (
-    <FormLabel className="flex items-center gap-xs">
+    <FormLabel
+      required={required}
+      className="flex items-center gap-xs">
       {t(labelKey)}
-      {required && <span className="text-sm text-destructive">*</span>}
       {infoKey && (
         <TooltipProvider>
           <Tooltip>
@@ -148,21 +152,17 @@ const EpicFieldLabel = ({
   );
 };
 
-const CharacterCount = ({
-  value,
-  maxChars,
-}: {
+type CharacterLimitProps = {
   value: string;
   maxChars: number;
-}) => {
+};
+
+const CharacterCounter = ({ value, maxChars }: CharacterLimitProps) => {
   const t = useTranslate();
   return (
-    <div className="flex items-start gap-s">
-      <FormMessage />
-      <p className="text-muted-foreground txt-sub-content ml-auto shrink-0">
-        {t('Epic.Form.CharacterCount', { count: value.length, maxChars })}
-      </p>
-    </div>
+    <p className="text-muted-foreground txt-sub-content ml-auto shrink-0">
+      {t('Epic.Form.CharacterCount', { count: value.length, maxChars })}
+    </p>
   );
 };
 
@@ -186,26 +186,23 @@ const EpicTextareaField = ({
     <FormField
       control={control}
       name={name}
-      render={({ field }) => (
-        <FormItem>
-          <EpicFieldLabel
-            labelKey={labelKey}
+      render={({ field, fieldState }) => (
+        <div className="flex flex-col gap-s">
+          <Textarea
+            label={t(labelKey)}
             required={required}
+            {...field}
+            value={field.value ?? ''}
+            minRows={TEXTAREA_MIN_ROWS}
+            resize="none"
+            placeholder={t(placeholderKey)}
+            error={fieldState.error?.message}
           />
-          <FormControl>
-            <Textarea
-              {...field}
-              value={field.value ?? ''}
-              rows={TEXTAREA_MIN_ROWS}
-              className="field-sizing-content min-h-24 resize-none"
-              placeholder={t(placeholderKey)}
-            />
-          </FormControl>
-          <CharacterCount
+          <CharacterCounter
             value={field.value ?? ''}
             maxChars={maxChars}
           />
-        </FormItem>
+        </div>
       )}
     />
   );
@@ -265,70 +262,48 @@ const EpicForm = ({
     <Form {...form}>
       <form
         className="w-full space-y-l"
+        noValidate
         onSubmit={form.handleSubmit(handleSubmit)}>
         <div className="grid gap-l sm:grid-cols-2">
           <FormField
             control={form.control}
             name="products"
-            render={({ field }) => (
-              <FormItem>
-                <EpicFieldLabel
-                  labelKey="Epic.Form.FiligranProduct"
-                  required
-                />
-                <FormControl>
-                  <MultiSelectFormField
-                    options={FILIGRAN_PRODUCTS_OPTIONS}
-                    popoverContentClassName="bg-elevation-background-layer-3"
-                    keyValue="id"
-                    keyLabel="label"
-                    defaultValue={field.value}
-                    value={field.value}
-                    onValueChange={(products) =>
-                      field.onChange(sortFiligranProducts(products))
-                    }
-                    noResultString={t('Utils.NotFound')}
-                    placeholder={t('Epic.Form.FiligranProduct')}
-                    variant="inverted"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+            render={({ field, fieldState }) => (
+              <AppCombobox
+                multiple
+                label={t('Epic.Form.FiligranProduct')}
+                required
+                placeholder={t('Epic.Form.FiligranProduct')}
+                error={fieldState.error?.message}
+                options={FILIGRAN_PRODUCT_OPTION_IDS.ids}
+                value={field.value ?? []}
+                onValueChange={(products) =>
+                  field.onChange(sortFiligranProducts(products))
+                }
+                getOptionLabel={FILIGRAN_PRODUCT_OPTION_IDS.getOptionLabel}
+                contentClassName="layer-2"
+              />
             )}
           />
           <FormField
             control={form.control}
             name="timeline"
-            render={({ field }) => (
-              <FormItem>
-                <EpicFieldLabel
-                  labelKey="Epic.Form.Timeline"
-                  required
-                />
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value ?? Timeline.Now}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={t('Epic.Form.TimelineOption.now')}
-                      />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {TIMELINE_VALUES.map((timeline) => (
-                      <SelectItem
-                        key={timeline}
-                        value={timeline}>
-                        {t(
-                          `Epic.Form.TimelineOption.${timeline.toLowerCase()}`
-                        )}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
+            render={({ field, fieldState }) => (
+              <SelectField
+                label={t('Epic.Form.Timeline')}
+                required
+                placeholder={t('Epic.Form.TimelineOption.now')}
+                options={TIMELINE_VALUES.map((timeline) => ({
+                  value: timeline,
+                  label: t(
+                    `Epic.Form.TimelineOption.${timeline.toLowerCase()}`
+                  ),
+                }))}
+                value={field.value ?? Timeline.Now}
+                onValueChange={field.onChange}
+                error={fieldState.error?.message}
+                contentClassName="layer-2"
+              />
             )}
           />
         </div>
@@ -345,20 +320,17 @@ const EpicForm = ({
               <div className="flex flex-wrap items-center gap-l">
                 <FormControl>
                   <RadioGroup
+                    orientation="horizontal"
+                    className="flex-wrap"
+                    aria-label={t('Epic.Form.EditionType')}
                     onValueChange={field.onChange}
-                    value={field.value ?? EditionType.CommunityEdition}
-                    className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                    value={field.value ?? EditionType.CommunityEdition}>
                     {Object.values(EditionType).map((value) => (
-                      <FormItem
+                      <Radio
                         key={value}
-                        className="flex flex-row items-center gap-3 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value={value} />
-                        </FormControl>
-                        <FormLabel className="cursor-pointer font-normal">
-                          {EditionTypeMapping[value].label}
-                        </FormLabel>
-                      </FormItem>
+                        value={value}
+                        label={EditionTypeMapping[value].label}
+                      />
                     ))}
                   </RadioGroup>
                 </FormControl>
@@ -370,17 +342,11 @@ const EpicForm = ({
                   control={form.control}
                   name="is_integration"
                   render={({ field: integrationField }) => (
-                    <FormItem className="flex flex-row items-center gap-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={integrationField.value ?? false}
-                          onCheckedChange={integrationField.onChange}
-                        />
-                      </FormControl>
-                      <FormLabel className="cursor-pointer font-normal">
-                        {t('Epic.Form.Integration')}
-                      </FormLabel>
-                    </FormItem>
+                    <Checkbox
+                      label={t('Epic.Form.Integration')}
+                      checked={integrationField.value ?? false}
+                      onCheckedChange={integrationField.onChange}
+                    />
                   )}
                 />
               </div>
@@ -391,24 +357,21 @@ const EpicForm = ({
         <FormField
           control={form.control}
           name="title"
-          render={({ field }) => (
-            <FormItem>
-              <EpicFieldLabel
-                labelKey="Epic.Form.Title"
+          render={({ field, fieldState }) => (
+            <div className="flex flex-col gap-s">
+              <Input
+                label={t('Epic.Form.Title')}
                 required
+                {...field}
+                value={field.value ?? ''}
+                placeholder={t('Epic.Form.Placeholder.Title')}
+                error={fieldState.error?.message}
               />
-              <FormControl>
-                <Input
-                  {...field}
-                  value={field.value ?? ''}
-                  placeholder={t('Epic.Form.Placeholder.Title')}
-                />
-              </FormControl>
-              <CharacterCount
+              <CharacterCounter
                 value={field.value ?? ''}
                 maxChars={TITLE_MAX_CHARS}
               />
-            </FormItem>
+            </div>
           )}
         />
 
@@ -461,20 +424,16 @@ const EpicForm = ({
         <FormField
           control={form.control}
           name="slack_link"
-          render={({ field }) => (
-            <FormItem>
-              <EpicFieldLabel labelKey="Epic.Form.SlackLink" />
-              <FormControl>
-                <AutocompleteInput
-                  options={EPIC_SLACK_LINK_OPTIONS}
-                  value={field.value}
-                  onChange={field.onChange}
-                  placeholder={t('Epic.Form.SlackLinkPlaceholder')}
-                  listLabel={t('Epic.Form.SlackLink')}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <AutocompleteInput
+              label={t('Epic.Form.SlackLink')}
+              options={EPIC_SLACK_LINK_OPTIONS}
+              value={field.value}
+              onChange={field.onChange}
+              placeholder={t('Epic.Form.SlackLinkPlaceholder')}
+              listLabel={t('Epic.Form.SlackLink')}
+              error={fieldState.error?.message}
+            />
           )}
         />
 
@@ -483,20 +442,12 @@ const EpicForm = ({
             control={form.control}
             name="active"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center gap-3 space-y-0">
-                <FormControl>
-                  <Checkbox
-                    checked={field.value ?? false}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-                <FormLabel className="cursor-pointer font-normal">
-                  {t('Epic.Form.PublishNow')}
-                  <span className="text-muted-foreground ml-xs">
-                    {t('Epic.Form.PublishNowHint')}
-                  </span>
-                </FormLabel>
-              </FormItem>
+              <Checkbox
+                label={t('Epic.Form.PublishNow')}
+                description={t('Epic.Form.PublishNowHint')}
+                checked={field.value ?? false}
+                onCheckedChange={field.onChange}
+              />
             )}
           />
           <div className="flex gap-s">

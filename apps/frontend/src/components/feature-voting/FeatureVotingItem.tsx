@@ -3,7 +3,7 @@
 import { FeatureVoteCard } from '@/components/feature-voting/FeatureVoteCard';
 import { FeatureVoteDetail } from '@/components/feature-voting/FeatureVoteDetail';
 import { useDetailParam } from '@/hooks/use-detail-param';
-import { Dialog, DialogContent } from '@filigran/ui';
+import { Dialog, DialogContent } from '@filigran/design-system';
 import { VotableFeaturePublicFragment } from '@graphql/generated';
 
 interface FeatureVotingItemProps {
@@ -29,7 +29,7 @@ export const FeatureVotingItem = ({
       <Dialog
         open={isOpen}
         onOpenChange={(open) => !open && close()}>
-        <DialogContent className="flex h-[80vh] max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden p-0">
+        <DialogContent size="lg">
           <FeatureVoteDetail
             feature={feature}
             serviceInstanceId={serviceInstanceId}

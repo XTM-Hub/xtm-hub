@@ -1,6 +1,6 @@
 import { ManageTrialTable } from '@/components/service/trial-instances/xtm-platform-trial/manage-trial/ManageTrialTable';
+import { SelectionState } from '@/components/ui/data-table';
 import testRender from '@/utils/test/test-render';
-import { SelectionState } from '@filigran/ui';
 import {
   BundleUserServiceGroupsQuery,
   PlatformIdentifier,
@@ -76,13 +76,17 @@ vi.mock('@graphql/generated', async (importOriginal) => {
   };
 });
 
-const toastMock = vi.hoisted(() => vi.fn());
+const showSnackbarMock = vi.hoisted(() => vi.fn());
 
-vi.mock('@filigran/ui', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@filigran/ui')>();
+vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
+  showSnackbar: showSnackbarMock,
+}));
+
+vi.mock('@/components/ui/data-table', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@/components/ui/data-table')>();
   return {
     ...actual,
-    toast: toastMock,
     DataTable: ({
       data,
       isLoading,
@@ -149,7 +153,7 @@ const getRoleCombobox = (userId: string, columnId: string) =>
 
 describe('ManageTrialTable', () => {
   beforeEach(() => {
-    toastMock.mockReset();
+    showSnackbarMock.mockReset();
     graphqlMocks.useRemoveUsersFromBundleGroupsMutation.mockReturnValue({
       mutate: vi.fn(),
     });
@@ -344,7 +348,10 @@ describe('ManageTrialTable', () => {
     );
 
     await waitFor(() =>
-      expect(toastMock).toHaveBeenCalledWith({ title: 'Utils.Success' })
+      expect(showSnackbarMock).toHaveBeenCalledWith({
+        severity: 'success',
+        title: 'Utils.Success',
+      })
     );
   });
 
@@ -376,9 +383,9 @@ describe('ManageTrialTable', () => {
     );
 
     await waitFor(() =>
-      expect(toastMock).toHaveBeenCalledWith(
+      expect(showSnackbarMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          variant: 'destructive',
+          severity: 'error',
           title: 'Utils.Error',
         })
       )
@@ -559,7 +566,8 @@ describe('ManageTrialTable', () => {
     );
 
     await waitFor(() =>
-      expect(toastMock).toHaveBeenCalledWith({
+      expect(showSnackbarMock).toHaveBeenCalledWith({
+        severity: 'success',
         title: 'Service.Bundle.ManageTrial.Table.RoleUpdated',
       })
     );
@@ -595,9 +603,9 @@ describe('ManageTrialTable', () => {
     );
 
     await waitFor(() =>
-      expect(toastMock).toHaveBeenCalledWith(
+      expect(showSnackbarMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          variant: 'destructive',
+          severity: 'error',
           title: 'Utils.Error',
         })
       )

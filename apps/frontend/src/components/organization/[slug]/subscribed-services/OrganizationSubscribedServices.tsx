@@ -1,17 +1,17 @@
 'use client';
 
-import { SearchInput } from '@/components/ui/SearchInput';
+import { DataTable, DataTableHeadBarOptions } from '@/components/ui/data-table';
 import {
   handleSortingChange,
   mapToSortingTableValue,
 } from '@/components/ui/handle-sorting.utils';
+import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { DEBOUNCE_TIME } from '@/utils/constant';
-import { i18nKey } from '@/utils/datatable';
 import { useDateFormatter } from '@/utils/date';
-import { Badge, DataTable, DataTableHeadBarOptions } from '@filigran/ui';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
+import { Chip, SearchField } from '@filigran/design-system';
 import {
   OrderingMode,
   OrganizationSubscribedServiceRowFragment,
@@ -20,8 +20,7 @@ import {
 } from '@graphql/generated';
 import { organizationSubscribedServicesKeys } from '@graphql/organization-subscribed-services/organization-subscribed-services.keys';
 import { ColumnDef } from '@tanstack/react-table';
-import { ChangeEvent, useMemo, useState } from 'react';
-import { useDebounceCallback } from 'usehooks-ts';
+import { useMemo, useState } from 'react';
 import {
   normalizeSubscribedServicesPageSize,
   useOrganizationSubscribedServicesLocalstorage,
@@ -63,9 +62,9 @@ const OrganizationSubscribedServicesSlug = ({
           const identifier =
             row.original.service_instance?.service_definition?.identifier;
           return identifier ? (
-            <Badge variant="outline">
-              {t(`Service.ServiceDefinitionIdentifier.${identifier}`)}
-            </Badge>
+            <Chip
+              label={t(`Service.ServiceDefinitionIdentifier.${identifier}`)}
+            />
           ) : (
             '—'
           );
@@ -78,7 +77,7 @@ const OrganizationSubscribedServicesSlug = ({
         enableSorting: false,
         cell: ({ row }) => {
           const status = row.original.service_instance?.creation_status;
-          return status ? <Badge>{status}</Badge> : '—';
+          return status ? <Chip label={status} /> : '—';
         },
       },
       {
@@ -102,11 +101,10 @@ const OrganizationSubscribedServicesSlug = ({
           return tags?.length ? (
             <div className="flex gap-xs">
               {tags.map((tag) => (
-                <Badge
+                <Chip
                   key={tag}
-                  variant="outline">
-                  {tag}
-                </Badge>
+                  label={tag}
+                />
               ))}
             </div>
           ) : (
@@ -186,16 +184,18 @@ const OrganizationSubscribedServicesSlug = ({
     });
   };
 
-  const onSearchChange = useDebounceCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      setSearchTerm(event.target.value);
-      setPagination((prevPagination) => ({
-        ...prevPagination,
-        pageIndex: 0,
-      }));
-    },
-    DEBOUNCE_TIME
-  );
+  const applySearch = (value: string) => {
+    setSearchTerm(value);
+    setPagination((prevPagination) => ({
+      ...prevPagination,
+      pageIndex: 0,
+    }));
+  };
+
+  const searchHandlers = useDebouncedSearch({
+    apply: applySearch,
+    appliedTerm: searchTerm,
+  });
 
   return (
     <>
@@ -211,7 +211,7 @@ const OrganizationSubscribedServicesSlug = ({
         columns={columns}
         data={subscribedServicesData}
         isLoading={isLoading}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         onResetTable={resetAll}
         tableState={{
           sorting: mapToSortingTableValue(orderBy, orderMode),
@@ -230,16 +230,13 @@ const OrganizationSubscribedServicesSlug = ({
         }}
         toolbar={
           <div className="flex flex-col-reverse items-center justify-between gap-s sm:flex-row">
-            <label
-              htmlFor="subscribed-services-search"
-              className="sr-only">
-              {t('Service.SearchServices')}
-            </label>
-            <SearchInput
-              id="subscribed-services-search"
-              containerClass="w-full sm:w-1/3"
+            <SearchField
+              className="w-full sm:w-1/3"
+              aria-label={t('Service.SearchServices')}
               placeholder={t('Service.SearchServices')}
-              onChange={onSearchChange}
+              clearLabel={t('DesignSystem.SearchField.Clear')}
+              onChange={searchHandlers.onChange}
+              onClear={searchHandlers.onClear}
             />
             <div className="flex w-full items-center justify-between gap-s sm:w-auto">
               <DataTableHeadBarOptions />

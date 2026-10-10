@@ -12,8 +12,29 @@ const roles = [
 ];
 const namespace = 'Service.Bundle.ManageTrial.Roles.opencti';
 const noAccessLabel = 'Service.Bundle.ManageTrial.Roles.NoAccess';
+const roleLabel = 'Service.Bundle.ManageTrial.Roles.opencti.Title';
 
 describe('RoleSelect', () => {
+  it('should name the combobox with the label when a label is given', () => {
+    // Given / When
+    testRender(
+      <RoleSelect
+        value={ServiceGroupName.Reader}
+        onValueChange={vi.fn()}
+        roles={roles}
+        namespace={namespace}
+        isOptional={false}
+        triggerClassName=""
+        label={roleLabel}
+      />
+    );
+
+    // Then
+    expect(
+      screen.getByRole('combobox', { name: roleLabel })
+    ).toBeInTheDocument();
+  });
+
   it('lists every provided role as a selectable option', async () => {
     const { user } = testRender(
       <RoleSelect
@@ -23,10 +44,11 @@ describe('RoleSelect', () => {
         namespace={namespace}
         isOptional={false}
         triggerClassName=""
+        aria-label={roleLabel}
       />
     );
 
-    await user.click(screen.getByRole('combobox'));
+    await user.click(screen.getByRole('combobox', { name: roleLabel }));
 
     roles.forEach((role) => {
       expect(
@@ -44,10 +66,11 @@ describe('RoleSelect', () => {
         namespace={namespace}
         isOptional
         triggerClassName=""
+        aria-label={roleLabel}
       />
     );
 
-    await user.click(screen.getByRole('combobox'));
+    await user.click(screen.getByRole('combobox', { name: roleLabel }));
 
     expect(
       screen.getByRole('option', { name: noAccessLabel })
@@ -63,10 +86,11 @@ describe('RoleSelect', () => {
         namespace={namespace}
         isOptional={false}
         triggerClassName=""
+        aria-label={roleLabel}
       />
     );
 
-    await user.click(screen.getByRole('combobox'));
+    await user.click(screen.getByRole('combobox', { name: roleLabel }));
 
     expect(
       screen.queryByRole('option', { name: noAccessLabel })
@@ -83,10 +107,11 @@ describe('RoleSelect', () => {
         namespace={namespace}
         isOptional={false}
         triggerClassName=""
+        aria-label={roleLabel}
       />
     );
 
-    await user.click(screen.getByRole('combobox'));
+    await user.click(screen.getByRole('combobox', { name: roleLabel }));
     await user.click(
       screen.getByRole('option', { name: `${namespace}.Admin.Label` })
     );
@@ -104,10 +129,11 @@ describe('RoleSelect', () => {
         namespace={namespace}
         isOptional
         triggerClassName=""
+        aria-label={roleLabel}
       />
     );
 
-    await user.click(screen.getByRole('combobox'));
+    await user.click(screen.getByRole('combobox', { name: roleLabel }));
     await user.click(screen.getByRole('option', { name: noAccessLabel }));
 
     expect(onValueChange).toHaveBeenCalledWith(NO_ROLE_VALUE);

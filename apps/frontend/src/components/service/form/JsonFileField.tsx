@@ -1,6 +1,11 @@
 import FileInputWithPrevent from '@/components/ui/FileInputWithPrevent';
+import {
+  FormControl,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
-import { FormControl, FormItem, FormLabel, FormMessage } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 

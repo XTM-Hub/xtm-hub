@@ -1,5 +1,5 @@
+import * as SnackbarStore from '@/components/ui/snackbar/snackbar-store';
 import testRender from '@/utils/test/test-render';
-import * as FiligranUI from '@filigran/ui';
 import { registeredPlatformsKeys } from '@graphql/registered-platforms/registered-platforms.keys';
 import { serviceInstancesKeys } from '@graphql/service-instances/service-instances.keys';
 import { platformTrialKeys } from '@graphql/trial/trial.keys';
@@ -38,15 +38,20 @@ vi.mock('@/components/ui/SheetWithPreventingDialog', () => ({
 vi.mock('@/components/service/registration/SelectWithEditableField', () => ({
   SelectWithEditableField: ({
     onChange,
+    error,
   }: {
     onChange: (value: string) => void;
+    error?: string;
   }) => (
-    <button
-      type="button"
-      data-testid="select-reason"
-      onClick={() => onChange('value')}>
-      select-reason
-    </button>
+    <>
+      <button
+        type="button"
+        data-testid="select-reason"
+        onClick={() => onChange('value')}>
+        select-reason
+      </button>
+      {error && <p data-testid="select-reason-error">{error}</p>}
+    </>
   ),
 }));
 vi.mock('react-relay', async (importOriginal) => ({
@@ -74,7 +79,7 @@ describe('TrialCancelSheet', () => {
     testState.invalidateQueries.mockReset();
     testState.lastCancelDeploymentRequestVariables = null;
     testState.mutationMode = 'success';
-    vi.spyOn(FiligranUI, 'toast').mockImplementation(() => undefined);
+    vi.spyOn(SnackbarStore, 'showSnackbar').mockImplementation(() => undefined);
   });
 
   it('should render and submit cancellation reason', async () => {
@@ -130,6 +135,7 @@ describe('TrialCancelSheet', () => {
 
     expect(testState.lastCancelDeploymentRequestVariables).toBeNull();
     expect(setOpen).not.toHaveBeenCalled();
+    expect(screen.getByTestId('select-reason-error')).not.toBeEmptyDOMElement();
   });
 
   it('should show warning if cancellation is definitive', () => {
@@ -179,8 +185,8 @@ describe('TrialCancelSheet', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Utils.Continue' }));
 
     await waitFor(() => {
-      expect(FiligranUI.toast).toHaveBeenCalledWith({
-        variant: 'destructive',
+      expect(SnackbarStore.showSnackbar).toHaveBeenCalledWith({
+        severity: 'error',
         title: 'Utils.Error',
         description: 'Error.Server.Some error',
       });

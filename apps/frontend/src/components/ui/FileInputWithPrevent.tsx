@@ -1,18 +1,9 @@
 'use client';
 
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button } from '@filigran/design-system';
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@filigran/ui';
-import { useRef, useState } from 'react';
+import { MouseEvent, useRef, useState } from 'react';
 
 const FileInputWithPrevent = ({
   texts,
@@ -43,37 +34,23 @@ const FileInputWithPrevent = ({
     }
   };
 
-  const openFileDialog = () => {
+  const openFileDialog = (e: MouseEvent<HTMLButtonElement>) => {
+    // Closes on file pick instead, so a dismissed picker keeps the confirmation up.
+    e.preventDefault();
     inputRef.current?.click();
   };
 
   return (
     <>
-      <AlertDialog
+      <ConfirmDialog
         open={isOpen}
-        onOpenChange={setIsOpen}>
-        <AlertDialogTrigger asChild>
-          <Button type="button">{texts?.selectFile}</Button>
-        </AlertDialogTrigger>
-
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{texts?.dialogTitle}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {texts?.dialogDescription}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('Utils.Cancel')}</AlertDialogCancel>
-            <Button
-              type="button"
-              onClick={openFileDialog}>
-              {t('Utils.Continue')}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        onOpenChange={setIsOpen}
+        trigger={<Button type="button">{texts?.selectFile}</Button>}
+        title={texts?.dialogTitle ?? ''}
+        description={texts?.dialogDescription}
+        confirmLabel={t('Utils.Continue')}
+        onConfirm={openFileDialog}
+      />
 
       <input
         ref={inputRef}

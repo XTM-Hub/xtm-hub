@@ -31,7 +31,7 @@ const mockMutation = (mutateAsync: typeof discard) =>
     typeof useDiscardContentTranslationDraftsMutation
   >;
 
-const renderDialog = () =>
+const renderDialog = (onOpenChange: (open: boolean) => void = vi.fn()) =>
   testRender(
     <EditModeProvider
       canEditContent
@@ -40,7 +40,7 @@ const renderDialog = () =>
       overriddenKeys={[]}>
       <ExitEditModeDialog
         open
-        onOpenChange={vi.fn()}
+        onOpenChange={onOpenChange}
       />
     </EditModeProvider>
   );
@@ -97,6 +97,19 @@ describe('ExitEditModeDialog', () => {
 
     // Then
     expect([...publish.mock.calls, ...discard.mock.calls]).toEqual([]);
+  });
+
+  it('should close without leaving edit mode when the corner Close is clicked', async () => {
+    // Given
+    const onOpenChange = vi.fn();
+    renderDialog(onOpenChange);
+
+    // When
+    await userEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+    // Then
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(setContentEditModeAction).not.toHaveBeenCalled();
   });
 
   it('should stay in edit mode when publishing fails', async () => {

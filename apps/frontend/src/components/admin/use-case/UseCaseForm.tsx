@@ -1,18 +1,10 @@
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { AppCombobox } from '@/components/ui/AppCombobox';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Form, FormField } from '@/components/ui/form';
+import { SheetFooter } from '@/components/ui/sheet';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
-import {
-  ColorPicker,
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Input,
-  MultiSelectFormField,
-  SheetFooter,
-} from '@filigran/ui';
+import { toComboboxOptionIds } from '@/utils/design-system/combobox';
+import { Button, ColorPicker, Input } from '@filigran/design-system';
 import { FiligranProduct } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -30,10 +22,11 @@ const productTagValues = Object.values(FiligranProduct) as [
   ...FiligranProduct[],
 ];
 
-const productTagOptions = productTagValues.map((productTag) => ({
-  id: productTag,
-  label: productTag.toUpperCase(),
-}));
+const productTagOptionIds = toComboboxOptionIds(
+  productTagValues,
+  (productTag) => productTag,
+  (productTag) => productTag.toUpperCase()
+);
 
 export const useCaseFormSchema = z.object({
   name: z.string().min(2, {
@@ -76,73 +69,62 @@ const UseCaseForm = ({
           control={form.control}
           name="name"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('UseCaseForm.Name')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('UseCaseForm.Name')}
-                  {...field}
-                />
-              </FormControl>
-            </FormItem>
+            <Input
+              label={t('UseCaseForm.Name')}
+              placeholder={t('UseCaseForm.Name')}
+              {...field}
+            />
           )}
         />
         <FormField
           control={form.control}
           name="product"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('UseCaseForm.Product')}</FormLabel>
-              <FormControl>
-                <MultiSelectFormField
-                  options={productTagOptions}
-                  popoverContentClassName="bg-elevation-background-layer-3"
-                  keyValue="id"
-                  keyLabel="label"
-                  defaultValue={field.value}
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  noResultString={t('Utils.NotFound')}
-                  placeholder={t('UseCaseForm.Product')}
-                  variant="inverted"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <AppCombobox
+              multiple
+              label={t('UseCaseForm.Product')}
+              placeholder={t('UseCaseForm.Product')}
+              error={fieldState.error?.message}
+              options={productTagOptionIds.ids}
+              value={field.value ?? []}
+              onValueChange={field.onChange}
+              getOptionLabel={productTagOptionIds.getOptionLabel}
+              contentClassName="layer-2"
+            />
           )}
         />
         <FormField
           control={form.control}
           name="color"
           render={({ field: { value, onChange } }) => (
-            <FormItem>
-              <FormLabel>{t('UseCaseForm.Color')}</FormLabel>
-              <ColorPicker
-                value={value ?? ''}
-                onChange={onChange}
-              />
-            </FormItem>
+            <ColorPicker
+              label={t('UseCaseForm.Color')}
+              placeholder={t('UseCaseForm.Color')}
+              maxLength={7}
+              value={value ?? ''}
+              onValueChange={onChange}
+            />
           )}
         />
 
         <SheetFooter className={useCase ? 'sm:justify-between pb-0' : 'pt-2'}>
           {useCase && (
-            <AlertDialogComponent
-              AlertTitle={t('MenuActions.Delete')}
-              actionButtonText={t('MenuActions.Delete')}
-              variantName={'destructive'}
-              triggerElement={
+            <ConfirmDialog
+              title={t('MenuActions.Delete')}
+              confirmLabel={t('MenuActions.Delete')}
+              destructive
+              trigger={
                 <Button
                   variant="destructive"
                   priority="secondary">
                   {t('MenuActions.Delete')}
                 </Button>
               }
-              onClickContinue={() => handleDelete!()}>
+              onConfirm={() => handleDelete!()}>
               {t('DeleteUseCaseDialog.TextDeleteUseCase', {
                 name: useCase.name,
               })}
-            </AlertDialogComponent>
+            </ConfirmDialog>
           )}
           <div className="flex gap-s">
             <Button

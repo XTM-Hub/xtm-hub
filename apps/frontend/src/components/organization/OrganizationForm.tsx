@@ -1,22 +1,21 @@
 import { organizationFormSchema } from '@/components/organization/OrganizationForm.schema';
+import { Form, FormField } from '@/components/ui/form';
+import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+  Button,
+  Combobox,
+  ComboboxChips,
+  ComboboxField,
+  ComboboxHelperText,
+  ComboboxInput,
+  ComboboxLabel,
   Input,
-  SheetFooter,
-  Tag,
-  TagInput,
-} from '@filigran/ui';
+} from '@filigran/design-system';
 import { organizationItem_fragment$data } from '@generated/organizationItem_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { KeyboardEvent, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -49,12 +48,7 @@ export const OrganizationForm = ({
   };
 
   const { setValue, setError, clearErrors } = form;
-  const [tags, setTags] = useState<Tag[]>(
-    (organization?.domains ?? []).map(
-      (domain) => ({ id: domain, text: domain }) as Tag
-    )
-  );
-  const [activeTagIndex, setActiveTagIndex] = useState<number | null>(null);
+  const [domainInput, setDomainInput] = useState('');
 
   const validTagDomain = (tag: string) => {
     // Exemple of valid domain : example.com, sub.example.com, my-site.co.uk
@@ -79,6 +73,25 @@ export const OrganizationForm = ({
     return true;
   };
 
+  const handleDomainKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Enter' && event.key !== ',') {
+      return;
+    }
+    const text = domainInput.trim();
+    if (!validTagDomain(text)) {
+      // Keeps the typed text and stops Enter from submitting the form.
+      event.preventDefault();
+      return;
+    }
+    if (event.key === ',') {
+      event.preventDefault();
+      setValue('domains', [...form.getValues('domains'), text], {
+        shouldDirty: true,
+      });
+      setDomainInput('');
+    }
+  };
+
   return (
     <Form {...form}>
       <form
@@ -88,47 +101,49 @@ export const OrganizationForm = ({
           control={form.control}
           name="name"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('OrganizationForm.Name')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('OrganizationForm.Name')}
-                  {...field}
-                />
-              </FormControl>
-            </FormItem>
+            <Input
+              label={t('OrganizationForm.Name')}
+              placeholder={t('OrganizationForm.Name')}
+              {...field}
+            />
           )}
         />
         <FormField
           control={form.control}
           name="domains"
-          render={({ field }) => (
-            <FormItem className="flex flex-col items-start">
-              <FormLabel className="text-left">
-                {t('OrganizationForm.Domains')}
-              </FormLabel>
-              <FormControl>
-                <TagInput
-                  {...field}
-                  placeholder={t('OrganizationForm.DomainsPlaceholder')}
-                  tags={tags}
-                  validateTag={validTagDomain}
-                  className="sm:min-w-[450px]"
-                  activeTagIndex={activeTagIndex}
-                  setActiveTagIndex={setActiveTagIndex}
-                  setTags={(newTags) => {
-                    const newTagsText: string[] = (newTags as Tag[]).map(
-                      (tag) => tag.text
-                    );
-                    setTags(newTags);
-                    setValue('domains', newTagsText, {
-                      shouldDirty: true,
-                    });
-                  }}
+          render={({ field, fieldState }) => (
+            <Combobox<string>
+              multiple
+              options={[]}
+              value={field.value}
+              onValueChange={(next) =>
+                setValue('domains', next as string[], { shouldDirty: true })
+              }
+              open={false}
+              allowCustomValue
+              createValueFromInput={(input) => input}
+              inputValue={domainInput}
+              onInputChange={setDomainInput}
+              error={Boolean(fieldState.error?.message)}>
+              <ComboboxLabel>{t('OrganizationForm.Domains')}</ComboboxLabel>
+              <ComboboxField>
+                <ComboboxChips
+                  aria-label={t('DesignSystem.Combobox.SelectedValues')}
                 />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+                <ComboboxInput
+                  ref={field.ref}
+                  onBlur={field.onBlur}
+                  placeholder={t('OrganizationForm.DomainsPlaceholder')}
+                  onKeyDown={handleDomainKeyDown}
+                  aria-invalid={fieldState.error?.message ? true : undefined}
+                />
+              </ComboboxField>
+              {fieldState.error?.message && (
+                <ComboboxHelperText>
+                  {fieldState.error.message}
+                </ComboboxHelperText>
+              )}
+            </Combobox>
           )}
         />
 

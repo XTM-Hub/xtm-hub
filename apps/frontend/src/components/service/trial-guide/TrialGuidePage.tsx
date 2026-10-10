@@ -9,7 +9,12 @@ import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
 import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { APP_PATH } from '@/utils/path/constant';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@filigran/ui';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@filigran/design-system';
 import { PlatformIdentifier } from '@graphql/generated';
 
 const TRIAL_GUIDE_TABS = [
@@ -77,7 +82,7 @@ export const TrialGuidePage = () => {
       <Tabs
         defaultValue={PlatformIdentifier.Opencti}
         className="mt-l">
-        <TabsList className="w-full h-auto items-stretch justify-start border-b border-elevation-border-subtle-layer-2 rounded-none p-0">
+        <TabsList>
           {TRIAL_GUIDE_TABS.map((platformIdentifier) => {
             const { name, Icon } = PlatformMetadataMapping[platformIdentifier];
             const isXtmOne = platformIdentifier === PlatformIdentifier.Xtmone;
@@ -85,22 +90,18 @@ export const TrialGuidePage = () => {
               <TabsTrigger
                 key={platformIdentifier}
                 value={platformIdentifier}
-                className="rounded-none items-center -mb-px border-b-2 border-transparent data-[state=active]:border-primary group">
-                <span
-                  className={cn(
-                    'flex items-center gap-s',
-                    isXtmOne &&
-                      'group-data-[state=active]:text-[var(--color-filigran-ia-main)]'
-                  )}>
+                icon={
                   <Icon
                     className={cn(
-                      'w-4 h-4',
                       isXtmOne &&
                         'group-data-[state=active]:[&>path]:fill-[url(#xtm-one-tab-icon-gradient)]'
                     )}
                   />
-                  {name}
-                </span>
+                }
+                className={cn(
+                  isXtmOne && 'data-[state=active]:text-filigran-ia-primary'
+                )}>
+                {name}
               </TabsTrigger>
             );
           })}

@@ -18,10 +18,10 @@ import {
   XtmPlatformTrialStatusPanelState,
 } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/xtm-platform-trial-panel.utils';
 import { BundleCancelSheet } from '@/components/service/trial-instances/xtm-platform-trial/shared/BundleCancelSheet';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Button } from '@filigran/design-system';
-import { toast } from '@filigran/ui/clients';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import {
   DeploymentRequestDeploymentType,
@@ -63,7 +63,8 @@ export const PrivateXtmPlatformTrialPanel = ({
         queryKey: xtmPlatformBundleKeys.all(),
       });
       invalidatePrivateNavigationQueries(queryClient);
-      toast({
+      showSnackbar({
+        severity: 'success',
         title: t('Utils.Success'),
         description: t('Service.Trials.Form.FormRequested'),
       });

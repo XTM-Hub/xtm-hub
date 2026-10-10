@@ -16,6 +16,14 @@ const PAGE_URL = 'https://hub.test/cybersecurity-solutions/lib/doc';
 const DEPLOY_KEY = 'Service.ShareableResources.Deploy.DeployPlatform';
 const DOWNLOAD_ICON_KEY = 'Service.ShareableResources.Download';
 const DOWNLOAD_TEXT_KEY = 'PublicResourcePage.Download';
+const UNAVAILABLE_DEPLOYMENTS_KEY = 'Service.Connectors.UnavailableDeployments';
+
+const UNSUPPORTED_CONNECTOR_OVERRIDES = {
+  __typename: 'Connector',
+  type: ShareableResourceType.OPENCTI_INTEGRATION,
+  integration_type: 'connector',
+  manager_supported: false,
+} as const;
 
 const signupHrefFor = (slug: ServiceSlug) =>
   `/sign-up?redirect=${encodeURIComponent(
@@ -126,12 +134,7 @@ describe('PublicResourceActions', () => {
 
   it('should disable the deploy button when the connector is not manager supported', () => {
     // Given
-    const documentData = buildDocumentData({
-      __typename: 'Connector',
-      type: ShareableResourceType.OPENCTI_INTEGRATION,
-      integration_type: 'connector',
-      manager_supported: false,
-    });
+    const documentData = buildDocumentData(UNSUPPORTED_CONNECTOR_OVERRIDES);
 
     // When
     renderActions(documentData, ServiceSlug.OPEN_CTI_INTEGRATIONS);
@@ -141,6 +144,26 @@ describe('PublicResourceActions', () => {
       screen.getByText(`${DEPLOY_KEY}:OpenCTI`).closest('button')
     ).toBeDisabled();
     expect(screen.getByText(`${DEPLOY_KEY}:OpenCTI`).closest('a')).toBeNull();
+  });
+
+  it('should explain why deploy is unavailable when the keyboard reaches the disabled deploy button of a connector without manager support', async () => {
+    // Given
+    const documentData = buildDocumentData(UNSUPPORTED_CONNECTOR_OVERRIDES);
+    const { user } = renderActions(
+      documentData,
+      ServiceSlug.OPEN_CTI_INTEGRATIONS
+    );
+
+    // When
+    // Share and download come before deploy in the tab order.
+    await user.tab();
+    await user.tab();
+    await user.tab();
+
+    // Then
+    expect(
+      await screen.findByRole('tooltip', { name: UNAVAILABLE_DEPLOYMENTS_KEY })
+    ).toBeInTheDocument();
   });
 
   it('should percent-encode a service instance id containing + so it survives the signup redirect round-trip', () => {

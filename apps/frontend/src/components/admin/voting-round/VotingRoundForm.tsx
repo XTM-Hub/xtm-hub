@@ -1,23 +1,10 @@
 import { RoadmapServiceInstance } from '@/components/admin/voting-round/use-roadmap-service-instances';
-import { AlertDialogComponent } from '@/components/ui/AlertDialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Form, FormField } from '@/components/ui/form';
+import { SelectField } from '@/components/ui/SelectField';
+import { SheetFooter } from '@/components/ui/sheet';
 import { useTranslate } from '@/hooks/use-translate';
-import { Button } from '@filigran/design-system';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  SheetFooter,
-  Textarea,
-} from '@filigran/ui';
+import { Button, Input, Textarea } from '@filigran/design-system';
 import { VotingRoundTheme } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -94,152 +81,108 @@ const VotingRoundForm = ({
           <FormField
             control={form.control}
             name="service_instance_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('VotingRound.Form.ServiceInstance')}</FormLabel>
-                <FormControl>
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}>
-                    <SelectTrigger
-                      aria-label={t('VotingRound.Form.ServiceInstance')}>
-                      <SelectValue
-                        placeholder={t(
-                          'VotingRound.Form.ServiceInstancePlaceholder'
-                        )}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {serviceInstances.map((serviceInstance) => (
-                        <SelectItem
-                          key={serviceInstance.id}
-                          value={serviceInstance.id}>
-                          {serviceInstance.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+            render={({ field, fieldState }) => (
+              <SelectField
+                label={t('VotingRound.Form.ServiceInstance')}
+                placeholder={t('VotingRound.Form.ServiceInstancePlaceholder')}
+                options={serviceInstances.map((serviceInstance) => ({
+                  value: serviceInstance.id,
+                  label: serviceInstance.name,
+                }))}
+                value={field.value}
+                onValueChange={field.onChange}
+                error={fieldState.error?.message}
+                contentClassName="layer-2"
+              />
             )}
           />
         )}
         <FormField
           control={form.control}
           name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('VotingRound.Form.Name')}</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder={t('VotingRound.Form.Name')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Input
+              label={t('VotingRound.Form.Name')}
+              placeholder={t('VotingRound.Form.Name')}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
         <FormField
           control={form.control}
           name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('VotingRound.Form.Description')}</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder={t('VotingRound.Form.DescriptionPlaceholder')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Textarea
+              label={t('VotingRound.Form.Description')}
+              placeholder={t('VotingRound.Form.DescriptionPlaceholder')}
+              error={fieldState.error?.message}
+              {...field}
+            />
           )}
         />
         <FormField
           control={form.control}
           name="theme"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('VotingRound.Form.Theme')}</FormLabel>
-              <FormControl>
-                <Select
-                  value={field.value}
-                  onValueChange={field.onChange}>
-                  <SelectTrigger aria-label={t('VotingRound.Form.Theme')}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {THEME_VALUES.map((themeValue) => (
-                      <SelectItem
-                        key={themeValue}
-                        value={themeValue}>
-                        {t(`VotingRound.Theme.${themeValue}`)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <SelectField
+              label={t('VotingRound.Form.Theme')}
+              options={THEME_VALUES.map((themeValue) => ({
+                value: themeValue,
+                label: t(`VotingRound.Theme.${themeValue}`),
+              }))}
+              value={field.value}
+              onValueChange={field.onChange}
+              error={fieldState.error?.message}
+              contentClassName="layer-2"
+            />
           )}
         />
         {!votingRound && copySources.length > 0 && (
           <FormField
             control={form.control}
             name="copy_features_from_round_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('VotingRound.Form.CopyFeaturesFrom')}</FormLabel>
-                <FormControl>
-                  <Select
-                    value={field.value ?? NO_COPY}
-                    onValueChange={(value) =>
-                      field.onChange(value === NO_COPY ? undefined : value)
-                    }>
-                    <SelectTrigger
-                      aria-label={t('VotingRound.Form.CopyFeaturesFrom')}>
-                      <SelectValue
-                        placeholder={t('VotingRound.Form.CopyFeaturesNone')}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={NO_COPY}>
-                        {t('VotingRound.Form.CopyFeaturesNone')}
-                      </SelectItem>
-                      {copySources.map((source) => (
-                        <SelectItem
-                          key={source.id}
-                          value={source.id}>
-                          {source.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+            render={({ field, fieldState }) => (
+              <SelectField
+                label={t('VotingRound.Form.CopyFeaturesFrom')}
+                placeholder={t('VotingRound.Form.CopyFeaturesNone')}
+                options={[
+                  {
+                    value: NO_COPY,
+                    label: t('VotingRound.Form.CopyFeaturesNone'),
+                  },
+                  ...copySources.map((source) => ({
+                    value: source.id,
+                    label: source.name,
+                  })),
+                ]}
+                value={field.value ?? NO_COPY}
+                onValueChange={(value) =>
+                  field.onChange(value === NO_COPY ? undefined : value)
+                }
+                error={fieldState.error?.message}
+                contentClassName="layer-2"
+              />
             )}
           />
         )}
         <SheetFooter
           className={votingRound ? 'sm:justify-between pb-0' : 'pt-2'}>
           {votingRound && (
-            <AlertDialogComponent
-              AlertTitle={t('MenuActions.Delete')}
-              actionButtonText={t('MenuActions.Delete')}
-              variantName="destructive"
-              triggerElement={
+            <ConfirmDialog
+              title={t('MenuActions.Delete')}
+              confirmLabel={t('MenuActions.Delete')}
+              destructive
+              trigger={
                 <Button
                   variant="destructive"
                   priority="secondary">
                   {t('MenuActions.Delete')}
                 </Button>
               }
-              onClickContinue={() => handleDelete!()}>
+              onConfirm={() => handleDelete!()}>
               {t('VotingRound.Dialog.DeleteRound', { name: votingRound.name })}
-            </AlertDialogComponent>
+            </ConfirmDialog>
           )}
           <div className="flex gap-s">
             <Button

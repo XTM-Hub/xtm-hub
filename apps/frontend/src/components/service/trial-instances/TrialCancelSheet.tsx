@@ -3,22 +3,19 @@
 import { invalidatePrivateNavigationQueries } from '@/components/menu/navigation/private/private-navigation-query-invalidation';
 import { SelectWithEditableField } from '@/components/service/registration/SelectWithEditableField';
 import { CancelDeploymentRequestMutation } from '@/components/service/trial-instances/trial-instances.graphql';
+import { AutoForm } from '@/components/ui/auto-form';
+import { useFormField } from '@/components/ui/form';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
 import { Button } from '@filigran/design-system';
 import { CheckIndeterminateIcon } from '@filigran/icon';
-import {
-  AutoForm,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  toast,
-} from '@filigran/ui';
 import { trialInstancesCancelDeploymentRequestMutation } from '@generated/trialInstancesCancelDeploymentRequestMutation.graphql';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
+import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 import { useMutation } from 'react-relay';
 import { z } from 'zod';
 
@@ -44,6 +41,44 @@ const REASONS = [
   'expertise',
 ];
 
+const CancellationReasonField = ({
+  field,
+}: {
+  field: ControllerRenderProps<FieldValues, string>;
+}) => {
+  const t = useTranslate();
+  const { error } = useFormField();
+  const cancellationReasons = REASONS.map((reason) => ({
+    value: reason,
+    label: t(`Service.Trials.CancellationReason.${reason}`),
+  }));
+
+  return (
+    <SelectWithEditableField
+      value={field.value}
+      onChange={field.onChange}
+      options={cancellationReasons}
+      required
+      error={error?.message}
+      labels={{
+        label: t(
+          'Service.Trials.Cancellation.ConfirmationForm.CancellationReason'
+        ),
+        placeholder: t(
+          'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonPlaceholder'
+        ),
+        editableFieldLabel: t(
+          'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonOther'
+        ),
+        editableFieldPlaceholder: t(
+          'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonOtherPlaceholder'
+        ),
+      }}
+      editableFieldValue="Other"
+    />
+  );
+};
+
 export const TrialCancelSheet = ({
   deploymentRequestId,
   isCancellationDefinitive,
@@ -60,10 +95,6 @@ export const TrialCancelSheet = ({
       ),
     [t]
   );
-  const cancellationReasons = REASONS.map((reason) => ({
-    value: reason,
-    label: t(`Service.Trials.CancellationReason.${reason}`),
-  }));
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -84,7 +115,8 @@ export const TrialCancelSheet = ({
           ?.counts_in_orga_quota
           ? 'Service.Trials.Cancellation.Toast.NoNewTrialPossible'
           : 'Service.Trials.Cancellation.Toast.NewTrialPossible';
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t(descriptionKey),
         });
@@ -94,8 +126,8 @@ export const TrialCancelSheet = ({
         router.push(XTM_PLATFORM_TRIAL_PATH);
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });
@@ -125,34 +157,7 @@ export const TrialCancelSheet = ({
             label: t(
               'Service.Trials.Cancellation.ConfirmationForm.CancellationReason'
             ),
-            fieldType: ({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  {t(
-                    'Service.Trials.Cancellation.ConfirmationForm.CancellationReason'
-                  )}
-                  <span className="text-sm text-destructive">*</span>
-                </FormLabel>
-                <SelectWithEditableField
-                  value={field.value}
-                  onChange={field.onChange}
-                  options={cancellationReasons}
-                  labels={{
-                    placeholder: t(
-                      'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonPlaceholder'
-                    ),
-                    editableFieldLabel: t(
-                      'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonOther'
-                    ),
-                    editableFieldPlaceholder: t(
-                      'Service.Trials.Cancellation.ConfirmationForm.CancellationReasonOtherPlaceholder'
-                    ),
-                  }}
-                  editableFieldValue="Other"
-                />
-                <FormMessage className="text-sm text-destructive" />
-              </FormItem>
-            ),
+            fieldType: CancellationReasonField,
           },
         }}>
         <div className="flex justify-end gap-s">

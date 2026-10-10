@@ -28,6 +28,9 @@ const { mockUseServiceCapability, mockUseServiceCapabilityWithSubscriptionId } =
 const { mockUseAdminByPass } = vi.hoisted(() => ({
   mockUseAdminByPass: vi.fn(),
 }));
+const { mockCancelDebounce } = vi.hoisted(() => ({
+  mockCancelDebounce: vi.fn(),
+}));
 
 vi.mock('@/hooks/use-service-capability', () => ({
   default: mockUseServiceCapability,
@@ -43,7 +46,10 @@ vi.mock('usehooks-ts', async (importOriginal) => {
     ...actual,
     useDebounceCallback: (
       callback: (event: { target: { value: string } }) => void
-    ) => callback,
+    ) =>
+      Object.assign((event: { target: { value: string } }) => callback(event), {
+        cancel: mockCancelDebounce,
+      }),
   };
 });
 
@@ -295,6 +301,26 @@ describe('EpicList', () => {
 
     // Then
     expect(onSearch).toHaveBeenLastCalledWith('road');
+  });
+
+  it('should call search callback with an empty value when clearing the search', async () => {
+    // Given
+    const onSearch = vi.fn();
+    const { user } = renderEpicList({ onSearch });
+    await user.type(
+      screen.getByPlaceholderText('GenericActions.Search'),
+      'road'
+    );
+    mockCancelDebounce.mockClear();
+
+    // When
+    await user.click(
+      screen.getByRole('button', { name: 'DesignSystem.SearchField.Clear' })
+    );
+
+    // Then
+    expect(mockCancelDebounce).toHaveBeenCalledOnce();
+    expect(onSearch).toHaveBeenLastCalledWith('');
   });
 
   it('should pass detailed service instance to capability hooks when capabilities exist', () => {

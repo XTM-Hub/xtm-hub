@@ -2,9 +2,9 @@ import { getUserListContext } from '@/components/admin/user/UserListPage';
 import { UserAdminForm } from '@/components/admin/user/forms/admin/UserAdminForm';
 import { userAdminFormSchema } from '@/components/admin/user/forms/user-form.schema';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button } from '@filigran/design-system';
-import { useToast } from '@filigran/ui';
 import { AdminAddUserMutation as AdminAddUserMutationType } from '@generated/AdminAddUserMutation.graphql';
 import { useState } from 'react';
 import { graphql, useMutation } from 'react-relay';
@@ -26,7 +26,6 @@ export const AdminAddUser = () => {
   const t = useTranslate();
   const [openSheet, setOpenSheet] = useState(false);
 
-  const { toast } = useToast();
   const [commitUserMutation] =
     useMutation<AdminAddUserMutationType>(AdminAddUserMutation);
 
@@ -42,14 +41,15 @@ export const AdminAddUser = () => {
       },
       onCompleted: () => {
         setOpenSheet(false);
-        toast({
+        showSnackbar({
+          severity: 'success',
           title: t('Utils.Success'),
           description: t('UserActions.UserCreated', { email: values.email }),
         });
       },
       onError: (error) => {
-        toast({
-          variant: 'destructive',
+        showSnackbar({
+          severity: 'error',
           title: t('Utils.Error'),
           description: t(`Error.Server.${error.message}`),
         });

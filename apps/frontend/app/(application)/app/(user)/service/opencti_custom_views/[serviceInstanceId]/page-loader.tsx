@@ -1,6 +1,7 @@
 'use client';
 
 import CustomViewsList from '@/components/service/custom-views/[serviceInstanceId]/CustomViewsList';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useLogicalFiltersFromStorage } from '@/hooks/use-logical-filters-from-storage';
 import {
   ServiceListLocalStorageKey,
@@ -8,7 +9,6 @@ import {
 } from '@/hooks/use-service-list-local-storage';
 import { useShareableResourceQueryLoader } from '@/hooks/use-shareable-resource-query-loader';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
-import { Skeleton } from '@filigran/ui';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 
 interface PageLoaderProps {

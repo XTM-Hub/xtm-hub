@@ -10,11 +10,10 @@ const GQL_OPERATION_FEATURE_VOTE = 'FeatureVote';
 const PRIVATE_FEATURE_VOTING_PATH =
   '/app/service/xtm_platform_roadmap/instance-1/feature-voting?voteFeatureId=feature-1';
 
-const { toastMock } = vi.hoisted(() => ({ toastMock: vi.fn() }));
+const { showSnackbarMock } = vi.hoisted(() => ({ showSnackbarMock: vi.fn() }));
 
-vi.mock('@filigran/ui', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@filigran/ui')>()),
-  toast: toastMock,
+vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
+  showSnackbar: showSnackbarMock,
 }));
 
 const mockVoteSuccess = () =>
@@ -72,7 +71,7 @@ describe('FeatureVoteButton', () => {
     expect(push).toHaveBeenCalledWith(
       `/sign-up?redirect=${encodeURIComponent(btoa(PRIVATE_FEATURE_VOTING_PATH))}`
     );
-    expect(toastMock).not.toHaveBeenCalled();
+    expect(showSnackbarMock).not.toHaveBeenCalled();
   });
 
   // A visitor already logged in on the public page must still be routed to
@@ -98,7 +97,7 @@ describe('FeatureVoteButton', () => {
 
     // Then
     expect(push).toHaveBeenCalledWith(PRIVATE_FEATURE_VOTING_PATH);
-    expect(toastMock).not.toHaveBeenCalled();
+    expect(showSnackbarMock).not.toHaveBeenCalled();
   });
 
   it('should confirm with a toast when the vote is recorded on the private page', async () => {
@@ -123,8 +122,11 @@ describe('FeatureVoteButton', () => {
 
     // Then
     await vi.waitFor(() =>
-      expect(toastMock).toHaveBeenCalledWith(
-        expect.objectContaining({ title: 'FeatureVoting.VoteRecordedTitle' })
+      expect(showSnackbarMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          severity: 'success',
+          title: 'FeatureVoting.VoteRecordedTitle',
+        })
       )
     );
     expect(push).not.toHaveBeenCalled();
@@ -152,8 +154,8 @@ describe('FeatureVoteButton', () => {
 
     // Then
     await vi.waitFor(() =>
-      expect(toastMock).toHaveBeenCalledWith(
-        expect.objectContaining({ variant: 'destructive' })
+      expect(showSnackbarMock).toHaveBeenCalledWith(
+        expect.objectContaining({ severity: 'error' })
       )
     );
   });

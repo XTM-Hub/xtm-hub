@@ -44,4 +44,35 @@ describe('RolePortalCapabilitiesList', () => {
       await screen.findByRole('row', { name: /User/ })
     ).toBeInTheDocument();
   });
+
+  it('should skip a missing capability without rendering an empty chip', async () => {
+    const mockedResponse: RolePortalsQuery = {
+      rolePortals: [
+        mockRolePortal({
+          id: 'role-admin',
+          name: 'Admin',
+          capabilities: [
+            null,
+            mockCapability({
+              id: 'capability-bypass',
+              name: PortalCapability.Bypass,
+            }),
+          ],
+        }),
+      ],
+    };
+
+    mswServer.use(
+      mockGraphqlQuery({
+        queryName: 'RolePortals',
+        data: mockedResponse,
+      })
+    );
+
+    testRender(<RolePortalCapabilitiesList />);
+
+    const chip = (await screen.findByText(PortalCapability.Bypass))
+      .parentElement as HTMLElement;
+    expect(chip.parentElement?.children).toHaveLength(1);
+  });
 });

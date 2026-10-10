@@ -4,10 +4,10 @@ import { FiligranProductMapping } from '@/components/epic/epic-item/FiligranProd
 import { VOTING_PRODUCTS } from '@/components/feature-voting/feature-voting.const';
 import { FeatureVotingItem } from '@/components/feature-voting/FeatureVotingItem';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useFeatureVote } from '@/hooks/use-feature-vote';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { Skeleton } from '@filigran/ui';
 import { featureVotingKeys } from '@graphql/feature-voting/feature-voting.keys';
 import {
   useCurrentVotingRoundQuery,
