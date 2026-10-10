@@ -2335,6 +2335,11 @@
     "Breadcrumbs": {
       "Label": "パンくずリスト"
     },
+    "Carousel": {
+      "GoToSlide": "スライド {slide} へ移動",
+      "Next": "次のスライド",
+      "Previous": "前のスライド"
+    },
     "Combobox": {
       "SelectedValues": "選択された値",
       "ToggleOptions": "選択肢の表示を切り替え"

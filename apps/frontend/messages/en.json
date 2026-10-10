@@ -2335,6 +2335,11 @@
     "Breadcrumbs": {
       "Label": "Breadcrumb"
     },
+    "Carousel": {
+      "GoToSlide": "Go to slide {slide}",
+      "Next": "Next slide",
+      "Previous": "Previous slide"
+    },
     "Combobox": {
       "SelectedValues": "Selected values",
       "ToggleOptions": "Toggle options"

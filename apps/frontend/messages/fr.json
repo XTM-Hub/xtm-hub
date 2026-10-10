@@ -2335,6 +2335,11 @@
     "Breadcrumbs": {
       "Label": "Fil d'Ariane"
     },
+    "Carousel": {
+      "GoToSlide": "Aller à la diapositive {slide}",
+      "Next": "Diapositive suivante",
+      "Previous": "Diapositive précédente"
+    },
     "Combobox": {
       "SelectedValues": "Valeurs sélectionnées",
       "ToggleOptions": "Afficher ou masquer les options"
