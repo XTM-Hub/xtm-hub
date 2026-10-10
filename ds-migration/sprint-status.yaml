@@ -79,7 +79,7 @@ development_status:
 
   # Legacy components with no DS equivalent: rebuilt on DS primitives, one folder per
   # component in apps/frontend/src/components/ui/, listed as candidates in the PR report
-  epic-3-candidates: in-progress
+  epic-3-candidates: review
   3691-label: done
   3692-separator: done
   3693-skeleton: done
@@ -92,7 +92,7 @@ development_status:
   3703-carousel: done
   3705-data-table: done
   3706-form: done
-  3707-auto-form: review
+  3707-auto-form: done
 
   # Remove the legacy copy, its theme and aliases, forbid @filigran/ui imports
   epic-4-cleanup: backlog
