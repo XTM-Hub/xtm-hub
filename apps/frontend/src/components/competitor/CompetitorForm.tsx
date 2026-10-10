@@ -2,9 +2,10 @@
 
 import { formatTier } from '@/components/competitor/competitor.utils';
 import { SelectField } from '@/components/ui/SelectField';
+import { SheetFooter } from '@/components/ui/sheet';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button } from '@filigran/design-system';
-import { AutoForm, SheetFooter, useFormField } from '@filigran/ui';
+import { AutoForm, useFormField } from '@filigran/ui';
 import { competitor_fragment$data } from '@generated/competitor_fragment.graphql';
 import { CompetitorTier } from '@graphql/generated';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';

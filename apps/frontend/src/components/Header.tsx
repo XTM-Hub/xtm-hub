@@ -10,18 +10,18 @@ import { DisplayLogo } from '@/components/ui/DisplayLogo';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { Avatar } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
-import { APP_PATH } from '@/utils/path/constant';
-
-import { useTranslate } from '@/hooks/use-translate';
-import { MenuIcon } from '@filigran/icon';
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '@filigran/ui/clients';
+} from '@/components/ui/sheet';
+import { cn } from '@/lib/utils';
+import { APP_PATH } from '@/utils/path/constant';
+
+import { useTranslate } from '@/hooks/use-translate';
+import { MenuIcon } from '@filigran/icon';
 import Link from 'next/link';
 
 import { OrganizationCapability } from '@graphql/generated';

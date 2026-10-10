@@ -103,8 +103,7 @@ export default class XTMPlatformRoadmapPage {
     }
     if (slackLink) {
       await field.fill(slackLink);
-      // Escape would dismiss the sheet itself, not just the suggestions
-      await form.getByRole('heading', { level: 2 }).click();
+      await this.page.keyboard.press('Escape');
     }
   }
 

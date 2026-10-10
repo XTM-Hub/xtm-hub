@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 
+import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import {
@@ -8,7 +9,7 @@ import {
   toFileSelectValue,
 } from '@/utils/design-system/file-select';
 import { Button, FileSelect } from '@filigran/design-system';
-import { Form, FormField, SheetFooter } from '@filigran/ui';
+import { Form, FormField } from '@filigran/ui';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 

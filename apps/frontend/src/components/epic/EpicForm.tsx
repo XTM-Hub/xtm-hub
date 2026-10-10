@@ -14,6 +14,7 @@ import { AppCombobox } from '@/components/ui/AppCombobox';
 import { AutocompleteInput } from '@/components/ui/AutocompleteInput';
 import { SelectField } from '@/components/ui/SelectField';
 import { Separator } from '@/components/ui/separator';
+import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/design-system/combobox';
@@ -36,7 +37,6 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  SheetFooter,
 } from '@filigran/ui';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import {

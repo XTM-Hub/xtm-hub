@@ -3,6 +3,7 @@ import { ServiceFormUseCasesField } from '@/components/service/form/UseCasesFiel
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import MarkdownInput from '@/components/ui/MarkdownInput';
 import { SelectField } from '@/components/ui/SelectField';
+import { SheetFooter } from '@/components/ui/sheet';
 import { useTranslate } from '@/hooks/use-translate';
 import {
   fromFileSelectValue,
@@ -24,7 +25,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  SheetFooter,
 } from '@filigran/ui';
 import { FiligranProduct } from '@graphql/generated';
 import { zodResolver } from '@hookform/resolvers/zod';

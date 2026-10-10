@@ -1,5 +1,4 @@
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { useTranslate } from '@/hooks/use-translate';
 import {
   Sheet,
   SheetContent,
@@ -7,7 +6,8 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from '@filigran/ui';
+} from '@/components/ui/sheet';
+import { useTranslate } from '@/hooks/use-translate';
 import { createContext, ReactNode, useContext, useState } from 'react';
 
 interface UserFormSheetProps {
@@ -68,8 +68,8 @@ export const SheetWithPreventingDialog = ({
         {trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
         <SheetContent
           side={'right'}
-          className="layer-2"
           onPointerDownOutside={(e) => alertDialogSheetClose(e)}
+          onEscapeKeyDown={(e) => alertDialogSheetClose(e)}
           onOpenAutoFocus={onOpenAutoFocus}>
           <SheetHeader>
             <SheetTitle>{title}</SheetTitle>

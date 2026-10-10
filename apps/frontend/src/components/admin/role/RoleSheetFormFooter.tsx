@@ -1,7 +1,7 @@
+import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button } from '@filigran/design-system';
-import { SheetFooter } from '@filigran/ui';
 import { useEffect } from 'react';
 
 const RoleSheetFormFooter = ({ isDirty }: { isDirty: boolean }) => {

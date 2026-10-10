@@ -7,6 +7,7 @@ import {
   UpdateSubscriptionInServiceMutation,
 } from '@/components/subcription/subscription.graphql';
 import { AppCombobox } from '@/components/ui/AppCombobox';
+import { SheetFooter } from '@/components/ui/sheet';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import {
@@ -23,7 +24,7 @@ import { useTranslate } from '@/hooks/use-translate';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import { Button, Checkbox, DatePicker } from '@filigran/design-system';
-import { Form, FormField, FormLabel, SheetFooter } from '@filigran/ui';
+import { Form, FormField, FormLabel } from '@filigran/ui';
 import { serviceInstanceForSubscriptions_fragment$data } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { subscriptionInServiceUpdateMutation } from '@generated/subscriptionInServiceUpdateMutation.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';

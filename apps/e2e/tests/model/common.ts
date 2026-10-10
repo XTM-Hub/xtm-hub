@@ -37,16 +37,10 @@ export async function selectSolutionCategories(page: Page) {
 
 export async function waitForDrawerToOpen(page: Page) {
   await page.locator('body > [role="dialog"]').waitFor({ state: 'visible' });
-  await page
-    .locator('body > div.fixed.inset-0.z-50')
-    .waitFor({ state: 'visible' });
 }
 
 export async function waitForDrawerToClose(page: Page) {
   await page.locator('body > [role="dialog"]').waitFor({ state: 'hidden' });
-  await page
-    .locator('body > div.fixed.inset-0.z-50')
-    .waitFor({ state: 'hidden' });
 }
 
 export async function waitForReactIdle(page: Page, timeout = 5000) {
