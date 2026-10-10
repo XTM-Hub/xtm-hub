@@ -9220,12 +9220,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"acorn@npm:^8.18.0":
-  version: 8.18.0
-  resolution: "acorn@npm:8.18.0"
+"acorn@npm:^8.19.0":
+  version: 8.19.0
+  resolution: "acorn@npm:8.19.0"
   bin:
     acorn: bin/acorn
-  checksum: 10/7fddbe1f80f596c2d82a08adaa966949c9782a0250956f0a469e8cc8ec81e2ff46ed0a4f338eb2544b99d74cca521c197af4fc12d8b7e85bf38359a3d8d63de5
+  checksum: 10/99307d577b38d6a441cd478456633b5b669d32bc722633ff84f1f3c88d361735d7cf01d04ecbf1113c70f1f39e5ceceb95cd5bf93b15bacaddc8fca1ea5e7496
   languageName: node
   linkType: hard
 
@@ -10633,10 +10633,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"commander@npm:^14.0.0, commander@npm:^14.0.3":
+"commander@npm:^14.0.0":
   version: 14.0.3
   resolution: "commander@npm:14.0.3"
   checksum: 10/dfa9ebe2a433d277de5cb0252d23b10a543d245d892db858d23b516336a835c50fd4f52bee4cd13c705cc8acb6f03dc632c73dd806f7d06d3353eb09953dd17a
+  languageName: node
+  linkType: hard
+
+"commander@npm:^15.0.0":
+  version: 15.0.0
+  resolution: "commander@npm:15.0.0"
+  checksum: 10/a5dab1f5c3f1bf2ea19e8089f650f7fb65c3ed88e13ddde62e490d34b20057bcb2cd3de5b6ddc8aae93286083f8256ca0b812df842f574cbebe0e40f5b2f98f7
   languageName: node
   linkType: hard
 
@@ -16583,14 +16590,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"monocart-coverage-reports@npm:^2.13.0":
-  version: 2.13.0
-  resolution: "monocart-coverage-reports@npm:2.13.0"
+"monocart-coverage-reports@npm:^2.13.1":
+  version: 2.13.1
+  resolution: "monocart-coverage-reports@npm:2.13.1"
   dependencies:
-    acorn: "npm:^8.18.0"
+    acorn: "npm:^8.19.0"
     acorn-loose: "npm:^8.5.2"
     acorn-walk: "npm:^8.3.5"
-    commander: "npm:^14.0.3"
+    commander: "npm:^15.0.0"
     console-grid: "npm:^2.2.4"
     eight-colors: "npm:^1.3.3"
     foreground-child: "npm:^4.0.3"
@@ -16598,34 +16605,34 @@ __metadata:
     istanbul-lib-report: "npm:^3.0.1"
     istanbul-reports: "npm:^3.2.0"
     lz-utils: "npm:^2.1.1"
-    monocart-locator: "npm:^1.0.3"
+    monocart-locator: "npm:^1.0.6"
   bin:
     mcr: lib/cli.js
-  checksum: 10/cbb789332622c231d57c3b9aa407d064079c360ab55f3411ea436552e7a9e8f601d770687e47bb8d4a1a637980ed423055e9728fb785e1a6f6bfbebaf1b56dc6
+  checksum: 10/e969216b5d6e415ba0a1921de9e9a81c4d38fe709fdb83a224823f73a1cd583d36993da5d87033e8a2fe76045d53fed7e182332a6d4e1fa1c0f6c4b314197c11
   languageName: node
   linkType: hard
 
-"monocart-locator@npm:^1.0.3":
-  version: 1.0.3
-  resolution: "monocart-locator@npm:1.0.3"
-  checksum: 10/dbb9a87a5c8db19bd2133ced5a7d50c4932315f07385b966a786ed849f5324dc099750dd75911239644847dc3165cb03db9bd6fe749c49ba4313e3c9a6f485b7
+"monocart-locator@npm:^1.0.6":
+  version: 1.0.6
+  resolution: "monocart-locator@npm:1.0.6"
+  checksum: 10/0941a17eb91416c36662922ab94afd9de40c38862c0f82f427e6bbfbd96412c6883f426da18264d4bee53056fa050dc6e1cebfd855c93e3d916b70e47919d26d
   languageName: node
   linkType: hard
 
-"monocart-reporter@npm:2.14.0":
-  version: 2.14.0
-  resolution: "monocart-reporter@npm:2.14.0"
+"monocart-reporter@npm:2.14.1":
+  version: 2.14.1
+  resolution: "monocart-reporter@npm:2.14.1"
   dependencies:
     console-grid: "npm:^2.2.4"
     eight-colors: "npm:^1.3.3"
     koa: "npm:^3.2.1"
     koa-static-resolver: "npm:^1.0.7"
     lz-utils: "npm:^2.1.1"
-    monocart-coverage-reports: "npm:^2.13.0"
-    monocart-locator: "npm:^1.0.3"
+    monocart-coverage-reports: "npm:^2.13.1"
+    monocart-locator: "npm:^1.0.6"
   bin:
     monocart: lib/cli.js
-  checksum: 10/51fa4890f73ed84df21d4dcc0771adca60ec469e46e552a923791c7b786b1f8e8f09b8ee846fcbb65207b9aa1240904873edbc37252c51dbb46a9c8bfef813ee
+  checksum: 10/79b2c1c3524f32f172154caa0bb21d23ec8a993269a5c4f75d73c98f400560db47c0bc050358df2c042eefa35bfba00f9662b989f7eeca74e4263baf40efc8c7
   languageName: node
   linkType: hard
 
