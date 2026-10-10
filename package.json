@@ -34,7 +34,7 @@
   "tsConfig": "tsconfig.json",
   "packageManager": "yarn@4.18.1",
   "resolutions": {
-    "@radix-ui/react-focus-scope": "1.1.16",
-    "@radix-ui/react-dismissable-layer": "1.1.19"
+    "@radix-ui/react-focus-scope": "1.2.0",
+    "@radix-ui/react-dismissable-layer": "1.1.20"
   }
 }
