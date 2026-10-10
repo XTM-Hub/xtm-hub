@@ -1,6 +1,7 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
+import { AutoForm } from '@/components/ui/auto-form';
 import { FormItem } from '@/components/ui/form';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import {
@@ -9,7 +10,6 @@ import {
   transformToFileList,
 } from '@/utils/documents';
 import { semanticVersionRegex, validLtsVersionRegex } from '@/utils/versioning';
-import { AutoForm } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { DocumentImageType, IntegrationType } from '@graphql/generated';
 import { useContext, useMemo } from 'react';

@@ -7,7 +7,6 @@ import {
 } from '@/utils/design-system/date-picker';
 import { DatePicker } from '@filigran/design-system';
 import { useLocale } from 'next-intl';
-import AutoFormTooltip from '../common/Tooltip';
 import type { AutoFormInputComponentProps } from '../types';
 
 const AutoFormDate = ({
@@ -34,7 +33,6 @@ const AutoFormDate = ({
           field.onChange(fromDatePickerChange(date, context))
         }
       />
-      <AutoFormTooltip fieldConfigItem={fieldConfigItem} />
     </FormItem>
   );
 };

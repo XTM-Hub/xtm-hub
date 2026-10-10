@@ -1,6 +1,7 @@
 'use client';
 
 import { MeRequestTransferPersonalSpaceMutation } from '@/components/me/me.graphql';
+import { AutoForm } from '@/components/ui/auto-form';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Separator } from '@/components/ui/separator';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
@@ -12,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@filigran/design-system';
-import { AutoForm } from '@filigran/ui';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useMutation } from 'react-relay';

@@ -1,6 +1,7 @@
 'use client';
 
 import { PortalContext } from '@/components/me/AppPortalContext';
+import { AutoForm } from '@/components/ui/auto-form';
 import { CountryCombobox } from '@/components/ui/country/Combobox';
 import { useFormField } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
@@ -11,7 +12,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@filigran/design-system';
-import { AutoForm } from '@filigran/ui';
 import { useContext } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 import { z } from 'zod';

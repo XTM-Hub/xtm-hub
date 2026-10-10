@@ -2,6 +2,7 @@
 
 import GuardCapacityComponent from '@/components/AdminGuard';
 import { useServiceContext } from '@/components/service/components/ServiceContext';
+import { AutoForm } from '@/components/ui/auto-form';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { Locale, locales } from '@/i18n/config';
@@ -15,7 +16,6 @@ import {
   DialogTitle,
 } from '@filigran/design-system';
 import { EditIcon } from '@filigran/icon';
-import { AutoForm } from '@filigran/ui';
 import {
   Locale as GraphqlLocale,
   PortalCapability,

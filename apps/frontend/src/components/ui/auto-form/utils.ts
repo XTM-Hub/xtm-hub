@@ -23,7 +23,6 @@ export type ZodObjectOrWrapped =
 export type ZodInternalDef = {
   typeName?: string;
   type?: string;
-  schema?: z.ZodTypeAny;
   in?: z.ZodTypeAny;
   out?: z.ZodTypeAny;
   innerType?: z.ZodTypeAny;
@@ -264,37 +263,4 @@ export function zodToHtmlInputProps(
   }
 
   return inputProps;
-}
-
-/**
- * Sort the fields by order.
- * If no order is set, the field will be sorted based on the order in the schema.
- */
-export function sortFieldsByOrder<SchemaType extends z.ZodObject>(
-  fieldConfig: FieldConfig<z.infer<SchemaType>> | undefined,
-  keys: string[]
-): string[] {
-  return keys.sort((a, b) => {
-    const fieldA = (fieldConfig?.[a]?.order as number) ?? 0;
-    const fieldB = (fieldConfig?.[b]?.order as number) ?? 0;
-    return fieldA - fieldB;
-  });
-}
-
-/**
- * Check if a schema has effects (transformations)
- */
-export function hasEffects(schema: z.ZodTypeAny): boolean {
-  return getZodDef(schema).typeName === 'ZodEffects';
-}
-
-/**
- * Unwrap all effects from a schema
- */
-export function unwrapEffects<T extends z.ZodTypeAny>(schema: T): T {
-  const def = getZodDef(schema);
-  if (def.typeName === 'ZodEffects') {
-    return unwrapEffects(def.schema as T);
-  }
-  return schema;
 }

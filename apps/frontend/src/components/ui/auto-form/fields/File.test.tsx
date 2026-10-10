@@ -1,4 +1,4 @@
-import { AutoForm } from '@/components/filigran-ui/components/auto-form';
+import { AutoForm } from '@/components/ui/auto-form';
 import { fileListCheck, JSON_FILE_ACCEPT } from '@/utils/documents';
 import testRender from '@/utils/test/test-render';
 import { screen, waitFor } from '@testing-library/react';

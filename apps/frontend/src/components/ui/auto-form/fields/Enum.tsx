@@ -1,5 +1,5 @@
-import { cn } from '@/components/filigran-ui/lib/utils';
 import { FormItem, useFormField } from '@/components/ui/form';
+import { cn } from '@/lib/utils';
 import {
   Select,
   SelectContent,
@@ -10,7 +10,6 @@ import {
   SelectValue,
 } from '@filigran/design-system';
 import type { ComponentProps } from 'react';
-import AutoFormTooltip from '../common/Tooltip';
 import type { AutoFormInputComponentProps } from '../types';
 import { getBaseSchema, getZodDef } from '../utils';
 
@@ -44,7 +43,6 @@ const AutoFormEnum = ({
     return values.find((item) => item[1] === value);
   }
 
-  const { popoverContentClassName, ...selectFieldProps } = fieldProps;
   const noSelectionLabel =
     fieldConfigItem.inputProps?.placeholder ?? 'Select an option';
 
@@ -58,7 +56,7 @@ const AutoFormEnum = ({
           defaultValue={field.value}
           // Field props are an untyped record; Partial because the children
           // come from the JSX below while the root types them as required.
-          {...(selectFieldProps as Partial<ComponentProps<typeof Select>>)}
+          {...(fieldProps as Partial<ComponentProps<typeof Select>>)}
           error={Boolean(error)}>
           <SelectLabel required={isRequired}>
             {fieldConfigItem?.label || label}
@@ -66,14 +64,13 @@ const AutoFormEnum = ({
           <SelectTrigger
             className={cn(
               'w-full',
-              selectFieldProps.className as string | undefined
+              fieldProps.className as string | undefined
             )}>
             <SelectValue placeholder={fieldConfigItem.inputProps?.placeholder}>
               {field.value ? findItem(field.value)?.[1] : noSelectionLabel}
             </SelectValue>
           </SelectTrigger>
-          <SelectContent
-            className={popoverContentClassName as string | undefined}>
+          <SelectContent>
             {values.map(([value, label]) => (
               <SelectItem
                 value={label}
@@ -85,7 +82,6 @@ const AutoFormEnum = ({
           {error && <SelectHelperText>{error.message}</SelectHelperText>}
         </Select>
       </div>
-      <AutoFormTooltip fieldConfigItem={fieldConfigItem} />
     </FormItem>
   );
 };

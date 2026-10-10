@@ -4,6 +4,7 @@ import { PortalContext } from '@/components/me/AppPortalContext';
 import { XtmPlatformTrialBanner } from '@/components/service/trial-instances/banner/xtm-platform-trial/XtmPlatformTrialBanner';
 import { deriveXtmPlatformTrialState } from '@/components/service/trial-instances/banner/xtm-platform-trial/xtm-platform-trial-banner.utils';
 import { SettingsContext } from '@/components/settings/EnvPortalContext';
+import { AutoForm } from '@/components/ui/auto-form';
 import { FormControl, FormItem, FormMessage } from '@/components/ui/form';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
@@ -20,7 +21,6 @@ import {
   RadioGroup,
   Textarea,
 } from '@filigran/design-system';
-import { AutoForm } from '@filigran/ui';
 import {
   HasRepliedSatisfaction,
   PlatformTrialStatusQueryVariables,

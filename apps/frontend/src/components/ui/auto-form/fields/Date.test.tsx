@@ -1,4 +1,4 @@
-import { AutoForm } from '@/components/filigran-ui/components/auto-form';
+import { AutoForm } from '@/components/ui/auto-form';
 import testRender from '@/utils/test/test-render';
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';

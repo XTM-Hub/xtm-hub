@@ -3,6 +3,7 @@
 import { invalidatePrivateNavigationQueries } from '@/components/menu/navigation/private/private-navigation-query-invalidation';
 import { SelectWithEditableField } from '@/components/service/registration/SelectWithEditableField';
 import { CancelDeploymentRequestMutation } from '@/components/service/trial-instances/trial-instances.graphql';
+import { AutoForm } from '@/components/ui/auto-form';
 import { useFormField } from '@/components/ui/form';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
@@ -10,7 +11,6 @@ import { useTranslate } from '@/hooks/use-translate';
 import { XTM_PLATFORM_TRIAL_PATH } from '@/utils/path/constant';
 import { Button } from '@filigran/design-system';
 import { CheckIndeterminateIcon } from '@filigran/icon';
-import { AutoForm } from '@filigran/ui';
 import { trialInstancesCancelDeploymentRequestMutation } from '@generated/trialInstancesCancelDeploymentRequestMutation.graphql';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';

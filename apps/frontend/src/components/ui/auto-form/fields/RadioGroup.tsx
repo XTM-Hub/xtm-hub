@@ -1,8 +1,11 @@
-import { FormControl, FormItem, FormMessage } from '@/components/ui/form';
+import {
+  FormControl,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Radio, RadioGroup } from '@filigran/design-system';
 import type { ComponentProps } from 'react';
-import AutoFormLabel from '../common/Label';
-import AutoFormTooltip from '../common/Tooltip';
 import type { AutoFormInputComponentProps } from '../types';
 import { getBaseSchema, getZodDef } from '../utils';
 
@@ -37,35 +40,31 @@ const AutoFormRadioGroup = ({
     }
   }
 
+  const text = fieldConfigItem?.label || label;
+
   return (
-    <div>
-      <FormItem>
-        <AutoFormLabel
-          label={fieldConfigItem?.label || label}
-          isRequired={isRequired}
-        />
-        <FormControl>
-          <RadioGroup
-            orientation="horizontal"
-            className="flex-wrap"
-            aria-label={fieldConfigItem?.label || label}
-            onValueChange={field.onChange}
-            defaultValue={field.value}
-            {...(fieldProps as ComponentProps<typeof RadioGroup>)}>
-            {values?.map((value: string) => (
-              <Radio
-                key={value}
-                value={value}
-                label={value}
-                disabled={Boolean(fieldProps.disabled)}
-              />
-            ))}
-          </RadioGroup>
-        </FormControl>
-        <FormMessage />
-      </FormItem>
-      <AutoFormTooltip fieldConfigItem={fieldConfigItem} />
-    </div>
+    <FormItem>
+      <FormLabel required={isRequired}>{text}</FormLabel>
+      <FormControl>
+        <RadioGroup
+          orientation="horizontal"
+          className="flex-wrap"
+          aria-label={text}
+          onValueChange={field.onChange}
+          defaultValue={field.value}
+          {...(fieldProps as ComponentProps<typeof RadioGroup>)}>
+          {values?.map((value: string) => (
+            <Radio
+              key={value}
+              value={value}
+              label={value}
+              disabled={Boolean(fieldProps.disabled)}
+            />
+          ))}
+        </RadioGroup>
+      </FormControl>
+      <FormMessage />
+    </FormItem>
   );
 };
 

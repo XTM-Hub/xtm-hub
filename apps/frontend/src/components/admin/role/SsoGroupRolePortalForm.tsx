@@ -1,9 +1,9 @@
 import RoleSheetFormFooter from '@/components/admin/role/RoleSheetFormFooter';
 import { AppCombobox } from '@/components/ui/AppCombobox';
+import { AutoForm } from '@/components/ui/auto-form';
 import { useFormField } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { AutoForm } from '@filigran/ui';
 import { RolePortalsQuery, useRolePortalsQuery } from '@graphql/generated';
 import { useMemo } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';

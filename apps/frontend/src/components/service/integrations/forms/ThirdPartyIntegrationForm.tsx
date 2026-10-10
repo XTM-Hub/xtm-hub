@@ -1,6 +1,7 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
+import { AutoForm } from '@/components/ui/auto-form';
 import { FormItem } from '@/components/ui/form';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
 import {
@@ -8,7 +9,6 @@ import {
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
-import { AutoForm } from '@filigran/ui';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import {
   DocumentImageType,

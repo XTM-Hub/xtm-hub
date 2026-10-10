@@ -1,4 +1,8 @@
 'use client';
+import { Form } from '@/components/ui/form';
+import { cn } from '@/lib/utils';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { type ReactNode, useEffect } from 'react';
 import {
   type DefaultValues,
   type FormState,
@@ -6,61 +10,18 @@ import {
   type UseFormReturn,
 } from 'react-hook-form';
 import { z } from 'zod';
-
-import { zodResolver } from '@hookform/resolvers/zod';
-
-import { cn } from '@/components/filigran-ui/lib/utils';
-import { Form } from '@/components/ui/form';
-import { Button } from '@filigran/design-system';
-import { useEffect } from 'react';
-import AutoFormObject from './fields/Object';
-import type { Dependency, FieldConfig, IntlTranslateFunction } from './types';
+import AutoFormObject from './AutoFormObject';
+import type { FieldConfig } from './types';
 import {
   getDefaultValues,
   getObjectFormSchema,
   type ZodObjectOrWrapped,
 } from './utils';
 
-const AutoFormSubmit = ({
-  children,
-  className,
-  disabled,
-  submitText = 'Submit',
-}: {
-  children?: React.ReactNode;
-  className?: string;
-  disabled?: boolean;
-  submitText?: string;
-}) => {
-  return (
-    <Button
-      type="submit"
-      disabled={disabled}
-      className={className}>
-      {children ?? submitText}
-    </Button>
-  );
-};
-
-const AutoForm = <SchemaType extends ZodObjectOrWrapped>({
-  formSchema,
-  values: valuesProp,
-  onValuesChange: onValuesChangeProp,
-  onParsedValuesChange,
-  onSubmit: onSubmitProp,
-  fieldConfig,
-  children,
-  className,
-  dependencies,
-  intlTranslation,
-}: {
+export type AutoFormProps<SchemaType extends ZodObjectOrWrapped> = {
   formSchema: SchemaType;
   values?: z.infer<SchemaType>;
   onValuesChange?: (
-    values: Partial<z.infer<SchemaType>>,
-    form: UseFormReturn<z.infer<SchemaType>>
-  ) => void;
-  onParsedValuesChange?: (
     values: Partial<z.infer<SchemaType>>,
     form: UseFormReturn<z.infer<SchemaType>>
   ) => void;
@@ -70,12 +31,19 @@ const AutoForm = <SchemaType extends ZodObjectOrWrapped>({
   ) => void;
   fieldConfig?: FieldConfig<z.infer<SchemaType>>;
   children?:
-    | React.ReactNode
-    | ((formState: FormState<z.infer<SchemaType>>) => React.ReactNode);
+    ReactNode | ((formState: FormState<z.infer<SchemaType>>) => ReactNode);
   className?: string;
-  dependencies?: Dependency<z.infer<SchemaType>>[];
-  intlTranslation?: IntlTranslateFunction;
-}) => {
+};
+
+const AutoForm = <SchemaType extends ZodObjectOrWrapped>({
+  formSchema,
+  values: valuesProp,
+  onValuesChange: onValuesChangeProp,
+  onSubmit: onSubmitProp,
+  fieldConfig,
+  children,
+  className,
+}: AutoFormProps<SchemaType>) => {
   const objectFormSchema = getObjectFormSchema(formSchema);
 
   const defaultValues =
@@ -87,8 +55,8 @@ const AutoForm = <SchemaType extends ZodObjectOrWrapped>({
   const form = useForm<z.infer<SchemaType>>({
     // zodResolver's generic Resolver<TFieldValues> can't be derived from the
     // caller-supplied SchemaType bound without collapsing useForm's own
-    // generic inference (see ZodObjectOrWrapped above for the same
-    // trade-off); the cast keeps the resolver correctly wired at runtime.
+    // generic inference (see ZodObjectOrWrapped for the same trade-off); the
+    // cast keeps the resolver correctly wired at runtime.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(formSchema as any),
     defaultValues: defaultValues as
@@ -106,15 +74,10 @@ const AutoForm = <SchemaType extends ZodObjectOrWrapped>({
   useEffect(() => {
     const subscription = form.watch((values) => {
       onValuesChangeProp?.(values as Partial<z.infer<SchemaType>>, form);
-
-      const parsedValues = formSchema.safeParse(values);
-      if (parsedValues.success) {
-        onParsedValuesChange?.(parsedValues.data, form);
-      }
     });
 
     return () => subscription.unsubscribe();
-  }, [form, formSchema, onValuesChangeProp, onParsedValuesChange]);
+  }, [form, onValuesChangeProp]);
 
   const renderChildren =
     typeof children === 'function'
@@ -131,14 +94,9 @@ const AutoForm = <SchemaType extends ZodObjectOrWrapped>({
           className={cn('space-y-5', className)}>
           <AutoFormObject
             schema={objectFormSchema as ZodObjectOrWrapped}
-            form={form as unknown as ReturnType<typeof useForm>}
-            dependencies={
-              dependencies as Dependency<Record<string, unknown>>[] | undefined
-            }
             fieldConfig={
               fieldConfig as FieldConfig<Record<string, unknown>> | undefined
             }
-            intlTranslation={intlTranslation}
           />
 
           {renderChildren}
@@ -148,4 +106,4 @@ const AutoForm = <SchemaType extends ZodObjectOrWrapped>({
   );
 };
 
-export { AutoForm, AutoFormSubmit };
+export { AutoForm };

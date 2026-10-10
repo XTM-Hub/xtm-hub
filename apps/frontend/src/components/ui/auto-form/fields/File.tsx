@@ -6,7 +6,6 @@ import {
   toFileSelectValue,
 } from '@/utils/design-system/file-select';
 import { FileSelect, type FileSelectProps } from '@filigran/design-system';
-import AutoFormTooltip from '../common/Tooltip';
 import type { AutoFormInputComponentProps } from '../types';
 
 const AutoFormFile = ({
@@ -18,22 +17,18 @@ const AutoFormFile = ({
   const t = useTranslate();
   const { error } = useFormField();
   const {
-    showLabel: _showLabel,
     required: _required,
     value,
     onChange,
     multiple,
     ...rest
   } = fieldProps;
-  const showLabel = _showLabel === undefined ? true : _showLabel;
-  const text = fieldConfigItem?.label || label;
 
   return (
     <FormItem>
       <FileSelect
         {...getFileSelectLabels(t)}
-        label={showLabel ? text : undefined}
-        aria-label={showLabel ? undefined : text}
+        label={fieldConfigItem?.label || label}
         required={isRequired}
         error={error?.message}
         {...(rest as FileSelectProps)}
@@ -45,7 +40,6 @@ const AutoFormFile = ({
           )
         }
       />
-      <AutoFormTooltip fieldConfigItem={fieldConfigItem} />
     </FormItem>
   );
 };
