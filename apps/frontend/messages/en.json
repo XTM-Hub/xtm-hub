@@ -114,21 +114,6 @@
       "SeeMore": "See more"
     }
   },
-  "Datatable": {
-    "Asc": "Asc",
-    "ClearSelection": "Clear selection",
-    "ColumnOptions": "Column options",
-    "Columns": "Columns",
-    "Desc": "Desc",
-    "GoFirstPage": "Go to first page",
-    "GoLastPage": "Go to last page",
-    "GoNextPage": "Go to next page",
-    "GoPreviousPage": "Go to previous page",
-    "Hide": "Hide",
-    "ManageColumnsVisibility": "Manage columns visibility",
-    "ResetTable": "Reset table",
-    "RowsPerPage": "Rows per page"
-  },
   "DeploymentRequestUseCase": {
     "threat_profiling_cti": "Threat Profiling (CTI)",
     "threat_profiling_fimi": "Threat Profiling (FIMI)",
@@ -2343,6 +2328,22 @@
     "Combobox": {
       "SelectedValues": "Selected values",
       "ToggleOptions": "Toggle options"
+    },
+    "DataTable": {
+      "ClearSelection": "Clear selection",
+      "ColumnOptions": "Column options",
+      "Columns": "Columns",
+      "HideColumn": "Hide",
+      "ManageColumns": "Manage columns visibility",
+      "NextPage": "Go to next page",
+      "PreviousPage": "Go to previous page",
+      "ResetTable": "Reset table",
+      "RowsPerPage": "Rows per page",
+      "SelectAll": "Select all",
+      "SelectedCount": "{count} selected",
+      "SelectRow": "Select row",
+      "SortAscending": "Asc",
+      "SortDescending": "Desc"
     },
     "DatePicker": {
       "Calendar": "Calendar",

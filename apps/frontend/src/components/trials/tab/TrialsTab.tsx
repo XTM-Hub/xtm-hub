@@ -16,6 +16,7 @@ import {
   TrialsTabType,
 } from '@/components/trials/trials.const';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { DataTable, DataTableHeadBarOptions } from '@/components/ui/data-table';
 import {
   handleSortingChange,
   mapToSortingTableValue,
@@ -29,8 +30,8 @@ import {
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { i18nKey } from '@/utils/datatable';
 import { daysUntil, useDateFormatter } from '@/utils/date';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { xtmPlatformTrialManageUsersFromDashboardPath } from '@/utils/path/constant';
 import {
   IconButton,
@@ -47,7 +48,6 @@ import {
   CloseIcon,
   GroupIcon,
 } from '@filigran/icon';
-import { DataTable, DataTableHeadBarOptions } from '@filigran/ui';
 import { trialsKeys } from '@graphql/deployment/deployment.keys';
 import {
   DeploymentRequestHubStatus,
@@ -646,7 +646,7 @@ const TrialsTab = ({ type, scope }: TrialsTabProps) => {
         onColumnOrderChange: setColumnOrder,
         onColumnVisibilityChange: setColumnVisibility,
       }}
-      i18nKey={i18nKey(t)}
+      {...getDataTableLabels(t)}
       tableState={{
         sorting: mapToSortingTableValue(orderBy, orderMode),
         pagination,

@@ -250,7 +250,7 @@ describe('NewsFeedList', () => {
     const { user } = testRender(<NewsFeedList />);
 
     await user.click(
-      screen.getByRole('button', { name: 'Datatable.GoNextPage' })
+      screen.getByRole('button', { name: 'DesignSystem.DataTable.NextPage' })
     );
 
     await waitFor(() => {

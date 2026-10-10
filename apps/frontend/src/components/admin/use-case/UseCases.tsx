@@ -1,8 +1,9 @@
 import AddUseCase from '@/components/admin/use-case/AddUseCase';
 import EditUseCase from '@/components/admin/use-case/EditUseCase';
+import { DataTable } from '@/components/ui/data-table';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { i18nKey } from '@/utils/datatable';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import {
   Chip,
   Select,
@@ -11,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@filigran/design-system';
-import { DataTable } from '@filigran/ui';
 import {
   FiligranProduct,
   OrderingMode,
@@ -105,7 +105,7 @@ const UseCases = () => {
       <DataTable
         columns={columns}
         data={useCasesData}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         tableOptions={{
           enableSorting: false,
           enableColumnResizing: false,

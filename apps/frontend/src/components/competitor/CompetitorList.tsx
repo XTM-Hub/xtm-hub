@@ -1,9 +1,9 @@
 'use client';
+import { DataTable, DataTableHeadBarOptions } from '@/components/ui/data-table';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
-import { i18nKey } from '@/utils/datatable';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { DeleteIcon, EditIcon } from '@filigran/icon';
-import { DataTable, DataTableHeadBarOptions } from '@filigran/ui';
 import { CompetitorTier } from '@graphql/generated';
 import { ColumnDef, SortingState, Updater } from '@tanstack/react-table';
 import { useCallback, useMemo, useState } from 'react';
@@ -208,7 +208,7 @@ const CompetitorList = () => {
       <DataTable
         columns={columns}
         data={competitorsData}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         onResetTable={resetAll}
         tableOptions={{
           onSortingChange,

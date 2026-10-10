@@ -11,6 +11,11 @@ import {
   BreadcrumbNavLink,
 } from '@/components/ui/BreadcrumbNav';
 import {
+  DataTable,
+  DataTableHeadBarOptions,
+  SelectionState,
+} from '@/components/ui/data-table';
+import {
   IconActions,
   IconActionsItem,
   IconActionsLink,
@@ -18,15 +23,10 @@ import {
 import useAdminPath from '@/hooks/use-admin-path';
 import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useTranslate } from '@/hooks/use-translate';
-import { i18nKey } from '@/utils/datatable';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { APP_PATH } from '@/utils/path/constant';
 import { Button, SearchField, Switch } from '@filigran/design-system';
 import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
-import {
-  DataTable,
-  DataTableHeadBarOptions,
-  SelectionState,
-} from '@filigran/ui';
 import { serviceInstanceByIdQuery } from '@generated/serviceInstanceByIdQuery.graphql';
 import { serviceInstanceForSubscriptions_fragment$key } from '@generated/serviceInstanceForSubscriptions_fragment.graphql';
 import { subscription_fragment$data } from '@generated/subscription_fragment.graphql';
@@ -266,7 +266,7 @@ const ServiceSlug = ({
           <h2 className="">{t('Service.Management.Description') + ':'}</h2>
 
           <DataTable
-            i18nKey={i18nKey(t)}
+            {...getDataTableLabels(t)}
             columns={columns}
             data={filteredAndSortedData}
             toolbar={toolbar}

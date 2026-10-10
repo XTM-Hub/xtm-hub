@@ -1,10 +1,10 @@
 import AddRolePortal from '@/components/admin/role/AddRolePortal';
 import RolePortalActions from '@/components/admin/role/RolePortalActions';
+import { DataTable } from '@/components/ui/data-table';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { i18nKey } from '@/utils/datatable';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { Chip } from '@filigran/design-system';
-import { DataTable } from '@filigran/ui';
 import { RolePortalsQuery, useRolePortalsQuery } from '@graphql/generated';
 import { ColumnDef } from '@tanstack/react-table';
 
@@ -65,7 +65,7 @@ const RolePortalCapabilitiesList = () => {
       <DataTable
         columns={columns}
         data={data?.rolePortals ?? []}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         tableOptions={{
           enableSorting: false,
           enableColumnResizing: false,

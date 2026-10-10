@@ -7,6 +7,7 @@ import { EditOrganization } from '@/components/organization/EditOrganization';
 import { getOrganizations } from '@/components/organization/Organization.service';
 import { useOrganizationListLocalstorage } from '@/components/organization/organization-list-localstorage';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
+import { DataTable, DataTableHeadBarOptions } from '@/components/ui/data-table';
 import {
   handleSortingChange,
   mapToSortingTableValue,
@@ -15,10 +16,9 @@ import {
 import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
-import { i18nKey } from '@/utils/datatable';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { Chip, SearchField } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
-import { DataTable, DataTableHeadBarOptions } from '@filigran/ui';
 import { OrganizationsPaginationQuery$variables } from '@generated/OrganizationsPaginationQuery.graphql';
 import { organizationItem_fragment$data } from '@generated/organizationItem_fragment.graphql';
 import { ColumnDef } from '@tanstack/react-table';
@@ -166,7 +166,7 @@ const OrganizationList = () => {
       <Suspense
         fallback={
           <DataTable
-            i18nKey={i18nKey(t)}
+            {...getDataTableLabels(t)}
             data={[]}
             columns={columns}
             isLoading={true}
@@ -207,7 +207,7 @@ const OrganizationList = () => {
             onColumnVisibilityChange: setColumnVisibility,
             rowCount: organizationsData.organizations.totalCount,
           }}
-          i18nKey={i18nKey(t)}
+          {...getDataTableLabels(t)}
           tableState={{
             sorting: mapToSortingTableValue(orderBy, orderMode),
             pagination,

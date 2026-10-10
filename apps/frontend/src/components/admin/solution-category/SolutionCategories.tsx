@@ -2,6 +2,7 @@ import AddSolutionCategory from '@/components/admin/solution-category/AddSolutio
 import EditSolutionCategory from '@/components/admin/solution-category/EditSolutionCategory';
 import SolutionCategoryProductFilter from '@/components/admin/solution-category/SolutionCategoryProductFilter';
 import { useSolutionCategoryListLocalstorage } from '@/components/admin/solution-category/solution-category-list-localstorage';
+import { DataTable, DataTableHeadBarOptions } from '@/components/ui/data-table';
 import {
   handleSortingChange,
   mapToSortingTableValue,
@@ -10,10 +11,9 @@ import {
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { i18nKey } from '@/utils/datatable';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { formatName } from '@/utils/format/name';
 import { Chip } from '@filigran/design-system';
-import { DataTable, DataTableHeadBarOptions } from '@filigran/ui';
 import {
   FiligranProduct,
   OrderingMode,
@@ -149,7 +149,7 @@ const SolutionCategories = () => {
         columns={columns}
         data={solutionCategories}
         isLoading={isLoading}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         onResetTable={resetAll}
         tableOptions={{
           onSortingChange,

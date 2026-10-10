@@ -41,7 +41,7 @@ vi.mock('usehooks-ts', async (importOriginal) => {
   };
 });
 
-vi.mock('@filigran/ui', () => ({
+vi.mock('@/components/ui/data-table', () => ({
   DataTableHeadBarOptions: () => <div>DataTableHeadBarOptions</div>,
   DataTable: ({
     data,

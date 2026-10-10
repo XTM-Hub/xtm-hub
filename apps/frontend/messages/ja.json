@@ -114,21 +114,6 @@
       "SeeMore": "詳細を見る"
     }
   },
-  "Datatable": {
-    "Asc": "として",
-    "ClearSelection": "選択を解除",
-    "ColumnOptions": "列のオプション",
-    "Columns": "列",
-    "Desc": "Des",
-    "GoFirstPage": "最初のページへ",
-    "GoLastPage": "最後のページへ",
-    "GoNextPage": "次のページへ",
-    "GoPreviousPage": "前のページへ",
-    "Hide": "隠す",
-    "ManageColumnsVisibility": "列の表示管理",
-    "ResetTable": "表のリセット",
-    "RowsPerPage": "ページあたりの行数"
-  },
   "DeploymentRequestUseCase": {
     "threat_profiling_cti": "脅威プロファイリング（CTI）",
     "threat_profiling_fimi": "脅威プロファイリング（FIMI）",
@@ -2343,6 +2328,22 @@
     "Combobox": {
       "SelectedValues": "選択された値",
       "ToggleOptions": "選択肢の表示を切り替え"
+    },
+    "DataTable": {
+      "ClearSelection": "選択を解除",
+      "ColumnOptions": "列のオプション",
+      "Columns": "列",
+      "HideColumn": "隠す",
+      "ManageColumns": "列の表示管理",
+      "NextPage": "次のページへ",
+      "PreviousPage": "前のページへ",
+      "ResetTable": "表のリセット",
+      "RowsPerPage": "ページあたりの行数",
+      "SelectAll": "すべて選択",
+      "SelectedCount": "{count} 件選択",
+      "SelectRow": "行を選択",
+      "SortAscending": "昇順",
+      "SortDescending": "降順"
     },
     "DatePicker": {
       "Calendar": "カレンダー",

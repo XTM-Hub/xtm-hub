@@ -6,12 +6,12 @@ import { VotableFeatureFormModel } from '@/components/admin/voting-round/Votable
 import { VotingRoundResults } from '@/components/admin/voting-round/VotingRoundResults';
 import { VotingRoundStatusActions } from '@/components/admin/voting-round/VotingRoundStatusActions';
 import { VotingRoundStatusBadge } from '@/components/admin/voting-round/VotingRoundStatusBadge';
+import { DataTable } from '@/components/ui/data-table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { i18nKey } from '@/utils/datatable';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { Chip } from '@filigran/design-system';
-import { DataTable } from '@filigran/ui';
 import {
   useVotingRoundDetailQuery,
   VotableFeatureAdminRowFragment,
@@ -128,7 +128,7 @@ export const VotingRoundDetail = ({ roundId }: { roundId: string }) => {
         <DataTable
           columns={columns}
           data={features}
-          i18nKey={i18nKey(t)}
+          {...getDataTableLabels(t)}
           onClickRow={({ original }) =>
             setFeatureToEdit({
               id: original.id,

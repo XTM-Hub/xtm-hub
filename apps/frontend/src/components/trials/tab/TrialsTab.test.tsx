@@ -12,7 +12,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const renderedColumns: string[] = [];
 
-vi.mock('@filigran/ui', () => ({
+vi.mock('@/components/ui/data-table', () => ({
   DataTable: ({ columns }: { columns: ColumnDef<unknown>[] }) => {
     renderedColumns.splice(
       0,

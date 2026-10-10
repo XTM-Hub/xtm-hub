@@ -6,14 +6,15 @@ import {
 import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
-import { useTranslate } from '@/hooks/use-translate';
-import { Chip } from '@filigran/design-system';
-import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
 import {
   DataTable,
   DataTableHeadBarOptions,
   SelectionState,
-} from '@filigran/ui';
+} from '@/components/ui/data-table';
+import { useTranslate } from '@/hooks/use-translate';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
+import { Chip } from '@filigran/design-system';
+import { AddIcon, DeleteIcon, MoreVertIcon } from '@filigran/icon';
 import { userServiceFromSubscription$key } from '@generated/userServiceFromSubscription.graphql';
 import {
   userServices_fragment$data,
@@ -313,6 +314,7 @@ const SubscriptionSlug = ({
       )}
 
       <DataTable
+        {...getDataTableLabels(t)}
         toolbar={toolbar}
         columns={columns}
         data={userData}

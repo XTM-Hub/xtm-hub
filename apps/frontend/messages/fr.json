@@ -114,21 +114,6 @@
       "SeeMore": "Voir plus"
     }
   },
-  "Datatable": {
-    "Asc": "Asc",
-    "ClearSelection": "Effacer la sélection",
-    "ColumnOptions": "Options de colonne",
-    "Columns": "Colonnes",
-    "Desc": "Desc",
-    "GoFirstPage": "Aller à la première page",
-    "GoLastPage": "Aller à la dernière page",
-    "GoNextPage": "Aller à la page suivante",
-    "GoPreviousPage": "Aller à la page précédente",
-    "Hide": "Cacher",
-    "ManageColumnsVisibility": "Gérer la visibilité des colonnes",
-    "ResetTable": "Réinitialiser",
-    "RowsPerPage": "Lignes par page"
-  },
   "DeploymentRequestUseCase": {
     "threat_profiling_cti": "Profilage des menaces (CTI)",
     "threat_profiling_fimi": "Profilage des menaces (FIMI)",
@@ -2343,6 +2328,22 @@
     "Combobox": {
       "SelectedValues": "Valeurs sélectionnées",
       "ToggleOptions": "Afficher ou masquer les options"
+    },
+    "DataTable": {
+      "ClearSelection": "Effacer la sélection",
+      "ColumnOptions": "Options de colonne",
+      "Columns": "Colonnes",
+      "HideColumn": "Cacher",
+      "ManageColumns": "Gérer la visibilité des colonnes",
+      "NextPage": "Aller à la page suivante",
+      "PreviousPage": "Aller à la page précédente",
+      "ResetTable": "Réinitialiser",
+      "RowsPerPage": "Lignes par page",
+      "SelectAll": "Tout sélectionner",
+      "SelectedCount": "{count} sélectionné(s)",
+      "SelectRow": "Sélectionner la ligne",
+      "SortAscending": "Asc",
+      "SortDescending": "Desc"
     },
     "DatePicker": {
       "Calendar": "Calendrier",

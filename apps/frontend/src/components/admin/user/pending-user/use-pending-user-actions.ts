@@ -4,9 +4,9 @@ import {
   RemovePendingUserBulkMutation,
   RemovePendingUserMutation,
 } from '@/components/admin/user/pending-user/pending-user.graphql';
+import { SelectionState } from '@/components/ui/data-table';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
-import { SelectionState } from '@filigran/ui';
 import { PendingUserListAcceptUserBulkMutation } from '@generated/PendingUserListAcceptUserBulkMutation.graphql';
 import { PendingUserListAcceptUserMutation } from '@generated/PendingUserListAcceptUserMutation.graphql';
 import { PendingUserListRemoveUserBulkMutation } from '@generated/PendingUserListRemoveUserBulkMutation.graphql';

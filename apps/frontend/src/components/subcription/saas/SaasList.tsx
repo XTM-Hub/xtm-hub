@@ -6,6 +6,7 @@ import {
   getSaasPlatformProductName,
   getSaasPlatformServicePath,
 } from '@/components/subcription/saas/saas-list.utils';
+import { DataTable, DataTableHeadBarOptions } from '@/components/ui/data-table';
 import {
   handleSortingChange,
   mapToSortingTableValue,
@@ -17,7 +18,7 @@ import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { cn } from '@/lib/utils';
 import { DEBOUNCE_TIME } from '@/utils/constant';
-import { i18nKey } from '@/utils/datatable';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import {
   Chip,
   SearchField,
@@ -26,7 +27,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import { DataTable, DataTableHeadBarOptions } from '@filigran/ui';
 import {
   OrderingMode,
   PortalCapability,
@@ -223,7 +223,7 @@ export const SaasList = () => {
         columns={columns}
         data={saasPlatforms}
         isLoading={isLoading}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         onResetTable={resetAll}
         tableOptions={{
           onSortingChange,

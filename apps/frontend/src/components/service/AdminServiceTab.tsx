@@ -6,6 +6,7 @@ import {
 } from '@graphql/generated';
 
 import { EditService } from '@/components/service/EditService';
+import { DataTable } from '@/components/ui/data-table';
 import {
   IconActions,
   IconActionsItem,
@@ -13,11 +14,10 @@ import {
 } from '@/components/ui/IconActions';
 import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useTranslate } from '@/hooks/use-translate';
-import { i18nKey } from '@/utils/datatable';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { APP_PATH } from '@/utils/path/constant';
 import { SearchField } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
-import { DataTable } from '@filigran/ui';
 import { serviceList_fragment$data } from '@generated/serviceList_fragment.graphql';
 import { serviceQuery } from '@generated/serviceQuery.graphql';
 import { servicesList_services$key } from '@generated/servicesList_services.graphql';
@@ -139,7 +139,7 @@ const AdminServiceTab = ({ serviceData, refetch }: AdminServiceTabProps) => {
     <>
       <DataTable
         columns={columns}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         data={serviceData}
         toolbar={
           <div className="flex flex-col-reverse items-center justify-between gap-s sm:flex-row">

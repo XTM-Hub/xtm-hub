@@ -161,7 +161,7 @@ describe('DocumentList', () => {
       `/app/service/${ServiceIdentifier}/${ServiceInstanceId}/${FirstDocumentId}`
     );
     expect(
-      screen.queryByLabelText('Manage columns visibility')
+      screen.queryByLabelText('DesignSystem.DataTable.ManageColumns')
     ).not.toBeInTheDocument();
   });
 

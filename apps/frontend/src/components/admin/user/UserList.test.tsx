@@ -166,8 +166,9 @@ vi.mock('@/components/ui/IconActions', () => ({
   ),
 }));
 
-vi.mock('@filigran/ui', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@filigran/ui')>();
+vi.mock('@/components/ui/data-table', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@/components/ui/data-table')>();
   return {
     ...actual,
     DataTableHeadBarOptions: () => <div>DataTableHeadBarOptions</div>,

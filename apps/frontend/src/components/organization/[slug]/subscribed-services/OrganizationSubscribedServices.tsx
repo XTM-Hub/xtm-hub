@@ -1,5 +1,6 @@
 'use client';
 
+import { DataTable, DataTableHeadBarOptions } from '@/components/ui/data-table';
 import {
   handleSortingChange,
   mapToSortingTableValue,
@@ -8,10 +9,9 @@ import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { i18nKey } from '@/utils/datatable';
 import { useDateFormatter } from '@/utils/date';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { Chip, SearchField } from '@filigran/design-system';
-import { DataTable, DataTableHeadBarOptions } from '@filigran/ui';
 import {
   OrderingMode,
   OrganizationSubscribedServiceRowFragment,
@@ -211,7 +211,7 @@ const OrganizationSubscribedServicesSlug = ({
         columns={columns}
         data={subscribedServicesData}
         isLoading={isLoading}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         onResetTable={resetAll}
         tableState={{
           sorting: mapToSortingTableValue(orderBy, orderMode),

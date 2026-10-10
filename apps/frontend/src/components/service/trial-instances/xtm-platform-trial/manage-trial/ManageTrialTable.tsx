@@ -1,13 +1,13 @@
 'use client';
 
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { DataTable, SelectionState } from '@/components/ui/data-table';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { i18nKey } from '@/utils/datatable';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { IconButton } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
-import { DataTable, SelectionState } from '@filigran/ui';
 import {
   BundleUserServiceGroupsQuery,
   PlatformIdentifier,
@@ -288,7 +288,7 @@ export const ManageTrialTable = ({
         columns={columns}
         data={rows}
         isLoading={isLoading}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         toolbar={<></>}
         tableState={{ columnPinning: { right: ['actions'] } }}
         selectionOptions={{

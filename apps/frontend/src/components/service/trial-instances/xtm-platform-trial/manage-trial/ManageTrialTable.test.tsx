@@ -1,6 +1,6 @@
 import { ManageTrialTable } from '@/components/service/trial-instances/xtm-platform-trial/manage-trial/ManageTrialTable';
+import { SelectionState } from '@/components/ui/data-table';
 import testRender from '@/utils/test/test-render';
-import { SelectionState } from '@filigran/ui';
 import {
   BundleUserServiceGroupsQuery,
   PlatformIdentifier,
@@ -82,8 +82,9 @@ vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
   showSnackbar: showSnackbarMock,
 }));
 
-vi.mock('@filigran/ui', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@filigran/ui')>();
+vi.mock('@/components/ui/data-table', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@/components/ui/data-table')>();
   return {
     ...actual,
     DataTable: ({

@@ -14,6 +14,7 @@ import { PortalContext } from '@/components/me/AppPortalContext';
 import BadgeOverflowCounter, {
   BadgeOverflow,
 } from '@/components/ui/BadgeOverflowCounter';
+import { DataTable, DataTableHeadBarOptions } from '@/components/ui/data-table';
 import {
   handleSortingChange,
   mapToSortingTableValue,
@@ -29,11 +30,10 @@ import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
 import { useUsersList } from '@/hooks/use-users-list';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { i18nKey } from '@/utils/datatable';
 import { useDateFormatter } from '@/utils/date';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { Button, Chip, SearchField } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
-import { DataTable, DataTableHeadBarOptions } from '@filigran/ui';
 import {
   UserList_fragment$data,
   UserList_fragment$key,
@@ -580,7 +580,7 @@ const UserList = ({ organization }: UserListProps) => {
       <DataTable
         columns={columns}
         data={userData}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         onResetTable={resetAll}
         tableOptions={{
           onSortingChange: onSortingChange,

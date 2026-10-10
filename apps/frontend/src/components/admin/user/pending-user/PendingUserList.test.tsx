@@ -109,7 +109,7 @@ vi.mock('usehooks-ts', async (importOriginal) => ({
     }),
 }));
 
-vi.mock('@filigran/ui', () => ({
+vi.mock('@/components/ui/data-table', () => ({
   DataTable: ({
     columns,
     data,

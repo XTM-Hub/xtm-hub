@@ -4,13 +4,13 @@ import AddVotingRound from '@/components/admin/voting-round/AddVotingRound';
 import EditVotingRound from '@/components/admin/voting-round/EditVotingRound';
 import { useRoadmapServiceInstances } from '@/components/admin/voting-round/use-roadmap-service-instances';
 import { VotingRoundStatusBadge } from '@/components/admin/voting-round/VotingRoundStatusBadge';
+import { DataTable, DataTableHeadBarOptions } from '@/components/ui/data-table';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { i18nKey } from '@/utils/datatable';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { APP_PATH } from '@/utils/path/constant';
 import { MoreVertIcon } from '@filigran/icon';
-import { DataTable, DataTableHeadBarOptions } from '@filigran/ui';
 import {
   useVotingRoundsListQuery,
   VotingRoundRowFragment,
@@ -107,7 +107,7 @@ const VotingRounds = () => {
         columns={columns}
         data={rounds}
         isLoading={isLoading}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         tableState={{ columnPinning: { right: ['actions'] } }}
         onClickRow={({ original }) =>
           router.push(`/${APP_PATH}/admin/voting-rounds/${original.id}`)

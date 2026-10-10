@@ -4,7 +4,7 @@ import {
   RemovePendingUserBulkMutation,
   RemovePendingUserMutation,
 } from '@/components/admin/user/pending-user/pending-user.graphql';
-import { SelectionState } from '@filigran/ui';
+import { SelectionState } from '@/components/ui/data-table';
 import { PendingUserListAcceptUserMutation$data } from '@generated/PendingUserListAcceptUserMutation.graphql';
 import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { FilterKey } from '@graphql/generated';

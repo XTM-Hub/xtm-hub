@@ -16,9 +16,10 @@ import {
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useContext, useMemo } from 'react';
 
+import { DataTable } from '@/components/ui/data-table';
 import useScrollPosition from '@/hooks/use-scroll-position';
 import { useTranslate } from '@/hooks/use-translate';
-import { DataTable } from '@filigran/ui';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { useRouter } from 'next/navigation';
 
 interface DocumentListProps {
@@ -69,6 +70,7 @@ const DocumentList = ({
       ) : (
         <div className={DOCUMENT_LIST_TABLE_CLASS_NAME}>
           <DataTable
+            {...getDataTableLabels(t)}
             columns={tableColumns}
             data={documents}
             toolbar={<></>}

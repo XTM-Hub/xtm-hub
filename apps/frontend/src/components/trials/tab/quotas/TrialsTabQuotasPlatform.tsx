@@ -1,10 +1,11 @@
 'use client';
 import { TrialsTabQuotasPlatformUpdate } from '@/components/trials/tab/quotas/TrialsTabQuotasPlatformUpdate';
 import { trialsRegionKey } from '@/components/trials/trials.const';
+import { DataTable } from '@/components/ui/data-table';
 import { useUserHasPortalCapability } from '@/hooks/use-portal-capability';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
-import { DataTable } from '@filigran/ui';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { trialsQuotasKeys } from '@graphql/deployment/deployment.keys';
 import {
   PortalCapability,
@@ -72,6 +73,7 @@ export const TrialsTabQuotasPlatform = () => {
   return (
     <>
       <DataTable
+        {...getDataTableLabels(t)}
         columns={columns}
         data={dataTableData}
         onClickRow={(row) => setQuotaEdit(row.original)}

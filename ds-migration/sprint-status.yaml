@@ -89,8 +89,8 @@ development_status:
   3698-accordion: done
   3699-sheet: done
   3702-markdown-renderer: done
-  3703-carousel: review
-  3705-data-table: backlog
+  3703-carousel: done
+  3705-data-table: review
   3706-form: backlog
   3707-auto-form: backlog
 

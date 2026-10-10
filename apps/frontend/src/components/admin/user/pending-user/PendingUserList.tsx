@@ -12,6 +12,12 @@ import {
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
+  DataTable,
+  DataTableHeadBarOptions,
+  SelectionState,
+  useRowSelection,
+} from '@/components/ui/data-table';
+import {
   handleSortingChange,
   mapToSortingTableValue,
   transformSortingValueToParams,
@@ -19,15 +25,9 @@ import {
 import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
-import { i18nKey } from '@/utils/datatable';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { IconButton, SearchField } from '@filigran/design-system';
 import { CheckIcon, CloseIcon } from '@filigran/icon';
-import {
-  DataTable,
-  DataTableHeadBarOptions,
-  SelectionState,
-  useRowSelection,
-} from '@filigran/ui';
 import {
   UserList_fragment$data,
   UserList_fragment$key,
@@ -286,7 +286,7 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
       <DataTable
         columns={columns}
         data={userData}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         onResetTable={resetAll}
         selectionOptions={{
           selectionState: {

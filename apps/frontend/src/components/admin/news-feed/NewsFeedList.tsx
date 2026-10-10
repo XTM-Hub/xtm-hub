@@ -7,17 +7,17 @@ import {
 } from '@/components/admin/news-feed/news-feed.graphql';
 import BadgeOverflowCounter from '@/components/ui/BadgeOverflowCounter';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { DataTable } from '@/components/ui/data-table';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
-import { i18nKey } from '@/utils/datatable';
 import { useDateFormatter } from '@/utils/date';
+import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { localizedCardName } from '@/utils/services';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
 import { Chip } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
-import { DataTable } from '@filigran/ui';
 import { newsFeedDeleteMutation } from '@generated/newsFeedDeleteMutation.graphql';
 import {
   newsFeedItem_fragment$data,
@@ -203,7 +203,7 @@ const NewsFeedList = () => {
       <DataTable
         columns={columns}
         data={newsFeedData}
-        i18nKey={i18nKey(t)}
+        {...getDataTableLabels(t)}
         tableOptions={{
           onPaginationChange,
           manualPagination: true,
