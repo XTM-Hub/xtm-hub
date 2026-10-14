@@ -20,6 +20,10 @@ export const VERSIONS_MATRIX_ERRORS = {
     message: 'The versions matrix is only available for the opencti product',
     status: 404,
   },
+  FeatureNotAvailable: {
+    message: 'The versions matrix is not available',
+    status: 404,
+  },
   InvalidVersionFormat: { message: 'Invalid version format', status: 400 },
   InvalidFormat: {
     message: 'Invalid format, expected "json", "env" or "csv"',

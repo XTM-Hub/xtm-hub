@@ -1,11 +1,15 @@
 import cors from 'cors';
 import { Express, Request, Response } from 'express';
 import rateLimit, { type Options } from 'express-rate-limit';
-import { PlatformIdentifier } from '../../../__generated__/resolvers-types';
+import {
+  FeatureFlag,
+  PlatformIdentifier,
+} from '../../../__generated__/resolvers-types';
 import { DocumentDomain } from '../../../modules/document/domain/document.domain';
 import { ManageProductVersionDomain } from '../../../modules/manage-product-version/manage-product-version.domain';
 import { ManifestFragmentHelper } from '../../../modules/shareable-resource/manifest-fragment/manifest-fragment.helper';
 import { logApp } from '../../../utils/app-logger.util';
+import { requireFeatureFlag } from '../shared/feature-flag-guard.util';
 import { buildIpRateLimiterOptions } from '../shared/ip-rate-limit.util';
 import { isProduct } from '../shared/product.util';
 import {
@@ -43,6 +47,12 @@ export const buildVersionsMatrixRateLimiterOptions = (): Partial<Options> =>
 
 const versionsMatrixRateLimiter = rateLimit(
   buildVersionsMatrixRateLimiterOptions()
+);
+
+export const versionsMatrixFeatureGuard = requireFeatureFlag(
+  FeatureFlag.DecouplingConnectors,
+  (res) =>
+    sendVersionsMatrixError(res, VERSIONS_MATRIX_ERRORS.FeatureNotAvailable)
 );
 
 type Result<T> =
@@ -300,6 +310,7 @@ export const versionsMatrixEndpoint = (app: Express) => {
     '/:product/versions-matrix',
     versionsMatrixRateLimiter,
     cors(),
+    versionsMatrixFeatureGuard,
     VersionsMatrixEndpoint.getMatrix
   );
 };

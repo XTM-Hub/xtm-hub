@@ -16,6 +16,7 @@ describe('sendVersionsMatrixError', () => {
   it.each([
     { error: VERSIONS_MATRIX_ERRORS.InvalidProduct, status: 400 },
     { error: VERSIONS_MATRIX_ERRORS.UnsupportedProduct, status: 404 },
+    { error: VERSIONS_MATRIX_ERRORS.FeatureNotAvailable, status: 404 },
     { error: VERSIONS_MATRIX_ERRORS.InvalidFormat, status: 400 },
     {
       error: VERSIONS_MATRIX_ERRORS.NoRegisteredVersion,

@@ -1,4 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import {
+  LicenseType,
+  ManifestType,
+  type ManifestFragmentInput,
+} from '../../../__generated__/resolvers-types';
 import { BadRequestErrorCode } from '../../../utils/error/error.code';
 import {
   ManifestFragmentHelper,
@@ -321,6 +326,81 @@ describe('parseContact', () => {
       const result = ManifestFragmentHelper.parseContact(value);
       // Then no error is raised and nothing is stored
       expect(result).toBeUndefined();
+    }
+  );
+});
+
+describe('validateManifestFragment', () => {
+  const VALID_VERSION = '7.260309.0-lts.5';
+  const VALID_CONTACT = 'https://github.com/some-contributor';
+
+  const makeFragment = (
+    overrides: Partial<ManifestFragmentInput> = {}
+  ): ManifestFragmentInput => ({
+    id: 'abc123',
+    title: 'MISP',
+    slug: 'misp',
+    description: 'The MISP connector.',
+    short_description: 'Import threat intelligence from MISP.',
+    logo: 'SGVsbG8sIFdvcmxkIQ==',
+    use_cases: [],
+    min_version: '7.260507.0',
+    version: VALID_VERSION,
+    image_name: 'opencti/connector-misp',
+    image_type: 'EXTERNAL_IMPORT',
+    manager_supported: true,
+    source_code: 'https://github.com/OpenCTI-Platform/connectors',
+    platform: 'OpenCTI',
+    integration_type: ManifestType.Connector,
+    license_type: LicenseType.Commercial,
+    contact: `  ${VALID_CONTACT}  `,
+    additional_properties: {},
+    config_schema: {},
+    solution_categories: ['Threat Intelligence'],
+    ...overrides,
+  });
+
+  it('should return the formatted version, license type and trimmed contact when the fragment is valid', () => {
+    // Given
+    const fragment = makeFragment();
+
+    // When
+    const result = ManifestFragmentHelper.validateManifestFragment(fragment);
+
+    // Then
+    expect(result).toEqual({
+      formattedVersion: '007.260309.000.LTS.005',
+      licenseType: LicenseType.Commercial,
+      contact: VALID_CONTACT,
+    });
+  });
+
+  it.each`
+    overrides                                          | expectedError                                       | description
+    ${{ integration_type: 'third_party_integration' }} | ${BadRequestErrorCode.IntegrationTypeNotRecognized} | ${'integration_type is not connector'}
+    ${{ min_version: '>= 7.260507.0' }}                | ${BadRequestErrorCode.InvalidManifestVersionFormat} | ${'min_version format is invalid'}
+    ${{ short_description: 'a'.repeat(251) }}          | ${BadRequestErrorCode.ShortDescriptionTooLong}      | ${'short_description is too long'}
+    ${{ solution_categories: [] }}                     | ${BadRequestErrorCode.SolutionCategoriesRequired}   | ${'solution_categories is empty'}
+    ${{ contact: 'a'.repeat(MAX_CONTACT_LENGTH + 1) }} | ${BadRequestErrorCode.ContactTooLong}               | ${'contact is too long'}
+    ${{ version: '7.260309' }}                         | ${BadRequestErrorCode.InvalidManifestVersionFormat} | ${'version format is invalid'}
+  `(
+    'should throw $expectedError when $description',
+    ({
+      overrides,
+      expectedError,
+    }: {
+      overrides: Partial<ManifestFragmentInput>;
+      expectedError: BadRequestErrorCode;
+    }) => {
+      // Given
+      const fragment = makeFragment(overrides);
+
+      // When
+      const call = () =>
+        ManifestFragmentHelper.validateManifestFragment(fragment);
+
+      // Then
+      expect(call).toThrow(expectedError);
     }
   );
 });

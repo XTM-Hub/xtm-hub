@@ -5,7 +5,6 @@ import {
   DocumentSourceType,
   IntegrationType,
   LicenseType,
-  ManifestType,
   type ManifestFragmentInput,
 } from '../../../__generated__/resolvers-types';
 import { withTransaction } from '../../../context/database.context';
@@ -159,23 +158,8 @@ export const ManifestFragmentDomain = {
   ingestManifestFragment: async (
     fragment: ManifestFragmentInput
   ): Promise<void> => {
-    if (fragment.integration_type !== ManifestType.Connector) {
-      throw new Error(BadRequestErrorCode.IntegrationTypeNotRecognized);
-    }
-
-    ManifestFragmentHelper.validateAndFormatManifestVersion(
-      fragment.min_version
-    );
-    ManifestFragmentHelper.validateShortDescriptionLength(
-      fragment.short_description
-    );
-    ManifestFragmentHelper.validateSolutionCategories(
-      fragment.solution_categories
-    );
-    const licenseType = fragment.license_type ?? undefined;
-    const contact = ManifestFragmentHelper.parseContact(fragment.contact);
-    const formattedVersion =
-      ManifestFragmentHelper.validateAndFormatManifestVersion(fragment.version);
+    const { formattedVersion, licenseType, contact } =
+      ManifestFragmentHelper.validateManifestFragment(fragment);
     const latestTag =
       ManifestFragmentHelper.getLatestTagForConnectorVersion(formattedVersion);
 

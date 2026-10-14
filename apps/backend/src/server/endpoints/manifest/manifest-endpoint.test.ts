@@ -31,7 +31,7 @@ import {
   PlatformIdentifier,
 } from '../../../__generated__/resolvers-types';
 import { StorageUnavailableError } from '../../../thirdparty/minio/storage-error';
-import { ManifestEndpoint } from './manifest-endpoint';
+import { ManifestEndpoint, manifestFeatureGuard } from './manifest-endpoint';
 
 const buildResponse = () => ({
   headersSent: false,
@@ -385,5 +385,35 @@ describe('listManifests', () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(loadManifestsMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('manifestEndpoint while decoupled connectors are paused', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should answer 404 without any database or storage access', () => {
+    // Given
+    const res = buildResponse();
+    const next = vi.fn();
+
+    // When
+    manifestFeatureGuard(
+      buildRequest({ ...VALID, name: VALID_NAME }),
+      res as unknown as Response,
+      next
+    );
+
+    // Then
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({
+      code: 404,
+      message: 'Manifests are not available',
+    });
+    expect(next).not.toHaveBeenCalled();
+    expect(loadManifestsMock).not.toHaveBeenCalled();
+    expect(getManifestByNameMock).not.toHaveBeenCalled();
+    expect(downloadFileMock).not.toHaveBeenCalled();
   });
 });

@@ -1,14 +1,11 @@
 export async function seed(knex) {
-  // Registered OpenCTI versions, used as the default version resolved by
-  // /opencti/:version/versions-matrix when the `version` query parameter is
-  // omitted (the highest version_padded wins), and as the suggestions for
-  // the "OpenCTI compatibility version" document filter. Several versions
-  // are registered so switching `version_padded` order is easy to verify,
-  // and they are real OpenCTI tags: 6.x is semver, 7.x is calver (first tag
-  // 7.260224.0). They match the connector requirements seeded in
-  // 10-development-connector-metadata.js and the `product_version` document
-  // metadata of 03-development-document-metadata.js (e.g. 6.5.2, 6.8.4) so
-  // the compatibility filter has a visible effect locally.
+  // Registered OpenCTI versions, used as the suggestions for the "OpenCTI
+  // compatibility version" document filter. Several versions are registered
+  // so switching `version_padded` order is easy to verify, and they are real
+  // OpenCTI tags: 6.x is semver, 7.x is calver (first tag 7.260224.0). They
+  // match the `product_version` document metadata of
+  // 03-development-document-metadata.js (e.g. 6.5.2, 6.8.4) so the
+  // compatibility filter has a visible effect locally.
   await knex('ProductVersion')
     .insert([
       {

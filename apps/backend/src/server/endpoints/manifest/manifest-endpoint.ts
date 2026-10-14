@@ -2,13 +2,17 @@ import cors from 'cors';
 import { Express, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import { Readable } from 'stream';
-import { PlatformIdentifier } from '../../../__generated__/resolvers-types';
+import {
+  FeatureFlag,
+  PlatformIdentifier,
+} from '../../../__generated__/resolvers-types';
 import { ManifestDomain } from '../../../modules/shareable-resource/manifest/manifest.domain';
 import { ManifestHelper } from '../../../modules/shareable-resource/manifest/manifest.helper';
 import { MinIOClient } from '../../../thirdparty/minio/client';
 import { StorageUnavailableError } from '../../../thirdparty/minio/storage-error';
 import { logApp } from '../../../utils/app-logger.util';
 import { getErrorMessage } from '../../../utils/error/error-guard.util';
+import { requireFeatureFlag } from '../shared/feature-flag-guard.util';
 import {
   MANIFEST_ERRORS,
   sendManifestError,
@@ -23,6 +27,11 @@ import {
 } from './manifest-endpoint.utils';
 
 const manifestRateLimiter = rateLimit(buildManifestRateLimiterOptions());
+
+export const manifestFeatureGuard = requireFeatureFlag(
+  FeatureFlag.DecouplingConnectors,
+  (res) => sendManifestError(res, MANIFEST_ERRORS.FeatureNotAvailable)
+);
 
 export const ManifestEndpoint = {
   listManifests: async (req: Request, res: Response): Promise<void> => {
@@ -191,18 +200,21 @@ export const manifestEndpoint = (app: Express) => {
     '/:product/:version/:integrationType/manifests',
     manifestRateLimiter,
     cors(),
+    manifestFeatureGuard,
     ManifestEndpoint.listManifests
   );
   app.get(
     '/:product/:version/:integrationType/manifests/latest',
     manifestRateLimiter,
     cors(),
+    manifestFeatureGuard,
     ManifestEndpoint.downloadLatestManifest
   );
   app.get(
     '/:product/:version/:integrationType/manifests/:name',
     manifestRateLimiter,
     cors(),
+    manifestFeatureGuard,
     ManifestEndpoint.downloadManifestByName
   );
 };

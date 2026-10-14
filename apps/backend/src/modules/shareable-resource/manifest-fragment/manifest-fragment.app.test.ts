@@ -1,4 +1,13 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+  type MockInstance,
+} from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import {
   ManifestType,
@@ -11,6 +20,8 @@ import { requestContext } from '../../../context/request.context';
 import type { DocumentId } from '../../../model/kanel/public/Document';
 import { SYSTEM_USER_CONTEXT } from '../../../portal.const';
 import { minioInit } from '../../../server/initialize';
+import { BadRequestErrorCode } from '../../../utils/error/error.code';
+import * as FeatureFlagUtil from '../../../utils/feature-flag.util';
 import { ManifestRebuildQueueStatus } from '../manifest/manifest.consts';
 import { ManifestHelper } from '../manifest/manifest.helper';
 import { ManifestFragmentApp } from './manifest-fragment.app';
@@ -31,7 +42,18 @@ describe('manifestFragmentApp', () => {
     ],
   };
 
+  let isFeatureEnabledSpy: MockInstance<
+    typeof FeatureFlagUtil.isFeatureEnabled
+  > | null = null;
+  const enableDecouplingConnectors = () => {
+    isFeatureEnabledSpy = vi
+      .spyOn(FeatureFlagUtil, 'isFeatureEnabled')
+      .mockReturnValue(true);
+  };
+
   afterEach(async () => {
+    isFeatureEnabledSpy?.mockRestore();
+    isFeatureEnabledSpy = null;
     if (createdDocumentIds.length > 0) {
       for (const documentId of createdDocumentIds) {
         await TestHelper.documentMetadata.delete({
@@ -110,6 +132,7 @@ describe('manifestFragmentApp', () => {
   describe('orchestration', () => {
     beforeEach(() => {
       requestContext.set({ user: manifestIngestionUser });
+      enableDecouplingConnectors();
       // These DB-integration tests only assert on ManifestRebuildQueue rows;
       // the pg-boss debounce trigger itself is covered in manifest.helper.test.ts.
       vi.spyOn(ManifestHelper, 'scheduleDebouncedRebuild').mockResolvedValue(
@@ -276,6 +299,35 @@ describe('manifestFragmentApp', () => {
       });
     });
 
+    it('should not ingest any fragment of the batch when one of them is invalid', async () => {
+      // Given
+      const validSlug = 'misp-batch-valid';
+      const args: MutationIngestManifestFragmentsArgs = {
+        manifestFragments: [
+          buildManifestFragment({ id: 'batch-valid', slug: validSlug }),
+          {
+            ...buildManifestFragment({
+              id: 'batch-invalid',
+              slug: 'misp-batch-invalid',
+            }),
+            short_description: 'a'.repeat(251),
+          },
+        ],
+      };
+
+      // When
+      const call = ManifestFragmentApp.ingestManifestFragments(args);
+
+      // Then
+      await expect(call).rejects.toThrow(
+        BadRequestErrorCode.ShortDescriptionTooLong
+      );
+      const createdDocument = await TestHelper.document.load({
+        slug: validSlug,
+      });
+      expect(createdDocument).toBeUndefined();
+    });
+
     it('rejects the call when the batch mixes LTS and non-LTS fragments', async () => {
       const args: MutationIngestManifestFragmentsArgs = {
         manifestFragments: [
@@ -301,6 +353,7 @@ describe('manifestFragmentApp', () => {
   describe('use case linking', () => {
     beforeEach(() => {
       requestContext.set({ user: manifestIngestionUser });
+      enableDecouplingConnectors();
     });
 
     it('should not create an unknown use case referenced by the manifest fragment', async () => {
@@ -323,6 +376,64 @@ describe('manifestFragmentApp', () => {
         object_id: createdDocument!.id,
       });
       expect(links).toHaveLength(0);
+    });
+  });
+
+  describe('while decoupled connectors are paused', () => {
+    const PAUSED_SLUG = 'misp-paused';
+    const IMPACTED_MANIFEST_VERSION = '7.260507.0';
+
+    beforeEach(() => {
+      requestContext.set({ user: manifestIngestionUser });
+      vi.spyOn(ManifestHelper, 'scheduleDebouncedRebuild').mockResolvedValue(
+        undefined
+      );
+    });
+
+    it('should validate the fragments but store nothing and schedule no rebuild when the batch is valid', async () => {
+      // Given
+      await TestHelper.manifest.create({
+        product: PlatformIdentifier.Opencti,
+        version: IMPACTED_MANIFEST_VERSION,
+        version_padded: '007.260507.000',
+      });
+      const args = buildArgs({
+        slug: PAUSED_SLUG,
+        minVersion: IMPACTED_MANIFEST_VERSION,
+      });
+
+      // When
+      const call = ManifestFragmentApp.ingestManifestFragments(args);
+
+      // Then
+      await expect(call).resolves.toBeUndefined();
+      const createdDocument = await TestHelper.document.load({
+        slug: PAUSED_SLUG,
+      });
+      expect(createdDocument).toBeUndefined();
+      const queuedRows = await TestHelper.manifestRebuildQueue.loadAll({});
+      expect(queuedRows).toHaveLength(0);
+      expect(ManifestHelper.scheduleDebouncedRebuild).not.toHaveBeenCalled();
+    });
+
+    it('should still reject a malformed fragment', async () => {
+      // Given
+      const args: MutationIngestManifestFragmentsArgs = {
+        manifestFragments: [
+          {
+            ...buildManifestFragment({ slug: PAUSED_SLUG }),
+            short_description: 'a'.repeat(251),
+          },
+        ],
+      };
+
+      // When
+      const call = ManifestFragmentApp.ingestManifestFragments(args);
+
+      // Then
+      await expect(call).rejects.toThrow(
+        BadRequestErrorCode.ShortDescriptionTooLong
+      );
     });
   });
 });
