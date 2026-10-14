@@ -80,6 +80,10 @@ const resolvers: Resolvers = {
       RegistrationApp.loadRegisteredSaasPlatformMetadata(
         input.service_instance_id
       ),
+    registeredSaasPlatformMetrics: async (_, { input }) =>
+      RegistrationApp.loadRegisteredSaasPlatformMetrics(
+        input.service_instance_id
+      ),
     registeredPlatforms: async (_, { input }) =>
       RegistrationApp.loadRegisteredPlatforms(input),
     saasPlatforms: async (_, args) => RegistrationApp.loadSaasPlatforms(args),

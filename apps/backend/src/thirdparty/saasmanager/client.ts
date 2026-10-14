@@ -78,4 +78,33 @@ export const SaasManagerClient = {
       `Bearer ${await provider.getAccessToken()}`
     );
   },
+
+  async callInstanceMetricsApi(platform_id: string): Promise<Response> {
+    const baseUrl = config.get<string | null>('saas_manager.url');
+    if (!baseUrl) {
+      throw new Error('SaaS Manager URL is not configured');
+    }
+
+    const url = new URL(
+      `${SAAS_MANAGER_INSTANCE_PATH}${encodeURIComponent(platform_id)}/metrics`,
+      baseUrl
+    );
+
+    const clientId = config.get<string | null>('saas_manager.client_id');
+    if (!clientId) {
+      throw new Error('SaaS Manager client ID is not configured');
+    }
+
+    const provider = getTokenProvider(baseUrl, clientId);
+    const accessToken = await provider.getAccessToken();
+    const response = await sendRequest(url, 'GET', `Bearer ${accessToken}`);
+    if (response.status !== 401) {
+      return response;
+    }
+
+    // The token may have been revoked before its expiry: renew it and retry once, never more.
+    await response.body?.cancel();
+    provider.invalidate(accessToken);
+    return sendRequest(url, 'GET', `Bearer ${await provider.getAccessToken()}`);
+  },
 };

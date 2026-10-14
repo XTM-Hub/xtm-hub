@@ -20,6 +20,9 @@ import {
   RegisteredPlatformsInput,
   RegisterPlatformInput,
   SaasPlatformMetadata,
+  SaasPlatformMetricPoint,
+  SaasPlatformMetrics,
+  SaasPlatformMetricSeries,
   ServiceDefinitionIdentifier,
   ServiceInstanceCreationStatus,
   UnregisterPlatformInput,
@@ -121,41 +124,112 @@ interface CachedSaasPlatformMetadata {
 
 const saasPlatformMetadataCache = new Map<string, CachedSaasPlatformMetadata>();
 
-const readMetadataString = (
+// The SaaS Manager is an external service: every field it sends is checked before it reaches the schema.
+const toRecord = (value: unknown): Record<string, unknown> =>
+  typeof value === 'object' && value !== null ? { ...value } : {};
+
+const readSaasManagerString = (
   body: Record<string, unknown>,
-  key: keyof SaasPlatformMetadata
+  key: string
 ): string | null => {
   const value = body[key];
   return typeof value === 'string' && value !== '' ? value : null;
 };
 
-const readMetadataDate = (
-  body: Record<string, unknown>,
-  key: 'start_date' | 'end_date'
-): string | null => {
-  const value = readMetadataString(body, key);
-  if (value === null) {
+const toIsoDate = (value: unknown): string | null => {
+  if (typeof value !== 'string' || value === '') {
     return null;
   }
   const time = Date.parse(value);
-  if (Number.isNaN(time)) {
+  return Number.isNaN(time) ? null : new Date(time).toISOString();
+};
+
+const readSaasManagerDate = (
+  body: Record<string, unknown>,
+  key: string
+): string | null => {
+  const value = readSaasManagerString(body, key);
+  if (value === null) {
+    return null;
+  }
+  const date = toIsoDate(value);
+  if (date === null) {
     logApp.warn('The SaaS Manager returned an unparseable platform date', {
       field: key,
     });
-    return null;
   }
-  return new Date(time).toISOString();
+  return date;
 };
 
 const parseSaasPlatformMetadata = (body: unknown): SaasPlatformMetadata => {
-  const fields: Record<string, unknown> =
-    typeof body === 'object' && body !== null ? { ...body } : {};
+  const fields = toRecord(body);
   return {
-    hostname: readMetadataString(fields, 'hostname'),
-    plan: readMetadataString(fields, 'plan'),
-    start_date: readMetadataDate(fields, 'start_date'),
-    end_date: readMetadataDate(fields, 'end_date'),
-    region: readMetadataString(fields, 'region'),
+    hostname: readSaasManagerString(fields, 'hostname'),
+    plan: readSaasManagerString(fields, 'plan'),
+    start_date: readSaasManagerDate(fields, 'start_date'),
+    end_date: readSaasManagerDate(fields, 'end_date'),
+    region: readSaasManagerString(fields, 'region'),
+  };
+};
+
+const parseSaasPlatformMetricPoint = (
+  point: unknown
+): SaasPlatformMetricPoint | null => {
+  const fields = toRecord(point);
+  const t = toIsoDate(fields.t);
+  if (t === null) {
+    return null;
+  }
+  const v = fields.v;
+  return { t, v: typeof v === 'number' && Number.isFinite(v) ? v : null };
+};
+
+const parseSaasPlatformMetricSeries = (
+  series: unknown
+): SaasPlatformMetricSeries | null => {
+  const fields = toRecord(series);
+  const metricType = readSaasManagerString(fields, 'metric_type');
+  if (metricType === null) {
+    return null;
+  }
+  const rawPoints = Array.isArray(fields.points) ? fields.points : [];
+  const points = rawPoints
+    .map(parseSaasPlatformMetricPoint)
+    .filter((point) => point !== null);
+  // One warning per series, not per point: a format drift would otherwise flood the logs.
+  if (points.length < rawPoints.length) {
+    logApp.warn(
+      'The SaaS Manager returned metric points without a valid date',
+      {
+        metricType,
+        droppedPoints: rawPoints.length - points.length,
+      }
+    );
+  }
+  return { metric_type: metricType, points };
+};
+
+const parseSaasPlatformMetrics = (
+  platformId: string,
+  body: unknown
+): SaasPlatformMetrics => {
+  const fields = toRecord(body);
+  const rawSeries = Array.isArray(fields.series) ? fields.series : [];
+  const series = rawSeries
+    .map(parseSaasPlatformMetricSeries)
+    .filter((entry) => entry !== null);
+  if (series.length < rawSeries.length) {
+    logApp.warn('The SaaS Manager returned metric series without a type', {
+      droppedSeries: rawSeries.length - series.length,
+    });
+  }
+  return {
+    // The Hub's own platform_id, never the one echoed back by the SaaS Manager.
+    platform_id: platformId,
+    start: readSaasManagerDate(fields, 'start'),
+    end: readSaasManagerDate(fields, 'end'),
+    resolution: readSaasManagerString(fields, 'resolution'),
+    series,
   };
 };
 
@@ -181,6 +255,35 @@ const fetchSaasPlatformMetadata = async (
     return parseSaasPlatformMetadata(await response.json());
   } catch (error) {
     logApp.error('Unable to load the platform metadata from the SaaS Manager', {
+      serviceInstanceId,
+      platformId,
+      error,
+    });
+    return null;
+  }
+};
+
+// Metrics change continuously, so unlike the metadata they are never cached.
+const fetchSaasPlatformMetrics = async (
+  serviceInstanceId: ServiceInstanceId,
+  platformId: string
+): Promise<SaasPlatformMetrics | null> => {
+  try {
+    const response = await SaasManagerClient.callInstanceMetricsApi(platformId);
+    if (!response.ok) {
+      logApp.error(
+        'Unable to load the platform metrics from the SaaS Manager',
+        {
+          serviceInstanceId,
+          platformId,
+          status: response.status,
+        }
+      );
+      return null;
+    }
+    return parseSaasPlatformMetrics(platformId, await response.json());
+  } catch (error) {
+    logApp.error('Unable to load the platform metrics from the SaaS Manager', {
       serviceInstanceId,
       platformId,
       error,
@@ -337,6 +440,20 @@ export const RegistrationApp = {
       serviceInstanceId,
       platform.platform_id
     );
+  },
+
+  loadRegisteredSaasPlatformMetrics: async (
+    serviceInstanceId: ServiceInstanceId
+  ): Promise<SaasPlatformMetrics | null> => {
+    // Same guard as the metadata: only a platform the user can access, with
+    // the platform_id stored in the Hub, ever reaches the SaaS Manager.
+    const [platform] =
+      await RegistrationDomain.loadRegisteredPlatform(serviceInstanceId);
+    if (!platform) {
+      return null;
+    }
+
+    return fetchSaasPlatformMetrics(serviceInstanceId, platform.platform_id);
   },
 
   loadRegisteredPlatforms: async (

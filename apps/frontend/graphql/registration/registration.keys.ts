@@ -1,8 +1,10 @@
 import {
   type RegisteredPlatformsQueryVariables,
   type RegisteredSaasPlatformMetadataQueryVariables,
+  type RegisteredSaasPlatformMetricsQueryVariables,
   useRegisteredPlatformsQuery,
   useRegisteredSaasPlatformMetadataQuery,
+  useRegisteredSaasPlatformMetricsQuery,
 } from '@graphql/generated';
 
 export const registrationKeys = {
@@ -12,4 +14,7 @@ export const registrationKeys = {
   registeredSaasPlatformMetadata: (
     variables: RegisteredSaasPlatformMetadataQueryVariables
   ) => useRegisteredSaasPlatformMetadataQuery.getKey(variables),
+  registeredSaasPlatformMetrics: (
+    variables: RegisteredSaasPlatformMetricsQueryVariables
+  ) => useRegisteredSaasPlatformMetricsQuery.getKey(variables),
 };

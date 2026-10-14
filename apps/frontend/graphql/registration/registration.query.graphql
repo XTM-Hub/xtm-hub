@@ -21,3 +21,19 @@ query RegisteredSaasPlatformMetadata($input: RegisteredPlatformInput!) {
     region
   }
 }
+
+query RegisteredSaasPlatformMetrics($input: RegisteredPlatformInput!) {
+  registeredSaasPlatformMetrics(input: $input) {
+    platform_id
+    start
+    end
+    resolution
+    series {
+      metric_type
+      points {
+        t
+        v
+      }
+    }
+  }
+}

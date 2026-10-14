@@ -1513,6 +1513,446 @@ describe('registration app', () => {
     });
   });
 
+  describe('loadRegisteredSaasPlatformMetrics', () => {
+    const cpuSeries = {
+      metric_type: 'cpu',
+      points: [
+        { t: '2026-10-01T00:00:00.000Z', v: 12.5 },
+        { t: '2026-10-01T01:00:00.000Z', v: null },
+      ],
+    };
+    const memorySeries = {
+      metric_type: 'memory',
+      points: [{ t: '2026-10-01T00:00:00.000Z', v: 2048 }],
+    };
+    const fullMetrics = {
+      start: '2026-10-01T00:00:00.000Z',
+      end: '2026-10-14T00:00:00.000Z',
+      resolution: '1h',
+      series: [cpuSeries, memorySeries],
+    };
+    const emptyMetrics = {
+      start: null,
+      end: null,
+      resolution: null,
+      series: [],
+    };
+
+    let platformId: string;
+    let serviceInstanceId: ServiceInstanceId;
+
+    beforeEach(async () => {
+      requestContext.set(requestContextRegistererUserSecondOrga);
+      platformId = uuidv4();
+      serviceInstanceId = await RegistrationDomain.registerNewPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        serviceDefinitionId: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+        configuration: {
+          registerer_id:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+          platform_id: platformId,
+          platform_url: 'http://example.com',
+          platform_title: 'My OpenCTI SaaS platform',
+          platform_contract: PlatformContract.Ee,
+          platform_version: '6.7.17',
+          token: uuidv4(),
+          commercial_model: CommercialModel.Saas,
+        },
+        platformIdentifier: PlatformIdentifier.Opencti,
+      });
+    });
+
+    afterEach(async () => {
+      vi.restoreAllMocks();
+      await PlatformConfigurationDomain.deleteConfigurationBy({
+        service_instance_id: serviceInstanceId,
+      });
+      await ServiceInstanceDomain.deleteServiceInstanceBy({
+        id: serviceInstanceId,
+      });
+    });
+
+    const mockSaasManagerResponse = (response: () => Promise<Response>) =>
+      vi
+        .spyOn(SaasManagerClient, 'callInstanceMetricsApi')
+        .mockImplementation(response);
+
+    const mockSaasManagerBody = (body: unknown) =>
+      mockSaasManagerResponse(
+        async () =>
+          ({
+            ok: true,
+            status: 200,
+            json: async () => body,
+          }) as Response
+      );
+
+    const mockSaasManagerFullMetrics = () => mockSaasManagerBody(fullMetrics);
+
+    it('should ask the SaaS Manager for the metrics of the platform_id of the registered platform', async () => {
+      // Given
+      const callSpy = mockSaasManagerFullMetrics();
+
+      // When
+      await RegistrationApp.loadRegisteredSaasPlatformMetrics(
+        serviceInstanceId
+      );
+
+      // Then
+      expect(callSpy).toHaveBeenCalledExactlyOnceWith(platformId);
+    });
+
+    it('should return the metrics sent by the SaaS Manager with the platform_id stored in the Hub', async () => {
+      // Given
+      mockSaasManagerBody({
+        ...fullMetrics,
+        platform_id: 'platform-id-sent-by-the-saas-manager',
+        unexpected: 'ignored',
+      });
+
+      // When
+      const metrics =
+        await RegistrationApp.loadRegisteredSaasPlatformMetrics(
+          serviceInstanceId
+        );
+
+      // Then
+      expect(metrics).toEqual({ platform_id: platformId, ...fullMetrics });
+    });
+
+    it.each`
+      case                         | body
+      ${'the body is null'}        | ${null}
+      ${'the body is an array'}    | ${[fullMetrics]}
+      ${'the body is empty'}       | ${{}}
+      ${'the fields are explicit'} | ${emptyMetrics}
+    `('should return empty metrics when $case', async ({ body }) => {
+      // Given
+      mockSaasManagerBody(body);
+
+      // When
+      const metrics =
+        await RegistrationApp.loadRegisteredSaasPlatformMetrics(
+          serviceInstanceId
+        );
+
+      // Then
+      expect(metrics).toEqual({ platform_id: platformId, ...emptyMetrics });
+    });
+
+    it.each`
+      case                     | fields
+      ${'an unparseable date'} | ${{ start: 'not a date', end: '2026-13-45' }}
+      ${'non-string values'}   | ${{ start: 1759276800000, end: true, resolution: 3600 }}
+      ${'empty strings'}       | ${{ start: '', end: '', resolution: '' }}
+    `(
+      'should return null for the fields the SaaS Manager sends as $case',
+      async ({ fields }) => {
+        // Given
+        mockSaasManagerBody({ ...fullMetrics, ...fields });
+
+        // When
+        const metrics =
+          await RegistrationApp.loadRegisteredSaasPlatformMetrics(
+            serviceInstanceId
+          );
+
+        // Then
+        expect(metrics).toEqual({
+          platform_id: platformId,
+          ...fullMetrics,
+          ...Object.fromEntries(Object.keys(fields).map((key) => [key, null])),
+        });
+      }
+    );
+
+    it('should return the dates sent by the SaaS Manager as ISO strings', async () => {
+      // Given
+      mockSaasManagerBody({
+        ...fullMetrics,
+        start: '2026-10-01T02:00:00+02:00',
+        end: '2026-10-14',
+        series: [
+          {
+            metric_type: 'cpu',
+            points: [{ t: '2026-10-01T03:00:00+03:00', v: 12.5 }],
+          },
+        ],
+      });
+
+      // When
+      const metrics =
+        await RegistrationApp.loadRegisteredSaasPlatformMetrics(
+          serviceInstanceId
+        );
+
+      // Then
+      expect(metrics).toEqual({
+        platform_id: platformId,
+        ...fullMetrics,
+        series: [
+          {
+            metric_type: 'cpu',
+            points: [{ t: '2026-10-01T00:00:00.000Z', v: 12.5 }],
+          },
+        ],
+      });
+    });
+
+    it.each`
+      case           | series
+      ${'null'}      | ${null}
+      ${'a string'}  | ${'cpu'}
+      ${'an object'} | ${{ cpu: cpuSeries }}
+    `(
+      'should return no series when the SaaS Manager sends them as $case',
+      async ({ series }) => {
+        // Given
+        mockSaasManagerBody({ ...fullMetrics, series });
+
+        // When
+        const metrics =
+          await RegistrationApp.loadRegisteredSaasPlatformMetrics(
+            serviceInstanceId
+          );
+
+        // Then
+        expect(metrics).toEqual({
+          platform_id: platformId,
+          ...fullMetrics,
+          series: [],
+        });
+      }
+    );
+
+    it.each`
+      case                              | entry
+      ${'a null entry'}                 | ${null}
+      ${'a string entry'}               | ${'memory'}
+      ${'an entry without metric_type'} | ${{ points: memorySeries.points }}
+      ${'an empty metric_type'}         | ${{ ...memorySeries, metric_type: '' }}
+      ${'a non-string metric_type'}     | ${{ ...memorySeries, metric_type: 42 }}
+    `(
+      'should drop the series sent as $case and keep the others',
+      async ({ entry }) => {
+        // Given
+        mockSaasManagerBody({ ...fullMetrics, series: [cpuSeries, entry] });
+
+        // When
+        const metrics =
+          await RegistrationApp.loadRegisteredSaasPlatformMetrics(
+            serviceInstanceId
+          );
+
+        // Then
+        expect(metrics).toEqual({
+          platform_id: platformId,
+          ...fullMetrics,
+          series: [cpuSeries],
+        });
+      }
+    );
+
+    it.each`
+      case           | points
+      ${'missing'}   | ${undefined}
+      ${'null'}      | ${null}
+      ${'an object'} | ${{ t: '2026-10-01T00:00:00.000Z', v: 1 }}
+    `(
+      'should return a series without points when its points are $case',
+      async ({ points }) => {
+        // Given
+        mockSaasManagerBody({
+          ...fullMetrics,
+          series: [{ metric_type: 'cpu', points }],
+        });
+
+        // When
+        const metrics =
+          await RegistrationApp.loadRegisteredSaasPlatformMetrics(
+            serviceInstanceId
+          );
+
+        // Then
+        expect(metrics).toEqual({
+          platform_id: platformId,
+          ...fullMetrics,
+          series: [{ metric_type: 'cpu', points: [] }],
+        });
+      }
+    );
+
+    it.each`
+      case                   | point
+      ${'a null point'}      | ${null}
+      ${'a point without t'} | ${{ v: 1 }}
+      ${'an empty t'}        | ${{ t: '', v: 1 }}
+      ${'an unparseable t'}  | ${{ t: 'not a date', v: 1 }}
+      ${'a numeric t'}       | ${{ t: 1759276800000, v: 1 }}
+    `(
+      'should drop the point sent as $case and keep the others',
+      async ({ point }) => {
+        // Given
+        mockSaasManagerBody({
+          ...fullMetrics,
+          series: [
+            { metric_type: 'cpu', points: [...cpuSeries.points, point] },
+          ],
+        });
+
+        // When
+        const metrics =
+          await RegistrationApp.loadRegisteredSaasPlatformMetrics(
+            serviceInstanceId
+          );
+
+        // Then
+        expect(metrics).toEqual({
+          platform_id: platformId,
+          ...fullMetrics,
+          series: [cpuSeries],
+        });
+      }
+    );
+
+    it.each`
+      case           | v
+      ${'missing'}   | ${undefined}
+      ${'a string'}  | ${'12.5'}
+      ${'a boolean'} | ${true}
+      ${'an object'} | ${{ value: 12.5 }}
+      ${'NaN'}       | ${Number.NaN}
+      ${'infinite'}  | ${Number.POSITIVE_INFINITY}
+    `(
+      'should return a null value for a point whose value is $case',
+      async ({ v }) => {
+        // Given
+        mockSaasManagerBody({
+          ...fullMetrics,
+          series: [
+            {
+              metric_type: 'cpu',
+              points: [{ t: '2026-10-01T00:00:00.000Z', v }],
+            },
+          ],
+        });
+
+        // When
+        const metrics =
+          await RegistrationApp.loadRegisteredSaasPlatformMetrics(
+            serviceInstanceId
+          );
+
+        // Then
+        expect(metrics).toEqual({
+          platform_id: platformId,
+          ...fullMetrics,
+          series: [
+            {
+              metric_type: 'cpu',
+              points: [{ t: '2026-10-01T00:00:00.000Z', v: null }],
+            },
+          ],
+        });
+      }
+    );
+
+    it.each`
+      case                       | response
+      ${'the call fails'}        | ${() => Promise.reject(new Error('fetch failed'))}
+      ${'it returns 401'}        | ${async () => ({ ok: false, status: 401, json: async () => fullMetrics }) as Response}
+      ${'it returns 404'}        | ${async () => ({ ok: false, status: 404, json: async () => fullMetrics }) as Response}
+      ${'it returns 500'}        | ${async () => ({ ok: false, status: 500, json: async () => fullMetrics }) as Response}
+      ${'the body is malformed'} | ${async () => ({ ok: true, status: 200, json: async () => Promise.reject(new SyntaxError('Unexpected token')) }) as Response}
+    `('should return null when $case', async ({ response }) => {
+      // Given
+      mockSaasManagerResponse(response);
+
+      // When
+      const metrics =
+        await RegistrationApp.loadRegisteredSaasPlatformMetrics(
+          serviceInstanceId
+        );
+
+      // Then
+      expect(metrics).toBeNull();
+    });
+
+    it('should return null without asking the SaaS Manager when the service instance is unknown', async () => {
+      // Given
+      const callSpy = mockSaasManagerFullMetrics();
+
+      // When
+      const metrics = await RegistrationApp.loadRegisteredSaasPlatformMetrics(
+        uuidv4() as ServiceInstanceId
+      );
+
+      // Then
+      expect(metrics).toBeNull();
+      expect(callSpy).not.toHaveBeenCalled();
+    });
+
+    it('should return null without asking the SaaS Manager when the platform belongs to another organization', async () => {
+      // Given
+      const callSpy = mockSaasManagerFullMetrics();
+      requestContext.set(requestContextSimpleUserFiligran2);
+
+      // When
+      const metrics =
+        await RegistrationApp.loadRegisteredSaasPlatformMetrics(
+          serviceInstanceId
+        );
+
+      // Then
+      expect(metrics).toBeNull();
+      expect(callSpy).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['READ_SAAS_METRICS', CAPABILITY_READ_SAAS_METRICS],
+      ['BYPASS', CAPABILITY_BYPASS],
+    ])(
+      'should return the metrics of a platform of another organization when the user has %s',
+      async (_, capability) => {
+        // Given
+        const callSpy = mockSaasManagerFullMetrics();
+        requestContext.set({
+          ...requestContextSimpleUserFiligran2,
+          user: {
+            ...requestContextSimpleUserFiligran2.user,
+            capabilities: [capability],
+          },
+        });
+
+        // When
+        const metrics =
+          await RegistrationApp.loadRegisteredSaasPlatformMetrics(
+            serviceInstanceId
+          );
+
+        // Then
+        expect(metrics).toEqual({ platform_id: platformId, ...fullMetrics });
+        expect(callSpy).toHaveBeenCalledExactlyOnceWith(platformId);
+      }
+    );
+
+    it('should ask the SaaS Manager on every call since metrics are not cached', async () => {
+      // Given
+      const callSpy = mockSaasManagerFullMetrics();
+      await RegistrationApp.loadRegisteredSaasPlatformMetrics(
+        serviceInstanceId
+      );
+
+      // When
+      await RegistrationApp.loadRegisteredSaasPlatformMetrics(
+        serviceInstanceId
+      );
+
+      // Then
+      expect(callSpy).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe('unregisterPlatform', () => {
     let platformId: string;
     let platform: PlatformInput;

@@ -132,6 +132,7 @@ type Query {
   canUnregisterPlatform(input: CanUnregisterPlatformInput!): CanUnregisterResponse!
   registeredPlatform(input: RegisteredPlatformInput!): RegisteredPlatform
   registeredSaasPlatformMetadata(input: RegisteredPlatformInput!): SaasPlatformMetadata
+  registeredSaasPlatformMetrics(input: RegisteredPlatformInput!): SaasPlatformMetrics
   registeredPlatforms(input: RegisteredPlatformsInput!): [RegisteredPlatform!]!
   saasPlatforms(first: Int!, after: ID, orderBy: RegisteredPlatformOrdering!, orderMode: OrderingMode!, searchTerm: String): RegisteredPlatformConnection!
   platformAssociatedOrganization(platformId: String!, tenantId: String): Organization
@@ -1424,6 +1425,24 @@ type SaasPlatformMetadata {
   start_date: Date
   end_date: Date
   region: String
+}
+
+type SaasPlatformMetricPoint {
+  t: Date!
+  v: Float
+}
+
+type SaasPlatformMetricSeries {
+  metric_type: String!
+  points: [SaasPlatformMetricPoint!]!
+}
+
+type SaasPlatformMetrics {
+  platform_id: String!
+  start: Date
+  end: Date
+  resolution: String
+  series: [SaasPlatformMetricSeries!]!
 }
 
 input AutoRegisterPlatformInput {

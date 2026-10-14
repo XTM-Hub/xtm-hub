@@ -2,6 +2,7 @@
 
 import { RegistrationDetails } from '@/components/service/registration/RegistrationDetails';
 import { RegistrationMetadata } from '@/components/service/registration/RegistrationMetadata';
+import { RegistrationMetrics } from '@/components/service/registration/RegistrationMetrics';
 import { Separator } from '@/components/ui/separator';
 import { useTranslate } from '@/hooks/use-translate';
 import { registeredPlatformByServiceInstanceId_fragment$key } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
@@ -23,6 +24,7 @@ export const PlatformInformation = ({
         <RegistrationDetails registeredPlatform={registeredPlatform} />
         <RegistrationMetadata registeredPlatform={registeredPlatform} />
       </div>
+      <RegistrationMetrics registeredPlatform={registeredPlatform} />
     </div>
   );
 };

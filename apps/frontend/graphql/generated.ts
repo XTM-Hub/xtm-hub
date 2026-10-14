@@ -2005,6 +2005,7 @@ export type Query = {
    */
   registeredProductVersions: Array<RegisteredProductVersion>;
   registeredSaasPlatformMetadata: Maybe<SaasPlatformMetadata>;
+  registeredSaasPlatformMetrics: Maybe<SaasPlatformMetrics>;
   rolePortals: Array<RolePortal>;
   saasPlatforms: RegisteredPlatformConnection;
   seoServiceInstance: SeoServiceInstance;
@@ -2242,6 +2243,11 @@ export type QueryRegisteredProductVersionsArgs = {
 
 
 export type QueryRegisteredSaasPlatformMetadataArgs = {
+  input: RegisteredPlatformInput;
+};
+
+
+export type QueryRegisteredSaasPlatformMetricsArgs = {
   input: RegisteredPlatformInput;
 };
 
@@ -2553,6 +2559,27 @@ export type SaasPlatformMetadata = {
   plan: Maybe<Scalars['String']['output']>;
   region: Maybe<Scalars['String']['output']>;
   start_date: Maybe<Scalars['Date']['output']>;
+};
+
+export type SaasPlatformMetricPoint = {
+  __typename?: 'SaasPlatformMetricPoint';
+  t: Scalars['Date']['output'];
+  v: Maybe<Scalars['Float']['output']>;
+};
+
+export type SaasPlatformMetricSeries = {
+  __typename?: 'SaasPlatformMetricSeries';
+  metric_type: Scalars['String']['output'];
+  points: Array<SaasPlatformMetricPoint>;
+};
+
+export type SaasPlatformMetrics = {
+  __typename?: 'SaasPlatformMetrics';
+  end: Maybe<Scalars['Date']['output']>;
+  platform_id: Scalars['String']['output'];
+  resolution: Maybe<Scalars['String']['output']>;
+  series: Array<SaasPlatformMetricSeries>;
+  start: Maybe<Scalars['Date']['output']>;
 };
 
 export type SendTelemetryMutation = {
@@ -3650,6 +3677,13 @@ export type RegisteredSaasPlatformMetadataQueryVariables = Exact<{
 
 
 export type RegisteredSaasPlatformMetadataQuery = { __typename?: 'Query', registeredSaasPlatformMetadata: { __typename?: 'SaasPlatformMetadata', hostname: string | null, plan: string | null, start_date: any | null, end_date: any | null, region: string | null } | null };
+
+export type RegisteredSaasPlatformMetricsQueryVariables = Exact<{
+  input: RegisteredPlatformInput;
+}>;
+
+
+export type RegisteredSaasPlatformMetricsQuery = { __typename?: 'Query', registeredSaasPlatformMetrics: { __typename?: 'SaasPlatformMetrics', platform_id: string, start: any | null, end: any | null, resolution: string | null, series: Array<{ __typename?: 'SaasPlatformMetricSeries', metric_type: string, points: Array<{ __typename?: 'SaasPlatformMetricPoint', t: any, v: number | null }> }> } | null };
 
 export type AddRolePortalMutationVariables = Exact<{
   input: AddRolePortalInput;
@@ -5950,6 +5984,69 @@ export const useInfiniteRegisteredSaasPlatformMetadataQuery = <
 useInfiniteRegisteredSaasPlatformMetadataQuery.getKey = (variables: RegisteredSaasPlatformMetadataQueryVariables) => ['RegisteredSaasPlatformMetadata.infinite', variables];
 useInfiniteRegisteredSaasPlatformMetadataQuery.getRootKey = () => ['RegisteredSaasPlatformMetadata.infinite'] as const;
 useRegisteredSaasPlatformMetadataQuery.fetcher = (client: GraphQLClient, variables: RegisteredSaasPlatformMetadataQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredSaasPlatformMetadataQuery, RegisteredSaasPlatformMetadataQueryVariables>(client, RegisteredSaasPlatformMetadataDocument, variables, headers);
+
+export const RegisteredSaasPlatformMetricsDocument = `
+    query RegisteredSaasPlatformMetrics($input: RegisteredPlatformInput!) {
+  registeredSaasPlatformMetrics(input: $input) {
+    platform_id
+    start
+    end
+    resolution
+    series {
+      metric_type
+      points {
+        t
+        v
+      }
+    }
+  }
+}
+    `;
+
+export const useRegisteredSaasPlatformMetricsQuery = <
+      TData = RegisteredSaasPlatformMetricsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: RegisteredSaasPlatformMetricsQueryVariables,
+      options?: Omit<UseQueryOptions<RegisteredSaasPlatformMetricsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<RegisteredSaasPlatformMetricsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<RegisteredSaasPlatformMetricsQuery, TError, TData>(
+      {
+    queryKey: ['RegisteredSaasPlatformMetrics', variables],
+    queryFn: fetcher<RegisteredSaasPlatformMetricsQuery, RegisteredSaasPlatformMetricsQueryVariables>(client, RegisteredSaasPlatformMetricsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useRegisteredSaasPlatformMetricsQuery.getKey = (variables: RegisteredSaasPlatformMetricsQueryVariables) => ['RegisteredSaasPlatformMetrics', variables];
+useRegisteredSaasPlatformMetricsQuery.getRootKey = () => ['RegisteredSaasPlatformMetrics'] as const;
+export const useInfiniteRegisteredSaasPlatformMetricsQuery = <
+      TData = InfiniteData<RegisteredSaasPlatformMetricsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: RegisteredSaasPlatformMetricsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<RegisteredSaasPlatformMetricsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<RegisteredSaasPlatformMetricsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<RegisteredSaasPlatformMetricsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['RegisteredSaasPlatformMetrics.infinite', variables],
+      queryFn: (metaData) => fetcher<RegisteredSaasPlatformMetricsQuery, RegisteredSaasPlatformMetricsQueryVariables>(client, RegisteredSaasPlatformMetricsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteRegisteredSaasPlatformMetricsQuery.getKey = (variables: RegisteredSaasPlatformMetricsQueryVariables) => ['RegisteredSaasPlatformMetrics.infinite', variables];
+useInfiniteRegisteredSaasPlatformMetricsQuery.getRootKey = () => ['RegisteredSaasPlatformMetrics.infinite'] as const;
+useRegisteredSaasPlatformMetricsQuery.fetcher = (client: GraphQLClient, variables: RegisteredSaasPlatformMetricsQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredSaasPlatformMetricsQuery, RegisteredSaasPlatformMetricsQueryVariables>(client, RegisteredSaasPlatformMetricsDocument, variables, headers);
 
 export const AddRolePortalDocument = `
     mutation AddRolePortal($input: AddRolePortalInput!) {

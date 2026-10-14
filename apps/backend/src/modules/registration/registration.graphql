@@ -182,6 +182,24 @@ type SaasPlatformMetadata {
   region: String
 }
 
+type SaasPlatformMetricPoint {
+  t: Date!
+  v: Float
+}
+
+type SaasPlatformMetricSeries {
+  metric_type: String!
+  points: [SaasPlatformMetricPoint!]!
+}
+
+type SaasPlatformMetrics {
+  platform_id: String!
+  start: Date
+  end: Date
+  resolution: String
+  series: [SaasPlatformMetricSeries!]!
+}
+
 input AutoRegisterPlatformInput {
   platform: PlatformInput!
   existing_users_count: Int
@@ -198,6 +216,9 @@ type Query {
   registeredSaasPlatformMetadata(
     input: RegisteredPlatformInput!
   ): SaasPlatformMetadata @auth
+  registeredSaasPlatformMetrics(
+    input: RegisteredPlatformInput!
+  ): SaasPlatformMetrics @auth
   registeredPlatforms(input: RegisteredPlatformsInput!): [RegisteredPlatform!]!
     @auth
   saasPlatforms(

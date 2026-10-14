@@ -228,3 +228,90 @@ describe('saasManagerClient.callInstanceApi', () => {
     );
   });
 });
+
+describe('saasManagerClient.callInstanceMetricsApi', () => {
+  let client: typeof SaasManagerClient;
+
+  beforeEach(async () => {
+    vi.resetModules();
+    client = (await import('./client')).SaasManagerClient;
+    useConfig({
+      'saas_manager.url': BASE_URL,
+      'saas_manager.client_id': CLIENT_ID,
+      'saas_manager.client_secret': CLIENT_SECRET,
+    });
+  });
+
+  afterEach(() => {
+    vi.mocked(config.get).mockImplementation(realConfigGet ?? (() => null));
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('should send a GET request to the metrics API of the platform with the access token', async () => {
+    // Given
+    const response = new Response(null, { status: 200 });
+    const fetchMock = stubSaasManager(response);
+
+    // When
+    const result = await client.callInstanceMetricsApi('platform-1');
+
+    // Then
+    expect(fetchMock).toHaveBeenCalledWith(
+      new URL(`${BASE_URL}/api/instance/platform-1/metrics`),
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({
+          Authorization: `Bearer ${FIRST_TOKEN}`,
+        }),
+      })
+    );
+    expect(result).toBe(response);
+  });
+
+  it('should encode the platform_id in the URL', async () => {
+    // Given
+    const fetchMock = stubSaasManager();
+
+    // When
+    await client.callInstanceMetricsApi('platform/..?id=1');
+
+    // Then
+    expect(apiCalls(fetchMock).map(([url]) => url.href)).toEqual([
+      `${BASE_URL}/api/instance/platform%2F..%3Fid%3D1/metrics`,
+    ]);
+  });
+
+  it('should retry once with a renewed token when the SaaS Manager answers 401', async () => {
+    // Given
+    const fetchMock = stubSaasManager(
+      new Response(null, { status: 401 }),
+      new Response(null, { status: 200 })
+    );
+
+    // When
+    const response = await client.callInstanceMetricsApi('platform-1');
+
+    // Then
+    expect({
+      authorizations: apiAuthorizations(fetchMock),
+      status: response.status,
+    }).toEqual({
+      authorizations: [`Bearer ${FIRST_TOKEN}`, `Bearer ${SECOND_TOKEN}`],
+      status: 200,
+    });
+  });
+
+  it('should throw without fetching when no SaaS Manager URL is configured', async () => {
+    // Given
+    useConfig({ 'saas_manager.url': null });
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    // When / Then
+    await expect(client.callInstanceMetricsApi('platform-1')).rejects.toThrow(
+      'SaaS Manager URL is not configured'
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});

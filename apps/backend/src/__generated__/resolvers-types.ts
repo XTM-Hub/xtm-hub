@@ -1998,6 +1998,7 @@ export type Query = {
    */
   registeredProductVersions: Array<RegisteredProductVersion>;
   registeredSaasPlatformMetadata?: Maybe<SaasPlatformMetadata>;
+  registeredSaasPlatformMetrics?: Maybe<SaasPlatformMetrics>;
   rolePortals: Array<RolePortal>;
   saasPlatforms: RegisteredPlatformConnection;
   seoServiceInstance: SeoServiceInstance;
@@ -2235,6 +2236,11 @@ export type QueryRegisteredProductVersionsArgs = {
 
 
 export type QueryRegisteredSaasPlatformMetadataArgs = {
+  input: RegisteredPlatformInput;
+};
+
+
+export type QueryRegisteredSaasPlatformMetricsArgs = {
   input: RegisteredPlatformInput;
 };
 
@@ -2546,6 +2552,27 @@ export type SaasPlatformMetadata = {
   plan?: Maybe<Scalars['String']['output']>;
   region?: Maybe<Scalars['String']['output']>;
   start_date?: Maybe<Scalars['Date']['output']>;
+};
+
+export type SaasPlatformMetricPoint = {
+  __typename?: 'SaasPlatformMetricPoint';
+  t: Scalars['Date']['output'];
+  v?: Maybe<Scalars['Float']['output']>;
+};
+
+export type SaasPlatformMetricSeries = {
+  __typename?: 'SaasPlatformMetricSeries';
+  metric_type: Scalars['String']['output'];
+  points: Array<SaasPlatformMetricPoint>;
+};
+
+export type SaasPlatformMetrics = {
+  __typename?: 'SaasPlatformMetrics';
+  end?: Maybe<Scalars['Date']['output']>;
+  platform_id: Scalars['String']['output'];
+  resolution?: Maybe<Scalars['String']['output']>;
+  series: Array<SaasPlatformMetricSeries>;
+  start?: Maybe<Scalars['Date']['output']>;
 };
 
 export type SendTelemetryMutation = {
@@ -3514,6 +3541,7 @@ export type ResolversTypes = ResolversObject<{
   FiligranProduct: FiligranProduct;
   Filter: Filter;
   FilterKey: FilterKey;
+  Float: ResolverTypeWrapper<Scalars['Float']['output']>;
   GenericServiceCapability: ResolverTypeWrapper<GenericServiceCapability>;
   GiveDeploymentFeedbackInput: GiveDeploymentFeedbackInput;
   HasRepliedSatisfaction: HasRepliedSatisfaction;
@@ -3600,6 +3628,9 @@ export type ResolversTypes = ResolversObject<{
   RssFeed: ResolverTypeWrapper<RssFeed>;
   SSOGroupRolePortal: ResolverTypeWrapper<SsoGroupRolePortal>;
   SaasPlatformMetadata: ResolverTypeWrapper<SaasPlatformMetadata>;
+  SaasPlatformMetricPoint: ResolverTypeWrapper<SaasPlatformMetricPoint>;
+  SaasPlatformMetricSeries: ResolverTypeWrapper<SaasPlatformMetricSeries>;
+  SaasPlatformMetrics: ResolverTypeWrapper<SaasPlatformMetrics>;
   SendTelemetryMutation: ResolverTypeWrapper<SendTelemetryMutation>;
   SeoServiceInstance: ResolverTypeWrapper<SeoServiceInstance>;
   SeoServiceInstanceMetadata: ResolverTypeWrapper<SeoServiceInstanceMetadata>;
@@ -3771,6 +3802,7 @@ export type ResolversParentTypes = ResolversObject<{
   Facet: Facet;
   FacetBucket: FacetBucket;
   Filter: Filter;
+  Float: Scalars['Float']['output'];
   GenericServiceCapability: GenericServiceCapability;
   GiveDeploymentFeedbackInput: GiveDeploymentFeedbackInput;
   ID: Scalars['ID']['output'];
@@ -3838,6 +3870,9 @@ export type ResolversParentTypes = ResolversObject<{
   RssFeed: RssFeed;
   SSOGroupRolePortal: SsoGroupRolePortal;
   SaasPlatformMetadata: SaasPlatformMetadata;
+  SaasPlatformMetricPoint: SaasPlatformMetricPoint;
+  SaasPlatformMetricSeries: SaasPlatformMetricSeries;
+  SaasPlatformMetrics: SaasPlatformMetrics;
   SendTelemetryMutation: SendTelemetryMutation;
   SeoServiceInstance: SeoServiceInstance;
   SeoServiceInstanceMetadata: SeoServiceInstanceMetadata;
@@ -4780,6 +4815,7 @@ export type QueryResolvers<ContextType = PortalContext, ParentType extends Resol
   registeredPlatforms?: Resolver<Array<ResolversTypes['RegisteredPlatform']>, ParentType, ContextType, RequireFields<QueryRegisteredPlatformsArgs, 'input'>>;
   registeredProductVersions?: Resolver<Array<ResolversTypes['RegisteredProductVersion']>, ParentType, ContextType, RequireFields<QueryRegisteredProductVersionsArgs, 'product'>>;
   registeredSaasPlatformMetadata?: Resolver<Maybe<ResolversTypes['SaasPlatformMetadata']>, ParentType, ContextType, RequireFields<QueryRegisteredSaasPlatformMetadataArgs, 'input'>>;
+  registeredSaasPlatformMetrics?: Resolver<Maybe<ResolversTypes['SaasPlatformMetrics']>, ParentType, ContextType, RequireFields<QueryRegisteredSaasPlatformMetricsArgs, 'input'>>;
   rolePortals?: Resolver<Array<ResolversTypes['RolePortal']>, ParentType, ContextType>;
   saasPlatforms?: Resolver<ResolversTypes['RegisteredPlatformConnection'], ParentType, ContextType, RequireFields<QuerySaasPlatformsArgs, 'first' | 'orderBy' | 'orderMode'>>;
   seoServiceInstance?: Resolver<ResolversTypes['SeoServiceInstance'], ParentType, ContextType, RequireFields<QuerySeoServiceInstanceArgs, 'slug'>>;
@@ -4921,6 +4957,27 @@ export type SaasPlatformMetadataResolvers<ContextType = PortalContext, ParentTyp
   plan?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   region?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   start_date?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SaasPlatformMetricPointResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasPlatformMetricPoint'] = ResolversParentTypes['SaasPlatformMetricPoint']> = ResolversObject<{
+  t?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  v?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SaasPlatformMetricSeriesResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasPlatformMetricSeries'] = ResolversParentTypes['SaasPlatformMetricSeries']> = ResolversObject<{
+  metric_type?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  points?: Resolver<Array<ResolversTypes['SaasPlatformMetricPoint']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SaasPlatformMetricsResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasPlatformMetrics'] = ResolversParentTypes['SaasPlatformMetrics']> = ResolversObject<{
+  end?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
+  platform_id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  resolution?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  series?: Resolver<Array<ResolversTypes['SaasPlatformMetricSeries']>, ParentType, ContextType>;
+  start?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -5538,6 +5595,9 @@ export type Resolvers<ContextType = PortalContext> = ResolversObject<{
   RssFeed?: RssFeedResolvers<ContextType>;
   SSOGroupRolePortal?: SsoGroupRolePortalResolvers<ContextType>;
   SaasPlatformMetadata?: SaasPlatformMetadataResolvers<ContextType>;
+  SaasPlatformMetricPoint?: SaasPlatformMetricPointResolvers<ContextType>;
+  SaasPlatformMetricSeries?: SaasPlatformMetricSeriesResolvers<ContextType>;
+  SaasPlatformMetrics?: SaasPlatformMetricsResolvers<ContextType>;
   SendTelemetryMutation?: SendTelemetryMutationResolvers<ContextType>;
   SeoServiceInstance?: SeoServiceInstanceResolvers<ContextType>;
   SeoServiceInstanceMetadata?: SeoServiceInstanceMetadataResolvers<ContextType>;
