@@ -76,11 +76,7 @@ import { TelemetryApp } from '../telemetry/telemetry.app';
 import { TelemetryHelper } from '../telemetry/telemetry.helper';
 import { CompetitorApp } from './competitor/competitor.app';
 import { DeploymentCancellationApp } from './deployment-cancellation.app';
-import {
-  DeploymentRequestDomain,
-  isBundleChild,
-  shouldDeleteDeploymentRequestAudience,
-} from './deployment.domain';
+import { DeploymentRequestDomain, isBundleChild } from './deployment.domain';
 import { DeploymentHelper } from './deployment.helper';
 import { DeploymentQuotaApp } from './quota/deployment.quota.app';
 import {
@@ -365,14 +361,6 @@ export const DeploymentApp = {
       return updated;
     });
 
-    for (const previousRequest of family) {
-      if (shouldDeleteDeploymentRequestAudience(previousRequest)) {
-        await DeploymentRequestDomain.deleteDeploymentRequestAudience(
-          previousRequest
-        );
-      }
-    }
-
     const [updatedDeploymentRequest] = updatedFamily;
     if (!updatedDeploymentRequest) {
       throw new Error(NotFoundErrorCode.DeploymentRequestNotFound);
@@ -409,14 +397,6 @@ export const DeploymentApp = {
           deploymentRequestId: trial.id,
         });
         continue;
-      }
-
-      for (const request of family) {
-        if (shouldDeleteDeploymentRequestAudience(request)) {
-          await DeploymentRequestDomain.deleteDeploymentRequestAudience(
-            request
-          );
-        }
       }
     }
   },

@@ -157,7 +157,8 @@ const PublicDocumentsList = ({
           onSearchChange={setSearch}
           className="mb-3"
           onDisplayModeChange={setDisplayMode}
-          actions={
+          filters={filters}
+          exportAction={
             isIntegrationsService ? (
               <IntegrationsCsvExportButton
                 serviceInstanceId={serviceInstance.id}

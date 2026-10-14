@@ -28,6 +28,7 @@ import { DocumentDomain } from '../../../document/domain/document.domain';
 import { EpicDomain } from '../../../xtm-platform-roadmap/epic.domain';
 import { OrganizationDomain } from '../../organization/organization.domain';
 import { UserDomain } from '../user-domain/user.domain';
+import { UserOrganizationApp } from '../user-organization/user-organization.app';
 import { UserOrganizationDomain } from '../user-organization/user-organization.domain';
 import { UserOrganizationPendingDomain } from '../user-pending/user-organization-pending.domain';
 import { UserProvisioningApp } from '../user-provisioning/user-provisioning.app';
@@ -165,12 +166,14 @@ export const UserAdminApp = {
     userId: UserId;
     input: EditUserCapabilitiesInput;
   }) => {
-    const user = requestContext.requireUser();
-    const organizationId = user.selected_organization_id;
-    await UserHelper.preventAdministratorRemovalOfOneOrganization(
-      userId,
-      organizationId,
-      input.capabilities
+    const organizationId =
+      requestContext.requireUser().selected_organization_id;
+    await securityGuard.assertUserCapabilities(
+      [
+        OrganizationCapability.AdministrateOrganization,
+        OrganizationCapability.ManageAccess,
+      ],
+      organizationId
     );
 
     const [userOrganization] =
@@ -179,17 +182,39 @@ export const UserAdminApp = {
         organization_id: organizationId,
       });
 
-    return userOrganization
-      ? await UserHelper.updateUserOrgCapabilitiesAndDispatch({
-          user_id: userId,
-          organization_id: organizationId,
-          orgCapabilities: input.capabilities,
-        })
-      : await UserHelper.acceptPendingUserWithCapabilities({
-          user_id: userId,
-          organization_id: organizationId,
-          orgCapabilities: input.capabilities,
-        });
+    if (userOrganization) {
+      await UserHelper.preventAdministratorRemovalOfOneOrganization(
+        userId,
+        organizationId,
+        input.capabilities
+      );
+      return UserHelper.updateUserOrgCapabilitiesAndDispatch({
+        user_id: userId,
+        organization_id: organizationId,
+        orgCapabilities: input.capabilities,
+      });
+    }
+
+    await UserOrganizationApp.assertOrganizationIsNotPersonalSpace(
+      organizationId,
+      ErrorCode.CantAddUserToPersonalSpace
+    );
+
+    // No lock on purpose: accepting a request that another administrator declines at the same time is unlikely to happen and acceptable
+    const [pendingUser] =
+      await UserOrganizationPendingDomain.loadUserOrganizationPending({
+        user_id: userId,
+        organization_id: organizationId,
+      });
+    if (!pendingUser) {
+      throw new Error(ErrorCode.PendingUserNotFound);
+    }
+
+    return UserHelper.acceptPendingUserWithCapabilities({
+      user_id: userId,
+      organization_id: organizationId,
+      orgCapabilities: input.capabilities,
+    });
   },
 
   bulkAcceptPendingUserInOrganization: async (

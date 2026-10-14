@@ -55,6 +55,13 @@ type User implements Node {
   has_replied_satisfaction: HasRepliedSatisfaction
 }
 
+type OrganizationMemberContact {
+  id: ID!
+  email: String!
+  first_name: String
+  last_name: String
+}
+
 type UserEdge {
   cursor: String!
   node: User!
@@ -75,7 +82,7 @@ type Query {
   me: User
   usersWithCapabilitiesInOrganization(
     input: UsersWithCapabilitiesInOrganizationInput!
-  ): [User!]! @auth
+  ): [OrganizationMemberContact!]! @auth
   users(
     first: Int!
     after: ID
@@ -210,8 +217,9 @@ type UserPendingSubscription {
 }
 
 type Subscription {
-  User(organizationId: ID): UserSubscription
+  User(organizationId: ID!): UserSubscription
     @auth(orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_ACCESS])
+  AdminUser: UserSubscription @auth(portalCapa: [BYPASS])
   MeUser: MeUserSubscription @auth
   UserPending(organizationId: ID!): UserPendingSubscription
     @auth(orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_ACCESS])

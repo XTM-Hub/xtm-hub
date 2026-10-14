@@ -57,6 +57,8 @@ vi.mock('../../../utils/app-logger.util', () => ({
 }));
 
 import { ServiceDefinitionIdentifier } from '../../../__generated__/resolvers-types';
+import { MARKETING_USER_CONTEXT } from '../../../portal.const';
+import { SYSTEM_TOKEN_HEADER } from '../../../security/directive-graphql/validator/system-token.validator';
 import { IntegrationCsvExportEndpoint } from './integration-csv-export-endpoint';
 
 const buildResponse = () => ({
@@ -72,13 +74,18 @@ const buildRequest = (
   user: Record<string, unknown> | null = {
     id: 'user-1',
     selected_organization_id: 'org-1',
-  }
+  },
+  headers: Record<string, string> = {}
 ) =>
   ({
     params,
     query,
     session: { user: user ?? undefined },
+    header: (name: string) => headers[name.toLowerCase()],
   }) as unknown as Request;
+
+// Dev value whose hash and salt are in config/default.json.
+const VALID_SYSTEM_TOKEN = 'changeMe';
 
 const VALID_PARAMS = { serviceInstanceId: 'U2VydmljZUluc3RhbmNlOnNlcnZpY2Ux' };
 
@@ -126,6 +133,63 @@ describe('integrationCsvExportEndpoint.exportCsv', () => {
 
     expect(res.status).toHaveBeenCalledWith(401);
     expect(loadServiceDefinitionByServiceInstanceMock).not.toHaveBeenCalled();
+  });
+
+  it.each`
+    description                                      | headers
+    ${'an empty system token'}                       | ${{ [SYSTEM_TOKEN_HEADER]: '' }}
+    ${'a wrong system token'}                        | ${{ [SYSTEM_TOKEN_HEADER]: 'invalid-token' }}
+    ${'the valid system token with a suffix'}        | ${{ [SYSTEM_TOKEN_HEADER]: `${VALID_SYSTEM_TOKEN}X` }}
+    ${'the system token in another header'}          | ${{ 'x-xtm-hub-marketing-token': VALID_SYSTEM_TOKEN }}
+    ${'the system token as an authorization bearer'} | ${{ authorization: `Bearer ${VALID_SYSTEM_TOKEN}` }}
+  `(
+    'returns 401 without a session when sending $description',
+    async ({ headers }) => {
+      const res = buildResponse();
+      await IntegrationCsvExportEndpoint.exportCsv(
+        buildRequest(VALID_PARAMS, {}, null, headers),
+        res as unknown as Response
+      );
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(loadServiceDefinitionByServiceInstanceMock).not.toHaveBeenCalled();
+    }
+  );
+
+  it('exports as the capability-less marketing user, not the system user, when the system token is valid', async () => {
+    loadDocumentsMock.mockResolvedValue({
+      edges: [buildDocumentEdge({ id: 'doc-1', name: 'My Integration' })],
+    });
+    useCasesByDocumentIdLoaderLoadManyMock.mockResolvedValue([[]]);
+    solutionCategoriesByDocumentIdLoaderLoadManyMock.mockResolvedValue([[]]);
+
+    const res = buildResponse();
+    await IntegrationCsvExportEndpoint.exportCsv(
+      buildRequest(VALID_PARAMS, {}, null, {
+        [SYSTEM_TOKEN_HEADER]: VALID_SYSTEM_TOKEN,
+      }),
+      res as unknown as Response
+    );
+
+    expect(requestContextUpdateMock).toHaveBeenCalledWith({
+      user: MARKETING_USER_CONTEXT.user,
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    const [csv] = res.send.mock.calls[0];
+    expect(csv).toContain('My Integration');
+  });
+
+  it('does not send a telemetry export event for a system token export', async () => {
+    const res = buildResponse();
+    await IntegrationCsvExportEndpoint.exportCsv(
+      buildRequest(VALID_PARAMS, {}, null, {
+        [SYSTEM_TOKEN_HEADER]: VALID_SYSTEM_TOKEN,
+      }),
+      res as unknown as Response
+    );
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(sendTelemetryEventMock).not.toHaveBeenCalled();
   });
 
   it('returns 404 when the service instance does not exist', async () => {

@@ -1,5 +1,4 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
-import { IntegrationsCsvExportButton } from '@/components/service/components/header/IntegrationsCsvExportButton';
 import { ServiceListIntegrationDropdown } from '@/components/service/components/header/ServiceListIntegrationDropdown';
 import { useServiceContext } from '@/components/service/components/ServiceContext';
 import { ServiceManageSheet } from '@/components/service/components/ServiceManageSheet';
@@ -45,13 +44,6 @@ const ServiceListHeaderButtons = ({}) => {
 
   return (
     <div className="flex gap-s">
-      {isIntegration && (
-        <IntegrationsCsvExportButton
-          serviceInstanceId={serviceInstance.id}
-          isAuthenticated
-          type={type}
-        />
-      )}
       {(hasCapaManageAccess || isAdminOrga || isBypass) && subscriptionId && (
         <Button
           priority="secondary"

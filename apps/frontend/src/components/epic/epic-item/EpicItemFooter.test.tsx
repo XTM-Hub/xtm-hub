@@ -3,7 +3,6 @@ import testRender from '@/utils/test/test-render';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import { EditionType, EpicType, FiligranProduct } from '@graphql/generated';
 import { screen } from '@testing-library/react';
-import { createMockEnvironment } from 'relay-test-utils';
 import { describe, expect, it } from 'vitest';
 
 describe('EpicItemFooter', () => {
@@ -20,22 +19,14 @@ describe('EpicItemFooter', () => {
   };
 
   it('renders product information', () => {
-    // Given
-    const environment = createMockEnvironment();
-
     // When
-    testRender(<EpicItemFooter {...defaultProps} />, {
-      relayConfig: environment,
-    });
+    testRender(<EpicItemFooter {...defaultProps} />);
 
     // Then
     expect(screen.getByText('OpenCTI')).toBeInTheDocument();
   });
 
   it('renders every product of the epic', () => {
-    // Given
-    const environment = createMockEnvironment();
-
     // When
     testRender(
       <EpicItemFooter
@@ -44,10 +35,7 @@ describe('EpicItemFooter', () => {
           ...epic,
           products: [FiligranProduct.Opencti, FiligranProduct.Openaev],
         }}
-      />,
-      {
-        relayConfig: environment,
-      }
+      />
     );
 
     // Then
@@ -56,9 +44,6 @@ describe('EpicItemFooter', () => {
   });
 
   it('renders the products in the expected order', () => {
-    // Given
-    const environment = createMockEnvironment();
-
     // When
     const { container } = testRender(
       <EpicItemFooter
@@ -71,10 +56,7 @@ describe('EpicItemFooter', () => {
             FiligranProduct.Xtmhub,
           ],
         }}
-      />,
-      {
-        relayConfig: environment,
-      }
+      />
     );
 
     // Then
@@ -90,7 +72,6 @@ describe('EpicItemFooter', () => {
     'renders edition tag according to edition type (editionType=$editionType)',
     ({ editionType, expectedLabel }) => {
       // Given
-      const environment = createMockEnvironment();
       const resolvedExpectedLabel =
         expectedLabel === '__NO_LABEL__' ? null : expectedLabel;
 
@@ -99,10 +80,7 @@ describe('EpicItemFooter', () => {
         <EpicItemFooter
           {...defaultProps}
           epic={{ ...epic, edition_type: editionType }}
-        />,
-        {
-          relayConfig: environment,
-        }
+        />
       );
 
       // Then
@@ -124,18 +102,12 @@ describe('EpicItemFooter', () => {
   `(
     'should render the integration badge only when the epic type is integration (epicType=$epicType)',
     ({ epicType, shouldRenderIntegration }) => {
-      // Given
-      const environment = createMockEnvironment();
-
       // When
       const { queryByText, container } = testRender(
         <EpicItemFooter
           {...defaultProps}
           epic={{ ...epic, epic_type: epicType }}
-        />,
-        {
-          relayConfig: environment,
-        }
+        />
       );
 
       // Then

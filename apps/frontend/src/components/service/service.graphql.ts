@@ -71,26 +71,6 @@ export const serviceListFragment = graphql`
   }
 `;
 
-export const subscription = graphql`
-  subscription serviceListSubscription($connections: [ID!]!) {
-    ServiceInstance {
-      add
-        @prependNode(
-          connections: $connections
-          edgeTypeName: "ServiceInstanceEdge"
-        ) {
-        ...serviceList_fragment
-      }
-      edit {
-        ...serviceList_fragment
-      }
-      delete {
-        id @deleteRecord
-      }
-    }
-  }
-`;
-
 export const servicesListFragment = graphql`
   fragment servicesList_services on Query
   @refetchable(queryName: "ServicesPaginationQuery") {

@@ -1,22 +1,27 @@
 import {
+  OrganizationCapability,
   Resolvers,
   User,
   UserPendingSubscription,
   UserSubscription,
 } from '../../../__generated__/resolvers-types';
+import { OrganizationId } from '../../../model/kanel/public/Organization';
 import { UserId } from '../../../model/kanel/public/User';
 import { dispatch, listen } from '../../../pub';
 import { hubspotReachOutSalesHook } from '../../../thirdparty/hubspot/hubspot';
 import { logApp } from '../../../utils/app-logger.util';
 import { getErrorMessage } from '../../../utils/error/error-guard.util';
 
+import { requestContext } from '../../../context/request.context';
 import { UserTransferRequestId } from '../../../model/kanel/public/UserTransferRequest';
 import { PortalContext } from '../../../model/portal-context';
+import { securityGuard } from '../../../security/guard';
 import { ErrorCode, UnknownErrorCode } from '../../../utils/error/error.code';
 import { mapToGraphQLError } from '../../../utils/error/error.mapping';
 import { ForbiddenAccess } from '../../../utils/error/error.util';
 import { createRelayIdScalar } from '../../../utils/scalar.util';
 import { extractId } from '../../../utils/utils';
+import { AuthHelper } from '../../security-management/capability/auth.helper';
 import { UserAdminApp } from './user-admin/user.admin.app';
 import { UserDomain } from './user-domain/user.domain';
 import { UserOrganizationApp } from './user-organization/user-organization.app';
@@ -24,6 +29,15 @@ import { UserOrganizationPendingDomain } from './user-pending/user-organization-
 import { userProfileApp } from './user-profile/user.profile.app';
 import { UserAuthApp } from './user.auth.app';
 import { UserHelper } from './user.helper';
+
+const assertCanListenOrganizationUsers = (organizationId: string) =>
+  securityGuard.assertUserIsAllowedOnOrganization(
+    requestContext.requireUser(),
+    {
+      organizationId: extractId<OrganizationId>(organizationId),
+      requiredCapability: OrganizationCapability.ManageAccess,
+    }
+  );
 
 const resolvers: Resolvers = {
   UserId: createRelayIdScalar<UserId>('User'),
@@ -41,12 +55,11 @@ const resolvers: Resolvers = {
       return UserHelper.mapUserToGraphqlUser(context.user);
     },
 
-    usersWithCapabilitiesInOrganization: async (_, { input }) => {
-      return UserDomain.loadUsersByCapabilitiesInOrganization(
-        input.organizationId,
-        input.capabilities
-      );
-    },
+    usersWithCapabilitiesInOrganization: async (_, { input }) =>
+      UserOrganizationApp.loadOrganizationMemberContactsByCapabilities({
+        organizationId: input.organizationId,
+        capabilities: input.capabilities,
+      }),
     users: async (
       _,
       { first, after, orderMode, orderBy, searchTerm, filters }
@@ -344,10 +357,11 @@ const resolvers: Resolvers = {
   },
   Subscription: {
     User: {
-      subscribe: (_, args, context, info) =>
-        listen(context, ['User'], info, (payload: unknown) => {
+      subscribe: async (_, args, context, info) => {
+        await assertCanListenOrganizationUsers(args.organizationId);
+        return listen(context, ['User'], info, (payload: unknown) => {
           const typedPayload = payload as UserSubscription;
-          if (!args.organizationId || typedPayload.merge) {
+          if (typedPayload.merge) {
             return true;
           }
           const user =
@@ -357,20 +371,32 @@ const resolvers: Resolvers = {
               ?.map((org) => org.id)
               ?.includes(extractId(args.organizationId)) ?? false
           );
-        }),
+        });
+      },
+    },
+    AdminUser: {
+      subscribe: (_, __, context, info) => {
+        if (!AuthHelper.userHasBypassCapability(requestContext.requireUser())) {
+          throw new Error(ErrorCode.MissingCapabilityOnOrganization);
+        }
+        return listen(context, ['User'], info);
+      },
+      resolve: (payload: { User: UserSubscription }) => payload.User,
     },
     MeUser: {
       subscribe: (_, __, context, info) => listen(context, ['MeUser'], info),
     },
     UserPending: {
-      subscribe: (_, args, context, info) =>
-        listen(context, ['UserPending'], info, (payload: unknown) => {
+      subscribe: async (_, args, context, info) => {
+        await assertCanListenOrganizationUsers(args.organizationId);
+        return listen(context, ['UserPending'], info, (payload: unknown) => {
           const typedPayload = payload as UserPendingSubscription;
           const organizationId = typedPayload.delete
             ? typedPayload.delete.pending_organization_id
             : typedPayload.invalidate?.id;
           return organizationId === extractId(args.organizationId);
-        }),
+        });
+      },
     },
   },
 };

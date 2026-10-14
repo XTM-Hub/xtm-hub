@@ -51,8 +51,6 @@ import {
   XTM_HUB_SUPPORT_EMAIL,
 } from '../../portal.const';
 import * as mailService from '../../server/mail-service';
-import { auth0ClientMock } from '../../thirdparty/auth0/mock';
-import { logApp } from '../../utils/app-logger.util';
 import {
   AlreadyExistsErrorCode,
   BadRequestErrorCode,
@@ -603,36 +601,6 @@ describe('deployment app', () => {
             hub_status: DeploymentRequestHubStatus.Cancelled,
             cancellation_reason: BUNDLE_REQUEST_CANCELLATION_REASON,
           });
-        });
-
-        it('should delete the Auth0 audience of cancelled standalone trials', async () => {
-          // Given an ongoing standalone trial of the requesting organization
-          const deleteAudienceSpy = vi.spyOn(
-            auth0ClientMock,
-            'deleteAudienceAPI'
-          );
-
-          const standalone =
-            await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-              {
-                organization_requester_id:
-                  TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
-                hub_status: DeploymentRequestHubStatus.Active,
-                platform_id: uuidv4(),
-              }
-            );
-
-          // When the bundle is requested
-          await DeploymentApp.createDeploymentRequest({
-            ...TEST_DEPLOYMENT,
-            products: [PlatformIdentifier.Xtmone, PlatformIdentifier.Opencti],
-          });
-
-          // Then the Auth0 audience of the cancelled standalone trial is deleted
-          expect(deleteAudienceSpy).toHaveBeenCalledWith(
-            standalone.organization_requester_id,
-            standalone.platform_id
-          );
         });
 
         it('should not cancel standalone trials of another organization', async () => {
@@ -2470,116 +2438,6 @@ describe('deployment app', () => {
       });
     });
 
-    it.each`
-      platformIdentifier            | description
-      ${PlatformIdentifier.Opencti} | ${'a standalone OpenCTI trial'}
-      ${PlatformIdentifier.Openaev} | ${'a standalone OpenAEV trial'}
-    `(
-      'should attempt to delete the Auth0 audience for $description',
-      async ({ platformIdentifier }) => {
-        // Given a deployment request that should have an Auth0 audience
-        const deleteAudienceSpy = vi.spyOn(
-          auth0ClientMock,
-          'deleteAudienceAPI'
-        );
-        const deployment =
-          (await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-            {
-              hub_status: DeploymentRequestHubStatus.Active,
-              actual_state: DeploymentRequestPlatformState.Active,
-              platform_id: uuidv4(),
-              platform_identifier: platformIdentifier,
-            }
-          )) as DeploymentRequest;
-
-        // When cancelling the deployment request
-        await DeploymentApp.cancelDeploymentRequest(deployment.id, true);
-
-        // Then the Auth0 audience deletion is attempted
-        expect(deleteAudienceSpy).toHaveBeenCalledWith(
-          deployment.organization_requester_id,
-          deployment.platform_id
-        );
-      }
-    );
-
-    it('should not attempt to delete the Auth0 audience for a standalone XtmOne trial', async () => {
-      // Given a standalone XtmOne trial, which never has an Auth0 audience
-      const deleteAudienceSpy = vi.spyOn(auth0ClientMock, 'deleteAudienceAPI');
-      const deployment =
-        (await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            hub_status: DeploymentRequestHubStatus.Active,
-            actual_state: DeploymentRequestPlatformState.Active,
-            platform_id: uuidv4(),
-            platform_identifier: PlatformIdentifier.Xtmone,
-          }
-        )) as DeploymentRequest;
-
-      // When cancelling the deployment request
-      await DeploymentApp.cancelDeploymentRequest(deployment.id, true);
-
-      // Then the Auth0 audience deletion is never attempted
-      expect(deleteAudienceSpy).not.toHaveBeenCalled();
-    });
-
-    it('should log an error when deleting a missing OpenCTI audience (404)', async () => {
-      // Given a deletion of the Auth0 audience that fails with a 404
-      vi.spyOn(auth0ClientMock, 'deleteAudienceAPI').mockRejectedValue({
-        statusCode: 404,
-      });
-      const errorSpy = vi.spyOn(logApp, 'error').mockImplementation(() => {});
-      const deployment =
-        (await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            hub_status: DeploymentRequestHubStatus.Active,
-            actual_state: DeploymentRequestPlatformState.Active,
-            platform_id: uuidv4(),
-            platform_identifier: PlatformIdentifier.Opencti,
-          }
-        )) as DeploymentRequest;
-
-      // When cancelling the deployment request
-      await DeploymentApp.cancelDeploymentRequest(deployment.id, true);
-
-      // Then it logs an error
-      expect(errorSpy).toHaveBeenCalledWith(
-        'Unable to delete audience',
-        expect.objectContaining({ deploymentRequestId: deployment.id })
-      );
-    });
-
-    it('should log a warning instead of an error when deleting a missing OpenAEV audience (404)', async () => {
-      // Given a deletion of the Auth0 audience that fails with a 404
-      vi.spyOn(auth0ClientMock, 'deleteAudienceAPI').mockRejectedValue({
-        statusCode: 404,
-      });
-      const errorSpy = vi.spyOn(logApp, 'error').mockImplementation(() => {});
-      const warnSpy = vi.spyOn(logApp, 'warn').mockImplementation(() => {});
-      const deployment =
-        (await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
-          {
-            hub_status: DeploymentRequestHubStatus.Active,
-            actual_state: DeploymentRequestPlatformState.Active,
-            platform_id: uuidv4(),
-            platform_identifier: PlatformIdentifier.Openaev,
-          }
-        )) as DeploymentRequest;
-
-      // When cancelling the deployment request
-      await DeploymentApp.cancelDeploymentRequest(deployment.id, true);
-
-      // Then it logs a warning, not an error
-      expect(warnSpy).toHaveBeenCalledWith(
-        'No Auth0 audience to delete for OpenAEV trial',
-        expect.objectContaining({ deploymentRequestId: deployment.id })
-      );
-      expect(errorSpy).not.toHaveBeenCalledWith(
-        'Unable to delete audience',
-        expect.anything()
-      );
-    });
-
     describe('quota', () => {
       beforeEach(async () => {
         freePlaceSpy.mockRestore();
@@ -2763,26 +2621,6 @@ describe('deployment app', () => {
             products: [PlatformIdentifier.Opencti, PlatformIdentifier.Xtmone],
           },
         });
-      });
-
-      it('should only delete the Auth0 audience of the OpenCTI child', async () => {
-        const deleteAudienceSpy = vi.spyOn(
-          auth0ClientMock,
-          'deleteAudienceAPI'
-        );
-
-        await DeploymentApp.cancelDeploymentRequest(
-          bundle.id,
-          false,
-          'my reason'
-        );
-
-        // Then only the OpenCTI child's audience is deleted: bundles, XtmOne
-        // children and OpenAEV bundle children never have one
-        expect(deleteAudienceSpy).toHaveBeenCalledExactlyOnceWith(
-          childOpencti.organization_requester_id,
-          childOpencti.platform_id
-        );
       });
 
       it('should send one telemetry event per deployment request', async () => {

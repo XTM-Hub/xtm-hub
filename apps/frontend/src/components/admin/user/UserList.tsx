@@ -24,7 +24,6 @@ import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useAdminPath from '@/hooks/use-admin-path';
 import { useDebouncedSearch } from '@/hooks/use-debounced-search';
-import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
 import { useAdminByPass } from '@/hooks/use-portal-capability';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
@@ -40,7 +39,6 @@ import {
 } from '@generated/UserList_fragment.graphql';
 import { UserListQuery$variables } from '@generated/UserListQuery.graphql';
 import {
-  FeatureFlag,
   UserAccountStatus,
   useUserAdminResendInviteMutation,
   useUserResendInviteMutation,
@@ -143,8 +141,7 @@ const UserList = ({ organization }: UserListProps) => {
   const isAdminPath = useAdminPath();
   const canDeleteUser = useAdminByPass();
   const hasActionsColumn = isAdminPath && canDeleteUser;
-  const isTrialInviteEnabled = useIsFeatureEnabled(FeatureFlag.TrialInvite);
-  const hasResendButtonColumn = !isAdminPath && isTrialInviteEnabled;
+  const hasResendButtonColumn = !isAdminPath;
   const { me } = useContext(PortalContext);
   const [userEdit, setUserEdit] = useState<UserList_fragment$data | undefined>(
     undefined
@@ -220,7 +217,7 @@ const UserList = ({ organization }: UserListProps) => {
   const userListSubscription = graphql`
     subscription UserListSubscription(
       $connections: [ID!]!
-      $organizationId: ID
+      $organizationId: ID!
     ) {
       User(organizationId: $organizationId) {
         add @appendNode(connections: $connections, edgeTypeName: "UserEdge") {
@@ -230,15 +227,37 @@ const UserList = ({ organization }: UserListProps) => {
     }
   `;
 
+  const adminUserListSubscription = graphql`
+    subscription UserListAdminSubscription($connections: [ID!]!) {
+      AdminUser {
+        add @appendNode(connections: $connections, edgeTypeName: "UserEdge") {
+          ...UserList_fragment
+        }
+      }
+    }
+  `;
+
   const userListSubscriptionConfig = useMemo(
-    () => ({
-      variables: {
-        connections: [connectionID],
-        organizationId: isAdminPath ? undefined : organization,
-      },
-      subscription: userListSubscription,
-    }),
-    [connectionID, isAdminPath, organization, userListSubscription]
+    () =>
+      isAdminPath
+        ? {
+            variables: { connections: [connectionID] },
+            subscription: adminUserListSubscription,
+          }
+        : {
+            variables: {
+              connections: [connectionID],
+              organizationId: organization,
+            },
+            subscription: userListSubscription,
+          },
+    [
+      adminUserListSubscription,
+      connectionID,
+      isAdminPath,
+      organization,
+      userListSubscription,
+    ]
   );
   useSubscription(userListSubscriptionConfig);
 
@@ -364,62 +383,54 @@ const UserList = ({ organization }: UserListProps) => {
               },
             },
           ]),
-      ...(isTrialInviteEnabled
-        ? [
-            {
-              accessorKey: 'status',
-              id: 'invitation_status',
-              header: t('UserListPage.InvitationStatus'),
-              enableSorting: false,
-              cell: ({
-                row: {
-                  original: { status },
-                },
-              }: {
-                row: { original: UserList_fragment$data };
-              }) => {
-                if (
-                  status === UserAccountStatus.Waiting ||
-                  status === UserAccountStatus.Invited
-                ) {
-                  return (
-                    <Chip
-                      label={t('UserListPage.InvitationPending')}
-                      severity="medium"
-                    />
-                  );
-                }
-                if (status === UserAccountStatus.Expired) {
-                  return (
-                    <Chip
-                      label={t('UserListPage.InvitationExpired')}
-                      severity="critical"
-                    />
-                  );
-                }
-                return null;
-              },
-            },
-            {
-              accessorKey: 'invitation_date',
-              id: 'invitation_date',
-              header: t('UserListPage.InvitationDate'),
-              cell: ({
-                row,
-              }: {
-                row: { original: UserList_fragment$data };
-              }) => {
-                return (
-                  <span className="truncate">
-                    {row.original.invitation_date
-                      ? formatDate(row.original.invitation_date, 'DATE_FULL')
-                      : '-'}
-                  </span>
-                );
-              },
-            },
-          ]
-        : []),
+      {
+        accessorKey: 'status',
+        id: 'invitation_status',
+        header: t('UserListPage.InvitationStatus'),
+        enableSorting: false,
+        cell: ({
+          row: {
+            original: { status },
+          },
+        }: {
+          row: { original: UserList_fragment$data };
+        }) => {
+          if (
+            status === UserAccountStatus.Waiting ||
+            status === UserAccountStatus.Invited
+          ) {
+            return (
+              <Chip
+                label={t('UserListPage.InvitationPending')}
+                severity="medium"
+              />
+            );
+          }
+          if (status === UserAccountStatus.Expired) {
+            return (
+              <Chip
+                label={t('UserListPage.InvitationExpired')}
+                severity="critical"
+              />
+            );
+          }
+          return null;
+        },
+      },
+      {
+        accessorKey: 'invitation_date',
+        id: 'invitation_date',
+        header: t('UserListPage.InvitationDate'),
+        cell: ({ row }: { row: { original: UserList_fragment$data } }) => {
+          return (
+            <span className="truncate">
+              {row.original.invitation_date
+                ? formatDate(row.original.invitation_date, 'DATE_FULL')
+                : '-'}
+            </span>
+          );
+        },
+      },
       ...(hasResendButtonColumn
         ? [
             {
@@ -457,8 +468,7 @@ const UserList = ({ organization }: UserListProps) => {
               enableResizing: false,
               cell: ({ row }: { row: Row<UserList_fragment$data> }) => {
                 const canDelete = canDeleteUserRow(row.original.id, me?.id);
-                const showResendInvite =
-                  isTrialInviteEnabled && canResendInvite(row.original.status);
+                const showResendInvite = canResendInvite(row.original.status);
                 return (
                   <div
                     className="flex items-center justify-end"
@@ -494,7 +504,6 @@ const UserList = ({ organization }: UserListProps) => {
       handleResendInvite,
       isAdminPath,
       isResendingInvite,
-      isTrialInviteEnabled,
       me?.id,
       me?.selected_organization_id,
       t,

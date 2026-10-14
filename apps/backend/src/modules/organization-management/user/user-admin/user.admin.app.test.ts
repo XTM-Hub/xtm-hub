@@ -216,6 +216,57 @@ describe('users admin app', () => {
     });
   });
 
+  describe('editUserCapabilities', () => {
+    const createdUsers: User[] = [];
+
+    afterEach(async () => {
+      await Promise.all(
+        createdUsers
+          .splice(0)
+          .map((user) => UserHelper.removeUser({ id: user.id }))
+      );
+    });
+
+    it('should reject the user when they have no pending request in the selected organization', async () => {
+      requestContext.set(requestContextAdminSecondOrga);
+
+      const call = UserAdminApp.editUserCapabilities({
+        userId: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE.ID,
+        input: {
+          capabilities: [OrganizationCapability.AdministrateOrganization],
+        },
+      });
+
+      await expect(call).rejects.toThrow(ErrorCode.PendingUserNotFound);
+      expect(
+        await UserOrganizationDomain.loadUserOrganization({
+          user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE.ID,
+          organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        })
+      ).toHaveLength(0);
+    });
+
+    it('should reject the user when the selected organization is the caller personal space', async () => {
+      const caller = await UserProvisioningDomain.createUser(
+        { email: `edit-capabilities-${uuidv4()}@edit-capabilities-test.io` },
+        { sendWelcomeEmail: false }
+      );
+      createdUsers.push(caller);
+      requestContext.set({
+        user: (await UserDomain.loadUserBy({ 'User.id': caller.id }))!,
+      });
+
+      const call = UserAdminApp.editUserCapabilities({
+        userId: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE.ID,
+        input: {
+          capabilities: [OrganizationCapability.AdministrateOrganization],
+        },
+      });
+
+      await expect(call).rejects.toThrow(ErrorCode.CantAddUserToPersonalSpace);
+    });
+  });
+
   describe('addUser', () => {
     const createdEmails: string[] = [];
 

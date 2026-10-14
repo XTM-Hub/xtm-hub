@@ -1,7 +1,5 @@
 import { AuthenticationClient, Management, ManagementClient } from 'auth0';
 import config from 'config';
-import { OrganizationId } from '../../model/kanel/public/Organization';
-import { OrganizationDomain } from '../../modules/organization-management/organization/organization.domain';
 import { logApp } from '../../utils/app-logger.util';
 import { chunk } from '../../utils/utils';
 import {
@@ -120,27 +118,5 @@ export const auth0ClientImplementation: Auth0Client = {
       email,
       connection: CONNECTION_TYPE,
     });
-  },
-  createAudienceAPI: async (
-    organization_name: string,
-    platform_id: string
-  ): Promise<void> => {
-    await managementClient.resourceServers.create({
-      name: `${organization_name}_${platform_id}`,
-      identifier: platform_id,
-      signing_alg: 'RS256',
-    });
-  },
-  deleteAudienceAPI: async (
-    organization_id: OrganizationId,
-    platform_id: string
-  ): Promise<void> => {
-    const organization = await OrganizationDomain.loadOrganizationBy({
-      id: organization_id,
-    });
-    logApp.info(
-      `Delete API Audience for organization ${organization?.name} with platform_id ${platform_id}`
-    );
-    await managementClient.resourceServers.delete(platform_id);
   },
 };

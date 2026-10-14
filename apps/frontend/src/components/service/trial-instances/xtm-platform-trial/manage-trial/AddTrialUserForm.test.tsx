@@ -1,5 +1,4 @@
 import { AddTrialUserForm } from '@/components/service/trial-instances/xtm-platform-trial/manage-trial/AddTrialUserForm';
-import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
 import { mockGraphqlQuery } from '@/utils/test/msw/graphql-api';
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
@@ -44,15 +43,24 @@ const bundleUserServiceGroupsResponse: BundleUserServiceGroupsQuery = {
   bundleUserServiceGroups: [],
 };
 
+// mockUser defaults status to Expired; null = active user, labelled by plain email
 const usersResponse: UsersQuery = {
   __typename: 'Query',
   users: mockUserConnection({
     edges: [
       mockUserEdge({
-        node: mockUser({ id: 'user-1', email: 'user1@filigran.io' }),
+        node: mockUser({
+          id: 'user-1',
+          email: 'user1@filigran.io',
+          status: null,
+        }),
       }),
       mockUserEdge({
-        node: mockUser({ id: 'user-2', email: 'user2@filigran.io' }),
+        node: mockUser({
+          id: 'user-2',
+          email: 'user2@filigran.io',
+          status: null,
+        }),
       }),
     ],
   }),
@@ -326,10 +334,9 @@ const renderForm = (
     { me }
   );
 
-describe('AddTrialUserForm with the TRIAL_INVITE feature flag', () => {
+describe('AddTrialUserForm user search and invitations', () => {
   beforeEach(() => {
     showSnackbarMock.mockReset();
-    vi.mocked(useIsFeatureEnabled).mockReturnValue(true);
   });
 
   it('appends the invitation status to the users who are not active yet', async () => {
@@ -538,31 +545,5 @@ describe('AddTrialUserForm with the TRIAL_INVITE feature flag', () => {
         'Service.Bundle.ManageTrial.AddUserDialog.NoPermissionToInvite'
       )
     ).not.toBeInTheDocument();
-  });
-});
-
-describe('AddTrialUserForm without the TRIAL_INVITE feature flag', () => {
-  beforeEach(() => {
-    vi.mocked(useIsFeatureEnabled).mockReturnValue(false);
-  });
-
-  it('keeps plain labels, no warning, no server search and no invite', async () => {
-    const { searchedTerms } = setupSearchableQueryMocks();
-    const { user } = renderForm(platformRegistrationManagerMe);
-
-    await openEmailDropdown(user);
-    expect(await screen.findByText('waiting@filigran.io')).toBeInTheDocument();
-    expect(
-      screen.queryByText(
-        'Service.Bundle.ManageTrial.AddUserDialog.NoPermissionToInvite'
-      )
-    ).not.toBeInTheDocument();
-
-    await user.type(getEmailCombobox(), 'new@filigran.io');
-
-    expect(
-      screen.queryByText('Service.Bundle.ManageTrial.AddUserDialog.InviteEmail')
-    ).not.toBeInTheDocument();
-    expect(searchedTerms.every((searchTerm) => !searchTerm)).toBe(true);
   });
 });

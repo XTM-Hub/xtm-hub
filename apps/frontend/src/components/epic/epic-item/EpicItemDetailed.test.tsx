@@ -4,7 +4,6 @@ import testRender from '@/utils/test/test-render';
 import { epic_fragment$data } from '@generated/epic_fragment.graphql';
 import { EditionType, EpicType, FiligranProduct } from '@graphql/generated';
 import { screen } from '@testing-library/react';
-import { createMockEnvironment } from 'relay-test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('EpicItemDetailed', () => {
@@ -38,13 +37,8 @@ describe('EpicItemDetailed', () => {
   });
 
   it('renders title, short description, markdown description and footer', () => {
-    // Given
-    const environment = createMockEnvironment();
-
     // When
-    testRender(<EpicItemDetailed {...defaultProps} />, {
-      relayConfig: environment,
-    });
+    testRender(<EpicItemDetailed {...defaultProps} />);
 
     // Then
     const heading = screen.getByRole('heading', { level: 2 });
@@ -54,13 +48,8 @@ describe('EpicItemDetailed', () => {
   });
 
   it('renders the problem, solution and value sections as markdown', () => {
-    // Given
-    const environment = createMockEnvironment();
-
     // When
-    testRender(<EpicItemDetailed {...defaultProps} />, {
-      relayConfig: environment,
-    });
+    testRender(<EpicItemDetailed {...defaultProps} />);
 
     // Then
     expect(
@@ -74,16 +63,12 @@ describe('EpicItemDetailed', () => {
   });
 
   it('does not render the heading of a section left empty', () => {
-    // Given
-    const environment = createMockEnvironment();
-
     // When
     testRender(
       <EpicItemDetailed
         {...defaultProps}
         epic={epic(null, { proposed_solution: '' })}
-      />,
-      { relayConfig: environment }
+      />
     );
 
     // Then
@@ -93,16 +78,12 @@ describe('EpicItemDetailed', () => {
   });
 
   it('does not render the description when the epic has none', () => {
-    // Given
-    const environment = createMockEnvironment();
-
     // When
     testRender(
       <EpicItemDetailed
         {...defaultProps}
         epic={epic(null, { description: '' })}
-      />,
-      { relayConfig: environment }
+      />
     );
 
     // Then
@@ -121,18 +102,12 @@ describe('EpicItemDetailed', () => {
   `(
     'renders community call-to-action with $description',
     ({ slackLink, expectedLink }) => {
-      // Given
-      const environment = createMockEnvironment();
-
       // When
       testRender(
         <EpicItemDetailed
           {...defaultProps}
           epic={epic(slackLink)}
-        />,
-        {
-          relayConfig: environment,
-        }
+        />
       );
 
       // Then

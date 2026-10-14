@@ -298,6 +298,7 @@
       "CANT_DELETE_BUILTIN_USER": "This built-in user cannot be deleted",
       "CANT_DELETE_YOURSELF": "You cannot delete your own account",
       "CANT_REMOVE_LAST_ADMINISTRATOR": "You cannot remove the last administrator of an organization",
+      "CANT_REMOVE_USER_FROM_PERSONAL_SPACE": "You cannot remove a user from a personal space",
       "CANT_REMOVE_YOURSELF_FROM_ORGA_ERROR": "You cannot remove yourself from organization",
       "CANT_REQUEST_FREE_TRIAL": "You cannot request a free trial",
       "CANT_REQUEST_FREE_TRIAL_IN_PERSONAL_SPACE": "You cannot request a free trial in your personal space",
@@ -386,6 +387,7 @@
       "ORGANIZATION_SAME_DOMAIN_EXISTS": "An organization with the same domain already exists",
       "ORGANIZATION_SAME_NAME_EXISTS": "An organization with the same name already exists",
       "ORGANIZATIONS_DOES_NOT_MATCH_SELECTED_ORGANIZATION": "You are not allowed to do this",
+      "PENDING_USER_NOT_FOUND": "This user has no pending request to join the organization",
       "PLATFORM_CONFIGURATION_NOT_FOUND": "Platform configuration was not found",
       "PLATFORM_NOT_REGISTERED": "The platform is not connected",
       "PLATFORM_TYPE_NOT_SUPPORTED": "The platform type is not supported",
@@ -956,7 +958,20 @@
       "Status": "Status",
       "PrivatePlatform": "Private platform",
       "LastConnectionCheck": "Last connection check",
-      "Access": "Access"
+      "Access": "Access",
+      "PlatformInformation": "Platform information",
+      "PlatformVersion": "Platform version"
+    },
+    "Metrics": {
+      "Metadata": {
+        "Hostname": "Host name",
+        "CopyHostname": "Copy host name",
+        "SubscribedPlan": "Subscribed plan",
+        "Contract": "Contract",
+        "RegionalArea": "Regional area",
+        "DaysLeft": "{days, plural, =1 {# day left} other {# days left}}",
+        "Unavailable": "The information is currently unavailable"
+      }
     },
     "Error": {
       "Capability": {
@@ -1168,7 +1183,7 @@
     },
     "LibraryHero": {
       "Eyebrow": "Filigran's resources",
-      "DefaultDescription": "Connect your OpenCTI or OpenAEV product to deploy pre-built content in one click, stay up to date with product newsfeeds, start free trials, and simply get more out of your XTM platform experience."
+      "DefaultDescription": "Connect your OpenCTI or OpenAEV product to deploy pre-built content in one click, stay up to date with product newsfeeds, start free trials, and simply get more out of your XTM Platform experience."
     },
     "Connectors": {
       "DataImport": "Data Import",
@@ -1427,6 +1442,7 @@
     "List": {
       "ViewTab": "Select tab view",
       "ViewList": "Select list view",
+      "Filters": "Filters",
       "Tab": {
         "Name": "Name",
         "Description": "Description",

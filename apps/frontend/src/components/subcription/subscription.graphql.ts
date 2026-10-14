@@ -62,17 +62,6 @@ export const AddSubscriptionInServiceMutation = graphql`
   }
 `;
 
-export const SubscriptionUpdateMutation = graphql`
-  mutation subscriptionUpdateMutation(
-    $subscription_id: SubscriptionId!
-    $input: UpdateSubscriptionInput!
-  ) {
-    updateSubscription(subscription_id: $subscription_id, input: $input) {
-      ...subscription_fragment
-    }
-  }
-`;
-
 export const SubscriptionListQuery = graphql`
   query subscriptionListQuery(
     $count: Int!

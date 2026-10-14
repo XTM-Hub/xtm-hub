@@ -25,7 +25,6 @@ type OrganizationUser = UsersQuery['users']['edges'][number]['node'];
 interface UseTrialUserOptionsParams {
   organizationId?: string | null;
   bundleUsers: { id: string; email: string }[];
-  isTrialInviteEnabled: boolean;
   canInviteUsers: boolean;
   canInviteOutsideOrganizationDomains: boolean;
 }
@@ -37,7 +36,6 @@ const getTrialUserOptionValue = ({ value }: TrialUserOption) => value;
 export const useTrialUserOptions = ({
   organizationId,
   bundleUsers,
-  isTrialInviteEnabled,
   canInviteUsers,
   canInviteOutsideOrganizationDomains,
 }: UseTrialUserOptionsParams) => {
@@ -56,7 +54,7 @@ export const useTrialUserOptions = ({
     filters: organizationId
       ? [{ key: FilterKey.OrganizationId, value: [organizationId] }]
       : [],
-    searchTerm: isTrialInviteEnabled && searchTerm ? searchTerm : null,
+    searchTerm: searchTerm || null,
   };
   const {
     data: usersData,
@@ -69,9 +67,7 @@ export const useTrialUserOptions = ({
   });
 
   const isInviteRestrictedToDomains =
-    isTrialInviteEnabled &&
-    canInviteUsers &&
-    !canInviteOutsideOrganizationDomains;
+    canInviteUsers && !canInviteOutsideOrganizationDomains;
   const { data: domainsData, isSuccess: areDomainsLoaded } =
     useMeOrganizationDomainsQuery(portalGraphqlClient, undefined, {
       queryKey: meOrganizationDomainsKeys.detail(),
@@ -95,9 +91,7 @@ export const useTrialUserOptions = ({
   const userOptions = useMemo(() => {
     const bundleUserIds = new Set(bundleUsers.map(({ id }) => id));
     const formatLabel = ({ email, status }: OrganizationUser) => {
-      const statusLabel = isTrialInviteEnabled
-        ? getUserStatusLabel(status)
-        : null;
+      const statusLabel = getUserStatusLabel(status);
       return statusLabel
         ? `${email} (${t(`Service.Bundle.ManageTrial.AddUserDialog.Status.${statusLabel}`)})`
         : email;
@@ -110,13 +104,12 @@ export const useTrialUserOptions = ({
         value: user.id,
         status: user.status,
       }));
-  }, [organizationUsers, bundleUsers, isTrialInviteEnabled, t]);
+  }, [organizationUsers, bundleUsers, t]);
 
   // Only offered once the server search for this exact term has resolved,
   // so an existing organization member is never mistaken for a new email
   const inviteOption = useMemo(() => {
     if (
-      !isTrialInviteEnabled ||
       !canInviteUsers ||
       !searchTerm ||
       !isSuccess ||
@@ -139,7 +132,6 @@ export const useTrialUserOptions = ({
       value: toNewEmailEntry(searchTerm),
     };
   }, [
-    isTrialInviteEnabled,
     canInviteUsers,
     searchTerm,
     isSuccess,
@@ -172,8 +164,8 @@ export const useTrialUserOptions = ({
 
   return {
     usersOptions,
-    onUsersInputChange: isTrialInviteEnabled ? handleInputChange : undefined,
+    onUsersInputChange: handleInputChange,
     onUsersChange: setSelectedValues,
-    hasSelectedExpiredUsers: isTrialInviteEnabled && hasSelectedExpiredUsers,
+    hasSelectedExpiredUsers,
   };
 };

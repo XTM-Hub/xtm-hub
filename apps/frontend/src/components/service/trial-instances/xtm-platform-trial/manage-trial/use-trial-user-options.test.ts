@@ -31,19 +31,15 @@ const renderUseTrialUserOptions = () =>
     useTrialUserOptions({
       organizationId: 'org-1',
       bundleUsers: [],
-      isTrialInviteEnabled: true,
       canInviteUsers: true,
       // Disables the organization domains query, covered by the form tests
       canInviteOutsideOrganizationDomains: true,
     })
   );
 
-const search = (
-  onUsersInputChange: ((value: string) => void) | undefined,
-  value: string
-) => {
+const search = (onUsersInputChange: (value: string) => void, value: string) => {
   act(() => {
-    onUsersInputChange?.(value);
+    onUsersInputChange(value);
     vi.advanceTimersByTime(DEBOUNCE_TIME);
   });
 };

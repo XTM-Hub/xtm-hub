@@ -15,7 +15,6 @@ import { auth0ClientMock } from '../../../../thirdparty/auth0/mock';
 import { PgBossProducer } from '../../../../thirdparty/pgboss/producer';
 import { logApp } from '../../../../utils/app-logger.util';
 import { ErrorCode } from '../../../../utils/error/error.code';
-import * as FeatureFlagUtil from '../../../../utils/feature-flag.util';
 import { chunk } from '../../../../utils/utils';
 import { ServiceGroupApp } from '../../../deployment/group/service-group.app';
 import { UserDomain } from '../user-domain/user.domain';
@@ -126,7 +125,6 @@ describe('userAccountStatusSyncApp.syncUserAccountStatusWithAuth0', () => {
 
   beforeEach(async () => {
     auth0Accounts = new Map();
-    vi.spyOn(FeatureFlagUtil, 'isFeatureEnabled').mockReturnValue(true);
     vi.spyOn(auth0ClientMock, 'getUsersByEmails').mockImplementation(
       async (emails) =>
         new Map(
@@ -161,22 +159,6 @@ describe('userAccountStatusSyncApp.syncUserAccountStatusWithAuth0', () => {
       createdBundleIds.length = 0;
       createdUserIds.length = 0;
     }
-  });
-
-  it('should do nothing when the TRIAL_INVITE flag is disabled', async () => {
-    // Given
-    const user = await createUser(UserAccountStatus.Waiting);
-    vi.spyOn(FeatureFlagUtil, 'isFeatureEnabled').mockReturnValue(false);
-
-    // When
-    await UserAccountStatusSyncApp.syncUserAccountStatusWithAuth0(OPTIONS);
-
-    // Then
-    expect(auth0ClientMock.getUsersByEmails).not.toHaveBeenCalled();
-    expect(logApp.info).toHaveBeenCalledWith(
-      'Auth0 sync skipped: TRIAL_INVITE disabled'
-    );
-    expect(await statusOf(user)).toBe(UserAccountStatus.Waiting);
   });
 
   it('should log and return when no user needs syncing', async () => {

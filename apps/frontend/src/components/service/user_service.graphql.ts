@@ -34,30 +34,6 @@ export const userServiceFromSubscriptionFragment = graphql`
   }
 `;
 
-export const userServiceFragment = graphql`
-  fragment userService_fragment on UserService {
-    id
-    user_service_capability {
-      generic_service_capability {
-        id
-        name
-      }
-      subscription_capability {
-        service_capability {
-          id
-          name
-        }
-      }
-    }
-    user {
-      id
-      last_name
-      first_name
-      email
-    }
-  }
-`;
-
 export const userServicesFragment = graphql`
   fragment userServices_fragment on UserService @inline {
     id

@@ -1,0 +1,198 @@
+'use client';
+
+import { registeredPlatformByServiceInstanceIdFragment } from '@/components/registration/register/register.graphql';
+import { Skeleton } from '@/components/ui/skeleton';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
+import { useTranslate } from '@/hooks/use-translate';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import { computePeriodProgress, useDateFormatter } from '@/utils/date';
+import {
+  Icon,
+  IconButton,
+  ProgressBar,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/design-system';
+import { registeredPlatformByServiceInstanceId_fragment$key } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
+import {
+  CommercialModel,
+  useRegisteredSaasPlatformMetadataQuery,
+} from '@graphql/generated';
+import { registrationKeys } from '@graphql/registration/registration.keys';
+import { useId } from 'react';
+import { useFragment } from 'react-relay';
+import { useCopyToClipboard } from 'usehooks-ts';
+
+// Matches the backend cache: a remount within a minute would only get the same answer back.
+const SAAS_PLATFORM_METADATA_STALE_TIME = 60_000;
+
+interface RegistrationMetadataProps {
+  registeredPlatform: registeredPlatformByServiceInstanceId_fragment$key;
+}
+
+export const RegistrationMetadata = ({
+  registeredPlatform,
+}: RegistrationMetadataProps) => {
+  const t = useTranslate();
+  const formatDate = useDateFormatter();
+  const contractLabelId = useId();
+  const daysLeftId = useId();
+  const [, copy] = useCopyToClipboard();
+
+  const platform =
+    useFragment<registeredPlatformByServiceInstanceId_fragment$key>(
+      registeredPlatformByServiceInstanceIdFragment,
+      registeredPlatform
+    );
+  const isSaas = platform.commercial_model === CommercialModel.Saas;
+
+  const variables = {
+    input: { service_instance_id: platform.service_instance_id },
+  };
+  const { data, isPending } = useRegisteredSaasPlatformMetadataQuery(
+    portalGraphqlClient,
+    variables,
+    {
+      queryKey: registrationKeys.registeredSaasPlatformMetadata(variables),
+      enabled: isSaas,
+      staleTime: SAAS_PLATFORM_METADATA_STALE_TIME,
+    }
+  );
+  const metadata = data?.registeredSaasPlatformMetadata;
+  const hostname = metadata?.hostname;
+
+  if (!isSaas) {
+    return null;
+  }
+
+  if (isPending) {
+    return <RegistrationMetadataSkeleton />;
+  }
+
+  const copyHostname = async (hostname: string) => {
+    const copied = await copy(hostname);
+    showSnackbar(
+      copied
+        ? { severity: 'success', title: t('Utils.Copied') }
+        : { severity: 'error', title: t('Utils.FailedToCopy') }
+    );
+  };
+
+  const contractPeriod =
+    metadata?.start_date && metadata?.end_date
+      ? computePeriodProgress(metadata?.start_date, metadata?.end_date)
+      : null;
+
+  return (
+    <section className="flex justify-between p-xl">
+      <ul className="text-sm flex flex-col gap-l">
+        <li className="flex items-center">
+          <span>
+            <span className="mr-xs text-default-secondary">
+              {t('Register.Metrics.Metadata.Hostname')}:
+            </span>
+            {hostname ? (
+              <span className="font-mono text-filigran-brand-primary">
+                {hostname}
+              </span>
+            ) : (
+              t('Register.Metrics.Metadata.Unavailable')
+            )}
+          </span>
+          {hostname && (
+            <TooltipProvider>
+              <Tooltip delayDuration={50}>
+                <TooltipTrigger asChild>
+                  <IconButton
+                    priority="tertiary"
+                    size="sm"
+                    className="ml-xs"
+                    aria-label={t('Register.Metrics.Metadata.CopyHostname')}
+                    icon={
+                      <Icon
+                        name="files"
+                        size={16}
+                      />
+                    }
+                    onClick={() => copyHostname(hostname)}
+                  />
+                </TooltipTrigger>
+                <TooltipContent>
+                  {t('Register.Metrics.Metadata.CopyHostname')}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </li>
+        <li>
+          <span className="mr-xs text-default-secondary">
+            {t('Register.Metrics.Metadata.SubscribedPlan')}:
+          </span>
+          {metadata?.plan ?? t('Register.Metrics.Metadata.Unavailable')}
+        </li>
+        <li className="flex flex-col gap-s">
+          <span>
+            <span
+              id={contractLabelId}
+              className="mr-xs text-default-secondary">
+              {t('Register.Metrics.Metadata.Contract')}:
+            </span>
+            {contractPeriod
+              ? `${formatDate(metadata?.start_date)} → ${formatDate(metadata?.end_date)}`
+              : t('Register.Metrics.Metadata.Unavailable')}
+          </span>
+          {contractPeriod && (
+            <div className="flex items-center gap-s">
+              <ProgressBar
+                value={contractPeriod.elapsedPercent}
+                aria-labelledby={`${contractLabelId} ${daysLeftId}`}
+                className="flex-1"
+              />
+              <span
+                id={daysLeftId}
+                className="shrink-0">
+                {t('Register.Metrics.Metadata.DaysLeft', {
+                  days: contractPeriod.daysLeft,
+                })}
+              </span>
+            </div>
+          )}
+        </li>
+        <li>
+          <span className="mr-xs text-default-secondary">
+            {t('Register.Metrics.Metadata.RegionalArea')}:
+          </span>
+          {metadata?.region ?? t('Register.Metrics.Metadata.Unavailable')}
+        </li>
+      </ul>
+    </section>
+  );
+};
+
+const RegistrationMetadataSkeleton = () => {
+  const t = useTranslate();
+
+  return (
+    <section
+      aria-busy="true"
+      className="flex justify-between p-xl">
+      <ul className="text-sm flex flex-col gap-l">
+        {[
+          'Register.Metrics.Metadata.Hostname',
+          'Register.Metrics.Metadata.SubscribedPlan',
+          'Register.Metrics.Metadata.Contract',
+          'Register.Metrics.Metadata.RegionalArea',
+        ].map((labelKey) => (
+          <li
+            key={labelKey}
+            className="flex items-center">
+            <span className="mr-xs text-default-secondary">{t(labelKey)}:</span>
+            <Skeleton className="h-4 w-40" />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+};

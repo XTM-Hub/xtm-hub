@@ -8,6 +8,9 @@ metadata:
     external-dns.alpha.kubernetes.io/ttl: "120"
     prometheus.io/probe: "true"
     {{- if eq .Values.ingressClass "nginx" }}
+    {{- if .Values.xtmhub.wwwRedirect }}
+    nginx.ingress.kubernetes.io/from-to-www-redirect: "true"
+    {{- end }}
     nginx.ingress.kubernetes.io/proxy-body-size: 256m
     nginx.ingress.kubernetes.io/retry-non-idempotent: "true"
     nginx.ingress.kubernetes.io/proxy-connect-timeout: "30s"
@@ -34,4 +37,8 @@ spec:
   tls:
   - hosts:
     - {{ .Values.xtmhub.host }}
+    {{- if .Values.xtmhub.wwwRedirect }}
+    # The certificate must also cover the www host for the HTTPS redirect to work
+    - www.{{ .Values.xtmhub.host }}
+    {{- end }}
     secretName: xtmhub-cert

@@ -1,6 +1,7 @@
 import {
   AddUserInput,
   OrganizationCapability,
+  OrganizationMemberContact,
 } from '../../../../__generated__/resolvers-types';
 import portalConfig from '../../../../config';
 import { withTransaction } from '../../../../context/database.context';
@@ -10,21 +11,36 @@ import Organization, {
 } from '../../../../model/kanel/public/Organization';
 import { UserId } from '../../../../model/kanel/public/User';
 import { UserLoadUserBy } from '../../../../model/user';
+import { dispatch } from '../../../../pub';
 import { securityGuard } from '../../../../security/guard';
 import {
   buildPendingUserActionLink,
   sendMail,
 } from '../../../../server/mail-service';
+import { updateUserSession } from '../../../../session-store-manager';
 import { logApp } from '../../../../utils/app-logger.util';
-import { ErrorCode } from '../../../../utils/error/error.code';
+import {
+  ErrorCode,
+  ForbiddenErrorCode,
+} from '../../../../utils/error/error.code';
 import { formatName } from '../../../../utils/format';
 import { isValidEmail } from '../../../../utils/verify-email.util';
 import { OrganizationDomain } from '../../organization/organization.domain';
+import { OrganizationHelper } from '../../organization/organization.helper';
 import { UserDomain } from '../user-domain/user.domain';
 import { UserOrganizationPendingDomain } from '../user-pending/user-organization-pending.domain';
 import { UserProvisioningApp } from '../user-provisioning/user-provisioning.app';
 import { UserHelper } from '../user.helper';
 import { UserOrganizationDomain } from './user-organization.domain';
+
+const assertIsNotPersonalSpace = (
+  organization: Organization,
+  errorCode: ForbiddenErrorCode
+): void => {
+  if (organization.personal_space) {
+    throw new Error(errorCode);
+  }
+};
 
 export const UserOrganizationApp = {
   addUserToOrganization: async (
@@ -56,16 +72,29 @@ export const UserOrganizationApp = {
     organization: Organization;
     email: string;
   }): Promise<void> => {
-    if (organization.personal_space) {
-      logApp.warn('You cannot add a user in your personal space');
-      throw new Error(ErrorCode.CantAddUserToPersonalSpace);
-    }
+    assertIsNotPersonalSpace(
+      organization,
+      ErrorCode.CantAddUserToPersonalSpace
+    );
 
     await securityGuard.assertEmailMatchesOrganization(
       requestContext.requireUser(),
       email,
       organization.id
     );
+  },
+
+  assertOrganizationIsNotPersonalSpace: async (
+    organizationId: OrganizationId,
+    personalSpaceErrorCode: ForbiddenErrorCode
+  ): Promise<void> => {
+    const organization = await OrganizationDomain.loadOrganizationBy({
+      id: organizationId,
+    });
+    if (!organization) {
+      throw new Error(ErrorCode.OrganizationNotFound);
+    }
+    assertIsNotPersonalSpace(organization, personalSpaceErrorCode);
   },
 
   provisionOrganizationUser: async ({
@@ -141,6 +170,22 @@ export const UserOrganizationApp = {
     }
     return [...memberIds, ...provisionedUserIds];
   },
+  loadOrganizationMemberContactsByCapabilities: async ({
+    organizationId,
+    capabilities,
+  }: {
+    organizationId: OrganizationId;
+    capabilities: OrganizationCapability[];
+  }): Promise<OrganizationMemberContact[]> => {
+    const user = requestContext.requireUser();
+    await securityGuard.assertUserIsInOrganization(user, organizationId);
+
+    return UserDomain.loadUsersByCapabilitiesInOrganization(
+      organizationId,
+      capabilities
+    );
+  },
+
   changeSelectedOrganization: async (
     organization_id: OrganizationId
   ): Promise<UserLoadUserBy> => {
@@ -177,16 +222,57 @@ export const UserOrganizationApp = {
       throw new Error(ErrorCode.CantRemoveYourselfFromOrgaError);
     }
 
-    await UserOrganizationDomain.removeUserFromOrganization(
+    await securityGuard.assertUserCapabilities(
+      [
+        OrganizationCapability.AdministrateOrganization,
+        OrganizationCapability.ManageAccess,
+      ],
+      organizationId
+    );
+
+    await UserOrganizationApp.assertOrganizationIsNotPersonalSpace(
+      organizationId,
+      ErrorCode.CantRemoveUserFromPersonalSpace
+    );
+
+    // No lock on purpose: two simultaneous removals of the last administrators are unlikely enough to accept the race
+    await UserHelper.preventAdministratorRemovalOfOneOrganization(
       userId,
       organizationId
     );
+    await withTransaction(async () => {
+      const [removedMembership] =
+        await UserOrganizationDomain.removeUserFromOrganization(
+          userId,
+          organizationId
+        );
+      if (!removedMembership) {
+        throw new Error(ErrorCode.UserIsNotInOrganization);
+      }
+      await UserDomain.updateUser(
+        userId,
+        {
+          selected_organization_id: OrganizationHelper.personalSpaceIdOf({
+            id: userId,
+          }),
+        },
+        { selected_organization_id: organizationId }
+      );
+    });
+
     const updatedUser = await UserDomain.loadUserBy({
       'User.id': userId,
     });
     if (!updatedUser) {
       throw new Error(ErrorCode.UserNotFound);
     }
+    await updateUserSession(updatedUser);
+    await dispatch(
+      'MeUser',
+      'edit',
+      UserHelper.mapUserToGraphqlUser(updatedUser),
+      'User'
+    );
     return updatedUser;
   },
 

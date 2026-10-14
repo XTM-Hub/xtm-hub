@@ -1,6 +1,5 @@
 import UserList from '@/components/admin/user/UserList';
 import { PortalContext } from '@/components/me/AppPortalContext';
-import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
 import testRender from '@/utils/test/test-render';
 import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { UserOrdering } from '@graphql/generated';
@@ -274,7 +273,6 @@ describe('UserList', () => {
     mocks.isAdminResendInvitePending = false;
     mocks.settleResendInvite.mockReset();
     mocks.showSnackbar.mockReset();
-    vi.mocked(useIsFeatureEnabled).mockReturnValue(false);
   });
 
   it('should render the empty state when there are no users', () => {
@@ -370,22 +368,6 @@ describe('UserList', () => {
     ).toBe(false);
   });
 
-  it('should not include the invitation status and date columns when TRIAL_INVITE is disabled', () => {
-    // Given TRIAL_INVITE is disabled
-    vi.mocked(useIsFeatureEnabled).mockReturnValue(false);
-
-    // When the list is rendered
-    renderUserListWith(makeUserNode());
-
-    // Then no invitation column is shown
-    expect(
-      mocks.capturedColumns.some((column) => column.id === 'invitation_status')
-    ).toBe(false);
-    expect(
-      mocks.capturedColumns.some((column) => column.id === 'invitation_date')
-    ).toBe(false);
-  });
-
   describe('edit sheet', () => {
     beforeEach(() => {
       vi.useFakeTimers();
@@ -437,343 +419,326 @@ describe('UserList', () => {
     );
   });
 
-  describe('when TRIAL_INVITE is enabled', () => {
-    beforeEach(() => {
-      vi.mocked(useIsFeatureEnabled).mockReturnValue(true);
-    });
+  it('should include the invitation status and date columns', () => {
+    // Given the bypass admin path
+    // When the list is rendered
+    renderUserListWith(makeUserNode());
 
-    it('should include the invitation status and date columns', () => {
-      // Given the bypass admin path
-      // When the list is rendered
-      renderUserListWith(makeUserNode());
+    // Then the invitation columns are shown
+    expect(
+      mocks.capturedColumns.some((column) => column.id === 'invitation_status')
+    ).toBe(true);
+    expect(
+      mocks.capturedColumns.some((column) => column.id === 'invitation_date')
+    ).toBe(true);
+    // Resend is folded into the existing actions menu, not a separate column.
+    expect(
+      mocks.capturedColumns.some((column) => column.id === 'invitation_action')
+    ).toBe(false);
+  });
 
-      // Then the invitation columns are shown
-      expect(
-        mocks.capturedColumns.some(
-          (column) => column.id === 'invitation_status'
-        )
-      ).toBe(true);
-      expect(
-        mocks.capturedColumns.some((column) => column.id === 'invitation_date')
-      ).toBe(true);
-      // Resend is folded into the existing actions menu, not a separate column.
-      expect(
-        mocks.capturedColumns.some(
-          (column) => column.id === 'invitation_action'
-        )
-      ).toBe(false);
-    });
+  it('should not allow sorting by invitation status, which the API cannot order users by', () => {
+    // Given the invitation columns are shown
+    // When the list is rendered
+    renderUserListWith(makeUserNode());
 
-    it('should not allow sorting by invitation status, which the API cannot order users by', () => {
-      // Given the invitation columns are shown
-      // When the list is rendered
-      renderUserListWith(makeUserNode());
+    // Then the invitation status column cannot be sorted
+    expect(
+      mocks.capturedColumns.find((column) => column.id === 'invitation_status')
+        ?.enableSorting
+    ).toBe(false);
+  });
 
-      // Then the invitation status column cannot be sorted
-      expect(
-        mocks.capturedColumns.find(
-          (column) => column.id === 'invitation_status'
-        )?.enableSorting
-      ).toBe(false);
-    });
+  it('should allow sorting by invitation date with an ordering the API accepts', () => {
+    // Given the invitation columns are shown
+    // When the list is rendered
+    renderUserListWith(makeUserNode());
 
-    it('should allow sorting by invitation date with an ordering the API accepts', () => {
-      // Given the invitation columns are shown
-      // When the list is rendered
-      renderUserListWith(makeUserNode());
+    // Then the invitation date column is sortable, and its id (sent as orderBy) is a valid ordering
+    const column = mocks.capturedColumns.find(
+      ({ id }) => id === 'invitation_date'
+    );
+    expect(column?.enableSorting).not.toBe(false);
+    expect(Object.values(UserOrdering)).toContain(column?.id);
+  });
 
-      // Then the invitation date column is sortable, and its id (sent as orderBy) is a valid ordering
-      const column = mocks.capturedColumns.find(
-        ({ id }) => id === 'invitation_date'
-      );
-      expect(column?.enableSorting).not.toBe(false);
-      expect(Object.values(UserOrdering)).toContain(column?.id);
-    });
+  it('should include a standalone resend action column on the org-admin manage/user path', () => {
+    // Given the org-admin path: `/manage/user` never has `useAdminPath() === true`,
+    // unlike the bypass `/admin/user` route, so resend needs its own column there
+    mocks.isAdminPath = false;
 
-    it('should include a standalone resend action column on the org-admin manage/user path', () => {
-      // Given the org-admin path: `/manage/user` never has `useAdminPath() === true`,
-      // unlike the bypass `/admin/user` route, so resend needs its own column there
-      mocks.isAdminPath = false;
+    // When the list is rendered
+    renderUserListWith(makeUserNode());
 
-      // When the list is rendered
-      renderUserListWith(makeUserNode());
+    // Then the resend column is shown, and not the bypass-only actions menu
+    expect(
+      mocks.capturedColumns.some((column) => column.id === 'invitation_action')
+    ).toBe(true);
+    expect(
+      mocks.capturedColumns.some((column) => column.id === 'actions')
+    ).toBe(false);
+  });
 
-      // Then the resend column is shown, and not the bypass-only actions menu
-      expect(
-        mocks.capturedColumns.some(
-          (column) => column.id === 'invitation_action'
-        )
-      ).toBe(true);
-      expect(
-        mocks.capturedColumns.some((column) => column.id === 'actions')
-      ).toBe(false);
-    });
-
-    describe('invitation status cell', () => {
-      it.each([
-        ['waiting', 'UserListPage.InvitationPending'],
-        ['invited', 'UserListPage.InvitationPending'],
-        ['expired', 'UserListPage.InvitationExpired'],
-      ] as const)(
-        'should render status "%s" as "%s"',
-        (status, expectedLabel) => {
-          // Given a user with the given invitation status
-          const node = makeUserNode({ status });
-
-          // When the invitation_status cell is rendered
-          renderUserCell('invitation_status', node);
-
-          // Then it shows the matching badge label
-          expect(screen.getByText(expectedLabel)).toBeInTheDocument();
-        }
-      );
-
-      it.each([[null], [undefined]])(
-        'should render nothing when the invitation status is %s (never invited, or already accepted)',
-        (status) => {
-          // Given a user with no invitation status
-          const node = makeUserNode({ status });
-
-          // When the invitation_status cell is rendered
-          const { container } = renderUserCell('invitation_status', node);
-
-          // Then no badge is shown
-          expect(container).toBeEmptyDOMElement();
-        }
-      );
-    });
-
-    describe('invitation date cell', () => {
-      it('should render a dash when the user has no invitation date', () => {
-        // Given a user without an invitation date
-        const node = makeUserNode({ invitation_date: null });
-
-        // When the invitation_date cell is rendered
-        renderUserCell('invitation_date', node);
-
-        // Then it falls back to a dash
-        expect(screen.getByText('-')).toBeInTheDocument();
-      });
-
-      it('should render the full invitation date when the user has one', () => {
-        // Given a user with an invitation date
-        const node = makeUserNode({ invitation_date: INVITATION_DATE });
-
-        // When the invitation_date cell is rendered
-        renderUserCell('invitation_date', node);
-
-        // Then it shows the date in the full format
-        expect(screen.getByText(FORMATTED_INVITATION_DATE)).toBeInTheDocument();
-      });
-    });
-
-    describe.each([
-      {
-        entryPoint: 'org-admin resend button',
-        isAdminPath: false,
-        columnId: 'invitation_action',
-        pendingFlag: 'isResendInvitePending',
-      },
-      {
-        entryPoint: 'bypass admin actions menu',
-        isAdminPath: true,
-        columnId: 'actions',
-        pendingFlag: 'isAdminResendInvitePending',
-      },
+  describe('invitation status cell', () => {
+    it.each([
+      ['waiting', 'UserListPage.InvitationPending'],
+      ['invited', 'UserListPage.InvitationPending'],
+      ['expired', 'UserListPage.InvitationExpired'],
     ] as const)(
-      'resend from the $entryPoint',
-      ({ isAdminPath, columnId, pendingFlag }) => {
-        beforeEach(() => {
-          mocks.isAdminPath = isAdminPath;
-        });
+      'should render status "%s" as "%s"',
+      (status, expectedLabel) => {
+        // Given a user with the given invitation status
+        const node = makeUserNode({ status });
 
-        it('should show the resend action when the invitation has expired', () => {
-          // Given a user whose invitation has expired
-          const node = makeUserNode({ status: 'expired' });
+        // When the invitation_status cell is rendered
+        renderUserCell('invitation_status', node);
 
-          // When the user's cell is rendered
-          renderUserCell(columnId, node);
-
-          // Then the resend action is available
-          expect(
-            screen.getByRole('button', { name: RESEND_INVITE_LABEL })
-          ).toBeEnabled();
-        });
-
-        it.each([['waiting'], ['invited'], [null], [undefined]])(
-          'should not show the resend action when status is %s',
-          (status) => {
-            // Given an invitation still pending, or no invitation at all
-            const node = makeUserNode({ status });
-
-            // When the user's cell is rendered
-            renderUserCell(columnId, node);
-
-            // Then no resend action is offered
-            expect(
-              screen.queryByRole('button', { name: RESEND_INVITE_LABEL })
-            ).not.toBeInTheDocument();
-          }
-        );
-
-        it('should disable the resend action while a resend is in flight', () => {
-          // Given a resend already in flight
-          mocks[pendingFlag] = true;
-          const node = makeUserNode({ status: 'expired' });
-
-          // When the user's cell is rendered
-          renderUserCell(columnId, node);
-
-          // Then resend is disabled so a double click cannot send it twice
-          expect(
-            screen.getByRole('button', { name: RESEND_INVITE_LABEL })
-          ).toBeDisabled();
-        });
-
-        it('should notify success when the resend succeeds', () => {
-          // Given the server accepts the resend
-          mocks.settleResendInvite.mockImplementation(({ onSuccess }) =>
-            onSuccess()
-          );
-          renderUserCell(columnId, makeUserNode({ status: 'expired' }));
-
-          // When resend is clicked
-          fireEvent.click(
-            screen.getByRole('button', { name: RESEND_INVITE_LABEL })
-          );
-
-          // Then success is shown
-          expect(mocks.showSnackbar).toHaveBeenCalledExactlyOnceWith({
-            severity: 'success',
-            title: 'Utils.Success',
-            description: 'UserListPage.ResendInviteSuccess',
-          });
-        });
-
-        it('should show the server error when the resend fails', () => {
-          // Given the server rejects the resend with an error code
-          mocks.settleResendInvite.mockImplementation(({ onError }) =>
-            onError(new Error(SERVER_ERROR_CODE))
-          );
-          renderUserCell(columnId, makeUserNode({ status: 'expired' }));
-
-          // When resend is clicked
-          fireEvent.click(
-            screen.getByRole('button', { name: RESEND_INVITE_LABEL })
-          );
-
-          // Then the matching error is shown
-          expect(mocks.showSnackbar).toHaveBeenCalledExactlyOnceWith({
-            severity: 'error',
-            title: 'Utils.Error',
-            description: `Error.Server.${SERVER_ERROR_CODE}`,
-          });
-        });
-
-        it('should reload the list from the server when the resend succeeds', () => {
-          // Given the server accepts the resend
-          mocks.settleResendInvite.mockImplementation(({ onSuccess }) =>
-            onSuccess()
-          );
-          renderUserCell(columnId, makeUserNode({ status: 'expired' }));
-
-          // When resend is clicked
-          fireEvent.click(
-            screen.getByRole('button', { name: RESEND_INVITE_LABEL })
-          );
-
-          // Then the list is refetched, bypassing the Relay store, so the row is up to date
-          expect(mocks.refetch).toHaveBeenCalledExactlyOnceWith(
-            {},
-            { fetchPolicy: 'network-only' }
-          );
-        });
-
-        it('should not reload the list when the resend fails', () => {
-          // Given the server rejects the resend
-          mocks.settleResendInvite.mockImplementation(({ onError }) =>
-            onError(new Error(SERVER_ERROR_CODE))
-          );
-          renderUserCell(columnId, makeUserNode({ status: 'expired' }));
-
-          // When resend is clicked
-          fireEvent.click(
-            screen.getByRole('button', { name: RESEND_INVITE_LABEL })
-          );
-
-          // Then the list is left as is
-          expect(mocks.refetch).not.toHaveBeenCalled();
-        });
+        // Then it shows the matching badge label
+        expect(screen.getByText(expectedLabel)).toBeInTheDocument();
       }
     );
 
-    it('should resend through addUser with the selected organization capabilities on the org-admin path', () => {
-      // Given an org admin and an expired invitation in their organization
-      mocks.isAdminPath = false;
-      const node = makeUserNode({
-        status: 'expired',
-        organization_capabilities: [selectedOrganizationCapabilities],
-      });
-      renderUserCell('invitation_action', node);
+    it.each([[null], [undefined]])(
+      'should render nothing when the invitation status is %s (never invited, or already accepted)',
+      (status) => {
+        // Given a user with no invitation status
+        const node = makeUserNode({ status });
 
-      // When resend is clicked
-      fireEvent.click(
-        screen.getByRole('button', { name: RESEND_INVITE_LABEL })
+        // When the invitation_status cell is rendered
+        const { container } = renderUserCell('invitation_status', node);
+
+        // Then no badge is shown
+        expect(container).toBeEmptyDOMElement();
+      }
+    );
+  });
+
+  describe('invitation date cell', () => {
+    it('should render a dash when the user has no invitation date', () => {
+      // Given a user without an invitation date
+      const node = makeUserNode({ invitation_date: null });
+
+      // When the invitation_date cell is rendered
+      renderUserCell('invitation_date', node);
+
+      // Then it falls back to a dash
+      expect(screen.getByText('-')).toBeInTheDocument();
+    });
+
+    it('should render the full invitation date when the user has one', () => {
+      // Given a user with an invitation date
+      const node = makeUserNode({ invitation_date: INVITATION_DATE });
+
+      // When the invitation_date cell is rendered
+      renderUserCell('invitation_date', node);
+
+      // Then it shows the date in the full format
+      expect(screen.getByText(FORMATTED_INVITATION_DATE)).toBeInTheDocument();
+    });
+  });
+
+  describe.each([
+    {
+      entryPoint: 'org-admin resend button',
+      isAdminPath: false,
+      columnId: 'invitation_action',
+      pendingFlag: 'isResendInvitePending',
+    },
+    {
+      entryPoint: 'bypass admin actions menu',
+      isAdminPath: true,
+      columnId: 'actions',
+      pendingFlag: 'isAdminResendInvitePending',
+    },
+  ] as const)(
+    'resend from the $entryPoint',
+    ({ isAdminPath, columnId, pendingFlag }) => {
+      beforeEach(() => {
+        mocks.isAdminPath = isAdminPath;
+      });
+
+      it('should show the resend action when the invitation has expired', () => {
+        // Given a user whose invitation has expired
+        const node = makeUserNode({ status: 'expired' });
+
+        // When the user's cell is rendered
+        renderUserCell(columnId, node);
+
+        // Then the resend action is available
+        expect(
+          screen.getByRole('button', { name: RESEND_INVITE_LABEL })
+        ).toBeEnabled();
+      });
+
+      it.each([['waiting'], ['invited'], [null], [undefined]])(
+        'should not show the resend action when status is %s',
+        (status) => {
+          // Given an invitation still pending, or no invitation at all
+          const node = makeUserNode({ status });
+
+          // When the user's cell is rendered
+          renderUserCell(columnId, node);
+
+          // Then no resend action is offered
+          expect(
+            screen.queryByRole('button', { name: RESEND_INVITE_LABEL })
+          ).not.toBeInTheDocument();
+        }
       );
 
-      // Then addUser gets the email and the capabilities in the selected organization
-      expect(mocks.resendInvite).toHaveBeenCalledExactlyOnceWith({
-        input: {
-          email: USER_EMAIL,
-          password: null,
-          capabilities: [SELECTED_ORGANIZATION_CAPABILITY],
-        },
+      it('should disable the resend action while a resend is in flight', () => {
+        // Given a resend already in flight
+        mocks[pendingFlag] = true;
+        const node = makeUserNode({ status: 'expired' });
+
+        // When the user's cell is rendered
+        renderUserCell(columnId, node);
+
+        // Then resend is disabled so a double click cannot send it twice
+        expect(
+          screen.getByRole('button', { name: RESEND_INVITE_LABEL })
+        ).toBeDisabled();
       });
-      expect(mocks.adminResendInvite).not.toHaveBeenCalled();
-    });
 
-    it('should resend through adminAddUser with the user identity and organization capabilities on the bypass admin path', () => {
-      // Given the bypass admin path and an expired invitation
-      const node = makeUserNode({
-        status: 'expired',
-        organization_capabilities: [selectedOrganizationCapabilities],
+      it('should notify success when the resend succeeds', () => {
+        // Given the server accepts the resend
+        mocks.settleResendInvite.mockImplementation(({ onSuccess }) =>
+          onSuccess()
+        );
+        renderUserCell(columnId, makeUserNode({ status: 'expired' }));
+
+        // When resend is clicked
+        fireEvent.click(
+          screen.getByRole('button', { name: RESEND_INVITE_LABEL })
+        );
+
+        // Then success is shown
+        expect(mocks.showSnackbar).toHaveBeenCalledExactlyOnceWith({
+          severity: 'success',
+          title: 'Utils.Success',
+          description: 'UserListPage.ResendInviteSuccess',
+        });
       });
-      renderUserCell('actions', node);
 
-      // When resend is clicked
-      fireEvent.click(
-        screen.getByRole('button', { name: RESEND_INVITE_LABEL })
-      );
+      it('should show the server error when the resend fails', () => {
+        // Given the server rejects the resend with an error code
+        mocks.settleResendInvite.mockImplementation(({ onError }) =>
+          onError(new Error(SERVER_ERROR_CODE))
+        );
+        renderUserCell(columnId, makeUserNode({ status: 'expired' }));
 
-      // Then adminAddUser gets the user identity and their organization capabilities
-      expect(mocks.adminResendInvite).toHaveBeenCalledExactlyOnceWith({
-        input: {
-          email: USER_EMAIL,
-          password: null,
-          first_name: USER_FIRST_NAME,
-          last_name: USER_LAST_NAME,
-          organization_capabilities: [
-            {
-              organization_id: SELECTED_ORGANIZATION_ID,
-              capabilities: [SELECTED_ORGANIZATION_CAPABILITY],
-            },
-          ],
-        },
+        // When resend is clicked
+        fireEvent.click(
+          screen.getByRole('button', { name: RESEND_INVITE_LABEL })
+        );
+
+        // Then the matching error is shown
+        expect(mocks.showSnackbar).toHaveBeenCalledExactlyOnceWith({
+          severity: 'error',
+          title: 'Utils.Error',
+          description: `Error.Server.${SERVER_ERROR_CODE}`,
+        });
       });
-      expect(mocks.resendInvite).not.toHaveBeenCalled();
+
+      it('should reload the list from the server when the resend succeeds', () => {
+        // Given the server accepts the resend
+        mocks.settleResendInvite.mockImplementation(({ onSuccess }) =>
+          onSuccess()
+        );
+        renderUserCell(columnId, makeUserNode({ status: 'expired' }));
+
+        // When resend is clicked
+        fireEvent.click(
+          screen.getByRole('button', { name: RESEND_INVITE_LABEL })
+        );
+
+        // Then the list is refetched, bypassing the Relay store, so the row is up to date
+        expect(mocks.refetch).toHaveBeenCalledExactlyOnceWith(
+          {},
+          { fetchPolicy: 'network-only' }
+        );
+      });
+
+      it('should not reload the list when the resend fails', () => {
+        // Given the server rejects the resend
+        mocks.settleResendInvite.mockImplementation(({ onError }) =>
+          onError(new Error(SERVER_ERROR_CODE))
+        );
+        renderUserCell(columnId, makeUserNode({ status: 'expired' }));
+
+        // When resend is clicked
+        fireEvent.click(
+          screen.getByRole('button', { name: RESEND_INVITE_LABEL })
+        );
+
+        // Then the list is left as is
+        expect(mocks.refetch).not.toHaveBeenCalled();
+      });
+    }
+  );
+
+  it('should resend through addUser with the selected organization capabilities on the org-admin path', () => {
+    // Given an org admin and an expired invitation in their organization
+    mocks.isAdminPath = false;
+    const node = makeUserNode({
+      status: 'expired',
+      organization_capabilities: [selectedOrganizationCapabilities],
     });
+    renderUserCell('invitation_action', node);
 
-    it('should keep the delete action next to resend in the bypass admin actions menu', () => {
-      // Given the bypass admin path and an expired invitation
-      const node = makeUserNode({ status: 'expired' });
+    // When resend is clicked
+    fireEvent.click(screen.getByRole('button', { name: RESEND_INVITE_LABEL }));
 
-      // When the actions cell is rendered
-      renderUserCell('actions', node);
-
-      // Then delete is still offered
-      expect(
-        screen.getByRole('button', { name: 'Utils.Delete' })
-      ).toBeInTheDocument();
+    // Then addUser gets the email and the capabilities in the selected organization
+    expect(mocks.resendInvite).toHaveBeenCalledExactlyOnceWith({
+      input: {
+        email: USER_EMAIL,
+        password: null,
+        capabilities: [SELECTED_ORGANIZATION_CAPABILITY],
+      },
     });
+    expect(mocks.adminResendInvite).not.toHaveBeenCalled();
+  });
+
+  it('should resend through adminAddUser with the user identity and organization capabilities on the bypass admin path', () => {
+    // Given the bypass admin path and an expired invitation
+    const node = makeUserNode({
+      status: 'expired',
+      organization_capabilities: [selectedOrganizationCapabilities],
+    });
+    renderUserCell('actions', node);
+
+    // When resend is clicked
+    fireEvent.click(screen.getByRole('button', { name: RESEND_INVITE_LABEL }));
+
+    // Then adminAddUser gets the user identity and their organization capabilities
+    expect(mocks.adminResendInvite).toHaveBeenCalledExactlyOnceWith({
+      input: {
+        email: USER_EMAIL,
+        password: null,
+        first_name: USER_FIRST_NAME,
+        last_name: USER_LAST_NAME,
+        organization_capabilities: [
+          {
+            organization_id: SELECTED_ORGANIZATION_ID,
+            capabilities: [SELECTED_ORGANIZATION_CAPABILITY],
+          },
+        ],
+      },
+    });
+    expect(mocks.resendInvite).not.toHaveBeenCalled();
+  });
+
+  it('should keep the delete action next to resend in the bypass admin actions menu', () => {
+    // Given the bypass admin path and an expired invitation
+    const node = makeUserNode({ status: 'expired' });
+
+    // When the actions cell is rendered
+    renderUserCell('actions', node);
+
+    // Then delete is still offered
+    expect(
+      screen.getByRole('button', { name: 'Utils.Delete' })
+    ).toBeInTheDocument();
   });
 });

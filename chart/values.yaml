@@ -46,6 +46,8 @@ xtmhub:
     environment: dev
   version: master
   host: localhost
+  # Redirects www.<host> to <host> (ingress-nginx only)
+  wwwRedirect: false
 postgres:
   version: "17.2"
   replicas: 2

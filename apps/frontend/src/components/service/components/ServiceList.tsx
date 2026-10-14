@@ -2,6 +2,7 @@ import { PortalCapability, ServiceRestriction } from '@graphql/generated';
 
 import DocumentList from '@/components/service/components/DocumentList';
 import { FilterSidebar } from '@/components/service/components/header/filter/FilterSidebar';
+import { IntegrationsCsvExportButton } from '@/components/service/components/header/IntegrationsCsvExportButton';
 import {
   ServiceListFilterMap,
   ServiceListHeader,
@@ -19,6 +20,7 @@ import useServiceCapability from '@/hooks/use-service-capability';
 import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
 import { useStickyHeaderOffset } from '@/hooks/use-sticky-header-offset';
 import { useTranslate } from '@/hooks/use-translate';
+import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { useLayoutEffect, useRef } from 'react';
 
@@ -42,7 +44,7 @@ const ServiceList = ({
   paginationControls,
 }: ServiceListProps) => {
   const t = useTranslate();
-  const { translationKey, serviceInstance } = useServiceContext();
+  const { translationKey, serviceInstance, type } = useServiceContext();
   const userCanUpdate = useServiceCapability(
     ServiceRestriction.Upload,
     serviceInstance
@@ -79,8 +81,18 @@ const ServiceList = ({
           search={search}
           onSearchChange={onSearchChange}
           actions={<ServiceListHeaderButtons />}
+          exportAction={
+            type === ShareableResourceType.OPENCTI_INTEGRATION && (
+              <IntegrationsCsvExportButton
+                serviceInstanceId={serviceInstance.id}
+                isAuthenticated
+                type={type}
+              />
+            )
+          }
           paginationControls={paginationControls}
           onDisplayModeChange={setDisplayMode}
+          filters={additionalFilters}
         />
       </div>
       <div className="flex flex-row">

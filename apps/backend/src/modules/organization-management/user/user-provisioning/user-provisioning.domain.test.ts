@@ -6,7 +6,6 @@ import { UserAccountStatus } from '../../../../__generated__/resolvers-types';
 import { UserId } from '../../../../model/kanel/public/User';
 import * as MailService from '../../../../server/mail-service';
 import * as Hubspot from '../../../../thirdparty/hubspot/hubspot';
-import * as FeatureFlagUtil from '../../../../utils/feature-flag.util';
 import { UserProvisioningDomain } from './user-provisioning.domain';
 
 describe('userProvisioningDomain', () => {
@@ -270,54 +269,8 @@ describe('userProvisioningDomain', () => {
       });
     });
 
-    it('should create a new user with existed=false when the email does not exist yet', async () => {
+    it('should create a waiting user with an invitation date, notify Hubspot and not send the welcome email when the email does not exist yet', async () => {
       const sendMailSpy = vi.spyOn(MailService, 'sendMail').mockResolvedValue();
-      vi.spyOn(FeatureFlagUtil, 'isFeatureEnabled').mockReturnValue(false);
-      const email = `find-or-create-${uuidv4()}@filigran.io`;
-
-      const { user, existed } = await UserProvisioningDomain.findOrCreateUser({
-        email,
-        first_name: 'Jane',
-        last_name: 'Doe',
-      });
-
-      expect(existed).toBe(false);
-      expect(user).toMatchObject({
-        email,
-        first_name: 'Jane',
-        last_name: 'Doe',
-      });
-      expect(sendMailSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ to: email, template: 'welcome' })
-      );
-    });
-
-    it('should not set an invitation status or notify Hubspot when the TRIAL_INVITE feature flag is disabled', async () => {
-      const sendMailSpy = vi.spyOn(MailService, 'sendMail').mockResolvedValue();
-      vi.spyOn(FeatureFlagUtil, 'isFeatureEnabled').mockReturnValue(false);
-      const hubspotSpy = vi
-        .spyOn(Hubspot, 'hubspotInviteUserHook')
-        .mockResolvedValue();
-      const email = `find-or-create-${uuidv4()}@filigran.io`;
-
-      const { user, existed } = await UserProvisioningDomain.findOrCreateUser({
-        email,
-        first_name: 'Jane',
-        last_name: 'Doe',
-      });
-
-      expect(existed).toBe(false);
-      expect(user.status).toBeNull();
-      expect(user.invitation_date).toBeNull();
-      expect(hubspotSpy).not.toHaveBeenCalled();
-      expect(sendMailSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ to: email, template: 'welcome' })
-      );
-    });
-
-    it('should set the user status to waiting, set the invitation date, notify Hubspot and not send the welcome email when the TRIAL_INVITE feature flag is enabled', async () => {
-      const sendMailSpy = vi.spyOn(MailService, 'sendMail').mockResolvedValue();
-      vi.spyOn(FeatureFlagUtil, 'isFeatureEnabled').mockReturnValue(true);
       const hubspotSpy = vi
         .spyOn(Hubspot, 'hubspotInviteUserHook')
         .mockResolvedValue();
@@ -331,7 +284,12 @@ describe('userProvisioningDomain', () => {
       });
 
       expect(existed).toBe(false);
-      expect(user.status).toBe(UserAccountStatus.Waiting);
+      expect(user).toMatchObject({
+        email,
+        first_name: 'Jane',
+        last_name: 'Doe',
+        status: UserAccountStatus.Waiting,
+      });
       expect(user.invitation_date).toBeInstanceOf(Date);
       expect(hubspotSpy).toHaveBeenCalledWith(
         expect.objectContaining({ id: user.id, email })
@@ -341,31 +299,9 @@ describe('userProvisioningDomain', () => {
       );
     });
 
-    it('should not reset an expired user status or notify Hubspot when the TRIAL_INVITE feature flag is disabled', async () => {
-      vi.spyOn(FeatureFlagUtil, 'isFeatureEnabled').mockReturnValue(false);
-      const hubspotSpy = vi
-        .spyOn(Hubspot, 'hubspotInviteUserHook')
-        .mockResolvedValue();
-      const existingUser = await TestHelper.user.insert({
-        email: `find-or-create-${uuidv4()}@filigran.io`,
-        status: UserAccountStatus.Expired,
-        invitation_date: new Date('2020-01-01'),
-      });
-
-      const { user, existed } = await UserProvisioningDomain.findOrCreateUser({
-        email: existingUser.email,
-      });
-
-      expect(existed).toBe(true);
-      expect(user.status).toBe(UserAccountStatus.Expired);
-      expect(user.invitation_date).toEqual(existingUser.invitation_date);
-      expect(hubspotSpy).not.toHaveBeenCalled();
-    });
-
     it.each([UserAccountStatus.Waiting, UserAccountStatus.Invited, null])(
       'should leave the user untouched and not notify Hubspot when re-invited with status=%s (not expired)',
       async (status) => {
-        vi.spyOn(FeatureFlagUtil, 'isFeatureEnabled').mockReturnValue(true);
         const hubspotSpy = vi
           .spyOn(Hubspot, 'hubspotInviteUserHook')
           .mockResolvedValue();
@@ -388,8 +324,7 @@ describe('userProvisioningDomain', () => {
       }
     );
 
-    it('should reset an expired user to waiting, set a new invitation date and notify Hubspot when re-invited with the TRIAL_INVITE feature flag enabled', async () => {
-      vi.spyOn(FeatureFlagUtil, 'isFeatureEnabled').mockReturnValue(true);
+    it('should reset an expired user to waiting, set a new invitation date and notify Hubspot when re-invited', async () => {
       const hubspotSpy = vi
         .spyOn(Hubspot, 'hubspotInviteUserHook')
         .mockResolvedValue();

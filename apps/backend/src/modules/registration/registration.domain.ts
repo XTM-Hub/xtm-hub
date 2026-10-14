@@ -9,6 +9,7 @@ import {
   PlatformConfigurationStatus,
   PlatformContract,
   PlatformIdentifier,
+  PortalCapability,
   QuerySaasPlatformsArgs,
   RegisteredPlatformConnection,
   RegisteredPlatformOrdering,
@@ -32,6 +33,7 @@ import { UserId } from '../../model/kanel/public/User';
 import { securityGuard } from '../../security/guard';
 import { ErrorCode } from '../../utils/error/error.code';
 import { OrganizationDomain } from '../organization-management/organization/organization.domain';
+import { AuthHelper } from '../security-management/capability/auth.helper';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { SubscriptionDomain } from '../subscription/subscription.domain';
 import { PlatformConfigurationDomain } from './platform-configuration/platform-configuration.domain';
@@ -176,7 +178,11 @@ export const RegistrationDomain = {
   loadRegisteredPlatform: async (
     serviceInstanceId: ServiceInstanceId
   ): Promise<DomainRegisteredPlatform[]> => {
-    return getRegisteredPlatformsDataQuery().where(
+    const skipOrganizationFilter = AuthHelper.userHasPortalCapability(
+      requestContext.requireUser(),
+      [PortalCapability.Bypass, PortalCapability.ReadSaasMetrics]
+    );
+    return getRegisteredPlatformsDataQuery({ skipOrganizationFilter }).where(
       'ServiceInstance.id',
       '=',
       serviceInstanceId
@@ -401,13 +407,15 @@ const getRegisteredPlatformsBaseQuery = () =>
     )
     .where('ServiceInstance.creation_status', '!=', 'DISABLED');
 
-const getRegisteredPlatformsDataQuery = (): Knex.QueryBuilder<
+const getRegisteredPlatformsDataQuery = ({
+  skipOrganizationFilter = false,
+}: { skipOrganizationFilter?: boolean } = {}): Knex.QueryBuilder<
   ServiceInstance,
   DomainRegisteredPlatform[]
 > => {
   const user = requestContext.requireUser();
   const userSelectedOrganization = user.selected_organization_id;
-  return getRegisteredPlatformsBaseQuery()
+  const query = getRegisteredPlatformsBaseQuery()
     .leftJoin(
       'Subscription',
       'Subscription.service_instance_id',
@@ -420,6 +428,9 @@ const getRegisteredPlatformsDataQuery = (): Knex.QueryBuilder<
       '=',
       'ServiceInstance.id'
     )
-    .where('Subscription.organization_id', '=', userSelectedOrganization)
     .select(RegisteredPlatformsSelectColumns);
+  if (!skipOrganizationFilter) {
+    query.where('Subscription.organization_id', '=', userSelectedOrganization);
+  }
+  return query;
 };

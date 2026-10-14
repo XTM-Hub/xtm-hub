@@ -2,23 +2,18 @@ import { ServiceListIntegrationDropdown } from '@/components/service/components/
 import testRender from '@/utils/test/test-render';
 import { IntegrationType } from '@graphql/generated';
 import { screen, waitFor } from '@testing-library/react';
-import { createMockEnvironment } from 'relay-test-utils';
 import { describe, expect, it, vi } from 'vitest';
 
 describe('Button with dropdown to add any kind of integration in the lib', () => {
   it('renders the trigger button', async () => {
     // Given
-    const environment = createMockEnvironment();
     const onIntegrationTypeSelect = vi.fn();
 
     // The component is rendered
     const { queryByText } = testRender(
       <ServiceListIntegrationDropdown
         onIntegrationTypeSelect={onIntegrationTypeSelect}
-      />,
-      {
-        relayConfig: environment,
-      }
+      />
     );
 
     // Then
@@ -30,14 +25,12 @@ describe('Button with dropdown to add any kind of integration in the lib', () =>
 
   it('opens the dropdown and shows the label after clicking the trigger', async () => {
     // Given
-    const environment = createMockEnvironment();
     const onIntegrationTypeSelect = vi.fn();
 
     const { user, getByRole } = testRender(
       <ServiceListIntegrationDropdown
         onIntegrationTypeSelect={onIntegrationTypeSelect}
-      />,
-      { relayConfig: environment }
+      />
     );
 
     // When
@@ -64,14 +57,12 @@ describe('Button with dropdown to add any kind of integration in the lib', () =>
     'clicking "$label" calls onIntegrationTypeSelect with $expectedEnum',
     async ({ label, expectedEnum }) => {
       // Given
-      const environment = createMockEnvironment();
       const onIntegrationTypeSelect = vi.fn();
 
       const { user } = testRender(
         <ServiceListIntegrationDropdown
           onIntegrationTypeSelect={onIntegrationTypeSelect}
-        />,
-        { relayConfig: environment }
+        />
       );
 
       // When

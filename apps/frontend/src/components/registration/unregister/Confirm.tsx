@@ -1,4 +1,3 @@
-import { getOrganization } from '@/components/organization/Organization.service';
 import { RegistrationContext } from '@/components/registration/Context';
 import { RegistrationLayout } from '@/components/registration/Layout';
 import { useTranslate } from '@/hooks/use-translate';
@@ -7,17 +6,16 @@ import { useContext } from 'react';
 interface UnregisterConfirmProps {
   confirm: () => void;
   cancel: () => void;
-  organizationId: string;
+  organizationName: string;
 }
 
 export const UnregisterConfirm = ({
   confirm,
   cancel,
-  organizationId,
+  organizationName,
 }: UnregisterConfirmProps) => {
   const { displayedIdentifier } = useContext(RegistrationContext);
   const t = useTranslate();
-  const organization = getOrganization(organizationId);
 
   return (
     <RegistrationLayout
@@ -26,7 +24,7 @@ export const UnregisterConfirm = ({
       <h1>
         {t(`Unregister.Confirm.Title`, {
           platformIdentifier: displayedIdentifier,
-          name: organization?.name ?? '',
+          name: organizationName,
         })}
       </h1>
       <p>{t(`Unregister.Confirm.Description`)}</p>

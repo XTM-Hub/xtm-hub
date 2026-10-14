@@ -284,12 +284,12 @@ export const UserDomain = {
   loadUsersByCapabilitiesInOrganization: async (
     organizationId: string,
     capabilities: OrganizationCapability[]
-  ): Promise<User[]> => {
+  ): Promise<Pick<User, 'id' | 'email' | 'first_name' | 'last_name'>[]> => {
     if (!capabilities.length) {
       return [];
     }
 
-    const users: User[] = await db<User>('User')
+    return db<User>('User')
       .leftJoin('User_Organization', 'User_Organization.user_id', 'User.id')
       .leftJoin(
         'UserOrganization_Capability',
@@ -300,10 +300,8 @@ export const UserDomain = {
       .andWhere((qb) => {
         qb.whereIn('UserOrganization_Capability.name', capabilities);
       })
-      .select('User.*')
+      .select('User.id', 'User.email', 'User.first_name', 'User.last_name')
       .distinct();
-
-    return users;
   },
 
   loadUserEmailsByCapabilityInOrganizations: async (

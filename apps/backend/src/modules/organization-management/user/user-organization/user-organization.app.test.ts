@@ -6,14 +6,24 @@ import { TestHelper } from '../../../../../tests/helper/test.helper';
 import {
   contextAdminSecondOrga,
   contextSimpleUserSecondOrga,
+  // eslint-disable-next-line no-restricted-imports -- needed to test platform admin bypass behavior in removeUserFromOrganization authorization
+  requestContextAdminUser,
   TEST_ORGANIZATIONS,
 } from '../../../../../tests/tests.const';
+import { OrganizationCapability } from '../../../../__generated__/resolvers-types';
 import portalConfig from '../../../../config';
 import { requestContext } from '../../../../context/request.context';
+import Organization, {
+  OrganizationId,
+} from '../../../../model/kanel/public/Organization';
 import User, { UserId } from '../../../../model/kanel/public/User';
 import * as MailService from '../../../../server/mail-service';
+import * as sessionStoreManager from '../../../../session-store-manager';
 import { ErrorCode } from '../../../../utils/error/error.code';
+import { OrganizationHelper } from '../../organization/organization.helper';
+import { UserDomain } from '../user-domain/user.domain';
 import { UserOrganizationPendingDomain } from '../user-pending/user-organization-pending.domain';
+import { UserProvisioningDomain } from '../user-provisioning/user-provisioning.domain';
 import { UserHelper } from '../user.helper';
 import { UserOrganizationApp } from './user-organization.app';
 import { UserOrganizationDomain } from './user-organization.domain';
@@ -536,6 +546,330 @@ describe('usersOrganizationApp', () => {
           organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         })
       ).rejects.toThrow(ErrorCode.MissingCapabilityOnOrganization);
+    });
+  });
+
+  describe('loadOrganizationMemberContactsByCapabilities', () => {
+    const secondOrganizationAdminContact = {
+      id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.ID,
+      email: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.EMAIL,
+      first_name: null,
+      last_name: null,
+    };
+    let createdUserIds: UserId[] = [];
+
+    beforeEach(() => {
+      createdUserIds = [];
+    });
+
+    afterEach(async () => {
+      await Promise.all(
+        createdUserIds.map((id) => UserHelper.removeUser({ id }))
+      );
+    });
+
+    it('should return the administrators contacts when the caller is a member of the organization', async () => {
+      requestContext.set({
+        user: (await UserDomain.loadUserBy({
+          'User.id': TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID,
+        }))!,
+      });
+
+      const contacts =
+        await UserOrganizationApp.loadOrganizationMemberContactsByCapabilities({
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          capabilities: [OrganizationCapability.AdministrateOrganization],
+        });
+
+      expect(contacts).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining(secondOrganizationAdminContact),
+        ])
+      );
+    });
+
+    it('should reject the call when the caller is a non-member with their personal space selected', async () => {
+      const user = await UserProvisioningDomain.createUser(
+        { email: `member-contacts-${uuidv4()}@member-contacts-test.io` },
+        { sendWelcomeEmail: false }
+      );
+      createdUserIds.push(user.id);
+      requestContext.set({
+        user: (await UserDomain.loadUserBy({ 'User.id': user.id }))!,
+      });
+
+      const call =
+        UserOrganizationApp.loadOrganizationMemberContactsByCapabilities({
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          capabilities: [OrganizationCapability.AdministrateOrganization],
+        });
+
+      await expect(call).rejects.toThrow(ErrorCode.UserIsNotInOrganization);
+    });
+  });
+
+  describe('removeUserFromOrganization', () => {
+    let organization: Organization;
+    let createdOrganizations: Organization[] = [];
+    let createdUsers: User[] = [];
+
+    const createOrganization = async () => {
+      const createdOrganization = await TestHelper.organization.create();
+      createdOrganizations.push(createdOrganization);
+      return createdOrganization;
+    };
+
+    const createUser = async () => {
+      const user = await UserProvisioningDomain.createUser(
+        { email: `remove-user-${uuidv4()}@remove-user-test.io` },
+        { sendWelcomeEmail: false }
+      );
+      createdUsers.push(user);
+      return user;
+    };
+
+    const addMember = async (
+      user: User,
+      capabilities: OrganizationCapability[],
+      organizationId: OrganizationId = organization.id
+    ) => {
+      const userOrganization = await TestHelper.user_Organization.create({
+        user_id: user.id,
+        organization_id: organizationId,
+      });
+      await Promise.all(
+        capabilities.map((name) =>
+          TestHelper.user_OrganizationCapability.create({
+            user_organization_id: userOrganization!.id,
+            name,
+          })
+        )
+      );
+    };
+
+    const selectOrganization = (user: User, organizationId: OrganizationId) =>
+      TestHelper.user.update(
+        { id: user.id },
+        { selected_organization_id: organizationId }
+      );
+
+    const actAs = async (user: User) => {
+      requestContext.set({
+        user: (await UserDomain.loadUserBy({ 'User.id': user.id }))!,
+      });
+    };
+
+    const loadMembership = (user: User) =>
+      TestHelper.user_Organization.load({
+        user_id: user.id,
+        organization_id: organization.id,
+      });
+
+    beforeEach(async () => {
+      createdUsers = [];
+      createdOrganizations = [];
+      organization = await createOrganization();
+    });
+
+    afterEach(async () => {
+      vi.restoreAllMocks();
+      await Promise.all(
+        createdUsers.map((user) => UserHelper.removeUser({ id: user.id }))
+      );
+      await Promise.all(
+        createdOrganizations.map(({ id }) =>
+          TestHelper.organization.delete({ id })
+        )
+      );
+    });
+
+    it('should remove the user when the caller administrates the organization', async () => {
+      const caller = await createUser();
+      await addMember(caller, [
+        OrganizationCapability.AdministrateOrganization,
+      ]);
+      const target = await createUser();
+      await addMember(target, []);
+      await actAs(caller);
+
+      await UserOrganizationApp.removeUserFromOrganization({
+        userId: target.id,
+        organizationId: organization.id,
+      });
+
+      expect(await loadMembership(target)).toBeUndefined();
+    });
+
+    it('should remove the user when the caller is a platform administrator', async () => {
+      const target = await createUser();
+      await addMember(target, []);
+      requestContext.set(requestContextAdminUser);
+
+      await UserOrganizationApp.removeUserFromOrganization({
+        userId: target.id,
+        organizationId: organization.id,
+      });
+
+      expect(await loadMembership(target)).toBeUndefined();
+    });
+
+    it('should reject the removal when the caller administrates another organization', async () => {
+      const otherOrganization = await createOrganization();
+      const caller = await createUser();
+      await addMember(
+        caller,
+        [OrganizationCapability.AdministrateOrganization],
+        otherOrganization.id
+      );
+      await selectOrganization(caller, otherOrganization.id);
+      const target = await createUser();
+      await addMember(target, []);
+      await actAs(caller);
+
+      const call = UserOrganizationApp.removeUserFromOrganization({
+        userId: target.id,
+        organizationId: organization.id,
+      });
+
+      await expect(call).rejects.toThrow(
+        ErrorCode.MissingCapabilityOnOrganization
+      );
+      expect(await loadMembership(target)).toBeDefined();
+    });
+
+    it('should reject the removal when the caller has no capability in the organization', async () => {
+      const caller = await createUser();
+      await addMember(caller, []);
+      const target = await createUser();
+      await addMember(target, []);
+      await actAs(caller);
+
+      const call = UserOrganizationApp.removeUserFromOrganization({
+        userId: target.id,
+        organizationId: organization.id,
+      });
+
+      await expect(call).rejects.toThrow(
+        ErrorCode.MissingCapabilityOnOrganization
+      );
+      expect(await loadMembership(target)).toBeDefined();
+    });
+
+    it('should reject the removal when the organization is a personal space', async () => {
+      const owner = await createUser();
+      const target = await createUser();
+      await TestHelper.user_Organization.create({
+        user_id: target.id,
+        organization_id: OrganizationHelper.personalSpaceIdOf(owner),
+      });
+      await actAs(owner);
+
+      const call = UserOrganizationApp.removeUserFromOrganization({
+        userId: target.id,
+        organizationId: OrganizationHelper.personalSpaceIdOf(owner),
+      });
+
+      await expect(call).rejects.toThrow(
+        ErrorCode.CantRemoveUserFromPersonalSpace
+      );
+    });
+
+    it('should reject the removal when the organization does not exist', async () => {
+      const target = await createUser();
+      requestContext.set(requestContextAdminUser);
+
+      const call = UserOrganizationApp.removeUserFromOrganization({
+        userId: target.id,
+        organizationId: uuidv4() as OrganizationId,
+      });
+
+      await expect(call).rejects.toThrow(ErrorCode.OrganizationNotFound);
+    });
+
+    it('should reject the removal when the user is not a member', async () => {
+      const caller = await createUser();
+      await addMember(caller, [
+        OrganizationCapability.AdministrateOrganization,
+      ]);
+      const target = await createUser();
+      await actAs(caller);
+
+      const call = UserOrganizationApp.removeUserFromOrganization({
+        userId: target.id,
+        organizationId: organization.id,
+      });
+
+      await expect(call).rejects.toThrow(ErrorCode.UserIsNotInOrganization);
+    });
+
+    it('should reject the removal when the user is the last administrator', async () => {
+      const caller = await createUser();
+      await addMember(caller, [OrganizationCapability.ManageAccess]);
+      const target = await createUser();
+      await addMember(target, [
+        OrganizationCapability.AdministrateOrganization,
+      ]);
+      await actAs(caller);
+
+      const call = UserOrganizationApp.removeUserFromOrganization({
+        userId: target.id,
+        organizationId: organization.id,
+      });
+
+      await expect(call).rejects.toThrow(ErrorCode.CantRemoveLastAdministrator);
+      expect(await loadMembership(target)).toBeDefined();
+    });
+
+    it('should select the personal space in the user sessions when the selected organization is removed', async () => {
+      const updateUserSessionSpy = vi
+        .spyOn(sessionStoreManager, 'updateUserSession')
+        .mockResolvedValue(undefined);
+      const caller = await createUser();
+      await addMember(caller, [
+        OrganizationCapability.AdministrateOrganization,
+      ]);
+      const target = await createUser();
+      await addMember(target, []);
+      await selectOrganization(target, organization.id);
+      await actAs(caller);
+
+      await UserOrganizationApp.removeUserFromOrganization({
+        userId: target.id,
+        organizationId: organization.id,
+      });
+
+      expect(updateUserSessionSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: target.id,
+          selected_organization_id:
+            OrganizationHelper.personalSpaceIdOf(target),
+          organizations: expect.not.arrayContaining([
+            expect.objectContaining({ id: organization.id }),
+          ]),
+        })
+      );
+    });
+
+    it('should keep the selected organization when another organization is removed', async () => {
+      const otherOrganization = await createOrganization();
+      const caller = await createUser();
+      await addMember(caller, [
+        OrganizationCapability.AdministrateOrganization,
+      ]);
+      const target = await createUser();
+      await addMember(target, []);
+      await addMember(target, [], otherOrganization.id);
+      await selectOrganization(target, otherOrganization.id);
+      await actAs(caller);
+
+      await UserOrganizationApp.removeUserFromOrganization({
+        userId: target.id,
+        organizationId: organization.id,
+      });
+
+      expect(
+        (await TestHelper.user.load({ id: target.id })).selected_organization_id
+      ).toBe(otherOrganization.id);
     });
   });
 });

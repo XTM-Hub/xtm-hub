@@ -3,13 +3,11 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import useGranted from '@/hooks/use-granted';
-import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
 import { useAdminByPass } from '@/hooks/use-portal-capability';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { CheckIndeterminateIcon } from '@filigran/icon';
 import {
-  FeatureFlag,
   OrganizationCapability,
   PlatformIdentifier,
   ServiceGroupName,
@@ -55,7 +53,6 @@ export const AddTrialUserForm = ({
   const t = useTranslate();
   const queryClient = useQueryClient();
   const { me } = useContext(PortalContext);
-  const isTrialInviteEnabled = useIsFeatureEnabled(FeatureFlag.TrialInvite);
   const isAdminByPass = useAdminByPass();
   const canAdministrateOrganization = useGranted(
     OrganizationCapability.AdministrateOrganization
@@ -99,7 +96,6 @@ export const AddTrialUserForm = ({
   } = useTrialUserOptions({
     organizationId: me?.selected_organization_id,
     bundleUsers,
-    isTrialInviteEnabled,
     canInviteUsers: canManageUsers,
     canInviteOutsideOrganizationDomains: !!isAdminByPass,
   });
@@ -162,7 +158,7 @@ export const AddTrialUserForm = ({
       )}
       pickerNotice={
         <>
-          {isTrialInviteEnabled && !canManageUsers && (
+          {!canManageUsers && (
             <PickerWarning>
               {t(
                 'Service.Bundle.ManageTrial.AddUserDialog.NoPermissionToInvite'

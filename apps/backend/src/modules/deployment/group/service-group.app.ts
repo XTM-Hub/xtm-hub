@@ -2,7 +2,6 @@ import type { Management } from 'auth0';
 import {
   AddUsersToBundleGroupsInput,
   BundleUserServiceGroup,
-  FeatureFlag,
   PlatformIdentifier,
   ServiceGroupName,
   ServiceGroup as ServiceGroupResponse,
@@ -21,7 +20,6 @@ import { UserLoadUserBy } from '../../../model/user';
 import { logApp } from '../../../utils/app-logger.util';
 import { getErrorMessage } from '../../../utils/error/error-guard.util';
 import { ErrorCode } from '../../../utils/error/error.code';
-import { isFeatureEnabled } from '../../../utils/feature-flag.util';
 import { normalizeEmails } from '../../../utils/verify-email.util';
 import { OrganizationDomain } from '../../organization-management/organization/organization.domain';
 import { UserDomain } from '../../organization-management/user/user-domain/user.domain';
@@ -129,10 +127,7 @@ export const ServiceGroupApp = {
       throw new Error(ErrorCode.XtmOneRoleRequired);
     }
 
-    const isTrialInviteEnabled = isFeatureEnabled(FeatureFlag.TrialInvite);
-    const emails = isTrialInviteEnabled
-      ? normalizeEmails(input.emails ?? [])
-      : [];
+    const emails = normalizeEmails(input.emails ?? []);
     if (emails.length > MAX_INVITED_EMAILS) {
       throw new Error(ErrorCode.TooManyEmails);
     }
@@ -192,8 +187,7 @@ export const ServiceGroupApp = {
         const users: User[] = [];
         for (const loadedUser of loadedUsers) {
           users.push(
-            isTrialInviteEnabled &&
-              loadedUser.status === UserAccountStatus.Expired
+            loadedUser.status === UserAccountStatus.Expired
               ? await UserProvisioningDomain.reinviteExpiredUser(loadedUser)
               : loadedUser
           );

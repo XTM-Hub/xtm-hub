@@ -1,8 +1,5 @@
 import type { Management } from 'auth0';
-import {
-  FeatureFlag,
-  UserAccountStatus,
-} from '../../../../__generated__/resolvers-types';
+import { UserAccountStatus } from '../../../../__generated__/resolvers-types';
 import portalConfig from '../../../../config';
 import User from '../../../../model/kanel/public/User';
 import {
@@ -13,7 +10,6 @@ import { auth0Client } from '../../../../thirdparty/auth0/client';
 import { logApp } from '../../../../utils/app-logger.util';
 import { getErrorMessage } from '../../../../utils/error/error-guard.util';
 import { ErrorCode } from '../../../../utils/error/error.code';
-import { isFeatureEnabled } from '../../../../utils/feature-flag.util';
 import { mapWithConcurrency } from '../../../../utils/typescript';
 import { chunk } from '../../../../utils/utils';
 import { ServiceGroupApp } from '../../../deployment/group/service-group.app';
@@ -352,11 +348,6 @@ export const UserAccountStatusSyncApp = {
   syncUserAccountStatusWithAuth0: async (
     options: Auth0SyncOptions = loadOptions()
   ): Promise<void> => {
-    if (!isFeatureEnabled(FeatureFlag.TrialInvite)) {
-      logApp.info('Auth0 sync skipped: TRIAL_INVITE disabled');
-      return;
-    }
-
     const startedAt = Date.now();
 
     // One extra row tells whether the cap was hit, without a count query.

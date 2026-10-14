@@ -1,6 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
 import {
-  FeatureFlag,
   OrganizationCapability,
   UserAccountStatus,
 } from '../../../../__generated__/resolvers-types';
@@ -23,7 +22,6 @@ import {
   BadRequestError,
   UnknownError,
 } from '../../../../utils/error/error.util';
-import { isFeatureEnabled } from '../../../../utils/feature-flag.util';
 import { hashPassword } from '../../../../utils/hash-password.util';
 import { isEmpty } from '../../../../utils/utils';
 import { extractDomain } from '../../../../utils/verify-email.util';
@@ -141,13 +139,9 @@ export const UserProvisioningDomain = {
     selected_organization_id?: OrganizationId;
   }): Promise<{ user: User; existed: boolean }> => {
     const [existingUser] = await UserDomain.loadUser({ email: data.email });
-    const isInviteFlagEnabled = isFeatureEnabled(FeatureFlag.TrialInvite);
 
     if (existingUser) {
-      if (
-        isInviteFlagEnabled &&
-        existingUser.status === UserAccountStatus.Expired
-      ) {
+      if (existingUser.status === UserAccountStatus.Expired) {
         return {
           user: await reinviteExpiredUser(existingUser),
           existed: true,
@@ -161,17 +155,13 @@ export const UserProvisioningDomain = {
       const createdUser = await UserProvisioningDomain.createUser(
         {
           ...data,
-          ...(isInviteFlagEnabled && {
-            status: UserAccountStatus.Waiting,
-            invitation_date: new Date(),
-          }),
+          status: UserAccountStatus.Waiting,
+          invitation_date: new Date(),
         },
-        { sendWelcomeEmail: !isInviteFlagEnabled }
+        { sendWelcomeEmail: false }
       );
 
-      if (isInviteFlagEnabled) {
-        await notifyHubspotInvite(createdUser);
-      }
+      await notifyHubspotInvite(createdUser);
 
       return createdUser;
     });

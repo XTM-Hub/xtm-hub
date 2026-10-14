@@ -6,11 +6,13 @@ import {
   afterAll,
   afterEach,
   beforeAll,
+  beforeEach,
   describe,
   expect,
   it,
   vi,
 } from 'vitest';
+import { TestHelper } from '../../../../tests/helper/test.helper';
 import { SubscriptionSpy } from '../../../../tests/test-utils';
 import {
   contextAdminSecondOrga,
@@ -30,19 +32,23 @@ import {
   FilterKey,
   OrderingMode,
   Organization,
+  OrganizationCapability,
   UserOrdering,
 } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
+import { OrganizationId } from '../../../model/kanel/public/Organization';
 import { UserId } from '../../../model/kanel/public/User';
 import { PortalContext } from '../../../model/portal-context';
 import { UserLoadUserBy } from '../../../model/user';
 import { auth0ClientMock } from '../../../thirdparty/auth0/mock';
+import { ErrorCode } from '../../../utils/error/error.code';
 import { loginFromProvider } from '../../security-management/authentication/auth-user';
 import { UserAdminApp } from './user-admin/user.admin.app';
 import { UserDomain } from './user-domain/user.domain';
 import { UserOrganizationApp } from './user-organization/user-organization.app';
 import { UserOrganizationDomain } from './user-organization/user-organization.domain';
 import { UserOrganizationPendingDomain } from './user-pending/user-organization-pending.domain';
+import { UserProvisioningDomain } from './user-provisioning/user-provisioning.domain';
 import { UserHelper } from './user.helper';
 import usersResolver from './user.resolver';
 
@@ -273,6 +279,7 @@ describe('user mutation resolver', () => {
       // Given
       const filigranSpy = new SubscriptionSpy();
       const secondOrgaSpy = new SubscriptionSpy();
+      requestContext.set(requestContextAdminUser);
       // @ts-ignore
       await filigranSpy.spy(
         usersResolver.Subscription!.User,
@@ -286,6 +293,7 @@ describe('user mutation resolver', () => {
         ['add']
       );
 
+      requestContext.set(requestContextAdminSecondOrga);
       await secondOrgaSpy.spy(
         usersResolver.Subscription!.User,
         {
@@ -300,6 +308,7 @@ describe('user mutation resolver', () => {
 
       const email = 'sseEventAddUser@filigran.io';
       // When
+      requestContext.set(requestContextAdminUser);
 
       // @ts-ignore
       await usersResolver.Mutation.adminAddUser(
@@ -1153,5 +1162,269 @@ describe('user mutation resolver', () => {
       );
       expect(mockSessionSave).toHaveBeenCalledOnce();
     });
+  });
+});
+
+describe('user subscription resolver', () => {
+  let organizationIds: OrganizationId[] = [];
+  let createdUserIds: UserId[] = [];
+  let spies: SubscriptionSpy[] = [];
+
+  const createOrganization = async () => {
+    const { id } = await TestHelper.organization.create();
+    organizationIds.push(id);
+    return id;
+  };
+
+  const createUser = async () => {
+    const user = await UserProvisioningDomain.createUser(
+      { email: `subscription-${uuidv4()}@subscription-test.io` },
+      { sendWelcomeEmail: false }
+    );
+    createdUserIds.push(user.id);
+    return user.id;
+  };
+
+  const createMember = async (
+    organizationId: OrganizationId,
+    capabilities: OrganizationCapability[]
+  ) => {
+    const userId = await createUser();
+    const userOrganization = await TestHelper.user_Organization.create({
+      user_id: userId,
+      organization_id: organizationId,
+    });
+    await Promise.all(
+      capabilities.map((name) =>
+        TestHelper.user_OrganizationCapability.create({
+          user_organization_id: userOrganization!.id,
+          name,
+        })
+      )
+    );
+    await TestHelper.user.update(
+      { id: userId },
+      { selected_organization_id: organizationId }
+    );
+    return userId;
+  };
+
+  const subscribeAs = async (
+    userId: UserId,
+    subscription: 'User' | 'AdminUser' | 'UserPending',
+    args: { organizationId?: OrganizationId },
+    fields: string[]
+  ) => {
+    const user = (await UserDomain.loadUserBy({ 'User.id': userId }))!;
+    requestContext.set({ user });
+    const spy = new SubscriptionSpy();
+    spies.push(spy);
+    await spy.spy(
+      usersResolver.Subscription![subscription],
+      args.organizationId
+        ? { organizationId: toGlobalId('Organization', args.organizationId) }
+        : {},
+      { user },
+      fields
+    );
+    return spy;
+  };
+
+  beforeEach(() => {
+    organizationIds = [];
+    createdUserIds = [];
+    spies = [];
+  });
+
+  afterEach(async () => {
+    await Promise.all(spies.map((spy) => spy.cleanup()));
+    await Promise.all(
+      createdUserIds.map((id) => UserHelper.removeUser({ id }))
+    );
+    await Promise.all(
+      organizationIds.map((id) => TestHelper.organization.delete({ id }))
+    );
+  });
+
+  it.each(['User', 'UserPending'] as const)(
+    'should reject the %s subscription when a user with their personal space selected targets another organization',
+    async (subscription) => {
+      // Given
+      const organizationId = await createOrganization();
+      const userId = await createUser();
+
+      // When
+      const call = subscribeAs(userId, subscription, { organizationId }, [
+        'delete',
+      ]);
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.UserIsNotInOrganization);
+    }
+  );
+
+  it.each(['User', 'UserPending'] as const)(
+    'should reject the %s subscription when the caller is a member without capability on the organization',
+    async (subscription) => {
+      // Given
+      const organizationId = await createOrganization();
+      const userId = await createMember(organizationId, []);
+
+      // When
+      const call = subscribeAs(userId, subscription, { organizationId }, [
+        'delete',
+      ]);
+
+      // Then
+      await expect(call).rejects.toThrow(
+        ErrorCode.MissingCapabilityOnOrganization
+      );
+    }
+  );
+
+  it('should reject the AdminUser subscription when the caller is not a BYPASS user', async () => {
+    // Given
+    const organizationId = await createOrganization();
+    const userId = await createMember(organizationId, [
+      OrganizationCapability.AdministrateOrganization,
+    ]);
+
+    // When
+    const call = subscribeAs(userId, 'AdminUser', {}, ['edit']);
+
+    // Then
+    await expect(call).rejects.toThrow(
+      ErrorCode.MissingCapabilityOnOrganization
+    );
+  });
+
+  it.each([
+    OrganizationCapability.ManageAccess,
+    OrganizationCapability.AdministrateOrganization,
+  ])(
+    'should send a User event only to the subscriber of its organization when the subscribers have %s',
+    async (capability) => {
+      // Given
+      const organizationId = await createOrganization();
+      const otherOrganizationId = await createOrganization();
+      const adminId = await createMember(organizationId, [capability]);
+      const otherAdminId = await createMember(otherOrganizationId, [
+        capability,
+      ]);
+      const memberId = await createMember(organizationId, []);
+      const otherMemberId = await createMember(otherOrganizationId, []);
+      const spy = await subscribeAs(adminId, 'User', { organizationId }, [
+        'edit',
+      ]);
+      const otherSpy = await subscribeAs(
+        otherAdminId,
+        'User',
+        { organizationId: otherOrganizationId },
+        ['edit']
+      );
+
+      // When
+      await UserHelper.updateAndDispatchUser(memberId);
+      await UserHelper.updateAndDispatchUser(otherMemberId);
+
+      // Then
+      expect(await spy.waitForEvents(1)).toMatchObject([
+        { User: { edit: { id: memberId } } },
+      ]);
+      expect(await otherSpy.waitForEvents(1)).toMatchObject([
+        { User: { edit: { id: otherMemberId } } },
+      ]);
+    }
+  );
+
+  it('should send a UserPending event only to the subscriber of its organization', async () => {
+    // Given
+    const organizationId = await createOrganization();
+    const otherOrganizationId = await createOrganization();
+    const adminId = await createMember(organizationId, [
+      OrganizationCapability.ManageAccess,
+    ]);
+    const otherAdminId = await createMember(otherOrganizationId, [
+      OrganizationCapability.ManageAccess,
+    ]);
+    const pendingUserId = await createUser();
+    const pendingUser = (await UserDomain.loadUserBy({
+      'User.id': pendingUserId,
+    }))!;
+    const spy = await subscribeAs(adminId, 'UserPending', { organizationId }, [
+      'delete',
+    ]);
+    const otherSpy = await subscribeAs(
+      otherAdminId,
+      'UserPending',
+      { organizationId: otherOrganizationId },
+      ['delete']
+    );
+
+    // When
+    await UserHelper.dispatchPendingDeleted(pendingUser, organizationId);
+    await UserHelper.dispatchPendingDeleted(pendingUser, otherOrganizationId);
+
+    // Then
+    expect(await spy.waitForEvents(1)).toMatchObject([
+      { UserPending: { delete: { pending_organization_id: organizationId } } },
+    ]);
+    expect(await otherSpy.waitForEvents(1)).toMatchObject([
+      {
+        UserPending: {
+          delete: { pending_organization_id: otherOrganizationId },
+        },
+      },
+    ]);
+  });
+
+  it('should send a UserPending event to a BYPASS user when they are not a member of its organization', async () => {
+    // Given
+    const organizationId = await createOrganization();
+    const pendingUserId = await createUser();
+    const pendingUser = (await UserDomain.loadUserBy({
+      'User.id': pendingUserId,
+    }))!;
+    const spy = await subscribeAs(
+      TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+      'UserPending',
+      { organizationId },
+      ['delete']
+    );
+
+    // When
+    await UserHelper.dispatchPendingDeleted(pendingUser, organizationId);
+
+    // Then
+    expect(await spy.waitForEvents(1)).toMatchObject([
+      {
+        UserPending: {
+          delete: {
+            id: pendingUserId,
+            pending_organization_id: organizationId,
+          },
+        },
+      },
+    ]);
+  });
+
+  it('should send a User event to a BYPASS user on the AdminUser subscription when they are not a member of its organization', async () => {
+    // Given
+    const organizationId = await createOrganization();
+    const memberId = await createMember(organizationId, []);
+    const spy = await subscribeAs(
+      TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+      'AdminUser',
+      {},
+      ['edit']
+    );
+
+    // When
+    await UserHelper.updateAndDispatchUser(memberId);
+
+    // Then
+    expect(await spy.waitForEvents(1)).toMatchObject([
+      { edit: { id: memberId } },
+    ]);
   });
 });

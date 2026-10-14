@@ -17,17 +17,19 @@ import registrationResolver from '../../registration.resolver';
 
 describe('query.canUnregisterPlatform', () => {
   it.each`
-    description        | organizationId                    | expectedOrgId
-    ${'with orgId'}    | ${TEST_ORGANIZATIONS.FILIGRAN.ID} | ${TEST_ORGANIZATIONS.FILIGRAN.ID}
-    ${'without orgId'} | ${null}                           | ${undefined}
+    description        | organizationId                    | expectedOrgId                     | organizationName
+    ${'with orgId'}    | ${TEST_ORGANIZATIONS.FILIGRAN.ID} | ${TEST_ORGANIZATIONS.FILIGRAN.ID} | ${TEST_ORGANIZATIONS.FILIGRAN.NAME}
+    ${'without orgId'} | ${null}                           | ${undefined}                      | ${null}
   `(
     'should return isPlatformRegistered: true $description',
     async ({
       organizationId,
       expectedOrgId,
+      organizationName,
     }: {
       organizationId: OrganizationId | null;
       expectedOrgId: string | undefined;
+      organizationName: string | null;
     }) => {
       // Given
       const input: CanUnregisterPlatformInput = { platformId: uuidv4() };
@@ -35,6 +37,7 @@ describe('query.canUnregisterPlatform', () => {
         isAllowed: organizationId !== null,
         isInOrganization: organizationId !== null,
         organizationId,
+        organizationName,
       });
 
       // When
@@ -49,6 +52,7 @@ describe('query.canUnregisterPlatform', () => {
       expect(result).toMatchObject({
         isPlatformRegistered: true,
         organizationId: expectedOrgId,
+        organizationName,
       });
     }
   );

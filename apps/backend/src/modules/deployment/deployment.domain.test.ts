@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import { TEST_ORGANIZATIONS } from '../../../tests/tests.const';
 import {
@@ -15,12 +15,7 @@ import {
 } from '../../__generated__/resolvers-types';
 import { DeploymentRequestId } from '../../model/kanel/public/DeploymentRequest';
 import { UserId } from '../../model/kanel/public/User';
-import { auth0Client } from '../../thirdparty/auth0/client';
-import {
-  DeploymentRequestDomain,
-  shouldDeleteDeploymentRequestAudience,
-} from './deployment.domain';
-import { ServiceGroupDomain } from './group/service-group.domain';
+import { DeploymentRequestDomain } from './deployment.domain';
 import { bundleQuotaKey, QuotaKey } from './quota/deployment.quota.domain';
 
 describe('deploymentRequestDomain', () => {
@@ -1725,54 +1720,6 @@ describe('deploymentRequestDomain', () => {
     });
   });
 
-  describe('initialiseServiceGroup', () => {
-    afterEach(async () => {
-      vi.restoreAllMocks();
-      await TestHelper.deploymentRequest.deleteAllWithServiceInstanceAndSubscription();
-    });
-
-    const createDeploymentRequest = (platformIdentifier: PlatformIdentifier) =>
-      TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription({
-        platform_identifier: platformIdentifier,
-        platform_id: uuidv4(),
-        hub_status: DeploymentRequestHubStatus.Active,
-        type: DeploymentRequestDeploymentType.Trial,
-      });
-
-    const spyOnAuth0AndServiceGroup = () => {
-      const createAudienceSpy = vi
-        .spyOn(auth0Client, 'createAudienceAPI')
-        .mockResolvedValue();
-      vi.spyOn(auth0Client, 'updateUserRBACInstance').mockResolvedValue();
-      vi.spyOn(ServiceGroupDomain, 'initGroupWithAdmin').mockResolvedValue();
-      return { createAudienceSpy };
-    };
-
-    it.each`
-      platformIdentifier            | shouldCreateAudience
-      ${PlatformIdentifier.Openaev} | ${false}
-      ${PlatformIdentifier.Opencti} | ${false}
-      ${PlatformIdentifier.Xtmone}  | ${false}
-    `(
-      'should create an Auth0 audience for a $platformIdentifier instance: $shouldCreateAudience',
-      async ({ platformIdentifier, shouldCreateAudience }) => {
-        const deployment = await createDeploymentRequest(platformIdentifier);
-        const { createAudienceSpy } = spyOnAuth0AndServiceGroup();
-
-        await DeploymentRequestDomain.initialiseServiceGroup(
-          deployment!.id,
-          platformIdentifier
-        );
-
-        if (shouldCreateAudience) {
-          expect(createAudienceSpy).toHaveBeenCalledOnce();
-        } else {
-          expect(createAudienceSpy).not.toHaveBeenCalled();
-        }
-      }
-    );
-  });
-
   describe('countDeploymentRequestsBy', () => {
     const REQUESTER_ID = TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID;
     const OTHER_USER_ID = TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE.ID;
@@ -1991,67 +1938,5 @@ describe('deploymentRequestDomain', () => {
         [openctiTrial.id, openaevTrial.id].sort()
       );
     });
-  });
-
-  describe('shouldDeleteDeploymentRequestAudience', () => {
-    it('should return false for a bundle', () => {
-      expect(
-        shouldDeleteDeploymentRequestAudience({
-          type: DeploymentRequestDeploymentType.Bundle,
-          platform_identifier: null,
-          parent_id: null,
-        })
-      ).toBe(false);
-    });
-
-    it('should return false for an xtmone trial', () => {
-      expect(
-        shouldDeleteDeploymentRequestAudience({
-          type: DeploymentRequestDeploymentType.Trial,
-          platform_identifier: PlatformIdentifier.Xtmone,
-          parent_id: null,
-        })
-      ).toBe(false);
-    });
-
-    it('should return false for an openaev bundle child', () => {
-      expect(
-        shouldDeleteDeploymentRequestAudience({
-          type: DeploymentRequestDeploymentType.Trial,
-          platform_identifier: PlatformIdentifier.Openaev,
-          parent_id: uuidv4() as DeploymentRequestId,
-        })
-      ).toBe(false);
-    });
-
-    it('should return true for a standalone openaev trial', () => {
-      expect(
-        shouldDeleteDeploymentRequestAudience({
-          type: DeploymentRequestDeploymentType.Trial,
-          platform_identifier: PlatformIdentifier.Openaev,
-          parent_id: null,
-        })
-      ).toBe(true);
-    });
-
-    it.each`
-      description
-      ${'standalone'}
-      ${'bundle child'}
-    `(
-      'should return true for an opencti $description trial',
-      ({ description }) => {
-        expect(
-          shouldDeleteDeploymentRequestAudience({
-            type: DeploymentRequestDeploymentType.Trial,
-            platform_identifier: PlatformIdentifier.Opencti,
-            parent_id:
-              description === 'bundle child'
-                ? (uuidv4() as DeploymentRequestId)
-                : null,
-          })
-        ).toBe(true);
-      }
-    );
   });
 });

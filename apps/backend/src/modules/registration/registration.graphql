@@ -19,6 +19,7 @@ type RegisteredPlatform implements Node {
   deployment_request: DeploymentRequest
   last_connectivity_check: Date
   status: PlatformConfigurationStatus
+  commercial_model: CommercialModel
   subscription: SubscriptionModel
   myGroups: [ServiceGroup!]
   organization: Organization
@@ -96,6 +97,7 @@ type CanUnregisterResponse {
   isAllowed: Boolean
   isInOrganization: Boolean
   organizationId: OrganizationId
+  organizationName: String
 }
 
 input UnregisterPlatformInput {
@@ -172,6 +174,14 @@ input RegisteredPlatformInput {
   service_instance_id: ServiceInstanceId!
 }
 
+type SaasPlatformMetadata {
+  hostname: String
+  plan: String
+  start_date: Date
+  end_date: Date
+  region: String
+}
+
 input AutoRegisterPlatformInput {
   platform: PlatformInput!
   existing_users_count: Int
@@ -185,6 +195,9 @@ type Query {
     input: CanUnregisterPlatformInput!
   ): CanUnregisterResponse! @auth
   registeredPlatform(input: RegisteredPlatformInput!): RegisteredPlatform @auth
+  registeredSaasPlatformMetadata(
+    input: RegisteredPlatformInput!
+  ): SaasPlatformMetadata @auth
   registeredPlatforms(input: RegisteredPlatformsInput!): [RegisteredPlatform!]!
     @auth
   saasPlatforms(

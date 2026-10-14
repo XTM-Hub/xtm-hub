@@ -50,11 +50,13 @@ vi.mock('next/navigation', async (importOriginal) => ({
   notFound: vi.fn(),
 }));
 
-// cookies() throws outside a Next.js request scope: an empty jar keeps edit
-// mode off.
+// cookies() and headers() throw outside a Next.js request scope: an empty jar
+// keeps edit mode off, and tests set the request headers they need through
+// vi.mocked(headers).
 vi.mock('next/headers', async (importOriginal) => ({
   ...(await importOriginal<typeof import('next/headers')>()),
   cookies: vi.fn(async () => ({ get: () => undefined })),
+  headers: vi.fn(async () => new Headers()),
 }));
 
 vi.mock('next-intl', async (importOriginal) => ({

@@ -38,7 +38,6 @@ import * as Hubspot from '../../../thirdparty/hubspot/hubspot';
 import { PgBossProducer } from '../../../thirdparty/pgboss/producer';
 import { logApp } from '../../../utils/app-logger.util';
 import { ErrorCode } from '../../../utils/error/error.code';
-import { isFeatureEnabled } from '../../../utils/feature-flag.util';
 import { formatName } from '../../../utils/format';
 
 import { TestHelper } from '../../../../tests/helper/test.helper';
@@ -54,14 +53,6 @@ const loadUser = async (userId: UserId): Promise<User> => {
 };
 
 const FREE_TRIAL_BUNDLE_USER_ADDED_TEMPLATE = 'free_trial_bundle_user_added';
-
-// Mocked (disabled by default) so tests don't depend on the local `enabled_features` config
-vi.mock('../../../utils/feature-flag.util', async (importOriginal) => ({
-  ...(await importOriginal<
-    typeof import('../../../utils/feature-flag.util')
-  >()),
-  isFeatureEnabled: vi.fn(() => false),
-}));
 
 describe('serviceGroupApp', () => {
   const adminGroupId = uuidv4() as ServiceGroupId;
@@ -1154,14 +1145,9 @@ describe('serviceGroupApp', () => {
       ];
 
       beforeEach(() => {
-        vi.mocked(isFeatureEnabled).mockReturnValue(true);
         vi.spyOn(auth0ClientMock, 'updateUserRBACInstance').mockResolvedValue(
           undefined
         );
-      });
-
-      afterEach(() => {
-        vi.mocked(isFeatureEnabled).mockReturnValue(false);
       });
 
       const addNewEmailAlongWithSelectedUser = async () => {
@@ -1190,33 +1176,6 @@ describe('serviceGroupApp', () => {
 
         return { groups, email, auth0Spy, sendMailSpy, hubspotInviteSpy };
       };
-
-      it('should ignore the emails input and only add the selected users when the TRIAL_INVITE feature flag is disabled', async () => {
-        // Given
-        vi.mocked(isFeatureEnabled).mockReturnValue(false);
-        const { bundle, groups } = await createBundleWithGroups();
-        vi.spyOn(mailService, 'sendMail').mockResolvedValue(undefined);
-        const email = `new-${uuidv4()}@filigran.io`;
-
-        // When
-        await ServiceGroupApp.addUsersToBundleGroups(
-          bundle.service_instance_id,
-          {
-            userIds: [TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID],
-            emails: [email],
-            roles: xtmoneUserRoles,
-          }
-        );
-
-        // Then
-        const members = await TestHelper.serviceGroupUser.load({
-          group_id: groups.xtmoneUserGroupId,
-        });
-        expect(members?.map(({ user_id }) => user_id)).toEqual([
-          TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
-        ]);
-        expect(await TestHelper.user.loadAll({ email })).toEqual([]);
-      });
 
       it('should add a single waiting user to the bundle organization and invite them through HubSpot when a new email is given', async () => {
         // Given / When
@@ -1418,31 +1377,6 @@ describe('serviceGroupApp', () => {
           expect(auth0Spy).not.toHaveBeenCalled();
         }
       );
-
-      it('should not re-invite an expired organization member when the TRIAL_INVITE feature flag is disabled', async () => {
-        // Given
-        vi.mocked(isFeatureEnabled).mockReturnValue(false);
-        const { user: member } = await TestHelper.user.insertInOrganization(
-          TEST_ORGANIZATIONS.FILIGRAN.ID,
-          { status: UserAccountStatus.Expired }
-        );
-        const { bundle } = await createBundleWithGroups();
-        const hubspotInviteSpy = vi
-          .spyOn(Hubspot, 'hubspotInviteUserHook')
-          .mockResolvedValue(undefined);
-
-        // When
-        await ServiceGroupApp.addUsersToBundleGroups(
-          bundle.service_instance_id,
-          { userIds: [member.id], roles: xtmoneUserRoles }
-        );
-
-        // Then
-        expect(hubspotInviteSpy).not.toHaveBeenCalled();
-        expect((await TestHelper.user.load({ id: member.id })).status).toBe(
-          UserAccountStatus.Expired
-        );
-      });
 
       it('should not re-invite a member whose expired status changed meanwhile and sync their trial access in Auth0', async () => {
         // Given

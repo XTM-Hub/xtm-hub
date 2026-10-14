@@ -1,7 +1,8 @@
 'use client';
 
 import { registeredPlatformByServiceInstanceId } from '@/components/registration/register/register.graphql';
-import { RegistrationDetails } from '@/components/service/registration/RegistrationDetails';
+import { PlatformInformation } from '@/components/service/registration/PlatformInformation';
+import { RegisteredPlatformHeader } from '@/components/service/registration/RegisteredPlatformHeader';
 import { ReachSalesButton } from '@/components/service/trial-instances/reach-sales/ReachSalesButton';
 import { SlackSupportButton } from '@/components/service/trial-instances/SlackSupport';
 import { TrialsHeader } from '@/components/service/trial-instances/TrialsHeader';
@@ -13,9 +14,16 @@ import { PlatformContract, PlatformIdentifier } from '@graphql/generated';
 import { notFound } from 'next/navigation';
 import { use } from 'react';
 import { useLazyLoadQuery } from 'react-relay';
-import { ServiceOpenCTIRegistrationPageProps } from './page';
 
-const ClientSection = ({ params }: ServiceOpenCTIRegistrationPageProps) => {
+interface RegisteredPlatformOverviewProps {
+  params: Promise<{ serviceInstanceId: string }>;
+  platformIdentifier: PlatformIdentifier;
+}
+
+export const RegisteredPlatformOverview = ({
+  params,
+  platformIdentifier,
+}: RegisteredPlatformOverviewProps) => {
   const { serviceInstanceId } = use(params);
   const decodedServiceInstanceId = decodeURIComponent(serviceInstanceId);
 
@@ -52,25 +60,24 @@ const ClientSection = ({ params }: ServiceOpenCTIRegistrationPageProps) => {
       <BreadcrumbNav value={breadcrumbs} />
       {isTrial && (
         <TrialsHeader
-          platformIdentifier={PlatformIdentifier.Opencti}
+          platformIdentifier={platformIdentifier}
           actions={
             <>
               <SlackSupportButton />
               <ReachSalesButton
                 variant="gradient"
                 platformId={queryData.registeredPlatform.platform_id}
-                platformIdentifier={PlatformIdentifier.Opencti}
+                platformIdentifier={platformIdentifier}
               />
             </>
           }
         />
       )}
-      <RegistrationDetails registeredPlatform={queryData.registeredPlatform} />
-      {isTrial && (
-        <TrialsLearnMore platformIdentifier={PlatformIdentifier.Opencti} />
-      )}
+      <RegisteredPlatformHeader
+        registeredPlatform={queryData.registeredPlatform}
+      />
+      <PlatformInformation registeredPlatform={queryData.registeredPlatform} />
+      {isTrial && <TrialsLearnMore platformIdentifier={platformIdentifier} />}
     </>
   );
 };
-
-export default ClientSection;

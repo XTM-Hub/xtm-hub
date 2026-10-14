@@ -44,11 +44,16 @@ export const Unregister = ({
       queryRef
     );
 
-  const { isAllowed, isPlatformRegistered, isInOrganization, organizationId } =
-    useFragment<registerCanUnregisterPlatformFragment$key>(
-      CanUnregisterPlatformFragment,
-      canUnregisterPreloadedQuery.canUnregisterPlatform
-    );
+  const {
+    isAllowed,
+    isPlatformRegistered,
+    isInOrganization,
+    organizationId,
+    organizationName,
+  } = useFragment<registerCanUnregisterPlatformFragment$key>(
+    CanUnregisterPlatformFragment,
+    canUnregisterPreloadedQuery.canUnregisterPlatform
+  );
 
   const [unregisterPlatform] =
     useMutation<registerUnregisterPlatformMutation>(UnregisterPlatform);
@@ -131,11 +136,11 @@ export const Unregister = ({
     );
   }
 
-  return organizationId ? (
+  return organizationName ? (
     <UnregisterConfirm
       cancel={cancel}
       confirm={confirm}
-      organizationId={organizationId}
+      organizationName={organizationName}
     />
   ) : (
     <Loader />
