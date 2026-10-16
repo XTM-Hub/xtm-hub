@@ -12,9 +12,65 @@ import {
 } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
 import { BadRequestErrorCode, ErrorCode } from '../../utils/error/error.code';
-import { PlatformConfigurationDomain } from './platform-configuration/platform-configuration.domain';
+import {
+  PlatformConfigurationDomain,
+  PlatformDeactivationReason,
+} from './platform-configuration/platform-configuration.domain';
 import { RegistrationApp } from './registration.app';
 import { RegistrationConnectivityApp } from './registration.connectivity.app';
+
+const HOUR_IN_MS = 60 * 60 * 1000;
+
+const registerOpenaevTenant = (platformId: string, tenantId: string) =>
+  RegistrationApp.registerPlatform({
+    organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+    platform: {
+      id: platformId,
+      url: `http://example.com/${tenantId}`,
+      contract: PlatformContract.Ee,
+      title: 'Fake title',
+      version: '2.4.0',
+      tenantId,
+      tenantName: `Tenant ${tenantId}`,
+    },
+    identifier: PlatformIdentifier.Openaev,
+  });
+
+const loadTenantConfiguration = (platformId: string, tenantId: string) =>
+  PlatformConfigurationDomain.loadConfigurationByPlatform(platformId, {
+    tenantId,
+  });
+
+// Moves the last successful refresh of a tenant back in time, as if its instance had stopped refreshing it.
+const ageLastConnectivityCheck = async (
+  platformId: string,
+  tenantId: string,
+  hours: number
+) => {
+  const config = await loadTenantConfiguration(platformId, tenantId);
+  await PlatformConfigurationDomain.updateConfiguration(
+    config!.service_instance_id,
+    { last_connectivity_check: new Date(Date.now() - hours * HOUR_IN_MS) }
+  );
+};
+
+const refreshAllTenants = (
+  platformId: string,
+  tenants: { tenantId: string; token: string }[]
+) =>
+  RegistrationConnectivityApp.refreshPlatformRegistrationConnectivityStatusAllTenants(
+    {
+      platformId,
+      platformVersion: '2.4.0',
+      platformIdentifier: PlatformIdentifier.Openaev,
+      tenants: tenants.map(({ tenantId, token }) => ({
+        tenantId,
+        tenantName: `Tenant ${tenantId}`,
+        token,
+        url: `http://example.com/${tenantId}`,
+      })),
+    }
+  );
 
 describe('registration connectivity app', () => {
   beforeEach(() => {
@@ -380,6 +436,92 @@ describe('registration connectivity app', () => {
       });
     });
 
+    it('should not attach a tenant id to an OpenCTI registration, whatever platform identifier the request sends', async () => {
+      // Given
+      const platformId = uuidv4();
+      const token = await RegistrationApp.registerPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        platform: {
+          id: platformId,
+          url: 'http://example.com',
+          contract: PlatformContract.Ee,
+          title: 'Fake title',
+          version: '6.8.0',
+        },
+        identifier: PlatformIdentifier.Opencti,
+      });
+
+      // When
+      const result =
+        await RegistrationConnectivityApp.refreshPlatformRegistrationConnectivityStatusSingleTenant(
+          {
+            platformId,
+            token,
+            platformVersion: '6.8.0',
+            url: 'http://other.example.com',
+            tenantId: uuidv4(),
+            tenantName: 'Injected tenant',
+            platformIdentifier: PlatformIdentifier.Opencti,
+          }
+        );
+
+      // Then
+      expect(result.status).not.toBe(
+        PlatformRegistrationConnectivityStatus.Active
+      );
+      const config =
+        await PlatformConfigurationDomain.loadConfigurationByPlatform(
+          platformId
+        );
+      expect(config).toMatchObject({
+        tenant_id: null,
+        platform_url: 'http://example.com',
+      });
+    });
+
+    it('should keep the stored url when the refresh sends an invalid one', async () => {
+      // Given
+      const platformId = uuidv4();
+      const tenantId = uuidv4();
+      const tenantName = 'My tenant';
+      const token = await RegistrationApp.registerPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        platform: {
+          id: platformId,
+          url: 'http://example.com/tenant',
+          contract: PlatformContract.Ee,
+          title: 'Fake title',
+          version: '2.4.0',
+          tenantId,
+          tenantName,
+        },
+        identifier: PlatformIdentifier.Openaev,
+      });
+
+      // When
+      const result =
+        await RegistrationConnectivityApp.refreshPlatformRegistrationConnectivityStatusSingleTenant(
+          {
+            platformId,
+            token,
+            platformVersion: '2.4.0',
+            url: 'not a url',
+            tenantId,
+            tenantName,
+            platformIdentifier: PlatformIdentifier.Openaev,
+          }
+        );
+
+      // Then
+      expect(result.status).toBe(PlatformRegistrationConnectivityStatus.Active);
+      const config =
+        await PlatformConfigurationDomain.loadConfigurationByPlatform(
+          platformId,
+          { tenantId }
+        );
+      expect(config?.platform_url).toBe('http://example.com/tenant');
+    });
+
     it('should update the contract of the refreshed tenant only when the platform sends a new contract', async () => {
       // Given
       const platformId = uuidv4();
@@ -689,6 +831,7 @@ describe('registration connectivity app', () => {
         },
         identifier: PlatformIdentifier.Openaev,
       });
+      await ageLastConnectivityCheck(platformId, tenantId2, 4);
 
       const result =
         await RegistrationConnectivityApp.refreshPlatformRegistrationConnectivityStatusAllTenants(
@@ -719,6 +862,137 @@ describe('registration connectivity app', () => {
           { tenantId: tenantId2 }
         );
       expect(staleConfig?.status).toBe(PlatformConfigurationStatus.Inactive);
+    });
+
+    it('should deactivate nothing when the call lists no tenant', async () => {
+      // Given
+      const platformId = uuidv4();
+      const tenantId = uuidv4();
+      await registerOpenaevTenant(platformId, tenantId);
+      await ageLastConnectivityCheck(platformId, tenantId, 4);
+
+      // When
+      await refreshAllTenants(platformId, []);
+
+      // Then
+      const config = await loadTenantConfiguration(platformId, tenantId);
+      expect(config?.status).toBe(PlatformConfigurationStatus.Active);
+    });
+
+    it('should deactivate nothing when one submitted tenant token is invalid', async () => {
+      // Given
+      const platformId = uuidv4();
+      const listedTenantId = uuidv4();
+      const omittedTenantId = uuidv4();
+      const listedToken = await registerOpenaevTenant(
+        platformId,
+        listedTenantId
+      );
+      await registerOpenaevTenant(platformId, omittedTenantId);
+      await ageLastConnectivityCheck(platformId, omittedTenantId, 4);
+
+      // When
+      await refreshAllTenants(platformId, [
+        { tenantId: listedTenantId, token: listedToken },
+        { tenantId: uuidv4(), token: uuidv4() },
+      ]);
+
+      // Then
+      const config = await loadTenantConfiguration(platformId, omittedTenantId);
+      expect(config?.status).toBe(PlatformConfigurationStatus.Active);
+    });
+
+    it('should keep an omitted tenant active when its instance refreshed it within the silence threshold', async () => {
+      // Given
+      const platformId = uuidv4();
+      const listedTenantId = uuidv4();
+      const omittedTenantId = uuidv4();
+      const listedToken = await registerOpenaevTenant(
+        platformId,
+        listedTenantId
+      );
+      await registerOpenaevTenant(platformId, omittedTenantId);
+      await ageLastConnectivityCheck(platformId, omittedTenantId, 2);
+
+      // When
+      await refreshAllTenants(platformId, [
+        { tenantId: listedTenantId, token: listedToken },
+      ]);
+
+      // Then
+      const config = await loadTenantConfiguration(platformId, omittedTenantId);
+      expect(config?.status).toBe(PlatformConfigurationStatus.Active);
+    });
+
+    it('should record why an omitted tenant was deactivated and reactivate it at its next valid refresh', async () => {
+      // Given
+      const platformId = uuidv4();
+      const listedTenantId = uuidv4();
+      const omittedTenantId = uuidv4();
+      const listedToken = await registerOpenaevTenant(
+        platformId,
+        listedTenantId
+      );
+      const omittedToken = await registerOpenaevTenant(
+        platformId,
+        omittedTenantId
+      );
+      await ageLastConnectivityCheck(platformId, omittedTenantId, 4);
+      await refreshAllTenants(platformId, [
+        { tenantId: listedTenantId, token: listedToken },
+      ]);
+      const deactivatedConfig = await loadTenantConfiguration(
+        platformId,
+        omittedTenantId
+      );
+
+      // When
+      const result = await refreshAllTenants(platformId, [
+        { tenantId: listedTenantId, token: listedToken },
+        { tenantId: omittedTenantId, token: omittedToken },
+      ]);
+
+      // Then
+      expect(deactivatedConfig).toMatchObject({
+        status: PlatformConfigurationStatus.Inactive,
+        deactivation_reason: PlatformDeactivationReason.OmittedByPlatform,
+      });
+      expect(result.statuses).toEqual(
+        expect.arrayContaining([
+          {
+            tenantId: omittedTenantId,
+            status: PlatformRegistrationConnectivityStatus.Active,
+          },
+        ])
+      );
+      const reactivatedConfig = await loadTenantConfiguration(
+        platformId,
+        omittedTenantId
+      );
+      expect(reactivatedConfig).toMatchObject({
+        status: PlatformConfigurationStatus.Active,
+        deactivation_reason: null,
+      });
+    });
+
+    it('should keep a tenant deactivated without a reason inactive at its next refresh', async () => {
+      // Given
+      const platformId = uuidv4();
+      const tenantId = uuidv4();
+      const token = await registerOpenaevTenant(platformId, tenantId);
+      const config = await loadTenantConfiguration(platformId, tenantId);
+      await PlatformConfigurationDomain.updateConfiguration(
+        config!.service_instance_id,
+        { status: PlatformConfigurationStatus.Inactive }
+      );
+
+      // When
+      const result = await refreshAllTenants(platformId, [{ tenantId, token }]);
+
+      // Then
+      expect(result.statuses).toEqual([
+        { tenantId, status: PlatformRegistrationConnectivityStatus.Inactive },
+      ]);
     });
 
     it('should update the contract of every refreshed tenant when the platform sends a new contract', async () => {

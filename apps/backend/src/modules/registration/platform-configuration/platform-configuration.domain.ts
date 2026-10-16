@@ -33,6 +33,12 @@ const PlatformConfigurationValidationSchema = z
   })
   .strict();
 
+// Why a platform configuration was deactivated, when it was not by an explicit unregistration.
+export const PlatformDeactivationReason = {
+  // The platform no longer listed the tenant in its all-tenants connectivity refresh.
+  OmittedByPlatform: 'OMITTED_BY_PLATFORM',
+} as const;
+
 export type FullPlatformConfiguration = {
   platformConfiguration: PlatformConfiguration;
   serviceDefinition: ServiceDefinition;
@@ -263,7 +269,8 @@ export const PlatformConfigurationDomain = {
 
   loadActiveConfigurationsByPlatformExcludingTenants: async (
     platformId: string,
-    excludedTenantIds: string[]
+    excludedTenantIds: string[],
+    silentSince?: Date
   ): Promise<PlatformConfiguration[]> => {
     const qb = db<PlatformConfiguration[]>('PlatformConfiguration')
       .where('platform_id', '=', platformId)
@@ -273,6 +280,14 @@ export const PlatformConfigurationDomain = {
 
     if (excludedTenantIds.length > 0) {
       qb.whereNotIn('tenant_id', excludedTenantIds);
+    }
+
+    if (silentSince) {
+      qb.where((silent) =>
+        silent
+          .whereNull('last_connectivity_check')
+          .orWhere('last_connectivity_check', '<', silentSince)
+      );
     }
 
     return qb;

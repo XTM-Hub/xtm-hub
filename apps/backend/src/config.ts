@@ -26,6 +26,9 @@ interface PortalConfig {
   saas_manager: {
     enabled: boolean;
   };
+  registration: {
+    omitted_tenant_silence_hours: number;
+  };
   auth0_sync: {
     enabled: boolean;
     max_users_per_run: number;
@@ -85,6 +88,10 @@ const portalConfig: PortalConfig = {
   },
   saas_manager: {
     enabled: config.get<boolean>('saas_manager.enabled') ?? false,
+  },
+  registration: {
+    omitted_tenant_silence_hours:
+      config.get<number>('registration.omitted_tenant_silence_hours') ?? 3,
   },
   auth0_sync: {
     enabled: config.get<boolean>('auth0_sync.enabled') ?? false,

@@ -1,3 +1,4 @@
+import z from 'zod';
 import {
   PlatformConfigurationStatus,
   PlatformContract,
@@ -8,46 +9,65 @@ import {
   RefreshPlatformRegistrationConnectivityStatusSingleTenantInput,
   TenantStatus,
 } from '../../__generated__/resolvers-types';
+import portalConfig from '../../config';
 import PlatformConfiguration from '../../model/kanel/public/PlatformConfiguration';
 import { logApp } from '../../utils/app-logger.util';
 import { BadRequestErrorCode, ErrorCode } from '../../utils/error/error.code';
 import { RequiredPlatformVersions } from '../../utils/required-platform-version';
 import { doesVersionSatisfy, isValidVersion } from '../../utils/versioning';
-import { PlatformConfigurationDomain } from './platform-configuration/platform-configuration.domain';
+import {
+  PlatformConfigurationDomain,
+  PlatformDeactivationReason,
+} from './platform-configuration/platform-configuration.domain';
 import { RegistrationHelper } from './registration.helper';
 
+const HOUR_IN_MS = 60 * 60 * 1000;
+
+interface RefreshOutcome {
+  status: PlatformRegistrationConnectivityStatus;
+  // True when the platform id and token matched a registration.
+  isTokenValid: boolean;
+}
+
+const isValidPlatformUrl = (url: string): boolean =>
+  z.url().safeParse(url).success;
+
+// Only a legacy OpenAEV registration, made before tenants were required, can move to a tenant. The platform type
+// comes from the stored registration, never from the request.
 const handleTenantUpgrade = async ({
   platform_id,
   token,
   tenant_id,
   tenant_name,
-  platform_identifier,
 }: {
   platform_id: string;
   token: string;
   tenant_id: string;
   tenant_name: string;
-  platform_identifier: PlatformIdentifier;
 }): Promise<PlatformConfiguration | null> => {
-  const configWithoutTenant =
-    await PlatformConfigurationDomain.loadConfigurationByPlatformAndToken({
-      platform_id,
-      token,
-      withoutTenantId: true,
-    });
+  const resolvedConfigWithoutTenant =
+    await PlatformConfigurationDomain.loadResolvedConfigurationByPlatformAndToken(
+      {
+        platform_id,
+        token,
+        withoutTenantId: true,
+      }
+    );
 
   if (
-    configWithoutTenant &&
+    resolvedConfigWithoutTenant?.platformIdentifier ===
+      PlatformIdentifier.Openaev &&
     !RegistrationHelper.isTenantIdRequired(
-      platform_identifier,
-      configWithoutTenant.platform_version
+      PlatformIdentifier.Openaev,
+      resolvedConfigWithoutTenant.platformConfiguration.platform_version
     )
   ) {
+    const { platformConfiguration } = resolvedConfigWithoutTenant;
     await PlatformConfigurationDomain.updateConfiguration(
-      configWithoutTenant.service_instance_id,
+      platformConfiguration.service_instance_id,
       { tenant_id, tenant_name }
     );
-    return { ...configWithoutTenant, tenant_id, tenant_name };
+    return { ...platformConfiguration, tenant_id, tenant_name };
   }
 
   return null;
@@ -98,6 +118,17 @@ const saveConfig = async ({
   tenant_name?: string;
   platform_contract?: PlatformContract;
 }): Promise<void> => {
+  const acceptedUrl =
+    platform_url && isValidPlatformUrl(platform_url) ? platform_url : undefined;
+  if (platform_url && !acceptedUrl) {
+    logApp.warn(
+      'Ignored an invalid platform URL sent by a connectivity refresh',
+      {
+        service_instance_id: platformConfiguration.service_instance_id,
+      }
+    );
+  }
+
   const shouldUpdateContract =
     RegistrationHelper.shouldUpdateContractFromRefresh(
       platformConfiguration.platform_contract,
@@ -105,7 +136,7 @@ const saveConfig = async ({
     );
   const hasConfigChanged =
     platformConfiguration.platform_version !== platform_version ||
-    (platform_url && platformConfiguration.platform_url !== platform_url) ||
+    (acceptedUrl && platformConfiguration.platform_url !== acceptedUrl) ||
     (tenant_name && platformConfiguration.tenant_name !== tenant_name) ||
     shouldUpdateContract;
 
@@ -115,7 +146,7 @@ const saveConfig = async ({
       {
         last_connectivity_check: new Date(),
         platform_version,
-        ...(platform_url ? { platform_url } : {}),
+        ...(acceptedUrl ? { platform_url: acceptedUrl } : {}),
         ...(tenant_name ? { tenant_name } : {}),
         ...(shouldUpdateContract ? { platform_contract } : {}),
       }
@@ -139,6 +170,25 @@ const saveConfig = async ({
   );
 };
 
+// A tenant deactivated because its platform stopped listing it comes back at its next valid refresh. A tenant an
+// admin unregistered has no deactivation reason, so it stays inactive.
+const reactivateIfOmittedByPlatform = async (
+  platformConfiguration: PlatformConfiguration
+): Promise<PlatformConfigurationStatus> => {
+  if (
+    platformConfiguration.status !== PlatformConfigurationStatus.Inactive ||
+    platformConfiguration.deactivation_reason !==
+      PlatformDeactivationReason.OmittedByPlatform
+  ) {
+    return platformConfiguration.status;
+  }
+  await PlatformConfigurationDomain.updateConfiguration(
+    platformConfiguration.service_instance_id,
+    { status: PlatformConfigurationStatus.Active, deactivation_reason: null }
+  );
+  return PlatformConfigurationStatus.Active;
+};
+
 const refreshConnectivityStatus = async ({
   platform_id,
   token,
@@ -157,7 +207,7 @@ const refreshConnectivityStatus = async ({
   tenant_name?: string;
   platform_identifier?: PlatformIdentifier;
   platform_contract?: PlatformContract;
-}): Promise<{ status: PlatformRegistrationConnectivityStatus }> => {
+}): Promise<RefreshOutcome> => {
   if (!isValidVersion(platform_version)) {
     throw new Error(ErrorCode.InvalidPlatformVersion);
   }
@@ -185,15 +235,17 @@ const refreshConnectivityStatus = async ({
       token,
       tenant_id,
       tenant_name,
-      platform_identifier,
     });
   }
 
   if (!platformConfiguration) {
-    return resolveStatusWhenNoConfiguration({
-      platform_identifier,
-      platform_version,
-    });
+    return {
+      ...resolveStatusWhenNoConfiguration({
+        platform_identifier,
+        platform_version,
+      }),
+      isTokenValid: false,
+    };
   }
 
   await saveConfig({
@@ -204,11 +256,14 @@ const refreshConnectivityStatus = async ({
     platform_contract,
   });
 
+  const status = await reactivateIfOmittedByPlatform(platformConfiguration);
+
   return {
     status:
-      platformConfiguration.status === PlatformConfigurationStatus.Active
+      status === PlatformConfigurationStatus.Active
         ? PlatformRegistrationConnectivityStatus.Active
         : PlatformRegistrationConnectivityStatus.Inactive,
+    isTokenValid: true,
   };
 };
 
@@ -216,19 +271,20 @@ export const RegistrationConnectivityApp = {
   refreshPlatformRegistrationConnectivityStatus: async (
     input: RefreshPlatformRegistrationConnectivityStatusInput
   ): Promise<{ status: PlatformRegistrationConnectivityStatus }> => {
-    return refreshConnectivityStatus({
+    const { status } = await refreshConnectivityStatus({
       platform_identifier: input.platformIdentifier ?? undefined,
       platform_version: input.platformVersion,
       platform_id: input.platformId,
       token: input.token,
       platform_contract: input.platformContract ?? undefined,
     });
+    return { status };
   },
 
   refreshPlatformRegistrationConnectivityStatusSingleTenant: async (
     input: RefreshPlatformRegistrationConnectivityStatusSingleTenantInput
   ): Promise<{ status: PlatformRegistrationConnectivityStatus }> => {
-    return refreshConnectivityStatus({
+    const { status } = await refreshConnectivityStatus({
       platform_identifier: input.platformIdentifier,
       platform_version: input.platformVersion,
       platform_id: input.platformId,
@@ -238,6 +294,7 @@ export const RegistrationConnectivityApp = {
       tenant_name: input.tenantName,
       platform_contract: input.platformContract ?? undefined,
     });
+    return { status };
   },
 
   refreshPlatformRegistrationConnectivityStatusAllTenants: async (
@@ -254,14 +311,14 @@ export const RegistrationConnectivityApp = {
           tenant_id: tenant.tenantId,
           tenant_name: tenant.tenantName,
           platform_contract: input.platformContract ?? undefined,
-        }).then(({ status }) => ({ tenantId: tenant.tenantId, status }))
+        })
       )
     );
     const statuses = results.map((result, index) => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const tenant = input.tenants[index]!;
       if (result.status === 'fulfilled') {
-        return result.value;
+        return { tenantId: tenant.tenantId, status: result.value.status };
       }
       logApp.error(
         `Failed to refresh connectivity status for tenant ${tenant.tenantId}`,
@@ -273,18 +330,43 @@ export const RegistrationConnectivityApp = {
       };
     });
 
+    // A tenant token speaks only for its tenant: deactivating the tenants a call omits needs every submitted token
+    // to be valid, and only reaches tenants their own instance has stopped refreshing.
+    const areAllTokensValid =
+      results.length > 0 &&
+      results.every(
+        (result) => result.status === 'fulfilled' && result.value.isTokenValid
+      );
+    if (!areAllTokensValid) {
+      if (results.length > 0) {
+        logApp.warn(
+          'Skipped the deactivation of omitted tenants: not every submitted tenant token is valid',
+          { platformId: input.platformId }
+        );
+      }
+      return { statuses };
+    }
+
     const knownTenantIds = input.tenants.map((t) => t.tenantId);
+    const silentSince = new Date(
+      Date.now() -
+        portalConfig.registration.omitted_tenant_silence_hours * HOUR_IN_MS
+    );
     const staleConfigurations =
       await PlatformConfigurationDomain.loadActiveConfigurationsByPlatformExcludingTenants(
         input.platformId,
-        knownTenantIds
+        knownTenantIds,
+        silentSince
       );
 
     await Promise.all(
       staleConfigurations.map((config) =>
         PlatformConfigurationDomain.updateConfiguration(
           config.service_instance_id,
-          { status: PlatformConfigurationStatus.Inactive }
+          {
+            status: PlatformConfigurationStatus.Inactive,
+            deactivation_reason: PlatformDeactivationReason.OmittedByPlatform,
+          }
         ).catch((error) => {
           logApp.error(
             `Failed to deactivate stale configuration for service instance ${config.service_instance_id}`,
