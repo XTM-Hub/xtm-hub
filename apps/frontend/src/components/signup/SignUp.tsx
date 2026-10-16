@@ -1,5 +1,7 @@
 'use client';
 
+import EmailNotVerifiedNotice from '@/components/signup/EmailNotVerifiedNotice';
+import SignUpErrorSnackbar from '@/components/signup/SignUpErrorSnackbar';
 import { useTranslate } from '@/hooks/use-translate';
 import FiligranLogo from '@public/filigran_logo.svg';
 import FiligranLogoDark from '@public/filigran_logo_dark.svg';
@@ -74,6 +76,7 @@ const SignUp = ({ showLocalLogin = false }: { showLocalLogin?: boolean }) => {
 
   return (
     <div className="flex flex-col md:flex-row md:h-[calc(100dvh-var(--cookie-banner-height,0px))] w-screen overflow-y-auto md:overflow-hidden">
+      <SignUpErrorSnackbar />
       <div className="layer-1 bg-elevation-default flex md:h-full md:w-2/5 flex-col pl-6 pr-0 py-6 md:overflow-hidden order-1">
         {/* Header */}
         <div className="shrink-0 flex justify-center pr-6">
@@ -82,6 +85,7 @@ const SignUp = ({ showLocalLogin = false }: { showLocalLogin?: boolean }) => {
         {/* Body */}
         <div className="md:flex-1 md:min-h-0 md:overflow-y-auto pr-6 scrollbar-thin [scrollbar-color:transparent_transparent] hover:[scrollbar-color:color-mix(in_srgb,var(--text-default-secondary)_40%,transparent)_transparent] transition-[scrollbar-color] duration-300">
           <div className="mx-auto w-full max-w-125 flex flex-col justify-start min-h-full py-6">
+            <EmailNotVerifiedNotice className="shrink-0 mb-6" />
             <h1 className="shrink-0 mt-auto text-3xl leading-9 font-medium text-default-primary">
               {t('Title1')}
               <br />

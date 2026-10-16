@@ -5,6 +5,7 @@ import portalConfig from '../../../config';
 import { UserLoadUserBy } from '../../../model/user';
 import { validatePassword } from '../../../security/util/user';
 import { ForbiddenAccess } from '../../../utils/error/error.util';
+import { startUserSession } from '../../../utils/session.util';
 import { ServiceGroupApp } from '../../deployment/group/service-group.app';
 import { UserDomain } from './user-domain/user.domain';
 
@@ -31,9 +32,10 @@ export const UserAuthApp = {
     const loggedUser = await UserDomain.loadUserBy({ email });
     if (loggedUser && password && validPassword(loggedUser, password)) {
       const user = await UserDomain.updateUserAtLogin(loggedUser);
-      req.session.user = user;
-
+      // The grant clears the pending status on the user, so the session
+      // snapshot is only written once it is done.
       await ServiceGroupApp.grantAccessAtLogin(user);
+      await startUserSession(req, user);
 
       res.cookie('NEXT_LOCALE', loggedUser.selected_language);
 

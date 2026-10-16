@@ -67,6 +67,7 @@ describe('user query resolver', () => {
       });
       const email = `testPending${uuidv4()}@second-orga.com`;
       const pendingUser = await loginFromProvider({
+        idp_subject: `auth0|${uuidv4()}`,
         email: email,
         first_name: 'test',
         last_name: 'pending',
@@ -101,12 +102,14 @@ describe('user query resolver', () => {
         },
       };
       const pendingUserSecondOrga = await loginFromProvider({
+        idp_subject: `auth0|${uuidv4()}`,
         email: `testPending${uuidv4()}@second-orga.com`,
         first_name: 'secondOrga',
         last_name: 'pending',
         roles: [],
       });
       const pendingUserFiligran = await loginFromProvider({
+        idp_subject: `auth0|${uuidv4()}`,
         email: `testPending${uuidv4()}@filigran.io`,
         first_name: 'filigran',
         last_name: 'pending',
@@ -155,12 +158,14 @@ describe('user query resolver', () => {
         },
       };
       const pendingUserSecondOrga = await loginFromProvider({
+        idp_subject: `auth0|${uuidv4()}`,
         email: `testPending${uuidv4()}@second-orga.com`,
         first_name: 'secondOrga',
         last_name: 'pending',
         roles: [],
       });
       const pendingUserFiligran = await loginFromProvider({
+        idp_subject: `auth0|${uuidv4()}`,
         email: `testPending${uuidv4()}@filigran.io`,
         first_name: 'filigran',
         last_name: 'pending',
@@ -205,11 +210,7 @@ describe('user mutation resolver', () => {
         password: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.PASSWORD,
       },
       {
-        req: {
-          session: {
-            user: {},
-          },
-        },
+        req: TestHelper.session.buildRequest(),
         res: {
           cookie: vi.fn(),
         },
@@ -705,6 +706,7 @@ describe('user mutation resolver', () => {
         user: testContext.user,
       });
       const pendingUser = await loginFromProvider({
+        idp_subject: `auth0|${uuidv4()}`,
         email: `testPending${uuidv4()}@second-orga.com`,
         first_name: 'test',
         last_name: 'pending',
@@ -949,6 +951,7 @@ describe('user mutation resolver', () => {
       });
       const email = `testPending${uuidv4()}@second-orga.com`;
       const pendingUser = await loginFromProvider({
+        idp_subject: `auth0|${uuidv4()}`,
         email: email,
         first_name: 'testToRemove',
         last_name: 'pending',
@@ -990,6 +993,7 @@ describe('user mutation resolver', () => {
       });
       const email = `testPending${uuidv4()}@second-orga.com`;
       const pendingUser = await loginFromProvider({
+        idp_subject: `auth0|${uuidv4()}`,
         email: email,
         first_name: 'testToRemove',
         last_name: 'pending',
@@ -1028,6 +1032,7 @@ describe('user mutation resolver', () => {
     it('should remove pending users from organization', async () => {
       const email = `testPending${uuidv4()}@second-orga.com`;
       const pendingUser = await loginFromProvider({
+        idp_subject: `auth0|${uuidv4()}`,
         email: email,
         first_name: 'testToRemove',
         last_name: 'pending',
@@ -1071,6 +1076,7 @@ describe('user mutation resolver', () => {
     it('should dispatch event when pending users are removed from organization', async () => {
       const email = `testPending${uuidv4()}@second-orga.com`;
       const pendingUser = await loginFromProvider({
+        idp_subject: `auth0|${uuidv4()}`,
         email: email,
         first_name: 'testToRemove',
         last_name: 'pending',

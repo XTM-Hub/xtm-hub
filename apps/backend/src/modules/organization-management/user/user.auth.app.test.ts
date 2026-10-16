@@ -1,15 +1,22 @@
 import config from 'config';
 import express from 'express';
 import { Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TestHelper } from '../../../../tests/helper/test.helper';
 import { UserLoadUserBy } from '../../../model/user';
 import * as UserSecurity from '../../../security/util/user';
 import { ServiceGroupApp } from '../../deployment/group/service-group.app';
 import { UserDomain } from './user-domain/user.domain';
 import { UserAuthApp } from './user.auth.app';
 
-vi.mock('config', () => ({
-  default: { get: vi.fn() },
-}));
+vi.mock('config', async (importOriginal) => {
+  const mod = await importOriginal<{ default: typeof config }>();
+  return {
+    default: {
+      get: vi.fn(mod.default.get.bind(mod.default)),
+      has: mod.default.has.bind(mod.default),
+    },
+  };
+});
 
 vi.mock('./user-domain/user.domain', () => ({
   UserDomain: {
@@ -28,7 +35,6 @@ vi.mock('../../../security/util/user', () => ({
   validatePassword: vi.fn(),
 }));
 
-const mockReq = { session: {} } as unknown as express.Request;
 const mockRes = { cookie: vi.fn() } as unknown as express.Response;
 
 const mockUser = {
@@ -42,11 +48,15 @@ const mockUser = {
 
 const SSO_ONLY_SETTINGS = [{ provider: 'oidc' }];
 const LOCAL_SETTINGS = [{ provider: 'local' }, { provider: 'oidc' }];
+const REGENERATE_ERROR = 'session store unavailable';
 
 describe('usersAuthApp', () => {
   describe('login', () => {
+    let mockReq: express.Request;
+
     beforeEach(() => {
       vi.resetAllMocks();
+      mockReq = TestHelper.session.buildRequest();
     });
 
     describe('when local auth is not enabled (SSO-only config)', () => {
@@ -100,12 +110,13 @@ describe('usersAuthApp', () => {
         ${'user not found'} | ${null}     | ${false}
         ${'wrong password'} | ${mockUser} | ${false}
       `(
-        'should return undefined when $reason',
+        'should return undefined and keep the pre-login session when $reason',
         async ({ user, passwordValid }) => {
           vi.mocked(UserDomain.loadUserBy).mockResolvedValue(user);
           vi.mocked(UserSecurity.validatePassword).mockReturnValue(
             passwordValid
           );
+          const preLoginSessionId = mockReq.sessionID;
 
           const result = await UserAuthApp.login(mockReq, mockRes, {
             email: 'user@company.com',
@@ -113,10 +124,50 @@ describe('usersAuthApp', () => {
           });
 
           expect(result).toBeUndefined();
+          expect(mockReq.sessionID).toBe(preLoginSessionId);
           expect(UserDomain.updateUserAtLogin).not.toHaveBeenCalled();
           expect(ServiceGroupApp.grantAccessAtLogin).not.toHaveBeenCalled();
         }
       );
+
+      it('should sign the user into a new session id when credentials are valid', async () => {
+        // Given
+        vi.mocked(UserDomain.loadUserBy).mockResolvedValue(mockUser);
+        vi.mocked(UserDomain.updateUserAtLogin).mockResolvedValue(mockUser);
+        vi.mocked(UserSecurity.validatePassword).mockReturnValue(true);
+        const preLoginSessionId = mockReq.sessionID;
+
+        // When
+        await UserAuthApp.login(mockReq, mockRes, {
+          email: 'user@company.com',
+          password: 'correctpassword',
+        });
+
+        // Then
+        expect(mockReq.sessionID).not.toBe(preLoginSessionId);
+        expect(mockReq.session).toMatchObject({ user: mockUser });
+      });
+
+      it('should reject without signing the user in when the session cannot be regenerated', async () => {
+        // Given
+        vi.mocked(UserDomain.loadUserBy).mockResolvedValue(mockUser);
+        vi.mocked(UserDomain.updateUserAtLogin).mockResolvedValue(mockUser);
+        vi.mocked(UserSecurity.validatePassword).mockReturnValue(true);
+        const req = TestHelper.session.buildRequest(
+          {},
+          { regenerateError: new Error(REGENERATE_ERROR) }
+        );
+
+        // When
+        const loggingIn = UserAuthApp.login(req, mockRes, {
+          email: 'user@company.com',
+          password: 'correctpassword',
+        });
+
+        // Then
+        await expect(loggingIn).rejects.toThrow(REGENERATE_ERROR);
+        expect(req.session.user).toBeUndefined();
+      });
     });
   });
 });

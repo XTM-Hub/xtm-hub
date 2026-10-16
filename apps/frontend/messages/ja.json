@@ -614,7 +614,31 @@
     "LoginWithLocal": "ローカルでログイン",
     "MadeBy": "制作",
     "WelcomeTitle": "XTM Hubへようこそ",
-    "WelcomeSubtitle": "XTM Platform を拡張・スケール"
+    "WelcomeSubtitle": "XTM Platform を拡張・スケール",
+    "EmailNotVerifiedError": {
+      "Title": "メールアドレスが確認されていません",
+      "Description": "お送りしたリンクからメールアドレスを確認してから、再度ログインしてください。"
+    },
+    "ResendVerificationEmail": {
+      "Button": "確認メールを再送信",
+      "Sent": "送信済み",
+      "Success": {
+        "Title": "確認メールを送信しました",
+        "Description": "受信トレイと迷惑メールフォルダをご確認ください。"
+      },
+      "TooManyRequests": {
+        "Title": "リクエストが多すぎます",
+        "Description": "新しい確認メールをリクエストする前に、数分お待ちください。"
+      },
+      "NoPendingVerification": {
+        "Title": "確認メールを再送信できません",
+        "Description": "新しい確認メールを受け取るには、再度ログインしてください。それでも問題が解決しない場合は、お問い合わせください。"
+      },
+      "Failed": {
+        "Title": "確認メールを送信できませんでした",
+        "Description": "エラーが発生しました。しばらくしてから再度お試しください。"
+      }
+    }
   },
   "MenuActions": {
     "Continue": "続けてください",

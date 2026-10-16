@@ -21,6 +21,7 @@ vi.mock('../../../context/request.context', () => ({
   requestContext: { set: vi.fn(), get: vi.fn() },
 }));
 
+import { ForbiddenErrorCode } from '../../../utils/error/error.code';
 import { initAuthPlatform } from './auth-platform';
 
 type RouteHandler = (
@@ -33,12 +34,14 @@ interface RegisteredApp {
   handler: RouteHandler;
   middlewares: RouteHandler[];
   authMiddleware: RouteHandler;
+  callbackHandler: RouteHandler;
 }
 
 const registerAuthPlatform = async (): Promise<RegisteredApp> => {
   let handler: RouteHandler | undefined;
   let middlewares: RouteHandler[] = [];
   let authMiddleware: RouteHandler | undefined;
+  let callbackHandler: RouteHandler | undefined;
 
   const app = {
     use: (path: string, middleware: RouteHandler) => {
@@ -52,15 +55,19 @@ const registerAuthPlatform = async (): Promise<RegisteredApp> => {
         handler = handlers[handlers.length - 1];
       }
     },
-    all: () => {},
+    all: (path: string, ...handlers: RouteHandler[]) => {
+      if (path === '/auth/:provider/callback') {
+        callbackHandler = handlers[handlers.length - 1];
+      }
+    },
   } as unknown as Express;
 
   await initAuthPlatform(app);
 
-  if (!handler || !authMiddleware) {
+  if (!handler || !authMiddleware || !callbackHandler) {
     throw new Error('/auth routes were not registered as expected');
   }
-  return { handler, middlewares, authMiddleware };
+  return { handler, middlewares, authMiddleware, callbackHandler };
 };
 
 const buildRequest = (
@@ -227,6 +234,140 @@ describe('initAuthPlatform', () => {
       expect(res.redirect).toHaveBeenCalledWith('/');
       expect(mocks.authenticate).not.toHaveBeenCalled();
       expect(mocks.isSessionUserActive).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('on the provider callback', () => {
+    type PassportOutcome = [Error | null, object | false | null, unknown?];
+
+    const givenPassportOutcome = (...outcome: PassportOutcome) => {
+      mocks.authenticate.mockImplementation(
+        (
+          _provider: string,
+          _options: object,
+          callback: (...args: PassportOutcome) => void
+        ) =>
+          () =>
+            callback(...outcome)
+      );
+    };
+
+    it.each([
+      [
+        'the email is not verified',
+        [new Error(ForbiddenErrorCode.EmailNotVerified), undefined],
+        '/sign-up?error=email-not-verified',
+      ],
+      [
+        'the provider strategy fails',
+        [new Error('boom'), undefined],
+        '/sign-up?error=login-failed',
+      ],
+      [
+        'the identity provider denies the sign-in',
+        [null, false, { message: 'access denied' }],
+        '/sign-up?error=login-failed',
+      ],
+    ] as [string, PassportOutcome, string][])(
+      'should send the user to the sign-up page with the reason when %s',
+      async (_description, outcome, expected) => {
+        // Given
+        givenPassportOutcome(...outcome);
+        const res = buildResponse();
+
+        // When
+        await app.callbackHandler(buildRequest(), res, vi.fn());
+
+        // Then
+        expect(res.redirect).toHaveBeenCalledWith(expected);
+      }
+    );
+
+    it('should keep the referer for the next attempt when the sign-in fails', async () => {
+      // Given
+      givenPassportOutcome(new Error('boom'), undefined);
+      const res = buildResponse();
+
+      // When
+      await app.callbackHandler(
+        buildRequest({ referer: '/app' }),
+        res,
+        vi.fn()
+      );
+
+      // Then
+      expect(res.redirect).toHaveBeenCalledWith(
+        '/sign-up?error=login-failed&redirect=L2FwcA%3D%3D'
+      );
+    });
+
+    it('should send the user to the sign-up page when the account is missing or disabled', async () => {
+      // Given
+      givenPassportOutcome(null, activeUser);
+      mocks.authenticateUser.mockResolvedValue(undefined);
+      const res = buildResponse();
+
+      // When
+      await app.callbackHandler(buildRequest(), res, vi.fn());
+
+      // Then
+      expect(res.redirect).toHaveBeenCalledWith('/sign-up?error=login-failed');
+    });
+
+    it('should send the user to the sign-up page with the referer when the session cannot be started', async () => {
+      // Given
+      givenPassportOutcome(null, activeUser);
+      mocks.authenticateUser.mockRejectedValue(new Error('store unavailable'));
+      const res = buildResponse();
+
+      // When
+      await app.callbackHandler(
+        buildRequest({ referer: '/app' }),
+        res,
+        vi.fn()
+      );
+
+      // Then
+      expect(res.redirect).toHaveBeenCalledWith(
+        '/sign-up?error=login-failed&redirect=L2FwcA%3D%3D'
+      );
+    });
+
+    it('should send a signed-in user back to the referer', async () => {
+      // Given
+      givenPassportOutcome(null, activeUser);
+      mocks.authenticateUser.mockResolvedValue(activeUser);
+      const res = buildResponse();
+
+      // When
+      await app.callbackHandler(
+        buildRequest({ referer: '/app/settings' }),
+        res,
+        vi.fn()
+      );
+
+      // Then
+      expect(res.redirect).toHaveBeenCalledWith('/app/settings');
+    });
+
+    it('should send a signed-in user back to the referer of the session replaced at login', async () => {
+      // Given
+      givenPassportOutcome(null, activeUser);
+      mocks.authenticateUser.mockImplementation(async (req: Request) => {
+        req.session = { user: activeUser } as unknown as Request['session'];
+        return activeUser;
+      });
+      const res = buildResponse();
+
+      // When
+      await app.callbackHandler(
+        buildRequest({ referer: '/app/settings' }),
+        res,
+        vi.fn()
+      );
+
+      // Then
+      expect(res.redirect).toHaveBeenCalledWith('/app/settings');
     });
   });
 });

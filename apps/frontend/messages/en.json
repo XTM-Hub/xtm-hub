@@ -614,7 +614,31 @@
     "LoginWithLocal": "Log in with local",
     "MadeBy": "Made by",
     "WelcomeTitle": "Welcome to XTM Hub",
-    "WelcomeSubtitle": "Extend and scale your XTM Platform"
+    "WelcomeSubtitle": "Extend and scale your XTM Platform",
+    "EmailNotVerifiedError": {
+      "Title": "Email address not verified",
+      "Description": "Please verify your email address using the link we sent you, then log in again."
+    },
+    "ResendVerificationEmail": {
+      "Button": "Resend verification email",
+      "Sent": "Email sent",
+      "Success": {
+        "Title": "Verification email sent",
+        "Description": "Check your inbox and spam folder."
+      },
+      "TooManyRequests": {
+        "Title": "Too many requests",
+        "Description": "Please wait a few minutes before requesting a new one."
+      },
+      "NoPendingVerification": {
+        "Title": "Unable to resend the verification email",
+        "Description": "Please log in again to receive a new one. If the issue persists, contact us for assistance."
+      },
+      "Failed": {
+        "Title": "Unable to send the verification email",
+        "Description": "Something went wrong. Please try again later."
+      }
+    }
   },
   "MenuActions": {
     "Continue": "Continue",

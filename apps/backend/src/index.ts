@@ -332,6 +332,8 @@ declare module 'express-session' {
   interface SessionData {
     user: UserLoadUserBy;
     referer: string;
+    // Auth0 account refused for an unverified email, used to resend the email
+    unverifiedIdpSubject: string;
   }
 }
 

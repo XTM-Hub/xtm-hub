@@ -4,6 +4,7 @@ import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   buildEmailsQuery,
   buildUserMetadataUpdate,
+  getPrimaryIdentity,
   getRateLimitWaitMs,
   groupAccountsByEmail,
   isRateLimitError,
@@ -237,5 +238,23 @@ describe('rate limit handling', () => {
     await expect(withRateLimitRetry(call, sleep)).rejects.toThrow('boom');
     expect(call).toHaveBeenCalledTimes(1);
     expect(sleep).not.toHaveBeenCalled();
+  });
+});
+
+describe('getPrimaryIdentity', () => {
+  it('should return the first identity with its user_id as a string', () => {
+    // Given
+    const user: Management.GetUserResponseContent = {
+      identities: [
+        { user_id: 1234, provider: 'github', connection: 'github' },
+        { user_id: 'linked-user', provider: 'auth0', connection: 'database' },
+      ],
+    };
+
+    // When
+    const identity = getPrimaryIdentity(user);
+
+    // Then
+    expect(identity).toEqual({ user_id: '1234', provider: 'github' });
   });
 });

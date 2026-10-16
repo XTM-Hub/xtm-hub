@@ -614,7 +614,31 @@
     "LoginWithLocal": "Se connecter en local",
     "MadeBy": "Réalisé par",
     "WelcomeTitle": "Bienvenue sur XTM Hub",
-    "WelcomeSubtitle": "Développez et faites évoluer votre XTM Platform"
+    "WelcomeSubtitle": "Développez et faites évoluer votre XTM Platform",
+    "EmailNotVerifiedError": {
+      "Title": "Adresse email non vérifiée",
+      "Description": "Veuillez vérifier votre adresse email à l’aide du lien que nous vous avons envoyé, puis reconnectez-vous."
+    },
+    "ResendVerificationEmail": {
+      "Button": "Renvoyer l’email de vérification",
+      "Sent": "Email envoyé",
+      "Success": {
+        "Title": "Email de vérification envoyé",
+        "Description": "Consultez votre boîte de réception et vos spams."
+      },
+      "TooManyRequests": {
+        "Title": "Trop de demandes",
+        "Description": "Veuillez patienter quelques minutes avant d’en demander un nouveau."
+      },
+      "NoPendingVerification": {
+        "Title": "Impossible de renvoyer l’email de vérification",
+        "Description": "Veuillez vous reconnecter pour en recevoir un nouveau. Si le problème persiste, contactez-nous pour obtenir de l’aide."
+      },
+      "Failed": {
+        "Title": "Impossible d’envoyer l’email de vérification",
+        "Description": "Une erreur est survenue. Veuillez réessayer plus tard."
+      }
+    }
   },
   "MenuActions": {
     "Continue": "Continuer",
