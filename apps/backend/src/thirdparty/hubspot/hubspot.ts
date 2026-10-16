@@ -2,6 +2,7 @@ import config from 'config';
 import {
   DeploymentRequestDeploymentType,
   OrganizationCapability,
+  PlatformConfigurationStatus,
   PlatformIdentifier,
 } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
@@ -11,9 +12,12 @@ import {
   DeploymentRequestDomain,
   FullyQualifiedDeploymentRequest,
 } from '../../modules/deployment/deployment.domain';
+import { OrganizationDomain } from '../../modules/organization-management/organization/organization.domain';
 import { UserDomain } from '../../modules/organization-management/user/user-domain/user.domain';
+import { PlatformConfigurationDomain } from '../../modules/registration/platform-configuration/platform-configuration.domain';
 import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode } from '../../utils/error/error.code';
+import { ForbiddenAccess } from '../../utils/error/error.util';
 import { isValidUrl } from '../../utils/utils';
 import {
   HUBSPOT_TYPE_TO_QUEUE,
@@ -185,6 +189,17 @@ export const hubspotReachOutSalesHook = async ({
           `No deployment request found for platform token: ${platformToken}`
         );
       }
+
+      const tokenRequest = deploymentRequest;
+      const hasUserRightsOnTokenRequest = user.organizations.some(
+        (organization) =>
+          organization.id === tokenRequest.organization_requester_id
+      );
+      if (!hasUserRightsOnTokenRequest) {
+        throw new Error(
+          `Deployment request ${tokenRequest.id}, organization ${tokenRequest.organization_requester_id} does not match user ${user.id} organizations`
+        );
+      }
     } else if (user?.id) {
       if (deploymentRequestType === DeploymentRequestDeploymentType.Bundle) {
         const bundle =
@@ -245,3 +260,83 @@ export const hubspotReachOutSalesHook = async ({
       message: `${deploymentRequest.platform_identifier}: Message sent for free trial: ${deploymentRequest.hub_status.toLowerCase()} ${deploymentRequest.type}.\n\n${message}`,
     };
   });
+
+type ReachOutSalesPayload = HubspotPayloadMap['reachOutSales'];
+
+/**
+ * Resolves the contact of a platform calling without a Hub session: the requester of its trial deployment, or the
+ * user who registered it. Throws when the platform id and token match neither, so the caller gets a real error.
+ */
+const loadPlatformContact = async ({
+  message,
+  platformId,
+  platformToken,
+}: {
+  message: string;
+  platformId: string;
+  platformToken: string;
+}): Promise<ReachOutSalesPayload> => {
+  const trialRequest =
+    await DeploymentRequestDomain.loadTrialDeploymentRequestByPlatformToken(
+      platformToken
+    );
+  if (
+    trialRequest &&
+    (!trialRequest.platform_id || trialRequest.platform_id === platformId)
+  ) {
+    return {
+      email: trialRequest.requester_email,
+      firstname: trialRequest.requester_first_name,
+      lastname: trialRequest.requester_last_name,
+      company: trialRequest.organization_name,
+      message: `${trialRequest.platform_identifier}: Message sent for free trial: ${trialRequest.hub_status.toLowerCase()} ${trialRequest.type}.\n\n${message}`,
+    };
+  }
+
+  const registration =
+    await PlatformConfigurationDomain.loadResolvedConfigurationByPlatformAndToken(
+      { platform_id: platformId, token: platformToken }
+    );
+  if (
+    registration?.platformConfiguration.status ===
+    PlatformConfigurationStatus.Active
+  ) {
+    const { platformConfiguration, platformIdentifier } = registration;
+    const [registerer, organization] = await Promise.all([
+      UserDomain.loadUserBy({
+        'User.id': platformConfiguration.registerer_id,
+      }),
+      OrganizationDomain.loadOrganizationSubscribedToServiceInstance(
+        platformConfiguration.service_instance_id
+      ),
+    ]);
+    if (registerer) {
+      return {
+        email: registerer.email,
+        firstname: registerer.first_name,
+        lastname: registerer.last_name,
+        company: organization?.name ?? '',
+        message: `${platformIdentifier}: ${message}`,
+      };
+    }
+  }
+
+  throw ForbiddenAccess(ErrorCode.InvalidPlatformToken);
+};
+
+export const hubspotReachOutSalesFromPlatformHook = async ({
+  message = 'Please contact me about the OpenCTI free trial',
+  platformId,
+  platformToken,
+}: {
+  message?: string;
+  platformId: string;
+  platformToken: string;
+}) => {
+  const contact = await loadPlatformContact({
+    message,
+    platformId,
+    platformToken,
+  });
+  await hubspotHook('reachOutSales', async () => contact);
+};

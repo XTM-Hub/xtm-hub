@@ -8,7 +8,10 @@ import {
 import { OrganizationId } from '../../../model/kanel/public/Organization';
 import { UserId } from '../../../model/kanel/public/User';
 import { dispatch, listen } from '../../../pub';
-import { hubspotReachOutSalesHook } from '../../../thirdparty/hubspot/hubspot';
+import {
+  hubspotReachOutSalesFromPlatformHook,
+  hubspotReachOutSalesHook,
+} from '../../../thirdparty/hubspot/hubspot';
 import { logApp } from '../../../utils/app-logger.util';
 import { getErrorMessage } from '../../../utils/error/error-guard.util';
 
@@ -342,12 +345,28 @@ const resolvers: Resolvers = {
           'XTM-Hub-Platform-Token'
         );
 
-        await hubspotReachOutSalesHook({
+        if (portalContext.user) {
+          await hubspotReachOutSalesHook({
+            message: message ?? undefined,
+            platformToken,
+            platformId: platformId ?? undefined,
+            platformIdentifier: platformIdentifier ?? undefined,
+            deploymentRequestType: deploymentRequestType ?? undefined,
+          });
+          return { success: true };
+        }
+
+        // Without a Hub session, only a platform calling with its own id and token can send a message.
+        const headerPlatformId = portalContext.req.header(
+          'XTM-Hub-Platform-Id'
+        );
+        if (!platformToken || !headerPlatformId) {
+          throw ForbiddenAccess(ErrorCode.InvalidPlatformToken);
+        }
+        await hubspotReachOutSalesFromPlatformHook({
           message: message ?? undefined,
+          platformId: headerPlatformId,
           platformToken,
-          platformId: platformId ?? undefined,
-          platformIdentifier: platformIdentifier ?? undefined,
-          deploymentRequestType: deploymentRequestType ?? undefined,
         });
         return { success: true };
       } catch (error) {

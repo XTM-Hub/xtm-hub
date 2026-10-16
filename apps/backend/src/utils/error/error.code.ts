@@ -16,6 +16,7 @@ export enum ForbiddenErrorCode {
   CantAddDisabledUser = 'CANT_ADD_DISABLED_USER',
   CantRemoveYourselfFromOrgaError = 'CANT_REMOVE_YOURSELF_FROM_ORGA_ERROR',
   YouCanNotLogin = 'YOU_CAN_NOT_LOGIN',
+  InvalidPlatformToken = 'INVALID_PLATFORM_TOKEN',
   PlatformTypeNotSupported = 'PLATFORM_TYPE_NOT_SUPPORTED',
   CantRequestFreeTrialInPersonalSpace = 'CANT_REQUEST_FREE_TRIAL_IN_PERSONAL_SPACE',
   CantRequestFreeTrial = 'CANT_REQUEST_FREE_TRIAL',

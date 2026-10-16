@@ -14,21 +14,26 @@ import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   contextAdminSecondOrga,
   requestContextAdminSecondOrga,
+  requestContextRegistererUserSecondOrga,
   TEST_ORGANIZATIONS,
 } from '../../../tests/tests.const';
 import {
   DeploymentRequestDeploymentType,
+  PlatformContract,
   PlatformIdentifier,
 } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
 import { UserLoadUserBy } from '../../model/user';
+import { RegistrationApp } from '../../modules/registration/registration.app';
 import { logApp } from '../../utils/app-logger.util';
+import { ErrorCode } from '../../utils/error/error.code';
 import * as utils from '../../utils/utils';
 import { HUBSPOT_TYPE_TO_QUEUE } from '../pgboss/hubspot.jobs';
 import { PgBossProducer } from '../pgboss/producer';
 import {
   hubspotHook,
   hubspotInviteUserHook,
+  hubspotReachOutSalesFromPlatformHook,
   hubspotReachOutSalesHook,
 } from './hubspot';
 
@@ -133,6 +138,31 @@ describe('hubspot', () => {
         {
           error: new Error(
             `No deployment request found for platform token: ${platformToken}`
+          ),
+        }
+      );
+    });
+
+    it('should log an error when request is retrieved from platform token and user is not authorized', async () => {
+      // Given
+      const deploymentRequest =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          {}
+        );
+      requestContext.set(requestContextAdminSecondOrga);
+
+      // When
+      await hubspotReachOutSalesHook({
+        platformToken: deploymentRequest.platform_token!,
+      });
+
+      // Then
+      expect(fetchSpy).not.toHaveBeenCalled();
+      expect(logSpy).toHaveBeenCalledWith(
+        'Failed to send Hubspot reachOutSales hook',
+        {
+          error: new Error(
+            `Deployment request ${deploymentRequest.id}, organization ${deploymentRequest.organization_requester_id} does not match user ${contextAdminSecondOrga.user.id} organizations`
           ),
         }
       );
@@ -310,6 +340,117 @@ describe('hubspot', () => {
           }),
         })
       );
+    });
+  });
+
+  describe('reachOutSalesFromPlatform (direct sending)', () => {
+    const expectSentContact = (contact: Record<string, string>) =>
+      expect(fetchSpy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          body: JSON.stringify({ type: 'reachOutSales', ...contact }),
+        })
+      );
+
+    beforeEach(() => {
+      fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue({} as Response);
+      vi.spyOn(utils, 'isValidUrl').mockReturnValue(true);
+      vi.mocked(config.get).mockImplementation((key: string) => {
+        if (key === 'hubspot_use_queue_processing') return false;
+        return realConfigGet(key);
+      });
+    });
+
+    it('should send the trial requester as contact for a trial deployment token', async () => {
+      // Given
+      const platformId = uuidv4();
+      const deploymentRequest =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          { platform_id: platformId }
+        );
+
+      // When
+      await hubspotReachOutSalesFromPlatformHook({
+        message: 'Please call me',
+        platformId,
+        platformToken: deploymentRequest.platform_token!,
+      });
+
+      // Then
+      expectSentContact({
+        email: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.EMAIL,
+        firstname: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.FIRST_NAME,
+        lastname: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.LAST_NAME,
+        company: TEST_ORGANIZATIONS.FILIGRAN.NAME,
+        message:
+          'opencti: Message sent for free trial: pending trial.\n\nPlease call me',
+      });
+    });
+
+    it('should send the registerer as contact for a registration token', async () => {
+      // Given
+      const platformId = uuidv4();
+      requestContext.set(requestContextRegistererUserSecondOrga);
+      const token = await RegistrationApp.registerPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        platform: {
+          id: platformId,
+          title: 'My OpenCTI platform',
+          url: 'http://example.com',
+          contract: PlatformContract.Ee,
+          version: '6.8.0',
+        },
+        identifier: PlatformIdentifier.Opencti,
+      });
+      fetchSpy.mockClear();
+
+      // When
+      await hubspotReachOutSalesFromPlatformHook({
+        message: 'Please call me',
+        platformId,
+        platformToken: token,
+      });
+
+      // Then
+      expectSentContact({
+        email: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.EMAIL,
+        firstname:
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.FIRST_NAME,
+        lastname:
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.LAST_NAME,
+        company: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
+        message: 'opencti: Please call me',
+      });
+    });
+
+    it('should refuse an unknown platform token without sending anything', async () => {
+      // When
+      const call = hubspotReachOutSalesFromPlatformHook({
+        platformId: uuidv4(),
+        platformToken: uuidv4(),
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.InvalidPlatformToken);
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it('should refuse a trial deployment token used with another platform id', async () => {
+      // Given
+      const deploymentRequest =
+        await TestHelper.deploymentRequest.createWithServiceInstanceAndSubscription(
+          { platform_id: uuidv4() }
+        );
+
+      // When
+      const call = hubspotReachOutSalesFromPlatformHook({
+        platformId: uuidv4(),
+        platformToken: deploymentRequest.platform_token!,
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(ErrorCode.InvalidPlatformToken);
+      expect(fetchSpy).not.toHaveBeenCalled();
     });
   });
 
