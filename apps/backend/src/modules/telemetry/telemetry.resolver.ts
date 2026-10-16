@@ -39,9 +39,11 @@ const resolvers: Resolvers = {
   SendTelemetryMutation: {
     oneClickDeploy: async (_, args, context) => {
       const { input } = args;
-      const userId = context.user.id as UserId;
       return runTelemetryMutation(() =>
-        TelemetryApp.sendOneClickDeployEvent({ userId, input })
+        TelemetryApp.sendOneClickDeployEvent({
+          userId: context.user.id as UserId,
+          input,
+        })
       );
     },
 
