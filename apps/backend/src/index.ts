@@ -41,6 +41,7 @@ import {
   sseSubscriptionCounter,
 } from './server/apollo-plugins/metrics';
 import { registerEndpoints } from './server/endpoints';
+import { configureTrustedProxy } from './server/endpoints/shared/ip-rate-limit.util';
 import createSchema from './server/graphql-schema';
 import platformInit, { minioInit } from './server/initialize';
 import { seedDevelopmentConnectors } from './server/initialize.helper';
@@ -99,6 +100,7 @@ const PORTAL_CORS_OPTIONS: cors.CorsOptions = {
 };
 
 const app = express();
+configureTrustedProxy(app);
 const SESSION_MAX_AGE = 24 * 60 * 60 * 1000; // 1 day
 const sessionMiddleware = expressSession({
   name: portalCookieName,

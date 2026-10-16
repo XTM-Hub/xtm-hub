@@ -152,6 +152,21 @@ export const NewsFeedDomain = {
       .select('*');
   },
 
+  loadNewsFeedItemWithMetadataById: async (
+    id: NewsFeedItemId
+  ): Promise<NewsFeedItemWithMetadata | undefined> => {
+    const newsFeedItem = await db<NewsFeedItem>('NewsFeedItem')
+      .where({ id })
+      .first();
+    if (!newsFeedItem) {
+      return undefined;
+    }
+    const metadata = await db<NewsFeedItemMetadata[]>('NewsFeedItemMetadata')
+      .where('news_feed_item_id', id)
+      .select('*');
+    return { ...newsFeedItem, metadata };
+  },
+
   loadNewsFeedItemByDocumentId: async (
     documentId: string
   ): Promise<NewsFeedItem | undefined> => {

@@ -1,11 +1,18 @@
 import config from 'config';
-import { OneClickDeployInput } from '../../__generated__/resolvers-types';
+import { z } from 'zod';
+import {
+  NewsFeedItemType,
+  NewsFeedRedirectInput,
+  OneClickDeployInput,
+} from '../../__generated__/resolvers-types';
 import portalConfig from '../../config';
 import { requestContext } from '../../context/request.context';
 import OneClickDeployment, {
   OneClickDeploymentInitializer,
 } from '../../model/kanel/public/OneClickDeployment';
+import Organization from '../../model/kanel/public/Organization';
 import { UserId } from '../../model/kanel/public/User';
+import { UserLoadUserBy } from '../../model/user';
 import { esDbClient } from '../../thirdparty/elasticsearch/client';
 import { PgBossProducer } from '../../thirdparty/pgboss/producer';
 import { TELEMETRY_QUEUES } from '../../thirdparty/pgboss/telemetry.jobs';
@@ -24,6 +31,34 @@ import {
 } from './telemetry.types';
 
 const TELEMETRY_INDEX = 'telemetry';
+
+// The platform id is a UUID. It comes from the query string, so anything else is dropped
+const PLATFORM_ID_SCHEMA = z.uuid();
+
+const parsePlatformId = (platformId: string | null | undefined) => {
+  const parsed = PLATFORM_ID_SCHEMA.safeParse(platformId);
+  return parsed.success ? parsed.data : undefined;
+};
+
+// The event only identifies the user and the organization when a user is logged in
+const loadLoggedInIdentity = async (
+  user: Pick<UserLoadUserBy, 'id' | 'selected_organization_id'> | undefined
+): Promise<{ organization?: Organization; userId?: UserId }> => {
+  if (!user) {
+    return {};
+  }
+  try {
+    const organization = await OrganizationDomain.loadOrganizationBy({
+      id: user.selected_organization_id,
+    });
+    return { organization, userId: user.id };
+  } catch (error) {
+    logApp.error('Unable to load the organization for a telemetry event', {
+      error,
+    });
+    return { userId: user.id };
+  }
+};
 
 const toOneClickDeploymentInitializer = (
   event: OneClickDeployEvent
@@ -224,5 +259,69 @@ export const TelemetryApp = {
         error,
       });
     }
+  },
+
+  // Fire and forget: never throws, so callers must not await it on the response path
+  async sendExternalNewsFeedRedirectEvent({
+    user,
+    newsFeedItemId,
+    newsFeedItemType,
+    destinationHost,
+    platformId,
+  }: {
+    user: Pick<UserLoadUserBy, 'id' | 'selected_organization_id'> | undefined;
+    newsFeedItemId: string;
+    newsFeedItemType: NewsFeedItemType;
+    destinationHost: string;
+    platformId: unknown;
+  }): Promise<void> {
+    try {
+      const { organization, userId } = await loadLoggedInIdentity(user);
+      const event = TelemetryHelper.buildNewsFeedRedirectEvent(
+        organization,
+        userId,
+        {
+          news_feed_item_id: newsFeedItemId,
+          news_feed_item_type: newsFeedItemType,
+          destination_host: destinationHost,
+          platform_id: parsePlatformId(
+            typeof platformId === 'string' ? platformId : undefined
+          ),
+        }
+      );
+      await TelemetryApp.sendTelemetryEvent(event);
+    } catch (error) {
+      logApp.error('Unable to send the external news feed redirect event', {
+        error,
+        newsFeedItemId,
+      });
+    }
+  },
+
+  // The input comes from the query string of a link: it is validated, and the event is best-effort analytics
+  async sendResourceNewsFeedRedirectEvent({
+    user,
+    input,
+  }: {
+    user: Pick<UserLoadUserBy, 'id' | 'selected_organization_id'>;
+    input: NewsFeedRedirectInput;
+  }): Promise<void> {
+    if (!TelemetryHelper.shouldSendEventForService(input.service_identifier)) {
+      throw new Error(ErrorCode.ServiceNotFound);
+    }
+
+    const { organization, userId } = await loadLoggedInIdentity(user);
+    const event = TelemetryHelper.buildNewsFeedRedirectEvent(
+      organization,
+      userId,
+      {
+        service: input.service_identifier,
+        resource_id: input.resource_id ?? undefined,
+        platform_id: parsePlatformId(input.platform_id),
+        platform_identifier: input.platform_identifier ?? undefined,
+        utm_content: input.utm_content ?? undefined,
+      }
+    );
+    await TelemetryApp.sendTelemetryEvent(event);
   },
 };

@@ -14,6 +14,7 @@ import { esDbClient } from '../../thirdparty/elasticsearch/client';
 import { PgBossProducer } from '../../thirdparty/pgboss/producer';
 import { TELEMETRY_QUEUES } from '../../thirdparty/pgboss/telemetry.jobs';
 import { logApp } from '../../utils/app-logger.util';
+import { ErrorCode } from '../../utils/error/error.code';
 import { loadInstanceIdentity } from './telemetry-snapshot.domain';
 import { resetHubIdentityCacheForTests, TelemetryApp } from './telemetry.app';
 import {
@@ -32,17 +33,27 @@ import {
 import { toGlobalId } from 'graphql-relay/node/node.js';
 import { FileUpload } from 'graphql-upload/processRequest.mjs';
 import { TestHelper } from '../../../tests/helper/test.helper';
-import { SERVICES, TEST_ORGANIZATIONS } from '../../../tests/tests.const';
+import {
+  contextSimpleUserFiligran2,
+  SERVICES,
+  TEST_ORGANIZATIONS,
+} from '../../../tests/tests.const';
 import {
   DocumentMetadataKeyCode,
   IntegrationType,
+  NewsFeedItemType,
+  NewsFeedRedirectInput,
+  NewsFeedUtmContent,
   PlatformConfigurationStatus,
   PlatformContract,
   PlatformIdentifier,
+  ServiceDefinitionIdentifier,
 } from '../../__generated__/resolvers-types';
+import type { DocumentId } from '../../model/kanel/public/Document';
 import type { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { DocumentApp } from '../document/document.app';
 import { DocumentUploadsHelper } from '../document/document.uploads.helper';
+import { OrganizationDomain } from '../organization-management/organization/organization.domain';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { INTEGRATION_SERVICE_INSTANCE_ID } from '../shareable-resource/opencti/integration/integration.model';
 
@@ -632,6 +643,259 @@ describe('telemetryApp', () => {
           index: 'telemetry',
           document: enrichedLoginEvent,
         });
+      });
+    });
+  });
+
+  describe('news feed redirect events', () => {
+    const NEWS_FEED_ITEM_ID = '4f1c0d52-8b6e-4c43-9f0e-6d2a1b7c3e55';
+    const PLATFORM_ID = '9b0c7a3e-1111-4a9e-8d6f-0d4f5a7c9e10';
+    const RESOURCE_ID = '3e7f1a9c-2b4d-4c8e-a6f1-7d9b2e5c1a08';
+    const LOGGED_IN_USER = contextSimpleUserFiligran2.user;
+    const LOGGED_IN_IDENTITY = {
+      user_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID,
+      organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+      organization_name: TEST_ORGANIZATIONS.FILIGRAN.NAME,
+      organization_type: TelemetryOrganizationType.PROFESSIONAL,
+    };
+    const ANONYMOUS_IDENTITY = {
+      user_id: undefined,
+      organization_id: undefined,
+      organization_name: undefined,
+      organization_type: TelemetryOrganizationType.PUBLIC,
+    };
+
+    let sendTelemetryEventSpy: MockInstance;
+
+    beforeEach(() => {
+      sendTelemetryEventSpy = vi
+        .spyOn(TelemetryApp, 'sendTelemetryEvent')
+        .mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    describe('sendExternalNewsFeedRedirectEvent', () => {
+      const externalRedirect = {
+        newsFeedItemId: NEWS_FEED_ITEM_ID,
+        newsFeedItemType: NewsFeedItemType.BlogPost,
+        destinationHost: 'filigran.io',
+        platformId: PLATFORM_ID,
+      };
+
+      it('should send the event with the user and the organization when a user is logged in', async () => {
+        // When
+        await TelemetryApp.sendExternalNewsFeedRedirectEvent({
+          user: LOGGED_IN_USER,
+          ...externalRedirect,
+        });
+
+        // Then
+        expect(sendTelemetryEventSpy).toHaveBeenCalledOnce();
+        expect(sendTelemetryEventSpy.mock.calls[0]![0]).toMatchObject({
+          event_type: TelemetryEventType.NEWS_FEED_REDIRECT,
+          news_feed_item_id: NEWS_FEED_ITEM_ID,
+          news_feed_item_type: NewsFeedItemType.BlogPost,
+          destination_host: 'filigran.io',
+          platform_id: PLATFORM_ID,
+          ...LOGGED_IN_IDENTITY,
+        });
+      });
+
+      it('should send an anonymous event when nobody is logged in', async () => {
+        // When
+        await TelemetryApp.sendExternalNewsFeedRedirectEvent({
+          user: undefined,
+          ...externalRedirect,
+        });
+
+        // Then
+        expect(sendTelemetryEventSpy).toHaveBeenCalledOnce();
+        expect(sendTelemetryEventSpy.mock.calls[0]![0]).toMatchObject({
+          event_type: TelemetryEventType.NEWS_FEED_REDIRECT,
+          news_feed_item_id: NEWS_FEED_ITEM_ID,
+          ...ANONYMOUS_IDENTITY,
+        });
+      });
+
+      it.each([
+        ['not a uuid', 'not-a-uuid'],
+        ['empty', ''],
+        ['a script', '<script>alert(1)</script>'],
+        ['repeated', [PLATFORM_ID, PLATFORM_ID]],
+        ['missing', undefined],
+      ])(
+        'should not set the platform_id of the event when it is %s',
+        async (_description, platformId) => {
+          // When
+          await TelemetryApp.sendExternalNewsFeedRedirectEvent({
+            user: undefined,
+            ...externalRedirect,
+            platformId,
+          });
+
+          // Then
+          expect(sendTelemetryEventSpy.mock.calls[0]![0]).toMatchObject({
+            news_feed_item_id: NEWS_FEED_ITEM_ID,
+            platform_id: undefined,
+          });
+        }
+      );
+
+      it('should keep the user but no organization when the organization cannot be loaded', async () => {
+        // Given
+        vi.spyOn(logApp, 'error').mockImplementation(() => undefined);
+        vi.spyOn(OrganizationDomain, 'loadOrganizationBy').mockRejectedValue(
+          new Error('database down')
+        );
+
+        // When
+        await TelemetryApp.sendExternalNewsFeedRedirectEvent({
+          user: LOGGED_IN_USER,
+          ...externalRedirect,
+        });
+
+        // Then
+        expect(sendTelemetryEventSpy.mock.calls[0]![0]).toMatchObject({
+          user_id: LOGGED_IN_IDENTITY.user_id,
+          organization_id: undefined,
+          organization_type: TelemetryOrganizationType.PUBLIC,
+        });
+      });
+
+      it('should not throw when sending the event fails', async () => {
+        // Given
+        const logErrorSpy = vi
+          .spyOn(logApp, 'error')
+          .mockImplementation(() => undefined);
+        sendTelemetryEventSpy.mockRejectedValue(new Error('telemetry down'));
+
+        // When / Then
+        await expect(
+          TelemetryApp.sendExternalNewsFeedRedirectEvent({
+            user: undefined,
+            ...externalRedirect,
+          })
+        ).resolves.toBeUndefined();
+        expect(logErrorSpy).toHaveBeenCalledOnce();
+      });
+
+      it('should stamp the event with the hub instance and environment', async () => {
+        // Given
+        sendTelemetryEventSpy.mockRestore();
+        resetHubIdentityCacheForTests();
+        const realConfigGet = vi
+          .mocked(config.get)
+          .getMockImplementation() as typeof config.get;
+        vi.mocked(config.get).mockImplementation((key: string) => {
+          if (key === 'telemetry_use_queue_processing') return false;
+          if (key === 'telemetry_queued_event_types') return [];
+          return realConfigGet(key);
+        });
+        const indexSpy = vi
+          .spyOn(esDbClient, 'index')
+          .mockResolvedValue(mockWriteResponse);
+
+        // When
+        await TelemetryApp.sendExternalNewsFeedRedirectEvent({
+          user: undefined,
+          ...externalRedirect,
+        });
+
+        // Then
+        expect(indexSpy).toHaveBeenCalledOnce();
+        expect(indexSpy.mock.calls[0]![0]).toMatchObject({
+          index: 'telemetry',
+          document: {
+            event_type: TelemetryEventType.NEWS_FEED_REDIRECT,
+            hub_instance_id: 'test-hub-instance-id',
+            hub_environment: portalConfig.environment,
+          },
+        });
+        vi.mocked(config.get).mockImplementation(realConfigGet);
+      });
+    });
+
+    describe('sendResourceNewsFeedRedirectEvent', () => {
+      const resourceRedirect: NewsFeedRedirectInput = {
+        service_identifier: ServiceDefinitionIdentifier.OpenctiCustomDashboards,
+        resource_id: RESOURCE_ID as DocumentId,
+        platform_id: PLATFORM_ID,
+        platform_identifier: PlatformIdentifier.Opencti,
+        utm_content: NewsFeedUtmContent.CustomDashboard,
+      };
+
+      it('should send the event with the resource, the user and the organization', async () => {
+        // When
+        await TelemetryApp.sendResourceNewsFeedRedirectEvent({
+          user: LOGGED_IN_USER,
+          input: resourceRedirect,
+        });
+
+        // Then
+        expect(sendTelemetryEventSpy).toHaveBeenCalledOnce();
+        expect(sendTelemetryEventSpy.mock.calls[0]![0]).toMatchObject({
+          event_type: TelemetryEventType.NEWS_FEED_REDIRECT,
+          service: TelemetryEventService.CUSTOM_DASHBOARDS_LIBRARY,
+          resource_id: RESOURCE_ID,
+          platform_id: PLATFORM_ID,
+          target_product: TelemetryTargetProduct.OPEN_CTI,
+          utm_content: 'custom_dashboard',
+          ...LOGGED_IN_IDENTITY,
+        });
+        expect(sendTelemetryEventSpy.mock.calls[0]![0]).not.toHaveProperty(
+          'news_feed_item_id'
+        );
+      });
+
+      it('should leave the optional fields unset when they are not given', async () => {
+        // When
+        await TelemetryApp.sendResourceNewsFeedRedirectEvent({
+          user: LOGGED_IN_USER,
+          input: {
+            service_identifier: ServiceDefinitionIdentifier.OpenctiPlaybooks,
+          },
+        });
+
+        // Then
+        expect(sendTelemetryEventSpy.mock.calls[0]![0]).toMatchObject({
+          service: TelemetryEventService.OPENCTI_PLAYBOOKS_LIBRARY,
+          resource_id: undefined,
+          platform_id: undefined,
+          target_product: undefined,
+          utm_content: undefined,
+        });
+      });
+
+      it('should not set the platform_id of the event when it is not a valid platform id', async () => {
+        // When
+        await TelemetryApp.sendResourceNewsFeedRedirectEvent({
+          user: LOGGED_IN_USER,
+          input: { ...resourceRedirect, platform_id: 'not-a-uuid' },
+        });
+
+        // Then
+        expect(sendTelemetryEventSpy.mock.calls[0]![0]).toMatchObject({
+          resource_id: RESOURCE_ID,
+          platform_id: undefined,
+        });
+      });
+
+      it('should refuse a service that has no telemetry mapping and send no event', async () => {
+        // When / Then
+        await expect(
+          TelemetryApp.sendResourceNewsFeedRedirectEvent({
+            user: LOGGED_IN_USER,
+            input: {
+              ...resourceRedirect,
+              service_identifier:
+                ServiceDefinitionIdentifier.OpenctiRegistration,
+            },
+          })
+        ).rejects.toThrow(ErrorCode.ServiceNotFound);
+        expect(sendTelemetryEventSpy).not.toHaveBeenCalled();
       });
     });
   });

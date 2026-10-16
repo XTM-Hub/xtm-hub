@@ -1,0 +1,34 @@
+meta {
+  name: News feed redirect
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/redirect/news-feed/:itemId?utm_source=opencti&utm_medium=newsfeed&utm_campaign=hub_resources&utm_content=other&platform_id=
+  body: none
+  auth: none
+}
+
+params:path {
+  itemId:
+}
+
+docs {
+  Public endpoint, no auth required, rate limited per IP (60 requests per minute).
+
+  itemId: id of a news feed item (UUID, not the Relay global id). Its type must have a destination builder,
+  today only BLOG_POST, built from the document_id metadata (the blog post slug).
+
+  Answers a 302 with Cache-Control: no-store:
+  - to the destination built from the item type and metadata, e.g. https://www.filigran.io/blog/<slug>
+    (only the utm_* query parameters are forwarded to filigran.io, platform_id never is)
+  - to the hub root (/) for a malformed id, an unknown or deleted item, a type without a builder or invalid metadata.
+    The response is identical in every case.
+
+  Answers a 429 when the rate limit is exceeded.
+
+  platform_id (optional, UUID) is only used as a label of the news_feed_redirect telemetry event.
+  If the request carries a session cookie, the event also carries the user and the organization. The session is never
+  created nor modified.
+}

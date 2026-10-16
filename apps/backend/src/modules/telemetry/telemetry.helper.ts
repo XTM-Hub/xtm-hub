@@ -2,6 +2,7 @@ import {
   DeploymentRequestSource,
   HasRepliedSatisfaction,
   IntegrationType,
+  NewsFeedItemType,
   Organization,
   PlatformContract,
   PlatformIdentifier,
@@ -30,6 +31,7 @@ import {
   DownloadEvent,
   ExportEvent,
   LoginEvent,
+  NewsFeedRedirectEvent,
   OneClickDeployEvent,
   RegisterPlatformEvent,
   ReplySatisfactionEvent,
@@ -354,6 +356,41 @@ export const TelemetryHelper = {
       platform_id,
       platform_version,
       tenant_id,
+    };
+  },
+
+  // The user and the organization are only set when the click comes from a logged in user
+  buildNewsFeedRedirectEvent: (
+    organization: Organization | undefined,
+    user_id: UserId | undefined,
+    data: {
+      news_feed_item_id?: string;
+      news_feed_item_type?: NewsFeedItemType;
+      destination_host?: string;
+      platform_id?: string;
+      service?: ServiceDefinitionIdentifier;
+      resource_id?: string;
+      platform_identifier?: PlatformIdentifier;
+      utm_content?: string;
+    },
+    timestamp?: Date
+  ): NewsFeedRedirectEvent => {
+    const baseEvent = buildBaseEvent(organization, user_id, timestamp);
+    const { service, platform_identifier, ...fields } = data;
+
+    return {
+      event_type: TelemetryEventType.NEWS_FEED_REDIRECT,
+      ...baseEvent,
+      ...fields,
+      ...(service !== undefined && {
+        service: getOrThrow(ServiceIdentifierToEventService, service),
+      }),
+      ...(platform_identifier !== undefined && {
+        target_product: getOrThrow(
+          TelemetryTargetProductMappedByPlatformIdentifier,
+          platform_identifier
+        ),
+      }),
     };
   },
 

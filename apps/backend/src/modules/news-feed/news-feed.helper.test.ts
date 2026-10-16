@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   IntegrationType,
   NewsFeedItemType,
+  NewsFeedUtmContent,
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
 } from '../../__generated__/resolvers-types';
@@ -10,6 +11,13 @@ import {
   doesPlatformSupportNewsFeed,
   NewsFeedHelper,
 } from './news-feed.helper';
+import {
+  NEWS_FEED_REDIRECT_PATH_PREFIX,
+  NEWS_FEED_UTM_CONTENT_FALLBACK,
+  newsFeedUtmContentMapping,
+} from './news-feed.model';
+
+const NEWS_FEED_ITEM_ID = '4f1c0d52-8b6e-4c43-9f0e-6d2a1b7c3e55';
 
 describe('news-feed.helper', () => {
   describe('doesPlatformSupportNewsFeed', () => {
@@ -186,6 +194,57 @@ describe('news-feed.helper', () => {
 
       expect(new URLSearchParams(result.split('?')[1]).get('utm_source')).toBe(
         'openaev'
+      );
+    });
+  });
+  describe('buildRedirectUrlPath', () => {
+    it('should return the relative redirect path of the news feed item', () => {
+      // When
+      const result = NewsFeedHelper.buildRedirectUrlPath(NEWS_FEED_ITEM_ID);
+
+      // Then
+      expect(result).toBe(`redirect/news-feed/${NEWS_FEED_ITEM_ID}`);
+      expect(result.startsWith('/')).toBe(false);
+      expect(result.startsWith(NEWS_FEED_REDIRECT_PATH_PREFIX)).toBe(true);
+    });
+
+    it('should encode the item id', () => {
+      // When
+      const result = NewsFeedHelper.buildRedirectUrlPath('a/b?c#d');
+
+      // Then
+      expect(result).toBe('redirect/news-feed/a%2Fb%3Fc%23d');
+    });
+
+    it('should work with addUtmToUrlPath', () => {
+      // Given
+      const urlPath = NewsFeedHelper.buildRedirectUrlPath(NEWS_FEED_ITEM_ID);
+
+      // When
+      const result = NewsFeedHelper.addUtmToUrlPath({
+        urlPath,
+        type: NewsFeedItemType.BlogPost,
+        platformIdentifier: PlatformIdentifier.Opencti,
+      });
+
+      // Then
+      expect(result).toBe(
+        `redirect/news-feed/${NEWS_FEED_ITEM_ID}?utm_source=opencti&utm_medium=newsfeed&utm_campaign=hub_resources&utm_content=other`
+      );
+    });
+  });
+
+  describe('newsFeedUtmContent', () => {
+    it('should list every utm_content value that the Hub gives to news feed links', () => {
+      // Given
+      const givenValues = [
+        ...Object.values(newsFeedUtmContentMapping),
+        NEWS_FEED_UTM_CONTENT_FALLBACK,
+      ];
+
+      // Then
+      expect(Object.values(NewsFeedUtmContent).sort()).toEqual(
+        [...new Set(givenValues)].sort()
       );
     });
   });

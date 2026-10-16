@@ -1258,4 +1258,175 @@ describe('newsFeedApp', () => {
       expect(provisioned[0]?.platform_id).toBe(otherOrganizationPlatformId);
     });
   });
+  describe('resolveExternalRedirect', () => {
+    const BLOG_POST_SLUG = 'threat-report-2026';
+    const BLOG_POST_URL = `https://www.filigran.io/blog/${BLOG_POST_SLUG}`;
+    const PLATFORM_ID = '9b0c7a3e-1111-4a9e-8d6f-0d4f5a7c9e10';
+
+    const createBlogPostItem = async ({
+      slug,
+      isDeleted = false,
+      type = NewsFeedItemType.BlogPost,
+    }: {
+      slug?: string;
+      isDeleted?: boolean;
+      type?: NewsFeedItemType;
+    } = {}) => {
+      const item = await TestHelper.newsFeed.createItem({
+        type,
+        title: 'Blog post',
+        is_deleted: isDeleted,
+      });
+      if (slug !== undefined) {
+        await TestHelper.newsFeed.createMetadata({
+          news_feed_item_id: item.id,
+          key: NewsFeedItemMetadataKey.DocumentId,
+          value: slug,
+        });
+      }
+      return item;
+    };
+
+    afterEach(async () => {
+      await TestHelper.newsFeed.deleteItem();
+    });
+
+    it('should resolve the filigran.io destination of a blog post item', async () => {
+      // Given
+      const item = await createBlogPostItem({ slug: BLOG_POST_SLUG });
+
+      // When
+      const result = await NewsFeedApp.resolveExternalRedirect({
+        newsFeedItemId: item.id,
+        query: {},
+      });
+
+      // Then
+      expect(result).toEqual({
+        newsFeedItemId: item.id,
+        newsFeedItemType: NewsFeedItemType.BlogPost,
+        host: 'filigran.io',
+        url: BLOG_POST_URL,
+      });
+    });
+
+    it('should forward the utm parameters only, never platform_id nor any other parameter', async () => {
+      // Given
+      const item = await createBlogPostItem({ slug: BLOG_POST_SLUG });
+
+      // When
+      const result = await NewsFeedApp.resolveExternalRedirect({
+        newsFeedItemId: item.id,
+        query: {
+          utm_source: 'opencti',
+          utm_medium: 'newsfeed',
+          utm_campaign: 'hub_resources',
+          utm_content: 'other',
+          platform_id: PLATFORM_ID,
+          next: 'https://evil.example',
+        },
+      });
+
+      // Then
+      expect(result?.url).toBe(
+        `${BLOG_POST_URL}?utm_source=opencti&utm_medium=newsfeed&utm_campaign=hub_resources&utm_content=other`
+      );
+    });
+
+    it.each([
+      ['a malformed id', 'not-a-uuid'],
+      ['an id with a path', '../../etc/passwd'],
+      ['an empty id', ''],
+      ['an unknown item', '3f8d0c1e-2b7a-4d65-8e19-5a4c6b7d8e90'],
+    ])('should not resolve %s', async (_description, newsFeedItemId) => {
+      // When
+      const result = await NewsFeedApp.resolveExternalRedirect({
+        newsFeedItemId,
+        query: {},
+      });
+
+      // Then
+      expect(result).toBeUndefined();
+    });
+
+    it('should not resolve a deleted item', async () => {
+      // Given
+      const item = await createBlogPostItem({
+        slug: BLOG_POST_SLUG,
+        isDeleted: true,
+      });
+
+      // When
+      const result = await NewsFeedApp.resolveExternalRedirect({
+        newsFeedItemId: item.id,
+        query: {},
+      });
+
+      // Then
+      expect(result).toBeUndefined();
+    });
+
+    it.each([
+      NewsFeedItemType.ResourceCustomDashboard,
+      NewsFeedItemType.ResourcePlaybook,
+    ])(
+      'should not resolve an item of the type %s that has no destination builder',
+      async (type) => {
+        // Given
+        const item = await createBlogPostItem({ slug: BLOG_POST_SLUG, type });
+
+        // When
+        const result = await NewsFeedApp.resolveExternalRedirect({
+          newsFeedItemId: item.id,
+          query: {},
+        });
+
+        // Then
+        expect(result).toBeUndefined();
+      }
+    );
+
+    it('should not resolve a blog post without document_id metadata', async () => {
+      // Given
+      const item = await createBlogPostItem();
+
+      // When
+      const result = await NewsFeedApp.resolveExternalRedirect({
+        newsFeedItemId: item.id,
+        query: {},
+      });
+
+      // Then
+      expect(result).toBeUndefined();
+    });
+
+    it.each([
+      'a/b',
+      'a?b=1',
+      'a#b',
+      'a\\b',
+      '..',
+      'a%2fb',
+      '%2e%2e',
+      'a%5cb',
+      'a%23b',
+      'a%3fb',
+      'a%252fb',
+    ])(
+      'should not resolve a blog post whose document_id is "%s"',
+      async (slug) => {
+        // Given
+        const item = await createBlogPostItem({ slug });
+
+        // When
+        const result = await NewsFeedApp.resolveExternalRedirect({
+          newsFeedItemId: item.id,
+          query: {},
+        });
+
+        // Then
+        expect(result).toBeUndefined();
+      }
+    );
+  });
 });
