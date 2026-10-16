@@ -245,6 +245,27 @@ const enqueueCommercialModelRefresh = async (
   }
 };
 
+// A platform_id has one owner. A request with a tenant id that matches no registration is checked against the
+// tenant-less registration of the same platform, when there is one, instead of creating a second registration
+// beside it: that registration is a legacy OpenAEV one moving to tenants, or someone else's platform.
+const loadExistingRegistration = async (
+  platformId: string,
+  tenantId?: string | null
+) => {
+  const registration =
+    await PlatformConfigurationDomain.loadResolvedConfigurationByPlatform(
+      platformId,
+      { tenantId }
+    );
+  if (registration || !tenantId) {
+    return registration;
+  }
+  return PlatformConfigurationDomain.loadResolvedConfigurationByPlatform(
+    platformId,
+    { tenant_id: null }
+  );
+};
+
 const buildPlatformConfiguration = (
   platform: PlatformInput,
   registererId: UserId,
@@ -427,13 +448,21 @@ export const RegistrationApp = {
       throw new Error(ErrorCode.InvalidPlatformConfiguration);
     }
 
-    const platformConfiguration =
-      await PlatformConfigurationDomain.loadConfigurationByPlatform(
-        platform.id,
-        {
-          tenantId: platform.tenantId,
-        }
-      );
+    if (platform.tenantId && !RegistrationHelper.usesTenants(identifier)) {
+      throw new Error(ErrorCode.InvalidPlatformConfiguration);
+    }
+
+    const existingRegistration = await loadExistingRegistration(
+      platform.id,
+      platform.tenantId
+    );
+    if (
+      existingRegistration &&
+      existingRegistration.platformIdentifier !== identifier
+    ) {
+      throw new Error(ErrorCode.InvalidPlatformIdentifier);
+    }
+    const platformConfiguration = existingRegistration?.platformConfiguration;
 
     const existingConfigTenantId = platformConfiguration?.tenant_id;
     if (existingConfigTenantId && !platform.tenantId) {

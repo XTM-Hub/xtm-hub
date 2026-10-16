@@ -16,6 +16,10 @@ export const RegistrationHelper = {
     storedContract !== PlatformContract.Trial &&
     refreshedContract !== PlatformContract.Trial,
 
+  // Returns true when the product registers per tenant from some version on (OpenAEV). OpenCTI never does.
+  usesTenants: (identifier: PlatformIdentifier): boolean =>
+    !!RequiredPlatformVersions.TenantIdRequired[identifier],
+
   // Returns true when the platform version meets or exceeds the configured threshold for tenantId.
   // A null threshold means tenantId is never required for that identifier.
   // A missing or invalid version is treated as legacy (no tenantId required).
