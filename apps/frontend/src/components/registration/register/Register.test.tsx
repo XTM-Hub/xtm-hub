@@ -170,7 +170,10 @@ describe('Register', () => {
     });
     const { user } = renderRegister();
     await user.click(screen.getByRole('button', { name: 'mock-cancel' }));
-    expect(postMessage).toHaveBeenCalledWith({ action: 'cancel' }, '*');
+    expect(postMessage).toHaveBeenCalledWith(
+      { action: 'cancel' },
+      'https://opencti.example.com'
+    );
   });
 
   it('renders the "too much organization" screen when unregistered with more than two organizations', async () => {
@@ -227,7 +230,7 @@ describe('Register', () => {
     await waitFor(() => {
       expect(postMessage).toHaveBeenCalledWith(
         { action: 'register', token: 'my-token' },
-        '*'
+        'https://opencti.example.com'
       );
     });
   });
@@ -257,7 +260,7 @@ describe('Register', () => {
     await waitFor(() => {
       expect(postMessage).toHaveBeenCalledWith(
         { action: 'register', token: testState.token },
-        '*'
+        'https://opencti.example.com'
       );
     });
     expect(
@@ -332,7 +335,10 @@ describe('Register', () => {
     });
     expect(screen.getByTestId('missing-capability')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'mock-cancel' }));
-    expect(postMessage).toHaveBeenCalledWith({ action: 'cancel' }, '*');
+    expect(postMessage).toHaveBeenCalledWith(
+      { action: 'cancel' },
+      'https://opencti.example.com'
+    );
   });
 
   it('renders a loader as a fallback for any other status', () => {

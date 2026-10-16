@@ -8,6 +8,7 @@ import { RegisterStateSucceeded } from '@/components/registration/register/Succe
 import { RegisterStateTooManyOrganizations } from '@/components/registration/register/TooManyOrganizations';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { toUrlOrigin } from '@/utils/external-url';
 import OrganizationListUserOrganizationsQueryGraphql, {
   organizationListUserOrganizationsQuery,
 } from '@generated/organizationListUserOrganizationsQuery.graphql';
@@ -116,10 +117,14 @@ export const Register = ({ queryRef, platform }: RegisterProps) => {
 
   const hasPostedMessageRef = useRef(false);
   const hasAutoRegisteredRef = useRef(false);
+  // Messages to the platform tab go to the origin of the platform being registered only.
+  const platformOrigin = toUrlOrigin(platform.url);
 
   const cancel = useCallback(() => {
-    window.opener?.postMessage({ action: 'cancel' }, '*');
-  }, []);
+    if (platformOrigin) {
+      window.opener?.postMessage({ action: 'cancel' }, platformOrigin);
+    }
+  }, [platformOrigin]);
 
   const register = useCallback(
     (organizationId: string, platformName: string = platform.title) => {
@@ -161,16 +166,18 @@ export const Register = ({ queryRef, platform }: RegisterProps) => {
   useLayoutEffect(() => {
     if (registerDataResponse?.token && !hasPostedMessageRef.current) {
       hasPostedMessageRef.current = true;
-      window.opener?.postMessage(
-        {
-          action: 'register',
-          token: registerDataResponse.token,
-        },
-        '*'
-      );
+      if (platformOrigin) {
+        window.opener?.postMessage(
+          {
+            action: 'register',
+            token: registerDataResponse.token,
+          },
+          platformOrigin
+        );
+      }
       dispatch({ type: 'SET_SUCCEEDED' });
     }
-  }, [registerDataResponse?.token]);
+  }, [registerDataResponse?.token, platformOrigin]);
 
   useLayoutEffect(() => {
     const shouldAutoRegister =

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { toExternalHref } from './external-url';
+import { toExternalHref, toUrlOrigin } from './external-url';
 
 describe('toExternalHref', () => {
   it.each`
@@ -31,5 +31,27 @@ describe('toExternalHref', () => {
     ${'ftp://example.com'}       | ${'ftp scheme'}
   `('returns null for $reason', ({ input }) => {
     expect(toExternalHref(input)).toBeNull();
+  });
+});
+
+describe('toUrlOrigin', () => {
+  it.each`
+    input                                   | expected
+    ${'https://opencti.example.com'}        | ${'https://opencti.example.com'}
+    ${'https://openaev.example.com/tenant'} | ${'https://openaev.example.com'}
+    ${'http://localhost:3000/dashboard'}    | ${'http://localhost:3000'}
+  `('returns the origin of "$input"', ({ input, expected }) => {
+    expect(toUrlOrigin(input)).toBe(expected);
+  });
+
+  it.each`
+    input                    | reason
+    ${null}                  | ${'null'}
+    ${undefined}             | ${'undefined'}
+    ${'not a url'}           | ${'invalid url'}
+    ${'javascript:alert(1)'} | ${'javascript scheme'}
+    ${'file:///etc/passwd'}  | ${'file scheme'}
+  `('returns null for $reason', ({ input }) => {
+    expect(toUrlOrigin(input)).toBeNull();
   });
 });

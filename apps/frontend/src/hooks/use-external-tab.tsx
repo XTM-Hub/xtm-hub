@@ -1,3 +1,4 @@
+import { toUrlOrigin } from '@/utils/external-url';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface UseExternalTabProps {
@@ -44,13 +45,22 @@ const useExternalTab = ({
     tabRef.current?.focus();
   }, []);
 
+  // The opened tab is only talked to, and listened to, on the origin of its URL.
+  const tabOrigin = toUrlOrigin(url);
+
   const postMessage = (message: Record<string, unknown>) => {
-    tabRef.current?.postMessage(message, '*');
+    if (tabOrigin) {
+      tabRef.current?.postMessage(message, tabOrigin);
+    }
   };
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      if (event.source === tabRef.current && onMessage) {
+      if (
+        event.source === tabRef.current &&
+        event.origin === tabOrigin &&
+        onMessage
+      ) {
         onMessage(event);
       }
     };
@@ -77,7 +87,7 @@ const useExternalTab = ({
         window.removeEventListener('beforeunload', beforeUnloadHandler);
       }
     };
-  }, [isTabOpen, closeTab, onClosingTab, onMessage, preventUnload]);
+  }, [isTabOpen, closeTab, onClosingTab, onMessage, preventUnload, tabOrigin]);
 
   return {
     isTabOpen,
