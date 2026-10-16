@@ -8,7 +8,7 @@ import {
 import { mockRolePortal } from '@graphql/mocks';
 import { screen, waitFor } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const GQL_OPERATION_DELETE_ROLE_PORTAL = 'DeleteRolePortal';
 const ROLE_PORTAL = 'Auditor';
@@ -85,5 +85,80 @@ describe('DeleteRolePortal', () => {
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(mutationCalled).toBe(false);
+  });
+});
+
+describe('DeleteRolePortal feedback', () => {
+  type DeleteRolePortalModule =
+    typeof import('@/components/admin/role/DeleteRolePortal');
+  type AppSnackbarsModule =
+    typeof import('@/components/ui/snackbar/AppSnackbars');
+
+  let DeleteRolePortalWithFeedback: DeleteRolePortalModule['default'];
+  let AppSnackbars: AppSnackbarsModule['AppSnackbars'];
+
+  // The messages live at module level: a fresh module per test keeps the
+  // message of one deletion out of the next.
+  beforeEach(async () => {
+    vi.resetModules();
+    ({ default: DeleteRolePortalWithFeedback } =
+      await import('@/components/admin/role/DeleteRolePortal'));
+    ({ AppSnackbars } = await import('@/components/ui/snackbar/AppSnackbars'));
+  });
+
+  it('should confirm the deletion to the administrator when it succeeds', async () => {
+    // Given
+    mswServer.use(
+      graphql.mutation(GQL_OPERATION_DELETE_ROLE_PORTAL, () =>
+        HttpResponse.json({
+          data: {
+            deleteRolePortal: mockRolePortal({
+              id: 'role-auditor',
+              name: ROLE_PORTAL,
+            }),
+          },
+        })
+      )
+    );
+    const { user } = testRender(
+      <AppSnackbars>
+        <DeleteRolePortalWithFeedback
+          open
+          onOpenChange={vi.fn()}
+          rolePortal={ROLE_PORTAL}
+        />
+      </AppSnackbars>
+    );
+
+    // When
+    await user.click(screen.getByRole('button', { name: 'Utils.Delete' }));
+
+    // Then
+    expect(await screen.findByText('Utils.Success')).toBeInTheDocument();
+  });
+
+  it('should report the server error to the administrator when the deletion fails', async () => {
+    // Given
+    mswServer.use(
+      graphql.mutation(GQL_OPERATION_DELETE_ROLE_PORTAL, () =>
+        HttpResponse.json({ errors: [{ message: 'UNKNOWN_ERROR' }] })
+      )
+    );
+    const { user } = testRender(
+      <AppSnackbars>
+        <DeleteRolePortalWithFeedback
+          open
+          onOpenChange={vi.fn()}
+          rolePortal={ROLE_PORTAL}
+        />
+      </AppSnackbars>
+    );
+
+    // When
+    await user.click(screen.getByRole('button', { name: 'Utils.Delete' }));
+
+    // Then
+    expect(await screen.findByText('Utils.Error')).toBeInTheDocument();
+    expect(screen.getByText('Error.Server.UNKNOWN_ERROR')).toBeInTheDocument();
   });
 });
