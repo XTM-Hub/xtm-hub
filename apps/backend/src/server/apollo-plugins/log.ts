@@ -6,6 +6,7 @@ import type {
   CustomApolloError,
   ErrorLogLevel,
 } from '../../utils/error/error.type';
+import { redactSecrets } from '../../utils/redact-secrets.util';
 
 export interface Context extends BaseContext {
   user: UserLoadUserBy;
@@ -24,7 +25,7 @@ export const errorLoggingPlugin = (): ApolloServerPlugin<Context> => ({
       {
         operationName: request.operationName,
         query: request.query,
-        variables: req?.body?.variables,
+        variables: redactSecrets(req?.body?.variables),
         user,
         serviceId,
       },
@@ -49,7 +50,7 @@ export const errorLoggingPlugin = (): ApolloServerPlugin<Context> => ({
               user: contextValue?.user,
               serviceId: contextValue?.serviceId,
               codeStack: error.originalError?.stack,
-              variables: contextValue?.req?.body?.variables,
+              variables: redactSecrets(contextValue?.req?.body?.variables),
             },
             AppLogsCategory.GRAPHQL
           );
