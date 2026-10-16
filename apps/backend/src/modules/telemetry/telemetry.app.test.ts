@@ -860,13 +860,15 @@ describe('telemetryApp', () => {
         });
 
         // Then
-        expect(sendTelemetryEventSpy.mock.calls[0]![0]).toMatchObject({
+        const event = sendTelemetryEventSpy.mock.calls[0]![0];
+        expect(event).toMatchObject({
           service: TelemetryEventService.OPENCTI_PLAYBOOKS_LIBRARY,
           resource_id: undefined,
           platform_id: undefined,
-          target_product: undefined,
           utm_content: undefined,
         });
+        // target_product is omitted, not defaulted, when the link carries no product
+        expect(event).not.toHaveProperty('target_product');
       });
 
       it('should not set the platform_id of the event when it is not a valid platform id', async () => {
