@@ -29,7 +29,10 @@ vi.mock('../../../utils/app-logger.util', () => ({
   logApp: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
-import { VersionsMatrixEndpoint } from './versions-matrix-endpoint';
+import {
+  VersionsMatrixEndpoint,
+  versionsMatrixFeatureGuard,
+} from './versions-matrix-endpoint';
 import { buildVersionsMatrixETag } from './versions-matrix-endpoint.utils';
 
 const buildResponse = () => ({
@@ -333,5 +336,34 @@ describe('getMatrix', () => {
     );
 
     expect(res.status).toHaveBeenCalledWith(500);
+  });
+});
+
+describe('versionsMatrixEndpoint while decoupled connectors are paused', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should answer 404 without any database access', () => {
+    // Given
+    const res = buildResponse();
+    const next = vi.fn();
+
+    // When
+    versionsMatrixFeatureGuard(
+      buildRequest({ version: '7.260904.0' }),
+      res as unknown as Response,
+      next
+    );
+
+    // Then
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({
+      code: 404,
+      message: 'The versions matrix is not available',
+    });
+    expect(next).not.toHaveBeenCalled();
+    expect(loadRegisteredProductVersionsMock).not.toHaveBeenCalled();
+    expect(loadDistinctConnectorSlugsMock).not.toHaveBeenCalled();
   });
 });

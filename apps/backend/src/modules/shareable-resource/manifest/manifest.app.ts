@@ -1,5 +1,6 @@
 import {
   DocumentMetadataKeyCode,
+  FeatureFlag,
   IntegrationType,
   ManifestType,
   PlatformIdentifier,
@@ -9,6 +10,7 @@ import type { DocumentId } from '../../../model/kanel/public/Document';
 import { logApp } from '../../../utils/app-logger.util';
 import { BadRequestErrorCode } from '../../../utils/error/error.code';
 import { BadRequestError } from '../../../utils/error/error.util';
+import { isFeatureEnabled } from '../../../utils/feature-flag.util';
 import { isLtsVersion } from '../../../utils/versioning';
 import { DocumentDomain } from '../../document/domain/document.domain';
 import { solutionCategoryDomain } from '../../solution-category/solution-category.domain';
@@ -148,11 +150,27 @@ export const ManifestApp = {
       type,
     };
 
+    if (!isFeatureEnabled(FeatureFlag.DecouplingConnectors)) {
+      logApp.info(
+        '[MANIFEST] Manifest generation skipped: decoupled connectors are disabled',
+        { key }
+      );
+      return;
+    }
+
     await ManifestDomain.insertIfNotPending(key);
     await ManifestHelper.enqueueImmediateRebuild(key);
   },
 
   processManifestQueue: async (manifest?: ManifestKey) => {
+    if (!isFeatureEnabled(FeatureFlag.DecouplingConnectors)) {
+      logApp.info(
+        '[MANIFEST] Manifest queue processing skipped: decoupled connectors are disabled',
+        { manifest }
+      );
+      return;
+    }
+
     const recovered = await ManifestDomain.recoverStuckProcessingEntries();
     if (recovered.length > 0) {
       logApp.error(

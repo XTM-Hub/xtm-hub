@@ -1,3 +1,8 @@
+import {
+  ManifestType,
+  type LicenseType,
+  type ManifestFragmentInput,
+} from '../../../__generated__/resolvers-types';
 import { BadRequestErrorCode } from '../../../utils/error/error.code';
 import { compareVersions, isLtsVersion } from '../../../utils/versioning';
 
@@ -16,7 +21,37 @@ export type ConnectorMetadataSnapshot = {
   demo_url?: string;
 };
 
+export type ValidatedManifestFragment = {
+  formattedVersion: string;
+  licenseType?: LicenseType;
+  contact?: string;
+};
+
 export const ManifestFragmentHelper = {
+  validateManifestFragment: (
+    fragment: ManifestFragmentInput
+  ): ValidatedManifestFragment => {
+    if (fragment.integration_type !== ManifestType.Connector) {
+      throw new Error(BadRequestErrorCode.IntegrationTypeNotRecognized);
+    }
+
+    ManifestFragmentHelper.validateAndFormatManifestVersion(
+      fragment.min_version
+    );
+    ManifestFragmentHelper.validateShortDescriptionLength(
+      fragment.short_description
+    );
+    ManifestFragmentHelper.validateSolutionCategories(
+      fragment.solution_categories
+    );
+    const licenseType = fragment.license_type ?? undefined;
+    const contact = ManifestFragmentHelper.parseContact(fragment.contact);
+    const formattedVersion =
+      ManifestFragmentHelper.validateAndFormatManifestVersion(fragment.version);
+
+    return { formattedVersion, licenseType, contact };
+  },
+
   validateAndFormatManifestVersion: (version: string): string => {
     const match = version.match(manifestVersionRegex);
     if (!match) {

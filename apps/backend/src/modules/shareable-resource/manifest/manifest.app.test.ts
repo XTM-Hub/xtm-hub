@@ -1,5 +1,13 @@
 import { Readable } from 'stream';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+  type MockInstance,
+} from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
 import { TEST_USE_CASES } from '../../../../tests/tests.const';
 import {
@@ -15,6 +23,7 @@ import type { ObjectUseCaseObjectId } from '../../../model/kanel/public/ObjectUs
 import { MinIOClient } from '../../../thirdparty/minio/client';
 import { logApp } from '../../../utils/app-logger.util';
 import { BadRequestErrorCode } from '../../../utils/error/error.code';
+import * as FeatureFlagUtil from '../../../utils/feature-flag.util';
 import { DocumentChildrenDomain } from '../../document/domain/document.children.domain';
 import { DocumentDomain } from '../../document/domain/document.domain';
 import {
@@ -106,11 +115,22 @@ const createConnectorWithFragment = async ({
 };
 
 describe('manifestApp', () => {
+  let isFeatureEnabledSpy: MockInstance<
+    typeof FeatureFlagUtil.isFeatureEnabled
+  > | null = null;
+  const enableDecouplingConnectors = () => {
+    isFeatureEnabledSpy = vi
+      .spyOn(FeatureFlagUtil, 'isFeatureEnabled')
+      .mockReturnValue(true);
+  };
+
   beforeEach(() => {
     vi.spyOn(ManifestHelper, 'uploadManifest').mockResolvedValue(undefined);
   });
 
   afterEach(async () => {
+    isFeatureEnabledSpy?.mockRestore();
+    isFeatureEnabledSpy = null;
     await TestHelper.objectUseCase.delete({});
     await TestHelper.manifest.delete({});
     await TestHelper.manifestRebuildQueue.delete({});
@@ -503,6 +523,7 @@ describe('manifestApp', () => {
 
   describe('requestManifestGeneration', () => {
     it('should queue the manifest and enqueue an immediate rebuild when the version is valid', async () => {
+      enableDecouplingConnectors();
       const insertIfNotPendingSpy = vi
         .spyOn(ManifestDomain, 'insertIfNotPending')
         .mockResolvedValue(undefined);
@@ -554,10 +575,44 @@ describe('manifestApp', () => {
         expect(enqueueImmediateRebuildSpy).not.toHaveBeenCalled();
       }
     );
+
+    it('should neither queue nor enqueue a rebuild when decoupled connectors are paused', async () => {
+      // Given
+      const enqueueImmediateRebuildSpy = vi
+        .spyOn(ManifestHelper, 'enqueueImmediateRebuild')
+        .mockResolvedValue(undefined);
+
+      // When
+      await ManifestApp.requestManifestGeneration({
+        product: MANIFEST_KEY.platformIdentifier,
+        version: MANIFEST_KEY.version,
+        type: MANIFEST_KEY.type,
+      });
+
+      // Then
+      const queuedRows = await TestHelper.manifestRebuildQueue.loadAll({});
+      expect(queuedRows).toHaveLength(0);
+      expect(enqueueImmediateRebuildSpy).not.toHaveBeenCalled();
+    });
+
+    it('should still reject an invalid version when decoupled connectors are paused', async () => {
+      // When
+      const call = ManifestApp.requestManifestGeneration({
+        product: PlatformIdentifier.Opencti,
+        version: 'not-a-version',
+        type: ManifestType.Connector,
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(
+        BadRequestErrorCode.InvalidPlatformVersion
+      );
+    });
   });
 
   describe('processManifestQueue', () => {
     beforeEach(() => {
+      enableDecouplingConnectors();
       vi.spyOn(ManifestApp, 'generateManifest').mockResolvedValue({
         id: 'catalog-id',
         name: 'OpenCTI Connectors contracts',
@@ -634,6 +689,33 @@ describe('manifestApp', () => {
       await ManifestApp.processManifestQueue();
 
       expect(ManifestApp.generateManifest).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('processManifestQueue while decoupled connectors are paused', () => {
+    it('should leave pending rows untouched and generate nothing', async () => {
+      // Given
+      vi.spyOn(ManifestApp, 'generateManifest').mockResolvedValue(null);
+      await TestHelper.manifestRebuildQueue.create({
+        product: MANIFEST_KEY.platformIdentifier,
+        version: MANIFEST_KEY.version,
+        type: MANIFEST_KEY.type,
+        status: ManifestRebuildQueueStatus.Pending,
+      });
+
+      // When
+      await ManifestApp.processManifestQueue(MANIFEST_KEY);
+
+      // Then
+      expect(ManifestApp.generateManifest).not.toHaveBeenCalled();
+      const queuedRows = await TestHelper.manifestRebuildQueue.loadAll({});
+      expect(queuedRows).toMatchObject([
+        {
+          product: MANIFEST_KEY.platformIdentifier,
+          version: MANIFEST_KEY.version,
+          status: ManifestRebuildQueueStatus.Pending,
+        },
+      ]);
     });
   });
 });

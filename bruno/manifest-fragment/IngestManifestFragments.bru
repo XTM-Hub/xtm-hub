@@ -84,6 +84,11 @@ docs {
   
   Upserts connector manifest fragments as Integration documents, then schedules a
   rebuild for any impacted Manifest (version >= batch minimum).
+
+  While decoupled connectors are paused (DECOUPLING_CONNECTORS in
+  PAUSED_FEATURE_FLAGS), the fragments are only validated: the same errors are
+  returned for malformed input, a valid batch returns success, but nothing is
+  stored and no rebuild is scheduled.
   
   Fill variables:
   manifestFragments: array of ManifestFragmentInput (see manifest-fragment.graphql)

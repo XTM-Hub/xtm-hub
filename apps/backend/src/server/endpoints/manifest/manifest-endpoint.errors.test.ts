@@ -22,6 +22,7 @@ describe('sendManifestError', () => {
   it.each([
     { error: MANIFEST_ERRORS.InvalidCount, status: 400 },
     { error: MANIFEST_ERRORS.StorageUnavailable, status: 503 },
+    { error: MANIFEST_ERRORS.FeatureNotAvailable, status: 404 },
   ])('derives $status from the error', ({ error, status }) => {
     const { res, status: statusMock, json } = buildResponse();
 

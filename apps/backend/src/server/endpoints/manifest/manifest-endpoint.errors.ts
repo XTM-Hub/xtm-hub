@@ -11,6 +11,7 @@ export const MANIFEST_ERRORS = {
   InvalidCount: { message: 'Invalid count', status: 400 },
   InvalidManifestName: { message: 'Invalid manifest name', status: 400 },
   ManifestNotFound: { message: 'Manifest not found', status: 404 },
+  FeatureNotAvailable: { message: 'Manifests are not available', status: 404 },
   TooManyRequests: {
     message: 'Too many requests, please try again later',
     status: 429,
