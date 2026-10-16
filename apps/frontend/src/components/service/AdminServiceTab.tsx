@@ -37,6 +37,8 @@ export const ADMIN_SERVICE_TAB_SERVICE_DEFINITION_IDENTIFIERS = Object.values(
     ![
       ServiceDefinitionIdentifier.OpenctiRegistration,
       ServiceDefinitionIdentifier.OpenaevRegistration,
+      ServiceDefinitionIdentifier.XtmoneRegistration,
+      ServiceDefinitionIdentifier.XtmPlatformBundle,
     ].includes(val)
 );
 
@@ -117,15 +119,13 @@ const AdminServiceTab = ({ serviceData, refetch }: AdminServiceTabProps) => {
     selectedValue: { value: string; label: string } | undefined
   ) => {
     setSelectedValue(selectedValue);
-    if (!selectedValue) {
-      refetch({ filters: [] });
-      return;
-    }
     refetch({
       filters: [
         {
           key: ServiceInstanceFilterKey.ServiceDefinitionIdentifier,
-          value: [selectedValue.value],
+          value: selectedValue
+            ? [selectedValue.value]
+            : ADMIN_SERVICE_TAB_SERVICE_DEFINITION_IDENTIFIERS,
         },
       ],
     });

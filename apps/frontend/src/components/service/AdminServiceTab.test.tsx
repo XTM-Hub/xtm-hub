@@ -6,7 +6,9 @@ import {
 import { screen, waitFor } from '@testing-library/react';
 import { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import AdminServiceTab from './AdminServiceTab';
+import AdminServiceTab, {
+  ADMIN_SERVICE_TAB_SERVICE_DEFINITION_IDENTIFIERS,
+} from './AdminServiceTab';
 
 vi.mock('@/components/ui/data-table', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/components/ui/data-table')>()),
@@ -57,7 +59,33 @@ describe('AdminServiceTab', () => {
     });
   });
 
-  it('should refetch every service when the picked service definition is cleared', async () => {
+  it.each([
+    ServiceDefinitionIdentifier.OpenctiRegistration,
+    ServiceDefinitionIdentifier.OpenaevRegistration,
+    ServiceDefinitionIdentifier.XtmoneRegistration,
+    ServiceDefinitionIdentifier.XtmPlatformBundle,
+  ])(
+    'should not offer the non-administrable %s service definition',
+    async (identifier) => {
+      // Given
+      const { user } = renderAdminServiceTab();
+
+      // When
+      await user.click(screen.getByRole('combobox', { name: FILTER_LABEL }));
+
+      // Then
+      expect(ADMIN_SERVICE_TAB_SERVICE_DEFINITION_IDENTIFIERS).not.toContain(
+        identifier
+      );
+      expect(
+        screen.queryByRole('option', {
+          name: `Service.ServiceDefinitionIdentifier.${identifier}`,
+        })
+      ).not.toBeInTheDocument();
+    }
+  );
+
+  it('should refetch every administrable service when the picked service definition is cleared', async () => {
     // Given
     const { refetch, user } = renderAdminServiceTab();
     await user.click(screen.getByRole('combobox', { name: FILTER_LABEL }));
@@ -69,7 +97,14 @@ describe('AdminServiceTab', () => {
     await user.click(screen.getByRole('button', { name: CLEAR_LABEL }));
 
     // Then
-    expect(refetch).toHaveBeenLastCalledWith({ filters: [] });
+    expect(refetch).toHaveBeenLastCalledWith({
+      filters: [
+        {
+          key: ServiceInstanceFilterKey.ServiceDefinitionIdentifier,
+          value: ADMIN_SERVICE_TAB_SERVICE_DEFINITION_IDENTIFIERS,
+        },
+      ],
+    });
   });
 
   it('should refetch with the typed term once typing pauses', async () => {
