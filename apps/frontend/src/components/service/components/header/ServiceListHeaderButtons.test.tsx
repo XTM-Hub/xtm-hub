@@ -2,12 +2,16 @@ import ServiceListHeaderButtons from '@/components/service/components/header/Ser
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import testRender from '@/utils/test/test-render';
 import {
+  IntegrationType,
   OrganizationCapability,
   PortalCapability,
   ServiceRestriction,
 } from '@graphql/generated';
 import { createMockEnvironment } from 'relay-test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const DASHBOARDS_TRANSLATION_KEY = 'Service.OpenctiCustomDashboards';
+const INTEGRATIONS_TRANSLATION_KEY = 'Service.OpenctiIntegrations';
 
 const { mockUseServiceContext, mockSetIntegrationType } = vi.hoisted(() => ({
   mockUseServiceContext: vi.fn(),
@@ -140,5 +144,72 @@ describe('ServiceListHeaderButtons', () => {
     ).toBeNull();
     expect(queryByText('integration-dropdown')).toBeNull();
     expect(queryByTestId('service-manage-sheet')).toBeNull();
+  });
+
+  it('should open the add sheet when the user clicks the add button of a service', async () => {
+    // Given
+    mockUseServiceContext.mockReturnValue(
+      buildServiceContext({
+        serviceInstance: {
+          id: 'service-1',
+          capabilities: [ServiceRestriction.Upload],
+        },
+        translationKey: DASHBOARDS_TRANSLATION_KEY,
+        ServiceForm: () => null,
+      })
+    );
+    const { user, getByRole } = testRender(<ServiceListHeaderButtons />);
+
+    // When
+    await user.click(
+      getByRole('button', {
+        name: `${DASHBOARDS_TRANSLATION_KEY}.AddService`,
+      })
+    );
+
+    // Then
+    expect(
+      getByRole('dialog', {
+        name: `${DASHBOARDS_TRANSLATION_KEY}.AddService`,
+      })
+    ).toBeInTheDocument();
+  });
+
+  it('should select the integration type and open the add sheet when the user picks a type to add', async () => {
+    // Given
+    mockUseServiceContext.mockReturnValue(
+      buildServiceContext({
+        serviceInstance: {
+          id: 'service-1',
+          capabilities: [ServiceRestriction.Upload],
+        },
+        translationKey: INTEGRATIONS_TRANSLATION_KEY,
+        type: ShareableResourceType.OPENCTI_INTEGRATION,
+        ServiceForm: () => null,
+      })
+    );
+    const { user, getByRole } = testRender(<ServiceListHeaderButtons />);
+
+    // When
+    await user.click(
+      getByRole('button', {
+        name: `${INTEGRATIONS_TRANSLATION_KEY}.AddService`,
+      })
+    );
+    await user.click(
+      getByRole('menuitem', {
+        name: `${INTEGRATIONS_TRANSLATION_KEY}.Type.${IntegrationType.TaxiiFeed}`,
+      })
+    );
+
+    // Then
+    expect(mockSetIntegrationType).toHaveBeenCalledWith(
+      IntegrationType.TaxiiFeed
+    );
+    expect(
+      getByRole('dialog', {
+        name: `${INTEGRATIONS_TRANSLATION_KEY}.AddService`,
+      })
+    ).toBeInTheDocument();
   });
 });

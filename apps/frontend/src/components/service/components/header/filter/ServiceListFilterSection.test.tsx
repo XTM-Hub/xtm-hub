@@ -95,4 +95,25 @@ describe('ServiceListFilterSection', () => {
     );
     expect(screen.getByText(secondContent)).toBeInTheDocument();
   });
+
+  it('should render a filter inline without a collapsible section when it opts out of the accordion', () => {
+    // Given
+    const inlineFilter = {
+      [ServiceListFilterKey.ProductVersion]: {
+        title: firstTitle,
+        node: <div>{firstContent}</div>,
+        noAccordion: true,
+      },
+    };
+
+    // When
+    testRender(<ServiceListFilterSection filters={inlineFilter} />);
+
+    // Then
+    expect(
+      screen.queryByRole('button', { name: firstTitle })
+    ).not.toBeInTheDocument();
+    expect(screen.getByText(firstTitle)).toBeInTheDocument();
+    expect(screen.getByText(firstContent)).toBeInTheDocument();
+  });
 });

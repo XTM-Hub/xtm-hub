@@ -125,6 +125,21 @@ describe('SaasList', () => {
     }
   );
 
+  it('should display an error message when the saas platforms cannot be loaded', () => {
+    // Given
+    mocks.useSaasPlatformsListQuery.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+    });
+
+    // When
+    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+    // Then
+    expect(screen.getByText('Utils.Error')).toBeInTheDocument();
+  });
+
   it('should fetch saas platforms with the ordering and page size stored in localStorage', () => {
     // Given a user who previously changed the list settings
     localStorage.setItem('countSaasList', '100');

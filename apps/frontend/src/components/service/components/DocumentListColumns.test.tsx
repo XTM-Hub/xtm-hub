@@ -1,11 +1,12 @@
 import testRender from '@/utils/test/test-render';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { IntegrationType } from '@graphql/generated';
-import { CellContext } from '@tanstack/react-table';
+import { CellContext, HeaderContext } from '@tanstack/react-table';
 import { describe, expect, it } from 'vitest';
 import { buildDocumentListColumns } from './DocumentListColumns';
 
 const t = (key: string) => key;
+const COMPATIBILITY_LABEL = 'Service.List.Tab.Compatibility';
 const CONNECTOR = {
   active: true,
   integration_type: IntegrationType.Connector,
@@ -33,6 +34,20 @@ const renderCell = (columnId: string, document: documentItem_fragment$data) => {
         unknown
       >)}
     </>
+  );
+};
+
+const renderHeader = (columnId: string) => {
+  const header = buildDocumentListColumns({
+    documents: [CONNECTOR],
+    t,
+    renderActions: () => null,
+  }).find((column) => column.id === columnId)?.header;
+  if (typeof header !== 'function') {
+    throw new Error(`column ${columnId} has no header renderer`);
+  }
+  return testRender(
+    <>{header({} as HeaderContext<documentItem_fragment$data, unknown>)}</>
   );
 };
 
@@ -100,6 +115,17 @@ describe('buildDocumentListColumns', () => {
       expect(container).not.toBeEmptyDOMElement();
     }
   );
+
+  it('should keep the full compatibility label as a tooltip on its header when the list holds connectors', () => {
+    // Given / When
+    const { getByText } = renderHeader('compatibility');
+
+    // Then
+    expect(getByText(COMPATIBILITY_LABEL)).toHaveAttribute(
+      'title',
+      COMPATIBILITY_LABEL
+    );
+  });
 
   it.each(['feature', 'compatibility'])(
     'should leave the %s cell empty when the row is not a connector',

@@ -117,6 +117,13 @@ describe('XtmPlatformTrialForm', () => {
     expect(
       screen.getAllByText('Service.Trials.XtmPlatform.Page.Form.UseCaseFor')
     ).toHaveLength(1);
+
+    await user.click(openctiCheckbox);
+
+    expect(openctiCheckbox).toBeChecked();
+    expect(
+      screen.getAllByText('Service.Trials.XtmPlatform.Page.Form.UseCaseFor')
+    ).toHaveLength(2);
   });
 
   it('disables the submit button when no selectable product is checked', async () => {

@@ -174,6 +174,29 @@ describe('ServiceListHeader', () => {
     expect(testState.setOrderMode).toHaveBeenCalledWith(OrderingMode.Desc);
   });
 
+  it('should store the sort field when the user picks another one', async () => {
+    // Given
+    testState.useServiceListLocalStorage.mockReturnValue(
+      buildLocalStorageState()
+    );
+    const { user } = renderHeader();
+
+    // When
+    await user.click(
+      screen.getByRole('combobox', { name: 'SortControls.SortBy' })
+    );
+    await user.click(
+      screen.getByRole('option', {
+        name: `DocumentOrdering.${DocumentOrdering.CreatedAt}`,
+      })
+    );
+
+    // Then
+    expect(testState.setOrderBy).toHaveBeenCalledWith(
+      DocumentOrdering.CreatedAt
+    );
+  });
+
   it('should not render the filters button when no filters are given', () => {
     // Given
     testState.useServiceListLocalStorage.mockReturnValue(

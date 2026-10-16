@@ -15,10 +15,13 @@ import {
   mockUser,
   mockUserPlatformGroup,
 } from '@graphql/mocks';
-import { UseMutationOptions } from '@tanstack/react-query';
+import { QueryKey, UseMutationOptions, useQuery } from '@tanstack/react-query';
 import { screen, waitFor, within } from '@testing-library/react';
 import { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const REMAINING_USER_ID = 'user-2';
+const REMAINING_USER_EMAIL = 'user2@filigran.io';
 
 const emptySelection: SelectionState = {
   selectAll: false,
@@ -389,6 +392,71 @@ describe('ManageTrialTable', () => {
           title: 'Utils.Error',
         })
       )
+    );
+  });
+
+  it('should remove the user from the table when the removal succeeds', async () => {
+    // Given
+    const remainingUser = mockBundleUserServiceGroup({
+      user: mockUser({ id: REMAINING_USER_ID, email: REMAINING_USER_EMAIL }),
+      groups: [],
+    });
+    const useCachedBundleUserServiceGroupsQuery = (
+      _client: unknown,
+      _variables: unknown,
+      options: { queryKey: QueryKey }
+    ) =>
+      useQuery({
+        queryKey: options.queryKey,
+        queryFn: async (): Promise<BundleUserServiceGroupsQuery> => ({
+          __typename: 'Query',
+          bundleUserServiceGroups: [
+            userOneAdminOpenctiUserXtmone,
+            remainingUser,
+          ],
+        }),
+      });
+    graphqlMocks.useBundleUserServiceGroupsQuery.mockImplementation(
+      useCachedBundleUserServiceGroupsQuery
+    );
+    graphqlMocks.useRemoveUsersFromBundleGroupsMutation.mockImplementation(
+      (_client: unknown, options?: RemoveUsersFromBundleGroupsOptions) => ({
+        mutate: (variables: RemoveUsersFromBundleGroupsMutationVariables) =>
+          options?.onSuccess?.(
+            { removeUsersFromBundleGroups: variables.userIds },
+            variables,
+            undefined
+          ),
+      })
+    );
+    const { user } = testRender(
+      <ManageTrialTable
+        serviceInstanceId="bundle-1"
+        products={Object.values(PlatformIdentifier)}
+        selection={emptySelection}
+        onSelectionChange={vi.fn()}
+      />
+    );
+    await user.click(
+      within(
+        await screen.findByTestId(
+          `cell-${userOneAdminOpenctiUserXtmone.user.id}-actions`
+        )
+      ).getByLabelText('Utils.Delete')
+    );
+
+    // When
+    await user.click(
+      within(screen.getByRole('alertdialog')).getByRole('button', {
+        name: 'Utils.Delete',
+      })
+    );
+
+    // Then
+    await waitFor(() =>
+      expect(
+        screen.getAllByTestId(/^cell-.*-email$/).map((cell) => cell.textContent)
+      ).toEqual([REMAINING_USER_EMAIL])
     );
   });
 

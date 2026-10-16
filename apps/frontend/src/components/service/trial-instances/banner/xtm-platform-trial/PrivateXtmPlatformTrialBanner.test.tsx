@@ -2,10 +2,20 @@ import { PrivateXtmPlatformTrialBanner } from '@/components/service/trial-instan
 import testRender from '@/utils/test/test-render';
 import {
   DeploymentRequestHubStatus,
+  GiveDeploymentFeedbackMutation,
+  GiveDeploymentFeedbackMutationVariables,
   HasRepliedSatisfaction,
   PlatformTrialStatusQueryVariables,
 } from '@graphql/generated';
+import { UseMutationOptions } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+type GiveDeploymentFeedbackOptions = UseMutationOptions<
+  GiveDeploymentFeedbackMutation,
+  unknown,
+  GiveDeploymentFeedbackMutationVariables,
+  unknown
+>;
 
 const graphqlMocks = vi.hoisted(() => ({
   usePlatformTrialStatusQuery: Object.assign(vi.fn(), {
@@ -16,6 +26,14 @@ const graphqlMocks = vi.hoisted(() => ({
     getRootKey: vi.fn(() => ['PlatformTrialStatus']),
   }),
   giveDeploymentFeedback: vi.fn(),
+  giveDeploymentFeedbackOptions: undefined as
+    GiveDeploymentFeedbackOptions | undefined,
+}));
+
+const showSnackbarMock = vi.hoisted(() => vi.fn());
+
+vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
+  showSnackbar: showSnackbarMock,
 }));
 
 vi.mock('@graphql/generated', async (importOriginal) => {
@@ -24,9 +42,13 @@ vi.mock('@graphql/generated', async (importOriginal) => {
   return {
     ...actual,
     usePlatformTrialStatusQuery: graphqlMocks.usePlatformTrialStatusQuery,
-    useGiveDeploymentFeedbackMutation: () => ({
-      mutate: graphqlMocks.giveDeploymentFeedback,
-    }),
+    useGiveDeploymentFeedbackMutation: (
+      _client: unknown,
+      options?: GiveDeploymentFeedbackOptions
+    ) => {
+      graphqlMocks.giveDeploymentFeedbackOptions = options;
+      return { mutate: graphqlMocks.giveDeploymentFeedback };
+    },
   };
 });
 
@@ -297,6 +319,34 @@ describe('PrivateXtmPlatformTrialBanner', () => {
 
       // Then
       expect(graphqlMocks.giveDeploymentFeedback).toHaveBeenCalledOnce();
+    });
+
+    it('should show an error toast when the feedback cannot be sent', async () => {
+      // Given
+      graphqlMocks.giveDeploymentFeedback.mockImplementation(
+        (variables: GiveDeploymentFeedbackMutationVariables) =>
+          graphqlMocks.giveDeploymentFeedbackOptions?.onError?.(
+            new Error('UNKNOWN_ERROR'),
+            variables,
+            undefined
+          )
+      );
+      const { getByRole, user } = testRender(
+        <PrivateXtmPlatformTrialBanner />,
+        {
+          me: USER_WITHOUT_FEEDBACK,
+        }
+      );
+      await user.click(getByRole('radio', { name: FEEDBACK_YES }));
+
+      // When
+      await user.click(getByRole('button', { name: FEEDBACK_SUBMIT }));
+
+      // Then
+      expect(showSnackbarMock).toHaveBeenCalledWith({
+        severity: 'error',
+        title: 'Utils.Error',
+      });
     });
 
     it('should not send the feedback when the trial has no deployment request', async () => {
