@@ -1,6 +1,11 @@
 import { serverMutateGraphQL } from '@/relay/server-portal-api-fetch';
 import { loadMeUser } from '@/utils/load-me-user';
-import { ServiceDefinitionIdentifier } from '@graphql/generated';
+import {
+  NewsFeedUtmContent,
+  PlatformIdentifier,
+  SendNewsFeedRedirectTelemetryDocument,
+  ServiceDefinitionIdentifier,
+} from '@graphql/generated';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { redirectToResource } from './resource';
@@ -10,8 +15,16 @@ import {
   loadServiceInstances,
 } from './utils/load';
 
+const telemetryMocks = vi.hoisted(() => ({
+  request: vi.fn(),
+  createPortalGraphqlClient: vi.fn(),
+}));
+
 vi.mock('../../../src/relay/server-portal-api-fetch', () => ({
   serverMutateGraphQL: vi.fn(),
+}));
+vi.mock('@/lib/graphql-client', () => ({
+  createPortalGraphqlClient: telemetryMocks.createPortalGraphqlClient,
 }));
 vi.mock('./utils/load');
 vi.mock('../../../src/utils/load-me-user');
@@ -271,6 +284,223 @@ describe('redirectToResource', () => {
     // Then
     expect(response.headers.get('location')).toBe(
       `${BASE_URL}/app/service/${IDENTIFIER}/${encodeURIComponent(INSTANCE_ID_WITH_SPECIAL_CHARS)}/${encodeURIComponent(DOCUMENT_ID_WITH_SPECIAL_CHARS)}`
+    );
+  });
+});
+
+describe('redirectToResource news feed telemetry', () => {
+  const SESSION_COOKIE = 'session=session-1';
+  const INSTANCE_ID = 'instance-1';
+  const DOCUMENT_ID = 'document-1';
+  const PLATFORM_ID = 'platform-1';
+  const NEWS_FEED_QUERY = `utm_source=opencti&utm_medium=newsfeed&utm_campaign=hub_resources&utm_content=custom_dashboard&document_id=${DOCUMENT_ID}&platform_id=${PLATFORM_ID}`;
+  const EXPECTED_LOCATION = `${BASE_URL}/app/service/${IDENTIFIER}/${INSTANCE_ID}/${DOCUMENT_ID}?utm_source=opencti&utm_medium=newsfeed&utm_campaign=hub_resources&utm_content=custom_dashboard`;
+
+  const makeNewsFeedRequest = (query = NEWS_FEED_QUERY) =>
+    new NextRequest(`${BASE_URL}/redirect/${IDENTIFIER}?${query}`, {
+      headers: { cookie: SESSION_COOKIE },
+    });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(loadBaseUrlFront).mockResolvedValue(BASE_URL);
+    vi.mocked(loadMeUser).mockResolvedValue(defaultUser);
+    vi.mocked(loadPlatformOrganizationId).mockResolvedValue(undefined);
+    vi.mocked(loadServiceInstances).mockResolvedValue([
+      {
+        id: INSTANCE_ID,
+        service_definition: { identifier: IDENTIFIER },
+      },
+    ] as LoadServiceInstancesResult);
+    telemetryMocks.request.mockResolvedValue({
+      sendTelemetryEvent: { newsFeedRedirect: { result: true } },
+    });
+    telemetryMocks.createPortalGraphqlClient.mockReturnValue({
+      request: telemetryMocks.request,
+    });
+  });
+
+  it('should emit one news feed redirect event with the full payload when the user is sent to the resource page', async () => {
+    // Given
+    const request = makeNewsFeedRequest();
+
+    // When
+    const response = await redirectToResource(
+      { identifier: IDENTIFIER },
+      request
+    );
+
+    // Then
+    expect(response.headers.get('location')).toBe(EXPECTED_LOCATION);
+    expect(telemetryMocks.request).toHaveBeenCalledOnce();
+    expect(telemetryMocks.request).toHaveBeenCalledWith(
+      SendNewsFeedRedirectTelemetryDocument,
+      {
+        input: {
+          service_identifier: IDENTIFIER,
+          resource_id: DOCUMENT_ID,
+          platform_id: PLATFORM_ID,
+          platform_identifier: PlatformIdentifier.Opencti,
+          utm_content: NewsFeedUtmContent.CustomDashboard,
+        },
+      }
+    );
+  });
+
+  it('should send the event with the session of the user', async () => {
+    // Given
+    const request = makeNewsFeedRequest();
+
+    // When
+    await redirectToResource({ identifier: IDENTIFIER }, request);
+
+    // Then
+    expect(telemetryMocks.createPortalGraphqlClient).toHaveBeenCalledOnce();
+    expect(telemetryMocks.createPortalGraphqlClient).toHaveBeenCalledWith(
+      SESSION_COOKIE
+    );
+  });
+
+  it('should leave out the values of the query that are not members of the enums', async () => {
+    // Given
+    const request = makeNewsFeedRequest(
+      `utm_medium=newsfeed&utm_source=unknown&utm_content=blog_post&document_id=${DOCUMENT_ID}`
+    );
+
+    // When
+    await redirectToResource({ identifier: IDENTIFIER }, request);
+
+    // Then
+    expect(telemetryMocks.request).toHaveBeenCalledWith(
+      SendNewsFeedRedirectTelemetryDocument,
+      {
+        input: {
+          service_identifier: IDENTIFIER,
+          resource_id: DOCUMENT_ID,
+          platform_id: null,
+          platform_identifier: null,
+          utm_content: null,
+        },
+      }
+    );
+  });
+
+  it('should emit nothing when the user is sent to the login page', async () => {
+    // Given
+    vi.mocked(loadMeUser).mockResolvedValue(null);
+    const request = makeNewsFeedRequest();
+
+    // When
+    const response = await redirectToResource(
+      { identifier: IDENTIFIER },
+      request
+    );
+
+    // Then
+    expect(response.headers.get('location')).toContain(`${BASE_URL}/login`);
+    expect(telemetryMocks.createPortalGraphqlClient).not.toHaveBeenCalled();
+    expect(telemetryMocks.request).not.toHaveBeenCalled();
+  });
+
+  it('should emit nothing when the identifier is invalid', async () => {
+    // Given
+    const request = makeNewsFeedRequest();
+
+    // When
+    const response = await redirectToResource(
+      { identifier: 'invalid-identifier' },
+      request
+    );
+
+    // Then
+    expect(response.status).toBe(400);
+    expect(telemetryMocks.createPortalGraphqlClient).not.toHaveBeenCalled();
+    expect(telemetryMocks.request).not.toHaveBeenCalled();
+  });
+
+  it('should emit nothing when the service has no instance', async () => {
+    // Given
+    vi.mocked(loadServiceInstances).mockResolvedValue(
+      [] as LoadServiceInstancesResult
+    );
+    const request = makeNewsFeedRequest();
+
+    // When
+    const response = await redirectToResource(
+      { identifier: IDENTIFIER },
+      request
+    );
+
+    // Then
+    expect(response.headers.get('location')).toBe(`${BASE_URL}/app`);
+    expect(telemetryMocks.createPortalGraphqlClient).not.toHaveBeenCalled();
+    expect(telemetryMocks.request).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['utm_medium is missing', `document_id=${DOCUMENT_ID}&utm_source=opencti`],
+    [
+      'utm_medium is another medium',
+      `document_id=${DOCUMENT_ID}&utm_medium=referral`,
+    ],
+    ['the link has no query', ''],
+  ])(
+    'should emit nothing when %s',
+    async (_description: string, query: string) => {
+      // Given
+      const request = makeNewsFeedRequest(query);
+
+      // When
+      await redirectToResource({ identifier: IDENTIFIER }, request);
+
+      // Then
+      expect(telemetryMocks.createPortalGraphqlClient).not.toHaveBeenCalled();
+      expect(telemetryMocks.request).not.toHaveBeenCalled();
+    }
+  );
+
+  describe('when the telemetry fails', () => {
+    it.each([
+      [
+        'the request rejects',
+        () => telemetryMocks.request.mockRejectedValue(new Error('boom')),
+      ],
+      [
+        'the request throws',
+        () =>
+          telemetryMocks.request.mockImplementation(() => {
+            throw new Error('boom');
+          }),
+      ],
+      [
+        'the client cannot be created',
+        () =>
+          telemetryMocks.createPortalGraphqlClient.mockImplementation(() => {
+            throw new Error('boom');
+          }),
+      ],
+      [
+        'the request never resolves',
+        () =>
+          telemetryMocks.request.mockReturnValue(new Promise(() => undefined)),
+      ],
+    ])(
+      'should keep the same redirect when %s',
+      async (_description: string, makeTelemetryFail: () => void) => {
+        // Given
+        makeTelemetryFail();
+        const request = makeNewsFeedRequest();
+
+        // When
+        const response = await redirectToResource(
+          { identifier: IDENTIFIER },
+          request
+        );
+
+        // Then
+        expect(response.status).toBe(307);
+        expect(response.headers.get('location')).toBe(EXPECTED_LOCATION);
+      }
     );
   });
 });

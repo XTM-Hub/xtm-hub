@@ -13,6 +13,7 @@ import {
   loadPlatformOrganizationId,
   loadServiceInstances,
 } from './utils/load';
+import { trackNewsFeedRedirect } from './utils/news-feed-telemetry';
 import { getLoginRedirectionURL } from './utils/url';
 
 async function switchOrganization(organization_id: string) {
@@ -85,6 +86,9 @@ export const redirectToResource = async (
   if (!serviceInstances[0]) {
     return NextResponse.redirect(new URL(`/${APP_PATH}`, baseUrlFront));
   }
+
+  // Final redirect to the resource page: the only place where a news feed click is counted
+  trackNewsFeedRedirect(identifier, request);
 
   const targetPath = `/${APP_PATH}/service/${identifier}/${encodeRedirectValue(serviceInstances[0].id)}${document_id ? `/${encodeRedirectValue(document_id)}` : ''}${queryString ? `?${queryString}` : ''}`;
   return NextResponse.redirect(new URL(targetPath, baseUrlFront));
