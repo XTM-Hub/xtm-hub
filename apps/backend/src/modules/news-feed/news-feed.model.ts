@@ -42,3 +42,7 @@ export const newsFeedUtmContentMapping: Partial<
   [NewsFeedItemType.ResourceIntegration]: 'integration',
   [NewsFeedItemType.ResourcePlaybook]: 'playbook',
 };
+
+// Public route that redirects to the external destination of an item. The relative url_path given to OpenCTI
+// is built from this prefix, so the endpoint and the producer cannot diverge.
+export const NEWS_FEED_REDIRECT_PATH_PREFIX = 'redirect/news-feed';

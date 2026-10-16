@@ -6,6 +6,7 @@ import {
   DeploymentRequestPlatformRegion,
   DeploymentRequestUseCase,
   HasRepliedSatisfaction,
+  NewsFeedItemType,
   ServiceGroupName,
 } from '../../__generated__/resolvers-types';
 import { DeploymentRequestId } from '../../model/kanel/public/DeploymentRequest';
@@ -34,6 +35,7 @@ export enum TelemetryEventType {
   TRIAL_ACCESS_GRANTED = 'trial_access_granted',
   TRIAL_ACCESS_REMOVED = 'trial_access_removed',
   REPLY_SATISFACTION = 'reply_satisfaction',
+  NEWS_FEED_REDIRECT = 'news_feed_redirect',
 }
 
 export interface BaseTelemetryEvent {
@@ -130,6 +132,23 @@ export interface OneClickDeployEvent extends BaseTelemetryEvent {
   tenant_id?: string;
 }
 
+/**
+ * A click on a news feed link. Which optional fields are set depends on the route that emits it:
+ * the external redirect sets the item, its type and the destination host; the resource redirect sets the service,
+ * the resource, the target product and utm_content. The user and the organization are only set when logged in.
+ */
+export interface NewsFeedRedirectEvent extends BaseTelemetryEvent {
+  event_type: TelemetryEventType.NEWS_FEED_REDIRECT;
+  news_feed_item_id?: string;
+  news_feed_item_type?: NewsFeedItemType;
+  destination_host?: string;
+  platform_id?: string;
+  service?: TelemetryEventService;
+  resource_id?: string;
+  target_product?: TelemetryTargetProduct;
+  utm_content?: string;
+}
+
 export interface UpdateOrganizationEvent extends BaseTelemetryEvent {
   event_type: TelemetryEventType.UPDATE_ORGANIZATION;
   domains: string[];
@@ -196,6 +215,7 @@ export type TelemetryEvent =
   | RegisterPlatformEvent
   | UnregisterPlatformEvent
   | OneClickDeployEvent
+  | NewsFeedRedirectEvent
   | UpdateOrganizationEvent
   | CreateOrganizationEvent
   | CreateDeploymentEvent

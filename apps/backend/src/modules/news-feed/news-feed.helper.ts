@@ -8,6 +8,7 @@ import { RequiredPlatformVersions } from '../../utils/required-platform-version'
 import { doesVersionSatisfy, isValidVersion } from '../../utils/versioning';
 import { isConnectorDocument } from '../shareable-resource/opencti/integration/integration.model';
 import {
+  NEWS_FEED_REDIRECT_PATH_PREFIX,
   NEWS_FEED_UTM_CAMPAIGN,
   NEWS_FEED_UTM_CONTENT_FALLBACK,
   NEWS_FEED_UTM_MEDIUM,
@@ -46,6 +47,10 @@ export const NewsFeedHelper = {
 
     return newsFeedConfiguration;
   },
+
+  // Relative url_path of the public route that redirects to the external destination of an item
+  buildRedirectUrlPath: (newsFeedItemId: string): string =>
+    `${NEWS_FEED_REDIRECT_PATH_PREFIX}/${encodeURIComponent(newsFeedItemId)}`,
 
   // Tags the Hub link so analytics can attribute visits coming from the platform news feed.
   // Overwrites existing utm_* values and keeps every other query parameter and the fragment.

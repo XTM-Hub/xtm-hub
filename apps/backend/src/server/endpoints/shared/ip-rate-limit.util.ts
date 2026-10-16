@@ -1,9 +1,19 @@
-import type { Request, Response } from 'express';
+import type { Express, Request, Response } from 'express';
 import { ipKeyGenerator, type Options } from 'express-rate-limit';
 import { logApp } from '../../../utils/app-logger.util';
 
 const RATE_LIMIT_LOG_INTERVAL_MS = 60 * 1000;
 const MAX_LOG_RATE_ENTRIES = 100;
+
+// The API is only reached through the frontend proxy (Next.js rewrites, behind the ingress), which forwards the
+// x-forwarded-for header it received. Trusting that single hop makes req.ip the last x-forwarded-for entry, the address
+// the ingress saw, and ignores the entries a client can forge. Without it req.ip is always the proxy's address and
+// every client shares one rate limit bucket.
+export const TRUSTED_PROXY_HOPS = 1;
+
+export const configureTrustedProxy = (app: Express): void => {
+  app.set('trust proxy', TRUSTED_PROXY_HOPS);
+};
 
 export interface IpRateLimiterConfig {
   windowMs: number;

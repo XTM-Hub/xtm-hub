@@ -1669,10 +1669,27 @@ export enum NewsFeedItemMetadataKey {
 }
 
 export enum NewsFeedItemType {
+  BlogPost = 'BLOG_POST',
   ResourceCustomDashboard = 'RESOURCE_CUSTOM_DASHBOARD',
   ResourceCustomView = 'RESOURCE_CUSTOM_VIEW',
   ResourceIntegration = 'RESOURCE_INTEGRATION',
   ResourcePlaybook = 'RESOURCE_PLAYBOOK'
+}
+
+export type NewsFeedRedirectInput = {
+  platform_id: InputMaybe<Scalars['String']['input']>;
+  platform_identifier: InputMaybe<PlatformIdentifier>;
+  resource_id: InputMaybe<Scalars['DocumentId']['input']>;
+  service_identifier: ServiceDefinitionIdentifier;
+  utm_content: InputMaybe<NewsFeedUtmContent>;
+};
+
+export enum NewsFeedUtmContent {
+  CustomDashboard = 'custom_dashboard',
+  CustomView = 'custom_view',
+  Integration = 'integration',
+  Other = 'other',
+  Playbook = 'playbook'
 }
 
 export type Node = {
@@ -2557,7 +2574,13 @@ export type SaasPlatformMetadata = {
 
 export type SendTelemetryMutation = {
   __typename?: 'SendTelemetryMutation';
+  newsFeedRedirect: Maybe<TelemetryResponse>;
   oneClickDeploy: Maybe<TelemetryResponse>;
+};
+
+
+export type SendTelemetryMutationNewsFeedRedirectArgs = {
+  input: NewsFeedRedirectInput;
 };
 
 
@@ -3624,6 +3647,13 @@ export type NewsFeedDeleteItemMutationVariables = Exact<{
 
 
 export type NewsFeedDeleteItemMutation = { __typename?: 'Mutation', deleteNewsFeedItem: boolean };
+
+export type SendNewsFeedRedirectTelemetryMutationVariables = Exact<{
+  input: NewsFeedRedirectInput;
+}>;
+
+
+export type SendNewsFeedRedirectTelemetryMutation = { __typename?: 'Mutation', sendTelemetryEvent: { __typename?: 'SendTelemetryMutation', newsFeedRedirect: { __typename?: 'TelemetryResponse', result: boolean, message: string | null } | null } | null };
 
 export type NewsFeedItemRowFragment = { __typename?: 'NewsFeedItem', id: string, title: string, type: NewsFeedItemType, creation_date: any, tags: Array<string>, is_deleted: boolean, metadata: Array<{ __typename?: 'NewsFeedItemMetadata', key: NewsFeedItemMetadataKey, value: string | null }> };
 
@@ -5753,6 +5783,38 @@ export const useNewsFeedDeleteItemMutation = <
 useNewsFeedDeleteItemMutation.getKey = () => ['NewsFeedDeleteItem'];
 useNewsFeedDeleteItemMutation.getRootKey = () => ['NewsFeedDeleteItem'] as const;
 useNewsFeedDeleteItemMutation.fetcher = (client: GraphQLClient, variables: NewsFeedDeleteItemMutationVariables, headers?: RequestInit['headers']) => fetcher<NewsFeedDeleteItemMutation, NewsFeedDeleteItemMutationVariables>(client, NewsFeedDeleteItemDocument, variables, headers);
+
+export const SendNewsFeedRedirectTelemetryDocument = `
+    mutation SendNewsFeedRedirectTelemetry($input: NewsFeedRedirectInput!) {
+  sendTelemetryEvent {
+    newsFeedRedirect(input: $input) {
+      result
+      message
+    }
+  }
+}
+    `;
+
+export const useSendNewsFeedRedirectTelemetryMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<SendNewsFeedRedirectTelemetryMutation, TError, SendNewsFeedRedirectTelemetryMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<SendNewsFeedRedirectTelemetryMutation, TError, SendNewsFeedRedirectTelemetryMutationVariables, TContext>(
+      {
+    mutationKey: ['SendNewsFeedRedirectTelemetry'],
+    mutationFn: (variables?: SendNewsFeedRedirectTelemetryMutationVariables) => fetcher<SendNewsFeedRedirectTelemetryMutation, SendNewsFeedRedirectTelemetryMutationVariables>(client, SendNewsFeedRedirectTelemetryDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useSendNewsFeedRedirectTelemetryMutation.getKey = () => ['SendNewsFeedRedirectTelemetry'];
+useSendNewsFeedRedirectTelemetryMutation.getRootKey = () => ['SendNewsFeedRedirectTelemetry'] as const;
+useSendNewsFeedRedirectTelemetryMutation.fetcher = (client: GraphQLClient, variables: SendNewsFeedRedirectTelemetryMutationVariables, headers?: RequestInit['headers']) => fetcher<SendNewsFeedRedirectTelemetryMutation, SendNewsFeedRedirectTelemetryMutationVariables>(client, SendNewsFeedRedirectTelemetryDocument, variables, headers);
 
 export const NewsFeedListDocument = `
     query NewsFeedList($count: Int!, $cursor: ID) {

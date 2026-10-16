@@ -1662,10 +1662,27 @@ export enum NewsFeedItemMetadataKey {
 }
 
 export enum NewsFeedItemType {
+  BlogPost = 'BLOG_POST',
   ResourceCustomDashboard = 'RESOURCE_CUSTOM_DASHBOARD',
   ResourceCustomView = 'RESOURCE_CUSTOM_VIEW',
   ResourceIntegration = 'RESOURCE_INTEGRATION',
   ResourcePlaybook = 'RESOURCE_PLAYBOOK'
+}
+
+export type NewsFeedRedirectInput = {
+  platform_id?: InputMaybe<Scalars['String']['input']>;
+  platform_identifier?: InputMaybe<PlatformIdentifier>;
+  resource_id?: InputMaybe<Scalars['DocumentId']['input']>;
+  service_identifier: ServiceDefinitionIdentifier;
+  utm_content?: InputMaybe<NewsFeedUtmContent>;
+};
+
+export enum NewsFeedUtmContent {
+  CustomDashboard = 'custom_dashboard',
+  CustomView = 'custom_view',
+  Integration = 'integration',
+  Other = 'other',
+  Playbook = 'playbook'
 }
 
 export type Node = {
@@ -2550,7 +2567,13 @@ export type SaasPlatformMetadata = {
 
 export type SendTelemetryMutation = {
   __typename?: 'SendTelemetryMutation';
+  newsFeedRedirect?: Maybe<TelemetryResponse>;
   oneClickDeploy?: Maybe<TelemetryResponse>;
+};
+
+
+export type SendTelemetryMutationNewsFeedRedirectArgs = {
+  input: NewsFeedRedirectInput;
 };
 
 
@@ -3544,6 +3567,8 @@ export type ResolversTypes = ResolversObject<{
   NewsFeedItemMetadata: ResolverTypeWrapper<NewsFeedItemMetadata>;
   NewsFeedItemMetadataKey: NewsFeedItemMetadataKey;
   NewsFeedItemType: NewsFeedItemType;
+  NewsFeedRedirectInput: NewsFeedRedirectInput;
+  NewsFeedUtmContent: NewsFeedUtmContent;
   Node: ResolverTypeWrapper<ResolversInterfaceTypes<ResolversTypes>['Node']>;
   OneClickDeployInput: OneClickDeployInput;
   OpenAEVScenario: ResolverTypeWrapper<OpenAevScenario>;
@@ -3793,6 +3818,7 @@ export type ResolversParentTypes = ResolversObject<{
   NewsFeedItemEdge: NewsFeedItemEdge;
   NewsFeedItemId: Scalars['NewsFeedItemId']['output'];
   NewsFeedItemMetadata: NewsFeedItemMetadata;
+  NewsFeedRedirectInput: NewsFeedRedirectInput;
   Node: ResolversInterfaceTypes<ResolversParentTypes>['Node'];
   OneClickDeployInput: OneClickDeployInput;
   OpenAEVScenario: OpenAevScenario;
@@ -4924,6 +4950,7 @@ export type SaasPlatformMetadataResolvers<ContextType = PortalContext, ParentTyp
 }>;
 
 export type SendTelemetryMutationResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SendTelemetryMutation'] = ResolversParentTypes['SendTelemetryMutation']> = ResolversObject<{
+  newsFeedRedirect?: Resolver<Maybe<ResolversTypes['TelemetryResponse']>, ParentType, ContextType, RequireFields<SendTelemetryMutationNewsFeedRedirectArgs, 'input'>>;
   oneClickDeploy?: Resolver<Maybe<ResolversTypes['TelemetryResponse']>, ParentType, ContextType, RequireFields<SendTelemetryMutationOneClickDeployArgs, 'input'>>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;

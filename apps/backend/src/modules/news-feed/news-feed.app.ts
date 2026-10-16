@@ -1,7 +1,9 @@
 import config from 'config';
+import { z } from 'zod';
 import {
   ConsumeProvisionedNewsFeedItemsResponse,
   NewsFeedItemMetadataKey,
+  NewsFeedItemType,
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
 } from '../../__generated__/resolvers-types';
@@ -17,6 +19,11 @@ import {
 import { PlatformConfigurationDomain } from '../registration/platform-configuration/platform-configuration.domain';
 import { RegistrationDomain } from '../registration/registration.domain';
 import { useCaseDomain } from '../use-case/use-case.domain';
+import {
+  buildNewsFeedDestination,
+  NewsFeedMetadataValues,
+  NewsFeedRedirectHelper,
+} from './news-feed-redirect.helper';
 import { NewsFeedDomain } from './news-feed.domain';
 import {
   doesPlatformSupportNewsFeed,
@@ -55,7 +62,57 @@ const provisionNewsFeedItemForAllSupportedPlatforms = async ({
   await NewsFeedDomain.provisionNewsFeedItem(newsFeedItemId, platformIds);
 };
 
+export interface NewsFeedExternalRedirect {
+  newsFeedItemId: NewsFeedItemId;
+  newsFeedItemType: NewsFeedItemType;
+  url: string;
+  host: string;
+}
+
+const NEWS_FEED_ITEM_ID_SCHEMA = z.uuid();
+
 export const NewsFeedApp = {
+  // The destination only depends on the item (its type and metadata): nothing from the request decides it,
+  // except the utm_* parameters that are forwarded when the destination accepts them.
+  // Returns undefined for anything that cannot produce a safe destination, without telling why.
+  resolveExternalRedirect: async ({
+    newsFeedItemId,
+    query,
+  }: {
+    newsFeedItemId: string;
+    query: Record<string, unknown>;
+  }): Promise<NewsFeedExternalRedirect | undefined> => {
+    const parsedItemId = NEWS_FEED_ITEM_ID_SCHEMA.safeParse(newsFeedItemId);
+    if (!parsedItemId.success) {
+      return undefined;
+    }
+
+    const newsFeedItem = await NewsFeedDomain.loadNewsFeedItemWithMetadataById(
+      parsedItemId.data as NewsFeedItemId
+    );
+    if (!newsFeedItem || newsFeedItem.is_deleted) {
+      return undefined;
+    }
+
+    const metadata = newsFeedItem.metadata.reduce<NewsFeedMetadataValues>(
+      (acc, { key, value }) => ({ ...acc, [key]: value }),
+      {}
+    );
+    const destination = buildNewsFeedDestination(newsFeedItem.type, metadata);
+    if (!destination) {
+      return undefined;
+    }
+
+    return {
+      newsFeedItemId: newsFeedItem.id,
+      newsFeedItemType: newsFeedItem.type,
+      host: destination.host,
+      url: destination.forwardUtmParams
+        ? NewsFeedRedirectHelper.appendUtmParams(destination.url, query)
+        : destination.url,
+    };
+  },
+
   consumeProvisionedNewsFeedItems: async ({
     platformId,
     token,

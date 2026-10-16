@@ -17,6 +17,7 @@ import {
   DocumentMetadataKeyCode,
   HasRepliedSatisfaction,
   IntegrationType,
+  NewsFeedItemType,
   Organization,
   PlatformContract,
   PlatformIdentifier,
@@ -980,5 +981,92 @@ describe('telemetryHelper', () => {
         expect(event.organization_type).toBe(expectedOrganizationType);
       }
     );
+  });
+
+  describe('buildNewsFeedRedirectEvent', () => {
+    const NEWS_FEED_ITEM_ID = '4f1c0d52-8b6e-4c43-9f0e-6d2a1b7c3e55';
+    const EXTERNAL_REDIRECT_DATA = {
+      news_feed_item_id: NEWS_FEED_ITEM_ID,
+      news_feed_item_type: NewsFeedItemType.BlogPost,
+      destination_host: 'filigran.io',
+      platform_id: PLATFORM_ID,
+    };
+
+    it('should build the external redirect event for a logged in user', () => {
+      // When
+      const event = TelemetryHelper.buildNewsFeedRedirectEvent(
+        makeOrganization(),
+        USER_ID,
+        EXTERNAL_REDIRECT_DATA,
+        TIMESTAMP
+      );
+
+      // Then
+      expect(event).toEqual({
+        ...PROFESSIONAL_BASE_EVENT,
+        event_type: TelemetryEventType.NEWS_FEED_REDIRECT,
+        ...EXTERNAL_REDIRECT_DATA,
+      });
+    });
+
+    it('should build an anonymous public event when there is no user nor organization', () => {
+      // When
+      const event = TelemetryHelper.buildNewsFeedRedirectEvent(
+        undefined,
+        undefined,
+        EXTERNAL_REDIRECT_DATA,
+        TIMESTAMP
+      );
+
+      // Then
+      expect(event).toStrictEqual({
+        '@timestamp': TIMESTAMP_ISO,
+        event_type: TelemetryEventType.NEWS_FEED_REDIRECT,
+        organization_id: undefined,
+        organization_name: undefined,
+        organization_type: TelemetryOrganizationType.PUBLIC,
+        source: TelemetrySource.XTMHUB,
+        user_id: undefined,
+        ...EXTERNAL_REDIRECT_DATA,
+      });
+    });
+
+    it('should build the resource redirect event with the mapped service and target product', () => {
+      // When
+      const event = TelemetryHelper.buildNewsFeedRedirectEvent(
+        makeOrganization(),
+        USER_ID,
+        {
+          service: ServiceDefinitionIdentifier.OpenctiPlaybooks,
+          resource_id: RESOURCE_ID,
+          platform_id: PLATFORM_ID,
+          platform_identifier: PlatformIdentifier.Opencti,
+          utm_content: 'playbook',
+        },
+        TIMESTAMP
+      );
+
+      // Then
+      expect(event).toEqual({
+        ...PROFESSIONAL_BASE_EVENT,
+        event_type: TelemetryEventType.NEWS_FEED_REDIRECT,
+        service: TelemetryEventService.OPENCTI_PLAYBOOKS_LIBRARY,
+        resource_id: RESOURCE_ID,
+        platform_id: PLATFORM_ID,
+        target_product: TelemetryTargetProduct.OPEN_CTI,
+        utm_content: 'playbook',
+      });
+      expect(event).not.toHaveProperty('news_feed_item_id');
+      expect(event).not.toHaveProperty('destination_host');
+    });
+
+    it('should throw for a service that has no telemetry mapping', () => {
+      // When / Then
+      expect(() =>
+        TelemetryHelper.buildNewsFeedRedirectEvent(undefined, undefined, {
+          service: ServiceDefinitionIdentifier.OpenctiRegistration,
+        })
+      ).toThrow();
+    });
   });
 });
