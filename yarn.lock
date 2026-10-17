@@ -3810,15 +3810,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@graphql-tools/merge@npm:9.2.6, @graphql-tools/merge@npm:^9.2.6":
-  version: 9.2.6
-  resolution: "@graphql-tools/merge@npm:9.2.6"
+"@graphql-tools/merge@npm:9.2.7, @graphql-tools/merge@npm:^9.2.7":
+  version: 9.2.7
+  resolution: "@graphql-tools/merge@npm:9.2.7"
   dependencies:
-    "@graphql-tools/utils": "npm:^12.0.3"
+    "@graphql-tools/utils": "npm:^12.0.4"
     tslib: "npm:^2.4.0"
   peerDependencies:
     graphql: ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
-  checksum: 10/6c2554ca294559a539b916f3437df90a73397feefedef34e8a67ede4fbf22b0381308b6a7845ffb75145a0ee85de9007da04590b554248f45aa176c6d81af4c5
+  checksum: 10/401a6e819e8c77468ba5d92ab04f7c10c9bb56d3e9a2c9397bfa90f00ddc18fe8fee783d3f958a644692c45e94e32f76d185af787b8d48dfd716c2d5d65d9078
   languageName: node
   linkType: hard
 
@@ -3908,16 +3908,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@graphql-tools/schema@npm:10.1.3":
-  version: 10.1.3
-  resolution: "@graphql-tools/schema@npm:10.1.3"
+"@graphql-tools/schema@npm:10.1.4":
+  version: 10.1.4
+  resolution: "@graphql-tools/schema@npm:10.1.4"
   dependencies:
-    "@graphql-tools/merge": "npm:^9.2.6"
-    "@graphql-tools/utils": "npm:^12.0.3"
+    "@graphql-tools/merge": "npm:^9.2.7"
+    "@graphql-tools/utils": "npm:^12.0.4"
     tslib: "npm:^2.4.0"
   peerDependencies:
     graphql: ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
-  checksum: 10/eb1395b1ebb6ee1e7049a03f26db4fc4d7732cd0c87b3898722feab3a47c71920c202b0852612b2e55ba6ed7a4b5cd7dce42b77052b83bc29876252ee05735d2
+  checksum: 10/d75a6b962a5268b3ec3e71dc428eb9ba363bc83ea27bc6234cf370ee9c106d3dc5d4f324e0e401ab902da0357a2280306652df97ec6f53c548120814752a4580
   languageName: node
   linkType: hard
 
@@ -4020,9 +4020,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@graphql-tools/utils@npm:^12.0.3":
-  version: 12.0.3
-  resolution: "@graphql-tools/utils@npm:12.0.3"
+"@graphql-tools/utils@npm:^12.0.4":
+  version: 12.0.4
+  resolution: "@graphql-tools/utils@npm:12.0.4"
   dependencies:
     "@graphql-typed-document-node/core": "npm:^3.1.1"
     "@whatwg-node/promise-helpers": "npm:^2.0.0"
@@ -4030,7 +4030,7 @@ __metadata:
     tslib: "npm:^2.4.0"
   peerDependencies:
     graphql: ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
-  checksum: 10/1cf2508d4d9bdbbf9af52713bd1b0223f7667c1c207df35a6f299cf2dd3774bf2bc968f9375ba6327cd8017310ae6fd507a464b6092c97075ce6e2f571566a22
+  checksum: 10/bee513126376c0b59123c5aef60da6cf5ed67c44d4640b3b406e4122bf55d672250b510a3a82ddc62041a0626a51cdf4c022252b4131a6b2b9e295ce660e4898
   languageName: node
   linkType: hard
 
@@ -8952,8 +8952,8 @@ __metadata:
     "@graphql-codegen/typescript": "catalog:"
     "@graphql-codegen/typescript-resolvers": "npm:4.5.2"
     "@graphql-tools/load-files": "npm:7.0.1"
-    "@graphql-tools/merge": "npm:9.2.6"
-    "@graphql-tools/schema": "npm:10.1.3"
+    "@graphql-tools/merge": "npm:9.2.7"
+    "@graphql-tools/schema": "npm:10.1.4"
     "@graphql-tools/utils": "npm:11.2.2"
     "@opentelemetry/exporter-metrics-otlp-http": "npm:0.221.0"
     "@opentelemetry/resources": "npm:2.10.0"
