@@ -5,7 +5,7 @@
   <a href="https://hub.filigran.io" alt="Website"><img src="https://img.shields.io/badge/website-hub.filigran.io-blue.svg" /></a>
   <a href="https://docs.hub.filigran.io" alt="Documentation"><img src="https://img.shields.io/badge/documentation-latest-orange.svg" /></a>
   <a href="https://community.filigran.io" alt="Slack"><img src="https://img.shields.io/badge/slack-3K%2B%20members-4A154B" /></a>
-  <a href="https://github.com/FiligranHQ/xtm-hub/actions"><img src="https://github.com/FiligranHQ/xtm-hub/actions/workflows/dockerbuild-ci.yml/badge.svg?branch=main" /></a>
+  <a href="https://github.com/XTM-Hub/xtm-hub/actions"><img src="https://github.com/XTM-Hub/xtm-hub/actions/workflows/dockerbuild-ci.yml/badge.svg?branch=main" /></a>
 </p>
 
 ## Introduction
@@ -61,7 +61,7 @@ If you want to know more about XTM Hub, you can read the [documentation on the t
 
 ## Releases
 
-Releases are available on the [GitHub releases page](https://github.com/FiligranHQ/xtm-hub/releases). You can also access the [rolling release package](https://github.com/FiligranHQ/xtm-hub/tags) generated from the main branch of the repository.
+Releases are available on the [GitHub releases page](https://github.com/XTM-Hub/xtm-hub/releases). You can also access the [rolling release package](https://github.com/XTM-Hub/xtm-hub/tags) generated from the main branch of the repository.
 
 ## Installation
 
@@ -79,7 +79,7 @@ Read our [contributing guide](CONTRIBUTING.md) to learn about our development pr
 
 ### Beginner friendly issues
 
-To help you get familiar with our contribution process, we maintain a list of [beginner friendly issues](https://github.com/FiligranHQ/xtm-hub/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22) that are fairly easy to implement. This is a great place to get started.
+To help you get familiar with our contribution process, we maintain a list of [beginner friendly issues](https://github.com/XTM-Hub/xtm-hub/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22) that are fairly easy to implement. This is a great place to get started.
 
 ### Development
 
@@ -89,7 +89,7 @@ If you want to actively help XTM Hub, we created a [dedicated documentation](htt
 
 ### Status & bugs
 
-XTM Hub is currently under heavy development. If you wish to report bugs or ask for new features, you can directly use the [GitHub issues module](https://github.com/FiligranHQ/xtm-hub/issues).
+XTM Hub is currently under heavy development. If you wish to report bugs or ask for new features, you can directly use the [GitHub issues module](https://github.com/XTM-Hub/xtm-hub/issues).
 
 ### Discussion
 
