@@ -8,7 +8,7 @@ import { DocumentOrdering, OrderingMode } from '@graphql/generated';
 import { useCallback } from 'react';
 import { useLocalStorage } from 'usehooks-ts';
 
-export enum ServiceListLocalStorageKey {
+export enum ServiceListStorageKey {
   OpenCTICustomDashboards = 'OpenCTICustomDashboards',
   OpenCTICustomViews = 'OpenCTICustomViews',
   OpenCTIIntegrationFeeds = 'OpenCTIIntegrationFeeds',
@@ -32,9 +32,7 @@ const deserializeLogicalMultiSelectSelection = (
   }
 };
 
-export const useServiceListLocalStorage = (
-  serviceName: ServiceListLocalStorageKey
-) => {
+export const useServiceListStorage = (serviceName: ServiceListStorageKey) => {
   const isPublicPath = usePublicPath();
   const pagePrefix = isPublicPath ? 'Public' : 'Private';
   const [search, setSearch, removeSearch] = useLocalStorage<string>(
@@ -120,7 +118,7 @@ export const useServiceListLocalStorage = (
   );
 
   const defaultOrderBy =
-    serviceName === ServiceListLocalStorageKey.OpenCTIIntegrationFeeds
+    serviceName === ServiceListStorageKey.OpenCTIIntegrationFeeds
       ? DocumentOrdering.Name
       : DocumentOrdering.CreatedAt;
 

@@ -2,8 +2,8 @@ import {
   ServiceListDisplayMode,
   ServiceListHeader,
 } from '@/components/service/components/header/ServiceListHeader';
-import { AppServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
-import { ServiceListLocalStorageKey } from '@/hooks/use-service-list-local-storage';
+import { AppServiceListStorageKeyContext } from '@/components/service/components/ServiceListStorageKeyContext';
+import { ServiceListStorageKey } from '@/hooks/use-service-list-storage';
 import testRender from '@/utils/test/test-render';
 import { DocumentOrdering, OrderingMode } from '@graphql/generated';
 import { screen } from '@testing-library/react';
@@ -13,7 +13,7 @@ import { describe, expect, it, vi } from 'vitest';
 const FILTERS_BUTTON_LABEL = 'Service.List.Filters';
 
 const testState = vi.hoisted(() => ({
-  useServiceListLocalStorage: vi.fn(),
+  useServiceListStorage: vi.fn(),
   setOrderBy: vi.fn(),
   setOrderMode: vi.fn(),
   setDisplayMode: vi.fn(),
@@ -28,14 +28,14 @@ vi.mock('usehooks-ts', async (importOriginal) => ({
     }),
 }));
 
-vi.mock('@/hooks/use-service-list-local-storage', async (importOriginal) => ({
+vi.mock('@/hooks/use-service-list-storage', async (importOriginal) => ({
   ...(await importOriginal<
-    typeof import('@/hooks/use-service-list-local-storage')
+    typeof import('@/hooks/use-service-list-storage')
   >()),
-  useServiceListLocalStorage: testState.useServiceListLocalStorage,
+  useServiceListStorage: testState.useServiceListStorage,
 }));
 
-const buildLocalStorageState = (displayMode = ServiceListDisplayMode.List) => ({
+const buildStorageState = (displayMode = ServiceListDisplayMode.List) => ({
   orderBy: DocumentOrdering.Name,
   orderMode: OrderingMode.Asc,
   setOrderBy: testState.setOrderBy,
@@ -48,21 +48,19 @@ const renderHeader = (
   props?: Partial<ComponentProps<typeof ServiceListHeader>>
 ) =>
   testRender(
-    <AppServiceListLocalStorageKeyContext
-      localStorageKey={ServiceListLocalStorageKey.OpenCTIIntegrationFeeds}>
+    <AppServiceListStorageKeyContext
+      storageKey={ServiceListStorageKey.OpenCTIIntegrationFeeds}>
       <ServiceListHeader
         search=""
         onSearchChange={vi.fn()}
         {...props}
       />
-    </AppServiceListLocalStorageKeyContext>
+    </AppServiceListStorageKeyContext>
   );
 
 describe('ServiceListHeader', () => {
   it('renders search, actions and pagination controls', () => {
-    testState.useServiceListLocalStorage.mockReturnValue(
-      buildLocalStorageState()
-    );
+    testState.useServiceListStorage.mockReturnValue(buildStorageState());
 
     renderHeader({
       actions: <button type="button">extra-action</button>,
@@ -79,9 +77,7 @@ describe('ServiceListHeader', () => {
   });
 
   it('calls onSearchChange when typing in search input', async () => {
-    testState.useServiceListLocalStorage.mockReturnValue(
-      buildLocalStorageState()
-    );
+    testState.useServiceListStorage.mockReturnValue(buildStorageState());
     const onSearchChange = vi.fn();
     const { user } = renderHeader({ onSearchChange });
 
@@ -95,9 +91,7 @@ describe('ServiceListHeader', () => {
 
   it('should call onSearchChange with an empty value when clearing the search', async () => {
     // Given
-    testState.useServiceListLocalStorage.mockReturnValue(
-      buildLocalStorageState()
-    );
+    testState.useServiceListStorage.mockReturnValue(buildStorageState());
     const onSearchChange = vi.fn();
     const { user } = renderHeader({ onSearchChange });
     await user.type(
@@ -123,8 +117,8 @@ describe('ServiceListHeader', () => {
   `(
     'changes display mode from $initialDisplayMode when clicking $clickedLabel',
     async ({ initialDisplayMode, clickedLabel, expectedMode }) => {
-      testState.useServiceListLocalStorage.mockReturnValue(
-        buildLocalStorageState(initialDisplayMode)
+      testState.useServiceListStorage.mockReturnValue(
+        buildStorageState(initialDisplayMode)
       );
       const onDisplayModeChange = vi.fn();
       const { user } = renderHeader({ onDisplayModeChange });
@@ -143,8 +137,8 @@ describe('ServiceListHeader', () => {
   `(
     'applies selected color classes for mode=$initialDisplayMode',
     ({ initialDisplayMode, expectedTabClass, expectedListClass }) => {
-      testState.useServiceListLocalStorage.mockReturnValue(
-        buildLocalStorageState(initialDisplayMode)
+      testState.useServiceListStorage.mockReturnValue(
+        buildStorageState(initialDisplayMode)
       );
 
       renderHeader();
@@ -162,9 +156,7 @@ describe('ServiceListHeader', () => {
   );
 
   it('toggles ordering mode when clicking sort direction button', async () => {
-    testState.useServiceListLocalStorage.mockReturnValue(
-      buildLocalStorageState()
-    );
+    testState.useServiceListStorage.mockReturnValue(buildStorageState());
     const { user } = renderHeader();
 
     await user.click(
@@ -199,9 +191,7 @@ describe('ServiceListHeader', () => {
 
   it('should not render the filters button when no filters are given', () => {
     // Given
-    testState.useServiceListLocalStorage.mockReturnValue(
-      buildLocalStorageState()
-    );
+    testState.useServiceListStorage.mockReturnValue(buildStorageState());
 
     // When
     renderHeader();

@@ -1,8 +1,8 @@
 import { ServiceListDisplayMode } from '@/components/service/components/header/ServiceListHeader';
 import {
-  ServiceListLocalStorageKey,
-  useServiceListLocalStorage,
-} from '@/hooks/use-service-list-local-storage';
+  ServiceListStorageKey,
+  useServiceListStorage,
+} from '@/hooks/use-service-list-storage';
 import { DocumentOrdering, OrderingMode } from '@graphql/generated';
 import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -21,7 +21,7 @@ vi.mock('usehooks-ts', () => ({
   useLocalStorage: testState.useLocalStorage,
 }));
 
-describe('useServiceListLocalStorage', () => {
+describe('useServiceListStorage', () => {
   beforeEach(() => {
     testState.removeFns = [];
     testState.usePublicPath.mockReturnValue(false);
@@ -44,9 +44,7 @@ describe('useServiceListLocalStorage', () => {
       testState.usePublicPath.mockReturnValue(isPublicPath);
 
       renderHook(() =>
-        useServiceListLocalStorage(
-          ServiceListLocalStorageKey.OpenCTICustomViews
-        )
+        useServiceListStorage(ServiceListStorageKey.OpenCTICustomViews)
       );
 
       expect(testState.useLocalStorage).toHaveBeenCalledWith(
@@ -61,13 +59,13 @@ describe('useServiceListLocalStorage', () => {
   );
 
   it.each`
-    serviceKey                                            | expectedDefaultOrderBy
-    ${ServiceListLocalStorageKey.OpenCTIIntegrationFeeds} | ${DocumentOrdering.Name}
-    ${ServiceListLocalStorageKey.OpenCTICustomDashboards} | ${DocumentOrdering.CreatedAt}
+    serviceKey                                       | expectedDefaultOrderBy
+    ${ServiceListStorageKey.OpenCTIIntegrationFeeds} | ${DocumentOrdering.Name}
+    ${ServiceListStorageKey.OpenCTICustomDashboards} | ${DocumentOrdering.CreatedAt}
   `(
     'uses $expectedDefaultOrderBy as default orderBy for $serviceKey',
     ({ serviceKey, expectedDefaultOrderBy }) => {
-      renderHook(() => useServiceListLocalStorage(serviceKey));
+      renderHook(() => useServiceListStorage(serviceKey));
 
       expect(testState.useLocalStorage).toHaveBeenCalledWith(
         expect.stringContaining('orderByPrivate'),
@@ -78,7 +76,7 @@ describe('useServiceListLocalStorage', () => {
 
   it('uses pageSize as the single source of truth for the page size', () => {
     renderHook(() =>
-      useServiceListLocalStorage(ServiceListLocalStorageKey.OpenAEVScenarios)
+      useServiceListStorage(ServiceListStorageKey.OpenAEVScenarios)
     );
 
     expect(testState.useLocalStorage).toHaveBeenCalledWith(
@@ -93,7 +91,7 @@ describe('useServiceListLocalStorage', () => {
 
   it('exposes expected default values', () => {
     const { result } = renderHook(() =>
-      useServiceListLocalStorage(ServiceListLocalStorageKey.OpenAEVScenarios)
+      useServiceListStorage(ServiceListStorageKey.OpenAEVScenarios)
     );
 
     expect(result.current.search).toBe('');
@@ -105,7 +103,7 @@ describe('useServiceListLocalStorage', () => {
 
   it('resetAll calls every local storage remover', () => {
     const { result } = renderHook(() =>
-      useServiceListLocalStorage(ServiceListLocalStorageKey.OpenCTIPlaybooks)
+      useServiceListStorage(ServiceListStorageKey.OpenCTIPlaybooks)
     );
 
     result.current.resetAll();

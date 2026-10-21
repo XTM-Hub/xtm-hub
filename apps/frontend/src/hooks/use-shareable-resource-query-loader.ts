@@ -10,7 +10,7 @@ export type UseShareableResourceQueryLoaderParams = Omit<
   documentsQuery$variables,
   'count' | 'cursor'
 > & {
-  /** Page size read from `useServiceListLocalStorage`. */
+  /** Page size read from `useServiceListStorage`. */
   pageSize: number;
 };
 

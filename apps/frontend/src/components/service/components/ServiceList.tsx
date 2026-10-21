@@ -9,7 +9,7 @@ import {
 } from '@/components/service/components/header/ServiceListHeader';
 import ServiceListHeaderButtons from '@/components/service/components/header/ServiceListHeaderButtons';
 import { useServiceContext } from '@/components/service/components/ServiceContext';
-import { useServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
+import { useServiceListStorageKeyContext } from '@/components/service/components/ServiceListStorageKeyContext';
 import {
   getHeroSectionLibraryProps,
   HeroSectionLibrary,
@@ -17,7 +17,7 @@ import {
 import { useUserHasPortalCapability } from '@/hooks/use-portal-capability';
 import useScrollPosition from '@/hooks/use-scroll-position';
 import useServiceCapability from '@/hooks/use-service-capability';
-import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useStickyHeaderOffset } from '@/hooks/use-sticky-header-offset';
 import { useTranslate } from '@/hooks/use-translate';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
@@ -54,9 +54,9 @@ const ServiceList = ({
     PortalCapability.Bypass,
   ]);
 
-  const { localStorageKey } = useServiceListLocalStorageKeyContext();
+  const { storageKey } = useServiceListStorageKeyContext();
   const { displayMode: selectedDisplayMode, setDisplayMode } =
-    useServiceListLocalStorage(localStorageKey);
+    useServiceListStorage(storageKey);
 
   const { restore } = useScrollPosition();
   useLayoutEffect(() => {

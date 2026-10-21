@@ -1,9 +1,9 @@
 import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
 import {
-  ServiceListLocalStorageKey,
-  useServiceListLocalStorage,
-} from '@/hooks/use-service-list-local-storage';
+  ServiceListStorageKey,
+  useServiceListStorage,
+} from '@/hooks/use-service-list-storage';
 import { useTranslate } from '@/hooks/use-translate';
 
 interface IntegrationVerifiedFilterProps {
@@ -13,8 +13,8 @@ interface IntegrationVerifiedFilterProps {
 export const IntegrationVerifiedFilter = ({
   facetCounts,
 }: IntegrationVerifiedFilterProps) => {
-  const { verified, setVerified } = useServiceListLocalStorage(
-    ServiceListLocalStorageKey.OpenCTIIntegrationFeeds
+  const { verified, setVerified } = useServiceListStorage(
+    ServiceListStorageKey.OpenCTIIntegrationFeeds
   );
   const t = useTranslate();
 

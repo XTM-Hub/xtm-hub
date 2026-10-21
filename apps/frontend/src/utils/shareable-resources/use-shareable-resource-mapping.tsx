@@ -14,7 +14,7 @@ import { IntegrationTypeFilter } from '@/components/ui/shareable-resource/integr
 import { IntegrationVerifiedFilter } from '@/components/ui/shareable-resource/integration/IntegrationVerifiedFilter';
 import { PrivateIntegrationProductVersionFilter } from '@/components/ui/shareable-resource/integration/PrivateIntegrationProductVersionFilter';
 import usePublicPath from '@/hooks/use-public-path';
-import { ServiceListLocalStorageKey } from '@/hooks/use-service-list-local-storage';
+import { ServiceListStorageKey } from '@/hooks/use-service-list-storage';
 import { useTranslate } from '@/hooks/use-translate';
 import {
   ServiceSlug,
@@ -27,22 +27,17 @@ export const useShareableResourceMapping = (
 ) => {
   const t = useTranslate();
   const isPublicPath = usePublicPath();
-  const localStorageKeyMapping: Record<
-    ServiceSlug,
-    ServiceListLocalStorageKey
-  > = {
+  const storageKeyMapping: Record<ServiceSlug, ServiceListStorageKey> = {
     [ServiceSlug.OPEN_CTI_INTEGRATIONS]:
-      ServiceListLocalStorageKey.OpenCTIIntegrationFeeds,
+      ServiceListStorageKey.OpenCTIIntegrationFeeds,
     [ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS]:
-      ServiceListLocalStorageKey.OpenCTICustomDashboards,
+      ServiceListStorageKey.OpenCTICustomDashboards,
     [ServiceSlug.OPEN_CTI_CUSTOM_VIEWS]:
-      ServiceListLocalStorageKey.OpenCTICustomViews,
-    [ServiceSlug.OPEN_AEV_SCENARIOS]:
-      ServiceListLocalStorageKey.OpenAEVScenarios,
-    [ServiceSlug.OPEN_CTI_PLAYBOOKS]:
-      ServiceListLocalStorageKey.OpenCTIPlaybooks,
+      ServiceListStorageKey.OpenCTICustomViews,
+    [ServiceSlug.OPEN_AEV_SCENARIOS]: ServiceListStorageKey.OpenAEVScenarios,
+    [ServiceSlug.OPEN_CTI_PLAYBOOKS]: ServiceListStorageKey.OpenCTIPlaybooks,
   };
-  const localStorageKey = localStorageKeyMapping[slug];
+  const storageKey = storageKeyMapping[slug];
   const typeFeed: Record<ServiceSlug, ShareableResourceType> = {
     [ServiceSlug.OPEN_CTI_INTEGRATIONS]:
       ShareableResourceType.OPENCTI_INTEGRATION,
@@ -135,6 +130,6 @@ export const useShareableResourceMapping = (
 
   return {
     filters,
-    localStorageKey,
+    storageKey,
   };
 };

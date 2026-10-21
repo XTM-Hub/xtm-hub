@@ -1,6 +1,6 @@
 import ServiceList from '@/components/service/components/ServiceList';
 import { ServiceListDisplayMode } from '@/components/service/components/header/ServiceListHeader';
-import { ServiceListLocalStorageKey } from '@/hooks/use-service-list-local-storage';
+import { ServiceListStorageKey } from '@/hooks/use-service-list-storage';
 import testRender from '@/utils/test/test-render';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import {
@@ -17,8 +17,8 @@ const testState = vi.hoisted(() => ({
   useServiceContext: vi.fn(),
   useServiceCapability: vi.fn(),
   useUserHasPortalCapability: vi.fn(),
-  useServiceListLocalStorageKeyContext: vi.fn(),
-  useServiceListLocalStorage: vi.fn(),
+  useServiceListStorageKeyContext: vi.fn(),
+  useServiceListStorage: vi.fn(),
   useScrollPosition: vi.fn(),
   setDisplayMode: vi.fn(),
   setOrderBy: vi.fn(),
@@ -40,19 +40,15 @@ vi.mock('@/hooks/use-portal-capability', () => ({
   useUserHasPortalCapability: testState.useUserHasPortalCapability,
 }));
 
-vi.mock(
-  '@/components/service/components/ServiceListLocalStorageKeyContext',
-  () => ({
-    useServiceListLocalStorageKeyContext:
-      testState.useServiceListLocalStorageKeyContext,
-  })
-);
+vi.mock('@/components/service/components/ServiceListStorageKeyContext', () => ({
+  useServiceListStorageKeyContext: testState.useServiceListStorageKeyContext,
+}));
 
-vi.mock('@/hooks/use-service-list-local-storage', async (importOriginal) => ({
+vi.mock('@/hooks/use-service-list-storage', async (importOriginal) => ({
   ...(await importOriginal<
-    typeof import('@/hooks/use-service-list-local-storage')
+    typeof import('@/hooks/use-service-list-storage')
   >()),
-  useServiceListLocalStorage: testState.useServiceListLocalStorage,
+  useServiceListStorage: testState.useServiceListStorage,
 }));
 
 vi.mock('@/hooks/use-scroll-position', () => ({
@@ -66,7 +62,7 @@ vi.mock(
   })
 );
 
-const buildLocalStorageState = (displayMode = ServiceListDisplayMode.Tab) => ({
+const buildStorageState = (displayMode = ServiceListDisplayMode.Tab) => ({
   removeLabels: testState.removeLabels,
   displayMode,
   setDisplayMode: testState.setDisplayMode,
@@ -100,11 +96,11 @@ describe('ServiceList', () => {
     });
     testState.useServiceCapability.mockReturnValue(true);
     testState.useUserHasPortalCapability.mockReturnValue(false);
-    testState.useServiceListLocalStorageKeyContext.mockReturnValue({
-      localStorageKey: ServiceListLocalStorageKey.OpenCTIIntegrationFeeds,
+    testState.useServiceListStorageKeyContext.mockReturnValue({
+      storageKey: ServiceListStorageKey.OpenCTIIntegrationFeeds,
     });
-    testState.useServiceListLocalStorage.mockImplementation(() =>
-      buildLocalStorageState()
+    testState.useServiceListStorage.mockImplementation(() =>
+      buildStorageState()
     );
     testState.useScrollPosition.mockReturnValue({
       restore: testState.restore,

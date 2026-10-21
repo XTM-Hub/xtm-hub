@@ -4,9 +4,9 @@ import ShareableResourceServiceList from '@/components/service/components/Sharea
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLogicalFiltersFromStorage } from '@/hooks/use-logical-filters-from-storage';
 import {
-  ServiceListLocalStorageKey,
-  useServiceListLocalStorage,
-} from '@/hooks/use-service-list-local-storage';
+  ServiceListStorageKey,
+  useServiceListStorage,
+} from '@/hooks/use-service-list-storage';
 import { useShareableResourceQueryLoader } from '@/hooks/use-shareable-resource-query-loader';
 import {
   ServiceSlug,
@@ -20,9 +20,7 @@ interface PageLoaderProps {
 
 const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
   const { pageSize, search, setSearch, labels, orderMode, orderBy } =
-    useServiceListLocalStorage(
-      ServiceListLocalStorageKey.OpenCTICustomDashboards
-    );
+    useServiceListStorage(ServiceListStorageKey.OpenCTICustomDashboards);
 
   const logicalFilters = useLogicalFiltersFromStorage({
     serviceInstanceSlug: ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS,
@@ -47,7 +45,7 @@ const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
           search={search}
           onSearchChange={setSearch}
           type={ShareableResourceType.OPENCTI_CUSTOM_DASHBOARD}
-          localStorageKey={ServiceListLocalStorageKey.OpenCTICustomDashboards}
+          storageKey={ServiceListStorageKey.OpenCTICustomDashboards}
         />
       ) : (
         <Skeleton className="w-full inset-1/2" />

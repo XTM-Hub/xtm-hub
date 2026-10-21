@@ -1,9 +1,9 @@
 import { FilterSheet } from '@/components/service/components/header/filter/FilterSheet';
-import { useServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
+import { useServiceListStorageKeyContext } from '@/components/service/components/ServiceListStorageKeyContext';
 import { Separator } from '@/components/ui/separator';
 import { SortControls } from '@/components/ui/SortControls';
 import { useDebouncedSearch } from '@/hooks/use-debounced-search';
-import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { SearchField } from '@filigran/design-system';
@@ -60,7 +60,7 @@ export const ServiceListHeader = ({
 }: ServiceListHeaderProps) => {
   const t = useTranslate();
 
-  const { localStorageKey } = useServiceListLocalStorageKeyContext();
+  const { storageKey } = useServiceListStorageKeyContext();
   const {
     orderBy,
     orderMode,
@@ -68,7 +68,7 @@ export const ServiceListHeader = ({
     setOrderMode,
     displayMode: storedDisplayMode,
     setDisplayMode: setStoredDisplayMode,
-  } = useServiceListLocalStorage(localStorageKey);
+  } = useServiceListStorage(storageKey);
   const handleDisplayModeChange = (mode: ServiceListDisplayMode) => {
     setStoredDisplayMode(mode);
     onDisplayModeChange?.(mode);

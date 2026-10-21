@@ -6,7 +6,7 @@ import {
   LogicalFiltersParams,
   useLogicalFiltersFromStorage,
 } from '@/hooks/use-logical-filters-from-storage';
-import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
 import { useShareableResourceMapping } from '@/utils/shareable-resources/use-shareable-resource-mapping';
 import { publicDocumentsQuery } from '@generated/publicDocumentsQuery.graphql';
@@ -28,7 +28,7 @@ export const PublicDocumentListPageLoader = ({
   );
 
   const serviceInstanceSlug = serviceInstance.slug as ServiceSlug;
-  const { localStorageKey } = useShareableResourceMapping(serviceInstanceSlug);
+  const { storageKey } = useShareableResourceMapping(serviceInstanceSlug);
 
   const {
     pageSize,
@@ -43,7 +43,7 @@ export const PublicDocumentListPageLoader = ({
     solutionCategories,
     orderMode,
     orderBy,
-  } = useServiceListLocalStorage(localStorageKey);
+  } = useServiceListStorage(storageKey);
   const params: LogicalFiltersParams =
     serviceInstanceSlug === ServiceSlug.OPEN_CTI_INTEGRATIONS
       ? {

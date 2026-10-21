@@ -5,7 +5,7 @@ import {
   IntegrationCsvExportFilters,
   toIntegrationCsvColumnLabelKey,
 } from '@/components/service/components/header/integrations-csv-export.utils';
-import { useServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
+import { useServiceListStorageKeyContext } from '@/components/service/components/ServiceListStorageKeyContext';
 import { useSolutionCategories } from '@/components/service/form/UseSolutionCategories';
 import { availableIntegrationTypes } from '@/components/service/integrations/Integration.utils';
 import { AppCombobox } from '@/components/ui/AppCombobox';
@@ -13,7 +13,7 @@ import { AutoForm } from '@/components/ui/auto-form';
 import { useFormField } from '@/components/ui/form';
 import { Label } from '@/components/ui/label';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
-import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useTranslate } from '@/hooks/use-translate';
 import { toComboboxOptionIds } from '@/utils/design-system/combobox';
 import {
@@ -110,7 +110,7 @@ export const IntegrationsCsvExportDialog = ({
   const t = useTranslate();
   const [isExporting, setIsExporting] = useState(false);
 
-  const { localStorageKey } = useServiceListLocalStorageKeyContext();
+  const { storageKey } = useServiceListStorageKeyContext();
   const {
     integrationTypes,
     licenseTypes,
@@ -118,7 +118,7 @@ export const IntegrationsCsvExportDialog = ({
     verified,
     deployable,
     labels,
-  } = useServiceListLocalStorage(localStorageKey);
+  } = useServiceListStorage(storageKey);
 
   const [seededValues, setSeededValues] = useState<CsvExportFormValues>(() => ({
     columns: defaultSelectedColumns(),

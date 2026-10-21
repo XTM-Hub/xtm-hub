@@ -9,7 +9,7 @@ import {
   VERIFIED_PARAM,
 } from '@/components/service/integrations/[serviceInstanceId]/integration-list-url-filters.utils';
 import { useIntegrationListStorage } from '@/components/service/integrations/[serviceInstanceId]/use-integration-list-storage';
-import { ServiceListLocalStorageKey } from '@/hooks/use-service-list-local-storage';
+import { ServiceListStorageKey } from '@/hooks/use-service-list-storage';
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -41,8 +41,8 @@ describe('useIntegrationListStorage', () => {
     const { result } = renderHook(() => useIntegrationListStorage());
 
     // Then
-    expect(result.current.localStorageKey).toBe(
-      ServiceListLocalStorageKey.OpenCTIIntegrationFeeds
+    expect(result.current.storageKey).toBe(
+      ServiceListStorageKey.OpenCTIIntegrationFeeds
     );
   });
 

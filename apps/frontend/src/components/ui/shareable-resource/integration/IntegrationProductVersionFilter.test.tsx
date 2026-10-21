@@ -18,11 +18,11 @@ vi.mock('@/hooks/use-registered-product-versions', () => ({
     useRegisteredProductVersionsMock(...args),
 }));
 
-vi.mock('@/hooks/use-service-list-local-storage', () => ({
-  ServiceListLocalStorageKey: {
+vi.mock('@/hooks/use-service-list-storage', () => ({
+  ServiceListStorageKey: {
     OpenCTIIntegrationFeeds: 'feeds',
   },
-  useServiceListLocalStorage: () => ({
+  useServiceListStorage: () => ({
     productVersions: {},
     setProductVersions: setProductVersionsMock,
     removeProductVersions: vi.fn(),

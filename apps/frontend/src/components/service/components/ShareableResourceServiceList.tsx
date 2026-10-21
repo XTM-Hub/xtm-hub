@@ -1,7 +1,7 @@
 import { useActiveAndDraftSplit } from '@/components/service/components/service-list-utils';
 import { AppServiceContext } from '@/components/service/components/ServiceContext';
 import ServiceList from '@/components/service/components/ServiceList';
-import { AppServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
+import { AppServiceListStorageKeyContext } from '@/components/service/components/ServiceListStorageKeyContext';
 import {
   documentItem,
   documentsFragment,
@@ -11,9 +11,9 @@ import { useDocumentContext } from '@/components/service/document/use-document-c
 import { PaginationControls } from '@/components/ui/pagination/PaginationControls';
 import { useDocumentFacetCounts } from '@/hooks/use-document-facet-counts';
 import {
-  ServiceListLocalStorageKey,
-  useServiceListLocalStorage,
-} from '@/hooks/use-service-list-local-storage';
+  ServiceListStorageKey,
+  useServiceListStorage,
+} from '@/hooks/use-service-list-storage';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import {
   SHAREABLE_RESOURCE_SERVICE_SLUG_MAPPING,
@@ -43,7 +43,7 @@ export interface ShareableResourceServiceListProps {
   search: string;
   onSearchChange: (v: string) => void;
   type: ShareableResourceType;
-  localStorageKey: ServiceListLocalStorageKey;
+  storageKey: ServiceListStorageKey;
 }
 
 /**
@@ -59,7 +59,7 @@ const ShareableResourceServiceList = ({
   search,
   onSearchChange,
   type,
-  localStorageKey,
+  storageKey,
 }: ShareableResourceServiceListProps) => {
   const queryData = usePreloadedQuery<documentsQuery>(
     DocumentsListQuery,
@@ -97,7 +97,7 @@ const ShareableResourceServiceList = ({
     solutionCategories,
     orderBy,
     orderMode,
-  } = useServiceListLocalStorage(localStorageKey);
+  } = useServiceListStorage(storageKey);
 
   const { pagination, setPagination, onPaginationChange } = useTablePagination({
     pageSize,
@@ -153,7 +153,7 @@ const ShareableResourceServiceList = ({
 
   return (
     <AppServiceContext {...context}>
-      <AppServiceListLocalStorageKeyContext localStorageKey={localStorageKey}>
+      <AppServiceListStorageKeyContext storageKey={storageKey}>
         <ServiceList
           active={active}
           draft={draft}
@@ -171,7 +171,7 @@ const ShareableResourceServiceList = ({
             />
           }
         />
-      </AppServiceListLocalStorageKeyContext>
+      </AppServiceListStorageKeyContext>
     </AppServiceContext>
   );
 };

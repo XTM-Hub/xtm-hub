@@ -4,9 +4,9 @@ import ShareableResourceServiceList from '@/components/service/components/Sharea
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLogicalFiltersFromStorage } from '@/hooks/use-logical-filters-from-storage';
 import {
-  ServiceListLocalStorageKey,
-  useServiceListLocalStorage,
-} from '@/hooks/use-service-list-local-storage';
+  ServiceListStorageKey,
+  useServiceListStorage,
+} from '@/hooks/use-service-list-storage';
 import { useShareableResourceQueryLoader } from '@/hooks/use-shareable-resource-query-loader';
 import {
   ServiceSlug,
@@ -20,7 +20,7 @@ interface PageLoaderProps {
 
 const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
   const { pageSize, search, labels, setSearch, orderMode, orderBy } =
-    useServiceListLocalStorage(ServiceListLocalStorageKey.OpenAEVScenarios);
+    useServiceListStorage(ServiceListStorageKey.OpenAEVScenarios);
   const logicalFilters = useLogicalFiltersFromStorage({
     serviceInstanceSlug: ServiceSlug.OPEN_AEV_SCENARIOS,
     labels,
@@ -44,7 +44,7 @@ const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
           search={search}
           onSearchChange={setSearch}
           type={ShareableResourceType.OPENAEV_SCENARIO}
-          localStorageKey={ServiceListLocalStorageKey.OpenAEVScenarios}
+          storageKey={ServiceListStorageKey.OpenAEVScenarios}
         />
       ) : (
         <Skeleton className="w-full inset-1/2" />

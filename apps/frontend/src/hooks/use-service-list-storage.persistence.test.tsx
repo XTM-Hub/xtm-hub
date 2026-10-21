@@ -1,7 +1,7 @@
 import {
-  ServiceListLocalStorageKey,
-  useServiceListLocalStorage,
-} from '@/hooks/use-service-list-local-storage';
+  ServiceListStorageKey,
+  useServiceListStorage,
+} from '@/hooks/use-service-list-storage';
 import { act, renderHook } from '@testing-library/react';
 import { usePathname } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -31,12 +31,10 @@ const resetKeys = RESET_KEY_PREFIXES.map(
 
 const renderStorage = () =>
   renderHook(() =>
-    useServiceListLocalStorage(
-      ServiceListLocalStorageKey.OpenCTIIntegrationFeeds
-    )
+    useServiceListStorage(ServiceListStorageKey.OpenCTIIntegrationFeeds)
   );
 
-describe('useServiceListLocalStorage persistence', () => {
+describe('useServiceListStorage persistence', () => {
   beforeEach(() => {
     window.localStorage.clear();
   });

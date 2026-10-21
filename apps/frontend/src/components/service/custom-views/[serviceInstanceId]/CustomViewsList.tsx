@@ -1,5 +1,5 @@
 import ShareableResourceServiceList from '@/components/service/components/ShareableResourceServiceList';
-import { ServiceListLocalStorageKey } from '@/hooks/use-service-list-local-storage';
+import { ServiceListStorageKey } from '@/hooks/use-service-list-storage';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { documentsQuery } from '@generated/documentsQuery.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
@@ -25,7 +25,7 @@ const CustomViewsList = ({
       search={search}
       onSearchChange={onSearchChange}
       type={ShareableResourceType.OPENCTI_CUSTOM_VIEW}
-      localStorageKey={ServiceListLocalStorageKey.OpenCTICustomViews}
+      storageKey={ServiceListStorageKey.OpenCTICustomViews}
     />
   );
 };

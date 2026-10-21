@@ -2,9 +2,9 @@ import { ServiceListFacetCounts } from '@/components/service/components/header/f
 import { availableIntegrationTypes } from '@/components/service/integrations/Integration.utils';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
 import {
-  ServiceListLocalStorageKey,
-  useServiceListLocalStorage,
-} from '@/hooks/use-service-list-local-storage';
+  ServiceListStorageKey,
+  useServiceListStorage,
+} from '@/hooks/use-service-list-storage';
 import { useTranslate } from '@/hooks/use-translate';
 import { IntegrationType } from '@graphql/generated';
 import { useMemo } from 'react';
@@ -16,8 +16,8 @@ interface IntegrationTypeFilterProps {
 export const IntegrationTypeFilter = ({
   facetCounts,
 }: IntegrationTypeFilterProps) => {
-  const { integrationTypes, setIntegrationTypes } = useServiceListLocalStorage(
-    ServiceListLocalStorageKey.OpenCTIIntegrationFeeds
+  const { integrationTypes, setIntegrationTypes } = useServiceListStorage(
+    ServiceListStorageKey.OpenCTIIntegrationFeeds
   );
 
   const t = useTranslate();

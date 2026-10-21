@@ -1,7 +1,7 @@
 import { FilterSidebar } from '@/components/service/components/header/filter/FilterSidebar';
 import { IntegrationsCsvExportButton } from '@/components/service/components/header/IntegrationsCsvExportButton';
 import { ServiceListHeader } from '@/components/service/components/header/ServiceListHeader';
-import { AppServiceListLocalStorageKeyContext } from '@/components/service/components/ServiceListLocalStorageKeyContext';
+import { AppServiceListStorageKeyContext } from '@/components/service/components/ServiceListStorageKeyContext';
 import {
   publicDocumentListItem,
   PublicDocumentListQuery,
@@ -10,7 +10,7 @@ import { PaginationControls } from '@/components/ui/pagination/PaginationControl
 import { PublicShareableResourceList } from '@/components/ui/shareable-resource/PublicShareableResourceList';
 import { useDocumentFacetCounts } from '@/hooks/use-document-facet-counts';
 import useScrollPosition from '@/hooks/use-scroll-position';
-import { useServiceListLocalStorage } from '@/hooks/use-service-list-local-storage';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useStickyHeaderOffset } from '@/hooks/use-sticky-header-offset';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { APP_PATH } from '@/utils/path/constant';
@@ -56,7 +56,7 @@ const PublicDocumentsList = ({
   >(publicDocumentListGraphql, queryData);
 
   const serviceInstanceSlug = serviceInstance.slug as ServiceSlug;
-  const { localStorageKey } = useShareableResourceMapping(serviceInstanceSlug);
+  const { storageKey } = useShareableResourceMapping(serviceInstanceSlug);
 
   const {
     search,
@@ -75,7 +75,7 @@ const PublicDocumentsList = ({
     solutionCategories,
     orderBy,
     orderMode,
-  } = useServiceListLocalStorage(localStorageKey);
+  } = useServiceListStorage(storageKey);
 
   const facetCounts = useDocumentFacetCounts({
     serviceInstanceId: serviceInstance.id,
@@ -148,7 +148,7 @@ const PublicDocumentsList = ({
     serviceInstanceSlug === ServiceSlug.OPEN_CTI_INTEGRATIONS;
 
   return (
-    <AppServiceListLocalStorageKeyContext localStorageKey={localStorageKey}>
+    <AppServiceListStorageKeyContext storageKey={storageKey}>
       <div
         ref={headerRef}
         className="sticky top-0 py-3 z-15 relative bg-gradient-default">
@@ -192,7 +192,7 @@ const PublicDocumentsList = ({
           />
         </div>
       </div>
-    </AppServiceListLocalStorageKeyContext>
+    </AppServiceListStorageKeyContext>
   );
 };
 

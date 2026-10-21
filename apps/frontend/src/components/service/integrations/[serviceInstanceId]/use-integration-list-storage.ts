@@ -11,14 +11,14 @@ import {
   VERIFIED_PARAM,
 } from '@/components/service/integrations/[serviceInstanceId]/integration-list-url-filters.utils';
 import {
-  ServiceListLocalStorageKey,
-  useServiceListLocalStorage,
-} from '@/hooks/use-service-list-local-storage';
+  ServiceListStorageKey,
+  useServiceListStorage,
+} from '@/hooks/use-service-list-storage';
 import { useCallback, useMemo } from 'react';
 
 export const useIntegrationListStorage = () => {
-  const localStorageKey = ServiceListLocalStorageKey.OpenCTIIntegrationFeeds;
-  const store = useServiceListLocalStorage(localStorageKey);
+  const storageKey = ServiceListStorageKey.OpenCTIIntegrationFeeds;
+  const store = useServiceListStorage(storageKey);
 
   const {
     integrationTypes,
@@ -79,5 +79,5 @@ export const useIntegrationListStorage = () => {
     ]
   );
 
-  return { ...store, filters, setFilters, localStorageKey };
+  return { ...store, filters, setFilters, storageKey };
 };
