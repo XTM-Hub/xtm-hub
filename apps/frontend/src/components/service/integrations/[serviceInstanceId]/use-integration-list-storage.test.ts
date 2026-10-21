@@ -9,7 +9,7 @@ import {
   VERIFIED_PARAM,
 } from '@/components/service/integrations/[serviceInstanceId]/integration-list-url-filters.utils';
 import { useIntegrationListStorage } from '@/components/service/integrations/[serviceInstanceId]/use-integration-list-storage';
-import { ServiceListStorageKey } from '@/hooks/use-service-list-storage';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -29,11 +29,11 @@ const storageKeyOf = (param: string) =>
   `${param}PrivateOpenCTIIntegrationFeedsList`;
 const selectionOf = (param: string) => ({ [`${param}-value`]: [] });
 const getStoredValue = (key: string) =>
-  JSON.parse(window.localStorage.getItem(key) ?? 'null');
+  JSON.parse(window.sessionStorage.getItem(key) ?? 'null');
 
 describe('useIntegrationListStorage', () => {
   beforeEach(() => {
-    window.localStorage.clear();
+    window.sessionStorage.clear();
   });
 
   it('should expose the OpenCTI integration feeds storage key', () => {
@@ -58,7 +58,7 @@ describe('useIntegrationListStorage', () => {
     'should expose the stored selection as the %s filter',
     (param) => {
       // Given
-      window.localStorage.setItem(
+      window.sessionStorage.setItem(
         storageKeyOf(param),
         JSON.stringify(selectionOf(param))
       );
@@ -146,7 +146,7 @@ describe('useIntegrationListStorage', () => {
     // Then
     expect(result.current.filters).toMatchObject(emptyFilters());
     for (const param of FILTER_PARAMS) {
-      expect(window.localStorage.getItem(storageKeyOf(param))).toBeNull();
+      expect(window.sessionStorage.getItem(storageKeyOf(param))).toBeNull();
     }
   });
 });

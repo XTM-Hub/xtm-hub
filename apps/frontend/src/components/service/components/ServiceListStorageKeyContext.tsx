@@ -1,4 +1,4 @@
-import { ServiceListStorageKey } from '@/hooks/use-service-list-storage';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import React, { createContext, useContext } from 'react';
 
 export interface ServiceListStorageKeyContextProps {

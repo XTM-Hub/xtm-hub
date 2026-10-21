@@ -10,11 +10,9 @@ import {
 import { useDocumentContext } from '@/components/service/document/use-document-context';
 import { PaginationControls } from '@/components/ui/pagination/PaginationControls';
 import { useDocumentFacetCounts } from '@/hooks/use-document-facet-counts';
-import {
-  ServiceListStorageKey,
-  useServiceListStorage,
-} from '@/hooks/use-service-list-storage';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useTablePagination } from '@/hooks/use-table-pagination';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import {
   SHAREABLE_RESOURCE_SERVICE_SLUG_MAPPING,
   ShareableResourceType,

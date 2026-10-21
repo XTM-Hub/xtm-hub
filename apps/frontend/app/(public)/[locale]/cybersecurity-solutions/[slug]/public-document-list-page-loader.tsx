@@ -1,6 +1,7 @@
 'use client';
 import { PublicDocumentListQuery } from '@/components/service/document/public-document.graphql';
 import PublicDocumentsList from '@/components/service/document/PublicDocumentsList';
+import { IntegrationListUrlFiltersSync } from '@/components/service/integrations/[serviceInstanceId]/IntegrationListUrlFiltersSync';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   LogicalFiltersParams,
@@ -44,28 +45,29 @@ export const PublicDocumentListPageLoader = ({
     orderMode,
     orderBy,
   } = useServiceListStorage(storageKey);
-  const params: LogicalFiltersParams =
-    serviceInstanceSlug === ServiceSlug.OPEN_CTI_INTEGRATIONS
-      ? {
-          serviceInstanceSlug:
-            serviceInstanceSlug as ServiceSlug.OPEN_CTI_INTEGRATIONS,
-          labels,
-          deployable,
-          verified,
-          integrationTypes,
-          productVersions,
-          licenseTypes,
-          solutionCategories,
-        }
-      : {
-          serviceInstanceSlug: serviceInstanceSlug as
-            | ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS
-            | ServiceSlug.OPEN_AEV_SCENARIOS
-            | ServiceSlug.OPEN_CTI_PLAYBOOKS
-            | ServiceSlug.OPEN_CTI_CUSTOM_VIEWS,
-          labels,
-          entityTypes,
-        };
+  const isIntegrationsService =
+    serviceInstanceSlug === ServiceSlug.OPEN_CTI_INTEGRATIONS;
+  const params: LogicalFiltersParams = isIntegrationsService
+    ? {
+        serviceInstanceSlug:
+          serviceInstanceSlug as ServiceSlug.OPEN_CTI_INTEGRATIONS,
+        labels,
+        deployable,
+        verified,
+        integrationTypes,
+        productVersions,
+        licenseTypes,
+        solutionCategories,
+      }
+    : {
+        serviceInstanceSlug: serviceInstanceSlug as
+          | ServiceSlug.OPEN_CTI_CUSTOM_DASHBOARDS
+          | ServiceSlug.OPEN_AEV_SCENARIOS
+          | ServiceSlug.OPEN_CTI_PLAYBOOKS
+          | ServiceSlug.OPEN_CTI_CUSTOM_VIEWS,
+        labels,
+        entityTypes,
+      };
 
   const logicalFilters = useLogicalFiltersFromStorage(params);
 
@@ -101,6 +103,7 @@ export const PublicDocumentListPageLoader = ({
 
   return (
     <>
+      {isIntegrationsService && <IntegrationListUrlFiltersSync />}
       {queryRef ? (
         <PublicDocumentsList
           serviceInstance={serviceInstance}

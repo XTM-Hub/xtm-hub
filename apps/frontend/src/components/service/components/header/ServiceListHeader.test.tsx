@@ -3,7 +3,7 @@ import {
   ServiceListHeader,
 } from '@/components/service/components/header/ServiceListHeader';
 import { AppServiceListStorageKeyContext } from '@/components/service/components/ServiceListStorageKeyContext';
-import { ServiceListStorageKey } from '@/hooks/use-service-list-storage';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import testRender from '@/utils/test/test-render';
 import { DocumentOrdering, OrderingMode } from '@graphql/generated';
 import { screen } from '@testing-library/react';

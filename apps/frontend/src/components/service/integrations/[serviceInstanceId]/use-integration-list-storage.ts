@@ -10,10 +10,8 @@ import {
   SOLUTION_CATEGORY_PARAM,
   VERIFIED_PARAM,
 } from '@/components/service/integrations/[serviceInstanceId]/integration-list-url-filters.utils';
-import {
-  ServiceListStorageKey,
-  useServiceListStorage,
-} from '@/hooks/use-service-list-storage';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import { useCallback, useMemo } from 'react';
 
 export const useIntegrationListStorage = () => {

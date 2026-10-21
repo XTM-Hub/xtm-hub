@@ -14,8 +14,8 @@ import { IntegrationTypeFilter } from '@/components/ui/shareable-resource/integr
 import { IntegrationVerifiedFilter } from '@/components/ui/shareable-resource/integration/IntegrationVerifiedFilter';
 import { PrivateIntegrationProductVersionFilter } from '@/components/ui/shareable-resource/integration/PrivateIntegrationProductVersionFilter';
 import usePublicPath from '@/hooks/use-public-path';
-import { ServiceListStorageKey } from '@/hooks/use-service-list-storage';
 import { useTranslate } from '@/hooks/use-translate';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import {
   ServiceSlug,
   ShareableResourceType,

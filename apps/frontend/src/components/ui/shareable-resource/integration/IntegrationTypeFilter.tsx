@@ -1,11 +1,9 @@
 import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { availableIntegrationTypes } from '@/components/service/integrations/Integration.utils';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
-import {
-  ServiceListStorageKey,
-  useServiceListStorage,
-} from '@/hooks/use-service-list-storage';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useTranslate } from '@/hooks/use-translate';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import { IntegrationType } from '@graphql/generated';
 import { useMemo } from 'react';
 

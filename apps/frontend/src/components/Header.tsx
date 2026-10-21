@@ -18,6 +18,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
+import { clearFiltersStorage } from '@/utils/filters-storage.utils';
 import { APP_PATH } from '@/utils/path/constant';
 
 import { useTranslate } from '@/hooks/use-translate';
@@ -66,6 +67,7 @@ const HeaderComponent = ({ displayLogo }: HeaderComponentProps) => {
         // same browser tab and could serve stale, user-scoped data (e.g.
         // service capabilities) to whoever logs in next.
         queryClient.clear();
+        clearFiltersStorage();
         router.push('/');
         router.refresh();
       },

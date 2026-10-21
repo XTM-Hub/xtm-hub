@@ -1,10 +1,8 @@
 import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
-import {
-  ServiceListStorageKey,
-  useServiceListStorage,
-} from '@/hooks/use-service-list-storage';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useTranslate } from '@/hooks/use-translate';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 
 interface IntegrationDeployableFilterProps {
   facetCounts?: ServiceListFacetCounts['managerSupported'];

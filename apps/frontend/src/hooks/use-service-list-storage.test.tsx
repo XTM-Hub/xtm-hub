@@ -1,8 +1,6 @@
 import { ServiceListDisplayMode } from '@/components/service/components/header/ServiceListHeader';
-import {
-  ServiceListStorageKey,
-  useServiceListStorage,
-} from '@/hooks/use-service-list-storage';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import { DocumentOrdering, OrderingMode } from '@graphql/generated';
 import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -10,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const testState = vi.hoisted(() => ({
   usePublicPath: vi.fn(),
   useLocalStorage: vi.fn(),
+  useSessionStorage: vi.fn(),
   removeFns: [] as Array<() => void>,
 }));
 
@@ -19,19 +18,21 @@ vi.mock('@/hooks/use-public-path', () => ({
 
 vi.mock('usehooks-ts', () => ({
   useLocalStorage: testState.useLocalStorage,
+  useSessionStorage: testState.useSessionStorage,
 }));
+
+const mockStorageHook = (_key: string, defaultValue: unknown) => {
+  const remove = vi.fn();
+  testState.removeFns.push(remove);
+  return [defaultValue, vi.fn(), remove];
+};
 
 describe('useServiceListStorage', () => {
   beforeEach(() => {
     testState.removeFns = [];
     testState.usePublicPath.mockReturnValue(false);
-    testState.useLocalStorage.mockImplementation(
-      (_key: string, defaultValue: unknown) => {
-        const remove = vi.fn();
-        testState.removeFns.push(remove);
-        return [defaultValue, vi.fn(), remove];
-      }
-    );
+    testState.useLocalStorage.mockImplementation(mockStorageHook);
+    testState.useSessionStorage.mockImplementation(mockStorageHook);
   });
 
   it.each`
@@ -39,7 +40,7 @@ describe('useServiceListStorage', () => {
     ${true}      | ${'Public'}
     ${false}     | ${'Private'}
   `(
-    'uses "$expectedPrefix" local storage prefix when public path is $isPublicPath',
+    'uses "$expectedPrefix" storage prefix when public path is $isPublicPath',
     ({ isPublicPath, expectedPrefix }) => {
       testState.usePublicPath.mockReturnValue(isPublicPath);
 
@@ -47,7 +48,7 @@ describe('useServiceListStorage', () => {
         useServiceListStorage(ServiceListStorageKey.OpenCTICustomViews)
       );
 
-      expect(testState.useLocalStorage).toHaveBeenCalledWith(
+      expect(testState.useSessionStorage).toHaveBeenCalledWith(
         `search${expectedPrefix}OpenCTICustomViewsList`,
         ''
       );
@@ -101,7 +102,7 @@ describe('useServiceListStorage', () => {
     expect(result.current.labels).toEqual({});
   });
 
-  it('resetAll calls every local storage remover', () => {
+  it('resetAll calls every storage remover', () => {
     const { result } = renderHook(() =>
       useServiceListStorage(ServiceListStorageKey.OpenCTIPlaybooks)
     );

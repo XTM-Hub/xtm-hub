@@ -1,6 +1,6 @@
 import ServiceList from '@/components/service/components/ServiceList';
 import { ServiceListDisplayMode } from '@/components/service/components/header/ServiceListHeader';
-import { ServiceListStorageKey } from '@/hooks/use-service-list-storage';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import testRender from '@/utils/test/test-render';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import {

@@ -1,10 +1,8 @@
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useRegisteredProductVersions } from '@/hooks/use-registered-product-versions';
-import {
-  ServiceListStorageKey,
-  useServiceListStorage,
-} from '@/hooks/use-service-list-storage';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useTranslate } from '@/hooks/use-translate';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import {
   Tooltip,
   TooltipContent,

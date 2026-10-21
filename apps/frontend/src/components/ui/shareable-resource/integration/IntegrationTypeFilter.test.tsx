@@ -7,9 +7,6 @@ import { IntegrationTypeFilter } from './IntegrationTypeFilter';
 const setIntegrationTypesMock = vi.fn();
 
 vi.mock('@/hooks/use-service-list-storage', () => ({
-  ServiceListStorageKey: {
-    OpenCTIIntegrationFeeds: 'feeds',
-  },
   useServiceListStorage: () => ({
     integrationTypes: {},
     setIntegrationTypes: setIntegrationTypesMock,

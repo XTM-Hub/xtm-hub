@@ -1,5 +1,5 @@
 import ShareableResourceServiceList from '@/components/service/components/ShareableResourceServiceList';
-import { ServiceListStorageKey } from '@/hooks/use-service-list-storage';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { documentsQuery } from '@generated/documentsQuery.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';

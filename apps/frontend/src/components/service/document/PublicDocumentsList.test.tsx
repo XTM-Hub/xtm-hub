@@ -1,6 +1,6 @@
 import { ServiceListDisplayMode } from '@/components/service/components/header/ServiceListHeader';
 import PublicDocumentsList from '@/components/service/document/PublicDocumentsList';
-import { ServiceListStorageKey } from '@/hooks/use-service-list-storage';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import { buildSignupRedirect, decodeSafeRedirect } from '@/utils/redirect';
 import testRender from '@/utils/test/test-render';
 import { publicDocumentsQuery } from '@generated/publicDocumentsQuery.graphql';

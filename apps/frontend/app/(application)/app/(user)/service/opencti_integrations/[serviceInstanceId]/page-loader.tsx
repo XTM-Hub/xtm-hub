@@ -1,8 +1,8 @@
 'use client';
 
+import { IntegrationListUrlFiltersSync } from '@/components/service/integrations/[serviceInstanceId]/IntegrationListUrlFiltersSync';
 import IntegrationsList from '@/components/service/integrations/[serviceInstanceId]/IntegrationsList';
 import { useIntegrationListStorage } from '@/components/service/integrations/[serviceInstanceId]/use-integration-list-storage';
-import { useIntegrationListUrlFilters } from '@/components/service/integrations/[serviceInstanceId]/use-integration-list-url-filters';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLogicalFiltersFromStorage } from '@/hooks/use-logical-filters-from-storage';
 import { useShareableResourceQueryLoader } from '@/hooks/use-shareable-resource-query-loader';
@@ -27,16 +27,7 @@ const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
     verified,
     orderBy,
     orderMode,
-    resetAll,
-    filters,
-    setFilters,
   } = useIntegrationListStorage();
-
-  useIntegrationListUrlFilters({
-    filters,
-    resetAll,
-    setFilters,
-  });
 
   const logicalFilters = useLogicalFiltersFromStorage({
     serviceInstanceSlug: ServiceSlug.OPEN_CTI_INTEGRATIONS,
@@ -60,6 +51,7 @@ const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
 
   return (
     <>
+      <IntegrationListUrlFiltersSync />
       {queryRef ? (
         <IntegrationsList
           serviceInstance={serviceInstance}
