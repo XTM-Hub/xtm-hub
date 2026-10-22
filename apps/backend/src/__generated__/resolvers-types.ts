@@ -1051,6 +1051,13 @@ export type MergeEvent = Node & {
   target: Scalars['ID']['output'];
 };
 
+export enum MetricType {
+  EsUsedSize = 'es_used_size',
+  S3UsedSize = 's3_used_size',
+  SlaAvailability = 'sla_availability',
+  SlaResponseTime = 'sla_response_time'
+}
+
 export type Mutation = {
   __typename?: 'Mutation';
   acceptPendingUserInOrganization?: Maybe<User>;
@@ -2579,23 +2586,28 @@ export type SaasPlatformMetadata = {
 
 export type SaasPlatformMetricPoint = {
   __typename?: 'SaasPlatformMetricPoint';
-  t: Scalars['Date']['output'];
-  v?: Maybe<Scalars['Float']['output']>;
+  timestamp: Scalars['Date']['output'];
+  value?: Maybe<Scalars['Float']['output']>;
 };
 
 export type SaasPlatformMetricSeries = {
   __typename?: 'SaasPlatformMetricSeries';
-  metric_type: Scalars['String']['output'];
+  metric_type: MetricType;
   points: Array<SaasPlatformMetricPoint>;
 };
 
 export type SaasPlatformMetrics = {
   __typename?: 'SaasPlatformMetrics';
   end: Scalars['Date']['output'];
-  resolution: Scalars['String']['output'];
+  resolution: SaasPlatformResolution;
   series: Array<SaasPlatformMetricSeries>;
   start: Scalars['Date']['output'];
 };
+
+export enum SaasPlatformResolution {
+  Day = 'day',
+  Hour = 'hour'
+}
 
 export type SendTelemetryMutation = {
   __typename?: 'SendTelemetryMutation';
@@ -3592,6 +3604,7 @@ export type ResolversTypes = ResolversObject<{
   ManifestType: ManifestType;
   MeUserSubscription: ResolverTypeWrapper<MeUserSubscription>;
   MergeEvent: ResolverTypeWrapper<MergeEvent>;
+  MetricType: MetricType;
   Mutation: ResolverTypeWrapper<{}>;
   NewsFeedItem: ResolverTypeWrapper<NewsFeedItem>;
   NewsFeedItemConnection: ResolverTypeWrapper<NewsFeedItemConnection>;
@@ -3663,6 +3676,7 @@ export type ResolversTypes = ResolversObject<{
   SaasPlatformMetricPoint: ResolverTypeWrapper<SaasPlatformMetricPoint>;
   SaasPlatformMetricSeries: ResolverTypeWrapper<SaasPlatformMetricSeries>;
   SaasPlatformMetrics: ResolverTypeWrapper<SaasPlatformMetrics>;
+  SaasPlatformResolution: SaasPlatformResolution;
   SendTelemetryMutation: ResolverTypeWrapper<SendTelemetryMutation>;
   SeoServiceInstance: ResolverTypeWrapper<SeoServiceInstance>;
   SeoServiceInstanceMetadata: ResolverTypeWrapper<SeoServiceInstanceMetadata>;
@@ -4999,20 +5013,20 @@ export type SaasPlatformMetadataResolvers<ContextType = PortalContext, ParentTyp
 }>;
 
 export type SaasPlatformMetricPointResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasPlatformMetricPoint'] = ResolversParentTypes['SaasPlatformMetricPoint']> = ResolversObject<{
-  t?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
-  v?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  timestamp?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  value?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type SaasPlatformMetricSeriesResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasPlatformMetricSeries'] = ResolversParentTypes['SaasPlatformMetricSeries']> = ResolversObject<{
-  metric_type?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  metric_type?: Resolver<ResolversTypes['MetricType'], ParentType, ContextType>;
   points?: Resolver<Array<ResolversTypes['SaasPlatformMetricPoint']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type SaasPlatformMetricsResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasPlatformMetrics'] = ResolversParentTypes['SaasPlatformMetrics']> = ResolversObject<{
   end?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
-  resolution?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  resolution?: Resolver<ResolversTypes['SaasPlatformResolution'], ParentType, ContextType>;
   series?: Resolver<Array<ResolversTypes['SaasPlatformMetricSeries']>, ParentType, ContextType>;
   start?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;

@@ -983,6 +983,16 @@
       "PlatformVersion": "Platform version"
     },
     "Metrics": {
+      "Title": "Storage consumption",
+      "Unavailable": "The metrics are currently unavailable",
+      "Database": {
+        "Title": "Database",
+        "Subtitle": "Knowledge, relationships, history and logs"
+      },
+      "FileStorage": {
+        "Title": "File storage",
+        "Subtitle": "Imported files, reports and attachments"
+      },
       "Metadata": {
         "Hostname": "Host name",
         "CopyHostname": "Copy host name",
@@ -2413,6 +2423,9 @@
       "default": "Default",
       "thread": "Thread"
     }
+  },
+  "TimeSeriesBarChart": {
+    "Peak": "Peak"
   },
   "EditableText": {
     "DialogTitle": "Edit content",

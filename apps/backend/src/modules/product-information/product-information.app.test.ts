@@ -100,7 +100,7 @@ describe('product information app', () => {
       // Then
       expect(callSpy).toHaveBeenCalledExactlyOnceWith({
         platform_id: platformId,
-        include_metrics: 30,
+        include_metrics: 90,
       });
     });
 
@@ -319,7 +319,7 @@ describe('product information app', () => {
         expect(data).toEqual({ metadata: fullMetadata, metrics: null });
         expect(callSpy).toHaveBeenCalledExactlyOnceWith({
           platform_id: platformId,
-          include_metrics: 30,
+          include_metrics: 90,
         });
       }
     );

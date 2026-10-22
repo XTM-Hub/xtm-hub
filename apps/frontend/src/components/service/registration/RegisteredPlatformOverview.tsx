@@ -5,6 +5,7 @@ import {
   registeredPlatformByServiceInstanceIdFragment,
 } from '@/components/registration/register/register.graphql';
 import { PlatformInformation } from '@/components/service/registration/PlatformInformation';
+import { PlatformMetrics } from '@/components/service/registration/PlatformMetrics';
 import { RegisteredPlatformHeader } from '@/components/service/registration/RegisteredPlatformHeader';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
 import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
@@ -98,6 +99,12 @@ export const RegisteredPlatformOverview = ({
       <RegisteredPlatformHeader
         registeredPlatform={queryData.registeredPlatform}
       />
+      {showSaasPlatformData && (
+        <PlatformMetrics
+          metrics={saasPlatformData?.registeredSaasPlatformData?.metrics}
+          isLoading={isSaasPlatformDataPending}
+        />
+      )}
       <PlatformInformation
         registeredPlatform={queryData.registeredPlatform}
         showMetadata={showSaasPlatformData}

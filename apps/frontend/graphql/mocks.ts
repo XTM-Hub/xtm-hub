@@ -1799,8 +1799,8 @@ export const mockSaasPlatformMetricPoint = (overrides?: Partial<SaasPlatformMetr
     relationshipsToOmit.add('SaasPlatformMetricPoint');
     return {
         __typename: 'SaasPlatformMetricPoint',
-        t: overrides && overrides.hasOwnProperty('t') ? overrides.t! : '2021-03-14T22:10:20.451Z',
-        v: overrides && overrides.hasOwnProperty('v') ? overrides.v! : 7.6,
+        timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : '2021-09-06T07:33:53.176Z',
+        value: overrides && overrides.hasOwnProperty('value') ? overrides.value! : 8.5,
     };
 };
 
@@ -1809,7 +1809,7 @@ export const mockSaasPlatformMetricSeries = (overrides?: Partial<SaasPlatformMet
     relationshipsToOmit.add('SaasPlatformMetricSeries');
     return {
         __typename: 'SaasPlatformMetricSeries',
-        metric_type: overrides && overrides.hasOwnProperty('metric_type') ? overrides.metric_type! : 'arma',
+        metric_type: overrides && overrides.hasOwnProperty('metric_type') ? overrides.metric_type! : MetricType.EsUsedSize,
         points: overrides && overrides.hasOwnProperty('points') ? overrides.points! : [relationshipsToOmit.has('SaasPlatformMetricPoint') ? {} as SaasPlatformMetricPoint : mockSaasPlatformMetricPoint({}, relationshipsToOmit)],
     };
 };
@@ -1820,7 +1820,7 @@ export const mockSaasPlatformMetrics = (overrides?: Partial<SaasPlatformMetrics>
     return {
         __typename: 'SaasPlatformMetrics',
         end: overrides && overrides.hasOwnProperty('end') ? overrides.end! : '2021-07-26T20:00:02.800Z',
-        resolution: overrides && overrides.hasOwnProperty('resolution') ? overrides.resolution! : 'vitae',
+        resolution: overrides && overrides.hasOwnProperty('resolution') ? overrides.resolution! : SaasPlatformResolution.Day,
         series: overrides && overrides.hasOwnProperty('series') ? overrides.series! : [relationshipsToOmit.has('SaasPlatformMetricSeries') ? {} as SaasPlatformMetricSeries : mockSaasPlatformMetricSeries({}, relationshipsToOmit)],
         start: overrides && overrides.hasOwnProperty('start') ? overrides.start! : '2021-03-10T22:36:33.605Z',
     };

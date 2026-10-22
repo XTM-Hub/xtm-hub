@@ -163,6 +163,35 @@ describe('RegisteredPlatformOverview', () => {
     expect(screen.getByText(HOSTNAME)).toBeInTheDocument();
   });
 
+  it('should display the platform metrics of a SaaS platform', async () => {
+    // Given
+    vi.mocked(useIsFeatureEnabled).mockReturnValue(true);
+
+    // When
+    await renderOverview(saasPlatform);
+
+    // Then
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Register.Metrics.Title' })
+    ).toBeInTheDocument();
+  });
+
+  it('should not display the platform metrics when the SaaS platform data is hidden', async () => {
+    // Given SAAS_METRICS is disabled
+    vi.mocked(useIsFeatureEnabled).mockReturnValue(false);
+
+    // When
+    await renderOverview(saasPlatform);
+
+    // Then
+    expect(
+      screen.queryByRole('heading', {
+        level: 2,
+        name: 'Register.Metrics.Title',
+      })
+    ).not.toBeInTheDocument();
+  });
+
   it('should neither query nor display the SaaS subscription metadata when SAAS_METRICS is disabled', async () => {
     // Given SAAS_METRICS is disabled
     vi.mocked(useIsFeatureEnabled).mockReturnValue(false);

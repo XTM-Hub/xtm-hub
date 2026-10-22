@@ -54,7 +54,7 @@ describe('product information helper', () => {
       // Then
       expect(callSpy).toHaveBeenCalledExactlyOnceWith({
         platform_id: platformId,
-        include_metrics: 30,
+        include_metrics: 90,
       });
     });
 
@@ -208,8 +208,8 @@ describe('product information helper', () => {
           {
             metric_type: 'sla_availability',
             points: [
-              { t: '2026-09-22T09:00:00.000Z', v: 1 },
-              { t: '2026-09-22T10:00:00.000Z', v: 0.5 },
+              { timestamp: '2026-09-22T09:00:00.000Z', value: 1 },
+              { timestamp: '2026-09-22T10:00:00.000Z', value: 0.5 },
             ],
           },
         ],
@@ -256,6 +256,7 @@ describe('product information helper', () => {
         ${'a missing end'}           | ${{ end: undefined }}
         ${'an empty resolution'}     | ${{ resolution: '' }}
         ${'a non-string resolution'} | ${{ resolution: 3600 }}
+        ${'an unknown resolution'}   | ${{ resolution: 'minute' }}
       `(
         'should return null metrics and warn when they have $case',
         async ({ fields }) => {
@@ -297,7 +298,7 @@ describe('product information helper', () => {
         expect(data?.metrics).toEqual({ ...parsedMetrics, series: [] });
       });
 
-      it('should drop the series without a metric type and keep a series without valid points empty', async () => {
+      it('should drop the series without a known metric type and keep a series without valid points empty', async () => {
         // Given
         mockSaasManagerBody({
           ...fullMetadata,
@@ -307,7 +308,8 @@ describe('product information helper', () => {
               { metric_type: '', points: metrics.series[0].points },
               { points: metrics.series[0].points },
               'sla_availability',
-              { metric_type: 'cpu_usage', points: 'none' },
+              { metric_type: 'cpu_usage', points: metrics.series[0].points },
+              { metric_type: 's3_used_size', points: 'none' },
             ],
           },
         });
@@ -320,7 +322,7 @@ describe('product information helper', () => {
 
         // Then
         expect(data?.metrics?.series).toEqual([
-          { metric_type: 'cpu_usage', points: [] },
+          { metric_type: 's3_used_size', points: [] },
         ]);
       });
 
@@ -357,9 +359,9 @@ describe('product information helper', () => {
           {
             metric_type: 'sla_availability',
             points: [
-              { t: '2026-09-22T09:00:00.000Z', v: null },
-              { t: '2026-09-22T10:00:00.000Z', v: null },
-              { t: '2026-09-22T11:00:00.000Z', v: null },
+              { timestamp: '2026-09-22T09:00:00.000Z', value: null },
+              { timestamp: '2026-09-22T10:00:00.000Z', value: null },
+              { timestamp: '2026-09-22T11:00:00.000Z', value: null },
             ],
           },
         ]);

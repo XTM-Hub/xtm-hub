@@ -14,8 +14,8 @@ query RegisteredSaasPlatformData($input: RegisteredPlatformInput!) {
       series {
         metric_type
         points {
-          t
-          v
+          timestamp
+          value
         }
       }
     }

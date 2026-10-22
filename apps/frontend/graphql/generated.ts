@@ -1058,6 +1058,13 @@ export type MergeEvent = Node & {
   target: Scalars['ID']['output'];
 };
 
+export enum MetricType {
+  EsUsedSize = 'es_used_size',
+  S3UsedSize = 's3_used_size',
+  SlaAvailability = 'sla_availability',
+  SlaResponseTime = 'sla_response_time'
+}
+
 export type Mutation = {
   __typename?: 'Mutation';
   acceptPendingUserInOrganization: Maybe<User>;
@@ -2586,23 +2593,28 @@ export type SaasPlatformMetadata = {
 
 export type SaasPlatformMetricPoint = {
   __typename?: 'SaasPlatformMetricPoint';
-  t: Scalars['Date']['output'];
-  v: Maybe<Scalars['Float']['output']>;
+  timestamp: Scalars['Date']['output'];
+  value: Maybe<Scalars['Float']['output']>;
 };
 
 export type SaasPlatformMetricSeries = {
   __typename?: 'SaasPlatformMetricSeries';
-  metric_type: Scalars['String']['output'];
+  metric_type: MetricType;
   points: Array<SaasPlatformMetricPoint>;
 };
 
 export type SaasPlatformMetrics = {
   __typename?: 'SaasPlatformMetrics';
   end: Scalars['Date']['output'];
-  resolution: Scalars['String']['output'];
+  resolution: SaasPlatformResolution;
   series: Array<SaasPlatformMetricSeries>;
   start: Scalars['Date']['output'];
 };
+
+export enum SaasPlatformResolution {
+  Day = 'day',
+  Hour = 'hour'
+}
 
 export type SendTelemetryMutation = {
   __typename?: 'SendTelemetryMutation';
@@ -3723,7 +3735,7 @@ export type RegisteredSaasPlatformDataQueryVariables = Exact<{
 }>;
 
 
-export type RegisteredSaasPlatformDataQuery = { __typename?: 'Query', registeredSaasPlatformData: { __typename?: 'SaasPlatformData', metadata: { __typename?: 'SaasPlatformMetadata', hostname: string | null, plan: string | null, start_date: any | null, end_date: any | null, region: string | null }, metrics: { __typename?: 'SaasPlatformMetrics', start: any, end: any, resolution: string, series: Array<{ __typename?: 'SaasPlatformMetricSeries', metric_type: string, points: Array<{ __typename?: 'SaasPlatformMetricPoint', t: any, v: number | null }> }> } | null } | null };
+export type RegisteredSaasPlatformDataQuery = { __typename?: 'Query', registeredSaasPlatformData: { __typename?: 'SaasPlatformData', metadata: { __typename?: 'SaasPlatformMetadata', hostname: string | null, plan: string | null, start_date: any | null, end_date: any | null, region: string | null }, metrics: { __typename?: 'SaasPlatformMetrics', start: any, end: any, resolution: SaasPlatformResolution, series: Array<{ __typename?: 'SaasPlatformMetricSeries', metric_type: MetricType, points: Array<{ __typename?: 'SaasPlatformMetricPoint', timestamp: any, value: number | null }> }> } | null } | null };
 
 export type RegisteredPlatformsListQueryVariables = Exact<{
   input: RegisteredPlatformsInput;
@@ -6105,8 +6117,8 @@ export const RegisteredSaasPlatformDataDocument = `
       series {
         metric_type
         points {
-          t
-          v
+          timestamp
+          value
         }
       }
     }

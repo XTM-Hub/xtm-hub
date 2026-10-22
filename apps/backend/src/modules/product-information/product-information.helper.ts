@@ -1,15 +1,29 @@
 import {
+  MetricType,
   SaasPlatformData,
   SaasPlatformMetadata,
   SaasPlatformMetricPoint,
   SaasPlatformMetrics,
   SaasPlatformMetricSeries,
+  SaasPlatformResolution,
 } from '../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
 import { logApp } from '../../utils/app-logger.util';
 
-const SAAS_PLATFORM_METRICS_DAYS = 30;
+const SAAS_PLATFORM_METRICS_DAYS = 90;
+
+const METRIC_TYPES: ReadonlySet<string> = new Set(Object.values(MetricType));
+
+const isMetricType = (value: unknown): value is MetricType =>
+  typeof value === 'string' && METRIC_TYPES.has(value);
+
+const RESOLUTIONS: ReadonlySet<string> = new Set(
+  Object.values(SaasPlatformResolution)
+);
+
+const isResolution = (value: unknown): value is SaasPlatformResolution =>
+  typeof value === 'string' && RESOLUTIONS.has(value);
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -51,19 +65,19 @@ const parseMetricPoint = (point: unknown): SaasPlatformMetricPoint[] => {
   if (!isRecord(point)) {
     return [];
   }
-  const t = toIsoDate(point.t);
-  if (t === null) {
+  // The SaaS Manager sends t and v: the Hub exposes them as timestamp and value.
+  const timestamp = toIsoDate(point.t);
+  if (timestamp === null) {
     return [];
   }
-  return [{ t, v: typeof point.v === 'number' ? point.v : null }];
+  const value =
+    typeof point.v === 'number' && Number.isFinite(point.v) ? point.v : null;
+  return [{ timestamp, value }];
 };
 
 const parseMetricSeries = (series: unknown): SaasPlatformMetricSeries[] => {
-  if (
-    !isRecord(series) ||
-    typeof series.metric_type !== 'string' ||
-    series.metric_type === ''
-  ) {
+  // GraphQL rejects a value outside the enum, so a metric type the Hub does not know yet is left out.
+  if (!isRecord(series) || !isMetricType(series.metric_type)) {
     return [];
   }
   return [
@@ -85,12 +99,8 @@ const parseSaasPlatformMetrics = (
   const start = toIsoDate(metrics.start);
   const end = toIsoDate(metrics.end);
   const resolution = metrics.resolution;
-  if (
-    start === null ||
-    end === null ||
-    typeof resolution !== 'string' ||
-    resolution === ''
-  ) {
+  // GraphQL rejects a value outside the enum: without a known resolution, the points cannot be read.
+  if (start === null || end === null || !isResolution(resolution)) {
     logApp.warn('The SaaS Manager returned incomplete platform metrics');
     return null;
   }

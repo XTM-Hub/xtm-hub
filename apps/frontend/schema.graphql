@@ -1253,18 +1253,30 @@ type SaasPlatformMetadata {
 type SaasPlatformMetrics {
   start: Date!
   end: Date!
-  resolution: String!
+  resolution: SaasPlatformResolution!
   series: [SaasPlatformMetricSeries!]!
 }
 
 type SaasPlatformMetricSeries {
-  metric_type: String!
+  metric_type: MetricType!
   points: [SaasPlatformMetricPoint!]!
 }
 
 type SaasPlatformMetricPoint {
-  t: Date!
-  v: Float
+  timestamp: Date!
+  value: Float
+}
+
+enum MetricType {
+  sla_availability
+  sla_response_time
+  es_used_size
+  s3_used_size
+}
+
+enum SaasPlatformResolution {
+  hour
+  day
 }
 
 enum PlatformConfigurationStatus {

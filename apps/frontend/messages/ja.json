@@ -983,6 +983,16 @@
       "PlatformVersion": "プラットフォームのバージョン"
     },
     "Metrics": {
+      "Title": "ストレージ使用量",
+      "Unavailable": "現在、このメトリクスは利用できません",
+      "Database": {
+        "Title": "データベース",
+        "Subtitle": "知識、関係性、履歴、ログ"
+      },
+      "FileStorage": {
+        "Title": "ファイルの保存",
+        "Subtitle": "インポートされたファイル、レポート、添付ファイル"
+      },
       "Metadata": {
         "Hostname": "ホスト名",
         "CopyHostname": "ホスト名をコピー",
@@ -2413,6 +2423,9 @@
       "default": "デフォルト",
       "thread": "Thread"
     }
+  },
+  "TimeSeriesBarChart": {
+    "Peak": "ピーク"
   },
   "EditableText": {
     "DialogTitle": "コンテンツを編集",
