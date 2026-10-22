@@ -1,5 +1,6 @@
 type SaasPlatformData {
   metadata: SaasPlatformMetadata!
+  metrics: SaasPlatformMetrics
 }
 
 type SaasPlatformMetadata {
@@ -8,6 +9,23 @@ type SaasPlatformMetadata {
   start_date: Date
   end_date: Date
   region: String
+}
+
+type SaasPlatformMetrics {
+  start: Date!
+  end: Date!
+  resolution: String!
+  series: [SaasPlatformMetricSeries!]!
+}
+
+type SaasPlatformMetricSeries {
+  metric_type: String!
+  points: [SaasPlatformMetricPoint!]!
+}
+
+type SaasPlatformMetricPoint {
+  t: Date!
+  v: Float
 }
 
 type Query {

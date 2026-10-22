@@ -1777,6 +1777,7 @@ export const mockSaasPlatformData = (overrides?: Partial<SaasPlatformData>, _rel
     return {
         __typename: 'SaasPlatformData',
         metadata: overrides && overrides.hasOwnProperty('metadata') ? overrides.metadata! : relationshipsToOmit.has('SaasPlatformMetadata') ? {} as SaasPlatformMetadata : mockSaasPlatformMetadata({}, relationshipsToOmit),
+        metrics: overrides && overrides.hasOwnProperty('metrics') ? overrides.metrics! : relationshipsToOmit.has('SaasPlatformMetrics') ? {} as SaasPlatformMetrics : mockSaasPlatformMetrics({}, relationshipsToOmit),
     };
 };
 
@@ -1790,6 +1791,38 @@ export const mockSaasPlatformMetadata = (overrides?: Partial<SaasPlatformMetadat
         plan: overrides && overrides.hasOwnProperty('plan') ? overrides.plan! : 'vester',
         region: overrides && overrides.hasOwnProperty('region') ? overrides.region! : 'quia',
         start_date: overrides && overrides.hasOwnProperty('start_date') ? overrides.start_date! : '2021-09-07T04:38:52.386Z',
+    };
+};
+
+export const mockSaasPlatformMetricPoint = (overrides?: Partial<SaasPlatformMetricPoint>, _relationshipsToOmit: Set<string> = new Set()): { __typename: 'SaasPlatformMetricPoint' } & SaasPlatformMetricPoint => {
+    const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+    relationshipsToOmit.add('SaasPlatformMetricPoint');
+    return {
+        __typename: 'SaasPlatformMetricPoint',
+        t: overrides && overrides.hasOwnProperty('t') ? overrides.t! : '2021-03-14T22:10:20.451Z',
+        v: overrides && overrides.hasOwnProperty('v') ? overrides.v! : 7.6,
+    };
+};
+
+export const mockSaasPlatformMetricSeries = (overrides?: Partial<SaasPlatformMetricSeries>, _relationshipsToOmit: Set<string> = new Set()): { __typename: 'SaasPlatformMetricSeries' } & SaasPlatformMetricSeries => {
+    const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+    relationshipsToOmit.add('SaasPlatformMetricSeries');
+    return {
+        __typename: 'SaasPlatformMetricSeries',
+        metric_type: overrides && overrides.hasOwnProperty('metric_type') ? overrides.metric_type! : 'arma',
+        points: overrides && overrides.hasOwnProperty('points') ? overrides.points! : [relationshipsToOmit.has('SaasPlatformMetricPoint') ? {} as SaasPlatformMetricPoint : mockSaasPlatformMetricPoint({}, relationshipsToOmit)],
+    };
+};
+
+export const mockSaasPlatformMetrics = (overrides?: Partial<SaasPlatformMetrics>, _relationshipsToOmit: Set<string> = new Set()): { __typename: 'SaasPlatformMetrics' } & SaasPlatformMetrics => {
+    const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+    relationshipsToOmit.add('SaasPlatformMetrics');
+    return {
+        __typename: 'SaasPlatformMetrics',
+        end: overrides && overrides.hasOwnProperty('end') ? overrides.end! : '2021-07-26T20:00:02.800Z',
+        resolution: overrides && overrides.hasOwnProperty('resolution') ? overrides.resolution! : 'vitae',
+        series: overrides && overrides.hasOwnProperty('series') ? overrides.series! : [relationshipsToOmit.has('SaasPlatformMetricSeries') ? {} as SaasPlatformMetricSeries : mockSaasPlatformMetricSeries({}, relationshipsToOmit)],
+        start: overrides && overrides.hasOwnProperty('start') ? overrides.start! : '2021-03-10T22:36:33.605Z',
     };
 };
 

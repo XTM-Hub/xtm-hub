@@ -10,6 +10,7 @@ const SAAS_MANAGER_INSTANCE_PATH = '/api/hub/instance/';
 interface SaasManagerRequest {
   method?: 'GET' | 'HEAD';
   platform_id?: string;
+  include_metrics?: number;
 }
 
 // Configuration is immutable at runtime, so one provider (and one token cache) serves the whole process.
@@ -46,6 +47,7 @@ export const SaasManagerClient = {
   async callInstanceApi({
     method = 'GET',
     platform_id,
+    include_metrics,
   }: SaasManagerRequest = {}): Promise<Response> {
     const baseUrl = config.get<string | null>('saas_manager.url');
     if (!baseUrl) {
@@ -56,6 +58,9 @@ export const SaasManagerClient = {
       ? `${SAAS_MANAGER_INSTANCE_PATH}${encodeURIComponent(platform_id)}/`
       : SAAS_MANAGER_INSTANCE_PATH;
     const url = new URL(path, baseUrl);
+    if (include_metrics !== undefined) {
+      url.searchParams.set('include_metrics', String(include_metrics));
+    }
 
     const clientId = config.get<string | null>('saas_manager.client_id');
     if (!clientId) {

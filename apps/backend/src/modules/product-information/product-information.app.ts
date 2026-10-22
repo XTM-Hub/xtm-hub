@@ -3,7 +3,8 @@ import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { RegistrationDomain } from '../registration/registration.domain';
 import { ProductInformationHelper } from './product-information.helper';
 
-// Hostname, plan, dates and region rarely change: a short cache keeps page refreshes from reaching the SaaS Manager.
+// The metadata rarely changes and the metrics are aggregated by the hour: a short cache keeps page refreshes from
+// reaching the SaaS Manager.
 const SAAS_PLATFORM_DATA_CACHE_TTL_MS = 60_000;
 
 interface CachedSaasPlatformData {
