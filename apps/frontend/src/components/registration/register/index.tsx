@@ -25,8 +25,9 @@ import {
 import {
   PlatformIdentifier,
   PlatformRegistrationStatus,
-  useSuspenseUserOrganizationsQuery,
+  useUserOrganizationsQuery,
 } from '@graphql/generated';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import {
   ReactNode,
   useCallback,
@@ -104,8 +105,10 @@ export const Register = ({
     );
 
   // Suspends like the rest of the page until the organizations are loaded.
-  const { data: userOrganizationsQueryData } =
-    useSuspenseUserOrganizationsQuery(portalGraphqlClient);
+  const { data: userOrganizationsQueryData } = useSuspenseQuery({
+    queryKey: useUserOrganizationsQuery.getKey(),
+    queryFn: useUserOrganizationsQuery.fetcher(portalGraphqlClient),
+  });
 
   const isPlatformRegistered =
     useFragment<registerIsPlatformRegisteredFragment$key>(

@@ -21,7 +21,6 @@ const config: CodegenConfig = {
         exposeMutationKeys: true,
         exposeFetcher: true,
         addInfiniteQuery: true,
-        addSuspenseQuery: true,
         reactQueryVersion: 5,
         avoidOptionals: true,
       },

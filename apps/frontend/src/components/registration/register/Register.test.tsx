@@ -61,20 +61,17 @@ vi.mock('react-relay', async (importOriginal) => ({
   ],
 }));
 
-// Suspends like the generated hook, on a fetch the tests control.
+// The component suspends on the real query key, with a fetch the tests control.
 vi.mock('@graphql/generated', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@graphql/generated')>();
-  const { useSuspenseQuery } = await import('@tanstack/react-query');
-  return {
-    ...actual,
-    useSuspenseUserOrganizationsQuery: () =>
-      useSuspenseQuery({
-        queryKey: actual.useSuspenseUserOrganizationsQuery.getKey(),
-        queryFn: () =>
-          testState.fetchUserOrganizations?.() ??
-          Promise.resolve({ userOrganizations: testState.userOrganizations }),
-      }),
-  };
+  const { mockGeneratedQueryHooks } =
+    await import('@/utils/test/mock-generated-query');
+  return mockGeneratedQueryHooks(importOriginal, {
+    useUserOrganizationsQuery: Object.assign(vi.fn(), {
+      fetcher: () => () =>
+        testState.fetchUserOrganizations?.() ??
+        Promise.resolve({ userOrganizations: testState.userOrganizations }),
+    }),
+  });
 });
 
 vi.mock('@/components/Loader', () => ({
