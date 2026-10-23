@@ -44,6 +44,7 @@ const SELECTED_ORGANIZATION_ID = 'organization-filigran';
 const SELECTED_ORGANIZATION_NAME = 'Filigran';
 const UPLOADER_ORGANIZATION_ID = 'organization-acme';
 const UPLOADER_ORGANIZATION_NAME = 'Acme Corporation';
+const RENAMED_ORGANIZATION_NAME = 'Acme Industries';
 const FIELD_LABEL = 'OrganizationInServiceAction.Organization';
 
 // The user the server loaded into the portal context.
@@ -67,6 +68,28 @@ const PORTAL_ME: Partial<meContext_fragment$data> = {
       personal_space: false,
     },
   ],
+};
+
+const ME_ORGANIZATIONS: MeOrganizationsQuery = {
+  me: {
+    id: 'user-1',
+    selected_organization_id: SELECTED_ORGANIZATION_ID,
+    organizations: PORTAL_ME.organizations ?? [],
+  },
+};
+
+const RENAMED_ME_ORGANIZATIONS: MeOrganizationsQuery = {
+  me: {
+    id: 'user-1',
+    selected_organization_id: SELECTED_ORGANIZATION_ID,
+    organizations: [
+      {
+        id: UPLOADER_ORGANIZATION_ID,
+        name: RENAMED_ORGANIZATION_NAME,
+        personal_space: false,
+      },
+    ],
+  },
 };
 
 const DOCUMENT = {
@@ -112,6 +135,7 @@ describe('ServiceFormUploaderOrganizationIdField', () => {
     mocks.useMeOrganizationsQuery.mockImplementation(
       useMeOrganizationsQueryWithMockedFetch
     );
+    mocks.fetchMeOrganizations.mockResolvedValue(ME_ORGANIZATIONS);
   });
 
   afterEach(() => {
@@ -159,9 +183,12 @@ describe('ServiceFormUploaderOrganizationIdField', () => {
     }
   );
 
-  it('should not query the organizations when it mounts or the window regains focus', () => {
+  it('should query the organizations once when it mounts and not when the window regains focus', async () => {
     // Given
-    renderField(DOCUMENT);
+    mocks.fetchMeOrganizations.mockResolvedValue(RENAMED_ME_ORGANIZATIONS);
+    const { user } = renderField(DOCUMENT);
+    await user.click(getOrganizationSelect());
+    await screen.findByRole('option', { name: RENAMED_ORGANIZATION_NAME });
 
     // When
     act(() => {
@@ -170,9 +197,6 @@ describe('ServiceFormUploaderOrganizationIdField', () => {
     });
 
     // Then
-    expect(getOrganizationSelect()).toHaveTextContent(
-      UPLOADER_ORGANIZATION_NAME
-    );
-    expect(mocks.fetchMeOrganizations).not.toHaveBeenCalled();
+    expect(mocks.fetchMeOrganizations).toHaveBeenCalledOnce();
   });
 });

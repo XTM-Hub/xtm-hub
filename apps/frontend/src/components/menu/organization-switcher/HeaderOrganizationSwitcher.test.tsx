@@ -5,6 +5,7 @@ import type { meContext_fragment$data } from '@generated/meContext_fragment.grap
 import type { MeOrganizationsQuery } from '@graphql/generated';
 import {
   focusManager,
+  useIsFetching,
   useQuery,
   useQueryClient,
   type UseQueryOptions,
@@ -69,6 +70,13 @@ const PORTAL_ME: Partial<meContext_fragment$data> = {
   selected_organization_id: SELECTED_ORGANIZATION_ID,
   organizations: ORGANIZATIONS,
 };
+const ME_ORGANIZATIONS: MeOrganizationsQuery = {
+  me: {
+    id: 'user-1',
+    selected_organization_id: SELECTED_ORGANIZATION_ID,
+    organizations: ORGANIZATIONS,
+  },
+};
 const RENAMED_ME_ORGANIZATIONS: MeOrganizationsQuery = {
   me: {
     id: 'user-1',
@@ -90,11 +98,23 @@ const ReloadOrganizations = () => {
   );
 };
 
+// The switcher looks the same while the organizations load, this tells when
+// they are done.
+const OrganizationsLoading = () => {
+  const fetchingCount = useIsFetching({ queryKey: ['MeOrganizations'] });
+  return (
+    <output aria-label="Organizations loading">
+      {fetchingCount > 0 ? 'loading' : 'done'}
+    </output>
+  );
+};
+
 const renderSwitcher = () =>
   testRender(
     <>
       <HeaderOrganizationSwitcher />
       <ReloadOrganizations />
+      <OrganizationsLoading />
     </>,
     { me: PORTAL_ME }
   );
@@ -103,6 +123,13 @@ const getTrigger = () =>
   screen.getByRole('combobox', {
     name: 'OrganizationSwitcher.SelectOrganization',
   });
+
+const waitForOrganizationsLoaded = () =>
+  waitFor(() =>
+    expect(screen.getByLabelText('Organizations loading')).toHaveTextContent(
+      'done'
+    )
+  );
 
 describe('HeaderOrganizationSwitcher', () => {
   // A successful switch reloads the page, which jsdom cannot navigate to.
@@ -115,7 +142,7 @@ describe('HeaderOrganizationSwitcher', () => {
     mocks.useMeOrganizationsQuery.mockImplementation(
       useMeOrganizationsQueryWithMockedFetch
     );
-    mocks.fetchMeOrganizations.mockResolvedValue(RENAMED_ME_ORGANIZATIONS);
+    mocks.fetchMeOrganizations.mockResolvedValue(ME_ORGANIZATIONS);
   });
 
   afterEach(() => {
@@ -189,9 +216,21 @@ describe('HeaderOrganizationSwitcher', () => {
     await waitFor(() => expect(location.href).toBe('/app'));
   });
 
-  it('should not query the organizations when it mounts or the window regains focus', () => {
+  it('should show the organization selected in the portal context before the organizations are loaded', () => {
+    // Given
+    mocks.fetchMeOrganizations.mockReturnValue(new Promise(() => {}));
+
+    // When
+    renderSwitcher();
+
+    // Then
+    expect(getTrigger()).toHaveTextContent('Filigran Team');
+  });
+
+  it('should query the organizations once when it mounts and not when the window regains focus', async () => {
     // Given
     renderSwitcher();
+    await waitForOrganizationsLoaded();
 
     // When
     act(() => {
@@ -201,12 +240,27 @@ describe('HeaderOrganizationSwitcher', () => {
 
     // Then
     expect(getTrigger()).toHaveTextContent('Filigran Team');
-    expect(mocks.fetchMeOrganizations).not.toHaveBeenCalled();
+    expect(mocks.fetchMeOrganizations).toHaveBeenCalledOnce();
+  });
+
+  it('should keep showing the organizations of the portal context when loading them fails', async () => {
+    // Given
+    mocks.fetchMeOrganizations.mockRejectedValue(new Error('Network error'));
+
+    // When
+    renderSwitcher();
+    await waitForOrganizationsLoaded();
+
+    // Then
+    expect(mocks.fetchMeOrganizations).toHaveBeenCalledOnce();
+    expect(getTrigger()).toHaveTextContent('Filigran Team');
   });
 
   it('should show the organizations loaded again after an organization changes', async () => {
     // Given
     const { user } = renderSwitcher();
+    await waitForOrganizationsLoaded();
+    mocks.fetchMeOrganizations.mockResolvedValue(RENAMED_ME_ORGANIZATIONS);
 
     // When
     await user.click(screen.getByRole('button', { name: 'Reload' }));
@@ -219,23 +273,26 @@ describe('HeaderOrganizationSwitcher', () => {
 
   it('should keep showing the organizations when loading them again fails', async () => {
     // Given
-    mocks.fetchMeOrganizations.mockRejectedValue(new Error('Network error'));
     const { user } = renderSwitcher();
+    await waitForOrganizationsLoaded();
+    mocks.fetchMeOrganizations.mockRejectedValue(new Error('Network error'));
 
     // When
     await user.click(screen.getByRole('button', { name: 'Reload' }));
 
     // Then
     await waitFor(() =>
-      expect(mocks.fetchMeOrganizations).toHaveBeenCalledOnce()
+      expect(mocks.fetchMeOrganizations).toHaveBeenCalledTimes(2)
     );
+    await waitForOrganizationsLoaded();
     expect(getTrigger()).toHaveTextContent('Filigran Team');
   });
 
   it('should render nothing when the user is no longer returned', async () => {
     // Given
-    mocks.fetchMeOrganizations.mockResolvedValue({ me: null });
     const { user } = renderSwitcher();
+    await waitForOrganizationsLoaded();
+    mocks.fetchMeOrganizations.mockResolvedValue({ me: null });
 
     // When
     await user.click(screen.getByRole('button', { name: 'Reload' }));
