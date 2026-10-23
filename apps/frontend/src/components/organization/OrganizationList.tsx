@@ -27,7 +27,7 @@ import {
 } from '@graphql/generated';
 import { ColumnDef } from '@tanstack/react-table';
 import { usePathname, useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const OrganizationList = () => {
   const t = useTranslate();
@@ -132,6 +132,29 @@ const OrganizationList = () => {
       orderBy,
       searchTerm,
     });
+
+  // Deleting the last row of the last page leaves it empty once the list is fetched again.
+  useEffect(() => {
+    if (
+      !isLoading &&
+      !isError &&
+      !isPlaceholderData &&
+      organizations.length === 0 &&
+      pagination.pageIndex > 0
+    ) {
+      setPagination((previousPagination) => ({
+        ...previousPagination,
+        pageIndex: previousPagination.pageIndex - 1,
+      }));
+    }
+  }, [
+    isLoading,
+    isError,
+    isPlaceholderData,
+    organizations.length,
+    pagination.pageIndex,
+    setPagination,
+  ]);
 
   const resetToFirstPage = () =>
     setPagination((previousPagination) => ({

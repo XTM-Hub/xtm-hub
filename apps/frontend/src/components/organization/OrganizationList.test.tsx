@@ -635,6 +635,30 @@ describe('OrganizationList', () => {
       );
     });
 
+    it('should go back to the previous page when the deletion empties the last page', async () => {
+      // Given
+      const lastPageCount = DEFAULT_PAGE_SIZE + 1;
+      mockListResponses(
+        Promise.resolve(makeListResponse([makeOrganization()], lastPageCount)),
+        Promise.resolve(makeListResponse([makeOrganization()], lastPageCount)),
+        Promise.resolve(makeListResponse([], DEFAULT_PAGE_SIZE))
+      );
+      const { user } = await renderList();
+      await user.click(getNextPageButton());
+      await screen.findByText(ORGANIZATION_NAME);
+
+      // When
+      await deleteOrganization(user);
+
+      // Then
+      await waitFor(() =>
+        expect(lastQueriedVariables()).toMatchObject({
+          cursor: toCursor(DEFAULT_PAGE_SIZE, 0),
+        })
+      );
+      expect(mocks.listOrganizations).toHaveBeenCalledTimes(4);
+    });
+
     it('should disable the confirmation while the deletion is in progress', async () => {
       // Given
       mocks.state.outcome = 'pending';
