@@ -2,12 +2,19 @@ import { ServiceFormUploaderOrganizationIdField } from '@/components/service/for
 import { Form, FormField } from '@/components/ui/form';
 import testRender from '@/utils/test/test-render';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
+import type { meContext_fragment$data } from '@generated/meContext_fragment.graphql';
 import type { MeOrganizationsQuery } from '@graphql/generated';
-import { screen } from '@testing-library/react';
+import {
+  focusManager,
+  useQuery,
+  type UseQueryOptions,
+} from '@tanstack/react-query';
+import { act, screen } from '@testing-library/react';
 import { useForm } from 'react-hook-form';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  fetchMeOrganizations: vi.fn(),
   useMeOrganizationsQuery: vi.fn(),
 }));
 
@@ -19,6 +26,18 @@ vi.mock('@graphql/generated', async (importOriginal) => {
   });
 });
 
+// Keeps the options the field passes, only the request is mocked.
+const useMeOrganizationsQueryWithMockedFetch = (
+  _client: unknown,
+  _variables: unknown,
+  options?: Omit<UseQueryOptions<MeOrganizationsQuery>, 'queryKey'>
+) =>
+  useQuery({
+    ...options,
+    queryKey: ['MeOrganizations'],
+    queryFn: mocks.fetchMeOrganizations,
+  });
+
 const PERSONAL_ORGANIZATION_ID = 'organization-personal';
 const PERSONAL_ORGANIZATION_NAME = 'john.doe@filigran.io';
 const SELECTED_ORGANIZATION_ID = 'organization-filigran';
@@ -27,28 +46,27 @@ const UPLOADER_ORGANIZATION_ID = 'organization-acme';
 const UPLOADER_ORGANIZATION_NAME = 'Acme Corporation';
 const FIELD_LABEL = 'OrganizationInServiceAction.Organization';
 
-const ME_ORGANIZATIONS_RESPONSE: MeOrganizationsQuery = {
-  me: {
-    id: 'user-1',
-    selected_organization_id: SELECTED_ORGANIZATION_ID,
-    organizations: [
-      {
-        id: PERSONAL_ORGANIZATION_ID,
-        name: PERSONAL_ORGANIZATION_NAME,
-        personal_space: true,
-      },
-      {
-        id: SELECTED_ORGANIZATION_ID,
-        name: SELECTED_ORGANIZATION_NAME,
-        personal_space: false,
-      },
-      {
-        id: UPLOADER_ORGANIZATION_ID,
-        name: UPLOADER_ORGANIZATION_NAME,
-        personal_space: false,
-      },
-    ],
-  },
+// The user the server loaded into the portal context.
+const PORTAL_ME: Partial<meContext_fragment$data> = {
+  id: 'user-1',
+  selected_organization_id: SELECTED_ORGANIZATION_ID,
+  organizations: [
+    {
+      id: PERSONAL_ORGANIZATION_ID,
+      name: PERSONAL_ORGANIZATION_NAME,
+      personal_space: true,
+    },
+    {
+      id: SELECTED_ORGANIZATION_ID,
+      name: SELECTED_ORGANIZATION_NAME,
+      personal_space: false,
+    },
+    {
+      id: UPLOADER_ORGANIZATION_ID,
+      name: UPLOADER_ORGANIZATION_NAME,
+      personal_space: false,
+    },
+  ],
 };
 
 const DOCUMENT = {
@@ -58,20 +76,6 @@ const DOCUMENT = {
     personal_space: false,
   },
 } as documentItem_fragment$data;
-
-const mockLoadedOrganizations = () =>
-  mocks.useMeOrganizationsQuery.mockReturnValue({
-    data: ME_ORGANIZATIONS_RESPONSE,
-    isLoading: false,
-    isError: false,
-  });
-
-const mockLoadingOrganizations = () =>
-  mocks.useMeOrganizationsQuery.mockReturnValue({
-    data: undefined,
-    isLoading: true,
-    isError: false,
-  });
 
 const TestForm = ({ document }: { document?: documentItem_fragment$data }) => {
   const form = useForm<{ uploader_organization_id: string }>({
@@ -95,6 +99,9 @@ const TestForm = ({ document }: { document?: documentItem_fragment$data }) => {
   );
 };
 
+const renderField = (document?: documentItem_fragment$data) =>
+  testRender(<TestForm document={document} />, { me: PORTAL_ME });
+
 // The field is hidden on creation, so the hidden elements are queried too.
 const getOrganizationSelect = () =>
   screen.getByRole('combobox', { name: FIELD_LABEL, hidden: true });
@@ -102,12 +109,18 @@ const getOrganizationSelect = () =>
 describe('ServiceFormUploaderOrganizationIdField', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockLoadedOrganizations();
+    mocks.useMeOrganizationsQuery.mockImplementation(
+      useMeOrganizationsQueryWithMockedFetch
+    );
+  });
+
+  afterEach(() => {
+    focusManager.setFocused(undefined);
   });
 
   it("should list the user's organizations by name when the options are opened", async () => {
     // Given
-    const { user } = testRender(<TestForm document={DOCUMENT} />);
+    const { user } = renderField(DOCUMENT);
 
     // When
     await user.click(getOrganizationSelect());
@@ -137,7 +150,7 @@ describe('ServiceFormUploaderOrganizationIdField', () => {
     'should select $expectedOrganizationName by default when $context',
     ({ document, expectedOrganizationName }) => {
       // Given / When
-      testRender(<TestForm document={document} />);
+      renderField(document);
 
       // Then
       expect(getOrganizationSelect()).toHaveTextContent(
@@ -146,29 +159,20 @@ describe('ServiceFormUploaderOrganizationIdField', () => {
     }
   );
 
-  it('should disable the field when the organizations are loading', () => {
+  it('should not query the organizations when it mounts or the window regains focus', () => {
     // Given
-    mockLoadingOrganizations();
+    renderField(DOCUMENT);
 
     // When
-    testRender(<TestForm document={DOCUMENT} />);
-
-    // Then
-    expect(getOrganizationSelect()).toBeDisabled();
-  });
-
-  it('should select the selected organization by default when the organizations finish loading after the first render', () => {
-    // Given
-    mockLoadingOrganizations();
-    const { rerender } = testRender(<TestForm />);
-
-    // When
-    mockLoadedOrganizations();
-    rerender(<TestForm />);
+    act(() => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
 
     // Then
     expect(getOrganizationSelect()).toHaveTextContent(
-      SELECTED_ORGANIZATION_NAME
+      UPLOADER_ORGANIZATION_NAME
     );
+    expect(mocks.fetchMeOrganizations).not.toHaveBeenCalled();
   });
 });

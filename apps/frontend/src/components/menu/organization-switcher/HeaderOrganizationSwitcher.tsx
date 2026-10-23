@@ -1,6 +1,6 @@
 'use client';
 
-import { PortalContext } from '@/components/me/AppPortalContext';
+import { useMeOrganizations } from '@/hooks/use-me-organizations';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH } from '@/utils/path/constant';
@@ -11,27 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@filigran/design-system';
-import { meContext_fragment$data } from '@generated/meContext_fragment.graphql';
-import {
-  MeOrganizationsQuery,
-  useChangeSelectedOrganizationMutation,
-  useMeOrganizationsQuery,
-} from '@graphql/generated';
-import { useContext, useMemo } from 'react';
-
-const toMeOrganizationsQuery = (
-  me: meContext_fragment$data
-): MeOrganizationsQuery => ({
-  me: {
-    id: me.id,
-    selected_organization_id: me.selected_organization_id,
-    organizations: me.organizations.map(({ id, name, personal_space }) => ({
-      id,
-      name,
-      personal_space,
-    })),
-  },
-});
+import { useChangeSelectedOrganizationMutation } from '@graphql/generated';
+import { useMemo } from 'react';
 
 interface HeaderOrganizationSwitcherProps {
   fitContainer?: boolean;
@@ -41,16 +22,7 @@ const HeaderOrganizationSwitcher = ({
   fitContainer = false,
 }: HeaderOrganizationSwitcherProps) => {
   const t = useTranslate();
-  const { me: portalMe } = useContext(PortalContext);
-  // Seeded with the user loaded on the server, so the first render already
-  // shows the selection. Only an organization edit or deletion, which
-  // invalidates the query, loads it again; if that fails, the seeded
-  // organizations stay shown.
-  const { data } = useMeOrganizationsQuery(portalGraphqlClient, undefined, {
-    enabled: Boolean(portalMe),
-    initialData: portalMe ? () => toMeOrganizationsQuery(portalMe) : undefined,
-    staleTime: Infinity,
-  });
+  const { data } = useMeOrganizations();
   const me = data?.me;
 
   const { mutate: changeSelectedOrganization } =
