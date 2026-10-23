@@ -1,3 +1,4 @@
+import { invalidateOrganizationQueries } from '@/components/organization/organization-query-invalidation';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
@@ -6,7 +7,6 @@ import {
   OrganizationItemFragment,
   useOrganizationDeleteMutation,
 } from '@graphql/generated';
-import { organizationKeys } from '@graphql/organization/organization.keys';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface DeleteOrganizationProps {
@@ -31,9 +31,7 @@ export const DeleteOrganization = ({
           title: t('Utils.Success'),
           description: t('OrganizationActions.OrganizationDeleted'),
         });
-        await queryClient.invalidateQueries({
-          queryKey: organizationKeys.all(),
-        });
+        await invalidateOrganizationQueries(queryClient);
       },
       onError: (error: unknown) => {
         setOpen(false);

@@ -11,8 +11,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@filigran/design-system';
-import { useChangeSelectedOrganizationMutation } from '@graphql/generated';
+import { meContext_fragment$data } from '@generated/meContext_fragment.graphql';
+import {
+  MeOrganizationsQuery,
+  useChangeSelectedOrganizationMutation,
+  useMeOrganizationsQuery,
+} from '@graphql/generated';
 import { useContext, useMemo } from 'react';
+
+const toMeOrganizationsQuery = (
+  me: meContext_fragment$data
+): MeOrganizationsQuery => ({
+  me: {
+    id: me.id,
+    selected_organization_id: me.selected_organization_id,
+    organizations: me.organizations.map(({ id, name, personal_space }) => ({
+      id,
+      name,
+      personal_space,
+    })),
+  },
+});
 
 interface HeaderOrganizationSwitcherProps {
   fitContainer?: boolean;
@@ -21,31 +40,36 @@ interface HeaderOrganizationSwitcherProps {
 const HeaderOrganizationSwitcher = ({
   fitContainer = false,
 }: HeaderOrganizationSwitcherProps) => {
-  const { me } = useContext(PortalContext);
   const t = useTranslate();
+  const { me: portalMe } = useContext(PortalContext);
+  // Seeded with the user loaded on the server, so the first render already
+  // shows the selection. Only an organization edit or deletion, which
+  // invalidates the query, loads it again; if that fails, the seeded
+  // organizations stay shown.
+  const { data } = useMeOrganizationsQuery(portalGraphqlClient, undefined, {
+    enabled: Boolean(portalMe),
+    initialData: portalMe ? () => toMeOrganizationsQuery(portalMe) : undefined,
+    staleTime: Infinity,
+  });
+  const me = data?.me;
 
   const { mutate: changeSelectedOrganization } =
     useChangeSelectedOrganizationMutation(portalGraphqlClient);
 
+  const organizationOptions = useMemo(
+    () =>
+      (me?.organizations ?? []).map((organization) => ({
+        value: organization.id,
+        label: organization.personal_space
+          ? t('OrganizationSwitcher.PersonalSpace')
+          : organization.name,
+      })),
+    [me?.organizations, t]
+  );
+
   if (!me) {
     return null;
   }
-
-  const parsedOrganizations = useMemo(() => {
-    return me.organizations.map((org) => ({
-      ...org,
-      name: org.personal_space
-        ? t('OrganizationSwitcher.PersonalSpace')
-        : org.name,
-    }));
-  }, [me.organizations, t]);
-
-  const organizationOptions = useMemo(() => {
-    return parsedOrganizations.map((organization) => ({
-      value: organization.id,
-      label: organization.name,
-    }));
-  }, [parsedOrganizations]);
 
   const handleOnValueChange = (organizationId: string) => {
     if (!organizationId || organizationId === me.selected_organization_id) {

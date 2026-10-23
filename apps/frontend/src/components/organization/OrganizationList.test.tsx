@@ -1,8 +1,10 @@
+import HeaderOrganizationSwitcher from '@/components/menu/organization-switcher/HeaderOrganizationSwitcher';
 import OrganizationList from '@/components/organization/OrganizationList';
 import * as SnackbarStore from '@/components/ui/snackbar/snackbar-store';
 import { toCursor } from '@/hooks/use-table-pagination';
 import testRender from '@/utils/test/test-render';
 import {
+  type MeOrganizationsQuery,
   OrderingMode,
   type OrganizationItemFragment,
   OrganizationOrdering,
@@ -22,6 +24,7 @@ const NEW_ORGANIZATION_NAME = 'Acme Corporation';
 const NEW_DOMAIN = 'acme.com';
 const SEARCH_TERM = 'fili';
 const SERVER_ERROR = 'ORGANIZATION_NOT_FOUND';
+const PERSONAL_ORGANIZATION_ID = 'organization-personal';
 const DEFAULT_PAGE_SIZE = 50;
 const STORED_PAGE_SIZE = 10;
 const SEVERAL_PAGES_COUNT = DEFAULT_PAGE_SIZE * 2;
@@ -66,6 +69,8 @@ const mocks = vi.hoisted(() => {
     state,
     listOrganizations: vi.fn(),
     useOrganizationsListQuery: vi.fn(),
+    fetchMeOrganizations: vi.fn(),
+    useMeOrganizationsQuery: vi.fn(),
     createOrganization,
     editOrganization,
     deleteOrganization,
@@ -79,6 +84,7 @@ vi.mock('@graphql/generated', async (importOriginal) => {
   return {
     ...(await mockGeneratedQueryHooks(importOriginal, {
       useOrganizationsListQuery: mocks.useOrganizationsListQuery,
+      useMeOrganizationsQuery: mocks.useMeOrganizationsQuery,
     })),
     // The responses are built on mutate, once the fixtures below exist.
     useOrganizationCreateMutation: mocks.buildMutationHook(
@@ -134,6 +140,24 @@ const useListQueryWithMockedFetch = (
     queryKey: ['OrganizationsList', variables],
     queryFn: () => mocks.listOrganizations(variables),
   });
+
+// The header switcher reads the user's organizations on the same QueryClient.
+const useMeOrganizationsQueryWithMockedFetch = () =>
+  useQuery({
+    queryKey: ['MeOrganizations'],
+    queryFn: mocks.fetchMeOrganizations,
+  });
+
+const ME_ORGANIZATIONS_RESPONSE: MeOrganizationsQuery = {
+  me: {
+    id: 'user-1',
+    selected_organization_id: PERSONAL_ORGANIZATION_ID,
+    organizations: [
+      { id: PERSONAL_ORGANIZATION_ID, name: 'Personal', personal_space: true },
+      { id: ORGANIZATION_ID, name: ORGANIZATION_NAME, personal_space: false },
+    ],
+  },
+};
 
 const mockListResponses = (...responses: Promise<OrganizationsListQuery>[]) =>
   responses.forEach((response) =>
@@ -217,6 +241,20 @@ const deleteOrganization = async (user: User) => {
   await user.click(getDeleteConfirmButton(dialog));
 };
 
+const renderListWithHeaderSwitcher = async (): Promise<
+  ReturnType<typeof testRender>
+> => {
+  const rendered = testRender(
+    <>
+      <HeaderOrganizationSwitcher />
+      <OrganizationList />
+    </>
+  );
+  await screen.findByText(ORGANIZATION_NAME);
+  await screen.findByText('OrganizationSwitcher.PersonalSpace');
+  return rendered;
+};
+
 const MUTATION_CASES = [
   {
     action: 'creation',
@@ -246,6 +284,10 @@ describe('OrganizationList', () => {
     mocks.listOrganizations.mockResolvedValue(
       makeListResponse([makeOrganization()])
     );
+    mocks.useMeOrganizationsQuery.mockImplementation(
+      useMeOrganizationsQueryWithMockedFetch
+    );
+    mocks.fetchMeOrganizations.mockResolvedValue(ME_ORGANIZATIONS_RESPONSE);
     vi.spyOn(SnackbarStore, 'showSnackbar').mockImplementation(() => undefined);
   });
 
@@ -420,6 +462,25 @@ describe('OrganizationList', () => {
         // Then
         await waitFor(() =>
           expect(mocks.listOrganizations).toHaveBeenCalledTimes(2)
+        );
+      }
+    );
+
+    it.each([
+      { action: 'edition', perform: editOrganization },
+      { action: 'deletion', perform: deleteOrganization },
+    ])(
+      "should query the user's organizations again for the header switcher when the $action succeeds",
+      async ({ perform }) => {
+        // Given
+        const { user } = await renderListWithHeaderSwitcher();
+
+        // When
+        await perform(user);
+
+        // Then
+        await waitFor(() =>
+          expect(mocks.fetchMeOrganizations).toHaveBeenCalledTimes(2)
         );
       }
     );

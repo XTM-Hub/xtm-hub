@@ -3652,6 +3652,11 @@ export type MeOrganizationDomainsQueryVariables = Exact<{ [key: string]: never; 
 
 export type MeOrganizationDomainsQuery = { __typename?: 'Query', me: { __typename?: 'User', organizations: Array<{ __typename?: 'Organization', id: string, domains: Array<string> | null }> | null } | null };
 
+export type MeOrganizationsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MeOrganizationsQuery = { __typename?: 'Query', me: { __typename?: 'User', id: string, selected_organization_id: any | null, organizations: Array<{ __typename?: 'Organization', id: string, name: string, personal_space: boolean }> | null } | null };
+
 export type NewsFeedDeleteItemMutationVariables = Exact<{
   id: Scalars['NewsFeedItemId']['input'];
 }>;
@@ -6732,6 +6737,108 @@ export const useSuspenseInfiniteMeOrganizationDomainsQuery = <
 useSuspenseInfiniteMeOrganizationDomainsQuery.getKey = (variables?: MeOrganizationDomainsQueryVariables) => variables === undefined ? ['MeOrganizationDomains.infinite'] : ['MeOrganizationDomains.infinite', variables];
 useSuspenseInfiniteMeOrganizationDomainsQuery.getRootKey = () => ['MeOrganizationDomains.infinite'] as const;
 useMeOrganizationDomainsQuery.fetcher = (client: GraphQLClient, variables?: MeOrganizationDomainsQueryVariables, headers?: RequestInit['headers']) => fetcher<MeOrganizationDomainsQuery, MeOrganizationDomainsQueryVariables>(client, MeOrganizationDomainsDocument, variables, headers);
+
+export const MeOrganizationsDocument = `
+    query MeOrganizations {
+  me {
+    id
+    selected_organization_id
+    organizations {
+      id
+      name
+      personal_space
+    }
+  }
+}
+    `;
+
+export const useMeOrganizationsQuery = <
+      TData = MeOrganizationsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: MeOrganizationsQueryVariables,
+      options?: Omit<UseQueryOptions<MeOrganizationsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<MeOrganizationsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<MeOrganizationsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['MeOrganizations'] : ['MeOrganizations', variables],
+    queryFn: fetcher<MeOrganizationsQuery, MeOrganizationsQueryVariables>(client, MeOrganizationsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useMeOrganizationsQuery.getKey = (variables?: MeOrganizationsQueryVariables) => variables === undefined ? ['MeOrganizations'] : ['MeOrganizations', variables];
+useMeOrganizationsQuery.getRootKey = () => ['MeOrganizations'] as const;
+export const useSuspenseMeOrganizationsQuery = <
+      TData = MeOrganizationsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: MeOrganizationsQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<MeOrganizationsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<MeOrganizationsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<MeOrganizationsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['MeOrganizations'] : ['MeOrganizations', variables],
+    queryFn: fetcher<MeOrganizationsQuery, MeOrganizationsQueryVariables>(client, MeOrganizationsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseMeOrganizationsQuery.getKey = (variables?: MeOrganizationsQueryVariables) => variables === undefined ? ['MeOrganizations'] : ['MeOrganizations', variables];
+useSuspenseMeOrganizationsQuery.getRootKey = () => ['MeOrganizations'] as const;
+export const useInfiniteMeOrganizationsQuery = <
+      TData = InfiniteData<MeOrganizationsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: MeOrganizationsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<MeOrganizationsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<MeOrganizationsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<MeOrganizationsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['MeOrganizations.infinite'] : ['MeOrganizations.infinite', variables],
+      queryFn: (metaData) => fetcher<MeOrganizationsQuery, MeOrganizationsQueryVariables>(client, MeOrganizationsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteMeOrganizationsQuery.getKey = (variables?: MeOrganizationsQueryVariables) => variables === undefined ? ['MeOrganizations.infinite'] : ['MeOrganizations.infinite', variables];
+useInfiniteMeOrganizationsQuery.getRootKey = () => ['MeOrganizations.infinite'] as const;
+export const useSuspenseInfiniteMeOrganizationsQuery = <
+      TData = InfiniteData<MeOrganizationsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: MeOrganizationsQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<MeOrganizationsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<MeOrganizationsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<MeOrganizationsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['MeOrganizations.infinite'] : ['MeOrganizations.infinite', variables],
+      queryFn: (metaData) => fetcher<MeOrganizationsQuery, MeOrganizationsQueryVariables>(client, MeOrganizationsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteMeOrganizationsQuery.getKey = (variables?: MeOrganizationsQueryVariables) => variables === undefined ? ['MeOrganizations.infinite'] : ['MeOrganizations.infinite', variables];
+useSuspenseInfiniteMeOrganizationsQuery.getRootKey = () => ['MeOrganizations.infinite'] as const;
+useMeOrganizationsQuery.fetcher = (client: GraphQLClient, variables?: MeOrganizationsQueryVariables, headers?: RequestInit['headers']) => fetcher<MeOrganizationsQuery, MeOrganizationsQueryVariables>(client, MeOrganizationsDocument, variables, headers);
 
 export const NewsFeedDeleteItemDocument = `
     mutation NewsFeedDeleteItem($id: NewsFeedItemId!) {

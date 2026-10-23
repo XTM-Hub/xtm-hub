@@ -1,6 +1,7 @@
 import { OrganizationForm } from '@/components/organization/OrganizationForm';
 import { organizationFormSchema } from '@/components/organization/OrganizationForm.schema';
 import { syncEditedOrganizationToRelayStore } from '@/components/organization/organization-relay-store';
+import { invalidateOrganizationQueries } from '@/components/organization/organization-query-invalidation';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
@@ -9,7 +10,6 @@ import {
   OrganizationItemFragment,
   useOrganizationEditMutation,
 } from '@graphql/generated';
-import { organizationKeys } from '@graphql/organization/organization.keys';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRelayEnvironment } from 'react-relay';
 import { z } from 'zod';
@@ -47,9 +47,7 @@ export const EditOrganization = ({
             name: input.name,
           }),
         });
-        await queryClient.invalidateQueries({
-          queryKey: organizationKeys.all(),
-        });
+        await invalidateOrganizationQueries(queryClient);
       },
       onError: (error: unknown) => {
         const errorMessage =

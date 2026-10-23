@@ -11,11 +11,9 @@ const SYNCED_FIELDS = [
 ] as const satisfies readonly (keyof EditedOrganization)[];
 
 /**
- * The header organization switcher still reads the user's organizations
- * through the Relay `me` fragment. Editing through react-query no longer
- * normalizes the response into that store, so the record is updated by id
- * here, as the former Relay mutation did. Without it, the switcher keeps
- * showing the former name until the next full reload.
+ * The uploader organization field still lists the user's organizations by name
+ * from the Relay `me` fragment, which a react-query edit no longer updates:
+ * without this, it shows the former name until the next full reload.
  */
 export const syncEditedOrganizationToRelayStore = (
   environment: IEnvironment,
