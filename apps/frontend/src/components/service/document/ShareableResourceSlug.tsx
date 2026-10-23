@@ -64,6 +64,10 @@ const ShareableResourceSlug = ({
   );
   const incrementDownloadNumber = () =>
     setDocumentDownloadNumber((prev) => prev + 1);
+  const [documentShareNumber, setDocumentShareNumber] = useState(
+    documentData.share_number ?? 0
+  );
+  const incrementShareNumber = () => setDocumentShareNumber((prev) => prev + 1);
   const downloadUrl = `/document/get/${serviceInstanceId}/${documentData.id}?attach=1`;
 
   const shouldShowOneClickDeployComponent = useMemo(
@@ -107,6 +111,7 @@ const ShareableResourceSlug = ({
             <div className="flex gap-2 ml-auto">
               <ShareLinkButton
                 documentId={documentData.id}
+                onShare={incrementShareNumber}
                 url={`${settings!.base_url_front}/${PUBLIC_CYBERSECURITY_SOLUTIONS_PATH}/${documentData?.service_instance?.slug}/${documentData?.slug}`}
               />
               {shouldShowOneClickDeployComponent ? (
@@ -183,6 +188,7 @@ const ShareableResourceSlug = ({
           <ShareableResourceDetails
             documentData={documentData}
             downloadNumber={documentDownloadNumber}
+            shareNumber={documentShareNumber}
             filigranWebsiteUtm={getResourcePageFiligranWebsiteUtm(
               serviceInstance.service_definition?.identifier
             )}

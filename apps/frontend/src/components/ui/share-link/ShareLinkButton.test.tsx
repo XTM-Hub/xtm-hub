@@ -1,16 +1,21 @@
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
+import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
+import {
+  IncrementShareNumberDocumentMutation,
+  IncrementShareNumberDocumentMutationVariables,
+} from '@graphql/generated';
+import { mockDefaultDocument } from '@graphql/mocks';
 import { waitFor } from '@testing-library/react';
+import { graphql, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
-  mockCommitMutation,
   mockUpdateShareNumber,
   mockUsePublicPath,
   showSnackbarMock,
   copyOverride,
 } = vi.hoisted(() => ({
-  mockCommitMutation: vi.fn(),
   mockUpdateShareNumber: vi.fn(),
   mockUsePublicPath: vi.fn(),
   showSnackbarMock: vi.fn(),
@@ -19,10 +24,6 @@ const {
   },
 }));
 
-vi.mock('react-relay', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('react-relay')>()),
-  useMutation: () => [mockCommitMutation, false],
-}));
 vi.mock('@/components/ui/share-link/ShareLinkActions', () => ({
   updateShareNumber: mockUpdateShareNumber,
 }));
@@ -48,10 +49,32 @@ vi.mock('usehooks-ts', async (importOriginal) => {
 const SHAREABLE_URL = 'https://hub.test/share';
 const DOCUMENT_ID = 'document-1';
 const COPY_ERROR_MESSAGE = 'Clipboard denied';
+const GQL_OPERATION_INCREMENT_SHARE_NUMBER = 'IncrementShareNumberDocument';
+
+const mockIncrementShareNumber = (
+  respond: () => Response = () =>
+    HttpResponse.json<{ data: IncrementShareNumberDocumentMutation }>({
+      data: {
+        incrementShareNumberDocument: mockDefaultDocument({ share_number: 1 }),
+      },
+    })
+) => {
+  const capturedVariables: IncrementShareNumberDocumentMutationVariables[] = [];
+  mswServer.use(
+    graphql.mutation(GQL_OPERATION_INCREMENT_SHARE_NUMBER, ({ variables }) => {
+      capturedVariables.push(
+        variables as IncrementShareNumberDocumentMutationVariables
+      );
+      return respond();
+    })
+  );
+  return capturedVariables;
+};
 
 describe('ShareLinkButton', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUpdateShareNumber.mockResolvedValue(undefined);
     copyOverride.current = undefined;
   });
 
@@ -71,6 +94,7 @@ describe('ShareLinkButton', () => {
     }) => {
       // Given
       mockUsePublicPath.mockReturnValue(isPublicPath);
+      const capturedVariables = mockIncrementShareNumber();
       const { user, container } = testRender(
         <ShareLinkButton
           url={SHAREABLE_URL}
@@ -86,13 +110,100 @@ describe('ShareLinkButton', () => {
       // Then
       await waitFor(() => expect(copied).toHaveBeenCalledWith(SHAREABLE_URL));
       await waitFor(() =>
-        expect(mockCommitMutation).toHaveBeenCalledTimes(expectedClientCalls)
-      );
-      expect(mockUpdateShareNumber).toHaveBeenCalledTimes(expectedServerCalls);
-      await waitFor(() =>
         expect(showSnackbarMock).toHaveBeenCalledWith({
           severity: 'success',
           title: 'Service.ShareableResources.Copied',
+        })
+      );
+      await waitFor(() =>
+        expect(capturedVariables).toHaveLength(expectedClientCalls)
+      );
+      if (expectedClientCalls > 0) {
+        expect(capturedVariables[0]).toEqual({ documentId: DOCUMENT_ID });
+      }
+      expect(mockUpdateShareNumber).toHaveBeenCalledTimes(expectedServerCalls);
+    }
+  );
+
+  it.each`
+    isPublicPath
+    ${false}
+    ${true}
+  `(
+    'should notify the share once the counter is incremented (isPublicPath=$isPublicPath)',
+    async ({ isPublicPath }) => {
+      // Given
+      mockUsePublicPath.mockReturnValue(isPublicPath);
+      mockIncrementShareNumber();
+      const onShare = vi.fn();
+      const { user, container } = testRender(
+        <ShareLinkButton
+          url={SHAREABLE_URL}
+          documentId={DOCUMENT_ID}
+          onShare={onShare}
+        />
+      );
+
+      // When
+      await user.click(container.querySelector('button')!);
+
+      // Then
+      await waitFor(() => expect(onShare).toHaveBeenCalledTimes(1));
+    }
+  );
+
+  it('should not notify the share when the counter increment fails', async () => {
+    // Given
+    mockUsePublicPath.mockReturnValue(false);
+    const capturedVariables = mockIncrementShareNumber(() =>
+      HttpResponse.json({ errors: [{ message: 'NOT_FOUND' }] })
+    );
+    const onShare = vi.fn();
+    const { user, container } = testRender(
+      <ShareLinkButton
+        url={SHAREABLE_URL}
+        documentId={DOCUMENT_ID}
+        onShare={onShare}
+      />
+    );
+
+    // When
+    await user.click(container.querySelector('button')!);
+
+    // Then
+    await waitFor(() => expect(capturedVariables).toHaveLength(1));
+    expect(onShare).not.toHaveBeenCalled();
+  });
+
+  it.each`
+    isPublicPath
+    ${false}
+    ${true}
+  `(
+    'should display an error message when the share counter increment fails (isPublicPath=$isPublicPath)',
+    async ({ isPublicPath }) => {
+      // Given both the client mutation and the server action fail
+      mockUsePublicPath.mockReturnValue(isPublicPath);
+      mockIncrementShareNumber(() =>
+        HttpResponse.json({ errors: [{ message: 'NOT_FOUND' }] })
+      );
+      mockUpdateShareNumber.mockRejectedValue(new Error('NOT_FOUND'));
+      const { user, container } = testRender(
+        <ShareLinkButton
+          url={SHAREABLE_URL}
+          documentId={DOCUMENT_ID}
+        />
+      );
+
+      // When
+      await user.click(container.querySelector('button')!);
+
+      // Then
+      await waitFor(() =>
+        expect(showSnackbarMock).toHaveBeenCalledWith({
+          severity: 'error',
+          title: 'Utils.Error',
+          description: 'Error.AnErrorOccured',
         })
       );
     }
@@ -101,6 +212,7 @@ describe('ShareLinkButton', () => {
   it('should raise an error message when the copy is rejected', async () => {
     // Given
     mockUsePublicPath.mockReturnValue(false);
+    const capturedVariables = mockIncrementShareNumber();
     copyOverride.current = vi
       .fn()
       .mockRejectedValue(new Error(COPY_ERROR_MESSAGE));
@@ -122,6 +234,6 @@ describe('ShareLinkButton', () => {
         description: COPY_ERROR_MESSAGE,
       })
     );
-    expect(mockCommitMutation).not.toHaveBeenCalled();
+    expect(capturedVariables).toHaveLength(0);
   });
 });

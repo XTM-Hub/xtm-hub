@@ -1,11 +1,17 @@
 import ShareableResourceSlug from '@/components/service/document/ShareableResourceSlug';
+import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import { settingsContext_fragment$data } from '@generated/settingsContext_fragment.graphql';
-import { IntegrationType } from '@graphql/generated';
-import { screen } from '@testing-library/react';
+import {
+  IncrementShareNumberDocumentMutation,
+  IntegrationType,
+} from '@graphql/generated';
+import { mockDefaultDocument } from '@graphql/mocks';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { graphql, HttpResponse } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////// Mock hooks /////////////////////////////////////////////////////
@@ -149,4 +155,53 @@ describe('Component: ShareableResourceSlug - Download', () => {
       expect(downloadCount).toHaveTextContent(/^2$/);
     }
   );
+});
+
+describe('Component: ShareableResourceSlug - Share', () => {
+  it('should increment the share count by one once the share link is copied', async () => {
+    // Given a resource shared once
+    mswServer.use(
+      graphql.mutation<IncrementShareNumberDocumentMutation>(
+        'IncrementShareNumberDocument',
+        () =>
+          HttpResponse.json({
+            data: {
+              incrementShareNumberDocument: mockDefaultDocument({
+                share_number: 2,
+              }),
+            },
+          })
+      )
+    );
+    const { user } = testRender(
+      <ShareableResourceSlug
+        breadcrumbValue={[]}
+        documentData={
+          {
+            id: 'document-1',
+            name: 'Test Document',
+            share_number: 1,
+            type: 'opencti_custom_dashboard',
+          } as unknown as documentItem_fragment$data
+        }
+        serviceInstance={
+          {
+            id: 'service-instance-1',
+          } as unknown as serviceInstance_fragment$data
+        }
+      />,
+      { settings: mockSettings }
+    );
+
+    // When the user copies the share link
+    await user.click(
+      screen.getByRole('button', { name: 'Service.ShareableResources.Share' })
+    );
+
+    // Then the displayed share count goes from 1 to 2
+    const shareCount = screen
+      .getByText('Service.ShareableResources.Details.Shares')
+      .closest('div')?.lastElementChild;
+    await waitFor(() => expect(shareCount).toHaveTextContent(/^2$/));
+  });
 });

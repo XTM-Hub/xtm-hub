@@ -31,6 +31,7 @@ import { DocumentMetadataKeyCode, IntegrationType } from '@graphql/generated';
 interface ShareableResourceDetailsProps {
   documentData: documentItem_fragment$data | PublicDocumentDetailsData;
   downloadNumber?: number | null;
+  shareNumber?: number | null;
   filigranWebsiteUtm?: FiligranWebsiteUtm;
 }
 
@@ -50,6 +51,7 @@ const DOCUMENTATION_URLS: Partial<Record<IntegrationType, string>> = {
 const ShareableResourceDetails = ({
   documentData,
   downloadNumber,
+  shareNumber,
   filigranWebsiteUtm,
 }: ShareableResourceDetailsProps) => {
   const t = useTranslate();
@@ -214,7 +216,7 @@ const ShareableResourceDetails = ({
       )}
       <ShareableResourceDetailItem
         label={t('Service.ShareableResources.Details.Shares')}>
-        <span>{roundToNearest(documentData.share_number)}</span>
+        <span>{roundToNearest(shareNumber ?? documentData.share_number)}</span>
       </ShareableResourceDetailItem>
     </ShareableResourceBasicInformation>
   );

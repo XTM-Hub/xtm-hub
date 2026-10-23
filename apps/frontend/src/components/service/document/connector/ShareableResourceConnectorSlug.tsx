@@ -32,6 +32,7 @@ import { documentItem_fragment$data } from '@generated/documentItem_fragment.gra
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState } from 'react';
 
 // Component interface
 interface ShareableResourceConnectorSlugProps {
@@ -55,6 +56,11 @@ const ShareableResourceConnectorSlug = ({
   const manifest_url = documentData.source_code
     ? `${documentData.source_code}/__metadata__/connector_manifest.json`
     : '';
+
+  const [documentShareNumber, setDocumentShareNumber] = useState(
+    documentData.share_number ?? 0
+  );
+  const incrementShareNumber = () => setDocumentShareNumber((prev) => prev + 1);
 
   const carouselImages = filterDocumentImages(documentData);
   const logo = findDocumentLogo(documentData);
@@ -108,6 +114,7 @@ const ShareableResourceConnectorSlug = ({
             <div className="ml-auto flex gap-2">
               <ShareLinkButton
                 documentId={documentData.id}
+                onShare={incrementShareNumber}
                 url={shareUrl}
               />
               <ServiceManageSheet
@@ -169,7 +176,11 @@ const ShareableResourceConnectorSlug = ({
           }
         />
         <ShareableResourceConnectorPrivateDetails
-          connectorDetails={{ ...documentData, name: documentData.name ?? '' }}
+          connectorDetails={{
+            ...documentData,
+            name: documentData.name ?? '',
+            share_number: documentShareNumber,
+          }}
           filigranWebsiteUtm={getResourcePageFiligranWebsiteUtm(
             serviceInstance.service_definition?.identifier
           )}

@@ -1,20 +1,23 @@
 'use server';
 
-import { serverMutateGraphQL } from '@/relay/server-portal-api-fetch';
-import ShareLinkButtonMutation, {
-  ShareLinkButtonMutation$variables,
-  ShareLinkButtonMutation as shareLinkButtonMutationType,
-} from '@generated/ShareLinkButtonMutation.graphql';
+import { getAuthenticatedGraphqlClient } from '@/lib/graphql-client';
+import { redirectToSignupOnUnauthenticated } from '@/lib/server-unauthenticated-redirect';
+import {
+  IncrementShareNumberDocumentDocument,
+  IncrementShareNumberDocumentMutation,
+  IncrementShareNumberDocumentMutationVariables,
+} from '@graphql/generated';
 
 export async function updateShareNumber({
   variables,
 }: {
-  variables: ShareLinkButtonMutation$variables;
+  variables: IncrementShareNumberDocumentMutationVariables;
 }) {
-  await serverMutateGraphQL<shareLinkButtonMutationType>(
-    ShareLinkButtonMutation,
-    {
-      documentId: variables.documentId,
-    }
-  );
+  await redirectToSignupOnUnauthenticated(async () => {
+    const client = await getAuthenticatedGraphqlClient();
+    return client.request<
+      IncrementShareNumberDocumentMutation,
+      IncrementShareNumberDocumentMutationVariables
+    >(IncrementShareNumberDocumentDocument, variables);
+  });
 }

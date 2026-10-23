@@ -3,7 +3,9 @@ import { updateShareNumber } from '@/components/ui/share-link/ShareLinkActions';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import usePublicPath from '@/hooks/use-public-path';
 import { useTranslate } from '@/hooks/use-translate';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { ShareIcon } from '@filigran/icon';
+import { useIncrementShareNumberDocumentMutation } from '@graphql/generated';
 
 import {
   IconButton,
@@ -13,7 +15,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import { graphql, useMutation } from 'react-relay';
+import { unstable_rethrow } from 'next/navigation';
 import { useCopyToClipboard } from 'usehooks-ts';
 
 export interface ShareLinkButtonProps {
@@ -21,15 +23,8 @@ export interface ShareLinkButtonProps {
   documentId?: string;
   tooltipText?: string;
   size?: IconButtonProps['size'];
+  onShare?: () => void;
 }
-
-export const shareLinkMutation = graphql`
-  mutation ShareLinkButtonMutation($documentId: DocumentId!) {
-    incrementShareNumberDocument(documentId: $documentId) {
-      share_number
-    }
-  }
-`;
 
 export const ShareLinkButton = (props: ShareLinkButtonProps) => {
   const isPublicPath = usePublicPath();
@@ -40,43 +35,64 @@ export const ShareLinkButton = (props: ShareLinkButtonProps) => {
   );
 };
 
-export const ShareLinkClientButton = (props: ShareLinkButtonProps) => {
-  const [commitMutation] = useMutation(shareLinkMutation);
+const useShowShareNumberError = () => {
+  const t = useTranslate();
+  return () =>
+    showSnackbar({
+      severity: 'error',
+      title: t('Utils.Error'),
+      description: t('Error.AnErrorOccured'),
+    });
+};
 
-  const { documentId, ..._ } = props;
+export const ShareLinkClientButton = (props: ShareLinkButtonProps) => {
+  const { documentId, onShare, ...buttonProps } = props;
+  const showShareNumberError = useShowShareNumberError();
+  const { mutate: incrementShareNumber } =
+    useIncrementShareNumberDocumentMutation(portalGraphqlClient, {
+      onSuccess: () => onShare?.(),
+      onError: showShareNumberError,
+    });
+
   return (
     <ShareLinkCommonButton
-      {...props}
+      {...buttonProps}
       onClickAction={() => {
         if (!documentId) return;
-        commitMutation({
-          variables: {
-            documentId,
-          },
-        });
+        incrementShareNumber({ documentId });
       }}
     />
   );
 };
 
 export const ShareLinkServerAction = (props: ShareLinkButtonProps) => {
-  const { documentId, ..._ } = props;
+  const { documentId, onShare, ...buttonProps } = props;
+  const showShareNumberError = useShowShareNumberError();
   return (
     <ShareLinkCommonButton
-      {...props}
+      {...buttonProps}
       onClickAction={() => {
         if (!documentId) return;
         updateShareNumber({
           variables: {
             documentId,
           },
-        });
+        })
+          .then(() => onShare?.())
+          .catch((error: unknown) => {
+            // Hands the signup redirect back to Next.js instead of reporting it.
+            unstable_rethrow(error);
+            showShareNumberError();
+          });
       }}
     />
   );
 };
 
-type ShareLinkCommonProps = ShareLinkButtonProps & {
+type ShareLinkCommonProps = Omit<
+  ShareLinkButtonProps,
+  'documentId' | 'onShare'
+> & {
   onClickAction: () => void;
 };
 export const ShareLinkCommonButton = ({
