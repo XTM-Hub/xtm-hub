@@ -2,24 +2,23 @@
 import { DataTable, DataTableHeadBarOptions } from '@/components/ui/data-table';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
+import { removeFromQueryCache } from '@/utils/query-cache';
 import { DeleteIcon, EditIcon } from '@filigran/icon';
-import { CompetitorTier } from '@graphql/generated';
-import { ColumnDef, SortingState, Updater } from '@tanstack/react-table';
-import { useCallback, useMemo, useState } from 'react';
-import {
-  readInlineData,
-  useLazyLoadQuery,
-  useMutation,
-  useRefetchableFragment,
-} from 'react-relay';
-
+import { competitorListKeys } from '@graphql/competitor/competitor-list.keys';
 import {
   CompetitorDeleteMutation,
-  competitorFragment,
-  competitorListFragment,
-  CompetitorListQuery,
-} from '@/components/competitor/competitor.graphql';
+  CompetitorOrdering,
+  CompetitorRowFragment,
+  CompetitorsListQuery,
+  OrderingMode,
+  useCompetitorDeleteMutation,
+  useCompetitorsListQuery,
+} from '@graphql/generated';
+import { keepPreviousData, useQueryClient } from '@tanstack/react-query';
+import { ColumnDef } from '@tanstack/react-table';
+import { useMemo, useState } from 'react';
 
 import ManageCompetitor from '@/components/competitor/ManageCompetitor';
 import { useCompetitorListLocalstorage } from '@/components/competitor/competitor-localstorage';
@@ -28,28 +27,18 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
   handleSortingChange,
   mapToSortingTableValue,
-  transformSortingValueToParams,
 } from '@/components/ui/handle-sorting.utils';
 import { Button, IconButton } from '@filigran/design-system';
-import {
-  competitorListQuery,
-  competitorListQuery$variables,
-} from '@generated/competitorListQuery.graphql';
-import {
-  competitor_fragment$data,
-  competitor_fragment$key,
-} from '@generated/competitor_fragment.graphql';
-import { competitor_list_fragment$key } from '@generated/competitor_list_fragment.graphql';
 
 const CompetitorList = () => {
   const t = useTranslate();
-  const [editRow, setEditRow] = useState<competitor_fragment$data | undefined>(
+  const queryClient = useQueryClient();
+  const [editRow, setEditRow] = useState<CompetitorRowFragment | undefined>(
     undefined
   );
 
   const [openAdd, setOpenAdd] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
-  const [deleteCompetitor] = useMutation(CompetitorDeleteMutation);
 
   const {
     pageSize,
@@ -62,28 +51,53 @@ const CompetitorList = () => {
     removeOrder,
   } = useCompetitorListLocalstorage();
 
-  const queryData = useLazyLoadQuery<competitorListQuery>(CompetitorListQuery, {
-    count: pageSize,
-    orderBy,
-    orderMode,
+  const { pagination, cursor, onPaginationChange } = useTablePagination({
+    pageSize,
+    setPageSize,
   });
 
-  const [data, refetch] = useRefetchableFragment<
-    competitorListQuery,
-    competitor_list_fragment$key
-  >(competitorListFragment, queryData);
-
-  const connectionID = data.competitors.__id;
-
-  const competitorsData = useMemo<competitor_fragment$data[]>(
-    () =>
-      (data?.competitors?.edges || []).map(({ node }) =>
-        readInlineData<competitor_fragment$key>(competitorFragment, node)
-      ),
-    [data]
+  const variables = useMemo(
+    () => ({
+      count: pagination.pageSize,
+      cursor,
+      orderBy,
+      orderMode: orderMode as OrderingMode,
+    }),
+    [orderBy, orderMode, pagination, cursor]
   );
 
-  const columns: ColumnDef<competitor_fragment$data>[] = useMemo(
+  const { data: queryData, isLoading } = useCompetitorsListQuery(
+    portalGraphqlClient,
+    variables,
+    {
+      placeholderData: keepPreviousData,
+      // Like Relay, a failed load reaches the admin error page; a failed background refetch keeps the rows shown.
+      throwOnError: (_error, query) => query.state.data === undefined,
+    }
+  );
+
+  const { mutate: deleteCompetitor } = useCompetitorDeleteMutation(
+    portalGraphqlClient,
+    {
+      onSuccess: async (data: CompetitorDeleteMutation) => {
+        queryClient.setQueriesData<CompetitorsListQuery>(
+          { queryKey: competitorListKeys.all() },
+          removeFromQueryCache('competitors', data.deleteCompetitor.id)
+        );
+        await queryClient.invalidateQueries({
+          queryKey: competitorListKeys.all(),
+        });
+      },
+    }
+  );
+
+  const competitorsData = useMemo<CompetitorRowFragment[]>(() => {
+    const edges = queryData?.competitors.edges ?? [];
+    return edges.map(({ node }) => node);
+  }, [queryData]);
+  const totalCount = queryData?.competitors.totalCount ?? 0;
+
+  const columns: ColumnDef<CompetitorRowFragment>[] = useMemo(
     () => [
       {
         accessorKey: 'name',
@@ -98,9 +112,7 @@ const CompetitorList = () => {
         id: 'tier',
         header: t('CompetitorListPage.Tier'),
         cell: ({ row }) => (
-          <span className="truncate">
-            {formatTier(row.original.tier as CompetitorTier)}
-          </span>
+          <span className="truncate">{formatTier(row.original.tier)}</span>
         ),
       },
       {
@@ -140,12 +152,7 @@ const CompetitorList = () => {
               }
               onConfirm={(e) => {
                 e.stopPropagation();
-                deleteCompetitor({
-                  variables: {
-                    id: row.original.id,
-                    connections: [connectionID ?? ''],
-                  },
-                });
+                deleteCompetitor({ id: row.original.id });
               }}>
               {t('CompetitorListPage.DeleteDialog.Text', {
                 name: row.original.name,
@@ -155,59 +162,27 @@ const CompetitorList = () => {
         ),
       },
     ],
-    [t, connectionID, deleteCompetitor]
+    [t, deleteCompetitor]
   );
 
-  const { pagination, cursor, onPaginationChange } = useTablePagination({
-    pageSize,
-    setPageSize,
-    onPaginationChange: (nextPagination, nextCursor) => {
-      handleRefetchData({ count: nextPagination.pageSize, cursor: nextCursor });
-    },
-  });
-
-  const handleRefetchData = useCallback(
-    (args?: Partial<competitorListQuery$variables>) => {
-      const sorting = mapToSortingTableValue(orderBy, orderMode);
-      refetch({
-        count: pagination.pageSize,
-        cursor,
-        orderBy,
-        orderMode,
-        ...transformSortingValueToParams(sorting),
-        ...args,
-      });
-    },
-    [orderBy, orderMode, pagination, cursor, refetch]
-  );
-
-  const onSortingChange = useCallback(
-    (updater: Updater<SortingState>) => {
-      handleSortingChange({
-        updater,
-        removeOrder,
-        setOrderBy,
-        setOrderMode,
-        orderBy,
-        orderMode,
-        handleRefetchData,
-      });
-    },
-    [
-      handleRefetchData,
+  const onSortingChange = (updater: unknown) => {
+    handleSortingChange<CompetitorOrdering>({
+      updater,
       orderBy,
       orderMode,
-      removeOrder,
       setOrderBy,
       setOrderMode,
-    ]
-  );
+      removeOrder,
+      handleRefetchData: () => undefined,
+    });
+  };
 
   return (
     <>
       <DataTable
         columns={columns}
         data={competitorsData}
+        isLoading={isLoading}
         {...getDataTableLabels(t)}
         onResetTable={resetAll}
         tableOptions={{
@@ -215,7 +190,7 @@ const CompetitorList = () => {
           onPaginationChange,
           manualSorting: true,
           manualPagination: true,
-          rowCount: data.competitors.totalCount,
+          rowCount: totalCount,
         }}
         tableState={{
           sorting: mapToSortingTableValue(orderBy, orderMode),
@@ -234,14 +209,14 @@ const CompetitorList = () => {
         }
       />
       <ManageCompetitor
-        connectionId={connectionID}
+        listVariables={variables}
         open={openAdd}
         setOpen={setOpenAdd}
       />
       {editRow && (
         <ManageCompetitor
           competitor={editRow}
-          connectionId={connectionID}
+          listVariables={variables}
           open={openEdit}
           setOpen={setOpenEdit}
         />

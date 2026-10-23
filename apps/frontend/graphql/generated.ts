@@ -3455,6 +3455,39 @@ export type XtmoneIntegrationStatusEntry = {
   status: Scalars['String']['output'];
 };
 
+export type CompetitorAddMutationVariables = Exact<{
+  input: CreateCompetitorInput;
+}>;
+
+
+export type CompetitorAddMutation = { __typename?: 'Mutation', createCompetitor: { __typename?: 'Competitor', id: string, name: string, domain: string, tier: CompetitorTier } };
+
+export type CompetitorEditMutationVariables = Exact<{
+  input: UpdateCompetitorInput;
+}>;
+
+
+export type CompetitorEditMutation = { __typename?: 'Mutation', updateCompetitor: { __typename?: 'Competitor', id: string, name: string, domain: string, tier: CompetitorTier } };
+
+export type CompetitorDeleteMutationVariables = Exact<{
+  id: Scalars['CompetitorId']['input'];
+}>;
+
+
+export type CompetitorDeleteMutation = { __typename?: 'Mutation', deleteCompetitor: { __typename?: 'Competitor', id: string } };
+
+export type CompetitorRowFragment = { __typename?: 'Competitor', id: string, name: string, domain: string, tier: CompetitorTier };
+
+export type CompetitorsListQueryVariables = Exact<{
+  count: Scalars['Int']['input'];
+  cursor: InputMaybe<Scalars['ID']['input']>;
+  orderBy: CompetitorOrdering;
+  orderMode: OrderingMode;
+}>;
+
+
+export type CompetitorsListQuery = { __typename?: 'Query', competitors: { __typename?: 'CompetitorConnection', totalCount: number, edges: Array<{ __typename?: 'CompetitorEdge', node: { __typename?: 'Competitor', id: string, name: string, domain: string, tier: CompetitorTier } }> } };
+
 export type SaveContentTranslationDraftMutationVariables = Exact<{
   input: UpsertContentTranslationInput;
 }>;
@@ -4236,6 +4269,14 @@ export type EpicCountPerTimelineQueryQueryVariables = Exact<{ [key: string]: nev
 export type EpicCountPerTimelineQueryQuery = { __typename?: 'Query', countEpicsPerTimeline: Array<{ __typename?: 'EpicCountPerTimeline', timeline: Timeline, count: number }> };
 
 
+export const CompetitorRowFragmentDoc = `
+    fragment CompetitorRow on Competitor {
+  id
+  name
+  domain
+  tier
+}
+    `;
 export const TrialsProductFragmentDoc = `
     fragment TrialsProduct on DeploymentRequest {
   id
@@ -4564,6 +4605,156 @@ export const VotingRoundRowFragmentDoc = `
   created_at
 }
     `;
+export const CompetitorAddDocument = `
+    mutation CompetitorAdd($input: CreateCompetitorInput!) {
+  createCompetitor(input: $input) {
+    ...CompetitorRow
+  }
+}
+    ${CompetitorRowFragmentDoc}`;
+
+export const useCompetitorAddMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<CompetitorAddMutation, TError, CompetitorAddMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<CompetitorAddMutation, TError, CompetitorAddMutationVariables, TContext>(
+      {
+    mutationKey: ['CompetitorAdd'],
+    mutationFn: (variables?: CompetitorAddMutationVariables) => fetcher<CompetitorAddMutation, CompetitorAddMutationVariables>(client, CompetitorAddDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useCompetitorAddMutation.getKey = () => ['CompetitorAdd'];
+useCompetitorAddMutation.getRootKey = () => ['CompetitorAdd'] as const;
+useCompetitorAddMutation.fetcher = (client: GraphQLClient, variables: CompetitorAddMutationVariables, headers?: RequestInit['headers']) => fetcher<CompetitorAddMutation, CompetitorAddMutationVariables>(client, CompetitorAddDocument, variables, headers);
+
+export const CompetitorEditDocument = `
+    mutation CompetitorEdit($input: UpdateCompetitorInput!) {
+  updateCompetitor(input: $input) {
+    ...CompetitorRow
+  }
+}
+    ${CompetitorRowFragmentDoc}`;
+
+export const useCompetitorEditMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<CompetitorEditMutation, TError, CompetitorEditMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<CompetitorEditMutation, TError, CompetitorEditMutationVariables, TContext>(
+      {
+    mutationKey: ['CompetitorEdit'],
+    mutationFn: (variables?: CompetitorEditMutationVariables) => fetcher<CompetitorEditMutation, CompetitorEditMutationVariables>(client, CompetitorEditDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useCompetitorEditMutation.getKey = () => ['CompetitorEdit'];
+useCompetitorEditMutation.getRootKey = () => ['CompetitorEdit'] as const;
+useCompetitorEditMutation.fetcher = (client: GraphQLClient, variables: CompetitorEditMutationVariables, headers?: RequestInit['headers']) => fetcher<CompetitorEditMutation, CompetitorEditMutationVariables>(client, CompetitorEditDocument, variables, headers);
+
+export const CompetitorDeleteDocument = `
+    mutation CompetitorDelete($id: CompetitorId!) {
+  deleteCompetitor(id: $id) {
+    id
+  }
+}
+    `;
+
+export const useCompetitorDeleteMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<CompetitorDeleteMutation, TError, CompetitorDeleteMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<CompetitorDeleteMutation, TError, CompetitorDeleteMutationVariables, TContext>(
+      {
+    mutationKey: ['CompetitorDelete'],
+    mutationFn: (variables?: CompetitorDeleteMutationVariables) => fetcher<CompetitorDeleteMutation, CompetitorDeleteMutationVariables>(client, CompetitorDeleteDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useCompetitorDeleteMutation.getKey = () => ['CompetitorDelete'];
+useCompetitorDeleteMutation.getRootKey = () => ['CompetitorDelete'] as const;
+useCompetitorDeleteMutation.fetcher = (client: GraphQLClient, variables: CompetitorDeleteMutationVariables, headers?: RequestInit['headers']) => fetcher<CompetitorDeleteMutation, CompetitorDeleteMutationVariables>(client, CompetitorDeleteDocument, variables, headers);
+
+export const CompetitorsListDocument = `
+    query CompetitorsList($count: Int!, $cursor: ID, $orderBy: CompetitorOrdering!, $orderMode: OrderingMode!) {
+  competitors(
+    first: $count
+    after: $cursor
+    orderBy: $orderBy
+    orderMode: $orderMode
+  ) {
+    totalCount
+    edges {
+      node {
+        ...CompetitorRow
+      }
+    }
+  }
+}
+    ${CompetitorRowFragmentDoc}`;
+
+export const useCompetitorsListQuery = <
+      TData = CompetitorsListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: CompetitorsListQueryVariables,
+      options?: Omit<UseQueryOptions<CompetitorsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<CompetitorsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<CompetitorsListQuery, TError, TData>(
+      {
+    queryKey: ['CompetitorsList', variables],
+    queryFn: fetcher<CompetitorsListQuery, CompetitorsListQueryVariables>(client, CompetitorsListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useCompetitorsListQuery.getKey = (variables: CompetitorsListQueryVariables) => ['CompetitorsList', variables];
+useCompetitorsListQuery.getRootKey = () => ['CompetitorsList'] as const;
+export const useInfiniteCompetitorsListQuery = <
+      TData = InfiniteData<CompetitorsListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: CompetitorsListQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<CompetitorsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<CompetitorsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<CompetitorsListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['CompetitorsList.infinite', variables],
+      queryFn: (metaData) => fetcher<CompetitorsListQuery, CompetitorsListQueryVariables>(client, CompetitorsListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteCompetitorsListQuery.getKey = (variables: CompetitorsListQueryVariables) => ['CompetitorsList.infinite', variables];
+useInfiniteCompetitorsListQuery.getRootKey = () => ['CompetitorsList.infinite'] as const;
+useCompetitorsListQuery.fetcher = (client: GraphQLClient, variables: CompetitorsListQueryVariables, headers?: RequestInit['headers']) => fetcher<CompetitorsListQuery, CompetitorsListQueryVariables>(client, CompetitorsListDocument, variables, headers);
+
 export const SaveContentTranslationDraftDocument = `
     mutation SaveContentTranslationDraft($input: UpsertContentTranslationInput!) {
   saveContentTranslationDraft(input: $input) {
