@@ -1,6 +1,6 @@
-import { PortalContext } from '@/components/me/AppPortalContext';
 import { useFormField } from '@/components/ui/form';
 import { useTranslate } from '@/hooks/use-translate';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import {
   Select,
   SelectContent,
@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from '@filigran/design-system';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { useContext } from 'react';
+import { useMeOrganizationsQuery } from '@graphql/generated';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 
 interface ServiceFormUploaderOrganizationIdFieldProps {
@@ -28,13 +28,16 @@ export const ServiceFormUploaderOrganizationIdField = ({
   disabled,
 }: ServiceFormUploaderOrganizationIdFieldProps) => {
   const t = useTranslate();
-  const { me } = useContext(PortalContext);
+  const { data, isLoading } = useMeOrganizationsQuery(portalGraphqlClient);
+  const me = data?.me;
   const { error } = useFormField();
 
   return (
     <div hidden={isCreation}>
+      {/* The default value is only read on mount: remount once the organizations are loaded. */}
       <Select
-        disabled={disabled}
+        key={isLoading ? 'loading' : 'loaded'}
+        disabled={disabled || isLoading}
         onValueChange={field.onChange}
         defaultValue={
           (isCreation
@@ -51,7 +54,7 @@ export const ServiceFormUploaderOrganizationIdField = ({
           />
         </SelectTrigger>
         <SelectContent className="layer-1">
-          {me?.organizations.map((node) => {
+          {me?.organizations?.map((node) => {
             return (
               <SelectItem
                 key={node?.id}

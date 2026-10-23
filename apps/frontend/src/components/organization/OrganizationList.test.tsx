@@ -13,8 +13,6 @@ import {
 } from '@graphql/generated';
 import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { commitLocalUpdate } from 'relay-runtime';
-import { createMockEnvironment } from 'relay-test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const ORGANIZATION_ID = 'organization-filigran';
@@ -601,27 +599,6 @@ describe('OrganizationList', () => {
             name: 'OrganizationForm.EditOrganization',
           })
         ).not.toBeInTheDocument()
-      );
-    });
-
-    it('should rename the organization in the Relay store read by the header switcher when the edition succeeds', async () => {
-      // Given
-      const relayEnvironment = createMockEnvironment();
-      commitLocalUpdate(relayEnvironment, (store) => {
-        store
-          .create(ORGANIZATION_ID, 'Organization')
-          .setValue(ORGANIZATION_NAME, 'name');
-      });
-      const { user } = await renderList({ relayConfig: relayEnvironment });
-
-      // When
-      await editOrganization(user);
-
-      // Then
-      await waitFor(() =>
-        expect(
-          relayEnvironment.getStore().getSource().get(ORGANIZATION_ID)
-        ).toMatchObject({ name: NEW_ORGANIZATION_NAME })
       );
     });
   });

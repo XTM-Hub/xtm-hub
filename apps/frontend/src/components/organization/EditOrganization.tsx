@@ -1,6 +1,5 @@
 import { OrganizationForm } from '@/components/organization/OrganizationForm';
 import { organizationFormSchema } from '@/components/organization/OrganizationForm.schema';
-import { syncEditedOrganizationToRelayStore } from '@/components/organization/organization-relay-store';
 import { invalidateOrganizationQueries } from '@/components/organization/organization-query-invalidation';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
@@ -11,7 +10,6 @@ import {
   useOrganizationEditMutation,
 } from '@graphql/generated';
 import { useQueryClient } from '@tanstack/react-query';
-import { useRelayEnvironment } from 'react-relay';
 import { z } from 'zod';
 
 interface EditOrganizationProps {
@@ -27,18 +25,10 @@ export const EditOrganization = ({
 }: EditOrganizationProps) => {
   const t = useTranslate();
   const queryClient = useQueryClient();
-  const relayEnvironment = useRelayEnvironment();
   const { mutate: editOrganization, isPending } = useOrganizationEditMutation(
     portalGraphqlClient,
     {
-      onSuccess: async (
-        { editOrganization: editedOrganization },
-        { input }
-      ) => {
-        syncEditedOrganizationToRelayStore(
-          relayEnvironment,
-          editedOrganization
-        );
+      onSuccess: async (_data, { input }) => {
         setOpen(false);
         showSnackbar({
           severity: 'success',
