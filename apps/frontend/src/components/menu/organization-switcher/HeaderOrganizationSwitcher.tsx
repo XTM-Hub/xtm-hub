@@ -2,6 +2,7 @@
 
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { useTranslate } from '@/hooks/use-translate';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH } from '@/utils/path/constant';
 import {
   Select,
@@ -10,19 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@filigran/design-system';
-import { OrganizationSwitcherMutation as OrganizationSwitcherMutationType } from '@generated/OrganizationSwitcherMutation.graphql';
+import { useChangeSelectedOrganizationMutation } from '@graphql/generated';
 import { useContext, useMemo } from 'react';
-import { graphql, useMutation } from 'react-relay';
-
-export const organizationSwitcherMutation = graphql`
-  mutation OrganizationSwitcherMutation($organization_id: OrganizationId!) {
-    changeSelectedOrganization(organization_id: $organization_id) {
-      id
-      selected_organization_id
-      selected_org_capabilities
-    }
-  }
-`;
 
 interface HeaderOrganizationSwitcherProps {
   fitContainer?: boolean;
@@ -34,8 +24,8 @@ const HeaderOrganizationSwitcher = ({
   const { me } = useContext(PortalContext);
   const t = useTranslate();
 
-  const [commitOrganizationSwitcherMutation] =
-    useMutation<OrganizationSwitcherMutationType>(organizationSwitcherMutation);
+  const { mutate: changeSelectedOrganization } =
+    useChangeSelectedOrganizationMutation(portalGraphqlClient);
 
   if (!me) {
     return null;
@@ -62,14 +52,14 @@ const HeaderOrganizationSwitcher = ({
       return;
     }
 
-    commitOrganizationSwitcherMutation({
-      variables: {
-        organization_id: organizationId,
-      },
-      onCompleted: () => {
-        window.location.href = `/${APP_PATH}`;
-      },
-    });
+    changeSelectedOrganization(
+      { organization_id: organizationId },
+      {
+        onSuccess: () => {
+          window.location.href = `/${APP_PATH}`;
+        },
+      }
+    );
   };
 
   return (
