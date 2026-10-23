@@ -1,0 +1,17 @@
+mutation OrganizationCreate($input: OrganizationInput!) {
+  addOrganization(input: $input) {
+    ...OrganizationItem
+  }
+}
+
+mutation OrganizationEdit($id: ID!, $input: OrganizationInput!) {
+  editOrganization(id: $id, input: $input) {
+    ...OrganizationItem
+  }
+}
+
+mutation OrganizationDelete($id: ID!) {
+  deleteOrganization(id: $id) {
+    id
+  }
+}

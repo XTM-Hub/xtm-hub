@@ -1,0 +1,37 @@
+fragment OrganizationItem on Organization {
+  id
+  name
+  domains
+  personal_space
+}
+
+query OrganizationsList(
+  $count: Int
+  $cursor: ID
+  $orderBy: OrganizationOrdering!
+  $orderMode: OrderingMode!
+  $searchTerm: String
+) {
+  organizations(
+    first: $count
+    after: $cursor
+    orderBy: $orderBy
+    orderMode: $orderMode
+    searchTerm: $searchTerm
+  ) {
+    totalCount
+    edges {
+      node {
+        ...OrganizationItem
+      }
+    }
+  }
+}
+
+query UserOrganizations {
+  userOrganizations {
+    id
+    name
+    personal_space
+  }
+}

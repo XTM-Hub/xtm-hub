@@ -1,6 +1,6 @@
 import type { GraphQLClient, RequestOptions } from "graphql-request";
 type GraphQLClientRequestHeaders = RequestOptions["requestHeaders"];
-import { useMutation, useQuery, useInfiniteQuery, UseMutationOptions, UseQueryOptions, UseInfiniteQueryOptions, InfiniteData } from '@tanstack/react-query';
+import { useMutation, useQuery, useSuspenseQuery, useInfiniteQuery, useSuspenseInfiniteQuery, UseMutationOptions, UseQueryOptions, UseSuspenseQueryOptions, UseInfiniteQueryOptions, InfiniteData, UseSuspenseInfiniteQueryOptions } from '@tanstack/react-query';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -3697,6 +3697,46 @@ export type OrganizationSubscribedServicesListQueryVariables = Exact<{
 
 export type OrganizationSubscribedServicesListQuery = { __typename?: 'Query', subscriptions: { __typename?: 'SubscriptionConnection', totalCount: number, edges: Array<{ __typename?: 'SubscriptionEdge', node: { __typename?: 'SubscriptionModel', id: string, start_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string, name: string, creation_status: ServiceInstanceCreationStatus | null, tags: Array<ServiceInstanceTag> | null, service_definition: { __typename?: 'ServiceDefinition', id: string, name: string, identifier: ServiceDefinitionIdentifier } | null } } }>, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, hasPreviousPage: boolean, startCursor: string | null, endCursor: string | null } } };
 
+export type OrganizationCreateMutationVariables = Exact<{
+  input: OrganizationInput;
+}>;
+
+
+export type OrganizationCreateMutation = { __typename?: 'Mutation', addOrganization: { __typename?: 'Organization', id: string, name: string, domains: Array<string> | null, personal_space: boolean } | null };
+
+export type OrganizationEditMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  input: OrganizationInput;
+}>;
+
+
+export type OrganizationEditMutation = { __typename?: 'Mutation', editOrganization: { __typename?: 'Organization', id: string, name: string, domains: Array<string> | null, personal_space: boolean } | null };
+
+export type OrganizationDeleteMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type OrganizationDeleteMutation = { __typename?: 'Mutation', deleteOrganization: { __typename?: 'Organization', id: string } | null };
+
+export type OrganizationItemFragment = { __typename?: 'Organization', id: string, name: string, domains: Array<string> | null, personal_space: boolean };
+
+export type OrganizationsListQueryVariables = Exact<{
+  count: InputMaybe<Scalars['Int']['input']>;
+  cursor: InputMaybe<Scalars['ID']['input']>;
+  orderBy: OrganizationOrdering;
+  orderMode: OrderingMode;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type OrganizationsListQuery = { __typename?: 'Query', organizations: { __typename?: 'OrganizationConnection', totalCount: number, edges: Array<{ __typename?: 'OrganizationEdge', node: { __typename?: 'Organization', id: string, name: string, domains: Array<string> | null, personal_space: boolean } }> } };
+
+export type UserOrganizationsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type UserOrganizationsQuery = { __typename?: 'Query', userOrganizations: Array<{ __typename?: 'Organization', id: string, name: string, personal_space: boolean }> };
+
 export type RegisteredSaasPlatformDataQueryVariables = Exact<{
   input: RegisteredPlatformInput;
 }>;
@@ -4372,6 +4412,14 @@ export const OrganizationSubscribedServiceRowFragmentDoc = `
   }
 }
     `;
+export const OrganizationItemFragmentDoc = `
+    fragment OrganizationItem on Organization {
+  id
+  name
+  domains
+  personal_space
+}
+    `;
 export const SeoServiceInstanceItemFragmentDoc = `
     fragment SeoServiceInstanceItem on SeoServiceInstance {
   id
@@ -4561,6 +4609,26 @@ export const useContentTranslationsByLocaleQuery = <
 
 useContentTranslationsByLocaleQuery.getKey = (variables?: ContentTranslationsByLocaleQueryVariables) => variables === undefined ? ['ContentTranslationsByLocale'] : ['ContentTranslationsByLocale', variables];
 useContentTranslationsByLocaleQuery.getRootKey = () => ['ContentTranslationsByLocale'] as const;
+export const useSuspenseContentTranslationsByLocaleQuery = <
+      TData = ContentTranslationsByLocaleQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: ContentTranslationsByLocaleQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<ContentTranslationsByLocaleQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<ContentTranslationsByLocaleQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<ContentTranslationsByLocaleQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['ContentTranslationsByLocale'] : ['ContentTranslationsByLocale', variables],
+    queryFn: fetcher<ContentTranslationsByLocaleQuery, ContentTranslationsByLocaleQueryVariables>(client, ContentTranslationsByLocaleDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseContentTranslationsByLocaleQuery.getKey = (variables?: ContentTranslationsByLocaleQueryVariables) => variables === undefined ? ['ContentTranslationsByLocale'] : ['ContentTranslationsByLocale', variables];
+useSuspenseContentTranslationsByLocaleQuery.getRootKey = () => ['ContentTranslationsByLocale'] as const;
 export const useInfiniteContentTranslationsByLocaleQuery = <
       TData = InfiniteData<ContentTranslationsByLocaleQuery>,
       TError = unknown
@@ -4584,6 +4652,29 @@ export const useInfiniteContentTranslationsByLocaleQuery = <
 
 useInfiniteContentTranslationsByLocaleQuery.getKey = (variables?: ContentTranslationsByLocaleQueryVariables) => variables === undefined ? ['ContentTranslationsByLocale.infinite'] : ['ContentTranslationsByLocale.infinite', variables];
 useInfiniteContentTranslationsByLocaleQuery.getRootKey = () => ['ContentTranslationsByLocale.infinite'] as const;
+export const useSuspenseInfiniteContentTranslationsByLocaleQuery = <
+      TData = InfiniteData<ContentTranslationsByLocaleQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ContentTranslationsByLocaleQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<ContentTranslationsByLocaleQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<ContentTranslationsByLocaleQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<ContentTranslationsByLocaleQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['ContentTranslationsByLocale.infinite'] : ['ContentTranslationsByLocale.infinite', variables],
+      queryFn: (metaData) => fetcher<ContentTranslationsByLocaleQuery, ContentTranslationsByLocaleQueryVariables>(client, ContentTranslationsByLocaleDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteContentTranslationsByLocaleQuery.getKey = (variables?: ContentTranslationsByLocaleQueryVariables) => variables === undefined ? ['ContentTranslationsByLocale.infinite'] : ['ContentTranslationsByLocale.infinite', variables];
+useSuspenseInfiniteContentTranslationsByLocaleQuery.getRootKey = () => ['ContentTranslationsByLocale.infinite'] as const;
 useContentTranslationsByLocaleQuery.fetcher = (client: GraphQLClient, variables?: ContentTranslationsByLocaleQueryVariables, headers?: RequestInit['headers']) => fetcher<ContentTranslationsByLocaleQuery, ContentTranslationsByLocaleQueryVariables>(client, ContentTranslationsByLocaleDocument, variables, headers);
 
 export const ContentTranslationKeysDocument = `
@@ -4614,6 +4705,26 @@ export const useContentTranslationKeysQuery = <
 
 useContentTranslationKeysQuery.getKey = (variables?: ContentTranslationKeysQueryVariables) => variables === undefined ? ['ContentTranslationKeys'] : ['ContentTranslationKeys', variables];
 useContentTranslationKeysQuery.getRootKey = () => ['ContentTranslationKeys'] as const;
+export const useSuspenseContentTranslationKeysQuery = <
+      TData = ContentTranslationKeysQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: ContentTranslationKeysQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<ContentTranslationKeysQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<ContentTranslationKeysQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<ContentTranslationKeysQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['ContentTranslationKeys'] : ['ContentTranslationKeys', variables],
+    queryFn: fetcher<ContentTranslationKeysQuery, ContentTranslationKeysQueryVariables>(client, ContentTranslationKeysDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseContentTranslationKeysQuery.getKey = (variables?: ContentTranslationKeysQueryVariables) => variables === undefined ? ['ContentTranslationKeys'] : ['ContentTranslationKeys', variables];
+useSuspenseContentTranslationKeysQuery.getRootKey = () => ['ContentTranslationKeys'] as const;
 export const useInfiniteContentTranslationKeysQuery = <
       TData = InfiniteData<ContentTranslationKeysQuery>,
       TError = unknown
@@ -4637,6 +4748,29 @@ export const useInfiniteContentTranslationKeysQuery = <
 
 useInfiniteContentTranslationKeysQuery.getKey = (variables?: ContentTranslationKeysQueryVariables) => variables === undefined ? ['ContentTranslationKeys.infinite'] : ['ContentTranslationKeys.infinite', variables];
 useInfiniteContentTranslationKeysQuery.getRootKey = () => ['ContentTranslationKeys.infinite'] as const;
+export const useSuspenseInfiniteContentTranslationKeysQuery = <
+      TData = InfiniteData<ContentTranslationKeysQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ContentTranslationKeysQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<ContentTranslationKeysQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<ContentTranslationKeysQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<ContentTranslationKeysQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['ContentTranslationKeys.infinite'] : ['ContentTranslationKeys.infinite', variables],
+      queryFn: (metaData) => fetcher<ContentTranslationKeysQuery, ContentTranslationKeysQueryVariables>(client, ContentTranslationKeysDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteContentTranslationKeysQuery.getKey = (variables?: ContentTranslationKeysQueryVariables) => variables === undefined ? ['ContentTranslationKeys.infinite'] : ['ContentTranslationKeys.infinite', variables];
+useSuspenseInfiniteContentTranslationKeysQuery.getRootKey = () => ['ContentTranslationKeys.infinite'] as const;
 useContentTranslationKeysQuery.fetcher = (client: GraphQLClient, variables?: ContentTranslationKeysQueryVariables, headers?: RequestInit['headers']) => fetcher<ContentTranslationKeysQuery, ContentTranslationKeysQueryVariables>(client, ContentTranslationKeysDocument, variables, headers);
 
 export const ContentTranslationForKeyDocument = `
@@ -4674,6 +4808,26 @@ export const useContentTranslationForKeyQuery = <
 
 useContentTranslationForKeyQuery.getKey = (variables?: ContentTranslationForKeyQueryVariables) => variables === undefined ? ['ContentTranslationForKey'] : ['ContentTranslationForKey', variables];
 useContentTranslationForKeyQuery.getRootKey = () => ['ContentTranslationForKey'] as const;
+export const useSuspenseContentTranslationForKeyQuery = <
+      TData = ContentTranslationForKeyQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: ContentTranslationForKeyQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<ContentTranslationForKeyQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<ContentTranslationForKeyQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<ContentTranslationForKeyQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['ContentTranslationForKey'] : ['ContentTranslationForKey', variables],
+    queryFn: fetcher<ContentTranslationForKeyQuery, ContentTranslationForKeyQueryVariables>(client, ContentTranslationForKeyDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseContentTranslationForKeyQuery.getKey = (variables?: ContentTranslationForKeyQueryVariables) => variables === undefined ? ['ContentTranslationForKey'] : ['ContentTranslationForKey', variables];
+useSuspenseContentTranslationForKeyQuery.getRootKey = () => ['ContentTranslationForKey'] as const;
 export const useInfiniteContentTranslationForKeyQuery = <
       TData = InfiniteData<ContentTranslationForKeyQuery>,
       TError = unknown
@@ -4697,6 +4851,29 @@ export const useInfiniteContentTranslationForKeyQuery = <
 
 useInfiniteContentTranslationForKeyQuery.getKey = (variables?: ContentTranslationForKeyQueryVariables) => variables === undefined ? ['ContentTranslationForKey.infinite'] : ['ContentTranslationForKey.infinite', variables];
 useInfiniteContentTranslationForKeyQuery.getRootKey = () => ['ContentTranslationForKey.infinite'] as const;
+export const useSuspenseInfiniteContentTranslationForKeyQuery = <
+      TData = InfiniteData<ContentTranslationForKeyQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ContentTranslationForKeyQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<ContentTranslationForKeyQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<ContentTranslationForKeyQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<ContentTranslationForKeyQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['ContentTranslationForKey.infinite'] : ['ContentTranslationForKey.infinite', variables],
+      queryFn: (metaData) => fetcher<ContentTranslationForKeyQuery, ContentTranslationForKeyQueryVariables>(client, ContentTranslationForKeyDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteContentTranslationForKeyQuery.getKey = (variables?: ContentTranslationForKeyQueryVariables) => variables === undefined ? ['ContentTranslationForKey.infinite'] : ['ContentTranslationForKey.infinite', variables];
+useSuspenseInfiniteContentTranslationForKeyQuery.getRootKey = () => ['ContentTranslationForKey.infinite'] as const;
 useContentTranslationForKeyQuery.fetcher = (client: GraphQLClient, variables?: ContentTranslationForKeyQueryVariables, headers?: RequestInit['headers']) => fetcher<ContentTranslationForKeyQuery, ContentTranslationForKeyQueryVariables>(client, ContentTranslationForKeyDocument, variables, headers);
 
 export const ContentTranslationDraftsDocument = `
@@ -4729,6 +4906,26 @@ export const useContentTranslationDraftsQuery = <
 
 useContentTranslationDraftsQuery.getKey = (variables?: ContentTranslationDraftsQueryVariables) => variables === undefined ? ['ContentTranslationDrafts'] : ['ContentTranslationDrafts', variables];
 useContentTranslationDraftsQuery.getRootKey = () => ['ContentTranslationDrafts'] as const;
+export const useSuspenseContentTranslationDraftsQuery = <
+      TData = ContentTranslationDraftsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: ContentTranslationDraftsQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<ContentTranslationDraftsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<ContentTranslationDraftsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<ContentTranslationDraftsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['ContentTranslationDrafts'] : ['ContentTranslationDrafts', variables],
+    queryFn: fetcher<ContentTranslationDraftsQuery, ContentTranslationDraftsQueryVariables>(client, ContentTranslationDraftsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseContentTranslationDraftsQuery.getKey = (variables?: ContentTranslationDraftsQueryVariables) => variables === undefined ? ['ContentTranslationDrafts'] : ['ContentTranslationDrafts', variables];
+useSuspenseContentTranslationDraftsQuery.getRootKey = () => ['ContentTranslationDrafts'] as const;
 export const useInfiniteContentTranslationDraftsQuery = <
       TData = InfiniteData<ContentTranslationDraftsQuery>,
       TError = unknown
@@ -4752,6 +4949,29 @@ export const useInfiniteContentTranslationDraftsQuery = <
 
 useInfiniteContentTranslationDraftsQuery.getKey = (variables?: ContentTranslationDraftsQueryVariables) => variables === undefined ? ['ContentTranslationDrafts.infinite'] : ['ContentTranslationDrafts.infinite', variables];
 useInfiniteContentTranslationDraftsQuery.getRootKey = () => ['ContentTranslationDrafts.infinite'] as const;
+export const useSuspenseInfiniteContentTranslationDraftsQuery = <
+      TData = InfiniteData<ContentTranslationDraftsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ContentTranslationDraftsQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<ContentTranslationDraftsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<ContentTranslationDraftsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<ContentTranslationDraftsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['ContentTranslationDrafts.infinite'] : ['ContentTranslationDrafts.infinite', variables],
+      queryFn: (metaData) => fetcher<ContentTranslationDraftsQuery, ContentTranslationDraftsQueryVariables>(client, ContentTranslationDraftsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteContentTranslationDraftsQuery.getKey = (variables?: ContentTranslationDraftsQueryVariables) => variables === undefined ? ['ContentTranslationDrafts.infinite'] : ['ContentTranslationDrafts.infinite', variables];
+useSuspenseInfiniteContentTranslationDraftsQuery.getRootKey = () => ['ContentTranslationDrafts.infinite'] as const;
 useContentTranslationDraftsQuery.fetcher = (client: GraphQLClient, variables?: ContentTranslationDraftsQueryVariables, headers?: RequestInit['headers']) => fetcher<ContentTranslationDraftsQuery, ContentTranslationDraftsQueryVariables>(client, ContentTranslationDraftsDocument, variables, headers);
 
 export const TrialsAdminCancelDeploymentRequestDocument = `
@@ -4919,6 +5139,26 @@ export const useTrialsListQuery = <
 
 useTrialsListQuery.getKey = (variables: TrialsListQueryVariables) => ['TrialsList', variables];
 useTrialsListQuery.getRootKey = () => ['TrialsList'] as const;
+export const useSuspenseTrialsListQuery = <
+      TData = TrialsListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: TrialsListQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<TrialsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<TrialsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<TrialsListQuery, TError, TData>(
+      {
+    queryKey: ['TrialsList', variables],
+    queryFn: fetcher<TrialsListQuery, TrialsListQueryVariables>(client, TrialsListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseTrialsListQuery.getKey = (variables: TrialsListQueryVariables) => ['TrialsList', variables];
+useSuspenseTrialsListQuery.getRootKey = () => ['TrialsList'] as const;
 export const useInfiniteTrialsListQuery = <
       TData = InfiniteData<TrialsListQuery>,
       TError = unknown
@@ -4942,6 +5182,29 @@ export const useInfiniteTrialsListQuery = <
 
 useInfiniteTrialsListQuery.getKey = (variables: TrialsListQueryVariables) => ['TrialsList.infinite', variables];
 useInfiniteTrialsListQuery.getRootKey = () => ['TrialsList.infinite'] as const;
+export const useSuspenseInfiniteTrialsListQuery = <
+      TData = InfiniteData<TrialsListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: TrialsListQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<TrialsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<TrialsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<TrialsListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['TrialsList.infinite', variables],
+      queryFn: (metaData) => fetcher<TrialsListQuery, TrialsListQueryVariables>(client, TrialsListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteTrialsListQuery.getKey = (variables: TrialsListQueryVariables) => ['TrialsList.infinite', variables];
+useSuspenseInfiniteTrialsListQuery.getRootKey = () => ['TrialsList.infinite'] as const;
 useTrialsListQuery.fetcher = (client: GraphQLClient, variables: TrialsListQueryVariables, headers?: RequestInit['headers']) => fetcher<TrialsListQuery, TrialsListQueryVariables>(client, TrialsListDocument, variables, headers);
 
 export const TrialsQuotasDocument = `
@@ -4972,6 +5235,26 @@ export const useTrialsQuotasQuery = <
 
 useTrialsQuotasQuery.getKey = (variables?: TrialsQuotasQueryVariables) => variables === undefined ? ['TrialsQuotas'] : ['TrialsQuotas', variables];
 useTrialsQuotasQuery.getRootKey = () => ['TrialsQuotas'] as const;
+export const useSuspenseTrialsQuotasQuery = <
+      TData = TrialsQuotasQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: TrialsQuotasQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<TrialsQuotasQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<TrialsQuotasQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<TrialsQuotasQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['TrialsQuotas'] : ['TrialsQuotas', variables],
+    queryFn: fetcher<TrialsQuotasQuery, TrialsQuotasQueryVariables>(client, TrialsQuotasDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseTrialsQuotasQuery.getKey = (variables?: TrialsQuotasQueryVariables) => variables === undefined ? ['TrialsQuotas'] : ['TrialsQuotas', variables];
+useSuspenseTrialsQuotasQuery.getRootKey = () => ['TrialsQuotas'] as const;
 export const useInfiniteTrialsQuotasQuery = <
       TData = InfiniteData<TrialsQuotasQuery>,
       TError = unknown
@@ -4995,6 +5278,29 @@ export const useInfiniteTrialsQuotasQuery = <
 
 useInfiniteTrialsQuotasQuery.getKey = (variables?: TrialsQuotasQueryVariables) => variables === undefined ? ['TrialsQuotas.infinite'] : ['TrialsQuotas.infinite', variables];
 useInfiniteTrialsQuotasQuery.getRootKey = () => ['TrialsQuotas.infinite'] as const;
+export const useSuspenseInfiniteTrialsQuotasQuery = <
+      TData = InfiniteData<TrialsQuotasQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: TrialsQuotasQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<TrialsQuotasQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<TrialsQuotasQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<TrialsQuotasQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['TrialsQuotas.infinite'] : ['TrialsQuotas.infinite', variables],
+      queryFn: (metaData) => fetcher<TrialsQuotasQuery, TrialsQuotasQueryVariables>(client, TrialsQuotasDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteTrialsQuotasQuery.getKey = (variables?: TrialsQuotasQueryVariables) => variables === undefined ? ['TrialsQuotas.infinite'] : ['TrialsQuotas.infinite', variables];
+useSuspenseInfiniteTrialsQuotasQuery.getRootKey = () => ['TrialsQuotas.infinite'] as const;
 useTrialsQuotasQuery.fetcher = (client: GraphQLClient, variables?: TrialsQuotasQueryVariables, headers?: RequestInit['headers']) => fetcher<TrialsQuotasQuery, TrialsQuotasQueryVariables>(client, TrialsQuotasDocument, variables, headers);
 
 export const XtmPlatformBundleDocument = `
@@ -5025,6 +5331,26 @@ export const useXtmPlatformBundleQuery = <
 
 useXtmPlatformBundleQuery.getKey = (variables?: XtmPlatformBundleQueryVariables) => variables === undefined ? ['XtmPlatformBundle'] : ['XtmPlatformBundle', variables];
 useXtmPlatformBundleQuery.getRootKey = () => ['XtmPlatformBundle'] as const;
+export const useSuspenseXtmPlatformBundleQuery = <
+      TData = XtmPlatformBundleQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: XtmPlatformBundleQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<XtmPlatformBundleQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<XtmPlatformBundleQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<XtmPlatformBundleQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['XtmPlatformBundle'] : ['XtmPlatformBundle', variables],
+    queryFn: fetcher<XtmPlatformBundleQuery, XtmPlatformBundleQueryVariables>(client, XtmPlatformBundleDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseXtmPlatformBundleQuery.getKey = (variables?: XtmPlatformBundleQueryVariables) => variables === undefined ? ['XtmPlatformBundle'] : ['XtmPlatformBundle', variables];
+useSuspenseXtmPlatformBundleQuery.getRootKey = () => ['XtmPlatformBundle'] as const;
 export const useInfiniteXtmPlatformBundleQuery = <
       TData = InfiniteData<XtmPlatformBundleQuery>,
       TError = unknown
@@ -5048,6 +5374,29 @@ export const useInfiniteXtmPlatformBundleQuery = <
 
 useInfiniteXtmPlatformBundleQuery.getKey = (variables?: XtmPlatformBundleQueryVariables) => variables === undefined ? ['XtmPlatformBundle.infinite'] : ['XtmPlatformBundle.infinite', variables];
 useInfiniteXtmPlatformBundleQuery.getRootKey = () => ['XtmPlatformBundle.infinite'] as const;
+export const useSuspenseInfiniteXtmPlatformBundleQuery = <
+      TData = InfiniteData<XtmPlatformBundleQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: XtmPlatformBundleQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<XtmPlatformBundleQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<XtmPlatformBundleQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<XtmPlatformBundleQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['XtmPlatformBundle.infinite'] : ['XtmPlatformBundle.infinite', variables],
+      queryFn: (metaData) => fetcher<XtmPlatformBundleQuery, XtmPlatformBundleQueryVariables>(client, XtmPlatformBundleDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteXtmPlatformBundleQuery.getKey = (variables?: XtmPlatformBundleQueryVariables) => variables === undefined ? ['XtmPlatformBundle.infinite'] : ['XtmPlatformBundle.infinite', variables];
+useSuspenseInfiniteXtmPlatformBundleQuery.getRootKey = () => ['XtmPlatformBundle.infinite'] as const;
 useXtmPlatformBundleQuery.fetcher = (client: GraphQLClient, variables?: XtmPlatformBundleQueryVariables, headers?: RequestInit['headers']) => fetcher<XtmPlatformBundleQuery, XtmPlatformBundleQueryVariables>(client, XtmPlatformBundleDocument, variables, headers);
 
 export const XtmonePlatformIntegrationStatusDocument = `
@@ -5078,6 +5427,26 @@ export const useXtmonePlatformIntegrationStatusQuery = <
 
 useXtmonePlatformIntegrationStatusQuery.getKey = (variables: XtmonePlatformIntegrationStatusQueryVariables) => ['XtmonePlatformIntegrationStatus', variables];
 useXtmonePlatformIntegrationStatusQuery.getRootKey = () => ['XtmonePlatformIntegrationStatus'] as const;
+export const useSuspenseXtmonePlatformIntegrationStatusQuery = <
+      TData = XtmonePlatformIntegrationStatusQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: XtmonePlatformIntegrationStatusQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<XtmonePlatformIntegrationStatusQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<XtmonePlatformIntegrationStatusQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<XtmonePlatformIntegrationStatusQuery, TError, TData>(
+      {
+    queryKey: ['XtmonePlatformIntegrationStatus', variables],
+    queryFn: fetcher<XtmonePlatformIntegrationStatusQuery, XtmonePlatformIntegrationStatusQueryVariables>(client, XtmonePlatformIntegrationStatusDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseXtmonePlatformIntegrationStatusQuery.getKey = (variables: XtmonePlatformIntegrationStatusQueryVariables) => ['XtmonePlatformIntegrationStatus', variables];
+useSuspenseXtmonePlatformIntegrationStatusQuery.getRootKey = () => ['XtmonePlatformIntegrationStatus'] as const;
 export const useInfiniteXtmonePlatformIntegrationStatusQuery = <
       TData = InfiniteData<XtmonePlatformIntegrationStatusQuery>,
       TError = unknown
@@ -5101,6 +5470,29 @@ export const useInfiniteXtmonePlatformIntegrationStatusQuery = <
 
 useInfiniteXtmonePlatformIntegrationStatusQuery.getKey = (variables: XtmonePlatformIntegrationStatusQueryVariables) => ['XtmonePlatformIntegrationStatus.infinite', variables];
 useInfiniteXtmonePlatformIntegrationStatusQuery.getRootKey = () => ['XtmonePlatformIntegrationStatus.infinite'] as const;
+export const useSuspenseInfiniteXtmonePlatformIntegrationStatusQuery = <
+      TData = InfiniteData<XtmonePlatformIntegrationStatusQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: XtmonePlatformIntegrationStatusQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<XtmonePlatformIntegrationStatusQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<XtmonePlatformIntegrationStatusQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<XtmonePlatformIntegrationStatusQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['XtmonePlatformIntegrationStatus.infinite', variables],
+      queryFn: (metaData) => fetcher<XtmonePlatformIntegrationStatusQuery, XtmonePlatformIntegrationStatusQueryVariables>(client, XtmonePlatformIntegrationStatusDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteXtmonePlatformIntegrationStatusQuery.getKey = (variables: XtmonePlatformIntegrationStatusQueryVariables) => ['XtmonePlatformIntegrationStatus.infinite', variables];
+useSuspenseInfiniteXtmonePlatformIntegrationStatusQuery.getRootKey = () => ['XtmonePlatformIntegrationStatus.infinite'] as const;
 useXtmonePlatformIntegrationStatusQuery.fetcher = (client: GraphQLClient, variables: XtmonePlatformIntegrationStatusQueryVariables, headers?: RequestInit['headers']) => fetcher<XtmonePlatformIntegrationStatusQuery, XtmonePlatformIntegrationStatusQueryVariables>(client, XtmonePlatformIntegrationStatusDocument, variables, headers);
 
 export const DocumentFacetsDocument = `
@@ -5158,6 +5550,26 @@ export const useDocumentFacetsQuery = <
 
 useDocumentFacetsQuery.getKey = (variables: DocumentFacetsQueryVariables) => ['DocumentFacets', variables];
 useDocumentFacetsQuery.getRootKey = () => ['DocumentFacets'] as const;
+export const useSuspenseDocumentFacetsQuery = <
+      TData = DocumentFacetsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: DocumentFacetsQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<DocumentFacetsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<DocumentFacetsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<DocumentFacetsQuery, TError, TData>(
+      {
+    queryKey: ['DocumentFacets', variables],
+    queryFn: fetcher<DocumentFacetsQuery, DocumentFacetsQueryVariables>(client, DocumentFacetsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseDocumentFacetsQuery.getKey = (variables: DocumentFacetsQueryVariables) => ['DocumentFacets', variables];
+useSuspenseDocumentFacetsQuery.getRootKey = () => ['DocumentFacets'] as const;
 export const useInfiniteDocumentFacetsQuery = <
       TData = InfiniteData<DocumentFacetsQuery>,
       TError = unknown
@@ -5181,6 +5593,29 @@ export const useInfiniteDocumentFacetsQuery = <
 
 useInfiniteDocumentFacetsQuery.getKey = (variables: DocumentFacetsQueryVariables) => ['DocumentFacets.infinite', variables];
 useInfiniteDocumentFacetsQuery.getRootKey = () => ['DocumentFacets.infinite'] as const;
+export const useSuspenseInfiniteDocumentFacetsQuery = <
+      TData = InfiniteData<DocumentFacetsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: DocumentFacetsQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<DocumentFacetsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<DocumentFacetsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<DocumentFacetsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['DocumentFacets.infinite', variables],
+      queryFn: (metaData) => fetcher<DocumentFacetsQuery, DocumentFacetsQueryVariables>(client, DocumentFacetsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteDocumentFacetsQuery.getKey = (variables: DocumentFacetsQueryVariables) => ['DocumentFacets.infinite', variables];
+useSuspenseInfiniteDocumentFacetsQuery.getRootKey = () => ['DocumentFacets.infinite'] as const;
 useDocumentFacetsQuery.fetcher = (client: GraphQLClient, variables: DocumentFacetsQueryVariables, headers?: RequestInit['headers']) => fetcher<DocumentFacetsQuery, DocumentFacetsQueryVariables>(client, DocumentFacetsDocument, variables, headers);
 
 export const MostDeployedDocumentsQueryDocument = `
@@ -5211,6 +5646,26 @@ export const useMostDeployedDocumentsQueryQuery = <
 
 useMostDeployedDocumentsQueryQuery.getKey = (variables: MostDeployedDocumentsQueryQueryVariables) => ['MostDeployedDocumentsQuery', variables];
 useMostDeployedDocumentsQueryQuery.getRootKey = () => ['MostDeployedDocumentsQuery'] as const;
+export const useSuspenseMostDeployedDocumentsQueryQuery = <
+      TData = MostDeployedDocumentsQueryQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: MostDeployedDocumentsQueryQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<MostDeployedDocumentsQueryQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<MostDeployedDocumentsQueryQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<MostDeployedDocumentsQueryQuery, TError, TData>(
+      {
+    queryKey: ['MostDeployedDocumentsQuery', variables],
+    queryFn: fetcher<MostDeployedDocumentsQueryQuery, MostDeployedDocumentsQueryQueryVariables>(client, MostDeployedDocumentsQueryDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseMostDeployedDocumentsQueryQuery.getKey = (variables: MostDeployedDocumentsQueryQueryVariables) => ['MostDeployedDocumentsQuery', variables];
+useSuspenseMostDeployedDocumentsQueryQuery.getRootKey = () => ['MostDeployedDocumentsQuery'] as const;
 export const useInfiniteMostDeployedDocumentsQueryQuery = <
       TData = InfiniteData<MostDeployedDocumentsQueryQuery>,
       TError = unknown
@@ -5234,6 +5689,29 @@ export const useInfiniteMostDeployedDocumentsQueryQuery = <
 
 useInfiniteMostDeployedDocumentsQueryQuery.getKey = (variables: MostDeployedDocumentsQueryQueryVariables) => ['MostDeployedDocumentsQuery.infinite', variables];
 useInfiniteMostDeployedDocumentsQueryQuery.getRootKey = () => ['MostDeployedDocumentsQuery.infinite'] as const;
+export const useSuspenseInfiniteMostDeployedDocumentsQueryQuery = <
+      TData = InfiniteData<MostDeployedDocumentsQueryQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: MostDeployedDocumentsQueryQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<MostDeployedDocumentsQueryQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<MostDeployedDocumentsQueryQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<MostDeployedDocumentsQueryQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['MostDeployedDocumentsQuery.infinite', variables],
+      queryFn: (metaData) => fetcher<MostDeployedDocumentsQueryQuery, MostDeployedDocumentsQueryQueryVariables>(client, MostDeployedDocumentsQueryDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteMostDeployedDocumentsQueryQuery.getKey = (variables: MostDeployedDocumentsQueryQueryVariables) => ['MostDeployedDocumentsQuery.infinite', variables];
+useSuspenseInfiniteMostDeployedDocumentsQueryQuery.getRootKey = () => ['MostDeployedDocumentsQuery.infinite'] as const;
 useMostDeployedDocumentsQueryQuery.fetcher = (client: GraphQLClient, variables: MostDeployedDocumentsQueryQueryVariables, headers?: RequestInit['headers']) => fetcher<MostDeployedDocumentsQueryQuery, MostDeployedDocumentsQueryQueryVariables>(client, MostDeployedDocumentsQueryDocument, variables, headers);
 
 export const NewestDocumentsQueryDocument = `
@@ -5264,6 +5742,26 @@ export const useNewestDocumentsQueryQuery = <
 
 useNewestDocumentsQueryQuery.getKey = (variables: NewestDocumentsQueryQueryVariables) => ['NewestDocumentsQuery', variables];
 useNewestDocumentsQueryQuery.getRootKey = () => ['NewestDocumentsQuery'] as const;
+export const useSuspenseNewestDocumentsQueryQuery = <
+      TData = NewestDocumentsQueryQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: NewestDocumentsQueryQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<NewestDocumentsQueryQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<NewestDocumentsQueryQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<NewestDocumentsQueryQuery, TError, TData>(
+      {
+    queryKey: ['NewestDocumentsQuery', variables],
+    queryFn: fetcher<NewestDocumentsQueryQuery, NewestDocumentsQueryQueryVariables>(client, NewestDocumentsQueryDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseNewestDocumentsQueryQuery.getKey = (variables: NewestDocumentsQueryQueryVariables) => ['NewestDocumentsQuery', variables];
+useSuspenseNewestDocumentsQueryQuery.getRootKey = () => ['NewestDocumentsQuery'] as const;
 export const useInfiniteNewestDocumentsQueryQuery = <
       TData = InfiniteData<NewestDocumentsQueryQuery>,
       TError = unknown
@@ -5287,6 +5785,29 @@ export const useInfiniteNewestDocumentsQueryQuery = <
 
 useInfiniteNewestDocumentsQueryQuery.getKey = (variables: NewestDocumentsQueryQueryVariables) => ['NewestDocumentsQuery.infinite', variables];
 useInfiniteNewestDocumentsQueryQuery.getRootKey = () => ['NewestDocumentsQuery.infinite'] as const;
+export const useSuspenseInfiniteNewestDocumentsQueryQuery = <
+      TData = InfiniteData<NewestDocumentsQueryQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: NewestDocumentsQueryQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<NewestDocumentsQueryQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<NewestDocumentsQueryQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<NewestDocumentsQueryQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['NewestDocumentsQuery.infinite', variables],
+      queryFn: (metaData) => fetcher<NewestDocumentsQueryQuery, NewestDocumentsQueryQueryVariables>(client, NewestDocumentsQueryDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteNewestDocumentsQueryQuery.getKey = (variables: NewestDocumentsQueryQueryVariables) => ['NewestDocumentsQuery.infinite', variables];
+useSuspenseInfiniteNewestDocumentsQueryQuery.getRootKey = () => ['NewestDocumentsQuery.infinite'] as const;
 useNewestDocumentsQueryQuery.fetcher = (client: GraphQLClient, variables: NewestDocumentsQueryQueryVariables, headers?: RequestInit['headers']) => fetcher<NewestDocumentsQueryQuery, NewestDocumentsQueryQueryVariables>(client, NewestDocumentsQueryDocument, variables, headers);
 
 export const LastDeployedOverviewQueryDocument = `
@@ -5329,6 +5850,26 @@ export const useLastDeployedOverviewQueryQuery = <
 
 useLastDeployedOverviewQueryQuery.getKey = (variables: LastDeployedOverviewQueryQueryVariables) => ['LastDeployedOverviewQuery', variables];
 useLastDeployedOverviewQueryQuery.getRootKey = () => ['LastDeployedOverviewQuery'] as const;
+export const useSuspenseLastDeployedOverviewQueryQuery = <
+      TData = LastDeployedOverviewQueryQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: LastDeployedOverviewQueryQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<LastDeployedOverviewQueryQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<LastDeployedOverviewQueryQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<LastDeployedOverviewQueryQuery, TError, TData>(
+      {
+    queryKey: ['LastDeployedOverviewQuery', variables],
+    queryFn: fetcher<LastDeployedOverviewQueryQuery, LastDeployedOverviewQueryQueryVariables>(client, LastDeployedOverviewQueryDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseLastDeployedOverviewQueryQuery.getKey = (variables: LastDeployedOverviewQueryQueryVariables) => ['LastDeployedOverviewQuery', variables];
+useSuspenseLastDeployedOverviewQueryQuery.getRootKey = () => ['LastDeployedOverviewQuery'] as const;
 export const useInfiniteLastDeployedOverviewQueryQuery = <
       TData = InfiniteData<LastDeployedOverviewQueryQuery>,
       TError = unknown
@@ -5352,6 +5893,29 @@ export const useInfiniteLastDeployedOverviewQueryQuery = <
 
 useInfiniteLastDeployedOverviewQueryQuery.getKey = (variables: LastDeployedOverviewQueryQueryVariables) => ['LastDeployedOverviewQuery.infinite', variables];
 useInfiniteLastDeployedOverviewQueryQuery.getRootKey = () => ['LastDeployedOverviewQuery.infinite'] as const;
+export const useSuspenseInfiniteLastDeployedOverviewQueryQuery = <
+      TData = InfiniteData<LastDeployedOverviewQueryQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: LastDeployedOverviewQueryQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<LastDeployedOverviewQueryQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<LastDeployedOverviewQueryQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<LastDeployedOverviewQueryQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['LastDeployedOverviewQuery.infinite', variables],
+      queryFn: (metaData) => fetcher<LastDeployedOverviewQueryQuery, LastDeployedOverviewQueryQueryVariables>(client, LastDeployedOverviewQueryDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteLastDeployedOverviewQueryQuery.getKey = (variables: LastDeployedOverviewQueryQueryVariables) => ['LastDeployedOverviewQuery.infinite', variables];
+useSuspenseInfiniteLastDeployedOverviewQueryQuery.getRootKey = () => ['LastDeployedOverviewQuery.infinite'] as const;
 useLastDeployedOverviewQueryQuery.fetcher = (client: GraphQLClient, variables: LastDeployedOverviewQueryQueryVariables, headers?: RequestInit['headers']) => fetcher<LastDeployedOverviewQueryQuery, LastDeployedOverviewQueryQueryVariables>(client, LastDeployedOverviewQueryDocument, variables, headers);
 
 export const PublicDocumentsByServiceSlugQueryDocument = `
@@ -5382,6 +5946,26 @@ export const usePublicDocumentsByServiceSlugQueryQuery = <
 
 usePublicDocumentsByServiceSlugQueryQuery.getKey = (variables: PublicDocumentsByServiceSlugQueryQueryVariables) => ['PublicDocumentsByServiceSlugQuery', variables];
 usePublicDocumentsByServiceSlugQueryQuery.getRootKey = () => ['PublicDocumentsByServiceSlugQuery'] as const;
+export const useSuspensePublicDocumentsByServiceSlugQueryQuery = <
+      TData = PublicDocumentsByServiceSlugQueryQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PublicDocumentsByServiceSlugQueryQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<PublicDocumentsByServiceSlugQueryQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<PublicDocumentsByServiceSlugQueryQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<PublicDocumentsByServiceSlugQueryQuery, TError, TData>(
+      {
+    queryKey: ['PublicDocumentsByServiceSlugQuery', variables],
+    queryFn: fetcher<PublicDocumentsByServiceSlugQueryQuery, PublicDocumentsByServiceSlugQueryQueryVariables>(client, PublicDocumentsByServiceSlugQueryDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspensePublicDocumentsByServiceSlugQueryQuery.getKey = (variables: PublicDocumentsByServiceSlugQueryQueryVariables) => ['PublicDocumentsByServiceSlugQuery', variables];
+useSuspensePublicDocumentsByServiceSlugQueryQuery.getRootKey = () => ['PublicDocumentsByServiceSlugQuery'] as const;
 export const useInfinitePublicDocumentsByServiceSlugQueryQuery = <
       TData = InfiniteData<PublicDocumentsByServiceSlugQueryQuery>,
       TError = unknown
@@ -5405,6 +5989,29 @@ export const useInfinitePublicDocumentsByServiceSlugQueryQuery = <
 
 useInfinitePublicDocumentsByServiceSlugQueryQuery.getKey = (variables: PublicDocumentsByServiceSlugQueryQueryVariables) => ['PublicDocumentsByServiceSlugQuery.infinite', variables];
 useInfinitePublicDocumentsByServiceSlugQueryQuery.getRootKey = () => ['PublicDocumentsByServiceSlugQuery.infinite'] as const;
+export const useSuspenseInfinitePublicDocumentsByServiceSlugQueryQuery = <
+      TData = InfiniteData<PublicDocumentsByServiceSlugQueryQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PublicDocumentsByServiceSlugQueryQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<PublicDocumentsByServiceSlugQueryQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<PublicDocumentsByServiceSlugQueryQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<PublicDocumentsByServiceSlugQueryQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['PublicDocumentsByServiceSlugQuery.infinite', variables],
+      queryFn: (metaData) => fetcher<PublicDocumentsByServiceSlugQueryQuery, PublicDocumentsByServiceSlugQueryQueryVariables>(client, PublicDocumentsByServiceSlugQueryDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfinitePublicDocumentsByServiceSlugQueryQuery.getKey = (variables: PublicDocumentsByServiceSlugQueryQueryVariables) => ['PublicDocumentsByServiceSlugQuery.infinite', variables];
+useSuspenseInfinitePublicDocumentsByServiceSlugQueryQuery.getRootKey = () => ['PublicDocumentsByServiceSlugQuery.infinite'] as const;
 usePublicDocumentsByServiceSlugQueryQuery.fetcher = (client: GraphQLClient, variables: PublicDocumentsByServiceSlugQueryQueryVariables, headers?: RequestInit['headers']) => fetcher<PublicDocumentsByServiceSlugQueryQuery, PublicDocumentsByServiceSlugQueryQueryVariables>(client, PublicDocumentsByServiceSlugQueryDocument, variables, headers);
 
 export const PublicDocumentsByServiceSlugSitemapQueryDocument = `
@@ -5437,6 +6044,26 @@ export const usePublicDocumentsByServiceSlugSitemapQueryQuery = <
 
 usePublicDocumentsByServiceSlugSitemapQueryQuery.getKey = (variables: PublicDocumentsByServiceSlugSitemapQueryQueryVariables) => ['PublicDocumentsByServiceSlugSitemapQuery', variables];
 usePublicDocumentsByServiceSlugSitemapQueryQuery.getRootKey = () => ['PublicDocumentsByServiceSlugSitemapQuery'] as const;
+export const useSuspensePublicDocumentsByServiceSlugSitemapQueryQuery = <
+      TData = PublicDocumentsByServiceSlugSitemapQueryQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PublicDocumentsByServiceSlugSitemapQueryQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<PublicDocumentsByServiceSlugSitemapQueryQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<PublicDocumentsByServiceSlugSitemapQueryQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<PublicDocumentsByServiceSlugSitemapQueryQuery, TError, TData>(
+      {
+    queryKey: ['PublicDocumentsByServiceSlugSitemapQuery', variables],
+    queryFn: fetcher<PublicDocumentsByServiceSlugSitemapQueryQuery, PublicDocumentsByServiceSlugSitemapQueryQueryVariables>(client, PublicDocumentsByServiceSlugSitemapQueryDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspensePublicDocumentsByServiceSlugSitemapQueryQuery.getKey = (variables: PublicDocumentsByServiceSlugSitemapQueryQueryVariables) => ['PublicDocumentsByServiceSlugSitemapQuery', variables];
+useSuspensePublicDocumentsByServiceSlugSitemapQueryQuery.getRootKey = () => ['PublicDocumentsByServiceSlugSitemapQuery'] as const;
 export const useInfinitePublicDocumentsByServiceSlugSitemapQueryQuery = <
       TData = InfiniteData<PublicDocumentsByServiceSlugSitemapQueryQuery>,
       TError = unknown
@@ -5460,6 +6087,29 @@ export const useInfinitePublicDocumentsByServiceSlugSitemapQueryQuery = <
 
 useInfinitePublicDocumentsByServiceSlugSitemapQueryQuery.getKey = (variables: PublicDocumentsByServiceSlugSitemapQueryQueryVariables) => ['PublicDocumentsByServiceSlugSitemapQuery.infinite', variables];
 useInfinitePublicDocumentsByServiceSlugSitemapQueryQuery.getRootKey = () => ['PublicDocumentsByServiceSlugSitemapQuery.infinite'] as const;
+export const useSuspenseInfinitePublicDocumentsByServiceSlugSitemapQueryQuery = <
+      TData = InfiniteData<PublicDocumentsByServiceSlugSitemapQueryQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PublicDocumentsByServiceSlugSitemapQueryQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<PublicDocumentsByServiceSlugSitemapQueryQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<PublicDocumentsByServiceSlugSitemapQueryQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<PublicDocumentsByServiceSlugSitemapQueryQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['PublicDocumentsByServiceSlugSitemapQuery.infinite', variables],
+      queryFn: (metaData) => fetcher<PublicDocumentsByServiceSlugSitemapQueryQuery, PublicDocumentsByServiceSlugSitemapQueryQueryVariables>(client, PublicDocumentsByServiceSlugSitemapQueryDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfinitePublicDocumentsByServiceSlugSitemapQueryQuery.getKey = (variables: PublicDocumentsByServiceSlugSitemapQueryQueryVariables) => ['PublicDocumentsByServiceSlugSitemapQuery.infinite', variables];
+useSuspenseInfinitePublicDocumentsByServiceSlugSitemapQueryQuery.getRootKey = () => ['PublicDocumentsByServiceSlugSitemapQuery.infinite'] as const;
 usePublicDocumentsByServiceSlugSitemapQueryQuery.fetcher = (client: GraphQLClient, variables: PublicDocumentsByServiceSlugSitemapQueryQueryVariables, headers?: RequestInit['headers']) => fetcher<PublicDocumentsByServiceSlugSitemapQueryQuery, PublicDocumentsByServiceSlugSitemapQueryQueryVariables>(client, PublicDocumentsByServiceSlugSitemapQueryDocument, variables, headers);
 
 export const FeatureVoteDocument = `
@@ -5529,6 +6179,26 @@ export const useCurrentVotingRoundQuery = <
 
 useCurrentVotingRoundQuery.getKey = (variables: CurrentVotingRoundQueryVariables) => ['CurrentVotingRound', variables];
 useCurrentVotingRoundQuery.getRootKey = () => ['CurrentVotingRound'] as const;
+export const useSuspenseCurrentVotingRoundQuery = <
+      TData = CurrentVotingRoundQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: CurrentVotingRoundQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<CurrentVotingRoundQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<CurrentVotingRoundQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<CurrentVotingRoundQuery, TError, TData>(
+      {
+    queryKey: ['CurrentVotingRound', variables],
+    queryFn: fetcher<CurrentVotingRoundQuery, CurrentVotingRoundQueryVariables>(client, CurrentVotingRoundDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseCurrentVotingRoundQuery.getKey = (variables: CurrentVotingRoundQueryVariables) => ['CurrentVotingRound', variables];
+useSuspenseCurrentVotingRoundQuery.getRootKey = () => ['CurrentVotingRound'] as const;
 export const useInfiniteCurrentVotingRoundQuery = <
       TData = InfiniteData<CurrentVotingRoundQuery>,
       TError = unknown
@@ -5552,6 +6222,29 @@ export const useInfiniteCurrentVotingRoundQuery = <
 
 useInfiniteCurrentVotingRoundQuery.getKey = (variables: CurrentVotingRoundQueryVariables) => ['CurrentVotingRound.infinite', variables];
 useInfiniteCurrentVotingRoundQuery.getRootKey = () => ['CurrentVotingRound.infinite'] as const;
+export const useSuspenseInfiniteCurrentVotingRoundQuery = <
+      TData = InfiniteData<CurrentVotingRoundQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: CurrentVotingRoundQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<CurrentVotingRoundQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<CurrentVotingRoundQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<CurrentVotingRoundQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['CurrentVotingRound.infinite', variables],
+      queryFn: (metaData) => fetcher<CurrentVotingRoundQuery, CurrentVotingRoundQueryVariables>(client, CurrentVotingRoundDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteCurrentVotingRoundQuery.getKey = (variables: CurrentVotingRoundQueryVariables) => ['CurrentVotingRound.infinite', variables];
+useSuspenseInfiniteCurrentVotingRoundQuery.getRootKey = () => ['CurrentVotingRound.infinite'] as const;
 useCurrentVotingRoundQuery.fetcher = (client: GraphQLClient, variables: CurrentVotingRoundQueryVariables, headers?: RequestInit['headers']) => fetcher<CurrentVotingRoundQuery, CurrentVotingRoundQueryVariables>(client, CurrentVotingRoundDocument, variables, headers);
 
 export const CurrentVotingRoundCalloutDocument = `
@@ -5585,6 +6278,26 @@ export const useCurrentVotingRoundCalloutQuery = <
 
 useCurrentVotingRoundCalloutQuery.getKey = (variables: CurrentVotingRoundCalloutQueryVariables) => ['CurrentVotingRoundCallout', variables];
 useCurrentVotingRoundCalloutQuery.getRootKey = () => ['CurrentVotingRoundCallout'] as const;
+export const useSuspenseCurrentVotingRoundCalloutQuery = <
+      TData = CurrentVotingRoundCalloutQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: CurrentVotingRoundCalloutQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<CurrentVotingRoundCalloutQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<CurrentVotingRoundCalloutQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<CurrentVotingRoundCalloutQuery, TError, TData>(
+      {
+    queryKey: ['CurrentVotingRoundCallout', variables],
+    queryFn: fetcher<CurrentVotingRoundCalloutQuery, CurrentVotingRoundCalloutQueryVariables>(client, CurrentVotingRoundCalloutDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseCurrentVotingRoundCalloutQuery.getKey = (variables: CurrentVotingRoundCalloutQueryVariables) => ['CurrentVotingRoundCallout', variables];
+useSuspenseCurrentVotingRoundCalloutQuery.getRootKey = () => ['CurrentVotingRoundCallout'] as const;
 export const useInfiniteCurrentVotingRoundCalloutQuery = <
       TData = InfiniteData<CurrentVotingRoundCalloutQuery>,
       TError = unknown
@@ -5608,6 +6321,29 @@ export const useInfiniteCurrentVotingRoundCalloutQuery = <
 
 useInfiniteCurrentVotingRoundCalloutQuery.getKey = (variables: CurrentVotingRoundCalloutQueryVariables) => ['CurrentVotingRoundCallout.infinite', variables];
 useInfiniteCurrentVotingRoundCalloutQuery.getRootKey = () => ['CurrentVotingRoundCallout.infinite'] as const;
+export const useSuspenseInfiniteCurrentVotingRoundCalloutQuery = <
+      TData = InfiniteData<CurrentVotingRoundCalloutQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: CurrentVotingRoundCalloutQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<CurrentVotingRoundCalloutQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<CurrentVotingRoundCalloutQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<CurrentVotingRoundCalloutQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['CurrentVotingRoundCallout.infinite', variables],
+      queryFn: (metaData) => fetcher<CurrentVotingRoundCalloutQuery, CurrentVotingRoundCalloutQueryVariables>(client, CurrentVotingRoundCalloutDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteCurrentVotingRoundCalloutQuery.getKey = (variables: CurrentVotingRoundCalloutQueryVariables) => ['CurrentVotingRoundCallout.infinite', variables];
+useSuspenseInfiniteCurrentVotingRoundCalloutQuery.getRootKey = () => ['CurrentVotingRoundCallout.infinite'] as const;
 useCurrentVotingRoundCalloutQuery.fetcher = (client: GraphQLClient, variables: CurrentVotingRoundCalloutQueryVariables, headers?: RequestInit['headers']) => fetcher<CurrentVotingRoundCalloutQuery, CurrentVotingRoundCalloutQueryVariables>(client, CurrentVotingRoundCalloutDocument, variables, headers);
 
 export const IntegrationProductVersionFilterDocument = `
@@ -5638,6 +6374,26 @@ export const useIntegrationProductVersionFilterQuery = <
 
 useIntegrationProductVersionFilterQuery.getKey = (variables: IntegrationProductVersionFilterQueryVariables) => ['IntegrationProductVersionFilter', variables];
 useIntegrationProductVersionFilterQuery.getRootKey = () => ['IntegrationProductVersionFilter'] as const;
+export const useSuspenseIntegrationProductVersionFilterQuery = <
+      TData = IntegrationProductVersionFilterQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: IntegrationProductVersionFilterQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<IntegrationProductVersionFilterQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<IntegrationProductVersionFilterQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<IntegrationProductVersionFilterQuery, TError, TData>(
+      {
+    queryKey: ['IntegrationProductVersionFilter', variables],
+    queryFn: fetcher<IntegrationProductVersionFilterQuery, IntegrationProductVersionFilterQueryVariables>(client, IntegrationProductVersionFilterDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseIntegrationProductVersionFilterQuery.getKey = (variables: IntegrationProductVersionFilterQueryVariables) => ['IntegrationProductVersionFilter', variables];
+useSuspenseIntegrationProductVersionFilterQuery.getRootKey = () => ['IntegrationProductVersionFilter'] as const;
 export const useInfiniteIntegrationProductVersionFilterQuery = <
       TData = InfiniteData<IntegrationProductVersionFilterQuery>,
       TError = unknown
@@ -5661,6 +6417,29 @@ export const useInfiniteIntegrationProductVersionFilterQuery = <
 
 useInfiniteIntegrationProductVersionFilterQuery.getKey = (variables: IntegrationProductVersionFilterQueryVariables) => ['IntegrationProductVersionFilter.infinite', variables];
 useInfiniteIntegrationProductVersionFilterQuery.getRootKey = () => ['IntegrationProductVersionFilter.infinite'] as const;
+export const useSuspenseInfiniteIntegrationProductVersionFilterQuery = <
+      TData = InfiniteData<IntegrationProductVersionFilterQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: IntegrationProductVersionFilterQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<IntegrationProductVersionFilterQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<IntegrationProductVersionFilterQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<IntegrationProductVersionFilterQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['IntegrationProductVersionFilter.infinite', variables],
+      queryFn: (metaData) => fetcher<IntegrationProductVersionFilterQuery, IntegrationProductVersionFilterQueryVariables>(client, IntegrationProductVersionFilterDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteIntegrationProductVersionFilterQuery.getKey = (variables: IntegrationProductVersionFilterQueryVariables) => ['IntegrationProductVersionFilter.infinite', variables];
+useSuspenseInfiniteIntegrationProductVersionFilterQuery.getRootKey = () => ['IntegrationProductVersionFilter.infinite'] as const;
 useIntegrationProductVersionFilterQuery.fetcher = (client: GraphQLClient, variables: IntegrationProductVersionFilterQueryVariables, headers?: RequestInit['headers']) => fetcher<IntegrationProductVersionFilterQuery, IntegrationProductVersionFilterQueryVariables>(client, IntegrationProductVersionFilterDocument, variables, headers);
 
 export const MeCheckDocument = `
@@ -5691,6 +6470,26 @@ export const useMeCheckQuery = <
 
 useMeCheckQuery.getKey = (variables?: MeCheckQueryVariables) => variables === undefined ? ['meCheck'] : ['meCheck', variables];
 useMeCheckQuery.getRootKey = () => ['meCheck'] as const;
+export const useSuspenseMeCheckQuery = <
+      TData = MeCheckQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: MeCheckQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<MeCheckQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<MeCheckQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<MeCheckQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['meCheck'] : ['meCheck', variables],
+    queryFn: fetcher<MeCheckQuery, MeCheckQueryVariables>(client, MeCheckDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseMeCheckQuery.getKey = (variables?: MeCheckQueryVariables) => variables === undefined ? ['meCheck'] : ['meCheck', variables];
+useSuspenseMeCheckQuery.getRootKey = () => ['meCheck'] as const;
 export const useInfiniteMeCheckQuery = <
       TData = InfiniteData<MeCheckQuery>,
       TError = unknown
@@ -5714,6 +6513,29 @@ export const useInfiniteMeCheckQuery = <
 
 useInfiniteMeCheckQuery.getKey = (variables?: MeCheckQueryVariables) => variables === undefined ? ['meCheck.infinite'] : ['meCheck.infinite', variables];
 useInfiniteMeCheckQuery.getRootKey = () => ['meCheck.infinite'] as const;
+export const useSuspenseInfiniteMeCheckQuery = <
+      TData = InfiniteData<MeCheckQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: MeCheckQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<MeCheckQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<MeCheckQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<MeCheckQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['meCheck.infinite'] : ['meCheck.infinite', variables],
+      queryFn: (metaData) => fetcher<MeCheckQuery, MeCheckQueryVariables>(client, MeCheckDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteMeCheckQuery.getKey = (variables?: MeCheckQueryVariables) => variables === undefined ? ['meCheck.infinite'] : ['meCheck.infinite', variables];
+useSuspenseInfiniteMeCheckQuery.getRootKey = () => ['meCheck.infinite'] as const;
 useMeCheckQuery.fetcher = (client: GraphQLClient, variables?: MeCheckQueryVariables, headers?: RequestInit['headers']) => fetcher<MeCheckQuery, MeCheckQueryVariables>(client, MeCheckDocument, variables, headers);
 
 export const MeFirstNameDocument = `
@@ -5744,6 +6566,26 @@ export const useMeFirstNameQuery = <
 
 useMeFirstNameQuery.getKey = (variables?: MeFirstNameQueryVariables) => variables === undefined ? ['MeFirstName'] : ['MeFirstName', variables];
 useMeFirstNameQuery.getRootKey = () => ['MeFirstName'] as const;
+export const useSuspenseMeFirstNameQuery = <
+      TData = MeFirstNameQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: MeFirstNameQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<MeFirstNameQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<MeFirstNameQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<MeFirstNameQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['MeFirstName'] : ['MeFirstName', variables],
+    queryFn: fetcher<MeFirstNameQuery, MeFirstNameQueryVariables>(client, MeFirstNameDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseMeFirstNameQuery.getKey = (variables?: MeFirstNameQueryVariables) => variables === undefined ? ['MeFirstName'] : ['MeFirstName', variables];
+useSuspenseMeFirstNameQuery.getRootKey = () => ['MeFirstName'] as const;
 export const useInfiniteMeFirstNameQuery = <
       TData = InfiniteData<MeFirstNameQuery>,
       TError = unknown
@@ -5767,6 +6609,29 @@ export const useInfiniteMeFirstNameQuery = <
 
 useInfiniteMeFirstNameQuery.getKey = (variables?: MeFirstNameQueryVariables) => variables === undefined ? ['MeFirstName.infinite'] : ['MeFirstName.infinite', variables];
 useInfiniteMeFirstNameQuery.getRootKey = () => ['MeFirstName.infinite'] as const;
+export const useSuspenseInfiniteMeFirstNameQuery = <
+      TData = InfiniteData<MeFirstNameQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: MeFirstNameQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<MeFirstNameQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<MeFirstNameQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<MeFirstNameQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['MeFirstName.infinite'] : ['MeFirstName.infinite', variables],
+      queryFn: (metaData) => fetcher<MeFirstNameQuery, MeFirstNameQueryVariables>(client, MeFirstNameDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteMeFirstNameQuery.getKey = (variables?: MeFirstNameQueryVariables) => variables === undefined ? ['MeFirstName.infinite'] : ['MeFirstName.infinite', variables];
+useSuspenseInfiniteMeFirstNameQuery.getRootKey = () => ['MeFirstName.infinite'] as const;
 useMeFirstNameQuery.fetcher = (client: GraphQLClient, variables?: MeFirstNameQueryVariables, headers?: RequestInit['headers']) => fetcher<MeFirstNameQuery, MeFirstNameQueryVariables>(client, MeFirstNameDocument, variables, headers);
 
 export const MeOrganizationDomainsDocument = `
@@ -5800,6 +6665,26 @@ export const useMeOrganizationDomainsQuery = <
 
 useMeOrganizationDomainsQuery.getKey = (variables?: MeOrganizationDomainsQueryVariables) => variables === undefined ? ['MeOrganizationDomains'] : ['MeOrganizationDomains', variables];
 useMeOrganizationDomainsQuery.getRootKey = () => ['MeOrganizationDomains'] as const;
+export const useSuspenseMeOrganizationDomainsQuery = <
+      TData = MeOrganizationDomainsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: MeOrganizationDomainsQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<MeOrganizationDomainsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<MeOrganizationDomainsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<MeOrganizationDomainsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['MeOrganizationDomains'] : ['MeOrganizationDomains', variables],
+    queryFn: fetcher<MeOrganizationDomainsQuery, MeOrganizationDomainsQueryVariables>(client, MeOrganizationDomainsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseMeOrganizationDomainsQuery.getKey = (variables?: MeOrganizationDomainsQueryVariables) => variables === undefined ? ['MeOrganizationDomains'] : ['MeOrganizationDomains', variables];
+useSuspenseMeOrganizationDomainsQuery.getRootKey = () => ['MeOrganizationDomains'] as const;
 export const useInfiniteMeOrganizationDomainsQuery = <
       TData = InfiniteData<MeOrganizationDomainsQuery>,
       TError = unknown
@@ -5823,6 +6708,29 @@ export const useInfiniteMeOrganizationDomainsQuery = <
 
 useInfiniteMeOrganizationDomainsQuery.getKey = (variables?: MeOrganizationDomainsQueryVariables) => variables === undefined ? ['MeOrganizationDomains.infinite'] : ['MeOrganizationDomains.infinite', variables];
 useInfiniteMeOrganizationDomainsQuery.getRootKey = () => ['MeOrganizationDomains.infinite'] as const;
+export const useSuspenseInfiniteMeOrganizationDomainsQuery = <
+      TData = InfiniteData<MeOrganizationDomainsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: MeOrganizationDomainsQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<MeOrganizationDomainsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<MeOrganizationDomainsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<MeOrganizationDomainsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['MeOrganizationDomains.infinite'] : ['MeOrganizationDomains.infinite', variables],
+      queryFn: (metaData) => fetcher<MeOrganizationDomainsQuery, MeOrganizationDomainsQueryVariables>(client, MeOrganizationDomainsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteMeOrganizationDomainsQuery.getKey = (variables?: MeOrganizationDomainsQueryVariables) => variables === undefined ? ['MeOrganizationDomains.infinite'] : ['MeOrganizationDomains.infinite', variables];
+useSuspenseInfiniteMeOrganizationDomainsQuery.getRootKey = () => ['MeOrganizationDomains.infinite'] as const;
 useMeOrganizationDomainsQuery.fetcher = (client: GraphQLClient, variables?: MeOrganizationDomainsQueryVariables, headers?: RequestInit['headers']) => fetcher<MeOrganizationDomainsQuery, MeOrganizationDomainsQueryVariables>(client, MeOrganizationDomainsDocument, variables, headers);
 
 export const NewsFeedDeleteItemDocument = `
@@ -5917,6 +6825,26 @@ export const useNewsFeedListQuery = <
 
 useNewsFeedListQuery.getKey = (variables: NewsFeedListQueryVariables) => ['NewsFeedList', variables];
 useNewsFeedListQuery.getRootKey = () => ['NewsFeedList'] as const;
+export const useSuspenseNewsFeedListQuery = <
+      TData = NewsFeedListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: NewsFeedListQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<NewsFeedListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<NewsFeedListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<NewsFeedListQuery, TError, TData>(
+      {
+    queryKey: ['NewsFeedList', variables],
+    queryFn: fetcher<NewsFeedListQuery, NewsFeedListQueryVariables>(client, NewsFeedListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseNewsFeedListQuery.getKey = (variables: NewsFeedListQueryVariables) => ['NewsFeedList', variables];
+useSuspenseNewsFeedListQuery.getRootKey = () => ['NewsFeedList'] as const;
 export const useInfiniteNewsFeedListQuery = <
       TData = InfiniteData<NewsFeedListQuery>,
       TError = unknown
@@ -5940,6 +6868,29 @@ export const useInfiniteNewsFeedListQuery = <
 
 useInfiniteNewsFeedListQuery.getKey = (variables: NewsFeedListQueryVariables) => ['NewsFeedList.infinite', variables];
 useInfiniteNewsFeedListQuery.getRootKey = () => ['NewsFeedList.infinite'] as const;
+export const useSuspenseInfiniteNewsFeedListQuery = <
+      TData = InfiniteData<NewsFeedListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: NewsFeedListQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<NewsFeedListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<NewsFeedListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<NewsFeedListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['NewsFeedList.infinite', variables],
+      queryFn: (metaData) => fetcher<NewsFeedListQuery, NewsFeedListQueryVariables>(client, NewsFeedListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteNewsFeedListQuery.getKey = (variables: NewsFeedListQueryVariables) => ['NewsFeedList.infinite', variables];
+useSuspenseInfiniteNewsFeedListQuery.getRootKey = () => ['NewsFeedList.infinite'] as const;
 useNewsFeedListQuery.fetcher = (client: GraphQLClient, variables: NewsFeedListQueryVariables, headers?: RequestInit['headers']) => fetcher<NewsFeedListQuery, NewsFeedListQueryVariables>(client, NewsFeedListDocument, variables, headers);
 
 export const OrganizationSubscribedServicesBreadcrumbDocument = `
@@ -5971,6 +6922,26 @@ export const useOrganizationSubscribedServicesBreadcrumbQuery = <
 
 useOrganizationSubscribedServicesBreadcrumbQuery.getKey = (variables: OrganizationSubscribedServicesBreadcrumbQueryVariables) => ['OrganizationSubscribedServicesBreadcrumb', variables];
 useOrganizationSubscribedServicesBreadcrumbQuery.getRootKey = () => ['OrganizationSubscribedServicesBreadcrumb'] as const;
+export const useSuspenseOrganizationSubscribedServicesBreadcrumbQuery = <
+      TData = OrganizationSubscribedServicesBreadcrumbQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: OrganizationSubscribedServicesBreadcrumbQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<OrganizationSubscribedServicesBreadcrumbQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<OrganizationSubscribedServicesBreadcrumbQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<OrganizationSubscribedServicesBreadcrumbQuery, TError, TData>(
+      {
+    queryKey: ['OrganizationSubscribedServicesBreadcrumb', variables],
+    queryFn: fetcher<OrganizationSubscribedServicesBreadcrumbQuery, OrganizationSubscribedServicesBreadcrumbQueryVariables>(client, OrganizationSubscribedServicesBreadcrumbDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseOrganizationSubscribedServicesBreadcrumbQuery.getKey = (variables: OrganizationSubscribedServicesBreadcrumbQueryVariables) => ['OrganizationSubscribedServicesBreadcrumb', variables];
+useSuspenseOrganizationSubscribedServicesBreadcrumbQuery.getRootKey = () => ['OrganizationSubscribedServicesBreadcrumb'] as const;
 export const useInfiniteOrganizationSubscribedServicesBreadcrumbQuery = <
       TData = InfiniteData<OrganizationSubscribedServicesBreadcrumbQuery>,
       TError = unknown
@@ -5994,6 +6965,29 @@ export const useInfiniteOrganizationSubscribedServicesBreadcrumbQuery = <
 
 useInfiniteOrganizationSubscribedServicesBreadcrumbQuery.getKey = (variables: OrganizationSubscribedServicesBreadcrumbQueryVariables) => ['OrganizationSubscribedServicesBreadcrumb.infinite', variables];
 useInfiniteOrganizationSubscribedServicesBreadcrumbQuery.getRootKey = () => ['OrganizationSubscribedServicesBreadcrumb.infinite'] as const;
+export const useSuspenseInfiniteOrganizationSubscribedServicesBreadcrumbQuery = <
+      TData = InfiniteData<OrganizationSubscribedServicesBreadcrumbQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: OrganizationSubscribedServicesBreadcrumbQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<OrganizationSubscribedServicesBreadcrumbQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<OrganizationSubscribedServicesBreadcrumbQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<OrganizationSubscribedServicesBreadcrumbQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['OrganizationSubscribedServicesBreadcrumb.infinite', variables],
+      queryFn: (metaData) => fetcher<OrganizationSubscribedServicesBreadcrumbQuery, OrganizationSubscribedServicesBreadcrumbQueryVariables>(client, OrganizationSubscribedServicesBreadcrumbDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteOrganizationSubscribedServicesBreadcrumbQuery.getKey = (variables: OrganizationSubscribedServicesBreadcrumbQueryVariables) => ['OrganizationSubscribedServicesBreadcrumb.infinite', variables];
+useSuspenseInfiniteOrganizationSubscribedServicesBreadcrumbQuery.getRootKey = () => ['OrganizationSubscribedServicesBreadcrumb.infinite'] as const;
 useOrganizationSubscribedServicesBreadcrumbQuery.fetcher = (client: GraphQLClient, variables: OrganizationSubscribedServicesBreadcrumbQueryVariables, headers?: RequestInit['headers']) => fetcher<OrganizationSubscribedServicesBreadcrumbQuery, OrganizationSubscribedServicesBreadcrumbQueryVariables>(client, OrganizationSubscribedServicesBreadcrumbDocument, variables, headers);
 
 export const OrganizationSubscribedServicesListDocument = `
@@ -6042,6 +7036,26 @@ export const useOrganizationSubscribedServicesListQuery = <
 
 useOrganizationSubscribedServicesListQuery.getKey = (variables: OrganizationSubscribedServicesListQueryVariables) => ['OrganizationSubscribedServicesList', variables];
 useOrganizationSubscribedServicesListQuery.getRootKey = () => ['OrganizationSubscribedServicesList'] as const;
+export const useSuspenseOrganizationSubscribedServicesListQuery = <
+      TData = OrganizationSubscribedServicesListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: OrganizationSubscribedServicesListQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<OrganizationSubscribedServicesListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<OrganizationSubscribedServicesListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<OrganizationSubscribedServicesListQuery, TError, TData>(
+      {
+    queryKey: ['OrganizationSubscribedServicesList', variables],
+    queryFn: fetcher<OrganizationSubscribedServicesListQuery, OrganizationSubscribedServicesListQueryVariables>(client, OrganizationSubscribedServicesListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseOrganizationSubscribedServicesListQuery.getKey = (variables: OrganizationSubscribedServicesListQueryVariables) => ['OrganizationSubscribedServicesList', variables];
+useSuspenseOrganizationSubscribedServicesListQuery.getRootKey = () => ['OrganizationSubscribedServicesList'] as const;
 export const useInfiniteOrganizationSubscribedServicesListQuery = <
       TData = InfiniteData<OrganizationSubscribedServicesListQuery>,
       TError = unknown
@@ -6065,7 +7079,322 @@ export const useInfiniteOrganizationSubscribedServicesListQuery = <
 
 useInfiniteOrganizationSubscribedServicesListQuery.getKey = (variables: OrganizationSubscribedServicesListQueryVariables) => ['OrganizationSubscribedServicesList.infinite', variables];
 useInfiniteOrganizationSubscribedServicesListQuery.getRootKey = () => ['OrganizationSubscribedServicesList.infinite'] as const;
+export const useSuspenseInfiniteOrganizationSubscribedServicesListQuery = <
+      TData = InfiniteData<OrganizationSubscribedServicesListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: OrganizationSubscribedServicesListQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<OrganizationSubscribedServicesListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<OrganizationSubscribedServicesListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<OrganizationSubscribedServicesListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['OrganizationSubscribedServicesList.infinite', variables],
+      queryFn: (metaData) => fetcher<OrganizationSubscribedServicesListQuery, OrganizationSubscribedServicesListQueryVariables>(client, OrganizationSubscribedServicesListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteOrganizationSubscribedServicesListQuery.getKey = (variables: OrganizationSubscribedServicesListQueryVariables) => ['OrganizationSubscribedServicesList.infinite', variables];
+useSuspenseInfiniteOrganizationSubscribedServicesListQuery.getRootKey = () => ['OrganizationSubscribedServicesList.infinite'] as const;
 useOrganizationSubscribedServicesListQuery.fetcher = (client: GraphQLClient, variables: OrganizationSubscribedServicesListQueryVariables, headers?: RequestInit['headers']) => fetcher<OrganizationSubscribedServicesListQuery, OrganizationSubscribedServicesListQueryVariables>(client, OrganizationSubscribedServicesListDocument, variables, headers);
+
+export const OrganizationCreateDocument = `
+    mutation OrganizationCreate($input: OrganizationInput!) {
+  addOrganization(input: $input) {
+    ...OrganizationItem
+  }
+}
+    ${OrganizationItemFragmentDoc}`;
+
+export const useOrganizationCreateMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<OrganizationCreateMutation, TError, OrganizationCreateMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<OrganizationCreateMutation, TError, OrganizationCreateMutationVariables, TContext>(
+      {
+    mutationKey: ['OrganizationCreate'],
+    mutationFn: (variables?: OrganizationCreateMutationVariables) => fetcher<OrganizationCreateMutation, OrganizationCreateMutationVariables>(client, OrganizationCreateDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useOrganizationCreateMutation.getKey = () => ['OrganizationCreate'];
+useOrganizationCreateMutation.getRootKey = () => ['OrganizationCreate'] as const;
+useOrganizationCreateMutation.fetcher = (client: GraphQLClient, variables: OrganizationCreateMutationVariables, headers?: RequestInit['headers']) => fetcher<OrganizationCreateMutation, OrganizationCreateMutationVariables>(client, OrganizationCreateDocument, variables, headers);
+
+export const OrganizationEditDocument = `
+    mutation OrganizationEdit($id: ID!, $input: OrganizationInput!) {
+  editOrganization(id: $id, input: $input) {
+    ...OrganizationItem
+  }
+}
+    ${OrganizationItemFragmentDoc}`;
+
+export const useOrganizationEditMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<OrganizationEditMutation, TError, OrganizationEditMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<OrganizationEditMutation, TError, OrganizationEditMutationVariables, TContext>(
+      {
+    mutationKey: ['OrganizationEdit'],
+    mutationFn: (variables?: OrganizationEditMutationVariables) => fetcher<OrganizationEditMutation, OrganizationEditMutationVariables>(client, OrganizationEditDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useOrganizationEditMutation.getKey = () => ['OrganizationEdit'];
+useOrganizationEditMutation.getRootKey = () => ['OrganizationEdit'] as const;
+useOrganizationEditMutation.fetcher = (client: GraphQLClient, variables: OrganizationEditMutationVariables, headers?: RequestInit['headers']) => fetcher<OrganizationEditMutation, OrganizationEditMutationVariables>(client, OrganizationEditDocument, variables, headers);
+
+export const OrganizationDeleteDocument = `
+    mutation OrganizationDelete($id: ID!) {
+  deleteOrganization(id: $id) {
+    id
+  }
+}
+    `;
+
+export const useOrganizationDeleteMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<OrganizationDeleteMutation, TError, OrganizationDeleteMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<OrganizationDeleteMutation, TError, OrganizationDeleteMutationVariables, TContext>(
+      {
+    mutationKey: ['OrganizationDelete'],
+    mutationFn: (variables?: OrganizationDeleteMutationVariables) => fetcher<OrganizationDeleteMutation, OrganizationDeleteMutationVariables>(client, OrganizationDeleteDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useOrganizationDeleteMutation.getKey = () => ['OrganizationDelete'];
+useOrganizationDeleteMutation.getRootKey = () => ['OrganizationDelete'] as const;
+useOrganizationDeleteMutation.fetcher = (client: GraphQLClient, variables: OrganizationDeleteMutationVariables, headers?: RequestInit['headers']) => fetcher<OrganizationDeleteMutation, OrganizationDeleteMutationVariables>(client, OrganizationDeleteDocument, variables, headers);
+
+export const OrganizationsListDocument = `
+    query OrganizationsList($count: Int, $cursor: ID, $orderBy: OrganizationOrdering!, $orderMode: OrderingMode!, $searchTerm: String) {
+  organizations(
+    first: $count
+    after: $cursor
+    orderBy: $orderBy
+    orderMode: $orderMode
+    searchTerm: $searchTerm
+  ) {
+    totalCount
+    edges {
+      node {
+        ...OrganizationItem
+      }
+    }
+  }
+}
+    ${OrganizationItemFragmentDoc}`;
+
+export const useOrganizationsListQuery = <
+      TData = OrganizationsListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: OrganizationsListQueryVariables,
+      options?: Omit<UseQueryOptions<OrganizationsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<OrganizationsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<OrganizationsListQuery, TError, TData>(
+      {
+    queryKey: ['OrganizationsList', variables],
+    queryFn: fetcher<OrganizationsListQuery, OrganizationsListQueryVariables>(client, OrganizationsListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useOrganizationsListQuery.getKey = (variables: OrganizationsListQueryVariables) => ['OrganizationsList', variables];
+useOrganizationsListQuery.getRootKey = () => ['OrganizationsList'] as const;
+export const useSuspenseOrganizationsListQuery = <
+      TData = OrganizationsListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: OrganizationsListQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<OrganizationsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<OrganizationsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<OrganizationsListQuery, TError, TData>(
+      {
+    queryKey: ['OrganizationsList', variables],
+    queryFn: fetcher<OrganizationsListQuery, OrganizationsListQueryVariables>(client, OrganizationsListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseOrganizationsListQuery.getKey = (variables: OrganizationsListQueryVariables) => ['OrganizationsList', variables];
+useSuspenseOrganizationsListQuery.getRootKey = () => ['OrganizationsList'] as const;
+export const useInfiniteOrganizationsListQuery = <
+      TData = InfiniteData<OrganizationsListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: OrganizationsListQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<OrganizationsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<OrganizationsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<OrganizationsListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['OrganizationsList.infinite', variables],
+      queryFn: (metaData) => fetcher<OrganizationsListQuery, OrganizationsListQueryVariables>(client, OrganizationsListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteOrganizationsListQuery.getKey = (variables: OrganizationsListQueryVariables) => ['OrganizationsList.infinite', variables];
+useInfiniteOrganizationsListQuery.getRootKey = () => ['OrganizationsList.infinite'] as const;
+export const useSuspenseInfiniteOrganizationsListQuery = <
+      TData = InfiniteData<OrganizationsListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: OrganizationsListQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<OrganizationsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<OrganizationsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<OrganizationsListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['OrganizationsList.infinite', variables],
+      queryFn: (metaData) => fetcher<OrganizationsListQuery, OrganizationsListQueryVariables>(client, OrganizationsListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteOrganizationsListQuery.getKey = (variables: OrganizationsListQueryVariables) => ['OrganizationsList.infinite', variables];
+useSuspenseInfiniteOrganizationsListQuery.getRootKey = () => ['OrganizationsList.infinite'] as const;
+useOrganizationsListQuery.fetcher = (client: GraphQLClient, variables: OrganizationsListQueryVariables, headers?: RequestInit['headers']) => fetcher<OrganizationsListQuery, OrganizationsListQueryVariables>(client, OrganizationsListDocument, variables, headers);
+
+export const UserOrganizationsDocument = `
+    query UserOrganizations {
+  userOrganizations {
+    id
+    name
+    personal_space
+  }
+}
+    `;
+
+export const useUserOrganizationsQuery = <
+      TData = UserOrganizationsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: UserOrganizationsQueryVariables,
+      options?: Omit<UseQueryOptions<UserOrganizationsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<UserOrganizationsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<UserOrganizationsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['UserOrganizations'] : ['UserOrganizations', variables],
+    queryFn: fetcher<UserOrganizationsQuery, UserOrganizationsQueryVariables>(client, UserOrganizationsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useUserOrganizationsQuery.getKey = (variables?: UserOrganizationsQueryVariables) => variables === undefined ? ['UserOrganizations'] : ['UserOrganizations', variables];
+useUserOrganizationsQuery.getRootKey = () => ['UserOrganizations'] as const;
+export const useSuspenseUserOrganizationsQuery = <
+      TData = UserOrganizationsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: UserOrganizationsQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<UserOrganizationsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<UserOrganizationsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<UserOrganizationsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['UserOrganizations'] : ['UserOrganizations', variables],
+    queryFn: fetcher<UserOrganizationsQuery, UserOrganizationsQueryVariables>(client, UserOrganizationsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseUserOrganizationsQuery.getKey = (variables?: UserOrganizationsQueryVariables) => variables === undefined ? ['UserOrganizations'] : ['UserOrganizations', variables];
+useSuspenseUserOrganizationsQuery.getRootKey = () => ['UserOrganizations'] as const;
+export const useInfiniteUserOrganizationsQuery = <
+      TData = InfiniteData<UserOrganizationsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: UserOrganizationsQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<UserOrganizationsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<UserOrganizationsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<UserOrganizationsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['UserOrganizations.infinite'] : ['UserOrganizations.infinite', variables],
+      queryFn: (metaData) => fetcher<UserOrganizationsQuery, UserOrganizationsQueryVariables>(client, UserOrganizationsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteUserOrganizationsQuery.getKey = (variables?: UserOrganizationsQueryVariables) => variables === undefined ? ['UserOrganizations.infinite'] : ['UserOrganizations.infinite', variables];
+useInfiniteUserOrganizationsQuery.getRootKey = () => ['UserOrganizations.infinite'] as const;
+export const useSuspenseInfiniteUserOrganizationsQuery = <
+      TData = InfiniteData<UserOrganizationsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: UserOrganizationsQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<UserOrganizationsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<UserOrganizationsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<UserOrganizationsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['UserOrganizations.infinite'] : ['UserOrganizations.infinite', variables],
+      queryFn: (metaData) => fetcher<UserOrganizationsQuery, UserOrganizationsQueryVariables>(client, UserOrganizationsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteUserOrganizationsQuery.getKey = (variables?: UserOrganizationsQueryVariables) => variables === undefined ? ['UserOrganizations.infinite'] : ['UserOrganizations.infinite', variables];
+useSuspenseInfiniteUserOrganizationsQuery.getRootKey = () => ['UserOrganizations.infinite'] as const;
+useUserOrganizationsQuery.fetcher = (client: GraphQLClient, variables?: UserOrganizationsQueryVariables, headers?: RequestInit['headers']) => fetcher<UserOrganizationsQuery, UserOrganizationsQueryVariables>(client, UserOrganizationsDocument, variables, headers);
 
 export const RegisteredSaasPlatformDataDocument = `
     query RegisteredSaasPlatformData($input: RegisteredPlatformInput!) {
@@ -6101,6 +7430,26 @@ export const useRegisteredSaasPlatformDataQuery = <
 
 useRegisteredSaasPlatformDataQuery.getKey = (variables: RegisteredSaasPlatformDataQueryVariables) => ['RegisteredSaasPlatformData', variables];
 useRegisteredSaasPlatformDataQuery.getRootKey = () => ['RegisteredSaasPlatformData'] as const;
+export const useSuspenseRegisteredSaasPlatformDataQuery = <
+      TData = RegisteredSaasPlatformDataQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: RegisteredSaasPlatformDataQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<RegisteredSaasPlatformDataQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<RegisteredSaasPlatformDataQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<RegisteredSaasPlatformDataQuery, TError, TData>(
+      {
+    queryKey: ['RegisteredSaasPlatformData', variables],
+    queryFn: fetcher<RegisteredSaasPlatformDataQuery, RegisteredSaasPlatformDataQueryVariables>(client, RegisteredSaasPlatformDataDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseRegisteredSaasPlatformDataQuery.getKey = (variables: RegisteredSaasPlatformDataQueryVariables) => ['RegisteredSaasPlatformData', variables];
+useSuspenseRegisteredSaasPlatformDataQuery.getRootKey = () => ['RegisteredSaasPlatformData'] as const;
 export const useInfiniteRegisteredSaasPlatformDataQuery = <
       TData = InfiniteData<RegisteredSaasPlatformDataQuery>,
       TError = unknown
@@ -6124,6 +7473,29 @@ export const useInfiniteRegisteredSaasPlatformDataQuery = <
 
 useInfiniteRegisteredSaasPlatformDataQuery.getKey = (variables: RegisteredSaasPlatformDataQueryVariables) => ['RegisteredSaasPlatformData.infinite', variables];
 useInfiniteRegisteredSaasPlatformDataQuery.getRootKey = () => ['RegisteredSaasPlatformData.infinite'] as const;
+export const useSuspenseInfiniteRegisteredSaasPlatformDataQuery = <
+      TData = InfiniteData<RegisteredSaasPlatformDataQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: RegisteredSaasPlatformDataQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<RegisteredSaasPlatformDataQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<RegisteredSaasPlatformDataQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<RegisteredSaasPlatformDataQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['RegisteredSaasPlatformData.infinite', variables],
+      queryFn: (metaData) => fetcher<RegisteredSaasPlatformDataQuery, RegisteredSaasPlatformDataQueryVariables>(client, RegisteredSaasPlatformDataDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteRegisteredSaasPlatformDataQuery.getKey = (variables: RegisteredSaasPlatformDataQueryVariables) => ['RegisteredSaasPlatformData.infinite', variables];
+useSuspenseInfiniteRegisteredSaasPlatformDataQuery.getRootKey = () => ['RegisteredSaasPlatformData.infinite'] as const;
 useRegisteredSaasPlatformDataQuery.fetcher = (client: GraphQLClient, variables: RegisteredSaasPlatformDataQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredSaasPlatformDataQuery, RegisteredSaasPlatformDataQueryVariables>(client, RegisteredSaasPlatformDataDocument, variables, headers);
 
 export const RegisteredPlatformsListDocument = `
@@ -6171,6 +7543,26 @@ export const useRegisteredPlatformsListQuery = <
 
 useRegisteredPlatformsListQuery.getKey = (variables: RegisteredPlatformsListQueryVariables) => ['RegisteredPlatformsList', variables];
 useRegisteredPlatformsListQuery.getRootKey = () => ['RegisteredPlatformsList'] as const;
+export const useSuspenseRegisteredPlatformsListQuery = <
+      TData = RegisteredPlatformsListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: RegisteredPlatformsListQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<RegisteredPlatformsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<RegisteredPlatformsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<RegisteredPlatformsListQuery, TError, TData>(
+      {
+    queryKey: ['RegisteredPlatformsList', variables],
+    queryFn: fetcher<RegisteredPlatformsListQuery, RegisteredPlatformsListQueryVariables>(client, RegisteredPlatformsListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseRegisteredPlatformsListQuery.getKey = (variables: RegisteredPlatformsListQueryVariables) => ['RegisteredPlatformsList', variables];
+useSuspenseRegisteredPlatformsListQuery.getRootKey = () => ['RegisteredPlatformsList'] as const;
 export const useInfiniteRegisteredPlatformsListQuery = <
       TData = InfiniteData<RegisteredPlatformsListQuery>,
       TError = unknown
@@ -6194,6 +7586,29 @@ export const useInfiniteRegisteredPlatformsListQuery = <
 
 useInfiniteRegisteredPlatformsListQuery.getKey = (variables: RegisteredPlatformsListQueryVariables) => ['RegisteredPlatformsList.infinite', variables];
 useInfiniteRegisteredPlatformsListQuery.getRootKey = () => ['RegisteredPlatformsList.infinite'] as const;
+export const useSuspenseInfiniteRegisteredPlatformsListQuery = <
+      TData = InfiniteData<RegisteredPlatformsListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: RegisteredPlatformsListQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<RegisteredPlatformsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<RegisteredPlatformsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<RegisteredPlatformsListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['RegisteredPlatformsList.infinite', variables],
+      queryFn: (metaData) => fetcher<RegisteredPlatformsListQuery, RegisteredPlatformsListQueryVariables>(client, RegisteredPlatformsListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteRegisteredPlatformsListQuery.getKey = (variables: RegisteredPlatformsListQueryVariables) => ['RegisteredPlatformsList.infinite', variables];
+useSuspenseInfiniteRegisteredPlatformsListQuery.getRootKey = () => ['RegisteredPlatformsList.infinite'] as const;
 useRegisteredPlatformsListQuery.fetcher = (client: GraphQLClient, variables: RegisteredPlatformsListQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredPlatformsListQuery, RegisteredPlatformsListQueryVariables>(client, RegisteredPlatformsListDocument, variables, headers);
 
 export const RegisteredPlatformsDocument = `
@@ -6235,6 +7650,26 @@ export const useRegisteredPlatformsQuery = <
 
 useRegisteredPlatformsQuery.getKey = (variables: RegisteredPlatformsQueryVariables) => ['RegisteredPlatforms', variables];
 useRegisteredPlatformsQuery.getRootKey = () => ['RegisteredPlatforms'] as const;
+export const useSuspenseRegisteredPlatformsQuery = <
+      TData = RegisteredPlatformsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: RegisteredPlatformsQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<RegisteredPlatformsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<RegisteredPlatformsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<RegisteredPlatformsQuery, TError, TData>(
+      {
+    queryKey: ['RegisteredPlatforms', variables],
+    queryFn: fetcher<RegisteredPlatformsQuery, RegisteredPlatformsQueryVariables>(client, RegisteredPlatformsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseRegisteredPlatformsQuery.getKey = (variables: RegisteredPlatformsQueryVariables) => ['RegisteredPlatforms', variables];
+useSuspenseRegisteredPlatformsQuery.getRootKey = () => ['RegisteredPlatforms'] as const;
 export const useInfiniteRegisteredPlatformsQuery = <
       TData = InfiniteData<RegisteredPlatformsQuery>,
       TError = unknown
@@ -6258,6 +7693,29 @@ export const useInfiniteRegisteredPlatformsQuery = <
 
 useInfiniteRegisteredPlatformsQuery.getKey = (variables: RegisteredPlatformsQueryVariables) => ['RegisteredPlatforms.infinite', variables];
 useInfiniteRegisteredPlatformsQuery.getRootKey = () => ['RegisteredPlatforms.infinite'] as const;
+export const useSuspenseInfiniteRegisteredPlatformsQuery = <
+      TData = InfiniteData<RegisteredPlatformsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: RegisteredPlatformsQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<RegisteredPlatformsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<RegisteredPlatformsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<RegisteredPlatformsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['RegisteredPlatforms.infinite', variables],
+      queryFn: (metaData) => fetcher<RegisteredPlatformsQuery, RegisteredPlatformsQueryVariables>(client, RegisteredPlatformsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteRegisteredPlatformsQuery.getKey = (variables: RegisteredPlatformsQueryVariables) => ['RegisteredPlatforms.infinite', variables];
+useSuspenseInfiniteRegisteredPlatformsQuery.getRootKey = () => ['RegisteredPlatforms.infinite'] as const;
 useRegisteredPlatformsQuery.fetcher = (client: GraphQLClient, variables: RegisteredPlatformsQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredPlatformsQuery, RegisteredPlatformsQueryVariables>(client, RegisteredPlatformsDocument, variables, headers);
 
 export const PlatformAssociatedOrganizationDocument = `
@@ -6288,6 +7746,26 @@ export const usePlatformAssociatedOrganizationQuery = <
 
 usePlatformAssociatedOrganizationQuery.getKey = (variables: PlatformAssociatedOrganizationQueryVariables) => ['PlatformAssociatedOrganization', variables];
 usePlatformAssociatedOrganizationQuery.getRootKey = () => ['PlatformAssociatedOrganization'] as const;
+export const useSuspensePlatformAssociatedOrganizationQuery = <
+      TData = PlatformAssociatedOrganizationQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PlatformAssociatedOrganizationQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<PlatformAssociatedOrganizationQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<PlatformAssociatedOrganizationQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<PlatformAssociatedOrganizationQuery, TError, TData>(
+      {
+    queryKey: ['PlatformAssociatedOrganization', variables],
+    queryFn: fetcher<PlatformAssociatedOrganizationQuery, PlatformAssociatedOrganizationQueryVariables>(client, PlatformAssociatedOrganizationDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspensePlatformAssociatedOrganizationQuery.getKey = (variables: PlatformAssociatedOrganizationQueryVariables) => ['PlatformAssociatedOrganization', variables];
+useSuspensePlatformAssociatedOrganizationQuery.getRootKey = () => ['PlatformAssociatedOrganization'] as const;
 export const useInfinitePlatformAssociatedOrganizationQuery = <
       TData = InfiniteData<PlatformAssociatedOrganizationQuery>,
       TError = unknown
@@ -6311,6 +7789,29 @@ export const useInfinitePlatformAssociatedOrganizationQuery = <
 
 useInfinitePlatformAssociatedOrganizationQuery.getKey = (variables: PlatformAssociatedOrganizationQueryVariables) => ['PlatformAssociatedOrganization.infinite', variables];
 useInfinitePlatformAssociatedOrganizationQuery.getRootKey = () => ['PlatformAssociatedOrganization.infinite'] as const;
+export const useSuspenseInfinitePlatformAssociatedOrganizationQuery = <
+      TData = InfiniteData<PlatformAssociatedOrganizationQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PlatformAssociatedOrganizationQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<PlatformAssociatedOrganizationQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<PlatformAssociatedOrganizationQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<PlatformAssociatedOrganizationQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['PlatformAssociatedOrganization.infinite', variables],
+      queryFn: (metaData) => fetcher<PlatformAssociatedOrganizationQuery, PlatformAssociatedOrganizationQueryVariables>(client, PlatformAssociatedOrganizationDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfinitePlatformAssociatedOrganizationQuery.getKey = (variables: PlatformAssociatedOrganizationQueryVariables) => ['PlatformAssociatedOrganization.infinite', variables];
+useSuspenseInfinitePlatformAssociatedOrganizationQuery.getRootKey = () => ['PlatformAssociatedOrganization.infinite'] as const;
 usePlatformAssociatedOrganizationQuery.fetcher = (client: GraphQLClient, variables: PlatformAssociatedOrganizationQueryVariables, headers?: RequestInit['headers']) => fetcher<PlatformAssociatedOrganizationQuery, PlatformAssociatedOrganizationQueryVariables>(client, PlatformAssociatedOrganizationDocument, variables, headers);
 
 export const AddRolePortalDocument = `
@@ -6547,6 +8048,26 @@ export const useRolePortalsQuery = <
 
 useRolePortalsQuery.getKey = (variables?: RolePortalsQueryVariables) => variables === undefined ? ['RolePortals'] : ['RolePortals', variables];
 useRolePortalsQuery.getRootKey = () => ['RolePortals'] as const;
+export const useSuspenseRolePortalsQuery = <
+      TData = RolePortalsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: RolePortalsQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<RolePortalsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<RolePortalsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<RolePortalsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['RolePortals'] : ['RolePortals', variables],
+    queryFn: fetcher<RolePortalsQuery, RolePortalsQueryVariables>(client, RolePortalsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseRolePortalsQuery.getKey = (variables?: RolePortalsQueryVariables) => variables === undefined ? ['RolePortals'] : ['RolePortals', variables];
+useSuspenseRolePortalsQuery.getRootKey = () => ['RolePortals'] as const;
 export const useInfiniteRolePortalsQuery = <
       TData = InfiniteData<RolePortalsQuery>,
       TError = unknown
@@ -6570,6 +8091,29 @@ export const useInfiniteRolePortalsQuery = <
 
 useInfiniteRolePortalsQuery.getKey = (variables?: RolePortalsQueryVariables) => variables === undefined ? ['RolePortals.infinite'] : ['RolePortals.infinite', variables];
 useInfiniteRolePortalsQuery.getRootKey = () => ['RolePortals.infinite'] as const;
+export const useSuspenseInfiniteRolePortalsQuery = <
+      TData = InfiniteData<RolePortalsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: RolePortalsQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<RolePortalsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<RolePortalsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<RolePortalsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['RolePortals.infinite'] : ['RolePortals.infinite', variables],
+      queryFn: (metaData) => fetcher<RolePortalsQuery, RolePortalsQueryVariables>(client, RolePortalsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteRolePortalsQuery.getKey = (variables?: RolePortalsQueryVariables) => variables === undefined ? ['RolePortals.infinite'] : ['RolePortals.infinite', variables];
+useSuspenseInfiniteRolePortalsQuery.getRootKey = () => ['RolePortals.infinite'] as const;
 useRolePortalsQuery.fetcher = (client: GraphQLClient, variables?: RolePortalsQueryVariables, headers?: RequestInit['headers']) => fetcher<RolePortalsQuery, RolePortalsQueryVariables>(client, RolePortalsDocument, variables, headers);
 
 export const SsoGroupRolePortalsDocument = `
@@ -6604,6 +8148,26 @@ export const useSsoGroupRolePortalsQuery = <
 
 useSsoGroupRolePortalsQuery.getKey = (variables?: SsoGroupRolePortalsQueryVariables) => variables === undefined ? ['SSOGroupRolePortals'] : ['SSOGroupRolePortals', variables];
 useSsoGroupRolePortalsQuery.getRootKey = () => ['SSOGroupRolePortals'] as const;
+export const useSuspenseSsoGroupRolePortalsQuery = <
+      TData = SsoGroupRolePortalsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: SsoGroupRolePortalsQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<SsoGroupRolePortalsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<SsoGroupRolePortalsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<SsoGroupRolePortalsQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['SSOGroupRolePortals'] : ['SSOGroupRolePortals', variables],
+    queryFn: fetcher<SsoGroupRolePortalsQuery, SsoGroupRolePortalsQueryVariables>(client, SsoGroupRolePortalsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseSsoGroupRolePortalsQuery.getKey = (variables?: SsoGroupRolePortalsQueryVariables) => variables === undefined ? ['SSOGroupRolePortals'] : ['SSOGroupRolePortals', variables];
+useSuspenseSsoGroupRolePortalsQuery.getRootKey = () => ['SSOGroupRolePortals'] as const;
 export const useInfiniteSsoGroupRolePortalsQuery = <
       TData = InfiniteData<SsoGroupRolePortalsQuery>,
       TError = unknown
@@ -6627,6 +8191,29 @@ export const useInfiniteSsoGroupRolePortalsQuery = <
 
 useInfiniteSsoGroupRolePortalsQuery.getKey = (variables?: SsoGroupRolePortalsQueryVariables) => variables === undefined ? ['SSOGroupRolePortals.infinite'] : ['SSOGroupRolePortals.infinite', variables];
 useInfiniteSsoGroupRolePortalsQuery.getRootKey = () => ['SSOGroupRolePortals.infinite'] as const;
+export const useSuspenseInfiniteSsoGroupRolePortalsQuery = <
+      TData = InfiniteData<SsoGroupRolePortalsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SsoGroupRolePortalsQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<SsoGroupRolePortalsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<SsoGroupRolePortalsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<SsoGroupRolePortalsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['SSOGroupRolePortals.infinite'] : ['SSOGroupRolePortals.infinite', variables],
+      queryFn: (metaData) => fetcher<SsoGroupRolePortalsQuery, SsoGroupRolePortalsQueryVariables>(client, SsoGroupRolePortalsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteSsoGroupRolePortalsQuery.getKey = (variables?: SsoGroupRolePortalsQueryVariables) => variables === undefined ? ['SSOGroupRolePortals.infinite'] : ['SSOGroupRolePortals.infinite', variables];
+useSuspenseInfiniteSsoGroupRolePortalsQuery.getRootKey = () => ['SSOGroupRolePortals.infinite'] as const;
 useSsoGroupRolePortalsQuery.fetcher = (client: GraphQLClient, variables?: SsoGroupRolePortalsQueryVariables, headers?: RequestInit['headers']) => fetcher<SsoGroupRolePortalsQuery, SsoGroupRolePortalsQueryVariables>(client, SsoGroupRolePortalsDocument, variables, headers);
 
 export const SaasPlatformsListDocument = `
@@ -6688,6 +8275,26 @@ export const useSaasPlatformsListQuery = <
 
 useSaasPlatformsListQuery.getKey = (variables: SaasPlatformsListQueryVariables) => ['SaasPlatformsList', variables];
 useSaasPlatformsListQuery.getRootKey = () => ['SaasPlatformsList'] as const;
+export const useSuspenseSaasPlatformsListQuery = <
+      TData = SaasPlatformsListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SaasPlatformsListQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<SaasPlatformsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<SaasPlatformsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<SaasPlatformsListQuery, TError, TData>(
+      {
+    queryKey: ['SaasPlatformsList', variables],
+    queryFn: fetcher<SaasPlatformsListQuery, SaasPlatformsListQueryVariables>(client, SaasPlatformsListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseSaasPlatformsListQuery.getKey = (variables: SaasPlatformsListQueryVariables) => ['SaasPlatformsList', variables];
+useSuspenseSaasPlatformsListQuery.getRootKey = () => ['SaasPlatformsList'] as const;
 export const useInfiniteSaasPlatformsListQuery = <
       TData = InfiniteData<SaasPlatformsListQuery>,
       TError = unknown
@@ -6711,6 +8318,29 @@ export const useInfiniteSaasPlatformsListQuery = <
 
 useInfiniteSaasPlatformsListQuery.getKey = (variables: SaasPlatformsListQueryVariables) => ['SaasPlatformsList.infinite', variables];
 useInfiniteSaasPlatformsListQuery.getRootKey = () => ['SaasPlatformsList.infinite'] as const;
+export const useSuspenseInfiniteSaasPlatformsListQuery = <
+      TData = InfiniteData<SaasPlatformsListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SaasPlatformsListQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<SaasPlatformsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<SaasPlatformsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<SaasPlatformsListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['SaasPlatformsList.infinite', variables],
+      queryFn: (metaData) => fetcher<SaasPlatformsListQuery, SaasPlatformsListQueryVariables>(client, SaasPlatformsListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteSaasPlatformsListQuery.getKey = (variables: SaasPlatformsListQueryVariables) => ['SaasPlatformsList.infinite', variables];
+useSuspenseInfiniteSaasPlatformsListQuery.getRootKey = () => ['SaasPlatformsList.infinite'] as const;
 useSaasPlatformsListQuery.fetcher = (client: GraphQLClient, variables: SaasPlatformsListQueryVariables, headers?: RequestInit['headers']) => fetcher<SaasPlatformsListQuery, SaasPlatformsListQueryVariables>(client, SaasPlatformsListDocument, variables, headers);
 
 export const AddUsersToBundleGroupsDocument = `
@@ -6850,6 +8480,26 @@ export const useBundleUserServiceGroupsQuery = <
 
 useBundleUserServiceGroupsQuery.getKey = (variables: BundleUserServiceGroupsQueryVariables) => ['BundleUserServiceGroups', variables];
 useBundleUserServiceGroupsQuery.getRootKey = () => ['BundleUserServiceGroups'] as const;
+export const useSuspenseBundleUserServiceGroupsQuery = <
+      TData = BundleUserServiceGroupsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: BundleUserServiceGroupsQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<BundleUserServiceGroupsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<BundleUserServiceGroupsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<BundleUserServiceGroupsQuery, TError, TData>(
+      {
+    queryKey: ['BundleUserServiceGroups', variables],
+    queryFn: fetcher<BundleUserServiceGroupsQuery, BundleUserServiceGroupsQueryVariables>(client, BundleUserServiceGroupsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseBundleUserServiceGroupsQuery.getKey = (variables: BundleUserServiceGroupsQueryVariables) => ['BundleUserServiceGroups', variables];
+useSuspenseBundleUserServiceGroupsQuery.getRootKey = () => ['BundleUserServiceGroups'] as const;
 export const useInfiniteBundleUserServiceGroupsQuery = <
       TData = InfiniteData<BundleUserServiceGroupsQuery>,
       TError = unknown
@@ -6873,6 +8523,29 @@ export const useInfiniteBundleUserServiceGroupsQuery = <
 
 useInfiniteBundleUserServiceGroupsQuery.getKey = (variables: BundleUserServiceGroupsQueryVariables) => ['BundleUserServiceGroups.infinite', variables];
 useInfiniteBundleUserServiceGroupsQuery.getRootKey = () => ['BundleUserServiceGroups.infinite'] as const;
+export const useSuspenseInfiniteBundleUserServiceGroupsQuery = <
+      TData = InfiniteData<BundleUserServiceGroupsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: BundleUserServiceGroupsQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<BundleUserServiceGroupsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<BundleUserServiceGroupsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<BundleUserServiceGroupsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['BundleUserServiceGroups.infinite', variables],
+      queryFn: (metaData) => fetcher<BundleUserServiceGroupsQuery, BundleUserServiceGroupsQueryVariables>(client, BundleUserServiceGroupsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteBundleUserServiceGroupsQuery.getKey = (variables: BundleUserServiceGroupsQueryVariables) => ['BundleUserServiceGroups.infinite', variables];
+useSuspenseInfiniteBundleUserServiceGroupsQuery.getRootKey = () => ['BundleUserServiceGroups.infinite'] as const;
 useBundleUserServiceGroupsQuery.fetcher = (client: GraphQLClient, variables: BundleUserServiceGroupsQueryVariables, headers?: RequestInit['headers']) => fetcher<BundleUserServiceGroupsQuery, BundleUserServiceGroupsQueryVariables>(client, BundleUserServiceGroupsDocument, variables, headers);
 
 export const BundleProductsDocument = `
@@ -6901,6 +8574,26 @@ export const useBundleProductsQuery = <
 
 useBundleProductsQuery.getKey = (variables: BundleProductsQueryVariables) => ['BundleProducts', variables];
 useBundleProductsQuery.getRootKey = () => ['BundleProducts'] as const;
+export const useSuspenseBundleProductsQuery = <
+      TData = BundleProductsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: BundleProductsQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<BundleProductsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<BundleProductsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<BundleProductsQuery, TError, TData>(
+      {
+    queryKey: ['BundleProducts', variables],
+    queryFn: fetcher<BundleProductsQuery, BundleProductsQueryVariables>(client, BundleProductsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseBundleProductsQuery.getKey = (variables: BundleProductsQueryVariables) => ['BundleProducts', variables];
+useSuspenseBundleProductsQuery.getRootKey = () => ['BundleProducts'] as const;
 export const useInfiniteBundleProductsQuery = <
       TData = InfiniteData<BundleProductsQuery>,
       TError = unknown
@@ -6924,6 +8617,29 @@ export const useInfiniteBundleProductsQuery = <
 
 useInfiniteBundleProductsQuery.getKey = (variables: BundleProductsQueryVariables) => ['BundleProducts.infinite', variables];
 useInfiniteBundleProductsQuery.getRootKey = () => ['BundleProducts.infinite'] as const;
+export const useSuspenseInfiniteBundleProductsQuery = <
+      TData = InfiniteData<BundleProductsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: BundleProductsQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<BundleProductsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<BundleProductsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<BundleProductsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['BundleProducts.infinite', variables],
+      queryFn: (metaData) => fetcher<BundleProductsQuery, BundleProductsQueryVariables>(client, BundleProductsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteBundleProductsQuery.getKey = (variables: BundleProductsQueryVariables) => ['BundleProducts.infinite', variables];
+useSuspenseInfiniteBundleProductsQuery.getRootKey = () => ['BundleProducts.infinite'] as const;
 useBundleProductsQuery.fetcher = (client: GraphQLClient, variables: BundleProductsQueryVariables, headers?: RequestInit['headers']) => fetcher<BundleProductsQuery, BundleProductsQueryVariables>(client, BundleProductsDocument, variables, headers);
 
 export const ServiceInstancesListDocument = `
@@ -6968,6 +8684,26 @@ export const useServiceInstancesListQuery = <
 
 useServiceInstancesListQuery.getKey = (variables: ServiceInstancesListQueryVariables) => ['ServiceInstancesList', variables];
 useServiceInstancesListQuery.getRootKey = () => ['ServiceInstancesList'] as const;
+export const useSuspenseServiceInstancesListQuery = <
+      TData = ServiceInstancesListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ServiceInstancesListQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<ServiceInstancesListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<ServiceInstancesListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<ServiceInstancesListQuery, TError, TData>(
+      {
+    queryKey: ['ServiceInstancesList', variables],
+    queryFn: fetcher<ServiceInstancesListQuery, ServiceInstancesListQueryVariables>(client, ServiceInstancesListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseServiceInstancesListQuery.getKey = (variables: ServiceInstancesListQueryVariables) => ['ServiceInstancesList', variables];
+useSuspenseServiceInstancesListQuery.getRootKey = () => ['ServiceInstancesList'] as const;
 export const useInfiniteServiceInstancesListQuery = <
       TData = InfiniteData<ServiceInstancesListQuery>,
       TError = unknown
@@ -6991,6 +8727,29 @@ export const useInfiniteServiceInstancesListQuery = <
 
 useInfiniteServiceInstancesListQuery.getKey = (variables: ServiceInstancesListQueryVariables) => ['ServiceInstancesList.infinite', variables];
 useInfiniteServiceInstancesListQuery.getRootKey = () => ['ServiceInstancesList.infinite'] as const;
+export const useSuspenseInfiniteServiceInstancesListQuery = <
+      TData = InfiniteData<ServiceInstancesListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ServiceInstancesListQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<ServiceInstancesListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<ServiceInstancesListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<ServiceInstancesListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['ServiceInstancesList.infinite', variables],
+      queryFn: (metaData) => fetcher<ServiceInstancesListQuery, ServiceInstancesListQueryVariables>(client, ServiceInstancesListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteServiceInstancesListQuery.getKey = (variables: ServiceInstancesListQueryVariables) => ['ServiceInstancesList.infinite', variables];
+useSuspenseInfiniteServiceInstancesListQuery.getRootKey = () => ['ServiceInstancesList.infinite'] as const;
 useServiceInstancesListQuery.fetcher = (client: GraphQLClient, variables: ServiceInstancesListQueryVariables, headers?: RequestInit['headers']) => fetcher<ServiceInstancesListQuery, ServiceInstancesListQueryVariables>(client, ServiceInstancesListDocument, variables, headers);
 
 export const SeoServiceInstancesDocument = `
@@ -7021,6 +8780,26 @@ export const useSeoServiceInstancesQuery = <
 
 useSeoServiceInstancesQuery.getKey = (variables?: SeoServiceInstancesQueryVariables) => variables === undefined ? ['SeoServiceInstances'] : ['SeoServiceInstances', variables];
 useSeoServiceInstancesQuery.getRootKey = () => ['SeoServiceInstances'] as const;
+export const useSuspenseSeoServiceInstancesQuery = <
+      TData = SeoServiceInstancesQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: SeoServiceInstancesQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<SeoServiceInstancesQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<SeoServiceInstancesQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<SeoServiceInstancesQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['SeoServiceInstances'] : ['SeoServiceInstances', variables],
+    queryFn: fetcher<SeoServiceInstancesQuery, SeoServiceInstancesQueryVariables>(client, SeoServiceInstancesDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseSeoServiceInstancesQuery.getKey = (variables?: SeoServiceInstancesQueryVariables) => variables === undefined ? ['SeoServiceInstances'] : ['SeoServiceInstances', variables];
+useSuspenseSeoServiceInstancesQuery.getRootKey = () => ['SeoServiceInstances'] as const;
 export const useInfiniteSeoServiceInstancesQuery = <
       TData = InfiniteData<SeoServiceInstancesQuery>,
       TError = unknown
@@ -7044,6 +8823,29 @@ export const useInfiniteSeoServiceInstancesQuery = <
 
 useInfiniteSeoServiceInstancesQuery.getKey = (variables?: SeoServiceInstancesQueryVariables) => variables === undefined ? ['SeoServiceInstances.infinite'] : ['SeoServiceInstances.infinite', variables];
 useInfiniteSeoServiceInstancesQuery.getRootKey = () => ['SeoServiceInstances.infinite'] as const;
+export const useSuspenseInfiniteSeoServiceInstancesQuery = <
+      TData = InfiniteData<SeoServiceInstancesQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SeoServiceInstancesQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<SeoServiceInstancesQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<SeoServiceInstancesQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<SeoServiceInstancesQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['SeoServiceInstances.infinite'] : ['SeoServiceInstances.infinite', variables],
+      queryFn: (metaData) => fetcher<SeoServiceInstancesQuery, SeoServiceInstancesQueryVariables>(client, SeoServiceInstancesDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteSeoServiceInstancesQuery.getKey = (variables?: SeoServiceInstancesQueryVariables) => variables === undefined ? ['SeoServiceInstances.infinite'] : ['SeoServiceInstances.infinite', variables];
+useSuspenseInfiniteSeoServiceInstancesQuery.getRootKey = () => ['SeoServiceInstances.infinite'] as const;
 useSeoServiceInstancesQuery.fetcher = (client: GraphQLClient, variables?: SeoServiceInstancesQueryVariables, headers?: RequestInit['headers']) => fetcher<SeoServiceInstancesQuery, SeoServiceInstancesQueryVariables>(client, SeoServiceInstancesDocument, variables, headers);
 
 export const SeoServiceInstanceBySlugDocument = `
@@ -7074,6 +8876,26 @@ export const useSeoServiceInstanceBySlugQuery = <
 
 useSeoServiceInstanceBySlugQuery.getKey = (variables: SeoServiceInstanceBySlugQueryVariables) => ['SeoServiceInstanceBySlug', variables];
 useSeoServiceInstanceBySlugQuery.getRootKey = () => ['SeoServiceInstanceBySlug'] as const;
+export const useSuspenseSeoServiceInstanceBySlugQuery = <
+      TData = SeoServiceInstanceBySlugQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SeoServiceInstanceBySlugQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<SeoServiceInstanceBySlugQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<SeoServiceInstanceBySlugQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<SeoServiceInstanceBySlugQuery, TError, TData>(
+      {
+    queryKey: ['SeoServiceInstanceBySlug', variables],
+    queryFn: fetcher<SeoServiceInstanceBySlugQuery, SeoServiceInstanceBySlugQueryVariables>(client, SeoServiceInstanceBySlugDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseSeoServiceInstanceBySlugQuery.getKey = (variables: SeoServiceInstanceBySlugQueryVariables) => ['SeoServiceInstanceBySlug', variables];
+useSuspenseSeoServiceInstanceBySlugQuery.getRootKey = () => ['SeoServiceInstanceBySlug'] as const;
 export const useInfiniteSeoServiceInstanceBySlugQuery = <
       TData = InfiniteData<SeoServiceInstanceBySlugQuery>,
       TError = unknown
@@ -7097,6 +8919,29 @@ export const useInfiniteSeoServiceInstanceBySlugQuery = <
 
 useInfiniteSeoServiceInstanceBySlugQuery.getKey = (variables: SeoServiceInstanceBySlugQueryVariables) => ['SeoServiceInstanceBySlug.infinite', variables];
 useInfiniteSeoServiceInstanceBySlugQuery.getRootKey = () => ['SeoServiceInstanceBySlug.infinite'] as const;
+export const useSuspenseInfiniteSeoServiceInstanceBySlugQuery = <
+      TData = InfiniteData<SeoServiceInstanceBySlugQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SeoServiceInstanceBySlugQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<SeoServiceInstanceBySlugQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<SeoServiceInstanceBySlugQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<SeoServiceInstanceBySlugQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['SeoServiceInstanceBySlug.infinite', variables],
+      queryFn: (metaData) => fetcher<SeoServiceInstanceBySlugQuery, SeoServiceInstanceBySlugQueryVariables>(client, SeoServiceInstanceBySlugDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteSeoServiceInstanceBySlugQuery.getKey = (variables: SeoServiceInstanceBySlugQueryVariables) => ['SeoServiceInstanceBySlug.infinite', variables];
+useSuspenseInfiniteSeoServiceInstanceBySlugQuery.getRootKey = () => ['SeoServiceInstanceBySlug.infinite'] as const;
 useSeoServiceInstanceBySlugQuery.fetcher = (client: GraphQLClient, variables: SeoServiceInstanceBySlugQueryVariables, headers?: RequestInit['headers']) => fetcher<SeoServiceInstanceBySlugQuery, SeoServiceInstanceBySlugQueryVariables>(client, SeoServiceInstanceBySlugDocument, variables, headers);
 
 export const ServiceInstanceLinksByTagsDocument = `
@@ -7127,6 +8972,26 @@ export const useServiceInstanceLinksByTagsQuery = <
 
 useServiceInstanceLinksByTagsQuery.getKey = (variables: ServiceInstanceLinksByTagsQueryVariables) => ['ServiceInstanceLinksByTags', variables];
 useServiceInstanceLinksByTagsQuery.getRootKey = () => ['ServiceInstanceLinksByTags'] as const;
+export const useSuspenseServiceInstanceLinksByTagsQuery = <
+      TData = ServiceInstanceLinksByTagsQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ServiceInstanceLinksByTagsQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<ServiceInstanceLinksByTagsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<ServiceInstanceLinksByTagsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<ServiceInstanceLinksByTagsQuery, TError, TData>(
+      {
+    queryKey: ['ServiceInstanceLinksByTags', variables],
+    queryFn: fetcher<ServiceInstanceLinksByTagsQuery, ServiceInstanceLinksByTagsQueryVariables>(client, ServiceInstanceLinksByTagsDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseServiceInstanceLinksByTagsQuery.getKey = (variables: ServiceInstanceLinksByTagsQueryVariables) => ['ServiceInstanceLinksByTags', variables];
+useSuspenseServiceInstanceLinksByTagsQuery.getRootKey = () => ['ServiceInstanceLinksByTags'] as const;
 export const useInfiniteServiceInstanceLinksByTagsQuery = <
       TData = InfiniteData<ServiceInstanceLinksByTagsQuery>,
       TError = unknown
@@ -7150,6 +9015,29 @@ export const useInfiniteServiceInstanceLinksByTagsQuery = <
 
 useInfiniteServiceInstanceLinksByTagsQuery.getKey = (variables: ServiceInstanceLinksByTagsQueryVariables) => ['ServiceInstanceLinksByTags.infinite', variables];
 useInfiniteServiceInstanceLinksByTagsQuery.getRootKey = () => ['ServiceInstanceLinksByTags.infinite'] as const;
+export const useSuspenseInfiniteServiceInstanceLinksByTagsQuery = <
+      TData = InfiniteData<ServiceInstanceLinksByTagsQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ServiceInstanceLinksByTagsQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<ServiceInstanceLinksByTagsQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<ServiceInstanceLinksByTagsQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<ServiceInstanceLinksByTagsQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['ServiceInstanceLinksByTags.infinite', variables],
+      queryFn: (metaData) => fetcher<ServiceInstanceLinksByTagsQuery, ServiceInstanceLinksByTagsQueryVariables>(client, ServiceInstanceLinksByTagsDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteServiceInstanceLinksByTagsQuery.getKey = (variables: ServiceInstanceLinksByTagsQueryVariables) => ['ServiceInstanceLinksByTags.infinite', variables];
+useSuspenseInfiniteServiceInstanceLinksByTagsQuery.getRootKey = () => ['ServiceInstanceLinksByTags.infinite'] as const;
 useServiceInstanceLinksByTagsQuery.fetcher = (client: GraphQLClient, variables: ServiceInstanceLinksByTagsQueryVariables, headers?: RequestInit['headers']) => fetcher<ServiceInstanceLinksByTagsQuery, ServiceInstanceLinksByTagsQueryVariables>(client, ServiceInstanceLinksByTagsDocument, variables, headers);
 
 export const ServiceInstanceSeoMetadataByIdDocument = `
@@ -7180,6 +9068,26 @@ export const useServiceInstanceSeoMetadataByIdQuery = <
 
 useServiceInstanceSeoMetadataByIdQuery.getKey = (variables: ServiceInstanceSeoMetadataByIdQueryVariables) => ['ServiceInstanceSeoMetadataById', variables];
 useServiceInstanceSeoMetadataByIdQuery.getRootKey = () => ['ServiceInstanceSeoMetadataById'] as const;
+export const useSuspenseServiceInstanceSeoMetadataByIdQuery = <
+      TData = ServiceInstanceSeoMetadataByIdQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ServiceInstanceSeoMetadataByIdQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<ServiceInstanceSeoMetadataByIdQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<ServiceInstanceSeoMetadataByIdQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<ServiceInstanceSeoMetadataByIdQuery, TError, TData>(
+      {
+    queryKey: ['ServiceInstanceSeoMetadataById', variables],
+    queryFn: fetcher<ServiceInstanceSeoMetadataByIdQuery, ServiceInstanceSeoMetadataByIdQueryVariables>(client, ServiceInstanceSeoMetadataByIdDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseServiceInstanceSeoMetadataByIdQuery.getKey = (variables: ServiceInstanceSeoMetadataByIdQueryVariables) => ['ServiceInstanceSeoMetadataById', variables];
+useSuspenseServiceInstanceSeoMetadataByIdQuery.getRootKey = () => ['ServiceInstanceSeoMetadataById'] as const;
 export const useInfiniteServiceInstanceSeoMetadataByIdQuery = <
       TData = InfiniteData<ServiceInstanceSeoMetadataByIdQuery>,
       TError = unknown
@@ -7203,6 +9111,29 @@ export const useInfiniteServiceInstanceSeoMetadataByIdQuery = <
 
 useInfiniteServiceInstanceSeoMetadataByIdQuery.getKey = (variables: ServiceInstanceSeoMetadataByIdQueryVariables) => ['ServiceInstanceSeoMetadataById.infinite', variables];
 useInfiniteServiceInstanceSeoMetadataByIdQuery.getRootKey = () => ['ServiceInstanceSeoMetadataById.infinite'] as const;
+export const useSuspenseInfiniteServiceInstanceSeoMetadataByIdQuery = <
+      TData = InfiniteData<ServiceInstanceSeoMetadataByIdQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ServiceInstanceSeoMetadataByIdQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<ServiceInstanceSeoMetadataByIdQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<ServiceInstanceSeoMetadataByIdQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<ServiceInstanceSeoMetadataByIdQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['ServiceInstanceSeoMetadataById.infinite', variables],
+      queryFn: (metaData) => fetcher<ServiceInstanceSeoMetadataByIdQuery, ServiceInstanceSeoMetadataByIdQueryVariables>(client, ServiceInstanceSeoMetadataByIdDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteServiceInstanceSeoMetadataByIdQuery.getKey = (variables: ServiceInstanceSeoMetadataByIdQueryVariables) => ['ServiceInstanceSeoMetadataById.infinite', variables];
+useSuspenseInfiniteServiceInstanceSeoMetadataByIdQuery.getRootKey = () => ['ServiceInstanceSeoMetadataById.infinite'] as const;
 useServiceInstanceSeoMetadataByIdQuery.fetcher = (client: GraphQLClient, variables: ServiceInstanceSeoMetadataByIdQueryVariables, headers?: RequestInit['headers']) => fetcher<ServiceInstanceSeoMetadataByIdQuery, ServiceInstanceSeoMetadataByIdQueryVariables>(client, ServiceInstanceSeoMetadataByIdDocument, variables, headers);
 
 export const EditSeoServiceInstanceMetadataDocument = `
@@ -7284,6 +9215,26 @@ export const useServiceUserCapabilitiesQuery = <
 
 useServiceUserCapabilitiesQuery.getKey = (variables: ServiceUserCapabilitiesQueryVariables) => ['ServiceUserCapabilities', variables];
 useServiceUserCapabilitiesQuery.getRootKey = () => ['ServiceUserCapabilities'] as const;
+export const useSuspenseServiceUserCapabilitiesQuery = <
+      TData = ServiceUserCapabilitiesQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ServiceUserCapabilitiesQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<ServiceUserCapabilitiesQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<ServiceUserCapabilitiesQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<ServiceUserCapabilitiesQuery, TError, TData>(
+      {
+    queryKey: ['ServiceUserCapabilities', variables],
+    queryFn: fetcher<ServiceUserCapabilitiesQuery, ServiceUserCapabilitiesQueryVariables>(client, ServiceUserCapabilitiesDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseServiceUserCapabilitiesQuery.getKey = (variables: ServiceUserCapabilitiesQueryVariables) => ['ServiceUserCapabilities', variables];
+useSuspenseServiceUserCapabilitiesQuery.getRootKey = () => ['ServiceUserCapabilities'] as const;
 export const useInfiniteServiceUserCapabilitiesQuery = <
       TData = InfiniteData<ServiceUserCapabilitiesQuery>,
       TError = unknown
@@ -7307,6 +9258,29 @@ export const useInfiniteServiceUserCapabilitiesQuery = <
 
 useInfiniteServiceUserCapabilitiesQuery.getKey = (variables: ServiceUserCapabilitiesQueryVariables) => ['ServiceUserCapabilities.infinite', variables];
 useInfiniteServiceUserCapabilitiesQuery.getRootKey = () => ['ServiceUserCapabilities.infinite'] as const;
+export const useSuspenseInfiniteServiceUserCapabilitiesQuery = <
+      TData = InfiniteData<ServiceUserCapabilitiesQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: ServiceUserCapabilitiesQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<ServiceUserCapabilitiesQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<ServiceUserCapabilitiesQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<ServiceUserCapabilitiesQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['ServiceUserCapabilities.infinite', variables],
+      queryFn: (metaData) => fetcher<ServiceUserCapabilitiesQuery, ServiceUserCapabilitiesQueryVariables>(client, ServiceUserCapabilitiesDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteServiceUserCapabilitiesQuery.getKey = (variables: ServiceUserCapabilitiesQueryVariables) => ['ServiceUserCapabilities.infinite', variables];
+useSuspenseInfiniteServiceUserCapabilitiesQuery.getRootKey = () => ['ServiceUserCapabilities.infinite'] as const;
 useServiceUserCapabilitiesQuery.fetcher = (client: GraphQLClient, variables: ServiceUserCapabilitiesQueryVariables, headers?: RequestInit['headers']) => fetcher<ServiceUserCapabilitiesQuery, ServiceUserCapabilitiesQueryVariables>(client, ServiceUserCapabilitiesDocument, variables, headers);
 
 export const SolutionCategoryAddDocument = `
@@ -7437,6 +9411,26 @@ export const useSolutionCategoriesListQuery = <
 
 useSolutionCategoriesListQuery.getKey = (variables: SolutionCategoriesListQueryVariables) => ['SolutionCategoriesList', variables];
 useSolutionCategoriesListQuery.getRootKey = () => ['SolutionCategoriesList'] as const;
+export const useSuspenseSolutionCategoriesListQuery = <
+      TData = SolutionCategoriesListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SolutionCategoriesListQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<SolutionCategoriesListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<SolutionCategoriesListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<SolutionCategoriesListQuery, TError, TData>(
+      {
+    queryKey: ['SolutionCategoriesList', variables],
+    queryFn: fetcher<SolutionCategoriesListQuery, SolutionCategoriesListQueryVariables>(client, SolutionCategoriesListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseSolutionCategoriesListQuery.getKey = (variables: SolutionCategoriesListQueryVariables) => ['SolutionCategoriesList', variables];
+useSuspenseSolutionCategoriesListQuery.getRootKey = () => ['SolutionCategoriesList'] as const;
 export const useInfiniteSolutionCategoriesListQuery = <
       TData = InfiniteData<SolutionCategoriesListQuery>,
       TError = unknown
@@ -7460,6 +9454,29 @@ export const useInfiniteSolutionCategoriesListQuery = <
 
 useInfiniteSolutionCategoriesListQuery.getKey = (variables: SolutionCategoriesListQueryVariables) => ['SolutionCategoriesList.infinite', variables];
 useInfiniteSolutionCategoriesListQuery.getRootKey = () => ['SolutionCategoriesList.infinite'] as const;
+export const useSuspenseInfiniteSolutionCategoriesListQuery = <
+      TData = InfiniteData<SolutionCategoriesListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: SolutionCategoriesListQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<SolutionCategoriesListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<SolutionCategoriesListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<SolutionCategoriesListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['SolutionCategoriesList.infinite', variables],
+      queryFn: (metaData) => fetcher<SolutionCategoriesListQuery, SolutionCategoriesListQueryVariables>(client, SolutionCategoriesListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteSolutionCategoriesListQuery.getKey = (variables: SolutionCategoriesListQueryVariables) => ['SolutionCategoriesList.infinite', variables];
+useSuspenseInfiniteSolutionCategoriesListQuery.getRootKey = () => ['SolutionCategoriesList.infinite'] as const;
 useSolutionCategoriesListQuery.fetcher = (client: GraphQLClient, variables: SolutionCategoriesListQueryVariables, headers?: RequestInit['headers']) => fetcher<SolutionCategoriesListQuery, SolutionCategoriesListQueryVariables>(client, SolutionCategoriesListDocument, variables, headers);
 
 export const CreateDeploymentRequestDocument = `
@@ -7614,6 +9631,26 @@ export const usePlatformTrialStatusQuery = <
 
 usePlatformTrialStatusQuery.getKey = (variables: PlatformTrialStatusQueryVariables) => ['PlatformTrialStatus', variables];
 usePlatformTrialStatusQuery.getRootKey = () => ['PlatformTrialStatus'] as const;
+export const useSuspensePlatformTrialStatusQuery = <
+      TData = PlatformTrialStatusQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PlatformTrialStatusQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<PlatformTrialStatusQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<PlatformTrialStatusQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<PlatformTrialStatusQuery, TError, TData>(
+      {
+    queryKey: ['PlatformTrialStatus', variables],
+    queryFn: fetcher<PlatformTrialStatusQuery, PlatformTrialStatusQueryVariables>(client, PlatformTrialStatusDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspensePlatformTrialStatusQuery.getKey = (variables: PlatformTrialStatusQueryVariables) => ['PlatformTrialStatus', variables];
+useSuspensePlatformTrialStatusQuery.getRootKey = () => ['PlatformTrialStatus'] as const;
 export const useInfinitePlatformTrialStatusQuery = <
       TData = InfiniteData<PlatformTrialStatusQuery>,
       TError = unknown
@@ -7637,6 +9674,29 @@ export const useInfinitePlatformTrialStatusQuery = <
 
 useInfinitePlatformTrialStatusQuery.getKey = (variables: PlatformTrialStatusQueryVariables) => ['PlatformTrialStatus.infinite', variables];
 useInfinitePlatformTrialStatusQuery.getRootKey = () => ['PlatformTrialStatus.infinite'] as const;
+export const useSuspenseInfinitePlatformTrialStatusQuery = <
+      TData = InfiniteData<PlatformTrialStatusQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PlatformTrialStatusQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<PlatformTrialStatusQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<PlatformTrialStatusQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<PlatformTrialStatusQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['PlatformTrialStatus.infinite', variables],
+      queryFn: (metaData) => fetcher<PlatformTrialStatusQuery, PlatformTrialStatusQueryVariables>(client, PlatformTrialStatusDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfinitePlatformTrialStatusQuery.getKey = (variables: PlatformTrialStatusQueryVariables) => ['PlatformTrialStatus.infinite', variables];
+useSuspenseInfinitePlatformTrialStatusQuery.getRootKey = () => ['PlatformTrialStatus.infinite'] as const;
 usePlatformTrialStatusQuery.fetcher = (client: GraphQLClient, variables: PlatformTrialStatusQueryVariables, headers?: RequestInit['headers']) => fetcher<PlatformTrialStatusQuery, PlatformTrialStatusQueryVariables>(client, PlatformTrialStatusDocument, variables, headers);
 
 export const UseCaseAddDocument = `
@@ -7768,6 +9828,26 @@ export const useUseCasesListQuery = <
 
 useUseCasesListQuery.getKey = (variables: UseCasesListQueryVariables) => ['UseCasesList', variables];
 useUseCasesListQuery.getRootKey = () => ['UseCasesList'] as const;
+export const useSuspenseUseCasesListQuery = <
+      TData = UseCasesListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: UseCasesListQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<UseCasesListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<UseCasesListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<UseCasesListQuery, TError, TData>(
+      {
+    queryKey: ['UseCasesList', variables],
+    queryFn: fetcher<UseCasesListQuery, UseCasesListQueryVariables>(client, UseCasesListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseUseCasesListQuery.getKey = (variables: UseCasesListQueryVariables) => ['UseCasesList', variables];
+useSuspenseUseCasesListQuery.getRootKey = () => ['UseCasesList'] as const;
 export const useInfiniteUseCasesListQuery = <
       TData = InfiniteData<UseCasesListQuery>,
       TError = unknown
@@ -7791,6 +9871,29 @@ export const useInfiniteUseCasesListQuery = <
 
 useInfiniteUseCasesListQuery.getKey = (variables: UseCasesListQueryVariables) => ['UseCasesList.infinite', variables];
 useInfiniteUseCasesListQuery.getRootKey = () => ['UseCasesList.infinite'] as const;
+export const useSuspenseInfiniteUseCasesListQuery = <
+      TData = InfiniteData<UseCasesListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: UseCasesListQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<UseCasesListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<UseCasesListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<UseCasesListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['UseCasesList.infinite', variables],
+      queryFn: (metaData) => fetcher<UseCasesListQuery, UseCasesListQueryVariables>(client, UseCasesListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteUseCasesListQuery.getKey = (variables: UseCasesListQueryVariables) => ['UseCasesList.infinite', variables];
+useSuspenseInfiniteUseCasesListQuery.getRootKey = () => ['UseCasesList.infinite'] as const;
 useUseCasesListQuery.fetcher = (client: GraphQLClient, variables: UseCasesListQueryVariables, headers?: RequestInit['headers']) => fetcher<UseCasesListQuery, UseCasesListQueryVariables>(client, UseCasesListDocument, variables, headers);
 
 export const UserDeleteDocument = `
@@ -7942,6 +10045,26 @@ export const useUsersWithCapabilitiesInOrganizationQuery = <
 
 useUsersWithCapabilitiesInOrganizationQuery.getKey = (variables: UsersWithCapabilitiesInOrganizationQueryVariables) => ['UsersWithCapabilitiesInOrganization', variables];
 useUsersWithCapabilitiesInOrganizationQuery.getRootKey = () => ['UsersWithCapabilitiesInOrganization'] as const;
+export const useSuspenseUsersWithCapabilitiesInOrganizationQuery = <
+      TData = UsersWithCapabilitiesInOrganizationQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: UsersWithCapabilitiesInOrganizationQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<UsersWithCapabilitiesInOrganizationQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<UsersWithCapabilitiesInOrganizationQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<UsersWithCapabilitiesInOrganizationQuery, TError, TData>(
+      {
+    queryKey: ['UsersWithCapabilitiesInOrganization', variables],
+    queryFn: fetcher<UsersWithCapabilitiesInOrganizationQuery, UsersWithCapabilitiesInOrganizationQueryVariables>(client, UsersWithCapabilitiesInOrganizationDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseUsersWithCapabilitiesInOrganizationQuery.getKey = (variables: UsersWithCapabilitiesInOrganizationQueryVariables) => ['UsersWithCapabilitiesInOrganization', variables];
+useSuspenseUsersWithCapabilitiesInOrganizationQuery.getRootKey = () => ['UsersWithCapabilitiesInOrganization'] as const;
 export const useInfiniteUsersWithCapabilitiesInOrganizationQuery = <
       TData = InfiniteData<UsersWithCapabilitiesInOrganizationQuery>,
       TError = unknown
@@ -7965,6 +10088,29 @@ export const useInfiniteUsersWithCapabilitiesInOrganizationQuery = <
 
 useInfiniteUsersWithCapabilitiesInOrganizationQuery.getKey = (variables: UsersWithCapabilitiesInOrganizationQueryVariables) => ['UsersWithCapabilitiesInOrganization.infinite', variables];
 useInfiniteUsersWithCapabilitiesInOrganizationQuery.getRootKey = () => ['UsersWithCapabilitiesInOrganization.infinite'] as const;
+export const useSuspenseInfiniteUsersWithCapabilitiesInOrganizationQuery = <
+      TData = InfiniteData<UsersWithCapabilitiesInOrganizationQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: UsersWithCapabilitiesInOrganizationQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<UsersWithCapabilitiesInOrganizationQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<UsersWithCapabilitiesInOrganizationQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<UsersWithCapabilitiesInOrganizationQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['UsersWithCapabilitiesInOrganization.infinite', variables],
+      queryFn: (metaData) => fetcher<UsersWithCapabilitiesInOrganizationQuery, UsersWithCapabilitiesInOrganizationQueryVariables>(client, UsersWithCapabilitiesInOrganizationDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteUsersWithCapabilitiesInOrganizationQuery.getKey = (variables: UsersWithCapabilitiesInOrganizationQueryVariables) => ['UsersWithCapabilitiesInOrganization.infinite', variables];
+useSuspenseInfiniteUsersWithCapabilitiesInOrganizationQuery.getRootKey = () => ['UsersWithCapabilitiesInOrganization.infinite'] as const;
 useUsersWithCapabilitiesInOrganizationQuery.fetcher = (client: GraphQLClient, variables: UsersWithCapabilitiesInOrganizationQueryVariables, headers?: RequestInit['headers']) => fetcher<UsersWithCapabilitiesInOrganizationQuery, UsersWithCapabilitiesInOrganizationQueryVariables>(client, UsersWithCapabilitiesInOrganizationDocument, variables, headers);
 
 export const UsersDocument = `
@@ -8007,6 +10153,26 @@ export const useUsersQuery = <
 
 useUsersQuery.getKey = (variables: UsersQueryVariables) => ['Users', variables];
 useUsersQuery.getRootKey = () => ['Users'] as const;
+export const useSuspenseUsersQuery = <
+      TData = UsersQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: UsersQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<UsersQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<UsersQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<UsersQuery, TError, TData>(
+      {
+    queryKey: ['Users', variables],
+    queryFn: fetcher<UsersQuery, UsersQueryVariables>(client, UsersDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseUsersQuery.getKey = (variables: UsersQueryVariables) => ['Users', variables];
+useSuspenseUsersQuery.getRootKey = () => ['Users'] as const;
 export const useInfiniteUsersQuery = <
       TData = InfiniteData<UsersQuery>,
       TError = unknown
@@ -8030,6 +10196,29 @@ export const useInfiniteUsersQuery = <
 
 useInfiniteUsersQuery.getKey = (variables: UsersQueryVariables) => ['Users.infinite', variables];
 useInfiniteUsersQuery.getRootKey = () => ['Users.infinite'] as const;
+export const useSuspenseInfiniteUsersQuery = <
+      TData = InfiniteData<UsersQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: UsersQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<UsersQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<UsersQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<UsersQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['Users.infinite', variables],
+      queryFn: (metaData) => fetcher<UsersQuery, UsersQueryVariables>(client, UsersDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteUsersQuery.getKey = (variables: UsersQueryVariables) => ['Users.infinite', variables];
+useSuspenseInfiniteUsersQuery.getRootKey = () => ['Users.infinite'] as const;
 useUsersQuery.fetcher = (client: GraphQLClient, variables: UsersQueryVariables, headers?: RequestInit['headers']) => fetcher<UsersQuery, UsersQueryVariables>(client, UsersDocument, variables, headers);
 
 export const VotingRoundCreateDocument = `
@@ -8264,6 +10453,26 @@ export const useVotingRoundsListQuery = <
 
 useVotingRoundsListQuery.getKey = (variables?: VotingRoundsListQueryVariables) => variables === undefined ? ['VotingRoundsList'] : ['VotingRoundsList', variables];
 useVotingRoundsListQuery.getRootKey = () => ['VotingRoundsList'] as const;
+export const useSuspenseVotingRoundsListQuery = <
+      TData = VotingRoundsListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: VotingRoundsListQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<VotingRoundsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<VotingRoundsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<VotingRoundsListQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['VotingRoundsList'] : ['VotingRoundsList', variables],
+    queryFn: fetcher<VotingRoundsListQuery, VotingRoundsListQueryVariables>(client, VotingRoundsListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseVotingRoundsListQuery.getKey = (variables?: VotingRoundsListQueryVariables) => variables === undefined ? ['VotingRoundsList'] : ['VotingRoundsList', variables];
+useSuspenseVotingRoundsListQuery.getRootKey = () => ['VotingRoundsList'] as const;
 export const useInfiniteVotingRoundsListQuery = <
       TData = InfiniteData<VotingRoundsListQuery>,
       TError = unknown
@@ -8287,6 +10496,29 @@ export const useInfiniteVotingRoundsListQuery = <
 
 useInfiniteVotingRoundsListQuery.getKey = (variables?: VotingRoundsListQueryVariables) => variables === undefined ? ['VotingRoundsList.infinite'] : ['VotingRoundsList.infinite', variables];
 useInfiniteVotingRoundsListQuery.getRootKey = () => ['VotingRoundsList.infinite'] as const;
+export const useSuspenseInfiniteVotingRoundsListQuery = <
+      TData = InfiniteData<VotingRoundsListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: VotingRoundsListQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<VotingRoundsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<VotingRoundsListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<VotingRoundsListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['VotingRoundsList.infinite'] : ['VotingRoundsList.infinite', variables],
+      queryFn: (metaData) => fetcher<VotingRoundsListQuery, VotingRoundsListQueryVariables>(client, VotingRoundsListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteVotingRoundsListQuery.getKey = (variables?: VotingRoundsListQueryVariables) => variables === undefined ? ['VotingRoundsList.infinite'] : ['VotingRoundsList.infinite', variables];
+useSuspenseInfiniteVotingRoundsListQuery.getRootKey = () => ['VotingRoundsList.infinite'] as const;
 useVotingRoundsListQuery.fetcher = (client: GraphQLClient, variables?: VotingRoundsListQueryVariables, headers?: RequestInit['headers']) => fetcher<VotingRoundsListQuery, VotingRoundsListQueryVariables>(client, VotingRoundsListDocument, variables, headers);
 
 export const VotingRoundDetailDocument = `
@@ -8321,6 +10553,26 @@ export const useVotingRoundDetailQuery = <
 
 useVotingRoundDetailQuery.getKey = (variables: VotingRoundDetailQueryVariables) => ['VotingRoundDetail', variables];
 useVotingRoundDetailQuery.getRootKey = () => ['VotingRoundDetail'] as const;
+export const useSuspenseVotingRoundDetailQuery = <
+      TData = VotingRoundDetailQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: VotingRoundDetailQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<VotingRoundDetailQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<VotingRoundDetailQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<VotingRoundDetailQuery, TError, TData>(
+      {
+    queryKey: ['VotingRoundDetail', variables],
+    queryFn: fetcher<VotingRoundDetailQuery, VotingRoundDetailQueryVariables>(client, VotingRoundDetailDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseVotingRoundDetailQuery.getKey = (variables: VotingRoundDetailQueryVariables) => ['VotingRoundDetail', variables];
+useSuspenseVotingRoundDetailQuery.getRootKey = () => ['VotingRoundDetail'] as const;
 export const useInfiniteVotingRoundDetailQuery = <
       TData = InfiniteData<VotingRoundDetailQuery>,
       TError = unknown
@@ -8344,6 +10596,29 @@ export const useInfiniteVotingRoundDetailQuery = <
 
 useInfiniteVotingRoundDetailQuery.getKey = (variables: VotingRoundDetailQueryVariables) => ['VotingRoundDetail.infinite', variables];
 useInfiniteVotingRoundDetailQuery.getRootKey = () => ['VotingRoundDetail.infinite'] as const;
+export const useSuspenseInfiniteVotingRoundDetailQuery = <
+      TData = InfiniteData<VotingRoundDetailQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: VotingRoundDetailQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<VotingRoundDetailQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<VotingRoundDetailQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<VotingRoundDetailQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['VotingRoundDetail.infinite', variables],
+      queryFn: (metaData) => fetcher<VotingRoundDetailQuery, VotingRoundDetailQueryVariables>(client, VotingRoundDetailDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteVotingRoundDetailQuery.getKey = (variables: VotingRoundDetailQueryVariables) => ['VotingRoundDetail.infinite', variables];
+useSuspenseInfiniteVotingRoundDetailQuery.getRootKey = () => ['VotingRoundDetail.infinite'] as const;
 useVotingRoundDetailQuery.fetcher = (client: GraphQLClient, variables: VotingRoundDetailQueryVariables, headers?: RequestInit['headers']) => fetcher<VotingRoundDetailQuery, VotingRoundDetailQueryVariables>(client, VotingRoundDetailDocument, variables, headers);
 
 export const VotingRoundRankingDocument = `
@@ -8385,6 +10660,26 @@ export const useVotingRoundRankingQuery = <
 
 useVotingRoundRankingQuery.getKey = (variables: VotingRoundRankingQueryVariables) => ['VotingRoundRanking', variables];
 useVotingRoundRankingQuery.getRootKey = () => ['VotingRoundRanking'] as const;
+export const useSuspenseVotingRoundRankingQuery = <
+      TData = VotingRoundRankingQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: VotingRoundRankingQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<VotingRoundRankingQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<VotingRoundRankingQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<VotingRoundRankingQuery, TError, TData>(
+      {
+    queryKey: ['VotingRoundRanking', variables],
+    queryFn: fetcher<VotingRoundRankingQuery, VotingRoundRankingQueryVariables>(client, VotingRoundRankingDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseVotingRoundRankingQuery.getKey = (variables: VotingRoundRankingQueryVariables) => ['VotingRoundRanking', variables];
+useSuspenseVotingRoundRankingQuery.getRootKey = () => ['VotingRoundRanking'] as const;
 export const useInfiniteVotingRoundRankingQuery = <
       TData = InfiniteData<VotingRoundRankingQuery>,
       TError = unknown
@@ -8408,6 +10703,29 @@ export const useInfiniteVotingRoundRankingQuery = <
 
 useInfiniteVotingRoundRankingQuery.getKey = (variables: VotingRoundRankingQueryVariables) => ['VotingRoundRanking.infinite', variables];
 useInfiniteVotingRoundRankingQuery.getRootKey = () => ['VotingRoundRanking.infinite'] as const;
+export const useSuspenseInfiniteVotingRoundRankingQuery = <
+      TData = InfiniteData<VotingRoundRankingQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: VotingRoundRankingQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<VotingRoundRankingQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<VotingRoundRankingQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<VotingRoundRankingQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['VotingRoundRanking.infinite', variables],
+      queryFn: (metaData) => fetcher<VotingRoundRankingQuery, VotingRoundRankingQueryVariables>(client, VotingRoundRankingDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteVotingRoundRankingQuery.getKey = (variables: VotingRoundRankingQueryVariables) => ['VotingRoundRanking.infinite', variables];
+useSuspenseInfiniteVotingRoundRankingQuery.getRootKey = () => ['VotingRoundRanking.infinite'] as const;
 useVotingRoundRankingQuery.fetcher = (client: GraphQLClient, variables: VotingRoundRankingQueryVariables, headers?: RequestInit['headers']) => fetcher<VotingRoundRankingQuery, VotingRoundRankingQueryVariables>(client, VotingRoundRankingDocument, variables, headers);
 
 export const EpicCountPerTimelineQueryDocument = `
@@ -8439,6 +10757,26 @@ export const useEpicCountPerTimelineQueryQuery = <
 
 useEpicCountPerTimelineQueryQuery.getKey = (variables?: EpicCountPerTimelineQueryQueryVariables) => variables === undefined ? ['EpicCountPerTimelineQuery'] : ['EpicCountPerTimelineQuery', variables];
 useEpicCountPerTimelineQueryQuery.getRootKey = () => ['EpicCountPerTimelineQuery'] as const;
+export const useSuspenseEpicCountPerTimelineQueryQuery = <
+      TData = EpicCountPerTimelineQueryQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: EpicCountPerTimelineQueryQueryVariables,
+      options?: Omit<UseSuspenseQueryOptions<EpicCountPerTimelineQueryQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseQueryOptions<EpicCountPerTimelineQueryQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseQuery<EpicCountPerTimelineQueryQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['EpicCountPerTimelineQuery'] : ['EpicCountPerTimelineQuery', variables],
+    queryFn: fetcher<EpicCountPerTimelineQueryQuery, EpicCountPerTimelineQueryQueryVariables>(client, EpicCountPerTimelineQueryDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useSuspenseEpicCountPerTimelineQueryQuery.getKey = (variables?: EpicCountPerTimelineQueryQueryVariables) => variables === undefined ? ['EpicCountPerTimelineQuery'] : ['EpicCountPerTimelineQuery', variables];
+useSuspenseEpicCountPerTimelineQueryQuery.getRootKey = () => ['EpicCountPerTimelineQuery'] as const;
 export const useInfiniteEpicCountPerTimelineQueryQuery = <
       TData = InfiniteData<EpicCountPerTimelineQueryQuery>,
       TError = unknown
@@ -8462,4 +10800,27 @@ export const useInfiniteEpicCountPerTimelineQueryQuery = <
 
 useInfiniteEpicCountPerTimelineQueryQuery.getKey = (variables?: EpicCountPerTimelineQueryQueryVariables) => variables === undefined ? ['EpicCountPerTimelineQuery.infinite'] : ['EpicCountPerTimelineQuery.infinite', variables];
 useInfiniteEpicCountPerTimelineQueryQuery.getRootKey = () => ['EpicCountPerTimelineQuery.infinite'] as const;
+export const useSuspenseInfiniteEpicCountPerTimelineQueryQuery = <
+      TData = InfiniteData<EpicCountPerTimelineQueryQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: EpicCountPerTimelineQueryQueryVariables,
+      options: Omit<UseSuspenseInfiniteQueryOptions<EpicCountPerTimelineQueryQuery, TError, TData>, 'queryKey'> & { queryKey?: UseSuspenseInfiniteQueryOptions<EpicCountPerTimelineQueryQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useSuspenseInfiniteQuery<EpicCountPerTimelineQueryQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['EpicCountPerTimelineQuery.infinite'] : ['EpicCountPerTimelineQuery.infinite', variables],
+      queryFn: (metaData) => fetcher<EpicCountPerTimelineQueryQuery, EpicCountPerTimelineQueryQueryVariables>(client, EpicCountPerTimelineQueryDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useSuspenseInfiniteEpicCountPerTimelineQueryQuery.getKey = (variables?: EpicCountPerTimelineQueryQueryVariables) => variables === undefined ? ['EpicCountPerTimelineQuery.infinite'] : ['EpicCountPerTimelineQuery.infinite', variables];
+useSuspenseInfiniteEpicCountPerTimelineQueryQuery.getRootKey = () => ['EpicCountPerTimelineQuery.infinite'] as const;
 useEpicCountPerTimelineQueryQuery.fetcher = (client: GraphQLClient, variables?: EpicCountPerTimelineQueryQueryVariables, headers?: RequestInit['headers']) => fetcher<EpicCountPerTimelineQueryQuery, EpicCountPerTimelineQueryQueryVariables>(client, EpicCountPerTimelineQueryDocument, variables, headers);
