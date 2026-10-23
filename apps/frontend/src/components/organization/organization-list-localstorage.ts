@@ -1,13 +1,15 @@
 import { isValueInEnum } from '@/utils/is-value-in-enum';
-import { OrderingMode } from '@generated/organizationSelectQuery.graphql';
-import { OrganizationOrdering } from '@graphql/generated';
+import { OrderingMode, OrganizationOrdering } from '@graphql/generated';
 import { ColumnDef } from '@tanstack/react-table';
 import { useEffect } from 'react';
 import { useLocalStorage } from 'usehooks-ts';
 
 export const useOrganizationListLocalstorage = <U>(columns: ColumnDef<U>[]) => {
   const [orderMode, setOrderMode, removeOrderMode] =
-    useLocalStorage<OrderingMode>('orderModeOrganizationList', 'asc');
+    useLocalStorage<OrderingMode>(
+      'orderModeOrganizationList',
+      OrderingMode.Asc
+    );
   const [orderBy, setOrderBy, removeOrderBy] =
     useLocalStorage<OrganizationOrdering>(
       'orderByOrganizationList',

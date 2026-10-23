@@ -754,6 +754,7 @@
   },
   "OrganizationActions": {
     "ErrorNameAlreadyExists": "The organization {name} already exists.",
+    "LoadOrganizationsError": "The organizations could not be loaded.",
     "OrganizationCreated": "Organization {name} has been created",
     "OrganizationDeleted": "Organization has been deleted",
     "OrganizationUpdated": "Organization {name} has been modified",

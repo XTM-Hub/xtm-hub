@@ -1,46 +1,52 @@
-import { organizationDeletion } from '@/components/organization/organization.graphql';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
-import { organizationDeletionMutation } from '@generated/organizationDeletionMutation.graphql';
-import { organizationItem_fragment$data } from '@generated/organizationItem_fragment.graphql';
-import { useMutation } from 'react-relay';
+import { portalGraphqlClient } from '@/lib/graphql-client';
+import {
+  OrganizationItemFragment,
+  useOrganizationDeleteMutation,
+} from '@graphql/generated';
+import { organizationKeys } from '@graphql/organization/organization.keys';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface DeleteOrganizationProps {
-  organization: organizationItem_fragment$data;
-  connectionId: string;
+  organization: OrganizationItemFragment;
   open: boolean;
   setOpen: (open: boolean) => void;
 }
 
 export const DeleteOrganization = ({
   organization,
-  connectionId,
   open,
   setOpen,
 }: DeleteOrganizationProps) => {
-  const [deleteOrganizationMutation] =
-    useMutation<organizationDeletionMutation>(organizationDeletion);
+  const queryClient = useQueryClient();
   const t = useTranslate();
-  const onDeletedOrganization = (deletedOrganizationId: string) => {
-    deleteOrganizationMutation({
-      variables: { id: deletedOrganizationId, connections: [connectionId] },
-      onCompleted: () => {
+  const { mutate: deleteOrganization, isPending } =
+    useOrganizationDeleteMutation(portalGraphqlClient, {
+      onSuccess: async () => {
+        setOpen(false);
         showSnackbar({
           severity: 'success',
           title: t('Utils.Success'),
           description: t('OrganizationActions.OrganizationDeleted'),
         });
+        await queryClient.invalidateQueries({
+          queryKey: organizationKeys.all(),
+        });
       },
-      onError: (error) => {
+      onError: (error: unknown) => {
+        setOpen(false);
+        const errorMessage =
+          error instanceof Error ? error.message : 'UNKNOWN_ERROR';
         showSnackbar({
           severity: 'error',
           title: t('Utils.Error'),
-          description: <>{t(`Error.Server.${error.message}`)}</>,
+          description: <>{t(`Error.Server.${errorMessage}`)}</>,
         });
       },
     });
-  };
+
   return (
     <ConfirmDialog
       confirmLabel={t('Utils.Delete')}
@@ -48,7 +54,12 @@ export const DeleteOrganization = ({
       title={t('OrganizationForm.DeleteOrganization')}
       open={open}
       onOpenChange={setOpen}
-      onConfirm={() => onDeletedOrganization(organization.id)}>
+      onConfirm={(event) => {
+        // Closing would unmount the dialog: the callbacks close it once the deletion settles.
+        event.preventDefault();
+        deleteOrganization({ id: organization.id });
+      }}
+      confirmDisabled={isPending}>
       {t('OrganizationForm.SureDeleteOrganization', {
         organizationName: organization.name,
       })}

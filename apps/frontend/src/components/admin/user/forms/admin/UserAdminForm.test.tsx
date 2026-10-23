@@ -3,7 +3,6 @@ import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDi
 import testRender from '@/utils/test/test-render';
 import { OrganizationCapability } from '@graphql/generated';
 import { screen } from '@testing-library/react';
-import { createMockEnvironment, MockPayloadGenerator } from 'relay-test-utils';
 import { describe, expect, it, vi } from 'vitest';
 
 const EMAIL_LABEL = 'UserForm.Email';
@@ -12,7 +11,6 @@ const LAST_NAME_LABEL = 'UserForm.LastName';
 const PASSWORD_LABEL = 'UserForm.Password';
 const ADD_ORGANIZATION_LABEL = 'UserForm.AddOrganization';
 const SHEET_TITLE = 'Add user';
-const QUEUED_RESPONSES_COUNT = 10;
 const USER_EMAIL = 'new.user@filigran.io';
 const USER_FIRST_NAME = 'Ada';
 const USER_LAST_NAME = 'Lovelace';
@@ -33,24 +31,23 @@ const GLOBEX_ORGANIZATION = {
   domains: [],
 };
 
-// The organization list is fetched through Relay: the mock environment answers
-// the initial query and every refetch triggered by the organization search.
-const createOrganizationsEnvironment = () => {
-  const environment = createMockEnvironment();
-  for (let request = 0; request < QUEUED_RESPONSES_COUNT; request += 1) {
-    environment.mock.queueOperationResolver((operation) =>
-      MockPayloadGenerator.generate(operation, {
-        Query: () => ({
-          organizations: {
-            totalCount: 2,
-            edges: [{ node: ACME_ORGANIZATION }, { node: GLOBEX_ORGANIZATION }],
-          },
-        }),
-      })
-    );
-  }
-  return environment;
-};
+// The organization list query answers the same organizations for every search.
+vi.mock('@graphql/generated', async (importOriginal) => {
+  const { mockGeneratedQueryHooks } =
+    await import('@/utils/test/mock-generated-query');
+  return mockGeneratedQueryHooks(importOriginal, {
+    useOrganizationsListQuery: () => ({
+      data: {
+        organizations: {
+          totalCount: 2,
+          edges: [{ node: ACME_ORGANIZATION }, { node: GLOBEX_ORGANIZATION }],
+        },
+      },
+      isLoading: false,
+      isError: false,
+    }),
+  });
+});
 
 const renderUserAdminForm = ({
   handleSubmit = vi.fn(),
@@ -70,7 +67,6 @@ const renderUserAdminForm = ({
     </SheetWithPreventingDialog>,
     {
       settings: { environment },
-      relayConfig: createOrganizationsEnvironment(),
     }
   );
 
