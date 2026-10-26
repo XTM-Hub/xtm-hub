@@ -259,6 +259,11 @@ export const NewsFeedApp = {
     }
 
     if (!updatedDocument.active) {
+      if (documentBeforeUpdate?.active) {
+        await NewsFeedApp.deleteScenarioNewsFeedItem({
+          documentId: updatedDocument.id,
+        });
+      }
       return;
     }
 
@@ -288,6 +293,24 @@ export const NewsFeedApp = {
         source: 'update',
       })
     );
+  },
+
+  deleteScenarioNewsFeedItem: async ({
+    documentId,
+  }: {
+    documentId: string;
+  }): Promise<void> => {
+    try {
+      const existingItem =
+        await NewsFeedDomain.loadNewsFeedItemByDocumentId(documentId);
+      if (existingItem?.type !== NewsFeedItemType.ResourceScenario) {
+        return;
+      }
+
+      await NewsFeedApp.deleteNewsFeedItem({ newsFeedItemId: existingItem.id });
+    } catch (error) {
+      logApp.error('Unable to delete news feed item', { error, documentId });
+    }
   },
 
   deleteNewsFeedItem: async ({

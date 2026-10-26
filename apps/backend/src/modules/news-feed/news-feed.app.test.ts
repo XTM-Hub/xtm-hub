@@ -955,6 +955,77 @@ describe('newsFeedApp', () => {
       });
     });
 
+    describe('deleteScenarioNewsFeedItem', () => {
+      it('should mark the news feed item as deleted when the document is a scenario', async () => {
+        // Given
+        const item = await NewsFeedDomain.createResourceNewsFeedItem({
+          document,
+          serviceDefinitionIdentifier:
+            ServiceDefinitionIdentifier.OpenaevScenarios,
+          type: NewsFeedItemType.ResourceScenario,
+          platformIdentifier: PlatformIdentifier.Openaev,
+          tags: [],
+        });
+
+        // When
+        await NewsFeedApp.deleteScenarioNewsFeedItem({
+          documentId: document.id,
+        });
+
+        // Then
+        const deletedItem = await TestHelper.newsFeed.loadFirstItem({
+          id: item.id,
+        });
+        expect(deletedItem?.is_deleted).toBe(true);
+      });
+
+      it('should not delete the news feed item when the document is not a scenario', async () => {
+        // Given
+        const item = await NewsFeedDomain.createResourceNewsFeedItem({
+          document,
+          serviceDefinitionIdentifier:
+            ServiceDefinitionIdentifier.OpenctiCustomDashboards,
+          type: NewsFeedItemType.ResourceCustomDashboard,
+          platformIdentifier: PlatformIdentifier.Opencti,
+          tags: [],
+        });
+
+        // When
+        await NewsFeedApp.deleteScenarioNewsFeedItem({
+          documentId: document.id,
+        });
+
+        // Then
+        const untouchedItem = await TestHelper.newsFeed.loadFirstItem({
+          id: item.id,
+        });
+        expect(untouchedItem?.is_deleted).toBe(false);
+      });
+
+      it('should log the failure instead of throwing when the deletion fails', async () => {
+        // Given
+        const error = new Error('delete-failed');
+        vi.spyOn(
+          NewsFeedDomain,
+          'loadNewsFeedItemByDocumentId'
+        ).mockRejectedValue(error);
+        const logErrorSpy = vi.spyOn(logApp, 'error').mockImplementation(() => {
+          return;
+        });
+
+        // When
+        await NewsFeedApp.deleteScenarioNewsFeedItem({
+          documentId: document.id,
+        });
+
+        // Then
+        expect(logErrorSpy).toHaveBeenCalledWith(
+          'Unable to delete news feed item',
+          { error, documentId: document.id }
+        );
+      });
+    });
+
     describe('upsertResourceNewsFeed', () => {
       it('should do nothing when the service definition is not configured', async () => {
         // Given
@@ -1047,7 +1118,7 @@ describe('newsFeedApp', () => {
         expect(createResourceNewsFeedItemSpy).not.toHaveBeenCalled();
       });
 
-      it('should do nothing when updated document is inactive', async () => {
+      it('should do nothing when updated document stays inactive', async () => {
         // Given
         vi.spyOn(NewsFeedHelper, 'getNewsFeedConfiguration').mockReturnValue({
           newsFeedType: NewsFeedItemType.ResourceCustomDashboard,
@@ -1059,10 +1130,13 @@ describe('newsFeedApp', () => {
         const updateResourceNewsFeedItemSpy = vi
           .spyOn(NewsFeedApp, 'updateResourceNewsFeedItem')
           .mockResolvedValue();
+        const deleteScenarioNewsFeedItemSpy = vi
+          .spyOn(NewsFeedApp, 'deleteScenarioNewsFeedItem')
+          .mockResolvedValue();
 
         // When
         await NewsFeedApp.upsertResourceNewsFeed({
-          documentBeforeUpdate: { ...document, active: true },
+          documentBeforeUpdate: { ...document, active: false },
           updatedDocument: { ...document, active: false },
           serviceDefinitionIdentifier:
             ServiceDefinitionIdentifier.OpenctiCustomDashboards,
@@ -1070,6 +1144,36 @@ describe('newsFeedApp', () => {
 
         // Then
         expect(createResourceNewsFeedItemSpy).not.toHaveBeenCalled();
+        expect(updateResourceNewsFeedItemSpy).not.toHaveBeenCalled();
+        expect(deleteScenarioNewsFeedItemSpy).not.toHaveBeenCalled();
+      });
+
+      it('should delete the scenario news feed item when the scenario is unpublished', async () => {
+        // Given
+        vi.spyOn(NewsFeedHelper, 'getNewsFeedConfiguration').mockReturnValue({
+          newsFeedType: NewsFeedItemType.ResourceScenario,
+          platformIdentifier: PlatformIdentifier.Openaev,
+        });
+        const updateResourceNewsFeedItemSpy = vi
+          .spyOn(NewsFeedApp, 'updateResourceNewsFeedItem')
+          .mockResolvedValue();
+        const deleteScenarioNewsFeedItemSpy = vi
+          .spyOn(NewsFeedApp, 'deleteScenarioNewsFeedItem')
+          .mockResolvedValue();
+
+        // When
+        await NewsFeedApp.upsertResourceNewsFeed({
+          documentBeforeUpdate: { ...document, active: true },
+          updatedDocument: { ...document, active: false },
+          serviceDefinitionIdentifier:
+            ServiceDefinitionIdentifier.OpenaevScenarios,
+        });
+
+        // Then
+        expect(deleteScenarioNewsFeedItemSpy).toHaveBeenCalledOnce();
+        expect(deleteScenarioNewsFeedItemSpy).toHaveBeenCalledWith({
+          documentId: document.id,
+        });
         expect(updateResourceNewsFeedItemSpy).not.toHaveBeenCalled();
       });
 
