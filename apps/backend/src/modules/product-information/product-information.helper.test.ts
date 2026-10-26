@@ -73,7 +73,11 @@ describe('product information helper', () => {
       );
 
       // Then
-      expect(data).toEqual({ metadata: fullMetadata, metrics: null });
+      expect(data).toEqual({
+        metadata: fullMetadata,
+        metrics: null,
+        storage: null,
+      });
     });
 
     it.each([
@@ -93,7 +97,11 @@ describe('product information helper', () => {
       );
 
       // Then
-      expect(data).toEqual({ metadata: emptyMetadata, metrics: null });
+      expect(data).toEqual({
+        metadata: emptyMetadata,
+        metrics: null,
+        storage: null,
+      });
     });
 
     it('should keep the fields sent when the SaaS Manager sends only some of them', async () => {
@@ -110,6 +118,7 @@ describe('product information helper', () => {
       expect(data).toEqual({
         metadata: { ...emptyMetadata, hostname: fullMetadata.hostname },
         metrics: null,
+        storage: null,
       });
     });
 
@@ -139,6 +148,7 @@ describe('product information helper', () => {
             ),
           },
           metrics: null,
+          storage: null,
         });
       }
     );
@@ -229,6 +239,7 @@ describe('product information helper', () => {
         expect(data).toEqual({
           metadata: fullMetadata,
           metrics: parsedMetrics,
+          storage: null,
         });
       });
 
@@ -247,7 +258,11 @@ describe('product information helper', () => {
         );
 
         // Then
-        expect(data).toEqual({ metadata: fullMetadata, metrics: null });
+        expect(data).toEqual({
+          metadata: fullMetadata,
+          metrics: null,
+          storage: null,
+        });
       });
 
       it.each`
@@ -365,6 +380,131 @@ describe('product information helper', () => {
             ],
           },
         ]);
+      });
+    });
+
+    describe('storage', () => {
+      const storage = {
+        es_used_size: {
+          percent: 12.5,
+          used: 1073741824,
+          limit: 8589934592,
+          time: '2026-10-23T13:46:23.624Z',
+        },
+        s3_used_size: {
+          percent: 0,
+          used: 0,
+          limit: 0,
+          time: '2026-10-23T13:46:23.624+00:00',
+        },
+      };
+      const parsedStorage = {
+        ...storage,
+        s3_used_size: {
+          ...storage.s3_used_size,
+          time: '2026-10-23T13:46:23.624Z',
+        },
+      };
+
+      it('should return the storage sent by the SaaS Manager with ISO dates and without the unknown fields', async () => {
+        // Given
+        mockSaasManagerBody({
+          ...fullMetadata,
+          storage: {
+            ...storage,
+            redis_used_size: storage.es_used_size,
+            es_used_size: { ...storage.es_used_size, unexpected: 'ignored' },
+          },
+        });
+
+        // When
+        const data = await ProductInformationHelper.fetchSaasPlatformData(
+          serviceInstanceId,
+          platformId,
+          metricsPeriod
+        );
+
+        // Then
+        expect(data).toEqual({
+          metadata: fullMetadata,
+          metrics: null,
+          storage: parsedStorage,
+        });
+      });
+
+      it.each([
+        ['null', null],
+        ['a string', 'storage'],
+        ['an array', [storage]],
+      ])('should return a null storage when it is %s', async (_, sent) => {
+        // Given
+        mockSaasManagerBody({ ...fullMetadata, storage: sent });
+
+        // When
+        const data = await ProductInformationHelper.fetchSaasPlatformData(
+          serviceInstanceId,
+          platformId,
+          metricsPeriod
+        );
+
+        // Then
+        expect(data?.storage).toBeNull();
+      });
+
+      it.each`
+        case                      | usage
+        ${'missing'}              | ${undefined}
+        ${'null'}                 | ${null}
+        ${'an array'}             | ${[storage.es_used_size]}
+        ${'without a time'}       | ${{ ...storage.es_used_size, time: undefined }}
+        ${'with an invalid time'} | ${{ ...storage.es_used_size, time: 'not a date' }}
+      `('should return a null usage when it is $case', async ({ usage }) => {
+        // Given
+        mockSaasManagerBody({
+          ...fullMetadata,
+          storage: { ...storage, es_used_size: usage },
+        });
+
+        // When
+        const data = await ProductInformationHelper.fetchSaasPlatformData(
+          serviceInstanceId,
+          platformId,
+          metricsPeriod
+        );
+
+        // Then
+        expect(data?.storage).toEqual({ ...parsedStorage, es_used_size: null });
+      });
+
+      it('should return a null value for the sizes that are not finite numbers', async () => {
+        // Given
+        mockSaasManagerBody({
+          ...fullMetadata,
+          storage: {
+            ...storage,
+            es_used_size: {
+              percent: '12.5',
+              used: null,
+              limit: Infinity,
+              time: storage.es_used_size.time,
+            },
+          },
+        });
+
+        // When
+        const data = await ProductInformationHelper.fetchSaasPlatformData(
+          serviceInstanceId,
+          platformId,
+          metricsPeriod
+        );
+
+        // Then
+        expect(data?.storage?.es_used_size).toEqual({
+          percent: null,
+          used: null,
+          limit: null,
+          time: storage.es_used_size.time,
+        });
       });
     });
 

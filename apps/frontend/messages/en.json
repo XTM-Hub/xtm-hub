@@ -1002,7 +1002,14 @@
         "RegionalArea": "Regional area",
         "DaysLeft": "{days, plural, =1 {# day left} other {# days left}}",
         "Unavailable": "The information is currently unavailable"
-      }
+      },
+      "Capacity": {
+        "Within": "Within capacity",
+        "Approaching": "Approaching capacity",
+        "Over": "Over capacity"
+      },
+      "MaxCapacity": "Max capacity",
+      "UsedOfLimit": "<highlight>{used}</highlight> <secondary>of {limit}</secondary>"
     },
     "Error": {
       "Capability": {

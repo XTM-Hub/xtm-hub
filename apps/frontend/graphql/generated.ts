@@ -2580,6 +2580,7 @@ export type SaasPlatformData = {
   __typename?: 'SaasPlatformData';
   metadata: SaasPlatformMetadata;
   metrics: Maybe<SaasPlatformMetrics>;
+  storage: Maybe<SaasPlatformStorage>;
 };
 
 export type SaasPlatformMetadata = {
@@ -2615,6 +2616,21 @@ export enum SaasPlatformResolution {
   Day = 'day',
   Hour = 'hour'
 }
+
+export type SaasPlatformStorage = {
+  __typename?: 'SaasPlatformStorage';
+  es_used_size: Maybe<SaasPlatformStorageUsage>;
+  postgres_used_size: Maybe<SaasPlatformStorageUsage>;
+  s3_used_size: Maybe<SaasPlatformStorageUsage>;
+};
+
+export type SaasPlatformStorageUsage = {
+  __typename?: 'SaasPlatformStorageUsage';
+  limit: Maybe<Scalars['Float']['output']>;
+  percent: Maybe<Scalars['Float']['output']>;
+  time: Scalars['Date']['output'];
+  used: Maybe<Scalars['Float']['output']>;
+};
 
 export type SendTelemetryMutation = {
   __typename?: 'SendTelemetryMutation';
@@ -3780,7 +3796,7 @@ export type RegisteredSaasPlatformDataQueryVariables = Exact<{
 }>;
 
 
-export type RegisteredSaasPlatformDataQuery = { __typename?: 'Query', registeredSaasPlatformData: { __typename?: 'SaasPlatformData', metadata: { __typename?: 'SaasPlatformMetadata', hostname: string | null, plan: string | null, start_date: any | null, end_date: any | null, region: string | null }, metrics: { __typename?: 'SaasPlatformMetrics', start: any, end: any, resolution: SaasPlatformResolution, series: Array<{ __typename?: 'SaasPlatformMetricSeries', metric_type: MetricType, points: Array<{ __typename?: 'SaasPlatformMetricPoint', timestamp: any, value: number | null }> }> } | null } | null };
+export type RegisteredSaasPlatformDataQuery = { __typename?: 'Query', registeredSaasPlatformData: { __typename?: 'SaasPlatformData', metadata: { __typename?: 'SaasPlatformMetadata', hostname: string | null, plan: string | null, start_date: any | null, end_date: any | null, region: string | null }, metrics: { __typename?: 'SaasPlatformMetrics', start: any, end: any, resolution: SaasPlatformResolution, series: Array<{ __typename?: 'SaasPlatformMetricSeries', metric_type: MetricType, points: Array<{ __typename?: 'SaasPlatformMetricPoint', timestamp: any, value: number | null }> }> } | null, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null, used: number | null, limit: number | null, time: any } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null, used: number | null, limit: number | null, time: any } | null, postgres_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null, used: number | null, limit: number | null, time: any } | null } | null } | null };
 
 export type RegisteredPlatformsListQueryVariables = Exact<{
   input: RegisteredPlatformsInput;
@@ -6438,6 +6454,26 @@ export const RegisteredSaasPlatformDataDocument = `
           timestamp
           value
         }
+      }
+    }
+    storage {
+      es_used_size {
+        percent
+        used
+        limit
+        time
+      }
+      s3_used_size {
+        percent
+        used
+        limit
+        time
+      }
+      postgres_used_size {
+        percent
+        used
+        limit
+        time
       }
     }
   }

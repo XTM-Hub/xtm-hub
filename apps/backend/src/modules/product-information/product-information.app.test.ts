@@ -134,7 +134,11 @@ describe('product information app', () => {
         );
 
       // Then
-      expect(data).toEqual({ metadata: fullMetadata, metrics: null });
+      expect(data).toEqual({
+        metadata: fullMetadata,
+        metrics: null,
+        storage: null,
+      });
     });
 
     it.each`
@@ -160,7 +164,11 @@ describe('product information app', () => {
         );
 
       // Then
-      expect(data).toEqual({ metadata: emptyMetadata, metrics: null });
+      expect(data).toEqual({
+        metadata: emptyMetadata,
+        metrics: null,
+        storage: null,
+      });
     });
 
     it('should keep the fields sent when the SaaS Manager sends only some of them', async () => {
@@ -184,6 +192,7 @@ describe('product information app', () => {
       expect(data).toEqual({
         metadata: { ...emptyMetadata, hostname: fullMetadata.hostname },
         metrics: null,
+        storage: null,
       });
     });
 
@@ -220,6 +229,7 @@ describe('product information app', () => {
             ),
           },
           metrics: null,
+          storage: null,
         });
       }
     );
@@ -246,7 +256,11 @@ describe('product information app', () => {
         );
 
       // Then
-      expect(data).toEqual({ metadata: fullMetadata, metrics: null });
+      expect(data).toEqual({
+        metadata: fullMetadata,
+        metrics: null,
+        storage: null,
+      });
     });
 
     it.each`
@@ -341,7 +355,11 @@ describe('product information app', () => {
           );
 
         // Then
-        expect(data).toEqual({ metadata: fullMetadata, metrics: null });
+        expect(data).toEqual({
+          metadata: fullMetadata,
+          metrics: null,
+          storage: null,
+        });
         expect(callSpy).toHaveBeenCalledExactlyOnceWith({
           platform_id: platformId,
           include_metrics: 90,
@@ -370,7 +388,11 @@ describe('product information app', () => {
           );
 
         // Then
-        expect(data).toEqual({ metadata: fullMetadata, metrics: null });
+        expect(data).toEqual({
+          metadata: fullMetadata,
+          metrics: null,
+          storage: null,
+        });
         expect(callSpy).toHaveBeenCalledOnce();
       });
 
@@ -408,8 +430,8 @@ describe('product information app', () => {
 
         // Then
         expect(data).toEqual([
-          { metadata: fullMetadata, metrics: null },
-          { metadata: fullMetadata, metrics: null },
+          { metadata: fullMetadata, metrics: null, storage: null },
+          { metadata: fullMetadata, metrics: null, storage: null },
         ]);
         expect(callSpy).toHaveBeenCalledOnce();
       });
@@ -430,7 +452,11 @@ describe('product information app', () => {
           );
 
         // Then
-        expect(data).toEqual({ metadata: fullMetadata, metrics: null });
+        expect(data).toEqual({
+          metadata: fullMetadata,
+          metrics: null,
+          storage: null,
+        });
         expect(callSpy).toHaveBeenCalledTimes(2);
       });
 

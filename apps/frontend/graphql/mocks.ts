@@ -1778,6 +1778,7 @@ export const mockSaasPlatformData = (overrides?: Partial<SaasPlatformData>, _rel
         __typename: 'SaasPlatformData',
         metadata: overrides && overrides.hasOwnProperty('metadata') ? overrides.metadata! : relationshipsToOmit.has('SaasPlatformMetadata') ? {} as SaasPlatformMetadata : mockSaasPlatformMetadata({}, relationshipsToOmit),
         metrics: overrides && overrides.hasOwnProperty('metrics') ? overrides.metrics! : relationshipsToOmit.has('SaasPlatformMetrics') ? {} as SaasPlatformMetrics : mockSaasPlatformMetrics({}, relationshipsToOmit),
+        storage: overrides && overrides.hasOwnProperty('storage') ? overrides.storage! : relationshipsToOmit.has('SaasPlatformStorage') ? {} as SaasPlatformStorage : mockSaasPlatformStorage({}, relationshipsToOmit),
     };
 };
 
@@ -1823,6 +1824,29 @@ export const mockSaasPlatformMetrics = (overrides?: Partial<SaasPlatformMetrics>
         resolution: overrides && overrides.hasOwnProperty('resolution') ? overrides.resolution! : SaasPlatformResolution.Day,
         series: overrides && overrides.hasOwnProperty('series') ? overrides.series! : [relationshipsToOmit.has('SaasPlatformMetricSeries') ? {} as SaasPlatformMetricSeries : mockSaasPlatformMetricSeries({}, relationshipsToOmit)],
         start: overrides && overrides.hasOwnProperty('start') ? overrides.start! : '2021-03-10T22:36:33.605Z',
+    };
+};
+
+export const mockSaasPlatformStorage = (overrides?: Partial<SaasPlatformStorage>, _relationshipsToOmit: Set<string> = new Set()): { __typename: 'SaasPlatformStorage' } & SaasPlatformStorage => {
+    const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+    relationshipsToOmit.add('SaasPlatformStorage');
+    return {
+        __typename: 'SaasPlatformStorage',
+        es_used_size: overrides && overrides.hasOwnProperty('es_used_size') ? overrides.es_used_size! : relationshipsToOmit.has('SaasPlatformStorageUsage') ? {} as SaasPlatformStorageUsage : mockSaasPlatformStorageUsage({}, relationshipsToOmit),
+        postgres_used_size: overrides && overrides.hasOwnProperty('postgres_used_size') ? overrides.postgres_used_size! : relationshipsToOmit.has('SaasPlatformStorageUsage') ? {} as SaasPlatformStorageUsage : mockSaasPlatformStorageUsage({}, relationshipsToOmit),
+        s3_used_size: overrides && overrides.hasOwnProperty('s3_used_size') ? overrides.s3_used_size! : relationshipsToOmit.has('SaasPlatformStorageUsage') ? {} as SaasPlatformStorageUsage : mockSaasPlatformStorageUsage({}, relationshipsToOmit),
+    };
+};
+
+export const mockSaasPlatformStorageUsage = (overrides?: Partial<SaasPlatformStorageUsage>, _relationshipsToOmit: Set<string> = new Set()): { __typename: 'SaasPlatformStorageUsage' } & SaasPlatformStorageUsage => {
+    const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+    relationshipsToOmit.add('SaasPlatformStorageUsage');
+    return {
+        __typename: 'SaasPlatformStorageUsage',
+        limit: overrides && overrides.hasOwnProperty('limit') ? overrides.limit! : 9.1,
+        percent: overrides && overrides.hasOwnProperty('percent') ? overrides.percent! : 4.2,
+        time: overrides && overrides.hasOwnProperty('time') ? overrides.time! : '2021-05-30T07:23:27.873Z',
+        used: overrides && overrides.hasOwnProperty('used') ? overrides.used! : 2.8,
     };
 };
 

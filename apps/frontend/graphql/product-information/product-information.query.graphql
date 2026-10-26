@@ -19,5 +19,17 @@ query RegisteredSaasPlatformData($input: RegisteredPlatformInput!) {
         }
       }
     }
+    storage {
+      es_used_size {
+        percent
+        used
+        limit
+      }
+      s3_used_size {
+        percent
+        used
+        limit
+      }
+    }
   }
 }

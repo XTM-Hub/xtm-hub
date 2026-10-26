@@ -6,6 +6,8 @@ import {
   SaasPlatformMetrics,
   SaasPlatformMetricSeries,
   SaasPlatformResolution,
+  SaasPlatformStorage,
+  SaasPlatformStorageUsage,
 } from '../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
@@ -26,6 +28,9 @@ const RESOLUTIONS: ReadonlySet<string> = new Set(
 
 const isResolution = (value: unknown): value is SaasPlatformResolution =>
   typeof value === 'string' && RESOLUTIONS.has(value);
+
+const toFiniteNumber = (value: unknown): number | null =>
+  typeof value === 'number' && Number.isFinite(value) ? value : null;
 
 const readMetadataString = (
   body: Record<string, unknown>,
@@ -61,9 +66,7 @@ const parseMetricPoint = (point: unknown): SaasPlatformMetricPoint[] => {
   if (timestamp === null) {
     return [];
   }
-  const value =
-    typeof point.v === 'number' && Number.isFinite(point.v) ? point.v : null;
-  return [{ timestamp, value }];
+  return [{ timestamp, value: toFiniteNumber(point.v) }];
 };
 
 const parseMetricSeries = (series: unknown): SaasPlatformMetricSeries[] => {
@@ -105,6 +108,34 @@ const parseSaasPlatformMetrics = (
   };
 };
 
+const parseStorageUsage = (usage: unknown): SaasPlatformStorageUsage | null => {
+  if (!isRecord(usage)) {
+    return null;
+  }
+  const time = toIsoDate(usage.time);
+  if (time === null) {
+    return null;
+  }
+  return {
+    percent: toFiniteNumber(usage.percent),
+    used: toFiniteNumber(usage.used),
+    limit: toFiniteNumber(usage.limit),
+    time,
+  };
+};
+
+const parseSaasPlatformStorage = (
+  storage: unknown
+): SaasPlatformStorage | null => {
+  if (!isRecord(storage)) {
+    return null;
+  }
+  return {
+    es_used_size: parseStorageUsage(storage.es_used_size),
+    s3_used_size: parseStorageUsage(storage.s3_used_size),
+  };
+};
+
 const parseSaasPlatformData = (body: unknown): SaasPlatformData => {
   const fields: Record<string, unknown> =
     typeof body === 'object' && body !== null ? { ...body } : {};
@@ -118,6 +149,7 @@ const parseSaasPlatformData = (body: unknown): SaasPlatformData => {
       region: readMetadataString(fields, 'region'),
     },
     metrics: parseSaasPlatformMetrics(fields.metrics),
+    storage: parseSaasPlatformStorage(fields.storage),
   };
 };
 

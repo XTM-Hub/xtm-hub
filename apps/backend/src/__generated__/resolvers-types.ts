@@ -2573,6 +2573,7 @@ export type SaasPlatformData = {
   __typename?: 'SaasPlatformData';
   metadata: SaasPlatformMetadata;
   metrics?: Maybe<SaasPlatformMetrics>;
+  storage?: Maybe<SaasPlatformStorage>;
 };
 
 export type SaasPlatformMetadata = {
@@ -2608,6 +2609,21 @@ export enum SaasPlatformResolution {
   Day = 'day',
   Hour = 'hour'
 }
+
+export type SaasPlatformStorage = {
+  __typename?: 'SaasPlatformStorage';
+  es_used_size?: Maybe<SaasPlatformStorageUsage>;
+  postgres_used_size?: Maybe<SaasPlatformStorageUsage>;
+  s3_used_size?: Maybe<SaasPlatformStorageUsage>;
+};
+
+export type SaasPlatformStorageUsage = {
+  __typename?: 'SaasPlatformStorageUsage';
+  limit?: Maybe<Scalars['Float']['output']>;
+  percent?: Maybe<Scalars['Float']['output']>;
+  time: Scalars['Date']['output'];
+  used?: Maybe<Scalars['Float']['output']>;
+};
 
 export type SendTelemetryMutation = {
   __typename?: 'SendTelemetryMutation';
@@ -3677,6 +3693,8 @@ export type ResolversTypes = ResolversObject<{
   SaasPlatformMetricSeries: ResolverTypeWrapper<SaasPlatformMetricSeries>;
   SaasPlatformMetrics: ResolverTypeWrapper<SaasPlatformMetrics>;
   SaasPlatformResolution: SaasPlatformResolution;
+  SaasPlatformStorage: ResolverTypeWrapper<SaasPlatformStorage>;
+  SaasPlatformStorageUsage: ResolverTypeWrapper<SaasPlatformStorageUsage>;
   SendTelemetryMutation: ResolverTypeWrapper<SendTelemetryMutation>;
   SeoServiceInstance: ResolverTypeWrapper<SeoServiceInstance>;
   SeoServiceInstanceMetadata: ResolverTypeWrapper<SeoServiceInstanceMetadata>;
@@ -3921,6 +3939,8 @@ export type ResolversParentTypes = ResolversObject<{
   SaasPlatformMetricPoint: SaasPlatformMetricPoint;
   SaasPlatformMetricSeries: SaasPlatformMetricSeries;
   SaasPlatformMetrics: SaasPlatformMetrics;
+  SaasPlatformStorage: SaasPlatformStorage;
+  SaasPlatformStorageUsage: SaasPlatformStorageUsage;
   SendTelemetryMutation: SendTelemetryMutation;
   SeoServiceInstance: SeoServiceInstance;
   SeoServiceInstanceMetadata: SeoServiceInstanceMetadata;
@@ -5000,6 +5020,7 @@ export type SsoGroupRolePortalResolvers<ContextType = PortalContext, ParentType 
 export type SaasPlatformDataResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasPlatformData'] = ResolversParentTypes['SaasPlatformData']> = ResolversObject<{
   metadata?: Resolver<ResolversTypes['SaasPlatformMetadata'], ParentType, ContextType>;
   metrics?: Resolver<Maybe<ResolversTypes['SaasPlatformMetrics']>, ParentType, ContextType>;
+  storage?: Resolver<Maybe<ResolversTypes['SaasPlatformStorage']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -5029,6 +5050,21 @@ export type SaasPlatformMetricsResolvers<ContextType = PortalContext, ParentType
   resolution?: Resolver<ResolversTypes['SaasPlatformResolution'], ParentType, ContextType>;
   series?: Resolver<Array<ResolversTypes['SaasPlatformMetricSeries']>, ParentType, ContextType>;
   start?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SaasPlatformStorageResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasPlatformStorage'] = ResolversParentTypes['SaasPlatformStorage']> = ResolversObject<{
+  es_used_size?: Resolver<Maybe<ResolversTypes['SaasPlatformStorageUsage']>, ParentType, ContextType>;
+  postgres_used_size?: Resolver<Maybe<ResolversTypes['SaasPlatformStorageUsage']>, ParentType, ContextType>;
+  s3_used_size?: Resolver<Maybe<ResolversTypes['SaasPlatformStorageUsage']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SaasPlatformStorageUsageResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasPlatformStorageUsage'] = ResolversParentTypes['SaasPlatformStorageUsage']> = ResolversObject<{
+  limit?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  percent?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  time?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  used?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -5651,6 +5687,8 @@ export type Resolvers<ContextType = PortalContext> = ResolversObject<{
   SaasPlatformMetricPoint?: SaasPlatformMetricPointResolvers<ContextType>;
   SaasPlatformMetricSeries?: SaasPlatformMetricSeriesResolvers<ContextType>;
   SaasPlatformMetrics?: SaasPlatformMetricsResolvers<ContextType>;
+  SaasPlatformStorage?: SaasPlatformStorageResolvers<ContextType>;
+  SaasPlatformStorageUsage?: SaasPlatformStorageUsageResolvers<ContextType>;
   SendTelemetryMutation?: SendTelemetryMutationResolvers<ContextType>;
   SeoServiceInstance?: SeoServiceInstanceResolvers<ContextType>;
   SeoServiceInstanceMetadata?: SeoServiceInstanceMetadataResolvers<ContextType>;

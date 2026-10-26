@@ -125,6 +125,114 @@ describe('TimeSeriesBarChart', () => {
     ]);
   });
 
+  it('should draw a thick solid red limit line labelled on the left, under the peak line', async () => {
+    // Given / When
+    const { options } = await renderChart({
+      limit: { value: 2_000_000_000, label: 'Max capacity' },
+    });
+
+    // Then
+    expect(options.annotations?.yaxis).toEqual([
+      expect.objectContaining({
+        y: 2_000_000_000,
+        borderColor: 'var(--color-feedback-error-primary)',
+        borderWidth: 2,
+        strokeDashArray: 0,
+        label: expect.objectContaining({
+          text: 'Max capacity - 2000000000 units',
+          position: 'left',
+          style: expect.objectContaining({ fontSize: '14px', fontWeight: 700 }),
+        }),
+      }),
+      expect.objectContaining({
+        y: 1_500_000_000,
+        strokeDashArray: expect.any(Number),
+        label: expect.objectContaining({
+          text: 'TimeSeriesBarChart.Peak - 1500000000 units',
+          position: 'left',
+        }),
+      }),
+    ]);
+  });
+
+  it.each`
+    case                             | limitValue       | limitLabelOffsetY | peakLabelOffsetY
+    ${'the peak is below the limit'} | ${2_000_000_000} | ${0}              | ${16}
+    ${'the peak reaches the limit'}  | ${1_500_000_000} | ${19}             | ${0}
+    ${'the peak is above the limit'} | ${1_000_000_000} | ${19}             | ${0}
+  `(
+    'should put the label of the lower line below it when $case',
+    async ({ limitValue, limitLabelOffsetY, peakLabelOffsetY }) => {
+      // Given / When
+      const { options } = await renderChart({
+        limit: { value: limitValue, label: 'Max capacity' },
+      });
+
+      // Then
+      const [limitLine, peakLine] = options.annotations?.yaxis ?? [];
+      expect(limitLine.label?.offsetY).toBe(limitLabelOffsetY);
+      expect(peakLine.label?.offsetY).toBe(peakLabelOffsetY);
+    }
+  );
+
+  it.each`
+    case                 | limit                                              | expected
+    ${'without a limit'} | ${undefined}                                       | ${1}
+    ${'with a limit'}    | ${{ value: 2_000_000_000, label: 'Max capacity' }} | ${0.8}
+  `(
+    'should fill the bars at $expected opacity $case',
+    async ({ limit, expected }) => {
+      // Given / When
+      const { options } = await renderChart({ limit });
+
+      // Then
+      expect(options.fill?.opacity).toBe(expected);
+    }
+  );
+
+  it('should keep the limit label above its line when there is no peak line', async () => {
+    // Given / When
+    const { options } = await renderChart({
+      points: [],
+      limit: { value: 2_000_000_000, label: 'Max capacity' },
+    });
+
+    // Then
+    expect(options.annotations?.yaxis).toEqual([
+      expect.objectContaining({
+        y: 2_000_000_000,
+        label: expect.objectContaining({ offsetY: 0 }),
+      }),
+    ]);
+  });
+
+  it.each`
+    case                                    | computedMax      | expected
+    ${'the highest bar is below the limit'} | ${1_500_000_000} | ${2_000_000_000}
+    ${'the highest bar is above the limit'} | ${2_500_000_000} | ${2_500_000_000}
+  `(
+    'should end the y axis at $expected when $case',
+    async ({ computedMax, expected }) => {
+      // Given / When
+      const { options } = await renderChart({
+        limit: { value: 2_000_000_000, label: 'Max capacity' },
+      });
+
+      // Then
+      const max = (options.yaxis as ApexYAxis).max as (max: number) => number;
+      expect(max(computedMax)).toBe(expected);
+    }
+  );
+
+  it('should neither draw a limit line nor bound the y axis without a limit', async () => {
+    // Given / When
+    const { options } = await renderChart();
+
+    // Then
+    expect(options.annotations?.yaxis).toHaveLength(1);
+    expect(options.yaxis).not.toHaveProperty('max');
+  });
+
   it.each([
     ['there are no points', []],
     [

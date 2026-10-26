@@ -1002,7 +1002,14 @@
         "RegionalArea": "リージョン",
         "DaysLeft": "{days, plural, =1 {残り#日} other {残り#日}}",
         "Unavailable": "現在、この情報はご利用いただけません。"
-      }
+      },
+      "Capacity": {
+        "Within": "容量内",
+        "Approaching": "容量上限に接近",
+        "Over": "容量超過"
+      },
+      "MaxCapacity": "最大容量",
+      "UsedOfLimit": "<secondary>{limit} 中</secondary> <highlight>{used}</highlight>"
     },
     "Error": {
       "Capability": {

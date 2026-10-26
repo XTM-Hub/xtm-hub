@@ -102,6 +102,7 @@ export const RegisteredPlatformOverview = ({
       {showSaasPlatformData && (
         <PlatformMetrics
           metrics={saasPlatformData?.registeredSaasPlatformData?.metrics}
+          storage={saasPlatformData?.registeredSaasPlatformData?.storage}
           isLoading={isSaasPlatformDataPending}
         />
       )}

@@ -1240,6 +1240,7 @@ type Subscription {
 type SaasPlatformData {
   metadata: SaasPlatformMetadata!
   metrics: SaasPlatformMetrics
+  storage: SaasPlatformStorage
 }
 
 type SaasPlatformMetadata {
@@ -1265,6 +1266,19 @@ type SaasPlatformMetricSeries {
 type SaasPlatformMetricPoint {
   timestamp: Date!
   value: Float
+}
+
+type SaasPlatformStorage {
+  es_used_size: SaasPlatformStorageUsage
+  s3_used_size: SaasPlatformStorageUsage
+  postgres_used_size: SaasPlatformStorageUsage
+}
+
+type SaasPlatformStorageUsage {
+  percent: Float
+  used: Float
+  limit: Float
+  time: Date!
 }
 
 enum MetricType {

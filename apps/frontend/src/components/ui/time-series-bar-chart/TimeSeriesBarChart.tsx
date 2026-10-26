@@ -19,7 +19,17 @@ const Chart = dynamic(() => import('react-apexcharts'), { ssr: false });
 const DEFAULT_HEIGHT = 240;
 const DEFAULT_COLOR = 'var(--color-filigran-brand-primary)';
 const PEAK_LINE_DASH_PX = 4;
-const PEAK_LABEL_OFFSET_X_PX = 4;
+const LABEL_OFFSET_X_PX = 4;
+// ApexCharts sets a label's baseline 3px above its line: below it, the text needs its font size plus a gap.
+const LABEL_BELOW_LINE_GAP_PX = 5;
+const PEAK_LABEL_FONT_SIZE_PX = 11;
+const LIMIT_COLOR = 'var(--color-feedback-error-primary)';
+const LIMIT_LINE_WIDTH_PX = 2;
+const LIMIT_LABEL_FONT_SIZE_PX = 14;
+const LIMIT_LABEL_FONT_WEIGHT = 700;
+// With a limit line, the bars step back so the line reads first.
+const BAR_OPACITY = 1;
+const BAR_OPACITY_WITH_LIMIT = 0.8;
 
 // Dresses the ApexCharts toolbar as tertiary sm IconButtons and its export menu as a Menu. ApexCharts injects
 // an unlayered stylesheet, which beats any Tailwind layer: every rule here needs the important modifier.
@@ -33,13 +43,20 @@ const TOOLBAR_CLASS_NAME = cn(
   '[&_.apexcharts-menu-item:focus-visible]:bg-input-hover! [&_.apexcharts-menu-item:focus-visible]:outline-filigran-brand-primary! [&_.apexcharts-menu-item:hover]:bg-input-hover!'
 );
 
+export interface TimeSeriesBarChartLimit {
+  value: number;
+  label: string;
+}
+
 export interface TimeSeriesBarChartProps {
   seriesName: string;
   points: TimeSeriesPoint[];
-  // Formats a value on the y axis, in the tooltip and in the peak label: keep it stable (useCallback).
+  // Formats a value on the y axis, in the tooltip and in the peak and limit labels: keep it stable (useCallback).
   formatValue: (value: number) => string;
   color?: string;
   height?: number;
+  // Draws a red line at this value: keep it stable (useMemo).
+  limit?: TimeSeriesBarChartLimit | null;
 }
 
 export const TimeSeriesBarChart = ({
@@ -48,6 +65,7 @@ export const TimeSeriesBarChart = ({
   formatValue,
   color = DEFAULT_COLOR,
   height = DEFAULT_HEIGHT,
+  limit,
 }: TimeSeriesBarChartProps) => {
   const t = useTranslate();
   const formatDate = useDateFormatter();
@@ -63,6 +81,11 @@ export const TimeSeriesBarChart = ({
 
   const options = useMemo<ApexOptions>(() => {
     const themeMode = resolvedTheme === 'light' ? 'light' : 'dark';
+    const labelBelowLineOffsetY = (below: boolean, fontSizePx: number) =>
+      below ? fontSizePx + LABEL_BELOW_LINE_GAP_PX : 0;
+    // Both labels sit on the left: the lower line takes its label below, so close lines never stack them.
+    const peakBelowLimit =
+      peakValue !== null && limit != null && peakValue < limit.value;
     // A reference line, not data: it wears the secondary ink so it never reads as another series.
     const peakAnnotations =
       peakValue === null
@@ -76,17 +99,51 @@ export const TimeSeriesBarChart = ({
                 text: `${peakLabel} - ${formatValue(peakValue)}`,
                 position: 'left',
                 textAnchor: 'start',
-                offsetX: PEAK_LABEL_OFFSET_X_PX,
+                offsetX: LABEL_OFFSET_X_PX,
+                offsetY: labelBelowLineOffsetY(
+                  peakBelowLimit,
+                  PEAK_LABEL_FONT_SIZE_PX
+                ),
                 borderWidth: 0,
                 style: {
                   background: 'transparent',
                   color: 'var(--text-default-secondary)',
+                  fontSize: `${PEAK_LABEL_FONT_SIZE_PX}px`,
                 },
               },
             },
           ];
+    const limitAnnotations = limit
+      ? [
+          {
+            y: limit.value,
+            borderColor: LIMIT_COLOR,
+            borderWidth: LIMIT_LINE_WIDTH_PX,
+            // ApexCharts dashes an annotation unless told otherwise.
+            strokeDashArray: 0,
+            label: {
+              text: `${limit.label} - ${formatValue(limit.value)}`,
+              position: 'left',
+              textAnchor: 'start',
+              offsetX: LABEL_OFFSET_X_PX,
+              offsetY: labelBelowLineOffsetY(
+                peakValue !== null && !peakBelowLimit,
+                LIMIT_LABEL_FONT_SIZE_PX
+              ),
+              borderWidth: 0,
+              style: {
+                background: 'transparent',
+                color: LIMIT_COLOR,
+                fontSize: `${LIMIT_LABEL_FONT_SIZE_PX}px`,
+                fontWeight: LIMIT_LABEL_FONT_WEIGHT,
+              },
+            },
+          },
+        ]
+      : [];
     return {
-      annotations: { yaxis: peakAnnotations },
+      // Drawn after the limit, the dashed peak line stays visible when both lines meet.
+      annotations: { yaxis: [...limitAnnotations, ...peakAnnotations] },
       chart: {
         type: 'bar',
         background: 'transparent',
@@ -104,7 +161,10 @@ export const TimeSeriesBarChart = ({
           borderRadiusApplication: 'end',
         },
       },
-      fill: { type: 'solid', opacity: 1 },
+      fill: {
+        type: 'solid',
+        opacity: limit ? BAR_OPACITY_WITH_LIMIT : BAR_OPACITY,
+      },
       dataLabels: { enabled: false },
       grid: {
         borderColor: 'var(--border-elevation-subtle)',
@@ -124,6 +184,10 @@ export const TimeSeriesBarChart = ({
       },
       yaxis: {
         min: 0,
+        // ApexCharts hides an annotation above the highest bar: stretch the axis up to the limit.
+        ...(limit && {
+          max: (max: number) => Math.max(max, limit.value),
+        }),
         labels: {
           style: { colors: 'var(--text-default-secondary)' },
           formatter: formatValue,
@@ -131,7 +195,15 @@ export const TimeSeriesBarChart = ({
       },
       tooltip: { y: { formatter: formatValue } },
     };
-  }, [resolvedTheme, formatDate, formatValue, peakValue, peakLabel, color]);
+  }, [
+    resolvedTheme,
+    formatDate,
+    formatValue,
+    peakValue,
+    peakLabel,
+    color,
+    limit,
+  ]);
 
   return (
     <div className={TOOLBAR_CLASS_NAME}>
