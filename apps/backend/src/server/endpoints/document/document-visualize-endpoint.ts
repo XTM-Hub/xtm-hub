@@ -12,7 +12,11 @@ import { MinIOClient } from '../../../thirdparty/minio/client';
 import { logApp } from '../../../utils/app-logger.util';
 import { NotFoundError } from '../../../utils/error/error.util';
 import { extractId } from '../../../utils/utils';
-import { setImageCacheHeaders } from './document-visualize-endpoint.utils';
+import {
+  buildETag,
+  CacheControl,
+  respondNotModifiedIfFresh,
+} from '../shared/http-cache.util';
 
 export const documentVisualizeEndpoint = (app: Application) => {
   app.get(
@@ -132,9 +136,16 @@ export const documentVisualizeEndpoint = (app: Application) => {
           return res.status(404).json({ message: 'Invalid document' });
         }
 
-        setImageCacheHeaders(res, document.minio_name);
-        if (req.fresh) {
-          return res.status(304).end();
+        // The URL of an image stays the same when its file is replaced (e.g. a
+        // connector logo), so clients must revalidate instead of caching blindly.
+        // The MinIO name changes with every upload, which makes it a reliable ETag.
+        if (
+          respondNotModifiedIfFresh(req, res, {
+            etag: buildETag(document.minio_name),
+            cacheControl: CacheControl.PublicRevalidate,
+          })
+        ) {
+          return;
         }
 
         const stream = (await MinIOClient.downloadFile(

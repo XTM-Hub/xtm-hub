@@ -6,7 +6,6 @@ import {
   buildMatrixEntries,
   buildVersionsMatrixCsv,
   buildVersionsMatrixEnv,
-  buildVersionsMatrixETag,
   buildVersionsMatrixJson,
   findIncompatibleSlugs,
   findUnknownSlugs,
@@ -15,26 +14,6 @@ import {
   parseConnectorSlugs,
   parseVersionsMatrixFormat,
 } from './versions-matrix-endpoint.utils';
-
-describe('buildVersionsMatrixETag', () => {
-  it('wraps a sha256 hash of the payload in a strong ETag', () => {
-    expect(buildVersionsMatrixETag('payload')).toBe(
-      '"239f59ed55e737c77147cf55ad0c1b030b6d7ee748a7426952f9b852d5a935e5"'
-    );
-  });
-
-  it('produces different ETags for different payloads', () => {
-    expect(buildVersionsMatrixETag('payload-a')).not.toBe(
-      buildVersionsMatrixETag('payload-b')
-    );
-  });
-
-  it('is deterministic for the same payload', () => {
-    expect(buildVersionsMatrixETag('same')).toBe(
-      buildVersionsMatrixETag('same')
-    );
-  });
-});
 
 describe('isVersionsMatrixFormat', () => {
   it.each`

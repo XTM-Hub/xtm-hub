@@ -23,8 +23,8 @@ vi.mock('../../../utils/app-logger.util', () => ({
   logApp: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
+import { buildETag } from '../shared/http-cache.util';
 import { documentVisualizeEndpoint } from './document-visualize-endpoint';
-import { buildImageETag } from './document-visualize-endpoint.utils';
 
 type Handler = (req: Request, res: Response) => Promise<unknown>;
 
@@ -99,10 +99,7 @@ describe('documentVisualizeEndpoint images route', () => {
 
     await getImageHandler()(buildRequest(), res);
 
-    expect(res.setHeader).toHaveBeenCalledWith(
-      'ETag',
-      buildImageETag('minio-name')
-    );
+    expect(res.setHeader).toHaveBeenCalledWith('ETag', buildETag('minio-name'));
     expect(res.setHeader).toHaveBeenCalledWith(
       'Cache-Control',
       'public, no-cache'
