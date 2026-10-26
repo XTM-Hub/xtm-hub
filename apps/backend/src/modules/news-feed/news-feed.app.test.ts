@@ -956,51 +956,42 @@ describe('newsFeedApp', () => {
     });
 
     describe('deleteResourceNewsFeed', () => {
-      it('should mark the news feed item as deleted when the document is a scenario', async () => {
-        // Given
-        const item = await NewsFeedDomain.createResourceNewsFeedItem({
-          document,
-          serviceDefinitionIdentifier:
-            ServiceDefinitionIdentifier.OpenaevScenarios,
-          type: NewsFeedItemType.ResourceScenario,
-          platformIdentifier: PlatformIdentifier.Openaev,
-          tags: [],
-        });
+      it.each`
+        serviceDefinitionIdentifier                            | type                                        | platformIdentifier
+        ${ServiceDefinitionIdentifier.OpenaevScenarios}        | ${NewsFeedItemType.ResourceScenario}        | ${PlatformIdentifier.Openaev}
+        ${ServiceDefinitionIdentifier.OpenctiCustomDashboards} | ${NewsFeedItemType.ResourceCustomDashboard} | ${PlatformIdentifier.Opencti}
+      `(
+        'should mark the $type news feed item as deleted when the document has one',
+        async ({
+          serviceDefinitionIdentifier,
+          type,
+          platformIdentifier,
+        }: {
+          serviceDefinitionIdentifier: ServiceDefinitionIdentifier;
+          type: NewsFeedItemType;
+          platformIdentifier: PlatformIdentifier;
+        }) => {
+          // Given
+          const item = await NewsFeedDomain.createResourceNewsFeedItem({
+            document,
+            serviceDefinitionIdentifier,
+            type,
+            platformIdentifier,
+            tags: [],
+          });
 
-        // When
-        await NewsFeedApp.deleteResourceNewsFeed({
-          documentId: document.id,
-        });
+          // When
+          await NewsFeedApp.deleteResourceNewsFeed({
+            documentId: document.id,
+          });
 
-        // Then
-        const deletedItem = await TestHelper.newsFeed.loadFirstItem({
-          id: item.id,
-        });
-        expect(deletedItem?.is_deleted).toBe(true);
-      });
-
-      it('should not delete the news feed item when the document is not a scenario', async () => {
-        // Given
-        const item = await NewsFeedDomain.createResourceNewsFeedItem({
-          document,
-          serviceDefinitionIdentifier:
-            ServiceDefinitionIdentifier.OpenctiCustomDashboards,
-          type: NewsFeedItemType.ResourceCustomDashboard,
-          platformIdentifier: PlatformIdentifier.Opencti,
-          tags: [],
-        });
-
-        // When
-        await NewsFeedApp.deleteResourceNewsFeed({
-          documentId: document.id,
-        });
-
-        // Then
-        const untouchedItem = await TestHelper.newsFeed.loadFirstItem({
-          id: item.id,
-        });
-        expect(untouchedItem?.is_deleted).toBe(false);
-      });
+          // Then
+          const deletedItem = await TestHelper.newsFeed.loadFirstItem({
+            id: item.id,
+          });
+          expect(deletedItem?.is_deleted).toBe(true);
+        }
+      );
 
       it('should log the failure instead of throwing when the deletion fails', async () => {
         // Given
@@ -1148,7 +1139,7 @@ describe('newsFeedApp', () => {
         expect(deleteResourceNewsFeedSpy).not.toHaveBeenCalled();
       });
 
-      it('should delete the scenario news feed item when the scenario is unpublished', async () => {
+      it('should delete the news feed item when the document is unpublished', async () => {
         // Given
         vi.spyOn(NewsFeedHelper, 'getNewsFeedConfiguration').mockReturnValue({
           newsFeedType: NewsFeedItemType.ResourceScenario,

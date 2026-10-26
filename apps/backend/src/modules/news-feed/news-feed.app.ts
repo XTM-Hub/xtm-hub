@@ -303,7 +303,7 @@ export const NewsFeedApp = {
     try {
       const existingItem =
         await NewsFeedDomain.loadNewsFeedItemByDocumentId(documentId);
-      if (existingItem?.type !== NewsFeedItemType.ResourceScenario) {
+      if (!existingItem) {
         return;
       }
 
