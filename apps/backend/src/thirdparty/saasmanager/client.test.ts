@@ -116,6 +116,20 @@ describe('saasManagerClient.callInstanceApi', () => {
     );
   });
 
+  it('asks for the metrics of the given period when include_metrics is set', async () => {
+    const fetchMock = stubSaasManager();
+
+    await client.callInstanceApi({
+      platform_id: 'platform-1',
+      include_metrics: 30,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      new URL(`${BASE_URL}/api/hub/instance/platform-1/?include_metrics=30`),
+      expect.any(Object)
+    );
+  });
+
   it('returns the response without throwing when the SaaS Manager responds with a non-ok status', async () => {
     const response = new Response(null, { status: 404 });
     stubSaasManager(response);

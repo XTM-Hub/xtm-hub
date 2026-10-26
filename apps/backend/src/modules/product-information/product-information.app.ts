@@ -1,9 +1,14 @@
-import { SaasPlatformData } from '../../__generated__/resolvers-types';
+import {
+  FeatureFlag,
+  SaasPlatformData,
+} from '../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
+import { isFeatureEnabled } from '../../utils/feature-flag.util';
 import { RegistrationDomain } from '../registration/registration.domain';
 import { ProductInformationHelper } from './product-information.helper';
 
-// Hostname, plan, dates and region rarely change: a short cache keeps page refreshes from reaching the SaaS Manager.
+// The metadata rarely changes and the metrics are aggregated by the hour: a short cache keeps page refreshes from
+// reaching the SaaS Manager.
 const SAAS_PLATFORM_DATA_CACHE_TTL_MS = 60_000;
 
 interface CachedSaasPlatformData {
@@ -53,6 +58,10 @@ export const ProductInformationApp = {
   loadRegisteredSaasPlatformData: async (
     serviceInstanceId: ServiceInstanceId
   ): Promise<SaasPlatformData | null> => {
+    if (!isFeatureEnabled(FeatureFlag.SaasMetrics)) {
+      return null;
+    }
+
     // Resolve the platform through the organization-scoped query first, so that
     // the SaaS Manager is only ever called for a platform the user can access,
     // and with the platform_id stored in the Hub, never a client-supplied one.

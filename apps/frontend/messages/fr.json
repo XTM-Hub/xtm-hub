@@ -983,6 +983,16 @@
       "PlatformVersion": "Version de la plateforme"
     },
     "Metrics": {
+      "Title": "Utilisation de l'espace de stockage",
+      "Unavailable": "Ces indicateurs ne sont actuellement pas disponibles",
+      "Database": {
+        "Title": "Base de données",
+        "Subtitle": "Connaissances, relations, historique et journaux"
+      },
+      "FileStorage": {
+        "Title": "Stockage de fichiers",
+        "Subtitle": "Fichiers importés, rapports et pièces jointes"
+      },
       "Metadata": {
         "Hostname": "Nom d'hôte",
         "CopyHostname": "Copier le nom d'hôte",
@@ -2413,6 +2423,9 @@
       "default": "Par défaut",
       "thread": "Thread"
     }
+  },
+  "TimeSeriesBarChart": {
+    "Peak": "Pic"
   },
   "EditableText": {
     "DialogTitle": "Modifier le contenu",

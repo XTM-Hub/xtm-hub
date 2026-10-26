@@ -9,6 +9,7 @@ import {
 } from '../../../tests/tests.const';
 import {
   CommercialModel,
+  FeatureFlag,
   PlatformContract,
   PlatformIdentifier,
 } from '../../__generated__/resolvers-types';
@@ -16,10 +17,16 @@ import { requestContext } from '../../context/request.context';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { CAPABILITY_BYPASS } from '../../portal.const';
 import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
+import { isFeatureEnabled } from '../../utils/feature-flag.util';
 import { PlatformConfigurationDomain } from '../registration/platform-configuration/platform-configuration.domain';
 import { RegistrationDomain } from '../registration/registration.domain';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { ProductInformationApp } from './product-information.app';
+
+// isFeatureEnabled is mocked so that tests are deterministic and independent of the local `enabled_features` config.
+vi.mock('../../utils/feature-flag.util', () => ({
+  isFeatureEnabled: vi.fn(),
+}));
 
 describe('product information app', () => {
   describe('loadRegisteredSaasPlatformData', () => {
@@ -44,6 +51,7 @@ describe('product information app', () => {
     let serviceInstanceId: ServiceInstanceId;
 
     beforeEach(async () => {
+      vi.mocked(isFeatureEnabled).mockReturnValue(true);
       requestContext.set(requestContextRegistererUserSecondOrga);
       platformId = uuidv4();
       serviceInstanceId = await RegistrationDomain.registerNewPlatform({
@@ -100,6 +108,7 @@ describe('product information app', () => {
       // Then
       expect(callSpy).toHaveBeenCalledExactlyOnceWith({
         platform_id: platformId,
+        include_metrics: 90,
       });
     });
 
@@ -125,7 +134,7 @@ describe('product information app', () => {
         );
 
       // Then
-      expect(data).toEqual({ metadata: fullMetadata });
+      expect(data).toEqual({ metadata: fullMetadata, metrics: null });
     });
 
     it.each`
@@ -151,7 +160,7 @@ describe('product information app', () => {
         );
 
       // Then
-      expect(data).toEqual({ metadata: emptyMetadata });
+      expect(data).toEqual({ metadata: emptyMetadata, metrics: null });
     });
 
     it('should keep the fields sent when the SaaS Manager sends only some of them', async () => {
@@ -174,6 +183,7 @@ describe('product information app', () => {
       // Then
       expect(data).toEqual({
         metadata: { ...emptyMetadata, hostname: fullMetadata.hostname },
+        metrics: null,
       });
     });
 
@@ -209,6 +219,7 @@ describe('product information app', () => {
               Object.keys(fields).map((key) => [key, null])
             ),
           },
+          metrics: null,
         });
       }
     );
@@ -235,7 +246,7 @@ describe('product information app', () => {
         );
 
       // Then
-      expect(data).toEqual({ metadata: fullMetadata });
+      expect(data).toEqual({ metadata: fullMetadata, metrics: null });
     });
 
     it.each`
@@ -258,6 +269,23 @@ describe('product information app', () => {
 
       // Then
       expect(data).toBeNull();
+    });
+
+    it('should return null without asking the SaaS Manager when the SaaS metrics feature flag is disabled', async () => {
+      // Given
+      const callSpy = mockSaasManagerFullMetadata();
+      vi.mocked(isFeatureEnabled).mockReturnValue(false);
+
+      // When
+      const data =
+        await ProductInformationApp.loadRegisteredSaasPlatformData(
+          serviceInstanceId
+        );
+
+      // Then
+      expect(data).toBeNull();
+      expect(callSpy).not.toHaveBeenCalled();
+      expect(isFeatureEnabled).toHaveBeenCalledWith(FeatureFlag.SaasMetrics);
     });
 
     it('should return null without asking the SaaS Manager when the service instance is unknown', async () => {
@@ -313,9 +341,10 @@ describe('product information app', () => {
           );
 
         // Then
-        expect(data).toEqual({ metadata: fullMetadata });
+        expect(data).toEqual({ metadata: fullMetadata, metrics: null });
         expect(callSpy).toHaveBeenCalledExactlyOnceWith({
           platform_id: platformId,
+          include_metrics: 90,
         });
       }
     );
@@ -341,7 +370,7 @@ describe('product information app', () => {
           );
 
         // Then
-        expect(data).toEqual({ metadata: fullMetadata });
+        expect(data).toEqual({ metadata: fullMetadata, metrics: null });
         expect(callSpy).toHaveBeenCalledOnce();
       });
 
@@ -379,8 +408,8 @@ describe('product information app', () => {
 
         // Then
         expect(data).toEqual([
-          { metadata: fullMetadata },
-          { metadata: fullMetadata },
+          { metadata: fullMetadata, metrics: null },
+          { metadata: fullMetadata, metrics: null },
         ]);
         expect(callSpy).toHaveBeenCalledOnce();
       });
@@ -401,7 +430,7 @@ describe('product information app', () => {
           );
 
         // Then
-        expect(data).toEqual({ metadata: fullMetadata });
+        expect(data).toEqual({ metadata: fullMetadata, metrics: null });
         expect(callSpy).toHaveBeenCalledTimes(2);
       });
 

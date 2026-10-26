@@ -1,5 +1,6 @@
 type SaasPlatformData {
   metadata: SaasPlatformMetadata!
+  metrics: SaasPlatformMetrics
 }
 
 type SaasPlatformMetadata {
@@ -10,7 +11,36 @@ type SaasPlatformMetadata {
   region: String
 }
 
+type SaasPlatformMetrics {
+  start: Date!
+  end: Date!
+  resolution: SaasPlatformResolution!
+  series: [SaasPlatformMetricSeries!]!
+}
+
+type SaasPlatformMetricSeries {
+  metric_type: MetricType!
+  points: [SaasPlatformMetricPoint!]!
+}
+
+type SaasPlatformMetricPoint {
+  timestamp: Date!
+  value: Float
+}
+
+enum MetricType {
+  sla_availability
+  sla_response_time
+  es_used_size
+  s3_used_size
+}
+
+enum SaasPlatformResolution {
+  hour
+  day
+}
+
 type Query {
   registeredSaasPlatformData(input: RegisteredPlatformInput!): SaasPlatformData
-    @auth
+    @auth(portalCapa: [BYPASS, READ_SAAS_METRICS])
 }

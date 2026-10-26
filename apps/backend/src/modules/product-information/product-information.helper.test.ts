@@ -54,6 +54,7 @@ describe('product information helper', () => {
       // Then
       expect(callSpy).toHaveBeenCalledExactlyOnceWith({
         platform_id: platformId,
+        include_metrics: 90,
       });
     });
 
@@ -72,7 +73,7 @@ describe('product information helper', () => {
       );
 
       // Then
-      expect(data).toEqual({ metadata: fullMetadata });
+      expect(data).toEqual({ metadata: fullMetadata, metrics: null });
     });
 
     it.each([
@@ -92,7 +93,7 @@ describe('product information helper', () => {
       );
 
       // Then
-      expect(data).toEqual({ metadata: emptyMetadata });
+      expect(data).toEqual({ metadata: emptyMetadata, metrics: null });
     });
 
     it('should keep the fields sent when the SaaS Manager sends only some of them', async () => {
@@ -108,6 +109,7 @@ describe('product information helper', () => {
       // Then
       expect(data).toEqual({
         metadata: { ...emptyMetadata, hostname: fullMetadata.hostname },
+        metrics: null,
       });
     });
 
@@ -136,6 +138,7 @@ describe('product information helper', () => {
               Object.keys(fields).map((key) => [key, null])
             ),
           },
+          metrics: null,
         });
       }
     );
@@ -179,6 +182,190 @@ describe('product information helper', () => {
         'The SaaS Manager returned an unparseable platform date',
         { field: 'end_date' }
       );
+    });
+
+    describe('metrics', () => {
+      const metrics = {
+        instance: platformId,
+        start: '2026-09-22T12:00:00+00:00',
+        end: '2026-10-22T12:07:57.335611+00:00',
+        resolution: 'hour',
+        series: [
+          {
+            metric_type: 'sla_availability',
+            points: [
+              { t: '2026-09-22T09:00:00+00:00', v: 1 },
+              { t: '2026-09-22T10:00:00+00:00', v: 0.5 },
+            ],
+          },
+        ],
+      };
+      const parsedMetrics = {
+        start: '2026-09-22T12:00:00.000Z',
+        end: '2026-10-22T12:07:57.335Z',
+        resolution: 'hour',
+        series: [
+          {
+            metric_type: 'sla_availability',
+            points: [
+              { timestamp: '2026-09-22T09:00:00.000Z', value: 1 },
+              { timestamp: '2026-09-22T10:00:00.000Z', value: 0.5 },
+            ],
+          },
+        ],
+      };
+
+      it('should return the metrics sent by the SaaS Manager with ISO dates and without the unknown fields', async () => {
+        // Given
+        mockSaasManagerBody({ ...fullMetadata, metrics });
+
+        // When
+        const data = await ProductInformationHelper.fetchSaasPlatformData(
+          serviceInstanceId,
+          platformId
+        );
+
+        // Then
+        expect(data).toEqual({
+          metadata: fullMetadata,
+          metrics: parsedMetrics,
+        });
+      });
+
+      it.each([
+        ['null', null],
+        ['a string', 'metrics'],
+        ['an array', [metrics]],
+      ])('should return null metrics when they are %s', async (_, sent) => {
+        // Given
+        mockSaasManagerBody({ ...fullMetadata, metrics: sent });
+
+        // When
+        const data = await ProductInformationHelper.fetchSaasPlatformData(
+          serviceInstanceId,
+          platformId
+        );
+
+        // Then
+        expect(data).toEqual({ metadata: fullMetadata, metrics: null });
+      });
+
+      it.each`
+        case                         | fields
+        ${'an unparseable start'}    | ${{ start: 'not a date' }}
+        ${'a missing end'}           | ${{ end: undefined }}
+        ${'an empty resolution'}     | ${{ resolution: '' }}
+        ${'a non-string resolution'} | ${{ resolution: 3600 }}
+        ${'an unknown resolution'}   | ${{ resolution: 'minute' }}
+      `(
+        'should return null metrics and warn when they have $case',
+        async ({ fields }) => {
+          // Given
+          const warnSpy = vi.spyOn(logApp, 'warn');
+          mockSaasManagerBody({
+            ...fullMetadata,
+            metrics: { ...metrics, ...fields },
+          });
+
+          // When
+          const data = await ProductInformationHelper.fetchSaasPlatformData(
+            serviceInstanceId,
+            platformId
+          );
+
+          // Then
+          expect(data?.metrics).toBeNull();
+          expect(warnSpy).toHaveBeenCalledExactlyOnceWith(
+            'The SaaS Manager returned incomplete platform metrics'
+          );
+        }
+      );
+
+      it('should return no series when the series are not a list', async () => {
+        // Given
+        mockSaasManagerBody({
+          ...fullMetadata,
+          metrics: { ...metrics, series: 'sla_availability' },
+        });
+
+        // When
+        const data = await ProductInformationHelper.fetchSaasPlatformData(
+          serviceInstanceId,
+          platformId
+        );
+
+        // Then
+        expect(data?.metrics).toEqual({ ...parsedMetrics, series: [] });
+      });
+
+      it('should drop the series without a known metric type and keep a series without valid points empty', async () => {
+        // Given
+        mockSaasManagerBody({
+          ...fullMetadata,
+          metrics: {
+            ...metrics,
+            series: [
+              { metric_type: '', points: metrics.series[0].points },
+              { points: metrics.series[0].points },
+              'sla_availability',
+              { metric_type: 'cpu_usage', points: metrics.series[0].points },
+              { metric_type: 's3_used_size', points: 'none' },
+            ],
+          },
+        });
+
+        // When
+        const data = await ProductInformationHelper.fetchSaasPlatformData(
+          serviceInstanceId,
+          platformId
+        );
+
+        // Then
+        expect(data?.metrics?.series).toEqual([
+          { metric_type: 's3_used_size', points: [] },
+        ]);
+      });
+
+      it('should drop the points without a valid time and return a null value when it is not a number', async () => {
+        // Given
+        mockSaasManagerBody({
+          ...fullMetadata,
+          metrics: {
+            ...metrics,
+            series: [
+              {
+                metric_type: 'sla_availability',
+                points: [
+                  { t: 'not a date', v: 1 },
+                  { v: 1 },
+                  null,
+                  { t: '2026-09-22T09:00:00+00:00', v: null },
+                  { t: '2026-09-22T10:00:00+00:00', v: '1' },
+                  { t: '2026-09-22T11:00:00+00:00' },
+                ],
+              },
+            ],
+          },
+        });
+
+        // When
+        const data = await ProductInformationHelper.fetchSaasPlatformData(
+          serviceInstanceId,
+          platformId
+        );
+
+        // Then
+        expect(data?.metrics?.series).toEqual([
+          {
+            metric_type: 'sla_availability',
+            points: [
+              { timestamp: '2026-09-22T09:00:00.000Z', value: null },
+              { timestamp: '2026-09-22T10:00:00.000Z', value: null },
+              { timestamp: '2026-09-22T11:00:00.000Z', value: null },
+            ],
+          },
+        ]);
+      });
     });
 
     it.each`

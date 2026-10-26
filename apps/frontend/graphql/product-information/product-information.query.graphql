@@ -7,5 +7,17 @@ query RegisteredSaasPlatformData($input: RegisteredPlatformInput!) {
       end_date
       region
     }
+    metrics {
+      start
+      end
+      resolution
+      series {
+        metric_type
+        points {
+          timestamp
+          value
+        }
+      }
+    }
   }
 }

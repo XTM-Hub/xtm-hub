@@ -9246,6 +9246,7 @@ __metadata:
     "@uiw/react-md-editor": "npm:4.1.3"
     "@vitejs/plugin-react": "npm:6.1.2"
     "@vitest/coverage-v8": "catalog:"
+    apexcharts: "npm:8.3.1"
     babel-plugin-relay: "npm:21.0.1"
     clsx: "npm:2.1.1"
     concurrently: "catalog:"
@@ -9272,6 +9273,7 @@ __metadata:
     prettier-plugin-organize-imports: "catalog:"
     prettier-plugin-tailwindcss: "npm:0.8.1"
     react: "catalog:"
+    react-apexcharts: "npm:2.1.1"
     react-dom: "catalog:"
     react-hook-form: "npm:7.85.0"
     react-relay: "npm:20.1.1"
@@ -9517,6 +9519,22 @@ __metadata:
   bin:
     arrow2csv: bin/arrow2csv.js
   checksum: 10/551d7bbc29c018c704fa52f3ad674b2d855a3744c7baf0d4a7ffb5cea71e935b6719bd8515f2a9f645ae5b533e68856019c9c492d0f724db9db22c29ee1988b9
+  languageName: node
+  linkType: hard
+
+"apex-commons@npm:^0.8.0":
+  version: 0.8.2
+  resolution: "apex-commons@npm:0.8.2"
+  checksum: 10/1c59f2a51935803916fe4a6f3398df68b36eccd9af77e9418bd27b350811a56c726995731a3b987617f4a721a62780cb7c611090e74ecdb10d50c5381c435f9a
+  languageName: node
+  linkType: hard
+
+"apexcharts@npm:8.3.1":
+  version: 8.3.1
+  resolution: "apexcharts@npm:8.3.1"
+  dependencies:
+    apex-commons: "npm:^0.8.0"
+  checksum: 10/76c91058187d0e0dc699ceac66108bf3e0e542dcb3c4260fe53716987650d01cf4eb6913cb7a22e93960f85eb49abab1301340de134433ddbe8fd2efdc898000
   languageName: node
   linkType: hard
 
@@ -18402,6 +18420,18 @@ __metadata:
     iconv-lite: "npm:~0.7.0"
     unpipe: "npm:~1.0.0"
   checksum: 10/4168c82157bd69175d5bd960e59b74e253e237b358213694946a427a6f750a18b8e150f036fed3421b3e83294b071a4e2bb01037a79ccacdac05360c63d3ebba
+  languageName: node
+  linkType: hard
+
+"react-apexcharts@npm:2.1.1":
+  version: 2.1.1
+  resolution: "react-apexcharts@npm:2.1.1"
+  dependencies:
+    prop-types: "npm:^15.8.1"
+  peerDependencies:
+    apexcharts: ">=5.10.1"
+    react: ">=16.8.0"
+  checksum: 10/fe58d9d8f310fa9709fcb5772f406046f1961899f6b4eedf4434d0b5bc03082ea1505a44597be3f13f9c08be04523e40e054f447180ef09bac505d23bc5a16c9
   languageName: node
   linkType: hard
 

@@ -1,10 +1,31 @@
 import {
+  MetricType,
   SaasPlatformData,
   SaasPlatformMetadata,
+  SaasPlatformMetricPoint,
+  SaasPlatformMetrics,
+  SaasPlatformMetricSeries,
+  SaasPlatformResolution,
 } from '../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
 import { logApp } from '../../utils/app-logger.util';
+import { toIsoDate } from '../../utils/format';
+import { isRecord } from '../../utils/typescript';
+
+const SAAS_PLATFORM_METRICS_DAYS = 90;
+
+const METRIC_TYPES: ReadonlySet<string> = new Set(Object.values(MetricType));
+
+const isMetricType = (value: unknown): value is MetricType =>
+  typeof value === 'string' && METRIC_TYPES.has(value);
+
+const RESOLUTIONS: ReadonlySet<string> = new Set(
+  Object.values(SaasPlatformResolution)
+);
+
+const isResolution = (value: unknown): value is SaasPlatformResolution =>
+  typeof value === 'string' && RESOLUTIONS.has(value);
 
 const readMetadataString = (
   body: Record<string, unknown>,
@@ -22,14 +43,66 @@ const readMetadataDate = (
   if (value === null) {
     return null;
   }
-  const time = Date.parse(value);
-  if (Number.isNaN(time)) {
+  const date = toIsoDate(value);
+  if (date === null) {
     logApp.warn('The SaaS Manager returned an unparseable platform date', {
       field: key,
     });
+  }
+  return date;
+};
+
+const parseMetricPoint = (point: unknown): SaasPlatformMetricPoint[] => {
+  if (!isRecord(point)) {
+    return [];
+  }
+  // The SaaS Manager sends t and v: the Hub exposes them as timestamp and value.
+  const timestamp = toIsoDate(point.t);
+  if (timestamp === null) {
+    return [];
+  }
+  const value =
+    typeof point.v === 'number' && Number.isFinite(point.v) ? point.v : null;
+  return [{ timestamp, value }];
+};
+
+const parseMetricSeries = (series: unknown): SaasPlatformMetricSeries[] => {
+  // GraphQL rejects a value outside the enum, so a metric type the Hub does not know yet is left out.
+  if (!isRecord(series) || !isMetricType(series.metric_type)) {
+    return [];
+  }
+  return [
+    {
+      metric_type: series.metric_type,
+      points: Array.isArray(series.points)
+        ? series.points.flatMap(parseMetricPoint)
+        : [],
+    },
+  ];
+};
+
+const parseSaasPlatformMetrics = (
+  metrics: unknown
+): SaasPlatformMetrics | null => {
+  if (!isRecord(metrics)) {
     return null;
   }
-  return new Date(time).toISOString();
+  const start = toIsoDate(metrics.start);
+  const end = toIsoDate(metrics.end);
+  const resolution = metrics.resolution;
+  // GraphQL rejects a value outside the enum: without a known resolution, the points cannot be read.
+  if (start === null || end === null || !isResolution(resolution)) {
+    logApp.warn('The SaaS Manager returned incomplete platform metrics');
+    return null;
+  }
+  return {
+    start,
+    end,
+    resolution,
+    series: Array.isArray(metrics.series)
+      ? metrics.series.flatMap(parseMetricSeries)
+      : [],
+  };
 };
 
 const parseSaasPlatformData = (body: unknown): SaasPlatformData => {
@@ -44,6 +117,7 @@ const parseSaasPlatformData = (body: unknown): SaasPlatformData => {
       end_date: readMetadataDate(fields, 'end_date'),
       region: readMetadataString(fields, 'region'),
     },
+    metrics: parseSaasPlatformMetrics(fields.metrics),
   };
 };
 
@@ -55,6 +129,7 @@ export const ProductInformationHelper = {
     try {
       const response = await SaasManagerClient.callInstanceApi({
         platform_id: platformId,
+        include_metrics: SAAS_PLATFORM_METRICS_DAYS,
       });
 
       if (response.status !== 200) {
