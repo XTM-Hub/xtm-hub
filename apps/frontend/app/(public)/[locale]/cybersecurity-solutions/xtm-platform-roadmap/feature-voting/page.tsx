@@ -1,4 +1,4 @@
-import { FeatureVotingList } from '@/components/feature-voting/FeatureVotingList';
+import { PrefetchedFeatureVotingList } from '@/components/feature-voting/PrefetchedFeatureVotingList';
 import { getFeatureVotingPrivatePath } from '@/components/feature-voting/feature-voting-path';
 import type { PublicLocale } from '@/i18n/config';
 import { buildSeoPageMetadata, getBaseUrl } from '@/utils/generate-metadata';
@@ -58,7 +58,7 @@ const Page = async ({
   }
 
   return (
-    <FeatureVotingList
+    <PrefetchedFeatureVotingList
       serviceInstanceId={serviceInstance.id}
       roadmapHref={`/${locale}${ROADMAP_PATH}`}
     />

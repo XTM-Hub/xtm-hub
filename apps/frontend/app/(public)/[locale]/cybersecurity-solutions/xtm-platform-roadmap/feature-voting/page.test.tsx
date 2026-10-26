@@ -32,8 +32,8 @@ vi.mock('@/utils/generate-metadata', () => ({
   getBaseUrl: vi.fn(async () => 'https://hub.filigran.io'),
 }));
 
-vi.mock('@/components/feature-voting/FeatureVotingList', () => ({
-  FeatureVotingList: () => <div data-testid="feature-voting-list" />,
+vi.mock('@/components/feature-voting/PrefetchedFeatureVotingList', () => ({
+  PrefetchedFeatureVotingList: () => <div data-testid="feature-voting-list" />,
 }));
 
 describe('public feature-voting page', () => {
