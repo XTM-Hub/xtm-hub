@@ -1,5 +1,6 @@
 'use client';
 
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useMeOrganizations } from '@/hooks/use-me-organizations';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
@@ -53,6 +54,15 @@ const HeaderOrganizationSwitcher = ({
       {
         onSuccess: () => {
           window.location.href = `/${APP_PATH}`;
+        },
+        onError: (error: unknown) => {
+          const errorMessage =
+            error instanceof Error ? error.message : 'UnknownError';
+          showSnackbar({
+            severity: 'error',
+            title: t('Utils.Error'),
+            description: <>{t(`Error.Server.${errorMessage}`)}</>,
+          });
         },
       }
     );

@@ -18,7 +18,7 @@ import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
-import { Alert, Chip, SearchField } from '@filigran/design-system';
+import { Chip, SearchField } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
 import {
   OrderingMode,
@@ -184,63 +184,61 @@ const OrganizationList = () => {
 
   return (
     <>
-      {isError ? (
-        <Alert
-          severity="error"
-          title={t('OrganizationActions.LoadOrganizationsError')}
-        />
-      ) : (
-        <DataTable
-          columns={columns}
-          data={organizations}
-          // Skeletons replace the previous rows while another page, sort or search loads.
-          isLoading={isLoading || isPlaceholderData}
-          toolbar={
-            <DataTableToolbar
-              search={
-                <SearchField
-                  fullWidth
-                  aria-label={t(
-                    'OrganizationActions.SearchOrganizationWithEmail'
-                  )}
-                  placeholder={t(
-                    'OrganizationActions.SearchOrganizationWithEmail'
-                  )}
-                  clearLabel={t('DesignSystem.SearchField.Clear')}
-                  onChange={searchHandlers.onChange}
-                  onClear={searchHandlers.onClear}
-                />
-              }
-              actions={
-                <>
-                  <DataTableHeadBarOptions />
-                  <CreateOrganization />
-                </>
-              }
-            />
-          }
-          onResetTable={resetAll}
-          tableOptions={{
-            onSortingChange: onSortingChange,
-            onPaginationChange: onPaginationChange,
-            manualSorting: true,
-            manualPagination: true,
-            onColumnOrderChange: setColumnOrder,
-            onColumnVisibilityChange: setColumnVisibility,
-            rowCount: totalCount,
-          }}
-          {...getDataTableLabels(t)}
-          tableState={{
-            sorting: mapToSortingTableValue(orderBy, orderMode),
-            pagination,
-            columnOrder,
-            columnVisibility,
-            columnPinning: {
-              right: ['actions'],
-            },
-          }}
-        />
+      {isError && (
+        <div className="mb-2 text-sm text-feedback-error-primary">
+          {t('OrganizationActions.LoadOrganizationsError')}
+        </div>
       )}
+      <DataTable
+        columns={columns}
+        data={organizations}
+        // Skeletons replace the previous rows while another page, sort or search loads.
+        isLoading={isLoading || isPlaceholderData}
+        toolbar={
+          <DataTableToolbar
+            search={
+              <SearchField
+                fullWidth
+                aria-label={t(
+                  'OrganizationActions.SearchOrganizationWithEmail'
+                )}
+                placeholder={t(
+                  'OrganizationActions.SearchOrganizationWithEmail'
+                )}
+                clearLabel={t('DesignSystem.SearchField.Clear')}
+                onChange={searchHandlers.onChange}
+                onClear={searchHandlers.onClear}
+              />
+            }
+            actions={
+              <>
+                <DataTableHeadBarOptions />
+                <CreateOrganization />
+              </>
+            }
+          />
+        }
+        onResetTable={resetAll}
+        tableOptions={{
+          onSortingChange: onSortingChange,
+          onPaginationChange: onPaginationChange,
+          manualSorting: true,
+          manualPagination: true,
+          onColumnOrderChange: setColumnOrder,
+          onColumnVisibilityChange: setColumnVisibility,
+          rowCount: totalCount,
+        }}
+        {...getDataTableLabels(t)}
+        tableState={{
+          sorting: mapToSortingTableValue(orderBy, orderMode),
+          pagination,
+          columnOrder,
+          columnVisibility,
+          columnPinning: {
+            right: ['actions'],
+          },
+        }}
+      />
       {editOrganization && (
         <EditOrganization
           key={`edit-${editOrganization.id}`}

@@ -1,6 +1,7 @@
 import { AppPortalContext } from '@/components/me/AppPortalContext';
 import HeaderOrganizationSwitcher from '@/components/menu/organization-switcher/HeaderOrganizationSwitcher';
 import { invalidateOrganizationQueries } from '@/components/organization/organization-query-invalidation';
+import { AppSnackbars } from '@/components/ui/snackbar/AppSnackbars';
 import testRender, { generateMockUser } from '@/utils/test/test-render';
 import type { meContext_fragment$data } from '@generated/meContext_fragment.graphql';
 import type { MeOrganizationsQuery } from '@graphql/generated';
@@ -28,11 +29,19 @@ vi.mock('@graphql/generated', async (importOriginal) => {
     ...(await mockGeneratedQueryHooks(importOriginal, {
       useMeOrganizationsQuery: mocks.useMeOrganizationsQuery,
     })),
-    // Settles like react-query: the success callback runs once the switch resolves.
+    // Settles like react-query: a callback runs once the switch resolves or rejects.
     useChangeSelectedOrganizationMutation: () => ({
-      mutate: (variables: unknown, callbacks?: { onSuccess?: () => void }) => {
-        mocks.changeSelectedOrganization(variables);
-        void Promise.resolve().then(() => callbacks?.onSuccess?.());
+      mutate: (
+        variables: unknown,
+        callbacks?: {
+          onSuccess?: () => void;
+          onError?: (error: unknown) => void;
+        }
+      ) => {
+        void Promise.resolve(mocks.changeSelectedOrganization(variables)).then(
+          () => callbacks?.onSuccess?.(),
+          (error: unknown) => callbacks?.onError?.(error)
+        );
       },
       isPending: false,
     }),
@@ -241,6 +250,32 @@ describe('HeaderOrganizationSwitcher', () => {
 
     // Then
     await waitFor(() => expect(location.href).toBe('/app'));
+  });
+
+  it('should report the server error and stay on the selected organization when the organization switch fails', async () => {
+    // Given
+    mocks.changeSelectedOrganization.mockRejectedValue(
+      new Error('UNKNOWN_ERROR')
+    );
+    const { user } = testRender(
+      <AppSnackbars>
+        <LivePortalUser>
+          <HeaderOrganizationSwitcher />
+        </LivePortalUser>
+      </AppSnackbars>
+    );
+    await user.click(getTrigger());
+
+    // When
+    await user.click(
+      screen.getByRole('option', { name: 'OrganizationSwitcher.PersonalSpace' })
+    );
+
+    // Then
+    expect(await screen.findByText('Utils.Error')).toBeInTheDocument();
+    expect(screen.getByText('Error.Server.UNKNOWN_ERROR')).toBeInTheDocument();
+    expect(getTrigger()).toHaveTextContent('Filigran Team');
+    expect(location.href).toBe('');
   });
 
   it('should show the organization selected in the portal context before the organizations are loaded', () => {

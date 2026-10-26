@@ -311,7 +311,7 @@ describe('OrganizationList', () => {
       expect(screen.getAllByRole('row')).toHaveLength(LOADING_ROW_COUNT + 1);
     });
 
-    it('should show the load error instead of the table when the organizations cannot be loaded', async () => {
+    it('should show the load error above the table and keep the toolbar when the organizations cannot be loaded', async () => {
       // Given
       mocks.listOrganizations.mockRejectedValue(new Error(SERVER_ERROR));
 
@@ -319,10 +319,11 @@ describe('OrganizationList', () => {
       testRender(<OrganizationList />);
 
       // Then
-      expect(await screen.findByRole('alert')).toHaveTextContent(
-        'OrganizationActions.LoadOrganizationsError'
-      );
-      expect(screen.queryByRole('table')).not.toBeInTheDocument();
+      expect(
+        await screen.findByText('OrganizationActions.LoadOrganizationsError')
+      ).toBeInTheDocument();
+      expect(screen.getByRole('table')).toBeInTheDocument();
+      expect(getSearchField()).toBeInTheDocument();
     });
 
     it('should query the first page with the page size and ordering stored in localStorage', async () => {
