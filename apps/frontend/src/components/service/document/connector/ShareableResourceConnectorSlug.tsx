@@ -4,6 +4,7 @@ import {
   BreadcrumbNav,
   BreadcrumbNavLink,
 } from '@/components/ui/BreadcrumbNav';
+import { useDocumentCounter } from '@/hooks/use-document-counter';
 import { useTranslate } from '@/hooks/use-translate';
 
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
@@ -32,7 +33,6 @@ import { documentItem_fragment$data } from '@generated/documentItem_fragment.gra
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
 
 // Component interface
 interface ShareableResourceConnectorSlugProps {
@@ -57,10 +57,8 @@ const ShareableResourceConnectorSlug = ({
     ? `${documentData.source_code}/__metadata__/connector_manifest.json`
     : '';
 
-  const [documentShareNumber, setDocumentShareNumber] = useState(
-    documentData.share_number ?? 0
-  );
-  const incrementShareNumber = () => setDocumentShareNumber((prev) => prev + 1);
+  const { count: shareNumber, increment: incrementShareNumber } =
+    useDocumentCounter(documentData.id, documentData.share_number);
 
   const carouselImages = filterDocumentImages(documentData);
   const logo = findDocumentLogo(documentData);
@@ -179,7 +177,7 @@ const ShareableResourceConnectorSlug = ({
           connectorDetails={{
             ...documentData,
             name: documentData.name ?? '',
-            share_number: documentShareNumber,
+            share_number: shareNumber,
           }}
           filigranWebsiteUtm={getResourcePageFiligranWebsiteUtm(
             serviceInstance.service_definition?.identifier

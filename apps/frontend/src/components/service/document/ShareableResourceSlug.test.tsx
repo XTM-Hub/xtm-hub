@@ -12,7 +12,7 @@ import { mockDefaultDocument } from '@graphql/mocks';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { graphql, HttpResponse } from 'msw';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////// Mock hooks /////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -203,5 +203,228 @@ describe('Component: ShareableResourceSlug - Share', () => {
       .getByText('Service.ShareableResources.Details.Shares')
       .closest('div')?.lastElementChild;
     await waitFor(() => expect(shareCount).toHaveTextContent(/^2$/));
+  });
+});
+
+describe('Component: ShareableResourceSlug - Share count refresh', () => {
+  const serviceInstance = {
+    id: 'service-instance-1',
+  } as unknown as serviceInstance_fragment$data;
+
+  const buildDocument = (id: string, shareNumber: number) =>
+    ({
+      id,
+      name: 'Test Document',
+      share_number: shareNumber,
+      type: 'opencti_custom_dashboard',
+    }) as unknown as documentItem_fragment$data;
+
+  const renderSlugElement = (documentData: documentItem_fragment$data) => (
+    <ShareableResourceSlug
+      breadcrumbValue={[]}
+      documentData={documentData}
+      serviceInstance={serviceInstance}
+    />
+  );
+
+  const getShareCount = () =>
+    screen.getByText('Service.ShareableResources.Details.Shares').closest('div')
+      ?.lastElementChild;
+
+  const shareLink = async (user: ReturnType<typeof testRender>['user']) =>
+    user.click(
+      screen.getByRole('button', { name: 'Service.ShareableResources.Share' })
+    );
+
+  beforeEach(() => {
+    mswServer.use(
+      graphql.mutation<IncrementShareNumberDocumentMutation>(
+        'IncrementShareNumberDocument',
+        () =>
+          HttpResponse.json({
+            data: {
+              incrementShareNumberDocument: mockDefaultDocument(),
+            },
+          })
+      )
+    );
+  });
+
+  it('should display the network share count once it replaces the cached one', () => {
+    // Given a cached share count of 3
+    const { rerender } = testRender(
+      renderSlugElement(buildDocument('document-1', 3)),
+      { settings: mockSettings }
+    );
+
+    // When the network returns 7
+    rerender(renderSlugElement(buildDocument('document-1', 7)));
+
+    // Then
+    expect(getShareCount()).toHaveTextContent(/^7$/);
+  });
+
+  it('should increment from the network share count when the link is shared after a refresh', async () => {
+    // Given a cached share count of 3 refreshed to 7
+    const { user, rerender } = testRender(
+      renderSlugElement(buildDocument('document-1', 3)),
+      { settings: mockSettings }
+    );
+    rerender(renderSlugElement(buildDocument('document-1', 7)));
+
+    // When the user copies the share link
+    await shareLink(user);
+
+    // Then
+    await waitFor(() => expect(getShareCount()).toHaveTextContent(/^8$/));
+  });
+
+  it.each`
+    refresh                           | refreshedShareNumber | expected
+    ${'predates the local share'}     | ${3}                 | ${/^4$/}
+    ${'already includes the share'}   | ${4}                 | ${/^4$/}
+    ${"includes other users' shares"} | ${7}                 | ${/^7$/}
+  `(
+    'should keep the local share when a refresh $refresh',
+    async ({ refreshedShareNumber, expected }) => {
+      // Given a resource shared from a cached share count of 3
+      const { user, rerender } = testRender(
+        renderSlugElement(buildDocument('document-1', 3)),
+        { settings: mockSettings }
+      );
+      await shareLink(user);
+      await waitFor(() => expect(getShareCount()).toHaveTextContent(/^4$/));
+
+      // When the document data is refreshed
+      rerender(
+        renderSlugElement(buildDocument('document-1', refreshedShareNumber))
+      );
+
+      // Then
+      expect(getShareCount()).toHaveTextContent(expected);
+    }
+  );
+
+  it('should reset the share count when another document is displayed', async () => {
+    // Given a resource shared from a share count of 3
+    const { user, rerender } = testRender(
+      renderSlugElement(buildDocument('document-1', 3)),
+      { settings: mockSettings }
+    );
+    await shareLink(user);
+    await waitFor(() => expect(getShareCount()).toHaveTextContent(/^4$/));
+
+    // When another document with 1 share is displayed
+    rerender(renderSlugElement(buildDocument('document-2', 1)));
+
+    // Then
+    expect(getShareCount()).toHaveTextContent(/^1$/);
+  });
+});
+
+describe('Component: ShareableResourceSlug - Download count refresh', () => {
+  const serviceInstance = {
+    id: 'service-instance-1',
+  } as unknown as serviceInstance_fragment$data;
+
+  const buildDocument = (id: string, downloadNumber: number) =>
+    ({
+      id,
+      active: false,
+      description: 'description',
+      download_number: downloadNumber,
+      name: 'Test Document',
+      type: 'opencti_custom_dashboard',
+    }) as unknown as documentItem_fragment$data;
+
+  const renderSlugElement = (documentData: documentItem_fragment$data) => (
+    <ShareableResourceSlug
+      breadcrumbValue={[]}
+      documentData={documentData}
+      serviceInstance={serviceInstance}
+    />
+  );
+
+  const getDownloadCount = () =>
+    screen
+      .getByText('Service.ShareableResources.Details.Downloads')
+      .closest('div')?.lastElementChild;
+
+  const download = async (user: ReturnType<typeof testRender>['user']) => {
+    const downloadLink = screen.getByRole('link', { name: 'Utils.Download' });
+    // Keep jsdom from attempting the file navigation
+    downloadLink.addEventListener('click', (event) => event.preventDefault());
+    await user.click(downloadLink);
+  };
+
+  it('should display the network download count once it replaces the cached one', () => {
+    // Given a cached download count of 3
+    const { rerender } = testRender(
+      renderSlugElement(buildDocument('document-1', 3)),
+      { settings: mockSettings }
+    );
+
+    // When the network returns 7
+    rerender(renderSlugElement(buildDocument('document-1', 7)));
+
+    // Then
+    expect(getDownloadCount()).toHaveTextContent(/^7$/);
+  });
+
+  it('should increment from the network download count when the resource is downloaded after a refresh', async () => {
+    // Given a cached download count of 3 refreshed to 7
+    const { user, rerender } = testRender(
+      renderSlugElement(buildDocument('document-1', 3)),
+      { settings: mockSettings }
+    );
+    rerender(renderSlugElement(buildDocument('document-1', 7)));
+
+    // When the user downloads the resource
+    await download(user);
+
+    // Then
+    expect(getDownloadCount()).toHaveTextContent(/^8$/);
+  });
+
+  it.each`
+    refresh                              | refreshedDownloadNumber | expected
+    ${'predates the local download'}     | ${3}                    | ${/^4$/}
+    ${'already includes the download'}   | ${4}                    | ${/^4$/}
+    ${"includes other users' downloads"} | ${7}                    | ${/^7$/}
+  `(
+    'should keep the local download when a refresh $refresh',
+    async ({ refreshedDownloadNumber, expected }) => {
+      // Given a resource downloaded from a cached download count of 3
+      const { user, rerender } = testRender(
+        renderSlugElement(buildDocument('document-1', 3)),
+        { settings: mockSettings }
+      );
+      await download(user);
+      expect(getDownloadCount()).toHaveTextContent(/^4$/);
+
+      // When the document data is refreshed
+      rerender(
+        renderSlugElement(buildDocument('document-1', refreshedDownloadNumber))
+      );
+
+      // Then
+      expect(getDownloadCount()).toHaveTextContent(expected);
+    }
+  );
+
+  it('should reset the download count when another document is displayed', async () => {
+    // Given a resource downloaded from a download count of 3
+    const { user, rerender } = testRender(
+      renderSlugElement(buildDocument('document-1', 3)),
+      { settings: mockSettings }
+    );
+    await download(user);
+    expect(getDownloadCount()).toHaveTextContent(/^4$/);
+
+    // When another document with 1 download is displayed
+    rerender(renderSlugElement(buildDocument('document-2', 1)));
+
+    // Then
+    expect(getDownloadCount()).toHaveTextContent(/^1$/);
   });
 });

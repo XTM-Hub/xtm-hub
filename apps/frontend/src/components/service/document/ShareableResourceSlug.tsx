@@ -1,4 +1,4 @@
-import { ReactNode, useContext, useMemo, useState } from 'react';
+import { ReactNode, useContext, useMemo } from 'react';
 
 import {
   BreadcrumbNav,
@@ -18,6 +18,7 @@ import BadgeOverflowCounter, {
 } from '@/components/ui/BadgeOverflowCounter';
 import { ShareLinkButton } from '@/components/ui/share-link/ShareLinkButton';
 import useDecodedParams from '@/hooks/use-decoded-params';
+import { useDocumentCounter } from '@/hooks/use-document-counter';
 import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
 import { getResourcePageFiligranWebsiteUtm } from '@/utils/filigran-website-utm';
 import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
@@ -59,15 +60,10 @@ const ShareableResourceSlug = ({
   const { serviceInstanceId } = useDecodedParams();
   const { settings } = useContext(SettingsContext);
 
-  const [documentDownloadNumber, setDocumentDownloadNumber] = useState(
-    documentData.download_number ?? 0
-  );
-  const incrementDownloadNumber = () =>
-    setDocumentDownloadNumber((prev) => prev + 1);
-  const [documentShareNumber, setDocumentShareNumber] = useState(
-    documentData.share_number ?? 0
-  );
-  const incrementShareNumber = () => setDocumentShareNumber((prev) => prev + 1);
+  const { count: downloadNumber, increment: incrementDownloadNumber } =
+    useDocumentCounter(documentData.id, documentData.download_number);
+  const { count: shareNumber, increment: incrementShareNumber } =
+    useDocumentCounter(documentData.id, documentData.share_number);
   const downloadUrl = `/document/get/${serviceInstanceId}/${documentData.id}?attach=1`;
 
   const shouldShowOneClickDeployComponent = useMemo(
@@ -187,8 +183,8 @@ const ShareableResourceSlug = ({
         {documentData && (
           <ShareableResourceDetails
             documentData={documentData}
-            downloadNumber={documentDownloadNumber}
-            shareNumber={documentShareNumber}
+            downloadNumber={downloadNumber}
+            shareNumber={shareNumber}
             filigranWebsiteUtm={getResourcePageFiligranWebsiteUtm(
               serviceInstance.service_definition?.identifier
             )}
