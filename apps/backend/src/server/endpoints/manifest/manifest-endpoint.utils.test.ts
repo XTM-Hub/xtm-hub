@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { ManifestType } from '../../../__generated__/resolvers-types';
 import { MANIFEST_LIST_DEFAULT_COUNT } from '../../../modules/shareable-resource/manifest/manifest.consts';
 import {
-  buildManifestETag,
   isIntegrationType,
   isValidManifestName,
   parseCount,
@@ -77,13 +76,5 @@ describe('validateManifestParams', () => {
     ${{ ...VALID, version: 'not-a-version' }} | ${'Invalid version format'}  | ${'malformed version'}
   `('rejects $description', ({ params, message }) => {
     expect(validateManifestParams(params)).toEqual({ ok: false, message });
-  });
-});
-
-describe('buildManifestETag', () => {
-  const VALID_NAME = 'connector-manifest-7.260604.0-260526113805';
-
-  it('wraps the manifest name in a strong ETag', () => {
-    expect(buildManifestETag(VALID_NAME)).toBe(`"${VALID_NAME}"`);
   });
 });

@@ -12,6 +12,11 @@ import { MinIOClient } from '../../../thirdparty/minio/client';
 import { logApp } from '../../../utils/app-logger.util';
 import { NotFoundError } from '../../../utils/error/error.util';
 import { extractId } from '../../../utils/utils';
+import {
+  buildETag,
+  CacheControl,
+  respondNotModifiedIfFresh,
+} from '../shared/http-cache.util';
 
 export const documentVisualizeEndpoint = (app: Application) => {
   app.get(
@@ -120,7 +125,8 @@ export const documentVisualizeEndpoint = (app: Application) => {
 
         if (!document?.mime_type?.startsWith('image/')) {
           logApp.error(
-            `Document not found. Required documentId: ${documentId}`
+            `Document not found. Required documentId: ${documentId}`,
+            { path: req.originalUrl, user_agent: req.get('user-agent') }
           );
           return res.status(404).json({ message: 'Document not found' });
         }
@@ -129,6 +135,19 @@ export const documentVisualizeEndpoint = (app: Application) => {
           logApp.error(`Invalid document - Missing name for ${documentId}`);
           return res.status(404).json({ message: 'Invalid document' });
         }
+
+        // The URL of an image stays the same when its file is replaced (e.g. a
+        // connector logo), so clients must revalidate instead of caching blindly.
+        // The MinIO name changes with every upload, which makes it a reliable ETag.
+        if (
+          respondNotModifiedIfFresh(req, res, {
+            etag: buildETag(document.minio_name),
+            cacheControl: CacheControl.PublicRevalidate,
+          })
+        ) {
+          return;
+        }
+
         const stream = (await MinIOClient.downloadFile(
           document.minio_name
         )) as Readable;

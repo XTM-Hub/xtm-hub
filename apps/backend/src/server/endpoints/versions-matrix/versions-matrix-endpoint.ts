@@ -6,6 +6,11 @@ import { DocumentDomain } from '../../../modules/document/domain/document.domain
 import { ManageProductVersionDomain } from '../../../modules/manage-product-version/manage-product-version.domain';
 import { ManifestFragmentHelper } from '../../../modules/shareable-resource/manifest-fragment/manifest-fragment.helper';
 import { logApp } from '../../../utils/app-logger.util';
+import {
+  buildETag,
+  CacheControl,
+  respondNotModifiedIfFresh,
+} from '../shared/http-cache.util';
 import { buildIpRateLimiterOptions } from '../shared/ip-rate-limit.util';
 import { isProduct } from '../shared/product.util';
 import {
@@ -18,7 +23,6 @@ import {
   buildMatrixEntries,
   buildVersionsMatrixCsv,
   buildVersionsMatrixEnv,
-  buildVersionsMatrixETag,
   buildVersionsMatrixJson,
   findIncompatibleSlugs,
   findUnknownSlugs,
@@ -194,10 +198,12 @@ const sendVersionsMatrixBody = (
   if (format === 'env') {
     const body = buildVersionsMatrixEnv(version, entries);
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.setHeader('ETag', buildVersionsMatrixETag(body));
-    res.setHeader('Cache-Control', 'no-cache');
-    if (req.fresh) {
-      res.status(304).end();
+    if (
+      respondNotModifiedIfFresh(req, res, {
+        etag: buildETag(body),
+        cacheControl: CacheControl.Revalidate,
+      })
+    ) {
       return;
     }
     res.status(200).send(body);
@@ -207,10 +213,12 @@ const sendVersionsMatrixBody = (
   if (format === 'csv') {
     const body = buildVersionsMatrixCsv(version, entries);
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('ETag', buildVersionsMatrixETag(body));
-    res.setHeader('Cache-Control', 'no-cache');
-    if (req.fresh) {
-      res.status(304).end();
+    if (
+      respondNotModifiedIfFresh(req, res, {
+        etag: buildETag(body),
+        cacheControl: CacheControl.Revalidate,
+      })
+    ) {
       return;
     }
     res.status(200).send(body);
@@ -218,10 +226,12 @@ const sendVersionsMatrixBody = (
   }
 
   const body = buildVersionsMatrixJson(version, entries);
-  res.setHeader('ETag', buildVersionsMatrixETag(JSON.stringify(body)));
-  res.setHeader('Cache-Control', 'no-cache');
-  if (req.fresh) {
-    res.status(304).end();
+  if (
+    respondNotModifiedIfFresh(req, res, {
+      etag: buildETag(JSON.stringify(body)),
+      cacheControl: CacheControl.Revalidate,
+    })
+  ) {
     return;
   }
   res.status(200).json(body);

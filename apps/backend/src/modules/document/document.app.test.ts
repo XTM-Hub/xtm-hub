@@ -26,12 +26,14 @@ import {
   QueryPublicDocumentsArgs,
   ServiceDefinitionIdentifier,
 } from '../../__generated__/resolvers-types';
-import Document from '../../model/kanel/public/Document';
+import { databaseContext } from '../../context/database.context';
+import Document, { DocumentId } from '../../model/kanel/public/Document';
 import { OrganizationId } from '../../model/kanel/public/Organization';
 import ServiceDefinition from '../../model/kanel/public/ServiceDefinition';
 import ServiceInstance, {
   ServiceInstanceId,
 } from '../../model/kanel/public/ServiceInstance';
+import { ADMIN_UUID } from '../../portal.const';
 import { MinIOClient } from '../../thirdparty/minio/client';
 import { ErrorCode } from '../../utils/error/error.code';
 import { NewsFeedApp } from '../news-feed/news-feed.app';
@@ -1489,6 +1491,83 @@ describe('documentApp', () => {
       });
     });
 
+    describe('obsolete external image files', () => {
+      const input = {
+        ...documentData,
+        uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+        slug: 'obsolete-files-slug',
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+      };
+
+      const upsertWithFile = async (minioName: string) => {
+        vi.spyOn(DocumentUploadsHelper, 'processUploads').mockResolvedValue([
+          { ...minioFileMock, minioName },
+        ]);
+        return DocumentApp.upsertDocumentWithExternalImage(
+          'integration',
+          input,
+          mockUpload,
+          metadataKeys,
+          FiligranProduct.Opencti
+        );
+      };
+
+      it('should delete the replaced file once the transaction is committed', async () => {
+        // Given
+        await upsertWithFile('first-file');
+        const inTransactionOnDelete: boolean[] = [];
+        vi.spyOn(MinIOClient, 'deleteFile').mockImplementation(async () => {
+          inTransactionOnDelete.push(databaseContext.isInTransaction());
+        });
+
+        // When
+        const doc = await upsertWithFile('second-file');
+
+        // Then
+        expect(MinIOClient.deleteFile).toHaveBeenCalledTimes(1);
+        expect(MinIOClient.deleteFile).toHaveBeenCalledWith('first-file');
+        expect(inTransactionOnDelete).toEqual([false]);
+        const children = await DocumentChildrenDomain.loadChildrenDocuments(
+          doc.id
+        );
+        expect(children[0]).toMatchObject({ minio_name: 'second-file' });
+      });
+
+      it('should keep the replaced file when the upsert fails', async () => {
+        // Given
+        await upsertWithFile('first-file');
+        vi.spyOn(MinIOClient, 'deleteFile').mockClear();
+        vi.spyOn(DocumentApp, 'replaceExternalImage').mockRejectedValueOnce(
+          new Error('upsert failed')
+        );
+
+        // When
+        await expect(upsertWithFile('second-file')).rejects.toThrow(
+          'upsert failed'
+        );
+
+        // Then
+        expect(MinIOClient.deleteFile).not.toHaveBeenCalled();
+      });
+
+      it('should not fail the upsert when deleting the replaced file fails', async () => {
+        // Given
+        await upsertWithFile('first-file');
+        vi.spyOn(MinIOClient, 'deleteFile').mockRejectedValue(
+          new Error('storage down')
+        );
+
+        // When
+        const doc = await upsertWithFile('second-file');
+
+        // Then
+        const children = await DocumentChildrenDomain.loadChildrenDocuments(
+          doc.id
+        );
+        expect(children[0]).toMatchObject({ minio_name: 'second-file' });
+      });
+    });
+
     describe('use_cases linking', () => {
       beforeEach(async () => {
         await TestHelper.objectUseCase.delete({});
@@ -1604,6 +1683,227 @@ describe('documentApp', () => {
           use_case_id: TEST_USE_CASES.DETECTION.ID,
         });
       });
+    });
+  });
+
+  describe('replaceExternalImage', () => {
+    let parentId: DocumentId;
+    let oldExternalId: DocumentId;
+    let oldInternalId: DocumentId;
+
+    const insertImage = async (
+      source_type: DocumentSourceType,
+      minio_name: string
+    ) => {
+      const id = uuidv4() as DocumentId;
+      await TestHelper.document.create({
+        id,
+        type: 'image',
+        source_type,
+        minio_name,
+        mime_type: 'image/png',
+        name: 'Test Image',
+        uploader_id: ADMIN_UUID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+      });
+      await TestHelper.documentChildren.create({
+        parent_document_id: parentId,
+        child_document_id: id,
+      });
+      return id;
+    };
+
+    const loadParent = () => TestHelper.document.load({ id: parentId });
+
+    const mockNewLogo = (minioName: string) =>
+      vi.spyOn(DocumentUploadsHelper, 'processUploads').mockResolvedValue([
+        {
+          minioName,
+          mimeType: 'image/png',
+          fileName: 'new-image.png',
+        },
+      ]);
+
+    beforeEach(async () => {
+      parentId = uuidv4() as DocumentId;
+      await TestHelper.document.create({
+        id: parentId,
+        type: 'folder',
+        source_type: DocumentSourceType.Internal,
+        minio_name: 'parent-folder',
+        name: 'Parent',
+        uploader_id: ADMIN_UUID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+      });
+      oldExternalId = await insertImage(
+        DocumentSourceType.External,
+        'old-external'
+      );
+      oldInternalId = await insertImage(
+        DocumentSourceType.Internal,
+        'old-internal'
+      );
+      mockNewLogo('new-minio');
+    });
+
+    afterEach(async () => {
+      await TestHelper.documentChildren.delete({});
+    });
+
+    it('should replace the external image file in place, keeping its id, and return the old file as obsolete', async () => {
+      // When
+      const obsoleteMinioNames = await DocumentApp.replaceExternalImage(
+        await loadParent(),
+        mockUpload
+      );
+
+      // Then
+      const externalImages =
+        await DocumentChildrenDomain.loadExternalImageFiles(parentId);
+      expect(externalImages).toMatchObject([
+        { id: oldExternalId, minio_name: 'new-minio' },
+      ]);
+      const internalImage = await TestHelper.document.load({
+        id: oldInternalId,
+      });
+      expect(internalImage.minio_name).toBe('old-internal');
+      expect(obsoleteMinioNames).toEqual(['old-external']);
+    });
+
+    it('should not return the file as obsolete when the new upload points to the same file', async () => {
+      // Given
+      mockNewLogo('old-external');
+
+      // When
+      const obsoleteMinioNames = await DocumentApp.replaceExternalImage(
+        await loadParent(),
+        mockUpload
+      );
+
+      // Then
+      expect(obsoleteMinioNames).toEqual([]);
+    });
+
+    it('should keep the oldest external image and return the duplicates as obsolete', async () => {
+      // Given
+      await insertImage(DocumentSourceType.External, 'duplicate-external');
+
+      // When
+      const obsoleteMinioNames = await DocumentApp.replaceExternalImage(
+        await loadParent(),
+        mockUpload
+      );
+
+      // Then
+      const externalImages =
+        await DocumentChildrenDomain.loadExternalImageFiles(parentId);
+      expect(externalImages).toHaveLength(1);
+      expect(externalImages[0]!.id).toBe(oldExternalId);
+      expect(obsoleteMinioNames).toHaveLength(2);
+      expect(obsoleteMinioNames).toEqual(
+        expect.arrayContaining(['duplicate-external', 'old-external'])
+      );
+    });
+
+    it('should not return the file of a duplicate that shares the new upload key as obsolete', async () => {
+      // Given
+      mockNewLogo('shared-key');
+      await insertImage(DocumentSourceType.External, 'shared-key');
+
+      // When
+      const obsoleteMinioNames = await DocumentApp.replaceExternalImage(
+        await loadParent(),
+        mockUpload
+      );
+
+      // Then
+      const externalImages =
+        await DocumentChildrenDomain.loadExternalImageFiles(parentId);
+      expect(externalImages).toHaveLength(1);
+      expect(externalImages[0]!.minio_name).toBe('shared-key');
+      expect(obsoleteMinioNames).toEqual(['old-external']);
+    });
+
+    it('should delete the external images when there is no new logo', async () => {
+      // Given
+      vi.spyOn(DocumentUploadsHelper, 'processUploads').mockResolvedValue([]);
+
+      // When
+      const obsoleteMinioNames = await DocumentApp.replaceExternalImage(
+        await loadParent(),
+        mockUpload
+      );
+
+      // Then
+      expect(
+        await DocumentChildrenDomain.loadExternalImageFiles(parentId)
+      ).toEqual([]);
+      expect(obsoleteMinioNames).toEqual(['old-external']);
+    });
+
+    it('should create the external image when there is none yet', async () => {
+      // Given
+      await TestHelper.document.update(
+        { id: oldExternalId },
+        { source_type: DocumentSourceType.Internal }
+      );
+
+      // When
+      const obsoleteMinioNames = await DocumentApp.replaceExternalImage(
+        await loadParent(),
+        mockUpload
+      );
+
+      // Then
+      const externalImages =
+        await DocumentChildrenDomain.loadExternalImageFiles(parentId);
+      expect(externalImages).toHaveLength(1);
+      expect(externalImages[0]!.minio_name).toBe('new-minio');
+      expect(obsoleteMinioNames).toEqual([]);
+    });
+
+    it('should not affect the external image of another parent', async () => {
+      // Given
+      const otherParentId = uuidv4() as DocumentId;
+      await TestHelper.document.create({
+        id: otherParentId,
+        type: 'folder',
+        source_type: DocumentSourceType.Internal,
+        name: 'Other parent',
+        uploader_id: ADMIN_UUID,
+      });
+      const otherChildId = uuidv4() as DocumentId;
+      await TestHelper.document.create({
+        id: otherChildId,
+        type: 'image',
+        source_type: DocumentSourceType.External,
+        minio_name: 'other-minio',
+        name: 'Other image',
+        uploader_id: ADMIN_UUID,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+      });
+      await TestHelper.documentChildren.create({
+        parent_document_id: otherParentId,
+        child_document_id: otherChildId,
+      });
+
+      // When
+      await DocumentApp.replaceExternalImage(await loadParent(), mockUpload);
+
+      // Then
+      expect(
+        await DocumentChildrenDomain.loadExternalImageFiles(otherParentId)
+      ).toMatchObject([{ id: otherChildId, minio_name: 'other-minio' }]);
+    });
+
+    it('should throw when the document has no service instance', async () => {
+      // Given
+      const doc = { ...(await loadParent()), service_instance_id: null };
+
+      // When / Then
+      await expect(
+        DocumentApp.replaceExternalImage(doc, mockUpload)
+      ).rejects.toThrow(ErrorCode.ServiceInstanceNotFound);
     });
   });
 

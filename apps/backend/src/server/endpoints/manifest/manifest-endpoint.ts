@@ -10,13 +10,17 @@ import { StorageUnavailableError } from '../../../thirdparty/minio/storage-error
 import { logApp } from '../../../utils/app-logger.util';
 import { getErrorMessage } from '../../../utils/error/error-guard.util';
 import {
+  CacheControl,
+  quoteETag,
+  respondNotModifiedIfFresh,
+} from '../shared/http-cache.util';
+import {
   MANIFEST_ERRORS,
   sendManifestError,
   sendManifestValidationError,
 } from './manifest-endpoint.errors';
 import { buildManifestRateLimiterOptions } from './manifest-endpoint.rate-limit';
 import {
-  buildManifestETag,
   isValidManifestName,
   parseCount,
   validateManifestParams,
@@ -94,10 +98,12 @@ export const ManifestEndpoint = {
         return;
       }
 
-      res.setHeader('ETag', buildManifestETag(latest.name));
-      res.setHeader('Cache-Control', 'no-cache');
-      if (req.fresh) {
-        res.status(304).end();
+      if (
+        respondNotModifiedIfFresh(req, res, {
+          etag: quoteETag(latest.name),
+          cacheControl: CacheControl.Revalidate,
+        })
+      ) {
         return;
       }
 
@@ -157,10 +163,12 @@ export const ManifestEndpoint = {
         return;
       }
 
-      res.setHeader('ETag', buildManifestETag(manifest.name));
-      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-      if (req.fresh) {
-        res.status(304).end();
+      if (
+        respondNotModifiedIfFresh(req, res, {
+          etag: quoteETag(manifest.name),
+          cacheControl: CacheControl.Immutable,
+        })
+      ) {
         return;
       }
 
