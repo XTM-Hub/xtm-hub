@@ -1008,11 +1008,11 @@ describe('documentApp', () => {
       ${true}    | ${'hard deleted'}
       ${false}   | ${'soft deleted'}
     `(
-      'should delegate the news feed item deletion to NewsFeedApp.deleteScenarioNewsFeedItem when the document is $description',
+      'should delegate the news feed item deletion to NewsFeedApp.deleteResourceNewsFeed when the document is $description',
       async ({ hardDelete }: { hardDelete: boolean }) => {
         // Given
-        const deleteScenarioNewsFeedItemSpy = vi
-          .spyOn(NewsFeedApp, 'deleteScenarioNewsFeedItem')
+        const deleteResourceNewsFeedSpy = vi
+          .spyOn(NewsFeedApp, 'deleteResourceNewsFeed')
           .mockResolvedValue();
         const document = await TestHelper.document.create({
           name: 'document to delete',
@@ -1027,8 +1027,8 @@ describe('documentApp', () => {
         );
 
         // Then
-        expect(deleteScenarioNewsFeedItemSpy).toHaveBeenCalledOnce();
-        expect(deleteScenarioNewsFeedItemSpy).toHaveBeenCalledWith({
+        expect(deleteResourceNewsFeedSpy).toHaveBeenCalledOnce();
+        expect(deleteResourceNewsFeedSpy).toHaveBeenCalledWith({
           documentId: document.id,
         });
       }
@@ -1036,8 +1036,8 @@ describe('documentApp', () => {
 
     it('should delegate the news feed item deletion when the file cleanup fails after a hard delete', async () => {
       // Given
-      const deleteScenarioNewsFeedItemSpy = vi
-        .spyOn(NewsFeedApp, 'deleteScenarioNewsFeedItem')
+      const deleteResourceNewsFeedSpy = vi
+        .spyOn(NewsFeedApp, 'deleteResourceNewsFeed')
         .mockResolvedValue();
       vi.spyOn(MinIOClient, 'deleteFile').mockRejectedValue(
         new Error('cleanup-failed')
@@ -1058,7 +1058,7 @@ describe('documentApp', () => {
       ).rejects.toThrow('cleanup-failed');
 
       // Then
-      expect(deleteScenarioNewsFeedItemSpy).toHaveBeenCalledWith({
+      expect(deleteResourceNewsFeedSpy).toHaveBeenCalledWith({
         documentId: document.id,
       });
     });

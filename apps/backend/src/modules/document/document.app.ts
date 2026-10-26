@@ -566,7 +566,7 @@ export const DocumentApp = {
           object_id: toObjectUseCaseObjectId(documentId),
         });
       });
-      void NewsFeedApp.deleteScenarioNewsFeedItem({ documentId });
+      void NewsFeedApp.deleteResourceNewsFeed({ documentId });
       await DocumentHelper.deleteFileFromMinIO(
         childrenDocumentFromDB,
         documentFromDb
@@ -576,7 +576,7 @@ export const DocumentApp = {
 
     // Soft delete => desactivate the document
     await DocumentDomain.deactivateDocuments([documentId, ...childIds]);
-    void NewsFeedApp.deleteScenarioNewsFeedItem({ documentId });
+    void NewsFeedApp.deleteResourceNewsFeed({ documentId });
 
     return documentFromDb as T;
   },

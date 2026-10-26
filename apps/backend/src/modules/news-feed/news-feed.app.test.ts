@@ -955,7 +955,7 @@ describe('newsFeedApp', () => {
       });
     });
 
-    describe('deleteScenarioNewsFeedItem', () => {
+    describe('deleteResourceNewsFeed', () => {
       it('should mark the news feed item as deleted when the document is a scenario', async () => {
         // Given
         const item = await NewsFeedDomain.createResourceNewsFeedItem({
@@ -968,7 +968,7 @@ describe('newsFeedApp', () => {
         });
 
         // When
-        await NewsFeedApp.deleteScenarioNewsFeedItem({
+        await NewsFeedApp.deleteResourceNewsFeed({
           documentId: document.id,
         });
 
@@ -991,7 +991,7 @@ describe('newsFeedApp', () => {
         });
 
         // When
-        await NewsFeedApp.deleteScenarioNewsFeedItem({
+        await NewsFeedApp.deleteResourceNewsFeed({
           documentId: document.id,
         });
 
@@ -1014,7 +1014,7 @@ describe('newsFeedApp', () => {
         });
 
         // When
-        await NewsFeedApp.deleteScenarioNewsFeedItem({
+        await NewsFeedApp.deleteResourceNewsFeed({
           documentId: document.id,
         });
 
@@ -1130,8 +1130,8 @@ describe('newsFeedApp', () => {
         const updateResourceNewsFeedItemSpy = vi
           .spyOn(NewsFeedApp, 'updateResourceNewsFeedItem')
           .mockResolvedValue();
-        const deleteScenarioNewsFeedItemSpy = vi
-          .spyOn(NewsFeedApp, 'deleteScenarioNewsFeedItem')
+        const deleteResourceNewsFeedSpy = vi
+          .spyOn(NewsFeedApp, 'deleteResourceNewsFeed')
           .mockResolvedValue();
 
         // When
@@ -1145,7 +1145,7 @@ describe('newsFeedApp', () => {
         // Then
         expect(createResourceNewsFeedItemSpy).not.toHaveBeenCalled();
         expect(updateResourceNewsFeedItemSpy).not.toHaveBeenCalled();
-        expect(deleteScenarioNewsFeedItemSpy).not.toHaveBeenCalled();
+        expect(deleteResourceNewsFeedSpy).not.toHaveBeenCalled();
       });
 
       it('should delete the scenario news feed item when the scenario is unpublished', async () => {
@@ -1157,8 +1157,8 @@ describe('newsFeedApp', () => {
         const updateResourceNewsFeedItemSpy = vi
           .spyOn(NewsFeedApp, 'updateResourceNewsFeedItem')
           .mockResolvedValue();
-        const deleteScenarioNewsFeedItemSpy = vi
-          .spyOn(NewsFeedApp, 'deleteScenarioNewsFeedItem')
+        const deleteResourceNewsFeedSpy = vi
+          .spyOn(NewsFeedApp, 'deleteResourceNewsFeed')
           .mockResolvedValue();
 
         // When
@@ -1170,8 +1170,8 @@ describe('newsFeedApp', () => {
         });
 
         // Then
-        expect(deleteScenarioNewsFeedItemSpy).toHaveBeenCalledOnce();
-        expect(deleteScenarioNewsFeedItemSpy).toHaveBeenCalledWith({
+        expect(deleteResourceNewsFeedSpy).toHaveBeenCalledOnce();
+        expect(deleteResourceNewsFeedSpy).toHaveBeenCalledWith({
           documentId: document.id,
         });
         expect(updateResourceNewsFeedItemSpy).not.toHaveBeenCalled();

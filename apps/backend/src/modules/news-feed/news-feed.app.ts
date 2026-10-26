@@ -7,7 +7,7 @@ import {
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
 } from '../../__generated__/resolvers-types';
-import Document from '../../model/kanel/public/Document';
+import Document, { DocumentId } from '../../model/kanel/public/Document';
 import { NewsFeedItemId } from '../../model/kanel/public/NewsFeedItem';
 import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode } from '../../utils/error/error.code';
@@ -260,7 +260,7 @@ export const NewsFeedApp = {
 
     if (!updatedDocument.active) {
       if (documentBeforeUpdate?.active) {
-        await NewsFeedApp.deleteScenarioNewsFeedItem({
+        await NewsFeedApp.deleteResourceNewsFeed({
           documentId: updatedDocument.id,
         });
       }
@@ -295,10 +295,10 @@ export const NewsFeedApp = {
     );
   },
 
-  deleteScenarioNewsFeedItem: async ({
+  deleteResourceNewsFeed: async ({
     documentId,
   }: {
-    documentId: string;
+    documentId: DocumentId;
   }): Promise<void> => {
     try {
       const existingItem =
