@@ -38,7 +38,6 @@ type SaasPlatformStorageUsage {
   percent: Float
   used: Float
   limit: Float
-  time: Date!
 }
 
 enum MetricType {
@@ -53,7 +52,19 @@ enum SaasPlatformResolution {
   day
 }
 
+enum SaasPlatformMetricsPeriod {
+  last_7_days
+  last_30_days
+  last_90_days
+}
+
+input RegisteredSaasPlatformDataInput {
+  service_instance_id: ServiceInstanceId!
+  metrics_period: SaasPlatformMetricsPeriod!
+}
+
 type Query {
-  registeredSaasPlatformData(input: RegisteredPlatformInput!): SaasPlatformData
-    @auth(portalCapa: [BYPASS, READ_SAAS_METRICS])
+  registeredSaasPlatformData(
+    input: RegisteredSaasPlatformDataInput!
+  ): SaasPlatformData @auth(portalCapa: [BYPASS, READ_SAAS_METRICS])
 }

@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { describe, expect, it, vi } from 'vitest';
+import { SaasPlatformMetricsPeriod } from '../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
 import { logApp } from '../../utils/app-logger.util';
@@ -9,6 +10,7 @@ describe('product information helper', () => {
   describe('fetchSaasPlatformData', () => {
     const serviceInstanceId = uuidv4() as ServiceInstanceId;
     const platformId = uuidv4();
+    const metricsPeriod = SaasPlatformMetricsPeriod.Last_90Days;
     const startDate = '2026-01-01T00:00:00.000Z';
     const endDate = '2027-01-01T00:00:00.000Z';
     const fullMetadata = {
@@ -48,7 +50,8 @@ describe('product information helper', () => {
       // When
       await ProductInformationHelper.fetchSaasPlatformData(
         serviceInstanceId,
-        platformId
+        platformId,
+        metricsPeriod
       );
 
       // Then
@@ -57,6 +60,32 @@ describe('product information helper', () => {
         include_metrics: 90,
       });
     });
+
+    it.each`
+      period                                   | days
+      ${SaasPlatformMetricsPeriod.Last_7Days}  | ${7}
+      ${SaasPlatformMetricsPeriod.Last_30Days} | ${30}
+      ${SaasPlatformMetricsPeriod.Last_90Days} | ${90}
+    `(
+      'should ask the SaaS Manager for $days days of metrics when the period is $period',
+      async ({ period, days }) => {
+        // Given
+        const callSpy = mockSaasManagerBody(fullMetadata);
+
+        // When
+        await ProductInformationHelper.fetchSaasPlatformData(
+          serviceInstanceId,
+          platformId,
+          period
+        );
+
+        // Then
+        expect(callSpy).toHaveBeenCalledExactlyOnceWith({
+          platform_id: platformId,
+          include_metrics: days,
+        });
+      }
+    );
 
     it('should return the metadata sent by the SaaS Manager without the unknown fields', async () => {
       // Given
@@ -69,7 +98,8 @@ describe('product information helper', () => {
       // When
       const data = await ProductInformationHelper.fetchSaasPlatformData(
         serviceInstanceId,
-        platformId
+        platformId,
+        metricsPeriod
       );
 
       // Then
@@ -93,7 +123,8 @@ describe('product information helper', () => {
       // When
       const data = await ProductInformationHelper.fetchSaasPlatformData(
         serviceInstanceId,
-        platformId
+        platformId,
+        metricsPeriod
       );
 
       // Then
@@ -111,7 +142,8 @@ describe('product information helper', () => {
       // When
       const data = await ProductInformationHelper.fetchSaasPlatformData(
         serviceInstanceId,
-        platformId
+        platformId,
+        metricsPeriod
       );
 
       // Then
@@ -136,7 +168,8 @@ describe('product information helper', () => {
         // When
         const data = await ProductInformationHelper.fetchSaasPlatformData(
           serviceInstanceId,
-          platformId
+          platformId,
+          metricsPeriod
         );
 
         // Then
@@ -157,7 +190,6 @@ describe('product information helper', () => {
       case                         | sent                           | expected
       ${'an ISO date'}             | ${startDate}                   | ${startDate}
       ${'a date with an offset'}   | ${'2026-01-01T01:00:00+01:00'} | ${startDate}
-      ${'a date without time'}     | ${'2026-01-01'}                | ${startDate}
       ${'a date with millisecond'} | ${'2026-01-01T00:00:00.5Z'}    | ${'2026-01-01T00:00:00.500Z'}
     `(
       'should return the date as an ISO string when the SaaS Manager sends $case',
@@ -168,7 +200,8 @@ describe('product information helper', () => {
         // When
         const data = await ProductInformationHelper.fetchSaasPlatformData(
           serviceInstanceId,
-          platformId
+          platformId,
+          metricsPeriod
         );
 
         // Then
@@ -184,7 +217,8 @@ describe('product information helper', () => {
       // When
       await ProductInformationHelper.fetchSaasPlatformData(
         serviceInstanceId,
-        platformId
+        platformId,
+        metricsPeriod
       );
 
       // Then
@@ -232,7 +266,8 @@ describe('product information helper', () => {
         // When
         const data = await ProductInformationHelper.fetchSaasPlatformData(
           serviceInstanceId,
-          platformId
+          platformId,
+          metricsPeriod
         );
 
         // Then
@@ -254,7 +289,8 @@ describe('product information helper', () => {
         // When
         const data = await ProductInformationHelper.fetchSaasPlatformData(
           serviceInstanceId,
-          platformId
+          platformId,
+          metricsPeriod
         );
 
         // Then
@@ -285,7 +321,8 @@ describe('product information helper', () => {
           // When
           const data = await ProductInformationHelper.fetchSaasPlatformData(
             serviceInstanceId,
-            platformId
+            platformId,
+            metricsPeriod
           );
 
           // Then
@@ -306,7 +343,8 @@ describe('product information helper', () => {
         // When
         const data = await ProductInformationHelper.fetchSaasPlatformData(
           serviceInstanceId,
-          platformId
+          platformId,
+          metricsPeriod
         );
 
         // Then
@@ -332,7 +370,8 @@ describe('product information helper', () => {
         // When
         const data = await ProductInformationHelper.fetchSaasPlatformData(
           serviceInstanceId,
-          platformId
+          platformId,
+          metricsPeriod
         );
 
         // Then
@@ -366,7 +405,8 @@ describe('product information helper', () => {
         // When
         const data = await ProductInformationHelper.fetchSaasPlatformData(
           serviceInstanceId,
-          platformId
+          platformId,
+          metricsPeriod
         );
 
         // Then
@@ -389,20 +429,17 @@ describe('product information helper', () => {
           percent: 12.5,
           used: 1073741824,
           limit: 8589934592,
-          time: '2026-10-23T13:46:23.624Z',
         },
         s3_used_size: {
           percent: 0,
           used: 0,
           limit: 0,
-          time: '2026-10-23T13:46:23.624+00:00',
         },
       };
       const parsedStorage = {
         ...storage,
         s3_used_size: {
           ...storage.s3_used_size,
-          time: '2026-10-23T13:46:23.624Z',
         },
       };
 
@@ -452,12 +489,10 @@ describe('product information helper', () => {
       });
 
       it.each`
-        case                      | usage
-        ${'missing'}              | ${undefined}
-        ${'null'}                 | ${null}
-        ${'an array'}             | ${[storage.es_used_size]}
-        ${'without a time'}       | ${{ ...storage.es_used_size, time: undefined }}
-        ${'with an invalid time'} | ${{ ...storage.es_used_size, time: 'not a date' }}
+        case          | usage
+        ${'missing'}  | ${undefined}
+        ${'null'}     | ${null}
+        ${'an array'} | ${[storage.es_used_size]}
       `('should return a null usage when it is $case', async ({ usage }) => {
         // Given
         mockSaasManagerBody({
@@ -486,7 +521,6 @@ describe('product information helper', () => {
               percent: '12.5',
               used: null,
               limit: Infinity,
-              time: storage.es_used_size.time,
             },
           },
         });
@@ -503,7 +537,6 @@ describe('product information helper', () => {
           percent: null,
           used: null,
           limit: null,
-          time: storage.es_used_size.time,
         });
       });
     });
@@ -523,7 +556,8 @@ describe('product information helper', () => {
       // When
       const data = await ProductInformationHelper.fetchSaasPlatformData(
         serviceInstanceId,
-        platformId
+        platformId,
+        metricsPeriod
       );
 
       // Then

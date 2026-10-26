@@ -1,4 +1,4 @@
-query RegisteredSaasPlatformData($input: RegisteredPlatformInput!) {
+query RegisteredSaasPlatformData($input: RegisteredSaasPlatformDataInput!) {
   registeredSaasPlatformData(input: $input) {
     metadata {
       hostname

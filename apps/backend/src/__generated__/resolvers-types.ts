@@ -2265,7 +2265,7 @@ export type QueryRegisteredProductVersionsArgs = {
 
 
 export type QueryRegisteredSaasPlatformDataArgs = {
-  input: RegisteredPlatformInput;
+  input: RegisteredSaasPlatformDataInput;
 };
 
 
@@ -2509,6 +2509,11 @@ export type RegisteredProductVersion = {
   version: Scalars['String']['output'];
 };
 
+export type RegisteredSaasPlatformDataInput = {
+  metrics_period: SaasPlatformMetricsPeriod;
+  service_instance_id: Scalars['ServiceInstanceId']['input'];
+};
+
 export type RegistrationResponse = {
   __typename?: 'RegistrationResponse';
   token: Scalars['String']['output'];
@@ -2605,6 +2610,12 @@ export type SaasPlatformMetrics = {
   start: Scalars['Date']['output'];
 };
 
+export enum SaasPlatformMetricsPeriod {
+  Last_7Days = 'last_7_days',
+  Last_30Days = 'last_30_days',
+  Last_90Days = 'last_90_days'
+}
+
 export enum SaasPlatformResolution {
   Day = 'day',
   Hour = 'hour'
@@ -2613,7 +2624,6 @@ export enum SaasPlatformResolution {
 export type SaasPlatformStorage = {
   __typename?: 'SaasPlatformStorage';
   es_used_size?: Maybe<SaasPlatformStorageUsage>;
-  postgres_used_size?: Maybe<SaasPlatformStorageUsage>;
   s3_used_size?: Maybe<SaasPlatformStorageUsage>;
 };
 
@@ -2621,7 +2631,6 @@ export type SaasPlatformStorageUsage = {
   __typename?: 'SaasPlatformStorageUsage';
   limit?: Maybe<Scalars['Float']['output']>;
   percent?: Maybe<Scalars['Float']['output']>;
-  time: Scalars['Date']['output'];
   used?: Maybe<Scalars['Float']['output']>;
 };
 
@@ -3681,6 +3690,7 @@ export type ResolversTypes = ResolversObject<{
   RegisteredPlatformOrdering: RegisteredPlatformOrdering;
   RegisteredPlatformsInput: RegisteredPlatformsInput;
   RegisteredProductVersion: ResolverTypeWrapper<RegisteredProductVersion>;
+  RegisteredSaasPlatformDataInput: RegisteredSaasPlatformDataInput;
   RegistrationResponse: ResolverTypeWrapper<RegistrationResponse>;
   ReorderDeploymentRequestInQueueDirection: ReorderDeploymentRequestInQueueDirection;
   ReorderDeploymentRequestInQueueInput: ReorderDeploymentRequestInQueueInput;
@@ -3692,6 +3702,7 @@ export type ResolversTypes = ResolversObject<{
   SaasPlatformMetricPoint: ResolverTypeWrapper<SaasPlatformMetricPoint>;
   SaasPlatformMetricSeries: ResolverTypeWrapper<SaasPlatformMetricSeries>;
   SaasPlatformMetrics: ResolverTypeWrapper<SaasPlatformMetrics>;
+  SaasPlatformMetricsPeriod: SaasPlatformMetricsPeriod;
   SaasPlatformResolution: SaasPlatformResolution;
   SaasPlatformStorage: ResolverTypeWrapper<SaasPlatformStorage>;
   SaasPlatformStorageUsage: ResolverTypeWrapper<SaasPlatformStorageUsage>;
@@ -3929,6 +3940,7 @@ export type ResolversParentTypes = ResolversObject<{
   RegisteredPlatformInput: RegisteredPlatformInput;
   RegisteredPlatformsInput: RegisteredPlatformsInput;
   RegisteredProductVersion: RegisteredProductVersion;
+  RegisteredSaasPlatformDataInput: RegisteredSaasPlatformDataInput;
   RegistrationResponse: RegistrationResponse;
   ReorderDeploymentRequestInQueueInput: ReorderDeploymentRequestInQueueInput;
   RolePortal: RolePortal;
@@ -5055,7 +5067,6 @@ export type SaasPlatformMetricsResolvers<ContextType = PortalContext, ParentType
 
 export type SaasPlatformStorageResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasPlatformStorage'] = ResolversParentTypes['SaasPlatformStorage']> = ResolversObject<{
   es_used_size?: Resolver<Maybe<ResolversTypes['SaasPlatformStorageUsage']>, ParentType, ContextType>;
-  postgres_used_size?: Resolver<Maybe<ResolversTypes['SaasPlatformStorageUsage']>, ParentType, ContextType>;
   s3_used_size?: Resolver<Maybe<ResolversTypes['SaasPlatformStorageUsage']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -5063,7 +5074,6 @@ export type SaasPlatformStorageResolvers<ContextType = PortalContext, ParentType
 export type SaasPlatformStorageUsageResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasPlatformStorageUsage'] = ResolversParentTypes['SaasPlatformStorageUsage']> = ResolversObject<{
   limit?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   percent?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
-  time?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
   used?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;

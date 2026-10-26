@@ -5,6 +5,7 @@ import {
   SaasPlatformMetricPoint,
   SaasPlatformMetrics,
   SaasPlatformMetricSeries,
+  SaasPlatformMetricsPeriod,
   SaasPlatformResolution,
   SaasPlatformStorage,
   SaasPlatformStorageUsage,
@@ -12,10 +13,14 @@ import {
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
 import { logApp } from '../../utils/app-logger.util';
-import { toIsoDate } from '../../utils/format';
+import { toFiniteNumber, toIsoDate } from '../../utils/format';
 import { isRecord } from '../../utils/typescript';
 
-const SAAS_PLATFORM_METRICS_DAYS = 90;
+const SAAS_PLATFORM_METRICS_DAYS: Record<SaasPlatformMetricsPeriod, number> = {
+  [SaasPlatformMetricsPeriod.Last_7Days]: 7,
+  [SaasPlatformMetricsPeriod.Last_30Days]: 30,
+  [SaasPlatformMetricsPeriod.Last_90Days]: 90,
+};
 
 const METRIC_TYPES: ReadonlySet<string> = new Set(Object.values(MetricType));
 
@@ -28,9 +33,6 @@ const RESOLUTIONS: ReadonlySet<string> = new Set(
 
 const isResolution = (value: unknown): value is SaasPlatformResolution =>
   typeof value === 'string' && RESOLUTIONS.has(value);
-
-const toFiniteNumber = (value: unknown): number | null =>
-  typeof value === 'number' && Number.isFinite(value) ? value : null;
 
 const readMetadataString = (
   body: Record<string, unknown>,
@@ -112,15 +114,10 @@ const parseStorageUsage = (usage: unknown): SaasPlatformStorageUsage | null => {
   if (!isRecord(usage)) {
     return null;
   }
-  const time = toIsoDate(usage.time);
-  if (time === null) {
-    return null;
-  }
   return {
     percent: toFiniteNumber(usage.percent),
     used: toFiniteNumber(usage.used),
     limit: toFiniteNumber(usage.limit),
-    time,
   };
 };
 
@@ -156,12 +153,13 @@ const parseSaasPlatformData = (body: unknown): SaasPlatformData => {
 export const ProductInformationHelper = {
   fetchSaasPlatformData: async (
     serviceInstanceId: ServiceInstanceId,
-    platformId: string
+    platformId: string,
+    metricsPeriod: SaasPlatformMetricsPeriod
   ): Promise<SaasPlatformData | null> => {
     try {
       const response = await SaasManagerClient.callInstanceApi({
         platform_id: platformId,
-        include_metrics: SAAS_PLATFORM_METRICS_DAYS,
+        include_metrics: SAAS_PLATFORM_METRICS_DAYS[metricsPeriod],
       });
 
       if (response.status !== 200) {

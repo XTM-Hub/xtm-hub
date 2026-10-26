@@ -17,6 +17,9 @@ export const toIsoDate = (value: unknown): string | null => {
   return Number.isNaN(time) ? null : new Date(time).toISOString();
 };
 
+export const toFiniteNumber = (value: unknown): number | null =>
+  typeof value === 'number' && Number.isFinite(value) ? value : null;
+
 export const formatName = (name: string | undefined | null): string => {
   if (!name) {
     return '';

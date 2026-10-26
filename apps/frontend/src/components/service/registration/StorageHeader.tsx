@@ -39,7 +39,7 @@ export const StorageHeader = ({
           <span className="text-default-secondary">{chunks}</span>
         ),
       })}
-      {usageStatus && (
+      {usageStatus && typeof storage.percent === 'number' && (
         <div className={cn('content-highlight', usageStatus.colorClass)}>
           {format.number(storage.percent / 100, {
             style: 'percent',

@@ -1,6 +1,7 @@
 import {
   FeatureFlag,
   SaasPlatformData,
+  SaasPlatformMetricsPeriod,
 } from '../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { isFeatureEnabled } from '../../utils/feature-flag.util';
@@ -24,39 +25,43 @@ const saasPlatformDataCache = new Map<string, CachedSaasPlatformData>();
  */
 const loadCachedSaasPlatformData = (
   serviceInstanceId: ServiceInstanceId,
-  platformId: string
+  platformId: string,
+  metricsPeriod: SaasPlatformMetricsPeriod
 ): Promise<SaasPlatformData | null> => {
   const now = Date.now();
-  const cached = saasPlatformDataCache.get(platformId);
+  const cacheKey = `${platformId}:${metricsPeriod}`;
+  const cached = saasPlatformDataCache.get(cacheKey);
   if (cached && now < cached.expiresAt) {
     return cached.data;
   }
 
-  for (const [cachedPlatformId, entry] of saasPlatformDataCache) {
+  for (const [cachedKey, entry] of saasPlatformDataCache) {
     if (entry.expiresAt <= now) {
-      saasPlatformDataCache.delete(cachedPlatformId);
+      saasPlatformDataCache.delete(cachedKey);
     }
   }
 
   const entry: CachedSaasPlatformData = {
     data: ProductInformationHelper.fetchSaasPlatformData(
       serviceInstanceId,
-      platformId
+      platformId,
+      metricsPeriod
     ).then((data) => {
-      if (data === null && saasPlatformDataCache.get(platformId) === entry) {
-        saasPlatformDataCache.delete(platformId);
+      if (data === null && saasPlatformDataCache.get(cacheKey) === entry) {
+        saasPlatformDataCache.delete(cacheKey);
       }
       return data;
     }),
     expiresAt: now + SAAS_PLATFORM_DATA_CACHE_TTL_MS,
   };
-  saasPlatformDataCache.set(platformId, entry);
+  saasPlatformDataCache.set(cacheKey, entry);
   return entry.data;
 };
 
 export const ProductInformationApp = {
   loadRegisteredSaasPlatformData: async (
-    serviceInstanceId: ServiceInstanceId
+    serviceInstanceId: ServiceInstanceId,
+    metricsPeriod: SaasPlatformMetricsPeriod
   ): Promise<SaasPlatformData | null> => {
     if (!isFeatureEnabled(FeatureFlag.SaasMetrics)) {
       return null;
@@ -71,6 +76,10 @@ export const ProductInformationApp = {
       return null;
     }
 
-    return loadCachedSaasPlatformData(serviceInstanceId, platform.platform_id);
+    return loadCachedSaasPlatformData(
+      serviceInstanceId,
+      platform.platform_id,
+      metricsPeriod
+    );
   },
 };

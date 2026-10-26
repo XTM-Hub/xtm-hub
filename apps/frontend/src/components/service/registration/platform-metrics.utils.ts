@@ -5,8 +5,8 @@ import {
 } from '@graphql/generated';
 
 export const findMetricPoints = (
-  metrics: SaasPlatformMetrics,
+  metrics: SaasPlatformMetrics | null | undefined,
   metricType: MetricType
 ): SaasPlatformMetricPoint[] =>
-  metrics.series.find((series) => series.metric_type === metricType)?.points ??
+  metrics?.series.find((series) => series.metric_type === metricType)?.points ??
   [];

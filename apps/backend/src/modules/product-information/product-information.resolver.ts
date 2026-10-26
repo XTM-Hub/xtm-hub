@@ -5,7 +5,8 @@ const resolvers: Resolvers = {
   Query: {
     registeredSaasPlatformData: async (_, { input }) =>
       ProductInformationApp.loadRegisteredSaasPlatformData(
-        input.service_instance_id
+        input.service_instance_id,
+        input.metrics_period
       ),
   },
 };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatName, toIsoDate } from './format';
+import { formatName, toFiniteNumber, toIsoDate } from './format';
 
 describe('toIsoDate', () => {
   it.each`
@@ -22,6 +22,24 @@ describe('toIsoDate', () => {
     ${'undefined'}       | ${undefined}
   `('should return null for $case', ({ input }) => {
     expect(toIsoDate(input)).toBeNull();
+  });
+});
+
+describe('toFiniteNumber', () => {
+  it.each([0, 12.5, -3, 8589934592])('should return %s as is', (input) => {
+    expect(toFiniteNumber(input)).toBe(input);
+  });
+
+  it.each`
+    case                  | input
+    ${'NaN'}              | ${NaN}
+    ${'Infinity'}         | ${Infinity}
+    ${'-Infinity'}        | ${-Infinity}
+    ${'a numeric string'} | ${'12.5'}
+    ${'null'}             | ${null}
+    ${'undefined'}        | ${undefined}
+  `('should return null for $case', ({ input }) => {
+    expect(toFiniteNumber(input)).toBeNull();
   });
 });
 

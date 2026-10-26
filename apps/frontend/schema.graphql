@@ -127,7 +127,7 @@ type Query {
   usersWithCapabilitiesInOrganization(input: UsersWithCapabilitiesInOrganizationInput!): [OrganizationMemberContact!]!
   users(first: Int!, after: ID, orderBy: UserOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [Filter!]): UserConnection!
   pendingUsers(first: Int!, after: ID, orderBy: UserOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [Filter!]): UserConnection!
-  registeredSaasPlatformData(input: RegisteredPlatformInput!): SaasPlatformData
+  registeredSaasPlatformData(input: RegisteredSaasPlatformDataInput!): SaasPlatformData
   openCTIPlatformRegistrationStatus(input: OpenCTIPlatformRegistrationStatusInput!): OpenCTIPlatformRegistrationStatusResponse! @deprecated(reason: "Use `refreshPlatformRegistrationConnectivityStatus` instead. This field is no longer used in the OpenCTI platform due to refactoring and the addition of a version value in the endpoint.")
   isPlatformRegistered(input: IsPlatformRegisteredInput!): IsPlatformRegisteredResponse!
   canUnregisterPlatform(input: CanUnregisterPlatformInput!): CanUnregisterResponse!
@@ -1271,14 +1271,12 @@ type SaasPlatformMetricPoint {
 type SaasPlatformStorage {
   es_used_size: SaasPlatformStorageUsage
   s3_used_size: SaasPlatformStorageUsage
-  postgres_used_size: SaasPlatformStorageUsage
 }
 
 type SaasPlatformStorageUsage {
   percent: Float
   used: Float
   limit: Float
-  time: Date!
 }
 
 enum MetricType {
@@ -1291,6 +1289,17 @@ enum MetricType {
 enum SaasPlatformResolution {
   hour
   day
+}
+
+enum SaasPlatformMetricsPeriod {
+  last_7_days
+  last_30_days
+  last_90_days
+}
+
+input RegisteredSaasPlatformDataInput {
+  service_instance_id: ServiceInstanceId!
+  metrics_period: SaasPlatformMetricsPeriod!
 }
 
 enum PlatformConfigurationStatus {

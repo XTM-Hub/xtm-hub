@@ -2272,7 +2272,7 @@ export type QueryRegisteredProductVersionsArgs = {
 
 
 export type QueryRegisteredSaasPlatformDataArgs = {
-  input: RegisteredPlatformInput;
+  input: RegisteredSaasPlatformDataInput;
 };
 
 
@@ -2516,6 +2516,11 @@ export type RegisteredProductVersion = {
   version: Scalars['String']['output'];
 };
 
+export type RegisteredSaasPlatformDataInput = {
+  metrics_period: SaasPlatformMetricsPeriod;
+  service_instance_id: Scalars['ServiceInstanceId']['input'];
+};
+
 export type RegistrationResponse = {
   __typename?: 'RegistrationResponse';
   token: Scalars['String']['output'];
@@ -2612,6 +2617,12 @@ export type SaasPlatformMetrics = {
   start: Scalars['Date']['output'];
 };
 
+export enum SaasPlatformMetricsPeriod {
+  Last_7Days = 'last_7_days',
+  Last_30Days = 'last_30_days',
+  Last_90Days = 'last_90_days'
+}
+
 export enum SaasPlatformResolution {
   Day = 'day',
   Hour = 'hour'
@@ -2620,7 +2631,6 @@ export enum SaasPlatformResolution {
 export type SaasPlatformStorage = {
   __typename?: 'SaasPlatformStorage';
   es_used_size: Maybe<SaasPlatformStorageUsage>;
-  postgres_used_size: Maybe<SaasPlatformStorageUsage>;
   s3_used_size: Maybe<SaasPlatformStorageUsage>;
 };
 
@@ -2628,7 +2638,6 @@ export type SaasPlatformStorageUsage = {
   __typename?: 'SaasPlatformStorageUsage';
   limit: Maybe<Scalars['Float']['output']>;
   percent: Maybe<Scalars['Float']['output']>;
-  time: Scalars['Date']['output'];
   used: Maybe<Scalars['Float']['output']>;
 };
 
@@ -3792,11 +3801,11 @@ export type UserOrganizationsQueryVariables = Exact<{ [key: string]: never; }>;
 export type UserOrganizationsQuery = { __typename?: 'Query', userOrganizations: Array<{ __typename?: 'Organization', id: string, name: string, personal_space: boolean }> };
 
 export type RegisteredSaasPlatformDataQueryVariables = Exact<{
-  input: RegisteredPlatformInput;
+  input: RegisteredSaasPlatformDataInput;
 }>;
 
 
-export type RegisteredSaasPlatformDataQuery = { __typename?: 'Query', registeredSaasPlatformData: { __typename?: 'SaasPlatformData', metadata: { __typename?: 'SaasPlatformMetadata', hostname: string | null, plan: string | null, start_date: any | null, end_date: any | null, region: string | null }, metrics: { __typename?: 'SaasPlatformMetrics', start: any, end: any, resolution: SaasPlatformResolution, series: Array<{ __typename?: 'SaasPlatformMetricSeries', metric_type: MetricType, points: Array<{ __typename?: 'SaasPlatformMetricPoint', timestamp: any, value: number | null }> }> } | null, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null, used: number | null, limit: number | null, time: any } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null, used: number | null, limit: number | null, time: any } | null, postgres_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null, used: number | null, limit: number | null, time: any } | null } | null } | null };
+export type RegisteredSaasPlatformDataQuery = { __typename?: 'Query', registeredSaasPlatformData: { __typename?: 'SaasPlatformData', metadata: { __typename?: 'SaasPlatformMetadata', hostname: string | null, plan: string | null, start_date: any | null, end_date: any | null, region: string | null }, metrics: { __typename?: 'SaasPlatformMetrics', start: any, end: any, resolution: SaasPlatformResolution, series: Array<{ __typename?: 'SaasPlatformMetricSeries', metric_type: MetricType, points: Array<{ __typename?: 'SaasPlatformMetricPoint', timestamp: any, value: number | null }> }> } | null, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null, used: number | null, limit: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null, used: number | null, limit: number | null } | null } | null } | null };
 
 export type RegisteredPlatformsListQueryVariables = Exact<{
   input: RegisteredPlatformsInput;
@@ -6435,7 +6444,7 @@ useInfiniteUserOrganizationsQuery.getRootKey = () => ['UserOrganizations.infinit
 useUserOrganizationsQuery.fetcher = (client: GraphQLClient, variables?: UserOrganizationsQueryVariables, headers?: RequestInit['headers']) => fetcher<UserOrganizationsQuery, UserOrganizationsQueryVariables>(client, UserOrganizationsDocument, variables, headers);
 
 export const RegisteredSaasPlatformDataDocument = `
-    query RegisteredSaasPlatformData($input: RegisteredPlatformInput!) {
+    query RegisteredSaasPlatformData($input: RegisteredSaasPlatformDataInput!) {
   registeredSaasPlatformData(input: $input) {
     metadata {
       hostname
@@ -6461,19 +6470,11 @@ export const RegisteredSaasPlatformDataDocument = `
         percent
         used
         limit
-        time
       }
       s3_used_size {
         percent
         used
         limit
-        time
-      }
-      postgres_used_size {
-        percent
-        used
-        limit
-        time
       }
     }
   }

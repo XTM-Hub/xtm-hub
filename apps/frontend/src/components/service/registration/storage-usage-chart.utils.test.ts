@@ -1,5 +1,6 @@
 import {
   hasStorageCapacity,
+  hasStorageUsage,
   splitByteSize,
   storageLimitLineValue,
   storageUsageStatus,
@@ -56,6 +57,19 @@ describe('hasStorageCapacity', () => {
     ${'there is no storage'} | ${null}             | ${false}
   `('should return $expected when $case', ({ storage, expected }) => {
     expect(hasStorageCapacity(storage)).toBe(expected);
+  });
+});
+
+describe('hasStorageUsage', () => {
+  it.each`
+    case                         | storage                         | expected
+    ${'the usage is measurable'} | ${{ used: 500, limit: 1_000 }}  | ${true}
+    ${'nothing is used yet'}     | ${{ used: 0, limit: 1_000 }}    | ${true}
+    ${'the usage is unknown'}    | ${{ used: null, limit: 1_000 }} | ${false}
+    ${'the limit is zero'}       | ${{ used: 500, limit: 0 }}      | ${false}
+    ${'there is no storage'}     | ${null}                         | ${false}
+  `('should return $expected when $case', ({ storage, expected }) => {
+    expect(hasStorageUsage(storage)).toBe(expected);
   });
 });
 
