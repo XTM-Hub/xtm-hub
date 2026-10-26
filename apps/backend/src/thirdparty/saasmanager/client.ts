@@ -5,7 +5,7 @@ import {
 } from './token-provider';
 
 const SAAS_MANAGER_TIMEOUT_MS = 10_000;
-const SAAS_MANAGER_INSTANCE_PATH = '/api/instance/';
+const SAAS_MANAGER_INSTANCE_PATH = '/api/hub/instance/';
 
 interface SaasManagerRequest {
   method?: 'GET' | 'HEAD';

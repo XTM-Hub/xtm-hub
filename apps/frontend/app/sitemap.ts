@@ -4,7 +4,7 @@ import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
 import { fetchSeoServiceInstances } from '@/utils/seo-service-instance/utils/seo-service-instance.server.utils';
 import { isExternalService } from '@/utils/services';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
-import { fetchDocumentSlugsForSitemap } from '@/utils/shareable-resources/utils/shareable-resources.server.utils';
+import { fetchPublicDocumentSlugs } from '@/utils/shareable-resources/utils/shareable-resources.server.utils';
 import SettingsQuery, { settingsQuery } from '@generated/settingsQuery.graphql';
 import { ServiceDefinitionIdentifier } from '@graphql/generated';
 import type { MetadataRoute } from 'next';
@@ -83,9 +83,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const servicesWithResources = await Promise.all(
     documentBearingServices.map(async (service) => ({
       service,
-      resources: await fetchDocumentSlugsForSitemap(
-        service.slug as ServiceSlug
-      ),
+      resources: await fetchPublicDocumentSlugs(service.slug as ServiceSlug),
     }))
   );
 

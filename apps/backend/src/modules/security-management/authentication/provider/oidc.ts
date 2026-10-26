@@ -58,10 +58,11 @@ export const addOIDCStrategy = async (
         const extractedRoles = extractRole(
           userinfo['https://xtm-hub-development/roles'] as string[]
         );
+        const groups =
+          (userinfo['https://xtm-hub-development/groups'] as
+            string[] | undefined) ?? [];
         const loadedRolesFromSSOGroup =
-          await RolePortalDomain.loadRolePortalsBySSOGroups(
-            userinfo['https://xtm-hub-development/groups'] as string[]
-          );
+          await RolePortalDomain.loadRolePortalsBySSOGroups(groups);
 
         const rolePortal = loadedRolesFromSSOGroup.roles ?? [];
 
@@ -98,6 +99,7 @@ export const addOIDCStrategy = async (
             first_name: given_name ?? first_name ?? '',
             last_name: family_name ?? '',
             roles,
+            groups,
             picture,
           },
           done

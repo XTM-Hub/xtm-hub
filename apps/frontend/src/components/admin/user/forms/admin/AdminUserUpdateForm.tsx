@@ -195,16 +195,14 @@ export const AdminUserUpdateForm = ({
                 key={`organization_capabilities.${index}.capabilities`}
                 name={`organization_capabilities.${index}.capabilities`}
                 render={({ field: formField, fieldState }) => {
+                  const organizationName = userOrganization.find(
+                    ({ id }) => id === field.organization_id
+                  )?.name;
                   return (
                     <div className="grid gap-3 items-center grid-cols-[1fr_4fr_3rem]">
-                      <Label>
-                        {
-                          userOrganization.find(
-                            ({ id }) => id === field.organization_id
-                          )?.name
-                        }
-                      </Label>
+                      <Label>{organizationName}</Label>
                       <CapabilityMultiSelect
+                        accessibleName={organizationName}
                         value={formField.value}
                         onChange={formField.onChange}
                         error={fieldState.error?.message}

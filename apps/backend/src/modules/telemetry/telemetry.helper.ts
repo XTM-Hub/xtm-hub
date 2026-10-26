@@ -2,6 +2,7 @@ import {
   DeploymentRequestSource,
   HasRepliedSatisfaction,
   IntegrationType,
+  NewsFeedItemType,
   Organization,
   PlatformContract,
   PlatformIdentifier,
@@ -18,6 +19,7 @@ import { ServiceInstanceDomain } from '../service/instance/service-instance.doma
 import {
   TelemetryEventService,
   TelemetryEventServiceType,
+  TelemetryNewsFeedItemType,
   TelemetryOrganizationType,
   TelemetrySource,
   TelemetryTargetProduct,
@@ -30,6 +32,7 @@ import {
   DownloadEvent,
   ExportEvent,
   LoginEvent,
+  NewsFeedRedirectEvent,
   OneClickDeployEvent,
   RegisterPlatformEvent,
   ReplySatisfactionEvent,
@@ -97,6 +100,12 @@ const ServiceIdentifierToEventService = new Map<
     TelemetryEventService.OPENCTI_CUSTOM_VIEWS_LIBRARY,
   ],
 ]);
+
+// One entry per news feed item type that can be clicked through the external redirect
+export const NewsFeedItemTypeToTelemetryNewsFeedItemType = new Map<
+  NewsFeedItemType,
+  TelemetryNewsFeedItemType
+>([[NewsFeedItemType.BlogPost, TelemetryNewsFeedItemType.BLOG_POST]]);
 
 export const TelemetryTargetProductMappedByPlatformIdentifier = new Map<
   PlatformIdentifier,
@@ -354,6 +363,48 @@ export const TelemetryHelper = {
       platform_id,
       platform_version,
       tenant_id,
+    };
+  },
+
+  // The user and the organization are only set when the click comes from a logged in user
+  buildNewsFeedRedirectEvent: (
+    organization: Organization | undefined,
+    user_id: UserId | undefined,
+    data: {
+      news_feed_item_id?: string;
+      news_feed_item_type?: NewsFeedItemType;
+      destination_host?: string;
+      platform_id?: string;
+      service?: ServiceDefinitionIdentifier;
+      resource_id?: string;
+      platform_identifier?: PlatformIdentifier;
+      utm_content?: string;
+    },
+    timestamp?: Date
+  ): NewsFeedRedirectEvent => {
+    const baseEvent = buildBaseEvent(organization, user_id, timestamp);
+    const { service, platform_identifier, news_feed_item_type, ...fields } =
+      data;
+
+    return {
+      event_type: TelemetryEventType.NEWS_FEED_REDIRECT,
+      ...baseEvent,
+      ...fields,
+      ...(news_feed_item_type !== undefined && {
+        news_feed_item_type: getOrThrow(
+          NewsFeedItemTypeToTelemetryNewsFeedItemType,
+          news_feed_item_type
+        ),
+      }),
+      ...(service !== undefined && {
+        service: getOrThrow(ServiceIdentifierToEventService, service),
+      }),
+      ...(platform_identifier !== undefined && {
+        target_product: getOrThrow(
+          TelemetryTargetProductMappedByPlatformIdentifier,
+          platform_identifier
+        ),
+      }),
     };
   },
 

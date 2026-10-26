@@ -18,7 +18,49 @@ import {
 import { OpenInNewIcon } from '@filigran/icon';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ElementType, ReactNode } from 'react';
+import { ElementType, ReactElement, RefObject, useRef, useState } from 'react';
+
+const isTruncated = (element: HTMLElement | null) =>
+  !!element && element.scrollWidth > element.clientWidth;
+
+interface LabelTooltipProps {
+  label: string;
+  labelRef: RefObject<HTMLElement | null>;
+  description?: string;
+  children: ReactElement;
+}
+
+const LabelTooltip = ({
+  label,
+  labelRef,
+  description,
+  children,
+}: LabelTooltipProps) => {
+  const [open, setOpen] = useState(false);
+
+  const handleOpenChange = (nextOpen: boolean) =>
+    setOpen(nextOpen && (!!description || isTruncated(labelRef.current)));
+
+  return (
+    <TooltipProvider>
+      <Tooltip
+        open={open}
+        onOpenChange={handleOpenChange}>
+        <TooltipTrigger asChild>{children}</TooltipTrigger>
+        <TooltipContent>
+          {description ? (
+            <div className="flex flex-col gap-0.5">
+              <span>{label}</span>
+              <span className="text-default-secondary">{description}</span>
+            </div>
+          ) : (
+            label
+          )}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
 
 export const PublicSubLink = ({
   href,
@@ -32,6 +74,7 @@ export const PublicSubLink = ({
   className?: string;
 }) => {
   const currentPath = usePathname();
+  const labelRef = useRef<HTMLSpanElement>(null);
   const isActive = !!href && currentPath === href;
   const sharedClassName = cn(
     buttonVariants({
@@ -50,6 +93,7 @@ export const PublicSubLink = ({
       <span className="flex min-w-0 flex-1 items-center gap-1">
         {external && <OpenInNewIcon className="h-3 w-3 shrink-0" />}
         <span
+          ref={labelRef}
           className={cn(
             'truncate',
             highlight && !isActive && 'text-gradient-focus',
@@ -66,38 +110,23 @@ export const PublicSubLink = ({
     </>
   );
 
-  const wrapWithTooltip = (node: ReactNode) => {
-    if (!tooltip) {
-      return node;
-    }
-
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>{node}</TooltipTrigger>
-          <TooltipContent>
-            <div className="flex flex-col gap-0.5">
-              <span>{label}</span>
-              <span className="text-default-secondary">{tooltip}</span>
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  };
-
-  if (!href) {
-    return wrapWithTooltip(<span className={sharedClassName}>{content}</span>);
-  }
-
-  return wrapWithTooltip(
-    <Link
-      href={href}
-      target={external ? '_blank' : undefined}
-      rel={external ? 'noopener noreferrer' : undefined}
-      className={sharedClassName}>
-      {content}
-    </Link>
+  return (
+    <LabelTooltip
+      label={label}
+      labelRef={labelRef}
+      description={tooltip}>
+      {href ? (
+        <Link
+          href={href}
+          target={external ? '_blank' : undefined}
+          rel={external ? 'noopener noreferrer' : undefined}
+          className={sharedClassName}>
+          {content}
+        </Link>
+      ) : (
+        <span className={sharedClassName}>{content}</span>
+      )}
+    </LabelTooltip>
   );
 };
 
@@ -129,6 +158,7 @@ export const NavigationLinkMenu = ({
   highlight,
 }: NavigationLinkMenuProps) => {
   const currentPath = usePathname();
+  const labelRef = useRef<HTMLSpanElement>(null);
   const HighlightIcon = icon;
 
   if (highlight) {
@@ -157,7 +187,7 @@ export const NavigationLinkMenu = ({
     );
   }
 
-  return (
+  const link = (
     <Link
       href={href}
       target={external ? '_blank' : undefined}
@@ -174,9 +204,22 @@ export const NavigationLinkMenu = ({
       )}>
       <MenuItemIcon icon={icon} />
       <span
+        ref={labelRef}
         className={cn('min-w-0 truncate', open ? 'ml-2 flex-1' : 'sr-only')}>
         {text}
       </span>
     </Link>
+  );
+
+  if (!open) {
+    return link;
+  }
+
+  return (
+    <LabelTooltip
+      label={text}
+      labelRef={labelRef}>
+      {link}
+    </LabelTooltip>
   );
 };

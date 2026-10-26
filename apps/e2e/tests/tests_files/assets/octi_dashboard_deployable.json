@@ -1,0 +1,8 @@
+{
+  "openCTI_version": "6.5.1",
+  "type": "dashboard",
+  "configuration": {
+    "name": "E2E deployed dashboard",
+    "manifest": "eyJ3aWRnZXRzIjoge30sICJjb25maWciOiB7fX0="
+  }
+}

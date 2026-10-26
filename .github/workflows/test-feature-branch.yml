@@ -26,7 +26,7 @@ jobs:
       - name: Setup Node Js
         uses: actions/setup-node@v6
         with:
-          node-version: "24.21.0"
+          node-version: "24.22.1"
       # awxkit overrides argparse's private `_parse_known_args` with the pre-3.12.7 signature, so it crashes
       # on newer Pythons (the ubuntu-26.04 system Python is 3.14). Keep Python on 3.11 until awxkit is fixed.
       - name: Setup Python

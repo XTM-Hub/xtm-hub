@@ -1,9 +1,6 @@
 name: Deploy documentation
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       tag:
@@ -47,9 +44,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ "${{ github.event_name }}" = "push" ]; then
-            TAG="${GITHUB_REF_NAME}"
-          elif [ -n "${INPUT_TAG}" ]; then
+          if [ -n "${INPUT_TAG}" ]; then
             TAG="${INPUT_TAG}"
           else
             TAG=$(git tag -l 'v*' --sort=-v:refname | head -1)

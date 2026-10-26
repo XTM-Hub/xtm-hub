@@ -19,7 +19,7 @@ export const RegisterStateTooManyOrganizations = ({
     <RegistrationLayout
       cancel={cancel}
       confirm={confirm}>
-      <h1>{t(`Register.TooManyOrganizations.Title`)}</h1>
+      <h1 className="title-sm">{t(`Register.TooManyOrganizations.Title`)}</h1>
       <p>
         {t(`Register.TooManyOrganizations.Description1`, {
           platformIdentifier: displayedIdentifier,

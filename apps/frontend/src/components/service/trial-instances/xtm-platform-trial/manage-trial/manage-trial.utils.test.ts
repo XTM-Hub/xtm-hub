@@ -3,13 +3,16 @@ import {
   computeMixedRoleDefaults,
   formatEmailList,
   getUserStatusLabel,
+  removeUsersFromBundleCache,
   UserPlatformGroups,
 } from '@/components/service/trial-instances/xtm-platform-trial/manage-trial/manage-trial.utils';
 import {
+  BundleUserServiceGroupsQuery,
   PlatformIdentifier,
   ServiceGroupName,
   UserAccountStatus,
 } from '@graphql/generated';
+import { mockBundleUserServiceGroup, mockUser } from '@graphql/mocks';
 import { describe, expect, it } from 'vitest';
 
 describe('formatEmailList', () => {
@@ -251,4 +254,54 @@ describe('canInviteEmail', () => {
       );
     }
   );
+});
+
+describe('removeUsersFromBundleCache', () => {
+  const REMOVED_USER_ID = 'user-1';
+  const REMAINING_USER_ID = 'user-2';
+  const UNKNOWN_USER_ID = 'user-3';
+  const removedUserRow = mockBundleUserServiceGroup({
+    user: mockUser({ id: REMOVED_USER_ID }),
+  });
+  const remainingUserRow = mockBundleUserServiceGroup({
+    user: mockUser({ id: REMAINING_USER_ID }),
+  });
+  const cachedUsers: BundleUserServiceGroupsQuery = {
+    bundleUserServiceGroups: [removedUserRow, remainingUserRow],
+  };
+
+  it.each([
+    {
+      context: 'one of them is cached',
+      userIds: [REMOVED_USER_ID],
+      expected: { bundleUserServiceGroups: [remainingUserRow] },
+    },
+    {
+      context: 'all of them are cached',
+      userIds: [REMOVED_USER_ID, REMAINING_USER_ID],
+      expected: { bundleUserServiceGroups: [] },
+    },
+    {
+      context: 'none of them is cached',
+      userIds: [UNKNOWN_USER_ID],
+      expected: cachedUsers,
+    },
+  ])(
+    'should keep only the users not removed when $context',
+    ({ userIds, expected }) => {
+      // Given / When
+      const result = removeUsersFromBundleCache(cachedUsers, userIds);
+
+      // Then
+      expect(result).toEqual(expected);
+    }
+  );
+
+  it('should leave the cache empty when nothing is cached yet', () => {
+    // Given / When
+    const result = removeUsersFromBundleCache(undefined, [REMOVED_USER_ID]);
+
+    // Then
+    expect(result).toBeUndefined();
+  });
 });

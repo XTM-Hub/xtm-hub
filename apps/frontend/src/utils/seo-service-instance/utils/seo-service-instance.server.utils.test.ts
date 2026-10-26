@@ -21,6 +21,7 @@ import {
   fetchSeoServiceInstances,
   fetchServiceInstanceLinksByTags,
   fetchVisibleServiceSlugs,
+  isPublicServiceSlug,
 } from './seo-service-instance.server.utils';
 
 vi.mock('@/lib/server-graphql-fetch', () => ({
@@ -204,4 +205,28 @@ describe('fetchSeoServiceInstanceMetadata', () => {
     // Then
     expect(result).toBeUndefined();
   });
+});
+
+describe('isPublicServiceSlug', () => {
+  it.each([
+    { slug: SERVICE_SLUG, expected: true },
+    { slug: 'guessed-service', expected: false },
+  ])(
+    'should return $expected for the service slug "$slug"',
+    async ({ slug, expected }) => {
+      // Given the API lists a single public service, plus one without slug
+      vi.mocked(serverGraphqlFetch).mockResolvedValue({
+        seoServiceInstances: [
+          mockSeoServiceInstance({ slug: SERVICE_SLUG }),
+          mockSeoServiceInstance({ slug: null }),
+        ],
+      });
+
+      // When checking the service slug
+      const result = await isPublicServiceSlug(slug);
+
+      // Then only the listed slug is considered public
+      expect(result).toBe(expected);
+    }
+  );
 });

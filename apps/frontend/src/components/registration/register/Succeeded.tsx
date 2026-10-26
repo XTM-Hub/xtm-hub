@@ -11,7 +11,7 @@ export const RegisterStateSucceeded = ({
   const t = useTranslate();
   return (
     <RegistrationLayout>
-      <h1>
+      <h1 className="title-sm">
         {t(`Register.Succeeded.Title`, {
           platformIdentifier: displayedIdentifier,
         })}

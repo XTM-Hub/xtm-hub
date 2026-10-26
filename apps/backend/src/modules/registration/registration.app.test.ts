@@ -11,14 +11,12 @@ import {
 } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import {
-  CAPABILITY_READ_SAAS_METRICS,
   // eslint-disable-next-line no-restricted-imports
   contextBypassUser,
   requestContextAdminSecondOrga,
   // eslint-disable-next-line no-restricted-imports
   requestContextAdminUser,
   requestContextRegistererUserSecondOrga,
-  requestContextSimpleUserFiligran2,
   requestContextSimpleUserSecondOrga,
   SERVICES,
   TEST_ORGANIZATIONS,
@@ -44,7 +42,6 @@ import {
   ServiceDefinitionIdentifier,
   ServiceInstanceCreationStatus,
 } from '../../__generated__/resolvers-types';
-import portalConfig from '../../config';
 import { requestContext } from '../../context/request.context';
 import DeploymentRequest, {
   DeploymentRequestId,
@@ -53,7 +50,6 @@ import ServiceInstance, {
   ServiceInstanceId,
 } from '../../model/kanel/public/ServiceInstance';
 import { SubscriptionId } from '../../model/kanel/public/Subscription';
-import { CAPABILITY_BYPASS } from '../../portal.const';
 import { PgBossProducer } from '../../thirdparty/pgboss/producer';
 import { REGISTRATION_QUEUES } from '../../thirdparty/pgboss/registration.jobs';
 import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
@@ -453,82 +449,53 @@ describe('registration app', () => {
         );
       };
 
-      const initialSaasManagerEnabled = portalConfig.saas_manager.enabled;
-
       beforeEach(() => {
         requestContext.set(requestContextRegistererUserSecondOrga);
-        portalConfig.saas_manager.enabled = false;
       });
 
-      afterEach(() => {
-        portalConfig.saas_manager.enabled = initialSaasManagerEnabled;
+      it('should register the platform without waiting for the SaaS Manager', async () => {
+        // Given
+        vi.spyOn(PgBossProducer, 'send').mockResolvedValue(null);
+        const callSpy = vi.spyOn(SaasManagerClient, 'callInstanceApi');
+
+        // When
+        const configuration = await registerNewPlatform();
+
+        // Then
+        expect(callSpy).not.toHaveBeenCalled();
+        expect(configuration?.commercial_model).toBe(CommercialModel.Other);
       });
 
-      it('should not enqueue the commercial model refresh when the SaaS Manager is disabled', async () => {
+      it('should enqueue the commercial model refresh of the registered platform', async () => {
         // Given
         const sendSpy = vi
           .spyOn(PgBossProducer, 'send')
           .mockResolvedValue(null);
 
         // When
-        await registerNewPlatform();
+        const configuration = await registerNewPlatform();
 
         // Then
-        expect(sendSpy).not.toHaveBeenCalledWith(
+        expect(sendSpy).toHaveBeenCalledWith(
           REGISTRATION_QUEUES.COMMERCIAL_MODEL,
-          expect.anything()
+          {
+            serviceInstanceId: configuration?.service_instance_id,
+            platformId: configuration?.platform_id,
+          }
         );
       });
 
-      describe('when the SaaS Manager is enabled', () => {
-        beforeEach(() => {
-          portalConfig.saas_manager.enabled = true;
-        });
+      it('should register the platform when the commercial model refresh cannot be enqueued', async () => {
+        // Given
+        vi.spyOn(PgBossProducer, 'send').mockRejectedValue(
+          new Error('PgBoss has not been started')
+        );
 
-        it('should register the platform without waiting for the SaaS Manager', async () => {
-          // Given
-          vi.spyOn(PgBossProducer, 'send').mockResolvedValue(null);
-          const callSpy = vi.spyOn(SaasManagerClient, 'callInstanceApi');
+        // When
+        const configuration = await registerNewPlatform();
 
-          // When
-          const configuration = await registerNewPlatform();
-
-          // Then
-          expect(callSpy).not.toHaveBeenCalled();
-          expect(configuration?.commercial_model).toBe(CommercialModel.Other);
-        });
-
-        it('should enqueue the commercial model refresh of the registered platform', async () => {
-          // Given
-          const sendSpy = vi
-            .spyOn(PgBossProducer, 'send')
-            .mockResolvedValue(null);
-
-          // When
-          const configuration = await registerNewPlatform();
-
-          // Then
-          expect(sendSpy).toHaveBeenCalledWith(
-            REGISTRATION_QUEUES.COMMERCIAL_MODEL,
-            {
-              serviceInstanceId: configuration?.service_instance_id,
-              platformId: configuration?.platform_id,
-            }
-          );
-        });
-
-        it('should register the platform when the commercial model refresh cannot be enqueued', async () => {
-          // Given
-          vi.spyOn(PgBossProducer, 'send').mockRejectedValue(
-            new Error('PgBoss has not been started')
-          );
-
-          // When
-          const configuration = await registerNewPlatform();
-
-          // Then
-          expect(configuration).toBeDefined();
-        });
+        // Then
+        expect(configuration).toBeDefined();
       });
     });
 
@@ -937,16 +904,6 @@ describe('registration app', () => {
   });
 
   describe('refreshCommercialModel', () => {
-    const initialSaasManagerEnabled = portalConfig.saas_manager.enabled;
-
-    beforeEach(() => {
-      portalConfig.saas_manager.enabled = false;
-    });
-
-    afterEach(() => {
-      portalConfig.saas_manager.enabled = initialSaasManagerEnabled;
-    });
-
     const createPlatform = async (commercialModel: CommercialModel) => {
       const serviceInstanceId = uuidv4() as ServiceInstanceId;
       const platformId = uuidv4();
@@ -978,78 +935,61 @@ describe('registration app', () => {
       );
     };
 
-    it('should not call the SaaS Manager when it is disabled', async () => {
-      // Given
-      const platform = await createPlatform(CommercialModel.Other);
-      const callSpy = vi.spyOn(SaasManagerClient, 'callInstanceApi');
-
+    it('should set the SaaS commercial model when the SaaS Manager returns PROD', async () => {
       // When
-      await RegistrationApp.refreshCommercialModel(platform);
+      const configuration = await refreshCommercialModel(
+        CommercialModel.Other,
+        async () =>
+          ({
+            ok: true,
+            status: 200,
+            json: async () => ({ commercial_model: 'PROD' }),
+          }) as Response
+      );
 
       // Then
-      expect(callSpy).not.toHaveBeenCalled();
+      expect(configuration?.commercial_model).toBe(CommercialModel.Saas);
     });
 
-    describe('when the SaaS Manager is enabled', () => {
-      beforeEach(() => {
-        portalConfig.saas_manager.enabled = true;
-      });
-
-      it('should set the SaaS commercial model when the SaaS Manager returns PROD', async () => {
+    it.each`
+      case                       | response
+      ${'the call fails'}        | ${() => Promise.reject(new Error('fetch failed'))}
+      ${'it returns 204'}        | ${async () => ({ ok: true, status: 204, json: async () => ({ commercial_model: 'TRIAL' }) }) as Response}
+      ${'it returns 401'}        | ${async () => ({ ok: false, status: 401 }) as Response}
+      ${'it returns 500'}        | ${async () => ({ ok: false, status: 500 }) as Response}
+      ${'the body is malformed'} | ${async () => ({ ok: true, status: 200, json: async () => Promise.reject(new SyntaxError('Unexpected token')) }) as Response}
+      ${'the model is missing'}  | ${async () => ({ ok: true, status: 200, json: async () => ({}) }) as Response}
+    `(
+      'should keep the SaaS commercial model when $case',
+      async ({ response }) => {
         // When
         const configuration = await refreshCommercialModel(
-          CommercialModel.Other,
-          async () =>
-            ({
-              ok: true,
-              status: 200,
-              json: async () => ({ commercial_model: 'PROD' }),
-            }) as Response
+          CommercialModel.Saas,
+          response
         );
 
         // Then
         expect(configuration?.commercial_model).toBe(CommercialModel.Saas);
-      });
+      }
+    );
 
-      it.each`
-        case                       | response
-        ${'the call fails'}        | ${() => Promise.reject(new Error('fetch failed'))}
-        ${'it returns 401'}        | ${async () => ({ ok: false, status: 401 }) as Response}
-        ${'it returns 500'}        | ${async () => ({ ok: false, status: 500 }) as Response}
-        ${'the body is malformed'} | ${async () => ({ ok: true, status: 200, json: async () => Promise.reject(new SyntaxError('Unexpected token')) }) as Response}
-        ${'the model is missing'}  | ${async () => ({ ok: true, status: 200, json: async () => ({}) }) as Response}
-      `(
-        'should keep the SaaS commercial model when $case',
-        async ({ response }) => {
-          // When
-          const configuration = await refreshCommercialModel(
-            CommercialModel.Saas,
-            response
-          );
+    it.each`
+      case                               | response
+      ${'it returns a non PROD model'}   | ${async () => ({ ok: true, status: 200, json: async () => ({ commercial_model: 'TRIAL' }) }) as Response}
+      ${'it does not know the platform'} | ${async () => ({ ok: false, status: 404 }) as Response}
+    `(
+      'should switch to the other commercial model when $case',
+      async ({ response }) => {
+        // When
+        const configuration = await refreshCommercialModel(
+          CommercialModel.Saas,
+          response
+        );
 
-          // Then
-          expect(configuration?.commercial_model).toBe(CommercialModel.Saas);
-        }
-      );
-
-      it.each`
-        case                               | response
-        ${'it returns a non PROD model'}   | ${async () => ({ ok: true, status: 200, json: async () => ({ commercial_model: 'TRIAL' }) }) as Response}
-        ${'it does not know the platform'} | ${async () => ({ ok: false, status: 404 }) as Response}
-      `(
-        'should switch to the other commercial model when $case',
-        async ({ response }) => {
-          // When
-          const configuration = await refreshCommercialModel(
-            CommercialModel.Saas,
-            response
-          );
-
-          // Then
-          expect(configuration?.commercial_model).toBe(CommercialModel.Other);
-        }
-      );
-    });
+        // Then
+        expect(configuration?.commercial_model).toBe(CommercialModel.Other);
+      }
+    );
   });
 
   describe('loadRegisteredPlatform', () => {
@@ -1118,399 +1058,6 @@ describe('registration app', () => {
         expect(platform?.version).toBe(expectedVersion);
       }
     );
-  });
-
-  describe('loadRegisteredSaasPlatformMetadata', () => {
-    const startDate = '2026-01-01T00:00:00.000Z';
-    const endDate = '2027-01-01T00:00:00.000Z';
-    const fullMetadata = {
-      hostname: 'my-platform.example.com',
-      plan: 'Enterprise',
-      start_date: startDate,
-      end_date: endDate,
-      region: 'eu-west',
-    };
-    const emptyMetadata = {
-      hostname: null,
-      plan: null,
-      start_date: null,
-      end_date: null,
-      region: null,
-    };
-
-    let platformId: string;
-    let serviceInstanceId: ServiceInstanceId;
-
-    beforeEach(async () => {
-      requestContext.set(requestContextRegistererUserSecondOrga);
-      platformId = uuidv4();
-      serviceInstanceId = await RegistrationDomain.registerNewPlatform({
-        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
-        serviceDefinitionId: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
-        configuration: {
-          registerer_id:
-            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
-          platform_id: platformId,
-          platform_url: 'http://example.com',
-          platform_title: 'My OpenCTI SaaS platform',
-          platform_contract: PlatformContract.Ee,
-          platform_version: '6.7.17',
-          token: uuidv4(),
-          commercial_model: CommercialModel.Saas,
-        },
-        platformIdentifier: PlatformIdentifier.Opencti,
-      });
-    });
-
-    afterEach(async () => {
-      vi.restoreAllMocks();
-      await PlatformConfigurationDomain.deleteConfigurationBy({
-        service_instance_id: serviceInstanceId,
-      });
-      await ServiceInstanceDomain.deleteServiceInstanceBy({
-        id: serviceInstanceId,
-      });
-    });
-
-    const mockSaasManagerResponse = (response: () => Promise<Response>) =>
-      vi
-        .spyOn(SaasManagerClient, 'callInstanceApi')
-        .mockImplementation(response);
-
-    const mockSaasManagerFullMetadata = () =>
-      mockSaasManagerResponse(
-        async () =>
-          ({
-            ok: true,
-            status: 200,
-            json: async () => fullMetadata,
-          }) as Response
-      );
-
-    it('should ask the SaaS Manager for the platform_id of the registered platform', async () => {
-      // Given
-      const callSpy = mockSaasManagerFullMetadata();
-
-      // When
-      await RegistrationApp.loadRegisteredSaasPlatformMetadata(
-        serviceInstanceId
-      );
-
-      // Then
-      expect(callSpy).toHaveBeenCalledExactlyOnceWith({
-        platform_id: platformId,
-      });
-    });
-
-    it('should return the metadata sent by the SaaS Manager', async () => {
-      // Given
-      mockSaasManagerResponse(
-        async () =>
-          ({
-            ok: true,
-            status: 200,
-            json: async () => ({
-              ...fullMetadata,
-              version: '6.7.17',
-              unexpected: 'ignored',
-            }),
-          }) as Response
-      );
-
-      // When
-      const metadata =
-        await RegistrationApp.loadRegisteredSaasPlatformMetadata(
-          serviceInstanceId
-        );
-
-      // Then
-      expect(metadata).toEqual(fullMetadata);
-    });
-
-    it.each`
-      case                         | body
-      ${'the body is null'}        | ${null}
-      ${'the body is empty'}       | ${{}}
-      ${'the fields are explicit'} | ${emptyMetadata}
-    `('should return null fields when $case', async ({ body }) => {
-      // Given
-      mockSaasManagerResponse(
-        async () =>
-          ({
-            ok: true,
-            status: 200,
-            json: async () => body,
-          }) as Response
-      );
-
-      // When
-      const metadata =
-        await RegistrationApp.loadRegisteredSaasPlatformMetadata(
-          serviceInstanceId
-        );
-
-      // Then
-      expect(metadata).toEqual(emptyMetadata);
-    });
-
-    it('should keep the fields sent when the SaaS Manager sends only some of them', async () => {
-      // Given
-      mockSaasManagerResponse(
-        async () =>
-          ({
-            ok: true,
-            status: 200,
-            json: async () => ({ hostname: fullMetadata.hostname }),
-          }) as Response
-      );
-
-      // When
-      const metadata =
-        await RegistrationApp.loadRegisteredSaasPlatformMetadata(
-          serviceInstanceId
-        );
-
-      // Then
-      expect(metadata).toEqual({
-        ...emptyMetadata,
-        hostname: fullMetadata.hostname,
-      });
-    });
-
-    it.each`
-      case                     | fields
-      ${'an unparseable date'} | ${{ start_date: 'not a date', end_date: '2027-13-45' }}
-      ${'non-string values'}   | ${{ hostname: 42, plan: { name: 'Enterprise' }, start_date: 1767225600000, end_date: true, region: ['eu-west'] }}
-      ${'empty strings'}       | ${{ hostname: '', plan: '', start_date: '', end_date: '', region: '' }}
-    `(
-      'should return null for the fields the SaaS Manager sends as $case',
-      async ({ fields }) => {
-        // Given
-        mockSaasManagerResponse(
-          async () =>
-            ({
-              ok: true,
-              status: 200,
-              json: async () => ({ ...fullMetadata, ...fields }),
-            }) as Response
-        );
-
-        // When
-        const metadata =
-          await RegistrationApp.loadRegisteredSaasPlatformMetadata(
-            serviceInstanceId
-          );
-
-        // Then
-        expect(metadata).toEqual({
-          ...fullMetadata,
-          ...Object.fromEntries(Object.keys(fields).map((key) => [key, null])),
-        });
-      }
-    );
-
-    it('should return the dates sent by the SaaS Manager as ISO strings', async () => {
-      // Given
-      mockSaasManagerResponse(
-        async () =>
-          ({
-            ok: true,
-            status: 200,
-            json: async () => ({
-              ...fullMetadata,
-              start_date: '2026-01-01T01:00:00+01:00',
-              end_date: '2027-01-01',
-            }),
-          }) as Response
-      );
-
-      // When
-      const metadata =
-        await RegistrationApp.loadRegisteredSaasPlatformMetadata(
-          serviceInstanceId
-        );
-
-      // Then
-      expect(metadata).toEqual(fullMetadata);
-    });
-
-    it.each`
-      case                       | response
-      ${'the call fails'}        | ${() => Promise.reject(new Error('fetch failed'))}
-      ${'it returns 401'}        | ${async () => ({ ok: false, status: 401, json: async () => fullMetadata }) as Response}
-      ${'it returns 404'}        | ${async () => ({ ok: false, status: 404, json: async () => fullMetadata }) as Response}
-      ${'it returns 500'}        | ${async () => ({ ok: false, status: 500, json: async () => fullMetadata }) as Response}
-      ${'the body is malformed'} | ${async () => ({ ok: true, status: 200, json: async () => Promise.reject(new SyntaxError('Unexpected token')) }) as Response}
-    `('should return null when $case', async ({ response }) => {
-      // Given
-      mockSaasManagerResponse(response);
-
-      // When
-      const metadata =
-        await RegistrationApp.loadRegisteredSaasPlatformMetadata(
-          serviceInstanceId
-        );
-
-      // Then
-      expect(metadata).toBeNull();
-    });
-
-    it('should return null without asking the SaaS Manager when the service instance is unknown', async () => {
-      // Given
-      const callSpy = mockSaasManagerFullMetadata();
-
-      // When
-      const metadata = await RegistrationApp.loadRegisteredSaasPlatformMetadata(
-        uuidv4() as ServiceInstanceId
-      );
-
-      // Then
-      expect(metadata).toBeNull();
-      expect(callSpy).not.toHaveBeenCalled();
-    });
-
-    it('should return null without asking the SaaS Manager when the platform belongs to another organization', async () => {
-      // Given
-      const callSpy = mockSaasManagerFullMetadata();
-      requestContext.set(requestContextSimpleUserFiligran2);
-
-      // When
-      const metadata =
-        await RegistrationApp.loadRegisteredSaasPlatformMetadata(
-          serviceInstanceId
-        );
-
-      // Then
-      expect(metadata).toBeNull();
-      expect(callSpy).not.toHaveBeenCalled();
-    });
-
-    it.each([
-      ['READ_SAAS_METRICS', CAPABILITY_READ_SAAS_METRICS],
-      ['BYPASS', CAPABILITY_BYPASS],
-    ])(
-      'should return the metadata of a platform of another organization when the user has %s',
-      async (_, capability) => {
-        // Given
-        const callSpy = mockSaasManagerFullMetadata();
-        requestContext.set({
-          ...requestContextSimpleUserFiligran2,
-          user: {
-            ...requestContextSimpleUserFiligran2.user,
-            capabilities: [capability],
-          },
-        });
-
-        // When
-        const metadata =
-          await RegistrationApp.loadRegisteredSaasPlatformMetadata(
-            serviceInstanceId
-          );
-
-        // Then
-        expect(metadata).toEqual(fullMetadata);
-        expect(callSpy).toHaveBeenCalledExactlyOnceWith({
-          platform_id: platformId,
-        });
-      }
-    );
-
-    describe('cache', () => {
-      afterEach(() => {
-        vi.useRealTimers();
-      });
-
-      it('should not ask the SaaS Manager again within a minute', async () => {
-        // Given
-        vi.useFakeTimers({ toFake: ['Date'] });
-        const callSpy = mockSaasManagerFullMetadata();
-        await RegistrationApp.loadRegisteredSaasPlatformMetadata(
-          serviceInstanceId
-        );
-        vi.setSystemTime(Date.now() + 59_000);
-
-        // When
-        const metadata =
-          await RegistrationApp.loadRegisteredSaasPlatformMetadata(
-            serviceInstanceId
-          );
-
-        // Then
-        expect(metadata).toEqual(fullMetadata);
-        expect(callSpy).toHaveBeenCalledOnce();
-      });
-
-      it('should ask the SaaS Manager again once the minute has passed', async () => {
-        // Given
-        vi.useFakeTimers({ toFake: ['Date'] });
-        const callSpy = mockSaasManagerFullMetadata();
-        await RegistrationApp.loadRegisteredSaasPlatformMetadata(
-          serviceInstanceId
-        );
-        vi.setSystemTime(Date.now() + 60_000);
-
-        // When
-        await RegistrationApp.loadRegisteredSaasPlatformMetadata(
-          serviceInstanceId
-        );
-
-        // Then
-        expect(callSpy).toHaveBeenCalledTimes(2);
-      });
-
-      it('should share a single SaaS Manager call between concurrent views', async () => {
-        // Given
-        const callSpy = mockSaasManagerFullMetadata();
-
-        // When
-        const metadata = await Promise.all([
-          RegistrationApp.loadRegisteredSaasPlatformMetadata(serviceInstanceId),
-          RegistrationApp.loadRegisteredSaasPlatformMetadata(serviceInstanceId),
-        ]);
-
-        // Then
-        expect(metadata).toEqual([fullMetadata, fullMetadata]);
-        expect(callSpy).toHaveBeenCalledOnce();
-      });
-
-      it('should ask the SaaS Manager again after a failure', async () => {
-        // Given
-        const callSpy = mockSaasManagerFullMetadata().mockRejectedValueOnce(
-          new Error('fetch failed')
-        );
-        await RegistrationApp.loadRegisteredSaasPlatformMetadata(
-          serviceInstanceId
-        );
-
-        // When
-        const metadata =
-          await RegistrationApp.loadRegisteredSaasPlatformMetadata(
-            serviceInstanceId
-          );
-
-        // Then
-        expect(metadata).toEqual(fullMetadata);
-        expect(callSpy).toHaveBeenCalledTimes(2);
-      });
-
-      it('should not serve the cached metadata to a user of another organization', async () => {
-        // Given
-        mockSaasManagerFullMetadata();
-        await RegistrationApp.loadRegisteredSaasPlatformMetadata(
-          serviceInstanceId
-        );
-        requestContext.set(requestContextSimpleUserFiligran2);
-
-        // When
-        const metadata =
-          await RegistrationApp.loadRegisteredSaasPlatformMetadata(
-            serviceInstanceId
-          );
-
-        // Then
-        expect(metadata).toBeNull();
-      });
-    });
   });
 
   describe('unregisterPlatform', () => {

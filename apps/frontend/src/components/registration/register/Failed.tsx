@@ -9,7 +9,7 @@ export const RegisterStateFailed = ({ cancel }: RegisterStateFailedProps) => {
   const t = useTranslate();
   return (
     <RegistrationLayout cancel={cancel}>
-      <h1>{t(`Register.Failed.Title`)}</h1>
+      <h1 className="title-sm">{t(`Register.Failed.Title`)}</h1>
       <p>{t(`Register.Failed.Description`)}</p>
     </RegistrationLayout>
   );

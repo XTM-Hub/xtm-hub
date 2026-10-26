@@ -233,30 +233,113 @@ const renderFailure = (failure) => {
   ].join('\n');
 };
 
+const escapeCell = (text) =>
+  escapeHtml(text)
+    .replace(/[\\`*_~[\]]/g, '\\$&')
+    .replace(/\|/g, '&#124;')
+    .replace(/\r?\n/g, ' ');
+
+const commonPrefix = (texts) =>
+  texts.reduce((prefix, text) => {
+    let length = 0;
+    while (length < prefix.length && prefix[length] === text[length]) {
+      length++;
+    }
+    return prefix.slice(0, length);
+  });
+const reverse = (text) => [...text].reverse().join('');
+
+export const splitCases = (titles) => {
+  if (new Set(titles).size === 1) {
+    return null;
+  }
+  const sharedStart = commonPrefix(titles);
+  const prefix = sharedStart.slice(0, sharedStart.lastIndexOf(' ') + 1);
+  const rests = titles.map((title) => title.slice(prefix.length));
+  const sharedEnd = reverse(commonPrefix(rests.map(reverse)));
+  const suffix = sharedEnd.includes(' ') ? sharedEnd.slice(sharedEnd.indexOf(' ')) : '';
+  const cases = rests.map((rest) => rest.slice(0, rest.length - suffix.length).trim());
+  if (cases.some((label) => label === '')) {
+    return null;
+  }
+  const title =
+    prefix || suffix
+      ? [prefix.trim(), '…', suffix.trim()].filter(Boolean).join(' ')
+      : `${titles.length} cases`;
+  return { title, cases };
+};
+
+const groupCases = (tests) => {
+  const groups = [];
+  for (const test of tests) {
+    const group = groups.at(-1);
+    const sameCall =
+      group &&
+      test.line !== undefined &&
+      group[0].line === test.line &&
+      group[0].suite.join(' › ') === test.suite.join(' › ');
+    if (sameCall) {
+      group.push(test);
+    } else {
+      groups.push([test]);
+    }
+  }
+  return groups;
+};
+
+const renderTestTable = (tests, changed) => {
+  const row = (result, mark, title) =>
+    `|${(changed ? [result, mark, title] : [result, title]).map((cell) => (cell ? ` ${cell} ` : ' ')).join('|')}|`;
+  const rows = changed
+    ? ['| Result | Changed | Test |', '| :-: | :-: | :-- |']
+    : ['| Result | Test |', '| :-: | :-- |'];
+  let currentSuite = null;
+  for (const group of groupCases(tests)) {
+    const suite = group[0].suite.join(' › ');
+    if (suite !== currentSuite && (suite || currentSuite !== null)) {
+      rows.push(row('', '', suite ? `**${escapeCell(suite)}**` : '**(top level)**'));
+    }
+    currentSuite = suite;
+    const mark = (test) => (changed?.has(test) ? '✏️' : '');
+    const split = group.length > 1 ? splitCases(group.map((test) => test.title)) : null;
+    if (!split) {
+      rows.push(...group.map((test) => row(statusIcon(test.status), mark(test), escapeCell(test.title))));
+      continue;
+    }
+    const passed = group.filter((test) => test.status === 'passed').length;
+    const failed = group.some((test) => test.status === 'failed');
+    rows.push(
+      row(
+        `${failed ? '❌ ' : ''}${passed} / ${group.length}`,
+        group.some((test) => changed?.has(test)) ? '✏️' : '',
+        escapeCell(split.title)
+      ),
+      ...group.map((test, index) =>
+        row(statusIcon(test.status), '', `&emsp;↳ <code>${escapeCell(split.cases[index])}</code>`)
+      )
+    );
+  }
+  return rows;
+};
+
 const renderTestFile = (testFile, { changedTests, sharedChanged }) => {
   const changed = new Set(changedTests);
   const failed = testFile.status === 'failed' || testFile.tests.some((test) => test.status === 'failed');
-  const renderTest = (test) =>
-    `- ${statusIcon(test.status)} ${changed.has(test) ? '✏️ ' : ''}${escapeHtml(test.name)}`;
   const shown = testFile.tests.filter((test) => changed.has(test) || test.status === 'failed');
   const others = testFile.tests.filter((test) => !shown.includes(test));
   const lines = [
     `<details open><summary>${failed ? '❌' : '✅'} <code>${escapeHtml(testFile.path)}</code> · ${changed.size} changed of ${pluralize(testFile.tests.length, 'test')}${sharedChanged ? ' · ⚠️ shared code changed' : ''}</summary>`,
     '',
   ];
-  if (sharedChanged) {
-    lines.push(
-      '⚠️ Code outside the tests changed (imports, mocks, hooks or describe blocks): every test of this file may be affected.',
-      ''
-    );
+  if (shown.length > 0) {
+    lines.push(...renderTestTable(shown, changed));
   }
-  lines.push(...shown.map(renderTest));
   if (others.length > 0) {
     lines.push(
       '',
       `<details><summary>${pluralize(others.length, 'other test')}</summary>`,
       '',
-      ...others.map(renderTest),
+      ...renderTestTable(others, null),
       '',
       '</details>'
     );
@@ -266,14 +349,12 @@ const renderTestFile = (testFile, { changedTests, sharedChanged }) => {
 };
 
 const renderRemoved = (removedTitles, deletedFiles) => {
-  const lines = ['#### 🗑️ Tests removed or renamed', ''];
+  const lines = ['#### 🗑️ Tests removed or renamed', '', '| Test file | Removed or renamed tests |', '| :-- | :-- |'];
   for (const file of deletedFiles) {
-    lines.push(`- <code>${escapeHtml(file)}</code>: test file deleted`);
+    lines.push(`| <code>${escapeCell(file)}</code> | _Test file deleted_ |`);
   }
   for (const [file, titles] of removedTitles) {
-    for (const title of titles) {
-      lines.push(`- <code>${escapeHtml(file)}</code> › ${escapeHtml(title)}`);
-    }
+    lines.push(`| <code>${escapeCell(file)}</code> | ${titles.map(escapeCell).join('<br>')} |`);
   }
   return [...lines, ''].join('\n');
 };
@@ -324,7 +405,7 @@ export const buildReport = ({
       blocks.push('_This pull request changes no test file here._\n');
     } else {
       blocks.push(
-        '_✏️ marks the tests whose own code this pull request adds or changes. ⚠️ flags a file whose code outside the tests changed._\n',
+        '_✏️ marks the tests whose own code this pull request adds or changes. ⚠️ shared code changed: code outside the tests (imports, mocks, hooks or describe blocks) changed, so every test of the file may be affected._\n',
         ...fileBlocks
       );
     }

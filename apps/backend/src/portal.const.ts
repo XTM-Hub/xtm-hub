@@ -21,6 +21,8 @@ export const MARKETING_USER_UUID: UserId =
   '84f72a20-25d3-4cce-b32d-54cb1fb5908f' as UserId;
 export const PLATFORM_NAME = 'Filigran';
 export const PLATFORM_DOMAIN = ['filigran.io'];
+// IdP group carried by the accounts of the Filigran organisation
+export const PLATFORM_IDP_GROUP = 'Filigran';
 export const PLATFORM_ORGANIZATION_UUID: OrganizationId =
   'ba091095-418f-4b4f-b150-6c9295e232c4' as OrganizationId;
 export const ADMIN_UUID: UserId =

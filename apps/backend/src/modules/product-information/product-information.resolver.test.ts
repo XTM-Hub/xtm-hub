@@ -8,41 +8,43 @@ import {
   requestContextSimpleUserFiligran2,
   SERVICES,
   TEST_ORGANIZATIONS,
-} from '../../../../../tests/tests.const';
+} from '../../../tests/tests.const';
 import {
   CommercialModel,
   PlatformContract,
   PlatformIdentifier,
-  SaasPlatformMetadata,
-} from '../../../../__generated__/resolvers-types';
-import { requestContext } from '../../../../context/request.context';
-import { ServiceInstanceId } from '../../../../model/kanel/public/ServiceInstance';
-import { SaasManagerClient } from '../../../../thirdparty/saasmanager/client';
-import { ServiceInstanceDomain } from '../../../service/instance/service-instance.domain';
-import { PlatformConfigurationDomain } from '../../platform-configuration/platform-configuration.domain';
-import { RegistrationApp } from '../../registration.app';
-import { RegistrationDomain } from '../../registration.domain';
-import registrationResolver from '../../registration.resolver';
+  SaasPlatformData,
+} from '../../__generated__/resolvers-types';
+import { requestContext } from '../../context/request.context';
+import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
+import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
+import { PlatformConfigurationDomain } from '../registration/platform-configuration/platform-configuration.domain';
+import { RegistrationDomain } from '../registration/registration.domain';
+import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
+import { ProductInformationApp } from './product-information.app';
+import productInformationResolver from './product-information.resolver';
 
-describe('query.registeredSaasPlatformMetadata', () => {
-  it('should pass the service_instance_id to registrationApp and return its metadata', async () => {
+describe('query.registeredSaasPlatformData', () => {
+  it('should pass the service_instance_id to productInformationApp and return its data', async () => {
     // Given
     const serviceInstanceId = uuidv4() as ServiceInstanceId;
-    const expectedMetadata: SaasPlatformMetadata = {
-      hostname: 'my-platform.example.com',
-      plan: 'Enterprise',
-      start_date: new Date('2026-01-01T00:00:00.000Z'),
-      end_date: new Date('2027-01-01T00:00:00.000Z'),
-      region: 'eu-west',
+    const expectedData: SaasPlatformData = {
+      metadata: {
+        hostname: 'my-platform.example.com',
+        plan: 'Enterprise',
+        start_date: new Date('2026-01-01T00:00:00.000Z'),
+        end_date: new Date('2027-01-01T00:00:00.000Z'),
+        region: 'eu-west',
+      },
     };
     vi.spyOn(
-      RegistrationApp,
-      'loadRegisteredSaasPlatformMetadata'
-    ).mockResolvedValue(expectedMetadata);
+      ProductInformationApp,
+      'loadRegisteredSaasPlatformData'
+    ).mockResolvedValue(expectedData);
 
     // When
-    const result = await registrationResolver.Query!
-      .registeredSaasPlatformMetadata!(
+    const result = await productInformationResolver.Query!
+      .registeredSaasPlatformData!(
       {},
       { input: { service_instance_id: serviceInstanceId } },
       contextSimpleUserFiligran2,
@@ -51,21 +53,21 @@ describe('query.registeredSaasPlatformMetadata', () => {
 
     // Then
     expect(
-      RegistrationApp.loadRegisteredSaasPlatformMetadata
+      ProductInformationApp.loadRegisteredSaasPlatformData
     ).toHaveBeenCalledWith(serviceInstanceId);
-    expect(result).toMatchObject(expectedMetadata);
+    expect(result).toMatchObject(expectedData);
   });
 
-  it('should return null when registrationApp cannot load the metadata', async () => {
+  it('should return null when productInformationApp cannot load the data', async () => {
     // Given
     vi.spyOn(
-      RegistrationApp,
-      'loadRegisteredSaasPlatformMetadata'
+      ProductInformationApp,
+      'loadRegisteredSaasPlatformData'
     ).mockResolvedValue(null);
 
     // When
-    const result = await registrationResolver.Query!
-      .registeredSaasPlatformMetadata!(
+    const result = await productInformationResolver.Query!
+      .registeredSaasPlatformData!(
       {},
       { input: { service_instance_id: uuidv4() as ServiceInstanceId } },
       contextSimpleUserFiligran2,
@@ -125,13 +127,13 @@ describe('query.registeredSaasPlatformMetadata', () => {
         json: async () => metadata,
       } as Response);
 
-    it('should return the metadata of a platform of the user organization', async () => {
+    it('should return the data of a platform of the user organization', async () => {
       // Given
       const callSpy = spySaasManager();
 
       // When
-      const result = await registrationResolver.Query!
-        .registeredSaasPlatformMetadata!(
+      const result = await productInformationResolver.Query!
+        .registeredSaasPlatformData!(
         {},
         { input: { service_instance_id: serviceInstanceId } },
         contextRegistererUserSecondOrga,
@@ -139,7 +141,7 @@ describe('query.registeredSaasPlatformMetadata', () => {
       );
 
       // Then
-      expect(result).toMatchObject(metadata);
+      expect(result).toMatchObject({ metadata });
       expect(callSpy).toHaveBeenCalledExactlyOnceWith({
         platform_id: platformId,
       });
@@ -151,8 +153,8 @@ describe('query.registeredSaasPlatformMetadata', () => {
       requestContext.set(requestContextSimpleUserFiligran2);
 
       // When
-      const result = await registrationResolver.Query!
-        .registeredSaasPlatformMetadata!(
+      const result = await productInformationResolver.Query!
+        .registeredSaasPlatformData!(
         {},
         { input: { service_instance_id: serviceInstanceId } },
         contextSimpleUserFiligran2,

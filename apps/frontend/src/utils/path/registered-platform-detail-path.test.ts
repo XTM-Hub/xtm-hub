@@ -53,6 +53,21 @@ describe('registeredPlatformDetailPath', () => {
     }
   );
 
+  it('should return undefined for an XTM One platform, which has no detail page', () => {
+    // Given
+    const input = {
+      identifier: ServiceDefinitionIdentifier.XtmoneRegistration,
+      deploymentRequest: null,
+      serviceInstanceId: SERVICE_INSTANCE_ID,
+    };
+
+    // When
+    const path = registeredPlatformDetailPath(input);
+
+    // Then
+    expect(path).toBeUndefined();
+  });
+
   it('should return undefined when the platform is not a bundle product and has no service instance', () => {
     // Given
     const input = {

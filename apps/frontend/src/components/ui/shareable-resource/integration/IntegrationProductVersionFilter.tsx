@@ -105,6 +105,7 @@ export const IntegrationProductVersionFilter = ({
       label={label}
       labelPosition="none"
       placeholder={placeholder}
+      inputClassName="content-compact"
       // The field drops typed text on blur, not when the list closes.
       onBlur={() => setSearch('')}
       options={options}

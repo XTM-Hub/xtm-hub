@@ -174,14 +174,6 @@ input RegisteredPlatformInput {
   service_instance_id: ServiceInstanceId!
 }
 
-type SaasPlatformMetadata {
-  hostname: String
-  plan: String
-  start_date: Date
-  end_date: Date
-  region: String
-}
-
 input AutoRegisterPlatformInput {
   platform: PlatformInput!
   existing_users_count: Int
@@ -195,9 +187,6 @@ type Query {
     input: CanUnregisterPlatformInput!
   ): CanUnregisterResponse! @auth
   registeredPlatform(input: RegisteredPlatformInput!): RegisteredPlatform @auth
-  registeredSaasPlatformMetadata(
-    input: RegisteredPlatformInput!
-  ): SaasPlatformMetadata @auth
   registeredPlatforms(input: RegisteredPlatformsInput!): [RegisteredPlatform!]!
     @auth
   saasPlatforms(

@@ -1,4 +1,5 @@
 import {
+  BundleUserServiceGroupsQuery,
   PlatformIdentifier,
   ServiceGroupName,
   UserAccountStatus,
@@ -52,6 +53,16 @@ export const formatEmailList = (
 
 export const isServiceGroupName = (value: string): value is ServiceGroupName =>
   (Object.values(ServiceGroupName) as string[]).includes(value);
+
+export const removeUsersFromBundleCache = (
+  previous: BundleUserServiceGroupsQuery | undefined,
+  userIds: string[]
+): BundleUserServiceGroupsQuery | undefined =>
+  previous && {
+    bundleUserServiceGroups: previous.bundleUserServiceGroups.filter(
+      (row) => !userIds.includes(row.user.id)
+    ),
+  };
 
 export interface UserPlatformGroups {
   id: string;

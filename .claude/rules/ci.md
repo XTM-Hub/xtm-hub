@@ -14,7 +14,8 @@ paths:
 ## Main pipeline
 
 `.github/workflows/dockerbuild-ci.yml` runs on `workflow_dispatch`, `merge_group`, pushes to `main` and `v*` tags
-(filtered to `apps/**`, `.github/actions/**`, the workflow file, `package.json`, `yarn.lock`), and pull requests targeting `main` or
+(filtered to `apps/**`, `.github/actions/**`, the workflow file, the `xtm-hub-dev/docker-compose-ci*.yml` files,
+`package.json`, `yarn.lock`), and pull requests targeting `main` or
 `issue/*`.
 
 ```mermaid
@@ -25,6 +26,7 @@ flowchart LR
   C --> E[run-front-unit-tests-shards<br/>8 shards]
   C --> F[run-api-unit-tests-shards<br/>8 shards]
   C --> G[deploy-feature-branch]
+  C --> P[run-e2e-platform-tests<br/>opencti · openaev]
   D --> H[run-e2e-tests]
   E --> I[run-front-unit-tests]
   F --> J[run-api-unit-tests]
@@ -42,6 +44,14 @@ flowchart LR
 - The three test suites each fan out over **8 shards**; the unsharded `run-*-tests` jobs are `always()` aggregators
   that collect the shard results, and they are what `build-images-prod` actually depends on. Unit test jobs are
   skipped on tag builds.
+- **run-e2e-platform-tests** runs `tests/platforms/` against the `opencti/platform:rolling` and
+  `openaev/platform:rolling` images, one matrix leg per platform, on pull requests and manual runs only. It is
+  **non-blocking**: nothing depends on it, it runs with `continue-on-error`, and the "Ready to merge" automation of
+  `pr-issue-automation.yml` ignores its checks, so a broken rolling image warns before a release without blocking a
+  merge.
+  Its compose files are `xtm-hub-dev/docker-compose-ci-opencti.yml` and `docker-compose-ci-openaev.yml`, layered on
+  `docker-compose-ci.yml`. Each leg posts its own pull request report ("OpenCTI e2e", "OpenAEV e2e", told apart by a
+  `comment-tag`), next to the "XTM Hub e2e" report of the shards, which run the `chromium` Playwright project only.
 - **deploy-feature-branch** publishes an ephemeral preview at `https://dev-pr-{number}.hub.staging.filigran.io`.
 - **build-images-prod** and **deploy** only run outside pull requests.
 
@@ -65,6 +75,7 @@ Before the Docker builds, migrations and seeds are copied into the e2e workspace
 ```bash
 cp -r ./apps/backend/src/migrations ./apps/e2e/migrations
 cp -r ./apps/backend/tests/seeds ./apps/e2e/seeds
+cp ./apps/backend/tests/test-utils.ts ./apps/e2e/test-utils.ts
 ```
 
 ## Feature environments (opt-out)

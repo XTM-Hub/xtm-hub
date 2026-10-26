@@ -1,0 +1,46 @@
+meta {
+  name: registeredSaasPlatformData
+  type: graphql
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/graphql-api
+  body: graphql
+  auth: inherit
+}
+
+headers {
+  cookie: {{cookie}}
+}
+
+body:graphql {
+  query RegisteredSaasPlatformData($input: RegisteredPlatformInput!) {
+    registeredSaasPlatformData(input: $input) {
+      metadata {
+        hostname
+        plan
+        start_date
+        end_date
+        region
+      }
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "input": {
+      "service_instance_id": ""
+    }
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  Set service_instance_id to the service instance of a registered SaaS platform of your organization.
+}

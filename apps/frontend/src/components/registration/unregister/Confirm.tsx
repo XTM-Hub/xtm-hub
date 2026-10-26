@@ -21,7 +21,7 @@ export const UnregisterConfirm = ({
     <RegistrationLayout
       confirm={confirm}
       cancel={cancel}>
-      <h1>
+      <h1 className="title-sm">
         {t(`Unregister.Confirm.Title`, {
           platformIdentifier: displayedIdentifier,
           name: organizationName,

@@ -1,0 +1,427 @@
+import { v4 as uuidv4 } from 'uuid';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  CAPABILITY_READ_SAAS_METRICS,
+  requestContextRegistererUserSecondOrga,
+  requestContextSimpleUserFiligran2,
+  SERVICES,
+  TEST_ORGANIZATIONS,
+} from '../../../tests/tests.const';
+import {
+  CommercialModel,
+  PlatformContract,
+  PlatformIdentifier,
+} from '../../__generated__/resolvers-types';
+import { requestContext } from '../../context/request.context';
+import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
+import { CAPABILITY_BYPASS } from '../../portal.const';
+import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
+import { PlatformConfigurationDomain } from '../registration/platform-configuration/platform-configuration.domain';
+import { RegistrationDomain } from '../registration/registration.domain';
+import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
+import { ProductInformationApp } from './product-information.app';
+
+describe('product information app', () => {
+  describe('loadRegisteredSaasPlatformData', () => {
+    const startDate = '2026-01-01T00:00:00.000Z';
+    const endDate = '2027-01-01T00:00:00.000Z';
+    const fullMetadata = {
+      hostname: 'my-platform.example.com',
+      plan: 'Enterprise',
+      start_date: startDate,
+      end_date: endDate,
+      region: 'eu-west',
+    };
+    const emptyMetadata = {
+      hostname: null,
+      plan: null,
+      start_date: null,
+      end_date: null,
+      region: null,
+    };
+
+    let platformId: string;
+    let serviceInstanceId: ServiceInstanceId;
+
+    beforeEach(async () => {
+      requestContext.set(requestContextRegistererUserSecondOrga);
+      platformId = uuidv4();
+      serviceInstanceId = await RegistrationDomain.registerNewPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        serviceDefinitionId: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+        configuration: {
+          registerer_id:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.ID,
+          platform_id: platformId,
+          platform_url: 'http://example.com',
+          platform_title: 'My OpenCTI SaaS platform',
+          platform_contract: PlatformContract.Ee,
+          platform_version: '6.7.17',
+          token: uuidv4(),
+          commercial_model: CommercialModel.Saas,
+        },
+        platformIdentifier: PlatformIdentifier.Opencti,
+      });
+    });
+
+    afterEach(async () => {
+      await PlatformConfigurationDomain.deleteConfigurationBy({
+        service_instance_id: serviceInstanceId,
+      });
+      await ServiceInstanceDomain.deleteServiceInstanceBy({
+        id: serviceInstanceId,
+      });
+    });
+
+    const mockSaasManagerResponse = (response: () => Promise<Response>) =>
+      vi
+        .spyOn(SaasManagerClient, 'callInstanceApi')
+        .mockImplementation(response);
+
+    const mockSaasManagerFullMetadata = () =>
+      mockSaasManagerResponse(
+        async () =>
+          ({
+            ok: true,
+            status: 200,
+            json: async () => fullMetadata,
+          }) as Response
+      );
+
+    it('should ask the SaaS Manager for the platform_id of the registered platform', async () => {
+      // Given
+      const callSpy = mockSaasManagerFullMetadata();
+
+      // When
+      await ProductInformationApp.loadRegisteredSaasPlatformData(
+        serviceInstanceId
+      );
+
+      // Then
+      expect(callSpy).toHaveBeenCalledExactlyOnceWith({
+        platform_id: platformId,
+      });
+    });
+
+    it('should return the metadata sent by the SaaS Manager', async () => {
+      // Given
+      mockSaasManagerResponse(
+        async () =>
+          ({
+            ok: true,
+            status: 200,
+            json: async () => ({
+              ...fullMetadata,
+              version: '6.7.17',
+              unexpected: 'ignored',
+            }),
+          }) as Response
+      );
+
+      // When
+      const data =
+        await ProductInformationApp.loadRegisteredSaasPlatformData(
+          serviceInstanceId
+        );
+
+      // Then
+      expect(data).toEqual({ metadata: fullMetadata });
+    });
+
+    it.each`
+      case                         | body
+      ${'the body is null'}        | ${null}
+      ${'the body is empty'}       | ${{}}
+      ${'the fields are explicit'} | ${emptyMetadata}
+    `('should return null fields when $case', async ({ body }) => {
+      // Given
+      mockSaasManagerResponse(
+        async () =>
+          ({
+            ok: true,
+            status: 200,
+            json: async () => body,
+          }) as Response
+      );
+
+      // When
+      const data =
+        await ProductInformationApp.loadRegisteredSaasPlatformData(
+          serviceInstanceId
+        );
+
+      // Then
+      expect(data).toEqual({ metadata: emptyMetadata });
+    });
+
+    it('should keep the fields sent when the SaaS Manager sends only some of them', async () => {
+      // Given
+      mockSaasManagerResponse(
+        async () =>
+          ({
+            ok: true,
+            status: 200,
+            json: async () => ({ hostname: fullMetadata.hostname }),
+          }) as Response
+      );
+
+      // When
+      const data =
+        await ProductInformationApp.loadRegisteredSaasPlatformData(
+          serviceInstanceId
+        );
+
+      // Then
+      expect(data).toEqual({
+        metadata: { ...emptyMetadata, hostname: fullMetadata.hostname },
+      });
+    });
+
+    it.each`
+      case                     | fields
+      ${'an unparseable date'} | ${{ start_date: 'not a date', end_date: '2027-13-45' }}
+      ${'non-string values'}   | ${{ hostname: 42, plan: { name: 'Enterprise' }, start_date: 1767225600000, end_date: true, region: ['eu-west'] }}
+      ${'empty strings'}       | ${{ hostname: '', plan: '', start_date: '', end_date: '', region: '' }}
+    `(
+      'should return null for the fields the SaaS Manager sends as $case',
+      async ({ fields }) => {
+        // Given
+        mockSaasManagerResponse(
+          async () =>
+            ({
+              ok: true,
+              status: 200,
+              json: async () => ({ ...fullMetadata, ...fields }),
+            }) as Response
+        );
+
+        // When
+        const data =
+          await ProductInformationApp.loadRegisteredSaasPlatformData(
+            serviceInstanceId
+          );
+
+        // Then
+        expect(data).toEqual({
+          metadata: {
+            ...fullMetadata,
+            ...Object.fromEntries(
+              Object.keys(fields).map((key) => [key, null])
+            ),
+          },
+        });
+      }
+    );
+
+    it('should return the dates sent by the SaaS Manager as ISO strings', async () => {
+      // Given
+      mockSaasManagerResponse(
+        async () =>
+          ({
+            ok: true,
+            status: 200,
+            json: async () => ({
+              ...fullMetadata,
+              start_date: '2026-01-01T01:00:00+01:00',
+              end_date: '2027-01-01',
+            }),
+          }) as Response
+      );
+
+      // When
+      const data =
+        await ProductInformationApp.loadRegisteredSaasPlatformData(
+          serviceInstanceId
+        );
+
+      // Then
+      expect(data).toEqual({ metadata: fullMetadata });
+    });
+
+    it.each`
+      case                       | response
+      ${'the call fails'}        | ${() => Promise.reject(new Error('fetch failed'))}
+      ${'it returns 401'}        | ${async () => ({ ok: false, status: 401, json: async () => fullMetadata }) as Response}
+      ${'it returns 204'}        | ${async () => ({ ok: true, status: 204, json: async () => fullMetadata }) as Response}
+      ${'it returns 404'}        | ${async () => ({ ok: false, status: 404, json: async () => fullMetadata }) as Response}
+      ${'it returns 500'}        | ${async () => ({ ok: false, status: 500, json: async () => fullMetadata }) as Response}
+      ${'the body is malformed'} | ${async () => ({ ok: true, status: 200, json: async () => Promise.reject(new SyntaxError('Unexpected token')) }) as Response}
+    `('should return null when $case', async ({ response }) => {
+      // Given
+      mockSaasManagerResponse(response);
+
+      // When
+      const data =
+        await ProductInformationApp.loadRegisteredSaasPlatformData(
+          serviceInstanceId
+        );
+
+      // Then
+      expect(data).toBeNull();
+    });
+
+    it('should return null without asking the SaaS Manager when the service instance is unknown', async () => {
+      // Given
+      const callSpy = mockSaasManagerFullMetadata();
+
+      // When
+      const data = await ProductInformationApp.loadRegisteredSaasPlatformData(
+        uuidv4() as ServiceInstanceId
+      );
+
+      // Then
+      expect(data).toBeNull();
+      expect(callSpy).not.toHaveBeenCalled();
+    });
+
+    it('should return null without asking the SaaS Manager when the platform belongs to another organization', async () => {
+      // Given
+      const callSpy = mockSaasManagerFullMetadata();
+      requestContext.set(requestContextSimpleUserFiligran2);
+
+      // When
+      const data =
+        await ProductInformationApp.loadRegisteredSaasPlatformData(
+          serviceInstanceId
+        );
+
+      // Then
+      expect(data).toBeNull();
+      expect(callSpy).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['READ_SAAS_METRICS', CAPABILITY_READ_SAAS_METRICS],
+      ['BYPASS', CAPABILITY_BYPASS],
+    ])(
+      'should return the data of a platform of another organization when the user has %s',
+      async (_, capability) => {
+        // Given
+        const callSpy = mockSaasManagerFullMetadata();
+        requestContext.set({
+          ...requestContextSimpleUserFiligran2,
+          user: {
+            ...requestContextSimpleUserFiligran2.user,
+            capabilities: [capability],
+          },
+        });
+
+        // When
+        const data =
+          await ProductInformationApp.loadRegisteredSaasPlatformData(
+            serviceInstanceId
+          );
+
+        // Then
+        expect(data).toEqual({ metadata: fullMetadata });
+        expect(callSpy).toHaveBeenCalledExactlyOnceWith({
+          platform_id: platformId,
+        });
+      }
+    );
+
+    describe('cache', () => {
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      it('should not ask the SaaS Manager again within a minute', async () => {
+        // Given
+        vi.useFakeTimers({ toFake: ['Date'] });
+        const callSpy = mockSaasManagerFullMetadata();
+        await ProductInformationApp.loadRegisteredSaasPlatformData(
+          serviceInstanceId
+        );
+        vi.setSystemTime(Date.now() + 59_000);
+
+        // When
+        const data =
+          await ProductInformationApp.loadRegisteredSaasPlatformData(
+            serviceInstanceId
+          );
+
+        // Then
+        expect(data).toEqual({ metadata: fullMetadata });
+        expect(callSpy).toHaveBeenCalledOnce();
+      });
+
+      it('should ask the SaaS Manager again once the minute has passed', async () => {
+        // Given
+        vi.useFakeTimers({ toFake: ['Date'] });
+        const callSpy = mockSaasManagerFullMetadata();
+        await ProductInformationApp.loadRegisteredSaasPlatformData(
+          serviceInstanceId
+        );
+        vi.setSystemTime(Date.now() + 60_000);
+
+        // When
+        await ProductInformationApp.loadRegisteredSaasPlatformData(
+          serviceInstanceId
+        );
+
+        // Then
+        expect(callSpy).toHaveBeenCalledTimes(2);
+      });
+
+      it('should share a single SaaS Manager call between concurrent views', async () => {
+        // Given
+        const callSpy = mockSaasManagerFullMetadata();
+
+        // When
+        const data = await Promise.all([
+          ProductInformationApp.loadRegisteredSaasPlatformData(
+            serviceInstanceId
+          ),
+          ProductInformationApp.loadRegisteredSaasPlatformData(
+            serviceInstanceId
+          ),
+        ]);
+
+        // Then
+        expect(data).toEqual([
+          { metadata: fullMetadata },
+          { metadata: fullMetadata },
+        ]);
+        expect(callSpy).toHaveBeenCalledOnce();
+      });
+
+      it('should ask the SaaS Manager again after a failure', async () => {
+        // Given
+        const callSpy = mockSaasManagerFullMetadata().mockRejectedValueOnce(
+          new Error('fetch failed')
+        );
+        await ProductInformationApp.loadRegisteredSaasPlatformData(
+          serviceInstanceId
+        );
+
+        // When
+        const data =
+          await ProductInformationApp.loadRegisteredSaasPlatformData(
+            serviceInstanceId
+          );
+
+        // Then
+        expect(data).toEqual({ metadata: fullMetadata });
+        expect(callSpy).toHaveBeenCalledTimes(2);
+      });
+
+      it('should not serve the cached data to a user of another organization', async () => {
+        // Given
+        mockSaasManagerFullMetadata();
+        await ProductInformationApp.loadRegisteredSaasPlatformData(
+          serviceInstanceId
+        );
+        requestContext.set(requestContextSimpleUserFiligran2);
+
+        // When
+        const data =
+          await ProductInformationApp.loadRegisteredSaasPlatformData(
+            serviceInstanceId
+          );
+
+        // Then
+        expect(data).toBeNull();
+      });
+    });
+  });
+});

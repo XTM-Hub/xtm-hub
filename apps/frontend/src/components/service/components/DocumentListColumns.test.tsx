@@ -1,40 +1,99 @@
 import testRender from '@/utils/test/test-render';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { IntegrationType } from '@graphql/generated';
-import { CellContext } from '@tanstack/react-table';
+import {
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from '@tanstack/react-table';
 import { describe, expect, it } from 'vitest';
 import { buildDocumentListColumns } from './DocumentListColumns';
 
 const t = (key: string) => key;
-const CONNECTOR = {
+const COMPATIBILITY_LABEL = 'Service.List.Tab.Compatibility';
+
+const buildDocument = (
+  overrides: Partial<documentItem_fragment$data>
+): documentItem_fragment$data => ({
+  ' $fragmentType': 'documentItem_fragment',
+  __typename: 'Document',
+  id: 'document-1',
+  type: 'OPENCTI_INTEGRATION',
   active: true,
+  name: null,
+  slug: null,
+  description: null,
+  short_description: null,
+  file_name: null,
+  created_at: null,
+  updated_at: null,
+  download_number: null,
+  share_number: null,
+  children_documents: null,
+  service_instance: null,
+  subscription: null,
+  uploader: null,
+  uploader_organization: null,
+  use_cases: null,
+  ...overrides,
+});
+
+const CONNECTOR = buildDocument({
   integration_type: IntegrationType.Connector,
   manager_supported: true,
   product_version: '6.8.0',
-} as unknown as documentItem_fragment$data;
-const CSV_FEED = {
+});
+const CSV_FEED = buildDocument({
   integration_type: IntegrationType.CsvFeed,
   product_version: '6.1.0',
-} as unknown as documentItem_fragment$data;
+});
 
-const renderCell = (columnId: string, document: documentItem_fragment$data) => {
-  const cell = buildDocumentListColumns({
-    documents: [CONNECTOR, CSV_FEED],
-    t,
-    renderActions: () => null,
-  }).find((column) => column.id === columnId)?.cell;
-  if (typeof cell !== 'function') {
-    throw new Error(`column ${columnId} has no cell`);
+const useDocumentListTable = (documents: documentItem_fragment$data[]) =>
+  useReactTable({
+    columns: buildDocumentListColumns({
+      documents,
+      t,
+      renderActions: () => null,
+    }),
+    data: documents,
+    getCoreRowModel: getCoreRowModel(),
+  });
+
+const ColumnCell = ({
+  columnId,
+  document,
+}: {
+  columnId: string;
+  document: documentItem_fragment$data;
+}) => {
+  const table = useDocumentListTable([CONNECTOR, CSV_FEED]);
+  const cell = table
+    .getRowModel()
+    .rows.find((row) => row.original === document)
+    ?.getAllCells()
+    .find((rowCell) => rowCell.column.id === columnId);
+  if (!cell) {
+    throw new Error(`column ${columnId} has no cell for this document`);
   }
-  return testRender(
-    <>
-      {cell({ row: { original: document } } as CellContext<
-        documentItem_fragment$data,
-        unknown
-      >)}
-    </>
-  );
+  return flexRender(cell.column.columnDef.cell, cell.getContext());
 };
+
+const ColumnHeader = ({ columnId }: { columnId: string }) => {
+  const table = useDocumentListTable([CONNECTOR]);
+  const header = table.getFlatHeaders().find(({ id }) => id === columnId);
+  if (!header) {
+    throw new Error(`column ${columnId} has no header`);
+  }
+  return flexRender(header.column.columnDef.header, header.getContext());
+};
+
+const renderCell = (columnId: string, document: documentItem_fragment$data) =>
+  testRender(
+    <ColumnCell
+      columnId={columnId}
+      document={document}
+    />
+  );
 
 describe('buildDocumentListColumns', () => {
   it.each([
@@ -100,6 +159,17 @@ describe('buildDocumentListColumns', () => {
       expect(container).not.toBeEmptyDOMElement();
     }
   );
+
+  it('should keep the full compatibility label as a tooltip on its header when the list holds connectors', () => {
+    // Given / When
+    const { getByText } = testRender(<ColumnHeader columnId="compatibility" />);
+
+    // Then
+    expect(getByText(COMPATIBILITY_LABEL)).toHaveAttribute(
+      'title',
+      COMPATIBILITY_LABEL
+    );
+  });
 
   it.each(['feature', 'compatibility'])(
     'should leave the %s cell empty when the row is not a connector',

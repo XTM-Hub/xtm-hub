@@ -35,3 +35,44 @@ export default class RegisterPage {
     await this.page.getByRole('button', { name: 'Connect' }).click();
   }
 }
+
+// The XTM Hub tab a real platform opens to connect or disconnect itself.
+export class XtmHubRegistrationTab {
+  constructor(private tab: Page) {}
+
+  getConnectionHeading(platformName: string) {
+    return this.tab.getByRole('heading', {
+      name: `You're about to connect your ${platformName} product to XTM Hub`,
+    });
+  }
+
+  getDisconnectionHeading(platformName: string) {
+    return this.tab.getByRole('heading', {
+      name: new RegExp(
+        `You are about to disconnect your ${platformName} product`
+      ),
+    });
+  }
+
+  // The platform closes this tab itself once it gets the message from XTM Hub.
+  private async clickAndWaitForClose(buttonName: string) {
+    const closed = this.tab.waitForEvent('close');
+    await this.tab
+      .getByRole('button', { name: buttonName, exact: true })
+      .click();
+    await closed;
+  }
+
+  async connect(displayedName: string) {
+    await this.tab.getByLabel('Name displayed in XTM Hub').fill(displayedName);
+    await this.clickAndWaitForClose('Connect');
+  }
+
+  async confirmDisconnection() {
+    await this.clickAndWaitForClose('Confirm');
+  }
+
+  async cancel() {
+    await this.clickAndWaitForClose('Cancel');
+  }
+}

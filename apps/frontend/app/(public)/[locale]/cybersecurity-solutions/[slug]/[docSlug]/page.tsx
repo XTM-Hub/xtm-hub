@@ -25,7 +25,10 @@ import {
   isConnectorResource,
   ServiceSlug,
 } from '@/utils/shareable-resources/shareable-resources.types';
-import { fetchSingleDocument } from '@/utils/shareable-resources/utils/shareable-resources.server.utils';
+import {
+  fetchSingleDocument,
+  isPublicDocumentSlug,
+} from '@/utils/shareable-resources/utils/shareable-resources.server.utils';
 import { LogoFiligranIcon } from '@filigran/icon';
 import { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
@@ -50,6 +53,10 @@ const FALLBACK_DESCRIPTION_KEYS: Record<ServiceSlug, string> = {
  */
 
 const getPageData = cache(async (serviceSlug: string, docSlug: string) => {
+  if (!(await isPublicDocumentSlug(serviceSlug, docSlug))) {
+    notFound();
+  }
+
   const baseUrl = await getBaseUrl();
 
   const serviceInstance = await fetchSeoServiceInstanceBySlug(serviceSlug);

@@ -377,6 +377,34 @@ describe('newsFeedDomain', () => {
       ).toBe(false);
     });
 
+    it('should exclude the blog_post_slug metadata, which only serves the redirect', async () => {
+      // Given
+      const item = await TestHelper.newsFeed.createItem({
+        type: NewsFeedItemType.BlogPost,
+        title: 'Blog post',
+      });
+      await TestHelper.newsFeed.createMetadata({
+        news_feed_item_id: item.id,
+        key: NewsFeedItemMetadataKey.UrlPath,
+        value: `redirect/news-feed/${item.id}`,
+      });
+      await TestHelper.newsFeed.createMetadata({
+        news_feed_item_id: item.id,
+        key: NewsFeedItemMetadataKey.BlogPostSlug,
+        value: 'threat-report-2026',
+      });
+
+      // When
+      const metadata = await NewsFeedDomain.loadMetadataByNewsFeedItemIds([
+        item.id,
+      ]);
+
+      // Then
+      expect(metadata.map((m) => m.key)).toEqual([
+        NewsFeedItemMetadataKey.UrlPath,
+      ]);
+    });
+
     it('should return the metadata for multiple news feed items in a single call', async () => {
       // Given
       const first = await createDocumentWithNewsFeedItem();

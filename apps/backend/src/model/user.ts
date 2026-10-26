@@ -15,6 +15,7 @@ export interface UserInfo {
 
 export interface ProviderUserInfo extends UserInfo {
   idp_subject: string;
+  groups: string[];
 }
 
 export interface UserWithOrganizations extends User {

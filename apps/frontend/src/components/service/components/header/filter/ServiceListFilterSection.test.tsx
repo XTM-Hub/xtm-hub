@@ -21,6 +21,14 @@ describe('ServiceListFilterSection', () => {
     },
   };
 
+  const inlineFilter = {
+    [ServiceListFilterKey.ProductVersion]: {
+      title: firstTitle,
+      node: <div>{firstContent}</div>,
+      noAccordion: true,
+    },
+  };
+
   it('should expand the first filter section by default', () => {
     // Given
     // When
@@ -94,5 +102,26 @@ describe('ServiceListFilterSection', () => {
       'true'
     );
     expect(screen.getByText(secondContent)).toBeInTheDocument();
+  });
+
+  it('should show the title and the content of a filter when it opts out of the accordion', () => {
+    // Given
+    // When
+    testRender(<ServiceListFilterSection filters={inlineFilter} />);
+
+    // Then
+    expect(screen.getByText(firstTitle)).toBeInTheDocument();
+    expect(screen.getByText(firstContent)).toBeInTheDocument();
+  });
+
+  it('should not let the user collapse a filter when it opts out of the accordion', () => {
+    // Given
+    // When
+    testRender(<ServiceListFilterSection filters={inlineFilter} />);
+
+    // Then
+    expect(
+      screen.queryByRole('button', { name: firstTitle })
+    ).not.toBeInTheDocument();
   });
 });

@@ -24,7 +24,10 @@ import {
   PlatformInput,
   registerPlatformMutation,
 } from '@generated/registerPlatformMutation.graphql';
-import { PlatformRegistrationStatus } from '@graphql/generated';
+import {
+  PlatformIdentifier,
+  PlatformRegistrationStatus,
+} from '@graphql/generated';
 import {
   ReactNode,
   useCallback,
@@ -44,7 +47,10 @@ import {
 
 interface RegisterProps {
   platform: PlatformInput;
+  platformOrigin: string;
   queryRef: PreloadedQuery<registerIsPlatformRegisteredQuery>;
+  /** The nonce XTM One opened the page with, echoed back in its messages. */
+  state?: string;
 }
 
 export type RegistrationRequestStatus =
@@ -83,7 +89,12 @@ const initialState: State = {
   registerFragmentRef: null,
 };
 
-export const Register = ({ queryRef, platform }: RegisterProps) => {
+export const Register = ({
+  queryRef,
+  platform,
+  platformOrigin,
+  state: openerState,
+}: RegisterProps) => {
   const t = useTranslate();
   const { displayedIdentifier, identifier } = useContext(RegistrationContext);
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -117,9 +128,23 @@ export const Register = ({ queryRef, platform }: RegisterProps) => {
   const hasPostedMessageRef = useRef(false);
   const hasAutoRegisteredRef = useRef(false);
 
+  // OpenCTI and OpenAEV never receive the state: their messages are unchanged.
+  const echoedState =
+    identifier === PlatformIdentifier.Xtmone ? openerState : undefined;
+
+  const postMessageToPlatform = useCallback(
+    (message: Record<string, unknown>) => {
+      window.opener?.postMessage(
+        { ...message, ...(echoedState && { state: echoedState }) },
+        platformOrigin
+      );
+    },
+    [platformOrigin, echoedState]
+  );
+
   const cancel = useCallback(() => {
-    window.opener?.postMessage({ action: 'cancel' }, '*');
-  }, []);
+    postMessageToPlatform({ action: 'cancel' });
+  }, [postMessageToPlatform]);
 
   const register = useCallback(
     (organizationId: string, platformName: string = platform.title) => {
@@ -161,16 +186,13 @@ export const Register = ({ queryRef, platform }: RegisterProps) => {
   useLayoutEffect(() => {
     if (registerDataResponse?.token && !hasPostedMessageRef.current) {
       hasPostedMessageRef.current = true;
-      window.opener?.postMessage(
-        {
-          action: 'register',
-          token: registerDataResponse.token,
-        },
-        '*'
-      );
+      postMessageToPlatform({
+        action: 'register',
+        token: registerDataResponse.token,
+      });
       dispatch({ type: 'SET_SUCCEEDED' });
     }
-  }, [registerDataResponse?.token]);
+  }, [registerDataResponse?.token, postMessageToPlatform]);
 
   useLayoutEffect(() => {
     const shouldAutoRegister =

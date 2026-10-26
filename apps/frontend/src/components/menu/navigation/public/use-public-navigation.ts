@@ -126,6 +126,11 @@ export const usePublicNavigation = (
           external: true,
         },
         {
+          href: 'https://docs.xtmone.io/',
+          label: t('Menu.Documentation'),
+          external: true,
+        },
+        {
           href: XTM_ONE_ABOUT_URL,
           label: t('Menu.About'),
           external: true,

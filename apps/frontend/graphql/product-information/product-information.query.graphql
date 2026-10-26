@@ -1,0 +1,11 @@
+query RegisteredSaasPlatformData($input: RegisteredPlatformInput!) {
+  registeredSaasPlatformData(input: $input) {
+    metadata {
+      hostname
+      plan
+      start_date
+      end_date
+      region
+    }
+  }
+}

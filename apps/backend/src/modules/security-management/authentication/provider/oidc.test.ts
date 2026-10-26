@@ -42,6 +42,8 @@ const SUB = 'auth0|jane-doe';
 const ACCESS_TOKEN = 'access-token';
 const GIVEN_NAME = 'Jane';
 const FAMILY_NAME = 'Doe';
+const GROUPS_CLAIM = 'https://xtm-hub-development/groups';
+const STAFF_GROUP = 'Filigran';
 
 const buildUserinfo = (overrides: Record<string, unknown> = {}) => ({
   sub: SUB,
@@ -87,8 +89,25 @@ describe('addOIDCStrategy', () => {
         first_name: GIVEN_NAME,
         last_name: FAMILY_NAME,
         roles: [],
+        groups: [],
         picture: undefined,
       },
+      expect.any(Function)
+    );
+  });
+
+  it('should pass the IdP groups on to the sign-in', async () => {
+    // Given
+    mocks.fetchUserInfo.mockResolvedValue(
+      buildUserinfo({ [GROUPS_CLAIM]: [STAFF_GROUP] })
+    );
+
+    // When
+    await signIn();
+
+    // Then
+    expect(mocks.providerLoginHandler).toHaveBeenCalledWith(
+      expect.objectContaining({ groups: [STAFF_GROUP] }),
       expect.any(Function)
     );
   });

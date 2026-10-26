@@ -12,6 +12,7 @@ on:
       - "apps/**"
       - ".github/actions/**"
       - ".github/workflows/dockerbuild-ci.yml"
+      - "xtm-hub-dev/docker-compose-ci*.yml"
       - "package.json"
       - "yarn.lock"
     tags:
@@ -43,6 +44,7 @@ jobs:
               - "apps/**"
               - ".github/actions/**"
               - ".github/workflows/dockerbuild-ci.yml"
+              - "xtm-hub-dev/docker-compose-ci*.yml"
               - "package.json"
               - "yarn.lock"
 
@@ -237,7 +239,7 @@ jobs:
            PLAYWRIGHT_SHARD="${{ matrix.shard }}/8"
           docker compose -f ./xtm-hub-dev/docker-compose-ci.yml run \
            -e PLAYWRIGHT_SHARD \
-           e2e sh -lc "yarn test:e2e --shard=${PLAYWRIGHT_SHARD}" || TEST_EXIT_CODE=$?
+           e2e sh -lc "yarn test:e2e --project=chromium --shard=${PLAYWRIGHT_SHARD}" || TEST_EXIT_CODE=$?
           CONTAINER_ID=$(docker ps -a --filter "name=e2e-run" --format "{{.ID}}" | head -1)
           docker cp $CONTAINER_ID:/app/apps/e2e/ctrf/. ./ctrf/
           exit ${TEST_EXIT_CODE:-0}
@@ -430,6 +432,104 @@ jobs:
           name: backend-shard-${{ matrix.shard }}
           token: ${{ secrets.CODECOV_TOKEN }}
 
+  # Registration against a real OpenCTI and OpenAEV (rolling images). Non-blocking on purpose: a rolling image can
+  # break it without any change on our side, so build-images-prod does not wait for it. It only warns early.
+  run-e2e-platform-tests:
+    name: run-e2e-platform-tests (${{ matrix.platform }})
+    needs: build-images-tests
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 25
+    # Advisory: a failure shows on its check and report, but does not fail the workflow.
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [opencti, openaev]
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      COMPOSE_FILES: -f ./xtm-hub-dev/docker-compose-ci.yml -f ./xtm-hub-dev/docker-compose-ci-${{ matrix.platform }}.yml
+      IMAGE_TAGS: ${{ needs.build-images-tests.outputs.docker-tags }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Install docker
+        uses: docker/setup-docker-action@v5
+
+      - name: Pull docker images
+        uses: ./.github/actions/retry-with-backoff
+        with:
+          command: docker compose $COMPOSE_FILES pull --include-deps e2e
+
+      - name: Run the platform registration tests
+        run: |
+          mkdir -p ctrf
+          docker compose $COMPOSE_FILES run e2e sh -lc "yarn test:e2e --project=${{ matrix.platform }}" || TEST_EXIT_CODE=$?
+          CONTAINER_ID=$(docker ps -a --filter "name=e2e-run" --format "{{.ID}}" | head -1)
+          docker cp $CONTAINER_ID:/app/apps/e2e/ctrf/. ./ctrf/ || true
+          mkdir -p test-results
+          docker cp $CONTAINER_ID:/app/apps/e2e/test-results/. ./test-results/ || true
+          exit ${TEST_EXIT_CODE:-0}
+
+      - name: Upload Playwright results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-results-platform-${{ matrix.platform }}
+          path: test-results/
+          retention-days: 7
+
+      - name: Upload CTRF artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ctrf-platform-${{ matrix.platform }}
+          path: ctrf/
+          retention-days: 30
+
+      # One PR comment per platform, apart from the XTM Hub e2e report: the comment tag keeps them separate.
+      - name: Publish Test Report
+        if: always()
+        uses: ctrf-io/github-test-reporter@v1
+        with:
+          title: ${{ matrix.platform == 'opencti' && 'OpenCTI' || 'OpenAEV' }} e2e
+          comment-tag: e2e-platform-${{ matrix.platform }}
+          report-path: "./ctrf/**/*.json"
+          pull-request: true
+          summary-report: true
+          failed-report: true
+          flaky-report: true
+          suite-folded-report: true
+          overwrite-comment: true
+          report-order: "summary-report,failed-report,flaky-report,test-report"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Save logs as artifacts
+        if: failure()
+        run: |
+          mkdir -p logs
+          for service in ${{ matrix.platform }} backend frontend e2e; do
+            docker compose $COMPOSE_FILES logs $service > logs/$service.log 2>&1 || true
+          done
+          docker compose $COMPOSE_FILES ps -a > logs/containers.txt 2>&1 || true
+
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: service-logs-${{ github.run_id }}-platform-${{ matrix.platform }}
+          path: logs/
+
   run-e2e-tests:
     needs:
       - run-e2e-tests-shards
@@ -458,6 +558,7 @@ jobs:
         if: always() && needs.run-e2e-tests-shards.result != 'skipped'
         uses: ctrf-io/github-test-reporter@v1
         with:
+          title: XTM Hub e2e
           report-path: "./ctrf/**/*.json"
           pull-request: true
           summary-report: true

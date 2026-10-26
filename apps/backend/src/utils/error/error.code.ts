@@ -19,6 +19,7 @@ export enum ForbiddenErrorCode {
   EmailNotVerified = 'EMAIL_NOT_VERIFIED',
   IdpSubjectNotProvided = 'IDP_SUBJECT_NOT_PROVIDED',
   IdpSubjectMismatch = 'IDP_SUBJECT_MISMATCH',
+  FiligranGroupMissing = 'FILIGRAN_GROUP_MISSING',
   PlatformTypeNotSupported = 'PLATFORM_TYPE_NOT_SUPPORTED',
   CantRequestFreeTrialInPersonalSpace = 'CANT_REQUEST_FREE_TRIAL_IN_PERSONAL_SPACE',
   CantRequestFreeTrial = 'CANT_REQUEST_FREE_TRIAL',

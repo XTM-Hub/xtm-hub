@@ -99,6 +99,57 @@ describe('registration connectivity app', () => {
       );
     });
 
+    it('should return not found when an XTM One platform is not registered', async () => {
+      // Given
+      const platformId = uuidv4();
+
+      // When
+      const result =
+        await RegistrationConnectivityApp.refreshPlatformRegistrationConnectivityStatus(
+          {
+            platformId,
+            token: uuidv4(),
+            platformVersion: '1.0.0',
+            platformIdentifier: PlatformIdentifier.Xtmone,
+          }
+        );
+
+      // Then
+      expect(result.status).toBe(
+        PlatformRegistrationConnectivityStatus.NotFound
+      );
+    });
+
+    it('should return active when an XTM One platform is registered', async () => {
+      // Given
+      const platformId = uuidv4();
+      const token = await RegistrationApp.registerPlatform({
+        organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        platform: {
+          id: platformId,
+          url: 'http://xtmone.example.com',
+          contract: PlatformContract.Ee,
+          title: 'XTM One',
+          version: '1.0.0',
+        },
+        identifier: PlatformIdentifier.Xtmone,
+      });
+
+      // When
+      const result =
+        await RegistrationConnectivityApp.refreshPlatformRegistrationConnectivityStatus(
+          {
+            platformId,
+            token,
+            platformVersion: '1.0.1',
+            platformIdentifier: PlatformIdentifier.Xtmone,
+          }
+        );
+
+      // Then
+      expect(result.status).toBe(PlatformRegistrationConnectivityStatus.Active);
+    });
+
     it('should return active when platform is registered and update version', async () => {
       const platformId = uuidv4();
       const token = await RegistrationApp.registerPlatform({

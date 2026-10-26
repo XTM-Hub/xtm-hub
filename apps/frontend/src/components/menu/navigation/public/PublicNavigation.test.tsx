@@ -1,4 +1,3 @@
-import { PublicSubLink } from '@/components/menu/navigation/shared/NavigationLinks';
 import testRender from '@/utils/test/test-render';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -16,6 +15,7 @@ const ALL_SERVICE_SLUGS = [
 ];
 
 const XTM_ONE_LIVE_DEMO_URL = 'https://demo.xtmone.io/login';
+const XTM_ONE_DOCUMENTATION_URL = 'https://docs.xtmone.io/';
 
 const renderPublicNavigation = (
   open = true,
@@ -135,6 +135,27 @@ describe('PublicNavigation — open={true}', () => {
     expect(liveDemoLink).toHaveAttribute('href', XTM_ONE_LIVE_DEMO_URL);
     expect(liveDemoLink).toHaveAttribute('target', '_blank');
     expect(liveDemoLink).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
+  it('should show an external Documentation link to the XTM One documentation when the XTM One section is expanded', async () => {
+    // Given
+    const user = userEvent.setup();
+    renderPublicNavigation();
+
+    // When
+    await expandSection(user, 'XTM One');
+
+    // Then
+    const xtmOneSection = screen.getByRole('region', { name: 'XTM One' });
+    const documentationLink = within(xtmOneSection).getByRole('link', {
+      name: /Menu\.Documentation/,
+    });
+    expect(documentationLink).toHaveAttribute(
+      'href',
+      XTM_ONE_DOCUMENTATION_URL
+    );
+    expect(documentationLink).toHaveAttribute('target', '_blank');
+    expect(documentationLink).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
   it('external sub-links have target="_blank" and rel="noopener noreferrer"', async () => {
@@ -304,27 +325,5 @@ describe('PublicNavigation — open={false}', () => {
     await waitFor(() => {
       expect(screen.queryByText('Menu.StartFreeTrial')).not.toBeInTheDocument();
     });
-  });
-});
-
-describe('PublicSubLink', () => {
-  it('paints the gradient on the label of a highlighted, inactive link, not on the link itself', () => {
-    // Given
-    vi.mocked(usePathname).mockReturnValue('/en');
-
-    // When
-    testRender(
-      <PublicSubLink
-        href="/en/highlighted"
-        label="Highlighted"
-        highlight
-      />
-    );
-
-    // Then
-    expect(screen.getByText('Highlighted')).toHaveClass('text-gradient-focus');
-    expect(screen.getByRole('link', { name: 'Highlighted' })).not.toHaveClass(
-      'text-gradient-focus'
-    );
   });
 });

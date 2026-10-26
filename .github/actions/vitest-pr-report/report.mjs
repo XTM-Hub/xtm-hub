@@ -47,6 +47,8 @@ const readTestFiles = () => {
       message: testFile.message,
       tests: testFile.assertionResults.map((test) => ({
         name: [...test.ancestorTitles, test.title].join(' › '),
+        suite: test.ancestorTitles,
+        title: test.title,
         status: test.status,
         line: test.location?.line,
         failureMessages: test.failureMessages ?? [],

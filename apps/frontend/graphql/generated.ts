@@ -1664,15 +1664,38 @@ export type NewsFeedItemMetadata = {
 };
 
 export enum NewsFeedItemMetadataKey {
+  BlogPostSlug = 'blog_post_slug',
   DocumentId = 'document_id',
   UrlPath = 'url_path'
 }
 
 export enum NewsFeedItemType {
+  BlogPost = 'BLOG_POST',
   ResourceCustomDashboard = 'RESOURCE_CUSTOM_DASHBOARD',
   ResourceCustomView = 'RESOURCE_CUSTOM_VIEW',
   ResourceIntegration = 'RESOURCE_INTEGRATION',
   ResourcePlaybook = 'RESOURCE_PLAYBOOK'
+}
+
+export type NewsFeedRedirectInput = {
+  platform_id: InputMaybe<Scalars['String']['input']>;
+  platform_identifier: InputMaybe<PlatformIdentifier>;
+  resource_id: InputMaybe<Scalars['DocumentId']['input']>;
+  service_identifier: ServiceDefinitionIdentifier;
+  utm_content: InputMaybe<NewsFeedUtmContent>;
+};
+
+export enum NewsFeedUtmContent {
+  BlogPosts = 'blog_posts',
+  CustomDashboard = 'custom_dashboard',
+  CustomView = 'custom_view',
+  Integration = 'integration',
+  Other = 'other',
+  Playbook = 'playbook'
+}
+
+export enum NewsFeedUtmMedium {
+  Newsfeed = 'newsfeed'
 }
 
 export type Node = {
@@ -2003,7 +2026,7 @@ export type Query = {
    * contains it (case-insensitive) are considered.
    */
   registeredProductVersions: Array<RegisteredProductVersion>;
-  registeredSaasPlatformMetadata: Maybe<SaasPlatformMetadata>;
+  registeredSaasPlatformData: Maybe<SaasPlatformData>;
   rolePortals: Array<RolePortal>;
   saasPlatforms: RegisteredPlatformConnection;
   seoServiceInstance: SeoServiceInstance;
@@ -2241,7 +2264,7 @@ export type QueryRegisteredProductVersionsArgs = {
 };
 
 
-export type QueryRegisteredSaasPlatformMetadataArgs = {
+export type QueryRegisteredSaasPlatformDataArgs = {
   input: RegisteredPlatformInput;
 };
 
@@ -2546,6 +2569,11 @@ export type SsoGroupRolePortal = {
   ssoGroup: Scalars['String']['output'];
 };
 
+export type SaasPlatformData = {
+  __typename?: 'SaasPlatformData';
+  metadata: SaasPlatformMetadata;
+};
+
 export type SaasPlatformMetadata = {
   __typename?: 'SaasPlatformMetadata';
   end_date: Maybe<Scalars['Date']['output']>;
@@ -2557,7 +2585,13 @@ export type SaasPlatformMetadata = {
 
 export type SendTelemetryMutation = {
   __typename?: 'SendTelemetryMutation';
+  newsFeedRedirect: Maybe<TelemetryResponse>;
   oneClickDeploy: Maybe<TelemetryResponse>;
+};
+
+
+export type SendTelemetryMutationNewsFeedRedirectArgs = {
+  input: NewsFeedRedirectInput;
 };
 
 
@@ -3625,6 +3659,13 @@ export type NewsFeedDeleteItemMutationVariables = Exact<{
 
 export type NewsFeedDeleteItemMutation = { __typename?: 'Mutation', deleteNewsFeedItem: boolean };
 
+export type SendNewsFeedRedirectTelemetryMutationVariables = Exact<{
+  input: NewsFeedRedirectInput;
+}>;
+
+
+export type SendNewsFeedRedirectTelemetryMutation = { __typename?: 'Mutation', sendTelemetryEvent: { __typename?: 'SendTelemetryMutation', newsFeedRedirect: { __typename?: 'TelemetryResponse', result: boolean, message: string | null } | null } | null };
+
 export type NewsFeedItemRowFragment = { __typename?: 'NewsFeedItem', id: string, title: string, type: NewsFeedItemType, creation_date: any, tags: Array<string>, is_deleted: boolean, metadata: Array<{ __typename?: 'NewsFeedItemMetadata', key: NewsFeedItemMetadataKey, value: string | null }> };
 
 export type NewsFeedListQueryVariables = Exact<{
@@ -3656,6 +3697,13 @@ export type OrganizationSubscribedServicesListQueryVariables = Exact<{
 
 export type OrganizationSubscribedServicesListQuery = { __typename?: 'Query', subscriptions: { __typename?: 'SubscriptionConnection', totalCount: number, edges: Array<{ __typename?: 'SubscriptionEdge', node: { __typename?: 'SubscriptionModel', id: string, start_date: any | null, service_instance: { __typename?: 'ServiceInstance', id: string, name: string, creation_status: ServiceInstanceCreationStatus | null, tags: Array<ServiceInstanceTag> | null, service_definition: { __typename?: 'ServiceDefinition', id: string, name: string, identifier: ServiceDefinitionIdentifier } | null } } }>, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, hasPreviousPage: boolean, startCursor: string | null, endCursor: string | null } } };
 
+export type RegisteredSaasPlatformDataQueryVariables = Exact<{
+  input: RegisteredPlatformInput;
+}>;
+
+
+export type RegisteredSaasPlatformDataQuery = { __typename?: 'Query', registeredSaasPlatformData: { __typename?: 'SaasPlatformData', metadata: { __typename?: 'SaasPlatformMetadata', hostname: string | null, plan: string | null, start_date: any | null, end_date: any | null, region: string | null } } | null };
+
 export type RegisteredPlatformsListQueryVariables = Exact<{
   input: RegisteredPlatformsInput;
 }>;
@@ -3669,13 +3717,6 @@ export type RegisteredPlatformsQueryVariables = Exact<{
 
 
 export type RegisteredPlatformsQuery = { __typename?: 'Query', registeredPlatforms: Array<{ __typename?: 'RegisteredPlatform', id: string, identifier: ServiceDefinitionIdentifier, title: string, contract: PlatformContract, deployment_request: { __typename?: 'DeploymentRequest', parent_id: any | null } | null, subscription: { __typename?: 'SubscriptionModel', start_date: any | null, end_date: any | null, service_instance_id: any } | null }> };
-
-export type RegisteredSaasPlatformMetadataQueryVariables = Exact<{
-  input: RegisteredPlatformInput;
-}>;
-
-
-export type RegisteredSaasPlatformMetadataQuery = { __typename?: 'Query', registeredSaasPlatformMetadata: { __typename?: 'SaasPlatformMetadata', hostname: string | null, plan: string | null, start_date: any | null, end_date: any | null, region: string | null } | null };
 
 export type PlatformAssociatedOrganizationQueryVariables = Exact<{
   platformId: Scalars['String']['input'];
@@ -5811,6 +5852,38 @@ useNewsFeedDeleteItemMutation.getKey = () => ['NewsFeedDeleteItem'];
 useNewsFeedDeleteItemMutation.getRootKey = () => ['NewsFeedDeleteItem'] as const;
 useNewsFeedDeleteItemMutation.fetcher = (client: GraphQLClient, variables: NewsFeedDeleteItemMutationVariables, headers?: RequestInit['headers']) => fetcher<NewsFeedDeleteItemMutation, NewsFeedDeleteItemMutationVariables>(client, NewsFeedDeleteItemDocument, variables, headers);
 
+export const SendNewsFeedRedirectTelemetryDocument = `
+    mutation SendNewsFeedRedirectTelemetry($input: NewsFeedRedirectInput!) {
+  sendTelemetryEvent {
+    newsFeedRedirect(input: $input) {
+      result
+      message
+    }
+  }
+}
+    `;
+
+export const useSendNewsFeedRedirectTelemetryMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<SendNewsFeedRedirectTelemetryMutation, TError, SendNewsFeedRedirectTelemetryMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<SendNewsFeedRedirectTelemetryMutation, TError, SendNewsFeedRedirectTelemetryMutationVariables, TContext>(
+      {
+    mutationKey: ['SendNewsFeedRedirectTelemetry'],
+    mutationFn: (variables?: SendNewsFeedRedirectTelemetryMutationVariables) => fetcher<SendNewsFeedRedirectTelemetryMutation, SendNewsFeedRedirectTelemetryMutationVariables>(client, SendNewsFeedRedirectTelemetryDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useSendNewsFeedRedirectTelemetryMutation.getKey = () => ['SendNewsFeedRedirectTelemetry'];
+useSendNewsFeedRedirectTelemetryMutation.getRootKey = () => ['SendNewsFeedRedirectTelemetry'] as const;
+useSendNewsFeedRedirectTelemetryMutation.fetcher = (client: GraphQLClient, variables: SendNewsFeedRedirectTelemetryMutationVariables, headers?: RequestInit['headers']) => fetcher<SendNewsFeedRedirectTelemetryMutation, SendNewsFeedRedirectTelemetryMutationVariables>(client, SendNewsFeedRedirectTelemetryDocument, variables, headers);
+
 export const NewsFeedListDocument = `
     query NewsFeedList($count: Int!, $cursor: ID) {
   newsFeedItems(first: $count, after: $cursor) {
@@ -5994,6 +6067,65 @@ useInfiniteOrganizationSubscribedServicesListQuery.getKey = (variables: Organiza
 useInfiniteOrganizationSubscribedServicesListQuery.getRootKey = () => ['OrganizationSubscribedServicesList.infinite'] as const;
 useOrganizationSubscribedServicesListQuery.fetcher = (client: GraphQLClient, variables: OrganizationSubscribedServicesListQueryVariables, headers?: RequestInit['headers']) => fetcher<OrganizationSubscribedServicesListQuery, OrganizationSubscribedServicesListQueryVariables>(client, OrganizationSubscribedServicesListDocument, variables, headers);
 
+export const RegisteredSaasPlatformDataDocument = `
+    query RegisteredSaasPlatformData($input: RegisteredPlatformInput!) {
+  registeredSaasPlatformData(input: $input) {
+    metadata {
+      hostname
+      plan
+      start_date
+      end_date
+      region
+    }
+  }
+}
+    `;
+
+export const useRegisteredSaasPlatformDataQuery = <
+      TData = RegisteredSaasPlatformDataQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: RegisteredSaasPlatformDataQueryVariables,
+      options?: Omit<UseQueryOptions<RegisteredSaasPlatformDataQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<RegisteredSaasPlatformDataQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<RegisteredSaasPlatformDataQuery, TError, TData>(
+      {
+    queryKey: ['RegisteredSaasPlatformData', variables],
+    queryFn: fetcher<RegisteredSaasPlatformDataQuery, RegisteredSaasPlatformDataQueryVariables>(client, RegisteredSaasPlatformDataDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useRegisteredSaasPlatformDataQuery.getKey = (variables: RegisteredSaasPlatformDataQueryVariables) => ['RegisteredSaasPlatformData', variables];
+useRegisteredSaasPlatformDataQuery.getRootKey = () => ['RegisteredSaasPlatformData'] as const;
+export const useInfiniteRegisteredSaasPlatformDataQuery = <
+      TData = InfiniteData<RegisteredSaasPlatformDataQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: RegisteredSaasPlatformDataQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<RegisteredSaasPlatformDataQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<RegisteredSaasPlatformDataQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<RegisteredSaasPlatformDataQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['RegisteredSaasPlatformData.infinite', variables],
+      queryFn: (metaData) => fetcher<RegisteredSaasPlatformDataQuery, RegisteredSaasPlatformDataQueryVariables>(client, RegisteredSaasPlatformDataDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteRegisteredSaasPlatformDataQuery.getKey = (variables: RegisteredSaasPlatformDataQueryVariables) => ['RegisteredSaasPlatformData.infinite', variables];
+useInfiniteRegisteredSaasPlatformDataQuery.getRootKey = () => ['RegisteredSaasPlatformData.infinite'] as const;
+useRegisteredSaasPlatformDataQuery.fetcher = (client: GraphQLClient, variables: RegisteredSaasPlatformDataQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredSaasPlatformDataQuery, RegisteredSaasPlatformDataQueryVariables>(client, RegisteredSaasPlatformDataDocument, variables, headers);
+
 export const RegisteredPlatformsListDocument = `
     query RegisteredPlatformsList($input: RegisteredPlatformsInput!) {
   registeredPlatforms(input: $input) {
@@ -6127,63 +6259,6 @@ export const useInfiniteRegisteredPlatformsQuery = <
 useInfiniteRegisteredPlatformsQuery.getKey = (variables: RegisteredPlatformsQueryVariables) => ['RegisteredPlatforms.infinite', variables];
 useInfiniteRegisteredPlatformsQuery.getRootKey = () => ['RegisteredPlatforms.infinite'] as const;
 useRegisteredPlatformsQuery.fetcher = (client: GraphQLClient, variables: RegisteredPlatformsQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredPlatformsQuery, RegisteredPlatformsQueryVariables>(client, RegisteredPlatformsDocument, variables, headers);
-
-export const RegisteredSaasPlatformMetadataDocument = `
-    query RegisteredSaasPlatformMetadata($input: RegisteredPlatformInput!) {
-  registeredSaasPlatformMetadata(input: $input) {
-    hostname
-    plan
-    start_date
-    end_date
-    region
-  }
-}
-    `;
-
-export const useRegisteredSaasPlatformMetadataQuery = <
-      TData = RegisteredSaasPlatformMetadataQuery,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: RegisteredSaasPlatformMetadataQueryVariables,
-      options?: Omit<UseQueryOptions<RegisteredSaasPlatformMetadataQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<RegisteredSaasPlatformMetadataQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useQuery<RegisteredSaasPlatformMetadataQuery, TError, TData>(
-      {
-    queryKey: ['RegisteredSaasPlatformMetadata', variables],
-    queryFn: fetcher<RegisteredSaasPlatformMetadataQuery, RegisteredSaasPlatformMetadataQueryVariables>(client, RegisteredSaasPlatformMetadataDocument, variables, headers),
-    ...options
-  }
-    )};
-
-useRegisteredSaasPlatformMetadataQuery.getKey = (variables: RegisteredSaasPlatformMetadataQueryVariables) => ['RegisteredSaasPlatformMetadata', variables];
-useRegisteredSaasPlatformMetadataQuery.getRootKey = () => ['RegisteredSaasPlatformMetadata'] as const;
-export const useInfiniteRegisteredSaasPlatformMetadataQuery = <
-      TData = InfiniteData<RegisteredSaasPlatformMetadataQuery>,
-      TError = unknown
-    >(
-      client: GraphQLClient,
-      variables: RegisteredSaasPlatformMetadataQueryVariables,
-      options: Omit<UseInfiniteQueryOptions<RegisteredSaasPlatformMetadataQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<RegisteredSaasPlatformMetadataQuery, TError, TData>['queryKey'] },
-      headers?: RequestInit['headers']
-    ) => {
-    
-    return useInfiniteQuery<RegisteredSaasPlatformMetadataQuery, TError, TData>(
-      (() => {
-    const { queryKey: optionsQueryKey, ...restOptions } = options;
-    return {
-      queryKey: optionsQueryKey ?? ['RegisteredSaasPlatformMetadata.infinite', variables],
-      queryFn: (metaData) => fetcher<RegisteredSaasPlatformMetadataQuery, RegisteredSaasPlatformMetadataQueryVariables>(client, RegisteredSaasPlatformMetadataDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
-      ...restOptions
-    }
-  })()
-    )};
-
-useInfiniteRegisteredSaasPlatformMetadataQuery.getKey = (variables: RegisteredSaasPlatformMetadataQueryVariables) => ['RegisteredSaasPlatformMetadata.infinite', variables];
-useInfiniteRegisteredSaasPlatformMetadataQuery.getRootKey = () => ['RegisteredSaasPlatformMetadata.infinite'] as const;
-useRegisteredSaasPlatformMetadataQuery.fetcher = (client: GraphQLClient, variables: RegisteredSaasPlatformMetadataQueryVariables, headers?: RequestInit['headers']) => fetcher<RegisteredSaasPlatformMetadataQuery, RegisteredSaasPlatformMetadataQueryVariables>(client, RegisteredSaasPlatformMetadataDocument, variables, headers);
 
 export const PlatformAssociatedOrganizationDocument = `
     query PlatformAssociatedOrganization($platformId: String!, $tenantId: String) {

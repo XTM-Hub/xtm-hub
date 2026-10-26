@@ -5,6 +5,7 @@ import {
   classifyChanges,
   findRemovedTitles,
   parseDiff,
+  splitCases,
 } from './report-lib.mjs';
 
 const FILE = 'apps/frontend/src/lib/omit.test.ts';
@@ -33,11 +34,19 @@ const SOURCE = [
   '});', // 22
   '', // 23
 ];
+const omitTest = (title, line, status = 'passed') => ({
+  name: `omit › ${title}`,
+  suite: ['omit'],
+  title,
+  status,
+  line,
+  failureMessages: [],
+});
 const TESTS = [
-  { name: 'omit › removes keys', status: 'passed', line: 7, failureMessages: [] },
-  { name: 'omit › handles a', status: 'passed', line: 15, failureMessages: [] },
-  { name: 'omit › handles b', status: 'passed', line: 15, failureMessages: [] },
-  { name: 'omit › keeps others', status: 'passed', line: 19, failureMessages: [] },
+  omitTest('removes keys', 7),
+  omitTest('handles a', 15),
+  omitTest('handles b', 15),
+  omitTest('keeps others', 19),
 ];
 
 const diffChanging = (lines, removed = []) =>
@@ -165,6 +174,24 @@ describe('findRemovedTitles', () => {
   });
 });
 
+describe('splitCases', () => {
+  it('should keep the shared start and end as the title and the differing part as each case', () => {
+    const titles = [
+      "should redirect when the url is 'missing' and stop",
+      "should redirect when the url is 'file scheme' and stop",
+    ];
+
+    assert.deepEqual(splitCases(titles), {
+      title: 'should redirect when the url is … and stop',
+      cases: ["'missing'", "'file scheme'"],
+    });
+  });
+
+  it('should not split titles that are all the same', () => {
+    assert.equal(splitCases(['same title', 'same title']), null);
+  });
+});
+
 describe('buildReport', () => {
   const testFile = { path: FILE, status: 'passed', message: '', tests: TESTS };
   const report = (overrides) =>
@@ -180,7 +207,76 @@ describe('buildReport', () => {
   it('should list the changed test file with its changed test marked', () => {
     const { comment } = report();
 
-    assert.match(comment, /- ✅ ✏️ omit › removes keys/);
+    assert.match(comment, /\| ✅ \| ✏️ \| removes keys \|/);
+  });
+
+  it('should name the suite once above its tests instead of on every test', () => {
+    const { comment } = report({ diff: diffChanging([8, 13]) });
+
+    assert.deepEqual(
+      {
+        suiteRows: comment.match(/\| \| \| \*\*omit\*\* \|/g).length,
+        prefixedTitles: comment.match(/omit › /g),
+      },
+      { suiteRows: 1, prefixedTitles: null }
+    );
+  });
+
+  it('should group the cases of an it.each under one row with their pass count', () => {
+    const { comment } = report({ diff: diffChanging([13]) });
+
+    assert.match(
+      comment,
+      /\| 2 \/ 2 \| ✏️ \| handles … \|\n\| ✅ \| \| &emsp;↳ <code>a<\/code> \|\n\| ✅ \| \| &emsp;↳ <code>b<\/code> \|/
+    );
+  });
+
+  it('should flag the it.each row when one of its cases fails', () => {
+    const failing = { ...testFile, tests: TESTS.map((test) => (test.title === 'handles b' ? { ...test, status: 'failed' } : test)) };
+
+    const { comment } = report({ testFiles: [failing], diff: diffChanging([13]) });
+
+    assert.match(comment, /\| ❌ 1 \/ 2 \| ✏️ \| handles … \|/);
+  });
+
+  it('should list the unchanged tests in their own table without the changed column', () => {
+    const { comment } = report();
+
+    assert.match(comment, /3 other tests<\/summary>\n\n\| Result \| Test \|[\s\S]*\| ✅ \| keeps others \|/);
+  });
+
+  it('should head the top-level tests that follow a describe so they do not read as part of it', () => {
+    const mixed = {
+      ...testFile,
+      tests: [
+        { ...TESTS[0], suite: [], title: 'top level first', name: 'top level first' },
+        TESTS[0],
+        { ...TESTS[0], suite: [], title: 'top level after', name: 'top level after' },
+      ],
+    };
+
+    const { comment } = report({ testFiles: [mixed] });
+
+    assert.match(
+      comment,
+      /\| Result \| Changed \| Test \|\n\| :-: \| :-: \| :-- \|\n\| ✅ \| ✏️ \| top level first \|\n\| \| \| \*\*omit\*\* \|\n\| ✅ \| ✏️ \| removes keys \|\n\| \| \| \*\*\(top level\)\*\* \|\n\| ✅ \| ✏️ \| top level after \|/
+    );
+  });
+
+  it('should escape the markdown characters of a suite so its bold row stays intact', () => {
+    const starred = { ...testFile, tests: [{ ...TESTS[0], suite: ['*_parse_*'] }] };
+
+    const { comment } = report({ testFiles: [starred] });
+
+    assert.match(comment, /\| \| \| \*\*\\\*\\_parse\\_\\\*\*\* \|/);
+  });
+
+  it('should escape a pipe in a test title so the table keeps its columns', () => {
+    const piped = { ...testFile, tests: [{ ...TESTS[0], title: 'a | b', name: 'omit › a | b' }] };
+
+    const { comment } = report({ testFiles: [piped] });
+
+    assert.match(comment, /\| ✅ \| ✏️ \| a &#124; b \|/);
   });
 
   it('should warn on the file when shared code changed', () => {
@@ -194,7 +290,7 @@ describe('buildReport', () => {
       diff: diffChanging([7], ["  it('drops keys', () => {"]),
     });
 
-    assert.match(comment, /#### 🗑️ Tests removed or renamed[\s\S]*› drops keys/);
+    assert.match(comment, /#### 🗑️ Tests removed or renamed[\s\S]*\| <code>[^<]*omit\.test\.ts<\/code> \| drops keys \|/);
   });
 
   it('should say so when no test file changed', () => {
@@ -208,6 +304,8 @@ describe('buildReport', () => {
       ...testFile,
       tests: Array.from({ length: 40 }, (_, index) => ({
         name: `failing ${index}`,
+        suite: [],
+        title: `failing ${index}`,
         status: 'failed',
         line: 7,
         failureMessages: [`<details><summary>DOM</summary>\n${'x'.repeat(200)}\n</details>`],
@@ -243,6 +341,8 @@ describe('buildReport', () => {
       ...testFile,
       tests: Array.from({ length: 40 }, (_, index) => ({
         name: `failing ${index}`,
+        suite: [],
+        title: `failing ${index}`,
         status: 'failed',
         line: 7,
         failureMessages: ['x'.repeat(500)],

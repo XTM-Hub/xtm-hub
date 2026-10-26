@@ -1,0 +1,13 @@
+{
+  "openCTI_version": "6.9.4",
+  "type": "taxiiFeeds",
+  "configuration": {
+    "name": "E2E deployed TAXII feed",
+    "description": "Nice description",
+    "uri": "https://example.com/taxii2",
+    "version": "v21",
+    "collection": "taxii_collection",
+    "authentication_type": "",
+    "authentication_value": ""
+  }
+}

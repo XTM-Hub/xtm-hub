@@ -17,6 +17,7 @@ import { PUBLIC_CYBERSECURITY_SOLUTIONS_PATH } from '@/utils/path/constant';
 import {
   fetchSeoServiceInstanceBySlug,
   fetchSeoServiceInstanceMetadata,
+  isPublicServiceSlug,
 } from '@/utils/seo-service-instance/utils/seo-service-instance.server.utils';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
 import { fetchAllDocuments } from '@/utils/shareable-resources/utils/shareable-resources.server.utils';
@@ -30,6 +31,10 @@ import { PublicDocumentListPageLoader } from './public-document-list-page-loader
  * Fetch the data for the page with caching to avoid multiple requests
  */
 const getPageData = cache(async (slug: string, locale: PublicLocale) => {
+  if (!(await isPublicServiceSlug(slug))) {
+    notFound();
+  }
+
   const baseUrl = await getBaseUrl();
 
   const serviceInstance = await fetchSeoServiceInstanceBySlug(slug);

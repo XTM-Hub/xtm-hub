@@ -1,0 +1,105 @@
+# Adds a real OpenCTI (rolling image) to docker-compose-ci.yml for the platform registration e2e tests.
+# Usage: docker compose -f docker-compose-ci.yml -f docker-compose-ci-opencti.yml run e2e ...
+services:
+  opencti:
+    container_name: opencti
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    image: opencti/platform:rolling
+    depends_on:
+      opencti-redis:
+        condition: service_healthy
+      opencti-elasticsearch:
+        condition: service_healthy
+      opencti-rabbitmq:
+        condition: service_healthy
+      portal-minio:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    environment:
+      - APP__PORT=8080
+      - APP__BASE_URL=http://opencti:8080
+      - APP__ADMIN__EMAIL=admin@opencti.io
+      - APP__ADMIN__PASSWORD=admin
+      - APP__ADMIN__TOKEN=d434ce02-e58e-4cac-8b4c-42bf16748e84
+      - APP__ENCRYPTION_KEY=mMG7tprE8I9atEkYth6jIcAyKUbXMkoKC65VDnLK2Lc=
+      - APP__HEALTH_ACCESS_KEY=e2e-health-key
+      - APP__CHILD_LOCKING_PROCESS__ENABLED=false
+      - REDIS__HOSTNAME=opencti-redis
+      - REDIS__PORT=6379
+      - ELASTICSEARCH__URL=http://opencti-elasticsearch:9200
+      - MINIO__ENDPOINT=portal-minio
+      - MINIO__PORT=9000
+      - MINIO__USE_SSL=false
+      - MINIO__ACCESS_KEY=portal
+      - MINIO__SECRET_KEY=changeme
+      - MINIO__BUCKET_NAME=opencti-bucket
+      - RABBITMQ__HOSTNAME=opencti-rabbitmq
+      - RABBITMQ__PORT=5672
+      - RABBITMQ__PORT_MANAGEMENT=15672
+      - RABBITMQ__USERNAME=guest
+      - RABBITMQ__PASSWORD=guest
+      - SMTP__ENABLED=false
+      - EXPIRATION_SCHEDULER__ENABLED=false
+      - SUBSCRIPTION_SCHEDULER__ENABLED=false
+      # The browser in the e2e container and the OpenCTI backend both reach the Hub on this address.
+      - XTM__XTMHUB_URL=http://frontend:3000
+      - XTM__XTMHUB_CONNECTIVITY_EMAIL_ENABLED=false
+      # OpenCTI pulls the XTM Hub news feed only from this job, hourly by default: every second for the news feed test.
+      - HUB_REGISTRATION_MANAGER__INTERVAL=1000
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health?health_access_key=e2e-health-key"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 60s
+
+  opencti-redis:
+    container_name: opencti-redis
+    image: redis:8.6.7
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  opencti-elasticsearch:
+    container_name: opencti-elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.23
+    environment:
+      - discovery.type=single-node
+      - xpack.ml.enabled=false
+      - xpack.security.enabled=false
+      - thread_pool.search.queue_size=5000
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl --silent --fail 'localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s' || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  opencti-rabbitmq:
+    container_name: opencti-rabbitmq
+    image: rabbitmq:4.3-management
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+
+  e2e:
+    depends_on:
+      opencti:
+        condition: service_healthy
+    environment:
+      - OPENCTI_URL=http://opencti:8080
+      - OPENCTI_ADMIN_EMAIL=admin@opencti.io
+      - OPENCTI_ADMIN_PASSWORD=admin

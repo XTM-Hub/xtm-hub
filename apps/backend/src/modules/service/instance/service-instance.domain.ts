@@ -562,6 +562,7 @@ export const ServiceInstanceDomain = {
       .whereIn('ServiceDefinition.identifier', [
         ServiceDefinitionIdentifier.OpenaevRegistration,
         ServiceDefinitionIdentifier.OpenctiRegistration,
+        ServiceDefinitionIdentifier.XtmoneRegistration,
       ])
       .select('ServiceInstance.*')
       .first();

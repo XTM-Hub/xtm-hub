@@ -25,7 +25,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useState } from 'react';
 import { TrialUserDialog } from './TrialUserDialog';
-import { formatEmailList } from './manage-trial.utils';
+import {
+  formatEmailList,
+  removeUsersFromBundleCache,
+} from './manage-trial.utils';
 
 interface ManageTrialHeaderUser {
   id: string;
@@ -62,11 +65,7 @@ export const ManageTrialHeader = ({
         queryClient.setQueryData<BundleUserServiceGroupsQuery>(
           bundleUserServiceGroupsKeys.list(variables),
           (previous) =>
-            previous && {
-              bundleUserServiceGroups: previous.bundleUserServiceGroups.filter(
-                (row) => !mutationVariables.userIds.includes(row.user.id)
-              ),
-            }
+            removeUsersFromBundleCache(previous, mutationVariables.userIds)
         );
         showSnackbar({ severity: 'success', title: t('Utils.Success') });
         setIsBulkDeleting(false);

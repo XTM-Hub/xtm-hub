@@ -1,22 +1,24 @@
 import { PlatformInformation } from '@/components/service/registration/PlatformInformation';
 import { basePlatform } from '@/components/service/registration/registered-platform.fixtures';
-import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
 import testRender from '@/utils/test/test-render';
 import { registeredPlatformByServiceInstanceId_fragment$data } from '@generated/registeredPlatformByServiceInstanceId_fragment.graphql';
-import {
-  CommercialModel,
-  useRegisteredSaasPlatformMetadataQuery,
-} from '@graphql/generated';
+import { SaasPlatformMetadata } from '@graphql/generated';
 import { screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
 const HOSTNAME = 'my-platform.filigran.io';
 
-const platform: registeredPlatformByServiceInstanceId_fragment$data = {
-  ...basePlatform,
-  commercial_model: CommercialModel.Saas,
+const platform: registeredPlatformByServiceInstanceId_fragment$data =
+  basePlatform;
+
+const metadata: SaasPlatformMetadata = {
+  hostname: HOSTNAME,
+  plan: null,
+  start_date: null,
+  end_date: null,
+  region: null,
 };
 
 vi.mock('react-relay', async (importOriginal) => ({
@@ -24,39 +26,22 @@ vi.mock('react-relay', async (importOriginal) => ({
   useFragment: () => platform,
 }));
 
-vi.mock('@graphql/generated', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@graphql/generated')>();
-  const useRegisteredSaasPlatformMetadataQuery = Object.assign(vi.fn(), {
-    getKey: actual.useRegisteredSaasPlatformMetadataQuery.getKey,
-  });
-  return { ...actual, useRegisteredSaasPlatformMetadataQuery };
-});
-
-const mockMetadataQuery = () =>
-  vi.mocked(useRegisteredSaasPlatformMetadataQuery).mockReturnValue({
-    data: {
-      registeredSaasPlatformMetadata: {
-        hostname: HOSTNAME,
-        plan: null,
-        start_date: null,
-        end_date: null,
-        region: null,
-      },
-    },
-    isPending: false,
-  } as ReturnType<typeof useRegisteredSaasPlatformMetadataQuery>);
-
-const renderInformation = () =>
-  testRender(<PlatformInformation registeredPlatform={platform} />);
+const renderInformation = ({
+  showMetadata = true,
+  isMetadataLoading = false,
+}: { showMetadata?: boolean; isMetadataLoading?: boolean } = {}) =>
+  testRender(
+    <PlatformInformation
+      registeredPlatform={platform}
+      showMetadata={showMetadata}
+      metadata={isMetadataLoading ? undefined : metadata}
+      isMetadataLoading={isMetadataLoading}
+    />
+  );
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('PlatformInformation', () => {
-  beforeEach(() => {
-    vi.mocked(useIsFeatureEnabled).mockReturnValue(true);
-    mockMetadataQuery();
-  });
-
   it('should display the platform information heading', () => {
     // Given / When
     renderInformation();
@@ -78,7 +63,7 @@ describe('PlatformInformation', () => {
     expect(screen.getByText(platform.url)).toBeInTheDocument();
   });
 
-  it('should display the SaaS subscription metadata of the platform when SAAS_METRICS is enabled', () => {
+  it('should display the SaaS subscription metadata of the platform when asked to', () => {
     // Given / When
     renderInformation();
 
@@ -86,15 +71,25 @@ describe('PlatformInformation', () => {
     expect(screen.getByText(HOSTNAME)).toBeInTheDocument();
   });
 
-  it('should not display the SaaS subscription metadata of the platform when SAAS_METRICS is disabled', () => {
-    // Given SAAS_METRICS is disabled
-    vi.mocked(useIsFeatureEnabled).mockReturnValue(false);
-
-    // When
-    renderInformation();
+  it('should not display the SaaS subscription metadata of the platform when not asked to', () => {
+    // Given / When
+    renderInformation({ showMetadata: false });
 
     // Then
-    expect(screen.queryByText(HOSTNAME)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Register.Metrics.Metadata.Hostname:')
+    ).not.toBeInTheDocument();
     expect(screen.getByText(platform.url)).toBeInTheDocument();
+  });
+
+  it('should display the SaaS subscription metadata as loading while it is loading', () => {
+    // Given / When
+    renderInformation({ isMetadataLoading: true });
+
+    // Then
+    expect(
+      screen.getByText('Register.Metrics.Metadata.Hostname:').closest('section')
+    ).toHaveAttribute('aria-busy', 'true');
+    expect(screen.queryByText(HOSTNAME)).not.toBeInTheDocument();
   });
 });

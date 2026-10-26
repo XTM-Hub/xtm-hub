@@ -33,12 +33,13 @@ const mockSearchParams = (featureId: string | null) => {
 };
 
 describe('FeatureVotingItem', () => {
-  const replace = vi.fn();
+  const replaceState = vi.spyOn(window.history, 'replaceState');
 
   beforeEach(() => {
+    replaceState.mockImplementation(() => {});
     vi.mocked(useRouter).mockReturnValue({
       push: vi.fn(),
-      replace,
+      replace: vi.fn(),
       prefetch: vi.fn(),
       back: vi.fn(),
       forward: vi.fn(),
@@ -67,9 +68,10 @@ describe('FeatureVotingItem', () => {
 
     await user.click(screen.getByText('AI-powered report triage'));
 
-    expect(replace).toHaveBeenCalledWith(
-      '/en/feature-voting?featureId=feature-1',
-      { scroll: false }
+    expect(replaceState).toHaveBeenCalledWith(
+      null,
+      '',
+      '/en/feature-voting?featureId=feature-1'
     );
   });
 
@@ -88,7 +90,7 @@ describe('FeatureVotingItem', () => {
       screen.getByRole('button', { name: 'FeatureVoting.Vote' })
     );
 
-    expect(replace).not.toHaveBeenCalled();
+    expect(replaceState).not.toHaveBeenCalled();
   });
 
   it('should open the detail from the keyboard through the title', async () => {
@@ -106,9 +108,10 @@ describe('FeatureVotingItem', () => {
     expect(
       screen.getByRole('button', { name: 'AI-powered report triage' })
     ).toHaveFocus();
-    expect(replace).toHaveBeenCalledWith(
-      '/en/feature-voting?featureId=feature-1',
-      { scroll: false }
+    expect(replaceState).toHaveBeenCalledWith(
+      null,
+      '',
+      '/en/feature-voting?featureId=feature-1'
     );
   });
 
@@ -144,8 +147,6 @@ describe('FeatureVotingItem', () => {
 
     await user.click(screen.getByRole('button', { name: 'Close' }));
 
-    expect(replace).toHaveBeenCalledWith('/en/feature-voting', {
-      scroll: false,
-    });
+    expect(replaceState).toHaveBeenCalledWith(null, '', '/en/feature-voting');
   });
 });

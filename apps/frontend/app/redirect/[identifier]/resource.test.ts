@@ -9,11 +9,13 @@ import {
   loadPlatformOrganizationId,
   loadServiceInstances,
 } from './utils/load';
+import { trackNewsFeedRedirect } from './utils/news-feed-telemetry';
 
 vi.mock('../../../src/relay/server-portal-api-fetch', () => ({
   serverMutateGraphQL: vi.fn(),
 }));
 vi.mock('./utils/load');
+vi.mock('./utils/news-feed-telemetry');
 vi.mock('../../../src/utils/load-me-user');
 
 const BASE_URL = 'http://localhost:3002';
@@ -272,5 +274,94 @@ describe('redirectToResource', () => {
     expect(response.headers.get('location')).toBe(
       `${BASE_URL}/app/service/${IDENTIFIER}/${encodeURIComponent(INSTANCE_ID_WITH_SPECIAL_CHARS)}/${encodeURIComponent(DOCUMENT_ID_WITH_SPECIAL_CHARS)}`
     );
+  });
+});
+
+// What is tracked, and how failures are handled, is covered by utils/news-feed-telemetry.test.ts
+describe('redirectToResource news feed telemetry', () => {
+  const INSTANCE_ID = 'instance-1';
+  const DOCUMENT_ID = 'document-1';
+  const NEWS_FEED_QUERY = `utm_source=opencti&utm_medium=newsfeed&utm_campaign=hub_resources&utm_content=custom_dashboard&document_id=${DOCUMENT_ID}&platform_id=platform-1`;
+  const EXPECTED_LOCATION = `${BASE_URL}/app/service/${IDENTIFIER}/${INSTANCE_ID}/${DOCUMENT_ID}?utm_source=opencti&utm_medium=newsfeed&utm_campaign=hub_resources&utm_content=custom_dashboard`;
+
+  const makeNewsFeedRequest = () =>
+    makeRequest(`/redirect/${IDENTIFIER}?${NEWS_FEED_QUERY}`);
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(loadBaseUrlFront).mockResolvedValue(BASE_URL);
+    vi.mocked(loadMeUser).mockResolvedValue(defaultUser);
+    vi.mocked(loadPlatformOrganizationId).mockResolvedValue(undefined);
+    vi.mocked(loadServiceInstances).mockResolvedValue([
+      {
+        id: INSTANCE_ID,
+        service_definition: { identifier: IDENTIFIER },
+      },
+    ] as LoadServiceInstancesResult);
+  });
+
+  it('should track the news feed redirect once when the user is sent to the resource page', async () => {
+    // Given
+    const request = makeNewsFeedRequest();
+
+    // When
+    const response = await redirectToResource(
+      { identifier: IDENTIFIER },
+      request
+    );
+
+    // Then
+    expect(response.headers.get('location')).toBe(EXPECTED_LOCATION);
+    expect(trackNewsFeedRedirect).toHaveBeenCalledOnce();
+    expect(trackNewsFeedRedirect).toHaveBeenCalledWith(IDENTIFIER, request);
+  });
+
+  it('should track nothing when the user is sent to the login page', async () => {
+    // Given
+    vi.mocked(loadMeUser).mockResolvedValue(null);
+    const request = makeNewsFeedRequest();
+
+    // When
+    const response = await redirectToResource(
+      { identifier: IDENTIFIER },
+      request
+    );
+
+    // Then
+    expect(response.headers.get('location')).toContain(`${BASE_URL}/login`);
+    expect(trackNewsFeedRedirect).not.toHaveBeenCalled();
+  });
+
+  it('should track nothing when the identifier is invalid', async () => {
+    // Given
+    const request = makeNewsFeedRequest();
+
+    // When
+    const response = await redirectToResource(
+      { identifier: 'invalid-identifier' },
+      request
+    );
+
+    // Then
+    expect(response.status).toBe(400);
+    expect(trackNewsFeedRedirect).not.toHaveBeenCalled();
+  });
+
+  it('should track nothing when the service has no instance', async () => {
+    // Given
+    vi.mocked(loadServiceInstances).mockResolvedValue(
+      [] as LoadServiceInstancesResult
+    );
+    const request = makeNewsFeedRequest();
+
+    // When
+    const response = await redirectToResource(
+      { identifier: IDENTIFIER },
+      request
+    );
+
+    // Then
+    expect(response.headers.get('location')).toBe(`${BASE_URL}/app`);
+    expect(trackNewsFeedRedirect).not.toHaveBeenCalled();
   });
 });

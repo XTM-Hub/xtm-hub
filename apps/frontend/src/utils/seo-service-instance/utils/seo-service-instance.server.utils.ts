@@ -49,6 +49,16 @@ export async function fetchVisibleServiceSlugs(): Promise<string[]> {
 }
 
 /**
+ * Whether `slug` is a public service instance, checked against the cached
+ * `seoServiceInstances` list so a guessed slug 404s on the frontend instead of
+ * erroring on the backend.
+ */
+export async function isPublicServiceSlug(slug: string): Promise<boolean> {
+  const slugs = await fetchVisibleServiceSlugs();
+  return slugs.includes(slug);
+}
+
+/**
  * Returns null for an unknown slug, which the API reports as a `NOT_FOUND`
  * error code rather than a null field.
  */

@@ -5,11 +5,29 @@ enum NewsFeedItemType {
   RESOURCE_PLAYBOOK
   RESOURCE_CUSTOM_VIEW
   RESOURCE_INTEGRATION
+  # Test purposes only: the real behavior comes with the blog post news feed items
+  BLOG_POST
+}
+
+# The utm_medium that the Hub gives to every news feed link. The frontend reads it to recognize a news feed redirect
+enum NewsFeedUtmMedium {
+  newsfeed
+}
+
+# Mirrors the utm_content values that the Hub gives to the news feed links (newsFeedUtmContentMapping and its fallback)
+enum NewsFeedUtmContent {
+  blog_posts
+  custom_dashboard
+  custom_view
+  integration
+  playbook
+  other
 }
 
 enum NewsFeedItemMetadataKey {
   url_path
   document_id
+  blog_post_slug
 }
 
 type NewsFeedItemMetadata {

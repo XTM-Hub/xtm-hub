@@ -80,7 +80,7 @@ describe('saasManagerClient.callInstanceApi', () => {
 
     // Then
     expect(fetchMock).toHaveBeenCalledWith(
-      new URL(`${BASE_URL}/api/instance/`),
+      new URL(`${BASE_URL}/api/hub/instance/`),
       expect.objectContaining({
         method: 'GET',
         headers: expect.objectContaining({
@@ -111,7 +111,7 @@ describe('saasManagerClient.callInstanceApi', () => {
     await client.callInstanceApi({ platform_id: 'platform-1' });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      new URL(`${BASE_URL}/api/instance/platform-1/`),
+      new URL(`${BASE_URL}/api/hub/instance/platform-1/`),
       expect.any(Object)
     );
   });

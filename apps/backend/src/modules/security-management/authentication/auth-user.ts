@@ -5,12 +5,17 @@ import {
   UserInfo,
   UserLoadUserBy,
 } from '../../../model/user';
-import { PLATFORM_ORGANIZATION_UUID } from '../../../portal.const';
+import {
+  PLATFORM_DOMAIN,
+  PLATFORM_IDP_GROUP,
+  PLATFORM_ORGANIZATION_UUID,
+} from '../../../portal.const';
 import { AppLogsCategory, logApp } from '../../../utils/app-logger.util';
 import { ErrorCode, ForbiddenErrorCode } from '../../../utils/error/error.code';
 import { ForbiddenAccess } from '../../../utils/error/error.util';
 import { startUserSession } from '../../../utils/session.util';
 import { isEmptyField } from '../../../utils/utils';
+import { extractDomain } from '../../../utils/verify-email.util';
 import { ServiceGroupApp } from '../../deployment/group/service-group.app';
 import { UserDomain } from '../../organization-management/user/user-domain/user.domain';
 import { UserOrganizationDomain } from '../../organization-management/user/user-organization/user-organization.domain';
@@ -53,6 +58,30 @@ const checkIdpSubject = async (
   return false;
 };
 
+const isFiligranEmail = (email: string): boolean =>
+  PLATFORM_DOMAIN.includes(extractDomain(email.toLowerCase()) ?? '');
+
+/**
+ * Every Filigran account carries the Filigran group, so a Filigran email
+ * without it is an account that should no longer be used: it is refused, and
+ * an existing account loses its Hub roles.
+ */
+const refuseFiligranEmailOutsideGroup = async (
+  email: string,
+  idpSubject: string
+): Promise<never> => {
+  const [user] = await UserDomain.loadUser({ email });
+  if (user) {
+    await RolePortalDomain.removeAllUserRolePortal(user.id);
+  }
+  logApp.warn(
+    'Sign-in refused: Filigran email without the Filigran group',
+    { userId: user?.id, idpSubject },
+    AppLogsCategory.LOGIN_PROVIDER
+  );
+  throw ForbiddenAccess(ForbiddenErrorCode.FiligranGroupMissing);
+};
+
 export const loginFromProvider = async (userInfo: ProviderUserInfo) => {
   // region test the groups existence and eventually auto create groups
   // endregion
@@ -63,7 +92,12 @@ export const loginFromProvider = async (userInfo: ProviderUserInfo) => {
   if (isEmptyField(idp_subject)) {
     throw ForbiddenAccess(ForbiddenErrorCode.IdpSubjectNotProvided);
   }
-  const isFiligranUser = email.endsWith('@filigran.io');
+  // Membership of the Filigran organisation comes from the IdP group that
+  // Filigran IT manages, never from the email domain.
+  const isFiligranUser = userInfo.groups.includes(PLATFORM_IDP_GROUP);
+  if (!isFiligranUser && isFiligranEmail(email)) {
+    await refuseFiligranEmailOutsideGroup(email, idp_subject);
+  }
   const idpSubjectMatches = await checkIdpSubject(email, idp_subject);
 
   const user = await UserProvisioningApp.getOrProvisionUser(userInfo, {
@@ -88,25 +122,30 @@ export const loginFromProvider = async (userInfo: ProviderUserInfo) => {
     // A concurrent sign-in may have bound this account after the initial check.
     await checkIdpSubject(email, idp_subject);
   }
-  // Check if the user has the admin role, so in creation we create user then add admin role
   if (isFiligranUser) {
     await UserOrganizationDomain.ensureUserOrganizationExists(
       user.id,
       PLATFORM_ORGANIZATION_UUID
     );
-    await RolePortalDomain.removeAllUserRolePortal(user.id);
-    if (userInfo.roles.length > 0) {
-      await Promise.all(
-        userInfo.roles.map((role) =>
-          RolePortalDomain.assignRoleByName(user.id, role)
-        )
-      );
-      const reloadedUser = await UserDomain.loadUserBy({ 'User.id': user.id });
-      if (!reloadedUser) {
-        throw new Error(ErrorCode.UserNotFound);
-      }
-      return reloadedUser;
+    // An earlier sign-in without the group left the account pending
+    await UserOrganizationDomain.removeUserFromPendingList({
+      user_id: user.id,
+      organization_id: PLATFORM_ORGANIZATION_UUID,
+    });
+  }
+  // Hub roles are reset from the IdP at every sign-in, for every account, so
+  // they never outlive the Filigran group.
+  await RolePortalDomain.removeAllUserRolePortal(user.id);
+  const roles = isFiligranUser ? userInfo.roles : [];
+  if (roles.length > 0) {
+    await Promise.all(
+      roles.map((role) => RolePortalDomain.assignRoleByName(user.id, role))
+    );
+    const reloadedUser = await UserDomain.loadUserBy({ 'User.id': user.id });
+    if (!reloadedUser) {
+      throw new Error(ErrorCode.UserNotFound);
     }
+    return reloadedUser;
   }
 
   return user;

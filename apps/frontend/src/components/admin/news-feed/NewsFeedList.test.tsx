@@ -1,4 +1,5 @@
 import NewsFeedList from '@/components/admin/news-feed/NewsFeedList';
+import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
 import testRender from '@/utils/test/test-render';
 import {
   NewsFeedItemMetadataKey,
@@ -162,6 +163,41 @@ describe('NewsFeedList', () => {
     expect(
       screen.getAllByRole('button', { name: 'NewsFeedAdminPage.Delete' })
     ).toHaveLength(1);
+  });
+
+  it('renders a placeholder instead of a library label for a blog post row', () => {
+    mocks.newsFeedItems = [
+      {
+        id: 'item-3',
+        title: 'Blog post news',
+        type: NewsFeedItemType.BlogPost,
+        creation_date: '2025-01-22T08:00:00.000Z',
+        tags: ['tag-4'],
+        is_deleted: false,
+        metadata: [],
+      },
+    ];
+
+    testRender(<NewsFeedList />);
+
+    const row = screen.getByText('Blog post news').closest('tr')!;
+    expect(
+      within(row).getByText('formatted:2025-01-22T08:00:00.000Z')
+    ).toBeInTheDocument();
+    expect(within(row).getByText('tag-4')).toBeInTheDocument();
+    expect(within(row).getByText('—')).toBeInTheDocument();
+    expect(row).not.toHaveTextContent(
+      new RegExp(Object.values(ServiceSlug).join('|'))
+    );
+  });
+
+  it('renders the library label of a resource item', () => {
+    testRender(<NewsFeedList />);
+
+    const row = screen.getByText('Active news').closest('tr')!;
+    expect(
+      within(row).getByText(ServiceSlug.OPEN_CTI_PLAYBOOKS)
+    ).toBeInTheDocument();
   });
 
   it('navigates to the item url_path when a row is clicked', async () => {

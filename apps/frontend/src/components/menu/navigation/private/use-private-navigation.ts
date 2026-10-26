@@ -252,6 +252,14 @@ export const usePrivateNavigation = (): NavigationConfig => {
       ),
     [registeredPlatformsQueryData]
   );
+  const xtmoneRegisteredPlatforms = useMemo(
+    () =>
+      getPrivateNavigationRegisteredPlatformsByIdentifier(
+        registeredPlatformsQueryData,
+        PlatformIdentifier.Xtmone
+      ),
+    [registeredPlatformsQueryData]
+  );
   const canShowXtmPlatformTrialLink =
     !platformTrialStatusData?.platformTrialStatus.isBlacklisted;
   const buildServiceLink = (
@@ -296,6 +304,22 @@ export const usePrivateNavigation = (): NavigationConfig => {
             subLinks: openaevRegisteredPlatforms.map((platform) => ({
               label: platform.title,
               href: `/${APP_PATH}/service/openaev_registration/${platform.serviceInstanceId}`,
+              tooltip: platform.url,
+            })),
+          },
+        ]
+      : [];
+  // XTM One has no Hub detail page: a click leads to the instance itself.
+  const xtmoneMyProductLinks: SectionLink[] =
+    xtmoneRegisteredPlatforms.length > 0
+      ? [
+          {
+            label: getMyProductLabel(xtmoneRegisteredPlatforms.length),
+            badge: `${xtmoneRegisteredPlatforms.length}`,
+            subLinks: xtmoneRegisteredPlatforms.map((platform) => ({
+              label: platform.title,
+              href: platform.url,
+              external: true,
               tooltip: platform.url,
             })),
           },
@@ -361,9 +385,15 @@ export const usePrivateNavigation = (): NavigationConfig => {
       icon: LogoXtmOneIcon,
       pathPrefix: `/${locale}/cybersecurity-solutions/xtm-one`,
       links: [
+        ...xtmoneMyProductLinks,
         {
           href: 'https://demo.xtmone.io/login',
           label: tMenu('LiveDemo'),
+          external: true,
+        },
+        {
+          href: 'https://docs.xtmone.io/',
+          label: tMenu('Documentation'),
           external: true,
         },
         {

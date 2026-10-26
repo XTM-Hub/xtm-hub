@@ -42,6 +42,18 @@ export async function GET(
         'unregister',
         PlatformIdentifier.Openaev
       );
+    case 'register-xtmone':
+      return redirectToRegistration(
+        request,
+        'register',
+        PlatformIdentifier.Xtmone
+      );
+    case 'unregister-xtmone':
+      return redirectToRegistration(
+        request,
+        'unregister',
+        PlatformIdentifier.Xtmone
+      );
     case 'transfer-personal-space':
       return redirectToTransferPersoSpace(request);
     case 'handle-pending-user':

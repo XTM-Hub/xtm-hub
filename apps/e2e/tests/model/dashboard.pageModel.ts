@@ -4,6 +4,12 @@ export const TEST_JSON_FILE = {
   path: './tests/tests_files/assets/octi_dashboard.json',
   name: 'octi_dashboard.json',
 };
+// A real OpenCTI dashboard export, that a real OpenCTI accepts to import.
+export const DEPLOYABLE_JSON_FILE = {
+  path: './tests/tests_files/assets/octi_dashboard_deployable.json',
+  name: 'octi_dashboard_deployable.json',
+  dashboardName: 'E2E deployed dashboard',
+};
 export const TEST_2_JSON_FILE = {
   path: './tests/tests_files/assets/octi_dashboard_2.json',
   name: 'octi_dashboard_2.json',
@@ -51,11 +57,13 @@ export default class DashboardPage {
     shortDescription,
     version,
     description,
+    jsonFilePath = TEST_JSON_FILE.path,
   }: {
     name: string;
     shortDescription: string;
     version: string;
     description: string;
+    jsonFilePath?: string;
   }) {
     await this.page.getByRole('button', { name: 'Add new dashboard' }).click();
     await this.page.getByPlaceholder('Dashboard name').fill(name);
@@ -67,7 +75,7 @@ export default class DashboardPage {
       .getByRole('textbox', { name: 'This is a paragraph to' })
       .fill(description);
     await this.page.getByLabel('Publish').click();
-    await this.uploadJsonDocument(TEST_JSON_FILE.path);
+    await this.uploadJsonDocument(jsonFilePath);
     await this.uploadImageDocument(TEST_IMAGE_FILE.path);
     await selectUseCase(this.page);
     await this.page.getByRole('button', { name: 'Validate' }).click();

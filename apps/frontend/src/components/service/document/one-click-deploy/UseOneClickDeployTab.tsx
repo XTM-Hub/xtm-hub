@@ -83,9 +83,7 @@ export const useOneClickDeployTab = ({
     );
 
   const handleMessage = (event: MessageEvent) => {
-    const eventData = event.data;
-    const { action } = eventData;
-    if (action === 'refresh-token') {
+    if (event.data?.action === 'refresh-token') {
       refreshUserPlatformToken({
         variables: {},
         onCompleted,

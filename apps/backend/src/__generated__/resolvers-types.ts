@@ -1657,15 +1657,38 @@ export type NewsFeedItemMetadata = {
 };
 
 export enum NewsFeedItemMetadataKey {
+  BlogPostSlug = 'blog_post_slug',
   DocumentId = 'document_id',
   UrlPath = 'url_path'
 }
 
 export enum NewsFeedItemType {
+  BlogPost = 'BLOG_POST',
   ResourceCustomDashboard = 'RESOURCE_CUSTOM_DASHBOARD',
   ResourceCustomView = 'RESOURCE_CUSTOM_VIEW',
   ResourceIntegration = 'RESOURCE_INTEGRATION',
   ResourcePlaybook = 'RESOURCE_PLAYBOOK'
+}
+
+export type NewsFeedRedirectInput = {
+  platform_id?: InputMaybe<Scalars['String']['input']>;
+  platform_identifier?: InputMaybe<PlatformIdentifier>;
+  resource_id?: InputMaybe<Scalars['DocumentId']['input']>;
+  service_identifier: ServiceDefinitionIdentifier;
+  utm_content?: InputMaybe<NewsFeedUtmContent>;
+};
+
+export enum NewsFeedUtmContent {
+  BlogPosts = 'blog_posts',
+  CustomDashboard = 'custom_dashboard',
+  CustomView = 'custom_view',
+  Integration = 'integration',
+  Other = 'other',
+  Playbook = 'playbook'
+}
+
+export enum NewsFeedUtmMedium {
+  Newsfeed = 'newsfeed'
 }
 
 export type Node = {
@@ -1996,7 +2019,7 @@ export type Query = {
    * contains it (case-insensitive) are considered.
    */
   registeredProductVersions: Array<RegisteredProductVersion>;
-  registeredSaasPlatformMetadata?: Maybe<SaasPlatformMetadata>;
+  registeredSaasPlatformData?: Maybe<SaasPlatformData>;
   rolePortals: Array<RolePortal>;
   saasPlatforms: RegisteredPlatformConnection;
   seoServiceInstance: SeoServiceInstance;
@@ -2234,7 +2257,7 @@ export type QueryRegisteredProductVersionsArgs = {
 };
 
 
-export type QueryRegisteredSaasPlatformMetadataArgs = {
+export type QueryRegisteredSaasPlatformDataArgs = {
   input: RegisteredPlatformInput;
 };
 
@@ -2539,6 +2562,11 @@ export type SsoGroupRolePortal = {
   ssoGroup: Scalars['String']['output'];
 };
 
+export type SaasPlatformData = {
+  __typename?: 'SaasPlatformData';
+  metadata: SaasPlatformMetadata;
+};
+
 export type SaasPlatformMetadata = {
   __typename?: 'SaasPlatformMetadata';
   end_date?: Maybe<Scalars['Date']['output']>;
@@ -2550,7 +2578,13 @@ export type SaasPlatformMetadata = {
 
 export type SendTelemetryMutation = {
   __typename?: 'SendTelemetryMutation';
+  newsFeedRedirect?: Maybe<TelemetryResponse>;
   oneClickDeploy?: Maybe<TelemetryResponse>;
+};
+
+
+export type SendTelemetryMutationNewsFeedRedirectArgs = {
+  input: NewsFeedRedirectInput;
 };
 
 
@@ -3544,6 +3578,9 @@ export type ResolversTypes = ResolversObject<{
   NewsFeedItemMetadata: ResolverTypeWrapper<NewsFeedItemMetadata>;
   NewsFeedItemMetadataKey: NewsFeedItemMetadataKey;
   NewsFeedItemType: NewsFeedItemType;
+  NewsFeedRedirectInput: NewsFeedRedirectInput;
+  NewsFeedUtmContent: NewsFeedUtmContent;
+  NewsFeedUtmMedium: NewsFeedUtmMedium;
   Node: ResolverTypeWrapper<ResolversInterfaceTypes<ResolversTypes>['Node']>;
   OneClickDeployInput: OneClickDeployInput;
   OpenAEVScenario: ResolverTypeWrapper<OpenAevScenario>;
@@ -3599,6 +3636,7 @@ export type ResolversTypes = ResolversObject<{
   RolePortal: ResolverTypeWrapper<RolePortal>;
   RssFeed: ResolverTypeWrapper<RssFeed>;
   SSOGroupRolePortal: ResolverTypeWrapper<SsoGroupRolePortal>;
+  SaasPlatformData: ResolverTypeWrapper<SaasPlatformData>;
   SaasPlatformMetadata: ResolverTypeWrapper<SaasPlatformMetadata>;
   SendTelemetryMutation: ResolverTypeWrapper<SendTelemetryMutation>;
   SeoServiceInstance: ResolverTypeWrapper<SeoServiceInstance>;
@@ -3793,6 +3831,7 @@ export type ResolversParentTypes = ResolversObject<{
   NewsFeedItemEdge: NewsFeedItemEdge;
   NewsFeedItemId: Scalars['NewsFeedItemId']['output'];
   NewsFeedItemMetadata: NewsFeedItemMetadata;
+  NewsFeedRedirectInput: NewsFeedRedirectInput;
   Node: ResolversInterfaceTypes<ResolversParentTypes>['Node'];
   OneClickDeployInput: OneClickDeployInput;
   OpenAEVScenario: OpenAevScenario;
@@ -3837,6 +3876,7 @@ export type ResolversParentTypes = ResolversObject<{
   RolePortal: RolePortal;
   RssFeed: RssFeed;
   SSOGroupRolePortal: SsoGroupRolePortal;
+  SaasPlatformData: SaasPlatformData;
   SaasPlatformMetadata: SaasPlatformMetadata;
   SendTelemetryMutation: SendTelemetryMutation;
   SeoServiceInstance: SeoServiceInstance;
@@ -4778,7 +4818,7 @@ export type QueryResolvers<ContextType = PortalContext, ParentType extends Resol
   registeredPlatform?: Resolver<Maybe<ResolversTypes['RegisteredPlatform']>, ParentType, ContextType, RequireFields<QueryRegisteredPlatformArgs, 'input'>>;
   registeredPlatforms?: Resolver<Array<ResolversTypes['RegisteredPlatform']>, ParentType, ContextType, RequireFields<QueryRegisteredPlatformsArgs, 'input'>>;
   registeredProductVersions?: Resolver<Array<ResolversTypes['RegisteredProductVersion']>, ParentType, ContextType, RequireFields<QueryRegisteredProductVersionsArgs, 'product'>>;
-  registeredSaasPlatformMetadata?: Resolver<Maybe<ResolversTypes['SaasPlatformMetadata']>, ParentType, ContextType, RequireFields<QueryRegisteredSaasPlatformMetadataArgs, 'input'>>;
+  registeredSaasPlatformData?: Resolver<Maybe<ResolversTypes['SaasPlatformData']>, ParentType, ContextType, RequireFields<QueryRegisteredSaasPlatformDataArgs, 'input'>>;
   rolePortals?: Resolver<Array<ResolversTypes['RolePortal']>, ParentType, ContextType>;
   saasPlatforms?: Resolver<ResolversTypes['RegisteredPlatformConnection'], ParentType, ContextType, RequireFields<QuerySaasPlatformsArgs, 'first' | 'orderBy' | 'orderMode'>>;
   seoServiceInstance?: Resolver<ResolversTypes['SeoServiceInstance'], ParentType, ContextType, RequireFields<QuerySeoServiceInstanceArgs, 'slug'>>;
@@ -4914,6 +4954,11 @@ export type SsoGroupRolePortalResolvers<ContextType = PortalContext, ParentType 
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type SaasPlatformDataResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasPlatformData'] = ResolversParentTypes['SaasPlatformData']> = ResolversObject<{
+  metadata?: Resolver<ResolversTypes['SaasPlatformMetadata'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type SaasPlatformMetadataResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasPlatformMetadata'] = ResolversParentTypes['SaasPlatformMetadata']> = ResolversObject<{
   end_date?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   hostname?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -4924,6 +4969,7 @@ export type SaasPlatformMetadataResolvers<ContextType = PortalContext, ParentTyp
 }>;
 
 export type SendTelemetryMutationResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SendTelemetryMutation'] = ResolversParentTypes['SendTelemetryMutation']> = ResolversObject<{
+  newsFeedRedirect?: Resolver<Maybe<ResolversTypes['TelemetryResponse']>, ParentType, ContextType, RequireFields<SendTelemetryMutationNewsFeedRedirectArgs, 'input'>>;
   oneClickDeploy?: Resolver<Maybe<ResolversTypes['TelemetryResponse']>, ParentType, ContextType, RequireFields<SendTelemetryMutationOneClickDeployArgs, 'input'>>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -5536,6 +5582,7 @@ export type Resolvers<ContextType = PortalContext> = ResolversObject<{
   RolePortal?: RolePortalResolvers<ContextType>;
   RssFeed?: RssFeedResolvers<ContextType>;
   SSOGroupRolePortal?: SsoGroupRolePortalResolvers<ContextType>;
+  SaasPlatformData?: SaasPlatformDataResolvers<ContextType>;
   SaasPlatformMetadata?: SaasPlatformMetadataResolvers<ContextType>;
   SendTelemetryMutation?: SendTelemetryMutationResolvers<ContextType>;
   SeoServiceInstance?: SeoServiceInstanceResolvers<ContextType>;

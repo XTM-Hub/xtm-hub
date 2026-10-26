@@ -127,11 +127,11 @@ type Query {
   usersWithCapabilitiesInOrganization(input: UsersWithCapabilitiesInOrganizationInput!): [OrganizationMemberContact!]!
   users(first: Int!, after: ID, orderBy: UserOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [Filter!]): UserConnection!
   pendingUsers(first: Int!, after: ID, orderBy: UserOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [Filter!]): UserConnection!
+  registeredSaasPlatformData(input: RegisteredPlatformInput!): SaasPlatformData
   openCTIPlatformRegistrationStatus(input: OpenCTIPlatformRegistrationStatusInput!): OpenCTIPlatformRegistrationStatusResponse! @deprecated(reason: "Use `refreshPlatformRegistrationConnectivityStatus` instead. This field is no longer used in the OpenCTI platform due to refactoring and the addition of a version value in the endpoint.")
   isPlatformRegistered(input: IsPlatformRegisteredInput!): IsPlatformRegisteredResponse!
   canUnregisterPlatform(input: CanUnregisterPlatformInput!): CanUnregisterResponse!
   registeredPlatform(input: RegisteredPlatformInput!): RegisteredPlatform
-  registeredSaasPlatformMetadata(input: RegisteredPlatformInput!): SaasPlatformMetadata
   registeredPlatforms(input: RegisteredPlatformsInput!): [RegisteredPlatform!]!
   saasPlatforms(first: Int!, after: ID, orderBy: RegisteredPlatformOrdering!, orderMode: OrderingMode!, searchTerm: String): RegisteredPlatformConnection!
   platformAssociatedOrganization(platformId: String!, tenantId: String): Organization
@@ -985,11 +985,26 @@ enum NewsFeedItemType {
   RESOURCE_PLAYBOOK
   RESOURCE_CUSTOM_VIEW
   RESOURCE_INTEGRATION
+  BLOG_POST
+}
+
+enum NewsFeedUtmMedium {
+  newsfeed
+}
+
+enum NewsFeedUtmContent {
+  blog_posts
+  custom_dashboard
+  custom_view
+  integration
+  playbook
+  other
 }
 
 enum NewsFeedItemMetadataKey {
   url_path
   document_id
+  blog_post_slug
 }
 
 type NewsFeedItemMetadata {
@@ -1222,6 +1237,18 @@ type Subscription {
   ServiceInstance: ServiceInstanceSubscription
 }
 
+type SaasPlatformData {
+  metadata: SaasPlatformMetadata!
+}
+
+type SaasPlatformMetadata {
+  hostname: String
+  plan: String
+  start_date: Date
+  end_date: Date
+  region: String
+}
+
 enum PlatformConfigurationStatus {
   active
   inactive
@@ -1415,14 +1442,6 @@ input RegisteredPlatformsInput {
 
 input RegisteredPlatformInput {
   service_instance_id: ServiceInstanceId!
-}
-
-type SaasPlatformMetadata {
-  hostname: String
-  plan: String
-  start_date: Date
-  end_date: Date
-  region: String
 }
 
 input AutoRegisterPlatformInput {
@@ -2186,8 +2205,17 @@ input OneClickDeployInput {
   platform_service_instance_id: ID!
 }
 
+input NewsFeedRedirectInput {
+  service_identifier: ServiceDefinitionIdentifier!
+  resource_id: DocumentId
+  platform_id: String
+  platform_identifier: PlatformIdentifier
+  utm_content: NewsFeedUtmContent
+}
+
 type SendTelemetryMutation {
   oneClickDeploy(input: OneClickDeployInput!): TelemetryResponse
+  newsFeedRedirect(input: NewsFeedRedirectInput!): TelemetryResponse
 }
 
 """A Relay global ID for UseCase, extracted to a branded UseCaseId string"""
