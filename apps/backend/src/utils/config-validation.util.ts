@@ -186,5 +186,39 @@ export const validateDevUserPartial = (
   }
 };
 
+/**
+ * Parses the Express `trust proxy` hop count. Only a non-negative integer is
+ * accepted: Express reads `true` as "trust everything" and a raw string such
+ * as "1" (node-config returns env vars as strings) as a list of trusted
+ * addresses. 0 becomes `false` so express-rate-limit still flags an
+ * unexpected X-Forwarded-For header.
+ *
+ * An invalid value logs an error and falls back to `false` (trust no proxy)
+ * instead of failing the boot. Behind the ingress, `false` makes `req.ip` the
+ * front pod IP, so every user then shares one rate-limit key: the error log is
+ * the signal to fix TRUST_PROXY.
+ */
+export const parseTrustProxy = (value: unknown): number | false => {
+  const hops =
+    typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value;
+  if (typeof hops !== 'number' || !Number.isSafeInteger(hops) || hops < 0) {
+    logApp.error(
+      `[TRUST-PROXY] Invalid trust_proxy configuration (TRUST_PROXY): expected a non-negative integer hop count, got ${JSON.stringify(value)}, falling back to false`
+    );
+    return false;
+  }
+  return hops === 0 ? false : hops;
+};
+
+/**
+ * Resolves the Express `trust proxy` setting. In local dev (LOCAL_DEV=true) there is no
+ * ingress in front of the API, so no hop is trusted and `req.ip` stays the socket peer,
+ * whatever trust_proxy holds.
+ */
+export const resolveTrustProxy = (
+  configured: unknown,
+  localDev: boolean
+): number | false => (localDev ? false : parseTrustProxy(configured));
+
 // Export schemas for potential reuse
 export { DevUserOrganizationSchema, DevUsersArraySchema, DevUserSchema };
