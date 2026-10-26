@@ -44,6 +44,7 @@ describe('createQueryClient', () => {
     vi.stubGlobal('location', location);
   });
 
+describe('getQueryClient', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });

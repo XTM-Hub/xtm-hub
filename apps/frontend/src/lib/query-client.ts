@@ -1,9 +1,12 @@
 import { UnauthenticatedError } from '@/lib/graphql-fetch.utils';
 import { redirectToLogin } from '@/utils/redirect';
-import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
+import { isServer, MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
 
 // Mirrors react-query's default, which a custom `retry` function replaces.
 const MAX_QUERY_RETRIES = 3;
+// Above zero so a query hydrated from a server prefetch is not refetched as
+// soon as the client mounts it.
+export const QUERY_STALE_TIME_MS = 60_000;
 
 // Never settles, so a mutation's own onError (an error snackbar) does not run during the redirect.
 const redirectOnUnauthenticated = (
@@ -24,6 +27,24 @@ export const createQueryClient = () =>
     queryCache: new QueryCache({ onError: redirectOnUnauthenticated }),
     mutationCache: new MutationCache({ onError: redirectOnUnauthenticated }),
     defaultOptions: {
-      queries: { retry: retryUnlessUnauthenticated },
+      queries: {
+        staleTime: QUERY_STALE_TIME_MS,
+        // A retry on the server holds the whole page render back.
+        retry: isServer ? false : retryUnlessUnauthenticated,
+      },
     },
   });
+
+let browserQueryClient: QueryClient | undefined;
+
+/**
+ * A new client on every server call, so a request never reads the cache of
+ * another visitor; one client for the whole browser session.
+ */
+export const getQueryClient = () => {
+  if (isServer) {
+    return makeQueryClient();
+  }
+  browserQueryClient ??= makeQueryClient();
+  return browserQueryClient;
+};

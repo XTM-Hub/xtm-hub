@@ -11,6 +11,10 @@ interface ReactQueryProviderProps {
 const queryClient = createQueryClient();
 
 export const ReactQueryProvider = ({ children }: ReactQueryProviderProps) => {
+  // Not in useState: React throws the state away if the first render
+  // suspends with no boundary above, which would drop the browser client.
+  const queryClient = getQueryClient();
+
   return (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
