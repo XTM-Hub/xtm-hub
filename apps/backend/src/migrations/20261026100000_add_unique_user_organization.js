@@ -5,9 +5,13 @@ const CONSTRAINT_NAME = 'user_organization_user_id_organization_id_unique';
  * @returns { Promise<void> }
  */
 export async function up(knex) {
-  // Block concurrent writers until commit, so no duplicate can be inserted
-  // between the cleanup below and the constraint creation.
-  await knex.raw('LOCK TABLE "User_Organization" IN SHARE ROW EXCLUSIVE MODE');
+  // Block concurrent writers until commit: no duplicate can be inserted
+  // between the cleanup below and the constraint creation, and no capability
+  // can be granted to a duplicate row that is about to be deleted (its
+  // ON DELETE CASCADE would silently drop the grant).
+  await knex.raw(
+    'LOCK TABLE "User_Organization", "UserOrganization_Capability" IN SHARE ROW EXCLUSIVE MODE'
+  );
 
   // For each (user_id, organization_id) pair, keep the oldest row and
   // reattach the capabilities of the other rows to it.

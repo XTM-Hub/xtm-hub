@@ -324,7 +324,17 @@ export const UserOrganizationDomain = {
           }
         );
       if (!userOrgRelation) {
-        throw UnknownError(UnknownErrorCode.AddingUserError);
+        // A concurrent request created the link first: accept it, and leave
+        // the capability grant to the request that created it.
+        const concurrentRelation =
+          await UserOrganizationDomain.loadUserOrganization({
+            user_id: user.id,
+            organization_id: organization.id,
+          });
+        if (isEmpty(concurrentRelation)) {
+          throw UnknownError(UnknownErrorCode.AddingUserError);
+        }
+        return;
       }
       const shouldBeAdminOrga =
         await UserOrganizationDomain.isFirstInOrganization(organization.id);
