@@ -63,6 +63,7 @@ export const newsFeedUtmContentMapping: Partial<
   [NewsFeedItemType.ResourceCustomView]: NewsFeedUtmContent.CustomView,
   [NewsFeedItemType.ResourceIntegration]: NewsFeedUtmContent.Integration,
   [NewsFeedItemType.ResourcePlaybook]: NewsFeedUtmContent.Playbook,
+  [NewsFeedItemType.ResourceScenario]: NewsFeedUtmContent.Scenario,
 };
 
 // Public route that redirects to the external destination of an item. The relative url_path given to OpenCTI

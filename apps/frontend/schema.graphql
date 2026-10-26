@@ -985,6 +985,7 @@ enum NewsFeedItemType {
   RESOURCE_PLAYBOOK
   RESOURCE_CUSTOM_VIEW
   RESOURCE_INTEGRATION
+  RESOURCE_SCENARIO
   BLOG_POST
 }
 
@@ -998,6 +999,7 @@ enum NewsFeedUtmContent {
   custom_view
   integration
   playbook
+  scenario
   other
 }
 

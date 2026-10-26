@@ -127,6 +127,7 @@ describe('news-feed.helper', () => {
       ${NewsFeedItemType.ResourceCustomView}      | ${'custom_view'}
       ${NewsFeedItemType.ResourceIntegration}     | ${'integration'}
       ${NewsFeedItemType.ResourcePlaybook}        | ${'playbook'}
+      ${NewsFeedItemType.ResourceScenario}        | ${'scenario'}
       ${'UNKNOWN_TYPE'}                           | ${'other'}
     `(
       'should set utm_content=$expectedContent for type $type',
