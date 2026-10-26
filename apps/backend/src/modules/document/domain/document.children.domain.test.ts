@@ -7,11 +7,9 @@ import {
   DocumentImageType,
   DocumentSourceType,
 } from '../../../__generated__/resolvers-types';
-import { withTransaction } from '../../../context/database.context';
 import Document, { DocumentId } from '../../../model/kanel/public/Document';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import { ADMIN_UUID } from '../../../portal.const';
-import { MinIOClient } from '../../../thirdparty/minio/client';
 import { DOCUMENT_IMAGE_METADATA_KEYS } from '../document.model';
 import { DocumentUploadsHelper, Upload } from '../document.uploads.helper';
 import { DocumentChildrenDomain } from './document.children.domain';
@@ -193,16 +191,16 @@ describe('documentChildrenDomain', () => {
       vi.spyOn(DocumentUploadsHelper, 'processUploads').mockResolvedValue([
         minioFileMock,
       ]);
-      vi.spyOn(MinIOClient, 'deleteFile').mockResolvedValue(undefined);
     });
 
-    it('should replace the external image file in place, keeping its id, and delete the old MinIO file', async () => {
+    it('should replace the external image file in place, keeping its id, and return the old MinIO file as obsolete', async () => {
       // Insert a fake parent doc model
       const parentDoc = await TestHelper.document.load({
         id: parentId,
       });
       // upsertExternalImage expects a DocumentModel, so we use the DB row
-      await DocumentChildrenDomain.upsertExternalImage(parentDoc, upload);
+      const obsoleteMinioNames =
+        await DocumentChildrenDomain.upsertExternalImage(parentDoc, upload);
       // Only one external image child should remain
       // eslint-disable-next-line no-restricted-syntax
       const children: Document[] = await db<Document>('Document')
@@ -227,20 +225,20 @@ describe('documentChildrenDomain', () => {
       );
       expect(internalImages).toHaveLength(1);
       expect(internalImages[0]!.id).toBe(oldInternalId);
-      // MinIOClient.deleteFile should be called for old external image file
-      expect(MinIOClient.deleteFile).toHaveBeenCalledWith('old-external');
+      expect(obsoleteMinioNames).toEqual(['old-external']);
     });
 
-    it('should not delete the MinIO file when the new upload points to the same file', async () => {
+    it('should not return the MinIO file as obsolete when the new upload points to the same file', async () => {
       vi.spyOn(DocumentUploadsHelper, 'processUploads').mockResolvedValue([
         { ...minioFileMock, minioName: 'old-external' },
       ]);
       const parentDoc = await TestHelper.document.load({
         id: parentId,
       });
-      await DocumentChildrenDomain.upsertExternalImage(parentDoc, upload);
+      const obsoleteMinioNames =
+        await DocumentChildrenDomain.upsertExternalImage(parentDoc, upload);
 
-      expect(MinIOClient.deleteFile).not.toHaveBeenCalled();
+      expect(obsoleteMinioNames).toEqual([]);
     });
 
     it('should keep the oldest external image and delete the duplicates', async () => {
@@ -257,17 +255,20 @@ describe('documentChildrenDomain', () => {
       const parentDoc = await TestHelper.document.load({
         id: parentId,
       });
-      await DocumentChildrenDomain.upsertExternalImage(parentDoc, upload);
+      const obsoleteMinioNames =
+        await DocumentChildrenDomain.upsertExternalImage(parentDoc, upload);
 
       const externalImages =
         await DocumentChildrenDomain.loadExternalImages(parentId);
       expect(externalImages).toHaveLength(1);
       expect(externalImages[0]!.id).toBe(oldExternalId);
-      expect(MinIOClient.deleteFile).toHaveBeenCalledWith('duplicate-external');
-      expect(MinIOClient.deleteFile).toHaveBeenCalledWith('old-external');
+      expect(obsoleteMinioNames).toHaveLength(2);
+      expect(obsoleteMinioNames).toEqual(
+        expect.arrayContaining(['duplicate-external', 'old-external'])
+      );
     });
 
-    it('should not delete the MinIO file of a duplicate that shares the new upload key', async () => {
+    it('should not return the MinIO file of a duplicate that shares the new upload key as obsolete', async () => {
       vi.spyOn(DocumentUploadsHelper, 'processUploads').mockResolvedValue([
         { ...minioFileMock, minioName: 'shared-key' },
       ]);
@@ -284,45 +285,14 @@ describe('documentChildrenDomain', () => {
       const parentDoc = await TestHelper.document.load({
         id: parentId,
       });
-      await DocumentChildrenDomain.upsertExternalImage(parentDoc, upload);
+      const obsoleteMinioNames =
+        await DocumentChildrenDomain.upsertExternalImage(parentDoc, upload);
 
       const externalImages =
         await DocumentChildrenDomain.loadExternalImages(parentId);
       expect(externalImages).toHaveLength(1);
       expect(externalImages[0]!.minio_name).toBe('shared-key');
-      expect(MinIOClient.deleteFile).not.toHaveBeenCalledWith('shared-key');
-      expect(MinIOClient.deleteFile).toHaveBeenCalledWith('old-external');
-    });
-
-    it('should delete the old MinIO file only once the enclosing transaction is committed', async () => {
-      const parentDoc = await TestHelper.document.load({
-        id: parentId,
-      });
-      await withTransaction(async () => {
-        await DocumentChildrenDomain.upsertExternalImage(parentDoc, upload);
-        expect(MinIOClient.deleteFile).not.toHaveBeenCalled();
-      });
-
-      expect(MinIOClient.deleteFile).toHaveBeenCalledTimes(1);
-      expect(MinIOClient.deleteFile).toHaveBeenCalledWith('old-external');
-    });
-
-    it('should keep the old MinIO file when the enclosing transaction rolls back', async () => {
-      const parentDoc = await TestHelper.document.load({
-        id: parentId,
-      });
-      await expect(
-        withTransaction(async () => {
-          await DocumentChildrenDomain.upsertExternalImage(parentDoc, upload);
-          throw new Error('rollback');
-        })
-      ).rejects.toThrow('rollback');
-
-      expect(MinIOClient.deleteFile).not.toHaveBeenCalled();
-      const externalImages =
-        await DocumentChildrenDomain.loadExternalImages(parentId);
-      expect(externalImages).toHaveLength(1);
-      expect(externalImages[0]!.minio_name).toBe('old-external');
+      expect(obsoleteMinioNames).toEqual(['old-external']);
     });
 
     it('should delete the external images when there is no new logo', async () => {
@@ -330,12 +300,13 @@ describe('documentChildrenDomain', () => {
       const parentDoc = await TestHelper.document.load({
         id: parentId,
       });
-      await DocumentChildrenDomain.upsertExternalImage(parentDoc, upload);
+      const obsoleteMinioNames =
+        await DocumentChildrenDomain.upsertExternalImage(parentDoc, upload);
 
       expect(await DocumentChildrenDomain.loadExternalImages(parentId)).toEqual(
         []
       );
-      expect(MinIOClient.deleteFile).toHaveBeenCalledWith('old-external');
+      expect(obsoleteMinioNames).toEqual(['old-external']);
     });
 
     it('should work if there are no previous external images', async () => {
@@ -348,7 +319,8 @@ describe('documentChildrenDomain', () => {
       const parentDoc = await TestHelper.document.load({
         id: parentId,
       });
-      await DocumentChildrenDomain.upsertExternalImage(parentDoc, upload);
+      const obsoleteMinioNames =
+        await DocumentChildrenDomain.upsertExternalImage(parentDoc, upload);
       // eslint-disable-next-line no-restricted-syntax
       const children: Document[] = await db<Document>('Document')
         .leftJoin(
@@ -363,8 +335,7 @@ describe('documentChildrenDomain', () => {
       );
       expect(externalImages).toHaveLength(1);
       expect(externalImages[0]!.minio_name).toBe('new-minio');
-      // No MinIO file deletion should be called
-      expect(MinIOClient.deleteFile).not.toHaveBeenCalled();
+      expect(obsoleteMinioNames).toEqual([]);
     });
 
     it('should not affect unrelated parents or children', async () => {

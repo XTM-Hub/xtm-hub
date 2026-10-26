@@ -5,10 +5,7 @@ import {
   DocumentMetadataKeyCode,
   DocumentSourceType,
 } from '../../../__generated__/resolvers-types';
-import {
-  afterCommit,
-  withTransaction,
-} from '../../../context/database.context';
+import { withTransaction } from '../../../context/database.context';
 import { requestContext } from '../../../context/request.context';
 import {
   DocumentId,
@@ -17,7 +14,6 @@ import {
 import DocumentChildren from '../../../model/kanel/public/DocumentChildren';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import { restrictDocumentToUserOrganization } from '../../../security/restriction/document';
-import { MinIOClient } from '../../../thirdparty/minio/client';
 import { MinioFile } from '../../../thirdparty/minio/types';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { DocumentApp } from '../document.app';
@@ -195,10 +191,15 @@ export const DocumentChildrenDomain = {
     return images;
   },
 
+  /**
+   * Replaces the external image of `doc` and returns the storage names of the
+   * files it made obsolete. It does not delete them: the caller must do so
+   * once its outermost transaction is committed, so a rollback keeps them.
+   */
   upsertExternalImage: async <T extends DocumentModel>(
     doc: T,
     externalImageUpload: Upload
-  ) => {
+  ): Promise<string[]> => {
     const { service_instance_id } = doc;
     if (!service_instance_id) {
       throw new Error(ErrorCode.ServiceInstanceNotFound);
@@ -246,19 +247,7 @@ export const DocumentChildrenDomain = {
         .filter((minioName) => minioName !== logoFile.minioName);
     });
 
-    // This may run inside the transaction of a caller, which commits later:
-    // delete the files only once everything is committed, so the database never
-    // references a missing file and a rollback keeps the previous files.
-    const minioNamesToDelete = [...new Set(obsoleteMinioNames)];
-    if (minioNamesToDelete.length > 0) {
-      await afterCommit(async () => {
-        await Promise.all(
-          minioNamesToDelete.map((minioName) =>
-            MinIOClient.deleteFile(minioName)
-          )
-        );
-      });
-    }
+    return [...new Set(obsoleteMinioNames)];
   },
 
   loadExternalImages: async (

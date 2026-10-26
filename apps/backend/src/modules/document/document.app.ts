@@ -512,7 +512,7 @@ export const DocumentApp = {
     metadataKeys: DocumentMetadataKeys<T>,
     product: FiligranProduct
   ) => {
-    return withTransaction(async () => {
+    const { doc, obsoleteMinioNames } = await withTransaction(async () => {
       const doc = await upsertDocument<T>(
         {
           ...input,
@@ -522,13 +522,20 @@ export const DocumentApp = {
         product
       );
 
-      await DocumentChildrenDomain.upsertExternalImage(
-        doc,
-        externalImageUpload
-      );
+      const obsoleteMinioNames =
+        await DocumentChildrenDomain.upsertExternalImage(
+          doc,
+          externalImageUpload
+        );
 
-      return doc;
+      return { doc, obsoleteMinioNames };
     });
+
+    // Only once committed: a rollback keeps the previous files, and readers
+    // never see a reference to a deleted file.
+    await DocumentHelper.deleteObsoleteFiles(obsoleteMinioNames);
+
+    return doc;
   },
 
   deleteDocument: async <T extends DocumentModel>(

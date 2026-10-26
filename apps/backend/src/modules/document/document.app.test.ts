@@ -26,6 +26,7 @@ import {
   QueryPublicDocumentsArgs,
   ServiceDefinitionIdentifier,
 } from '../../__generated__/resolvers-types';
+import { databaseContext } from '../../context/database.context';
 import Document from '../../model/kanel/public/Document';
 import { OrganizationId } from '../../model/kanel/public/Organization';
 import ServiceDefinition from '../../model/kanel/public/ServiceDefinition';
@@ -1486,6 +1487,84 @@ describe('documentApp', () => {
       expect(children[0]).toMatchObject({
         source_type: DocumentSourceType.External,
         file_name: 'new-image.png',
+      });
+    });
+
+    describe('obsolete external image files', () => {
+      const input = {
+        ...documentData,
+        uploader_id: TEST_ORGANIZATIONS.FILIGRAN.USERS.BYPASS.ID,
+        slug: 'obsolete-files-slug',
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+      };
+
+      const upsertWithFile = async (minioName: string) => {
+        vi.spyOn(DocumentUploadsHelper, 'processUploads').mockResolvedValue([
+          { ...minioFileMock, minioName },
+        ]);
+        return DocumentApp.upsertDocumentWithExternalImage(
+          'integration',
+          input,
+          mockUpload,
+          metadataKeys,
+          FiligranProduct.Opencti
+        );
+      };
+
+      it('should delete the replaced file once the transaction is committed', async () => {
+        // Given
+        await upsertWithFile('first-file');
+        const inTransactionOnDelete: boolean[] = [];
+        vi.spyOn(MinIOClient, 'deleteFile').mockImplementation(async () => {
+          inTransactionOnDelete.push(databaseContext.isInTransaction());
+        });
+
+        // When
+        const doc = await upsertWithFile('second-file');
+
+        // Then
+        expect(MinIOClient.deleteFile).toHaveBeenCalledTimes(1);
+        expect(MinIOClient.deleteFile).toHaveBeenCalledWith('first-file');
+        expect(inTransactionOnDelete).toEqual([false]);
+        const children = await DocumentChildrenDomain.loadChildrenDocuments(
+          doc.id
+        );
+        expect(children[0]).toMatchObject({ minio_name: 'second-file' });
+      });
+
+      it('should keep the replaced file when the upsert fails', async () => {
+        // Given
+        await upsertWithFile('first-file');
+        vi.spyOn(MinIOClient, 'deleteFile').mockClear();
+        vi.spyOn(
+          DocumentChildrenDomain,
+          'upsertExternalImage'
+        ).mockRejectedValueOnce(new Error('upsert failed'));
+
+        // When
+        await expect(upsertWithFile('second-file')).rejects.toThrow(
+          'upsert failed'
+        );
+
+        // Then
+        expect(MinIOClient.deleteFile).not.toHaveBeenCalled();
+      });
+
+      it('should not fail the upsert when deleting the replaced file fails', async () => {
+        // Given
+        await upsertWithFile('first-file');
+        vi.spyOn(MinIOClient, 'deleteFile').mockRejectedValue(
+          new Error('storage down')
+        );
+
+        // When
+        const doc = await upsertWithFile('second-file');
+
+        // Then
+        const children = await DocumentChildrenDomain.loadChildrenDocuments(
+          doc.id
+        );
+        expect(children[0]).toMatchObject({ minio_name: 'second-file' });
       });
     });
 

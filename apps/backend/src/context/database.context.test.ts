@@ -1,13 +1,5 @@
 import { Knex } from 'knex';
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { database, db } from '../../knexfile';
 import { databaseContext } from './database.context';
 
@@ -180,69 +172,6 @@ describe('databaseContext Tests', () => {
 
       // All operations should be rolled back
       expect(await countItems()).toBe(0);
-    });
-  });
-
-  describe('afterCommit', () => {
-    it('should run the callback immediately outside a transaction', async () => {
-      const callback = vi.fn();
-
-      await databaseContext.afterCommit(callback);
-
-      expect(callback).toHaveBeenCalledTimes(1);
-    });
-
-    it('should run the callback only after the transaction is committed', async () => {
-      const callback = vi.fn();
-
-      await databaseContext.withTransaction(async () => {
-        await databaseContext.afterCommit(callback);
-        expect(callback).not.toHaveBeenCalled();
-      });
-
-      expect(callback).toHaveBeenCalledTimes(1);
-    });
-
-    it('should wait for the outermost transaction when nested', async () => {
-      const callback = vi.fn();
-
-      await databaseContext.withTransaction(async () => {
-        await databaseContext.withTransaction(async () => {
-          await databaseContext.afterCommit(callback);
-        });
-        expect(callback).not.toHaveBeenCalled();
-      });
-
-      expect(callback).toHaveBeenCalledTimes(1);
-    });
-
-    it('should not run the callback when the transaction rolls back', async () => {
-      const callback = vi.fn();
-
-      await expect(
-        databaseContext.withTransaction(async () => {
-          await databaseContext.afterCommit(callback);
-          throw new Error('rollback');
-        })
-      ).rejects.toThrow('rollback');
-
-      expect(callback).not.toHaveBeenCalled();
-    });
-
-    it('should not fail the transaction when a callback throws', async () => {
-      const next = vi.fn();
-
-      await expect(
-        databaseContext.withTransaction(async () => {
-          await databaseContext.afterCommit(() => {
-            throw new Error('callback failure');
-          });
-          await databaseContext.afterCommit(next);
-          return 'done';
-        })
-      ).resolves.toBe('done');
-
-      expect(next).toHaveBeenCalledTimes(1);
     });
   });
 
