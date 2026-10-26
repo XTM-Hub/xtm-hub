@@ -10,6 +10,8 @@ import {
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
 import { logApp } from '../../utils/app-logger.util';
+import { toIsoDate } from '../../utils/format';
+import { isRecord } from '../../utils/typescript';
 
 const SAAS_PLATFORM_METRICS_DAYS = 90;
 
@@ -24,17 +26,6 @@ const RESOLUTIONS: ReadonlySet<string> = new Set(
 
 const isResolution = (value: unknown): value is SaasPlatformResolution =>
   typeof value === 'string' && RESOLUTIONS.has(value);
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
-
-const toIsoDate = (value: unknown): string | null => {
-  if (typeof value !== 'string' || value === '') {
-    return null;
-  }
-  const time = Date.parse(value);
-  return Number.isNaN(time) ? null : new Date(time).toISOString();
-};
 
 const readMetadataString = (
   body: Record<string, unknown>,

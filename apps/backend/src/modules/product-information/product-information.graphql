@@ -42,5 +42,5 @@ enum SaasPlatformResolution {
 
 type Query {
   registeredSaasPlatformData(input: RegisteredPlatformInput!): SaasPlatformData
-    @auth
+    @auth(portalCapa: [BYPASS, READ_SAAS_METRICS])
 }

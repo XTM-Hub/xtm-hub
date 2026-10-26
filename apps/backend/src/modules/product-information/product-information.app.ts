@@ -1,5 +1,9 @@
-import { SaasPlatformData } from '../../__generated__/resolvers-types';
+import {
+  FeatureFlag,
+  SaasPlatformData,
+} from '../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
+import { isFeatureEnabled } from '../../utils/feature-flag.util';
 import { RegistrationDomain } from '../registration/registration.domain';
 import { ProductInformationHelper } from './product-information.helper';
 
@@ -54,6 +58,10 @@ export const ProductInformationApp = {
   loadRegisteredSaasPlatformData: async (
     serviceInstanceId: ServiceInstanceId
   ): Promise<SaasPlatformData | null> => {
+    if (!isFeatureEnabled(FeatureFlag.SaasMetrics)) {
+      return null;
+    }
+
     // Resolve the platform through the organization-scoped query first, so that
     // the SaaS Manager is only ever called for a platform the user can access,
     // and with the platform_id stored in the Hub, never a client-supplied one.
