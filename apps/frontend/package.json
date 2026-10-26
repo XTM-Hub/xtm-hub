@@ -99,7 +99,7 @@
     "relay-test-utils": "20.1.1",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vite-plugin-relay": "2.1.0",
+    "vite-plugin-relay": "2.2.1",
     "vite-tsconfig-paths": "6.1.1",
     "vitest": "catalog:"
   },
