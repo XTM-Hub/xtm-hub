@@ -54,7 +54,7 @@ describe('news-feed.helper', () => {
 
     it('returns true when no minimum is configured for the identifier', () => {
       expect(
-        doesPlatformSupportNewsFeed(PlatformIdentifier.Openaev, '1.0.0')
+        doesPlatformSupportNewsFeed(PlatformIdentifier.Xtmone, '1.0.0')
       ).toBe(true);
     });
   });
