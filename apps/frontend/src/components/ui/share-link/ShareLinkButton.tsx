@@ -1,7 +1,5 @@
 'use client';
-import { updateShareNumber } from '@/components/ui/share-link/ShareLinkActions';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
-import usePublicPath from '@/hooks/use-public-path';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { ShareIcon } from '@filigran/icon';
@@ -15,7 +13,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@filigran/design-system';
-import { unstable_rethrow } from 'next/navigation';
 import { useCopyToClipboard } from 'usehooks-ts';
 
 export interface ShareLinkButtonProps {
@@ -27,31 +24,10 @@ export interface ShareLinkButtonProps {
 }
 
 export const ShareLinkButton = (props: ShareLinkButtonProps) => {
-  const isPublicPath = usePublicPath();
-  return isPublicPath ? (
-    <ShareLinkServerAction {...props} />
-  ) : (
-    <ShareLinkClientButton {...props} />
-  );
-};
-
-const useShowShareNumberError = () => {
-  const t = useTranslate();
-  return () =>
-    showSnackbar({
-      severity: 'error',
-      title: t('Utils.Error'),
-      description: t('Error.AnErrorOccured'),
-    });
-};
-
-export const ShareLinkClientButton = (props: ShareLinkButtonProps) => {
   const { documentId, onShare, ...buttonProps } = props;
-  const showShareNumberError = useShowShareNumberError();
   const { mutate: incrementShareNumber } =
     useIncrementShareNumberDocumentMutation(portalGraphqlClient, {
       onSuccess: () => onShare?.(),
-      onError: showShareNumberError,
     });
 
   return (
@@ -60,30 +36,6 @@ export const ShareLinkClientButton = (props: ShareLinkButtonProps) => {
       onClickAction={() => {
         if (!documentId) return;
         incrementShareNumber({ documentId });
-      }}
-    />
-  );
-};
-
-export const ShareLinkServerAction = (props: ShareLinkButtonProps) => {
-  const { documentId, onShare, ...buttonProps } = props;
-  const showShareNumberError = useShowShareNumberError();
-  return (
-    <ShareLinkCommonButton
-      {...buttonProps}
-      onClickAction={() => {
-        if (!documentId) return;
-        updateShareNumber({
-          variables: {
-            documentId,
-          },
-        })
-          .then(() => onShare?.())
-          .catch((error: unknown) => {
-            // Hands the signup redirect back to Next.js instead of reporting it.
-            unstable_rethrow(error);
-            showShareNumberError();
-          });
       }}
     />
   );

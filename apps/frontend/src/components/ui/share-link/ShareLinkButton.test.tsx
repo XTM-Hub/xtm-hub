@@ -10,26 +10,13 @@ import { waitFor } from '@testing-library/react';
 import { graphql, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const {
-  mockUpdateShareNumber,
-  mockUsePublicPath,
-  showSnackbarMock,
-  copyOverride,
-} = vi.hoisted(() => ({
-  mockUpdateShareNumber: vi.fn(),
-  mockUsePublicPath: vi.fn(),
+const { showSnackbarMock, copyOverride } = vi.hoisted(() => ({
   showSnackbarMock: vi.fn(),
   copyOverride: {
     current: undefined as undefined | ((text: string) => Promise<boolean>),
   },
 }));
 
-vi.mock('@/components/ui/share-link/ShareLinkActions', () => ({
-  updateShareNumber: mockUpdateShareNumber,
-}));
-vi.mock('@/hooks/use-public-path', () => ({
-  default: mockUsePublicPath,
-}));
 vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
   showSnackbar: showSnackbarMock,
 }));
@@ -74,26 +61,17 @@ const mockIncrementShareNumber = (
 describe('ShareLinkButton', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUpdateShareNumber.mockResolvedValue(undefined);
     copyOverride.current = undefined;
   });
 
   it.each`
-    isPublicPath | documentId     | expectedClientCalls | expectedServerCalls
-    ${false}     | ${DOCUMENT_ID} | ${1}                | ${0}
-    ${false}     | ${undefined}   | ${0}                | ${0}
-    ${true}      | ${DOCUMENT_ID} | ${0}                | ${1}
-    ${true}      | ${undefined}   | ${0}                | ${0}
+    documentId     | expectedCalls
+    ${DOCUMENT_ID} | ${1}
+    ${undefined}   | ${0}
   `(
-    'increments the share counter only when a document id is given (isPublicPath=$isPublicPath, documentId=$documentId)',
-    async ({
-      isPublicPath,
-      documentId,
-      expectedClientCalls,
-      expectedServerCalls,
-    }) => {
+    'increments the share counter only when a document id is given (documentId=$documentId)',
+    async ({ documentId, expectedCalls }) => {
       // Given
-      mockUsePublicPath.mockReturnValue(isPublicPath);
       const capturedVariables = mockIncrementShareNumber();
       const { user, container } = testRender(
         <ShareLinkButton
@@ -116,45 +94,35 @@ describe('ShareLinkButton', () => {
         })
       );
       await waitFor(() =>
-        expect(capturedVariables).toHaveLength(expectedClientCalls)
+        expect(capturedVariables).toHaveLength(expectedCalls)
       );
-      if (expectedClientCalls > 0) {
+      if (expectedCalls > 0) {
         expect(capturedVariables[0]).toEqual({ documentId: DOCUMENT_ID });
       }
-      expect(mockUpdateShareNumber).toHaveBeenCalledTimes(expectedServerCalls);
     }
   );
 
-  it.each`
-    isPublicPath
-    ${false}
-    ${true}
-  `(
-    'should notify the share once the counter is incremented (isPublicPath=$isPublicPath)',
-    async ({ isPublicPath }) => {
-      // Given
-      mockUsePublicPath.mockReturnValue(isPublicPath);
-      mockIncrementShareNumber();
-      const onShare = vi.fn();
-      const { user, container } = testRender(
-        <ShareLinkButton
-          url={SHAREABLE_URL}
-          documentId={DOCUMENT_ID}
-          onShare={onShare}
-        />
-      );
-
-      // When
-      await user.click(container.querySelector('button')!);
-
-      // Then
-      await waitFor(() => expect(onShare).toHaveBeenCalledTimes(1));
-    }
-  );
-
-  it('should not notify the share when the counter increment fails', async () => {
+  it('should notify the share once the counter is incremented', async () => {
     // Given
-    mockUsePublicPath.mockReturnValue(false);
+    mockIncrementShareNumber();
+    const onShare = vi.fn();
+    const { user, container } = testRender(
+      <ShareLinkButton
+        url={SHAREABLE_URL}
+        documentId={DOCUMENT_ID}
+        onShare={onShare}
+      />
+    );
+
+    // When
+    await user.click(container.querySelector('button')!);
+
+    // Then
+    await waitFor(() => expect(onShare).toHaveBeenCalledTimes(1));
+  });
+
+  it('should stay silent and not notify the share when the counter increment fails', async () => {
+    // Given
     const capturedVariables = mockIncrementShareNumber(() =>
       HttpResponse.json({ errors: [{ message: 'NOT_FOUND' }] })
     );
@@ -172,46 +140,18 @@ describe('ShareLinkButton', () => {
 
     // Then
     await waitFor(() => expect(capturedVariables).toHaveLength(1));
+    await waitFor(() =>
+      expect(showSnackbarMock).toHaveBeenCalledWith({
+        severity: 'success',
+        title: 'Service.ShareableResources.Copied',
+      })
+    );
+    expect(showSnackbarMock).toHaveBeenCalledTimes(1);
     expect(onShare).not.toHaveBeenCalled();
   });
 
-  it.each`
-    isPublicPath
-    ${false}
-    ${true}
-  `(
-    'should display an error message when the share counter increment fails (isPublicPath=$isPublicPath)',
-    async ({ isPublicPath }) => {
-      // Given both the client mutation and the server action fail
-      mockUsePublicPath.mockReturnValue(isPublicPath);
-      mockIncrementShareNumber(() =>
-        HttpResponse.json({ errors: [{ message: 'NOT_FOUND' }] })
-      );
-      mockUpdateShareNumber.mockRejectedValue(new Error('NOT_FOUND'));
-      const { user, container } = testRender(
-        <ShareLinkButton
-          url={SHAREABLE_URL}
-          documentId={DOCUMENT_ID}
-        />
-      );
-
-      // When
-      await user.click(container.querySelector('button')!);
-
-      // Then
-      await waitFor(() =>
-        expect(showSnackbarMock).toHaveBeenCalledWith({
-          severity: 'error',
-          title: 'Utils.Error',
-          description: 'Error.AnErrorOccured',
-        })
-      );
-    }
-  );
-
   it('should raise an error message when the copy is rejected', async () => {
     // Given
-    mockUsePublicPath.mockReturnValue(false);
     const capturedVariables = mockIncrementShareNumber();
     copyOverride.current = vi
       .fn()

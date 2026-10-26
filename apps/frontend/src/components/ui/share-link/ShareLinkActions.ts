@@ -1,7 +1,6 @@
 'use server';
 
 import { getAuthenticatedGraphqlClient } from '@/lib/graphql-client';
-import { redirectToSignupOnUnauthenticated } from '@/lib/server-unauthenticated-redirect';
 import {
   IncrementShareNumberDocumentDocument,
   IncrementShareNumberDocumentMutation,
@@ -13,11 +12,9 @@ export async function updateShareNumber({
 }: {
   variables: IncrementShareNumberDocumentMutationVariables;
 }) {
-  await redirectToSignupOnUnauthenticated(async () => {
-    const client = await getAuthenticatedGraphqlClient();
-    return client.request<
-      IncrementShareNumberDocumentMutation,
-      IncrementShareNumberDocumentMutationVariables
-    >(IncrementShareNumberDocumentDocument, variables);
-  });
+  const client = await getAuthenticatedGraphqlClient();
+  await client.request<
+    IncrementShareNumberDocumentMutation,
+    IncrementShareNumberDocumentMutationVariables
+  >(IncrementShareNumberDocumentDocument, variables);
 }
