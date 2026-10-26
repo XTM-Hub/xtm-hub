@@ -69,6 +69,10 @@ resolver.
   for tests).
 - Call the hook with `portalGraphqlClient` from `apps/frontend/src/lib/graphql-client.ts` (a `graphql-request`
   client) as the first argument; manage cache invalidation with `@tanstack/react-query`'s `useQueryClient()`.
+- An expired session is handled once, by the `QueryClient` from `createQueryClient()`
+  (`apps/frontend/src/lib/query-client.ts`): it redirects to the login page, does not retry, and keeps a failed
+  mutation's own `onError` from running. Do not check for `UnauthenticatedError` in a react-query hook's options or
+  callbacks.
 
 ## Subscriptions
 

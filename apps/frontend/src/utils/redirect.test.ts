@@ -7,6 +7,7 @@ import {
   decodeSafeRedirect,
   encodeRedirectValue,
   isSafeRedirect,
+  redirectToLogin,
 } from './redirect';
 
 describe('isSafeRedirect', () => {
@@ -113,6 +114,52 @@ describe('buildLoginRedirect', () => {
     const loginUrl = buildLoginRedirect(path);
     const b64 = new URLSearchParams(loginUrl.split('?')[1]).get('redirect');
     expect(decodeSafeRedirect(b64)).toBe(path);
+  });
+});
+
+describe('redirectToLogin', () => {
+  const CURRENT_PATHNAME = '/app/current-page';
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('should send the visitor to the login page with a way back when they are on an app page', () => {
+    // Given
+    const location = {
+      href: '',
+      pathname: CURRENT_PATHNAME,
+      search: '',
+      hash: '',
+    };
+    vi.stubGlobal('location', location);
+
+    // When
+    redirectToLogin();
+
+    // Then
+    expect(location.href).toBe(buildLoginRedirect(CURRENT_PATHNAME));
+  });
+
+  it('should keep the query string and the hash in the way back when the page depends on them', () => {
+    // Given
+    const location = {
+      href: '',
+      pathname: '/app/profile/transfer-personal-space',
+      search: '?id=transfer-request-id',
+      hash: '#details',
+    };
+    vi.stubGlobal('location', location);
+
+    // When
+    redirectToLogin();
+
+    // Then
+    expect(location.href).toBe(
+      buildLoginRedirect(
+        '/app/profile/transfer-personal-space?id=transfer-request-id#details'
+      )
+    );
   });
 });
 

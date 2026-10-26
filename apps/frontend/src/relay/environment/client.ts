@@ -9,7 +9,7 @@ import {
   RELAY_WINDOW_KEY,
 } from '@/relay/environment/helpers';
 import { registerClientEnvironment } from '@/relay/environment/registry';
-import { buildLoginRedirect } from '@/utils/redirect';
+import { redirectToLogin } from '@/utils/redirect';
 import {
   Environment,
   FetchFunction,
@@ -27,7 +27,7 @@ let clientSideRelayEnvironment: RelayModernEnvironment | null = null;
 
 function handleUnauthenticated(e: unknown): Promise<never> {
   if (e instanceof UnauthenticatedError) {
-    window.location.href = buildLoginRedirect(window.location.pathname);
+    redirectToLogin();
     return new Promise<never>(() => {});
   }
   throw e;
