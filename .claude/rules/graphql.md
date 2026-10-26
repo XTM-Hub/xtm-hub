@@ -73,6 +73,45 @@ resolver.
   (`apps/frontend/src/lib/query-client.ts`): it redirects to the login page, does not retry, and keeps a failed
   mutation's own `onError` from running. Do not check for `UnauthenticatedError` in a react-query hook's options or
   callbacks.
+- In application code, get a `QueryClient` only from `getQueryClient()` in `apps/frontend/src/lib/query-client.ts`,
+  never with `new QueryClient()` (tests render with their own, from `testRender`): it returns a new client on each
+  server call, so one visitor's data never lands in another's render, and one client for the browser session. Its
+  `staleTime` keeps a hydrated query from refetching on mount, so a mutation has to invalidate the queries it changes.
+
+### Server rendering
+
+For data a page fetches on the server, pick the model by whether a client `use<Name>Query` hook reads the same query
+key (operation and variables). Another call of the same operation with other variables is another query:
+
+- **No client hook reads that key**: fetch it in the server component with the generated document or fetcher, as
+  `XtmRoadmap.tsx` does, and render it there or pass it as props to a client component, which refreshes it with
+  `router.refresh()` or a Server Action, as the edit-mode drafts in `app/(application)/app/layout.tsx` do. The
+  operation still lives in `apps/frontend/graphql/`; only the `QueryClient` and the hydration are left out.
+- **A client hook reads that key**: prefetch it on the server and hydrate it. Never hand it down as props or
+  `initialData`: the client cache would not hold it, so invalidating it after a mutation would do nothing.
+
+```tsx
+const queryClient = getQueryClient();
+await queryClient.prefetchQuery({
+  queryKey: featureVotingKeys.current(variables), // the exact key the client hook passes
+  queryFn: useCurrentVotingRoundQuery.fetcher(await getAuthenticatedGraphqlClient(), variables),
+});
+return (
+  <HydrationBoundary state={dehydrate(queryClient)}>
+    <FeatureVotingList {...props} />
+  </HydrationBoundary>
+);
+```
+
+Reference: `apps/frontend/src/components/feature-voting/PrefetchedFeatureVotingList.tsx`, rendered by both
+feature-voting pages.
+
+- Build the `queryKey` from the domain's `*.keys.ts`, with the same variables as the client hook. A key that
+  differs is a silent miss: the page renders its loading state and the client fetches again.
+- `prefetchQuery` swallows errors and a failed query is not dehydrated, so the client fetches it again. When the page
+  must redirect or 404 on failure, use `fetchQuery` instead (it throws), wrapped in `redirectToSignupOnUnauthenticated`
+  for an anonymous visitor.
+- Pick the `queryFn` client by the server-side fetch rules in [`frontend.md`](frontend.md#data-fetching).
 
 ## Subscriptions
 

@@ -126,6 +126,8 @@ Server-side fetches:
   visitor's cookies and bypasses the data cache, so a response that belongs to one user is never cached.
 - Wrap the call in `redirectToSignupOnUnauthenticated` (`src/lib/server-unauthenticated-redirect.ts`) to send an
   anonymous visitor to the signup page instead of throwing.
+- When a server component fetches a query that a client component also reads through a react-query hook, prefetch
+  and hydrate it, never pass it as props: see [`graphql.md`](graphql.md#server-rendering).
 - Existing Relay pages still go through `src/relay/server-portal-api-fetch.ts`, which forwards cookies and redirects on
   its own.
 
