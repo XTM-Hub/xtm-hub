@@ -3,7 +3,7 @@ import config from 'config';
 import {
   DevUser,
   parseAndValidateDevUsers,
-  parseTrustProxy,
+  resolveTrustProxy,
 } from './utils/config-validation.util';
 
 interface PortalConfig {
@@ -124,7 +124,10 @@ const portalConfig: PortalConfig = {
     name: config.get<string>('session.name'),
     secret: config.get<string>('session.secret'),
   },
-  trust_proxy: parseTrustProxy(config.get<unknown>('trust_proxy')),
+  trust_proxy: resolveTrustProxy(
+    config.get<unknown>('trust_proxy'),
+    process.env.LOCAL_DEV === 'true'
+  ),
   environment: config.get<string>('environment'),
   enabled_features: config.get<string[]>('enabled_features') ?? [],
   dev_users: parseAndValidateDevUsers(),

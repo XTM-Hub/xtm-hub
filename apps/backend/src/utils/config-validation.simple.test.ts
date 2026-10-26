@@ -1,5 +1,10 @@
-import { describe, expect, it } from 'vitest';
-import { parseTrustProxy, validateDevUser } from './config-validation.util';
+import { describe, expect, it, vi } from 'vitest';
+import { logApp } from './app-logger.util';
+import {
+  parseTrustProxy,
+  resolveTrustProxy,
+  validateDevUser,
+} from './config-validation.util';
 
 describe('zod Config Validation', () => {
   it('should validate a valid dev user', () => {
@@ -92,16 +97,48 @@ describe('parseTrustProxy', () => {
     ['null', null],
     ['undefined', undefined],
     ['an array', []],
-  ])('should throw when given %s', (_description, value) => {
+  ])(
+    'should log an error and fall back to false when given %s',
+    (_description, value) => {
+      // Given
+      const logErrorSpy = vi
+        .spyOn(logApp, 'error')
+        .mockImplementation(() => {});
+
+      // When
+      const result = parseTrustProxy(value);
+
+      // Then
+      expect(result).toBe(false);
+      expect(logErrorSpy).toHaveBeenCalledExactlyOnceWith(
+        `[TRUST-PROXY] Invalid trust_proxy configuration (TRUST_PROXY): expected a non-negative integer hop count, got ${JSON.stringify(value)}, falling back to false`
+      );
+    }
+  );
+});
+
+describe('resolveTrustProxy', () => {
+  it('should trust no proxy in local dev even when one hop is configured', () => {
     // Given
-    // value comes from the dataset
+    const configured = 1;
+    const localDev = true;
 
     // When
-    const parse = () => parseTrustProxy(value);
+    const result = resolveTrustProxy(configured, localDev);
 
     // Then
-    expect(parse).toThrow(
-      'Invalid trust_proxy configuration (TRUST_PROXY): expected a non-negative integer hop count'
-    );
+    expect(result).toBe(false);
+  });
+
+  it('should parse the configured hop count outside local dev', () => {
+    // Given
+    const configured = '2';
+    const localDev = false;
+
+    // When
+    const result = resolveTrustProxy(configured, localDev);
+
+    // Then
+    expect(result).toBe(2);
   });
 });
