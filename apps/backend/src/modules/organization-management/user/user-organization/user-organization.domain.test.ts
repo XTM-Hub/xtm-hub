@@ -226,6 +226,61 @@ describe('userOrganizationDomain', () => {
 
       expect(second.id).toBe(first.id);
     });
+
+    it('should create a single link when called concurrently', async () => {
+      const organization = await TestHelper.organization.create({
+        personal_space: false,
+      });
+      const user = await UserProvisioningDomain.createUser(
+        { email: `ensure-user-org-${uuidv4()}@filigran.io` },
+        { sendWelcomeEmail: false }
+      );
+
+      const results = await Promise.all(
+        Array.from({ length: 5 }, () =>
+          UserOrganizationDomain.ensureUserOrganizationExists(
+            user.id,
+            organization.id
+          )
+        )
+      );
+
+      expect(new Set(results.map(({ id }) => id)).size).toBe(1);
+      expect(
+        await UserOrganizationDomain.loadUserOrganization({
+          user_id: user.id,
+          organization_id: organization.id,
+        })
+      ).toHaveLength(1);
+    });
+  });
+
+  describe('createUserOrganizationRelation', () => {
+    it('should not duplicate a link that already exists', async () => {
+      const organization = await TestHelper.organization.create({
+        personal_space: false,
+      });
+      const user = await UserProvisioningDomain.createUser(
+        { email: `create-user-org-${uuidv4()}@filigran.io` },
+        { sendWelcomeEmail: false }
+      );
+
+      await UserOrganizationDomain.createUserOrganizationRelation({
+        user_id: user.id,
+        organizations_id: [organization.id, organization.id],
+      });
+      await UserOrganizationDomain.createUserOrganizationRelation({
+        user_id: user.id,
+        organizations_id: [organization.id],
+      });
+
+      expect(
+        await UserOrganizationDomain.loadUserOrganization({
+          user_id: user.id,
+          organization_id: organization.id,
+        })
+      ).toHaveLength(1);
+    });
   });
 
   describe('isFirstInOrganization', () => {

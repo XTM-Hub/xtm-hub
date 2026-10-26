@@ -35,8 +35,12 @@ export const UserOrganizationDomain = {
   insertNewUserOrganization: (
     field: UserOrganizationInitializer | UserOrganizationInitializer[]
   ): Promise<UserOrganization[]> => {
+    // Backed by the unique (user_id, organization_id) constraint: a link that
+    // already exists is skipped, so only the newly created links are returned.
     return db<UserOrganization>('User_Organization')
       .insert(field)
+      .onConflict(['user_id', 'organization_id'])
+      .ignore()
       .returning('*');
   },
 
@@ -69,11 +73,12 @@ export const UserOrganizationDomain = {
     user_id: UserId;
     organizations_id: OrganizationId[];
   }): Promise<UserOrganization[]> => {
-    const usersOrganization: UserOrganizationInitializer[] =
-      organizations_id.map((organization_id) => ({
-        user_id,
-        organization_id,
-      }));
+    const usersOrganization: UserOrganizationInitializer[] = [
+      ...new Set(organizations_id),
+    ].map((organization_id) => ({
+      user_id,
+      organization_id,
+    }));
     return UserOrganizationDomain.insertNewUserOrganization(usersOrganization);
   },
 
@@ -87,21 +92,27 @@ export const UserOrganizationDomain = {
     user_id: UserId,
     organization_id: OrganizationId
   ): Promise<{ id: UserOrganizationId }> => {
-    const existing = await db<UserOrganization>('User_Organization')
-      .where({ user_id, organization_id })
-      .first();
+    const loadExisting = () =>
+      db<UserOrganization>('User_Organization')
+        .where({ user_id, organization_id })
+        .first();
+
+    const existing = await loadExisting();
     if (existing) {
       return { id: existing.id };
     }
 
+    // A concurrent request may have created the link since the check above:
+    // the insert then returns nothing and the winner's row is loaded instead.
     const [inserted] = await UserOrganizationDomain.insertNewUserOrganization({
       user_id,
       organization_id,
     });
-    if (!inserted) {
+    const link = inserted ?? (await loadExisting());
+    if (!link) {
       throw new Error(UnknownErrorCode.UnknownError);
     }
-    return { id: inserted.id };
+    return { id: link.id };
   },
 
   assignUserOrgCapabilities: async ({
