@@ -3,6 +3,7 @@ import {
   DocumentImageType,
   DocumentMetadataKeyCode,
   DocumentMetadata as DocumentMetadataResolverType,
+  DocumentSourceType,
   FiligranProduct,
   MutationUpdateDocumentArgs as MutationUpdateDocumentArgsResolverType,
   PlatformIdentifier,
@@ -43,7 +44,10 @@ import {
 } from './document.helper';
 import { DocumentListOptions } from './document.model';
 import { DocumentUploadsHelper, Upload } from './document.uploads.helper';
-import { DocumentChildrenDomain } from './domain/document.children.domain';
+import {
+  DocumentChildrenDomain,
+  ExternalImageFile,
+} from './domain/document.children.domain';
 import { DocumentData, DocumentDomain } from './domain/document.domain';
 import {
   DocumentMetadataDomain,
@@ -67,6 +71,9 @@ const setDocumentMetadataValue = (
 ): void => {
   (document as DocumentWithDynamicMetadata)[key] = value;
 };
+
+const toMinioNames = (images: ExternalImageFile[]): string[] =>
+  images.flatMap(({ minio_name }) => (minio_name ? [minio_name] : []));
 
 export const DocumentApp = {
   createDocument: async ({
@@ -505,6 +512,64 @@ export const DocumentApp = {
     });
   },
 
+  /**
+   * Replaces the external image of `doc` and returns the storage names of the
+   * files it made obsolete. It does not delete them: the caller must do so
+   * once its outermost transaction is committed, so a rollback keeps them.
+   */
+  replaceExternalImage: async <T extends DocumentModel>(
+    doc: T,
+    externalImageUpload: Upload
+  ): Promise<string[]> => {
+    const { service_instance_id } = doc;
+    if (!service_instance_id) {
+      throw new Error(ErrorCode.ServiceInstanceNotFound);
+    }
+
+    const [logoFile] = await DocumentUploadsHelper.processUploads(
+      externalImageUpload,
+      service_instance_id
+    );
+
+    const obsoleteMinioNames = await withTransaction(async () => {
+      if (!logoFile) {
+        const deleted = await DocumentChildrenDomain.deleteExternalImages(
+          doc.id
+        );
+        return toMinioNames(deleted);
+      }
+
+      // Keep the id of the existing external image: its URL is public, indexed
+      // by search engines and shared in link previews, so it must stay valid.
+      const [existingImage] =
+        await DocumentChildrenDomain.loadExternalImageFiles(doc.id);
+      if (!existingImage) {
+        await DocumentChildrenDomain.createImageDocuments(
+          doc.id,
+          service_instance_id,
+          [logoFile],
+          DocumentImageType.Logo,
+          DocumentSourceType.External
+        );
+        return [];
+      }
+
+      await DocumentChildrenDomain.replaceImageFile(existingImage.id, logoFile);
+      const deletedDuplicates =
+        await DocumentChildrenDomain.deleteExternalImages(
+          doc.id,
+          existingImage.id
+        );
+      // The retained image now references the new file: never delete it, even
+      // if the replaced image or a duplicate pointed to the same object.
+      return toMinioNames([existingImage, ...deletedDuplicates]).filter(
+        (minioName) => minioName !== logoFile.minioName
+      );
+    });
+
+    return [...new Set(obsoleteMinioNames)];
+  },
+
   upsertDocumentWithExternalImage: async <T extends DocumentModel>(
     type: string,
     input: DocumentData<T, string>,
@@ -522,11 +587,10 @@ export const DocumentApp = {
         product
       );
 
-      const obsoleteMinioNames =
-        await DocumentChildrenDomain.upsertExternalImage(
-          doc,
-          externalImageUpload
-        );
+      const obsoleteMinioNames = await DocumentApp.replaceExternalImage(
+        doc,
+        externalImageUpload
+      );
 
       return { doc, obsoleteMinioNames };
     });

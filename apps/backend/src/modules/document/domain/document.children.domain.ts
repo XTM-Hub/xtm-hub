@@ -5,7 +5,6 @@ import {
   DocumentMetadataKeyCode,
   DocumentSourceType,
 } from '../../../__generated__/resolvers-types';
-import { withTransaction } from '../../../context/database.context';
 import { requestContext } from '../../../context/request.context';
 import {
   DocumentId,
@@ -15,20 +14,15 @@ import DocumentChildren from '../../../model/kanel/public/DocumentChildren';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import { restrictDocumentToUserOrganization } from '../../../security/restriction/document';
 import { MinioFile } from '../../../thirdparty/minio/types';
-import { ErrorCode } from '../../../utils/error/error.code';
 import { DocumentApp } from '../document.app';
 import { Document } from '../document.helper';
 import { DOCUMENT_IMAGE_METADATA_KEYS, DocumentImage } from '../document.model';
-import { DocumentUploadsHelper, Upload } from '../document.uploads.helper';
 import {
   DocumentMetadataDomain,
   DocumentMetadataKeys,
 } from './document.metadata.domain';
 
 export type ExternalImageFile = Pick<DocumentModel, 'id' | 'minio_name'>;
-
-const toMinioNames = (images: ExternalImageFile[]): string[] =>
-  images.flatMap(({ minio_name }) => (minio_name ? [minio_name] : []));
 
 export const DocumentChildrenDomain = {
   insertChildRelationship: async ({
@@ -194,64 +188,6 @@ export const DocumentChildrenDomain = {
       image.id = toGlobalId('Document', image.id) as typeof image.id;
     }
     return images;
-  },
-
-  /**
-   * Replaces the external image of `doc` and returns the storage names of the
-   * files it made obsolete. It does not delete them: the caller must do so
-   * once its outermost transaction is committed, so a rollback keeps them.
-   */
-  upsertExternalImage: async <T extends DocumentModel>(
-    doc: T,
-    externalImageUpload: Upload
-  ): Promise<string[]> => {
-    const { service_instance_id } = doc;
-    if (!service_instance_id) {
-      throw new Error(ErrorCode.ServiceInstanceNotFound);
-    }
-
-    const [logoFile] = await DocumentUploadsHelper.processUploads(
-      externalImageUpload,
-      service_instance_id
-    );
-
-    const obsoleteMinioNames = await withTransaction(async () => {
-      if (!logoFile) {
-        const deleted = await DocumentChildrenDomain.deleteExternalImages(
-          doc.id
-        );
-        return toMinioNames(deleted);
-      }
-
-      // Keep the id of the existing external image: its URL is public, indexed
-      // by search engines and shared in link previews, so it must stay valid.
-      const [existingImage] =
-        await DocumentChildrenDomain.loadExternalImageFiles(doc.id);
-      if (!existingImage) {
-        await DocumentChildrenDomain.createImageDocuments(
-          doc.id,
-          service_instance_id,
-          [logoFile],
-          DocumentImageType.Logo,
-          DocumentSourceType.External
-        );
-        return [];
-      }
-
-      await DocumentChildrenDomain.replaceImageFile(existingImage.id, logoFile);
-      const deletedDuplicates =
-        await DocumentChildrenDomain.deleteExternalImages(
-          doc.id,
-          existingImage.id
-        );
-      // The retained image now references the new file: never delete it, even
-      // if the replaced image or a duplicate pointed to the same object.
-      return toMinioNames([existingImage, ...deletedDuplicates]).filter(
-        (minioName) => minioName !== logoFile.minioName
-      );
-    });
-
-    return [...new Set(obsoleteMinioNames)];
   },
 
   loadExternalImageFiles: async (
