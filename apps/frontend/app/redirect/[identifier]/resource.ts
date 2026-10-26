@@ -1,12 +1,13 @@
-import { serverMutateGraphQL } from '@/relay/server-portal-api-fetch';
+import { getAuthenticatedGraphqlClient } from '@/lib/graphql-client';
+import { redirectToSignupOnUnauthenticated } from '@/lib/server-unauthenticated-redirect';
 import { isValueInEnum } from '@/utils/is-value-in-enum';
 import { loadMeUser } from '@/utils/load-me-user';
 import { APP_PATH } from '@/utils/path/constant';
 import { encodeRedirectValue } from '@/utils/redirect';
-import OrganizationSwitcherMutation, {
-  OrganizationSwitcherMutation as OrganizationSwitcherMutationType,
-} from '@generated/OrganizationSwitcherMutation.graphql';
-import { ServiceDefinitionIdentifier } from '@graphql/generated';
+import {
+  ServiceDefinitionIdentifier,
+  useChangeSelectedOrganizationMutation,
+} from '@graphql/generated';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   loadBaseUrlFront,
@@ -17,12 +18,12 @@ import { trackNewsFeedRedirect } from './utils/news-feed-telemetry';
 import { getLoginRedirectionURL } from './utils/url';
 
 async function switchOrganization(organization_id: string) {
-  await serverMutateGraphQL<OrganizationSwitcherMutationType>(
-    OrganizationSwitcherMutation,
-    {
+  await redirectToSignupOnUnauthenticated(async () => {
+    const client = await getAuthenticatedGraphqlClient();
+    return useChangeSelectedOrganizationMutation.fetcher(client, {
       organization_id,
-    }
-  );
+    })();
+  });
 }
 export const redirectToResource = async (
   params: { identifier: string },

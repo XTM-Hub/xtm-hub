@@ -1,35 +1,23 @@
-import { CreateOrganizationMutation } from '@/components/organization/organization.graphql';
 import { OrganizationForm } from '@/components/organization/OrganizationForm';
 import { organizationFormSchema } from '@/components/organization/OrganizationForm.schema';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { Button } from '@filigran/design-system';
-import { organizationCreateMutation } from '@generated/organizationCreateMutation.graphql';
+import { useOrganizationCreateMutation } from '@graphql/generated';
+import { organizationKeys } from '@graphql/organization/organization.keys';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { useMutation } from 'react-relay';
 import { z } from 'zod';
 
-interface CreateOrganizationProps {
-  connectionId: string;
-}
-
-export const CreateOrganization = ({
-  connectionId,
-}: CreateOrganizationProps) => {
+export const CreateOrganization = () => {
   const t = useTranslate();
-  const [commitOrganizationCreationMutation] =
-    useMutation<organizationCreateMutation>(CreateOrganizationMutation);
+  const queryClient = useQueryClient();
   const [openSheet, setOpenSheet] = useState(false);
-
-  const handleSubmit = (values: z.infer<typeof organizationFormSchema>) => {
-    commitOrganizationCreationMutation({
-      variables: {
-        connections: [connectionId],
-        input: { ...values },
-      },
-
-      onCompleted: ({ addOrganization }) => {
+  const { mutate: createOrganization, isPending } =
+    useOrganizationCreateMutation(portalGraphqlClient, {
+      onSuccess: async ({ addOrganization }, { input }) => {
         if (!addOrganization) {
           return;
         }
@@ -38,17 +26,22 @@ export const CreateOrganization = ({
           severity: 'success',
           title: t('Utils.Success'),
           description: t('OrganizationActions.OrganizationCreated', {
-            name: values.name,
+            name: input.name,
           }),
         });
+        await queryClient.invalidateQueries({
+          queryKey: organizationKeys.all(),
+        });
       },
-      onError: (error) => {
+      onError: (error: unknown, { input }) => {
+        const errorMessage =
+          error instanceof Error ? error.message : 'UNKNOWN_ERROR';
         const message =
-          error.message === 'ORGANIZATION_SAME_NAME_EXISTS'
+          errorMessage === 'ORGANIZATION_SAME_NAME_EXISTS'
             ? t('OrganizationActions.ErrorNameAlreadyExists', {
-                name: values.name,
+                name: input.name,
               })
-            : t(`Error.Server.${error.message}`);
+            : t(`Error.Server.${errorMessage}`);
         showSnackbar({
           severity: 'error',
           title: t('Utils.Error'),
@@ -56,6 +49,9 @@ export const CreateOrganization = ({
         });
       },
     });
+
+  const handleSubmit = (values: z.infer<typeof organizationFormSchema>) => {
+    createOrganization({ input: { ...values } });
   };
   return (
     <SheetWithPreventingDialog
@@ -67,7 +63,10 @@ export const CreateOrganization = ({
         </Button>
       }
       title={t('OrganizationForm.CreateOrganization')}>
-      <OrganizationForm handleSubmit={handleSubmit} />
+      <OrganizationForm
+        handleSubmit={handleSubmit}
+        isSubmitting={isPending}
+      />
     </SheetWithPreventingDialog>
   );
 };

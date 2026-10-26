@@ -1,6 +1,6 @@
 import { OrganizationForm } from '@/components/organization/OrganizationForm';
 import testRender from '@/utils/test/test-render';
-import { organizationItem_fragment$data } from '@generated/organizationItem_fragment.graphql';
+import { OrganizationItemFragment } from '@graphql/generated';
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -21,12 +21,11 @@ const DUPLICATE = 'OrganizationForm.Error.DuplicateName';
 const NO_DOMAIN = 'OrganizationForm.Error.Domain';
 const NEW_NAME = 'Filigran Labs';
 
-const ORGANIZATION: organizationItem_fragment$data = {
+const ORGANIZATION: OrganizationItemFragment = {
   id: 'organization-id',
   name: 'Filigran',
   domains: [EXISTING_DOMAIN],
   personal_space: false,
-  ' $fragmentType': 'organizationItem_fragment',
 };
 
 const getDomainsInput = () =>
@@ -168,5 +167,26 @@ describe('OrganizationForm', () => {
     // Then
     expect(await screen.findByText(NO_DOMAIN)).toBeInTheDocument();
     expect(handleSubmit).not.toHaveBeenCalled();
+  });
+
+  it('should disable Validate when the changed values are being saved', async () => {
+    // Given
+    const { user } = testRender(
+      <OrganizationForm
+        organization={ORGANIZATION}
+        handleSubmit={vi.fn()}
+        isSubmitting
+      />
+    );
+    const nameInput = screen.getByRole('textbox', {
+      name: 'OrganizationForm.Name',
+    });
+
+    // When
+    await user.clear(nameInput);
+    await user.type(nameInput, NEW_NAME);
+
+    // Then
+    expect(getValidateButton()).toBeDisabled();
   });
 });

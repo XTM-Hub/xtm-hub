@@ -1,4 +1,4 @@
-import { OrganizationOrdering } from '@graphql/generated';
+import { OrderingMode, OrganizationOrdering } from '@graphql/generated';
 import { ColumnDef } from '@tanstack/react-table';
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -63,7 +63,7 @@ describe('useOrganizationListLocalstorage', () => {
       useOrganizationListLocalstorage(COLUMNS)
     );
     act(() => {
-      result.current.setOrderMode('desc');
+      result.current.setOrderMode(OrderingMode.Desc);
       result.current.setPageSize(CUSTOM_PAGE_SIZE);
     });
 
@@ -89,7 +89,7 @@ describe('useOrganizationListLocalstorage', () => {
       useOrganizationListLocalstorage(COLUMNS)
     );
     act(() => {
-      result.current.setOrderMode('desc');
+      result.current.setOrderMode(OrderingMode.Desc);
       result.current.setPageSize(CUSTOM_PAGE_SIZE);
       result.current.setColumnOrder(['members', 'name']);
       result.current.setColumnVisibility({ name: false });

@@ -8,9 +8,7 @@ import { RegisterStateSucceeded } from '@/components/registration/register/Succe
 import { RegisterStateTooManyOrganizations } from '@/components/registration/register/TooManyOrganizations';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTranslate } from '@/hooks/use-translate';
-import OrganizationListUserOrganizationsQueryGraphql, {
-  organizationListUserOrganizationsQuery,
-} from '@generated/organizationListUserOrganizationsQuery.graphql';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import registerFragmentGraphql, {
   registerFragment$key,
 } from '@generated/registerFragment.graphql';
@@ -27,7 +25,9 @@ import {
 import {
   PlatformIdentifier,
   PlatformRegistrationStatus,
+  useUserOrganizationsQuery,
 } from '@graphql/generated';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import {
   ReactNode,
   useCallback,
@@ -40,7 +40,6 @@ import {
 import {
   PreloadedQuery,
   useFragment,
-  useLazyLoadQuery,
   useMutation,
   usePreloadedQuery,
 } from 'react-relay';
@@ -105,11 +104,11 @@ export const Register = ({
       queryRef
     );
 
-  const userOrganizationsQueryData =
-    useLazyLoadQuery<organizationListUserOrganizationsQuery>(
-      OrganizationListUserOrganizationsQueryGraphql,
-      {}
-    );
+  // Suspends like the rest of the page until the organizations are loaded.
+  const { data: userOrganizationsQueryData } = useSuspenseQuery({
+    queryKey: useUserOrganizationsQuery.getKey(),
+    queryFn: useUserOrganizationsQuery.fetcher(portalGraphqlClient),
+  });
 
   const isPlatformRegistered =
     useFragment<registerIsPlatformRegisteredFragment$key>(

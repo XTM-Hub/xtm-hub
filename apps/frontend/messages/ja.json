@@ -754,6 +754,7 @@
   },
   "OrganizationActions": {
     "ErrorNameAlreadyExists": "組織 {name} は既に存在しています。",
+    "LoadOrganizationsError": "組織を読み込めませんでした。",
     "OrganizationCreated": "組織 {name} が作成されました",
     "OrganizationDeleted": "組織が削除された",
     "OrganizationUpdated": "組織 {name} が変更された",

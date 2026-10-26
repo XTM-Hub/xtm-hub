@@ -1,5 +1,5 @@
 import {
-  getOrganizations,
+  useOrganizations,
   useUnsubscribedOrganizations,
 } from '@/components/organization/Organization.service';
 import {
@@ -29,7 +29,7 @@ import { serviceInstanceForSubscriptions_fragment$data } from '@generated/servic
 import { subscriptionInServiceUpdateMutation } from '@generated/subscriptionInServiceUpdateMutation.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocale } from 'next-intl';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useMutation } from 'react-relay';
 import { useDebounceCallback } from 'usehooks-ts';
@@ -64,9 +64,15 @@ export const ServiceSlugOrgaForm = ({
   const locale = useLocale();
   const startDateLabel = t('OrganizationInServiceAction.StartDate');
   const endDateLabel = t('OrganizationInServiceAction.EndDate');
-  const { organizationsData, refetch } = getOrganizations();
+  const [organizationSearchTerm, setOrganizationSearchTerm] = useState('');
+  const {
+    organizations: searchedOrganizations,
+    isLoading: isLoadingOrganizations,
+    isError: isOrganizationsError,
+    isPlaceholderData: isSearchingOrganizations,
+  } = useOrganizations({ searchTerm: organizationSearchTerm });
   const organizations = useUnsubscribedOrganizations(
-    organizationsData,
+    searchedOrganizations,
     subscriptions,
     subscriptionToEdit
   );
@@ -192,11 +198,7 @@ export const ServiceSlugOrgaForm = ({
   };
 
   const handleOrganizationsInputChange = useDebounceCallback(
-    (search: string) => {
-      refetch({
-        searchTerm: search,
-      });
-    },
+    setOrganizationSearchTerm,
     DEBOUNCE_TIME
   );
 
@@ -217,7 +219,13 @@ export const ServiceSlugOrgaForm = ({
                   placeholder={t(
                     'OrganizationInServiceAction.SelectOrganization'
                   )}
-                  error={fieldState.error?.message}
+                  error={
+                    fieldState.error?.message ??
+                    (isOrganizationsError
+                      ? t('OrganizationActions.LoadOrganizationsError')
+                      : undefined)
+                  }
+                  loading={isLoadingOrganizations || isSearchingOrganizations}
                   options={organizationOptionIds.ids}
                   value={field.value ?? []}
                   onValueChange={field.onChange}
