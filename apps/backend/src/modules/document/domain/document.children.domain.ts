@@ -25,6 +25,11 @@ import {
   DocumentMetadataKeys,
 } from './document.metadata.domain';
 
+export type ExternalImageFile = Pick<DocumentModel, 'id' | 'minio_name'>;
+
+const toMinioNames = (images: ExternalImageFile[]): string[] =>
+  images.flatMap(({ minio_name }) => (minio_name ? [minio_name] : []));
+
 export const DocumentChildrenDomain = {
   insertChildRelationship: async ({
     childDocumentId,
@@ -215,14 +220,13 @@ export const DocumentChildrenDomain = {
         const deleted = await DocumentChildrenDomain.deleteExternalImages(
           doc.id
         );
-        return deleted.map(({ minio_name }) => minio_name);
+        return toMinioNames(deleted);
       }
 
       // Keep the id of the existing external image: its URL is public, indexed
       // by search engines and shared in link previews, so it must stay valid.
-      const [existingImage] = await DocumentChildrenDomain.loadExternalImages(
-        doc.id
-      );
+      const [existingImage] =
+        await DocumentChildrenDomain.loadExternalImageFiles(doc.id);
       if (!existingImage) {
         await DocumentChildrenDomain.createImageDocuments(
           doc.id,
@@ -242,18 +246,18 @@ export const DocumentChildrenDomain = {
         );
       // The retained image now references the new file: never delete it, even
       // if the replaced image or a duplicate pointed to the same object.
-      return [existingImage, ...deletedDuplicates]
-        .map(({ minio_name }) => minio_name)
-        .filter((minioName) => minioName !== logoFile.minioName);
+      return toMinioNames([existingImage, ...deletedDuplicates]).filter(
+        (minioName) => minioName !== logoFile.minioName
+      );
     });
 
     return [...new Set(obsoleteMinioNames)];
   },
 
-  loadExternalImages: async (
+  loadExternalImageFiles: async (
     parentDocumentId: DocumentId
-  ): Promise<{ id: DocumentId; minio_name: string }[]> => {
-    return db('Document')
+  ): Promise<ExternalImageFile[]> => {
+    return db<DocumentModel>('Document')
       .join(
         'Document_Children',
         'Document.id',
@@ -283,8 +287,8 @@ export const DocumentChildrenDomain = {
   deleteExternalImages: async (
     parentDocumentId: DocumentId,
     excludeDocumentId?: DocumentId
-  ): Promise<{ id: string; minio_name: string }[]> => {
-    return db('Document')
+  ): Promise<ExternalImageFile[]> => {
+    return db<DocumentModel>('Document')
       .delete()
       .whereIn('id', function () {
         this.select('child_document_id')

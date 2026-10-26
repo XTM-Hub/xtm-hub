@@ -259,7 +259,7 @@ describe('documentChildrenDomain', () => {
         await DocumentChildrenDomain.upsertExternalImage(parentDoc, upload);
 
       const externalImages =
-        await DocumentChildrenDomain.loadExternalImages(parentId);
+        await DocumentChildrenDomain.loadExternalImageFiles(parentId);
       expect(externalImages).toHaveLength(1);
       expect(externalImages[0]!.id).toBe(oldExternalId);
       expect(obsoleteMinioNames).toHaveLength(2);
@@ -289,7 +289,7 @@ describe('documentChildrenDomain', () => {
         await DocumentChildrenDomain.upsertExternalImage(parentDoc, upload);
 
       const externalImages =
-        await DocumentChildrenDomain.loadExternalImages(parentId);
+        await DocumentChildrenDomain.loadExternalImageFiles(parentId);
       expect(externalImages).toHaveLength(1);
       expect(externalImages[0]!.minio_name).toBe('shared-key');
       expect(obsoleteMinioNames).toEqual(['old-external']);
@@ -303,9 +303,9 @@ describe('documentChildrenDomain', () => {
       const obsoleteMinioNames =
         await DocumentChildrenDomain.upsertExternalImage(parentDoc, upload);
 
-      expect(await DocumentChildrenDomain.loadExternalImages(parentId)).toEqual(
-        []
-      );
+      expect(
+        await DocumentChildrenDomain.loadExternalImageFiles(parentId)
+      ).toEqual([]);
       expect(obsoleteMinioNames).toEqual(['old-external']);
     });
 
