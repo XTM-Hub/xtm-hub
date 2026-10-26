@@ -50,6 +50,16 @@ describe('newsFeedDomain', () => {
       );
     });
 
+    it('should return only the scenario news feed type when the platform is OpenAEV', () => {
+      // When
+      const result = NewsFeedDomain.loadAvailableNewsFeedTypes(
+        PlatformIdentifier.Openaev
+      );
+
+      // Then
+      expect(result).toEqual([NewsFeedItemType.ResourceScenario]);
+    });
+
     it('should return empty array for a platform with no configured news feed types', () => {
       const result = NewsFeedDomain.loadAvailableNewsFeedTypes(
         'UnknownIdentifier' as PlatformIdentifier

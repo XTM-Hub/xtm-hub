@@ -31,6 +31,10 @@ export const newsFeedConfigurationMapping: Partial<
     newsFeedType: NewsFeedItemType.ResourceIntegration,
     platformIdentifier: PlatformIdentifier.Opencti,
   },
+  [ServiceDefinitionIdentifier.OpenaevScenarios]: {
+    newsFeedType: NewsFeedItemType.ResourceScenario,
+    platformIdentifier: PlatformIdentifier.Openaev,
+  },
 };
 
 // Metadata keys that only serve the Hub (document lookup, external destination of a redirect): they are never

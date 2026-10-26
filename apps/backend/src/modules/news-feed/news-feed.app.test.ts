@@ -463,6 +463,45 @@ describe('newsFeedApp', () => {
         );
       });
 
+      it('should provision the news feed item to the OpenAEV platforms only when the document is a scenario', async () => {
+        // Given
+        const openAEVPlatformId = uuidv4();
+        const openAEVServiceInstance = await TestHelper.serviceInstance.create({
+          service_definition_id: SERVICES.DEFINITIONS.OPENAEV_REGISTRATION.ID,
+        });
+        createdServiceInstanceIds.push(openAEVServiceInstance.id);
+        await TestHelper.platformConfiguration.create({
+          service_instance_id: openAEVServiceInstance.id,
+          platform_id: openAEVPlatformId,
+          platform_version: '2.4.0',
+        });
+        await createOpenCTIPlatformForOrganization(
+          uuidv4(),
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+        );
+
+        // When
+        await NewsFeedApp.createResourceNewsFeedItem({
+          document,
+          serviceDefinitionIdentifier:
+            ServiceDefinitionIdentifier.OpenaevScenarios,
+        });
+
+        // Then
+        const newsFeedItem = await TestHelper.newsFeed.loadFirstItem();
+        expect(newsFeedItem).toMatchObject({
+          type: NewsFeedItemType.ResourceScenario,
+          platform_identifier: PlatformIdentifier.Openaev,
+          title: document.name,
+        });
+        const provisioned = await TestHelper.newsFeed.loadProvisioned({
+          news_feed_item_id: newsFeedItem!.id,
+        });
+        expect(provisioned.map((p) => p.platform_id)).toEqual([
+          openAEVPlatformId,
+        ]);
+      });
+
       it('should create the news feed item but no provisioned records when no platforms are registered', async () => {
         await createCustomDashboardNewsFeedItem();
 

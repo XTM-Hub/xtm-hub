@@ -66,7 +66,7 @@ describe('news-feed.helper', () => {
       ${ServiceDefinitionIdentifier.OpenctiPlaybooks}        | ${true}  | ${'playbooks service definition'}
       ${ServiceDefinitionIdentifier.OpenctiIntegrations}     | ${true}  | ${'integrations service definition'}
       ${ServiceDefinitionIdentifier.OpenctiRegistration}     | ${false} | ${'registration identifier'}
-      ${ServiceDefinitionIdentifier.OpenaevScenarios}        | ${false} | ${'openaev scenarios identifier'}
+      ${ServiceDefinitionIdentifier.OpenaevScenarios}        | ${true}  | ${'openaev scenarios service definition'}
     `(
       'should return a configuration $expected for $description ($identifier)',
       ({
