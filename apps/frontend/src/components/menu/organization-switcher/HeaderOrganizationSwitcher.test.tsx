@@ -1,6 +1,7 @@
+import { AppPortalContext } from '@/components/me/AppPortalContext';
 import HeaderOrganizationSwitcher from '@/components/menu/organization-switcher/HeaderOrganizationSwitcher';
 import { invalidateOrganizationQueries } from '@/components/organization/organization-query-invalidation';
-import testRender from '@/utils/test/test-render';
+import testRender, { generateMockUser } from '@/utils/test/test-render';
 import type { meContext_fragment$data } from '@generated/meContext_fragment.graphql';
 import type { MeOrganizationsQuery } from '@graphql/generated';
 import {
@@ -11,6 +12,7 @@ import {
   type UseQueryOptions,
 } from '@tanstack/react-query';
 import { act, screen, waitFor } from '@testing-library/react';
+import { type ReactNode, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -77,6 +79,11 @@ const ME_ORGANIZATIONS: MeOrganizationsQuery = {
     organizations: ORGANIZATIONS,
   },
 };
+const JOINED_ORGANIZATION = {
+  id: 'organization-3',
+  name: 'Acme Corporation',
+  personal_space: false,
+};
 const RENAMED_ME_ORGANIZATIONS: MeOrganizationsQuery = {
   me: {
     id: 'user-1',
@@ -86,6 +93,27 @@ const RENAMED_ME_ORGANIZATIONS: MeOrganizationsQuery = {
       { ...ORGANIZATIONS[1], name: RENAMED_ORGANIZATION_NAME },
     ],
   },
+};
+
+// Stands for the Relay store, which a MeUser.edit event updates: the portal
+// context then holds the updated user.
+const LivePortalUser = ({
+  update,
+  children,
+}: {
+  update?: Partial<meContext_fragment$data>;
+  children: ReactNode;
+}) => {
+  const [me, setMe] = useState(() => generateMockUser(PORTAL_ME));
+  return (
+    <AppPortalContext me={me}>
+      {children}
+      <button
+        onClick={() => setMe(generateMockUser({ ...PORTAL_ME, ...update }))}>
+        Receive user update
+      </button>
+    </AppPortalContext>
+  );
 };
 
 // Stands for an organization edit or deletion, which reloads the organizations.
@@ -109,14 +137,13 @@ const OrganizationsLoading = () => {
   );
 };
 
-const renderSwitcher = () =>
+const renderSwitcher = (portalUserUpdate?: Partial<meContext_fragment$data>) =>
   testRender(
-    <>
+    <LivePortalUser update={portalUserUpdate}>
       <HeaderOrganizationSwitcher />
       <ReloadOrganizations />
       <OrganizationsLoading />
-    </>,
-    { me: PORTAL_ME }
+    </LivePortalUser>
   );
 
 const getTrigger = () =>
@@ -286,6 +313,90 @@ describe('HeaderOrganizationSwitcher', () => {
     );
     await waitForOrganizationsLoaded();
     expect(getTrigger()).toHaveTextContent('Filigran Team');
+  });
+
+  it('should load the organizations again when the user joins an organization, keeping the names reloaded after an organization edit', async () => {
+    // Given
+    const { user } = renderSwitcher({
+      organizations: [...ORGANIZATIONS, JOINED_ORGANIZATION],
+    });
+    await waitForOrganizationsLoaded();
+    mocks.fetchMeOrganizations.mockResolvedValue(RENAMED_ME_ORGANIZATIONS);
+    await user.click(screen.getByRole('button', { name: 'Reload' }));
+    await waitFor(() =>
+      expect(getTrigger()).toHaveTextContent(RENAMED_ORGANIZATION_NAME)
+    );
+    mocks.fetchMeOrganizations.mockResolvedValue({
+      me: {
+        ...RENAMED_ME_ORGANIZATIONS.me,
+        organizations: [
+          ...(RENAMED_ME_ORGANIZATIONS.me?.organizations ?? []),
+          JOINED_ORGANIZATION,
+        ],
+      },
+    });
+
+    // When
+    await user.click(
+      screen.getByRole('button', { name: 'Receive user update' })
+    );
+
+    // Then
+    await waitFor(() =>
+      expect(mocks.fetchMeOrganizations).toHaveBeenCalledTimes(3)
+    );
+    await waitForOrganizationsLoaded();
+    expect(getTrigger()).toHaveTextContent(RENAMED_ORGANIZATION_NAME);
+    await user.click(getTrigger());
+    expect(
+      screen.getAllByRole('option').map((option) => option.textContent)
+    ).toEqual([
+      'OrganizationSwitcher.PersonalSpace',
+      RENAMED_ORGANIZATION_NAME,
+      JOINED_ORGANIZATION.name,
+    ]);
+  });
+
+  it('should load the organizations again when the selected organization changes', async () => {
+    // Given
+    const { user } = renderSwitcher({
+      selected_organization_id: PERSONAL_ORGANIZATION_ID,
+    });
+    await waitForOrganizationsLoaded();
+    mocks.fetchMeOrganizations.mockResolvedValue({
+      me: {
+        ...ME_ORGANIZATIONS.me,
+        selected_organization_id: PERSONAL_ORGANIZATION_ID,
+      },
+    });
+
+    // When
+    await user.click(
+      screen.getByRole('button', { name: 'Receive user update' })
+    );
+
+    // Then
+    await waitFor(() =>
+      expect(getTrigger()).toHaveTextContent(
+        'OrganizationSwitcher.PersonalSpace'
+      )
+    );
+    expect(mocks.fetchMeOrganizations).toHaveBeenCalledTimes(2);
+  });
+
+  it('should not load the organizations again when the user changes without touching them', async () => {
+    // Given
+    const { user } = renderSwitcher({ first_name: 'Jane' });
+    await waitForOrganizationsLoaded();
+
+    // When
+    await user.click(
+      screen.getByRole('button', { name: 'Receive user update' })
+    );
+
+    // Then
+    await waitForOrganizationsLoaded();
+    expect(mocks.fetchMeOrganizations).toHaveBeenCalledOnce();
   });
 
   it('should render nothing when the user is no longer returned', async () => {

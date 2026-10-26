@@ -344,6 +344,12 @@ describe('redirectToResource news feed telemetry', () => {
         service_definition: { identifier: IDENTIFIER },
       },
     ] as LoadServiceInstancesResult);
+    vi.mocked(getAuthenticatedGraphqlClient).mockResolvedValue(
+      {} as Awaited<ReturnType<typeof getAuthenticatedGraphqlClient>>
+    );
+    changeSelectedOrganizationFetcher.mockReturnValue(() =>
+      Promise.resolve({ changeSelectedOrganization: null })
+    );
   });
 
   it('should track the news feed redirect once when the user is sent to the resource page', async () => {
