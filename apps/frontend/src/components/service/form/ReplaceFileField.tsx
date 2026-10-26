@@ -9,23 +9,33 @@ import { useTranslate } from '@/hooks/use-translate';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 
-interface ServiceFormJsonFileFieldProps {
+export interface ServiceFormReplaceFileTexts {
+  existingFile: string;
+  updateFile: string;
+  updateFileDescription: string;
+}
+
+interface ServiceFormReplaceFileFieldProps {
   field: ControllerRenderProps<FieldValues, string>;
   setIsDirty: (isDirty: boolean) => void;
   document?: documentItem_fragment$data;
+  texts: ServiceFormReplaceFileTexts;
+  accept: string;
 }
 
-export const ServiceFormJsonFileField = ({
+export const ServiceFormReplaceFileField = ({
   field,
   setIsDirty,
   document,
-}: ServiceFormJsonFileFieldProps) => {
+  texts,
+  accept,
+}: ServiceFormReplaceFileFieldProps) => {
   const t = useTranslate();
   return (
     <FormItem>
       <FormLabel>
-        {t('Service.Form.ExistingJSONFile', {
-          file_name: field.value?.[0].name ?? document?.file_name,
+        {t(texts.existingFile, {
+          file_name: field.value?.[0]?.name ?? document?.file_name,
         })}
       </FormLabel>
       <FormControl>
@@ -33,11 +43,11 @@ export const ServiceFormJsonFileField = ({
           <FileInputWithPrevent
             field={field}
             texts={{
-              selectFile: t('Service.Form.UpdateJSONFile'),
-              dialogTitle: t('Service.Form.UpdateJSONFile'),
-              dialogDescription: t('Service.Form.DescriptionUpdateJSONFile'),
+              selectFile: t(texts.updateFile),
+              dialogTitle: t(texts.updateFile),
+              dialogDescription: t(texts.updateFileDescription),
             }}
-            allowedTypes="application/json"
+            allowedTypes={accept}
           />
         </div>
       </FormControl>

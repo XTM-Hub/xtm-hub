@@ -1,13 +1,14 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
-import { ServiceFormJsonFileField } from '@/components/service/form/JsonFileField';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
+import {
+  JSON_DOCUMENT_FILE,
+  useDocumentFileField,
+} from '@/components/service/form/UseDocumentFileField';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import { AutoForm } from '@/components/ui/auto-form';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
-import { useTranslate } from '@/hooks/use-translate';
 import {
   fileListCheck,
-  JSON_FILE_ACCEPT,
   optionalFileListCheck,
   transformToFileList,
 } from '@/utils/documents';
@@ -44,9 +45,8 @@ interface StreamFormProps {
 }
 
 export const StreamForm = ({ handleSubmit, document }: StreamFormProps) => {
-  const t = useTranslate();
   const { me } = useContext(PortalContext);
-  const { handleCloseSheet, setIsDirty } = useDialogContext();
+  const { handleCloseSheet } = useDialogContext();
 
   const isCreation = !document;
 
@@ -121,6 +121,7 @@ export const StreamForm = ({ handleSubmit, document }: StreamFormProps) => {
     platform: 'OpenCTI',
     document,
   });
+  const documentField = useDocumentFileField(JSON_DOCUMENT_FILE, document);
 
   return (
     <>
@@ -129,7 +130,7 @@ export const StreamForm = ({ handleSubmit, document }: StreamFormProps) => {
           onSubmit(values as StreamFormValues);
         }}
         onValuesChange={(values, form) => {
-          if (isCreation && values.name) {
+          if (isCreation && values.name !== undefined) {
             const generatedSlug = slugify(values.name, {
               lower: true,
               strict: true,
@@ -152,23 +153,7 @@ export const StreamForm = ({ handleSubmit, document }: StreamFormProps) => {
           },
           uploader_id,
           uploader_organization_id,
-          document: isCreation
-            ? {
-                label: t('Service.Form.SelectJSONFile'),
-                fieldType: 'file',
-                inputProps: {
-                  accept: JSON_FILE_ACCEPT,
-                },
-              }
-            : {
-                fieldType: ({ field }) => (
-                  <ServiceFormJsonFileField
-                    field={field}
-                    setIsDirty={setIsDirty}
-                    document={document}
-                  />
-                ),
-              },
+          document: documentField,
           logo,
           images: imagesField,
           active,

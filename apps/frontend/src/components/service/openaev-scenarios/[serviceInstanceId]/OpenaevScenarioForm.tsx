@@ -1,16 +1,12 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
 import { ServiceFormSheetFooter } from '@/components/service/form/SheetFooter';
+import {
+  ServiceFormDocumentFile,
+  useDocumentFileField,
+} from '@/components/service/form/UseDocumentFileField';
 import { useServiceFormFields } from '@/components/service/form/UseServiceFormFields';
 import { AutoForm } from '@/components/ui/auto-form';
-import FileInputWithPrevent from '@/components/ui/FileInputWithPrevent';
-import {
-  FormControl,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { useDialogContext } from '@/components/ui/SheetWithPreventingDialog';
-import { useTranslate } from '@/hooks/use-translate';
 import {
   fileListCheck,
   optionalFileListCheck,
@@ -21,6 +17,17 @@ import { DocumentImageType } from '@graphql/generated';
 import { useContext, useMemo } from 'react';
 import slugify from 'slugify';
 import { z } from 'zod';
+
+const SCENARIO_DOCUMENT_FILE: ServiceFormDocumentFile = {
+  label: 'Service.OpenAEVScenario.Form.OpenAEVScenarioFile',
+  accept: 'application/zip, .zip',
+  texts: {
+    existingFile: 'Service.OpenAEVScenario.Form.ExistingOpenAEVScenarioFile',
+    updateFile: 'Service.OpenAEVScenario.Form.UpdateZIPFile',
+    updateFileDescription:
+      'Service.OpenAEVScenario.Form.DescriptionUpdateZIPFile',
+  },
+};
 
 const openAEVScenarioFormSchema = z.object({
   name: z.string().min(1, 'Required'),
@@ -51,11 +58,10 @@ export const OpenaevScenarioForm = ({
   handleSubmit,
   document,
 }: OpenAEVScenarioFormProps) => {
-  const t = useTranslate();
   const { me } = useContext(PortalContext);
 
   const isCreation = !document;
-  const { handleCloseSheet, setIsDirty } = useDialogContext();
+  const { handleCloseSheet } = useDialogContext();
   const onSubmit = (values: OpenAEVScenarioFormValues) => {
     if (isCreation) {
       handleSubmit({ ...values, images: images as unknown as FileList });
@@ -117,6 +123,7 @@ export const OpenaevScenarioForm = ({
     platform: 'OpenAEV',
     document,
   });
+  const documentField = useDocumentFileField(SCENARIO_DOCUMENT_FILE, document);
 
   return (
     <AutoForm
@@ -124,7 +131,7 @@ export const OpenaevScenarioForm = ({
         onSubmit(values as OpenAEVScenarioFormValues);
       }}
       onValuesChange={(values, form) => {
-        if (isCreation && values.name) {
+        if (isCreation && values.name !== undefined) {
           const generatedSlug = slugify(values.name, {
             lower: true,
             strict: true,
@@ -142,48 +149,7 @@ export const OpenaevScenarioForm = ({
         use_cases,
         uploader_id,
         uploader_organization_id,
-        document: isCreation
-          ? {
-              label: t('Service.OpenAEVScenario.Form.OpenAEVScenarioFile'),
-              fieldType: 'file',
-              inputProps: {
-                accept: 'application/zip, .zip',
-              },
-            }
-          : {
-              fieldType: ({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {t(
-                      'Service.OpenAEVScenario.Form.ExistingOpenAEVScenarioFile',
-                      {
-                        file_name: field.value?.[0].name ?? document?.file_name,
-                      }
-                    )}
-                  </FormLabel>
-                  <FormControl>
-                    <div onClick={() => setIsDirty(true)}>
-                      <FileInputWithPrevent
-                        field={field}
-                        texts={{
-                          selectFile: t(
-                            'Service.OpenAEVScenario.Form.UpdateZIPFile'
-                          ),
-                          dialogTitle: t(
-                            'Service.OpenAEVScenario.Form.UpdateZIPFile'
-                          ),
-                          dialogDescription: t(
-                            'Service.OpenAEVScenario.Form.DescriptionUpdateZIPFile'
-                          ),
-                        }}
-                        allowedTypes="application/zip"
-                      />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              ),
-            },
+        document: documentField,
         logo,
         images: imagesField,
         active,
