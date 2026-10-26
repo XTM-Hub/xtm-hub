@@ -15,7 +15,7 @@ headers {
 }
 
 body:graphql {
-  query RegisteredSaasPlatformData($input: RegisteredPlatformInput!) {
+  query RegisteredSaasPlatformData($input: RegisteredSaasPlatformDataInput!) {
     registeredSaasPlatformData(input: $input) {
       metadata {
         hostname
@@ -36,6 +36,18 @@ body:graphql {
           }
         }
       }
+      storage {
+        es_used_size {
+          percent
+          used
+          limit
+        }
+        s3_used_size {
+          percent
+          used
+          limit
+        }
+      }
     }
   }
 }
@@ -43,7 +55,8 @@ body:graphql {
 body:graphql:vars {
   {
     "input": {
-      "service_instance_id": ""
+      "service_instance_id": "",
+      "metrics_period": "last_90_days"
     }
   }
 }
@@ -54,5 +67,5 @@ settings {
 }
 
 docs {
-  Set service_instance_id to the service instance of a registered SaaS platform of your organization.
+  Set service_instance_id to the service instance of a registered SaaS platform of your organization, and metrics_period to last_7_days, last_30_days or last_90_days.
 }

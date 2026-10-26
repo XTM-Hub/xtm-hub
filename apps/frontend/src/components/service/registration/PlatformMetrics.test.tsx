@@ -3,7 +3,9 @@ import testRender from '@/utils/test/test-render';
 import {
   MetricType,
   SaasPlatformMetrics,
+  SaasPlatformMetricsPeriod,
   SaasPlatformResolution,
+  SaasPlatformStorage,
 } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -42,6 +44,12 @@ const metrics: SaasPlatformMetrics = {
   ],
 };
 
+const storageUsage = { percent: 50, time: '2026-10-22T12:00:00.000Z' };
+const storage: Pick<SaasPlatformStorage, 'es_used_size' | 's3_used_size'> = {
+  es_used_size: { ...storageUsage, used: 1_500_000_000, limit: 3_000_000_000 },
+  s3_used_size: { ...storageUsage, used: 4_000_000_000, limit: 8_000_000_000 },
+};
+
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('PlatformMetrics', () => {
@@ -54,7 +62,10 @@ describe('PlatformMetrics', () => {
     testRender(
       <PlatformMetrics
         metrics={metrics}
+        storage={storage}
         isLoading={false}
+        period={SaasPlatformMetricsPeriod.Last_90Days}
+        onPeriodChange={vi.fn()}
       />
     );
 
@@ -76,6 +87,8 @@ describe('PlatformMetrics', () => {
       <PlatformMetrics
         metrics={metrics}
         isLoading={false}
+        period={SaasPlatformMetricsPeriod.Last_90Days}
+        onPeriodChange={vi.fn()}
       />
     );
 
@@ -94,12 +107,41 @@ describe('PlatformMetrics', () => {
     );
   });
 
+  it.each`
+    case             | metrics      | isLoading
+    ${'loaded'}      | ${metrics}   | ${false}
+    ${'loading'}     | ${undefined} | ${true}
+    ${'unavailable'} | ${null}      | ${false}
+  `(
+    'should display the period selector when the metrics are $case',
+    ({ metrics: displayedMetrics, isLoading }) => {
+      // Given / When
+      testRender(
+        <PlatformMetrics
+          metrics={displayedMetrics}
+          isLoading={isLoading}
+          period={SaasPlatformMetricsPeriod.Last_30Days}
+          onPeriodChange={vi.fn()}
+        />
+      );
+
+      // Then
+      expect(
+        screen.getByRole('radiogroup', {
+          name: 'Register.Metrics.Period.Label',
+        })
+      ).toBeInTheDocument();
+    }
+  );
+
   it('should display the metrics as loading while they are pending', () => {
     // Given / When
     const { container } = testRender(
       <PlatformMetrics
         metrics={undefined}
         isLoading
+        period={SaasPlatformMetricsPeriod.Last_90Days}
+        onPeriodChange={vi.fn()}
       />
     );
 
@@ -110,6 +152,23 @@ describe('PlatformMetrics', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('should display the storage of each card when only the metrics series are unavailable', () => {
+    // Given / When
+    testRender(
+      <PlatformMetrics
+        metrics={null}
+        storage={storage}
+        isLoading={false}
+        period={SaasPlatformMetricsPeriod.Last_90Days}
+        onPeriodChange={vi.fn()}
+      />
+    );
+
+    // Then
+    expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(2);
+    expect(screen.getAllByText('Register.Metrics.UsedOfLimit')).toHaveLength(2);
+  });
+
   it.each([[null], [undefined]])(
     'should display the metrics as unavailable when they are %s',
     (unavailableMetrics) => {
@@ -118,6 +177,8 @@ describe('PlatformMetrics', () => {
         <PlatformMetrics
           metrics={unavailableMetrics}
           isLoading={false}
+          period={SaasPlatformMetricsPeriod.Last_90Days}
+          onPeriodChange={vi.fn()}
         />
       );
 
@@ -128,6 +189,35 @@ describe('PlatformMetrics', () => {
       expect(
         container.querySelector('[aria-busy="true"]')
       ).not.toBeInTheDocument();
+      screen.getAllByRole('radio').forEach((radio) => {
+        expect(radio).toBeDisabled();
+      });
+    }
+  );
+
+  it.each`
+    case                           | isLoading | metricsData  | storageData
+    ${'they are loading'}          | ${true}   | ${undefined} | ${undefined}
+    ${'they are shown'}            | ${false}  | ${metrics}   | ${storage}
+    ${'only the storage is known'} | ${false}  | ${null}      | ${storage}
+  `(
+    'should keep the period selector enabled when $case',
+    ({ isLoading, metricsData, storageData }) => {
+      // Given / When
+      testRender(
+        <PlatformMetrics
+          metrics={metricsData}
+          storage={storageData}
+          isLoading={isLoading}
+          period={SaasPlatformMetricsPeriod.Last_90Days}
+          onPeriodChange={vi.fn()}
+        />
+      );
+
+      // Then
+      screen.getAllByRole('radio').forEach((radio) => {
+        expect(radio).toBeEnabled();
+      });
     }
   );
 });

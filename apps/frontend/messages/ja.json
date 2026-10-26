@@ -986,6 +986,12 @@
     "Metrics": {
       "Title": "ストレージ使用量",
       "Unavailable": "現在、このメトリクスは利用できません",
+      "Period": {
+        "Label": "メトリクスの期間",
+        "last_7_days": "7日間",
+        "last_30_days": "30日間",
+        "last_90_days": "90日間"
+      },
       "Database": {
         "Title": "データベース",
         "Subtitle": "知識、関係性、履歴、ログ"
@@ -1002,7 +1008,14 @@
         "RegionalArea": "リージョン",
         "DaysLeft": "{days, plural, =1 {残り#日} other {残り#日}}",
         "Unavailable": "現在、この情報はご利用いただけません。"
-      }
+      },
+      "Capacity": {
+        "Within": "容量内",
+        "Approaching": "容量上限に接近",
+        "Over": "容量超過"
+      },
+      "MaxCapacity": "最大容量",
+      "UsedOfLimit": "<secondary>{limit} 中</secondary> <highlight>{used}</highlight>"
     },
     "Error": {
       "Capability": {

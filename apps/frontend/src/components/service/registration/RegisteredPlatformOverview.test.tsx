@@ -6,6 +6,8 @@ import { registeredPlatformByServiceInstanceId_fragment$data } from '@generated/
 import {
   CommercialModel,
   PortalCapability,
+  SaasPlatformMetricsPeriod,
+  SaasPlatformStorage,
   useRegisteredSaasPlatformDataQuery,
 } from '@graphql/generated';
 import { act, screen, within } from '@testing-library/react';
@@ -37,7 +39,13 @@ const HOSTNAME = 'my-platform.filigran.io';
 
 const mockSaasPlatformDataQuery = ({
   isPending = false,
-}: { isPending?: boolean } = {}) =>
+  isPlaceholderData = false,
+  storage = null,
+}: {
+  isPending?: boolean;
+  isPlaceholderData?: boolean;
+  storage?: SaasPlatformStorage | null;
+} = {}) =>
   vi.mocked(useRegisteredSaasPlatformDataQuery).mockReturnValue({
     data: isPending
       ? undefined
@@ -50,9 +58,11 @@ const mockSaasPlatformDataQuery = ({
               end_date: null,
               region: null,
             },
+            storage,
           },
         },
     isPending,
+    isPlaceholderData,
   } as ReturnType<typeof useRegisteredSaasPlatformDataQuery>);
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -70,8 +80,9 @@ const renderOverview = async (
   capabilities: PortalCapability[] = [PortalCapability.ReadSaasMetrics]
 ) => {
   mockPlatformData = platform;
+  let rendered: ReturnType<typeof testRender> | undefined;
   await act(async () => {
-    testRender(
+    rendered = testRender(
       <Suspense>
         <RegisteredPlatformOverview
           params={Promise.resolve({
@@ -84,6 +95,7 @@ const renderOverview = async (
       }
     );
   });
+  return rendered!;
 };
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -157,7 +169,12 @@ describe('RegisteredPlatformOverview', () => {
     // Then
     expect(useRegisteredSaasPlatformDataQuery).toHaveBeenLastCalledWith(
       expect.anything(),
-      { input: { service_instance_id: SERVICE_INSTANCE_ID } },
+      {
+        input: {
+          service_instance_id: SERVICE_INSTANCE_ID,
+          metrics_period: SaasPlatformMetricsPeriod.Last_90Days,
+        },
+      },
       expect.objectContaining({ enabled: true })
     );
     expect(screen.getByText(HOSTNAME)).toBeInTheDocument();
@@ -288,5 +305,58 @@ describe('RegisteredPlatformOverview', () => {
       screen.getByText('Register.Metrics.Metadata.Hostname:').closest('section')
     ).toHaveAttribute('aria-busy', 'true');
     expect(screen.queryByText(HOSTNAME)).not.toBeInTheDocument();
+  });
+
+  it('should query the metrics of the period chosen in the period selector', async () => {
+    // Given
+    vi.mocked(useIsFeatureEnabled).mockReturnValue(true);
+    // The period selector is disabled while the metrics are unavailable.
+    mockSaasPlatformDataQuery({
+      storage: {
+        es_used_size: {
+          percent: 50,
+          used: 1_500_000_000,
+          limit: 3_000_000_000,
+          time: '2026-10-22T12:00:00.000Z',
+        },
+      },
+    });
+    const { user } = await renderOverview(saasPlatform);
+
+    // When
+    await user.click(
+      screen.getByRole('radio', {
+        name: `Register.Metrics.Period.${SaasPlatformMetricsPeriod.Last_30Days}`,
+      })
+    );
+
+    // Then
+    expect(useRegisteredSaasPlatformDataQuery).toHaveBeenLastCalledWith(
+      expect.anything(),
+      {
+        input: {
+          service_instance_id: SERVICE_INSTANCE_ID,
+          metrics_period: SaasPlatformMetricsPeriod.Last_30Days,
+        },
+      },
+      expect.objectContaining({ enabled: true })
+    );
+  });
+
+  it('should keep the SaaS subscription metadata and display the metrics as loading while another period loads', async () => {
+    // Given
+    vi.mocked(useIsFeatureEnabled).mockReturnValue(true);
+    mockSaasPlatformDataQuery({ isPlaceholderData: true });
+
+    // When
+    const { container } = await renderOverview(saasPlatform);
+
+    // Then the metadata stays on screen and only the metrics are busy
+    const metadataSection = screen
+      .getByText('Register.Metrics.Metadata.Hostname:')
+      .closest('section');
+    expect(metadataSection).not.toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByText(HOSTNAME)).toBeInTheDocument();
+    expect(container.querySelectorAll('[aria-busy="true"]')).toHaveLength(1);
   });
 });

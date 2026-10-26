@@ -986,6 +986,12 @@
     "Metrics": {
       "Title": "Utilisation de l'espace de stockage",
       "Unavailable": "Ces indicateurs ne sont actuellement pas disponibles",
+      "Period": {
+        "Label": "Période des indicateurs",
+        "last_7_days": "7 jours",
+        "last_30_days": "30 jours",
+        "last_90_days": "90 jours"
+      },
       "Database": {
         "Title": "Base de données",
         "Subtitle": "Connaissances, relations, historique et journaux"
@@ -1002,7 +1008,14 @@
         "RegionalArea": "Zone régionale",
         "DaysLeft": "{days, plural, =1 {# jour restant} other {# jours restants}}",
         "Unavailable": "Les informations sont actuellement indisponibles."
-      }
+      },
+      "Capacity": {
+        "Within": "Capacité suffisante",
+        "Approaching": "Capacité bientôt atteinte",
+        "Over": "Capacité dépassée"
+      },
+      "MaxCapacity": "Capacité maximale",
+      "UsedOfLimit": "<highlight>{used}</highlight> <secondary>sur {limit}</secondary>"
     },
     "Error": {
       "Capability": {

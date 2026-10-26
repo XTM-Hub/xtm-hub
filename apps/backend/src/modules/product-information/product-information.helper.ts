@@ -5,15 +5,22 @@ import {
   SaasPlatformMetricPoint,
   SaasPlatformMetrics,
   SaasPlatformMetricSeries,
+  SaasPlatformMetricsPeriod,
   SaasPlatformResolution,
+  SaasPlatformStorage,
+  SaasPlatformStorageUsage,
 } from '../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
 import { logApp } from '../../utils/app-logger.util';
-import { toIsoDate } from '../../utils/format';
+import { toFiniteNumber, toIsoDate } from '../../utils/format';
 import { isRecord } from '../../utils/typescript';
 
-const SAAS_PLATFORM_METRICS_DAYS = 90;
+const SAAS_PLATFORM_METRICS_DAYS: Record<SaasPlatformMetricsPeriod, number> = {
+  [SaasPlatformMetricsPeriod.Last_7Days]: 7,
+  [SaasPlatformMetricsPeriod.Last_30Days]: 30,
+  [SaasPlatformMetricsPeriod.Last_90Days]: 90,
+};
 
 const METRIC_TYPES: ReadonlySet<string> = new Set(Object.values(MetricType));
 
@@ -61,9 +68,7 @@ const parseMetricPoint = (point: unknown): SaasPlatformMetricPoint[] => {
   if (timestamp === null) {
     return [];
   }
-  const value =
-    typeof point.v === 'number' && Number.isFinite(point.v) ? point.v : null;
-  return [{ timestamp, value }];
+  return [{ timestamp, value: toFiniteNumber(point.v) }];
 };
 
 const parseMetricSeries = (series: unknown): SaasPlatformMetricSeries[] => {
@@ -105,6 +110,29 @@ const parseSaasPlatformMetrics = (
   };
 };
 
+const parseStorageUsage = (usage: unknown): SaasPlatformStorageUsage | null => {
+  if (!isRecord(usage)) {
+    return null;
+  }
+  return {
+    percent: toFiniteNumber(usage.percent),
+    used: toFiniteNumber(usage.used),
+    limit: toFiniteNumber(usage.limit),
+  };
+};
+
+const parseSaasPlatformStorage = (
+  storage: unknown
+): SaasPlatformStorage | null => {
+  if (!isRecord(storage)) {
+    return null;
+  }
+  return {
+    es_used_size: parseStorageUsage(storage.es_used_size),
+    s3_used_size: parseStorageUsage(storage.s3_used_size),
+  };
+};
+
 const parseSaasPlatformData = (body: unknown): SaasPlatformData => {
   const fields: Record<string, unknown> =
     typeof body === 'object' && body !== null ? { ...body } : {};
@@ -118,18 +146,20 @@ const parseSaasPlatformData = (body: unknown): SaasPlatformData => {
       region: readMetadataString(fields, 'region'),
     },
     metrics: parseSaasPlatformMetrics(fields.metrics),
+    storage: parseSaasPlatformStorage(fields.storage),
   };
 };
 
 export const ProductInformationHelper = {
   fetchSaasPlatformData: async (
     serviceInstanceId: ServiceInstanceId,
-    platformId: string
+    platformId: string,
+    metricsPeriod: SaasPlatformMetricsPeriod
   ): Promise<SaasPlatformData | null> => {
     try {
       const response = await SaasManagerClient.callInstanceApi({
         platform_id: platformId,
-        include_metrics: SAAS_PLATFORM_METRICS_DAYS,
+        include_metrics: SAAS_PLATFORM_METRICS_DAYS[metricsPeriod],
       });
 
       if (response.status !== 200) {

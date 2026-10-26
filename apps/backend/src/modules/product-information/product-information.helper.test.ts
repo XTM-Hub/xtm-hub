@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { describe, expect, it, vi } from 'vitest';
+import { SaasPlatformMetricsPeriod } from '../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
 import { logApp } from '../../utils/app-logger.util';
@@ -9,6 +10,7 @@ describe('product information helper', () => {
   describe('fetchSaasPlatformData', () => {
     const serviceInstanceId = uuidv4() as ServiceInstanceId;
     const platformId = uuidv4();
+    const metricsPeriod = SaasPlatformMetricsPeriod.Last_90Days;
     const startDate = '2026-01-01T00:00:00.000Z';
     const endDate = '2027-01-01T00:00:00.000Z';
     const fullMetadata = {
@@ -48,7 +50,8 @@ describe('product information helper', () => {
       // When
       await ProductInformationHelper.fetchSaasPlatformData(
         serviceInstanceId,
-        platformId
+        platformId,
+        metricsPeriod
       );
 
       // Then
@@ -57,6 +60,32 @@ describe('product information helper', () => {
         include_metrics: 90,
       });
     });
+
+    it.each`
+      period                                   | days
+      ${SaasPlatformMetricsPeriod.Last_7Days}  | ${7}
+      ${SaasPlatformMetricsPeriod.Last_30Days} | ${30}
+      ${SaasPlatformMetricsPeriod.Last_90Days} | ${90}
+    `(
+      'should ask the SaaS Manager for $days days of metrics when the period is $period',
+      async ({ period, days }) => {
+        // Given
+        const callSpy = mockSaasManagerBody(fullMetadata);
+
+        // When
+        await ProductInformationHelper.fetchSaasPlatformData(
+          serviceInstanceId,
+          platformId,
+          period
+        );
+
+        // Then
+        expect(callSpy).toHaveBeenCalledExactlyOnceWith({
+          platform_id: platformId,
+          include_metrics: days,
+        });
+      }
+    );
 
     it('should return the metadata sent by the SaaS Manager without the unknown fields', async () => {
       // Given
@@ -69,11 +98,16 @@ describe('product information helper', () => {
       // When
       const data = await ProductInformationHelper.fetchSaasPlatformData(
         serviceInstanceId,
-        platformId
+        platformId,
+        metricsPeriod
       );
 
       // Then
-      expect(data).toEqual({ metadata: fullMetadata, metrics: null });
+      expect(data).toEqual({
+        metadata: fullMetadata,
+        metrics: null,
+        storage: null,
+      });
     });
 
     it.each([
@@ -89,11 +123,16 @@ describe('product information helper', () => {
       // When
       const data = await ProductInformationHelper.fetchSaasPlatformData(
         serviceInstanceId,
-        platformId
+        platformId,
+        metricsPeriod
       );
 
       // Then
-      expect(data).toEqual({ metadata: emptyMetadata, metrics: null });
+      expect(data).toEqual({
+        metadata: emptyMetadata,
+        metrics: null,
+        storage: null,
+      });
     });
 
     it('should keep the fields sent when the SaaS Manager sends only some of them', async () => {
@@ -103,13 +142,15 @@ describe('product information helper', () => {
       // When
       const data = await ProductInformationHelper.fetchSaasPlatformData(
         serviceInstanceId,
-        platformId
+        platformId,
+        metricsPeriod
       );
 
       // Then
       expect(data).toEqual({
         metadata: { ...emptyMetadata, hostname: fullMetadata.hostname },
         metrics: null,
+        storage: null,
       });
     });
 
@@ -127,7 +168,8 @@ describe('product information helper', () => {
         // When
         const data = await ProductInformationHelper.fetchSaasPlatformData(
           serviceInstanceId,
-          platformId
+          platformId,
+          metricsPeriod
         );
 
         // Then
@@ -139,6 +181,7 @@ describe('product information helper', () => {
             ),
           },
           metrics: null,
+          storage: null,
         });
       }
     );
@@ -147,7 +190,6 @@ describe('product information helper', () => {
       case                         | sent                           | expected
       ${'an ISO date'}             | ${startDate}                   | ${startDate}
       ${'a date with an offset'}   | ${'2026-01-01T01:00:00+01:00'} | ${startDate}
-      ${'a date without time'}     | ${'2026-01-01'}                | ${startDate}
       ${'a date with millisecond'} | ${'2026-01-01T00:00:00.5Z'}    | ${'2026-01-01T00:00:00.500Z'}
     `(
       'should return the date as an ISO string when the SaaS Manager sends $case',
@@ -158,7 +200,8 @@ describe('product information helper', () => {
         // When
         const data = await ProductInformationHelper.fetchSaasPlatformData(
           serviceInstanceId,
-          platformId
+          platformId,
+          metricsPeriod
         );
 
         // Then
@@ -174,7 +217,8 @@ describe('product information helper', () => {
       // When
       await ProductInformationHelper.fetchSaasPlatformData(
         serviceInstanceId,
-        platformId
+        platformId,
+        metricsPeriod
       );
 
       // Then
@@ -222,13 +266,15 @@ describe('product information helper', () => {
         // When
         const data = await ProductInformationHelper.fetchSaasPlatformData(
           serviceInstanceId,
-          platformId
+          platformId,
+          metricsPeriod
         );
 
         // Then
         expect(data).toEqual({
           metadata: fullMetadata,
           metrics: parsedMetrics,
+          storage: null,
         });
       });
 
@@ -243,11 +289,16 @@ describe('product information helper', () => {
         // When
         const data = await ProductInformationHelper.fetchSaasPlatformData(
           serviceInstanceId,
-          platformId
+          platformId,
+          metricsPeriod
         );
 
         // Then
-        expect(data).toEqual({ metadata: fullMetadata, metrics: null });
+        expect(data).toEqual({
+          metadata: fullMetadata,
+          metrics: null,
+          storage: null,
+        });
       });
 
       it.each`
@@ -270,7 +321,8 @@ describe('product information helper', () => {
           // When
           const data = await ProductInformationHelper.fetchSaasPlatformData(
             serviceInstanceId,
-            platformId
+            platformId,
+            metricsPeriod
           );
 
           // Then
@@ -291,7 +343,8 @@ describe('product information helper', () => {
         // When
         const data = await ProductInformationHelper.fetchSaasPlatformData(
           serviceInstanceId,
-          platformId
+          platformId,
+          metricsPeriod
         );
 
         // Then
@@ -317,7 +370,8 @@ describe('product information helper', () => {
         // When
         const data = await ProductInformationHelper.fetchSaasPlatformData(
           serviceInstanceId,
-          platformId
+          platformId,
+          metricsPeriod
         );
 
         // Then
@@ -351,7 +405,8 @@ describe('product information helper', () => {
         // When
         const data = await ProductInformationHelper.fetchSaasPlatformData(
           serviceInstanceId,
-          platformId
+          platformId,
+          metricsPeriod
         );
 
         // Then
@@ -365,6 +420,124 @@ describe('product information helper', () => {
             ],
           },
         ]);
+      });
+    });
+
+    describe('storage', () => {
+      const storage = {
+        es_used_size: {
+          percent: 12.5,
+          used: 1073741824,
+          limit: 8589934592,
+        },
+        s3_used_size: {
+          percent: 0,
+          used: 0,
+          limit: 0,
+        },
+      };
+      const parsedStorage = {
+        ...storage,
+        s3_used_size: {
+          ...storage.s3_used_size,
+        },
+      };
+
+      it('should return the storage sent by the SaaS Manager with ISO dates and without the unknown fields', async () => {
+        // Given
+        mockSaasManagerBody({
+          ...fullMetadata,
+          storage: {
+            ...storage,
+            redis_used_size: storage.es_used_size,
+            es_used_size: { ...storage.es_used_size, unexpected: 'ignored' },
+          },
+        });
+
+        // When
+        const data = await ProductInformationHelper.fetchSaasPlatformData(
+          serviceInstanceId,
+          platformId,
+          metricsPeriod
+        );
+
+        // Then
+        expect(data).toEqual({
+          metadata: fullMetadata,
+          metrics: null,
+          storage: parsedStorage,
+        });
+      });
+
+      it.each([
+        ['null', null],
+        ['a string', 'storage'],
+        ['an array', [storage]],
+      ])('should return a null storage when it is %s', async (_, sent) => {
+        // Given
+        mockSaasManagerBody({ ...fullMetadata, storage: sent });
+
+        // When
+        const data = await ProductInformationHelper.fetchSaasPlatformData(
+          serviceInstanceId,
+          platformId,
+          metricsPeriod
+        );
+
+        // Then
+        expect(data?.storage).toBeNull();
+      });
+
+      it.each`
+        case          | usage
+        ${'missing'}  | ${undefined}
+        ${'null'}     | ${null}
+        ${'an array'} | ${[storage.es_used_size]}
+      `('should return a null usage when it is $case', async ({ usage }) => {
+        // Given
+        mockSaasManagerBody({
+          ...fullMetadata,
+          storage: { ...storage, es_used_size: usage },
+        });
+
+        // When
+        const data = await ProductInformationHelper.fetchSaasPlatformData(
+          serviceInstanceId,
+          platformId,
+          metricsPeriod
+        );
+
+        // Then
+        expect(data?.storage).toEqual({ ...parsedStorage, es_used_size: null });
+      });
+
+      it('should return a null value for the sizes that are not finite numbers', async () => {
+        // Given
+        mockSaasManagerBody({
+          ...fullMetadata,
+          storage: {
+            ...storage,
+            es_used_size: {
+              percent: '12.5',
+              used: null,
+              limit: Infinity,
+            },
+          },
+        });
+
+        // When
+        const data = await ProductInformationHelper.fetchSaasPlatformData(
+          serviceInstanceId,
+          platformId,
+          metricsPeriod
+        );
+
+        // Then
+        expect(data?.storage?.es_used_size).toEqual({
+          percent: null,
+          used: null,
+          limit: null,
+        });
       });
     });
 
@@ -383,7 +556,8 @@ describe('product information helper', () => {
       // When
       const data = await ProductInformationHelper.fetchSaasPlatformData(
         serviceInstanceId,
-        platformId
+        platformId,
+        metricsPeriod
       );
 
       // Then

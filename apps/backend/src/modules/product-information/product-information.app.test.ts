@@ -12,6 +12,7 @@ import {
   FeatureFlag,
   PlatformContract,
   PlatformIdentifier,
+  SaasPlatformMetricsPeriod,
 } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
@@ -39,6 +40,7 @@ describe('product information app', () => {
       end_date: endDate,
       region: 'eu-west',
     };
+    const metricsPeriod = SaasPlatformMetricsPeriod.Last_90Days;
     const emptyMetadata = {
       hostname: null,
       plan: null,
@@ -102,7 +104,8 @@ describe('product information app', () => {
 
       // When
       await ProductInformationApp.loadRegisteredSaasPlatformData(
-        serviceInstanceId
+        serviceInstanceId,
+        metricsPeriod
       );
 
       // Then
@@ -128,13 +131,17 @@ describe('product information app', () => {
       );
 
       // When
-      const data =
-        await ProductInformationApp.loadRegisteredSaasPlatformData(
-          serviceInstanceId
-        );
+      const data = await ProductInformationApp.loadRegisteredSaasPlatformData(
+        serviceInstanceId,
+        metricsPeriod
+      );
 
       // Then
-      expect(data).toEqual({ metadata: fullMetadata, metrics: null });
+      expect(data).toEqual({
+        metadata: fullMetadata,
+        metrics: null,
+        storage: null,
+      });
     });
 
     it.each`
@@ -154,13 +161,17 @@ describe('product information app', () => {
       );
 
       // When
-      const data =
-        await ProductInformationApp.loadRegisteredSaasPlatformData(
-          serviceInstanceId
-        );
+      const data = await ProductInformationApp.loadRegisteredSaasPlatformData(
+        serviceInstanceId,
+        metricsPeriod
+      );
 
       // Then
-      expect(data).toEqual({ metadata: emptyMetadata, metrics: null });
+      expect(data).toEqual({
+        metadata: emptyMetadata,
+        metrics: null,
+        storage: null,
+      });
     });
 
     it('should keep the fields sent when the SaaS Manager sends only some of them', async () => {
@@ -175,15 +186,16 @@ describe('product information app', () => {
       );
 
       // When
-      const data =
-        await ProductInformationApp.loadRegisteredSaasPlatformData(
-          serviceInstanceId
-        );
+      const data = await ProductInformationApp.loadRegisteredSaasPlatformData(
+        serviceInstanceId,
+        metricsPeriod
+      );
 
       // Then
       expect(data).toEqual({
         metadata: { ...emptyMetadata, hostname: fullMetadata.hostname },
         metrics: null,
+        storage: null,
       });
     });
 
@@ -206,10 +218,10 @@ describe('product information app', () => {
         );
 
         // When
-        const data =
-          await ProductInformationApp.loadRegisteredSaasPlatformData(
-            serviceInstanceId
-          );
+        const data = await ProductInformationApp.loadRegisteredSaasPlatformData(
+          serviceInstanceId,
+          metricsPeriod
+        );
 
         // Then
         expect(data).toEqual({
@@ -220,6 +232,7 @@ describe('product information app', () => {
             ),
           },
           metrics: null,
+          storage: null,
         });
       }
     );
@@ -240,13 +253,17 @@ describe('product information app', () => {
       );
 
       // When
-      const data =
-        await ProductInformationApp.loadRegisteredSaasPlatformData(
-          serviceInstanceId
-        );
+      const data = await ProductInformationApp.loadRegisteredSaasPlatformData(
+        serviceInstanceId,
+        metricsPeriod
+      );
 
       // Then
-      expect(data).toEqual({ metadata: fullMetadata, metrics: null });
+      expect(data).toEqual({
+        metadata: fullMetadata,
+        metrics: null,
+        storage: null,
+      });
     });
 
     it.each`
@@ -262,10 +279,10 @@ describe('product information app', () => {
       mockSaasManagerResponse(response);
 
       // When
-      const data =
-        await ProductInformationApp.loadRegisteredSaasPlatformData(
-          serviceInstanceId
-        );
+      const data = await ProductInformationApp.loadRegisteredSaasPlatformData(
+        serviceInstanceId,
+        metricsPeriod
+      );
 
       // Then
       expect(data).toBeNull();
@@ -277,10 +294,10 @@ describe('product information app', () => {
       vi.mocked(isFeatureEnabled).mockReturnValue(false);
 
       // When
-      const data =
-        await ProductInformationApp.loadRegisteredSaasPlatformData(
-          serviceInstanceId
-        );
+      const data = await ProductInformationApp.loadRegisteredSaasPlatformData(
+        serviceInstanceId,
+        metricsPeriod
+      );
 
       // Then
       expect(data).toBeNull();
@@ -294,7 +311,8 @@ describe('product information app', () => {
 
       // When
       const data = await ProductInformationApp.loadRegisteredSaasPlatformData(
-        uuidv4() as ServiceInstanceId
+        uuidv4() as ServiceInstanceId,
+        metricsPeriod
       );
 
       // Then
@@ -308,10 +326,10 @@ describe('product information app', () => {
       requestContext.set(requestContextSimpleUserFiligran2);
 
       // When
-      const data =
-        await ProductInformationApp.loadRegisteredSaasPlatformData(
-          serviceInstanceId
-        );
+      const data = await ProductInformationApp.loadRegisteredSaasPlatformData(
+        serviceInstanceId,
+        metricsPeriod
+      );
 
       // Then
       expect(data).toBeNull();
@@ -335,13 +353,17 @@ describe('product information app', () => {
         });
 
         // When
-        const data =
-          await ProductInformationApp.loadRegisteredSaasPlatformData(
-            serviceInstanceId
-          );
+        const data = await ProductInformationApp.loadRegisteredSaasPlatformData(
+          serviceInstanceId,
+          metricsPeriod
+        );
 
         // Then
-        expect(data).toEqual({ metadata: fullMetadata, metrics: null });
+        expect(data).toEqual({
+          metadata: fullMetadata,
+          metrics: null,
+          storage: null,
+        });
         expect(callSpy).toHaveBeenCalledExactlyOnceWith({
           platform_id: platformId,
           include_metrics: 90,
@@ -359,18 +381,23 @@ describe('product information app', () => {
         vi.useFakeTimers({ toFake: ['Date'] });
         const callSpy = mockSaasManagerFullMetadata();
         await ProductInformationApp.loadRegisteredSaasPlatformData(
-          serviceInstanceId
+          serviceInstanceId,
+          metricsPeriod
         );
         vi.setSystemTime(Date.now() + 59_000);
 
         // When
-        const data =
-          await ProductInformationApp.loadRegisteredSaasPlatformData(
-            serviceInstanceId
-          );
+        const data = await ProductInformationApp.loadRegisteredSaasPlatformData(
+          serviceInstanceId,
+          metricsPeriod
+        );
 
         // Then
-        expect(data).toEqual({ metadata: fullMetadata, metrics: null });
+        expect(data).toEqual({
+          metadata: fullMetadata,
+          metrics: null,
+          storage: null,
+        });
         expect(callSpy).toHaveBeenCalledOnce();
       });
 
@@ -379,17 +406,41 @@ describe('product information app', () => {
         vi.useFakeTimers({ toFake: ['Date'] });
         const callSpy = mockSaasManagerFullMetadata();
         await ProductInformationApp.loadRegisteredSaasPlatformData(
-          serviceInstanceId
+          serviceInstanceId,
+          metricsPeriod
         );
         vi.setSystemTime(Date.now() + 60_000);
 
         // When
         await ProductInformationApp.loadRegisteredSaasPlatformData(
-          serviceInstanceId
+          serviceInstanceId,
+          metricsPeriod
         );
 
         // Then
         expect(callSpy).toHaveBeenCalledTimes(2);
+      });
+
+      it('should ask the SaaS Manager again for another metrics period', async () => {
+        // Given
+        const callSpy = mockSaasManagerFullMetadata();
+        await ProductInformationApp.loadRegisteredSaasPlatformData(
+          serviceInstanceId,
+          SaasPlatformMetricsPeriod.Last_90Days
+        );
+
+        // When
+        await ProductInformationApp.loadRegisteredSaasPlatformData(
+          serviceInstanceId,
+          SaasPlatformMetricsPeriod.Last_7Days
+        );
+
+        // Then
+        expect(callSpy).toHaveBeenCalledTimes(2);
+        expect(callSpy).toHaveBeenLastCalledWith({
+          platform_id: platformId,
+          include_metrics: 7,
+        });
       });
 
       it('should share a single SaaS Manager call between concurrent views', async () => {
@@ -399,17 +450,19 @@ describe('product information app', () => {
         // When
         const data = await Promise.all([
           ProductInformationApp.loadRegisteredSaasPlatformData(
-            serviceInstanceId
+            serviceInstanceId,
+            metricsPeriod
           ),
           ProductInformationApp.loadRegisteredSaasPlatformData(
-            serviceInstanceId
+            serviceInstanceId,
+            metricsPeriod
           ),
         ]);
 
         // Then
         expect(data).toEqual([
-          { metadata: fullMetadata, metrics: null },
-          { metadata: fullMetadata, metrics: null },
+          { metadata: fullMetadata, metrics: null, storage: null },
+          { metadata: fullMetadata, metrics: null, storage: null },
         ]);
         expect(callSpy).toHaveBeenCalledOnce();
       });
@@ -420,17 +473,22 @@ describe('product information app', () => {
           new Error('fetch failed')
         );
         await ProductInformationApp.loadRegisteredSaasPlatformData(
-          serviceInstanceId
+          serviceInstanceId,
+          metricsPeriod
         );
 
         // When
-        const data =
-          await ProductInformationApp.loadRegisteredSaasPlatformData(
-            serviceInstanceId
-          );
+        const data = await ProductInformationApp.loadRegisteredSaasPlatformData(
+          serviceInstanceId,
+          metricsPeriod
+        );
 
         // Then
-        expect(data).toEqual({ metadata: fullMetadata, metrics: null });
+        expect(data).toEqual({
+          metadata: fullMetadata,
+          metrics: null,
+          storage: null,
+        });
         expect(callSpy).toHaveBeenCalledTimes(2);
       });
 
@@ -438,15 +496,16 @@ describe('product information app', () => {
         // Given
         mockSaasManagerFullMetadata();
         await ProductInformationApp.loadRegisteredSaasPlatformData(
-          serviceInstanceId
+          serviceInstanceId,
+          metricsPeriod
         );
         requestContext.set(requestContextSimpleUserFiligran2);
 
         // When
-        const data =
-          await ProductInformationApp.loadRegisteredSaasPlatformData(
-            serviceInstanceId
-          );
+        const data = await ProductInformationApp.loadRegisteredSaasPlatformData(
+          serviceInstanceId,
+          metricsPeriod
+        );
 
         // Then
         expect(data).toBeNull();

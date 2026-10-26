@@ -18,11 +18,13 @@ import {
   CommercialModel,
   FeatureFlag,
   PortalCapability,
+  SaasPlatformMetricsPeriod,
   useRegisteredSaasPlatformDataQuery,
 } from '@graphql/generated';
 import { productInformationKeys } from '@graphql/product-information/product-information.keys';
+import { keepPreviousData } from '@tanstack/react-query';
 import { notFound } from 'next/navigation';
-import { use } from 'react';
+import { use, useState } from 'react';
 import { useFragment, useLazyLoadQuery } from 'react-relay';
 
 // Matches the backend cache: a remount within a minute would only get the same answer back.
@@ -62,21 +64,32 @@ export const RegisteredPlatformOverview = ({
   const showSaasPlatformData =
     isSaasMetricsEnabled && isSaas && canReadSaasMetrics;
 
+  const [metricsPeriod, setMetricsPeriod] = useState<SaasPlatformMetricsPeriod>(
+    SaasPlatformMetricsPeriod.Last_90Days
+  );
   const saasPlatformDataVariables = {
-    input: { service_instance_id: decodedServiceInstanceId },
+    input: {
+      service_instance_id: decodedServiceInstanceId,
+      metrics_period: metricsPeriod,
+    },
   };
-  const { data: saasPlatformData, isPending: isSaasPlatformDataPending } =
-    useRegisteredSaasPlatformDataQuery(
-      portalGraphqlClient,
-      saasPlatformDataVariables,
-      {
-        queryKey: productInformationKeys.registeredSaasPlatformData(
-          saasPlatformDataVariables
-        ),
-        enabled: showSaasPlatformData,
-        staleTime: SAAS_PLATFORM_DATA_STALE_TIME,
-      }
-    );
+  const {
+    data: saasPlatformData,
+    isPending: isSaasPlatformDataPending,
+    isPlaceholderData: isPreviousMetricsPeriodData,
+  } = useRegisteredSaasPlatformDataQuery(
+    portalGraphqlClient,
+    saasPlatformDataVariables,
+    {
+      queryKey: productInformationKeys.registeredSaasPlatformData(
+        saasPlatformDataVariables
+      ),
+      enabled: showSaasPlatformData,
+      staleTime: SAAS_PLATFORM_DATA_STALE_TIME,
+      // The metadata does not depend on the period: keep it on screen while the metrics of another period load.
+      placeholderData: keepPreviousData,
+    }
+  );
 
   if (!queryData.registeredPlatform || !platform) {
     notFound();
@@ -102,7 +115,10 @@ export const RegisteredPlatformOverview = ({
       {showSaasPlatformData && (
         <PlatformMetrics
           metrics={saasPlatformData?.registeredSaasPlatformData?.metrics}
-          isLoading={isSaasPlatformDataPending}
+          storage={saasPlatformData?.registeredSaasPlatformData?.storage}
+          isLoading={isSaasPlatformDataPending || isPreviousMetricsPeriodData}
+          period={metricsPeriod}
+          onPeriodChange={setMetricsPeriod}
         />
       )}
       <PlatformInformation

@@ -32,4 +32,13 @@ describe('findMetricPoints', () => {
   it('should return no points when no series has the given metric type', () => {
     expect(findMetricPoints(metrics, MetricType.EsUsedSize)).toEqual([]);
   });
+
+  it.each([[null], [undefined]])(
+    'should return no points when the metrics are %s',
+    (missingMetrics) => {
+      expect(findMetricPoints(missingMetrics, MetricType.S3UsedSize)).toEqual(
+        []
+      );
+    }
+  );
 });

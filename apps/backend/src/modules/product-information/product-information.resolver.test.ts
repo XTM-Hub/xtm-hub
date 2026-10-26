@@ -14,6 +14,7 @@ import {
   PlatformContract,
   PlatformIdentifier,
   SaasPlatformData,
+  SaasPlatformMetricsPeriod,
 } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
@@ -52,7 +53,12 @@ describe('query.registeredSaasPlatformData', () => {
     const result = await productInformationResolver.Query!
       .registeredSaasPlatformData!(
       {},
-      { input: { service_instance_id: serviceInstanceId } },
+      {
+        input: {
+          service_instance_id: serviceInstanceId,
+          metrics_period: SaasPlatformMetricsPeriod.Last_90Days,
+        },
+      },
       contextSimpleUserFiligran2,
       GRAPHQL_RESOLVE_INFO
     );
@@ -60,7 +66,10 @@ describe('query.registeredSaasPlatformData', () => {
     // Then
     expect(
       ProductInformationApp.loadRegisteredSaasPlatformData
-    ).toHaveBeenCalledWith(serviceInstanceId);
+    ).toHaveBeenCalledWith(
+      serviceInstanceId,
+      SaasPlatformMetricsPeriod.Last_90Days
+    );
     expect(result).toMatchObject(expectedData);
   });
 
@@ -75,7 +84,12 @@ describe('query.registeredSaasPlatformData', () => {
     const result = await productInformationResolver.Query!
       .registeredSaasPlatformData!(
       {},
-      { input: { service_instance_id: uuidv4() as ServiceInstanceId } },
+      {
+        input: {
+          service_instance_id: uuidv4() as ServiceInstanceId,
+          metrics_period: SaasPlatformMetricsPeriod.Last_90Days,
+        },
+      },
       contextSimpleUserFiligran2,
       GRAPHQL_RESOLVE_INFO
     );
@@ -142,7 +156,12 @@ describe('query.registeredSaasPlatformData', () => {
       const result = await productInformationResolver.Query!
         .registeredSaasPlatformData!(
         {},
-        { input: { service_instance_id: serviceInstanceId } },
+        {
+          input: {
+            service_instance_id: serviceInstanceId,
+            metrics_period: SaasPlatformMetricsPeriod.Last_90Days,
+          },
+        },
         contextRegistererUserSecondOrga,
         GRAPHQL_RESOLVE_INFO
       );
@@ -164,7 +183,12 @@ describe('query.registeredSaasPlatformData', () => {
       const result = await productInformationResolver.Query!
         .registeredSaasPlatformData!(
         {},
-        { input: { service_instance_id: serviceInstanceId } },
+        {
+          input: {
+            service_instance_id: serviceInstanceId,
+            metrics_period: SaasPlatformMetricsPeriod.Last_90Days,
+          },
+        },
         contextSimpleUserFiligran2,
         GRAPHQL_RESOLVE_INFO
       );
