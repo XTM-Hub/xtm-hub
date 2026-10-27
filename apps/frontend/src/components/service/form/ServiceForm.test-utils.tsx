@@ -4,6 +4,9 @@ import { documentItem_fragment$data } from '@generated/documentItem_fragment.gra
 import {
   DocumentImageType,
   DocumentSourceType,
+  FiligranProduct,
+  LicenseType,
+  useSolutionCategoriesListQuery,
   useUseCasesListQuery,
 } from '@graphql/generated';
 import '@testing-library/jest-dom/vitest';
@@ -18,44 +21,49 @@ const SLUG_LABEL = 'Service.Form.SlugLabel';
 const SHORT_DESCRIPTION_LABEL = 'Service.Form.ShortDescriptionLabel';
 const PRODUCT_VERSION_LABEL = 'Service.Form.ProductVersionLabel';
 const USE_CASES_LABEL = 'Service.Form.UseCasesLabel';
+const SOLUTION_CATEGORIES_LABEL = 'Service.Form.SolutionCategoriesLabel';
 const DELETE_IMAGE_LABEL = 'Service.Form.DeleteImage';
 const PRODUCT_VERSION_ERROR = 'Product version must be X.Y.Z';
 export const DESCRIPTION_PLACEHOLDER = 'Service.Form.DescriptionPlaceholder';
 export const VALIDATE_LABEL = 'Utils.Validate';
 
-const CURRENT_USER_ID = 'current-user';
+export const CURRENT_USER_ID = 'current-user';
 const CURRENT_USER_EMAIL = 'current.user@filigran.io';
-const CURRENT_ORGANIZATION = {
+export const CURRENT_ORGANIZATION = {
   id: 'organization-current',
   name: 'Current Organization',
   personal_space: false,
 };
-const DOCUMENT_ORGANIZATION = {
+export const DOCUMENT_ORGANIZATION = {
   id: 'organization-document',
   name: 'Document Organization',
   personal_space: false,
 };
-const UPLOADER = {
+export const UPLOADER = {
   id: 'uploader-1',
   email: 'uploader@filigran.io',
   first_name: null,
   last_name: null,
   picture: null,
 };
-const USE_CASE = {
+export const USE_CASE = {
   id: 'use-case-threat-hunting',
   name: 'Threat hunting',
   color: '#001122',
 };
+export const SOLUTION_CATEGORY = {
+  id: 'solution-category-threat-feeds',
+  name: 'Threat feeds',
+};
 
-const DOCUMENT_NAME = 'Ransomware overview';
-const DOCUMENT_SLUG = 'ransomware-overview';
-const DOCUMENT_SHORT_DESCRIPTION = 'Track ransomware activity';
-const DOCUMENT_DESCRIPTION = 'Every ransomware campaign at a glance';
+export const DOCUMENT_NAME = 'Ransomware overview';
+export const DOCUMENT_SLUG = 'ransomware-overview';
+export const DOCUMENT_SHORT_DESCRIPTION = 'Track ransomware activity';
+export const DOCUMENT_DESCRIPTION = 'Every ransomware campaign at a glance';
 const DOCUMENT_PRODUCT_VERSION = '6.4.0';
-const NEW_NAME = 'Threat Intel: APT-28 (v2)';
-const NEW_SLUG = 'threat-intel-apt-28-v2';
-const NEW_SHORT_DESCRIPTION = 'Follow APT-28';
+export const NEW_NAME = 'Threat Intel: APT-28 (v2)';
+export const NEW_SLUG = 'threat-intel-apt-28-v2';
+export const NEW_SHORT_DESCRIPTION = 'Follow APT-28';
 const NEW_PRODUCT_VERSION = '6.5.1';
 export const NEW_DESCRIPTION = 'Everything about APT-28';
 
@@ -71,8 +79,8 @@ const buildImage = (id: string, fileName: string) => ({
   source_type: DocumentSourceType.Internal,
 });
 
-const KEPT_IMAGE = buildImage('image-kept', 'kept.png');
-const DELETED_IMAGE = buildImage('image-deleted', 'deleted.png');
+export const KEPT_IMAGE = buildImage('image-kept', 'kept.png');
+export const DELETED_IMAGE = buildImage('image-deleted', 'deleted.png');
 
 export const buildDocument = (
   overrides: Partial<documentItem_fragment$data> = {}
@@ -100,6 +108,15 @@ export const buildDocument = (
   ' $fragmentType': 'documentItem_fragment',
   ...overrides,
 });
+
+export const buildIntegrationDocument = (
+  overrides: Partial<documentItem_fragment$data> = {}
+): documentItem_fragment$data =>
+  buildDocument({
+    solution_categories: [SOLUTION_CATEGORY],
+    license_type: LicenseType.Commercial,
+    ...overrides,
+  });
 
 export enum ServiceFormResource {
   CUSTOM_DASHBOARD = 'dashboard',
@@ -183,18 +200,30 @@ export const renderServiceForm = <Values,>(
   };
 };
 
-export const fillCommonCreationFields = async (user: ServiceFormUser) => {
+const typeNewNameAndShortDescription = async (user: ServiceFormUser) => {
   await user.type(screen.getByRole('textbox', { name: NAME_LABEL }), NEW_NAME);
   await user.type(
     screen.getByRole('textbox', { name: SHORT_DESCRIPTION_LABEL }),
     NEW_SHORT_DESCRIPTION
   );
+};
+
+const selectOption = async (
+  user: ServiceFormUser,
+  comboboxName: string,
+  optionName: string
+) => {
+  await user.click(screen.getByRole('combobox', { name: comboboxName }));
+  await user.click(screen.getByRole('option', { name: optionName }));
+};
+
+export const fillCommonCreationFields = async (user: ServiceFormUser) => {
+  await typeNewNameAndShortDescription(user);
   await user.type(
     screen.getByRole('textbox', { name: PRODUCT_VERSION_LABEL }),
     NEW_PRODUCT_VERSION
   );
-  await user.click(screen.getByRole('combobox', { name: USE_CASES_LABEL }));
-  await user.click(screen.getByRole('option', { name: USE_CASE.name }));
+  await selectOption(user, USE_CASES_LABEL, USE_CASE.name);
 };
 
 export const typeNewDescription = (user: ServiceFormUser) =>
@@ -207,6 +236,27 @@ export const uploadFile = (
   user: ServiceFormUser,
   { label, file }: ServiceFormFileField
 ) => user.upload(screen.getByLabelText(label, { selector: 'input' }), file);
+
+export const givenSolutionCategories = () =>
+  vi.mocked(useSolutionCategoriesListQuery).mockReturnValue({
+    data: {
+      solutionCategories: {
+        totalCount: 1,
+        edges: [
+          {
+            node: { ...SOLUTION_CATEGORY, product: [FiligranProduct.Opencti] },
+          },
+        ],
+      },
+    },
+  } as ReturnType<typeof useSolutionCategoriesListQuery>);
+
+export const fillIntegrationCreationFields = async (user: ServiceFormUser) => {
+  await typeNewNameAndShortDescription(user);
+  await typeNewDescription(user);
+  await selectOption(user, USE_CASES_LABEL, USE_CASE.name);
+  await selectOption(user, SOLUTION_CATEGORIES_LABEL, SOLUTION_CATEGORY.name);
+};
 
 interface ServiceFormTestTarget<Values> {
   Form: ServiceFormComponent<Values>;
@@ -299,7 +349,7 @@ interface EditedServiceFormTestsOptions<
   buildEditedDocument: () => documentItem_fragment$data;
 }
 
-const defineDeletedImagesTest = <Values,>({
+export const defineDeletedImagesTest = <Values,>({
   Form,
   resourceName,
   buildEditedDocument,
@@ -374,7 +424,7 @@ const fillShortDescription = async (
   return shortDescriptionField;
 };
 
-const defineShortDescriptionLengthTests = <Values,>({
+export const defineShortDescriptionLengthTests = <Values,>({
   Form,
   resourceName,
   buildEditedDocument,
@@ -425,7 +475,7 @@ interface RequiredFileTestOptions<
   fillCreationFields: (user: ServiceFormUser) => Promise<void>;
 }
 
-const defineRequiredFileTest = <Values,>({
+export const defineRequiredFileTest = <Values,>({
   Form,
   resourceName,
   fileField,
