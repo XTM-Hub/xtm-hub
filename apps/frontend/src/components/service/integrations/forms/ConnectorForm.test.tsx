@@ -42,6 +42,7 @@ const MINIMUM_DEPLOYABLE_VERSION_ERROR =
 const CONTAINER_IMAGE = 'opencti/connector-mitre';
 const SOURCE_CODE = 'https://github.com/OpenCTI-Platform/connectors';
 const MINIMUM_DEPLOYABLE_VERSION = '6.2.0';
+const UPPERCASE_LTS_MINIMUM_DEPLOYABLE_VERSION = '6.0.0-LTS.1';
 
 const buildConnector = (overrides: Partial<documentItem_fragment$data> = {}) =>
   buildIntegrationDocument({
@@ -178,6 +179,29 @@ describe('ConnectorForm', () => {
     expect(
       screen.queryByRole('textbox', { name: MINIMUM_DEPLOYABLE_VERSION_LABEL })
     ).not.toBeInTheDocument();
+  });
+
+  it('should keep the minimum deployable version the form would reject when the user edits a connector not supported by the manager', async () => {
+    // Given
+    const { user, handleSubmit } = renderServiceForm(
+      ConnectorForm,
+      buildConnector({
+        manager_supported: false,
+        minimum_deployable_version: UPPERCASE_LTS_MINIMUM_DEPLOYABLE_VERSION,
+      })
+    );
+
+    // When
+    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+    // Then
+    await waitFor(() =>
+      expect(handleSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          minimum_deployable_version: UPPERCASE_LTS_MINIMUM_DEPLOYABLE_VERSION,
+        } satisfies ExpectedValues)
+      )
+    );
   });
 
   it.each(['6.0.0-lts', '6.0.0-lts.2'])(
