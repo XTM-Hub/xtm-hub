@@ -208,7 +208,7 @@ export const uploadFile = (
   { label, file }: ServiceFormFileField
 ) => user.upload(screen.getByLabelText(label, { selector: 'input' }), file);
 
-interface SlugGenerationTestsOptions<Values> {
+interface ServiceFormTestTarget<Values> {
   Form: ServiceFormComponent<Values>;
   resourceName: ServiceFormResource;
 }
@@ -216,7 +216,7 @@ interface SlugGenerationTestsOptions<Values> {
 export const defineSlugGenerationTests = <Values,>({
   Form,
   resourceName,
-}: SlugGenerationTestsOptions<Values>) => {
+}: ServiceFormTestTarget<Values>) => {
   it.each([
     { name: 'Threat hunting', slug: 'threat-hunting' },
     { name: NEW_NAME, slug: NEW_SLUG },
@@ -293,12 +293,166 @@ export const defineReplaceFileConfirmationTest = <Values,>({
   });
 };
 
+interface EditedServiceFormTestsOptions<
+  Values,
+> extends ServiceFormTestTarget<Values> {
+  buildEditedDocument: () => documentItem_fragment$data;
+}
+
+const defineDeletedImagesTest = <Values,>({
+  Form,
+  resourceName,
+  buildEditedDocument,
+}: EditedServiceFormTestsOptions<Values>) => {
+  it(`should not send the images the user deleted when the user edits the ${resourceName}`, async () => {
+    // Given
+    const { user, handleSubmit } = renderServiceForm(
+      Form,
+      buildEditedDocument()
+    );
+    await user.click(
+      within(
+        screen.getByText(DELETED_IMAGE.file_name).parentElement as HTMLElement
+      ).getByRole('button', { name: DELETE_IMAGE_LABEL })
+    );
+
+    // When
+    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+    // Then
+    await waitFor(() =>
+      expect(handleSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ images: [KEPT_IMAGE] })
+      )
+    );
+  });
+};
+
+const defineProductVersionFormatTests = <Values,>({
+  Form,
+  resourceName,
+  buildEditedDocument,
+}: EditedServiceFormTestsOptions<Values>) => {
+  it.each(['6.4', 'v6.4.0', '6.4.0-rc1'])(
+    `should reject the product version %s when the user saves the ${resourceName}`,
+    async (productVersion) => {
+      // Given
+      const { user } = renderServiceForm(Form, buildEditedDocument());
+      const productVersionField = screen.getByRole('textbox', {
+        name: PRODUCT_VERSION_LABEL,
+      });
+      await user.clear(productVersionField);
+      await user.type(productVersionField, productVersion);
+
+      // When
+      await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+      // Then
+      expect(
+        await screen.findByText(PRODUCT_VERSION_ERROR)
+      ).toBeInTheDocument();
+    }
+  );
+};
+
+interface ShortDescriptionLengthTestsOptions<
+  Values,
+> extends EditedServiceFormTestsOptions<Values> {
+  shortDescriptionMaxLength: number;
+}
+
+const fillShortDescription = async (
+  user: ServiceFormUser,
+  shortDescription: string
+) => {
+  const shortDescriptionField = screen.getByRole('textbox', {
+    name: SHORT_DESCRIPTION_LABEL,
+  });
+  await user.clear(shortDescriptionField);
+  await user.click(shortDescriptionField);
+  await user.paste(shortDescription);
+  return shortDescriptionField;
+};
+
+const defineShortDescriptionLengthTests = <Values,>({
+  Form,
+  resourceName,
+  buildEditedDocument,
+  shortDescriptionMaxLength,
+}: ShortDescriptionLengthTestsOptions<Values>) => {
+  it(`should save a short description of ${shortDescriptionMaxLength} characters when the user edits the ${resourceName}`, async () => {
+    // Given
+    const { user, handleSubmit } = renderServiceForm(
+      Form,
+      buildEditedDocument()
+    );
+    const shortDescription = 'a'.repeat(shortDescriptionMaxLength);
+    await fillShortDescription(user, shortDescription);
+
+    // When
+    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+    // Then
+    await waitFor(() =>
+      expect(handleSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ short_description: shortDescription })
+      )
+    );
+  });
+
+  it(`should reject a short description longer than ${shortDescriptionMaxLength} characters when the user edits the ${resourceName}`, async () => {
+    // Given
+    const { user } = renderServiceForm(Form, buildEditedDocument());
+    const shortDescriptionField = await fillShortDescription(
+      user,
+      'a'.repeat(shortDescriptionMaxLength + 1)
+    );
+
+    // When
+    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+    // Then
+    await waitFor(() =>
+      expect(shortDescriptionField).toHaveAttribute('aria-invalid', 'true')
+    );
+  });
+};
+
+interface RequiredFileTestOptions<
+  Values,
+> extends ServiceFormTestTarget<Values> {
+  fileField: ServiceFormFileField;
+  fillCreationFields: (user: ServiceFormUser) => Promise<void>;
+}
+
+const defineRequiredFileTest = <Values,>({
+  Form,
+  resourceName,
+  fileField,
+  fillCreationFields,
+}: RequiredFileTestOptions<Values>) => {
+  it(`should ask for the ${fileField.name} when the user creates a ${resourceName} without it`, async () => {
+    // Given
+    const { user } = renderServiceForm(Form);
+    await fillCreationFields(user);
+
+    // When
+    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+    // Then
+    await waitFor(() =>
+      expect(
+        screen.getByLabelText(fileField.label, { selector: 'input' })
+      ).toHaveAttribute('aria-invalid', 'true')
+    );
+  });
+};
+
 interface ServiceFormTestsOptions<Values>
   extends
-    SlugGenerationTestsOptions<Values>,
-    ReplaceFileConfirmationTestOptions<Values> {
-  shortDescriptionMaxLength: number;
-  fillCreationFields: (user: ServiceFormUser) => Promise<void>;
+    ShortDescriptionLengthTestsOptions<Values>,
+    ReplaceFileConfirmationTestOptions<Values>,
+    RequiredFileTestOptions<Values> {
   creationValues: NoInfer<Partial<Values>>;
   editionValues?: NoInfer<Partial<Values>>;
 }
@@ -313,19 +467,6 @@ export const defineServiceFormTests = <Values,>({
   creationValues,
   editionValues = {},
 }: ServiceFormTestsOptions<Values>) => {
-  const fillShortDescription = async (
-    user: ServiceFormUser,
-    shortDescription: string
-  ) => {
-    const shortDescriptionField = screen.getByRole('textbox', {
-      name: SHORT_DESCRIPTION_LABEL,
-    });
-    await user.clear(shortDescriptionField);
-    await user.click(shortDescriptionField);
-    await user.paste(shortDescription);
-    return shortDescriptionField;
-  };
-
   defineSlugGenerationTests({ Form, resourceName });
 
   it(`should keep the slug of the ${resourceName} when the user renames it`, async () => {
@@ -370,21 +511,7 @@ export const defineServiceFormTests = <Values,>({
     );
   });
 
-  it(`should ask for the ${fileField.name} when the user creates a ${resourceName} without it`, async () => {
-    // Given
-    const { user } = renderServiceForm(Form);
-    await fillCreationFields(user);
-
-    // When
-    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
-
-    // Then
-    await waitFor(() =>
-      expect(
-        screen.getByLabelText(fileField.label, { selector: 'input' })
-      ).toHaveAttribute('aria-invalid', 'true')
-    );
-  });
+  defineRequiredFileTest({ Form, resourceName, fileField, fillCreationFields });
 
   defineReplaceFileConfirmationTest({ Form, fileField, buildEditedDocument });
 
@@ -417,84 +544,14 @@ export const defineServiceFormTests = <Values,>({
     );
   });
 
-  it(`should not send the images the user deleted when the user edits the ${resourceName}`, async () => {
-    // Given
-    const { user, handleSubmit } = renderServiceForm(
-      Form,
-      buildEditedDocument()
-    );
-    await user.click(
-      within(
-        screen.getByText(DELETED_IMAGE.file_name).parentElement as HTMLElement
-      ).getByRole('button', { name: DELETE_IMAGE_LABEL })
-    );
+  defineDeletedImagesTest({ Form, resourceName, buildEditedDocument });
 
-    // When
-    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+  defineProductVersionFormatTests({ Form, resourceName, buildEditedDocument });
 
-    // Then
-    await waitFor(() =>
-      expect(handleSubmit).toHaveBeenCalledWith(
-        expect.objectContaining({ images: [KEPT_IMAGE] })
-      )
-    );
-  });
-
-  it.each(['6.4', 'v6.4.0', '6.4.0-rc1'])(
-    `should reject the product version %s when the user saves the ${resourceName}`,
-    async (productVersion) => {
-      // Given
-      const { user } = renderServiceForm(Form, buildEditedDocument());
-      const productVersionField = screen.getByRole('textbox', {
-        name: PRODUCT_VERSION_LABEL,
-      });
-      await user.clear(productVersionField);
-      await user.type(productVersionField, productVersion);
-
-      // When
-      await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
-
-      // Then
-      expect(
-        await screen.findByText(PRODUCT_VERSION_ERROR)
-      ).toBeInTheDocument();
-    }
-  );
-
-  it(`should save a short description of ${shortDescriptionMaxLength} characters when the user edits the ${resourceName}`, async () => {
-    // Given
-    const { user, handleSubmit } = renderServiceForm(
-      Form,
-      buildEditedDocument()
-    );
-    const shortDescription = 'a'.repeat(shortDescriptionMaxLength);
-    await fillShortDescription(user, shortDescription);
-
-    // When
-    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
-
-    // Then
-    await waitFor(() =>
-      expect(handleSubmit).toHaveBeenCalledWith(
-        expect.objectContaining({ short_description: shortDescription })
-      )
-    );
-  });
-
-  it(`should reject a short description longer than ${shortDescriptionMaxLength} characters when the user edits the ${resourceName}`, async () => {
-    // Given
-    const { user } = renderServiceForm(Form, buildEditedDocument());
-    const shortDescriptionField = await fillShortDescription(
-      user,
-      'a'.repeat(shortDescriptionMaxLength + 1)
-    );
-
-    // When
-    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
-
-    // Then
-    await waitFor(() =>
-      expect(shortDescriptionField).toHaveAttribute('aria-invalid', 'true')
-    );
+  defineShortDescriptionLengthTests({
+    Form,
+    resourceName,
+    buildEditedDocument,
+    shortDescriptionMaxLength,
   });
 };
