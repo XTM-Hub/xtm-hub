@@ -1674,7 +1674,8 @@ export enum NewsFeedItemType {
   ResourceCustomDashboard = 'RESOURCE_CUSTOM_DASHBOARD',
   ResourceCustomView = 'RESOURCE_CUSTOM_VIEW',
   ResourceIntegration = 'RESOURCE_INTEGRATION',
-  ResourcePlaybook = 'RESOURCE_PLAYBOOK'
+  ResourcePlaybook = 'RESOURCE_PLAYBOOK',
+  ResourceScenario = 'RESOURCE_SCENARIO'
 }
 
 export type NewsFeedRedirectInput = {
@@ -1691,7 +1692,8 @@ export enum NewsFeedUtmContent {
   CustomView = 'custom_view',
   Integration = 'integration',
   Other = 'other',
-  Playbook = 'playbook'
+  Playbook = 'playbook',
+  Scenario = 'scenario'
 }
 
 export enum NewsFeedUtmMedium {

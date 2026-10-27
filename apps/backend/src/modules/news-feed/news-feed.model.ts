@@ -31,6 +31,10 @@ export const newsFeedConfigurationMapping: Partial<
     newsFeedType: NewsFeedItemType.ResourceIntegration,
     platformIdentifier: PlatformIdentifier.Opencti,
   },
+  [ServiceDefinitionIdentifier.OpenaevScenarios]: {
+    newsFeedType: NewsFeedItemType.ResourceScenario,
+    platformIdentifier: PlatformIdentifier.Openaev,
+  },
 };
 
 // Metadata keys that only serve the Hub (document lookup, external destination of a redirect): they are never
@@ -63,6 +67,7 @@ export const newsFeedUtmContentMapping: Partial<
   [NewsFeedItemType.ResourceCustomView]: NewsFeedUtmContent.CustomView,
   [NewsFeedItemType.ResourceIntegration]: NewsFeedUtmContent.Integration,
   [NewsFeedItemType.ResourcePlaybook]: NewsFeedUtmContent.Playbook,
+  [NewsFeedItemType.ResourceScenario]: NewsFeedUtmContent.Scenario,
 };
 
 // Public route that redirects to the external destination of an item. The relative url_path given to OpenCTI

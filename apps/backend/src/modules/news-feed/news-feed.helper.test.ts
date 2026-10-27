@@ -54,7 +54,7 @@ describe('news-feed.helper', () => {
 
     it('returns true when no minimum is configured for the identifier', () => {
       expect(
-        doesPlatformSupportNewsFeed(PlatformIdentifier.Openaev, '1.0.0')
+        doesPlatformSupportNewsFeed(PlatformIdentifier.Xtmone, '1.0.0')
       ).toBe(true);
     });
   });
@@ -66,7 +66,7 @@ describe('news-feed.helper', () => {
       ${ServiceDefinitionIdentifier.OpenctiPlaybooks}        | ${true}  | ${'playbooks service definition'}
       ${ServiceDefinitionIdentifier.OpenctiIntegrations}     | ${true}  | ${'integrations service definition'}
       ${ServiceDefinitionIdentifier.OpenctiRegistration}     | ${false} | ${'registration identifier'}
-      ${ServiceDefinitionIdentifier.OpenaevScenarios}        | ${false} | ${'openaev scenarios identifier'}
+      ${ServiceDefinitionIdentifier.OpenaevScenarios}        | ${true}  | ${'openaev scenarios service definition'}
     `(
       'should return a configuration $expected for $description ($identifier)',
       ({
@@ -127,6 +127,7 @@ describe('news-feed.helper', () => {
       ${NewsFeedItemType.ResourceCustomView}      | ${'custom_view'}
       ${NewsFeedItemType.ResourceIntegration}     | ${'integration'}
       ${NewsFeedItemType.ResourcePlaybook}        | ${'playbook'}
+      ${NewsFeedItemType.ResourceScenario}        | ${'scenario'}
       ${'UNKNOWN_TYPE'}                           | ${'other'}
     `(
       'should set utm_content=$expectedContent for type $type',

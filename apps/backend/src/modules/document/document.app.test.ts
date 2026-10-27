@@ -1004,6 +1004,68 @@ describe('documentApp', () => {
     });
   });
 
+  describe('deleteDocument', () => {
+    it.each`
+      hardDelete | description
+      ${true}    | ${'hard deleted'}
+      ${false}   | ${'soft deleted'}
+    `(
+      'should delegate the news feed item deletion to NewsFeedApp.deleteResourceNewsFeed when the document is $description',
+      async ({ hardDelete }: { hardDelete: boolean }) => {
+        // Given
+        const deleteResourceNewsFeedSpy = vi
+          .spyOn(NewsFeedApp, 'deleteResourceNewsFeed')
+          .mockResolvedValue();
+        const document = await TestHelper.document.create({
+          name: 'document to delete',
+          service_instance_id: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+        });
+
+        // When
+        await DocumentApp.deleteDocument(
+          document.id,
+          SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+          hardDelete
+        );
+
+        // Then
+        expect(deleteResourceNewsFeedSpy).toHaveBeenCalledOnce();
+        expect(deleteResourceNewsFeedSpy).toHaveBeenCalledWith({
+          documentId: document.id,
+        });
+      }
+    );
+
+    it('should delegate the news feed item deletion when the file cleanup fails after a hard delete', async () => {
+      // Given
+      const deleteResourceNewsFeedSpy = vi
+        .spyOn(NewsFeedApp, 'deleteResourceNewsFeed')
+        .mockResolvedValue();
+      vi.spyOn(MinIOClient, 'deleteFile').mockRejectedValue(
+        new Error('cleanup-failed')
+      );
+      const document = await TestHelper.document.create({
+        name: 'document to delete',
+        minio_name: minioFileMock.minioName,
+        service_instance_id: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+      });
+
+      // When
+      await expect(
+        DocumentApp.deleteDocument(
+          document.id,
+          SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+          true
+        )
+      ).rejects.toThrow('cleanup-failed');
+
+      // Then
+      expect(deleteResourceNewsFeedSpy).toHaveBeenCalledWith({
+        documentId: document.id,
+      });
+    });
+  });
+
   describe('loadDocument', () => {
     it('should return the document with elastic search counters', async () => {
       // Given
