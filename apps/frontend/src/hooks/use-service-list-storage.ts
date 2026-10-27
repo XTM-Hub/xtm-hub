@@ -7,6 +7,7 @@ import usePublicPath from '@/hooks/use-public-path';
 import {
   buildServiceListStorageKey,
   ServiceListStorageKey,
+  ServiceListStorageName,
 } from '@/utils/filters-storage.utils';
 import { DocumentOrdering, OrderingMode } from '@graphql/generated';
 import { useCallback } from 'react';
@@ -30,7 +31,7 @@ const deserializeLogicalMultiSelectSelection = (
 
 export const useServiceListStorage = (serviceName: ServiceListStorageKey) => {
   const isPublicPath = usePublicPath();
-  const buildKey = (name: string) =>
+  const buildKey = (name: ServiceListStorageName) =>
     buildServiceListStorageKey(name, isPublicPath, serviceName);
 
   const [search, setSearch, removeSearch] = useSessionStorage<string>(

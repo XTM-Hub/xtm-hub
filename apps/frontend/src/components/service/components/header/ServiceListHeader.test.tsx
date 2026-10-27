@@ -168,9 +168,7 @@ describe('ServiceListHeader', () => {
 
   it('should store the sort field when the user picks another one', async () => {
     // Given
-    testState.useServiceListLocalStorage.mockReturnValue(
-      buildLocalStorageState()
-    );
+    testState.useServiceListStorage.mockReturnValue(buildStorageState());
     const { user } = renderHeader();
 
     // When

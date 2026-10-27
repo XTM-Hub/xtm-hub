@@ -18,10 +18,18 @@ const SERVICE_LIST_FILTER_NAMES = [
   'entityType',
   'deployable',
   'verified',
-];
+] as const;
+
+// Every list setting must be declared here: filter names are cleared on logout, the others are kept.
+export type ServiceListStorageName =
+  | (typeof SERVICE_LIST_FILTER_NAMES)[number]
+  | 'pageSize'
+  | 'orderBy'
+  | 'orderMode'
+  | 'displayMode';
 
 export const buildServiceListStorageKey = (
-  name: string,
+  name: ServiceListStorageName,
   isPublicPath: boolean,
   serviceName: ServiceListStorageKey
 ) => `${name}${isPublicPath ? 'Public' : 'Private'}${serviceName}List`;
