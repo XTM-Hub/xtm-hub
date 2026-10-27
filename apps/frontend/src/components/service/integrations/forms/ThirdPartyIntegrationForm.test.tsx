@@ -113,7 +113,7 @@ describe('ThirdPartyIntegrationForm', () => {
 
   it('should ask for an image when the user creates a third party integration without any', async () => {
     // Given
-    const { user } = renderServiceForm(ThirdPartyIntegrationForm);
+    const { user, handleSubmit } = renderServiceForm(ThirdPartyIntegrationForm);
     await fillThirdPartyCreationFields(user);
 
     // When
@@ -125,6 +125,7 @@ describe('ThirdPartyIntegrationForm', () => {
         screen.getByLabelText(IMAGES_LABEL, { selector: 'input' })
       ).toHaveAttribute('aria-invalid', 'true')
     );
+    expect(handleSubmit).not.toHaveBeenCalled();
   });
 
   it('should save the third party integration with its links when the user edits it', async () => {
@@ -161,17 +162,25 @@ describe('ThirdPartyIntegrationForm', () => {
   });
 
   it.each([
-    { field: 'GitHub URL', label: GITHUB_URL_LABEL },
-    { field: 'product version', label: PRODUCT_VERSION_LABEL },
+    {
+      field: 'GitHub URL',
+      clearedLabel: GITHUB_URL_LABEL,
+      keptLabel: PRODUCT_VERSION_LABEL,
+    },
+    {
+      field: 'product version',
+      clearedLabel: PRODUCT_VERSION_LABEL,
+      keptLabel: GITHUB_URL_LABEL,
+    },
   ])(
-    'should flag the $field when the user clears it but keeps the other one',
-    async ({ label }) => {
+    'should flag only the $field when the user clears it but keeps the other one',
+    async ({ clearedLabel, keptLabel }) => {
       // Given
-      const { user } = renderServiceForm(
+      const { user, handleSubmit } = renderServiceForm(
         ThirdPartyIntegrationForm,
         buildThirdPartyIntegration()
       );
-      const clearedField = screen.getByRole('textbox', { name: label });
+      const clearedField = screen.getByRole('textbox', { name: clearedLabel });
       await user.clear(clearedField);
 
       // When
@@ -181,6 +190,10 @@ describe('ThirdPartyIntegrationForm', () => {
       await waitFor(() =>
         expect(clearedField).toHaveAttribute('aria-invalid', 'true')
       );
+      expect(
+        screen.getByRole('textbox', { name: keptLabel })
+      ).not.toHaveAttribute('aria-invalid', 'true');
+      expect(handleSubmit).not.toHaveBeenCalled();
     }
   );
 
@@ -209,28 +222,27 @@ describe('ThirdPartyIntegrationForm', () => {
     );
   });
 
-  it.each(['', 'vendor.example.com'])(
-    'should reject the vendor URL "%s" when the user saves the third party integration',
-    async (vendorUrl) => {
-      // Given
-      const { user } = renderServiceForm(
-        ThirdPartyIntegrationForm,
-        buildThirdPartyIntegration()
-      );
-      const vendorUrlField = screen.getByRole('textbox', {
-        name: VENDOR_URL_LABEL,
-      });
-      await user.clear(vendorUrlField);
-      await user.click(vendorUrlField);
-      await user.paste(vendorUrl);
+  it('should reject a vendor URL without protocol when the user saves the third party integration', async () => {
+    // Given
+    const { user, handleSubmit } = renderServiceForm(
+      ThirdPartyIntegrationForm,
+      buildThirdPartyIntegration()
+    );
+    const vendorUrlField = screen.getByRole('textbox', {
+      name: VENDOR_URL_LABEL,
+    });
+    await user.clear(vendorUrlField);
+    await user.type(vendorUrlField, 'vendor.example.com');
 
-      // When
-      await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+    // When
+    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
 
-      // Then
-      await waitFor(() => expect(vendorUrlField).toBeInvalid());
-    }
-  );
+    // Then
+    await waitFor(() =>
+      expect(vendorUrlField).toHaveAttribute('aria-invalid', 'true')
+    );
+    expect(handleSubmit).not.toHaveBeenCalled();
+  });
 
   defineDeletedImagesTest({
     Form: ThirdPartyIntegrationForm,
