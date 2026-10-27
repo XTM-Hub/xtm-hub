@@ -60,14 +60,18 @@ const resizeBanner = (height: number) => {
   });
 };
 
+const pollCopilot = (polls: number) => {
+  act(() => {
+    vi.advanceTimersByTime(polls * COPILOT_POLL_MS);
+  });
+};
+
 const loadCopilot = (polls: number) => {
   const host = document.createElement('div');
   host.id = COPILOT_SCRIPT_ID;
   host.attachShadow({ mode: 'open' });
   document.body.appendChild(host);
-  act(() => {
-    vi.advanceTimersByTime(polls * COPILOT_POLL_MS);
-  });
+  pollCopilot(polls);
 };
 
 const readCopilotStyles = () =>
@@ -166,6 +170,7 @@ describe('CookieConsentBanner', () => {
 
     // When
     await user.click(screen.getByRole('button', { name: 'AcceptAll' }));
+    pollCopilot(1);
 
     // Then
     expect(readCopilotStyles()).toEqual([]);

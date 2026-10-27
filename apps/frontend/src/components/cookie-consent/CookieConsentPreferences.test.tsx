@@ -46,7 +46,7 @@ const renderPreferences = (services: ServiceConsent) =>
 const openPreferences = (user: UserEvent) =>
   user.click(screen.getByRole('button', { name: 'CookieSettingsLink' }));
 
-const expandServices = async (user: UserEvent) => {
+const toggleServices = async (user: UserEvent) => {
   for (const button of screen.getAllByRole('button', {
     name: 'ManageServices',
   })) {
@@ -94,7 +94,7 @@ describe('CookieConsentPreferences', () => {
     await openPreferences(user);
 
     // When
-    await expandServices(user);
+    await toggleServices(user);
 
     // Then
     expect(
@@ -108,10 +108,10 @@ describe('CookieConsentPreferences', () => {
     // Given
     const { user } = renderPreferences(ALL_DENIED);
     await openPreferences(user);
-    await expandServices(user);
+    await toggleServices(user);
 
     // When
-    await expandServices(user);
+    await toggleServices(user);
 
     // Then
     expect(
@@ -130,7 +130,7 @@ describe('CookieConsentPreferences', () => {
       // Given
       const { user } = renderPreferences(ALL_DENIED);
       await openPreferences(user);
-      await expandServices(user);
+      await toggleServices(user);
 
       // When
       await user.click(screen.getByRole('switch', { name }));
