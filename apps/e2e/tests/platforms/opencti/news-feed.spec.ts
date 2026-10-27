@@ -153,26 +153,41 @@ test.describe('OpenCTI news feed', () => {
   });
 
   test('should announce nothing to a user unsubscribed from all the news feed types', async () => {
-    const ignored = uniqueTitle('e2e ignored dashboard');
-    const lastPulled = uniqueTitle('e2e last pulled custom view');
+    const ignoredDashboard = uniqueTitle('e2e ignored dashboard');
+    const ignoredCustomView = uniqueTitle('e2e ignored custom view');
+    const barrier = uniqueTitle('e2e barrier dashboard');
+    const ignored = [ignoredDashboard, ignoredCustomView];
 
     await test.step('preferences: unsubscribe from all the types', async () => {
       await newsFeedPage.setSubscription('all', false);
       await newsFeedPage.openDashboard();
     });
 
-    await test.step('publication: OpenCTI pulls a dashboard, then a custom view', async () => {
-      await provisionAndWaitUntilPulled('RESOURCE_CUSTOM_DASHBOARD', ignored);
-      // OpenCTI starts the pull of the custom view when it is done with the dashboard: nothing is left to arrive.
-      await provisionAndWaitUntilPulled('RESOURCE_CUSTOM_VIEW', lastPulled);
+    await test.step('publication: OpenCTI pulls a dashboard, a custom view, then a barrier', async () => {
+      await provisionAndWaitUntilPulled(
+        'RESOURCE_CUSTOM_DASHBOARD',
+        ignoredDashboard
+      );
+      await provisionAndWaitUntilPulled(
+        'RESOURCE_CUSTOM_VIEW',
+        ignoredCustomView
+      );
+      // OpenCTI starts the pull of the barrier when it is done with the custom view, which is then no longer
+      // waiting to arrive. The barrier itself may still be processed: it is not checked.
+      await provisionAndWaitUntilPulled('RESOURCE_CUSTOM_DASHBOARD', barrier);
     });
 
     await test.step('toast: nothing is announced', async () => {
-      await expect(newsFeedPage.getToast(ignored)).toHaveCount(0);
+      for (const title of ignored) {
+        await expect(newsFeedPage.getToast(title)).toHaveCount(0);
+      }
     });
 
     await test.step('datatable: nothing is in the News Feed', async () => {
-      expect(await newsFeedPage.getReceivedTitles()).not.toContain(ignored);
+      const received = await newsFeedPage.getReceivedTitles();
+      for (const title of ignored) {
+        expect(received).not.toContain(title);
+      }
     });
   });
 });
