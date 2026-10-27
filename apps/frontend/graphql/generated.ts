@@ -3574,6 +3574,13 @@ export type DocumentFacetsQueryVariables = Exact<{
 
 export type DocumentFacetsQuery = { __typename?: 'Query', documentFacets: { __typename?: 'Facet', integration_type: Array<{ __typename?: 'FacetBucket', value: string, count: number }>, license_type: Array<{ __typename?: 'FacetBucket', value: string, count: number }>, manager_supported: Array<{ __typename?: 'FacetBucket', value: string, count: number }>, verified: Array<{ __typename?: 'FacetBucket', value: string, count: number }>, solution_category: Array<{ __typename?: 'FacetBucket', value: string, count: number }>, use_case: Array<{ __typename?: 'FacetBucket', value: string, count: number }>, entity_type: Array<{ __typename?: 'FacetBucket', value: string, count: number }> } | null };
 
+export type IncrementShareNumberDocumentMutationVariables = Exact<{
+  documentId: Scalars['DocumentId']['input'];
+}>;
+
+
+export type IncrementShareNumberDocumentMutation = { __typename?: 'Mutation', incrementShareNumberDocument: { __typename?: 'Connector', share_number: number | null } | { __typename?: 'CsvFeed', share_number: number | null } | { __typename?: 'CustomDashboard', share_number: number | null } | { __typename?: 'CustomView', share_number: number | null } | { __typename?: 'DefaultDocument', share_number: number | null } | { __typename?: 'IntegrationHack', share_number: number | null } | { __typename?: 'OpenAEVScenario', share_number: number | null } | { __typename?: 'OpenCTIPlaybook', share_number: number | null } | { __typename?: 'RssFeed', share_number: number | null } | { __typename?: 'Stream', share_number: number | null } | { __typename?: 'TaxiiFeed', share_number: number | null } | { __typename?: 'ThirdPartyIntegration', share_number: number | null } };
+
 type HomepageDocument_Connector_Fragment = { __typename?: 'Connector', verified: boolean, manager_supported: boolean, id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
 
 type HomepageDocument_CsvFeed_Fragment = { __typename?: 'CsvFeed', id: string, name: string, short_description: string | null, type: string, active: boolean, slug: string, service_instance_id: any | null, children_documents: Array<{ __typename?: 'ShareableResource', id: string, image_type: DocumentImageType | null }> | null, use_cases: Array<{ __typename?: 'UseCase', id: string, name: string }> | null };
@@ -5293,6 +5300,35 @@ export const useInfiniteDocumentFacetsQuery = <
 useInfiniteDocumentFacetsQuery.getKey = (variables: DocumentFacetsQueryVariables) => ['DocumentFacets.infinite', variables];
 useInfiniteDocumentFacetsQuery.getRootKey = () => ['DocumentFacets.infinite'] as const;
 useDocumentFacetsQuery.fetcher = (client: GraphQLClient, variables: DocumentFacetsQueryVariables, headers?: RequestInit['headers']) => fetcher<DocumentFacetsQuery, DocumentFacetsQueryVariables>(client, DocumentFacetsDocument, variables, headers);
+
+export const IncrementShareNumberDocumentDocument = `
+    mutation IncrementShareNumberDocument($documentId: DocumentId!) {
+  incrementShareNumberDocument(documentId: $documentId) {
+    share_number
+  }
+}
+    `;
+
+export const useIncrementShareNumberDocumentMutation = <
+      TError = unknown,
+      TContext = unknown
+    >(
+      client: GraphQLClient,
+      options?: UseMutationOptions<IncrementShareNumberDocumentMutation, TError, IncrementShareNumberDocumentMutationVariables, TContext>,
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useMutation<IncrementShareNumberDocumentMutation, TError, IncrementShareNumberDocumentMutationVariables, TContext>(
+      {
+    mutationKey: ['IncrementShareNumberDocument'],
+    mutationFn: (variables?: IncrementShareNumberDocumentMutationVariables) => fetcher<IncrementShareNumberDocumentMutation, IncrementShareNumberDocumentMutationVariables>(client, IncrementShareNumberDocumentDocument, variables, headers)(),
+    ...options
+  }
+    )};
+
+useIncrementShareNumberDocumentMutation.getKey = () => ['IncrementShareNumberDocument'];
+useIncrementShareNumberDocumentMutation.getRootKey = () => ['IncrementShareNumberDocument'] as const;
+useIncrementShareNumberDocumentMutation.fetcher = (client: GraphQLClient, variables: IncrementShareNumberDocumentMutationVariables, headers?: RequestInit['headers']) => fetcher<IncrementShareNumberDocumentMutation, IncrementShareNumberDocumentMutationVariables>(client, IncrementShareNumberDocumentDocument, variables, headers);
 
 export const MostDeployedDocumentsQueryDocument = `
     query MostDeployedDocumentsQuery($limit: Int!, $platformIdentifiers: [PlatformIdentifier!]) {

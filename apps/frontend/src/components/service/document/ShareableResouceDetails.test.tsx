@@ -35,6 +35,9 @@ const buildDocumentData = (
     ...overrides,
   }) as unknown as documentItem_fragment$data;
 
+const DOCUMENT_SHARE_NUMBER = 3;
+const LIVE_SHARE_NUMBER = 7;
+
 describe('ShareableResourceDetails', () => {
   it('should render solution category and OpenCTI documentation link for CSV feed', () => {
     testRender(
@@ -121,4 +124,39 @@ describe('ShareableResourceDetails', () => {
     expect(screen.getByText('Organization')).toBeInTheDocument();
     expect(screen.getByText('Filigran')).toBeInTheDocument();
   });
+
+  it.each([
+    {
+      context: 'a share number is given',
+      shareNumber: LIVE_SHARE_NUMBER,
+      expectedShareCount: LIVE_SHARE_NUMBER,
+    },
+    {
+      context: 'no share number is given',
+      shareNumber: undefined,
+      expectedShareCount: DOCUMENT_SHARE_NUMBER,
+    },
+  ])(
+    'should display $expectedShareCount shares when $context',
+    ({ shareNumber, expectedShareCount }) => {
+      // Given a document shared DOCUMENT_SHARE_NUMBER times
+      // When the details are rendered
+      testRender(
+        <ShareableResourceDetails
+          documentData={buildDocumentData({
+            share_number: DOCUMENT_SHARE_NUMBER,
+          })}
+          shareNumber={shareNumber}
+        />
+      );
+
+      // Then the share count shown is the given one, else the document's
+      const shareCount = screen
+        .getByText('Service.ShareableResources.Details.Shares')
+        .closest('div')?.lastElementChild;
+      expect(shareCount).toHaveTextContent(
+        new RegExp(`^${expectedShareCount}$`)
+      );
+    }
+  );
 });
