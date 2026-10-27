@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../../../tests/helper/test.helper';
 import {
   // eslint-disable-next-line no-restricted-imports
@@ -226,6 +226,61 @@ describe('userOrganizationDomain', () => {
 
       expect(second.id).toBe(first.id);
     });
+
+    it('should create a single link when called concurrently', async () => {
+      const organization = await TestHelper.organization.create({
+        personal_space: false,
+      });
+      const user = await UserProvisioningDomain.createUser(
+        { email: `ensure-user-org-${uuidv4()}@filigran.io` },
+        { sendWelcomeEmail: false }
+      );
+
+      const results = await Promise.all(
+        Array.from({ length: 5 }, () =>
+          UserOrganizationDomain.ensureUserOrganizationExists(
+            user.id,
+            organization.id
+          )
+        )
+      );
+
+      expect(new Set(results.map(({ id }) => id)).size).toBe(1);
+      expect(
+        await UserOrganizationDomain.loadUserOrganization({
+          user_id: user.id,
+          organization_id: organization.id,
+        })
+      ).toHaveLength(1);
+    });
+  });
+
+  describe('createUserOrganizationRelation', () => {
+    it('should not duplicate a link that already exists', async () => {
+      const organization = await TestHelper.organization.create({
+        personal_space: false,
+      });
+      const user = await UserProvisioningDomain.createUser(
+        { email: `create-user-org-${uuidv4()}@filigran.io` },
+        { sendWelcomeEmail: false }
+      );
+
+      await UserOrganizationDomain.createUserOrganizationRelation({
+        user_id: user.id,
+        organizations_id: [organization.id, organization.id],
+      });
+      await UserOrganizationDomain.createUserOrganizationRelation({
+        user_id: user.id,
+        organizations_id: [organization.id],
+      });
+
+      expect(
+        await UserOrganizationDomain.loadUserOrganization({
+          user_id: user.id,
+          organization_id: organization.id,
+        })
+      ).toHaveLength(1);
+    });
   });
 
   describe('isFirstInOrganization', () => {
@@ -333,6 +388,46 @@ describe('userOrganizationDomain', () => {
       });
       expect(userOrganization).toBeTruthy();
 
+      const capabilities = await TestHelper.user_OrganizationCapability.loadAll(
+        { user_organization_id: userOrganization.id }
+      );
+      expect(capabilities).toHaveLength(0);
+    });
+
+    it('should accept a link created concurrently without granting administrate capability', async () => {
+      requestContext.set(requestContextAdminUser);
+      const domain = `link-subscription-${uuidv4()}.io`;
+      const organization = await TestHelper.organization.create({
+        personal_space: false,
+        domains: [domain],
+      });
+      const subscription = await TestHelper.subscription.create({
+        organization_id: organization.id,
+        service_instance_id: SERVICES.INSTANCES.INTEGRATIONS.ID,
+      });
+      const user = await UserProvisioningDomain.createUser(
+        { email: `user@${domain}` },
+        { sendWelcomeEmail: false }
+      );
+      // The link is created by another request between the existence check and the insert.
+      await UserOrganizationDomain.createUserOrganizationRelation({
+        user_id: user.id,
+        organizations_id: [organization.id],
+      });
+      vi.spyOn(
+        UserOrganizationDomain,
+        'loadUserOrganization'
+      ).mockResolvedValueOnce([]);
+
+      await UserOrganizationDomain.linkUserToSubscriptionOrganization(
+        user,
+        subscription.id
+      );
+
+      const userOrganization = await TestHelper.user_Organization.load({
+        user_id: user.id,
+        organization_id: organization.id,
+      });
       const capabilities = await TestHelper.user_OrganizationCapability.loadAll(
         { user_organization_id: userOrganization.id }
       );
