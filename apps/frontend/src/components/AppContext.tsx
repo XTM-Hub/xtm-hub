@@ -3,6 +3,7 @@ import { CookieConsent } from '@/components/cookie-consent/CookieConsent';
 import { ManagedScripts } from '@/components/cookie-consent/ManagedScripts';
 import { AppSnackbars } from '@/components/ui/snackbar/AppSnackbars';
 import { useTranslate } from '@/hooks/use-translate';
+import { removeLegacyFiltersLocalStorage } from '@/utils/filters-storage.utils';
 import { APP_PATH } from '@/utils/path/constant';
 import { geologica, ibmPlexSans } from '@app/font';
 import { useLocale } from 'next-intl';
@@ -30,6 +31,11 @@ const AppContext = ({ children }: AppProps) => {
   const pathname = usePathname();
   const t = useTranslate();
   const forcedTheme = isThemeSwitchablePath(pathname) ? undefined : 'dark';
+
+  React.useEffect(() => {
+    removeLegacyFiltersLocalStorage();
+  }, []);
+
   return (
     <html
       suppressHydrationWarning

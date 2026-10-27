@@ -9,15 +9,12 @@ vi.mock('@/components/service/form/UseSolutionCategories', () => ({
   useSolutionCategories: () => [{ id: 'cat-1', name: 'Threat Intelligence' }],
 }));
 
-vi.mock(
-  '@/components/service/components/ServiceListLocalStorageKeyContext',
-  () => ({
-    useServiceListLocalStorageKeyContext: () => ({ localStorageKey: 'feeds' }),
-  })
-);
+vi.mock('@/components/service/components/ServiceListStorageKeyContext', () => ({
+  useServiceListStorageKeyContext: () => ({ storageKey: 'feeds' }),
+}));
 
-vi.mock('@/hooks/use-service-list-local-storage', () => ({
-  useServiceListLocalStorage: () => ({
+vi.mock('@/hooks/use-service-list-storage', () => ({
+  useServiceListStorage: () => ({
     solutionCategories: {},
     setSolutionCategories: setSolutionCategoriesMock,
     removeSolutionCategories: vi.fn(),

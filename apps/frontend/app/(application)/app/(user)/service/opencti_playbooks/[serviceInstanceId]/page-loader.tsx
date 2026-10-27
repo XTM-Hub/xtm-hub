@@ -3,11 +3,9 @@
 import ShareableResourceServiceList from '@/components/service/components/ShareableResourceServiceList';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLogicalFiltersFromStorage } from '@/hooks/use-logical-filters-from-storage';
-import {
-  ServiceListLocalStorageKey,
-  useServiceListLocalStorage,
-} from '@/hooks/use-service-list-local-storage';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useShareableResourceQueryLoader } from '@/hooks/use-shareable-resource-query-loader';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import {
   ServiceSlug,
   ShareableResourceType,
@@ -20,7 +18,7 @@ interface PageLoaderProps {
 
 const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
   const { pageSize, search, labels, setSearch, orderMode, orderBy } =
-    useServiceListLocalStorage(ServiceListLocalStorageKey.OpenCTIPlaybooks);
+    useServiceListStorage(ServiceListStorageKey.OpenCTIPlaybooks);
   const logicalFilters = useLogicalFiltersFromStorage({
     serviceInstanceSlug: ServiceSlug.OPEN_CTI_PLAYBOOKS,
     labels,
@@ -44,7 +42,7 @@ const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
           search={search}
           onSearchChange={setSearch}
           type={ShareableResourceType.OPENCTI_PLAYBOOK}
-          localStorageKey={ServiceListLocalStorageKey.OpenCTIPlaybooks}
+          storageKey={ServiceListStorageKey.OpenCTIPlaybooks}
         />
       ) : (
         <Skeleton className="w-full inset-1/2" />

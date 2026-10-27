@@ -1,10 +1,8 @@
 import { ServiceListFacetCounts } from '@/components/service/components/header/filter/service-list-facet-counts';
 import { LogicalMultiSelectFormField } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
-import {
-  ServiceListLocalStorageKey,
-  useServiceListLocalStorage,
-} from '@/hooks/use-service-list-local-storage';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useTranslate } from '@/hooks/use-translate';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 
 interface IntegrationDeployableFilterProps {
   facetCounts?: ServiceListFacetCounts['managerSupported'];
@@ -13,8 +11,8 @@ interface IntegrationDeployableFilterProps {
 export const IntegrationDeployableFilter = ({
   facetCounts,
 }: IntegrationDeployableFilterProps) => {
-  const { deployable, setDeployable } = useServiceListLocalStorage(
-    ServiceListLocalStorageKey.OpenCTIIntegrationFeeds
+  const { deployable, setDeployable } = useServiceListStorage(
+    ServiceListStorageKey.OpenCTIIntegrationFeeds
   );
   const t = useTranslate();
 

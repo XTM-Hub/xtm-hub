@@ -3,11 +3,9 @@
 import CustomViewsList from '@/components/service/custom-views/[serviceInstanceId]/CustomViewsList';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLogicalFiltersFromStorage } from '@/hooks/use-logical-filters-from-storage';
-import {
-  ServiceListLocalStorageKey,
-  useServiceListLocalStorage,
-} from '@/hooks/use-service-list-local-storage';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useShareableResourceQueryLoader } from '@/hooks/use-shareable-resource-query-loader';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
 import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 
@@ -24,7 +22,7 @@ const PageLoader = ({ serviceInstance }: PageLoaderProps) => {
     setSearch,
     orderMode,
     orderBy,
-  } = useServiceListLocalStorage(ServiceListLocalStorageKey.OpenCTICustomViews);
+  } = useServiceListStorage(ServiceListStorageKey.OpenCTICustomViews);
   const logicalFilters = useLogicalFiltersFromStorage({
     serviceInstanceSlug: ServiceSlug.OPEN_CTI_CUSTOM_VIEWS,
     labels,

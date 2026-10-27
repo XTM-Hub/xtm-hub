@@ -4,17 +4,14 @@ import {
   LogicalMultiSelectSelection,
 } from '@/components/ui/shareable-resource/logical-multi-select/LogicalMultiSelectFormField';
 import usePublicPath from '@/hooks/use-public-path';
+import {
+  buildServiceListStorageKey,
+  ServiceListStorageKey,
+  ServiceListStorageName,
+} from '@/utils/filters-storage.utils';
 import { DocumentOrdering, OrderingMode } from '@graphql/generated';
 import { useCallback } from 'react';
-import { useLocalStorage } from 'usehooks-ts';
-
-export enum ServiceListLocalStorageKey {
-  OpenCTICustomDashboards = 'OpenCTICustomDashboards',
-  OpenCTICustomViews = 'OpenCTICustomViews',
-  OpenCTIIntegrationFeeds = 'OpenCTIIntegrationFeeds',
-  OpenAEVScenarios = 'OpenAEVScenarios',
-  OpenCTIPlaybooks = 'OpenCTIPlaybooks',
-}
+import { useLocalStorage, useSessionStorage } from 'usehooks-ts';
 
 const deserializeLogicalMultiSelectSelection = (
   stored: string
@@ -32,19 +29,19 @@ const deserializeLogicalMultiSelectSelection = (
   }
 };
 
-export const useServiceListLocalStorage = (
-  serviceName: ServiceListLocalStorageKey
-) => {
+export const useServiceListStorage = (serviceName: ServiceListStorageKey) => {
   const isPublicPath = usePublicPath();
-  const pagePrefix = isPublicPath ? 'Public' : 'Private';
-  const [search, setSearch, removeSearch] = useLocalStorage<string>(
-    `search${pagePrefix}${serviceName}List`,
+  const buildKey = (name: ServiceListStorageName) =>
+    buildServiceListStorageKey(name, isPublicPath, serviceName);
+
+  const [search, setSearch, removeSearch] = useSessionStorage<string>(
+    buildKey('search'),
     ''
   );
 
   const [labels, setLabels, removeLabels] =
-    useLocalStorage<LogicalMultiSelectSelection>(
-      `label${pagePrefix}${serviceName}List`,
+    useSessionStorage<LogicalMultiSelectSelection>(
+      buildKey('label'),
       {},
       {
         deserializer: deserializeLogicalMultiSelectSelection,
@@ -52,8 +49,8 @@ export const useServiceListLocalStorage = (
     );
 
   const [integrationTypes, setIntegrationTypes, removeIntegrationTypes] =
-    useLocalStorage<LogicalMultiSelectSelection>(
-      `integrationType${pagePrefix}${serviceName}List`,
+    useSessionStorage<LogicalMultiSelectSelection>(
+      buildKey('integrationType'),
       {},
       {
         deserializer: deserializeLogicalMultiSelectSelection,
@@ -61,8 +58,8 @@ export const useServiceListLocalStorage = (
     );
 
   const [productVersions, setProductVersions, removeProductVersions] =
-    useLocalStorage<LogicalMultiSelectSelection>(
-      `productVersion${pagePrefix}${serviceName}List`,
+    useSessionStorage<LogicalMultiSelectSelection>(
+      buildKey('productVersion'),
       {},
       {
         deserializer: deserializeLogicalMultiSelectSelection,
@@ -70,8 +67,8 @@ export const useServiceListLocalStorage = (
     );
 
   const [licenseTypes, setLicenseTypes, removeLicenseTypes] =
-    useLocalStorage<LogicalMultiSelectSelection>(
-      `licenseType${pagePrefix}${serviceName}List`,
+    useSessionStorage<LogicalMultiSelectSelection>(
+      buildKey('licenseType'),
       {},
       {
         deserializer: deserializeLogicalMultiSelectSelection,
@@ -79,8 +76,8 @@ export const useServiceListLocalStorage = (
     );
 
   const [solutionCategories, setSolutionCategories, removeSolutionCategories] =
-    useLocalStorage<LogicalMultiSelectSelection>(
-      `solutionCategory${pagePrefix}${serviceName}List`,
+    useSessionStorage<LogicalMultiSelectSelection>(
+      buildKey('solutionCategory'),
       {},
       {
         deserializer: deserializeLogicalMultiSelectSelection,
@@ -88,8 +85,8 @@ export const useServiceListLocalStorage = (
     );
 
   const [entityTypes, setEntityTypes, removeEntityTypes] =
-    useLocalStorage<LogicalMultiSelectSelection>(
-      `entityType${pagePrefix}${serviceName}List`,
+    useSessionStorage<LogicalMultiSelectSelection>(
+      buildKey('entityType'),
       {},
       {
         deserializer: deserializeLogicalMultiSelectSelection,
@@ -97,8 +94,8 @@ export const useServiceListLocalStorage = (
     );
 
   const [deployable, setDeployable, removeDeployable] =
-    useLocalStorage<LogicalMultiSelectSelection>(
-      `deployable${pagePrefix}${serviceName}List`,
+    useSessionStorage<LogicalMultiSelectSelection>(
+      buildKey('deployable'),
       {},
       {
         deserializer: deserializeLogicalMultiSelectSelection,
@@ -106,8 +103,8 @@ export const useServiceListLocalStorage = (
     );
 
   const [verified, setVerified, removeVerified] =
-    useLocalStorage<LogicalMultiSelectSelection>(
-      `verified${pagePrefix}${serviceName}List`,
+    useSessionStorage<LogicalMultiSelectSelection>(
+      buildKey('verified'),
       {},
       {
         deserializer: deserializeLogicalMultiSelectSelection,
@@ -115,29 +112,23 @@ export const useServiceListLocalStorage = (
     );
 
   const [pageSize, setPageSize, removePageSize] = useLocalStorage(
-    `pageSize${pagePrefix}${serviceName}List`,
+    buildKey('pageSize'),
     50
   );
 
   const defaultOrderBy =
-    serviceName === ServiceListLocalStorageKey.OpenCTIIntegrationFeeds
+    serviceName === ServiceListStorageKey.OpenCTIIntegrationFeeds
       ? DocumentOrdering.Name
       : DocumentOrdering.CreatedAt;
 
   const [orderBy, setOrderBy, removeOrderBy] =
-    useLocalStorage<DocumentOrdering>(
-      `orderBy${pagePrefix}${serviceName}List`,
-      defaultOrderBy
-    );
+    useLocalStorage<DocumentOrdering>(buildKey('orderBy'), defaultOrderBy);
 
   const [orderMode, setOrderMode, removeOrderMode] =
-    useLocalStorage<OrderingMode>(
-      `orderMode${pagePrefix}${serviceName}List`,
-      OrderingMode.Asc
-    );
+    useLocalStorage<OrderingMode>(buildKey('orderMode'), OrderingMode.Asc);
   const [displayMode, setDisplayMode, removeDisplayMode] =
     useLocalStorage<ServiceListDisplayMode>(
-      `displayMode${pagePrefix}${serviceName}List`,
+      buildKey('displayMode'),
       ServiceListDisplayMode.Tab
     );
 
