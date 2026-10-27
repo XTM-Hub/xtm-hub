@@ -32,6 +32,11 @@ export const buildLoginRedirect = (
   pathname: string | null | undefined
 ): string => buildAuthRedirect('/login', pathname);
 
+export const redirectToLogin = (): void => {
+  const { pathname, search, hash } = window.location;
+  window.location.href = buildLoginRedirect(`${pathname}${search}${hash}`);
+};
+
 export const buildSignupRedirect = (
   pathname: string | null | undefined
 ): string => buildAuthRedirect('/sign-up', pathname);
