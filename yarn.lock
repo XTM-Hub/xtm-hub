@@ -4895,13 +4895,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/eslint-plugin-next@npm:16.4.2":
-  version: 16.4.2
-  resolution: "@next/eslint-plugin-next@npm:16.4.2"
+"@next/eslint-plugin-next@npm:16.4.3":
+  version: 16.4.3
+  resolution: "@next/eslint-plugin-next@npm:16.4.3"
   dependencies:
     "@eslint-community/eslint-utils": "npm:4.9.1"
     fast-glob: "npm:3.3.1"
-  checksum: 10/961ba902b831ddae05a3519862fc43e969be2cd47e0bdc75a070ddfe7136d22c0b7428bfe1fc7863e44c0af913a43317060e318329bb47907d9fd1a1fbc02420
+  checksum: 10/b00bad73eedf18224e9c7700a6f8e990ace898190e2fc004b4dfc5f592d968da2b47b9cffea163b524bddba2aebf9817245bcd6f5259074fb435cb2a1ecb9994
   languageName: node
   linkType: hard
 
@@ -9253,7 +9253,7 @@ __metadata:
     embla-carousel: "npm:8.6.0"
     embla-carousel-react: "npm:8.6.0"
     eslint: "catalog:"
-    eslint-config-next: "npm:16.4.2"
+    eslint-config-next: "npm:16.4.3"
     eslint-config-prettier: "catalog:"
     eslint-plugin-formatjs: "npm:6.6.3"
     graphql: "catalog:"
@@ -12090,11 +12090,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-config-next@npm:16.4.2":
-  version: 16.4.2
-  resolution: "eslint-config-next@npm:16.4.2"
+"eslint-config-next@npm:16.4.3":
+  version: 16.4.3
+  resolution: "eslint-config-next@npm:16.4.3"
   dependencies:
-    "@next/eslint-plugin-next": "npm:16.4.2"
+    "@next/eslint-plugin-next": "npm:16.4.3"
     eslint-import-resolver-node: "npm:^0.3.6"
     eslint-import-resolver-typescript: "npm:^3.5.2"
     eslint-plugin-import: "npm:^2.32.0"
@@ -12109,7 +12109,7 @@ __metadata:
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10/283689732ef094b159fff2994493ab5fc80aaffc7ed1616288e2e48979dfab96c7450e4ae8279fc1a89e86830e7d0a5d3a83f18645c46176b4ff8e5f52bdcf97
+  checksum: 10/b974d1887be5fb3825058803c274fd89c3ab593f3c5a0ca9b2b89621c7ae029760daff89eb4240f6b05d59625722df9101bb9cede0317422cf98a631f416500c
   languageName: node
   linkType: hard
 
