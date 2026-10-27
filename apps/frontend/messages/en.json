@@ -984,7 +984,8 @@
       "PlatformVersion": "Platform version"
     },
     "Metrics": {
-      "Title": "Storage consumption",
+      "Title": "Usage & health",
+      "StorageTitle": "Storage consumption",
       "Unavailable": "The metrics are currently unavailable",
       "Period": {
         "Label": "Metrics period",
@@ -999,6 +1000,20 @@
       "FileStorage": {
         "Title": "File storage",
         "Subtitle": "Imported files, reports and attachments"
+      },
+      "SLA": {
+        "Title": "Availability (SLA)",
+        "Subtitle": "Calculated per calendar month, as in your contract",
+        "MonthRange": "{start} – {end}",
+        "MonthToDate": "{month} (to date)",
+        "OnTarget": "{availability} - On target",
+        "BelowTarget": "{availability} - Below target",
+        "NoData": "No data",
+        "Legend": {
+          "Met": "On target",
+          "Missed": "Below target",
+          "Unknown": "Rest of the month"
+        }
       },
       "Metadata": {
         "Hostname": "Host name",

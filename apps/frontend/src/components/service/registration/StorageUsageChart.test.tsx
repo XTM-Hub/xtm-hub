@@ -62,7 +62,7 @@ describe('StorageUsageChart', () => {
     // Then
     expect(
       screen.getByRole('heading', {
-        level: 3,
+        level: 4,
         name: 'Register.Metrics.FileStorage.Title',
       })
     ).toBeInTheDocument();
@@ -77,7 +77,7 @@ describe('StorageUsageChart', () => {
 
     // Then
     const square = screen
-      .getByRole('heading', { level: 3 })
+      .getByRole('heading', { level: 4 })
       .querySelector('[aria-hidden="true"]');
     expect(square).toHaveStyle({ backgroundColor: COLOR });
     expect(options.colors).toEqual([COLOR]);

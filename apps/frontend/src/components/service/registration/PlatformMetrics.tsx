@@ -2,6 +2,7 @@
 
 import { findMetricPoints } from '@/components/service/registration/platform-metrics.utils';
 import { PlatformMetricsPeriodSelector } from '@/components/service/registration/PlatformMetricsPeriodSelector';
+import { SlaUsageChart } from '@/components/service/registration/SlaUsageChart';
 import { StorageUsageChart } from '@/components/service/registration/StorageUsageChart';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -53,18 +54,27 @@ export const PlatformMetrics = ({
       )}
 
       {!isLoading && (metrics || storage) && (
-        <div className="grid w-full grid-cols-2 gap-4">
-          <StorageUsageChart
-            points={findMetricPoints(metrics, MetricType.EsUsedSize)}
-            storage={storage?.es_used_size}
-            graphType={'Database'}
-            color="var(--color-filigran-brand-primary)"
-          />
-          <StorageUsageChart
-            points={findMetricPoints(metrics, MetricType.S3UsedSize)}
-            storage={storage?.s3_used_size}
-            graphType={'FileStorage'}
-            color="var(--color-filigran-tonic-secondary)"
+        <div className="flex flex-col gap-6">
+          <section className="flex flex-col gap-4">
+            <h3 className="title-xs">{t('Register.Metrics.StorageTitle')}</h3>
+            <div className="grid w-full grid-cols-2 gap-4">
+              <StorageUsageChart
+                points={findMetricPoints(metrics, MetricType.EsUsedSize)}
+                storage={storage?.es_used_size}
+                graphType={'Database'}
+                color="var(--color-filigran-brand-primary)"
+              />
+              <StorageUsageChart
+                points={findMetricPoints(metrics, MetricType.S3UsedSize)}
+                storage={storage?.s3_used_size}
+                graphType={'FileStorage'}
+                color="var(--color-filigran-tonic-secondary)"
+              />
+            </div>
+          </section>
+          <SlaUsageChart
+            points={findMetricPoints(metrics, MetricType.SlaAvailability)}
+            period={period}
           />
         </div>
       )}

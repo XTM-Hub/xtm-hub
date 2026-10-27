@@ -984,7 +984,8 @@
       "PlatformVersion": "Version de la plateforme"
     },
     "Metrics": {
-      "Title": "Utilisation de l'espace de stockage",
+      "Title": "Utilisation et santé",
+      "StorageTitle": "Utilisation de l'espace de stockage",
       "Unavailable": "Ces indicateurs ne sont actuellement pas disponibles",
       "Period": {
         "Label": "Période des indicateurs",
@@ -999,6 +1000,20 @@
       "FileStorage": {
         "Title": "Stockage de fichiers",
         "Subtitle": "Fichiers importés, rapports et pièces jointes"
+      },
+      "SLA": {
+        "Title": "Disponibilité (SLA)",
+        "Subtitle": "Calculée par mois calendaire, comme dans votre contrat",
+        "MonthRange": "{start} – {end}",
+        "MonthToDate": "{month} (en cours)",
+        "OnTarget": "{availability} - Dans l'objectif",
+        "BelowTarget": "{availability} - Sous l'objectif",
+        "NoData": "Aucune donnée",
+        "Legend": {
+          "Met": "Dans l'objectif",
+          "Missed": "Sous l'objectif",
+          "Unknown": "Reste du mois"
+        }
       },
       "Metadata": {
         "Hostname": "Nom d'hôte",

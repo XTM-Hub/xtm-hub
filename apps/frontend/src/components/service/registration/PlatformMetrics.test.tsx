@@ -165,7 +165,12 @@ describe('PlatformMetrics', () => {
     );
 
     // Then
-    expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(2);
+    expect(
+      screen
+        .getAllByRole('heading', { level: 3 })
+        .map(({ textContent }) => textContent)
+    ).toEqual(['Register.Metrics.StorageTitle', 'Register.Metrics.SLA.Title']);
+    expect(screen.getAllByRole('heading', { level: 4 })).toHaveLength(2);
     expect(screen.getAllByText('Register.Metrics.UsedOfLimit')).toHaveLength(2);
   });
 
