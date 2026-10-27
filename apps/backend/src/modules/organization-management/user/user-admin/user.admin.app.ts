@@ -5,6 +5,7 @@ import {
   Filter,
   OrganizationCapability,
 } from '../../../../__generated__/resolvers-types';
+import portalConfig from '../../../../config';
 import { withTransaction } from '../../../../context/database.context';
 import { requestContext } from '../../../../context/request.context';
 import { OrganizationId } from '../../../../model/kanel/public/Organization';
@@ -23,6 +24,7 @@ import { logApp } from '../../../../utils/app-logger.util';
 import { toError } from '../../../../utils/error/error-guard.util';
 import { ErrorCode } from '../../../../utils/error/error.code';
 import { ForbiddenAccess } from '../../../../utils/error/error.util';
+import { hashPassword } from '../../../../utils/hash-password.util';
 import { stripNulls } from '../../../../utils/typescript';
 import { DocumentDomain } from '../../../document/domain/document.domain';
 import { EpicDomain } from '../../../xtm-platform-roadmap/epic.domain';
@@ -44,6 +46,17 @@ const isForeignKeyViolation = (error: unknown): boolean =>
   error !== null &&
   'code' in error &&
   (error as { code?: string }).code === FOREIGN_KEY_VIOLATION_CODE;
+
+// Setting a password by hand is a convenience for development and demo environments: production accounts set their
+// own password through the identity provider.
+const assertCanSetUserPassword = (contextUser: UserLoadUserBy) => {
+  if (
+    !isUserAdminPlatform(contextUser) ||
+    portalConfig.environment === 'production'
+  ) {
+    throw ForbiddenAccess(ErrorCode.SetUserPasswordNotAllowed);
+  }
+};
 
 export const UserAdminApp = {
   addUser: async (input: AdminAddUserInput): Promise<UserLoadUserBy> => {
@@ -80,6 +93,10 @@ export const UserAdminApp = {
     input: AdminEditUserInput;
   }) => {
     const contextUser = requestContext.requireUser();
+    const { organization_capabilities, password, ...userInput } = input;
+    if (password) {
+      assertCanSetUserPassword(contextUser);
+    }
     if (!isUserAdminPlatform(contextUser)) {
       await securityGuard.assertUserCapabilities(
         [
@@ -105,7 +122,6 @@ export const UserAdminApp = {
         throw ForbiddenAccess(ErrorCode.MissingCapabilityOnOrganization);
       }
     }
-    const { organization_capabilities, ...userInput } = input;
     const mappedCapabilities = (organization_capabilities ?? []).map(
       (orgCapability) => ({
         organizationId: orgCapability.organization_id,
@@ -118,14 +134,24 @@ export const UserAdminApp = {
         mappedCapabilities
       );
     }
-    const updatedUser = await UserDomain.updateUser(
-      userId,
-      stripNulls(userInput)
-    );
+    const passwordFields = password ? hashPassword(password) : undefined;
+    const updatedUser = await UserDomain.updateUser(userId, {
+      ...stripNulls(userInput),
+      ...(passwordFields && {
+        salt: passwordFields.salt,
+        password: passwordFields.hash,
+      }),
+    });
+    if (passwordFields) {
+      logApp.info('User password set by a platform administrator', {
+        userId,
+        administratorId: contextUser.id,
+      });
+    }
     if (updatedUser) {
       try {
         await auth0Client.updateUser({
-          ...stripNulls(input),
+          ...stripNulls(userInput),
           email: updatedUser.email,
         });
       } catch (err) {

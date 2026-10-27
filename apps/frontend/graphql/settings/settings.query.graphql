@@ -1,0 +1,5 @@
+query PlatformEnvironment {
+  settings {
+    environment
+  }
+}

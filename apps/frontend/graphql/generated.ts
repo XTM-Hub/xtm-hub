@@ -119,6 +119,11 @@ export type AdminEditUserInput = {
   first_name: InputMaybe<Scalars['String']['input']>;
   last_name: InputMaybe<Scalars['String']['input']>;
   organization_capabilities: InputMaybe<Array<OrganizationCapabilitiesInput>>;
+  /**
+   * Sets the password of a local account. Platform administrators only, refused in production.
+   * An empty or null value leaves the password unchanged.
+   */
+  password: InputMaybe<Scalars['String']['input']>;
 };
 
 export type AutoRegisterPlatformInput = {
@@ -3990,6 +3995,11 @@ export type ServiceUserCapabilitiesQueryVariables = Exact<{
 
 export type ServiceUserCapabilitiesQuery = { __typename?: 'Query', userServiceCapabilities: { __typename?: 'UserServiceCapabilitiesResponse', subscription_id: any | null, userServiceCapabilities: Array<{ __typename?: 'UserServiceCapability', id: string, user_service_id: string, generic_service_capability: { __typename?: 'GenericServiceCapability', id: string, name: string | null } | null, subscription_capability: { __typename?: 'SubscriptionCapability', id: string, service_capability: { __typename?: 'ServiceCapability', name: string | null, id: string } | null } | null }> } };
 
+export type PlatformEnvironmentQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type PlatformEnvironmentQuery = { __typename?: 'Query', settings: { __typename?: 'Settings', environment: string } };
+
 export type SolutionCategoryAddMutationVariables = Exact<{
   input: AddSolutionCategoryInput;
 }>;
@@ -7708,6 +7718,59 @@ export const useInfiniteServiceUserCapabilitiesQuery = <
 useInfiniteServiceUserCapabilitiesQuery.getKey = (variables: ServiceUserCapabilitiesQueryVariables) => ['ServiceUserCapabilities.infinite', variables];
 useInfiniteServiceUserCapabilitiesQuery.getRootKey = () => ['ServiceUserCapabilities.infinite'] as const;
 useServiceUserCapabilitiesQuery.fetcher = (client: GraphQLClient, variables: ServiceUserCapabilitiesQueryVariables, headers?: RequestInit['headers']) => fetcher<ServiceUserCapabilitiesQuery, ServiceUserCapabilitiesQueryVariables>(client, ServiceUserCapabilitiesDocument, variables, headers);
+
+export const PlatformEnvironmentDocument = `
+    query PlatformEnvironment {
+  settings {
+    environment
+  }
+}
+    `;
+
+export const usePlatformEnvironmentQuery = <
+      TData = PlatformEnvironmentQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables?: PlatformEnvironmentQueryVariables,
+      options?: Omit<UseQueryOptions<PlatformEnvironmentQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<PlatformEnvironmentQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<PlatformEnvironmentQuery, TError, TData>(
+      {
+    queryKey: variables === undefined ? ['PlatformEnvironment'] : ['PlatformEnvironment', variables],
+    queryFn: fetcher<PlatformEnvironmentQuery, PlatformEnvironmentQueryVariables>(client, PlatformEnvironmentDocument, variables, headers),
+    ...options
+  }
+    )};
+
+usePlatformEnvironmentQuery.getKey = (variables?: PlatformEnvironmentQueryVariables) => variables === undefined ? ['PlatformEnvironment'] : ['PlatformEnvironment', variables];
+usePlatformEnvironmentQuery.getRootKey = () => ['PlatformEnvironment'] as const;
+export const useInfinitePlatformEnvironmentQuery = <
+      TData = InfiniteData<PlatformEnvironmentQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: PlatformEnvironmentQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<PlatformEnvironmentQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<PlatformEnvironmentQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<PlatformEnvironmentQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? variables === undefined ? ['PlatformEnvironment.infinite'] : ['PlatformEnvironment.infinite', variables],
+      queryFn: (metaData) => fetcher<PlatformEnvironmentQuery, PlatformEnvironmentQueryVariables>(client, PlatformEnvironmentDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfinitePlatformEnvironmentQuery.getKey = (variables?: PlatformEnvironmentQueryVariables) => variables === undefined ? ['PlatformEnvironment.infinite'] : ['PlatformEnvironment.infinite', variables];
+useInfinitePlatformEnvironmentQuery.getRootKey = () => ['PlatformEnvironment.infinite'] as const;
+usePlatformEnvironmentQuery.fetcher = (client: GraphQLClient, variables?: PlatformEnvironmentQueryVariables, headers?: RequestInit['headers']) => fetcher<PlatformEnvironmentQuery, PlatformEnvironmentQueryVariables>(client, PlatformEnvironmentDocument, variables, headers);
 
 export const SolutionCategoryAddDocument = `
     mutation SolutionCategoryAdd($input: AddSolutionCategoryInput!) {

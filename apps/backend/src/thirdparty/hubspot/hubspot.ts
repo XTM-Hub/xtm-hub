@@ -62,6 +62,13 @@ export async function hubspotWebhookSend<T extends HubspotWebhookType>(
   type: T,
   payload: HubspotPayloadMap[T]
 ) {
+  // Only production reports to HubSpot: other environments hold test accounts
+  // and activity that must not reach the CRM.
+  if (config.get<string>('environment') !== 'production') {
+    logApp.debug(`Hubspot ${type} hook skipped: not a production environment`);
+    return;
+  }
+
   const webHookUrl = config.get<string>('hubspot_webhook_url');
   if (!isValidUrl(webHookUrl)) {
     logApp.debug(`Hubspot ${type} hook skipped: invalid or empty webhook URL`);

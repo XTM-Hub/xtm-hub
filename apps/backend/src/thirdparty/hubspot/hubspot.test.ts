@@ -30,6 +30,7 @@ import {
   hubspotHook,
   hubspotInviteUserHook,
   hubspotReachOutSalesHook,
+  hubspotWebhookSend,
 } from './hubspot';
 
 vi.mock('config', async (importOriginal) => {
@@ -64,6 +65,7 @@ describe('hubspot', () => {
       vi.spyOn(utils, 'isValidUrl').mockReturnValue(true);
       vi.mocked(config.get).mockImplementation((key: string) => {
         if (key === 'hubspot_use_queue_processing') return false;
+        if (key === 'environment') return 'production';
         return realConfigGet(key);
       });
     });
@@ -319,6 +321,7 @@ describe('hubspot', () => {
       vi.spyOn(utils, 'isValidUrl').mockReturnValue(true);
       vi.mocked(config.get).mockImplementation((key: string) => {
         if (key === 'hubspot_use_queue_processing') return false;
+        if (key === 'environment') return 'production';
         return realConfigGet(key);
       });
     });
@@ -345,6 +348,33 @@ describe('hubspot', () => {
         })
       );
     });
+  });
+
+  describe('outside production', () => {
+    beforeEach(() => {
+      fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue({} as Response);
+      vi.spyOn(utils, 'isValidUrl').mockReturnValue(true);
+    });
+
+    it.each(['development', 'staging'])(
+      'should not call the webhook in %s',
+      async (environment) => {
+        vi.mocked(config.get).mockImplementation((key: string) => {
+          if (key === 'hubspot_use_queue_processing') return false;
+          if (key === 'environment') return environment;
+          return realConfigGet(key);
+        });
+
+        await hubspotWebhookSend('login', {
+          email: 'test@example.com',
+          first_login: true,
+          last_login: null,
+          is_admin: false,
+        });
+
+        expect(fetchSpy).not.toHaveBeenCalled();
+      }
+    );
   });
 
   describe('hubspotHook (queue processing)', () => {

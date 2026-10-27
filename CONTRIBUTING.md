@@ -19,7 +19,7 @@ Whether you are an organisation or an individual working or studying in the fiel
 
 ## Code of Conduct
 
-XTM Hub has adopted a Code of Conduct that we expect project participants to adhere to. Please read the [full text](https://github.com/FiligranHQ/xtm-hub/blob/main/CODE_OF_CONDUCT.md) so that you can understand which actions will and will not be tolerated.
+XTM Hub has adopted a Code of Conduct that we expect project participants to adhere to. Please read the [full text](https://github.com/XTM-Hub/xtm-hub/blob/main/CODE_OF_CONDUCT.md) so that you can understand which actions will and will not be tolerated.
 
 
 ## How can you contribute?
@@ -28,9 +28,9 @@ Any contribution is appreciated, and many don’t imply coding. Contributions ca
 
 For general suggestions or questions about the project or the documentation, you can open an issue on the repository with the label "question". We will answer as soon as possible. If you do not wish to publish on the repository, please see the section below [**"How can you get in touch for other questions?"**](#howcanyougetintouchforotherquestions).
 
-* Just using XTM Hub and opening issues if everything is not working as expect will be a huge step forward. See our section about opening an issue. To report a bug, please refer to the [bug reporting module](https://github.com/FiligranHQ/xtm-hub/issues/new?template=bug_report.md). To suggest a new feature, please fill in the feature request [form](https://github.com/FiligranHQ/xtm-hub/issues/new?template=feature_request.md).
+* Just using XTM Hub and opening issues if everything is not working as expect will be a huge step forward. See our section about opening an issue. To report a bug, please refer to the [bug reporting module](https://github.com/XTM-Hub/xtm-hub/issues/new?template=1-bug_report.md). To suggest a new feature, please fill in the feature request [form](https://github.com/XTM-Hub/xtm-hub/issues/new?template=2-feature_request.md).
 
-* Don’t hesitate to flag us an issue with the documentation or the templates if you find them incomplete or not clear enough. You can do that either by opening a [bug report](https://github.com/FiligranHQ/xtm-hub/issues/new?template=bug_report.md) or by sending us a message on our [Slack channel](https://community.filigran.io).
+* Don’t hesitate to flag us an issue with the documentation or the templates if you find them incomplete or not clear enough. You can do that either by opening a [bug report](https://github.com/XTM-Hub/xtm-hub/issues/new?template=1-bug_report.md) or by sending us a message on our [Slack channel](https://community.filigran.io).
 
 * You can look through opened issues and help triage them (ask for more information, suggest workarounds, suggest label, flag issues etc.)
 

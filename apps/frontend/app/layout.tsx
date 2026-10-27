@@ -3,6 +3,7 @@ import { CookieConsentProvider } from '@/components/cookie-consent/CookieConsent
 import { readServerConsent } from '@/components/cookie-consent/cookie-consent.server';
 import I18nContext from '@/i18n/i18n-context';
 import { getMetadataBase } from '@/utils/metadata';
+import { isProductionPlatform } from '@/utils/platform-environment/platform-environment.server';
 import { Metadata } from 'next';
 import * as React from 'react';
 
@@ -19,11 +20,16 @@ interface RootLayoutProps {
 }
 
 const RootLayout = async ({ children }: RootLayoutProps) => {
-  const initialConsent = await readServerConsent();
+  const [initialConsent, loadThirdPartyScripts] = await Promise.all([
+    readServerConsent(),
+    isProductionPlatform(),
+  ]);
   return (
     <I18nContext>
       <CookieConsentProvider initialConsent={initialConsent}>
-        <AppContext>{children}</AppContext>
+        <AppContext loadThirdPartyScripts={loadThirdPartyScripts}>
+          {children}
+        </AppContext>
       </CookieConsentProvider>
     </I18nContext>
   );

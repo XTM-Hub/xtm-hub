@@ -309,6 +309,7 @@
       "ROLE_PORTAL_NOT_FOUND": "Rôle introuvable",
       "ROLE_PORTAL_ALREADY_EXISTS": "Ce rôle existe déjà",
       "ROLE_PORTAL_PROTECTED": "Ce rôle est utilisé par la plateforme : il ne peut être ni renommé ni supprimé, et ADMIN doit garder BYPASS",
+      "SET_USER_PASSWORD_NOT_ALLOWED": "Vous n'êtes pas autorisé à définir le mot de passe d'un utilisateur sur cette plateforme",
       "COMPETITOR_DOMAIN_ALREADY_EXISTS": "Il existe déjà un concurrent avec le même domaine",
       "DEPLOYMENT_FEEDBACK_ALREADY_EXISTS": "Des retours d'expérience sur le déploiement existent déjà",
       "COMPETITOR_NOT_FOUND": "Concurrent non trouvé",
@@ -2202,6 +2203,7 @@
     "OrganizationsCapabilitiesPlaceholder": "Capacités supplémentaires",
     "OrganizationsPlaceholder": "Sélectionner une organisation",
     "Password": "Mot de passe",
+    "PasswordHelper": "Laissez vide pour conserver le mot de passe actuel",
     "Picture": "Photo",
     "ResetPassword": {
       "Action": "Réinitialiser le mot de passe",

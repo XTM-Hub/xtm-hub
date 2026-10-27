@@ -1172,6 +1172,12 @@ input AdminEditUserInput {
   first_name: String
   last_name: String
   email: String
+
+  """
+  Sets the password of a local account. Platform administrators only, refused in production.
+  An empty or null value leaves the password unchanged.
+  """
+  password: String
   organization_capabilities: [OrganizationCapabilitiesInput!]
 }
 

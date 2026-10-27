@@ -309,6 +309,7 @@
       "ROLE_PORTAL_NOT_FOUND": "Role not found",
       "ROLE_PORTAL_ALREADY_EXISTS": "This role already exists",
       "ROLE_PORTAL_PROTECTED": "This role is used by the platform: it cannot be renamed or deleted, and ADMIN must keep BYPASS",
+      "SET_USER_PASSWORD_NOT_ALLOWED": "You are not allowed to set a user's password on this platform",
       "COMPETITOR_DOMAIN_ALREADY_EXISTS": "A competitor with the same domain already exists",
       "DEPLOYMENT_FEEDBACK_ALREADY_EXISTS": "Deployment feedback already exists",
       "COMPETITOR_NOT_FOUND": "Competitor not found",
@@ -2202,6 +2203,7 @@
     "OrganizationsCapabilitiesPlaceholder": "Additional capabilities",
     "OrganizationsPlaceholder": "Select an organization",
     "Password": "Password",
+    "PasswordHelper": "Leave empty to keep the current password",
     "Picture": "Picture",
     "ResetPassword": {
       "Action": "Reset password",

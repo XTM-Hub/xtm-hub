@@ -4,6 +4,7 @@ import {
 } from '@/components/admin/user/AutocompleteOrganization';
 import { CapabilityDescription } from '@/components/admin/user/CapabilityDescription';
 import { userEditAdminFormSchema } from '@/components/admin/user/forms/user-form.schema';
+import { SettingsContext } from '@/components/settings/EnvPortalContext';
 import { CapabilityMultiSelect } from '@/components/ui/capability/MultiSelect';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Form, FormField } from '@/components/ui/form';
@@ -17,7 +18,7 @@ import { Button, IconButton, Input } from '@filigran/design-system';
 import { DeleteIcon } from '@filigran/icon';
 import { UserList_fragment$data } from '@generated/UserList_fragment.graphql';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { graphql, useMutation } from 'react-relay';
 import { z } from 'zod';
@@ -41,6 +42,10 @@ export const AdminUserUpdateForm = ({
 }: AdminUserUpdateFormProps) => {
   const t = useTranslate();
   const { handleCloseSheet, setIsDirty } = useDialogContext();
+  const { settings } = useContext(SettingsContext);
+
+  const isDevelopmentEnvSetting =
+    settings?.environment && settings.environment !== 'production';
 
   const [userOrganization, setUserOrganization] = useState<
     UserOrganizationFormProps[]
@@ -70,6 +75,7 @@ export const AdminUserUpdateForm = ({
     defaultValues: {
       first_name: user.first_name ?? '',
       last_name: user.last_name ?? '',
+      password: '',
       organization_capabilities: (user.organization_capabilities ?? [])
         .filter((org) => !org.organization.personal_space)
         .map((o) => ({
@@ -89,11 +95,16 @@ export const AdminUserUpdateForm = ({
 
   const [updateUserMutation] = useMutation(AdminUserUpdateFormMutation);
 
-  const updateUser = (values: z.infer<typeof userEditAdminFormSchema>) => {
+  const updateUser = ({
+    password,
+    ...values
+  }: z.infer<typeof userEditAdminFormSchema>) => {
     updateUserMutation({
       variables: {
         input: {
           ...values,
+          // An empty password keeps the current one, so it is not sent at all.
+          ...(password ? { password } : {}),
         },
         id: user.id,
       },
@@ -172,6 +183,24 @@ export const AdminUserUpdateForm = ({
             />
           )}
         />
+        {isDevelopmentEnvSetting && (
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field, fieldState }) => (
+              <Input
+                label={t('UserForm.Password')}
+                type="password"
+                // Keeps the browser from filling in the administrator's own saved password.
+                autoComplete="new-password"
+                placeholder={t('UserForm.Password')}
+                helperText={t('UserForm.PasswordHelper')}
+                error={fieldState.error?.message}
+                {...field}
+              />
+            )}
+          />
+        )}
         <CapabilityDescription />
         <div className="flex items-center gap-3">
           <Label>{t('UserForm.Organizations')}</Label>

@@ -17,6 +17,7 @@ import {
   OrganizationCapability,
   PlatformConfigurationStatus,
 } from '../../../../__generated__/resolvers-types';
+import portalConfig from '../../../../config';
 import { requestContext } from '../../../../context/request.context';
 import { OrganizationId } from '../../../../model/kanel/public/Organization';
 import User, { UserId } from '../../../../model/kanel/public/User';
@@ -29,7 +30,9 @@ import {
   SYSTEM_USER_UUID,
 } from '../../../../portal.const';
 import * as pub from '../../../../pub';
+import { validatePassword } from '../../../../security/util/user';
 import * as sessionStoreManager from '../../../../session-store-manager';
+import { auth0ClientMock } from '../../../../thirdparty/auth0/mock';
 import { ErrorCode } from '../../../../utils/error/error.code';
 import { OrganizationDomain } from '../../organization/organization.domain';
 import { OrganizationHelper } from '../../organization/organization.helper';
@@ -213,6 +216,135 @@ describe('users admin app', () => {
           ErrorCode.CantRemoveLastAdministrator
         );
       });
+    });
+
+    describe('password', () => {
+      const NEW_PASSWORD = 'development-password-1';
+      let user: User;
+      let originalEnvironment: string;
+
+      const loadStoredUser = async (): Promise<User> => {
+        const [storedUser] = await UserDomain.loadUser({ id: user.id });
+        return storedUser!;
+      };
+
+      beforeEach(async () => {
+        originalEnvironment = portalConfig.environment;
+        requestContext.set(requestContextAdminUser);
+        user = await UserProvisioningDomain.createUser(
+          {
+            email: `edit-user-password-${uuidv4()}@edit-user-password-test.io`,
+            password: 'initial-password',
+          },
+          { sendWelcomeEmail: false }
+        );
+      });
+
+      afterEach(async () => {
+        portalConfig.environment = originalEnvironment;
+        await UserHelper.removeUser({ id: user.id });
+      });
+
+      it('should let a platform admin set the password outside production', async () => {
+        await UserAdminApp.editUser({
+          userId: user.id,
+          input: { password: NEW_PASSWORD },
+        });
+
+        const storedUser = await loadStoredUser();
+        expect(
+          validatePassword(storedUser.salt, NEW_PASSWORD, storedUser.password)
+        ).toBe(true);
+        expect(
+          validatePassword(
+            storedUser.salt,
+            'initial-password',
+            storedUser.password
+          )
+        ).toBe(false);
+        expect(storedUser.salt).not.toBe(user.salt);
+      });
+
+      it('should not send the password to the identity provider nor in the dispatched events', async () => {
+        const auth0Spy = vi.spyOn(auth0ClientMock, 'updateUser');
+        const dispatchSpy = vi.spyOn(pub, 'dispatch');
+
+        await UserAdminApp.editUser({
+          userId: user.id,
+          input: { password: NEW_PASSWORD, first_name: 'Arya' },
+        });
+
+        expect(auth0Spy).toHaveBeenCalledWith({
+          first_name: 'Arya',
+          email: user.email,
+        });
+        expect(JSON.stringify(dispatchSpy.mock.calls)).not.toContain(
+          NEW_PASSWORD
+        );
+      });
+
+      it('should refuse to set the password in production and keep the current one', async () => {
+        portalConfig.environment = 'production';
+
+        const call = UserAdminApp.editUser({
+          userId: user.id,
+          input: { password: NEW_PASSWORD },
+        });
+
+        await expect(call).rejects.toThrow(ErrorCode.SetUserPasswordNotAllowed);
+        expect(await loadStoredUser()).toMatchObject({
+          salt: user.salt,
+          password: user.password,
+        });
+      });
+
+      it('should refuse a password set by an organization administrator', async () => {
+        requestContext.set(requestContextAdminSecondOrga);
+        const [targetUser] = await UserDomain.loadUser({
+          id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID,
+        });
+
+        const call = UserAdminApp.editUser({
+          userId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID,
+          input: {
+            password: NEW_PASSWORD,
+            organization_capabilities: [
+              {
+                organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+                capabilities: [],
+              },
+            ],
+          },
+        });
+
+        await expect(call).rejects.toThrow(ErrorCode.SetUserPasswordNotAllowed);
+        const [storedTargetUser] = await UserDomain.loadUser({
+          id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID,
+        });
+        expect(storedTargetUser).toMatchObject({
+          salt: targetUser!.salt,
+          password: targetUser!.password,
+        });
+      });
+
+      it.each([
+        { label: 'an empty string', password: '' },
+        { label: 'null', password: null },
+      ])(
+        'should keep the current password when it is $label',
+        async ({ password }) => {
+          await UserAdminApp.editUser({
+            userId: user.id,
+            input: { password, first_name: 'Arya' },
+          });
+
+          expect(await loadStoredUser()).toMatchObject({
+            first_name: 'Arya',
+            salt: user.salt,
+            password: user.password,
+          });
+        }
+      );
     });
   });
 

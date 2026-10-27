@@ -13,6 +13,7 @@ import { isContentEditModeActive } from '@/utils/content-translation/content-edi
 import { loadContentTranslationDrafts } from '@/utils/content-translation/content-translation-drafts.server';
 import { countPendingChanges } from '@/utils/content-translation/pending-changes';
 import { getDefaultMetadata } from '@/utils/generate-metadata';
+import { isProductionPlatform } from '@/utils/platform-environment/platform-environment.server';
 import { fetchVisibleServiceSlugs } from '@/utils/seo-service-instance/utils/seo-service-instance.server.utils';
 import '@styles/globals.css';
 import { Metadata } from 'next';
@@ -52,6 +53,7 @@ const RootLayout = async ({
     await loadContentTranslationDrafts()
   );
   const overriddenKeys = await loadOverriddenContentKeys();
+  const loadThirdPartyScripts = await isProductionPlatform();
   // Public pages never load the current user: only an editor already in edit
   // mode gets the toggle, to turn it off.
 
@@ -81,7 +83,7 @@ const RootLayout = async ({
         </AppShell>
         <EditModeContentObserver />
       </EditModeProvider>
-      <Copilot />
+      {loadThirdPartyScripts && <Copilot />}
     </ReactQueryProvider>
   );
 };

@@ -47,6 +47,7 @@ export enum ForbiddenErrorCode {
   CopyFeaturesFromAnotherRoadmap = 'COPY_FEATURES_FROM_ANOTHER_ROADMAP',
   OpenVotingRoundWithoutActiveFeature = 'OPEN_VOTING_ROUND_WITHOUT_ACTIVE_FEATURE',
   RolePortalProtected = 'ROLE_PORTAL_PROTECTED',
+  SetUserPasswordNotAllowed = 'SET_USER_PASSWORD_NOT_ALLOWED',
 }
 
 export enum BadRequestErrorCode {

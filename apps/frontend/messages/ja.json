@@ -309,6 +309,7 @@
       "ROLE_PORTAL_NOT_FOUND": "ロールが見つかりません",
       "ROLE_PORTAL_ALREADY_EXISTS": "このロールはすでに存在します",
       "ROLE_PORTAL_PROTECTED": "このロールはプラットフォームで使用されています。名前の変更や削除はできず、ADMINはBYPASSを保持する必要があります",
+      "SET_USER_PASSWORD_NOT_ALLOWED": "このプラットフォームではユーザーのパスワードを設定する権限がありません",
       "COMPETITOR_DOMAIN_ALREADY_EXISTS": "同じドメインの競合がすでに存在する",
       "DEPLOYMENT_FEEDBACK_ALREADY_EXISTS": "導入に関するフィードバックはすでに存在しています",
       "COMPETITOR_NOT_FOUND": "競合他社が見つかりません",
@@ -2202,6 +2203,7 @@
     "OrganizationsCapabilitiesPlaceholder": "その他の能力",
     "OrganizationsPlaceholder": "組織を選ぶ",
     "Password": "パスワード",
+    "PasswordHelper": "現在のパスワードを維持する場合は空欄のままにしてください",
     "Picture": "写真",
     "ResetPassword": {
       "Action": "パスワード再設定",
