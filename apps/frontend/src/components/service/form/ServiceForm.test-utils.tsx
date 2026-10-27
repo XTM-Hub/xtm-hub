@@ -19,7 +19,7 @@ const SHEET_TITLE = 'Service form';
 const NAME_LABEL = 'Service.Form.NameLabel';
 const SLUG_LABEL = 'Service.Form.SlugLabel';
 const SHORT_DESCRIPTION_LABEL = 'Service.Form.ShortDescriptionLabel';
-const PRODUCT_VERSION_LABEL = 'Service.Form.ProductVersionLabel';
+export const PRODUCT_VERSION_LABEL = 'Service.Form.ProductVersionLabel';
 const USE_CASES_LABEL = 'Service.Form.UseCasesLabel';
 const SOLUTION_CATEGORIES_LABEL = 'Service.Form.SolutionCategoriesLabel';
 const DELETE_IMAGE_LABEL = 'Service.Form.DeleteImage';
@@ -60,7 +60,7 @@ export const DOCUMENT_NAME = 'Ransomware overview';
 export const DOCUMENT_SLUG = 'ransomware-overview';
 export const DOCUMENT_SHORT_DESCRIPTION = 'Track ransomware activity';
 export const DOCUMENT_DESCRIPTION = 'Every ransomware campaign at a glance';
-const DOCUMENT_PRODUCT_VERSION = '6.4.0';
+export const DOCUMENT_PRODUCT_VERSION = '6.4.0';
 export const NEW_NAME = 'Threat Intel: APT-28 (v2)';
 export const NEW_SLUG = 'threat-intel-apt-28-v2';
 export const NEW_SHORT_DESCRIPTION = 'Follow APT-28';
@@ -149,7 +149,7 @@ type ServiceFormComponent<Values> = ComponentType<{
   handleSubmit: (values: Values) => void;
 }>;
 
-type ServiceFormUser = ReturnType<typeof testRender>['user'];
+export type ServiceFormUser = ReturnType<typeof testRender>['user'];
 
 const createUsersEnvironment = () => {
   const environment = createMockEnvironment();
@@ -378,7 +378,7 @@ export const defineDeletedImagesTest = <Values,>({
   });
 };
 
-const defineProductVersionFormatTests = <Values,>({
+export const defineProductVersionFormatTests = <Values,>({
   Form,
   resourceName,
   buildEditedDocument,
