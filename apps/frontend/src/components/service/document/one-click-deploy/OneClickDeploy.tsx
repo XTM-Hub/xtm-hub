@@ -227,7 +227,6 @@ const OneClickDeploy = ({
       <EeLearnMoreSheet
         open={isEeSheetOpen}
         setOpen={setIsEeSheetOpen}
-        serviceInstanceId={documentData.service_instance!.id}
         platformIdentifier={platformIdentifier}
       />
     </>

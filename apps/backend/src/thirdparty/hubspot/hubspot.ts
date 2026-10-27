@@ -1,16 +1,8 @@
 import config from 'config';
-import {
-  DeploymentRequestDeploymentType,
-  OrganizationCapability,
-  PlatformIdentifier,
-} from '../../__generated__/resolvers-types';
+import { OrganizationCapability } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
 import type User from '../../model/kanel/public/User';
 import type { UserId } from '../../model/kanel/public/User';
-import {
-  DeploymentRequestDomain,
-  FullyQualifiedDeploymentRequest,
-} from '../../modules/deployment/deployment.domain';
 import { UserDomain } from '../../modules/organization-management/user/user-domain/user.domain';
 import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode } from '../../utils/error/error.code';
@@ -28,27 +20,37 @@ import { PgBossProducer } from '../pgboss/producer';
 const useQueueProcessing = (): boolean =>
   config.get<boolean>('hubspot_use_queue_processing');
 
+/**
+ * Hands a built payload to HubSpot. Delivery is best effort: a failure is logged, never returned to the caller.
+ */
+const deliverHubspotPayload = async <T extends HubspotWebhookType>(
+  type: T,
+  payload: HubspotPayloadMap[T]
+) => {
+  if (useQueueProcessing()) {
+    try {
+      const queueName = HUBSPOT_TYPE_TO_QUEUE[type];
+      await PgBossProducer.send(queueName, { type, payload });
+    } catch (error) {
+      logApp.error(`Failed to enqueue Hubspot ${type} job`, { error });
+    }
+    return;
+  }
+
+  hubspotWebhookSend(type, payload).catch((error) => {
+    logApp.error(`Failed to send Hubspot ${type} hook synchronously`, {
+      error,
+    });
+  });
+};
+
 export async function hubspotHook<T extends HubspotWebhookType>(
   type: T,
   buildPayload: () => Promise<HubspotPayloadMap[T]>
 ) {
   try {
     const payload = await buildPayload();
-    if (useQueueProcessing()) {
-      try {
-        const queueName = HUBSPOT_TYPE_TO_QUEUE[type];
-        await PgBossProducer.send(queueName, { type, payload });
-      } catch (error) {
-        logApp.error(`Failed to enqueue Hubspot ${type} job`, { error });
-      }
-      return;
-    }
-
-    hubspotWebhookSend(type, payload).catch((error) => {
-      logApp.error(`Failed to send Hubspot ${type} hook synchronously`, {
-        error,
-      });
-    });
+    await deliverHubspotPayload(type, payload);
   } catch (error) {
     logApp.error(`Failed to send Hubspot ${type} hook`, { error });
   }
@@ -132,116 +134,10 @@ export const hubspotInviteUserHook = async (
     inviter_email: requestContext.requireUser().email,
   }));
 
-export const hubspotReachOutSalesHook = async ({
-  message = 'Please contact me about the OpenCTI free trial',
-  platformId,
-  platformIdentifier = PlatformIdentifier.Opencti,
-  platformToken,
-  deploymentRequestType,
-}: {
-  message?: string;
-  platformIdentifier?: PlatformIdentifier;
-  platformId?: string;
-  platformToken?: string;
-  deploymentRequestType?: DeploymentRequestDeploymentType;
-}) =>
-  hubspotHook('reachOutSales', async () => {
-    const user = requestContext.requireUser();
+export type ReachOutSalesPayload = HubspotPayloadMap['reachOutSales'];
 
-    let deploymentRequest: FullyQualifiedDeploymentRequest | undefined;
-    if (platformId) {
-      deploymentRequest =
-        await DeploymentRequestDomain.loadFullDeploymentRequest({
-          platform_id: platformId,
-        });
-
-      if (!deploymentRequest) {
-        throw new Error(
-          `No deployment request found for platform id: ${platformId}`
-        );
-      }
-
-      if (deploymentRequest.type !== DeploymentRequestDeploymentType.Trial) {
-        throw new Error(
-          `Deployment request ${deploymentRequest.id} is not a trial deployment request`
-        );
-      }
-      const request = deploymentRequest;
-      const hasUserRightsOnRequest = user.organizations.some(
-        (organization) => organization.id === request.organization_requester_id
-      );
-      if (!hasUserRightsOnRequest) {
-        throw new Error(
-          `Deployment request ${deploymentRequest.id}, organization ${deploymentRequest.organization_requester_id} does not match user ${user.id} organizations`
-        );
-      }
-    } else if (platformToken) {
-      deploymentRequest =
-        await DeploymentRequestDomain.loadTrialDeploymentRequestByPlatformToken(
-          platformToken
-        );
-      if (!deploymentRequest) {
-        throw new Error(
-          'No trial deployment request found for the provided platform token'
-        );
-      }
-    } else if (user?.id) {
-      if (deploymentRequestType === DeploymentRequestDeploymentType.Bundle) {
-        const bundle =
-          await DeploymentRequestDomain.loadLatestDeploymentRequestForUser(
-            user.id,
-            { type: DeploymentRequestDeploymentType.Bundle }
-          );
-        if (bundle) {
-          const children =
-            await DeploymentRequestDomain.loadChildrenByParentIds([bundle.id]);
-          const products = children
-            .map((child) => child.platform_identifier)
-            .filter((identifier): identifier is PlatformIdentifier =>
-              Boolean(identifier)
-            );
-          return {
-            email: bundle.requester_email,
-            firstname: bundle.requester_first_name,
-            lastname: bundle.requester_last_name,
-            company: bundle.organization_name,
-            message: `${products.join(', ')}: Message sent for free trial: ${bundle.hub_status.toLowerCase()} ${bundle.type}.\n\n${message}`,
-          };
-        }
-      } else {
-        deploymentRequest =
-          await DeploymentRequestDomain.loadLatestDeploymentRequestForUser(
-            user.id,
-            {
-              type: DeploymentRequestDeploymentType.Trial,
-              platform_identifier: platformIdentifier,
-            }
-          );
-      }
-
-      if (!deploymentRequest) {
-        return {
-          email: user.email,
-          firstname: user.first_name,
-          lastname: user.last_name,
-          company:
-            user.organizations.find(
-              (org) => org.id === user.selected_organization_id
-            )?.name || '',
-          message: `${platformIdentifier}: ${message}`,
-        };
-      }
-    } else {
-      throw new Error(
-        'Either userId, platformToken or platformId must be provided'
-      );
-    }
-
-    return {
-      email: deploymentRequest.requester_email,
-      firstname: deploymentRequest.requester_first_name,
-      lastname: deploymentRequest.requester_last_name,
-      company: deploymentRequest.organization_name,
-      message: `${deploymentRequest.platform_identifier}: Message sent for free trial: ${deploymentRequest.hub_status.toLowerCase()} ${deploymentRequest.type}.\n\n${message}`,
-    };
-  });
+/**
+ * Sends a contact request already resolved by the caller. Delivery is best effort, like every other hook.
+ */
+export const hubspotReachOutSalesHook = async (contact: ReachOutSalesPayload) =>
+  deliverHubspotPayload('reachOutSales', contact);

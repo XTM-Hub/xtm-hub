@@ -29,7 +29,6 @@ import { z } from 'zod';
 interface EeLearnMoreSheetProps {
   open: boolean;
   setOpen: (open: boolean) => void;
-  serviceInstanceId: string;
   platformIdentifier: PlatformIdentifier;
 }
 
@@ -48,7 +47,6 @@ const interestFormSchema = z.object({
 const EeLearnMoreSheet = ({
   open,
   setOpen,
-  serviceInstanceId,
   platformIdentifier,
 }: EeLearnMoreSheetProps) => {
   const t = useTranslate();
@@ -96,7 +94,8 @@ const EeLearnMoreSheet = ({
   const handleSubmit = (values: z.infer<typeof interestFormSchema>) => {
     commitContactUs({
       message: values.message,
-      platformId: serviceInstanceId,
+      // No platform: the Hub sends the signed-in user as the contact.
+      platformId: null,
       platformIdentifier,
     });
   };
