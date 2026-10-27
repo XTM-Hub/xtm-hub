@@ -1243,6 +1243,23 @@ type SaasPlatformData {
   metadata: SaasPlatformMetadata!
   metrics: SaasPlatformMetrics
   storage: SaasPlatformStorage
+  sla: SaasPlatformSla
+}
+
+type SaasPlatformSla {
+  target: Float!
+  months: [SaasPlatformMonthlySla!]!
+}
+
+type SaasPlatformMonthlySla {
+  month: Date!
+  availability: Float
+  days: [SaasPlatformDailySla!]!
+}
+
+type SaasPlatformDailySla {
+  day: Date!
+  availability: Float
 }
 
 type SaasPlatformMetadata {

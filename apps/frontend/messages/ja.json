@@ -1009,6 +1009,12 @@
         "OnTarget": "{availability}（目標達成）",
         "BelowTarget": "{availability}（目標未達）",
         "NoData": "データなし",
+        "Summary": {
+          "Title": "月次SLA・目標 {target}",
+          "FullMonthsOnTarget": "{total}か月中{met}か月が目標達成",
+          "CurrentMonth": "{month}・月初から現在まで",
+          "TargetAndMeasuredDays": "目標 {target}・{total}日中{measured}日測定済み"
+        },
         "Legend": {
           "Met": "目標達成",
           "Missed": "目標未達",

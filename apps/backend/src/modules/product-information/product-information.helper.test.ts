@@ -1,13 +1,47 @@
 import { v4 as uuidv4 } from 'uuid';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SaasPlatformMetricsPeriod } from '../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
 import { logApp } from '../../utils/app-logger.util';
 import { ProductInformationHelper } from './product-information.helper';
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+// The SLA grid and the days asked to the SaaS Manager depend on the current date.
+const NOW = '2026-10-27T09:00:00.000Z';
+
+/** The expected SLA of a month: every day of it, null unless given an availability by day of the month. */
+const slaMonth = (
+  month: string,
+  availability: number | null,
+  dayAvailabilities: Record<number, number> = {}
+) => {
+  const start = new Date(month);
+  const dayCount = new Date(
+    Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 0)
+  ).getUTCDate();
+  return {
+    month,
+    availability,
+    days: Array.from({ length: dayCount }, (_, index) => ({
+      day: new Date(start.getTime() + index * MS_PER_DAY).toISOString(),
+      availability: dayAvailabilities[index + 1] ?? null,
+    })),
+  };
+};
+
 describe('product information helper', () => {
   describe('fetchSaasPlatformData', () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(NOW);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     const serviceInstanceId = uuidv4() as ServiceInstanceId;
     const platformId = uuidv4();
     const metricsPeriod = SaasPlatformMetricsPeriod.Last_90Days;
@@ -67,7 +101,7 @@ describe('product information helper', () => {
       ${SaasPlatformMetricsPeriod.Last_30Days} | ${30}
       ${SaasPlatformMetricsPeriod.Last_90Days} | ${90}
     `(
-      'should ask the SaaS Manager for $days days of metrics when the period is $period',
+      'should ask the SaaS Manager for $days days of metrics when the period is $period and covers its first SLA month',
       async ({ period, days }) => {
         // Given
         const callSpy = mockSaasManagerBody(fullMetadata);
@@ -107,6 +141,7 @@ describe('product information helper', () => {
         metadata: fullMetadata,
         metrics: null,
         storage: null,
+        sla: null,
       });
     });
 
@@ -132,6 +167,7 @@ describe('product information helper', () => {
         metadata: emptyMetadata,
         metrics: null,
         storage: null,
+        sla: null,
       });
     });
 
@@ -151,6 +187,7 @@ describe('product information helper', () => {
         metadata: { ...emptyMetadata, hostname: fullMetadata.hostname },
         metrics: null,
         storage: null,
+        sla: null,
       });
     });
 
@@ -182,6 +219,7 @@ describe('product information helper', () => {
           },
           metrics: null,
           storage: null,
+          sla: null,
         });
       }
     );
@@ -275,6 +313,14 @@ describe('product information helper', () => {
           metadata: fullMetadata,
           metrics: parsedMetrics,
           storage: null,
+          sla: {
+            target: 0.9998,
+            months: [
+              slaMonth('2026-08-01T00:00:00.000Z', null),
+              slaMonth('2026-09-01T00:00:00.000Z', 0.75, { 22: 0.75 }),
+              slaMonth('2026-10-01T00:00:00.000Z', null),
+            ],
+          },
         });
       });
 
@@ -298,6 +344,7 @@ describe('product information helper', () => {
           metadata: fullMetadata,
           metrics: null,
           storage: null,
+          sla: null,
         });
       });
 
@@ -423,6 +470,179 @@ describe('product information helper', () => {
       });
     });
 
+    describe('sla', () => {
+      const slaMetrics = (
+        start: string,
+        points: { t: string; v: unknown }[]
+      ) => ({
+        start,
+        end: NOW,
+        resolution: 'hour',
+        series: [
+          { metric_type: 'sla_availability', points },
+          {
+            metric_type: 'es_used_size',
+            points: [{ t: start, v: 1073741824 }],
+          },
+        ],
+      });
+
+      const fetchSla = async (
+        metrics: unknown,
+        period: SaasPlatformMetricsPeriod = metricsPeriod
+      ) => {
+        mockSaasManagerBody({ ...fullMetadata, metrics });
+        const data = await ProductInformationHelper.fetchSaasPlatformData(
+          serviceInstanceId,
+          platformId,
+          period
+        );
+        return data?.sla;
+      };
+
+      it.each`
+        period                                    | days
+        ${SaasPlatformMetricsPeriod.Last_30Days}  | ${31}
+        ${SaasPlatformMetricsPeriod.Last_90Days}  | ${92}
+      `(
+        'should ask the SaaS Manager for $days days of metrics when the period $period starts after the midnight of its first SLA month',
+        async ({ period, days }) => {
+          // Given
+          vi.setSystemTime('2026-10-31T12:00:00.000Z');
+          const callSpy = mockSaasManagerBody(fullMetadata);
+
+          // When
+          await ProductInformationHelper.fetchSaasPlatformData(
+            serviceInstanceId,
+            platformId,
+            period
+          );
+
+          // Then
+          expect(callSpy).toHaveBeenCalledExactlyOnceWith({
+            platform_id: platformId,
+            include_metrics: days,
+          });
+        }
+      );
+
+      it('should average all the sla_availability points of each month and of each day, the current month to date', async () => {
+        // Given
+        const metrics = slaMetrics('2026-07-29T09:00:00+00:00', [
+          { t: '2026-08-01T00:00:00+00:00', v: 1 },
+          { t: '2026-08-31T21:00:00+00:00', v: 0.5 },
+          { t: '2026-08-31T22:00:00+00:00', v: 0.75 },
+          { t: '2026-08-31T23:00:00+00:00', v: 0.25 },
+          { t: '2026-09-15T12:00:00+00:00', v: null },
+          { t: '2026-10-03T12:00:00+00:00', v: 0.9999 },
+        ]);
+
+        // When
+        const sla = await fetchSla(metrics);
+
+        // Then
+        expect(sla).toEqual({
+          target: 0.9998,
+          months: [
+            slaMonth('2026-08-01T00:00:00.000Z', 0.625, { 1: 1, 31: 0.5 }),
+            slaMonth('2026-09-01T00:00:00.000Z', null),
+            slaMonth('2026-10-01T00:00:00.000Z', 0.9999, { 3: 0.9999 }),
+          ],
+        });
+      });
+
+      it('should list every day of the current month, the days to come without availability', async () => {
+        // Given
+        const metrics = slaMetrics('2026-09-27T09:00:00+00:00', [
+          { t: '2026-10-03T12:00:00+00:00', v: 1 },
+          { t: '2026-10-27T08:00:00+00:00', v: 0.5 },
+        ]);
+
+        // When
+        const sla = await fetchSla(
+          metrics,
+          SaasPlatformMetricsPeriod.Last_30Days
+        );
+
+        // Then
+        const days = sla?.months[0].days;
+        expect(days).toHaveLength(31);
+        expect(days?.[0]).toEqual({
+          day: '2026-10-01T00:00:00.000Z',
+          availability: null,
+        });
+        expect(days?.[2]).toEqual({
+          day: '2026-10-03T00:00:00.000Z',
+          availability: 1,
+        });
+        expect(days?.[26]).toEqual({
+          day: '2026-10-27T00:00:00.000Z',
+          availability: 0.5,
+        });
+        expect(days?.slice(27)).toEqual([
+          { day: '2026-10-28T00:00:00.000Z', availability: null },
+          { day: '2026-10-29T00:00:00.000Z', availability: null },
+          { day: '2026-10-30T00:00:00.000Z', availability: null },
+          { day: '2026-10-31T00:00:00.000Z', availability: null },
+        ]);
+      });
+
+      it('should ignore the points outside the months of the period', async () => {
+        // Given
+        const metrics = slaMetrics('2026-09-27T09:00:00+00:00', [
+          { t: '2026-09-30T23:59:59+00:00', v: 0 },
+          { t: '2026-10-02T12:00:00+00:00', v: 1 },
+          { t: '2026-11-01T00:00:00+00:00', v: 0 },
+        ]);
+
+        // When
+        const sla = await fetchSla(
+          metrics,
+          SaasPlatformMetricsPeriod.Last_30Days
+        );
+
+        // Then
+        expect(sla).toEqual({
+          target: 0.9998,
+          months: [slaMonth('2026-10-01T00:00:00.000Z', 1, { 2: 1 })],
+        });
+      });
+
+      it('should carry the months over to the next year', async () => {
+        // Given
+        vi.setSystemTime('2027-01-15T12:00:00.000Z');
+        const metrics = slaMetrics('2026-10-17T12:00:00+00:00', [
+          { t: '2026-12-31T23:00:00+00:00', v: 0.5 },
+          { t: '2027-01-01T00:00:00+00:00', v: 1 },
+        ]);
+
+        // When
+        const sla = await fetchSla(metrics);
+
+        // Then
+        expect(sla).toEqual({
+          target: 0.9998,
+          months: [
+            slaMonth('2026-11-01T00:00:00.000Z', null),
+            slaMonth('2026-12-01T00:00:00.000Z', 0.5, { 31: 0.5 }),
+            slaMonth('2027-01-01T00:00:00.000Z', 1, { 1: 1 }),
+          ],
+        });
+      });
+
+      it.each`
+        case                                     | metrics
+        ${'the metrics are null'}                | ${null}
+        ${'there is no sla_availability series'} | ${{ start: '2026-07-29T09:00:00+00:00', end: NOW, resolution: 'hour', series: [] }}
+      `('should return a null sla when $case', async ({ metrics }) => {
+        // Given / When
+        const sla = await fetchSla(metrics);
+
+        // Then
+        expect(sla).toBeNull();
+      });
+    });
+
     describe('storage', () => {
       const storage = {
         es_used_size: {
@@ -466,6 +686,7 @@ describe('product information helper', () => {
           metadata: fullMetadata,
           metrics: null,
           storage: parsedStorage,
+          sla: null,
         });
       });
 

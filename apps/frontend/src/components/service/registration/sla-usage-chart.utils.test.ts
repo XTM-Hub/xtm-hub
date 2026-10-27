@@ -1,7 +1,10 @@
 import {
   averageAvailabilityByDay,
   buildSlaMonths,
+  countFullMonthsOnTarget,
+  countMeasuredDays,
   slaDayStatus,
+  toSlaMonthSummaries,
 } from '@/components/service/registration/sla-usage-chart.utils';
 import { SaasPlatformMetricsPeriod } from '@graphql/generated';
 import { describe, expect, it } from 'vitest';
@@ -119,5 +122,85 @@ describe('buildSlaMonths', () => {
       },
     ]);
     expect(october?.end).toEqual(new Date('2026-10-31T00:00:00.000Z'));
+  });
+});
+
+describe('toSlaMonthSummaries', () => {
+  it('should rate each month, flag the current one and list the most recent first', () => {
+    // Given
+    const sla = [
+      { month: '2026-08-01T00:00:00.000Z', availability: 0.9992 },
+      { month: '2026-09-01T00:00:00.000Z', availability: 0.9999 },
+      { month: '2026-10-01T00:00:00.000Z', availability: null },
+    ];
+
+    // When
+    const months = toSlaMonthSummaries(sla, NOW);
+
+    // Then
+    expect(months).toEqual([
+      {
+        month: new Date('2026-10-01T00:00:00.000Z'),
+        availability: null,
+        status: 'Unknown',
+        isCurrent: true,
+      },
+      {
+        month: new Date('2026-09-01T00:00:00.000Z'),
+        availability: 0.9999,
+        status: 'Met',
+        isCurrent: false,
+      },
+      {
+        month: new Date('2026-08-01T00:00:00.000Z'),
+        availability: 0.9992,
+        status: 'Missed',
+        isCurrent: false,
+      },
+    ]);
+  });
+});
+
+describe('countFullMonthsOnTarget', () => {
+  it('should count the past months with a value, and those on target among them', () => {
+    // Given
+    const months = toSlaMonthSummaries(
+      [
+        { month: '2026-06-01T00:00:00.000Z', availability: null },
+        { month: '2026-07-01T00:00:00.000Z', availability: 1 },
+        { month: '2026-08-01T00:00:00.000Z', availability: 0.9992 },
+        { month: '2026-09-01T00:00:00.000Z', availability: 0.9999 },
+        { month: '2026-10-01T00:00:00.000Z', availability: 1 },
+      ],
+      NOW
+    );
+
+    // When
+    const count = countFullMonthsOnTarget(months);
+
+    // Then
+    expect(count).toEqual({ met: 2, total: 3 });
+  });
+});
+
+describe('countMeasuredDays', () => {
+  it('should count the days of the month with a value, out of all its days', () => {
+    // Given
+    const points = [
+      { timestamp: '2026-09-30T23:00:00.000Z', value: 1 },
+      { timestamp: '2026-10-01T10:00:00.000Z', value: 1 },
+      { timestamp: '2026-10-01T11:00:00.000Z', value: 0.99 },
+      { timestamp: '2026-10-02T10:00:00.000Z', value: null },
+      { timestamp: '2026-10-20T10:00:00.000Z', value: 0.9999 },
+    ];
+
+    // When
+    const days = countMeasuredDays(
+      points,
+      new Date('2026-10-01T00:00:00.000Z')
+    );
+
+    // Then
+    expect(days).toEqual({ measured: 2, total: 31 });
   });
 });

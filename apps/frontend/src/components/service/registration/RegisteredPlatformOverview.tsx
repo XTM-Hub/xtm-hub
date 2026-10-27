@@ -116,6 +116,7 @@ export const RegisteredPlatformOverview = ({
         <PlatformMetrics
           metrics={saasPlatformData?.registeredSaasPlatformData?.metrics}
           storage={saasPlatformData?.registeredSaasPlatformData?.storage}
+          sla={saasPlatformData?.registeredSaasPlatformData?.sla}
           isLoading={isSaasPlatformDataPending || isPreviousMetricsPeriodData}
           period={metricsPeriod}
           onPeriodChange={setMetricsPeriod}

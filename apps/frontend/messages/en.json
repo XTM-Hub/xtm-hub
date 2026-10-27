@@ -1006,9 +1006,15 @@
         "Subtitle": "Calculated per calendar month, as in your contract",
         "MonthRange": "{start} – {end}",
         "MonthToDate": "{month} (to date)",
-        "OnTarget": "{availability} - On target",
-        "BelowTarget": "{availability} - Below target",
+        "OnTarget": "{availability} · On target",
+        "BelowTarget": "{availability} · Below target",
         "NoData": "No data",
+        "Summary": {
+          "Title": "Monthly SLA · target {target}",
+          "FullMonthsOnTarget": "{met} of {total, plural, one {# full month} other {# full months}} on target",
+          "CurrentMonth": "{month} · month to date",
+          "TargetAndMeasuredDays": "Target {target} · {measured} of {total} days measured"
+        },
         "Legend": {
           "Met": "On target",
           "Missed": "Below target",

@@ -2,7 +2,7 @@
 
 import { findMetricPoints } from '@/components/service/registration/platform-metrics.utils';
 import { PlatformMetricsPeriodSelector } from '@/components/service/registration/PlatformMetricsPeriodSelector';
-import { SlaUsageChart } from '@/components/service/registration/SlaUsageChart';
+import { SlaAvailabilityChart } from '@/components/service/registration/SlaAvailabilityChart';
 import { StorageUsageChart } from '@/components/service/registration/StorageUsageChart';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,12 +11,15 @@ import {
   MetricType,
   SaasPlatformMetrics,
   SaasPlatformMetricsPeriod,
+  SaasPlatformSla,
   SaasPlatformStorage,
 } from '@graphql/generated';
 
 interface PlatformMetricsProps {
   metrics?: SaasPlatformMetrics | null;
   storage?: SaasPlatformStorage | null;
+  // Null without any SLA to show: the section is left out.
+  sla?: SaasPlatformSla | null;
   isLoading: boolean;
   period: SaasPlatformMetricsPeriod;
   onPeriodChange: (period: SaasPlatformMetricsPeriod) => void;
@@ -25,6 +28,7 @@ interface PlatformMetricsProps {
 export const PlatformMetrics = ({
   metrics,
   storage,
+  sla,
   isLoading,
   period,
   onPeriodChange,
@@ -72,10 +76,7 @@ export const PlatformMetrics = ({
               />
             </div>
           </section>
-          <SlaUsageChart
-            points={findMetricPoints(metrics, MetricType.SlaAvailability)}
-            period={period}
-          />
+          {sla && <SlaAvailabilityChart sla={sla} />}
         </div>
       )}
     </div>

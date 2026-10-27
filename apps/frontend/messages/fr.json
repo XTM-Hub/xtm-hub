@@ -1006,9 +1006,15 @@
         "Subtitle": "Calculée par mois calendaire, comme dans votre contrat",
         "MonthRange": "{start} – {end}",
         "MonthToDate": "{month} (en cours)",
-        "OnTarget": "{availability} - Dans l'objectif",
-        "BelowTarget": "{availability} - Sous l'objectif",
+        "OnTarget": "{availability} · Dans l'objectif",
+        "BelowTarget": "{availability} · Sous l'objectif",
         "NoData": "Aucune donnée",
+        "Summary": {
+          "Title": "SLA mensuel · objectif {target}",
+          "FullMonthsOnTarget": "{met} sur {total, plural, one {# mois complet} other {# mois complets}} dans l'objectif",
+          "CurrentMonth": "{month} · mois en cours",
+          "TargetAndMeasuredDays": "Objectif {target} · {measured} jours mesurés sur {total}"
+        },
         "Legend": {
           "Met": "Dans l'objectif",
           "Missed": "Sous l'objectif",

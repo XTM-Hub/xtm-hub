@@ -2,6 +2,31 @@ type SaasPlatformData {
   metadata: SaasPlatformMetadata!
   metrics: SaasPlatformMetrics
   storage: SaasPlatformStorage
+  # null without metrics or without any sla_availability series.
+  sla: SaasPlatformSla
+}
+
+type SaasPlatformSla {
+  # The availability the contract commits to, as a ratio (1 is 100 %).
+  target: Float!
+  # The whole calendar months of the period, the oldest first: the last one is the current month, counted to date.
+  months: [SaasPlatformMonthlySla!]!
+}
+
+type SaasPlatformMonthlySla {
+  # First day of the month, at midnight UTC.
+  month: Date!
+  # Mean of the sla_availability points of the month, as a ratio (1 is 100 %); null without any point.
+  availability: Float
+  # Every day of the month, the days to come included, without availability.
+  days: [SaasPlatformDailySla!]!
+}
+
+type SaasPlatformDailySla {
+  # Midnight UTC.
+  day: Date!
+  # Mean of the sla_availability points of the day, as a ratio (1 is 100 %); null without any point.
+  availability: Float
 }
 
 type SaasPlatformMetadata {

@@ -48,6 +48,17 @@ body:graphql {
           limit
         }
       }
+      sla {
+        target
+        months {
+          month
+          availability
+          days {
+            day
+            availability
+          }
+        }
+      }
     }
   }
 }

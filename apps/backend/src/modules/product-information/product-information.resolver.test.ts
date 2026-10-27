@@ -111,6 +111,9 @@ describe('query.registeredSaasPlatformData', () => {
     let serviceInstanceId: ServiceInstanceId;
 
     beforeEach(async () => {
+      // The days asked to the SaaS Manager depend on the current date.
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime('2026-10-27T09:00:00.000Z');
       vi.mocked(isFeatureEnabled).mockReturnValue(true);
       requestContext.set(requestContextRegistererUserSecondOrga);
       platformId = uuidv4();
@@ -133,6 +136,7 @@ describe('query.registeredSaasPlatformData', () => {
     });
 
     afterEach(async () => {
+      vi.useRealTimers();
       await PlatformConfigurationDomain.deleteConfigurationBy({
         service_instance_id: serviceInstanceId,
       });

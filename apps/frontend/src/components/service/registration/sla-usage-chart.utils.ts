@@ -1,6 +1,8 @@
+import type { ChipSeverity } from '@filigran/design-system';
 import {
   SaasPlatformMetricPoint,
   SaasPlatformMetricsPeriod,
+  SaasPlatformMonthlySla,
 } from '@graphql/generated';
 
 // The SaaS Manager sends the availability as a ratio: 1 is 100 %.
@@ -19,6 +21,12 @@ export const SLA_DAY_STATUS_CLASS: Record<SlaDayStatus, string> = {
   Met: 'bg-feedback-success-primary',
   Missed: 'bg-feedback-alert-primary',
   Unknown: 'bg-feedback-neutral-primary',
+};
+
+export const SLA_STATUS_CHIP_SEVERITY: Record<SlaDayStatus, ChipSeverity> = {
+  Met: 'low',
+  Missed: 'medium',
+  Unknown: 'neutral',
 };
 
 export interface SlaDay {
@@ -87,4 +95,58 @@ export const buildSlaMonths = (
       days,
     };
   });
+};
+
+export interface SlaMonthSummary {
+  month: Date;
+  availability: number | null;
+  status: SlaDayStatus;
+  isCurrent: boolean;
+}
+
+// The most recent month first, as the summary reads from the current month back.
+export const toSlaMonthSummaries = (
+  sla: SaasPlatformMonthlySla[],
+  now: Date
+): SlaMonthSummary[] => {
+  const currentMonth = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1);
+  return sla
+    .map(({ month, availability }) => {
+      const date = new Date(month);
+      return {
+        month: date,
+        availability,
+        status: slaDayStatus(availability),
+        isCurrent: date.getTime() === currentMonth,
+      };
+    })
+    .reverse();
+};
+
+// The current month is not over yet and a month without any value says nothing: neither counts as a full month.
+export const countFullMonthsOnTarget = (
+  months: SlaMonthSummary[]
+): { met: number; total: number } => {
+  const fullMonths = months.filter(
+    ({ isCurrent, availability }) => !isCurrent && availability !== null
+  );
+  return {
+    met: fullMonths.filter(({ status }) => status === 'Met').length,
+    total: fullMonths.length,
+  };
+};
+
+// A day is measured when the series has at least one value for it.
+export const countMeasuredDays = (
+  points: SaasPlatformMetricPoint[],
+  month: Date
+): { measured: number; total: number } => {
+  const monthKey = month.toISOString().slice(0, 7);
+  const measured = [...averageAvailabilityByDay(points).keys()].filter((day) =>
+    day.startsWith(monthKey)
+  ).length;
+  const total = new Date(
+    Date.UTC(month.getUTCFullYear(), month.getUTCMonth() + 1, 0)
+  ).getUTCDate();
+  return { measured, total };
 };
