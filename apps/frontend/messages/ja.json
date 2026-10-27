@@ -989,9 +989,9 @@
       "Unavailable": "現在、このメトリクスは利用できません",
       "Period": {
         "Label": "メトリクスの期間",
-        "last_7_days": "7日間",
         "last_30_days": "30日間",
-        "last_90_days": "90日間"
+        "last_90_days": "90日間",
+        "last_180_days": "180日間"
       },
       "Database": {
         "Title": "データベース",

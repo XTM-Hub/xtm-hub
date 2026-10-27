@@ -24,16 +24,13 @@ import {
 } from '../../utils/format';
 import { isRecord } from '../../utils/typescript';
 
-const SAAS_PLATFORM_METRICS_DAYS: Record<SaasPlatformMetricsPeriod, number> = {
-  [SaasPlatformMetricsPeriod.Last_7Days]: 7,
-  [SaasPlatformMetricsPeriod.Last_30Days]: 30,
-  [SaasPlatformMetricsPeriod.Last_90Days]: 90,
-};
-
-const SAAS_PLATFORM_SLA_MONTHS: Record<SaasPlatformMetricsPeriod, number> = {
-  [SaasPlatformMetricsPeriod.Last_7Days]: 1,
-  [SaasPlatformMetricsPeriod.Last_30Days]: 1,
-  [SaasPlatformMetricsPeriod.Last_90Days]: 3,
+const SAAS_PLATFORM_METRICS_PERIODS: Record<
+  SaasPlatformMetricsPeriod,
+  { days: number; slaMonths: number }
+> = {
+  [SaasPlatformMetricsPeriod.Last_30Days]: { days: 30, slaMonths: 1 },
+  [SaasPlatformMetricsPeriod.Last_90Days]: { days: 90, slaMonths: 3 },
+  [SaasPlatformMetricsPeriod.Last_180Days]: { days: 180, slaMonths: 6 },
 };
 
 // The availability the contract commits to, as a ratio (1 is 100 %).
@@ -253,8 +250,7 @@ export const ProductInformationHelper = {
     platformId: string,
     metricsPeriod: SaasPlatformMetricsPeriod
   ): Promise<SaasPlatformData | null> => {
-    const days = SAAS_PLATFORM_METRICS_DAYS[metricsPeriod];
-    const slaMonths = SAAS_PLATFORM_SLA_MONTHS[metricsPeriod];
+    const { days, slaMonths } = SAAS_PLATFORM_METRICS_PERIODS[metricsPeriod];
     const now = new Date();
     const firstSlaMonth = toUtcMonthStart(now, 1 - slaMonths);
     // The SaaS Manager only takes a number of days back from now: ask for enough of them to cover the first SLA month

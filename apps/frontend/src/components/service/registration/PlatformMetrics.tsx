@@ -38,7 +38,7 @@ export const PlatformMetrics = ({
   const isUnavailable = !isLoading && !metrics && !storage;
 
   return (
-    <div className="my-3 layer-2 bg-filigran-brand-primary-transparency-10 p-6">
+    <div className="mt-3 layer-2 bg-filigran-brand-primary-transparency-10 p-6">
       <div className="flex items-center justify-between gap-4">
         <h2>{t('Register.Metrics.Title')}</h2>
         <PlatformMetricsPeriodSelector

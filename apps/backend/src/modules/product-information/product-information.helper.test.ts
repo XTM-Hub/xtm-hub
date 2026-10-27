@@ -96,10 +96,10 @@ describe('product information helper', () => {
     });
 
     it.each`
-      period                                   | days
-      ${SaasPlatformMetricsPeriod.Last_7Days}  | ${7}
-      ${SaasPlatformMetricsPeriod.Last_30Days} | ${30}
-      ${SaasPlatformMetricsPeriod.Last_90Days} | ${90}
+      period                                    | days
+      ${SaasPlatformMetricsPeriod.Last_30Days}  | ${30}
+      ${SaasPlatformMetricsPeriod.Last_90Days}  | ${90}
+      ${SaasPlatformMetricsPeriod.Last_180Days} | ${180}
     `(
       'should ask the SaaS Manager for $days days of metrics when the period is $period and covers its first SLA month',
       async ({ period, days }) => {
@@ -504,6 +504,7 @@ describe('product information helper', () => {
         period                                    | days
         ${SaasPlatformMetricsPeriod.Last_30Days}  | ${31}
         ${SaasPlatformMetricsPeriod.Last_90Days}  | ${92}
+        ${SaasPlatformMetricsPeriod.Last_180Days} | ${184}
       `(
         'should ask the SaaS Manager for $days days of metrics when the period $period starts after the midnight of its first SLA month',
         async ({ period, days }) => {
@@ -585,6 +586,32 @@ describe('product information helper', () => {
           { day: '2026-10-30T00:00:00.000Z', availability: null },
           { day: '2026-10-31T00:00:00.000Z', availability: null },
         ]);
+      });
+
+      it('should return every month of the period when the metrics start after its first month', async () => {
+        // Given
+        const metrics = slaMetrics('2026-09-15T00:00:00+00:00', [
+          { t: '2026-09-15T00:00:00+00:00', v: 1 },
+        ]);
+
+        // When
+        const sla = await fetchSla(
+          metrics,
+          SaasPlatformMetricsPeriod.Last_180Days
+        );
+
+        // Then
+        expect(sla).toEqual({
+          target: 0.9998,
+          months: [
+            slaMonth('2026-05-01T00:00:00.000Z', null),
+            slaMonth('2026-06-01T00:00:00.000Z', null),
+            slaMonth('2026-07-01T00:00:00.000Z', null),
+            slaMonth('2026-08-01T00:00:00.000Z', null),
+            slaMonth('2026-09-01T00:00:00.000Z', 1, { 15: 1 }),
+            slaMonth('2026-10-01T00:00:00.000Z', null),
+          ],
+        });
       });
 
       it('should ignore the points outside the months of the period', async () => {

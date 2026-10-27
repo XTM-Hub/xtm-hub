@@ -166,7 +166,13 @@ export const SlaAvailabilityChart = ({ sla }: SlaAvailabilityChartProps) => {
         />
         <TooltipProvider>
           {/* One tooltip for every bar, driven by the active day rather than by each bar's own hover. */}
-          <Tooltip open={Boolean(activeSlaDay)}>
+          <Tooltip
+            open={Boolean(activeSlaDay)}
+            onOpenChange={(open) => {
+              if (!open) {
+                setActiveDay(null);
+              }
+            }}>
             <div
               className="flex min-w-0 flex-1 items-center gap-2"
               onPointerOver={onBarsPointerOver}

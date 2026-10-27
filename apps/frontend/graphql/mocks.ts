@@ -1700,7 +1700,7 @@ export const mockRegisteredSaasPlatformDataInput = (overrides?: Partial<Register
     const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
     relationshipsToOmit.add('RegisteredSaasPlatformDataInput');
     return {
-        metrics_period: overrides && overrides.hasOwnProperty('metrics_period') ? overrides.metrics_period! : SaasPlatformMetricsPeriod.Last_7Days,
+        metrics_period: overrides && overrides.hasOwnProperty('metrics_period') ? overrides.metrics_period! : SaasPlatformMetricsPeriod.Last_30Days,
         service_instance_id: overrides && overrides.hasOwnProperty('service_instance_id') ? overrides.service_instance_id! : 'virtus',
     };
 };

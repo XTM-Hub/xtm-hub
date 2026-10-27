@@ -437,14 +437,14 @@ describe('product information app', () => {
         // When
         await ProductInformationApp.loadRegisteredSaasPlatformData(
           serviceInstanceId,
-          SaasPlatformMetricsPeriod.Last_7Days
+          SaasPlatformMetricsPeriod.Last_180Days
         );
 
         // Then
         expect(callSpy).toHaveBeenCalledTimes(2);
         expect(callSpy).toHaveBeenLastCalledWith({
           platform_id: platformId,
-          include_metrics: 7,
+          include_metrics: 180,
         });
       });
 

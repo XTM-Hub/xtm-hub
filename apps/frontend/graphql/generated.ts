@@ -2627,9 +2627,9 @@ export type SaasPlatformMetrics = {
 };
 
 export enum SaasPlatformMetricsPeriod {
-  Last_7Days = 'last_7_days',
   Last_30Days = 'last_30_days',
-  Last_90Days = 'last_90_days'
+  Last_90Days = 'last_90_days',
+  Last_180Days = 'last_180_days'
 }
 
 export type SaasPlatformMonthlySla = {
