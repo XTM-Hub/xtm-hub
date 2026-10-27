@@ -218,7 +218,9 @@ const selectOption = async (
   await user.click(screen.getByRole('option', { name: optionName }));
 };
 
-export const fillCommonCreationFields = async (user: ServiceFormUser) => {
+export const fillCustomContentCreationFields = async (
+  user: ServiceFormUser
+) => {
   await typeNewNameAndShortDescription(user);
   await user.type(
     screen.getByRole('textbox', { name: PRODUCT_VERSION_LABEL }),

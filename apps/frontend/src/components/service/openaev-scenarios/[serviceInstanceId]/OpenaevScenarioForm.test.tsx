@@ -1,7 +1,7 @@
 import {
   buildDocument,
   defineServiceFormTests,
-  fillCommonCreationFields,
+  fillCustomContentCreationFields,
   NEW_DESCRIPTION,
   renderServiceForm,
   ServiceFormFileField,
@@ -34,7 +34,7 @@ describe('OpenaevScenarioForm', () => {
     shortDescriptionMaxLength: 250,
     buildEditedDocument: buildDocument,
     fillCreationFields: async (user) => {
-      await fillCommonCreationFields(user);
+      await fillCustomContentCreationFields(user);
       await typeNewDescription(user);
     },
     creationValues: { description: NEW_DESCRIPTION },

@@ -2,7 +2,7 @@ import { CustomViewForm } from '@/components/service/custom-views/[serviceInstan
 import {
   buildDocument,
   defineServiceFormTests,
-  fillCommonCreationFields,
+  fillCustomContentCreationFields,
   JSON_FILE_FIELD,
   NEW_DESCRIPTION,
   renderServiceForm,
@@ -31,7 +31,7 @@ describe('CustomViewForm', () => {
     buildEditedDocument: () =>
       buildDocument({ entity_types: [ENTITY_TYPE.id] }),
     fillCreationFields: async (user) => {
-      await fillCommonCreationFields(user);
+      await fillCustomContentCreationFields(user);
       await typeNewDescription(user);
       await user.click(
         screen.getByRole('combobox', { name: ENTITY_TYPES_LABEL })
@@ -48,7 +48,7 @@ describe('CustomViewForm', () => {
   it('should ask for an entity type when the user creates a view without any', async () => {
     // Given
     const { user } = renderServiceForm(CustomViewForm);
-    await fillCommonCreationFields(user);
+    await fillCustomContentCreationFields(user);
     await typeNewDescription(user);
     await uploadFile(user, JSON_FILE_FIELD);
 
