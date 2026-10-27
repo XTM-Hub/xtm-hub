@@ -141,6 +141,18 @@ describe('ConnectorForm', () => {
         playbook_supported: 'true',
       },
     },
+    {
+      flags: {
+        verified: undefined,
+        manager_supported: undefined,
+        playbook_supported: undefined,
+      },
+      expected: {
+        verified: 'false',
+        manager_supported: 'false',
+        playbook_supported: 'false',
+      },
+    },
   ])(
     'should send verified $flags.verified, manager supported $flags.manager_supported and playbook supported $flags.playbook_supported as text when the user saves the connector',
     async ({ flags, expected }) => {
@@ -232,7 +244,10 @@ describe('ConnectorForm', () => {
     'should reject the minimum deployable version %s when the user edits the connector',
     async (version) => {
       // Given
-      const { user } = renderServiceForm(ConnectorForm, buildConnector());
+      const { user, handleSubmit } = renderServiceForm(
+        ConnectorForm,
+        buildConnector()
+      );
       await typeMinimumDeployableVersion(user, version);
 
       // When
@@ -242,6 +257,7 @@ describe('ConnectorForm', () => {
       expect(
         await screen.findByText(MINIMUM_DEPLOYABLE_VERSION_ERROR)
       ).toBeInTheDocument();
+      expect(handleSubmit).not.toHaveBeenCalled();
     }
   );
 
