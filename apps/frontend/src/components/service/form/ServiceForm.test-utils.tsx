@@ -128,6 +128,7 @@ export enum ServiceFormResource {
   STREAM = 'stream',
   TAXII_FEED = 'TAXII feed',
   THIRD_PARTY_INTEGRATION = 'third party integration',
+  CONNECTOR = 'connector',
 }
 
 export interface ServiceFormFileField {
