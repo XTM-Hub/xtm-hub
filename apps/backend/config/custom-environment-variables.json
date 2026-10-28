@@ -76,6 +76,8 @@
   "trust_proxy": "TRUST_PROXY",
   "news_feed": {
     "cleanup_interval_value": "NEWS_FEED_CLEANUP_INTERVAL_VALUE",
-    "cleanup_interval_unit": "NEWS_FEED_CLEANUP_INTERVAL_UNIT"
+    "cleanup_interval_unit": "NEWS_FEED_CLEANUP_INTERVAL_UNIT",
+    "blogpost_webhook_token_hash": "NEWS_FEED_BLOGPOST_WEBHOOK_TOKEN_HASH",
+    "blogpost_webhook_token_salt": "NEWS_FEED_BLOGPOST_WEBHOOK_TOKEN_SALT"
   }
 }

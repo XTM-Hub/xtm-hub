@@ -1,0 +1,32 @@
+meta {
+  name: Sync news feed blogposts
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/webhooks/news-feed/blogposts
+  body: none
+  auth: none
+}
+
+headers {
+  x-xtm-hub-token: {{blogpost-webhook-token}}
+}
+
+docs {
+  Webhook called by n8n each time a blog post is published, edited or unpublished. It is only a trigger: the request
+  body is ignored, the Hub fetches the latest blog posts itself and reconciles the news feed.
+
+  Ensure blogpost-webhook-token is defined in environment. It is a dedicated token, not the system token. Its hash and
+  salt come from news_feed.blogpost_webhook_token_hash and news_feed.blogpost_webhook_token_salt in the backend config
+  (the local dev default of the config is the one to use locally).
+
+  Answers:
+  - 200 once the synchronization is committed, with the counts only:
+    { "created": 1, "updated": 0, "dropped": 1, "provisionedPlatforms": 12 }
+  - 401, with no body, when the token is missing or wrong (identical in both cases)
+  - 429 when the rate limit is exceeded (30 requests per minute per IP)
+  - 500 with { "message": "Unable to synchronize blog posts" } when anything fails, nothing is applied then.
+    The details are in the Hub logs.
+}

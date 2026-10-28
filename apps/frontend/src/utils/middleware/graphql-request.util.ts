@@ -7,6 +7,7 @@ export const SERVER_HTTP_API =
 const MANIFEST_PATH = /^\/[^/]+\/[^/]+\/[^/]+\/manifests(?:\/|$)/;
 const VERSIONS_MATRIX_PATH = /^\/[^/]+\/versions-matrix(?:\/|$)/;
 const NEWS_FEED_REDIRECT_PATH = /^\/redirect\/news-feed\/[^/]+\/?$/;
+const NEWS_FEED_BLOGPOST_SYNC_PATH = /^\/webhooks\/news-feed\/blogposts\/?$/;
 
 export const manageRequest = async (request: NextRequest) => {
   const { pathname, search } = request.nextUrl;
@@ -49,6 +50,12 @@ export const manageRequest = async (request: NextRequest) => {
   }
   // Public route, answered by the backend with a 302 (relayed untouched, no login, no session)
   if (NEWS_FEED_REDIRECT_PATH.test(pathname)) {
+    return NextResponse.rewrite(
+      new URL(SERVER_HTTP_API + pathname + search, request.url)
+    );
+  }
+  // Webhook called by n8n, answered by the backend (token in the x-xtm-hub-token header, no login, no session)
+  if (NEWS_FEED_BLOGPOST_SYNC_PATH.test(pathname)) {
     return NextResponse.rewrite(
       new URL(SERVER_HTTP_API + pathname + search, request.url)
     );

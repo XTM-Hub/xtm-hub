@@ -124,6 +124,8 @@
   "news_feed": {
     "cleanup_interval_value": 180,
     "cleanup_interval_unit": "days",
-    "blogpost_limit": 6
+    "blogpost_limit": 6,
+    "blogpost_webhook_token_hash": "a6c12d272f81e99c5124e7e7a045d2a250acdab90e3d2ea31aa15a45645de763dd51451c7a4c4248f9d2b81766b470db881882a0596fab217ebcc2e9bf27a69b",
+    "blogpost_webhook_token_salt": "74599357efee89a3999d64d2179c502a"
   }
 }
