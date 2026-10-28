@@ -8,12 +8,14 @@ import {
   ServiceDefinitionIdentifier,
 } from '@graphql/generated';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { useTranslations } from 'next-intl';
 
 const CUSTOMER = 'Filigran';
-const HOSTNAME = 'filigran.octi.filigran.io';
 const PLAN = 'Enterprise';
-const REGION = 'eu-west-1';
 const PRODUCT = 'OCTI';
+const PRODUCT_NAME = 'OpenCTI';
+const VERSION = '6.8.1';
+const CONTRACT_END_DATE = '2027-03-15T12:00:00.000Z';
 const SEARCH_TERM = 'filigran';
 const SERVICE_INSTANCE_ID = 'service-instance-id';
 const ORGANIZATION_NAME = 'Filigran organization';
@@ -54,6 +56,7 @@ const registeredPlatform: NonNullable<
   id: SERVICE_INSTANCE_ID,
   service_instance_id: SERVICE_INSTANCE_ID,
   identifier: ServiceDefinitionIdentifier.OpenctiRegistration,
+  version: VERSION,
   organization: {
     id: 'organization-id',
     name: ORGANIZATION_NAME,
@@ -67,7 +70,10 @@ const buildSaasPlatform = (
   id: 'platform-id',
   product: PRODUCT,
   customer: CUSTOMER,
-  metadata: { hostname: HOSTNAME, plan: PLAN, region: REGION },
+  metadata: {
+    plan: PLAN,
+    end_date: CONTRACT_END_DATE,
+  },
   registered_platform: registeredPlatform,
   ...overrides,
 });
@@ -103,6 +109,12 @@ describe('SaasList', () => {
       data: undefined,
       isLoading: false,
     });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    // Back to the translator of setup-vitest, which gives back the bare key
+    vi.mocked(useTranslations).mockReset();
   });
 
   it.each([[PortalCapability.Bypass], [PortalCapability.ReadSaasMetrics]])(
@@ -154,7 +166,7 @@ describe('SaasList', () => {
     localStorage.setItem('countSaasList', '100');
     localStorage.setItem(
       'orderBySaasList',
-      JSON.stringify(SaasPlatformOrdering.Region)
+      JSON.stringify(SaasPlatformOrdering.Plan)
     );
     localStorage.setItem(
       'orderModeSaasList',
@@ -168,7 +180,7 @@ describe('SaasList', () => {
     expect(lastQueryVariables()).toEqual({
       page: 1,
       pageSize: 100,
-      orderBy: SaasPlatformOrdering.Region,
+      orderBy: SaasPlatformOrdering.Plan,
       orderMode: OrderingMode.Desc,
       searchTerm: null,
     });
@@ -196,7 +208,7 @@ describe('SaasList', () => {
     expect(lastQueryVariables()).toMatchObject({ page: 2, pageSize: 50 });
   });
 
-  it('should display the customer, product, hostname, plan and region of each saas platform', () => {
+  it('should display the customer, the full product name and the plan of each saas platform', () => {
     // Given a saas platform listed by the SaaS Manager
     mockSaasPlatforms([buildSaasPlatform()]);
 
@@ -204,9 +216,87 @@ describe('SaasList', () => {
     renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
 
     // Then its row shows each of its fields
-    for (const value of [CUSTOMER, PRODUCT, HOSTNAME, PLAN, REGION]) {
+    for (const value of [CUSTOMER, PRODUCT_NAME, PLAN]) {
       expect(screen.getByText(value)).toBeInTheDocument();
     }
+  });
+
+  it('should display the version and the contract end date of a saas platform registered in the Hub', () => {
+    // Given a saas platform registered in the Hub with a contract end date
+    mockSaasPlatforms([buildSaasPlatform()]);
+
+    // When the list is rendered
+    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+    // Then its row shows the version reported to the Hub and the contract end date
+    expect(screen.getByText(VERSION)).toBeInTheDocument();
+    expect(screen.getByText('Mar 15, 2027')).toBeInTheDocument();
+  });
+
+  it('should display no version for a saas platform that is not registered in the Hub', () => {
+    // Given a saas platform the Hub does not know
+    mockSaasPlatforms([buildSaasPlatform({ registered_platform: null })]);
+
+    // When the list is rendered
+    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+    // Then its row shows no version
+    expect(screen.queryByText(VERSION)).not.toBeInTheDocument();
+  });
+
+  it.each`
+    description               | endDate                       | days  | className
+    ${'in 90 days or more'}   | ${'2027-01-26T12:00:00.000Z'} | ${90} | ${'text-default-secondary'}
+    ${'in less than 90 days'} | ${'2027-01-25T12:00:00.000Z'} | ${89} | ${'text-feedback-warning-primary'}
+  `(
+    'should display the $days days left on a contract that ends $description in $className',
+    ({ endDate, days, className }) => {
+      // Given a saas platform whose contract ends at a known date from now
+      vi.useFakeTimers({
+        toFake: ['Date'],
+        now: new Date('2026-10-28T12:00:00.000Z'),
+      });
+      vi.mocked(useTranslations).mockReturnValue(((
+        key: string,
+        values?: Record<string, unknown>
+      ) => (values ? `${key}:${JSON.stringify(values)}` : key)) as ReturnType<
+        typeof useTranslations
+      >);
+      mockSaasPlatforms([
+        buildSaasPlatform({
+          metadata: {
+            plan: PLAN,
+            end_date: endDate,
+          },
+        }),
+      ]);
+
+      // When the list is rendered
+      renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+      // Then its row shows the days left, colored after how soon the contract ends
+      expect(
+        screen.getByText(`CSMBoard.EndsIn:${JSON.stringify({ days })}`)
+      ).toHaveClass(className);
+    }
+  );
+
+  it('should display no contract end date for a saas platform without one', () => {
+    // Given a saas platform the SaaS Manager knows no contract end date of
+    mockSaasPlatforms([
+      buildSaasPlatform({
+        metadata: {
+          plan: PLAN,
+          end_date: null,
+        },
+      }),
+    ]);
+
+    // When the list is rendered
+    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+    // Then its row shows no contract end date
+    expect(screen.queryByText('Mar 15, 2027')).not.toBeInTheDocument();
   });
 
   it('should display the logo and the metrics link of a saas platform registered in the Hub', () => {
@@ -358,6 +448,7 @@ describe('SaasList', () => {
   it.each([
     ['CSMBoard.Organization'],
     ['CSMBoard.Administrators'],
+    ['CSMBoard.Version'],
     ['CSMBoard.Link'],
   ])(
     'should keep the ordering when the user clicks the %s column header',
@@ -395,11 +486,10 @@ describe('SaasList', () => {
   });
 
   it.each`
-    header                 | orderBy
-    ${'CSMBoard.Products'} | ${SaasPlatformOrdering.Product}
-    ${'CSMBoard.Hostname'} | ${SaasPlatformOrdering.Hostname}
-    ${'CSMBoard.Plan'}     | ${SaasPlatformOrdering.Plan}
-    ${'CSMBoard.Region'}   | ${SaasPlatformOrdering.Region}
+    header                    | orderBy
+    ${'CSMBoard.Products'}    | ${SaasPlatformOrdering.Product}
+    ${'CSMBoard.Plan'}        | ${SaasPlatformOrdering.Plan}
+    ${'CSMBoard.ContractEnd'} | ${SaasPlatformOrdering.EndDate}
   `(
     'should fetch saas platforms ordered by $orderBy ascending when the user sorts the $header column',
     ({ header, orderBy }) => {

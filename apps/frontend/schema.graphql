@@ -1335,10 +1335,9 @@ type SaasPlatformPage {
 
 enum SaasPlatformOrdering {
   customer__name
-  hostname
   product
   plan
-  region
+  end_date
 }
 
 input RegisteredSaasPlatformDataInput {

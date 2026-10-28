@@ -552,6 +552,7 @@ describe('product information app', () => {
       ${'the page asked for'}                    | ${{ page: 3, pageSize: 10 }}                                                    | ${{ page: 3, page_size: 10, search: undefined, ordering: 'customer__name' }}
       ${'a descending ordering'}                 | ${{ orderBy: SaasPlatformOrdering.Plan, orderMode: OrderingMode.Desc }}         | ${{ page: 1, page_size: 25, search: undefined, ordering: '-plan' }}
       ${'the customer name in descending order'} | ${{ orderBy: SaasPlatformOrdering.CustomerName, orderMode: OrderingMode.Desc }} | ${{ page: 1, page_size: 25, search: undefined, ordering: '-customer__name' }}
+      ${'the contract end date'}                 | ${{ orderBy: SaasPlatformOrdering.EndDate }}                                    | ${{ page: 1, page_size: 25, search: undefined, ordering: 'end_date' }}
       ${'the search term'}                       | ${{ searchTerm: 'filigran' }}                                                   | ${{ page: 1, page_size: 25, search: 'filigran', ordering: 'customer__name' }}
       ${'no search for an empty search term'}    | ${{ searchTerm: '' }}                                                           | ${{ page: 1, page_size: 25, search: undefined, ordering: 'customer__name' }}
     `(

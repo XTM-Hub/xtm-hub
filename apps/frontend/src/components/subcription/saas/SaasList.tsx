@@ -2,8 +2,10 @@
 
 import { useSaasListLocalstorage } from '@/components/subcription/saas/saas-list-localstorage';
 import {
+  getContractEndStatus,
   getSaasPlatformMetadata,
   getSaasPlatformServicePath,
+  getSaasProductName,
 } from '@/components/subcription/saas/saas-list.utils';
 import {
   DataTable,
@@ -21,6 +23,7 @@ import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { cn } from '@/lib/utils';
 import { DEBOUNCE_TIME } from '@/utils/constant';
+import { useDateFormatter } from '@/utils/date';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
 import {
   Chip,
@@ -47,6 +50,7 @@ import { useDebounceCallback } from 'usehooks-ts';
 
 export const SaasList = () => {
   const t = useTranslate();
+  const formatDate = useDateFormatter();
   const canReadSaasMetrics = useUserHasPortalCapability([
     PortalCapability.Bypass,
     PortalCapability.ReadSaasMetrics,
@@ -149,34 +153,25 @@ export const SaasList = () => {
       sortDescFirst: false,
       header: t('CSMBoard.Products'),
       cell: ({ row }) =>
-        row.original.product && <Chip label={row.original.product} />,
-    },
-    {
-      id: SaasPlatformOrdering.Hostname,
-      accessorFn: (platform) => platform.metadata.hostname,
-      sortDescFirst: false,
-      header: t('CSMBoard.Hostname'),
-      cell: ({ row }) => (
-        <span className="truncate">{row.original.metadata.hostname}</span>
-      ),
+        row.original.product && (
+          <Chip
+            label={getSaasProductName(row.original.product)}
+            severity="info"
+          />
+        ),
     },
     {
       id: SaasPlatformOrdering.Plan,
       accessorFn: (platform) => platform.metadata.plan,
       sortDescFirst: false,
       header: t('CSMBoard.Plan'),
-      cell: ({ row }) => (
-        <span className="truncate">{row.original.metadata.plan}</span>
-      ),
-    },
-    {
-      id: SaasPlatformOrdering.Region,
-      accessorFn: (platform) => platform.metadata.region,
-      sortDescFirst: false,
-      header: t('CSMBoard.Region'),
-      cell: ({ row }) => (
-        <span className="truncate">{row.original.metadata.region}</span>
-      ),
+      cell: ({ row }) =>
+        row.original.metadata.plan && (
+          <Chip
+            label={row.original.metadata.plan}
+            severity="info"
+          />
+        ),
     },
     {
       id: 'link',
@@ -214,6 +209,46 @@ export const SaasList = () => {
           </span>
         );
       },
+    },
+    {
+      id: SaasPlatformOrdering.EndDate,
+      accessorFn: (platform) => platform.metadata.end_date,
+      sortDescFirst: false,
+      header: t('CSMBoard.ContractEnd'),
+      cell: ({ row }) => {
+        const endDate = row.original.metadata.end_date;
+        if (!endDate) {
+          return null;
+        }
+        const { daysLeft, isEndingSoon } = getContractEndStatus(endDate);
+        return (
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="truncate">
+              {formatDate(endDate, 'DATE_MEDIUM')}
+            </span>
+            <span
+              className={cn(
+                'shrink-0',
+                isEndingSoon
+                  ? 'text-feedback-warning-primary'
+                  : 'text-default-secondary'
+              )}>
+              {t('CSMBoard.EndsIn', { days: daysLeft })}
+            </span>
+          </span>
+        );
+      },
+    },
+    {
+      id: 'version',
+      header: t('CSMBoard.Version'),
+      // The version is the one the platform reports to the Hub: the SaaS Manager cannot order by it
+      enableSorting: false,
+      cell: ({ row }) => (
+        <span className="truncate">
+          {row.original.registered_platform?.version}
+        </span>
+      ),
     },
   ];
 

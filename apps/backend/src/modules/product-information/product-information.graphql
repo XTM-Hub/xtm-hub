@@ -108,10 +108,9 @@ type SaasPlatformPage {
 # The customer is a relation, ordered by its name.
 enum SaasPlatformOrdering {
   customer__name
-  hostname
   product
   plan
-  region
+  end_date
 }
 
 input RegisteredSaasPlatformDataInput {

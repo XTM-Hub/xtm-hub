@@ -3,14 +3,14 @@ fragment SaasPlatformRow on SaasPlatform {
   product
   customer
   metadata {
-    hostname
     plan
-    region
+    end_date
   }
   registered_platform {
     id
     service_instance_id
     identifier
+    version
     organization {
       id
       name

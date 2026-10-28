@@ -2637,10 +2637,9 @@ export type SaasPlatformMonthlySla = {
 
 export enum SaasPlatformOrdering {
   CustomerName = 'customer__name',
-  Hostname = 'hostname',
+  EndDate = 'end_date',
   Plan = 'plan',
-  Product = 'product',
-  Region = 'region'
+  Product = 'product'
 }
 
 export type SaasPlatformPage = {
@@ -3956,7 +3955,7 @@ export type SsoGroupRolePortalsQueryVariables = Exact<{ [key: string]: never; }>
 
 export type SsoGroupRolePortalsQuery = { __typename?: 'Query', ssoGroupRolePortals: Array<{ __typename?: 'SSOGroupRolePortal', ssoGroup: string, rolePortal: { __typename?: 'RolePortal', id: string, name: string } }> };
 
-export type SaasPlatformRowFragment = { __typename?: 'SaasPlatform', id: string, product: string | null, customer: string | null, metadata: { __typename?: 'SaasPlatformMetadata', hostname: string | null, plan: string | null, region: string | null }, registered_platform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, identifier: ServiceDefinitionIdentifier, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } | null };
+export type SaasPlatformRowFragment = { __typename?: 'SaasPlatform', id: string, product: string | null, customer: string | null, metadata: { __typename?: 'SaasPlatformMetadata', plan: string | null, end_date: any | null }, registered_platform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, identifier: ServiceDefinitionIdentifier, version: string | null, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } | null };
 
 export type SaasManagerPlatformsListQueryVariables = Exact<{
   page: Scalars['Int']['input'];
@@ -3967,7 +3966,7 @@ export type SaasManagerPlatformsListQueryVariables = Exact<{
 }>;
 
 
-export type SaasManagerPlatformsListQuery = { __typename?: 'Query', saasManagerPlatforms: { __typename?: 'SaasPlatformPage', totalCount: number, platforms: Array<{ __typename?: 'SaasPlatform', id: string, product: string | null, customer: string | null, metadata: { __typename?: 'SaasPlatformMetadata', hostname: string | null, plan: string | null, region: string | null }, registered_platform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, identifier: ServiceDefinitionIdentifier, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } | null }> } | null };
+export type SaasManagerPlatformsListQuery = { __typename?: 'Query', saasManagerPlatforms: { __typename?: 'SaasPlatformPage', totalCount: number, platforms: Array<{ __typename?: 'SaasPlatform', id: string, product: string | null, customer: string | null, metadata: { __typename?: 'SaasPlatformMetadata', plan: string | null, end_date: any | null }, registered_platform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, identifier: ServiceDefinitionIdentifier, version: string | null, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } | null }> } | null };
 
 export type AddUsersToBundleGroupsMutationVariables = Exact<{
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
@@ -4571,14 +4570,14 @@ export const SaasPlatformRowFragmentDoc = `
   product
   customer
   metadata {
-    hostname
     plan
-    region
+    end_date
   }
   registered_platform {
     id
     service_instance_id
     identifier
+    version
     organization {
       id
       name

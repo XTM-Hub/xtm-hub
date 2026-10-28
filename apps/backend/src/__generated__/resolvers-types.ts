@@ -2630,10 +2630,9 @@ export type SaasPlatformMonthlySla = {
 
 export enum SaasPlatformOrdering {
   CustomerName = 'customer__name',
-  Hostname = 'hostname',
+  EndDate = 'end_date',
   Plan = 'plan',
-  Product = 'product',
-  Region = 'region'
+  Product = 'product'
 }
 
 export type SaasPlatformPage = {
