@@ -32,7 +32,7 @@ const getUrlPath = (item: NewsFeedItemRowFragment): string | undefined =>
   item.metadata.find((m) => m.key === NewsFeedItemMetadataKey.UrlPath)?.value ??
   undefined;
 
-// A type that does not point to a resource of a library (e.g. a blog post) has no service slug
+// A type that has no library of its own (e.g. a scenario) has no service slug. A blog post is labelled before this lookup
 const NEWS_FEED_TYPE_TO_SERVICE_SLUG: Partial<
   Record<NewsFeedItemType, ServiceSlug>
 > = {
