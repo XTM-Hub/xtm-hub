@@ -22,6 +22,7 @@ import {
   BlogApiErrorCode,
 } from '../../../thirdparty/blog-api/errors';
 import { logApp } from '../../../utils/app-logger.util';
+import { ErrorCode } from '../../../utils/error/error.code';
 import { newsFeedBlogpostSyncEndpoint } from './news-feed-blogpost-sync-endpoint';
 
 const SYNC_PATH = '/webhooks/news-feed/blogposts';
@@ -229,6 +230,11 @@ describe('news feed blogpost sync endpoint', () => {
       [
         'a failure of the blog API without a post',
         new BlogApiError(BlogApiErrorCode.Timeout, INTERNAL_ERROR_MESSAGE),
+        undefined,
+      ],
+      [
+        'the empty feed safeguard',
+        new Error(ErrorCode.NewsFeedBlogpostEmptyFeed),
         undefined,
       ],
       ['any other error', new Error(INTERNAL_ERROR_MESSAGE), undefined],
