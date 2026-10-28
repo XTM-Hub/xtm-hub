@@ -16,6 +16,11 @@ const PRODUCT = 'OCTI';
 const PRODUCT_NAME = 'OpenCTI';
 const VERSION = '6.8.1';
 const CONTRACT_END_DATE = '2027-03-15T12:00:00.000Z';
+const DATABASE_USAGE_PERCENT = 57.4;
+const FILE_STORAGE_USAGE_PERCENT = 93;
+const AVAILABILITY_PERCENT = 99.96;
+const ALERT_PROGRESS_BAR_CLASS =
+  '[&>[data-slot=progress-bar-indicator]]:bg-feedback-alert-primary';
 const SEARCH_TERM = 'filigran';
 const SERVICE_INSTANCE_ID = 'service-instance-id';
 const ORGANIZATION_NAME = 'Filigran organization';
@@ -70,6 +75,11 @@ const buildSaasPlatform = (
   id: 'platform-id',
   product: PRODUCT,
   customer: CUSTOMER,
+  sla_cmtd: AVAILABILITY_PERCENT,
+  storage: {
+    es_used_size: { percent: DATABASE_USAGE_PERCENT },
+    s3_used_size: { percent: FILE_STORAGE_USAGE_PERCENT },
+  },
   metadata: {
     plan: PLAN,
     end_date: CONTRACT_END_DATE,
@@ -281,6 +291,78 @@ describe('SaasList', () => {
     }
   );
 
+  it('should display the database and file storage usages with their bars, the usage above 80 % in alert color', () => {
+    // Given a saas platform whose file storage is above 80 % of its capacity
+    // (the database one is not)
+    mockSaasPlatforms([buildSaasPlatform()]);
+
+    // When the list is rendered
+    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+    // Then each usage shows its rounded percentage next to a bar, only the file storage ones in alert color
+    const databaseBar = screen.getByRole('progressbar', {
+      name: 'CSMBoard.Database',
+    });
+    const fileStorageBar = screen.getByRole('progressbar', {
+      name: 'CSMBoard.FileStorage',
+    });
+    expect(databaseBar).toHaveAttribute(
+      'aria-valuenow',
+      String(DATABASE_USAGE_PERCENT)
+    );
+    expect(fileStorageBar).toHaveAttribute(
+      'aria-valuenow',
+      String(FILE_STORAGE_USAGE_PERCENT)
+    );
+    expect(databaseBar).not.toHaveClass(ALERT_PROGRESS_BAR_CLASS);
+    expect(fileStorageBar).toHaveClass(ALERT_PROGRESS_BAR_CLASS);
+    expect(screen.getByText('57%')).not.toHaveClass(
+      'text-feedback-alert-primary'
+    );
+    expect(screen.getByText('93%')).toHaveClass('text-feedback-alert-primary');
+  });
+
+  it.each`
+    availability | text         | isMissed
+    ${99.96}     | ${'99.96%'}  | ${true}
+    ${99.98}     | ${'99.98%'}  | ${false}
+    ${100}       | ${'100.00%'} | ${false}
+  `(
+    'should display an availability of $text, in red: $isMissed',
+    ({ availability, text, isMissed }) => {
+      // Given a saas platform with a known availability
+      mockSaasPlatforms([buildSaasPlatform({ sla_cmtd: availability })]);
+
+      // When the list is rendered
+      renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+      // Then its availability is shown, in red under the 99.98 % the contract commits to
+      const availabilityText = screen.getByText(text);
+      if (isMissed) {
+        expect(availabilityText).toHaveClass('text-feedback-error-primary');
+      } else {
+        expect(availabilityText).not.toHaveClass('text-feedback-error-primary');
+      }
+    }
+  );
+
+  it('should display no usage nor availability for a saas platform the SaaS Manager has no measure of', () => {
+    // Given a saas platform without any storage usage nor availability
+    mockSaasPlatforms([
+      buildSaasPlatform({
+        sla_cmtd: null,
+        storage: { es_used_size: null, s3_used_size: { percent: null } },
+      }),
+    ]);
+
+    // When the list is rendered
+    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+    // Then no bar nor percentage is shown
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    expect(screen.queryByText(/%$/)).not.toBeInTheDocument();
+  });
+
   it('should display no contract end date for a saas platform without one', () => {
     // Given a saas platform the SaaS Manager knows no contract end date of
     mockSaasPlatforms([
@@ -448,6 +530,9 @@ describe('SaasList', () => {
   it.each([
     ['CSMBoard.Organization'],
     ['CSMBoard.Administrators'],
+    ['CSMBoard.Database'],
+    ['CSMBoard.FileStorage'],
+    ['CSMBoard.Availability'],
     ['CSMBoard.Version'],
     ['CSMBoard.Link'],
   ])(

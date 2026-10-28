@@ -1,11 +1,14 @@
 'use client';
 
+import { SLA_PERCENT_FORMAT } from '@/components/service/registration/sla-availability-chart.utils';
 import { useSaasListLocalstorage } from '@/components/subcription/saas/saas-list-localstorage';
 import {
   getContractEndStatus,
   getSaasPlatformMetadata,
   getSaasPlatformServicePath,
   getSaasProductName,
+  isSlaMissed,
+  isStorageUsageHigh,
 } from '@/components/subcription/saas/saas-list.utils';
 import {
   DataTable,
@@ -27,6 +30,7 @@ import { useDateFormatter } from '@/utils/date';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
 import {
   Chip,
+  ProgressBar,
   SearchField,
   Tooltip,
   TooltipContent,
@@ -44,6 +48,7 @@ import {
 } from '@graphql/generated';
 import { saasPlatformsKeys } from '@graphql/saas-platforms/saas-platforms.keys';
 import { ColumnDef } from '@tanstack/react-table';
+import { useFormatter } from 'next-intl';
 import Link from 'next/link';
 import { ChangeEvent, useMemo, useState } from 'react';
 import { useDebounceCallback } from 'usehooks-ts';
@@ -51,6 +56,7 @@ import { useDebounceCallback } from 'usehooks-ts';
 export const SaasList = () => {
   const t = useTranslate();
   const formatDate = useDateFormatter();
+  const format = useFormatter();
   const canReadSaasMetrics = useUserHasPortalCapability([
     PortalCapability.Bypass,
     PortalCapability.ReadSaasMetrics,
@@ -92,6 +98,34 @@ export const SaasList = () => {
       enabled: !!canReadSaasMetrics,
     }
   );
+
+  const renderStorageUsage = (
+    percent: number | null | undefined,
+    label: string
+  ) =>
+    typeof percent === 'number' && (
+      <span className="flex min-w-0 items-center gap-2">
+        <ProgressBar
+          value={percent}
+          aria-label={label}
+          className={cn(
+            'w-10 shrink-0',
+            // The design system has no alert tone for a progress bar: its indicator is painted directly
+            isStorageUsageHigh(percent) &&
+              '[&>[data-slot=progress-bar-indicator]]:bg-feedback-alert-primary'
+          )}
+        />
+        <span
+          className={cn(
+            isStorageUsageHigh(percent) && 'text-feedback-alert-primary'
+          )}>
+          {format.number(percent / 100, {
+            style: 'percent',
+            maximumFractionDigits: 0,
+          })}
+        </span>
+      </span>
+    );
 
   const columns: ColumnDef<SaasPlatformRowFragment>[] = [
     {
@@ -235,6 +269,47 @@ export const SaasList = () => {
               )}>
               {t('CSMBoard.EndsIn', { days: daysLeft })}
             </span>
+          </span>
+        );
+      },
+    },
+    {
+      id: 'database',
+      header: t('CSMBoard.Database'),
+      // The SaaS Manager cannot order by the usage of a storage
+      enableSorting: false,
+      cell: ({ row }) =>
+        renderStorageUsage(
+          row.original.storage?.es_used_size?.percent,
+          t('CSMBoard.Database')
+        ),
+    },
+    {
+      id: 'file_storage',
+      header: t('CSMBoard.FileStorage'),
+      enableSorting: false,
+      cell: ({ row }) =>
+        renderStorageUsage(
+          row.original.storage?.s3_used_size?.percent,
+          t('CSMBoard.FileStorage')
+        ),
+    },
+    {
+      id: 'availability',
+      header: t('CSMBoard.Availability'),
+      enableSorting: false,
+      cell: ({ row }) => {
+        const availability = row.original.sla_cmtd;
+        if (availability === null) {
+          return null;
+        }
+        return (
+          <span
+            className={cn(
+              'truncate',
+              isSlaMissed(availability) && 'text-feedback-error-primary'
+            )}>
+            {format.number(availability / 100, SLA_PERCENT_FORMAT)}
           </span>
         );
       },

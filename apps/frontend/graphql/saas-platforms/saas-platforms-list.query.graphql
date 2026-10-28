@@ -6,6 +6,15 @@ fragment SaasPlatformRow on SaasPlatform {
     plan
     end_date
   }
+  sla_cmtd
+  storage {
+    es_used_size {
+      percent
+    }
+    s3_used_size {
+      percent
+    }
+  }
   registered_platform {
     id
     service_instance_id

@@ -3,6 +3,7 @@ import {
   PlatformMetadataMapping,
   ServiceDefinitionIdentifierToPlatformIdentifier,
 } from '@/components/registration/PlatformIdentifierMapping';
+import { slaStatus } from '@/components/service/registration/sla-availability-chart.utils';
 import { daysUntil } from '@/utils/date';
 import { APP_PATH } from '@/utils/path/constant';
 import {
@@ -10,7 +11,7 @@ import {
   ServiceDefinitionIdentifier,
 } from '@graphql/generated';
 
-// The SaaS Manager names its products by a short code, upper-cased here. OpengRC is not a platform of the Hub.
+// The SaaS Manager names its products by a short code, upper-cased here.
 const PRODUCT_NAME_BY_SAAS_PRODUCT: Record<string, string> = {
   OCTI: PlatformMetadataMapping[PlatformIdentifier.Opencti].name,
   OAEV: PlatformMetadataMapping[PlatformIdentifier.Openaev].name,
@@ -20,6 +21,19 @@ const PRODUCT_NAME_BY_SAAS_PRODUCT: Record<string, string> = {
 // A product the Hub does not know keeps the code the SaaS Manager sent.
 export const getSaasProductName = (product: string): string =>
   PRODUCT_NAME_BY_SAAS_PRODUCT[product.toUpperCase()] ?? product;
+
+// Above this share of its capacity, a storage is highlighted: it needs room soon.
+const STORAGE_USAGE_HIGH_PERCENT = 80;
+
+export const isStorageUsageHigh = (percent: number): boolean =>
+  percent > STORAGE_USAGE_HIGH_PERCENT;
+
+// The availability the contract commits to, as a ratio, as the backend's SAAS_PLATFORM_SLA_TARGET.
+const SAAS_PLATFORM_SLA_TARGET = 0.9998;
+
+// The SaaS Manager sends the availability of the list as a percentage (100 is 100 %).
+export const isSlaMissed = (availabilityPercent: number): boolean =>
+  slaStatus(availabilityPercent / 100, SAAS_PLATFORM_SLA_TARGET) === 'Missed';
 
 // Under this many days left, the end of the contract is highlighted: its renewal is due.
 const CONTRACT_ENDING_SOON_DAYS = 90;

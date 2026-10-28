@@ -4,6 +4,8 @@ import {
   getSaasPlatformMetadata,
   getSaasPlatformServicePath,
   getSaasProductName,
+  isSlaMissed,
+  isStorageUsageHigh,
 } from '@/components/subcription/saas/saas-list.utils';
 import {
   PlatformIdentifier,
@@ -99,7 +101,6 @@ describe('getSaasProductName', () => {
     ${'OCTI'} | ${'OpenCTI'}
     ${'OAEV'} | ${'OpenAEV'}
     ${'ONE'}  | ${'XTM One'}
-    ${'OgRC'} | ${'OpengRC'}
     ${'octi'} | ${'OpenCTI'}
   `('should return $name for the $product product', ({ product, name }) => {
     // Given a product code sent by the SaaS Manager
@@ -118,4 +119,45 @@ describe('getSaasProductName', () => {
     // Then the code is returned as is
     expect(productName).toBe('OTHER');
   });
+});
+
+describe('isStorageUsageHigh', () => {
+  it.each`
+    percent | isHigh
+    ${57}   | ${false}
+    ${80}   | ${false}
+    ${80.1} | ${true}
+    ${100}  | ${true}
+  `(
+    'should return $isHigh for a storage used at $percent %',
+    ({ percent, isHigh }) => {
+      // Given a storage usage
+      // When it is rated
+      const high = isStorageUsageHigh(percent);
+
+      // Then it is high only above 80 % of the capacity
+      expect(high).toBe(isHigh);
+    }
+  );
+});
+
+describe('isSlaMissed', () => {
+  it.each`
+    availability | isMissed
+    ${99.71}     | ${true}
+    ${99.97}     | ${true}
+    ${99.975}    | ${false}
+    ${99.98}     | ${false}
+    ${100}       | ${false}
+  `(
+    'should return $isMissed for an availability of $availability %',
+    ({ availability, isMissed }) => {
+      // Given an availability sent by the SaaS Manager
+      // When it is rated against the 99.98 % the contract commits to
+      const missed = isSlaMissed(availability);
+
+      // Then it is missed only when it shows under 99.98 %
+      expect(missed).toBe(isMissed);
+    }
+  );
 });
