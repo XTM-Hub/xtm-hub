@@ -47,19 +47,22 @@ export const PrivateXtmPlatformTrialPanel = ({
   const [isCancelSheetOpen, setIsCancelSheetOpen] = useState(false);
 
   const queryClient = useQueryClient();
-  const { mutate } = useCreateDeploymentRequestMutation(portalGraphqlClient, {
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: xtmPlatformBundleKeys.all(),
-      });
-      invalidatePrivateNavigationQueries(queryClient);
-      showSnackbar({
-        severity: 'success',
-        title: t('Utils.Success'),
-        description: t('Service.Trials.Form.FormRequested'),
-      });
-    },
-  });
+  const { mutate, isPending } = useCreateDeploymentRequestMutation(
+    portalGraphqlClient,
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: xtmPlatformBundleKeys.all(),
+        });
+        invalidatePrivateNavigationQueries(queryClient);
+        showSnackbar({
+          severity: 'success',
+          title: t('Utils.Success'),
+          description: t('Service.Trials.Form.FormRequested'),
+        });
+      },
+    }
+  );
 
   const handleSubmit = (values: z.infer<typeof xtmPlatformTrialFormSchema>) => {
     const { acceptTerms: _, use_cases_by_product, ...rest } = values;
@@ -153,5 +156,10 @@ export const PrivateXtmPlatformTrialPanel = ({
     );
   }
 
-  return <XtmPlatformTrialForm handleSubmit={handleSubmit} />;
+  return (
+    <XtmPlatformTrialForm
+      handleSubmit={handleSubmit}
+      isSubmitting={isPending}
+    />
+  );
 };
