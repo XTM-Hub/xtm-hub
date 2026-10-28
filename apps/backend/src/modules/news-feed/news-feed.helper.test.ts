@@ -76,18 +76,20 @@ describe('news-feed.helper', () => {
   });
 
   describe('doesPlatformSupportBlogpostNewsFeed', () => {
-    const replaceRequiredVersion = (requiredVersion: string | null) =>
-      vi.replaceProperty(RequiredPlatformVersions, 'NewsFeedBlogpostSupport', {
+    const originalBlogpostSupport =
+      RequiredPlatformVersions.NewsFeedBlogpostSupport;
+
+    const replaceRequiredVersion = (requiredVersion: string | null) => {
+      RequiredPlatformVersions.NewsFeedBlogpostSupport = {
         [PlatformIdentifier.Opencti]: requiredVersion,
         [PlatformIdentifier.Openaev]: null,
         [PlatformIdentifier.Xtmone]: null,
-      });
-
-    let replacedProperty: ReturnType<typeof replaceRequiredVersion> | undefined;
+      };
+    };
 
     afterEach(() => {
-      replacedProperty?.restore();
-      replacedProperty = undefined;
+      RequiredPlatformVersions.NewsFeedBlogpostSupport =
+        originalBlogpostSupport;
     });
 
     it('is disabled for every platform and version until a required version is set', () => {
@@ -121,7 +123,7 @@ describe('news-feed.helper', () => {
     `(
       'returns $expected for OpenCTI when the version is $description',
       ({ requiredVersion, version, expected }) => {
-        replacedProperty = replaceRequiredVersion(requiredVersion);
+        replaceRequiredVersion(requiredVersion);
 
         expect(
           doesPlatformSupportBlogpostNewsFeed(
@@ -133,7 +135,7 @@ describe('news-feed.helper', () => {
     );
 
     it('returns false for a platform without a required version even when the version is valid', () => {
-      replacedProperty = replaceRequiredVersion(BLOGPOST_REQUIRED_VERSION);
+      replaceRequiredVersion(BLOGPOST_REQUIRED_VERSION);
 
       expect(
         doesPlatformSupportBlogpostNewsFeed(
