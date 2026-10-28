@@ -1,5 +1,6 @@
 'use client';
 import { DataTable, DataTableHeadBarOptions } from '@/components/ui/data-table';
+import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
@@ -17,7 +18,7 @@ import {
   useCompetitorsListQuery,
 } from '@graphql/generated';
 import { keepPreviousData, useQueryClient } from '@tanstack/react-query';
-import { ColumnDef } from '@tanstack/react-table';
+import { ColumnDef, SortingState, Updater } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
 
 import ManageCompetitor from '@/components/competitor/ManageCompetitor';
@@ -61,9 +62,9 @@ const CompetitorList = () => {
       count: pagination.pageSize,
       cursor,
       orderBy,
-      orderMode: orderMode as OrderingMode,
+      orderMode,
     }),
-    [orderBy, orderMode, pagination, cursor]
+    [orderBy, orderMode, pagination.pageSize, cursor]
   );
 
   const { data: queryData, isLoading } = useCompetitorsListQuery(
@@ -76,7 +77,7 @@ const CompetitorList = () => {
     }
   );
 
-  const { mutate: deleteCompetitor } = useCompetitorDeleteMutation(
+  const { mutate: deleteCompetitor } = useCompetitorDeleteMutation<Error>(
     portalGraphqlClient,
     {
       onSuccess: async (data: CompetitorDeleteMutation) => {
@@ -86,6 +87,15 @@ const CompetitorList = () => {
         );
         await queryClient.invalidateQueries({
           queryKey: competitorListKeys.all(),
+        });
+      },
+      onError: (error: Error) => {
+        const errorMessage =
+          error instanceof Error ? error.message : 'UnknownError';
+        showSnackbar({
+          severity: 'error',
+          title: t('Utils.Error'),
+          description: <>{t(`Error.Server.${errorMessage}`)}</>,
         });
       },
     }
@@ -165,8 +175,8 @@ const CompetitorList = () => {
     [t, deleteCompetitor]
   );
 
-  const onSortingChange = (updater: unknown) => {
-    handleSortingChange<CompetitorOrdering>({
+  const onSortingChange = (updater: Updater<SortingState>) => {
+    handleSortingChange<CompetitorOrdering, OrderingMode>({
       updater,
       orderBy,
       orderMode,

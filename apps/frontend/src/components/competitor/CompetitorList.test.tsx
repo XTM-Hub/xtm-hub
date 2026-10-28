@@ -2,6 +2,7 @@ import CompetitorList from '@/components/competitor/CompetitorList';
 import testRender from '@/utils/test/test-render';
 import { competitorListKeys } from '@graphql/competitor/competitor-list.keys';
 import {
+  CompetitorDeleteMutation,
   CompetitorOrdering,
   CompetitorRowFragment,
   CompetitorsListQuery,
@@ -14,25 +15,26 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const LIST_QUERY_KEY = vi.hoisted(() => ['CompetitorsList']);
+const mocks = vi.hoisted(() => {
+  const state: {
+    deleteOptions?: {
+      onSuccess: (data: CompetitorDeleteMutation) => Promise<void> | void;
+      onError: (err: Error) => void;
+    };
+  } = {};
+  return {
+    listQuery: vi.fn(),
+    deleteMutate: vi.fn(),
+    showSnackbar: vi.fn(),
+    competitors: [] as CompetitorRowFragment[],
+    totalCount: 0,
+    ...state,
+  };
+});
 
-const mocks = vi.hoisted(() => ({
-  listQuery: vi.fn(),
-  deleteMutate: vi.fn(),
-  deleteOptions: undefined as
-    | {
-        onSuccess: (data: {
-          deleteCompetitor: { id: string };
-        }) => Promise<void>;
-      }
-    | undefined,
-  competitors: [] as CompetitorRowFragment[],
-  totalCount: 0,
-}));
-
-vi.mock('@graphql/generated', async (importOriginal) => ({
-  ...(await importOriginal<object>()),
-  useCompetitorsListQuery: (...args: unknown[]) => {
+vi.mock('@graphql/generated', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@graphql/generated')>();
+  const useCompetitorsListQueryMock = (...args: unknown[]) => {
     mocks.listQuery(...args);
     return {
       data: {
@@ -43,21 +45,25 @@ vi.mock('@graphql/generated', async (importOriginal) => ({
       },
       isLoading: false,
     };
-  },
-  useCompetitorDeleteMutation: (
-    _client: unknown,
-    options: typeof mocks.deleteOptions
-  ) => {
-    mocks.deleteOptions = options;
-    return { mutate: mocks.deleteMutate };
-  },
-}));
+  };
+  return {
+    ...actual,
+    useCompetitorsListQuery: Object.assign(useCompetitorsListQueryMock, {
+      getKey: actual.useCompetitorsListQuery.getKey,
+      getRootKey: actual.useCompetitorsListQuery.getRootKey,
+    }),
+    useCompetitorDeleteMutation: (
+      _client: unknown,
+      options: typeof mocks.deleteOptions
+    ) => {
+      mocks.deleteOptions = options;
+      return { mutate: mocks.deleteMutate };
+    },
+  };
+});
 
-vi.mock('@graphql/competitor/competitor-list.keys', () => ({
-  competitorListKeys: {
-    all: () => LIST_QUERY_KEY,
-    list: (variables: object) => [...LIST_QUERY_KEY, variables],
-  },
+vi.mock('@/components/ui/snackbar/snackbar-store', () => ({
+  showSnackbar: mocks.showSnackbar,
 }));
 
 const ACME = mockCompetitor({
@@ -88,6 +94,7 @@ const CACHED_TOTAL_COUNT = 3;
 const NEXT_PAGE_LABEL = 'DesignSystem.DataTable.NextPage';
 const DELETE_LABEL = 'CompetitorListPage.Delete';
 const NAME_FIELD_LABEL = /CompetitorForm.Name/i;
+const COMPETITOR_NOT_FOUND_ERROR = 'COMPETITOR_NOT_FOUND';
 
 const FIRST_PAGE_VARIABLES: CompetitorsListQueryVariables = {
   count: DEFAULT_PAGE_SIZE,
@@ -183,12 +190,7 @@ describe('CompetitorList', () => {
     testRender(<CompetitorList />);
 
     // Then
-    expect(lastListVariables()).toEqual({
-      count: DEFAULT_PAGE_SIZE,
-      cursor: btoa('0'),
-      orderBy: CompetitorOrdering.Tier,
-      orderMode: OrderingMode.Asc,
-    });
+    expect(lastListVariables()).toEqual(FIRST_PAGE_VARIABLES);
   });
 
   it('should query the next cursor when moving to the next page', async () => {
@@ -400,5 +402,22 @@ describe('CompetitorList', () => {
             ?.isInvalidated
       )
     ).toEqual([true, true]);
+  });
+
+  it('should show the server error when the deletion fails', async () => {
+    // Given
+    testRender(<CompetitorList />);
+
+    // When
+    await act(async () => {
+      await mocks.deleteOptions?.onError(new Error(COMPETITOR_NOT_FOUND_ERROR));
+    });
+
+    // Then
+    expect(mocks.showSnackbar).toHaveBeenCalledWith({
+      severity: 'error',
+      title: 'Utils.Error',
+      description: <>{`Error.Server.${COMPETITOR_NOT_FOUND_ERROR}`}</>,
+    });
   });
 });

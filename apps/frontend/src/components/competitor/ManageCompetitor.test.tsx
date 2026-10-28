@@ -16,37 +16,40 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-type MutationOptions<TData> = {
-  onSuccess: (data: TData) => Promise<void> | void;
-  onError: (error: unknown) => void;
-};
-
-const LIST_QUERY_KEY = vi.hoisted(() => ['CompetitorsList']);
-
-const mocks = vi.hoisted(() => ({
-  addMutate: vi.fn(),
-  editMutate: vi.fn(),
-  addOptions: undefined as unknown,
-  editOptions: undefined as unknown,
-  showSnackbar: vi.fn(),
-}));
+const mocks = vi.hoisted(() => {
+  const state: {
+    addOptions?: {
+      onSuccess: (data: CompetitorAddMutation) => Promise<void> | void;
+      onError: (err: Error) => void;
+    };
+    editOptions?: {
+      onSuccess: (data: CompetitorEditMutation) => Promise<void> | void;
+      onError: (err: Error) => void;
+    };
+  } = {};
+  return {
+    addMutate: vi.fn(),
+    editMutate: vi.fn(),
+    showSnackbar: vi.fn(),
+    ...state,
+  };
+});
 
 vi.mock('@graphql/generated', async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  useCompetitorAddMutation: (_client: unknown, options: unknown) => {
+  useCompetitorAddMutation: (
+    _client: unknown,
+    options: typeof mocks.addOptions
+  ) => {
     mocks.addOptions = options;
     return { mutate: mocks.addMutate };
   },
-  useCompetitorEditMutation: (_client: unknown, options: unknown) => {
+  useCompetitorEditMutation: (
+    _client: unknown,
+    options: typeof mocks.editOptions
+  ) => {
     mocks.editOptions = options;
     return { mutate: mocks.editMutate };
-  },
-}));
-
-vi.mock('@graphql/competitor/competitor-list.keys', () => ({
-  competitorListKeys: {
-    all: () => LIST_QUERY_KEY,
-    list: (variables: object) => [...LIST_QUERY_KEY, variables],
   },
 }));
 
@@ -125,9 +128,7 @@ const renderWithCachedPages = (competitor?: CompetitorRowFragment) => {
 
 const succeedCreation = () =>
   act(async () => {
-    await (
-      mocks.addOptions as MutationOptions<CompetitorAddMutation>
-    ).onSuccess({ createCompetitor: GLOBEX });
+    await mocks.addOptions?.onSuccess({ createCompetitor: GLOBEX });
   });
 
 describe('ManageCompetitor', () => {
@@ -254,9 +255,7 @@ describe('ManageCompetitor', () => {
 
     // When
     await act(async () => {
-      await (
-        mocks.editOptions as MutationOptions<CompetitorEditMutation>
-      ).onSuccess({ updateCompetitor: updatedAcme });
+      await mocks.editOptions?.onSuccess({ updateCompetitor: updatedAcme });
     });
 
     // Then
@@ -276,18 +275,12 @@ describe('ManageCompetitor', () => {
     {
       operation: 'creation',
       competitor: undefined,
-      succeed: () =>
-        (mocks.addOptions as MutationOptions<CompetitorAddMutation>).onSuccess({
-          createCompetitor: GLOBEX,
-        }),
+      succeed: () => mocks.addOptions?.onSuccess({ createCompetitor: GLOBEX }),
     },
     {
       operation: 'edition',
       competitor: ACME,
-      succeed: () =>
-        (
-          mocks.editOptions as MutationOptions<CompetitorEditMutation>
-        ).onSuccess({ updateCompetitor: ACME }),
+      succeed: () => mocks.editOptions?.onSuccess({ updateCompetitor: ACME }),
     },
   ])(
     'should close the sheet when the $operation succeeds',
@@ -324,9 +317,7 @@ describe('ManageCompetitor', () => {
 
     // When
     act(() => {
-      (mocks.addOptions as MutationOptions<CompetitorAddMutation>).onError(
-        new Error(DOMAIN_ALREADY_EXISTS_ERROR)
-      );
+      mocks.addOptions?.onError(new Error(DOMAIN_ALREADY_EXISTS_ERROR));
     });
 
     // Then
@@ -349,9 +340,7 @@ describe('ManageCompetitor', () => {
 
     // When
     act(() => {
-      (mocks.addOptions as MutationOptions<CompetitorAddMutation>).onError(
-        new Error(DOMAIN_ALREADY_EXISTS_ERROR)
-      );
+      mocks.addOptions?.onError(new Error(DOMAIN_ALREADY_EXISTS_ERROR));
     });
 
     // Then

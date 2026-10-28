@@ -1,12 +1,11 @@
-import { OrderingMode } from '@/components/ui/handle-sorting.utils';
 import { isValueInEnum } from '@/utils/is-value-in-enum';
-import { CompetitorOrdering } from '@graphql/generated';
+import { CompetitorOrdering, OrderingMode } from '@graphql/generated';
 import { useEffect } from 'react';
 import { useLocalStorage } from 'usehooks-ts';
 
 export const useCompetitorListLocalstorage = () => {
   const [orderMode, setOrderMode, removeOrderMode] =
-    useLocalStorage<OrderingMode>('orderModeCompetitorList', 'asc');
+    useLocalStorage<OrderingMode>('orderModeCompetitorList', OrderingMode.Asc);
   const [orderBy, setOrderBy, removeOrderBy] =
     useLocalStorage<CompetitorOrdering>(
       'orderByCompetitorList',
