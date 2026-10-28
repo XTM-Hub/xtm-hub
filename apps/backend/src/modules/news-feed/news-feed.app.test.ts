@@ -2450,4 +2450,267 @@ describe('newsFeedApp', () => {
       expect(await loadBlogpostState()).toEqual(stateBefore);
     });
   });
+
+  describe('blogpost backfill', () => {
+    const BLOGPOST_REQUIRED_VERSION = '7.260901.0';
+    // Default of news_feed.blogpost_limit
+    const DEFAULT_BLOGPOST_LIMIT = 6;
+    const BELOW_VERSION = '7.260831.0';
+    const ABOVE_VERSION = '7.260902.0';
+    const BACKFILL_ERROR_MESSAGE =
+      'Unable to backfill blogpost news feed items';
+    let replacedProperty: ReturnType<typeof vi.replaceProperty> | undefined;
+
+    const enableBlogpostGate = () => {
+      replacedProperty = vi.replaceProperty(
+        RequiredPlatformVersions,
+        'NewsFeedBlogpostSupport',
+        {
+          [PlatformIdentifier.Opencti]: BLOGPOST_REQUIRED_VERSION,
+          [PlatformIdentifier.Openaev]: BLOGPOST_REQUIRED_VERSION,
+          [PlatformIdentifier.Xtmone]: null,
+        }
+      );
+    };
+
+    // The blogpost number 1 is the newest one
+    const createBlogposts = async (count: number) => {
+      const blogposts = [];
+      for (let number = 1; number <= count; number++) {
+        blogposts.push(
+          await TestHelper.newsFeed.createItem({
+            title: `Blogpost ${number}`,
+            type: NewsFeedItemType.BlogPost,
+            platform_identifier: PlatformIdentifier.Opencti,
+            creation_date: new Date(Date.now() - number * 24 * 60 * 60 * 1000),
+          })
+        );
+      }
+      return blogposts;
+    };
+
+    const loadProvisionedItemIds = async (platformId: string) =>
+      (await TestHelper.newsFeed.loadProvisioned({ platform_id: platformId }))
+        .map((row) => row.news_feed_item_id)
+        .sort();
+
+    afterEach(async () => {
+      replacedProperty?.restore();
+      replacedProperty = undefined;
+      await TestHelper.newsFeed.deleteItem();
+      await cleanupCreatedServiceInstances();
+    });
+
+    describe('backfillBlogpostsForPlatform', () => {
+      it('should provision the newest blogposts up to the configured limit when the version supports blogposts', async () => {
+        // Given
+        enableBlogpostGate();
+        const blogposts = await createBlogposts(8);
+        const platformId = uuidv4();
+
+        // When
+        await NewsFeedApp.backfillBlogpostsForPlatform({
+          platformId,
+          platformIdentifier: PlatformIdentifier.Opencti,
+          platformVersion: BLOGPOST_REQUIRED_VERSION,
+        });
+
+        // Then
+        expect(await loadProvisionedItemIds(platformId)).toEqual(
+          blogposts
+            .slice(0, DEFAULT_BLOGPOST_LIMIT)
+            .map(({ id }) => id)
+            .sort()
+        );
+      });
+
+      it.each`
+        description  | version
+        ${'below'}   | ${BELOW_VERSION}
+        ${'invalid'} | ${'not-a-version'}
+        ${'missing'} | ${null}
+      `(
+        'should not provision anything when the platform version is $description the required version',
+        async ({ version }) => {
+          // Given
+          enableBlogpostGate();
+          await createBlogposts(2);
+          const platformId = uuidv4();
+
+          // When
+          await NewsFeedApp.backfillBlogpostsForPlatform({
+            platformId,
+            platformIdentifier: PlatformIdentifier.Opencti,
+            platformVersion: version,
+          });
+
+          // Then
+          expect(await loadProvisionedItemIds(platformId)).toEqual([]);
+        }
+      );
+
+      it('should not provision anything while the gate is disabled', async () => {
+        // Given
+        await createBlogposts(2);
+        const platformId = uuidv4();
+
+        // When
+        await NewsFeedApp.backfillBlogpostsForPlatform({
+          platformId,
+          platformIdentifier: PlatformIdentifier.Opencti,
+          platformVersion: '99.0.0',
+        });
+
+        // Then
+        expect(await loadProvisionedItemIds(platformId)).toEqual([]);
+      });
+
+      it('should not provision anything to a platform of a product without blogposts', async () => {
+        // Given
+        enableBlogpostGate();
+        await createBlogposts(2);
+        const platformId = uuidv4();
+
+        // When
+        await NewsFeedApp.backfillBlogpostsForPlatform({
+          platformId,
+          platformIdentifier: PlatformIdentifier.Openaev,
+          platformVersion: ABOVE_VERSION,
+        });
+
+        // Then
+        expect(await loadProvisionedItemIds(platformId)).toEqual([]);
+      });
+
+      it('should be idempotent when the platform is backfilled twice', async () => {
+        // Given
+        enableBlogpostGate();
+        const blogposts = await createBlogposts(3);
+        const platformId = uuidv4();
+        const input = {
+          platformId,
+          platformIdentifier: PlatformIdentifier.Opencti,
+          platformVersion: ABOVE_VERSION,
+        };
+        await NewsFeedApp.backfillBlogpostsForPlatform(input);
+
+        // When
+        await NewsFeedApp.backfillBlogpostsForPlatform(input);
+
+        // Then
+        expect(await loadProvisionedItemIds(platformId)).toEqual(
+          blogposts.map(({ id }) => id).sort()
+        );
+      });
+
+      it('should log the error and not throw when the provisioning fails', async () => {
+        // Given
+        enableBlogpostGate();
+        const platformId = uuidv4();
+        const failure = new Error('database unavailable');
+        const provisionSpy = vi
+          .spyOn(NewsFeedDomain, 'provisionLatestBlogpostsToPlatform')
+          .mockRejectedValue(failure);
+        const logErrorSpy = vi.spyOn(logApp, 'error').mockImplementation(() => {
+          return logApp;
+        });
+
+        // When
+        const call = NewsFeedApp.backfillBlogpostsForPlatform({
+          platformId,
+          platformIdentifier: PlatformIdentifier.Opencti,
+          platformVersion: ABOVE_VERSION,
+        });
+
+        // Then
+        await expect(call).resolves.toBeUndefined();
+        expect(logErrorSpy).toHaveBeenCalledWith(BACKFILL_ERROR_MESSAGE, {
+          error: failure,
+          platformId,
+          platformIdentifier: PlatformIdentifier.Opencti,
+        });
+        provisionSpy.mockRestore();
+        logErrorSpy.mockRestore();
+      });
+    });
+
+    describe('backfillBlogpostsOnVersionChange', () => {
+      it.each`
+        description                     | previousVersion              | newVersion                   | expectedBackfill
+        ${'below to above'}             | ${BELOW_VERSION}             | ${ABOVE_VERSION}             | ${true}
+        ${'below to equal'}             | ${BELOW_VERSION}             | ${BLOGPOST_REQUIRED_VERSION} | ${true}
+        ${'missing to above'}           | ${null}                      | ${ABOVE_VERSION}             | ${true}
+        ${'invalid to above'}           | ${'not-a-version'}           | ${ABOVE_VERSION}             | ${true}
+        ${'below to below'}             | ${'7.260801.0'}              | ${BELOW_VERSION}             | ${false}
+        ${'above to above'}             | ${BLOGPOST_REQUIRED_VERSION} | ${ABOVE_VERSION}             | ${false}
+        ${'above to below (downgrade)'} | ${ABOVE_VERSION}             | ${BELOW_VERSION}             | ${false}
+      `(
+        'should backfill: $expectedBackfill when the version goes $description',
+        async ({ previousVersion, newVersion, expectedBackfill }) => {
+          // Given
+          enableBlogpostGate();
+          const blogposts = await createBlogposts(2);
+          const platformId = uuidv4();
+          const serviceInstance = await createOpenCTIPlatformForOrganization(
+            platformId,
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            { platform_version: newVersion }
+          );
+
+          // When
+          await NewsFeedApp.backfillBlogpostsOnVersionChange({
+            serviceInstanceId: serviceInstance.id,
+            platformId,
+            previousVersion,
+            newVersion,
+          });
+
+          // Then
+          expect(await loadProvisionedItemIds(platformId)).toEqual(
+            expectedBackfill ? blogposts.map(({ id }) => id).sort() : []
+          );
+        }
+      );
+
+      it('should use the platform identifier given by the caller instead of resolving it', async () => {
+        // Given
+        enableBlogpostGate();
+        const blogposts = await createBlogposts(1);
+        const platformId = uuidv4();
+
+        // When
+        await NewsFeedApp.backfillBlogpostsOnVersionChange({
+          serviceInstanceId: uuidv4() as ServiceInstanceId,
+          platformId,
+          platformIdentifier: PlatformIdentifier.Opencti,
+          previousVersion: BELOW_VERSION,
+          newVersion: ABOVE_VERSION,
+        });
+
+        // Then
+        expect(await loadProvisionedItemIds(platformId)).toEqual(
+          blogposts.map(({ id }) => id)
+        );
+      });
+
+      it('should not provision anything nor throw when the platform identifier cannot be resolved', async () => {
+        // Given
+        enableBlogpostGate();
+        await createBlogposts(1);
+        const platformId = uuidv4();
+
+        // When
+        const call = NewsFeedApp.backfillBlogpostsOnVersionChange({
+          serviceInstanceId: uuidv4() as ServiceInstanceId,
+          platformId,
+          previousVersion: BELOW_VERSION,
+          newVersion: ABOVE_VERSION,
+        });
+
+        // Then
+        await expect(call).resolves.toBeUndefined();
+        expect(await loadProvisionedItemIds(platformId)).toEqual([]);
+      });
+    });
+  });
 });

@@ -10,6 +10,7 @@ import {
 import { withTransaction } from '../../context/database.context';
 import Document, { DocumentId } from '../../model/kanel/public/Document';
 import { NewsFeedItemId } from '../../model/kanel/public/NewsFeedItem';
+import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { BlogApiClient } from '../../thirdparty/blog-api/client';
 import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode } from '../../utils/error/error.code';
@@ -20,6 +21,8 @@ import {
 } from '../common/interval.helper';
 import { PlatformConfigurationDomain } from '../registration/platform-configuration/platform-configuration.domain';
 import { RegistrationDomain } from '../registration/registration.domain';
+import { platformIdentifierMappedByServiceDefinitionIdentifier } from '../registration/registration.mapping';
+import { ServiceDefinitionDomain } from '../service/definition/service-definition.domain';
 import { useCaseDomain } from '../use-case/use-case.domain';
 import {
   buildNewsFeedDestination,
@@ -111,6 +114,20 @@ export interface BlogpostSyncResult {
   dropped: number;
   provisionedPlatforms: number;
 }
+
+const resolvePlatformIdentifier = async (
+  serviceInstanceId: ServiceInstanceId
+): Promise<PlatformIdentifier | undefined> => {
+  const serviceDefinition =
+    await ServiceDefinitionDomain.loadServiceDefinitionByServiceInstance(
+      serviceInstanceId
+    );
+  return serviceDefinition
+    ? platformIdentifierMappedByServiceDefinitionIdentifier[
+        serviceDefinition.identifier
+      ]
+    : undefined;
+};
 
 export interface NewsFeedExternalRedirect {
   newsFeedItemId: NewsFeedItemId;
@@ -281,6 +298,86 @@ export const NewsFeedApp = {
         resolvedConfiguration.platformConfiguration.platform_version
       ),
     };
+  },
+
+  // Gives a platform the latest blogpost items of its product, without waiting for the next post. It never throws:
+  // it runs after the registration or the version change is committed and must not break it.
+  backfillBlogpostsForPlatform: async ({
+    platformId,
+    platformIdentifier,
+    platformVersion,
+  }: {
+    platformId: string;
+    platformIdentifier: PlatformIdentifier;
+    platformVersion?: string | null;
+  }): Promise<void> => {
+    try {
+      const isBlogpostProduct = Object.values(blogpostProductMapping).includes(
+        platformIdentifier
+      );
+      if (
+        !isBlogpostProduct ||
+        !doesPlatformSupportBlogpostNewsFeed(
+          platformIdentifier,
+          platformVersion
+        )
+      ) {
+        return;
+      }
+
+      await NewsFeedDomain.provisionLatestBlogpostsToPlatform({
+        platformId,
+        platformIdentifier,
+        limit: NewsFeedHelper.getBlogpostLimit(),
+      });
+    } catch (error) {
+      logApp.error('Unable to backfill blogpost news feed items', {
+        error,
+        platformId,
+        platformIdentifier,
+      });
+    }
+  },
+
+  // Backfills only when the platform goes from a version that does not support blogpost items to one that does:
+  // neither a downgrade nor a change between two supporting versions. The identifier is resolved from the service
+  // definition of the platform when the caller does not know it. It never throws.
+  backfillBlogpostsOnVersionChange: async ({
+    serviceInstanceId,
+    platformId,
+    platformIdentifier,
+    previousVersion,
+    newVersion,
+  }: {
+    serviceInstanceId: ServiceInstanceId;
+    platformId: string;
+    platformIdentifier?: PlatformIdentifier;
+    previousVersion?: string | null;
+    newVersion: string;
+  }): Promise<void> => {
+    try {
+      const resolvedIdentifier =
+        platformIdentifier ??
+        (await resolvePlatformIdentifier(serviceInstanceId));
+      if (
+        !resolvedIdentifier ||
+        doesPlatformSupportBlogpostNewsFeed(resolvedIdentifier, previousVersion)
+      ) {
+        return;
+      }
+
+      await NewsFeedApp.backfillBlogpostsForPlatform({
+        platformId,
+        platformIdentifier: resolvedIdentifier,
+        platformVersion: newVersion,
+      });
+    } catch (error) {
+      logApp.error('Unable to backfill blogpost news feed items', {
+        error,
+        platformId,
+        serviceInstanceId,
+      });
+    }
   },
 
   createResourceNewsFeedItem: async ({

@@ -30,6 +30,7 @@ import {
   DeploymentRequestPlatformRegion,
   DeploymentRequestPlatformState,
   DeploymentRequestUseCase,
+  NewsFeedItemType,
   PlatformConfigurationStatus,
   PlatformContract,
   PlatformIdentifier,
@@ -50,6 +51,7 @@ import { SubscriptionId } from '../../model/kanel/public/Subscription';
 import { PgBossProducer } from '../../thirdparty/pgboss/producer';
 import { REGISTRATION_QUEUES } from '../../thirdparty/pgboss/registration.jobs';
 import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
+import { logApp } from '../../utils/app-logger.util';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 
 import {
@@ -58,7 +60,10 @@ import {
   ForbiddenErrorCode,
   NotFoundErrorCode,
 } from '../../utils/error/error.code';
+import { RequiredPlatformVersions } from '../../utils/required-platform-version';
 import { DeploymentRequestDomain } from '../deployment/deployment.domain';
+import { NewsFeedApp } from '../news-feed/news-feed.app';
+import { NewsFeedDomain } from '../news-feed/news-feed.domain';
 import { AuthHelper } from '../security-management/capability/auth.helper';
 import { SubscriptionDomain } from '../subscription/subscription.domain';
 import { TelemetryApp } from '../telemetry/telemetry.app';
@@ -71,6 +76,41 @@ import { TelemetryEventType } from '../telemetry/telemetry.types';
 import { PlatformConfigurationDomain } from './platform-configuration/platform-configuration.domain';
 import { RegistrationApp } from './registration.app';
 import { RegistrationDomain } from './registration.domain';
+
+const BLOGPOST_REQUIRED_VERSION = '7.260901.0';
+const BELOW_BLOGPOST_VERSION = '7.260831.0';
+
+const enableBlogpostGate = () =>
+  vi.replaceProperty(RequiredPlatformVersions, 'NewsFeedBlogpostSupport', {
+    [PlatformIdentifier.Opencti]: BLOGPOST_REQUIRED_VERSION,
+    [PlatformIdentifier.Openaev]: null,
+    [PlatformIdentifier.Xtmone]: null,
+  });
+
+// The blogpost number 1 is the newest one
+const createBlogposts = async (count: number) => {
+  const blogposts = [];
+  for (let number = 1; number <= count; number++) {
+    blogposts.push(
+      await TestHelper.newsFeed.createItem({
+        title: `Blogpost ${number}`,
+        type: NewsFeedItemType.BlogPost,
+        platform_identifier: PlatformIdentifier.Opencti,
+        creation_date: new Date(Date.now() - number * 24 * 60 * 60 * 1000),
+      })
+    );
+  }
+  return blogposts;
+};
+
+const loadProvisionedItemIds = async (platformId: string) =>
+  (await TestHelper.newsFeed.loadProvisioned({ platform_id: platformId }))
+    .map((row) => row.news_feed_item_id)
+    .sort();
+
+// The backfill is fire and forget: waits for the ones the registration started
+const waitForBackfills = (backfillSpy: MockInstance) =>
+  Promise.all(backfillSpy.mock.results.map((result) => result.value));
 
 describe('registration app', () => {
   afterAll(async () => {
@@ -431,6 +471,143 @@ describe('registration app', () => {
       });
 
       expect(token).toBeDefined();
+    });
+
+    describe('blogpost backfill', () => {
+      let replacedProperty: ReturnType<typeof vi.replaceProperty>;
+      let backfillSpy: MockInstance;
+
+      beforeEach(() => {
+        requestContext.set(requestContextRegistererUserSecondOrga);
+        replacedProperty = enableBlogpostGate();
+        backfillSpy = vi.spyOn(NewsFeedApp, 'backfillBlogpostsForPlatform');
+      });
+
+      afterEach(async () => {
+        vi.restoreAllMocks();
+        replacedProperty.restore();
+        await TestHelper.newsFeed.deleteItem();
+      });
+
+      const registerOpenCtiPlatform = (
+        platformId: string,
+        version: string | undefined
+      ) =>
+        RegistrationApp.registerPlatform({
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          platform: { ...platform, id: platformId, version },
+          identifier: PlatformIdentifier.Opencti,
+        });
+
+      it('should backfill the newest blogposts once when a platform with a supported version is registered', async () => {
+        // Given
+        const platformId = uuidv4();
+        const blogposts = await createBlogposts(2);
+
+        // When
+        await registerOpenCtiPlatform(platformId, BLOGPOST_REQUIRED_VERSION);
+        await waitForBackfills(backfillSpy);
+
+        // Then
+        expect(backfillSpy).toHaveBeenCalledExactlyOnceWith({
+          platformId,
+          platformIdentifier: PlatformIdentifier.Opencti,
+          platformVersion: BLOGPOST_REQUIRED_VERSION,
+        });
+        expect(await loadProvisionedItemIds(platformId)).toEqual(
+          blogposts.map(({ id }) => id).sort()
+        );
+      });
+
+      it.each`
+        description                 | version
+        ${'below the required one'} | ${BELOW_BLOGPOST_VERSION}
+        ${'missing'}                | ${undefined}
+      `(
+        'should not provision blogposts when the registered platform version is $description',
+        async ({ version }) => {
+          // Given
+          const platformId = uuidv4();
+          await createBlogposts(2);
+
+          // When
+          await registerOpenCtiPlatform(platformId, version);
+          await waitForBackfills(backfillSpy);
+
+          // Then
+          expect(await loadProvisionedItemIds(platformId)).toEqual([]);
+        }
+      );
+
+      it('should not provision blogposts to an OpenAEV platform', async () => {
+        // Given
+        const platformId = uuidv4();
+        await createBlogposts(2);
+
+        // When
+        await RegistrationApp.registerPlatform({
+          organizationId: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          platform: {
+            ...platform,
+            id: platformId,
+            version: '2.4.0',
+            tenantId: uuidv4(),
+          },
+          identifier: PlatformIdentifier.Openaev,
+        });
+        await waitForBackfills(backfillSpy);
+
+        // Then
+        expect(await loadProvisionedItemIds(platformId)).toEqual([]);
+      });
+
+      it('should register the platform when the backfill fails', async () => {
+        // Given
+        const platformId = uuidv4();
+        await createBlogposts(1);
+        vi.spyOn(
+          NewsFeedDomain,
+          'provisionLatestBlogpostsToPlatform'
+        ).mockRejectedValue(new Error('database unavailable'));
+        vi.spyOn(logApp, 'error').mockImplementation(() => logApp);
+
+        // When
+        const token = await registerOpenCtiPlatform(
+          platformId,
+          BLOGPOST_REQUIRED_VERSION
+        );
+        await waitForBackfills(backfillSpy);
+
+        // Then
+        const configuration =
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            platformId
+          );
+        expect(configuration).toMatchObject({
+          platform_id: platformId,
+          token,
+          status: PlatformConfigurationStatus.Active,
+        });
+        expect(await loadProvisionedItemIds(platformId)).toEqual([]);
+      });
+
+      it('should leave the provisioned blogposts unchanged when the platform is registered again', async () => {
+        // Given
+        const platformId = uuidv4();
+        const blogposts = await createBlogposts(2);
+        await registerOpenCtiPlatform(platformId, BLOGPOST_REQUIRED_VERSION);
+        await waitForBackfills(backfillSpy);
+
+        // When
+        await registerOpenCtiPlatform(platformId, BLOGPOST_REQUIRED_VERSION);
+        await waitForBackfills(backfillSpy);
+
+        // Then
+        expect(backfillSpy).toHaveBeenCalledTimes(2);
+        expect(await loadProvisionedItemIds(platformId)).toEqual(
+          blogposts.map(({ id }) => id).sort()
+        );
+      });
     });
 
     describe('commercial model', () => {
@@ -1841,6 +2018,125 @@ describe('registration app', () => {
         tenant_name: tenantName,
         service_instance_id: deploymentRequest.service_instance_id,
         status: PlatformConfigurationStatus.Active,
+      });
+    });
+
+    describe('blogpost backfill', () => {
+      let replacedProperty: ReturnType<typeof vi.replaceProperty>;
+      let backfillSpy: MockInstance;
+
+      beforeEach(() => {
+        replacedProperty = enableBlogpostGate();
+        backfillSpy = vi.spyOn(NewsFeedApp, 'backfillBlogpostsForPlatform');
+      });
+
+      afterEach(async () => {
+        vi.restoreAllMocks();
+        replacedProperty.restore();
+        await TestHelper.newsFeed.deleteItem();
+      });
+
+      it('should backfill the newest blogposts once after the registration when the version is supported', async () => {
+        // Given
+        const blogposts = await createBlogposts(2);
+
+        // When
+        await RegistrationApp.autoRegisterPlatform(
+          deploymentRequest.platform_token as string,
+          {
+            platform: {
+              ...platformConfiguration,
+              version: BLOGPOST_REQUIRED_VERSION,
+            },
+          }
+        );
+        await waitForBackfills(backfillSpy);
+
+        // Then
+        expect(backfillSpy).toHaveBeenCalledExactlyOnceWith({
+          platformId: platformConfiguration.id,
+          platformIdentifier: PlatformIdentifier.Opencti,
+          platformVersion: BLOGPOST_REQUIRED_VERSION,
+        });
+        expect(await loadProvisionedItemIds(platformConfiguration.id)).toEqual(
+          blogposts.map(({ id }) => id).sort()
+        );
+      });
+
+      it('should not provision blogposts when the version is below the required one', async () => {
+        // Given
+        await createBlogposts(2);
+
+        // When
+        await RegistrationApp.autoRegisterPlatform(
+          deploymentRequest.platform_token as string,
+          {
+            platform: {
+              ...platformConfiguration,
+              version: BELOW_BLOGPOST_VERSION,
+            },
+          }
+        );
+        await waitForBackfills(backfillSpy);
+
+        // Then
+        expect(await loadProvisionedItemIds(platformConfiguration.id)).toEqual(
+          []
+        );
+      });
+
+      it('should not backfill when the registration fails', async () => {
+        // Given
+        await createBlogposts(1);
+
+        // When
+        const call = RegistrationApp.autoRegisterPlatform(uuidv4(), {
+          platform: {
+            ...platformConfiguration,
+            version: BLOGPOST_REQUIRED_VERSION,
+          },
+        });
+
+        // Then
+        await expect(call).rejects.toThrow(
+          NotFoundErrorCode.DeploymentRequestNotFound
+        );
+        expect(backfillSpy).not.toHaveBeenCalled();
+      });
+
+      it('should register the platform when the backfill fails', async () => {
+        // Given
+        await createBlogposts(1);
+        vi.spyOn(
+          NewsFeedDomain,
+          'provisionLatestBlogpostsToPlatform'
+        ).mockRejectedValue(new Error('database unavailable'));
+        vi.spyOn(logApp, 'error').mockImplementation(() => logApp);
+
+        // When
+        await RegistrationApp.autoRegisterPlatform(
+          deploymentRequest.platform_token as string,
+          {
+            platform: {
+              ...platformConfiguration,
+              version: BLOGPOST_REQUIRED_VERSION,
+            },
+          }
+        );
+        await waitForBackfills(backfillSpy);
+
+        // Then
+        const configuration =
+          await PlatformConfigurationDomain.loadConfigurationByPlatform(
+            platformConfiguration.id
+          );
+        expect(configuration).toMatchObject({
+          platform_id: platformConfiguration.id,
+          status: PlatformConfigurationStatus.Active,
+        });
+        expect(await loadProvisionedItemIds(platformConfiguration.id)).toEqual(
+          []
+        );
       });
     });
   });
