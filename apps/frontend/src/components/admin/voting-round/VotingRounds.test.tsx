@@ -4,7 +4,7 @@ import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
 import { VotingRoundsListQuery, VotingRoundStatus } from '@graphql/generated';
 import { mockVotingRound } from '@graphql/mocks';
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
 
 const serviceInstancesHandler = mockGraphqlQuery({
@@ -149,6 +149,40 @@ describe('VotingRounds', () => {
       })
     );
 
+    expect(
+      await screen.findByLabelText(/VotingRound.Form.Name/i)
+    ).toBeInTheDocument();
+  });
+
+  it('should open the edit sheet again when the admin edits the same round after cancelling', async () => {
+    // Given
+    mockRounds();
+    const { user } = testRender(<VotingRounds />);
+    const editFirstRound = async () => {
+      const [menuButton] = await screen.findAllByRole('button', {
+        name: 'Utils.OpenMenu',
+      });
+      await user.click(menuButton!);
+      await user.click(
+        await screen.findByRole('menuitem', {
+          name: 'VotingRound.Actions.Edit',
+        })
+      );
+    };
+    await editFirstRound();
+    await user.click(
+      await screen.findByRole('button', { name: 'Utils.Cancel' })
+    );
+    await waitFor(() =>
+      expect(
+        screen.queryByLabelText(/VotingRound.Form.Name/i)
+      ).not.toBeInTheDocument()
+    );
+
+    // When
+    await editFirstRound();
+
+    // Then
     expect(
       await screen.findByLabelText(/VotingRound.Form.Name/i)
     ).toBeInTheDocument();
