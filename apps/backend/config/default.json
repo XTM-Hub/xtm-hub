@@ -119,6 +119,7 @@
   },
   "news_feed": {
     "cleanup_interval_value": 180,
-    "cleanup_interval_unit": "days"
+    "cleanup_interval_unit": "days",
+    "blogpost_limit": 6
   }
 }

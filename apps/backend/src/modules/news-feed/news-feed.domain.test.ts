@@ -1,6 +1,6 @@
 import { toGlobalId } from 'graphql-relay/node/node.js';
 import { v4 as uuidv4 } from 'uuid';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   NewsFeedItemMetadataKey,
@@ -12,6 +12,7 @@ import { NewsFeedItemId } from '../../model/kanel/public/NewsFeedItem';
 import { NewsFeedItemMetadataKey as NewsFeedItemMetadataKeyModel } from '../../model/kanel/public/NewsFeedItemMetadata';
 import { ProvisionedNewsFeedItemPlatformId } from '../../model/kanel/public/ProvisionedNewsFeedItem';
 import { BadRequestErrorCode } from '../../utils/error/error.code';
+import { RequiredPlatformVersions } from '../../utils/required-platform-version';
 import { NewsFeedDomain } from './news-feed.domain';
 
 describe('newsFeedDomain', () => {
@@ -58,6 +59,85 @@ describe('newsFeedDomain', () => {
 
       // Then
       expect(result).toEqual([NewsFeedItemType.ResourceScenario]);
+    });
+
+    it('should not list the blogpost type while the blogpost gate is disabled', () => {
+      // When
+      const result = NewsFeedDomain.loadAvailableNewsFeedTypes(
+        PlatformIdentifier.Opencti,
+        '99.0.0'
+      );
+
+      // Then
+      expect(result).not.toContain(NewsFeedItemType.BlogPost);
+    });
+
+    describe('with a blogpost required version', () => {
+      const BLOGPOST_REQUIRED_VERSION = '7.260901.0';
+      let replacedProperty: ReturnType<typeof vi.replaceProperty> | undefined;
+
+      const setRequiredVersion = (requiredVersion: string | null) => {
+        replacedProperty = vi.replaceProperty(
+          RequiredPlatformVersions,
+          'NewsFeedBlogpostSupport',
+          {
+            [PlatformIdentifier.Opencti]: requiredVersion,
+            [PlatformIdentifier.Openaev]: requiredVersion,
+            [PlatformIdentifier.Xtmone]: null,
+          }
+        );
+      };
+
+      afterEach(() => {
+        replacedProperty?.restore();
+        replacedProperty = undefined;
+      });
+
+      it.each`
+        description         | requiredVersion              | version                      | expected
+        ${'null required'}  | ${null}                      | ${'8.0.0'}                   | ${false}
+        ${'below'}          | ${BLOGPOST_REQUIRED_VERSION} | ${'7.260831.0'}              | ${false}
+        ${'equal'}          | ${BLOGPOST_REQUIRED_VERSION} | ${BLOGPOST_REQUIRED_VERSION} | ${true}
+        ${'above'}          | ${BLOGPOST_REQUIRED_VERSION} | ${'7.260902.0'}              | ${true}
+        ${'invalid'}        | ${BLOGPOST_REQUIRED_VERSION} | ${'not-a-version'}           | ${false}
+        ${'missing (null)'} | ${BLOGPOST_REQUIRED_VERSION} | ${null}                      | ${false}
+        ${'missing'}        | ${BLOGPOST_REQUIRED_VERSION} | ${undefined}                 | ${false}
+      `(
+        'should list the blogpost type for OpenCTI only when the version is $description ($expected)',
+        ({ requiredVersion, version, expected }) => {
+          // Given
+          setRequiredVersion(requiredVersion);
+
+          // When
+          const result = NewsFeedDomain.loadAvailableNewsFeedTypes(
+            PlatformIdentifier.Opencti,
+            version
+          );
+
+          // Then
+          expect(result.includes(NewsFeedItemType.BlogPost)).toBe(expected);
+          expect(result).toEqual(
+            expect.arrayContaining([
+              NewsFeedItemType.ResourceCustomDashboard,
+              NewsFeedItemType.ResourcePlaybook,
+            ])
+          );
+        }
+      );
+
+      it('should not list the blogpost type for a platform that is not mapped to a blog product', () => {
+        // Given
+        setRequiredVersion(BLOGPOST_REQUIRED_VERSION);
+
+        // When
+        const result = NewsFeedDomain.loadAvailableNewsFeedTypes(
+          PlatformIdentifier.Openaev,
+          '99.0.0'
+        );
+
+        // Then
+        expect(result).toEqual([NewsFeedItemType.ResourceScenario]);
+      });
     });
 
     it('should return empty array for a platform with no configured news feed types', () => {
