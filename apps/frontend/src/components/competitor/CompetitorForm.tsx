@@ -7,8 +7,7 @@ import { SelectField } from '@/components/ui/SelectField';
 import { SheetFooter } from '@/components/ui/sheet';
 import { useTranslate } from '@/hooks/use-translate';
 import { Button } from '@filigran/design-system';
-import { competitor_fragment$data } from '@generated/competitor_fragment.graphql';
-import { CompetitorTier } from '@graphql/generated';
+import { CompetitorRowFragment, CompetitorTier } from '@graphql/generated';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -59,7 +58,7 @@ const CompetitorForm = ({
   handleSubmit,
   onClose,
 }: {
-  competitor?: competitor_fragment$data;
+  competitor?: CompetitorRowFragment;
   handleSubmit: (values: z.infer<typeof competitorFormSchema>) => void;
   onClose: () => void;
 }) => {
@@ -71,7 +70,7 @@ const CompetitorForm = ({
       values={{
         name: competitor?.name ?? '',
         domain: competitor?.domain ?? '',
-        tier: (competitor?.tier as CompetitorTier) ?? CompetitorTier.Tier1,
+        tier: competitor?.tier ?? CompetitorTier.Tier1,
       }}
       onSubmit={(values) => handleSubmit(values)}
       fieldConfig={{
