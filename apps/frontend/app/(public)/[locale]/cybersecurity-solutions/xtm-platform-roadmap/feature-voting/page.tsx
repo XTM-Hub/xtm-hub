@@ -47,12 +47,16 @@ const Page = async ({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const serviceInstance = await getRoadmapServiceInstance();
+  // Independent lookups: loadCurrentUser resolves to null on failure, so it is
+  // harmless to call it even when the service instance turns out to be missing.
+  const [serviceInstance, user] = await Promise.all([
+    getRoadmapServiceInstance(),
+    loadCurrentUser(),
+  ]);
   if (!serviceInstance) {
     notFound();
   }
 
-  const user = await loadCurrentUser();
   if (user) {
     redirect(getFeatureVotingPrivatePath(serviceInstance.id));
   }

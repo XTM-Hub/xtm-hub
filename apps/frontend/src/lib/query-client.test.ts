@@ -4,6 +4,9 @@ import { buildLoginRedirect } from '@/utils/redirect';
 import { MutationObserver, QueryObserver } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+// setup-vitest.ts mocks getQueryClient for every other test: this file tests the real one.
+vi.unmock('@/lib/query-client');
+
 const CURRENT_PATHNAME = '/app/current-page';
 
 const observeQuery = async (queryFn: () => Promise<string>) => {

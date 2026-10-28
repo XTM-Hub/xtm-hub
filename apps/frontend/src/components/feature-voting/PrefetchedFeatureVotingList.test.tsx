@@ -22,22 +22,6 @@ vi.mock('@/lib/graphql-client', async (importOriginal) => {
   };
 });
 
-// jsdom is a browser: give each render the fresh, never-retrying client a
-// server request gets.
-vi.mock('@/lib/query-client', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/lib/query-client')>();
-  return {
-    ...actual,
-    getQueryClient: () => {
-      const client = actual.createQueryClient();
-      client.setDefaultOptions({
-        queries: { ...client.getDefaultOptions().queries, retry: false },
-      });
-      return client;
-    },
-  };
-});
-
 const mockRound = (description: string) =>
   mswServer.use(
     mockGraphqlQuery<CurrentVotingRoundQuery>({
