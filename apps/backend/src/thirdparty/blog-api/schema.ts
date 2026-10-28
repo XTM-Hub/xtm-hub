@@ -9,6 +9,8 @@ export const BlogFeedEnvelopeSchema = z.object({
   items: z.array(z.unknown()),
 });
 
+const AuthorSchema = z.object({ name: z.string().nullish() });
+
 // The article url is not read: the Hub redirect builds it from the slug.
 export const buildBlogFeedItemSchema = (product: string) =>
   z.object({
@@ -32,11 +34,28 @@ export const buildBlogFeedItemSchema = (product: string) =>
         error: `Must contain the product ${product}`,
       }),
     summary: z.string().nullish(),
-    authors: z.array(z.object({ name: z.string() })).default([]),
+    // A guest author can have no name: such entries are dropped, the post stays valid
+    authors: z
+      .array(z.unknown())
+      .default([])
+      .transform((entries) =>
+        entries.flatMap((entry) => {
+          const author = AuthorSchema.safeParse(entry);
+          return author.success && author.data.name?.trim()
+            ? [{ name: author.data.name }]
+            : [];
+        })
+      ),
     categories: z
       .array(z.object({ slug: z.string(), label: z.string() }))
       .default([]),
-    read_minutes: z.number().int().min(1).nullish(),
+    // An absent, null or zero read time means "unknown"
+    read_minutes: z
+      .number()
+      .int()
+      .min(0)
+      .nullish()
+      .transform((minutes) => minutes || undefined),
   });
 
 export type BlogFeedItem = z.infer<ReturnType<typeof buildBlogFeedItemSchema>>;

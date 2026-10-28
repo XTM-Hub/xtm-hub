@@ -182,6 +182,23 @@ describe('blogApiClient.fetchBlogFeed', () => {
       }
     );
 
+    it.each([0, -1, Number.NaN, 1.5])(
+      'should throw when the limit is %j',
+      async (limit) => {
+        // Given
+        const fetchMock = stubFeed(SAMPLE_FEED);
+
+        // When
+        const result = fetchBlogFeed({ product: PRODUCT, limit });
+
+        // Then
+        await expect(result).rejects.toThrow(
+          'Blog API limit is not a positive integer'
+        );
+        expect(fetchMock).not.toHaveBeenCalled();
+      }
+    );
+
     it.each([0, -1, 1.5, 'soon'])(
       'should throw when the timeout is %j',
       async (timeoutMs) => {
@@ -298,6 +315,64 @@ describe('blogApiClient.fetchBlogFeed', () => {
         published_at: '2026-09-11T10:00:00+02:00',
       });
     });
+
+    it.each([
+      ['null', null],
+      ['missing', undefined],
+      ['an empty string', ''],
+      ['blank', '   '],
+      ['not a string', 42],
+    ])('should drop an author when its name is %s', async (_label, name) => {
+      // Given
+      const guestAuthor = { name, role: null, avatar: null };
+      stubFeed(
+        makeFeed([
+          makeItem({
+            authors: [
+              guestAuthor,
+              { name: 'Romain Guignard' },
+              null,
+              'Anonymous',
+            ],
+          }),
+        ])
+      );
+
+      // When
+      const items = await fetchBlogFeed();
+
+      // Then
+      expect(items[0].authors).toStrictEqual([{ name: 'Romain Guignard' }]);
+    });
+
+    it('should return no author when every author has no name', async () => {
+      // Given
+      stubFeed(makeFeed([makeItem({ authors: [{ name: null }] })]));
+
+      // When
+      const items = await fetchBlogFeed();
+
+      // Then
+      expect(items[0].authors).toStrictEqual([]);
+    });
+
+    it.each([
+      ['0', 0],
+      ['null', null],
+      ['missing', undefined],
+    ])(
+      'should return an undefined read time when it is %s',
+      async (_label, readMinutes) => {
+        // Given
+        stubFeed(makeFeed([makeItem({ read_minutes: readMinutes })]));
+
+        // When
+        const items = await fetchBlogFeed();
+
+        // Then
+        expect(items[0].read_minutes).toBeUndefined();
+      }
+    );
   });
 
   describe('ordering and limit', () => {
@@ -542,8 +617,15 @@ describe('blogApiClient.fetchBlogFeed', () => {
       ['a missing products list', { products: undefined }],
       ['products without the requested one', { products: ['openaev'] }],
       ['empty products', { products: [] }],
-      ['a read time below 1', { read_minutes: 0 }],
+      ['a negative read time', { read_minutes: -1 }],
       ['a read time that is not an integer', { read_minutes: 1.5 }],
+      ['a read time that is not a number', { read_minutes: '7' }],
+      ['authors that are not an array', { authors: 'Romain Guignard' }],
+      ['authors that are null', { authors: null }],
+      ['authors that are an object', { authors: { name: 'Romain Guignard' } }],
+      ['categories that are not an array', { categories: 'partnership' }],
+      ['categories that are null', { categories: null }],
+      ['a category without label', { categories: [{ slug: 'partnership' }] }],
     ])(
       'should throw an invalid item error with the post id when the item has %s',
       async (_label, overrides) => {
@@ -600,6 +682,26 @@ describe('blogApiClient.fetchBlogFeed', () => {
         // Then
         expect(error.code).toBe(BlogApiErrorCode.InvalidItem);
         expect(error.postId).toBeUndefined();
+      }
+    );
+
+    it.each([
+      ['the same id', { id: 'post-614', slug: 'another-slug' }, 'post-614'],
+      ['the same slug', { id: 'post-2', slug: SAMPLE_ITEM.slug }, 'post-2'],
+    ])(
+      'should throw an invalid item error with the post id when two items have %s',
+      async (_label, overrides, expectedPostId) => {
+        // Given
+        stubFeed(makeFeed([SAMPLE_ITEM, makeItem(overrides)]));
+
+        // When
+        const error = await catchBlogApiError(fetchBlogFeed());
+
+        // Then
+        expect(error).toMatchObject({
+          code: BlogApiErrorCode.InvalidItem,
+          postId: expectedPostId,
+        });
       }
     );
 
