@@ -121,7 +121,7 @@ export const BundleCancelSheet = ({
     []
   );
 
-  const { mutate: cancelDeploymentRequest } =
+  const { mutate: cancelDeploymentRequest, isPending } =
     useTrialsCancelDeploymentRequestMutation(portalGraphqlClient, {
       onSuccess: (response) => {
         syncCancelledDeploymentRequestToRelayStore(
@@ -203,6 +203,7 @@ export const BundleCancelSheet = ({
               <Button
                 variant="destructive"
                 disabled={!selectedCancellationReason.trim()}
+                loading={isPending}
                 type="submit">
                 {t('Utils.Confirm')}
               </Button>
