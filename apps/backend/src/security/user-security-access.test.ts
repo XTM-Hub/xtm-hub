@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { ActionType } from '../../knexfile';
+import { TEST_ORGANIZATIONS } from '../../tests/tests.const';
 import { UserLoadUserBy } from '../model/user';
 import { TypedNode } from '../pub';
 import { meUserSSESecurity } from './user-security-access';
 
-const USER_ID = 'b8f1c0a6-3c1e-4a8e-9a55-3f0f6c1d2e01';
-const OTHER_USER_ID = 'c2d7e5f4-7b9a-4f1e-8c3d-6a5b4c3d2e02';
+const USER_ID = TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE.ID;
+const OTHER_USER_ID = TEST_ORGANIZATIONS.FILIGRAN.USERS.SIMPLE2.ID;
 
 describe('user-security-access', () => {
   describe('meUserSSESecurity', () => {
