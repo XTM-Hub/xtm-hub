@@ -1,13 +1,16 @@
 'use client';
 
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
+import { XTM_PLATFORM_TRIAL_PRODUCTS } from '@/components/service/trial-instances/form-constants';
 import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { PlatformIdentifier } from '@graphql/generated';
 
-const BUNDLE_PRODUCTS = [
-  PlatformIdentifier.Opencti,
-  PlatformIdentifier.Openaev,
+// The pitch presents XTM One last, after the products it orchestrates
+const PITCH_PRODUCTS = [
+  ...XTM_PLATFORM_TRIAL_PRODUCTS.filter(
+    (platformIdentifier) => platformIdentifier !== PlatformIdentifier.Xtmone
+  ),
   PlatformIdentifier.Xtmone,
 ];
 
@@ -26,7 +29,7 @@ export const XtmPlatformTrialPitch = () => {
       </div>
 
       <div className="flex flex-col gap-6 pr-30">
-        {BUNDLE_PRODUCTS.map((platformIdentifier) => {
+        {PITCH_PRODUCTS.map((platformIdentifier) => {
           const { name, Icon, iconClassName } =
             PlatformMetadataMapping[platformIdentifier];
 

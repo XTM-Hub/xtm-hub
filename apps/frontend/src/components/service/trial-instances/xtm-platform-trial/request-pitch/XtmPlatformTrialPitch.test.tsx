@@ -22,6 +22,18 @@ describe('XtmPlatformTrialPitch', () => {
     expect(screen.getByText('XTM One')).toBeInTheDocument();
   });
 
+  it('should render OpenCTI, OpenAEV then XTM One when the pitch is displayed', () => {
+    // When
+    render(<XtmPlatformTrialPitch />);
+
+    // Then
+    expect(
+      screen
+        .getAllByText(/^(OpenCTI|OpenAEV|XTM One)$/)
+        .map((productName) => productName.textContent)
+    ).toEqual(['OpenCTI', 'OpenAEV', 'XTM One']);
+  });
+
   it('renders the tagline and description translation keys for each product', () => {
     render(<XtmPlatformTrialPitch />);
 

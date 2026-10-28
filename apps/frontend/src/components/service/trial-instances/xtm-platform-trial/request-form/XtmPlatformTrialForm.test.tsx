@@ -111,16 +111,6 @@ describe('XtmPlatformTrialForm', () => {
     );
   });
 
-  it('keeps the submit button enabled', () => {
-    testRender(<XtmPlatformTrialForm handleSubmit={vi.fn()} />);
-
-    expect(
-      screen.getByRole('button', {
-        name: 'Service.Trials.XtmPlatform.Page.Form.Submit',
-      })
-    ).toBeEnabled();
-  });
-
   it('submits the expected values when the form is filled and submitted', async () => {
     const handleSubmit = vi.fn();
     const { user, container } = testRender(

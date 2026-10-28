@@ -142,6 +142,11 @@ test.describe('XTM Platform bundle trial', () => {
 
       await trialPage.navigateTo();
       await expect(
+        page.getByRole('heading', {
+          name: 'You have completed your XTM Platform trial',
+        })
+      ).toBeVisible();
+      await expect(
         page.getByText(
           'Thank you for trying out the XTM platform, we hope you enjoyed your experience.'
         )
