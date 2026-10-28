@@ -1489,6 +1489,46 @@ describe('newsFeedApp', () => {
       ).rejects.toThrow(ErrorCode.NewsFeedItemNotFound);
     });
 
+    it.each`
+      description                 | isDeleted
+      ${'a live blog post'}       | ${false}
+      ${'an already deleted one'} | ${true}
+    `(
+      'should refuse to delete $description and leave it untouched',
+      async ({ isDeleted }: { isDeleted: boolean }) => {
+        // Given
+        const platformId = uuidv4();
+        await createOpenCTIPlatformForOrganization(
+          platformId,
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+        );
+        const item = await TestHelper.newsFeed.createItem({
+          type: NewsFeedItemType.BlogPost,
+          platform_identifier: PlatformIdentifier.Opencti,
+          title: 'Blog post to keep',
+          is_deleted: isDeleted,
+        });
+
+        // When
+        const call = NewsFeedApp.deleteNewsFeedItem({
+          newsFeedItemId: item.id,
+        });
+
+        // Then
+        await expect(call).rejects.toThrow(
+          ErrorCode.CantDeleteBlogpostNewsFeedItem
+        );
+        expect(
+          await TestHelper.newsFeed.loadFirstItem({ id: item.id })
+        ).toMatchObject({ id: item.id, is_deleted: isDeleted });
+        expect(
+          await TestHelper.newsFeed.loadProvisioned({
+            news_feed_item_id: item.id,
+          })
+        ).toHaveLength(0);
+      }
+    );
+
     it('should mark the news feed item as deleted', async () => {
       // Given
       const item = await TestHelper.newsFeed.createItem({
