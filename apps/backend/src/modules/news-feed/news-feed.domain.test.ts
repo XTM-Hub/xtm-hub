@@ -928,6 +928,53 @@ describe('newsFeedDomain', () => {
       }
     );
 
+    describe('blog posts', () => {
+      const createExpiredBlogPost = (isDeleted: boolean) =>
+        TestHelper.newsFeed.createItem({
+          type: NewsFeedItemType.BlogPost,
+          platform_identifier: PlatformIdentifier.Opencti,
+          title: 'expired-blog-post',
+          creation_date: monthsAgo(24),
+          is_deleted: isDeleted,
+        });
+
+      it('should keep an expired blog post that is not deleted', async () => {
+        // Given
+        const liveBlogPost = await createExpiredBlogPost(false);
+        const expiredResource = await createItemWithAge(24);
+
+        // When
+        const deletedCount = await NewsFeedDomain.deleteNewsFeedItemsOlderThan(
+          monthsAgo(6)
+        );
+
+        // Then
+        expect(deletedCount).toBe(1);
+        expect(
+          await TestHelper.newsFeed.loadFirstItem({ id: liveBlogPost.id })
+        ).toMatchObject({ id: liveBlogPost.id, is_deleted: false });
+        expect(
+          await TestHelper.newsFeed.loadFirstItem({ id: expiredResource.id })
+        ).toBeUndefined();
+      });
+
+      it('should delete an expired blog post that is already deleted', async () => {
+        // Given
+        const deletedBlogPost = await createExpiredBlogPost(true);
+
+        // When
+        const deletedCount = await NewsFeedDomain.deleteNewsFeedItemsOlderThan(
+          monthsAgo(6)
+        );
+
+        // Then
+        expect(deletedCount).toBe(1);
+        expect(
+          await TestHelper.newsFeed.loadFirstItem({ id: deletedBlogPost.id })
+        ).toBeUndefined();
+      });
+    });
+
     it('should return the count of deleted items', async () => {
       // Given
       await createItemWithAge(12);

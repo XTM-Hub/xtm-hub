@@ -712,6 +712,7 @@
     "IsDeleted": "削除",
     "IsDeletedYes": "削除",
     "Delete": "削除",
+    "DeleteBlogpostDisabled": "ブログ記事は同期によって管理されるため、削除できません",
     "DeleteSuccess": "ニュースフィード項目 \"{title}\" は正常に削除されました。",
     "DeleteError": "ニュースフィードアイテムの削除中にエラーが発生しました。",
     "DeleteDialog": {

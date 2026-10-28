@@ -2,6 +2,7 @@
 import BadgeOverflowCounter from '@/components/ui/BadgeOverflowCounter';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { DataTable } from '@/components/ui/data-table';
+import { DisabledActionTooltip } from '@/components/ui/DisabledActionTooltip';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTablePagination } from '@/hooks/use-table-pagination';
@@ -169,9 +170,20 @@ const NewsFeedList = () => {
               <IconActions
                 aria-label={t('Utils.OpenMenu')}
                 icon={<MoreVertIcon className="h-4 w-4 text-icon-highlight" />}>
-                <IconActionsItem onClick={() => setDeleteTarget(row.original)}>
-                  {t('NewsFeedAdminPage.Delete')}
-                </IconActionsItem>
+                {row.original.type === NewsFeedItemType.BlogPost ? (
+                  // Live blog items are managed by the synchronization only
+                  <DisabledActionTooltip
+                    reason={t('NewsFeedAdminPage.DeleteBlogpostDisabled')}>
+                    <IconActionsItem disabled>
+                      {t('NewsFeedAdminPage.Delete')}
+                    </IconActionsItem>
+                  </DisabledActionTooltip>
+                ) : (
+                  <IconActionsItem
+                    onClick={() => setDeleteTarget(row.original)}>
+                    {t('NewsFeedAdminPage.Delete')}
+                  </IconActionsItem>
+                )}
               </IconActions>
             </div>
           ),

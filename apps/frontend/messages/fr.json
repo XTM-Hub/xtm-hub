@@ -712,6 +712,7 @@
     "IsDeleted": "Supprimé",
     "IsDeletedYes": "Supprimé",
     "Delete": "Supprimer",
+    "DeleteBlogpostDisabled": "Les articles de blog sont gérés par la synchronisation et ne peuvent pas être supprimés",
     "DeleteSuccess": "L'élément de fil d'actualité \"{title}\" a été supprimé avec succès",
     "DeleteError": "Une erreur est survenue lors de la suppression de l'élément",
     "DeleteDialog": {

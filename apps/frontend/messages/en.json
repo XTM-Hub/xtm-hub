@@ -712,6 +712,7 @@
     "IsDeleted": "Deleted",
     "IsDeletedYes": "Deleted",
     "Delete": "Delete",
+    "DeleteBlogpostDisabled": "Blog posts are managed by the synchronization and cannot be deleted",
     "DeleteSuccess": "The news feed item \"{title}\" has been deleted successfully",
     "DeleteError": "An error occurred while deleting the news feed item",
     "DeleteDialog": {
