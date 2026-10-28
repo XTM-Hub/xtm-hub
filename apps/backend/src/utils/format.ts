@@ -17,6 +17,17 @@ export const toIsoDate = (value: unknown): string | null => {
   return Number.isNaN(time) ? null : new Date(time).toISOString();
 };
 
+/**
+ * Midnight UTC on the first day of the month of the date, shifted by monthOffset months, as a timestamp. Date.UTC
+ * carries a negative or overflowing month over to the year.
+ */
+export const toUtcMonthStart = (date: Date, monthOffset = 0): number =>
+  Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + monthOffset, 1);
+
+/** Midnight UTC on the day of the date, as a timestamp. */
+export const toUtcDayStart = (date: Date): number =>
+  Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+
 export const toFiniteNumber = (value: unknown): number | null =>
   typeof value === 'number' && Number.isFinite(value) ? value : null;
 

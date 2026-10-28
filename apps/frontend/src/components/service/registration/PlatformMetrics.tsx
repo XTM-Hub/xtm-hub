@@ -2,6 +2,7 @@
 
 import { findMetricPoints } from '@/components/service/registration/platform-metrics.utils';
 import { PlatformMetricsPeriodSelector } from '@/components/service/registration/PlatformMetricsPeriodSelector';
+import { SlaAvailabilityChart } from '@/components/service/registration/SlaAvailabilityChart';
 import { StorageUsageChart } from '@/components/service/registration/StorageUsageChart';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -10,12 +11,15 @@ import {
   MetricType,
   SaasPlatformMetrics,
   SaasPlatformMetricsPeriod,
+  SaasPlatformSla,
   SaasPlatformStorage,
 } from '@graphql/generated';
 
 interface PlatformMetricsProps {
   metrics?: SaasPlatformMetrics | null;
   storage?: SaasPlatformStorage | null;
+  // Null without any SLA to show: the section is left out.
+  sla?: SaasPlatformSla | null;
   isLoading: boolean;
   period: SaasPlatformMetricsPeriod;
   onPeriodChange: (period: SaasPlatformMetricsPeriod) => void;
@@ -24,6 +28,7 @@ interface PlatformMetricsProps {
 export const PlatformMetrics = ({
   metrics,
   storage,
+  sla,
   isLoading,
   period,
   onPeriodChange,
@@ -33,7 +38,7 @@ export const PlatformMetrics = ({
   const isUnavailable = !isLoading && !metrics && !storage;
 
   return (
-    <div className="my-3 layer-2 bg-filigran-brand-primary-transparency-10 p-6">
+    <div className="mt-3 layer-2 bg-filigran-brand-primary-transparency-10 p-6">
       <div className="flex items-center justify-between gap-4">
         <h2>{t('Register.Metrics.Title')}</h2>
         <PlatformMetricsPeriodSelector
@@ -53,19 +58,25 @@ export const PlatformMetrics = ({
       )}
 
       {!isLoading && (metrics || storage) && (
-        <div className="grid w-full grid-cols-2 gap-4">
-          <StorageUsageChart
-            points={findMetricPoints(metrics, MetricType.EsUsedSize)}
-            storage={storage?.es_used_size}
-            graphType={'Database'}
-            color="var(--color-filigran-brand-primary)"
-          />
-          <StorageUsageChart
-            points={findMetricPoints(metrics, MetricType.S3UsedSize)}
-            storage={storage?.s3_used_size}
-            graphType={'FileStorage'}
-            color="var(--color-filigran-tonic-secondary)"
-          />
+        <div className="flex flex-col gap-6">
+          <section className="flex flex-col gap-4">
+            <h3 className="title-xs">{t('Register.Metrics.StorageTitle')}</h3>
+            <div className="grid w-full grid-cols-2 gap-4">
+              <StorageUsageChart
+                points={findMetricPoints(metrics, MetricType.EsUsedSize)}
+                storage={storage?.es_used_size}
+                graphType={'Database'}
+                color="var(--color-filigran-brand-primary)"
+              />
+              <StorageUsageChart
+                points={findMetricPoints(metrics, MetricType.S3UsedSize)}
+                storage={storage?.s3_used_size}
+                graphType={'FileStorage'}
+                color="var(--color-filigran-tonic-secondary)"
+              />
+            </div>
+          </section>
+          {sla && <SlaAvailabilityChart sla={sla} />}
         </div>
       )}
     </div>

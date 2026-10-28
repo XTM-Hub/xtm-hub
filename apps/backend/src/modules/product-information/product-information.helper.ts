@@ -1,26 +1,42 @@
 import {
   MetricType,
+  SaasPlatformDailySla,
   SaasPlatformData,
   SaasPlatformMetadata,
   SaasPlatformMetricPoint,
   SaasPlatformMetrics,
   SaasPlatformMetricSeries,
   SaasPlatformMetricsPeriod,
+  SaasPlatformMonthlySla,
   SaasPlatformResolution,
+  SaasPlatformSla,
   SaasPlatformStorage,
   SaasPlatformStorageUsage,
 } from '../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
 import { logApp } from '../../utils/app-logger.util';
-import { toFiniteNumber, toIsoDate } from '../../utils/format';
+import {
+  toFiniteNumber,
+  toIsoDate,
+  toUtcDayStart,
+  toUtcMonthStart,
+} from '../../utils/format';
 import { isRecord } from '../../utils/typescript';
 
-const SAAS_PLATFORM_METRICS_DAYS: Record<SaasPlatformMetricsPeriod, number> = {
-  [SaasPlatformMetricsPeriod.Last_7Days]: 7,
-  [SaasPlatformMetricsPeriod.Last_30Days]: 30,
-  [SaasPlatformMetricsPeriod.Last_90Days]: 90,
+const SAAS_PLATFORM_METRICS_PERIODS: Record<
+  SaasPlatformMetricsPeriod,
+  { days: number; slaMonths: number }
+> = {
+  [SaasPlatformMetricsPeriod.Last_30Days]: { days: 30, slaMonths: 1 },
+  [SaasPlatformMetricsPeriod.Last_90Days]: { days: 90, slaMonths: 3 },
+  [SaasPlatformMetricsPeriod.Last_180Days]: { days: 180, slaMonths: 6 },
 };
+
+// The availability the contract commits to, as a ratio (1 is 100 %).
+const SAAS_PLATFORM_SLA_TARGET = 0.9998;
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 const METRIC_TYPES: ReadonlySet<string> = new Set(Object.values(MetricType));
 
@@ -110,6 +126,79 @@ const parseSaasPlatformMetrics = (
   };
 };
 
+interface SaasPlatformSlaGrid {
+  // Midnight UTC on the first day of the oldest month, as a timestamp.
+  firstMonth: number;
+  now: Date;
+}
+
+interface AvailabilityTotal {
+  sum: number;
+  count: number;
+}
+
+const addToTotal = (
+  totals: Map<number, AvailabilityTotal>,
+  key: number,
+  value: number
+) => {
+  const total = totals.get(key) ?? { sum: 0, count: 0 };
+  totals.set(key, { sum: total.sum + value, count: total.count + 1 });
+};
+
+const toMeanAvailability = (total: AvailabilityTotal | undefined) =>
+  total ? total.sum / total.count : null;
+
+// The contract measures the availability per calendar month: the grid runs from firstMonth to the current month,
+// counted to date, whatever part of it the metrics cover.
+const parseSaasPlatformSla = (
+  metrics: SaasPlatformMetrics | null,
+  { firstMonth, now }: SaasPlatformSlaGrid
+): SaasPlatformSla | null => {
+  if (!metrics) {
+    return null;
+  }
+  const points = metrics.series.find(
+    ({ metric_type }) => metric_type === MetricType.SlaAvailability
+  )?.points;
+  if (!points) {
+    return null;
+  }
+
+  const gridEnd = toUtcMonthStart(now, 1);
+  const monthTotals = new Map<number, AvailabilityTotal>();
+  const dayTotals = new Map<number, AvailabilityTotal>();
+  for (const { timestamp, value } of points) {
+    const date = new Date(timestamp);
+    const time = date.getTime();
+    if (typeof value !== 'number' || time < firstMonth || time >= gridEnd) {
+      continue;
+    }
+    addToTotal(monthTotals, toUtcMonthStart(date), value);
+    addToTotal(dayTotals, toUtcDayStart(date), value);
+  }
+
+  const months: SaasPlatformMonthlySla[] = [];
+  for (let month = firstMonth; month < gridEnd;) {
+    const nextMonth = toUtcMonthStart(new Date(month), 1);
+    const days: SaasPlatformDailySla[] = [];
+    // UTC has no daylight saving time: every day lasts exactly MS_PER_DAY.
+    for (let day = month; day < nextMonth; day += MS_PER_DAY) {
+      days.push({
+        day: new Date(day).toISOString(),
+        availability: toMeanAvailability(dayTotals.get(day)),
+      });
+    }
+    months.push({
+      month: new Date(month).toISOString(),
+      availability: toMeanAvailability(monthTotals.get(month)),
+      days,
+    });
+    month = nextMonth;
+  }
+  return { target: SAAS_PLATFORM_SLA_TARGET, months };
+};
+
 const parseStorageUsage = (usage: unknown): SaasPlatformStorageUsage | null => {
   if (!isRecord(usage)) {
     return null;
@@ -133,9 +222,13 @@ const parseSaasPlatformStorage = (
   };
 };
 
-const parseSaasPlatformData = (body: unknown): SaasPlatformData => {
+const parseSaasPlatformData = (
+  body: unknown,
+  slaGrid: SaasPlatformSlaGrid
+): SaasPlatformData => {
   const fields: Record<string, unknown> =
     typeof body === 'object' && body !== null ? { ...body } : {};
+  const metrics = parseSaasPlatformMetrics(fields.metrics);
 
   return {
     metadata: {
@@ -145,8 +238,9 @@ const parseSaasPlatformData = (body: unknown): SaasPlatformData => {
       end_date: readMetadataDate(fields, 'end_date'),
       region: readMetadataString(fields, 'region'),
     },
-    metrics: parseSaasPlatformMetrics(fields.metrics),
+    metrics,
     storage: parseSaasPlatformStorage(fields.storage),
+    sla: parseSaasPlatformSla(metrics, slaGrid),
   };
 };
 
@@ -156,10 +250,19 @@ export const ProductInformationHelper = {
     platformId: string,
     metricsPeriod: SaasPlatformMetricsPeriod
   ): Promise<SaasPlatformData | null> => {
+    const { days, slaMonths } = SAAS_PLATFORM_METRICS_PERIODS[metricsPeriod];
+    const now = new Date();
+    const firstSlaMonth = toUtcMonthStart(now, 1 - slaMonths);
+    // The SaaS Manager only takes a number of days back from now: ask for enough of them to cover the first SLA month
+    // from its midnight, and never fewer than the period.
+    const includeMetrics = Math.max(
+      days,
+      Math.ceil((now.getTime() - firstSlaMonth) / MS_PER_DAY)
+    );
     try {
       const response = await SaasManagerClient.callInstanceApi({
         platform_id: platformId,
-        include_metrics: SAAS_PLATFORM_METRICS_DAYS[metricsPeriod],
+        include_metrics: includeMetrics,
       });
 
       if (response.status !== 200) {
@@ -170,7 +273,10 @@ export const ProductInformationHelper = {
         });
         return null;
       }
-      return parseSaasPlatformData(await response.json());
+      return parseSaasPlatformData(await response.json(), {
+        firstMonth: firstSlaMonth,
+        now,
+      });
     } catch (error) {
       logApp.error('Unable to load the platform data from the SaaS Manager', {
         serviceInstanceId,

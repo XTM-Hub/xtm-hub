@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { formatName, toFiniteNumber, toIsoDate } from './format';
+import {
+  formatName,
+  toFiniteNumber,
+  toIsoDate,
+  toUtcDayStart,
+  toUtcMonthStart,
+} from './format';
 
 describe('toIsoDate', () => {
   it.each`
@@ -22,6 +28,49 @@ describe('toIsoDate', () => {
     ${'undefined'}       | ${undefined}
   `('should return null for $case', ({ input }) => {
     expect(toIsoDate(input)).toBeNull();
+  });
+});
+
+describe('toUtcMonthStart', () => {
+  it.each`
+    date                          | expected
+    ${'2026-10-01T00:00:00.000Z'} | ${'2026-10-01T00:00:00.000Z'}
+    ${'2026-10-27T09:30:00.000Z'} | ${'2026-10-01T00:00:00.000Z'}
+    ${'2026-12-31T23:59:59.999Z'} | ${'2026-12-01T00:00:00.000Z'}
+  `('should return $expected for $date', ({ date, expected }) => {
+    expect(new Date(toUtcMonthStart(new Date(date))).toISOString()).toBe(
+      expected
+    );
+  });
+
+  it.each`
+    date                          | monthOffset | expected
+    ${'2026-10-27T09:30:00.000Z'} | ${-2}       | ${'2026-08-01T00:00:00.000Z'}
+    ${'2026-02-15T12:00:00.000Z'} | ${-5}       | ${'2025-09-01T00:00:00.000Z'}
+    ${'2026-01-31T12:00:00.000Z'} | ${1}        | ${'2026-02-01T00:00:00.000Z'}
+    ${'2026-12-15T00:00:00.000Z'} | ${1}        | ${'2027-01-01T00:00:00.000Z'}
+    ${'2026-11-30T23:59:59.999Z'} | ${14}       | ${'2028-01-01T00:00:00.000Z'}
+  `(
+    'should return $expected for $date shifted by $monthOffset months',
+    ({ date, monthOffset, expected }) => {
+      expect(
+        new Date(toUtcMonthStart(new Date(date), monthOffset)).toISOString()
+      ).toBe(expected);
+    }
+  );
+});
+
+describe('toUtcDayStart', () => {
+  it.each`
+    date                           | expected
+    ${'2026-10-27T00:00:00.000Z'}  | ${'2026-10-27T00:00:00.000Z'}
+    ${'2026-10-27T09:30:00.000Z'}  | ${'2026-10-27T00:00:00.000Z'}
+    ${'2026-12-31T23:59:59.999Z'}  | ${'2026-12-31T00:00:00.000Z'}
+    ${'2026-03-29T01:30:00+02:00'} | ${'2026-03-28T00:00:00.000Z'}
+  `('should return $expected for $date', ({ date, expected }) => {
+    expect(new Date(toUtcDayStart(new Date(date))).toISOString()).toBe(
+      expected
+    );
   });
 });
 

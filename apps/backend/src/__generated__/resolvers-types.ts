@@ -2576,10 +2576,17 @@ export type SsoGroupRolePortal = {
   ssoGroup: Scalars['String']['output'];
 };
 
+export type SaasPlatformDailySla = {
+  __typename?: 'SaasPlatformDailySla';
+  availability?: Maybe<Scalars['Float']['output']>;
+  day: Scalars['Date']['output'];
+};
+
 export type SaasPlatformData = {
   __typename?: 'SaasPlatformData';
   metadata: SaasPlatformMetadata;
   metrics?: Maybe<SaasPlatformMetrics>;
+  sla?: Maybe<SaasPlatformSla>;
   storage?: Maybe<SaasPlatformStorage>;
 };
 
@@ -2613,15 +2620,28 @@ export type SaasPlatformMetrics = {
 };
 
 export enum SaasPlatformMetricsPeriod {
-  Last_7Days = 'last_7_days',
   Last_30Days = 'last_30_days',
-  Last_90Days = 'last_90_days'
+  Last_90Days = 'last_90_days',
+  Last_180Days = 'last_180_days'
 }
+
+export type SaasPlatformMonthlySla = {
+  __typename?: 'SaasPlatformMonthlySla';
+  availability?: Maybe<Scalars['Float']['output']>;
+  days: Array<SaasPlatformDailySla>;
+  month: Scalars['Date']['output'];
+};
 
 export enum SaasPlatformResolution {
   Day = 'day',
   Hour = 'hour'
 }
+
+export type SaasPlatformSla = {
+  __typename?: 'SaasPlatformSla';
+  months: Array<SaasPlatformMonthlySla>;
+  target: Scalars['Float']['output'];
+};
 
 export type SaasPlatformStorage = {
   __typename?: 'SaasPlatformStorage';
@@ -3699,13 +3719,16 @@ export type ResolversTypes = ResolversObject<{
   RolePortal: ResolverTypeWrapper<RolePortal>;
   RssFeed: ResolverTypeWrapper<RssFeed>;
   SSOGroupRolePortal: ResolverTypeWrapper<SsoGroupRolePortal>;
+  SaasPlatformDailySla: ResolverTypeWrapper<SaasPlatformDailySla>;
   SaasPlatformData: ResolverTypeWrapper<SaasPlatformData>;
   SaasPlatformMetadata: ResolverTypeWrapper<SaasPlatformMetadata>;
   SaasPlatformMetricPoint: ResolverTypeWrapper<SaasPlatformMetricPoint>;
   SaasPlatformMetricSeries: ResolverTypeWrapper<SaasPlatformMetricSeries>;
   SaasPlatformMetrics: ResolverTypeWrapper<SaasPlatformMetrics>;
   SaasPlatformMetricsPeriod: SaasPlatformMetricsPeriod;
+  SaasPlatformMonthlySla: ResolverTypeWrapper<SaasPlatformMonthlySla>;
   SaasPlatformResolution: SaasPlatformResolution;
+  SaasPlatformSla: ResolverTypeWrapper<SaasPlatformSla>;
   SaasPlatformStorage: ResolverTypeWrapper<SaasPlatformStorage>;
   SaasPlatformStorageUsage: ResolverTypeWrapper<SaasPlatformStorageUsage>;
   SendTelemetryMutation: ResolverTypeWrapper<SendTelemetryMutation>;
@@ -3948,11 +3971,14 @@ export type ResolversParentTypes = ResolversObject<{
   RolePortal: RolePortal;
   RssFeed: RssFeed;
   SSOGroupRolePortal: SsoGroupRolePortal;
+  SaasPlatformDailySla: SaasPlatformDailySla;
   SaasPlatformData: SaasPlatformData;
   SaasPlatformMetadata: SaasPlatformMetadata;
   SaasPlatformMetricPoint: SaasPlatformMetricPoint;
   SaasPlatformMetricSeries: SaasPlatformMetricSeries;
   SaasPlatformMetrics: SaasPlatformMetrics;
+  SaasPlatformMonthlySla: SaasPlatformMonthlySla;
+  SaasPlatformSla: SaasPlatformSla;
   SaasPlatformStorage: SaasPlatformStorage;
   SaasPlatformStorageUsage: SaasPlatformStorageUsage;
   SendTelemetryMutation: SendTelemetryMutation;
@@ -5031,9 +5057,16 @@ export type SsoGroupRolePortalResolvers<ContextType = PortalContext, ParentType 
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type SaasPlatformDailySlaResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasPlatformDailySla'] = ResolversParentTypes['SaasPlatformDailySla']> = ResolversObject<{
+  availability?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  day?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type SaasPlatformDataResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasPlatformData'] = ResolversParentTypes['SaasPlatformData']> = ResolversObject<{
   metadata?: Resolver<ResolversTypes['SaasPlatformMetadata'], ParentType, ContextType>;
   metrics?: Resolver<Maybe<ResolversTypes['SaasPlatformMetrics']>, ParentType, ContextType>;
+  sla?: Resolver<Maybe<ResolversTypes['SaasPlatformSla']>, ParentType, ContextType>;
   storage?: Resolver<Maybe<ResolversTypes['SaasPlatformStorage']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -5064,6 +5097,19 @@ export type SaasPlatformMetricsResolvers<ContextType = PortalContext, ParentType
   resolution?: Resolver<ResolversTypes['SaasPlatformResolution'], ParentType, ContextType>;
   series?: Resolver<Array<ResolversTypes['SaasPlatformMetricSeries']>, ParentType, ContextType>;
   start?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SaasPlatformMonthlySlaResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasPlatformMonthlySla'] = ResolversParentTypes['SaasPlatformMonthlySla']> = ResolversObject<{
+  availability?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  days?: Resolver<Array<ResolversTypes['SaasPlatformDailySla']>, ParentType, ContextType>;
+  month?: Resolver<ResolversTypes['Date'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SaasPlatformSlaResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasPlatformSla'] = ResolversParentTypes['SaasPlatformSla']> = ResolversObject<{
+  months?: Resolver<Array<ResolversTypes['SaasPlatformMonthlySla']>, ParentType, ContextType>;
+  target?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -5694,11 +5740,14 @@ export type Resolvers<ContextType = PortalContext> = ResolversObject<{
   RolePortal?: RolePortalResolvers<ContextType>;
   RssFeed?: RssFeedResolvers<ContextType>;
   SSOGroupRolePortal?: SsoGroupRolePortalResolvers<ContextType>;
+  SaasPlatformDailySla?: SaasPlatformDailySlaResolvers<ContextType>;
   SaasPlatformData?: SaasPlatformDataResolvers<ContextType>;
   SaasPlatformMetadata?: SaasPlatformMetadataResolvers<ContextType>;
   SaasPlatformMetricPoint?: SaasPlatformMetricPointResolvers<ContextType>;
   SaasPlatformMetricSeries?: SaasPlatformMetricSeriesResolvers<ContextType>;
   SaasPlatformMetrics?: SaasPlatformMetricsResolvers<ContextType>;
+  SaasPlatformMonthlySla?: SaasPlatformMonthlySlaResolvers<ContextType>;
+  SaasPlatformSla?: SaasPlatformSlaResolvers<ContextType>;
   SaasPlatformStorage?: SaasPlatformStorageResolvers<ContextType>;
   SaasPlatformStorageUsage?: SaasPlatformStorageUsageResolvers<ContextType>;
   SendTelemetryMutation?: SendTelemetryMutationResolvers<ContextType>;

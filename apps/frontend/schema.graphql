@@ -1243,6 +1243,23 @@ type SaasPlatformData {
   metadata: SaasPlatformMetadata!
   metrics: SaasPlatformMetrics
   storage: SaasPlatformStorage
+  sla: SaasPlatformSla
+}
+
+type SaasPlatformSla {
+  target: Float!
+  months: [SaasPlatformMonthlySla!]!
+}
+
+type SaasPlatformMonthlySla {
+  month: Date!
+  availability: Float
+  days: [SaasPlatformDailySla!]!
+}
+
+type SaasPlatformDailySla {
+  day: Date!
+  availability: Float
 }
 
 type SaasPlatformMetadata {
@@ -1294,9 +1311,9 @@ enum SaasPlatformResolution {
 }
 
 enum SaasPlatformMetricsPeriod {
-  last_7_days
   last_30_days
   last_90_days
+  last_180_days
 }
 
 input RegisteredSaasPlatformDataInput {

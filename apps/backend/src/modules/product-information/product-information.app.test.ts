@@ -53,6 +53,9 @@ describe('product information app', () => {
     let serviceInstanceId: ServiceInstanceId;
 
     beforeEach(async () => {
+      // The days asked to the SaaS Manager depend on the current date.
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime('2026-10-27T09:00:00.000Z');
       vi.mocked(isFeatureEnabled).mockReturnValue(true);
       requestContext.set(requestContextRegistererUserSecondOrga);
       platformId = uuidv4();
@@ -75,6 +78,7 @@ describe('product information app', () => {
     });
 
     afterEach(async () => {
+      vi.useRealTimers();
       await PlatformConfigurationDomain.deleteConfigurationBy({
         service_instance_id: serviceInstanceId,
       });
@@ -141,6 +145,7 @@ describe('product information app', () => {
         metadata: fullMetadata,
         metrics: null,
         storage: null,
+        sla: null,
       });
     });
 
@@ -171,6 +176,7 @@ describe('product information app', () => {
         metadata: emptyMetadata,
         metrics: null,
         storage: null,
+        sla: null,
       });
     });
 
@@ -196,6 +202,7 @@ describe('product information app', () => {
         metadata: { ...emptyMetadata, hostname: fullMetadata.hostname },
         metrics: null,
         storage: null,
+        sla: null,
       });
     });
 
@@ -233,6 +240,7 @@ describe('product information app', () => {
           },
           metrics: null,
           storage: null,
+          sla: null,
         });
       }
     );
@@ -263,6 +271,7 @@ describe('product information app', () => {
         metadata: fullMetadata,
         metrics: null,
         storage: null,
+        sla: null,
       });
     });
 
@@ -363,6 +372,7 @@ describe('product information app', () => {
           metadata: fullMetadata,
           metrics: null,
           storage: null,
+          sla: null,
         });
         expect(callSpy).toHaveBeenCalledExactlyOnceWith({
           platform_id: platformId,
@@ -372,13 +382,8 @@ describe('product information app', () => {
     );
 
     describe('cache', () => {
-      afterEach(() => {
-        vi.useRealTimers();
-      });
-
       it('should not ask the SaaS Manager again within a minute', async () => {
         // Given
-        vi.useFakeTimers({ toFake: ['Date'] });
         const callSpy = mockSaasManagerFullMetadata();
         await ProductInformationApp.loadRegisteredSaasPlatformData(
           serviceInstanceId,
@@ -397,13 +402,13 @@ describe('product information app', () => {
           metadata: fullMetadata,
           metrics: null,
           storage: null,
+          sla: null,
         });
         expect(callSpy).toHaveBeenCalledOnce();
       });
 
       it('should ask the SaaS Manager again once the minute has passed', async () => {
         // Given
-        vi.useFakeTimers({ toFake: ['Date'] });
         const callSpy = mockSaasManagerFullMetadata();
         await ProductInformationApp.loadRegisteredSaasPlatformData(
           serviceInstanceId,
@@ -432,14 +437,14 @@ describe('product information app', () => {
         // When
         await ProductInformationApp.loadRegisteredSaasPlatformData(
           serviceInstanceId,
-          SaasPlatformMetricsPeriod.Last_7Days
+          SaasPlatformMetricsPeriod.Last_180Days
         );
 
         // Then
         expect(callSpy).toHaveBeenCalledTimes(2);
         expect(callSpy).toHaveBeenLastCalledWith({
           platform_id: platformId,
-          include_metrics: 7,
+          include_metrics: 180,
         });
       });
 
@@ -461,8 +466,8 @@ describe('product information app', () => {
 
         // Then
         expect(data).toEqual([
-          { metadata: fullMetadata, metrics: null, storage: null },
-          { metadata: fullMetadata, metrics: null, storage: null },
+          { metadata: fullMetadata, metrics: null, storage: null, sla: null },
+          { metadata: fullMetadata, metrics: null, storage: null, sla: null },
         ]);
         expect(callSpy).toHaveBeenCalledOnce();
       });
@@ -488,6 +493,7 @@ describe('product information app', () => {
           metadata: fullMetadata,
           metrics: null,
           storage: null,
+          sla: null,
         });
         expect(callSpy).toHaveBeenCalledTimes(2);
       });

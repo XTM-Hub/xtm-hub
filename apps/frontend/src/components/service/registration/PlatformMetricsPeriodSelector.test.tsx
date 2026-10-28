@@ -30,17 +30,17 @@ describe('PlatformMetricsPeriodSelector', () => {
         .getAllByRole('radio')
         .map((radio) => radio.textContent)
     ).toEqual([
-      periodRadioName(SaasPlatformMetricsPeriod.Last_7Days),
       periodRadioName(SaasPlatformMetricsPeriod.Last_30Days),
       periodRadioName(SaasPlatformMetricsPeriod.Last_90Days),
+      periodRadioName(SaasPlatformMetricsPeriod.Last_180Days),
     ]);
   });
 
   it.each`
-    period                                   | days
-    ${SaasPlatformMetricsPeriod.Last_7Days}  | ${7}
-    ${SaasPlatformMetricsPeriod.Last_30Days} | ${30}
-    ${SaasPlatformMetricsPeriod.Last_90Days} | ${90}
+    period                                    | days
+    ${SaasPlatformMetricsPeriod.Last_30Days}  | ${30}
+    ${SaasPlatformMetricsPeriod.Last_90Days}  | ${90}
+    ${SaasPlatformMetricsPeriod.Last_180Days} | ${180}
   `(
     'should check only the $days days radio when the period is $period',
     ({ period }) => {
@@ -73,13 +73,13 @@ describe('PlatformMetricsPeriodSelector', () => {
     // When
     await user.click(
       screen.getByRole('radio', {
-        name: periodRadioName(SaasPlatformMetricsPeriod.Last_7Days),
+        name: periodRadioName(SaasPlatformMetricsPeriod.Last_180Days),
       })
     );
 
     // Then
     expect(onPeriodChange).toHaveBeenCalledExactlyOnceWith(
-      SaasPlatformMetricsPeriod.Last_7Days
+      SaasPlatformMetricsPeriod.Last_180Days
     );
   });
 
@@ -109,7 +109,7 @@ describe('PlatformMetricsPeriodSelector', () => {
     const onPeriodChange = vi.fn();
     const { user } = testRender(
       <PlatformMetricsPeriodSelector
-        period={SaasPlatformMetricsPeriod.Last_7Days}
+        period={SaasPlatformMetricsPeriod.Last_30Days}
         onPeriodChange={onPeriodChange}
       />
     );
@@ -121,11 +121,11 @@ describe('PlatformMetricsPeriodSelector', () => {
     // Then
     expect(
       screen.getByRole('radio', {
-        name: periodRadioName(SaasPlatformMetricsPeriod.Last_30Days),
+        name: periodRadioName(SaasPlatformMetricsPeriod.Last_90Days),
       })
     ).toHaveFocus();
     expect(onPeriodChange).toHaveBeenCalledExactlyOnceWith(
-      SaasPlatformMetricsPeriod.Last_30Days
+      SaasPlatformMetricsPeriod.Last_90Days
     );
   });
 

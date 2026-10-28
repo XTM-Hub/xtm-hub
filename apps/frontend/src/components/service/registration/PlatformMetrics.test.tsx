@@ -5,6 +5,7 @@ import {
   SaasPlatformMetrics,
   SaasPlatformMetricsPeriod,
   SaasPlatformResolution,
+  SaasPlatformSla,
   SaasPlatformStorage,
 } from '@graphql/generated';
 import { screen } from '@testing-library/react';
@@ -48,6 +49,17 @@ const storageUsage = { percent: 50, time: '2026-10-22T12:00:00.000Z' };
 const storage: Pick<SaasPlatformStorage, 'es_used_size' | 's3_used_size'> = {
   es_used_size: { ...storageUsage, used: 1_500_000_000, limit: 3_000_000_000 },
   s3_used_size: { ...storageUsage, used: 4_000_000_000, limit: 8_000_000_000 },
+};
+
+const sla: SaasPlatformSla = {
+  target: 0.9998,
+  months: [
+    {
+      month: '2026-10-01T00:00:00.000Z',
+      availability: 1,
+      days: [{ day: '2026-10-01T00:00:00.000Z', availability: 1 }],
+    },
+  ],
 };
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -165,9 +177,58 @@ describe('PlatformMetrics', () => {
     );
 
     // Then
-    expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(2);
+    expect(
+      screen
+        .getAllByRole('heading', { level: 3 })
+        .map(({ textContent }) => textContent)
+    ).toEqual(['Register.Metrics.StorageTitle']);
+    expect(screen.getAllByRole('heading', { level: 4 })).toHaveLength(2);
     expect(screen.getAllByText('Register.Metrics.UsedOfLimit')).toHaveLength(2);
   });
+
+  it('should display the SLA section when the SLA is known', () => {
+    // Given / When
+    testRender(
+      <PlatformMetrics
+        metrics={metrics}
+        storage={storage}
+        sla={sla}
+        isLoading={false}
+        period={SaasPlatformMetricsPeriod.Last_30Days}
+        onPeriodChange={vi.fn()}
+      />
+    );
+
+    // Then
+    expect(
+      screen
+        .getAllByRole('heading', { level: 3 })
+        .map(({ textContent }) => textContent)
+    ).toEqual(['Register.Metrics.StorageTitle', 'Register.Metrics.SLA.Title']);
+  });
+
+  it.each([[null], [undefined]])(
+    'should hide the SLA section when the SLA is %s',
+    (unknownSla) => {
+      // Given / When
+      testRender(
+        <PlatformMetrics
+          metrics={metrics}
+          storage={storage}
+          sla={unknownSla}
+          isLoading={false}
+          period={SaasPlatformMetricsPeriod.Last_30Days}
+          onPeriodChange={vi.fn()}
+        />
+      );
+
+      // Then
+      expect(
+        screen.queryByRole('heading', { name: 'Register.Metrics.SLA.Title' })
+      ).not.toBeInTheDocument();
+      expect(screen.queryByRole('list')).not.toBeInTheDocument();
+    }
+  );
 
   it.each([[null], [undefined]])(
     'should display the metrics as unavailable when they are %s',

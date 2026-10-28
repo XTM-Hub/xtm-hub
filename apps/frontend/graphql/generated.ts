@@ -2583,10 +2583,17 @@ export type SsoGroupRolePortal = {
   ssoGroup: Scalars['String']['output'];
 };
 
+export type SaasPlatformDailySla = {
+  __typename?: 'SaasPlatformDailySla';
+  availability: Maybe<Scalars['Float']['output']>;
+  day: Scalars['Date']['output'];
+};
+
 export type SaasPlatformData = {
   __typename?: 'SaasPlatformData';
   metadata: SaasPlatformMetadata;
   metrics: Maybe<SaasPlatformMetrics>;
+  sla: Maybe<SaasPlatformSla>;
   storage: Maybe<SaasPlatformStorage>;
 };
 
@@ -2620,15 +2627,28 @@ export type SaasPlatformMetrics = {
 };
 
 export enum SaasPlatformMetricsPeriod {
-  Last_7Days = 'last_7_days',
   Last_30Days = 'last_30_days',
-  Last_90Days = 'last_90_days'
+  Last_90Days = 'last_90_days',
+  Last_180Days = 'last_180_days'
 }
+
+export type SaasPlatformMonthlySla = {
+  __typename?: 'SaasPlatformMonthlySla';
+  availability: Maybe<Scalars['Float']['output']>;
+  days: Array<SaasPlatformDailySla>;
+  month: Scalars['Date']['output'];
+};
 
 export enum SaasPlatformResolution {
   Day = 'day',
   Hour = 'hour'
 }
+
+export type SaasPlatformSla = {
+  __typename?: 'SaasPlatformSla';
+  months: Array<SaasPlatformMonthlySla>;
+  target: Scalars['Float']['output'];
+};
 
 export type SaasPlatformStorage = {
   __typename?: 'SaasPlatformStorage';
@@ -3814,7 +3834,7 @@ export type RegisteredSaasPlatformDataQueryVariables = Exact<{
 }>;
 
 
-export type RegisteredSaasPlatformDataQuery = { __typename?: 'Query', registeredSaasPlatformData: { __typename?: 'SaasPlatformData', metadata: { __typename?: 'SaasPlatformMetadata', hostname: string | null, plan: string | null, start_date: any | null, end_date: any | null, region: string | null }, metrics: { __typename?: 'SaasPlatformMetrics', start: any, end: any, resolution: SaasPlatformResolution, series: Array<{ __typename?: 'SaasPlatformMetricSeries', metric_type: MetricType, points: Array<{ __typename?: 'SaasPlatformMetricPoint', timestamp: any, value: number | null }> }> } | null, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null, used: number | null, limit: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null, used: number | null, limit: number | null } | null } | null } | null };
+export type RegisteredSaasPlatformDataQuery = { __typename?: 'Query', registeredSaasPlatformData: { __typename?: 'SaasPlatformData', metadata: { __typename?: 'SaasPlatformMetadata', hostname: string | null, plan: string | null, start_date: any | null, end_date: any | null, region: string | null }, metrics: { __typename?: 'SaasPlatformMetrics', start: any, end: any, resolution: SaasPlatformResolution, series: Array<{ __typename?: 'SaasPlatformMetricSeries', metric_type: MetricType, points: Array<{ __typename?: 'SaasPlatformMetricPoint', timestamp: any, value: number | null }> }> } | null, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null, used: number | null, limit: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null, used: number | null, limit: number | null } | null } | null, sla: { __typename?: 'SaasPlatformSla', target: number, months: Array<{ __typename?: 'SaasPlatformMonthlySla', month: any, availability: number | null, days: Array<{ __typename?: 'SaasPlatformDailySla', day: any, availability: number | null }> }> } | null } | null };
 
 export type RegisteredPlatformsListQueryVariables = Exact<{
   input: RegisteredPlatformsInput;
@@ -6513,6 +6533,17 @@ export const RegisteredSaasPlatformDataDocument = `
         percent
         used
         limit
+      }
+    }
+    sla {
+      target
+      months {
+        month
+        availability
+        days {
+          day
+          availability
+        }
       }
     }
   }
