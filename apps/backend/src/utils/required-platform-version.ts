@@ -32,7 +32,8 @@ export const RequiredPlatformVersions: RequiredPlatformVersionsConfig = {
   },
   // Stays null until the first OpenCTI version that renders blogpost items is released, so the Hub ships dark.
   NewsFeedBlogpostSupport: {
-    [PlatformIdentifier.Opencti]: null,
+    // TEMPORARY, DO NOT MERGE: test-only version so the feature env can provision blog items. C9 must set the real OpenCTI release (or null).
+    [PlatformIdentifier.Opencti]: '0.0.0',
     [PlatformIdentifier.Openaev]: null,
     [PlatformIdentifier.Xtmone]: null,
   },
