@@ -144,7 +144,6 @@ elasticsearch:
       cpu: "256m"
     limits:
       memory: 4Gi
-  plugin_prometheus_enabled: true
   reindexRemote:
     enabled: false
     serviceName: opensearch-cluster-master
