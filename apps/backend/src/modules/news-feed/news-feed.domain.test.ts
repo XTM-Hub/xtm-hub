@@ -912,6 +912,113 @@ describe('newsFeedDomain', () => {
     });
   });
 
+  describe('provisionLatestBlogpostsToPlatform', () => {
+    const platformId = uuidv4();
+
+    const createBlogpost = (
+      daysAgo: number,
+      overrides: Parameters<typeof TestHelper.newsFeed.createItem>[0] = {}
+    ) =>
+      TestHelper.newsFeed.createItem({
+        title: `Blogpost ${daysAgo} days ago`,
+        type: NewsFeedItemType.BlogPost,
+        platform_identifier: PlatformIdentifier.Opencti,
+        creation_date: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000),
+        ...overrides,
+      });
+
+    it('should provision only the newest active blogposts up to the limit', async () => {
+      // Given
+      const newest = await createBlogpost(1);
+      const second = await createBlogpost(2);
+      await createBlogpost(3);
+
+      // When
+      const provisionedIds =
+        await NewsFeedDomain.provisionLatestBlogpostsToPlatform({
+          platformId,
+          platformIdentifier: PlatformIdentifier.Opencti,
+          limit: 2,
+        });
+
+      // Then
+      expect(provisionedIds).toEqual([newest.id, second.id]);
+      const provisioned = await TestHelper.newsFeed.loadProvisioned({
+        platform_id: platformId,
+      });
+      expect(provisioned.map((row) => row.news_feed_item_id).sort()).toEqual(
+        [newest.id, second.id].sort()
+      );
+    });
+
+    it('should skip deleted blogposts, other types and other products', async () => {
+      // Given
+      const active = await createBlogpost(5);
+      await createBlogpost(1, { is_deleted: true });
+      await createBlogpost(2, {
+        type: NewsFeedItemType.ResourceCustomDashboard,
+      });
+      await createBlogpost(3, {
+        platform_identifier: PlatformIdentifier.Openaev,
+      });
+
+      // When
+      const provisionedIds =
+        await NewsFeedDomain.provisionLatestBlogpostsToPlatform({
+          platformId,
+          platformIdentifier: PlatformIdentifier.Opencti,
+          limit: 6,
+        });
+
+      // Then
+      expect(provisionedIds).toEqual([active.id]);
+      const provisioned = await TestHelper.newsFeed.loadProvisioned({
+        platform_id: platformId,
+      });
+      expect(provisioned).toMatchObject([
+        { news_feed_item_id: active.id, platform_id: platformId },
+      ]);
+    });
+
+    it('should provision nothing when the product has no blogpost', async () => {
+      // When
+      const provisionedIds =
+        await NewsFeedDomain.provisionLatestBlogpostsToPlatform({
+          platformId,
+          platformIdentifier: PlatformIdentifier.Opencti,
+          limit: 6,
+        });
+
+      // Then
+      expect(provisionedIds).toEqual([]);
+      expect(
+        await TestHelper.newsFeed.loadProvisioned({ platform_id: platformId })
+      ).toHaveLength(0);
+    });
+
+    it('should be idempotent when called twice for the same platform', async () => {
+      // Given
+      const blogpost = await createBlogpost(1);
+      const input = {
+        platformId,
+        platformIdentifier: PlatformIdentifier.Opencti,
+        limit: 6,
+      };
+      await NewsFeedDomain.provisionLatestBlogpostsToPlatform(input);
+
+      // When
+      await NewsFeedDomain.provisionLatestBlogpostsToPlatform(input);
+
+      // Then
+      const provisioned = await TestHelper.newsFeed.loadProvisioned({
+        platform_id: platformId,
+      });
+      expect(provisioned).toMatchObject([
+        { news_feed_item_id: blogpost.id, platform_id: platformId },
+      ]);
+    });
+  });
+
   describe('deleteNewsFeedItemsOlderThan', () => {
     const REFERENCE_NOW = new Date();
 
