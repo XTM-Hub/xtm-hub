@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test';
+import { Page, WebSocket } from '@playwright/test';
 import { expect } from '../../fixtures/baseFixtures';
 
 // What OpenCTI calls each news feed type: the toast announces "New <name>", the settings list "<name>".
@@ -15,6 +15,7 @@ export const NEWS_FEED_TYPES = {
 
 const ALL_TYPES_SWITCH_LABEL = 'Enable News Feed notifications';
 const TOAST_SUBSCRIPTION = 'NewsFeedToastManagerSubscription';
+const PAGE_SUBSCRIPTION = 'RootMeSubscription';
 const TOGGLE_SAVED_MUTATION = 'NewsFeedPageFieldPatchMutation';
 
 // The XTM Hub News Feed of a real OpenCTI: its toasts, its datatable and the news feed preferences of the user.
@@ -30,13 +31,13 @@ export default class OpenctiNewsFeedPage {
     return this.page.getByRole('row').filter({ hasText: title });
   }
 
-  // A toast has no role or test id: it is the innermost block holding both the title and the link to XTM Hub.
+  // The toast of OpenCTI has no role, label or test id, and this repository does not change OpenCTI to give it one:
+  // it is the nearest block around its title that holds the link to XTM Hub. Look for toasts on a page without the
+  // News Feed datatable (see openDashboard): its rows hold the same titles and links.
   getToast(title: string) {
     return this.page
-      .locator('div')
-      .filter({ has: this.page.getByText(title, { exact: true }) })
-      .filter({ has: this.page.getByRole('link') })
-      .last();
+      .getByText(title, { exact: true })
+      .locator('xpath=ancestor::div[.//a][1]');
   }
 
   getToastLink(title: string) {
@@ -51,24 +52,57 @@ export default class OpenctiNewsFeedPage {
     await this.page.goto(`${this.openctiUrl}/dashboard`);
   }
 
+  // The subscriptions OpenCTI sends over its websocket, as long as the watch is not stopped.
+  private watchSubscriptions() {
+    const sent: string[] = [];
+    const watch = (webSocket: WebSocket) =>
+      webSocket.on('framesent', ({ payload }) => {
+        sent.push(String(payload));
+      });
+    this.page.on('websocket', watch);
+    return {
+      hasSent: (subscription: string) =>
+        sent.some((frame) => frame.includes(subscription)),
+      stop: () => this.page.off('websocket', watch),
+    };
+  }
+
   // OpenCTI announces an item with a toast through a subscription it opens when a page loads, and never replays it:
   // an item pulled before that is not announced. Opens a page where the toast shows, once the subscription is open.
-  // A user unsubscribed from every type has no subscription: use openDashboard for that user.
+  // A user unsubscribed from every type has no subscription: use openDashboardWithoutToasts for that user.
   async openToastPage() {
-    let subscribed = false;
-    this.page.on('websocket', (webSocket) =>
-      webSocket.on('framesent', ({ payload }) => {
-        if (String(payload).includes(TOAST_SUBSCRIPTION)) {
-          subscribed = true;
-        }
-      })
-    );
-    await this.openDashboard();
-    await expect
-      .poll(() => subscribed, {
-        message: 'OpenCTI did not subscribe to the news feed toasts',
-      })
-      .toBe(true);
+    const subscriptions = this.watchSubscriptions();
+    try {
+      await this.openDashboard();
+      await expect
+        .poll(() => subscriptions.hasSent(TOAST_SUBSCRIPTION), {
+          message: 'OpenCTI did not subscribe to the news feed toasts',
+        })
+        .toBe(true);
+    } finally {
+      subscriptions.stop();
+    }
+  }
+
+  // Opens a page of a user unsubscribed from every type, and checks that OpenCTI does not listen to toasts on it.
+  // OpenCTI opens its RootMeSubscription on every page: once it is sent, the page has opened its subscriptions, so
+  // the absence of the toast subscription is not just a page that has not finished loading.
+  async openDashboardWithoutToasts() {
+    const subscriptions = this.watchSubscriptions();
+    try {
+      await this.openDashboard();
+      await expect
+        .poll(() => subscriptions.hasSent(PAGE_SUBSCRIPTION), {
+          message: 'OpenCTI did not open the subscriptions of its page',
+        })
+        .toBe(true);
+      expect(
+        subscriptions.hasSent(TOAST_SUBSCRIPTION),
+        'OpenCTI subscribed to the news feed toasts of a user unsubscribed from all the types'
+      ).toBe(false);
+    } finally {
+      subscriptions.stop();
+    }
   }
 
   // OpenCTI pulls the news feed from XTM Hub in a background job, not when the page opens: reload until it shows.

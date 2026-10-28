@@ -160,7 +160,12 @@ test.describe('OpenCTI news feed', () => {
 
     await test.step('preferences: unsubscribe from all the types', async () => {
       await newsFeedPage.setSubscription('all', false);
-      await newsFeedPage.openDashboard();
+    });
+
+    // OpenCTI announces an item to the pages that listen to toasts: a user unsubscribed from every type has none,
+    // so no toast can show, whatever XTM Hub gives. The News Feed of the user checks what OpenCTI delivered.
+    await test.step('toast: OpenCTI does not listen to the toasts', async () => {
+      await newsFeedPage.openDashboardWithoutToasts();
     });
 
     await test.step('publication: OpenCTI pulls a dashboard, a custom view, then a barrier', async () => {
@@ -175,12 +180,6 @@ test.describe('OpenCTI news feed', () => {
       // OpenCTI starts the pull of the barrier when it is done with the custom view, which is then no longer
       // waiting to arrive. The barrier itself may still be processed: it is not checked.
       await provisionAndWaitUntilPulled('RESOURCE_CUSTOM_DASHBOARD', barrier);
-    });
-
-    await test.step('toast: nothing is announced', async () => {
-      for (const title of ignored) {
-        await expect(newsFeedPage.getToast(title)).toHaveCount(0);
-      }
     });
 
     await test.step('datatable: nothing is in the News Feed', async () => {
