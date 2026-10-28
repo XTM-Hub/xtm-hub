@@ -1,3 +1,4 @@
+import config from 'config';
 import {
   NewsFeedItemType,
   PlatformIdentifier,
@@ -31,7 +32,34 @@ export const doesPlatformSupportNewsFeed = (
   return doesVersionSatisfy({ givenVersion: version, requiredVersion });
 };
 
+// Opposite of doesPlatformSupportNewsFeed: a null required version means blogpost items are disabled
+export const doesPlatformSupportBlogpostNewsFeed = (
+  identifier: PlatformIdentifier,
+  version?: string | null
+): boolean => {
+  const requiredVersion =
+    RequiredPlatformVersions.NewsFeedBlogpostSupport[identifier];
+  if (!requiredVersion) return false;
+  if (!version || !isValidVersion(version)) return false;
+  return doesVersionSatisfy({ givenVersion: version, requiredVersion });
+};
+
 export const NewsFeedHelper = {
+  // Number of newest blog posts kept per product
+  getBlogpostLimit: (): number => {
+    const rawValue = config.get('news_feed.blogpost_limit');
+    if (
+      typeof rawValue !== 'number' ||
+      !Number.isInteger(rawValue) ||
+      rawValue <= 0
+    ) {
+      throw new Error(
+        `Invalid config "news_feed.blogpost_limit": expected positive integer, got ${typeof rawValue} (${rawValue})`
+      );
+    }
+    return rawValue;
+  },
+
   getNewsFeedConfiguration: (
     serviceDefinitionIdentifier: ServiceDefinitionIdentifier,
     document: Document

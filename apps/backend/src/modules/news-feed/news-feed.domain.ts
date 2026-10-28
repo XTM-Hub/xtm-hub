@@ -15,7 +15,9 @@ import NewsFeedItem, {
 } from '../../model/kanel/public/NewsFeedItem';
 import NewsFeedItemMetadata from '../../model/kanel/public/NewsFeedItemMetadata';
 import { ErrorCode } from '../../utils/error/error.code';
+import { doesPlatformSupportBlogpostNewsFeed } from './news-feed.helper';
 import {
+  blogpostProductMapping,
   NEWS_FEED_INTERNAL_METADATA_KEYS,
   newsFeedConfigurationMapping,
 } from './news-feed.model';
@@ -25,12 +27,23 @@ export interface NewsFeedItemWithMetadata extends NewsFeedItem {
 }
 
 export const NewsFeedDomain = {
+  // BLOG_POST is listed only for platforms whose version supports blogpost items: it is also what shows the
+  // OpenCTI See all link
   loadAvailableNewsFeedTypes: (
-    platformIdentifier: PlatformIdentifier
+    platformIdentifier: PlatformIdentifier,
+    platformVersion?: string | null
   ): NewsFeedItemType[] => {
-    return Object.values(newsFeedConfigurationMapping)
+    const resourceTypes = Object.values(newsFeedConfigurationMapping)
       .filter((config) => config.platformIdentifier === platformIdentifier)
       .map((config) => config.newsFeedType);
+
+    const supportsBlogpost =
+      Object.values(blogpostProductMapping).includes(platformIdentifier) &&
+      doesPlatformSupportBlogpostNewsFeed(platformIdentifier, platformVersion);
+
+    return supportsBlogpost
+      ? [...resourceTypes, NewsFeedItemType.BlogPost]
+      : resourceTypes;
   },
 
   loadAndConsumeProvisionedNewsFeedItems: async (
