@@ -1,6 +1,6 @@
 import { Knex } from 'knex';
 import { v4 as uuidv4 } from 'uuid';
-import { db, paginate } from '../../../knexfile';
+import { db } from '../../../knexfile';
 import {
   CommercialModel,
   DeploymentRequestDeploymentType,
@@ -10,9 +10,6 @@ import {
   PlatformContract,
   PlatformIdentifier,
   PortalCapability,
-  QuerySaasPlatformsArgs,
-  RegisteredPlatformConnection,
-  RegisteredPlatformOrdering,
   ServiceDefinitionIdentifier,
   ServiceInstanceCreationStatus,
 } from '../../__generated__/resolvers-types';
@@ -68,22 +65,6 @@ const RegisteredPlatformsSelectColumns = [
   'ServiceInstance.id as id',
   'ServiceInstance.illustration_document_id as illustration_document_id',
   'PlatformConfiguration.*',
-] as const;
-
-const SaasPlatformsSelectColumns = [
-  'ServiceInstance.id as id',
-  'ServiceInstance.id as service_instance_id',
-  'ServiceDefinition.identifier as identifier',
-  'ServiceInstance.illustration_document_id as illustration_document_id',
-  'PlatformConfiguration.platform_id as platform_id',
-  'PlatformConfiguration.tenant_id as tenant_id',
-  'PlatformConfiguration.tenant_name as tenant_name',
-  'PlatformConfiguration.platform_title as title',
-  'PlatformConfiguration.platform_url as url',
-  'PlatformConfiguration.platform_contract as contract',
-  'PlatformConfiguration.platform_version as version',
-  'PlatformConfiguration.status as status',
-  'PlatformConfiguration.last_connectivity_check as last_connectivity_check',
 ] as const;
 
 export const RegistrationDomain = {
@@ -274,65 +255,6 @@ export const RegistrationDomain = {
         PlatformConfigurationStatus.Active
       )
       .select(RegisteredPlatformsSelectColumns);
-  },
-
-  loadSaasPlatforms: async ({
-    searchTerm,
-    ...pagination
-  }: QuerySaasPlatformsArgs): Promise<RegisteredPlatformConnection> => {
-    const query = getRegisteredPlatformsBaseQuery()
-      .queryContext({ __typename: 'RegisteredPlatform' })
-      .where(
-        'ServiceDefinition.identifier',
-        '=',
-        serviceDefinitionIdentifierMappedByPlatformIdentifier[
-          PlatformIdentifier.Opencti
-        ]
-      )
-      .where(
-        'PlatformConfiguration.status',
-        '=',
-        PlatformConfigurationStatus.Active
-      )
-      .where(
-        'PlatformConfiguration.commercial_model',
-        '=',
-        CommercialModel.Saas
-      )
-      .select(SaasPlatformsSelectColumns);
-
-    if (
-      searchTerm ||
-      pagination.orderBy === RegisteredPlatformOrdering.OrganizationName
-    ) {
-      query
-        .leftJoin(
-          getPlatformOwnerSubscriptionsQuery()
-            .select('service_instance_id', 'organization_id')
-            .as('OwnerSubscription'),
-          'OwnerSubscription.service_instance_id',
-          '=',
-          'ServiceInstance.id'
-        )
-        .leftJoin(
-          'Organization',
-          'Organization.id',
-          '=',
-          'OwnerSubscription.organization_id'
-        )
-        .select('Organization.name as organization_name');
-    }
-
-    if (searchTerm) {
-      query.whereILike('Organization.name', `%${searchTerm}%`);
-    }
-
-    return paginate<ServiceInstance, RegisteredPlatformConnection>(
-      'ServiceInstance',
-      pagination,
-      undefined,
-      query
-    );
   },
 
   loadRegisteredPlatforms: async (

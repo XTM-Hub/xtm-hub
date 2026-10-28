@@ -2031,7 +2031,6 @@ export type Query = {
   registeredSaasPlatformData?: Maybe<SaasPlatformData>;
   rolePortals: Array<RolePortal>;
   saasManagerPlatforms?: Maybe<SaasPlatformPage>;
-  saasPlatforms: RegisteredPlatformConnection;
   seoServiceInstance: SeoServiceInstance;
   seoServiceInstanceMetadata: Array<SeoServiceInstanceMetadata>;
   seoServiceInstances: Array<SeoServiceInstance>;
@@ -2281,15 +2280,6 @@ export type QuerySaasManagerPlatformsArgs = {
 };
 
 
-export type QuerySaasPlatformsArgs = {
-  after?: InputMaybe<Scalars['ID']['input']>;
-  first: Scalars['Int']['input'];
-  orderBy: RegisteredPlatformOrdering;
-  orderMode: OrderingMode;
-  searchTerm?: InputMaybe<Scalars['String']['input']>;
-};
-
-
 export type QuerySeoServiceInstanceArgs = {
   slug: Scalars['String']['input'];
 };
@@ -2486,26 +2476,9 @@ export type RegisteredPlatform = Node & {
   version?: Maybe<Scalars['String']['output']>;
 };
 
-export type RegisteredPlatformConnection = {
-  __typename?: 'RegisteredPlatformConnection';
-  edges: Array<RegisteredPlatformEdge>;
-  pageInfo: PageInfo;
-  totalCount: Scalars['Int']['output'];
-};
-
-export type RegisteredPlatformEdge = {
-  __typename?: 'RegisteredPlatformEdge';
-  cursor: Scalars['String']['output'];
-  node: RegisteredPlatform;
-};
-
 export type RegisteredPlatformInput = {
   service_instance_id: Scalars['ServiceInstanceId']['input'];
 };
-
-export enum RegisteredPlatformOrdering {
-  OrganizationName = 'organization_name'
-}
 
 export type RegisteredPlatformsInput = {
   hasDeployedResources?: InputMaybe<Scalars['Boolean']['input']>;
@@ -3743,10 +3716,7 @@ export type ResolversTypes = ResolversObject<{
   RefreshUserPlatformTokenResponse: ResolverTypeWrapper<RefreshUserPlatformTokenResponse>;
   RegisterPlatformInput: RegisterPlatformInput;
   RegisteredPlatform: ResolverTypeWrapper<RegisteredPlatform>;
-  RegisteredPlatformConnection: ResolverTypeWrapper<RegisteredPlatformConnection>;
-  RegisteredPlatformEdge: ResolverTypeWrapper<RegisteredPlatformEdge>;
   RegisteredPlatformInput: RegisteredPlatformInput;
-  RegisteredPlatformOrdering: RegisteredPlatformOrdering;
   RegisteredPlatformsInput: RegisteredPlatformsInput;
   RegisteredProductVersion: ResolverTypeWrapper<RegisteredProductVersion>;
   RegisteredSaasPlatformDataInput: RegisteredSaasPlatformDataInput;
@@ -4000,8 +3970,6 @@ export type ResolversParentTypes = ResolversObject<{
   RefreshUserPlatformTokenResponse: RefreshUserPlatformTokenResponse;
   RegisterPlatformInput: RegisterPlatformInput;
   RegisteredPlatform: RegisteredPlatform;
-  RegisteredPlatformConnection: RegisteredPlatformConnection;
-  RegisteredPlatformEdge: RegisteredPlatformEdge;
   RegisteredPlatformInput: RegisteredPlatformInput;
   RegisteredPlatformsInput: RegisteredPlatformsInput;
   RegisteredProductVersion: RegisteredProductVersion;
@@ -4966,7 +4934,6 @@ export type QueryResolvers<ContextType = PortalContext, ParentType extends Resol
   registeredSaasPlatformData?: Resolver<Maybe<ResolversTypes['SaasPlatformData']>, ParentType, ContextType, RequireFields<QueryRegisteredSaasPlatformDataArgs, 'input'>>;
   rolePortals?: Resolver<Array<ResolversTypes['RolePortal']>, ParentType, ContextType>;
   saasManagerPlatforms?: Resolver<Maybe<ResolversTypes['SaasPlatformPage']>, ParentType, ContextType, RequireFields<QuerySaasManagerPlatformsArgs, 'orderBy' | 'orderMode' | 'page' | 'pageSize'>>;
-  saasPlatforms?: Resolver<ResolversTypes['RegisteredPlatformConnection'], ParentType, ContextType, RequireFields<QuerySaasPlatformsArgs, 'first' | 'orderBy' | 'orderMode'>>;
   seoServiceInstance?: Resolver<ResolversTypes['SeoServiceInstance'], ParentType, ContextType, RequireFields<QuerySeoServiceInstanceArgs, 'slug'>>;
   seoServiceInstanceMetadata?: Resolver<Array<ResolversTypes['SeoServiceInstanceMetadata']>, ParentType, ContextType, RequireFields<QuerySeoServiceInstanceMetadataArgs, 'service_instance_id'>>;
   seoServiceInstances?: Resolver<Array<ResolversTypes['SeoServiceInstance']>, ParentType, ContextType>;
@@ -5027,19 +4994,6 @@ export type RegisteredPlatformResolvers<ContextType = PortalContext, ParentType 
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   url?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   version?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type RegisteredPlatformConnectionResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['RegisteredPlatformConnection'] = ResolversParentTypes['RegisteredPlatformConnection']> = ResolversObject<{
-  edges?: Resolver<Array<ResolversTypes['RegisteredPlatformEdge']>, ParentType, ContextType>;
-  pageInfo?: Resolver<ResolversTypes['PageInfo'], ParentType, ContextType>;
-  totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type RegisteredPlatformEdgeResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['RegisteredPlatformEdge'] = ResolversParentTypes['RegisteredPlatformEdge']> = ResolversObject<{
-  cursor?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  node?: Resolver<ResolversTypes['RegisteredPlatform'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -5795,8 +5749,6 @@ export type Resolvers<ContextType = PortalContext> = ResolversObject<{
   RefreshPlatformRegistrationConnectivityStatusResponse?: RefreshPlatformRegistrationConnectivityStatusResponseResolvers<ContextType>;
   RefreshUserPlatformTokenResponse?: RefreshUserPlatformTokenResponseResolvers<ContextType>;
   RegisteredPlatform?: RegisteredPlatformResolvers<ContextType>;
-  RegisteredPlatformConnection?: RegisteredPlatformConnectionResolvers<ContextType>;
-  RegisteredPlatformEdge?: RegisteredPlatformEdgeResolvers<ContextType>;
   RegisteredProductVersion?: RegisteredProductVersionResolvers<ContextType>;
   RegistrationResponse?: RegistrationResponseResolvers<ContextType>;
   RolePortal?: RolePortalResolvers<ContextType>;

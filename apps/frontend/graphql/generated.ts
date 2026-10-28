@@ -2038,7 +2038,6 @@ export type Query = {
   registeredSaasPlatformData: Maybe<SaasPlatformData>;
   rolePortals: Array<RolePortal>;
   saasManagerPlatforms: Maybe<SaasPlatformPage>;
-  saasPlatforms: RegisteredPlatformConnection;
   seoServiceInstance: SeoServiceInstance;
   seoServiceInstanceMetadata: Array<SeoServiceInstanceMetadata>;
   seoServiceInstances: Array<SeoServiceInstance>;
@@ -2288,15 +2287,6 @@ export type QuerySaasManagerPlatformsArgs = {
 };
 
 
-export type QuerySaasPlatformsArgs = {
-  after: InputMaybe<Scalars['ID']['input']>;
-  first: Scalars['Int']['input'];
-  orderBy: RegisteredPlatformOrdering;
-  orderMode: OrderingMode;
-  searchTerm: InputMaybe<Scalars['String']['input']>;
-};
-
-
 export type QuerySeoServiceInstanceArgs = {
   slug: Scalars['String']['input'];
 };
@@ -2493,26 +2483,9 @@ export type RegisteredPlatform = Node & {
   version: Maybe<Scalars['String']['output']>;
 };
 
-export type RegisteredPlatformConnection = {
-  __typename?: 'RegisteredPlatformConnection';
-  edges: Array<RegisteredPlatformEdge>;
-  pageInfo: PageInfo;
-  totalCount: Scalars['Int']['output'];
-};
-
-export type RegisteredPlatformEdge = {
-  __typename?: 'RegisteredPlatformEdge';
-  cursor: Scalars['String']['output'];
-  node: RegisteredPlatform;
-};
-
 export type RegisteredPlatformInput = {
   service_instance_id: Scalars['ServiceInstanceId']['input'];
 };
-
-export enum RegisteredPlatformOrdering {
-  OrganizationName = 'organization_name'
-}
 
 export type RegisteredPlatformsInput = {
   hasDeployedResources: InputMaybe<Scalars['Boolean']['input']>;
