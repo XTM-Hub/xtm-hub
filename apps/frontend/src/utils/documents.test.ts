@@ -1,5 +1,5 @@
 import type { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
-import { DocumentImageType } from '@graphql/generated';
+import { DocumentImageType, DocumentSourceType } from '@graphql/generated';
 import {
   docIsExistingFile,
   filterDocumentImages,
@@ -13,6 +13,48 @@ const EXISTING_IMAGE_ID = 'existing-image-id';
 const EXISTING_FILE_NAME = 'existing.png';
 const NEW_FILE_NAME = 'new.png';
 const NEW_FILE_PREVIEW = 'data:image/png;base64,AAAA';
+const CREATED_AT = '2025-01-01T00:00:00.000Z';
+
+const makeChild = (id: string, imageType: DocumentImageType) => ({
+  active: true,
+  created_at: CREATED_AT,
+  description: null,
+  download_number: null,
+  file_name: `${id}.png`,
+  id,
+  image_type: imageType,
+  name: null,
+  source_type: DocumentSourceType.Internal,
+});
+
+const makeDocument = (
+  children: documentItem_fragment$data['children_documents']
+): documentItem_fragment$data => ({
+  __typename: 'Document',
+  active: true,
+  children_documents: children,
+  created_at: CREATED_AT,
+  description: null,
+  download_number: null,
+  file_name: null,
+  id: 'document-id',
+  name: null,
+  service_instance: null,
+  share_number: null,
+  short_description: null,
+  slug: null,
+  subscription: null,
+  type: 'document',
+  updated_at: null,
+  uploader: null,
+  uploader_organization: null,
+  use_cases: null,
+  ' $fragmentType': 'documentItem_fragment',
+});
+
+const LOGO = makeChild('logo-id', DocumentImageType.Logo);
+const IMAGE = makeChild('image-id', DocumentImageType.Image);
+const OTHER_IMAGE = makeChild('other-image-id', DocumentImageType.Image);
 
 const makeExistingImage = () => ({
   id: EXISTING_IMAGE_ID,
@@ -27,41 +69,32 @@ const makeNewImage = () =>
 describe('Documents utils', () => {
   describe('filterDocumentImages', () => {
     it.each`
-      title                                      | document                                                                                                                         | expected
-      ${'only images'}                           | ${{ children_documents: [{ id: '1', image_type: 'image' }, { id: '2', image_type: 'logo' }, { id: '3', image_type: 'image' }] }} | ${[{ id: '1', image_type: 'image' }, { id: '3', image_type: 'image' }]}
-      ${'empty array if no children'}            | ${{}}                                                                                                                            | ${[]}
-      ${'empty array if no images'}              | ${{ children_documents: [{ id: '1', image_type: 'logo' }, { id: '2', image_type: 'logo' }] }}                                    | ${[]}
-      ${'empty array if null children_document'} | ${{ children_documents: null }}                                                                                                  | ${[]}
-    `('should return $title', ({ document, expected }) => {
-      const result = filterDocumentImages(
-        document as unknown as documentItem_fragment$data
-      );
+      title                                      | children                      | expected
+      ${'only images'}                           | ${[IMAGE, LOGO, OTHER_IMAGE]} | ${[IMAGE, OTHER_IMAGE]}
+      ${'empty array if no children'}            | ${undefined}                  | ${[]}
+      ${'empty array if no images'}              | ${[LOGO]}                     | ${[]}
+      ${'empty array if null children_document'} | ${null}                       | ${[]}
+    `('should return $title', ({ children, expected }) => {
+      const result = filterDocumentImages(makeDocument(children));
       expect(result).toEqual(expected);
     });
   });
 
   describe('findDocumentLogo', () => {
     it('should return logo when child has image_type LOGO', () => {
-      const document = {
-        children_documents: [
-          { id: '1', image_type: 'logo' },
-          { id: '2', image_type: 'image' },
-        ],
-      } as unknown as documentItem_fragment$data;
+      const document = makeDocument([LOGO, IMAGE]);
       const result = findDocumentLogo(document);
-      expect(result).toStrictEqual({ id: '1', image_type: 'logo' });
+      expect(result).toStrictEqual(LOGO);
     });
 
     it.each`
-      title                                           | document
-      ${'undefined if no child with image_type LOGO'} | ${{ children_documents: [{ id: '1', image_type: 'image' }, { id: '2', image_type: 'image' }] }}
-      ${'undefined if children_documents is empty'}   | ${{ children_documents: [] }}
-      ${'undefined if children_documents is null'}    | ${{ children_documents: null }}
-      ${'undefined if children_documents is missing'} | ${{}}
-    `('should return $title', ({ document }) => {
-      const result = findDocumentLogo(
-        document as unknown as documentItem_fragment$data
-      );
+      title                                           | children
+      ${'undefined if no child with image_type LOGO'} | ${[IMAGE, OTHER_IMAGE]}
+      ${'undefined if children_documents is empty'}   | ${[]}
+      ${'undefined if children_documents is null'}    | ${null}
+      ${'undefined if children_documents is missing'} | ${undefined}
+    `('should return $title', ({ children }) => {
+      const result = findDocumentLogo(makeDocument(children));
       expect(result).toBeUndefined();
     });
   });
@@ -109,12 +142,12 @@ describe('Documents utils', () => {
       });
     });
 
-    it('should not send the preview of a new image to the server', () => {
+    it('should strip the preview in place from the new image held by the form', () => {
       // Given
-      const images = [makeNewImage()];
+      const newImage = makeNewImage();
 
       // When
-      const [, [newImage]] = splitExistingAndNewImages(images);
+      splitExistingAndNewImages([newImage]);
 
       // Then
       expect(newImage).not.toHaveProperty('preview');
@@ -133,51 +166,48 @@ describe('Documents utils', () => {
   });
 
   describe('transformToFileList', () => {
-    const LOGO = { id: 'logo-id', image_type: DocumentImageType.Logo };
-    const IMAGE = { id: 'image-id', image_type: DocumentImageType.Image };
-
     it.each([
       [
-        'logos',
-        'mixed children',
+        'the logo of a document with mixed children',
         DocumentImageType.Logo,
-        { children_documents: [LOGO, IMAGE] },
+        [LOGO, IMAGE],
         [LOGO],
       ],
       [
-        'images',
-        'mixed children',
+        'the images of a document with mixed children',
         DocumentImageType.Image,
-        { children_documents: [LOGO, IMAGE] },
+        [LOGO, IMAGE],
         [IMAGE],
       ],
       [
-        'no image',
-        'only a logo',
+        'no image of a document with only a logo',
         DocumentImageType.Image,
-        { children_documents: [LOGO] },
+        [LOGO],
         [],
       ],
       [
-        'no image',
-        'no children',
+        'no image of a document without children',
         DocumentImageType.Image,
-        { children_documents: null },
+        null,
         [],
       ],
-      ['no image', 'no document', DocumentImageType.Image, undefined, []],
-    ])(
-      'should keep %s when the document has %s',
-      (_kept, _context, imageType, document, expected) => {
-        // Given / When
-        const result = transformToFileList(
-          imageType,
-          document as unknown as documentItem_fragment$data
-        );
+    ])('should keep %s', (_context, imageType, children, expected) => {
+      // Given
+      const document = makeDocument(children);
 
-        // Then
-        expect(result).toEqual(expected);
-      }
-    );
+      // When
+      const result = transformToFileList(imageType, document);
+
+      // Then
+      expect(result).toEqual(expected);
+    });
+
+    it('should keep no image when there is no document', () => {
+      // Given / When
+      const result = transformToFileList(DocumentImageType.Image);
+
+      // Then
+      expect(result).toEqual([]);
+    });
   });
 });
