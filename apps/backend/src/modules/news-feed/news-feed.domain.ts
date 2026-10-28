@@ -245,6 +245,15 @@ export const NewsFeedDomain = {
     return { ...newsFeedItem, metadata };
   },
 
+  loadNewsFeedItemTypeById: async (
+    id: NewsFeedItemId
+  ): Promise<NewsFeedItemType | undefined> => {
+    const newsFeedItem = await db<NewsFeedItem>('NewsFeedItem')
+      .where({ id })
+      .first('type');
+    return newsFeedItem?.type as NewsFeedItemType | undefined;
+  },
+
   loadNewsFeedItemByDocumentId: async (
     documentId: string
   ): Promise<NewsFeedItem | undefined> => {

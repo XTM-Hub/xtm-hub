@@ -393,6 +393,32 @@ describe('newsFeedDomain', () => {
     });
   });
 
+  describe('loadNewsFeedItemTypeById', () => {
+    it.each([NewsFeedItemType.BlogPost, NewsFeedItemType.ResourcePlaybook])(
+      'should return the type %s of the item',
+      async (type) => {
+        // Given
+        const item = await TestHelper.newsFeed.createItem({ type });
+
+        // When
+        const result = await NewsFeedDomain.loadNewsFeedItemTypeById(item.id);
+
+        // Then
+        expect(result).toBe(type);
+      }
+    );
+
+    it('should return undefined when the item does not exist', async () => {
+      // When
+      const result = await NewsFeedDomain.loadNewsFeedItemTypeById(
+        uuidv4() as NewsFeedItemId
+      );
+
+      // Then
+      expect(result).toBeUndefined();
+    });
+  });
+
   describe('loadNewsFeedItemByDocumentId', () => {
     it('should return undefined when no metadata matches the document id', async () => {
       const result =

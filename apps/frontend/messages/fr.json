@@ -310,6 +310,7 @@
       "CANT_ADD_DISABLED_USER": "Vous ne pouvez pas ajouter un utilisateur qui est désactivé sur la plateforme",
       "CANT_ADD_USER_TO_PERSONAL_SPACE": "Vous ne pouvez pas ajouter un utilisateur à votre espace personnel",
       "CANT_CANCEL_BUNDLE_PRODUCT": "Un produit d'un XTM Platform Trial ne peut pas être annulé seul",
+      "CANT_DELETE_BLOGPOST_NEWS_FEED_ITEM": "Vous ne pouvez pas supprimer un article de blog : il est géré par la synchronisation",
       "CANT_DELETE_BUILTIN_USER": "Cet utilisateur intégré ne peut pas être supprimé",
       "CANT_DELETE_YOURSELF": "Vous ne pouvez pas supprimer votre propre compte",
       "CANT_REMOVE_LAST_ADMINISTRATOR": "Vous ne pouvez pas supprimer le dernier administrateur d'une organisation",
