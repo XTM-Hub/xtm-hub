@@ -43,12 +43,6 @@ test.describe('XTM Platform bundle trial', () => {
       ).toBeVisible();
       await expect(page.getByText('Requested on')).toBeVisible();
       await expect(
-        page.getByText('Products included in your trial request')
-      ).toBeVisible();
-      for (const product of BUNDLE_PRODUCTS) {
-        await expect(trialPage.getStatusProductCheckbox(product)).toBeChecked();
-      }
-      await expect(
         page.getByRole('button', { name: 'Cancel trial request' })
       ).toBeVisible();
     });
@@ -158,12 +152,6 @@ test.describe('XTM Platform bundle trial', () => {
 
       await expect(page.getByText('Started on')).toBeVisible();
       await expect(page.getByText('Finished on')).toBeVisible();
-      await expect(
-        page.getByText('Products included in your trial')
-      ).toBeVisible();
-      for (const product of BUNDLE_PRODUCTS) {
-        await expect(trialPage.getStatusProductCheckbox(product)).toBeChecked();
-      }
 
       // An expired bundle can no longer be reached nor cancelled, the only
       // action left is contacting sales

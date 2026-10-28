@@ -56,7 +56,7 @@ let capturedHandleSubmit:
       acceptTerms: boolean;
       use_cases_by_product: {
         platform_identifier: PlatformIdentifier;
-        use_case?: DeploymentRequestUseCase;
+        use_case: DeploymentRequestUseCase;
       }[];
     }) => void)
   | undefined;
@@ -97,13 +97,11 @@ vi.mock(
     XtmPlatformTrialStatusPanel: ({
       state,
       dateRows,
-      products,
       stepIndex,
       actions,
     }: {
       state: string;
       dateRows: { labelKey: string; date: string | null }[];
-      products: PlatformIdentifier[];
       stepIndex?: number;
       actions?: ReactNode;
     }) => (
@@ -111,7 +109,6 @@ vi.mock(
         <span data-testid="panel-state">{state}</span>
         <span data-testid="panel-step-index">{stepIndex}</span>
         <span data-testid="panel-date-rows">{JSON.stringify(dateRows)}</span>
-        <span data-testid="panel-products">{JSON.stringify(products)}</span>
         <div data-testid="panel-actions">{actions}</div>
       </div>
     ),
@@ -246,7 +243,7 @@ describe('PrivateXtmPlatformTrialPanel', () => {
     expect(screen.getByTestId('xtm-platform-trial-form')).toBeInTheDocument();
   });
 
-  it('submits a bundle deployment request with only the entries that have a use case', () => {
+  it('submits a bundle deployment request with XTM One, OpenCTI and OpenAEV and their use cases', () => {
     testRender(
       <PrivateXtmPlatformTrialPanel
         bundle={null}
@@ -266,7 +263,7 @@ describe('PrivateXtmPlatformTrialPanel', () => {
         },
         {
           platform_identifier: PlatformIdentifier.Openaev,
-          use_case: undefined,
+          use_case: DeploymentRequestUseCase.OaevAttackSimulation,
         },
       ],
     });
@@ -276,10 +273,19 @@ describe('PrivateXtmPlatformTrialPanel', () => {
         region: 'eu',
         job_title: 'CISO',
         activity_sector: 'IT',
+        products: [
+          PlatformIdentifier.Xtmone,
+          PlatformIdentifier.Opencti,
+          PlatformIdentifier.Openaev,
+        ],
         use_cases_by_product: [
           {
             platform_identifier: PlatformIdentifier.Opencti,
             use_case: DeploymentRequestUseCase.ThreatHunting,
+          },
+          {
+            platform_identifier: PlatformIdentifier.Openaev,
+            use_case: DeploymentRequestUseCase.OaevAttackSimulation,
           },
         ],
         source: DeploymentRequestSource.Xtmhub,
@@ -345,36 +351,6 @@ describe('PrivateXtmPlatformTrialPanel', () => {
         { labelKey: 'StartedOn', date: '2025-02-01T00:00:00.000Z' },
         expectedSecondRow,
       ])
-    );
-  });
-
-  it('passes the bundle children with a platform identifier as products', () => {
-    testRender(
-      <PrivateXtmPlatformTrialPanel
-        bundle={buildBundle({
-          children: [
-            {
-              platform_identifier: PlatformIdentifier.Opencti,
-              service_instance_id: 'child-1',
-              url: null,
-              service_instance: null,
-              registered_platform: null,
-            },
-            {
-              platform_identifier: null,
-              service_instance_id: 'child-2',
-              url: null,
-              service_instance: null,
-              registered_platform: null,
-            },
-          ],
-        })}
-        view={statusView({ stepIndex: 0 })}
-      />
-    );
-
-    expect(screen.getByTestId('panel-products')).toHaveTextContent(
-      JSON.stringify([PlatformIdentifier.Opencti])
     );
   });
 

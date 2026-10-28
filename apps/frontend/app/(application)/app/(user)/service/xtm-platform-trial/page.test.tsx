@@ -103,8 +103,7 @@ describe('private xtm-platform-trial page', () => {
   });
 
   it.each([
-    { view: { kind: 'personalSpace' }, xtmPlatformBundle: null },
-    { view: { kind: 'notAllowed' }, xtmPlatformBundle: null },
+    { view: { kind: 'form' }, xtmPlatformBundle: null },
     {
       view: { kind: 'status', state: 'request-in-progress', stepIndex: 0 },
       xtmPlatformBundle: {
@@ -113,7 +112,52 @@ describe('private xtm-platform-trial page', () => {
       },
     },
   ])(
-    'should hide the limitations when the panel view is $view.kind',
+    'should show the limitations when the panel view is $view.kind $view.state',
+    async ({ view, xtmPlatformBundle }) => {
+      // Given
+      mockUseXtmPlatformBundleQuery.mockReturnValue({
+        data: { xtmPlatformBundle },
+        isLoading: false,
+      });
+      mockUseXtmPlatformTrialPanelView.mockReturnValue(view);
+
+      // When
+      const element = await Page();
+      render(element);
+
+      // Then
+      expect(
+        screen.getByText('Service.Trials.XtmPlatform.Page.Limitations.Title')
+      ).toBeInTheDocument();
+    }
+  );
+
+  it.each([
+    {
+      view: { kind: 'status', state: 'cancelled', stepIndex: undefined },
+      xtmPlatformBundle: {
+        service_instance_id: 'bundle-instance-id',
+        hub_status: 'cancelled',
+      },
+    },
+    {
+      view: { kind: 'status', state: 'expired', stepIndex: undefined },
+      xtmPlatformBundle: {
+        service_instance_id: 'bundle-instance-id',
+        hub_status: 'expired',
+      },
+    },
+    {
+      view: { kind: 'status', state: 'failed', stepIndex: undefined },
+      xtmPlatformBundle: {
+        service_instance_id: 'bundle-instance-id',
+        hub_status: 'failed',
+      },
+    },
+    { view: { kind: 'personalSpace' }, xtmPlatformBundle: null },
+    { view: { kind: 'notAllowed' }, xtmPlatformBundle: null },
+  ])(
+    'should hide the limitations when the panel view is $view.kind $view.state',
     async ({ view, xtmPlatformBundle }) => {
       // Given
       mockUseXtmPlatformBundleQuery.mockReturnValue({
@@ -130,6 +174,53 @@ describe('private xtm-platform-trial page', () => {
       expect(
         screen.queryByText('Service.Trials.XtmPlatform.Page.Limitations.Title')
       ).not.toBeInTheDocument();
+    }
+  );
+
+  it.each([
+    {
+      view: { kind: 'status', state: 'expired', stepIndex: undefined },
+      expectedTitle: 'Service.Trials.XtmPlatform.Page.ExpiredTitle',
+    },
+    {
+      view: { kind: 'status', state: 'cancelled', stepIndex: undefined },
+      expectedTitle: 'Service.Trials.XtmPlatform.Page.Title',
+    },
+    {
+      view: { kind: 'status', state: 'failed', stepIndex: undefined },
+      expectedTitle: 'Service.Trials.XtmPlatform.Page.Title',
+    },
+    {
+      view: { kind: 'status', state: 'request-in-progress', stepIndex: 0 },
+      expectedTitle: 'Service.Trials.XtmPlatform.Page.Title',
+    },
+    {
+      view: { kind: 'form' },
+      expectedTitle: 'Service.Trials.XtmPlatform.Page.Title',
+    },
+  ])(
+    'should render the $expectedTitle heading when the panel view is $view.kind $view.state',
+    async ({ view, expectedTitle }) => {
+      // Given
+      mockUseXtmPlatformBundleQuery.mockReturnValue({
+        data: {
+          xtmPlatformBundle: {
+            service_instance_id: 'bundle-instance-id',
+            hub_status: 'expired',
+          },
+        },
+        isLoading: false,
+      });
+      mockUseXtmPlatformTrialPanelView.mockReturnValue(view);
+
+      // When
+      const element = await Page();
+      render(element);
+
+      // Then
+      expect(
+        screen.getByRole('heading', { level: 1, name: expectedTitle })
+      ).toBeInTheDocument();
     }
   );
 

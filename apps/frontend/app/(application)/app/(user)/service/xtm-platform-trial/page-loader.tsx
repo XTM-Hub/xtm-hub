@@ -3,8 +3,10 @@
 import { XtmPlatformActiveBundlePage as XtmPlatformTrialBundlePage } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/XtmPlatformActiveBundlePage';
 import { PrivateXtmPlatformTrialPanel } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/PrivateXtmPlatformTrialPanel';
 import { useXtmPlatformTrialPanelView } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/useXtmPlatformTrialPanelView';
+import { XtmPlatformTrialStatusPanelState } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/xtm-platform-trial-panel.utils';
 import { XtmPlatformTrialRequestPage } from '@/components/service/trial-instances/xtm-platform-trial/XtmPlatformTrialRequestPage';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
+import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { APP_PATH } from '@/utils/path/constant';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
@@ -24,6 +26,7 @@ const breadcrumbs = [
 ];
 
 const PageLoader = () => {
+  const t = useTranslate();
   const { data, isLoading } = useXtmPlatformBundleQuery(
     portalGraphqlClient,
     undefined,
@@ -40,6 +43,13 @@ const PageLoader = () => {
     return null;
   }
 
+  const isExpired =
+    view.kind === 'status' &&
+    view.state === XtmPlatformTrialStatusPanelState.Expired;
+  const isRequestInProgress =
+    view.kind === 'status' &&
+    view.state === XtmPlatformTrialStatusPanelState.RequestInProgress;
+
   return (
     <>
       <BreadcrumbNav value={breadcrumbs} />
@@ -53,7 +63,12 @@ const PageLoader = () => {
               view={view}
             />
           }
-          showLimitations={view.kind === 'form'}
+          showLimitations={view.kind === 'form' || isRequestInProgress}
+          title={
+            isExpired
+              ? t('Service.Trials.XtmPlatform.Page.ExpiredTitle')
+              : undefined
+          }
         />
       )}
     </>

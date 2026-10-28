@@ -8,11 +8,13 @@ import { ReactNode } from 'react';
 interface XtmPlatformTrialPageProps {
   panel: ReactNode;
   showLimitations?: boolean;
+  title?: string;
 }
 
 export const XtmPlatformTrialRequestPage = ({
   panel,
   showLimitations = false,
+  title,
 }: XtmPlatformTrialPageProps) => {
   const t = useTranslate();
   return (
@@ -22,7 +24,7 @@ export const XtmPlatformTrialRequestPage = ({
           {t('Service.Trials.XtmPlatform.Page.Overline')}
         </p>
         <h1 className="title-2xl">
-          {t('Service.Trials.XtmPlatform.Page.Title')}
+          {title ?? t('Service.Trials.XtmPlatform.Page.Title')}
         </h1>
       </header>
 
