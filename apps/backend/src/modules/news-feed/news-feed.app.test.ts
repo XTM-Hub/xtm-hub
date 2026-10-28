@@ -2136,6 +2136,33 @@ describe('newsFeedApp', () => {
       expect(await TestHelper.newsFeed.loadProvisioned({})).toHaveLength(0);
     });
 
+    it('should provision a restored item to the platforms that support blogposts', async () => {
+      // Given
+      const platformId = uuidv4();
+      await createOpenCTIPlatformForOrganization(
+        platformId,
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+      );
+      mockFeed(buildFeed(1, 2));
+      await NewsFeedApp.syncBlogposts();
+      mockFeed(buildFeed(1));
+      await NewsFeedApp.syncBlogposts();
+      await TestHelper.newsFeed.deleteProvisioned();
+      mockFeed(buildFeed(1, 2));
+
+      // When
+      await NewsFeedApp.syncBlogposts();
+
+      // Then
+      const restoredItem = await loadBlogpostItem('blog-post-2');
+      expect(restoredItem?.is_deleted).toBe(false);
+      expect(
+        await TestHelper.newsFeed.loadProvisioned({
+          news_feed_item_id: restoredItem!.id,
+        })
+      ).toMatchObject([{ platform_id: platformId }]);
+    });
+
     it('should provision the dropped items so that the platforms delete them', async () => {
       // Given
       const platformId = uuidv4();
@@ -2294,6 +2321,30 @@ describe('newsFeedApp', () => {
 
       // Then
       await expect(sync).rejects.toThrow('Blog API unreachable');
+      expect(await loadBlogpostState()).toEqual(stateBefore);
+    });
+
+    it('should roll back everything when the feed holds two posts with the same slug', async () => {
+      // Given
+      await createOpenCTIPlatformForOrganization(
+        uuidv4(),
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+      );
+      mockFeed(buildFeed(1, 2));
+      await NewsFeedApp.syncBlogposts();
+      const stateBefore = await loadBlogpostState();
+      mockFeed([
+        buildPost(1, { title: 'A new title' }),
+        buildPost(3),
+        buildPost(3, { id: 'post-3-duplicate', title: 'Duplicate of post 3' }),
+      ]);
+
+      // When
+      const sync = NewsFeedApp.syncBlogposts();
+
+      // Then
+      await expect(sync).rejects.toThrow();
+      expect(await loadBlogpostItem('blog-post-3')).toBeUndefined();
       expect(await loadBlogpostState()).toEqual(stateBefore);
     });
 

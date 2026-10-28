@@ -307,14 +307,15 @@ export const NewsFeedDomain = {
   countActiveBlogpostItems: async (
     platformIdentifier: PlatformIdentifier
   ): Promise<number> => {
-    const rows: { id: NewsFeedItemId }[] = await db('NewsFeedItem')
+    // pg returns the count as a string
+    const [row]: { count: string | number }[] = await db('NewsFeedItem')
       .where({
         platform_identifier: platformIdentifier,
         type: NewsFeedItemType.BlogPost,
         is_deleted: false,
       })
-      .select('id');
-    return rows.length;
+      .count('* as count');
+    return Number(row?.count ?? 0);
   },
 
   // Applies the desired blogposts in the current transaction, the caller owns the transaction. Existing items are
