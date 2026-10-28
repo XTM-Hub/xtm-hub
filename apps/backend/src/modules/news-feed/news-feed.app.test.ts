@@ -1714,19 +1714,20 @@ describe('newsFeedApp', () => {
     const buildFeed = (...numbers: number[]): BlogFeedItem[] =>
       numbers.map((number) => buildPost(number));
 
-    const replaceRequiredBlogpostVersion = (requiredVersion: string | null) =>
-      vi.replaceProperty(RequiredPlatformVersions, 'NewsFeedBlogpostSupport', {
+    // Saved once and restored in afterEach, so that a failing test cannot leak the override
+    const originalBlogpostSupport =
+      RequiredPlatformVersions.NewsFeedBlogpostSupport;
+    const setRequiredBlogpostVersion = (requiredVersion: string | null) => {
+      RequiredPlatformVersions.NewsFeedBlogpostSupport = {
         [PlatformIdentifier.Opencti]: requiredVersion,
         [PlatformIdentifier.Openaev]: null,
         [PlatformIdentifier.Xtmone]: null,
-      });
+      };
+    };
 
     let fetchBlogFeedSpy: MockInstance<typeof BlogApiClient.fetchBlogFeed>;
     let provisionSpy:
       MockInstance<typeof NewsFeedDomain.provisionNewsFeedItem> | undefined;
-    let replacedRequiredVersions: ReturnType<
-      typeof replaceRequiredBlogpostVersion
-    >;
 
     const mockFeed = (posts: BlogFeedItem[]) =>
       fetchBlogFeedSpy.mockResolvedValue(posts);
@@ -1774,12 +1775,12 @@ describe('newsFeedApp', () => {
 
     beforeEach(() => {
       fetchBlogFeedSpy = vi.spyOn(BlogApiClient, 'fetchBlogFeed');
-      replacedRequiredVersions =
-        replaceRequiredBlogpostVersion(SUPPORTED_VERSION);
+      setRequiredBlogpostVersion(SUPPORTED_VERSION);
     });
 
     afterEach(async () => {
-      replacedRequiredVersions.restore();
+      RequiredPlatformVersions.NewsFeedBlogpostSupport =
+        originalBlogpostSupport;
       fetchBlogFeedSpy.mockRestore();
       provisionSpy?.mockRestore();
       provisionSpy = undefined;
@@ -2115,8 +2116,7 @@ describe('newsFeedApp', () => {
 
     it('should not provision any platform when the blogpost gate is disabled', async () => {
       // Given
-      replacedRequiredVersions.restore();
-      replacedRequiredVersions = replaceRequiredBlogpostVersion(null);
+      setRequiredBlogpostVersion(null);
       await createOpenCTIPlatformForOrganization(
         uuidv4(),
         TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
