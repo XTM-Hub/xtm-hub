@@ -25,13 +25,16 @@
     "Title": "Capacités disponibles"
   },
   "CSMBoard": {
+    "Customer": "Client",
     "Organization": "Organisation",
     "Administrators": "Administrateurs",
     "Products": "Produits",
+    "Hostname": "Nom d'hôte",
+    "Plan": "Offre",
+    "Region": "Région",
     "Link": "Métriques SaaS",
-    "Version": "Version",
     "ViewMetrics": "Voir les métriques",
-    "SearchOrganization": "Rechercher une organisation",
+    "SearchPlatform": "Rechercher une plateforme",
     "ClearSearch": "Effacer la recherche"
   },
   "CountryComboBox": {

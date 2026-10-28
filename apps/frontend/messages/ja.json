@@ -25,13 +25,16 @@
     "Title": "利用可能な機能"
   },
   "CSMBoard": {
+    "Customer": "顧客",
     "Organization": "組織",
     "Administrators": "管理者",
     "Products": "製品",
+    "Hostname": "ホスト名",
+    "Plan": "プラン",
+    "Region": "リージョン",
     "Link": "SaaS指標",
-    "Version": "バージョン",
     "ViewMetrics": "メトリクスを見る",
-    "SearchOrganization": "組織検索",
+    "SearchPlatform": "プラットフォーム検索",
     "ClearSearch": "検索をクリア"
   },
   "CountryComboBox": {

@@ -541,6 +541,150 @@ describe('registration domain', () => {
     );
   });
 
+  describe('loadSaasRegisteredPlatformsByPlatformIds', () => {
+    const saasPlatformId = uuidv4();
+    const latestRegistration = {
+      serviceInstanceId: uuidv4() as ServiceInstanceId,
+      platformId: saasPlatformId,
+      status: PlatformConfigurationStatus.Active,
+      commercialModel: CommercialModel.Saas,
+      lastConnectivityCheck: new Date('2026-10-02T10:00:00.000Z'),
+    };
+    const olderRegistration = {
+      ...latestRegistration,
+      serviceInstanceId: uuidv4() as ServiceInstanceId,
+      lastConnectivityCheck: new Date('2026-10-01T10:00:00.000Z'),
+    };
+    const nonSaasRegistration = {
+      ...latestRegistration,
+      serviceInstanceId: uuidv4() as ServiceInstanceId,
+      platformId: uuidv4(),
+      commercialModel: CommercialModel.Other,
+    };
+    const inactiveRegistration = {
+      ...latestRegistration,
+      serviceInstanceId: uuidv4() as ServiceInstanceId,
+      platformId: uuidv4(),
+      status: PlatformConfigurationStatus.Inactive,
+    };
+    const registrations = [
+      olderRegistration,
+      latestRegistration,
+      nonSaasRegistration,
+      inactiveRegistration,
+    ];
+
+    const setUserCapabilities = (capabilities: string[]) =>
+      requestContext.set({
+        ...requestContextSimpleUserFiligran2,
+        user: { ...requestContextSimpleUserFiligran2.user, capabilities },
+      });
+
+    beforeEach(async () => {
+      setUserCapabilities([CAPABILITY_READ_SAAS_METRICS]);
+      // Every registration belongs to another organization than the one of the user.
+      for (const registration of registrations) {
+        await TestHelper.serviceInstance.create({
+          id: registration.serviceInstanceId,
+          service_definition_id: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+          creation_status: ServiceInstanceCreationStatus.Ready,
+        });
+        await TestHelper.platformConfiguration.create({
+          service_instance_id: registration.serviceInstanceId,
+          platform_id: registration.platformId,
+          status: registration.status,
+          commercial_model: registration.commercialModel,
+          last_connectivity_check: registration.lastConnectivityCheck,
+        });
+        await TestHelper.subscription.create({
+          organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          service_instance_id: registration.serviceInstanceId,
+        });
+      }
+    });
+
+    afterEach(async () => {
+      for (const { serviceInstanceId } of registrations) {
+        await TestHelper.subscription.delete({
+          service_instance_id: serviceInstanceId,
+        });
+        await TestHelper.platformConfiguration.delete({
+          service_instance_id: serviceInstanceId,
+        });
+        await TestHelper.serviceInstance.delete({ id: serviceInstanceId });
+      }
+    });
+
+    it.each([
+      ['READ_SAAS_METRICS', CAPABILITY_READ_SAAS_METRICS],
+      ['BYPASS', CAPABILITY_BYPASS],
+    ])(
+      'should return the active SaaS registrations of the platform ids, the most recently seen first, whatever their organization, when the user has %s',
+      async (_, capability) => {
+        // Given
+        setUserCapabilities([capability]);
+
+        // When
+        const platforms =
+          await RegistrationDomain.loadSaasRegisteredPlatformsByPlatformIds([
+            saasPlatformId,
+          ]);
+
+        // Then
+        expect(
+          platforms.map(({ id, platform_id }) => ({ id, platform_id }))
+        ).toEqual([
+          {
+            id: latestRegistration.serviceInstanceId,
+            platform_id: saasPlatformId,
+          },
+          {
+            id: olderRegistration.serviceInstanceId,
+            platform_id: saasPlatformId,
+          },
+        ]);
+      }
+    );
+
+    it.each([
+      ['a non-SaaS registration', nonSaasRegistration.platformId],
+      ['an inactive registration', inactiveRegistration.platformId],
+      ['an unknown platform id', uuidv4()],
+    ])('should not return %s', async (_, platformId) => {
+      // When
+      const platforms =
+        await RegistrationDomain.loadSaasRegisteredPlatformsByPlatformIds([
+          platformId,
+        ]);
+
+      // Then
+      expect(platforms).toEqual([]);
+    });
+
+    it('should not return a registration of another organization when the user cannot read the SaaS metrics', async () => {
+      // Given
+      setUserCapabilities([]);
+
+      // When
+      const platforms =
+        await RegistrationDomain.loadSaasRegisteredPlatformsByPlatformIds([
+          saasPlatformId,
+        ]);
+
+      // Then
+      expect(platforms).toEqual([]);
+    });
+
+    it('should return an empty array when no platform ids are requested', async () => {
+      // When
+      const platforms =
+        await RegistrationDomain.loadSaasRegisteredPlatformsByPlatformIds([]);
+
+      // Then
+      expect(platforms).toEqual([]);
+    });
+  });
+
   describe('loadAllActiveRegisteredPlatformsByPlatformIdentifier', () => {
     const openAEVServiceDefinitionId =
       SERVICES.DEFINITIONS.OPENAEV_REGISTRATION.ID;

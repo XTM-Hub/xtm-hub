@@ -200,6 +200,31 @@ export const RegistrationDomain = {
     ]);
   },
 
+  loadSaasRegisteredPlatformsByPlatformIds: async (
+    platformIds: readonly string[]
+  ): Promise<DomainRegisteredPlatform[]> => {
+    if (platformIds.length === 0) {
+      return [];
+    }
+    const skipOrganizationFilter = AuthHelper.userHasPortalCapability(
+      requestContext.requireUser(),
+      [PortalCapability.Bypass, PortalCapability.ReadSaasMetrics]
+    );
+    return getRegisteredPlatformsDataQuery({ skipOrganizationFilter })
+      .whereIn('PlatformConfiguration.platform_id', [...platformIds])
+      .where(
+        'PlatformConfiguration.status',
+        '=',
+        PlatformConfigurationStatus.Active
+      )
+      .where(
+        'PlatformConfiguration.commercial_model',
+        '=',
+        CommercialModel.Saas
+      )
+      .orderBy('PlatformConfiguration.last_connectivity_check', 'desc', 'last');
+  },
+
   loadPlatformOwnerOrganizationsByServiceInstanceIds: async (
     serviceInstanceIds: readonly ServiceInstanceId[]
   ): Promise<PlatformOwnerOrganization[]> => {

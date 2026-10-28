@@ -128,6 +128,7 @@ type Query {
   users(first: Int!, after: ID, orderBy: UserOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [Filter!]): UserConnection!
   pendingUsers(first: Int!, after: ID, orderBy: UserOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [Filter!]): UserConnection!
   registeredSaasPlatformData(input: RegisteredSaasPlatformDataInput!): SaasPlatformData
+  saasManagerPlatforms(page: Int!, pageSize: Int!, orderBy: SaasPlatformOrdering!, orderMode: OrderingMode!, searchTerm: String): SaasPlatformPage
   openCTIPlatformRegistrationStatus(input: OpenCTIPlatformRegistrationStatusInput!): OpenCTIPlatformRegistrationStatusResponse! @deprecated(reason: "Use `refreshPlatformRegistrationConnectivityStatus` instead. This field is no longer used in the OpenCTI platform due to refactoring and the addition of a version value in the endpoint.")
   isPlatformRegistered(input: IsPlatformRegisteredInput!): IsPlatformRegisteredResponse!
   canUnregisterPlatform(input: CanUnregisterPlatformInput!): CanUnregisterResponse!
@@ -1314,6 +1315,31 @@ enum SaasPlatformMetricsPeriod {
   last_30_days
   last_90_days
   last_180_days
+}
+
+type SaasPlatform {
+  id: String!
+  status: String
+  product: String
+  customer: String
+  commercial_model: String
+  sla_cmtd: Float
+  metadata: SaasPlatformMetadata!
+  storage: SaasPlatformStorage
+  registered_platform: RegisteredPlatform
+}
+
+type SaasPlatformPage {
+  totalCount: Int!
+  platforms: [SaasPlatform!]!
+}
+
+enum SaasPlatformOrdering {
+  customer__name
+  hostname
+  product
+  plan
+  region
 }
 
 input RegisteredSaasPlatformDataInput {

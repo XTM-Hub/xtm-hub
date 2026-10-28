@@ -1,32 +1,39 @@
 import { SaasList } from '@/components/subcription/saas/SaasList';
-import { toCursor } from '@/hooks/use-table-pagination';
 import testRender from '@/utils/test/test-render';
 import {
   OrderingMode,
   PortalCapability,
-  RegisteredPlatformOrdering,
+  SaasPlatformOrdering,
+  type SaasPlatformRowFragment,
   ServiceDefinitionIdentifier,
 } from '@graphql/generated';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 
-const ORGANIZATION_NAME = 'Filigran';
-const ADMINISTRATOR_EMAILS = ['admin@filigran.io', 'other.admin@filigran.io'];
-const SERVICE_INSTANCE_ID = 'service-instance-id';
-const PLATFORM_VERSION = '6.9.0';
+const CUSTOMER = 'Filigran';
+const HOSTNAME = 'filigran.octi.filigran.io';
+const PLAN = 'Enterprise';
+const REGION = 'eu-west-1';
+const PRODUCT = 'OCTI';
 const SEARCH_TERM = 'filigran';
+const SERVICE_INSTANCE_ID = 'service-instance-id';
+const ORGANIZATION_NAME = 'Filigran organization';
+const ADMINISTRATOR_EMAILS = ['admin@filigran.io', 'other.admin@filigran.io'];
 
 const mocks = vi.hoisted(() => ({
-  useSaasPlatformsListQuery: vi.fn(),
+  useSaasManagerPlatformsListQuery: vi.fn(),
 }));
 
 vi.mock('@graphql/generated', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@graphql/generated')>();
   return {
     ...actual,
-    useSaasPlatformsListQuery: Object.assign(mocks.useSaasPlatformsListQuery, {
-      getKey: actual.useSaasPlatformsListQuery.getKey,
-      getRootKey: actual.useSaasPlatformsListQuery.getRootKey,
-    }),
+    useSaasManagerPlatformsListQuery: Object.assign(
+      mocks.useSaasManagerPlatformsListQuery,
+      {
+        getKey: actual.useSaasManagerPlatformsListQuery.getKey,
+        getRootKey: actual.useSaasManagerPlatformsListQuery.getRootKey,
+      }
+    ),
   };
 });
 
@@ -36,44 +43,41 @@ const renderWithCapabilities = (capabilities: PortalCapability[]) =>
   });
 
 const isQueryEnabled = () =>
-  mocks.useSaasPlatformsListQuery.mock.lastCall?.[2]?.enabled;
+  mocks.useSaasManagerPlatformsListQuery.mock.lastCall?.[2]?.enabled;
 
 const lastQueryVariables = () =>
-  mocks.useSaasPlatformsListQuery.mock.lastCall?.[1];
+  mocks.useSaasManagerPlatformsListQuery.mock.lastCall?.[1];
 
-const buildSaasPlatform = (
-  overrides: Partial<{
-    id: string;
-    service_instance_id: string;
-    identifier: ServiceDefinitionIdentifier;
-    title: string;
-    version: string | null;
-    organization: {
-      id: string;
-      name: string;
-      administrator_emails: string[] | null;
-    } | null;
-  }> = {}
-) => ({
-  id: 'platform-id',
+const registeredPlatform: NonNullable<
+  SaasPlatformRowFragment['registered_platform']
+> = {
+  id: SERVICE_INSTANCE_ID,
   service_instance_id: SERVICE_INSTANCE_ID,
   identifier: ServiceDefinitionIdentifier.OpenctiRegistration,
-  title: 'SaaS OpenCTI platform',
-  version: PLATFORM_VERSION,
   organization: {
     id: 'organization-id',
     name: ORGANIZATION_NAME,
     administrator_emails: ADMINISTRATOR_EMAILS,
   },
+};
+
+const buildSaasPlatform = (
+  overrides: Partial<SaasPlatformRowFragment> = {}
+): SaasPlatformRowFragment => ({
+  id: 'platform-id',
+  product: PRODUCT,
+  customer: CUSTOMER,
+  metadata: { hostname: HOSTNAME, plan: PLAN, region: REGION },
+  registered_platform: registeredPlatform,
   ...overrides,
 });
 
-const mockSaasPlatforms = (nodes: ReturnType<typeof buildSaasPlatform>[]) =>
-  mocks.useSaasPlatformsListQuery.mockReturnValue({
+const mockSaasPlatforms = (nodes: SaasPlatformRowFragment[]) =>
+  mocks.useSaasManagerPlatformsListQuery.mockReturnValue({
     data: {
-      saasPlatforms: {
+      saasManagerPlatforms: {
         totalCount: nodes.length,
-        edges: nodes.map((node) => ({ node })),
+        platforms: nodes,
       },
     },
     isLoading: false,
@@ -94,8 +98,8 @@ const getAdministratorsCell = () => {
 describe('SaasList', () => {
   beforeEach(() => {
     localStorage.clear();
-    mocks.useSaasPlatformsListQuery.mockReset();
-    mocks.useSaasPlatformsListQuery.mockReturnValue({
+    mocks.useSaasManagerPlatformsListQuery.mockReset();
+    mocks.useSaasManagerPlatformsListQuery.mockReturnValue({
       data: undefined,
       isLoading: false,
     });
@@ -125,12 +129,17 @@ describe('SaasList', () => {
     }
   );
 
-  it('should display an error message when the saas platforms cannot be loaded', () => {
+  it.each([
+    ['the query fails', { data: undefined, isError: true }],
+    [
+      'the SaaS Manager cannot be reached',
+      { data: { saasManagerPlatforms: null }, isError: false },
+    ],
+  ])('should display an error message when %s', (_, queryResult) => {
     // Given
-    mocks.useSaasPlatformsListQuery.mockReturnValue({
-      data: undefined,
+    mocks.useSaasManagerPlatformsListQuery.mockReturnValue({
+      ...queryResult,
       isLoading: false,
-      isError: true,
     });
 
     // When
@@ -145,7 +154,7 @@ describe('SaasList', () => {
     localStorage.setItem('countSaasList', '100');
     localStorage.setItem(
       'orderBySaasList',
-      JSON.stringify(RegisteredPlatformOrdering.OrganizationName)
+      JSON.stringify(SaasPlatformOrdering.Region)
     );
     localStorage.setItem(
       'orderModeSaasList',
@@ -157,35 +166,95 @@ describe('SaasList', () => {
 
     // Then the stored settings are used as query variables
     expect(lastQueryVariables()).toEqual({
-      first: 100,
-      after: toCursor(100, 0),
-      orderBy: RegisteredPlatformOrdering.OrganizationName,
+      page: 1,
+      pageSize: 100,
+      orderBy: SaasPlatformOrdering.Region,
       orderMode: OrderingMode.Desc,
       searchTerm: null,
     });
   });
 
-  it('should display the organization, product, logo, link and version of each saas platform', () => {
-    // Given a saas platform registered by an organization
+  it('should fetch the next page of the SaaS Manager when the user goes to the next page', async () => {
+    // Given a list of more saas platforms than a page holds
+    mocks.useSaasManagerPlatformsListQuery.mockReturnValue({
+      data: {
+        saasManagerPlatforms: {
+          totalCount: 120,
+          platforms: [buildSaasPlatform()],
+        },
+      },
+      isLoading: false,
+    });
+    const { user } = renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+    // When the user goes to the next page
+    await user.click(
+      screen.getByRole('button', { name: 'DesignSystem.DataTable.NextPage' })
+    );
+
+    // Then the second page of the SaaS Manager is asked for
+    expect(lastQueryVariables()).toMatchObject({ page: 2, pageSize: 50 });
+  });
+
+  it('should display the customer, product, hostname, plan and region of each saas platform', () => {
+    // Given a saas platform listed by the SaaS Manager
     mockSaasPlatforms([buildSaasPlatform()]);
 
     // When the list is rendered
     renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
 
-    // Then its row shows the organization, the product, the logo before the link and the version
-    expect(screen.getByText(ORGANIZATION_NAME)).toBeInTheDocument();
+    // Then its row shows each of its fields
+    for (const value of [CUSTOMER, PRODUCT, HOSTNAME, PLAN, REGION]) {
+      expect(screen.getByText(value)).toBeInTheDocument();
+    }
+  });
 
-    expect(screen.getByText('OpenCTI')).toBeInTheDocument();
-    const link = screen.getByRole('link', {
-      name: 'CSMBoard.ViewMetrics',
-    });
+  it('should display the logo and the metrics link of a saas platform registered in the Hub', () => {
+    // Given a saas platform registered in the Hub
+    mockSaasPlatforms([buildSaasPlatform()]);
+
+    // When the list is rendered
+    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+    // Then its row links to the metrics page of its service instance, after the logo of its product
+    const link = screen.getByRole('link', { name: 'CSMBoard.ViewMetrics' });
     expect(link).toHaveAttribute(
       'href',
       `/app/service/opencti_registration/${SERVICE_INSTANCE_ID}`
     );
     expect(link.previousElementSibling?.tagName.toLowerCase()).toBe('svg');
-    expect(screen.getByText(PLATFORM_VERSION)).toBeInTheDocument();
   });
+
+  it('should display the organization of a saas platform registered in the Hub', () => {
+    // Given a saas platform registered in the Hub by an organization
+    mockSaasPlatforms([buildSaasPlatform()]);
+
+    // When the list is rendered
+    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+    // Then its row shows the organization
+    expect(screen.getByText(ORGANIZATION_NAME)).toBeInTheDocument();
+  });
+
+  it.each([
+    ['is not registered in the Hub', null],
+    [
+      'has no organization in the Hub',
+      { ...registeredPlatform, organization: null },
+    ],
+  ])(
+    'should display no organization for a saas platform that %s',
+    (_, registered_platform) => {
+      // Given
+      mockSaasPlatforms([buildSaasPlatform({ registered_platform })]);
+
+      // When
+      renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+      // Then
+      expect(screen.queryByText(ORGANIZATION_NAME)).not.toBeInTheDocument();
+    }
+  );
 
   it('should display the emails of the organization administrators of a saas platform', () => {
     // Given a saas platform whose organization has several administrators
@@ -222,10 +291,13 @@ describe('SaasList', () => {
     const [email] = ADMINISTRATOR_EMAILS;
     mockSaasPlatforms([
       buildSaasPlatform({
-        organization: {
-          id: 'organization-id',
-          name: ORGANIZATION_NAME,
-          administrator_emails: [email],
+        registered_platform: {
+          ...registeredPlatform,
+          organization: {
+            id: 'organization-id',
+            name: ORGANIZATION_NAME,
+            administrator_emails: [email],
+          },
         },
       }),
     ]);
@@ -243,17 +315,24 @@ describe('SaasList', () => {
     [
       'its organization has no administrator',
       {
-        id: 'organization-id',
-        name: ORGANIZATION_NAME,
-        administrator_emails: [],
+        ...registeredPlatform,
+        organization: {
+          id: 'organization-id',
+          name: ORGANIZATION_NAME,
+          administrator_emails: [],
+        },
       },
     ],
-    ['it has no organization', null],
+    [
+      'it has no organization in the Hub',
+      { ...registeredPlatform, organization: null },
+    ],
+    ['it is not registered in the Hub', null],
   ])(
     'should display no administrator for a saas platform when %s',
-    (_, organization) => {
+    (_, registered_platform) => {
       // Given a saas platform without any organization administrator
-      mockSaasPlatforms([buildSaasPlatform({ organization })]);
+      mockSaasPlatforms([buildSaasPlatform({ registered_platform })]);
 
       // When the list is rendered
       renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
@@ -263,33 +342,27 @@ describe('SaasList', () => {
     }
   );
 
-  it('should fetch saas platforms ordered by organization name and store the ordering when the user sorts the organization column', () => {
-    // Given the list ordered by organization name ascending by default, starting with a platform without organization
-    mockSaasPlatforms([buildSaasPlatform({ organization: null })]);
+  it('should display no metrics link for a saas platform that is not registered in the Hub', () => {
+    // Given a saas platform the Hub does not know
+    mockSaasPlatforms([buildSaasPlatform({ registered_platform: null })]);
+
+    // When the list is rendered
     renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
 
-    // When the user clicks the organization column header
-    fireEvent.click(screen.getByText('CSMBoard.Organization'));
-
-    // Then the saas platforms are fetched in descending order and the ordering is stored
-    expect(lastQueryVariables()).toMatchObject({
-      orderBy: RegisteredPlatformOrdering.OrganizationName,
-      orderMode: OrderingMode.Desc,
-    });
-    expect(localStorage.getItem('orderModeSaasList')).toBe(
-      JSON.stringify(OrderingMode.Desc)
-    );
+    // Then its row has no metrics link
+    expect(
+      screen.queryByRole('link', { name: 'CSMBoard.ViewMetrics' })
+    ).not.toBeInTheDocument();
   });
 
   it.each([
+    ['CSMBoard.Organization'],
     ['CSMBoard.Administrators'],
-    ['CSMBoard.Products'],
     ['CSMBoard.Link'],
-    ['CSMBoard.Version'],
   ])(
     'should keep the ordering when the user clicks the %s column header',
     (header) => {
-      // Given the list ordered by organization name ascending by default
+      // Given the list ordered by customer ascending by default
       renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
 
       // When the user clicks a column header that cannot be sorted
@@ -297,18 +370,60 @@ describe('SaasList', () => {
 
       // Then the saas platforms are still fetched in the default order
       expect(lastQueryVariables()).toMatchObject({
-        orderBy: RegisteredPlatformOrdering.OrganizationName,
+        orderBy: SaasPlatformOrdering.CustomerName,
         orderMode: OrderingMode.Asc,
       });
     }
   );
 
-  it('should fetch saas platforms filtered on the organization the user searches for', async () => {
+  it('should fetch saas platforms ordered by customer descending and store the ordering when the user sorts the customer column', () => {
+    // Given the list ordered by customer ascending by default
+    mockSaasPlatforms([buildSaasPlatform()]);
+    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+    // When the user clicks the customer column header
+    fireEvent.click(screen.getByText('CSMBoard.Customer'));
+
+    // Then the saas platforms are fetched in descending order and the ordering is stored
+    expect(lastQueryVariables()).toMatchObject({
+      orderBy: SaasPlatformOrdering.CustomerName,
+      orderMode: OrderingMode.Desc,
+    });
+    expect(localStorage.getItem('orderModeSaasList')).toBe(
+      JSON.stringify(OrderingMode.Desc)
+    );
+  });
+
+  it.each`
+    header                 | orderBy
+    ${'CSMBoard.Products'} | ${SaasPlatformOrdering.Product}
+    ${'CSMBoard.Hostname'} | ${SaasPlatformOrdering.Hostname}
+    ${'CSMBoard.Plan'}     | ${SaasPlatformOrdering.Plan}
+    ${'CSMBoard.Region'}   | ${SaasPlatformOrdering.Region}
+  `(
+    'should fetch saas platforms ordered by $orderBy ascending when the user sorts the $header column',
+    ({ header, orderBy }) => {
+      // Given the list ordered by customer ascending by default
+      mockSaasPlatforms([buildSaasPlatform()]);
+      renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+      // When the user clicks another column header
+      fireEvent.click(screen.getByText(header));
+
+      // Then the saas platforms are fetched ordered by that column
+      expect(lastQueryVariables()).toMatchObject({
+        orderBy,
+        orderMode: OrderingMode.Asc,
+      });
+    }
+  );
+
+  it('should fetch saas platforms filtered on what the user searches for', async () => {
     // Given the list of saas platforms
     renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
 
-    // When the user searches for an organization
-    fireEvent.change(screen.getByLabelText('CSMBoard.SearchOrganization'), {
+    // When the user searches for a platform
+    fireEvent.change(screen.getByLabelText('CSMBoard.SearchPlatform'), {
       target: { value: `  ${SEARCH_TERM}  ` },
     });
 
@@ -319,9 +434,9 @@ describe('SaasList', () => {
   });
 
   it('should fetch every saas platform again when the user clears the search', async () => {
-    // Given a list filtered on an organization
+    // Given a list filtered on a search term
     renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
-    fireEvent.change(screen.getByLabelText('CSMBoard.SearchOrganization'), {
+    fireEvent.change(screen.getByLabelText('CSMBoard.SearchPlatform'), {
       target: { value: SEARCH_TERM },
     });
     await waitFor(() =>

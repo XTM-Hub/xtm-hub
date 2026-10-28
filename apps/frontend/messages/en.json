@@ -25,13 +25,16 @@
     "Title": "Available capabilities"
   },
   "CSMBoard": {
+    "Customer": "Customer",
     "Organization": "Organization",
     "Administrators": "Administrators",
     "Products": "Products",
+    "Hostname": "Hostname",
+    "Plan": "Plan",
+    "Region": "Region",
     "Link": "SaaS metrics",
-    "Version": "Version",
     "ViewMetrics": "View metrics",
-    "SearchOrganization": "Search organization",
+    "SearchPlatform": "Search platform",
     "ClearSearch": "Clear search"
   },
   "CountryComboBox": {

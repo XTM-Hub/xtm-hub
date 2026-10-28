@@ -1,5 +1,6 @@
 import {
   MetricType,
+  SaasPlatform,
   SaasPlatformDailySla,
   SaasPlatformData,
   SaasPlatformMetadata,
@@ -14,7 +15,10 @@ import {
   SaasPlatformStorageUsage,
 } from '../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
-import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
+import {
+  SaasManagerClient,
+  type SaasManagerInstanceListRequest,
+} from '../../thirdparty/saasmanager/client';
 import { logApp } from '../../utils/app-logger.util';
 import {
   toFiniteNumber,
@@ -38,6 +42,11 @@ const SAAS_PLATFORM_SLA_TARGET = 0.9998;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
+interface SaasPlatformsPage {
+  totalCount: number;
+  platforms: SaasPlatform[];
+}
+
 const METRIC_TYPES: ReadonlySet<string> = new Set(Object.values(MetricType));
 
 const isMetricType = (value: unknown): value is MetricType =>
@@ -50,9 +59,9 @@ const RESOLUTIONS: ReadonlySet<string> = new Set(
 const isResolution = (value: unknown): value is SaasPlatformResolution =>
   typeof value === 'string' && RESOLUTIONS.has(value);
 
-const readMetadataString = (
+const readString = (
   body: Record<string, unknown>,
-  key: keyof SaasPlatformMetadata
+  key: string
 ): string | null => {
   const value = body[key];
   return typeof value === 'string' && value !== '' ? value : null;
@@ -62,7 +71,7 @@ const readMetadataDate = (
   body: Record<string, unknown>,
   key: 'start_date' | 'end_date'
 ): string | null => {
-  const value = readMetadataString(body, key);
+  const value = readString(body, key);
   if (value === null) {
     return null;
   }
@@ -222,6 +231,16 @@ const parseSaasPlatformStorage = (
   };
 };
 
+const parseSaasPlatformMetadata = (
+  fields: Record<string, unknown>
+): SaasPlatformMetadata => ({
+  hostname: readString(fields, 'hostname'),
+  plan: readString(fields, 'plan'),
+  start_date: readMetadataDate(fields, 'start_date'),
+  end_date: readMetadataDate(fields, 'end_date'),
+  region: readString(fields, 'region'),
+});
+
 const parseSaasPlatformData = (
   body: unknown,
   slaGrid: SaasPlatformSlaGrid
@@ -231,17 +250,34 @@ const parseSaasPlatformData = (
   const metrics = parseSaasPlatformMetrics(fields.metrics);
 
   return {
-    metadata: {
-      hostname: readMetadataString(fields, 'hostname'),
-      plan: readMetadataString(fields, 'plan'),
-      start_date: readMetadataDate(fields, 'start_date'),
-      end_date: readMetadataDate(fields, 'end_date'),
-      region: readMetadataString(fields, 'region'),
-    },
+    metadata: parseSaasPlatformMetadata(fields),
     metrics,
     storage: parseSaasPlatformStorage(fields.storage),
     sla: parseSaasPlatformSla(metrics, slaGrid),
   };
+};
+
+const parseSaasPlatform = (platform: unknown): SaasPlatform[] => {
+  if (!isRecord(platform)) {
+    return [];
+  }
+  // Without an id, the platform cannot be told apart from the others.
+  const id = readString(platform, 'id');
+  if (id === null) {
+    return [];
+  }
+  return [
+    {
+      id,
+      status: readString(platform, 'status'),
+      product: readString(platform, 'product'),
+      customer: readString(platform, 'customer'),
+      commercial_model: readString(platform, 'commercial_model'),
+      sla_cmtd: toFiniteNumber(platform.sla_cmtd),
+      metadata: parseSaasPlatformMetadata(platform),
+      storage: parseSaasPlatformStorage(platform.storage),
+    },
+  ];
 };
 
 export const ProductInformationHelper = {
@@ -281,6 +317,44 @@ export const ProductInformationHelper = {
       logApp.error('Unable to load the platform data from the SaaS Manager', {
         serviceInstanceId,
         platformId,
+        error,
+      });
+      return null;
+    }
+  },
+
+  fetchSaasPlatforms: async (
+    request: SaasManagerInstanceListRequest
+  ): Promise<SaasPlatformsPage | null> => {
+    try {
+      const response = await SaasManagerClient.callInstanceListApi(request);
+
+      if (response.status !== 200) {
+        logApp.error('Unable to load the platforms from the SaaS Manager', {
+          page: request.page,
+          status: response.status,
+        });
+        return null;
+      }
+      const body: unknown = await response.json();
+      // Without its list of results, the page cannot be told empty: it is as unreadable as a failed call.
+      if (!isRecord(body) || !Array.isArray(body.results)) {
+        logApp.error(
+          'The SaaS Manager returned an unreadable page of platforms',
+          {
+            page: request.page,
+          }
+        );
+        return null;
+      }
+      const platforms = body.results.flatMap(parseSaasPlatform);
+      return {
+        totalCount: toFiniteNumber(body.count) ?? platforms.length,
+        platforms,
+      };
+    } catch (error) {
+      logApp.error('Unable to load the platforms from the SaaS Manager', {
+        page: request.page,
         error,
       });
       return null;

@@ -3,7 +3,6 @@
 import { useSaasListLocalstorage } from '@/components/subcription/saas/saas-list-localstorage';
 import {
   getSaasPlatformMetadata,
-  getSaasPlatformProductName,
   getSaasPlatformServicePath,
 } from '@/components/subcription/saas/saas-list.utils';
 import {
@@ -34,19 +33,17 @@ import {
 import {
   OrderingMode,
   PortalCapability,
-  RegisteredPlatformOrdering,
-  type SaasPlatformsListQuery,
-  type SaasPlatformsListQueryVariables,
-  useSaasPlatformsListQuery,
+  type SaasManagerPlatformsListQueryVariables,
+  SaasPlatformOrdering,
+  type SaasPlatformRowFragment,
+  ServiceDefinitionIdentifier,
+  useSaasManagerPlatformsListQuery,
 } from '@graphql/generated';
 import { saasPlatformsKeys } from '@graphql/saas-platforms/saas-platforms.keys';
 import { ColumnDef } from '@tanstack/react-table';
 import Link from 'next/link';
 import { ChangeEvent, useMemo, useState } from 'react';
 import { useDebounceCallback } from 'usehooks-ts';
-
-type SaasPlatform =
-  SaasPlatformsListQuery['saasPlatforms']['edges'][number]['node'];
 
 export const SaasList = () => {
   const t = useTranslate();
@@ -66,24 +63,24 @@ export const SaasList = () => {
     removeOrder,
   } = useSaasListLocalstorage();
   const [searchTerm, setSearchTerm] = useState<string | null>(null);
-  const { pagination, setPagination, cursor, onPaginationChange } =
-    useTablePagination({
-      pageSize,
-      setPageSize,
-    });
+  const { pagination, setPagination, onPaginationChange } = useTablePagination({
+    pageSize,
+    setPageSize,
+  });
 
-  const variables = useMemo<SaasPlatformsListQueryVariables>(
+  const variables = useMemo<SaasManagerPlatformsListQueryVariables>(
     () => ({
-      first: pagination.pageSize,
-      after: cursor,
+      // The SaaS Manager counts its pages from 1
+      page: pagination.pageIndex + 1,
+      pageSize: pagination.pageSize,
       orderBy,
       orderMode,
       searchTerm,
     }),
-    [pagination.pageSize, cursor, orderBy, orderMode, searchTerm]
+    [pagination.pageIndex, pagination.pageSize, orderBy, orderMode, searchTerm]
   );
 
-  const { data, isLoading, isError } = useSaasPlatformsListQuery(
+  const { data, isLoading, isError } = useSaasManagerPlatformsListQuery(
     portalGraphqlClient,
     variables,
     {
@@ -92,16 +89,27 @@ export const SaasList = () => {
     }
   );
 
-  const columns: ColumnDef<SaasPlatform>[] = [
+  const columns: ColumnDef<SaasPlatformRowFragment>[] = [
     {
-      id: RegisteredPlatformOrdering.OrganizationName,
-      accessorFn: (platform) => platform.organization?.name,
+      id: SaasPlatformOrdering.CustomerName,
+      accessorFn: (platform) => platform.customer,
       // Without it, react-table infers the first sort direction from the first row's value
-      // and removes the sorting instead of toggling it when that row has no organization
+      // and removes the sorting instead of toggling it when that row has no customer
       sortDescFirst: false,
-      header: t('CSMBoard.Organization'),
+      header: t('CSMBoard.Customer'),
       cell: ({ row }) => (
-        <span className="truncate">{row.original.organization?.name}</span>
+        <span className="truncate">{row.original.customer}</span>
+      ),
+    },
+    {
+      id: 'organization',
+      header: t('CSMBoard.Organization'),
+      // The SaaS Manager cannot order by an organization of the Hub
+      enableSorting: false,
+      cell: ({ row }) => (
+        <span className="truncate">
+          {row.original.registered_platform?.organization?.name}
+        </span>
       ),
     },
     {
@@ -109,7 +117,9 @@ export const SaasList = () => {
       header: t('CSMBoard.Administrators'),
       enableSorting: false,
       cell: ({ row }) => {
-        const emails = row.original.organization?.administrator_emails ?? [];
+        const emails =
+          row.original.registered_platform?.organization
+            ?.administrator_emails ?? [];
         if (emails.length <= 1) {
           return <span className="truncate">{emails[0]}</span>;
         }
@@ -134,11 +144,38 @@ export const SaasList = () => {
       },
     },
     {
-      id: 'product',
+      id: SaasPlatformOrdering.Product,
+      accessorFn: (platform) => platform.product,
+      sortDescFirst: false,
       header: t('CSMBoard.Products'),
-      enableSorting: false,
+      cell: ({ row }) =>
+        row.original.product && <Chip label={row.original.product} />,
+    },
+    {
+      id: SaasPlatformOrdering.Hostname,
+      accessorFn: (platform) => platform.metadata.hostname,
+      sortDescFirst: false,
+      header: t('CSMBoard.Hostname'),
       cell: ({ row }) => (
-        <Chip label={getSaasPlatformProductName(row.original.identifier)} />
+        <span className="truncate">{row.original.metadata.hostname}</span>
+      ),
+    },
+    {
+      id: SaasPlatformOrdering.Plan,
+      accessorFn: (platform) => platform.metadata.plan,
+      sortDescFirst: false,
+      header: t('CSMBoard.Plan'),
+      cell: ({ row }) => (
+        <span className="truncate">{row.original.metadata.plan}</span>
+      ),
+    },
+    {
+      id: SaasPlatformOrdering.Region,
+      accessorFn: (platform) => platform.metadata.region,
+      sortDescFirst: false,
+      header: t('CSMBoard.Region'),
+      cell: ({ row }) => (
+        <span className="truncate">{row.original.metadata.region}</span>
       ),
     },
     {
@@ -146,9 +183,19 @@ export const SaasList = () => {
       header: t('CSMBoard.Link'),
       enableSorting: false,
       cell: ({ row }) => {
+        // Only a platform registered in the Hub has a metrics page.
+        const registeredPlatform = row.original.registered_platform;
+        if (
+          !registeredPlatform ||
+          registeredPlatform.identifier ===
+            ServiceDefinitionIdentifier.XtmoneRegistration
+        ) {
+          return null;
+        }
         const platformMetadata = getSaasPlatformMetadata(
-          row.original.identifier
+          registeredPlatform.identifier
         );
+
         return (
           <span className="flex min-w-0 items-center gap-2">
             {platformMetadata && (
@@ -160,7 +207,7 @@ export const SaasList = () => {
               />
             )}
             <Link
-              href={getSaasPlatformServicePath(row.original)}
+              href={getSaasPlatformServicePath(registeredPlatform)}
               className="truncate text-filigran-brand-primary underline">
               {t('CSMBoard.ViewMetrics')}
             </Link>
@@ -168,18 +215,10 @@ export const SaasList = () => {
         );
       },
     },
-    {
-      id: 'version',
-      header: t('CSMBoard.Version'),
-      enableSorting: false,
-      cell: ({ row }) => (
-        <span className="truncate">{row.original.version}</span>
-      ),
-    },
   ];
 
-  const saasPlatforms = useMemo<SaasPlatform[]>(
-    () => (data?.saasPlatforms.edges ?? []).map(({ node }) => node),
+  const saasPlatforms = useMemo<SaasPlatformRowFragment[]>(
+    () => data?.saasManagerPlatforms?.platforms ?? [],
     [data]
   );
 
@@ -206,7 +245,7 @@ export const SaasList = () => {
   };
 
   const onSortingChange = (updater: unknown) => {
-    handleSortingChange<RegisteredPlatformOrdering>({
+    handleSortingChange<SaasPlatformOrdering>({
       updater,
       orderBy,
       orderMode: orderMode as unknown as SortingOrderingMode,
@@ -220,7 +259,8 @@ export const SaasList = () => {
 
   return (
     <>
-      {isError && (
+      {/* null when the SaaS Manager cannot be reached */}
+      {(isError || data?.saasManagerPlatforms === null) && (
         <div className="mb-2 text-sm text-feedback-error-primary">
           {t('Utils.Error')}
         </div>
@@ -236,7 +276,7 @@ export const SaasList = () => {
           onPaginationChange,
           manualSorting: true,
           manualPagination: true,
-          rowCount: data?.saasPlatforms.totalCount ?? 0,
+          rowCount: data?.saasManagerPlatforms?.totalCount ?? 0,
         }}
         tableState={{
           sorting: mapToSortingTableValue(orderBy, orderMode),
@@ -249,12 +289,12 @@ export const SaasList = () => {
                 <label
                   htmlFor="saas-platforms-search"
                   className="sr-only">
-                  {t('CSMBoard.SearchOrganization')}
+                  {t('CSMBoard.SearchPlatform')}
                 </label>
                 <SearchField
                   id="saas-platforms-search"
                   fullWidth
-                  placeholder={t('CSMBoard.SearchOrganization')}
+                  placeholder={t('CSMBoard.SearchPlatform')}
                   clearLabel={t('CSMBoard.ClearSearch')}
                   onChange={onSearchChange}
                   onClear={onSearchClear}

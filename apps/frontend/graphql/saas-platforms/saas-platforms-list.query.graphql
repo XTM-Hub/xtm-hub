@@ -1,42 +1,41 @@
-query SaasPlatformsList(
-  $first: Int!
-  $after: ID
-  $orderBy: RegisteredPlatformOrdering!
+fragment SaasPlatformRow on SaasPlatform {
+  id
+  product
+  customer
+  metadata {
+    hostname
+    plan
+    region
+  }
+  registered_platform {
+    id
+    service_instance_id
+    identifier
+    organization {
+      id
+      name
+      administrator_emails
+    }
+  }
+}
+
+query SaasManagerPlatformsList(
+  $page: Int!
+  $pageSize: Int!
+  $orderBy: SaasPlatformOrdering!
   $orderMode: OrderingMode!
   $searchTerm: String
 ) {
-  saasPlatforms(
-    first: $first
-    after: $after
+  saasManagerPlatforms(
+    page: $page
+    pageSize: $pageSize
     orderBy: $orderBy
     orderMode: $orderMode
     searchTerm: $searchTerm
   ) {
     totalCount
-    pageInfo {
-      hasNextPage
-      endCursor
-    }
-    edges {
-      node {
-        id
-        service_instance_id
-        platform_id
-        tenant_id
-        tenant_name
-        url
-        title
-        version
-        contract
-        status
-        last_connectivity_check
-        identifier
-        organization {
-          id
-          name
-          administrator_emails
-        }
-      }
+    platforms {
+      ...SaasPlatformRow
     }
   }
 }

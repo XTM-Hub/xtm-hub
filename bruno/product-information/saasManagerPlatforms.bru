@@ -1,0 +1,91 @@
+meta {
+  name: saasManagerPlatforms
+  type: graphql
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/graphql-api
+  body: graphql
+  auth: inherit
+}
+
+headers {
+  cookie: {{cookie}}
+}
+
+body:graphql {
+  query SaasManagerPlatforms(
+    $page: Int!
+    $pageSize: Int!
+    $orderBy: SaasPlatformOrdering!
+    $orderMode: OrderingMode!
+    $searchTerm: String
+  ) {
+    saasManagerPlatforms(
+      page: $page
+      pageSize: $pageSize
+      orderBy: $orderBy
+      orderMode: $orderMode
+      searchTerm: $searchTerm
+    ) {
+      totalCount
+      platforms {
+        id
+        status
+        product
+        customer
+        commercial_model
+        sla_cmtd
+        metadata {
+          hostname
+          plan
+          start_date
+          end_date
+          region
+        }
+        storage {
+          es_used_size {
+            percent
+            used
+            limit
+          }
+          s3_used_size {
+            percent
+            used
+            limit
+          }
+        }
+        registered_platform {
+          id
+          service_instance_id
+          identifier
+          organization {
+            id
+            name
+            administrator_emails
+          }
+        }
+      }
+    }
+  }
+}
+
+body:graphql:vars {
+  {
+    "page": 1,
+    "pageSize": 25,
+    "orderBy": "customer__name",
+    "orderMode": "asc",
+    "searchTerm": null
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
+
+docs {
+  Lists the platforms the SaaS Manager knows, paged, searched and ordered by it. page counts from 1 and pageSize is at most 500, as the SaaS Manager pages them; a platform without an id is left out. registered_platform is the active SaaS registration of the platform in the Hub, null when the Hub does not know it. Needs the BYPASS or READ_SAAS_METRICS capability and the SAAS_METRICS feature flag.
+}

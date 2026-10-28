@@ -16,10 +16,6 @@ export const getSaasPlatformMetadata = (
     : undefined;
 };
 
-export const getSaasPlatformProductName = (
-  identifier: ServiceDefinitionIdentifier
-): string => getSaasPlatformMetadata(identifier)?.name ?? '';
-
 export const getSaasPlatformServicePath = ({
   identifier,
   service_instance_id,

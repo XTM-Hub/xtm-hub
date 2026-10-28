@@ -1,7 +1,6 @@
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
 import {
   getSaasPlatformMetadata,
-  getSaasPlatformProductName,
   getSaasPlatformServicePath,
 } from '@/components/subcription/saas/saas-list.utils';
 import {
@@ -40,39 +39,6 @@ describe('getSaasPlatformMetadata', () => {
     // Then no metadata is returned
     expect(metadata).toBeUndefined();
   });
-});
-
-describe('getSaasPlatformProductName', () => {
-  it.each([
-    [ServiceDefinitionIdentifier.OpenctiRegistration, 'OpenCTI'],
-    [ServiceDefinitionIdentifier.OpenaevRegistration, 'OpenAEV'],
-    [ServiceDefinitionIdentifier.XtmoneRegistration, 'XTM One'],
-  ])(
-    'should return the product name of a %s platform',
-    (identifier, expected) => {
-      // Given a platform registered for a known product
-      // When its product name is resolved
-      const productName = getSaasPlatformProductName(identifier);
-
-      // Then the product name is returned
-      expect(productName).toBe(expected);
-    }
-  );
-
-  it.each([
-    [ServiceDefinitionIdentifier.Link],
-    [ServiceDefinitionIdentifier.OpenctiIntegrations],
-  ])(
-    'should return an empty product name for a %s identifier',
-    (identifier) => {
-      // Given an identifier that does not match any registered product
-      // When its product name is resolved
-      const productName = getSaasPlatformProductName(identifier);
-
-      // Then the product name is empty
-      expect(productName).toBe('');
-    }
-  );
 });
 
 describe('getSaasPlatformServicePath', () => {

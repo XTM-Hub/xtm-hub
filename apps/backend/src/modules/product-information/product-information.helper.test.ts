@@ -812,4 +812,211 @@ describe('product information helper', () => {
       expect(data).toBeNull();
     });
   });
+
+  describe('fetchSaasPlatforms', () => {
+    const platform = {
+      id: uuidv4(),
+      status: 'active',
+      plan: 'Enterprise',
+      storage: {
+        es_used_size: {
+          percent: 12.5,
+          used: 1073741824,
+          limit: 8589934592,
+          time: '2026-10-28T08:30:00.587Z',
+        },
+        s3_used_size: {
+          percent: 0,
+          used: 0,
+          limit: 0,
+          time: '2026-10-28T08:30:00.587Z',
+        },
+        postgres_used_size: {
+          percent: 1,
+          used: 1,
+          limit: 100,
+          time: '2026-10-28T08:30:00.587Z',
+        },
+      },
+      sla_cmtd: 99.9,
+      start_date: '2026-01-01',
+      end_date: '2027-01-01',
+      hostname: 'my-platform.example.com',
+      commercial_model: 'INTERNAL',
+      customer: 'Filigran',
+      region: 'eu-west',
+      product: 'OCTI',
+    };
+    const parsedPlatform = {
+      id: platform.id,
+      status: 'active',
+      product: 'OCTI',
+      customer: 'Filigran',
+      commercial_model: 'INTERNAL',
+      sla_cmtd: 99.9,
+      metadata: {
+        hostname: 'my-platform.example.com',
+        plan: 'Enterprise',
+        start_date: '2026-01-01T00:00:00.000Z',
+        end_date: '2027-01-01T00:00:00.000Z',
+        region: 'eu-west',
+      },
+      storage: {
+        es_used_size: { percent: 12.5, used: 1073741824, limit: 8589934592 },
+        s3_used_size: { percent: 0, used: 0, limit: 0 },
+      },
+    };
+
+    const request = {
+      page: 2,
+      page_size: 25,
+      search: 'filigran',
+      ordering: '-customer',
+    };
+
+    const page = (results: unknown[], count = 26) => ({
+      count,
+      next: null,
+      previous: 'https://saasmanager.test/api/hub/instance/?page=1',
+      results,
+    });
+
+    const mockSaasManagerBody = (body: unknown) =>
+      vi.spyOn(SaasManagerClient, 'callInstanceListApi').mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => body,
+      } as Response);
+
+    it('should ask the SaaS Manager for the given page, search and ordering', async () => {
+      // Given
+      const callSpy = mockSaasManagerBody(page([platform]));
+
+      // When
+      await ProductInformationHelper.fetchSaasPlatforms(request);
+
+      // Then
+      expect(callSpy).toHaveBeenCalledExactlyOnceWith(request);
+    });
+
+    it('should return the platforms sent by the SaaS Manager without the unknown fields, with the total count', async () => {
+      // Given
+      mockSaasManagerBody(page([platform]));
+
+      // When
+      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+
+      // Then
+      expect(result).toEqual({ totalCount: 26, platforms: [parsedPlatform] });
+    });
+
+    it('should count the platforms of the page when the SaaS Manager sends no count', async () => {
+      // Given
+      mockSaasManagerBody({ results: [platform] });
+
+      // When
+      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+
+      // Then
+      expect(result).toEqual({ totalCount: 1, platforms: [parsedPlatform] });
+    });
+
+    it('should return no platform when the SaaS Manager sends an empty page', async () => {
+      // Given
+      mockSaasManagerBody(page([], 0));
+
+      // When
+      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+
+      // Then
+      expect(result).toEqual({ totalCount: 0, platforms: [] });
+    });
+
+    it.each`
+      case                          | body
+      ${'the body is null'}         | ${null}
+      ${'the body is an array'}     | ${[platform]}
+      ${'the results are missing'}  | ${{ count: 0, next: null }}
+      ${'the results are a string'} | ${{ count: 0, next: null, results: 'platforms' }}
+    `('should log an error and return null when $case', async ({ body }) => {
+      // Given
+      mockSaasManagerBody(body);
+      const errorSpy = vi.spyOn(logApp, 'error');
+
+      // When
+      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+
+      // Then
+      expect(result).toBeNull();
+      expect(errorSpy).toHaveBeenCalledExactlyOnceWith(
+        'The SaaS Manager returned an unreadable page of platforms',
+        { page: request.page }
+      );
+    });
+
+    it.each`
+      case                   | sent
+      ${'not an object'}     | ${'platform'}
+      ${'without an id'}     | ${{ ...platform, id: undefined }}
+      ${'with an empty id'}  | ${{ ...platform, id: '' }}
+      ${'with a numeric id'} | ${{ ...platform, id: 42 }}
+    `('should drop a platform $case', async ({ sent }) => {
+      // Given
+      mockSaasManagerBody(page([sent, platform]));
+
+      // When
+      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+
+      // Then
+      expect(result?.platforms).toEqual([parsedPlatform]);
+    });
+
+    it('should return null fields when the SaaS Manager sends only the id of a platform', async () => {
+      // Given
+      mockSaasManagerBody(page([{ id: platform.id }]));
+
+      // When
+      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+
+      // Then
+      expect(result?.platforms).toEqual([
+        {
+          id: platform.id,
+          status: null,
+          product: null,
+          customer: null,
+          commercial_model: null,
+          sla_cmtd: null,
+          metadata: {
+            hostname: null,
+            plan: null,
+            start_date: null,
+            end_date: null,
+            region: null,
+          },
+          storage: null,
+        },
+      ]);
+    });
+
+    it.each`
+      case                       | response
+      ${'the call fails'}        | ${() => Promise.reject(new Error('fetch failed'))}
+      ${'it returns 401'}        | ${async () => ({ ok: false, status: 401, json: async () => page([platform]) }) as Response}
+      ${'it returns 404'}        | ${async () => ({ ok: false, status: 404, json: async () => ({ detail: 'Invalid page.' }) }) as Response}
+      ${'it returns 500'}        | ${async () => ({ ok: false, status: 500, json: async () => page([platform]) }) as Response}
+      ${'the body is malformed'} | ${async () => ({ ok: true, status: 200, json: async () => Promise.reject(new SyntaxError('Unexpected token')) }) as Response}
+    `('should return null when $case', async ({ response }) => {
+      // Given
+      vi.spyOn(SaasManagerClient, 'callInstanceListApi').mockImplementation(
+        response
+      );
+
+      // When
+      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+
+      // Then
+      expect(result).toBeNull();
+    });
+  });
 });
