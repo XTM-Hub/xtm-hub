@@ -70,6 +70,7 @@ export enum BadRequestErrorCode {
   IntegrationTypeNotRecognized = 'INTEGRATION_TYPE_NOT_RECOGNIZED',
   MissingAutoRegisterPlatformArgument = 'MISSING_AUTO_REGISTER_PLATFORM_ARGUMENT',
   DocumentFileMissing = 'DOCUMENT_FILE_MISSING',
+  NewsFeedBlogpostEmptyFeed = 'NEWS_FEED_BLOGPOST_EMPTY_FEED',
   TenantIdMandatory = 'TENANT_ID_MANDATORY',
   NewsFeedItemMissingTitle = 'NEWS_FEED_ITEM_MISSING_TITLE',
   InvalidManifestVersionFormat = 'INVALID_MANIFEST_VERSION_FORMAT',
