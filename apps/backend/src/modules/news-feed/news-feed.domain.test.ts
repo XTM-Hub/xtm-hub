@@ -1,6 +1,6 @@
 import { toGlobalId } from 'graphql-relay/node/node.js';
 import { v4 as uuidv4 } from 'uuid';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   NewsFeedItemMetadataKey,
@@ -74,23 +74,20 @@ describe('newsFeedDomain', () => {
 
     describe('with a blogpost required version', () => {
       const BLOGPOST_REQUIRED_VERSION = '7.260901.0';
-      let replacedProperty: ReturnType<typeof vi.replaceProperty> | undefined;
+      const originalBlogpostSupport =
+        RequiredPlatformVersions.NewsFeedBlogpostSupport;
 
       const setRequiredVersion = (requiredVersion: string | null) => {
-        replacedProperty = vi.replaceProperty(
-          RequiredPlatformVersions,
-          'NewsFeedBlogpostSupport',
-          {
-            [PlatformIdentifier.Opencti]: requiredVersion,
-            [PlatformIdentifier.Openaev]: requiredVersion,
-            [PlatformIdentifier.Xtmone]: null,
-          }
-        );
+        RequiredPlatformVersions.NewsFeedBlogpostSupport = {
+          [PlatformIdentifier.Opencti]: requiredVersion,
+          [PlatformIdentifier.Openaev]: requiredVersion,
+          [PlatformIdentifier.Xtmone]: null,
+        };
       };
 
       afterEach(() => {
-        replacedProperty?.restore();
-        replacedProperty = undefined;
+        RequiredPlatformVersions.NewsFeedBlogpostSupport =
+          originalBlogpostSupport;
       });
 
       it.each`

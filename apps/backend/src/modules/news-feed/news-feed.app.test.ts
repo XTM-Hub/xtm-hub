@@ -273,11 +273,12 @@ describe('newsFeedApp', () => {
 
     describe('available_news_feed_types and the blogpost version gate', () => {
       const BLOGPOST_REQUIRED_VERSION = '7.260901.0';
-      let replacedProperty: ReturnType<typeof vi.replaceProperty> | undefined;
+      const originalBlogpostSupport =
+        RequiredPlatformVersions.NewsFeedBlogpostSupport;
 
       afterEach(async () => {
-        replacedProperty?.restore();
-        replacedProperty = undefined;
+        RequiredPlatformVersions.NewsFeedBlogpostSupport =
+          originalBlogpostSupport;
         await cleanupCreatedServiceInstances();
       });
 
@@ -314,15 +315,11 @@ describe('newsFeedApp', () => {
         'should list BLOG_POST only when the platform version is $description ($expected)',
         async ({ version, expected }) => {
           // Given
-          replacedProperty = vi.replaceProperty(
-            RequiredPlatformVersions,
-            'NewsFeedBlogpostSupport',
-            {
-              [PlatformIdentifier.Opencti]: BLOGPOST_REQUIRED_VERSION,
-              [PlatformIdentifier.Openaev]: null,
-              [PlatformIdentifier.Xtmone]: null,
-            }
-          );
+          RequiredPlatformVersions.NewsFeedBlogpostSupport = {
+            [PlatformIdentifier.Opencti]: BLOGPOST_REQUIRED_VERSION,
+            [PlatformIdentifier.Openaev]: null,
+            [PlatformIdentifier.Xtmone]: null,
+          };
           const gatedPlatformId = uuidv4();
           const gatedToken = uuidv4();
           await createOpenCTIPlatformForOrganization(
