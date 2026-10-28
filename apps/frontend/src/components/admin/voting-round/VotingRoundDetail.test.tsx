@@ -9,11 +9,12 @@ import {
   VotingRoundStatus,
 } from '@graphql/generated';
 import {
+  mockUseCaseConnection,
   mockVotableFeature,
   mockVotingRound,
   mockVotingRoundResults,
 } from '@graphql/mocks';
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 
 const GQL_OPERATION_VOTING_ROUND_DETAIL = 'VotingRoundDetail';
 const GQL_OPERATION_VOTING_ROUND_RANKING = 'VotingRoundRanking';
@@ -229,6 +230,54 @@ describe('VotingRoundDetail', () => {
 
     await user.click(await screen.findByText('AI-powered report triage'));
 
+    expect(
+      await screen.findByLabelText(/VotingRound.Feature.Title/i)
+    ).toBeInTheDocument();
+  });
+
+  it('should tell the admin that the round does not exist', async () => {
+    // Given
+    mswServer.use(
+      mockGraphqlQuery({
+        queryName: GQL_OPERATION_VOTING_ROUND_DETAIL,
+        data: { votingRound: null },
+      })
+    );
+
+    // When
+    testRender(<VotingRoundDetail roundId="round-1" />);
+
+    // Then
+    expect(await screen.findByText('Utils.NotFound')).toBeInTheDocument();
+  });
+
+  it('should open the edit sheet again when the admin clicks the feature after cancelling', async () => {
+    // Given
+    mockDetail();
+    mswServer.use(
+      mockGraphqlQuery({
+        queryName: 'UseCasesList',
+        data: { useCases: mockUseCaseConnection({ edges: [] }) },
+      })
+    );
+    const { user } = testRender(<VotingRoundDetail roundId="round-1" />);
+    const featureRow = await screen.findByRole('row', {
+      name: /AI-powered report triage/,
+    });
+    await user.click(featureRow);
+    await user.click(
+      await screen.findByRole('button', { name: 'Utils.Cancel' })
+    );
+    await waitFor(() =>
+      expect(
+        screen.queryByLabelText(/VotingRound.Feature.Title/i)
+      ).not.toBeInTheDocument()
+    );
+
+    // When
+    await user.click(featureRow);
+
+    // Then
     expect(
       await screen.findByLabelText(/VotingRound.Feature.Title/i)
     ).toBeInTheDocument();
