@@ -17,7 +17,10 @@ import { PortalContext } from '../../../model/portal-context';
 import { securityGuard } from '../../../security/guard';
 import { ErrorCode, UnknownErrorCode } from '../../../utils/error/error.code';
 import { mapToGraphQLError } from '../../../utils/error/error.mapping';
-import { ForbiddenAccess } from '../../../utils/error/error.util';
+import {
+  ForbiddenAccess,
+  UnauthenticatedAccess,
+} from '../../../utils/error/error.util';
 import { createRelayIdScalar } from '../../../utils/scalar.util';
 import { extractId } from '../../../utils/utils';
 import { AuthHelper } from '../../security-management/capability/auth.helper';
@@ -400,7 +403,15 @@ const resolvers: Resolvers = {
       resolve: (payload: { User: UserSubscription }) => payload.User,
     },
     MeUser: {
-      subscribe: (_, __, context, info) => listen(context, ['MeUser'], info),
+      subscribe: (_, __, context, info) => {
+        // @auth only wraps resolve, which runs after the SSE filter
+        if (!context.user) {
+          throw UnauthenticatedAccess(
+            'Not authorized: You are not authenticated'
+          );
+        }
+        return listen(context, ['MeUser'], info);
+      },
     },
     UserPending: {
       subscribe: async (_, args, context, info) => {
