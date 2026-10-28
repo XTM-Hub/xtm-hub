@@ -1137,7 +1137,7 @@ export const mockNewsFeedItemMetadata = (overrides?: Partial<NewsFeedItemMetadat
     relationshipsToOmit.add('NewsFeedItemMetadata');
     return {
         __typename: 'NewsFeedItemMetadata',
-        key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : NewsFeedItemMetadataKey.BlogPostSlug,
+        key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : NewsFeedItemMetadataKey.AuthorNames,
         value: overrides && overrides.hasOwnProperty('value') ? overrides.value! : 'astrum',
     };
 };

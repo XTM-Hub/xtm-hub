@@ -706,6 +706,7 @@
   "NewsFeedAdminPage": {
     "Title": "タイトル",
     "Library": "ライブラリ",
+    "Blogpost": "ブログ記事",
     "CreationDate": "作成日",
     "Tags": "タグ",
     "IsDeleted": "削除",

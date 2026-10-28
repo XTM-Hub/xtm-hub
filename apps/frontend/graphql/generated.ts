@@ -1671,8 +1671,13 @@ export type NewsFeedItemMetadata = {
 };
 
 export enum NewsFeedItemMetadataKey {
+  AuthorNames = 'author_names',
   BlogPostSlug = 'blog_post_slug',
+  Description = 'description',
   DocumentId = 'document_id',
+  ImageAlt = 'image_alt',
+  ImageUrl = 'image_url',
+  ReadMinutes = 'read_minutes',
   UrlPath = 'url_path'
 }
 

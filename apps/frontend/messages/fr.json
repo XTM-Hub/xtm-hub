@@ -706,6 +706,7 @@
   "NewsFeedAdminPage": {
     "Title": "Titre",
     "Library": "Bibliothèque",
+    "Blogpost": "Article de blog",
     "CreationDate": "Date de création",
     "Tags": "Tags",
     "IsDeleted": "Supprimé",

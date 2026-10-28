@@ -6,7 +6,6 @@ enum NewsFeedItemType {
   RESOURCE_CUSTOM_VIEW
   RESOURCE_INTEGRATION
   RESOURCE_SCENARIO
-  # Test purposes only: the real behavior comes with the blog post news feed items
   BLOG_POST
 }
 
@@ -30,6 +29,11 @@ enum NewsFeedItemMetadataKey {
   url_path
   document_id
   blog_post_slug
+  description
+  image_url
+  image_alt
+  author_names
+  read_minutes
 }
 
 type NewsFeedItemMetadata {

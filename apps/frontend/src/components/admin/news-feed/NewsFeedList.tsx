@@ -110,6 +110,9 @@ const NewsFeedList = () => {
         id: 'library',
         header: t('NewsFeedAdminPage.Library'),
         cell: ({ row }) => {
+          if (row.original.type === NewsFeedItemType.BlogPost) {
+            return <span>{t('NewsFeedAdminPage.Blogpost')}</span>;
+          }
           const slug = NEWS_FEED_TYPE_TO_SERVICE_SLUG[row.original.type];
           if (!slug) {
             // Explicit placeholder: an empty cell reads as missing data, not as "not applicable"
