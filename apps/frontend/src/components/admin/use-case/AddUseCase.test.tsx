@@ -94,4 +94,22 @@ describe('AddUseCase', () => {
       await screen.findByLabelText(/UseCaseForm.Name/i)
     ).toBeInTheDocument();
   });
+
+  it('should close the sheet when the admin cancels the creation', async () => {
+    // Given
+    const { user } = testRender(<AddUseCase />);
+    await user.click(
+      screen.getByRole('button', { name: 'UseCaseActions.AddUseCase' })
+    );
+
+    // When
+    await user.click(screen.getByRole('button', { name: 'Utils.Cancel' }));
+
+    // Then
+    await waitFor(() => {
+      expect(
+        screen.queryByLabelText('UseCaseForm.Name')
+      ).not.toBeInTheDocument();
+    });
+  });
 });
