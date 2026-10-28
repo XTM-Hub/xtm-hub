@@ -81,6 +81,21 @@ const parseFeed = (
     return item.data;
   });
 
+  // The Hub identifies a post by its slug: a repeated id or slug would hit the unique index
+  const seenIds = new Set<string>();
+  const seenSlugs = new Set<string>();
+  items.forEach(({ id, slug }) => {
+    if (seenIds.has(id) || seenSlugs.has(slug)) {
+      throw new BlogApiError(
+        BlogApiErrorCode.InvalidItem,
+        `Blog API item ${id} is invalid: duplicate id or slug`,
+        { postId: id }
+      );
+    }
+    seenIds.add(id);
+    seenSlugs.add(slug);
+  });
+
   // The API may ignore the limit: keep the newest items only
   return items.sort(compareItems).slice(0, limit);
 };
@@ -88,6 +103,10 @@ const parseFeed = (
 export const BlogApiClient = {
   // Reads the whole feed first: nothing is returned unless every item is valid.
   async fetchBlogFeed(request: BlogFeedRequest): Promise<BlogFeedItem[]> {
+    if (!Number.isInteger(request.limit) || request.limit <= 0) {
+      throw new Error('Blog API limit is not a positive integer');
+    }
+
     const baseUrl = config.get<string | null>('blog_api.base_url');
     if (!baseUrl) {
       throw new Error('Blog API base URL is not configured');
