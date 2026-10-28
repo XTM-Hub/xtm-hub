@@ -1,10 +1,13 @@
 import { PrefetchedFeatureVotingList } from '@/components/feature-voting/PrefetchedFeatureVotingList';
+import { createQueryClient } from '@/lib/query-client';
 import { mockGraphqlQuery } from '@/utils/test/msw/graphql-api';
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
 import { CurrentVotingRoundQuery, FiligranProduct } from '@graphql/generated';
 import { mockVotableFeature, mockVotingRound } from '@graphql/mocks';
-import { screen } from '@testing-library/react';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { screen, waitFor } from '@testing-library/react';
+import { graphql } from 'msw';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 const GQL_OPERATION_CURRENT_ROUND = 'CurrentVotingRound';
@@ -19,10 +22,20 @@ vi.mock('@/lib/graphql-client', async (importOriginal) => {
   };
 });
 
-// jsdom is a browser: give each render the fresh client a server request gets.
+// jsdom is a browser: give each render the fresh, never-retrying client a
+// server request gets.
 vi.mock('@/lib/query-client', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/query-client')>();
-  return { ...actual, getQueryClient: actual.makeQueryClient };
+  return {
+    ...actual,
+    getQueryClient: () => {
+      const client = actual.createQueryClient();
+      client.setDefaultOptions({
+        queries: { ...client.getDefaultOptions().queries, retry: false },
+      });
+      return client;
+    },
+  };
 });
 
 const mockRound = (description: string) =>
@@ -46,6 +59,17 @@ const mockRound = (description: string) =>
       },
     })
   );
+
+// Returns nothing, so MSW falls through to the handler that answers.
+const countRoundRequests = () => {
+  const counter = { requests: 0 };
+  mswServer.use(
+    graphql.query(GQL_OPERATION_CURRENT_ROUND, () => {
+      counter.requests += 1;
+    })
+  );
+  return counter;
+};
 
 const prefetchList = () =>
   PrefetchedFeatureVotingList({
@@ -80,6 +104,26 @@ describe('PrefetchedFeatureVotingList', () => {
     // Then
     expect(screen.getByText('Tell us what matters to you')).toBeInTheDocument();
     expect(screen.getByText('AI-powered report triage')).toBeInTheDocument();
+  });
+
+  it('should not refetch the prefetched round when the list mounts', async () => {
+    // Given
+    mockRound('Tell us what matters to you');
+    const prefetchedList = await prefetchList();
+    const counter = countRoundRequests();
+    // testRender's client has a zero stale time: use the production one.
+    const queryClient = createQueryClient();
+
+    // When
+    testRender(
+      <QueryClientProvider client={queryClient}>
+        {prefetchedList}
+      </QueryClientProvider>
+    );
+
+    // Then
+    await waitFor(() => expect(queryClient.isFetching()).toBe(0));
+    expect(counter.requests).toBe(0);
   });
 
   it('should fetch the round client-side when the prefetch fails', async () => {

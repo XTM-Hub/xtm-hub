@@ -1,6 +1,11 @@
 import { UnauthenticatedError } from '@/lib/graphql-fetch.utils';
 import { redirectToLogin } from '@/utils/redirect';
-import { isServer, MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
+import {
+  isServer,
+  MutationCache,
+  QueryCache,
+  QueryClient,
+} from '@tanstack/react-query';
 
 // Mirrors react-query's default, which a custom `retry` function replaces.
 const MAX_QUERY_RETRIES = 3;
@@ -9,10 +14,12 @@ const MAX_QUERY_RETRIES = 3;
 export const QUERY_STALE_TIME_MS = 60_000;
 
 // Never settles, so a mutation's own onError (an error snackbar) does not run during the redirect.
+// On the server there is no window: the error reaches the caller, which can
+// wrap the fetch in `redirectToSignupOnUnauthenticated`.
 const redirectOnUnauthenticated = (
   error: Error
 ): Promise<never> | undefined => {
-  if (!(error instanceof UnauthenticatedError)) return undefined;
+  if (isServer || !(error instanceof UnauthenticatedError)) return undefined;
 
   redirectToLogin();
   return new Promise<never>(() => {});
@@ -43,8 +50,8 @@ let browserQueryClient: QueryClient | undefined;
  */
 export const getQueryClient = () => {
   if (isServer) {
-    return makeQueryClient();
+    return createQueryClient();
   }
-  browserQueryClient ??= makeQueryClient();
+  browserQueryClient ??= createQueryClient();
   return browserQueryClient;
 };

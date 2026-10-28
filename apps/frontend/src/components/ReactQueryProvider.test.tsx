@@ -8,6 +8,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const CURRENT_PATHNAME = '/app/current-page';
 
+// jsdom is a browser: give each render a fresh client, not the session singleton.
+vi.mock('@/lib/query-client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/query-client')>();
+  return { ...actual, getQueryClient: actual.createQueryClient };
+});
+
 const ExpiredSessionMutation = () => {
   const { mutate } = useMutation({
     mutationFn: () => Promise.reject(new UnauthenticatedError()),
