@@ -122,6 +122,10 @@ export const SegmentedControl = <T extends string>({
       )}>
       {items.map((item, index) => {
         const isSelected = index === selectedIndex;
+        // The arrows skip a disabled item, so one with a tooltip is a tab stop of its own, like DisabledActionTooltip:
+        // otherwise the keyboard never reaches its explanation.
+        const isTabStop =
+          index === tabbableIndex || (!!item.disabled && !!item.tooltip);
         const segment = (
           <button
             key={item.value}
@@ -131,9 +135,9 @@ export const SegmentedControl = <T extends string>({
             type="button"
             role="radio"
             aria-checked={isSelected}
-            // aria-disabled rather than disabled: the item still takes the hover that opens its tooltip.
+            // aria-disabled rather than disabled: the item still takes the hover and focus that open its tooltip.
             aria-disabled={item.disabled || undefined}
-            tabIndex={index === tabbableIndex ? 0 : -1}
+            tabIndex={isTabStop ? 0 : -1}
             disabled={disabled}
             onClick={() => select(item)}
             onKeyDown={(event) => handleKeyDown(event, index)}

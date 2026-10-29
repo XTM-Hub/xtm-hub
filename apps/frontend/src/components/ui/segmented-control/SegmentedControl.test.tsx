@@ -291,16 +291,72 @@ describe('SegmentedControl', () => {
       expect(radio).not.toHaveClass('bg-filigran-brand-primary');
     });
 
-    it('should make the first enabled item the tab stop when the value is the disabled item', () => {
-      // Given / When
-      renderWithDisabledItem('month');
+    it('should enter the group at the first enabled item when the value is the disabled item', async () => {
+      // Given
+      const { user } = renderWithDisabledItem('month');
+
+      // When
+      await user.tab();
 
       // Then
+      expect(screen.getByRole('radio', { name: '7 days' })).toHaveFocus();
+    });
+
+    it('should show the tooltip of the disabled item when the keyboard reaches it', async () => {
+      // Given
+      const { user } = renderWithDisabledItem('week');
+      await user.tab();
+
+      // When
+      await user.tab();
+
+      // Then
+      expect(screen.getByRole('radio', { name: '30 days' })).toHaveFocus();
       expect(
-        screen
-          .getAllByRole('radio')
-          .map((radio) => radio.getAttribute('tabindex'))
-      ).toEqual(['0', '-1', '-1']);
+        await screen.findByRole('tooltip', { name: REASON })
+      ).toBeInTheDocument();
+    });
+
+    it.each`
+      key
+      ${'{Enter}'}
+      ${'[Space]'}
+    `(
+      'should not notify a change when $key is pressed on the focused disabled item',
+      async ({ key }) => {
+        // Given
+        const onValueChange = vi.fn();
+        const { user } = renderWithDisabledItem('week', onValueChange);
+        await user.tab();
+        await user.tab();
+
+        // When
+        await user.keyboard(key);
+
+        // Then
+        expect(onValueChange).not.toHaveBeenCalled();
+      }
+    );
+
+    it('should keep a disabled item without a tooltip out of the tab order', () => {
+      // Given / When
+      testRender(
+        <SegmentedControl
+          aria-label={LABEL}
+          items={[
+            { value: 'week', label: '7 days' },
+            { value: 'month', label: '30 days', disabled: true },
+          ]}
+          value="week"
+          onValueChange={vi.fn()}
+        />
+      );
+
+      // Then
+      expect(screen.getByRole('radio', { name: '30 days' })).toHaveAttribute(
+        'tabindex',
+        '-1'
+      );
     });
   });
 });
