@@ -398,7 +398,10 @@ describe('newsFeedDomain', () => {
       'should return the type %s of the item',
       async (type) => {
         // Given
-        const item = await TestHelper.newsFeed.createItem({ type });
+        const item = await TestHelper.newsFeed.createItem({
+          type,
+          title: `item-of-type-${type}`,
+        });
 
         // When
         const result = await NewsFeedDomain.loadNewsFeedItemTypeById(item.id);
@@ -998,6 +1001,31 @@ describe('newsFeedDomain', () => {
         expect(
           await TestHelper.newsFeed.loadFirstItem({ id: deletedBlogPost.id })
         ).toBeUndefined();
+      });
+
+      it('should keep an expired deleted blog post while a platform has not consumed its deletion', async () => {
+        // Given
+        const deletedBlogPost = await createExpiredBlogPost(true);
+        const platformId = uuidv4();
+        await NewsFeedDomain.provisionNewsFeedItem(deletedBlogPost.id, [
+          platformId,
+        ]);
+
+        // When
+        const deletedCount = await NewsFeedDomain.deleteNewsFeedItemsOlderThan(
+          monthsAgo(6)
+        );
+
+        // Then
+        expect(deletedCount).toBe(0);
+        expect(
+          await TestHelper.newsFeed.loadFirstItem({ id: deletedBlogPost.id })
+        ).toMatchObject({ id: deletedBlogPost.id, is_deleted: true });
+        expect(
+          await TestHelper.newsFeed.loadProvisioned({
+            news_feed_item_id: deletedBlogPost.id,
+          })
+        ).toHaveLength(1);
       });
     });
 

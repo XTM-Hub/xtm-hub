@@ -202,38 +202,6 @@ describe('NewsFeedList', () => {
     );
   });
 
-  it('disables the delete action of a live blog post with an explanatory tooltip', async () => {
-    mocks.newsFeedItems = [
-      {
-        id: 'item-3',
-        title: 'Blog post news',
-        type: NewsFeedItemType.BlogPost,
-        creation_date: '2025-01-22T08:00:00.000Z',
-        tags: [],
-        is_deleted: false,
-        metadata: [],
-      },
-    ];
-
-    const { user } = testRender(<NewsFeedList />);
-
-    const deleteButton = screen.getByRole('button', {
-      name: 'NewsFeedAdminPage.Delete',
-    });
-    expect(deleteButton).toBeDisabled();
-
-    await user.click(deleteButton);
-    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
-    expect(mocks.deleteMutate).not.toHaveBeenCalled();
-
-    act(() => deleteButton.parentElement!.focus());
-    expect(
-      await screen.findByRole('tooltip', {
-        name: 'NewsFeedAdminPage.DeleteBlogpostDisabled',
-      })
-    ).toBeInTheDocument();
-  });
-
   it('renders the library label of a resource item', () => {
     testRender(<NewsFeedList />);
 

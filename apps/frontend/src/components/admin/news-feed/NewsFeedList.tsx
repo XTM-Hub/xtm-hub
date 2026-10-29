@@ -2,7 +2,6 @@
 import BadgeOverflowCounter from '@/components/ui/BadgeOverflowCounter';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { DataTable } from '@/components/ui/data-table';
-import { DisabledActionTooltip } from '@/components/ui/DisabledActionTooltip';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
 import { useTablePagination } from '@/hooks/use-table-pagination';
@@ -12,7 +11,13 @@ import { useDateFormatter } from '@/utils/date';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { localizedCardName } from '@/utils/services';
 import { ServiceSlug } from '@/utils/shareable-resources/shareable-resources.types';
-import { Chip } from '@filigran/design-system';
+import {
+  Chip,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
 import {
   NewsFeedItemMetadataKey,
@@ -25,7 +30,7 @@ import { newsFeedKeys } from '@graphql/news-feed/news-feed.keys';
 import { keepPreviousData, useQueryClient } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 
 const DEFAULT_PAGE_SIZE = 25;
 
@@ -43,6 +48,41 @@ const NEWS_FEED_TYPE_TO_SERVICE_SLUG: Partial<
   [NewsFeedItemType.ResourceCustomView]: ServiceSlug.OPEN_CTI_CUSTOM_VIEWS,
   [NewsFeedItemType.ResourceIntegration]: ServiceSlug.OPEN_CTI_INTEGRATIONS,
   [NewsFeedItemType.ResourceScenario]: ServiceSlug.OPEN_AEV_SCENARIOS,
+};
+
+// Not `disabled`: Radix skips disabled items in arrow-key navigation, so keyboard users would
+// never reach the reason. The item stays focusable, opens the tooltip on focus, announces the
+// reason as its description and ignores selection.
+const BlogpostDeleteItem = ({
+  label,
+  reason,
+}: {
+  label: string;
+  reason: string;
+}) => {
+  const reasonId = useId();
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <IconActionsItem
+            aria-disabled="true"
+            aria-describedby={reasonId}
+            className="cursor-not-allowed opacity-50"
+            onSelect={(event) => event.preventDefault()}>
+            {label}
+          </IconActionsItem>
+        </TooltipTrigger>
+        <TooltipContent>{reason}</TooltipContent>
+      </Tooltip>
+      <span
+        id={reasonId}
+        className="sr-only">
+        {reason}
+      </span>
+    </TooltipProvider>
+  );
 };
 
 const NewsFeedList = () => {
@@ -172,12 +212,10 @@ const NewsFeedList = () => {
                 icon={<MoreVertIcon className="h-4 w-4 text-icon-highlight" />}>
                 {row.original.type === NewsFeedItemType.BlogPost ? (
                   // Live blog items are managed by the synchronization only
-                  <DisabledActionTooltip
-                    reason={t('NewsFeedAdminPage.DeleteBlogpostDisabled')}>
-                    <IconActionsItem disabled>
-                      {t('NewsFeedAdminPage.Delete')}
-                    </IconActionsItem>
-                  </DisabledActionTooltip>
+                  <BlogpostDeleteItem
+                    label={t('NewsFeedAdminPage.Delete')}
+                    reason={t('NewsFeedAdminPage.DeleteBlogpostDisabled')}
+                  />
                 ) : (
                   <IconActionsItem
                     onClick={() => setDeleteTarget(row.original)}>
