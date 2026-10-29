@@ -17,6 +17,11 @@ import {
   ServiceDefinitionIdentifier,
 } from '@graphql/generated';
 
+export const STORAGE_PERCENT_FORMAT = {
+  style: 'percent',
+  maximumFractionDigits: 0,
+} as const;
+
 // The SaaS Manager names its products by a short code, normalised by the backend.
 const PRODUCT_NAME_BY_SAAS_PRODUCT: Record<SaasProduct, string> = {
   [SaasProduct.Octi]: PlatformMetadataMapping[PlatformIdentifier.Opencti].name,

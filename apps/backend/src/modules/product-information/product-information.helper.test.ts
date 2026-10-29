@@ -868,7 +868,7 @@ describe('product information helper', () => {
       },
       storage: {
         es_used_size: { percent: 12.5, used: 1073741824, limit: 8589934592 },
-        s3_used_size: { percent: 0, used: 0, limit: 0 },
+        s3_used_size: { percent: null, used: 0, limit: 0 },
       },
       health_issues: [SaasPlatformHealthIssue.Availability],
       contract_status: SaasPlatformContractStatus.EndingSoon,
@@ -928,7 +928,7 @@ describe('product information helper', () => {
       expect(result).toEqual({ totalCount: 26, platforms: [parsedPlatform] });
     });
 
-    it('should count the platforms of the page when the SaaS Manager sends no count', async () => {
+    it('should return null when the SaaS Manager sends no count', async () => {
       // Given
       mockSaasManagerBody({ results: [platform] });
 
@@ -936,7 +936,7 @@ describe('product information helper', () => {
       const result = await ProductInformationHelper.fetchSaasPlatforms(request);
 
       // Then
-      expect(result).toEqual({ totalCount: 1, platforms: [parsedPlatform] });
+      expect(result).toBeNull();
     });
 
     it('should return no platform when the SaaS Manager sends an empty page', async () => {

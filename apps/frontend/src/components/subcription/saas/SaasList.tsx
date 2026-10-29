@@ -1,14 +1,13 @@
 'use client';
 
 import { SLA_PERCENT_FORMAT } from '@/components/service/registration/sla-availability-chart.utils';
+import { SaasAdministrators } from '@/components/subcription/saas/datatable/SaasAdministrators';
+import { SaasContractEnd } from '@/components/subcription/saas/datatable/SaasContractEnd';
+import { SaasPlatformHealth } from '@/components/subcription/saas/datatable/SaasPlatformHealth';
+import { SaasPlatformLink } from '@/components/subcription/saas/datatable/SaasPlatformLink';
+import { SaasProductChip } from '@/components/subcription/saas/datatable/SaasProductChip';
+import { SaasStorageUsage } from '@/components/subcription/saas/datatable/SaasStorageUsage';
 import { useSaasListLocalstorage } from '@/components/subcription/saas/saas-list-localstorage';
-import {
-  getContractDaysLeft,
-  getHealthIssueRatio,
-  getSaasPlatformMetadata,
-  getSaasPlatformServicePath,
-  getSaasProductName,
-} from '@/components/subcription/saas/saas-list.utils';
 import { SaasProductFilter } from '@/components/subcription/saas/SaasProductFilter';
 import {
   DataTable,
@@ -27,23 +26,12 @@ import { useTranslate } from '@/hooks/use-translate';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { cn } from '@/lib/utils';
 import { DEBOUNCE_TIME } from '@/utils/constant';
-import { useDateFormatter } from '@/utils/date';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
-import {
-  Chip,
-  type ChipSeverity,
-  ProgressBar,
-  SearchField,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@filigran/design-system';
+import { Chip, SearchField, TooltipProvider } from '@filigran/design-system';
 import {
   OrderingMode,
   PortalCapability,
   type SaasManagerPlatformsListQueryVariables,
-  SaasPlatformContractStatus,
   SaasPlatformHealthIssue,
   SaasPlatformOrdering,
   type SaasPlatformRowFragment,
@@ -54,49 +42,11 @@ import {
 import { saasPlatformsKeys } from '@graphql/saas-platforms/saas-platforms.keys';
 import { ColumnDef } from '@tanstack/react-table';
 import { useFormatter } from 'next-intl';
-import Link from 'next/link';
 import { ChangeEvent, useMemo, useState } from 'react';
 import { useDebounceCallback } from 'usehooks-ts';
 
-const STORAGE_PERCENT_FORMAT = {
-  style: 'percent',
-  maximumFractionDigits: 0,
-} as const;
-
-const CONTRACT_STATUS_CLASS: Record<SaasPlatformContractStatus, string> = {
-  [SaasPlatformContractStatus.Active]: 'text-default-secondary',
-  [SaasPlatformContractStatus.EndingSoon]: 'text-feedback-warning-primary',
-  [SaasPlatformContractStatus.Ended]: 'text-feedback-error-primary',
-};
-
-const HEALTH_ISSUE_CHIPS = {
-  [SaasPlatformHealthIssue.Availability]: {
-    labelKey: 'CSMBoard.HealthSla',
-    percentFormat: SLA_PERCENT_FORMAT,
-    severity: 'critical',
-  },
-  [SaasPlatformHealthIssue.Database]: {
-    labelKey: 'CSMBoard.HealthDatabase',
-    percentFormat: STORAGE_PERCENT_FORMAT,
-    severity: 'medium',
-  },
-  [SaasPlatformHealthIssue.FileStorage]: {
-    labelKey: 'CSMBoard.HealthFileStorage',
-    percentFormat: STORAGE_PERCENT_FORMAT,
-    severity: 'medium',
-  },
-} satisfies Record<
-  SaasPlatformHealthIssue,
-  {
-    labelKey: string;
-    percentFormat: Intl.NumberFormatOptions;
-    severity: ChipSeverity;
-  }
->;
-
 export const SaasList = () => {
   const t = useTranslate();
-  const formatDate = useDateFormatter();
   const format = useFormatter();
   const canReadSaasMetrics = useUserHasPortalCapability([
     PortalCapability.Bypass,
@@ -149,90 +99,6 @@ export const SaasList = () => {
     }
   );
 
-  const renderStorageUsage = (
-    percent: number | null | undefined,
-    label: string,
-    isHigh: boolean
-  ) =>
-    typeof percent === 'number' && (
-      <span className="flex min-w-0 items-center gap-2">
-        <ProgressBar
-          value={percent}
-          aria-label={label}
-          className={cn(
-            'w-8 shrink-0',
-            // The design system has no alert tone for a progress bar: its indicator is painted directly
-            isHigh &&
-              '[&>[data-slot=progress-bar-indicator]]:bg-feedback-alert-primary'
-          )}
-        />
-        <span className={cn(isHigh && 'text-feedback-alert-primary')}>
-          {format.number(percent / 100, STORAGE_PERCENT_FORMAT)}
-        </span>
-      </span>
-    );
-
-  const getHealthIssueLabel = (
-    platform: SaasPlatformRowFragment,
-    issue: SaasPlatformHealthIssue
-  ) => {
-    const ratio = getHealthIssueRatio(platform, issue);
-    return t(HEALTH_ISSUE_CHIPS[issue].labelKey, {
-      percent:
-        ratio === null
-          ? ''
-          : format.number(ratio, HEALTH_ISSUE_CHIPS[issue].percentFormat),
-    });
-  };
-
-  const renderHealth = (platform: SaasPlatformRowFragment) => {
-    const issues = platform.health_issues;
-    if (!issues) {
-      return null;
-    }
-    const [firstIssue, ...otherIssues] = issues;
-    if (!firstIssue) {
-      return (
-        <Chip
-          label={t('CSMBoard.Healthy')}
-          severity="low"
-        />
-      );
-    }
-    const firstIssueLabel = getHealthIssueLabel(platform, firstIssue);
-    const firstIssueSeverity = HEALTH_ISSUE_CHIPS[firstIssue].severity;
-    if (otherIssues.length === 0) {
-      return (
-        <Chip
-          label={firstIssueLabel}
-          severity={firstIssueSeverity}
-        />
-      );
-    }
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Chip
-            label={`${firstIssueLabel} +${otherIssues.length}`}
-            severity={firstIssueSeverity}
-            tabIndex={0}
-          />
-        </TooltipTrigger>
-        <TooltipContent>
-          <span className="flex flex-col items-start gap-1">
-            {otherIssues.map((issue) => (
-              <Chip
-                key={issue}
-                label={getHealthIssueLabel(platform, issue)}
-                severity={HEALTH_ISSUE_CHIPS[issue].severity}
-              />
-            ))}
-          </span>
-        </TooltipContent>
-      </Tooltip>
-    );
-  };
-
   const columns: ColumnDef<SaasPlatformRowFragment>[] = [
     {
       id: SaasPlatformOrdering.CustomerName,
@@ -279,30 +145,14 @@ export const SaasList = () => {
       header: t('CSMBoard.Administrators'),
       size: 130,
       enableSorting: false,
-      cell: ({ row }) => {
-        const emails =
-          row.original.registered_platform?.organization
-            ?.administrator_emails ?? [];
-        if (emails.length <= 1) {
-          return <span className="truncate">{emails[0]}</span>;
-        }
-        return (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span
-                className="truncate"
-                tabIndex={0}>
-                {emails.join(', ')}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              {emails.map((email) => (
-                <div key={email}>{email}</div>
-              ))}
-            </TooltipContent>
-          </Tooltip>
-        );
-      },
+      cell: ({ row }) => (
+        <SaasAdministrators
+          emails={
+            row.original.registered_platform?.organization
+              ?.administrator_emails ?? []
+          }
+        />
+      ),
     },
     {
       id: SaasPlatformOrdering.Product,
@@ -310,37 +160,14 @@ export const SaasList = () => {
       sortDescFirst: false,
       header: t('CSMBoard.Products'),
       size: 100,
-      cell: ({ row }) => {
-        const { product, registered_platform } = row.original;
-        if (!product) {
-          return null;
-        }
-        const productName = getSaasProductName(product);
-        // Only a platform registered in the Hub reports its version.
-        const version = registered_platform?.version;
-        if (!version) {
-          return (
-            <Chip
-              label={productName}
-              severity="info"
-            />
-          );
-        }
-        return (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Chip
-                label={productName}
-                severity="info"
-                tabIndex={0}
-              />
-            </TooltipTrigger>
-            <TooltipContent>
-              {t('CSMBoard.ProductVersion', { version })}
-            </TooltipContent>
-          </Tooltip>
-        );
-      },
+      cell: ({ row }) =>
+        row.original.product && (
+          <SaasProductChip
+            product={row.original.product}
+            // Only a platform registered in the Hub reports its version.
+            version={row.original.registered_platform?.version}
+          />
+        ),
     },
     {
       id: SaasPlatformOrdering.Plan,
@@ -371,27 +198,7 @@ export const SaasList = () => {
         ) {
           return null;
         }
-        const platformMetadata = getSaasPlatformMetadata(
-          registeredPlatform.identifier
-        );
-
-        return (
-          <span className="flex min-w-0 items-center gap-2">
-            {platformMetadata && (
-              <platformMetadata.Icon
-                className={cn(
-                  'size-4 shrink-0',
-                  platformMetadata.iconClassName
-                )}
-              />
-            )}
-            <Link
-              href={getSaasPlatformServicePath(registeredPlatform)}
-              className="truncate text-filigran-brand-primary underline">
-              {t('CSMBoard.ViewMetrics')}
-            </Link>
-          </span>
-        );
+        return <SaasPlatformLink registeredPlatform={registeredPlatform} />;
       },
     },
     {
@@ -400,36 +207,13 @@ export const SaasList = () => {
       sortDescFirst: false,
       header: t('CSMBoard.ContractEnd'),
       size: 130,
-      cell: ({ row }) => {
-        const {
-          metadata: { end_date: endDate },
-          contract_status: contractStatus,
-        } = row.original;
-        if (!endDate) {
-          return null;
-        }
-        return (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span
-                className={cn(
-                  'truncate',
-                  contractStatus && CONTRACT_STATUS_CLASS[contractStatus]
-                )}
-                tabIndex={0}>
-                {contractStatus === SaasPlatformContractStatus.Ended
-                  ? t('CSMBoard.ContractEnded')
-                  : t('CSMBoard.EndsIn', {
-                      days: getContractDaysLeft(endDate),
-                    })}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>
-              {formatDate(endDate, 'DATE_MEDIUM')}
-            </TooltipContent>
-          </Tooltip>
-        );
-      },
+      cell: ({ row }) =>
+        row.original.metadata.end_date && (
+          <SaasContractEnd
+            endDate={row.original.metadata.end_date}
+            contractStatus={row.original.contract_status}
+          />
+        ),
     },
     {
       id: 'database',
@@ -437,28 +221,34 @@ export const SaasList = () => {
       size: 100,
       // The SaaS Manager cannot order by the usage of a storage
       enableSorting: false,
-      cell: ({ row }) =>
-        renderStorageUsage(
-          row.original.storage?.es_used_size?.percent,
-          t('CSMBoard.Database'),
-          !!row.original.health_issues?.includes(
-            SaasPlatformHealthIssue.Database
-          )
-        ),
+      cell: ({ row }) => (
+        <SaasStorageUsage
+          percent={row.original.storage?.es_used_size?.percent}
+          label={t('CSMBoard.Database')}
+          isHigh={
+            !!row.original.health_issues?.includes(
+              SaasPlatformHealthIssue.Database
+            )
+          }
+        />
+      ),
     },
     {
       id: 'file_storage',
       header: t('CSMBoard.FileStorage'),
       size: 100,
       enableSorting: false,
-      cell: ({ row }) =>
-        renderStorageUsage(
-          row.original.storage?.s3_used_size?.percent,
-          t('CSMBoard.FileStorage'),
-          !!row.original.health_issues?.includes(
-            SaasPlatformHealthIssue.FileStorage
-          )
-        ),
+      cell: ({ row }) => (
+        <SaasStorageUsage
+          percent={row.original.storage?.s3_used_size?.percent}
+          label={t('CSMBoard.FileStorage')}
+          isHigh={
+            !!row.original.health_issues?.includes(
+              SaasPlatformHealthIssue.FileStorage
+            )
+          }
+        />
+      ),
     },
     {
       id: 'availability',
@@ -500,7 +290,7 @@ export const SaasList = () => {
       size: 170,
       // The health of each platform is rated by the Hub: the SaaS Manager cannot order by it
       enableSorting: false,
-      cell: ({ row }) => renderHealth(row.original),
+      cell: ({ row }) => <SaasPlatformHealth platform={row.original} />,
     },
   ];
 

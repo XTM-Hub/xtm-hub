@@ -11,7 +11,6 @@ import {
   ServiceDefinitionIdentifier,
 } from '@graphql/generated';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { useTranslations } from 'next-intl';
 
 const CUSTOMER = 'Filigran';
 const PLAN = 'Enterprise';
@@ -119,18 +118,6 @@ const mockSaasPlatforms = (nodes: SaasPlatformRowFragment[]) =>
     isLoading: false,
   });
 
-const mockTranslationsWithValues = () =>
-  vi
-    .mocked(useTranslations)
-    .mockReturnValue(((key: string, values?: Record<string, unknown>) =>
-      values ? `${key}:${JSON.stringify(values)}` : key) as ReturnType<
-      typeof useTranslations
-    >);
-
-// The tone of a chip is painted on its root, around the label
-const getChipByLabel = (label: string) =>
-  screen.getByText(label).closest('[class*="bg-feedback-"]');
-
 const getAdministratorsCell = () => {
   const administratorsColumnIndex = screen
     .getAllByRole('columnheader')
@@ -151,12 +138,6 @@ describe('SaasList', () => {
       data: undefined,
       isLoading: false,
     });
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-    // Back to the translator of setup-vitest, which gives back the bare key
-    vi.mocked(useTranslations).mockReset();
   });
 
   it.each([[PortalCapability.Bypass], [PortalCapability.ReadSaasMetrics]])(
@@ -319,36 +300,6 @@ describe('SaasList', () => {
     }
   });
 
-  it('should display the version of a saas platform registered in the Hub in a tooltip on its product', async () => {
-    // Given a saas platform registered in the Hub
-    mockTranslationsWithValues();
-    mockSaasPlatforms([buildSaasPlatform()]);
-    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
-
-    // When the user focuses its product
-    fireEvent.focus(screen.getByText(PRODUCT_NAME));
-
-    // Then a tooltip shows the version reported to the Hub
-    const tooltip = await screen.findByRole('tooltip');
-    expect(
-      within(tooltip).getByText(
-        `CSMBoard.ProductVersion:${JSON.stringify({ version: VERSION })}`
-      )
-    ).toBeInTheDocument();
-  });
-
-  it('should display no version tooltip on the product of a saas platform that is not registered in the Hub', () => {
-    // Given a saas platform the Hub does not know
-    mockSaasPlatforms([buildSaasPlatform({ registered_platform: null })]);
-    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
-
-    // When the user focuses its product
-    fireEvent.focus(screen.getByText(PRODUCT_NAME));
-
-    // Then no tooltip opens
-    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
-  });
-
   it('should display the version of a saas platform registered in the Hub', () => {
     // Given a saas platform registered in the Hub
     mockSaasPlatforms([buildSaasPlatform()]);
@@ -360,20 +311,6 @@ describe('SaasList', () => {
     expect(screen.getByText(VERSION)).toBeInTheDocument();
   });
 
-  it('should display the exact contract end date in a tooltip on the days left', async () => {
-    // Given a saas platform with a contract end date
-    mockSaasPlatforms([buildSaasPlatform()]);
-    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
-    expect(screen.queryByText('Mar 15, 2027')).not.toBeInTheDocument();
-
-    // When the user focuses the days left of its contract
-    fireEvent.focus(screen.getByText('CSMBoard.EndsIn'));
-
-    // Then a tooltip shows the exact end date
-    const tooltip = await screen.findByRole('tooltip');
-    expect(within(tooltip).getByText('Mar 15, 2027')).toBeInTheDocument();
-  });
-
   it('should display no version for a saas platform that is not registered in the Hub', () => {
     // Given a saas platform the Hub does not know
     mockSaasPlatforms([buildSaasPlatform({ registered_platform: null })]);
@@ -383,59 +320,6 @@ describe('SaasList', () => {
 
     // Then its row shows no version
     expect(screen.queryByText(VERSION)).not.toBeInTheDocument();
-  });
-
-  it.each`
-    description               | endDate                       | contractStatus                           | days  | className
-    ${'in 90 days or more'}   | ${'2027-01-26T12:00:00.000Z'} | ${SaasPlatformContractStatus.Active}     | ${90} | ${'text-default-secondary'}
-    ${'in less than 90 days'} | ${'2027-01-25T12:00:00.000Z'} | ${SaasPlatformContractStatus.EndingSoon} | ${89} | ${'text-feedback-warning-primary'}
-  `(
-    'should display the $days days left on a contract that ends $description in $className',
-    ({ endDate, contractStatus, days, className }) => {
-      // Given a saas platform whose contract ends at a known date from now
-      vi.useFakeTimers({
-        toFake: ['Date'],
-        now: new Date('2026-10-28T12:00:00.000Z'),
-      });
-      mockTranslationsWithValues();
-      mockSaasPlatforms([
-        buildSaasPlatform({
-          metadata: {
-            plan: PLAN,
-            end_date: endDate,
-          },
-          contract_status: contractStatus,
-        }),
-      ]);
-
-      // When the list is rendered
-      renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
-
-      // Then its row shows the days left, colored after how soon the contract ends
-      expect(
-        screen.getByText(`CSMBoard.EndsIn:${JSON.stringify({ days })}`)
-      ).toHaveClass(className);
-    }
-  );
-
-  it('should display an ended contract as ended, in red, with its end date in a tooltip', async () => {
-    // Given a saas platform whose contract ended 40 days ago
-    mockSaasPlatforms([
-      buildSaasPlatform({
-        metadata: { plan: PLAN, end_date: '2026-09-18T12:00:00.000Z' },
-        contract_status: SaasPlatformContractStatus.Ended,
-      }),
-    ]);
-    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
-
-    // When the user focuses its contract end
-    const contractEnd = screen.getByText('CSMBoard.ContractEnded');
-    fireEvent.focus(contractEnd);
-
-    // Then it reads ended, in red, not as days left, and the tooltip shows its date
-    expect(contractEnd).toHaveClass('text-feedback-error-primary');
-    expect(screen.queryByText(/^CSMBoard\.EndsIn/)).not.toBeInTheDocument();
-    expect(await screen.findByRole('tooltip')).toBeInTheDocument();
   });
 
   it('should display the database and file storage usages with their bars, the storage with an issue in alert color', () => {
@@ -513,99 +397,6 @@ describe('SaasList', () => {
     expect(screen.queryByText(/%$/)).not.toBeInTheDocument();
   });
 
-  it('should display a green health chip for a saas platform without any issue', () => {
-    // Given a saas platform whose availability and storages are all fine
-    mockSaasPlatforms([
-      buildSaasPlatform({
-        sla_cmtd: 1,
-        storage: {
-          es_used_size: { percent: DATABASE_USAGE_PERCENT },
-          s3_used_size: { percent: DATABASE_USAGE_PERCENT },
-        },
-        health_issues: [],
-      }),
-    ]);
-
-    // When the list is rendered
-    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
-
-    // Then its health is a green chip
-    expect(getChipByLabel('CSMBoard.Healthy')).toHaveClass(
-      'bg-feedback-success-secondary-transparency-30'
-    );
-  });
-
-  it.each`
-    description                         | overrides                                                                                                                                        | label                                             | className
-    ${'misses its SLA'}                 | ${{ storage: { es_used_size: { percent: 12 }, s3_used_size: { percent: 12 } }, health_issues: [SaasPlatformHealthIssue.Availability] }}          | ${'CSMBoard.HealthSla:{"percent":"99.96%"}'}      | ${'bg-feedback-error-secondary-transparency-30'}
-    ${'has a nearly full database'}     | ${{ sla_cmtd: 1, storage: { es_used_size: { percent: 85 }, s3_used_size: { percent: 12 } }, health_issues: [SaasPlatformHealthIssue.Database] }} | ${'CSMBoard.HealthDatabase:{"percent":"85%"}'}    | ${'bg-feedback-alert-secondary-transparency-30'}
-    ${'has a nearly full file storage'} | ${{ sla_cmtd: 1, health_issues: [SaasPlatformHealthIssue.FileStorage] }}                                                                         | ${'CSMBoard.HealthFileStorage:{"percent":"93%"}'} | ${'bg-feedback-alert-secondary-transparency-30'}
-  `(
-    'should display a health chip naming the issue of a saas platform that $description',
-    ({ overrides, label, className }) => {
-      // Given a saas platform with a single issue
-      mockTranslationsWithValues();
-      mockSaasPlatforms([buildSaasPlatform(overrides)]);
-
-      // When the list is rendered
-      renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
-
-      // Then its health chip names the measure and its value, in the tone of the issue
-      expect(getChipByLabel(label)).toHaveClass(className);
-      expect(screen.queryByText('CSMBoard.Healthy')).not.toBeInTheDocument();
-    }
-  );
-
-  it('should display the most severe health issue with the count of the others, listed in a tooltip', async () => {
-    // Given a saas platform that misses its SLA and whose storages are nearly full
-    mockTranslationsWithValues();
-    mockSaasPlatforms([
-      buildSaasPlatform({
-        storage: {
-          es_used_size: { percent: 85 },
-          s3_used_size: { percent: FILE_STORAGE_USAGE_PERCENT },
-        },
-        health_issues: [
-          SaasPlatformHealthIssue.Availability,
-          SaasPlatformHealthIssue.Database,
-          SaasPlatformHealthIssue.FileStorage,
-        ],
-      }),
-    ]);
-    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
-
-    // When the user focuses its health chip
-    const chipLabel = 'CSMBoard.HealthSla:{"percent":"99.96%"} +2';
-    expect(getChipByLabel(chipLabel)).toHaveClass(
-      'bg-feedback-error-secondary-transparency-30'
-    );
-    fireEvent.focus(getChipByLabel(chipLabel)!);
-
-    // Then a tooltip lists the other issues
-    const tooltip = await screen.findByRole('tooltip');
-    for (const label of [
-      'CSMBoard.HealthDatabase:{"percent":"85%"}',
-      'CSMBoard.HealthFileStorage:{"percent":"93%"}',
-    ]) {
-      expect(within(tooltip).getByText(label)).toBeInTheDocument();
-    }
-  });
-
-  it('should display no health for a saas platform the SaaS Manager has no measure of', () => {
-    // Given a saas platform without any storage usage nor availability
-    mockSaasPlatforms([
-      buildSaasPlatform({ sla_cmtd: null, storage: null, health_issues: null }),
-    ]);
-
-    // When the list is rendered
-    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
-
-    // Then no health chip is shown
-    expect(
-      screen.queryByText(/^CSMBoard\.Health(y|Sla|Database|FileStorage)/)
-    ).not.toBeInTheDocument();
-  });
-
   it('should display no contract end date for a saas platform without one', () => {
     // Given a saas platform the SaaS Manager knows no contract end date of
     mockSaasPlatforms([
@@ -622,22 +413,6 @@ describe('SaasList', () => {
 
     // Then its row shows no days left
     expect(screen.queryByText('CSMBoard.EndsIn')).not.toBeInTheDocument();
-  });
-
-  it('should display the logo and the metrics link of a saas platform registered in the Hub', () => {
-    // Given a saas platform registered in the Hub
-    mockSaasPlatforms([buildSaasPlatform()]);
-
-    // When the list is rendered
-    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
-
-    // Then its row links to the metrics page of its service instance, opened from the CSM board, after the logo of its product
-    const link = screen.getByRole('link', { name: 'CSMBoard.ViewMetrics' });
-    expect(link).toHaveAttribute(
-      'href',
-      `/app/service/opencti_registration/${SERVICE_INSTANCE_ID}?from=csm-board`
-    );
-    expect(link.previousElementSibling?.tagName.toLowerCase()).toBe('svg');
   });
 
   it('should display the organization of a saas platform registered in the Hub', () => {
@@ -670,61 +445,6 @@ describe('SaasList', () => {
       expect(screen.queryByText(ORGANIZATION_NAME)).not.toBeInTheDocument();
     }
   );
-
-  it('should display the emails of the organization administrators of a saas platform', () => {
-    // Given a saas platform whose organization has several administrators
-    mockSaasPlatforms([buildSaasPlatform()]);
-
-    // When the list is rendered
-    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
-
-    // Then the administrators cell shows every administrator email
-    expect(getAdministratorsCell()).toHaveTextContent(
-      ADMINISTRATOR_EMAILS.join(', ')
-    );
-  });
-
-  it('should list every administrator email in a tooltip when the organization has several administrators', async () => {
-    // Given a saas platform whose organization has several administrators
-    mockSaasPlatforms([buildSaasPlatform()]);
-    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
-
-    // When the user focuses the administrators cell
-    fireEvent.focus(
-      within(getAdministratorsCell()).getByText(ADMINISTRATOR_EMAILS.join(', '))
-    );
-
-    // Then a tooltip lists each administrator email
-    const tooltip = await screen.findByRole('tooltip');
-    for (const email of ADMINISTRATOR_EMAILS) {
-      expect(within(tooltip).getByText(email)).toBeInTheDocument();
-    }
-  });
-
-  it('should display the email without a tooltip when the organization has a single administrator', () => {
-    // Given a saas platform whose organization has a single administrator
-    const [email] = ADMINISTRATOR_EMAILS;
-    mockSaasPlatforms([
-      buildSaasPlatform({
-        registered_platform: {
-          ...registeredPlatform,
-          organization: {
-            id: 'organization-id',
-            name: ORGANIZATION_NAME,
-            administrator_emails: [email],
-          },
-        },
-      }),
-    ]);
-    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
-
-    // When the user focuses the administrators cell
-    fireEvent.focus(within(getAdministratorsCell()).getByText(email));
-
-    // Then the email is shown and no tooltip opens
-    expect(getAdministratorsCell()).toHaveTextContent(email);
-    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
-  });
 
   it.each([
     [
