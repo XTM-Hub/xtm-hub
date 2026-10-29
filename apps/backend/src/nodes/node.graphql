@@ -21,7 +21,6 @@ enum PortalCapability {
   MANAGE_MANIFEST_INGESTIONS
   GENERATE_MANIFEST
   READ_SAAS_METRICS
-  MANAGE_NEWS_FEED_BLOGPOSTS
 }
 
 enum OrganizationCapability {

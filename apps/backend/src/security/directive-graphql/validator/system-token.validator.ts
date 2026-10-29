@@ -33,7 +33,7 @@ type ResolverFn = GraphQLFieldResolver<
   Record<string, ResolverArgumentValue>
 >;
 
-export const buildScopedSystemUser = (
+const buildScopedSystemUser = (
   requiredCapabilities: PortalCapability[] = []
 ): UserLoadUserBy => {
   const scopedPortalCapabilities = requiredCapabilities.map((name) => ({
