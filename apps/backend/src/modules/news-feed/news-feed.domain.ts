@@ -456,13 +456,26 @@ export const NewsFeedDomain = {
   // The creation date of a blogpost is its publication date, so a post of the latest ones can be older than the
   // cutoff: an active blogpost is kept as long as the blog feed holds it, its redirect and its UUID depend on it.
   deleteNewsFeedItemsOlderThan: async (cutoffDate: Date): Promise<number> => {
-    // Live blog items are only removed by the blogpost synchronization, whatever their age
+    // Live blog items are only removed by the blogpost synchronization, whatever their age.
+    // A dropped one is kept while platforms still have to consume its deletion: the hard
+    // delete cascades to ProvisionedNewsFeedItem, so they would never be notified.
     const deletedRows: { id: NewsFeedItemId }[] = await db('NewsFeedItem')
       .where('creation_date', '<', cutoffDate)
-      .whereNot((builder) =>
+      .where((builder) =>
         builder
-          .where('type', NewsFeedItemType.BlogPost)
-          .andWhere('is_deleted', false)
+          .whereNot('type', NewsFeedItemType.BlogPost)
+          .orWhere((droppedBlogPost) =>
+            droppedBlogPost
+              .where('is_deleted', true)
+              .whereNotExists(
+                db('ProvisionedNewsFeedItem')
+                  .whereRaw('?? = ??', [
+                    'ProvisionedNewsFeedItem.news_feed_item_id',
+                    'NewsFeedItem.id',
+                  ])
+                  .select('news_feed_item_id')
+              )
+          )
       )
       .delete()
       .returning('id');
