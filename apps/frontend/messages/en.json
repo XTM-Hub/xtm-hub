@@ -310,7 +310,7 @@
       "CANT_ADD_DISABLED_USER": "You cannot add a user that is disabled in the platform",
       "CANT_ADD_USER_TO_PERSONAL_SPACE": "You cannot add a user to your personal space",
       "CANT_CANCEL_BUNDLE_PRODUCT": "A single product of an XTM Platform Trial cannot be cancelled",
-      "CANT_DELETE_BLOGPOST_NEWS_FEED_ITEM": "You cannot delete a blog post: it is managed by the synchronization",
+      "CANT_DELETE_BLOGPOST_NEWS_FEED_ITEM": "You cannot delete a blogpost: it is managed by the synchronization",
       "CANT_DELETE_BUILTIN_USER": "This built-in user cannot be deleted",
       "CANT_DELETE_YOURSELF": "You cannot delete your own account",
       "CANT_REMOVE_LAST_ADMINISTRATOR": "You cannot remove the last administrator of an organization",
@@ -713,7 +713,7 @@
     "IsDeleted": "Deleted",
     "IsDeletedYes": "Deleted",
     "Delete": "Delete",
-    "DeleteBlogpostDisabled": "Blog posts are managed by the synchronization and cannot be deleted",
+    "DeleteBlogpostDisabled": "Blogposts are managed by the synchronization and cannot be deleted",
     "DeleteSuccess": "The news feed item \"{title}\" has been deleted successfully",
     "DeleteError": "An error occurred while deleting the news feed item",
     "DeleteDialog": {
