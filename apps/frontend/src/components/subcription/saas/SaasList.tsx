@@ -10,7 +10,6 @@ import {
   getSaasProductName,
 } from '@/components/subcription/saas/saas-list.utils';
 import { SaasProductFilter } from '@/components/subcription/saas/SaasProductFilter';
-import { TruncatedText } from '@/components/subcription/saas/TruncatedText';
 import {
   DataTable,
   DataTableHeadBarOptions,
@@ -21,6 +20,7 @@ import {
   mapToSortingTableValue,
   OrderingMode as SortingOrderingMode,
 } from '@/components/ui/handle-sorting.utils';
+import { TruncatedText } from '@/components/ui/truncated-text';
 import { useUserHasPortalCapability } from '@/hooks/use-portal-capability';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
