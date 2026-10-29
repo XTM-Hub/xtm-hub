@@ -11,16 +11,15 @@ post {
 }
 
 headers {
-  x-xtm-hub-token: {{blogpost-webhook-token}}
+  x-xtm-hub-token: {{xtm-hub-token}}
 }
 
 docs {
   Webhook called by n8n each time a blog post is published, edited or unpublished. It is only a trigger: the request
   body is ignored, the Hub fetches the latest blog posts itself and reconciles the news feed.
 
-  Ensure blogpost-webhook-token is defined in environment. It is a dedicated token, not the system token. Its hash and
-  salt come from news_feed.blogpost_webhook_token_hash and news_feed.blogpost_webhook_token_salt in the backend config
-  (the local dev default of the config is the one to use locally).
+  Ensure xtm-hub-token is defined in environment. It is the system token: the sync runs as a system user scoped to the
+  MANAGE_NEWS_FEED_BLOGPOSTS capability.
 
   Answers:
   - 200 once the synchronization is committed, with the counts only:

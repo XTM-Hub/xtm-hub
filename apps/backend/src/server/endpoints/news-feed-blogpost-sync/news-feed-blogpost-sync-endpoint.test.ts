@@ -10,7 +10,9 @@ import {
   it,
   vi,
 } from 'vitest';
+import { PortalCapability } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
+import { UserLoadUserBy } from '../../../model/user';
 import {
   BlogpostSyncResult,
   NewsFeedApp,
@@ -26,10 +28,8 @@ import { ErrorCode } from '../../../utils/error/error.code';
 import { newsFeedBlogpostSyncEndpoint } from './news-feed-blogpost-sync-endpoint';
 
 const SYNC_PATH = '/webhooks/news-feed/blogposts';
-// The dev-only default of config news_feed.blogpost_webhook_token_hash and news_feed.blogpost_webhook_token_salt
-const VALID_TOKEN = 'changeMeBlogpostWebhook';
-// The dev-only default of the system token, which is not valid here
-const SYSTEM_TOKEN = 'changeMe';
+// The dev-only default of the system token
+const VALID_TOKEN = 'changeMe';
 const RATE_LIMIT = 30;
 const CLIENT_IP_HEADER = 'x-test-client-ip';
 const SYNC_FAILURE_BODY = { message: 'Unable to synchronize blog posts' };
@@ -112,7 +112,6 @@ describe('news feed blogpost sync endpoint', () => {
       ['an empty token', withToken('')],
       ['a wrong token', withToken('invalid-token')],
       ['the valid token with a suffix', withToken(`${VALID_TOKEN}X`)],
-      ['the system token', withToken(SYSTEM_TOKEN)],
       [
         'the valid token in another header',
         { 'x-xtm-hub-marketing-token': VALID_TOKEN },
@@ -165,13 +164,13 @@ describe('news feed blogpost sync endpoint', () => {
       expect(await response.json()).toEqual(SYNC_RESULT);
     });
 
-    it('should run the synchronization once, in a context of the system user', async () => {
+    it('should run the synchronization once, in a context of the system user scoped to the news feed blogposts capability', async () => {
       // Given
-      let contextUserId: string | undefined;
+      let contextUser: UserLoadUserBy | undefined;
       const syncBlogposts = vi
         .spyOn(NewsFeedApp, 'syncBlogposts')
         .mockImplementation(async () => {
-          contextUserId = requestContext.get()?.user?.id;
+          contextUser = requestContext.get()?.user;
           return SYNC_RESULT;
         });
 
@@ -180,7 +179,10 @@ describe('news feed blogpost sync endpoint', () => {
 
       // Then
       expect(syncBlogposts).toHaveBeenCalledTimes(1);
-      expect(contextUserId).toBe(SYSTEM_USER_UUID);
+      expect(contextUser?.id).toBe(SYSTEM_USER_UUID);
+      expect(contextUser?.capabilities.map(({ name }) => name)).toEqual([
+        PortalCapability.ManageNewsFeedBlogposts,
+      ]);
     });
 
     const bodies: [string, Record<string, string>, string][] = [

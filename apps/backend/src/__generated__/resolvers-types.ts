@@ -1955,6 +1955,7 @@ export enum PortalCapability {
   ManageConnectorsIngestions = 'MANAGE_CONNECTORS_INGESTIONS',
   ManageDeployment = 'MANAGE_DEPLOYMENT',
   ManageManifestIngestions = 'MANAGE_MANIFEST_INGESTIONS',
+  ManageNewsFeedBlogposts = 'MANAGE_NEWS_FEED_BLOGPOSTS',
   ModifyCompetitors = 'MODIFY_COMPETITORS',
   ModifyServiceMetadata = 'MODIFY_SERVICE_METADATA',
   ModifyTrials = 'MODIFY_TRIALS',
