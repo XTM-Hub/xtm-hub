@@ -1,16 +1,14 @@
 'use client';
 
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
-import { XTM_PLATFORM_TRIAL_PRODUCTS } from '@/components/service/trial-instances/form-constants';
 import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { PlatformIdentifier } from '@graphql/generated';
 
 // The pitch presents XTM One last, after the products it orchestrates
 const PITCH_PRODUCTS = [
-  ...XTM_PLATFORM_TRIAL_PRODUCTS.filter(
-    (platformIdentifier) => platformIdentifier !== PlatformIdentifier.Xtmone
-  ),
+  PlatformIdentifier.Opencti,
+  PlatformIdentifier.Openaev,
   PlatformIdentifier.Xtmone,
 ];
 
