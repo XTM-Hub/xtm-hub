@@ -2459,18 +2459,15 @@ describe('newsFeedApp', () => {
     const ABOVE_VERSION = '7.260902.0';
     const BACKFILL_ERROR_MESSAGE =
       'Unable to backfill blogpost news feed items';
-    let replacedProperty: ReturnType<typeof vi.replaceProperty> | undefined;
+    const originalBlogpostSupport =
+      RequiredPlatformVersions.NewsFeedBlogpostSupport;
 
     const enableBlogpostGate = () => {
-      replacedProperty = vi.replaceProperty(
-        RequiredPlatformVersions,
-        'NewsFeedBlogpostSupport',
-        {
-          [PlatformIdentifier.Opencti]: BLOGPOST_REQUIRED_VERSION,
-          [PlatformIdentifier.Openaev]: BLOGPOST_REQUIRED_VERSION,
-          [PlatformIdentifier.Xtmone]: null,
-        }
-      );
+      RequiredPlatformVersions.NewsFeedBlogpostSupport = {
+        [PlatformIdentifier.Opencti]: BLOGPOST_REQUIRED_VERSION,
+        [PlatformIdentifier.Openaev]: BLOGPOST_REQUIRED_VERSION,
+        [PlatformIdentifier.Xtmone]: null,
+      };
     };
 
     // The blogpost number 1 is the newest one
@@ -2495,8 +2492,8 @@ describe('newsFeedApp', () => {
         .sort();
 
     afterEach(async () => {
-      replacedProperty?.restore();
-      replacedProperty = undefined;
+      RequiredPlatformVersions.NewsFeedBlogpostSupport =
+        originalBlogpostSupport;
       await TestHelper.newsFeed.deleteItem();
       await cleanupCreatedServiceInstances();
     });

@@ -850,20 +850,17 @@ describe('registration connectivity app', () => {
     const BLOGPOST_REQUIRED_VERSION = '7.260901.0';
     const BELOW_VERSION = '7.260831.0';
     const ABOVE_VERSION = '7.260902.0';
-    let replacedProperty: ReturnType<typeof vi.replaceProperty>;
+    const originalBlogpostSupport =
+      RequiredPlatformVersions.NewsFeedBlogpostSupport;
     let registrationBackfillSpy: MockInstance;
     let versionBackfillSpy: MockInstance;
 
     beforeEach(() => {
-      replacedProperty = vi.replaceProperty(
-        RequiredPlatformVersions,
-        'NewsFeedBlogpostSupport',
-        {
-          [PlatformIdentifier.Opencti]: BLOGPOST_REQUIRED_VERSION,
-          [PlatformIdentifier.Openaev]: null,
-          [PlatformIdentifier.Xtmone]: null,
-        }
-      );
+      RequiredPlatformVersions.NewsFeedBlogpostSupport = {
+        [PlatformIdentifier.Opencti]: BLOGPOST_REQUIRED_VERSION,
+        [PlatformIdentifier.Openaev]: null,
+        [PlatformIdentifier.Xtmone]: null,
+      };
       registrationBackfillSpy = vi.spyOn(
         NewsFeedApp,
         'backfillBlogpostsForPlatform'
@@ -876,7 +873,8 @@ describe('registration connectivity app', () => {
 
     afterEach(async () => {
       vi.restoreAllMocks();
-      replacedProperty.restore();
+      RequiredPlatformVersions.NewsFeedBlogpostSupport =
+        originalBlogpostSupport;
       await TestHelper.newsFeed.deleteItem();
     });
 

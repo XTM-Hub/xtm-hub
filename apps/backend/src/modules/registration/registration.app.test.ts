@@ -80,12 +80,19 @@ import { RegistrationDomain } from './registration.domain';
 const BLOGPOST_REQUIRED_VERSION = '7.260901.0';
 const BELOW_BLOGPOST_VERSION = '7.260831.0';
 
-const enableBlogpostGate = () =>
-  vi.replaceProperty(RequiredPlatformVersions, 'NewsFeedBlogpostSupport', {
+// Returns the function restoring the original required versions
+const enableBlogpostGate = () => {
+  const originalBlogpostSupport =
+    RequiredPlatformVersions.NewsFeedBlogpostSupport;
+  RequiredPlatformVersions.NewsFeedBlogpostSupport = {
     [PlatformIdentifier.Opencti]: BLOGPOST_REQUIRED_VERSION,
     [PlatformIdentifier.Openaev]: null,
     [PlatformIdentifier.Xtmone]: null,
-  });
+  };
+  return () => {
+    RequiredPlatformVersions.NewsFeedBlogpostSupport = originalBlogpostSupport;
+  };
+};
 
 // The blogpost number 1 is the newest one
 const createBlogposts = async (count: number) => {
@@ -474,18 +481,18 @@ describe('registration app', () => {
     });
 
     describe('blogpost backfill', () => {
-      let replacedProperty: ReturnType<typeof vi.replaceProperty>;
+      let restoreBlogpostGate: () => void;
       let backfillSpy: MockInstance;
 
       beforeEach(() => {
         requestContext.set(requestContextRegistererUserSecondOrga);
-        replacedProperty = enableBlogpostGate();
+        restoreBlogpostGate = enableBlogpostGate();
         backfillSpy = vi.spyOn(NewsFeedApp, 'backfillBlogpostsForPlatform');
       });
 
       afterEach(async () => {
         vi.restoreAllMocks();
-        replacedProperty.restore();
+        restoreBlogpostGate();
         await TestHelper.newsFeed.deleteItem();
       });
 
@@ -2022,17 +2029,17 @@ describe('registration app', () => {
     });
 
     describe('blogpost backfill', () => {
-      let replacedProperty: ReturnType<typeof vi.replaceProperty>;
+      let restoreBlogpostGate: () => void;
       let backfillSpy: MockInstance;
 
       beforeEach(() => {
-        replacedProperty = enableBlogpostGate();
+        restoreBlogpostGate = enableBlogpostGate();
         backfillSpy = vi.spyOn(NewsFeedApp, 'backfillBlogpostsForPlatform');
       });
 
       afterEach(async () => {
         vi.restoreAllMocks();
-        replacedProperty.restore();
+        restoreBlogpostGate();
         await TestHelper.newsFeed.deleteItem();
       });
 
