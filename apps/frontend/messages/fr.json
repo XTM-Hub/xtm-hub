@@ -1006,7 +1006,8 @@
         "Label": "Période des indicateurs",
         "last_30_days": "30 jours",
         "last_90_days": "90 jours",
-        "last_180_days": "180 jours"
+        "last_180_days": "180 jours",
+        "ComingSoon": "À venir"
       },
       "Database": {
         "Title": "Base de données",

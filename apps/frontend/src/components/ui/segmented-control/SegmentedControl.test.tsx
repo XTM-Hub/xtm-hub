@@ -190,4 +190,117 @@ describe('SegmentedControl', () => {
     // Then
     expect(onValueChange).not.toHaveBeenCalled();
   });
+
+  describe('with a disabled item', () => {
+    const REASON = 'Coming soon';
+    const itemsWithDisabled: SegmentedControlItem<string>[] = [
+      { value: 'week', label: '7 days' },
+      { value: 'month', label: '30 days', disabled: true, tooltip: REASON },
+      { value: 'quarter', label: '90 days' },
+    ];
+
+    const renderWithDisabledItem = (value: string, onValueChange = vi.fn()) =>
+      testRender(
+        <SegmentedControl
+          aria-label={LABEL}
+          items={itemsWithDisabled}
+          value={value}
+          onValueChange={onValueChange}
+        />
+      );
+
+    it('should not notify a change when the disabled item is clicked', async () => {
+      // Given
+      const onValueChange = vi.fn();
+      const { user } = renderWithDisabledItem('week', onValueChange);
+
+      // When
+      await user.click(screen.getByRole('radio', { name: '30 days' }));
+
+      // Then
+      expect(screen.getByRole('radio', { name: '30 days' })).toHaveAttribute(
+        'aria-disabled',
+        'true'
+      );
+      expect(onValueChange).not.toHaveBeenCalled();
+    });
+
+    it('should show the tooltip of the disabled item on hover', async () => {
+      // Given
+      const { user } = renderWithDisabledItem('week');
+
+      // When
+      await user.hover(screen.getByRole('radio', { name: '30 days' }));
+
+      // Then
+      expect(
+        await screen.findByRole('tooltip', { name: REASON })
+      ).toBeInTheDocument();
+    });
+
+    it.each`
+      value        | key             | label        | expected
+      ${'week'}    | ${'ArrowRight'} | ${'90 days'} | ${'quarter'}
+      ${'quarter'} | ${'ArrowLeft'}  | ${'7 days'}  | ${'week'}
+    `(
+      'should skip the disabled item when $key is pressed on $value',
+      async ({ value, key, label, expected }) => {
+        // Given
+        const onValueChange = vi.fn();
+        const { user } = renderWithDisabledItem(value, onValueChange);
+        await user.tab();
+
+        // When
+        await user.keyboard(`{${key}}`);
+
+        // Then
+        expect(screen.getByRole('radio', { name: label })).toHaveFocus();
+        expect(onValueChange).toHaveBeenCalledExactlyOnceWith(expected);
+      }
+    );
+
+    it.each`
+      value        | key             | label        | expected
+      ${'week'}    | ${'ArrowRight'} | ${'90 days'} | ${'quarter'}
+      ${'quarter'} | ${'ArrowLeft'}  | ${'7 days'}  | ${'week'}
+    `(
+      'should move to the enabled neighbour when $key is pressed on the clicked disabled item',
+      async ({ value, key, label, expected }) => {
+        // Given
+        const onValueChange = vi.fn();
+        const { user } = renderWithDisabledItem(value, onValueChange);
+        await user.click(screen.getByRole('radio', { name: '30 days' }));
+
+        // When
+        await user.keyboard(`{${key}}`);
+
+        // Then
+        expect(screen.getByRole('radio', { name: label })).toHaveFocus();
+        expect(onValueChange).toHaveBeenCalledExactlyOnceWith(expected);
+      }
+    );
+
+    it('should show the selected disabled item on the disabled fill', () => {
+      // Given / When
+      renderWithDisabledItem('month');
+
+      // Then
+      const radio = screen.getByRole('radio', { name: '30 days' });
+      expect(radio).toHaveAttribute('aria-checked', 'true');
+      expect(radio).toHaveClass('bg-input-disabled', 'text-default-disabled');
+      expect(radio).not.toHaveClass('bg-filigran-brand-primary');
+    });
+
+    it('should make the first enabled item the tab stop when the value is the disabled item', () => {
+      // Given / When
+      renderWithDisabledItem('month');
+
+      // Then
+      expect(
+        screen
+          .getAllByRole('radio')
+          .map((radio) => radio.getAttribute('tabindex'))
+      ).toEqual(['0', '-1', '-1']);
+    });
+  });
 });

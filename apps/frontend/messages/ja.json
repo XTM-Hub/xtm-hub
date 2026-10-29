@@ -1006,7 +1006,8 @@
         "Label": "メトリクスの期間",
         "last_30_days": "30日間",
         "last_90_days": "90日間",
-        "last_180_days": "180日間"
+        "last_180_days": "180日間",
+        "ComingSoon": "近日公開予定"
       },
       "Database": {
         "Title": "データベース",
