@@ -68,10 +68,10 @@ describe('news-feed.helper', () => {
       ).toBe(false);
     });
 
-    it('returns true when no minimum is configured for the identifier', () => {
+    it('returns false when news feed is disabled (null required version) for the identifier', () => {
       expect(
-        doesPlatformSupportNewsFeed(PlatformIdentifier.Xtmone, '1.0.0')
-      ).toBe(true);
+        doesPlatformSupportNewsFeed(PlatformIdentifier.Xtmone, '99.0.0')
+      ).toBe(false);
     });
   });
 
