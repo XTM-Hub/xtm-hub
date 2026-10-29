@@ -203,6 +203,28 @@ describe('NewsFeedList', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders the library label of a scenario item', () => {
+    mocks.newsFeedItems = [
+      {
+        id: 'item-4',
+        title: 'Scenario news',
+        type: NewsFeedItemType.ResourceScenario,
+        creation_date: '2025-01-23T08:00:00.000Z',
+        tags: [],
+        is_deleted: false,
+        metadata: [],
+      },
+    ];
+
+    testRender(<NewsFeedList />);
+
+    const row = screen.getByText('Scenario news').closest('tr')!;
+    expect(
+      within(row).getByText(ServiceSlug.OPEN_AEV_SCENARIOS)
+    ).toBeInTheDocument();
+    expect(within(row).queryByText('—')).not.toBeInTheDocument();
+  });
+
   it('navigates to the item url_path when a row is clicked', async () => {
     const { user } = testRender(<NewsFeedList />);
 

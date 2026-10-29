@@ -1,11 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
-import { database, db, dbRaw } from '../../knexfile';
+import { db } from '../../knexfile';
 import {
   NewsFeedItemMetadataKey,
   NewsFeedItemType,
   PlatformIdentifier,
 } from '../../src/__generated__/resolvers-types';
-import * as addBlogPostSlugUniqueIndex from '../../src/migrations/20261028100000_add_blog_post_slug_unique_index.js';
 import NewsFeedItem, {
   NewsFeedItemId,
   NewsFeedItemInitializer,
@@ -17,9 +16,6 @@ import NewsFeedItemMetadata, {
 import ProvisionedNewsFeedItem, {
   ProvisionedNewsFeedItemMutator,
 } from '../../src/model/kanel/public/ProvisionedNewsFeedItem';
-
-const BLOG_POST_SLUG_UNIQUE_INDEX_NAME =
-  'idx_news_feed_item_metadata_blog_post_slug_unique';
 
 export const TestNewsfeedHelper = {
   newsFeed: {
@@ -74,21 +70,6 @@ export const TestNewsfeedHelper = {
     },
     deleteItem: async (field: NewsFeedItemMutator = {}) => {
       await db<NewsFeedItem>('NewsFeedItem').where(field).del();
-    },
-  },
-  blogPostSlugIndexMigration: {
-    up: async (): Promise<void> => {
-      await addBlogPostSlugUniqueIndex.up(database);
-    },
-    down: async (): Promise<void> => {
-      await addBlogPostSlugUniqueIndex.down(database);
-    },
-    indexExists: async (): Promise<boolean> => {
-      const { rows } = await dbRaw<{ rows: unknown[] }>(
-        'SELECT 1 FROM pg_indexes WHERE schemaname = current_schema() AND indexname = ?',
-        [BLOG_POST_SLUG_UNIQUE_INDEX_NAME]
-      );
-      return rows.length > 0;
     },
   },
 };
