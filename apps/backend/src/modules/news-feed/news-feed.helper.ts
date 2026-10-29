@@ -22,27 +22,34 @@ import {
 // Only used to parse the relative url_path, never part of the returned value
 const URL_PATH_PARSING_BASE = 'https://hub.invalid';
 
-export const doesPlatformSupportNewsFeed = (
-  identifier: PlatformIdentifier,
+// A null required version means the feature is disabled for the identifier. Otherwise the platform must report a
+// valid version that is at least the required one.
+const isPlatformVersionAtLeast = (
+  requiredVersion: string | null,
   version?: string | null
 ): boolean => {
-  const requiredVersion = RequiredPlatformVersions.NewsFeedSupport[identifier];
-  if (!requiredVersion) return true;
-  if (!version || !isValidVersion(version)) return false;
-  return doesVersionSatisfy({ givenVersion: version, requiredVersion });
-};
-
-// Opposite of doesPlatformSupportNewsFeed: a null required version means blogpost items are disabled
-export const doesPlatformSupportBlogpostNewsFeed = (
-  identifier: PlatformIdentifier,
-  version?: string | null
-): boolean => {
-  const requiredVersion =
-    RequiredPlatformVersions.NewsFeedBlogpostSupport[identifier];
   if (!requiredVersion) return false;
   if (!version || !isValidVersion(version)) return false;
   return doesVersionSatisfy({ givenVersion: version, requiredVersion });
 };
+
+export const doesPlatformSupportNewsFeed = (
+  identifier: PlatformIdentifier,
+  version?: string | null
+): boolean =>
+  isPlatformVersionAtLeast(
+    RequiredPlatformVersions.NewsFeedSupport[identifier],
+    version
+  );
+
+export const doesPlatformSupportBlogpostNewsFeed = (
+  identifier: PlatformIdentifier,
+  version?: string | null
+): boolean =>
+  isPlatformVersionAtLeast(
+    RequiredPlatformVersions.NewsFeedBlogpostSupport[identifier],
+    version
+  );
 
 export const NewsFeedHelper = {
   // Number of newest blog posts kept per product
