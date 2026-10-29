@@ -181,7 +181,7 @@ describe('query.registeredSaasPlatformData', () => {
       expect(result).toMatchObject({ metadata });
       expect(callSpy).toHaveBeenCalledExactlyOnceWith({
         platform_id: platformId,
-        include_metrics: 90,
+        include_metrics: 95,
       });
     });
 

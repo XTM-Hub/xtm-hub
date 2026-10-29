@@ -1006,7 +1006,8 @@
         "Label": "Metrics period",
         "last_30_days": "30 days",
         "last_90_days": "90 days",
-        "last_180_days": "180 days"
+        "last_180_days": "180 days",
+        "ComingSoon": "Coming soon"
       },
       "Database": {
         "Title": "Database",
@@ -1024,9 +1025,9 @@
         "OnTarget": "{availability} · On target",
         "BelowTarget": "{availability} · Below target",
         "NoData": "No data",
+        "NotTrackedYet": "No data · The metrics had not been measured yet",
         "Summary": {
           "Title": "Monthly SLA · target {target}",
-          "FullMonthsOnTarget": "{met} of {total, plural, one {# full month} other {# full months}} on target",
           "CurrentMonth": "{month} · month to date",
           "TargetAndMeasuredDays": "Target {target} · {measured} of {total} days measured"
         },

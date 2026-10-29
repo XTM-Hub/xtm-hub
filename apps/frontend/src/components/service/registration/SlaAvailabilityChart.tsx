@@ -3,6 +3,8 @@
 import {
   SLA_STATUS_CLASS,
   SlaDay,
+  SlaMissingDayReason,
+  slaMissingDayReason,
   SlaMonth,
   SlaStatus,
   toSlaMonths,
@@ -42,12 +44,19 @@ interface ActiveDay {
 const DAY_FORMAT = { month: 'short', day: 'numeric', timeZone: 'UTC' } as const;
 const MONTH_FORMAT = { month: 'short', timeZone: 'UTC' } as const;
 const LEGEND_STATUSES: SlaStatus[] = ['Met', 'Missed', 'Unknown'];
+// A day still to come reads like the grey bar's legend entry.
+const MISSING_DAY_LABEL: Record<SlaMissingDayReason, string> = {
+  NotTrackedYet: 'Register.Metrics.SLA.NotTrackedYet',
+  Upcoming: 'Register.Metrics.SLA.Legend.Unknown',
+  NoData: 'Register.Metrics.SLA.NoData',
+};
 
 export const SlaAvailabilityChart = ({ sla }: SlaAvailabilityChartProps) => {
   const t = useTranslate();
   const format = useFormatter();
   const { formatAvailability, formatMonth } = useSlaFormat(MONTH_FORMAT);
   const months = useMemo(() => toSlaMonths(sla), [sla]);
+  const now = new Date();
   const isSingleMonth = months.length === 1;
   const [activeDay, setActiveDay] = useState<ActiveDay | null>(null);
   const activeSlaDay =
@@ -116,10 +125,10 @@ export const SlaAvailabilityChart = ({ sla }: SlaAvailabilityChartProps) => {
     return formatMonth(month);
   };
 
-  const dayStatusLabel = ({ availability, status }: SlaDay) => {
+  const dayStatusLabel = ({ date, availability, status }: SlaDay) => {
     const value = formatAvailability(availability);
     if (availability === null) {
-      return value;
+      return t(MISSING_DAY_LABEL[slaMissingDayReason(date, now)]);
     }
     return status === 'Met'
       ? t('Register.Metrics.SLA.OnTarget', { availability: value })

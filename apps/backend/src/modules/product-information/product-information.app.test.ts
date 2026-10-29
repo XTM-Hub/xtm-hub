@@ -118,7 +118,7 @@ describe('product information app', () => {
       // Then
       expect(callSpy).toHaveBeenCalledExactlyOnceWith({
         platform_id: platformId,
-        include_metrics: 90,
+        include_metrics: 95,
       });
     });
 
@@ -379,7 +379,7 @@ describe('product information app', () => {
         });
         expect(callSpy).toHaveBeenCalledExactlyOnceWith({
           platform_id: platformId,
-          include_metrics: 90,
+          include_metrics: 95,
         });
       }
     );
@@ -447,7 +447,7 @@ describe('product information app', () => {
         expect(callSpy).toHaveBeenCalledTimes(2);
         expect(callSpy).toHaveBeenLastCalledWith({
           platform_id: platformId,
-          include_metrics: 180,
+          include_metrics: 187,
         });
       });
 

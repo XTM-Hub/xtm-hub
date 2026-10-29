@@ -1006,7 +1006,8 @@
         "Label": "メトリクスの期間",
         "last_30_days": "30日間",
         "last_90_days": "90日間",
-        "last_180_days": "180日間"
+        "last_180_days": "180日間",
+        "ComingSoon": "近日公開予定"
       },
       "Database": {
         "Title": "データベース",
@@ -1024,9 +1025,9 @@
         "OnTarget": "{availability}（目標達成）",
         "BelowTarget": "{availability}（目標未達）",
         "NoData": "データなし",
+        "NotTrackedYet": "データなし · 指標はまだ測定されていません",
         "Summary": {
           "Title": "月次SLA・目標 {target}",
-          "FullMonthsOnTarget": "{total}か月中{met}か月が目標達成",
           "CurrentMonth": "{month}・月初から現在まで",
           "TargetAndMeasuredDays": "目標 {target}・{total}日中{measured}日測定済み"
         },

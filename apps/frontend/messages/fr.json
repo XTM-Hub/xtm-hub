@@ -1006,7 +1006,8 @@
         "Label": "Période des indicateurs",
         "last_30_days": "30 jours",
         "last_90_days": "90 jours",
-        "last_180_days": "180 jours"
+        "last_180_days": "180 jours",
+        "ComingSoon": "À venir"
       },
       "Database": {
         "Title": "Base de données",
@@ -1024,9 +1025,9 @@
         "OnTarget": "{availability} · Dans l'objectif",
         "BelowTarget": "{availability} · Sous l'objectif",
         "NoData": "Aucune donnée",
+        "NotTrackedYet": "Aucune donnée · Ces indicateurs n'avaient pas encore été mesurés",
         "Summary": {
           "Title": "SLA mensuel · objectif {target}",
-          "FullMonthsOnTarget": "{met} sur {total, plural, one {# mois complet} other {# mois complets}} dans l'objectif",
           "CurrentMonth": "{month} · mois en cours",
           "TargetAndMeasuredDays": "Objectif {target} · {measured} jours mesurés sur {total}"
         },

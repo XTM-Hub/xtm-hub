@@ -96,17 +96,17 @@ describe('product information helper', () => {
       // Then
       expect(callSpy).toHaveBeenCalledExactlyOnceWith({
         platform_id: platformId,
-        include_metrics: 90,
+        include_metrics: 95,
       });
     });
 
     it.each`
       period                                    | days
-      ${SaasPlatformMetricsPeriod.Last_30Days}  | ${30}
-      ${SaasPlatformMetricsPeriod.Last_90Days}  | ${90}
-      ${SaasPlatformMetricsPeriod.Last_180Days} | ${180}
+      ${SaasPlatformMetricsPeriod.Last_30Days}  | ${32}
+      ${SaasPlatformMetricsPeriod.Last_90Days}  | ${95}
+      ${SaasPlatformMetricsPeriod.Last_180Days} | ${187}
     `(
-      'should ask the SaaS Manager for $days days of metrics when the period is $period and covers its first SLA month',
+      'should ask the SaaS Manager for $days days of metrics when the period is $period',
       async ({ period, days }) => {
         // Given
         const callSpy = mockSaasManagerBody(fullMetadata);
@@ -329,6 +329,62 @@ describe('product information helper', () => {
         });
       });
 
+      it('should return only the metrics of the period while its SLA keeps the days before it', async () => {
+        // Given
+        vi.setSystemTime('2026-10-31T12:00:00.000Z');
+        mockSaasManagerBody({
+          ...fullMetadata,
+          metrics: {
+            start: '2026-07-25T12:00:00+00:00',
+            end: '2026-10-31T12:00:00+00:00',
+            resolution: 'day',
+            series: [
+              {
+                metric_type: 'sla_availability',
+                points: [
+                  { t: '2026-08-01T00:00:00+00:00', v: 0.5 },
+                  { t: '2026-09-01T00:00:00+00:00', v: 1 },
+                ],
+              },
+              {
+                metric_type: 'es_used_size',
+                points: [
+                  { t: '2026-08-02T11:59:59+00:00', v: 1 },
+                  { t: '2026-08-02T12:00:00+00:00', v: 2 },
+                ],
+              },
+            ],
+          },
+        });
+
+        // When
+        const data = await ProductInformationHelper.fetchSaasPlatformData(
+          serviceInstanceId,
+          platformId,
+          metricsPeriod
+        );
+
+        // Then
+        expect(data?.metrics).toEqual({
+          start: '2026-08-02T12:00:00.000Z',
+          end: '2026-10-31T12:00:00.000Z',
+          resolution: 'day',
+          series: [
+            {
+              metric_type: 'sla_availability',
+              points: [{ timestamp: '2026-09-01T00:00:00.000Z', value: 1 }],
+            },
+            {
+              metric_type: 'es_used_size',
+              points: [{ timestamp: '2026-08-02T12:00:00.000Z', value: 2 }],
+            },
+          ],
+        });
+        expect(data?.sla?.months[0]).toEqual(
+          slaMonth('2026-08-01T00:00:00.000Z', 0.5, { 1: 0.5 })
+        );
+      });
+
       it.each([
         ['null', null],
         ['a string', 'metrics'],
@@ -504,33 +560,6 @@ describe('product information helper', () => {
         );
         return data?.sla;
       };
-
-      it.each`
-        period                                    | days
-        ${SaasPlatformMetricsPeriod.Last_30Days}  | ${31}
-        ${SaasPlatformMetricsPeriod.Last_90Days}  | ${92}
-        ${SaasPlatformMetricsPeriod.Last_180Days} | ${184}
-      `(
-        'should ask the SaaS Manager for $days days of metrics when the period $period starts after the midnight of its first SLA month',
-        async ({ period, days }) => {
-          // Given
-          vi.setSystemTime('2026-10-31T12:00:00.000Z');
-          const callSpy = mockSaasManagerBody(fullMetadata);
-
-          // When
-          await ProductInformationHelper.fetchSaasPlatformData(
-            serviceInstanceId,
-            platformId,
-            period
-          );
-
-          // Then
-          expect(callSpy).toHaveBeenCalledExactlyOnceWith({
-            platform_id: platformId,
-            include_metrics: days,
-          });
-        }
-      );
 
       it('should average all the sla_availability points of each month and of each day, the current month to date', async () => {
         // Given
@@ -815,6 +844,34 @@ describe('product information helper', () => {
 
       // Then
       expect(data).toBeNull();
+    });
+
+    it('should log only the start of the body when the SaaS Manager returns an error', async () => {
+      // Given
+      const errorSpy = vi.spyOn(logApp, 'error');
+      const body = `<html>${'x'.repeat(1000)}</html>`;
+      mockSaasManagerResponse(
+        async () =>
+          ({ ok: false, status: 502, text: async () => body }) as Response
+      );
+
+      // When
+      await ProductInformationHelper.fetchSaasPlatformData(
+        serviceInstanceId,
+        platformId,
+        metricsPeriod
+      );
+
+      // Then
+      expect(errorSpy).toHaveBeenCalledExactlyOnceWith(
+        'Unable to load the platform data from the SaaS Manager',
+        {
+          serviceInstanceId,
+          platformId,
+          status: 502,
+          body: body.slice(0, 256),
+        }
+      );
     });
   });
 

@@ -84,19 +84,7 @@ describe('SlaMonthlySummary', () => {
     ]);
   });
 
-  it('should count the past months on target, out of the past months', () => {
-    // Given / When
-    renderSummary(sla);
-
-    // Then
-    expect(
-      screen.getByText(
-        'Register.Metrics.SLA.Summary.FullMonthsOnTarget:{"met":1,"total":2}'
-      )
-    ).toBeInTheDocument();
-  });
-
-  it('should leave out the full months count when no past month has a value', () => {
+  it('should display no data for a past month without any value', () => {
     // Given / When
     renderSummary([
       { month: '2026-09-01T00:00:00.000Z', availability: null, days: [] },
@@ -107,9 +95,6 @@ describe('SlaMonthlySummary', () => {
     expect(screen.getAllByRole('definition')[1]).toHaveTextContent(
       'Register.Metrics.SLA.NoData'
     );
-    expect(
-      screen.queryByText(/Register\.Metrics\.SLA\.Summary\.FullMonthsOnTarget/)
-    ).not.toBeInTheDocument();
   });
 
   describe('with a single month', () => {
