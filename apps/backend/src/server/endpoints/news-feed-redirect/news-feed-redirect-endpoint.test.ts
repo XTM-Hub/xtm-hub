@@ -1,3 +1,4 @@
+import config from 'config';
 import express from 'express';
 import expressSession, {
   MemoryStore,
@@ -36,7 +37,7 @@ import { ReadOnlySessionStore } from '../../session/read-only-session.store';
 import { newsFeedRedirectEndpoint } from './news-feed-redirect-endpoint';
 
 const BLOG_POST_SLUG = 'threat-report-2026';
-const BLOG_POST_URL = `https://filigran.io/blog/${BLOG_POST_SLUG}`;
+const BLOG_POST_URL = `${config.get<string>('blog_api.base_url')}/blog/${BLOG_POST_SLUG}`;
 const PLATFORM_ID = '9b0c7a3e-1111-4a9e-8d6f-0d4f5a7c9e10';
 const UNKNOWN_ITEM_ID = '3f8d0c1e-2b7a-4d65-8e19-5a4c6b7d8e90';
 const HUB_ROOT = '/';
@@ -344,7 +345,8 @@ describe('news feed redirect endpoint', () => {
         event_type: TelemetryEventType.NEWS_FEED_REDIRECT,
         news_feed_item_id: item.id,
         news_feed_item_type: TelemetryNewsFeedItemType.BLOG_POST,
-        destination_host: 'filigran.io',
+        destination_host: new URL(config.get<string>('blog_api.base_url'))
+          .hostname,
         platform_id: PLATFORM_ID,
         organization_type: TelemetryOrganizationType.PUBLIC,
         organization_id: undefined,

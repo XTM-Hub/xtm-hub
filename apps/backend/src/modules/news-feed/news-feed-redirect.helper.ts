@@ -1,3 +1,4 @@
+import config from 'config';
 import {
   NewsFeedItemMetadataKey,
   NewsFeedItemType,
@@ -16,7 +17,8 @@ export type NewsFeedMetadataValues = Partial<
 >;
 
 interface NewsFeedDestinationDefinition {
-  host: string;
+  // Evaluated per redirect: the host follows the configured base url
+  getHost: () => string;
   forwardUtmParams: boolean;
   // Returns undefined when the metadata cannot produce a safe destination
   buildUrl: (metadata: NewsFeedMetadataValues) => string | undefined;
@@ -28,9 +30,9 @@ interface NewsFeedDestinationDefinition {
 const SAFE_PATH_SEGMENT_PATTERN = /^[A-Za-z0-9]+(?:[._-][A-Za-z0-9]+)*$/;
 const SAFE_PATH_SEGMENT_MAX_LENGTH = 200;
 
-export const FILIGRAN_WEBSITE_ORIGIN = 'https://filigran.io';
-export const FILIGRAN_WEBSITE_HOST_LABEL = 'filigran.io';
 const FILIGRAN_BLOG_PATH = '/blog/';
+
+const getBlogBaseUrl = (): string => config.get<string>('blog_api.base_url');
 
 // The five standard utm keys, the only ones the Hub ever sends. Anything else in the query is dropped, so a crafted
 // link cannot add arbitrary parameters to the destination.
@@ -98,12 +100,13 @@ export const NewsFeedDestinationRegistry: Partial<
   Record<NewsFeedItemType, NewsFeedDestinationDefinition>
 > = {
   [NewsFeedItemType.BlogPost]: {
-    host: FILIGRAN_WEBSITE_HOST_LABEL,
+    getHost: () => new URL(getBlogBaseUrl()).hostname,
     forwardUtmParams: true,
     // The blog post slug is the only value that fills the path, after the validation of buildUrlWithSegment
     buildUrl: (metadata) =>
       NewsFeedRedirectHelper.buildUrlWithSegment({
-        origin: FILIGRAN_WEBSITE_ORIGIN,
+        // Same origin as the blog API client, so a staging Hub redirects to the staging blog
+        origin: getBlogBaseUrl(),
         pathPrefix: FILIGRAN_BLOG_PATH,
         segment: metadata[NewsFeedItemMetadataKey.BlogPostSlug],
       }),
@@ -128,7 +131,7 @@ export const buildNewsFeedDestination = (
   }
   return {
     url,
-    host: definition.host,
+    host: definition.getHost(),
     forwardUtmParams: definition.forwardUtmParams,
   };
 };
