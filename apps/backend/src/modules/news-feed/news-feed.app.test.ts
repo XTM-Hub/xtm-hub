@@ -1413,6 +1413,35 @@ describe('newsFeedApp', () => {
       expect(remainingIds).toContain(recentItem.id);
     });
 
+    it('should keep the active blogposts, whatever their publication date', async () => {
+      // Given
+      const activeBlogpost = await TestHelper.newsFeed.createItem({
+        type: NewsFeedItemType.BlogPost,
+        platform_identifier: PlatformIdentifier.Opencti,
+        title: 'old active blogpost',
+        creation_date: monthsAgo(7),
+        tags: [],
+      });
+      const droppedBlogpost = await TestHelper.newsFeed.createItem({
+        type: NewsFeedItemType.BlogPost,
+        platform_identifier: PlatformIdentifier.Opencti,
+        title: 'old dropped blogpost',
+        creation_date: monthsAgo(7),
+        is_deleted: true,
+        tags: [],
+      });
+
+      // When
+      await NewsFeedApp.cleanExpiredNewsFeedItems();
+
+      // Then
+      const remainingIds = (await TestHelper.newsFeed.loadItems()).map(
+        (item) => item.id
+      );
+      expect(remainingIds).toContain(activeBlogpost.id);
+      expect(remainingIds).not.toContain(droppedBlogpost.id);
+    });
+
     it('should not throw when no items exist', async () => {
       await expect(
         NewsFeedApp.cleanExpiredNewsFeedItems()
@@ -2360,10 +2389,17 @@ describe('newsFeedApp', () => {
       const stateBefore = await loadBlogpostState();
       // The post 0 is created, the post 1 rewritten and the post 2 dropped
       mockFeed([buildPost(0), buildPost(1, { title: 'A new title' })]);
+      const droppedItemId = (await loadBlogpostItem('blog-post-2'))!.id;
+      // The real provisioning writes the created and the updated items, the dropped one is the failure
+      const provisionNewsFeedItem = NewsFeedDomain.provisionNewsFeedItem;
       provisionSpy = vi
         .spyOn(NewsFeedDomain, 'provisionNewsFeedItem')
-        .mockResolvedValueOnce(undefined)
-        .mockRejectedValueOnce(new Error('provisioning failed'));
+        .mockImplementation(async (newsFeedItemId, platformIds) => {
+          if (newsFeedItemId === droppedItemId) {
+            throw new Error('provisioning failed');
+          }
+          await provisionNewsFeedItem(newsFeedItemId, platformIds);
+        });
 
       // When
       const sync = NewsFeedApp.syncBlogposts();
