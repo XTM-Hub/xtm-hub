@@ -1,6 +1,8 @@
 import {
   deriveXtmPlatformTrialPanelView,
+  deriveXtmPlatformTrialRequestPageLayout,
   XtmPlatformTrialPanelView,
+  XtmPlatformTrialRequestPageLayout,
   XtmPlatformTrialStatusPanelState,
 } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/xtm-platform-trial-panel.utils';
 import { DeploymentRequestHubStatus } from '@graphql/generated';
@@ -124,6 +126,65 @@ describe('deriveXtmPlatformTrialPanelView', () => {
 
       // Then the expected view is selected
       expect(view).toEqual(expected as XtmPlatformTrialPanelView);
+    }
+  );
+});
+
+const buildStatusView = (
+  state: XtmPlatformTrialStatusPanelState
+): XtmPlatformTrialPanelView => ({
+  kind: 'status',
+  state,
+  stepIndex: undefined,
+});
+
+describe('deriveXtmPlatformTrialRequestPageLayout', () => {
+  it.each<
+    [string, XtmPlatformTrialPanelView, XtmPlatformTrialRequestPageLayout]
+  >([
+    [
+      'form',
+      { kind: 'form' },
+      { showLimitations: true, showExpiredTitle: false },
+    ],
+    [
+      'request in progress',
+      buildStatusView(XtmPlatformTrialStatusPanelState.RequestInProgress),
+      { showLimitations: true, showExpiredTitle: false },
+    ],
+    [
+      'personal space',
+      { kind: 'personalSpace' },
+      { showLimitations: false, showExpiredTitle: false },
+    ],
+    [
+      'not allowed',
+      { kind: 'notAllowed' },
+      { showLimitations: false, showExpiredTitle: false },
+    ],
+    [
+      'cancelled',
+      buildStatusView(XtmPlatformTrialStatusPanelState.Cancelled),
+      { showLimitations: false, showExpiredTitle: false },
+    ],
+    [
+      'expired',
+      buildStatusView(XtmPlatformTrialStatusPanelState.Expired),
+      { showLimitations: false, showExpiredTitle: true },
+    ],
+    [
+      'failed',
+      buildStatusView(XtmPlatformTrialStatusPanelState.Failed),
+      { showLimitations: false, showExpiredTitle: false },
+    ],
+  ])(
+    'should return the request page layout when the panel view is %s',
+    (_viewName, view, expectedLayout) => {
+      // When
+      const layout = deriveXtmPlatformTrialRequestPageLayout(view);
+
+      // Then
+      expect(layout).toEqual(expectedLayout);
     }
   );
 });

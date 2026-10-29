@@ -3,7 +3,7 @@
 import { XtmPlatformActiveBundlePage as XtmPlatformTrialBundlePage } from '@/components/service/trial-instances/xtm-platform-trial/active-bundle/XtmPlatformActiveBundlePage';
 import { PrivateXtmPlatformTrialPanel } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/PrivateXtmPlatformTrialPanel';
 import { useXtmPlatformTrialPanelView } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/useXtmPlatformTrialPanelView';
-import { XtmPlatformTrialStatusPanelState } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/xtm-platform-trial-panel.utils';
+import { deriveXtmPlatformTrialRequestPageLayout } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/xtm-platform-trial-panel.utils';
 import { XtmPlatformTrialRequestPage } from '@/components/service/trial-instances/xtm-platform-trial/XtmPlatformTrialRequestPage';
 import { BreadcrumbNav } from '@/components/ui/BreadcrumbNav';
 import { useTranslate } from '@/hooks/use-translate';
@@ -43,12 +43,8 @@ const PageLoader = () => {
     return null;
   }
 
-  const isExpired =
-    view.kind === 'status' &&
-    view.state === XtmPlatformTrialStatusPanelState.Expired;
-  const isRequestInProgress =
-    view.kind === 'status' &&
-    view.state === XtmPlatformTrialStatusPanelState.RequestInProgress;
+  const { showLimitations, showExpiredTitle } =
+    deriveXtmPlatformTrialRequestPageLayout(view);
 
   return (
     <>
@@ -63,9 +59,9 @@ const PageLoader = () => {
               view={view}
             />
           }
-          showLimitations={view.kind === 'form' || isRequestInProgress}
+          showLimitations={showLimitations}
           title={
-            isExpired
+            showExpiredTitle
               ? t('Service.Trials.XtmPlatform.Page.ExpiredTitle')
               : undefined
           }
