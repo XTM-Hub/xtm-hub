@@ -182,19 +182,16 @@ describe('TimeSeriesBarChart', () => {
   );
 
   it.each`
-    case                 | limit                                              | expected
-    ${'without a limit'} | ${undefined}                                       | ${1}
-    ${'with a limit'}    | ${{ value: 2_000_000_000, label: 'Max capacity' }} | ${0.8}
-  `(
-    'should fill the bars at $expected opacity $case',
-    async ({ limit, expected }) => {
-      // Given / When
-      const { options } = await renderChart({ limit });
+    case                 | limit
+    ${'without a limit'} | ${undefined}
+    ${'with a limit'}    | ${{ value: 2_000_000_000, label: 'Max capacity' }}
+  `('should fill the bars fully opaque $case', async ({ limit }) => {
+    // Given / When
+    const { options } = await renderChart({ limit });
 
-      // Then
-      expect(options.fill?.opacity).toBe(expected);
-    }
-  );
+    // Then
+    expect(options.fill?.opacity).toBe(1);
+  });
 
   it('should keep the limit label above its line when there is no peak line', async () => {
     // Given / When

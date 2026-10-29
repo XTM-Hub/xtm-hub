@@ -33,9 +33,6 @@ const LIMIT_LABEL_COLOR = 'var(--text-default-primary)';
 const LIMIT_LABEL_RADIUS_PX = 4;
 const LIMIT_LABEL_PADDING_X_PX = 8;
 const LIMIT_LABEL_PADDING_Y_PX = 2;
-// With a limit line, the bars step back so the line reads first.
-const BAR_OPACITY = 1;
-const BAR_OPACITY_WITH_LIMIT = 0.8;
 
 // Dresses the ApexCharts toolbar as tertiary sm IconButtons and its export menu as a Menu. ApexCharts injects
 // an unlayered stylesheet, which beats any Tailwind layer: every rule here needs the important modifier.
@@ -173,10 +170,7 @@ export const TimeSeriesBarChart = ({
           borderRadiusApplication: 'end',
         },
       },
-      fill: {
-        type: 'solid',
-        opacity: limit ? BAR_OPACITY_WITH_LIMIT : BAR_OPACITY,
-      },
+      fill: { type: 'solid', opacity: 1 },
       dataLabels: { enabled: false },
       grid: {
         borderColor: 'var(--border-elevation-subtle)',
