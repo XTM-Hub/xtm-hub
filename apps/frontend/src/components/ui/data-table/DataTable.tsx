@@ -257,7 +257,7 @@ const DataTableHeadBarOptions = () => {
   const { pageIndex, pageSize } = table.getState().pagination;
   const rowCount = table.getRowCount();
   return (
-    <div className="inline-flex h-9 shrink-0 items-center rounded-sm border border-elevation-default">
+    <div className="inline-flex h-9 shrink-0 items-center rounded-sm border border-filigran-brand-primary-transparency-55">
       <IconButton
         priority="tertiary"
         onClick={() => table.previousPage()}
@@ -438,6 +438,7 @@ const DataTableHeaderCell = <TData, TValue>({
     <th
       ref={setNodeRef}
       colSpan={header.colSpan}
+      data-column-id={header.column.id}
       style={style}
       className={cn(
         'relative group whitespace-nowrap truncate px-4 h-12 text-left align-middle bg-elevation-highlight content-compact-bold text-default-primary transition-transform duration-200 ease-in-out [&:has([role=checkbox])]:pr-0',
@@ -504,6 +505,7 @@ const DataTableCell = <TData,>({ cell }: { cell: Cell<TData, unknown> }) => {
   return (
     <td
       ref={setNodeRef}
+      data-column-id={cell.column.id}
       style={{
         maxWidth: cell.column.getSize(),
         width: cell.column.getSize(),

@@ -47,7 +47,23 @@
     "Link": "SaaS metrics",
     "ViewMetrics": "View metrics",
     "SearchPlatform": "Search platform",
-    "ClearSearch": "Clear search"
+    "ClearSearch": "Clear search",
+    "Tour": {
+      "Documentation": "Documentation",
+      "Close": "Close the tour",
+      "Table": "This board lists every SaaS platform from the SaaS Manager, with the data it reports.",
+      "Search": "Search for a platform by customer name.",
+      "ProductFilter": "Show only the platforms of one product.",
+      "HubColumns": "These columns fill in once the customer connects their product to XTM Hub. Click \"{viewMetrics}\" for more metrics on the platform.",
+      "HoverDetails": "Hover over a cell in these columns for details: administrator emails, product version and exact contract end date.",
+      "MetricsLink": "Available once the customer connects their product to XTM Hub. The link opens the product's details page, which the customer can access too.",
+      "Database": "Elasticsearch storage used, as a percentage of what the plan allows.",
+      "FileStorage": "S3 storage used, as a percentage of what the plan allows.",
+      "Availability": "The SLA availability of the platform. Contracts set the target at 99.98%.",
+      "Health": "Spot at a glance which platforms have an issue, and what it is: SLA, database or file storage.",
+      "ColumnMenu": "Hover over a column header to open its menu and hide the columns you don't need. Click some headers to sort the table by that column.",
+      "ShowHiddenColumn": "To bring back a hidden column, open the table menu and select it under \"{columns}\"."
+    }
   },
   "CountryComboBox": {
     "Placeholder": "Choose a country"

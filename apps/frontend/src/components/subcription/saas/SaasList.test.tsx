@@ -1,4 +1,9 @@
 import { SaasList } from '@/components/subcription/saas/SaasList';
+import {
+  getSaasListTourSteps,
+  HIGHLIGHTED_ROW_COUNT,
+} from '@/components/subcription/saas/tour/saas-list-tour';
+import type { useTranslate } from '@/hooks/use-translate';
 import testRender from '@/utils/test/test-render';
 import {
   OrderingMode,
@@ -640,5 +645,92 @@ describe('SaasList', () => {
 
     // Then the saas platforms are fetched without search term
     expect(lastQueryVariables()).toMatchObject({ searchTerm: null });
+  });
+
+  it('should start the tour on its first step when the user opens the documentation', async () => {
+    // Given the list of saas platforms
+    const { user } = renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+    // When the user opens the documentation
+    await user.click(
+      screen.getByRole('button', { name: 'CSMBoard.Tour.Documentation' })
+    );
+
+    // Then the tour shows its first step
+    expect(await screen.findByText('CSMBoard.Tour.Table')).toBeVisible();
+  });
+
+  it.each([
+    [
+      'the columns of the Hub',
+      3,
+      'CSMBoard.Tour.HubColumns',
+      [SaasPlatformOrdering.Product, SaasPlatformOrdering.Plan],
+    ],
+    [
+      'the columns with more information on hover',
+      4,
+      'CSMBoard.Tour.HoverDetails',
+      [SaasPlatformOrdering.Plan, 'link'],
+    ],
+  ])(
+    'should dim the columns in between on the step about %s',
+    async (_, nextStepCount, stepContent, dimmedColumnIds) => {
+      // Given the tour opened on the list of saas platforms
+      mockSaasPlatforms([buildSaasPlatform()]);
+      const { user, container } = renderWithCapabilities([
+        PortalCapability.ReadSaasMetrics,
+      ]);
+      await user.click(
+        screen.getByRole('button', { name: 'CSMBoard.Tour.Documentation' })
+      );
+
+      // When the user goes to the step
+      for (let step = 0; step < nextStepCount; step++) {
+        await user.click(
+          screen.getByRole('button', { name: 'Go to next step' })
+        );
+      }
+      await screen.findByText(stepContent);
+
+      // Then the header and cell of each column in between are dimmed
+      const list = container.querySelector('[data-tour="saas-list"]');
+      expect(list).toHaveClass(
+        ...dimmedColumnIds.map(
+          (columnId) => `[&_[data-column-id=${columnId}]]:opacity-30`
+        )
+      );
+      expect(
+        list?.querySelectorAll(
+          dimmedColumnIds
+            .map((columnId) => `[data-column-id="${columnId}"]`)
+            .join(', ')
+        )
+      ).toHaveLength(dimmedColumnIds.length * 2);
+    }
+  );
+
+  it('should find every element the tour points at in the list', () => {
+    // Given a list with as many saas platforms as the tour highlights rows
+    mockSaasPlatforms(
+      Array.from({ length: HIGHLIGHTED_ROW_COUNT }, (_, index) =>
+        buildSaasPlatform({ id: `platform-${index}` })
+      )
+    );
+    renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+    // When the tour looks for the elements of its steps
+    const steps = getSaasListTourSteps(
+      ((key: string) => key) as unknown as ReturnType<typeof useTranslate>
+    );
+    const selectors = steps.flatMap((step) => [
+      step.selector as string,
+      ...(step.highlightedSelectors ?? []),
+    ]);
+
+    // Then each of them is in the list
+    expect(
+      selectors.filter((selector) => !document.querySelector(selector))
+    ).toEqual([]);
   });
 });

@@ -47,7 +47,23 @@
     "Link": "Métriques SaaS",
     "ViewMetrics": "Voir les métriques",
     "SearchPlatform": "Rechercher une plateforme",
-    "ClearSearch": "Effacer la recherche"
+    "ClearSearch": "Effacer la recherche",
+    "Tour": {
+      "Documentation": "Documentation",
+      "Close": "Fermer la visite",
+      "Table": "Ce tableau liste toutes les plateformes SaaS du SaaS Manager, avec les données qu'il remonte.",
+      "Search": "Recherchez une plateforme par nom de client.",
+      "ProductFilter": "N'affichez que les plateformes d'un produit.",
+      "HubColumns": "Ces colonnes se remplissent dès que le client connecte son produit à XTM Hub. Cliquez sur « {viewMetrics} » pour accéder à plus de métriques sur la plateforme.",
+      "HoverDetails": "Survolez une cellule de ces colonnes pour plus de détails : e-mails des administrateurs, version du produit et date exacte de fin de contrat.",
+      "MetricsLink": "Disponible dès que le client connecte son produit à XTM Hub. Le lien ouvre la page de détails du produit, à laquelle le client a aussi accès.",
+      "Database": "Stockage Elasticsearch utilisé, en pourcentage de ce que l'offre autorise.",
+      "FileStorage": "Stockage S3 utilisé, en pourcentage de ce que l'offre autorise.",
+      "Availability": "Disponibilité SLA de la plateforme. Les contrats fixent l'objectif à 99,98 %.",
+      "Health": "Repérez en un coup d'œil les plateformes en difficulté, et le problème en cause : SLA, base de données ou stockage de fichiers.",
+      "ColumnMenu": "Survolez l'en-tête d'une colonne pour ouvrir son menu et masquer les colonnes inutiles. Cliquez sur certains en-têtes pour trier le tableau selon cette colonne.",
+      "ShowHiddenColumn": "Pour réafficher une colonne masquée, ouvrez le menu du tableau et sélectionnez-la dans « {columns} »."
+    }
   },
   "CountryComboBox": {
     "Placeholder": "Choisir un pays"
