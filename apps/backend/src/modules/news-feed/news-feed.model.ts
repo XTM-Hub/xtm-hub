@@ -1,4 +1,5 @@
 import {
+  FiligranProduct,
   NewsFeedItemMetadataKey,
   NewsFeedItemType,
   NewsFeedUtmContent,
@@ -39,8 +40,10 @@ export const newsFeedConfigurationMapping: Partial<
 
 // Products of the blog API whose posts become news feed items, with the platform that consumes them. MVP: OpenCTI only,
 // the other products are ignored.
-export const blogpostProductMapping: Record<string, PlatformIdentifier> = {
-  opencti: PlatformIdentifier.Opencti,
+export const blogpostProductMapping: Partial<
+  Record<FiligranProduct, PlatformIdentifier>
+> = {
+  [FiligranProduct.Opencti]: PlatformIdentifier.Opencti,
 };
 
 // Metadata keys that only serve the Hub (document lookup, external destination of a redirect): they are never
