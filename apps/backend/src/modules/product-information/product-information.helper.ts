@@ -369,6 +369,11 @@ const parseSaasPlatform = (
   const slaPercent = toFiniteNumber(platform.sla_cmtd);
   const availability = slaPercent === null ? null : percentToRatio(slaPercent);
   const storage = parseSaasPlatformStorage(platform.storage);
+  for (const usage of [storage?.es_used_size, storage?.s3_used_size]) {
+    if (usage && (usage.limit ?? 0) <= 0) {
+      usage.percent = null;
+    }
+  }
   const metadata = parseSaasPlatformMetadata(platform);
   return {
     id,
@@ -456,8 +461,19 @@ export const ProductInformationHelper = {
         const parsed = parseSaasPlatform(platform, now);
         return parsed ? [parsed] : [];
       });
+      const totalCount = toFiniteNumber(body.count);
+      if (
+        totalCount === null ||
+        !Number.isInteger(totalCount) ||
+        totalCount < 0
+      ) {
+        logApp.error('The SaaS Manager returned an unreadable platform count', {
+          page: request.page,
+        });
+        return null;
+      }
       return {
-        totalCount: toFiniteNumber(body.count) ?? platforms.length,
+        totalCount,
         platforms,
       };
     } catch (error) {
