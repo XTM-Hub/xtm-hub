@@ -18,8 +18,7 @@ docs {
   Webhook called by n8n each time a blog post is published, edited or unpublished. It is only a trigger: the request
   body is ignored, the Hub fetches the latest blog posts itself and reconciles the news feed.
 
-  Ensure xtm-hub-token is defined in environment. It is the system token: the sync runs as a system user scoped to the
-  MANAGE_NEWS_FEED_BLOGPOSTS capability.
+  Ensure xtm-hub-token is defined in environment. It is the system token: the sync runs as the system user.
 
   Answers:
   - 200 once the synchronization is committed, with the counts only:

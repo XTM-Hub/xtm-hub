@@ -10,7 +10,6 @@ import {
   it,
   vi,
 } from 'vitest';
-import { PortalCapability } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
 import { UserLoadUserBy } from '../../../model/user';
 import {
@@ -164,7 +163,7 @@ describe('news feed blogpost sync endpoint', () => {
       expect(await response.json()).toEqual(SYNC_RESULT);
     });
 
-    it('should run the synchronization once, in a context of the system user scoped to the news feed blogposts capability', async () => {
+    it('should run the synchronization once, in a context of the system user', async () => {
       // Given
       let contextUser: UserLoadUserBy | undefined;
       const syncBlogposts = vi
@@ -180,9 +179,6 @@ describe('news feed blogpost sync endpoint', () => {
       // Then
       expect(syncBlogposts).toHaveBeenCalledTimes(1);
       expect(contextUser?.id).toBe(SYSTEM_USER_UUID);
-      expect(contextUser?.capabilities.map(({ name }) => name)).toEqual([
-        PortalCapability.ManageNewsFeedBlogposts,
-      ]);
     });
 
     const bodies: [string, Record<string, string>, string][] = [

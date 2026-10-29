@@ -184,11 +184,6 @@ export const CAPABILITY_READ_SAAS_METRICS: CapabilityPortal = {
   name: PortalCapability.ReadSaasMetrics,
 };
 
-export const CAPABILITY_MANAGE_NEWS_FEED_BLOGPOSTS: CapabilityPortal = {
-  id: '46d50b3a-58c0-4e80-8cc7-0c1dfafe2430' as CapabilityPortalId,
-  name: PortalCapability.ManageNewsFeedBlogposts,
-};
-
 export const CAPABILITY_MANAGE_DEPLOYMENT: CapabilityPortal = {
   id: 'system-token-MANAGE_DEPLOYMENT' as CapabilityPortalId,
   name: PortalCapability.ManageDeployment,
