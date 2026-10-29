@@ -1,11 +1,14 @@
-import config from 'config';
 import { Express, Request, Response } from 'express';
 import rateLimit, { type Options } from 'express-rate-limit';
+import { PortalCapability } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
 import { NewsFeedApp } from '../../../modules/news-feed/news-feed.app';
 import { SYSTEM_USER_CONTEXT } from '../../../portal.const';
-import { SYSTEM_TOKEN_HEADER } from '../../../security/directive-graphql/validator/system-token.validator';
-import { validatePassword } from '../../../security/util/user';
+import {
+  buildScopedSystemUser,
+  isValidSystemToken,
+  SYSTEM_TOKEN_HEADER,
+} from '../../../security/directive-graphql/validator/system-token.validator';
 import { BlogApiError } from '../../../thirdparty/blog-api/errors';
 import { logApp } from '../../../utils/app-logger.util';
 import { buildIpRateLimiterOptions } from '../shared/ip-rate-limit.util';
@@ -15,12 +18,11 @@ const NEWS_FEED_BLOGPOST_SYNC_PATH = '/webhooks/news-feed/blogposts';
 const NEWS_FEED_BLOGPOST_SYNC_RATE_WINDOW_MS = 60 * 1000;
 const NEWS_FEED_BLOGPOST_SYNC_RATE_MAX = 30;
 
-const NEWS_FEED_BLOGPOST_WEBHOOK_TOKEN_HASH = config.get<string>(
-  'news_feed.blogpost_webhook_token_hash'
-);
-const NEWS_FEED_BLOGPOST_WEBHOOK_TOKEN_SALT = config.get<string>(
-  'news_feed.blogpost_webhook_token_salt'
-);
+// Like a @system_token(portalCapa: [...]) field: the sync only gets the capability it needs, not the whole system user
+const buildBlogpostSyncContext = () => ({
+  ...SYSTEM_USER_CONTEXT,
+  user: buildScopedSystemUser([PortalCapability.ManageNewsFeedBlogposts]),
+});
 
 // Nothing about the failure is revealed to the caller: the details stay in the logs
 const SYNC_FAILURE_MESSAGE = 'Unable to synchronize blog posts';
@@ -42,16 +44,6 @@ const newsFeedBlogpostSyncRateLimiter = rateLimit(
   buildNewsFeedBlogpostSyncRateLimiterOptions()
 );
 
-// The dedicated token, not the system token. The input is hashed before the comparison, so it needs no constant-time
-// wrapper.
-const isValidWebhookToken = (token: string | undefined): boolean =>
-  !!token &&
-  validatePassword(
-    NEWS_FEED_BLOGPOST_WEBHOOK_TOKEN_SALT,
-    token,
-    NEWS_FEED_BLOGPOST_WEBHOOK_TOKEN_HASH
-  );
-
 // A missing and a wrong token get the same answer, without any body
 const sendUnauthorized = (res: Response): void => {
   res.status(401).end();
@@ -59,14 +51,15 @@ const sendUnauthorized = (res: Response): void => {
 
 export const NewsFeedBlogpostSyncEndpoint = {
   sync: async (req: Request, res: Response): Promise<void> => {
-    if (!isValidWebhookToken(req.header(SYSTEM_TOKEN_HEADER))) {
+    if (!isValidSystemToken(req.header(SYSTEM_TOKEN_HEADER) ?? null)) {
       sendUnauthorized(res);
       return;
     }
 
     try {
-      // No session, like the crons: the sync runs as the system user. The request body is ignored.
-      const result = await requestContext.run(SYSTEM_USER_CONTEXT, () =>
+      // No session, like the crons: the sync runs as the system user scoped to its capability. The request body is
+      // ignored.
+      const result = await requestContext.run(buildBlogpostSyncContext(), () =>
         NewsFeedApp.syncBlogposts()
       );
       res.status(200).json({
