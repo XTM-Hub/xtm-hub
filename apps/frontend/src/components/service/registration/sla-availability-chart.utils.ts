@@ -66,16 +66,3 @@ export const toSlaMonths = ({ target, months }: SaasPlatformSla): SlaMonth[] =>
       status: slaStatus(day.availability, target),
     })),
   }));
-
-// The current month is not over yet and a month without any value says nothing: neither counts as a full month.
-export const countFullMonthsOnTarget = (
-  months: SlaMonth[]
-): { met: number; total: number } => {
-  const fullMonths = months.filter(
-    ({ isCurrent, availability }) => !isCurrent && availability !== null
-  );
-  return {
-    met: fullMonths.filter(({ status }) => status === 'Met').length,
-    total: fullMonths.length,
-  };
-};

@@ -1027,7 +1027,6 @@
         "NoData": "No data",
         "Summary": {
           "Title": "Monthly SLA · target {target}",
-          "FullMonthsOnTarget": "{met} of {total, plural, one {# full month} other {# full months}} on target",
           "CurrentMonth": "{month} · month to date",
           "TargetAndMeasuredDays": "Target {target} · {measured} of {total} days measured"
         },

@@ -1,5 +1,4 @@
 import {
-  countFullMonthsOnTarget,
   slaStatus,
   toSlaMonths,
 } from '@/components/service/registration/sla-availability-chart.utils';
@@ -107,41 +106,5 @@ describe('toSlaMonths', () => {
 
     // Then
     expect(months.map(({ isCurrent }) => isCurrent)).toEqual([true]);
-  });
-});
-
-describe('countFullMonthsOnTarget', () => {
-  it('should count the past months with a value, and those on target among them', () => {
-    // Given
-    const months = toSlaMonths({
-      target: TARGET,
-      months: [
-        monthlySla('2026-06-01T00:00:00.000Z', null),
-        monthlySla('2026-07-01T00:00:00.000Z', 1),
-        monthlySla('2026-08-01T00:00:00.000Z', 0.9992),
-        monthlySla('2026-09-01T00:00:00.000Z', 0.9999),
-        monthlySla('2026-10-01T00:00:00.000Z', 1),
-      ],
-    });
-
-    // When
-    const count = countFullMonthsOnTarget(months);
-
-    // Then
-    expect(count).toEqual({ met: 2, total: 3 });
-  });
-
-  it('should count no full month when only the current month is known', () => {
-    // Given
-    const months = toSlaMonths({
-      target: TARGET,
-      months: [monthlySla('2026-10-01T00:00:00.000Z', 1)],
-    });
-
-    // When
-    const count = countFullMonthsOnTarget(months);
-
-    // Then
-    expect(count).toEqual({ met: 0, total: 0 });
   });
 });
