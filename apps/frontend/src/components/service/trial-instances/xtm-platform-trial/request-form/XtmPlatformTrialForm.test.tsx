@@ -8,7 +8,7 @@ import {
 } from '@/components/service/trial-instances/xtm-platform-trial/request-form/XtmPlatformTrialForm';
 import testRender from '@/utils/test/test-render';
 import { PlatformIdentifier } from '@graphql/generated';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
@@ -187,15 +187,17 @@ describe('XtmPlatformTrialForm', () => {
     );
   });
 
-  it.each([
-    'region',
-    'job_title',
-    'activity_sector',
-    'use_cases_by_product.0.use_case',
-    'use_cases_by_product.1.use_case',
+  // Each field path comes with the position of its select: region, job title,
+  // activity sector, then the OpenCTI and OpenAEV use cases.
+  it.each<[string, number]>([
+    ['region', 0],
+    ['job_title', 1],
+    ['activity_sector', 2],
+    ['use_cases_by_product.0.use_case', 3],
+    ['use_cases_by_product.1.use_case', 4],
   ])(
     'should show the %s validation message when the form is submitted with the selects empty',
-    async (fieldPath) => {
+    async (fieldPath, selectIndex) => {
       // Given
       const expectedMessage = getSchemaErrorMessage(fieldPath);
       const { user } = testRender(
@@ -210,9 +212,13 @@ describe('XtmPlatformTrialForm', () => {
       );
 
       // Then
-      // Both use case selects show the same message, hence findAll.
+      // Both use case selects show the same message: only look inside the
+      // container of the field under test, which also holds its error.
+      const fieldContainer = screen
+        .getAllByRole('combobox')
+        [selectIndex]?.closest('div') as HTMLElement;
       expect(
-        (await screen.findAllByText(expectedMessage))[0]
+        await within(fieldContainer).findByText(expectedMessage)
       ).toBeInTheDocument();
     }
   );
