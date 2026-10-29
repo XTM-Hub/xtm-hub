@@ -36,6 +36,7 @@ query SaasManagerPlatformsList(
   $orderBy: SaasPlatformOrdering!
   $orderMode: OrderingMode!
   $searchTerm: String
+  $product: SaasProduct
 ) {
   saasManagerPlatforms(
     page: $page
@@ -43,6 +44,7 @@ query SaasManagerPlatformsList(
     orderBy: $orderBy
     orderMode: $orderMode
     searchTerm: $searchTerm
+    product: $product
   ) {
     totalCount
     platforms {

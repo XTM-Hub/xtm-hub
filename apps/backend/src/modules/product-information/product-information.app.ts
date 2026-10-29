@@ -95,6 +95,7 @@ export const ProductInformationApp = {
     orderBy,
     orderMode,
     searchTerm,
+    product,
   }: QuerySaasManagerPlatformsArgs): Promise<SaasPlatformPage | null> => {
     if (!isFeatureEnabled(FeatureFlag.SaasMetrics)) {
       return null;
@@ -105,6 +106,7 @@ export const ProductInformationApp = {
       page: Math.max(1, page),
       page_size: Math.min(Math.max(1, pageSize), SAAS_PLATFORMS_MAX_PAGE_SIZE),
       search: searchTerm || undefined,
+      product: product ?? undefined,
       ordering: `${orderMode === OrderingMode.Desc ? '-' : ''}${orderBy}`,
     });
   },

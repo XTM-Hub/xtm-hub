@@ -9,6 +9,7 @@ import {
   getSaasPlatformServicePath,
   getSaasProductName,
 } from '@/components/subcription/saas/saas-list.utils';
+import { SaasProductFilter } from '@/components/subcription/saas/SaasProductFilter';
 import { TruncatedText } from '@/components/subcription/saas/TruncatedText';
 import {
   DataTable,
@@ -46,6 +47,7 @@ import {
   SaasPlatformHealthIssue,
   SaasPlatformOrdering,
   type SaasPlatformRowFragment,
+  type SaasProduct,
   ServiceDefinitionIdentifier,
   useSaasManagerPlatformsListQuery,
 } from '@graphql/generated';
@@ -112,6 +114,7 @@ export const SaasList = () => {
     removeOrder,
   } = useSaasListLocalstorage();
   const [searchTerm, setSearchTerm] = useState<string | null>(null);
+  const [product, setProduct] = useState<SaasProduct | null>(null);
   const { pagination, setPagination, onPaginationChange } = useTablePagination({
     pageSize,
     setPageSize,
@@ -125,8 +128,16 @@ export const SaasList = () => {
       orderBy,
       orderMode,
       searchTerm,
+      product,
     }),
-    [pagination.pageIndex, pagination.pageSize, orderBy, orderMode, searchTerm]
+    [
+      pagination.pageIndex,
+      pagination.pageSize,
+      orderBy,
+      orderMode,
+      searchTerm,
+      product,
+    ]
   );
 
   const { data, isLoading, isError } = useSaasManagerPlatformsListQuery(
@@ -520,6 +531,11 @@ export const SaasList = () => {
     updateSearchTerm('');
   };
 
+  const onProductChange = (nextProduct: SaasProduct | null) => {
+    setProduct(nextProduct);
+    resetToFirstPage();
+  };
+
   const onSortingChange = (updater: unknown) => {
     handleSortingChange<SaasPlatformOrdering>({
       updater,
@@ -577,6 +593,12 @@ export const SaasList = () => {
                   onClear={onSearchClear}
                 />
               </>
+            }
+            filters={
+              <SaasProductFilter
+                selectedProduct={product}
+                onProductChange={onProductChange}
+              />
             }
             actions={<DataTableHeadBarOptions />}
           />

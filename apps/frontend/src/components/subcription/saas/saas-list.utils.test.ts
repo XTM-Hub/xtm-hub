@@ -9,6 +9,7 @@ import {
 import {
   PlatformIdentifier,
   SaasPlatformHealthIssue,
+  SaasProduct,
   ServiceDefinitionIdentifier,
 } from '@graphql/generated';
 
@@ -95,27 +96,17 @@ describe('getContractDaysLeft', () => {
 
 describe('getSaasProductName', () => {
   it.each`
-    product   | name
-    ${'OCTI'} | ${'OpenCTI'}
-    ${'OAEV'} | ${'OpenAEV'}
-    ${'ONE'}  | ${'XTM One'}
-    ${'octi'} | ${'OpenCTI'}
+    product             | name
+    ${SaasProduct.Octi} | ${'OpenCTI'}
+    ${SaasProduct.Oaev} | ${'OpenAEV'}
+    ${SaasProduct.One}  | ${'XTM One'}
   `('should return $name for the $product product', ({ product, name }) => {
-    // Given a product code sent by the SaaS Manager
+    // Given a product of the SaaS Manager
     // When its name is resolved
     const productName = getSaasProductName(product);
 
     // Then the full name of the product is returned
     expect(productName).toBe(name);
-  });
-
-  it('should return the code of a product the Hub does not know', () => {
-    // Given a product code the Hub has no name for
-    // When its name is resolved
-    const productName = getSaasProductName('OTHER');
-
-    // Then the code is returned as is
-    expect(productName).toBe('OTHER');
   });
 });
 

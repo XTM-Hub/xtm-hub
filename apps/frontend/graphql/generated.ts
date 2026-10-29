@@ -2283,6 +2283,7 @@ export type QuerySaasManagerPlatformsArgs = {
   orderMode: OrderingMode;
   page: Scalars['Int']['input'];
   pageSize: Scalars['Int']['input'];
+  product: InputMaybe<SaasProduct>;
   searchTerm: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -2574,7 +2575,7 @@ export type SaasPlatform = {
   health_issues: Maybe<Array<SaasPlatformHealthIssue>>;
   id: Scalars['String']['output'];
   metadata: SaasPlatformMetadata;
-  product: Maybe<Scalars['String']['output']>;
+  product: Maybe<SaasProduct>;
   registered_platform: Maybe<RegisteredPlatform>;
   sla_cmtd: Maybe<Scalars['Float']['output']>;
   status: Maybe<Scalars['String']['output']>;
@@ -2685,6 +2686,12 @@ export type SaasPlatformStorageUsage = {
   percent: Maybe<Scalars['Float']['output']>;
   used: Maybe<Scalars['Float']['output']>;
 };
+
+export enum SaasProduct {
+  Oaev = 'OAEV',
+  Octi = 'OCTI',
+  One = 'ONE'
+}
 
 export type SendTelemetryMutation = {
   __typename?: 'SendTelemetryMutation';
@@ -3969,7 +3976,7 @@ export type SsoGroupRolePortalsQueryVariables = Exact<{ [key: string]: never; }>
 
 export type SsoGroupRolePortalsQuery = { __typename?: 'Query', ssoGroupRolePortals: Array<{ __typename?: 'SSOGroupRolePortal', ssoGroup: string, rolePortal: { __typename?: 'RolePortal', id: string, name: string } }> };
 
-export type SaasPlatformRowFragment = { __typename?: 'SaasPlatform', id: string, product: string | null, customer: string | null, sla_cmtd: number | null, health_issues: Array<SaasPlatformHealthIssue> | null, contract_status: SaasPlatformContractStatus | null, metadata: { __typename?: 'SaasPlatformMetadata', plan: string | null, end_date: any | null }, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null } | null, registered_platform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, identifier: ServiceDefinitionIdentifier, version: string | null, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } | null };
+export type SaasPlatformRowFragment = { __typename?: 'SaasPlatform', id: string, product: SaasProduct | null, customer: string | null, sla_cmtd: number | null, health_issues: Array<SaasPlatformHealthIssue> | null, contract_status: SaasPlatformContractStatus | null, metadata: { __typename?: 'SaasPlatformMetadata', plan: string | null, end_date: any | null }, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null } | null, registered_platform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, identifier: ServiceDefinitionIdentifier, version: string | null, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } | null };
 
 export type SaasManagerPlatformsListQueryVariables = Exact<{
   page: Scalars['Int']['input'];
@@ -3977,10 +3984,11 @@ export type SaasManagerPlatformsListQueryVariables = Exact<{
   orderBy: SaasPlatformOrdering;
   orderMode: OrderingMode;
   searchTerm: InputMaybe<Scalars['String']['input']>;
+  product: InputMaybe<SaasProduct>;
 }>;
 
 
-export type SaasManagerPlatformsListQuery = { __typename?: 'Query', saasManagerPlatforms: { __typename?: 'SaasPlatformPage', totalCount: number, platforms: Array<{ __typename?: 'SaasPlatform', id: string, product: string | null, customer: string | null, sla_cmtd: number | null, health_issues: Array<SaasPlatformHealthIssue> | null, contract_status: SaasPlatformContractStatus | null, metadata: { __typename?: 'SaasPlatformMetadata', plan: string | null, end_date: any | null }, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null } | null, registered_platform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, identifier: ServiceDefinitionIdentifier, version: string | null, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } | null }> } | null };
+export type SaasManagerPlatformsListQuery = { __typename?: 'Query', saasManagerPlatforms: { __typename?: 'SaasPlatformPage', totalCount: number, platforms: Array<{ __typename?: 'SaasPlatform', id: string, product: SaasProduct | null, customer: string | null, sla_cmtd: number | null, health_issues: Array<SaasPlatformHealthIssue> | null, contract_status: SaasPlatformContractStatus | null, metadata: { __typename?: 'SaasPlatformMetadata', plan: string | null, end_date: any | null }, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null } | null, registered_platform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, identifier: ServiceDefinitionIdentifier, version: string | null, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } | null }> } | null };
 
 export type AddUsersToBundleGroupsMutationVariables = Exact<{
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
@@ -7348,13 +7356,14 @@ useInfiniteSsoGroupRolePortalsQuery.getRootKey = () => ['SSOGroupRolePortals.inf
 useSsoGroupRolePortalsQuery.fetcher = (client: GraphQLClient, variables?: SsoGroupRolePortalsQueryVariables, headers?: RequestInit['headers']) => fetcher<SsoGroupRolePortalsQuery, SsoGroupRolePortalsQueryVariables>(client, SsoGroupRolePortalsDocument, variables, headers);
 
 export const SaasManagerPlatformsListDocument = `
-    query SaasManagerPlatformsList($page: Int!, $pageSize: Int!, $orderBy: SaasPlatformOrdering!, $orderMode: OrderingMode!, $searchTerm: String) {
+    query SaasManagerPlatformsList($page: Int!, $pageSize: Int!, $orderBy: SaasPlatformOrdering!, $orderMode: OrderingMode!, $searchTerm: String, $product: SaasProduct) {
   saasManagerPlatforms(
     page: $page
     pageSize: $pageSize
     orderBy: $orderBy
     orderMode: $orderMode
     searchTerm: $searchTerm
+    product: $product
   ) {
     totalCount
     platforms {

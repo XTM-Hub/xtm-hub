@@ -30,6 +30,7 @@
     "Administrators": "管理者",
     "Products": "製品",
     "ProductVersion": "バージョン: {version}",
+    "AllProducts": "すべての製品",
     "Plan": "プラン",
     "Health": "ヘルス",
     "Healthy": "正常",

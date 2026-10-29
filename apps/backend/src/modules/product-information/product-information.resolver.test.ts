@@ -20,6 +20,7 @@ import {
   SaasPlatformOrdering,
   SaasPlatformPage,
   SaasPlatformResolvers,
+  SaasProduct,
 } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
@@ -227,7 +228,7 @@ describe('query.saasManagerPlatforms', () => {
         {
           id: uuidv4(),
           status: 'active',
-          product: 'OCTI',
+          product: SaasProduct.Octi,
           metadata: { hostname: 'my-platform.example.com' },
         },
       ],

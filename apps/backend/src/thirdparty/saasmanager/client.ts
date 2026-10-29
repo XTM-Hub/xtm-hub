@@ -17,6 +17,7 @@ export interface SaasManagerInstanceListRequest {
   page: number;
   page_size: number;
   search?: string;
+  product?: string;
   ordering: string;
 }
 
@@ -105,6 +106,7 @@ export const SaasManagerClient = {
     page,
     page_size,
     search,
+    product,
     ordering,
   }: SaasManagerInstanceListRequest): Promise<Response> {
     const baseUrl = getBaseUrl();
@@ -114,6 +116,9 @@ export const SaasManagerClient = {
     url.searchParams.set('page_size', String(page_size));
     if (search) {
       url.searchParams.set('search', search);
+    }
+    if (product) {
+      url.searchParams.set('product', product);
     }
     url.searchParams.set('ordering', ordering);
 

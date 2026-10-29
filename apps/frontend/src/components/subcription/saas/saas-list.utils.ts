@@ -13,19 +13,26 @@ import {
   PlatformIdentifier,
   SaasPlatformHealthIssue,
   type SaasPlatformRowFragment,
+  SaasProduct,
   ServiceDefinitionIdentifier,
 } from '@graphql/generated';
 
-// The SaaS Manager names its products by a short code, upper-cased here.
-const PRODUCT_NAME_BY_SAAS_PRODUCT: Record<string, string> = {
-  OCTI: PlatformMetadataMapping[PlatformIdentifier.Opencti].name,
-  OAEV: PlatformMetadataMapping[PlatformIdentifier.Openaev].name,
-  ONE: PlatformMetadataMapping[PlatformIdentifier.Xtmone].name,
+// The SaaS Manager names its products by a short code, normalised by the backend.
+const PRODUCT_NAME_BY_SAAS_PRODUCT: Record<SaasProduct, string> = {
+  [SaasProduct.Octi]: PlatformMetadataMapping[PlatformIdentifier.Opencti].name,
+  [SaasProduct.Oaev]: PlatformMetadataMapping[PlatformIdentifier.Openaev].name,
+  [SaasProduct.One]: PlatformMetadataMapping[PlatformIdentifier.Xtmone].name,
 };
 
-// A product the Hub does not know keeps the code the SaaS Manager sent.
-export const getSaasProductName = (product: string): string =>
-  PRODUCT_NAME_BY_SAAS_PRODUCT[product.toUpperCase()] ?? product;
+// In the order the Hub lists its products.
+export const SAAS_PRODUCTS = [
+  SaasProduct.Octi,
+  SaasProduct.Oaev,
+  SaasProduct.One,
+];
+
+export const getSaasProductName = (product: SaasProduct): string =>
+  PRODUCT_NAME_BY_SAAS_PRODUCT[product];
 
 // The measure behind a health issue of a platform, as a ratio (1 is 100 %): the storages are sent as percentages.
 export const getHealthIssueRatio = (

@@ -87,7 +87,8 @@ enum SaasPlatformMetricsPeriod {
 type SaasPlatform {
   id: String!
   status: String
-  product: String
+  # null when the SaaS Manager sends a product the Hub does not know.
+  product: SaasProduct
   customer: String
   commercial_model: String
   # The availability the SaaS Manager measured, as a ratio (1 is 100 %).
@@ -134,6 +135,13 @@ enum SaasPlatformOrdering {
   end_date
 }
 
+# The products the SaaS Manager can filter the platforms on, named by its codes.
+enum SaasProduct {
+  OCTI
+  OAEV
+  ONE
+}
+
 input RegisteredSaasPlatformDataInput {
   service_instance_id: ServiceInstanceId!
   metrics_period: SaasPlatformMetricsPeriod!
@@ -143,7 +151,7 @@ type Query {
   registeredSaasPlatformData(
     input: RegisteredSaasPlatformDataInput!
   ): SaasPlatformData @auth(portalCapa: [BYPASS, READ_SAAS_METRICS])
-  # The platforms the SaaS Manager knows, paged, searched and ordered by it; null when it cannot be reached.
+  # The platforms the SaaS Manager knows, paged, searched, filtered and ordered by it; null when it cannot be reached.
   saasManagerPlatforms(
     # From 1.
     page: Int!
@@ -152,5 +160,6 @@ type Query {
     orderBy: SaasPlatformOrdering!
     orderMode: OrderingMode!
     searchTerm: String
+    product: SaasProduct
   ): SaasPlatformPage @auth(portalCapa: [BYPASS, READ_SAAS_METRICS])
 }

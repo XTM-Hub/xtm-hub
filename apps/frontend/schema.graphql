@@ -128,7 +128,7 @@ type Query {
   users(first: Int!, after: ID, orderBy: UserOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [Filter!]): UserConnection!
   pendingUsers(first: Int!, after: ID, orderBy: UserOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [Filter!]): UserConnection!
   registeredSaasPlatformData(input: RegisteredSaasPlatformDataInput!): SaasPlatformData
-  saasManagerPlatforms(page: Int!, pageSize: Int!, orderBy: SaasPlatformOrdering!, orderMode: OrderingMode!, searchTerm: String): SaasPlatformPage
+  saasManagerPlatforms(page: Int!, pageSize: Int!, orderBy: SaasPlatformOrdering!, orderMode: OrderingMode!, searchTerm: String, product: SaasProduct): SaasPlatformPage
   openCTIPlatformRegistrationStatus(input: OpenCTIPlatformRegistrationStatusInput!): OpenCTIPlatformRegistrationStatusResponse! @deprecated(reason: "Use `refreshPlatformRegistrationConnectivityStatus` instead. This field is no longer used in the OpenCTI platform due to refactoring and the addition of a version value in the endpoint.")
   isPlatformRegistered(input: IsPlatformRegisteredInput!): IsPlatformRegisteredResponse!
   canUnregisterPlatform(input: CanUnregisterPlatformInput!): CanUnregisterResponse!
@@ -1319,7 +1319,7 @@ enum SaasPlatformMetricsPeriod {
 type SaasPlatform {
   id: String!
   status: String
-  product: String
+  product: SaasProduct
   customer: String
   commercial_model: String
   sla_cmtd: Float
@@ -1352,6 +1352,12 @@ enum SaasPlatformOrdering {
   product
   plan
   end_date
+}
+
+enum SaasProduct {
+  OCTI
+  OAEV
+  ONE
 }
 
 input RegisteredSaasPlatformDataInput {

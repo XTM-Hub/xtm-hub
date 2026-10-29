@@ -21,6 +21,7 @@ body:graphql {
     $orderBy: SaasPlatformOrdering!
     $orderMode: OrderingMode!
     $searchTerm: String
+    $product: SaasProduct
   ) {
     saasManagerPlatforms(
       page: $page
@@ -28,6 +29,7 @@ body:graphql {
       orderBy: $orderBy
       orderMode: $orderMode
       searchTerm: $searchTerm
+      product: $product
     ) {
       totalCount
       platforms {
@@ -79,7 +81,8 @@ body:graphql:vars {
     "pageSize": 25,
     "orderBy": "customer__name",
     "orderMode": "asc",
-    "searchTerm": null
+    "searchTerm": null,
+    "product": null
   }
 }
 
@@ -89,5 +92,5 @@ settings {
 }
 
 docs {
-  Lists the platforms the SaaS Manager knows, paged, searched and ordered by it. page counts from 1 and pageSize is at most 500, as the SaaS Manager pages them; a platform without an id is left out. sla_cmtd is a ratio (1 is 100 %). health_issues lists the measures past their limit, the most severe first: empty when the platform is healthy, null when the SaaS Manager has no measure of it. contract_status is ending_soon under 90 days before the end date, ended from it, null without one. registered_platform is the active SaaS registration of the platform in the Hub, null when the Hub does not know it. Needs the BYPASS or READ_SAAS_METRICS capability and the SAAS_METRICS feature flag.
+  Lists the platforms the SaaS Manager knows, paged, searched, filtered on a product (OCTI, OAEV or ONE) and ordered by it. page counts from 1 and pageSize is at most 500, as the SaaS Manager pages them; a platform without an id is left out. sla_cmtd is a ratio (1 is 100 %). health_issues lists the measures past their limit, the most severe first: empty when the platform is healthy, null when the SaaS Manager has no measure of it. contract_status is ending_soon under 90 days before the end date, ended from it, null without one. registered_platform is the active SaaS registration of the platform in the Hub, null when the Hub does not know it. Needs the BYPASS or READ_SAAS_METRICS capability and the SAAS_METRICS feature flag.
 }

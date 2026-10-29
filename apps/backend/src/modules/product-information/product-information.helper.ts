@@ -15,6 +15,7 @@ import {
   SaasPlatformSla,
   SaasPlatformStorage,
   SaasPlatformStorageUsage,
+  SaasProduct,
 } from '../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import {
@@ -70,6 +71,11 @@ const RESOLUTIONS: ReadonlySet<string> = new Set(
 
 const isResolution = (value: unknown): value is SaasPlatformResolution =>
   typeof value === 'string' && RESOLUTIONS.has(value);
+
+const SAAS_PRODUCTS: ReadonlySet<string> = new Set(Object.values(SaasProduct));
+
+const isSaasProduct = (value: unknown): value is SaasProduct =>
+  typeof value === 'string' && SAAS_PRODUCTS.has(value);
 
 const readString = (
   body: Record<string, unknown>,
@@ -330,34 +336,52 @@ const parseSaasPlatformContractStatus = (
     : SaasPlatformContractStatus.Active;
 };
 
-const parseSaasPlatform = (platform: unknown, now: Date): SaasPlatform[] => {
+// The SaaS Manager does not guarantee the case of its product codes: GraphQL rejects a value outside the enum.
+const readSaasProduct = (
+  platform: Record<string, unknown>
+): SaasProduct | null => {
+  const product = readString(platform, 'product');
+  if (product === null) {
+    return null;
+  }
+  const code = product.toUpperCase();
+  if (isSaasProduct(code)) {
+    return code;
+  }
+  logApp.warn('The SaaS Manager returned an unknown product', { product });
+  return null;
+};
+
+// Null for a platform that cannot be read, left out of its page.
+const parseSaasPlatform = (
+  platform: unknown,
+  now: Date
+): SaasPlatform | null => {
   if (!isRecord(platform)) {
-    return [];
+    return null;
   }
   // Without an id, the platform cannot be told apart from the others.
   const id = readString(platform, 'id');
   if (id === null) {
-    return [];
+    return null;
   }
   // The SaaS Manager lists the availability as a percentage, the Hub serves it as a ratio, as for the SLA of a platform.
   const slaPercent = toFiniteNumber(platform.sla_cmtd);
   const availability = slaPercent === null ? null : percentToRatio(slaPercent);
   const storage = parseSaasPlatformStorage(platform.storage);
   const metadata = parseSaasPlatformMetadata(platform);
-  return [
-    {
-      id,
-      status: readString(platform, 'status'),
-      product: readString(platform, 'product'),
-      customer: readString(platform, 'customer'),
-      commercial_model: readString(platform, 'commercial_model'),
-      sla_cmtd: availability,
-      metadata,
-      storage,
-      health_issues: parseSaasPlatformHealthIssues(availability, storage),
-      contract_status: parseSaasPlatformContractStatus(metadata.end_date, now),
-    },
-  ];
+  return {
+    id,
+    status: readString(platform, 'status'),
+    product: readSaasProduct(platform),
+    customer: readString(platform, 'customer'),
+    commercial_model: readString(platform, 'commercial_model'),
+    sla_cmtd: availability,
+    metadata,
+    storage,
+    health_issues: parseSaasPlatformHealthIssues(availability, storage),
+    contract_status: parseSaasPlatformContractStatus(metadata.end_date, now),
+  };
 };
 
 export const ProductInformationHelper = {
@@ -428,9 +452,10 @@ export const ProductInformationHelper = {
         return null;
       }
       const now = new Date();
-      const platforms = body.results.flatMap((platform) =>
-        parseSaasPlatform(platform, now)
-      );
+      const platforms = body.results.flatMap((platform) => {
+        const parsed = parseSaasPlatform(platform, now);
+        return parsed ? [parsed] : [];
+      });
       return {
         totalCount: toFiniteNumber(body.count) ?? platforms.length,
         platforms,

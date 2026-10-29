@@ -30,6 +30,7 @@
     "Administrators": "Administrators",
     "Products": "Products",
     "ProductVersion": "Version: {version}",
+    "AllProducts": "All products",
     "Plan": "Plan",
     "Health": "Health",
     "Healthy": "Healthy",

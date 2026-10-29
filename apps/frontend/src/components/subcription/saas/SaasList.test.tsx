@@ -7,6 +7,7 @@ import {
   SaasPlatformHealthIssue,
   SaasPlatformOrdering,
   type SaasPlatformRowFragment,
+  SaasProduct,
   ServiceDefinitionIdentifier,
 } from '@graphql/generated';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
@@ -14,7 +15,7 @@ import { useTranslations } from 'next-intl';
 
 const CUSTOMER = 'Filigran';
 const PLAN = 'Enterprise';
-const PRODUCT = 'OCTI';
+const PRODUCT = SaasProduct.Octi;
 const PRODUCT_NAME = 'OpenCTI';
 const VERSION = '6.8.1';
 const CONTRACT_END_DATE = '2027-03-15T12:00:00.000Z';
@@ -224,6 +225,7 @@ describe('SaasList', () => {
       orderBy: SaasPlatformOrdering.Plan,
       orderMode: OrderingMode.Desc,
       searchTerm: null,
+      product: null,
     });
   });
 
@@ -848,6 +850,57 @@ describe('SaasList', () => {
     await waitFor(() =>
       expect(lastQueryVariables()).toMatchObject({ searchTerm: SEARCH_TERM })
     );
+  });
+
+  it('should fetch the saas platforms of the product the user filters on', async () => {
+    // Given the list of saas platforms
+    mockSaasPlatforms([buildSaasPlatform()]);
+    const { user } = renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+    // When the user filters on a product
+    await user.click(
+      screen.getByRole('combobox', { name: 'CSMBoard.Products' })
+    );
+    await user.click(screen.getByRole('option', { name: 'OpenAEV' }));
+
+    // Then the saas platforms of that product are fetched
+    expect(lastQueryVariables()).toMatchObject({
+      product: SaasProduct.Oaev,
+    });
+  });
+
+  it('should list the products to filter on, after every product', async () => {
+    // Given the list of saas platforms
+    const { user } = renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+
+    // When the user opens the product filter
+    await user.click(
+      screen.getByRole('combobox', { name: 'CSMBoard.Products' })
+    );
+
+    // Then every product the SaaS Manager can filter on is offered by its full name
+    expect(
+      screen.getAllByRole('option').map((option) => option.textContent)
+    ).toEqual(['CSMBoard.AllProducts', 'OpenCTI', 'OpenAEV', 'XTM One']);
+  });
+
+  it('should fetch the saas platforms of every product again when the user picks all products', async () => {
+    // Given a list filtered on a product
+    const { user } = renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+    const productFilter = screen.getByRole('combobox', {
+      name: 'CSMBoard.Products',
+    });
+    await user.click(productFilter);
+    await user.click(screen.getByRole('option', { name: 'OpenAEV' }));
+
+    // When the user picks all products
+    await user.click(productFilter);
+    await user.click(
+      screen.getByRole('option', { name: 'CSMBoard.AllProducts' })
+    );
+
+    // Then the saas platforms are fetched without product filter
+    expect(lastQueryVariables()).toMatchObject({ product: null });
   });
 
   it('should fetch every saas platform again when the user clears the search', async () => {

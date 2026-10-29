@@ -4,6 +4,7 @@ import {
   SaasPlatformContractStatus,
   SaasPlatformHealthIssue,
   SaasPlatformMetricsPeriod,
+  SaasProduct,
 } from '../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
@@ -977,7 +978,7 @@ describe('product information helper', () => {
       ${'without an id'}     | ${{ ...platform, id: undefined }}
       ${'with an empty id'}  | ${{ ...platform, id: '' }}
       ${'with a numeric id'} | ${{ ...platform, id: 42 }}
-    `('should drop a platform $case', async ({ sent }) => {
+    `('should leave out a platform $case', async ({ sent }) => {
       // Given
       mockSaasManagerBody(page([sent, platform]));
 
@@ -1016,6 +1017,42 @@ describe('product information helper', () => {
           contract_status: null,
         },
       ]);
+    });
+
+    it.each`
+      case                      | product   | expected
+      ${'a product code as is'} | ${'OCTI'} | ${SaasProduct.Octi}
+      ${'a lower-case product'} | ${'oaev'} | ${SaasProduct.Oaev}
+      ${'a mixed-case product'} | ${'One'}  | ${SaasProduct.One}
+    `(
+      'should return $case as a product of the Hub',
+      async ({ product, expected }) => {
+        // Given
+        mockSaasManagerBody(page([{ id: platform.id, product }]));
+
+        // When
+        const result =
+          await ProductInformationHelper.fetchSaasPlatforms(request);
+
+        // Then
+        expect(result?.platforms[0]?.product).toBe(expected);
+      }
+    );
+
+    it('should log a warning and return no product for a product the Hub does not know', async () => {
+      // Given
+      mockSaasManagerBody(page([{ id: platform.id, product: 'OTHER' }]));
+      const warnSpy = vi.spyOn(logApp, 'warn');
+
+      // When
+      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+
+      // Then
+      expect(result?.platforms[0]?.product).toBeNull();
+      expect(warnSpy).toHaveBeenCalledExactlyOnceWith(
+        'The SaaS Manager returned an unknown product',
+        { product: 'OTHER' }
+      );
     });
 
     it.each`

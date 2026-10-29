@@ -2276,6 +2276,7 @@ export type QuerySaasManagerPlatformsArgs = {
   orderMode: OrderingMode;
   page: Scalars['Int']['input'];
   pageSize: Scalars['Int']['input'];
+  product?: InputMaybe<SaasProduct>;
   searchTerm?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -2567,7 +2568,7 @@ export type SaasPlatform = {
   health_issues?: Maybe<Array<SaasPlatformHealthIssue>>;
   id: Scalars['String']['output'];
   metadata: SaasPlatformMetadata;
-  product?: Maybe<Scalars['String']['output']>;
+  product?: Maybe<SaasProduct>;
   registered_platform?: Maybe<RegisteredPlatform>;
   sla_cmtd?: Maybe<Scalars['Float']['output']>;
   status?: Maybe<Scalars['String']['output']>;
@@ -2678,6 +2679,12 @@ export type SaasPlatformStorageUsage = {
   percent?: Maybe<Scalars['Float']['output']>;
   used?: Maybe<Scalars['Float']['output']>;
 };
+
+export enum SaasProduct {
+  Oaev = 'OAEV',
+  Octi = 'OCTI',
+  One = 'ONE'
+}
 
 export type SendTelemetryMutation = {
   __typename?: 'SendTelemetryMutation';
@@ -3756,6 +3763,7 @@ export type ResolversTypes = ResolversObject<{
   SaasPlatformSla: ResolverTypeWrapper<SaasPlatformSla>;
   SaasPlatformStorage: ResolverTypeWrapper<SaasPlatformStorage>;
   SaasPlatformStorageUsage: ResolverTypeWrapper<SaasPlatformStorageUsage>;
+  SaasProduct: SaasProduct;
   SendTelemetryMutation: ResolverTypeWrapper<SendTelemetryMutation>;
   SeoServiceInstance: ResolverTypeWrapper<SeoServiceInstance>;
   SeoServiceInstanceMetadata: ResolverTypeWrapper<SeoServiceInstanceMetadata>;
@@ -5076,7 +5084,7 @@ export type SaasPlatformResolvers<ContextType = PortalContext, ParentType extend
   health_issues?: Resolver<Maybe<Array<ResolversTypes['SaasPlatformHealthIssue']>>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   metadata?: Resolver<ResolversTypes['SaasPlatformMetadata'], ParentType, ContextType>;
-  product?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  product?: Resolver<Maybe<ResolversTypes['SaasProduct']>, ParentType, ContextType>;
   registered_platform?: Resolver<Maybe<ResolversTypes['RegisteredPlatform']>, ParentType, ContextType>;
   sla_cmtd?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   status?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;

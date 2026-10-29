@@ -15,6 +15,7 @@ import {
   PlatformIdentifier,
   SaasPlatformMetricsPeriod,
   SaasPlatformOrdering,
+  SaasProduct,
 } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
@@ -555,6 +556,7 @@ describe('product information app', () => {
       ${'the contract end date'}                 | ${{ orderBy: SaasPlatformOrdering.EndDate }}                                    | ${{ page: 1, page_size: 25, search: undefined, ordering: 'end_date' }}
       ${'the search term'}                       | ${{ searchTerm: 'filigran' }}                                                   | ${{ page: 1, page_size: 25, search: 'filigran', ordering: 'customer__name' }}
       ${'no search for an empty search term'}    | ${{ searchTerm: '' }}                                                           | ${{ page: 1, page_size: 25, search: undefined, ordering: 'customer__name' }}
+      ${'the platforms of a product'}            | ${{ product: SaasProduct.Oaev }}                                                | ${{ page: 1, page_size: 25, search: undefined, product: 'OAEV', ordering: 'customer__name' }}
     `(
       'should ask the SaaS Manager for $case',
       async ({ extraArgs, expected }) => {
