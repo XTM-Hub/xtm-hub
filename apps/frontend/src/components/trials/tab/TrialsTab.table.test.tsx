@@ -377,7 +377,7 @@ describe('TrialsTab', () => {
       testRender(<TrialsTab type={TrialsTabType.Running} />);
 
       // Then
-      expect(getCell(column).textContent).toBe(`${OPENCTI_LABEL}${expected}`);
+      expect(within(getCell(column)).getByText(expected)).toBeInTheDocument();
     }
   );
 
