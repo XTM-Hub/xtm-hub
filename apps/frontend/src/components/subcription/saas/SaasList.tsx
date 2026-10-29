@@ -1,11 +1,14 @@
 'use client';
 
+import { SLA_PERCENT_FORMAT } from '@/components/service/registration/sla-availability-chart.utils';
+import { SaasAdministrators } from '@/components/subcription/saas/datatable/SaasAdministrators';
+import { SaasContractEnd } from '@/components/subcription/saas/datatable/SaasContractEnd';
+import { SaasPlatformHealth } from '@/components/subcription/saas/datatable/SaasPlatformHealth';
+import { SaasPlatformLink } from '@/components/subcription/saas/datatable/SaasPlatformLink';
+import { SaasProductChip } from '@/components/subcription/saas/datatable/SaasProductChip';
+import { SaasStorageUsage } from '@/components/subcription/saas/datatable/SaasStorageUsage';
 import { useSaasListLocalstorage } from '@/components/subcription/saas/saas-list-localstorage';
-import {
-  getSaasPlatformMetadata,
-  getSaasPlatformProductName,
-  getSaasPlatformServicePath,
-} from '@/components/subcription/saas/saas-list.utils';
+import { SaasProductFilter } from '@/components/subcription/saas/SaasProductFilter';
 import {
   DataTable,
   DataTableHeadBarOptions,
@@ -16,6 +19,7 @@ import {
   mapToSortingTableValue,
   OrderingMode as SortingOrderingMode,
 } from '@/components/ui/handle-sorting.utils';
+import { TruncatedText } from '@/components/ui/truncated-text';
 import { useUserHasPortalCapability } from '@/hooks/use-portal-capability';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
@@ -23,33 +27,27 @@ import { portalGraphqlClient } from '@/lib/graphql-client';
 import { cn } from '@/lib/utils';
 import { DEBOUNCE_TIME } from '@/utils/constant';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
-import {
-  Chip,
-  SearchField,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@filigran/design-system';
+import { Chip, SearchField, TooltipProvider } from '@filigran/design-system';
 import {
   OrderingMode,
   PortalCapability,
-  RegisteredPlatformOrdering,
-  type SaasPlatformsListQuery,
-  type SaasPlatformsListQueryVariables,
-  useSaasPlatformsListQuery,
+  type SaasManagerPlatformsListQueryVariables,
+  SaasPlatformHealthIssue,
+  SaasPlatformOrdering,
+  type SaasPlatformRowFragment,
+  type SaasProduct,
+  ServiceDefinitionIdentifier,
+  useSaasManagerPlatformsListQuery,
 } from '@graphql/generated';
 import { saasPlatformsKeys } from '@graphql/saas-platforms/saas-platforms.keys';
 import { ColumnDef } from '@tanstack/react-table';
-import Link from 'next/link';
+import { useFormatter } from 'next-intl';
 import { ChangeEvent, useMemo, useState } from 'react';
 import { useDebounceCallback } from 'usehooks-ts';
 
-type SaasPlatform =
-  SaasPlatformsListQuery['saasPlatforms']['edges'][number]['node'];
-
 export const SaasList = () => {
   const t = useTranslate();
+  const format = useFormatter();
   const canReadSaasMetrics = useUserHasPortalCapability([
     PortalCapability.Bypass,
     PortalCapability.ReadSaasMetrics,
@@ -66,24 +64,33 @@ export const SaasList = () => {
     removeOrder,
   } = useSaasListLocalstorage();
   const [searchTerm, setSearchTerm] = useState<string | null>(null);
-  const { pagination, setPagination, cursor, onPaginationChange } =
-    useTablePagination({
-      pageSize,
-      setPageSize,
-    });
+  const [product, setProduct] = useState<SaasProduct | null>(null);
+  const { pagination, setPagination, onPaginationChange } = useTablePagination({
+    pageSize,
+    setPageSize,
+  });
 
-  const variables = useMemo<SaasPlatformsListQueryVariables>(
+  const variables = useMemo<SaasManagerPlatformsListQueryVariables>(
     () => ({
-      first: pagination.pageSize,
-      after: cursor,
+      // The SaaS Manager counts its pages from 1
+      page: pagination.pageIndex + 1,
+      pageSize: pagination.pageSize,
       orderBy,
       orderMode,
       searchTerm,
+      product,
     }),
-    [pagination.pageSize, cursor, orderBy, orderMode, searchTerm]
+    [
+      pagination.pageIndex,
+      pagination.pageSize,
+      orderBy,
+      orderMode,
+      searchTerm,
+      product,
+    ]
   );
 
-  const { data, isLoading, isError } = useSaasPlatformsListQuery(
+  const { data, isLoading, isError } = useSaasManagerPlatformsListQuery(
     portalGraphqlClient,
     variables,
     {
@@ -92,78 +99,175 @@ export const SaasList = () => {
     }
   );
 
-  const columns: ColumnDef<SaasPlatform>[] = [
+  const columns: ColumnDef<SaasPlatformRowFragment>[] = [
     {
-      id: RegisteredPlatformOrdering.OrganizationName,
-      accessorFn: (platform) => platform.organization?.name,
+      id: SaasPlatformOrdering.CustomerName,
+      accessorFn: (platform) => platform.customer,
       // Without it, react-table infers the first sort direction from the first row's value
-      // and removes the sorting instead of toggling it when that row has no organization
+      // and removes the sorting instead of toggling it when that row has no customer
       sortDescFirst: false,
-      header: t('CSMBoard.Organization'),
-      cell: ({ row }) => (
-        <span className="truncate">{row.original.organization?.name}</span>
-      ),
+      header: t('CSMBoard.Customer'),
+      size: 120,
+      cell: ({ row }) =>
+        row.original.customer && <TruncatedText text={row.original.customer} />,
     },
     {
-      id: 'administrators',
-      header: t('CSMBoard.Administrators'),
+      id: 'organization',
+      header: t('CSMBoard.Organization'),
+      size: 120,
+      // The SaaS Manager cannot order by an organization of the Hub
       enableSorting: false,
       cell: ({ row }) => {
-        const emails = row.original.organization?.administrator_emails ?? [];
-        if (emails.length <= 1) {
-          return <span className="truncate">{emails[0]}</span>;
+        const organization = row.original.registered_platform?.organization;
+        if (!organization) {
+          return null;
         }
+        const administratorEmails = organization.administrator_emails ?? [];
         return (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
+          <TruncatedText
+            text={organization.name}
+            details={
+              administratorEmails.length > 0 &&
+              administratorEmails.map((email) => (
                 <span
-                  className="truncate"
-                  tabIndex={0}>
-                  {emails.join(', ')}
+                  key={email}
+                  className="text-default-secondary">
+                  {email}
                 </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                {emails.map((email) => (
-                  <div key={email}>{email}</div>
-                ))}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+              ))
+            }
+          />
         );
       },
     },
     {
-      id: 'product',
-      header: t('CSMBoard.Products'),
+      id: 'administrators',
+      header: t('CSMBoard.Administrators'),
+      size: 130,
       enableSorting: false,
       cell: ({ row }) => (
-        <Chip label={getSaasPlatformProductName(row.original.identifier)} />
+        <SaasAdministrators
+          emails={
+            row.original.registered_platform?.organization
+              ?.administrator_emails ?? []
+          }
+        />
       ),
+    },
+    {
+      id: SaasPlatformOrdering.Product,
+      accessorFn: (platform) => platform.product,
+      sortDescFirst: false,
+      header: t('CSMBoard.Products'),
+      size: 100,
+      cell: ({ row }) =>
+        row.original.product && (
+          <SaasProductChip
+            product={row.original.product}
+            // Only a platform registered in the Hub reports its version.
+            version={row.original.registered_platform?.version}
+          />
+        ),
+    },
+    {
+      id: SaasPlatformOrdering.Plan,
+      accessorFn: (platform) => platform.metadata.plan,
+      sortDescFirst: false,
+      header: t('CSMBoard.Plan'),
+      size: 90,
+      cell: ({ row }) =>
+        row.original.metadata.plan && (
+          <Chip
+            label={row.original.metadata.plan}
+            severity="info"
+          />
+        ),
     },
     {
       id: 'link',
       header: t('CSMBoard.Link'),
+      size: 130,
       enableSorting: false,
       cell: ({ row }) => {
-        const platformMetadata = getSaasPlatformMetadata(
-          row.original.identifier
-        );
+        // Only a platform registered in the Hub has a metrics page.
+        const registeredPlatform = row.original.registered_platform;
+        if (
+          !registeredPlatform ||
+          registeredPlatform.identifier ===
+            ServiceDefinitionIdentifier.XtmoneRegistration
+        ) {
+          return null;
+        }
+        return <SaasPlatformLink registeredPlatform={registeredPlatform} />;
+      },
+    },
+    {
+      id: SaasPlatformOrdering.EndDate,
+      accessorFn: (platform) => platform.metadata.end_date,
+      sortDescFirst: false,
+      header: t('CSMBoard.ContractEnd'),
+      size: 130,
+      cell: ({ row }) =>
+        row.original.metadata.end_date && (
+          <SaasContractEnd
+            endDate={row.original.metadata.end_date}
+            contractStatus={row.original.contract_status}
+          />
+        ),
+    },
+    {
+      id: 'database',
+      header: t('CSMBoard.Database'),
+      size: 100,
+      // The SaaS Manager cannot order by the usage of a storage
+      enableSorting: false,
+      cell: ({ row }) => (
+        <SaasStorageUsage
+          percent={row.original.storage?.es_used_size?.percent}
+          label={t('CSMBoard.Database')}
+          isHigh={
+            !!row.original.health_issues?.includes(
+              SaasPlatformHealthIssue.Database
+            )
+          }
+        />
+      ),
+    },
+    {
+      id: 'file_storage',
+      header: t('CSMBoard.FileStorage'),
+      size: 100,
+      enableSorting: false,
+      cell: ({ row }) => (
+        <SaasStorageUsage
+          percent={row.original.storage?.s3_used_size?.percent}
+          label={t('CSMBoard.FileStorage')}
+          isHigh={
+            !!row.original.health_issues?.includes(
+              SaasPlatformHealthIssue.FileStorage
+            )
+          }
+        />
+      ),
+    },
+    {
+      id: 'availability',
+      header: t('CSMBoard.Availability'),
+      size: 100,
+      enableSorting: false,
+      cell: ({ row }) => {
+        const { sla_cmtd: availability, health_issues } = row.original;
+        if (availability === null) {
+          return null;
+        }
         return (
-          <span className="flex min-w-0 items-center gap-2">
-            {platformMetadata && (
-              <platformMetadata.Icon
-                className={cn(
-                  'size-4 shrink-0',
-                  platformMetadata.iconClassName
-                )}
-              />
-            )}
-            <Link
-              href={getSaasPlatformServicePath(row.original)}
-              className="truncate text-filigran-brand-primary underline">
-              {t('CSMBoard.ViewMetrics')}
-            </Link>
+          <span
+            className={cn(
+              'truncate',
+              health_issues?.includes(SaasPlatformHealthIssue.Availability) &&
+                'text-feedback-error-primary'
+            )}>
+            {format.number(availability, SLA_PERCENT_FORMAT)}
           </span>
         );
       },
@@ -171,15 +275,27 @@ export const SaasList = () => {
     {
       id: 'version',
       header: t('CSMBoard.Version'),
+      size: 90,
+      // The version is the one the platform reports to the Hub: the SaaS Manager cannot order by it
       enableSorting: false,
       cell: ({ row }) => (
-        <span className="truncate">{row.original.version}</span>
+        <span className="truncate">
+          {row.original.registered_platform?.version}
+        </span>
       ),
+    },
+    {
+      id: 'health',
+      header: t('CSMBoard.Health'),
+      size: 170,
+      // The health of each platform is rated by the Hub: the SaaS Manager cannot order by it
+      enableSorting: false,
+      cell: ({ row }) => <SaasPlatformHealth platform={row.original} />,
     },
   ];
 
-  const saasPlatforms = useMemo<SaasPlatform[]>(
-    () => (data?.saasPlatforms.edges ?? []).map(({ node }) => node),
+  const saasPlatforms = useMemo<SaasPlatformRowFragment[]>(
+    () => data?.saasManagerPlatforms?.platforms ?? [],
     [data]
   );
 
@@ -205,8 +321,13 @@ export const SaasList = () => {
     updateSearchTerm('');
   };
 
+  const onProductChange = (nextProduct: SaasProduct | null) => {
+    setProduct(nextProduct);
+    resetToFirstPage();
+  };
+
   const onSortingChange = (updater: unknown) => {
-    handleSortingChange<RegisteredPlatformOrdering>({
+    handleSortingChange<SaasPlatformOrdering>({
       updater,
       orderBy,
       orderMode: orderMode as unknown as SortingOrderingMode,
@@ -219,8 +340,10 @@ export const SaasList = () => {
   };
 
   return (
-    <>
-      {isError && (
+    // One provider for every tooltip of the table, rather than one per cell.
+    <TooltipProvider>
+      {/* null when the SaaS Manager cannot be reached */}
+      {(isError || data?.saasManagerPlatforms === null) && (
         <div className="mb-2 text-sm text-feedback-error-primary">
           {t('Utils.Error')}
         </div>
@@ -236,7 +359,7 @@ export const SaasList = () => {
           onPaginationChange,
           manualSorting: true,
           manualPagination: true,
-          rowCount: data?.saasPlatforms.totalCount ?? 0,
+          rowCount: data?.saasManagerPlatforms?.totalCount ?? 0,
         }}
         tableState={{
           sorting: mapToSortingTableValue(orderBy, orderMode),
@@ -249,22 +372,28 @@ export const SaasList = () => {
                 <label
                   htmlFor="saas-platforms-search"
                   className="sr-only">
-                  {t('CSMBoard.SearchOrganization')}
+                  {t('CSMBoard.SearchPlatform')}
                 </label>
                 <SearchField
                   id="saas-platforms-search"
                   fullWidth
-                  placeholder={t('CSMBoard.SearchOrganization')}
+                  placeholder={t('CSMBoard.SearchPlatform')}
                   clearLabel={t('CSMBoard.ClearSearch')}
                   onChange={onSearchChange}
                   onClear={onSearchClear}
                 />
               </>
             }
+            filters={
+              <SaasProductFilter
+                selectedProduct={product}
+                onProductChange={onProductChange}
+              />
+            }
             actions={<DataTableHeadBarOptions />}
           />
         }
       />
-    </>
+    </TooltipProvider>
   );
 };

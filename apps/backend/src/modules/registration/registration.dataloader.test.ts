@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   requestContextRegistererUserSecondOrga,
@@ -9,6 +9,7 @@ import {
 import {
   PlatformContract,
   PlatformIdentifier,
+  ServiceDefinitionIdentifier,
 } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
 import { OrganizationId } from '../../model/kanel/public/Organization';
@@ -16,7 +17,10 @@ import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { PlatformConfigurationDomain } from './platform-configuration/platform-configuration.domain';
 import { RegistrationDataLoader } from './registration.dataloader';
-import { RegistrationDomain } from './registration.domain';
+import {
+  DomainRegisteredPlatform,
+  RegistrationDomain,
+} from './registration.domain';
 
 describe('batchLoadRegisteredPlatforms', () => {
   const openCTIPlatformId = uuidv4();
@@ -111,6 +115,44 @@ describe('batchLoadRegisteredPlatforms', () => {
 
     // Then
     expect(result).toEqual([]);
+  });
+});
+
+describe('batchLoadSaasRegisteredPlatforms', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('should return the first registration of each requested platform id, in order, and null for an unregistered one', async () => {
+    // Given
+    const platformId = uuidv4();
+    const otherPlatformId = uuidv4();
+    const latest = {
+      id: uuidv4(),
+      platform_id: platformId,
+      identifier: ServiceDefinitionIdentifier.OpenctiRegistration,
+    } as DomainRegisteredPlatform;
+    const older = { ...latest, id: uuidv4() };
+    const other = { ...latest, id: uuidv4(), platform_id: otherPlatformId };
+    vi.spyOn(
+      RegistrationDomain,
+      'loadSaasRegisteredPlatformsByPlatformIds'
+    ).mockResolvedValue([latest, other, older]);
+
+    // When
+    const platforms =
+      await RegistrationDataLoader.batchLoadSaasRegisteredPlatforms([
+        otherPlatformId,
+        uuidv4(),
+        platformId,
+      ]);
+
+    // Then
+    expect(platforms).toEqual([
+      expect.objectContaining({ service_instance_id: other.id }),
+      null,
+      expect.objectContaining({ service_instance_id: latest.id }),
+    ]);
   });
 });
 

@@ -128,12 +128,12 @@ type Query {
   users(first: Int!, after: ID, orderBy: UserOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [Filter!]): UserConnection!
   pendingUsers(first: Int!, after: ID, orderBy: UserOrdering!, orderMode: OrderingMode!, searchTerm: String, filters: [Filter!]): UserConnection!
   registeredSaasPlatformData(input: RegisteredSaasPlatformDataInput!): SaasPlatformData
+  saasManagerPlatforms(page: Int!, pageSize: Int!, orderBy: SaasPlatformOrdering!, orderMode: OrderingMode!, searchTerm: String, product: SaasProduct): SaasPlatformPage
   openCTIPlatformRegistrationStatus(input: OpenCTIPlatformRegistrationStatusInput!): OpenCTIPlatformRegistrationStatusResponse! @deprecated(reason: "Use `refreshPlatformRegistrationConnectivityStatus` instead. This field is no longer used in the OpenCTI platform due to refactoring and the addition of a version value in the endpoint.")
   isPlatformRegistered(input: IsPlatformRegisteredInput!): IsPlatformRegisteredResponse!
   canUnregisterPlatform(input: CanUnregisterPlatformInput!): CanUnregisterResponse!
   registeredPlatform(input: RegisteredPlatformInput!): RegisteredPlatform
   registeredPlatforms(input: RegisteredPlatformsInput!): [RegisteredPlatform!]!
-  saasPlatforms(first: Int!, after: ID, orderBy: RegisteredPlatformOrdering!, orderMode: OrderingMode!, searchTerm: String): RegisteredPlatformConnection!
   platformAssociatedOrganization(platformId: String!, tenantId: String): Organization
   rolePortals: [RolePortal!]!
   ssoGroupRolePortals: [SSOGroupRolePortal!]!
@@ -1316,6 +1316,50 @@ enum SaasPlatformMetricsPeriod {
   last_180_days
 }
 
+type SaasPlatform {
+  id: String!
+  status: String
+  product: SaasProduct
+  customer: String
+  commercial_model: String
+  sla_cmtd: Float
+  metadata: SaasPlatformMetadata!
+  storage: SaasPlatformStorage
+  health_issues: [SaasPlatformHealthIssue!]
+  contract_status: SaasPlatformContractStatus
+  registered_platform: RegisteredPlatform
+}
+
+enum SaasPlatformHealthIssue {
+  availability
+  database
+  file_storage
+}
+
+enum SaasPlatformContractStatus {
+  active
+  ending_soon
+  ended
+}
+
+type SaasPlatformPage {
+  totalCount: Int!
+  platforms: [SaasPlatform!]!
+}
+
+enum SaasPlatformOrdering {
+  customer__name
+  product
+  plan
+  end_date
+}
+
+enum SaasProduct {
+  OCTI
+  OAEV
+  ONE
+}
+
 input RegisteredSaasPlatformDataInput {
   service_instance_id: ServiceInstanceId!
   metrics_period: SaasPlatformMetricsPeriod!
@@ -1365,21 +1409,6 @@ type RegisteredPlatform implements Node {
   subscription: SubscriptionModel
   myGroups: [ServiceGroup!]
   organization: Organization
-}
-
-type RegisteredPlatformEdge {
-  cursor: String!
-  node: RegisteredPlatform!
-}
-
-type RegisteredPlatformConnection {
-  totalCount: Int!
-  edges: [RegisteredPlatformEdge!]!
-  pageInfo: PageInfo!
-}
-
-enum RegisteredPlatformOrdering {
-  organization_name
 }
 
 input PlatformInput {

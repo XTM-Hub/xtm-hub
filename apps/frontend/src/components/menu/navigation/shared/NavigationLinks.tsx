@@ -7,6 +7,7 @@ import {
   SectionSubLink,
 } from '@/components/menu/navigation/shared/navigation.type';
 import { cn } from '@/lib/utils';
+import { isTruncated } from '@/utils/is-truncated';
 import {
   Button,
   buttonVariants,
@@ -19,9 +20,6 @@ import { OpenInNewIcon } from '@filigran/icon';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ElementType, ReactElement, RefObject, useRef, useState } from 'react';
-
-const isTruncated = (element: HTMLElement | null) =>
-  !!element && element.scrollWidth > element.clientWidth;
 
 interface LabelTooltipProps {
   label: string;

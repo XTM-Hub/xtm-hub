@@ -13,6 +13,14 @@ interface SaasManagerRequest {
   include_metrics?: number;
 }
 
+export interface SaasManagerInstanceListRequest {
+  page: number;
+  page_size: number;
+  search?: string;
+  product?: string;
+  ordering: string;
+}
+
 // Configuration is immutable at runtime, so one provider (and one token cache) serves the whole process.
 let tokenProvider: SaasManagerTokenProvider | null = null;
 
@@ -26,6 +34,14 @@ const getTokenProvider = (
     clientSecret: config.get<string | null>('saas_manager.client_secret'),
   });
   return tokenProvider;
+};
+
+const getBaseUrl = (): string => {
+  const baseUrl = config.get<string | null>('saas_manager.url');
+  if (!baseUrl) {
+    throw new Error('SaaS Manager URL is not configured');
+  }
+  return baseUrl;
 };
 
 const sendRequest = (
@@ -43,16 +59,36 @@ const sendRequest = (
     signal: AbortSignal.timeout(SAAS_MANAGER_TIMEOUT_MS),
   });
 
+const sendAuthenticatedRequest = async (
+  baseUrl: string,
+  url: URL,
+  method: SaasManagerRequest['method']
+): Promise<Response> => {
+  const clientId = config.get<string | null>('saas_manager.client_id');
+  if (!clientId) {
+    throw new Error('SaaS Manager client ID is not configured');
+  }
+
+  const provider = getTokenProvider(baseUrl, clientId);
+  const accessToken = await provider.getAccessToken();
+  const response = await sendRequest(url, method, `Bearer ${accessToken}`);
+  if (response.status !== 401) {
+    return response;
+  }
+
+  // The token may have been revoked before its expiry: renew it and retry once, never more.
+  await response.body?.cancel();
+  provider.invalidate(accessToken);
+  return sendRequest(url, method, `Bearer ${await provider.getAccessToken()}`);
+};
+
 export const SaasManagerClient = {
   async callInstanceApi({
     method = 'GET',
     platform_id,
     include_metrics,
   }: SaasManagerRequest = {}): Promise<Response> {
-    const baseUrl = config.get<string | null>('saas_manager.url');
-    if (!baseUrl) {
-      throw new Error('SaaS Manager URL is not configured');
-    }
+    const baseUrl = getBaseUrl();
 
     const path = platform_id
       ? `${SAAS_MANAGER_INSTANCE_PATH}${encodeURIComponent(platform_id)}/`
@@ -62,25 +98,30 @@ export const SaasManagerClient = {
       url.searchParams.set('include_metrics', String(include_metrics));
     }
 
-    const clientId = config.get<string | null>('saas_manager.client_id');
-    if (!clientId) {
-      throw new Error('SaaS Manager client ID is not configured');
-    }
+    return sendAuthenticatedRequest(baseUrl, url, method);
+  },
 
-    const provider = getTokenProvider(baseUrl, clientId);
-    const accessToken = await provider.getAccessToken();
-    const response = await sendRequest(url, method, `Bearer ${accessToken}`);
-    if (response.status !== 401) {
-      return response;
-    }
+  // One page of the instances, searched, filtered on a product and ordered by the SaaS Manager.
+  async callInstanceListApi({
+    page,
+    page_size,
+    search,
+    product,
+    ordering,
+  }: SaasManagerInstanceListRequest): Promise<Response> {
+    const baseUrl = getBaseUrl();
 
-    // The token may have been revoked before its expiry: renew it and retry once, never more.
-    await response.body?.cancel();
-    provider.invalidate(accessToken);
-    return sendRequest(
-      url,
-      method,
-      `Bearer ${await provider.getAccessToken()}`
-    );
+    const url = new URL(SAAS_MANAGER_INSTANCE_PATH, baseUrl);
+    url.searchParams.set('page', String(page));
+    url.searchParams.set('page_size', String(page_size));
+    if (search) {
+      url.searchParams.set('search', search);
+    }
+    if (product) {
+      url.searchParams.set('product', product);
+    }
+    url.searchParams.set('ordering', ordering);
+
+    return sendAuthenticatedRequest(baseUrl, url, 'GET');
   },
 };

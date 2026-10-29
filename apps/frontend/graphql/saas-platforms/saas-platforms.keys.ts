@@ -1,10 +1,10 @@
 import {
-  type SaasPlatformsListQueryVariables,
-  useSaasPlatformsListQuery,
+  type SaasManagerPlatformsListQueryVariables,
+  useSaasManagerPlatformsListQuery,
 } from '@graphql/generated';
 
 export const saasPlatformsKeys = {
-  all: useSaasPlatformsListQuery.getRootKey,
-  list: (variables: SaasPlatformsListQueryVariables) =>
-    useSaasPlatformsListQuery.getKey(variables),
+  all: useSaasManagerPlatformsListQuery.getRootKey,
+  list: (variables: SaasManagerPlatformsListQueryVariables) =>
+    useSaasManagerPlatformsListQuery.getKey(variables),
 };

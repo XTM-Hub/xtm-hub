@@ -11,7 +11,11 @@ import {
   useRegisteredSaasPlatformDataQuery,
 } from '@graphql/generated';
 import { act, screen, within } from '@testing-library/react';
-import { notFound } from 'next/navigation';
+import {
+  notFound,
+  ReadonlyURLSearchParams,
+  useSearchParams,
+} from 'next/navigation';
 import { Suspense } from 'react';
 import { useLazyLoadQuery } from 'react-relay';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -145,6 +149,32 @@ describe('RegisteredPlatformOverview', () => {
       within(breadcrumb).getByText(basePlatform.title)
     ).toBeInTheDocument();
   });
+
+  it.each`
+    description                                               | capabilities                          | search              | breadcrumbLink
+    ${'a user who can read saas metrics, from the CSM board'} | ${[PortalCapability.ReadSaasMetrics]} | ${'from=csm-board'} | ${'MenuLinks.CSMBoard'}
+    ${'a user who can read saas metrics, from elsewhere'}     | ${[PortalCapability.ReadSaasMetrics]} | ${''}               | ${'MenuLinks.Home'}
+    ${'a customer given a link from the CSM board'}           | ${[]}                                 | ${'from=csm-board'} | ${'MenuLinks.Home'}
+  `(
+    'should lead the breadcrumb back to $breadcrumbLink for $description',
+    async ({ capabilities, search, breadcrumbLink }) => {
+      // Given a platform page opened with a known origin
+      vi.mocked(useSearchParams).mockReturnValue(
+        new URLSearchParams(search) as ReadonlyURLSearchParams
+      );
+
+      // When the page is rendered
+      await renderOverview(basePlatform, capabilities);
+
+      // Then its breadcrumb leads back to where the user came from
+      const breadcrumb = screen
+        .getByRole('link', { name: breadcrumbLink })
+        .closest('nav') as HTMLElement;
+      expect(
+        within(breadcrumb).getByText(basePlatform.title)
+      ).toBeInTheDocument();
+    }
+  );
 
   it('should display the platform header and its information', async () => {
     // Given / When
