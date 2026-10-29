@@ -89,26 +89,18 @@ describe('XtmPlatformTrialForm', () => {
   it('renders one use case field for OpenCTI then one for OpenAEV', () => {
     testRender(<XtmPlatformTrialForm handleSubmit={vi.fn()} />);
 
-    expect(
-      screen.getAllByText('Service.Trials.XtmPlatform.Page.Form.UseCaseFor')
-    ).toHaveLength(2);
     // Region, job title, activity sector, then the OpenCTI and OpenAEV use cases
-    const [, , , openctiUseCaseSelect, openaevUseCaseSelect] =
-      screen.getAllByRole('combobox');
-    const optionValues = (select: HTMLElement | undefined) =>
-      Array.from((select as HTMLSelectElement).options).map(
-        (option) => option.value
-      );
-    expect(optionValues(openctiUseCaseSelect)).toEqual(
-      expect.arrayContaining(
-        USE_CASES_BY_PLATFORM_IDENTIFIER[PlatformIdentifier.Opencti]
+    const useCaseSelects = screen.getAllByRole('combobox').slice(3);
+    expect(
+      useCaseSelects.map((select) =>
+        within(select)
+          .getAllByRole('option')
+          .map((option) => option.getAttribute('value'))
       )
-    );
-    expect(optionValues(openaevUseCaseSelect)).toEqual(
-      expect.arrayContaining(
-        USE_CASES_BY_PLATFORM_IDENTIFIER[PlatformIdentifier.Openaev]
-      )
-    );
+    ).toEqual([
+      USE_CASES_BY_PLATFORM_IDENTIFIER[PlatformIdentifier.Opencti],
+      USE_CASES_BY_PLATFORM_IDENTIFIER[PlatformIdentifier.Openaev],
+    ]);
   });
 
   it('submits the expected values when the form is filled and submitted', async () => {
