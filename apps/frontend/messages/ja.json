@@ -1025,6 +1025,7 @@
         "OnTarget": "{availability}（目標達成）",
         "BelowTarget": "{availability}（目標未達）",
         "NoData": "データなし",
+        "NotTrackedYet": "データなし · 指標はまだ測定されていません",
         "Summary": {
           "Title": "月次SLA・目標 {target}",
           "CurrentMonth": "{month}・月初から現在まで",

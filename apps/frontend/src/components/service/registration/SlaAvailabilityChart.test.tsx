@@ -4,7 +4,7 @@ import { SaasPlatformMonthlySla, SaasPlatformSla } from '@graphql/generated';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useTranslations } from 'next-intl';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -179,11 +179,21 @@ describe('SlaAvailabilityChart', () => {
   });
 
   describe('tooltip', () => {
+    beforeEach(() => {
+      // Only Date is faked: a day without value reads by the clock, but user-event still needs the real timers.
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime('2026-10-02T12:00:00.000Z');
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     it.each`
       case                  | dayIndex | date       | status
       ${'on the target'}    | ${0}     | ${'Oct 1'} | ${'Register.Metrics.SLA.OnTarget'}
       ${'below the target'} | ${1}     | ${'Oct 2'} | ${'Register.Metrics.SLA.BelowTarget'}
-      ${'without value'}    | ${2}     | ${'Oct 3'} | ${'Register.Metrics.SLA.NoData'}
+      ${'still to come'}    | ${2}     | ${'Oct 3'} | ${'Register.Metrics.SLA.Legend.Unknown'}
     `(
       'should show the date then the availability of a day $case on hover',
       async ({ dayIndex, date, status }) => {
@@ -197,6 +207,25 @@ describe('SlaAvailabilityChart', () => {
         // Then
         expect(await tooltipLines()).toEqual([date, status]);
         expect(getBar(dayIndex)).toHaveClass('outline-focus');
+      }
+    );
+
+    it.each`
+      case                                  | barIndex | date       | status
+      ${'before the availability tracking'} | ${38}    | ${'Sep 8'} | ${'Register.Metrics.SLA.NotTrackedYet'}
+      ${'past and since the tracking'}      | ${39}    | ${'Sep 9'} | ${'Register.Metrics.SLA.NoData'}
+    `(
+      'should show why a day $case has no value on hover',
+      async ({ barIndex, date, status }) => {
+        // Given
+        const user = userEvent.setup();
+        testRender(<SlaAvailabilityChart sla={threeMonthsSla} />);
+
+        // When
+        await user.hover(getBar(barIndex));
+
+        // Then
+        expect(await tooltipLines()).toEqual([date, status]);
       }
     );
 

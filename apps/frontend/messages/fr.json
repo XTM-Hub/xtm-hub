@@ -1025,6 +1025,7 @@
         "OnTarget": "{availability} · Dans l'objectif",
         "BelowTarget": "{availability} · Sous l'objectif",
         "NoData": "Aucune donnée",
+        "NotTrackedYet": "Aucune donnée · Ces indicateurs n'avaient pas encore été mesurés",
         "Summary": {
           "Title": "SLA mensuel · objectif {target}",
           "CurrentMonth": "{month} · mois en cours",

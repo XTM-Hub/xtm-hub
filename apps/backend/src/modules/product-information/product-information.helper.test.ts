@@ -845,6 +845,34 @@ describe('product information helper', () => {
       // Then
       expect(data).toBeNull();
     });
+
+    it('should log only the start of the body when the SaaS Manager returns an error', async () => {
+      // Given
+      const errorSpy = vi.spyOn(logApp, 'error');
+      const body = `<html>${'x'.repeat(1000)}</html>`;
+      mockSaasManagerResponse(
+        async () =>
+          ({ ok: false, status: 502, text: async () => body }) as Response
+      );
+
+      // When
+      await ProductInformationHelper.fetchSaasPlatformData(
+        serviceInstanceId,
+        platformId,
+        metricsPeriod
+      );
+
+      // Then
+      expect(errorSpy).toHaveBeenCalledExactlyOnceWith(
+        'Unable to load the platform data from the SaaS Manager',
+        {
+          serviceInstanceId,
+          platformId,
+          status: 502,
+          body: body.slice(0, 256),
+        }
+      );
+    });
   });
 
   describe('fetchSaasPlatforms', () => {

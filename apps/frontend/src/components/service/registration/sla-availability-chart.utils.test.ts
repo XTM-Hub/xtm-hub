@@ -1,4 +1,6 @@
 import {
+  isBeforeSlaTracking,
+  slaMissingDayReason,
   slaStatus,
   toSlaMonths,
 } from '@/components/service/registration/sla-availability-chart.utils';
@@ -11,6 +13,42 @@ const monthlySla = (
   month: string,
   availability: number | null
 ): SaasPlatformSla['months'][number] => ({ month, availability, days: [] });
+
+describe('isBeforeSlaTracking', () => {
+  it.each`
+    case                          | date                          | expected
+    ${'the day before it starts'} | ${'2026-09-08T00:00:00.000Z'} | ${true}
+    ${'the day it starts'}        | ${'2026-09-09T00:00:00.000Z'} | ${false}
+    ${'a later day'}              | ${'2026-10-01T00:00:00.000Z'} | ${false}
+  `(
+    'should tell whether $case is before the availability tracking',
+    ({ date, expected }) => {
+      // Given / When
+      const result = isBeforeSlaTracking(new Date(date));
+
+      // Then
+      expect(result).toBe(expected);
+    }
+  );
+});
+
+describe('slaMissingDayReason', () => {
+  const NOW = new Date('2026-10-02T12:00:00.000Z');
+
+  it.each`
+    case                                  | date                          | reason
+    ${'before the availability tracking'} | ${'2026-09-08T00:00:00.000Z'} | ${'NotTrackedYet'}
+    ${'past and since the tracking'}      | ${'2026-10-01T00:00:00.000Z'} | ${'NoData'}
+    ${'today, not over yet'}              | ${'2026-10-02T00:00:00.000Z'} | ${'Upcoming'}
+    ${'still to come'}                    | ${'2026-10-03T00:00:00.000Z'} | ${'Upcoming'}
+  `('should tell why a day $case has no value', ({ date, reason }) => {
+    // Given / When
+    const result = slaMissingDayReason(new Date(date), NOW);
+
+    // Then
+    expect(result).toBe(reason);
+  });
+});
 
 describe('slaStatus', () => {
   it.each`

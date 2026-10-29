@@ -70,6 +70,9 @@ const SAAS_PLATFORM_CONTRACT_ENDING_SOON_DAYS = 90;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
+// An error body can be a whole HTML page from a gateway: the log keeps only its start.
+const MAX_LOGGED_BODY_LENGTH = 256;
+
 interface SaasPlatformsPage {
   totalCount: number;
   platforms: SaasPlatform[];
@@ -448,6 +451,7 @@ export const ProductInformationHelper = {
           serviceInstanceId,
           platformId,
           status: response.status,
+          body: (await response.text()).slice(0, MAX_LOGGED_BODY_LENGTH),
         });
         return null;
       }
