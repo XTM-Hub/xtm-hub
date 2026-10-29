@@ -72,10 +72,12 @@ const SELECTABLE_PRODUCTS = [
 
 interface XtmPlatformTrialFormProps {
   handleSubmit: (values: z.infer<typeof xtmPlatformTrialFormSchema>) => void;
+  isSubmitting?: boolean;
 }
 
 export const XtmPlatformTrialForm = ({
   handleSubmit,
+  isSubmitting = false,
 }: XtmPlatformTrialFormProps) => {
   const t = useTranslate();
   const { me } = useContext(PortalContext);
@@ -313,7 +315,8 @@ export const XtmPlatformTrialForm = ({
           <div className="flex justify-end">
             <Button
               type="submit"
-              disabled={!hasSelectableProduct}>
+              disabled={!hasSelectableProduct}
+              loading={isSubmitting}>
               {t('Service.Trials.XtmPlatform.Page.Form.Submit')}
             </Button>
           </div>

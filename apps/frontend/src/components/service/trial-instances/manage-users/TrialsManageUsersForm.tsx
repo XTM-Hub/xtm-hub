@@ -61,7 +61,7 @@ export const TrialsManageUsersForm = ({
     { serviceInstanceId: serviceInstanceId }
   );
 
-  const [commitUpdateServiceGroups] = useMutation(
+  const [commitUpdateServiceGroups, isInFlight] = useMutation(
     ServiceGroupsUpdateMutationGraphql
   );
 
@@ -196,6 +196,7 @@ export const TrialsManageUsersForm = ({
             </Button>
             <Button
               disabled={!form.formState.isDirty}
+              loading={isInFlight}
               type="submit">
               {t('Utils.Validate')}
             </Button>

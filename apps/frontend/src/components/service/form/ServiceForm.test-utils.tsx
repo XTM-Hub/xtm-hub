@@ -1,3 +1,7 @@
+import {
+  AppServiceContext,
+  ServiceContextProps,
+} from '@/components/service/components/ServiceContext';
 import { SheetWithPreventingDialog } from '@/components/ui/SheetWithPreventingDialog';
 import testRender from '@/utils/test/test-render';
 import { documentItem_fragment$data } from '@generated/documentItem_fragment.graphql';
@@ -127,6 +131,14 @@ export const JSON_FILE_FIELD: ServiceFormFileField = {
   file: new File(['{}'], 'document.json', { type: 'application/json' }),
 };
 
+export const buildServiceContext = (
+  overrides: Partial<ServiceContextProps> = {}
+): ServiceContextProps =>
+  ({
+    isSubmitting: false,
+    ...overrides,
+  }) as ServiceContextProps;
+
 type ServiceFormComponent<Values> = ComponentType<{
   document: documentItem_fragment$data | undefined;
   handleSubmit: (values: Values) => void;
@@ -161,15 +173,17 @@ export const renderServiceForm = <Values,>(
   return {
     handleSubmit,
     ...testRender(
-      <SheetWithPreventingDialog
-        open
-        setOpen={vi.fn()}
-        title={SHEET_TITLE}>
-        <Form
-          document={document}
-          handleSubmit={handleSubmit}
-        />
-      </SheetWithPreventingDialog>,
+      <AppServiceContext {...buildServiceContext()}>
+        <SheetWithPreventingDialog
+          open
+          setOpen={vi.fn()}
+          title={SHEET_TITLE}>
+          <Form
+            document={document}
+            handleSubmit={handleSubmit}
+          />
+        </SheetWithPreventingDialog>
+      </AppServiceContext>,
       {
         relayConfig: createUsersEnvironment(),
         me: {

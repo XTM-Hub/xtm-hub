@@ -53,12 +53,10 @@ export const UserServiceForm = ({
   const { handleCloseSheet, setIsDirty, setOpenSheet } = useDialogContext();
   const { me } = useContext(PortalContext);
 
-  const [commitUserServiceEditMutation] = useMutation<userServiceEditMutation>(
-    UserServiceEditMutation
-  );
-  const [commitUserServiceMutation] = useMutation<userServiceCreateMutation>(
-    UserServiceCreateMutation
-  );
+  const [commitUserServiceEditMutation, isEditInFlight] =
+    useMutation<userServiceEditMutation>(UserServiceEditMutation);
+  const [commitUserServiceMutation, isCreateInFlight] =
+    useMutation<userServiceCreateMutation>(UserServiceCreateMutation);
   const t = useTranslate();
   const isUserCreation = !userService?.id;
 
@@ -383,7 +381,11 @@ export const UserServiceForm = ({
             onClick={(e) => handleCloseSheet(e)}>
             {t('Utils.Cancel')}
           </Button>
-          <Button type="submit">{t('Utils.Validate')}</Button>
+          <Button
+            type="submit"
+            loading={isEditInFlight || isCreateInFlight}>
+            {t('Utils.Validate')}
+          </Button>
         </SheetFooter>
       </form>
     </Form>
