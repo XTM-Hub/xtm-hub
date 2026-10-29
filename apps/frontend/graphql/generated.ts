@@ -2569,7 +2569,9 @@ export type SsoGroupRolePortal = {
 export type SaasPlatform = {
   __typename?: 'SaasPlatform';
   commercial_model: Maybe<Scalars['String']['output']>;
+  contract_status: Maybe<SaasPlatformContractStatus>;
   customer: Maybe<Scalars['String']['output']>;
+  health_issues: Maybe<Array<SaasPlatformHealthIssue>>;
   id: Scalars['String']['output'];
   metadata: SaasPlatformMetadata;
   product: Maybe<Scalars['String']['output']>;
@@ -2578,6 +2580,12 @@ export type SaasPlatform = {
   status: Maybe<Scalars['String']['output']>;
   storage: Maybe<SaasPlatformStorage>;
 };
+
+export enum SaasPlatformContractStatus {
+  Active = 'active',
+  Ended = 'ended',
+  EndingSoon = 'ending_soon'
+}
 
 export type SaasPlatformDailySla = {
   __typename?: 'SaasPlatformDailySla';
@@ -2592,6 +2600,12 @@ export type SaasPlatformData = {
   sla: Maybe<SaasPlatformSla>;
   storage: Maybe<SaasPlatformStorage>;
 };
+
+export enum SaasPlatformHealthIssue {
+  Availability = 'availability',
+  Database = 'database',
+  FileStorage = 'file_storage'
+}
 
 export type SaasPlatformMetadata = {
   __typename?: 'SaasPlatformMetadata';
@@ -3955,7 +3969,7 @@ export type SsoGroupRolePortalsQueryVariables = Exact<{ [key: string]: never; }>
 
 export type SsoGroupRolePortalsQuery = { __typename?: 'Query', ssoGroupRolePortals: Array<{ __typename?: 'SSOGroupRolePortal', ssoGroup: string, rolePortal: { __typename?: 'RolePortal', id: string, name: string } }> };
 
-export type SaasPlatformRowFragment = { __typename?: 'SaasPlatform', id: string, product: string | null, customer: string | null, sla_cmtd: number | null, metadata: { __typename?: 'SaasPlatformMetadata', plan: string | null, end_date: any | null }, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null } | null, registered_platform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, identifier: ServiceDefinitionIdentifier, version: string | null, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } | null };
+export type SaasPlatformRowFragment = { __typename?: 'SaasPlatform', id: string, product: string | null, customer: string | null, sla_cmtd: number | null, health_issues: Array<SaasPlatformHealthIssue> | null, contract_status: SaasPlatformContractStatus | null, metadata: { __typename?: 'SaasPlatformMetadata', plan: string | null, end_date: any | null }, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null } | null, registered_platform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, identifier: ServiceDefinitionIdentifier, version: string | null, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } | null };
 
 export type SaasManagerPlatformsListQueryVariables = Exact<{
   page: Scalars['Int']['input'];
@@ -3966,7 +3980,7 @@ export type SaasManagerPlatformsListQueryVariables = Exact<{
 }>;
 
 
-export type SaasManagerPlatformsListQuery = { __typename?: 'Query', saasManagerPlatforms: { __typename?: 'SaasPlatformPage', totalCount: number, platforms: Array<{ __typename?: 'SaasPlatform', id: string, product: string | null, customer: string | null, sla_cmtd: number | null, metadata: { __typename?: 'SaasPlatformMetadata', plan: string | null, end_date: any | null }, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null } | null, registered_platform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, identifier: ServiceDefinitionIdentifier, version: string | null, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } | null }> } | null };
+export type SaasManagerPlatformsListQuery = { __typename?: 'Query', saasManagerPlatforms: { __typename?: 'SaasPlatformPage', totalCount: number, platforms: Array<{ __typename?: 'SaasPlatform', id: string, product: string | null, customer: string | null, sla_cmtd: number | null, health_issues: Array<SaasPlatformHealthIssue> | null, contract_status: SaasPlatformContractStatus | null, metadata: { __typename?: 'SaasPlatformMetadata', plan: string | null, end_date: any | null }, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null } | null, registered_platform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, identifier: ServiceDefinitionIdentifier, version: string | null, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } | null }> } | null };
 
 export type AddUsersToBundleGroupsMutationVariables = Exact<{
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
@@ -4582,6 +4596,8 @@ export const SaasPlatformRowFragmentDoc = `
       percent
     }
   }
+  health_issues
+  contract_status
   registered_platform {
     id
     service_instance_id

@@ -3,11 +3,12 @@ import {
   PlatformMetadataMapping,
   ServiceDefinitionIdentifierToPlatformIdentifier,
 } from '@/components/registration/PlatformIdentifierMapping';
-import { slaStatus } from '@/components/service/registration/sla-availability-chart.utils';
 import { daysUntil } from '@/utils/date';
 import { APP_PATH } from '@/utils/path/constant';
 import {
   PlatformIdentifier,
+  SaasPlatformHealthIssue,
+  type SaasPlatformRowFragment,
   ServiceDefinitionIdentifier,
 } from '@graphql/generated';
 
@@ -22,29 +23,26 @@ const PRODUCT_NAME_BY_SAAS_PRODUCT: Record<string, string> = {
 export const getSaasProductName = (product: string): string =>
   PRODUCT_NAME_BY_SAAS_PRODUCT[product.toUpperCase()] ?? product;
 
-// Above this share of its capacity, a storage is highlighted: it needs room soon.
-const STORAGE_USAGE_HIGH_PERCENT = 80;
-
-export const isStorageUsageHigh = (percent: number): boolean =>
-  percent > STORAGE_USAGE_HIGH_PERCENT;
-
-// The availability the contract commits to, as a ratio, as the backend's SAAS_PLATFORM_SLA_TARGET.
-const SAAS_PLATFORM_SLA_TARGET = 0.9998;
-
-// The SaaS Manager sends the availability of the list as a percentage (100 is 100 %).
-export const isSlaMissed = (availabilityPercent: number): boolean =>
-  slaStatus(availabilityPercent / 100, SAAS_PLATFORM_SLA_TARGET) === 'Missed';
-
-// Under this many days left, the end of the contract is highlighted: its renewal is due.
-const CONTRACT_ENDING_SOON_DAYS = 90;
-
-export const getContractEndStatus = (
-  endDate: Date | string
-): { daysLeft: number; isEndingSoon: boolean } => {
-  // A contract already over has no day left.
-  const daysLeft = Math.max(daysUntil(new Date(endDate)), 0);
-  return { daysLeft, isEndingSoon: daysLeft < CONTRACT_ENDING_SOON_DAYS };
+// The measure behind a health issue of a platform, as a ratio (1 is 100 %): the storages are sent as percentages.
+export const getHealthIssueRatio = (
+  { sla_cmtd, storage }: Pick<SaasPlatformRowFragment, 'sla_cmtd' | 'storage'>,
+  issue: SaasPlatformHealthIssue
+): number | null => {
+  const percentToRatio = (percent: number | null | undefined) =>
+    typeof percent === 'number' ? percent / 100 : null;
+  switch (issue) {
+    case SaasPlatformHealthIssue.Availability:
+      return sla_cmtd;
+    case SaasPlatformHealthIssue.Database:
+      return percentToRatio(storage?.es_used_size?.percent);
+    case SaasPlatformHealthIssue.FileStorage:
+      return percentToRatio(storage?.s3_used_size?.percent);
+  }
 };
+
+// Counted in started days, as the backend rates the contract status.
+export const getContractDaysLeft = (endDate: Date | string): number =>
+  daysUntil(new Date(endDate));
 
 export const getSaasPlatformMetadata = (
   identifier: ServiceDefinitionIdentifier

@@ -90,11 +90,32 @@ type SaasPlatform {
   product: String
   customer: String
   commercial_model: String
+  # The availability the SaaS Manager measured, as a ratio (1 is 100 %).
   sla_cmtd: Float
   metadata: SaasPlatformMetadata!
   storage: SaasPlatformStorage
+  # The issues of the platform, the most severe first: empty when it is healthy, null when the SaaS Manager has no
+  # measure of it, which then cannot be told healthy.
+  health_issues: [SaasPlatformHealthIssue!]
+  # Where the platform stands in its contract on its end date; null without an end date.
+  contract_status: SaasPlatformContractStatus
   # The active SaaS registration of the platform in the Hub, matched on its platform_id; null when it is not registered.
   registered_platform: RegisteredPlatform
+}
+
+# A measure of a platform that breaks its contract, or soon will: the availability under the SLA target, a storage
+# almost full.
+enum SaasPlatformHealthIssue {
+  availability
+  database
+  file_storage
+}
+
+# Within the contract, its renewal due in less than 90 days, or over.
+enum SaasPlatformContractStatus {
+  active
+  ending_soon
+  ended
 }
 
 # A page of the platforms, as the SaaS Manager pages them.

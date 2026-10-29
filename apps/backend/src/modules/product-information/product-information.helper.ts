@@ -1,8 +1,10 @@
 import {
   MetricType,
   SaasPlatform,
+  SaasPlatformContractStatus,
   SaasPlatformDailySla,
   SaasPlatformData,
+  SaasPlatformHealthIssue,
   SaasPlatformMetadata,
   SaasPlatformMetricPoint,
   SaasPlatformMetrics,
@@ -21,6 +23,7 @@ import {
 } from '../../thirdparty/saasmanager/client';
 import { logApp } from '../../utils/app-logger.util';
 import {
+  percentToRatio,
   toFiniteNumber,
   toIsoDate,
   toUtcDayStart,
@@ -39,6 +42,15 @@ const SAAS_PLATFORM_METRICS_PERIODS: Record<
 
 // The availability the contract commits to, as a ratio (1 is 100 %).
 const SAAS_PLATFORM_SLA_TARGET = 0.9998;
+
+// Rated on the availability as displayed, a percent with two decimals: 99.975 % shows as 99.98 % and meets the target.
+const SAAS_PLATFORM_SLA_RATIO_SCALE = 10_000;
+
+// Above this share of its capacity, in percent, a storage needs room soon.
+const SAAS_PLATFORM_STORAGE_USAGE_HIGH_PERCENT = 80;
+
+// Under this many days left, the renewal of the contract is due.
+const SAAS_PLATFORM_CONTRACT_ENDING_SOON_DAYS = 90;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -257,7 +269,68 @@ const parseSaasPlatformData = (
   };
 };
 
-const parseSaasPlatform = (platform: unknown): SaasPlatform[] => {
+const isSlaMissed = (availability: number): boolean =>
+  Math.round(availability * SAAS_PLATFORM_SLA_RATIO_SCALE) <
+  Math.round(SAAS_PLATFORM_SLA_TARGET * SAAS_PLATFORM_SLA_RATIO_SCALE);
+
+const isStorageUsageHigh = (percent: number): boolean =>
+  percent > SAAS_PLATFORM_STORAGE_USAGE_HIGH_PERCENT;
+
+// The issues the most severe first: a missed SLA already breaks the contract, a full storage only will.
+const parseSaasPlatformHealthIssues = (
+  availability: number | null,
+  storage: SaasPlatformStorage | null
+): SaasPlatformHealthIssue[] | null => {
+  const measures: {
+    issue: SaasPlatformHealthIssue;
+    value: number | null | undefined;
+    hasIssue: (value: number) => boolean;
+  }[] = [
+    {
+      issue: SaasPlatformHealthIssue.Availability,
+      value: availability,
+      hasIssue: isSlaMissed,
+    },
+    {
+      issue: SaasPlatformHealthIssue.Database,
+      value: storage?.es_used_size?.percent,
+      hasIssue: isStorageUsageHigh,
+    },
+    {
+      issue: SaasPlatformHealthIssue.FileStorage,
+      value: storage?.s3_used_size?.percent,
+      hasIssue: isStorageUsageHigh,
+    },
+  ];
+  // Without any measure, the platform cannot be told healthy.
+  if (measures.every(({ value }) => typeof value !== 'number')) {
+    return null;
+  }
+  return measures.flatMap(({ issue, value, hasIssue }) =>
+    typeof value === 'number' && hasIssue(value) ? [issue] : []
+  );
+};
+
+// Counted in started days, as the board shows them: a contract that ends in 89.5 days has 90 days left.
+const parseSaasPlatformContractStatus = (
+  endDate: string | null,
+  now: Date
+): SaasPlatformContractStatus | null => {
+  if (endDate === null) {
+    return null;
+  }
+  const daysLeft = Math.ceil(
+    (Date.parse(endDate) - now.getTime()) / MS_PER_DAY
+  );
+  if (daysLeft <= 0) {
+    return SaasPlatformContractStatus.Ended;
+  }
+  return daysLeft < SAAS_PLATFORM_CONTRACT_ENDING_SOON_DAYS
+    ? SaasPlatformContractStatus.EndingSoon
+    : SaasPlatformContractStatus.Active;
+};
+
+const parseSaasPlatform = (platform: unknown, now: Date): SaasPlatform[] => {
   if (!isRecord(platform)) {
     return [];
   }
@@ -266,6 +339,11 @@ const parseSaasPlatform = (platform: unknown): SaasPlatform[] => {
   if (id === null) {
     return [];
   }
+  // The SaaS Manager lists the availability as a percentage, the Hub serves it as a ratio, as for the SLA of a platform.
+  const slaPercent = toFiniteNumber(platform.sla_cmtd);
+  const availability = slaPercent === null ? null : percentToRatio(slaPercent);
+  const storage = parseSaasPlatformStorage(platform.storage);
+  const metadata = parseSaasPlatformMetadata(platform);
   return [
     {
       id,
@@ -273,9 +351,11 @@ const parseSaasPlatform = (platform: unknown): SaasPlatform[] => {
       product: readString(platform, 'product'),
       customer: readString(platform, 'customer'),
       commercial_model: readString(platform, 'commercial_model'),
-      sla_cmtd: toFiniteNumber(platform.sla_cmtd),
-      metadata: parseSaasPlatformMetadata(platform),
-      storage: parseSaasPlatformStorage(platform.storage),
+      sla_cmtd: availability,
+      metadata,
+      storage,
+      health_issues: parseSaasPlatformHealthIssues(availability, storage),
+      contract_status: parseSaasPlatformContractStatus(metadata.end_date, now),
     },
   ];
 };
@@ -347,7 +427,10 @@ export const ProductInformationHelper = {
         );
         return null;
       }
-      const platforms = body.results.flatMap(parseSaasPlatform);
+      const now = new Date();
+      const platforms = body.results.flatMap((platform) =>
+        parseSaasPlatform(platform, now)
+      );
       return {
         totalCount: toFiniteNumber(body.count) ?? platforms.length,
         platforms,

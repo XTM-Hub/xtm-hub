@@ -1,6 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SaasPlatformMetricsPeriod } from '../../__generated__/resolvers-types';
+import {
+  SaasPlatformContractStatus,
+  SaasPlatformHealthIssue,
+  SaasPlatformMetricsPeriod,
+} from '../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
 import { logApp } from '../../utils/app-logger.util';
@@ -853,7 +857,7 @@ describe('product information helper', () => {
       product: 'OCTI',
       customer: 'Filigran',
       commercial_model: 'INTERNAL',
-      sla_cmtd: 99.9,
+      sla_cmtd: 0.999,
       metadata: {
         hostname: 'my-platform.example.com',
         plan: 'Enterprise',
@@ -865,7 +869,20 @@ describe('product information helper', () => {
         es_used_size: { percent: 12.5, used: 1073741824, limit: 8589934592 },
         s3_used_size: { percent: 0, used: 0, limit: 0 },
       },
+      health_issues: [SaasPlatformHealthIssue.Availability],
+      contract_status: SaasPlatformContractStatus.EndingSoon,
     };
+
+    beforeEach(() => {
+      vi.useFakeTimers({
+        toFake: ['Date'],
+        now: new Date('2026-10-28T12:00:00.000Z'),
+      });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
 
     const request = {
       page: 2,
@@ -995,8 +1012,104 @@ describe('product information helper', () => {
             region: null,
           },
           storage: null,
+          health_issues: null,
+          contract_status: null,
         },
       ]);
+    });
+
+    it.each`
+      case                                     | end_date                      | contract_status
+      ${'active with 90 days left'}            | ${'2027-01-26T12:00:00.000Z'} | ${SaasPlatformContractStatus.Active}
+      ${'ending soon with 89 days left'}       | ${'2027-01-25T12:00:00.000Z'} | ${SaasPlatformContractStatus.EndingSoon}
+      ${'ending soon on its last started day'} | ${'2026-10-28T13:00:00.000Z'} | ${SaasPlatformContractStatus.EndingSoon}
+      ${'ended at its end date'}               | ${'2026-10-28T12:00:00.000Z'} | ${SaasPlatformContractStatus.Ended}
+      ${'ended 40 days ago'}                   | ${'2026-09-18T12:00:00.000Z'} | ${SaasPlatformContractStatus.Ended}
+    `(
+      'should tell the contract of a platform $case',
+      async ({ end_date, contract_status }) => {
+        // Given
+        mockSaasManagerBody(page([{ id: platform.id, end_date }]));
+
+        // When
+        const result =
+          await ProductInformationHelper.fetchSaasPlatforms(request);
+
+        // Then
+        expect(result?.platforms[0]?.contract_status).toBe(contract_status);
+      }
+    );
+
+    const storageUsage = (percent: number) => ({
+      percent,
+      used: percent,
+      limit: 100,
+    });
+
+    it.each`
+      case                                                  | sla_cmtd  | esPercent | s3Percent | health_issues
+      ${'no issue when every measure is within its limit'}  | ${99.99}  | ${80}     | ${12}     | ${[]}
+      ${'no issue for an availability shown at the target'} | ${99.975} | ${10}     | ${10}     | ${[]}
+      ${'the availability under the SLA target'}            | ${99.97}  | ${10}     | ${10}     | ${[SaasPlatformHealthIssue.Availability]}
+      ${'the database above 80 % of its capacity'}          | ${99.99}  | ${80.5}   | ${10}     | ${[SaasPlatformHealthIssue.Database]}
+      ${'the file storage above 80 % of its capacity'}      | ${99.99}  | ${10}     | ${93}     | ${[SaasPlatformHealthIssue.FileStorage]}
+      ${'every issue, the missed SLA first'}                | ${95}     | ${90}     | ${93}     | ${[SaasPlatformHealthIssue.Availability, SaasPlatformHealthIssue.Database, SaasPlatformHealthIssue.FileStorage]}
+    `(
+      'should return $case',
+      async ({ sla_cmtd, esPercent, s3Percent, health_issues }) => {
+        // Given
+        mockSaasManagerBody(
+          page([
+            {
+              id: platform.id,
+              sla_cmtd,
+              storage: {
+                es_used_size: storageUsage(esPercent),
+                s3_used_size: storageUsage(s3Percent),
+              },
+            },
+          ])
+        );
+
+        // When
+        const result =
+          await ProductInformationHelper.fetchSaasPlatforms(request);
+
+        // Then
+        expect(result?.platforms[0]?.health_issues).toEqual(health_issues);
+      }
+    );
+
+    it('should rate the storage of a platform without availability', async () => {
+      // Given
+      mockSaasManagerBody(
+        page([
+          {
+            id: platform.id,
+            storage: { es_used_size: storageUsage(95) },
+          },
+        ])
+      );
+
+      // When
+      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+
+      // Then
+      expect(result?.platforms[0]).toMatchObject({
+        sla_cmtd: null,
+        health_issues: [SaasPlatformHealthIssue.Database],
+      });
+    });
+
+    it('should return the availability as a ratio', async () => {
+      // Given
+      mockSaasManagerBody(page([{ id: platform.id, sla_cmtd: 99.95 }]));
+
+      // When
+      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+
+      // Then
+      expect(result?.platforms[0]?.sla_cmtd).toBe(0.9995);
     });
 
     it.each`

@@ -2562,7 +2562,9 @@ export type SsoGroupRolePortal = {
 export type SaasPlatform = {
   __typename?: 'SaasPlatform';
   commercial_model?: Maybe<Scalars['String']['output']>;
+  contract_status?: Maybe<SaasPlatformContractStatus>;
   customer?: Maybe<Scalars['String']['output']>;
+  health_issues?: Maybe<Array<SaasPlatformHealthIssue>>;
   id: Scalars['String']['output'];
   metadata: SaasPlatformMetadata;
   product?: Maybe<Scalars['String']['output']>;
@@ -2571,6 +2573,12 @@ export type SaasPlatform = {
   status?: Maybe<Scalars['String']['output']>;
   storage?: Maybe<SaasPlatformStorage>;
 };
+
+export enum SaasPlatformContractStatus {
+  Active = 'active',
+  Ended = 'ended',
+  EndingSoon = 'ending_soon'
+}
 
 export type SaasPlatformDailySla = {
   __typename?: 'SaasPlatformDailySla';
@@ -2585,6 +2593,12 @@ export type SaasPlatformData = {
   sla?: Maybe<SaasPlatformSla>;
   storage?: Maybe<SaasPlatformStorage>;
 };
+
+export enum SaasPlatformHealthIssue {
+  Availability = 'availability',
+  Database = 'database',
+  FileStorage = 'file_storage'
+}
 
 export type SaasPlatformMetadata = {
   __typename?: 'SaasPlatformMetadata';
@@ -3726,8 +3740,10 @@ export type ResolversTypes = ResolversObject<{
   RssFeed: ResolverTypeWrapper<RssFeed>;
   SSOGroupRolePortal: ResolverTypeWrapper<SsoGroupRolePortal>;
   SaasPlatform: ResolverTypeWrapper<SaasPlatform>;
+  SaasPlatformContractStatus: SaasPlatformContractStatus;
   SaasPlatformDailySla: ResolverTypeWrapper<SaasPlatformDailySla>;
   SaasPlatformData: ResolverTypeWrapper<SaasPlatformData>;
+  SaasPlatformHealthIssue: SaasPlatformHealthIssue;
   SaasPlatformMetadata: ResolverTypeWrapper<SaasPlatformMetadata>;
   SaasPlatformMetricPoint: ResolverTypeWrapper<SaasPlatformMetricPoint>;
   SaasPlatformMetricSeries: ResolverTypeWrapper<SaasPlatformMetricSeries>;
@@ -5055,7 +5071,9 @@ export type SsoGroupRolePortalResolvers<ContextType = PortalContext, ParentType 
 
 export type SaasPlatformResolvers<ContextType = PortalContext, ParentType extends ResolversParentTypes['SaasPlatform'] = ResolversParentTypes['SaasPlatform']> = ResolversObject<{
   commercial_model?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  contract_status?: Resolver<Maybe<ResolversTypes['SaasPlatformContractStatus']>, ParentType, ContextType>;
   customer?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  health_issues?: Resolver<Maybe<Array<ResolversTypes['SaasPlatformHealthIssue']>>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   metadata?: Resolver<ResolversTypes['SaasPlatformMetadata'], ParentType, ContextType>;
   product?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;

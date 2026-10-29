@@ -1325,7 +1325,21 @@ type SaasPlatform {
   sla_cmtd: Float
   metadata: SaasPlatformMetadata!
   storage: SaasPlatformStorage
+  health_issues: [SaasPlatformHealthIssue!]
+  contract_status: SaasPlatformContractStatus
   registered_platform: RegisteredPlatform
+}
+
+enum SaasPlatformHealthIssue {
+  availability
+  database
+  file_storage
+}
+
+enum SaasPlatformContractStatus {
+  active
+  ending_soon
+  ended
 }
 
 type SaasPlatformPage {

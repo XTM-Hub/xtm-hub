@@ -1,14 +1,14 @@
 import { PlatformMetadataMapping } from '@/components/registration/PlatformIdentifierMapping';
 import {
-  getContractEndStatus,
+  getContractDaysLeft,
+  getHealthIssueRatio,
   getSaasPlatformMetadata,
   getSaasPlatformServicePath,
   getSaasProductName,
-  isSlaMissed,
-  isStorageUsageHigh,
 } from '@/components/subcription/saas/saas-list.utils';
 import {
   PlatformIdentifier,
+  SaasPlatformHealthIssue,
   ServiceDefinitionIdentifier,
 } from '@graphql/generated';
 
@@ -64,7 +64,7 @@ describe('getSaasPlatformServicePath', () => {
   });
 });
 
-describe('getContractEndStatus', () => {
+describe('getContractDaysLeft', () => {
   const NOW = '2026-10-28T12:00:00.000Z';
 
   beforeEach(() => {
@@ -76,21 +76,19 @@ describe('getContractEndStatus', () => {
   });
 
   it.each`
-    description                    | endDate                       | daysLeft | isEndingSoon
-    ${'ends in more than 90 days'} | ${'2027-03-15T12:00:00.000Z'} | ${138}   | ${false}
-    ${'ends in exactly 90 days'}   | ${'2027-01-26T12:00:00.000Z'} | ${90}    | ${false}
-    ${'ends in 89 days'}           | ${'2027-01-25T12:00:00.000Z'} | ${89}    | ${true}
-    ${'ends today'}                | ${NOW}                        | ${0}     | ${true}
-    ${'is already over'}           | ${'2026-10-01T12:00:00.000Z'} | ${0}     | ${true}
+    description           | endDate                       | daysLeft
+    ${'ends in 90 days'}  | ${'2027-01-26T12:00:00.000Z'} | ${90}
+    ${'ends in 89 days'}  | ${'2027-01-25T12:00:00.000Z'} | ${89}
+    ${'ends later today'} | ${'2026-10-28T13:00:00.000Z'} | ${1}
   `(
-    'should return $daysLeft days left, ending soon $isEndingSoon, for a contract that $description',
-    ({ endDate, daysLeft, isEndingSoon }) => {
+    'should return $daysLeft days left for a contract that $description',
+    ({ endDate, daysLeft }) => {
       // Given a contract end date
-      // When its status is computed
-      const status = getContractEndStatus(endDate);
+      // When the days left are counted
+      const days = getContractDaysLeft(endDate);
 
-      // Then the days left and whether the contract ends soon are returned
-      expect(status).toEqual({ daysLeft, isEndingSoon });
+      // Then every started day counts
+      expect(days).toBe(daysLeft);
     }
   );
 });
@@ -121,43 +119,38 @@ describe('getSaasProductName', () => {
   });
 });
 
-describe('isStorageUsageHigh', () => {
+describe('getHealthIssueRatio', () => {
+  const platform = {
+    sla_cmtd: 0.9971,
+    storage: {
+      es_used_size: { percent: 85 },
+      s3_used_size: { percent: 93 },
+    },
+  };
+
   it.each`
-    percent | isHigh
-    ${57}   | ${false}
-    ${80}   | ${false}
-    ${80.1} | ${true}
-    ${100}  | ${true}
-  `(
-    'should return $isHigh for a storage used at $percent %',
-    ({ percent, isHigh }) => {
-      // Given a storage usage
-      // When it is rated
-      const high = isStorageUsageHigh(percent);
+    issue                                   | ratio
+    ${SaasPlatformHealthIssue.Availability} | ${0.9971}
+    ${SaasPlatformHealthIssue.Database}     | ${0.85}
+    ${SaasPlatformHealthIssue.FileStorage}  | ${0.93}
+  `('should return $ratio for the $issue issue', ({ issue, ratio }) => {
+    // Given a platform the SaaS Manager measured
+    // When the measure behind one of its issues is read
+    const issueRatio = getHealthIssueRatio(platform, issue);
 
-      // Then it is high only above 80 % of the capacity
-      expect(high).toBe(isHigh);
-    }
-  );
-});
+    // Then it is a ratio, whatever unit the measure is sent in
+    expect(issueRatio).toBe(ratio);
+  });
 
-describe('isSlaMissed', () => {
-  it.each`
-    availability | isMissed
-    ${99.71}     | ${true}
-    ${99.97}     | ${true}
-    ${99.975}    | ${false}
-    ${99.98}     | ${false}
-    ${100}       | ${false}
-  `(
-    'should return $isMissed for an availability of $availability %',
-    ({ availability, isMissed }) => {
-      // Given an availability sent by the SaaS Manager
-      // When it is rated against the 99.98 % the contract commits to
-      const missed = isSlaMissed(availability);
+  it('should return null for the issue of a storage without usage', () => {
+    // Given a platform without any storage measure
+    // When the measure behind its database issue is read
+    const issueRatio = getHealthIssueRatio(
+      { sla_cmtd: null, storage: null },
+      SaasPlatformHealthIssue.Database
+    );
 
-      // Then it is missed only when it shows under 99.98 %
-      expect(missed).toBe(isMissed);
-    }
-  );
+    // Then there is none
+    expect(issueRatio).toBeNull();
+  });
 });
