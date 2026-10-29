@@ -46,7 +46,7 @@ describe('getSaasPlatformMetadata', () => {
 });
 
 describe('getSaasPlatformServicePath', () => {
-  it('should return the service page path of the platform service instance', () => {
+  it('should return the service page path of the platform service instance, opened from the CSM board', () => {
     // Given a saas platform registered on a service instance
     const platform = {
       identifier: ServiceDefinitionIdentifier.OpenctiRegistration,
@@ -57,9 +57,9 @@ describe('getSaasPlatformServicePath', () => {
     // When its service page path is built
     const path = getSaasPlatformServicePath(platform);
 
-    // Then it points to the service instance page of its product
+    // Then it points to the service instance page of its product, which leads back to the CSM board
     expect(path).toBe(
-      '/app/service/opencti_registration/U2VydmljZUluc3RhbmNlOjY5NzAwZWFlLTM2YWYtNDJmZi1hMThiLTljMzBkNGMzODU5Mg=='
+      '/app/service/opencti_registration/U2VydmljZUluc3RhbmNlOjY5NzAwZWFlLTM2YWYtNDJmZi1hMThiLTljMzBkNGMzODU5Mg==?from=csm-board'
     );
   });
 });

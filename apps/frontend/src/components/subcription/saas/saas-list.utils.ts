@@ -4,7 +4,11 @@ import {
   ServiceDefinitionIdentifierToPlatformIdentifier,
 } from '@/components/registration/PlatformIdentifierMapping';
 import { daysUntil } from '@/utils/date';
-import { APP_PATH } from '@/utils/path/constant';
+import {
+  APP_PATH,
+  REGISTERED_PLATFORM_ORIGIN_CSM_BOARD,
+  REGISTERED_PLATFORM_ORIGIN_PARAM,
+} from '@/utils/path/constant';
 import {
   PlatformIdentifier,
   SaasPlatformHealthIssue,
@@ -60,4 +64,5 @@ export const getSaasPlatformServicePath = ({
 }: {
   identifier: ServiceDefinitionIdentifier;
   service_instance_id: string;
-}): string => `/${APP_PATH}/service/${identifier}/${service_instance_id}`;
+}): string =>
+  `/${APP_PATH}/service/${identifier}/${service_instance_id}?${REGISTERED_PLATFORM_ORIGIN_PARAM}=${REGISTERED_PLATFORM_ORIGIN_CSM_BOARD}`;

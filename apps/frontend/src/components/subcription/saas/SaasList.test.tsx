@@ -629,11 +629,11 @@ describe('SaasList', () => {
     // When the list is rendered
     renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
 
-    // Then its row links to the metrics page of its service instance, after the logo of its product
+    // Then its row links to the metrics page of its service instance, opened from the CSM board, after the logo of its product
     const link = screen.getByRole('link', { name: 'CSMBoard.ViewMetrics' });
     expect(link).toHaveAttribute(
       'href',
-      `/app/service/opencti_registration/${SERVICE_INSTANCE_ID}`
+      `/app/service/opencti_registration/${SERVICE_INSTANCE_ID}?from=csm-board`
     );
     expect(link.previousElementSibling?.tagName.toLowerCase()).toBe('svg');
   });
