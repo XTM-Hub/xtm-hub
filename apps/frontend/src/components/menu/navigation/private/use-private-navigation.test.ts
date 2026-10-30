@@ -260,6 +260,17 @@ describe('usePrivateNavigation', () => {
     });
   });
 
+  it('should scope the XTM One section to the XTM One Hub service pages', () => {
+    // Given / When
+    const { result } = renderUsePrivateNavigation({
+      selectedOrganizationId: 'org-1',
+    });
+
+    // Then
+    const xtmOneSection = getSection(result.current.sections, 'xtm-one');
+    expect(xtmOneSection?.pathPrefix).toBe(`/${APP_PATH}/service/xtmone`);
+  });
+
   it('hides the xtm-platform-trial bottom link when organization is blacklisted', () => {
     graphqlMocks.usePlatformTrialStatusQuery.mockReturnValue({
       data: {
@@ -537,7 +548,7 @@ describe('usePrivateNavigation', () => {
     });
   });
 
-  it('links XTM One registered platforms directly to their instance in a new tab', () => {
+  it('links XTM One registered platforms to their Hub details page', () => {
     vi.mocked(
       getPrivateNavigationRegisteredPlatformsByIdentifier
     ).mockImplementation((_queryData, platformIdentifier) =>
@@ -564,8 +575,7 @@ describe('usePrivateNavigation', () => {
       subLinks: [
         {
           label: 'XTM One Production Platform',
-          href: 'https://xtmone.example.com',
-          external: true,
+          href: '/app/service/xtmone_registration/xtmone-service-instance-id',
           tooltip: 'https://xtmone.example.com',
         },
       ],
