@@ -39,6 +39,25 @@ describe('platformConfigurationDomain', () => {
 
       expect(result).toBe(false);
     });
+
+    it.each(['javascript:alert(1)', 'file:///etc/passwd', 'ftp://example.com'])(
+      'returns false for the non-web platform url %s',
+      async (platformUrl) => {
+        const result =
+          await PlatformConfigurationDomain.isPlatformConfigurationValid({
+            registerer_id: contextSimpleUserSecondOrga.user.id,
+            platform_id: uuidv4(),
+            platform_url: platformUrl,
+            platform_title: 'Platform title',
+            token: uuidv4(),
+            platform_contract: 'EE',
+            platform_version: '1.0.0',
+            last_connectivity_check: new Date(),
+          });
+
+        expect(result).toBe(false);
+      }
+    );
   });
 
   describe('countConfigurationsByRegisterer', () => {

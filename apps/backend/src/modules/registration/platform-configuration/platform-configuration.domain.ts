@@ -18,13 +18,16 @@ import { formatRawObject } from '../../../utils/query-raw.util';
 import type { PlatformConfigurationInput } from '../registration.domain';
 import { platformIdentifierMappedByServiceDefinitionIdentifier } from '../registration.mapping';
 
+// A platform URL is stored and rendered as a link: only web schemes, never javascript: or file:.
+export const PlatformUrlSchema = z.url({ protocol: /^https?$/ });
+
 const PlatformConfigurationValidationSchema = z
   .object({
     registerer_id: z.uuid(),
     platform_id: z.uuid(),
     tenant_id: z.string().min(1).optional(),
     tenant_name: z.string().min(1).optional(),
-    platform_url: z.url(),
+    platform_url: PlatformUrlSchema,
     platform_title: z.string().min(1),
     platform_version: z.string().min(1).optional(),
     platform_contract: z.enum(PlatformContract),
@@ -263,7 +266,8 @@ export const PlatformConfigurationDomain = {
 
   loadActiveConfigurationsByPlatformExcludingTenants: async (
     platformId: string,
-    excludedTenantIds: string[]
+    excludedTenantIds: string[],
+    silentSince?: Date
   ): Promise<PlatformConfiguration[]> => {
     const qb = db<PlatformConfiguration[]>('PlatformConfiguration')
       .where('platform_id', '=', platformId)
@@ -273,6 +277,14 @@ export const PlatformConfigurationDomain = {
 
     if (excludedTenantIds.length > 0) {
       qb.whereNotIn('tenant_id', excludedTenantIds);
+    }
+
+    if (silentSince) {
+      qb.where((silent) =>
+        silent
+          .whereNull('last_connectivity_check')
+          .orWhere('last_connectivity_check', '<', silentSince)
+      );
     }
 
     return qb;
