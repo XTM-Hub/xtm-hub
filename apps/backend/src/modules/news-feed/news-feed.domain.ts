@@ -453,6 +453,47 @@ export const NewsFeedDomain = {
       .ignore();
   },
 
+  // Provisions the newest active blogpost items of a product to one platform, the source being the Hub database.
+  // Idempotent: an item already provisioned to the platform is left untouched. No lock: a concurrent
+  // synchronization that drops one of these items provisions it too, so the platform still deletes it.
+  provisionLatestBlogpostsToPlatform: async ({
+    platformId,
+    platformIdentifier,
+    limit,
+  }: {
+    platformId: string;
+    platformIdentifier: PlatformIdentifier;
+    limit: number;
+  }): Promise<NewsFeedItemId[]> => {
+    const newsFeedItems: Pick<NewsFeedItem, 'id'>[] = await db<NewsFeedItem>(
+      'NewsFeedItem'
+    )
+      .where({
+        platform_identifier: platformIdentifier,
+        type: NewsFeedItemType.BlogPost,
+        is_deleted: false,
+      })
+      .orderBy('creation_date', 'desc')
+      .orderBy('id', 'desc')
+      .limit(limit)
+      .select('id');
+    if (newsFeedItems.length === 0) {
+      return [];
+    }
+
+    await db('ProvisionedNewsFeedItem')
+      .insert(
+        newsFeedItems.map(({ id }) => ({
+          news_feed_item_id: id,
+          platform_id: platformId,
+        }))
+      )
+      .onConflict(['news_feed_item_id', 'platform_id'])
+      .ignore();
+
+    return newsFeedItems.map(({ id }) => id);
+  },
+
   // The creation date of a blogpost is its publication date, so a post of the latest ones can be older than the
   // cutoff: an active blogpost is kept as long as the blog feed holds it, its redirect and its UUID depend on it.
   deleteNewsFeedItemsOlderThan: async (cutoffDate: Date): Promise<number> => {
