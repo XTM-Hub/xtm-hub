@@ -25,13 +25,28 @@
     "Title": "Available capabilities"
   },
   "CSMBoard": {
+    "Customer": "Customer",
     "Organization": "Organization",
     "Administrators": "Administrators",
     "Products": "Products",
-    "Link": "SaaS metrics",
+    "ProductVersion": "Version: {version}",
+    "AllProducts": "All products",
+    "Plan": "Plan",
+    "Health": "Health",
+    "Healthy": "Healthy",
+    "HealthSla": "SLA {percent}",
+    "HealthDatabase": "Database {percent}",
+    "HealthFileStorage": "File storage {percent}",
+    "Database": "Database",
+    "FileStorage": "File storage",
+    "Availability": "Availability",
     "Version": "Version",
+    "ContractEnd": "Contract end",
+    "EndsIn": "in {days} d",
+    "ContractEnded": "Ended",
+    "Link": "SaaS metrics",
     "ViewMetrics": "View metrics",
-    "SearchOrganization": "Search organization",
+    "SearchPlatform": "Search platform",
     "ClearSearch": "Clear search"
   },
   "CountryComboBox": {
@@ -990,7 +1005,8 @@
         "Label": "Metrics period",
         "last_30_days": "30 days",
         "last_90_days": "90 days",
-        "last_180_days": "180 days"
+        "last_180_days": "180 days",
+        "ComingSoon": "Coming soon"
       },
       "Database": {
         "Title": "Database",
@@ -1008,9 +1024,9 @@
         "OnTarget": "{availability} · On target",
         "BelowTarget": "{availability} · Below target",
         "NoData": "No data",
+        "NotTrackedYet": "No data · The metrics had not been measured yet",
         "Summary": {
           "Title": "Monthly SLA · target {target}",
-          "FullMonthsOnTarget": "{met} of {total, plural, one {# full month} other {# full months}} on target",
           "CurrentMonth": "{month} · month to date",
           "TargetAndMeasuredDays": "Target {target} · {measured} of {total} days measured"
         },
@@ -1685,6 +1701,7 @@
           "Breadcrumb": "XTM Platform Trial",
           "Overline": "XTM Platform free trial",
           "Title": "Start your 30-day free trial",
+          "ExpiredTitle": "You have completed your XTM Platform trial",
           "PitchTitle": "Explore the full XTM Platform experience",
           "PitchDescription": "Get 30 days to explore the SaaS-based enterprise editions of OpenCTI and OpenAEV, including XTM One's agentic orchestration capabilities. Unify your threat intelligence and validate your defenses with agentic, continuous exposure management and cyber risk reduction.",
           "Products": {
@@ -1710,9 +1727,6 @@
             "NoSLA": "Note that this trial does not include SLAs. In the event of a cloud provider outage, recovery time is not guaranteed. We recommend not storing critical or irreplaceable data in your trial environment."
           },
           "Form": {
-            "ProductsTitle": "Products included in this trial",
-            "ProductsWarning": "Choose your trial bundle carefully.",
-            "ProductsWarningDescription": "Once your trial starts, products cannot be added or changed, and no additional trials can be requested for the same organization.",
             "UseCaseFor": "{product} use case",
             "Submit": "Request XTM Platform trial"
           },
@@ -1733,8 +1747,6 @@
             "StartedOn": "Started on",
             "CancelledOn": "Cancelled on",
             "FinishedOn": "Finished on",
-            "ProductsIncluded": "Products included in your trial",
-            "ProductsIncludedInRequest": "Products included in your trial request",
             "CancelTrialRequest": "Cancel trial request",
             "request-in-progress": {
               "Title": "Thanks! We've received your request.",
@@ -2004,7 +2016,7 @@
         "Eyebrow": "XTM Platform free trial",
         "Description": "Easily manage your team and collaborate throughout your XTM Platform trial. Invite team members, assign roles and permissions, and ensure everyone has the right level of access to the platform.",
         "BackButton": "Back to XTM Platform Trial",
-        "BackToDashboardButton": "Back to dashboard",
+        "BackToDashboardButton": "Back",
         "GroupAction": "Group action",
         "GroupActionDisabledTooltip": "You need to select users in the list to apply group action",
         "BulkDeleteTooltip": "You can delete selected users",

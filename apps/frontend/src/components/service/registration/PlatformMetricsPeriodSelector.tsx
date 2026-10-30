@@ -11,6 +11,7 @@ interface PlatformMetricsPeriodSelectorProps {
 }
 
 const PERIODS = Object.values(SaasPlatformMetricsPeriod);
+const COMING_SOON_PERIODS = new Set([SaasPlatformMetricsPeriod.Last_180Days]);
 
 export const PlatformMetricsPeriodSelector = ({
   period,
@@ -22,10 +23,17 @@ export const PlatformMetricsPeriodSelector = ({
   return (
     <SegmentedControl
       aria-label={t('Register.Metrics.Period.Label')}
-      items={PERIODS.map((option) => ({
-        value: option,
-        label: t(`Register.Metrics.Period.${option}`),
-      }))}
+      items={PERIODS.map((option) => {
+        const isComingSoon = COMING_SOON_PERIODS.has(option);
+        return {
+          value: option,
+          label: t(`Register.Metrics.Period.${option}`),
+          disabled: isComingSoon,
+          tooltip: isComingSoon
+            ? t('Register.Metrics.Period.ComingSoon')
+            : undefined,
+        };
+      })}
       value={period}
       onValueChange={onPeriodChange}
       size="md"

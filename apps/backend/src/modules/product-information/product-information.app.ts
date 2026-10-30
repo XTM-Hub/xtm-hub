@@ -1,7 +1,10 @@
 import {
   FeatureFlag,
+  OrderingMode,
+  QuerySaasManagerPlatformsArgs,
   SaasPlatformData,
   SaasPlatformMetricsPeriod,
+  SaasPlatformPage,
 } from '../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { isFeatureEnabled } from '../../utils/feature-flag.util';
@@ -11,6 +14,9 @@ import { ProductInformationHelper } from './product-information.helper';
 // The metadata rarely changes and the metrics are aggregated by the hour: a short cache keeps page refreshes from
 // reaching the SaaS Manager.
 const SAAS_PLATFORM_DATA_CACHE_TTL_MS = 60_000;
+
+// Each page is one call to the SaaS Manager: the size a caller asks for is bounded so it cannot make it list them all.
+const SAAS_PLATFORMS_MAX_PAGE_SIZE = 500;
 
 interface CachedSaasPlatformData {
   data: Promise<SaasPlatformData | null>;
@@ -81,5 +87,27 @@ export const ProductInformationApp = {
       platform.platform_id,
       metricsPeriod
     );
+  },
+
+  loadSaasManagerPlatforms: async ({
+    page,
+    pageSize,
+    orderBy,
+    orderMode,
+    searchTerm,
+    product,
+  }: QuerySaasManagerPlatformsArgs): Promise<SaasPlatformPage | null> => {
+    if (!isFeatureEnabled(FeatureFlag.SaasMetrics)) {
+      return null;
+    }
+
+    // The board pages as the SaaS Manager does: its page goes through as it is.
+    return ProductInformationHelper.fetchSaasPlatforms({
+      page: Math.max(1, page),
+      page_size: Math.min(Math.max(1, pageSize), SAAS_PLATFORMS_MAX_PAGE_SIZE),
+      search: searchTerm || undefined,
+      product: product ?? undefined,
+      ordering: `${orderMode === OrderingMode.Desc ? '-' : ''}${orderBy}`,
+    });
   },
 };

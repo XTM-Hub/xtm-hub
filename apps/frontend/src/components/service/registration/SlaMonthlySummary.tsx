@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  countFullMonthsOnTarget,
   SLA_PERCENT_FORMAT,
   SLA_STATUS_CHIP_SEVERITY,
   SlaMonth,
@@ -35,7 +34,6 @@ export const SlaMonthlySummary = ({
   const { formatAvailability, formatMonth } = useSlaFormat(MONTH_FORMAT);
   // The summary reads from the current month back.
   const recentFirst = useMemo(() => [...months].reverse(), [months]);
-  const { met, total } = countFullMonthsOnTarget(months);
   const formattedTarget = format.number(target, SLA_PERCENT_FORMAT);
 
   const singleMonth = months.length === 1 ? months[0] : undefined;
@@ -90,11 +88,6 @@ export const SlaMonthlySummary = ({
           </div>
         ))}
       </dl>
-      {total > 0 && (
-        <p className="text-sm text-default-secondary">
-          {t('Register.Metrics.SLA.Summary.FullMonthsOnTarget', { met, total })}
-        </p>
-      )}
     </div>
   );
 };

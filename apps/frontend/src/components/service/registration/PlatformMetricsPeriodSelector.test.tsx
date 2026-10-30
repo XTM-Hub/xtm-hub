@@ -73,14 +73,38 @@ describe('PlatformMetricsPeriodSelector', () => {
     // When
     await user.click(
       screen.getByRole('radio', {
-        name: periodRadioName(SaasPlatformMetricsPeriod.Last_180Days),
+        name: periodRadioName(SaasPlatformMetricsPeriod.Last_30Days),
       })
     );
 
     // Then
     expect(onPeriodChange).toHaveBeenCalledExactlyOnceWith(
-      SaasPlatformMetricsPeriod.Last_180Days
+      SaasPlatformMetricsPeriod.Last_30Days
     );
+  });
+
+  it('should disable the 180 days period with a coming soon tooltip', async () => {
+    // Given
+    const { user } = testRender(
+      <PlatformMetricsPeriodSelector
+        period={SaasPlatformMetricsPeriod.Last_90Days}
+        onPeriodChange={vi.fn()}
+      />
+    );
+    const radio = screen.getByRole('radio', {
+      name: periodRadioName(SaasPlatformMetricsPeriod.Last_180Days),
+    });
+
+    // When
+    await user.hover(radio);
+
+    // Then
+    expect(radio).toHaveAttribute('aria-disabled', 'true');
+    expect(
+      await screen.findByRole('tooltip', {
+        name: 'Register.Metrics.Period.ComingSoon',
+      })
+    ).toBeInTheDocument();
   });
 
   it('should not notify a change when the selected period is clicked again', async () => {

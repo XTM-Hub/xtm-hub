@@ -11,6 +11,28 @@ export const SLA_PERCENT_FORMAT = {
 // A percent shows two more digits of the ratio than its own fraction digits.
 const SLA_RATIO_SCALE = 10 ** (SLA_PERCENT_FORMAT.maximumFractionDigits + 2);
 
+// The SaaS Manager measures the availability since then: the days before it have no data to show.
+// To remove in the #4090
+export const SLA_TRACKING_START = new Date(Date.UTC(2026, 8, 9));
+
+export const isBeforeSlaTracking = (date: Date) =>
+  date.getTime() < SLA_TRACKING_START.getTime();
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+// Why a day has no value: measured only since the tracking start, not over yet, or missed by the measures.
+export type SlaMissingDayReason = 'NotTrackedYet' | 'Upcoming' | 'NoData';
+
+export const slaMissingDayReason = (
+  date: Date,
+  now: Date
+): SlaMissingDayReason => {
+  if (isBeforeSlaTracking(date)) {
+    return 'NotTrackedYet';
+  }
+  return date.getTime() + MS_PER_DAY > now.getTime() ? 'Upcoming' : 'NoData';
+};
+
 export type SlaStatus = 'Met' | 'Missed' | 'Unknown';
 
 export const SLA_STATUS_CLASS: Record<SlaStatus, string> = {
@@ -66,16 +88,3 @@ export const toSlaMonths = ({ target, months }: SaasPlatformSla): SlaMonth[] =>
       status: slaStatus(day.availability, target),
     })),
   }));
-
-// The current month is not over yet and a month without any value says nothing: neither counts as a full month.
-export const countFullMonthsOnTarget = (
-  months: SlaMonth[]
-): { met: number; total: number } => {
-  const fullMonths = months.filter(
-    ({ isCurrent, availability }) => !isCurrent && availability !== null
-  );
-  return {
-    met: fullMonths.filter(({ status }) => status === 'Met').length,
-    total: fullMonths.length,
-  };
-};

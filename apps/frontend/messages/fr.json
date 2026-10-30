@@ -25,13 +25,28 @@
     "Title": "Capacités disponibles"
   },
   "CSMBoard": {
+    "Customer": "Client",
     "Organization": "Organisation",
     "Administrators": "Administrateurs",
     "Products": "Produits",
-    "Link": "Métriques SaaS",
+    "ProductVersion": "Version : {version}",
+    "AllProducts": "Tous les produits",
+    "Plan": "Offre",
+    "Health": "Santé",
+    "Healthy": "Sain",
+    "HealthSla": "SLA {percent}",
+    "HealthDatabase": "Base de données {percent}",
+    "HealthFileStorage": "Stockage de fichiers {percent}",
+    "Database": "Base de données",
+    "FileStorage": "Stockage de fichiers",
+    "Availability": "Disponibilité",
     "Version": "Version",
+    "ContractEnd": "Fin du contrat",
+    "EndsIn": "dans {days} j",
+    "ContractEnded": "Terminé",
+    "Link": "Métriques SaaS",
     "ViewMetrics": "Voir les métriques",
-    "SearchOrganization": "Rechercher une organisation",
+    "SearchPlatform": "Rechercher une plateforme",
     "ClearSearch": "Effacer la recherche"
   },
   "CountryComboBox": {
@@ -990,7 +1005,8 @@
         "Label": "Période des indicateurs",
         "last_30_days": "30 jours",
         "last_90_days": "90 jours",
-        "last_180_days": "180 jours"
+        "last_180_days": "180 jours",
+        "ComingSoon": "À venir"
       },
       "Database": {
         "Title": "Base de données",
@@ -1008,9 +1024,9 @@
         "OnTarget": "{availability} · Dans l'objectif",
         "BelowTarget": "{availability} · Sous l'objectif",
         "NoData": "Aucune donnée",
+        "NotTrackedYet": "Aucune donnée · Ces indicateurs n'avaient pas encore été mesurés",
         "Summary": {
           "Title": "SLA mensuel · objectif {target}",
-          "FullMonthsOnTarget": "{met} sur {total, plural, one {# mois complet} other {# mois complets}} dans l'objectif",
           "CurrentMonth": "{month} · mois en cours",
           "TargetAndMeasuredDays": "Objectif {target} · {measured} jours mesurés sur {total}"
         },
@@ -1685,6 +1701,7 @@
           "Breadcrumb": "XTM Platform Trial",
           "Overline": "Essai gratuit XTM Platform",
           "Title": "Démarrez votre essai gratuit de 30 jours",
+          "ExpiredTitle": "Vous avez terminé votre essai XTM Platform",
           "PitchTitle": "Découvrez l'expérience XTM Platform complète",
           "PitchDescription": "Profitez de 30 jours pour explorer les éditions entreprise en SaaS d'OpenCTI et OpenAEV, ainsi que les capacités d'orchestration agentique de XTM One. Unifiez votre threat intelligence et validez vos défenses grâce à une gestion continue et agentique de l'exposition et à la réduction du risque cyber.",
           "Products": {
@@ -1710,9 +1727,6 @@
             "NoSLA": "Notez que cet essai n'inclut aucun SLA. En cas de panne du fournisseur cloud, le délai de rétablissement n'est pas garanti. Nous vous recommandons de ne pas stocker de données critiques ou irremplaçables dans votre environnement d'essai."
           },
           "Form": {
-            "ProductsTitle": "Produits inclus dans cet essai",
-            "ProductsWarning": "Choisissez soigneusement votre offre d'essai.",
-            "ProductsWarningDescription": "Une fois votre période d'essai lancée, il n'est plus possible d'ajouter ou de modifier des produits, et aucune autre période d'essai ne peut être demandée pour la même organisation.",
             "UseCaseFor": "Cas d'usage {product}",
             "Submit": "Demander l'essai XTM Platform"
           },
@@ -1733,8 +1747,6 @@
             "StartedOn": "Démarré le",
             "CancelledOn": "Annulé le",
             "FinishedOn": "Terminé le",
-            "ProductsIncluded": "Produits inclus dans votre essai",
-            "ProductsIncludedInRequest": "Produits inclus dans votre demande d'essai",
             "CancelTrialRequest": "Annuler la demande d'essai",
             "request-in-progress": {
               "Title": "Merci ! Nous avons bien reçu votre demande.",
@@ -2004,7 +2016,7 @@
         "Eyebrow": "Essai gratuit XTM Platform",
         "Description": "Gérez facilement votre équipe et collaborez tout au long de votre essai XTM Platform. Invitez des membres, attribuez des rôles et des permissions, et assurez à chacun le bon niveau d'accès à la plateforme.",
         "BackButton": "Retour à l'essai XTM Platform",
-        "BackToDashboardButton": "Retour au tableau de bord",
+        "BackToDashboardButton": "Retour",
         "GroupAction": "Action groupée",
         "GroupActionDisabledTooltip": "Vous devez sélectionner des utilisateurs dans la liste pour appliquer une action groupée",
         "BulkDeleteTooltip": "Vous pouvez supprimer les utilisateurs sélectionnés",

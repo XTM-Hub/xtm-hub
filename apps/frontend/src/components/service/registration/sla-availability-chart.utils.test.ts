@@ -1,5 +1,6 @@
 import {
-  countFullMonthsOnTarget,
+  isBeforeSlaTracking,
+  slaMissingDayReason,
   slaStatus,
   toSlaMonths,
 } from '@/components/service/registration/sla-availability-chart.utils';
@@ -12,6 +13,42 @@ const monthlySla = (
   month: string,
   availability: number | null
 ): SaasPlatformSla['months'][number] => ({ month, availability, days: [] });
+
+describe('isBeforeSlaTracking', () => {
+  it.each`
+    case                          | date                          | expected
+    ${'the day before it starts'} | ${'2026-09-08T00:00:00.000Z'} | ${true}
+    ${'the day it starts'}        | ${'2026-09-09T00:00:00.000Z'} | ${false}
+    ${'a later day'}              | ${'2026-10-01T00:00:00.000Z'} | ${false}
+  `(
+    'should tell whether $case is before the availability tracking',
+    ({ date, expected }) => {
+      // Given / When
+      const result = isBeforeSlaTracking(new Date(date));
+
+      // Then
+      expect(result).toBe(expected);
+    }
+  );
+});
+
+describe('slaMissingDayReason', () => {
+  const NOW = new Date('2026-10-02T12:00:00.000Z');
+
+  it.each`
+    case                                  | date                          | reason
+    ${'before the availability tracking'} | ${'2026-09-08T00:00:00.000Z'} | ${'NotTrackedYet'}
+    ${'past and since the tracking'}      | ${'2026-10-01T00:00:00.000Z'} | ${'NoData'}
+    ${'today, not over yet'}              | ${'2026-10-02T00:00:00.000Z'} | ${'Upcoming'}
+    ${'still to come'}                    | ${'2026-10-03T00:00:00.000Z'} | ${'Upcoming'}
+  `('should tell why a day $case has no value', ({ date, reason }) => {
+    // Given / When
+    const result = slaMissingDayReason(new Date(date), NOW);
+
+    // Then
+    expect(result).toBe(reason);
+  });
+});
 
 describe('slaStatus', () => {
   it.each`
@@ -107,41 +144,5 @@ describe('toSlaMonths', () => {
 
     // Then
     expect(months.map(({ isCurrent }) => isCurrent)).toEqual([true]);
-  });
-});
-
-describe('countFullMonthsOnTarget', () => {
-  it('should count the past months with a value, and those on target among them', () => {
-    // Given
-    const months = toSlaMonths({
-      target: TARGET,
-      months: [
-        monthlySla('2026-06-01T00:00:00.000Z', null),
-        monthlySla('2026-07-01T00:00:00.000Z', 1),
-        monthlySla('2026-08-01T00:00:00.000Z', 0.9992),
-        monthlySla('2026-09-01T00:00:00.000Z', 0.9999),
-        monthlySla('2026-10-01T00:00:00.000Z', 1),
-      ],
-    });
-
-    // When
-    const count = countFullMonthsOnTarget(months);
-
-    // Then
-    expect(count).toEqual({ met: 2, total: 3 });
-  });
-
-  it('should count no full month when only the current month is known', () => {
-    // Given
-    const months = toSlaMonths({
-      target: TARGET,
-      months: [monthlySla('2026-10-01T00:00:00.000Z', 1)],
-    });
-
-    // When
-    const count = countFullMonthsOnTarget(months);
-
-    // Then
-    expect(count).toEqual({ met: 0, total: 0 });
   });
 });

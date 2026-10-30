@@ -2,7 +2,7 @@ import {
   buildDocument,
   defineServiceFormTests,
   DESCRIPTION_PLACEHOLDER,
-  fillCommonCreationFields,
+  fillCustomContentCreationFields,
   JSON_FILE_FIELD,
   renderServiceForm,
   ServiceFormResource,
@@ -26,7 +26,7 @@ describe('OpenctiPlaybookForm', () => {
     fileField: JSON_FILE_FIELD,
     shortDescriptionMaxLength: 250,
     buildEditedDocument: buildDocument,
-    fillCreationFields: fillCommonCreationFields,
+    fillCreationFields: fillCustomContentCreationFields,
     creationValues: { description: descriptionValue },
   });
 

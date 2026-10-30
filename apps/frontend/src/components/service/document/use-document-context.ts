@@ -84,9 +84,8 @@ export function useDocumentContext({
     IntegrationType.CsvFeed
   );
   const t = useTranslate();
-  const [createMutation] = useMutation<documentCreateMutation>(
-    DocumentCreateMutation
-  );
+  const [createMutation, isCreateInFlight] =
+    useMutation<documentCreateMutation>(DocumentCreateMutation);
 
   const handleAddSheet = async (
     values: ServiceFormValues,
@@ -179,9 +178,8 @@ export function useDocumentContext({
     });
   };
 
-  const [updateMutation] = useMutation<documentUpdateMutation>(
-    DocumentUpdateMutation
-  );
+  const [updateMutation, isUpdateInFlight] =
+    useMutation<documentUpdateMutation>(DocumentUpdateMutation);
 
   const handleUpdateSheet = async (
     values: ServiceFormValues,
@@ -303,5 +301,6 @@ export function useDocumentContext({
     translationKey,
     type,
     setIntegrationType,
+    isSubmitting: isCreateInFlight || isUpdateInFlight,
   };
 }

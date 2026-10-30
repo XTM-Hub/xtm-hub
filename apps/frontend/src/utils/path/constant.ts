@@ -25,3 +25,9 @@ export const xtmPlatformTrialManageUsersFromDashboardPath = (
 export const XTM_PLATFORM_TRIAL_GUIDE_PATH = `/${APP_PATH}/service/xtm-platform-trial-guide`;
 
 export const ADMIN_MANAGE_TRIALS_PATH = `/${APP_PATH}/admin/manage-trials`;
+
+export const ADMIN_CSM_BOARD_PATH = `/${APP_PATH}/admin/csm-board`;
+
+// Tells the page of a registered platform it was opened from the CSM board, to lead back to it.
+export const REGISTERED_PLATFORM_ORIGIN_PARAM = 'from';
+export const REGISTERED_PLATFORM_ORIGIN_CSM_BOARD = 'csm-board';

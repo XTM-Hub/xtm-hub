@@ -31,6 +31,10 @@ export const toUtcDayStart = (date: Date): number =>
 export const toFiniteNumber = (value: unknown): number | null =>
   typeof value === 'number' && Number.isFinite(value) ? value : null;
 
+/** A percentage as a ratio (100 is 1), without the float noise of the division: 99.9 is 0.999, not 0.9990000000000001. */
+export const percentToRatio = (percent: number): number =>
+  Number((percent / 100).toPrecision(15));
+
 export const formatName = (name: string | undefined | null): string => {
   if (!name) {
     return '';

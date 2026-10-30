@@ -83,6 +83,65 @@ enum SaasPlatformMetricsPeriod {
   last_180_days
 }
 
+# A platform as listed by the SaaS Manager.
+type SaasPlatform {
+  id: String!
+  status: String
+  # null when the SaaS Manager sends a product the Hub does not know.
+  product: SaasProduct
+  customer: String
+  commercial_model: String
+  # The availability the SaaS Manager measured, as a ratio (1 is 100 %).
+  sla_cmtd: Float
+  metadata: SaasPlatformMetadata!
+  storage: SaasPlatformStorage
+  # The issues of the platform, the most severe first: empty when it is healthy, null when the SaaS Manager has no
+  # measure of it, which then cannot be told healthy.
+  health_issues: [SaasPlatformHealthIssue!]
+  # Where the platform stands in its contract on its end date; null without an end date.
+  contract_status: SaasPlatformContractStatus
+  # The active SaaS registration of the platform in the Hub, matched on its platform_id; null when it is not registered.
+  registered_platform: RegisteredPlatform
+}
+
+# A measure of a platform that breaks its contract, or soon will: the availability under the SLA target, a storage
+# almost full.
+enum SaasPlatformHealthIssue {
+  availability
+  database
+  file_storage
+}
+
+# Within the contract, its renewal due in less than 90 days, or over.
+enum SaasPlatformContractStatus {
+  active
+  ending_soon
+  ended
+}
+
+# A page of the platforms, as the SaaS Manager pages them.
+type SaasPlatformPage {
+  totalCount: Int!
+  # The platforms the SaaS Manager cannot tell apart, without an id, are left out.
+  platforms: [SaasPlatform!]!
+}
+
+# The fields the SaaS Manager can order the platforms by, named as it expects them: it silently ignores any other.
+# The customer is a relation, ordered by its name.
+enum SaasPlatformOrdering {
+  customer__name
+  product
+  plan
+  end_date
+}
+
+# The products the SaaS Manager can filter the platforms on, named by its codes.
+enum SaasProduct {
+  OCTI
+  OAEV
+  ONE
+}
+
 input RegisteredSaasPlatformDataInput {
   service_instance_id: ServiceInstanceId!
   metrics_period: SaasPlatformMetricsPeriod!
@@ -92,4 +151,15 @@ type Query {
   registeredSaasPlatformData(
     input: RegisteredSaasPlatformDataInput!
   ): SaasPlatformData @auth(portalCapa: [BYPASS, READ_SAAS_METRICS])
+  # The platforms the SaaS Manager knows, paged, searched, filtered and ordered by it; null when it cannot be reached.
+  saasManagerPlatforms(
+    # From 1.
+    page: Int!
+    # At most 500.
+    pageSize: Int!
+    orderBy: SaasPlatformOrdering!
+    orderMode: OrderingMode!
+    searchTerm: String
+    product: SaasProduct
+  ): SaasPlatformPage @auth(portalCapa: [BYPASS, READ_SAAS_METRICS])
 }

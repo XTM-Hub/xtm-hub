@@ -4,8 +4,6 @@ import { XtmPlatformTrialRequestStepper } from '@/components/service/trial-insta
 import { XtmPlatformTrialStatusPanelState } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/xtm-platform-trial-panel.utils';
 import { useTranslate } from '@/hooks/use-translate';
 import { useDateFormatter } from '@/utils/date';
-import { Checkbox } from '@filigran/design-system';
-import { PlatformIdentifier } from '@graphql/generated';
 import { ReactNode } from 'react';
 
 export type XtmPlatformTrialStatusPanelDateRowLabelKey =
@@ -20,7 +18,6 @@ interface XtmPlatformTrialStatusPanelProps {
   state: XtmPlatformTrialStatusPanelState;
   requesterEmail: string;
   dateRows: XtmPlatformTrialStatusPanelDateRow[];
-  products: PlatformIdentifier[];
   stepIndex?: number;
   actions?: ReactNode;
 }
@@ -29,14 +26,11 @@ export const XtmPlatformTrialStatusPanel = ({
   state,
   requesterEmail,
   dateRows,
-  products,
   stepIndex,
   actions,
 }: XtmPlatformTrialStatusPanelProps) => {
   const t = useTranslate();
   const formatDate = useDateFormatter();
-  const isInProgress =
-    state === XtmPlatformTrialStatusPanelState.RequestInProgress;
 
   const renderDateRow = ({
     labelKey,
@@ -71,27 +65,6 @@ export const XtmPlatformTrialStatusPanel = ({
             {dateRows.map(renderDateRow)}
           </div>
         )}
-      </div>
-
-      <div className="flex flex-col gap-2 rounded p-4 layer-3 bg-elevation-default">
-        <h3 className="title-xs">
-          {t(
-            isInProgress
-              ? 'Service.Trials.XtmPlatform.Page.Status.ProductsIncludedInRequest'
-              : 'Service.Trials.XtmPlatform.Page.Status.ProductsIncluded'
-          )}
-        </h3>
-        <div className="flex items-center gap-6">
-          {products.map((product) => (
-            <Checkbox
-              key={product}
-              id={`status-product-${product}`}
-              label={t(`PlatformIdentifier.${product}`)}
-              checked
-              disabled
-            />
-          ))}
-        </div>
       </div>
 
       <div className="flex flex-col items-center justify-center gap-6 rounded border border-[var(--border-elevation-subtle-layer-3)] px-6 py-16 text-center">

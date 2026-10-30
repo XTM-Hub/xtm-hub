@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   formatName,
+  percentToRatio,
   toFiniteNumber,
   toIsoDate,
   toUtcDayStart,
@@ -89,6 +90,20 @@ describe('toFiniteNumber', () => {
     ${'undefined'}        | ${undefined}
   `('should return null for $case', ({ input }) => {
     expect(toFiniteNumber(input)).toBeNull();
+  });
+});
+
+describe('percentToRatio', () => {
+  it.each`
+    percent   | ratio
+    ${0}      | ${0}
+    ${12.5}   | ${0.125}
+    ${99.9}   | ${0.999}
+    ${99.975} | ${0.99975}
+    ${100}    | ${1}
+    ${150}    | ${1.5}
+  `('should return $ratio for $percent %', ({ percent, ratio }) => {
+    expect(percentToRatio(percent)).toBe(ratio);
   });
 });
 

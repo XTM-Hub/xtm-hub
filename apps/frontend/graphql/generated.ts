@@ -2038,7 +2038,7 @@ export type Query = {
   registeredProductVersions: Array<RegisteredProductVersion>;
   registeredSaasPlatformData: Maybe<SaasPlatformData>;
   rolePortals: Array<RolePortal>;
-  saasPlatforms: RegisteredPlatformConnection;
+  saasManagerPlatforms: Maybe<SaasPlatformPage>;
   seoServiceInstance: SeoServiceInstance;
   seoServiceInstanceMetadata: Array<SeoServiceInstanceMetadata>;
   seoServiceInstances: Array<SeoServiceInstance>;
@@ -2279,11 +2279,12 @@ export type QueryRegisteredSaasPlatformDataArgs = {
 };
 
 
-export type QuerySaasPlatformsArgs = {
-  after: InputMaybe<Scalars['ID']['input']>;
-  first: Scalars['Int']['input'];
-  orderBy: RegisteredPlatformOrdering;
+export type QuerySaasManagerPlatformsArgs = {
+  orderBy: SaasPlatformOrdering;
   orderMode: OrderingMode;
+  page: Scalars['Int']['input'];
+  pageSize: Scalars['Int']['input'];
+  product: InputMaybe<SaasProduct>;
   searchTerm: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -2484,26 +2485,9 @@ export type RegisteredPlatform = Node & {
   version: Maybe<Scalars['String']['output']>;
 };
 
-export type RegisteredPlatformConnection = {
-  __typename?: 'RegisteredPlatformConnection';
-  edges: Array<RegisteredPlatformEdge>;
-  pageInfo: PageInfo;
-  totalCount: Scalars['Int']['output'];
-};
-
-export type RegisteredPlatformEdge = {
-  __typename?: 'RegisteredPlatformEdge';
-  cursor: Scalars['String']['output'];
-  node: RegisteredPlatform;
-};
-
 export type RegisteredPlatformInput = {
   service_instance_id: Scalars['ServiceInstanceId']['input'];
 };
-
-export enum RegisteredPlatformOrdering {
-  OrganizationName = 'organization_name'
-}
 
 export type RegisteredPlatformsInput = {
   hasDeployedResources: InputMaybe<Scalars['Boolean']['input']>;
@@ -2584,6 +2568,27 @@ export type SsoGroupRolePortal = {
   ssoGroup: Scalars['String']['output'];
 };
 
+export type SaasPlatform = {
+  __typename?: 'SaasPlatform';
+  commercial_model: Maybe<Scalars['String']['output']>;
+  contract_status: Maybe<SaasPlatformContractStatus>;
+  customer: Maybe<Scalars['String']['output']>;
+  health_issues: Maybe<Array<SaasPlatformHealthIssue>>;
+  id: Scalars['String']['output'];
+  metadata: SaasPlatformMetadata;
+  product: Maybe<SaasProduct>;
+  registered_platform: Maybe<RegisteredPlatform>;
+  sla_cmtd: Maybe<Scalars['Float']['output']>;
+  status: Maybe<Scalars['String']['output']>;
+  storage: Maybe<SaasPlatformStorage>;
+};
+
+export enum SaasPlatformContractStatus {
+  Active = 'active',
+  Ended = 'ended',
+  EndingSoon = 'ending_soon'
+}
+
 export type SaasPlatformDailySla = {
   __typename?: 'SaasPlatformDailySla';
   availability: Maybe<Scalars['Float']['output']>;
@@ -2597,6 +2602,12 @@ export type SaasPlatformData = {
   sla: Maybe<SaasPlatformSla>;
   storage: Maybe<SaasPlatformStorage>;
 };
+
+export enum SaasPlatformHealthIssue {
+  Availability = 'availability',
+  Database = 'database',
+  FileStorage = 'file_storage'
+}
 
 export type SaasPlatformMetadata = {
   __typename?: 'SaasPlatformMetadata';
@@ -2640,6 +2651,19 @@ export type SaasPlatformMonthlySla = {
   month: Scalars['Date']['output'];
 };
 
+export enum SaasPlatformOrdering {
+  CustomerName = 'customer__name',
+  EndDate = 'end_date',
+  Plan = 'plan',
+  Product = 'product'
+}
+
+export type SaasPlatformPage = {
+  __typename?: 'SaasPlatformPage';
+  platforms: Array<SaasPlatform>;
+  totalCount: Scalars['Int']['output'];
+};
+
 export enum SaasPlatformResolution {
   Day = 'day',
   Hour = 'hour'
@@ -2663,6 +2687,12 @@ export type SaasPlatformStorageUsage = {
   percent: Maybe<Scalars['Float']['output']>;
   used: Maybe<Scalars['Float']['output']>;
 };
+
+export enum SaasProduct {
+  Oaev = 'OAEV',
+  Octi = 'OCTI',
+  One = 'ONE'
+}
 
 export type SendTelemetryMutation = {
   __typename?: 'SendTelemetryMutation';
@@ -3947,16 +3977,19 @@ export type SsoGroupRolePortalsQueryVariables = Exact<{ [key: string]: never; }>
 
 export type SsoGroupRolePortalsQuery = { __typename?: 'Query', ssoGroupRolePortals: Array<{ __typename?: 'SSOGroupRolePortal', ssoGroup: string, rolePortal: { __typename?: 'RolePortal', id: string, name: string } }> };
 
-export type SaasPlatformsListQueryVariables = Exact<{
-  first: Scalars['Int']['input'];
-  after: InputMaybe<Scalars['ID']['input']>;
-  orderBy: RegisteredPlatformOrdering;
+export type SaasPlatformRowFragment = { __typename?: 'SaasPlatform', id: string, product: SaasProduct | null, customer: string | null, sla_cmtd: number | null, health_issues: Array<SaasPlatformHealthIssue> | null, contract_status: SaasPlatformContractStatus | null, metadata: { __typename?: 'SaasPlatformMetadata', plan: string | null, end_date: any | null }, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null } | null, registered_platform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, identifier: ServiceDefinitionIdentifier, version: string | null, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } | null };
+
+export type SaasManagerPlatformsListQueryVariables = Exact<{
+  page: Scalars['Int']['input'];
+  pageSize: Scalars['Int']['input'];
+  orderBy: SaasPlatformOrdering;
   orderMode: OrderingMode;
   searchTerm: InputMaybe<Scalars['String']['input']>;
+  product: InputMaybe<SaasProduct>;
 }>;
 
 
-export type SaasPlatformsListQuery = { __typename?: 'Query', saasPlatforms: { __typename?: 'RegisteredPlatformConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor: string | null }, edges: Array<{ __typename?: 'RegisteredPlatformEdge', node: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, platform_id: string, tenant_id: string | null, tenant_name: string | null, url: string, title: string, version: string | null, contract: PlatformContract, status: PlatformConfigurationStatus | null, last_connectivity_check: any | null, identifier: ServiceDefinitionIdentifier, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } }> } };
+export type SaasManagerPlatformsListQuery = { __typename?: 'Query', saasManagerPlatforms: { __typename?: 'SaasPlatformPage', totalCount: number, platforms: Array<{ __typename?: 'SaasPlatform', id: string, product: SaasProduct | null, customer: string | null, sla_cmtd: number | null, health_issues: Array<SaasPlatformHealthIssue> | null, contract_status: SaasPlatformContractStatus | null, metadata: { __typename?: 'SaasPlatformMetadata', plan: string | null, end_date: any | null }, storage: { __typename?: 'SaasPlatformStorage', es_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null, s3_used_size: { __typename?: 'SaasPlatformStorageUsage', percent: number | null } | null } | null, registered_platform: { __typename?: 'RegisteredPlatform', id: string, service_instance_id: any, identifier: ServiceDefinitionIdentifier, version: string | null, organization: { __typename?: 'Organization', id: string, name: string, administrator_emails: Array<string> | null } | null } | null }> } | null };
 
 export type AddUsersToBundleGroupsMutationVariables = Exact<{
   serviceInstanceId: Scalars['ServiceInstanceId']['input'];
@@ -4552,6 +4585,39 @@ export const OrganizationItemFragmentDoc = `
   name
   domains
   personal_space
+}
+    `;
+export const SaasPlatformRowFragmentDoc = `
+    fragment SaasPlatformRow on SaasPlatform {
+  id
+  product
+  customer
+  metadata {
+    plan
+    end_date
+  }
+  sla_cmtd
+  storage {
+    es_used_size {
+      percent
+    }
+    s3_used_size {
+      percent
+    }
+  }
+  health_issues
+  contract_status
+  registered_platform {
+    id
+    service_instance_id
+    identifier
+    version
+    organization {
+      id
+      name
+      administrator_emails
+    }
+  }
 }
     `;
 export const SeoServiceInstanceItemFragmentDoc = `
@@ -7290,89 +7356,68 @@ useInfiniteSsoGroupRolePortalsQuery.getKey = (variables?: SsoGroupRolePortalsQue
 useInfiniteSsoGroupRolePortalsQuery.getRootKey = () => ['SSOGroupRolePortals.infinite'] as const;
 useSsoGroupRolePortalsQuery.fetcher = (client: GraphQLClient, variables?: SsoGroupRolePortalsQueryVariables, headers?: RequestInit['headers']) => fetcher<SsoGroupRolePortalsQuery, SsoGroupRolePortalsQueryVariables>(client, SsoGroupRolePortalsDocument, variables, headers);
 
-export const SaasPlatformsListDocument = `
-    query SaasPlatformsList($first: Int!, $after: ID, $orderBy: RegisteredPlatformOrdering!, $orderMode: OrderingMode!, $searchTerm: String) {
-  saasPlatforms(
-    first: $first
-    after: $after
+export const SaasManagerPlatformsListDocument = `
+    query SaasManagerPlatformsList($page: Int!, $pageSize: Int!, $orderBy: SaasPlatformOrdering!, $orderMode: OrderingMode!, $searchTerm: String, $product: SaasProduct) {
+  saasManagerPlatforms(
+    page: $page
+    pageSize: $pageSize
     orderBy: $orderBy
     orderMode: $orderMode
     searchTerm: $searchTerm
+    product: $product
   ) {
     totalCount
-    pageInfo {
-      hasNextPage
-      endCursor
-    }
-    edges {
-      node {
-        id
-        service_instance_id
-        platform_id
-        tenant_id
-        tenant_name
-        url
-        title
-        version
-        contract
-        status
-        last_connectivity_check
-        identifier
-        organization {
-          id
-          name
-          administrator_emails
-        }
-      }
+    platforms {
+      ...SaasPlatformRow
     }
   }
 }
-    `;
+    ${SaasPlatformRowFragmentDoc}`;
 
-export const useSaasPlatformsListQuery = <
-      TData = SaasPlatformsListQuery,
+export const useSaasManagerPlatformsListQuery = <
+      TData = SaasManagerPlatformsListQuery,
       TError = unknown
     >(
       client: GraphQLClient,
-      variables: SaasPlatformsListQueryVariables,
-      options?: Omit<UseQueryOptions<SaasPlatformsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<SaasPlatformsListQuery, TError, TData>['queryKey'] },
+      variables: SaasManagerPlatformsListQueryVariables,
+      options?: Omit<UseQueryOptions<SaasManagerPlatformsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<SaasManagerPlatformsListQuery, TError, TData>['queryKey'] },
       headers?: RequestInit['headers']
     ) => {
     
-    return useQuery<SaasPlatformsListQuery, TError, TData>(
+    return useQuery<SaasManagerPlatformsListQuery, TError, TData>(
       {
-    queryKey: ['SaasPlatformsList', variables],
-    queryFn: fetcher<SaasPlatformsListQuery, SaasPlatformsListQueryVariables>(client, SaasPlatformsListDocument, variables, headers),
+    queryKey: ['SaasManagerPlatformsList', variables],
+    queryFn: fetcher<SaasManagerPlatformsListQuery, SaasManagerPlatformsListQueryVariables>(client, SaasManagerPlatformsListDocument, variables, headers),
     ...options
   }
     )};
 
-useSaasPlatformsListQuery.getKey = (variables: SaasPlatformsListQueryVariables) => ['SaasPlatformsList', variables];
-useSaasPlatformsListQuery.getRootKey = () => ['SaasPlatformsList'] as const;
-export const useInfiniteSaasPlatformsListQuery = <
-      TData = InfiniteData<SaasPlatformsListQuery>,
+useSaasManagerPlatformsListQuery.getKey = (variables: SaasManagerPlatformsListQueryVariables) => ['SaasManagerPlatformsList', variables];
+useSaasManagerPlatformsListQuery.getRootKey = () => ['SaasManagerPlatformsList'] as const;
+export const useInfiniteSaasManagerPlatformsListQuery = <
+      TData = InfiniteData<SaasManagerPlatformsListQuery>,
       TError = unknown
     >(
       client: GraphQLClient,
-      variables: SaasPlatformsListQueryVariables,
-      options: Omit<UseInfiniteQueryOptions<SaasPlatformsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<SaasPlatformsListQuery, TError, TData>['queryKey'] },
+      variables: SaasManagerPlatformsListQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<SaasManagerPlatformsListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<SaasManagerPlatformsListQuery, TError, TData>['queryKey'] },
       headers?: RequestInit['headers']
     ) => {
     
-    return useInfiniteQuery<SaasPlatformsListQuery, TError, TData>(
+    return useInfiniteQuery<SaasManagerPlatformsListQuery, TError, TData>(
       (() => {
     const { queryKey: optionsQueryKey, ...restOptions } = options;
     return {
-      queryKey: optionsQueryKey ?? ['SaasPlatformsList.infinite', variables],
-      queryFn: (metaData) => fetcher<SaasPlatformsListQuery, SaasPlatformsListQueryVariables>(client, SaasPlatformsListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      queryKey: optionsQueryKey ?? ['SaasManagerPlatformsList.infinite', variables],
+      queryFn: (metaData) => fetcher<SaasManagerPlatformsListQuery, SaasManagerPlatformsListQueryVariables>(client, SaasManagerPlatformsListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
       ...restOptions
     }
   })()
     )};
 
-useInfiniteSaasPlatformsListQuery.getKey = (variables: SaasPlatformsListQueryVariables) => ['SaasPlatformsList.infinite', variables];
-useInfiniteSaasPlatformsListQuery.getRootKey = () => ['SaasPlatformsList.infinite'] as const;
-useSaasPlatformsListQuery.fetcher = (client: GraphQLClient, variables: SaasPlatformsListQueryVariables, headers?: RequestInit['headers']) => fetcher<SaasPlatformsListQuery, SaasPlatformsListQueryVariables>(client, SaasPlatformsListDocument, variables, headers);
+useInfiniteSaasManagerPlatformsListQuery.getKey = (variables: SaasManagerPlatformsListQueryVariables) => ['SaasManagerPlatformsList.infinite', variables];
+useInfiniteSaasManagerPlatformsListQuery.getRootKey = () => ['SaasManagerPlatformsList.infinite'] as const;
+useSaasManagerPlatformsListQuery.fetcher = (client: GraphQLClient, variables: SaasManagerPlatformsListQueryVariables, headers?: RequestInit['headers']) => fetcher<SaasManagerPlatformsListQuery, SaasManagerPlatformsListQueryVariables>(client, SaasManagerPlatformsListDocument, variables, headers);
 
 export const AddUsersToBundleGroupsDocument = `
     mutation AddUsersToBundleGroups($serviceInstanceId: ServiceInstanceId!, $input: AddUsersToBundleGroupsInput!) {

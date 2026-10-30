@@ -25,13 +25,28 @@
     "Title": "利用可能な機能"
   },
   "CSMBoard": {
+    "Customer": "顧客",
     "Organization": "組織",
     "Administrators": "管理者",
     "Products": "製品",
-    "Link": "SaaS指標",
+    "ProductVersion": "バージョン: {version}",
+    "AllProducts": "すべての製品",
+    "Plan": "プラン",
+    "Health": "ヘルス",
+    "Healthy": "正常",
+    "HealthSla": "SLA {percent}",
+    "HealthDatabase": "データベース {percent}",
+    "HealthFileStorage": "ファイルストレージ {percent}",
+    "Database": "データベース",
+    "FileStorage": "ファイルストレージ",
+    "Availability": "可用性",
     "Version": "バージョン",
+    "ContractEnd": "契約終了日",
+    "EndsIn": "あと{days}日",
+    "ContractEnded": "終了",
+    "Link": "SaaS指標",
     "ViewMetrics": "メトリクスを見る",
-    "SearchOrganization": "組織検索",
+    "SearchPlatform": "プラットフォーム検索",
     "ClearSearch": "検索をクリア"
   },
   "CountryComboBox": {
@@ -990,7 +1005,8 @@
         "Label": "メトリクスの期間",
         "last_30_days": "30日間",
         "last_90_days": "90日間",
-        "last_180_days": "180日間"
+        "last_180_days": "180日間",
+        "ComingSoon": "近日公開予定"
       },
       "Database": {
         "Title": "データベース",
@@ -1008,9 +1024,9 @@
         "OnTarget": "{availability}（目標達成）",
         "BelowTarget": "{availability}（目標未達）",
         "NoData": "データなし",
+        "NotTrackedYet": "データなし · 指標はまだ測定されていません",
         "Summary": {
           "Title": "月次SLA・目標 {target}",
-          "FullMonthsOnTarget": "{total}か月中{met}か月が目標達成",
           "CurrentMonth": "{month}・月初から現在まで",
           "TargetAndMeasuredDays": "目標 {target}・{total}日中{measured}日測定済み"
         },
@@ -1685,6 +1701,7 @@
           "Breadcrumb": "XTM Platform Trial",
           "Overline": "XTM Platform 無料トライアル",
           "Title": "30日間の無料トライアルを開始",
+          "ExpiredTitle": "XTM Platform トライアルが終了しました",
           "PitchTitle": "XTM Platform のすべてを体験する",
           "PitchDescription": "30日間、OpenCTI と OpenAEV の SaaS 版エンタープライズエディション、および XTM One のエージェンティックなオーケストレーション機能をご利用いただけます。脅威インテリジェンスを統合し、エージェンティックかつ継続的なエクスポージャー管理とサイバーリスク低減によって防御を検証しましょう。",
           "Products": {
@@ -1710,9 +1727,6 @@
             "NoSLA": "本トライアルに SLA は含まれません。クラウドプロバイダーの障害が発生した場合、復旧時間は保証されません。トライアル環境には重要なデータや代替できないデータを保存しないことを推奨します。"
           },
           "Form": {
-            "ProductsTitle": "このトライアルに含まれる製品",
-            "ProductsWarning": "トライアルバンドルは慎重にお選びください。",
-            "ProductsWarningDescription": "トライアルが開始されると、製品の追加や変更はできなくなり、また、同じ組織に対して追加のトライアルを申請することもできません。",
             "UseCaseFor": "{product} のユースケース",
             "Submit": "XTM Platform トライアルを申請"
           },
@@ -1733,8 +1747,6 @@
             "StartedOn": "開始日",
             "CancelledOn": "キャンセル日",
             "FinishedOn": "終了日",
-            "ProductsIncluded": "トライアルに含まれる製品",
-            "ProductsIncludedInRequest": "トライアル申請に含まれる製品",
             "CancelTrialRequest": "トライアル申請をキャンセル",
             "request-in-progress": {
               "Title": "ありがとうございます。リクエストを受け付けました。",
@@ -2004,7 +2016,7 @@
         "Eyebrow": "XTM Platform 無料トライアル",
         "Description": "XTM Platform のトライアル期間中、チームを簡単に管理し、共同作業を行いましょう。メンバーを招待し、役割と権限を割り当てて、全員がプラットフォームに適切なレベルでアクセスできるようにします。",
         "BackButton": "XTM Platform トライアルに戻る",
-        "BackToDashboardButton": "ダッシュボードに戻る",
+        "BackToDashboardButton": "戻る",
         "GroupAction": "グループアクション",
         "GroupActionDisabledTooltip": "グループアクションを適用するには、リストからユーザーを選択する必要があります",
         "BulkDeleteTooltip": "選択したユーザーを削除できます",
