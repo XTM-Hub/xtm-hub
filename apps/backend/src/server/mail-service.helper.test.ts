@@ -252,13 +252,16 @@ describe('renderEmail', () => {
       expect(html).not.toContain('full capacity');
     });
 
-    it('should render the cancellation wording, the chosen products and the community link', async () => {
+    it('should render the cancellation wording, the bundle products and the community link', async () => {
       const html = await renderEmail('free_trial_bundle_cancelled', {
         firstName: 'User',
         productNames: 'OpenCTI and XTM One',
         products: [PlatformIdentifier.Opencti, PlatformIdentifier.Xtmone],
       });
 
+      expect(html.replace(/\s+/g, ' ')).toContain(
+        'You no longer have access to <strong>OpenCTI and XTM One</strong> in your trial environment.'
+      );
       expect(html.replace(/\s+/g, ' ')).toContain(
         'If you have any questions or need support, don’t hesitate to contact us at'
       );
@@ -660,7 +663,10 @@ describe('free_trial_bundle_user_added', () => {
     expect(html).toContain('You’ve Been Added to an XTM Platform Trial');
     expect(html).toContain('Hi Alice,');
     expect(html).toMatch(/by\s+admin@filigran\.io\./);
-    expect(html).toContain('<strong>OpenCTI and XTM One</strong>');
+    expect(html.replace(/\s+/g, ' ')).toContain(
+      'You’ll have access to <strong>OpenCTI and XTM One</strong> as part of this trial.'
+    );
+    expect(html).not.toContain('selected');
     expect(html).toMatch(
       /You have 12 days remaining\s+until the end of the trial\./
     );
@@ -698,6 +704,64 @@ describe('free_trial_bundle_user_added', () => {
       })
     ).toBe('You’ve Been Added to an XTM Platform Trial');
   });
+});
+
+describe('bundle trial product list', () => {
+  afterEach(() => {
+    clearTemplateCache();
+  });
+
+  const renderBundleTrialEmail = (
+    template: 'free_trial_bundle_user_added' | 'free_trial_bundle_cancelled',
+    products: PlatformIdentifier[]
+  ) => {
+    const params = {
+      firstName: 'User',
+      productNames: formatProductNames(products),
+      products,
+    };
+
+    return template === 'free_trial_bundle_user_added'
+      ? renderEmail(template, {
+          ...params,
+          adminEmail: 'admin@filigran.io',
+          daysLeft: 12,
+          platformUrl: 'https://trial.filigran.cloud',
+        })
+      : renderEmail(template, params);
+  };
+
+  it.each([
+    'free_trial_bundle_user_added',
+    'free_trial_bundle_cancelled',
+  ] as const)(
+    'should only list the products of a partial bundle in %s',
+    async (template) => {
+      const html = await renderBundleTrialEmail(template, [
+        PlatformIdentifier.Xtmone,
+        PlatformIdentifier.Opencti,
+      ]);
+
+      expect(html).toContain('<strong>OpenCTI and XTM One</strong>');
+      expect(html).not.toContain('OpenAEV');
+    }
+  );
+
+  it.each([
+    'free_trial_bundle_user_added',
+    'free_trial_bundle_cancelled',
+  ] as const)(
+    'should list every product of a full bundle in %s',
+    async (template) => {
+      const html = await renderBundleTrialEmail(template, [
+        PlatformIdentifier.Xtmone,
+        PlatformIdentifier.Openaev,
+        PlatformIdentifier.Opencti,
+      ]);
+
+      expect(html).toContain('<strong>OpenCTI, OpenAEV, and XTM One</strong>');
+    }
+  );
 });
 
 describe('bundle trial subjects', () => {
