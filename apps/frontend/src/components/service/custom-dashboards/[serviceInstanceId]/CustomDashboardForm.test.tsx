@@ -2,7 +2,7 @@ import { CustomDashboardForm } from '@/components/service/custom-dashboards/[ser
 import {
   buildDocument,
   defineServiceFormTests,
-  fillCommonCreationFields,
+  fillCustomContentCreationFields,
   JSON_FILE_FIELD,
   NEW_DESCRIPTION,
   ServiceFormResource,
@@ -23,7 +23,7 @@ describe('CustomDashboardForm', () => {
     shortDescriptionMaxLength: 255,
     buildEditedDocument: buildDocument,
     fillCreationFields: async (user) => {
-      await fillCommonCreationFields(user);
+      await fillCustomContentCreationFields(user);
       await typeNewDescription(user);
     },
     creationValues: { description: NEW_DESCRIPTION },
