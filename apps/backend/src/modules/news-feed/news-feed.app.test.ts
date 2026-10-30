@@ -1,6 +1,14 @@
 import config from 'config';
 import { v4 as uuidv4 } from 'uuid';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type MockInstance,
+  vi,
+} from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   requestContextSimpleUserSecondOrga,
@@ -11,17 +19,25 @@ import {
   IntegrationType,
   NewsFeedItemMetadataKey,
   NewsFeedItemType,
+  PlatformConfigurationStatus,
   PlatformContract,
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
 } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
 import Document from '../../model/kanel/public/Document';
+import { NewsFeedItemId } from '../../model/kanel/public/NewsFeedItem';
 import { ObjectUseCaseObjectId } from '../../model/kanel/public/ObjectUseCase';
 import { OrganizationId } from '../../model/kanel/public/Organization';
 import PlatformConfigurationModel from '../../model/kanel/public/PlatformConfiguration';
 import { ProvisionedNewsFeedItemPlatformId } from '../../model/kanel/public/ProvisionedNewsFeedItem';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
+import { BlogApiClient } from '../../thirdparty/blog-api/client';
+import {
+  BlogApiError,
+  BlogApiErrorCode,
+} from '../../thirdparty/blog-api/errors';
+import type { BlogFeedItem } from '../../thirdparty/blog-api/schema';
 import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode } from '../../utils/error/error.code';
 import { RequiredPlatformVersions } from '../../utils/required-platform-version';
@@ -1397,6 +1413,35 @@ describe('newsFeedApp', () => {
       expect(remainingIds).toContain(recentItem.id);
     });
 
+    it('should keep the active blogposts, whatever their publication date', async () => {
+      // Given
+      const activeBlogpost = await TestHelper.newsFeed.createItem({
+        type: NewsFeedItemType.BlogPost,
+        platform_identifier: PlatformIdentifier.Opencti,
+        title: 'old active blogpost',
+        creation_date: monthsAgo(7),
+        tags: [],
+      });
+      const droppedBlogpost = await TestHelper.newsFeed.createItem({
+        type: NewsFeedItemType.BlogPost,
+        platform_identifier: PlatformIdentifier.Opencti,
+        title: 'old dropped blogpost',
+        creation_date: monthsAgo(7),
+        is_deleted: true,
+        tags: [],
+      });
+
+      // When
+      await NewsFeedApp.cleanExpiredNewsFeedItems();
+
+      // Then
+      const remainingIds = (await TestHelper.newsFeed.loadItems()).map(
+        (item) => item.id
+      );
+      expect(remainingIds).toContain(activeBlogpost.id);
+      expect(remainingIds).not.toContain(droppedBlogpost.id);
+    });
+
     it('should not throw when no items exist', async () => {
       await expect(
         NewsFeedApp.cleanExpiredNewsFeedItems()
@@ -1665,6 +1710,704 @@ describe('newsFeedApp', () => {
 
       // Then
       expect(result).toBeUndefined();
+    });
+  });
+
+  describe('syncBlogposts', () => {
+    const SUPPORTED_VERSION = '7.260529.0';
+    const ABOVE_VERSION = '7.260601.0';
+    const BELOW_VERSION = '7.260101.0';
+
+    // The higher the number, the older the post: post 1 is the newest
+    const buildPost = (
+      number: number,
+      overrides: Partial<BlogFeedItem> = {}
+    ): BlogFeedItem => ({
+      id: `post-${number}`,
+      slug: `blog-post-${number}`,
+      title: `Blog post ${number}`,
+      summary: `Summary of the blog post ${number}`,
+      image: {
+        url: `https://filigran.io/api/media/file/blog-post-${number}.png`,
+        alt: `Image of the blog post ${number}`,
+      },
+      authors: [{ name: 'Romain Guignard' }],
+      categories: [
+        { slug: 'threat-intelligence', label: 'Threat Intelligence' },
+      ],
+      products: ['opencti'],
+      read_minutes: 7,
+      published_at: new Date(Date.UTC(2026, 8, 30 - number, 8)).toISOString(),
+      ...overrides,
+    });
+    const buildFeed = (...numbers: number[]): BlogFeedItem[] =>
+      numbers.map((number) => buildPost(number));
+
+    // Saved once and restored in afterEach, so that a failing test cannot leak the override
+    const originalBlogpostSupport =
+      RequiredPlatformVersions.NewsFeedBlogpostSupport;
+    const setRequiredBlogpostVersion = (requiredVersion: string | null) => {
+      RequiredPlatformVersions.NewsFeedBlogpostSupport = {
+        [PlatformIdentifier.Opencti]: requiredVersion,
+        [PlatformIdentifier.Openaev]: null,
+        [PlatformIdentifier.Xtmone]: null,
+      };
+    };
+
+    let fetchBlogFeedSpy: MockInstance<typeof BlogApiClient.fetchBlogFeed>;
+    let provisionSpy:
+      MockInstance<typeof NewsFeedDomain.provisionNewsFeedItem> | undefined;
+
+    const mockFeed = (posts: BlogFeedItem[]) =>
+      fetchBlogFeedSpy.mockResolvedValue(posts);
+
+    const loadBlogpostItem = async (slug: string) => {
+      const [slugMetadata] = await TestHelper.newsFeed.loadMetadata({
+        key: NewsFeedItemMetadataKey.BlogPostSlug,
+        value: slug,
+      });
+      if (!slugMetadata) {
+        return undefined;
+      }
+      return TestHelper.newsFeed.loadFirstItem({
+        id: slugMetadata.news_feed_item_id,
+      });
+    };
+
+    const loadMetadataValues = async (newsFeedItemId: NewsFeedItemId) => {
+      const metadata = await TestHelper.newsFeed.loadMetadata({
+        news_feed_item_id: newsFeedItemId,
+      });
+      return Object.fromEntries(metadata.map(({ key, value }) => [key, value]));
+    };
+
+    // Everything the sync writes, in a stable order, to compare two states of the database
+    const loadBlogpostState = async () => {
+      const items = await TestHelper.newsFeed.loadItems({
+        type: NewsFeedItemType.BlogPost,
+      });
+      const state = await Promise.all(
+        items.map(async (item) => ({
+          item,
+          metadata: await loadMetadataValues(item.id),
+          provisioned: (
+            await TestHelper.newsFeed.loadProvisioned({
+              news_feed_item_id: item.id,
+            })
+          )
+            .map(({ platform_id }) => platform_id)
+            .sort(),
+        }))
+      );
+      return state.sort((a, b) => a.item.title.localeCompare(b.item.title));
+    };
+
+    beforeEach(() => {
+      fetchBlogFeedSpy = vi.spyOn(BlogApiClient, 'fetchBlogFeed');
+      setRequiredBlogpostVersion(SUPPORTED_VERSION);
+    });
+
+    afterEach(async () => {
+      RequiredPlatformVersions.NewsFeedBlogpostSupport =
+        originalBlogpostSupport;
+      fetchBlogFeedSpy.mockRestore();
+      provisionSpy?.mockRestore();
+      provisionSpy = undefined;
+      await TestHelper.newsFeed.deleteItem();
+      await cleanupCreatedServiceInstances();
+    });
+
+    it('should ask the blog API for the newest posts of the mapped product', async () => {
+      // Given
+      mockFeed([]);
+
+      // When
+      await NewsFeedApp.syncBlogposts();
+
+      // Then
+      expect(fetchBlogFeedSpy).toHaveBeenCalledTimes(1);
+      expect(fetchBlogFeedSpy).toHaveBeenCalledWith({
+        product: 'opencti',
+        limit: 6,
+      });
+    });
+
+    it('should import the posts of the first call as blogpost items', async () => {
+      // Given
+      mockFeed(buildFeed(1, 2, 3));
+
+      // When
+      const result = await NewsFeedApp.syncBlogposts();
+
+      // Then
+      expect(result).toEqual({
+        created: 3,
+        updated: 0,
+        dropped: 0,
+        provisionedPlatforms: 0,
+      });
+      expect(await TestHelper.newsFeed.loadItems()).toHaveLength(3);
+      const firstPost = buildPost(1);
+      const firstItem = await loadBlogpostItem(firstPost.slug);
+      expect(firstItem).toMatchObject({
+        type: NewsFeedItemType.BlogPost,
+        platform_identifier: PlatformIdentifier.Opencti,
+        title: 'Blog post 1',
+        creation_date: new Date(firstPost.published_at),
+        tags: ['Threat Intelligence'],
+        is_deleted: false,
+      });
+      expect(await loadMetadataValues(firstItem!.id)).toEqual({
+        [NewsFeedItemMetadataKey.UrlPath]: NewsFeedHelper.buildRedirectUrlPath(
+          firstItem!.id
+        ),
+        [NewsFeedItemMetadataKey.Description]: 'Summary of the blog post 1',
+        [NewsFeedItemMetadataKey.ImageUrl]:
+          'https://filigran.io/api/media/file/blog-post-1.png',
+        [NewsFeedItemMetadataKey.ImageAlt]: 'Image of the blog post 1',
+        [NewsFeedItemMetadataKey.AuthorNames]: '["Romain Guignard"]',
+        [NewsFeedItemMetadataKey.ReadMinutes]: '7',
+        [NewsFeedItemMetadataKey.BlogPostSlug]: 'blog-post-1',
+      });
+    });
+
+    it('should keep the distinct category labels as tags', async () => {
+      // Given
+      mockFeed([
+        buildPost(1, {
+          categories: [
+            { slug: 'threat-intelligence', label: 'Threat Intelligence' },
+            { slug: 'partnership', label: 'Partnership' },
+            { slug: 'threat-intel', label: 'Threat Intelligence' },
+          ],
+        }),
+      ]);
+
+      // When
+      await NewsFeedApp.syncBlogposts();
+
+      // Then
+      const item = await loadBlogpostItem('blog-post-1');
+      expect(item?.tags).toEqual(['Threat Intelligence', 'Partnership']);
+    });
+
+    it('should omit the metadata that the post does not have', async () => {
+      // Given
+      mockFeed([
+        buildPost(1, {
+          summary: '',
+          image: null,
+          authors: [],
+          read_minutes: null,
+          categories: [],
+        }),
+      ]);
+
+      // When
+      await NewsFeedApp.syncBlogposts();
+
+      // Then
+      const item = await loadBlogpostItem('blog-post-1');
+      expect(item?.tags).toEqual([]);
+      expect(await loadMetadataValues(item!.id)).toEqual({
+        [NewsFeedItemMetadataKey.UrlPath]: NewsFeedHelper.buildRedirectUrlPath(
+          item!.id
+        ),
+        [NewsFeedItemMetadataKey.BlogPostSlug]: 'blog-post-1',
+      });
+    });
+
+    it('should store the names of all the authors as a JSON array', async () => {
+      // Given
+      mockFeed([
+        buildPost(1, {
+          authors: [{ name: 'Romain Guignard' }, { name: 'Ada Lovelace' }],
+        }),
+      ]);
+
+      // When
+      await NewsFeedApp.syncBlogposts();
+
+      // Then
+      const item = await loadBlogpostItem('blog-post-1');
+      const metadata = await loadMetadataValues(item!.id);
+      expect(metadata[NewsFeedItemMetadataKey.AuthorNames]).toBe(
+        '["Romain Guignard","Ada Lovelace"]'
+      );
+    });
+
+    it('should add a new post and keep the existing ones', async () => {
+      // Given
+      mockFeed(buildFeed(2, 3));
+      await NewsFeedApp.syncBlogposts();
+      const existingItem = await loadBlogpostItem('blog-post-2');
+      mockFeed(buildFeed(1, 2, 3));
+
+      // When
+      const result = await NewsFeedApp.syncBlogposts();
+
+      // Then
+      expect(result).toMatchObject({ created: 1, updated: 2, dropped: 0 });
+      expect(await TestHelper.newsFeed.loadItems()).toHaveLength(3);
+      expect(await loadBlogpostItem('blog-post-2')).toMatchObject({
+        id: existingItem!.id,
+        is_deleted: false,
+      });
+      expect(await loadBlogpostItem('blog-post-1')).toMatchObject({
+        title: 'Blog post 1',
+        is_deleted: false,
+      });
+    });
+
+    it('should rewrite an updated post, including the metadata that disappeared', async () => {
+      // Given
+      mockFeed(buildFeed(1, 2));
+      await NewsFeedApp.syncBlogposts();
+      const existingItem = await loadBlogpostItem('blog-post-1');
+      mockFeed([
+        buildPost(1, {
+          title: 'A new title',
+          summary: 'A new summary',
+          image: null,
+          authors: [],
+          read_minutes: 9,
+          categories: [{ slug: 'partnership', label: 'Partnership' }],
+        }),
+        buildPost(2),
+      ]);
+
+      // When
+      const result = await NewsFeedApp.syncBlogposts();
+
+      // Then
+      expect(result).toMatchObject({ created: 0, updated: 2, dropped: 0 });
+      expect(await loadBlogpostItem('blog-post-1')).toMatchObject({
+        id: existingItem!.id,
+        title: 'A new title',
+        tags: ['Partnership'],
+        is_deleted: false,
+      });
+      expect(await loadMetadataValues(existingItem!.id)).toEqual({
+        [NewsFeedItemMetadataKey.UrlPath]: NewsFeedHelper.buildRedirectUrlPath(
+          existingItem!.id
+        ),
+        [NewsFeedItemMetadataKey.Description]: 'A new summary',
+        [NewsFeedItemMetadataKey.ReadMinutes]: '9',
+        [NewsFeedItemMetadataKey.BlogPostSlug]: 'blog-post-1',
+      });
+    });
+
+    it('should drop the post that leaves the latest posts when a 7th post appears', async () => {
+      // Given
+      mockFeed(buildFeed(1, 2, 3, 4, 5, 6));
+      await NewsFeedApp.syncBlogposts();
+      mockFeed(buildFeed(0, 1, 2, 3, 4, 5));
+
+      // When
+      const result = await NewsFeedApp.syncBlogposts();
+
+      // Then
+      expect(result).toMatchObject({ created: 1, updated: 5, dropped: 1 });
+      expect(await loadBlogpostItem('blog-post-6')).toMatchObject({
+        is_deleted: true,
+      });
+      const activeItems = await TestHelper.newsFeed.loadItems({
+        is_deleted: false,
+      });
+      expect(activeItems.map(({ title }) => title).sort()).toEqual([
+        'Blog post 0',
+        'Blog post 1',
+        'Blog post 2',
+        'Blog post 3',
+        'Blog post 4',
+        'Blog post 5',
+      ]);
+    });
+
+    it('should drop an unpublished post and keep its metadata for a later restore', async () => {
+      // Given
+      mockFeed(buildFeed(1, 2, 3));
+      await NewsFeedApp.syncBlogposts();
+      mockFeed(buildFeed(1, 3));
+
+      // When
+      const result = await NewsFeedApp.syncBlogposts();
+
+      // Then
+      expect(result).toMatchObject({ created: 0, updated: 2, dropped: 1 });
+      const droppedItem = await loadBlogpostItem('blog-post-2');
+      expect(droppedItem).toMatchObject({ is_deleted: true });
+      expect(await loadMetadataValues(droppedItem!.id)).toMatchObject({
+        [NewsFeedItemMetadataKey.BlogPostSlug]: 'blog-post-2',
+      });
+    });
+
+    it('should restore a post that returns instead of creating a new item', async () => {
+      // Given
+      mockFeed(buildFeed(1, 2, 3));
+      await NewsFeedApp.syncBlogposts();
+      const initialItem = await loadBlogpostItem('blog-post-2');
+      mockFeed(buildFeed(1, 3));
+      await NewsFeedApp.syncBlogposts();
+      mockFeed([
+        buildPost(1),
+        buildPost(2, { title: 'Back again' }),
+        buildPost(3),
+      ]);
+
+      // When
+      const result = await NewsFeedApp.syncBlogposts();
+
+      // Then
+      expect(result).toMatchObject({ created: 0, updated: 3, dropped: 0 });
+      expect(await TestHelper.newsFeed.loadItems()).toHaveLength(3);
+      expect(await loadBlogpostItem('blog-post-2')).toMatchObject({
+        id: initialItem!.id,
+        title: 'Back again',
+        is_deleted: false,
+      });
+    });
+
+    it('should leave the data identical when the same feed is synchronized again', async () => {
+      // Given
+      await createOpenCTIPlatformForOrganization(
+        uuidv4(),
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+      );
+      await createOpenCTIPlatformForOrganization(
+        uuidv4(),
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+      );
+      mockFeed(buildFeed(1, 2, 3, 4, 5, 6));
+      const firstResult = await NewsFeedApp.syncBlogposts();
+      const stateAfterFirstCall = await loadBlogpostState();
+
+      // When
+      const secondResult = await NewsFeedApp.syncBlogposts();
+
+      // Then
+      expect(firstResult).toEqual({
+        created: 6,
+        updated: 0,
+        dropped: 0,
+        provisionedPlatforms: 2,
+      });
+      expect(secondResult).toEqual({
+        created: 0,
+        updated: 6,
+        dropped: 0,
+        provisionedPlatforms: 2,
+      });
+      expect(await loadBlogpostState()).toEqual(stateAfterFirstCall);
+    });
+
+    it('should provision every item of the feed to the platforms that support blogposts', async () => {
+      // Given
+      const supportedPlatformId = uuidv4();
+      const newerPlatformId = uuidv4();
+      const organizationId = TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID;
+      await createOpenCTIPlatformForOrganization(
+        supportedPlatformId,
+        organizationId,
+        { platform_version: SUPPORTED_VERSION }
+      );
+      await createOpenCTIPlatformForOrganization(
+        newerPlatformId,
+        organizationId,
+        { platform_version: ABOVE_VERSION }
+      );
+      await createOpenCTIPlatformForOrganization(uuidv4(), organizationId, {
+        platform_version: BELOW_VERSION,
+      });
+      await createOpenCTIPlatformForOrganization(uuidv4(), organizationId, {
+        platform_version: null,
+      });
+      await createOpenCTIPlatformForOrganization(uuidv4(), organizationId, {
+        platform_version: 'not-a-version',
+      });
+      mockFeed(buildFeed(1, 2));
+
+      // When
+      const result = await NewsFeedApp.syncBlogposts();
+
+      // Then
+      expect(result.provisionedPlatforms).toBe(2);
+      const provisioned = await TestHelper.newsFeed.loadProvisioned({});
+      expect(provisioned).toHaveLength(4);
+      expect(
+        new Set(provisioned.map(({ platform_id }) => platform_id))
+      ).toEqual(new Set([supportedPlatformId, newerPlatformId]));
+      const items = await TestHelper.newsFeed.loadItems();
+      expect(
+        new Set(provisioned.map(({ news_feed_item_id }) => news_feed_item_id))
+      ).toEqual(new Set(items.map(({ id }) => id)));
+    });
+
+    it('should not provision any platform when the blogpost gate is disabled', async () => {
+      // Given
+      setRequiredBlogpostVersion(null);
+      await createOpenCTIPlatformForOrganization(
+        uuidv4(),
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+      );
+      mockFeed(buildFeed(1, 2));
+
+      // When
+      const result = await NewsFeedApp.syncBlogposts();
+
+      // Then
+      expect(result).toEqual({
+        created: 2,
+        updated: 0,
+        dropped: 0,
+        provisionedPlatforms: 0,
+      });
+      expect(await TestHelper.newsFeed.loadProvisioned({})).toHaveLength(0);
+    });
+
+    it('should provision a restored item to the platforms that support blogposts', async () => {
+      // Given
+      const platformId = uuidv4();
+      await createOpenCTIPlatformForOrganization(
+        platformId,
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+      );
+      mockFeed(buildFeed(1, 2));
+      await NewsFeedApp.syncBlogposts();
+      mockFeed(buildFeed(1));
+      await NewsFeedApp.syncBlogposts();
+      await TestHelper.newsFeed.deleteProvisioned();
+      mockFeed(buildFeed(1, 2));
+
+      // When
+      await NewsFeedApp.syncBlogposts();
+
+      // Then
+      const restoredItem = await loadBlogpostItem('blog-post-2');
+      expect(restoredItem?.is_deleted).toBe(false);
+      expect(
+        await TestHelper.newsFeed.loadProvisioned({
+          news_feed_item_id: restoredItem!.id,
+        })
+      ).toMatchObject([{ platform_id: platformId }]);
+    });
+
+    it('should provision the dropped items so that the platforms delete them', async () => {
+      // Given
+      const platformId = uuidv4();
+      await createOpenCTIPlatformForOrganization(
+        platformId,
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+      );
+      mockFeed(buildFeed(1, 2));
+      await NewsFeedApp.syncBlogposts();
+      await TestHelper.newsFeed.deleteProvisioned();
+      mockFeed(buildFeed(1));
+
+      // When
+      await NewsFeedApp.syncBlogposts();
+
+      // Then
+      const droppedItem = await loadBlogpostItem('blog-post-2');
+      expect(droppedItem?.is_deleted).toBe(true);
+      expect(
+        await TestHelper.newsFeed.loadProvisioned({
+          news_feed_item_id: droppedItem!.id,
+        })
+      ).toMatchObject([{ platform_id: platformId }]);
+    });
+
+    it('should only provision the actively registered platforms', async () => {
+      // Given
+      const activePlatformId = uuidv4();
+      await createOpenCTIPlatformForOrganization(
+        activePlatformId,
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+      );
+      await createOpenCTIPlatformForOrganization(
+        uuidv4(),
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        { status: PlatformConfigurationStatus.Inactive }
+      );
+      mockFeed(buildFeed(1));
+
+      // When
+      const result = await NewsFeedApp.syncBlogposts();
+
+      // Then
+      expect(result.provisionedPlatforms).toBe(1);
+      expect(await TestHelper.newsFeed.loadProvisioned({})).toMatchObject([
+        { platform_id: activePlatformId },
+      ]);
+    });
+
+    it('should leave the other products and the other types of items untouched', async () => {
+      // Given
+      const openAevPlatformId = uuidv4();
+      const openAevServiceInstance = await TestHelper.serviceInstance.create({
+        service_definition_id: SERVICES.DEFINITIONS.OPENAEV_REGISTRATION.ID,
+      });
+      createdServiceInstanceIds.push(openAevServiceInstance.id);
+      await TestHelper.platformConfiguration.create({
+        service_instance_id: openAevServiceInstance.id,
+        platform_id: openAevPlatformId,
+        platform_version: SUPPORTED_VERSION,
+      });
+      const dashboardItem = await TestHelper.newsFeed.createItem({
+        type: NewsFeedItemType.ResourceCustomDashboard,
+        platform_identifier: PlatformIdentifier.Opencti,
+        title: 'A dashboard',
+      });
+      const openAevBlogpostItem = await TestHelper.newsFeed.createItem({
+        type: NewsFeedItemType.BlogPost,
+        platform_identifier: PlatformIdentifier.Openaev,
+        title: 'An OpenAEV blogpost',
+      });
+      await TestHelper.newsFeed.createMetadata({
+        news_feed_item_id: openAevBlogpostItem.id,
+        key: NewsFeedItemMetadataKey.BlogPostSlug,
+        value: 'openaev-blog-post',
+      });
+      mockFeed(buildFeed(1));
+
+      // When
+      const result = await NewsFeedApp.syncBlogposts();
+
+      // Then
+      expect(result).toMatchObject({ created: 1, updated: 0, dropped: 0 });
+      expect(
+        await TestHelper.newsFeed.loadFirstItem({ id: dashboardItem.id })
+      ).toMatchObject({ title: 'A dashboard', is_deleted: false });
+      expect(
+        await TestHelper.newsFeed.loadFirstItem({ id: openAevBlogpostItem.id })
+      ).toMatchObject({ title: 'An OpenAEV blogpost', is_deleted: false });
+      expect(
+        await TestHelper.newsFeed.loadProvisioned({
+          platform_id: openAevPlatformId,
+        })
+      ).toHaveLength(0);
+    });
+
+    it('should refuse an empty feed while blogpost items are active, and change nothing', async () => {
+      // Given
+      await createOpenCTIPlatformForOrganization(
+        uuidv4(),
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+      );
+      mockFeed(buildFeed(1, 2));
+      await NewsFeedApp.syncBlogposts();
+      const stateBefore = await loadBlogpostState();
+      mockFeed([]);
+
+      // When
+      const sync = NewsFeedApp.syncBlogposts();
+
+      // Then
+      await expect(sync).rejects.toThrow(ErrorCode.NewsFeedBlogpostEmptyFeed);
+      expect(await loadBlogpostState()).toEqual(stateBefore);
+    });
+
+    it('should accept an empty feed when the Hub holds no active blogpost item', async () => {
+      // Given
+      const droppedItem = await TestHelper.newsFeed.createItem({
+        type: NewsFeedItemType.BlogPost,
+        title: 'A dropped blogpost',
+        is_deleted: true,
+      });
+      await TestHelper.newsFeed.createMetadata({
+        news_feed_item_id: droppedItem.id,
+        key: NewsFeedItemMetadataKey.BlogPostSlug,
+        value: 'a-dropped-blog-post',
+      });
+      mockFeed([]);
+
+      // When
+      const result = await NewsFeedApp.syncBlogposts();
+
+      // Then
+      expect(result).toEqual({
+        created: 0,
+        updated: 0,
+        dropped: 0,
+        provisionedPlatforms: 0,
+      });
+      expect(
+        await TestHelper.newsFeed.loadFirstItem({ id: droppedItem.id })
+      ).toMatchObject({ is_deleted: true });
+    });
+
+    it('should change nothing when the blog API fails', async () => {
+      // Given
+      mockFeed(buildFeed(1, 2));
+      await NewsFeedApp.syncBlogposts();
+      const stateBefore = await loadBlogpostState();
+      fetchBlogFeedSpy.mockRejectedValue(
+        new BlogApiError(BlogApiErrorCode.Unreachable, 'Blog API unreachable')
+      );
+
+      // When
+      const sync = NewsFeedApp.syncBlogposts();
+
+      // Then
+      await expect(sync).rejects.toThrow('Blog API unreachable');
+      expect(await loadBlogpostState()).toEqual(stateBefore);
+    });
+
+    it('should roll back everything when the feed holds two posts with the same slug', async () => {
+      // Given
+      await createOpenCTIPlatformForOrganization(
+        uuidv4(),
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+      );
+      mockFeed(buildFeed(1, 2));
+      await NewsFeedApp.syncBlogposts();
+      const stateBefore = await loadBlogpostState();
+      mockFeed([
+        buildPost(1, { title: 'A new title' }),
+        buildPost(3),
+        buildPost(3, { id: 'post-3-duplicate', title: 'Duplicate of post 3' }),
+      ]);
+
+      // When
+      const sync = NewsFeedApp.syncBlogposts();
+
+      // Then
+      await expect(sync).rejects.toThrow();
+      expect(await loadBlogpostItem('blog-post-3')).toBeUndefined();
+      expect(await loadBlogpostState()).toEqual(stateBefore);
+    });
+
+    it('should roll back the reconciliation when the provisioning fails', async () => {
+      // Given
+      await createOpenCTIPlatformForOrganization(
+        uuidv4(),
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+      );
+      mockFeed(buildFeed(1, 2));
+      await NewsFeedApp.syncBlogposts();
+      await TestHelper.newsFeed.deleteProvisioned();
+      const stateBefore = await loadBlogpostState();
+      // The post 0 is created, the post 1 rewritten and the post 2 dropped
+      mockFeed([buildPost(0), buildPost(1, { title: 'A new title' })]);
+      const droppedItemId = (await loadBlogpostItem('blog-post-2'))!.id;
+      // The real provisioning writes the created and the updated items, the dropped one is the failure
+      const provisionNewsFeedItem = NewsFeedDomain.provisionNewsFeedItem;
+      provisionSpy = vi
+        .spyOn(NewsFeedDomain, 'provisionNewsFeedItem')
+        .mockImplementation(async (newsFeedItemId, platformIds) => {
+          if (newsFeedItemId === droppedItemId) {
+            throw new Error('provisioning failed');
+          }
+          await provisionNewsFeedItem(newsFeedItemId, platformIds);
+        });
+
+      // When
+      const sync = NewsFeedApp.syncBlogposts();
+
+      // Then
+      await expect(sync).rejects.toThrow('provisioning failed');
+      expect(await loadBlogpostItem('blog-post-0')).toBeUndefined();
+      expect(await loadBlogpostState()).toEqual(stateBefore);
     });
   });
 });
