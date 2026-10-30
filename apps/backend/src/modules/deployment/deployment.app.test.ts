@@ -399,7 +399,7 @@ describe('deployment app', () => {
               PlatformIdentifier.Openaev,
               PlatformIdentifier.Opencti,
               PlatformIdentifier.Xtmone,
-            ].sort()
+            ]
           );
         }
       );
