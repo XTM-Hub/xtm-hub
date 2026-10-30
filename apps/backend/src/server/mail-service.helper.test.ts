@@ -252,15 +252,15 @@ describe('renderEmail', () => {
       expect(html).not.toContain('full capacity');
     });
 
-    it('should render the cancellation wording, the bundle products and the community link', async () => {
+    it('should render the cancellation wording and the community link without listing the products', async () => {
       const html = await renderEmail('free_trial_bundle_cancelled', {
         firstName: 'User',
-        productNames: 'OpenCTI and XTM One',
-        products: [PlatformIdentifier.Opencti, PlatformIdentifier.Xtmone],
+        productNames: bundleProductNames,
+        products: bundleProducts,
       });
 
       expect(html.replace(/\s+/g, ' ')).toContain(
-        'You no longer have access to <strong>OpenCTI and XTM One</strong> in your trial environment.'
+        'We want to inform you that your <strong>XTM Platform Trial</strong> has been cancelled. As a result, you no longer have access to your trial environments.'
       );
       expect(html.replace(/\s+/g, ' ')).toContain(
         'If you have any questions or need support, don’t hesitate to contact us at'
@@ -268,8 +268,9 @@ describe('renderEmail', () => {
       expect(html).toContain(
         'https://filigran-community.slack.com/archives/CHNEM9NUT'
       );
-      expect(html).toContain('OpenCTI and XTM One');
+      expect(html).not.toContain('OpenCTI');
       expect(html).not.toContain('OpenAEV');
+      expect(html).not.toContain('XTM One');
     });
 
     it('should render the expiration wording', async () => {
@@ -664,7 +665,7 @@ describe('free_trial_bundle_user_added', () => {
     expect(html).toContain('Hi Alice,');
     expect(html).toMatch(/by\s+admin@filigran\.io\./);
     expect(html.replace(/\s+/g, ' ')).toContain(
-      'You’ll have access to <strong>OpenCTI and XTM One</strong> as part of this trial.'
+      'You’ll have access to the XTM Platform products: <strong>OpenCTI and XTM One</strong>.'
     );
     expect(html).not.toContain('selected');
     expect(html).toMatch(
@@ -712,29 +713,19 @@ describe('bundle trial product list', () => {
   });
 
   const renderBundleTrialEmail = (
-    template: 'free_trial_bundle_user_added' | 'free_trial_bundle_cancelled',
+    template: 'free_trial_bundle_user_added',
     products: PlatformIdentifier[]
-  ) => {
-    const params = {
+  ) =>
+    renderEmail(template, {
       firstName: 'User',
       productNames: formatProductNames(products),
       products,
-    };
+      adminEmail: 'admin@filigran.io',
+      daysLeft: 12,
+      platformUrl: 'https://trial.filigran.cloud',
+    });
 
-    return template === 'free_trial_bundle_user_added'
-      ? renderEmail(template, {
-          ...params,
-          adminEmail: 'admin@filigran.io',
-          daysLeft: 12,
-          platformUrl: 'https://trial.filigran.cloud',
-        })
-      : renderEmail(template, params);
-  };
-
-  it.each([
-    'free_trial_bundle_user_added',
-    'free_trial_bundle_cancelled',
-  ] as const)(
+  it.each(['free_trial_bundle_user_added'] as const)(
     'should only list the products of a partial bundle in %s',
     async (template) => {
       const html = await renderBundleTrialEmail(template, [
@@ -747,10 +738,7 @@ describe('bundle trial product list', () => {
     }
   );
 
-  it.each([
-    'free_trial_bundle_user_added',
-    'free_trial_bundle_cancelled',
-  ] as const)(
+  it.each(['free_trial_bundle_user_added'] as const)(
     'should list every product of a full bundle in %s',
     async (template) => {
       const html = await renderBundleTrialEmail(template, [
