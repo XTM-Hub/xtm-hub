@@ -165,7 +165,7 @@ describe('NewsFeedList', () => {
     ).toHaveLength(1);
   });
 
-  it('renders a placeholder instead of a library label for a blog post row', () => {
+  it('renders the blogpost label instead of a library label for a blog post row', () => {
     mocks.newsFeedItems = [
       {
         id: 'item-3',
@@ -185,7 +185,10 @@ describe('NewsFeedList', () => {
       within(row).getByText('formatted:2025-01-22T08:00:00.000Z')
     ).toBeInTheDocument();
     expect(within(row).getByText('tag-4')).toBeInTheDocument();
-    expect(within(row).getByText('—')).toBeInTheDocument();
+    expect(
+      within(row).getByText('NewsFeedAdminPage.Blogpost')
+    ).toBeInTheDocument();
+    expect(within(row).queryByText('—')).not.toBeInTheDocument();
     expect(row).not.toHaveTextContent(
       new RegExp(Object.values(ServiceSlug).join('|'))
     );
@@ -198,6 +201,28 @@ describe('NewsFeedList', () => {
     expect(
       within(row).getByText(ServiceSlug.OPEN_CTI_PLAYBOOKS)
     ).toBeInTheDocument();
+  });
+
+  it('renders the library label of a scenario item', () => {
+    mocks.newsFeedItems = [
+      {
+        id: 'item-4',
+        title: 'Scenario news',
+        type: NewsFeedItemType.ResourceScenario,
+        creation_date: '2025-01-23T08:00:00.000Z',
+        tags: [],
+        is_deleted: false,
+        metadata: [],
+      },
+    ];
+
+    testRender(<NewsFeedList />);
+
+    const row = screen.getByText('Scenario news').closest('tr')!;
+    expect(
+      within(row).getByText(ServiceSlug.OPEN_AEV_SCENARIOS)
+    ).toBeInTheDocument();
+    expect(within(row).queryByText('—')).not.toBeInTheDocument();
   });
 
   it('navigates to the item url_path when a row is clicked', async () => {

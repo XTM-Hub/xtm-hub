@@ -32,7 +32,7 @@ const getUrlPath = (item: NewsFeedItemRowFragment): string | undefined =>
   item.metadata.find((m) => m.key === NewsFeedItemMetadataKey.UrlPath)?.value ??
   undefined;
 
-// A type that does not point to a resource of a library (e.g. a blog post) has no service slug
+// A blog post has no library of its own, so it is labelled before this lookup
 const NEWS_FEED_TYPE_TO_SERVICE_SLUG: Partial<
   Record<NewsFeedItemType, ServiceSlug>
 > = {
@@ -41,6 +41,7 @@ const NEWS_FEED_TYPE_TO_SERVICE_SLUG: Partial<
   [NewsFeedItemType.ResourcePlaybook]: ServiceSlug.OPEN_CTI_PLAYBOOKS,
   [NewsFeedItemType.ResourceCustomView]: ServiceSlug.OPEN_CTI_CUSTOM_VIEWS,
   [NewsFeedItemType.ResourceIntegration]: ServiceSlug.OPEN_CTI_INTEGRATIONS,
+  [NewsFeedItemType.ResourceScenario]: ServiceSlug.OPEN_AEV_SCENARIOS,
 };
 
 const NewsFeedList = () => {
@@ -110,6 +111,9 @@ const NewsFeedList = () => {
         id: 'library',
         header: t('NewsFeedAdminPage.Library'),
         cell: ({ row }) => {
+          if (row.original.type === NewsFeedItemType.BlogPost) {
+            return <span>{t('NewsFeedAdminPage.Blogpost')}</span>;
+          }
           const slug = NEWS_FEED_TYPE_TO_SERVICE_SLUG[row.original.type];
           if (!slug) {
             // Explicit placeholder: an empty cell reads as missing data, not as "not applicable"
