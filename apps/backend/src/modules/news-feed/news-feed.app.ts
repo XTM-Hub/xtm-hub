@@ -430,6 +430,14 @@ export const NewsFeedApp = {
   }: {
     newsFeedItemId: string;
   }): Promise<void> => {
+    // Blog items are owned by the blogpost synchronization: only it can drop them
+    const existingItemType = await NewsFeedDomain.loadNewsFeedItemTypeById(
+      newsFeedItemId as NewsFeedItemId
+    );
+    if (existingItemType === NewsFeedItemType.BlogPost) {
+      throw new Error(ErrorCode.CantDeleteBlogpostNewsFeedItem);
+    }
+
     const newsFeedItem = await NewsFeedDomain.markNewsFeedItemAsDeleted(
       newsFeedItemId as NewsFeedItemId
     );

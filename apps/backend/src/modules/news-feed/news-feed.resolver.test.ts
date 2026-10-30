@@ -7,7 +7,7 @@ import {
 import { NewsFeedItemMetadataKey } from '../../__generated__/resolvers-types';
 import { NewsFeedItemId } from '../../model/kanel/public/NewsFeedItem';
 import { UserLoadUserBy } from '../../model/user';
-import { UnknownErrorCode } from '../../utils/error/error.code';
+import { ErrorCode, UnknownErrorCode } from '../../utils/error/error.code';
 import { NewsFeedApp } from './news-feed.app';
 import { NewsFeedDomain } from './news-feed.domain';
 import newsFeedResolver from './news-feed.resolver';
@@ -179,6 +179,27 @@ describe('deleteNewsFeedItem GraphQL mutation', () => {
 
     // Then
     await expect(call).rejects.toThrow(UnknownErrorCode.UnknownError);
+  });
+
+  it('should throw the mapped forbidden error when the item is a blog post', async () => {
+    // Given
+    vi.spyOn(NewsFeedApp, 'deleteNewsFeedItem').mockRejectedValue(
+      new Error(ErrorCode.CantDeleteBlogpostNewsFeedItem)
+    );
+
+    // When
+    const call = newsFeedResolver.Mutation!.deleteNewsFeedItem!(
+      {},
+      { id: 'blog-post-id' as NewsFeedItemId },
+      contextSimpleUserFiligran2,
+      GRAPHQL_RESOLVE_INFO
+    );
+
+    // Then
+    await expect(call).rejects.toMatchObject({
+      message: ErrorCode.CantDeleteBlogpostNewsFeedItem,
+      data: { http_status: 403 },
+    });
   });
 });
 

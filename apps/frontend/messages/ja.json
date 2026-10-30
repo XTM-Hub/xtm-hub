@@ -310,6 +310,7 @@
       "CANT_ADD_DISABLED_USER": "プラットフォームで無効になっているユーザーを追加できない",
       "CANT_ADD_USER_TO_PERSONAL_SPACE": "パーソナルスペースにユーザーを追加することはできません",
       "CANT_CANCEL_BUNDLE_PRODUCT": "XTM Platform Trial 内の個別の製品はキャンセルできない",
+      "CANT_DELETE_BLOGPOST_NEWS_FEED_ITEM": "ブログ記事は同期によって管理されているため、削除できません",
       "CANT_DELETE_BUILTIN_USER": "この組み込みユーザーは削除できません",
       "CANT_DELETE_YOURSELF": "自分のアカウントを削除することはできません",
       "CANT_REMOVE_LAST_ADMINISTRATOR": "組織の最後の管理者を削除することはできない",
@@ -712,6 +713,7 @@
     "IsDeleted": "削除",
     "IsDeletedYes": "削除",
     "Delete": "削除",
+    "DeleteBlogpostDisabled": "ブログ記事は同期によって管理されるため、削除できません",
     "DeleteSuccess": "ニュースフィード項目 \"{title}\" は正常に削除されました。",
     "DeleteError": "ニュースフィードアイテムの削除中にエラーが発生しました。",
     "DeleteDialog": {

@@ -61,10 +61,18 @@ vi.mock('@/components/ui/IconActions', () => ({
   IconActionsItem: ({
     children,
     onClick,
+    disabled,
   }: {
     children: ReactNode;
     onClick?: () => void;
-  }) => <button onClick={onClick}>{children}</button>,
+    disabled?: boolean;
+  }) => (
+    <button
+      onClick={onClick}
+      disabled={disabled}>
+      {children}
+    </button>
+  ),
 }));
 
 vi.mock('@/components/ui/ConfirmDialog', () => ({
