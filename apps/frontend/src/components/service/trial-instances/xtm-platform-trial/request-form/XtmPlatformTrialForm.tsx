@@ -1,5 +1,6 @@
 import { PortalContext } from '@/components/me/AppPortalContext';
 import {
+  PRODUCTS_WITH_USE_CASE,
   REGIONS,
   REGIONS_VALUES,
   USE_CASES_BY_PLATFORM_IDENTIFIER,
@@ -19,7 +20,6 @@ import {
   withFiligranWebsiteUtm,
 } from '@/utils/filigran-website-utm';
 import { Button, Checkbox } from '@filigran/design-system';
-import { WarningIcon } from '@filigran/icon';
 import {
   DeploymentRequestActivitySector,
   DeploymentRequestJobTitle,
@@ -29,7 +29,7 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { ReactNode, useContext, useMemo } from 'react';
-import { useFieldArray, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 const buildXtmPlatformTrialFormSchema = (t: (key: string) => string) =>
@@ -37,25 +37,14 @@ const buildXtmPlatformTrialFormSchema = (t: (key: string) => string) =>
     region: z.enum(REGIONS_VALUES),
     job_title: z.enum(DeploymentRequestJobTitle),
     activity_sector: z.enum(DeploymentRequestActivitySector),
-    products: z.array(z.enum(PlatformIdentifier)),
-    use_cases_by_product: z
-      .array(
-        z.object({
-          platform_identifier: z.enum(PlatformIdentifier),
-          use_case: z.enum(DeploymentRequestUseCase).optional(),
-        })
-      )
-      .superRefine((entries, ctx) => {
-        entries.forEach((entry, index) => {
-          if (!entry.use_case) {
-            ctx.addIssue({
-              path: [index, 'use_case'],
-              code: 'custom',
-              message: t('Service.Trials.Form.Error.UseCase'),
-            });
-          }
-        });
-      }),
+    use_cases_by_product: z.array(
+      z.object({
+        platform_identifier: z.enum(PlatformIdentifier),
+        use_case: z.enum(DeploymentRequestUseCase, {
+          error: t('Service.Trials.Form.Error.UseCase'),
+        }),
+      })
+    ),
     acceptTerms: z.boolean().refine((value) => value === true, {
       error: t('Service.Trials.Form.Error.AcceptTerms'),
     }),
@@ -64,11 +53,6 @@ const buildXtmPlatformTrialFormSchema = (t: (key: string) => string) =>
 export const xtmPlatformTrialFormSchema = buildXtmPlatformTrialFormSchema(
   (key) => key
 );
-
-const SELECTABLE_PRODUCTS = [
-  PlatformIdentifier.Opencti,
-  PlatformIdentifier.Openaev,
-];
 
 interface XtmPlatformTrialFormProps {
   handleSubmit: (values: z.infer<typeof xtmPlatformTrialFormSchema>) => void;
@@ -112,53 +96,15 @@ export const XtmPlatformTrialForm = ({
   const form = useForm<z.infer<typeof xtmPlatformTrialFormSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      products: [
-        PlatformIdentifier.Opencti,
-        PlatformIdentifier.Openaev,
-        PlatformIdentifier.Xtmone,
-      ],
-      use_cases_by_product: SELECTABLE_PRODUCTS.map((platformIdentifier) => ({
-        platform_identifier: platformIdentifier,
-        use_case: undefined,
-      })),
+      use_cases_by_product: PRODUCTS_WITH_USE_CASE.map(
+        (platformIdentifier) => ({
+          platform_identifier: platformIdentifier,
+          use_case: undefined,
+        })
+      ),
       acceptTerms: false,
     },
   });
-
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: 'use_cases_by_product',
-  });
-
-  const products = form.watch('products');
-
-  const hasSelectableProduct = products.some(
-    (product) => product !== PlatformIdentifier.Xtmone
-  );
-
-  const toggleProduct = (
-    platformIdentifier: PlatformIdentifier,
-    checked: boolean
-  ) => {
-    if (checked) {
-      form.setValue('products', [...products, platformIdentifier]);
-      append({
-        platform_identifier: platformIdentifier,
-        use_case: undefined,
-      });
-      return;
-    }
-    form.setValue(
-      'products',
-      products.filter((product) => product !== platformIdentifier)
-    );
-    const index = fields.findIndex(
-      (entry) => entry.platform_identifier === platformIdentifier
-    );
-    if (index !== -1) {
-      remove(index);
-    }
-  };
 
   return (
     <div className="flex w-full flex-col gap-6 rounded layer-2 bg-elevation-default p-6">
@@ -173,45 +119,6 @@ export const XtmPlatformTrialForm = ({
         <form
           className="flex w-full flex-col gap-4"
           onSubmit={form.handleSubmit(handleSubmit)}>
-          <div className="flex flex-col gap-2 rounded bg-elevation-highlight p-4">
-            <h3>{t('Service.Trials.XtmPlatform.Page.Form.ProductsTitle')}</h3>
-
-            <div className="flex items-start gap-1 rounded border border-solid border-alert-alert p-2">
-              <WarningIcon className="size-4 mt-1 shrink-0 text-icon-alert" />
-              <div className="flex flex-col gap-1 content-compact">
-                <span>
-                  {t('Service.Trials.XtmPlatform.Page.Form.ProductsWarning')}
-                </span>
-                <span>
-                  {t(
-                    'Service.Trials.XtmPlatform.Page.Form.ProductsWarningDescription'
-                  )}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-6">
-              {SELECTABLE_PRODUCTS.map((platformIdentifier) => (
-                <Checkbox
-                  key={platformIdentifier}
-                  id={`product-${platformIdentifier}`}
-                  label={t(`PlatformIdentifier.${platformIdentifier}`)}
-                  checked={products.includes(platformIdentifier)}
-                  onCheckedChange={(checked) =>
-                    toggleProduct(platformIdentifier, checked === true)
-                  }
-                />
-              ))}
-
-              <Checkbox
-                id="product-xtmone"
-                label={t(`PlatformIdentifier.${PlatformIdentifier.Xtmone}`)}
-                checked
-                disabled
-              />
-            </div>
-          </div>
-
           <FormField
             control={form.control}
             name="region"
@@ -261,23 +168,19 @@ export const XtmPlatformTrialForm = ({
             )}
           />
 
-          {fields.map((entry, index) => (
+          {PRODUCTS_WITH_USE_CASE.map((platformIdentifier, index) => (
             <FormField
-              key={entry.id}
+              key={platformIdentifier}
               control={form.control}
               name={`use_cases_by_product.${index}.use_case`}
               render={({ field, fieldState }) => (
                 <TranslatableEnumSelectField
                   field={field}
                   label={t('Service.Trials.XtmPlatform.Page.Form.UseCaseFor', {
-                    product: t(
-                      `PlatformIdentifier.${entry.platform_identifier}`
-                    ),
+                    product: t(`PlatformIdentifier.${platformIdentifier}`),
                   })}
                   placeholder={t('Service.Trials.Form.UseCasePlaceholder')}
-                  values={
-                    USE_CASES_BY_PLATFORM_IDENTIFIER[entry.platform_identifier]
-                  }
+                  values={USE_CASES_BY_PLATFORM_IDENTIFIER[platformIdentifier]}
                   translationNamespace="DeploymentRequestUseCase"
                   error={fieldState.error?.message}
                 />
@@ -315,7 +218,6 @@ export const XtmPlatformTrialForm = ({
           <div className="flex justify-end">
             <Button
               type="submit"
-              disabled={!hasSelectableProduct}
               loading={isSubmitting}>
               {t('Service.Trials.XtmPlatform.Page.Form.Submit')}
             </Button>

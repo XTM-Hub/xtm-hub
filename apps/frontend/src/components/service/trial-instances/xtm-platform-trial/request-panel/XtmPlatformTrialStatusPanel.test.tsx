@@ -1,12 +1,11 @@
 import { XtmPlatformTrialStatusPanel } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/XtmPlatformTrialStatusPanel';
 import { XtmPlatformTrialStatusPanelState } from '@/components/service/trial-instances/xtm-platform-trial/request-panel/xtm-platform-trial-panel.utils';
 import testRender from '@/utils/test/test-render';
-import { PlatformIdentifier } from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 describe('XtmPlatformTrialStatusPanel', () => {
-  it('renders the associated email, products, message, requested-on date and stepper for the in-progress state', () => {
+  it('renders the associated email, message, requested-on date and stepper for the in-progress state', () => {
     testRender(
       <XtmPlatformTrialStatusPanel
         state={XtmPlatformTrialStatusPanelState.RequestInProgress}
@@ -14,20 +13,12 @@ describe('XtmPlatformTrialStatusPanel', () => {
         dateRows={[
           { labelKey: 'RequestedOn', date: '2025-01-01T00:00:00.000Z' },
         ]}
-        products={[PlatformIdentifier.Opencti, PlatformIdentifier.Openaev]}
         stepIndex={0}
         actions={<button>cancel</button>}
       />
     );
 
     expect(screen.getByText('requester@acme.io')).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'Service.Trials.XtmPlatform.Page.Status.ProductsIncludedInRequest'
-      )
-    ).toBeInTheDocument();
-    expect(screen.getByText('PlatformIdentifier.opencti')).toBeInTheDocument();
-    expect(screen.getByText('PlatformIdentifier.openaev')).toBeInTheDocument();
     expect(
       screen.getByText('Service.Trials.XtmPlatform.Page.Status.RequestedOn:', {
         exact: false,
@@ -57,7 +48,6 @@ describe('XtmPlatformTrialStatusPanel', () => {
           { labelKey: 'StartedOn', date: '2025-01-01T00:00:00.000Z' },
           { labelKey: 'CancelledOn', date: '2025-01-15T00:00:00.000Z' },
         ]}
-        products={[]}
         actions={<button>reach sales</button>}
       />
     );
@@ -86,7 +76,6 @@ describe('XtmPlatformTrialStatusPanel', () => {
           { labelKey: 'StartedOn', date: '2025-01-01T00:00:00.000Z' },
           { labelKey: 'FinishedOn', date: '2025-01-15T00:00:00.000Z' },
         ]}
-        products={[]}
         actions={<button>reach sales</button>}
       />
     );
@@ -101,31 +90,24 @@ describe('XtmPlatformTrialStatusPanel', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders the products heading without "InRequest" for terminal states', () => {
-    testRender(
-      <XtmPlatformTrialStatusPanel
-        state={XtmPlatformTrialStatusPanelState.Failed}
-        requesterEmail="requester@acme.io"
-        dateRows={[
-          { labelKey: 'StartedOn', date: null },
-          { labelKey: 'FinishedOn', date: null },
-        ]}
-        products={[PlatformIdentifier.Opencti]}
-        actions={<button>reach sales</button>}
-      />
-    );
+  it.each(Object.values(XtmPlatformTrialStatusPanelState))(
+    'does not list the products of the trial in the %s state',
+    (state) => {
+      testRender(
+        <XtmPlatformTrialStatusPanel
+          state={state}
+          requesterEmail="requester@acme.io"
+          dateRows={[]}
+          actions={null}
+        />
+      );
 
-    expect(
-      screen.getByText(
-        'Service.Trials.XtmPlatform.Page.Status.ProductsIncluded'
-      )
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByText(
-        'Service.Trials.XtmPlatform.Page.Status.ProductsIncludedInRequest'
-      )
-    ).not.toBeInTheDocument();
-  });
+      expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(/PlatformIdentifier\./)
+      ).not.toBeInTheDocument();
+    }
+  );
 
   it('does not render a stepper when stepIndex is not provided', () => {
     testRender(
@@ -133,7 +115,6 @@ describe('XtmPlatformTrialStatusPanel', () => {
         state={XtmPlatformTrialStatusPanelState.Failed}
         requesterEmail="requester@acme.io"
         dateRows={[]}
-        products={[]}
         actions={null}
       />
     );
@@ -151,7 +132,6 @@ describe('XtmPlatformTrialStatusPanel', () => {
         state={XtmPlatformTrialStatusPanelState.RequestInProgress}
         requesterEmail="requester@acme.io"
         dateRows={[{ labelKey: 'RequestedOn', date: null }]}
-        products={[]}
         stepIndex={0}
         actions={<button>my-action</button>}
       />

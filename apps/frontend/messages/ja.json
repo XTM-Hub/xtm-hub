@@ -1702,6 +1702,7 @@
           "Breadcrumb": "XTM Platform Trial",
           "Overline": "XTM Platform 無料トライアル",
           "Title": "30日間の無料トライアルを開始",
+          "ExpiredTitle": "XTM Platform トライアルが終了しました",
           "PitchTitle": "XTM Platform のすべてを体験する",
           "PitchDescription": "30日間、OpenCTI と OpenAEV の SaaS 版エンタープライズエディション、および XTM One のエージェンティックなオーケストレーション機能をご利用いただけます。脅威インテリジェンスを統合し、エージェンティックかつ継続的なエクスポージャー管理とサイバーリスク低減によって防御を検証しましょう。",
           "Products": {
@@ -1727,9 +1728,6 @@
             "NoSLA": "本トライアルに SLA は含まれません。クラウドプロバイダーの障害が発生した場合、復旧時間は保証されません。トライアル環境には重要なデータや代替できないデータを保存しないことを推奨します。"
           },
           "Form": {
-            "ProductsTitle": "このトライアルに含まれる製品",
-            "ProductsWarning": "トライアルバンドルは慎重にお選びください。",
-            "ProductsWarningDescription": "トライアルが開始されると、製品の追加や変更はできなくなり、また、同じ組織に対して追加のトライアルを申請することもできません。",
             "UseCaseFor": "{product} のユースケース",
             "Submit": "XTM Platform トライアルを申請"
           },
@@ -1750,8 +1748,6 @@
             "StartedOn": "開始日",
             "CancelledOn": "キャンセル日",
             "FinishedOn": "終了日",
-            "ProductsIncluded": "トライアルに含まれる製品",
-            "ProductsIncludedInRequest": "トライアル申請に含まれる製品",
             "CancelTrialRequest": "トライアル申請をキャンセル",
             "request-in-progress": {
               "Title": "ありがとうございます。リクエストを受け付けました。",

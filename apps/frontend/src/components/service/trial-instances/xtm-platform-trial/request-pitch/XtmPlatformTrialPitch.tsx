@@ -5,7 +5,8 @@ import { useTranslate } from '@/hooks/use-translate';
 import { cn } from '@/lib/utils';
 import { PlatformIdentifier } from '@graphql/generated';
 
-const BUNDLE_PRODUCTS = [
+// The pitch presents XTM One last, after the products it orchestrates
+const PITCH_PRODUCTS = [
   PlatformIdentifier.Opencti,
   PlatformIdentifier.Openaev,
   PlatformIdentifier.Xtmone,
@@ -26,7 +27,7 @@ export const XtmPlatformTrialPitch = () => {
       </div>
 
       <div className="flex flex-col gap-6 pr-30">
-        {BUNDLE_PRODUCTS.map((platformIdentifier) => {
+        {PITCH_PRODUCTS.map((platformIdentifier) => {
           const { name, Icon, iconClassName } =
             PlatformMetadataMapping[platformIdentifier];
 
