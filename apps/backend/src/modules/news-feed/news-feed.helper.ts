@@ -1,3 +1,4 @@
+import config from 'config';
 import {
   NewsFeedItemType,
   PlatformIdentifier,
@@ -21,17 +22,51 @@ import {
 // Only used to parse the relative url_path, never part of the returned value
 const URL_PATH_PARSING_BASE = 'https://hub.invalid';
 
-export const doesPlatformSupportNewsFeed = (
-  identifier: PlatformIdentifier,
+// A null required version means the feature is disabled for the identifier. Otherwise the platform must report a
+// valid version that is at least the required one.
+const isPlatformVersionAtLeast = (
+  requiredVersion: string | null,
   version?: string | null
 ): boolean => {
-  const requiredVersion = RequiredPlatformVersions.NewsFeedSupport[identifier];
-  if (!requiredVersion) return true;
+  if (!requiredVersion) return false;
   if (!version || !isValidVersion(version)) return false;
   return doesVersionSatisfy({ givenVersion: version, requiredVersion });
 };
 
+export const doesPlatformSupportNewsFeed = (
+  identifier: PlatformIdentifier,
+  version?: string | null
+): boolean =>
+  isPlatformVersionAtLeast(
+    RequiredPlatformVersions.NewsFeedSupport[identifier],
+    version
+  );
+
+export const doesPlatformSupportBlogpostNewsFeed = (
+  identifier: PlatformIdentifier,
+  version?: string | null
+): boolean =>
+  isPlatformVersionAtLeast(
+    RequiredPlatformVersions.NewsFeedBlogpostSupport[identifier],
+    version
+  );
+
 export const NewsFeedHelper = {
+  // Number of newest blog posts kept per product
+  getBlogpostLimit: (): number => {
+    const rawValue = config.get('news_feed.blogpost_limit');
+    if (
+      typeof rawValue !== 'number' ||
+      !Number.isInteger(rawValue) ||
+      rawValue <= 0
+    ) {
+      throw new Error(
+        `Invalid config "news_feed.blogpost_limit": expected positive integer, got ${typeof rawValue} (${rawValue})`
+      );
+    }
+    return rawValue;
+  },
+
   getNewsFeedConfiguration: (
     serviceDefinitionIdentifier: ServiceDefinitionIdentifier,
     document: Document

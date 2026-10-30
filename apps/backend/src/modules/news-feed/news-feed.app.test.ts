@@ -24,6 +24,7 @@ import { ProvisionedNewsFeedItemPlatformId } from '../../model/kanel/public/Prov
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { logApp } from '../../utils/app-logger.util';
 import { ErrorCode } from '../../utils/error/error.code';
+import { RequiredPlatformVersions } from '../../utils/required-platform-version';
 import { objectUseCaseDomain } from '../use-case/object-use-case/object-use-case.domain';
 import { useCaseDomain } from '../use-case/use-case.domain';
 import { NewsFeedApp } from './news-feed.app';
@@ -267,6 +268,77 @@ describe('newsFeedApp', () => {
           NewsFeedItemType.ResourcePlaybook,
           NewsFeedItemType.ResourceCustomView,
         ])
+      );
+    });
+
+    describe('available_news_feed_types and the blogpost version gate', () => {
+      const BLOGPOST_REQUIRED_VERSION = '7.260901.0';
+      const originalBlogpostSupport =
+        RequiredPlatformVersions.NewsFeedBlogpostSupport;
+
+      afterEach(async () => {
+        RequiredPlatformVersions.NewsFeedBlogpostSupport =
+          originalBlogpostSupport;
+        await cleanupCreatedServiceInstances();
+      });
+
+      it('should not list BLOG_POST for a supported version while the gate is disabled', async () => {
+        // Given
+        const gatedPlatformId = uuidv4();
+        const gatedToken = uuidv4();
+        await createOpenCTIPlatformForOrganization(
+          gatedPlatformId,
+          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          { token: gatedToken, platform_version: '99.0.0' }
+        );
+
+        // When
+        const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
+          platformId: gatedPlatformId,
+          token: gatedToken,
+        });
+
+        // Then
+        expect(result.available_news_feed_types).not.toContain(
+          NewsFeedItemType.BlogPost
+        );
+      });
+
+      it.each`
+        description  | version                      | expected
+        ${'below'}   | ${'7.260831.0'}              | ${false}
+        ${'equal'}   | ${BLOGPOST_REQUIRED_VERSION} | ${true}
+        ${'above'}   | ${'7.260902.0'}              | ${true}
+        ${'invalid'} | ${'not-a-version'}           | ${false}
+        ${'missing'} | ${null}                      | ${false}
+      `(
+        'should list BLOG_POST only when the platform version is $description ($expected)',
+        async ({ version, expected }) => {
+          // Given
+          RequiredPlatformVersions.NewsFeedBlogpostSupport = {
+            [PlatformIdentifier.Opencti]: BLOGPOST_REQUIRED_VERSION,
+            [PlatformIdentifier.Openaev]: null,
+            [PlatformIdentifier.Xtmone]: null,
+          };
+          const gatedPlatformId = uuidv4();
+          const gatedToken = uuidv4();
+          await createOpenCTIPlatformForOrganization(
+            gatedPlatformId,
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+            { token: gatedToken, platform_version: version }
+          );
+
+          // When
+          const result = await NewsFeedApp.consumeProvisionedNewsFeedItems({
+            platformId: gatedPlatformId,
+            token: gatedToken,
+          });
+
+          // Then
+          expect(
+            result.available_news_feed_types.includes(NewsFeedItemType.BlogPost)
+          ).toBe(expected);
+        }
       );
     });
 
