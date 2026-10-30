@@ -51,6 +51,9 @@
     "Tour": {
       "Documentation": "Documentation",
       "Close": "Close the tour",
+      "PreviousStep": "Go to previous step",
+      "NextStep": "Go to next step",
+      "GoToStep": "Go to step {step}",
       "Table": "This board lists every SaaS platform from the SaaS Manager, with the data it reports.",
       "Search": "Search for a platform by customer name.",
       "ProductFilter": "Show only the platforms of one product.",

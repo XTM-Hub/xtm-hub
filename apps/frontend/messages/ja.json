@@ -51,6 +51,9 @@
     "Tour": {
       "Documentation": "ドキュメント",
       "Close": "ツアーを閉じる",
+      "PreviousStep": "前のステップへ移動",
+      "NextStep": "次のステップへ移動",
+      "GoToStep": "ステップ {step} へ移動",
       "Table": "この表には、SaaS Manager のすべての SaaS プラットフォームと、そこから取得したデータが表示されます。",
       "Search": "顧客名でプラットフォームを検索できます。",
       "ProductFilter": "特定の製品のプラットフォームだけを表示できます。",

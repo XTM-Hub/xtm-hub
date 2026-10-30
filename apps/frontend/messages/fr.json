@@ -51,6 +51,9 @@
     "Tour": {
       "Documentation": "Documentation",
       "Close": "Fermer la visite",
+      "PreviousStep": "Aller à l'étape précédente",
+      "NextStep": "Aller à l'étape suivante",
+      "GoToStep": "Aller à l'étape {step}",
       "Table": "Ce tableau liste toutes les plateformes SaaS du SaaS Manager, avec les données qu'il remonte.",
       "Search": "Recherchez une plateforme par nom de client.",
       "ProductFilter": "N'affichez que les plateformes d'un produit.",

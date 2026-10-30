@@ -148,6 +148,9 @@ const useDataTableContext = <TData,>(): DataTableContextValue<TData> => {
   return context;
 };
 
+// For the parts a page renders inside the table, such as its toolbar actions, that act on the table.
+const useDataTable = <TData,>() => useDataTableContext<TData>().table;
+
 const getTransformString = ({ x, y }: Transform) => `translate(${x}px, ${y}px)`;
 
 const SelectAllHeader = <TData,>({ table }: HeaderContext<TData, unknown>) => {
@@ -788,4 +791,4 @@ const DataTable = <TData extends { id: string }, TValue>({
   );
 };
 
-export { DataTable, DataTableHeadBarOptions, DataTableToolbar };
+export { DataTable, DataTableHeadBarOptions, DataTableToolbar, useDataTable };

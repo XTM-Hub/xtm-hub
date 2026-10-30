@@ -16,6 +16,8 @@ export const SAAS_LIST_TOUR_TARGET = {
 export type SaasListTourStep = StepType & {
   // Set on the list during the step. Written in full: Tailwind only generates the classes it finds in the source.
   listClassName?: string;
+  // The columns the step points at: the tour shows them while it is open, even when the user hid them.
+  columnIds?: string[];
 };
 
 type SaasListTourTarget =
@@ -24,6 +26,10 @@ type SaasListTourTarget =
 export const saasListTourTarget = (target: SaasListTourTarget) => ({
   'data-tour': target,
 });
+
+export const getSaasListTourColumnIds = (steps: SaasListTourStep[]) => [
+  ...new Set(steps.flatMap((step) => step.columnIds ?? [])),
+];
 
 const selectTarget = (target: SaasListTourTarget) => `[data-tour="${target}"]`;
 
@@ -59,6 +65,7 @@ const selectColumnStep = (
 ): SaasListTourStep => ({
   selector: selectColumnHeader(columnId),
   highlightedSelectors: selectColumns([columnId]),
+  columnIds: [columnId],
   content,
 });
 
@@ -89,6 +96,7 @@ export const getSaasListTourSteps = (
   {
     selector: COLUMN_HEADERS,
     highlightedSelectors: selectColumns(HUB_COLUMN_IDS),
+    columnIds: HUB_COLUMN_IDS,
     // The highlighted area spans the products and plan columns, which hold no data of the Hub.
     listClassName:
       '[&_[data-column-id=product]]:opacity-30 [&_[data-column-id=plan]]:opacity-30',
@@ -99,6 +107,7 @@ export const getSaasListTourSteps = (
   {
     selector: COLUMN_HEADERS,
     highlightedSelectors: selectColumns(HOVER_DETAILS_COLUMN_IDS),
+    columnIds: HOVER_DETAILS_COLUMN_IDS,
     // The highlighted area spans the plan and SaaS metrics columns, which show nothing more on hover.
     listClassName:
       '[&_[data-column-id=plan]]:opacity-30 [&_[data-column-id=link]]:opacity-30',
@@ -112,6 +121,7 @@ export const getSaasListTourSteps = (
   {
     // Its menu only shows when the header is hovered: the tour points at the whole header.
     selector: selectColumnHeader(SaasPlatformOrdering.CustomerName),
+    columnIds: [SaasPlatformOrdering.CustomerName],
     content: t('CSMBoard.Tour.ColumnMenu'),
   },
   {
