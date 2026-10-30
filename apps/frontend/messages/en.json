@@ -1684,7 +1684,7 @@
         "opencti": {
           "Intro": "OpenCTI is part of Filigran's open-source threat intelligence, advanced adversary simulation, and strategic cyber risk management solution designed to help your organization anticipate and manage threats end-to-end.",
           "Tagline": "Collect, correlate and leverage",
-          "Description": "An open-source threat intelligence platform built by practitioners for practitioners - to break data silos and make threat intelligence truly actionable."
+          "Description": "An open-source threat intelligence product built by practitioners for practitioners - to break data silos and make threat intelligence truly actionable."
         },
         "openaev": {
           "Intro": "OpenAEV is part of Filigran's open-source threat intelligence, advanced adversary simulation, and strategic cyber risk management solution designed to help your organization anticipate and manage threats end-to-end.",
