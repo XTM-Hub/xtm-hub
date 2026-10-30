@@ -394,13 +394,11 @@ describe('deployment app', () => {
           });
           expect(
             children.map((child) => child.platform_identifier).sort()
-          ).toEqual(
-            [
-              PlatformIdentifier.Openaev,
-              PlatformIdentifier.Opencti,
-              PlatformIdentifier.Xtmone,
-            ]
-          );
+          ).toEqual([
+            PlatformIdentifier.Openaev,
+            PlatformIdentifier.Opencti,
+            PlatformIdentifier.Xtmone,
+          ]);
         }
       );
 
