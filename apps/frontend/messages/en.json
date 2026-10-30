@@ -1675,14 +1675,23 @@
         "Link": "Learn more"
       },
       "XTMPlatform": {
-        "Title": "Your eXtended Threat Management (XTM) product",
-        "Description": "{platformName} is part of Filigran's open-source threat intelligence, advanced adversary simulation, and strategic cyber risk management solution designed to help your organization anticipate and manage threats end-to-end.",
-        "OpenCTITagline": "Collect, correlate and leverage",
-        "OpenCTIDescription": "An open-source threat intelligence product built by practitioners for practitioners - to break data silos and make threat intelligence truly actionable.",
-        "OpenAEVTagline": "Prioritize, test and fix what matters",
-        "OpenAEVDescription": "Proactively defend against threats with Adversarial Exposure Validation (AEV), simulating real-life attack scenarios to optimize security defenses.",
-        "LogoAlt": "{name} Logo",
-        "IllustrationAlt": "Illustration of free trial service"
+        "Title": "Your eXtended Threat Management (XTM) Platform",
+        "xtmone": {
+          "Intro": "XTM One is the agentic AI foundation of Filigran's open-source XTM Platform, which unifies threat intelligence, continuous exposure validation and cyber risk reduction so your organization can anticipate and manage threats end to end.",
+          "Tagline": "Simplify Your Path Towards Agentic Threat Management",
+          "Description": "XTM One orchestrates assistive and agentic AI across the XTM Platform to run your CTEM program from threat signal to validated action at machine speed."
+        },
+        "opencti": {
+          "Intro": "OpenCTI is part of Filigran's open-source threat intelligence, advanced adversary simulation, and strategic cyber risk management solution designed to help your organization anticipate and manage threats end-to-end.",
+          "Tagline": "Collect, correlate and leverage",
+          "Description": "An open-source threat intelligence platform built by practitioners for practitioners - to break data silos and make threat intelligence truly actionable."
+        },
+        "openaev": {
+          "Intro": "OpenAEV is part of Filigran's open-source threat intelligence, advanced adversary simulation, and strategic cyber risk management solution designed to help your organization anticipate and manage threats end-to-end.",
+          "Tagline": "Prioritize, test and fix what matters",
+          "Description": "Proactively defend against threats with Adversarial Exposure Validation (AEV), simulating real-life attack scenarios to optimize security defenses."
+        },
+        "IllustrationAlt": "Illustration of the {platformName} ecosystem"
       },
       "XtmPlatform": {
         "NoTrial": {

@@ -1675,14 +1675,23 @@
         "Link": "もっと詳しく"
       },
       "XTMPlatform": {
-        "Title": "あなたの eXtended Threat Management (XTM) スイート",
-        "Description": "{platformName} は、Filigran のオープンソースの脅威インテリジェンス、高度な敵対者シミュレーション、戦略的サイバーリスク管理ソリューションの一部であり、組織が脅威をエンドツーエンドで予測・管理できるよう支援します。",
-        "OpenCTITagline": "収集、相関、活用",
-        "OpenCTIDescription": "実務者によって実務者のために構築されたオープンソースの脅威インテリジェンスプラットフォーム — データのサイロを打破し、脅威インテリジェンスを真に実行可能なものにします。",
-        "OpenAEVTagline": "優先順位付け、テスト、重要なものの修正",
-        "OpenAEVDescription": "Adversarial Exposure Validation (AEV) で脅威に積極的に対抗し、現実の攻撃シナリオをシミュレートしてセキュリティ防御を最適化します。",
-        "LogoAlt": "{name} ロゴ",
-        "IllustrationAlt": "無料トライアルサービスのイラスト"
+        "Title": "あなたの eXtended Threat Management (XTM) プラットフォーム",
+        "xtmone": {
+          "Intro": "XTM One は、Filigran のオープンソース XTM プラットフォームのエージェント型 AI 基盤です。XTM プラットフォームは脅威インテリジェンス、継続的なエクスポージャー検証、サイバーリスク低減を統合し、組織が脅威をエンドツーエンドで予測・管理できるよう支援します。",
+          "Tagline": "エージェント型脅威管理への道のりをシンプルに",
+          "Description": "XTM One は、XTM プラットフォーム全体でアシスト型およびエージェント型 AI をオーケストレーションし、脅威シグナルから検証済みのアクションまで、機械のスピードで CTEM プログラムを運用します。"
+        },
+        "opencti": {
+          "Intro": "OpenCTI は、Filigran のオープンソースの脅威インテリジェンス、高度な敵対者シミュレーション、戦略的サイバーリスク管理ソリューションの一部であり、組織が脅威をエンドツーエンドで予測・管理できるよう支援します。",
+          "Tagline": "収集、相関、活用",
+          "Description": "実務者によって実務者のために構築されたオープンソースの脅威インテリジェンスプラットフォーム — データのサイロを打破し、脅威インテリジェンスを真に実行可能なものにします。"
+        },
+        "openaev": {
+          "Intro": "OpenAEV は、Filigran のオープンソースの脅威インテリジェンス、高度な敵対者シミュレーション、戦略的サイバーリスク管理ソリューションの一部であり、組織が脅威をエンドツーエンドで予測・管理できるよう支援します。",
+          "Tagline": "優先順位付け、テスト、重要なものの修正",
+          "Description": "Adversarial Exposure Validation (AEV) で脅威に積極的に対抗し、現実の攻撃シナリオをシミュレートしてセキュリティ防御を最適化します。"
+        },
+        "IllustrationAlt": "{platformName} エコシステムのイラスト"
       },
       "XtmPlatform": {
         "NoTrial": {

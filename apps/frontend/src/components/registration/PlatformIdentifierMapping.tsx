@@ -8,6 +8,7 @@ import {
   PlatformContract,
   PlatformIdentifier,
   ServiceDefinitionIdentifier,
+  ServiceInstanceTag,
 } from '@graphql/generated';
 import openaevTextLogo from '@public/logo_openaev_text.png';
 import openaevTextDarkLogo from '@public/logo_openaev_text_dark.png';
@@ -24,6 +25,7 @@ export interface PlatformMetadata {
   darkTextLogo: StaticImageData;
   Icon: ({ className }: { className: string }) => JSX.Element;
   iconClassName: string;
+  serviceInstanceTag: ServiceInstanceTag;
 }
 
 export const PlatformMetadataMapping: Record<
@@ -36,6 +38,7 @@ export const PlatformMetadataMapping: Record<
     darkTextLogo: openctiTextDarkLogo,
     Icon: ({ className }) => <OpenCtiIconIcon className={className} />,
     iconClassName: 'text-filigran-brand-primary',
+    serviceInstanceTag: ServiceInstanceTag.OpenCti,
   },
   [PlatformIdentifier.Openaev]: {
     name: 'OpenAEV',
@@ -43,6 +46,7 @@ export const PlatformMetadataMapping: Record<
     darkTextLogo: openaevTextDarkLogo,
     Icon: ({ className }) => <OpenAevIconIcon className={className} />,
     iconClassName: 'text-filigran-brand-primary',
+    serviceInstanceTag: ServiceInstanceTag.OpenAev,
   },
   [PlatformIdentifier.Xtmone]: {
     name: 'XTM One',
@@ -50,6 +54,7 @@ export const PlatformMetadataMapping: Record<
     darkTextLogo: xtmoneTextDarkLogo,
     Icon: ({ className }) => <LogoXtmOneIcon className={className} />,
     iconClassName: 'text-filigran-ia-primary',
+    serviceInstanceTag: ServiceInstanceTag.XtmOne,
   },
 };
 
