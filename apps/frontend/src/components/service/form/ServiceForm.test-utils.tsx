@@ -366,6 +366,27 @@ interface EditedServiceFormTestsOptions<
   buildEditedDocument: () => documentItem_fragment$data;
 }
 
+export const defineSlugKeptOnEditTest = <Values,>({
+  Form,
+  resourceName,
+  buildEditedDocument,
+}: EditedServiceFormTestsOptions<Values>) => {
+  it(`should keep the slug of the ${resourceName} when the user renames it`, async () => {
+    // Given
+    const { user } = renderServiceForm(Form, buildEditedDocument());
+    const nameField = screen.getByRole('textbox', { name: NAME_LABEL });
+
+    // When
+    await user.clear(nameField);
+    await user.type(nameField, NEW_NAME);
+
+    // Then
+    expect(screen.getByRole('textbox', { name: SLUG_LABEL })).toHaveValue(
+      DOCUMENT_SLUG
+    );
+  });
+};
+
 export const defineDeletedImagesTest = <Values,>({
   Form,
   resourceName,
@@ -536,20 +557,7 @@ export const defineServiceFormTests = <Values,>({
 }: ServiceFormTestsOptions<Values>) => {
   defineSlugGenerationTests({ Form, resourceName });
 
-  it(`should keep the slug of the ${resourceName} when the user renames it`, async () => {
-    // Given
-    const { user } = renderServiceForm(Form, buildEditedDocument());
-    const nameField = screen.getByRole('textbox', { name: NAME_LABEL });
-
-    // When
-    await user.clear(nameField);
-    await user.type(nameField, NEW_NAME);
-
-    // Then
-    expect(screen.getByRole('textbox', { name: SLUG_LABEL })).toHaveValue(
-      DOCUMENT_SLUG
-    );
-  });
+  defineSlugKeptOnEditTest({ Form, resourceName, buildEditedDocument });
 
   it(`should send the filled ${resourceName} when the user creates it`, async () => {
     // Given
