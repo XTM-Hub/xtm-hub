@@ -8825,9 +8825,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@uiw/react-md-editor@npm:4.1.5":
-  version: 4.1.5
-  resolution: "@uiw/react-md-editor@npm:4.1.5"
+"@uiw/react-md-editor@npm:4.1.6":
+  version: 4.1.6
+  resolution: "@uiw/react-md-editor@npm:4.1.6"
   dependencies:
     "@babel/runtime": "npm:^7.14.6"
     "@uiw/react-markdown-preview": "npm:^5.2.0"
@@ -8836,7 +8836,7 @@ __metadata:
   peerDependencies:
     react: ">=16.8.0"
     react-dom: ">=16.8.0"
-  checksum: 10/5078bf44502b347a542b9e2d37c2f4fecefdb6cf8203c734ee3e54d492f19ad535ff2f99dcd0251bd167d5c008cb188bfb086bdc07648e2b57584471ba6f796b
+  checksum: 10/c5cb2bd0e4a35b5cf9b565f97c927dc2139b4ab16cb43fa137c4fc4d61b19a18291192e4844fe9e94c61de6bf7b1073a7f56df38a6fcaa932d76e36529f45753
   languageName: node
   linkType: hard
 
@@ -9304,7 +9304,7 @@ __metadata:
     "@types/react-dom": "npm:19.3.0"
     "@types/react-relay": "npm:18.2.1"
     "@types/relay-test-utils": "npm:19.0.0"
-    "@uiw/react-md-editor": "npm:4.1.5"
+    "@uiw/react-md-editor": "npm:4.1.6"
     "@vitejs/plugin-react": "npm:6.1.2"
     "@vitest/coverage-v8": "catalog:"
     apexcharts: "npm:8.3.1"
