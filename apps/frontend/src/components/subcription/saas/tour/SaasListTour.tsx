@@ -76,6 +76,7 @@ export const SaasListTourButton = () => {
 
   return (
     <Button
+      {...saasListTourTarget(SAAS_LIST_TOUR_TARGET.Documentation)}
       priority="secondary"
       startIcon={
         <Icon

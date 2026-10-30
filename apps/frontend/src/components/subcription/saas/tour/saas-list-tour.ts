@@ -1,6 +1,8 @@
+import { SaasListTourDocumentation } from '@/components/subcription/saas/tour/SaasListTourDocumentation';
 import { useTranslate } from '@/hooks/use-translate';
 import { SaasPlatformOrdering } from '@graphql/generated';
 import type { StepType } from '@reactour/tour';
+import { createElement } from 'react';
 
 // Each element the tour points at carries one of these values in its `data-tour` attribute.
 export const SAAS_LIST_TOUR_TARGET = {
@@ -8,6 +10,7 @@ export const SAAS_LIST_TOUR_TARGET = {
   Search: 'saas-list-search',
   ProductFilter: 'saas-list-product-filter',
   TableOptions: 'saas-list-table-options',
+  Documentation: 'saas-list-documentation',
 } as const;
 
 export type SaasListTourStep = StepType & {
@@ -116,5 +119,9 @@ export const getSaasListTourSteps = (
     content: t('CSMBoard.Tour.ShowHiddenColumn', {
       columns: t('DesignSystem.DataTable.Columns'),
     }),
+  },
+  {
+    selector: selectTarget(SAAS_LIST_TOUR_TARGET.Documentation),
+    content: createElement(SaasListTourDocumentation),
   },
 ];

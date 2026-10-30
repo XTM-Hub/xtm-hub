@@ -62,7 +62,8 @@
       "Availability": "Disponibilité SLA de la plateforme. Les contrats fixent l'objectif à 99,98 %.",
       "Health": "Repérez en un coup d'œil les plateformes en difficulté, et le problème en cause : SLA, base de données ou stockage de fichiers.",
       "ColumnMenu": "Survolez l'en-tête d'une colonne pour ouvrir son menu et masquer les colonnes inutiles. Cliquez sur certains en-têtes pour trier le tableau selon cette colonne.",
-      "ShowHiddenColumn": "Pour réafficher une colonne masquée, ouvrez le menu du tableau et sélectionnez-la dans « {columns} »."
+      "ShowHiddenColumn": "Pour réafficher une colonne masquée, ouvrez le menu du tableau et sélectionnez-la dans « {columns} ».",
+      "FullDocumentation": "Tous les détails sur la gestion des métriques dans XTM Hub sont sur <link>cette page Notion</link>."
     }
   },
   "CountryComboBox": {

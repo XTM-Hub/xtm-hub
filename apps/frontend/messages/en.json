@@ -62,7 +62,8 @@
       "Availability": "The SLA availability of the platform. Contracts set the target at 99.98%.",
       "Health": "Spot at a glance which platforms have an issue, and what it is: SLA, database or file storage.",
       "ColumnMenu": "Hover over a column header to open its menu and hide the columns you don't need. Click some headers to sort the table by that column.",
-      "ShowHiddenColumn": "To bring back a hidden column, open the table menu and select it under \"{columns}\"."
+      "ShowHiddenColumn": "To bring back a hidden column, open the table menu and select it under \"{columns}\".",
+      "FullDocumentation": "Every detail on how XTM Hub handles metrics is in <link>this Notion page</link>."
     }
   },
   "CountryComboBox": {

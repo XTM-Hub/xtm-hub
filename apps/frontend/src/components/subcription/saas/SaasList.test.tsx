@@ -710,6 +710,28 @@ describe('SaasList', () => {
     }
   );
 
+  it('should end the tour on the full documentation of the metrics', async () => {
+    // Given the tour opened on the list of saas platforms
+    mockSaasPlatforms([buildSaasPlatform()]);
+    const { user } = renderWithCapabilities([PortalCapability.ReadSaasMetrics]);
+    await user.click(
+      screen.getByRole('button', { name: 'CSMBoard.Tour.Documentation' })
+    );
+
+    // When the user goes to the last step
+    const stepCount = getSaasListTourSteps(
+      ((key: string) => key) as unknown as ReturnType<typeof useTranslate>
+    ).length;
+    for (let step = 1; step < stepCount; step++) {
+      await user.click(screen.getByRole('button', { name: 'Go to next step' }));
+    }
+
+    // Then the tour points to the full documentation
+    expect(
+      await screen.findByText('CSMBoard.Tour.FullDocumentation')
+    ).toBeVisible();
+  });
+
   it('should find every element the tour points at in the list', () => {
     // Given a list with as many saas platforms as the tour highlights rows
     mockSaasPlatforms(
