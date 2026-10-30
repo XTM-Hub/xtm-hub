@@ -70,6 +70,23 @@ vi.mock('next-intl', async (importOriginal) => {
   };
 });
 
+// jsdom is a browser, so the real getQueryClient would share one client, and
+// its cache, across every test: hand each call a fresh one that never retries,
+// like the client testRender provides.
+vi.mock('@/lib/query-client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/query-client')>();
+  return {
+    ...actual,
+    getQueryClient: () => {
+      const client = actual.createQueryClient();
+      client.setDefaultOptions({
+        queries: { ...client.getDefaultOptions().queries, retry: false },
+      });
+      return client;
+    },
+  };
+});
+
 const relayRegistryMocks = vi.hoisted(() => ({
   getClientEnvironment: vi.fn(),
   registerClientEnvironment: vi.fn(),

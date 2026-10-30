@@ -1228,7 +1228,7 @@ describe('user subscription resolver', () => {
 
   const subscribeAs = async (
     userId: UserId,
-    subscription: 'User' | 'AdminUser' | 'UserPending',
+    subscription: 'User' | 'AdminUser' | 'UserPending' | 'MeUser',
     args: { organizationId?: OrganizationId },
     fields: string[]
   ) => {
@@ -1443,5 +1443,47 @@ describe('user subscription resolver', () => {
     expect(await spy.waitForEvents(1)).toMatchObject([
       { edit: { id: memberId } },
     ]);
+  });
+
+  it('should reject the MeUser subscription when the caller is not authenticated', async () => {
+    // Given
+    const spy = new SubscriptionSpy();
+    spies.push(spy);
+
+    // When
+    const call = spy.spy(usersResolver.Subscription!.MeUser, {}, {}, ['edit']);
+
+    // Then
+    await expect(call).rejects.toThrow(
+      'Not authorized: You are not authenticated'
+    );
+  });
+
+  it('should send a MeUser event only to the subscriber it concerns', async () => {
+    // Given
+    const organizationId = await createOrganization();
+    const memberId = await createMember(organizationId, []);
+    const otherMemberId = await createMember(organizationId, []);
+    const spy = await subscribeAs(memberId, 'MeUser', {}, ['edit']);
+    const otherSpy = await subscribeAs(otherMemberId, 'MeUser', {}, ['edit']);
+    const adminId = await createMember(organizationId, [
+      OrganizationCapability.AdministrateOrganization,
+    ]);
+    requestContext.set({
+      user: (await UserDomain.loadUserBy({ 'User.id': adminId }))!,
+    });
+
+    // When
+    await UserHelper.updateUserOrgCapabilitiesAndDispatch({
+      user_id: memberId,
+      organization_id: organizationId,
+      orgCapabilities: [],
+    });
+
+    // Then
+    expect(await spy.waitForEvents(1)).toMatchObject([
+      { MeUser: { edit: { id: memberId } } },
+    ]);
+    await otherSpy.expectNoEvents();
   });
 });

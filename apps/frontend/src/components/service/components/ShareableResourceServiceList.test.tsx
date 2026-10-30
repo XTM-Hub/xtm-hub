@@ -1,5 +1,5 @@
 import ShareableResourceServiceList from '@/components/service/components/ShareableResourceServiceList';
-import { ServiceListLocalStorageKey } from '@/hooks/use-service-list-local-storage';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import testRender from '@/utils/test/test-render';
 import { documentsQuery } from '@generated/documentsQuery.graphql';
@@ -17,7 +17,7 @@ const FILTERED_TOTAL_COUNT = 4;
 const testState = vi.hoisted(() => ({
   usePreloadedQuery: vi.fn(),
   useRefetchableFragment: vi.fn(),
-  useServiceListLocalStorage: vi.fn(),
+  useServiceListStorage: vi.fn(),
   useDocumentFacetCounts: vi.fn(),
   useShareableResourceMapping: vi.fn(),
   refetch: vi.fn(),
@@ -32,7 +32,7 @@ const withDocuments = (totalCount: number) => [
 // Shared reference so unrelated filters don't look "changed" between renders.
 const EMPTY_SELECTION = {};
 
-const baseLocalStorageState = () => ({
+const baseStorageState = () => ({
   pageSize: PAGE_SIZE,
   setPageSize: testState.setPageSize,
   labels: EMPTY_SELECTION,
@@ -57,11 +57,11 @@ vi.mock('react-relay', async (importOriginal) => {
   };
 });
 
-vi.mock('@/hooks/use-service-list-local-storage', async (importOriginal) => ({
+vi.mock('@/hooks/use-service-list-storage', async (importOriginal) => ({
   ...(await importOriginal<
-    typeof import('@/hooks/use-service-list-local-storage')
+    typeof import('@/hooks/use-service-list-storage')
   >()),
-  useServiceListLocalStorage: testState.useServiceListLocalStorage,
+  useServiceListStorage: testState.useServiceListStorage,
 }));
 
 vi.mock('@/hooks/use-document-facet-counts', () => ({
@@ -93,7 +93,7 @@ describe('ShareableResourceServiceList', () => {
       search={search}
       onSearchChange={vi.fn()}
       type={ShareableResourceType.OPENCTI_INTEGRATION}
-      localStorageKey={ServiceListLocalStorageKey.OpenCTIIntegrationFeeds}
+      storageKey={ServiceListStorageKey.OpenCTIIntegrationFeeds}
     />
   );
 
@@ -113,9 +113,7 @@ describe('ShareableResourceServiceList', () => {
     testState.usePreloadedQuery.mockReturnValue({});
     testState.useDocumentFacetCounts.mockReturnValue({});
     testState.useShareableResourceMapping.mockReturnValue({ filters: {} });
-    testState.useServiceListLocalStorage.mockReturnValue(
-      baseLocalStorageState()
-    );
+    testState.useServiceListStorage.mockReturnValue(baseStorageState());
     testState.useRefetchableFragment.mockReturnValue(
       withDocuments(LARGE_TOTAL_COUNT)
     );
@@ -144,8 +142,8 @@ describe('ShareableResourceServiceList', () => {
     expect(container.textContent).toBe(`51 - 100 / ${LARGE_TOTAL_COUNT}`);
 
     // When
-    testState.useServiceListLocalStorage.mockReturnValue({
-      ...baseLocalStorageState(),
+    testState.useServiceListStorage.mockReturnValue({
+      ...baseStorageState(),
       labels: { 'label-1': true },
     });
     testState.useRefetchableFragment.mockReturnValue(
@@ -164,8 +162,8 @@ describe('ShareableResourceServiceList', () => {
     expect(container.textContent).toBe(`51 - 100 / ${LARGE_TOTAL_COUNT}`);
 
     // When
-    testState.useServiceListLocalStorage.mockReturnValue({
-      ...baseLocalStorageState(),
+    testState.useServiceListStorage.mockReturnValue({
+      ...baseStorageState(),
       orderBy: DocumentOrdering.Name,
       orderMode: OrderingMode.Desc,
     });

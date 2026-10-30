@@ -25,11 +25,14 @@ const LABEL_BELOW_LINE_GAP_PX = 5;
 const PEAK_LABEL_FONT_SIZE_PX = 11;
 const LIMIT_COLOR = 'var(--color-feedback-error-primary)';
 const LIMIT_LINE_WIDTH_PX = 2;
+// The limit label wears a critical Chip (h-6 px-2 rounded-sm, 14px default ink), filled opaque so the bars
+// behind never show through the text.
 const LIMIT_LABEL_FONT_SIZE_PX = 14;
-const LIMIT_LABEL_FONT_WEIGHT = 700;
-// With a limit line, the bars step back so the line reads first.
-const BAR_OPACITY = 1;
-const BAR_OPACITY_WITH_LIMIT = 0.8;
+const LIMIT_LABEL_BACKGROUND = 'var(--color-feedback-error-secondary)';
+const LIMIT_LABEL_COLOR = 'var(--text-default-primary)';
+const LIMIT_LABEL_RADIUS_PX = 4;
+const LIMIT_LABEL_PADDING_X_PX = 8;
+const LIMIT_LABEL_PADDING_Y_PX = 2;
 
 // Dresses the ApexCharts toolbar as tertiary sm IconButtons and its export menu as a Menu. ApexCharts injects
 // an unlayered stylesheet, which beats any Tailwind layer: every rule here needs the important modifier.
@@ -128,14 +131,20 @@ export const TimeSeriesBarChart = ({
               offsetX: LABEL_OFFSET_X_PX,
               offsetY: labelBelowLineOffsetY(
                 peakValue !== null && !peakBelowLimit,
-                LIMIT_LABEL_FONT_SIZE_PX
+                LIMIT_LABEL_FONT_SIZE_PX + LIMIT_LABEL_PADDING_Y_PX
               ),
               borderWidth: 0,
+              borderRadius: LIMIT_LABEL_RADIUS_PX,
               style: {
-                background: 'transparent',
-                color: LIMIT_COLOR,
+                background: LIMIT_LABEL_BACKGROUND,
+                color: LIMIT_LABEL_COLOR,
                 fontSize: `${LIMIT_LABEL_FONT_SIZE_PX}px`,
-                fontWeight: LIMIT_LABEL_FONT_WEIGHT,
+                padding: {
+                  left: LIMIT_LABEL_PADDING_X_PX,
+                  right: LIMIT_LABEL_PADDING_X_PX,
+                  top: LIMIT_LABEL_PADDING_Y_PX,
+                  bottom: LIMIT_LABEL_PADDING_Y_PX,
+                },
               },
             },
           },
@@ -161,10 +170,7 @@ export const TimeSeriesBarChart = ({
           borderRadiusApplication: 'end',
         },
       },
-      fill: {
-        type: 'solid',
-        opacity: limit ? BAR_OPACITY_WITH_LIMIT : BAR_OPACITY,
-      },
+      fill: { type: 'solid', opacity: 1 },
       dataLabels: { enabled: false },
       grid: {
         borderColor: 'var(--border-elevation-subtle)',

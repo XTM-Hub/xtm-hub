@@ -31,5 +31,16 @@ query RegisteredSaasPlatformData($input: RegisteredSaasPlatformDataInput!) {
         limit
       }
     }
+    sla {
+      target
+      months {
+        month
+        availability
+        days {
+          day
+          availability
+        }
+      }
+    }
   }
 }

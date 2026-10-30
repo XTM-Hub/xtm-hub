@@ -1,10 +1,8 @@
 import { AppCombobox } from '@/components/ui/AppCombobox';
 import { useRegisteredProductVersions } from '@/hooks/use-registered-product-versions';
-import {
-  ServiceListLocalStorageKey,
-  useServiceListLocalStorage,
-} from '@/hooks/use-service-list-local-storage';
+import { useServiceListStorage } from '@/hooks/use-service-list-storage';
 import { useTranslate } from '@/hooks/use-translate';
+import { ServiceListStorageKey } from '@/utils/filters-storage.utils';
 import {
   Tooltip,
   TooltipContent,
@@ -40,8 +38,8 @@ export const IntegrationProductVersionFilter = ({
     [registeredInstancesByVersion]
   );
 
-  const { productVersions, setProductVersions } = useServiceListLocalStorage(
-    ServiceListLocalStorageKey.OpenCTIIntegrationFeeds
+  const { productVersions, setProductVersions } = useServiceListStorage(
+    ServiceListStorageKey.OpenCTIIntegrationFeeds
   );
 
   const { versions } = useRegisteredProductVersions(

@@ -16,6 +16,7 @@ const testState = vi.hoisted(() => ({
   invalidateQueries: vi.fn(),
   lastCancelDeploymentRequestVariables: null as Record<string, unknown> | null,
   mutationMode: 'success' as 'success' | 'error',
+  isPending: false,
 }));
 
 const showSnackbarMock = vi.hoisted(() => vi.fn());
@@ -68,6 +69,7 @@ vi.mock('@graphql/generated', async (importOriginal) => ({
       onError?: (err: Error) => void;
     }
   ) => ({
+    isPending: testState.isPending,
     mutate: (variables: Record<string, unknown>) => {
       testState.lastCancelDeploymentRequestVariables = variables;
       if (testState.mutationMode === 'error') {
@@ -86,6 +88,7 @@ describe('BundleCancelSheet', () => {
     testState.invalidateQueries.mockReset();
     testState.lastCancelDeploymentRequestVariables = null;
     testState.mutationMode = 'success';
+    testState.isPending = false;
     showSnackbarMock.mockReset();
   });
 
@@ -135,6 +138,26 @@ describe('BundleCancelSheet', () => {
     expect(
       screen.getByRole('button', { name: 'Utils.Confirm' })
     ).not.toBeDisabled();
+  });
+
+  it('should disable the confirm button while the cancellation is pending', () => {
+    // Given
+    testState.isPending = true;
+    testRender(
+      <BundleCancelSheet
+        deploymentRequestId={bundleDeploymentRequestId}
+        open={true}
+        setOpen={vi.fn()}
+      />
+    );
+
+    // When
+    fireEvent.click(screen.getByTestId('select-reason'));
+
+    // Then
+    expect(
+      screen.getByRole('button', { name: /^Utils\.Confirm/ })
+    ).toBeDisabled();
   });
 
   it('should keep the reason field mounted when the reason changes', () => {

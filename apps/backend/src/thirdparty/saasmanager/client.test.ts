@@ -242,3 +242,125 @@ describe('saasManagerClient.callInstanceApi', () => {
     );
   });
 });
+
+describe('saasManagerClient.callInstanceListApi', () => {
+  // A fresh client module per test, so the process-wide token cache never leaks from one test to the next.
+  let client: typeof SaasManagerClient;
+
+  const request = {
+    page: 2,
+    page_size: 25,
+    ordering: '-customer__name',
+  };
+
+  beforeEach(async () => {
+    vi.resetModules();
+    client = (await import('./client')).SaasManagerClient;
+    useConfig({
+      'saas_manager.url': BASE_URL,
+      'saas_manager.client_id': CLIENT_ID,
+      'saas_manager.client_secret': CLIENT_SECRET,
+    });
+  });
+
+  afterEach(() => {
+    vi.mocked(config.get).mockImplementation(realConfigGet ?? (() => null));
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('should send a GET request for the given page, page size, search and ordering of the instance list', async () => {
+    // Given
+    const response = new Response(null, { status: 200 });
+    const fetchMock = stubSaasManager(response);
+
+    // When
+    const result = await client.callInstanceListApi({
+      ...request,
+      search: 'filigran corp',
+    });
+
+    // Then
+    expect(fetchMock).toHaveBeenCalledWith(
+      new URL(
+        `${BASE_URL}/api/hub/instance/?page=2&page_size=25&search=filigran+corp&ordering=-customer__name`
+      ),
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({
+          Authorization: `Bearer ${FIRST_TOKEN}`,
+        }),
+      })
+    );
+    expect(result).toBe(response);
+  });
+
+  it.each([
+    ['undefined', undefined],
+    ['empty', ''],
+  ])('should not send a search when it is %s', async (_, search) => {
+    // Given
+    const fetchMock = stubSaasManager();
+
+    // When
+    await client.callInstanceListApi({ ...request, search });
+
+    // Then
+    expect(fetchMock).toHaveBeenCalledWith(
+      new URL(
+        `${BASE_URL}/api/hub/instance/?page=2&page_size=25&ordering=-customer__name`
+      ),
+      expect.any(Object)
+    );
+  });
+
+  it('should send the product to filter the instance list on', async () => {
+    // Given
+    const fetchMock = stubSaasManager();
+
+    // When
+    await client.callInstanceListApi({ ...request, product: 'OAEV' });
+
+    // Then
+    expect(fetchMock).toHaveBeenCalledWith(
+      new URL(
+        `${BASE_URL}/api/hub/instance/?page=2&page_size=25&product=OAEV&ordering=-customer__name`
+      ),
+      expect.any(Object)
+    );
+  });
+
+  it('should renew the token and retry once when the instance list answers 401', async () => {
+    // Given
+    const fetchMock = stubSaasManager(
+      new Response(null, { status: 401 }),
+      new Response(null, { status: 200 })
+    );
+
+    // When
+    const response = await client.callInstanceListApi(request);
+
+    // Then
+    expect({
+      authorizations: apiAuthorizations(fetchMock),
+      status: response.status,
+    }).toEqual({
+      authorizations: [`Bearer ${FIRST_TOKEN}`, `Bearer ${SECOND_TOKEN}`],
+      status: 200,
+    });
+  });
+
+  it('should throw without fetching when no SaaS Manager URL is configured', async () => {
+    // Given
+    useConfig({ 'saas_manager.url': null });
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    // When
+    const result = client.callInstanceListApi(request);
+
+    // Then
+    await expect(result).rejects.toThrow('SaaS Manager URL is not configured');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});

@@ -29,6 +29,7 @@ export interface ServiceContextProps {
   ServiceForm: ServiceForm;
   type: ShareableResourceType;
   setIntegrationType: (integrationType: IntegrationType) => void;
+  isSubmitting: boolean;
 }
 
 const ServiceContext = createContext<ServiceContextProps | undefined>(

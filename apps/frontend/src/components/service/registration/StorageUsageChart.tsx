@@ -70,14 +70,14 @@ export const StorageUsageChart = ({
     <figure>
       <figcaption className="flex items-start justify-between gap-2">
         <div className="flex flex-col">
-          <h3 className="flex items-center gap-2">
+          <h4 className="flex items-center gap-2">
             <span
               aria-hidden="true"
               className="size-3 shrink-0 rounded-xs"
               style={{ backgroundColor: color }}
             />
             {title}
-          </h3>
+          </h4>
           <p className="text-default-secondary">
             {t(`Register.Metrics.${graphType}.Subtitle`)}
           </p>

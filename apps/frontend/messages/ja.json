@@ -25,13 +25,28 @@
     "Title": "利用可能な機能"
   },
   "CSMBoard": {
+    "Customer": "顧客",
     "Organization": "組織",
     "Administrators": "管理者",
     "Products": "製品",
-    "Link": "SaaS指標",
+    "ProductVersion": "バージョン: {version}",
+    "AllProducts": "すべての製品",
+    "Plan": "プラン",
+    "Health": "ヘルス",
+    "Healthy": "正常",
+    "HealthSla": "SLA {percent}",
+    "HealthDatabase": "データベース {percent}",
+    "HealthFileStorage": "ファイルストレージ {percent}",
+    "Database": "データベース",
+    "FileStorage": "ファイルストレージ",
+    "Availability": "可用性",
     "Version": "バージョン",
+    "ContractEnd": "契約終了日",
+    "EndsIn": "あと{days}日",
+    "ContractEnded": "終了",
+    "Link": "SaaS指標",
     "ViewMetrics": "メトリクスを見る",
-    "SearchOrganization": "組織検索",
+    "SearchPlatform": "プラットフォーム検索",
     "ClearSearch": "検索をクリア"
   },
   "CountryComboBox": {
@@ -984,13 +999,15 @@
       "PlatformVersion": "プラットフォームのバージョン"
     },
     "Metrics": {
-      "Title": "ストレージ使用量",
+      "Title": "使用状況と健全性",
+      "StorageTitle": "ストレージ使用量",
       "Unavailable": "現在、このメトリクスは利用できません",
       "Period": {
         "Label": "メトリクスの期間",
-        "last_7_days": "7日間",
         "last_30_days": "30日間",
-        "last_90_days": "90日間"
+        "last_90_days": "90日間",
+        "last_180_days": "180日間",
+        "ComingSoon": "近日公開予定"
       },
       "Database": {
         "Title": "データベース",
@@ -999,6 +1016,26 @@
       "FileStorage": {
         "Title": "ファイルの保存",
         "Subtitle": "インポートされたファイル、レポート、添付ファイル"
+      },
+      "SLA": {
+        "Title": "可用性 (SLA)",
+        "Subtitle": "ご契約どおり、暦月ごとに算出",
+        "MonthRange": "{start}～{end}",
+        "MonthToDate": "{month}（現在まで）",
+        "OnTarget": "{availability}（目標達成）",
+        "BelowTarget": "{availability}（目標未達）",
+        "NoData": "データなし",
+        "NotTrackedYet": "データなし · 指標はまだ測定されていません",
+        "Summary": {
+          "Title": "月次SLA・目標 {target}",
+          "CurrentMonth": "{month}・月初から現在まで",
+          "TargetAndMeasuredDays": "目標 {target}・{total}日中{measured}日測定済み"
+        },
+        "Legend": {
+          "Met": "目標達成",
+          "Missed": "目標未達",
+          "Unknown": "月の残り"
+        }
       },
       "Metadata": {
         "Hostname": "ホスト名",
@@ -1980,7 +2017,7 @@
         "Eyebrow": "XTM Platform 無料トライアル",
         "Description": "XTM Platform のトライアル期間中、チームを簡単に管理し、共同作業を行いましょう。メンバーを招待し、役割と権限を割り当てて、全員がプラットフォームに適切なレベルでアクセスできるようにします。",
         "BackButton": "XTM Platform トライアルに戻る",
-        "BackToDashboardButton": "ダッシュボードに戻る",
+        "BackToDashboardButton": "戻る",
         "GroupAction": "グループアクション",
         "GroupActionDisabledTooltip": "グループアクションを適用するには、リストからユーザーを選択する必要があります",
         "BulkDeleteTooltip": "選択したユーザーを削除できます",

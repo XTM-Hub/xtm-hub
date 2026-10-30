@@ -45,6 +45,44 @@ describe('VotableFeatureForm', () => {
     });
   });
 
+  describe('product and use cases fields', () => {
+    it('should clear the selected use cases when the admin picks another product', async () => {
+      // Given
+      const handleSubmit = vi.fn();
+      const { user } = testRender(
+        <VotableFeatureForm
+          feature={buildFeature()}
+          serviceInstanceId="instance-1"
+          onClose={vi.fn()}
+          handleDelete={vi.fn()}
+          handleSubmit={handleSubmit}
+        />
+      );
+
+      // When
+      await user.click(
+        screen.getByRole('combobox', { name: 'VotingRound.Feature.Product' })
+      );
+      await user.click(
+        await screen.findByRole('option', {
+          name: FiligranProduct.Openaev.toUpperCase(),
+        })
+      );
+      await user.click(screen.getByRole('button', { name: 'Utils.Validate' }));
+
+      // Then
+      await waitFor(() =>
+        expect(handleSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({
+            product: FiligranProduct.Openaev,
+            use_case_ids: [],
+          }),
+          expect.anything()
+        )
+      );
+    });
+  });
+
   describe('illustration field', () => {
     it('should preview the current illustration and hide it once removed', async () => {
       const { user } = testRender(

@@ -125,7 +125,7 @@ describe('TimeSeriesBarChart', () => {
     ]);
   });
 
-  it('should draw a thick solid red limit line labelled on the left, under the peak line', async () => {
+  it('should draw a thick solid red limit line labelled with a critical chip on the left, under the peak line', async () => {
     // Given / When
     const { options } = await renderChart({
       limit: { value: 2_000_000_000, label: 'Max capacity' },
@@ -141,7 +141,13 @@ describe('TimeSeriesBarChart', () => {
         label: expect.objectContaining({
           text: 'Max capacity - 2000000000 units',
           position: 'left',
-          style: expect.objectContaining({ fontSize: '14px', fontWeight: 700 }),
+          borderRadius: 4,
+          style: expect.objectContaining({
+            background: 'var(--color-feedback-error-secondary)',
+            color: 'var(--text-default-primary)',
+            fontSize: '14px',
+            padding: { left: 8, right: 8, top: 2, bottom: 2 },
+          }),
         }),
       }),
       expect.objectContaining({
@@ -158,8 +164,8 @@ describe('TimeSeriesBarChart', () => {
   it.each`
     case                             | limitValue       | limitLabelOffsetY | peakLabelOffsetY
     ${'the peak is below the limit'} | ${2_000_000_000} | ${0}              | ${16}
-    ${'the peak reaches the limit'}  | ${1_500_000_000} | ${19}             | ${0}
-    ${'the peak is above the limit'} | ${1_000_000_000} | ${19}             | ${0}
+    ${'the peak reaches the limit'}  | ${1_500_000_000} | ${21}             | ${0}
+    ${'the peak is above the limit'} | ${1_000_000_000} | ${21}             | ${0}
   `(
     'should put the label of the lower line below it when $case',
     async ({ limitValue, limitLabelOffsetY, peakLabelOffsetY }) => {
@@ -176,19 +182,16 @@ describe('TimeSeriesBarChart', () => {
   );
 
   it.each`
-    case                 | limit                                              | expected
-    ${'without a limit'} | ${undefined}                                       | ${1}
-    ${'with a limit'}    | ${{ value: 2_000_000_000, label: 'Max capacity' }} | ${0.8}
-  `(
-    'should fill the bars at $expected opacity $case',
-    async ({ limit, expected }) => {
-      // Given / When
-      const { options } = await renderChart({ limit });
+    case                 | limit
+    ${'without a limit'} | ${undefined}
+    ${'with a limit'}    | ${{ value: 2_000_000_000, label: 'Max capacity' }}
+  `('should fill the bars fully opaque $case', async ({ limit }) => {
+    // Given / When
+    const { options } = await renderChart({ limit });
 
-      // Then
-      expect(options.fill?.opacity).toBe(expected);
-    }
-  );
+    // Then
+    expect(options.fill?.opacity).toBe(1);
+  });
 
   it('should keep the limit label above its line when there is no peak line', async () => {
     // Given / When

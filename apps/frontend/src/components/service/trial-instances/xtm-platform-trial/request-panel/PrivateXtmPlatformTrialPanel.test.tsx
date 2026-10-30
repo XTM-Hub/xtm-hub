@@ -66,11 +66,19 @@ vi.mock(
   () => ({
     XtmPlatformTrialForm: ({
       handleSubmit,
+      isSubmitting,
     }: {
       handleSubmit: typeof capturedHandleSubmit;
+      isSubmitting?: boolean;
     }) => {
       capturedHandleSubmit = handleSubmit;
-      return <div data-testid="xtm-platform-trial-form" />;
+      return (
+        <button
+          type="submit"
+          data-testid="xtm-platform-trial-form"
+          disabled={isSubmitting}
+        />
+      );
     },
     xtmPlatformTrialFormSchema: {},
   })
@@ -241,6 +249,22 @@ describe('PrivateXtmPlatformTrialPanel', () => {
     );
 
     expect(screen.getByTestId('xtm-platform-trial-form')).toBeInTheDocument();
+  });
+
+  it('disables the form submit while the deployment request is pending', () => {
+    graphqlMocks.useCreateDeploymentRequestMutation.mockReturnValue({
+      mutate: graphqlMocks.mutate,
+      isPending: true,
+    });
+
+    testRender(
+      <PrivateXtmPlatformTrialPanel
+        bundle={null}
+        view={formView}
+      />
+    );
+
+    expect(screen.getByTestId('xtm-platform-trial-form')).toBeDisabled();
   });
 
   it('submits a bundle deployment request with XTM One, OpenCTI and OpenAEV and their use cases', () => {

@@ -16,6 +16,10 @@ export interface RegistrationDataLoaders {
     ServiceInstanceId,
     Organization | null
   >;
+  saasRegisteredPlatformByPlatformIdLoader: DataLoader<
+    string,
+    RegisteredPlatform | null
+  >;
 }
 
 export const RegistrationDataLoader = {
@@ -34,6 +38,24 @@ export const RegistrationDataLoader = {
       }
     }
     return serviceInstanceIds.map((id) => map.get(id) ?? null);
+  },
+
+  batchLoadSaasRegisteredPlatforms: async (
+    platformIds: readonly string[]
+  ): Promise<(RegisteredPlatform | null)[]> => {
+    const rows =
+      await RegistrationDomain.loadSaasRegisteredPlatformsByPlatformIds(
+        platformIds
+      );
+
+    // The rows come most recently seen first: the first one of each platform_id wins.
+    const map = new Map<string, RegisteredPlatform>();
+    for (const row of rows) {
+      if (!map.has(row.platform_id)) {
+        map.set(row.platform_id, mapDomainRegisteredPlatformToGraphQL(row));
+      }
+    }
+    return platformIds.map((id) => map.get(id) ?? null);
   },
 
   batchLoadOwnerOrganizations: async (
@@ -59,6 +81,9 @@ export const RegistrationDataLoader = {
     ),
     ownerOrganizationByServiceInstanceLoader: new DataLoader(
       RegistrationDataLoader.batchLoadOwnerOrganizations
+    ),
+    saasRegisteredPlatformByPlatformIdLoader: new DataLoader(
+      RegistrationDataLoader.batchLoadSaasRegisteredPlatforms
     ),
   }),
 };

@@ -4,6 +4,8 @@ import { screen, waitFor } from '@testing-library/react';
 
 const SERVICE_INSTANCES = [{ id: 'instance-1', name: 'XTM Platform Roadmap' }];
 
+type User = ReturnType<typeof testRender>['user'];
+
 describe('VotingRoundForm', () => {
   describe('form validation', () => {
     it('should not submit when the name is too short', async () => {
@@ -180,6 +182,77 @@ describe('VotingRoundForm', () => {
       expect(
         screen.queryByLabelText(/VotingRound.Form.CopyFeaturesFrom/i)
       ).not.toBeInTheDocument();
+    });
+  });
+
+  describe('copy-features field', () => {
+    const COPY_SOURCE = { id: 'round-0', name: 'Feature vote #0' };
+    const NEW_ROUND_NAME = 'Feature vote #2';
+
+    const renderNewRound = (handleSubmit = vi.fn()) => ({
+      handleSubmit,
+      ...testRender(
+        <VotingRoundForm
+          serviceInstances={SERVICE_INSTANCES}
+          copySources={[COPY_SOURCE]}
+          onClose={vi.fn()}
+          handleSubmit={handleSubmit}
+        />
+      ),
+    });
+
+    const pickCopySource = async (user: User, optionName: string) => {
+      await user.click(
+        screen.getByRole('combobox', {
+          name: 'VotingRound.Form.CopyFeaturesFrom',
+        })
+      );
+      await user.click(await screen.findByRole('option', { name: optionName }));
+    };
+
+    it('should copy the features of the round the admin picks', async () => {
+      // Given
+      const { user, handleSubmit } = renderNewRound();
+      await user.type(
+        screen.getByLabelText(/VotingRound.Form.Name/i),
+        NEW_ROUND_NAME
+      );
+
+      // When
+      await pickCopySource(user, COPY_SOURCE.name);
+      await user.click(screen.getByRole('button', { name: 'Utils.Validate' }));
+
+      // Then
+      await waitFor(() =>
+        expect(handleSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({
+            copy_features_from_round_id: COPY_SOURCE.id,
+          }),
+          expect.anything()
+        )
+      );
+    });
+
+    it('should copy no feature when the admin switches back to none', async () => {
+      // Given
+      const { user, handleSubmit } = renderNewRound();
+      await user.type(
+        screen.getByLabelText(/VotingRound.Form.Name/i),
+        NEW_ROUND_NAME
+      );
+      await pickCopySource(user, COPY_SOURCE.name);
+
+      // When
+      await pickCopySource(user, 'VotingRound.Form.CopyFeaturesNone');
+      await user.click(screen.getByRole('button', { name: 'Utils.Validate' }));
+
+      // Then
+      await waitFor(() =>
+        expect(handleSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({ copy_features_from_round_id: undefined }),
+          expect.anything()
+        )
+      );
     });
   });
 });

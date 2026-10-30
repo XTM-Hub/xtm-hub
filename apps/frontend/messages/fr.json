@@ -25,13 +25,28 @@
     "Title": "Capacités disponibles"
   },
   "CSMBoard": {
+    "Customer": "Client",
     "Organization": "Organisation",
     "Administrators": "Administrateurs",
     "Products": "Produits",
-    "Link": "Métriques SaaS",
+    "ProductVersion": "Version : {version}",
+    "AllProducts": "Tous les produits",
+    "Plan": "Offre",
+    "Health": "Santé",
+    "Healthy": "Sain",
+    "HealthSla": "SLA {percent}",
+    "HealthDatabase": "Base de données {percent}",
+    "HealthFileStorage": "Stockage de fichiers {percent}",
+    "Database": "Base de données",
+    "FileStorage": "Stockage de fichiers",
+    "Availability": "Disponibilité",
     "Version": "Version",
+    "ContractEnd": "Fin du contrat",
+    "EndsIn": "dans {days} j",
+    "ContractEnded": "Terminé",
+    "Link": "Métriques SaaS",
     "ViewMetrics": "Voir les métriques",
-    "SearchOrganization": "Rechercher une organisation",
+    "SearchPlatform": "Rechercher une plateforme",
     "ClearSearch": "Effacer la recherche"
   },
   "CountryComboBox": {
@@ -984,13 +999,15 @@
       "PlatformVersion": "Version de la plateforme"
     },
     "Metrics": {
-      "Title": "Utilisation de l'espace de stockage",
+      "Title": "Utilisation et santé",
+      "StorageTitle": "Utilisation de l'espace de stockage",
       "Unavailable": "Ces indicateurs ne sont actuellement pas disponibles",
       "Period": {
         "Label": "Période des indicateurs",
-        "last_7_days": "7 jours",
         "last_30_days": "30 jours",
-        "last_90_days": "90 jours"
+        "last_90_days": "90 jours",
+        "last_180_days": "180 jours",
+        "ComingSoon": "À venir"
       },
       "Database": {
         "Title": "Base de données",
@@ -999,6 +1016,26 @@
       "FileStorage": {
         "Title": "Stockage de fichiers",
         "Subtitle": "Fichiers importés, rapports et pièces jointes"
+      },
+      "SLA": {
+        "Title": "Disponibilité (SLA)",
+        "Subtitle": "Calculée par mois calendaire, comme dans votre contrat",
+        "MonthRange": "{start} – {end}",
+        "MonthToDate": "{month} (en cours)",
+        "OnTarget": "{availability} · Dans l'objectif",
+        "BelowTarget": "{availability} · Sous l'objectif",
+        "NoData": "Aucune donnée",
+        "NotTrackedYet": "Aucune donnée · Ces indicateurs n'avaient pas encore été mesurés",
+        "Summary": {
+          "Title": "SLA mensuel · objectif {target}",
+          "CurrentMonth": "{month} · mois en cours",
+          "TargetAndMeasuredDays": "Objectif {target} · {measured} jours mesurés sur {total}"
+        },
+        "Legend": {
+          "Met": "Dans l'objectif",
+          "Missed": "Sous l'objectif",
+          "Unknown": "Reste du mois"
+        }
       },
       "Metadata": {
         "Hostname": "Nom d'hôte",
@@ -1980,7 +2017,7 @@
         "Eyebrow": "Essai gratuit XTM Platform",
         "Description": "Gérez facilement votre équipe et collaborez tout au long de votre essai XTM Platform. Invitez des membres, attribuez des rôles et des permissions, et assurez à chacun le bon niveau d'accès à la plateforme.",
         "BackButton": "Retour à l'essai XTM Platform",
-        "BackToDashboardButton": "Retour au tableau de bord",
+        "BackToDashboardButton": "Retour",
         "GroupAction": "Action groupée",
         "GroupActionDisabledTooltip": "Vous devez sélectionner des utilisateurs dans la liste pour appliquer une action groupée",
         "BulkDeleteTooltip": "Vous pouvez supprimer les utilisateurs sélectionnés",

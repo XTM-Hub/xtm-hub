@@ -34,17 +34,14 @@ const { storageMock } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock(
-  '@/components/service/components/ServiceListLocalStorageKeyContext',
-  () => ({
-    useServiceListLocalStorageKeyContext: () => ({
-      localStorageKey: 'OpenCTIIntegrationFeeds',
-    }),
-  })
-);
+vi.mock('@/components/service/components/ServiceListStorageKeyContext', () => ({
+  useServiceListStorageKeyContext: () => ({
+    storageKey: 'OpenCTIIntegrationFeeds',
+  }),
+}));
 
-vi.mock('@/hooks/use-service-list-local-storage', () => ({
-  useServiceListLocalStorage: () => storageMock,
+vi.mock('@/hooks/use-service-list-storage', () => ({
+  useServiceListStorage: () => storageMock,
 }));
 
 vi.mock('@/components/admin/use-case/use-use-cases', () => ({

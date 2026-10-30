@@ -10,9 +10,12 @@ import {
 import {
   CommercialModel,
   FeatureFlag,
+  OrderingMode,
   PlatformContract,
   PlatformIdentifier,
   SaasPlatformMetricsPeriod,
+  SaasPlatformOrdering,
+  SaasProduct,
 } from '../../__generated__/resolvers-types';
 import { requestContext } from '../../context/request.context';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
@@ -53,6 +56,9 @@ describe('product information app', () => {
     let serviceInstanceId: ServiceInstanceId;
 
     beforeEach(async () => {
+      // The days asked to the SaaS Manager depend on the current date.
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime('2026-10-27T09:00:00.000Z');
       vi.mocked(isFeatureEnabled).mockReturnValue(true);
       requestContext.set(requestContextRegistererUserSecondOrga);
       platformId = uuidv4();
@@ -75,6 +81,7 @@ describe('product information app', () => {
     });
 
     afterEach(async () => {
+      vi.useRealTimers();
       await PlatformConfigurationDomain.deleteConfigurationBy({
         service_instance_id: serviceInstanceId,
       });
@@ -111,7 +118,7 @@ describe('product information app', () => {
       // Then
       expect(callSpy).toHaveBeenCalledExactlyOnceWith({
         platform_id: platformId,
-        include_metrics: 90,
+        include_metrics: 95,
       });
     });
 
@@ -141,6 +148,7 @@ describe('product information app', () => {
         metadata: fullMetadata,
         metrics: null,
         storage: null,
+        sla: null,
       });
     });
 
@@ -171,6 +179,7 @@ describe('product information app', () => {
         metadata: emptyMetadata,
         metrics: null,
         storage: null,
+        sla: null,
       });
     });
 
@@ -196,6 +205,7 @@ describe('product information app', () => {
         metadata: { ...emptyMetadata, hostname: fullMetadata.hostname },
         metrics: null,
         storage: null,
+        sla: null,
       });
     });
 
@@ -233,6 +243,7 @@ describe('product information app', () => {
           },
           metrics: null,
           storage: null,
+          sla: null,
         });
       }
     );
@@ -263,6 +274,7 @@ describe('product information app', () => {
         metadata: fullMetadata,
         metrics: null,
         storage: null,
+        sla: null,
       });
     });
 
@@ -363,22 +375,18 @@ describe('product information app', () => {
           metadata: fullMetadata,
           metrics: null,
           storage: null,
+          sla: null,
         });
         expect(callSpy).toHaveBeenCalledExactlyOnceWith({
           platform_id: platformId,
-          include_metrics: 90,
+          include_metrics: 95,
         });
       }
     );
 
     describe('cache', () => {
-      afterEach(() => {
-        vi.useRealTimers();
-      });
-
       it('should not ask the SaaS Manager again within a minute', async () => {
         // Given
-        vi.useFakeTimers({ toFake: ['Date'] });
         const callSpy = mockSaasManagerFullMetadata();
         await ProductInformationApp.loadRegisteredSaasPlatformData(
           serviceInstanceId,
@@ -397,13 +405,13 @@ describe('product information app', () => {
           metadata: fullMetadata,
           metrics: null,
           storage: null,
+          sla: null,
         });
         expect(callSpy).toHaveBeenCalledOnce();
       });
 
       it('should ask the SaaS Manager again once the minute has passed', async () => {
         // Given
-        vi.useFakeTimers({ toFake: ['Date'] });
         const callSpy = mockSaasManagerFullMetadata();
         await ProductInformationApp.loadRegisteredSaasPlatformData(
           serviceInstanceId,
@@ -432,14 +440,14 @@ describe('product information app', () => {
         // When
         await ProductInformationApp.loadRegisteredSaasPlatformData(
           serviceInstanceId,
-          SaasPlatformMetricsPeriod.Last_7Days
+          SaasPlatformMetricsPeriod.Last_180Days
         );
 
         // Then
         expect(callSpy).toHaveBeenCalledTimes(2);
         expect(callSpy).toHaveBeenLastCalledWith({
           platform_id: platformId,
-          include_metrics: 7,
+          include_metrics: 187,
         });
       });
 
@@ -461,8 +469,8 @@ describe('product information app', () => {
 
         // Then
         expect(data).toEqual([
-          { metadata: fullMetadata, metrics: null, storage: null },
-          { metadata: fullMetadata, metrics: null, storage: null },
+          { metadata: fullMetadata, metrics: null, storage: null, sla: null },
+          { metadata: fullMetadata, metrics: null, storage: null, sla: null },
         ]);
         expect(callSpy).toHaveBeenCalledOnce();
       });
@@ -488,6 +496,7 @@ describe('product information app', () => {
           metadata: fullMetadata,
           metrics: null,
           storage: null,
+          sla: null,
         });
         expect(callSpy).toHaveBeenCalledTimes(2);
       });
@@ -510,6 +519,130 @@ describe('product information app', () => {
         // Then
         expect(data).toBeNull();
       });
+    });
+  });
+
+  describe('loadSaasManagerPlatforms', () => {
+    const platformId = uuidv4();
+    const args = {
+      page: 1,
+      pageSize: 25,
+      orderBy: SaasPlatformOrdering.CustomerName,
+      orderMode: OrderingMode.Asc,
+    };
+
+    beforeEach(() => {
+      vi.mocked(isFeatureEnabled).mockReturnValue(true);
+    });
+
+    const mockSaasManagerPage = (count = 1) =>
+      vi.spyOn(SaasManagerClient, 'callInstanceListApi').mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          count,
+          next: null,
+          previous: null,
+          results: [{ id: platformId, hostname: 'my-platform.example.com' }],
+        }),
+      } as Response);
+
+    it.each`
+      case                                       | extraArgs                                                                       | expected
+      ${'the first page without search'}         | ${{}}                                                                           | ${{ page: 1, page_size: 25, search: undefined, ordering: 'customer__name' }}
+      ${'the page asked for'}                    | ${{ page: 3, pageSize: 10 }}                                                    | ${{ page: 3, page_size: 10, search: undefined, ordering: 'customer__name' }}
+      ${'a descending ordering'}                 | ${{ orderBy: SaasPlatformOrdering.Plan, orderMode: OrderingMode.Desc }}         | ${{ page: 1, page_size: 25, search: undefined, ordering: '-plan' }}
+      ${'the customer name in descending order'} | ${{ orderBy: SaasPlatformOrdering.CustomerName, orderMode: OrderingMode.Desc }} | ${{ page: 1, page_size: 25, search: undefined, ordering: '-customer__name' }}
+      ${'the contract end date'}                 | ${{ orderBy: SaasPlatformOrdering.EndDate }}                                    | ${{ page: 1, page_size: 25, search: undefined, ordering: 'end_date' }}
+      ${'the search term'}                       | ${{ searchTerm: 'filigran' }}                                                   | ${{ page: 1, page_size: 25, search: 'filigran', ordering: 'customer__name' }}
+      ${'no search for an empty search term'}    | ${{ searchTerm: '' }}                                                           | ${{ page: 1, page_size: 25, search: undefined, ordering: 'customer__name' }}
+      ${'the platforms of a product'}            | ${{ product: SaasProduct.Oaev }}                                                | ${{ page: 1, page_size: 25, search: undefined, product: 'OAEV', ordering: 'customer__name' }}
+    `(
+      'should ask the SaaS Manager for $case',
+      async ({ extraArgs, expected }) => {
+        // Given
+        const callSpy = mockSaasManagerPage();
+
+        // When
+        await ProductInformationApp.loadSaasManagerPlatforms({
+          ...args,
+          ...extraArgs,
+        });
+
+        // Then
+        expect(callSpy).toHaveBeenCalledExactlyOnceWith(expected);
+      }
+    );
+
+    it('should return the platforms of the page with the total count', async () => {
+      // Given
+      mockSaasManagerPage(60);
+
+      // When
+      const platformPage = await ProductInformationApp.loadSaasManagerPlatforms(
+        { ...args, page: 2 }
+      );
+
+      // Then
+      expect(platformPage).toMatchObject({
+        totalCount: 60,
+        platforms: [
+          {
+            id: platformId,
+            metadata: { hostname: 'my-platform.example.com' },
+          },
+        ],
+      });
+    });
+
+    it.each`
+      case                        | extraArgs             | page | pageSize
+      ${'above the maximum size'} | ${{ pageSize: 1000 }} | ${1} | ${500}
+      ${'below one platform'}     | ${{ pageSize: 0 }}    | ${1} | ${1}
+      ${'before the first page'}  | ${{ page: 0 }}        | ${1} | ${25}
+    `('should bound the page $case', async ({ extraArgs, page, pageSize }) => {
+      // Given
+      const callSpy = mockSaasManagerPage();
+
+      // When
+      await ProductInformationApp.loadSaasManagerPlatforms({
+        ...args,
+        ...extraArgs,
+      });
+
+      // Then
+      expect(callSpy).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({ page, page_size: pageSize })
+      );
+    });
+
+    it('should return null when the SaaS Manager cannot list the platforms', async () => {
+      // Given
+      vi.spyOn(SaasManagerClient, 'callInstanceListApi').mockRejectedValue(
+        new Error('fetch failed')
+      );
+
+      // When
+      const platformPage =
+        await ProductInformationApp.loadSaasManagerPlatforms(args);
+
+      // Then
+      expect(platformPage).toBeNull();
+    });
+
+    it('should return null without asking the SaaS Manager when the SaaS metrics feature flag is disabled', async () => {
+      // Given
+      const callSpy = mockSaasManagerPage();
+      vi.mocked(isFeatureEnabled).mockReturnValue(false);
+
+      // When
+      const platformPage =
+        await ProductInformationApp.loadSaasManagerPlatforms(args);
+
+      // Then
+      expect(platformPage).toBeNull();
+      expect(callSpy).not.toHaveBeenCalled();
+      expect(isFeatureEnabled).toHaveBeenCalledWith(FeatureFlag.SaasMetrics);
     });
   });
 });

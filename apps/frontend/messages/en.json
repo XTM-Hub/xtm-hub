@@ -25,13 +25,28 @@
     "Title": "Available capabilities"
   },
   "CSMBoard": {
+    "Customer": "Customer",
     "Organization": "Organization",
     "Administrators": "Administrators",
     "Products": "Products",
-    "Link": "SaaS metrics",
+    "ProductVersion": "Version: {version}",
+    "AllProducts": "All products",
+    "Plan": "Plan",
+    "Health": "Health",
+    "Healthy": "Healthy",
+    "HealthSla": "SLA {percent}",
+    "HealthDatabase": "Database {percent}",
+    "HealthFileStorage": "File storage {percent}",
+    "Database": "Database",
+    "FileStorage": "File storage",
+    "Availability": "Availability",
     "Version": "Version",
+    "ContractEnd": "Contract end",
+    "EndsIn": "in {days} d",
+    "ContractEnded": "Ended",
+    "Link": "SaaS metrics",
     "ViewMetrics": "View metrics",
-    "SearchOrganization": "Search organization",
+    "SearchPlatform": "Search platform",
     "ClearSearch": "Clear search"
   },
   "CountryComboBox": {
@@ -984,13 +999,15 @@
       "PlatformVersion": "Platform version"
     },
     "Metrics": {
-      "Title": "Storage consumption",
+      "Title": "Usage & health",
+      "StorageTitle": "Storage consumption",
       "Unavailable": "The metrics are currently unavailable",
       "Period": {
         "Label": "Metrics period",
-        "last_7_days": "7 days",
         "last_30_days": "30 days",
-        "last_90_days": "90 days"
+        "last_90_days": "90 days",
+        "last_180_days": "180 days",
+        "ComingSoon": "Coming soon"
       },
       "Database": {
         "Title": "Database",
@@ -999,6 +1016,26 @@
       "FileStorage": {
         "Title": "File storage",
         "Subtitle": "Imported files, reports and attachments"
+      },
+      "SLA": {
+        "Title": "Availability (SLA)",
+        "Subtitle": "Calculated per calendar month, as in your contract",
+        "MonthRange": "{start} – {end}",
+        "MonthToDate": "{month} (to date)",
+        "OnTarget": "{availability} · On target",
+        "BelowTarget": "{availability} · Below target",
+        "NoData": "No data",
+        "NotTrackedYet": "No data · The metrics had not been measured yet",
+        "Summary": {
+          "Title": "Monthly SLA · target {target}",
+          "CurrentMonth": "{month} · month to date",
+          "TargetAndMeasuredDays": "Target {target} · {measured} of {total} days measured"
+        },
+        "Legend": {
+          "Met": "On target",
+          "Missed": "Below target",
+          "Unknown": "Rest of the month"
+        }
       },
       "Metadata": {
         "Hostname": "Host name",
@@ -1980,7 +2017,7 @@
         "Eyebrow": "XTM Platform free trial",
         "Description": "Easily manage your team and collaborate throughout your XTM Platform trial. Invite team members, assign roles and permissions, and ensure everyone has the right level of access to the platform.",
         "BackButton": "Back to XTM Platform Trial",
-        "BackToDashboardButton": "Back to dashboard",
+        "BackToDashboardButton": "Back",
         "GroupAction": "Group action",
         "GroupActionDisabledTooltip": "You need to select users in the list to apply group action",
         "BulkDeleteTooltip": "You can delete selected users",

@@ -1,13 +1,52 @@
 import { v4 as uuidv4 } from 'uuid';
-import { describe, expect, it, vi } from 'vitest';
-import { SaasPlatformMetricsPeriod } from '../../__generated__/resolvers-types';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  SaasPlatformContractStatus,
+  SaasPlatformHealthIssue,
+  SaasPlatformMetricsPeriod,
+  SaasProduct,
+} from '../../__generated__/resolvers-types';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { SaasManagerClient } from '../../thirdparty/saasmanager/client';
 import { logApp } from '../../utils/app-logger.util';
 import { ProductInformationHelper } from './product-information.helper';
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+// The SLA grid and the days asked to the SaaS Manager depend on the current date.
+const NOW = '2026-10-27T09:00:00.000Z';
+
+/** The expected SLA of a month: every day of it, null unless given an availability by day of the month. */
+const slaMonth = (
+  month: string,
+  availability: number | null,
+  dayAvailabilities: Record<number, number> = {}
+) => {
+  const start = new Date(month);
+  const dayCount = new Date(
+    Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 0)
+  ).getUTCDate();
+  return {
+    month,
+    availability,
+    days: Array.from({ length: dayCount }, (_, index) => ({
+      day: new Date(start.getTime() + index * MS_PER_DAY).toISOString(),
+      availability: dayAvailabilities[index + 1] ?? null,
+    })),
+  };
+};
+
 describe('product information helper', () => {
   describe('fetchSaasPlatformData', () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(NOW);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     const serviceInstanceId = uuidv4() as ServiceInstanceId;
     const platformId = uuidv4();
     const metricsPeriod = SaasPlatformMetricsPeriod.Last_90Days;
@@ -57,15 +96,15 @@ describe('product information helper', () => {
       // Then
       expect(callSpy).toHaveBeenCalledExactlyOnceWith({
         platform_id: platformId,
-        include_metrics: 90,
+        include_metrics: 95,
       });
     });
 
     it.each`
-      period                                   | days
-      ${SaasPlatformMetricsPeriod.Last_7Days}  | ${7}
-      ${SaasPlatformMetricsPeriod.Last_30Days} | ${30}
-      ${SaasPlatformMetricsPeriod.Last_90Days} | ${90}
+      period                                    | days
+      ${SaasPlatformMetricsPeriod.Last_30Days}  | ${32}
+      ${SaasPlatformMetricsPeriod.Last_90Days}  | ${95}
+      ${SaasPlatformMetricsPeriod.Last_180Days} | ${187}
     `(
       'should ask the SaaS Manager for $days days of metrics when the period is $period',
       async ({ period, days }) => {
@@ -107,6 +146,7 @@ describe('product information helper', () => {
         metadata: fullMetadata,
         metrics: null,
         storage: null,
+        sla: null,
       });
     });
 
@@ -132,6 +172,7 @@ describe('product information helper', () => {
         metadata: emptyMetadata,
         metrics: null,
         storage: null,
+        sla: null,
       });
     });
 
@@ -151,6 +192,7 @@ describe('product information helper', () => {
         metadata: { ...emptyMetadata, hostname: fullMetadata.hostname },
         metrics: null,
         storage: null,
+        sla: null,
       });
     });
 
@@ -182,6 +224,7 @@ describe('product information helper', () => {
           },
           metrics: null,
           storage: null,
+          sla: null,
         });
       }
     );
@@ -275,7 +318,71 @@ describe('product information helper', () => {
           metadata: fullMetadata,
           metrics: parsedMetrics,
           storage: null,
+          sla: {
+            target: 0.9998,
+            months: [
+              slaMonth('2026-08-01T00:00:00.000Z', null),
+              slaMonth('2026-09-01T00:00:00.000Z', 0.75, { 22: 0.75 }),
+              slaMonth('2026-10-01T00:00:00.000Z', null),
+            ],
+          },
         });
+      });
+
+      it('should return only the metrics of the period while its SLA keeps the days before it', async () => {
+        // Given
+        vi.setSystemTime('2026-10-31T12:00:00.000Z');
+        mockSaasManagerBody({
+          ...fullMetadata,
+          metrics: {
+            start: '2026-07-25T12:00:00+00:00',
+            end: '2026-10-31T12:00:00+00:00',
+            resolution: 'day',
+            series: [
+              {
+                metric_type: 'sla_availability',
+                points: [
+                  { t: '2026-08-01T00:00:00+00:00', v: 0.5 },
+                  { t: '2026-09-01T00:00:00+00:00', v: 1 },
+                ],
+              },
+              {
+                metric_type: 'es_used_size',
+                points: [
+                  { t: '2026-08-02T11:59:59+00:00', v: 1 },
+                  { t: '2026-08-02T12:00:00+00:00', v: 2 },
+                ],
+              },
+            ],
+          },
+        });
+
+        // When
+        const data = await ProductInformationHelper.fetchSaasPlatformData(
+          serviceInstanceId,
+          platformId,
+          metricsPeriod
+        );
+
+        // Then
+        expect(data?.metrics).toEqual({
+          start: '2026-08-02T12:00:00.000Z',
+          end: '2026-10-31T12:00:00.000Z',
+          resolution: 'day',
+          series: [
+            {
+              metric_type: 'sla_availability',
+              points: [{ timestamp: '2026-09-01T00:00:00.000Z', value: 1 }],
+            },
+            {
+              metric_type: 'es_used_size',
+              points: [{ timestamp: '2026-08-02T12:00:00.000Z', value: 2 }],
+            },
+          ],
+        });
+        expect(data?.sla?.months[0]).toEqual(
+          slaMonth('2026-08-01T00:00:00.000Z', 0.5, { 1: 0.5 })
+        );
       });
 
       it.each([
@@ -298,6 +405,7 @@ describe('product information helper', () => {
           metadata: fullMetadata,
           metrics: null,
           storage: null,
+          sla: null,
         });
       });
 
@@ -423,6 +531,179 @@ describe('product information helper', () => {
       });
     });
 
+    describe('sla', () => {
+      const slaMetrics = (
+        start: string,
+        points: { t: string; v: unknown }[]
+      ) => ({
+        start,
+        end: NOW,
+        resolution: 'hour',
+        series: [
+          { metric_type: 'sla_availability', points },
+          {
+            metric_type: 'es_used_size',
+            points: [{ t: start, v: 1073741824 }],
+          },
+        ],
+      });
+
+      const fetchSla = async (
+        metrics: unknown,
+        period: SaasPlatformMetricsPeriod = metricsPeriod
+      ) => {
+        mockSaasManagerBody({ ...fullMetadata, metrics });
+        const data = await ProductInformationHelper.fetchSaasPlatformData(
+          serviceInstanceId,
+          platformId,
+          period
+        );
+        return data?.sla;
+      };
+
+      it('should average all the sla_availability points of each month and of each day, the current month to date', async () => {
+        // Given
+        const metrics = slaMetrics('2026-07-29T09:00:00+00:00', [
+          { t: '2026-08-01T00:00:00+00:00', v: 1 },
+          { t: '2026-08-31T21:00:00+00:00', v: 0.5 },
+          { t: '2026-08-31T22:00:00+00:00', v: 0.75 },
+          { t: '2026-08-31T23:00:00+00:00', v: 0.25 },
+          { t: '2026-09-15T12:00:00+00:00', v: null },
+          { t: '2026-10-03T12:00:00+00:00', v: 0.9999 },
+        ]);
+
+        // When
+        const sla = await fetchSla(metrics);
+
+        // Then
+        expect(sla).toEqual({
+          target: 0.9998,
+          months: [
+            slaMonth('2026-08-01T00:00:00.000Z', 0.625, { 1: 1, 31: 0.5 }),
+            slaMonth('2026-09-01T00:00:00.000Z', null),
+            slaMonth('2026-10-01T00:00:00.000Z', 0.9999, { 3: 0.9999 }),
+          ],
+        });
+      });
+
+      it('should list every day of the current month, the days to come without availability', async () => {
+        // Given
+        const metrics = slaMetrics('2026-09-27T09:00:00+00:00', [
+          { t: '2026-10-03T12:00:00+00:00', v: 1 },
+          { t: '2026-10-27T08:00:00+00:00', v: 0.5 },
+        ]);
+
+        // When
+        const sla = await fetchSla(
+          metrics,
+          SaasPlatformMetricsPeriod.Last_30Days
+        );
+
+        // Then
+        const days = sla?.months[0].days;
+        expect(days).toHaveLength(31);
+        expect(days?.[0]).toEqual({
+          day: '2026-10-01T00:00:00.000Z',
+          availability: null,
+        });
+        expect(days?.[2]).toEqual({
+          day: '2026-10-03T00:00:00.000Z',
+          availability: 1,
+        });
+        expect(days?.[26]).toEqual({
+          day: '2026-10-27T00:00:00.000Z',
+          availability: 0.5,
+        });
+        expect(days?.slice(27)).toEqual([
+          { day: '2026-10-28T00:00:00.000Z', availability: null },
+          { day: '2026-10-29T00:00:00.000Z', availability: null },
+          { day: '2026-10-30T00:00:00.000Z', availability: null },
+          { day: '2026-10-31T00:00:00.000Z', availability: null },
+        ]);
+      });
+
+      it('should return every month of the period when the metrics start after its first month', async () => {
+        // Given
+        const metrics = slaMetrics('2026-09-15T00:00:00+00:00', [
+          { t: '2026-09-15T00:00:00+00:00', v: 1 },
+        ]);
+
+        // When
+        const sla = await fetchSla(
+          metrics,
+          SaasPlatformMetricsPeriod.Last_180Days
+        );
+
+        // Then
+        expect(sla).toEqual({
+          target: 0.9998,
+          months: [
+            slaMonth('2026-05-01T00:00:00.000Z', null),
+            slaMonth('2026-06-01T00:00:00.000Z', null),
+            slaMonth('2026-07-01T00:00:00.000Z', null),
+            slaMonth('2026-08-01T00:00:00.000Z', null),
+            slaMonth('2026-09-01T00:00:00.000Z', 1, { 15: 1 }),
+            slaMonth('2026-10-01T00:00:00.000Z', null),
+          ],
+        });
+      });
+
+      it('should ignore the points outside the months of the period', async () => {
+        // Given
+        const metrics = slaMetrics('2026-09-27T09:00:00+00:00', [
+          { t: '2026-09-30T23:59:59+00:00', v: 0 },
+          { t: '2026-10-02T12:00:00+00:00', v: 1 },
+          { t: '2026-11-01T00:00:00+00:00', v: 0 },
+        ]);
+
+        // When
+        const sla = await fetchSla(
+          metrics,
+          SaasPlatformMetricsPeriod.Last_30Days
+        );
+
+        // Then
+        expect(sla).toEqual({
+          target: 0.9998,
+          months: [slaMonth('2026-10-01T00:00:00.000Z', 1, { 2: 1 })],
+        });
+      });
+
+      it('should carry the months over to the next year', async () => {
+        // Given
+        vi.setSystemTime('2027-01-15T12:00:00.000Z');
+        const metrics = slaMetrics('2026-10-17T12:00:00+00:00', [
+          { t: '2026-12-31T23:00:00+00:00', v: 0.5 },
+          { t: '2027-01-01T00:00:00+00:00', v: 1 },
+        ]);
+
+        // When
+        const sla = await fetchSla(metrics);
+
+        // Then
+        expect(sla).toEqual({
+          target: 0.9998,
+          months: [
+            slaMonth('2026-11-01T00:00:00.000Z', null),
+            slaMonth('2026-12-01T00:00:00.000Z', 0.5, { 31: 0.5 }),
+            slaMonth('2027-01-01T00:00:00.000Z', 1, { 1: 1 }),
+          ],
+        });
+      });
+
+      it.each`
+        case                                     | metrics
+        ${'the metrics are null'}                | ${null}
+        ${'there is no sla_availability series'} | ${{ start: '2026-07-29T09:00:00+00:00', end: NOW, resolution: 'hour', series: [] }}
+      `('should return a null sla when $case', async ({ metrics }) => {
+        // Given / When
+        const sla = await fetchSla(metrics);
+
+        // Then
+        expect(sla).toBeNull();
+      });
+    });
+
     describe('storage', () => {
       const storage = {
         es_used_size: {
@@ -466,6 +747,7 @@ describe('product information helper', () => {
           metadata: fullMetadata,
           metrics: null,
           storage: parsedStorage,
+          sla: null,
         });
       });
 
@@ -562,6 +844,386 @@ describe('product information helper', () => {
 
       // Then
       expect(data).toBeNull();
+    });
+
+    it('should log only the start of the body when the SaaS Manager returns an error', async () => {
+      // Given
+      const errorSpy = vi.spyOn(logApp, 'error');
+      const body = `<html>${'x'.repeat(1000)}</html>`;
+      mockSaasManagerResponse(
+        async () =>
+          ({ ok: false, status: 502, text: async () => body }) as Response
+      );
+
+      // When
+      await ProductInformationHelper.fetchSaasPlatformData(
+        serviceInstanceId,
+        platformId,
+        metricsPeriod
+      );
+
+      // Then
+      expect(errorSpy).toHaveBeenCalledExactlyOnceWith(
+        'Unable to load the platform data from the SaaS Manager',
+        {
+          serviceInstanceId,
+          platformId,
+          status: 502,
+          body: body.slice(0, 256),
+        }
+      );
+    });
+  });
+
+  describe('fetchSaasPlatforms', () => {
+    const platform = {
+      id: uuidv4(),
+      status: 'active',
+      plan: 'Enterprise',
+      storage: {
+        es_used_size: {
+          percent: 12.5,
+          used: 1073741824,
+          limit: 8589934592,
+          time: '2026-10-28T08:30:00.587Z',
+        },
+        s3_used_size: {
+          percent: 0,
+          used: 0,
+          limit: 0,
+          time: '2026-10-28T08:30:00.587Z',
+        },
+        postgres_used_size: {
+          percent: 1,
+          used: 1,
+          limit: 100,
+          time: '2026-10-28T08:30:00.587Z',
+        },
+      },
+      sla_cmtd: 99.9,
+      start_date: '2026-01-01',
+      end_date: '2027-01-01',
+      hostname: 'my-platform.example.com',
+      commercial_model: 'INTERNAL',
+      customer: 'Filigran',
+      region: 'eu-west',
+      product: 'OCTI',
+    };
+    const parsedPlatform = {
+      id: platform.id,
+      status: 'active',
+      product: 'OCTI',
+      customer: 'Filigran',
+      commercial_model: 'INTERNAL',
+      sla_cmtd: 0.999,
+      metadata: {
+        hostname: 'my-platform.example.com',
+        plan: 'Enterprise',
+        start_date: '2026-01-01T00:00:00.000Z',
+        end_date: '2027-01-01T00:00:00.000Z',
+        region: 'eu-west',
+      },
+      storage: {
+        es_used_size: { percent: 12.5, used: 1073741824, limit: 8589934592 },
+        s3_used_size: { percent: null, used: 0, limit: 0 },
+      },
+      health_issues: [SaasPlatformHealthIssue.Availability],
+      contract_status: SaasPlatformContractStatus.EndingSoon,
+    };
+
+    beforeEach(() => {
+      vi.useFakeTimers({
+        toFake: ['Date'],
+        now: new Date('2026-10-28T12:00:00.000Z'),
+      });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const request = {
+      page: 2,
+      page_size: 25,
+      search: 'filigran',
+      ordering: '-customer',
+    };
+
+    const page = (results: unknown[], count = 26) => ({
+      count,
+      next: null,
+      previous: 'https://saasmanager.test/api/hub/instance/?page=1',
+      results,
+    });
+
+    const mockSaasManagerBody = (body: unknown) =>
+      vi.spyOn(SaasManagerClient, 'callInstanceListApi').mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => body,
+      } as Response);
+
+    it('should ask the SaaS Manager for the given page, search and ordering', async () => {
+      // Given
+      const callSpy = mockSaasManagerBody(page([platform]));
+
+      // When
+      await ProductInformationHelper.fetchSaasPlatforms(request);
+
+      // Then
+      expect(callSpy).toHaveBeenCalledExactlyOnceWith(request);
+    });
+
+    it('should return the platforms sent by the SaaS Manager without the unknown fields, with the total count', async () => {
+      // Given
+      mockSaasManagerBody(page([platform]));
+
+      // When
+      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+
+      // Then
+      expect(result).toEqual({ totalCount: 26, platforms: [parsedPlatform] });
+    });
+
+    it('should return null when the SaaS Manager sends no count', async () => {
+      // Given
+      mockSaasManagerBody({ results: [platform] });
+
+      // When
+      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+
+      // Then
+      expect(result).toBeNull();
+    });
+
+    it('should return no platform when the SaaS Manager sends an empty page', async () => {
+      // Given
+      mockSaasManagerBody(page([], 0));
+
+      // When
+      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+
+      // Then
+      expect(result).toEqual({ totalCount: 0, platforms: [] });
+    });
+
+    it.each`
+      case                          | body
+      ${'the body is null'}         | ${null}
+      ${'the body is an array'}     | ${[platform]}
+      ${'the results are missing'}  | ${{ count: 0, next: null }}
+      ${'the results are a string'} | ${{ count: 0, next: null, results: 'platforms' }}
+    `('should log an error and return null when $case', async ({ body }) => {
+      // Given
+      mockSaasManagerBody(body);
+      const errorSpy = vi.spyOn(logApp, 'error');
+
+      // When
+      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+
+      // Then
+      expect(result).toBeNull();
+      expect(errorSpy).toHaveBeenCalledExactlyOnceWith(
+        'The SaaS Manager returned an unreadable page of platforms',
+        { page: request.page }
+      );
+    });
+
+    it.each`
+      case                   | sent
+      ${'not an object'}     | ${'platform'}
+      ${'without an id'}     | ${{ ...platform, id: undefined }}
+      ${'with an empty id'}  | ${{ ...platform, id: '' }}
+      ${'with a numeric id'} | ${{ ...platform, id: 42 }}
+    `('should leave out a platform $case', async ({ sent }) => {
+      // Given
+      mockSaasManagerBody(page([sent, platform]));
+
+      // When
+      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+
+      // Then
+      expect(result?.platforms).toEqual([parsedPlatform]);
+    });
+
+    it('should return null fields when the SaaS Manager sends only the id of a platform', async () => {
+      // Given
+      mockSaasManagerBody(page([{ id: platform.id }]));
+
+      // When
+      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+
+      // Then
+      expect(result?.platforms).toEqual([
+        {
+          id: platform.id,
+          status: null,
+          product: null,
+          customer: null,
+          commercial_model: null,
+          sla_cmtd: null,
+          metadata: {
+            hostname: null,
+            plan: null,
+            start_date: null,
+            end_date: null,
+            region: null,
+          },
+          storage: null,
+          health_issues: null,
+          contract_status: null,
+        },
+      ]);
+    });
+
+    it.each`
+      case                      | product   | expected
+      ${'a product code as is'} | ${'OCTI'} | ${SaasProduct.Octi}
+      ${'a lower-case product'} | ${'oaev'} | ${SaasProduct.Oaev}
+      ${'a mixed-case product'} | ${'One'}  | ${SaasProduct.One}
+    `(
+      'should return $case as a product of the Hub',
+      async ({ product, expected }) => {
+        // Given
+        mockSaasManagerBody(page([{ id: platform.id, product }]));
+
+        // When
+        const result =
+          await ProductInformationHelper.fetchSaasPlatforms(request);
+
+        // Then
+        expect(result?.platforms[0]?.product).toBe(expected);
+      }
+    );
+
+    it('should log a warning and return no product for a product the Hub does not know', async () => {
+      // Given
+      mockSaasManagerBody(page([{ id: platform.id, product: 'OTHER' }]));
+      const warnSpy = vi.spyOn(logApp, 'warn');
+
+      // When
+      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+
+      // Then
+      expect(result?.platforms[0]?.product).toBeNull();
+      expect(warnSpy).toHaveBeenCalledExactlyOnceWith(
+        'The SaaS Manager returned an unknown product',
+        { product: 'OTHER' }
+      );
+    });
+
+    it.each`
+      case                                     | end_date                      | contract_status
+      ${'active with 90 days left'}            | ${'2027-01-26T12:00:00.000Z'} | ${SaasPlatformContractStatus.Active}
+      ${'ending soon with 89 days left'}       | ${'2027-01-25T12:00:00.000Z'} | ${SaasPlatformContractStatus.EndingSoon}
+      ${'ending soon on its last started day'} | ${'2026-10-28T13:00:00.000Z'} | ${SaasPlatformContractStatus.EndingSoon}
+      ${'ended at its end date'}               | ${'2026-10-28T12:00:00.000Z'} | ${SaasPlatformContractStatus.Ended}
+      ${'ended 40 days ago'}                   | ${'2026-09-18T12:00:00.000Z'} | ${SaasPlatformContractStatus.Ended}
+    `(
+      'should tell the contract of a platform $case',
+      async ({ end_date, contract_status }) => {
+        // Given
+        mockSaasManagerBody(page([{ id: platform.id, end_date }]));
+
+        // When
+        const result =
+          await ProductInformationHelper.fetchSaasPlatforms(request);
+
+        // Then
+        expect(result?.platforms[0]?.contract_status).toBe(contract_status);
+      }
+    );
+
+    const storageUsage = (percent: number) => ({
+      percent,
+      used: percent,
+      limit: 100,
+    });
+
+    it.each`
+      case                                                  | sla_cmtd  | esPercent | s3Percent | health_issues
+      ${'no issue when every measure is within its limit'}  | ${99.99}  | ${80}     | ${12}     | ${[]}
+      ${'no issue for an availability shown at the target'} | ${99.975} | ${10}     | ${10}     | ${[]}
+      ${'the availability under the SLA target'}            | ${99.97}  | ${10}     | ${10}     | ${[SaasPlatformHealthIssue.Availability]}
+      ${'the database above 80 % of its capacity'}          | ${99.99}  | ${80.5}   | ${10}     | ${[SaasPlatformHealthIssue.Database]}
+      ${'the file storage above 80 % of its capacity'}      | ${99.99}  | ${10}     | ${93}     | ${[SaasPlatformHealthIssue.FileStorage]}
+      ${'every issue, the missed SLA first'}                | ${95}     | ${90}     | ${93}     | ${[SaasPlatformHealthIssue.Availability, SaasPlatformHealthIssue.Database, SaasPlatformHealthIssue.FileStorage]}
+    `(
+      'should return $case',
+      async ({ sla_cmtd, esPercent, s3Percent, health_issues }) => {
+        // Given
+        mockSaasManagerBody(
+          page([
+            {
+              id: platform.id,
+              sla_cmtd,
+              storage: {
+                es_used_size: storageUsage(esPercent),
+                s3_used_size: storageUsage(s3Percent),
+              },
+            },
+          ])
+        );
+
+        // When
+        const result =
+          await ProductInformationHelper.fetchSaasPlatforms(request);
+
+        // Then
+        expect(result?.platforms[0]?.health_issues).toEqual(health_issues);
+      }
+    );
+
+    it('should rate the storage of a platform without availability', async () => {
+      // Given
+      mockSaasManagerBody(
+        page([
+          {
+            id: platform.id,
+            storage: { es_used_size: storageUsage(95) },
+          },
+        ])
+      );
+
+      // When
+      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+
+      // Then
+      expect(result?.platforms[0]).toMatchObject({
+        sla_cmtd: null,
+        health_issues: [SaasPlatformHealthIssue.Database],
+      });
+    });
+
+    it('should return the availability as a ratio', async () => {
+      // Given
+      mockSaasManagerBody(page([{ id: platform.id, sla_cmtd: 99.95 }]));
+
+      // When
+      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+
+      // Then
+      expect(result?.platforms[0]?.sla_cmtd).toBe(0.9995);
+    });
+
+    it.each`
+      case                       | response
+      ${'the call fails'}        | ${() => Promise.reject(new Error('fetch failed'))}
+      ${'it returns 401'}        | ${async () => ({ ok: false, status: 401, json: async () => page([platform]) }) as Response}
+      ${'it returns 404'}        | ${async () => ({ ok: false, status: 404, json: async () => ({ detail: 'Invalid page.' }) }) as Response}
+      ${'it returns 500'}        | ${async () => ({ ok: false, status: 500, json: async () => page([platform]) }) as Response}
+      ${'the body is malformed'} | ${async () => ({ ok: true, status: 200, json: async () => Promise.reject(new SyntaxError('Unexpected token')) }) as Response}
+    `('should return null when $case', async ({ response }) => {
+      // Given
+      vi.spyOn(SaasManagerClient, 'callInstanceListApi').mockImplementation(
+        response
+      );
+
+      // When
+      const result = await ProductInformationHelper.fetchSaasPlatforms(request);
+
+      // Then
+      expect(result).toBeNull();
     });
   });
 });

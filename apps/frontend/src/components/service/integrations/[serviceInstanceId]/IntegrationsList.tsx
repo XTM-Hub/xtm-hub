@@ -18,7 +18,7 @@ const IntegrationsList = ({
   search,
   onSearchChange,
 }: IntegrationsListProps) => {
-  const { localStorageKey } = useIntegrationListStorage();
+  const { storageKey } = useIntegrationListStorage();
 
   return (
     <ShareableResourceServiceList
@@ -27,7 +27,7 @@ const IntegrationsList = ({
       search={search}
       onSearchChange={onSearchChange}
       type={ShareableResourceType.OPENCTI_INTEGRATION}
-      localStorageKey={localStorageKey}
+      storageKey={storageKey}
     />
   );
 };

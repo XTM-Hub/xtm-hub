@@ -103,6 +103,21 @@ describe('XtmPlatformTrialForm', () => {
     ]);
   });
 
+  it('disables the submit button while the request is submitting', () => {
+    testRender(
+      <XtmPlatformTrialForm
+        handleSubmit={vi.fn()}
+        isSubmitting
+      />
+    );
+
+    expect(
+      screen.getByRole('button', {
+        name: /^Service\.Trials\.XtmPlatform\.Page\.Form\.Submit/,
+      })
+    ).toBeDisabled();
+  });
+
   it('submits the expected values when the form is filled and submitted', async () => {
     const handleSubmit = vi.fn();
     const { user, container } = testRender(

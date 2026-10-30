@@ -5,11 +5,8 @@ import { IntegrationVerifiedFilter } from './IntegrationVerifiedFilter';
 
 const setVerifiedMock = vi.fn();
 
-vi.mock('@/hooks/use-service-list-local-storage', () => ({
-  ServiceListLocalStorageKey: {
-    OpenCTIIntegrationFeeds: 'feeds',
-  },
-  useServiceListLocalStorage: () => ({
+vi.mock('@/hooks/use-service-list-storage', () => ({
+  useServiceListStorage: () => ({
     verified: {},
     setVerified: setVerifiedMock,
     removeVerified: vi.fn(),
