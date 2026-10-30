@@ -9,6 +9,7 @@ import {
   DocumentImageType,
   DocumentSourceType,
   FiligranProduct,
+  IntegrationType,
   LicenseType,
   useSolutionCategoriesListQuery,
   useUseCasesListQuery,
@@ -17,7 +18,7 @@ import '@testing-library/jest-dom/vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import { ComponentType } from 'react';
 import { createMockEnvironment, MockPayloadGenerator } from 'relay-test-utils';
-import { expect, it, vi } from 'vitest';
+import { beforeEach, expect, it, vi } from 'vitest';
 
 const SHEET_TITLE = 'Service form';
 const NAME_LABEL = 'Service.Form.NameLabel';
@@ -366,6 +367,27 @@ interface EditedServiceFormTestsOptions<
   buildEditedDocument: () => documentItem_fragment$data;
 }
 
+export const defineSlugKeptOnEditTest = <Values,>({
+  Form,
+  resourceName,
+  buildEditedDocument,
+}: EditedServiceFormTestsOptions<Values>) => {
+  it(`should keep the slug of the ${resourceName} when the user renames it`, async () => {
+    // Given
+    const { user } = renderServiceForm(Form, buildEditedDocument());
+    const nameField = screen.getByRole('textbox', { name: NAME_LABEL });
+
+    // When
+    await user.clear(nameField);
+    await user.type(nameField, NEW_NAME);
+
+    // Then
+    expect(screen.getByRole('textbox', { name: SLUG_LABEL })).toHaveValue(
+      DOCUMENT_SLUG
+    );
+  });
+};
+
 export const defineDeletedImagesTest = <Values,>({
   Form,
   resourceName,
@@ -536,20 +558,7 @@ export const defineServiceFormTests = <Values,>({
 }: ServiceFormTestsOptions<Values>) => {
   defineSlugGenerationTests({ Form, resourceName });
 
-  it(`should keep the slug of the ${resourceName} when the user renames it`, async () => {
-    // Given
-    const { user } = renderServiceForm(Form, buildEditedDocument());
-    const nameField = screen.getByRole('textbox', { name: NAME_LABEL });
-
-    // When
-    await user.clear(nameField);
-    await user.type(nameField, NEW_NAME);
-
-    // Then
-    expect(screen.getByRole('textbox', { name: SLUG_LABEL })).toHaveValue(
-      DOCUMENT_SLUG
-    );
-  });
+  defineSlugKeptOnEditTest({ Form, resourceName, buildEditedDocument });
 
   it(`should send the filled ${resourceName} when the user creates it`, async () => {
     // Given
@@ -620,5 +629,110 @@ export const defineServiceFormTests = <Values,>({
     resourceName,
     buildEditedDocument,
     shortDescriptionMaxLength,
+  });
+};
+
+const INTEGRATION_SHORT_DESCRIPTION_MAX_LENGTH = 250;
+
+interface IntegrationFormTestsOptions<
+  Values,
+> extends ServiceFormTestTarget<Values> {
+  integrationType: IntegrationType;
+  creationValues?: NoInfer<Partial<Values>>;
+}
+
+export const defineIntegrationFormTests = <Values,>({
+  Form,
+  resourceName,
+  integrationType,
+  creationValues = {},
+}: IntegrationFormTestsOptions<Values>) => {
+  beforeEach(() => {
+    givenSolutionCategories();
+  });
+
+  defineSlugKeptOnEditTest({
+    Form,
+    resourceName,
+    buildEditedDocument: buildIntegrationDocument,
+  });
+
+  it(`should send the filled ${resourceName} when the user creates it`, async () => {
+    // Given
+    const { user, handleSubmit } = renderServiceForm(Form);
+    await fillIntegrationCreationFields(user);
+    await uploadFile(user, JSON_FILE_FIELD);
+
+    // When
+    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+    // Then
+    await waitFor(() =>
+      expect(handleSubmit).toHaveBeenCalledWith({
+        name: NEW_NAME,
+        slug: NEW_SLUG,
+        uploader_id: CURRENT_USER_ID,
+        short_description: NEW_SHORT_DESCRIPTION,
+        description: NEW_DESCRIPTION,
+        uploader_organization_id: CURRENT_ORGANIZATION.id,
+        integration_type: integrationType,
+        use_cases: [USE_CASE.id],
+        solution_categories: [SOLUTION_CATEGORY.id],
+        document: [JSON_FILE_FIELD.file],
+        logo: [],
+        images: [],
+        ...creationValues,
+      })
+    );
+  });
+
+  defineRequiredFileTest({
+    Form,
+    resourceName,
+    fileField: JSON_FILE_FIELD,
+    fillCreationFields: fillIntegrationCreationFields,
+  });
+
+  it(`should save the ${resourceName} without a new ${JSON_FILE_FIELD.name} when the user edits it`, async () => {
+    // Given
+    const { user, handleSubmit } = renderServiceForm(
+      Form,
+      buildIntegrationDocument()
+    );
+
+    // When
+    await user.click(screen.getByRole('button', { name: VALIDATE_LABEL }));
+
+    // Then
+    await waitFor(() =>
+      expect(handleSubmit).toHaveBeenCalledWith({
+        name: DOCUMENT_NAME,
+        slug: DOCUMENT_SLUG,
+        uploader_id: UPLOADER.id,
+        short_description: DOCUMENT_SHORT_DESCRIPTION,
+        description: DOCUMENT_DESCRIPTION,
+        uploader_organization_id: DOCUMENT_ORGANIZATION.id,
+        integration_type: integrationType,
+        use_cases: [USE_CASE.id],
+        solution_categories: [SOLUTION_CATEGORY.id],
+        license_type: LicenseType.Commercial,
+        active: true,
+        logo: [],
+        images: [DELETED_IMAGE, KEPT_IMAGE],
+      })
+    );
+  });
+
+  defineDeletedImagesTest({
+    Form,
+    resourceName,
+    buildEditedDocument: buildIntegrationDocument,
+  });
+
+  defineShortDescriptionLengthTests({
+    Form,
+    resourceName,
+    buildEditedDocument: buildIntegrationDocument,
+    shortDescriptionMaxLength: INTEGRATION_SHORT_DESCRIPTION_MAX_LENGTH,
   });
 };
