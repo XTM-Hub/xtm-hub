@@ -425,6 +425,7 @@
       "SOLUTION_CATEGORY_NOT_FOUND": "ソリューションカテゴリが見つかりません",
       "SUBSCRIPTION_NOT_FOUND": "購読が見つからない",
       "TENANT_ID_MANDATORY": "テナントIDは必須です",
+      "TENANT_ID_NOT_SUPPORTED": "このプラットフォームはテナントに対応していません",
       "TOO_MANY_EMAILS": "一度に招待できるメールアドレスは最大50件です",
       "TRANSFER_ME_ERROR": "個人スペースの転送要求中にエラーが発生しました。",
       "UNKNOWN_ERROR": "不明なエラーが発生",

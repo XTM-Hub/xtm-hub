@@ -425,6 +425,7 @@
       "SOLUTION_CATEGORY_NOT_FOUND": "Catégorie de solution non trouvée",
       "SUBSCRIPTION_NOT_FOUND": "L'abonnement n'a pas été trouvé",
       "TENANT_ID_MANDATORY": "L'identifiant du locataire est obligatoire",
+      "TENANT_ID_NOT_SUPPORTED": "Cette plateforme ne prend pas en charge les locataires",
       "TOO_MANY_EMAILS": "Vous pouvez inviter au maximum 50 emails à la fois",
       "TRANSFER_ME_ERROR": "Une erreur s'est produite lors de la demande de transfert de l'espace personnel.",
       "UNKNOWN_ERROR": "Une erreur inconnue s'est produite",
