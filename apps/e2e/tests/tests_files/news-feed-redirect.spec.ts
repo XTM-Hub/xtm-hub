@@ -35,9 +35,14 @@ test.describe('News feed redirect', () => {
     );
 
     expect(response.status()).toBe(302);
+    // The host depends on the environment (staging.filigran.io outside production)
+    const location = new URL(response.headers()['location']);
+    expect(location.protocol).toBe('https:');
+    expect(location.hostname).toMatch(/(^|\.)filigran\.io$/);
+    expect(location.pathname).toBe(`/blog/${BLOG_POST_SLUG}`);
     // Only the utm parameters are forwarded to the destination, platform_id is not
-    expect(response.headers()['location']).toBe(
-      `https://filigran.io/blog/${BLOG_POST_SLUG}?utm_source=opencti&utm_medium=newsfeed&utm_campaign=blog_posts&utm_content=blog_posts`
+    expect(location.search).toBe(
+      '?utm_source=opencti&utm_medium=newsfeed&utm_campaign=blog_posts&utm_content=blog_posts'
     );
     expect(response.headers()['cache-control']).toBe('no-store');
     expect(response.headers()['set-cookie']).toBeUndefined();

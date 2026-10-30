@@ -13,5 +13,8 @@
     }
   ],
   "enabled_features": ["*"],
-  "base_url_front": "http://localhost:3002"
+  "base_url_front": "http://localhost:3002",
+  "blog_api": {
+    "base_url": "https://staging.filigran.io"
+  }
 }

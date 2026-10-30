@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import config from 'config';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   NewsFeedItemMetadataKey,
   NewsFeedItemType,
@@ -9,8 +10,21 @@ import {
   NewsFeedRedirectHelper,
 } from './news-feed-redirect.helper';
 
+vi.mock('config', async (importOriginal) => {
+  const mod = await importOriginal<{ default: typeof config }>();
+  return {
+    default: {
+      get: vi.fn(mod.default.get.bind(mod.default)),
+      has: mod.default.has.bind(mod.default),
+    },
+  };
+});
+
+const realConfigGet = vi.mocked(config.get).getMockImplementation();
+
 const BLOG_POST_SLUG = 'threat-report-2026';
-const BLOG_POST_URL = `https://filigran.io/blog/${BLOG_POST_SLUG}`;
+const BLOG_HOST = new URL(config.get<string>('blog_api.base_url')).hostname;
+const BLOG_POST_URL = `${config.get<string>('blog_api.base_url')}/blog/${BLOG_POST_SLUG}`;
 
 const UNSAFE_SEGMENTS: [string, string][] = [
   ['a slash', 'a/b'],
@@ -40,6 +54,10 @@ const UNSAFE_SEGMENTS: [string, string][] = [
 ];
 
 describe('news-feed-redirect.helper', () => {
+  afterEach(() => {
+    vi.mocked(config.get).mockImplementation(realConfigGet!);
+  });
+
   describe('isSafePathSegment', () => {
     it.each(['report', 'threat-report-2026', 'a.b', 'a_b', 'A1', '2026'])(
       'should accept the simple path segment "%s"',
@@ -71,7 +89,7 @@ describe('news-feed-redirect.helper', () => {
         segment: BLOG_POST_SLUG,
       });
 
-      expect(url).toBe(BLOG_POST_URL);
+      expect(url).toBe(`https://filigran.io/blog/${BLOG_POST_SLUG}`);
     });
 
     // The unsafe segments are exhaustively covered by isSafePathSegment
@@ -154,7 +172,7 @@ describe('news-feed-redirect.helper', () => {
   });
 
   describe('buildNewsFeedDestination', () => {
-    it('should build the filigran.io blog post destination from the blog_post_slug metadata', () => {
+    it('should build the blog post destination from the blog_post_slug metadata', () => {
       const destination = buildNewsFeedDestination(NewsFeedItemType.BlogPost, {
         [NewsFeedItemMetadataKey.BlogPostSlug]: BLOG_POST_SLUG,
         [NewsFeedItemMetadataKey.UrlPath]: 'redirect/news-feed/ignored',
@@ -162,9 +180,22 @@ describe('news-feed-redirect.helper', () => {
 
       expect(destination).toEqual({
         url: BLOG_POST_URL,
-        host: 'filigran.io',
+        host: BLOG_HOST,
         forwardUtmParams: true,
       });
+    });
+
+    it('should build the blog post destination from the configured blog base url', () => {
+      vi.mocked(config.get).mockImplementation((key: string) =>
+        key === 'blog_api.base_url' ? 'https://blog.test' : realConfigGet?.(key)
+      );
+
+      const destination = buildNewsFeedDestination(NewsFeedItemType.BlogPost, {
+        [NewsFeedItemMetadataKey.BlogPostSlug]: BLOG_POST_SLUG,
+      });
+
+      expect(destination?.url).toBe(`https://blog.test/blog/${BLOG_POST_SLUG}`);
+      expect(destination?.host).toBe('blog.test');
     });
 
     it.each([

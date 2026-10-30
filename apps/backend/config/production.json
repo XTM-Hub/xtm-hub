@@ -17,5 +17,8 @@
   "base_url_front": "https://hub.filigran.io",
   "saas_manager": {
     "url": "https://saasmanager.filigran.io"
+  },
+  "blog_api": {
+    "base_url": "https://filigran.io"
   }
 }
