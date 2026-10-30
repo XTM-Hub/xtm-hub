@@ -76,4 +76,8 @@ describe('proxy', () => {
       config.matcher.filter((path) => path.startsWith('/redirect'))
     ).toEqual(['/redirect/news-feed/:itemId']);
   });
+
+  it('should run on the blogpost sync webhook route', () => {
+    expect(config.matcher).toContain('/webhooks/news-feed/blogposts');
+  });
 });
