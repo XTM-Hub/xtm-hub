@@ -1260,6 +1260,10 @@
       "xtm-platform-roadmap": {
         "Name": "Roadmap XTM Platform",
         "Description": "Explorez et suivez la roadmap XTM Platform de Filigran."
+      },
+      "xtmone-documentation": {
+        "Name": "Documentation XTM One",
+        "Description": "Documentation technique et guides utilisateur pour vous aider à comprendre le fonctionnement de la plateforme"
       }
     },
     "LibraryHero": {
@@ -1671,14 +1675,23 @@
         "Link": "En savoir plus"
       },
       "XTMPlatform": {
-        "Title": "Votre produit eXtended Threat Management (XTM)",
-        "Description": "{platformName} fait partie de la solution open-source de threat intelligence, de simulation avancée d'adversaires et de gestion stratégique des cyber-risques de Filigran, conçue pour aider votre organisation à anticiper et gérer les menaces de bout en bout.",
-        "OpenCTITagline": "Collecter, corréler et exploiter",
-        "OpenCTIDescription": "Un produit de threat intelligence open-source construit par des praticiens pour des praticiens — pour briser les silos de données et rendre la threat intelligence réellement actionnable.",
-        "OpenAEVTagline": "Prioriser, tester et corriger ce qui compte",
-        "OpenAEVDescription": "Défendez-vous proactivement contre les menaces avec l'Adversarial Exposure Validation (AEV), en simulant des scénarios d'attaque réels pour optimiser vos défenses.",
-        "LogoAlt": "Logo {name}",
-        "IllustrationAlt": "Illustration du service d'essai gratuit"
+        "Title": "Votre plateforme eXtended Threat Management (XTM)",
+        "xtmone": {
+          "Intro": "XTM One est le socle d'IA agentique de la plateforme XTM open-source de Filigran, qui unifie la threat intelligence, la validation continue de l'exposition et la réduction des cyber-risques afin que votre organisation puisse anticiper et gérer les menaces de bout en bout.",
+          "Tagline": "Simplifiez votre chemin vers la gestion agentique des menaces",
+          "Description": "XTM One orchestre l'IA assistive et agentique sur l'ensemble de la plateforme XTM pour piloter votre programme CTEM, du signal de menace à l'action validée, à la vitesse de la machine."
+        },
+        "opencti": {
+          "Intro": "OpenCTI fait partie de la solution open-source de threat intelligence, de simulation avancée d'adversaires et de gestion stratégique des cyber-risques de Filigran, conçue pour aider votre organisation à anticiper et gérer les menaces de bout en bout.",
+          "Tagline": "Collecter, corréler et exploiter",
+          "Description": "Un produit de threat intelligence open-source construit par des praticiens pour des praticiens — pour briser les silos de données et rendre la threat intelligence réellement actionnable."
+        },
+        "openaev": {
+          "Intro": "OpenAEV fait partie de la solution open-source de threat intelligence, de simulation avancée d'adversaires et de gestion stratégique des cyber-risques de Filigran, conçue pour aider votre organisation à anticiper et gérer les menaces de bout en bout.",
+          "Tagline": "Prioriser, tester et corriger ce qui compte",
+          "Description": "Défendez-vous proactivement contre les menaces avec l'Adversarial Exposure Validation (AEV), en simulant des scénarios d'attaque réels pour optimiser vos défenses."
+        },
+        "IllustrationAlt": "Illustration de l'écosystème {platformName}"
       },
       "XtmPlatform": {
         "NoTrial": {
