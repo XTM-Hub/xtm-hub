@@ -1260,6 +1260,10 @@
       "xtm-platform-roadmap": {
         "Name": "Roadmap XTM Platform",
         "Description": "Explorez et suivez la roadmap XTM Platform de Filigran."
+      },
+      "xtmone-documentation": {
+        "Name": "Documentation XTM One",
+        "Description": "Documentation technique et guides utilisateur pour vous aider à comprendre le fonctionnement de la plateforme"
       }
     },
     "LibraryHero": {
