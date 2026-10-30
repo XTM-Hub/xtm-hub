@@ -628,7 +628,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.11.15"
+          python-version: "3.15.2"
       - name: Install AWX cli
         run: pip install awxkit
 
@@ -751,7 +751,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.11.15"
+          python-version: "3.15.2"
       - name: Install AWX cli
         run: pip install awxkit
 
