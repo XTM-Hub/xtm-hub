@@ -86,6 +86,13 @@ import {
 
 export const XTM_PLATFORM_BUNDLE_SERVICE_INSTANCE_NAME = 'XTM Platform Bundle';
 
+// Every XTM Platform trial embarks these products, whatever the input says
+const XTM_PLATFORM_BUNDLE_PRODUCTS = [
+  PlatformIdentifier.Xtmone,
+  PlatformIdentifier.Opencti,
+  PlatformIdentifier.Openaev,
+];
+
 const DEPLOYMENT_REQUEST_LOCK_NAMESPACE = 'deployment_request';
 
 export const DeploymentApp = {
@@ -94,7 +101,10 @@ export const DeploymentApp = {
   ): Promise<DeploymentRequest> => {
     const user = requestContext.requireUser();
 
-    const products = validateDeploymentRequestProducts(input);
+    DeploymentHelper.validateUseCasesByProduct(
+      input,
+      XTM_PLATFORM_BUNDLE_PRODUCTS
+    );
 
     const chosenOrganization = await OrganizationDomain.loadOrganizationBy({
       id: user.selected_organization_id,
@@ -133,7 +143,7 @@ export const DeploymentApp = {
             user,
             chosenOrganization,
             input,
-            products,
+            products: XTM_PLATFORM_BUNDLE_PRODUCTS,
           });
         }
       );
@@ -474,20 +484,6 @@ export const DeploymentApp = {
 
     return fetchXtmoneIntegrationStatus(baseUrl);
   },
-};
-
-const validateDeploymentRequestProducts = (
-  input: CreateDeploymentRequestInput
-): PlatformIdentifier[] => {
-  const uniqueProducts = [...new Set(input.products)];
-
-  const includesXtmone = uniqueProducts.includes(PlatformIdentifier.Xtmone);
-  const hasAtLeastOneOtherProduct = uniqueProducts.length >= 2;
-  if (!includesXtmone || !hasAtLeastOneOtherProduct) {
-    throw new Error(BadRequestErrorCode.InvalidProductsForDeploymentType);
-  }
-  DeploymentHelper.validateUseCasesByProduct(input, uniqueProducts);
-  return uniqueProducts;
 };
 
 const createBundleChildDeploymentRequest = async ({

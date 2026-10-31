@@ -271,7 +271,8 @@ export type CreateCompetitorInput = {
 export type CreateDeploymentRequestInput = {
   activity_sector: InputMaybe<DeploymentRequestActivitySector>;
   job_title: InputMaybe<DeploymentRequestJobTitle>;
-  products: Array<PlatformIdentifier>;
+  /** @deprecated Ignored: every XTM Platform trial includes XTM One, OpenCTI and OpenAEV */
+  products: InputMaybe<Array<PlatformIdentifier>>;
   region: DeploymentRequestPlatformRegion;
   source: DeploymentRequestSource;
   use_cases_by_product: InputMaybe<Array<ProductUseCaseInput>>;

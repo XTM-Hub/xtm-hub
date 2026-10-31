@@ -78,6 +78,7 @@ import {
   DomainRegisteredPlatform,
   RegistrationDomain,
 } from '../registration/registration.domain';
+import { ServiceDefinitionDomain } from '../service/definition/service-definition.domain';
 import { ServiceInstanceDomain } from '../service/instance/service-instance.domain';
 import { CompetitorDomain } from './competitor/competitor.domain';
 import { DeploymentCancellationApp } from './deployment-cancellation.app';
@@ -165,19 +166,33 @@ describe('deployment app', () => {
       );
     });
 
-    it('should throw when a use case targets a product that was not requested', async () => {
+    it.each([[PlatformIdentifier.Opencti], [PlatformIdentifier.Openaev]])(
+      'should throw when the %s use case is missing',
+      async (missingProduct) => {
+        // When
+        const call = DeploymentApp.createDeploymentRequest({
+          ...TEST_DEPLOYMENT,
+          use_cases_by_product: TEST_DEPLOYMENT.use_cases_by_product.filter(
+            (entry) => entry.platform_identifier !== missingProduct
+          ),
+        });
+
+        // Then
+        await expect(call).rejects.toThrow(
+          BadRequestErrorCode.InvalidUseCasesForProducts
+        );
+      }
+    );
+
+    it('should throw when a use case targets XTM One', async () => {
       // When
       const call = DeploymentApp.createDeploymentRequest({
         ...TEST_DEPLOYMENT,
-        products: [PlatformIdentifier.Xtmone, PlatformIdentifier.Opencti],
         use_cases_by_product: [
+          ...TEST_DEPLOYMENT.use_cases_by_product,
           {
-            platform_identifier: PlatformIdentifier.Opencti,
+            platform_identifier: PlatformIdentifier.Xtmone,
             use_case: DeploymentRequestUseCase.ThreatHunting,
-          },
-          {
-            platform_identifier: PlatformIdentifier.Openaev,
-            use_case: DeploymentRequestUseCase.OaevPurpleTeam,
           },
         ],
       });
@@ -191,12 +206,8 @@ describe('deployment app', () => {
       // When
       const call = DeploymentApp.createDeploymentRequest({
         ...TEST_DEPLOYMENT,
-        products: [PlatformIdentifier.Xtmone, PlatformIdentifier.Opencti],
         use_cases_by_product: [
-          {
-            platform_identifier: PlatformIdentifier.Opencti,
-            use_case: DeploymentRequestUseCase.ThreatHunting,
-          },
+          ...TEST_DEPLOYMENT.use_cases_by_product,
           {
             platform_identifier: PlatformIdentifier.Opencti,
             use_case: DeploymentRequestUseCase.DetectionEngineering,
@@ -209,39 +220,18 @@ describe('deployment app', () => {
         BadRequestErrorCode.InvalidUseCasesForProducts
       );
     });
-    it.each([
-      [[PlatformIdentifier.Opencti, PlatformIdentifier.Openaev]],
-      [[PlatformIdentifier.Xtmone]],
-      [[PlatformIdentifier.Xtmone, PlatformIdentifier.Xtmone]],
-    ])(
-      'should throw InvalidProductsForDeploymentType for products %s',
-      async (products) => {
-        const call = DeploymentApp.createDeploymentRequest({
-          ...TEST_DEPLOYMENT,
-          products,
-        });
-
-        await expect(call).rejects.toThrow(
-          BadRequestErrorCode.InvalidProductsForDeploymentType
-        );
-      }
-    );
 
     it("should throw when a bundle product's service definition is not found", async () => {
-      const call = DeploymentApp.createDeploymentRequest({
-        ...TEST_DEPLOYMENT,
-        products: [
-          PlatformIdentifier.Xtmone,
-          'unknown-platform' as PlatformIdentifier,
-        ],
-        use_cases_by_product: [
-          {
-            platform_identifier: 'unknown-platform' as PlatformIdentifier,
-            use_case: DeploymentRequestUseCase.ThreatHunting,
-          },
-        ],
-      });
+      // Given
+      vi.spyOn(
+        ServiceDefinitionDomain,
+        'loadServiceDefinitionByPlatformIdentifier'
+      ).mockResolvedValue(undefined);
 
+      // When
+      const call = DeploymentApp.createDeploymentRequest(TEST_DEPLOYMENT);
+
+      // Then
       await expect(call).rejects.toThrow(ErrorCode.ServiceDefinitionNotFound);
     });
 
@@ -255,24 +245,8 @@ describe('deployment app', () => {
       });
 
       it('should create a bundle deployment request with a child trial deployment request per product', async () => {
-        const bundle = await DeploymentApp.createDeploymentRequest({
-          ...TEST_DEPLOYMENT,
-          products: [
-            PlatformIdentifier.Xtmone,
-            PlatformIdentifier.Opencti,
-            PlatformIdentifier.Openaev,
-          ],
-          use_cases_by_product: [
-            {
-              platform_identifier: PlatformIdentifier.Opencti,
-              use_case: DeploymentRequestUseCase.ThreatHunting,
-            },
-            {
-              platform_identifier: PlatformIdentifier.Openaev,
-              use_case: DeploymentRequestUseCase.OaevPurpleTeam,
-            },
-          ],
-        });
+        const bundle =
+          await DeploymentApp.createDeploymentRequest(TEST_DEPLOYMENT);
 
         expect(bundle).toMatchObject({
           type: DeploymentRequestDeploymentType.Bundle,
@@ -392,6 +366,43 @@ describe('deployment app', () => {
       });
 
       it.each([
+        ['without products', undefined],
+        [
+          'with a subset of products',
+          [PlatformIdentifier.Xtmone, PlatformIdentifier.Opencti],
+        ],
+        [
+          'with duplicated products',
+          [
+            PlatformIdentifier.Opencti,
+            PlatformIdentifier.Opencti,
+            PlatformIdentifier.Xtmone,
+          ],
+        ],
+      ])(
+        'should ignore the requested products and create exactly the 3 XTM Platform children %s',
+        async (_, products) => {
+          // When
+          const bundle = await DeploymentApp.createDeploymentRequest({
+            ...TEST_DEPLOYMENT,
+            products,
+          });
+
+          // Then
+          const children = await TestHelper.deploymentRequest.loadMany({
+            parent_id: bundle.id as DeploymentRequestId,
+          });
+          expect(
+            children.map((child) => child.platform_identifier).sort()
+          ).toEqual([
+            PlatformIdentifier.Openaev,
+            PlatformIdentifier.Opencti,
+            PlatformIdentifier.Xtmone,
+          ]);
+        }
+      );
+
+      it.each([
         [DeploymentRequestHubStatus.Cancelled],
         [DeploymentRequestHubStatus.Expired],
       ])(
@@ -407,16 +418,14 @@ describe('deployment app', () => {
             }
           );
 
-          const bundle = await DeploymentApp.createDeploymentRequest({
-            ...TEST_DEPLOYMENT,
-            products: [PlatformIdentifier.Xtmone, PlatformIdentifier.Opencti],
-          });
+          const bundle =
+            await DeploymentApp.createDeploymentRequest(TEST_DEPLOYMENT);
 
           expect(bundle.id).toBeDefined();
           const children = await TestHelper.deploymentRequest.loadMany({
             parent_id: bundle.id as DeploymentRequestId,
           });
-          expect(children).toHaveLength(2);
+          expect(children).toHaveLength(3);
         }
       );
 
@@ -432,10 +441,8 @@ describe('deployment app', () => {
           });
 
         // When
-        const bundle = await DeploymentApp.createDeploymentRequest({
-          ...TEST_DEPLOYMENT,
-          products: [PlatformIdentifier.Xtmone, PlatformIdentifier.Opencti],
-        });
+        const bundle =
+          await DeploymentApp.createDeploymentRequest(TEST_DEPLOYMENT);
 
         // Then
         expect(bundle.id).toBeDefined();
@@ -446,21 +453,9 @@ describe('deployment app', () => {
       });
 
       it('should reject a second bundle for the same organization', async () => {
-        await DeploymentApp.createDeploymentRequest({
-          ...TEST_DEPLOYMENT,
-          products: [PlatformIdentifier.Xtmone, PlatformIdentifier.Opencti],
-        });
+        await DeploymentApp.createDeploymentRequest(TEST_DEPLOYMENT);
 
-        const call = DeploymentApp.createDeploymentRequest({
-          ...TEST_DEPLOYMENT,
-          products: [PlatformIdentifier.Xtmone, PlatformIdentifier.Openaev],
-          use_cases_by_product: [
-            {
-              platform_identifier: PlatformIdentifier.Openaev,
-              use_case: DeploymentRequestUseCase.ThreatHunting,
-            },
-          ],
-        });
+        const call = DeploymentApp.createDeploymentRequest(TEST_DEPLOYMENT);
 
         await expect(call).rejects.toThrow(
           AlreadyExistsErrorCode.FreeTrialAlreadyExists
@@ -472,12 +467,10 @@ describe('deployment app', () => {
           DeploymentApp.createDeploymentRequest({
             ...TEST_DEPLOYMENT,
             region: DeploymentRequestPlatformRegion.EuWest,
-            products: [PlatformIdentifier.Xtmone, PlatformIdentifier.Opencti],
           }),
           DeploymentApp.createDeploymentRequest({
             ...TEST_DEPLOYMENT,
             region: DeploymentRequestPlatformRegion.UsEast,
-            products: [PlatformIdentifier.Xtmone, PlatformIdentifier.Openaev],
           }),
         ]);
 
@@ -510,24 +503,7 @@ describe('deployment app', () => {
             return originalRegisterNewPlatform(args);
           });
 
-        const call = DeploymentApp.createDeploymentRequest({
-          ...TEST_DEPLOYMENT,
-          products: [
-            PlatformIdentifier.Xtmone,
-            PlatformIdentifier.Opencti,
-            PlatformIdentifier.Openaev,
-          ],
-          use_cases_by_product: [
-            {
-              platform_identifier: PlatformIdentifier.Opencti,
-              use_case: DeploymentRequestUseCase.ThreatHunting,
-            },
-            {
-              platform_identifier: PlatformIdentifier.Openaev,
-              use_case: DeploymentRequestUseCase.OaevPurpleTeam,
-            },
-          ],
-        });
+        const call = DeploymentApp.createDeploymentRequest(TEST_DEPLOYMENT);
 
         await expect(call).rejects.toThrow('boom');
         expect(registerNewPlatformSpy).toHaveBeenCalledTimes(2);
@@ -587,14 +563,14 @@ describe('deployment app', () => {
 
     describe('telemetry', () => {
       it.each`
-        product                       | targetProduct | source                                 | telemetrySource
-        ${PlatformIdentifier.Opencti} | ${'open-cti'} | ${DeploymentRequestSource.OpenctiDemo} | ${TelemetrySource.DEMO_OPENCTI}
-        ${PlatformIdentifier.Openaev} | ${'open-aev'} | ${DeploymentRequestSource.OpenaevDemo} | ${TelemetrySource.DEMO_OPENAEV}
-        ${PlatformIdentifier.Opencti} | ${'open-cti'} | ${DeploymentRequestSource.Xtmhub}      | ${TelemetrySource.XTMHUB}
-        ${PlatformIdentifier.Openaev} | ${'open-aev'} | ${DeploymentRequestSource.Xtmhub}      | ${TelemetrySource.XTMHUB}
+        product                       | targetProduct | useCase                                    | source                                 | telemetrySource
+        ${PlatformIdentifier.Opencti} | ${'open-cti'} | ${DeploymentRequestUseCase.ThreatHunting}  | ${DeploymentRequestSource.OpenctiDemo} | ${TelemetrySource.DEMO_OPENCTI}
+        ${PlatformIdentifier.Openaev} | ${'open-aev'} | ${DeploymentRequestUseCase.OaevPurpleTeam} | ${DeploymentRequestSource.OpenaevDemo} | ${TelemetrySource.DEMO_OPENAEV}
+        ${PlatformIdentifier.Opencti} | ${'open-cti'} | ${DeploymentRequestUseCase.ThreatHunting}  | ${DeploymentRequestSource.Xtmhub}      | ${TelemetrySource.XTMHUB}
+        ${PlatformIdentifier.Openaev} | ${'open-aev'} | ${DeploymentRequestUseCase.OaevPurpleTeam} | ${DeploymentRequestSource.Xtmhub}      | ${TelemetrySource.XTMHUB}
       `(
         'should send a telemetry event for the bundle and its $product child when launched from $source',
-        async ({ product, targetProduct, source, telemetrySource }) => {
+        async ({ targetProduct, useCase, source, telemetrySource }) => {
           // Given
           requestContext.set(requestContextRegistererUserSecondOrga);
 
@@ -604,17 +580,7 @@ describe('deployment app', () => {
 
           // When
           const bundle = await DeploymentApp.createDeploymentRequest({
-            activity_sector:
-              DeploymentRequestActivitySector.ComputerNetworkSecurity,
-            job_title: DeploymentRequestJobTitle.CLevel,
-            use_cases_by_product: [
-              {
-                platform_identifier: product,
-                use_case: DeploymentRequestUseCase.ThreatHunting,
-              },
-            ],
-            products: [PlatformIdentifier.Xtmone, product],
-            region: DeploymentRequestPlatformRegion.UsEast,
+            ...TEST_DEPLOYMENT,
             source,
           });
 
@@ -647,7 +613,7 @@ describe('deployment app', () => {
               deployment_type: DeploymentRequestDeploymentType.Trial,
               parent_id: bundle.id,
               target_product: targetProduct,
-              use_case: DeploymentRequestUseCase.ThreatHunting,
+              use_case: useCase,
             })
           );
         }
@@ -693,8 +659,12 @@ describe('deployment app', () => {
               firstName:
                 TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER
                   .FIRST_NAME,
-              productNames: 'OpenCTI and XTM One',
-              products: [PlatformIdentifier.Opencti, PlatformIdentifier.Xtmone],
+              productNames: 'OpenCTI, OpenAEV, and XTM One',
+              products: [
+                PlatformIdentifier.Opencti,
+                PlatformIdentifier.Openaev,
+                PlatformIdentifier.Xtmone,
+              ],
             },
           });
           expect(mockSendMail).toHaveBeenNthCalledWith(2, {
@@ -709,8 +679,8 @@ describe('deployment app', () => {
               activitySector:
                 DeploymentRequestActivitySector.ComputerNetworkSecurity,
               openCTIUseCase: DeploymentRequestUseCase.ThreatHunting,
-              openAEVUseCase: undefined,
-              products: 'OpenCTI and XTM One',
+              openAEVUseCase: DeploymentRequestUseCase.OaevPurpleTeam,
+              products: 'OpenCTI, OpenAEV, and XTM One',
               deploymentType: 'Bundle',
             },
           });
@@ -728,21 +698,6 @@ describe('deployment app', () => {
         const bundle = await DeploymentApp.createDeploymentRequest({
           ...TEST_DEPLOYMENT,
           region: QUOTA_REGION,
-          products: [
-            PlatformIdentifier.Xtmone,
-            PlatformIdentifier.Opencti,
-            PlatformIdentifier.Openaev,
-          ],
-          use_cases_by_product: [
-            {
-              platform_identifier: PlatformIdentifier.Opencti,
-              use_case: DeploymentRequestUseCase.ThreatHunting,
-            },
-            {
-              platform_identifier: PlatformIdentifier.Openaev,
-              use_case: DeploymentRequestUseCase.ThreatHunting,
-            },
-          ],
         });
 
         expect(bundle.hub_status).toBe(DeploymentRequestHubStatus.Pending);
@@ -757,21 +712,6 @@ describe('deployment app', () => {
         const bundle = await DeploymentApp.createDeploymentRequest({
           ...TEST_DEPLOYMENT,
           region: QUOTA_REGION,
-          products: [
-            PlatformIdentifier.Xtmone,
-            PlatformIdentifier.Opencti,
-            PlatformIdentifier.Openaev,
-          ],
-          use_cases_by_product: [
-            {
-              platform_identifier: PlatformIdentifier.Opencti,
-              use_case: DeploymentRequestUseCase.ThreatHunting,
-            },
-            {
-              platform_identifier: PlatformIdentifier.Openaev,
-              use_case: DeploymentRequestUseCase.ThreatHunting,
-            },
-          ],
         });
 
         expect(bundle.hub_status).toBe(DeploymentRequestHubStatus.Queued);
@@ -2317,13 +2257,6 @@ describe('deployment app', () => {
         const bundle = await DeploymentApp.createDeploymentRequest({
           ...TEST_DEPLOYMENT,
           region: QUOTA_REGION,
-          products: [PlatformIdentifier.Xtmone, PlatformIdentifier.Openaev],
-          use_cases_by_product: [
-            {
-              platform_identifier: PlatformIdentifier.Openaev,
-              use_case: DeploymentRequestUseCase.ThreatHunting,
-            },
-          ],
         });
         expect(bundle.hub_status).toBe(DeploymentRequestHubStatus.Queued);
 
@@ -2338,7 +2271,7 @@ describe('deployment app', () => {
         const children = await TestHelper.deploymentRequest.loadMany({
           parent_id: bundle.id as DeploymentRequestId,
         });
-        expect(children).toHaveLength(2);
+        expect(children).toHaveLength(3);
         for (const child of children) {
           expect(child.hub_status).toBe(DeploymentRequestHubStatus.Pending);
         }
@@ -2480,7 +2413,6 @@ describe('deployment app', () => {
           const bundle = await DeploymentApp.createDeploymentRequest({
             ...TEST_DEPLOYMENT,
             region: QUOTA_REGION,
-            products: [PlatformIdentifier.Xtmone, PlatformIdentifier.Opencti],
           });
           const [child] = await TestHelper.deploymentRequest.loadMany({
             parent_id: bundle.id as DeploymentRequestId,
@@ -3256,7 +3188,6 @@ describe('deployment app', () => {
         const bundle = await DeploymentApp.createDeploymentRequest({
           ...TEST_DEPLOYMENT,
           region: QUOTA_REGION,
-          products: [PlatformIdentifier.Xtmone, PlatformIdentifier.Opencti],
         });
         const [child] = await TestHelper.deploymentRequest.loadMany({
           parent_id: bundle.id as DeploymentRequestId,
@@ -3397,11 +3328,6 @@ describe('deployment app', () => {
     const createActiveBundle = async () => {
       const bundle = await DeploymentApp.createDeploymentRequest({
         ...TEST_DEPLOYMENT,
-        products: [
-          PlatformIdentifier.Xtmone,
-          PlatformIdentifier.Opencti,
-          PlatformIdentifier.Openaev,
-        ],
         use_cases_by_product: [
           {
             platform_identifier: PlatformIdentifier.Opencti,
